@@ -40,6 +40,101 @@ pub struct AddonsBackupManager {
 }
 
 impl AddonsBackupManager {
+  fn copy_dir_recursive_for_backup(src: &Path, dst: &Path) -> Result<(u64, u32), Error> {
+    fs::create_dir_all(dst).map_err(|e| {
+      Error::BackupCreationFailed(format!("Failed to create backup subfolder: {e}"))
+    })?;
+
+    let mut total_size = 0u64;
+    let mut vpk_count = 0u32;
+
+    for entry in fs::read_dir(src)
+      .map_err(|e| Error::BackupCreationFailed(format!("Failed to read directory: {e}")))?
+    {
+      let entry =
+        entry.map_err(|e| Error::BackupCreationFailed(format!("Failed to read entry: {e}")))?;
+      let path = entry.path();
+      let dest_path = dst.join(entry.file_name());
+      if path.is_dir() {
+        let (child_size, child_vpks) = Self::copy_dir_recursive_for_backup(&path, &dest_path)?;
+        total_size += child_size;
+        vpk_count += child_vpks;
+      } else if path.is_file() {
+        fs::copy(&path, &dest_path)
+          .map_err(|e| Error::BackupCreationFailed(format!("Failed to copy file: {e}")))?;
+        if let Ok(metadata) = fs::metadata(&path) {
+          total_size += metadata.len();
+        }
+        if path.extension().is_some_and(|ext| ext == "vpk") {
+          vpk_count += 1;
+        }
+      }
+    }
+
+    Ok((total_size, vpk_count))
+  }
+
+  fn copy_dir_recursive_for_restore(src: &Path, dst: &Path) -> Result<(), Error> {
+    fs::create_dir_all(dst).map_err(|e| {
+      Error::BackupRestoreFailed(format!("Failed to create restore subfolder: {e}"))
+    })?;
+
+    for entry in fs::read_dir(src)
+      .map_err(|e| Error::BackupRestoreFailed(format!("Failed to read backup directory: {e}")))?
+    {
+      let entry = entry
+        .map_err(|e| Error::BackupRestoreFailed(format!("Failed to read backup entry: {e}")))?;
+      let path = entry.path();
+      let dest_path = dst.join(entry.file_name());
+      if path.is_dir() {
+        Self::copy_dir_recursive_for_restore(&path, &dest_path)?;
+      } else if path.is_file() {
+        fs::copy(&path, &dest_path)
+          .map_err(|e| Error::BackupRestoreFailed(format!("Failed to restore file: {e}")))?;
+      }
+    }
+
+    Ok(())
+  }
+
+  fn dir_size_recursive(path: &Path) -> u64 {
+    fs::read_dir(path)
+      .map(|entries| {
+        entries
+          .filter_map(|entry| entry.ok())
+          .map(|entry| {
+            let path = entry.path();
+            if path.is_dir() {
+              Self::dir_size_recursive(&path)
+            } else {
+              entry.metadata().map_or(0, |metadata| metadata.len())
+            }
+          })
+          .sum()
+      })
+      .unwrap_or(0)
+  }
+
+  fn count_vpk_files_recursive(path: &Path) -> u32 {
+    fs::read_dir(path)
+      .map(|entries| {
+        entries
+          .filter_map(|entry| entry.ok())
+          .map(|entry| {
+            let path = entry.path();
+            if path.is_dir() {
+              Self::count_vpk_files_recursive(&path)
+            } else if path.extension().is_some_and(|ext| ext == "vpk") {
+              1
+            } else {
+              0
+            }
+          })
+          .sum()
+      })
+      .unwrap_or(0)
+  }
+
   pub fn new() -> Self {
     Self {
       game_path: None,
@@ -106,7 +201,7 @@ impl AddonsBackupManager {
       .filter(|entry| entry.path().is_file())
       .collect();
 
-    let vpk_count = entries
+    let mut vpk_count = entries
       .iter()
       .filter(|entry| entry.path().extension().is_some_and(|ext| ext == "vpk"))
       .count();
@@ -151,6 +246,40 @@ impl AddonsBackupManager {
             "message": format!("Copying files... ({}/{total_files})", i + 1)
           }),
         );
+      }
+    }
+
+    for entry in fs::read_dir(&addons_path)
+      .map_err(|e| Error::BackupCreationFailed(format!("Failed to read addons directory: {e}")))?
+      .filter_map(|entry| entry.ok())
+    {
+      let path = entry.path();
+      if !path.is_dir() {
+        continue;
+      }
+      if let Some(file_name) = path.file_name() {
+        let (dir_size, dir_vpks) =
+          Self::copy_dir_recursive_for_backup(&path, &backup_path.join(file_name))?;
+        total_size += dir_size;
+        vpk_count += dir_vpks as usize;
+      }
+    }
+
+    // Copy sibling shard directories (addons2, addons3, ...) so installs that
+    // exceed 99 VPKs via multiple search paths are captured in full. Each shard
+    // is stored under a subfolder of the same name inside the backup.
+    if let Some(citadel_dir) = addons_path.parent() {
+      for shard in 2..=crate::mod_manager::shards::MAX_SHARDS {
+        let shard_src = citadel_dir.join(format!("addons{shard}"));
+        if !shard_src.is_dir() {
+          continue;
+        }
+
+        let shard_dest = backup_path.join(format!("addons{shard}"));
+        let (shard_size, shard_vpks) =
+          Self::copy_dir_recursive_for_backup(&shard_src, &shard_dest)?;
+        total_size += shard_size;
+        vpk_count += shard_vpks as usize;
       }
     }
 
@@ -248,14 +377,10 @@ impl AddonsBackupManager {
   }
 
   fn count_vpk_files_in_archive(&self, backup_path: &Path) -> Result<u32, Error> {
-    // Count VPK files in backup directory
-    let count = fs::read_dir(backup_path)
-      .map_err(|e| Error::BackupRestoreFailed(format!("Failed to read backup directory: {e}")))?
-      .filter_map(|entry| entry.ok())
-      .filter(|entry| entry.path().extension().is_some_and(|ext| ext == "vpk"))
-      .count();
-
-    Ok(count as u32)
+    if !backup_path.exists() {
+      return Err(Error::BackupNotFound);
+    }
+    Ok(Self::count_vpk_files_recursive(backup_path))
   }
 
   pub fn list_backups(&self) -> Result<Vec<AddonsBackup>, Error> {
@@ -277,17 +402,7 @@ impl AddonsBackupManager {
         && let Some(filename) = path.file_name().and_then(|n| n.to_str())
         && filename.starts_with("addons-backup-")
       {
-        // Calculate total size of all files in the backup directory
-        let mut file_size = 0u64;
-        if let Ok(entries) = fs::read_dir(&path) {
-          for entry in entries.flatten() {
-            if let Ok(metadata) = entry.metadata()
-              && metadata.is_file()
-            {
-              file_size += metadata.len();
-            }
-          }
-        }
+        let file_size = Self::dir_size_recursive(&path);
 
         let created_at = if let Some(timestamp) = self.parse_backup_filename(filename) {
           timestamp
@@ -344,6 +459,17 @@ impl AddonsBackupManager {
         fs::remove_dir_all(&addons_path)
           .map_err(|e| Error::BackupRestoreFailed(format!("Failed to clear addons folder: {e}")))?;
       }
+      // Also clear sibling shard directories so a replace restore is clean.
+      if let Some(citadel_dir) = addons_path.parent() {
+        for shard in 2..=crate::mod_manager::shards::MAX_SHARDS {
+          let shard_dir = citadel_dir.join(format!("addons{shard}"));
+          if shard_dir.exists() {
+            fs::remove_dir_all(&shard_dir).map_err(|e| {
+              Error::BackupRestoreFailed(format!("Failed to clear shard folder: {e}"))
+            })?;
+          }
+        }
+      }
       fs::create_dir_all(&addons_path)
         .map_err(|e| Error::BackupRestoreFailed(format!("Failed to create addons folder: {e}")))?;
     } else {
@@ -366,6 +492,19 @@ impl AddonsBackupManager {
         let dest_path = addons_path.join(file_name);
         fs::copy(&path, &dest_path)
           .map_err(|e| Error::BackupRestoreFailed(format!("Failed to restore file: {e}")))?;
+      } else if path.is_dir()
+        && let Some(dir_name) = path.file_name().and_then(|n| n.to_str())
+      {
+        let dest_dir = if dir_name.starts_with("addons") {
+          if let Some(citadel_dir) = addons_path.parent() {
+            citadel_dir.join(dir_name)
+          } else {
+            addons_path.join(dir_name)
+          }
+        } else {
+          addons_path.join(dir_name)
+        };
+        Self::copy_dir_recursive_for_restore(&path, &dest_dir)?;
       }
     }
 
@@ -427,7 +566,11 @@ impl AddonsBackupManager {
     }
 
     let metadata = fs::metadata(&backup_path)?;
-    let file_size = metadata.len();
+    let file_size = if backup_path.is_dir() {
+      Self::dir_size_recursive(&backup_path)
+    } else {
+      metadata.len()
+    };
 
     let created_at = if let Some(timestamp) = self.parse_backup_filename(file_name) {
       timestamp

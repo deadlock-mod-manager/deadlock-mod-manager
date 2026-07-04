@@ -110,9 +110,6 @@ import { type LocalMod, ModStatus } from "@/types/mods";
 const PAGE_SIZE = 20;
 const MODS_STORE_PAGINATION_SETTING_ID = "mods-store-pagination";
 
-const ENGINE_VPK_LIMIT = 99;
-const VPK_LIMIT_WARNING_THRESHOLD = 85;
-
 function ModsPagination({
   page,
   totalPages,
@@ -749,13 +746,6 @@ const MyMods = () => {
     .filter(isInstalledModWithVpks)
     .reduce((sum, mod) => sum + (mod.installedVpks?.length ?? 0), 0);
 
-  const vpkStatSubordinateClass =
-    enabledVpkFileCount >= ENGINE_VPK_LIMIT
-      ? "text-destructive/80"
-      : enabledVpkFileCount >= VPK_LIMIT_WARNING_THRESHOLD
-        ? "text-orange-700/90 dark:text-orange-400/90"
-        : "text-muted-foreground";
-
   useLayoutEffect(() => {
     if (scrollContainerRef.current && scrollPositionRef.current > 0) {
       scrollContainerRef.current.scrollTop = scrollPositionRef.current;
@@ -811,62 +801,19 @@ const MyMods = () => {
                       className='h-3.5 w-px shrink-0 bg-border'
                     />
                     <div className='flex flex-wrap items-center gap-2'>
-                      <div
-                        className={cn(
-                          "flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 tabular-nums",
-                          enabledVpkFileCount >= ENGINE_VPK_LIMIT
-                            ? "text-destructive"
-                            : enabledVpkFileCount >= VPK_LIMIT_WARNING_THRESHOLD
-                              ? "text-orange-600 dark:text-orange-500"
-                              : "text-foreground",
-                        )}>
+                      <div className='flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-foreground tabular-nums'>
                         <span className='inline-flex items-baseline gap-px font-semibold'>
                           <span>{enabledVpkFileCount}</span>
-                          <span
-                            className={cn(
-                              "font-normal",
-                              vpkStatSubordinateClass,
-                            )}>
-                            /{ENGINE_VPK_LIMIT}
-                          </span>
                         </span>
-                        <span
-                          className={cn(
-                            "font-normal",
-                            vpkStatSubordinateClass,
-                          )}>
+                        <span className='font-normal text-muted-foreground'>
                           {t("myMods.vpkFilesNoun")}
                         </span>
                       </div>
-                      {enabledVpkFileCount >= VPK_LIMIT_WARNING_THRESHOLD && (
-                        <Badge
-                          className='shrink-0 py-0 text-xs font-medium'
-                          variant={
-                            enabledVpkFileCount >= ENGINE_VPK_LIMIT
-                              ? "destructive"
-                              : "secondary"
-                          }>
-                          {enabledVpkFileCount >= ENGINE_VPK_LIMIT
-                            ? t("myMods.vpkLimitBadgeAtLimit")
-                            : t("myMods.vpkLimitBadgeNear")}
-                        </Badge>
-                      )}
                     </div>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent className='max-w-sm'>
                   <div className='flex flex-col gap-3 text-sm'>
-                    <p className='text-pretty'>
-                      {t("myMods.modLimitTooltipP1", {
-                        max: ENGINE_VPK_LIMIT,
-                      })}
-                    </p>
-                    <p className='text-pretty'>
-                      {t("myMods.modLimitTooltipP2")}
-                    </p>
-                    <p className='text-pretty'>
-                      {t("myMods.modLimitTooltipP3")}
-                    </p>
                     <p className='text-muted-foreground text-pretty'>
                       {t("myMods.modLimitTooltipStatHeading")}
                     </p>

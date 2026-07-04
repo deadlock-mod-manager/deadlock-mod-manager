@@ -1,5 +1,6 @@
 use crate::errors::Error;
 use crate::mod_manager::filesystem_helper::FileSystemHelper;
+use crate::mod_manager::shards;
 use crate::utils;
 use log;
 use serde::{Deserialize, Serialize};
@@ -823,19 +824,14 @@ impl GameConfigManager {
     self.game_setup
   }
 
-  /// Each entry produces one `Game citadel/addons[/<folder>]` line, in order.
-  /// `None` (and empty input) falls back to the root `addons` directory.
-  fn generate_modded_search_paths_multi(folders: &[Option<String>]) -> String {
-    let resolved: Vec<String> = if folders.is_empty() {
+  /// Build the modded `SearchPaths` block from full `citadel/...` search-path
+  /// strings, one `Game` line each, in order. Empty input falls back to the
+  /// root `addons` directory.
+  fn generate_modded_search_paths(search_paths: &[String]) -> String {
+    let resolved: Vec<String> = if search_paths.is_empty() {
       vec!["citadel/addons".to_string()]
     } else {
-      folders
-        .iter()
-        .map(|f| match f {
-          Some(name) if !name.is_empty() => format!("citadel/addons/{}", name),
-          _ => "citadel/addons".to_string(),
-        })
-        .collect()
+      search_paths.to_vec()
     };
 
     let game_lines = resolved
@@ -847,20 +843,55 @@ impl GameConfigManager {
     let search_paths = format!(
       r#"
 		SearchPaths
-        {{  
+        {{
             Game_Language       citadel_*LANGUAGE*
 {}
             Mod                 citadel
-            Write               citadel          
+            Write               citadel
             Game                citadel
             Mod                 core
             Write               core
-            Game                core        
+            Game                core
         }}"#,
       game_lines
     );
 
     Self::ensure_game_language_search_path(&search_paths)
+  }
+
+  /// Each entry produces one `Game citadel/addons[/<folder>]` line, in order.
+  /// `None` (and empty input) falls back to the root `addons` directory.
+  /// Retained as a tested helper; production paths flow through
+  /// [`Self::expand_folder_shards`] + [`Self::generate_modded_search_paths`].
+  #[allow(dead_code)]
+  fn generate_modded_search_paths_multi(folders: &[Option<String>]) -> String {
+    let paths: Vec<String> = if folders.is_empty() {
+      vec!["citadel/addons".to_string()]
+    } else {
+      folders
+        .iter()
+        .map(|f| match f {
+          Some(name) if !name.is_empty() => format!("citadel/addons/{}", name),
+          _ => "citadel/addons".to_string(),
+        })
+        .collect()
+    };
+
+    Self::generate_modded_search_paths(&paths)
+  }
+
+  /// Expand one profile base folder into the search paths of all its shard
+  /// directories: shard 1 (the base) is always included; shards 2..=MAX are
+  /// included only when their directory holds at least one enabled VPK.
+  fn expand_folder_shards(game_path: &Path, folder: Option<&str>) -> Vec<String> {
+    let mut out = vec![shards::shard_search_path(folder, 1)];
+    for shard in 2..=shards::MAX_SHARDS {
+      let dir = shards::shard_dir(game_path, folder, shard);
+      if shards::dir_has_enabled_vpk(&dir) {
+        out.push(shards::shard_search_path(folder, shard));
+      }
+    }
+    out
   }
 
   /// `citadel/addons[/...]` paths inside the marker block, in source order.
@@ -972,7 +1003,19 @@ impl GameConfigManager {
         ));
       };
 
-    let modded_search_paths = Self::generate_modded_search_paths_multi(folders);
+    // Expand each requested base folder into every shard directory that
+    // currently holds enabled VPKs, so all `addons`, `addons2`, ... paths get
+    // registered. Preserve order and de-duplicate.
+    let mut search_paths: Vec<String> = Vec::new();
+    for folder in folders {
+      for path in Self::expand_folder_shards(game_path, folder.as_deref()) {
+        if !search_paths.contains(&path) {
+          search_paths.push(path);
+        }
+      }
+    }
+
+    let modded_search_paths = Self::generate_modded_search_paths(&search_paths);
     let replacement_content =
       format!("\n{MOD_MANAGER_MARKER_START}\n{modded_search_paths}\n{MOD_MANAGER_MARKER_END}");
 
@@ -1262,6 +1305,51 @@ mod tests {
       ],
       "layered server folder should precede profile folder"
     );
+  }
+
+  #[test]
+  fn update_mod_path_registers_extra_shard_when_present() {
+    let (_dir, game_path) = setup_game_dir();
+    write_gameinfo(&game_path, &fixture_gameinfo_with_server_entry());
+
+    // A shard-2 directory with an enabled VPK must be registered alongside the base.
+    let addons2 = game_path.join("game").join("citadel").join("addons2");
+    std::fs::create_dir_all(&addons2).expect("create addons2");
+    std::fs::write(addons2.join("pak01_dir.vpk"), b"x").expect("write shard vpk");
+
+    let mut mgr = GameConfigManager::new();
+    mgr.game_setup = true;
+
+    mgr
+      .update_mod_path(&game_path, None)
+      .expect("update should succeed");
+
+    let result = mgr.marker_addons_paths(&game_path).expect("read markers");
+    assert_eq!(
+      result,
+      vec!["citadel/addons".to_string(), "citadel/addons2".to_string()],
+      "base and non-empty shard 2 must both be registered"
+    );
+  }
+
+  #[test]
+  fn update_mod_path_ignores_empty_extra_shard() {
+    let (_dir, game_path) = setup_game_dir();
+    write_gameinfo(&game_path, &fixture_gameinfo_with_server_entry());
+
+    // An empty shard-2 directory must not be registered.
+    let addons2 = game_path.join("game").join("citadel").join("addons2");
+    std::fs::create_dir_all(&addons2).expect("create empty addons2");
+
+    let mut mgr = GameConfigManager::new();
+    mgr.game_setup = true;
+
+    mgr
+      .update_mod_path(&game_path, None)
+      .expect("update should succeed");
+
+    let result = mgr.marker_addons_paths(&game_path).expect("read markers");
+    assert_eq!(result, vec!["citadel/addons".to_string()]);
   }
 
   #[test]

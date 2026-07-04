@@ -31,6 +31,10 @@ pub struct ProfileVpkManifestEntry {
   pub disabled_vpks: Vec<String>,
   #[serde(default)]
   pub original_vpk_names: Vec<String>,
+  /// Which addons shard directory this mod's enabled VPKs live in.
+  /// `None` means the legacy base directory (shard 1).
+  #[serde(default, skip_serializing_if = "Option::is_none")]
+  pub shard: Option<u32>,
 }
 
 impl Default for ProfileVpkManifest {
@@ -136,6 +140,8 @@ impl ProfileVpkManifest {
     let entry = self.mods.entry(mod_id.to_string()).or_default();
     entry.enabled = false;
     entry.current_vpks.clear();
+    // Disabled VPKs move back to the base directory, so drop the shard binding.
+    entry.shard = None;
     entry.disabled_vpks = disabled_vpks;
     if !original_vpk_names.is_empty() {
       entry.original_vpk_names = original_vpk_names;

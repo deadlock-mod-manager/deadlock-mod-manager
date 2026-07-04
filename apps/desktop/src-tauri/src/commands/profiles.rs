@@ -592,6 +592,8 @@ pub struct SeedManifestEntry {
   pub original_vpk_names: Vec<String>,
   #[serde(default)]
   pub order: Option<u32>,
+  #[serde(default)]
+  pub shard: Option<u32>,
 }
 
 #[tauri::command]
@@ -614,12 +616,16 @@ pub async fn seed_profile_vpk_manifest_entries(
       continue;
     }
     if entry.enabled {
+      let shard = entry.shard;
       manifest.mark_enabled(
         &entry.mod_id,
         entry.current_vpks,
         entry.original_vpk_names,
         entry.order,
       );
+      if let Some(manifest_entry) = manifest.mods.get_mut(&entry.mod_id) {
+        manifest_entry.shard = shard;
+      }
     } else {
       manifest.mark_disabled(&entry.mod_id, entry.disabled_vpks, entry.original_vpk_names);
     }
