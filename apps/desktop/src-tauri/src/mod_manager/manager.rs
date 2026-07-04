@@ -10,7 +10,7 @@ use crate::mod_manager::{
   mod_repository::{Mod, ModRepository},
   steam_manager::SteamManager,
   vpk_manager::{MissingVpkPolicy, VpkManager},
-  vpk_manifest::ProfileVpkManifest,
+  vpk_manifest::{ProfileVpkManifest, ProfileVpkManifestEntry},
 };
 use log;
 use std::{
@@ -134,6 +134,75 @@ impl ModManager {
           .unwrap_or_else(|| vpk.clone())
       })
       .collect()
+  }
+
+  fn existing_vpk_filenames(addons_path: &Path, vpks: &[String]) -> Vec<String> {
+    Self::vpk_filenames(vpks)
+      .into_iter()
+      .filter(|vpk| addons_path.join(vpk).exists())
+      .collect()
+  }
+
+  fn resolve_reorder_vpks(
+    addons_path: &Path,
+    manifest_vpks: &[String],
+    fallback_vpks: &[String],
+  ) -> Vec<String> {
+    let manifest_filenames = Self::vpk_filenames(manifest_vpks);
+    let existing_manifest_vpks = Self::existing_vpk_filenames(addons_path, &manifest_filenames);
+
+    if !manifest_filenames.is_empty() && existing_manifest_vpks.len() == manifest_filenames.len() {
+      return manifest_filenames;
+    }
+
+    let fallback_filenames = Self::vpk_filenames(fallback_vpks);
+    let existing_fallback_vpks = Self::existing_vpk_filenames(addons_path, &fallback_filenames);
+
+    if !existing_fallback_vpks.is_empty()
+      && existing_fallback_vpks.len() == fallback_filenames.len()
+    {
+      return fallback_filenames;
+    }
+
+    if !existing_manifest_vpks.is_empty() {
+      return existing_manifest_vpks;
+    }
+
+    existing_fallback_vpks
+  }
+
+  fn reconcile_manifest_entry_for_reorder(
+    addons_path: &Path,
+    entry: &mut ProfileVpkManifestEntry,
+    fallback_vpks: &[String],
+  ) -> bool {
+    let resolved_vpks = Self::resolve_reorder_vpks(addons_path, &entry.current_vpks, fallback_vpks);
+    let can_enable_from_fallback = !fallback_vpks.is_empty();
+    let mut changed = false;
+
+    if entry.current_vpks != resolved_vpks {
+      entry.current_vpks = resolved_vpks;
+      changed = true;
+    }
+
+    if entry.current_vpks.is_empty() {
+      if entry.enabled {
+        entry.enabled = false;
+        changed = true;
+      }
+    } else if entry.enabled || can_enable_from_fallback {
+      if !entry.enabled {
+        entry.enabled = true;
+        changed = true;
+      }
+
+      if !entry.disabled_vpks.is_empty() {
+        entry.disabled_vpks.clear();
+        changed = true;
+      }
+    }
+
+    changed
   }
 
   pub fn stop_game(&mut self) -> Result<(), Error> {
@@ -453,18 +522,19 @@ impl ModManager {
     log::info!("Reordering all mods based on install order for profile: {profile_folder:?}");
 
     let mut manifest = ProfileVpkManifest::load(&addons_path)?;
-    let mut ordered_manifest_entries: Vec<(String, u32, Vec<String>)> = manifest
-      .mods
-      .iter()
-      .filter(|(_, entry)| entry.enabled && !entry.current_vpks.is_empty())
-      .map(|(mod_id, entry)| {
-        (
+    let mut manifest_changed = false;
+    let mut ordered_manifest_entries = Vec::new();
+    for (mod_id, entry) in &mut manifest.mods {
+      manifest_changed |= Self::reconcile_manifest_entry_for_reorder(&addons_path, entry, &[]);
+
+      if entry.enabled && !entry.current_vpks.is_empty() {
+        ordered_manifest_entries.push((
           mod_id.clone(),
           entry.order.unwrap_or(UNORDERED_FALLBACK_ORDER),
           entry.current_vpks.clone(),
-        )
-      })
-      .collect();
+        ));
+      }
+    }
     ordered_manifest_entries.sort_by_key(|(_, order, _)| *order);
 
     let mod_vpk_mapping: Vec<(String, Vec<String>)> = ordered_manifest_entries
@@ -473,6 +543,9 @@ impl ModManager {
       .collect();
 
     if mod_vpk_mapping.is_empty() {
+      if manifest_changed {
+        manifest.save(&addons_path)?;
+      }
       log::info!("No enabled manifest VPKs need reordering");
       return Ok(());
     }
@@ -535,18 +608,14 @@ impl ModManager {
     let mut manifest_changed = false;
     for (remote_id, vpk_files, order) in sorted_data {
       let vpk_files = Self::vpk_filenames(&vpk_files);
-      let was_known = manifest.mods.contains_key(&remote_id);
       let entry = manifest.mods.entry(remote_id.clone()).or_default();
       if entry.order != Some(order) {
         entry.order = Some(order);
         manifest_changed = true;
       }
 
-      if !was_known && !vpk_files.is_empty() {
-        entry.enabled = true;
-        entry.current_vpks = vpk_files;
-        manifest_changed = true;
-      }
+      manifest_changed |=
+        Self::reconcile_manifest_entry_for_reorder(&addons_path, entry, &vpk_files);
 
       if entry.enabled && !entry.current_vpks.is_empty() {
         mod_vpk_mapping.push((remote_id, entry.current_vpks.clone()));
@@ -613,6 +682,7 @@ impl ModManager {
           entry.order = Some(new_order);
           manifest_changed = true;
         }
+        manifest_changed |= Self::reconcile_manifest_entry_for_reorder(&addons_path, entry, &[]);
         if entry.enabled && !entry.current_vpks.is_empty() {
           mod_vpk_mapping.push((mod_id.clone(), entry.current_vpks.clone()));
         }
@@ -1028,7 +1098,14 @@ fn dir_size(path: &std::path::Path) -> u64 {
 
 #[cfg(test)]
 mod tests {
+  use crate::mod_manager::vpk_manifest::ProfileVpkManifestEntry;
+
   use super::ModManager;
+  use std::fs;
+
+  fn write_vpk(addons_path: &std::path::Path, name: &str) {
+    fs::write(addons_path.join(name), b"test vpk").unwrap();
+  }
 
   #[test]
   fn profile_folder_validation_rejects_path_escape_components() {
@@ -1043,5 +1120,67 @@ mod tests {
 
     #[cfg(windows)]
     assert!(!ModManager::is_safe_profile_folder("C:\\tmp\\profile_123"));
+  }
+
+  #[test]
+  fn reorder_vpk_resolution_prefers_valid_manifest_names() {
+    let temp = tempfile::tempdir().unwrap();
+    write_vpk(temp.path(), "pak01_dir.vpk");
+    write_vpk(temp.path(), "pak02_dir.vpk");
+
+    let resolved = ModManager::resolve_reorder_vpks(
+      temp.path(),
+      &["pak01_dir.vpk".to_string()],
+      &["pak02_dir.vpk".to_string()],
+    );
+
+    assert_eq!(resolved, vec!["pak01_dir.vpk".to_string()]);
+  }
+
+  #[test]
+  fn reorder_vpk_resolution_uses_frontend_names_when_manifest_is_stale() {
+    let temp = tempfile::tempdir().unwrap();
+    write_vpk(temp.path(), "pak02_dir.vpk");
+
+    let resolved = ModManager::resolve_reorder_vpks(
+      temp.path(),
+      &["pak01_dir.vpk".to_string()],
+      &["pak02_dir.vpk".to_string()],
+    );
+
+    assert_eq!(resolved, vec!["pak02_dir.vpk".to_string()]);
+  }
+
+  #[test]
+  fn reorder_manifest_reconciliation_disables_entries_without_existing_vpks() {
+    let temp = tempfile::tempdir().unwrap();
+    let mut entry = ProfileVpkManifestEntry {
+      enabled: true,
+      current_vpks: vec!["pak01_dir.vpk".to_string()],
+      ..Default::default()
+    };
+
+    let changed = ModManager::reconcile_manifest_entry_for_reorder(temp.path(), &mut entry, &[]);
+
+    assert!(changed);
+    assert!(!entry.enabled);
+    assert!(entry.current_vpks.is_empty());
+  }
+
+  #[test]
+  fn reorder_manifest_reconciliation_does_not_enable_disabled_entries_without_fallback() {
+    let temp = tempfile::tempdir().unwrap();
+    write_vpk(temp.path(), "pak01_dir.vpk");
+    let mut entry = ProfileVpkManifestEntry {
+      enabled: false,
+      current_vpks: vec!["pak01_dir.vpk".to_string()],
+      ..Default::default()
+    };
+
+    let changed = ModManager::reconcile_manifest_entry_for_reorder(temp.path(), &mut entry, &[]);
+
+    assert!(!changed);
+    assert!(!entry.enabled);
+    assert_eq!(entry.current_vpks, vec!["pak01_dir.vpk".to_string()]);
   }
 }
