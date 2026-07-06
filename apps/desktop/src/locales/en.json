@@ -24,6 +24,7 @@
     "expandMenu": "Expand menu",
     "about": "About",
     "crosshairs": "Crosshairs",
+    "foundry": "Mod Foundry",
     "customization": "Customization",
     "autoexec": "Autoexec Config",
     "maps": "Maps",
@@ -32,6 +33,74 @@
     "general": "General",
     "earlyAccess": "Early Access",
     "mods": "Mods"
+  },
+  "foundry": {
+    "title": "Mod Foundry",
+    "subtitle": "Import a hero skin and customize cards, effect colors, and ability sounds with a live preview",
+    "empty": {
+      "title": "Craft your hero skin",
+      "description": "Import an installed skin VPK to edit its cards, recolor its effects, and swap ability sounds. Map mods aren't supported here — the Foundry is for hero skins."
+    },
+    "import": {
+      "cta": "Import skin",
+      "analyzing": "Analyzing…",
+      "browseTitle": "Select a skin VPK",
+      "browseCta": "Choose VPK file",
+      "dialogTitle": "Import a hero skin",
+      "dialogDescription": "Pick one of your hero skins or import a local VPK. Only hero skins are shown — maps and audio mods are excluded.",
+      "fromLibrary": "Your mods",
+      "fromFile": "Local file",
+      "searchPlaceholder": "Search your skins…",
+      "noHeroSkins": "No hero skins found in your library yet. Install a hero skin, or import a local VPK.",
+      "fileHint": "Import any hero-skin VPK from disk. Map mods will be rejected."
+    },
+    "toolbar": {
+      "entryCount": "{{count}} files",
+      "changeSkin": "Change skin",
+      "export": "Export"
+    },
+    "tabs": {
+      "skin": "Skin",
+      "skinHint": "Model and materials",
+      "skinEmpty": "No model files found in this skin.",
+      "cards": "Cards",
+      "cardsHint": "Selection and portrait images",
+      "cardsEmpty": "No card textures found in this skin.",
+      "effects": "Effects",
+      "effectsHint": "Ability VFX and colors",
+      "effectsEmpty": "No particle effects found in this skin.",
+      "sounds": "Sounds",
+      "soundsHint": "Per-ability sounds",
+      "soundsEmpty": "No sound files found in this skin."
+    },
+    "preview": {
+      "empty": "Import a skin to see it here",
+      "placeholder": "{{hero}} — live preview coming soon",
+      "unknownHero": "Unknown hero",
+      "loading": "Loading model…",
+      "decoding": "Decoding texture…",
+      "decodeFailed": "Couldn't decode this texture.",
+      "alt": "Skin preview"
+    },
+    "inspector": {
+      "title": "Properties",
+      "noSelection": "Select an item to see its details.",
+      "file": "File",
+      "path": "Path",
+      "type": "Type",
+      "size": "Size",
+      "dimensions": "Dimensions",
+      "skinSoon": "Live 3D preview and model tools are coming to this tab.",
+      "cardsSoon": "Upload and crop a custom card image here — coming soon.",
+      "effectsSoon": "Recolor ability effects (solid, gradient, rainbow) here — coming soon.",
+      "soundsSoon": "Assign and preview custom ability sounds here — coming soon."
+    },
+    "errors": {
+      "notHeroSkinTitle": "Not a hero skin",
+      "notHeroSkinDescription": "This VPK doesn't look like a hero skin. The Mod Foundry only supports hero skins.",
+      "analyzeFailedTitle": "Couldn't read that VPK",
+      "analyzeFailedDescription": "The file could not be parsed. Make sure it's a valid Deadlock VPK."
+    }
   },
   "servers": {
     "title": "Server Browser",

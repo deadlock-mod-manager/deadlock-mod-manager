@@ -1132,6 +1132,7 @@ dependencies = [
 name = "deadlock-mod-manager"
 version = "1.0.0"
 dependencies = [
+ "base64 0.22.1",
  "chrono",
  "clap",
  "deadlock-discord-presence",
@@ -1152,6 +1153,7 @@ dependencies = [
  "serde_json",
  "sevenz-rust",
  "sha2",
+ "source2-model",
  "steamlocate",
  "sysinfo",
  "tauri",
@@ -2985,6 +2987,15 @@ name = "lru-slab"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "112b39cec0b298b6c1999fee3e31427f74f676e4cb9879ed1a121b43661a4154"
+
+[[package]]
+name = "lz4_flex"
+version = "0.11.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "373f5eceeeab7925e0c1098212f2fbc4d416adec9d35051a6ab251e824c1854a"
+dependencies = [
+ "twox-hash",
+]
 
 [[package]]
 name = "lzma-rust"
@@ -5508,6 +5519,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "source2-model"
+version = "0.1.0"
+dependencies = [
+ "image",
+ "log",
+ "lz4_flex",
+ "texture2ddecoder",
+ "thiserror 2.0.18",
+ "vpk-parser",
+]
+
+[[package]]
 name = "specta"
 version = "2.0.0-rc.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6374,6 +6397,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06794f8f6c5c898b3275aebefa6b8a1cb24cd2c6c79397ab15774837a0bc5755"
 dependencies = [
  "winapi-util",
+]
+
+[[package]]
+name = "texture2ddecoder"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "427ae8ec7f2f0fdd3146b77cfa44bea880caf066f7e55398a8467afe2645c832"
+dependencies = [
+ "paste",
 ]
 
 [[package]]
