@@ -1,0 +1,21 @@
+[package]
+name = "source2-model"
+version = "0.1.0"
+edition = "2024"
+description = "Decoder for Source 2 compiled assets (textures) used by the Mod Foundry"
+
+[lib]
+name = "source2_model"
+crate-type = ["rlib"]
+path = "src/lib.rs"
+
+[dependencies]
+vpk-parser = { path = "../vpk-parser" }
+texture2ddecoder = "0.1"
+lz4_flex = "0.11"
+image = { version = "0.25", default-features = false, features = ["png"] }
+thiserror = "2.0"
+log = "0.4"
+
+[dev-dependencies]
+env_logger = "0.11"
