@@ -22,6 +22,7 @@ import {
   DiscordLogoIcon,
   DownloadIcon,
   GearIcon,
+  HammerIcon,
   HardDrivesIcon,
   HouseIcon,
   type Icon,
@@ -169,6 +170,14 @@ const getSidebarItems = (
       tooltipLabel: t("navigation.skins"),
       url: "/skins",
       icon: TShirtIcon,
+      group: "customization",
+    },
+    {
+      id: "foundry",
+      title: () => <span>{t("navigation.foundry")}</span>,
+      tooltipLabel: t("navigation.foundry"),
+      url: "/foundry",
+      icon: HammerIcon,
       group: "customization",
     },
     {

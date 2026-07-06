@@ -15,6 +15,7 @@ import Dashboard from "./pages/dashboard";
 import Debug from "./pages/debug";
 import Developer from "./pages/developer";
 import Downloads from "./pages/downloads";
+import Foundry from "./pages/foundry";
 
 import Mod from "./pages/mod";
 import GetMods, { GetMaps } from "./pages/mods";
@@ -78,6 +79,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<Crosshairs />} path='/crosshairs' />
               <Route element={<Skins />} path='/skins' />
               <Route element={<StatsRouteGate />} path='/stats' />
+              <Route element={<Foundry />} path='/foundry' />
               <Route
                 element={<CustomSettings value='autoexec' />}
                 path='/settings/autoexec'
