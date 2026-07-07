@@ -39,4 +39,10 @@ export interface FoundryTexture {
   dataUrl: string;
 }
 
+export interface FoundryModel {
+  vertexCount: number;
+  indexCount: number;
+  dataUrl: string;
+}
+
 export type FoundryTab = "skin" | "cards" | "effects" | "sounds";

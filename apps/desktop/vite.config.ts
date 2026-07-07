@@ -35,6 +35,18 @@ export default defineConfig(async () => ({
   optimizeDeps: {
     include: ['react', 'react-dom', 'react/jsx-runtime'],
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          const normalizedId = id.replaceAll(path.sep, '/');
+          if (normalizedId.includes('/node_modules/three/')) {
+            return 'vendor-three';
+          }
+        },
+      },
+    },
+  },
 
   // Vite options tailored for Tauri development and only applied in `tauri dev` or `tauri build`
   //
