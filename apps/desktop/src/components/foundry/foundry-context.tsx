@@ -9,13 +9,19 @@ import {
   useState,
 } from "react";
 import {
+  analyzeDefaultFoundryHero,
   analyzeFoundryVpk,
+  decodeFoundryCards,
   decodeFoundryModel,
   decodeFoundryTexture,
   resolveModVpk,
 } from "@/lib/foundry";
 import logger from "@/lib/logger";
-import type { FoundryManifest, FoundryTab } from "@/types/foundry";
+import type {
+  FoundryCardPreview,
+  FoundryManifest,
+  FoundryTab,
+} from "@/types/foundry";
 
 type FoundryStatus = "idle" | "analyzing" | "ready" | "error";
 
@@ -33,6 +39,12 @@ interface ModelPreview {
   indexCount: number | null;
 }
 
+interface CardPreviews {
+  status: "idle" | "loading" | "ready" | "error";
+  modCards: FoundryCardPreview[];
+  defaultCards: FoundryCardPreview[];
+}
+
 const IDLE_TEXTURE: TexturePreview = {
   status: "idle",
   dataUrl: null,
@@ -47,6 +59,12 @@ const IDLE_MODEL: ModelPreview = {
   indexCount: null,
 };
 
+const IDLE_CARDS: CardPreviews = {
+  status: "idle",
+  modCards: [],
+  defaultCards: [],
+};
+
 interface FoundryContextValue {
   status: FoundryStatus;
   manifest: FoundryManifest | null;
@@ -55,14 +73,18 @@ interface FoundryContextValue {
   selectedEntryPath: string | null;
   texturePreview: TexturePreview;
   modelPreview: ModelPreview;
+  cardPreviews: CardPreviews;
+  selectedCardKey: string | null;
   setActiveTab: (tab: FoundryTab) => void;
   setSelectedEntryPath: (path: string | null) => void;
+  previewCard: (card: FoundryCardPreview) => void;
   importVpk: (filePath: string) => Promise<FoundryManifest | null>;
   importMod: (
     modId: string,
     installedVpks?: string[],
     profileFolder?: string | null,
   ) => Promise<FoundryManifest | null>;
+  importDefaultHero: (heroDisplay: string) => Promise<FoundryManifest | null>;
   reset: () => void;
 }
 
@@ -92,24 +114,62 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
   const [texturePreview, setTexturePreview] =
     useState<TexturePreview>(IDLE_TEXTURE);
   const [modelPreview, setModelPreview] = useState<ModelPreview>(IDLE_MODEL);
+  const [cardPreviews, setCardPreviews] = useState<CardPreviews>(IDLE_CARDS);
+  const [selectedTextureSource, setSelectedTextureSource] = useState<
+    "manifest" | "preloadedCard"
+  >("manifest");
+  const [selectedCardKey, setSelectedCardKey] = useState<string | null>(null);
+  const texturePreviewCacheRef = useRef<Map<string, TexturePreview>>(new Map());
   const modelPreviewCacheRef = useRef<Map<string, ModelPreview>>(new Map());
 
   const reset = useCallback(() => {
+    texturePreviewCacheRef.current.clear();
     modelPreviewCacheRef.current.clear();
     setStatus("idle");
     setManifest(null);
     setError(null);
     setActiveTab("skin");
     setSelectedEntryPath(null);
+    setSelectedTextureSource("manifest");
+    setSelectedCardKey(null);
     setTexturePreview(IDLE_TEXTURE);
     setModelPreview(IDLE_MODEL);
+    setCardPreviews(IDLE_CARDS);
+  }, []);
+
+  const selectEntryPath = useCallback((path: string | null) => {
+    setSelectedTextureSource("manifest");
+    setSelectedCardKey(null);
+    setSelectedEntryPath(path);
+  }, []);
+
+  const previewCard = useCallback((card: FoundryCardPreview) => {
+    setSelectedTextureSource("preloadedCard");
+    setSelectedCardKey(`${card.source}:${card.path}`);
+    setSelectedEntryPath(card.path);
+    setModelPreview(IDLE_MODEL);
+    setTexturePreview({
+      status: "ready",
+      dataUrl: card.dataUrl,
+      width: card.width,
+      height: card.height,
+    });
   }, []);
 
   const filePath = manifest?.filePath ?? null;
   useEffect(() => {
     const entryPath = selectedEntryPath;
+    if (selectedTextureSource === "preloadedCard") {
+      return;
+    }
     if (!filePath || !isTextureEntry(entryPath)) {
       setTexturePreview(IDLE_TEXTURE);
+      return;
+    }
+    const cacheKey = `${filePath}\n${entryPath}`;
+    const cached = texturePreviewCacheRef.current.get(cacheKey);
+    if (cached) {
+      setTexturePreview(cached);
       return;
     }
     let cancelled = false;
@@ -117,12 +177,14 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     decodeFoundryTexture(filePath, entryPath)
       .then((tex) => {
         if (cancelled) return;
-        setTexturePreview({
+        const preview: TexturePreview = {
           status: "ready",
           dataUrl: tex.dataUrl,
           width: tex.width,
           height: tex.height,
-        });
+        };
+        texturePreviewCacheRef.current.set(cacheKey, preview);
+        setTexturePreview(preview);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -132,7 +194,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       cancelled = true;
     };
-  }, [filePath, selectedEntryPath]);
+  }, [filePath, selectedEntryPath, selectedTextureSource]);
 
   useEffect(() => {
     const entryPath = selectedEntryPath;
@@ -170,32 +232,78 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [filePath, selectedEntryPath]);
 
-  const importVpk = useCallback(async (filePath: string) => {
-    modelPreviewCacheRef.current.clear();
-    setStatus("analyzing");
-    setError(null);
-    try {
-      const result = await analyzeFoundryVpk(filePath);
-      if (!result.isHeroSkin) {
+  useEffect(() => {
+    if (!manifest) {
+      setCardPreviews(IDLE_CARDS);
+      return;
+    }
+
+    let cancelled = false;
+    setCardPreviews({ ...IDLE_CARDS, status: "loading" });
+    decodeFoundryCards(manifest.filePath, manifest.hero, manifest.heroDisplay)
+      .then((cards) => {
+        if (cancelled) return;
+        const modCards = cards.filter((card) => card.source === "mod");
+        const defaultCards = cards.filter((card) => card.source === "default");
+        for (const card of modCards) {
+          texturePreviewCacheRef.current.set(
+            `${manifest.filePath}\n${card.path}`,
+            {
+              status: "ready",
+              dataUrl: card.dataUrl,
+              width: card.width,
+              height: card.height,
+            },
+          );
+        }
+        setCardPreviews({
+          status: "ready",
+          modCards,
+          defaultCards,
+        });
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        logger.withError(err).error("[Foundry] Failed to decode cards");
+        setCardPreviews({ ...IDLE_CARDS, status: "error" });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [manifest]);
+
+  const importVpk = useCallback(
+    async (filePath: string) => {
+      texturePreviewCacheRef.current.clear();
+      modelPreviewCacheRef.current.clear();
+      setCardPreviews(IDLE_CARDS);
+      setStatus("analyzing");
+      setError(null);
+      try {
+        const result = await analyzeFoundryVpk(filePath);
+        if (!result.isHeroSkin) {
+          setStatus("error");
+          setError("notHeroSkin");
+          setManifest(null);
+          return null;
+        }
+        setManifest(result);
+        selectEntryPath(getInitialModelPath(result));
+        setActiveTab("skin");
+        setStatus("ready");
+        return result;
+      } catch (err) {
+        logger.withError(err).error("[Foundry] Failed to analyze VPK");
         setStatus("error");
-        setError("notHeroSkin");
+        setError("analyzeFailed");
         setManifest(null);
+        selectEntryPath(null);
         return null;
       }
-      setManifest(result);
-      setSelectedEntryPath(getInitialModelPath(result));
-      setActiveTab("skin");
-      setStatus("ready");
-      return result;
-    } catch (err) {
-      logger.withError(err).error("[Foundry] Failed to analyze VPK");
-      setStatus("error");
-      setError("analyzeFailed");
-      setManifest(null);
-      setSelectedEntryPath(null);
-      return null;
-    }
-  }, []);
+    },
+    [selectEntryPath],
+  );
 
   const importMod = useCallback(
     async (
@@ -217,11 +325,37 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
         setStatus("error");
         setError("analyzeFailed");
         setManifest(null);
-        setSelectedEntryPath(null);
+        selectEntryPath(null);
         return null;
       }
     },
-    [importVpk],
+    [importVpk, selectEntryPath],
+  );
+
+  const importDefaultHero = useCallback(
+    async (heroDisplay: string) => {
+      texturePreviewCacheRef.current.clear();
+      modelPreviewCacheRef.current.clear();
+      setCardPreviews(IDLE_CARDS);
+      setStatus("analyzing");
+      setError(null);
+      try {
+        const result = await analyzeDefaultFoundryHero(heroDisplay);
+        setManifest(result);
+        selectEntryPath(getInitialModelPath(result));
+        setActiveTab("skin");
+        setStatus("ready");
+        return result;
+      } catch (err) {
+        logger.withError(err).error("[Foundry] Failed to analyze default hero");
+        setStatus("error");
+        setError("analyzeFailed");
+        setManifest(null);
+        selectEntryPath(null);
+        return null;
+      }
+    },
+    [selectEntryPath],
   );
 
   const value = useMemo<FoundryContextValue>(
@@ -233,10 +367,14 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       selectedEntryPath,
       texturePreview,
       modelPreview,
+      cardPreviews,
+      selectedCardKey,
       setActiveTab,
-      setSelectedEntryPath,
+      setSelectedEntryPath: selectEntryPath,
+      previewCard,
       importVpk,
       importMod,
+      importDefaultHero,
       reset,
     }),
     [
@@ -247,8 +385,13 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       selectedEntryPath,
       texturePreview,
       modelPreview,
+      cardPreviews,
+      selectedCardKey,
+      selectEntryPath,
+      previewCard,
       importVpk,
       importMod,
+      importDefaultHero,
       reset,
     ],
   );

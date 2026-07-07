@@ -45,4 +45,16 @@ export interface FoundryModel {
   dataUrl: string;
 }
 
+export type FoundryCardSource = "mod" | "default";
+
+export interface FoundryCardPreview {
+  source: FoundryCardSource;
+  path: string;
+  filename: string;
+  variant: string;
+  width: number;
+  height: number;
+  dataUrl: string;
+}
+
 export type FoundryTab = "skin" | "cards" | "effects" | "sounds";

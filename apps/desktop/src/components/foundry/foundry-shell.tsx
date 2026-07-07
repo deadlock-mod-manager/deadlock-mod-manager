@@ -18,10 +18,12 @@ import {
   MusicNotesIcon,
   RepeatIcon,
   SparkleIcon,
+  XCircleIcon,
 } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { FoundryEntry, FoundryTab } from "@/types/foundry";
+import { FoundryCardsPanel } from "./foundry-cards-panel";
 import { useFoundry } from "./foundry-context";
 import { FoundryEntryList } from "./foundry-entry-list";
 import { FoundryImportDialog } from "./foundry-import-dialog";
@@ -35,6 +37,9 @@ const TAB_ICONS: Record<FoundryTab, React.ReactNode> = {
   sounds: <MusicNotesIcon className='h-4 w-4' weight='duotone' />,
 };
 
+const TABS_LIST_CLASS_NAME =
+  "grid w-full max-w-[22rem] grid-cols-4 rounded-none rounded-t-lg";
+
 const prioritizePreviewableModels = (entries: FoundryEntry[]): FoundryEntry[] =>
   [...entries].sort((a, b) => {
     const aPreviewable = a.path.endsWith(".vmesh_c") ? 0 : 1;
@@ -47,6 +52,7 @@ export const FoundryShell = () => {
   const {
     manifest,
     activeTab,
+    reset,
     setActiveTab,
     selectedEntryPath,
     setSelectedEntryPath,
@@ -74,6 +80,7 @@ export const FoundryShell = () => {
 
   if (!manifest) return null;
 
+  const showPreviewPanel = activeTab !== "cards" && activeTab !== "sounds";
   const onSelect = (entry: FoundryEntry) => setSelectedEntryPath(entry.path);
 
   return (
@@ -96,22 +103,32 @@ export const FoundryShell = () => {
             variant='outline'>
             {t("foundry.toolbar.changeSkin")}
           </Button>
+          <Button
+            icon={<XCircleIcon className='h-4 w-4' />}
+            onClick={reset}
+            size='sm'
+            variant='outline'>
+            {t("foundry.toolbar.clear")}
+          </Button>
           <Button disabled size='sm' variant='default'>
             {t("foundry.toolbar.export")}
           </Button>
         </div>
       </div>
 
-      {/* 3-column workspace */}
+      {/* Workspace */}
       <ResizablePanelGroup
         className='flex-1 rounded-lg border'
-        direction='horizontal'>
-        <ResizablePanel defaultSize={26} minSize={18}>
+        direction='horizontal'
+        key={showPreviewPanel ? "with-preview" : "without-preview"}>
+        <ResizablePanel
+          defaultSize={showPreviewPanel ? 26 : 74}
+          minSize={showPreviewPanel ? 18 : 40}>
           <Tabs
             className='flex h-full flex-col'
             onValueChange={(value) => setActiveTab(value as FoundryTab)}
             value={activeTab}>
-            <TabsList className='grid w-full grid-cols-4 rounded-none rounded-t-lg'>
+            <TabsList className={TABS_LIST_CLASS_NAME}>
               {(["skin", "cards", "effects", "sounds"] as FoundryTab[]).map(
                 (tab) => (
                   <TabsTrigger
@@ -140,12 +157,16 @@ export const FoundryShell = () => {
                   </div>
                   <ScrollArea className='h-[calc(100%-3.25rem)]'>
                     <div className='p-2'>
-                      <FoundryEntryList
-                        emptyLabel={t(`foundry.tabs.${tab}Empty`)}
-                        entries={entriesForTab}
-                        onSelect={onSelect}
-                        selectedPath={selectedEntryPath}
-                      />
+                      {tab === "cards" ? (
+                        <FoundryCardsPanel />
+                      ) : (
+                        <FoundryEntryList
+                          emptyLabel={t(`foundry.tabs.${tab}Empty`)}
+                          entries={entriesForTab}
+                          onSelect={onSelect}
+                          selectedPath={selectedEntryPath}
+                        />
+                      )}
                     </div>
                   </ScrollArea>
                 </TabsContent>
@@ -154,13 +175,17 @@ export const FoundryShell = () => {
           </Tabs>
         </ResizablePanel>
 
-        <ResizableHandle withHandle />
+        {showPreviewPanel && (
+          <>
+            <ResizableHandle withHandle />
 
-        <ResizablePanel defaultSize={48} minSize={30}>
-          <div className='h-full p-3'>
-            <FoundryPreview />
-          </div>
-        </ResizablePanel>
+            <ResizablePanel defaultSize={48} minSize={30}>
+              <div className='h-full p-3'>
+                <FoundryPreview />
+              </div>
+            </ResizablePanel>
+          </>
+        )}
 
         <ResizableHandle withHandle />
 

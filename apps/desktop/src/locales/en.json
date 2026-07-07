@@ -48,15 +48,18 @@
       "browseCta": "Choose VPK file",
       "dialogTitle": "Import a hero skin",
       "dialogDescription": "Pick one of your hero skins or import a local VPK. Only hero skins are shown — maps and audio mods are excluded.",
-      "fromLibrary": "Your mods",
+      "defaultSkins": "Default",
+      "fromLibrary": "My Mods",
       "fromFile": "Local file",
       "searchPlaceholder": "Search your skins…",
+      "noDefaultSkins": "No default skins match your search.",
       "noHeroSkins": "No hero skins found in your library yet. Install a hero skin, or import a local VPK.",
       "fileHint": "Import any hero-skin VPK from disk. Map mods will be rejected."
     },
     "toolbar": {
       "entryCount": "{{count}} files",
       "changeSkin": "Change skin",
+      "clear": "Clear",
       "export": "Export"
     },
     "tabs": {
@@ -73,6 +76,23 @@
       "soundsHint": "Per-ability sounds",
       "soundsEmpty": "No sound files found in this skin."
     },
+    "cards": {
+      "loading": "Loading card art…",
+      "loadFailed": "Couldn't load the card art for this skin.",
+      "modCards": "Mod cards",
+      "defaultCards": "Default cards",
+      "noModCards": "No mod card art found for this hero.",
+      "noDefaultCards": "No default card art found for this hero.",
+      "variants": {
+        "card": "Card",
+        "vertical": "Vertical",
+        "card_critical": "Low HP",
+        "card_gloat": "Gloat",
+        "minimap": "Minimap",
+        "small": "Small",
+        "other": "Other"
+      }
+    },
     "preview": {
       "empty": "Import a skin to see it here",
       "placeholder": "{{hero}} — live preview coming soon",
@@ -81,6 +101,8 @@
       "decoding": "Decoding texture…",
       "decodeFailed": "Couldn't decode this texture.",
       "modelDecodeFailed": "Couldn't decode this model.",
+      "selectCard": "Select a card to preview it",
+      "soundsPlaceholder": "Select a sound file to inspect its details",
       "alt": "Skin preview",
       "startSpin": "Auto-rotate",
       "stopSpin": "Stop rotation"

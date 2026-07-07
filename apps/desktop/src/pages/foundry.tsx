@@ -2,10 +2,7 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { FoundryEmptyState } from "@/components/foundry/foundry-empty-state";
-import {
-  FoundryProvider,
-  useFoundry,
-} from "@/components/foundry/foundry-context";
+import { useFoundry } from "@/components/foundry/foundry-context";
 import { FoundryShell } from "@/components/foundry/foundry-shell";
 import PageTitle from "@/components/shared/page-title";
 
@@ -44,9 +41,7 @@ const Foundry = () => {
         />
       </div>
       <div className='min-h-0 flex-1'>
-        <FoundryProvider>
-          <FoundryWorkspace />
-        </FoundryProvider>
+        <FoundryWorkspace />
       </div>
     </div>
   );

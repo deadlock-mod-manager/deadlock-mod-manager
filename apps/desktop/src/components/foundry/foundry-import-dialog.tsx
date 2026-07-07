@@ -20,6 +20,10 @@ import { ImageIcon, UploadSimpleIcon } from "@phosphor-icons/react";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  DEFAULT_FOUNDRY_SKINS,
+  type DefaultFoundrySkin,
+} from "@/lib/foundry-default-skins";
 import { usePersistedStore } from "@/lib/store";
 import { type LocalMod, ModStatus } from "@/types/mods";
 import { useFoundry } from "./foundry-context";
@@ -93,6 +97,50 @@ const SkinTile = ({
   );
 };
 
+const DefaultSkinTile = ({
+  skin,
+  disabled,
+  loading,
+  onSelect,
+}: {
+  skin: DefaultFoundrySkin;
+  disabled: boolean;
+  loading: boolean;
+  onSelect: () => void;
+}) => {
+  return (
+    <button
+      className={cn(
+        "group flex h-full flex-col overflow-hidden rounded-lg border text-left transition-colors hover:border-primary",
+        disabled && "pointer-events-none opacity-60",
+      )}
+      disabled={disabled}
+      onClick={onSelect}
+      type='button'>
+      <div className='relative flex h-28 w-full items-center justify-center bg-muted/40'>
+        <img
+          alt={skin.hero}
+          className='h-full max-w-full object-contain'
+          decoding='async'
+          src={skin.image}
+        />
+        {loading && (
+          <div className='absolute inset-x-0 bottom-0 bg-background/85 p-2'>
+            <div className='h-1 overflow-hidden rounded-full bg-primary/20'>
+              <div className='h-full w-2/3 animate-pulse rounded-full bg-primary' />
+            </div>
+          </div>
+        )}
+      </div>
+      <div className='flex min-w-0 flex-col gap-0.5 p-2'>
+        <span className='truncate font-medium text-sm' title={skin.hero}>
+          {skin.hero}
+        </span>
+      </div>
+    </button>
+  );
+};
+
 interface FoundryImportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -107,14 +155,24 @@ export const FoundryImportDialog = ({
   onOpenChange,
 }: FoundryImportDialogProps) => {
   const { t } = useTranslation();
-  const { importMod, importVpk, status } = useFoundry();
+  const { importDefaultHero, importMod, importVpk, status } = useFoundry();
   const localMods = usePersistedStore((state) => state.localMods);
   const activeProfile = usePersistedStore(
     (state) => state.profiles[state.activeProfileId],
   );
   const [query, setQuery] = useState("");
   const [loadingModId, setLoadingModId] = useState<string | null>(null);
+  const [loadingDefaultHero, setLoadingDefaultHero] = useState<string | null>(
+    null,
+  );
   const busy = status === "analyzing";
+
+  const defaultSkins = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return DEFAULT_FOUNDRY_SKINS.filter(
+      (skin) => !q || skin.hero.toLowerCase().includes(q),
+    );
+  }, [query]);
 
   const heroSkins = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -140,6 +198,19 @@ export const FoundryImportDialog = ({
       }
     },
     [activeProfile?.folderName, importMod, onOpenChange],
+  );
+
+  const handleSelectDefaultSkin = useCallback(
+    async (skin: DefaultFoundrySkin) => {
+      setLoadingDefaultHero(skin.hero);
+      try {
+        const result = await importDefaultHero(skin.hero);
+        if (result) onOpenChange(false);
+      } finally {
+        setLoadingDefaultHero(null);
+      }
+    },
+    [importDefaultHero, onOpenChange],
   );
 
   const handleBrowseFile = useCallback(async () => {
@@ -169,7 +240,10 @@ export const FoundryImportDialog = ({
           className='flex min-h-0 flex-1 flex-col overflow-hidden'
           defaultValue='library'>
           <div className='shrink-0 px-6 pt-4'>
-            <TabsList className='grid w-full grid-cols-2'>
+            <TabsList className='grid w-full grid-cols-3'>
+              <TabsTrigger value='default'>
+                {t("foundry.import.defaultSkins")}
+              </TabsTrigger>
               <TabsTrigger value='library'>
                 {t("foundry.import.fromLibrary")}
               </TabsTrigger>
@@ -178,6 +252,39 @@ export const FoundryImportDialog = ({
               </TabsTrigger>
             </TabsList>
           </div>
+
+          <TabsContent
+            className='mt-0 min-h-0 grow basis-0 gap-3 px-6 pt-4 pb-6 data-[state=active]:flex data-[state=inactive]:hidden data-[state=active]:flex-col'
+            value='default'>
+            <div className='shrink-0'>
+              <SearchInput
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t("foundry.import.searchPlaceholder")}
+                value={query}
+              />
+            </div>
+            {defaultSkins.length === 0 ? (
+              <div className='flex flex-1 items-center justify-center'>
+                <p className='max-w-sm text-center text-muted-foreground text-sm'>
+                  {t("foundry.import.noDefaultSkins")}
+                </p>
+              </div>
+            ) : (
+              <ScrollArea className='min-h-0 flex-1 pr-3'>
+                <div className='grid grid-cols-2 gap-3 pb-1 sm:grid-cols-3'>
+                  {defaultSkins.map((skin) => (
+                    <DefaultSkinTile
+                      disabled={busy}
+                      key={skin.hero}
+                      loading={loadingDefaultHero === skin.hero}
+                      onSelect={() => handleSelectDefaultSkin(skin)}
+                      skin={skin}
+                    />
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </TabsContent>
 
           <TabsContent
             className='mt-0 min-h-0 grow basis-0 gap-3 px-6 pt-4 pb-6 data-[state=active]:flex data-[state=inactive]:hidden data-[state=active]:flex-col'
