@@ -205,7 +205,10 @@ impl VtexHeader {
 
     /// Compressed mip sizes if the COMPRESSED_MIP_SIZE extra-data block is present.
     fn compressed_mip_sizes(&self, data: &[u8]) -> Option<Vec<usize>> {
-        let e = self.extra.iter().find(|e| e.kind == EXTRA_COMPRESSED_MIP_SIZE)?;
+        let e = self
+            .extra
+            .iter()
+            .find(|e| e.kind == EXTRA_COMPRESSED_MIP_SIZE)?;
         // layout: u32 compressionMethod, u32 mipCount, then mipCount * u32 sizes
         let count = rd_u32(data, e.offset + 4).ok()? as usize;
         let mut sizes = Vec::with_capacity(count);
@@ -215,15 +218,17 @@ impl VtexHeader {
         Some(sizes)
     }
 
-    /// Extract and (if needed) LZ4-decompress the raw bytes of the top mip level.
-    fn top_mip_bytes(&self, data: &[u8]) -> Result<Vec<u8>> {
+    /// Extract and (if needed) LZ4-decompress one mip level.
+    fn mip_bytes(&self, data: &[u8], target_level: u32) -> Result<Vec<u8>> {
         let mips = self.num_mip_levels.max(1) as u32;
-        let uncompressed_top =
-            self.format.mip_byte_size(self.width as u32, self.height as u32)?;
+        let target_level = target_level.min(mips - 1);
+        let target_width = (self.width as u32 >> target_level).max(1);
+        let target_height = (self.height as u32 >> target_level).max(1);
+        let uncompressed_target = self.format.mip_byte_size(target_width, target_height)?;
         let compressed_sizes = self.compressed_mip_sizes(data);
 
-        // Mips are stored smallest first; the top mip (index 0) is stored last.
-        // Compute the on-disk size of every mip, then seek to the top mip.
+        // Mips are stored smallest first. Compute the on-disk size of every mip,
+        // then seek to the requested level.
         let mut on_disk: Vec<(usize /*uncompressed*/, usize /*stored*/)> =
             Vec::with_capacity(mips as usize);
         for level in 0..mips {
@@ -239,30 +244,31 @@ impl VtexHeader {
 
         // Stored order: level = mips-1 (smallest) .. 0 (largest).
         let mut cursor = self.data_offset;
-        let mut top: Option<Vec<u8>> = None;
+        let mut target: Option<Vec<u8>> = None;
         for level in (0..mips).rev() {
             let (unc, stored) = on_disk[level as usize];
             let slice = data
                 .get(cursor..cursor + stored)
                 .ok_or_else(|| Source2Error::Resource("mip data oob".into()))?;
-            if level == 0 {
+            if level == target_level {
                 let bytes = if stored != unc {
                     lz4_flex::block::decompress(slice, unc)
                         .map_err(|e| Source2Error::Decode(format!("lz4: {e}")))?
                 } else {
                     slice.to_vec()
                 };
-                top = Some(bytes);
+                target = Some(bytes);
+                break;
             }
             cursor += stored;
         }
 
-        let bytes = top.ok_or_else(|| Source2Error::Resource("no top mip".into()))?;
-        if bytes.len() < uncompressed_top {
+        let bytes = target.ok_or_else(|| Source2Error::Resource("no requested mip".into()))?;
+        if bytes.len() < uncompressed_target {
             return Err(Source2Error::Decode(format!(
-                "top mip short: {} < {}",
+                "mip short: {} < {}",
                 bytes.len(),
-                uncompressed_top
+                uncompressed_target
             )));
         }
         Ok(bytes)
@@ -270,10 +276,27 @@ impl VtexHeader {
 
     /// Decode the top mip to RGBA8.
     pub fn decode(&self, data: &[u8]) -> Result<DecodedTexture> {
+        self.decode_mip(data, 0)
+    }
+
+    /// Decode a mip no larger than `max_side` to RGBA8.
+    pub fn decode_preview(&self, data: &[u8], max_side: u32) -> Result<DecodedTexture> {
+        let mut level = 0;
+        let mut width = self.width as u32;
+        let mut height = self.height as u32;
+        while level + 1 < self.num_mip_levels as u32 && width.max(height) > max_side {
+            level += 1;
+            width = (width >> 1).max(1);
+            height = (height >> 1).max(1);
+        }
+        self.decode_mip(data, level)
+    }
+
+    fn decode_mip(&self, data: &[u8], level: u32) -> Result<DecodedTexture> {
         use VtexFormat::*;
-        let w = self.width as usize;
-        let h = self.height as usize;
-        let raw = self.top_mip_bytes(data)?;
+        let w = (self.width as u32 >> level).max(1) as usize;
+        let h = (self.height as u32 >> level).max(1) as usize;
+        let raw = self.mip_bytes(data, level)?;
         let mut out = vec![0u32; w * h];
 
         let ok = match self.format {

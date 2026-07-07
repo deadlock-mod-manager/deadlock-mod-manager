@@ -80,6 +80,7 @@
       "loading": "Loading model…",
       "decoding": "Decoding texture…",
       "decodeFailed": "Couldn't decode this texture.",
+      "modelDecodeFailed": "Couldn't decode this model.",
       "alt": "Skin preview"
     },
     "inspector": {
@@ -90,7 +91,9 @@
       "type": "Type",
       "size": "Size",
       "dimensions": "Dimensions",
-      "skinSoon": "Live 3D preview and model tools are coming to this tab.",
+      "vertices": "Vertices",
+      "triangles": "Triangles",
+      "skinSoon": "Select a model to inspect its live preview.",
       "cardsSoon": "Upload and crop a custom card image here — coming soon.",
       "effectsSoon": "Recolor ability effects (solid, gradient, rainbow) here — coming soon.",
       "soundsSoon": "Assign and preview custom ability sounds here — coming soon."

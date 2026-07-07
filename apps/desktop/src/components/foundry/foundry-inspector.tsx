@@ -24,8 +24,13 @@ const allEntries = (
  */
 export const FoundryInspector = () => {
   const { t } = useTranslation();
-  const { manifest, activeTab, selectedEntryPath, texturePreview } =
-    useFoundry();
+  const {
+    manifest,
+    activeTab,
+    selectedEntryPath,
+    modelPreview,
+    texturePreview,
+  } = useFoundry();
 
   const selected = useMemo<FoundryEntry | null>(() => {
     if (!manifest || !selectedEntryPath) return null;
@@ -82,6 +87,28 @@ export const FoundryInspector = () => {
                   <dd className='font-medium'>
                     {texturePreview.width} × {texturePreview.height}
                   </dd>
+                </div>
+              )}
+            {modelPreview.status === "ready" &&
+              modelPreview.vertexCount &&
+              modelPreview.indexCount && (
+                <div className='flex gap-6'>
+                  <div>
+                    <dt className='text-muted-foreground text-xs'>
+                      {t("foundry.inspector.vertices")}
+                    </dt>
+                    <dd className='font-medium'>
+                      {modelPreview.vertexCount.toLocaleString()}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className='text-muted-foreground text-xs'>
+                      {t("foundry.inspector.triangles")}
+                    </dt>
+                    <dd className='font-medium'>
+                      {Math.floor(modelPreview.indexCount / 3).toLocaleString()}
+                    </dd>
+                  </div>
                 </div>
               )}
           </dl>

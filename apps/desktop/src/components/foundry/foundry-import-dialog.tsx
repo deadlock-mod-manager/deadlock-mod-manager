@@ -31,10 +31,12 @@ const isHeroSkin = (mod: LocalMod): boolean =>
 const SkinTile = ({
   mod,
   disabled,
+  loading,
   onSelect,
 }: {
   mod: LocalMod;
   disabled: boolean;
+  loading: boolean;
   onSelect: () => void;
 }) => {
   const { t } = useTranslation();
@@ -69,6 +71,13 @@ const SkinTile = ({
             {t("modStatus.installed")}
           </Badge>
         )}
+        {loading && (
+          <div className='absolute inset-x-0 bottom-0 bg-background/85 p-2'>
+            <div className='h-1 overflow-hidden rounded-full bg-primary/20'>
+              <div className='h-full w-2/3 animate-pulse rounded-full bg-primary' />
+            </div>
+          </div>
+        )}
       </div>
       <div className='flex min-w-0 flex-col gap-0.5 p-2'>
         <span className='truncate font-medium text-sm' title={mod.name}>
@@ -100,7 +109,11 @@ export const FoundryImportDialog = ({
   const { t } = useTranslation();
   const { importMod, importVpk, status } = useFoundry();
   const localMods = usePersistedStore((state) => state.localMods);
+  const activeProfile = usePersistedStore(
+    (state) => state.profiles[state.activeProfileId],
+  );
   const [query, setQuery] = useState("");
+  const [loadingModId, setLoadingModId] = useState<string | null>(null);
   const busy = status === "analyzing";
 
   const heroSkins = useMemo(() => {
@@ -113,10 +126,20 @@ export const FoundryImportDialog = ({
 
   const handleSelectMod = useCallback(
     async (mod: LocalMod) => {
-      const result = await importMod(mod.remoteId);
-      if (result) onOpenChange(false);
+      const modId = mod.remoteId ?? mod.id;
+      setLoadingModId(modId);
+      try {
+        const result = await importMod(
+          modId,
+          mod.installedVpks ?? [],
+          activeProfile?.folderName ?? null,
+        );
+        if (result) onOpenChange(false);
+      } finally {
+        setLoadingModId(null);
+      }
     },
-    [importMod, onOpenChange],
+    [activeProfile?.folderName, importMod, onOpenChange],
   );
 
   const handleBrowseFile = useCallback(async () => {
@@ -179,6 +202,7 @@ export const FoundryImportDialog = ({
                     <SkinTile
                       disabled={busy}
                       key={mod.remoteId ?? mod.id}
+                      loading={loadingModId === (mod.remoteId ?? mod.id)}
                       mod={mod}
                       onSelect={() => handleSelectMod(mod)}
                     />

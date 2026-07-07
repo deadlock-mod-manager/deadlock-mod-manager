@@ -78,11 +78,7 @@ fn append_section(content: &mut String, section_content: &str) {
   content.push_str(section_content);
 }
 
-fn upsert_managed_section(
-  content: &mut String,
-  section: ManagedSection,
-  section_content: &str,
-) {
+fn upsert_managed_section(content: &mut String, section: ManagedSection, section_content: &str) {
   if let Some((start_pos, end_pos)) = section_range(content, section) {
     content.replace_range(start_pos..end_pos, section_content);
     return;

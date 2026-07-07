@@ -1,5 +1,5 @@
-use crate::download_manager::{DownloadFileDto, DownloadManager, DownloadStatus, DownloadTask};
 use crate::app_runtime::AppHandle;
+use crate::download_manager::{DownloadFileDto, DownloadManager, DownloadStatus, DownloadTask};
 use crate::errors::Error;
 use crate::mod_manager::ModFileTree;
 use futures::future::join_all;

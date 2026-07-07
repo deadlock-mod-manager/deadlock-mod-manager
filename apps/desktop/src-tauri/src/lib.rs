@@ -161,6 +161,7 @@ pub fn run() {
       commands::foundry::foundry_analyze_vpk,
       commands::foundry::foundry_resolve_mod_vpk,
       commands::foundry::foundry_decode_texture,
+      commands::foundry::foundry_decode_model,
       commands::reports::create_report,
       commands::reports::get_report_counts,
       commands::auth::store_auth_token,

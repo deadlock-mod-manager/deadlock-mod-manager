@@ -2,8 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .ease-dmm-smooth {
+    transition-timing-function: var(--ease-dmm-smooth);
+  }
+}
+
 @layer base {
   :root {
+    --ease-dmm-smooth: cubic-bezier(0.22, 1, 0.36, 1);
     --background: 20, 9%, 6%;
     --background-dark: 20, 10%, 4%;
     --foreground: 38, 65%, 97%;

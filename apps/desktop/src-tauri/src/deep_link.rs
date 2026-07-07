@@ -60,11 +60,7 @@ pub fn is_deep_link(url: &str) -> bool {
 }
 
 #[cfg(desktop)]
-pub fn on_second_instance(
-  app_handle: &AppHandle,
-  argv: Vec<String>,
-  _cwd: String,
-) {
+pub fn on_second_instance(app_handle: &AppHandle, argv: Vec<String>, _cwd: String) {
   log::info!("[DeepLink] Single instance callback triggered with argv: {argv:?}");
 
   for arg in &argv {

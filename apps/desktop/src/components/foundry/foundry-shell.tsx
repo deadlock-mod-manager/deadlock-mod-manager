@@ -35,6 +35,13 @@ const TAB_ICONS: Record<FoundryTab, React.ReactNode> = {
   sounds: <MusicNotesIcon className='h-4 w-4' weight='duotone' />,
 };
 
+const prioritizePreviewableModels = (entries: FoundryEntry[]): FoundryEntry[] =>
+  [...entries].sort((a, b) => {
+    const aPreviewable = a.path.endsWith(".vmesh_c") ? 0 : 1;
+    const bPreviewable = b.path.endsWith(".vmesh_c") ? 0 : 1;
+    return aPreviewable - bPreviewable;
+  });
+
 export const FoundryShell = () => {
   const { t } = useTranslation();
   const {
@@ -50,7 +57,10 @@ export const FoundryShell = () => {
     if (!manifest) return [];
     switch (activeTab) {
       case "skin":
-        return [...manifest.models, ...manifest.materials];
+        return [
+          ...prioritizePreviewableModels(manifest.models),
+          ...manifest.materials,
+        ];
       case "cards":
         return manifest.cards;
       case "effects":

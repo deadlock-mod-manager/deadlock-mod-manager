@@ -1,8 +1,8 @@
 use crate::app_runtime::AppHandle;
 use crate::download_manager::DownloadTask;
 use crate::errors::Error;
-use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use crate::mod_manager::Mod;
+use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use serde::Deserialize;
 use tauri::{Emitter, Manager};
 
@@ -572,9 +572,7 @@ pub async fn get_profile_vpk_manifest(
 }
 
 #[tauri::command]
-pub async fn hydrate_mods_from_manifest(
-  profile_folder: Option<String>,
-) -> Result<usize, Error> {
+pub async fn hydrate_mods_from_manifest(profile_folder: Option<String>) -> Result<usize, Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.hydrate_mods_from_manifest(profile_folder)
 }

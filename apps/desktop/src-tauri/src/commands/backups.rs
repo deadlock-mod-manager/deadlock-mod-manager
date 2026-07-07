@@ -1,7 +1,7 @@
-use crate::errors::Error;
-use crate::mod_manager::addons_backup_manager::AddonsBackupManager;
-use crate::mod_manager::AddonsBackup;
 use crate::app_runtime::AppHandle;
+use crate::errors::Error;
+use crate::mod_manager::AddonsBackup;
+use crate::mod_manager::addons_backup_manager::AddonsBackupManager;
 
 use super::state::MANAGER;
 

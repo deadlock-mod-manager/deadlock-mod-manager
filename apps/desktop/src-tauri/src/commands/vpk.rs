@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
+use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 use crate::mod_manager::{AddonAnalyzer, AnalyzeAddonsResult};
-use crate::app_runtime::AppHandle;
 use vpk_parser::{VpkParseOptions, VpkParsed, VpkParser};
 
 use super::state::MANAGER;
