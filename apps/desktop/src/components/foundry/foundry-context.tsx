@@ -5,10 +5,12 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import {
   analyzeFoundryVpk,
+  decodeFoundryModel,
   decodeFoundryTexture,
   resolveModVpk,
 } from "@/lib/foundry";
@@ -24,11 +26,25 @@ interface TexturePreview {
   height: number | null;
 }
 
+interface ModelPreview {
+  status: "idle" | "loading" | "ready" | "error";
+  dataUrl: string | null;
+  vertexCount: number | null;
+  indexCount: number | null;
+}
+
 const IDLE_TEXTURE: TexturePreview = {
   status: "idle",
   dataUrl: null,
   width: null,
   height: null,
+};
+
+const IDLE_MODEL: ModelPreview = {
+  status: "idle",
+  dataUrl: null,
+  vertexCount: null,
+  indexCount: null,
 };
 
 interface FoundryContextValue {
@@ -38,14 +54,32 @@ interface FoundryContextValue {
   activeTab: FoundryTab;
   selectedEntryPath: string | null;
   texturePreview: TexturePreview;
+  modelPreview: ModelPreview;
   setActiveTab: (tab: FoundryTab) => void;
   setSelectedEntryPath: (path: string | null) => void;
   importVpk: (filePath: string) => Promise<FoundryManifest | null>;
-  importMod: (modId: string) => Promise<FoundryManifest | null>;
+  importMod: (
+    modId: string,
+    installedVpks?: string[],
+    profileFolder?: string | null,
+  ) => Promise<FoundryManifest | null>;
   reset: () => void;
 }
 
 const FoundryContext = createContext<FoundryContextValue | null>(null);
+
+const isTextureEntry = (path: string | null): path is string =>
+  path?.endsWith(".vtex_c") ?? false;
+
+const isModelEntry = (path: string | null): path is string =>
+  path?.endsWith(".vmesh_c") || path?.endsWith(".vmdl_c") || false;
+
+const getInitialModelPath = (manifest: FoundryManifest): string | null => {
+  const directMesh = manifest.models.find((entry) =>
+    entry.path.endsWith(".vmesh_c"),
+  );
+  return directMesh?.path ?? manifest.models[0]?.path ?? null;
+};
 
 export const FoundryProvider = ({ children }: { children: ReactNode }) => {
   const [status, setStatus] = useState<FoundryStatus>("idle");
@@ -57,27 +91,30 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
   );
   const [texturePreview, setTexturePreview] =
     useState<TexturePreview>(IDLE_TEXTURE);
+  const [modelPreview, setModelPreview] = useState<ModelPreview>(IDLE_MODEL);
+  const modelPreviewCacheRef = useRef<Map<string, ModelPreview>>(new Map());
 
   const reset = useCallback(() => {
+    modelPreviewCacheRef.current.clear();
     setStatus("idle");
     setManifest(null);
     setError(null);
     setActiveTab("skin");
     setSelectedEntryPath(null);
     setTexturePreview(IDLE_TEXTURE);
+    setModelPreview(IDLE_MODEL);
   }, []);
 
-  // Decode the selected texture / card entry to a PNG for the center preview.
-  // Non-texture selections (models, sounds, particles) leave the preview idle.
   const filePath = manifest?.filePath ?? null;
   useEffect(() => {
-    if (!filePath || !selectedEntryPath?.endsWith(".vtex_c")) {
+    const entryPath = selectedEntryPath;
+    if (!filePath || !isTextureEntry(entryPath)) {
       setTexturePreview(IDLE_TEXTURE);
       return;
     }
     let cancelled = false;
     setTexturePreview({ ...IDLE_TEXTURE, status: "loading" });
-    decodeFoundryTexture(filePath, selectedEntryPath)
+    decodeFoundryTexture(filePath, entryPath)
       .then((tex) => {
         if (cancelled) return;
         setTexturePreview({
@@ -97,7 +134,44 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [filePath, selectedEntryPath]);
 
+  useEffect(() => {
+    const entryPath = selectedEntryPath;
+    if (!filePath || !isModelEntry(entryPath)) {
+      setModelPreview(IDLE_MODEL);
+      return;
+    }
+    const cacheKey = `${filePath}\n${entryPath}`;
+    const cached = modelPreviewCacheRef.current.get(cacheKey);
+    if (cached) {
+      setModelPreview(cached);
+      return;
+    }
+    let cancelled = false;
+    setModelPreview({ ...IDLE_MODEL, status: "loading" });
+    decodeFoundryModel(filePath, entryPath)
+      .then((model) => {
+        if (cancelled) return;
+        const preview: ModelPreview = {
+          status: "ready",
+          dataUrl: model.dataUrl,
+          vertexCount: model.vertexCount,
+          indexCount: model.indexCount,
+        };
+        modelPreviewCacheRef.current.set(cacheKey, preview);
+        setModelPreview(preview);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        logger.withError(err).error("[Foundry] Failed to decode model");
+        setModelPreview({ ...IDLE_MODEL, status: "error" });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [filePath, selectedEntryPath]);
+
   const importVpk = useCallback(async (filePath: string) => {
+    modelPreviewCacheRef.current.clear();
     setStatus("analyzing");
     setError(null);
     try {
@@ -109,7 +183,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
         return null;
       }
       setManifest(result);
-      setSelectedEntryPath(null);
+      setSelectedEntryPath(getInitialModelPath(result));
       setActiveTab("skin");
       setStatus("ready");
       return result;
@@ -118,22 +192,32 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       setStatus("error");
       setError("analyzeFailed");
       setManifest(null);
+      setSelectedEntryPath(null);
       return null;
     }
   }, []);
 
   const importMod = useCallback(
-    async (modId: string) => {
+    async (
+      modId: string,
+      installedVpks: string[] = [],
+      profileFolder: string | null = null,
+    ) => {
       setStatus("analyzing");
       setError(null);
       try {
-        const filePath = await resolveModVpk(modId);
+        const filePath = await resolveModVpk(
+          modId,
+          installedVpks,
+          profileFolder,
+        );
         return await importVpk(filePath);
       } catch (err) {
         logger.withError(err).error("[Foundry] Failed to resolve mod VPK");
         setStatus("error");
         setError("analyzeFailed");
         setManifest(null);
+        setSelectedEntryPath(null);
         return null;
       }
     },
@@ -148,6 +232,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       activeTab,
       selectedEntryPath,
       texturePreview,
+      modelPreview,
       setActiveTab,
       setSelectedEntryPath,
       importVpk,
@@ -161,6 +246,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       activeTab,
       selectedEntryPath,
       texturePreview,
+      modelPreview,
       importVpk,
       importMod,
       reset,

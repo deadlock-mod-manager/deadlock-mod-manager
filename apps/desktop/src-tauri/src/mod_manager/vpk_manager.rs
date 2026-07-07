@@ -226,7 +226,10 @@ impl VpkManager {
       let vpk_path = addons_path.join(vpk_name);
       if vpk_path.exists()
         && let Err(e) = fs_retry::retry_file_operation("open for write", vpk_name, || {
-          fs::OpenOptions::new().write(true).open(&vpk_path).map(|_| ())
+          fs::OpenOptions::new()
+            .write(true)
+            .open(&vpk_path)
+            .map(|_| ())
         })
       {
         log::error!(
@@ -283,7 +286,8 @@ impl VpkManager {
     for vpk_name in vpk_names {
       let vpk_path = addons_path.join(vpk_name);
       if vpk_path.exists() {
-        if let Err(e) = fs_retry::retry_file_operation("remove", vpk_name, || fs::remove_file(&vpk_path))
+        if let Err(e) =
+          fs_retry::retry_file_operation("remove", vpk_name, || fs::remove_file(&vpk_path))
         {
           return Err(fs_retry::map_file_lock_error("remove", vpk_name, e));
         }
@@ -497,9 +501,9 @@ impl VpkManager {
       let new_name = format!("pak{next_number:02}_dir.vpk");
       let new_path = addons_path.join(&new_name);
 
-      if let Err(e) = fs_retry::retry_file_operation("rename", prefixed_name, || {
-        fs::rename(&old_path, &new_path)
-      }) {
+      if let Err(e) =
+        fs_retry::retry_file_operation("rename", prefixed_name, || fs::rename(&old_path, &new_path))
+      {
         log::error!(
           "Failed to enable VPK {prefixed_name}: {e}, rolling back {count} already-renamed file(s)",
           count = renamed.len()
@@ -618,7 +622,8 @@ impl VpkManager {
         log::info!(
           "Prefixed destination already exists (newly staged variant), removing old active VPK: {vpk_name}"
         );
-        if let Err(e) = fs_retry::retry_file_operation("remove", &vpk_name, || fs::remove_file(&old_path))
+        if let Err(e) =
+          fs_retry::retry_file_operation("remove", &vpk_name, || fs::remove_file(&old_path))
         {
           log::error!(
             "Failed to remove old active VPK {vpk_name}: {e}, rolling back {count} already-renamed file(s)",
@@ -630,9 +635,9 @@ impl VpkManager {
             fs_retry::map_file_lock_error("disable", &vpk_name, e),
           ));
         }
-      } else if let Err(e) = fs_retry::retry_file_operation("rename", &vpk_name, || {
-        fs::rename(&old_path, &new_path)
-      }) {
+      } else if let Err(e) =
+        fs_retry::retry_file_operation("rename", &vpk_name, || fs::rename(&old_path, &new_path))
+      {
         log::error!(
           "Failed to disable VPK {vpk_name}: {e}, rolling back {count} already-renamed file(s)",
           count = renamed.len()

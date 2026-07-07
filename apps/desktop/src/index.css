@@ -79,6 +79,12 @@
   }
 }
 
+@layer utilities {
+  .ease-dmm-smooth {
+    transition-timing-function: var(--ease-dmm-smooth);
+  }
+}
+
 /* Font Face Declarations */
 @font-face {
   font-family: "Forevs Demo";
@@ -116,6 +122,7 @@
 
 @layer base {
   :root {
+    --ease-dmm-smooth: cubic-bezier(0.22, 1, 0.36, 1);
     --background: 20 9% 6%;
     --foreground: 38 65% 97%;
     --card: 20 8% 9%;

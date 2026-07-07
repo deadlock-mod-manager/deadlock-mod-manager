@@ -8,8 +8,7 @@ const FILE_OPERATION_RETRIES: usize = 5;
 const FILE_OPERATION_RETRY_DELAY: Duration = Duration::from_millis(150);
 
 pub fn is_transient_file_lock_error(error: &io::Error) -> bool {
-  matches!(error.raw_os_error(), Some(32 | 33))
-    || matches!(error.kind(), io::ErrorKind::WouldBlock)
+  matches!(error.raw_os_error(), Some(32 | 33)) || matches!(error.kind(), io::ErrorKind::WouldBlock)
 }
 
 pub fn retry_file_operation(
@@ -23,8 +22,7 @@ pub fn retry_file_operation(
     match run() {
       Ok(()) => return Ok(()),
       Err(error) => {
-        let should_retry =
-          attempt < FILE_OPERATION_RETRIES && is_transient_file_lock_error(&error);
+        let should_retry = attempt < FILE_OPERATION_RETRIES && is_transient_file_lock_error(&error);
         if should_retry {
           log::warn!(
             "File {label} for {path_label} failed because the file may be temporarily locked; retrying ({}/{}) after {}ms: {error}",
@@ -58,13 +56,19 @@ mod tests {
 
   #[test]
   fn transient_file_lock_error_matches_windows_sharing_and_lock_violations() {
-    assert!(is_transient_file_lock_error(&io::Error::from_raw_os_error(32)));
-    assert!(is_transient_file_lock_error(&io::Error::from_raw_os_error(33)));
+    assert!(is_transient_file_lock_error(&io::Error::from_raw_os_error(
+      32
+    )));
+    assert!(is_transient_file_lock_error(&io::Error::from_raw_os_error(
+      33
+    )));
   }
 
   #[test]
   fn transient_file_lock_error_rejects_access_denied() {
-    assert!(!is_transient_file_lock_error(&io::Error::from_raw_os_error(5)));
+    assert!(!is_transient_file_lock_error(
+      &io::Error::from_raw_os_error(5)
+    ));
   }
 
   #[test]
