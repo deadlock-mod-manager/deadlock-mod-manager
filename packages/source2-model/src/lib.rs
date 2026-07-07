@@ -204,7 +204,9 @@ fn decode_material_preview_textures(
 ) -> Vec<PreviewTexture> {
     let mut jobs = Vec::<(String, String, Vec<u8>)>::new();
     let mut raw_cache = Vec::<(String, Vec<u8>)>::new();
-    for material_path in material_paths.iter().take(16) {
+    // These are the mesh's actual drawcall materials, so the count is naturally
+    // bounded; cap only to guard against pathological models.
+    for material_path in material_paths.iter().take(64) {
         let Some(texture_path) = material_color_texture(archive, material_path) else {
             continue;
         };

@@ -81,7 +81,9 @@
       "decoding": "Decoding texture…",
       "decodeFailed": "Couldn't decode this texture.",
       "modelDecodeFailed": "Couldn't decode this model.",
-      "alt": "Skin preview"
+      "alt": "Skin preview",
+      "startSpin": "Auto-rotate",
+      "stopSpin": "Stop rotation"
     },
     "inspector": {
       "title": "Properties",

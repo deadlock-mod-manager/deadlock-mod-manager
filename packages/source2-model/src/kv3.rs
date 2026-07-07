@@ -243,15 +243,21 @@ fn align(pos: &mut usize, alignment: usize) {
     }
 }
 
+/// Split a KV3 data buffer into its 1/2/4/8-byte value segments. `start` is the
+/// absolute byte offset the segments begin at: the 2/4/8-byte alignment padding
+/// is computed against this absolute position (in v5 the object-length table
+/// precedes the segments, and its size is not 8-aligned), so callers must pass
+/// the real offset rather than pre-slicing.
 fn split_segment(
     raw: &[u8],
+    start: usize,
     count_bytes1: usize,
     count_bytes2: usize,
     count_bytes4: usize,
     count_bytes8: usize,
     align_empty_8: bool,
 ) -> Result<(Segment, usize)> {
-    let mut pos = 0usize;
+    let mut pos = start;
     let bytes1 = raw
         .get(pos..pos + count_bytes1)
         .ok_or_else(|| Source2Error::Resource("KV3 bytes1 segment out of bounds".into()))?
@@ -677,6 +683,7 @@ pub fn parse(data: &[u8]) -> Result<KvValue> {
 
     let (mut segment1, segment1_offset) = split_segment(
         &buffer1,
+        0,
         count_bytes1,
         count_bytes2,
         count_bytes4,
@@ -734,16 +741,15 @@ pub fn parse(data: &[u8]) -> Result<KvValue> {
             .ok_or_else(|| Source2Error::Resource("KV3 object lengths out of bounds".into()))?
             .to_vec();
         let (segment2, segment2_offset) = split_segment(
-            buffer2
-                .get(object_len_bytes..)
-                .ok_or_else(|| Source2Error::Resource("KV3 buffer2 slice out of bounds".into()))?,
+            &buffer2,
+            object_len_bytes,
             count_bytes1_buffer2,
             count_bytes2_buffer2,
             count_bytes4_buffer2,
             count_bytes8_buffer2,
             false,
         )?;
-        let type_start = object_len_bytes + segment2_offset;
+        let type_start = segment2_offset;
         types = buffer2
             .get(type_start..type_start + count_types)
             .ok_or_else(|| Source2Error::Resource("KV3 types out of bounds".into()))?
