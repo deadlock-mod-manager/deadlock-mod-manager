@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
+use std::thread;
 
 use base64::Engine;
 use hero_parser::detect_hero;
@@ -21,6 +22,20 @@ pub struct FoundryEntry {
   pub ext: String,
   pub size: u32,
   pub category: String,
+}
+
+/// A decoded hero-card texture, either from the imported mod VPK or from the
+/// base game's default `pak01_dir.vpk`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FoundryCardPreview {
+  pub source: String,
+  pub path: String,
+  pub filename: String,
+  pub variant: String,
+  pub width: u32,
+  pub height: u32,
+  pub data_url: String,
 }
 
 /// The categorized contents of an imported skin VPK. Map / non-hero mods report
@@ -49,10 +64,178 @@ const CATEGORY_CARD: &str = "card";
 const CATEGORY_PARTICLE: &str = "particle";
 const CATEGORY_SOUND: &str = "sound";
 const CATEGORY_OTHER: &str = "other";
+const CARD_SOURCE_MOD: &str = "mod";
+const CARD_SOURCE_DEFAULT: &str = "default";
+
+const VARIANT_ORDER: &[&str] = &[
+  "card",
+  "vertical",
+  "card_critical",
+  "card_gloat",
+  "minimap",
+  "small",
+  "other",
+];
+
+/// Display-name to panorama `class_name` namespace. This mirrors Grimoire's
+/// Locker card picker so Foundry sees the same card variants and legacy packs.
+fn panorama_codenames(hero_name: &str) -> Vec<&'static str> {
+  match hero_name {
+    "Abrams" => vec!["atlas", "bull"],
+    "Apollo" => vec!["fencer"],
+    "Bebop" => vec!["bebop"],
+    "Billy" => vec!["punkgoat"],
+    "Calico" => vec!["nano"],
+    "Celeste" => vec!["unicorn"],
+    "Doorman" | "The Doorman" => vec!["doorman"],
+    "Drifter" => vec!["drifter"],
+    "Dynamo" => vec!["dynamo", "sumo"],
+    "Graves" => vec!["necro"],
+    "Grey Talon" => vec!["orion", "archer"],
+    "Haze" => vec!["haze"],
+    "Holliday" => vec!["astro"],
+    "Infernus" => vec!["inferno"],
+    "Ivy" => vec!["tengu"],
+    "Kelvin" => vec!["kelvin"],
+    "Lady Geist" => vec!["ghost", "spectre"],
+    "Lash" => vec!["lash"],
+    "McGinnis" => vec!["forge", "engineer"],
+    "Mina" => vec!["vampirebat"],
+    "Mirage" => vec!["mirage"],
+    "Mo & Krill" => vec!["krill", "digger"],
+    "Paige" => vec!["bookworm"],
+    "Paradox" => vec!["chrono"],
+    "Pocket" => vec!["synth"],
+    "Rem" => vec!["familiar"],
+    "Seven" => vec!["gigawatt"],
+    "Shiv" => vec!["shiv"],
+    "Silver" => vec!["werewolf"],
+    "Sinclair" => vec!["magician"],
+    "Venator" => vec!["priest"],
+    "Victor" => vec!["frank"],
+    "Vindicta" => vec!["hornet"],
+    "Viscous" => vec!["viscous"],
+    "Vyper" => vec!["viper"],
+    "Warden" => vec!["warden"],
+    "Wraith" => vec!["wraith"],
+    "Wrecker" => vec!["butcher"],
+    "Yamato" => vec!["yamato"],
+    _ => Vec::new(),
+  }
+}
+
+fn card_prefixes(codenames: &[&str]) -> Vec<String> {
+  codenames
+    .iter()
+    .map(|codename| format!("panorama/images/heroes/{codename}_"))
+    .collect()
+}
+
+fn default_model_codenames(hero_name: &str) -> Vec<&'static str> {
+  match hero_name {
+    "Abrams" => vec!["abrams", "atlas_detective"],
+    "Grey Talon" => vec!["greytalon", "grey_talon", "archer"],
+    "Lady Geist" => vec!["geist", "lady_geist", "ladygeist"],
+    "McGinnis" => vec!["mcginnis", "engineer"],
+    "Mo & Krill" => vec!["mokrill", "mo_krill", "mo_and_krill", "digger"],
+    "Seven" => vec!["gigawatt_prisoner"],
+    _ => Vec::new(),
+  }
+}
+
+fn normalized_hero_terms(hero_name: &str) -> Vec<String> {
+  let lower = hero_name.to_ascii_lowercase();
+  let underscored = lower
+    .chars()
+    .map(|c| if c.is_ascii_alphanumeric() { c } else { '_' })
+    .collect::<String>()
+    .split('_')
+    .filter(|part| !part.is_empty() && *part != "and")
+    .collect::<Vec<_>>()
+    .join("_");
+  let compact = underscored.replace('_', "");
+  [underscored, compact]
+    .into_iter()
+    .filter(|term| !term.is_empty())
+    .collect()
+}
+
+fn hero_asset_terms(hero_name: &str, codenames: &[&str]) -> Vec<String> {
+  let mut terms = normalized_hero_terms(hero_name);
+  terms.extend(codenames.iter().map(|codename| codename.to_string()));
+  terms.extend(
+    default_model_codenames(hero_name)
+      .into_iter()
+      .map(str::to_string),
+  );
+  terms.sort();
+  terms.dedup();
+  terms
+}
+
+fn is_hero_card_path(path: &str, prefixes: &[String]) -> bool {
+  let lower = path.to_ascii_lowercase();
+  lower.ends_with(".vtex_c") && prefixes.iter().any(|prefix| lower.starts_with(prefix))
+}
+
+fn is_default_hero_asset(path: &str, card_prefixes: &[String], terms: &[String]) -> bool {
+  let lower = path.to_ascii_lowercase();
+  if is_hero_card_path(&lower, card_prefixes) {
+    return true;
+  }
+
+  let in_hero_area = lower.contains("models/heroes")
+    || lower.contains("materials/models/heroes")
+    || lower.contains("particles/abilities")
+    || lower.contains("sounds/abilities")
+    || lower.contains("soundevents")
+    || lower.contains("panorama/images/hud/abilities")
+    || lower.starts_with("panorama/images/heroes/");
+
+  in_hero_area && terms.iter().any(|term| lower.contains(term))
+}
+
+fn card_variant(path: &str, codenames: &[&str]) -> String {
+  let filename = Path::new(path)
+    .file_name()
+    .and_then(|name| name.to_str())
+    .unwrap_or(path)
+    .to_ascii_lowercase();
+  let stem = filename
+    .strip_suffix(".vtex_c")
+    .or_else(|| filename.strip_suffix(".vtex"))
+    .unwrap_or(&filename);
+
+  let variant = codenames
+    .iter()
+    .find_map(|codename| stem.strip_prefix(&format!("{codename}_")))
+    .unwrap_or(stem)
+    .strip_suffix("_psd")
+    .or_else(|| stem.strip_suffix("_png"))
+    .unwrap_or_else(|| {
+      codenames
+        .iter()
+        .find_map(|codename| stem.strip_prefix(&format!("{codename}_")))
+        .unwrap_or(stem)
+    });
+
+  if variant.is_empty() {
+    "card".to_string()
+  } else {
+    variant.to_string()
+  }
+}
+
+fn variant_rank(variant: &str) -> usize {
+  VARIANT_ORDER
+    .iter()
+    .position(|known| *known == variant)
+    .unwrap_or(VARIANT_ORDER.len())
+}
 
 /// Classify a VPK entry by its compiled Source 2 extension, promoting textures
 /// that live under a hero-card path to the dedicated `card` bucket.
-fn classify(ext: &str, full_path: &str) -> &'static str {
+fn classify(ext: &str, full_path: &str, card_prefixes: &[String]) -> &'static str {
   let lower = full_path.to_ascii_lowercase();
   match ext {
     "vmdl_c" | "vmesh_c" | "vmorf_c" | "vphys_c" | "vanim_c" | "vagrp_c" | "vseq_c" => {
@@ -60,7 +243,8 @@ fn classify(ext: &str, full_path: &str) -> &'static str {
     }
     "vmat_c" => CATEGORY_MATERIAL,
     "vtex_c" => {
-      if lower.contains("hero_card")
+      if is_hero_card_path(&lower, card_prefixes)
+        || lower.contains("hero_card")
         || lower.contains("herocard")
         || lower.contains("/cards/")
         || lower.contains("_card")
@@ -97,6 +281,13 @@ fn analyze_vpk_path(path: &Path) -> Result<FoundryManifest, Error> {
 
   let detection = detect_hero(&parsed.entries);
   let is_hero_skin = detection.category == "hero";
+  let codenames = detection
+    .hero_display
+    .as_deref()
+    .or(detection.hero.as_deref())
+    .map(panorama_codenames)
+    .unwrap_or_default();
+  let card_prefixes = card_prefixes(&codenames);
 
   let mut manifest = FoundryManifest {
     file_path,
@@ -114,7 +305,7 @@ fn analyze_vpk_path(path: &Path) -> Result<FoundryManifest, Error> {
   };
 
   for entry in &parsed.entries {
-    let category = classify(&entry.ext, &entry.full_path);
+    let category = classify(&entry.ext, &entry.full_path, &card_prefixes);
     let foundry_entry = FoundryEntry {
       path: entry.full_path.clone(),
       filename: entry.filename.clone(),
@@ -149,6 +340,209 @@ fn analyze_vpk_path(path: &Path) -> Result<FoundryManifest, Error> {
   Ok(manifest)
 }
 
+fn analyze_default_hero(hero_display: String) -> Result<FoundryManifest, Error> {
+  let vpk_path = base_game_vpk_path()?.ok_or_else(|| {
+    Error::InvalidInput("Deadlock base VPK not found for default hero import".to_string())
+  })?;
+  let file_path = vpk_path.to_string_lossy().to_string();
+  let codenames = panorama_codenames(&hero_display);
+  let card_prefixes = card_prefixes(&codenames);
+  let terms = hero_asset_terms(&hero_display, &codenames);
+
+  let vpk_data = std::fs::read(&vpk_path).map_err(|e| {
+    log::error!("[Foundry] Failed to read base VPK {file_path}: {e}");
+    e
+  })?;
+
+  let options = VpkParseOptions {
+    include_entries: true,
+    file_path: file_path.clone(),
+    ..Default::default()
+  };
+
+  let parsed = VpkParser::parse(vpk_data, options)
+    .map_err(|e| Error::InvalidInput(format!("Failed to parse VPK {file_path}: {e}")))?;
+
+  let mut manifest = FoundryManifest {
+    file_path,
+    hero: Some(hero_display.clone()),
+    hero_display: Some(hero_display.clone()),
+    is_hero_skin: true,
+    entry_count: 0,
+    models: Vec::new(),
+    materials: Vec::new(),
+    textures: Vec::new(),
+    cards: Vec::new(),
+    particles: Vec::new(),
+    sounds: Vec::new(),
+    other: Vec::new(),
+  };
+
+  for entry in &parsed.entries {
+    if !is_default_hero_asset(&entry.full_path, &card_prefixes, &terms) {
+      continue;
+    }
+    let category = classify(&entry.ext, &entry.full_path, &card_prefixes);
+    let foundry_entry = FoundryEntry {
+      path: entry.full_path.clone(),
+      filename: entry.filename.clone(),
+      ext: entry.ext.clone(),
+      size: entry.entry_length + u32::from(entry.preload_bytes),
+      category: category.to_string(),
+    };
+    manifest.entry_count += 1;
+    match category {
+      CATEGORY_MODEL => manifest.models.push(foundry_entry),
+      CATEGORY_MATERIAL => manifest.materials.push(foundry_entry),
+      CATEGORY_TEXTURE => manifest.textures.push(foundry_entry),
+      CATEGORY_CARD => manifest.cards.push(foundry_entry),
+      CATEGORY_PARTICLE => manifest.particles.push(foundry_entry),
+      CATEGORY_SOUND => manifest.sounds.push(foundry_entry),
+      _ => manifest.other.push(foundry_entry),
+    }
+  }
+
+  log::info!(
+    "[Foundry] Analyzed default hero {}: {} entries, {} models, {} materials, {} textures, {} cards, {} particles, {} sounds",
+    hero_display,
+    manifest.entry_count,
+    manifest.models.len(),
+    manifest.materials.len(),
+    manifest.textures.len(),
+    manifest.cards.len(),
+    manifest.particles.len(),
+    manifest.sounds.len(),
+  );
+
+  Ok(manifest)
+}
+
+struct CardDecodeJob {
+  source: String,
+  vpk_path: PathBuf,
+  entry_path: String,
+  filename: String,
+  variant: String,
+}
+
+fn decode_card_preview(job: CardDecodeJob) -> Option<FoundryCardPreview> {
+  let decoded = source2_model::decode_texture_png(&job.vpk_path, &job.entry_path).ok()?;
+  let b64 = base64::engine::general_purpose::STANDARD.encode(&decoded.png);
+  Some(FoundryCardPreview {
+    source: job.source,
+    path: job.entry_path,
+    filename: job.filename,
+    variant: job.variant,
+    width: decoded.width,
+    height: decoded.height,
+    data_url: format!("data:image/png;base64,{b64}"),
+  })
+}
+
+fn collect_card_jobs(
+  vpk_path: &Path,
+  source: &str,
+  codenames: &[&str],
+) -> Result<Vec<CardDecodeJob>, Error> {
+  let prefixes = card_prefixes(codenames);
+  let entries = source2_model::vpk_extract::list_entries(vpk_path)
+    .map_err(|e| Error::InvalidInput(format!("failed to list VPK entries: {e}")))?;
+  let mut jobs = entries
+    .into_iter()
+    .filter(|entry_path| is_hero_card_path(entry_path, &prefixes))
+    .map(|entry_path| CardDecodeJob {
+      source: source.to_string(),
+      filename: Path::new(&entry_path)
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or(&entry_path)
+        .to_string(),
+      variant: card_variant(&entry_path, codenames),
+      vpk_path: vpk_path.to_path_buf(),
+      entry_path,
+    })
+    .collect::<Vec<_>>();
+
+  jobs.sort_by(|a, b| {
+    variant_rank(&a.variant)
+      .cmp(&variant_rank(&b.variant))
+      .then_with(|| a.entry_path.cmp(&b.entry_path))
+  });
+  Ok(jobs)
+}
+
+fn decode_card_jobs(jobs: Vec<CardDecodeJob>) -> Vec<FoundryCardPreview> {
+  let mut previews = thread::scope(|scope| {
+    let handles = jobs
+      .into_iter()
+      .map(|job| scope.spawn(move || decode_card_preview(job)))
+      .collect::<Vec<_>>();
+
+    handles
+      .into_iter()
+      .filter_map(|handle| handle.join().ok().flatten())
+      .collect::<Vec<_>>()
+  });
+  previews.sort_by(|a, b| {
+    variant_rank(&a.variant)
+      .cmp(&variant_rank(&b.variant))
+      .then_with(|| a.path.cmp(&b.path))
+  });
+  previews
+}
+
+fn base_game_vpk_path() -> Result<Option<PathBuf>, Error> {
+  let mut manager = MANAGER
+    .lock()
+    .map_err(|e| Error::InvalidInput(format!("manager lock poisoned: {e}")))?;
+  let game_path = manager
+    .get_steam_manager()
+    .get_game_path()
+    .cloned()
+    .or_else(|| manager.find_game().ok());
+  let Some(game_path) = game_path else {
+    return Ok(None);
+  };
+  let pak_path = game_path.join("game").join("citadel").join("pak01_dir.vpk");
+  Ok(pak_path.exists().then_some(pak_path))
+}
+
+fn paths_equal(left: &Path, right: &Path) -> bool {
+  let left = std::fs::canonicalize(left).unwrap_or_else(|_| left.to_path_buf());
+  let right = std::fs::canonicalize(right).unwrap_or_else(|_| right.to_path_buf());
+  left == right
+}
+
+fn decode_foundry_cards(
+  file_path: PathBuf,
+  hero: Option<String>,
+  hero_display: Option<String>,
+) -> Result<Vec<FoundryCardPreview>, Error> {
+  let hero_name = hero_display.or(hero).unwrap_or_default();
+  let codenames = panorama_codenames(&hero_name);
+  if codenames.is_empty() {
+    return Ok(Vec::new());
+  }
+
+  let default_vpk = base_game_vpk_path()?;
+  let mut jobs = if default_vpk
+    .as_ref()
+    .is_some_and(|base_vpk| paths_equal(&file_path, base_vpk))
+  {
+    Vec::new()
+  } else {
+    collect_card_jobs(&file_path, CARD_SOURCE_MOD, &codenames)?
+  };
+  if let Some(default_vpk) = default_vpk {
+    match collect_card_jobs(&default_vpk, CARD_SOURCE_DEFAULT, &codenames) {
+      Ok(default_jobs) => jobs.extend(default_jobs),
+      Err(error) => log::warn!("[Foundry] Failed to collect default cards: {error}"),
+    }
+  }
+
+  Ok(decode_card_jobs(jobs))
+}
+
 /// Parse a skin VPK, detect its hero, and return the entries grouped by editing
 /// category. Read-only: this never writes to disk.
 #[tauri::command]
@@ -156,6 +550,16 @@ pub async fn foundry_analyze_vpk(file_path: String) -> Result<FoundryManifest, E
   tauri::async_runtime::spawn_blocking(move || analyze_vpk_path(&PathBuf::from(file_path)))
     .await
     .map_err(|e| Error::InvalidInput(format!("VPK analysis task failed: {e}")))?
+}
+
+/// Open the base game's default hero assets as a Foundry source. This is
+/// read-only and filters `pak01_dir.vpk` to one hero instead of surfacing the
+/// entire game archive.
+#[tauri::command]
+pub async fn foundry_analyze_default_hero(hero_display: String) -> Result<FoundryManifest, Error> {
+  tauri::async_runtime::spawn_blocking(move || analyze_default_hero(hero_display))
+    .await
+    .map_err(|e| Error::InvalidInput(format!("default hero analysis task failed: {e}")))?
 }
 
 /// Recursively collect `.vpk` files under `dir` (bounded depth), skipping the
@@ -261,12 +665,7 @@ pub fn foundry_resolve_mod_vpk(
     if let Ok(manifest) = ProfileVpkManifest::load(addons_path)
       && let Some(entry) = manifest.mods.get(&mod_id)
     {
-      push_named_vpks(
-        &mut candidates,
-        &mut seen,
-        addons_path,
-        &entry.current_vpks,
-      );
+      push_named_vpks(&mut candidates, &mut seen, addons_path, &entry.current_vpks);
       push_named_vpks(
         &mut candidates,
         &mut seen,
@@ -357,6 +756,21 @@ pub async fn foundry_decode_texture(
   })
   .await
   .map_err(|e| Error::InvalidInput(format!("texture decode task failed: {e}")))?
+}
+
+/// Decode every hero-card texture for the active Foundry skin in one background
+/// pass. This returns both mod-provided cards and the base game's defaults.
+#[tauri::command]
+pub async fn foundry_decode_cards(
+  file_path: String,
+  hero: Option<String>,
+  hero_display: Option<String>,
+) -> Result<Vec<FoundryCardPreview>, Error> {
+  tauri::async_runtime::spawn_blocking(move || {
+    decode_foundry_cards(PathBuf::from(file_path), hero, hero_display)
+  })
+  .await
+  .map_err(|e| Error::InvalidInput(format!("card decode task failed: {e}")))?
 }
 
 /// Decode a `.vmesh_c`, or resolve a `.vmdl_c` to its first referenced mesh, to

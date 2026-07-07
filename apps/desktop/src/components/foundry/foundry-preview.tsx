@@ -1,5 +1,5 @@
 import { cn } from "@deadlock-mods/ui/lib/utils";
-import { CubeIcon } from "@phosphor-icons/react";
+import { CubeIcon, ImageIcon, MusicNotesIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { useFoundry } from "./foundry-context";
 import { FoundryModelViewer } from "./foundry-model-viewer";
@@ -11,14 +11,36 @@ import { FoundryModelViewer } from "./foundry-model-viewer";
  */
 export const FoundryPreview = () => {
   const { t } = useTranslation();
-  const { manifest, modelPreview, selectedEntryPath, texturePreview } =
-    useFoundry();
+  const {
+    activeTab,
+    manifest,
+    modelPreview,
+    selectedEntryPath,
+    texturePreview,
+  } = useFoundry();
 
-  const imageUrl = texturePreview.dataUrl;
-  const modelUrl = modelPreview.dataUrl;
+  const showModel = activeTab === "skin";
+  const imageUrl = activeTab === "cards" ? texturePreview.dataUrl : null;
+  const modelUrl = showModel ? modelPreview.dataUrl : null;
   const decoding = texturePreview.status === "loading";
-  const loadingModel = modelPreview.status === "loading";
+  const loadingModel = showModel && modelPreview.status === "loading";
   const showBar = decoding || loadingModel;
+  const PlaceholderIcon =
+    activeTab === "cards"
+      ? ImageIcon
+      : activeTab === "sounds"
+        ? MusicNotesIcon
+        : CubeIcon;
+  const placeholderLabel =
+    activeTab === "cards"
+      ? t("foundry.preview.selectCard")
+      : activeTab === "sounds"
+        ? t("foundry.preview.soundsPlaceholder")
+        : manifest
+          ? t("foundry.preview.placeholder", {
+              hero: manifest.heroDisplay ?? t("foundry.preview.unknownHero"),
+            })
+          : t("foundry.preview.empty");
 
   return (
     <div className='relative flex h-full w-full items-center justify-center overflow-hidden rounded-lg border bg-gradient-to-b from-muted/40 to-background'>
@@ -38,9 +60,9 @@ export const FoundryPreview = () => {
         />
       ) : (
         <div className='flex flex-col items-center gap-3 text-muted-foreground'>
-          <CubeIcon className='h-14 w-14 opacity-40' weight='duotone' />
+          <PlaceholderIcon className='h-14 w-14 opacity-40' weight='duotone' />
           <p className='text-sm'>
-            {modelPreview.status === "error"
+            {showModel && modelPreview.status === "error"
               ? t("foundry.preview.modelDecodeFailed")
               : texturePreview.status === "error"
                 ? t("foundry.preview.decodeFailed")
@@ -48,13 +70,7 @@ export const FoundryPreview = () => {
                   ? t("foundry.preview.loading")
                   : decoding
                     ? t("foundry.preview.decoding")
-                    : manifest
-                      ? t("foundry.preview.placeholder", {
-                          hero:
-                            manifest.heroDisplay ??
-                            t("foundry.preview.unknownHero"),
-                        })
-                      : t("foundry.preview.empty")}
+                    : placeholderLabel}
           </p>
         </div>
       )}

@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
+  FoundryCardPreview,
   FoundryManifest,
   FoundryModel,
   FoundryTexture,
@@ -14,6 +15,18 @@ export const analyzeFoundryVpk = async (
   filePath: string,
 ): Promise<FoundryManifest> => {
   return await invoke<FoundryManifest>("foundry_analyze_vpk", { filePath });
+};
+
+/**
+ * Open the base game's default skin assets for one hero from `pak01_dir.vpk`.
+ * This is read-only and does not create or download a mod.
+ */
+export const analyzeDefaultFoundryHero = async (
+  heroDisplay: string,
+): Promise<FoundryManifest> => {
+  return await invoke<FoundryManifest>("foundry_analyze_default_hero", {
+    heroDisplay,
+  });
 };
 
 /**
@@ -42,6 +55,22 @@ export const decodeFoundryTexture = async (
   return await invoke<FoundryTexture>("foundry_decode_texture", {
     filePath,
     entryPath,
+  });
+};
+
+/**
+ * Decode every hero-card texture for the active skin and the matching base-game
+ * defaults. The Foundry starts this in the background as soon as a skin loads.
+ */
+export const decodeFoundryCards = async (
+  filePath: string,
+  hero: string | null,
+  heroDisplay: string | null,
+): Promise<FoundryCardPreview[]> => {
+  return await invoke<FoundryCardPreview[]>("foundry_decode_cards", {
+    filePath,
+    hero,
+    heroDisplay,
   });
 };
 

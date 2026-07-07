@@ -9,6 +9,7 @@ import usePromise from "react-promise-suspense";
 import { Outlet } from "react-router";
 import { FontInstallDialog } from "./components/downloads/font-install-dialog";
 import { ProgressProvider } from "./components/downloads/progress-indicator";
+import { FoundryProvider } from "./components/foundry/foundry-context";
 import { GamePresenceRenderer } from "./components/game-presence-renderer";
 import { MatchSyncRenderer } from "./components/match-sync-renderer";
 import GlobalPluginRenderer from "./components/global-plugin-renderer";
@@ -140,9 +141,11 @@ const App = () => {
                 <AlertDialogProvider>
                   <TauriAppWindowProvider>
                     <ThemeOverridesProvider>
-                      <Layout>
-                        <Outlet />
-                      </Layout>
+                      <FoundryProvider>
+                        <Layout>
+                          <Outlet />
+                        </Layout>
+                      </FoundryProvider>
                     </ThemeOverridesProvider>
                     <GlobalPluginRenderer />
                     <GamePresenceRenderer />
