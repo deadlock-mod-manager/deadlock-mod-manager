@@ -11,7 +11,6 @@ export type AccountStatus = {
   quotaRemaining: number;
   quotaResetAt: number | null;
   fullSyncComplete: boolean;
-  available: boolean;
   gcUnavailable: boolean;
 };
 

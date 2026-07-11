@@ -152,13 +152,13 @@ where
       st.progress.quota_remaining = 0;
       return Ok(FetchStep::QuotaReached);
     }
-    // Re-checked here, not just at pass-start: the game can launch mid-pass, and
-    // this is the actual GC choke point that must never race its own session.
+    self.throttle.acquire().await;
+    // Re-checked here, not just at pass-start, and after the throttle wait (up to
+    // GC_MIN_INTERVAL), not before it: the game can launch during that sleep, and this
+    // is the actual GC choke point that must never race the game's own session.
     if self.game_check.is_game_running() {
       return Err(MatchSyncError::GameRunning);
     }
-
-    self.throttle.acquire().await;
     self.counter.fetch_add(1, Ordering::Relaxed);
 
     let salts = match self.gc.fetch_match_salts(ctx, match_id).await {
@@ -229,10 +229,11 @@ where
     ctx: &AuthContext,
     cursor: Option<u64>,
   ) -> Result<MatchHistoryPage, MatchSyncError> {
+    self.throttle.acquire().await;
+    // Checked after the throttle wait, not before: the game may launch during the sleep.
     if self.game_check.is_game_running() {
       return Err(MatchSyncError::GameRunning);
     }
-    self.throttle.acquire().await;
     self.gc.fetch_match_history(ctx, cursor).await
   }
 

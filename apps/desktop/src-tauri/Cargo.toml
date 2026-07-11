@@ -69,7 +69,7 @@ fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
 tauri-plugin-clipboard-manager = "2.3.2"
 dirs = "6"
 ttf-parser = "0.24"
-# Local Steam session recovery + GC access (see user-auth.md).
+# Local Steam session recovery + GC access.
 aes = "0.8"
 cbc = { version = "0.1", features = ["alloc"] }
 crc32fast = "1.4"
