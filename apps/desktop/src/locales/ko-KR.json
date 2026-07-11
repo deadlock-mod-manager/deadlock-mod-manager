@@ -993,6 +993,56 @@
     "confirmRestore": "백업에서 gameinfo.gi를 복원하시겠습니까? 현재 파일을 덮어쓰게 됩니다.",
     "confirmReset": "gameinfo.gi를 바닐라 상태로 재설정하시겠습니까? 이렇게 하면 모든 모드 구성이 제거되고 원래 게임 설정이 복원됩니다."
   },
+  "matchSync": {
+    "title": "",
+    "description": "",
+    "about": {
+      "reads": "",
+      "sends": "",
+      "limit": "",
+      "risk": ""
+    },
+    "enable": {
+      "title": "",
+      "description": ""
+    },
+    "consent": {
+      "title": "",
+      "body": "",
+      "accept": "",
+      "decline": ""
+    },
+    "quota": {
+      "remaining": "",
+      "accountRemaining": "",
+      "gcUnavailable": "",
+      "reachedToday": ""
+    },
+    "noAccounts": "",
+    "loadError": {
+      "title": "",
+      "retry": ""
+    },
+    "errors": {
+      "consentRequired": "",
+      "disabled": "",
+      "alreadyRunning": "",
+      "gameRunning": "",
+      "quotaReached": ""
+    },
+    "fullSync": {
+      "title": "",
+      "description": "",
+      "button": "",
+      "started": "",
+      "cancel": "",
+      "accountProgress": "",
+      "running": "",
+      "done": "",
+      "doneQuota": "",
+      "rateLimited": ""
+    }
+  },
   "privacy": {
     "title": "개인정보 보호 및 콘텐츠",
     "description": "NSFW(Not Safe For Work) 콘텐츠가 표시되고 필터링되는 방식을 제어합니다.",

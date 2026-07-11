@@ -993,6 +993,56 @@
     "confirmRestore": "Sei sicuro di voler ripristinare gameinfo.gi dal backup? Il file attuale verrà sovrascritto.",
     "confirmReset": "Sei sicuro di voler ripristinare gameinfo.gi allo stato vanilla? Verranno rimosse tutte le configurazioni dei mod e ripristinate le impostazioni originali del gioco."
   },
+  "matchSync": {
+    "title": "",
+    "description": "",
+    "about": {
+      "reads": "",
+      "sends": "",
+      "limit": "",
+      "risk": ""
+    },
+    "enable": {
+      "title": "",
+      "description": ""
+    },
+    "consent": {
+      "title": "",
+      "body": "",
+      "accept": "",
+      "decline": ""
+    },
+    "quota": {
+      "remaining": "",
+      "accountRemaining": "",
+      "gcUnavailable": "",
+      "reachedToday": ""
+    },
+    "noAccounts": "",
+    "loadError": {
+      "title": "",
+      "retry": ""
+    },
+    "errors": {
+      "consentRequired": "",
+      "disabled": "",
+      "alreadyRunning": "",
+      "gameRunning": "",
+      "quotaReached": ""
+    },
+    "fullSync": {
+      "title": "",
+      "description": "",
+      "button": "",
+      "started": "",
+      "cancel": "",
+      "accountProgress": "",
+      "running": "",
+      "done": "",
+      "doneQuota": "",
+      "rateLimited": ""
+    }
+  },
   "privacy": {
     "title": "Privacy e Contenuti",
     "description": "Controlla come vengono visualizzati e filtrati i contenuti NSFW (Not Safe For Work).",

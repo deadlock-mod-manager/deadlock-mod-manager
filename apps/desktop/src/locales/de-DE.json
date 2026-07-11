@@ -993,6 +993,56 @@
     "confirmRestore": "Möchten Sie gameinfo.gi wirklich aus der Sicherung wiederherstellen? Die aktuelle Datei wird überschrieben.",
     "confirmReset": "Möchten Sie gameinfo.gi wirklich auf den Vanilla-Zustand zurücksetzen? Dabei werden alle Mod-Konfigurationen entfernt und die ursprünglichen Spieleinstellungen wiederhergestellt."
   },
+  "matchSync": {
+    "title": "",
+    "description": "",
+    "about": {
+      "reads": "",
+      "sends": "",
+      "limit": "",
+      "risk": ""
+    },
+    "enable": {
+      "title": "",
+      "description": ""
+    },
+    "consent": {
+      "title": "",
+      "body": "",
+      "accept": "",
+      "decline": ""
+    },
+    "quota": {
+      "remaining": "",
+      "accountRemaining": "",
+      "gcUnavailable": "",
+      "reachedToday": ""
+    },
+    "noAccounts": "",
+    "loadError": {
+      "title": "",
+      "retry": ""
+    },
+    "errors": {
+      "consentRequired": "",
+      "disabled": "",
+      "alreadyRunning": "",
+      "gameRunning": "",
+      "quotaReached": ""
+    },
+    "fullSync": {
+      "title": "",
+      "description": "",
+      "button": "",
+      "started": "",
+      "cancel": "",
+      "accountProgress": "",
+      "running": "",
+      "done": "",
+      "doneQuota": "",
+      "rateLimited": ""
+    }
+  },
   "privacy": {
     "title": "Datenschutz & Inhalte",
     "description": "Steuern Sie, wie NSFW (Not Safe For Work) Inhalte angezeigt und gefiltert werden.",
