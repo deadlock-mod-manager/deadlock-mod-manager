@@ -1,12 +1,14 @@
 use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
-use std::sync::{Arc, LazyLock};
+use std::sync::{Arc, LazyLock, Mutex};
 
 use crate::app_runtime::AppHandle;
 use serde::Serialize;
-use tauri::{Emitter, State};
+use tauri::{Emitter, Manager};
 
 pub(crate) use deadlock_discord_presence::GamePresenceWatcher;
-use deadlock_discord_presence::{HeroDataStore, PresenceBuildConfig, PresencePhase};
+use deadlock_discord_presence::{
+  GameExitCallback, HeroDataStore, PresenceBuildConfig, PresencePhase, PresenceStatusCallback,
+};
 
 use crate::commands::state::MANAGER;
 use crate::errors::Error;
@@ -55,7 +57,20 @@ impl Status {
 }
 
 static STATUS: LazyLock<AtomicU8> = LazyLock::new(|| AtomicU8::new(Status::Inactive as u8));
-static RUNNING: LazyLock<Arc<AtomicBool>> = LazyLock::new(|| Arc::new(AtomicBool::new(false)));
+// Each start gets a fresh stop flag so a mode-switch restart can stop the old loop
+// without racing the new one (they hold different Arcs).
+static CURRENT_RUNNING: LazyLock<Mutex<Option<Arc<AtomicBool>>>> =
+  LazyLock::new(|| Mutex::new(None));
+// Desired inputs deciding whether — and in which mode — the single watcher runs.
+static PRESENCE_DESIRED: AtomicBool = AtomicBool::new(false);
+static MONITORING_DESIRED: AtomicBool = AtomicBool::new(false);
+// true = the running watcher has Discord Rich Presence active.
+static CURRENT_PRESENCE_MODE: AtomicBool = AtomicBool::new(false);
+// Serializes ensure_watcher so overlapping start/stop/restart requests (dev
+// StrictMode, the presence + match-sync renderers) can't double-spawn watchers.
+static COORDINATOR_LOCK: Mutex<()> = Mutex::new(());
+static LATEST_PRESENCE_CONFIG: LazyLock<Mutex<Option<PresenceBuildConfig>>> =
+  LazyLock::new(|| Mutex::new(None));
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -74,11 +89,10 @@ pub fn snapshot() -> GamePresenceStatusDto {
 }
 
 pub(crate) fn is_running() -> bool {
-  Status::from_u8(STATUS.load(Ordering::Relaxed)) != Status::Inactive
-}
-
-pub(crate) fn running_handle() -> Arc<AtomicBool> {
-  Arc::clone(&RUNNING)
+  CURRENT_RUNNING
+    .lock()
+    .map(|guard| guard.is_some())
+    .unwrap_or(false)
 }
 
 fn emit_status(app_handle: Option<&AppHandle>) {
@@ -93,16 +107,111 @@ pub(crate) fn set_phase_emit(app_handle: Option<&AppHandle>, phase: PresencePhas
   emit_status(app_handle);
 }
 
-pub(crate) fn mark_started(app_handle: &AppHandle) {
-  RUNNING.store(true, Ordering::Relaxed);
-  STATUS.store(Status::Waiting as u8, Ordering::Relaxed);
-  emit_status(Some(app_handle));
-}
-
-pub(crate) fn mark_stopped(app_handle: Option<&AppHandle>) {
-  RUNNING.store(false, Ordering::Relaxed);
+fn stop_current(app_handle: Option<&AppHandle>) {
+  if let Ok(mut current) = CURRENT_RUNNING.lock()
+    && let Some(flag) = current.take()
+  {
+    flag.store(false, Ordering::Relaxed);
+  }
   STATUS.store(Status::Inactive as u8, Ordering::Relaxed);
   emit_status(app_handle);
+}
+
+pub(crate) fn resolve_game_path() -> Option<std::path::PathBuf> {
+  let mut mod_manager = MANAGER.lock().ok()?;
+  mod_manager.find_game().ok()
+}
+
+fn spawn_watcher(app_handle: &AppHandle, presence_enabled: bool) -> Result<(), Error> {
+  let game_path = resolve_game_path().ok_or(Error::GameNotFound)?;
+  let discord_presence = app_handle.state::<DiscordState>().inner().clone();
+  let presence_config = LATEST_PRESENCE_CONFIG
+    .lock()
+    .ok()
+    .and_then(|config| config.clone())
+    .unwrap_or_default();
+
+  let running = Arc::new(AtomicBool::new(true));
+  if let Ok(mut current) = CURRENT_RUNNING.lock() {
+    *current = Some(Arc::clone(&running));
+  }
+  CURRENT_PRESENCE_MODE.store(presence_enabled, Ordering::Relaxed);
+  STATUS.store(Status::Waiting as u8, Ordering::Relaxed);
+  emit_status(Some(app_handle));
+
+  let status_app = app_handle.clone();
+  let status_running = Arc::clone(&running);
+  let status_callback: PresenceStatusCallback = Arc::new(move |phase| {
+    if status_running.load(Ordering::Relaxed) {
+      set_phase_emit(Some(&status_app), phase);
+    }
+  });
+  let exit_app = app_handle.clone();
+  let exit_running = Arc::clone(&running);
+  let exit_callback: GameExitCallback = Arc::new(move || {
+    if exit_running.load(Ordering::Relaxed) {
+      crate::match_sync::on_game_exit(exit_app.clone());
+    }
+  });
+  let done_app = app_handle.clone();
+  let done_flag = Arc::clone(&running);
+
+  tokio::spawn(async move {
+    let watcher = GamePresenceWatcher::new(
+      game_path,
+      running,
+      discord_presence,
+      Some(status_callback),
+      presence_config,
+    )
+    .with_presence_enabled(presence_enabled)
+    .with_game_exit_callback(exit_callback);
+    watcher.run().await;
+
+    // Only clear shared status if we are still the active watcher (not superseded
+    // by a restart), otherwise we'd stomp the newer watcher's state.
+    if let Ok(mut current) = CURRENT_RUNNING.lock()
+      && current.as_ref().is_some_and(|flag| Arc::ptr_eq(flag, &done_flag))
+    {
+      current.take();
+      STATUS.store(Status::Inactive as u8, Ordering::Relaxed);
+      emit_status(Some(&done_app));
+    }
+  });
+  Ok(())
+}
+
+pub(crate) fn ensure_watcher(app_handle: &AppHandle) -> Result<(), Error> {
+  let _guard = COORDINATOR_LOCK
+    .lock()
+    .unwrap_or_else(std::sync::PoisonError::into_inner);
+  let presence = PRESENCE_DESIRED.load(Ordering::Relaxed);
+  let monitoring = MONITORING_DESIRED.load(Ordering::Relaxed);
+
+  if !presence && !monitoring {
+    stop_current(Some(app_handle));
+    return Ok(());
+  }
+
+  let running = is_running();
+  let mode_matches = CURRENT_PRESENCE_MODE.load(Ordering::Relaxed) == presence;
+  if running && mode_matches {
+    return Ok(());
+  }
+  if running {
+    stop_current(Some(app_handle));
+  }
+  spawn_watcher(app_handle, presence)
+}
+
+pub fn sync_monitoring_watcher(app_handle: &AppHandle) {
+  MONITORING_DESIRED.store(
+    crate::match_sync::should_monitor(app_handle),
+    Ordering::Relaxed,
+  );
+  if let Err(e) = ensure_watcher(app_handle) {
+    log::warn!("[GamePresence] Failed to start game-exit detection: {e}");
+  }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -148,55 +257,27 @@ pub async fn get_game_presence_heroes() -> Result<Vec<GamePresenceHeroDto>, Erro
 #[tauri::command]
 pub async fn start_game_presence_watcher(
   app_handle: AppHandle,
-  discord_state: State<'_, DiscordState>,
   presence_config: Option<PresenceBuildConfig>,
 ) -> Result<(), Error> {
-  if is_running() {
-    log::info!("Game presence watcher already running");
-    return Ok(());
+  if let Some(config) = presence_config
+    && let Ok(mut slot) = LATEST_PRESENCE_CONFIG.lock()
+  {
+    *slot = Some(config);
   }
-
-  let game_path = {
-    let mut mod_manager = MANAGER.lock().unwrap();
-    mod_manager
-      .find_game()
-      .map_err(|e| Error::InvalidInput(format!("Cannot find game path: {e}")))?
-  };
-
-  mark_started(&app_handle);
-
-  let running = running_handle();
-  let app_spawn = app_handle.clone();
-  let discord_presence = discord_state.inner().clone();
-  let presence_config = presence_config.unwrap_or_default();
-
-  tokio::spawn(async move {
-    let status_app = app_spawn.clone();
-    let status_callback = Arc::new(move |phase| {
-      set_phase_emit(Some(&status_app), phase);
-    });
-    let watcher = GamePresenceWatcher::new(
-      game_path,
-      running,
-      discord_presence,
-      Some(status_callback),
-      presence_config,
-    );
-    watcher.run().await;
-    mark_stopped(Some(&app_spawn));
-  });
-
-  log::info!("Game presence watcher started");
+  PRESENCE_DESIRED.store(true, Ordering::Relaxed);
+  ensure_watcher(&app_handle)?;
+  log::info!("Game presence watcher requested");
   Ok(())
 }
 
 #[tauri::command]
 pub async fn stop_game_presence_watcher(app_handle: AppHandle) -> Result<(), Error> {
-  if !is_running() {
-    return Ok(());
+  PRESENCE_DESIRED.store(false, Ordering::Relaxed);
+  // Stopping presence itself always succeeds; only a fallback restart into
+  // detect-only mode (for match-sync monitoring) could fail here.
+  if let Err(e) = ensure_watcher(&app_handle) {
+    log::warn!("[GamePresence] Failed to restart in detect-only mode: {e}");
   }
-
-  mark_stopped(Some(&app_handle));
-  log::info!("Game presence watcher stop signal sent");
+  log::info!("Game presence watcher stop requested");
   Ok(())
 }

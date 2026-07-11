@@ -27,6 +27,7 @@ pub enum PresencePhase {
 }
 
 pub type PresenceStatusCallback = Arc<dyn Fn(PresencePhase) + Send + Sync>;
+pub type GameExitCallback = Arc<dyn Fn() + Send + Sync>;
 
 pub struct GamePresenceWatcher {
     game_path: PathBuf,
@@ -35,6 +36,10 @@ pub struct GamePresenceWatcher {
     discord_presence: DiscordPresenceState,
     status_callback: Option<PresenceStatusCallback>,
     presence_config: PresenceBuildConfig,
+    // When false, poll game state only (no Discord activity) — lets match-sync reuse
+    // this watcher for game-exit detection without turning on Rich Presence.
+    presence_enabled: bool,
+    on_game_exit: Option<GameExitCallback>,
 }
 
 impl GamePresenceWatcher {
@@ -53,7 +58,19 @@ impl GamePresenceWatcher {
             discord_presence,
             status_callback,
             presence_config,
+            presence_enabled: true,
+            on_game_exit: None,
         }
+    }
+
+    pub fn with_presence_enabled(mut self, enabled: bool) -> Self {
+        self.presence_enabled = enabled;
+        self
+    }
+
+    pub fn with_game_exit_callback(mut self, callback: GameExitCallback) -> Self {
+        self.on_game_exit = Some(callback);
+        self
     }
 
     pub async fn run(&self) {
@@ -92,27 +109,33 @@ impl GamePresenceWatcher {
                 );
                 last_offset = file_size(&self.console_log_path);
 
-                update_presence(
-                    &self.discord_presence,
-                    self.status_callback.as_ref(),
-                    &state,
-                    &hero_store,
-                    &self.presence_config,
-                    &mut last_presence_hash,
-                )
-                .await;
-                last_presence_update = std::time::Instant::now();
+                if self.presence_enabled {
+                    update_presence(
+                        &self.discord_presence,
+                        self.status_callback.as_ref(),
+                        &state,
+                        &hero_store,
+                        &self.presence_config,
+                        &mut last_presence_hash,
+                    )
+                    .await;
+                    last_presence_update = std::time::Instant::now();
+                }
             } else if !game_running {
                 if game_was_running {
                     log::info!("[GamePresence] Deadlock closed");
                     game_was_running = false;
                     parser.reset_tracking();
                     state.reset();
-                    if let Err(error) = self.discord_presence.disconnect().await
+                    if self.presence_enabled
+                        && let Err(error) = self.discord_presence.disconnect().await
                     {
                         log::debug!("[GamePresence] Discord disconnect skipped: {error}");
                     }
                     self.emit_phase(PresencePhase::Waiting);
+                    if let Some(callback) = &self.on_game_exit {
+                        callback();
+                    }
                     last_presence_hash = None;
                     last_offset = 0;
                 }
@@ -142,8 +165,10 @@ impl GamePresenceWatcher {
                 }
             }
 
-            if changed
-                || last_presence_update.elapsed().as_millis() > PRESENCE_UPDATE_INTERVAL_MS as u128
+            if self.presence_enabled
+                && (changed
+                    || last_presence_update.elapsed().as_millis()
+                        > PRESENCE_UPDATE_INTERVAL_MS as u128)
             {
                 update_presence(
                     &self.discord_presence,
@@ -160,7 +185,8 @@ impl GamePresenceWatcher {
             tokio::time::sleep(tokio::time::Duration::from_millis(POLL_INTERVAL_MS)).await;
         }
 
-        if let Err(error) = self.discord_presence.disconnect().await
+        if self.presence_enabled
+            && let Err(error) = self.discord_presence.disconnect().await
         {
             log::debug!("[GamePresence] Discord disconnect skipped: {error}");
         }
@@ -228,7 +254,13 @@ fn emit_phase(status_callback: Option<&PresenceStatusCallback>, phase: PresenceP
     }
 }
 
-fn is_game_running(sys: &mut sysinfo::System, console_log_path: &Path) -> bool {
+/// The `console.log` path this watcher itself checks, derived from the install dir.
+pub fn console_log_path(game_path: &Path) -> PathBuf {
+    game_path.join("game").join("citadel").join("console.log")
+}
+
+/// Exposed so other consumers can check without duplicating the process-name list.
+pub fn is_game_running(sys: &mut sysinfo::System, console_log_path: &Path) -> bool {
     sys.refresh_processes_specifics(
         sysinfo::ProcessesToUpdate::All,
         true,

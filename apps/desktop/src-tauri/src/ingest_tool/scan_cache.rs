@@ -12,7 +12,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 const DEADLOCK_APP_ID: &str = "1422450";
 const MAX_BYTES_TO_READ: usize = 200;
 const SEARCH_SEQUENCE: &[u8; 10] = b".valve.net";
-const PATH_END_MARKERS: [u8; 6] = [b' ', b'\'', b'\0', b'\n', b'\r', b'"'];
+const PATH_END_MARKERS: [u8; 6] = *b" '\0\n\r\"";
 
 /// Get the Steam HTTP cache directory using steamlocate
 pub fn get_cache_directory() -> Option<PathBuf> {

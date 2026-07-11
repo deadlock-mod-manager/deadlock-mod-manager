@@ -65,6 +65,7 @@ import { LinuxGpuToggle } from "@/components/settings/linux-gpu-toggle";
 import { LoggingSettings } from "@/components/settings/logging-settings";
 import OccultGeometrySettings from "@/components/settings/occult-geometry-settings";
 import { PluginList } from "@/components/settings/plugin-list";
+import { MatchSyncSettings } from "@/components/settings/match-sync-settings";
 import PrivacySettings from "@/components/settings/privacy-settings";
 import { ProxySettings } from "@/components/settings/proxy-settings";
 import Section, { SectionSkeleton } from "@/components/settings/section";
@@ -893,6 +894,12 @@ const CustomSettings = ({ value }: { value?: string }) => {
               <div className='grid grid-cols-1 gap-4'>
                 <PrivacySettings />
               </div>
+            </Section>
+
+            <Section
+              description={t("matchSync.description")}
+              title={t("matchSync.title")}>
+              <MatchSyncSettings />
             </Section>
           </TabsContent>
 
