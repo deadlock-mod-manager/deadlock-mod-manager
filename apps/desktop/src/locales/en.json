@@ -1014,7 +1014,7 @@
     },
     "quota": {
       "remaining": "{{remaining}} of {{limit}} match fetches left in the next 24 hours.",
-      "accountRemaining": "{{name}}: {{remaining}}/{{limit}} today",
+      "accountRemaining": "{{name}}: {{remaining}}/{{limit}} left today",
       "gcUnavailable": "Can't connect to Deadlock, retrying in 24h",
       "reachedToday": "Daily limit reached. Come back tomorrow to fetch more."
     },

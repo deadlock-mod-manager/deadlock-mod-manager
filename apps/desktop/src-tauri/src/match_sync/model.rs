@@ -5,6 +5,12 @@ pub const DEADLOCK_APP_ID: u32 = 1422450;
 pub const FETCH_QUOTA_LIMIT: usize = 40;
 pub const FETCH_QUOTA_WINDOW_SECS: i64 = 24 * 60 * 60;
 
+// Quota slots the background pass keeps free from global backfill, so a user's own
+// freshly-played matches (fetched first, and not subject to this reserve) always have
+// headroom against a bottomless global to-fetch list. Sized for ~4 matches/day plus
+// margin for two sessions straddling the rolling 24h window.
+pub const BACKFILL_QUOTA_RESERVE: usize = 8;
+
 // Matches the httpcache scraper so both ingest sources look identical server-side.
 pub const INGEST_USERNAME: &str = "Mod Manager";
 

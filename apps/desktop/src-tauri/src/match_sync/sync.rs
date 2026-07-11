@@ -13,7 +13,8 @@ use super::error::MatchSyncError;
 use super::game_check::GameRunningCheck;
 use super::gc_client::GcMatchClient;
 use super::model::{
-  AuthContext, FetchScope, MatchHistoryPage, MatchSyncConfig, SaltPayload, SyncProgress,
+  AuthContext, BACKFILL_QUOTA_RESERVE, FetchScope, MatchHistoryPage, MatchSyncConfig, SaltPayload,
+  SyncProgress,
 };
 use super::quota::QuotaWindow;
 use super::throttle::Throttle;
@@ -388,7 +389,12 @@ where
     if let LoopControl::Continue = control
       && !cancel.load(Ordering::Relaxed)
     {
-      let budget = st.quota.remaining(self.persistence.now());
+      // Keep a reserve untouched so the user's own matches — always fetched first, and
+      // not subject to this cap — retain headroom against a bottomless global list.
+      let budget = st
+        .quota
+        .remaining(self.persistence.now())
+        .saturating_sub(BACKFILL_QUOTA_RESERVE);
       if budget > 0 {
         match self.backfill.to_fetch(FetchScope::Global).await {
           Ok(global) => {
@@ -723,6 +729,27 @@ mod tests {
     let posted = eng.sink.posted.lock().unwrap();
     assert_eq!(&posted[..3], &[102, 101, 100], "own matches, newest first, deduped");
     assert_eq!(posted.len(), 10);
+  }
+
+  #[tokio::test]
+  async fn background_backfill_leaves_reserve_for_own_matches() {
+    // No own matches, a bottomless global list: backfill must stop at LIMIT - reserve
+    // rather than drain the whole bucket, so a later-played match keeps headroom.
+    let backfill = SpyBackfill {
+      account: vec![],
+      global: (1..=200).collect(),
+      calls: AtomicU64::new(0),
+    };
+    let eng = engine(SpyGc::default(), backfill);
+
+    let p = eng
+      .run_background_pass(&active_config(), &AtomicBool::new(false))
+      .await
+      .unwrap()
+      .unwrap();
+    assert_eq!(p.fetched, 0);
+    assert_eq!(p.backfilled as usize, LIMIT - BACKFILL_QUOTA_RESERVE);
+    assert_eq!(p.quota_remaining as usize, BACKFILL_QUOTA_RESERVE);
   }
 
   #[tokio::test]
