@@ -75,7 +75,7 @@ desktop-file-utils
       src
       ;
     pnpm = pnpm_11;
-    fetcherVersion = 3;
+    fetcherVersion = 4;
     sourceRoot = "source";
     hash = "sha256-zl+ZrI21EnMBeMInKvEkUObiZ0OA5SJLJjnHwu/Dagc=";
   };
