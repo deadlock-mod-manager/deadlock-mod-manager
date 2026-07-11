@@ -24,8 +24,8 @@
         "aarch64-linux"
       ];
     in
-    # Dev shells for all default systems
-    flake-utils.lib.eachDefaultSystem (
+    # Dev shells and packages for Linux systems only
+    flake-utils.lib.eachSystem linuxSystems (
       system:
       let
         overlays = [ (import rust-overlay) ];
