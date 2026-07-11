@@ -1,5 +1,5 @@
 //! Local Steam session recovery: read the `local.vdf` ConnectCache blob and decrypt
-//! the refresh-token JWT (AES on Linux/macOS, DPAPI on Windows) per `user-auth.md`.
+//! the refresh-token JWT (AES on Linux/macOS, DPAPI on Windows).
 //! The token is a live account credential: in-memory only, never logged/persisted/sent.
 
 use std::path::{Path, PathBuf};
@@ -30,7 +30,7 @@ fn child<'a>(value: &'a Value<'a>, key: &str) -> Option<&'a Value<'a>> {
   value.get_obj()?.get(key)?.first()
 }
 
-// The auth file location differs on Windows (see user-auth.md).
+// The auth file location differs on Windows.
 #[cfg(windows)]
 fn local_vdf_path(_steam_dir: &Path) -> Result<PathBuf, MatchSyncError> {
   dirs::data_local_dir()

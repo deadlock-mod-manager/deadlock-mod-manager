@@ -1,5 +1,5 @@
-//! While Deadlock is running, Steam routes GC traffic to the game's own pipe
-//! (user-auth.md); a second process's GC session gets nothing. Every fetch path
+//! While Deadlock is running, Steam routes GC traffic to the game's own pipe;
+//! a second process's GC session gets nothing. Every fetch path
 //! must refuse while the game is running, not just detect it opportunistically.
 
 use std::sync::Mutex;

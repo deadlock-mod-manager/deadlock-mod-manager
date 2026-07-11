@@ -1,6 +1,6 @@
 use thiserror::Error;
 
-// Messages never include the refresh token / GC session (secrets — see user-auth.md).
+// Messages never include the refresh token / GC session (secrets).
 #[derive(Error, Debug)]
 pub enum MatchSyncError {
   #[error("Match sync is disabled")]

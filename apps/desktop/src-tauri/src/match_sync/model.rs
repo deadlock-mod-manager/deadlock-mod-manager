@@ -8,7 +8,7 @@ pub const FETCH_QUOTA_WINDOW_SECS: i64 = 24 * 60 * 60;
 // Matches the httpcache scraper so both ingest sources look identical server-side.
 pub const INGEST_USERNAME: &str = "Mod Manager";
 
-// refresh_token is a live account credential (user-auth.md): in-memory only, never
+// refresh_token is a live account credential: in-memory only, never
 // logged/persisted/sent. Debug is hand-written to keep it out of logs.
 #[derive(Clone)]
 pub struct AuthContext {

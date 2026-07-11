@@ -1,6 +1,6 @@
 //! The Steam Game Coordinator boundary: recover per-match salts and history
-//! client-side through the user's own account (`steam-vent` + `CMsgClientToGc*` per
-//! user-auth.md). The subsystem never uses deadlock-api's own server-side endpoints.
+//! client-side through the user's own account (`steam-vent` + `CMsgClientToGc*`).
+//! The subsystem never uses deadlock-api's own server-side endpoints.
 
 use std::future::Future;
 use std::sync::Arc;
