@@ -92,7 +92,6 @@
           # Desktop application (main mod manager)
           # cargoHash is managed by CI workflow
           default = pkgs.callPackage ./package.nix {
-            inherit rustToolchain;
             src = self;
           };
 
