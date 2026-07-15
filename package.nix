@@ -1,9 +1,7 @@
 {
   lib,
   rustPlatform,
-  rustToolchain,
   src,
-  nodejs_22,
   pnpm_11,
   fetchPnpmDeps,
   pnpmConfigHook,
@@ -25,6 +23,7 @@
   fontconfig,
   cargo-tauri,
   nodejs,
+  protobuf,
 }:
 
 rustPlatform.buildRustPackage (finalAttrs: {
@@ -39,12 +38,13 @@ rustPlatform.buildRustPackage (finalAttrs: {
   cargoHash = "sha256-miIMK/mHDgyVU10MO4MtQq1ELaoYUno8YL5pLV6kr1Y=";
 
   nativeBuildInputs = [
-rustPlatform.cargoSetupHook cargo-tauri.hook nodejs
+    rustPlatform.cargoSetupHook cargo-tauri.hook nodejs
 
     pnpmConfigHook
     pnpm_11
     pkg-config
     wrapGAppsHook3
+    protobuf
   ];
 
   buildInputs = [
@@ -55,11 +55,11 @@ rustPlatform.cargoSetupHook cargo-tauri.hook nodejs
     glib-networking
     gtk3
     libsoup_3
-pango
+    pango
 
     openssl
     bzip2
-desktop-file-utils
+    desktop-file-utils
 
     gst_all_1.gstreamer
     gst_all_1.gst-plugins-base
