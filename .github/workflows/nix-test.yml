@@ -121,7 +121,7 @@ jobs:
       - name: Free disk space
         uses: wimpysworld/nothing-but-nix@main
         with:
-          hatchet-protocol: holster
+          hatchet-protocol: Cleave
 
       - name: Checkout repository (latest after hash updates)
         uses: actions/checkout@v4
