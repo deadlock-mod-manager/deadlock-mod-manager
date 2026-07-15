@@ -109,8 +109,8 @@ jobs:
   build-nightly:
     name: Build Nightly Package
     runs-on: depot-ubuntu-24.04
-    needs: check-flake
-    if: always() && needs.check-flake.result == 'success'
+    needs: update-hashes
+    if: always() && needs.update-hashes.result == 'success'
     steps:
       - name: Free disk space
         run: |
@@ -163,8 +163,8 @@ jobs:
   build-dev-shell:
     name: Test Development Shell
     runs-on: depot-ubuntu-24.04
-    needs: check-flake
-    if: always() && needs.check-flake.result == 'success'
+    needs: update-hashes
+    if: always() && needs.update-hashes.result == 'success'
     steps:
       - name: Checkout repository (latest after hash updates)
         uses: actions/checkout@v4
