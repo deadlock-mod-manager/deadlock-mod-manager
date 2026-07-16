@@ -11,6 +11,7 @@ export * from "./message-pattern-embeddings";
 export * from "./mirrored-files";
 export * from "./mods";
 export * from "./profiles";
+export * from "./quick-answers";
 export * from "./relations";
 export * from "./reports";
 export * from "./rss-items";

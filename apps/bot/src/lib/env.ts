@@ -35,6 +35,25 @@ export const envSchema = z.object({
         .map((id) => id.trim())
         .filter(Boolean),
     ),
+  QUICKANSWER_ASSET_CHANNEL_ID: z.string().optional(),
+  QUICKANSWER_EDITOR_ROLE_IDS: z
+    .string()
+    .default("")
+    .transform((val) =>
+      val
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean),
+    ),
+  QUICKANSWER_USER_ROLE_IDS: z
+    .string()
+    .default("")
+    .transform((val) =>
+      val
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean),
+    ),
   CORE_CONTRIBUTOR_ROLES: z
     .string()
     .default("1322369692962390119")
