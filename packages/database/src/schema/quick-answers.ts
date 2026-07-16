@@ -65,7 +65,10 @@ export const quickAnswerAssets = pgTable(
     ...timestamps,
   },
   (table) => [
-    index("quick_answer_assets_template_idx").on(table.templateId),
+    uniqueIndex("quick_answer_assets_template_sort_idx").on(
+      table.templateId,
+      table.sortOrder,
+    ),
     uniqueIndex("quick_answer_assets_attachment_idx").on(table.attachmentId),
   ],
 );

@@ -2535,17 +2535,23 @@
         }
       },
       "indexes": {
-        "quick_answer_assets_template_idx": {
-          "name": "quick_answer_assets_template_idx",
+        "quick_answer_assets_template_sort_idx": {
+          "name": "quick_answer_assets_template_sort_idx",
           "columns": [
             {
               "expression": "template_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
+            },
+            {
+              "expression": "sort_order",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
             }
           ],
-          "isUnique": false,
+          "isUnique": true,
           "concurrently": false,
           "method": "btree",
           "with": {}

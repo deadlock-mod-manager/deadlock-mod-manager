@@ -30,7 +30,7 @@ CREATE TABLE "quick_answer_templates" (
 );
 --> statement-breakpoint
 ALTER TABLE "quick_answer_assets" ADD CONSTRAINT "quick_answer_assets_template_id_quick_answer_templates_id_fk" FOREIGN KEY ("template_id") REFERENCES "public"."quick_answer_templates"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-CREATE INDEX "quick_answer_assets_template_idx" ON "quick_answer_assets" USING btree ("template_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "quick_answer_assets_template_sort_idx" ON "quick_answer_assets" USING btree ("template_id","sort_order");--> statement-breakpoint
 CREATE UNIQUE INDEX "quick_answer_assets_attachment_idx" ON "quick_answer_assets" USING btree ("attachment_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "quick_answer_templates_guild_slug_idx" ON "quick_answer_templates" USING btree ("guild_id","slug");--> statement-breakpoint
 CREATE INDEX "quick_answer_templates_guild_active_idx" ON "quick_answer_templates" USING btree ("guild_id","is_active");

@@ -604,7 +604,7 @@ export class QuickAnswerCommand extends Command {
     interaction: ChatInputCommandInteraction<"cached">,
     customId: string,
   ): Promise<ModalSubmitInteraction<"cached"> | null> {
-    return await interaction
+    const submission = await interaction
       .awaitModalSubmit({
         time: 15 * 60 * 1_000,
         filter: (submission) =>
@@ -612,6 +612,25 @@ export class QuickAnswerCommand extends Command {
           submission.user.id === interaction.user.id,
       })
       .catch(() => null);
+
+    if (!submission) {
+      return null;
+    }
+
+    // Re-check editor authorization: roles may have been revoked between
+    // showing the modal and its (up to 15 minute) submission window.
+    if (!hasQuickAnswerEditorPermission(submission.member)) {
+      await submission
+        .reply({
+          content: `You don't have permission to use this command. Required: ${getQuickAnswerEditorRolesDisplay()}`,
+          flags: MessageFlags.Ephemeral,
+          allowedMentions: { parse: [] },
+        })
+        .catch(() => undefined);
+      return null;
+    }
+
+    return submission;
   }
 
   private async replyWithError(
