@@ -69,7 +69,7 @@ export class QuickAnswerCommand extends Command {
             .addStringOption((option) =>
               option
                 .setName("template")
-                .setDescription("Template slug or title")
+                .setDescription("Template slug")
                 .setRequired(true)
                 .setAutocomplete(true),
             ),
@@ -81,7 +81,7 @@ export class QuickAnswerCommand extends Command {
             .addStringOption((option) =>
               option
                 .setName("template")
-                .setDescription("Template slug or title")
+                .setDescription("Template slug")
                 .setRequired(true)
                 .setAutocomplete(true),
             ),
@@ -93,7 +93,7 @@ export class QuickAnswerCommand extends Command {
             .addStringOption((option) =>
               option
                 .setName("template")
-                .setDescription("Template slug or title")
+                .setDescription("Template slug")
                 .setRequired(true)
                 .setAutocomplete(true),
             ),
@@ -105,7 +105,7 @@ export class QuickAnswerCommand extends Command {
             .addStringOption((option) =>
               option
                 .setName("template")
-                .setDescription("Template slug or title")
+                .setDescription("Template slug")
                 .setRequired(true)
                 .setAutocomplete(true),
             ),
@@ -117,7 +117,7 @@ export class QuickAnswerCommand extends Command {
             .addStringOption((option) =>
               option
                 .setName("template")
-                .setDescription("Template slug or title")
+                .setDescription("Template slug")
                 .setRequired(true)
                 .setAutocomplete(true),
             )
@@ -136,7 +136,7 @@ export class QuickAnswerCommand extends Command {
             .addStringOption((option) =>
               option
                 .setName("template")
-                .setDescription("Template slug or title")
+                .setDescription("Template slug")
                 .setRequired(true)
                 .setAutocomplete(true),
             ),
