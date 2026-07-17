@@ -43,6 +43,7 @@ export const ModContextMenu = ({ mod, children }: ModContextMenuProps) => {
 
       if (mod.installedVpks && mod.installedVpks.length > 0) {
         await invoke("show_mod_in_game", {
+          modId: mod.remoteId,
           vpkFiles: mod.installedVpks,
           profileFolder,
           isMap: mod.isMap ?? false,

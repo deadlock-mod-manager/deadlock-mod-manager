@@ -1,8 +1,9 @@
 use crate::commands::state::MANAGER;
 use crate::errors::Error;
+use crate::mod_manager::{shard, vpk_manifest::ProfileVpkManifest};
 use hero_parser::HeroDetectionResult;
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
 
 static HERO_CACHE: LazyLock<hero_parser::VpkEntryCache> =
@@ -28,6 +29,87 @@ fn collect_vpk_files_recursive(dir: &PathBuf, out: &mut Vec<PathBuf>) {
   }
 }
 
+fn profile_bases(addons_root: &Path) -> Vec<PathBuf> {
+  let mut bases = vec![addons_root.to_path_buf()];
+  if let Ok(entries) = std::fs::read_dir(addons_root) {
+    bases.extend(
+      entries
+        .filter_map(|entry| entry.ok())
+        .map(|entry| entry.path())
+        .filter(|path| path.is_dir()),
+    );
+  }
+  bases
+}
+
+fn push_existing_unique(out: &mut Vec<PathBuf>, path: PathBuf) {
+  if path.is_file() && !out.contains(&path) {
+    out.push(path);
+  }
+}
+
+fn collect_game_vpks_for_mod(
+  addons_root: &Path,
+  mod_id: &str,
+  known_vpks: &[String],
+  out: &mut Vec<PathBuf>,
+) {
+  let bases = profile_bases(addons_root);
+  let mut found_manifest_entry = false;
+
+  for base in &bases {
+    let Ok(manifest) = ProfileVpkManifest::load(base) else {
+      continue;
+    };
+    let Some(entry) = manifest.mods.get(mod_id) else {
+      continue;
+    };
+    found_manifest_entry = true;
+
+    if entry.enabled {
+      let enabled_dir = shard::shard_dir(base, entry.shard.max(1));
+      for vpk in &entry.current_vpks {
+        push_existing_unique(out, enabled_dir.join(vpk));
+      }
+    } else {
+      for vpk in &entry.disabled_vpks {
+        push_existing_unique(out, base.join(vpk));
+      }
+    }
+  }
+
+  if !found_manifest_entry {
+    for base in &bases {
+      for shard_index in 1..=shard::MAX_SHARDS {
+        let dir = shard::shard_dir(base, shard_index);
+        for vpk in known_vpks {
+          let Some(filename) = Path::new(vpk).file_name() else {
+            continue;
+          };
+          push_existing_unique(out, dir.join(filename));
+        }
+      }
+    }
+  }
+
+  let prefix = format!("{mod_id}_");
+  for base in bases {
+    if let Ok(entries) = std::fs::read_dir(base) {
+      for entry in entries.filter_map(|entry| entry.ok()) {
+        let path = entry.path();
+        if path.extension().and_then(|extension| extension.to_str()) == Some("vpk")
+          && path
+            .file_name()
+            .and_then(|name| name.to_str())
+            .is_some_and(|name| name.starts_with(&prefix))
+        {
+          push_existing_unique(out, path);
+        }
+      }
+    }
+  }
+}
+
 fn collect_vpk_files_for_mod(mod_id: &str, installed_vpks: Option<Vec<String>>) -> Vec<PathBuf> {
   let mut vpk_files: Vec<PathBuf> = Vec::new();
 
@@ -43,38 +125,7 @@ fn collect_vpk_files_for_mod(mod_id: &str, installed_vpks: Option<Vec<String>>) 
         .filter(|v| !v.is_empty())
         .or(installed_vpks)
         .unwrap_or_default();
-      for vpk_name in &known_vpks {
-        let vpk_path = addons_path.join(vpk_name);
-        if vpk_path.exists() {
-          vpk_files.push(vpk_path);
-        }
-      }
-
-      let prefix = format!("{mod_id}_");
-      let scan_dirs: Vec<PathBuf> = std::iter::once(addons_path.clone())
-        .chain(
-          std::fs::read_dir(&addons_path)
-            .into_iter()
-            .flatten()
-            .filter_map(|e| e.ok())
-            .map(|e| e.path())
-            .filter(|p| p.is_dir()),
-        )
-        .collect();
-
-      for dir in scan_dirs {
-        if let Ok(entries) = std::fs::read_dir(&dir) {
-          for entry in entries.filter_map(|e| e.ok()) {
-            let path = entry.path();
-            if path.extension().and_then(|e| e.to_str()) == Some("vpk")
-              && let Some(name) = path.file_name().and_then(|n| n.to_str())
-              && name.starts_with(&prefix)
-            {
-              vpk_files.push(path);
-            }
-          }
-        }
-      }
+      collect_game_vpks_for_mod(&addons_path, mod_id, &known_vpks, &mut vpk_files);
     }
   }
   drop(mod_manager);
@@ -155,38 +206,7 @@ pub async fn detect_mod_heroes_batch(
               .filter(|v| !v.is_empty())
               .or(req.installed_vpks)
               .unwrap_or_default();
-            for vpk_name in &known_vpks {
-              let vpk_path = addons_path.join(vpk_name);
-              if vpk_path.exists() {
-                vpk_files.push(vpk_path);
-              }
-            }
-
-            let prefix = format!("{}_", req.mod_id);
-            let scan_dirs: Vec<PathBuf> = std::iter::once(addons_path.clone())
-              .chain(
-                std::fs::read_dir(&addons_path)
-                  .into_iter()
-                  .flatten()
-                  .filter_map(|e| e.ok())
-                  .map(|e| e.path())
-                  .filter(|p| p.is_dir()),
-              )
-              .collect();
-
-            for dir in scan_dirs {
-              if let Ok(entries) = std::fs::read_dir(&dir) {
-                for entry in entries.filter_map(|e| e.ok()) {
-                  let path = entry.path();
-                  if path.extension().and_then(|e| e.to_str()) == Some("vpk")
-                    && let Some(name) = path.file_name().and_then(|n| n.to_str())
-                    && name.starts_with(&prefix)
-                  {
-                    vpk_files.push(path);
-                  }
-                }
-              }
-            }
+            collect_game_vpks_for_mod(&addons_path, &req.mod_id, &known_vpks, &mut vpk_files);
           }
         }
 
