@@ -35,10 +35,12 @@ export const envSchema = z.object({
         .map((id) => id.trim())
         .filter(Boolean),
     ),
-  QUICKANSWER_ASSET_CHANNEL_ID: z.string().optional(),
+  QUICKANSWER_ASSET_CHANNEL_ID: z.string().default("1527730609651318874"),
   QUICKANSWER_EDITOR_ROLE_IDS: z
     .string()
-    .default("")
+    .default(
+      "1486214760952234105,1499784538056818699,1491132377282514978,1509603829396672754,1322369692962390119,1322369688445124719",
+    )
     .transform((val) =>
       val
         .split(",")
@@ -47,7 +49,7 @@ export const envSchema = z.object({
     ),
   QUICKANSWER_USER_ROLE_IDS: z
     .string()
-    .default("")
+    .default("1414647916777177220,1413097123204829214")
     .transform((val) =>
       val
         .split(",")
