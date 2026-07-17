@@ -36,6 +36,16 @@ fn sanitize_archive_name(name: &str) -> Result<String, Error> {
   }
 }
 
+/// A VPK value is safe to join onto a shard directory and persist in the
+/// manifest only if it is exactly one normal filename component: no separators,
+/// no `.`/`..`, no absolute or parent-directory forms.
+fn is_plain_vpk_filename(name: &str) -> bool {
+  !name.is_empty()
+    && !name.contains('/')
+    && !name.contains('\\')
+    && std::path::Path::new(name).file_name().and_then(|f| f.to_str()) == Some(name)
+}
+
 fn validate_download_url(url: &str) -> Result<(), Error> {
   let parsed = reqwest::Url::parse(url)
     .map_err(|e| Error::InvalidInput(format!("Invalid download URL: {e}")))?;
@@ -565,6 +575,12 @@ pub async fn register_analyzed_mod(
       original_vpk_names: Vec::new(),
     };
     mod_manager.get_mod_repository_mut().add_mod(deadlock_mod);
+  }
+
+  if let Some(bad) = installed_vpks.iter().find(|vpk| !is_plain_vpk_filename(vpk)) {
+    return Err(Error::InvalidInput(format!(
+      "Invalid analyzed VPK filename: {bad}"
+    )));
   }
 
   let discovered_shard = (1..=crate::mod_manager::shard::MAX_SHARDS)
@@ -1228,7 +1244,18 @@ pub async fn switch_mod_download_variant(
     let dest = addons_path.join(&prefixed);
     let backup = if dest.is_file() {
       let backup = deployment_backup_dir.join(original);
-      filesystem.copy_file(&dest, &backup)?;
+      if let Err(error) = filesystem.copy_file(&dest, &backup) {
+        // Roll back the variants already deployed in earlier iterations so a
+        // backup failure cannot leave the mod with a mix of old and new files.
+        let rollback_failures = rollback_prefixed_deployment(&deployed);
+        if rollback_failures.is_empty() {
+          return Err(error);
+        }
+        return Err(Error::RollbackFailed(format!(
+          "Failed to back up existing variant: {error}. Failed to restore: {}",
+          rollback_failures.join("; ")
+        )));
+      }
       Some(backup)
     } else {
       None

@@ -118,7 +118,15 @@ impl AddonsBackupManager {
         backup_path.display()
       )));
     }
-    fs::create_dir_all(&backup_path)
+    // Build into a hidden staging directory and only rename it to the final
+    // (listable) name after validation succeeds, so an interrupted or invalid
+    // backup can never be listed, restored, deleted, or pruned. The name does
+    // not start with `addons-backup-`, so `list_backups` ignores it.
+    let staging_path = backup_dir.join(format!(".{filename}.staging"));
+    if staging_path.exists() {
+      let _ = fs::remove_dir_all(&staging_path);
+    }
+    fs::create_dir_all(&staging_path)
       .map_err(|e| Error::BackupCreationFailed(format!("Failed to create backup folder: {e}")))?;
 
     let citadel_path = addons_path.parent().ok_or_else(|| {
@@ -144,7 +152,8 @@ impl AddonsBackupManager {
       let root_name = source_root
         .file_name()
         .ok_or_else(|| Error::BackupCreationFailed("Addon shard root has no name".to_string()))?;
-      let copied = Self::copy_tree(source_root, &backup_path.join(root_name)).map_err(|e| {
+      let copied = Self::copy_tree(source_root, &staging_path.join(root_name)).map_err(|e| {
+        let _ = fs::remove_dir_all(&staging_path);
         Error::BackupCreationFailed(format!(
           "Failed to copy addon folder {}: {e}",
           source_root.display()
@@ -163,10 +172,18 @@ impl AddonsBackupManager {
       );
     }
 
-    if let Err(error) = Self::validate_snapshot(&backup_path) {
-      let _ = fs::remove_dir_all(&backup_path);
+    if let Err(error) = Self::validate_snapshot(&staging_path) {
+      let _ = fs::remove_dir_all(&staging_path);
       return Err(Error::BackupCreationFailed(format!(
         "Created backup is inconsistent: {error}"
+      )));
+    }
+
+    // Publish the validated snapshot atomically.
+    if let Err(error) = fs::rename(&staging_path, &backup_path) {
+      let _ = fs::remove_dir_all(&staging_path);
+      return Err(Error::BackupCreationFailed(format!(
+        "Failed to finalize backup: {error}"
       )));
     }
 
@@ -592,11 +609,16 @@ impl AddonsBackupManager {
       )));
     }
 
-    fs::remove_dir_all(&staging_path).map_err(|error| {
-      Error::BackupRestoreFailed(format!(
-        "Backup restored, but failed to remove restore staging directory: {error}"
-      ))
-    })?;
+    // The restore is already committed: the backup roots are active and the
+    // old roots only survive as leftovers in the staging dir. Removing them is
+    // best-effort cleanup and must never turn a successful restore into a
+    // failure.
+    if let Err(error) = fs::remove_dir_all(&staging_path) {
+      log::warn!(
+        "Backup restored successfully, but failed to remove restore staging directory {}: {error}",
+        staging_path.display()
+      );
+    }
 
     log::info!("Backup restored successfully");
     Ok(())

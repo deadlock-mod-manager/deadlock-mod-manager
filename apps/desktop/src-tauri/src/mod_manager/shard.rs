@@ -87,12 +87,19 @@ pub fn is_valid_search_path(path: &str) -> bool {
 
   match (segments.next(), segments.next()) {
     (None, None) => true,
-    (Some(profile), None) => {
-      !profile.is_empty()
-        && Path::new(profile)
-          .components()
-          .all(|component| matches!(component, std::path::Component::Normal(_)))
-    }
+    (Some(profile), None) => is_gameinfo_safe_profile(profile),
     _ => false,
   }
+}
+
+/// Profile/server folder names are interpolated verbatim into `Game
+/// citadel/addonsN/<profile>` lines in gameinfo.gi. Restrict them to a strict
+/// allowlist so characters that are safe path components but unsafe in the KV
+/// syntax (spaces, quotes, braces, control chars) can never reach that file.
+/// Created folders are already sanitized to this set; this is defense in depth.
+fn is_gameinfo_safe_profile(profile: &str) -> bool {
+  !profile.is_empty()
+    && profile
+      .chars()
+      .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
 }

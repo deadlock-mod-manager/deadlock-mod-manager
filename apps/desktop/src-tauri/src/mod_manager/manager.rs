@@ -178,11 +178,12 @@ impl ModManager {
     let base = self.get_addons_path(profile_folder.as_deref())?;
 
     let mut max_shard = 1u32;
-    if let Ok(manifest) = ProfileVpkManifest::load(&base) {
-      for entry in manifest.mods.values() {
-        if entry.enabled && !entry.current_vpks.is_empty() {
-          max_shard = max_shard.max(entry.shard.max(1));
-        }
+    // A missing manifest loads as an empty default; a malformed or unsupported
+    // one must fail loudly rather than silently emit truncated search paths.
+    let manifest = ProfileVpkManifest::load(&base)?;
+    for entry in manifest.mods.values() {
+      if entry.enabled && !entry.current_vpks.is_empty() {
+        max_shard = max_shard.max(entry.shard.max(1));
       }
     }
 
@@ -527,14 +528,26 @@ impl ModManager {
     log::info!("Adding mod to managed mods list");
     self.mod_repository.add_mod(deadlock_mod.clone());
 
-    // If the mod has an install order, trigger a reorder to maintain correct sequence
+    // If the mod has an install order, trigger a reorder to maintain correct
+    // sequence. The install itself is already committed above, so a reorder
+    // failure must not be reported as an install failure; keep the enabled mod
+    // and just log a warning.
     if deadlock_mod.install_order.is_some() {
       log::info!("Mod has install order, triggering reorder to maintain sequence");
-      self.reorder_all_mods_for_profile(profile_folder.clone())?;
-      let reordered_manifest = ProfileVpkManifest::load(&addons_path)?;
-      if let Some(entry) = reordered_manifest.mods.get(&deadlock_mod.id) {
-        deadlock_mod.installed_vpks = entry.current_vpks.clone();
-        self.mod_repository.add_mod(deadlock_mod.clone());
+      match self.reorder_all_mods_for_profile(profile_folder.clone()) {
+        Ok(()) => {
+          let reordered_manifest = ProfileVpkManifest::load(&addons_path)?;
+          if let Some(entry) = reordered_manifest.mods.get(&deadlock_mod.id) {
+            deadlock_mod.installed_vpks = entry.current_vpks.clone();
+            self.mod_repository.add_mod(deadlock_mod.clone());
+          }
+        }
+        Err(e) => {
+          log::warn!(
+            "Mod {} installed successfully but post-install reorder failed: {e}",
+            deadlock_mod.id
+          );
+        }
       }
     }
 
