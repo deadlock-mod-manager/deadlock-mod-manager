@@ -778,9 +778,12 @@ export const createProfilesSlice: StateCreator<
 
       // Enabled VPKs follow the pattern pak##_dir.vpk
       // Disabled (prefixed) VPKs follow the pattern {modid}_*.vpk
-      const enabledVpkPattern = /^pak\d+_dir\.vpk$/i;
-      const enabledVpkSet = new Set(
+      const enabledVpkPattern = /^(?:addons(?:[2-9]|10)\/)?pak\d+_dir\.vpk$/i;
+      const enabledVpkLocators = new Set(
         allVpks.filter((vpk) => enabledVpkPattern.test(vpk)),
+      );
+      const enabledVpkFilenames = new Set(
+        Array.from(enabledVpkLocators, (vpk) => vpk.split("/").pop() ?? vpk),
       );
 
       const updatedEnabledMods: Record<string, ModProfileEntry> = {};
@@ -792,9 +795,14 @@ export const createProfilesSlice: StateCreator<
 
         if (manifestEntry) {
           const currentVpks = manifestEntry.currentVpks ?? [];
+          const shardPrefix =
+            manifestEntry.shard > 1 ? "addons" + manifestEntry.shard + "/" : "";
           const hasEnabledVpks =
             manifestEntry.enabled &&
-            currentVpks.some((vpk) => enabledVpkSet.has(vpk));
+            currentVpks.length > 0 &&
+            currentVpks.every((vpk) =>
+              enabledVpkLocators.has(shardPrefix + vpk),
+            );
 
           if (hasEnabledVpks) {
             updatedEnabledMods[mod.remoteId] = {
@@ -816,8 +824,9 @@ export const createProfilesSlice: StateCreator<
                   profileId,
                   remoteId: mod.remoteId,
                   currentVpks,
-                  enabledVpkCount: enabledVpkSet.size,
-                  enabledVpkSample: Array.from(enabledVpkSet).slice(0, 10),
+                  shard: manifestEntry.shard,
+                  enabledVpkCount: enabledVpkLocators.size,
+                  enabledVpkSample: Array.from(enabledVpkLocators).slice(0, 10),
                 })
                 .warn(
                   "Manifest entry marked enabled but no matching enabled VPKs on disk; treating as downloaded",
@@ -841,7 +850,7 @@ export const createProfilesSlice: StateCreator<
         const enabledVpksForMod =
           mod.installedVpks?.filter((installedVpk) => {
             const filename = installedVpk.split(/[\\/]/).pop() || "";
-            return enabledVpkSet.has(filename);
+            return enabledVpkFilenames.has(filename);
           }) ?? [];
 
         const hasVpksInProfile =

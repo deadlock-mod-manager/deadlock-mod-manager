@@ -1,8 +1,8 @@
 use crate::app_runtime::AppHandle;
 use crate::download_manager::DownloadTask;
 use crate::errors::Error;
-use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use crate::mod_manager::Mod;
+use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use serde::Deserialize;
 use tauri::{Emitter, Manager};
 
@@ -84,32 +84,24 @@ pub async fn delete_profile_folder(profile_folder: String) -> Result<(), Error> 
     .get_game_path()
     .ok_or(Error::GamePathNotSet)?;
 
-  let addons_path = game_path.join("game").join("citadel").join("addons");
-  let profile_path = addons_path.join(&profile_folder);
-
-  if !profile_path.exists() {
-    log::warn!("Profile folder does not exist: {profile_path:?}");
-    return Ok(());
+  let base = game_path
+    .join("game")
+    .join("citadel")
+    .join("addons")
+    .join(&profile_folder);
+  let mut removed = false;
+  for shard_index in 1..=crate::mod_manager::shard::MAX_SHARDS {
+    let profile_path = crate::mod_manager::shard::shard_dir(&base, shard_index);
+    if profile_path.exists() {
+      std::fs::remove_dir_all(&profile_path)?;
+      removed = true;
+      log::info!("Deleted profile shard folder: {profile_path:?}");
+    }
   }
 
-  let addons_canonical = addons_path
-    .canonicalize()
-    .map_err(|_| Error::UnauthorizedPath("Unable to resolve addons directory".to_string()))?;
-  let profile_canonical = profile_path.canonicalize().map_err(|_| {
-    Error::UnauthorizedPath(format!(
-      "Unable to resolve profile path: {}",
-      profile_path.display()
-    ))
-  })?;
-
-  if !profile_canonical.starts_with(&addons_canonical) {
-    return Err(Error::UnauthorizedPath(
-      "Profile folder must be within addons directory".to_string(),
-    ));
+  if !removed {
+    log::warn!("Profile folder does not exist in any addon shard: {profile_folder}");
   }
-
-  std::fs::remove_dir_all(&profile_canonical)?;
-  log::info!("Deleted profile folder: {profile_canonical:?}");
 
   Ok(())
 }
@@ -119,15 +111,7 @@ pub async fn switch_profile(profile_folder: Option<String>) -> Result<(), Error>
   log::info!("Switching to profile folder: {profile_folder:?}");
 
   let mut mod_manager = MANAGER.lock().unwrap();
-  let game_path = mod_manager
-    .get_steam_manager()
-    .get_game_path()
-    .ok_or(Error::GamePathNotSet)?
-    .clone();
-
-  mod_manager
-    .get_config_manager_mut()
-    .update_mod_path(&game_path, profile_folder)?;
+  mod_manager.apply_profile_gameinfo(profile_folder)?;
 
   log::info!("Successfully switched profile");
   Ok(())
@@ -198,15 +182,33 @@ pub async fn get_profile_installed_vpks(
 
   let mut vpk_files = Vec::new();
 
-  for entry in std::fs::read_dir(&addons_path)? {
-    let path = entry?.path();
+  let mut dirs = vec![(1, addons_path.clone())];
+  for shard_index in 2..=crate::mod_manager::shard::MAX_SHARDS {
+    let shard_dir = crate::mod_manager::shard::shard_dir(&addons_path, shard_index);
+    if shard_dir.exists() {
+      dirs.push((shard_index, shard_dir));
+    }
+  }
 
-    if path.is_file()
-      && let Some(file_name) = path.file_name().and_then(|n| n.to_str())
-      && file_name.ends_with(".vpk")
-    {
-      vpk_files.push(file_name.to_string());
-      log::debug!("Found VPK file: {file_name}");
+  for (shard_index, dir) in dirs {
+    for entry in std::fs::read_dir(&dir)? {
+      let path = entry?.path();
+
+      if path.is_file()
+        && let Some(file_name) = path.file_name().and_then(|n| n.to_str())
+        && file_name.ends_with(".vpk")
+      {
+        let locator = if shard_index == 1 {
+          file_name.to_string()
+        } else {
+          format!(
+            "{}/{file_name}",
+            crate::mod_manager::shard::shard_root_name(shard_index)
+          )
+        };
+        vpk_files.push(locator);
+        log::debug!("Found VPK file: {file_name}");
+      }
     }
   }
 
@@ -214,39 +216,47 @@ pub async fn get_profile_installed_vpks(
   Ok(vpk_files)
 }
 
+struct ResolvedProfileVpk {
+  path: std::path::PathBuf,
+  profile_base: std::path::PathBuf,
+  shard: u32,
+  filename: String,
+}
+
 fn resolve_profile_vpk_path(
   profile_folder: Option<String>,
   vpk_name: &str,
-) -> Result<std::path::PathBuf, Error> {
-  if vpk_name.is_empty()
-    || vpk_name.contains('/')
-    || vpk_name.contains('\\')
-    || vpk_name.contains("..")
-    || !vpk_name.to_lowercase().ends_with(".vpk")
-  {
+) -> Result<ResolvedProfileVpk, Error> {
+  if vpk_name.is_empty() || vpk_name.contains('\\') || vpk_name.contains("..") {
     return Err(Error::InvalidInput(format!(
       "Invalid VPK file name: {vpk_name}"
     )));
   }
 
   let mod_manager = MANAGER.lock().unwrap();
-  let game_path = mod_manager
-    .get_steam_manager()
-    .get_game_path()
-    .ok_or(Error::GamePathNotSet)?;
-
-  let addons_path = game_path.join("game").join("citadel").join("addons");
-  let target_dir = if let Some(folder) = profile_folder {
-    addons_path.join(folder)
-  } else {
-    addons_path.clone()
+  let base = mod_manager.get_addons_path(profile_folder.as_deref())?;
+  let (shard_index, filename) = match vpk_name.split_once('/') {
+    Some((root, filename)) => {
+      let shard_index = root
+        .strip_prefix("addons")
+        .and_then(|value| value.parse::<u32>().ok())
+        .filter(|value| (2..=crate::mod_manager::shard::MAX_SHARDS).contains(value))
+        .ok_or_else(|| Error::InvalidInput(format!("Invalid VPK shard locator: {vpk_name}")))?;
+      (shard_index, filename)
+    }
+    None => (1, vpk_name),
   };
+  if filename.is_empty() || filename.contains('/') || !filename.to_lowercase().ends_with(".vpk") {
+    return Err(Error::InvalidInput(format!(
+      "Invalid VPK file name: {vpk_name}"
+    )));
+  }
 
-  let vpk_path = target_dir.join(vpk_name);
-
-  let addons_canonical = addons_path
+  let target_dir = crate::mod_manager::shard::shard_dir(&base, shard_index);
+  let vpk_path = target_dir.join(filename);
+  let target_canonical = target_dir
     .canonicalize()
-    .map_err(|_| Error::UnauthorizedPath("Unable to resolve addons directory".to_string()))?;
+    .map_err(|_| Error::UnauthorizedPath("Unable to resolve addon shard directory".to_string()))?;
   let vpk_canonical = vpk_path.canonicalize().map_err(|_| {
     Error::UnauthorizedPath(format!(
       "Unable to resolve VPK path: {}",
@@ -254,13 +264,18 @@ fn resolve_profile_vpk_path(
     ))
   })?;
 
-  if !vpk_canonical.starts_with(&addons_canonical) {
+  if !vpk_canonical.starts_with(&target_canonical) {
     return Err(Error::UnauthorizedPath(
       "VPK file must be within addons directory".to_string(),
     ));
   }
 
-  Ok(vpk_canonical)
+  Ok(ResolvedProfileVpk {
+    path: vpk_canonical,
+    profile_base: base,
+    shard: shard_index,
+    filename: filename.to_string(),
+  })
 }
 
 #[tauri::command]
@@ -269,9 +284,24 @@ pub async fn delete_profile_vpk(
   vpk_name: String,
 ) -> Result<(), Error> {
   log::info!("Deleting VPK {vpk_name} from profile {profile_folder:?}");
-  let vpk_path = resolve_profile_vpk_path(profile_folder, &vpk_name)?;
-  std::fs::remove_file(&vpk_path)?;
-  log::info!("Deleted VPK file: {vpk_path:?}");
+  let resolved = resolve_profile_vpk_path(profile_folder, &vpk_name)?;
+  let manifest = ProfileVpkManifest::load(&resolved.profile_base)?;
+  let is_managed = manifest.mods.values().any(|entry| {
+    if entry.enabled {
+      entry.shard == resolved.shard && entry.current_vpks.contains(&resolved.filename)
+    } else {
+      resolved.shard == 1 && entry.disabled_vpks.contains(&resolved.filename)
+    }
+  });
+  if is_managed {
+    return Err(Error::ModInvalid(format!(
+      "Cannot delete managed VPK {} as an unmatched file; refresh the VPK scan",
+      resolved.filename
+    )));
+  }
+
+  std::fs::remove_file(&resolved.path)?;
+  log::info!("Deleted unmanaged VPK file: {:?}", resolved.path);
   Ok(())
 }
 
@@ -281,8 +311,8 @@ pub async fn show_profile_vpk_in_folder(
   vpk_name: String,
 ) -> Result<(), Error> {
   log::info!("Revealing VPK {vpk_name} from profile {profile_folder:?}");
-  let vpk_path = resolve_profile_vpk_path(profile_folder, &vpk_name)?;
-  crate::utils::show_in_folder(vpk_path.to_string_lossy().as_ref())
+  let resolved = resolve_profile_vpk_path(profile_folder, &vpk_name)?;
+  crate::utils::show_in_folder(resolved.path.to_string_lossy().as_ref())
 }
 
 #[tauri::command]
@@ -572,9 +602,7 @@ pub async fn get_profile_vpk_manifest(
 }
 
 #[tauri::command]
-pub async fn hydrate_mods_from_manifest(
-  profile_folder: Option<String>,
-) -> Result<usize, Error> {
+pub async fn hydrate_mods_from_manifest(profile_folder: Option<String>) -> Result<usize, Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.hydrate_mods_from_manifest(profile_folder)
 }
@@ -619,6 +647,7 @@ pub async fn seed_profile_vpk_manifest_entries(
         entry.current_vpks,
         entry.original_vpk_names,
         entry.order,
+        1,
       );
     } else {
       manifest.mark_disabled(&entry.mod_id, entry.disabled_vpks, entry.original_vpk_names);

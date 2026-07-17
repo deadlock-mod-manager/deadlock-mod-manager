@@ -8,8 +8,9 @@ use crate::mod_manager::{
   game_config_manager::GameConfigManager,
   game_process_manager::GameProcessManager,
   mod_repository::{Mod, ModRepository},
+  shard,
   steam_manager::SteamManager,
-  vpk_manager::{MissingVpkPolicy, VpkManager},
+  vpk_manager::{MissingVpkPolicy, ShardPlacement, VpkManager},
   vpk_manifest::{ProfileVpkManifest, ProfileVpkManifestEntry},
 };
 use log;
@@ -18,8 +19,6 @@ use std::{
   path::{Component, Path, PathBuf},
 };
 use tauri::Manager;
-
-const UNORDERED_FALLBACK_ORDER: u32 = u32::MAX;
 
 pub struct ModManager {
   steam_manager: SteamManager,
@@ -124,16 +123,143 @@ impl ModManager {
         .all(|component| matches!(component, Component::Normal(_)))
   }
 
+  /// Pick the last active shard when it has room, otherwise append a new shard.
+  /// Filling holes in older shards would move a newly installed mod ahead of
+  /// mods in later search paths and silently change load order.
+  pub(crate) fn choose_shard_for(
+    base: &Path,
+    current_mod: Option<(u32, u32)>,
+    needed: u32,
+  ) -> Result<u32, Error> {
+    if needed > shard::SHARD_CAPACITY {
+      return Err(Error::ModInvalid(format!(
+        "This mod has {needed} VPK files, more than the {} the engine allows per addon folder.",
+        shard::SHARD_CAPACITY
+      )));
+    }
+    if let Some((current_shard, current_count)) = current_mod {
+      let current_dir = shard::shard_dir(base, current_shard);
+      let used_without_mod =
+        VpkManager::count_enabled_vpks(&current_dir).saturating_sub(current_count);
+      if shard::SHARD_CAPACITY.saturating_sub(used_without_mod) >= needed {
+        return Ok(current_shard);
+      }
+    }
+
+    let mut last_active_shard = 1;
+    for shard_index in 2..=shard::MAX_SHARDS {
+      let dir = shard::shard_dir(base, shard_index);
+      if VpkManager::count_enabled_vpks(&dir) > 0 {
+        last_active_shard = shard_index;
+      }
+    }
+
+    let active_dir = shard::shard_dir(base, last_active_shard);
+    let used = VpkManager::count_enabled_vpks(&active_dir);
+    if shard::SHARD_CAPACITY.saturating_sub(used) >= needed {
+      return Ok(last_active_shard);
+    }
+    if last_active_shard < shard::MAX_SHARDS {
+      return Ok(last_active_shard + 1);
+    }
+
+    Err(Error::ModInvalid(format!(
+      "Cannot enable this mod: all {} addon shard folders are full ({} files each). Disable some mods first.",
+      shard::MAX_SHARDS,
+      shard::SHARD_CAPACITY
+    )))
+  }
+
+  /// Ordered `Game` search paths required for a profile. Always includes shard 1.
+  pub fn profile_gameinfo_paths(
+    &self,
+    profile_folder: Option<String>,
+  ) -> Result<Vec<String>, Error> {
+    let base = self.get_addons_path(profile_folder.as_deref())?;
+
+    let mut max_shard = 1u32;
+    if let Ok(manifest) = ProfileVpkManifest::load(&base) {
+      for entry in manifest.mods.values() {
+        if entry.enabled && !entry.current_vpks.is_empty() {
+          max_shard = max_shard.max(entry.shard.max(1));
+        }
+      }
+    }
+
+    for shard_index in 2..=shard::MAX_SHARDS {
+      let dir = shard::shard_dir(&base, shard_index);
+      if dir.exists() && VpkManager::count_enabled_vpks(&dir) > 0 {
+        max_shard = max_shard.max(shard_index);
+      }
+    }
+
+    Ok(
+      (1..=max_shard)
+        .map(|s| shard::shard_search_path(profile_folder.as_deref(), s))
+        .collect(),
+    )
+  }
+
+  fn ensure_profile_sharding(&mut self, profile_folder: Option<String>) -> Result<(), Error> {
+    let base = self.get_addons_path(profile_folder.as_deref())?;
+    let needs_reorder = (1..=shard::MAX_SHARDS).any(|shard_index| {
+      let dir = shard::shard_dir(&base, shard_index);
+      VpkManager::count_enabled_vpks(&dir) > shard::SHARD_CAPACITY
+        || VpkManager::has_out_of_range_enabled_vpks(&dir)
+    });
+    if needs_reorder {
+      log::info!("Migrating legacy VPK numbering into addon shards for profile {profile_folder:?}");
+      self.reorder_all_mods_for_profile(profile_folder)?;
+    }
+    Ok(())
+  }
+
+  /// Write the modded gameinfo.gi search paths for a single profile, expanding
+  /// it into one `Game` line per shard.
+  pub fn apply_profile_gameinfo(&mut self, profile_folder: Option<String>) -> Result<(), Error> {
+    let game_path = self
+      .steam_manager
+      .get_game_path()
+      .ok_or(Error::GamePathNotSet)?
+      .clone();
+    self.ensure_profile_sharding(profile_folder.clone())?;
+    let paths = self.profile_gameinfo_paths(profile_folder)?;
+    self.config_manager.update_mod_paths(&game_path, &paths)
+  }
+
+  /// Write layered gameinfo.gi search paths: the server folder's shards first
+  /// (higher precedence), then the active profile's shards.
+  pub fn apply_layered_gameinfo(
+    &mut self,
+    server_folder: Option<String>,
+    profile_folder: Option<String>,
+  ) -> Result<(), Error> {
+    let game_path = self
+      .steam_manager
+      .get_game_path()
+      .ok_or(Error::GamePathNotSet)?
+      .clone();
+
+    let mut paths = Vec::new();
+    if let Some(server) = server_folder {
+      self.ensure_profile_sharding(Some(server.clone()))?;
+      paths.extend(self.profile_gameinfo_paths(Some(server))?);
+    }
+    self.ensure_profile_sharding(profile_folder.clone())?;
+    paths.extend(self.profile_gameinfo_paths(profile_folder)?);
+
+    self.config_manager.update_mod_paths(&game_path, &paths)
+  }
+
   fn vpk_filenames(vpks: &[String]) -> Vec<String> {
-    vpks
-      .iter()
-      .map(|vpk| {
-        std::path::Path::new(vpk)
-          .file_name()
-          .map(|f| f.to_string_lossy().to_string())
-          .unwrap_or_else(|| vpk.clone())
-      })
-      .collect()
+    vpks.iter().map(|vpk| Self::vpk_filename(vpk)).collect()
+  }
+
+  fn vpk_filename(vpk: &str) -> String {
+    std::path::Path::new(vpk)
+      .file_name()
+      .map(|filename| filename.to_string_lossy().to_string())
+      .unwrap_or_else(|| vpk.to_string())
   }
 
   fn existing_vpk_filenames(addons_path: &Path, vpks: &[String]) -> Vec<String> {
@@ -172,11 +298,13 @@ impl ModManager {
   }
 
   fn reconcile_manifest_entry_for_reorder(
-    addons_path: &Path,
+    base: &Path,
     entry: &mut ProfileVpkManifestEntry,
     fallback_vpks: &[String],
   ) -> bool {
-    let resolved_vpks = Self::resolve_reorder_vpks(addons_path, &entry.current_vpks, fallback_vpks);
+    let enabled_dir = shard::shard_dir(base, entry.shard.max(1));
+    let resolved_vpks =
+      Self::resolve_reorder_vpks(&enabled_dir, &entry.current_vpks, fallback_vpks);
     let can_enable_from_fallback = !fallback_vpks.is_empty();
     let mut changed = false;
 
@@ -203,6 +331,20 @@ impl ModManager {
     }
 
     changed
+  }
+
+  fn apply_placements_to_manifest(
+    manifest: &mut ProfileVpkManifest,
+    placements: &[ShardPlacement],
+  ) {
+    for placement in placements {
+      if let Some(entry) = manifest.mods.get_mut(&placement.mod_id) {
+        entry.enabled = true;
+        entry.shard = placement.shard;
+        entry.current_vpks = placement.vpks.clone();
+        entry.disabled_vpks.clear();
+      }
+    }
   }
 
   pub fn stop_game(&mut self) -> Result<(), Error> {
@@ -243,7 +385,7 @@ impl ModManager {
     profile_folder: Option<String>,
   ) -> Result<(), Error> {
     // Ensure game path is found
-    let game_path = self.find_game()?;
+    self.find_game()?;
 
     // Toggle mods based on vanilla flag
     if vanilla {
@@ -251,10 +393,7 @@ impl ModManager {
       self.toggle_mods(vanilla)?;
     } else {
       log::info!("Enabling mods for profile: {:?}...", profile_folder);
-      // Use update_mod_path to set the correct profile folder path
-      self
-        .config_manager
-        .update_mod_path(&game_path, profile_folder)?;
+      self.apply_profile_gameinfo(profile_folder)?;
     }
 
     // Launch the game through Steam
@@ -319,10 +458,16 @@ impl ModManager {
 
     log::info!("Found {} prefixed VPKs, enabling them", prefixed_vpks.len());
 
-    let installed_vpks =
-      self
-        .vpk_manager
-        .enable_vpks(&addons_path, &deadlock_mod.id, &prefixed_vpks)?;
+    let mut manifest = ProfileVpkManifest::load(&addons_path)?;
+    let target_shard = Self::choose_shard_for(&addons_path, None, prefixed_vpks.len() as u32)?;
+    let enabled_dir = shard::shard_dir(&addons_path, target_shard);
+
+    let installed_vpks = self.vpk_manager.enable_vpks_in(
+      &addons_path,
+      &enabled_dir,
+      &deadlock_mod.id,
+      &prefixed_vpks,
+    )?;
 
     deadlock_mod.installed_vpks = installed_vpks;
     deadlock_mod.original_vpk_names = prefixed_vpks
@@ -355,22 +500,42 @@ impl ModManager {
       });
     }
 
-    log::info!("Adding mod to managed mods list");
-    self.mod_repository.add_mod(deadlock_mod.clone());
-
-    let mut manifest = ProfileVpkManifest::load(&addons_path)?;
     manifest.mark_enabled(
       &deadlock_mod.id,
       deadlock_mod.installed_vpks.clone(),
       deadlock_mod.original_vpk_names.clone(),
       deadlock_mod.install_order,
+      target_shard,
     );
-    manifest.save(&addons_path)?;
+    if let Err(save_error) = manifest.save(&addons_path) {
+      let rollback = self.vpk_manager.disable_vpks_in(
+        &enabled_dir,
+        &addons_path,
+        &deadlock_mod.id,
+        &deadlock_mod.installed_vpks,
+        &deadlock_mod.original_vpk_names,
+        MissingVpkPolicy::Strict,
+      );
+      return match rollback {
+        Ok(_) => Err(save_error),
+        Err(rollback_error) => Err(Error::RollbackFailed(format!(
+          "Failed to save manifest: {save_error}. Failed to disable newly enabled VPKs: {rollback_error}"
+        ))),
+      };
+    }
+
+    log::info!("Adding mod to managed mods list");
+    self.mod_repository.add_mod(deadlock_mod.clone());
 
     // If the mod has an install order, trigger a reorder to maintain correct sequence
     if deadlock_mod.install_order.is_some() {
       log::info!("Mod has install order, triggering reorder to maintain sequence");
-      self.reorder_all_mods_for_profile(profile_folder)?;
+      self.reorder_all_mods_for_profile(profile_folder.clone())?;
+      let reordered_manifest = ProfileVpkManifest::load(&addons_path)?;
+      if let Some(entry) = reordered_manifest.mods.get(&deadlock_mod.id) {
+        deadlock_mod.installed_vpks = entry.current_vpks.clone();
+        self.mod_repository.add_mod(deadlock_mod.clone());
+      }
     }
 
     log::info!("Mod installation (enable) completed successfully");
@@ -434,7 +599,13 @@ impl ModManager {
       )));
     };
 
-    let prefixed_vpks = self.vpk_manager.disable_vpks(
+    // Enabled VPKs live in the mod's shard; the disabled prefixed copies always
+    // go back to the profile base dir.
+    let shard_index = manifest_entry.as_ref().map(|e| e.shard.max(1)).unwrap_or(1);
+    let enabled_dir = shard::shard_dir(&addons_path, shard_index);
+
+    let prefixed_vpks = self.vpk_manager.disable_vpks_in(
+      &enabled_dir,
       &addons_path,
       &mod_id,
       &installed_vpks,
@@ -443,7 +614,21 @@ impl ModManager {
     )?;
 
     manifest.mark_disabled(&mod_id, prefixed_vpks.clone(), original_vpk_names);
-    manifest.save(&addons_path)?;
+    if let Err(save_error) = manifest.save(&addons_path) {
+      let rollback =
+        self
+          .vpk_manager
+          .enable_vpks_in(&addons_path, &enabled_dir, &mod_id, &prefixed_vpks);
+      return match rollback {
+        Ok(_) => Err(save_error),
+        Err(rollback_error) => Err(Error::RollbackFailed(format!(
+          "Failed to save manifest: {save_error}. Failed to re-enable VPKs: {rollback_error}"
+        ))),
+      };
+    }
+
+    // The mod's shard may now be empty; drop stray empty shard folders.
+    VpkManager::prune_empty_shard_dirs(&addons_path);
 
     if let Some(mut local_mod) = self.mod_repository.get_mod(&mod_id).cloned() {
       local_mod.installed_vpks = Vec::new();
@@ -466,41 +651,7 @@ impl ModManager {
   ) -> Result<(), Error> {
     log::info!("Purging mod: {mod_id} (profile: {profile_folder:?})");
 
-    let addons_path = self.get_addons_path(profile_folder.as_deref())?;
-    let mut manifest = ProfileVpkManifest::load(&addons_path)?;
-    let mut vpks_to_remove = manifest
-      .mods
-      .get(&mod_id)
-      .map(|entry| entry.current_vpks.clone())
-      .unwrap_or_default();
-
-    if !addons_path.exists() {
-      return Err(Error::GamePathNotSet);
-    }
-
-    if let Some(local_mod) = self.mod_repository.get_mod(&mod_id).cloned() {
-      log::info!("Mod found in memory: {}", local_mod.name);
-      vpks_to_remove.extend(local_mod.installed_vpks);
-    } else {
-      vpks_to_remove.extend(vpks);
-    }
-
-    let mut seen_vpks = HashSet::new();
-    vpks_to_remove.retain(|vpk| seen_vpks.insert(vpk.clone()));
-
-    if !vpks_to_remove.is_empty() {
-      self
-        .vpk_manager
-        .remove_vpks(&vpks_to_remove, &addons_path)?;
-    }
-    self
-      .vpk_manager
-      .remove_vpks_by_mod_id(&addons_path, &mod_id)?;
-
-    manifest.remove_mod(&mod_id);
-    manifest.save(&addons_path)?;
-
-    self.mod_repository.remove_mod(&mod_id);
+    self.remove_mod_vpks_for_update(&mod_id, &vpks, profile_folder)?;
 
     let mods_path = self.get_mods_store_path()?;
     let user_mod_dir = mods_path.join(&mod_id);
@@ -513,6 +664,162 @@ impl ModManager {
     }
 
     Ok(())
+  }
+
+  /// Remove a mod's VPKs transactionally for updates and permanent purges.
+  ///
+  /// Files are first renamed to non-VPK staging names. The manifest is then
+  /// committed without the mod, and only after that are the staged files
+  /// deleted. A failed manifest write restores every staged file.
+  pub fn remove_mod_vpks_for_update(
+    &mut self,
+    mod_id: &str,
+    fallback_vpks: &[String],
+    profile_folder: Option<String>,
+  ) -> Result<(usize, Option<u32>), Error> {
+    if !Self::is_safe_profile_folder(mod_id) {
+      return Err(Error::InvalidInput(format!("Invalid mod ID: {mod_id}")));
+    }
+
+    let addons_path = self.get_addons_path(profile_folder.as_deref())?;
+    let mut manifest = ProfileVpkManifest::load(&addons_path)?;
+    let manifest_entry = manifest.mods.get(mod_id).cloned();
+    let install_order = manifest_entry.as_ref().and_then(|entry| entry.order);
+    let staging_dir = addons_path.join(format!(".dmm-update-{mod_id}"));
+    let mut sources = HashSet::new();
+
+    if let Some(entry) = &manifest_entry {
+      if entry.enabled {
+        let enabled_dir = shard::shard_dir(&addons_path, entry.shard.max(1));
+        for vpk in &entry.current_vpks {
+          let path = enabled_dir.join(Self::vpk_filename(vpk));
+          if path.is_file() {
+            sources.insert(path);
+          }
+        }
+      } else {
+        for vpk in &entry.disabled_vpks {
+          let path = addons_path.join(Self::vpk_filename(vpk));
+          if path.is_file() {
+            sources.insert(path);
+          }
+        }
+      }
+    }
+
+    for prefixed_vpk in self.vpk_manager.find_prefixed_vpks(&addons_path, mod_id)? {
+      let path = addons_path.join(prefixed_vpk);
+      if path.is_file() {
+        sources.insert(path);
+      }
+    }
+
+    let mut fallback_names = fallback_vpks.to_vec();
+    if let Some(repository_mod) = self.mod_repository.get_mod(mod_id) {
+      fallback_names.extend(repository_mod.installed_vpks.clone());
+    }
+    for fallback in fallback_names {
+      let normalized = fallback.replace('\\', "/");
+      let (shard_index, filename) = normalized
+        .split_once('/')
+        .and_then(|(root, filename)| {
+          root
+            .strip_prefix("addons")
+            .and_then(|value| value.parse::<u32>().ok())
+            .filter(|value| (2..=shard::MAX_SHARDS).contains(value))
+            .map(|value| (value, filename.to_string()))
+        })
+        .unwrap_or_else(|| (1, Self::vpk_filename(&normalized)));
+      let path = shard::shard_dir(&addons_path, shard_index).join(filename);
+      if path.is_file() {
+        sources.insert(path);
+      }
+    }
+
+    if sources.is_empty() && manifest_entry.is_none() {
+      self.mod_repository.remove_mod(mod_id);
+      return Ok((0, install_order));
+    }
+
+    std::fs::create_dir_all(&staging_dir)?;
+
+    let mut staged: Vec<(PathBuf, PathBuf)> = Vec::new();
+    let mut ordered_sources: Vec<PathBuf> = sources.into_iter().collect();
+    ordered_sources.sort();
+    for source in ordered_sources {
+      let source_shard = (1..=shard::MAX_SHARDS)
+        .find(|shard_index| {
+          source
+            .parent()
+            .is_some_and(|parent| parent == shard::shard_dir(&addons_path, *shard_index))
+        })
+        .ok_or_else(|| {
+          Error::ModInvalid(format!(
+            "Cannot stage VPK outside profile shards: {}",
+            source.display()
+          ))
+        })?;
+      let filename = source
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| Error::ModInvalid("VPK filename is not valid UTF-8".to_string()))?;
+      let staged_path = staging_dir.join(format!("s{source_shard}__{filename}.pending"));
+      if let Err(error) = std::fs::rename(&source, &staged_path) {
+        let mut rollback_failures = Vec::new();
+        for (staged_path, source) in staged.into_iter().rev() {
+          if let Err(rollback_error) = std::fs::rename(&staged_path, &source) {
+            rollback_failures.push(format!(
+              "{} -> {}: {rollback_error}",
+              staged_path.display(),
+              source.display()
+            ));
+          }
+        }
+        let _ = std::fs::remove_dir(&staging_dir);
+        if !rollback_failures.is_empty() {
+          return Err(Error::RollbackFailed(format!(
+            "Failed to stage {}: {error}. Failed to restore: {}",
+            source.display(),
+            rollback_failures.join(", ")
+          )));
+        }
+        return Err(error.into());
+      }
+      staged.push((staged_path, source));
+    }
+
+    manifest.remove_mod(mod_id);
+    if let Err(error) = manifest.save(&addons_path) {
+      let mut rollback_failures = Vec::new();
+      for (staged_path, source) in staged.into_iter().rev() {
+        if let Err(rollback_error) = std::fs::rename(&staged_path, &source) {
+          rollback_failures.push(format!(
+            "{} -> {}: {rollback_error}",
+            staged_path.display(),
+            source.display()
+          ));
+        }
+      }
+      let _ = std::fs::remove_dir(&staging_dir);
+      if rollback_failures.is_empty() {
+        return Err(error);
+      }
+      return Err(Error::RollbackFailed(format!(
+        "Failed to save manifest: {error}. Failed to restore: {}",
+        rollback_failures.join(", ")
+      )));
+    }
+
+    let removed_count = staged.len();
+    if let Err(error) = std::fs::remove_dir_all(&staging_dir) {
+      log::warn!(
+        "Updated manifest but failed to remove non-VPK update staging directory {staging_dir:?}: {error}"
+      );
+    }
+    self.mod_repository.remove_mod(mod_id);
+    VpkManager::prune_empty_shard_dirs(&addons_path);
+
+    Ok((removed_count, install_order))
   }
 
   /// Reorder all mods based on their current install_order for a specific profile
@@ -528,49 +835,85 @@ impl ModManager {
       manifest_changed |= Self::reconcile_manifest_entry_for_reorder(&addons_path, entry, &[]);
 
       if entry.enabled && !entry.current_vpks.is_empty() {
+        let first_vpk_number = entry
+          .current_vpks
+          .iter()
+          .filter_map(|vpk| VpkManager::enabled_vpk_number(&Self::vpk_filename(vpk)))
+          .min()
+          .unwrap_or(u32::MAX);
+        let sort_key = match entry.order {
+          Some(order) => (0, order, first_vpk_number),
+          None => (1, entry.shard.max(1), first_vpk_number),
+        };
         ordered_manifest_entries.push((
           mod_id.clone(),
-          entry.order.unwrap_or(UNORDERED_FALLBACK_ORDER),
+          sort_key,
+          entry.shard.max(1),
           entry.current_vpks.clone(),
         ));
       }
     }
-    ordered_manifest_entries.sort_by_key(|(_, order, _)| *order);
+    ordered_manifest_entries.sort_by_key(|(_, sort_key, _, _)| *sort_key);
 
-    let mod_vpk_mapping: Vec<(String, Vec<String>)> = ordered_manifest_entries
+    let mod_vpk_mapping: Vec<(String, u32, Vec<String>)> = ordered_manifest_entries
       .into_iter()
-      .map(|(mod_id, _, vpks)| (mod_id, vpks))
+      .map(|(mod_id, _, shard_index, vpks)| (mod_id, shard_index, vpks))
       .collect();
 
     if mod_vpk_mapping.is_empty() {
       if manifest_changed {
         manifest.save(&addons_path)?;
       }
-      log::info!("No enabled manifest VPKs need reordering");
+      let has_unmanaged_enabled_vpks = (1..=shard::MAX_SHARDS).any(|shard_index| {
+        VpkManager::count_enabled_vpks(&shard::shard_dir(&addons_path, shard_index)) > 0
+      });
+      if has_unmanaged_enabled_vpks {
+        self.vpk_manager.reorder_vpks_sharded(&[], &addons_path)?;
+        log::info!("Reordered unmanaged enabled VPKs without manifest entries");
+      } else {
+        log::info!("No enabled VPKs need reordering");
+      }
       return Ok(());
     }
 
-    let updated_vpk_mappings = self
-      .vpk_manager
-      .reorder_vpks(&mod_vpk_mapping, &addons_path)?;
+    let placements = self.vpk_manager.reorder_vpks_sharded_with_commit(
+      &mod_vpk_mapping,
+      &addons_path,
+      |placements| {
+        Self::apply_placements_to_manifest(&mut manifest, placements);
+        manifest.save(&addons_path)
+      },
+    )?;
 
-    for (mod_id, new_vpk_names) in updated_vpk_mappings {
-      if let Some(entry) = manifest.mods.get_mut(&mod_id) {
-        entry.enabled = true;
-        entry.current_vpks = new_vpk_names.clone();
-        entry.disabled_vpks.clear();
-      }
-
-      if let Some(mut mod_entry) = self.mod_repository.remove_mod(&mod_id) {
-        mod_entry.installed_vpks = new_vpk_names;
+    for placement in placements {
+      if let Some(mut mod_entry) = self.mod_repository.remove_mod(&placement.mod_id) {
+        mod_entry.installed_vpks = placement.vpks;
         self.mod_repository.add_mod(mod_entry);
       }
     }
 
-    manifest.save(&addons_path)?;
-
     log::info!("All mods reordered successfully");
     Ok(())
+  }
+
+  pub(crate) fn reorder_profile_after_variant_change(
+    &mut self,
+    profile_folder: Option<String>,
+    mod_id: &str,
+  ) -> Result<Vec<String>, Error> {
+    self.reorder_all_mods_for_profile(profile_folder.clone())?;
+    let addons_path = self.get_addons_path(profile_folder.as_deref())?;
+    let manifest = ProfileVpkManifest::load(&addons_path)?;
+    manifest
+      .mods
+      .get(mod_id)
+      .filter(|entry| entry.enabled)
+      .map(|entry| entry.current_vpks.clone())
+      .ok_or_else(|| {
+        Error::ModInvalid(format!(
+          "Mod {mod_id} is missing from the manifest after reordering"
+        ))
+      })
   }
 
   /// Reorder mods based on their remote IDs and current VPK files
@@ -618,7 +961,7 @@ impl ModManager {
         Self::reconcile_manifest_entry_for_reorder(&addons_path, entry, &vpk_files);
 
       if entry.enabled && !entry.current_vpks.is_empty() {
-        mod_vpk_mapping.push((remote_id, entry.current_vpks.clone()));
+        mod_vpk_mapping.push((remote_id, entry.shard.max(1), entry.current_vpks.clone()));
       }
     }
 
@@ -630,25 +973,25 @@ impl ModManager {
       return Ok(Vec::new());
     }
 
-    // Reorder the VPK files and get the updated mappings
-    let updated_mappings = self
-      .vpk_manager
-      .reorder_vpks(&mod_vpk_mapping, &addons_path)?;
+    // Reorder the VPK files and get the updated placements
+    let placements = self.vpk_manager.reorder_vpks_sharded_with_commit(
+      &mod_vpk_mapping,
+      &addons_path,
+      |placements| {
+        Self::apply_placements_to_manifest(&mut manifest, placements);
+        manifest.save(&addons_path)
+      },
+    )?;
 
-    for (remote_id, new_vpks) in &updated_mappings {
-      if let Some(entry) = manifest.mods.get_mut(remote_id) {
-        entry.enabled = true;
-        entry.current_vpks = new_vpks.clone();
-        entry.disabled_vpks.clear();
-      }
-
-      if let Some(mut mod_entry) = self.mod_repository.remove_mod(remote_id) {
-        mod_entry.installed_vpks = new_vpks.clone();
+    let mut updated_mappings = Vec::new();
+    for placement in placements {
+      if let Some(mut mod_entry) = self.mod_repository.remove_mod(&placement.mod_id) {
+        mod_entry.installed_vpks = placement.vpks.clone();
         self.mod_repository.add_mod(mod_entry);
       }
-    }
 
-    manifest.save(&addons_path)?;
+      updated_mappings.push((placement.mod_id, placement.vpks));
+    }
 
     log::info!("Mod reordering by remote ID completed successfully");
     Ok(updated_mappings)
@@ -684,7 +1027,11 @@ impl ModManager {
         }
         manifest_changed |= Self::reconcile_manifest_entry_for_reorder(&addons_path, entry, &[]);
         if entry.enabled && !entry.current_vpks.is_empty() {
-          mod_vpk_mapping.push((mod_id.clone(), entry.current_vpks.clone()));
+          mod_vpk_mapping.push((
+            mod_id.clone(),
+            entry.shard.max(1),
+            entry.current_vpks.clone(),
+          ));
         }
       }
 
@@ -708,25 +1055,24 @@ impl ModManager {
     }
 
     // Reorder the VPK files
-    let updated_vpk_mappings = self
-      .vpk_manager
-      .reorder_vpks(&mod_vpk_mapping, &addons_path)?;
+    let placements = self.vpk_manager.reorder_vpks_sharded_with_commit(
+      &mod_vpk_mapping,
+      &addons_path,
+      |placements| {
+        Self::apply_placements_to_manifest(&mut manifest, placements);
+        manifest.save(&addons_path)
+      },
+    )?;
 
     // Update mod data with new VPK names and re-add to repository
     let mut result_mods = Vec::new();
-    for (mod_id, new_vpk_names) in updated_vpk_mappings {
-      if let Some(entry) = manifest.mods.get_mut(&mod_id) {
-        entry.enabled = true;
-        entry.current_vpks = new_vpk_names.clone();
-        entry.disabled_vpks.clear();
-      }
-
+    for placement in placements {
       if let Some(index) = updated_mods
         .iter()
-        .position(|mod_entry| mod_entry.id == mod_id)
+        .position(|mod_entry| mod_entry.id == placement.mod_id)
       {
         let mut deadlock_mod = updated_mods.remove(index);
-        deadlock_mod.installed_vpks = new_vpk_names;
+        deadlock_mod.installed_vpks = placement.vpks;
         self.mod_repository.add_mod(deadlock_mod.clone());
         result_mods.push(deadlock_mod);
       }
@@ -736,8 +1082,6 @@ impl ModManager {
       self.mod_repository.add_mod(deadlock_mod);
     }
 
-    manifest.save(&addons_path)?;
-
     log::info!("Successfully reordered {} mods", result_mods.len());
     Ok(result_mods)
   }
@@ -745,8 +1089,11 @@ impl ModManager {
   pub fn clear_mods(&mut self, profile_folder: Option<String>) -> Result<(), Error> {
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
 
-    self.vpk_manager.clear_all_vpks(&addons_path)?;
-    ProfileVpkManifest::default().save(&addons_path)?;
+    self
+      .vpk_manager
+      .clear_all_vpks_with_commit(&addons_path, || {
+        ProfileVpkManifest::default().save(&addons_path)
+      })?;
     Ok(())
   }
 
@@ -895,9 +1242,7 @@ impl ModManager {
     }
 
     if hydrated > 0 {
-      log::info!(
-        "Hydrated {hydrated} mods from manifest for profile {profile_folder:?}"
-      );
+      log::info!("Hydrated {hydrated} mods from manifest for profile {profile_folder:?}");
     }
 
     Ok(hydrated)
@@ -918,36 +1263,39 @@ impl ModManager {
 
     // Use VPK info from frontend first, then try repository, then look for prefixed VPKs
     let manifest = ProfileVpkManifest::load(&addons_path)?;
-    let (installed_vpks, original_names) = if let Some(entry) = manifest.mods.get(&mod_id)
+    let target_shard = manifest
+      .mods
+      .get(&mod_id)
+      .map(|e| e.shard.max(1))
+      .unwrap_or(1);
+    let enabled_dir = shard::shard_dir(&addons_path, target_shard);
+    let installed_vpks = if let Some(entry) = manifest.mods.get(&mod_id)
       && !entry.current_vpks.is_empty()
     {
       log::info!("Using manifest VPKs for replacement");
-      (entry.current_vpks.clone(), entry.original_vpk_names.clone())
+      entry.current_vpks.clone()
     } else if !installed_vpks_from_frontend.is_empty() {
       log::info!("Using installed VPKs from frontend");
-      (installed_vpks_from_frontend, Vec::new())
+      installed_vpks_from_frontend
     } else if let Some(mod_info) = self.mod_repository.get_mod(&mod_id) {
       log::info!("Found mod in repository: {mod_id}");
-      (
-        mod_info.installed_vpks.clone(),
-        mod_info.original_vpk_names.clone(),
-      )
+      mod_info.installed_vpks.clone()
     } else {
       log::info!(
         "Mod not in repository and no installed VPKs provided, will find VPKs by prefix: {mod_id}"
       );
       // Mod not in repository - it might be disabled or the repository wasn't loaded
       // We'll let replace_vpks find the prefixed VPKs directly
-      (Vec::new(), Vec::new())
+      Vec::new()
     };
 
     // Use VpkManager to replace the files
     self.vpk_manager.replace_vpks(
       &addons_path,
+      &enabled_dir,
       &mod_id,
       &source_vpk_paths,
       &installed_vpks,
-      &original_names,
     )?;
 
     let new_original_names: Vec<String> = source_vpk_paths
@@ -957,12 +1305,16 @@ impl ModManager {
 
     let mut manifest = ProfileVpkManifest::load(&addons_path)?;
     if installed_vpks.is_empty() {
-      let prefixed_vpks = self
-        .vpk_manager
-        .find_prefixed_vpks(&addons_path, &mod_id)?;
+      let prefixed_vpks = self.vpk_manager.find_prefixed_vpks(&addons_path, &mod_id)?;
       manifest.mark_disabled(&mod_id, prefixed_vpks, new_original_names);
     } else {
-      manifest.mark_enabled(&mod_id, installed_vpks, new_original_names, None);
+      manifest.mark_enabled(
+        &mod_id,
+        installed_vpks,
+        new_original_names,
+        None,
+        target_shard,
+      );
     }
     manifest.save(&addons_path)?;
 

@@ -21,25 +21,30 @@ pub async fn show_mod_in_store(mod_id: String) -> Result<(), Error> {
 
 #[tauri::command]
 pub async fn show_mod_in_game(
+  mod_id: String,
   vpk_files: Vec<String>,
   profile_folder: Option<String>,
   _is_map: Option<bool>,
 ) -> Result<(), Error> {
   let mod_manager = MANAGER.lock().unwrap();
-  let game_path = mod_manager
-    .get_steam_manager()
-    .get_game_path()
-    .ok_or(Error::GamePathNotSet)?;
-
-  let target_path = if let Some(ref folder) = profile_folder {
-    game_path
-      .join("game")
-      .join("citadel")
-      .join("addons")
-      .join(folder)
-  } else {
-    game_path.join("game").join("citadel").join("addons")
-  };
+  let base = mod_manager.get_addons_path(profile_folder.as_deref())?;
+  let manifest = crate::mod_manager::vpk_manifest::ProfileVpkManifest::load(&base)?;
+  let shard_index = manifest
+    .mods
+    .get(&mod_id)
+    .map(|entry| entry.shard.max(1))
+    .or_else(|| {
+      (1..=crate::mod_manager::shard::MAX_SHARDS).find(|shard_index| {
+        let dir = crate::mod_manager::shard::shard_dir(&base, *shard_index);
+        vpk_files.iter().any(|vpk| {
+          std::path::Path::new(vpk)
+            .file_name()
+            .is_some_and(|filename| dir.join(filename).is_file())
+        })
+      })
+    })
+    .unwrap_or(1);
+  let target_path = crate::mod_manager::shard::shard_dir(&base, shard_index);
 
   if !target_path.exists() {
     return Err(Error::GamePathNotSet);
