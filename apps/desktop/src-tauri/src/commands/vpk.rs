@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
+use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 use crate::mod_manager::{AddonAnalyzer, AnalyzeAddonsResult};
-use crate::app_runtime::AppHandle;
 use vpk_parser::{VpkParseOptions, VpkParsed, VpkParser};
 
 use super::state::MANAGER;
@@ -77,11 +77,17 @@ pub async fn check_addons_exist(profile_folder: Option<String>) -> Result<bool, 
     return Ok(false);
   }
 
-  for entry in std::fs::read_dir(addons_path)? {
-    let entry = entry?;
-    if entry.path().extension().and_then(|e| e.to_str()) == Some("vpk") {
-      log::info!("Found VPK file in addons folder");
-      return Ok(true);
+  for shard_index in 1..=crate::mod_manager::shard::MAX_SHARDS {
+    let shard_path = crate::mod_manager::shard::shard_dir(&addons_path, shard_index);
+    if !shard_path.exists() {
+      continue;
+    }
+    for entry in std::fs::read_dir(shard_path)? {
+      let entry = entry?;
+      if entry.path().extension().and_then(|e| e.to_str()) == Some("vpk") {
+        log::info!("Found VPK file in addons folder");
+        return Ok(true);
+      }
     }
   }
 
