@@ -1548,4 +1548,20 @@ mod tests {
     assert!(!entry.enabled);
     assert_eq!(entry.current_vpks, vec!["pak01_dir.vpk".to_string()]);
   }
+
+  #[test]
+  fn choose_shard_appends_new_shard_when_current_is_full() {
+    let temp = tempfile::tempdir().unwrap();
+    let addons_path = temp.path().join("citadel").join("addons");
+    fs::create_dir_all(&addons_path).unwrap();
+
+    // Fill the base shard (citadel/addons) to the engine's 99-file capacity.
+    for i in 1..=99u32 {
+      write_vpk(&addons_path, &format!("pak{i:02}_dir.vpk"));
+    }
+
+    // A newly enabled mod must overflow into shard 2 rather than being rejected.
+    let chosen = ModManager::choose_shard_for(&addons_path, None, 1).unwrap();
+    assert_eq!(chosen, 2);
+  }
 }
