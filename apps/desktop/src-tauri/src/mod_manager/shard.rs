@@ -103,3 +103,49 @@ fn is_gameinfo_safe_profile(profile: &str) -> bool {
       .chars()
       .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
 }
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use std::path::Path;
+
+  #[test]
+  fn shard_dir_resolves_sibling_addon_folders() {
+    // Default profile: base is `citadel/addons`; shard N is the sibling
+    // `citadel/addonsN`.
+    let base = Path::new("/game/citadel/addons");
+    assert_eq!(shard_dir(base, 1), base);
+    assert_eq!(shard_dir(base, 2), Path::new("/game/citadel/addons2"));
+    assert_eq!(shard_dir(base, 10), Path::new("/game/citadel/addons10"));
+
+    // Named profile: shard N lives under `citadel/addonsN/<profile>`.
+    let profile = Path::new("/game/citadel/addons/profile_x");
+    assert_eq!(shard_dir(profile, 1), profile);
+    assert_eq!(
+      shard_dir(profile, 2),
+      Path::new("/game/citadel/addons2/profile_x")
+    );
+  }
+
+  #[test]
+  fn valid_search_paths_accept_safe_profiles_and_shards() {
+    assert!(is_valid_search_path("citadel/addons"));
+    assert!(is_valid_search_path("citadel/addons/profile_123_my-mod"));
+    assert!(is_valid_search_path("citadel/addons2/server_abc"));
+    assert!(is_valid_search_path("citadel/addons10/profile_x"));
+  }
+
+  #[test]
+  fn valid_search_paths_reject_unsafe_or_out_of_range() {
+    // Hardened allowlist: characters that survive `Path::components()` but break
+    // gameinfo.gi KV syntax must be rejected.
+    assert!(!is_valid_search_path("citadel/addons/evil profile")); // space
+    assert!(!is_valid_search_path("citadel/addons/pro\"file")); // quote
+    assert!(!is_valid_search_path("citadel/addons/pro{file}")); // braces
+    assert!(!is_valid_search_path("citadel/addons/../escape")); // traversal
+    assert!(!is_valid_search_path("citadel/addons/a/b")); // nested
+    assert!(!is_valid_search_path("citadel/addons11/profile")); // shard > MAX
+    assert!(!is_valid_search_path("citadel/addons1/profile")); // shard 1 must be "addons"
+    assert!(!is_valid_search_path("other/addons/profile")); // wrong root
+  }
+}
