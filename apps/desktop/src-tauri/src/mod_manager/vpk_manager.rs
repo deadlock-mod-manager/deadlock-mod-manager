@@ -1503,4 +1503,98 @@ mod tests {
     assert!(temp.path().join("123456_first.vpk").exists());
     assert!(!temp.path().join("pak01_dir.vpk").exists());
   }
+
+  /// The core feature: more than 99 enabled VPKs are spread across sibling
+  /// `addons`/`addons2` folders, bypassing the engine's 99-file-per-directory
+  /// limit while preserving global load order.
+  #[test]
+  fn sharding_spreads_more_than_99_vpks_across_addon_folders() {
+    let temp = tempfile::tempdir().unwrap();
+    let addons_path = addons_base(&temp);
+    let addons_path = addons_path.as_path();
+
+    // 150 single-file mods, currently all crammed into the base folder
+    // (the legacy "over the 99 limit" state on disk).
+    let mut ordered = Vec::new();
+    for i in 1..=150u32 {
+      let name = format!("pak{i:02}_dir.vpk");
+      write_vpk(addons_path, &name);
+      ordered.push((format!("mod{i}"), 1u32, vec![name]));
+    }
+
+    let manager = VpkManager::new();
+    let placements = manager.reorder_vpks_sharded(&ordered, addons_path).unwrap();
+
+    let shard1 = shard::shard_dir(addons_path, 1);
+    let shard2 = shard::shard_dir(addons_path, 2);
+
+    // Shard 1 (citadel/addons) fills to capacity, shard 2 (citadel/addons2)
+    // takes the overflow.
+    assert_eq!(VpkManager::count_enabled_vpks(&shard1), 99);
+    assert_eq!(VpkManager::count_enabled_vpks(&shard2), 51);
+
+    // Load order preserved: mods 1..99 in shard 1, 100..150 in shard 2.
+    assert_eq!(placements.len(), 150);
+    assert_eq!(placements[0].shard, 1);
+    assert_eq!(placements[98].shard, 1);
+    assert_eq!(placements[99].shard, 2);
+    assert_eq!(placements[149].shard, 2);
+    assert!(shard2.join("pak01_dir.vpk").is_file());
+    assert!(shard2.join("pak51_dir.vpk").is_file());
+    // No mod is split: shard 2 numbering restarts at pak01.
+    assert!(!shard2.join("pak100_dir.vpk").exists());
+  }
+
+  /// Fix regression guard: disabling a mod whose prefixed destination already
+  /// exists (a newly staged variant) must remove the active copy and keep the
+  /// pre-existing variant intact — never clobber it via a bogus rollback rename.
+  #[test]
+  fn disable_with_existing_prefixed_destination_removes_active_copy() {
+    let temp = tempfile::tempdir().unwrap();
+    let addons_path = addons_base(&temp);
+    let addons_path = addons_path.as_path();
+    write_vpk(addons_path, "pak01_dir.vpk"); // active
+    write_vpk(addons_path, "123456_original.vpk"); // pre-existing staged variant
+
+    let manager = VpkManager::new();
+    let out = manager
+      .disable_vpks_in(
+        addons_path,
+        addons_path,
+        "123456",
+        &["pak01_dir.vpk".to_string()],
+        &["original.vpk".to_string()],
+        MissingVpkPolicy::Strict,
+      )
+      .unwrap();
+
+    assert_eq!(out, vec!["123456_original.vpk".to_string()]);
+    assert!(!addons_path.join("pak01_dir.vpk").exists()); // active removed
+    assert!(addons_path.join("123456_original.vpk").exists()); // preserved
+  }
+
+  /// Fix regression guard: enabling must reject a missing source up front
+  /// instead of warn-and-skip, so a mod can never be left partially enabled.
+  #[test]
+  fn enable_rejects_missing_source_before_renaming() {
+    let temp = tempfile::tempdir().unwrap();
+    let addons_path = addons_base(&temp);
+    let addons_path = addons_path.as_path();
+    write_vpk(addons_path, "123456_a.vpk"); // 123456_b.vpk is intentionally missing
+
+    let manager = VpkManager::new();
+    let err = manager
+      .enable_vpks_in(
+        addons_path,
+        addons_path,
+        "123456",
+        &["123456_a.vpk".to_string(), "123456_b.vpk".to_string()],
+      )
+      .unwrap_err();
+
+    assert!(err.to_string().contains("source VPK files are missing"));
+    // Nothing was renamed: existing source untouched, no pak## created.
+    assert!(addons_path.join("123456_a.vpk").exists());
+    assert!(!addons_path.join("pak01_dir.vpk").exists());
+  }
 }
