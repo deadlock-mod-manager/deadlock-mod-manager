@@ -258,12 +258,34 @@ impl AddonAnalyzer {
 
     // Find all VPK files in the addons directory
     let mut vpk_file_paths = Vec::new();
-    if let Err(e) = self.find_vpk_file_paths(&addons_path, &mut vpk_file_paths) {
+    let scan_result = if profile_folder.is_some() {
+      self.find_vpk_file_paths(&addons_path, &mut vpk_file_paths)
+    } else {
+      Self::find_vpk_file_paths_shallow(&addons_path, &mut vpk_file_paths)
+    };
+    if let Err(e) = scan_result {
       return Ok(AnalyzeAddonsResult {
         addons: Vec::new(),
         total_count: 0,
         errors: vec![format!("Failed to scan addons directory: {e}")],
       });
+    }
+    for shard_index in 2..=crate::mod_manager::shard::MAX_SHARDS {
+      let shard_path = crate::mod_manager::shard::shard_dir(&addons_path, shard_index);
+      let scan_result = if profile_folder.is_some() {
+        self.find_vpk_file_paths(&shard_path, &mut vpk_file_paths)
+      } else {
+        Self::find_vpk_file_paths_shallow(&shard_path, &mut vpk_file_paths)
+      };
+      if shard_path.exists()
+        && let Err(e) = scan_result
+      {
+        return Ok(AnalyzeAddonsResult {
+          addons: Vec::new(),
+          total_count: 0,
+          errors: vec![format!("Failed to scan addon shard {shard_index}: {e}")],
+        });
+      }
     }
 
     // Separate prefixed VPKs from non-prefixed ones
@@ -560,6 +582,20 @@ impl AddonAnalyzer {
         } else if path.extension().and_then(|e| e.to_str()) == Some("vpk") {
           vpk_paths.push(path);
         }
+      }
+    }
+    Ok(())
+  }
+
+  fn find_vpk_file_paths_shallow(dir: &PathBuf, vpk_paths: &mut Vec<PathBuf>) -> Result<(), Error> {
+    if !dir.is_dir() {
+      return Ok(());
+    }
+    for entry in std::fs::read_dir(dir)? {
+      let path = entry?.path();
+      if path.is_file() && path.extension().and_then(|extension| extension.to_str()) == Some("vpk")
+      {
+        vpk_paths.push(path);
       }
     }
     Ok(())
