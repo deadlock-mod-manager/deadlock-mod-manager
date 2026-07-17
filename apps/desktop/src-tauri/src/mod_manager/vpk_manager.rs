@@ -776,14 +776,25 @@ impl VpkManager {
       return Ok(Vec::new());
     }
 
+    // Reject any missing source before touching the filesystem so a mod can
+    // never be left partially enabled with silently dropped VPKs.
+    let missing: Vec<String> = prefixed_vpks
+      .iter()
+      .filter(|name| !disabled_dir.join(name).exists())
+      .cloned()
+      .collect();
+    if !missing.is_empty() {
+      return Err(Error::ModInvalid(format!(
+        "Cannot enable mod {mod_id} because source VPK files are missing: {}",
+        missing.join(", ")
+      )));
+    }
+
     if enabled_dir != disabled_dir {
       fs::create_dir_all(enabled_dir)?;
     }
 
-    let source_count = prefixed_vpks
-      .iter()
-      .filter(|name| disabled_dir.join(name).exists())
-      .count() as u32;
+    let source_count = prefixed_vpks.len() as u32;
     let used = Self::count_enabled_vpks(enabled_dir);
     if used + source_count > shard::SHARD_CAPACITY {
       return Err(Error::ModInvalid(format!(
@@ -798,10 +809,6 @@ impl VpkManager {
 
     for prefixed_name in prefixed_vpks {
       let old_path = disabled_dir.join(prefixed_name);
-      if !old_path.exists() {
-        log::warn!("Prefixed VPK not found: {prefixed_name}");
-        continue;
-      }
 
       // Find next available number in the target shard (fills gaps)
       let next_number = self.find_next_available_vpk_number(enabled_dir)?;
@@ -949,20 +956,26 @@ impl VpkManager {
             fs_retry::map_file_lock_error("disable", &vpk_name, e),
           ));
         }
-      } else if let Err(e) =
-        fs_retry::retry_file_operation("rename", &vpk_name, || fs::rename(&old_path, &new_path))
-      {
-        log::error!(
-          "Failed to disable VPK {vpk_name}: {e}, rolling back {count} already-renamed file(s)",
-          count = renamed.len()
-        );
-        return Err(Self::rollback_path_renames_on_failure(
-          renamed,
-          fs_retry::map_file_lock_error("disable", &vpk_name, e),
-        ));
+        // This was a deletion, not a rename: `new_path` already existed and is
+        // not something we can restore, so it must not enter the rollback list.
+        // Rolling it back would move the pre-existing staged variant into the
+        // active slot and corrupt state.
+      } else {
+        if let Err(e) =
+          fs_retry::retry_file_operation("rename", &vpk_name, || fs::rename(&old_path, &new_path))
+        {
+          log::error!(
+            "Failed to disable VPK {vpk_name}: {e}, rolling back {count} already-renamed file(s)",
+            count = renamed.len()
+          );
+          return Err(Self::rollback_path_renames_on_failure(
+            renamed,
+            fs_retry::map_file_lock_error("disable", &vpk_name, e),
+          ));
+        }
+        renamed.push((new_path, old_path));
       }
 
-      renamed.push((new_path, old_path));
       prefixed_out.push(prefixed_name.clone());
       log::info!("Disabled VPK for mod {mod_id}: {vpk_name} -> {prefixed_name}");
     }

@@ -34,14 +34,20 @@ pub async fn show_mod_in_game(
     .get(&mod_id)
     .map(|entry| entry.shard.max(1))
     .or_else(|| {
-      (1..=crate::mod_manager::shard::MAX_SHARDS).find(|shard_index| {
-        let dir = crate::mod_manager::shard::shard_dir(&base, *shard_index);
-        vpk_files.iter().any(|vpk| {
-          std::path::Path::new(vpk)
-            .file_name()
-            .is_some_and(|filename| dir.join(filename).is_file())
+      // No manifest entry: only trust a shard when exactly one contains the
+      // mod's files. If several shards share a matching basename (or none do),
+      // fall back to the profile base rather than revealing an arbitrary shard.
+      let matching: Vec<u32> = (1..=crate::mod_manager::shard::MAX_SHARDS)
+        .filter(|shard_index| {
+          let dir = crate::mod_manager::shard::shard_dir(&base, *shard_index);
+          vpk_files.iter().any(|vpk| {
+            std::path::Path::new(vpk)
+              .file_name()
+              .is_some_and(|filename| dir.join(filename).is_file())
+          })
         })
-      })
+        .collect();
+      (matching.len() == 1).then(|| matching[0])
     })
     .unwrap_or(1);
   let target_path = crate::mod_manager::shard::shard_dir(&base, shard_index);
