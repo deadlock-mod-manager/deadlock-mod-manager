@@ -112,7 +112,7 @@ jobs:
           ls -la ./cef-artifacts
 
       - name: Upload signed regular artifacts to release
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           RELEASE_ID: ${{ inputs.release_id }}
         with:
@@ -144,7 +144,7 @@ jobs:
 
       - name: Upload signed CEF artifacts to release
         if: steps.download-cef.outcome == 'success'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           RELEASE_ID: ${{ inputs.release_id }}
         with:
@@ -208,7 +208,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Upload latest.json to release (Windows-only nightly)
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           RELEASE_ID: ${{ inputs.release_id }}
           NIGHTLY_VERSION: ${{ inputs.nightly_version }}
@@ -307,7 +307,7 @@ jobs:
       contents: write
     steps:
       - name: Publish nightly release
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           RELEASE_ID: ${{ inputs.release_id }}
         with:

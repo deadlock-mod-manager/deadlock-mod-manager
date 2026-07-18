@@ -138,7 +138,7 @@ jobs:
 
       - name: Create test release
         id: create-release
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           TAG_NAME: ${{ steps.version.outputs.tag_name }}
           BRANCH: ${{ needs.check-label.outputs.branch }}
@@ -274,7 +274,7 @@ jobs:
 
       - name: Upload Flatpak to release (Linux)
         if: matrix.platform == 'ubuntu-24.04'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           RELEASE_ID: ${{ needs.create-test-release.outputs.release_id }}
         with:
@@ -330,7 +330,7 @@ jobs:
 
       - name: Upload signed artifacts to release
         if: matrix.platform == 'windows-latest'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           RELEASE_ID: ${{ needs.create-test-release.outputs.release_id }}
         with:
@@ -379,7 +379,7 @@ jobs:
 
     steps:
       - name: Delete failed test release
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           release_id: ${{ needs.create-test-release.outputs.release_id }}
         with:
