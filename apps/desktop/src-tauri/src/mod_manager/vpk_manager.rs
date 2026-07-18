@@ -388,9 +388,45 @@ impl VpkManager {
         })?;
       let original_dir = shard::shard_dir(base, shard_index);
       fs::create_dir_all(&original_dir)?;
-      fs::rename(&staged_path, original_dir.join(filename))?;
+      let mut destination = original_dir.join(filename);
+      if destination.exists() {
+        // If a hard crash interrupted the placement phase, some files were
+        // already written to their new `pak##` names while others are still
+        // staged here. Restoring a staged file onto an already-placed name
+        // would overwrite and destroy another mod's VPK, so recover it into a
+        // free slot instead. No content is lost; the manifest (never committed
+        // for an interrupted reorder) is reconciled from disk on the next
+        // reorder.
+        let recovered = Self::next_free_enabled_vpk_path(&original_dir);
+        log::warn!(
+          "Reorder recovery: {} already exists, restoring staged file as {}",
+          destination.display(),
+          recovered.display()
+        );
+        destination = recovered;
+      }
+      fs::rename(&staged_path, &destination)?;
     }
     Ok(())
+  }
+
+  /// Lowest-unused `pak##_dir.vpk` path in `dir`. Used by crash recovery to
+  /// place a staged file without clobbering one an interrupted placement phase
+  /// already wrote.
+  fn next_free_enabled_vpk_path(dir: &Path) -> PathBuf {
+    let mut used = std::collections::HashSet::new();
+    if let Ok(entries) = fs::read_dir(dir) {
+      for entry in entries.flatten() {
+        if let Some(number) = entry.file_name().to_str().and_then(Self::enabled_vpk_number) {
+          used.insert(number);
+        }
+      }
+    }
+    let mut number = 1u32;
+    while used.contains(&number) {
+      number += 1;
+    }
+    dir.join(format!("pak{number:02}_dir.vpk"))
   }
 
   fn find_orphaned_enabled_vpks(
@@ -1596,5 +1632,29 @@ mod tests {
     // Nothing was renamed: existing source untouched, no pak## created.
     assert!(addons_path.join("123456_a.vpk").exists());
     assert!(!addons_path.join("pak01_dir.vpk").exists());
+  }
+
+  /// Fix regression guard: if a hard crash interrupts the placement phase, some
+  /// files sit at their new `pak##` names and others are still staged. Recovery
+  /// must never overwrite an already-placed file when restoring a staged one.
+  #[test]
+  fn reorder_recovery_does_not_clobber_already_placed_files() {
+    let temp = tempfile::tempdir().unwrap();
+    let base = addons_base(&temp);
+    let base = base.as_path();
+
+    // A file already written to its destination by the interrupted placement.
+    fs::write(base.join("pak01_dir.vpk"), b"placed").unwrap();
+    // A staged file whose original name collides with the placed one.
+    let reorder = base.join(".dmm-reorder");
+    fs::create_dir_all(&reorder).unwrap();
+    fs::write(reorder.join("s1__pak01_dir.vpk"), b"staged").unwrap();
+
+    VpkManager::restore_staged_files(base, &reorder).unwrap();
+
+    // Neither file is lost: the placed file keeps its slot, the staged file is
+    // recovered into a free one.
+    assert_eq!(fs::read(base.join("pak01_dir.vpk")).unwrap(), b"placed");
+    assert_eq!(fs::read(base.join("pak02_dir.vpk")).unwrap(), b"staged");
   }
 }
