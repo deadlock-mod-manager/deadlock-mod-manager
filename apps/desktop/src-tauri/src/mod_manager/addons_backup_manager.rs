@@ -122,12 +122,34 @@ impl AddonsBackupManager {
     // (listable) name after validation succeeds, so an interrupted or invalid
     // backup can never be listed, restored, deleted, or pruned. The name does
     // not start with `addons-backup-`, so `list_backups` ignores it.
-    let staging_path = backup_dir.join(format!(".{filename}.staging"));
-    if staging_path.exists() {
-      let _ = fs::remove_dir_all(&staging_path);
-    }
-    fs::create_dir_all(&staging_path)
-      .map_err(|e| Error::BackupCreationFailed(format!("Failed to create backup folder: {e}")))?;
+    //
+    // Claim the staging directory atomically via exclusive creation and retry
+    // under a fresh name on collision. This never removes or reuses an existing
+    // directory, so a concurrent backup (which may share the same second-
+    // resolution filename) can't have its in-progress staging clobbered, and a
+    // stale leftover can't be copied into the new backup.
+    let staging_path = {
+      let mut attempt = 0u32;
+      loop {
+        let candidate = backup_dir.join(format!(".{filename}.staging-{attempt}"));
+        match fs::create_dir(&candidate) {
+          Ok(()) => break candidate,
+          Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+            attempt += 1;
+            if attempt > 1000 {
+              return Err(Error::BackupCreationFailed(
+                "Failed to claim a unique backup staging directory".to_string(),
+              ));
+            }
+          }
+          Err(e) => {
+            return Err(Error::BackupCreationFailed(format!(
+              "Failed to create backup folder: {e}"
+            )));
+          }
+        }
+      }
+    };
 
     let citadel_path = addons_path.parent().ok_or_else(|| {
       Error::BackupCreationFailed("Addons folder has no parent directory".to_string())
