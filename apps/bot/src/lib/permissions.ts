@@ -110,3 +110,51 @@ export function getBlacklistRequiredPermissionsDisplay(): string {
   }
   return adminText;
 }
+
+function hasConfiguredRole(
+  member: GuildMember,
+  configuredRoleIds: string[],
+): boolean {
+  return configuredRoleIds.some((roleId) => member.roles.cache.has(roleId));
+}
+
+export function hasQuickAnswerEditorPermission(member: GuildMember): boolean {
+  return (
+    member.permissions.has("Administrator") ||
+    hasConfiguredRole(member, env.QUICKANSWER_EDITOR_ROLE_IDS)
+  );
+}
+
+export function hasQuickAnswerUsePermission(member: GuildMember): boolean {
+  return (
+    hasQuickAnswerEditorPermission(member) ||
+    hasConfiguredRole(member, env.QUICKANSWER_USER_ROLE_IDS)
+  );
+}
+
+export function getQuickAnswerEditorRolesDisplay(): string {
+  if (env.QUICKANSWER_EDITOR_ROLE_IDS.length === 0) {
+    return "Server Administrator";
+  }
+
+  const roles = env.QUICKANSWER_EDITOR_ROLE_IDS.map(
+    (roleId) => `<@&${roleId}>`,
+  ).join(", ");
+  return `Server Administrator or ${roles}`;
+}
+
+export function getQuickAnswerUserRolesDisplay(): string {
+  const roleIds = [
+    ...new Set([
+      ...env.QUICKANSWER_EDITOR_ROLE_IDS,
+      ...env.QUICKANSWER_USER_ROLE_IDS,
+    ]),
+  ];
+
+  if (roleIds.length === 0) {
+    return "Server Administrator";
+  }
+
+  const roles = roleIds.map((roleId) => `<@&${roleId}>`).join(", ");
+  return `Server Administrator or ${roles}`;
+}
