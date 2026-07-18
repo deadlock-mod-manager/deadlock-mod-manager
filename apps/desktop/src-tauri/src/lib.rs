@@ -226,6 +226,7 @@ pub fn run() {
       commands::autoexec::open_autoexec_editor,
       commands::autoexec::apply_crosshair_to_autoexec,
       commands::autoexec::remove_crosshair_from_autoexec,
+      commands::autoexec::disable_custom_crosshairs,
       commands::autoexec::add_map_command_to_autoexec,
       commands::autoexec::remove_map_command_from_autoexec,
       commands::autoexec::get_map_command_from_autoexec,

@@ -22,6 +22,7 @@ import { ThemeProvider } from "./components/providers/theme";
 import { ThemeOverridesProvider } from "./components/providers/theme-overrides";
 import { AnalyticsProvider } from "./contexts/analytics-context";
 import { useAutoUpdate } from "./hooks/use-auto-update";
+import { useCrosshairConfigReconciliation } from "./hooks/use-crosshair-config-reconciliation";
 import { useDeepLink } from "./hooks/use-deep-link";
 import { useIngestToolInit } from "./hooks/use-ingest-tool-init";
 import { useLanguageListener } from "./hooks/use-language-listener";
@@ -49,6 +50,7 @@ const App = () => {
   useLanguageListener();
   useModOrderMigration();
   useDownloadsMigration();
+  useCrosshairConfigReconciliation();
   useHeroDetection();
   useIngestToolInit();
   const { t } = useTranslation();

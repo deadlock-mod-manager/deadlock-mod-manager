@@ -146,6 +146,24 @@ pub async fn remove_crosshair_from_autoexec() -> Result<(), Error> {
 }
 
 #[tauri::command]
+pub async fn disable_custom_crosshairs() -> Result<(), Error> {
+  log::info!("Disabling custom crosshairs");
+
+  let mut mod_manager = MANAGER.lock().unwrap();
+  if mod_manager.is_game_running()? {
+    return Err(Error::GameRunning);
+  }
+  let game_path = mod_manager
+    .get_steam_manager()
+    .get_game_path()
+    .ok_or(Error::GamePathNotSet)?;
+
+  mod_manager
+    .get_autoexec_manager()
+    .disable_custom_crosshairs(game_path)
+}
+
+#[tauri::command]
 pub async fn add_map_command_to_autoexec(map_name: String) -> Result<(), Error> {
   log::info!("Adding map command to autoexec: {map_name}");
   let mod_manager = MANAGER.lock().unwrap();

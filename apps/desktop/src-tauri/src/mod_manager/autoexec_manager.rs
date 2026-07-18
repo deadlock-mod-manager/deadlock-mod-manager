@@ -7,6 +7,20 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 const AUTOEXEC_FILENAME: &str = "autoexec.cfg";
+const MACHINE_CONVARS_FILENAME: &str = "machine_convars.vcfg";
+const MANAGED_CROSSHAIR_CONVARS: &[&str] = &[
+  "citadel_crosshair_color_r",
+  "citadel_crosshair_color_g",
+  "citadel_crosshair_color_b",
+  "citadel_crosshair_pip_border",
+  "citadel_crosshair_pip_gap_static",
+  "citadel_crosshair_pip_opacity",
+  "citadel_crosshair_pip_width",
+  "citadel_crosshair_pip_height",
+  "citadel_crosshair_pip_gap",
+  "citadel_crosshair_dot_opacity",
+  "citadel_crosshair_dot_outline_opacity",
+];
 const CROSSHAIR_SECTION_START: &str =
   "// === Deadlock Mod Manager - Crosshair Settings (DO NOT EDIT) ===";
 const CROSSHAIR_SECTION_END: &str = "// === End Crosshair Settings ===";
@@ -130,6 +144,35 @@ fn remove_managed_section(content: &mut String, section: ManagedSection) {
   log::info!("{} section not found, nothing to remove", section.label);
 }
 
+fn without_managed_crosshair_convars(content: &str) -> Result<Option<String>, Error> {
+  let mut config = keyvalues_parser::parse(content)
+    .map(keyvalues_parser::Vdf::from)
+    .map_err(|error| Error::CrosshairConfigResetFailed(error.to_string()))?;
+  let convars = config
+    .value
+    .get_mut_obj()
+    .and_then(|root| root.get_mut("convars"))
+    .and_then(|values| values.first_mut())
+    .and_then(keyvalues_parser::Value::get_mut_obj)
+    .ok_or_else(|| {
+      Error::CrosshairConfigResetFailed(
+        "machine_convars.vcfg does not contain a convars object".to_string(),
+      )
+    })?;
+
+  let removed_count = MANAGED_CROSSHAIR_CONVARS
+    .iter()
+    .filter(|name| convars.remove(**name).is_some())
+    .count();
+
+  if removed_count == 0 {
+    return Ok(None);
+  }
+
+  log::info!("Removed {removed_count} persisted crosshair convars");
+  Ok(Some(format!("{config}\n")))
+}
+
 fn merge_readonly_sections_into_full_content(
   full_content: &str,
   readonly_sections: &[ReadonlySection],
@@ -169,6 +212,14 @@ impl AutoexecManager {
       .join("citadel")
       .join("cfg")
       .join(AUTOEXEC_FILENAME)
+  }
+
+  fn get_machine_convars_path(&self, game_path: &Path) -> PathBuf {
+    game_path
+      .join("game")
+      .join("citadel")
+      .join("cfg")
+      .join(MACHINE_CONVARS_FILENAME)
   }
 
   pub fn read_autoexec_config(&self, game_path: &Path) -> Result<String, Error> {
@@ -273,6 +324,35 @@ impl AutoexecManager {
     remove_managed_section(&mut content, CROSSHAIR_SECTION);
 
     self.write_autoexec_config(game_path, &content)
+  }
+
+  pub fn disable_custom_crosshairs(&self, game_path: &Path) -> Result<(), Error> {
+    let machine_convars_path = self.get_machine_convars_path(game_path);
+    let reset_machine_convars = if machine_convars_path.exists() {
+      let content = fs::read_to_string(&machine_convars_path).map_err(|error| {
+        Error::CrosshairConfigResetFailed(format!(
+          "Failed to read {}: {error}",
+          machine_convars_path.display()
+        ))
+      })?;
+      without_managed_crosshair_convars(&content)?
+    } else {
+      None
+    };
+
+    let mut autoexec_content = self.read_autoexec_config(game_path)?;
+    remove_managed_section(&mut autoexec_content, CROSSHAIR_SECTION);
+
+    if let Some(content) = reset_machine_convars {
+      fs::write(&machine_convars_path, content).map_err(|error| {
+        Error::CrosshairConfigResetFailed(format!(
+          "Failed to write {}: {error}",
+          machine_convars_path.display()
+        ))
+      })?;
+    }
+
+    self.write_autoexec_config(game_path, &autoexec_content)
   }
 
   pub fn add_map_command(&self, game_path: &Path, map_name: &str) -> Result<(), Error> {
@@ -469,6 +549,72 @@ mod tests {
     assert!(returned.full_content.contains(MAP_COMMAND_SECTION_START));
     assert!(returned.full_content.contains("map streetball"));
     assert_eq!(written, returned.full_content);
+
+    std::fs::remove_dir_all(&game_path).expect("temp game path should be removed");
+  }
+
+  #[test]
+  fn disable_custom_crosshairs_removes_persisted_values_and_autoexec_section() {
+    let manager = AutoexecManager::new();
+    let game_path = unique_test_game_path("disable_custom_crosshairs");
+    let cfg_path = game_path.join("game").join("citadel").join("cfg");
+    std::fs::create_dir_all(&cfg_path).expect("cfg directory should be created");
+    std::fs::write(
+      cfg_path.join(MACHINE_CONVARS_FILENAME),
+      r#""config"
+{
+	"convars"
+	{
+		"citadel_crosshair_color_r"		"255"
+		"citadel_crosshair_pip_gap"		"-8"
+		"unrelated_setting"		"keep"
+	}
+}
+"#,
+    )
+    .expect("machine convars should be written");
+    std::fs::write(
+      manager.get_autoexec_path(&game_path),
+      format!("echo keep\n{}", crosshair_section()),
+    )
+    .expect("autoexec should be written");
+
+    manager
+      .disable_custom_crosshairs(&game_path)
+      .expect("crosshairs should be disabled");
+
+    let machine_convars = std::fs::read_to_string(cfg_path.join(MACHINE_CONVARS_FILENAME))
+      .expect("machine convars should be readable");
+    assert!(!machine_convars.contains("citadel_crosshair_color_r"));
+    assert!(!machine_convars.contains("citadel_crosshair_pip_gap"));
+    assert!(machine_convars.contains("unrelated_setting"));
+    assert!(machine_convars.contains("keep"));
+
+    let autoexec = std::fs::read_to_string(manager.get_autoexec_path(&game_path))
+      .expect("autoexec should be readable");
+    assert_eq!(autoexec, "echo keep");
+
+    std::fs::remove_dir_all(&game_path).expect("temp game path should be removed");
+  }
+
+  #[test]
+  fn disable_custom_crosshairs_does_not_change_autoexec_when_convars_are_invalid() {
+    let manager = AutoexecManager::new();
+    let game_path = unique_test_game_path("invalid_machine_convars");
+    let cfg_path = game_path.join("game").join("citadel").join("cfg");
+    std::fs::create_dir_all(&cfg_path).expect("cfg directory should be created");
+    std::fs::write(cfg_path.join(MACHINE_CONVARS_FILENAME), "invalid {")
+      .expect("invalid machine convars should be written");
+    let original_autoexec = crosshair_section();
+    std::fs::write(manager.get_autoexec_path(&game_path), &original_autoexec)
+      .expect("autoexec should be written");
+
+    let result = manager.disable_custom_crosshairs(&game_path);
+
+    assert!(matches!(result, Err(Error::CrosshairConfigResetFailed(_))));
+    let autoexec = std::fs::read_to_string(manager.get_autoexec_path(&game_path))
+      .expect("autoexec should be readable");
+    assert_eq!(autoexec, original_autoexec);
 
     std::fs::remove_dir_all(&game_path).expect("temp game path should be removed");
   }
