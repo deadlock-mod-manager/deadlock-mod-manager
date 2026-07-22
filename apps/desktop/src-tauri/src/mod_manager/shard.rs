@@ -81,8 +81,19 @@ pub fn remove_profile_shards(base: &Path) -> std::io::Result<bool> {
   }
 
   let removed = !staged.is_empty();
-  for (_, staging) in &staged {
-    fs::remove_dir_all(staging)?;
+  for (index, (_, staging)) in staged.iter().enumerate() {
+    if let Err(err) = fs::remove_dir_all(staging) {
+      // Restore the shard that failed to delete along with every shard we
+      // haven't processed yet, so their canonical paths reappear and a later
+      // deletion attempt can discover and retry them. The original delete error
+      // is preserved and returned.
+      for (original, staging) in &staged[index..] {
+        if let Err(restore_err) = fs::rename(staging, original) {
+          log::error!("Failed to restore staged shard {staging:?}: {restore_err}");
+        }
+      }
+      return Err(err);
+    }
   }
   Ok(removed)
 }
