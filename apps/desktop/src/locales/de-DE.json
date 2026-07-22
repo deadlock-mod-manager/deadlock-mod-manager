@@ -565,7 +565,7 @@
     "confirmClearAllModsData": "",
     "confirmClearAllModsDataAction": "",
     "clearAllMods": "Alle Mods löschen",
-    "clearAllModsDescription": "",
+    "clearAllModsDescription": "Entfernt alle Mods aus der Anwendung und Ihrem Spielordner. Dies kann nicht rückgängig gemacht werden.",
     "confirmClearAllMods": "Sind Sie sicher, dass Sie alle Mods löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
     "confirmClearAllModsAction": "",
     "allModsCleared": "Alle Mods wurden gelöscht",
@@ -992,6 +992,56 @@
     "openedInEditor": "gameinfo.gi mit System-Editor geöffnet",
     "confirmRestore": "Möchten Sie gameinfo.gi wirklich aus der Sicherung wiederherstellen? Die aktuelle Datei wird überschrieben.",
     "confirmReset": "Möchten Sie gameinfo.gi wirklich auf den Vanilla-Zustand zurücksetzen? Dabei werden alle Mod-Konfigurationen entfernt und die ursprünglichen Spieleinstellungen wiederhergestellt."
+  },
+  "matchSync": {
+    "title": "",
+    "description": "",
+    "about": {
+      "reads": "",
+      "sends": "",
+      "limit": "",
+      "risk": ""
+    },
+    "enable": {
+      "title": "",
+      "description": ""
+    },
+    "consent": {
+      "title": "",
+      "body": "",
+      "accept": "",
+      "decline": ""
+    },
+    "quota": {
+      "remaining": "",
+      "accountRemaining": "",
+      "gcUnavailable": "",
+      "reachedToday": ""
+    },
+    "noAccounts": "",
+    "loadError": {
+      "title": "",
+      "retry": ""
+    },
+    "errors": {
+      "consentRequired": "",
+      "disabled": "",
+      "alreadyRunning": "",
+      "gameRunning": "",
+      "quotaReached": ""
+    },
+    "fullSync": {
+      "title": "",
+      "description": "",
+      "button": "",
+      "started": "",
+      "cancel": "",
+      "accountProgress": "",
+      "running": "",
+      "done": "",
+      "doneQuota": "",
+      "rateLimited": ""
+    }
   },
   "privacy": {
     "title": "Datenschutz & Inhalte",
@@ -2286,7 +2336,7 @@
     "removedRestart": "Fadenkreuz-Abschnitt entfernt! Starten Sie das Spiel neu, damit die Änderungen wirksam werden.",
     "disabledError": "Benutzerdefinierte Fadenkreuze sind deaktiviert. Aktivieren Sie sie in den Einstellungen, um Fadenkreuze anzuwenden.",
     "toggleError": "Benutzerdefinierte Fadenkreuze konnten nicht umgeschaltet werden",
-    "stopGameBeforeDisable": "Beenden Sie Deadlock, bevor Sie benutzerdefinierte Fadenkreuze deaktivieren.",
+    "stopGameBeforeDisable": "",
     "form": {
       "metadata": "Metadaten",
       "name": "",

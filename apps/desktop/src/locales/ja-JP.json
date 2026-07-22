@@ -993,6 +993,56 @@
     "confirmRestore": "",
     "confirmReset": ""
   },
+  "matchSync": {
+    "title": "",
+    "description": "",
+    "about": {
+      "reads": "",
+      "sends": "",
+      "limit": "",
+      "risk": ""
+    },
+    "enable": {
+      "title": "",
+      "description": ""
+    },
+    "consent": {
+      "title": "",
+      "body": "",
+      "accept": "",
+      "decline": ""
+    },
+    "quota": {
+      "remaining": "",
+      "accountRemaining": "",
+      "gcUnavailable": "",
+      "reachedToday": ""
+    },
+    "noAccounts": "",
+    "loadError": {
+      "title": "",
+      "retry": ""
+    },
+    "errors": {
+      "consentRequired": "",
+      "disabled": "",
+      "alreadyRunning": "",
+      "gameRunning": "",
+      "quotaReached": ""
+    },
+    "fullSync": {
+      "title": "",
+      "description": "",
+      "button": "",
+      "started": "",
+      "cancel": "",
+      "accountProgress": "",
+      "running": "",
+      "done": "",
+      "doneQuota": "",
+      "rateLimited": ""
+    }
+  },
   "privacy": {
     "title": "プライバシー＆コンテンツ",
     "description": "NSFW（R-18）コンテンツの表示/フィルター方法を管理する",
@@ -2286,6 +2336,7 @@
     "removedRestart": "クロスヘアセクションを削除しました！変更を反映するにはゲームを再起動してください。",
     "disabledError": "カスタムクロスヘアが無効になっています。設定で有効にしてクロスヘアを適用してください。",
     "toggleError": "カスタムクロスヘアの切り替えに失敗しました",
+    "stopGameBeforeDisable": "",
     "form": {
       "metadata": "メタデータ",
       "name": "名前",

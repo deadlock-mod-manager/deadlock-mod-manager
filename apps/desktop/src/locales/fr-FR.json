@@ -993,6 +993,56 @@
     "confirmRestore": "Voulez-vous vraiment restaurer gameinfo.gi depuis la sauvegarde ? Cela écrasera le fichier actuel.",
     "confirmReset": "Voulez-vous vraiment réinitialiser gameinfo.gi à l'état d'origine ? Cela supprimera toutes les configurations de mods et restaurera les paramètres du jeu d'origine."
   },
+  "matchSync": {
+    "title": "",
+    "description": "",
+    "about": {
+      "reads": "",
+      "sends": "",
+      "limit": "",
+      "risk": ""
+    },
+    "enable": {
+      "title": "",
+      "description": ""
+    },
+    "consent": {
+      "title": "",
+      "body": "",
+      "accept": "",
+      "decline": ""
+    },
+    "quota": {
+      "remaining": "",
+      "accountRemaining": "",
+      "gcUnavailable": "",
+      "reachedToday": ""
+    },
+    "noAccounts": "",
+    "loadError": {
+      "title": "",
+      "retry": ""
+    },
+    "errors": {
+      "consentRequired": "",
+      "disabled": "",
+      "alreadyRunning": "",
+      "gameRunning": "",
+      "quotaReached": ""
+    },
+    "fullSync": {
+      "title": "",
+      "description": "",
+      "button": "",
+      "started": "",
+      "cancel": "",
+      "accountProgress": "",
+      "running": "",
+      "done": "",
+      "doneQuota": "",
+      "rateLimited": ""
+    }
+  },
   "privacy": {
     "title": "Confidentialité & Contenu",
     "description": "Contrôlez comment le contenu NSFW (Not Safe For Work) est affiché et filtré.",
@@ -2286,6 +2336,7 @@
     "removedRestart": "",
     "disabledError": "",
     "toggleError": "",
+    "stopGameBeforeDisable": "",
     "form": {
       "metadata": "",
       "name": "",
