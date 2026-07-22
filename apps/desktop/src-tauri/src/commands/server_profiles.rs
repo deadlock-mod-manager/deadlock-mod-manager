@@ -99,16 +99,10 @@ pub async fn delete_server_addons_folder(server_id: String) -> Result<(), Error>
     .join("citadel")
     .join("addons")
     .join(&folder_name);
-  let mut removed = false;
-  for shard_index in 1..=crate::mod_manager::shard::MAX_SHARDS {
-    let folder_path = crate::mod_manager::shard::shard_dir(&base, shard_index);
-    if folder_path.exists() {
-      std::fs::remove_dir_all(&folder_path)?;
-      removed = true;
-      log::info!("Deleted server shard folder: {folder_path:?}");
-    }
-  }
-  if !removed {
+  let removed = crate::mod_manager::shard::remove_profile_shards(&base)?;
+  if removed {
+    log::info!("Deleted server shard folders for: {folder_name}");
+  } else {
     log::warn!("Server addons folder does not exist: {folder_name}");
   }
 

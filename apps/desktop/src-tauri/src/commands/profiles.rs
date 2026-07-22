@@ -89,17 +89,11 @@ pub async fn delete_profile_folder(profile_folder: String) -> Result<(), Error> 
     .join("citadel")
     .join("addons")
     .join(&profile_folder);
-  let mut removed = false;
-  for shard_index in 1..=crate::mod_manager::shard::MAX_SHARDS {
-    let profile_path = crate::mod_manager::shard::shard_dir(&base, shard_index);
-    if profile_path.exists() {
-      std::fs::remove_dir_all(&profile_path)?;
-      removed = true;
-      log::info!("Deleted profile shard folder: {profile_path:?}");
-    }
-  }
+  let removed = crate::mod_manager::shard::remove_profile_shards(&base)?;
 
-  if !removed {
+  if removed {
+    log::info!("Deleted profile shard folders for: {profile_folder}");
+  } else {
     log::warn!("Profile folder does not exist in any addon shard: {profile_folder}");
   }
 

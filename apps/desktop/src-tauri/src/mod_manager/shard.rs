@@ -12,6 +12,7 @@
 //! Disabled (prefixed `{mod_id}_*.vpk`) files and the `.dmm.json` manifest always
 //! live in the base dir regardless of which shard a mod's enabled VPKs occupy.
 
+use std::fs;
 use std::path::{Path, PathBuf};
 
 /// Max enabled `pak##_dir.vpk` files the engine loads per search-path directory.
@@ -49,6 +50,56 @@ pub fn shard_dir(base: &Path, shard: u32) -> PathBuf {
   } else {
     shard_root
   }
+}
+
+/// Delete every existing shard directory for a profile `base` transactionally.
+///
+/// Each existing shard is first moved aside to a sibling staging name; only once
+/// *all* shards have been staged are the staged directories removed. If staging
+/// any shard fails, the already-staged shards are renamed back so a partial
+/// failure leaves the profile intact rather than half-deleted. Returns whether
+/// any shard existed.
+pub fn remove_profile_shards(base: &Path) -> std::io::Result<bool> {
+  let mut staged: Vec<(PathBuf, PathBuf)> = Vec::new();
+
+  for shard_index in 1..=MAX_SHARDS {
+    let dir = shard_dir(base, shard_index);
+    if !dir.exists() {
+      continue;
+    }
+    let staging = shard_delete_staging(&dir);
+    if let Err(err) = fs::rename(&dir, &staging) {
+      // Roll back the shards staged so far to their original names.
+      for (original, staging) in staged.iter().rev() {
+        if let Err(rollback_err) = fs::rename(staging, original) {
+          log::error!("Failed to roll back staged shard {staging:?}: {rollback_err}");
+        }
+      }
+      return Err(err);
+    }
+    staged.push((dir, staging));
+  }
+
+  let removed = !staged.is_empty();
+  for (_, staging) in &staged {
+    fs::remove_dir_all(staging)?;
+  }
+  Ok(removed)
+}
+
+/// Pick a unique sibling staging path for a shard directory about to be deleted.
+fn shard_delete_staging(dir: &Path) -> PathBuf {
+  let file_name = dir
+    .file_name()
+    .and_then(|name| name.to_str())
+    .unwrap_or("shard");
+  for attempt in 0..u32::MAX {
+    let candidate = dir.with_file_name(format!(".dmm-deleting-{file_name}-{attempt}"));
+    if !candidate.exists() {
+      return candidate;
+    }
+  }
+  dir.with_file_name(format!(".dmm-deleting-{file_name}"))
 }
 
 pub fn shard_root_name(shard: u32) -> String {

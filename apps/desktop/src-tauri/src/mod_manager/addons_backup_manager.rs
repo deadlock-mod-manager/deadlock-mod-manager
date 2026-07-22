@@ -279,9 +279,23 @@ impl AddonsBackupManager {
       let source_path = entry.path();
       let entry_name = entry.file_name();
       let entry_name = entry_name.to_string_lossy();
+      if entry_name.as_ref() == ".dmm.json.tmp" {
+        // A temp manifest with no canonical `.dmm.json` sibling is the only
+        // surviving record of this profile's mod ownership (the process crashed
+        // between writing the temp file and renaming it into place). Canonicalize
+        // it into the backup as `.dmm.json` so restore and validation see it.
+        // When `.dmm.json` already exists the temp file is stale and skipped.
+        if !source.join(".dmm.json").exists() {
+          let destination_path = destination.join(".dmm.json");
+          let bytes = fs::copy(&source_path, &destination_path)?;
+          stats.bytes += bytes;
+          stats.files += 1;
+        }
+        continue;
+      }
       if matches!(
         entry_name.as_ref(),
-        ".dmm-clear" | ".dmm-reorder" | "temp_reorder" | ".dmm.json.tmp"
+        ".dmm-clear" | ".dmm-reorder" | "temp_reorder"
       ) || entry_name.starts_with(".dmm-update-")
       {
         continue;
