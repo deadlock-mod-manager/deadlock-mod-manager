@@ -32,6 +32,7 @@ export type ErrorKind = {
     | "fileWriteFailed"
     | "autoexecReadFailed"
     | "autoexecWriteFailed"
+    | "crosshairConfigResetFailed"
     | "rollbackFailed"
     | "backgroundTaskFailed"
     | "vpkInUse";

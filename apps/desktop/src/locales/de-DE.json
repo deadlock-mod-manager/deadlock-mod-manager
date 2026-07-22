@@ -2286,6 +2286,7 @@
     "removedRestart": "Fadenkreuz-Abschnitt entfernt! Starten Sie das Spiel neu, damit die Änderungen wirksam werden.",
     "disabledError": "Benutzerdefinierte Fadenkreuze sind deaktiviert. Aktivieren Sie sie in den Einstellungen, um Fadenkreuze anzuwenden.",
     "toggleError": "Benutzerdefinierte Fadenkreuze konnten nicht umgeschaltet werden",
+    "stopGameBeforeDisable": "Beenden Sie Deadlock, bevor Sie benutzerdefinierte Fadenkreuze deaktivieren.",
     "form": {
       "metadata": "Metadaten",
       "name": "",

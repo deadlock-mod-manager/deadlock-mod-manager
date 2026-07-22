@@ -58,6 +58,8 @@ pub enum Error {
   AutoexecReadFailed(String),
   #[error("Failed to write autoexec config: {0}")]
   AutoexecWriteFailed(String),
+  #[error("Failed to reset persisted crosshair settings: {0}")]
+  CrosshairConfigResetFailed(String),
   #[error(
     "Operation failed and rollback was incomplete — VPK files may be in an inconsistent state: {0}"
   )]
@@ -113,6 +115,7 @@ impl serde::Serialize for Error {
       Error::FileWriteFailed(_) => "fileWriteFailed",
       Error::AutoexecReadFailed(_) => "autoexecReadFailed",
       Error::AutoexecWriteFailed(_) => "autoexecWriteFailed",
+      Error::CrosshairConfigResetFailed(_) => "crosshairConfigResetFailed",
       Error::RollbackFailed(_) => "rollbackFailed",
       Error::BackgroundTaskFailed(_) => "backgroundTaskFailed",
       Error::VpkInUse(_) => "vpkInUse",

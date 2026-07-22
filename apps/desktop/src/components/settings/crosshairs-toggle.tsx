@@ -6,6 +6,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
+import { isTauriError } from "@/types/tauri";
 
 export const CrosshairsToggle = () => {
   const { t } = useTranslation();
@@ -21,7 +22,7 @@ export const CrosshairsToggle = () => {
   const toggleMutation = useMutation({
     mutationFn: async (enabled: boolean) => {
       if (!enabled) {
-        return invoke("remove_crosshair_from_autoexec");
+        return invoke("disable_custom_crosshairs");
       }
       if (activeCrosshair) {
         return invoke("apply_crosshair_to_autoexec", {
@@ -30,6 +31,7 @@ export const CrosshairsToggle = () => {
       }
     },
     onSuccess: (_, enabled) => {
+      setCrosshairsEnabled(enabled);
       if (!enabled) {
         toast.success(t("crosshairs.removedRestart"));
       } else if (activeCrosshair) {
@@ -39,12 +41,15 @@ export const CrosshairsToggle = () => {
     },
     onError: (error) => {
       logger.errorOnly(error);
+      if (isTauriError(error) && error.kind === "gameRunning") {
+        toast.error(t("crosshairs.stopGameBeforeDisable"));
+        return;
+      }
       toast.error(t("crosshairs.toggleError"));
     },
   });
 
   const handleToggle = (checked: boolean) => {
-    setCrosshairsEnabled(checked);
     toggleMutation.mutate(checked);
   };
 

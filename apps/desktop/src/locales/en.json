@@ -2336,6 +2336,7 @@
     "removedRestart": "Crosshair section removed! Restart game for changes to take effect.",
     "disabledError": "Custom crosshairs are disabled. Enable them in settings to apply crosshairs.",
     "toggleError": "Failed to toggle custom crosshairs",
+    "stopGameBeforeDisable": "Stop Deadlock before disabling custom crosshairs.",
     "form": {
       "metadata": "Metadata",
       "name": "Name",
