@@ -11,6 +11,7 @@ pub mod game_config_manager;
 pub mod game_process_manager;
 pub mod manager;
 pub mod mod_repository;
+pub mod shard;
 pub mod steam_manager;
 pub mod vpk_manager;
 pub mod vpk_manifest;

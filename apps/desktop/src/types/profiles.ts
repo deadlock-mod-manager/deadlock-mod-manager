@@ -23,6 +23,7 @@ export interface ModProfile {
 export interface VpkManifestEntry {
   enabled: boolean;
   order?: number | null;
+  shard: number;
   currentVpks: string[];
   disabledVpks: string[];
   originalVpkNames: string[];

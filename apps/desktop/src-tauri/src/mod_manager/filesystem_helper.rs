@@ -35,15 +35,6 @@ impl FileSystemHelper {
     Ok(())
   }
 
-  /// Remove a single file
-  pub fn remove_file(&self, path: &Path) -> Result<(), Error> {
-    if path.exists() {
-      log::info!("Removing file: {:?}", path);
-      fs::remove_file(path)?;
-    }
-    Ok(())
-  }
-
   /// Copy a file from source to destination
   pub fn copy_file(&self, src: &Path, dest: &Path) -> Result<(), Error> {
     if let Some(parent) = dest.parent() {

@@ -1,5 +1,6 @@
 use crate::errors::Error;
 use crate::mod_manager::filesystem_helper::FileSystemHelper;
+use crate::mod_manager::shard;
 use crate::utils;
 use log;
 use serde::{Deserialize, Serialize};
@@ -360,6 +361,7 @@ impl GameConfigManager {
     }
 
     log::info!("gameinfo.gi restored successfully from backup");
+    self.game_setup = self.has_mod_manager_markers(&fs::read_to_string(&gameinfo_path)?);
     Ok(())
   }
 
@@ -400,6 +402,7 @@ impl GameConfigManager {
 
     // Write the vanilla content
     fs::write(&gameinfo_path, vanilla_content)?;
+    self.game_setup = false;
     log::info!("Successfully replaced gameinfo.gi with vanilla version");
 
     // Validate the result
@@ -561,7 +564,7 @@ impl GameConfigManager {
   }
 
   /// Toggle between modded and vanilla game configuration
-  pub fn toggle_mods(&self, game_path: &Path, vanilla: bool) -> Result<(), Error> {
+  pub fn toggle_mods(&mut self, game_path: &Path, vanilla: bool) -> Result<(), Error> {
     log::info!("Toggling mods: vanilla={vanilla}");
 
     let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
@@ -577,6 +580,7 @@ impl GameConfigManager {
     }
 
     self.modify_search_paths(&gameinfo_path, vanilla)?;
+    self.game_setup = !vanilla;
 
     // Validate the changes were applied correctly
     if let Err(e) = self.validate_gameinfo_patch(game_path, vanilla) {
@@ -823,19 +827,12 @@ impl GameConfigManager {
     self.game_setup
   }
 
-  /// Each entry produces one `Game citadel/addons[/<folder>]` line, in order.
-  /// `None` (and empty input) falls back to the root `addons` directory.
-  fn generate_modded_search_paths_multi(folders: &[Option<String>]) -> String {
-    let resolved: Vec<String> = if folders.is_empty() {
+  /// Each entry is a complete game-relative path such as `citadel/addons2/profile_x`.
+  fn generate_modded_search_paths(paths: &[String]) -> String {
+    let resolved: Vec<String> = if paths.is_empty() {
       vec!["citadel/addons".to_string()]
     } else {
-      folders
-        .iter()
-        .map(|f| match f {
-          Some(name) if !name.is_empty() => format!("citadel/addons/{}", name),
-          _ => "citadel/addons".to_string(),
-        })
-        .collect()
+      paths.to_vec()
     };
 
     let game_lines = resolved
@@ -893,30 +890,23 @@ impl GameConfigManager {
         continue;
       };
       let value = rest.trim();
-      if value.starts_with("citadel/addons") {
+      if shard::is_valid_search_path(value) {
         paths.push(value.to_string());
       }
     }
     Ok(paths)
   }
 
-  /// Single-folder convenience wrapper around `update_mod_path_multi`.
-  pub fn update_mod_path(
-    &mut self,
-    game_path: &Path,
-    profile_folder: Option<String>,
-  ) -> Result<(), Error> {
-    self.update_mod_path_multi(game_path, &[profile_folder])
-  }
+  /// Update gameinfo.gi with complete `citadel/addonsN[/...]` search paths.
+  /// The first path has the highest precedence.
+  pub fn update_mod_paths(&mut self, game_path: &Path, paths: &[String]) -> Result<(), Error> {
+    log::info!("Updating mod search paths: {paths:?}");
 
-  /// Update gameinfo.gi with one or more `Game citadel/addons[/...]` entries.
-  /// The first folder is highest-precedence (engine reads it first).
-  pub fn update_mod_path_multi(
-    &mut self,
-    game_path: &Path,
-    folders: &[Option<String>],
-  ) -> Result<(), Error> {
-    log::info!("Updating mod path for folders: {folders:?}");
+    if paths.iter().any(|path| !shard::is_valid_search_path(path)) {
+      return Err(Error::InvalidInput(
+        "Invalid gameinfo.gi addon search path".to_string(),
+      ));
+    }
 
     if !self.game_setup {
       log::info!("Game not setup yet, setting up for mods...");
@@ -935,8 +925,16 @@ impl GameConfigManager {
       )));
     }
 
-    // Read current content
-    let gameinfo_content = fs::read_to_string(&gameinfo_path)?;
+    let mut gameinfo_content = fs::read_to_string(&gameinfo_path)?;
+
+    // Deadlock updates and the Settings reset replace gameinfo.gi with a clean
+    // file while this manager may still remember the old setup state.
+    if !self.has_mod_manager_markers(&gameinfo_content) {
+      log::info!("Mod manager markers are missing; rebuilding the modded SearchPaths section");
+      self.modify_search_paths(&gameinfo_path, false)?;
+      self.game_setup = true;
+      gameinfo_content = fs::read_to_string(&gameinfo_path)?;
+    }
 
     // Create backup if it doesn't exist
     let backup_path = gameinfo_path.with_extension("gi.bak");
@@ -972,7 +970,7 @@ impl GameConfigManager {
         ));
       };
 
-    let modded_search_paths = Self::generate_modded_search_paths_multi(folders);
+    let modded_search_paths = Self::generate_modded_search_paths(paths);
     let replacement_content =
       format!("\n{MOD_MANAGER_MARKER_START}\n{modded_search_paths}\n{MOD_MANAGER_MARKER_END}");
 
@@ -1015,7 +1013,7 @@ impl GameConfigManager {
       )));
     }
 
-    log::info!("Successfully updated mod path with folders: {folders:?}");
+    log::info!("Successfully updated mod search paths: {paths:?}");
     Ok(())
   }
 
@@ -1066,33 +1064,35 @@ mod tests {
   }
 
   #[test]
-  fn generate_modded_search_paths_multi_empty_falls_back_to_root() {
-    let out = GameConfigManager::generate_modded_search_paths_multi(&[]);
+  fn generate_modded_search_paths_empty_falls_back_to_root() {
+    let out = GameConfigManager::generate_modded_search_paths(&[]);
     assert!(out.contains("Game                citadel/addons\n"));
   }
 
   #[test]
-  fn generate_modded_search_paths_multi_single_none_uses_root() {
-    let out = GameConfigManager::generate_modded_search_paths_multi(&[None]);
+  fn generate_modded_search_paths_single_root_path() {
+    let out = GameConfigManager::generate_modded_search_paths(&["citadel/addons".to_string()]);
     assert!(out.contains("Game                citadel/addons\n"));
     assert!(!out.contains("citadel/addons/"));
   }
 
   #[test]
-  fn generate_modded_search_paths_multi_single_some_uses_subfolder() {
-    let out =
-      GameConfigManager::generate_modded_search_paths_multi(&[Some("profile_default".to_string())]);
+  fn generate_modded_search_paths_single_profile_path() {
+    let out = GameConfigManager::generate_modded_search_paths(&[
+      "citadel/addons/profile_default".to_string()
+    ]);
     assert!(out.contains("Game                citadel/addons/profile_default\n"));
   }
 
   #[test]
-  fn generate_modded_search_paths_multi_two_folders_preserve_order() {
-    let out = GameConfigManager::generate_modded_search_paths_multi(&[
-      Some("server_abc".to_string()),
-      Some("profile_default".to_string()),
+  fn generate_modded_search_paths_two_paths_preserve_order() {
+    let out = GameConfigManager::generate_modded_search_paths(&[
+      "citadel/addons/server_abc".to_string(),
+      "citadel/addons2/server_abc".to_string(),
+      "citadel/addons/profile_default".to_string(),
     ]);
     let server_idx = out
-      .find("citadel/addons/server_abc")
+      .find("citadel/addons2/server_abc")
       .expect("server line present");
     let profile_idx = out
       .find("citadel/addons/profile_default")
@@ -1101,12 +1101,6 @@ mod tests {
       server_idx < profile_idx,
       "server folder must precede profile folder for engine precedence"
     );
-  }
-
-  #[test]
-  fn generate_modded_search_paths_multi_empty_string_treated_as_root() {
-    let out = GameConfigManager::generate_modded_search_paths_multi(&[Some(String::new())]);
-    assert!(out.contains("Game                citadel/addons\n"));
   }
 
   #[test]
@@ -1224,7 +1218,7 @@ mod tests {
     mgr.game_setup = true; // skip setup_game_for_mods (which expects vanilla layout)
 
     mgr
-      .update_mod_path(&game_path, Some("profile_default".to_string()))
+      .update_mod_paths(&game_path, &["citadel/addons/profile_default".to_string()])
       .expect("update should succeed");
 
     let result = mgr.marker_addons_paths(&game_path).expect("read markers");
@@ -1244,11 +1238,11 @@ mod tests {
     mgr.game_setup = true;
 
     mgr
-      .update_mod_path_multi(
+      .update_mod_paths(
         &game_path,
         &[
-          Some("server_new".to_string()),
-          Some("profile_default".to_string()),
+          "citadel/addons/server_new".to_string(),
+          "citadel/addons/profile_default".to_string(),
         ],
       )
       .expect("update should succeed");
@@ -1273,7 +1267,7 @@ mod tests {
     mgr.game_setup = true;
 
     mgr
-      .update_mod_path(&game_path, None)
+      .update_mod_paths(&game_path, &["citadel/addons".to_string()])
       .expect("update should succeed");
 
     let result = mgr.marker_addons_paths(&game_path).expect("read markers");
