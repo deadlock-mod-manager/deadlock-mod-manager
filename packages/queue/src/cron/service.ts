@@ -24,7 +24,7 @@ export type CronServiceQueueOptions = Pick<QueueConfig, "defaultJobOptions">;
 
 export class CronService {
   private queue: CronQueue;
-  private workers: Map<string, CronWorker> = new Map();
+  private worker: CronWorker | null = null;
   private jobs: Map<string, CronJobDefinition> = new Map();
   private defaultConcurrency: number;
   private pausedSchedulers: Awaited<ReturnType<CronQueue["getJobSchedulers"]>> =
@@ -67,19 +67,7 @@ export class CronService {
     // Store the job definition
     this.jobs.set(name, definition);
 
-    const jobConcurrency = concurrency ?? this.defaultConcurrency;
-    const workerKey = `${processor.constructor.name}-${jobConcurrency}`;
-
-    if (!this.workers.has(workerKey)) {
-      const worker = new CronWorker(
-        this.queue.getQueue().name,
-        this.redis,
-        this.logger,
-        processor,
-        jobConcurrency,
-      );
-      this.workers.set(workerKey, worker);
-    }
+    this.ensureWorker();
 
     // Schedule the job if enabled
     if (enabled) {
@@ -99,7 +87,7 @@ export class CronService {
         endDate: endDate?.toISOString(),
         limit,
         processor: processor.constructor.name,
-        concurrency: jobConcurrency,
+        concurrency: concurrency ?? this.defaultConcurrency,
       })
       .info(`Defined cron job: ${name} with pattern: ${pattern}`);
   }
@@ -143,20 +131,7 @@ export class CronService {
       throw new NotFoundError(`Job not found: ${jobName}`);
     }
 
-    // Ensure worker exists for this processor with the correct concurrency
-    const jobConcurrency = definition.concurrency ?? this.defaultConcurrency;
-    const workerKey = `${definition.processor.constructor.name}-${jobConcurrency}`;
-
-    if (!this.workers.has(workerKey)) {
-      const worker = new CronWorker(
-        this.queue.getQueue().name,
-        this.redis,
-        this.logger,
-        definition.processor,
-        jobConcurrency,
-      );
-      this.workers.set(workerKey, worker);
-    }
+    this.ensureWorker();
 
     definition.enabled = true;
     await this.upsertJob(jobName, definition.pattern, {
@@ -394,16 +369,27 @@ export class CronService {
       enabledJobs: Array.from(this.jobs.values()).filter((job) => job.enabled)
         .length,
       scheduledJobs: scheduledJobs.length,
-      workers: this.workers.size,
+      workers: this.worker ? 1 : 0,
     };
   }
 
   async shutdown(): Promise<void> {
-    const workerClosePromises = Array.from(this.workers.values()).map(
-      (worker) => worker.close(),
-    );
-    await Promise.all([...workerClosePromises, this.queue.close()]);
-    this.workers.clear();
+    await Promise.all([this.worker?.close(), this.queue.close()]);
+    this.worker = null;
     this.logger.info("Cron service shutdown complete");
+  }
+
+  private ensureWorker(): void {
+    if (this.worker) {
+      return;
+    }
+
+    this.worker = new CronWorker(
+      this.queue.getQueue().name,
+      this.redis,
+      this.logger,
+      this.jobs,
+      this.defaultConcurrency,
+    );
   }
 }
