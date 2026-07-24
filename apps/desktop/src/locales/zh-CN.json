@@ -993,6 +993,56 @@
     "confirmRestore": "您确定要从备份中恢复 gameinfo.gi 吗？这会覆盖当前文件。",
     "confirmReset": "您确定要将 gameinfo.gi 重置为原版状态吗？这将移除所有模组配置并恢复原始游戏设置。"
   },
+  "matchSync": {
+    "title": "",
+    "description": "",
+    "about": {
+      "reads": "",
+      "sends": "",
+      "limit": "",
+      "risk": ""
+    },
+    "enable": {
+      "title": "",
+      "description": ""
+    },
+    "consent": {
+      "title": "",
+      "body": "",
+      "accept": "",
+      "decline": ""
+    },
+    "quota": {
+      "remaining": "",
+      "accountRemaining": "",
+      "gcUnavailable": "",
+      "reachedToday": ""
+    },
+    "noAccounts": "",
+    "loadError": {
+      "title": "",
+      "retry": ""
+    },
+    "errors": {
+      "consentRequired": "",
+      "disabled": "",
+      "alreadyRunning": "",
+      "gameRunning": "",
+      "quotaReached": ""
+    },
+    "fullSync": {
+      "title": "",
+      "description": "",
+      "button": "",
+      "started": "",
+      "cancel": "",
+      "accountProgress": "",
+      "running": "",
+      "done": "",
+      "doneQuota": "",
+      "rateLimited": ""
+    }
+  },
   "privacy": {
     "title": "隐私与内容",
     "description": "控制如何显示和过滤NSFW（不适宜工作场所观看）内容。",
@@ -2286,6 +2336,7 @@
     "removedRestart": "准星部分已移除！请重启游戏以使更改生效。",
     "disabledError": "自定义准星已禁用。请在设置中启用它们以应用准星。",
     "toggleError": "切换自定义准星失败",
+    "stopGameBeforeDisable": "",
     "form": {
       "metadata": "元数据",
       "name": "名称",

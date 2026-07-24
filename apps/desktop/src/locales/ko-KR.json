@@ -993,6 +993,56 @@
     "confirmRestore": "백업에서 gameinfo.gi를 복원하시겠습니까? 현재 파일을 덮어쓰게 됩니다.",
     "confirmReset": "gameinfo.gi를 바닐라 상태로 재설정하시겠습니까? 이렇게 하면 모든 모드 구성이 제거되고 원래 게임 설정이 복원됩니다."
   },
+  "matchSync": {
+    "title": "",
+    "description": "",
+    "about": {
+      "reads": "",
+      "sends": "",
+      "limit": "",
+      "risk": ""
+    },
+    "enable": {
+      "title": "",
+      "description": ""
+    },
+    "consent": {
+      "title": "",
+      "body": "",
+      "accept": "",
+      "decline": ""
+    },
+    "quota": {
+      "remaining": "",
+      "accountRemaining": "",
+      "gcUnavailable": "",
+      "reachedToday": ""
+    },
+    "noAccounts": "",
+    "loadError": {
+      "title": "",
+      "retry": ""
+    },
+    "errors": {
+      "consentRequired": "",
+      "disabled": "",
+      "alreadyRunning": "",
+      "gameRunning": "",
+      "quotaReached": ""
+    },
+    "fullSync": {
+      "title": "",
+      "description": "",
+      "button": "",
+      "started": "",
+      "cancel": "",
+      "accountProgress": "",
+      "running": "",
+      "done": "",
+      "doneQuota": "",
+      "rateLimited": ""
+    }
+  },
   "privacy": {
     "title": "개인정보 보호 및 콘텐츠",
     "description": "NSFW(Not Safe For Work) 콘텐츠가 표시되고 필터링되는 방식을 제어합니다.",
@@ -2286,6 +2336,7 @@
     "removedRestart": "십자선 섹션이 제거되었습니다! 변경 사항을 적용하려면 게임을 다시 시작하세요.",
     "disabledError": "사용자 정의 십자선이 비활성화되었습니다. 십자선을 적용하려면 설정에서 활성화하세요.",
     "toggleError": "맞춤 십자선을 전환하지 못했습니다.",
+    "stopGameBeforeDisable": "",
     "form": {
       "metadata": "메타데이터",
       "name": "이름",
