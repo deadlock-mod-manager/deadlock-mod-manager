@@ -347,6 +347,10 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
         return t("downloads.downloadingPercent", {
           percent: Math.round(modProgress?.percentage ?? 0),
         });
+      case ModStatus.Paused:
+        return `${t("downloads.paused")} ${t("downloads.percentage", {
+          percentage: Math.round(modProgress?.percentage ?? 0),
+        })}`;
       case undefined:
         return t("modButton.add");
       default:
@@ -360,6 +364,8 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
         return t("modButton.installedTooltip");
       case ModStatus.Downloaded:
         return t("modButton.downloadedTooltip");
+      case ModStatus.Paused:
+        return t("downloads.paused");
       case undefined:
         return t("modButton.add");
       default:
