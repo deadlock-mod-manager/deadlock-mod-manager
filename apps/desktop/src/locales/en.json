@@ -353,6 +353,7 @@
     "pause": "Pause",
     "resume": "Resume",
     "paused": "Paused",
+    "retry": "Retry",
     "pauseError": "Could not pause download: {{message}}",
     "resumeError": "Could not resume download: {{message}}"
   },

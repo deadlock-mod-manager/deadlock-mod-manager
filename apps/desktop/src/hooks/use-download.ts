@@ -119,8 +119,34 @@ export const useDownload = (
     }
   };
 
+  const retryDownload = () => {
+    if (!mod || !localMod) {
+      toast.error("Failed to fetch mod download data. Try again later.");
+      return;
+    }
+
+    const selectedDownloads = localMod.selectedDownloads ?? [];
+    const persistedDownloads = localMod.downloads ?? [];
+
+    const retryFiles =
+      selectedDownloads.length > 0
+        ? selectedDownloads
+        : persistedDownloads.length > 0
+          ? persistedDownloads
+          : availableFiles;
+
+    if (retryFiles.length === 0) {
+      toast.error("No downloadable files found.");
+      return;
+    }
+
+    setModStatus(mod.remoteId, ModStatus.Downloading);
+    void downloadSelectedFiles(retryFiles);
+  };
+
   return {
     download: initiateDownload,
+    retryDownload,
     downloadSelectedFiles,
     pauseDownload,
     resumeDownload,
