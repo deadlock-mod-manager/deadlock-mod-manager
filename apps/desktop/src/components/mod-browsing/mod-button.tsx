@@ -128,7 +128,9 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
     currentMod,
   } = useInstallWithCollection();
   const { uninstall } = useUninstall();
-  const getModProgress = usePersistedStore((state) => state.getModProgress);
+  const modProgress = usePersistedStore((state) =>
+    remoteMod?.remoteId ? state.modProgress[remoteMod.remoteId] : undefined,
+  );
   const setInstalledVpks = usePersistedStore((state) => state.setInstalledVpks);
   const removeMod = usePersistedStore((state) => state.removeMod);
   const setModStatus = usePersistedStore((state) => state.setModStatus);
@@ -341,12 +343,20 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
           return t("modButton.enableMod");
         }
         return t("modButton.downloaded");
+      case ModStatus.Downloading:
+        return t("downloads.downloadingPercent", {
+          percent: Math.round(modProgress?.percentage ?? 0),
+        });
+      case ModStatus.Paused:
+        return `${t("downloads.paused")} ${t("downloads.percentage", {
+          percentage: Math.round(modProgress?.percentage ?? 0),
+        })}`;
       case undefined:
         return t("modButton.add");
       default:
         return t(`modButton.${localMod?.status}`);
     }
-  }, [localMod?.status, t, hovering]);
+  }, [localMod?.status, t, hovering, modProgress?.percentage]);
 
   const tooltip = useMemo(() => {
     switch (localMod?.status) {
@@ -354,6 +364,8 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
         return t("modButton.installedTooltip");
       case ModStatus.Downloaded:
         return t("modButton.downloadedTooltip");
+      case ModStatus.Paused:
+        return t("downloads.paused");
       case undefined:
         return t("modButton.add");
       default:
@@ -451,9 +463,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
       />
 
       <MultiFileDownloadDialog
-        downloadPercentage={
-          getModProgress(remoteMod?.remoteId ?? "")?.percentage ?? 0
-        }
+        downloadPercentage={modProgress?.percentage ?? 0}
         files={availableFiles}
         isDownloading={
           localMod?.status === ModStatus.Downloading ||
