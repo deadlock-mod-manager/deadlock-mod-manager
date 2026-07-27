@@ -1212,6 +1212,7 @@
   "modStatus": {
     "added": "Added to my mods",
     "completed": "Completed",
+    "failed": "Failed",
     "downloading": "Downloading...",
     "extracting": "Extracting...",
     "downloaded": "Downloaded",
