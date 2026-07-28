@@ -22,15 +22,11 @@ finish-args:
   - --filesystem=home/.steam
   - --talk-name=org.freedesktop.Notifications
   - --talk-name=org.kde.StatusNotifierWatcher
-  # CEF-only permissions (zypak, audio, portals)
+  # CEF-only permissions (audio, portals, updater's flatpak-spawn)
   - --socket=session-bus
   - --socket=pulseaudio
   - --talk-name=org.freedesktop.portal.Desktop
   - --talk-name=org.freedesktop.portal.OpenURI
-  # zypak uses the spawn-strategy zygote by default which fails on some
-  # hosts ("Failed to send spawn request to supervisor: Bad file descriptor").
-  # The legacy fork strategy is more compatible with custom CEF apps.
-  - --env=ZYPAK_ZYGOTE_STRATEGY_SPAWN=0
 
 modules:
   - name: deadlock-mod-manager
@@ -43,7 +39,7 @@ modules:
       - type: file
         path: dev.stormix.deadlock-mod-manager.desktop
       - type: file
-        path: zypak-wrapper.sh
+        path: launcher.sh
     build-commands:
       - set -e
       - mkdir -p deb-extract
@@ -51,7 +47,8 @@ modules:
       - tar -C deb-extract -xf deb-extract/data.tar.gz
 
       # The binary has RUNPATH=$ORIGIN so it must stay next to libcef.so.
-      # chrome-sandbox is removed because zypak handles sandboxing.
+      # chrome-sandbox is removed because the Chromium sandbox is disabled
+      # under Flatpak (see launcher.sh).
       # The install path must not contain spaces (CEF's zygote re-execs
       # using argv[0] without quoting), so we relocate from the deb's
       # "/usr/share/Deadlock Mod Manager/" to a no-spaces path.
@@ -60,7 +57,7 @@ modules:
         mkdir -p /app/share
         cp -a "deb-extract/usr/share/Deadlock Mod Manager" /app/share/deadlock-mod-manager
         rm -f /app/share/deadlock-mod-manager/chrome-sandbox
-        install -Dm755 zypak-wrapper.sh /app/bin/deadlock-mod-manager
+        install -Dm755 launcher.sh /app/bin/deadlock-mod-manager
 
       - install -Dm644 dev.stormix.deadlock-mod-manager.desktop /app/share/applications/dev.stormix.deadlock-mod-manager.desktop
 
