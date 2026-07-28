@@ -629,11 +629,7 @@ describe("parseRequirements", () => {
   it("returns [] for null/undefined/non-array input", () => {
     expect(parseRequirements(null)).toEqual([]);
     expect(parseRequirements(undefined)).toEqual([]);
-    expect(
-      parseRequirements(
-        "nope" as unknown as GameBanana.GameBananaRequirement[],
-      ),
-    ).toEqual([]);
+    expect(parseRequirements("nope" as unknown as string[][])).toEqual([]);
   });
 
   it("parses the real Sinners-and-Statues sample (Recommended + enabled)", () => {
@@ -691,6 +687,23 @@ describe("parseRequirements", () => {
 
   it("drops rows with neither label nor url", () => {
     expect(parseRequirements([["", "", "1", "1"], []])).toEqual([]);
+  });
+
+  it("only reads a mod id when the url is actually a GameBanana mod page", () => {
+    const [embedded] = parseRequirements([
+      [
+        "Elsewhere",
+        "https://example.com/?ref=gamebanana.com/mods/123",
+        "1",
+        "1",
+      ],
+    ]);
+    expect(embedded.remoteId).toBeNull();
+
+    const [subdomain] = parseRequirements([
+      ["Real", "https://www.gamebanana.com/mods/123", "1", "1"],
+    ]);
+    expect(subdomain.remoteId).toBe("123");
   });
 
   it("parses the real ProfilePage label shape (Enabled + Recommended)", () => {

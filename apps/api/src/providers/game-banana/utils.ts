@@ -16,7 +16,7 @@ export {
   submitterDisplayName,
 } from "./profile";
 
-const GB_MOD_URL_RE = /gamebanana\.com\/mods\/(\d+)/i;
+const GB_MOD_URL_RE = /^https?:\/\/(?:www\.)?gamebanana\.com\/mods\/(\d+)/i;
 
 // GameBanana's Required/Recommended dropdown. The profile endpoint spells it out,
 // the base endpoint sends a number
@@ -57,7 +57,7 @@ const POSITIVE_STATE_LABELS = new Set([
  * they sit.
  */
 export const parseRequirements = (
-  raw: GameBanana.GameBananaRequirement[] | null | undefined,
+  raw: string[][] | null | undefined,
 ): ModDependency[] => {
   if (!Array.isArray(raw)) {
     return [];

@@ -146,13 +146,9 @@ export type GameBananaModFile = {
   _sAvastAvResult: string;
 };
 
-/**
- * One row from a mod's GameBanana requirements
- */
-export type GameBananaRequirement = string[];
-
 export type GameBananaModProfile = BaseSubmission & {
-  _aRequirements?: GameBananaRequirement[] | null;
+  /** Each row is one requirement */
+  _aRequirements?: string[][] | null;
   /** True when the mod has any requirements */
   _bAdvancedRequirementsExist?: boolean;
   _nStatus: string;
@@ -283,7 +279,8 @@ export type GameBananaModProfile = BaseSubmission & {
 };
 
 export type GameBananaSoundProfile = BaseSubmission & {
-  _aRequirements?: GameBananaRequirement[] | null;
+  /** Each row is one requirement */
+  _aRequirements?: string[][] | null;
   /** True when the mod has any requirements */
   _bAdvancedRequirementsExist?: boolean;
   _nStatus: string;

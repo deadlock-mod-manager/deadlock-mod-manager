@@ -18,6 +18,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import ModButton from "@/components/mod-browsing/mod-button";
 import { prefetchModDetail } from "@/lib/mods/mod-detail-prefetch";
+import { isTrustedExternalUrl } from "@/lib/trusted-external-url";
 import type { ModDependency, ResolvedDependency } from "@/types/dependencies";
 
 interface ModDependenciesProps {
@@ -142,17 +143,27 @@ const ExternalDependencyRow = ({
   const url = dependency.dependency.url;
   const level = dependency.dependency.level;
 
-  // No link, so it's just a note
-  if (!url) {
+  // These urls come from whatever the mod author typed on GameBanana, so we
+  // only open the ones we trust. Anything else stays a plain note with the link shown as text
+  if (!isTrustedExternalUrl(url)) {
     return (
       <li className='flex items-center gap-3 rounded-lg border p-3'>
         <div className='flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-secondary'>
           <Info className='h-5 w-5 text-muted-foreground' />
         </div>
-        <div className='flex min-w-0 flex-1 items-center gap-2'>
-          {level === "required" && <LevelBadge level='required' />}
-          <span className='font-medium'>{label}</span>
-          {level === "recommended" && <LevelBadge level='recommended' />}
+        <div className='min-w-0 flex-1'>
+          <div className='flex items-center gap-2'>
+            {level === "required" && <LevelBadge level='required' />}
+            <span className='truncate font-medium'>
+              {label || t("modDependencies.openExternal")}
+            </span>
+            {level === "recommended" && <LevelBadge level='recommended' />}
+          </div>
+          {url && (
+            <p className='truncate text-muted-foreground text-sm' title={url}>
+              {url}
+            </p>
+          )}
         </div>
       </li>
     );
