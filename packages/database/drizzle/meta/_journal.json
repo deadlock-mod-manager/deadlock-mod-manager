@@ -372,6 +372,13 @@
       "when": 1784228932248,
       "tag": "0052_cultured_menace",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1784644302365,
+      "tag": "0053_legal_beast",
+      "breakpoints": true
     }
   ]
 }

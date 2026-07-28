@@ -1,5 +1,7 @@
 import type { Mod, ModDownload } from "@deadlock-mods/database";
 
+export type { ModDependency } from "@deadlock-mods/database";
+
 export const toModDto = (mod: Mod) => {
   if (!mod.overrides) return mod;
 

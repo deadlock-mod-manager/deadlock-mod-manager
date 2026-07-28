@@ -13,6 +13,7 @@ import ModButton from "@/components/mod-browsing/mod-button";
 import { InstalledFilesDisplay } from "@/components/mod-detail/installed-files-display";
 import { InstalledVpksSection } from "@/components/mod-detail/installed-vpks-section";
 import { ModAudioPreview } from "@/components/mod-detail/mod-audio-preview";
+import { ModDependencies } from "@/components/mod-detail/mod-dependencies";
 import { ModDescription } from "@/components/mod-detail/mod-description";
 import { ModFiles } from "@/components/mod-detail/mod-files";
 import { ModGallery } from "@/components/mod-detail/mod-gallery";
@@ -31,6 +32,7 @@ import { BrokenModButton } from "@/components/reports/report-button";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { useMod } from "@/hooks/use-mod";
+import { useResolvedDependencies } from "@/hooks/use-mod-dependencies";
 import { useModOptions } from "@/hooks/use-mod-options";
 import { useModDownloads } from "@/hooks/use-mod-downloads";
 import { useReportCounts } from "@/hooks/use-report-counts";
@@ -84,6 +86,9 @@ const Mod = () => {
   const developerMode = usePersistedStore((state) => state.developerMode);
   const setModDownloads = usePersistedStore((state) => state.setModDownloads);
   const localMod = localMods.find((m) => m.remoteId === mod?.remoteId);
+  const resolvedDependencies = useResolvedDependencies(
+    mod?.dependencies ?? undefined,
+  );
 
   useEffect(() => {
     if (
@@ -326,6 +331,7 @@ const Mod = () => {
               </div>
             </CardFooter>
           </Card>
+          <ModDependencies dependencies={resolvedDependencies} />
           {isInstalled &&
             localMod?.installedVpks &&
             localMod.installedVpks.length > 0 && (

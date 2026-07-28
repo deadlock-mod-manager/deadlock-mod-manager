@@ -304,6 +304,7 @@ export const useModProcessor = () => {
       filesUpdatedAt: null,
       metadata: null,
       overrides: null,
+      dependencies: null,
     };
 
     addMod(modDto, {
@@ -399,6 +400,7 @@ export const useModProcessor = () => {
       filesUpdatedAt: null,
       metadata: null,
       overrides: null,
+      dependencies: null,
     };
 
     const vpkFileName = existingPath.split(/[\\/]/).pop() || existingPath;

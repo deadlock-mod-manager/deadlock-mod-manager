@@ -26,6 +26,7 @@ import {
   classifyNSFW,
   heroFromGameBananaProfile,
   mapGameBananaFileserverState,
+  parseRequirements,
   parseTags,
   submitterDisplayName,
 } from "./utils";
@@ -332,6 +333,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     }
 
     const description = profile._sText || profile._sDescription || "";
+    const dependencies = parseRequirements(profile._aRequirements);
 
     return {
       remoteId: profile._idRow.toString(),
@@ -354,6 +356,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       isMap: false,
       isAudio: true,
       audioUrl: profile._aPreviewMedia._aMetadata._sAudioUrl,
+      dependencies,
       metadata: buildMetadata({
         description,
         isMap: false,
@@ -376,6 +379,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     const description = profile._sText || profile._sDescription || "";
     const category = categoryFromGameBananaProfile(profile);
     const isMap = category === MAPS_CATEGORY_NAME;
+    const dependencies = parseRequirements(profile._aRequirements);
 
     return {
       remoteId: profile._idRow.toString(),
@@ -400,6 +404,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       isTrashed: false,
       isMap,
       isAudio: false,
+      dependencies,
       metadata: buildMetadata({
         description,
         isMap,

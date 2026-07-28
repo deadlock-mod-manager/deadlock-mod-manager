@@ -1,4 +1,4 @@
-import type { ModDownload } from "@deadlock-mods/database";
+import type { ModDependency, ModDownload } from "@deadlock-mods/database";
 import type {
   DonationLink,
   FileserverDto,
@@ -15,6 +15,108 @@ export {
   parseTags,
   submitterDisplayName,
 } from "./profile";
+
+const GB_MOD_URL_RE = /gamebanana\.com\/mods\/(\d+)/i;
+
+// GameBanana's Required/Recommended dropdown. The profile endpoint spells it out,
+// the base endpoint sends a number
+const MODALITY_BY_CODE: Record<string, ModDependency["level"]> = {
+  "1": "required",
+  "2": "recommended",
+};
+const MODALITY_BY_LABEL: Record<string, ModDependency["level"]> = {
+  required: "required",
+  recommended: "recommended",
+};
+
+// The state dropdown is 1-indexed with ten options, and its five negative ones
+// ("uninstalled", "absent" ...) mean the mods clash, which is why these are the evens
+const NEGATIVE_STATE_CODES = new Set(["2", "4", "6", "8", "10"]);
+const NEGATIVE_STATE_LABELS = new Set([
+  "uninstalled",
+  "absent",
+  "disabled",
+  "off",
+  "false",
+]);
+const POSITIVE_STATE_LABELS = new Set([
+  "installed",
+  "present",
+  "enabled",
+  "on",
+  "true",
+]);
+
+/**
+ * Turns a mod's GameBanana requirements into the dependencies we store. Anything
+ * that flags a conflict is dropped, the rest are kept. The link can be empty, and
+ * when it points at another mod we pull out that mod's id.
+ *
+ * Rows arrive in two layouts, words from the profile page and numbers from the base
+ * endpoint, so the columns after label and url are read by what they say, not where
+ * they sit.
+ */
+export const parseRequirements = (
+  raw: GameBanana.GameBananaRequirement[] | null | undefined,
+): ModDependency[] => {
+  if (!Array.isArray(raw)) {
+    return [];
+  }
+
+  const dependencies: ModDependency[] = [];
+  for (const row of raw) {
+    if (!Array.isArray(row) || row.length === 0) {
+      continue;
+    }
+    const label = typeof row[0] === "string" ? row[0].trim() : "";
+    const url = typeof row[1] === "string" ? row[1].trim() : "";
+    if (!label && !url) {
+      continue;
+    }
+
+    const meta = row
+      .slice(2)
+      .map((value) =>
+        typeof value === "string" ? value.trim().toLowerCase() : "",
+      );
+
+    // Nothing in the response tells us which layout we got, so work it out from
+    // whether any of the trailing columns are words we recognise
+    const isLabelShape = meta.some(
+      (token) =>
+        token in MODALITY_BY_LABEL ||
+        NEGATIVE_STATE_LABELS.has(token) ||
+        POSITIVE_STATE_LABELS.has(token),
+    );
+
+    let level: ModDependency["level"];
+    let isIncompatibility: boolean;
+    if (isLabelShape) {
+      const modalityLabel = meta.find((token) => token in MODALITY_BY_LABEL);
+      level = modalityLabel ? MODALITY_BY_LABEL[modalityLabel] : null;
+      isIncompatibility = meta.some((token) =>
+        NEGATIVE_STATE_LABELS.has(token),
+      );
+    } else {
+      // In the number layout modality comes first and state second
+      level = MODALITY_BY_CODE[meta[0] ?? ""] ?? null;
+      isIncompatibility = NEGATIVE_STATE_CODES.has(meta[1] ?? "");
+    }
+
+    // The author wants the other mod gone, so there is nothing to offer installing
+    if (isIncompatibility) {
+      continue;
+    }
+
+    dependencies.push({
+      label,
+      url: url || null,
+      remoteId: url ? (url.match(GB_MOD_URL_RE)?.[1] ?? null) : null,
+      level,
+    });
+  }
+  return dependencies;
+};
 
 /**
  * Classify if a GameBanana mod contains NSFW content

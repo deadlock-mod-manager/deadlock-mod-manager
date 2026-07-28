@@ -2293,6 +2293,13 @@
       "countMismatch": "Expected {{expected}} file(s), got {{actual}}"
     }
   },
+  "modDependencies": {
+    "title": "Requirements",
+    "description": "This mod is built to work with the following.",
+    "openExternal": "Open link",
+    "required": "Required",
+    "recommended": "Recommended"
+  },
   "reports": {
     "reportSubmitted": "Report submitted successfully",
     "reportFailed": "Failed to submit report",

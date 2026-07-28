@@ -4,6 +4,13 @@ import { z } from "zod";
 const coercedDate = z.coerce.date();
 const coercedDateNullable = z.coerce.date().nullable();
 
+export const ModDependencySchema = z.object({
+  label: z.string(),
+  url: z.string().nullable(),
+  remoteId: z.string().nullable(),
+  level: z.enum(["required", "recommended"]).nullable(),
+});
+
 // ModDto schema (matches the raw Mod type from database)
 export const ModDtoSchema = z.object({
   id: z.string(),
@@ -40,6 +47,7 @@ export const ModDtoSchema = z.object({
     })
     .nullable()
     .optional(),
+  dependencies: z.array(ModDependencySchema).nullable().optional(),
   createdAt: coercedDateNullable,
   updatedAt: coercedDateNullable,
 });
