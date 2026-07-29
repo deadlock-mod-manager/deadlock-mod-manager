@@ -21,10 +21,12 @@ const Skins = () => {
   const groups = useMemo(() => groupSkinsByHero(localMods), [localMods]);
 
   const entries = useMemo<HeroListEntry[]>(() => {
-    const knownHeroes = Object.values(DeadlockHeroes) as string[];
+    const knownHeroes: ReadonlySet<string> = new Set(
+      Object.values(DeadlockHeroes),
+    );
     // Manual overrides may name heroes outside the enum; keep them visible.
     const extraHeroes = [...groups.keys()]
-      .filter((hero) => !knownHeroes.includes(hero))
+      .filter((hero) => !knownHeroes.has(hero))
       .sort();
     const all = [...knownHeroes, ...extraHeroes].map((hero) => {
       const group = groups.get(hero);
