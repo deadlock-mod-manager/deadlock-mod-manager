@@ -4,7 +4,10 @@ import { swapHeroSkin } from "./skin-swap";
 type TestMod = { remoteId: string };
 const mod = (id: string): TestMod => ({ remoteId: id });
 
-const recordingDeps = (uninstallResults: Record<string, boolean> = {}) => {
+const recordingDeps = (
+  uninstallResults: Record<string, boolean> = {},
+  installResults: Record<string, boolean> = {},
+) => {
   const calls: string[] = [];
   return {
     calls,
@@ -15,6 +18,7 @@ const recordingDeps = (uninstallResults: Record<string, boolean> = {}) => {
       },
       install: async (m: TestMod) => {
         calls.push(`install:${m.remoteId}`);
+        return installResults[m.remoteId] ?? true;
       },
     },
   };
@@ -61,5 +65,12 @@ describe("swapHeroSkin", () => {
     const result = await swapHeroSkin([], mod("new"), deps);
     expect(result).toBe("swapped");
     expect(calls).toEqual(["install:new"]);
+  });
+
+  it("aborts when the install fails", async () => {
+    const { calls, deps } = recordingDeps({}, { new: false });
+    const result = await swapHeroSkin([mod("old")], mod("new"), deps);
+    expect(result).toBe("aborted");
+    expect(calls).toEqual(["uninstall:old", "install:new"]);
   });
 });

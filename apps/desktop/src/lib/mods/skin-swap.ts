@@ -1,7 +1,8 @@
 export type SkinSwapDeps<T> = {
   /** Returns false when the uninstall did not take effect; the swap aborts. */
   uninstall: (mod: T) => Promise<boolean>;
-  install: (mod: T) => Promise<void>;
+  /** Returns false when the install did not succeed; the swap aborts. */
+  install: (mod: T) => Promise<boolean>;
 };
 
 export type SkinSwapResult = "swapped" | "reset" | "aborted" | "noop";
@@ -33,7 +34,10 @@ export async function swapHeroSkin<T extends { remoteId: string }>(
     return "reset";
   }
   if (!targetIsActive) {
-    await deps.install(target);
+    const installed = await deps.install(target);
+    if (!installed) {
+      return "aborted";
+    }
   }
   return "swapped";
 }
