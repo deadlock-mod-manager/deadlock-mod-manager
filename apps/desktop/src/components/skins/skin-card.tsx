@@ -23,18 +23,36 @@ export const SkinCard = ({
   const { t } = useTranslation();
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
+  const handleSelect = () => {
+    if (!disabled) {
+      onSelect();
+    }
+  };
+
   return (
     <Card
+      aria-disabled={disabled}
+      aria-pressed={isActive}
       className={cn(
         "cursor-pointer overflow-hidden shadow-none transition-colors hover:border-primary",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         isActive && "ring-2 ring-primary",
         disabled && "pointer-events-none opacity-60",
       )}
-      onClick={() => {
-        if (!disabled) {
-          onSelect();
+      onClick={handleSelect}
+      onKeyDown={(e) => {
+        // Guard on the card itself so Enter on the nested NSFW or variant
+        // controls does not also trigger a swap.
+        if (
+          e.target === e.currentTarget &&
+          (e.key === "Enter" || e.key === " ")
+        ) {
+          e.preventDefault();
+          handleSelect();
         }
-      }}>
+      }}
+      role='button'
+      tabIndex={disabled ? -1 : 0}>
       {mod.images.length > 0 ? (
         <NSFWBlur
           blurStrength={nsfwSettings.blurStrength}
@@ -82,18 +100,31 @@ export const DefaultSkinCard = ({
 }: DefaultSkinCardProps) => {
   const { t } = useTranslation();
 
+  const handleSelect = () => {
+    if (!disabled) {
+      onSelect();
+    }
+  };
+
   return (
     <Card
+      aria-disabled={disabled}
+      aria-pressed={isActive}
       className={cn(
         "cursor-pointer overflow-hidden shadow-none transition-colors hover:border-primary",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         isActive && "ring-2 ring-primary",
         disabled && "pointer-events-none opacity-60",
       )}
-      onClick={() => {
-        if (!disabled) {
-          onSelect();
+      onClick={handleSelect}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          handleSelect();
         }
-      }}>
+      }}
+      role='button'
+      tabIndex={disabled ? -1 : 0}>
       <div className='flex h-32 w-full items-center justify-center bg-muted text-muted-foreground'>
         {t("skins.default")}
       </div>
