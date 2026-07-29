@@ -13,7 +13,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@deadlock-mods/ui/components/sidebar";
-import { ShirtIcon } from "@deadlock-mods/ui/icons";
 import {
   ArticleIcon,
   BugBeetleIcon,
@@ -29,6 +28,7 @@ import {
   MapTrifoldIcon,
   PackageIcon,
   QuestionIcon,
+  TShirtIcon,
 } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useState } from "react";
@@ -164,7 +164,7 @@ const getSidebarItems = (
       title: () => <span>{t("navigation.skins")}</span>,
       tooltipLabel: t("navigation.skins"),
       url: "/skins",
-      icon: ShirtIcon,
+      icon: TShirtIcon,
       group: "customization",
     },
     {
