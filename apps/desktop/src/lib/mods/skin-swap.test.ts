@@ -53,6 +53,13 @@ describe("swapHeroSkin", () => {
     expect(calls).toEqual([]);
   });
 
+  it("does nothing when resetting to default with no active skins", async () => {
+    const { calls, deps } = recordingDeps();
+    const result = await swapHeroSkin([], null, deps);
+    expect(result).toBe("noop");
+    expect(calls).toEqual([]);
+  });
+
   it("keeps the target and removes the rest when resolving a conflict", async () => {
     const { calls, deps } = recordingDeps();
     const result = await swapHeroSkin([mod("a"), mod("b")], mod("a"), deps);

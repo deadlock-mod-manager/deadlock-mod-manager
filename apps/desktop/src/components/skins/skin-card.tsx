@@ -30,7 +30,7 @@ export const SkinCard = ({
         disabled && "pointer-events-none opacity-60",
       )}
       onClick={() => {
-        if (!(disabled || isActive)) {
+        if (!disabled) {
           onSelect();
         }
       }}>
@@ -88,7 +88,7 @@ export const DefaultSkinCard = ({
         disabled && "pointer-events-none opacity-60",
       )}
       onClick={() => {
-        if (!(disabled || isActive)) {
+        if (!disabled) {
           onSelect();
         }
       }}>

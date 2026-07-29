@@ -19,6 +19,9 @@ export async function swapHeroSkin<T extends { remoteId: string }>(
   if (targetIsActive && activeSkins.length === 1) {
     return "noop";
   }
+  if (target === null && activeSkins.length === 0) {
+    return "noop";
+  }
 
   const toRemove = activeSkins.filter(
     (mod) => mod.remoteId !== target?.remoteId,
