@@ -54,6 +54,16 @@ describe("groupSkinsByHero", () => {
     expect(groupSkinsByHero([installing]).size).toBe(0);
   });
 
+  it("keeps failed installs selectable so they can be retried", () => {
+    const failed = makeMod({
+      detectedHero: "Haze",
+      status: ModStatus.FailedToInstall,
+    });
+    const group = groupSkinsByHero([failed]).get("Haze");
+    expect(group?.skins).toEqual([failed]);
+    expect(group?.active).toEqual([]);
+  });
+
   it("excludes mods with no resolvable hero", () => {
     expect(groupSkinsByHero([makeMod()]).size).toBe(0);
   });
