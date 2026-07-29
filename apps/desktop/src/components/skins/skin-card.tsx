@@ -2,6 +2,7 @@ import { Card } from "@deadlock-mods/ui/components/card";
 import { Check } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { NSFWBlur } from "@/components/mod-browsing/nsfw-blur";
+import { SkinVariantControls } from "@/components/skins/skin-variant-controls";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { cn } from "@/lib/utils";
 import type { LocalMod } from "@/types/mods";
@@ -63,6 +64,7 @@ export const SkinCard = ({
         </div>
         {isActive && <Check className='h-4 w-4 shrink-0 text-primary' />}
       </div>
+      <SkinVariantControls mod={mod} />
     </Card>
   );
 };

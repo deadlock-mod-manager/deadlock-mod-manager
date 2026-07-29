@@ -48,7 +48,8 @@
     "restartHint": "Deadlock is running — the new skin appears after you restart the game.",
     "swapFailed": "Failed to change skin",
     "overrideFooter": "Skin not showing under the right hero?",
-    "overrideFooterLink": "Set its hero override in your Mods Library."
+    "overrideFooterLink": "Set its hero override in your Mods Library.",
+    "variants": "Variants"
   },
   "servers": {
     "title": "Server Browser",
