@@ -154,6 +154,28 @@ const deriveOriginalsForArchive = (
     .map((f) => f.name);
 };
 
+export const deriveActiveArchiveNames = (mod: LocalMod | null): Set<string> => {
+  const names = new Set<string>();
+  for (const f of mod?.installedFileTree?.files ?? []) {
+    if (f.is_selected && f.archive_name) names.add(f.archive_name);
+  }
+  if (names.size === 0 && mod?.activeVariantArchive) {
+    for (const part of mod.activeVariantArchive.split(",")) {
+      if (part) names.add(part);
+    }
+  }
+  if (
+    names.size === 0 &&
+    mod?.selectedDownloads &&
+    mod.selectedDownloads.length > 0
+  ) {
+    for (const d of mod.selectedDownloads) {
+      names.add(d.name);
+    }
+  }
+  return names;
+};
+
 export const useModOptions = (mod: LocalMod | null) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
@@ -176,31 +198,10 @@ export const useModOptions = (mod: LocalMod | null) => {
     [mod?.selectedDownloads],
   );
 
-  const activeArchiveNames = useMemo(() => {
-    const names = new Set<string>();
-    for (const f of mod?.installedFileTree?.files ?? []) {
-      if (f.is_selected && f.archive_name) names.add(f.archive_name);
-    }
-    if (names.size === 0 && mod?.activeVariantArchive) {
-      for (const part of mod.activeVariantArchive.split(",")) {
-        if (part) names.add(part);
-      }
-    }
-    if (
-      names.size === 0 &&
-      mod?.selectedDownloads &&
-      mod.selectedDownloads.length > 0
-    ) {
-      for (const d of mod.selectedDownloads) {
-        names.add(d.name);
-      }
-    }
-    return names;
-  }, [
-    mod?.installedFileTree,
-    mod?.activeVariantArchive,
-    mod?.selectedDownloads,
-  ]);
+  const activeArchiveNames = useMemo(
+    () => deriveActiveArchiveNames(mod),
+    [mod?.installedFileTree, mod?.activeVariantArchive, mod?.selectedDownloads],
+  );
 
   const showButton =
     mod?.status === ModStatus.Installed && downloads.length > 1;
