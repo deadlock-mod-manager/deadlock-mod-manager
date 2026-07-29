@@ -1,6 +1,7 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
+import { useConfirm } from "@/components/providers/alert-dialog";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import useInstallWithCollection from "@/hooks/use-install-with-collection";
 import { usePersistedStore } from "@/lib/store";
@@ -19,6 +20,7 @@ export type UseInstallActionReturn = {
 export const useInstallAction = (): UseInstallActionReturn => {
   const { t } = useTranslation();
   const { analytics } = useAnalyticsContext();
+  const confirm = useConfirm();
   const setInstalledVpks = usePersistedStore((state) => state.setInstalledVpks);
   const setModStatus = usePersistedStore((state) => state.setModStatus);
   const setModEnabledInCurrentProfile = usePersistedStore(
@@ -36,6 +38,19 @@ export const useInstallAction = (): UseInstallActionReturn => {
 
   const performInstall = useCallback(
     async (mod: LocalMod) => {
+      if (mod.usesCriticalPaths) {
+        const confirmed = await confirm({
+          title: t("criticalPaths.title"),
+          body: t("criticalPaths.body"),
+          tone: "destructive",
+          cancelButton: t("criticalPaths.cancel"),
+          actionButton: t("criticalPaths.confirm"),
+        });
+        if (!confirmed) {
+          return;
+        }
+      }
+
       await install(mod, {
         onStart: (m) => {
           setModStatus(m.remoteId, ModStatus.Installing);
@@ -84,6 +99,7 @@ export const useInstallAction = (): UseInstallActionReturn => {
       setModEnabledInCurrentProfile,
       t,
       analytics,
+      confirm,
     ],
   );
 

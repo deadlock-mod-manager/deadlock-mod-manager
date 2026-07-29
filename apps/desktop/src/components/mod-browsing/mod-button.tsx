@@ -26,7 +26,6 @@ import {
   HeroConflictDialog,
   type HeroConflictResolution,
 } from "@/components/mod-browsing/hero-conflict-dialog";
-import { useConfirm } from "@/components/providers/alert-dialog";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { useDownload } from "@/hooks/use-download";
@@ -103,7 +102,6 @@ export const ModStatusIcon = ({
 const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
   const { t } = useTranslation();
   const { analytics } = useAnalyticsContext();
-  const confirm = useConfirm();
   const localMods = usePersistedStore((state) => state.localMods);
   const heroConflictWarningEnabled = usePersistedStore(
     (state) => state.settings["hero-conflict-warning"]?.enabled ?? true,
@@ -209,16 +207,6 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
               }
             }
           }
-          if (localMod.usesCriticalPaths) {
-            const confirmed = await confirm({
-              title: t("criticalPaths.title"),
-              body: t("criticalPaths.body"),
-              tone: "destructive",
-              cancelButton: t("criticalPaths.cancel"),
-              actionButton: t("criticalPaths.confirm"),
-            });
-            if (!confirmed) break;
-          }
           await performInstall(localMod);
           break;
         }
@@ -245,7 +233,6 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
     localMod,
     localMods,
     heroConflictWarningEnabled,
-    confirm,
     download,
     retryDownload,
     uninstall,
