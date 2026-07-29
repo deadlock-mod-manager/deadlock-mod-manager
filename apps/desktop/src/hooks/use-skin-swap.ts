@@ -50,15 +50,12 @@ export const useSkinSwap = (): {
           install: async (mod) => {
             await installAction.performInstall(mod);
 
-            const statusBeforeInstall = usePersistedStore
+            const status = usePersistedStore
               .getState()
               .localMods.find((m) => m.remoteId === mod.remoteId)?.status;
 
-            if (statusBeforeInstall !== ModStatus.Installing) {
-              const finalStatus = usePersistedStore
-                .getState()
-                .localMods.find((m) => m.remoteId === mod.remoteId)?.status;
-              return finalStatus === ModStatus.Installed;
+            if (status !== ModStatus.Installing) {
+              return status === ModStatus.Installed;
             }
 
             return new Promise<boolean>((resolve) => {
