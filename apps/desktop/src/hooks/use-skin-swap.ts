@@ -1,5 +1,4 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -7,6 +6,7 @@ import {
   useInstallAction,
 } from "@/hooks/use-install-action";
 import useUninstall from "@/hooks/use-uninstall";
+import { isGameRunning } from "@/lib/tauri-commands";
 import logger from "@/lib/logger";
 import { groupSkinsByHero } from "@/lib/mods/skin-selection";
 import { swapHeroSkin } from "@/lib/mods/skin-swap";
@@ -49,13 +49,34 @@ export const useSkinSwap = (): {
           },
           install: async (mod) => {
             await installAction.performInstall(mod);
+
+            const statusBeforeInstall = usePersistedStore
+              .getState()
+              .localMods.find((m) => m.remoteId === mod.remoteId)?.status;
+
+            if (statusBeforeInstall !== ModStatus.Installing) {
+              const finalStatus = usePersistedStore
+                .getState()
+                .localMods.find((m) => m.remoteId === mod.remoteId)?.status;
+              return finalStatus === ModStatus.Installed;
+            }
+
+            return new Promise<boolean>((resolve) => {
+              const unsubscribe = usePersistedStore.subscribe((state) => {
+                const status = state.localMods.find(
+                  (m) => m.remoteId === mod.remoteId,
+                )?.status;
+                if (status !== ModStatus.Installing) {
+                  unsubscribe();
+                  resolve(status === ModStatus.Installed);
+                }
+              });
+            });
           },
         });
 
         if (result === "swapped" || result === "reset") {
-          const gameRunning = await invoke<boolean>("is_game_running").catch(
-            () => false,
-          );
+          const gameRunning = await isGameRunning().catch(() => false);
           if (gameRunning) {
             toast.info(t("skins.restartHint"));
           }
