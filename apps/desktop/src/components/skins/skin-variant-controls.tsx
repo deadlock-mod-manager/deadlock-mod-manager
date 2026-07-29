@@ -1,4 +1,9 @@
 import { Button } from "@deadlock-mods/ui/components/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deadlock-mods/ui/components/tooltip";
 import { Settings } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { ModOptionsDialog } from "@/components/mod-management/mod-options-dialog";
@@ -26,13 +31,19 @@ export const SkinVariantControls = ({ mod }: SkinVariantControlsProps) => {
       <span className='truncate text-muted-foreground text-xs'>
         {[...modOptions.activeArchiveNames].join(", ")}
       </span>
-      <Button
-        icon={<Settings className='h-3 w-3' />}
-        onClick={modOptions.open}
-        size='sm'
-        variant='outline'>
-        {t("skins.variants")}
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            aria-label={t("skins.variants")}
+            className='h-8 w-8 shrink-0'
+            icon={<Settings className='h-3 w-3' />}
+            onClick={modOptions.open}
+            size='icon'
+            variant='outline'
+          />
+        </TooltipTrigger>
+        <TooltipContent>{t("skins.variants")}</TooltipContent>
+      </Tooltip>
       <ModOptionsDialog
         activeArchiveNames={modOptions.activeArchiveNames}
         downloads={modOptions.downloads}
