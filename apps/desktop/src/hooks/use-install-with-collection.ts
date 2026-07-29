@@ -129,6 +129,12 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         "kind" in error
       ) {
         options.onError(mod, error as ErrorKind);
+      } else {
+        // A swallowed failure leaves the mod stuck in Installing forever.
+        options.onError(mod, {
+          kind: "unknown",
+          message: typeof error === "string" ? error : "",
+        });
       }
       return null;
     }
@@ -342,6 +348,12 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         "kind" in error
       ) {
         options.onError(mod, error as ErrorKind);
+      } else {
+        // A swallowed failure leaves the mod stuck in Installing forever.
+        options.onError(mod, {
+          kind: "unknown",
+          message: typeof error === "string" ? error : "",
+        });
       }
       return null;
     }
