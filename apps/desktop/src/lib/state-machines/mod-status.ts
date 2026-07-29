@@ -42,12 +42,7 @@ const VALID_TRANSITIONS: Record<ModStatus, ModStatus[]> = {
   [ModStatus.Removing]: [ModStatus.Removed, ModStatus.FailedToRemove],
   [ModStatus.Removed]: [ModStatus.Error],
   [ModStatus.FailedToInstall]: [ModStatus.Downloaded, ModStatus.Error],
-  [ModStatus.FailedToDownload]: [
-    ModStatus.Downloading,
-    ModStatus.Extracting,
-    ModStatus.Downloaded,
-    ModStatus.Error,
-  ],
+  [ModStatus.FailedToDownload]: [ModStatus.Error],
   [ModStatus.FailedToRemove]: [
     ModStatus.Installed,
     ModStatus.Downloaded,

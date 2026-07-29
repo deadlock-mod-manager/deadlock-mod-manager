@@ -124,6 +124,18 @@ impl ModManager {
         .all(|component| matches!(component, Component::Normal(_)))
   }
 
+  /// Mod IDs are joined onto the mods store path and the result is deleted
+  /// recursively, so a traversing ID would reach outside the store.
+  fn ensure_safe_mod_id(mod_id: &str) -> Result<(), Error> {
+    if mod_id.contains("..") || mod_id.contains('/') || mod_id.contains('\\') {
+      return Err(Error::InvalidInput(
+        "Invalid mod ID: path traversal not allowed".to_string(),
+      ));
+    }
+
+    Ok(())
+  }
+
   fn vpk_filenames(vpks: &[String]) -> Vec<String> {
     vpks
       .iter()
@@ -476,6 +488,7 @@ impl ModManager {
     mods_path: &Path,
   ) -> Result<(), Error> {
     log::info!("Purging mod: {mod_id} (profile: {profile_folder:?})");
+    Self::ensure_safe_mod_id(&mod_id)?;
 
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
 
@@ -1032,11 +1045,7 @@ impl ModManager {
 
   /// Validate and resolve a mod folder path, rejecting path traversal in mod_id.
   pub fn get_validated_mod_folder_path(&self, mod_id: &str) -> Result<PathBuf, Error> {
-    if mod_id.contains("..") || mod_id.contains('/') || mod_id.contains('\\') {
-      return Err(Error::InvalidInput(
-        "Invalid mod ID: path traversal not allowed".to_string(),
-      ));
-    }
+    Self::ensure_safe_mod_id(mod_id)?;
     let mods_root = self.get_mods_store_path()?;
     let mod_folder = mods_root.join(mod_id);
     if mod_folder.exists() {
@@ -1288,5 +1297,27 @@ mod tests {
 
     assert!(!mod_dir.exists());
     assert!(!addons_path.join("pak01_dir.vpk").exists());
+  }
+
+  #[test]
+  fn purge_rejects_mod_ids_that_escape_the_mods_store() {
+    let game = game_dir();
+    let root = tempfile::tempdir().unwrap();
+    let mods_store = root.path().join("mods");
+    fs::create_dir_all(&mods_store).unwrap();
+
+    let outside = root.path().join("victim");
+    fs::create_dir_all(&outside).unwrap();
+    fs::write(outside.join("keep.txt"), b"not yours to delete").unwrap();
+
+    let mut manager = test_manager(game.path());
+
+    for mod_id in ["../victim", "..\\victim", "/etc"] {
+      let result = manager.purge_mod_from(mod_id.to_string(), Vec::new(), None, &mods_store);
+
+      assert!(matches!(result, Err(Error::InvalidInput(_))), "{mod_id}");
+    }
+
+    assert!(outside.join("keep.txt").exists());
   }
 }
