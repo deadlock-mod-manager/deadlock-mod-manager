@@ -30,7 +30,7 @@ import { useConfirm } from "@/components/providers/alert-dialog";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { useDownload } from "@/hooks/use-download";
-import useInstallWithCollection from "@/hooks/use-install-with-collection";
+import { useInstallAction } from "@/hooks/use-install-action";
 import { useModDownloads } from "@/hooks/use-mod-downloads";
 import useUninstall from "@/hooks/use-uninstall";
 import logger from "@/lib/logger";
@@ -122,24 +122,19 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
     isDialogOpen,
   } = useDownload(remoteMod, availableFiles);
   const {
-    install,
+    performInstall,
     isAnalyzing,
     currentFileTree,
     showFileSelector,
     confirmInstallation,
     cancelInstallation,
     currentMod,
-  } = useInstallWithCollection();
+  } = useInstallAction();
   const { uninstall } = useUninstall();
   const modProgress = usePersistedStore((state) =>
     remoteMod?.remoteId ? state.modProgress[remoteMod.remoteId] : undefined,
   );
-  const setInstalledVpks = usePersistedStore((state) => state.setInstalledVpks);
   const removeMod = usePersistedStore((state) => state.removeMod);
-  const setModStatus = usePersistedStore((state) => state.setModStatus);
-  const setModEnabledInCurrentProfile = usePersistedStore(
-    (state) => state.setModEnabledInCurrentProfile,
-  );
   const [ref, hovering] = useHover();
   const [isActionInProgress, setIsActionInProgress] = useState(false);
   const [heroConflict, setHeroConflict] = useState<{
@@ -150,62 +145,6 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
   const heroConflictResolverRef = useRef<
     ((resolution: HeroConflictResolution) => void) | null
   >(null);
-
-  const performInstall = useCallback(
-    async (mod: typeof localMod) => {
-      if (!mod) {
-        return;
-      }
-      await install(mod, {
-        onStart: (m) => {
-          setModStatus(m.remoteId, ModStatus.Installing);
-        },
-        onComplete: (m, result) => {
-          setModStatus(m.remoteId, ModStatus.Installed);
-          setInstalledVpks(m.remoteId, result.installed_vpks, result.file_tree);
-          setModEnabledInCurrentProfile(m.remoteId, true);
-          toast.success(t("notifications.modInstalledSuccessfully"));
-          analytics.trackModInstalled(m.remoteId, {
-            vpk_count: result.installed_vpks.length,
-            file_tree_complexity: result.file_tree?.has_multiple_files
-              ? "complex"
-              : "simple",
-          });
-        },
-        onError: (m, error) => {
-          setModStatus(m.remoteId, ModStatus.Downloaded);
-          toast.error(error.message || t("notifications.failedToInstallMod"));
-          analytics.trackError(
-            "mod_installation",
-            error.message || "Unknown installation error",
-            { mod_id: m.remoteId },
-          );
-        },
-        onCancel: (m) => {
-          setModStatus(m.remoteId, ModStatus.Downloaded);
-          toast.info(t("notifications.installationCanceled"));
-        },
-        onFileTreeAnalyzed: (m, fileTree) => {
-          if (fileTree.has_multiple_files) {
-            toast.info(
-              t("notifications.modContainsFiles", {
-                modName: m.name,
-                fileCount: fileTree.total_files,
-              }),
-            );
-          }
-        },
-      });
-    },
-    [
-      install,
-      setModStatus,
-      setInstalledVpks,
-      setModEnabledInCurrentProfile,
-      t,
-      analytics,
-    ],
-  );
 
   const askHeroConflict = useCallback(
     (heroName: string, currentMod: LocalMod, newMod: LocalMod) =>
