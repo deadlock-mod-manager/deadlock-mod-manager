@@ -80,7 +80,11 @@ const useUninstall = () => {
         remove ? t("mods.deleteSuccess") : t("mods.disableSuccess"),
       );
     } catch (error) {
-      logger.errorOnly(error);
+      // Tauri rejects with a plain {kind, message} object, which `errorOnly`
+      // renders as an empty line.
+      logger
+        .withMetadata({ modId: mod.remoteId, remove, error })
+        .error("Failed to uninstall mod");
 
       if (isTauriError(error) && error.kind === "vpkInUse") {
         toast.error(remove ? t("mods.deleteError") : t("mods.disableError"), {
