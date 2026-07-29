@@ -13,6 +13,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@deadlock-mods/ui/components/sidebar";
+import { ShirtIcon } from "@deadlock-mods/ui/icons";
 import {
   ArticleIcon,
   BugBeetleIcon,
@@ -156,6 +157,14 @@ const getSidebarItems = (
       tooltipLabel: t("navigation.crosshairs"),
       url: "/crosshairs",
       icon: CrosshairIcon,
+      group: "customization",
+    },
+    {
+      id: "skins",
+      title: () => <span>{t("navigation.skins")}</span>,
+      tooltipLabel: t("navigation.skins"),
+      url: "/skins",
+      icon: ShirtIcon,
       group: "customization",
     },
     {

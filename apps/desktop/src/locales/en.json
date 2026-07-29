@@ -24,6 +24,7 @@
     "expandMenu": "Expand menu",
     "about": "About",
     "crosshairs": "Crosshairs",
+    "skins": "Hero Skins",
     "customization": "Customization",
     "autoexec": "Autoexec Config",
     "maps": "Maps",
@@ -32,6 +33,22 @@
     "general": "General",
     "earlyAccess": "Early Access",
     "mods": "Mods"
+  },
+  "skins": {
+    "title": "Hero Skins",
+    "subtitle": "Choose which skin each hero wears — one at a time",
+    "searchPlaceholder": "Search heroes...",
+    "default": "Default",
+    "defaultDescription": "Vanilla appearance, no skin mod",
+    "skinsDownloaded_one": "{{count}} skin downloaded",
+    "skinsDownloaded_other": "{{count}} skins downloaded",
+    "noSkins": "No skins downloaded",
+    "noSkinsHint": "Download skins from the Mods Store. If a downloaded skin isn't listed here, set its hero override from your Mods Library.",
+    "conflict": "Multiple skins active",
+    "restartHint": "Deadlock is running — the new skin appears after you restart the game.",
+    "swapFailed": "Failed to change skin",
+    "overrideFooter": "Skin not showing under the right hero?",
+    "overrideFooterLink": "Set its hero override in your Mods Library."
   },
   "servers": {
     "title": "Server Browser",

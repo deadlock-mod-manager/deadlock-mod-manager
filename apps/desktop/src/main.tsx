@@ -19,6 +19,7 @@ import MyMods from "./pages/my-mods";
 import PluginEntry from "./pages/plugin";
 import Servers from "./pages/servers";
 import CustomSettings from "./pages/settings";
+import Skins from "./pages/skins";
 import Splash from "./pages/splash";
 import "flag-icons/css/flag-icons.min.css";
 import "./index.css";
@@ -61,6 +62,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<PluginEntry />} path='/plugins/:id' />
               <Route element={<Debug />} path='/debug' />
               <Route element={<Crosshairs />} path='/crosshairs' />
+              <Route element={<Skins />} path='/skins' />
               <Route
                 element={<CustomSettings value='autoexec' />}
                 path='/settings/autoexec'
