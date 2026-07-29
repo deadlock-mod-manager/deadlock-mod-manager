@@ -77,6 +77,8 @@ export const useSkinSwap = (): {
           if (gameRunning) {
             toast.info(t("skins.restartHint"));
           }
+        } else if (result === "aborted") {
+          toast.error(t("skins.swapFailed"));
         }
       } catch (error) {
         logger.errorOnly(error);
