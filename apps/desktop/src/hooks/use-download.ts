@@ -4,8 +4,10 @@ import type { z } from "zod";
 import { ModDownloadDtoSchema } from "@deadlock-mods/shared";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { detectHeroForMod } from "@/hooks/use-hero-detection";
 import { downloadManager } from "@/lib/download/manager";
+import { getErrorMessage } from "@/lib/errors";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { type ModDownloadItem, ModStatus } from "@/types/mods";
@@ -16,6 +18,7 @@ export const useDownload = (
   mod: Pick<ModDto, "remoteId" | "name"> | undefined,
   availableFiles: ModDownloadDto[],
 ) => {
+  const { t } = useTranslation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const addLocalMod = usePersistedStore((state) => state.addLocalMod);
   const localMods = usePersistedStore((state) => state.localMods);
@@ -119,8 +122,42 @@ export const useDownload = (
     }
   };
 
+  const retryDownload = () => {
+    if (!mod) {
+      toast.error(t("downloads.retryFetchError"));
+      return;
+    }
+
+    const selectedDownloads = localMod?.selectedDownloads ?? [];
+    const persistedDownloads = localMod?.downloads ?? [];
+
+    const retryFiles =
+      selectedDownloads.length > 0
+        ? selectedDownloads
+        : persistedDownloads.length > 0
+          ? persistedDownloads
+          : availableFiles;
+
+    if (retryFiles.length === 0) {
+      toast.error(t("downloads.retryNoFiles"));
+      return;
+    }
+
+    setModStatus(mod.remoteId, ModStatus.Downloading);
+    downloadSelectedFiles(retryFiles).catch((err: unknown) => {
+      const message = getErrorMessage(err);
+      logger
+        .withMetadata({ mod: mod.remoteId })
+        .withError(err instanceof Error ? err : new Error(message))
+        .error("Failed to retry download");
+      setModStatus(mod.remoteId, ModStatus.FailedToDownload);
+      toast.error(t("downloads.retryError", { message }));
+    });
+  };
+
   return {
     download: initiateDownload,
+    retryDownload,
     downloadSelectedFiles,
     pauseDownload,
     resumeDownload,

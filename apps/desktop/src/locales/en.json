@@ -353,8 +353,12 @@
     "pause": "Pause",
     "resume": "Resume",
     "paused": "Paused",
+    "retry": "Retry",
     "pauseError": "Could not pause download: {{message}}",
-    "resumeError": "Could not resume download: {{message}}"
+    "resumeError": "Could not resume download: {{message}}",
+    "retryFetchError": "Failed to fetch mod download data. Try again later.",
+    "retryNoFiles": "No downloadable files found.",
+    "retryError": "Could not retry download: {{message}}"
   },
   "notifications": {
     "modInstalledSuccessfully": "Mod installed successfully",
@@ -1212,6 +1216,7 @@
   "modStatus": {
     "added": "Added to my mods",
     "completed": "Completed",
+    "failed": "Failed",
     "downloading": "Downloading...",
     "extracting": "Extracting...",
     "downloaded": "Downloaded",

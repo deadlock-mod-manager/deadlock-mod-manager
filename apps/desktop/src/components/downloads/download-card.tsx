@@ -1,11 +1,12 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Card } from "@deadlock-mods/ui/components/card";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { Pause, Play } from "@phosphor-icons/react";
+import { ArrowClockwiseIcon, Pause, Play } from "@phosphor-icons/react";
 import { type MouseEvent, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { downloadManager } from "@/lib/download/manager";
+import { useDownload } from "@/hooks/use-download";
 import { getErrorMessage } from "@/lib/errors";
 import { usePersistedStore } from "@/lib/store";
 import { cn, formatSize, formatSpeed } from "@/lib/utils";
@@ -102,6 +103,7 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
   const isPaused = download.status === ModStatus.Paused;
   const isExtracting = download.status === ModStatus.Extracting;
   const isInProgress = isDownloading || isPaused || isExtracting;
+  const isFailed = download.status === ModStatus.FailedToDownload;
   const percentage = isInProgress ? (modProgress?.percentage ?? 0) : 100;
   const speed = isDownloading ? (modProgress?.speed ?? 0) : 0;
   const totalSize = useMemo(() => {
@@ -110,6 +112,7 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
     }
     return download.downloads.reduce((acc, curr) => acc + (curr.size || 0), 0);
   }, [download.downloads]);
+  const { retryDownload } = useDownload(download, download.downloads ?? []);
 
   const handleOpen = () => navigate(`/mods/${download.remoteId}`);
 
@@ -131,6 +134,12 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
     });
   };
 
+  const handleRetry = (e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    e.preventDefault();
+    retryDownload();
+  };
+
   return (
     <Card
       aria-label={`Open ${download.name}`}
@@ -142,6 +151,9 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
       )}
       onClick={handleOpen}
       onKeyDown={(e) => {
+        if (e.target !== e.currentTarget) {
+          return;
+        }
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
           handleOpen();
@@ -198,12 +210,28 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
         />
       </div>
 
-      {(isDownloading || isPaused) && (
+      {(isDownloading || isPaused || isFailed) && (
         <div
           className='mt-3 flex flex-wrap gap-2'
           onClick={(e) => {
             e.stopPropagation();
           }}>
+          {isFailed && (
+            <Button
+              className='h-8'
+              onClick={handleRetry}
+              size='sm'
+              type='button'
+              variant='outline'>
+              <ArrowClockwiseIcon
+                aria-hidden
+                className='mr-1 size-4'
+                weight='bold'
+              />
+              {t("downloads.retry")}
+            </Button>
+          )}
+
           {isDownloading && (
             <Button
               className='h-8'

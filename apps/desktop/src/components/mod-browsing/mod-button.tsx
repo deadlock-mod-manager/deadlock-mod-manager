@@ -14,6 +14,7 @@ import {
   X,
   XIcon,
 } from "@deadlock-mods/ui/icons";
+import { ArrowClockwiseIcon } from "@phosphor-icons/react";
 import { useHover } from "@uidotdev/usehooks";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -72,6 +73,7 @@ export const ModStatusIcon = ({
       case ModStatus.Installed:
         return hovering ? X : Check;
       case ModStatus.FailedToDownload:
+        return ArrowClockwiseIcon;
       case ModStatus.FailedToInstall:
       case ModStatus.FailedToRemove:
         return XIcon;
@@ -114,6 +116,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
   const {
     download,
     downloadSelectedFiles,
+    retryDownload,
     closeDialog,
     localMod,
     isDialogOpen,
@@ -285,6 +288,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
           analytics.trackModUninstalled(localMod.remoteId, "user_choice");
           break;
         case ModStatus.FailedToDownload:
+          retryDownload();
           break;
         case ModStatus.Error:
           removeMod(localMod.remoteId);
@@ -304,6 +308,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
     heroConflictWarningEnabled,
     confirm,
     download,
+    retryDownload,
     uninstall,
     removeMod,
     askHeroConflict,
@@ -366,6 +371,8 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
         return t("modButton.downloadedTooltip");
       case ModStatus.Paused:
         return t("downloads.paused");
+      case ModStatus.FailedToDownload:
+        return t("downloads.retry");
       case undefined:
         return t("modButton.add");
       default:
@@ -431,6 +438,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
+              aria-label={tooltip}
               disabled={isActionInProgress || isAnalyzing}
               icon={
                 <ModStatusIcon hovering={hovering} status={localMod?.status} />
@@ -438,7 +446,6 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
               onClick={onClick}
               ref={ref}
               size={variant === "iconOnly" ? "icon" : "default"}
-              title={text}
               variant={buttonVariant}>
               {variant === "iconOnly" ? null : text}
             </Button>
