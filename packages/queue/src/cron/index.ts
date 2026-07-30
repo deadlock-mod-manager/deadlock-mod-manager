@@ -1,4 +1,5 @@
+export * from "./factory";
 export * from "./patterns";
 export * from "./queue";
 export * from "./service";
-export * from "./worker";
+export * from "./types";

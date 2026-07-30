@@ -26,16 +26,4 @@ export const queueConfigs: Record<string, QueueConfig> = {
       removeOnFail: 50,
     },
   },
-  cron: {
-    name: "lockdex-cron-queue",
-    defaultJobOptions: {
-      attempts: 2,
-      backoff: {
-        type: "exponential",
-        delay: 5000,
-      },
-      removeOnComplete: 50,
-      removeOnFail: 25,
-    },
-  },
 };
