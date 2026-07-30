@@ -353,8 +353,12 @@
     "pause": "Wstrzymaj",
     "resume": "Wznów",
     "paused": "Wstrzymano",
+    "retry": "",
     "pauseError": "Nie mona wstrzymać pobierania: {{message}}",
-    "resumeError": "Nie można wznowić pobierania: {{message}}"
+    "resumeError": "Nie można wznowić pobierania: {{message}}",
+    "retryFetchError": "",
+    "retryNoFiles": "",
+    "retryError": ""
   },
   "notifications": {
     "modInstalledSuccessfully": "Mod został zainstalowany",
@@ -993,6 +997,56 @@
     "confirmRestore": "Czy na pewno chcesz przywrócić gameinfo.gi z kopii zapasowej? Zostanie nadpisany bieżący plik.",
     "confirmReset": "Czy na pewno chcesz zresetować gameinfo.gi do stanu vanilla? Spowoduje to usunięcie wszystkich konfiguracji modów i przywrócenie oryginalnych ustawień gry."
   },
+  "matchSync": {
+    "title": "",
+    "description": "",
+    "about": {
+      "reads": "",
+      "sends": "",
+      "limit": "",
+      "risk": ""
+    },
+    "enable": {
+      "title": "",
+      "description": ""
+    },
+    "consent": {
+      "title": "",
+      "body": "",
+      "accept": "",
+      "decline": ""
+    },
+    "quota": {
+      "remaining": "",
+      "accountRemaining": "",
+      "gcUnavailable": "",
+      "reachedToday": ""
+    },
+    "noAccounts": "",
+    "loadError": {
+      "title": "",
+      "retry": ""
+    },
+    "errors": {
+      "consentRequired": "",
+      "disabled": "",
+      "alreadyRunning": "",
+      "gameRunning": "",
+      "quotaReached": ""
+    },
+    "fullSync": {
+      "title": "",
+      "description": "",
+      "button": "",
+      "started": "",
+      "cancel": "",
+      "accountProgress": "",
+      "running": "",
+      "done": "",
+      "doneQuota": "",
+      "rateLimited": ""
+    }
+  },
   "privacy": {
     "title": "Prywatność i treści",
     "description": "Kontroluj sposób wyświetlania i filtrowania treści NSFW (nieodpowiednich w pracy).",
@@ -1162,6 +1216,7 @@
   "modStatus": {
     "added": "Dodano do moich modów",
     "completed": "",
+    "failed": "",
     "downloading": "Pobieranie...",
     "extracting": "Rozpakowywanie...",
     "downloaded": "Pobrano",
@@ -2243,6 +2298,13 @@
       "countMismatch": "Oczekiwano {{expected}} plików, otrzymano {{actual}}"
     }
   },
+  "modDependencies": {
+    "title": "",
+    "description": "",
+    "openExternal": "",
+    "required": "",
+    "recommended": ""
+  },
   "reports": {
     "reportSubmitted": "Pomyślnie przesłano zgłoszenie",
     "reportFailed": "Nie udało się przesłać zgłoszenia",
@@ -2286,6 +2348,7 @@
     "removedRestart": "Przecinek celownika został usunięty! Zrestartuj grę, aby zmiany odniosły skutek.",
     "disabledError": "Niestandardowe celowniki są wyłączone. Włącz je w ustawieniach, aby móc ustawiać celowniki",
     "toggleError": "Nie udało się przełączyć niestandardowych celowników",
+    "stopGameBeforeDisable": "",
     "form": {
       "metadata": "Metadane",
       "name": "Nazwa",

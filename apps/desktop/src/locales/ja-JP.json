@@ -353,8 +353,12 @@
     "pause": "",
     "resume": "",
     "paused": "",
+    "retry": "",
     "pauseError": "",
-    "resumeError": ""
+    "resumeError": "",
+    "retryFetchError": "",
+    "retryNoFiles": "",
+    "retryError": ""
   },
   "notifications": {
     "modInstalledSuccessfully": "Modをインストールしました",
@@ -993,6 +997,56 @@
     "confirmRestore": "",
     "confirmReset": ""
   },
+  "matchSync": {
+    "title": "",
+    "description": "",
+    "about": {
+      "reads": "",
+      "sends": "",
+      "limit": "",
+      "risk": ""
+    },
+    "enable": {
+      "title": "",
+      "description": ""
+    },
+    "consent": {
+      "title": "",
+      "body": "",
+      "accept": "",
+      "decline": ""
+    },
+    "quota": {
+      "remaining": "",
+      "accountRemaining": "",
+      "gcUnavailable": "",
+      "reachedToday": ""
+    },
+    "noAccounts": "",
+    "loadError": {
+      "title": "",
+      "retry": ""
+    },
+    "errors": {
+      "consentRequired": "",
+      "disabled": "",
+      "alreadyRunning": "",
+      "gameRunning": "",
+      "quotaReached": ""
+    },
+    "fullSync": {
+      "title": "",
+      "description": "",
+      "button": "",
+      "started": "",
+      "cancel": "",
+      "accountProgress": "",
+      "running": "",
+      "done": "",
+      "doneQuota": "",
+      "rateLimited": ""
+    }
+  },
   "privacy": {
     "title": "プライバシー＆コンテンツ",
     "description": "NSFW（R-18）コンテンツの表示/フィルター方法を管理する",
@@ -1162,6 +1216,7 @@
   "modStatus": {
     "added": "Modに追加しました",
     "completed": "",
+    "failed": "",
     "downloading": "ダウンロード中...",
     "extracting": "",
     "downloaded": "ダウンロード完了",
@@ -2243,6 +2298,13 @@
       "countMismatch": ""
     }
   },
+  "modDependencies": {
+    "title": "",
+    "description": "",
+    "openExternal": "",
+    "required": "",
+    "recommended": ""
+  },
   "reports": {
     "reportSubmitted": "報告を正常に送信しました",
     "reportFailed": "報告の送信に失敗しました",
@@ -2286,6 +2348,7 @@
     "removedRestart": "クロスヘアセクションを削除しました！変更を反映するにはゲームを再起動してください。",
     "disabledError": "カスタムクロスヘアが無効になっています。設定で有効にしてクロスヘアを適用してください。",
     "toggleError": "カスタムクロスヘアの切り替えに失敗しました",
+    "stopGameBeforeDisable": "",
     "form": {
       "metadata": "メタデータ",
       "name": "名前",
