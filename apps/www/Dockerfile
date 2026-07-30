@@ -14,7 +14,7 @@ RUN curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n && \
     rm n && \
     npm install -g n && \
     corepack enable && \
-    corepack prepare pnpm@11.2.2 --activate
+    corepack prepare pnpm@11.18.0 --activate
 
 # Copy package configuration files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
@@ -67,7 +67,7 @@ RUN curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n && \
     rm n && \
     npm install -g n && \
     corepack enable && \
-    corepack prepare pnpm@11.2.2 --activate
+    corepack prepare pnpm@11.18.0 --activate
 
 # Switch to non-root user before copying files
 USER appuser

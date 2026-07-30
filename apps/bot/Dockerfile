@@ -13,7 +13,7 @@ RUN curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n && \
     rm n && \
     npm install -g n && \
     corepack enable && \
-    corepack prepare pnpm@11.2.2 --activate
+    corepack prepare pnpm@11.18.0 --activate
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 
