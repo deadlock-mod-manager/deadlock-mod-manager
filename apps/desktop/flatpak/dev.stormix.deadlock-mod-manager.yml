@@ -38,7 +38,7 @@ modules:
 
       # WebKit (wry) builds ship the binary directly in /usr/bin. The CEF
       # manifest (dev.stormix.deadlock-mod-manager.cef.yml) handles the
-      # symlink/libcef layout and zypak wrapping.
+      # libcef layout and launcher wrapping.
       - install -Dm755 deb-extract/usr/bin/deadlock-mod-manager /app/bin/deadlock-mod-manager
 
       - install -Dm644 dev.stormix.deadlock-mod-manager.desktop /app/share/applications/dev.stormix.deadlock-mod-manager.desktop

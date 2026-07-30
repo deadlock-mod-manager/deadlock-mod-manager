@@ -55,6 +55,12 @@
   </provides>
 
   <releases>
+    <release version="1.0.0" date="2026-05-28">
+      <url type="details">https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/tag/v1.0.0</url>
+      <description>
+        <p>See the full release notes at https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases</p>
+      </description>
+    </release>
     <release version="0.15.0" date="2026-02-26">
       <url type="details">https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/tag/v0.15.0</url>
       <description>
