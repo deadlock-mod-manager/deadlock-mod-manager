@@ -24,6 +24,7 @@
     "expandMenu": "Разширяване на меню",
     "about": "За",
     "crosshairs": "Мерници",
+    "skins": "",
     "customization": "Персонализиране",
     "autoexec": "Autoexec конфигурация",
     "maps": "Карти",
@@ -32,6 +33,23 @@
     "general": "Основно",
     "earlyAccess": "",
     "mods": "Модове"
+  },
+  "skins": {
+    "title": "",
+    "subtitle": "",
+    "searchPlaceholder": "",
+    "default": "",
+    "defaultDescription": "",
+    "skinsDownloaded_one": "",
+    "skinsDownloaded_other": "",
+    "noSkins": "",
+    "noSkinsHint": "",
+    "conflict": "",
+    "restartHint": "",
+    "swapFailed": "",
+    "overrideFooter": "",
+    "overrideFooterLink": "",
+    "variants": ""
   },
   "servers": {
     "title": "Преглед на сървъри",

@@ -24,6 +24,7 @@
     "expandMenu": "Menü aufklappen",
     "about": "Über",
     "crosshairs": "Fadenkreuze",
+    "skins": "",
     "customization": "Personalisieren",
     "autoexec": "Autoexec Konfiguration",
     "maps": "Karten",
@@ -32,6 +33,23 @@
     "general": "Allgemein",
     "earlyAccess": "Frühzugang",
     "mods": "Mods"
+  },
+  "skins": {
+    "title": "",
+    "subtitle": "",
+    "searchPlaceholder": "",
+    "default": "",
+    "defaultDescription": "",
+    "skinsDownloaded_one": "",
+    "skinsDownloaded_other": "",
+    "noSkins": "",
+    "noSkinsHint": "",
+    "conflict": "",
+    "restartHint": "",
+    "swapFailed": "",
+    "overrideFooter": "",
+    "overrideFooterLink": "",
+    "variants": ""
   },
   "servers": {
     "title": "Server Liste",

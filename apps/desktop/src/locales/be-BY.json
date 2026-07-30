@@ -24,6 +24,7 @@
     "expandMenu": "Разгарнуць меню",
     "about": "Аб праграме",
     "crosshairs": "Прыцэлы",
+    "skins": "",
     "customization": "Кастамізацыя",
     "autoexec": "Autoexec Канфіг",
     "maps": "Карты",
@@ -32,6 +33,23 @@
     "general": "Асноўныя",
     "earlyAccess": "Ранні Доступ",
     "mods": "Моды"
+  },
+  "skins": {
+    "title": "",
+    "subtitle": "",
+    "searchPlaceholder": "",
+    "default": "",
+    "defaultDescription": "",
+    "skinsDownloaded_one": "",
+    "skinsDownloaded_other": "",
+    "noSkins": "",
+    "noSkinsHint": "",
+    "conflict": "",
+    "restartHint": "",
+    "swapFailed": "",
+    "overrideFooter": "",
+    "overrideFooterLink": "",
+    "variants": ""
   },
   "servers": {
     "title": "Браўзер сервераў",

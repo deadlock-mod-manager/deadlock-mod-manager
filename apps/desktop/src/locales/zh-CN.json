@@ -24,6 +24,7 @@
     "expandMenu": "展开菜单",
     "about": "关于",
     "crosshairs": "准心",
+    "skins": "",
     "customization": "自定义",
     "autoexec": "Autoexec 配置",
     "maps": "地图",
@@ -32,6 +33,23 @@
     "general": "常规",
     "earlyAccess": "抢先体验",
     "mods": "模组"
+  },
+  "skins": {
+    "title": "",
+    "subtitle": "",
+    "searchPlaceholder": "",
+    "default": "",
+    "defaultDescription": "",
+    "skinsDownloaded_one": "",
+    "skinsDownloaded_other": "",
+    "noSkins": "",
+    "noSkinsHint": "",
+    "conflict": "",
+    "restartHint": "",
+    "swapFailed": "",
+    "overrideFooter": "",
+    "overrideFooterLink": "",
+    "variants": ""
   },
   "servers": {
     "title": "浏览服务器",

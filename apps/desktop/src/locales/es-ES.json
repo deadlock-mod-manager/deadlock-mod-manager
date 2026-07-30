@@ -24,6 +24,7 @@
     "expandMenu": "Expandir menú",
     "about": "Información",
     "crosshairs": "Miras",
+    "skins": "",
     "customization": "Personalizacion",
     "autoexec": "Configuración de ejecución automática",
     "maps": "Mapas",
@@ -32,6 +33,23 @@
     "general": "General",
     "earlyAccess": "",
     "mods": "Mods"
+  },
+  "skins": {
+    "title": "",
+    "subtitle": "",
+    "searchPlaceholder": "",
+    "default": "",
+    "defaultDescription": "",
+    "skinsDownloaded_one": "",
+    "skinsDownloaded_other": "",
+    "noSkins": "",
+    "noSkinsHint": "",
+    "conflict": "",
+    "restartHint": "",
+    "swapFailed": "",
+    "overrideFooter": "",
+    "overrideFooterLink": "",
+    "variants": ""
   },
   "servers": {
     "title": "Buscador de servidores",
