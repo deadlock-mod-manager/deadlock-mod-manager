@@ -8,6 +8,7 @@ import {
   extractDonationLinksFromDescription,
   extractMapName,
   heroFromGameBananaProfile,
+  parseRequirements,
 } from "./utils";
 
 type GameBananaCategory = GameBanana.GameBananaModProfile["_aCategory"];
@@ -621,5 +622,146 @@ describe("buildMetadata", () => {
     });
     expect(result?.mapName).toBe("my_arena");
     expect(result?.donationLinks).toHaveLength(1);
+  });
+});
+
+describe("parseRequirements", () => {
+  it("returns [] for null/undefined/non-array input", () => {
+    expect(parseRequirements(null)).toEqual([]);
+    expect(parseRequirements(undefined)).toEqual([]);
+    expect(parseRequirements("nope" as unknown as string[][])).toEqual([]);
+  });
+
+  it("parses the real Sinners-and-Statues sample (Recommended + enabled)", () => {
+    const result = parseRequirements([
+      ["Universal Mod Manager", "https://gamebanana.com/mods/693642", "2", "5"],
+    ]);
+    expect(result).toEqual([
+      {
+        label: "Universal Mod Manager",
+        url: "https://gamebanana.com/mods/693642",
+        remoteId: "693642",
+        level: "recommended",
+      },
+    ]);
+  });
+
+  it("maps modality code 1 to required", () => {
+    const [dep] = parseRequirements([
+      ["Base Mod", "https://gamebanana.com/mods/111", "1", "1"],
+    ]);
+    expect(dep.level).toBe("required");
+    expect(dep.remoteId).toBe("111");
+  });
+
+  it("skips incompatibilities (negative state codes)", () => {
+    // 2 is uninstalled and 6 is disabled, so these are conflicts, not dependencies
+    expect(
+      parseRequirements([
+        ["Conflicting Mod", "https://gamebanana.com/mods/222", "1", "2"],
+        ["Other Conflict", "https://gamebanana.com/mods/333", "1", "6"],
+      ]),
+    ).toEqual([]);
+  });
+
+  it("handles URL-less free-text requirements", () => {
+    const [dep] = parseRequirements([
+      ["Add enable_mods 1 to autoexec.cfg", "", "1", "5"],
+    ]);
+    expect(dep).toEqual({
+      label: "Add enable_mods 1 to autoexec.cfg",
+      url: null,
+      remoteId: null,
+      level: "required",
+    });
+  });
+
+  it("leaves remoteId null for non-mod / external URLs and unknown modality", () => {
+    const [dep] = parseRequirements([
+      ["Deadlock Mod Loader", "https://gamebanana.com/tools/20525", "", "3"],
+    ]);
+    expect(dep.remoteId).toBeNull();
+    expect(dep.url).toBe("https://gamebanana.com/tools/20525");
+    expect(dep.level).toBeNull();
+  });
+
+  it("drops rows with neither label nor url", () => {
+    expect(parseRequirements([["", "", "1", "1"], []])).toEqual([]);
+  });
+
+  it("only reads a mod id when the url is actually a GameBanana mod page", () => {
+    const [embedded] = parseRequirements([
+      [
+        "Elsewhere",
+        "https://example.com/?ref=gamebanana.com/mods/123",
+        "1",
+        "1",
+      ],
+    ]);
+    expect(embedded.remoteId).toBeNull();
+
+    const [subdomain] = parseRequirements([
+      ["Real", "https://www.gamebanana.com/mods/123", "1", "1"],
+    ]);
+    expect(subdomain.remoteId).toBe("123");
+  });
+
+  it("parses the real ProfilePage label shape (Enabled + Recommended)", () => {
+    const result = parseRequirements([
+      [
+        "Universal Mod Manager",
+        "https://gamebanana.com/mods/693642",
+        "Enabled",
+        "BlueColor",
+        "Recommended",
+        "GreyColor",
+      ],
+    ]);
+    expect(result).toEqual([
+      {
+        label: "Universal Mod Manager",
+        url: "https://gamebanana.com/mods/693642",
+        remoteId: "693642",
+        level: "recommended",
+      },
+    ]);
+  });
+
+  it("maps the Required label shape and ignores color tokens", () => {
+    const [dep] = parseRequirements([
+      [
+        "Base Mod",
+        "https://gamebanana.com/mods/111",
+        "Installed",
+        "GreenColor",
+        "Required",
+        "RedColor",
+      ],
+    ]);
+    expect(dep.level).toBe("required");
+    expect(dep.remoteId).toBe("111");
+  });
+
+  it("skips incompatibilities in the label shape (negative state label)", () => {
+    expect(
+      parseRequirements([
+        [
+          "Conflicting Mod",
+          "https://gamebanana.com/mods/222",
+          "Disabled",
+          "RedColor",
+          "Required",
+          "GreyColor",
+        ],
+        [
+          "Other Conflict",
+          "https://gamebanana.com/mods/333",
+          "Uninstalled",
+          "RedColor",
+          "Recommended",
+          "GreyColor",
+        ],
+      ]),
+    ).toEqual([]);
   });
 });

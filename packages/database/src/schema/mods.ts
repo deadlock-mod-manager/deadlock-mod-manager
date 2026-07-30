@@ -28,6 +28,17 @@ export interface ModOverrides {
   downloads?: Array<{ url: string; file: string }>;
 }
 
+export interface ModDependency {
+  /** The text GameBanana shows */
+  label: string;
+  /** The link, if there is one */
+  url: string | null;
+  /** The other mod's id, if the link points at a GameBanana mod */
+  remoteId: string | null;
+  /** Required or recommended, if GameBanana says which */
+  level: "required" | "recommended" | null;
+}
+
 export const mods = pgTable(
   "mod",
   {
@@ -64,6 +75,7 @@ export const mods = pgTable(
       donationLinks?: Array<{ url: string; platform: string }>;
     }>(),
     overrides: jsonb("overrides").$type<ModOverrides>(),
+    dependencies: jsonb("dependencies").$type<ModDependency[]>(),
     ...timestamps,
   },
   (table) => [

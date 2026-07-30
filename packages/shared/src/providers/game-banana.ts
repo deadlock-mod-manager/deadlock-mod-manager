@@ -147,6 +147,10 @@ export type GameBananaModFile = {
 };
 
 export type GameBananaModProfile = BaseSubmission & {
+  /** Each row is one requirement */
+  _aRequirements?: string[][] | null;
+  /** True when the mod has any requirements */
+  _bAdvancedRequirementsExist?: boolean;
   _nStatus: string;
   _bIsPrivate: boolean;
   _tsDateModified: number;
@@ -275,6 +279,10 @@ export type GameBananaModProfile = BaseSubmission & {
 };
 
 export type GameBananaSoundProfile = BaseSubmission & {
+  /** Each row is one requirement */
+  _aRequirements?: string[][] | null;
+  /** True when the mod has any requirements */
+  _bAdvancedRequirementsExist?: boolean;
   _nStatus: string;
   _bIsPrivate: boolean;
   _tsDateModified: number;
