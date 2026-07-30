@@ -353,8 +353,12 @@
     "pause": "",
     "resume": "",
     "paused": "",
+    "retry": "",
     "pauseError": "",
-    "resumeError": ""
+    "resumeError": "",
+    "retryFetchError": "",
+    "retryNoFiles": "",
+    "retryError": ""
   },
   "notifications": {
     "modInstalledSuccessfully": "Mod instalado com sucesso",
@@ -993,6 +997,56 @@
     "confirmRestore": "",
     "confirmReset": ""
   },
+  "matchSync": {
+    "title": "",
+    "description": "",
+    "about": {
+      "reads": "",
+      "sends": "",
+      "limit": "",
+      "risk": ""
+    },
+    "enable": {
+      "title": "",
+      "description": ""
+    },
+    "consent": {
+      "title": "",
+      "body": "",
+      "accept": "",
+      "decline": ""
+    },
+    "quota": {
+      "remaining": "",
+      "accountRemaining": "",
+      "gcUnavailable": "",
+      "reachedToday": ""
+    },
+    "noAccounts": "",
+    "loadError": {
+      "title": "",
+      "retry": ""
+    },
+    "errors": {
+      "consentRequired": "",
+      "disabled": "",
+      "alreadyRunning": "",
+      "gameRunning": "",
+      "quotaReached": ""
+    },
+    "fullSync": {
+      "title": "",
+      "description": "",
+      "button": "",
+      "started": "",
+      "cancel": "",
+      "accountProgress": "",
+      "running": "",
+      "done": "",
+      "doneQuota": "",
+      "rateLimited": ""
+    }
+  },
   "privacy": {
     "title": "Privacidade e Conteúdo",
     "description": "Controla como Conteúdo Adulto é exibido e filtrado.",
@@ -1162,6 +1216,7 @@
   "modStatus": {
     "added": "Adicionado aos meus mods",
     "completed": "",
+    "failed": "",
     "downloading": "Baixando...",
     "extracting": "",
     "downloaded": "Baixado",
@@ -2243,6 +2298,13 @@
       "countMismatch": ""
     }
   },
+  "modDependencies": {
+    "title": "",
+    "description": "",
+    "openExternal": "",
+    "required": "",
+    "recommended": ""
+  },
   "reports": {
     "reportSubmitted": "Relatório enviado com sucesso",
     "reportFailed": "Falha ao enviar relatório",
@@ -2286,6 +2348,7 @@
     "removedRestart": "",
     "disabledError": "",
     "toggleError": "",
+    "stopGameBeforeDisable": "",
     "form": {
       "metadata": "",
       "name": "",

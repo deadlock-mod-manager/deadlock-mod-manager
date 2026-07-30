@@ -353,8 +353,12 @@
     "pause": "",
     "resume": "",
     "paused": "",
+    "retry": "",
     "pauseError": "",
-    "resumeError": ""
+    "resumeError": "",
+    "retryFetchError": "",
+    "retryNoFiles": "",
+    "retryError": ""
   },
   "notifications": {
     "modInstalledSuccessfully": "Модът е инсталиран успешно",
@@ -993,6 +997,56 @@
     "confirmRestore": "",
     "confirmReset": ""
   },
+  "matchSync": {
+    "title": "",
+    "description": "",
+    "about": {
+      "reads": "",
+      "sends": "",
+      "limit": "",
+      "risk": ""
+    },
+    "enable": {
+      "title": "",
+      "description": ""
+    },
+    "consent": {
+      "title": "",
+      "body": "",
+      "accept": "",
+      "decline": ""
+    },
+    "quota": {
+      "remaining": "",
+      "accountRemaining": "",
+      "gcUnavailable": "",
+      "reachedToday": ""
+    },
+    "noAccounts": "",
+    "loadError": {
+      "title": "",
+      "retry": ""
+    },
+    "errors": {
+      "consentRequired": "",
+      "disabled": "",
+      "alreadyRunning": "",
+      "gameRunning": "",
+      "quotaReached": ""
+    },
+    "fullSync": {
+      "title": "",
+      "description": "",
+      "button": "",
+      "started": "",
+      "cancel": "",
+      "accountProgress": "",
+      "running": "",
+      "done": "",
+      "doneQuota": "",
+      "rateLimited": ""
+    }
+  },
   "privacy": {
     "title": "Поверителност и съдържание",
     "description": "Контролирайте как се показва и филтрира съдържанието, което не е подходящо за работа (NSFW).",
@@ -1162,6 +1216,7 @@
   "modStatus": {
     "added": "",
     "completed": "",
+    "failed": "",
     "downloading": "",
     "extracting": "",
     "downloaded": "",
@@ -2243,6 +2298,13 @@
       "countMismatch": ""
     }
   },
+  "modDependencies": {
+    "title": "",
+    "description": "",
+    "openExternal": "",
+    "required": "",
+    "recommended": ""
+  },
   "reports": {
     "reportSubmitted": "",
     "reportFailed": "",
@@ -2286,6 +2348,7 @@
     "removedRestart": "",
     "disabledError": "",
     "toggleError": "",
+    "stopGameBeforeDisable": "",
     "form": {
       "metadata": "",
       "name": "",

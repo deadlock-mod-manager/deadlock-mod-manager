@@ -14,7 +14,7 @@
     "dashboard": "主页",
     "myMods": "我的模组",
     "getMods": "获取模组",
-    "addMods": "添加模组",
+    "addMods": "添加本地模组",
     "downloads": "下载",
     "settings": "设置",
     "developer": "开发者",
@@ -87,7 +87,7 @@
     "stats": {
       "totalServers_one": "{{count}} 服务器",
       "totalServers_other": "{{count}}个服务器",
-      "relays": "在线服务器"
+      "relays": "在线服务器：{{healthy}}/{{total}}"
     },
     "network": {
       "title": "网络状态",
@@ -129,7 +129,7 @@
       "metaSourceRelay": "地区",
       "metaLastSeen": "上次上线时间",
       "join": "加入服务器",
-      "joining": "正在加入...",
+      "joining": "正在加入……",
       "missingMods_one": "{{count}}个依赖模组缺失",
       "missingMods_other": "{{count}}个依赖模组缺失",
       "installAll": "安装依赖模组",
@@ -137,22 +137,22 @@
       "installMod": "安装模组",
       "passwordPrompt": "此服务器需要密码",
       "passwordPlaceholder": "服务器密码",
-      "openExternal": "正在启动DeadLock...",
+      "openExternal": "正在启动DeadLock……",
       "unknown": "未知",
       "keepMyMods": "保持已安装的模组为启用 (服务器模组优先于你的的活动配置文件)"
     },
     "staging": {
-      "creatingFolder": "正在准备服务器插件文件夹...",
-      "installing": "正在安装依赖的模组...",
-      "installingNamed": "正在安装{name}…",
-      "awaitingFileSelection": "正在等待文件选择...",
-      "awaitingCustomConfirm": "正在等待确认下载自定义模组...",
+      "creatingFolder": "正在准备服务器插件文件夹……",
+      "installing": "正在安装依赖的模组……",
+      "installingNamed": "正在安装{{name}}……",
+      "awaitingFileSelection": "正在等待文件选择……",
+      "awaitingCustomConfirm": "正在等待确认下载自定义模组……",
       "customConfirmTitle": "该服务器希望下载来自自定义提供方的模组",
       "customConfirmDescription": "这些文件来自第三方 URL（非 GameBanana）。在允许下载前请检查来源。",
       "customConfirm": "允许下载",
       "customSkip": "跳过自定义模组",
-      "downloadingCustom": "正在下载来自自定义提供方的模组...",
-      "applying": "正在将服务器模组应用到 gameinfo.gi..."
+      "downloadingCustom": "正在下载来自自定义提供方的模组……",
+      "applying": "正在将服务器模组应用到 gameinfo.gi...custom-provider……"
     },
     "requirementRow": {
       "customProvider": "自定义",
@@ -211,14 +211,14 @@
     "modLimitTooltipP2": "您的库仍然可以列出比那更多的模组，因为一个模组可以附带多个附加文件。",
     "modLimitTooltipP3": "第一对是已启用的模组与完整库的对比。第二对是这些已启用的模组所使用的插件文件数量，旁边标注了上限。",
     "modLimitTooltipStatHeading": "每个数字代表什么：",
-    "modLimitTooltipStatEnabled_one": "{{count}} 模组已启用",
+    "modLimitTooltipStatEnabled_one": "{{count}} 模组已启用。",
     "modLimitTooltipStatEnabled_other": "已启用 {{count}} 个模组。",
     "modLimitTooltipStatLibrary_one": "你的库中有 {{count}} 个模组。",
     "modLimitTooltipStatLibrary_other": "你的库中有 {{count}} 个模组。",
-    "modLimitTooltipStatVpks_one": "來自已啟用模組的 {{count}} 個附加檔案",
-    "modLimitTooltipStatVpks_other": "来自已启用模组的 {{count}} 个插件文件",
+    "modLimitTooltipStatVpks_one": "来自已启用模组的 {{count}} 个附加档案。",
+    "modLimitTooltipStatVpks_other": "来自已启用模组的 {{count}} 个插件文件。",
     "updateAll": "全部更新",
-    "updateAllDescription": "下载并安装所有模组的最新版本。",
+    "updateAllDescription": "下载并安装所有模组的最新版本",
     "updateAvailableCount_one": "{{count}} 个更新可用",
     "updateAvailableCount_other": "{{count}} 个更新可用",
     "batchUpdate": {
@@ -230,7 +230,7 @@
       "updatedAt": "最后更新",
       "selectVariant": "选择变体",
       "backupNote": "更新前将自动创建备份",
-      "updating": "模组更新中...",
+      "updating": "模组更新中……",
       "complete": "更新完成",
       "partialSuccess": "{{succeeded}} 更新成功，{{failed}} 失败",
       "error": "更新模组失败"
@@ -267,7 +267,7 @@
     "audioMod": "音频模组",
     "mapBadge": "地图",
     "customBadge": "自定义",
-    "installing": "安装中...",
+    "installing": "安装中……",
     "enable": "启用",
     "disable": "禁用",
     "removeMod": "移除模组",
@@ -353,8 +353,12 @@
     "pause": "暂停",
     "resume": "继续",
     "paused": "已暂停",
+    "retry": "",
     "pauseError": "无法暂停下载：{{message}}",
-    "resumeError": "无法恢复下载：{{message}}"
+    "resumeError": "无法恢复下载：{{message}}",
+    "retryFetchError": "",
+    "retryNoFiles": "",
+    "retryError": ""
   },
   "notifications": {
     "modInstalledSuccessfully": "模组安装成功",
@@ -602,7 +606,7 @@
     "backupProgressCopying": "正在复制VPK文件...",
     "backupProgressFinalizing": "正在完成备份...",
     "autoBackupEnabled": "更新前自动备份",
-    "autoBackupEnabledDescription": "",
+    "autoBackupEnabledDescription": "在更新模组前自动创建备份",
     "maxBackupCount": "保留的最大备份数",
     "maxBackupCountDescription": "达到此限制时，较早的备份将自动删除。",
     "unlimitedBackups": "无限",
@@ -616,8 +620,8 @@
     "launchVanillaNoArgsDescription": "以纯净模式启动游戏，不添加额外参数。",
     "modsStorePagination": "分页浏览",
     "modsStorePaginationDescription": "将 Mods Store 和 Library 分页显示，而非连续滚动列表。",
-    "heroConflictWarning": "",
-    "heroConflictWarningDescription": "",
+    "heroConflictWarning": "角色模组冲突",
+    "heroConflictWarningDescription": "当为一个已经激活模组的角色启用新的模组时，显示警告。",
     "createCustomSetting": "创建自定义设置",
     "createCustomSettingDescription": "为游戏添加自定义设置。这些将作为启动选项添加到游戏中。",
     "key": "键",
@@ -993,6 +997,56 @@
     "confirmRestore": "您确定要从备份中恢复 gameinfo.gi 吗？这会覆盖当前文件。",
     "confirmReset": "您确定要将 gameinfo.gi 重置为原版状态吗？这将移除所有模组配置并恢复原始游戏设置。"
   },
+  "matchSync": {
+    "title": "分享比赛数据",
+    "description": "抓取你的比赛数据用于Deadlock api跟踪器。",
+    "about": {
+      "reads": "读取您本地存储的 Steam 登录信息（即本机上已保存的自动登录令牌），以便代表您与 Steam 进行通信。",
+      "sends": "仅向Deadlock api发送比赛 ID及其哈希盐值，而不会发送您的令牌、密码或个人数据。",
+      "limit": "严格限制每24小时最多获取 {{limit}} 场比赛数据，该次数限制同样适用于下文所列的所有选项。",
+      "risk": "该操作基于您的Steam账户完成，存在一定的风险，该风险较低但绝不为零。启用该操作视作您接受该风险。"
+    },
+    "enable": {
+      "title": "启用比赛数据分享",
+      "description": "开启此功能前，不会读取或发送您设备上的任何数据。"
+    },
+    "consent": {
+      "title": "是否启用比赛数据分享？",
+      "body": "启用后，本app将会读取您本地的Steam令牌，用于获取您账号的比赛记录，然后向Deadlock api发送比赛 ID及其哈希盐值。我们不会存储或发送您的令牌，密码以及其他个人数据。所有的数据获取操作均受限制，每24小时最多40次请求。该操作基于您的Steam账户完成，存在一定的风险，该风险较低但绝不为零。您是否想要继续？",
+      "accept": "我已经了解存在的风险，开启这个功能",
+      "decline": "取消"
+    },
+    "quota": {
+      "remaining": "未来24小时内，剩余 {{remaining}} 次比赛数据获取，共{{limit}}次。",
+      "accountRemaining": "{{name}}: 今天剩余{{remaining}}次比赛数据获取，共 {{limit}} 次",
+      "gcUnavailable": "无法连接至Deadlock服务器，将在24小时后重试",
+      "reachedToday": "已达到每日获取上限。请明天再来吧。"
+    },
+    "noAccounts": "未检测到 Steam 帐户。登录Steam 以同步比赛。",
+    "loadError": {
+      "title": "无法加载比赛数据共享状态",
+      "retry": "请重试"
+    },
+    "errors": {
+      "consentRequired": "您需要先同意相关条款。",
+      "disabled": "比赛数据共享已关闭。",
+      "alreadyRunning": "同步正在进行中。",
+      "gameRunning": "请先关闭Deadlock，然后再试一次。",
+      "quotaReached": "您已达到每日获取上限。请明天再来吧。"
+    },
+    "fullSync": {
+      "title": "获取我的所有比赛记录",
+      "description": "完整扫描一次您的比赛历史，然后补发所有追踪器尚未收录的数据。该操作会限速、支持断点续传，并且可以安全地重复执行。",
+      "button": "获取我的所有比赛记录",
+      "started": "在后台获取我的所有比赛记录。",
+      "cancel": "取消",
+      "accountProgress": "正在同步第 {{index}} 个账户，共 {{total}} 个：{{name}}",
+      "running": "目前已获取{{fetched}}场比赛数据。今天剩余{{remaining}}次比赛数据获取，共 {{limit}} 次。",
+      "done": "已获取 {{fetched}} 场比赛。全部同步完成。",
+      "doneQuota": "已获取 {{fetched}} 场比赛。您已达到每日 {{limit}} 次的获取上限。请明天再来。",
+      "rateLimited": "Steam 当前正在限制您账号的请求频率，请稍后再试。"
+    }
+  },
   "privacy": {
     "title": "隐私与内容",
     "description": "控制如何显示和过滤NSFW（不适宜工作场所观看）内容。",
@@ -1162,6 +1216,7 @@
   "modStatus": {
     "added": "已添加到我的模组",
     "completed": "已完成",
+    "failed": "",
     "downloading": "下载中...",
     "extracting": "正在解压...",
     "downloaded": "已下载",
@@ -2243,6 +2298,13 @@
       "countMismatch": "预期 {{expected}} 个文件，实际得到 {{actual}} 个"
     }
   },
+  "modDependencies": {
+    "title": "",
+    "description": "",
+    "openExternal": "",
+    "required": "",
+    "recommended": ""
+  },
   "reports": {
     "reportSubmitted": "报告已成功提交",
     "reportFailed": "提交报告失败",
@@ -2286,6 +2348,7 @@
     "removedRestart": "准星部分已移除！请重启游戏以使更改生效。",
     "disabledError": "自定义准星已禁用。请在设置中启用它们以应用准星。",
     "toggleError": "切换自定义准星失败",
+    "stopGameBeforeDisable": "禁用自定义准星前，请先退出 Deadlock。",
     "form": {
       "metadata": "元数据",
       "name": "名称",

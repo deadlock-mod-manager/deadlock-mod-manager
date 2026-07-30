@@ -353,8 +353,12 @@
     "pause": "",
     "resume": "",
     "paused": "",
+    "retry": "",
     "pauseError": "",
-    "resumeError": ""
+    "resumeError": "",
+    "retryFetchError": "",
+    "retryNoFiles": "",
+    "retryError": ""
   },
   "notifications": {
     "modInstalledSuccessfully": "تم تثبيت التعديل بنجاح",
@@ -993,6 +997,56 @@
     "confirmRestore": "هل أنت متأكد من أنك تريد استعادة gameinfo.gi من النسخة الاحتياطية؟ سيؤدي هذا إلى الكتابة فوق الملف الحالي.",
     "confirmReset": "هل أنت متأكد من أنك تريد إعادة تعيين gameinfo.gi إلى الحالة الأصلية؟ سيؤدي هذا إلى إزالة جميع تكوينات التعديلات واستعادة إعدادات اللعبة الأصلية."
   },
+  "matchSync": {
+    "title": "",
+    "description": "",
+    "about": {
+      "reads": "",
+      "sends": "",
+      "limit": "",
+      "risk": ""
+    },
+    "enable": {
+      "title": "",
+      "description": ""
+    },
+    "consent": {
+      "title": "",
+      "body": "",
+      "accept": "",
+      "decline": ""
+    },
+    "quota": {
+      "remaining": "",
+      "accountRemaining": "",
+      "gcUnavailable": "",
+      "reachedToday": ""
+    },
+    "noAccounts": "",
+    "loadError": {
+      "title": "",
+      "retry": ""
+    },
+    "errors": {
+      "consentRequired": "",
+      "disabled": "",
+      "alreadyRunning": "",
+      "gameRunning": "",
+      "quotaReached": ""
+    },
+    "fullSync": {
+      "title": "",
+      "description": "",
+      "button": "",
+      "started": "",
+      "cancel": "",
+      "accountProgress": "",
+      "running": "",
+      "done": "",
+      "doneQuota": "",
+      "rateLimited": ""
+    }
+  },
   "privacy": {
     "title": "الخصوصية والمحتوى",
     "description": "التحكم في كيفية عرض محتوى NSFW (غير آمن للعمل) وتصفيته.",
@@ -1162,6 +1216,7 @@
   "modStatus": {
     "added": "تمت الإضافة إلى تعديلاتي",
     "completed": "",
+    "failed": "",
     "downloading": "جاري التحميل...",
     "extracting": "",
     "downloaded": "تم التحميل",
@@ -2243,6 +2298,13 @@
       "countMismatch": ""
     }
   },
+  "modDependencies": {
+    "title": "",
+    "description": "",
+    "openExternal": "",
+    "required": "",
+    "recommended": ""
+  },
   "reports": {
     "reportSubmitted": "تم إرسال التقرير",
     "reportFailed": "فشل في إرسال التقرير",
@@ -2286,6 +2348,7 @@
     "removedRestart": "تمت إزالة قسم الموضع! أعد تشغيل اللعبة لتفعيل التغييرات.",
     "disabledError": "المواضع المخصصة معطلة. قم بتمكينها في الإعدادات لتطبيق المواضع.",
     "toggleError": "فشل في تبديل المواضع المخصصة",
+    "stopGameBeforeDisable": "",
     "form": {
       "metadata": "البيانات الوصفية",
       "name": "الاسم",
