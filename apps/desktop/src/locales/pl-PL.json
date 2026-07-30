@@ -24,6 +24,7 @@
     "expandMenu": "Rozwiń menu",
     "about": "O Aplikacji",
     "crosshairs": "Celowniki",
+    "skins": "",
     "customization": "Dostosowanie",
     "autoexec": "Podstawowy config (autoexec)",
     "maps": "Mapy",
@@ -32,6 +33,23 @@
     "general": "Główne",
     "earlyAccess": "",
     "mods": "Modyfikacje"
+  },
+  "skins": {
+    "title": "",
+    "subtitle": "",
+    "searchPlaceholder": "",
+    "default": "",
+    "defaultDescription": "",
+    "skinsDownloaded_one": "",
+    "skinsDownloaded_other": "",
+    "noSkins": "",
+    "noSkinsHint": "",
+    "conflict": "",
+    "restartHint": "",
+    "swapFailed": "",
+    "overrideFooter": "",
+    "overrideFooterLink": "",
+    "variants": ""
   },
   "servers": {
     "title": "Przeglądarka serwerów",

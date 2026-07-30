@@ -24,6 +24,7 @@
     "expandMenu": "Развернуть меню",
     "about": "О программе",
     "crosshairs": "Прицел",
+    "skins": "",
     "customization": "Внешний вид",
     "autoexec": "Autoexec Конфиг",
     "maps": "Карты",
@@ -32,6 +33,23 @@
     "general": "Общие",
     "earlyAccess": "Ранний Доступ",
     "mods": "Моды"
+  },
+  "skins": {
+    "title": "",
+    "subtitle": "",
+    "searchPlaceholder": "",
+    "default": "",
+    "defaultDescription": "",
+    "skinsDownloaded_one": "",
+    "skinsDownloaded_other": "",
+    "noSkins": "",
+    "noSkinsHint": "",
+    "conflict": "",
+    "restartHint": "",
+    "swapFailed": "",
+    "overrideFooter": "",
+    "overrideFooterLink": "",
+    "variants": ""
   },
   "servers": {
     "title": "Список Серверов",

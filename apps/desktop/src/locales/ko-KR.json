@@ -24,6 +24,7 @@
     "expandMenu": "메뉴 펼치기",
     "about": "에 대한",
     "crosshairs": "십자선",
+    "skins": "",
     "customization": "맞춤화",
     "autoexec": "자동 실행 구성",
     "maps": "지도",
@@ -32,6 +33,23 @@
     "general": "",
     "earlyAccess": "",
     "mods": ""
+  },
+  "skins": {
+    "title": "",
+    "subtitle": "",
+    "searchPlaceholder": "",
+    "default": "",
+    "defaultDescription": "",
+    "skinsDownloaded_one": "",
+    "skinsDownloaded_other": "",
+    "noSkins": "",
+    "noSkinsHint": "",
+    "conflict": "",
+    "restartHint": "",
+    "swapFailed": "",
+    "overrideFooter": "",
+    "overrideFooterLink": "",
+    "variants": ""
   },
   "servers": {
     "title": "",
