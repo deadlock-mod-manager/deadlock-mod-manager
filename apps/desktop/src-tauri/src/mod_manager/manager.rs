@@ -124,6 +124,18 @@ impl ModManager {
         .all(|component| matches!(component, Component::Normal(_)))
   }
 
+  /// Mod IDs are joined onto the mods store path and the result is deleted
+  /// recursively, so a traversing ID would reach outside the store.
+  fn ensure_safe_mod_id(mod_id: &str) -> Result<(), Error> {
+    if mod_id.contains("..") || mod_id.contains('/') || mod_id.contains('\\') {
+      return Err(Error::InvalidInput(
+        "Invalid mod ID: path traversal not allowed".to_string(),
+      ));
+    }
+
+    Ok(())
+  }
+
   fn vpk_filenames(vpks: &[String]) -> Vec<String> {
     vpks
       .iter()
@@ -464,45 +476,32 @@ impl ModManager {
     vpks: Vec<String>,
     profile_folder: Option<String>,
   ) -> Result<(), Error> {
+    let mods_path = self.get_mods_store_path()?;
+    self.purge_mod_from(mod_id, vpks, profile_folder, &mods_path)
+  }
+
+  pub(crate) fn purge_mod_from(
+    &mut self,
+    mod_id: String,
+    vpks: Vec<String>,
+    profile_folder: Option<String>,
+    mods_path: &Path,
+  ) -> Result<(), Error> {
     log::info!("Purging mod: {mod_id} (profile: {profile_folder:?})");
+    Self::ensure_safe_mod_id(&mod_id)?;
 
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
-    let mut manifest = ProfileVpkManifest::load(&addons_path)?;
-    let mut vpks_to_remove = manifest
-      .mods
-      .get(&mod_id)
-      .map(|entry| entry.current_vpks.clone())
-      .unwrap_or_default();
 
-    if !addons_path.exists() {
-      return Err(Error::GamePathNotSet);
-    }
-
-    if let Some(local_mod) = self.mod_repository.get_mod(&mod_id).cloned() {
-      log::info!("Mod found in memory: {}", local_mod.name);
-      vpks_to_remove.extend(local_mod.installed_vpks);
+    // A mod whose download failed never reached the addons directory, which
+    // may not exist at all yet. Its downloaded files still have to go.
+    if addons_path.exists() {
+      self.purge_mod_vpks(&mod_id, vpks, &addons_path)?;
     } else {
-      vpks_to_remove.extend(vpks);
+      log::info!("Addons path does not exist, skipping VPK cleanup: {addons_path:?}");
     }
-
-    let mut seen_vpks = HashSet::new();
-    vpks_to_remove.retain(|vpk| seen_vpks.insert(vpk.clone()));
-
-    if !vpks_to_remove.is_empty() {
-      self
-        .vpk_manager
-        .remove_vpks(&vpks_to_remove, &addons_path)?;
-    }
-    self
-      .vpk_manager
-      .remove_vpks_by_mod_id(&addons_path, &mod_id)?;
-
-    manifest.remove_mod(&mod_id);
-    manifest.save(&addons_path)?;
 
     self.mod_repository.remove_mod(&mod_id);
 
-    let mods_path = self.get_mods_store_path()?;
     let user_mod_dir = mods_path.join(&mod_id);
 
     if user_mod_dir.exists() {
@@ -513,6 +512,40 @@ impl ModManager {
     }
 
     Ok(())
+  }
+
+  fn purge_mod_vpks(
+    &mut self,
+    mod_id: &str,
+    vpks: Vec<String>,
+    addons_path: &Path,
+  ) -> Result<(), Error> {
+    let mut manifest = ProfileVpkManifest::load(addons_path)?;
+    let mut vpks_to_remove = manifest
+      .mods
+      .get(mod_id)
+      .map(|entry| entry.current_vpks.clone())
+      .unwrap_or_default();
+
+    if let Some(local_mod) = self.mod_repository.get_mod(mod_id).cloned() {
+      log::info!("Mod found in memory: {}", local_mod.name);
+      vpks_to_remove.extend(local_mod.installed_vpks);
+    } else {
+      vpks_to_remove.extend(vpks);
+    }
+
+    let mut seen_vpks = HashSet::new();
+    vpks_to_remove.retain(|vpk| seen_vpks.insert(vpk.clone()));
+
+    if !vpks_to_remove.is_empty() {
+      self.vpk_manager.remove_vpks(&vpks_to_remove, addons_path)?;
+    }
+    self
+      .vpk_manager
+      .remove_vpks_by_mod_id(addons_path, mod_id)?;
+
+    manifest.remove_mod(mod_id);
+    manifest.save(addons_path)
   }
 
   /// Reorder all mods based on their current install_order for a specific profile
@@ -1012,11 +1045,7 @@ impl ModManager {
 
   /// Validate and resolve a mod folder path, rejecting path traversal in mod_id.
   pub fn get_validated_mod_folder_path(&self, mod_id: &str) -> Result<PathBuf, Error> {
-    if mod_id.contains("..") || mod_id.contains('/') || mod_id.contains('\\') {
-      return Err(Error::InvalidInput(
-        "Invalid mod ID: path traversal not allowed".to_string(),
-      ));
-    }
+    Self::ensure_safe_mod_id(mod_id)?;
     let mods_root = self.get_mods_store_path()?;
     let mod_folder = mods_root.join(mod_id);
     if mod_folder.exists() {
@@ -1100,11 +1129,50 @@ fn dir_size(path: &std::path::Path) -> u64 {
 mod tests {
   use crate::mod_manager::vpk_manifest::ProfileVpkManifestEntry;
 
-  use super::ModManager;
+  use super::*;
   use std::fs;
 
   fn write_vpk(addons_path: &std::path::Path, name: &str) {
     fs::write(addons_path.join(name), b"test vpk").unwrap();
+  }
+
+  /// Builds a manager pointing at a throwaway game install, bypassing the
+  /// Steam lookup and the app handle that `ModManager::new` depends on.
+  fn test_manager(game_path: &Path) -> ModManager {
+    let mut manager = ModManager {
+      steam_manager: SteamManager::new(),
+      process_manager: GameProcessManager::new(),
+      config_manager: GameConfigManager::new(),
+      vpk_manager: VpkManager::new(),
+      file_tree_analyzer: FileTreeAnalyzer::new(),
+      filesystem: FileSystemHelper::new(),
+      mod_repository: ModRepository::new(),
+      addons_backup_manager: AddonsBackupManager::new(),
+      autoexec_manager: AutoexecManager::new(),
+      app_handle: None,
+    };
+
+    manager
+      .steam_manager
+      .set_game_path(game_path.to_path_buf())
+      .unwrap();
+
+    manager
+  }
+
+  fn game_dir() -> tempfile::TempDir {
+    let game = tempfile::tempdir().unwrap();
+    let citadel = game.path().join("game").join("citadel");
+    fs::create_dir_all(&citadel).unwrap();
+    fs::write(citadel.join("gameinfo.gi"), b"").unwrap();
+    game
+  }
+
+  fn downloaded_mod(mods_store: &std::path::Path, mod_id: &str) -> PathBuf {
+    let mod_dir = mods_store.join(mod_id);
+    fs::create_dir_all(&mod_dir).unwrap();
+    fs::write(mod_dir.join("mod.zip"), b"downloaded archive").unwrap();
+    mod_dir
   }
 
   #[test]
@@ -1182,5 +1250,74 @@ mod tests {
     assert!(!changed);
     assert!(!entry.enabled);
     assert_eq!(entry.current_vpks, vec!["pak01_dir.vpk".to_string()]);
+  }
+
+  #[test]
+  fn purge_deletes_downloaded_files_when_addons_directory_is_missing() {
+    let game = game_dir();
+    let mods_store = tempfile::tempdir().unwrap();
+    let mod_dir = downloaded_mod(mods_store.path(), "650634");
+    let mut manager = test_manager(game.path());
+
+    assert!(
+      !game
+        .path()
+        .join("game")
+        .join("citadel")
+        .join("addons")
+        .exists()
+    );
+
+    manager
+      .purge_mod_from("650634".to_string(), Vec::new(), None, mods_store.path())
+      .unwrap();
+
+    assert!(!mod_dir.exists());
+  }
+
+  #[test]
+  fn purge_deletes_downloaded_files_and_installed_vpks_when_addons_exist() {
+    let game = game_dir();
+    let addons_path = game.path().join("game").join("citadel").join("addons");
+    fs::create_dir_all(&addons_path).unwrap();
+    write_vpk(&addons_path, "pak01_dir.vpk");
+
+    let mods_store = tempfile::tempdir().unwrap();
+    let mod_dir = downloaded_mod(mods_store.path(), "650634");
+    let mut manager = test_manager(game.path());
+
+    manager
+      .purge_mod_from(
+        "650634".to_string(),
+        vec!["pak01_dir.vpk".to_string()],
+        None,
+        mods_store.path(),
+      )
+      .unwrap();
+
+    assert!(!mod_dir.exists());
+    assert!(!addons_path.join("pak01_dir.vpk").exists());
+  }
+
+  #[test]
+  fn purge_rejects_mod_ids_that_escape_the_mods_store() {
+    let game = game_dir();
+    let root = tempfile::tempdir().unwrap();
+    let mods_store = root.path().join("mods");
+    fs::create_dir_all(&mods_store).unwrap();
+
+    let outside = root.path().join("victim");
+    fs::create_dir_all(&outside).unwrap();
+    fs::write(outside.join("keep.txt"), b"not yours to delete").unwrap();
+
+    let mut manager = test_manager(game.path());
+
+    for mod_id in ["../victim", "..\\victim", "/etc"] {
+      let result = manager.purge_mod_from(mod_id.to_string(), Vec::new(), None, &mods_store);
+
+      assert!(matches!(result, Err(Error::InvalidInput(_))), "{mod_id}");
+    }
+
+    assert!(outside.join("keep.txt").exists());
   }
 }

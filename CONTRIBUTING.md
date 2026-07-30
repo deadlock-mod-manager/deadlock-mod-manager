@@ -68,7 +68,9 @@ sudo pacman -S --needed \
   librsvg \
   xdotool \
   gst-plugins-base \
-  gst-plugins-good
+  gst-plugins-good \
+  dbus \
+  protobuf
 ```
 
 **Note for Linux users:**
@@ -101,7 +103,9 @@ sudo apt install libwebkit2gtk-4.1-dev \
   libssl-dev \
   libgtk-3-dev \
   libayatana-appindicator3-dev \
-  librsvg2-dev
+  librsvg2-dev \
+  libdbus-1-dev \
+  protobuf-compiler
 ```
 
 **Fedora:**
@@ -112,7 +116,9 @@ sudo dnf install webkit2gtk4.1-devel \
   curl \
   wget \
   file \
-  gtk3-devel
+  gtk3-devel \
+  dbus-devel \
+  protobuf-compiler
 ```
 
 See [Tauri Prerequisites](https://tauri.app/start/prerequisites/) for other distributions.
