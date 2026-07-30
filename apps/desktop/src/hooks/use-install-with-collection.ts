@@ -14,6 +14,23 @@ import type { ErrorKind } from "@/types/tauri";
 
 const logger = createLogger("install-with-collection");
 
+// Every rejection has to reach onError or the mod stays stuck in Installing.
+// An empty message is deliberate: callers substitute their own localized copy.
+const toUnknownError = (error: unknown): ErrorKind => {
+  if (typeof error === "string") {
+    return { kind: "unknown", message: error };
+  }
+  if (
+    typeof error === "object" &&
+    error !== null &&
+    "message" in error &&
+    typeof error.message === "string"
+  ) {
+    return { kind: "unknown", message: error.message };
+  }
+  return { kind: "unknown", message: "" };
+};
+
 export type InstallWithCollectionOptions = {
   onStart: (mod: LocalMod) => void;
   onComplete: (mod: LocalMod, result: InstallableMod) => void;
@@ -129,6 +146,8 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         "kind" in error
       ) {
         options.onError(mod, error as ErrorKind);
+      } else {
+        options.onError(mod, toUnknownError(error));
       }
       return null;
     }
@@ -342,6 +361,8 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         "kind" in error
       ) {
         options.onError(mod, error as ErrorKind);
+      } else {
+        options.onError(mod, toUnknownError(error));
       }
       return null;
     }

@@ -28,6 +28,7 @@ import {
   MapTrifoldIcon,
   PackageIcon,
   QuestionIcon,
+  TShirtIcon,
 } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useState } from "react";
@@ -156,6 +157,14 @@ const getSidebarItems = (
       tooltipLabel: t("navigation.crosshairs"),
       url: "/crosshairs",
       icon: CrosshairIcon,
+      group: "customization",
+    },
+    {
+      id: "skins",
+      title: () => <span>{t("navigation.skins")}</span>,
+      tooltipLabel: t("navigation.skins"),
+      url: "/skins",
+      icon: TShirtIcon,
       group: "customization",
     },
     {
