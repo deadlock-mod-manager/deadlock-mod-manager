@@ -4,9 +4,11 @@ use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 use crate::mod_manager::Mod;
 use crate::mod_manager::archive_extractor::ArchiveExtractor;
-use crate::mod_manager::file_tree::{ModFile, ModFileTree};
+use crate::mod_manager::file_tree::ModFileTree;
 use crate::mod_manager::filesystem_helper::FileSystemHelper;
+use crate::mod_manager::shard;
 use crate::mod_manager::vpk_manager::VpkManager;
+use crate::mod_manager::vpk_manager::staging::VpkSnapshot;
 use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use serde::{Deserialize, Serialize};
 use tauri::{Emitter, Manager};
@@ -43,7 +45,10 @@ fn is_plain_vpk_filename(name: &str) -> bool {
   !name.is_empty()
     && !name.contains('/')
     && !name.contains('\\')
-    && std::path::Path::new(name).file_name().and_then(|f| f.to_str()) == Some(name)
+    && std::path::Path::new(name)
+      .file_name()
+      .and_then(|f| f.to_str())
+      == Some(name)
 }
 
 fn validate_download_url(url: &str) -> Result<(), Error> {
@@ -325,9 +330,9 @@ pub async fn batch_update_mods(
     } else {
       Some(profile_folder.clone())
     };
-    let (removed_count, install_order) = {
+    let removed = {
       let mut mod_manager = MANAGER.lock().unwrap();
-      match mod_manager.remove_mod_vpks_for_update(
+      match mod_manager.remove_mod_vpks(
         &mod_data.mod_id,
         &mod_data.installed_vpks,
         profile_folder_option.clone(),
@@ -348,9 +353,11 @@ pub async fn batch_update_mods(
       }
     };
     log::info!(
-      "Removed {removed_count} old VPKs for mod {} before update",
+      "Removed {} old VPKs for mod {} before update",
+      removed.count,
       mod_data.mod_id
     );
+    let install_order = removed.install_order;
 
     app_handle
       .emit(
@@ -577,15 +584,18 @@ pub async fn register_analyzed_mod(
     mod_manager.get_mod_repository_mut().add_mod(deadlock_mod);
   }
 
-  if let Some(bad) = installed_vpks.iter().find(|vpk| !is_plain_vpk_filename(vpk)) {
+  if let Some(bad) = installed_vpks
+    .iter()
+    .find(|vpk| !is_plain_vpk_filename(vpk))
+  {
     return Err(Error::InvalidInput(format!(
       "Invalid analyzed VPK filename: {bad}"
     )));
   }
 
-  let discovered_shard = (1..=crate::mod_manager::shard::MAX_SHARDS)
+  let discovered_shard = shard::all_shards()
     .find(|shard_index| {
-      let shard_dir = crate::mod_manager::shard::shard_dir(&addons_path, *shard_index);
+      let shard_dir = addons_path.shard_dir(*shard_index);
       installed_vpks
         .iter()
         .all(|vpk| shard_dir.join(vpk).exists())
@@ -618,28 +628,6 @@ fn resolve_addons_path(game_path: &std::path::Path, profile_folder: Option<&str>
   match profile_folder {
     Some(folder) => base.join(folder),
     None => base,
-  }
-}
-
-fn build_options_file_tree(
-  available_originals: &[String],
-  selected_originals: &std::collections::HashSet<String>,
-) -> ModFileTree {
-  let files: Vec<ModFile> = available_originals
-    .iter()
-    .map(|name| ModFile {
-      name: name.clone(),
-      path: name.clone(),
-      size: 0,
-      is_selected: selected_originals.contains(name),
-      archive_name: String::new(),
-    })
-    .collect();
-  let total_files = files.len();
-  ModFileTree {
-    files,
-    total_files,
-    has_multiple_files: total_files > 1,
   }
 }
 
@@ -698,7 +686,7 @@ pub async fn get_mod_available_options(
   available.sort();
 
   let selected_set: std::collections::HashSet<String> = enabled_originals.into_iter().collect();
-  Ok(build_options_file_tree(&available, &selected_set))
+  Ok(ModFileTree::from_options(&available, &selected_set))
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -706,30 +694,6 @@ pub struct SwapModOptionsResult {
   pub installed_vpks: Vec<String>,
   pub original_vpk_names: Vec<String>,
   pub file_tree: ModFileTree,
-}
-
-fn rollback_prefixed_deployment(deployed: &[(PathBuf, Option<PathBuf>)]) -> Vec<String> {
-  let mut failures = Vec::new();
-  for (destination, backup) in deployed.iter().rev() {
-    if destination.exists()
-      && let Err(error) = std::fs::remove_file(destination)
-    {
-      failures.push(format!(
-        "failed to remove {}: {error}",
-        destination.display()
-      ));
-      continue;
-    }
-    if let Some(backup) = backup
-      && let Err(error) = std::fs::copy(backup, destination)
-    {
-      failures.push(format!(
-        "failed to restore {}: {error}",
-        destination.display()
-      ));
-    }
-  }
-  failures
 }
 
 #[tauri::command]
@@ -752,87 +716,18 @@ pub async fn swap_mod_options(
     ));
   }
 
-  let game_path = {
-    let manager = MANAGER.lock().unwrap();
-    manager
-      .get_steam_manager()
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?
-      .clone()
-  };
-  let addons_path = resolve_addons_path(&game_path, profile_folder.as_deref());
-
-  let mut manifest = ProfileVpkManifest::load(&addons_path)?;
-  let current_shard = manifest
-    .mods
-    .get(&mod_id)
-    .map(|e| e.shard.max(1))
-    .unwrap_or(1);
-  let target_shard = crate::mod_manager::manager::ModManager::choose_shard_for(
-    &addons_path,
-    Some((current_shard, current_installed_vpks.len() as u32)),
-    selected_original_names.len() as u32,
-  )?;
-  let current_enabled_dir = crate::mod_manager::shard::shard_dir(&addons_path, current_shard);
-  let target_enabled_dir = crate::mod_manager::shard::shard_dir(&addons_path, target_shard);
-
-  let vpk_manager = VpkManager::new();
-  vpk_manager.swap_enabled_vpks_with_commit(
-    &addons_path,
-    &current_enabled_dir,
-    &target_enabled_dir,
+  let result = MANAGER.lock().unwrap().apply_variant_selection(
     &mod_id,
+    profile_folder,
     &current_installed_vpks,
     &current_original_names,
-    &selected_original_names,
-    |installed| {
-      manifest.mark_enabled(
-        &mod_id,
-        installed.to_vec(),
-        selected_original_names.clone(),
-        None,
-        target_shard,
-      );
-      manifest.save(&addons_path)
-    },
+    selected_original_names,
   )?;
 
-  let prefixed_vpks = vpk_manager.find_prefixed_vpks(&addons_path, &mod_id)?;
-  let prefix = format!("{mod_id}_");
-  let disabled_originals: Vec<String> = prefixed_vpks
-    .iter()
-    .filter_map(|name| name.strip_prefix(&prefix).map(|s| s.to_string()))
-    .collect();
-
-  let mut available: Vec<String> = selected_original_names.clone();
-  for name in disabled_originals {
-    if !available.contains(&name) {
-      available.push(name);
-    }
-  }
-  available.sort();
-
-  let selected_set: std::collections::HashSet<String> =
-    selected_original_names.iter().cloned().collect();
-  let file_tree = build_options_file_tree(&available, &selected_set);
-
-  let new_installed_vpks = {
-    let mut manager = MANAGER.lock().unwrap();
-    let reordered = manager.reorder_profile_after_variant_change(profile_folder, &mod_id)?;
-    if let Some(existing) = manager.get_mod_repository().get_mod(&mod_id).cloned() {
-      let mut updated = existing;
-      updated.installed_vpks = reordered.clone();
-      updated.original_vpk_names = selected_original_names.clone();
-      updated.file_tree = Some(file_tree.clone());
-      manager.get_mod_repository_mut().add_mod(updated);
-    }
-    reordered
-  };
-
   Ok(SwapModOptionsResult {
-    installed_vpks: new_installed_vpks,
-    original_vpk_names: selected_original_names,
-    file_tree,
+    installed_vpks: result.installed_vpks,
+    original_vpk_names: result.original_vpk_names,
+    file_tree: result.file_tree,
   })
 }
 
@@ -1124,13 +1019,6 @@ pub async fn switch_mod_download_variant(
     return Err(Error::GamePathNotSet);
   }
 
-  let mut manifest = ProfileVpkManifest::load(&addons_path)?;
-  let current_shard = manifest
-    .mods
-    .get(&mod_id)
-    .map(|e| e.shard.max(1))
-    .unwrap_or(1);
-
   validate_download_url(&archive_url)?;
   let safe_archive_name = sanitize_archive_name(&archive_name)?;
 
@@ -1206,14 +1094,6 @@ pub async fn switch_mod_download_variant(
     new_originals
   );
 
-  let target_shard = crate::mod_manager::manager::ModManager::choose_shard_for(
-    &addons_path,
-    Some((current_shard, current_installed_vpks.len() as u32)),
-    new_originals.len() as u32,
-  )?;
-  let current_enabled_dir = crate::mod_manager::shard::shard_dir(&addons_path, current_shard);
-  let target_enabled_dir = crate::mod_manager::shard::shard_dir(&addons_path, target_shard);
-
   let staging_dir = tempfile::tempdir()?;
   let mut staged_pairs: Vec<(String, PathBuf)> = Vec::new();
   for original in &new_originals {
@@ -1230,117 +1110,41 @@ pub async fn switch_mod_download_variant(
     }
   }
 
-  let vpk_manager = VpkManager::new();
   let prefix = format!("{mod_id}_");
-
-  let deployment_backup_dir = staging_dir.path().join("previous");
-  std::fs::create_dir_all(&deployment_backup_dir)?;
-  let mut deployed = Vec::new();
+  let mut deployment = VpkSnapshot::new()?;
   for (original, staged_path) in &staged_pairs {
     let prefixed = format!("{prefix}{original}");
     let dest = addons_path.join(&prefixed);
-    let backup = if dest.is_file() {
-      let backup = deployment_backup_dir.join(original);
-      if let Err(error) = filesystem.copy_file(&dest, &backup) {
-        // Roll back the variants already deployed in earlier iterations so a
-        // backup failure cannot leave the mod with a mix of old and new files.
-        let rollback_failures = rollback_prefixed_deployment(&deployed);
-        if rollback_failures.is_empty() {
-          return Err(error);
-        }
-        return Err(Error::RollbackFailed(format!(
-          "Failed to back up existing variant: {error}. Failed to restore: {}",
-          rollback_failures.join("; ")
-        )));
-      }
-      Some(backup)
-    } else {
-      None
-    };
-    deployed.push((dest.clone(), backup));
+    if let Err(error) = deployment.capture(&dest) {
+      return Err(deployment.rollback(error));
+    }
     if let Err(error) = filesystem.copy_file(staged_path, &dest) {
-      let rollback_failures = rollback_prefixed_deployment(&deployed);
-      if rollback_failures.is_empty() {
-        return Err(error);
-      }
-      return Err(Error::RollbackFailed(format!(
-        "Failed to stage new variant: {error}. Failed to restore: {}",
-        rollback_failures.join("; ")
-      )));
+      return Err(deployment.rollback(error));
     }
     log::info!("Staged VPK {original} -> {}", dest.display());
   }
 
-  let new_installed_vpks = match vpk_manager.swap_enabled_vpks_with_commit(
-    &addons_path,
-    &current_enabled_dir,
-    &target_enabled_dir,
+  let variant_result = match MANAGER.lock().unwrap().apply_variant_selection(
     &mod_id,
+    profile_folder,
     &current_installed_vpks,
     &current_original_names,
-    &new_originals,
-    |installed| {
-      manifest.mark_enabled(
-        &mod_id,
-        installed.to_vec(),
-        new_originals.clone(),
-        None,
-        target_shard,
-      );
-      manifest.save(&addons_path)
-    },
+    new_originals,
   ) {
-    Ok(installed) => installed,
-    Err(error) => {
-      let rollback_failures = rollback_prefixed_deployment(&deployed);
-      if rollback_failures.is_empty() {
-        return Err(error);
-      }
-      return Err(Error::RollbackFailed(format!(
-        "Variant switch failed: {error}. Failed to restore staged variants: {}",
-        rollback_failures.join("; ")
-      )));
-    }
+    Ok(result) => result,
+    Err(error) => return Err(deployment.rollback(error)),
   };
+  deployment.commit();
 
   log::info!(
     "Variant switch complete: {} VPKs enabled as {:?}",
-    new_installed_vpks.len(),
-    new_installed_vpks
+    variant_result.installed_vpks.len(),
+    variant_result.installed_vpks
   );
 
-  let vpk_prefixed = vpk_manager.find_prefixed_vpks(&addons_path, &mod_id)?;
-  let disabled_originals: Vec<String> = vpk_prefixed
-    .iter()
-    .filter_map(|name| name.strip_prefix(&prefix).map(|s| s.to_string()))
-    .collect();
-
-  let mut available: Vec<String> = new_originals.clone();
-  for name in disabled_originals {
-    if !available.contains(&name) {
-      available.push(name);
-    }
-  }
-  available.sort();
-
-  let selected_set: std::collections::HashSet<String> = new_originals.iter().cloned().collect();
-  let file_tree = build_options_file_tree(&available, &selected_set);
-
-  let new_installed_vpks = {
-    let mut manager = MANAGER.lock().unwrap();
-    if let Some(existing) = manager.get_mod_repository().get_mod(&mod_id).cloned() {
-      let mut updated = existing;
-      updated.installed_vpks = new_installed_vpks.clone();
-      updated.original_vpk_names = new_originals.clone();
-      updated.file_tree = Some(file_tree.clone());
-      manager.get_mod_repository_mut().add_mod(updated);
-    }
-    manager.reorder_profile_after_variant_change(profile_folder, &mod_id)?
-  };
-
   Ok(SwitchDownloadVariantResult {
-    installed_vpks: new_installed_vpks,
-    original_vpk_names: new_originals,
-    file_tree,
+    installed_vpks: variant_result.installed_vpks,
+    original_vpk_names: variant_result.original_vpk_names,
+    file_tree: variant_result.file_tree,
   })
 }

@@ -768,18 +768,6 @@
     "libraryModsNoun_one": "modyfikacja",
     "libraryModsNoun_other": "modyfikacje",
     "vpkFilesNoun": "pliki addonów",
-    "vpkLimitBadgeNear": "Blisko limitu",
-    "vpkLimitBadgeAtLimit": "Osiągnięto limit",
-    "modLimitTooltipP1": "Deadlock limituje ilość addonów które mogą być załadowane na raz. Zwykle limit wynosi {{max}}.",
-    "modLimitTooltipP2": "Twoja biblioteka może pomieścić więcej modyfikacji niż posiadasz ponieważ jedna modyfikacja może mieć w sobie więcej niż jednego addona.",
-    "modLimitTooltipP3": "Pierwsza para jest włączona mody w porównaniu z pełną biblioteką. Drugą jest ilu plików addonów używają te modyfikacje do następnego limitu.",
-    "modLimitTooltipStatHeading": "Jaki jest każdy numer:",
-    "modLimitTooltipStatEnabled_one": "Włączono {{count}} modyfikację.",
-    "modLimitTooltipStatEnabled_other": "Włączono {{count}} modyfikacji.",
-    "modLimitTooltipStatLibrary_one": "Modyfikacja {{count}} w twojej bibliotece.",
-    "modLimitTooltipStatLibrary_other": "Mody {{count}} w twojej bibliotece.",
-    "modLimitTooltipStatVpks_one": "{{count}} plików dodatków z włączonych modyfikacji.",
-    "modLimitTooltipStatVpks_other": "{{count}} plików dodatków z włączonych modyfikacji.",
     "updateAll": "Aktualizuj wszystkie",
     "updateAllDescription": "Pobierz i zainstaluj najnowsze wersje wszystkich modyfikacji",
     "updateAvailableCount_one": "{{count}} dostępna aktualizacja",
@@ -2711,8 +2699,7 @@
   },
   "developer": {
     "title": "Narzędzia dla deweloperów",
-    "description": "Zaawansowane narzędzia i funkcje dla programistów",
-    "placeholder": "Narzędzia programistów będą dostępne tutaj"
+    "description": "Zaawansowane narzędzia i funkcje dla programistów"
   },
   "contextMenu": {
     "shareUrl": "Udostępnij",

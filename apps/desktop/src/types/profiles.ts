@@ -34,9 +34,16 @@ export interface VpkManifest {
   mods: Record<string, VpkManifestEntry>;
 }
 
+export interface ProfileVpkFile {
+  shard: number;
+  filename: string;
+  locator: string;
+}
+
 export interface SeedManifestEntry {
   modId: string;
   enabled: boolean;
+  shard: number;
   currentVpks: string[];
   disabledVpks: string[];
   originalVpkNames: string[];

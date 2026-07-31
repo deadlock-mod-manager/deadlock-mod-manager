@@ -25,6 +25,30 @@ pub struct ModFileTree {
   pub has_multiple_files: bool,
 }
 
+impl ModFileTree {
+  pub fn from_options(
+    available_originals: &[String],
+    selected_originals: &std::collections::HashSet<String>,
+  ) -> Self {
+    let files: Vec<ModFile> = available_originals
+      .iter()
+      .map(|name| ModFile {
+        name: name.clone(),
+        path: name.clone(),
+        size: 0,
+        is_selected: selected_originals.contains(name),
+        archive_name: String::new(),
+      })
+      .collect();
+    let total_files = files.len();
+    Self {
+      files,
+      total_files,
+      has_multiple_files: total_files > 1,
+    }
+  }
+}
+
 /// Simple file tree analyzer that just lists files without grouping
 pub struct FileTreeAnalyzer {
   archive_extractor: ArchiveExtractor,

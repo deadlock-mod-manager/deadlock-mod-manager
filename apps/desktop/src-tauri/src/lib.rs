@@ -241,6 +241,8 @@ pub fn run() {
       commands::profiles::get_profile_installed_vpks,
       commands::profiles::get_profile_vpk_manifest,
       commands::profiles::hydrate_mods_from_manifest,
+      commands::shards::get_shard_diagnostics,
+      commands::shards::resync_profile_shards,
       commands::profiles::seed_profile_vpk_manifest_entries,
       commands::profiles::delete_profile_vpk,
       commands::profiles::show_profile_vpk_in_folder,

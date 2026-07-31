@@ -77,11 +77,8 @@ pub async fn check_addons_exist(profile_folder: Option<String>) -> Result<bool, 
     return Ok(false);
   }
 
-  for shard_index in 1..=crate::mod_manager::shard::MAX_SHARDS {
-    let shard_path = crate::mod_manager::shard::shard_dir(&addons_path, shard_index);
-    if !shard_path.exists() {
-      continue;
-    }
+  let profile_base = crate::mod_manager::shard::ProfileBase::new(addons_path)?;
+  for (_, shard_path) in profile_base.existing_shards() {
     for entry in std::fs::read_dir(shard_path)? {
       let entry = entry?;
       if entry.path().extension().and_then(|e| e.to_str()) == Some("vpk") {

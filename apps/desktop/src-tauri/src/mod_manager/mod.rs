@@ -12,6 +12,7 @@ pub mod game_process_manager;
 pub mod manager;
 pub mod mod_repository;
 pub mod shard;
+pub mod shard_report;
 pub mod steam_manager;
 pub(crate) mod steam_uri_launcher;
 pub mod vpk_manager;

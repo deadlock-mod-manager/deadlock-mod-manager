@@ -256,30 +256,16 @@ impl AddonAnalyzer {
       });
     }
 
-    // Find all VPK files in the addons directory
+    let profile_base = crate::mod_manager::shard::ProfileBase::new(&addons_path)?;
+    let recursive = profile_folder.is_some();
     let mut vpk_file_paths = Vec::new();
-    let scan_result = if profile_folder.is_some() {
-      self.find_vpk_file_paths(&addons_path, &mut vpk_file_paths)
-    } else {
-      Self::find_vpk_file_paths_shallow(&addons_path, &mut vpk_file_paths)
-    };
-    if let Err(e) = scan_result {
-      return Ok(AnalyzeAddonsResult {
-        addons: Vec::new(),
-        total_count: 0,
-        errors: vec![format!("Failed to scan addons directory: {e}")],
-      });
-    }
-    for shard_index in 2..=crate::mod_manager::shard::MAX_SHARDS {
-      let shard_path = crate::mod_manager::shard::shard_dir(&addons_path, shard_index);
-      let scan_result = if profile_folder.is_some() {
+    for (shard_index, shard_path) in profile_base.existing_shards() {
+      let scan_result = if recursive {
         self.find_vpk_file_paths(&shard_path, &mut vpk_file_paths)
       } else {
         Self::find_vpk_file_paths_shallow(&shard_path, &mut vpk_file_paths)
       };
-      if shard_path.exists()
-        && let Err(e) = scan_result
-      {
+      if let Err(e) = scan_result {
         return Ok(AnalyzeAddonsResult {
           addons: Vec::new(),
           total_count: 0,
