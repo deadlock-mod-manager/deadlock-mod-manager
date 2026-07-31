@@ -17,7 +17,7 @@
 	GameData	"citadel.fgd"
 
 	DisallowGameInfoConditionals 1
-	PGIVersion "6E09D3ED5A47F6A97443813F0E00F90BAA435918F82DF0C9B5DA46D27A33D903"
+	PGIVersion "5F91238F16576E941DAB5C3F730738838AF8777BC361578713B03EF09E686957"
 
 	Localize
 	{
@@ -159,6 +159,7 @@
 		PauseSinglePlayerOnGameOverlay 1
 		DefensiveConCommands 1
 		DisableLoadingPlaque 1
+		LocalServerClientAccess 1
 	}
 
 	ContentBuilder
