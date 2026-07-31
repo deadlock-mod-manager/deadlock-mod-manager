@@ -768,18 +768,6 @@
     "libraryModsNoun_one": "",
     "libraryModsNoun_other": "",
     "vpkFilesNoun": "",
-    "vpkLimitBadgeNear": "",
-    "vpkLimitBadgeAtLimit": "",
-    "modLimitTooltipP1": "",
-    "modLimitTooltipP2": "",
-    "modLimitTooltipP3": "",
-    "modLimitTooltipStatHeading": "",
-    "modLimitTooltipStatEnabled_one": "",
-    "modLimitTooltipStatEnabled_other": "",
-    "modLimitTooltipStatLibrary_one": "",
-    "modLimitTooltipStatLibrary_other": "",
-    "modLimitTooltipStatVpks_one": "",
-    "modLimitTooltipStatVpks_other": "",
     "updateAll": "",
     "updateAllDescription": "",
     "updateAvailableCount_one": "",
@@ -2711,8 +2699,7 @@
   },
   "developer": {
     "title": "Strumenti Sviluppatore",
-    "description": "Strumenti e funzionalità avanzate per sviluppatori",
-    "placeholder": "Gli strumenti sviluppatore saranno disponibili qui"
+    "description": "Strumenti e funzionalità avanzate per sviluppatori"
   },
   "contextMenu": {
     "shareUrl": "Condividi",

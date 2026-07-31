@@ -768,18 +768,6 @@
     "libraryModsNoun_one": "",
     "libraryModsNoun_other": "",
     "vpkFilesNoun": "",
-    "vpkLimitBadgeNear": "",
-    "vpkLimitBadgeAtLimit": "",
-    "modLimitTooltipP1": "",
-    "modLimitTooltipP2": "",
-    "modLimitTooltipP3": "",
-    "modLimitTooltipStatHeading": "",
-    "modLimitTooltipStatEnabled_one": "",
-    "modLimitTooltipStatEnabled_other": "",
-    "modLimitTooltipStatLibrary_one": "",
-    "modLimitTooltipStatLibrary_other": "",
-    "modLimitTooltipStatVpks_one": "",
-    "modLimitTooltipStatVpks_other": "",
     "updateAll": "모두 업데이트",
     "updateAllDescription": "모든 모드의 최신 버전을 다운로드하고 설치하세요.",
     "updateAvailableCount_one": "{{count}} 업데이트 가능",
@@ -2711,8 +2699,7 @@
   },
   "developer": {
     "title": "개발자 도구",
-    "description": "개발자를 위한 고급 도구 및 기능",
-    "placeholder": "개발자 도구는 여기에서 사용할 수 있습니다."
+    "description": "개발자를 위한 고급 도구 및 기능"
   },
   "contextMenu": {
     "shareUrl": "공유하다",

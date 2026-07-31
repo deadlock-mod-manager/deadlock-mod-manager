@@ -2,8 +2,9 @@ use crate::app_runtime::AppHandle;
 use crate::download_manager::DownloadTask;
 use crate::errors::Error;
 use crate::mod_manager::Mod;
+use crate::mod_manager::shard::{ShardIndex, ShardLocator};
 use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use tauri::{Emitter, Manager};
 
 use super::downloads::get_download_manager;
@@ -105,6 +106,7 @@ pub async fn switch_profile(profile_folder: Option<String>) -> Result<(), Error>
   log::info!("Switching to profile folder: {profile_folder:?}");
 
   let mut mod_manager = MANAGER.lock().unwrap();
+  mod_manager.migrate_profile_to_shards(profile_folder.clone())?;
   mod_manager.apply_profile_gameinfo(profile_folder)?;
 
   log::info!("Successfully switched profile");
@@ -150,7 +152,7 @@ pub async fn list_profile_folders() -> Result<Vec<String>, Error> {
 #[tauri::command]
 pub async fn get_profile_installed_vpks(
   profile_folder: Option<String>,
-) -> Result<Vec<String>, Error> {
+) -> Result<Vec<ProfileVpkFile>, Error> {
   log::info!("Getting installed VPKs for profile: {profile_folder:?}");
 
   let mod_manager = MANAGER.lock().unwrap();
@@ -176,15 +178,9 @@ pub async fn get_profile_installed_vpks(
 
   let mut vpk_files = Vec::new();
 
-  let mut dirs = vec![(1, addons_path.clone())];
-  for shard_index in 2..=crate::mod_manager::shard::MAX_SHARDS {
-    let shard_dir = crate::mod_manager::shard::shard_dir(&addons_path, shard_index);
-    if shard_dir.exists() {
-      dirs.push((shard_index, shard_dir));
-    }
-  }
+  let profile_base = crate::mod_manager::shard::ProfileBase::new(addons_path)?;
 
-  for (shard_index, dir) in dirs {
+  for (shard_index, dir) in profile_base.existing_shards() {
     for entry in std::fs::read_dir(&dir)? {
       let path = entry?.path();
 
@@ -192,15 +188,12 @@ pub async fn get_profile_installed_vpks(
         && let Some(file_name) = path.file_name().and_then(|n| n.to_str())
         && file_name.ends_with(".vpk")
       {
-        let locator = if shard_index == 1 {
-          file_name.to_string()
-        } else {
-          format!(
-            "{}/{file_name}",
-            crate::mod_manager::shard::shard_root_name(shard_index)
-          )
-        };
-        vpk_files.push(locator);
+        let locator = ShardLocator::new(shard_index, file_name);
+        vpk_files.push(ProfileVpkFile {
+          shard: shard_index,
+          filename: file_name.to_string(),
+          locator: locator.to_wire(),
+        });
         log::debug!("Found VPK file: {file_name}");
       }
     }
@@ -210,10 +203,18 @@ pub async fn get_profile_installed_vpks(
   Ok(vpk_files)
 }
 
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProfileVpkFile {
+  shard: ShardIndex,
+  filename: String,
+  locator: String,
+}
+
 struct ResolvedProfileVpk {
   path: std::path::PathBuf,
-  profile_base: std::path::PathBuf,
-  shard: u32,
+  profile_base: crate::mod_manager::shard::ProfileBase,
+  shard: ShardIndex,
   filename: String,
 }
 
@@ -229,25 +230,17 @@ fn resolve_profile_vpk_path(
 
   let mod_manager = MANAGER.lock().unwrap();
   let base = mod_manager.get_addons_path(profile_folder.as_deref())?;
-  let (shard_index, filename) = match vpk_name.split_once('/') {
-    Some((root, filename)) => {
-      let shard_index = root
-        .strip_prefix("addons")
-        .and_then(|value| value.parse::<u32>().ok())
-        .filter(|value| (2..=crate::mod_manager::shard::MAX_SHARDS).contains(value))
-        .ok_or_else(|| Error::InvalidInput(format!("Invalid VPK shard locator: {vpk_name}")))?;
-      (shard_index, filename)
-    }
-    None => (1, vpk_name),
-  };
+  let locator = ShardLocator::parse(vpk_name)?;
+  let shard_index = locator.shard;
+  let filename = locator.filename;
   if filename.is_empty() || filename.contains('/') || !filename.to_lowercase().ends_with(".vpk") {
     return Err(Error::InvalidInput(format!(
       "Invalid VPK file name: {vpk_name}"
     )));
   }
 
-  let target_dir = crate::mod_manager::shard::shard_dir(&base, shard_index);
-  let vpk_path = target_dir.join(filename);
+  let target_dir = base.shard_dir(shard_index);
+  let vpk_path = target_dir.join(&filename);
   let target_canonical = target_dir
     .canonicalize()
     .map_err(|_| Error::UnauthorizedPath("Unable to resolve addon shard directory".to_string()))?;
@@ -268,7 +261,7 @@ fn resolve_profile_vpk_path(
     path: vpk_canonical,
     profile_base: base,
     shard: shard_index,
-    filename: filename.to_string(),
+    filename,
   })
 }
 
@@ -284,7 +277,7 @@ pub async fn delete_profile_vpk(
     if entry.enabled {
       entry.shard == resolved.shard && entry.current_vpks.contains(&resolved.filename)
     } else {
-      resolved.shard == 1 && entry.disabled_vpks.contains(&resolved.filename)
+      resolved.shard == ShardIndex::FIRST && entry.disabled_vpks.contains(&resolved.filename)
     }
   });
   if is_managed {
@@ -606,6 +599,8 @@ pub async fn hydrate_mods_from_manifest(profile_folder: Option<String>) -> Resul
 pub struct SeedManifestEntry {
   pub mod_id: String,
   pub enabled: bool,
+  #[serde(default = "default_seed_shard")]
+  pub shard: ShardIndex,
   #[serde(default)]
   pub current_vpks: Vec<String>,
   #[serde(default)]
@@ -614,6 +609,10 @@ pub struct SeedManifestEntry {
   pub original_vpk_names: Vec<String>,
   #[serde(default)]
   pub order: Option<u32>,
+}
+
+fn default_seed_shard() -> ShardIndex {
+  ShardIndex::FIRST
 }
 
 #[tauri::command]
@@ -641,7 +640,7 @@ pub async fn seed_profile_vpk_manifest_entries(
         entry.current_vpks,
         entry.original_vpk_names,
         entry.order,
-        1,
+        entry.shard,
       );
     } else {
       manifest.mark_disabled(&entry.mod_id, entry.disabled_vpks, entry.original_vpk_names);

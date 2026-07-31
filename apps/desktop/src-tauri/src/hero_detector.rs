@@ -1,6 +1,6 @@
 use crate::commands::state::MANAGER;
 use crate::errors::Error;
-use crate::mod_manager::{shard, vpk_manifest::ProfileVpkManifest};
+use crate::mod_manager::{shard::ProfileBase, vpk_manifest::ProfileVpkManifest};
 use hero_parser::HeroDetectionResult;
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -42,12 +42,6 @@ fn profile_bases(addons_root: &Path) -> Vec<PathBuf> {
   bases
 }
 
-fn push_existing_unique(out: &mut Vec<PathBuf>, path: PathBuf) {
-  if path.is_file() && !out.contains(&path) {
-    out.push(path);
-  }
-}
-
 fn collect_game_vpks_for_mod(
   addons_root: &Path,
   mod_id: &str,
@@ -56,9 +50,13 @@ fn collect_game_vpks_for_mod(
 ) {
   let bases = profile_bases(addons_root);
   let mut found_manifest_entry = false;
+  let mut found = std::collections::BTreeSet::new();
 
-  for base in &bases {
-    let Ok(manifest) = ProfileVpkManifest::load(base) else {
+  for base_path in &bases {
+    let (Ok(base), Ok(manifest)) = (
+      ProfileBase::new(base_path),
+      ProfileVpkManifest::load(base_path),
+    ) else {
       continue;
     };
     let Some(entry) = manifest.mods.get(mod_id) else {
@@ -66,27 +64,27 @@ fn collect_game_vpks_for_mod(
     };
     found_manifest_entry = true;
 
-    if entry.enabled {
-      let enabled_dir = shard::shard_dir(base, entry.shard.max(1));
-      for vpk in &entry.current_vpks {
-        push_existing_unique(out, enabled_dir.join(vpk));
-      }
-    } else {
-      for vpk in &entry.disabled_vpks {
-        push_existing_unique(out, base.join(vpk));
+    for path in entry.file_paths(&base) {
+      if path.is_file() {
+        found.insert(path);
       }
     }
   }
 
   if !found_manifest_entry {
-    for base in &bases {
-      for shard_index in 1..=shard::MAX_SHARDS {
-        let dir = shard::shard_dir(base, shard_index);
+    for base_path in &bases {
+      let Ok(base) = ProfileBase::new(base_path) else {
+        continue;
+      };
+      for (_, dir) in base.existing_shards() {
         for vpk in known_vpks {
           let Some(filename) = Path::new(vpk).file_name() else {
             continue;
           };
-          push_existing_unique(out, dir.join(filename));
+          let path = dir.join(filename);
+          if path.is_file() {
+            found.insert(path);
+          }
         }
       }
     }
@@ -103,11 +101,12 @@ fn collect_game_vpks_for_mod(
             .and_then(|name| name.to_str())
             .is_some_and(|name| name.starts_with(&prefix))
         {
-          push_existing_unique(out, path);
+          found.insert(path);
         }
       }
     }
   }
+  out.extend(found);
 }
 
 fn collect_vpk_files_for_mod(mod_id: &str, installed_vpks: Option<Vec<String>>) -> Vec<PathBuf> {
