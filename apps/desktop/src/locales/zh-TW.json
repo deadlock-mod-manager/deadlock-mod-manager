@@ -351,7 +351,6 @@
   },
   "developer": {
     "description": "Advanced tools and features for developers",
-    "placeholder": "Developer tools will be available here",
     "title": "Developer Tools"
   },
   "downloads": {
@@ -655,7 +654,6 @@
     "enabledModsCount": "{{count}}/99 個模組已啟用",
     "enabledModsCountAtLimit": "{{count}}/99 個模組已啟用（達到上限）",
     "enabledModsCountNearLimit": "{{count}}/99 個模組已啟用（接近上限）",
-    "modLimitTooltip": "Deadlock 將模組的數量限制為最多 99 個",
     "noModsDescription": "您尚未安裝任何模組。請透過瀏覽可用模組或分析本機插件資料夾來開始使用。",
     "noModsTitle": "尚未安裝模組",
     "subtitle": "您已下載或安裝的模組",

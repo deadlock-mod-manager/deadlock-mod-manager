@@ -223,18 +223,6 @@
     "libraryModsNoun_one": "",
     "libraryModsNoun_other": "",
     "vpkFilesNoun": "",
-    "vpkLimitBadgeNear": "",
-    "vpkLimitBadgeAtLimit": "",
-    "modLimitTooltipP1": "",
-    "modLimitTooltipP2": "",
-    "modLimitTooltipP3": "",
-    "modLimitTooltipStatHeading": "",
-    "modLimitTooltipStatEnabled_one": "",
-    "modLimitTooltipStatEnabled_other": "",
-    "modLimitTooltipStatLibrary_one": "",
-    "modLimitTooltipStatLibrary_other": "",
-    "modLimitTooltipStatVpks_one": "",
-    "modLimitTooltipStatVpks_other": "",
     "updateAll": "",
     "updateAllDescription": "",
     "updateAvailableCount_one": "",
@@ -2157,8 +2145,7 @@
   },
   "developer": {
     "title": "開発者ツール",
-    "description": "開発者向けの高度なツールと機能",
-    "placeholder": "開発者ツールはここで利用可能になります"
+    "description": "開発者向けの高度なツールと機能"
   },
   "contextMenu": {
     "shareUrl": "共有",

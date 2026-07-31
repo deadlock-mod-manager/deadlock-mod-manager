@@ -223,18 +223,6 @@
     "libraryModsNoun_one": "мод",
     "libraryModsNoun_other": "моды",
     "vpkFilesNoun": "файлы дадаткаў",
-    "vpkLimitBadgeNear": "Блізка да ліміту",
-    "vpkLimitBadgeAtLimit": "Дасягнуты ліміт",
-    "modLimitTooltipP1": "Deadlock абмяжоўвае колькасць файлаў дадаткаў, якія гульня можа загрузіць адначасова. Звычайны ліміт складае {{max}}.",
-    "modLimitTooltipP2": "Твая бібліятэка ўсё роўна можа змяшчаць больш модаў, паколькі адзін мод можа ўтрымліваць некалькі файлаў дадаткаў.",
-    "modLimitTooltipP3": "Першая пара — гэта ўключаныя моды ў параўнанні з усёй бібліятэкай. Другая — колькасць файлаў дадаткаў, якія выкарыстоўваюць гэтыя ўключаныя моды, побач з лімітам.",
-    "modLimitTooltipStatHeading": "Што азначае кожная лічба:",
-    "modLimitTooltipStatEnabled_one": "{{count}} мод уключаны.",
-    "modLimitTooltipStatEnabled_other": "{{count}} модаў уключана.",
-    "modLimitTooltipStatLibrary_one": "{{count}} мод у тваёй бібліятэцы.",
-    "modLimitTooltipStatLibrary_other": "{{count}} модаў у тваёй бібліятэцы.",
-    "modLimitTooltipStatVpks_one": "{{count}} файл дадатка ад уключаных модаў.",
-    "modLimitTooltipStatVpks_other": "{{count}} файлаў дадаткаў ад уключаных модаў.",
     "updateAll": "Абнавіць усё",
     "updateAllDescription": "Спампаваць і ўсталяваць апошнія версіі ўсіх тваіх модаў",
     "updateAvailableCount_one": "{{count}} абнаўленне даступна",
@@ -2157,8 +2145,7 @@
   },
   "developer": {
     "title": "",
-    "description": "",
-    "placeholder": ""
+    "description": ""
   },
   "contextMenu": {
     "shareUrl": "",

@@ -1,6 +1,5 @@
-use crate::errors::Error;
-
 use super::state::MANAGER;
+use crate::errors::Error;
 
 #[tauri::command]
 pub async fn show_in_folder(path: String) -> Result<(), Error> {
@@ -32,25 +31,13 @@ pub async fn show_mod_in_game(
   let shard_index = manifest
     .mods
     .get(&mod_id)
-    .map(|entry| entry.shard.max(1))
-    .or_else(|| {
-      // No manifest entry: only trust a shard when exactly one contains the
-      // mod's files. If several shards share a matching basename (or none do),
-      // fall back to the profile base rather than revealing an arbitrary shard.
-      let matching: Vec<u32> = (1..=crate::mod_manager::shard::MAX_SHARDS)
-        .filter(|shard_index| {
-          let dir = crate::mod_manager::shard::shard_dir(&base, *shard_index);
-          vpk_files.iter().any(|vpk| {
-            std::path::Path::new(vpk)
-              .file_name()
-              .is_some_and(|filename| dir.join(filename).is_file())
-          })
-        })
-        .collect();
-      (matching.len() == 1).then(|| matching[0])
-    })
-    .unwrap_or(1);
-  let target_path = crate::mod_manager::shard::shard_dir(&base, shard_index);
+    .map(|entry| entry.shard)
+    .ok_or_else(|| {
+      Error::ModInvalid(format!(
+        "Cannot locate mod {mod_id}: refresh the VPK scan first"
+      ))
+    })?;
+  let target_path = base.shard_dir(shard_index);
 
   if !target_path.exists() {
     return Err(Error::GamePathNotSet);

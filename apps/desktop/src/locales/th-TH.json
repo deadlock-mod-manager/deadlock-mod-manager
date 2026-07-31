@@ -223,18 +223,6 @@
     "libraryModsNoun_one": "",
     "libraryModsNoun_other": "",
     "vpkFilesNoun": "",
-    "vpkLimitBadgeNear": "",
-    "vpkLimitBadgeAtLimit": "",
-    "modLimitTooltipP1": "",
-    "modLimitTooltipP2": "",
-    "modLimitTooltipP3": "",
-    "modLimitTooltipStatHeading": "",
-    "modLimitTooltipStatEnabled_one": "",
-    "modLimitTooltipStatEnabled_other": "",
-    "modLimitTooltipStatLibrary_one": "",
-    "modLimitTooltipStatLibrary_other": "",
-    "modLimitTooltipStatVpks_one": "",
-    "modLimitTooltipStatVpks_other": "",
     "updateAll": "",
     "updateAllDescription": "",
     "updateAvailableCount_one": "",
@@ -2157,8 +2145,7 @@
   },
   "developer": {
     "title": "เครื่องมือสำหรับนักพัฒนา",
-    "description": "เครื่องมือและคุณสมบัติขั้นสูงสำหรับนักพัฒนา",
-    "placeholder": "เครื่องมือสำหรับนักพัฒนาจะพร้อมใช้งานที่นี่"
+    "description": "เครื่องมือและคุณสมบัติขั้นสูงสำหรับนักพัฒนา"
   },
   "contextMenu": {
     "shareUrl": "แชร์",
