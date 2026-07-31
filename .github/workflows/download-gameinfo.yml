@@ -16,7 +16,7 @@ jobs:
       MANIFESTID: "" # set a manifest ID to pin; empty = latest
       OUTDIR: "_depot"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 

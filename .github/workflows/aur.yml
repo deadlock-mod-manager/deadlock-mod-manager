@@ -31,7 +31,7 @@ jobs:
             pkgbuild_dir: distribution/aur/deadlock-modmanager-bin
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: main
           token: ${{ secrets.GITHUB_TOKEN }}

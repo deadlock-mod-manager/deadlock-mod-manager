@@ -16,7 +16,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Copy PKGBUILD for deploy
         run: cp -r distribution/aur/deadlock-modmanager-git ./deadlock-modmanager-git

@@ -34,7 +34,7 @@ jobs:
       has-cef: ${{ steps.download-cef.outcome == 'success' }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - uses: pnpm/action-setup@v6
 
@@ -186,7 +186,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Download signed Windows artifact
         uses: actions/download-artifact@v8
@@ -283,7 +283,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Update latest-cef.json
         uses: ./.github/actions/update-latest-cef-json
