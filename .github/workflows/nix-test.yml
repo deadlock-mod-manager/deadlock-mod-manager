@@ -24,7 +24,7 @@ jobs:
     if: always() && !failure() && !cancelled()
     steps:
       - name: Checkout repository (latest after hash updates)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.ref }}
 
@@ -56,7 +56,7 @@ jobs:
       hashes_updated: ${{ steps.update.outputs.updated }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -127,7 +127,7 @@ jobs:
           witness-carnage: true
 
       - name: Checkout repository (latest after hash updates)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 1
           ref: ${{ github.ref }}
@@ -166,7 +166,7 @@ jobs:
     if: always() && needs.update-hashes.result == 'success'
     steps:
       - name: Checkout repository (latest after hash updates)
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.ref }}
 
