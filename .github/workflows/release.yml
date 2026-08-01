@@ -250,7 +250,7 @@ jobs:
       - name: Upload unsigned Windows artifact
         id: upload-unsigned
         if: matrix.platform == 'windows-latest'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-unsigned
           path: apps/desktop/target/release/bundle/nsis/*.exe
@@ -281,7 +281,7 @@ jobs:
 
       - name: Upload signed Windows artifact
         if: matrix.platform == 'windows-latest'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-signed
           path: ./artifact-output/*
