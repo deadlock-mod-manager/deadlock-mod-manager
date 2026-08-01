@@ -371,6 +371,12 @@ jobs:
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
+      # Required by prost-build, pulled in transitively via steam-vent/valveprotos.
+      - name: Install protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Install apt dependencies (ubuntu only)
         if: matrix.os == 'linux'
         run: |

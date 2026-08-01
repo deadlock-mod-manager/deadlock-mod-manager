@@ -168,6 +168,12 @@ jobs:
         shell: bash
         run: sccache --show-stats
 
+      # Required by prost-build, pulled in transitively via steam-vent/valveprotos.
+      - name: Install protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Install apt dependencies (Linux only)
         if: matrix.os == 'linux'
         run: |
