@@ -1541,17 +1541,17 @@
     },
     "versions": {
       "1.1.0": {
-        "title": "Skin Locker, Mod Dependencies & Bug Fixes",
+        "title": "",
         "features": [
-          "✨ Added a Skins page to pick which skin each hero wears",
-          "✨ Added opt-in match data sharing to help community match trackers",
-          "✨ Mod pages now show required mods and link to the ones you already have",
-          "📥 Retry failed downloads straight from the queue or the mod page",
-          "📥 Download progress now shows on mod buttons",
-          "🐛 Fixed custom crosshairs staying active after being disabled",
-          "🐛 Fixed mod load order not always saving",
-          "🐛 Fixed deleting a mod whose download never finished",
-          "🐛 Fixed the Linux Flatpak crashing on launch"
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
         ]
       },
       "1.0.0": {
