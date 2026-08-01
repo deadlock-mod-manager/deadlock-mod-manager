@@ -202,12 +202,12 @@ fn decrypt_blob(blob: &[u8], account: &str) -> Result<String, MatchSyncError> {
   use windows::Win32::Security::Cryptography::{CRYPT_INTEGER_BLOB, CryptUnprotectData};
 
   // DPAPI with the ASCII account name as the mandatory optional entropy.
-  let mut data_in = CRYPT_INTEGER_BLOB {
+  let data_in = CRYPT_INTEGER_BLOB {
     cbData: blob.len() as u32,
     pbData: blob.as_ptr() as *mut u8,
   };
   let entropy_bytes = account.as_bytes();
-  let mut entropy = CRYPT_INTEGER_BLOB {
+  let entropy = CRYPT_INTEGER_BLOB {
     cbData: entropy_bytes.len() as u32,
     pbData: entropy_bytes.as_ptr() as *mut u8,
   };
@@ -215,9 +215,9 @@ fn decrypt_blob(blob: &[u8], account: &str) -> Result<String, MatchSyncError> {
 
   unsafe {
     CryptUnprotectData(
-      &mut data_in,
+      &data_in,
       None,
-      Some(&mut entropy),
+      Some(&entropy),
       None,
       None,
       0,

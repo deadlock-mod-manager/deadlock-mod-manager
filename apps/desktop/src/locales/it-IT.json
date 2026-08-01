@@ -1541,7 +1541,7 @@
     },
     "versions": {
       "1.1.0": {
-        "title": "Skins, Match Sharing & Download Fixes",
+        "title": "Skin Locker, Mod Dependencies & Bug Fixes",
         "features": [
           "✨ Added a Skins page to pick which skin each hero wears",
           "✨ Added opt-in match data sharing to help community match trackers",

@@ -23,6 +23,7 @@ import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useAbout from "@/hooks/use-about";
 import { APP_NAME, GITHUB_REPO } from "@/lib/constants";
+import { getWhatsNewVideoId } from "@/lib/whats-new-versions";
 
 type WhatsNewDialogProps = {
   onClose: () => void;
@@ -235,9 +236,7 @@ export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
   const version = data?.version || "0.10.0";
 
   const title = t(`whatsNew.versions.${version}.title`, { defaultValue: "" });
-  const videoId = t(`whatsNew.versions.${version}.videoId`, {
-    defaultValue: "",
-  });
+  const videoId = getWhatsNewVideoId(version);
 
   const categories = useMemo(() => {
     const features = getFeatures(t, version);
