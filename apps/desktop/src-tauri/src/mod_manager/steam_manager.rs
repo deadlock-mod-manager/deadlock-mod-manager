@@ -110,6 +110,13 @@ impl SteamManager {
       ));
     }
 
+    // steamlocate's from_dir only checks that the path is a directory.
+    if !path.join("steamapps").is_dir() {
+      return Err(Error::InvalidInput(
+        "Invalid Steam path: not a valid Steam installation directory".to_string(),
+      ));
+    }
+
     let steam_dir = steamlocate::SteamDir::from_dir(&path).map_err(|_| {
       Error::InvalidInput(
         "Invalid Steam path: not a valid Steam installation directory".to_string(),

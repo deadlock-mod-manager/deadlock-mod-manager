@@ -115,16 +115,21 @@ jobs:
   build-nightly:
     name: Build Nightly Package
     env:
-      NIX_BUILD_CORES: "2"
+      NIX_BUILD_CORES: "8"
     runs-on: depot-ubuntu-24.04-8
     needs: update-hashes
     if: always() && needs.update-hashes.result == 'success'
     steps:
+      # Not nothing-but-nix: it's GitHub-hosted-only and leaves / with 2GB, which ENOSPCs the runner.
       - name: Free disk space
-        uses: wimpysworld/nothing-but-nix@main
-        with:
-          hatchet-protocol: Rampage
-          witness-carnage: true
+        run: |
+          echo "Disk usage before cleanup:"
+          df -h /
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /opt/hostedtoolcache/CodeQL || true
+          sudo docker system prune -af || true
+          sudo apt-get clean
+          echo "Disk usage after cleanup:"
+          df -h /
 
       - name: Checkout repository (latest after hash updates)
         uses: actions/checkout@v7
