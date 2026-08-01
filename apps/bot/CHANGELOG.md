@@ -1,5 +1,19 @@
 # @deadlock-mods/bot
 
+## 1.3.0
+
+### Minor Changes
+
+- 2cca7f5: Add reusable Discord quick answers with persistent image and video attachments
+
+### Patch Changes
+
+- Updated dependencies [2cca7f5]
+  - @deadlock-mods/database@2.1.0
+  - @deadlock-mods/feature-flags@0.2.8
+  - @deadlock-mods/instrumentation@0.1.10
+  - @deadlock-mods/shared@2.1.0
+
 ## 1.2.8
 
 ### Patch Changes

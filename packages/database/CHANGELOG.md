@@ -1,5 +1,11 @@
 # @deadlock-mods/database
 
+## 2.1.0
+
+### Minor Changes
+
+- 2cca7f5: Add reusable Discord quick answers with persistent image and video attachments
+
 ## 2.0.1
 
 ### Patch Changes

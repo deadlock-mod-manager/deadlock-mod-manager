@@ -1,5 +1,24 @@
 # desktop
 
+## 1.1.0
+
+### Minor Changes
+
+- cd10b4d: Add retry actions for failed downloads in the queue and mod screen.
+- 00f82c8: Add opt-in match data sharing. When enabled, the app recovers your local Steam login on your machine to fetch your own Deadlock match salts through Steam's Game Coordinator and contributes them to deadlock-api trackers. It never sends your token, password, or personal data, only runs while Deadlock is closed, and is throttled and hard-capped at 40 fetches per 24 hours per account.
+- 335aa31: Add a Skins page for choosing which single skin each hero wears
+- 911a0e6: Show GameBanana requirements and local mod links on detail pages
+
+### Patch Changes
+
+- 727bc7c: Fix the Linux Flatpak crashing to "Aw, Snap!" on launch
+- 380477d: Fix unreliable mod load order saves
+- fec53a9: Fix custom crosshairs remaining active after they are disabled
+- 6d9be1e: Show download progress on mod action buttons
+- 4522cf8: Fix deleting a mod whose download never finished
+- 727bc7c: Show the correct app version in software stores on Flatpak
+  - @deadlock-mods/shared@2.1.0
+
 ## 1.0.0
 
 ### Major Changes

@@ -1,5 +1,17 @@
 # api
 
+## 3.1.1
+
+### Patch Changes
+
+- abf346f: Use lightweight liveness probes so saturated API pods are not restarted under load
+- Updated dependencies [2cca7f5]
+  - @deadlock-mods/database@2.1.0
+  - @deadlock-mods/distributed-lock@1.0.10
+  - @deadlock-mods/feature-flags@0.2.8
+  - @deadlock-mods/instrumentation@0.1.10
+  - @deadlock-mods/shared@2.1.0
+
 ## 3.1.0
 
 ### Minor Changes
