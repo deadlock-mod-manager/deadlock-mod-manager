@@ -1,21 +1,27 @@
 import { DeadlockHeroes } from "@deadlock-mods/shared";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { FileSelectorDialog } from "@/components/downloads/file-selector-dialog";
 import PageTitle from "@/components/shared/page-title";
 import { HeroList, type HeroListEntry } from "@/components/skins/hero-list";
 import { SkinGrid } from "@/components/skins/skin-grid";
 import { deriveActiveArchiveNames } from "@/hooks/use-mod-options";
 import { useSkinSwap } from "@/hooks/use-skin-swap";
+import useUninstall from "@/hooks/use-uninstall";
 import { groupSkinsByHero } from "@/lib/mods/skin-selection";
 import { usePersistedStore } from "@/lib/store";
 import type { LocalMod } from "@/types/mods";
 
 const Skins = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const localMods = usePersistedStore((state) => state.localMods);
+  const updateModsFilters = usePersistedStore(
+    (state) => state.updateModsFilters,
+  );
   const { selectSkin, swappingHero, installAction } = useSkinSwap();
+  const { uninstall } = useUninstall();
   const [selectedHero, setSelectedHero] = useState<string | null>(null);
 
   const groups = useMemo(() => groupSkinsByHero(localMods), [localMods]);
@@ -61,6 +67,25 @@ const Skins = () => {
     }
   };
 
+  const handleAddSkin = () => {
+    if (!effectiveHero) {
+      return;
+    }
+    // Hand the store a single-hero filter so the browser opens on exactly the
+    // skins for the hero the user came from.
+    updateModsFilters({
+      selectedHeroes: [effectiveHero],
+      filterMode: "include",
+      searchQuery: "",
+      showFavoritesOnly: false,
+    });
+    navigate("/mods");
+  };
+
+  const handleDelete = (mod: LocalMod) => {
+    void uninstall(mod, true);
+  };
+
   return (
     <div className='flex h-full w-full flex-col overflow-hidden pl-4 pr-2'>
       <div className='mb-6'>
@@ -79,6 +104,8 @@ const Skins = () => {
             }
             disabled={swappingHero !== null}
             hero={effectiveHero}
+            onAddSkin={handleAddSkin}
+            onDelete={handleDelete}
             onSelect={handleSelect}
             skins={selectedGroup?.skins ?? []}
           />

@@ -1,5 +1,11 @@
+import { Button } from "@deadlock-mods/ui/components/button";
 import { Card } from "@deadlock-mods/ui/components/card";
-import { Check } from "@deadlock-mods/ui/icons";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deadlock-mods/ui/components/tooltip";
+import { Check, Trash2 } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { NSFWBlur } from "@/components/mod-browsing/nsfw-blur";
 import { SkinVariantControls } from "@/components/skins/skin-variant-controls";
@@ -12,6 +18,7 @@ interface SkinCardProps {
   isActive: boolean;
   disabled: boolean;
   onSelect: () => void;
+  onDelete: () => void;
 }
 
 export const SkinCard = ({
@@ -19,6 +26,7 @@ export const SkinCard = ({
   isActive,
   disabled,
   onSelect,
+  onDelete,
 }: SkinCardProps) => {
   const { t } = useTranslation();
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
@@ -34,7 +42,7 @@ export const SkinCard = ({
       aria-disabled={disabled}
       aria-pressed={isActive}
       className={cn(
-        "cursor-pointer overflow-hidden shadow-none transition-colors hover:border-primary",
+        "group/skin relative cursor-pointer overflow-hidden shadow-none transition-colors hover:border-primary",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         isActive && "ring-2 ring-primary",
         disabled && "pointer-events-none opacity-60",
@@ -53,6 +61,23 @@ export const SkinCard = ({
       }}
       role='button'
       tabIndex={disabled ? -1 : 0}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            aria-label={t("skins.deleteSkin")}
+            className='absolute top-2 right-2 z-10 h-7 w-7 opacity-0 transition-opacity focus-visible:opacity-100 group-hover/skin:opacity-100 group-focus-within/skin:opacity-100'
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            onKeyDown={(e) => e.stopPropagation()}
+            size='icon'
+            variant='destructive'>
+            <Trash2 className='h-3.5 w-3.5' />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{t("skins.deleteSkin")}</TooltipContent>
+      </Tooltip>
       {mod.images.length > 0 ? (
         <NSFWBlur
           blurStrength={nsfwSettings.blurStrength}
