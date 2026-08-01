@@ -200,7 +200,7 @@ jobs:
         with:
           runtime-version: "49"
 
-      - name: Install Electron base app (zypak for CEF)
+      - name: Install Electron base app (Flatpak base for CEF)
         if: matrix.os == 'linux'
         run: flatpak install --user -y flathub org.electronjs.Electron2.BaseApp//24.08
 
