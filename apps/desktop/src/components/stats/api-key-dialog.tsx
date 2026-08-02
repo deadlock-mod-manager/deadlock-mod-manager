@@ -14,7 +14,7 @@ import { type FormEvent, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { openUrl } from "@tauri-apps/plugin-opener";
 
-const PATREON_URL = "https://deadlock-api.com/prioritized-fetching";
+const PATREON_URL = "https://deadlock-api.com/patron";
 
 interface ApiKeyDialogProps {
   open: boolean;
