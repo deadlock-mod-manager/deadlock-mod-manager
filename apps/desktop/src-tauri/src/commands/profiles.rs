@@ -272,7 +272,7 @@ pub async fn delete_profile_vpk(
 ) -> Result<(), Error> {
   log::info!("Deleting VPK {vpk_name} from profile {profile_folder:?}");
   let resolved = resolve_profile_vpk_path(profile_folder, &vpk_name)?;
-  let manifest = ProfileVpkManifest::load(&resolved.profile_base)?;
+  let manifest = ProfileVpkManifest::open_for_write(&resolved.profile_base)?;
   let is_managed = manifest.mods.values().any(|entry| {
     if entry.enabled {
       entry.shard == resolved.shard && entry.current_vpks.contains(&resolved.filename)
@@ -627,7 +627,7 @@ pub async fn seed_profile_vpk_manifest_entries(
 
   let mod_manager = MANAGER.lock().unwrap();
   let addons_path = mod_manager.get_addons_path(profile_folder.as_deref())?;
-  let mut manifest = ProfileVpkManifest::load(&addons_path)?;
+  let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
   let mut changed = false;
 
   for entry in entries {

@@ -561,7 +561,7 @@ pub async fn register_analyzed_mod(
   let mut mod_manager = MANAGER.lock().unwrap();
 
   let addons_path = mod_manager.get_addons_path(profile_folder.as_deref())?;
-  let mut manifest = ProfileVpkManifest::load(&addons_path)?;
+  let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
 
   let install_order = manifest.mods.get(&mod_id).and_then(|e| e.order);
 

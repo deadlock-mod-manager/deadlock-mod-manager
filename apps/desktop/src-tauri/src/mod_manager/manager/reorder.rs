@@ -217,7 +217,7 @@ impl ModManager {
     selected_original_names: Vec<String>,
   ) -> Result<VariantChangeResult, Error> {
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
-    let mut manifest = ProfileVpkManifest::load(&addons_path)?;
+    let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
     let current_shard = manifest.shard_of(mod_id);
     let target_shard = Self::choose_shard_for(
       &addons_path,
@@ -299,7 +299,7 @@ impl ModManager {
 
     log::info!("Reordering all mods based on install order for profile: {profile_folder:?}");
 
-    let mut manifest = ProfileVpkManifest::load(&addons_path)?;
+    let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
     let mut manifest_changed = false;
     for entry in manifest.mods.values_mut() {
       manifest_changed |= Self::reconcile_manifest_entry_for_reorder(&addons_path, entry, &[]);
@@ -346,7 +346,7 @@ impl ModManager {
     let mut sorted_data = mod_order_data;
     sorted_data.sort_by_key(|(_, _, order)| *order);
 
-    let mut manifest = ProfileVpkManifest::load(&addons_path)?;
+    let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
     let mut mod_vpk_mapping = Vec::new();
     let mut manifest_changed = false;
     for (remote_id, vpk_files, order) in sorted_data {
@@ -404,7 +404,7 @@ impl ModManager {
     let mut sorted_order = mod_order_data;
     sorted_order.sort_by_key(|(_, order)| *order);
 
-    let mut manifest = ProfileVpkManifest::load(&addons_path)?;
+    let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
     let mut mod_vpk_mapping = Vec::new();
     let mut manifest_changed = false;
 
