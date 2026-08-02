@@ -14,6 +14,32 @@ interface InsightListProps {
 
 const MAX_INSIGHTS = 4;
 
+const heroIdOf = (insight: Insight): number | null =>
+  insight.kind === "comfortHero" ||
+  insight.kind === "trapHero" ||
+  insight.kind === "topHero"
+    ? insight.heroId
+    : null;
+
+/**
+ * The kind alone is not unique - two hero insights of the same kind can make the
+ * cut - so the key carries whatever the insight is actually about.
+ */
+const insightKey = (insight: Insight): string => {
+  switch (insight.kind) {
+    case "comfortHero":
+    case "trapHero":
+    case "topHero":
+      return `${insight.kind}:${insight.heroId}`;
+    case "hours":
+      return `${insight.kind}:${insight.hour}`;
+    case "session":
+      return `${insight.kind}:${insight.position}`;
+    default:
+      return insight.kind;
+  }
+};
+
 const useInsightText = () => {
   const { t } = useTranslation();
 
@@ -85,12 +111,7 @@ export const InsightList = ({ insights, heroesById }: InsightListProps) => {
   return (
     <div className='grid gap-3 sm:grid-cols-2'>
       {visible.map((insight) => {
-        const heroId =
-          insight.kind === "comfortHero" ||
-          insight.kind === "trapHero" ||
-          insight.kind === "topHero"
-            ? insight.heroId
-            : null;
+        const heroId = heroIdOf(insight);
         const Icon =
           insight.tone === "good"
             ? TrendingUp
@@ -101,7 +122,7 @@ export const InsightList = ({ insights, heroesById }: InsightListProps) => {
         return (
           <Card
             className='flex items-start gap-3 p-3 shadow-none'
-            key={insight.kind}>
+            key={insightKey(insight)}>
             {heroId === null ? (
               <span
                 className={cn(

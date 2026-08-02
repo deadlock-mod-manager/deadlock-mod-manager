@@ -108,10 +108,15 @@ pub struct LocalMatch {
 // token for the next (older) page, or None when history is exhausted.
 #[derive(Debug, Clone, Default)]
 pub struct MatchHistoryPage {
-  pub match_ids: Vec<u64>,
-  /// The same matches with their full stats, for callers that want more than ids.
   pub matches: Vec<LocalMatch>,
   pub next_cursor: Option<u64>,
+}
+
+impl MatchHistoryPage {
+  /// The ids alone, for the sync engine - it only ever walks the page by id.
+  pub fn match_ids(&self) -> Vec<u64> {
+    self.matches.iter().map(|m| m.match_id).collect()
+  }
 }
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]

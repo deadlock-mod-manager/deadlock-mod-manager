@@ -1,8 +1,25 @@
+import { ProviderError } from "@deadlock-mods/common/client-errors";
 import { fetch } from "./fetch";
 
-const HEROES_API = "https://assets.deadlock-api.com/v2/heroes";
-const ITEMS_API = "https://assets.deadlock-api.com/v2/items";
+export const ASSETS_BASE_URL = "https://assets.deadlock-api.com";
+
+const HEROES_API = `${ASSETS_BASE_URL}/v2/heroes`;
+const ITEMS_API = `${ASSETS_BASE_URL}/v2/items`;
 const HERO_API = `${HEROES_API}/by-name`;
+
+/**
+ * Every deadlock-api failure, on the app's shared error hierarchy. Lives here
+ * rather than in `stats/api.ts` so the asset and the stats client can both throw
+ * it without importing each other.
+ */
+export class DeadlockApiError extends ProviderError {
+  constructor(
+    readonly status: number,
+    readonly endpoint: string,
+  ) {
+    super(`deadlock-api ${endpoint} failed with ${status}`);
+  }
+}
 
 export interface DeadlockHero {
   id: number;
@@ -20,7 +37,7 @@ export interface DeadlockHero {
 export const getHeroes = async (): Promise<DeadlockHero[]> => {
   const res = await fetch(`${HEROES_API}?only_active=true`);
   if (!res.ok) {
-    throw new Error(`Failed to load heroes: ${res.status}`);
+    throw new DeadlockApiError(res.status, "/v2/heroes");
   }
   return res.json();
 };
@@ -46,7 +63,7 @@ export interface DeadlockItem {
 export const getItems = async (): Promise<DeadlockItem[]> => {
   const res = await fetch(`${ITEMS_API}?only_active=true`);
   if (!res.ok) {
-    throw new Error(`Failed to load items: ${res.status}`);
+    throw new DeadlockApiError(res.status, "/v2/items");
   }
   const items = (await res.json()) as DeadlockItem[];
   return items

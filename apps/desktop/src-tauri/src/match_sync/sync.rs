@@ -299,7 +299,7 @@ where
           break;
         }
       };
-      let fresh = newest_first_fresh(page.match_ids, &st.processed);
+      let fresh = newest_first_fresh(page.match_ids(), &st.processed);
       if let LoopControl::Stop = self
         .process_ids(&ctx, fresh, false, Some(cancel), st)
         .await?
@@ -382,7 +382,7 @@ where
     // Own matches = the newest GC history page ∪ deadlock-api's missing-for-account
     // list, newest first. Both best-effort so one being down still syncs the other.
     let mut own_ids = match self.gc_history_page(&ctx, None).await {
-      Ok(page) => page.match_ids,
+      Ok(page) => page.match_ids(),
       Err(MatchSyncError::GameRunning) => return Err(MatchSyncError::GameRunning),
       Err(e) => {
         log::warn!("match-sync: GC match history unavailable: {e}");
@@ -435,7 +435,7 @@ where
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::match_sync::model::{AuthContext, MatchHistoryPage, MatchSalts};
+  use crate::match_sync::model::{AuthContext, LocalMatch, MatchHistoryPage, MatchSalts};
   use crate::match_sync::quota::QuotaWindow;
   use std::sync::Mutex;
   use std::time::Duration;
@@ -477,9 +477,15 @@ mod tests {
         return Err(MatchSyncError::GcUnavailable("spy history".into()));
       }
       Ok(MatchHistoryPage {
-        match_ids: self.history.clone(),
+        matches: self
+          .history
+          .iter()
+          .map(|&match_id| LocalMatch {
+            match_id,
+            ..Default::default()
+          })
+          .collect(),
         next_cursor: None,
-        ..Default::default()
       })
     }
     async fn fetch_match_salts(

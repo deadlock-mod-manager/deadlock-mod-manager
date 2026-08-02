@@ -90,13 +90,19 @@ export const HeroesTab = ({
               <TableHead>{t("stats.heroes.hero")}</TableHead>
               {columns.map((column) => (
                 <TableHead
+                  aria-sort={sortKey === column.key ? "descending" : "none"}
                   className={cn(
-                    "cursor-pointer select-none text-right",
+                    "text-right",
                     sortKey === column.key && "text-foreground",
                   )}
-                  key={column.key}
-                  onClick={() => setSortKey(column.key)}>
-                  {column.label}
+                  key={column.key}>
+                  {/* A real button, so sorting is reachable by keyboard. */}
+                  <button
+                    className='w-full select-none text-right'
+                    onClick={() => setSortKey(column.key)}
+                    type='button'>
+                    {column.label}
+                  </button>
                 </TableHead>
               ))}
             </TableRow>
@@ -104,12 +110,24 @@ export const HeroesTab = ({
           <TableBody>
             {sorted.map((hero) => (
               <TableRow
+                aria-selected={hero.heroId === activeHeroId}
                 className={cn(
                   "cursor-pointer",
                   hero.heroId === activeHeroId && "bg-accent",
                 )}
                 key={hero.heroId}
-                onClick={() => setSelectedHeroId(hero.heroId)}>
+                onClick={() => setSelectedHeroId(hero.heroId)}
+                onKeyDown={(event) => {
+                  if (event.key !== "Enter" && event.key !== " ") {
+                    return;
+                  }
+                  // Space would otherwise scroll the table out from under the
+                  // selection it just made.
+                  event.preventDefault();
+                  setSelectedHeroId(hero.heroId);
+                }}
+                role='button'
+                tabIndex={0}>
                 <TableCell className='flex items-center gap-2 font-medium'>
                   <HeroAvatar
                     hero={heroesById.get(hero.heroId)}

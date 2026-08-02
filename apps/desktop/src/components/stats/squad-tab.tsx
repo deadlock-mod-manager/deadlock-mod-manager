@@ -6,12 +6,6 @@ import {
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Card } from "@deadlock-mods/ui/components/card";
 import {
-  type ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@deadlock-mods/ui/components/chart";
-import {
   Table,
   TableBody,
   TableCell,
@@ -21,16 +15,8 @@ import {
 } from "@deadlock-mods/ui/components/table";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import {
-  Bar,
-  BarChart,
-  Cell,
-  LabelList,
-  ReferenceLine,
-  XAxis,
-  YAxis,
-} from "recharts";
 import { ChartCard } from "@/components/stats/chart-card";
+import { DeltaBarChart } from "@/components/stats/delta-bar-chart";
 import type { EnemyStats, SteamProfile } from "@/lib/stats/api";
 import type { MateInsight } from "@/lib/stats/derive";
 import {
@@ -81,25 +67,26 @@ export const SquadTab = ({
 }: SquadTabProps) => {
   const { t } = useTranslation();
 
-  const chartData = useMemo(
+  const bars = useMemo(
     () =>
       [...mates]
         .sort((a, b) => b.matchesTogether - a.matchesTogether)
         .slice(0, TOP_MATES)
         .sort((a, b) => b.winrateDelta - a.winrateDelta)
         .map((mate) => ({
-          name: profilesById.get(mate.mateId)?.personaname ?? `#${mate.mateId}`,
+          id: mate.mateId,
+          label:
+            profilesById.get(mate.mateId)?.personaname ?? `#${mate.mateId}`,
           delta: mate.winrateDelta * 100,
           rawDelta: mate.winrateDelta,
-          winrate: mate.winrateTogether,
-          matches: mate.matchesTogether,
+          isPositive: mate.winrateDelta >= 0,
+          tooltip: t("stats.squad.tooltip", {
+            winrate: formatPercent(mate.winrateTogether, 0),
+            matches: mate.matchesTogether,
+          }),
         })),
-    [mates, profilesById],
+    [mates, profilesById, t],
   );
-
-  const config = {
-    delta: { label: t("stats.squad.delta") },
-  } satisfies ChartConfig;
 
   if (mates.length === 0) {
     return (
@@ -116,76 +103,12 @@ export const SquadTab = ({
           winrate: formatPercent(careerWinrate, 0),
         })}
         title={t("stats.squad.chartTitle")}>
-        <ChartContainer
-          className='aspect-auto w-full'
-          config={config}
-          style={{ height: `${Math.max(200, chartData.length * 34)}px` }}>
-          <BarChart
-            data={chartData}
-            layout='vertical'
-            margin={{ left: 8, right: 56, top: 4, bottom: 4 }}>
-            <XAxis
-              axisLine={false}
-              tickFormatter={(value: number) => `${Math.round(value)}%`}
-              tickLine={false}
-              type='number'
-            />
-            <YAxis
-              axisLine={false}
-              dataKey='name'
-              // Steam personas run long; clip them here rather than let recharts
-              // cut the start of the name off.
-              tickFormatter={(value: string) =>
-                value.length > 18 ? `${value.slice(0, 17)}…` : value
-              }
-              tickLine={false}
-              type='category'
-              width={150}
-            />
-            <ReferenceLine stroke='hsl(var(--border))' x={0} />
-            <ChartTooltip
-              cursor={{ fill: "hsl(var(--accent))" }}
-              content={
-                <ChartTooltipContent
-                  hideIndicator
-                  formatter={(_value, _name, item) => (
-                    <span className='font-medium'>
-                      {t("stats.squad.tooltip", {
-                        winrate: formatPercent(
-                          Number(item?.payload?.winrate ?? 0),
-                          0,
-                        ),
-                        matches: Number(item?.payload?.matches ?? 0),
-                      })}
-                    </span>
-                  )}
-                  labelFormatter={(_, payload) =>
-                    String(payload?.[0]?.payload?.name ?? "")
-                  }
-                />
-              }
-            />
-            <Bar dataKey='delta' maxBarSize={20} radius={4}>
-              {chartData.map((entry) => (
-                <Cell
-                  fill={
-                    entry.delta >= 0
-                      ? "var(--viz-positive)"
-                      : "var(--viz-negative)"
-                  }
-                  key={entry.name}
-                />
-              ))}
-              <LabelList
-                className='fill-muted-foreground'
-                dataKey='rawDelta'
-                fontSize={11}
-                formatter={(value: number) => formatSignedPercent(value, 0)}
-                position='right'
-              />
-            </Bar>
-          </BarChart>
-        </ChartContainer>
+        {/* Steam personas run long; clipped so recharts does not cut the start. */}
+        <DeltaBarChart
+          bars={bars}
+          maxLabelChars={18}
+          seriesLabel={t("stats.squad.delta")}
+        />
       </ChartCard>
 
       <Card className='shadow-none'>

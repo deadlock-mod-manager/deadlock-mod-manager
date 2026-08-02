@@ -89,6 +89,7 @@
       "resolving": "Requesting the live broadcast…",
       "connecting": "Waiting for the first ticks…",
       "broadcastError": "Could not open the live broadcast. deadlock-api allows two spectate requests per hour — try again in a bit.",
+      "streamError": "The live broadcast closed before sending a scoreboard. Use \"Check now\" once the match is running again.",
       "status": {
         "connecting": "Connecting",
         "streaming": "Live",
@@ -104,15 +105,12 @@
       "matchesTracked": "Tracked matches",
       "overallWinrate": "Overall winrate",
       "overallKda": "Overall KDA",
-      "recentActivity": "Recently active",
-      "matchesLast30d_one": "{{count}} match in 30 days",
-      "matchesLast30d_other": "{{count}} matches in 30 days",
       "netWorth": "Net worth right now",
+      "netWorthHint": "In the current match",
       "mostPlayed": "Most played heroes",
       "mostPlayedDescription": "Winrate on the heroes they pick most; the line marks even odds",
       "lastN": "Last {{count}} matches",
       "recentForm": "Recent form",
-      "matchesLast30dShort": "Matches (30 days)",
       "formTitle": "Form",
       "formDescription": "Winrate across a rolling window of {{window}} matches",
       "recentMatches": "Recent matches",
@@ -123,6 +121,9 @@
       "soulLeadDescription": "Sapphire minus Amber over the course of the match",
       "killsTitle": "Kills",
       "killsDescription": "Team kills as the match goes on"
+    },
+    "duration": {
+      "hoursMinutes": "{{hours}}h {{minutes}}m"
     },
     "win": "Win",
     "loss": "Loss",

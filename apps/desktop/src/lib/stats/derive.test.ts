@@ -57,6 +57,63 @@ const win = (overrides: Partial<MatchHistoryEntry> = {}) =>
 const loss = (overrides: Partial<MatchHistoryEntry> = {}) =>
   makeMatch({ player_team: 0, match_result: 1, ...overrides });
 
+// Zeroed baselines, so a test only has to state the fields it actually asserts on
+// without any of them silently arriving as `undefined`.
+const makeHeroStats = (
+  overrides: Partial<PlayerHeroStats> = {},
+): PlayerHeroStats => ({
+  account_id: 1,
+  hero_id: 15,
+  matches_played: 0,
+  wins: 0,
+  last_played: 0,
+  time_played: 0,
+  kills: 0,
+  deaths: 0,
+  assists: 0,
+  ending_level: 0,
+  accuracy: 0,
+  crit_shot_rate: 0,
+  denies_per_match: 0,
+  kills_per_min: 0,
+  deaths_per_min: 0,
+  assists_per_min: 0,
+  denies_per_min: 0,
+  networth_per_min: 0,
+  last_hits_per_min: 0,
+  damage_per_min: 0,
+  damage_taken_per_min: 0,
+  damage_mitigated_per_min: 0,
+  obj_damage_per_min: 0,
+  total_player_damage: 0,
+  total_player_damage_taken: 0,
+  total_boss_damage: 0,
+  total_creep_damage: 0,
+  total_neutral_damage: 0,
+  ...overrides,
+});
+
+const makeAnalyticsHeroStats = (
+  overrides: Partial<AnalyticsHeroStats> = {},
+): AnalyticsHeroStats => ({
+  hero_id: 15,
+  matches: 0,
+  wins: 0,
+  losses: 0,
+  total_kills: 0,
+  total_deaths: 0,
+  total_assists: 0,
+  total_net_worth: 0,
+  total_last_hits: 0,
+  total_denies: 0,
+  total_player_damage: 0,
+  total_player_damage_taken: 0,
+  total_boss_damage: 0,
+  total_shots_hit: 0,
+  total_shots_missed: 0,
+  ...overrides,
+});
+
 describe("isWin", () => {
   it("treats match_result as the winning team index", () => {
     expect(isWin(makeMatch({ player_team: 1, match_result: 1 }))).toBe(true);
@@ -195,8 +252,7 @@ describe("sessionCurve", () => {
 });
 
 describe("benchmarkDeltas", () => {
-  const mine = {
-    hero_id: 15,
+  const mine = makeHeroStats({
     matches_played: 10,
     kills: 100,
     deaths: 50,
@@ -206,10 +262,9 @@ describe("benchmarkDeltas", () => {
     last_hits_per_min: 5,
     networth_per_min: 1000,
     total_player_damage: 200_000,
-  } as PlayerHeroStats;
+  });
 
-  const global = {
-    hero_id: 15,
+  const global = makeAnalyticsHeroStats({
     matches: 1000,
     total_kills: 5000,
     total_deaths: 5000,
@@ -218,7 +273,7 @@ describe("benchmarkDeltas", () => {
     total_denies: 5000,
     total_net_worth: 25_000_000,
     total_player_damage: 25_000_000,
-  } as AnalyticsHeroStats;
+  });
 
   it("compares per-match averages on both sides", () => {
     const rows = benchmarkDeltas(mine, global);
@@ -286,24 +341,24 @@ describe("joinMateStats", () => {
 describe("heroPerformance", () => {
   it("skips heroes without matches and sorts by games played", () => {
     const stats = [
-      { hero_id: 1, matches_played: 0 },
-      {
+      makeHeroStats({ hero_id: 1, matches_played: 0 }),
+      makeHeroStats({
         hero_id: 2,
         matches_played: 5,
         wins: 3,
         kills: 20,
         deaths: 10,
         assists: 30,
-      },
-      {
+      }),
+      makeHeroStats({
         hero_id: 3,
         matches_played: 20,
         wins: 10,
         kills: 50,
         deaths: 25,
         assists: 60,
-      },
-    ] as PlayerHeroStats[];
+      }),
+    ];
 
     const result = heroPerformance(stats);
 
@@ -343,9 +398,7 @@ describe("mergeLocalMatches", () => {
 
 describe("mergeHeroStats", () => {
   const heroStats = [
-    {
-      account_id: 1,
-      hero_id: 15,
+    makeHeroStats({
       matches_played: 10,
       wins: 5,
       kills: 50,
@@ -354,7 +407,7 @@ describe("mergeHeroStats", () => {
       time_played: 18_000,
       last_played: 100,
       networth_per_min: 1000,
-    } as PlayerHeroStats,
+    }),
   ];
 
   it("folds today's matches into the hero the API already knows", () => {
@@ -451,7 +504,7 @@ describe("generateInsights", () => {
       ),
     ];
     const heroes = heroPerformance([
-      {
+      makeHeroStats({
         hero_id: 9,
         matches_played: 20,
         wins: 2,
@@ -462,7 +515,7 @@ describe("generateInsights", () => {
         time_played: 3600,
         accuracy: 0.3,
         networth_per_min: 900,
-      } as PlayerHeroStats,
+      }),
     ]);
 
     const insights = generateInsights(matches, heroes);
@@ -488,7 +541,7 @@ describe("generateInsights", () => {
       }),
     );
     const heroes = heroPerformance([
-      {
+      makeHeroStats({
         hero_id: 4,
         matches_played: 40,
         wins: 20,
@@ -499,7 +552,7 @@ describe("generateInsights", () => {
         time_played: 96_000,
         accuracy: 0.5,
         networth_per_min: 1000,
-      } as PlayerHeroStats,
+      }),
     ]);
 
     const insights = generateInsights(matches, heroes);
@@ -517,7 +570,7 @@ describe("generateInsights", () => {
       win({ start_time: start + i * 24 * HOUR }),
     );
     const heroes = heroPerformance([
-      {
+      makeHeroStats({
         hero_id: 9,
         matches_played: 20,
         wins: 2,
@@ -528,7 +581,7 @@ describe("generateInsights", () => {
         time_played: 3600,
         accuracy: 0.3,
         networth_per_min: 900,
-      } as PlayerHeroStats,
+      }),
     ]);
 
     const kinds = generateInsights(matches, heroes).map((i) => i.kind);

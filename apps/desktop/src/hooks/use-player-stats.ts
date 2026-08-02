@@ -1,3 +1,4 @@
+import { RuntimeError } from "@deadlock-mods/common/client-errors";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -60,6 +61,30 @@ const useStatsQuery = <T>(
     meta: { skipGlobalErrorHandler: true },
   });
 
+/**
+ * A query that only means anything for a known account. The guard is what lets
+ * the fetchers take a plain `number` - every caller would otherwise assert the
+ * nullable id away behind the `enabled` flag.
+ */
+const usePlayerScopedQuery = <T>(
+  accountId: number | null,
+  { key, ttl }: { key: string; ttl: number },
+  fetcher: (accountId: number) => Promise<T>,
+) =>
+  useStatsQuery(
+    {
+      key: `${PLAYER_CACHE_PREFIX}${key}:${accountId}`,
+      ttl,
+      enabled: accountId !== null,
+    },
+    () => {
+      if (accountId === null) {
+        throw new RuntimeError(`stats query "${key}" ran without an account`);
+      }
+      return fetcher(accountId);
+    },
+  );
+
 export const useHeroCatalog = () => {
   const query = useStatsQuery(
     { key: "assets:heroes", ttl: STATS_TTL.assets },
@@ -89,13 +114,10 @@ export const useItemStats = (accountId: number | null) => {
     getItems,
   );
 
-  const mine = useStatsQuery(
-    {
-      key: `${PLAYER_CACHE_PREFIX}items:${accountId}`,
-      ttl: STATS_TTL.heroStats,
-      enabled,
-    },
-    () => getItemStats(accountId as number),
+  const mine = usePlayerScopedQuery(
+    accountId,
+    { key: "items", ttl: STATS_TTL.heroStats },
+    (id) => getItemStats(id),
   );
 
   const global = useStatsQuery(
@@ -131,49 +153,34 @@ export const useItemStats = (accountId: number | null) => {
 export const usePlayerStats = (accountId: number | null) => {
   const enabled = accountId !== null;
 
-  const matchHistory = useStatsQuery(
-    {
-      key: `${PLAYER_CACHE_PREFIX}match-history:${accountId}`,
-      ttl: STATS_TTL.matchHistory,
-      enabled,
-    },
-    () => getMatchHistory(accountId as number),
+  const matchHistory = usePlayerScopedQuery(
+    accountId,
+    { key: "match-history", ttl: STATS_TTL.matchHistory },
+    (id) => getMatchHistory(id),
   );
 
-  const heroStats = useStatsQuery(
-    {
-      key: `${PLAYER_CACHE_PREFIX}hero-stats:${accountId}`,
-      ttl: STATS_TTL.heroStats,
-      enabled,
-    },
-    () => getPlayerHeroStats(accountId as number),
+  const heroStats = usePlayerScopedQuery(
+    accountId,
+    { key: "hero-stats", ttl: STATS_TTL.heroStats },
+    (id) => getPlayerHeroStats(id),
   );
 
-  const mmrHistory = useStatsQuery(
-    {
-      key: `${PLAYER_CACHE_PREFIX}mmr:${accountId}`,
-      ttl: STATS_TTL.mmrHistory,
-      enabled,
-    },
-    () => getMmrHistory(accountId as number),
+  const mmrHistory = usePlayerScopedQuery(
+    accountId,
+    { key: "mmr", ttl: STATS_TTL.mmrHistory },
+    (id) => getMmrHistory(id),
   );
 
-  const rank = useStatsQuery(
-    {
-      key: `${PLAYER_CACHE_PREFIX}rank:${accountId}`,
-      ttl: STATS_TTL.rank,
-      enabled,
-    },
-    () => getPlayerRank(accountId as number),
+  const rank = usePlayerScopedQuery(
+    accountId,
+    { key: "rank", ttl: STATS_TTL.rank },
+    (id) => getPlayerRank(id),
   );
 
-  const profile = useStatsQuery(
-    {
-      key: `${PLAYER_CACHE_PREFIX}profile:${accountId}`,
-      ttl: STATS_TTL.steamProfiles,
-      enabled,
-    },
-    async () => (await getSteamProfiles([accountId as number]))[0] ?? null,
+  const profile = usePlayerScopedQuery(
+    accountId,
+    { key: "profile", ttl: STATS_TTL.steamProfiles },
+    async (id) => (await getSteamProfiles([id]))[0] ?? null,
   );
 
   const benchmark = useStatsQuery(
@@ -186,7 +193,14 @@ export const usePlayerStats = (accountId: number | null) => {
   // them yet. Silent by design - it either adds matches or it does not.
   const local = useQuery({
     queryKey: ["local-match-history", accountId],
-    queryFn: () => invoke<MatchHistoryEntry[]>("get_local_match_history"),
+    queryFn: () => {
+      if (accountId === null) {
+        throw new RuntimeError("local match history ran without an account");
+      }
+      return invoke<MatchHistoryEntry[]>("get_local_match_history", {
+        accountId,
+      });
+    },
     enabled,
     staleTime: STATS_TTL.matchHistory,
     retry: false,
@@ -204,10 +218,15 @@ export const usePlayerStats = (accountId: number | null) => {
     () => mergeLocalMatches(matchHistory.data?.data ?? [], local.data ?? []),
     [matchHistory.data, local.data],
   );
-  const heroes = useMemo(
-    () =>
-      heroPerformance(mergeHeroStats(heroStats.data?.data ?? [], localOnly)),
+  // The per-hero aggregates the API returns, topped up with today's local-only
+  // matches. Shared by the Heroes table and the per-hero benchmark.
+  const mergedHeroStats = useMemo(
+    () => mergeHeroStats(heroStats.data?.data ?? [], localOnly),
     [heroStats.data, localOnly],
+  );
+  const heroes = useMemo(
+    () => heroPerformance(mergedHeroStats),
+    [mergedHeroStats],
   );
   const insights = useMemo(
     () => generateInsights(matches, heroes),
@@ -224,13 +243,11 @@ export const usePlayerStats = (accountId: number | null) => {
 
   const benchmarkFor = useCallback(
     (heroId: number) => {
-      const mine = mergeHeroStats(heroStats.data?.data ?? [], localOnly).find(
-        (hero) => hero.hero_id === heroId,
-      );
+      const mine = mergedHeroStats.find((hero) => hero.hero_id === heroId);
       const global = benchmarkByHero.get(heroId);
       return mine && global ? benchmarkDeltas(mine, global) : [];
     },
-    [heroStats.data, localOnly, benchmarkByHero],
+    [mergedHeroStats, benchmarkByHero],
   );
 
   const sources = [matchHistory, heroStats, mmrHistory, rank, profile];
@@ -256,13 +273,10 @@ export const usePlayerStats = (accountId: number | null) => {
  * a lobby of twelve does not pull twelve histories up front.
  */
 export const usePlayerHistory = (accountId: number | null) => {
-  const query = useStatsQuery(
-    {
-      key: `${PLAYER_CACHE_PREFIX}history:${accountId}`,
-      ttl: STATS_TTL.mmrHistory,
-      enabled: accountId !== null,
-    },
-    () => getMatchHistory(accountId as number),
+  const query = usePlayerScopedQuery(
+    accountId,
+    { key: "history", ttl: STATS_TTL.mmrHistory },
+    (id) => getMatchHistory(id),
   );
 
   return {
@@ -278,31 +292,22 @@ export const useSquadStats = (
 ) => {
   const enabled = accountId !== null;
 
-  const mates = useStatsQuery(
-    {
-      key: `${PLAYER_CACHE_PREFIX}mates:${accountId}`,
-      ttl: STATS_TTL.mates,
-      enabled,
-    },
-    () => getMateStats(accountId as number),
+  const mates = usePlayerScopedQuery(
+    accountId,
+    { key: "mates", ttl: STATS_TTL.mates },
+    (id) => getMateStats(id),
   );
 
-  const party = useStatsQuery(
-    {
-      key: `${PLAYER_CACHE_PREFIX}party:${accountId}`,
-      ttl: STATS_TTL.mates,
-      enabled,
-    },
-    () => getMateStats(accountId as number, true),
+  const party = usePlayerScopedQuery(
+    accountId,
+    { key: "party", ttl: STATS_TTL.mates },
+    (id) => getMateStats(id, true),
   );
 
-  const enemies = useStatsQuery(
-    {
-      key: `${PLAYER_CACHE_PREFIX}enemies:${accountId}`,
-      ttl: STATS_TTL.mates,
-      enabled,
-    },
-    () => getEnemyStats(accountId as number),
+  const enemies = usePlayerScopedQuery(
+    accountId,
+    { key: "enemies", ttl: STATS_TTL.mates },
+    (id) => getEnemyStats(id),
   );
 
   const mateInsights = useMemo(
@@ -334,11 +339,10 @@ export const useSquadStats = (
     [mateInsights, enemyList],
   );
 
-  // The key has to change when the set of ids changes, not just its size.
-  const profileIdsKey = useMemo(
-    () => `${profileIds.length}-${profileIds.reduce((sum, id) => sum + id, 0)}`,
-    [profileIds],
-  );
+  // The key has to identify the exact set of ids: a length-plus-sum digest
+  // collides (swap two mates for two others summing the same and the cache would
+  // hand back the wrong personas).
+  const profileIdsKey = useMemo(() => profileIds.join(","), [profileIds]);
 
   const profiles = useStatsQuery(
     {

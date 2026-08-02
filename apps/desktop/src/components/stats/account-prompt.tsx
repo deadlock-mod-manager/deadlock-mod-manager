@@ -11,9 +11,7 @@ import { Input } from "@deadlock-mods/ui/components/input";
 import { UserSearch } from "@deadlock-mods/ui/icons";
 import { type FormEvent, useState } from "react";
 import { useTranslation } from "react-i18next";
-
-/** SteamID64s start here; anything smaller is already a Steam3 account id. */
-const STEAM_ID64_BASE = 76_561_197_960_265_728n;
+import { STEAM_ID64_BASE } from "@/lib/stats/steam-id";
 
 /**
  * Accepts a SteamID64, a Steam3 account id or a profile URL and reduces it to the

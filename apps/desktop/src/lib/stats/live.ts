@@ -4,6 +4,7 @@ import {
   apiKeyQuery,
   DeadlockApiError,
   getPlayerRank,
+  type PlayerHeroStats,
   type PlayerRank,
 } from "@/lib/stats/api";
 import { fetch } from "@/lib/fetch";
@@ -85,24 +86,35 @@ const LIVE_QUERY = [
 
 /** Rows arrive per tick; the UI only needs the newest state per player. */
 const FLUSH_INTERVAL_MS = 1000;
+/**
+ * A broadcast that is accepted but never sends anything leaves EventSource open
+ * without ever firing `error`, and the tab would spin forever. Give the first row
+ * this long to arrive.
+ */
+const FIRST_ROW_TIMEOUT_MS = 30_000;
 /** Source 2 runs at 60 Hz, which turns ticks into match seconds. */
 const TICKS_PER_SECOND = 60;
 /** One sample per 15 match-seconds keeps a 40 minute match around 160 points. */
 const SAMPLE_INTERVAL_S = 15;
 
-const SAPPHIRE_TEAM = 2;
+/** The game numbers the teams 2 and 3. */
+export const SAPPHIRE_TEAM = 2;
+export const AMBER_TEAM = 3;
+
+const isSapphire = (player: LivePlayer) => player.team === SAPPHIRE_TEAM;
+// Anything that is not Sapphire counts as Amber, so a stray team number can
+// never make the two sides add up to less than the lobby.
+const isAmber = (player: LivePlayer) => !isSapphire(player);
 
 /** Rolls the current player states up into one match-wide sample. */
 export const sampleMatch = (players: LivePlayer[]): LiveMatchSample => {
-  const sum = (team: number, pick: (player: LivePlayer) => number) =>
-    players
-      .filter((player) => player.team === team)
-      .reduce((total, player) => total + pick(player), 0);
+  const sum = (
+    side: (player: LivePlayer) => boolean,
+    pick: (player: LivePlayer) => number,
+  ) => players.filter(side).reduce((total, player) => total + pick(player), 0);
 
-  const sapphireNetWorth = sum(SAPPHIRE_TEAM, (p) => p.netWorth);
-  const amberNetWorth = players
-    .filter((player) => player.team !== SAPPHIRE_TEAM)
-    .reduce((total, player) => total + player.netWorth, 0);
+  const sapphireNetWorth = sum(isSapphire, (p) => p.netWorth);
+  const amberNetWorth = sum(isAmber, (p) => p.netWorth);
 
   return {
     second: Math.round(
@@ -111,11 +123,28 @@ export const sampleMatch = (players: LivePlayer[]): LiveMatchSample => {
     sapphireNetWorth,
     amberNetWorth,
     soulLead: sapphireNetWorth - amberNetWorth,
-    sapphireKills: sum(SAPPHIRE_TEAM, (p) => p.kills),
-    amberKills: players
-      .filter((player) => player.team !== SAPPHIRE_TEAM)
-      .reduce((total, player) => total + player.kills, 0),
+    sapphireKills: sum(isSapphire, (p) => p.kills),
+    amberKills: sum(isAmber, (p) => p.kills),
   };
+};
+
+/**
+ * The lobby's hero stats arrive as one flat list for every account. Both the
+ * scoreboard and the player dialog want them per player, so the split lives here.
+ */
+export const heroStatsByAccount = (
+  heroStats: PlayerHeroStats[],
+): Map<number, PlayerHeroStats[]> => {
+  const byAccount = new Map<number, PlayerHeroStats[]>();
+  for (const entry of heroStats) {
+    const existing = byAccount.get(entry.account_id);
+    if (existing) {
+      existing.push(entry);
+    } else {
+      byAccount.set(entry.account_id, [entry]);
+    }
+  }
+  return byAccount;
 };
 
 export type LiveStatus = "connecting" | "streaming" | "ended" | "error";
@@ -196,8 +225,17 @@ export const subscribeToLiveMatch = (
     if (closed) return;
     closed = true;
     window.clearInterval(flush);
+    window.clearTimeout(watchdog);
     source.close();
   };
+
+  // Silent stream: nothing arrives, nothing errors. Treat it as a failure rather
+  // than leave the UI connecting forever.
+  const watchdog = window.setTimeout(() => {
+    logger.warn("Live stream produced no rows");
+    onStatus("error");
+    stop();
+  }, FIRST_ROW_TIMEOUT_MS);
 
   source.addEventListener("message", (event) => {
     try {
@@ -205,6 +243,7 @@ export const subscribeToLiveMatch = (
       if (!steamId64) return;
       const player = toPlayer(steamId64, JSON.parse(event.data) as LiveRow);
       if (!player) return;
+      window.clearTimeout(watchdog);
       latest.set(player.steamId64, player);
       dirty = true;
       onStatus("streaming");

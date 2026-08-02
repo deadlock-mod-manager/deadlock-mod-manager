@@ -1,6 +1,7 @@
+import { RuntimeError } from "@deadlock-mods/common/client-errors";
 import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { getPlayerHeroStats, getSteamProfiles } from "@/lib/stats/api";
 import { cachedFetch, STATS_TTL } from "@/lib/stats/cache";
 import {
@@ -75,14 +76,17 @@ export const useLiveMatch = (enabled: boolean) => {
   const [players, setPlayers] = useState<LivePlayer[]>([]);
   const [samples, setSamples] = useState<LiveMatchSample[]>([]);
   const [status, setStatus] = useState<LiveStatus>("connecting");
-  const stopRef = useRef<(() => void) | null>(null);
 
   const broadcast = useQuery({
     queryKey: ["live-broadcast", matchId],
-    queryFn: () =>
-      cachedFetch(`live:broadcast:${matchId}`, BROADCAST_TTL, () =>
-        getLiveBroadcast(matchId as string),
-      ),
+    queryFn: () => {
+      if (matchId === null) {
+        throw new RuntimeError("live broadcast query ran without a match");
+      }
+      return cachedFetch(`live:broadcast:${matchId}`, BROADCAST_TTL, () =>
+        getLiveBroadcast(matchId),
+      );
+    },
     enabled: enabled && matchId !== null,
     // The 2/h limit makes retrying counterproductive.
     retry: false,
@@ -99,21 +103,15 @@ export const useLiveMatch = (enabled: boolean) => {
     setPlayers([]);
     setSamples([]);
     setStatus("connecting");
-    const stop = subscribeToLiveMatch(
+    // The cleanup covers both a changed broadcast and unmount, so leaving the
+    // tab or the page cannot keep the stream running.
+    return subscribeToLiveMatch(
       broadcastUrl,
       setPlayers,
       setStatus,
       setSamples,
     );
-    stopRef.current = stop;
-    return () => {
-      stopRef.current = null;
-      stop();
-    };
   }, [enabled, broadcastUrl]);
-
-  // Leaving the tab or the page must not keep the stream running.
-  useEffect(() => () => stopRef.current?.(), []);
 
   const accountIds = [
     ...new Set(players.map((player) => player.accountId)),

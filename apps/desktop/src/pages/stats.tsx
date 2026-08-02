@@ -54,13 +54,17 @@ import { cn } from "@/lib/utils";
 
 type StatsTab = "overview" | "heroes" | "items" | "squad" | "live";
 
-const TABS = new Set<StatsTab>([
+const TABS: readonly StatsTab[] = [
   "overview",
   "heroes",
   "items",
   "squad",
   "live",
-]);
+];
+
+/** Narrows the `?tab=` value and the tab component's `string` callback alike. */
+const isStatsTab = (value: string | null): value is StatsTab =>
+  TABS.some((tab) => tab === value);
 
 const TAB_TRIGGER_CLASS =
   "h-9 gap-1.5 rounded-full px-6 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm";
@@ -95,9 +99,9 @@ const Stats = () => {
     setDeadlockApiKey(deadlockApiKey);
   }, [deadlockApiKey]);
 
-  const tabParam = searchParams.get("tab") as StatsTab | null;
+  const tabParam = searchParams.get("tab");
   const [tab, setTab] = useState<StatsTab>(
-    tabParam && TABS.has(tabParam) ? tabParam : "overview",
+    isStatsTab(tabParam) ? tabParam : "overview",
   );
 
   const {
@@ -130,9 +134,11 @@ const Stats = () => {
   }, [analytics, tab]);
 
   const handleTabChange = (value: string) => {
-    const next = value as StatsTab;
-    setTab(next);
-    setSearchParams({ tab: next }, { replace: true });
+    if (!isStatsTab(value)) {
+      return;
+    }
+    setTab(value);
+    setSearchParams({ tab: value }, { replace: true });
   };
 
   const careerWinrate = summarize(stats.matches).winrate;
@@ -268,9 +274,11 @@ const Stats = () => {
       </div>
 
       {/* Account, tabs and refresh share one pinned row - the tabs are the
-          page's primary navigation and shouldn't cost a band of their own. */}
-      {hasAccount && (
-        <div className='flex shrink-0 flex-col gap-3 px-4 pr-2 pt-4 pb-4'>
+          page's primary navigation and shouldn't cost a band of their own.
+          Without a detected account there is no header to hang them off, but the
+          live tab still works, so the switcher stands on its own. */}
+      <div className='flex shrink-0 flex-col gap-3 px-4 pr-2 pt-4 pb-4'>
+        {hasAccount ? (
           <StatsHeader
             account={account}
             accountId={accountId}
@@ -288,25 +296,28 @@ const Stats = () => {
             rank={stats.rank}
             rankAssets={rankAssets.data?.data ?? []}
           />
-          {showSyncHint && (
-            <LocalSyncHint
-              missingCount={missingLocal.length}
-              onDismiss={() => setSyncHintDismissed(true)}
-            />
-          )}
-          {stats.isStale && (
-            <Alert variant='warning'>
-              <TriangleAlert className='h-4 w-4' />
-              <AlertDescription>{t("stats.staleWarning")}</AlertDescription>
-            </Alert>
-          )}
-        </div>
-      )}
+        ) : (
+          <div className='flex justify-center'>{statsTabs}</div>
+        )}
+        {showSyncHint && (
+          <LocalSyncHint
+            missingCount={missingLocal.length}
+            onDismiss={() => setSyncHintDismissed(true)}
+          />
+        )}
+        {hasAccount && stats.isStale && (
+          <Alert variant='warning'>
+            <TriangleAlert className='h-4 w-4' />
+            <AlertDescription>{t("stats.staleWarning")}</AlertDescription>
+          </Alert>
+        )}
+      </div>
 
       <div
         className={cn(
           "min-h-0 flex-1 overflow-y-auto px-4 pr-2",
-          !hasAccount && "flex items-center justify-center",
+          // The account prompt is a centred card; every tab body is a full page.
+          !hasAccount && tab !== "live" && "flex items-center justify-center",
         )}>
         {renderBody()}
       </div>

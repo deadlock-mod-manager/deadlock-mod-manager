@@ -33,10 +33,39 @@ export type CachedResult<T> = {
   isStale: boolean;
 };
 
+/** Nothing is worth keeping past the longest TTL any caller can ask for. */
+const MAX_TTL = Math.max(...Object.values(STATS_TTL));
+
 let storePromise: Promise<Store> | null = null;
 
+/**
+ * Drops entries from a superseded cache version and anything older than the
+ * longest TTL. Without this the file only ever grows: a key that stops being
+ * requested (an account the user no longer looks at) is never read, so it is
+ * never noticed as expired.
+ */
+const evictExpired = async (store: Store): Promise<void> => {
+  const now = Date.now();
+  const stale: string[] = [];
+  for (const [key, value] of await store.entries<CacheEntry<unknown>>()) {
+    if (value?.version !== CACHE_VERSION || now - value.fetchedAt > MAX_TTL) {
+      stale.push(key);
+    }
+  }
+  await Promise.all(stale.map((key) => store.delete(key)));
+};
+
 const getCacheStore = (): Promise<Store> => {
-  storePromise ??= load(STORE_FILE, { autoSave: true, defaults: {} });
+  storePromise ??= load(STORE_FILE, { autoSave: true, defaults: {} }).then(
+    async (store) => {
+      try {
+        await evictExpired(store);
+      } catch (error) {
+        logger.withError(error).warn("Cache eviction failed");
+      }
+      return store;
+    },
+  );
   return storePromise;
 };
 

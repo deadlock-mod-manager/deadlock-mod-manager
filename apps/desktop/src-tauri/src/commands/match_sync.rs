@@ -8,11 +8,15 @@ pub async fn get_match_sync_status(app_handle: AppHandle) -> Result<MatchSyncSta
   Ok(match_sync::status(&app_handle)?)
 }
 
-/// Today's matches from the Game Coordinator, which deadlock-api has not ingested
-/// yet. Empty whenever it cannot run - the caller treats that as "nothing to add".
+/// Today's matches from the Game Coordinator for `account_id`, which deadlock-api
+/// has not ingested yet. Empty whenever it cannot run - the caller treats that as
+/// "nothing to add".
 #[tauri::command]
-pub async fn get_local_match_history(app_handle: AppHandle) -> Result<Vec<LocalMatch>, Error> {
-  Ok(match_sync::recent_local_matches(&app_handle).await)
+pub async fn get_local_match_history(
+  app_handle: AppHandle,
+  account_id: u32,
+) -> Result<Vec<LocalMatch>, Error> {
+  Ok(match_sync::recent_local_matches(&app_handle, account_id).await)
 }
 
 #[tauri::command]

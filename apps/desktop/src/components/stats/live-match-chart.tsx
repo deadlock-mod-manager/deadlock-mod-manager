@@ -16,11 +16,8 @@ import {
   YAxis,
 } from "recharts";
 import { ChartCard, LegendKey } from "@/components/stats/chart-card";
-import { formatCompact } from "@/lib/stats/format";
+import { formatClock, formatCompact } from "@/lib/stats/format";
 import type { LiveMatchSample } from "@/lib/stats/live";
-
-const formatClock = (seconds: number) =>
-  `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 
 interface LiveMatchChartsProps {
   samples: LiveMatchSample[];

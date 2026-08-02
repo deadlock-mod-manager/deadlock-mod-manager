@@ -1,5 +1,5 @@
 /** SteamID64 - this = the Steam3 account id deadlock-api works with. */
-const STEAM_ID64_BASE = 76_561_197_960_265_728n;
+export const STEAM_ID64_BASE = 76_561_197_960_265_728n;
 
 export const accountIdFromSteamId64 = (steamId64: string | number): number =>
   Number(BigInt(steamId64) - STEAM_ID64_BASE);

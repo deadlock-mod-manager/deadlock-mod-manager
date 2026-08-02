@@ -4,10 +4,8 @@ import { HeroAvatar } from "@/components/stats/hero-avatar";
 import type { DeadlockHero } from "@/lib/deadlock-api";
 import type { SteamProfile } from "@/lib/stats/api";
 import { formatCompact } from "@/lib/stats/format";
-import type { LivePlayer } from "@/lib/stats/live";
+import { type LivePlayer, SAPPHIRE_TEAM } from "@/lib/stats/live";
 import { cn } from "@/lib/utils";
-
-const SAPPHIRE = 2;
 
 interface LiveLeaderboardProps {
   players: LivePlayer[];
@@ -58,7 +56,7 @@ const Board = ({
               style={{
                 width: `${(value / leader) * 100}%`,
                 backgroundColor:
-                  player.team === SAPPHIRE
+                  player.team === SAPPHIRE_TEAM
                     ? "var(--viz-series-1)"
                     : "var(--viz-series-2)",
               }}

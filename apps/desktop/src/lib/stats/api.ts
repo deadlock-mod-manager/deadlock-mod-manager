@@ -1,4 +1,7 @@
+import { ASSETS_BASE_URL, DeadlockApiError } from "@/lib/deadlock-api";
 import { fetch } from "@/lib/fetch";
+
+export { DeadlockApiError };
 
 const BASE_URL = "https://api.deadlock-api.com";
 
@@ -128,16 +131,6 @@ export interface RankAsset {
   images: Record<string, string>;
 }
 
-export class DeadlockApiError extends Error {
-  constructor(
-    readonly status: number,
-    readonly endpoint: string,
-  ) {
-    super(`deadlock-api ${endpoint} failed with ${status}`);
-    this.name = "DeadlockApiError";
-  }
-}
-
 /**
  * A Patreon key raises the shared IP limits to per-key ones - most visibly on
  * the live broadcast, which goes from 2 requests per hour to 100.
@@ -237,8 +230,27 @@ export const getItemStats = (
     }`,
   );
 
+/**
+ * Valve packs division and tier into one badge number: 26 reads as division 2,
+ * tier 6. Resolving it against the asset list is the same job in the page header
+ * and in the live player card, so it lives here.
+ */
+export const resolveRank = (
+  badge: number | undefined,
+  rankAssets: RankAsset[],
+) => {
+  const tier = Math.floor((badge ?? 0) / 10);
+  const subrank = (badge ?? 0) % 10;
+  const asset = rankAssets.find((entry) => entry.tier === tier);
+  return {
+    subrank,
+    name: asset?.name,
+    image: asset?.images[`large_subrank${subrank}`] ?? asset?.images.large,
+  };
+};
+
 export const getRankAssets = async (): Promise<RankAsset[]> => {
-  const response = await fetch("https://assets.deadlock-api.com/v2/ranks");
+  const response = await fetch(`${ASSETS_BASE_URL}/v2/ranks`);
   if (!response.ok) {
     throw new DeadlockApiError(response.status, "/v2/ranks");
   }

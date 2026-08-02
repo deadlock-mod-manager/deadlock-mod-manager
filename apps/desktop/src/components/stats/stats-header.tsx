@@ -27,7 +27,12 @@ import { formatDistanceToNow } from "date-fns";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { SteamAccount } from "@/hooks/use-steam-accounts";
-import type { PlayerRank, RankAsset, SteamProfile } from "@/lib/stats/api";
+import {
+  type PlayerRank,
+  type RankAsset,
+  resolveRank,
+  type SteamProfile,
+} from "@/lib/stats/api";
 import { cn } from "@/lib/utils";
 
 const DEADLOCK_API_URL = "https://deadlock-api.com/";
@@ -51,12 +56,6 @@ interface StatsHeaderProps {
   onOpenApiKey: () => void;
 }
 
-/** Valve packs division and tier into one number: 26 reads as division 2, tier 6. */
-const splitBadge = (badge: number) => ({
-  tier: Math.floor(badge / 10),
-  subrank: badge % 10,
-});
-
 export const StatsHeader = ({
   accounts,
   account,
@@ -76,10 +75,7 @@ export const StatsHeader = ({
 }: StatsHeaderProps) => {
   const { t } = useTranslation();
 
-  const { tier, subrank } = splitBadge(rank?.badge ?? 0);
-  const rankAsset = rankAssets.find((asset) => asset.tier === tier);
-  const rankImage =
-    rankAsset?.images[`large_subrank${subrank}`] ?? rankAsset?.images.large;
+  const badge = resolveRank(rank?.badge, rankAssets);
   const displayName =
     profile?.personaname ?? account?.personaName ?? account?.accountName ?? "";
 
@@ -126,16 +122,16 @@ export const StatsHeader = ({
             )}
           </div>
           <div className='flex items-center gap-2 text-muted-foreground text-xs'>
-            {rankImage ? (
+            {badge.image ? (
               <>
                 <img
                   alt=''
                   className='h-5 w-5 object-contain'
-                  src={rankImage}
+                  src={badge.image}
                 />
                 <span>
-                  {rankAsset?.name}
-                  {subrank > 0 ? ` ${subrank}` : ""}
+                  {badge.name}
+                  {badge.subrank > 0 ? ` ${badge.subrank}` : ""}
                 </span>
               </>
             ) : (

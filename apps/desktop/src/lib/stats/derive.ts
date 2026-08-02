@@ -213,6 +213,28 @@ export const rollingWinrate = (
   });
 };
 
+/** A rolling-winrate point that actually has a value, ready to plot. */
+export interface FormPoint {
+  startTime: number;
+  /** Percent, not a fraction: recharts axes are configured in whole percent. */
+  winrate: number;
+}
+
+/**
+ * The plot-ready form curve: the rolling winrate with the not-yet-filled leading
+ * points dropped. Both form charts want exactly this, so neither has to re-derive
+ * it (and neither has to assert the nullable winrate away).
+ */
+export const formCurve = (
+  matches: MatchHistoryEntry[],
+  window: number,
+): FormPoint[] =>
+  rollingWinrate(matches, window).flatMap((point) =>
+    point.winrate === null
+      ? []
+      : [{ startTime: point.startTime, winrate: point.winrate * 100 }],
+  );
+
 export interface StreakInfo {
   /** Positive for a win streak, negative for a loss streak. */
   current: number;
@@ -298,7 +320,12 @@ export const sessionCurve = (matches: MatchHistoryEntry[]): BucketStats[] => {
 
   const byPosition = new Map<number, MatchHistoryEntry[]>();
   for (const { match, position: slot } of positioned) {
-    byPosition.set(slot, [...(byPosition.get(slot) ?? []), match]);
+    const bucket = byPosition.get(slot);
+    if (bucket) {
+      bucket.push(match);
+    } else {
+      byPosition.set(slot, [match]);
+    }
   }
 
   return [...byPosition.entries()]
@@ -582,6 +609,25 @@ const RECENT_WINDOW = 30;
 const MIN_BUCKET_MATCHES = 15;
 const SIGNIFICANT_WINRATE_GAP = 0.06;
 
+// The insights are all "the one entry that stands out", which is a min or a max
+// on an empty-able list. Named here so the rules below read as rules.
+const extremeBy = <T>(
+  items: T[],
+  score: (item: T) => number,
+  better: (candidate: number, incumbent: number) => boolean,
+): T | null =>
+  items.reduce<T | null>(
+    (best, item) =>
+      best === null || better(score(item), score(best)) ? item : best,
+    null,
+  );
+
+const minBy = <T>(items: T[], score: (item: T) => number) =>
+  extremeBy(items, score, (a, b) => a < b);
+
+const maxBy = <T>(items: T[], score: (item: T) => number) =>
+  extremeBy(items, score, (a, b) => a > b);
+
 /**
  * Ranks the notable deviations in the history so the dashboard can show a few
  * sentences that are actually actionable instead of a wall of numbers.
@@ -618,12 +664,12 @@ export const generateInsights = (
     });
   }
 
-  const worstSession = sessionCurve(ordered)
-    .filter((slot) => slot.bucket > 1 && slot.matches >= MIN_BUCKET_MATCHES)
-    .reduce<BucketStats | null>(
-      (worst, slot) => (!worst || slot.winrate < worst.winrate ? slot : worst),
-      null,
-    );
+  const worstSession = minBy(
+    sessionCurve(ordered).filter(
+      (slot) => slot.bucket > 1 && slot.matches >= MIN_BUCKET_MATCHES,
+    ),
+    (slot) => slot.winrate,
+  );
   if (
     worstSession &&
     career.winrate - worstSession.winrate >= SIGNIFICANT_WINRATE_GAP
@@ -637,12 +683,10 @@ export const generateInsights = (
     });
   }
 
-  const worstHour = winrateByHour(ordered)
-    .filter((slot) => slot.matches >= MIN_BUCKET_MATCHES)
-    .reduce<BucketStats | null>(
-      (worst, slot) => (!worst || slot.winrate < worst.winrate ? slot : worst),
-      null,
-    );
+  const worstHour = minBy(
+    winrateByHour(ordered).filter((slot) => slot.matches >= MIN_BUCKET_MATCHES),
+    (slot) => slot.winrate,
+  );
   if (
     worstHour &&
     career.winrate - worstHour.winrate >= SIGNIFICANT_WINRATE_GAP
@@ -657,14 +701,8 @@ export const generateInsights = (
   }
 
   const ranked = heroes.filter((hero) => hero.matches >= 10);
-  const best = ranked.reduce<HeroPerformance | null>(
-    (top, hero) => (!top || hero.winrate > top.winrate ? hero : top),
-    null,
-  );
-  const worst = ranked.reduce<HeroPerformance | null>(
-    (low, hero) => (!low || hero.winrate < low.winrate ? hero : low),
-    null,
-  );
+  const best = maxBy(ranked, (hero) => hero.winrate);
+  const worst = minBy(ranked, (hero) => hero.winrate);
 
   if (best && best.winrate - career.winrate >= SIGNIFICANT_WINRATE_GAP) {
     insights.push({
@@ -705,10 +743,7 @@ const fallbackInsights = (
 ): Insight[] => {
   const fallbacks: Insight[] = [];
 
-  const mostPlayed = heroes.reduce<HeroPerformance | null>(
-    (top, hero) => (!top || hero.matches > top.matches ? hero : top),
-    null,
-  );
+  const mostPlayed = maxBy(heroes, (hero) => hero.matches);
   // Skip it when the same hero already carries a comfort/trap card.
   const heroAlreadyShown = chosen.some(
     (insight) =>

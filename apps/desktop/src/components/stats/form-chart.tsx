@@ -16,7 +16,7 @@ import {
 } from "recharts";
 import { ChartCard } from "@/components/stats/chart-card";
 import type { MatchHistoryEntry } from "@/lib/stats/api";
-import { rollingWinrate } from "@/lib/stats/derive";
+import { formCurve } from "@/lib/stats/derive";
 import { formatDayTick, formatPercent } from "@/lib/stats/format";
 
 const WINDOW = 20;
@@ -28,16 +28,7 @@ interface FormChartProps {
 export const FormChart = ({ matches }: FormChartProps) => {
   const { t, i18n } = useTranslation();
 
-  const data = useMemo(
-    () =>
-      rollingWinrate(matches, WINDOW)
-        .filter((point) => point.winrate !== null)
-        .map((point) => ({
-          startTime: point.startTime,
-          winrate: (point.winrate as number) * 100,
-        })),
-    [matches],
-  );
+  const data = useMemo(() => formCurve(matches, WINDOW), [matches]);
 
   const config = {
     winrate: {

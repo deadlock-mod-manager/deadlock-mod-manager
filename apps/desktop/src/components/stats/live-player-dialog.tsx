@@ -40,25 +40,21 @@ import {
 import { HeroAvatar } from "@/components/stats/hero-avatar";
 import { usePlayerHistory } from "@/hooks/use-player-stats";
 import type { DeadlockHero } from "@/lib/deadlock-api";
-import type {
-  PlayerHeroStats,
-  PlayerRank,
-  RankAsset,
-  SteamProfile,
-} from "@/lib/stats/api";
 import {
-  chronological,
-  isWin,
-  rollingWinrate,
-  summarize,
-} from "@/lib/stats/derive";
+  type PlayerHeroStats,
+  type PlayerRank,
+  type RankAsset,
+  resolveRank,
+  type SteamProfile,
+} from "@/lib/stats/api";
+import { chronological, formCurve, isWin, summarize } from "@/lib/stats/derive";
 import {
   formatCompact,
   formatDecimal,
   formatDayTick,
   formatPercent,
 } from "@/lib/stats/format";
-import type { LivePlayer } from "@/lib/stats/live";
+import { heroStatsByAccount, type LivePlayer } from "@/lib/stats/live";
 import { cn } from "@/lib/utils";
 
 const FORM_WINDOW = 10;
@@ -74,11 +70,6 @@ interface LivePlayerDialogProps {
   heroesById: Map<number, DeadlockHero>;
   onOpenChange: (open: boolean) => void;
 }
-
-const splitBadge = (badge: number) => ({
-  tier: Math.floor(badge / 10),
-  subrank: badge % 10,
-});
 
 const Metric = ({
   label,
@@ -133,20 +124,12 @@ export const LivePlayerDialog = ({
 
   const mine = useMemo(
     () =>
-      player
-        ? heroStats.filter((entry) => entry.account_id === player.accountId)
-        : [],
+      player ? (heroStatsByAccount(heroStats).get(player.accountId) ?? []) : [],
     [heroStats, player],
   );
 
   const form = useMemo(
-    () =>
-      rollingWinrate(history.matches, FORM_WINDOW)
-        .filter((point) => point.winrate !== null)
-        .map((point) => ({
-          startTime: point.startTime,
-          winrate: (point.winrate as number) * 100,
-        })),
+    () => formCurve(history.matches, FORM_WINDOW),
     [history.matches],
   );
 
@@ -186,10 +169,7 @@ export const LivePlayerDialog = ({
   );
 
   const recentForm = summarize(recent);
-  const { tier, subrank } = splitBadge(rank?.badge ?? 0);
-  const rankAsset = rankAssets.find((asset) => asset.tier === tier);
-  const rankImage =
-    rankAsset?.images[`large_subrank${subrank}`] ?? rankAsset?.images.large;
+  const badge = resolveRank(rank?.badge, rankAssets);
   const hero = heroesById.get(player.heroId);
 
   const formConfig = {
@@ -218,15 +198,15 @@ export const LivePlayerDialog = ({
                 {profile?.personaname ?? `#${player.accountId}`}
               </div>
               <div className='flex items-center gap-1.5 font-normal text-muted-foreground text-xs'>
-                {rankImage && (
+                {badge.image && (
                   <img
                     alt=''
                     className='h-4 w-4 object-contain'
-                    src={rankImage}
+                    src={badge.image}
                   />
                 )}
-                <span>{rankAsset?.name ?? t("stats.unranked")}</span>
-                {subrank > 0 && <span>{subrank}</span>}
+                <span>{badge.name ?? t("stats.unranked")}</span>
+                {badge.subrank > 0 && <span>{badge.subrank}</span>}
                 <span aria-hidden>·</span>
                 <span className='tabular-nums'>{player.accountId}</span>
               </div>
@@ -286,7 +266,7 @@ export const LivePlayerDialog = ({
             )}
           />
           <Metric
-            hint={t("stats.live.matchesLast30dShort")}
+            hint={t("stats.live.netWorthHint")}
             label={t("stats.live.netWorth")}
             value={formatCompact(player.netWorth)}
           />
@@ -386,6 +366,7 @@ export const LivePlayerDialog = ({
         {recent.length > 0 && (
           <Section title={t("stats.live.recentMatches")}>
             <div className='flex flex-wrap gap-1.5'>
+              {/* Newest first; `recent` is already a copy, but reverse mutates. */}
               {[...recent].toReversed().map((match) => (
                 <Tooltip key={match.match_id}>
                   <TooltipTrigger asChild>

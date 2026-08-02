@@ -301,23 +301,27 @@ pub fn status(app: &AppHandle) -> Result<MatchSyncStatusDto, MatchSyncError> {
   })
 }
 
-/// The most recent matches straight from Valve's Game Coordinator, for the
-/// account the user is signed in with.
+/// The most recent matches straight from Valve's Game Coordinator, for one
+/// specific account.
 ///
 /// deadlock-api ingests matches with a delay of up to a day, so today's games are
 /// missing from its history. The GC already knows them, and the app already holds
 /// a Steam session for match sync - this reuses both to fill that gap.
 ///
+/// `account_id` is the Steam3 id the Stats page is showing. Asking for it makes
+/// the answer unambiguous: matches only ever come back for the account they will
+/// be merged into, never for whichever remembered session happened to answer
+/// first.
+///
 /// Returns an empty list rather than an error whenever it cannot run: match sync
 /// is opt-in (this touches the Steam session, so it stays behind that consent),
-/// and the GC refuses while Deadlock is running because Steam routes its traffic
-/// to the game.
-pub async fn recent_local_matches(app: &AppHandle) -> Vec<LocalMatch> {
-  let config = match settings::load_config(app) {
-    Ok(config) if config.is_active() => config,
+/// the GC refuses while Deadlock is running because Steam routes its traffic to
+/// the game, and the requested account may simply not have a usable session.
+pub async fn recent_local_matches(app: &AppHandle, account_id: u32) -> Vec<LocalMatch> {
+  match settings::load_config(app) {
+    Ok(config) if config.is_active() => {}
     _ => return Vec::new(),
-  };
-  let _ = config;
+  }
 
   if SysGameRunningCheck::new().is_game_running() {
     return Vec::new();
@@ -331,20 +335,24 @@ pub async fn recent_local_matches(app: &AppHandle) -> Vec<LocalMatch> {
     }
   };
 
-  for ctx in contexts {
-    let resources = resources_for(ctx.steam_id64);
-    // The same 2-minute spacing the sync engine uses; a stats page refresh must
-    // not hammer the GC.
-    if !resources.throttle.try_acquire().await {
-      continue;
-    }
-    match resources.gc_client.fetch_match_history(&ctx, None).await {
-      Ok(page) if !page.matches.is_empty() => return page.matches,
-      Ok(_) => {}
-      Err(e) => log::debug!("match-sync: local history unavailable: {e}"),
+  let Some(ctx) = contexts.into_iter().find(|c| c.account_id() == account_id) else {
+    log::debug!("match-sync: no Steam session for account {account_id}");
+    return Vec::new();
+  };
+
+  let resources = resources_for(ctx.steam_id64);
+  // The same 2-minute spacing the sync engine uses; a stats page refresh must
+  // not hammer the GC.
+  if !resources.throttle.try_acquire().await {
+    return Vec::new();
+  }
+  match resources.gc_client.fetch_match_history(&ctx, None).await {
+    Ok(page) => page.matches,
+    Err(e) => {
+      log::debug!("match-sync: local history unavailable: {e}");
+      Vec::new()
     }
   }
-  Vec::new()
 }
 
 pub fn set_consent(app: &AppHandle, accepted: bool) -> Result<(), MatchSyncError> {

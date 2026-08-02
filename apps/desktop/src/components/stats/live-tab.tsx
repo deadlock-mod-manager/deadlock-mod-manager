@@ -27,11 +27,13 @@ import { useLiveMatch } from "@/hooks/use-live-match";
 import type { DeadlockHero } from "@/lib/deadlock-api";
 import type { RankAsset } from "@/lib/stats/api";
 import { formatCompact, formatPercent } from "@/lib/stats/format";
-import type { LivePlayer } from "@/lib/stats/live";
+import {
+  AMBER_TEAM,
+  heroStatsByAccount,
+  type LivePlayer,
+  SAPPHIRE_TEAM,
+} from "@/lib/stats/live";
 import { cn } from "@/lib/utils";
-
-/** The game numbers the teams 2 and 3. */
-const SAPPHIRE = 2;
 
 interface LiveTabProps {
   heroesById: Map<number, DeadlockHero>;
@@ -126,20 +128,46 @@ export const LiveTab = ({
     );
   }
 
-  const teams = [SAPPHIRE, 3].map((team) => ({
+  const teams = [SAPPHIRE_TEAM, AMBER_TEAM].map((team) => ({
     team,
     players: live.players
       .filter((player) => player.team === team)
       .sort((a, b) => b.netWorth - a.netWorth),
   }));
 
+  // Grouped once for the whole board rather than re-scanned per player.
+  const statsByAccount = heroStatsByAccount(heroStats);
+
+  // What to say while there is no scoreboard yet. A stream that already failed or
+  // ended is done, so spinning on it would just look like a hang; a failed
+  // broadcast request says nothing here because the alert above already covers it.
+  const renderEmptyBoard = () => {
+    if (live.broadcastError) {
+      return null;
+    }
+    if (live.status === "error" || live.status === "ended") {
+      return (
+        <div className='py-16 text-center text-muted-foreground text-sm'>
+          {t("stats.live.streamError")}
+        </div>
+      );
+    }
+    return (
+      <div className='flex items-center justify-center gap-2 py-16 text-muted-foreground text-sm'>
+        <Loader2 className='h-4 w-4 animate-spin' />
+        {live.isResolvingBroadcast
+          ? t("stats.live.resolving")
+          : t("stats.live.connecting")}
+      </div>
+    );
+  };
+
   const renderPlayer = (player: LivePlayer) => {
     const profile = profiles.get(player.accountId);
     const rank = ranks.get(player.accountId);
-    const mine = heroStats.filter(
-      (entry) => entry.account_id === player.accountId,
-    );
-    const onHero = mine.find((entry) => entry.hero_id === player.heroId);
+    const onHero = statsByAccount
+      .get(player.accountId)
+      ?.find((entry) => entry.hero_id === player.heroId);
     const isSelf = player.accountId === ownAccountId;
 
     return (
@@ -219,12 +247,7 @@ export const LiveTab = ({
       )}
 
       {live.players.length === 0 ? (
-        <div className='flex items-center justify-center gap-2 py-16 text-muted-foreground text-sm'>
-          <Loader2 className='h-4 w-4 animate-spin' />
-          {live.isResolvingBroadcast
-            ? t("stats.live.resolving")
-            : t("stats.live.connecting")}
-        </div>
+        renderEmptyBoard()
       ) : (
         <div className='grid gap-4 lg:grid-cols-2'>
           {teams.map(({ team, players }) => (
@@ -232,7 +255,7 @@ export const LiveTab = ({
               <div className='flex items-center justify-between'>
                 <span className='font-semibold text-sm'>
                   {t(
-                    team === SAPPHIRE
+                    team === SAPPHIRE_TEAM
                       ? "stats.live.sapphire"
                       : "stats.live.amber",
                   )}
