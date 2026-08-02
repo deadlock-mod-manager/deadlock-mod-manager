@@ -42,6 +42,8 @@
     "defaultDescription": "",
     "skinsDownloaded_one": "",
     "skinsDownloaded_other": "",
+    "skinCount_one": "",
+    "skinCount_other": "",
     "noSkins": "",
     "noSkinsHint": "",
     "conflict": "",
@@ -49,7 +51,11 @@
     "swapFailed": "",
     "overrideFooter": "",
     "overrideFooterLink": "",
-    "variants": ""
+    "variants": "",
+    "addSkin": "",
+    "addSkinFor": "",
+    "emptyTitle": "",
+    "deleteSkin": ""
   },
   "servers": {
     "title": "Преглед на сървъри",
