@@ -66,6 +66,7 @@ export const SkinCard = ({
           <Button
             aria-label={t("skins.deleteSkin")}
             className='absolute top-2 right-2 z-10 h-7 w-7 opacity-0 transition-opacity focus-visible:opacity-100 group-hover/skin:opacity-100 group-focus-within/skin:opacity-100'
+            disabled={disabled}
             onClick={(e) => {
               e.stopPropagation();
               onDelete();

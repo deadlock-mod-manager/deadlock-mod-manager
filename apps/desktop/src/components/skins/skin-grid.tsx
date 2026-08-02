@@ -42,7 +42,11 @@ export const SkinGrid = ({
             {t("skins.skinsDownloaded", { count: skins.length })}
           </p>
         </div>
-        <Button className='shrink-0' onClick={onAddSkin} size='sm'>
+        <Button
+          className='shrink-0'
+          disabled={disabled}
+          onClick={onAddSkin}
+          size='sm'>
           <Plus className='h-4 w-4' />
           {t("skins.addSkin")}
         </Button>
@@ -57,7 +61,7 @@ export const SkinGrid = ({
             <EmptyDescription>{t("skins.noSkinsHint")}</EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
-            <Button onClick={onAddSkin}>
+            <Button disabled={disabled} onClick={onAddSkin}>
               <Plus className='h-4 w-4' />
               {t("skins.addSkinFor", { hero })}
             </Button>

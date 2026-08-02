@@ -66,7 +66,10 @@ const HeroListRow = ({ entry, isSelected, onSelect }: HeroListRowProps) => {
       </div>
       {entry.skinCount > 0 && (
         <span className='shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-muted-foreground text-xs tabular-nums'>
-          {entry.skinCount}
+          <span className='sr-only'>
+            {t("skins.skinCount", { count: entry.skinCount })}
+          </span>
+          <span aria-hidden='true'>{entry.skinCount}</span>
         </span>
       )}
     </button>
