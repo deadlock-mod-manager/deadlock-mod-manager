@@ -1,5 +1,6 @@
 import type {
   AnalyticsHeroStats,
+  ItemStats,
   MatchHistoryEntry,
   MateStats,
   PlayerHeroStats,
@@ -19,6 +20,106 @@ export const chronological = (
   matches: MatchHistoryEntry[],
 ): MatchHistoryEntry[] =>
   [...matches].sort((a, b) => a.start_time - b.start_time);
+
+/**
+ * Merges the matches the Game Coordinator knows about into the API's history.
+ *
+ * deadlock-api ingests with up to a day of delay, so today's games are missing
+ * from it while the GC already has them. The API entry wins on conflicts - it is
+ * the richer record - and local-only matches are appended.
+ */
+export const mergeLocalMatches = (
+  api: MatchHistoryEntry[],
+  local: MatchHistoryEntry[],
+): MatchHistoryEntry[] => {
+  const extra = localOnlyMatches(api, local);
+  return extra.length === 0 ? api : [...extra, ...api];
+};
+
+/** The local matches the API does not know yet - the gap everything else fills from. */
+export const localOnlyMatches = (
+  api: MatchHistoryEntry[],
+  local: MatchHistoryEntry[],
+): MatchHistoryEntry[] => {
+  if (local.length === 0) {
+    return [];
+  }
+  const known = new Set(api.map((match) => match.match_id));
+  return local.filter((match) => !known.has(match.match_id));
+};
+
+/**
+ * Folds matches the API has not ingested into its per-hero aggregates.
+ *
+ * `hero-stats` lags the same day the match history does, so without this the
+ * Heroes tab would ignore everything played today - including a hero picked up
+ * for the first time, which would be missing entirely rather than merely stale.
+ *
+ * Only the counters that can be reconstructed from a match row are updated; the
+ * per-minute rates and accuracy stay on the API's values, which is why they are
+ * left alone rather than recomputed from a partial picture.
+ */
+export const mergeHeroStats = (
+  heroStats: PlayerHeroStats[],
+  extraMatches: MatchHistoryEntry[],
+): PlayerHeroStats[] => {
+  if (extraMatches.length === 0) {
+    return heroStats;
+  }
+
+  const byHero = new Map(heroStats.map((hero) => [hero.hero_id, { ...hero }]));
+
+  for (const match of extraMatches) {
+    const existing = byHero.get(match.hero_id);
+    const hero: PlayerHeroStats = existing ?? {
+      ...EMPTY_HERO_STATS,
+      account_id: match.account_id,
+      hero_id: match.hero_id,
+    };
+
+    hero.matches_played += 1;
+    hero.wins += isWin(match) ? 1 : 0;
+    hero.kills += match.player_kills;
+    hero.deaths += match.player_deaths;
+    hero.assists += match.player_assists;
+    hero.time_played += match.match_duration_s;
+    hero.last_played = Math.max(hero.last_played, match.start_time);
+    byHero.set(match.hero_id, hero);
+  }
+
+  return [...byHero.values()];
+};
+
+const EMPTY_HERO_STATS: PlayerHeroStats = {
+  account_id: 0,
+  hero_id: 0,
+  matches_played: 0,
+  wins: 0,
+  last_played: 0,
+  time_played: 0,
+  kills: 0,
+  deaths: 0,
+  assists: 0,
+  ending_level: 0,
+  accuracy: 0,
+  crit_shot_rate: 0,
+  denies_per_match: 0,
+  kills_per_min: 0,
+  deaths_per_min: 0,
+  assists_per_min: 0,
+  denies_per_min: 0,
+  networth_per_min: 0,
+  last_hits_per_min: 0,
+  damage_per_min: 0,
+  damage_taken_per_min: 0,
+  damage_mitigated_per_min: 0,
+  obj_damage_per_min: 0,
+  total_player_damage: 0,
+  total_player_damage_taken: 0,
+  total_boss_damage: 0,
+  total_creep_damage: 0,
+  total_neutral_damage: 0,
+};
 
 export interface StatsSummary {
   matches: number;
@@ -380,6 +481,53 @@ export const heroPerformance = (
       timePlayedMin: hero.time_played / 60,
     }))
     .sort((a, b) => b.matches - a.matches);
+
+export interface ItemInsight {
+  itemId: number;
+  matches: number;
+  winrate: number;
+  /** Winrate difference against everyone else building the same item. */
+  winrateDelta: number;
+  globalWinrate: number;
+  avgBuyTimeS: number;
+  /** Positive means the player buys it later into the match than average. */
+  buyTimeDeltaS: number;
+}
+
+/**
+ * Joins the player's item stats with the global ones. The interesting part is
+ * not the raw winrate - good items win for everyone - but the gap to how the
+ * same item performs in everyone else's hands, and how late it gets bought.
+ */
+export const joinItemStats = (
+  mine: ItemStats[],
+  global: ItemStats[],
+  minMatches = 5,
+): ItemInsight[] => {
+  const globalById = new Map(global.map((item) => [item.item_id, item]));
+
+  return mine
+    .filter((item) => item.matches >= minMatches)
+    .map((item) => {
+      const reference = globalById.get(item.item_id);
+      const winrate = item.wins / item.matches;
+      const globalWinrate = reference
+        ? reference.wins / reference.matches
+        : winrate;
+      return {
+        itemId: item.item_id,
+        matches: item.matches,
+        winrate,
+        globalWinrate,
+        winrateDelta: winrate - globalWinrate,
+        avgBuyTimeS: item.avg_buy_time_s,
+        buyTimeDeltaS: reference
+          ? item.avg_buy_time_s - reference.avg_buy_time_s
+          : 0,
+      };
+    })
+    .sort((a, b) => b.matches - a.matches);
+};
 
 export type Insight =
   | { kind: "form"; tone: Tone; recent: number; career: number }

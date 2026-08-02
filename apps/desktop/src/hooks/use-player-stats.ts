@@ -1,10 +1,17 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { type DeadlockHero, getHeroes } from "@/lib/deadlock-api";
+import {
+  type DeadlockHero,
+  type DeadlockItem,
+  getHeroes,
+  getItems,
+} from "@/lib/deadlock-api";
 import {
   type AnalyticsHeroStats,
   getAnalyticsHeroStats,
   getEnemyStats,
+  getItemStats,
   getMatchHistory,
   getMateStats,
   getMmrHistory,
@@ -12,6 +19,7 @@ import {
   getPlayerRank,
   getRankAssets,
   getSteamProfiles,
+  type MatchHistoryEntry,
   type SteamProfile,
 } from "@/lib/stats/api";
 import { cachedFetch, clearCachedPrefix, STATS_TTL } from "@/lib/stats/cache";
@@ -19,7 +27,11 @@ import {
   benchmarkDeltas,
   generateInsights,
   heroPerformance,
+  joinItemStats,
   joinMateStats,
+  localOnlyMatches,
+  mergeHeroStats,
+  mergeLocalMatches,
 } from "@/lib/stats/derive";
 
 const PLAYER_CACHE_PREFIX = "player:";
@@ -67,6 +79,50 @@ export const useHeroCatalog = () => {
 
 export const useRankAssets = () =>
   useStatsQuery({ key: "assets:ranks", ttl: STATS_TTL.assets }, getRankAssets);
+
+/** The player's item performance against everyone else's. */
+export const useItemStats = (accountId: number | null) => {
+  const enabled = accountId !== null;
+
+  const catalog = useStatsQuery(
+    { key: "assets:items", ttl: STATS_TTL.assets },
+    getItems,
+  );
+
+  const mine = useStatsQuery(
+    {
+      key: `${PLAYER_CACHE_PREFIX}items:${accountId}`,
+      ttl: STATS_TTL.heroStats,
+      enabled,
+    },
+    () => getItemStats(accountId as number),
+  );
+
+  const global = useStatsQuery(
+    { key: "benchmark:items", ttl: STATS_TTL.benchmark },
+    () => getItemStats(undefined, 1000),
+  );
+
+  const items = useMemo(
+    () => joinItemStats(mine.data?.data ?? [], global.data?.data ?? []),
+    [mine.data, global.data],
+  );
+
+  const itemsById = useMemo(() => {
+    const map = new Map<number, DeadlockItem>();
+    for (const item of catalog.data?.data ?? []) {
+      map.set(item.id, item);
+    }
+    return map;
+  }, [catalog.data]);
+
+  return {
+    items,
+    itemsById,
+    isPending: enabled && (mine.isPending || global.isPending),
+    isError: mine.isError,
+  };
+};
 
 /**
  * Everything the Overview and Heroes tabs need. One match-history request feeds
@@ -126,10 +182,32 @@ export const usePlayerStats = (accountId: number | null) => {
       getAnalyticsHeroStats(Math.floor(Date.now() / 1000) - BENCHMARK_WINDOW_S),
   );
 
-  const matches = matchHistory.data?.data ?? [];
+  // Today's matches come from the Game Coordinator; the API has not ingested
+  // them yet. Silent by design - it either adds matches or it does not.
+  const local = useQuery({
+    queryKey: ["local-match-history", accountId],
+    queryFn: () => invoke<MatchHistoryEntry[]>("get_local_match_history"),
+    enabled,
+    staleTime: STATS_TTL.matchHistory,
+    retry: false,
+    meta: { skipGlobalErrorHandler: true },
+  });
+
+  // Computed once and reused: the same gap fills the history and the per-hero
+  // aggregates, which lag by the same day.
+  const localOnly = useMemo(
+    () => localOnlyMatches(matchHistory.data?.data ?? [], local.data ?? []),
+    [matchHistory.data, local.data],
+  );
+
+  const matches = useMemo(
+    () => mergeLocalMatches(matchHistory.data?.data ?? [], local.data ?? []),
+    [matchHistory.data, local.data],
+  );
   const heroes = useMemo(
-    () => heroPerformance(heroStats.data?.data ?? []),
-    [heroStats.data],
+    () =>
+      heroPerformance(mergeHeroStats(heroStats.data?.data ?? [], localOnly)),
+    [heroStats.data, localOnly],
   );
   const insights = useMemo(
     () => generateInsights(matches, heroes),
@@ -146,11 +224,13 @@ export const usePlayerStats = (accountId: number | null) => {
 
   const benchmarkFor = useCallback(
     (heroId: number) => {
-      const mine = heroStats.data?.data.find((hero) => hero.hero_id === heroId);
+      const mine = mergeHeroStats(heroStats.data?.data ?? [], localOnly).find(
+        (hero) => hero.hero_id === heroId,
+      );
       const global = benchmarkByHero.get(heroId);
       return mine && global ? benchmarkDeltas(mine, global) : [];
     },
-    [heroStats.data, benchmarkByHero],
+    [heroStats.data, localOnly, benchmarkByHero],
   );
 
   const sources = [matchHistory, heroStats, mmrHistory, rank, profile];
@@ -168,6 +248,26 @@ export const usePlayerStats = (accountId: number | null) => {
     error: matchHistory.error,
     isStale: sources.some((query) => query.data?.isStale ?? false),
     fetchedAt: matchHistory.data?.fetchedAt ?? null,
+  };
+};
+
+/**
+ * One other player's recent history, fetched only when their card is opened so
+ * a lobby of twelve does not pull twelve histories up front.
+ */
+export const usePlayerHistory = (accountId: number | null) => {
+  const query = useStatsQuery(
+    {
+      key: `${PLAYER_CACHE_PREFIX}history:${accountId}`,
+      ttl: STATS_TTL.mmrHistory,
+      enabled: accountId !== null,
+    },
+    () => getMatchHistory(accountId as number),
+  );
+
+  return {
+    matches: query.data?.data ?? [],
+    isPending: accountId !== null && query.isPending,
   };
 };
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import type {
   AnalyticsHeroStats,
+  ItemStats,
   MatchHistoryEntry,
   MateStats,
   PlayerHeroStats,
@@ -11,7 +12,10 @@ import {
   generateInsights,
   heroPerformance,
   isWin,
+  joinItemStats,
   joinMateStats,
+  mergeHeroStats,
+  mergeLocalMatches,
   rollingWinrate,
   sessionCurve,
   streaks,
@@ -306,6 +310,127 @@ describe("heroPerformance", () => {
     expect(result.map((hero) => hero.heroId)).toEqual([3, 2]);
     expect(result[1].winrate).toBe(0.6);
     expect(result[1].kda).toBe(5);
+  });
+});
+
+describe("mergeLocalMatches", () => {
+  it("adds matches the API has not ingested yet", () => {
+    const api = [win({ match_id: 1 }), win({ match_id: 2 })];
+    const local = [win({ match_id: 2 }), win({ match_id: 3 })];
+
+    const merged = mergeLocalMatches(api, local);
+
+    expect(merged.map((m) => m.match_id).sort()).toEqual([1, 2, 3]);
+  });
+
+  it("keeps the API entry when both know a match", () => {
+    const fromApi = win({ match_id: 7, net_worth: 50_000 });
+    const merged = mergeLocalMatches(
+      [fromApi],
+      [win({ match_id: 7, net_worth: 0 })],
+    );
+
+    expect(merged).toHaveLength(1);
+    expect(merged[0].net_worth).toBe(50_000);
+  });
+
+  it("returns the API list untouched when there is nothing local", () => {
+    const api = [win({ match_id: 1 })];
+
+    expect(mergeLocalMatches(api, [])).toBe(api);
+  });
+});
+
+describe("mergeHeroStats", () => {
+  const heroStats = [
+    {
+      account_id: 1,
+      hero_id: 15,
+      matches_played: 10,
+      wins: 5,
+      kills: 50,
+      deaths: 40,
+      assists: 60,
+      time_played: 18_000,
+      last_played: 100,
+      networth_per_min: 1000,
+    } as PlayerHeroStats,
+  ];
+
+  it("folds today's matches into the hero the API already knows", () => {
+    const [hero] = mergeHeroStats(heroStats, [
+      win({
+        hero_id: 15,
+        player_kills: 10,
+        player_deaths: 2,
+        player_assists: 4,
+        start_time: 500,
+      }),
+    ]);
+
+    expect(hero.matches_played).toBe(11);
+    expect(hero.wins).toBe(6);
+    expect(hero.kills).toBe(60);
+    expect(hero.last_played).toBe(500);
+    // Rates the API computed are left alone rather than guessed at.
+    expect(hero.networth_per_min).toBe(1000);
+  });
+
+  it("adds a hero that only exists locally so far", () => {
+    const merged = mergeHeroStats(heroStats, [
+      loss({ hero_id: 99, player_kills: 1, player_deaths: 9 }),
+    ]);
+
+    const fresh = merged.find((hero) => hero.hero_id === 99);
+    expect(fresh?.matches_played).toBe(1);
+    expect(fresh?.wins).toBe(0);
+  });
+
+  it("returns the API rows untouched with nothing to merge", () => {
+    expect(mergeHeroStats(heroStats, [])).toBe(heroStats);
+  });
+});
+
+describe("joinItemStats", () => {
+  const item = (
+    itemId: number,
+    matches: number,
+    wins: number,
+    buyTime: number,
+  ): ItemStats => ({
+    item_id: itemId,
+    matches,
+    wins,
+    losses: matches - wins,
+    players: 1,
+    avg_buy_time_s: buyTime,
+    avg_buy_time_relative: 30,
+  });
+
+  it("compares the player against everyone building the same item", () => {
+    const [row] = joinItemStats(
+      [item(1, 20, 14, 900)],
+      [item(1, 100_000, 50_000, 600)],
+    );
+
+    expect(row.winrate).toBe(0.7);
+    expect(row.globalWinrate).toBe(0.5);
+    expect(row.winrateDelta).toBeCloseTo(0.2, 10);
+    // Bought five minutes later than everyone else.
+    expect(row.buyTimeDeltaS).toBe(300);
+  });
+
+  it("drops items with too few matches to mean anything", () => {
+    expect(
+      joinItemStats([item(1, 2, 2, 600)], [item(1, 500, 250, 600)]),
+    ).toEqual([]);
+  });
+
+  it("falls back to the player's own numbers when the item has no baseline", () => {
+    const [row] = joinItemStats([item(9, 10, 5, 600)], []);
+
+    expect(row.winrateDelta).toBe(0);
+    expect(row.buyTimeDeltaS).toBe(0);
   });
 });
 

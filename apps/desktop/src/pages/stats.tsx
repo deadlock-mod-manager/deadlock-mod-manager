@@ -15,6 +15,7 @@ import {
 } from "@deadlock-mods/ui/components/tabs";
 import {
   ChartLine,
+  Package,
   Radio,
   Sword,
   TriangleAlert,
@@ -26,7 +27,9 @@ import { useSearchParams } from "react-router";
 import PageTitle from "@/components/shared/page-title";
 import { AccountPrompt } from "@/components/stats/account-prompt";
 import { HeroesTab } from "@/components/stats/heroes-tab";
+import { ItemsTab } from "@/components/stats/items-tab";
 import { LiveTab } from "@/components/stats/live-tab";
+import { LocalSyncHint } from "@/components/stats/local-sync-hint";
 import { OverviewTab } from "@/components/stats/overview-tab";
 import { SquadTab } from "@/components/stats/squad-tab";
 import { StatsHeader } from "@/components/stats/stats-header";
@@ -34,18 +37,30 @@ import { StatTileSkeleton } from "@/components/stats/stat-tile";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import {
   useHeroCatalog,
+  useItemStats,
   usePlayerStats,
   useRankAssets,
   useSquadStats,
   useStatsRefresh,
 } from "@/hooks/use-player-stats";
+import { useMissingLocalMatches } from "@/hooks/use-live-match";
+import { useMatchSync } from "@/hooks/use-match-sync";
 import { useSelectedSteamAccount } from "@/hooks/use-steam-accounts";
+import { ApiKeyDialog } from "@/components/stats/api-key-dialog";
+import { setDeadlockApiKey } from "@/lib/stats/api";
 import { summarize } from "@/lib/stats/derive";
+import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
-type StatsTab = "overview" | "heroes" | "squad" | "live";
+type StatsTab = "overview" | "heroes" | "items" | "squad" | "live";
 
-const TABS = new Set<StatsTab>(["overview", "heroes", "squad", "live"]);
+const TABS = new Set<StatsTab>([
+  "overview",
+  "heroes",
+  "items",
+  "squad",
+  "live",
+]);
 
 const TAB_TRIGGER_CLASS =
   "h-9 gap-1.5 rounded-full px-6 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm";
@@ -69,6 +84,16 @@ const Stats = () => {
   const { t } = useTranslation();
   const { analytics } = useAnalyticsContext();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [apiKeyOpen, setApiKeyOpen] = useState(false);
+  const deadlockApiKey = usePersistedStore((state) => state.deadlockApiKey);
+  const saveDeadlockApiKey = usePersistedStore(
+    (state) => state.setDeadlockApiKey,
+  );
+
+  // The API client is a plain module, so it has to be told about the key.
+  useEffect(() => {
+    setDeadlockApiKey(deadlockApiKey);
+  }, [deadlockApiKey]);
 
   const tabParam = searchParams.get("tab") as StatsTab | null;
   const [tab, setTab] = useState<StatsTab>(
@@ -82,8 +107,20 @@ const Stats = () => {
     isPending: accountsPending,
     setAccountId,
   } = useSelectedSteamAccount();
+  const hasAccount = accountId !== null;
   const stats = usePlayerStats(accountId);
   const squad = useSquadStats(accountId, stats.matches);
+  const itemStats = useItemStats(accountId);
+  // The console log knows about matches the API has not ingested yet. Filling
+  // them in needs the Steam session, which sits behind the match-sync consent.
+  const matchSync = useMatchSync();
+  const [syncHintDismissed, setSyncHintDismissed] = useState(false);
+  const missingLocal = useMissingLocalMatches(
+    stats.matches.map((match) => match.match_id),
+    hasAccount && !matchSync.status?.enabled,
+  );
+  const showSyncHint =
+    !syncHintDismissed && !matchSync.status?.enabled && missingLocal.length > 0;
   const { heroesById } = useHeroCatalog();
   const rankAssets = useRankAssets();
   const { refresh, isRefreshing, canRefresh } = useStatsRefresh();
@@ -99,7 +136,6 @@ const Stats = () => {
   };
 
   const careerWinrate = summarize(stats.matches).winrate;
-  const hasAccount = accountId !== null;
 
   const statsTabs = (
     <Tabs className='w-auto' onValueChange={handleTabChange} value={tab}>
@@ -111,6 +147,10 @@ const Stats = () => {
         <TabsTrigger className={TAB_TRIGGER_CLASS} value='heroes'>
           <Sword className='h-4 w-4' />
           {t("stats.tabs.heroes")}
+        </TabsTrigger>
+        <TabsTrigger className={TAB_TRIGGER_CLASS} value='items'>
+          <Package className='h-4 w-4' />
+          {t("stats.tabs.items")}
         </TabsTrigger>
         <TabsTrigger className={TAB_TRIGGER_CLASS} value='squad'>
           <Users className='h-4 w-4' />
@@ -197,6 +237,13 @@ const Stats = () => {
             heroesById={heroesById}
           />
         </TabsContent>
+        <TabsContent className='mt-0' value='items'>
+          <ItemsTab
+            isPending={itemStats.isPending}
+            items={itemStats.items}
+            itemsById={itemStats.itemsById}
+          />
+        </TabsContent>
         <TabsContent className='mt-0' value='squad'>
           {squad.isPending ? (
             <StatsSkeleton />
@@ -215,7 +262,7 @@ const Stats = () => {
   };
 
   return (
-    <div className='stats-viz flex h-full min-h-0 w-full flex-col'>
+    <div className='flex h-full min-h-0 w-full flex-col'>
       <div className='shrink-0 px-4 pr-2'>
         <PageTitle subtitle={t("stats.subtitle")} title={t("stats.title")} />
       </div>
@@ -231,6 +278,8 @@ const Stats = () => {
             canRefresh={canRefresh}
             center={statsTabs}
             fetchedAt={stats.fetchedAt}
+            hasApiKey={deadlockApiKey !== null}
+            onOpenApiKey={() => setApiKeyOpen(true)}
             isRefreshing={isRefreshing}
             isStale={stats.isStale}
             onRefresh={refresh}
@@ -239,6 +288,12 @@ const Stats = () => {
             rank={stats.rank}
             rankAssets={rankAssets.data?.data ?? []}
           />
+          {showSyncHint && (
+            <LocalSyncHint
+              missingCount={missingLocal.length}
+              onDismiss={() => setSyncHintDismissed(true)}
+            />
+          )}
           {stats.isStale && (
             <Alert variant='warning'>
               <TriangleAlert className='h-4 w-4' />
@@ -255,6 +310,13 @@ const Stats = () => {
         )}>
         {renderBody()}
       </div>
+
+      <ApiKeyDialog
+        currentKey={deadlockApiKey}
+        onOpenChange={setApiKeyOpen}
+        onSave={saveDeadlockApiKey}
+        open={apiKeyOpen}
+      />
     </div>
   );
 };

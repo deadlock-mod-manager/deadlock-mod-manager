@@ -77,11 +77,40 @@ pub enum FetchScope {
   Global,
 }
 
+/// A match as Valve's Game Coordinator reports it. The field names deliberately
+/// mirror deadlock-api's `match-history` entries so the frontend can merge the
+/// two without a translation layer - the GC knows about today's matches hours
+/// before the API has ingested them.
+#[derive(Debug, Clone, Default, Serialize)]
+pub struct LocalMatch {
+  pub match_id: u64,
+  pub hero_id: u32,
+  pub hero_level: u32,
+  pub start_time: u32,
+  pub game_mode: i32,
+  pub match_mode: i32,
+  pub player_team: i32,
+  pub player_kills: u32,
+  pub player_deaths: u32,
+  pub player_assists: u32,
+  pub denies: u32,
+  pub net_worth: u32,
+  pub last_hits: u32,
+  pub match_duration_s: u32,
+  pub match_result: u32,
+  pub team_abandoned: Option<bool>,
+  pub abandoned_time_s: Option<u32>,
+  pub objectives_mask_team0: u64,
+  pub objectives_mask_team1: u64,
+}
+
 // One page of the GC `GetMatchHistory` response. `next_cursor` is the continuation
 // token for the next (older) page, or None when history is exhausted.
 #[derive(Debug, Clone, Default)]
 pub struct MatchHistoryPage {
   pub match_ids: Vec<u64>,
+  /// The same matches with their full stats, for callers that want more than ids.
+  pub matches: Vec<LocalMatch>,
   pub next_cursor: Option<u64>,
 }
 

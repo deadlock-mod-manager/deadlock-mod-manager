@@ -1,5 +1,7 @@
 import { createLogger } from "@/lib/logger";
 import {
+  apiHeaders,
+  apiKeyQuery,
   DeadlockApiError,
   getPlayerRank,
   type PlayerRank,
@@ -23,16 +25,31 @@ export interface LiveBroadcast {
 export const getLiveBroadcast = async (
   matchId: string,
 ): Promise<LiveBroadcast> => {
-  const response = await fetch(`${BASE_URL}/v1/matches/${matchId}/live/url`);
+  const response = await fetch(`${BASE_URL}/v1/matches/${matchId}/live/url`, {
+    headers: apiHeaders(),
+  });
   if (!response.ok) {
     throw new DeadlockApiError(response.status, "/live/url");
   }
   return (await response.json()) as LiveBroadcast;
 };
 
+/** One sample of the whole match, aggregated from the players at that moment. */
+export interface LiveMatchSample {
+  /** Seconds into the match, derived from the tick at 60 Hz. */
+  second: number;
+  sapphireNetWorth: number;
+  amberNetWorth: number;
+  /** Sapphire minus Amber; the number people actually read. */
+  soulLead: number;
+  sapphireKills: number;
+  amberKills: number;
+}
+
 export interface LivePlayer {
   accountId: number;
   steamId64: string;
+  tick: number;
   /** 2 = Sapphire, 3 = Amber, as the game numbers them. */
   team: number;
   heroId: number;
@@ -46,6 +63,7 @@ export interface LivePlayer {
 }
 
 type LiveRow = {
+  tick: number;
   m_iTeamNum: number;
   m_nCurrentRank: number;
   m_PlayerDataGlobal__m_nHeroID: number;
@@ -58,7 +76,7 @@ type LiveRow = {
 
 // Column names are case-sensitive and must be quoted; the table name must not be.
 const LIVE_QUERY = [
-  'SELECT "m_steamID", "m_iTeamNum", "m_nCurrentRank",',
+  'SELECT tick, "m_steamID", "m_iTeamNum", "m_nCurrentRank",',
   '"m_PlayerDataGlobal__m_nHeroID", "m_PlayerDataGlobal__m_iGoldNetWorth",',
   '"m_PlayerDataGlobal__m_iPlayerKills", "m_PlayerDataGlobal__m_iDeaths",',
   '"m_PlayerDataGlobal__m_iPlayerAssists", "m_PlayerDataGlobal__m_iLevel"',
@@ -67,6 +85,38 @@ const LIVE_QUERY = [
 
 /** Rows arrive per tick; the UI only needs the newest state per player. */
 const FLUSH_INTERVAL_MS = 1000;
+/** Source 2 runs at 60 Hz, which turns ticks into match seconds. */
+const TICKS_PER_SECOND = 60;
+/** One sample per 15 match-seconds keeps a 40 minute match around 160 points. */
+const SAMPLE_INTERVAL_S = 15;
+
+const SAPPHIRE_TEAM = 2;
+
+/** Rolls the current player states up into one match-wide sample. */
+export const sampleMatch = (players: LivePlayer[]): LiveMatchSample => {
+  const sum = (team: number, pick: (player: LivePlayer) => number) =>
+    players
+      .filter((player) => player.team === team)
+      .reduce((total, player) => total + pick(player), 0);
+
+  const sapphireNetWorth = sum(SAPPHIRE_TEAM, (p) => p.netWorth);
+  const amberNetWorth = players
+    .filter((player) => player.team !== SAPPHIRE_TEAM)
+    .reduce((total, player) => total + player.netWorth, 0);
+
+  return {
+    second: Math.round(
+      Math.max(...players.map((player) => player.tick), 0) / TICKS_PER_SECOND,
+    ),
+    sapphireNetWorth,
+    amberNetWorth,
+    soulLead: sapphireNetWorth - amberNetWorth,
+    sapphireKills: sum(SAPPHIRE_TEAM, (p) => p.kills),
+    amberKills: players
+      .filter((player) => player.team !== SAPPHIRE_TEAM)
+      .reduce((total, player) => total + player.kills, 0),
+  };
+};
 
 export type LiveStatus = "connecting" | "streaming" | "ended" | "error";
 
@@ -78,6 +128,7 @@ const toPlayer = (steamId64: string, row: LiveRow): LivePlayer | null => {
   return {
     accountId: accountIdFromSteamId64(steamId64),
     steamId64,
+    tick: row.tick ?? 0,
     team: row.m_iTeamNum,
     heroId: row.m_PlayerDataGlobal__m_nHeroID,
     netWorth: row.m_PlayerDataGlobal__m_iGoldNetWorth ?? 0,
@@ -101,14 +152,36 @@ export const subscribeToLiveMatch = (
   broadcastUrl: string,
   onPlayers: (players: LivePlayer[]) => void,
   onStatus: (status: LiveStatus) => void,
+  onSamples?: (samples: LiveMatchSample[]) => void,
 ): (() => void) => {
   const url = new URL(`${BASE_URL}/v1/matches/demo/live/query`);
   url.searchParams.set("query", LIVE_QUERY);
   url.searchParams.set("broadcast_url", broadcastUrl);
+  // EventSource cannot send headers, which is what the query-param variant of
+  // the key is for.
+  const key = apiKeyQuery();
+  if (key) {
+    url.searchParams.set("api_key", key);
+  }
 
   const latest = new Map<string, LivePlayer>();
+  // The stream is the only source for these; sampling it as it arrives means the
+  // match charts cost no extra requests.
+  const samples: LiveMatchSample[] = [];
   let dirty = false;
   let closed = false;
+
+  const publish = () => {
+    const players = [...latest.values()];
+    onPlayers(players);
+
+    const sample = sampleMatch(players);
+    const last = samples.at(-1);
+    if (!last || sample.second - last.second >= SAMPLE_INTERVAL_S) {
+      samples.push(sample);
+      onSamples?.([...samples]);
+    }
+  };
 
   const source = new EventSource(url.toString());
   onStatus("connecting");
@@ -116,7 +189,7 @@ export const subscribeToLiveMatch = (
   const flush = window.setInterval(() => {
     if (!dirty) return;
     dirty = false;
-    onPlayers([...latest.values()]);
+    publish();
   }, FLUSH_INTERVAL_MS);
 
   const stop = () => {
@@ -141,7 +214,7 @@ export const subscribeToLiveMatch = (
   });
 
   source.addEventListener("end", () => {
-    onPlayers([...latest.values()]);
+    publish();
     onStatus("ended");
     stop();
   });
@@ -155,7 +228,7 @@ export const subscribeToLiveMatch = (
       logger.withMetadata({ data }).warn("Live query rejected");
     }
     if (latest.size > 0) {
-      onPlayers([...latest.values()]);
+      publish();
     }
     onStatus(latest.size > 0 ? "ended" : "error");
     stop();

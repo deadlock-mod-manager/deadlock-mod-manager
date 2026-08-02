@@ -15,12 +15,22 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
-import { ChevronDown, Loader2, RefreshCw } from "@deadlock-mods/ui/icons";
+import {
+  ChevronDown,
+  ExternalLink,
+  KeyRound,
+  Loader2,
+  RefreshCw,
+} from "@deadlock-mods/ui/icons";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { formatDistanceToNow } from "date-fns";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { SteamAccount } from "@/hooks/use-steam-accounts";
 import type { PlayerRank, RankAsset, SteamProfile } from "@/lib/stats/api";
+import { cn } from "@/lib/utils";
+
+const DEADLOCK_API_URL = "https://deadlock-api.com/";
 
 interface StatsHeaderProps {
   accounts: SteamAccount[];
@@ -37,6 +47,8 @@ interface StatsHeaderProps {
   onSelectAccount: (accountId: number) => void;
   /** Sits centred between the account and the refresh controls - the page tabs. */
   center?: ReactNode;
+  hasApiKey: boolean;
+  onOpenApiKey: () => void;
 }
 
 /** Valve packs division and tier into one number: 26 reads as division 2, tier 6. */
@@ -59,6 +71,8 @@ export const StatsHeader = ({
   onRefresh,
   onSelectAccount,
   center,
+  hasApiKey,
+  onOpenApiKey,
 }: StatsHeaderProps) => {
   const { t } = useTranslation();
 
@@ -136,17 +150,45 @@ export const StatsHeader = ({
       <div className='flex justify-center'>{center}</div>
 
       <div className='flex items-center justify-end gap-2'>
-        {fetchedAt !== null && (
-          <span className='text-muted-foreground text-xs'>
-            {isStale
-              ? t("stats.offlineData", {
-                  ago: formatDistanceToNow(fetchedAt, { addSuffix: true }),
-                })
-              : t("stats.updated", {
-                  ago: formatDistanceToNow(fetchedAt, { addSuffix: true }),
-                })}
-          </span>
-        )}
+        <div className='flex flex-col items-end'>
+          {fetchedAt !== null && (
+            <span className='text-muted-foreground text-xs'>
+              {isStale
+                ? t("stats.offlineData", {
+                    ago: formatDistanceToNow(fetchedAt, { addSuffix: true }),
+                  })
+                : t("stats.updated", {
+                    ago: formatDistanceToNow(fetchedAt, { addSuffix: true }),
+                  })}
+            </span>
+          )}
+          <button
+            className='flex items-center gap-1 text-muted-foreground text-xs underline-offset-2 hover:text-foreground hover:underline'
+            onClick={() => void openUrl(DEADLOCK_API_URL)}
+            type='button'>
+            {t("stats.poweredBy")}
+            <ExternalLink className='h-3 w-3' />
+          </button>
+        </div>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              className={cn(hasApiKey && "border-primary text-primary")}
+              onClick={onOpenApiKey}
+              size='sm'
+              variant='outline'>
+              <KeyRound className='h-4 w-4' />
+              {t(hasApiKey ? "stats.apiKey.active" : "stats.apiKey.connect")}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {t(
+              hasApiKey ? "stats.apiKey.activeHint" : "stats.apiKey.hintShort",
+            )}
+          </TooltipContent>
+        </Tooltip>
+
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

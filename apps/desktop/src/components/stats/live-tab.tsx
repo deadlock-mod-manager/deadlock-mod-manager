@@ -20,6 +20,8 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { HeroAvatar } from "@/components/stats/hero-avatar";
+import { LiveLeaderboard } from "@/components/stats/live-leaderboard";
+import { LiveMatchCharts } from "@/components/stats/live-match-chart";
 import { LivePlayerDialog } from "@/components/stats/live-player-dialog";
 import { useLiveMatch } from "@/hooks/use-live-match";
 import type { DeadlockHero } from "@/lib/deadlock-api";
@@ -246,6 +248,16 @@ export const LiveTab = ({
           ))}
         </div>
       )}
+
+      <LiveLeaderboard
+        heroesById={heroesById}
+        onSelect={setSelected}
+        ownAccountId={ownAccountId}
+        players={live.players}
+        profiles={profiles}
+      />
+
+      <LiveMatchCharts samples={live.samples} />
 
       <LivePlayerDialog
         heroStats={heroStats}

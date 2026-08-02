@@ -33,17 +33,26 @@ pub struct LiveMatchStatus {
   /// Sitting in matchmaking, waiting for a lobby.
   pub queued: bool,
   pub current: Option<LiveMatch>,
+  /// Matches played this session, which deadlock-api may not have ingested yet.
+  pub recent_match_ids: Vec<String>,
 }
 
 fn console_log_path(game_path: &Path) -> PathBuf {
   game_path.join("game").join("citadel").join("console.log")
 }
 
+/// Matches from this session are worth remembering even after the lobby closes:
+/// deadlock-api ingests with a day of delay, so they are exactly the ones its
+/// history is missing.
+const RECENT_LIMIT: usize = 20;
+
 /// What the log says the player is doing right now.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct LivePhase {
   pub queued: bool,
   pub current: Option<LiveMatch>,
+  /// Every match id seen this session, newest last, capped at `RECENT_LIMIT`.
+  pub recent_match_ids: Vec<String>,
 }
 
 /// Folds the matchmaking and lobby lines of `log` onto an already-known phase.
@@ -78,10 +87,14 @@ pub fn fold_phase(log: &str, previous: LivePhase) -> LivePhase {
     let match_id = capture[2].to_owned();
 
     if &capture[3] == "created" {
-      phase = LivePhase {
-        queued: false,
-        current: Some(LiveMatch { match_id, lobby_id }),
-      };
+      if !phase.recent_match_ids.contains(&match_id) {
+        phase.recent_match_ids.push(match_id.clone());
+        if phase.recent_match_ids.len() > RECENT_LIMIT {
+          phase.recent_match_ids.remove(0);
+        }
+      }
+      phase.queued = false;
+      phase.current = Some(LiveMatch { match_id, lobby_id });
     } else if phase
       .current
       .as_ref()
@@ -119,6 +132,7 @@ pub fn status(game_path: &Path) -> LiveMatchStatus {
     console_log_available: true,
     queued: phase.queued,
     current: phase.current,
+    recent_match_ids: phase.recent_match_ids,
   }
 }
 
@@ -212,6 +226,16 @@ mod tests {
 
     assert_eq!(still_live.current.as_ref().unwrap().match_id, "96996563");
     assert!(fold_phase(DESTROYED, still_live).current.is_none());
+  }
+
+  #[test]
+  fn remembers_the_matches_of_this_session() {
+    let phase = fold_phase(
+      &format!("Lobby 1 for Match 111 created\nLobby 1 for Match 111 destroyed\n{CREATED}\n"),
+      LivePhase::default(),
+    );
+
+    assert_eq!(phase.recent_match_ids, vec!["111", "96996563"]);
   }
 
   #[test]

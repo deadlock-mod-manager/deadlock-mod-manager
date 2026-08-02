@@ -138,10 +138,28 @@ export class DeadlockApiError extends Error {
   }
 }
 
+/**
+ * A Patreon key raises the shared IP limits to per-key ones - most visibly on
+ * the live broadcast, which goes from 2 requests per hour to 100.
+ */
+let apiKey: string | null = null;
+
+export const setDeadlockApiKey = (key: string | null): void => {
+  apiKey = key?.trim() ? key.trim() : null;
+};
+
+export const hasDeadlockApiKey = (): boolean => apiKey !== null;
+
+/** For EventSource, which cannot set headers. */
+export const apiKeyQuery = (): string | null => apiKey;
+
+export const apiHeaders = (): Record<string, string> => ({
+  Accept: "application/json",
+  ...(apiKey ? { "X-API-KEY": apiKey } : {}),
+});
+
 const get = async <T>(path: string): Promise<T> => {
-  const response = await fetch(`${BASE_URL}${path}`, {
-    headers: { Accept: "application/json" },
-  });
+  const response = await fetch(`${BASE_URL}${path}`, { headers: apiHeaders() });
   if (!response.ok) {
     throw new DeadlockApiError(response.status, path);
   }
@@ -192,6 +210,31 @@ export const getSteamProfiles = (accountIds: number[]) => {
 export const getAnalyticsHeroStats = (sinceUnix: number) =>
   get<AnalyticsHeroStats[]>(
     `/v1/analytics/hero-stats?min_unix_timestamp=${sinceUnix}`,
+  );
+
+export interface ItemStats {
+  item_id: number;
+  matches: number;
+  wins: number;
+  losses: number;
+  players: number;
+  avg_buy_time_s: number;
+  /** Where in the match the item is usually bought, as a percentage. */
+  avg_buy_time_relative: number;
+}
+
+/**
+ * Item performance. Without `accountId` this is everyone's data, which is the
+ * baseline the player's own numbers get compared against.
+ */
+export const getItemStats = (
+  accountId?: number,
+  minMatches = 3,
+): Promise<ItemStats[]> =>
+  get<ItemStats[]>(
+    `/v1/analytics/item-stats?min_matches=${minMatches}${
+      accountId ? `&account_id=${accountId}` : ""
+    }`,
   );
 
 export const getRankAssets = async (): Promise<RankAsset[]> => {

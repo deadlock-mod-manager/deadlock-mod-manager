@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getPlayerHeroStats, getSteamProfiles } from "@/lib/stats/api";
 import { cachedFetch, STATS_TTL } from "@/lib/stats/cache";
 import {
   getLiveBroadcast,
   getRanksFor,
+  type LiveMatchSample,
   type LivePlayer,
   type LiveStatus,
   subscribeToLiveMatch,
@@ -22,6 +23,26 @@ export type LiveMatchStatus = {
   /** In matchmaking, waiting for a lobby. */
   queued: boolean;
   current: LiveMatchInfo | null;
+  /** Matches played this session, which the API may not have ingested yet. */
+  recentMatchIds: string[];
+};
+
+/**
+ * Matches the game logged that the API's history does not contain. A non-empty
+ * result means the page is showing an incomplete picture of today.
+ */
+export const useMissingLocalMatches = (
+  apiMatchIds: number[],
+  enabled: boolean,
+) => {
+  const detection = useLiveMatchDetection(enabled);
+
+  return useMemo(() => {
+    const known = new Set(apiMatchIds.map(String));
+    return (detection.data?.recentMatchIds ?? []).filter(
+      (id) => !known.has(id),
+    );
+  }, [detection.data, apiMatchIds]);
 };
 
 /** Cheap local file read; polling it is nicer than keeping a watcher alive. */
@@ -52,6 +73,7 @@ export const useLiveMatch = (enabled: boolean) => {
   const matchId = detection.data?.current?.matchId ?? null;
 
   const [players, setPlayers] = useState<LivePlayer[]>([]);
+  const [samples, setSamples] = useState<LiveMatchSample[]>([]);
   const [status, setStatus] = useState<LiveStatus>("connecting");
   const stopRef = useRef<(() => void) | null>(null);
 
@@ -75,8 +97,14 @@ export const useLiveMatch = (enabled: boolean) => {
       return;
     }
     setPlayers([]);
+    setSamples([]);
     setStatus("connecting");
-    const stop = subscribeToLiveMatch(broadcastUrl, setPlayers, setStatus);
+    const stop = subscribeToLiveMatch(
+      broadcastUrl,
+      setPlayers,
+      setStatus,
+      setSamples,
+    );
     stopRef.current = stop;
     return () => {
       stopRef.current = null;
@@ -126,6 +154,7 @@ export const useLiveMatch = (enabled: boolean) => {
     consoleLogAvailable: detection.data?.consoleLogAvailable ?? true,
     queued: detection.data?.queued ?? false,
     players,
+    samples,
     status,
     profiles: new Map(
       (profiles.data?.data.steam ?? []).map((profile) => [

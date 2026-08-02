@@ -197,6 +197,7 @@ pub fn run() {
       game_presence::start_game_presence_watcher,
       game_presence::stop_game_presence_watcher,
       commands::match_sync::get_match_sync_status,
+      commands::match_sync::get_local_match_history,
       commands::match_sync::set_match_sync_consent,
       commands::match_sync::set_match_sync_enabled,
       commands::match_sync::start_full_match_sync,

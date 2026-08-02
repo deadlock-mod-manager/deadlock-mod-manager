@@ -61,7 +61,10 @@ struct RunState {
 }
 
 fn newest_first_fresh(ids: Vec<u64>, processed: &HashSet<u64>) -> Vec<u64> {
-  let mut ids: Vec<u64> = ids.into_iter().filter(|id| !processed.contains(id)).collect();
+  let mut ids: Vec<u64> = ids
+    .into_iter()
+    .filter(|id| !processed.contains(id))
+    .collect();
   ids.sort_unstable_by(|a, b| b.cmp(a));
   ids.dedup();
   ids
@@ -297,7 +300,10 @@ where
         }
       };
       let fresh = newest_first_fresh(page.match_ids, &st.processed);
-      if let LoopControl::Stop = self.process_ids(&ctx, fresh, false, Some(cancel), st).await? {
+      if let LoopControl::Stop = self
+        .process_ids(&ctx, fresh, false, Some(cancel), st)
+        .await?
+      {
         return Ok(());
       }
       match page.next_cursor {
@@ -314,7 +320,10 @@ where
       if cancel.load(Ordering::Relaxed) {
         return Ok(());
       }
-      let ids = self.backfill.to_fetch(FetchScope::Account(account_id)).await?;
+      let ids = self
+        .backfill
+        .to_fetch(FetchScope::Account(account_id))
+        .await?;
       let fresh = newest_first_fresh(ids, &st.processed);
       if fresh.is_empty() {
         // Only the account's own matches were walked here; the Steam history walk
@@ -324,7 +333,10 @@ where
         }
         return Ok(());
       }
-      if let LoopControl::Stop = self.process_ids(&ctx, fresh, false, Some(cancel), st).await? {
+      if let LoopControl::Stop = self
+        .process_ids(&ctx, fresh, false, Some(cancel), st)
+        .await?
+      {
         return Ok(());
       }
     }
@@ -378,7 +390,11 @@ where
         Vec::new()
       }
     };
-    match self.backfill.to_fetch(FetchScope::Account(account_id)).await {
+    match self
+      .backfill
+      .to_fetch(FetchScope::Account(account_id))
+      .await
+    {
       Ok(ids) => own_ids.extend(ids),
       Err(e) => log::warn!("match-sync: account to-fetch unavailable: {e}"),
     }
@@ -403,7 +419,9 @@ where
               .into_iter()
               .take(budget)
               .collect();
-            self.process_ids(&ctx, picks, true, Some(cancel), st).await?;
+            self
+              .process_ids(&ctx, picks, true, Some(cancel), st)
+              .await?;
           }
           Err(e) => log::warn!("match-sync: global to-fetch unavailable: {e}"),
         }
@@ -461,6 +479,7 @@ mod tests {
       Ok(MatchHistoryPage {
         match_ids: self.history.clone(),
         next_cursor: None,
+        ..Default::default()
       })
     }
     async fn fetch_match_salts(
@@ -533,7 +552,11 @@ mod tests {
       if self.fail_load_quota {
         return Err(MatchSyncError::Store("spy load failure".into()));
       }
-      Ok(QuotaWindow::new(self.quota_hits.lock().unwrap().clone(), LIMIT, WINDOW))
+      Ok(QuotaWindow::new(
+        self.quota_hits.lock().unwrap().clone(),
+        LIMIT,
+        WINDOW,
+      ))
     }
     fn save_quota(&self, quota: &QuotaWindow) -> Result<(), MatchSyncError> {
       if self.fail_save_quota {
@@ -641,9 +664,17 @@ mod tests {
     );
     let config = MatchSyncConfig::default();
 
-    let out = eng.run_background_pass(&config, &AtomicBool::new(false)).await.unwrap();
+    let out = eng
+      .run_background_pass(&config, &AtomicBool::new(false))
+      .await
+      .unwrap();
     assert!(out.is_none());
-    assert!(eng.run_full_sync_if_enabled(&config, &AtomicBool::new(false)).await.is_err());
+    assert!(
+      eng
+        .run_full_sync_if_enabled(&config, &AtomicBool::new(false))
+        .await
+        .is_err()
+    );
 
     assert_eq!(eng.auth.calls.load(Ordering::Relaxed), 0);
     assert_eq!(eng.gc.calls.load(Ordering::Relaxed), 0);
@@ -728,7 +759,11 @@ mod tests {
     // Backfill takes the rest of the global list (quota has plenty left).
     assert_eq!(p.backfilled, 7);
     let posted = eng.sink.posted.lock().unwrap();
-    assert_eq!(&posted[..3], &[102, 101, 100], "own matches, newest first, deduped");
+    assert_eq!(
+      &posted[..3],
+      &[102, 101, 100],
+      "own matches, newest first, deduped"
+    );
     assert_eq!(posted.len(), 10);
   }
 
@@ -889,7 +924,8 @@ mod tests {
     );
 
     assert!(matches!(
-      eng.run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
+      eng
+        .run_full_sync_if_enabled(&active_config(), &AtomicBool::new(false))
         .await,
       Err(MatchSyncError::GameRunning)
     ));
