@@ -373,7 +373,10 @@ mod tests {
     let disabled = loaded.mods.get("local-abc").unwrap();
     assert_eq!(disabled.shard, ShardIndex::FIRST);
     assert!(!disabled.enabled);
-    assert_eq!(disabled.disabled_vpks, vec!["local-abc_skin.vpk".to_string()]);
+    assert_eq!(
+      disabled.disabled_vpks,
+      vec!["local-abc_skin.vpk".to_string()]
+    );
 
     // A v1 entry resolves against the base directory, exactly where its files are.
     let profile = ProfileBase::new(&base).unwrap();
@@ -408,7 +411,10 @@ mod tests {
     let base = addons_base(&temp);
     fs::write(
       base.join(MANIFEST_FILENAME),
-      format!(r#"{{"version": {}, "mods": {{}}}}"#, CURRENT_MANIFEST_VERSION + 1),
+      format!(
+        r#"{{"version": {}, "mods": {{}}}}"#,
+        CURRENT_MANIFEST_VERSION + 1
+      ),
     )
     .unwrap();
 

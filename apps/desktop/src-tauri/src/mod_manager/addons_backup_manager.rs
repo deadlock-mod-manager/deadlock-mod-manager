@@ -751,7 +751,11 @@ mod tests {
       fs::read(snapshot.join("addons2/profile_x/pak01_dir.vpk")).unwrap(),
       b"overflow vpk"
     );
-    assert!(snapshot.join("addons/profile_x/some_mod_disabled.vpk").is_file());
+    assert!(
+      snapshot
+        .join("addons/profile_x/some_mod_disabled.vpk")
+        .is_file()
+    );
 
     // The snapshot must satisfy the same check restore runs against it.
     AddonsBackupManager::validate_snapshot(&snapshot).unwrap();
@@ -778,9 +782,20 @@ mod tests {
     let temp = tempfile::tempdir().unwrap();
     let citadel = sharded_citadel(&temp);
     let base = citadel.join("addons").join("profile_x");
-    write(&base.join(".dmm-reorder").join("s1__pak01_dir.vpk.pending"), b"staged");
-    write(&base.join(".dmm-clear").join("s1__pak02_dir.vpk.pending"), b"staged");
-    write(&base.join(".dmm-update-123").join("s1__pak03_dir.vpk.pending"), b"staged");
+    write(
+      &base.join(".dmm-reorder").join("s1__pak01_dir.vpk.pending"),
+      b"staged",
+    );
+    write(
+      &base.join(".dmm-clear").join("s1__pak02_dir.vpk.pending"),
+      b"staged",
+    );
+    write(
+      &base
+        .join(".dmm-update-123")
+        .join("s1__pak03_dir.vpk.pending"),
+      b"staged",
+    );
     let snapshot = temp.path().join("snapshot");
 
     copy_all_shards(&citadel, &snapshot);
