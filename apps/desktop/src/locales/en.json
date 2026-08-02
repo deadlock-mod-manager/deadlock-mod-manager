@@ -42,6 +42,8 @@
     "defaultDescription": "Vanilla appearance, no skin mod",
     "skinsDownloaded_one": "{{count}} skin downloaded",
     "skinsDownloaded_other": "{{count}} skins downloaded",
+    "skinCount_one": "{{count}} skin",
+    "skinCount_other": "{{count}} skins",
     "noSkins": "No skins downloaded",
     "noSkinsHint": "Download skins from the Mods Store. If a downloaded skin isn't listed here, set its hero override from your Mods Library.",
     "conflict": "Multiple skins active",
@@ -49,7 +51,11 @@
     "swapFailed": "Failed to change skin",
     "overrideFooter": "Skin not showing under the right hero?",
     "overrideFooterLink": "Set its hero override in your Mods Library.",
-    "variants": "Variants"
+    "variants": "Variants",
+    "addSkin": "Add Skin",
+    "addSkinFor": "Browse skins for {{hero}}",
+    "emptyTitle": "No skins for {{hero}} yet",
+    "deleteSkin": "Delete skin"
   },
   "servers": {
     "title": "Server Browser",

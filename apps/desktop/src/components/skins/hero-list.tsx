@@ -36,13 +36,18 @@ const HeroListRow = ({ entry, isSelected, onSelect }: HeroListRowProps) => {
   return (
     <button
       className={cn(
-        "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left hover:bg-accent",
+        "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors hover:bg-accent",
         isSelected && "bg-accent",
-        entry.skinCount === 0 && "opacity-50",
       )}
       onClick={() => onSelect(entry.hero)}
       type='button'>
-      <Avatar className='h-9 w-9'>
+      <Avatar
+        className={cn(
+          "h-9 w-9",
+          // Dim only the portrait so heroes without skins still read as
+          // selectable rows.
+          entry.skinCount === 0 && "opacity-50 grayscale",
+        )}>
         {heroImage && <AvatarImage alt={entry.hero} src={heroImage} />}
         <AvatarFallback>{entry.hero.charAt(0)}</AvatarFallback>
       </Avatar>
@@ -59,6 +64,14 @@ const HeroListRow = ({ entry, isSelected, onSelect }: HeroListRowProps) => {
           </span>
         </div>
       </div>
+      {entry.skinCount > 0 && (
+        <span className='shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-muted-foreground text-xs tabular-nums'>
+          <span className='sr-only'>
+            {t("skins.skinCount", { count: entry.skinCount })}
+          </span>
+          <span aria-hidden='true'>{entry.skinCount}</span>
+        </span>
+      )}
     </button>
   );
 };
