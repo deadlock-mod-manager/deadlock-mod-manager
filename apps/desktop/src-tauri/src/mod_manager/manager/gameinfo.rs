@@ -63,6 +63,12 @@ impl ModManager {
 
   pub fn migrate_profile_to_shards(&mut self, profile_folder: Option<String>) -> Result<(), Error> {
     let base = self.get_addons_path(profile_folder.as_deref())?;
+    // Runs on the launch path, where nothing else reopens the manifest for
+    // writing. Without this a crash would leave VPKs parked in a staging
+    // directory and the game would start with those mods silently missing.
+    if base.exists() {
+      ProfileVpkManifest::recover_profile(&base)?;
+    }
     if needs_shard_migration(&base) {
       log::info!("Migrating legacy VPK numbering into addon shards for profile {profile_folder:?}");
       self.reorder_all_mods_for_profile(profile_folder)?;

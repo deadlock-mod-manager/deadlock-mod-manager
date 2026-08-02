@@ -143,37 +143,34 @@ impl ProfileVpkManifest {
       .unwrap_or(ShardIndex::FIRST)
   }
 
+  /// Read a profile's manifest without touching anything on disk.
+  ///
+  /// A crashed [`Self::save`] can leave the manifest only in the temp file; that
+  /// case is resolved in memory here so reads see the committed data, and the
+  /// files are reconciled by [`Self::open_for_write`].
   pub fn load(addons_path: &Path) -> Result<Self, Error> {
     let manifest_path = addons_path.join(MANIFEST_FILENAME);
     let temp_path = addons_path.join(format!("{MANIFEST_FILENAME}.tmp"));
 
-    if manifest_path.exists() && temp_path.exists() {
-      fs::remove_file(&temp_path).map_err(|e| {
-        Error::InvalidInput(format!(
-          "Failed to remove stale VPK manifest temp file at {}: {e}",
-          temp_path.display()
-        ))
-      })?;
-    } else if !manifest_path.exists() && temp_path.exists() {
-      fs::rename(&temp_path, &manifest_path).map_err(|e| {
-        Error::InvalidInput(format!(
-          "Failed to recover VPK manifest temp file from {} to {}: {e}",
-          temp_path.display(),
-          manifest_path.display()
-        ))
-      })?;
-    }
-
-    let mut manifest = if manifest_path.exists() {
-      let manifest_json = fs::read_to_string(&manifest_path)?;
-      serde_json::from_str(&manifest_json).map_err(|e| {
-        Error::InvalidInput(format!(
-          "Failed to parse VPK manifest at {}: {e}",
-          manifest_path.display()
-        ))
-      })?
+    let source_path = if manifest_path.exists() {
+      Some(manifest_path.clone())
+    } else if temp_path.exists() {
+      Some(temp_path)
     } else {
-      Self::default()
+      None
+    };
+
+    let mut manifest = match source_path {
+      Some(path) => {
+        let manifest_json = fs::read_to_string(&path)?;
+        serde_json::from_str(&manifest_json).map_err(|e| {
+          Error::InvalidInput(format!(
+            "Failed to parse VPK manifest at {}: {e}",
+            path.display()
+          ))
+        })?
+      }
+      None => Self::default(),
     };
 
     if manifest.version > CURRENT_MANIFEST_VERSION {
@@ -188,8 +185,55 @@ impl ProfileVpkManifest {
       manifest.version = CURRENT_MANIFEST_VERSION;
     }
 
+    Ok(manifest)
+  }
+
+  /// Read a profile's manifest and repair whatever a crashed operation left
+  /// behind: a half-committed manifest temp file and any staged VPKs still
+  /// parked in a staging directory.
+  ///
+  /// Only mutation entry points may call this. Reads must use [`Self::load`],
+  /// which never writes -- notably [`Self::validate_tree`], which walks backup
+  /// snapshots that must come out byte-identical.
+  pub fn open_for_write(addons_path: &Path) -> Result<Self, Error> {
+    Self::reconcile_manifest_temp_file(addons_path)?;
+    let manifest = Self::load(addons_path)?;
     Self::recover_pending_staging(addons_path, &manifest)?;
     Ok(manifest)
+  }
+
+  /// Repair a profile in place without keeping the manifest around, for entry
+  /// points that mutate the profile without reading it.
+  pub fn recover_profile(addons_path: &Path) -> Result<(), Error> {
+    Self::open_for_write(addons_path).map(|_| ())
+  }
+
+  fn reconcile_manifest_temp_file(addons_path: &Path) -> Result<(), Error> {
+    let manifest_path = addons_path.join(MANIFEST_FILENAME);
+    let temp_path = addons_path.join(format!("{MANIFEST_FILENAME}.tmp"));
+
+    if !temp_path.exists() {
+      return Ok(());
+    }
+
+    if manifest_path.exists() {
+      fs::remove_file(&temp_path).map_err(|e| {
+        Error::InvalidInput(format!(
+          "Failed to remove stale VPK manifest temp file at {}: {e}",
+          temp_path.display()
+        ))
+      })?;
+    } else {
+      fs::rename(&temp_path, &manifest_path).map_err(|e| {
+        Error::InvalidInput(format!(
+          "Failed to recover VPK manifest temp file from {} to {}: {e}",
+          temp_path.display(),
+          manifest_path.display()
+        ))
+      })?;
+    }
+
+    Ok(())
   }
 
   fn recover_pending_staging(addons_path: &Path, manifest: &Self) -> Result<(), Error> {
@@ -458,7 +502,7 @@ mod tests {
   }
 
   #[test]
-  fn load_recovers_temp_manifest_when_main_is_missing() {
+  fn open_for_write_recovers_temp_manifest_when_main_is_missing() {
     let temp = tempfile::tempdir().unwrap();
     let base = addons_base(&temp);
     let mut manifest = ProfileVpkManifest::default();
@@ -472,7 +516,12 @@ mod tests {
     let temp_path = base.join(format!("{MANIFEST_FILENAME}.tmp"));
     fs::write(&temp_path, serde_json::to_string_pretty(&manifest).unwrap()).unwrap();
 
-    let loaded = ProfileVpkManifest::load(&base).unwrap();
+    // A read sees the committed data without moving the file...
+    assert_eq!(ProfileVpkManifest::load(&base).unwrap(), manifest);
+    assert!(temp_path.exists());
+
+    // ...and the write path is what reconciles it.
+    let loaded = ProfileVpkManifest::open_for_write(&base).unwrap();
 
     assert_eq!(loaded, manifest);
     assert!(base.join(MANIFEST_FILENAME).exists());
@@ -480,7 +529,7 @@ mod tests {
   }
 
   #[test]
-  fn load_removes_stale_temp_manifest_when_main_exists() {
+  fn open_for_write_removes_stale_temp_manifest_when_main_exists() {
     let temp = tempfile::tempdir().unwrap();
     let base = addons_base(&temp);
     let mut manifest = ProfileVpkManifest::default();
@@ -495,27 +544,85 @@ mod tests {
     let temp_path = base.join(format!("{MANIFEST_FILENAME}.tmp"));
     fs::write(&temp_path, "{}").unwrap();
 
-    let loaded = ProfileVpkManifest::load(&base).unwrap();
+    let loaded = ProfileVpkManifest::open_for_write(&base).unwrap();
 
     assert_eq!(loaded, manifest);
     assert!(!temp_path.exists());
   }
 
   #[test]
-  fn load_recovers_interrupted_reorder_staging() {
+  fn open_for_write_recovers_interrupted_reorder_staging() {
     let temp = tempfile::tempdir().unwrap();
     let base = addons_base(&temp);
     let staging = base.join(REORDER_STAGING_DIR);
     fs::create_dir_all(&staging).unwrap();
     fs::write(staging.join("s2__pak01_dir.vpk.pending"), b"vpk").unwrap();
 
-    ProfileVpkManifest::load(&base).unwrap();
+    ProfileVpkManifest::open_for_write(&base).unwrap();
 
     assert_eq!(
       fs::read(temp.path().join("citadel/addons2/pak01_dir.vpk")).unwrap(),
       b"vpk"
     );
     assert!(!staging.exists());
+  }
+
+  /// Reads must never repair. Recovery relocates files across shards, so a read
+  /// that triggered it would mutate whatever tree it was pointed at.
+  #[test]
+  fn load_leaves_interrupted_staging_alone() {
+    let temp = tempfile::tempdir().unwrap();
+    let base = addons_base(&temp);
+    let staging = base.join(REORDER_STAGING_DIR);
+    fs::create_dir_all(&staging).unwrap();
+    let staged = staging.join("s2__pak01_dir.vpk.pending");
+    fs::write(&staged, b"vpk").unwrap();
+
+    ProfileVpkManifest::load(&base).unwrap();
+
+    assert_eq!(fs::read(&staged).unwrap(), b"vpk");
+    assert!(!temp.path().join("citadel/addons2/pak01_dir.vpk").exists());
+  }
+
+  /// Backups are validated by walking the snapshot. A snapshot taken mid-operation
+  /// contains staging directories by construction, and validating it must not
+  /// relocate or delete their contents.
+  #[test]
+  fn validate_tree_does_not_mutate_the_snapshot() {
+    let temp = tempfile::tempdir().unwrap();
+    let snapshot = temp.path().join("snapshot");
+    let profile = snapshot.join("addons/profile_x");
+    fs::create_dir_all(&profile).unwrap();
+
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_enabled(
+      "123",
+      vec!["pak01_dir.vpk".to_string()],
+      vec!["cool_mod.vpk".to_string()],
+      Some(0),
+      ShardIndex::FIRST,
+    );
+    manifest.save(&profile).unwrap();
+    fs::write(profile.join("pak01_dir.vpk"), b"vpk").unwrap();
+
+    let staging = profile.join(REORDER_STAGING_DIR);
+    fs::create_dir_all(&staging).unwrap();
+    let staged = staging.join("s2__pak02_dir.vpk.pending");
+    fs::write(&staged, b"staged vpk").unwrap();
+
+    let orphan_staging = profile.join(format!("{UPDATE_STAGING_PREFIX}999"));
+    fs::create_dir_all(&orphan_staging).unwrap();
+    let orphan_staged = orphan_staging.join("s1__pak03_dir.vpk.pending");
+    fs::write(&orphan_staged, b"orphan vpk").unwrap();
+
+    ProfileVpkManifest::validate_tree(&snapshot).unwrap();
+
+    assert_eq!(fs::read(&staged).unwrap(), b"staged vpk");
+    assert_eq!(fs::read(&orphan_staged).unwrap(), b"orphan vpk");
+    assert!(
+      !snapshot.join("addons2/profile_x/pak02_dir.vpk").exists(),
+      "validation relocated a staged VPK inside the backup"
+    );
   }
 
   #[test]

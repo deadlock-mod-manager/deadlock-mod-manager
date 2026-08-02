@@ -133,6 +133,9 @@ impl ModManager {
     ProfileBase::new(profile_path)
   }
 
+  /// Profile folders may nest (`profiles/imported`), so this permits separators
+  /// and only rejects components that escape the addons directory. It is not a
+  /// mod-ID check; use [`Self::ensure_safe_mod_id`] for those.
   fn is_safe_profile_folder(folder: &str) -> bool {
     !folder.is_empty()
       && Path::new(folder)
@@ -878,5 +881,22 @@ mod tests {
     }
 
     assert!(outside.join("keep.txt").exists());
+  }
+
+  /// `remove_mod_vpks` is public and reached directly by the batch-update path,
+  /// where it is the only guard on the mod ID. It once used the profile-folder
+  /// predicate, which permits separators.
+  #[test]
+  fn remove_mod_vpks_rejects_mod_ids_with_separators() {
+    let game = game_dir();
+    let addons_path = game.path().join("game").join("citadel").join("addons");
+    fs::create_dir_all(&addons_path).unwrap();
+    let mut manager = test_manager(game.path());
+
+    for mod_id in ["profiles/imported", "../victim", "..\\victim", "/etc"] {
+      let result = manager.remove_mod_vpks(mod_id, &[], None);
+
+      assert!(matches!(result, Err(Error::InvalidInput(_))), "{mod_id}");
+    }
   }
 }

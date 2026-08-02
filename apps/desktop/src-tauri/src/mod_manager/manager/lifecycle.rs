@@ -53,7 +53,7 @@ impl ModManager {
 
     log::info!("Found {} prefixed VPKs, enabling them", prefixed_vpks.len());
 
-    let mut manifest = ProfileVpkManifest::load(&addons_path)?;
+    let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
     let target_shard = Self::choose_shard_for(&addons_path, None, prefixed_vpks.len() as u32)?;
     let enabled_dir = addons_path.shard_dir(target_shard);
 
@@ -170,7 +170,7 @@ impl ModManager {
       return Err(Error::GamePathNotSet);
     }
 
-    let mut manifest = ProfileVpkManifest::load(&addons_path)?;
+    let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
     let manifest_entry = manifest.mods.get(&mod_id).cloned();
 
     let (installed_vpks, original_vpk_names) = if let Some(entry) = manifest_entry.as_ref()
@@ -278,6 +278,9 @@ impl ModManager {
     mods_path: &Path,
   ) -> Result<(), Error> {
     log::info!("Purging mod: {mod_id} (profile: {profile_folder:?})");
+    // Not redundant with the check in `remove_mod_vpks`: when the addons
+    // directory is missing that call is skipped, and this is all that stands
+    // between a traversing ID and the recursive delete below.
     Self::ensure_safe_mod_id(&mod_id)?;
 
     // A mod whose download failed never reached the addons directory, which
@@ -314,12 +317,10 @@ impl ModManager {
     fallback_vpks: &[String],
     profile_folder: Option<String>,
   ) -> Result<RemovedModVpks, Error> {
-    if !Self::is_safe_profile_folder(mod_id) {
-      return Err(Error::InvalidInput(format!("Invalid mod ID: {mod_id}")));
-    }
+    Self::ensure_safe_mod_id(mod_id)?;
 
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
-    let mut manifest = ProfileVpkManifest::load(&addons_path)?;
+    let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
     let manifest_entry = manifest.mods.get(mod_id).cloned();
     let install_order = manifest_entry.as_ref().and_then(|entry| entry.order);
     let mut sources = HashSet::new();
@@ -439,7 +440,7 @@ impl ModManager {
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
 
     // Use VPK info from frontend first, then try repository, then look for prefixed VPKs
-    let manifest = ProfileVpkManifest::load(&addons_path)?;
+    let manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
     let target_shard = manifest
       .mods
       .get(&mod_id)
