@@ -84,6 +84,11 @@ For help and support:
 >
 > Linux support is provided on a **best-effort basis**. Due to a lack of contributors with Linux expertise and the maintainer's limited experience distributing software across the many Linux distributions, you may encounter packaging issues, missing dependencies, or platform-specific bugs. If you're a Linux user and want to help improve support, contributions are very welcome! Please reach out on [Discord](https://deadlockmods.app/discord) or open a PR.
 
+> [!NOTE]
+> **AUR Releases Temporarily Unavailable**
+>
+> We are currently unable to push new releases to the [AUR](https://aur.archlinux.org/packages/deadlock-modmanager) package. As of late July 2026, the Arch Linux team has restricted AUR package adoptions and related git write access while investigating waves of malicious package adoptions (over 1,500 infected packages removed). Until those restrictions are lifted, AUR packages may lag behind GitHub releases. Please download the latest Linux builds from the [GitHub Releases](https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest) page in the meantime.
+
 <br />
 
 ## Sponsors
