@@ -47,15 +47,18 @@ impl ModManager {
     // A missing manifest loads as an empty default; a malformed or unsupported
     // one must fail loudly rather than silently emit truncated search paths.
     let manifest = ProfileVpkManifest::load(&base)?;
-    Ok(search_paths_for(&base, &manifest, profile_folder.as_deref()))
+    Ok(search_paths_for(
+      &base,
+      &manifest,
+      profile_folder.as_deref(),
+    ))
   }
 
   /// Whether [`Self::migrate_profile_to_shards`] would do any work.
-  pub fn profile_needs_shard_migration(
-    &self,
-    profile_folder: Option<&str>,
-  ) -> Result<bool, Error> {
-    Ok(needs_shard_migration(&self.get_addons_path(profile_folder)?))
+  pub fn profile_needs_shard_migration(&self, profile_folder: Option<&str>) -> Result<bool, Error> {
+    Ok(needs_shard_migration(
+      &self.get_addons_path(profile_folder)?,
+    ))
   }
 
   pub fn migrate_profile_to_shards(&mut self, profile_folder: Option<String>) -> Result<(), Error> {
@@ -136,7 +139,10 @@ mod tests {
     let citadel = citadel(&temp);
 
     write_pak(&citadel.join("addons"), "pak01_dir.vpk");
-    assert_eq!(paths_for(&citadel, None), vec!["citadel/addons".to_string()]);
+    assert_eq!(
+      paths_for(&citadel, None),
+      vec!["citadel/addons".to_string()]
+    );
 
     write_pak(&citadel.join("addons2"), "pak01_dir.vpk");
     write_pak(&citadel.join("addons3"), "pak01_dir.vpk");
@@ -221,4 +227,3 @@ mod tests {
     assert!(needs_shard_migration(&base));
   }
 }
-

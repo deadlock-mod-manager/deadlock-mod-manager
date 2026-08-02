@@ -625,7 +625,10 @@ mod tests {
     let ordered = ModManager::ordered_assignments(&manifest);
 
     assert_eq!(
-      ordered.iter().map(|a| a.mod_id.as_str()).collect::<Vec<_>>(),
+      ordered
+        .iter()
+        .map(|a| a.mod_id.as_str())
+        .collect::<Vec<_>>(),
       vec!["first", "second", "third"]
     );
   }
@@ -656,7 +659,10 @@ mod tests {
     let ordered = ModManager::ordered_assignments(&manifest);
 
     assert_eq!(
-      ordered.iter().map(|a| a.mod_id.as_str()).collect::<Vec<_>>(),
+      ordered
+        .iter()
+        .map(|a| a.mod_id.as_str())
+        .collect::<Vec<_>>(),
       vec!["ordered", "unordered"]
     );
   }
@@ -685,7 +691,10 @@ mod tests {
     let ordered = ModManager::ordered_assignments(&manifest);
 
     assert_eq!(
-      ordered.iter().map(|a| a.mod_id.as_str()).collect::<Vec<_>>(),
+      ordered
+        .iter()
+        .map(|a| a.mod_id.as_str())
+        .collect::<Vec<_>>(),
       vec!["shard1_low", "shard1_high", "shard2_low"]
     );
   }
@@ -756,7 +765,11 @@ mod tests {
     );
 
     let shard_two = ShardIndex::new(2).unwrap();
-    assert!(placements[..99].iter().all(|p| p.shard == ShardIndex::FIRST));
+    assert!(
+      placements[..99]
+        .iter()
+        .all(|p| p.shard == ShardIndex::FIRST)
+    );
     assert!(placements[99..].iter().all(|p| p.shard == shard_two));
 
     // Both shards are within the engine's per-directory limit, and the
@@ -776,7 +789,10 @@ mod tests {
       entry.shard = placement.shard;
       entry.current_vpks = placement.vpks.clone();
       for path in entry.file_paths(&base) {
-        assert!(path.is_file(), "manifest points at a missing file: {path:?}");
+        assert!(
+          path.is_file(),
+          "manifest points at a missing file: {path:?}"
+        );
       }
     }
   }

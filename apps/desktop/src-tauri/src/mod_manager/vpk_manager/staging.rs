@@ -488,7 +488,10 @@ mod tests {
     let staged_second = staging.stage(&base, &second).unwrap();
     for staged in [&staged_first, &staged_second] {
       let name = staged.file_name().unwrap().to_str().unwrap();
-      assert!(StagedName::parse(name).is_ok(), "unparseable park name {name}");
+      assert!(
+        StagedName::parse(name).is_ok(),
+        "unparseable park name {name}"
+      );
     }
     staging.place(&staged_first, &second).unwrap();
     staging.place(&staged_second, &first).unwrap();
