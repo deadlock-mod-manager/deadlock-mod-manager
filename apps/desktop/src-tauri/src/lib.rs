@@ -15,6 +15,7 @@ mod flatpak;
 mod game_presence;
 mod hero_detector;
 mod ingest_tool;
+mod live_match;
 mod logs;
 mod match_sync;
 mod mod_manager;
@@ -202,6 +203,7 @@ pub fn run() {
       commands::match_sync::cancel_full_match_sync,
       commands::match_sync::resume_match_sync_monitoring,
       commands::steam_user::get_steam_accounts,
+      commands::live_match::get_live_match,
       commands::profiles::create_profile_folder,
       commands::profiles::delete_profile_folder,
       commands::profiles::switch_profile,

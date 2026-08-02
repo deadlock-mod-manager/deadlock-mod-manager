@@ -58,7 +58,42 @@
     "tabs": {
       "overview": "Overview",
       "heroes": "Heroes",
-      "squad": "Squad"
+      "squad": "Squad",
+      "live": "Live"
+    },
+    "live": {
+      "condebugTitle": "Console log is off",
+      "condebugDescription": "The live scoreboard reads your current match from the game's console log, which Deadlock only writes with the -condebug launch option. Turn it on, then restart the game.",
+      "openSettings": "Open launch options",
+      "queuedTitle": "Searching for a match",
+      "queuedDescription": "You are in the queue. As soon as the lobby is formed, everyone in it shows up here.",
+      "waitingTitle": "No match running",
+      "waitingDescription": "Start a Deadlock match and this fills up with everyone in your lobby. The match is read from the game's console log, so nothing needs to be typed in.",
+      "checkNow": "Check now",
+      "matchId": "Match {{id}}",
+      "resolving": "Requesting the live broadcast…",
+      "connecting": "Waiting for the first ticks…",
+      "broadcastError": "Could not open the live broadcast. deadlock-api allows two spectate requests per hour — try again in a bit.",
+      "status": {
+        "connecting": "Connecting",
+        "streaming": "Live",
+        "ended": "Match over",
+        "error": "Disconnected"
+      },
+      "sapphire": "Sapphire",
+      "amber": "Amber",
+      "you": "You",
+      "onHero": "{{matches}} matches on this hero at {{winrate}} winrate",
+      "onHeroShort": "{{matches}} × this hero · {{winrate}}",
+      "firstTimeHero": "No tracked matches on this hero",
+      "matchesTracked": "Tracked matches",
+      "overallWinrate": "Overall winrate",
+      "overallKda": "Overall KDA",
+      "recentActivity": "Recently active",
+      "matchesLast30d_one": "{{count}} match in 30 days",
+      "matchesLast30d_other": "{{count}} matches in 30 days",
+      "netWorth": "Net worth right now",
+      "mostPlayed": "Most played heroes"
     },
     "win": "Win",
     "loss": "Loss",

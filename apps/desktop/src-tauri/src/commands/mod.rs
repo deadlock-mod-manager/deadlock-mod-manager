@@ -12,6 +12,7 @@ pub mod fonts;
 pub mod game;
 pub mod gameinfo;
 pub mod ingest;
+pub mod live_match;
 pub mod logs;
 pub mod match_sync;
 pub mod mods;

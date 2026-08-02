@@ -151,8 +151,11 @@ const get = async <T>(path: string): Promise<T> => {
 export const getMatchHistory = (accountId: number) =>
   get<MatchHistoryEntry[]>(`/v1/players/${accountId}/match-history`);
 
-export const getPlayerHeroStats = (accountId: number) =>
-  get<PlayerHeroStats[]>(`/v1/players/hero-stats?account_ids=${accountId}`);
+/** Takes a whole lobby at once, so the live scoreboard costs a single request. */
+export const getPlayerHeroStats = (accountIds: number | number[]) =>
+  get<PlayerHeroStats[]>(
+    `/v1/players/hero-stats?account_ids=${[accountIds].flat().join(",")}`,
+  );
 
 export const getMmrHistory = (accountId: number) =>
   get<MmrHistoryEntry[]>(`/v1/players/${accountId}/mmr-history`);

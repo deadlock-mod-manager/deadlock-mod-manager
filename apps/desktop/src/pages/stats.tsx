@@ -15,6 +15,7 @@ import {
 } from "@deadlock-mods/ui/components/tabs";
 import {
   ChartLine,
+  Radio,
   Sword,
   TriangleAlert,
   Users,
@@ -25,6 +26,7 @@ import { useSearchParams } from "react-router";
 import PageTitle from "@/components/shared/page-title";
 import { AccountPrompt } from "@/components/stats/account-prompt";
 import { HeroesTab } from "@/components/stats/heroes-tab";
+import { LiveTab } from "@/components/stats/live-tab";
 import { OverviewTab } from "@/components/stats/overview-tab";
 import { SquadTab } from "@/components/stats/squad-tab";
 import { StatsHeader } from "@/components/stats/stats-header";
@@ -41,9 +43,9 @@ import { useSelectedSteamAccount } from "@/hooks/use-steam-accounts";
 import { summarize } from "@/lib/stats/derive";
 import { cn } from "@/lib/utils";
 
-type StatsTab = "overview" | "heroes" | "squad";
+type StatsTab = "overview" | "heroes" | "squad" | "live";
 
-const TABS = new Set<StatsTab>(["overview", "heroes", "squad"]);
+const TABS = new Set<StatsTab>(["overview", "heroes", "squad", "live"]);
 
 const TAB_TRIGGER_CLASS =
   "h-9 gap-1.5 rounded-full px-6 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm";
@@ -114,11 +116,27 @@ const Stats = () => {
           <Users className='h-4 w-4' />
           {t("stats.tabs.squad")}
         </TabsTrigger>
+        <TabsTrigger className={TAB_TRIGGER_CLASS} value='live'>
+          <Radio className='h-4 w-4' />
+          {t("stats.tabs.live")}
+        </TabsTrigger>
       </TabsList>
     </Tabs>
   );
 
   const renderBody = () => {
+    // The live scoreboard reads the running match from the game, so it works
+    // before any history has loaded - and even without a detected account.
+    if (tab === "live") {
+      return (
+        <LiveTab
+          heroesById={heroesById}
+          ownAccountId={accountId}
+          rankAssets={rankAssets.data?.data ?? []}
+        />
+      );
+    }
+
     if (accountsPending) {
       return <StatsSkeleton />;
     }
