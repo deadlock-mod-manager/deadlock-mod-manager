@@ -1,5 +1,5 @@
 mod api_client;
-mod auth;
+pub mod auth;
 mod error;
 mod game_check;
 mod gc_client;

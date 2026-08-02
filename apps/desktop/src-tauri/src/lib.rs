@@ -20,6 +20,7 @@ mod match_sync;
 mod mod_manager;
 pub mod proxy;
 mod reports;
+mod steam_user;
 mod updater_channel;
 mod utils;
 
@@ -200,6 +201,7 @@ pub fn run() {
       commands::match_sync::start_full_match_sync,
       commands::match_sync::cancel_full_match_sync,
       commands::match_sync::resume_match_sync_monitoring,
+      commands::steam_user::get_steam_accounts,
       commands::profiles::create_profile_folder,
       commands::profiles::delete_profile_folder,
       commands::profiles::switch_profile,

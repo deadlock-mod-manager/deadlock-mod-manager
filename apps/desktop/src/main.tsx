@@ -21,6 +21,7 @@ import Servers from "./pages/servers";
 import CustomSettings from "./pages/settings";
 import Skins from "./pages/skins";
 import Splash from "./pages/splash";
+import Stats from "./pages/stats";
 import "flag-icons/css/flag-icons.min.css";
 import "./index.css";
 import "./lib/i18n";
@@ -31,6 +32,19 @@ const MapsRouteGate = () => {
     return <Navigate replace to='/mods' />;
   }
   return <GetMaps />;
+};
+
+const StatsRouteGate = () => {
+  // Unlike the other gates this waits for the flag request: redirecting during
+  // the first fetch would bounce anyone who opens /stats on a cold start.
+  const { isEnabled, isPending } = useFeatureFlag("player-stats", false);
+  if (isPending) {
+    return null;
+  }
+  if (!isEnabled) {
+    return <Navigate replace to='/' />;
+  }
+  return <Stats />;
 };
 
 const ServersRouteGate = () => {
@@ -63,6 +77,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<Debug />} path='/debug' />
               <Route element={<Crosshairs />} path='/crosshairs' />
               <Route element={<Skins />} path='/skins' />
+              <Route element={<StatsRouteGate />} path='/stats' />
               <Route
                 element={<CustomSettings value='autoexec' />}
                 path='/settings/autoexec'

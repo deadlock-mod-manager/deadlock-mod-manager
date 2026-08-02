@@ -55,6 +55,9 @@
         },
         {
           "url": "https://assets.deadlock-api.com/**"
+        },
+        {
+          "url": "https://api.deadlock-api.com/**"
         }
       ]
     },

@@ -16,6 +16,7 @@ import {
 import {
   ArticleIcon,
   BugBeetleIcon,
+  ChartLineUpIcon,
   CodeIcon,
   CrosshairIcon,
   DiscordLogoIcon,
@@ -175,6 +176,14 @@ const getSidebarItems = (
       icon: ArticleIcon,
       group: "customization",
     },
+    {
+      id: "stats",
+      title: () => <span>{t("navigation.stats")}</span>,
+      tooltipLabel: t("navigation.stats"),
+      url: "/stats",
+      icon: ChartLineUpIcon,
+      group: "customization",
+    },
     ...(developerMode
       ? [
           {
@@ -307,11 +316,16 @@ export const AppSidebar = () => {
     "server-browser",
     false,
   );
+  const { isEnabled: isPlayerStatsEnabled } = useFeatureFlag(
+    "player-stats",
+    false,
+  );
 
   const allItems = getSidebarItems(t, developerMode).filter(
     (item) =>
       (item.id !== "maps" || isCustomMapsEnabled) &&
-      (item.id !== "servers" || isServerBrowserEnabled),
+      (item.id !== "servers" || isServerBrowserEnabled) &&
+      (item.id !== "stats" || isPlayerStatsEnabled),
   );
 
   const groupLabels: Record<GroupId, string> = {

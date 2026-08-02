@@ -29,6 +29,8 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+    /* Referenced by components/chart.tsx as the recessive gridline colour. */
+    --chart-grid: 60 2% 17%;
     --radius: 0.5rem;
 
     --sidebar-background: 20, 9%, 6%;
@@ -67,6 +69,7 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+    --chart-grid: 53 12% 87%;
 
     --toast-background: 15, 10%, 13%;
     --sidebar-background: 0 0% 98%;
@@ -105,6 +108,7 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+    --chart-grid: 60 2% 17%;
     --toast-background: 15, 10%, 13%;
 
     --sidebar-background: 20, 9%, 6%;

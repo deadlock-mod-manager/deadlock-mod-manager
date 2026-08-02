@@ -7,7 +7,11 @@ import {
 } from "@/lib/api-client";
 import logger from "@/lib/logger";
 
-const DEV_ALWAYS_ON_FLAGS = new Set(["custom-maps", "server-browser"]);
+const DEV_ALWAYS_ON_FLAGS = new Set([
+  "custom-maps",
+  "server-browser",
+  "player-stats",
+]);
 
 export const useFeatureFlags = () => {
   return useQuery<FeatureFlag[]>({
