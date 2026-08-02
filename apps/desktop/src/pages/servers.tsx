@@ -32,6 +32,7 @@ const Servers = () => {
     availableGameModes,
     availableRegions,
     serversQuery,
+    pings,
     allRelaysFailed,
   } = useServerBrowserData(filters);
 
@@ -83,6 +84,7 @@ const Servers = () => {
             onSelect={(s) => setSelectedId(s.id)}
             selectedId={selectedId}
             servers={servers}
+            pings={pings}
           />
 
           {servers.length > 0 && (

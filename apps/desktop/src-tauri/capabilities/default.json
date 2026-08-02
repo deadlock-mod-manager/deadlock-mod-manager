@@ -48,6 +48,9 @@
           "url": "https://*.deadlockmods.com/**"
         },
         {
+          "url": "https://api.deadworks.net/**"
+        },
+        {
           "url": "http://localhost:9000/**"
         },
         {

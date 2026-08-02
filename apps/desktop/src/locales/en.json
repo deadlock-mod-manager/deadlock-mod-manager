@@ -120,6 +120,11 @@
       "ping": "Ping",
       "tags": "Tags"
     },
+    "ping": {
+      "loading": "Checking...",
+      "unavailable": "n/a",
+      "ms": "{{ms}} ms"
+    },
     "badges": {
       "password": "Password",
       "auth": "Auth required",

@@ -15,8 +15,10 @@ import type {
   SharedProfile,
 } from "@deadlock-mods/shared";
 import {
+  DeadworksRegistryResponseSchema,
   FileserversResponseSchema,
   ModDownloadDtoSchema,
+  normalizeDeadworksRegistryServers,
 } from "@deadlock-mods/shared";
 import type { z } from "zod";
 import { ensureValidToken } from "./auth/token";
@@ -28,6 +30,8 @@ type ModDownloadDto = z.infer<typeof ModDownloadDtoSchema>;
 
 export const BASE_URL =
   import.meta.env.VITE_API_URL ?? "https://api.deadlockmods.app";
+
+const DEADWORKS_REGISTRY_URL = "https://api.deadworks.net";
 
 const apiRequest = async <T>(
   endpoint: string,
@@ -167,8 +171,103 @@ export const getApiHealth = async () => {
   }>("/");
 };
 
-export const getServerFacets = async (): Promise<ServerBrowserFacetsResponse> =>
-  apiRequest<ServerBrowserFacetsResponse>("/api/v2/servers/facets");
+let registryServersPromise: Promise<ServerBrowserEntry[]> | null = null;
+let registryCacheExpiresAt = 0;
+
+const requestDeadworksRegistryServers = async (): Promise<
+  ServerBrowserEntry[]
+> => {
+  const endpoint = `${DEADWORKS_REGISTRY_URL}/api/servers`;
+  const response = await fetch(endpoint, {
+    headers: { Accept: "application/json" },
+  });
+  if (!response.ok) {
+    logger
+      .withMetadata({ status: response.status, endpoint })
+      .warn("Deadworks registry request failed");
+    return [];
+  }
+
+  const payload = DeadworksRegistryResponseSchema.parse(await response.json());
+  return normalizeDeadworksRegistryServers(payload, DEADWORKS_REGISTRY_URL);
+};
+
+const fetchDeadworksRegistryServers = (): Promise<ServerBrowserEntry[]> => {
+  if (registryServersPromise && Date.now() < registryCacheExpiresAt) {
+    return registryServersPromise;
+  }
+
+  registryCacheExpiresAt = Date.now() + 10_000;
+  registryServersPromise = requestDeadworksRegistryServers();
+  return registryServersPromise;
+};
+
+export const getServerFacets =
+  async (): Promise<ServerBrowserFacetsResponse> => {
+    const apiFacets = await apiRequest<ServerBrowserFacetsResponse>(
+      "/api/v2/servers/facets",
+    );
+
+    try {
+      const registryServers = await fetchDeadworksRegistryServers();
+      const regions = Array.from(
+        new Set([
+          ...apiFacets.regions,
+          ...registryServers
+            .map((server) => server.source_region ?? "")
+            .filter(Boolean),
+        ]),
+      ).sort();
+      return { ...apiFacets, regions };
+    } catch (error) {
+      logger.withError(error).warn("Deadworks registry facets request failed");
+      return apiFacets;
+    }
+  };
+
+const filterServerBrowserEntries = (
+  servers: ServerBrowserEntry[],
+  filters: ServerBrowserListInput,
+): ServerBrowserEntry[] => {
+  let filtered = servers;
+
+  if (filters.search) {
+    const search = filters.search.toLowerCase();
+    filtered = filtered.filter(
+      (server) =>
+        server.name.toLowerCase().includes(search) ||
+        server.map.toLowerCase().includes(search) ||
+        server.game_mode.toLowerCase().includes(search),
+    );
+  }
+  if (filters.region) {
+    const region = filters.region.toLowerCase();
+    filtered = filtered.filter(
+      (server) => server.source_region?.toLowerCase() === region,
+    );
+  }
+  if (filters.game_mode) {
+    const gameMode = filters.game_mode.toLowerCase();
+    filtered = filtered.filter(
+      (server) => server.game_mode.toLowerCase() === gameMode,
+    );
+  }
+  if (filters.has_players) {
+    filtered = filtered.filter((server) => server.player_count > 0);
+  }
+  if (typeof filters.password === "boolean") {
+    filtered = filtered.filter(
+      (server) => server.password_protected === filters.password,
+    );
+  }
+
+  return [...filtered].sort((left, right) => {
+    if (left.player_count !== right.player_count) {
+      return right.player_count - left.player_count;
+    }
+    return left.name.localeCompare(right.name);
+  });
+};
 
 export const getServers = async (
   filters: ServerBrowserListInput = {},
@@ -181,14 +280,45 @@ export const getServers = async (
   if (filters.region) params.set("region", filters.region);
   if (typeof filters.password === "boolean")
     params.set("password", String(filters.password));
-  if (typeof filters.limit === "number")
-    params.set("limit", String(filters.limit));
-  if (typeof filters.cursor === "number")
-    params.set("cursor", String(filters.cursor));
+  params.set("limit", "500");
   const qs = params.toString();
-  return await apiRequest<ServerBrowserListResponse>(
+  const apiResponse = await apiRequest<ServerBrowserListResponse>(
     `/api/v2/servers${qs ? `?${qs}` : ""}`,
   );
+
+  let registryServers: ServerBrowserEntry[] = [];
+  try {
+    registryServers = await fetchDeadworksRegistryServers();
+  } catch (error) {
+    logger.withError(error).warn("Deadworks registry request failed");
+  }
+
+  const deduplicated = new Map<string, ServerBrowserEntry>();
+  for (const server of [...apiResponse.servers, ...registryServers]) {
+    const existing = deduplicated.get(server.id);
+    if (
+      !existing ||
+      new Date(server.last_seen).getTime() >
+        new Date(existing.last_seen).getTime()
+    ) {
+      deduplicated.set(server.id, server);
+    }
+  }
+
+  const filtered = filterServerBrowserEntries(
+    Array.from(deduplicated.values()),
+    filters,
+  );
+  const cursor = filters.cursor ?? 0;
+  const limit = filters.limit ?? 100;
+  const nextCursor = cursor + limit < filtered.length ? cursor + limit : null;
+
+  return {
+    ...apiResponse,
+    servers: filtered.slice(cursor, cursor + limit),
+    total: filtered.length,
+    cursor: nextCursor,
+  };
 };
 
 export const getServer = async (id: string): Promise<ServerBrowserEntry> => {

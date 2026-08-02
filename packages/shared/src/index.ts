@@ -1,5 +1,6 @@
 export * from "./auth";
 export * from "./constants";
+export * from "./deadworks-registry";
 export * from "./dto/announcement.dto";
 export * from "./dto/crosshair.dto";
 export * from "./dto/custom-settings.dto";
