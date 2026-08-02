@@ -18,12 +18,16 @@ import {
   DownloadSimpleIcon,
   SignInIcon,
 } from "@phosphor-icons/react";
+import { invoke } from "@tauri-apps/api/core";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { MultiFileDownloadDialog } from "@/components/downloads/multi-file-download-dialog";
+import { useConfirm } from "@/components/providers/alert-dialog";
 import { useServerJoin } from "@/hooks/use-server-join";
 import { isStagingActive, useServerStage } from "@/hooks/use-server-stage";
 import logger from "@/lib/logger";
+import { usePersistedStore } from "@/lib/store";
+import { getAdditionalArgs } from "@/lib/utils";
 import { joinServer } from "./server-join/join-action";
 import RequirementRow from "./server-join/requirement-row";
 
@@ -33,47 +37,44 @@ interface ServerJoinDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const GAME_EXIT_POLL_MS = 500;
+const GAME_EXIT_TIMEOUT_MS = 20_000;
+
+const isGameRunning = async (): Promise<boolean> => {
+  try {
+    return await invoke<boolean>("is_game_running");
+  } catch (err) {
+    logger
+      .withError(err)
+      .warn("Could not determine whether Deadlock is running");
+    return false;
+  }
+};
+
+const waitForGameExit = async (): Promise<boolean> => {
+  const deadline = Date.now() + GAME_EXIT_TIMEOUT_MS;
+  while (Date.now() < deadline) {
+    if (!(await isGameRunning())) return true;
+    await new Promise((resolve) => setTimeout(resolve, GAME_EXIT_POLL_MS));
+  }
+  return false;
+};
+
 const ServerJoinDialog = ({
   server,
   open,
   onOpenChange,
 }: ServerJoinDialogProps) => {
   const { t } = useTranslation();
+  const confirm = useConfirm();
   const join = useServerJoin(server);
   const stager = useServerStage();
+  const settings = usePersistedStore((s) => s.settings);
+  const gamePresenceEnabled = usePersistedStore((s) => s.gamePresenceEnabled);
+  const getActiveProfile = usePersistedStore((s) => s.getActiveProfile);
   const [password, setPassword] = useState("");
   const [keepActiveProfile, setKeepActiveProfile] = useState(false);
-
-  if (!server) return null;
-
-  const passwordOk =
-    !server.password_protected || password.length > 0 || !!server.gateway_url;
-  const staging = isStagingActive(stager.state.phase);
-
-  const handleJoin = async () => {
-    try {
-      if (server.required_mods.length > 0) {
-        await stager.stage(server, {
-          layered: keepActiveProfile,
-          requirements: join.requirements,
-        });
-      }
-      await joinServer({
-        server,
-        password,
-        t,
-        onComplete: () => {
-          onOpenChange(false);
-          stager.reset();
-        },
-      });
-    } catch (err) {
-      logger.withError(err).error("Server join failed");
-      toast.error(
-        err instanceof Error ? err.message : t("servers.detail.unknown"),
-      );
-    }
-  };
+  const [isJoining, setIsJoining] = useState(false);
 
   const stagingLabel = useMemo(() => {
     switch (stager.state.phase) {
@@ -98,10 +99,117 @@ const ServerJoinDialog = ({
     }
   }, [stager.state.phase, stager.state.currentRequirement, t]);
 
+  if (!server) return null;
+
+  const passwordOk =
+    !server.password_protected || password.length > 0 || !!server.gateway_url;
+  const staging = isStagingActive(stager.state.phase);
+  const busy = staging || isJoining;
+  const needsMods = server.required_mods.length > 0;
+
+  const reportOutcome = (
+    outcome: Awaited<ReturnType<typeof joinServer>>,
+  ): void => {
+    switch (outcome.kind) {
+      case "gateway":
+        toast.info(t("servers.detail.openExternal"));
+        return;
+      case "launched":
+        toast.success(t("servers.join.launched", { name: server.name }));
+        if (outcome.passwordSkipped) {
+          toast.warning(t("servers.join.passwordSkipped"), {
+            duration: 15_000,
+          });
+        }
+        return;
+      case "steam-url":
+        toast.success(t("servers.join.launched", { name: server.name }));
+        return;
+      case "manual":
+        toast.warning(t("servers.join.manual", { code: outcome.code }), {
+          duration: 20_000,
+        });
+    }
+  };
+
+  /**
+   * gameinfo.gi is only read at startup, so anything we change for this
+   * server needs Deadlock to be closed first.
+   */
+  const ensureGameClosed = async (): Promise<boolean> => {
+    if (!(await isGameRunning())) return true;
+
+    const shouldRestart = await confirm({
+      title: t("servers.join.gameRunning.title"),
+      body: t("servers.join.gameRunning.body"),
+      actionButton: t("servers.join.gameRunning.restart"),
+      cancelButton: t("common.cancel"),
+      actionButtonVariant: "default",
+    });
+    if (!shouldRestart) return false;
+
+    toast.info(t("servers.join.stopping"));
+    try {
+      await invoke("stop_game");
+    } catch (err) {
+      logger.withError(err).warn("Failed to stop the game before joining");
+    }
+
+    if (await waitForGameExit()) return true;
+
+    toast.error(t("servers.join.gameStillRunning"));
+    return false;
+  };
+
+  const handleJoin = async () => {
+    setIsJoining(true);
+    try {
+      if (!server.gateway_url && !(await ensureGameClosed())) {
+        return;
+      }
+
+      if (needsMods) {
+        await stager.stage(server, {
+          layered: keepActiveProfile,
+          requirements: join.requirements,
+        });
+      } else if (!server.gateway_url) {
+        // A previous join may have left a server addons path in gameinfo.gi;
+        // this server needs none, so put the user's own profile back.
+        try {
+          await invoke("cleanup_stale_server_gameinfo", {
+            activeProfileFolder: getActiveProfile()?.folderName ?? null,
+          });
+        } catch (err) {
+          logger
+            .withError(err)
+            .warn("Stale server gameinfo cleanup failed; joining anyway");
+        }
+      }
+
+      const additionalArgs = await getAdditionalArgs(
+        Object.values(settings),
+        gamePresenceEnabled,
+      );
+
+      const outcome = await joinServer({ server, password, additionalArgs });
+      reportOutcome(outcome);
+      onOpenChange(false);
+      stager.reset();
+    } catch (err) {
+      logger.withError(err).error("Server join failed");
+      toast.error(
+        err instanceof Error ? err.message : t("servers.detail.unknown"),
+      );
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
   const customDownloads = stager.state.pendingCustomDownloads;
   const fileSelection = stager.state.pendingFileSelection;
   const showCancelDisabled =
-    staging &&
+    busy &&
     stager.state.phase !== "awaiting-custom-confirm" &&
     stager.state.phase !== "awaiting-file-selection";
 
@@ -162,7 +270,7 @@ const ServerJoinDialog = ({
             <div className='flex items-start gap-2 rounded-md border border-border/60 bg-card/40 p-2'>
               <Checkbox
                 checked={keepActiveProfile}
-                disabled={staging}
+                disabled={busy}
                 id='layered-mods'
                 onCheckedChange={(v) => setKeepActiveProfile(v === true)}
               />
@@ -172,13 +280,6 @@ const ServerJoinDialog = ({
                 {t("servers.detail.keepMyMods")}
               </Label>
             </div>
-
-            {staging && stagingLabel && (
-              <p className='text-xs text-muted-foreground'>{stagingLabel}</p>
-            )}
-            {stager.state.phase === "error" && stager.state.error && (
-              <p className='text-xs text-red-400'>{stager.state.error}</p>
-            )}
 
             {customDownloads && customDownloads.length > 0 && (
               <div className='space-y-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-3'>
@@ -218,6 +319,35 @@ const ServerJoinDialog = ({
           </section>
         )}
 
+        {!server.gateway_url && (
+          <div className='space-y-1.5 rounded-md border border-border/60 bg-card/40 p-3'>
+            <p className='text-xs font-semibold text-foreground'>
+              {t("servers.join.summaryTitle")}
+            </p>
+            <ol className='list-inside list-decimal space-y-0.5 text-[11px] text-muted-foreground'>
+              {needsMods ? (
+                <li>
+                  {t("servers.join.summaryMods", {
+                    count: server.required_mods.length,
+                  })}
+                </li>
+              ) : (
+                <li>{t("servers.join.summaryRestore")}</li>
+              )}
+              <li>{t("servers.join.summaryLaunch")}</li>
+            </ol>
+          </div>
+        )}
+
+        {busy && (stagingLabel || isJoining) && (
+          <p className='text-xs text-muted-foreground'>
+            {stagingLabel ?? t("servers.join.launching")}
+          </p>
+        )}
+        {stager.state.phase === "error" && stager.state.error && (
+          <p className='text-xs text-red-400'>{stager.state.error}</p>
+        )}
+
         <DialogFooter>
           <Button
             disabled={showCancelDisabled}
@@ -226,12 +356,12 @@ const ServerJoinDialog = ({
               stager.reset();
             }}
             variant='ghost'>
-            Cancel
+            {t("common.cancel")}
           </Button>
           <Button
             className='gap-2'
-            disabled={!passwordOk || staging || join.isLoading}
-            isLoading={staging}
+            disabled={!passwordOk || busy || join.isLoading}
+            isLoading={busy}
             onClick={handleJoin}>
             {server.gateway_url ? (
               <>

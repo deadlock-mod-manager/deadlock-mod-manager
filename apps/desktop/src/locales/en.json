@@ -164,6 +164,24 @@
       "unknown": "Unknown",
       "keepMyMods": "Keep my installed mods enabled (layer server mods on top of your active profile)"
     },
+    "join": {
+      "summaryTitle": "What happens next",
+      "summaryMods_one": "{{count}} required mod is downloaded and enabled for this server",
+      "summaryMods_other": "{{count}} required mods are downloaded and enabled for this server",
+      "summaryRestore": "Your own mod profile stays active",
+      "summaryLaunch": "Deadlock starts and connects to the server automatically",
+      "launching": "Starting Deadlock and connecting...",
+      "launched": "Deadlock is starting and will connect to {{name}}",
+      "stopping": "Closing Deadlock...",
+      "manual": "Couldn't connect automatically. The connect code is copied — open Deadlock, press F7 and paste: connect {{code}}",
+      "passwordSkipped": "Your password can't be passed at launch. Once in Deadlock, press F7 and type: password <your password>",
+      "gameStillRunning": "Deadlock is still running. Close it and try joining again.",
+      "gameRunning": {
+        "title": "Deadlock needs to restart",
+        "body": "Server mods are only loaded when the game starts. Deadlock will be closed and restarted directly into this server.",
+        "restart": "Close and join"
+      }
+    },
     "staging": {
       "creatingFolder": "Preparing server addons folder...",
       "installing": "Installing required mods...",
@@ -188,7 +206,10 @@
       "title": "No servers found",
       "description": "Try clearing some filters or check back in a moment. The list refreshes automatically.",
       "errorTitle": "Could not load servers",
-      "errorDescription": "We couldn't load servers right now. Please try again in a moment."
+      "errorDescription": "We couldn't load servers right now. Please try again in a moment.",
+      "registryDegraded": "The Deadworks server registry is unreachable right now, so its servers are missing from this list. This is an outage on their side — retrying won't help.",
+      "registryStale_one": "The Deadworks server registry is unreachable. Its servers are shown from a snapshot {{minutes}} minute old and may already be gone.",
+      "registryStale_other": "The Deadworks server registry is unreachable. Its servers are shown from a snapshot {{minutes}} minutes old and may already be gone."
     },
     "relayBar": {
       "online": "online",

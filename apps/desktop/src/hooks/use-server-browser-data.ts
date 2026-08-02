@@ -84,6 +84,10 @@ export const useServerBrowserData = (filters: ServerFiltersValue) => {
     ]),
   ).sort();
 
+  const registryDegraded = serversQuery.data?.registry_degraded ?? false;
+  const registrySnapshotAgeMs =
+    serversQuery.data?.registry_snapshot_age_ms ?? null;
+
   const allRelaysFailed =
     !!serversQuery.data &&
     serversQuery.data.relays_failed > 0 &&
@@ -101,5 +105,7 @@ export const useServerBrowserData = (filters: ServerFiltersValue) => {
     pings,
     pingsQuery,
     allRelaysFailed,
+    registryDegraded,
+    registrySnapshotAgeMs,
   };
 };

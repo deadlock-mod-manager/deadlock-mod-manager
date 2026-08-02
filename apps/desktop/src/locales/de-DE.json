@@ -159,6 +159,24 @@
       "unknown": "Unbekannt",
       "keepMyMods": "Meine installierten Mods aktiviert halten (Die Server Mods über dem aktiven Profil laden)"
     },
+    "join": {
+      "summaryTitle": "Was jetzt passiert",
+      "summaryMods_one": "{{count}} benötigter Mod wird für diesen Server heruntergeladen und aktiviert",
+      "summaryMods_other": "{{count}} benötigte Mods werden für diesen Server heruntergeladen und aktiviert",
+      "summaryRestore": "Dein eigenes Mod-Profil bleibt aktiv",
+      "summaryLaunch": "Deadlock startet und verbindet sich automatisch mit dem Server",
+      "launching": "Deadlock wird gestartet und verbindet sich...",
+      "launched": "Deadlock startet und verbindet sich mit {{name}}",
+      "stopping": "Deadlock wird beendet...",
+      "manual": "Automatisches Verbinden hat nicht geklappt. Der Connect-Code ist kopiert – öffne Deadlock, drücke F7 und füge ein: connect {{code}}",
+      "passwordSkipped": "Dein Passwort lässt sich nicht beim Start übergeben. Drücke in Deadlock F7 und tippe: password <dein Passwort>",
+      "gameStillRunning": "Deadlock läuft noch. Beende das Spiel und versuche es erneut.",
+      "gameRunning": {
+        "title": "Deadlock muss neu starten",
+        "body": "Server-Mods werden nur beim Spielstart geladen. Deadlock wird beendet und direkt auf diesem Server neu gestartet.",
+        "restart": "Beenden und beitreten"
+      }
+    },
     "staging": {
       "creatingFolder": "Bereite den Ordner für Server-Addons vor...",
       "installing": "Benötigte Mods werden installiert...",
@@ -183,7 +201,10 @@
       "title": "Keine Server gefunden",
       "description": "Versuchen Sie einige Filter zu löschen oder versuchen Sie es gleich erneut. Die Liste aktualisiert sich automatisch.",
       "errorTitle": "Server konnten nicht geladen werden",
-      "errorDescription": "Wir können die Server momentan nicht laden. Bitte versuchen Sie es in einem Moment erneut."
+      "errorDescription": "Wir können die Server momentan nicht laden. Bitte versuchen Sie es in einem Moment erneut.",
+      "registryDegraded": "Die Deadworks-Serverliste ist gerade nicht erreichbar, deshalb fehlen deren Server in dieser Liste. Die Störung liegt auf deren Seite – erneutes Laden hilft nicht.",
+      "registryStale_one": "Die Deadworks-Serverliste ist nicht erreichbar. Deren Server stammen aus einem {{minutes}} Minute alten Stand und existieren möglicherweise nicht mehr.",
+      "registryStale_other": "Die Deadworks-Serverliste ist nicht erreichbar. Deren Server stammen aus einem {{minutes}} Minuten alten Stand und existieren möglicherweise nicht mehr."
     },
     "relayBar": {
       "online": "online",

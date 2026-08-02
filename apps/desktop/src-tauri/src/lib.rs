@@ -115,6 +115,7 @@ pub fn run() {
       commands::mods::install_mod,
       commands::game::stop_game,
       commands::game::start_game,
+      commands::game::launch_game_direct,
       commands::folders::show_in_folder,
       commands::folders::show_mod_in_store,
       commands::folders::show_mod_in_game,

@@ -34,6 +34,8 @@ const Servers = () => {
     serversQuery,
     pings,
     allRelaysFailed,
+    registryDegraded,
+    registrySnapshotAgeMs,
   } = useServerBrowserData(filters);
 
   const selectedServer: ServerBrowserEntry | null = useMemo(() => {
@@ -72,6 +74,22 @@ const Servers = () => {
           <WarningIcon className='size-4' />
           <AlertDescription>
             {t("servers.empty.errorDescription")}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {registryDegraded && (
+        <Alert>
+          <WarningIcon className='size-4' />
+          <AlertDescription>
+            {registrySnapshotAgeMs === null
+              ? t("servers.empty.registryDegraded")
+              : t("servers.empty.registryStale", {
+                  minutes: Math.max(
+                    1,
+                    Math.round(registrySnapshotAgeMs / 60000),
+                  ),
+                })}
           </AlertDescription>
         </Alert>
       )}

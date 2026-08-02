@@ -10,6 +10,9 @@ mock.module("@tauri-apps/plugin-clipboard-manager", () => ({
 mock.module("@tauri-apps/plugin-opener", () => ({
   openUrl: async () => {},
 }));
+mock.module("@tauri-apps/api/core", () => ({
+  invoke: async () => {},
+}));
 mock.module("@/lib/logger", () => {
   const logger = {
     withError: () => ({ error: () => {}, warn: () => {} }),
@@ -21,6 +24,8 @@ mock.module("@/lib/logger", () => {
 });
 
 const { buildSteamConnectUrl } = await import("./join-action");
+const { buildConnectArgs, normalizeConnectCode } =
+  await import("./connect-args");
 
 const defaultServer: ServerBrowserEntry = {
   id: "srv1",
@@ -54,6 +59,81 @@ const baseServer = (
 ): ServerBrowserEntry => ({
   ...defaultServer,
   ...overrides,
+});
+
+describe("normalizeConnectCode", () => {
+  it("returns null for empty or whitespace codes", () => {
+    expect(normalizeConnectCode("")).toBeNull();
+    expect(normalizeConnectCode("   ")).toBeNull();
+    expect(normalizeConnectCode(undefined)).toBeNull();
+  });
+
+  it("accepts ipv4 host:port", () => {
+    expect(normalizeConnectCode("  10.0.0.1:27015  ")).toBe("10.0.0.1:27015");
+  });
+
+  it("accepts hostname:port", () => {
+    expect(normalizeConnectCode("eu1.example.net:27015")).toBe(
+      "eu1.example.net:27015",
+    );
+  });
+
+  it("wraps a bare lobby id in brackets", () => {
+    expect(normalizeConnectCode("76561198000000000")).toBe(
+      "[76561198000000000]",
+    );
+    expect(normalizeConnectCode("[76561198000000000]")).toBe(
+      "[76561198000000000]",
+    );
+  });
+
+  it("rejects out-of-range octets and ports", () => {
+    expect(normalizeConnectCode("999.0.0.1:27015")).toBeNull();
+    expect(normalizeConnectCode("10.0.0.1:70000")).toBeNull();
+    expect(normalizeConnectCode("10.0.0.1:0")).toBeNull();
+  });
+
+  it("rejects codes that could inject extra launch options", () => {
+    expect(normalizeConnectCode("10.0.0.1:27015 +exec evil")).toBeNull();
+    expect(normalizeConnectCode('10.0.0.1:27015"')).toBeNull();
+    expect(normalizeConnectCode("10.0.0.1:27015; rm -rf /")).toBeNull();
+  });
+});
+
+describe("buildConnectArgs", () => {
+  it("returns null when the connect code is unusable", () => {
+    expect(buildConnectArgs(baseServer({ connect_code: "" }), "")).toBeNull();
+  });
+
+  it("builds a bare +connect for open servers", () => {
+    expect(buildConnectArgs(baseServer(), "")?.args).toBe(
+      "+connect 203.0.113.10:27015",
+    );
+  });
+
+  it("ignores a password on servers that don't ask for one", () => {
+    expect(buildConnectArgs(baseServer(), "hunter2")?.args).toBe(
+      "+connect 203.0.113.10:27015",
+    );
+  });
+
+  it("appends +password for password-protected servers", () => {
+    const result = buildConnectArgs(
+      baseServer({ password_protected: true }),
+      "hunter2",
+    );
+    expect(result?.args).toBe("+connect 203.0.113.10:27015 +password hunter2");
+    expect(result?.passwordSkipped).toBe(false);
+  });
+
+  it("skips passwords that can't be passed as a launch option", () => {
+    const result = buildConnectArgs(
+      baseServer({ password_protected: true }),
+      "p ss wd",
+    );
+    expect(result?.args).toBe("+connect 203.0.113.10:27015");
+    expect(result?.passwordSkipped).toBe(true);
+  });
 });
 
 describe("buildSteamConnectUrl", () => {

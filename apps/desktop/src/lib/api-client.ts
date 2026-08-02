@@ -171,8 +171,72 @@ export const getApiHealth = async () => {
   }>("/");
 };
 
-let registryServersPromise: Promise<ServerBrowserEntry[]> | null = null;
+const REGISTRY_CACHE_MS = 10_000;
+// The registry has gone fully down before (Cloudflare quota exhaustion returns
+// 429 on every route). Polling it every 10s through an outage is pointless, so
+// failures back off instead.
+const REGISTRY_BACKOFF_MS = 60_000;
+// How long a snapshot may still be shown once the registry is unreachable.
+// Quota exhaustion lasts until the provider's daily reset, so a 30 minute
+// window would expire mid-outage; the UI shows the snapshot's age so stale
+// entries stay recognisable as such.
+const REGISTRY_MAX_STALE_MS = 3 * 60 * 60_000;
+const REGISTRY_SNAPSHOT_KEY = "deadworks-registry-snapshot";
+
+export type DeadworksRegistryResult = {
+  servers: ServerBrowserEntry[];
+  /** True when these servers are a stale snapshot because the refresh failed. */
+  degraded: boolean;
+  /** Age of the served snapshot in ms, when it is a stale one. */
+  snapshotAgeMs: number | null;
+};
+
+type RegistrySnapshot = {
+  servers: ServerBrowserEntry[];
+  fetchedAt: number;
+};
+
+let registryPromise: Promise<DeadworksRegistryResult> | null = null;
 let registryCacheExpiresAt = 0;
+let registrySnapshot: RegistrySnapshot | null = null;
+
+const readPersistedSnapshot = (): RegistrySnapshot | null => {
+  if (typeof localStorage === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(REGISTRY_SNAPSHOT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as RegistrySnapshot;
+    if (!Array.isArray(parsed?.servers) || typeof parsed.fetchedAt !== "number")
+      return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+const persistSnapshot = (snapshot: RegistrySnapshot): void => {
+  if (typeof localStorage === "undefined") return;
+  try {
+    localStorage.setItem(REGISTRY_SNAPSHOT_KEY, JSON.stringify(snapshot));
+  } catch (error) {
+    logger
+      .withError(error)
+      .warn("Could not persist Deadworks registry snapshot");
+  }
+};
+
+/** The newest snapshot we're still willing to show, in-memory or from disk. */
+const usableSnapshot = (): {
+  servers: ServerBrowserEntry[];
+  ageMs: number | null;
+} => {
+  const snapshot = registrySnapshot ?? readPersistedSnapshot();
+  if (!snapshot) return { servers: [], ageMs: null };
+  const ageMs = Date.now() - snapshot.fetchedAt;
+  if (ageMs > REGISTRY_MAX_STALE_MS) return { servers: [], ageMs: null };
+  registrySnapshot = snapshot;
+  return { servers: snapshot.servers, ageMs };
+};
 
 const requestDeadworksRegistryServers = async (): Promise<
   ServerBrowserEntry[]
@@ -182,24 +246,45 @@ const requestDeadworksRegistryServers = async (): Promise<
     headers: { Accept: "application/json" },
   });
   if (!response.ok) {
-    logger
-      .withMetadata({ status: response.status, endpoint })
-      .warn("Deadworks registry request failed");
-    return [];
+    throw new Error(
+      `Deadworks registry responded ${response.status} for ${endpoint}`,
+    );
   }
 
   const payload = DeadworksRegistryResponseSchema.parse(await response.json());
   return normalizeDeadworksRegistryServers(payload, DEADWORKS_REGISTRY_URL);
 };
 
-const fetchDeadworksRegistryServers = (): Promise<ServerBrowserEntry[]> => {
-  if (registryServersPromise && Date.now() < registryCacheExpiresAt) {
-    return registryServersPromise;
+/**
+ * A failed refresh must not blank the browser: the last successful snapshot is
+ * served instead, flagged as degraded so the UI can say why it may be stale.
+ */
+const loadDeadworksRegistryServers =
+  async (): Promise<DeadworksRegistryResult> => {
+    try {
+      const servers = await requestDeadworksRegistryServers();
+      registrySnapshot = { servers, fetchedAt: Date.now() };
+      persistSnapshot(registrySnapshot);
+      registryCacheExpiresAt = Date.now() + REGISTRY_CACHE_MS;
+      return { servers, degraded: false, snapshotAgeMs: null };
+    } catch (error) {
+      logger.withError(error).warn("Deadworks registry request failed");
+      registryCacheExpiresAt = Date.now() + REGISTRY_BACKOFF_MS;
+      const { servers, ageMs } = usableSnapshot();
+      return { servers, degraded: true, snapshotAgeMs: ageMs };
+    }
+  };
+
+const fetchDeadworksRegistryServers = (): Promise<DeadworksRegistryResult> => {
+  if (registryPromise && Date.now() < registryCacheExpiresAt) {
+    return registryPromise;
   }
 
-  registryCacheExpiresAt = Date.now() + 10_000;
-  registryServersPromise = requestDeadworksRegistryServers();
-  return registryServersPromise;
+  // Claim the cache window up front so concurrent callers share this request;
+  // the real expiry is set once the outcome is known.
+  registryCacheExpiresAt = Date.now() + REGISTRY_CACHE_MS;
+  registryPromise = loadDeadworksRegistryServers();
+  return registryPromise;
 };
 
 export const getServerFacets =
@@ -208,21 +293,16 @@ export const getServerFacets =
       "/api/v2/servers/facets",
     );
 
-    try {
-      const registryServers = await fetchDeadworksRegistryServers();
-      const regions = Array.from(
-        new Set([
-          ...apiFacets.regions,
-          ...registryServers
-            .map((server) => server.source_region ?? "")
-            .filter(Boolean),
-        ]),
-      ).sort();
-      return { ...apiFacets, regions };
-    } catch (error) {
-      logger.withError(error).warn("Deadworks registry facets request failed");
-      return apiFacets;
-    }
+    const { servers: registryServers } = await fetchDeadworksRegistryServers();
+    const regions = Array.from(
+      new Set([
+        ...apiFacets.regions,
+        ...registryServers
+          .map((server) => server.source_region ?? "")
+          .filter(Boolean),
+      ]),
+    ).sort();
+    return { ...apiFacets, regions };
   };
 
 const filterServerBrowserEntries = (
@@ -269,9 +349,16 @@ const filterServerBrowserEntries = (
   });
 };
 
+export type ServerBrowserListResult = ServerBrowserListResponse & {
+  /** The Deadworks registry couldn't be refreshed; its servers may be stale. */
+  registry_degraded: boolean;
+  /** Age of the stale registry snapshot in ms, if one is being shown. */
+  registry_snapshot_age_ms: number | null;
+};
+
 export const getServers = async (
   filters: ServerBrowserListInput = {},
-): Promise<ServerBrowserListResponse> => {
+): Promise<ServerBrowserListResult> => {
   const params = new URLSearchParams();
   if (filters.game_mode) params.set("game_mode", filters.game_mode);
   if (typeof filters.has_players === "boolean")
@@ -286,12 +373,11 @@ export const getServers = async (
     `/api/v2/servers${qs ? `?${qs}` : ""}`,
   );
 
-  let registryServers: ServerBrowserEntry[] = [];
-  try {
-    registryServers = await fetchDeadworksRegistryServers();
-  } catch (error) {
-    logger.withError(error).warn("Deadworks registry request failed");
-  }
+  const {
+    servers: registryServers,
+    degraded: registryDegraded,
+    snapshotAgeMs,
+  } = await fetchDeadworksRegistryServers();
 
   const deduplicated = new Map<string, ServerBrowserEntry>();
   for (const server of [...apiResponse.servers, ...registryServers]) {
@@ -318,6 +404,8 @@ export const getServers = async (
     servers: filtered.slice(cursor, cursor + limit),
     total: filtered.length,
     cursor: nextCursor,
+    registry_degraded: registryDegraded,
+    registry_snapshot_age_ms: snapshotAgeMs,
   };
 };
 

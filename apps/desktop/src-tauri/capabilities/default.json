@@ -28,6 +28,14 @@
     "fs:allow-applocaldata-write-recursive",
     "fs:allow-applocaldata-meta-recursive",
     "opener:default",
+    {
+      "identifier": "opener:allow-open-url",
+      "allow": [
+        {
+          "url": "steam://*"
+        }
+      ]
+    },
     "clipboard-manager:allow-write-text",
     "deep-link:default",
     "machine-uid:default",
