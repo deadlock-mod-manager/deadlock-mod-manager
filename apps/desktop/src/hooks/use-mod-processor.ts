@@ -46,14 +46,44 @@ const getSourceFilePath = (file: File): string | null => {
   return typeof filePath === "string" && filePath.length > 0 ? filePath : null;
 };
 
-const readSourceFileBytes = async (file: File): Promise<Uint8Array> => {
+/**
+ * Copies a path-backed source file into the mods store entirely in the backend.
+ * Nothing is streamed through the command channel, so multi-hundred-MB VPKs
+ * import without stalling the webview.
+ */
+const copySourceFile = (
+  filePath: string,
+  targetDir: string,
+  fileName: string,
+): Promise<string> =>
+  invoke<string>("copy_dropped_mod_file", { filePath, targetDir, fileName });
+
+/**
+ * Fallback for files that only exist as browser blobs (e.g. `<input type=file>`
+ * selections), where no filesystem path is available.
+ */
+const writeSourceFileBytes = async (
+  file: File,
+  targetDir: string,
+  fileName: string,
+): Promise<void> => {
+  const bytes = await fileToBytes(file);
+  await writeFileBytes(await join(targetDir, fileName), bytes);
+};
+
+const storeSourceFile = async (
+  file: File,
+  targetDir: string,
+  fileName: string,
+): Promise<void> => {
   const filePath = getSourceFilePath(file);
-  if (!filePath) {
-    return fileToBytes(file);
+
+  if (filePath) {
+    await copySourceFile(filePath, targetDir, fileName);
+    return;
   }
 
-  const bytes = await invoke<number[]>("read_dropped_mod_file", { filePath });
-  return new Uint8Array(bytes);
+  await writeSourceFileBytes(file, targetDir, fileName);
 };
 
 export const useModProcessor = () => {
@@ -73,7 +103,44 @@ export const useModProcessor = () => {
   ): Promise<void> => {
     const fileBaseName = getFileBaseName(file);
     const fileName = fileBaseName.toLowerCase();
-    const fileBytes = await readSourceFileBytes(file);
+    const sourcePath = getSourceFilePath(file);
+
+    if (sourcePath) {
+      const format = fileName.split(".").pop()?.toUpperCase();
+      const isKeptArchive =
+        fileName.endsWith(".rar") || fileName.endsWith(".7z");
+
+      // RAR/7z archives stay in the mod directory so a later selective install
+      // can re-extract them; ZIPs are extracted straight from their source.
+      let archivePath = sourcePath;
+      if (isKeptArchive) {
+        setProcessing(true, t("addMods.storingArchive", { format }));
+        archivePath = await copySourceFile(sourcePath, modDir, fileBaseName);
+      }
+
+      try {
+        setProcessing(true, t("addMods.extractingArchive", { format }));
+        await invoke("extract_archive", {
+          archivePath,
+          targetPath: filesDir,
+        });
+        toast.success(t("addMods.archiveExtractedSuccess", { format }));
+      } catch (error) {
+        logger
+          .withMetadata({ archivePath })
+          .withError(error)
+          .error("Failed to extract dropped archive");
+        toast.error(t("addMods.failedToExtractArchive"));
+
+        if (!isKeptArchive) {
+          await copySourceFile(sourcePath, modDir, fileBaseName);
+        }
+      }
+
+      return;
+    }
+
+    const fileBytes = await fileToBytes(file);
 
     if (fileName.endsWith(".zip")) {
       const zip = await JSZip.loadAsync(fileBytes);
@@ -196,20 +263,29 @@ export const useModProcessor = () => {
     try {
       if (detectedSource.kind === "vpk") {
         const fileName = getFileBaseName(detectedSource.file);
-        await writeFileBytes(
-          await join(filesDir, fileName),
-          await readSourceFileBytes(detectedSource.file),
-        );
+        await storeSourceFile(detectedSource.file, filesDir, fileName);
       } else {
         await processArchive(detectedSource.file, filesDir, modDir);
       }
-    } catch {
+    } catch (error) {
       const fileName = getFileBaseName(detectedSource.file);
+      logger
+        .withMetadata({ modId, fileName })
+        .withError(error)
+        .error("Failed to process mod source file");
       toast.error(t("addMods.failedToProcessArchive"));
-      await writeFileBytes(
-        await join(modDir, fileName),
-        await readSourceFileBytes(detectedSource.file),
-      );
+
+      try {
+        await storeSourceFile(detectedSource.file, modDir, fileName);
+      } catch (fallbackError) {
+        logger
+          .withMetadata({ modId, fileName })
+          .withError(fallbackError)
+          .error("Failed to store mod source file");
+        toast.error((fallbackError as Error)?.message || "Unknown error");
+        setProcessing(false);
+        return;
+      }
     }
 
     setProcessing(true, t("addMods.validatingFiles"));

@@ -241,7 +241,7 @@ pub fn run() {
       commands::logs::parse_crash_dump,
       commands::logs::parse_latest_crash_dump,
       commands::logs::open_latest_crash_dump_parsed,
-      commands::archive::read_dropped_mod_file,
+      commands::archive::copy_dropped_mod_file,
       commands::app::check_filesystem_writable,
       commands::downloads::test_fileserver_latency,
       proxy::set_proxy_config,

@@ -71,8 +71,16 @@ pub async fn copy_selected_vpks_from_archive(
   let mod_dir = mods_path.join(&mod_id);
 
   let extracted_dir = mod_dir.join("extracted");
+  let files_dir = mod_dir.join("files");
 
-  if !extracted_dir.exists() {
+  // The extracted directory is temporary and gets cleaned up afterwards; the
+  // "files" directory of a locally imported mod must be kept.
+  let mut source_dir = extracted_dir.clone();
+  let mut cleanup_source_dir = true;
+
+  if extracted_dir.exists() {
+    log::info!("Using already-extracted directory: {extracted_dir:?}");
+  } else {
     log::warn!("Extracted directory not found, falling back to archive extraction");
 
     let extractor = ArchiveExtractor::new();
@@ -87,13 +95,21 @@ pub async fn copy_selected_vpks_from_archive(
       }
     }
 
-    let archive_path = archive_path.ok_or(Error::ModFileNotFound)?;
-
-    std::fs::create_dir_all(&extracted_dir)?;
-    log::info!("Extracting archive: {archive_path:?}");
-    extractor.extract_archive(&archive_path, &extracted_dir)?;
-  } else {
-    log::info!("Using already-extracted directory: {extracted_dir:?}");
+    match archive_path {
+      Some(archive_path) => {
+        std::fs::create_dir_all(&extracted_dir)?;
+        log::info!("Extracting archive: {archive_path:?}");
+        extractor.extract_archive(&archive_path, &extracted_dir)?;
+      }
+      // Locally imported mods keep their VPKs in "files" and may not store an
+      // archive at all, so select from there instead of failing.
+      None if files_dir.exists() => {
+        log::info!("No archive found, selecting VPKs from local files directory: {files_dir:?}");
+        source_dir = files_dir;
+        cleanup_source_dir = false;
+      }
+      None => return Err(Error::ModFileNotFound),
+    }
   }
 
   let game_path = mod_manager
@@ -120,14 +136,19 @@ pub async fn copy_selected_vpks_from_archive(
 
   let vpk_manager = VpkManager::new();
   vpk_manager.copy_selected_vpks_with_prefix(
-    &extracted_dir,
+    &source_dir,
     &destination_path,
     &mod_id,
     &file_tree,
   )?;
 
-  log::info!("Removing extracted directory: {extracted_dir:?}");
-  std::fs::remove_dir_all(&extracted_dir)?;
+  if !cleanup_source_dir {
+    log::info!("Successfully copied selected VPKs for mod: {}", mod_id);
+    return Ok(());
+  }
+
+  log::info!("Removing extracted directory: {source_dir:?}");
+  std::fs::remove_dir_all(&source_dir)?;
 
   let extractor = ArchiveExtractor::new();
   for entry in std::fs::read_dir(&mod_dir)? {
@@ -244,14 +265,96 @@ pub async fn replace_mod_vpks(
   Ok(())
 }
 
+fn sanitize_destination_file_name(name: &str) -> Result<String, Error> {
+  let trimmed = name.trim();
+
+  if trimmed.is_empty()
+    || trimmed == "."
+    || trimmed == ".."
+    || trimmed.contains(['/', '\\'])
+    || trimmed.contains(':')
+  {
+    return Err(Error::InvalidInput(format!(
+      "Invalid destination file name: {name}"
+    )));
+  }
+
+  Ok(trimmed.to_string())
+}
+
+/// Copy a dropped/selected mod file into the mods store without moving its
+/// contents through the command channel. Large VPKs (hundreds of MB) would
+/// otherwise be serialized as a JSON byte array, which stalls the webview.
 #[tauri::command]
-pub async fn read_dropped_mod_file(file_path: String) -> Result<Vec<u8>, Error> {
-  let validated_path = crate::dropped_mod_file::validate_dropped_mod_file_path(&file_path)?;
+pub async fn copy_dropped_mod_file(
+  file_path: String,
+  target_dir: String,
+  file_name: Option<String>,
+) -> Result<String, Error> {
+  let source_path = crate::dropped_mod_file::validate_dropped_mod_file_path(&file_path)?;
+
+  let destination_name = match file_name {
+    Some(name) => sanitize_destination_file_name(&name)?,
+    None => source_path
+      .file_name()
+      .and_then(|name| name.to_str())
+      .map(|name| name.to_string())
+      .ok_or_else(|| {
+        Error::InvalidInput(format!(
+          "Could not determine file name for '{}'",
+          source_path.display()
+        ))
+      })?,
+  };
+
+  let target_dir = PathBuf::from(&target_dir);
+  std::fs::create_dir_all(&target_dir)?;
+
+  let validated_target_dir = {
+    let mod_manager = MANAGER.lock().unwrap();
+    mod_manager.validate_extract_target_path(&target_dir)?
+  };
+
+  let destination_path = validated_target_dir.join(&destination_name);
 
   log::info!(
-    "Reading dropped mod file from path: {}",
-    validated_path.display()
+    "Copying dropped mod file {} -> {}",
+    source_path.display(),
+    destination_path.display()
   );
 
-  tokio::fs::read(&validated_path).await.map_err(Error::from)
+  let copied_bytes = tokio::fs::copy(&source_path, &destination_path).await?;
+  log::info!(
+    "Copied {copied_bytes} bytes to {}",
+    destination_path.display()
+  );
+
+  Ok(destination_path.to_string_lossy().to_string())
+}
+
+#[cfg(test)]
+mod tests {
+  use super::sanitize_destination_file_name;
+  use crate::errors::Error;
+
+  #[test]
+  fn accepts_plain_file_names() {
+    assert_eq!(
+      sanitize_destination_file_name(" my mod.vpk ").expect("plain name should be accepted"),
+      "my mod.vpk"
+    );
+  }
+
+  #[test]
+  fn rejects_path_separators_and_traversal() {
+    for name in ["..", ".", "", "sub/mod.vpk", "sub\\mod.vpk", "C:mod.vpk"] {
+      assert!(
+        matches!(
+          sanitize_destination_file_name(name),
+          Err(Error::InvalidInput(_))
+        ),
+        "expected '{name}' to be rejected"
+      );
+    }
+  }
 }
