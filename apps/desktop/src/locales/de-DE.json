@@ -175,7 +175,9 @@
         "title": "Deadlock muss neu starten",
         "body": "Server-Mods werden nur beim Spielstart geladen. Deadlock wird beendet und direkt auf diesem Server neu gestartet.",
         "restart": "Beenden und beitreten"
-      }
+      },
+      "launchedWatched": "{{name}} wird gestartet — DMM verbindet dich, sobald das Spiel bereit ist",
+      "summaryServerContent": "Maps und Addons dieses Servers herunterladen und aktivieren"
     },
     "staging": {
       "creatingFolder": "Bereite den Ordner für Server-Addons vor...",
@@ -188,7 +190,8 @@
       "customConfirm": "Downloads erlauben",
       "customSkip": "Benutzerdefinierte Mods überspringen",
       "downloadingCustom": "Lade benutzerdefinierte Provider-Mods herunter...",
-      "applying": "Server-Mods werden auf gameinfo.gi appliziert..."
+      "applying": "Server-Mods werden auf gameinfo.gi appliziert...",
+      "downloadingServerContent": "Maps und Addons dieses Servers werden heruntergeladen..."
     },
     "requirementRow": {
       "customProvider": "Benutzerdefiniert",
@@ -218,6 +221,11 @@
       "description": "Teile ihn hier damit andere Spieler ihn finden und ihm beitreten können.",
       "action": "Server auflisten",
       "openError": "Konnte die Server-Hosting-Seite nicht öffnen."
+    },
+    "connect": {
+      "retrying": "Deadlock hat sich nicht selbst verbunden — neuer Versuch mit {{address}}",
+      "connected": "Mit {{address}} verbunden",
+      "timedOut": "Automatischer Beitritt zu {{address}} fehlgeschlagen. Öffne die Konsole im Spiel und führe aus: connect {{address}}"
     }
   },
   "menu": {

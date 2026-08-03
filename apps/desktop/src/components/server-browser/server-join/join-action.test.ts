@@ -23,7 +23,7 @@ mock.module("@/lib/logger", () => {
   };
 });
 
-const { buildSteamConnectUrl } = await import("./join-action");
+const { buildSteamConnectUrl, withConsoleLog } = await import("./join-action");
 const { buildConnectArgs, normalizeConnectCode } =
   await import("./connect-args");
 
@@ -173,5 +173,31 @@ describe("buildSteamConnectUrl", () => {
     expect(buildSteamConnectUrl(server, "")).toBe(
       "steam://connect/10.0.0.1:27015",
     );
+  });
+
+  it("prefers a resolved address over the raw connect code", () => {
+    const server = baseServer({ connect_code: "eu1.example.net:27015" });
+    expect(buildSteamConnectUrl(server, "", "198.51.100.7:27015")).toBe(
+      "steam://connect/198.51.100.7:27015",
+    );
+  });
+});
+
+describe("withConsoleLog", () => {
+  it("adds -condebug when it is missing", () => {
+    expect(withConsoleLog("+connect 10.0.0.1:27015")).toBe(
+      "+connect 10.0.0.1:27015 -condebug",
+    );
+    expect(withConsoleLog("")).toBe("-condebug");
+  });
+
+  it("leaves args that already log to the console alone", () => {
+    expect(withConsoleLog("-condebug +connect 10.0.0.1:27015")).toBe(
+      "-condebug +connect 10.0.0.1:27015",
+    );
+  });
+
+  it("does not mistake a longer flag for -condebug", () => {
+    expect(withConsoleLog("-condebuglog")).toBe("-condebuglog -condebug");
   });
 });

@@ -186,12 +186,23 @@ impl SteamManager {
   pub fn launch_game(&self, additional_args: &str) -> Result<(), Error> {
     let steam_uri = format!("steam://run/{DEADLOCK_APP_ID}//{additional_args}");
     log::info!("Launching game with URI: {steam_uri}");
+    self.open_steam_uri(&steam_uri)
+  }
+
+  /// Hand a `steam://` URI to the Steam client.
+  ///
+  /// `steam://connect/<ip:port>` is the only join path Steam treats as
+  /// first-class: it launches the game when it is closed and hands the
+  /// address to an already running client, which `steam://run//+connect`
+  /// cannot do.
+  pub fn open_steam_uri(&self, steam_uri: &str) -> Result<(), Error> {
+    log::info!("Opening Steam URI: {steam_uri}");
 
     #[cfg(target_os = "windows")]
     {
       let steam_exe = self.get_steam_executable()?;
       std::process::Command::new(steam_exe)
-        .arg(&steam_uri)
+        .arg(steam_uri)
         .spawn()
         .map_err(|e| Error::GameLaunchFailed(e.to_string()))?;
     }
@@ -199,7 +210,7 @@ impl SteamManager {
     #[cfg(target_os = "linux")]
     {
       std::process::Command::new("xdg-open")
-        .arg(&steam_uri)
+        .arg(steam_uri)
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
         .spawn()
@@ -209,7 +220,7 @@ impl SteamManager {
     #[cfg(target_os = "macos")]
     {
       std::process::Command::new("open")
-        .arg(&steam_uri)
+        .arg(steam_uri)
         .spawn()
         .map_err(|e| Error::GameLaunchFailed(e.to_string()))?;
     }

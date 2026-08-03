@@ -23,6 +23,8 @@ const DeadworksRegistryServerSchema = z.object({
   map: z.string().optional().default(""),
   players: z.array(DeadworksPlayerSchema).optional().default([]),
   content_addons: z.array(z.string()).optional().default([]),
+  /** Custom maps the server rotates through, on top of `map`. */
+  extra_maps: z.array(z.string()).optional().default([]),
   version: z.string().optional().default(""),
   visibility: z
     .enum(["public", "unlisted", "private", "password"])
@@ -92,7 +94,12 @@ const normalizeServers = (
         game_mode: "",
         version: raw.version,
         players: raw.players,
-        mods: raw.content_addons.map((name) => ({ name, version: "" })),
+        // Both are client-side content the player needs before joining, so
+        // they belong in the same list the detail panel renders.
+        mods: [...raw.content_addons, ...raw.extra_maps].map((name) => ({
+          name,
+          version: "",
+        })),
         required_mods: [],
         last_seen: normalizeLastSeen(raw.last_heartbeat),
         auth_required: false,

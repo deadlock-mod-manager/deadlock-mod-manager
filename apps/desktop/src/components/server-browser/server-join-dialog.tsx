@@ -28,6 +28,7 @@ import { isStagingActive, useServerStage } from "@/hooks/use-server-stage";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { getAdditionalArgs } from "@/lib/utils";
+import { deadworksRegistryFor } from "./server-join/deadworks-content";
 import { joinServer } from "./server-join/join-action";
 import RequirementRow from "./server-join/requirement-row";
 
@@ -92,6 +93,8 @@ const ServerJoinDialog = ({
         return t("servers.staging.awaitingCustomConfirm");
       case "downloading-custom":
         return t("servers.staging.downloadingCustom");
+      case "downloading-server-content":
+        return t("servers.staging.downloadingServerContent");
       case "patching-gameinfo":
         return t("servers.staging.applying");
       default:
@@ -105,7 +108,10 @@ const ServerJoinDialog = ({
     !server.password_protected || password.length > 0 || !!server.gateway_url;
   const staging = isStagingActive(stager.state.phase);
   const busy = staging || isJoining;
-  const needsMods = server.required_mods.length > 0;
+  // Deadworks servers ship their maps and addons through a content manifest
+  // instead of `required_mods`, so they need staging either way.
+  const needsMods =
+    server.required_mods.length > 0 || !!deadworksRegistryFor(server);
 
   const reportOutcome = (
     outcome: Awaited<ReturnType<typeof joinServer>>,
@@ -115,7 +121,11 @@ const ServerJoinDialog = ({
         toast.info(t("servers.detail.openExternal"));
         return;
       case "launched":
-        toast.success(t("servers.join.launched", { name: server.name }));
+        toast.success(
+          outcome.watched
+            ? t("servers.join.launchedWatched", { name: server.name })
+            : t("servers.join.launched", { name: server.name }),
+        );
         if (outcome.passwordSkipped) {
           toast.warning(t("servers.join.passwordSkipped"), {
             duration: 15_000,
@@ -164,26 +174,36 @@ const ServerJoinDialog = ({
   const handleJoin = async () => {
     setIsJoining(true);
     try {
-      if (!server.gateway_url && !(await ensureGameClosed())) {
-        return;
-      }
+      let gameRunning = !server.gateway_url && (await isGameRunning());
 
       if (needsMods) {
+        // The server's addons only land in gameinfo.gi for the next start.
+        if (gameRunning) {
+          if (!(await ensureGameClosed())) return;
+          gameRunning = false;
+        }
         await stager.stage(server, {
           layered: keepActiveProfile,
           requirements: join.requirements,
         });
       } else if (!server.gateway_url) {
         // A previous join may have left a server addons path in gameinfo.gi;
-        // this server needs none, so put the user's own profile back.
+        // this server needs none, so put the user's own profile back. Only a
+        // path that actually changed forces a restart — otherwise the running
+        // client can join as-is.
+        let changed = false;
         try {
-          await invoke("cleanup_stale_server_gameinfo", {
+          changed = await invoke<boolean>("cleanup_stale_server_gameinfo", {
             activeProfileFolder: getActiveProfile()?.folderName ?? null,
           });
         } catch (err) {
           logger
             .withError(err)
             .warn("Stale server gameinfo cleanup failed; joining anyway");
+        }
+        if (changed && gameRunning) {
+          if (!(await ensureGameClosed())) return;
+          gameRunning = false;
         }
       }
 
@@ -192,7 +212,12 @@ const ServerJoinDialog = ({
         gamePresenceEnabled,
       );
 
-      const outcome = await joinServer({ server, password, additionalArgs });
+      const outcome = await joinServer({
+        server,
+        password,
+        additionalArgs,
+        gameRunning,
+      });
       reportOutcome(outcome);
       onOpenChange(false);
       stager.reset();
@@ -325,15 +350,17 @@ const ServerJoinDialog = ({
               {t("servers.join.summaryTitle")}
             </p>
             <ol className='list-inside list-decimal space-y-0.5 text-[11px] text-muted-foreground'>
-              {needsMods ? (
+              {server.required_mods.length > 0 && (
                 <li>
                   {t("servers.join.summaryMods", {
                     count: server.required_mods.length,
                   })}
                 </li>
-              ) : (
-                <li>{t("servers.join.summaryRestore")}</li>
               )}
+              {deadworksRegistryFor(server) && (
+                <li>{t("servers.join.summaryServerContent")}</li>
+              )}
+              {!needsMods && <li>{t("servers.join.summaryRestore")}</li>}
               <li>{t("servers.join.summaryLaunch")}</li>
             </ol>
           </div>

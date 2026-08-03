@@ -180,7 +180,9 @@
         "title": "Deadlock needs to restart",
         "body": "Server mods are only loaded when the game starts. Deadlock will be closed and restarted directly into this server.",
         "restart": "Close and join"
-      }
+      },
+      "launchedWatched": "Launching {{name}} — DMM will connect you as soon as the game is ready",
+      "summaryServerContent": "Download and activate the maps and addons this server requires"
     },
     "staging": {
       "creatingFolder": "Preparing server addons folder...",
@@ -193,7 +195,8 @@
       "customConfirm": "Allow downloads",
       "customSkip": "Skip custom mods",
       "downloadingCustom": "Downloading custom-provider mods...",
-      "applying": "Applying server mods to gameinfo.gi..."
+      "applying": "Applying server mods to gameinfo.gi...",
+      "downloadingServerContent": "Downloading the maps and addons this server needs..."
     },
     "requirementRow": {
       "customProvider": "Custom",
@@ -223,6 +226,11 @@
       "description": "Share it here so other players can find and join it.",
       "action": "List your server",
       "openError": "Couldn't open the server hosting page."
+    },
+    "connect": {
+      "retrying": "Deadlock did not connect on its own — retrying {{address}}",
+      "connected": "Connected to {{address}}",
+      "timedOut": "Could not join {{address}} automatically. Open the console in-game and run: connect {{address}}"
     }
   },
   "menu": {
