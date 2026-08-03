@@ -1,4 +1,10 @@
 import { describe, expect, it } from "bun:test";
+import {
+  AMBER_TEAM,
+  SAPPHIRE_TEAM,
+  sampleMatch,
+  toPlayer,
+} from "./live-players";
 import { accountIdFromSteamId64, readSteamId } from "./steam-id";
 
 // A real frame from the live query, verbatim.
@@ -36,5 +42,67 @@ describe("readSteamId", () => {
 describe("accountIdFromSteamId64", () => {
   it("subtracts the Steam3 base", () => {
     expect(accountIdFromSteamId64("76561198371579856")).toBe(411_314_128);
+  });
+});
+
+const STEAM_ID = "76561198371579856";
+
+describe("toPlayer", () => {
+  it("fills the counters the stream omits", () => {
+    const player = toPlayer(STEAM_ID, JSON.parse(ROW));
+
+    expect(player).toMatchObject({
+      accountId: 411_314_128,
+      team: SAPPHIRE_TEAM,
+      heroId: 15,
+      netWorth: 0,
+      kills: 0,
+    });
+  });
+
+  it("drops spectator and placeholder controllers", () => {
+    expect(toPlayer("0", JSON.parse(ROW))).toBeNull();
+  });
+
+  it("drops rows that are not objects", () => {
+    expect(toPlayer(STEAM_ID, 42)).toBeNull();
+    expect(toPlayer(STEAM_ID, "m_iTeamNum")).toBeNull();
+    expect(toPlayer(STEAM_ID, null)).toBeNull();
+  });
+
+  it("drops rows without a team, rather than inventing a zero player", () => {
+    expect(toPlayer(STEAM_ID, { tick: 100 })).toBeNull();
+  });
+
+  it("drops rows whose team is neither side", () => {
+    expect(toPlayer(STEAM_ID, { m_iTeamNum: 0 })).toBeNull();
+    expect(toPlayer(STEAM_ID, { m_iTeamNum: 4 })).toBeNull();
+  });
+});
+
+describe("sampleMatch", () => {
+  const player = (team: number, netWorth: number, kills: number) =>
+    toPlayer(STEAM_ID, {
+      tick: 600,
+      m_iTeamNum: team,
+      m_PlayerDataGlobal__m_iGoldNetWorth: netWorth,
+      m_PlayerDataGlobal__m_iPlayerKills: kills,
+    });
+
+  it("splits the lobby by team", () => {
+    const players = [
+      player(SAPPHIRE_TEAM, 1000, 2),
+      player(SAPPHIRE_TEAM, 500, 1),
+      player(AMBER_TEAM, 900, 4),
+    ].filter((entry) => entry !== null);
+
+    expect(sampleMatch(players)).toEqual({
+      second: 10,
+      sapphireNetWorth: 1500,
+      amberNetWorth: 900,
+      soulLead: 600,
+      sapphireKills: 3,
+      amberKills: 4,
+    });
   });
 });

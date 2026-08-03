@@ -1,7 +1,13 @@
 import { ASSETS_BASE_URL, DeadlockApiError } from "@/lib/deadlock-api";
 import { fetch } from "@/lib/fetch";
+import {
+  parseList,
+  type RankAsset,
+  rankAssetSchema,
+} from "@/lib/validation/deadlock-api";
 
 export { DeadlockApiError };
+export type { RankAsset };
 
 const BASE_URL = "https://api.deadlock-api.com";
 
@@ -123,12 +129,6 @@ export interface PlayerRank {
   badge: number;
   rank: number;
   subrank: number;
-}
-
-export interface RankAsset {
-  tier: number;
-  name: string;
-  images: Record<string, string>;
 }
 
 /**
@@ -254,5 +254,5 @@ export const getRankAssets = async (): Promise<RankAsset[]> => {
   if (!response.ok) {
     throw new DeadlockApiError(response.status, "/v2/ranks");
   }
-  return (await response.json()) as RankAsset[];
+  return parseList(rankAssetSchema, await response.json(), "/v2/ranks");
 };

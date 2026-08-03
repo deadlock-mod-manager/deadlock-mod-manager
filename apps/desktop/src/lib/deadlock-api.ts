@@ -1,5 +1,14 @@
 import { ProviderError } from "@deadlock-mods/common/client-errors";
+import {
+  type DeadlockHero,
+  deadlockHeroSchema,
+  type DeadlockItem,
+  deadlockItemSchema,
+  parseList,
+} from "./validation/deadlock-api";
 import { fetch } from "./fetch";
+
+export type { DeadlockHero, DeadlockItem };
 
 export const ASSETS_BASE_URL = "https://assets.deadlock-api.com";
 
@@ -21,39 +30,14 @@ export class DeadlockApiError extends ProviderError {
   }
 }
 
-export interface DeadlockHero {
-  id: number;
-  name: string;
-  class_name: string;
-  images: {
-    icon_hero_card?: string;
-    icon_hero_card_webp?: string;
-    icon_image_small?: string;
-    icon_image_small_webp?: string;
-  };
-}
-
 /** Every playable hero, for id -> name/portrait lookups. Changes only per patch. */
 export const getHeroes = async (): Promise<DeadlockHero[]> => {
   const res = await fetch(`${HEROES_API}?only_active=true`);
   if (!res.ok) {
     throw new DeadlockApiError(res.status, "/v2/heroes");
   }
-  return res.json();
+  return parseList(deadlockHeroSchema, await res.json(), "/v2/heroes");
 };
-
-export interface DeadlockItem {
-  id: number;
-  name: string;
-  type: string;
-  item_slot_type?: string;
-  item_tier?: number;
-  cost?: number | null;
-  image?: string;
-  image_webp?: string;
-  shop_image?: string;
-  shop_image_webp?: string;
-}
 
 /**
  * Buyable upgrades only. The raw asset list is ~5.7 MB of abilities and weapons
@@ -65,8 +49,7 @@ export const getItems = async (): Promise<DeadlockItem[]> => {
   if (!res.ok) {
     throw new DeadlockApiError(res.status, "/v2/items");
   }
-  const items = (await res.json()) as DeadlockItem[];
-  return items
+  return parseList(deadlockItemSchema, await res.json(), "/v2/items")
     .filter((item) => item.type === "upgrade")
     .map((item) => ({
       id: item.id,
@@ -87,5 +70,6 @@ export const getHeroByName = async (
   if (!res.ok) {
     return null;
   }
-  return res.json();
+  const hero = deadlockHeroSchema.safeParse(await res.json());
+  return hero.success ? hero.data : null;
 };

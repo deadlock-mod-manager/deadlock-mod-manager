@@ -65,6 +65,21 @@ export const useLiveMatchDetection = (enabled: boolean) =>
     meta: { skipGlobalErrorHandler: true },
   });
 
+/** Everything the stream produces, tagged with the match it belongs to. */
+type LiveStream = {
+  matchId: string | null;
+  players: LivePlayer[];
+  samples: LiveMatchSample[];
+  status: LiveStatus;
+};
+
+const emptyStream = (matchId: string | null): LiveStream => ({
+  matchId,
+  players: [],
+  samples: [],
+  status: "connecting",
+});
+
 /**
  * The live scoreboard: the match from the game's console log, its broadcast, and
  * the profile/rank/hero data for everyone in the lobby.
@@ -73,9 +88,11 @@ export const useLiveMatch = (enabled: boolean) => {
   const detection = useLiveMatchDetection(enabled);
   const matchId = detection.data?.current?.matchId ?? null;
 
-  const [players, setPlayers] = useState<LivePlayer[]>([]);
-  const [samples, setSamples] = useState<LiveMatchSample[]>([]);
-  const [status, setStatus] = useState<LiveStatus>("connecting");
+  const [stream, setStream] = useState<LiveStream>(() => emptyStream(null));
+  // Keyed by match rather than cleared in an effect: a new lobby shows an empty
+  // scoreboard on the same render, not one commit later.
+  const live =
+    enabled && stream.matchId === matchId ? stream : emptyStream(matchId);
 
   const broadcast = useQuery({
     queryKey: ["live-broadcast", matchId],
@@ -97,24 +114,26 @@ export const useLiveMatch = (enabled: boolean) => {
   const broadcastUrl = broadcast.data?.data.broadcast_url ?? null;
 
   useEffect(() => {
-    if (!enabled || !broadcastUrl) {
+    if (!enabled || !broadcastUrl || matchId === null) {
       return;
     }
-    setPlayers([]);
-    setSamples([]);
-    setStatus("connecting");
+    const patch = (update: Partial<LiveStream>) =>
+      setStream((prev) => ({
+        ...(prev.matchId === matchId ? prev : emptyStream(matchId)),
+        ...update,
+      }));
     // The cleanup covers both a changed broadcast and unmount, so leaving the
     // tab or the page cannot keep the stream running.
     return subscribeToLiveMatch(
       broadcastUrl,
-      setPlayers,
-      setStatus,
-      setSamples,
+      (players) => patch({ players }),
+      (status) => patch({ status }),
+      (samples) => patch({ samples }),
     );
-  }, [enabled, broadcastUrl]);
+  }, [enabled, broadcastUrl, matchId]);
 
   const accountIds = [
-    ...new Set(players.map((player) => player.accountId)),
+    ...new Set(live.players.map((player) => player.accountId)),
   ].sort((a, b) => a - b);
   const lobbyKey = accountIds.join(",");
 
@@ -151,9 +170,9 @@ export const useLiveMatch = (enabled: boolean) => {
     // Absent only until the first poll answers; assume it works until told otherwise.
     consoleLogAvailable: detection.data?.consoleLogAvailable ?? true,
     queued: detection.data?.queued ?? false,
-    players,
-    samples,
-    status,
+    players: live.players,
+    samples: live.samples,
+    status: live.status,
     profiles: new Map(
       (profiles.data?.data.steam ?? []).map((profile) => [
         profile.account_id,

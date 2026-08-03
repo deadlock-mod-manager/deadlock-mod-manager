@@ -49,10 +49,28 @@ export const LiveTab = ({
 }: LiveTabProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [selected, setSelected] = useState<LivePlayer | null>(null);
+  // Tagged with the match it was made in, so the dialog cannot survive into the
+  // next lobby - not even when the same account shows up there again.
+  const [selection, setSelection] = useState<{
+    matchId: string | null;
+    accountId: number;
+  } | null>(null);
   const live = useLiveMatch(true);
 
   const { profiles, ranks, heroStats } = live;
+
+  const matchId = live.match?.matchId ?? null;
+  const select = (player: LivePlayer) =>
+    setSelection({ matchId, accountId: player.accountId });
+
+  // Derived from the live rows rather than held as its own copy, so the dialog
+  // follows the scoreboard instead of freezing the moment it was opened.
+  const selected =
+    selection?.matchId === matchId
+      ? (live.players.find(
+          (player) => player.accountId === selection.accountId,
+        ) ?? null)
+      : null;
 
   // Everything here is parsed out of console.log, which the game only writes
   // with -condebug. Without it the tab can never find anything, so it says so
@@ -177,7 +195,7 @@ export const LiveTab = ({
           isSelf && "border-primary",
         )}
         key={player.steamId64}
-        onClick={() => setSelected(player)}
+        onClick={() => select(player)}
         type='button'>
         <HeroAvatar
           className='h-9 w-9'
@@ -274,7 +292,7 @@ export const LiveTab = ({
 
       <LiveLeaderboard
         heroesById={heroesById}
-        onSelect={setSelected}
+        onSelect={select}
         ownAccountId={ownAccountId}
         players={live.players}
         profiles={profiles}
@@ -285,7 +303,7 @@ export const LiveTab = ({
       <LivePlayerDialog
         heroStats={heroStats}
         heroesById={heroesById}
-        onOpenChange={(open) => !open && setSelected(null)}
+        onOpenChange={(open) => !open && setSelection(null)}
         player={selected}
         profile={selected ? profiles.get(selected.accountId) : undefined}
         rank={selected ? ranks.get(selected.accountId) : undefined}

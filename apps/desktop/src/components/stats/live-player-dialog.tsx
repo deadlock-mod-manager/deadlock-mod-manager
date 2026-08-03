@@ -366,7 +366,7 @@ export const LivePlayerDialog = ({
         {recent.length > 0 && (
           <Section title={t("stats.live.recentMatches")}>
             <div className='flex flex-wrap gap-1.5'>
-              {/* Newest first; `recent` is already a copy, but reverse mutates. */}
+              {/* Newest first; copied because `reverse` mutates in place. */}
               {[...recent].toReversed().map((match) => (
                 <Tooltip key={match.match_id}>
                   <TooltipTrigger asChild>

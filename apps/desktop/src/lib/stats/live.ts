@@ -4,20 +4,29 @@ import {
   apiKeyQuery,
   DeadlockApiError,
   getPlayerRank,
-  type PlayerHeroStats,
   type PlayerRank,
 } from "@/lib/stats/api";
 import { fetch } from "@/lib/fetch";
-import { accountIdFromSteamId64, readSteamId } from "@/lib/stats/steam-id";
+import {
+  type LiveMatchSample,
+  type LivePlayer,
+  sampleMatch,
+  toPlayer,
+} from "@/lib/stats/live-players";
+import { readSteamId } from "@/lib/stats/steam-id";
+import {
+  type LiveBroadcast,
+  liveBroadcastSchema,
+} from "@/lib/validation/live-match";
+
+// The scoreboard model itself lives in `live-players`; re-exported so callers
+// keep one import for the whole live feature.
+export * from "@/lib/stats/live-players";
+export type { LiveBroadcast };
 
 const logger = createLogger("live-match");
 
 const BASE_URL = "https://api.deadlock-api.com";
-
-export interface LiveBroadcast {
-  broadcast_url: string;
-  lobby_id: number;
-}
 
 /**
  * Resolving this makes the API spectate the lobby, which is why it is capped at
@@ -32,47 +41,12 @@ export const getLiveBroadcast = async (
   if (!response.ok) {
     throw new DeadlockApiError(response.status, "/live/url");
   }
-  return (await response.json()) as LiveBroadcast;
-};
-
-/** One sample of the whole match, aggregated from the players at that moment. */
-export interface LiveMatchSample {
-  /** Seconds into the match, derived from the tick at 60 Hz. */
-  second: number;
-  sapphireNetWorth: number;
-  amberNetWorth: number;
-  /** Sapphire minus Amber; the number people actually read. */
-  soulLead: number;
-  sapphireKills: number;
-  amberKills: number;
-}
-
-export interface LivePlayer {
-  accountId: number;
-  steamId64: string;
-  tick: number;
-  /** 2 = Sapphire, 3 = Amber, as the game numbers them. */
-  team: number;
-  heroId: number;
-  netWorth: number;
-  kills: number;
-  deaths: number;
-  assists: number;
-  level: number;
-  /** In-game rank; 0 in unranked lobbies. */
-  currentRank: number;
-}
-
-type LiveRow = {
-  tick: number;
-  m_iTeamNum: number;
-  m_nCurrentRank: number;
-  m_PlayerDataGlobal__m_nHeroID: number;
-  m_PlayerDataGlobal__m_iGoldNetWorth: number;
-  m_PlayerDataGlobal__m_iPlayerKills: number;
-  m_PlayerDataGlobal__m_iDeaths: number;
-  m_PlayerDataGlobal__m_iPlayerAssists: number;
-  m_PlayerDataGlobal__m_iLevel: number;
+  const broadcast = liveBroadcastSchema.safeParse(await response.json());
+  if (!broadcast.success) {
+    // The URL feeds an EventSource; a malformed handle is as good as no answer.
+    throw new DeadlockApiError(response.status, "/live/url");
+  }
+  return broadcast.data;
 };
 
 // Column names are case-sensitive and must be quoted; the table name must not be.
@@ -92,82 +66,10 @@ const FLUSH_INTERVAL_MS = 1000;
  * this long to arrive.
  */
 const FIRST_ROW_TIMEOUT_MS = 30_000;
-/** Source 2 runs at 60 Hz, which turns ticks into match seconds. */
-const TICKS_PER_SECOND = 60;
 /** One sample per 15 match-seconds keeps a 40 minute match around 160 points. */
 const SAMPLE_INTERVAL_S = 15;
 
-/** The game numbers the teams 2 and 3. */
-export const SAPPHIRE_TEAM = 2;
-export const AMBER_TEAM = 3;
-
-const isSapphire = (player: LivePlayer) => player.team === SAPPHIRE_TEAM;
-// Anything that is not Sapphire counts as Amber, so a stray team number can
-// never make the two sides add up to less than the lobby.
-const isAmber = (player: LivePlayer) => !isSapphire(player);
-
-/** Rolls the current player states up into one match-wide sample. */
-export const sampleMatch = (players: LivePlayer[]): LiveMatchSample => {
-  const sum = (
-    side: (player: LivePlayer) => boolean,
-    pick: (player: LivePlayer) => number,
-  ) => players.filter(side).reduce((total, player) => total + pick(player), 0);
-
-  const sapphireNetWorth = sum(isSapphire, (p) => p.netWorth);
-  const amberNetWorth = sum(isAmber, (p) => p.netWorth);
-
-  return {
-    second: Math.round(
-      Math.max(...players.map((player) => player.tick), 0) / TICKS_PER_SECOND,
-    ),
-    sapphireNetWorth,
-    amberNetWorth,
-    soulLead: sapphireNetWorth - amberNetWorth,
-    sapphireKills: sum(isSapphire, (p) => p.kills),
-    amberKills: sum(isAmber, (p) => p.kills),
-  };
-};
-
-/**
- * The lobby's hero stats arrive as one flat list for every account. Both the
- * scoreboard and the player dialog want them per player, so the split lives here.
- */
-export const heroStatsByAccount = (
-  heroStats: PlayerHeroStats[],
-): Map<number, PlayerHeroStats[]> => {
-  const byAccount = new Map<number, PlayerHeroStats[]>();
-  for (const entry of heroStats) {
-    const existing = byAccount.get(entry.account_id);
-    if (existing) {
-      existing.push(entry);
-    } else {
-      byAccount.set(entry.account_id, [entry]);
-    }
-  }
-  return byAccount;
-};
-
 export type LiveStatus = "connecting" | "streaming" | "ended" | "error";
-
-const toPlayer = (steamId64: string, row: LiveRow): LivePlayer | null => {
-  // Spectator and placeholder controllers carry no Steam id.
-  if (steamId64 === "0") {
-    return null;
-  }
-  return {
-    accountId: accountIdFromSteamId64(steamId64),
-    steamId64,
-    tick: row.tick ?? 0,
-    team: row.m_iTeamNum,
-    heroId: row.m_PlayerDataGlobal__m_nHeroID,
-    netWorth: row.m_PlayerDataGlobal__m_iGoldNetWorth ?? 0,
-    kills: row.m_PlayerDataGlobal__m_iPlayerKills ?? 0,
-    deaths: row.m_PlayerDataGlobal__m_iDeaths ?? 0,
-    assists: row.m_PlayerDataGlobal__m_iPlayerAssists ?? 0,
-    level: row.m_PlayerDataGlobal__m_iLevel ?? 0,
-    currentRank: row.m_nCurrentRank ?? 0,
-  };
-};
 
 /**
  * Streams the live scoreboard over Server-Sent Events. Uses the browser's
@@ -241,7 +143,7 @@ export const subscribeToLiveMatch = (
     try {
       const steamId64 = readSteamId(event.data);
       if (!steamId64) return;
-      const player = toPlayer(steamId64, JSON.parse(event.data) as LiveRow);
+      const player = toPlayer(steamId64, JSON.parse(event.data));
       if (!player) return;
       window.clearTimeout(watchdog);
       latest.set(player.steamId64, player);

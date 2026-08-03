@@ -23,9 +23,13 @@ export const formatSignedPercent = (value: number, digits = 1): string =>
   // `signDisplay: "always"` would render -0 as "-0%", which reads as a loss.
   percentFormat(digits, true).format(value === 0 ? 0 : value);
 
+// Magnitude, not sign: the soul-lead chart runs negative numbers through here.
 export const formatCompact = (value: number): string =>
-  value >= 10_000
-    ? `${(value / 1000).toFixed(value >= 100_000 ? 0 : 1)}k`
+  Math.abs(value) >= 10_000
+    ? new Intl.NumberFormat(activeLocale(), {
+        notation: "compact",
+        maximumFractionDigits: Math.abs(value) >= 100_000 ? 0 : 1,
+      }).format(value)
     : Math.round(value).toLocaleString(activeLocale());
 
 export const formatDecimal = (value: number, digits = 2): string =>
