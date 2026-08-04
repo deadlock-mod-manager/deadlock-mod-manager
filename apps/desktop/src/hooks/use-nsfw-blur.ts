@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { shouldBlurNSFWItem } from "@/lib/mods/nsfw-visibility";
 import { usePersistedStore } from "@/lib/store";
 
 interface NSFWItem {
@@ -21,19 +22,13 @@ export function useNSFWBlur(item?: NSFWItem | null) {
   );
 
   const shouldBlur = useMemo(() => {
-    if (!item?.isNSFW) {
-      return false; // Not NSFW, no need to blur
-    }
+    if (!item) return false;
 
-    // Check for per-item override first
-    const override = getPerItemNSFWOverride(item.remoteId);
-    if (override !== undefined) {
-      return !override; // If override says show (true), don't blur (false)
-    }
-
-    // Use global setting if no per-item override
-    return !nsfwSettings.hideNSFW; // If hiding NSFW globally, blur when visible
-  }, [item, nsfwSettings.hideNSFW, getPerItemNSFWOverride]);
+    return shouldBlurNSFWItem({
+      isNSFW: item.isNSFW,
+      isVisibleOverride: getPerItemNSFWOverride(item.remoteId),
+    });
+  }, [item, getPerItemNSFWOverride]);
 
   const handleNSFWToggle = (visible: boolean) => {
     if (item && nsfwSettings.rememberPerItemOverrides) {
