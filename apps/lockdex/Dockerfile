@@ -28,8 +28,7 @@ COPY packages ./packages
 COPY tools ./tools
 COPY apps/lockdex ./apps/lockdex
 
-# Install dependencies (handle lockfile config mismatch)
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # Generate TypeScript types from Rust
 RUN cd packages/vpk-parser && \
@@ -83,8 +82,7 @@ COPY --chown=appuser:appuser --from=builder /usr/src/app/packages ./packages
 COPY --chown=appuser:appuser --from=builder /usr/src/app/tools ./tools
 COPY --chown=appuser:appuser --from=builder /usr/src/app/apps/lockdex ./apps/lockdex
 
-# Install only production dependencies (as non-root user)
-RUN pnpm install --no-frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile --prod
 
 WORKDIR /usr/src/app/apps/lockdex
 
