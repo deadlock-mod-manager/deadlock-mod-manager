@@ -27,8 +27,9 @@ export function useNSFWBlur(item?: NSFWItem | null) {
     return shouldBlurNSFWItem({
       isNSFW: item.isNSFW,
       isVisibleOverride: getPerItemNSFWOverride(item.remoteId),
+      rememberOverrides: nsfwSettings.rememberPerItemOverrides,
     });
-  }, [item, getPerItemNSFWOverride]);
+  }, [item, nsfwSettings.rememberPerItemOverrides, getPerItemNSFWOverride]);
 
   const handleNSFWToggle = (visible: boolean) => {
     if (item && nsfwSettings.rememberPerItemOverrides) {

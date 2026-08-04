@@ -4,6 +4,7 @@ type NSFWItem = {
 
 type NSFWBlurState = NSFWItem & {
   isVisibleOverride: boolean | undefined;
+  rememberOverrides: boolean;
 };
 
 export const filterHiddenNSFWItems = <T extends NSFWItem>(
@@ -18,9 +19,12 @@ export const filterHiddenNSFWItems = <T extends NSFWItem>(
 export const shouldBlurNSFWItem = ({
   isNSFW,
   isVisibleOverride,
+  rememberOverrides,
 }: NSFWBlurState): boolean => {
   if (!isNSFW) return false;
-  if (isVisibleOverride !== undefined) return !isVisibleOverride;
+  if (rememberOverrides && isVisibleOverride !== undefined) {
+    return !isVisibleOverride;
+  }
 
   // Blur by default, even for globally hidden items that leak onto
   // surfaces without global NSFW filtering.

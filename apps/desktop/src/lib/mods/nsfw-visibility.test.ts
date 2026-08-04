@@ -20,25 +20,51 @@ describe("filterHiddenNSFWItems", () => {
 describe("shouldBlurNSFWItem", () => {
   it("blurs NSFW items by default, including hidden items that leak into the UI", () => {
     expect(
-      shouldBlurNSFWItem({ isNSFW: true, isVisibleOverride: undefined }),
+      shouldBlurNSFWItem({
+        isNSFW: true,
+        isVisibleOverride: undefined,
+        rememberOverrides: true,
+      }),
     ).toBe(true);
   });
 
   it("honors a show override", () => {
-    expect(shouldBlurNSFWItem({ isNSFW: true, isVisibleOverride: true })).toBe(
-      false,
-    );
+    expect(
+      shouldBlurNSFWItem({
+        isNSFW: true,
+        isVisibleOverride: true,
+        rememberOverrides: true,
+      }),
+    ).toBe(false);
   });
 
   it("honors a hide override", () => {
-    expect(shouldBlurNSFWItem({ isNSFW: true, isVisibleOverride: false })).toBe(
-      true,
-    );
+    expect(
+      shouldBlurNSFWItem({
+        isNSFW: true,
+        isVisibleOverride: false,
+        rememberOverrides: true,
+      }),
+    ).toBe(true);
+  });
+
+  it("ignores stored overrides when remembering per-item choices is disabled", () => {
+    expect(
+      shouldBlurNSFWItem({
+        isNSFW: true,
+        isVisibleOverride: true,
+        rememberOverrides: false,
+      }),
+    ).toBe(true);
   });
 
   it("does not blur SFW items", () => {
     expect(
-      shouldBlurNSFWItem({ isNSFW: false, isVisibleOverride: undefined }),
+      shouldBlurNSFWItem({
+        isNSFW: false,
+        isVisibleOverride: undefined,
+        rememberOverrides: true,
+      }),
     ).toBe(false);
   });
 });
