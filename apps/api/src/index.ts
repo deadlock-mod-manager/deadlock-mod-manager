@@ -132,26 +132,24 @@ const main = async () => {
   }
 
   logger.info("Defining cron jobs");
-  await cronService.defineJob({
-    name: ModsSyncProcessor.name,
-    pattern: ModsSyncProcessor.cronPattern,
-    processor: ModsSyncProcessor.getInstance(),
-    enabled: true,
-  });
-
-  await cronService.defineJob({
-    name: GamebananaRssProcessor.name,
-    pattern: GamebananaRssProcessor.cronPattern,
-    processor: GamebananaRssProcessor.getInstance(),
-    enabled: true,
-  });
-
-  await cronService.defineJob({
-    name: RelayDiscoveryProcessor.name,
-    pattern: RelayDiscoveryProcessor.cronPattern,
-    processor: RelayDiscoveryProcessor.getInstance(),
-    enabled: true,
-  });
+  await cronService.defineJobs([
+    {
+      name: ModsSyncProcessor.name,
+      pattern: ModsSyncProcessor.cronPattern,
+      processor: ModsSyncProcessor.getInstance(),
+    },
+    {
+      name: GamebananaRssProcessor.name,
+      pattern: GamebananaRssProcessor.cronPattern,
+      processor: GamebananaRssProcessor.getInstance(),
+    },
+    {
+      name: RelayDiscoveryProcessor.name,
+      pattern: RelayDiscoveryProcessor.cronPattern,
+      processor: RelayDiscoveryProcessor.getInstance(),
+    },
+  ]);
+  cronService.start();
 
   process.on("SIGTERM", async () => {
     await cronService.shutdown();

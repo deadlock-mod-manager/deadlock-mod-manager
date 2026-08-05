@@ -5,16 +5,23 @@ import type { Redis } from "ioredis";
 import type { BaseJobData } from "../types/jobs";
 import type { BaseProcessor } from "./processor";
 
+/**
+ * Selects the processor for a job. Workers bound to a single processor return
+ * it unconditionally; workers serving a queue of differently-named jobs (cron)
+ * dispatch on `job.name`.
+ */
+export type ProcessorResolver<T> = (job: Job<T>) => BaseProcessor<T>;
+
 export class BaseWorker<T extends BaseJobData> {
   protected worker: Worker;
   protected logger: Logger;
-  protected processor: BaseProcessor<T>;
+  protected resolveProcessor: ProcessorResolver<T>;
 
   constructor(
     queueName: string,
     redis: Redis,
     logger: Logger,
-    processor: BaseProcessor<T>,
+    resolveProcessor: ProcessorResolver<T>,
     concurrency = 1,
   ) {
     this.worker = new Worker(queueName, this.processJob.bind(this), {
@@ -25,39 +32,42 @@ export class BaseWorker<T extends BaseJobData> {
       worker: `${queueName}-worker`,
       queue: queueName,
     });
-    this.processor = processor;
+    this.resolveProcessor = resolveProcessor;
 
     this.setupEventListeners();
   }
 
   private async processJob(job: Job<T>) {
-    this.logger.info(`Processing job ${job.id} of type ${job.name}`);
+    this.logger
+      .withMetadata({ jobId: job.id, jobName: job.name })
+      .info("Processing job");
 
-    try {
-      const result = await this.processor.process(job.data);
+    const processor = this.resolveProcessor(job);
+    const result = await processor.process(job.data);
 
-      if (!result.success) {
-        throw new RuntimeError(result.error || "Processing failed");
-      }
-
-      return result.data;
-    } catch (error) {
-      this.logger.withError(error).error(`Job ${job.id} failed`);
-      throw error;
+    if (!result.success) {
+      throw new RuntimeError(result.error || "Processing failed");
     }
+
+    return result.data;
   }
 
   private setupEventListeners() {
     this.worker.on("completed", (job) => {
-      this.logger.info(`Job ${job.id} completed successfully`);
+      this.logger
+        .withMetadata({ jobId: job.id, jobName: job.name })
+        .info("Job completed");
     });
 
-    this.worker.on("failed", (job, err) => {
-      this.logger.withError(err).error(`Job ${job?.id} failed: ${err.message}`);
+    this.worker.on("failed", (job, error) => {
+      this.logger
+        .withMetadata({ jobId: job?.id, jobName: job?.name })
+        .withError(error)
+        .error("Job failed");
     });
 
-    this.worker.on("error", (err) => {
-      this.logger.withError(err).error("Worker error");
+    this.worker.on("error", (error) => {
+      this.logger.withError(error).error("Worker error");
     });
   }
 
