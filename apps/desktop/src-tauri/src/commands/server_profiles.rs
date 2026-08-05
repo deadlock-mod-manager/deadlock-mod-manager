@@ -94,32 +94,17 @@ pub async fn delete_server_addons_folder(server_id: String) -> Result<(), Error>
     .get_game_path()
     .ok_or(Error::GamePathNotSet)?;
 
-  let addons_path = game_path.join("game").join("citadel").join("addons");
-  let folder_path = addons_path.join(&folder_name);
-
-  if !folder_path.exists() {
-    log::warn!("Server addons folder does not exist: {folder_path:?}");
-    return Ok(());
+  let base = game_path
+    .join("game")
+    .join("citadel")
+    .join("addons")
+    .join(&folder_name);
+  let removed = crate::mod_manager::shard::remove_profile_shards(&base)?;
+  if removed {
+    log::info!("Deleted server shard folders for: {folder_name}");
+  } else {
+    log::warn!("Server addons folder does not exist: {folder_name}");
   }
-
-  let addons_canonical = addons_path
-    .canonicalize()
-    .map_err(|_| Error::UnauthorizedPath("Unable to resolve addons directory".to_string()))?;
-  let folder_canonical = folder_path.canonicalize().map_err(|_| {
-    Error::UnauthorizedPath(format!(
-      "Unable to resolve server folder: {}",
-      folder_path.display()
-    ))
-  })?;
-
-  if !folder_canonical.starts_with(&addons_canonical) {
-    return Err(Error::UnauthorizedPath(
-      "Server folder must be within addons directory".to_string(),
-    ));
-  }
-
-  std::fs::remove_dir_all(&folder_canonical)?;
-  log::info!("Deleted server addons folder: {folder_canonical:?}");
 
   Ok(())
 }
@@ -172,20 +157,7 @@ pub async fn apply_server_gameinfo(
   validate_addons_subfolder(&server_folder)?;
 
   let mut mod_manager = MANAGER.lock().unwrap();
-  let game_path = mod_manager
-    .get_steam_manager()
-    .get_game_path()
-    .ok_or(Error::GamePathNotSet)?
-    .clone();
-
-  let mut folders: Vec<Option<String>> = vec![Some(server_folder)];
-  if let Some(profile) = also_include_profile {
-    folders.push(Some(profile));
-  }
-
-  mod_manager
-    .get_config_manager_mut()
-    .update_mod_path_multi(&game_path, &folders)?;
+  mod_manager.apply_layered_gameinfo(Some(server_folder), also_include_profile)?;
 
   Ok(())
 }
@@ -195,15 +167,7 @@ pub async fn restore_active_profile_gameinfo(profile_folder: Option<String>) -> 
   log::info!("Restoring gameinfo to active profile: {profile_folder:?}");
 
   let mut mod_manager = MANAGER.lock().unwrap();
-  let game_path = mod_manager
-    .get_steam_manager()
-    .get_game_path()
-    .ok_or(Error::GamePathNotSet)?
-    .clone();
-
-  mod_manager
-    .get_config_manager_mut()
-    .update_mod_path(&game_path, profile_folder)?;
+  mod_manager.apply_profile_gameinfo(profile_folder)?;
 
   Ok(())
 }
@@ -241,19 +205,17 @@ pub async fn cleanup_stale_server_gameinfo(
     log::warn!(
       "Stale server entry present but caller passed no active profile; preserving existing profile reference {existing:?}"
     );
+    // `existing` is the profile's shard-1 (base) line since base is emitted
+    // before its shard folders, so this recovers the base folder name.
     let recovered = existing
       .strip_prefix("citadel/addons/")
       .map(|s| s.to_string());
-    mod_manager
-      .get_config_manager_mut()
-      .update_mod_path(&game_path, recovered)?;
+    mod_manager.apply_profile_gameinfo(recovered)?;
     return Ok(true);
   }
 
   log::info!("Stale server entry detected, restoring active profile path");
-  mod_manager
-    .get_config_manager_mut()
-    .update_mod_path(&game_path, active_profile_folder)?;
+  mod_manager.apply_profile_gameinfo(active_profile_folder)?;
 
   Ok(true)
 }
