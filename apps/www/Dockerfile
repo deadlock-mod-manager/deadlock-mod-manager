@@ -36,8 +36,7 @@ ENV VITE_AUTH_URL=${VITE_AUTH_URL}
 ENV VITE_GA_MEASUREMENT_ID=${VITE_GA_MEASUREMENT_ID}
 ENV VITE_SENTRY_DSN=${VITE_SENTRY_DSN}
 
-# Install dependencies (handle lockfile config mismatch)
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # Build the www application
 RUN pnpm --filter @deadlock-mods/www build
@@ -84,8 +83,7 @@ COPY --chown=appuser:appuser --from=builder /usr/src/app/packages ./packages
 COPY --chown=appuser:appuser --from=builder /usr/src/app/tools ./tools
 COPY --chown=appuser:appuser --from=builder /usr/src/app/apps/www ./apps/www
 
-# Install only production dependencies (as non-root user)
-RUN pnpm install --prod
+RUN pnpm install --frozen-lockfile --prod
 
 ENV PORT=3000
 ENV BASE_URL=https://deadlockmods.app

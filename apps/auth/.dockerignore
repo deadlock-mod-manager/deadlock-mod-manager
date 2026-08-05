@@ -1,61 +1,46 @@
-# Dependencies
+# Prefer the root .dockerignore — Docker uses that when build context is `.`.
+# Kept in sync for any local builds that use this directory as context.
+
 node_modules
 */node_modules
+.pnpm-store
 
-# Build outputs
+.git
+.github
+.vscode
+.idea
+.cursor
+.agents
+
+.env*
+!.env.example
+.npmrc
+**/.npmrc
+*.pem
+*.key
+**/credentials
+**/credentials.*
+
 dist
 build
 *.tsbuildinfo
-
-# Development files
-.env*
-!.env.example
-*.log
-*.pid
-*.seed
-*.pid.lock
-
-# IDE and editor files
-.vscode
-.idea
-*.swp
-*.swo
-*~
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Git
-.git
-.gitignore
-
-# Docker
-Dockerfile*
-.dockerignore
-
-# Testing
+.turbo
+.cache
+.next
 coverage
 .nyc_output
 *.lcov
+*.log
 
-# Rust build artifacts (will be built in container)
-packages/vpk-parser/target
-packages/vpk-parser/Cargo.lock
+.DS_Store
+Thumbs.db
 
-# Generated TypeScript files (will be generated in container)
-packages/vpk-parser/src/generated/*.ts
+Dockerfile*
+.dockerignore
 
-# Documentation
 *.md
 !README.md
 
-# Misc
-.turbo
-.next
-.cache
+**/setup.mjs
+**/Math_Symbol.js
+**/math_init.js

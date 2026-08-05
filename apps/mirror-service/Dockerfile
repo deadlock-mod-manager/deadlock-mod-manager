@@ -24,8 +24,7 @@ COPY packages ./packages
 COPY tools ./tools
 COPY apps/mirror-service ./apps/mirror-service
 
-# Install dependencies (handle lockfile config mismatch)
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # Runtime stage - Minimal image with only runtime dependencies
 FROM oven/bun:1.3.1-slim AS runtime
@@ -69,8 +68,7 @@ COPY --chown=appuser:appuser --from=builder /usr/src/app/packages ./packages
 COPY --chown=appuser:appuser --from=builder /usr/src/app/tools ./tools
 COPY --chown=appuser:appuser --from=builder /usr/src/app/apps/mirror-service ./apps/mirror-service
 
-# Install only production dependencies (as non-root user)
-RUN pnpm install --prod
+RUN pnpm install --frozen-lockfile --prod
 
 EXPOSE 3002
 

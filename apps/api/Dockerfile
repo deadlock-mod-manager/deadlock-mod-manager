@@ -28,8 +28,7 @@ COPY packages ./packages
 COPY tools ./tools
 COPY apps/api ./apps/api
 
-# Install dependencies (handle lockfile config mismatch)
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # Generate TypeScript types from Rust
 RUN cd packages/vpk-parser && \
@@ -91,8 +90,7 @@ COPY --chown=appuser:appuser --from=builder /usr/src/app/packages ./packages
 COPY --chown=appuser:appuser --from=builder /usr/src/app/tools ./tools
 COPY --chown=appuser:appuser --from=builder /usr/src/app/apps/api ./apps/api
 
-# Install only production dependencies (as non-root user)
-RUN pnpm install --no-frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile --prod
 
 EXPOSE 9000
 
