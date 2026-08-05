@@ -17,6 +17,7 @@ interface ServerTableProps {
   isError: boolean;
   selectedId: string | null;
   onSelect: (server: ServerBrowserEntry) => void;
+  pings: Partial<Record<string, number | null>>;
 }
 
 const SKELETON_ROW_COUNT = 8;
@@ -28,6 +29,7 @@ const ServerTable = ({
   isError,
   selectedId,
   onSelect,
+  pings,
 }: ServerTableProps) => {
   const { t } = useTranslation();
 
@@ -46,8 +48,8 @@ const ServerTable = ({
               <th className='whitespace-nowrap border-b border-border/60 px-3 py-2'>
                 {t("servers.table.map")}
               </th>
-              <th className='whitespace-nowrap border-b border-border/60 px-3 py-2'>
-                {t("servers.table.mode")}
+              <th className='whitespace-nowrap border-b border-border/60 px-3 py-2 text-center'>
+                {t("servers.table.ping")}
               </th>
               <th className='whitespace-nowrap border-b border-border/60 px-3 py-2 text-right'>
                 {t("servers.table.region")}
@@ -107,6 +109,7 @@ const ServerTable = ({
                   isSelected={server.id === selectedId}
                   key={server.id}
                   onSelect={onSelect}
+                  pingMs={pings[server.id]}
                   server={server}
                 />
               ))

@@ -95,6 +95,20 @@ pub async fn start_game(
   first_result
 }
 
+/// Launch the game without touching `gameinfo.gi`.
+///
+/// The server-browser join flow writes its own (possibly layered) addon path
+/// set via `apply_server_gameinfo` before launching; going through
+/// `start_game` here would overwrite that with the active profile alone and
+/// the server's required mods would never load.
+#[tauri::command]
+pub async fn launch_game_direct(additional_args: String) -> Result<(), Error> {
+  log::info!("Launching game without gameinfo changes, args: {additional_args:?}");
+
+  let mod_manager = MANAGER.lock().unwrap();
+  mod_manager.get_steam_manager().launch_game(&additional_args)
+}
+
 #[tauri::command]
 pub async fn stop_game() -> Result<(), Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
