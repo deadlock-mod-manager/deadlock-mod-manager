@@ -15,11 +15,14 @@ import { useFeaturedMod } from "@/hooks/use-featured-mod";
 import { useTrendingByCategory } from "@/hooks/use-trending-by-category";
 import { getMods } from "@/lib/api-client";
 import { MOD_CATEGORY_ORDER } from "@/lib/constants";
+import { filterHiddenNSFWItems } from "@/lib/mods/nsfw-visibility";
 import { STALE_TIME_API } from "@/lib/query-constants";
+import { usePersistedStore } from "@/lib/store";
 
 const Dashboard = () => {
   const { t } = useTranslation();
   const DashboardPage = useThemeOverride("dashboardPage");
+  const hideNSFW = usePersistedStore((state) => state.nsfwSettings.hideNSFW);
 
   const { data: mods, isPending } = useQuery({
     queryKey: ["mods"],
@@ -28,8 +31,12 @@ const Dashboard = () => {
     refetchOnWindowFocus: false,
   });
 
-  const featured = useFeaturedMod(mods);
-  const trending = useTrendingByCategory(mods);
+  const visibleMods = useMemo(
+    () => filterHiddenNSFWItems(mods, hideNSFW),
+    [hideNSFW, mods],
+  );
+  const featured = useFeaturedMod(visibleMods);
+  const trending = useTrendingByCategory(visibleMods);
 
   const visibleCategories = useMemo(
     () =>
