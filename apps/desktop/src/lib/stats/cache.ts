@@ -12,6 +12,7 @@ const CACHE_VERSION = 2;
 
 export const STATS_TTL = {
   matchHistory: 10 * 60 * 1000,
+  matchMetadata: 7 * 24 * 60 * 60 * 1000,
   heroStats: 10 * 60 * 1000,
   rank: 30 * 60 * 1000,
   mates: 60 * 60 * 1000,

@@ -118,42 +118,53 @@ export const useLiveMatch = () => {
   );
   const lobbyKey = accountIds.join(",");
 
-  const profiles = useQuery({
-    queryKey: ["live-profiles", lobbyKey],
+  const steamProfiles = useQuery({
+    queryKey: ["live-player-data", "profiles", lobbyKey],
     queryFn: () =>
       cachedFetch(
-        `live:profiles:${lobbyKey}`,
+        `live:steam-profiles:${lobbyKey}`,
         STATS_TTL.steamProfiles,
-        async () => {
-          const [steam, ranks, heroStats] = await Promise.all([
-            getSteamProfiles(accountIds),
-            getRanksFor(accountIds),
-            getPlayerHeroStats(accountIds),
-          ]);
-          return {
-            steam,
-            ranks: [...ranks.entries()],
-            heroStats,
-          };
-        },
+        () => getSteamProfiles(accountIds),
       ),
     enabled: accountIds.length > 0,
     staleTime: STATS_TTL.steamProfiles,
     meta: { skipGlobalErrorHandler: true },
   });
 
+  const ranks = useQuery({
+    queryKey: ["live-player-data", "ranks", lobbyKey],
+    queryFn: () =>
+      cachedFetch(`live:ranks:${lobbyKey}`, STATS_TTL.rank, async () => [
+        ...(await getRanksFor(accountIds)).entries(),
+      ]),
+    enabled: accountIds.length > 0,
+    staleTime: STATS_TTL.rank,
+    meta: { skipGlobalErrorHandler: true },
+  });
+
+  const heroStats = useQuery({
+    queryKey: ["live-player-data", "hero-stats", lobbyKey],
+    queryFn: () =>
+      cachedFetch(`live:hero-stats:${lobbyKey}`, STATS_TTL.heroStats, () =>
+        getPlayerHeroStats(accountIds),
+      ),
+    enabled: accountIds.length > 0,
+    staleTime: STATS_TTL.heroStats,
+    meta: { skipGlobalErrorHandler: true },
+  });
+
   const lobby = useMemo(
     () => ({
       profiles: new Map(
-        (profiles.data?.data.steam ?? []).map((profile) => [
+        (steamProfiles.data?.data ?? []).map((profile) => [
           profile.account_id,
           profile,
         ]),
       ),
-      ranks: new Map(profiles.data?.data.ranks ?? []),
-      heroStats: profiles.data?.data.heroStats ?? [],
+      ranks: new Map(ranks.data?.data ?? []),
+      heroStats: heroStats.data?.data ?? [],
     }),
-    [profiles.data],
+    [steamProfiles.data, ranks.data, heroStats.data],
   );
 
   const refresh = useCallback(() => {

@@ -99,8 +99,8 @@ const Stats = () => {
   } = useSelectedSteamAccount();
   const hasAccount = accountId !== null;
   const stats = usePlayerStats(accountId);
-  const squad = useSquadStats(accountId, stats.matches);
-  const itemStats = useItemStats(accountId);
+  const squad = useSquadStats(accountId, stats.matches, tab === "squad");
+  const itemStats = useItemStats(accountId, tab === "items");
   const { heroesById } = useHeroCatalog();
   const rankAssets = useRankAssets();
   const { refresh, isRefreshing, canRefresh } = useStatsRefresh();
@@ -210,6 +210,7 @@ const Stats = () => {
       <Tabs onValueChange={handleTabChange} value={tab}>
         <TabsContent className='mt-0' value='overview'>
           <OverviewTab
+            accountId={accountId}
             heroesById={heroesById}
             insights={stats.insights}
             matches={stats.matches}
@@ -238,6 +239,7 @@ const Stats = () => {
             <SquadTab
               careerWinrate={careerWinrate}
               enemies={squad.enemies}
+              heroStatsById={squad.heroStatsById}
               heroesById={heroesById}
               mates={squad.mates}
               partyIds={squad.partyIds}

@@ -16,7 +16,7 @@ import {
   Radio,
   TriangleAlert,
 } from "@deadlock-mods/ui/icons";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { HeroAvatar } from "@/components/stats/hero-avatar";
@@ -156,7 +156,10 @@ export const LiveTab = ({
   }));
 
   // Grouped once for the whole board rather than re-scanned per player.
-  const statsByAccount = heroStatsByAccount(heroStats);
+  const statsByAccount = useMemo(
+    () => heroStatsByAccount(heroStats),
+    [heroStats],
+  );
 
   // What to say while there is no scoreboard yet. A stream that already failed or
   // ended is done, so spinning on it would just look like a hang; a failed
@@ -312,6 +315,14 @@ export const LiveTab = ({
         onOpenChange={(open) => !open && setSelection(null)}
         profile={selected ? profiles.get(selected.accountId) : undefined}
         rankAssets={rankAssets}
+        seed={
+          selected
+            ? {
+                heroStats: statsByAccount.get(selected.accountId),
+                rank: ranks.get(selected.accountId),
+              }
+            : undefined
+        }
       />
     </div>
   );

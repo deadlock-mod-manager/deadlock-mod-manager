@@ -14,12 +14,15 @@ import {
   getEnemyStats,
   getItemStats,
   getMatchHistory,
+  getMatchMetadata,
   getMateStats,
   getPlayerHeroStats,
   getPlayerRank,
   getRankAssets,
   getSteamProfiles,
   type MatchHistoryEntry,
+  type PlayerHeroStats,
+  type PlayerRank,
   type SteamProfile,
 } from "@/lib/stats/api";
 import { cachedFetch, clearCachedPrefix, STATS_TTL } from "@/lib/stats/cache";
@@ -33,6 +36,8 @@ import {
   mergeHeroStats,
   mergeLocalMatches,
 } from "@/lib/stats/derive";
+import { heroStatsByAccount } from "@/lib/stats/live-players";
+import { playerFromMatch } from "@/lib/stats/match-detail";
 
 const PLAYER_CACHE_PREFIX = "player:";
 /** Only the last ~3 months of global data, so the benchmark matches the meta. */
@@ -67,14 +72,14 @@ const useStatsQuery = <T>(
  */
 const usePlayerScopedQuery = <T>(
   accountId: number | null,
-  { key, ttl }: { key: string; ttl: number },
+  { key, ttl, enabled = true }: { key: string; ttl: number; enabled?: boolean },
   fetcher: (accountId: number) => Promise<T>,
 ) =>
   useStatsQuery(
     {
       key: `${PLAYER_CACHE_PREFIX}${key}:${accountId}`,
       ttl,
-      enabled: accountId !== null,
+      enabled: accountId !== null && enabled,
     },
     () => {
       if (accountId === null) {
@@ -104,23 +109,40 @@ export const useHeroCatalog = () => {
 export const useRankAssets = () =>
   useStatsQuery({ key: "assets:ranks", ttl: STATS_TTL.assets }, getRankAssets);
 
-/** The player's item performance against everyone else's. */
-export const useItemStats = (accountId: number | null) => {
-  const enabled = accountId !== null;
-
-  const catalog = useStatsQuery(
-    { key: "assets:items", ttl: STATS_TTL.assets },
+export const useItemCatalog = (active = true) => {
+  const query = useStatsQuery(
+    { key: "assets:items", ttl: STATS_TTL.assets, enabled: active },
     getItems,
   );
 
+  const itemsById = useMemo(() => {
+    const map = new Map<number, DeadlockItem>();
+    for (const item of query.data?.data ?? []) {
+      map.set(item.id, item);
+    }
+    return map;
+  }, [query.data]);
+
+  return { itemsById, isPending: active && query.isPending };
+};
+
+/** The player's item performance against everyone else's. */
+export const useItemStats = (accountId: number | null, active = true) => {
+  const enabled = accountId !== null && active;
+  const catalog = useItemCatalog(active);
+
   const mine = usePlayerScopedQuery(
     accountId,
-    { key: "items", ttl: STATS_TTL.heroStats },
+    { key: "items", ttl: STATS_TTL.heroStats, enabled: active },
     (id) => getItemStats(id),
   );
 
   const global = useStatsQuery(
-    { key: "benchmark:items", ttl: STATS_TTL.benchmark },
+    {
+      key: "benchmark:items",
+      ttl: STATS_TTL.benchmark,
+      enabled: active,
+    },
     () => getItemStats(undefined, 1000),
   );
 
@@ -129,19 +151,48 @@ export const useItemStats = (accountId: number | null) => {
     [mine.data, global.data],
   );
 
-  const itemsById = useMemo(() => {
-    const map = new Map<number, DeadlockItem>();
-    for (const item of catalog.data?.data ?? []) {
-      map.set(item.id, item);
-    }
-    return map;
-  }, [catalog.data]);
-
   return {
     items,
-    itemsById,
+    itemsById: catalog.itemsById,
     isPending: enabled && (mine.isPending || global.isPending),
     isError: mine.isError,
+  };
+};
+
+/** Detailed data for one selected match, never fetched for the closed tab. */
+export const useMatchDetails = (
+  matchId: number | null,
+  accountId: number | null,
+  active = true,
+) => {
+  const enabled = active && matchId !== null && accountId !== null;
+  const metadata = useStatsQuery(
+    {
+      key: `match:${matchId}:metadata`,
+      ttl: STATS_TTL.matchMetadata,
+      enabled,
+    },
+    () => {
+      if (matchId === null) {
+        throw new RuntimeError("match metadata ran without a match");
+      }
+      return getMatchMetadata(matchId);
+    },
+  );
+  const catalog = useItemCatalog(enabled);
+
+  const player = useMemo(() => {
+    if (accountId === null || !metadata.data) return null;
+    return playerFromMatch(metadata.data.data.match_info.players, accountId);
+  }, [accountId, metadata.data]);
+
+  return {
+    match: metadata.data?.data.match_info ?? null,
+    player,
+    itemsById: catalog.itemsById,
+    isPending: enabled && (metadata.isPending || catalog.isPending),
+    isError: metadata.isError,
+    refetch: metadata.refetch,
   };
 };
 
@@ -261,15 +312,22 @@ export const usePlayerStats = (accountId: number | null) => {
 };
 
 /**
- * Everything the player card shows, fetched only once a card is opened - a lobby
- * of twelve must not pull twelve histories up front.
+ * Everything the player card still needs, fetched only once the card opens - a
+ * lobby of twelve must not pull twelve histories up front.
  *
- * The query keys are the ones `usePlayerStats` uses, so opening your own card,
- * or the same player twice, costs nothing. All three endpoints are on the 100
- * req/s players tier and cached for minutes, which is why the card fetches for
- * itself rather than making every caller thread lobby data through.
+ * Roster views seed data they already have. Remaining requests reuse the keys
+ * from `usePlayerStats`, so opening your own card or the same player twice is
+ * free while the cache is fresh.
  */
-export const usePlayerCard = (accountId: number | null) => {
+export interface PlayerCardSeed {
+  heroStats?: PlayerHeroStats[];
+  rank?: PlayerRank;
+}
+
+export const usePlayerCard = (
+  accountId: number | null,
+  seed: PlayerCardSeed = {},
+) => {
   const history = usePlayerScopedQuery(
     accountId,
     { key: "match-history", ttl: STATS_TTL.matchHistory },
@@ -278,21 +336,31 @@ export const usePlayerCard = (accountId: number | null) => {
 
   const heroStats = usePlayerScopedQuery(
     accountId,
-    { key: "hero-stats", ttl: STATS_TTL.heroStats },
+    {
+      key: "hero-stats",
+      ttl: STATS_TTL.heroStats,
+      enabled: seed.heroStats === undefined,
+    },
     (id) => getPlayerHeroStats(id),
   );
 
   const rank = usePlayerScopedQuery(
     accountId,
-    { key: "rank", ttl: STATS_TTL.rank },
+    {
+      key: "rank",
+      ttl: STATS_TTL.rank,
+      enabled: seed.rank === undefined,
+    },
     (id) => getPlayerRank(id),
   );
 
   return {
     matches: history.data?.data ?? [],
-    heroStats: heroStats.data?.data ?? [],
-    rank: rank.data?.data ?? undefined,
+    heroStats: seed.heroStats ?? heroStats.data?.data ?? [],
+    rank: seed.rank ?? rank.data?.data,
     isPending: accountId !== null && history.isPending,
+    isHeroStatsPending:
+      accountId !== null && seed.heroStats === undefined && heroStats.isPending,
   };
 };
 
@@ -300,24 +368,25 @@ export const usePlayerCard = (accountId: number | null) => {
 export const useSquadStats = (
   accountId: number | null,
   matches: ReturnType<typeof usePlayerStats>["matches"],
+  active = true,
 ) => {
-  const enabled = accountId !== null;
+  const enabled = accountId !== null && active;
 
   const mates = usePlayerScopedQuery(
     accountId,
-    { key: "mates", ttl: STATS_TTL.mates },
+    { key: "mates", ttl: STATS_TTL.mates, enabled: active },
     (id) => getMateStats(id),
   );
 
   const party = usePlayerScopedQuery(
     accountId,
-    { key: "party", ttl: STATS_TTL.mates },
+    { key: "party", ttl: STATS_TTL.mates, enabled: active },
     (id) => getMateStats(id, true),
   );
 
   const enemies = usePlayerScopedQuery(
     accountId,
-    { key: "enemies", ttl: STATS_TTL.mates },
+    { key: "enemies", ttl: STATS_TTL.mates, enabled: active },
     (id) => getEnemyStats(id),
   );
 
@@ -344,8 +413,10 @@ export const useSquadStats = (
   const profileIds = useMemo(
     () =>
       [
-        ...mateInsights.slice(0, 25).map((mate) => mate.mateId),
-        ...enemyList.map((enemy) => enemy.enemy_id),
+        ...new Set([
+          ...mateInsights.slice(0, 25).map((mate) => mate.mateId),
+          ...enemyList.map((enemy) => enemy.enemy_id),
+        ]),
       ].sort((a, b) => a - b),
     [mateInsights, enemyList],
   );
@@ -364,6 +435,15 @@ export const useSquadStats = (
     () => getSteamProfiles(profileIds),
   );
 
+  const heroStats = useStatsQuery(
+    {
+      key: `${PLAYER_CACHE_PREFIX}squad-hero-stats:${profileIdsKey}`,
+      ttl: STATS_TTL.heroStats,
+      enabled: enabled && profileIds.length > 0,
+    },
+    () => getPlayerHeroStats(profileIds),
+  );
+
   const profilesById = useMemo(() => {
     const map = new Map<number, SteamProfile>();
     for (const profile of profiles.data?.data ?? []) {
@@ -372,11 +452,17 @@ export const useSquadStats = (
     return map;
   }, [profiles.data]);
 
+  const heroStatsById = useMemo(
+    () => heroStatsByAccount(heroStats.data?.data ?? []),
+    [heroStats.data],
+  );
+
   return {
     mates: mateInsights,
     partyIds,
     enemies: enemyList,
     profilesById,
+    heroStatsById,
     isPending: enabled && (mates.isPending || enemies.isPending),
     isError: mates.isError,
   };

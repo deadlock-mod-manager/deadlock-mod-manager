@@ -50,6 +50,53 @@ export interface MatchHistoryEntry {
   ranked_calibration_match?: number | null;
 }
 
+export interface MatchMetadataItem {
+  game_time_s: number;
+  item_id: number;
+  upgrade_id: number;
+  sold_time_s: number;
+}
+
+export interface MatchMetadataStat {
+  time_stamp_s: number;
+  net_worth: number;
+  kills: number;
+  deaths: number;
+  assists: number;
+  player_damage: number;
+  player_damage_taken: number;
+  player_healing: number;
+  damage_mitigated: number;
+  boss_damage: number;
+  shots_hit: number;
+  shots_missed: number;
+}
+
+export interface MatchMetadataPlayer {
+  account_id: number;
+  team: number;
+  hero_id: number;
+  kills: number;
+  deaths: number;
+  assists: number;
+  net_worth: number;
+  last_hits: number;
+  denies: number;
+  level: number;
+  items: MatchMetadataItem[];
+  stats: MatchMetadataStat[];
+}
+
+export interface MatchMetadata {
+  match_info: {
+    duration_s: number;
+    winning_team: number;
+    start_time: number;
+    match_id: number;
+    players: MatchMetadataPlayer[];
+  };
+}
+
 export interface PlayerHeroStats {
   account_id: number;
   hero_id: number;
@@ -152,6 +199,57 @@ const get = async <T>(path: string): Promise<T> => {
 
 export const getMatchHistory = (accountId: number) =>
   get<MatchHistoryEntry[]>(`/v1/players/${accountId}/match-history`);
+
+/**
+ * Full post-match data. Steam fallback is disabled deliberately: opening a
+ * player card must never enqueue a Steam fetch or consume the API's scarce
+ * three-per-hour fallback allowance. Cached/S3 metadata is enough here.
+ */
+export const getMatchMetadata = (matchId: number) =>
+  get<MatchMetadata>(`/v1/matches/${matchId}/metadata?disable_steam=true`).then(
+    ({ match_info }) => ({
+      match_info: {
+        duration_s: match_info.duration_s,
+        winning_team: match_info.winning_team,
+        start_time: match_info.start_time,
+        match_id: match_info.match_id,
+        // Raw metadata also has pings, damage matrices and tracked-stat trees.
+        // Trim those before the response reaches React Query and the disk cache.
+        players: match_info.players.map((player) => ({
+          account_id: player.account_id,
+          team: player.team,
+          hero_id: player.hero_id,
+          kills: player.kills,
+          deaths: player.deaths,
+          assists: player.assists,
+          net_worth: player.net_worth,
+          last_hits: player.last_hits,
+          denies: player.denies,
+          level: player.level,
+          items: player.items.map((item) => ({
+            game_time_s: item.game_time_s,
+            item_id: item.item_id,
+            upgrade_id: item.upgrade_id,
+            sold_time_s: item.sold_time_s,
+          })),
+          stats: player.stats.map((stat) => ({
+            time_stamp_s: stat.time_stamp_s,
+            net_worth: stat.net_worth,
+            kills: stat.kills,
+            deaths: stat.deaths,
+            assists: stat.assists,
+            player_damage: stat.player_damage,
+            player_damage_taken: stat.player_damage_taken,
+            player_healing: stat.player_healing,
+            damage_mitigated: stat.damage_mitigated,
+            boss_damage: stat.boss_damage,
+            shots_hit: stat.shots_hit,
+            shots_missed: stat.shots_missed,
+          })),
+        })),
+      },
+    }),
+  );
 
 /** Takes a whole lobby at once, so the live scoreboard costs a single request. */
 export const getPlayerHeroStats = (accountIds: number | number[]) =>

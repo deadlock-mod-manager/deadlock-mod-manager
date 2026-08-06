@@ -19,7 +19,12 @@ import { ChartCard } from "@/components/stats/chart-card";
 import { DeltaBarChart } from "@/components/stats/delta-bar-chart";
 import { PlayerDialog } from "@/components/stats/player-dialog";
 import type { DeadlockHero } from "@/lib/deadlock-api";
-import type { EnemyStats, RankAsset, SteamProfile } from "@/lib/stats/api";
+import type {
+  EnemyStats,
+  PlayerHeroStats,
+  RankAsset,
+  SteamProfile,
+} from "@/lib/stats/api";
 import type { MateInsight } from "@/lib/stats/derive";
 import {
   formatDecimal,
@@ -35,6 +40,7 @@ interface SquadTabProps {
   partyIds: Set<number>;
   enemies: EnemyStats[];
   profilesById: Map<number, SteamProfile>;
+  heroStatsById: Map<number, PlayerHeroStats[]>;
   careerWinrate: number;
   heroesById: Map<number, DeadlockHero>;
   rankAssets: RankAsset[];
@@ -73,6 +79,7 @@ export const SquadTab = ({
   partyIds,
   enemies,
   profilesById,
+  heroStatsById,
   careerWinrate,
   heroesById,
   rankAssets,
@@ -226,6 +233,11 @@ export const SquadTab = ({
         onOpenChange={(open) => !open && setSelected(null)}
         profile={selected === null ? undefined : profilesById.get(selected)}
         rankAssets={rankAssets}
+        seed={
+          selected === null
+            ? undefined
+            : { heroStats: heroStatsById.get(selected) }
+        }
       />
     </div>
   );

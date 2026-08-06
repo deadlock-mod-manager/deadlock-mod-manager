@@ -25,6 +25,7 @@ const RECENT_WINDOW = 30;
 const THIRTY_DAYS_S = 30 * 24 * 60 * 60;
 
 interface OverviewTabProps {
+  accountId: number;
   matches: MatchHistoryEntry[];
   insights: Insight[];
   heroesById: Map<number, DeadlockHero>;
@@ -32,6 +33,7 @@ interface OverviewTabProps {
 }
 
 export const OverviewTab = ({
+  accountId,
   matches,
   insights,
   heroesById,
@@ -114,7 +116,11 @@ export const OverviewTab = ({
         <RankChart matches={matches} rankAssets={rankAssets} />
       </div>
 
-      <RecentMatches heroesById={heroesById} matches={matches} />
+      <RecentMatches
+        accountId={accountId}
+        heroesById={heroesById}
+        matches={matches}
+      />
     </div>
   );
 };
