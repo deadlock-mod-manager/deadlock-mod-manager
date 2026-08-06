@@ -77,9 +77,15 @@ export const LiveMatchCharts = ({ samples }: LiveMatchChartsProps) => {
             <XAxis
               axisLine={false}
               dataKey='second'
+              // Anchored at kick-off rather than at the first sample: the app
+              // only records from the moment it connected, and a line that
+              // starts partway across says so where a rescaled axis would hide
+              // it behind a plausible-looking 16:41.
+              domain={[0, "dataMax"]}
               minTickGap={40}
               tickFormatter={formatClock}
               tickLine={false}
+              type='number'
             />
             <YAxis
               axisLine={false}
@@ -137,9 +143,15 @@ export const LiveMatchCharts = ({ samples }: LiveMatchChartsProps) => {
             <XAxis
               axisLine={false}
               dataKey='second'
+              // Anchored at kick-off rather than at the first sample: the app
+              // only records from the moment it connected, and a line that
+              // starts partway across says so where a rescaled axis would hide
+              // it behind a plausible-looking 16:41.
+              domain={[0, "dataMax"]}
               minTickGap={40}
               tickFormatter={formatClock}
               tickLine={false}
+              type='number'
             />
             <YAxis axisLine={false} tickLine={false} width={32} />
             <ChartTooltip

@@ -10,12 +10,11 @@ export type StatsState = {
   statsAccountId: number | null;
   setStatsAccountId: (accountId: number | null) => void;
   /**
-   * deadlock-api key from a Patreon subscription. Lifts the shared IP rate
-   * limits to per-key ones, which is what makes the live broadcast usable
-   * across several matches in a row.
+   * The patron hint points at something outside the app and nothing here can
+   * satisfy it, so re-showing it every visit would only nag. Dismissing is final.
    */
-  deadlockApiKey: string | null;
-  setDeadlockApiKey: (key: string | null) => void;
+  patronHintDismissed: boolean;
+  dismissPatronHint: () => void;
 };
 
 export const statsDeepMergeKeys =
@@ -25,10 +24,9 @@ export const createStatsSlice: StateCreator<State, [], [], StatsState> = (
   set,
 ) => ({
   statsAccountId: null,
-  deadlockApiKey: null,
+  patronHintDismissed: false,
 
   setStatsAccountId: (accountId) => set({ statsAccountId: accountId }),
 
-  setDeadlockApiKey: (key) =>
-    set({ deadlockApiKey: key?.trim() ? key.trim() : null }),
+  dismissPatronHint: () => set({ patronHintDismissed: true }),
 });

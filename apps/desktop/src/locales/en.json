@@ -86,6 +86,7 @@
       "waitingDescription": "Start a Deadlock match and this fills up with everyone in your lobby. The match is read from the game's console log, so nothing needs to be typed in.",
       "checkNow": "Check now",
       "matchId": "Match {{id}}",
+      "lastMatch": "Your last match",
       "resolving": "Requesting the live broadcast…",
       "connecting": "Waiting for the first ticks…",
       "broadcastError": "Could not open the live broadcast. deadlock-api allows two spectate requests per hour — try again in a bit.",
@@ -99,10 +100,18 @@
       "sapphire": "Sapphire",
       "amber": "Amber",
       "you": "You",
+      "mostSouls": "Most souls",
+      "mostKills": "Most kills",
+      "soulLead": "Soul lead",
+      "soulLeadTitle": "Soul lead",
+      "soulLeadDescription": "Sapphire minus Amber over the course of the match",
+      "killsTitle": "Kills",
+      "killsDescription": "Team kills as the match goes on"
+    },
+    "player": {
       "onHero": "{{matches}} matches on this hero at {{winrate}} winrate",
       "onHeroShort": "{{matches}} × this hero · {{winrate}}",
       "firstTimeHero": "No tracked matches on this hero",
-      "matchesTracked": "Tracked matches",
       "overallWinrate": "Overall winrate",
       "overallKda": "Overall KDA",
       "netWorth": "Net worth right now",
@@ -114,13 +123,8 @@
       "formTitle": "Form",
       "formDescription": "Winrate across a rolling window of {{window}} matches",
       "recentMatches": "Recent matches",
-      "mostSouls": "Most souls",
-      "mostKills": "Most kills",
-      "soulLead": "Soul lead",
-      "soulLeadTitle": "Soul lead",
-      "soulLeadDescription": "Sapphire minus Amber over the course of the match",
-      "killsTitle": "Kills",
-      "killsDescription": "Team kills as the match goes on"
+      "trackedMatches": "Tracked matches",
+      "trackedMatchesHint": "Matches Deadlock API has on record"
     },
     "duration": {
       "hoursMinutes": "{{hours}}h {{minutes}}m"
@@ -130,25 +134,16 @@
     "unranked": "Unranked",
     "unknownPlayer": "Unknown player",
     "signedIn": "signed in",
-    "poweredBy": "Stats provided by Deadlock API",
-    "localSync": {
-      "description_one": "{{count}} match from this session is missing here — Deadlock API needs up to a day to ingest it. Match sync can pull it from Steam in the meantime.",
-      "description_other": "{{count}} matches from this session are missing here — Deadlock API needs up to a day to ingest them. Match sync can pull them from Steam in the meantime.",
-      "enable": "Turn on match sync"
+    "credit": {
+      "name": "Deadlock API",
+      "priorityHint": "Deadlock API patrons get prioritized fetching for their Steam account: faster updates, full match history and accurate ranks.",
+      "priorityCta": "Learn more"
     },
-    "apiKey": {
-      "title": "Connect your Deadlock API key",
-      "description": "Patrons of the Deadlock API get a dedicated fetch queue: faster updates, full match history and accurate ranks straight from Steam. Paste the key from your account and this app will use it for every request.",
-      "label": "API key",
-      "placeholder": "Paste your key",
-      "hint": "Stored locally on this machine and only sent to deadlock-api.com.",
-      "hintShort": "Use your Patreon key for prioritized data and a much higher live-match limit",
-      "getKey": "Sign in with Patreon to get a key",
-      "save": "Save",
-      "remove": "Remove key",
-      "connect": "API key",
-      "active": "Patron",
-      "activeHint": "Prioritized fetching is active"
+    "matchSyncHint": {
+      "description": "Match sharing is off. Turning it on lets this app upload the matches you play, so Deadlock API can show them here instead of waiting on somebody else to submit them.",
+      "missing_one": "{{count}} match from this session is missing here — Deadlock API needs up to a day to ingest it. Match sharing can pull it from Steam in the meantime.",
+      "missing_other": "{{count}} matches from this session are missing here — Deadlock API needs up to a day to ingest them. Match sharing can pull them from Steam in the meantime.",
+      "enable": "Turn on match sharing"
     },
     "refresh": "Refresh",
     "refreshHint": "Fetch the latest matches from deadlock-api",
@@ -182,13 +177,9 @@
     },
     "charts": {
       "winrate": "Winrate",
-      "playerScore": "Player score",
       "heroes": "Heroes",
       "formTitle": "Form",
       "formDescription": "Winrate across a rolling window of {{window}} matches",
-      "scoreTitle": "Player score",
-      "scoreDescription": "Valve's rating for your ranked matches over time",
-      "scoreEmpty": "No ranked matches with a score yet.",
       "sessionTitle": "Winrate per session",
       "sessionDescription": "How you do on the 1st, 2nd, 3rd… match of a session. The dashed line is your overall winrate.",
       "sessionTick": "#{{position}}",
@@ -205,7 +196,11 @@
       "scatterTitle": "Comfort picks and traps",
       "scatterDescription": "Matches played against winrate. Bubble size is time played; pick a hero to benchmark it.",
       "scatterTooltip": "{{winrate}} winrate · {{matches}} matches · {{hours}}h",
-      "matchesAxis": "Matches"
+      "matchesAxis": "Matches",
+      "rank": "Rank",
+      "rankTitle": "Rank over time",
+      "rankDescription": "The badge Valve gave you after each ranked match",
+      "rankEmpty": "No ranked matches on record yet."
     },
     "metrics": {
       "kills": "Kills",

@@ -15,7 +15,6 @@ import {
   getItemStats,
   getMatchHistory,
   getMateStats,
-  getMmrHistory,
   getPlayerHeroStats,
   getPlayerRank,
   getRankAssets,
@@ -165,12 +164,6 @@ export const usePlayerStats = (accountId: number | null) => {
     (id) => getPlayerHeroStats(id),
   );
 
-  const mmrHistory = usePlayerScopedQuery(
-    accountId,
-    { key: "mmr", ttl: STATS_TTL.mmrHistory },
-    (id) => getMmrHistory(id),
-  );
-
   const rank = usePlayerScopedQuery(
     accountId,
     { key: "rank", ttl: STATS_TTL.rank },
@@ -250,14 +243,13 @@ export const usePlayerStats = (accountId: number | null) => {
     [mergedHeroStats, benchmarkByHero],
   );
 
-  const sources = [matchHistory, heroStats, mmrHistory, rank, profile];
+  const sources = [matchHistory, heroStats, rank, profile];
 
   return {
     matches,
     heroes,
     insights,
     benchmarkFor,
-    mmrHistory: mmrHistory.data?.data ?? [],
     rank: rank.data?.data ?? null,
     profile: profile.data?.data ?? null,
     isPending: enabled && sources.some((query) => query.isPending),
@@ -269,19 +261,38 @@ export const usePlayerStats = (accountId: number | null) => {
 };
 
 /**
- * One other player's recent history, fetched only when their card is opened so
- * a lobby of twelve does not pull twelve histories up front.
+ * Everything the player card shows, fetched only once a card is opened - a lobby
+ * of twelve must not pull twelve histories up front.
+ *
+ * The query keys are the ones `usePlayerStats` uses, so opening your own card,
+ * or the same player twice, costs nothing. All three endpoints are on the 100
+ * req/s players tier and cached for minutes, which is why the card fetches for
+ * itself rather than making every caller thread lobby data through.
  */
-export const usePlayerHistory = (accountId: number | null) => {
-  const query = usePlayerScopedQuery(
+export const usePlayerCard = (accountId: number | null) => {
+  const history = usePlayerScopedQuery(
     accountId,
-    { key: "history", ttl: STATS_TTL.mmrHistory },
+    { key: "match-history", ttl: STATS_TTL.matchHistory },
     (id) => getMatchHistory(id),
   );
 
+  const heroStats = usePlayerScopedQuery(
+    accountId,
+    { key: "hero-stats", ttl: STATS_TTL.heroStats },
+    (id) => getPlayerHeroStats(id),
+  );
+
+  const rank = usePlayerScopedQuery(
+    accountId,
+    { key: "rank", ttl: STATS_TTL.rank },
+    (id) => getPlayerRank(id),
+  );
+
   return {
-    matches: query.data?.data ?? [],
-    isPending: accountId !== null && query.isPending,
+    matches: history.data?.data ?? [],
+    heroStats: heroStats.data?.data ?? [],
+    rank: rank.data?.data ?? undefined,
+    isPending: accountId !== null && history.isPending,
   };
 };
 

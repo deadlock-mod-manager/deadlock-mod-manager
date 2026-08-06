@@ -26,13 +26,14 @@ import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router";
 import PageTitle from "@/components/shared/page-title";
 import { AccountPrompt } from "@/components/stats/account-prompt";
+import { DeadlockApiCredit } from "@/components/stats/deadlock-api-credit";
 import { HeroesTab } from "@/components/stats/heroes-tab";
 import { ItemsTab } from "@/components/stats/items-tab";
 import { LiveTab } from "@/components/stats/live-tab";
-import { LocalSyncHint } from "@/components/stats/local-sync-hint";
 import { OverviewTab } from "@/components/stats/overview-tab";
 import { SquadTab } from "@/components/stats/squad-tab";
 import { StatsHeader } from "@/components/stats/stats-header";
+import { StatsHints } from "@/components/stats/stats-hints";
 import { StatTileSkeleton } from "@/components/stats/stat-tile";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import {
@@ -43,13 +44,8 @@ import {
   useSquadStats,
   useStatsRefresh,
 } from "@/hooks/use-player-stats";
-import { useMissingLocalMatches } from "@/hooks/use-live-match";
-import { useMatchSync } from "@/hooks/use-match-sync";
 import { useSelectedSteamAccount } from "@/hooks/use-steam-accounts";
-import { ApiKeyDialog } from "@/components/stats/api-key-dialog";
-import { setDeadlockApiKey } from "@/lib/stats/api";
 import { summarize } from "@/lib/stats/derive";
-import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 type StatsTab = "overview" | "heroes" | "items" | "squad" | "live";
@@ -67,7 +63,7 @@ const isStatsTab = (value: string | null): value is StatsTab =>
   TABS.some((tab) => tab === value);
 
 const TAB_TRIGGER_CLASS =
-  "h-9 gap-1.5 rounded-full px-6 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm";
+  "h-9 gap-1.5 rounded-full px-4 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm 2xl:px-6";
 
 const StatsSkeleton = () => (
   <div className='flex flex-col gap-4'>
@@ -88,16 +84,6 @@ const Stats = () => {
   const { t } = useTranslation();
   const { analytics } = useAnalyticsContext();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [apiKeyOpen, setApiKeyOpen] = useState(false);
-  const deadlockApiKey = usePersistedStore((state) => state.deadlockApiKey);
-  const saveDeadlockApiKey = usePersistedStore(
-    (state) => state.setDeadlockApiKey,
-  );
-
-  // The API client is a plain module, so it has to be told about the key.
-  useEffect(() => {
-    setDeadlockApiKey(deadlockApiKey);
-  }, [deadlockApiKey]);
 
   const tabParam = searchParams.get("tab");
   const [tab, setTab] = useState<StatsTab>(
@@ -115,16 +101,6 @@ const Stats = () => {
   const stats = usePlayerStats(accountId);
   const squad = useSquadStats(accountId, stats.matches);
   const itemStats = useItemStats(accountId);
-  // The console log knows about matches the API has not ingested yet. Filling
-  // them in needs the Steam session, which sits behind the match-sync consent.
-  const matchSync = useMatchSync();
-  const [syncHintDismissed, setSyncHintDismissed] = useState(false);
-  const missingLocal = useMissingLocalMatches(
-    stats.matches.map((match) => match.match_id),
-    hasAccount && !matchSync.status?.enabled,
-  );
-  const showSyncHint =
-    !syncHintDismissed && !matchSync.status?.enabled && missingLocal.length > 0;
   const { heroesById } = useHeroCatalog();
   const rankAssets = useRankAssets();
   const { refresh, isRefreshing, canRefresh } = useStatsRefresh();
@@ -144,8 +120,13 @@ const Stats = () => {
   const careerWinrate = summarize(stats.matches).winrate;
 
   const statsTabs = (
-    <Tabs className='w-auto' onValueChange={handleTabChange} value={tab}>
-      <TabsList className='h-11 rounded-full bg-muted/60 p-1'>
+    // Five pills outgrow a narrow window before anything else in the header
+    // does; scrolling them keeps every tab reachable instead of clipped.
+    <Tabs
+      className='max-w-full overflow-x-auto'
+      onValueChange={handleTabChange}
+      value={tab}>
+      <TabsList className='h-11 w-max rounded-full bg-muted/60 p-1'>
         <TabsTrigger className={TAB_TRIGGER_CLASS} value='overview'>
           <ChartLine className='h-4 w-4' />
           {t("stats.tabs.overview")}
@@ -232,7 +213,7 @@ const Stats = () => {
             heroesById={heroesById}
             insights={stats.insights}
             matches={stats.matches}
-            mmrHistory={stats.mmrHistory}
+            rankAssets={rankAssets.data?.data ?? []}
           />
         </TabsContent>
         <TabsContent className='mt-0' value='heroes'>
@@ -257,9 +238,11 @@ const Stats = () => {
             <SquadTab
               careerWinrate={careerWinrate}
               enemies={squad.enemies}
+              heroesById={heroesById}
               mates={squad.mates}
               partyIds={squad.partyIds}
               profilesById={squad.profilesById}
+              rankAssets={rankAssets.data?.data ?? []}
             />
           )}
         </TabsContent>
@@ -286,8 +269,6 @@ const Stats = () => {
             canRefresh={canRefresh}
             center={statsTabs}
             fetchedAt={stats.fetchedAt}
-            hasApiKey={deadlockApiKey !== null}
-            onOpenApiKey={() => setApiKeyOpen(true)}
             isRefreshing={isRefreshing}
             isStale={stats.isStale}
             onRefresh={refresh}
@@ -297,12 +278,16 @@ const Stats = () => {
             rankAssets={rankAssets.data?.data ?? []}
           />
         ) : (
-          <div className='flex justify-center'>{statsTabs}</div>
+          // No header to hang the attribution off, but it belongs on every view
+          // of this page, so it rides along with the standalone tab switcher.
+          <div className='flex flex-wrap items-center justify-center gap-3'>
+            {statsTabs}
+            <DeadlockApiCredit />
+          </div>
         )}
-        {showSyncHint && (
-          <LocalSyncHint
-            missingCount={missingLocal.length}
-            onDismiss={() => setSyncHintDismissed(true)}
+        {hasAccount && (
+          <StatsHints
+            apiMatchIds={stats.matches.map((match) => match.match_id)}
           />
         )}
         {hasAccount && stats.isStale && (
@@ -321,13 +306,6 @@ const Stats = () => {
         )}>
         {renderBody()}
       </div>
-
-      <ApiKeyDialog
-        currentKey={deadlockApiKey}
-        onOpenChange={setApiKeyOpen}
-        onSave={saveDeadlockApiKey}
-        open={apiKeyOpen}
-      />
     </div>
   );
 };

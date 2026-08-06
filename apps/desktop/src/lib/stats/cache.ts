@@ -7,12 +7,12 @@ const logger = createLogger("stats-cache");
 // blob that carries the mod library.
 const STORE_FILE = "stats-cache.json";
 // Bump when a cached payload's shape changes; older entries are then ignored.
-const CACHE_VERSION = 1;
+// v2: match history carries the ranked badge, which replaced /mmr-history.
+const CACHE_VERSION = 2;
 
 export const STATS_TTL = {
   matchHistory: 10 * 60 * 1000,
   heroStats: 10 * 60 * 1000,
-  mmrHistory: 30 * 60 * 1000,
   rank: 30 * 60 * 1000,
   mates: 60 * 60 * 1000,
   steamProfiles: 24 * 60 * 60 * 1000,

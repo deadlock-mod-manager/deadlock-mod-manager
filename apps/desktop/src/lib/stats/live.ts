@@ -1,7 +1,6 @@
 import { createLogger } from "@/lib/logger";
 import {
-  apiHeaders,
-  apiKeyQuery,
+  API_HEADERS,
   DeadlockApiError,
   getPlayerRank,
   type PlayerRank,
@@ -36,7 +35,7 @@ export const getLiveBroadcast = async (
   matchId: string,
 ): Promise<LiveBroadcast> => {
   const response = await fetch(`${BASE_URL}/v1/matches/${matchId}/live/url`, {
-    headers: apiHeaders(),
+    headers: API_HEADERS,
   });
   if (!response.ok) {
     throw new DeadlockApiError(response.status, "/live/url");
@@ -88,12 +87,6 @@ export const subscribeToLiveMatch = (
   const url = new URL(`${BASE_URL}/v1/matches/demo/live/query`);
   url.searchParams.set("query", LIVE_QUERY);
   url.searchParams.set("broadcast_url", broadcastUrl);
-  // EventSource cannot send headers, which is what the query-param variant of
-  // the key is for.
-  const key = apiKeyQuery();
-  if (key) {
-    url.searchParams.set("api_key", key);
-  }
 
   const latest = new Map<string, LivePlayer>();
   // The stream is the only source for these; sampling it as it arrives means the

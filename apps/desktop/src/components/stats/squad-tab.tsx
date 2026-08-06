@@ -13,11 +13,13 @@ import {
   TableHeader,
   TableRow,
 } from "@deadlock-mods/ui/components/table";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ChartCard } from "@/components/stats/chart-card";
 import { DeltaBarChart } from "@/components/stats/delta-bar-chart";
-import type { EnemyStats, SteamProfile } from "@/lib/stats/api";
+import { PlayerDialog } from "@/components/stats/player-dialog";
+import type { DeadlockHero } from "@/lib/deadlock-api";
+import type { EnemyStats, RankAsset, SteamProfile } from "@/lib/stats/api";
 import type { MateInsight } from "@/lib/stats/derive";
 import {
   formatDecimal,
@@ -34,16 +36,24 @@ interface SquadTabProps {
   enemies: EnemyStats[];
   profilesById: Map<number, SteamProfile>;
   careerWinrate: number;
+  heroesById: Map<number, DeadlockHero>;
+  rankAssets: RankAsset[];
 }
 
+/** Opens the same player card the live scoreboard uses. */
 const PlayerCell = ({
   accountId,
   profile,
+  onSelect,
 }: {
   accountId: number;
   profile: SteamProfile | undefined;
+  onSelect: (accountId: number) => void;
 }) => (
-  <div className='flex items-center gap-2'>
+  <button
+    className='flex min-w-0 items-center gap-2 rounded-md text-left transition-colors hover:text-primary'
+    onClick={() => onSelect(accountId)}
+    type='button'>
     <Avatar className='h-7 w-7'>
       {profile?.avatarmedium && (
         <AvatarImage alt={profile.personaname} src={profile.avatarmedium} />
@@ -55,7 +65,7 @@ const PlayerCell = ({
     <span className='truncate font-medium'>
       {profile?.personaname ?? `#${accountId}`}
     </span>
-  </div>
+  </button>
 );
 
 export const SquadTab = ({
@@ -64,8 +74,11 @@ export const SquadTab = ({
   enemies,
   profilesById,
   careerWinrate,
+  heroesById,
+  rankAssets,
 }: SquadTabProps) => {
   const { t } = useTranslation();
+  const [selected, setSelected] = useState<number | null>(null);
 
   const bars = useMemo(
     () =>
@@ -137,6 +150,7 @@ export const SquadTab = ({
                   <div className='flex items-center gap-2'>
                     <PlayerCell
                       accountId={mate.mateId}
+                      onSelect={setSelected}
                       profile={profilesById.get(mate.mateId)}
                     />
                     {partyIds.has(mate.mateId) && (
@@ -187,6 +201,7 @@ export const SquadTab = ({
                   <TableCell>
                     <PlayerCell
                       accountId={enemy.enemy_id}
+                      onSelect={setSelected}
                       profile={profilesById.get(enemy.enemy_id)}
                     />
                   </TableCell>
@@ -204,6 +219,14 @@ export const SquadTab = ({
           </Table>
         </Card>
       )}
+
+      <PlayerDialog
+        accountId={selected}
+        heroesById={heroesById}
+        onOpenChange={(open) => !open && setSelected(null)}
+        profile={selected === null ? undefined : profilesById.get(selected)}
+        rankAssets={rankAssets}
+      />
     </div>
   );
 };

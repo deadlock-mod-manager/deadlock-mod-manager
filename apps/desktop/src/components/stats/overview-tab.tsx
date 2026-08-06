@@ -2,12 +2,12 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { FormChart } from "@/components/stats/form-chart";
 import { InsightList } from "@/components/stats/insight-list";
+import { RankChart } from "@/components/stats/rank-chart";
 import { RecentMatches } from "@/components/stats/recent-matches";
-import { ScoreChart } from "@/components/stats/score-chart";
 import { SessionChart } from "@/components/stats/session-chart";
 import { StatTile } from "@/components/stats/stat-tile";
 import type { DeadlockHero } from "@/lib/deadlock-api";
-import type { MatchHistoryEntry, MmrHistoryEntry } from "@/lib/stats/api";
+import type { MatchHistoryEntry, RankAsset } from "@/lib/stats/api";
 import {
   chronological,
   type Insight,
@@ -26,16 +26,16 @@ const THIRTY_DAYS_S = 30 * 24 * 60 * 60;
 
 interface OverviewTabProps {
   matches: MatchHistoryEntry[];
-  mmrHistory: MmrHistoryEntry[];
   insights: Insight[];
   heroesById: Map<number, DeadlockHero>;
+  rankAssets: RankAsset[];
 }
 
 export const OverviewTab = ({
   matches,
-  mmrHistory,
   insights,
   heroesById,
+  rankAssets,
 }: OverviewTabProps) => {
   const { t } = useTranslation();
 
@@ -111,7 +111,7 @@ export const OverviewTab = ({
 
       <div className='grid gap-4 lg:grid-cols-2'>
         <SessionChart matches={matches} />
-        <ScoreChart history={mmrHistory} />
+        <RankChart matches={matches} rankAssets={rankAssets} />
       </div>
 
       <RecentMatches heroesById={heroesById} matches={matches} />

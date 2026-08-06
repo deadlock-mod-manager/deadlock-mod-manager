@@ -102,6 +102,10 @@ pub struct LocalMatch {
   pub abandoned_time_s: Option<u32>,
   pub objectives_mask_team0: u64,
   pub objectives_mask_team1: u64,
+  // No ranked_display_badge/ranked_delta: Valve added them as fields 27-30 of
+  // the GC history message, which the pinned `valveprotos` revision predates.
+  // Locally synced matches therefore carry no badge, and the rank chart picks
+  // them up once deadlock-api has ingested them.
 }
 
 // One page of the GC `GetMatchHistory` response. `next_cursor` is the continuation

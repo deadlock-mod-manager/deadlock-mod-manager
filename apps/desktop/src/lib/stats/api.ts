@@ -37,6 +37,17 @@ export interface MatchHistoryEntry {
   abandoned_time_s: number | null;
   objectives_mask_team0: number;
   objectives_mask_team1: number;
+  /**
+   * The badge Valve showed the player after this match, encoded like every other
+   * badge in the API: tier in the leading digits, subrank in the last one. Null
+   * on unranked matches and during placements. This replaced `/mmr-history`,
+   * which the API deprecated along with its MMR estimate.
+   */
+  ranked_display_badge?: number | null;
+  /** Ranked progress the match awarded; a subrank spans 1000 points. */
+  ranked_delta?: number | null;
+  /** Non-zero while the match still counted towards placement. */
+  ranked_calibration_match?: number | null;
 }
 
 export interface PlayerHeroStats {
@@ -88,16 +99,6 @@ export interface AnalyticsHeroStats {
   total_shots_missed: number;
 }
 
-export interface MmrHistoryEntry {
-  account_id: number;
-  match_id: number;
-  start_time: number;
-  player_score: number;
-  rank: number;
-  division: number;
-  division_tier: number;
-}
-
 export interface MateStats {
   mate_id: number;
   wins: number;
@@ -132,27 +133,17 @@ export interface PlayerRank {
 }
 
 /**
- * A Patreon key raises the shared IP limits to per-key ones - most visibly on
- * the live broadcast, which goes from 2 requests per hour to 100.
+ * Every endpoint used here is public - a Patreon subscription is tied to the
+ * Steam accounts a supporter registers on deadlock-api.com, not to a credential
+ * the client has to send. Requests for a prioritized account get the better data
+ * on their own, so the app never asks for a key.
  */
-let apiKey: string | null = null;
-
-export const setDeadlockApiKey = (key: string | null): void => {
-  apiKey = key?.trim() ? key.trim() : null;
+export const API_HEADERS: Readonly<Record<string, string>> = {
+  Accept: "application/json",
 };
 
-export const hasDeadlockApiKey = (): boolean => apiKey !== null;
-
-/** For EventSource, which cannot set headers. */
-export const apiKeyQuery = (): string | null => apiKey;
-
-export const apiHeaders = (): Record<string, string> => ({
-  Accept: "application/json",
-  ...(apiKey ? { "X-API-KEY": apiKey } : {}),
-});
-
 const get = async <T>(path: string): Promise<T> => {
-  const response = await fetch(`${BASE_URL}${path}`, { headers: apiHeaders() });
+  const response = await fetch(`${BASE_URL}${path}`, { headers: API_HEADERS });
   if (!response.ok) {
     throw new DeadlockApiError(response.status, path);
   }
@@ -167,9 +158,6 @@ export const getPlayerHeroStats = (accountIds: number | number[]) =>
   get<PlayerHeroStats[]>(
     `/v1/players/hero-stats?account_ids=${[accountIds].flat().join(",")}`,
   );
-
-export const getMmrHistory = (accountId: number) =>
-  get<MmrHistoryEntry[]>(`/v1/players/${accountId}/mmr-history`);
 
 export const getPlayerRank = (accountId: number) =>
   get<PlayerRank>(`/v1/players/${accountId}/rank`);

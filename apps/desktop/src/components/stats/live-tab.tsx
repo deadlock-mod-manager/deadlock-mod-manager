@@ -22,7 +22,7 @@ import { useNavigate } from "react-router";
 import { HeroAvatar } from "@/components/stats/hero-avatar";
 import { LiveLeaderboard } from "@/components/stats/live-leaderboard";
 import { LiveMatchCharts } from "@/components/stats/live-match-chart";
-import { LivePlayerDialog } from "@/components/stats/live-player-dialog";
+import { PlayerDialog } from "@/components/stats/player-dialog";
 import { useLiveMatch } from "@/hooks/use-live-match";
 import type { DeadlockHero } from "@/lib/deadlock-api";
 import type { RankAsset } from "@/lib/stats/api";
@@ -55,18 +55,20 @@ export const LiveTab = ({
     matchId: string | null;
     accountId: number;
   } | null>(null);
-  const live = useLiveMatch(true);
+  const live = useLiveMatch();
 
-  const { profiles, ranks, heroStats } = live;
+  const { board, profiles, ranks, heroStats } = live;
 
-  const matchId = live.match?.matchId ?? null;
   const select = (player: LivePlayer) =>
-    setSelection({ matchId, accountId: player.accountId });
+    setSelection({
+      matchId: board?.matchId ?? null,
+      accountId: player.accountId,
+    });
 
   // Derived from the live rows rather than held as its own copy, so the dialog
   // follows the scoreboard instead of freezing the moment it was opened.
   const selected =
-    selection?.matchId === matchId
+    selection?.matchId === (board?.matchId ?? null)
       ? (live.players.find(
           (player) => player.accountId === selection.accountId,
         ) ?? null)
@@ -101,7 +103,7 @@ export const LiveTab = ({
 
   // In matchmaking: the lobby lands in the log within a minute, so this is a
   // waiting state rather than an empty one.
-  if (!live.match && live.queued) {
+  if (!board && live.queued) {
     return (
       <Empty className='py-16'>
         <EmptyHeader>
@@ -120,7 +122,7 @@ export const LiveTab = ({
     );
   }
 
-  if (!live.match) {
+  if (!board) {
     return (
       <Empty className='py-16'>
         <EmptyHeader>
@@ -215,14 +217,14 @@ export const LiveTab = ({
           </div>
           <div className='truncate text-muted-foreground text-xs'>
             {onHero
-              ? t("stats.live.onHeroShort", {
+              ? t("stats.player.onHeroShort", {
                   matches: onHero.matches_played,
                   winrate: formatPercent(
                     onHero.wins / onHero.matches_played,
                     0,
                   ),
                 })
-              : t("stats.live.firstTimeHero")}
+              : t("stats.player.firstTimeHero")}
           </div>
         </div>
         <div className='shrink-0 text-right'>
@@ -252,8 +254,11 @@ export const LiveTab = ({
           />
           {t(`stats.live.status.${live.status}`)}
         </Badge>
+        {!board.isRunning && (
+          <Badge variant='outline'>{t("stats.live.lastMatch")}</Badge>
+        )}
         <span className='text-muted-foreground text-xs'>
-          {t("stats.live.matchId", { id: live.match.matchId })}
+          {t("stats.live.matchId", { id: board.matchId })}
         </span>
       </div>
 
@@ -300,13 +305,12 @@ export const LiveTab = ({
 
       <LiveMatchCharts samples={live.samples} />
 
-      <LivePlayerDialog
-        heroStats={heroStats}
+      <PlayerDialog
+        accountId={selected?.accountId ?? null}
         heroesById={heroesById}
+        live={selected}
         onOpenChange={(open) => !open && setSelection(null)}
-        player={selected}
         profile={selected ? profiles.get(selected.accountId) : undefined}
-        rank={selected ? ranks.get(selected.accountId) : undefined}
         rankAssets={rankAssets}
       />
     </div>
