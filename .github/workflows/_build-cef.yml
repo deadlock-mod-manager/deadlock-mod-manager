@@ -145,7 +145,7 @@ jobs:
           bun-version: latest
 
       - name: Cache CEF binaries
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/tauri-cef
           key: ${{ runner.os }}-${{ runner.arch }}-cef-${{ hashFiles('apps/desktop/Cargo.lock') }}
@@ -154,7 +154,7 @@ jobs:
 
       - name: Cache Tauri CEF CLI
         id: cache-tauri-cli
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cargo/bin/cargo-tauri
           key: ${{ runner.os }}-${{ runner.arch }}-tauri-cli-${{ env.TAURI_CEF_BRANCH }}
