@@ -31,12 +31,19 @@ export const RankChart = ({ matches, rankAssets }: RankChartProps) => {
     () =>
       matches
         // Unranked matches and placements carry no badge; plotting them as 0
-        // would drop the line to Obscurus between every ranked game.
-        .filter((match) => (match.ranked_display_badge ?? 0) > 0)
+        // would drop the line to Obscurus between every ranked game. The
+        // predicate is what lets the badge stay a number below.
+        .filter(
+          (
+            match,
+          ): match is MatchHistoryEntry & { ranked_display_badge: number } =>
+            typeof match.ranked_display_badge === "number" &&
+            match.ranked_display_badge > 0,
+        )
         .sort((a, b) => a.start_time - b.start_time)
         .map((match) => ({
           startTime: match.start_time,
-          badge: match.ranked_display_badge as number,
+          badge: match.ranked_display_badge,
         })),
     [matches],
   );

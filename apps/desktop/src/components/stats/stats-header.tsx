@@ -152,19 +152,24 @@ export const StatsHeader = ({
         </div>
 
         <Tooltip>
+          {/* The trigger has to sit on something enabled: a disabled button
+              swallows pointer events, so the cooldown explanation - the one
+              case the tooltip actually matters - would never appear. */}
           <TooltipTrigger asChild>
-            <Button
-              disabled={!canRefresh || isRefreshing}
-              onClick={onRefresh}
-              size='sm'
-              variant='outline'>
-              {isRefreshing ? (
-                <Loader2 className='h-4 w-4 animate-spin' />
-              ) : (
-                <RefreshCw className='h-4 w-4' />
-              )}
-              {t("stats.refresh")}
-            </Button>
+            <span className='inline-flex'>
+              <Button
+                disabled={!canRefresh || isRefreshing}
+                onClick={onRefresh}
+                size='sm'
+                variant='outline'>
+                {isRefreshing ? (
+                  <Loader2 className='h-4 w-4 animate-spin' />
+                ) : (
+                  <RefreshCw className='h-4 w-4' />
+                )}
+                {t("stats.refresh")}
+              </Button>
+            </span>
           </TooltipTrigger>
           <TooltipContent>
             {canRefresh ? t("stats.refreshHint") : t("stats.refreshCooldown")}

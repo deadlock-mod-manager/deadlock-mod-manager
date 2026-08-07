@@ -72,6 +72,7 @@ interface PlayerCareerOverviewProps {
   isHeroStatsPending: boolean;
   live?: LivePlayer | null;
   onSelectMatch: (matchId: number) => void;
+  onSelectHero: (heroId: number) => void;
 }
 
 export const PlayerCareerOverview = ({
@@ -82,6 +83,7 @@ export const PlayerCareerOverview = ({
   isHeroStatsPending,
   live,
   onSelectMatch,
+  onSelectHero,
 }: PlayerCareerOverviewProps) => {
   const { t } = useTranslation();
   const form = useMemo(() => formCurve(matches, FORM_WINDOW), [matches]);
@@ -211,7 +213,33 @@ export const PlayerCareerOverview = ({
           <Section
             description={t("stats.player.mostPlayedDescription")}
             title={t("stats.player.mostPlayed")}>
-            <HeroWinrateBars heroes={topHeroes} />
+            {/* The bars take a click, but a recharts shape is not focusable -
+                these portraits are the keyboard route to the same breakdown. */}
+            <div className='flex flex-wrap gap-1.5'>
+              {topHeroes.map((entry) => (
+                <Tooltip key={entry.heroId}>
+                  <TooltipTrigger asChild>
+                    <button
+                      aria-label={t("stats.hero.openHero", {
+                        hero: entry.name,
+                      })}
+                      className='rounded-md p-0.5 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+                      onClick={() => onSelectHero(entry.heroId)}
+                      type='button'>
+                      <HeroAvatar
+                        className='h-7 w-7'
+                        hero={heroesById.get(entry.heroId)}
+                        heroId={entry.heroId}
+                      />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    {t("stats.hero.openHero", { hero: entry.name })}
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </div>
+            <HeroWinrateBars heroes={topHeroes} onSelect={onSelectHero} />
           </Section>
         )
       )}

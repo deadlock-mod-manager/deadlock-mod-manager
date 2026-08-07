@@ -18,7 +18,9 @@ import {
 import { formatClock, formatCompact } from "@/lib/stats/format";
 import { cn } from "@/lib/utils";
 
-const INVENTORY_SLOTS = 16;
+/** The grid is eight wide; the number of rows follows the build itself. */
+const SLOTS_PER_ROW = 8;
+const VISIBLE_TRANSACTIONS = 3;
 const PLAYBACK_DURATION_MS = 8_000;
 
 type PlaybackStart = {
@@ -40,13 +42,10 @@ const itemTone = (slotType: string | undefined): string => {
 };
 
 const ItemSlot = ({ item }: { item?: DeadlockItem }) => {
+  // An empty slot is a spacer that keeps the grid from reflowing as the build
+  // fills up, not something to draw a box around.
   if (!item) {
-    return (
-      <div
-        aria-hidden
-        className='aspect-square rounded-md border border-border/60 bg-background/40'
-      />
-    );
+    return <div aria-hidden className='aspect-square' />;
   }
 
   const image = item.shop_image_webp ?? item.shop_image;
@@ -111,12 +110,24 @@ export const ItemPurchaseTimeline = ({
     () =>
       transactions
         .filter((transaction) => transaction.time <= playhead)
-        .slice(-5)
+        .slice(-VISIBLE_TRANSACTIONS)
         .reverse(),
     [transactions, playhead],
   );
   const bought = transactions.filter(({ kind }) => kind === "buy").length;
   const sold = transactions.length - bought;
+
+  // Sizing the grid to the build's peak keeps it from growing a row mid-playback
+  // while never reserving space for items the player never owned at once.
+  const slotCount = useMemo(() => {
+    let owned = 0;
+    let peak = 0;
+    for (const transaction of transactions) {
+      owned += transaction.kind === "buy" ? 1 : -1;
+      peak = Math.max(peak, owned);
+    }
+    return Math.max(Math.ceil(peak / SLOTS_PER_ROW), 1) * SLOTS_PER_ROW;
+  }, [transactions]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -159,29 +170,18 @@ export const ItemPurchaseTimeline = ({
   };
 
   return (
-    <section className='mt-4 rounded-md border bg-muted/10 p-4'>
-      <div className='mb-3 flex flex-wrap items-center justify-between gap-3'>
+    <section className='space-y-3'>
+      <div className='flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1'>
         <h3 className='font-semibold text-sm'>
           {t("stats.player.itemization")}
         </h3>
-        <dl className='flex gap-5 text-xs'>
-          <div>
-            <dt className='text-muted-foreground'>
-              {t("stats.player.active")}
-            </dt>
-            <dd className='font-semibold tabular-nums'>{inventory.length}</dd>
-          </div>
-          <div>
-            <dt className='text-muted-foreground'>
-              {t("stats.player.bought")}
-            </dt>
-            <dd className='font-semibold tabular-nums'>{bought}</dd>
-          </div>
-          <div>
-            <dt className='text-muted-foreground'>{t("stats.player.sold")}</dt>
-            <dd className='font-semibold tabular-nums'>{sold}</dd>
-          </div>
-        </dl>
+        <p className='text-muted-foreground text-xs tabular-nums'>
+          {t("stats.player.buildSummary", {
+            active: inventory.length,
+            bought,
+            sold,
+          })}
+        </p>
       </div>
 
       <div className='flex items-center gap-3'>
@@ -246,9 +246,9 @@ export const ItemPurchaseTimeline = ({
         </span>
       </div>
 
-      <div className='mt-4 grid gap-5 lg:grid-cols-[minmax(20rem,1fr)_minmax(19rem,0.9fr)]'>
+      <div className='grid gap-x-6 gap-y-4 lg:grid-cols-[minmax(20rem,1fr)_minmax(17rem,0.8fr)]'>
         <div>
-          <div className='mb-2 flex items-center justify-between gap-3'>
+          <div className='mb-1.5 flex items-baseline justify-between gap-3'>
             <span className='font-medium text-xs'>
               {t("stats.player.inventory")}
             </span>
@@ -262,17 +262,20 @@ export const ItemPurchaseTimeline = ({
             </span>
           </div>
           <div className='grid grid-cols-8 gap-1.5'>
-            {Array.from({ length: INVENTORY_SLOTS }, (_, index) => (
+            {Array.from({ length: slotCount }, (_, index) => (
               <ItemSlot item={inventory[index]} key={index} />
             ))}
           </div>
         </div>
 
         <div>
-          <h4 className='mb-2 font-medium text-xs'>
+          <h4 className='mb-1.5 font-medium text-xs'>
             {t("stats.player.transactions")}
           </h4>
-          <div className='flex min-h-28 flex-col gap-1'>
+          {/* Rows on a shared surface: a border per purchase turned a three-line
+              log into three more boxes. The height is reserved for the full log
+              so scrubbing does not shift the build grid beside it. */}
+          <div className='min-h-[6.75rem] divide-y'>
             {visibleTransactions.length > 0 ? (
               visibleTransactions.map((transaction) => {
                 const Icon = transaction.kind === "buy" ? ArrowUp : ArrowDown;
@@ -281,14 +284,9 @@ export const ItemPurchaseTimeline = ({
                   transaction.item.shop_image;
                 return (
                   <div
-                    className={cn(
-                      "grid min-h-9 grid-cols-[3rem_1rem_1.75rem_minmax(0,1fr)] items-center gap-2 rounded-md border border-l-2 bg-background/50 px-2 text-xs",
-                      transaction.kind === "buy"
-                        ? "border-l-emerald-500/70"
-                        : "border-l-destructive/70",
-                    )}
+                    className='grid h-9 grid-cols-[2.75rem_1rem_1.5rem_minmax(0,1fr)] items-center gap-2 text-xs'
                     key={transaction.id}>
-                    <span className='font-medium tabular-nums'>
+                    <span className='text-muted-foreground tabular-nums'>
                       {formatClock(transaction.time)}
                     </span>
                     <Icon
@@ -327,9 +325,9 @@ export const ItemPurchaseTimeline = ({
                 );
               })
             ) : (
-              <div className='flex min-h-28 items-center justify-center rounded-md border border-dashed text-muted-foreground text-xs'>
+              <p className='flex h-9 items-center text-muted-foreground text-xs'>
                 {t("stats.player.noTransactionsYet")}
-              </div>
+              </p>
             )}
           </div>
         </div>

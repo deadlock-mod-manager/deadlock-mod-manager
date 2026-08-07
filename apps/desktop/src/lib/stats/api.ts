@@ -2,12 +2,49 @@ import { ASSETS_BASE_URL, DeadlockApiError } from "@/lib/deadlock-api";
 import { fetch } from "@/lib/fetch";
 import {
   parseList,
+  parseOne,
   type RankAsset,
   rankAssetSchema,
 } from "@/lib/validation/deadlock-api";
+import {
+  analyticsHeroStatsSchema,
+  badgeDistributionEntrySchema,
+  enemyStatsSchema,
+  heroCounterStatsSchema,
+  itemStatsSchema,
+  matchHistoryEntrySchema,
+  matchMetadataSchema,
+  mateStatsSchema,
+  playerHeroStatsSchema,
+  playerRankSchema,
+  rankedSeasonSchema,
+  steamProfileSchema,
+} from "@/lib/validation/stats-api";
+import type { z } from "zod";
 
 export { DeadlockApiError };
 export type { RankAsset };
+// The shapes live with their schemas so the two cannot drift; everything on the
+// Stats page still imports them from here.
+export type {
+  AnalyticsHeroStats,
+  BadgeDistributionEntry,
+  EnemyStats,
+  HeroCounterStats,
+  ItemStats,
+  LastRankedMatch,
+  MatchHistoryEntry,
+  MatchMetadata,
+  MatchMetadataItem,
+  MatchMetadataPlayer,
+  MatchMetadataStat,
+  MateStats,
+  PlayerHeroStats,
+  PlayerRank,
+  RankedSeason,
+  SeasonInterval,
+  SteamProfile,
+} from "@/lib/validation/stats-api";
 
 const BASE_URL = "https://api.deadlock-api.com";
 
@@ -15,305 +52,142 @@ const BASE_URL = "https://api.deadlock-api.com";
 // capped at 5 req/min per IP, and match-history?force_refetch=true is 1 req/h.
 // Everything used here is 100 req/s per IP (players) or 200 req/min (analytics).
 
-export interface MatchHistoryEntry {
-  account_id: number;
-  match_id: number;
-  hero_id: number;
-  hero_level: number;
-  start_time: number;
-  game_mode: number;
-  match_mode: number;
-  player_team: number;
-  player_kills: number;
-  player_deaths: number;
-  player_assists: number;
-  denies: number;
-  net_worth: number;
-  last_hits: number;
-  match_duration_s: number;
-  /** 0/1 - the team index that won. */
-  match_result: number;
-  team_abandoned: boolean | null;
-  abandoned_time_s: number | null;
-  objectives_mask_team0: number;
-  objectives_mask_team1: number;
-  /**
-   * The badge Valve showed the player after this match, encoded like every other
-   * badge in the API: tier in the leading digits, subrank in the last one. Null
-   * on unranked matches and during placements. This replaced `/mmr-history`,
-   * which the API deprecated along with its MMR estimate.
-   */
-  ranked_display_badge?: number | null;
-  /** Ranked progress the match awarded; a subrank spans 1000 points. */
-  ranked_delta?: number | null;
-  /** Non-zero while the match still counted towards placement. */
-  ranked_calibration_match?: number | null;
-}
-
-export interface MatchMetadataItem {
-  game_time_s: number;
-  item_id: number;
-  upgrade_id: number;
-  sold_time_s: number;
-}
-
-export interface MatchMetadataStat {
-  time_stamp_s: number;
-  net_worth: number;
-  kills: number;
-  deaths: number;
-  assists: number;
-  player_damage: number;
-  player_damage_taken: number;
-  player_healing: number;
-  damage_mitigated: number;
-  boss_damage: number;
-  shots_hit: number;
-  shots_missed: number;
-}
-
-export interface MatchMetadataPlayer {
-  account_id: number;
-  team: number;
-  hero_id: number;
-  kills: number;
-  deaths: number;
-  assists: number;
-  net_worth: number;
-  last_hits: number;
-  denies: number;
-  level: number;
-  items: MatchMetadataItem[];
-  stats: MatchMetadataStat[];
-}
-
-export interface MatchMetadata {
-  match_info: {
-    duration_s: number;
-    winning_team: number;
-    start_time: number;
-    match_id: number;
-    players: MatchMetadataPlayer[];
-  };
-}
-
-export interface PlayerHeroStats {
-  account_id: number;
-  hero_id: number;
-  matches_played: number;
-  wins: number;
-  last_played: number;
-  time_played: number;
-  kills: number;
-  deaths: number;
-  assists: number;
-  ending_level: number;
-  accuracy: number;
-  crit_shot_rate: number;
-  denies_per_match: number;
-  kills_per_min: number;
-  deaths_per_min: number;
-  assists_per_min: number;
-  denies_per_min: number;
-  networth_per_min: number;
-  last_hits_per_min: number;
-  damage_per_min: number;
-  damage_taken_per_min: number;
-  damage_mitigated_per_min: number;
-  obj_damage_per_min: number;
-  total_player_damage: number;
-  total_player_damage_taken: number;
-  total_boss_damage: number;
-  total_creep_damage: number;
-  total_neutral_damage: number;
-}
-
-export interface AnalyticsHeroStats {
-  hero_id: number;
-  matches: number;
-  wins: number;
-  losses: number;
-  total_kills: number;
-  total_deaths: number;
-  total_assists: number;
-  total_net_worth: number;
-  total_last_hits: number;
-  total_denies: number;
-  total_player_damage: number;
-  total_player_damage_taken: number;
-  total_boss_damage: number;
-  total_shots_hit: number;
-  total_shots_missed: number;
-}
-
-export interface MateStats {
-  mate_id: number;
-  wins: number;
-  matches_played: number;
-  matches: number[];
-}
-
-export interface EnemyStats {
-  enemy_id: number;
-  wins: number;
-  matches_played: number;
-  matches: number[];
-}
-
-export interface SteamProfile {
-  account_id: number;
-  personaname: string;
-  profileurl: string;
-  avatar: string;
-  avatarmedium: string;
-  avatarfull: string;
-  realname: string | null;
-  countrycode: string | null;
-  last_updated: string;
-  matches_played_last_30d: number;
-}
-
-export interface PlayerRank {
-  badge: number;
-  rank: number;
-  subrank: number;
-}
-
 /**
  * Every endpoint used here is public - a Patreon subscription is tied to the
  * Steam accounts a supporter registers on deadlock-api.com, not to a credential
  * the client has to send. Requests for a prioritized account get the better data
- * on their own, so the app never asks for a key.
+ * on their own, so the app never asks for one.
  */
 export const API_HEADERS: Readonly<Record<string, string>> = {
   Accept: "application/json",
 };
 
-const get = async <T>(path: string): Promise<T> => {
+const request = async (path: string): Promise<unknown> => {
   const response = await fetch(`${BASE_URL}${path}`, { headers: API_HEADERS });
   if (!response.ok) {
     throw new DeadlockApiError(response.status, path);
   }
-  return (await response.json()) as T;
+  return await response.json();
 };
 
+/**
+ * A list endpoint. Entries that no longer match their schema are dropped rather
+ * than failing the request: one unexpected row should not empty a scoreboard.
+ */
+const getList = async <T>(path: string, schema: z.ZodType<T>): Promise<T[]> =>
+  parseList(schema, await request(path), path);
+
+/** A single-object endpoint, where there is nothing to salvage from a bad shape. */
+const getOne = async <T>(path: string, schema: z.ZodType<T>): Promise<T> =>
+  parseOne(schema, await request(path), path);
+
 export const getMatchHistory = (accountId: number) =>
-  get<MatchHistoryEntry[]>(`/v1/players/${accountId}/match-history`);
+  getList(`/v1/players/${accountId}/match-history`, matchHistoryEntrySchema);
 
 /**
  * Full post-match data. Steam fallback is disabled deliberately: opening a
  * player card must never enqueue a Steam fetch or consume the API's scarce
  * three-per-hour fallback allowance. Cached/S3 metadata is enough here.
+ *
+ * The schema doubles as the trim: raw metadata also carries pings, damage
+ * matrices and tracked-stat trees, and parsing drops every field it does not
+ * declare before the response reaches React Query and the disk cache.
  */
 export const getMatchMetadata = (matchId: number) =>
-  get<MatchMetadata>(`/v1/matches/${matchId}/metadata?disable_steam=true`).then(
-    ({ match_info }) => ({
-      match_info: {
-        duration_s: match_info.duration_s,
-        winning_team: match_info.winning_team,
-        start_time: match_info.start_time,
-        match_id: match_info.match_id,
-        // Raw metadata also has pings, damage matrices and tracked-stat trees.
-        // Trim those before the response reaches React Query and the disk cache.
-        players: match_info.players.map((player) => ({
-          account_id: player.account_id,
-          team: player.team,
-          hero_id: player.hero_id,
-          kills: player.kills,
-          deaths: player.deaths,
-          assists: player.assists,
-          net_worth: player.net_worth,
-          last_hits: player.last_hits,
-          denies: player.denies,
-          level: player.level,
-          items: player.items.map((item) => ({
-            game_time_s: item.game_time_s,
-            item_id: item.item_id,
-            upgrade_id: item.upgrade_id,
-            sold_time_s: item.sold_time_s,
-          })),
-          stats: player.stats.map((stat) => ({
-            time_stamp_s: stat.time_stamp_s,
-            net_worth: stat.net_worth,
-            kills: stat.kills,
-            deaths: stat.deaths,
-            assists: stat.assists,
-            player_damage: stat.player_damage,
-            player_damage_taken: stat.player_damage_taken,
-            player_healing: stat.player_healing,
-            damage_mitigated: stat.damage_mitigated,
-            boss_damage: stat.boss_damage,
-            shots_hit: stat.shots_hit,
-            shots_missed: stat.shots_missed,
-          })),
-        })),
-      },
-    }),
+  getOne(
+    `/v1/matches/${matchId}/metadata?disable_steam=true`,
+    matchMetadataSchema,
   );
 
 /** Takes a whole lobby at once, so the live scoreboard costs a single request. */
 export const getPlayerHeroStats = (accountIds: number | number[]) =>
-  get<PlayerHeroStats[]>(
+  getList(
     `/v1/players/hero-stats?account_ids=${[accountIds].flat().join(",")}`,
+    playerHeroStatsSchema,
   );
 
 export const getPlayerRank = (accountId: number) =>
-  get<PlayerRank>(`/v1/players/${accountId}/rank`);
+  getOne(`/v1/players/${accountId}/rank`, playerRankSchema);
 
 /** `sameParty` restricts the result to premades instead of any shared match. */
 export const getMateStats = (accountId: number, sameParty = false) =>
-  get<MateStats[]>(
+  getList(
     `/v1/players/${accountId}/mate-stats?min_matches_played=3${
       sameParty ? "&same_party=true" : ""
     }`,
+    mateStatsSchema,
   );
 
 export const getEnemyStats = (accountId: number) =>
-  get<EnemyStats[]>(
+  getList(
     `/v1/players/${accountId}/enemy-stats?min_matches_played=3`,
+    enemyStatsSchema,
   );
 
 /** One batched call for every mate, so the Squad tab costs a single request. */
 export const getSteamProfiles = (accountIds: number[]) => {
   if (accountIds.length === 0) {
-    return Promise.resolve<SteamProfile[]>([]);
+    return Promise.resolve<z.infer<typeof steamProfileSchema>[]>([]);
   }
   // `refresh` is left off on purpose: the read path is 100 req/s, the refresh
   // path only 3 req/min.
-  return get<SteamProfile[]>(
+  return getList(
     `/v1/players/steam?account_ids=${accountIds.join(",")}`,
+    steamProfileSchema,
   );
 };
 
 /** Global per-hero totals, used to benchmark the player against everyone else. */
 export const getAnalyticsHeroStats = (sinceUnix: number) =>
-  get<AnalyticsHeroStats[]>(
+  getList(
     `/v1/analytics/hero-stats?min_unix_timestamp=${sinceUnix}`,
+    analyticsHeroStatsSchema,
   );
 
-export interface ItemStats {
-  item_id: number;
-  matches: number;
-  wins: number;
-  losses: number;
-  players: number;
-  avg_buy_time_s: number;
-  /** Where in the match the item is usually bought, as a percentage. */
-  avg_buy_time_relative: number;
-}
+/**
+ * How the whole ranked population is spread across the badges. Only badges with a
+ * subrank of 1-6 ever carry players, so the response has holes by design.
+ */
+export const getBadgeDistribution = () =>
+  getList("/v1/analytics/badge-distribution", badgeDistributionEntrySchema);
+
+/** The season definitions the game client ships, including its entry requirements. */
+export const getRankedSeasons = () =>
+  getList("/v1/assets/ranked-seasons", rankedSeasonSchema);
+
+/**
+ * The player's own record against every enemy hero. Scoped to `accountId`, so
+ * this is their matchups rather than the global ones.
+ */
+export const getHeroCounterStats = (accountId: number, minMatches = 2) =>
+  getList(
+    `/v1/analytics/hero-counter-stats?account_id=${accountId}&min_matches=${minMatches}`,
+    heroCounterStatsSchema,
+  );
 
 /**
  * Item performance. Without `accountId` this is everyone's data, which is the
- * baseline the player's own numbers get compared against.
+ * baseline the player's own numbers get compared against; with `heroId` it is
+ * narrowed to the builds that player ran on that one hero.
  */
-export const getItemStats = (
-  accountId?: number,
+export const getItemStats = ({
+  accountId,
+  heroId,
   minMatches = 3,
-): Promise<ItemStats[]> =>
-  get<ItemStats[]>(
+}: {
+  accountId?: number;
+  heroId?: number;
+  minMatches?: number;
+} = {}) =>
+  getList(
     `/v1/analytics/item-stats?min_matches=${minMatches}${
       accountId ? `&account_id=${accountId}` : ""
+    }${
+      // `hero_ids` (plural) is the filter that applies; the singular `hero_id`
+      // parameter the schema also lists comes back empty for every account.
+      heroId ? `&hero_ids=${heroId}` : ""
     }`,
+    itemStatsSchema,
   );
 
 /**

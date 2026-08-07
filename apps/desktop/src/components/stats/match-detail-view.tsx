@@ -18,12 +18,15 @@ import {
 } from "@/lib/stats/format";
 import { cn } from "@/lib/utils";
 
-const DetailMetric = ({ label, value }: { label: string; value: string }) => (
-  <div className='min-w-0 border-r border-b px-3 py-2.5'>
-    <dt className='truncate text-muted-foreground text-[11px]'>{label}</dt>
-    <dd className='mt-0.5 truncate font-semibold text-sm tabular-nums'>
-      {value}
-    </dd>
+/**
+ * One number in the stat line. Frameless on purpose: ten of these used to be ten
+ * bordered cells, which cost more height than the numbers themselves and turned
+ * the summary into a table nobody reads across.
+ */
+const Figure = ({ label, value }: { label: string; value: string }) => (
+  <div className='min-w-0'>
+    <dt className='truncate text-[11px] text-muted-foreground'>{label}</dt>
+    <dd className='truncate font-semibold text-sm tabular-nums'>{value}</dd>
   </div>
 );
 
@@ -31,6 +34,8 @@ interface MatchDetailViewProps {
   accountId: number;
   match: MatchHistoryEntry;
   heroesById: Map<number, DeadlockHero>;
+  /** Opens the hero's own card; omitted where there is nowhere to go. */
+  onSelectHero?: (heroId: number) => void;
   className?: string;
 }
 
@@ -38,6 +43,7 @@ export const MatchDetailView = ({
   accountId,
   match,
   heroesById,
+  onSelectHero,
   className,
 }: MatchDetailViewProps) => {
   const { t, i18n } = useTranslation();
@@ -48,15 +54,28 @@ export const MatchDetailView = ({
   const shots = (finalStat?.shots_hit ?? 0) + (finalStat?.shots_missed ?? 0);
   const accuracy = shots > 0 ? (finalStat?.shots_hit ?? 0) / shots : null;
 
+  const heroName = hero?.name ?? `#${match.hero_id}`;
+  const portrait = (
+    <HeroAvatar className='h-12 w-12' hero={hero} heroId={match.hero_id} />
+  );
+
   return (
-    <div className={cn("p-4 md:p-5", className)}>
-      <header className='flex flex-wrap items-center gap-3 border-b pr-8 pb-4'>
-        <HeroAvatar className='h-14 w-14' hero={hero} heroId={match.hero_id} />
+    <div className={cn("flex flex-col gap-4 p-4 md:p-5", className)}>
+      <header className='flex flex-wrap items-center gap-3 pr-8'>
+        {onSelectHero ? (
+          <button
+            aria-label={t("stats.hero.openHero", { hero: heroName })}
+            className='shrink-0 rounded-full transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+            onClick={() => onSelectHero(match.hero_id)}
+            type='button'>
+            {portrait}
+          </button>
+        ) : (
+          portrait
+        )}
         <div className='min-w-0 flex-1'>
           <div className='flex items-center gap-2'>
-            <h3 className='truncate font-semibold'>
-              {hero?.name ?? `#${match.hero_id}`}
-            </h3>
+            <h3 className='truncate font-semibold'>{heroName}</h3>
             <Badge
               className={
                 won
@@ -67,7 +86,7 @@ export const MatchDetailView = ({
               {won ? t("stats.win") : t("stats.loss")}
             </Badge>
           </div>
-          <p className='text-muted-foreground text-xs'>
+          <p className='truncate text-muted-foreground text-xs'>
             {formatDateTime(match.start_time, i18n.language)} ·{" "}
             {formatDuration(match.match_duration_s)} · #{match.match_id}
           </p>
@@ -77,20 +96,20 @@ export const MatchDetailView = ({
             {match.player_kills} / {match.player_deaths} /{" "}
             {match.player_assists}
           </div>
-          <div className='text-muted-foreground text-[10px] uppercase'>
+          <div className='text-[10px] text-muted-foreground uppercase'>
             {t("stats.player.killsDeathsAssists")}
           </div>
         </div>
       </header>
 
       {details.isPending ? (
-        <div className='space-y-4 pt-4'>
-          <Skeleton className='h-20 w-full rounded-lg' />
-          <Skeleton className='h-64 w-full rounded-lg' />
+        <div className='space-y-4'>
+          <Skeleton className='h-16 w-full rounded-lg' />
+          <Skeleton className='h-48 w-full rounded-lg' />
         </div>
       ) : details.isError || !details.player || !details.match ? (
         <div
-          className='mt-4 flex min-h-64 flex-col items-center justify-center rounded-md border border-dashed p-6 text-center'
+          className='flex min-h-48 flex-col items-center justify-center rounded-md border border-dashed p-6 text-center'
           role='status'>
           <h3 className='font-semibold text-sm'>
             {t("stats.player.detailsUnavailable")}
@@ -109,48 +128,50 @@ export const MatchDetailView = ({
           </Button>
         </div>
       ) : (
-        <div className='pt-4'>
-          <dl className='grid grid-cols-2 border-t border-l sm:grid-cols-5'>
-            <DetailMetric
+        <>
+          {/* Two rules instead of twenty cell borders - the row still reads as a
+              block, at a third of the height. */}
+          <dl className='grid grid-cols-3 gap-x-4 gap-y-3 border-y py-3 sm:grid-cols-5'>
+            <Figure
               label={t("stats.player.kdaRatio")}
               value={formatDecimal(
                 (details.player.kills + details.player.assists) /
                   Math.max(details.player.deaths, 1),
               )}
             />
-            <DetailMetric
+            <Figure
               label={t("stats.metrics.netWorth")}
               value={formatCompact(details.player.net_worth)}
             />
-            <DetailMetric
+            <Figure
               label={t("stats.metrics.playerDamage")}
               value={formatCompact(finalStat?.player_damage ?? 0)}
             />
-            <DetailMetric
+            <Figure
               label={t("stats.player.damageTaken")}
               value={formatCompact(finalStat?.player_damage_taken ?? 0)}
             />
-            <DetailMetric
+            <Figure
               label={t("stats.player.healing")}
               value={formatCompact(finalStat?.player_healing ?? 0)}
             />
-            <DetailMetric
+            <Figure
               label={t("stats.metrics.lastHits")}
               value={formatCompact(details.player.last_hits)}
             />
-            <DetailMetric
+            <Figure
               label={t("stats.metrics.denies")}
               value={formatCompact(details.player.denies)}
             />
-            <DetailMetric
+            <Figure
               label={t("stats.player.accuracy")}
               value={accuracy === null ? "-" : formatPercent(accuracy, 0)}
             />
-            <DetailMetric
+            <Figure
               label={t("stats.player.bossDamage")}
               value={formatCompact(finalStat?.boss_damage ?? 0)}
             />
-            <DetailMetric
+            <Figure
               label={t("stats.player.level")}
               value={formatCompact(details.player.level)}
             />
@@ -162,7 +183,7 @@ export const MatchDetailView = ({
             key={match.match_id}
             player={details.player}
           />
-        </div>
+        </>
       )}
     </div>
   );

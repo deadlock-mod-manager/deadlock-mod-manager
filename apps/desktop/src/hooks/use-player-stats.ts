@@ -11,7 +11,9 @@ import {
 import {
   type AnalyticsHeroStats,
   getAnalyticsHeroStats,
+  getBadgeDistribution,
   getEnemyStats,
+  getHeroCounterStats,
   getItemStats,
   getMatchHistory,
   getMatchMetadata,
@@ -19,6 +21,7 @@ import {
   getPlayerHeroStats,
   getPlayerRank,
   getRankAssets,
+  getRankedSeasons,
   getSteamProfiles,
   type MatchHistoryEntry,
   type PlayerHeroStats,
@@ -123,7 +126,11 @@ export const useItemCatalog = (active = true) => {
     return map;
   }, [query.data]);
 
-  return { itemsById, isPending: active && query.isPending };
+  return {
+    itemsById,
+    isPending: active && query.isPending,
+    isError: query.isError,
+  };
 };
 
 /** The player's item performance against everyone else's. */
@@ -134,7 +141,7 @@ export const useItemStats = (accountId: number | null, active = true) => {
   const mine = usePlayerScopedQuery(
     accountId,
     { key: "items", ttl: STATS_TTL.heroStats, enabled: active },
-    (id) => getItemStats(id),
+    (id) => getItemStats({ accountId: id }),
   );
 
   const global = useStatsQuery(
@@ -143,7 +150,7 @@ export const useItemStats = (accountId: number | null, active = true) => {
       ttl: STATS_TTL.benchmark,
       enabled: active,
     },
-    () => getItemStats(undefined, 1000),
+    () => getItemStats({ minMatches: 1000 }),
   );
 
   const items = useMemo(
@@ -156,6 +163,89 @@ export const useItemStats = (accountId: number | null, active = true) => {
     itemsById: catalog.itemsById,
     isPending: enabled && (mine.isPending || global.isPending),
     isError: mine.isError,
+  };
+};
+
+/**
+ * Where the player sits on the current ladder. Both payloads are global and
+ * account-independent, so they are fetched once and shared by every card that
+ * wants to place a badge - and only once something actually opens.
+ */
+export const useRankInsights = (active = true) => {
+  const distribution = useStatsQuery(
+    {
+      key: "ranked:distribution",
+      ttl: STATS_TTL.distribution,
+      enabled: active,
+    },
+    getBadgeDistribution,
+  );
+
+  const seasons = useStatsQuery(
+    { key: "assets:ranked-seasons", ttl: STATS_TTL.assets, enabled: active },
+    getRankedSeasons,
+  );
+
+  return {
+    distribution: distribution.data?.data ?? [],
+    seasons: seasons.data?.data ?? [],
+    // Both, or the card renders a season-less summary the moment the histogram
+    // lands and then pops the season panel in underneath it.
+    isPending: active && (distribution.isPending || seasons.isPending),
+  };
+};
+
+/**
+ * The per-hero deep dive: who the player beats on that hero and what they build
+ * on it. Two analytics requests, made only once a hero card is opened.
+ */
+export const useHeroDeepDive = (
+  accountId: number | null,
+  heroId: number | null,
+) => {
+  const enabled = accountId !== null && heroId !== null;
+
+  const counters = usePlayerScopedQuery(
+    accountId,
+    { key: "counters", ttl: STATS_TTL.heroStats, enabled },
+    (id) => getHeroCounterStats(id),
+  );
+
+  const items = usePlayerScopedQuery(
+    accountId,
+    { key: `hero-items:${heroId}`, ttl: STATS_TTL.heroStats, enabled },
+    (id) => getItemStats({ accountId: id, heroId: heroId ?? undefined }),
+  );
+
+  const catalog = useItemCatalog(enabled);
+
+  // One request covers every hero the player has faced; the card only wants the
+  // rows for the hero it is showing.
+  const matchups = useMemo(
+    () =>
+      (counters.data?.data ?? [])
+        .filter((entry) => entry.hero_id === heroId)
+        .sort((a, b) => b.matches_played - a.matches_played),
+    [counters.data, heroId],
+  );
+
+  const build = useMemo(
+    () =>
+      [...(items.data?.data ?? [])]
+        .filter((item) => catalog.itemsById.has(item.item_id))
+        .sort((a, b) => b.matches - a.matches),
+    [items.data, catalog.itemsById],
+  );
+
+  return {
+    matchups,
+    build,
+    itemsById: catalog.itemsById,
+    // The catalog counts: `build` drops every item it cannot name, so reporting
+    // ready while it loads would show the hero as having no build at all.
+    isPending:
+      enabled && (counters.isPending || items.isPending || catalog.isPending),
+    isError: counters.isError || items.isError || catalog.isError,
   };
 };
 
@@ -191,7 +281,10 @@ export const useMatchDetails = (
     player,
     itemsById: catalog.itemsById,
     isPending: enabled && (metadata.isPending || catalog.isPending),
-    isError: metadata.isError,
+    // A missing catalog is an error, not an empty build: the timeline resolves
+    // every purchase through it, so without it the match reads as though the
+    // player never bought anything.
+    isError: metadata.isError || catalog.isError,
     refetch: metadata.refetch,
   };
 };

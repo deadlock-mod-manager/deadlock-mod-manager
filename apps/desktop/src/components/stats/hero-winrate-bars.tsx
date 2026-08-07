@@ -21,7 +21,14 @@ export interface HeroWinrate {
  * Rows grow the plot rather than squeezing into a fixed height, so six heroes
  * stay as readable as two.
  */
-export const HeroWinrateBars = ({ heroes }: { heroes: HeroWinrate[] }) => {
+export const HeroWinrateBars = ({
+  heroes,
+  onSelect,
+}: {
+  heroes: HeroWinrate[];
+  /** Makes each bar a way into that hero's own breakdown. */
+  onSelect?: (heroId: number) => void;
+}) => {
   const { t } = useTranslation();
 
   const config = {
@@ -78,7 +85,19 @@ export const HeroWinrateBars = ({ heroes }: { heroes: HeroWinrate[] }) => {
           }
           cursor={{ fill: "hsl(var(--accent))" }}
         />
-        <Bar dataKey='winrate' maxBarSize={16} radius={4}>
+        <Bar
+          cursor={onSelect ? "pointer" : undefined}
+          dataKey='winrate'
+          maxBarSize={16}
+          // recharts hands the click the rendered rectangle, not the row behind
+          // it - the hero has to come back out of the data by index.
+          onClick={(_, index: number) => {
+            const heroId = heroes[index]?.heroId;
+            if (heroId !== undefined) {
+              onSelect?.(heroId);
+            }
+          }}
+          radius={4}>
           {heroes.map((hero) => (
             <Cell
               fill={

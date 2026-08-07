@@ -2,10 +2,12 @@ import { RuntimeError } from "@deadlock-mods/common/client-errors";
 import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { getPlayerHeroStats, getSteamProfiles } from "@/lib/stats/api";
 import { cachedFetch, STATS_TTL } from "@/lib/stats/cache";
 import { getLiveBroadcast, getRanksFor } from "@/lib/stats/live";
 import {
+  beginLiveMatch,
   connectLiveStream,
   getLiveStream,
   subscribeToLiveStream,
@@ -50,6 +52,8 @@ const DETECT_INTERVAL_MS = 10_000;
 const QUEUED_INTERVAL_MS = 3_000;
 /** A broadcast URL stays valid for the match, and resolving it is 2 req/h. */
 const BROADCAST_TTL = 6 * 60 * 60 * 1000;
+/** How long the roster has to hold still before it counts as the final lobby. */
+const LOBBY_SETTLE_MS = 2_000;
 
 export const useLiveMatchDetection = (enabled: boolean) =>
   useQuery({
@@ -96,9 +100,15 @@ export const useLiveMatch = () => {
   const broadcastUrl = broadcast.data?.data.broadcast_url ?? null;
 
   // No cleanup: the stream is deliberately not tied to this component's life, so
-  // leaving the tab leaves the board and the sample history intact.
+  // leaving the tab leaves the board and the sample history intact. The round is
+  // claimed before its broadcast resolves, so the seconds spent waiting on that
+  // request do not show the previous match's board under the new match's id.
   useEffect(() => {
-    if (matchId === null || broadcastUrl === null) {
+    if (matchId === null) {
+      return;
+    }
+    beginLiveMatch(matchId);
+    if (broadcastUrl === null) {
       return;
     }
     connectLiveStream(matchId, broadcastUrl);
@@ -116,7 +126,18 @@ export const useLiveMatch = () => {
       ),
     [live.players],
   );
-  const lobbyKey = accountIds.join(",");
+  // Players arrive over the first few ticks, so the roster grows one or two at a
+  // time. Keying the lobby queries straight off it would refetch on every step -
+  // and ranks cost one request per player, so a twelve-player lobby would burn
+  // dozens of them before it is even complete.
+  const lobbyKey = useDebouncedValue(accountIds.join(","), LOBBY_SETTLE_MS);
+  // Read back out of the settled key rather than used alongside it: the live
+  // roster is ahead of the key by design, and fetching one roster under another
+  // one's cache entry would pin the wrong answer in place.
+  const lobbyIds = useMemo(
+    () => (lobbyKey === "" ? [] : lobbyKey.split(",").map(Number)),
+    [lobbyKey],
+  );
 
   const steamProfiles = useQuery({
     queryKey: ["live-player-data", "profiles", lobbyKey],
@@ -124,9 +145,9 @@ export const useLiveMatch = () => {
       cachedFetch(
         `live:steam-profiles:${lobbyKey}`,
         STATS_TTL.steamProfiles,
-        () => getSteamProfiles(accountIds),
+        () => getSteamProfiles(lobbyIds),
       ),
-    enabled: accountIds.length > 0,
+    enabled: lobbyIds.length > 0,
     staleTime: STATS_TTL.steamProfiles,
     meta: { skipGlobalErrorHandler: true },
   });
@@ -135,9 +156,9 @@ export const useLiveMatch = () => {
     queryKey: ["live-player-data", "ranks", lobbyKey],
     queryFn: () =>
       cachedFetch(`live:ranks:${lobbyKey}`, STATS_TTL.rank, async () => [
-        ...(await getRanksFor(accountIds)).entries(),
+        ...(await getRanksFor(lobbyIds)).entries(),
       ]),
-    enabled: accountIds.length > 0,
+    enabled: lobbyIds.length > 0,
     staleTime: STATS_TTL.rank,
     meta: { skipGlobalErrorHandler: true },
   });
@@ -146,9 +167,9 @@ export const useLiveMatch = () => {
     queryKey: ["live-player-data", "hero-stats", lobbyKey],
     queryFn: () =>
       cachedFetch(`live:hero-stats:${lobbyKey}`, STATS_TTL.heroStats, () =>
-        getPlayerHeroStats(accountIds),
+        getPlayerHeroStats(lobbyIds),
       ),
-    enabled: accountIds.length > 0,
+    enabled: lobbyIds.length > 0,
     staleTime: STATS_TTL.heroStats,
     meta: { skipGlobalErrorHandler: true },
   });

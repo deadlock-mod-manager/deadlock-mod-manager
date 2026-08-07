@@ -59,6 +59,14 @@ export const LiveTab = ({
 
   const { board, profiles, ranks, heroStats } = live;
 
+  // Grouped once for the whole board rather than re-scanned per player. Has to
+  // stay above the empty states: every one of them returns early, and a hook
+  // below them would appear and disappear as a match starts.
+  const statsByAccount = useMemo(
+    () => heroStatsByAccount(heroStats),
+    [heroStats],
+  );
+
   const select = (player: LivePlayer) =>
     setSelection({
       matchId: board?.matchId ?? null,
@@ -154,12 +162,6 @@ export const LiveTab = ({
       .filter((player) => player.team === team)
       .sort((a, b) => b.netWorth - a.netWorth),
   }));
-
-  // Grouped once for the whole board rather than re-scanned per player.
-  const statsByAccount = useMemo(
-    () => heroStatsByAccount(heroStats),
-    [heroStats],
-  );
 
   // What to say while there is no scoreboard yet. A stream that already failed or
   // ended is done, so spinning on it would just look like a hang; a failed

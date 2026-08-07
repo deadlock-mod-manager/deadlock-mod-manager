@@ -18,6 +18,9 @@ export const STATS_TTL = {
   mates: 60 * 60 * 1000,
   steamProfiles: 24 * 60 * 60 * 1000,
   benchmark: 24 * 60 * 60 * 1000,
+  // The ranked population barely moves within a day, and the endpoint returns
+  // the whole ladder in one go.
+  distribution: 12 * 60 * 60 * 1000,
   assets: 7 * 24 * 60 * 60 * 1000,
 } as const;
 

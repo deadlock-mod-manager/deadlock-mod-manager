@@ -73,3 +73,25 @@ export const parseList = <T>(
   }
   return parsed;
 };
+
+/**
+ * Parses a single-object response. Unlike a list there is nothing to salvage
+ * here - a rank or a match that does not match its shape is the whole answer -
+ * so it throws rather than handing the app a half-built object.
+ */
+export const parseOne = <T>(
+  schema: z.ZodType<T>,
+  data: unknown,
+  endpoint: string,
+): T => {
+  const result = schema.safeParse(data);
+  if (!result.success) {
+    logger
+      .withMetadata({ endpoint, issues: result.error.issues })
+      .warn("Unparsable response");
+    throw new ProviderError(
+      `deadlock-api ${endpoint} returned an unexpected shape`,
+    );
+  }
+  return result.data;
+};
