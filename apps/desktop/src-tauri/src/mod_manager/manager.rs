@@ -14,7 +14,7 @@ use crate::mod_manager::{
 };
 use log;
 use std::{
-  collections::HashSet,
+  collections::{BTreeMap, HashSet},
   path::{Component, Path, PathBuf},
 };
 use tauri::Manager;
@@ -215,6 +215,163 @@ impl ModManager {
     }
 
     changed
+  }
+
+  /// Drop VPK claims recorded by more than one mod, keeping the first claimant in load order.
+  ///
+  /// A VPK file has exactly one owner on disk, so a shared claim always means a stale record.
+  /// Refusing to reorder in that case leaves the profile permanently unorderable, so the later
+  /// claimants give up the claim instead; they are reconciled as uninstalled by the caller.
+  fn dedupe_reorder_mapping(
+    mod_vpk_mapping: Vec<(String, Vec<String>)>,
+  ) -> (Vec<(String, Vec<String>)>, Vec<String>) {
+    let mut claimed: HashSet<String> = HashSet::new();
+    let mut deduped = Vec::new();
+    let mut dropped_mod_ids = Vec::new();
+
+    for (mod_id, vpks) in mod_vpk_mapping {
+      let mut kept = Vec::new();
+      for vpk in vpks {
+        if claimed.insert(vpk.clone()) {
+          kept.push(vpk);
+        } else {
+          log::warn!("Dropping stale claim on {vpk} by mod {mod_id}: already owned by another mod");
+        }
+      }
+
+      if kept.is_empty() {
+        dropped_mod_ids.push(mod_id);
+      } else {
+        deduped.push((mod_id, kept));
+      }
+    }
+
+    (deduped, dropped_mod_ids)
+  }
+
+  /// Rewrite manifest entries that were not part of a reorder mapping.
+  ///
+  /// Reordering renumbers every enabled VPK in the addons folder, including files these entries
+  /// still reference. Without this, their recorded names point at another mod's file and the next
+  /// reorder sees duplicate claims.
+  fn resync_unmapped_manifest_entries(
+    addons_path: &Path,
+    manifest: &mut ProfileVpkManifest,
+    mapped_mod_ids: &HashSet<String>,
+    renamed_unclaimed: &BTreeMap<String, String>,
+  ) {
+    for (mod_id, entry) in &mut manifest.mods {
+      if mapped_mod_ids.contains(mod_id) {
+        continue;
+      }
+
+      let resynced: Vec<String> = entry
+        .current_vpks
+        .iter()
+        .filter_map(|vpk| {
+          let filename = Self::vpk_filenames(std::slice::from_ref(vpk))
+            .pop()
+            .unwrap_or_else(|| vpk.clone());
+
+          // Disabled (prefixed) VPKs are never touched by a reorder.
+          if !VpkManager::is_enabled_vpk_name(&filename) {
+            return Some(filename);
+          }
+
+          match renamed_unclaimed.get(&filename) {
+            Some(new_name) => {
+              log::info!("Resynced {filename} -> {new_name} for unmapped mod {mod_id}");
+              Some(new_name.clone())
+            }
+            None => {
+              log::warn!("Dropping stale VPK {filename} from unmapped mod {mod_id} after reorder");
+              None
+            }
+          }
+        })
+        .filter(|vpk| addons_path.join(vpk).exists())
+        .collect();
+
+      entry.current_vpks = resynced;
+      if entry.current_vpks.is_empty() {
+        entry.enabled = false;
+      }
+    }
+  }
+
+  /// Reorder the given mapping and bring the whole manifest back in sync with what is on disk.
+  fn apply_reorder(
+    &self,
+    addons_path: &Path,
+    manifest: &mut ProfileVpkManifest,
+    mod_vpk_mapping: Vec<(String, Vec<String>)>,
+  ) -> Result<Vec<(String, Vec<String>)>, Error> {
+    // Only `pak##_dir.vpk` files take part in a reorder; prefixed (disabled) VPKs stay put and
+    // must survive the manifest rewrite, so they are set aside and re-attached afterwards.
+    let mut preserved_vpks: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    let mut reorderable = Vec::new();
+    for (mod_id, vpks) in mod_vpk_mapping {
+      let (enabled_vpks, other_vpks): (Vec<String>, Vec<String>) = Self::vpk_filenames(&vpks)
+        .into_iter()
+        .partition(|vpk| VpkManager::is_enabled_vpk_name(vpk));
+
+      if !other_vpks.is_empty() {
+        preserved_vpks.insert(mod_id.clone(), other_vpks);
+      }
+
+      if !enabled_vpks.is_empty() {
+        reorderable.push((mod_id, enabled_vpks));
+      }
+    }
+
+    let (mod_vpk_mapping, dropped_mod_ids) = Self::dedupe_reorder_mapping(reorderable);
+
+    // Reported back so callers can drop the stale VPK names from their own state too.
+    let mut dropped_mappings = Vec::new();
+    for mod_id in dropped_mod_ids {
+      let remaining_vpks = preserved_vpks.remove(&mod_id).unwrap_or_default();
+      if let Some(entry) = manifest.mods.get_mut(&mod_id) {
+        entry.current_vpks = remaining_vpks.clone();
+        entry.enabled = !remaining_vpks.is_empty();
+      }
+      dropped_mappings.push((mod_id, remaining_vpks));
+    }
+
+    if mod_vpk_mapping.is_empty() {
+      return Ok(dropped_mappings);
+    }
+
+    let mapped_mod_ids: HashSet<String> = mod_vpk_mapping
+      .iter()
+      .map(|(mod_id, _)| mod_id.clone())
+      .collect();
+
+    let outcome = self
+      .vpk_manager
+      .reorder_vpks(&mod_vpk_mapping, addons_path)?;
+
+    let mut updated_mappings = dropped_mappings;
+    for (mod_id, new_vpk_names) in outcome.mappings {
+      let mut current_vpks = new_vpk_names;
+      current_vpks.extend(preserved_vpks.remove(&mod_id).unwrap_or_default());
+
+      if let Some(entry) = manifest.mods.get_mut(&mod_id) {
+        entry.enabled = !current_vpks.is_empty();
+        entry.current_vpks = current_vpks.clone();
+        entry.disabled_vpks.clear();
+      }
+
+      updated_mappings.push((mod_id, current_vpks));
+    }
+
+    Self::resync_unmapped_manifest_entries(
+      addons_path,
+      manifest,
+      &mapped_mod_ids,
+      &outcome.renamed_unclaimed,
+    );
+
+    Ok(updated_mappings)
   }
 
   pub fn stop_game(&mut self) -> Result<(), Error> {
@@ -583,17 +740,9 @@ impl ModManager {
       return Ok(());
     }
 
-    let updated_vpk_mappings = self
-      .vpk_manager
-      .reorder_vpks(&mod_vpk_mapping, &addons_path)?;
+    let updated_vpk_mappings = self.apply_reorder(&addons_path, &mut manifest, mod_vpk_mapping)?;
 
     for (mod_id, new_vpk_names) in updated_vpk_mappings {
-      if let Some(entry) = manifest.mods.get_mut(&mod_id) {
-        entry.enabled = true;
-        entry.current_vpks = new_vpk_names.clone();
-        entry.disabled_vpks.clear();
-      }
-
       if let Some(mut mod_entry) = self.mod_repository.remove_mod(&mod_id) {
         mod_entry.installed_vpks = new_vpk_names;
         self.mod_repository.add_mod(mod_entry);
@@ -664,17 +813,9 @@ impl ModManager {
     }
 
     // Reorder the VPK files and get the updated mappings
-    let updated_mappings = self
-      .vpk_manager
-      .reorder_vpks(&mod_vpk_mapping, &addons_path)?;
+    let updated_mappings = self.apply_reorder(&addons_path, &mut manifest, mod_vpk_mapping)?;
 
     for (remote_id, new_vpks) in &updated_mappings {
-      if let Some(entry) = manifest.mods.get_mut(remote_id) {
-        entry.enabled = true;
-        entry.current_vpks = new_vpks.clone();
-        entry.disabled_vpks.clear();
-      }
-
       if let Some(mut mod_entry) = self.mod_repository.remove_mod(remote_id) {
         mod_entry.installed_vpks = new_vpks.clone();
         self.mod_repository.add_mod(mod_entry);
@@ -741,19 +882,11 @@ impl ModManager {
     }
 
     // Reorder the VPK files
-    let updated_vpk_mappings = self
-      .vpk_manager
-      .reorder_vpks(&mod_vpk_mapping, &addons_path)?;
+    let updated_vpk_mappings = self.apply_reorder(&addons_path, &mut manifest, mod_vpk_mapping)?;
 
     // Update mod data with new VPK names and re-add to repository
     let mut result_mods = Vec::new();
     for (mod_id, new_vpk_names) in updated_vpk_mappings {
-      if let Some(entry) = manifest.mods.get_mut(&mod_id) {
-        entry.enabled = true;
-        entry.current_vpks = new_vpk_names.clone();
-        entry.disabled_vpks.clear();
-      }
-
       if let Some(index) = updated_mods
         .iter()
         .position(|mod_entry| mod_entry.id == mod_id)
@@ -1233,6 +1366,191 @@ mod tests {
     assert!(changed);
     assert!(!entry.enabled);
     assert!(entry.current_vpks.is_empty());
+  }
+
+  #[test]
+  fn reorder_dedupe_keeps_first_claimant_of_a_shared_vpk() {
+    let (deduped, dropped) = ModManager::dedupe_reorder_mapping(vec![
+      ("first".to_string(), vec!["pak01_dir.vpk".to_string()]),
+      (
+        "second".to_string(),
+        vec!["pak01_dir.vpk".to_string(), "pak02_dir.vpk".to_string()],
+      ),
+      ("third".to_string(), vec!["pak01_dir.vpk".to_string()]),
+    ]);
+
+    assert_eq!(
+      deduped,
+      vec![
+        ("first".to_string(), vec!["pak01_dir.vpk".to_string()]),
+        ("second".to_string(), vec!["pak02_dir.vpk".to_string()]),
+      ]
+    );
+    assert_eq!(dropped, vec!["third".to_string()]);
+  }
+
+  #[test]
+  fn reorder_keeps_prefixed_vpks_attached_to_their_mod() {
+    let temp = tempfile::tempdir().unwrap();
+    let addons_path = temp.path();
+    write_vpk(addons_path, "pak01_dir.vpk");
+    write_vpk(addons_path, "665094_pak05_dir.vpk");
+
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mods.insert(
+      "665094".to_string(),
+      ProfileVpkManifestEntry {
+        enabled: true,
+        current_vpks: vec!["665094_pak05_dir.vpk".to_string()],
+        ..Default::default()
+      },
+    );
+    manifest.mods.insert(
+      "123456".to_string(),
+      ProfileVpkManifestEntry {
+        enabled: true,
+        current_vpks: vec!["pak01_dir.vpk".to_string()],
+        ..Default::default()
+      },
+    );
+
+    let manager = test_manager(addons_path);
+    let updated = manager
+      .apply_reorder(
+        addons_path,
+        &mut manifest,
+        vec![
+          (
+            "665094".to_string(),
+            vec!["665094_pak05_dir.vpk".to_string()],
+          ),
+          ("123456".to_string(), vec!["pak01_dir.vpk".to_string()]),
+        ],
+      )
+      .unwrap();
+
+    // A prefixed VPK is not reorderable, so its mod keeps the file instead of losing the record.
+    assert_eq!(
+      manifest.mods["665094"].current_vpks,
+      vec!["665094_pak05_dir.vpk".to_string()]
+    );
+    assert!(manifest.mods["665094"].enabled);
+    assert!(addons_path.join("665094_pak05_dir.vpk").exists());
+    assert_eq!(
+      updated,
+      vec![("123456".to_string(), vec!["pak01_dir.vpk".to_string()])]
+    );
+  }
+
+  #[test]
+  fn reorder_reports_mods_that_lost_a_duplicate_claim() {
+    let temp = tempfile::tempdir().unwrap();
+    let addons_path = temp.path();
+    write_vpk(addons_path, "pak01_dir.vpk");
+
+    let mut manifest = ProfileVpkManifest::default();
+    for mod_id in ["first", "second"] {
+      manifest.mods.insert(
+        mod_id.to_string(),
+        ProfileVpkManifestEntry {
+          enabled: true,
+          current_vpks: vec!["pak01_dir.vpk".to_string()],
+          ..Default::default()
+        },
+      );
+    }
+
+    let manager = test_manager(addons_path);
+    let updated = manager
+      .apply_reorder(
+        addons_path,
+        &mut manifest,
+        vec![
+          ("first".to_string(), vec!["pak01_dir.vpk".to_string()]),
+          ("second".to_string(), vec!["pak01_dir.vpk".to_string()]),
+        ],
+      )
+      .unwrap();
+
+    assert_eq!(
+      updated,
+      vec![
+        ("second".to_string(), Vec::new()),
+        ("first".to_string(), vec!["pak01_dir.vpk".to_string()]),
+      ]
+    );
+    assert!(!manifest.mods["second"].enabled);
+    assert!(manifest.mods["second"].current_vpks.is_empty());
+    assert!(manifest.mods["first"].enabled);
+  }
+
+  #[test]
+  fn reorder_resync_follows_renamed_unclaimed_vpks() {
+    let temp = tempfile::tempdir().unwrap();
+    write_vpk(temp.path(), "pak02_dir.vpk");
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mods.insert(
+      "unmapped".to_string(),
+      ProfileVpkManifestEntry {
+        enabled: true,
+        current_vpks: vec!["pak07_dir.vpk".to_string()],
+        ..Default::default()
+      },
+    );
+
+    let renamed = BTreeMap::from([("pak07_dir.vpk".to_string(), "pak02_dir.vpk".to_string())]);
+    ModManager::resync_unmapped_manifest_entries(
+      temp.path(),
+      &mut manifest,
+      &HashSet::new(),
+      &renamed,
+    );
+
+    let entry = &manifest.mods["unmapped"];
+    assert!(entry.enabled);
+    assert_eq!(entry.current_vpks, vec!["pak02_dir.vpk".to_string()]);
+  }
+
+  #[test]
+  fn reorder_resync_drops_stale_names_but_keeps_disabled_vpks() {
+    let temp = tempfile::tempdir().unwrap();
+    write_vpk(temp.path(), "665094_pak05_dir.vpk");
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mods.insert(
+      "665094".to_string(),
+      ProfileVpkManifestEntry {
+        enabled: true,
+        current_vpks: vec![
+          "pak34_dir.vpk".to_string(),
+          "665094_pak05_dir.vpk".to_string(),
+        ],
+        ..Default::default()
+      },
+    );
+    manifest.mods.insert(
+      "mapped".to_string(),
+      ProfileVpkManifestEntry {
+        enabled: true,
+        current_vpks: vec!["pak01_dir.vpk".to_string()],
+        ..Default::default()
+      },
+    );
+
+    ModManager::resync_unmapped_manifest_entries(
+      temp.path(),
+      &mut manifest,
+      &HashSet::from(["mapped".to_string()]),
+      &BTreeMap::new(),
+    );
+
+    let entry = &manifest.mods["665094"];
+    assert_eq!(entry.current_vpks, vec!["665094_pak05_dir.vpk".to_string()]);
+    assert!(entry.enabled);
+    // Mapped entries are updated by the reorder itself and must not be touched here.
+    assert_eq!(
+      manifest.mods["mapped"].current_vpks,
+      vec!["pak01_dir.vpk".to_string()]
+    );
   }
 
   #[test]
