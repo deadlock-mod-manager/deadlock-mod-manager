@@ -413,7 +413,7 @@ jobs:
       # Linux build - upload directly to release
       - name: Build the app (Linux)
         if: matrix.os == 'linux'
-        uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
@@ -454,7 +454,7 @@ jobs:
       # Windows build - upload unsigned artifact for separate SignPath workflow
       - name: Build the app (Windows)
         if: matrix.os == 'windows'
-        uses: tauri-apps/tauri-action@v0
+        uses: tauri-apps/tauri-action@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
