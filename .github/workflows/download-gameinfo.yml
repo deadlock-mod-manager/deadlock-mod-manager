@@ -30,7 +30,7 @@ jobs:
         run: echo "game/citadel/gameinfo.gi" > filelist.txt
 
       - name: Cache depot by manifest
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ${{ env.OUTDIR }}
           key: depot-${{ env.APPID }}-${{ env.DEPOTID }}-${{ env.MANIFESTID }}
