@@ -1299,3 +1299,30 @@
 .wn-feature-enter {
   animation: wn-feature-enter 0.3s ease both;
 }
+
+/*
+ * Chart palette for the Stats page. Its own --viz-* namespace so the app's
+ * themes keep their --chart-* vars: these steps are picked per surface (not
+ * flipped) and validated for colour-vision deficiency against the dark
+ * (#100f0e) and light (#ffffff) chart surfaces - worst adjacent pair CVD
+ * deltaE 19.2, normal vision 29.0. Dark is the default, matching :root in the
+ * UI package.
+ *
+ * Defined on the root rather than a page wrapper: dialogs and tooltips render
+ * through a portal on document.body, and a scoped class does not reach them.
+ */
+:root {
+  --viz-series-1: #3987e5;
+  --viz-series-2: #d95926;
+  --viz-positive: #3987e5;
+  --viz-negative: #e66767;
+  --viz-neutral: #383835;
+}
+
+.light {
+  --viz-series-1: #2a78d6;
+  --viz-series-2: #eb6834;
+  --viz-positive: #2a78d6;
+  --viz-negative: #e34948;
+  --viz-neutral: #f0efec;
+}

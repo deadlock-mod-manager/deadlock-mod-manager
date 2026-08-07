@@ -38,6 +38,17 @@ export const useFeatureFlag = (
   };
 };
 
+/**
+ * The Stats page ships on, so it is the one flag that fails *open*: an
+ * unreachable flag service leaves the page enabled rather than hiding a shipped
+ * feature every time the backend hiccups. Turning it off remotely therefore
+ * needs a flag response that actually arrives - which is the right trade for a
+ * page whose own data comes from a third party and degrades on its own.
+ *
+ * One helper so the three call sites cannot drift on that default.
+ */
+export const usePlayerStatsEnabled = () => useFeatureFlag("player-stats", true);
+
 export const useFeatureFlagMutation = () => {
   const queryClient = useQueryClient();
 

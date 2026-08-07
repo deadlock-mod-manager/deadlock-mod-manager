@@ -4,7 +4,10 @@ import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import App from "./app";
-import { useFeatureFlag } from "./hooks/use-feature-flags";
+import {
+  useFeatureFlag,
+  usePlayerStatsEnabled,
+} from "./hooks/use-feature-flags";
 import { queryClient } from "./lib/client";
 import AddMods from "./pages/add-mods";
 import Crosshairs from "./pages/crosshairs";
@@ -21,6 +24,7 @@ import Servers from "./pages/servers";
 import CustomSettings from "./pages/settings";
 import Skins from "./pages/skins";
 import Splash from "./pages/splash";
+import Stats from "./pages/stats";
 import "flag-icons/css/flag-icons.min.css";
 import "./index.css";
 import "./lib/i18n";
@@ -31,6 +35,16 @@ const MapsRouteGate = () => {
     return <Navigate replace to='/mods' />;
   }
   return <GetMaps />;
+};
+
+const StatsRouteGate = () => {
+  // On by default, so an unanswered flag request renders the page rather than
+  // bouncing anyone who opens /stats on a cold start - no pending state needed.
+  const { isEnabled } = usePlayerStatsEnabled();
+  if (!isEnabled) {
+    return <Navigate replace to='/' />;
+  }
+  return <Stats />;
 };
 
 const ServersRouteGate = () => {
@@ -63,6 +77,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<Debug />} path='/debug' />
               <Route element={<Crosshairs />} path='/crosshairs' />
               <Route element={<Skins />} path='/skins' />
+              <Route element={<StatsRouteGate />} path='/stats' />
               <Route
                 element={<CustomSettings value='autoexec' />}
                 path='/settings/autoexec'

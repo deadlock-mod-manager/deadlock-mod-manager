@@ -48,6 +48,11 @@ import {
   settingsDeepMergeKeys,
   type SettingsState,
 } from "./slices/settings";
+import {
+  createStatsSlice,
+  statsDeepMergeKeys,
+  type StatsState,
+} from "./slices/stats";
 import { createUISlice, uiDeepMergeKeys, type UIState } from "./slices/ui";
 import storage from "./storage";
 
@@ -60,7 +65,8 @@ export type State = ModsState &
   UIState &
   ScrollState &
   CrosshairState &
-  FavoritesState;
+  FavoritesState &
+  StatsState;
 
 const allDeepMergeKeys = new Set<string>([
   ...modsDeepMergeKeys,
@@ -73,6 +79,7 @@ const allDeepMergeKeys = new Set<string>([
   ...scrollDeepMergeKeys,
   ...crosshairDeepMergeKeys,
   ...favoritesDeepMergeKeys,
+  ...statsDeepMergeKeys,
 ]);
 
 export const usePersistedStore = create<State>()(
@@ -88,6 +95,7 @@ export const usePersistedStore = create<State>()(
       ...createScrollSlice(...a),
       ...createCrosshairSlice(...a),
       ...createFavoritesSlice(...a),
+      ...createStatsSlice(...a),
     }),
     {
       name: "local-config",

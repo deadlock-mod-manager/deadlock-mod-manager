@@ -1,11 +1,22 @@
 use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 use crate::game_presence;
-use crate::match_sync::{self, MatchSyncStatusDto};
+use crate::match_sync::{self, LocalMatch, MatchSyncStatusDto};
 
 #[tauri::command]
 pub async fn get_match_sync_status(app_handle: AppHandle) -> Result<MatchSyncStatusDto, Error> {
   Ok(match_sync::status(&app_handle)?)
+}
+
+/// Today's matches from the Game Coordinator for `account_id`, which deadlock-api
+/// has not ingested yet. Empty whenever it cannot run - the caller treats that as
+/// "nothing to add".
+#[tauri::command]
+pub async fn get_local_match_history(
+  app_handle: AppHandle,
+  account_id: u32,
+) -> Result<Vec<LocalMatch>, Error> {
+  Ok(match_sync::recent_local_matches(&app_handle, account_id).await)
 }
 
 #[tauri::command]
