@@ -210,7 +210,9 @@ export const ModOrderingDialog = ({
       toast.success(t("modOrdering.orderSaved"));
       setOpen(false);
     } catch (error) {
-      toast.error(t("modOrdering.orderSaveFailed"));
+      toast.error(t("modOrdering.orderSaveFailed"), {
+        description: error instanceof Error ? error.message : String(error),
+      });
       console.error("Failed to save mod order:", error);
     } finally {
       setIsLoading(false);
