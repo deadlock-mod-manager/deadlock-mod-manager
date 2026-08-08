@@ -4,6 +4,7 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@deadlock-mods/ui/components/chart";
+import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import {
   Area,
@@ -26,8 +27,13 @@ interface LiveMatchChartsProps {
 /**
  * Derived from the broadcast stream that is already open, so the match charts
  * cost nothing on top of the live scoreboard.
+ *
+ * Memoised because the scoreboard around it moves every second while a sample
+ * is only taken every fifteen match-seconds. Recharts lays out both charts from
+ * scratch on each render, and doing that fifteen times over for the same data
+ * was the bulk of what made the tab feel heavy during a match.
  */
-export const LiveMatchCharts = ({ samples }: LiveMatchChartsProps) => {
+export const LiveMatchCharts = memo(({ samples }: LiveMatchChartsProps) => {
   const { t } = useTranslation();
 
   const leadConfig = {
@@ -182,4 +188,4 @@ export const LiveMatchCharts = ({ samples }: LiveMatchChartsProps) => {
       </ChartCard>
     </div>
   );
-};
+});

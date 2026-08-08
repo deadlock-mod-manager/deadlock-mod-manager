@@ -10,6 +10,7 @@ import {
   beginLiveMatch,
   connectLiveStream,
   getLiveStream,
+  reopenLiveStream,
   subscribeToLiveStream,
 } from "@/lib/stats/live-store";
 
@@ -46,10 +47,15 @@ export const useMissingLocalMatches = (
   }, [detection.data, apiMatchIds]);
 };
 
-/** Cheap local file read; polling it is nicer than keeping a watcher alive. */
-const DETECT_INTERVAL_MS = 10_000;
+/**
+ * Polling is nicer than keeping a watcher alive, and it is cheap enough to do
+ * often: the backend caches the game path and reads only the bytes the log has
+ * grown by, so a poll is a stat plus a few kilobytes. Queue and lobby lines land
+ * within this of being written, which is what the Live tab reacts to.
+ */
+const DETECT_INTERVAL_MS = 5_000;
 /** Queues resolve in well under a minute, so watch them more closely. */
-const QUEUED_INTERVAL_MS = 3_000;
+const QUEUED_INTERVAL_MS = 2_000;
 /** A broadcast URL stays valid for the match, and resolving it is 2 req/h. */
 const BROADCAST_TTL = 6 * 60 * 60 * 1000;
 /** How long the roster has to hold still before it counts as the final lobby. */
@@ -188,9 +194,28 @@ export const useLiveMatch = () => {
     [steamProfiles.data, ranks.data, heroStats.data],
   );
 
+  const { refetch } = detection;
+  const refetchBroadcast = broadcast.refetch;
+  const broadcastFailed = broadcast.isError;
+
+  /**
+   * The one thing in here that is asked for rather than polled, so it retries
+   * everything that gives up on its own: detection, the broadcast handle after
+   * it was refused, and the stream itself once it has ended or dropped.
+   *
+   * Reconnecting is left to the button on purpose. A broadcast that closed early
+   * usually closes early again, and doing that on a timer would spend the
+   * endpoint's budget on a match that is over.
+   */
   const refresh = useCallback(() => {
-    void detection.refetch();
-  }, [detection]);
+    void refetch();
+    if (broadcastFailed) {
+      void refetchBroadcast();
+    } else if (matchId !== null && broadcastUrl !== null) {
+      reopenLiveStream();
+      connectLiveStream(matchId, broadcastUrl);
+    }
+  }, [refetch, refetchBroadcast, broadcastFailed, matchId, broadcastUrl]);
 
   return {
     /**

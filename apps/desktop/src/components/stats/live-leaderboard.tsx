@@ -1,6 +1,8 @@
 import { Card } from "@deadlock-mods/ui/components/card";
+import { memo, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { HeroAvatar } from "@/components/stats/hero-avatar";
+import { useReorderSafeSelect } from "@/hooks/use-reorder-safe-select";
 import type { DeadlockHero } from "@/lib/deadlock-api";
 import type { SteamProfile } from "@/lib/stats/api";
 import { formatCompact } from "@/lib/stats/format";
@@ -33,9 +35,13 @@ const Board = ({
   onSelect,
 }: BoardProps) => {
   const leader = Math.max(valueOf(ranked[0]) || 0, 1);
+  // These rows swap places as souls and kills come in, so a press has to be
+  // tied to the row it started on rather than to whatever ends up under the
+  // cursor a moment later.
+  const { containerProps, itemProps } = useReorderSafeSelect(onSelect);
 
   return (
-    <Card className='flex flex-col gap-1 p-3 shadow-none'>
+    <Card className='flex flex-col gap-1 p-3 shadow-none' {...containerProps}>
       <span className='mb-1 font-semibold text-sm'>{title}</span>
       {ranked.map((player, index) => {
         const value = valueOf(player);
@@ -47,8 +53,8 @@ const Board = ({
               isSelf && "bg-accent/60",
             )}
             key={player.steamId64}
-            onClick={() => onSelect(player)}
-            type='button'>
+            type='button'
+            {...itemProps(player)}>
             {/* Bar behind the row: share of the current leader's value. */}
             <span
               aria-hidden
@@ -89,32 +95,48 @@ const Board = ({
   );
 };
 
+const byNetWorth = (player: LivePlayer) => player.netWorth;
+const byKills = (player: LivePlayer) => player.kills;
+
 /** Who is ahead right now, across both teams rather than within one. */
-export const LiveLeaderboard = ({ players, ...rest }: LiveLeaderboardProps) => {
-  const { t } = useTranslation();
+export const LiveLeaderboard = memo(
+  ({ players, ...rest }: LiveLeaderboardProps) => {
+    const { t } = useTranslation();
 
-  if (players.length === 0) {
-    return null;
-  }
+    // Sorted off the roster rather than in the render body: the surrounding view
+    // re-renders on things the ranking does not depend on, and both orders are a
+    // fresh copy plus a sort of the whole lobby.
+    const bySouls = useMemo(
+      () => [...players].sort((a, b) => b.netWorth - a.netWorth),
+      [players],
+    );
+    const byFrags = useMemo(
+      () =>
+        [...players].sort((a, b) => b.kills - a.kills || a.deaths - b.deaths),
+      [players],
+    );
 
-  return (
-    <div className='grid gap-4 lg:grid-cols-2'>
-      <Board
-        format={formatCompact}
-        ranked={[...players].sort((a, b) => b.netWorth - a.netWorth)}
-        title={t("stats.live.mostSouls")}
-        valueOf={(player) => player.netWorth}
-        {...rest}
-      />
-      <Board
-        format={String}
-        ranked={[...players].sort(
-          (a, b) => b.kills - a.kills || a.deaths - b.deaths,
-        )}
-        title={t("stats.live.mostKills")}
-        valueOf={(player) => player.kills}
-        {...rest}
-      />
-    </div>
-  );
-};
+    if (players.length === 0) {
+      return null;
+    }
+
+    return (
+      <div className='grid gap-4 lg:grid-cols-2'>
+        <Board
+          format={formatCompact}
+          ranked={bySouls}
+          title={t("stats.live.mostSouls")}
+          valueOf={byNetWorth}
+          {...rest}
+        />
+        <Board
+          format={String}
+          ranked={byFrags}
+          title={t("stats.live.mostKills")}
+          valueOf={byKills}
+          {...rest}
+        />
+      </div>
+    );
+  },
+);

@@ -92,8 +92,24 @@ export const subscribeToLiveMatch = (
   // The stream is the only source for these; sampling it as it arrives means the
   // match charts cost no extra requests.
   const samples: LiveMatchSample[] = [];
+  // Steam ids already taken this flush window. The broadcast sends a row per
+  // player per tick - 60 Hz times a full lobby - and everything past the first
+  // row of a window is thrown away a moment later anyway. Skipping it before the
+  // JSON and schema parse is what keeps the stream off the main thread.
+  const takenThisWindow = new Set<string>();
   let dirty = false;
   let closed = false;
+  let current: LiveStatus = "connecting";
+
+  // Called per row, so it has to stay quiet unless something actually moved:
+  // every call reaches a store that re-renders the whole live view.
+  const setStatus = (status: LiveStatus) => {
+    if (status === current) {
+      return;
+    }
+    current = status;
+    onStatus(status);
+  };
 
   const publish = () => {
     const players = [...latest.values()];
@@ -108,9 +124,12 @@ export const subscribeToLiveMatch = (
   };
 
   const source = new EventSource(url.toString());
+  // Straight through rather than via `setStatus`: on a reconnect the store is
+  // still on the old stream's status and has to be put back to connecting.
   onStatus("connecting");
 
   const flush = window.setInterval(() => {
+    takenThisWindow.clear();
     if (!dirty) return;
     dirty = false;
     publish();
@@ -128,20 +147,26 @@ export const subscribeToLiveMatch = (
   // than leave the UI connecting forever.
   const watchdog = window.setTimeout(() => {
     logger.warn("Live stream produced no rows");
-    onStatus("error");
+    setStatus("error");
     stop();
   }, FIRST_ROW_TIMEOUT_MS);
 
   source.addEventListener("message", (event) => {
     try {
+      // Reading the id off the raw frame is a single regex; parsing the row is
+      // JSON plus a schema. Ordering them this way is what makes the skip pay.
       const steamId64 = readSteamId(event.data);
-      if (!steamId64) return;
+      if (!steamId64 || takenThisWindow.has(steamId64)) return;
+      // Claimed before the parse, so the rows that never become a player -
+      // spectator controllers, above all - are skipped for the rest of the
+      // window too instead of being parsed sixty times over.
+      takenThisWindow.add(steamId64);
       const player = toPlayer(steamId64, JSON.parse(event.data));
       if (!player) return;
       window.clearTimeout(watchdog);
       latest.set(player.steamId64, player);
       dirty = true;
-      onStatus("streaming");
+      setStatus("streaming");
     } catch (error) {
       logger.withError(error).warn("Unparsable live row");
     }
@@ -149,7 +174,7 @@ export const subscribeToLiveMatch = (
 
   source.addEventListener("end", () => {
     publish();
-    onStatus("ended");
+    setStatus("ended");
     stop();
   });
 
@@ -164,7 +189,7 @@ export const subscribeToLiveMatch = (
     if (latest.size > 0) {
       publish();
     }
-    onStatus(latest.size > 0 ? "ended" : "error");
+    setStatus(latest.size > 0 ? "ended" : "error");
     stop();
   });
 

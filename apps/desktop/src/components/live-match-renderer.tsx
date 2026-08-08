@@ -1,13 +1,24 @@
 import { useEffect } from "react";
 import { usePlayerStatsEnabled } from "@/hooks/use-feature-flags";
 import { useLiveMatch } from "@/hooks/use-live-match";
-import { disconnectLiveStream } from "@/lib/stats/live-store";
+import {
+  disconnectLiveStream,
+  hydrateLiveStream,
+} from "@/lib/stats/live-store";
 
 const LiveMatchWatcher = () => {
+  // Before anything else the component does: the board saved by the last
+  // session is on screen while detection is still deciding whether that match
+  // is over or, after a restart mid-round, still running.
+  useEffect(() => {
+    void hydrateLiveStream();
+  }, []);
+
   useLiveMatch();
 
-  // The only teardown there is. Everything else deliberately keeps running while
-  // the app is open, so the Live tab always opens onto current data.
+  // The only teardown there is; it writes the board out one last time.
+  // Everything else deliberately keeps running while the app is open, so the
+  // Live tab always opens onto current data.
   useEffect(() => disconnectLiveStream, []);
 
   return null;

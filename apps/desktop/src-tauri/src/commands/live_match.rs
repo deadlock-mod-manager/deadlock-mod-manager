@@ -10,7 +10,7 @@ use crate::live_match::{self, LiveMatchStatus};
 #[tauri::command]
 pub async fn get_live_match() -> Result<LiveMatchStatus, Error> {
   let status = tauri::async_runtime::spawn_blocking(|| {
-    resolve_game_path()
+    live_match::cached_game_path(resolve_game_path)
       .map(|game_path| live_match::status(&game_path))
       .unwrap_or_default()
   })

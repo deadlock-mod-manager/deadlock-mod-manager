@@ -82,6 +82,7 @@
       "openSettings": "Open launch options",
       "queuedTitle": "Searching for a match",
       "queuedDescription": "You are in the queue. As soon as the lobby is formed, everyone in it shows up here.",
+      "queuedBadge": "In queue",
       "waitingTitle": "No match running",
       "waitingDescription": "Start a Deadlock match and this fills up with everyone in your lobby. The match is read from the game's console log, so nothing needs to be typed in.",
       "checkNow": "Check now",

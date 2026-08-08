@@ -16,7 +16,7 @@ import {
   Radio,
   TriangleAlert,
 } from "@deadlock-mods/ui/icons";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { HeroAvatar } from "@/components/stats/hero-avatar";
@@ -24,6 +24,7 @@ import { LiveLeaderboard } from "@/components/stats/live-leaderboard";
 import { LiveMatchCharts } from "@/components/stats/live-match-chart";
 import { PlayerDialog } from "@/components/stats/player-dialog";
 import { useLiveMatch } from "@/hooks/use-live-match";
+import { useReorderSafeSelect } from "@/hooks/use-reorder-safe-select";
 import type { DeadlockHero } from "@/lib/deadlock-api";
 import type { RankAsset } from "@/lib/stats/api";
 import { formatCompact, formatPercent } from "@/lib/stats/format";
@@ -58,29 +59,60 @@ export const LiveTab = ({
   const live = useLiveMatch();
 
   const { board, profiles, ranks, heroStats } = live;
+  const boardMatchId = board?.matchId ?? null;
 
-  // Grouped once for the whole board rather than re-scanned per player. Has to
-  // stay above the empty states: every one of them returns early, and a hook
-  // below them would appear and disappear as a match starts.
+  // Grouped once for the whole board rather than re-scanned per player. This
+  // and everything down to the empty states has to stay above them: every one
+  // of those returns early, and a hook below would appear and disappear as a
+  // match starts.
   const statsByAccount = useMemo(
     () => heroStatsByAccount(heroStats),
     [heroStats],
   );
 
-  const select = (player: LivePlayer) =>
-    setSelection({
-      matchId: board?.matchId ?? null,
-      accountId: player.accountId,
-    });
+  const select = useCallback(
+    (player: LivePlayer) =>
+      setSelection({ matchId: boardMatchId, accountId: player.accountId }),
+    [boardMatchId],
+  );
+  // Team cards re-sort by souls every second, so a press has to stay tied to the
+  // row it started on instead of the one that slid into its place.
+  const { containerProps, itemProps } = useReorderSafeSelect(select);
+
+  // Split and ranked here rather than in the render body: the view re-renders on
+  // every tick of the stream, and both of these copy and sort the whole lobby.
+  const teams = useMemo(
+    () =>
+      [SAPPHIRE_TEAM, AMBER_TEAM].map((team) => ({
+        team,
+        players: live.players
+          .filter((player) => player.team === team)
+          .sort((a, b) => b.netWorth - a.netWorth),
+      })),
+    [live.players],
+  );
 
   // Derived from the live rows rather than held as its own copy, so the dialog
   // follows the scoreboard instead of freezing the moment it was opened.
   const selected =
-    selection?.matchId === (board?.matchId ?? null)
+    selection?.matchId === boardMatchId
       ? (live.players.find(
           (player) => player.accountId === selection.accountId,
         ) ?? null)
       : null;
+
+  // The one way out of every dead end this tab can reach, so it is the same
+  // button in all of them rather than one that only exists before a match.
+  const checkNowButton = (
+    <Button onClick={live.refresh} variant='outline'>
+      {live.isDetecting ? (
+        <Loader2 className='h-4 w-4 animate-spin' />
+      ) : (
+        <Radio className='h-4 w-4' />
+      )}
+      {t("stats.live.checkNow")}
+    </Button>
+  );
 
   // Everything here is parsed out of console.log, which the game only writes
   // with -condebug. Without it the tab can never find anything, so it says so
@@ -142,38 +174,27 @@ export const LiveTab = ({
             {t("stats.live.waitingDescription")}
           </EmptyDescription>
         </EmptyHeader>
-        <EmptyContent>
-          <Button onClick={live.refresh} variant='outline'>
-            {live.isDetecting ? (
-              <Loader2 className='h-4 w-4 animate-spin' />
-            ) : (
-              <Radio className='h-4 w-4' />
-            )}
-            {t("stats.live.checkNow")}
-          </Button>
-        </EmptyContent>
+        <EmptyContent>{checkNowButton}</EmptyContent>
       </Empty>
     );
   }
 
-  const teams = [SAPPHIRE_TEAM, AMBER_TEAM].map((team) => ({
-    team,
-    players: live.players
-      .filter((player) => player.team === team)
-      .sort((a, b) => b.netWorth - a.netWorth),
-  }));
-
-  // What to say while there is no scoreboard yet. A stream that already failed or
-  // ended is done, so spinning on it would just look like a hang; a failed
-  // broadcast request says nothing here because the alert above already covers it.
+  // What to say while there is no scoreboard yet. A stream that already failed
+  // or ended is done, so spinning on it would just look like a hang - it gets
+  // the retry the copy points at instead. Nothing reconnects on its own from
+  // here, so leaving the button out was leaving the tab with no way forward.
   const renderEmptyBoard = () => {
+    // The alert above already says what went wrong; only the way out is missing.
     if (live.broadcastError) {
-      return null;
+      return <div className='flex justify-center py-16'>{checkNowButton}</div>;
     }
     if (live.status === "error" || live.status === "ended") {
       return (
-        <div className='py-16 text-center text-muted-foreground text-sm'>
-          {t("stats.live.streamError")}
+        <div className='flex flex-col items-center gap-4 py-16'>
+          <span className='text-center text-muted-foreground text-sm'>
+            {t("stats.live.streamError")}
+          </span>
+          {checkNowButton}
         </div>
       );
     }
@@ -202,8 +223,8 @@ export const LiveTab = ({
           isSelf && "border-primary",
         )}
         key={player.steamId64}
-        onClick={() => select(player)}
-        type='button'>
+        type='button'
+        {...itemProps(player)}>
         <HeroAvatar
           className='h-9 w-9'
           hero={heroesById.get(player.heroId)}
@@ -262,6 +283,18 @@ export const LiveTab = ({
         {!board.isRunning && (
           <Badge variant='outline'>{t("stats.live.lastMatch")}</Badge>
         )}
+        {/* The board of the match just played stays up until the next one
+            starts, so the queue for that next one has to be visible next to it -
+            otherwise searching looks exactly like sitting in the menu. */}
+        {live.queued && (
+          <Badge className='gap-1.5' variant='outline'>
+            <span className='relative flex h-2 w-2'>
+              <span className='absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/60' />
+              <span className='relative inline-flex h-2 w-2 rounded-full bg-primary' />
+            </span>
+            {t("stats.live.queuedBadge")}
+          </Badge>
+        )}
         <span className='text-muted-foreground text-xs'>
           {t("stats.live.matchId", { id: board.matchId })}
         </span>
@@ -279,7 +312,10 @@ export const LiveTab = ({
       ) : (
         <div className='grid gap-4 lg:grid-cols-2'>
           {teams.map(({ team, players }) => (
-            <Card className='flex flex-col gap-2 p-3 shadow-none' key={team}>
+            <Card
+              className='flex flex-col gap-2 p-3 shadow-none'
+              key={team}
+              {...containerProps}>
               <div className='flex items-center justify-between'>
                 <span className='font-semibold text-sm'>
                   {t(

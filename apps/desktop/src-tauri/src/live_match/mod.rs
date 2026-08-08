@@ -41,6 +41,26 @@ fn console_log_path(game_path: &Path) -> PathBuf {
   game_path.join("game").join("citadel").join("console.log")
 }
 
+static GAME_PATH: LazyLock<Mutex<Option<PathBuf>>> = LazyLock::new(Mutex::default);
+
+/// The install behind the console log, resolved at most once per app run.
+///
+/// Resolving it walks the Steam library folders behind the global mod-manager
+/// lock, which is far more than a poll running every couple of seconds should
+/// cost - and it would contend with whatever the mod library is doing. The
+/// install does not move while the app is open, so it is only looked up again
+/// once the directory stops being there.
+pub fn cached_game_path(resolve: impl FnOnce() -> Option<PathBuf>) -> Option<PathBuf> {
+  let mut cached = GAME_PATH.lock().ok()?;
+  if cached.as_deref().is_some_and(|path| !path.is_dir()) {
+    *cached = None;
+  }
+  if cached.is_none() {
+    *cached = resolve();
+  }
+  cached.clone()
+}
+
 /// Matches from this session are worth remembering even after the lobby closes:
 /// deadlock-api ingests with a day of delay, so they are exactly the ones its
 /// history is missing.
@@ -111,6 +131,11 @@ pub fn fold_phase(log: &str, previous: LivePhase) -> LivePhase {
 #[derive(Default)]
 struct ScanState {
   path: Option<PathBuf>,
+  /// When the log we folded was created. The game overwrites it on every start,
+  /// so a different value means a new session and everything we know about the
+  /// old one - the offset, and a match whose teardown line we will never see
+  /// because the game was closed on it - is stale.
+  created: Option<std::time::SystemTime>,
   /// How far into the log we have folded, always on a line boundary.
   offset: u64,
   phase: LivePhase,
@@ -141,11 +166,16 @@ fn phase(path: &Path) -> Option<LivePhase> {
 
   let mut state = STATE.lock().ok()?;
 
-  // A different install or a truncated file (new game session) starts over.
-  let len = std::fs::metadata(path).ok()?.len();
-  if state.path.as_deref() != Some(path) || len < state.offset {
+  // A different install, or a log that belongs to a different run of the game,
+  // starts over. Truncation alone is not enough to notice the latter: a fresh
+  // log can already be past where the last one was read by the time we look.
+  let metadata = std::fs::metadata(path).ok()?;
+  let len = metadata.len();
+  let created = metadata.created().ok();
+  if state.path.as_deref() != Some(path) || state.created != created || len < state.offset {
     *state = ScanState {
       path: Some(path.to_path_buf()),
+      created,
       ..Default::default()
     };
   }
