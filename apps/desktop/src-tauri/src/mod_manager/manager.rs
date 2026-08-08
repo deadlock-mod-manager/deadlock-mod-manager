@@ -1391,10 +1391,11 @@ mod tests {
 
   #[test]
   fn reorder_keeps_prefixed_vpks_attached_to_their_mod() {
-    let temp = tempfile::tempdir().unwrap();
-    let addons_path = temp.path();
-    write_vpk(addons_path, "pak01_dir.vpk");
-    write_vpk(addons_path, "665094_pak05_dir.vpk");
+    let game = game_dir();
+    let addons_path = game.path().join("game").join("citadel").join("addons");
+    fs::create_dir_all(&addons_path).unwrap();
+    write_vpk(&addons_path, "pak01_dir.vpk");
+    write_vpk(&addons_path, "665094_pak05_dir.vpk");
 
     let mut manifest = ProfileVpkManifest::default();
     manifest.mods.insert(
@@ -1414,10 +1415,10 @@ mod tests {
       },
     );
 
-    let manager = test_manager(addons_path);
+    let manager = test_manager(game.path());
     let updated = manager
       .apply_reorder(
-        addons_path,
+        &addons_path,
         &mut manifest,
         vec![
           (
@@ -1444,9 +1445,10 @@ mod tests {
 
   #[test]
   fn reorder_reports_mods_that_lost_a_duplicate_claim() {
-    let temp = tempfile::tempdir().unwrap();
-    let addons_path = temp.path();
-    write_vpk(addons_path, "pak01_dir.vpk");
+    let game = game_dir();
+    let addons_path = game.path().join("game").join("citadel").join("addons");
+    fs::create_dir_all(&addons_path).unwrap();
+    write_vpk(&addons_path, "pak01_dir.vpk");
 
     let mut manifest = ProfileVpkManifest::default();
     for mod_id in ["first", "second"] {
@@ -1460,10 +1462,10 @@ mod tests {
       );
     }
 
-    let manager = test_manager(addons_path);
+    let manager = test_manager(game.path());
     let updated = manager
       .apply_reorder(
-        addons_path,
+        &addons_path,
         &mut manifest,
         vec![
           ("first".to_string(), vec!["pak01_dir.vpk".to_string()]),
