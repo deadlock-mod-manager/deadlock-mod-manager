@@ -1328,6 +1328,7 @@ dependencies = [
  "serde_json",
  "sevenz-rust",
  "sha2",
+ "source2-model",
  "steam-vent",
  "steamlocate",
  "sysinfo",
@@ -1856,6 +1857,15 @@ dependencies = [
  "crc32fast",
  "miniz_oxide",
  "zlib-rs",
+]
+
+[[package]]
+name = "float-cmp"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b09cf3155332e944990140d967ff5eceb70df778b34f77d8075db46e4704e6d8"
+dependencies = [
+ "num-traits",
 ]
 
 [[package]]
@@ -3218,6 +3228,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "112b39cec0b298b6c1999fee3e31427f74f676e4cb9879ed1a121b43661a4154"
 
 [[package]]
+name = "lz4_flex"
+version = "0.11.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "373f5eceeeab7925e0c1098212f2fbc4d416adec9d35051a6ab251e824c1854a"
+dependencies = [
+ "twox-hash",
+]
+
+[[package]]
 name = "lzma-rust"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3289,6 +3308,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "488016bfae457b036d996092f6cb448677611ce4449e970ceaf42695203f218a"
 dependencies = [
  "autocfg",
+]
+
+[[package]]
+name = "meshopt"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e01e77ead21976b3a9f01ec1724f766923da74f0726364e2b0f425658935d71a"
+dependencies = [
+ "bitflags 2.11.1",
+ "cc",
+ "float-cmp",
+ "thiserror 2.0.18",
 ]
 
 [[package]]
@@ -5998,6 +6029,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "source2-model"
+version = "0.1.0"
+dependencies = [
+ "image",
+ "log",
+ "lz4_flex",
+ "meshopt",
+ "serde_json",
+ "texture2ddecoder",
+ "thiserror 2.0.18",
+ "vpk-parser",
+ "zstd",
+]
+
+[[package]]
 name = "specta"
 version = "2.0.0-rc.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6970,6 +7016,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06794f8f6c5c898b3275aebefa6b8a1cb24cd2c6c79397ab15774837a0bc5755"
 dependencies = [
  "winapi-util",
+]
+
+[[package]]
+name = "texture2ddecoder"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "427ae8ec7f2f0fdd3146b77cfa44bea880caf066f7e55398a8467afe2645c832"
+dependencies = [
+ "paste",
 ]
 
 [[package]]
