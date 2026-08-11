@@ -23,8 +23,6 @@ pub async fn extract_archive(
   let validated_target_path = mod_manager.validate_extract_target_path(&target_path)?;
   drop(mod_manager);
 
-  std::fs::create_dir_all(&validated_target_path)?;
-
   let extractor = ArchiveExtractor::new();
   extractor.extract_archive(&archive_path, &validated_target_path)?;
 
@@ -89,7 +87,6 @@ pub async fn copy_selected_vpks_from_archive(
 
     let archive_path = archive_path.ok_or(Error::ModFileNotFound)?;
 
-    std::fs::create_dir_all(&extracted_dir)?;
     log::info!("Extracting archive: {archive_path:?}");
     extractor.extract_archive(&archive_path, &extracted_dir)?;
   } else {

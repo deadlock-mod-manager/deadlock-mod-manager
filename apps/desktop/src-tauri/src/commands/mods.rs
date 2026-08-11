@@ -969,7 +969,6 @@ pub async fn fetch_missing_mod_variants(
     std::fs::write(&archive_path, &bytes)?;
 
     let extract_dir = temp_dir.path().join("extracted");
-    std::fs::create_dir_all(&extract_dir)?;
 
     let extractor = ArchiveExtractor::new();
     extractor.extract_archive(&archive_path, &extract_dir)?;
@@ -1072,7 +1071,6 @@ pub async fn stage_download_archive(
   std::fs::write(&archive_path, &bytes)?;
 
   let extract_dir = temp_dir.path().join("extracted");
-  std::fs::create_dir_all(&extract_dir)?;
 
   let extractor = ArchiveExtractor::new();
   extractor.extract_archive(&archive_path, &extract_dir)?;
@@ -1181,7 +1179,6 @@ pub async fn switch_mod_download_variant(
   std::fs::write(&archive_path, &bytes)?;
 
   let extract_dir = temp_dir.path().join("extracted");
-  std::fs::create_dir_all(&extract_dir)?;
 
   let extractor = ArchiveExtractor::new();
   extractor.extract_archive(&archive_path, &extract_dir)?;

@@ -44,7 +44,7 @@ sysinfo = { version = "0.37.2", features = ["windows"] }
 tauri-plugin-log = "2.8"
 log = "0.4"
 tauri-plugin-process = "2.3.1"
-sevenz-rust = "0.6.1"
+sevenz-rust2 = "0.21.4"
 tauri-plugin-sentry = "0.5.0"
 steamlocate = "2.0.1"
 tauri-plugin-deep-link = "2.4.9"
