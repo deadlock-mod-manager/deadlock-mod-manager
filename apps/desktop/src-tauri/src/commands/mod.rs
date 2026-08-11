@@ -18,4 +18,5 @@ pub mod mods;
 pub mod profiles;
 pub mod reports;
 pub mod server_profiles;
+pub mod shards;
 pub mod vpk;
