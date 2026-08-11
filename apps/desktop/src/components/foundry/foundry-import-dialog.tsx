@@ -15,8 +15,15 @@ import {
   TabsList,
   TabsTrigger,
 } from "@deadlock-mods/ui/components/tabs";
+import { Label } from "@deadlock-mods/ui/components/label";
+import { Switch } from "@deadlock-mods/ui/components/switch";
 import { cn } from "@deadlock-mods/ui/lib/utils";
-import { ImageIcon, UploadSimpleIcon } from "@phosphor-icons/react";
+import {
+  CubeIcon,
+  ImageIcon,
+  UploadSimpleIcon,
+  WarningIcon,
+} from "@phosphor-icons/react";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -27,6 +34,7 @@ import {
 import { usePersistedStore } from "@/lib/store";
 import { type LocalMod, ModStatus } from "@/types/mods";
 import { useFoundry } from "./foundry-context";
+import { FoundryLoadingBar } from "./foundry-loading-bar";
 
 /** A hero skin has a resolved hero and is neither a map nor an audio mod. */
 const isHeroSkin = (mod: LocalMod): boolean =>
@@ -77,9 +85,7 @@ const SkinTile = ({
         )}
         {loading && (
           <div className='absolute inset-x-0 bottom-0 bg-background/85 p-2'>
-            <div className='h-1 overflow-hidden rounded-full bg-primary/20'>
-              <div className='h-full w-2/3 animate-pulse rounded-full bg-primary' />
-            </div>
+            <FoundryLoadingBar />
           </div>
         )}
       </div>
@@ -126,9 +132,7 @@ const DefaultSkinTile = ({
         />
         {loading && (
           <div className='absolute inset-x-0 bottom-0 bg-background/85 p-2'>
-            <div className='h-1 overflow-hidden rounded-full bg-primary/20'>
-              <div className='h-full w-2/3 animate-pulse rounded-full bg-primary' />
-            </div>
+            <FoundryLoadingBar />
           </div>
         )}
       </div>
@@ -157,6 +161,10 @@ export const FoundryImportDialog = ({
   const { t } = useTranslation();
   const { importDefaultHero, importMod, importVpk, status } = useFoundry();
   const localMods = usePersistedStore((state) => state.localMods);
+  const preview3d = usePersistedStore((state) => state.foundry3dPreviewEnabled);
+  const setPreview3d = usePersistedStore(
+    (state) => state.setFoundry3dPreviewEnabled,
+  );
   const activeProfile = usePersistedStore(
     (state) => state.profiles[state.activeProfileId],
   );
@@ -343,6 +351,39 @@ export const FoundryImportDialog = ({
             </div>
           </TabsContent>
         </Tabs>
+
+        <div className='shrink-0 space-y-2 border-t px-6 py-4'>
+          <div className='flex items-start gap-3'>
+            <CubeIcon
+              className='mt-0.5 h-5 w-5 shrink-0 text-muted-foreground'
+              weight='duotone'
+            />
+            <div className='min-w-0 flex-1'>
+              <Label
+                className='cursor-pointer font-medium text-sm'
+                htmlFor='foundry-3d-toggle'>
+                {t("foundry.import.preview3dLabel")}
+              </Label>
+              <p className='text-muted-foreground text-xs'>
+                {t("foundry.import.preview3dHint")}
+              </p>
+            </div>
+            <Switch
+              checked={preview3d}
+              id='foundry-3d-toggle'
+              onCheckedChange={setPreview3d}
+            />
+          </div>
+
+          {preview3d && (
+            <div className='flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2.5'>
+              <WarningIcon className='mt-0.5 h-4 w-4 shrink-0 text-amber-500' />
+              <p className='text-xs leading-relaxed'>
+                {t("foundry.import.preview3dWarning")}
+              </p>
+            </div>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

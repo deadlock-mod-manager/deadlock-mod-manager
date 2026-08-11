@@ -1,5 +1,6 @@
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { cn } from "@deadlock-mods/ui/lib/utils";
+import { useTranslation } from "react-i18next";
 import type { FoundryEntry } from "@/types/foundry";
 
 const formatBytes = (bytes: number): string => {
@@ -13,6 +14,9 @@ interface FoundryEntryListProps {
   selectedPath: string | null;
   onSelect: (entry: FoundryEntry) => void;
   emptyLabel: string;
+  editedPaths?: ReadonlySet<string>;
+  /** The model marked as the skin's primary one, badged in the list. */
+  primaryPath?: string | null;
 }
 
 /**
@@ -24,7 +28,11 @@ export const FoundryEntryList = ({
   selectedPath,
   onSelect,
   emptyLabel,
+  editedPaths,
+  primaryPath,
 }: FoundryEntryListProps) => {
+  const { t } = useTranslation();
+
   if (entries.length === 0) {
     return (
       <p className='px-2 py-6 text-center text-muted-foreground text-sm'>
@@ -48,10 +56,20 @@ export const FoundryEntryList = ({
               )}
               onClick={() => onSelect(entry)}
               type='button'>
-              <span className='min-w-0 flex-1 truncate' title={entry.path}>
-                {entry.filename}
+              <span className='flex min-w-0 flex-1 items-center gap-2'>
+                <span className='truncate' title={entry.path}>
+                  {entry.filename}
+                </span>
+                {primaryPath === entry.path && (
+                  <Badge className='shrink-0 text-[10px]' variant='secondary'>
+                    {t("foundry.primary")}
+                  </Badge>
+                )}
               </span>
               <div className='flex shrink-0 items-center gap-2'>
+                {editedPaths?.has(entry.path) && (
+                  <Badge className='text-[10px]'>{t("foundry.edited")}</Badge>
+                )}
                 <span className='text-muted-foreground text-xs'>
                   {formatBytes(entry.size)}
                 </span>

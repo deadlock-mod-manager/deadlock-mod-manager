@@ -1,5 +1,4 @@
 import { Button } from "@deadlock-mods/ui/components/button";
-import { Progress } from "@deadlock-mods/ui/components/progress";
 import { cn } from "@deadlock-mods/ui/lib/utils";
 import { ArrowsClockwiseIcon, CubeIcon } from "@phosphor-icons/react";
 import { useEffect, useRef, useState } from "react";
@@ -8,11 +7,137 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { FoundryLoadingBar } from "./foundry-loading-bar";
+import {
+  hueOf,
+  installPaintShader,
+  type PaintableMaterial,
+  type PaintUniforms,
+} from "./foundry-paint-shader";
+
+/** A live paint preview: which part, and the exact paint being previewed. */
+export interface FoundryPreviewTint {
+  target: "body" | "weapon" | "bodyAndWeapon" | "abilities";
+  colorHex: string;
+  saturation: number;
+  brightness: number;
+}
 
 interface FoundryModelViewerProps {
   dataUrl: string;
   label: string;
+  /** Paints the matching materials on the GPU, without touching any file, so
+   *  the paint tab shows a color the instant it is picked. */
+  tint?: FoundryPreviewTint | null;
 }
+
+interface MaterialSnapshot {
+  /** The paint shader's uniforms for this material. */
+  uniforms: PaintUniforms;
+  /** Material and mesh names joined, which is what the part match reads. */
+  name: string;
+}
+
+const isTintable = (material: THREE.Material): material is PaintableMaterial =>
+  material instanceof THREE.MeshBasicMaterial ||
+  material instanceof THREE.MeshStandardMaterial ||
+  material instanceof THREE.MeshPhysicalMaterial ||
+  material instanceof THREE.MeshPhongMaterial ||
+  material instanceof THREE.MeshLambertMaterial;
+
+const WEAPON_TOKENS = [
+  "weapon",
+  "gun",
+  "rifle",
+  "pistol",
+  "shotgun",
+  "cannon",
+  "launcher",
+  "bow",
+  "arrow",
+  "blade",
+  "sword",
+  "knife",
+  "staff",
+  "wand",
+  "mace",
+  "club",
+  "revolver",
+  "smg",
+  "bullet",
+  "melee",
+];
+
+/**
+ * Whether a material belongs to the part being painted. This mirrors the
+ * backend's material classification (`commands/foundry/paint.rs`) so the preview
+ * highlights exactly what an Apply would rewrite. Ability effects are not part
+ * of the model, so nothing on the mesh matches them.
+ */
+const materialMatchesTarget = (
+  snapshot: MaterialSnapshot,
+  target: FoundryPreviewTint["target"],
+): boolean => {
+  // Ability effects are not part of the mesh, so nothing on it ever matches.
+  if (target === "abilities") return false;
+  if (target === "bodyAndWeapon") return true;
+  const name = snapshot.name.toLowerCase();
+  const isWeapon = WEAPON_TOKENS.some((token) => name.includes(token));
+  return target === "weapon" ? isWeapon : !isWeapon;
+};
+
+/** Clone every material so tinting one model never bleeds into another. */
+const cloneSceneMaterials = (root: THREE.Object3D) => {
+  root.traverse((child) => {
+    if (!(child instanceof THREE.Mesh)) return;
+    child.material = Array.isArray(child.material)
+      ? child.material.map((material) => material.clone())
+      : child.material.clone();
+  });
+};
+
+/** Hook the paint shader into every paintable material and record its uniforms. */
+const installPaintShaders = (root: THREE.Object3D): MaterialSnapshot[] => {
+  const snapshots: MaterialSnapshot[] = [];
+  root.traverse((child) => {
+    if (!(child instanceof THREE.Mesh)) return;
+    const materials = Array.isArray(child.material)
+      ? child.material
+      : [child.material];
+    for (const material of materials) {
+      if (!isTintable(material)) continue;
+      snapshots.push({
+        uniforms: installPaintShader(material),
+        name: [material.name, child.name].filter(Boolean).join(" "),
+      });
+    }
+  });
+  return snapshots;
+};
+
+/**
+ * Point the paint shader at `tint`, or switch it off when it is null.
+ *
+ * This only writes uniforms, so it costs nothing per change: the scene already
+ * redraws every frame and the transform runs on the GPU. Dragging the picker is
+ * therefore free, and what it shows is the same HSV transform an Apply bakes.
+ */
+const applyPreviewTint = (
+  snapshots: MaterialSnapshot[],
+  tint: FoundryPreviewTint | null | undefined,
+) => {
+  const hue = tint ? hueOf(tint.colorHex) : 0;
+  for (const snapshot of snapshots) {
+    const painted =
+      Boolean(tint) && materialMatchesTarget(snapshot, tint!.target);
+    snapshot.uniforms.uPaintActive.value = painted ? 1 : 0;
+    if (painted && tint) {
+      snapshot.uniforms.uPaintHue.value = hue;
+      snapshot.uniforms.uPaintSaturation.value = tint.saturation;
+      snapshot.uniforms.uPaintBrightness.value = tint.brightness;
+    }
+  }
+};
 
 // DMM-themed gizmo palette (dark surface, gold primary accent).
 const GIZMO_AXES: {
@@ -77,12 +202,14 @@ const makeHandleTexture = (
 export const FoundryModelViewer = ({
   dataUrl,
   label,
+  tint,
 }: FoundryModelViewerProps) => {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
   const gizmoRef = useRef<HTMLDivElement>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
-  const [progress, setProgress] = useState<number | null>(null);
+  const snapshotsRef = useRef<MaterialSnapshot[]>([]);
+  const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
   const [autoRotate, setAutoRotate] = useState(true);
 
@@ -100,7 +227,7 @@ export const FoundryModelViewer = ({
     if (!container || !gizmoContainer) return;
 
     setFailed(false);
-    setProgress(5);
+    setLoading(true);
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0a0b0d);
@@ -260,19 +387,17 @@ export const FoundryModelViewer = ({
         }
 
         loadedRoot = gltf.scene;
+        cloneSceneMaterials(gltf.scene);
+        snapshotsRef.current = installPaintShaders(gltf.scene);
         scene.add(gltf.scene);
 
         frameModel(gltf.scene);
-        setProgress(null);
+        setLoading(false);
       },
-      (event) => {
-        if (event.total > 0) {
-          setProgress(Math.min(95, (event.loaded / event.total) * 100));
-        }
-      },
+      undefined,
       () => {
         if (disposed) return;
-        setProgress(null);
+        setLoading(false);
         setFailed(true);
       },
     );
@@ -321,6 +446,7 @@ export const FoundryModelViewer = ({
       resizeObserver.disconnect();
       controls.dispose();
       controlsRef.current = null;
+      snapshotsRef.current = [];
       if (loadedRoot) {
         scene.remove(loadedRoot);
         disposeObject(loadedRoot);
@@ -332,12 +458,23 @@ export const FoundryModelViewer = ({
       environmentMap.dispose();
       pmremGenerator.dispose();
       environment.dispose();
+      // `dispose()` frees three.js resources but leaves the WebGL context
+      // alive; browsers cap how many a page may hold, and this canvas is
+      // mounted and unmounted on every repaint, so release it explicitly.
       renderer.dispose();
+      renderer.forceContextLoss();
       renderer.domElement.remove();
       gizmoRenderer.dispose();
+      gizmoRenderer.forceContextLoss();
       gizmoRenderer.domElement.remove();
     };
   }, [dataUrl]);
+
+  // Re-tint whenever the picked color changes. The scene already renders every
+  // frame, so touching the materials is all that is needed.
+  useEffect(() => {
+    applyPreviewTint(snapshotsRef.current, tint);
+  }, [tint, loading]);
 
   return (
     <div className='relative h-full w-full overflow-hidden rounded-lg border bg-background'>
@@ -366,13 +503,12 @@ export const FoundryModelViewer = ({
         />
       </Button>
 
-      {progress !== null && (
+      {loading && !failed && (
         <div className='absolute inset-x-0 bottom-0 space-y-2 bg-gradient-to-t from-background/90 to-transparent p-4'>
-          <div className='flex items-center justify-between text-muted-foreground text-xs'>
-            <span>{t("foundry.preview.loading")}</span>
-            <span>{Math.round(progress)}%</span>
-          </div>
-          <Progress value={progress} />
+          <span className='text-muted-foreground text-xs'>
+            {t("foundry.preview.loading")}
+          </span>
+          <FoundryLoadingBar />
         </div>
       )}
       {failed && (

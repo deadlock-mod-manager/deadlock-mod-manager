@@ -1306,3 +1306,27 @@
 .wn-feature-enter {
   animation: wn-feature-enter 0.3s ease both;
 }
+
+/* Mod Foundry: an indeterminate sweep for work whose duration is unknown
+   (parsing a pak, decoding a model). It deliberately shows no real progress —
+   the backend cannot report any — it only shows that something is happening. */
+@keyframes foundry-sweep {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(420%);
+  }
+}
+
+.foundry-sweep {
+  animation: foundry-sweep 1.25s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .foundry-sweep {
+    animation: none;
+    transform: translateX(120%);
+    opacity: 0.6;
+  }
+}

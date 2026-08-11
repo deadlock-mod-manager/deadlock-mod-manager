@@ -1,26 +1,34 @@
-//! Decoder for Source 2 compiled assets used by the Mod Foundry.
+//! Decoder for the Source 2 compiled assets the Mod Foundry previews.
 //!
-//! The first slice targets textures (`.vtex_c`): extract an entry from a VPK,
-//! parse the resource block table, decode the top mip to RGBA8, and encode PNG.
+//! Scope is deliberately narrow, and read-only: character models
+//! (`.vmdl_c` / `.vmesh_c`) and the materials and textures they reference.
+//! Animation, particle and physics decoding are intentionally not part of this
+//! crate — the Foundry previews a static character model only — and the write
+//! side (recolor, replace, pack) lives in `vpkmanager`.
 
 pub mod error;
 pub mod kv3;
+mod material_preview;
+pub mod nm_anim;
 pub mod resource;
+pub mod skeleton;
 pub mod vmesh;
 pub mod vpk_extract;
 pub mod vtex;
 
 use std::io::Cursor;
 use std::path::Path;
-use std::thread;
 
 use image::codecs::png::PngEncoder;
 use image::imageops::FilterType;
 use image::{ExtendedColorType, ImageBuffer, ImageEncoder, Rgba};
 
 pub use error::{Result, Source2Error};
+use material_preview::decode_preview_textures;
+pub use material_preview::material_color_texture;
 pub use resource::Resource;
-pub use vmesh::{ModelGlb, PreviewTexture};
+pub use skeleton::{Bone, BoneTransform, Skeleton};
+pub use vmesh::{ModelGlb, PreviewTexture, RenderMaterial, RenderModel, RenderPrimitive};
 use vpk_extract::VpkArchive;
 pub use vtex::{DecodedTexture, VtexFormat, VtexHeader};
 
@@ -105,225 +113,23 @@ fn encode_png_bytes(decoded: &DecodedTexture, max_side: u32) -> Result<Vec<u8>> 
     Ok(png)
 }
 
-fn normalize_compiled_path(path: &str, source_extension: &str) -> String {
-    let mut normalized = path.replace('\\', "/").to_ascii_lowercase();
-    if normalized.ends_with("_c") {
-        return normalized;
-    }
-    if normalized.ends_with(source_extension) {
-        normalized.push_str("_c");
-    }
-    normalized
-}
-
-fn texture_param_score(name: &str, path: &str) -> i32 {
-    let name = name.to_ascii_lowercase();
-    let path = path.to_ascii_lowercase();
-    let mut score = 0;
-    if name.contains("color") || name.contains("albedo") || name.contains("base") {
-        score += 120;
-    }
-    if path.contains("color") || path.contains("albedo") {
-        score += 80;
-    }
-    if name == "g_tcolor" || name == "g_tcolor1" || name == "g_talbedo" {
-        score += 80;
-    }
-    if name.contains("normal")
-        || name.contains("rough")
-        || name.contains("metal")
-        || name.contains("mask")
-        || name.contains("ao")
-        || name.contains("illum")
-        || name.contains("tint")
-        || path.contains("normal")
-        || path.contains("rough")
-        || path.contains("metal")
-        || path.contains("mask")
-        || path.contains("_ao")
-        || path.contains("illum")
-    {
-        score -= 220;
-    }
-    score
-}
-
-fn material_color_texture(archive: &VpkArchive, material_path: &str) -> Option<String> {
-    let material_path = normalize_compiled_path(material_path, ".vmat");
-    let bytes = archive.extract_entry(&material_path).ok()?;
-    let res = Resource::parse(bytes).ok()?;
-    let data = res
-        .block_bytes("DATA")
-        .and_then(|bytes| kv3::parse(bytes).ok())?;
-    let texture_params = data.get("m_textureParams")?.as_array()?;
-
-    texture_params
-        .into_iter()
-        .filter_map(|param| {
-            let name = param.get("m_name")?.as_string()?;
-            let path = param.get("m_pValue")?.as_string()?;
-            let score = texture_param_score(name, path);
-            (score > 0).then_some((score, normalize_compiled_path(path, ".vtex")))
-        })
-        .max_by_key(|(score, _)| *score)
-        .map(|(_, path)| path)
-}
-
-fn decode_texture_preview(
-    archive: &VpkArchive,
-    texture_path: &str,
-    material_path: Option<&str>,
-) -> Option<PreviewTexture> {
-    let bytes = archive.extract_entry(texture_path).ok()?;
-    decode_texture_preview_bytes(
-        texture_path.to_string(),
-        material_path.map(str::to_string),
-        bytes,
-    )
-}
-
-fn decode_texture_preview_bytes(
-    texture_path: String,
-    material_path: Option<String>,
-    bytes: Vec<u8>,
-) -> Option<PreviewTexture> {
-    let res = Resource::parse(bytes).ok()?;
-    let header = VtexHeader::parse(&res).ok()?;
-    let decoded = header.decode_preview(&res.data, 512).ok()?;
-    let png = encode_png_bytes(&decoded, 512).ok()?;
-    Some(PreviewTexture {
-        name: texture_path,
-        material: material_path.map(|path| normalize_compiled_path(&path, ".vmat")),
-        png,
-    })
-}
-
-fn decode_material_preview_textures(
-    archive: &VpkArchive,
-    material_paths: &[String],
-) -> Vec<PreviewTexture> {
-    let mut jobs = Vec::<(String, String, Vec<u8>)>::new();
-    let mut raw_cache = Vec::<(String, Vec<u8>)>::new();
-    // These are the mesh's actual drawcall materials, so the count is naturally
-    // bounded; cap only to guard against pathological models.
-    for material_path in material_paths.iter().take(64) {
-        let Some(texture_path) = material_color_texture(archive, material_path) else {
-            continue;
-        };
-        if !archive.contains_entry(&texture_path) {
-            continue;
-        }
-        let bytes = if let Some((_, bytes)) = raw_cache
-            .iter()
-            .find(|(path, _)| path.eq_ignore_ascii_case(&texture_path))
-        {
-            bytes.clone()
-        } else {
-            let Ok(bytes) = archive.extract_entry(&texture_path) else {
-                continue;
-            };
-            raw_cache.push((texture_path.clone(), bytes.clone()));
-            bytes
-        };
-        jobs.push((texture_path, material_path.clone(), bytes));
-    }
-
-    thread::scope(|scope| {
-        let handles = jobs
-            .into_iter()
-            .map(|(texture_path, material_path, bytes)| {
-                scope.spawn(move || {
-                    decode_texture_preview_bytes(texture_path, Some(material_path), bytes)
-                })
-            })
-            .collect::<Vec<_>>();
-
-        handles
-            .into_iter()
-            .filter_map(|handle| handle.join().ok().flatten())
-            .collect()
-    })
-}
-
-fn decode_fallback_preview_textures(
-    archive: &VpkArchive,
-    model_entry_path: &str,
-) -> Vec<PreviewTexture> {
-    let mut texture_paths = archive
-        .list_entries()
-        .into_iter()
-        .filter_map(|entry| {
-            let score = texture_candidate_score(model_entry_path, &entry);
-            (score > 0).then_some((score, entry))
-        })
-        .collect::<Vec<_>>();
-    texture_paths.sort_by(|(left_score, left_path), (right_score, right_path)| {
-        right_score
-            .cmp(left_score)
-            .then_with(|| left_path.cmp(right_path))
-    });
-
-    texture_paths
-        .into_iter()
-        .take(4)
-        .filter_map(|(_, texture_path)| decode_texture_preview(archive, &texture_path, None))
-        .collect()
-}
-
-fn candidate_material_paths(archive: &VpkArchive, model_entry_path: &str) -> Vec<String> {
-    let model_lower = model_entry_path.to_ascii_lowercase();
-    let hero_token = model_lower
-        .split('/')
-        .filter(|part| !part.is_empty())
-        .rev()
-        .find(|part| {
-            !part.ends_with(".vmdl_c")
-                && !part.ends_with(".vmesh_c")
-                && *part != "models"
-                && !part.starts_with("heroes")
-        })
-        .unwrap_or("");
-
-    let mut candidates = archive
-        .list_entries()
-        .into_iter()
-        .filter(|entry| {
-            let lower = entry.to_ascii_lowercase();
-            lower.ends_with(".vmat_c")
-                && lower.contains("materials/")
-                && (hero_token.is_empty() || lower.contains(hero_token))
-        })
-        .collect::<Vec<_>>();
-    candidates.sort();
-    candidates.truncate(16);
-    candidates
-}
-
-fn decode_preview_textures(
-    archive: &VpkArchive,
-    model_entry_path: &str,
-    material_paths: &[String],
-) -> Vec<PreviewTexture> {
-    let candidates = if material_paths.is_empty() {
-        candidate_material_paths(archive, model_entry_path)
-    } else {
-        material_paths.to_vec()
-    };
-    let textures = decode_material_preview_textures(archive, &candidates);
-    if textures.is_empty() {
-        decode_fallback_preview_textures(archive, model_entry_path)
-    } else {
-        textures
-    }
-}
-
 /// Decode a `.vtex_c` entry inside a VPK to a PNG.
 pub fn decode_texture_png(vpk_path: &Path, entry_path: &str) -> Result<TexturePng> {
     let bytes = vpk_extract::extract_entry(vpk_path, entry_path)?;
+    decode_texture_png_bytes(bytes)
+}
+
+/// Decode a `.vtex_c` file that is already available as raw bytes to a PNG.
+pub fn decode_texture_png_bytes(bytes: Vec<u8>) -> Result<TexturePng> {
     let res = Resource::parse(bytes)?;
     let header = VtexHeader::parse(&res)?;
     let decoded = header.decode(&res.data)?;
     encode_png(&decoded)
+}
+
+/// Decode a standalone `.vtex_c` file on disk to a PNG.
+pub fn decode_texture_file(path: &Path) -> Result<TexturePng> {
+    decode_texture_png_bytes(std::fs::read(path)?)
 }
 
 /// Decode a `.vmesh_c` entry inside a VPK to a binary GLB for the live preview.
@@ -340,25 +146,149 @@ fn decode_mesh_glb_from_archive(archive: &VpkArchive, entry_path: &str) -> Resul
     vmesh::decode_mesh_glb_from_resource(&res, &preview_textures)
 }
 
-/// Decode a `.vmesh_c`, or resolve the first referenced mesh from a `.vmdl_c`.
+/// Decode a `.vmesh_c`, or assemble every mesh a `.vmdl_c` references, into one
+/// GLB. A model's meshes are separate resources sharing the model's skeleton, so
+/// the whole character is stitched together here rather than previewing a part.
 pub fn decode_model_glb(vpk_path: &Path, entry_path: &str) -> Result<ModelGlb> {
     let archive = VpkArchive::open(vpk_path)?;
     decode_model_glb_from_archive(&archive, entry_path)
 }
 
-fn decode_model_glb_from_archive(archive: &VpkArchive, entry_path: &str) -> Result<ModelGlb> {
+/// Decode a model with an unpacked workspace tree shadowing the archive, so the
+/// preview shows the user's edited textures rather than the packed originals.
+pub fn decode_model_glb_with_overlay(
+    vpk_path: &Path,
+    entry_path: &str,
+    overlay_dir: Option<&Path>,
+) -> Result<ModelGlb> {
+    let archive = VpkArchive::open_with_overlay(vpk_path, overlay_dir)?;
+    decode_model_glb_from_archive(&archive, entry_path)
+}
+
+pub fn decode_model_glb_from_archive(archive: &VpkArchive, entry_path: &str) -> Result<ModelGlb> {
     if entry_path.ends_with(".vmesh_c") {
         return decode_mesh_glb_from_archive(archive, entry_path);
     }
 
     let bytes = archive.extract_entry(entry_path)?;
     let res = Resource::parse(bytes)?;
-    if let Some(mesh_path) = vmesh::referenced_meshes(&res)?.into_iter().next() {
-        return decode_mesh_glb_from_archive(archive, &mesh_path);
+    let mesh_paths = vmesh::referenced_meshes(&res)?;
+    if !mesh_paths.is_empty() {
+        let skeleton = skeleton::parse_model_skeleton(&res)?;
+        let mut primitives = Vec::new();
+        let mut preview_textures = Vec::new();
+        for (mesh_index, mesh_path) in mesh_paths.into_iter().enumerate() {
+            let mesh_bytes = archive.extract_entry(&mesh_path)?;
+            let mesh_res = Resource::parse(mesh_bytes)?;
+            let material_paths = vmesh::referenced_materials(&mesh_res);
+            let mesh_textures = decode_preview_textures(archive, &mesh_path, &material_paths);
+            let material_offset = preview_textures.len();
+            let bone_remap = vmesh::model_mesh_bone_remap(&res, mesh_index)?;
+            let mut mesh_primitives = vmesh::decode_mesh_primitives_from_resource(
+                &mesh_res,
+                &mesh_textures,
+                bone_remap.as_deref(),
+            )?;
+            for primitive in &mut mesh_primitives {
+                if primitive.material > 0 {
+                    primitive.material += material_offset;
+                }
+            }
+            primitives.append(&mut mesh_primitives);
+            preview_textures.extend(mesh_textures);
+        }
+        return vmesh::model_from_decoded_primitives(
+            &primitives,
+            &preview_textures,
+            skeleton.as_ref(),
+        );
     }
     let material_paths = vmesh::referenced_materials(&res);
     let preview_textures = decode_preview_textures(archive, entry_path, &material_paths);
     vmesh::decode_embedded_model_glb_from_resource(&res, &preview_textures)
+}
+
+/// Decode a `.vmesh_c`, or resolve a `.vmdl_c`, into renderer-friendly mesh data.
+pub fn decode_model_render_model(vpk_path: &Path, entry_path: &str) -> Result<RenderModel> {
+    let archive = VpkArchive::open(vpk_path)?;
+    decode_model_render_model_from_archive(&archive, entry_path)
+}
+
+fn decode_model_render_model_from_archive(
+    archive: &VpkArchive,
+    entry_path: &str,
+) -> Result<RenderModel> {
+    if entry_path.ends_with(".vmesh_c") {
+        let bytes = archive.extract_entry(entry_path)?;
+        let res = Resource::parse(bytes)?;
+        let skeleton = skeleton::parse_model_skeleton(&res)?;
+        let material_paths = vmesh::referenced_materials(&res);
+        let preview_textures = decode_preview_textures(archive, entry_path, &material_paths);
+        return vmesh::decode_mesh_render_model_from_resource_with_skeleton(
+            &res,
+            skeleton,
+            &preview_textures,
+            None,
+        );
+    }
+
+    let bytes = archive.extract_entry(entry_path)?;
+    let res = Resource::parse(bytes)?;
+    let mesh_paths = vmesh::referenced_meshes(&res)?;
+    if !mesh_paths.is_empty() {
+        let skeleton = skeleton::parse_model_skeleton(&res)?;
+        let mesh_groups = vmesh::default_mesh_group_masks(&res);
+        let default_mesh_group_mask = mesh_groups
+            .as_ref()
+            .map_or(u64::MAX, |(mask, _)| u64::from(*mask));
+        let mut primitives = Vec::new();
+        let mut materials = vec![RenderMaterial {
+            name: "default".into(),
+            base_color_png: None,
+            normal_png: None,
+            orm_png: None,
+            emissive_png: None,
+            base_color_factor: [1.0; 4],
+            alpha_mode: vmesh::MaterialAlphaMode::Opaque,
+            alpha_cutoff: 0.5,
+            emissive_factor: None,
+        }];
+        for (mesh_index, mesh_path) in mesh_paths.into_iter().enumerate() {
+            let bone_remap = vmesh::model_mesh_bone_remap(&res, mesh_index)?;
+            let mesh_bytes = archive.extract_entry(&mesh_path)?;
+            let mesh_res = Resource::parse(mesh_bytes)?;
+            let material_paths = vmesh::referenced_materials(&mesh_res);
+            let preview_textures = decode_preview_textures(archive, &mesh_path, &material_paths);
+            let material_offset = materials.len().saturating_sub(1);
+            let mut render_model = vmesh::decode_mesh_render_model_from_resource_with_skeleton(
+                &mesh_res,
+                None,
+                &preview_textures,
+                bone_remap.as_deref(),
+            )?;
+            for primitive in &mut render_model.primitives {
+                if primitive.material > 0 {
+                    primitive.material += material_offset;
+                }
+                primitive.mesh_group_mask = mesh_groups
+                    .as_ref()
+                    .and_then(|(_, masks)| masks.get(mesh_index))
+                    .map_or(u64::MAX, |mask| u64::from(*mask));
+            }
+            primitives.append(&mut render_model.primitives);
+            materials.extend(render_model.materials.into_iter().skip(1));
+        }
+        return Ok(RenderModel {
+            primitives,
+            materials,
+            skeleton,
+            default_mesh_group_mask,
+        });
+    }
+
+    let material_paths = vmesh::referenced_materials(&res);
+    let preview_textures = decode_preview_textures(archive, entry_path, &material_paths);
+    vmesh::decode_embedded_model_render_model_from_resource(&res, &preview_textures)
 }
 
 /// Parse only the texture header (dimensions / format / mips) without decoding.
@@ -371,6 +301,79 @@ pub fn inspect_texture(vpk_path: &Path, entry_path: &str) -> Result<(u32, u32, S
         header.height as u32,
         format!("{:?}", header.format),
     ))
+}
+
+/// Load only the model skeleton from a `.vmdl_c`.
+pub fn load_model_skeleton(vpk_path: &Path, entry_path: &str) -> Result<Option<Skeleton>> {
+    let bytes = vpk_extract::extract_entry(vpk_path, entry_path)?;
+    let res = Resource::parse(bytes)?;
+    skeleton::parse_model_skeleton(&res)
+}
+
+/// The name of the game's neutral standing clip. Every hero has one, and it is
+/// the pose Deadlock shows a hero in outside of combat: upright, weapon held in
+/// the right hand.
+const REST_POSE_CLIP: &str = "weapon_stand_idle";
+
+/// Stand a decoded model in the game's idle rest pose.
+///
+/// A `.vmdl_c` on its own is in bind pose — arms out, weapon floating wherever
+/// its own bind transform puts it — which is not how the hero ever looks. The
+/// base game ships the idle as an NM clip beside the model, so the Foundry
+/// samples its **first frame only** and bakes those bone transforms into the
+/// glTF skeleton. Nothing is played back: this is one still pose, chosen so the
+/// weapon sits in the hand and the silhouette reads like the real character.
+///
+/// Returns the model unchanged when the game isn't installed, the model has no
+/// skeleton, or no idle clip resolves — a posed preview is an improvement, not a
+/// requirement.
+pub fn pose_model_at_rest(
+    model: ModelGlb,
+    base: &VpkArchive,
+    skin: &VpkArchive,
+    entry_path: &str,
+) -> ModelGlb {
+    match try_pose_model_at_rest(&model, base, skin, entry_path) {
+        Ok(Some(posed)) => posed,
+        Ok(None) => model,
+        Err(error) => {
+            log::warn!("[source2] Could not apply the rest pose to {entry_path}: {error}");
+            model
+        }
+    }
+}
+
+fn skeleton_from_archive(archive: &VpkArchive, entry_path: &str) -> Option<Skeleton> {
+    let bytes = archive.extract_entry(entry_path).ok()?;
+    let res = Resource::parse(bytes).ok()?;
+    skeleton::parse_model_skeleton(&res).ok().flatten()
+}
+
+fn try_pose_model_at_rest(
+    model: &ModelGlb,
+    base: &VpkArchive,
+    skin: &VpkArchive,
+    entry_path: &str,
+) -> Result<Option<ModelGlb>> {
+    // The skin's own VPK carries the skeleton when it ships the model; a
+    // default-hero load reads it from the base game instead.
+    let Some(skeleton) = skeleton_from_archive(skin, entry_path)
+        .or_else(|| skeleton_from_archive(base, entry_path))
+    else {
+        return Ok(None);
+    };
+
+    // Clips live beside the model in the base pak, never in a skin mod.
+    let Some(resolved) =
+        nm_anim::resolve_nm_clip_from_archive(base, entry_path, Some(REST_POSE_CLIP), None)?
+    else {
+        return Ok(None);
+    };
+    let animation = nm_anim::load_nm_animation_from_archive(base, &resolved.clip_path)?;
+    let frame = animation.sample_frame(0)?;
+    let mut pose = nm_anim::retarget_nm_pose(&animation, &frame, &skeleton);
+    skeleton.pin_procedural_cloth_roots(&mut pose);
+    vmesh::pose_model_glb(model, &skeleton, &pose).map(Some)
 }
 
 fn encode_png(decoded: &DecodedTexture) -> Result<TexturePng> {
