@@ -72,10 +72,19 @@ impl VtexFormat {
         }
     }
 
+    /// Formats whose on-disk mip data is a self-contained PNG or JPEG file
+    /// rather than raw/block-compressed pixels. Source 2 uses these for card and
+    /// portrait art (e.g. `panorama/images/heroes/<hero>_card_psd.vtex_c`); the
+    /// blob decodes straight to RGBA with an image codec.
+    fn is_embedded_image(self) -> bool {
+        use VtexFormat::*;
+        matches!(self, PngRgba8888 | JpegRgba8888 | PngDxt5 | JpegDxt5)
+    }
+
     /// Bytes occupied by a single mip level of the given dimensions.
     fn mip_byte_size(self, width: u32, height: u32) -> Result<usize> {
         use VtexFormat::*;
-        let blocks = |w: u32, h: u32| ((w as usize + 3) / 4) * ((h as usize + 3) / 4);
+        let blocks = |w: u32, h: u32| (w as usize).div_ceil(4) * (h as usize).div_ceil(4);
         let bytes = match self {
             Dxt1 | Ati1n => blocks(width, height) * 8,
             Dxt5 | Ati2n | Bc6h | Bc7 => blocks(width, height) * 16,
@@ -98,6 +107,21 @@ pub struct ExtraData {
     pub size: usize,
 }
 
+#[derive(Debug, Clone, PartialEq)]
+pub struct SpriteSheetFrame {
+    pub display_time: f32,
+    pub cropped_min: [f32; 2],
+    pub cropped_max: [f32; 2],
+    pub uncropped_min: [f32; 2],
+    pub uncropped_max: [f32; 2],
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct SpriteSheetSequence {
+    pub frames_per_second: f32,
+    pub frames: Vec<SpriteSheetFrame>,
+}
+
 #[derive(Debug)]
 pub struct VtexHeader {
     pub version: u16,
@@ -114,10 +138,9 @@ pub struct VtexHeader {
     pub block_offset: usize,
 }
 
-// VTexExtraData kinds: 1=FALLBACK_BITS, 2=SHEET, 3=FILL_TO_POWER_OF_TWO,
-// 4=METADATA, 5=COMPRESSED_MIP_SIZE. Deadlock skin textures are typically stored
-// uncompressed (no kind 5), in which case each mip is read at its raw size.
-const EXTRA_COMPRESSED_MIP_SIZE: u32 = 5;
+// VTexExtraData kinds used by Source 2.
+const EXTRA_SHEET: u32 = 2;
+const EXTRA_COMPRESSED_MIP_SIZE: u32 = 4;
 
 /// A fully decoded texture, RGBA8, top mip only.
 pub struct DecodedTexture {
@@ -136,6 +159,12 @@ fn rd_u32(d: &[u8], p: usize) -> Result<u32> {
     d.get(p..p + 4)
         .map(|b| u32::from_le_bytes(b.try_into().unwrap()))
         .ok_or_else(|| Source2Error::Resource("vtex u32 oob".into()))
+}
+
+fn rd_f32(d: &[u8], p: usize) -> Result<f32> {
+    d.get(p..p + 4)
+        .map(|b| f32::from_le_bytes(b.try_into().unwrap()))
+        .ok_or_else(|| Source2Error::Resource("vtex f32 oob".into()))
 }
 
 impl VtexHeader {
@@ -203,6 +232,66 @@ impl VtexHeader {
         })
     }
 
+    pub fn sprite_sheet_sequences(&self, data: &[u8]) -> Result<Vec<SpriteSheetSequence>> {
+        let Some(extra) = self.extra.iter().find(|extra| extra.kind == EXTRA_SHEET) else {
+            return Ok(Vec::new());
+        };
+        let bytes = data
+            .get(extra.offset..extra.offset + extra.size)
+            .ok_or_else(|| Source2Error::Resource("vtex sheet data oob".into()))?;
+        if rd_u32(bytes, 0)? != 8 {
+            return Err(Source2Error::UnsupportedFormat(
+                "unsupported vtex sprite sheet version".into(),
+            ));
+        }
+        let sequence_count = rd_u32(bytes, 4)? as usize;
+        let mut header_pos = 8usize;
+        let mut sequences = Vec::with_capacity(sequence_count);
+        for _ in 0..sequence_count {
+            let frames_offset_field = header_pos + 8;
+            let frames_offset = frames_offset_field + rd_u32(bytes, frames_offset_field)? as usize;
+            let frame_count = rd_u32(bytes, header_pos + 12)? as usize;
+            let frames_per_second = rd_f32(bytes, header_pos + 16)?;
+            header_pos += 32;
+
+            let mut frame_pos = frames_offset;
+            let mut frames = Vec::with_capacity(frame_count);
+            for _ in 0..frame_count {
+                let display_time = rd_f32(bytes, frame_pos)?;
+                let image_offset_field = frame_pos + 4;
+                let image_offset = image_offset_field + rd_u32(bytes, image_offset_field)? as usize;
+                let image_count = rd_u32(bytes, frame_pos + 8)? as usize;
+                if image_count > 0 {
+                    frames.push(SpriteSheetFrame {
+                        display_time,
+                        cropped_min: [
+                            rd_f32(bytes, image_offset)?,
+                            rd_f32(bytes, image_offset + 4)?,
+                        ],
+                        cropped_max: [
+                            rd_f32(bytes, image_offset + 8)?,
+                            rd_f32(bytes, image_offset + 12)?,
+                        ],
+                        uncropped_min: [
+                            rd_f32(bytes, image_offset + 16)?,
+                            rd_f32(bytes, image_offset + 20)?,
+                        ],
+                        uncropped_max: [
+                            rd_f32(bytes, image_offset + 24)?,
+                            rd_f32(bytes, image_offset + 28)?,
+                        ],
+                    });
+                }
+                frame_pos += 12;
+            }
+            sequences.push(SpriteSheetSequence {
+                frames_per_second,
+                frames,
+            });
+        }
+        Ok(sequences)
+    }
+
     /// Compressed mip sizes if the COMPRESSED_MIP_SIZE extra-data block is present.
     fn compressed_mip_sizes(&self, data: &[u8]) -> Option<Vec<usize>> {
         let e = self
@@ -216,6 +305,34 @@ impl VtexHeader {
             sizes.push(rd_u32(data, e.offset + 8 + i * 4).ok()? as usize);
         }
         Some(sizes)
+    }
+
+    /// Stored bytes of one mip for an embedded-image format (PNG/JPEG). Each mip
+    /// is a standalone image blob. When the COMPRESSED_MIP_SIZE table is present
+    /// it gives each mip's stored length (mips are laid out smallest-first);
+    /// otherwise the texture is single-mip and the blob spans the rest of DATA.
+    fn embedded_mip_bytes<'a>(&self, data: &'a [u8], target_level: u32) -> Result<&'a [u8]> {
+        let mips = self.num_mip_levels.max(1) as u32;
+        let target_level = target_level.min(mips - 1);
+        match self.compressed_mip_sizes(data) {
+            Some(sizes) => {
+                let mut cursor = self.data_offset;
+                for level in (0..mips).rev() {
+                    let stored = sizes.get(level as usize).copied().unwrap_or(0);
+                    let slice = data
+                        .get(cursor..cursor + stored)
+                        .ok_or_else(|| Source2Error::Resource("embedded mip oob".into()))?;
+                    if level == target_level {
+                        return Ok(slice);
+                    }
+                    cursor += stored;
+                }
+                Err(Source2Error::Resource("no requested embedded mip".into()))
+            }
+            None => data
+                .get(self.data_offset..)
+                .ok_or_else(|| Source2Error::Resource("embedded data oob".into())),
+        }
     }
 
     /// Extract and (if needed) LZ4-decompress one mip level.
@@ -294,6 +411,22 @@ impl VtexHeader {
 
     fn decode_mip(&self, data: &[u8], level: u32) -> Result<DecodedTexture> {
         use VtexFormat::*;
+
+        // Card / portrait art ships as an embedded PNG or JPEG; decode the blob
+        // directly rather than treating it as raw pixels (which would fail the
+        // mip-size math and drop the card entirely).
+        if self.format.is_embedded_image() {
+            let blob = self.embedded_mip_bytes(data, level)?;
+            let img = image::load_from_memory(blob)
+                .map_err(|e| Source2Error::Decode(format!("embedded image: {e}")))?
+                .to_rgba8();
+            return Ok(DecodedTexture {
+                width: img.width(),
+                height: img.height(),
+                rgba: img.into_raw(),
+            });
+        }
+
         let w = (self.width as u32 >> level).max(1) as usize;
         let h = (self.height as u32 >> level).max(1) as usize;
         let raw = self.mip_bytes(data, level)?;
