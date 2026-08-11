@@ -16,6 +16,16 @@ pub enum MissingVpkPolicy {
   Reconcile,
 }
 
+/// Result of a reorder pass over the addons directory.
+#[derive(Debug, Default)]
+pub struct ReorderOutcome {
+  /// (mod_id, new vpk filenames) for every mod in the requested mapping.
+  pub mappings: Vec<(String, Vec<String>)>,
+  /// Enabled VPKs that no mod in the mapping claimed, as `old filename -> new filename`.
+  /// Reordering renumbers these too, so recorded names elsewhere must follow them.
+  pub renamed_unclaimed: BTreeMap<String, String>,
+}
+
 /// Manages VPK file operations and installation
 pub struct VpkManager {
   filesystem: FileSystemHelper,
@@ -61,7 +71,7 @@ impl VpkManager {
     &self,
     mod_vpk_mapping: &[(String, Vec<String>)], // (mod_id, vpk_filenames)
     addons_path: &Path,
-  ) -> Result<Vec<(String, Vec<String>)>, Error> {
+  ) -> Result<ReorderOutcome, Error> {
     if !addons_path.exists() {
       return Err(Error::Io(std::io::Error::new(
         std::io::ErrorKind::NotFound,
@@ -160,7 +170,8 @@ impl VpkManager {
       updated_mappings.push((mod_id.clone(), new_vpk_names));
     }
 
-    // Step 3: Restore any orphaned VPKs (VPKs not managed by our mod system)
+    // Step 3: Restore any unclaimed VPKs (enabled VPKs no mod in the mapping asked for)
+    let mut renamed_unclaimed = BTreeMap::new();
     if temp_dir.exists() {
       // Move any remaining VPKs back to addons directory with sequential numbering
       for entry in std::fs::read_dir(&temp_dir)? {
@@ -168,15 +179,16 @@ impl VpkManager {
         let path = entry.path();
 
         if path.is_file() && path.extension().is_some_and(|ext| ext == "vpk") {
-          // Find next available number for orphaned VPK
-          let orphaned_name = format!("pak{:02}_dir.vpk", current_number);
-          let orphaned_path = addons_path.join(&orphaned_name);
+          // Find next available number for unclaimed VPK
+          let unclaimed_name = format!("pak{:02}_dir.vpk", current_number);
+          let unclaimed_path = addons_path.join(&unclaimed_name);
 
-          std::fs::rename(&path, &orphaned_path)?;
+          std::fs::rename(&path, &unclaimed_path)?;
           current_number += 1;
 
           if let Some(filename) = path.file_name().and_then(|n| n.to_str()) {
-            log::info!("Restored orphaned VPK file: {filename} -> {orphaned_name}");
+            renamed_unclaimed.insert(filename.to_string(), unclaimed_name.clone());
+            log::info!("Restored unclaimed VPK file: {filename} -> {unclaimed_name}");
           }
         }
       }
@@ -185,7 +197,10 @@ impl VpkManager {
     }
 
     log::info!("VPK reordering completed successfully");
-    Ok(updated_mappings)
+    Ok(ReorderOutcome {
+      mappings: updated_mappings,
+      renamed_unclaimed,
+    })
   }
 
   fn duplicate_reorder_vpk_assignments(mod_vpk_mapping: &[(String, Vec<String>)]) -> Vec<String> {
@@ -686,7 +701,7 @@ impl VpkManager {
     None
   }
 
-  fn is_enabled_vpk_name(filename: &str) -> bool {
+  pub fn is_enabled_vpk_name(filename: &str) -> bool {
     Self::enabled_vpk_number(filename).is_some()
   }
 
@@ -942,11 +957,38 @@ mod tests {
       .unwrap();
 
     assert_eq!(
-      updated,
+      updated.mappings,
       vec![("123456".to_string(), vec!["pak01_dir.vpk".to_string()])]
     );
+    assert!(updated.renamed_unclaimed.is_empty());
     assert!(addons_path.join("local-abc-123_original.vpk").exists());
     assert!(!addons_path.join("pak02_dir.vpk").exists());
+  }
+
+  #[test]
+  fn reorder_reports_renamed_unclaimed_vpks() {
+    let temp = tempfile::tempdir().unwrap();
+    let addons_path = temp.path();
+    write_vpk(addons_path, "pak01_dir.vpk");
+    write_vpk(addons_path, "pak05_dir.vpk");
+
+    let manager = VpkManager::new();
+    let updated = manager
+      .reorder_vpks(
+        &[("123456".to_string(), vec!["pak05_dir.vpk".to_string()])],
+        addons_path,
+      )
+      .unwrap();
+
+    assert_eq!(
+      updated.mappings,
+      vec![("123456".to_string(), vec!["pak01_dir.vpk".to_string()])]
+    );
+    assert_eq!(
+      updated.renamed_unclaimed.get("pak01_dir.vpk"),
+      Some(&"pak02_dir.vpk".to_string())
+    );
+    assert!(addons_path.join("pak02_dir.vpk").exists());
   }
 
   #[test]
