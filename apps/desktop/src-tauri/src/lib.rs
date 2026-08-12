@@ -12,6 +12,7 @@ mod download_manager;
 mod dropped_mod_file;
 mod errors;
 mod flatpak;
+mod forge_bridge;
 mod game_presence;
 mod hero_detector;
 mod ingest_tool;
@@ -208,6 +209,9 @@ pub fn run() {
       commands::ingest::stop_cache_watcher,
       commands::ingest::get_ingest_status,
       commands::ingest::initialize_ingest_tool,
+      commands::forge::start_forge_bridge,
+      commands::forge::stop_forge_bridge,
+      commands::forge::finish_forge_install,
       game_presence::get_game_presence_status,
       game_presence::get_game_presence_heroes,
       game_presence::start_game_presence_watcher,

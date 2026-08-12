@@ -1493,7 +1493,9 @@
     "modifications": "Modifications",
     "modManager": "Mod Manager",
     "external": "External",
-    "syntax": "Syntax"
+    "syntax": "Syntax",
+    "forgeInstall": "1-click installs from DeadlockForge",
+    "forgeInstallDescription": "Let deadlockforge.net send mods you build straight to Deadlock Mod Manager. Nothing installs without asking you first."
   },
   "featureFlags": {
     "title": "Experimental Features",
@@ -3144,5 +3146,19 @@
       "removeOverride": "Reset to default",
       "inheritPlaceholder": "Leave empty to use the default"
     }
+  },
+  "forge": {
+    "confirmTitle": "Install this mod from DeadlockForge?",
+    "confirmBody": "deadlockforge.net wants to send \"{{name}}\" to Deadlock Mod Manager. It will be added to your mods but stays disabled until you enable it.",
+    "confirmAction": "Install",
+    "confirmCancel": "Cancel",
+    "modDescription": "Created with DeadlockForge",
+    "installFailed": "Failed to install the mod from DeadlockForge",
+    "enableTitle": "Allow 1-click installs from DeadlockForge?",
+    "enableBody": "deadlockforge.net is trying to send you a mod. Turning this on lets it hand mods straight to Deadlock Mod Manager. You will still be asked before anything is installed, and you can turn it off in Settings.",
+    "enableAction": "Allow",
+    "enableCancel": "Not now",
+    "enabled": "1-click installs enabled. Click the button on the site again.",
+    "alreadyEnabled": "1-click installs are already on."
   }
 }

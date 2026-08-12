@@ -59,6 +59,7 @@ import { SteamPathSettings } from "@/components/settings/steam-path-settings";
 import { GamePresenceSettings } from "@/components/settings/game-presence-settings";
 import GameInfoManagement from "@/components/settings/gameinfo-management";
 import { HeroParserSettings } from "@/components/settings/hero-parser-settings";
+import { ForgeInstallToggle } from "@/components/settings/forge-install-toggle";
 import { IngestToolToggle } from "@/components/settings/ingest-tool-toggle";
 import { LanguageSettings } from "@/components/settings/language-settings";
 import { LinuxGpuToggle } from "@/components/settings/linux-gpu-toggle";
@@ -704,6 +705,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
                 <UpdateChannelSelect />
                 <DeveloperModeToggle />
                 <IngestToolToggle />
+                <ForgeInstallToggle />
                 <LinuxGpuToggle />
               </div>
             </Section>

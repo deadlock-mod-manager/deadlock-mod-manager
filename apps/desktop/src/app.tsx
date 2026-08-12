@@ -9,6 +9,7 @@ import usePromise from "react-promise-suspense";
 import { Outlet } from "react-router";
 import { FontInstallDialog } from "./components/downloads/font-install-dialog";
 import { ProgressProvider } from "./components/downloads/progress-indicator";
+import { ForgeInstallRenderer } from "./components/forge-install-renderer";
 import { FoundryProvider } from "./components/foundry/foundry-context";
 import { GamePresenceRenderer } from "./components/game-presence-renderer";
 import { LiveMatchRenderer } from "./components/live-match-renderer";
@@ -152,6 +153,7 @@ const App = () => {
                     <GamePresenceRenderer />
                     <MatchSyncRenderer />
                     <LiveMatchRenderer />
+                    <ForgeInstallRenderer />
                     <UpdateDialog
                       downloadProgress={downloadProgress}
                       isDownloading={isDownloading}

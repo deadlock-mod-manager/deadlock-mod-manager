@@ -13,9 +13,14 @@ pub const EVENT_OIDC_ERROR: &str = "oidc-callback-error";
 pub const EVENT_AUTH_CALLBACK: &str = "auth-callback-received";
 pub const EVENT_AUTH_ERROR: &str = "auth-callback-error";
 pub const EVENT_DEEP_LINK_RECEIVED: &str = "deep-link-received";
+pub const EVENT_FORGE_LAUNCH: &str = "forge-launch-requested";
 
 pub const PATH_OIDC_CALLBACK: &str = "//auth/callback";
 pub const PATH_LEGACY_AUTH_CALLBACK: &str = "//auth-callback";
+
+/// Fired by deadlockforge.net when its 1-click button cannot find the bridge.
+/// Brings the app up and asks whether to turn 1-click installs on.
+pub const PATH_FORGE_LAUNCH: &str = "//forge/launch";
 
 pub const GAMEBANANA_DOMAIN: &str = "gamebanana.com";
 pub const MOD_ID_PARTS_COUNT: usize = 3;
@@ -152,6 +157,11 @@ pub fn handle_deep_link_url(
     return Ok(());
   }
 
+  if data_part.starts_with(PATH_FORGE_LAUNCH) {
+    emit_to_main_window(app_handle, EVENT_FORGE_LAUNCH, ())?;
+    return Ok(());
+  }
+
   if data_part.starts_with(PATH_LEGACY_AUTH_CALLBACK) {
     if let Some(query_start) = data_part.find('?') {
       let query = &data_part[query_start + 1..];
@@ -219,4 +229,18 @@ pub fn setup(app: &tauri::App<AppRuntime>) -> Result<(), Box<dyn std::error::Err
   });
 
   Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+  use super::{PATH_FORGE_LAUNCH, strip_scheme};
+
+  #[test]
+  fn recognises_the_forge_launch_url_the_site_fires() {
+    // The site hardcodes this URL, so a change to either the scheme list or
+    // the path silently stops the 1-click button from waking the app.
+    let stripped =
+      strip_scheme("deadlock-mod-manager://forge/launch").expect("scheme should be recognised");
+    assert!(stripped.starts_with(PATH_FORGE_LAUNCH));
+  }
 }
