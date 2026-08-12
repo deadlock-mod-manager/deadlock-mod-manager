@@ -3,6 +3,7 @@ import { useFeatureFlags } from "@/hooks/use-feature-flags";
 import logger from "@/lib/logger";
 import { getPlugins } from "@/lib/plugins";
 import { usePersistedStore } from "@/lib/store";
+import { resolvePluginEnabled } from "@/lib/store/utils/plugin-slice";
 import type { PluginModule } from "@/plugins/types";
 import type { LoadedPlugin } from "@/types/plugins";
 
@@ -60,7 +61,7 @@ const GlobalPluginRenderer = () => {
       }
 
       // Then check local configuration
-      return enabledPlugins[pluginId] ?? false;
+      return resolvePluginEnabled(enabledPlugins, pluginId);
     };
   }, [enabledPlugins, featureFlagMap]);
 

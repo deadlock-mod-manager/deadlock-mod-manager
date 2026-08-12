@@ -22,8 +22,9 @@ const PluginEntry = () => {
     () => getPlugins().find((p) => p.manifest.id === id),
     [id],
   );
+  const alwaysEnabled = plugin?.manifest.alwaysEnabled === true;
   const isEnabled = usePersistedStore(
-    (s) => s.enabledPlugins[id ?? ""] ?? false,
+    (s) => alwaysEnabled || (s.enabledPlugins[id ?? ""] ?? false),
   );
   const setEnabled = usePersistedStore((s) => s.setEnabledPlugin);
 
@@ -111,7 +112,7 @@ const PluginEntry = () => {
                     if (!id) return;
                     setEnabled(id, checked);
                   }}
-                  disabled={!id}
+                  disabled={!id || alwaysEnabled}
                   className='data-[state=checked]:bg-primary'
                 />
               </div>

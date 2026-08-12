@@ -9,5 +9,6 @@
   "icon": "public/icon.svg",
   "tags": ["official"],
   "entry": "./index.tsx",
-  "disabledPlugins": ["background"]
+  "disabledPlugins": ["background"],
+  "alwaysEnabled": true
 }

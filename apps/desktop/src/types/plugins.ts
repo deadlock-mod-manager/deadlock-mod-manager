@@ -12,6 +12,7 @@ export type PluginManifest = {
   tags?: PluginTag[];
   entry?: string; // module entry relative path (e.g., ./src/index.tsx)
   disabledPlugins?: string[]; // plugin IDs to disable when this plugin is enabled
+  alwaysEnabled?: boolean; // has no toggle in the plugins list and cannot be disabled
 };
 
 export type LoadedPlugin = {
