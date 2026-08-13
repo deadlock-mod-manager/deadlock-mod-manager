@@ -211,6 +211,7 @@ pub fn run() {
       commands::ingest::initialize_ingest_tool,
       commands::forge::start_forge_bridge,
       commands::forge::stop_forge_bridge,
+      commands::forge::place_forge_payload,
       commands::forge::finish_forge_install,
       game_presence::get_game_presence_status,
       game_presence::get_game_presence_heroes,

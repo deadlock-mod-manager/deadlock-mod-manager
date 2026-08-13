@@ -25,6 +25,11 @@ export type DetectedSource =
   | { kind: "archive"; file: File }
   | { kind: "vpk"; file: File };
 
+// A VPK already on disk, placed natively rather than read through the renderer.
+export type StagedSource = { kind: "vpkPath"; path: string; fileName: string };
+
+export type ModSource = DetectedSource | StagedSource;
+
 /**
  * File utility functions
  */

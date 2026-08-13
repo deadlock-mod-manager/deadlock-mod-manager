@@ -1,18 +1,9 @@
 //! Loopback HTTP bridge for 1-click installs from DeadlockForge.
 //!
-//! DeadlockForge builds VPKs in the browser on demand, so unlike GameBanana
-//! there is no hosted URL to hand over and the existing deep link flow does not
-//! apply. Instead the site detects this app listening on loopback and POSTs the
-//! bytes straight in.
-//!
-//! Trust is the Origin header, checked against an exact allowlist. The site
-//! cannot forge it: browsers set it themselves, and the install route requires
-//! a non-simple content type plus a custom header so it is always preceded by a
-//! preflight this server can refuse.
-//!
-//! Nothing is written to the mod library here. A validated payload lands in a
-//! temp file and the frontend is asked to confirm before it is imported through
-//! the normal local mod pipeline.
+//! The site builds VPKs in the browser, so there is no URL to hand the deep
+//! link flow. It posts the bytes here instead. Trust is the Origin header:
+//! browsers set it themselves, and the install route is deliberately a
+//! non-simple request so a preflight always precedes it.
 
 use crate::app_runtime::AppHandle;
 use crate::errors::Error;
@@ -26,31 +17,28 @@ use serde::Serialize;
 use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::{Duration, Instant};
 use tauri::{Emitter, Manager};
 use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 
 const FORGE_PROTOCOL_VERSION: u32 = 1;
 
-/// Distinct from Grimoire's 43110-43114 so both managers can run at once and
-/// the site always reaches the one it meant to.
+/// Distinct from Grimoire's 43110-43114 so both managers can run at once.
 const FORGE_PORTS: [u16; 5] = [43120, 43121, 43122, 43123, 43124];
 
-/// Identifies this app in the ping response so the site can tell managers apart
-/// even if a custom build ends up on another manager's port.
+/// Lets the site tell managers apart if one answers in the other's range.
 const FORGE_APP_ID: &str = "deadlock-mod-manager";
 
 const EVENT_FORGE_INSTALL_REQUESTED: &str = "forge-install-requested";
 
 const ALLOWED_ORIGINS: &[&str] = &["https://deadlockforge.net", "https://www.deadlockforge.net"];
 
-/// Sound mods scale with both clip length and the number of replaced sounds:
-/// roughly 16 KB per second of audio per sound, so a 600 sound build from a
-/// 30 second clip is already near 300 MB.
+/// Sound builds run large: roughly 16 KB per second of audio per replaced
+/// sound, so 600 sounds from a 30 second clip approaches 300 MB.
 const MAX_BODY_BYTES: usize = 512 * 1024 * 1024;
 
-/// Below this a payload cannot carry a VPK header, so it is never worth reading.
+/// Below this a payload cannot carry a VPK header.
 const MIN_BODY_BYTES: usize = 32;
 
 const VPK_SIGNATURE: u32 = 0x55AA_1234;
@@ -59,9 +47,8 @@ const PROTOCOL_HEADER: &str = "x-forge-protocol";
 const NAME_HEADER: &str = "x-forge-name";
 const AUTHOR_HEADER: &str = "x-forge-author";
 
-/// Every header the site may send on an install. A header missing here is not
-/// merely ignored: the browser refuses to send the request at all, and the
-/// caller sees a transport failure rather than a rejection it can explain.
+/// Every header the site sends. One missing here is not ignored: the browser
+/// refuses to send the request at all, which looks like an unreachable app.
 const ALLOWED_REQUEST_HEADERS: &str =
   "content-type, x-forge-protocol, x-forge-name, x-forge-type, x-forge-author";
 const CONTENT_TYPE: &str = "application/octet-stream";
@@ -73,14 +60,21 @@ struct BridgeHandle {
 
 static BRIDGE: Mutex<Option<BridgeHandle>> = Mutex::new(None);
 
-/// Payloads this bridge staged and has not yet cleaned up. The frontend hands a
-/// path back when the user answers, and only a path we put here is ever deleted,
-/// so the cleanup command cannot be turned into an arbitrary file delete.
+/// Payloads staged and not yet cleaned up. Only a path listed here is ever
+/// deleted, so the cleanup command cannot delete arbitrary files.
 static STAGED: Mutex<Vec<PathBuf>> = Mutex::new(Vec::new());
 
-/// One install may be awaiting the user's answer at a time. A second request is
-/// refused rather than queued, so a page cannot stack dialogs.
-static INSTALL_IN_FLIGHT: AtomicBool = AtomicBool::new(false);
+/// One install may await an answer at a time, so a page cannot stack dialogs.
+/// An instant rather than a flag, so a dialog that never reports back cannot
+/// hold the slot for the rest of the session.
+static IN_FLIGHT_SINCE: Mutex<Option<Instant>> = Mutex::new(None);
+
+/// How long an unanswered install keeps the slot before another may take it.
+const INSTALL_ANSWER_TIMEOUT: Duration = Duration::from_secs(300);
+
+/// Serialises start and stop; two concurrent starts would otherwise bind
+/// separate ports and only the handle stored last could be closed.
+static LIFECYCLE: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 #[derive(Serialize, Clone)]
 struct PingBody {
@@ -125,8 +119,7 @@ fn allowed_origin(origin: Option<&str>) -> Option<&str> {
     .copied()
 }
 
-/// The Host header must be a loopback literal. A name that resolves to 127.0.0.1
-/// is how DNS rebinding reaches a local server, and no legitimate caller uses one.
+/// Requires a loopback literal, which is what stops a DNS rebind.
 fn host_is_loopback(host: Option<&str>) -> bool {
   let Some(host) = host else {
     return false;
@@ -143,8 +136,8 @@ fn is_plausible_vpk(bytes: &[u8]) -> bool {
   signature == VPK_SIGNATURE
 }
 
-/// Names arrive percent encoded because raw non-ASCII is not legal in a header.
-/// Anything path-like is stripped: this becomes a filename.
+/// Percent encoded in transit, and stripped of anything path-like because this
+/// becomes a filename.
 fn decode_mod_name(raw: Option<&str>) -> String {
   let decoded = raw
     .and_then(|value| urlencoding::decode(value).ok())
@@ -165,7 +158,6 @@ fn decode_mod_name(raw: Option<&str>) -> String {
   }
 }
 
-/// Percent-decoded, trimmed, and dropped if it carries nothing useful.
 fn decode_optional(raw: Option<&str>) -> Option<String> {
   let decoded = raw
     .and_then(|value| urlencoding::decode(value).ok())
@@ -235,13 +227,17 @@ async fn handle_install(
     );
   }
 
-  if INSTALL_IN_FLIGHT.swap(true, Ordering::SeqCst) {
+  let Some(abandoned) = claim_install_slot() else {
     return error_response(StatusCode::TOO_MANY_REQUESTS, "BUSY", Some(origin));
+  };
+
+  for path in abandoned {
+    let _ = tokio::fs::remove_file(&path).await;
   }
 
   let response = read_and_dispatch(req, origin, &headers, app_handle).await;
   if response.status() != StatusCode::ACCEPTED {
-    INSTALL_IN_FLIGHT.store(false, Ordering::SeqCst);
+    release_in_flight();
   }
   response
 }
@@ -311,9 +307,8 @@ async fn read_and_dispatch(
   )
 }
 
-/// What a request is allowed to do, decided purely from its method, path and
-/// headers. Kept separate from the response building so the trust rules can be
-/// tested without standing up a window.
+/// Split from the response building so the trust rules can be tested without
+/// standing up a window.
 #[derive(Debug, PartialEq, Eq)]
 enum Decision<'a> {
   Reject(StatusCode, &'static str),
@@ -411,6 +406,8 @@ async fn bind_first_free() -> Option<(TcpListener, u16)> {
 }
 
 pub async fn start(app_handle: AppHandle) -> Result<u16, Error> {
+  let _serialised = LIFECYCLE.lock().await;
+
   {
     let guard = BRIDGE
       .lock()
@@ -463,21 +460,59 @@ pub async fn start(app_handle: AppHandle) -> Result<u16, Error> {
   Ok(port)
 }
 
-pub fn stop() {
+pub async fn stop() {
+  let _serialised = LIFECYCLE.lock().await;
+
   let handle = BRIDGE.lock().ok().and_then(|mut guard| guard.take());
   if let Some(handle) = handle {
     let _ = handle.shutdown.send(());
-    INSTALL_IN_FLIGHT.store(false, Ordering::SeqCst);
+    release_in_flight();
     log::info!("[ForgeBridge] Stopped");
   }
 }
 
-/// Called once the user has answered, so the next request is not refused as busy.
-pub fn release_in_flight() {
-  INSTALL_IN_FLIGHT.store(false, Ordering::SeqCst);
+/// Takes the slot, or `None` if held. A slot past the timeout is taken over,
+/// returning whatever the abandoned install staged so it can be deleted.
+fn claim_install_slot() -> Option<Vec<PathBuf>> {
+  let mut guard = IN_FLIGHT_SINCE.lock().ok()?;
+
+  match *guard {
+    Some(since) if since.elapsed() < INSTALL_ANSWER_TIMEOUT => None,
+    _ => {
+      *guard = Some(Instant::now());
+      Some(drain_staged())
+    }
+  }
 }
 
-/// Resolve a path the frontend reported back to one this bridge actually staged.
+fn drain_staged() -> Vec<PathBuf> {
+  STAGED
+    .lock()
+    .map(|mut guard| std::mem::take(&mut *guard))
+    .unwrap_or_default()
+}
+
+pub fn release_in_flight() {
+  if let Ok(mut guard) = IN_FLIGHT_SINCE.lock() {
+    *guard = None;
+  }
+}
+
+/// Resolve a reported path without consuming the entry.
+pub fn peek_staged(candidate: &str) -> Result<PathBuf, Error> {
+  let candidate = PathBuf::from(candidate);
+  let guard = STAGED
+    .lock()
+    .map_err(|_| Error::InvalidInput("Forge staging state is poisoned".to_string()))?;
+
+  if guard.contains(&candidate) {
+    Ok(candidate)
+  } else {
+    Err(Error::UnauthorizedPath(candidate.display().to_string()))
+  }
+}
+
+/// Resolve a reported path to one this bridge actually staged.
 pub fn staged_path(candidate: &str) -> Result<PathBuf, Error> {
   let candidate = PathBuf::from(candidate);
   let mut guard = STAGED
@@ -613,11 +648,28 @@ mod tests {
 
   #[test]
   fn refuses_a_second_install_while_one_is_awaiting_an_answer() {
-    INSTALL_IN_FLIGHT.store(false, Ordering::SeqCst);
-    assert!(!INSTALL_IN_FLIGHT.swap(true, Ordering::SeqCst));
-    assert!(INSTALL_IN_FLIGHT.swap(true, Ordering::SeqCst));
     release_in_flight();
-    assert!(!INSTALL_IN_FLIGHT.swap(true, Ordering::SeqCst));
+    assert!(claim_install_slot().is_some());
+    assert!(claim_install_slot().is_none());
+    release_in_flight();
+    assert!(claim_install_slot().is_some());
+    release_in_flight();
+  }
+
+  #[test]
+  fn takes_over_a_slot_whose_answer_never_came() {
+    // Without the timeout a lost dialog would refuse installs all session.
+    let stale = std::env::temp_dir().join("deadlockforge-abandoned.vpk");
+    remember_staged(&stale);
+    *IN_FLIGHT_SINCE.lock().expect("lock") =
+      Some(Instant::now() - INSTALL_ANSWER_TIMEOUT - Duration::from_secs(1));
+
+    let abandoned = claim_install_slot().expect("stale slot should be taken over");
+    assert_eq!(
+      abandoned,
+      vec![stale],
+      "the leftover payload must come back"
+    );
     release_in_flight();
   }
 
@@ -633,10 +685,8 @@ mod tests {
 
   #[test]
   fn allows_every_header_the_site_sends_on_an_install() {
-    // Regression: the list omitted x-forge-type and x-forge-author, so the
-    // browser refused to send the POST at all. Detection still worked, because
-    // the ping is a simple request and skips the preflight, which made it look
-    // like the app was unreachable rather than like a CORS refusal.
+    // Regression: omitting x-forge-type and x-forge-author made the browser
+    // refuse the POST, which looked like the app being unreachable.
     for header in [
       "content-type",
       PROTOCOL_HEADER,

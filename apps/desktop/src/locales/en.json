@@ -3159,6 +3159,7 @@
     "enableAction": "Allow",
     "enableCancel": "Not now",
     "enabled": "1-click installs enabled. Click the button on the site again.",
-    "alreadyEnabled": "1-click installs are already on."
+    "alreadyEnabled": "1-click installs are already on.",
+    "fallbackName": "DeadlockForge mod"
   }
 }

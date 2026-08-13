@@ -8,12 +8,8 @@ import { usePersistedStore } from "@/lib/store";
 
 const FORGE_LAUNCH_EVENT = "forge-launch-requested";
 
-/**
- * Raised when deadlockforge.net cannot find the bridge and fires the app's
- * protocol URL to bring it up. Without this the app would surface with no
- * explanation of why, and the user would have to find the Settings toggle on
- * their own before the site's button could work.
- */
+// Raised when the site cannot find the bridge and fires the protocol URL.
+// Without it the app surfaces with no explanation of why.
 export const useForgeLaunchPrompt = () => {
   const { t } = useTranslation();
   const confirm = useConfirm();
@@ -42,7 +38,9 @@ export const useForgeLaunchPrompt = () => {
       }));
 
       if (!accepted) {
-        logger.info("Forge 1-click installs declined at the prompt");
+        logger
+          .withMetadata({ feature: "forge", outcome: "declined" })
+          .info("Forge 1-click installs declined at the prompt");
         return;
       }
 

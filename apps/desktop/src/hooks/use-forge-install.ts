@@ -21,10 +21,17 @@ type ForgeInstallRequest = {
 
 const VPK_SUFFIX = /\.vpk$/i;
 
-// The site sends the built filename, so it usually carries a .vpk suffix. That
-// is right for the file on disk and wrong for the name shown in the library.
-const toDisplayName = (name: string): string =>
-  name.replace(VPK_SUFFIX, "").trim() || "DeadlockForge mod";
+// The site sends the built filename; the suffix suits the file, not the label.
+const toDisplayName = (name: string, fallback: string): string =>
+  name.replace(VPK_SUFFIX, "").trim() || fallback;
+
+const finishInstall = async (path: string): Promise<void> => {
+  try {
+    await invoke("finish_forge_install", { path });
+  } catch (error) {
+    logger.withError(error).warn("Failed to release the forge install slot");
+  }
+};
 
 const toFileName = (name: string): string =>
   `${name.replace(VPK_SUFFIX, "")}.vpk`;
@@ -37,8 +44,7 @@ export const useForgeInstall = () => {
     (state) => state.forgeInstallEnabled,
   );
 
-  // The listener is registered once, so it must read the current setting and
-  // the current processMod rather than the ones captured when it was created.
+  // Registered once, so it must read current values rather than captured ones.
   const enabledRef = useRef(forgeInstallEnabled);
   enabledRef.current = forgeInstallEnabled;
   const processRef = useRef(processMod);
@@ -53,50 +59,49 @@ export const useForgeInstall = () => {
         // The bridge only runs while the setting is on, but a request already
         // in flight when it is switched off must not slip through.
         if (!enabledRef.current) {
-          await invoke("finish_forge_install", { path: request.path }).catch(
-            () => undefined,
-          );
+          await finishInstall(request.path);
           return;
         }
 
         try {
+          const displayName = toDisplayName(
+            request.name,
+            t("forge.fallbackName"),
+          );
+
           const accepted = !!(await confirm({
             title: t("forge.confirmTitle"),
-            body: t("forge.confirmBody", { name: toDisplayName(request.name) }),
+            body: t("forge.confirmBody", { name: displayName }),
             actionButton: t("forge.confirmAction"),
             cancelButton: t("forge.confirmCancel"),
           }));
 
           if (!accepted) {
-            logger.info("Forge install declined by user");
+            logger
+              .withMetadata({ feature: "forge", outcome: "declined" })
+              .info("Forge install declined by user");
             return;
           }
 
-          const bytes = await invoke<number[]>("read_dropped_mod_file", {
-            filePath: request.path,
-          });
-          const file = new File(
-            [new Uint8Array(bytes)],
-            toFileName(request.name),
-          );
-
           await processRef.current(
             {
-              name: toDisplayName(request.name),
+              name: displayName,
               author: request.author ?? FORGE_AUTHOR,
               link: FORGE_LINK,
               description: t("forge.modDescription"),
             },
             ModCategory.OTHER_MISC,
-            { kind: "vpk", file },
+            {
+              kind: "vpkPath",
+              path: request.path,
+              fileName: toFileName(request.name),
+            },
           );
         } catch (error) {
           logger.withError(error).error("Failed to install mod from forge");
           toast.error(t("forge.installFailed"));
         } finally {
-          await invoke("finish_forge_install", { path: request.path }).catch(
-            () => undefined,
-          );
+          await finishInstall(request.path);
         }
       },
     );
