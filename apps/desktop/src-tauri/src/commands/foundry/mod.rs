@@ -9,6 +9,7 @@
 //! - `paint` recolors whole parts of the hero (body, gun, abilities)
 //! - `sounds` groups a hero's clips by ability slot
 //! - `hero` holds the codename tables those two need
+//! - `vdata` asks the game which model is a hero's body
 //! - `export` delivers the packed VPK to a file, a new mod, or the source mod
 //! - `commands` is the Tauri surface
 
@@ -23,6 +24,7 @@ mod resolve;
 mod sounds;
 mod staging;
 mod types;
+mod vdata;
 mod workspace;
 
 pub use commands::*;

@@ -90,7 +90,9 @@ impl SteamGcClient {
     guard: &mut Option<GcSession>,
     ctx: &AuthContext,
   ) -> Result<(), MatchSyncError> {
-    let stale = guard.as_ref().is_none_or(|s| s.steam_id64 != ctx.steam_id64);
+    let stale = guard
+      .as_ref()
+      .is_none_or(|s| s.steam_id64 != ctx.steam_id64);
     if stale {
       *guard = Some(Self::connect(ctx).await?);
     }
@@ -107,11 +109,11 @@ impl SteamGcClient {
   ) -> Result<RawNetMessage, MatchSyncError> {
     let sent = tokio::time::timeout(
       GC_CALL_TIMEOUT,
-      guard
-        .as_ref()
-        .expect("connected above")
-        .gc
-        .job_untyped(UntypedMessage(req_bytes), kind, true),
+      guard.as_ref().expect("connected above").gc.job_untyped(
+        UntypedMessage(req_bytes),
+        kind,
+        true,
+      ),
     )
     .await;
 
@@ -119,7 +121,9 @@ impl SteamGcClient {
       Ok(Ok(raw)) => Ok(raw),
       Ok(Err(e)) => {
         *guard = None;
-        Err(MatchSyncError::GcUnavailable(format!("{label} request failed: {e}")))
+        Err(MatchSyncError::GcUnavailable(format!(
+          "{label} request failed: {e}"
+        )))
       }
       Err(_) => {
         *guard = None;

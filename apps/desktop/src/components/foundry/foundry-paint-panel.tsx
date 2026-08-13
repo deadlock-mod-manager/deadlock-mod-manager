@@ -7,6 +7,8 @@ import { Slider } from "@deadlock-mods/ui/components/slider";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { cn } from "@deadlock-mods/ui/lib/utils";
 import {
+  EyeIcon,
+  EyeSlashIcon,
   PaintBrushIcon,
   PersonIcon,
   SparkleIcon,
@@ -165,6 +167,11 @@ export const FoundryPaintPanel = () => {
   const [drafts, setDrafts] = useState<
     Partial<Record<FoundryPaintTargetId, FoundryPaint>>
   >({});
+  // Off until the user asks for it. A color the user has not committed to must
+  // not appear on the hero: the picker always holds *some* value, so tinting
+  // whenever it differs from what is baked meant a freshly opened skin was
+  // already wearing the default color.
+  const [previewEnabled, setPreviewEnabled] = useState(false);
 
   const infoById = useMemo(
     () => new Map(paintTargets.map((info) => [info.id, info])),
@@ -173,7 +180,15 @@ export const FoundryPaintPanel = () => {
 
   const paint =
     drafts[selected] ?? appliedPaint[selected] ?? defaultPaint(selected);
-  const disabled = !workspace || busy || coverage(infoById.get(selected)) === 0;
+  const info = infoById.get(selected);
+  const disabled = !workspace || busy || coverage(info) === 0;
+
+  // A pattern carries its own palette and replaces the picked color on every
+  // texture it covers. Particles are the one thing it cannot cover, so for
+  // abilities the color still does something and the controls stay live.
+  const patterned = paint.pattern !== "none";
+  const colorDrivesParticlesOnly = patterned && (info?.particleCount ?? 0) > 0;
+  const colorIgnored = patterned && !colorDrivesParticlesOnly;
 
   // Whether the panel holds a change that has not been baked yet.
   const applied = appliedPaint[selected];
@@ -183,12 +198,18 @@ export const FoundryPaintPanel = () => {
     applied.saturation !== paint.saturation ||
     applied.brightness !== paint.brightness;
 
-  // The shader previews the *pending* paint only. Once a part is applied its
-  // real textures carry that color, so painting on top would double it and the
-  // preview would stop telling the truth.
+  // Three things all have to hold before the hero is tinted, and each rules out
+  // a way the preview could lie:
+  //  - the user asked for it, so an untouched skin shows its real colors;
+  //  - the paint is *pending*, because once applied the real textures carry it
+  //    and tinting on top would double it;
+  //  - no pattern is chosen, because the shader cannot generate one and would
+  //    show a hue the bake is about to discard.
+  const showTint = previewEnabled && isDirty && !patterned;
+
   useEffect(() => {
     setPreviewTint(
-      isDirty
+      showTint
         ? {
             target: selected,
             colorHex: paint.colorHex,
@@ -199,7 +220,7 @@ export const FoundryPaintPanel = () => {
     );
     return () => setPreviewTint(null);
   }, [
-    isDirty,
+    showTint,
     selected,
     paint.colorHex,
     paint.saturation,
@@ -220,6 +241,9 @@ export const FoundryPaintPanel = () => {
   const handleApply = useCallback(async () => {
     try {
       await paintTarget(selected, paint);
+      // The baked textures are the truth now, so the scene tint has nothing
+      // left to add — leaving it on would paint the color a second time.
+      setPreviewEnabled(false);
       // No success toast: the preview repaints and the target picks up its
       // "Edited" badge, which says the same thing without a popup on every
       // colour the user tries.
@@ -246,10 +270,34 @@ export const FoundryPaintPanel = () => {
 
       <Separator />
 
-      <div className='space-y-3'>
-        <Label className='text-muted-foreground text-xs'>
-          {t("foundry.paint.colorLabel")}
-        </Label>
+      <div
+        className={cn(
+          "space-y-3 transition-opacity",
+          colorIgnored && "pointer-events-none opacity-45",
+        )}>
+        <div className='flex items-center justify-between gap-2'>
+          <Label className='text-muted-foreground text-xs'>
+            {t("foundry.paint.colorLabel")}
+          </Label>
+          <Button
+            className='h-7 gap-1.5 px-2 text-xs'
+            disabled={disabled || patterned}
+            onClick={() => setPreviewEnabled((on) => !on)}
+            size='sm'
+            title={t(
+              patterned
+                ? "foundry.paint.previewUnavailable"
+                : "foundry.paint.previewHint",
+            )}
+            variant={previewEnabled ? "secondary" : "ghost"}>
+            {previewEnabled ? (
+              <EyeIcon className='h-3.5 w-3.5' weight='fill' />
+            ) : (
+              <EyeSlashIcon className='h-3.5 w-3.5' />
+            )}
+            {t("foundry.paint.preview")}
+          </Button>
+        </div>
         <ColorPicker
           labels={{
             red: t("foundry.paint.red"),
@@ -276,6 +324,16 @@ export const FoundryPaintPanel = () => {
           value={paint.brightness}
         />
       </div>
+
+      {patterned && (
+        <p className='rounded-md border border-dashed px-3 py-2 text-muted-foreground text-xs'>
+          {t(
+            colorDrivesParticlesOnly
+              ? "foundry.paint.patternOverridesColorExceptEffects"
+              : "foundry.paint.patternOverridesColor",
+          )}
+        </p>
+      )}
 
       <Separator />
 

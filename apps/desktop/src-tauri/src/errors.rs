@@ -146,7 +146,10 @@ mod tests {
     let json = serde_json::to_value(&err).unwrap();
     assert_eq!(json["kind"], "matchSync");
     assert_eq!(json["matchSyncKind"], "consentRequired");
-    assert_eq!(json["message"], "Match sync error: Consent has not been accepted");
+    assert_eq!(
+      json["message"],
+      "Match sync error: Consent has not been accepted"
+    );
   }
 
   #[test]

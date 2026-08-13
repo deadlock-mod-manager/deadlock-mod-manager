@@ -139,10 +139,16 @@ const isModelEntry = (path: string | null): path is string =>
   path?.endsWith(".vmesh_c") || path?.endsWith(".vmdl_c") || false;
 
 /**
- * The entry to show first. A `.vmdl_c` assembles the whole character (every mesh
- * plus the skeleton), so it beats a lone `.vmesh_c`, which is one body part.
+ * The entry to show first.
+ *
+ * The backend resolves the hero's actual body model through the game's
+ * `heroes.vdata_c`, so `primaryModelPath` is an answer rather than a guess and
+ * is used whenever it is there. The local fallback only covers a manifest from
+ * an older backend or a skin with no hero: a `.vmdl_c` assembles the whole
+ * character, so it beats a lone `.vmesh_c`, which is one body part.
  */
 const getInitialModelPath = (manifest: FoundryManifest): string | null => {
+  if (manifest.primaryModelPath) return manifest.primaryModelPath;
   const model = manifest.models.find((entry) => entry.path.endsWith(".vmdl_c"));
   const mesh = manifest.models.find((entry) => entry.path.endsWith(".vmesh_c"));
   return model?.path ?? mesh?.path ?? manifest.models[0]?.path ?? null;
@@ -653,7 +659,12 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
       primaryModelPath,
       setPrimaryModelPath,
       preview3dEnabled,
-      previewTint,
+      // Scoped to the paint tab at the source. The tab panels are all mounted
+      // at once (the inactive ones are only hidden with CSS), so the paint
+      // panel's effects run even while the user is looking at the asset
+      // browser. Gating the tint here means no panel can colour a preview
+      // outside the tab that owns the control.
+      previewTint: activeTab === "paint" ? previewTint : null,
       setPreviewTint,
       paintTargets,
       appliedPaint,

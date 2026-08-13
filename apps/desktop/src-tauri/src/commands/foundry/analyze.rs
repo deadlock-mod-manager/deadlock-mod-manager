@@ -14,6 +14,8 @@ use super::game::paths_equal;
 use super::hero::{card_prefixes, hero_asset_terms, panorama_codenames};
 use super::sounds::group_sounds;
 use super::staging::{stage_source_vpk, staged_base_game_vpk};
+use super::vdata::primary_model_path;
+
 use super::types::{
   CARD_SOURCE_DEFAULT, CARD_SOURCE_MOD, CATEGORY_CARD, CATEGORY_MATERIAL, CATEGORY_MODEL,
   CATEGORY_OTHER, CATEGORY_SOUND, CATEGORY_TEXTURE, ENTRY_SOURCE_DEFAULT, ENTRY_SOURCE_MOD,
@@ -161,6 +163,7 @@ fn empty_manifest(file_path: String) -> FoundryManifest {
     sounds: Vec::new(),
     other: Vec::new(),
     sound_groups: Vec::new(),
+    primary_model_path: None,
   }
 }
 
@@ -210,9 +213,10 @@ fn finalize(manifest: &mut FoundryManifest) {
     .clone()
     .or_else(|| manifest.hero.clone());
   manifest.sound_groups = group_sounds(hero.as_deref(), &manifest.sounds);
+  manifest.primary_model_path = primary_model_path(hero.as_deref(), &manifest.models);
 
   log::info!(
-    "[Foundry] Analyzed {} entries (hero={:?}, skin={}): {} models, {} materials, {} textures, {} cards, {} sounds in {} groups",
+    "[Foundry] Analyzed {} entries (hero={:?}, skin={}): {} models, {} materials, {} textures, {} cards, {} sounds in {} groups, body={:?}",
     manifest.entry_count,
     manifest.hero_display,
     manifest.is_hero_skin,
@@ -222,6 +226,7 @@ fn finalize(manifest: &mut FoundryManifest) {
     manifest.cards.len(),
     manifest.sounds.len(),
     manifest.sound_groups.len(),
+    manifest.primary_model_path,
   );
 }
 
