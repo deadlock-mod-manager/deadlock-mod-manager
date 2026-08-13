@@ -87,3 +87,27 @@ export const disablePlugin = (
   isAlwaysEnabled(getManifests(), pluginId)
     ? {}
     : { enabledPlugins: { ...state.enabledPlugins, [pluginId]: false } };
+
+export const applyPluginSettings = (
+  state: PluginSliceState,
+  pluginId: string,
+  value: unknown,
+): Partial<PluginSliceState> => {
+  const pluginSettings = { ...state.pluginSettings, [pluginId]: value };
+  if (!hasActiveTheme(value) || value.activeTheme === undefined) {
+    return { pluginSettings };
+  }
+
+  // Always-enabled plugins have no switch; their selection activates them.
+  const manifests = getManifests();
+  if (!isAlwaysEnabled(manifests, pluginId)) {
+    return { pluginSettings };
+  }
+
+  const enabledPlugins = { ...state.enabledPlugins };
+  for (const excludedId of getExcludedPluginIds(manifests, pluginId)) {
+    enabledPlugins[excludedId] = false;
+  }
+
+  return { enabledPlugins, pluginSettings };
+};

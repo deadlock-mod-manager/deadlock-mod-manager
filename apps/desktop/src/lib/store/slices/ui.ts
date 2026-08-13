@@ -1,7 +1,11 @@
 import type { StateCreator } from "zustand";
 import { SortType, TimePeriod } from "@/lib/constants";
 import type { State } from "..";
-import { disablePlugin, enablePlugin } from "../utils/plugin-slice";
+import {
+  applyPluginSettings,
+  disablePlugin,
+  enablePlugin,
+} from "../utils/plugin-slice";
 
 export type FilterMode = "include" | "exclude";
 
@@ -160,7 +164,5 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
     ),
 
   setPluginSettings: (id: string, value: unknown) =>
-    set((state) => ({
-      pluginSettings: { ...state.pluginSettings, [id]: value },
-    })),
+    set((state) => applyPluginSettings(state, id, value)),
 });
