@@ -153,20 +153,15 @@ describe("safeMigrate", () => {
   });
 
   it("v25 (themes switch): drops the leftover enabledPlugins.themes entry", () => {
-    const state: Record<string, unknown> = {
-      enabledPlugins: { themes: false, background: true },
-    };
+    const state = { enabledPlugins: { themes: false, background: true } };
 
-    const result = safeMigrate(state, 24) as Record<string, unknown>;
-
-    const enabledPlugins = result.enabledPlugins as Record<string, boolean>;
-    expect("themes" in enabledPlugins).toBe(false);
-    expect(enabledPlugins.background).toBe(true);
+    expect(safeMigrate(state, 24)).toStrictEqual({
+      enabledPlugins: { background: true },
+    });
   });
 
   it("v25 (themes switch): tolerates a missing enabledPlugins map", () => {
-    const result = safeMigrate({}, 24) as Record<string, unknown>;
-    expect(result.enabledPlugins).toBeUndefined();
+    expect(safeMigrate({}, 24)).toStrictEqual({});
   });
 
   describe("specific step idempotency", () => {
