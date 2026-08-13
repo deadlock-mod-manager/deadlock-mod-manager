@@ -34,14 +34,13 @@ fn store(app: &AppHandle) -> Result<Arc<Store<AppRuntime>>, MatchSyncError> {
 }
 
 fn get_bool(store: &Store<AppRuntime>, key: &str, default: bool) -> bool {
-  store
-    .get(key)
-    .and_then(|v| v.as_bool())
-    .unwrap_or(default)
+  store.get(key).and_then(|v| v.as_bool()).unwrap_or(default)
 }
 
 fn save(store: &Store<AppRuntime>) -> Result<(), MatchSyncError> {
-  store.save().map_err(|e| MatchSyncError::Store(e.to_string()))
+  store
+    .save()
+    .map_err(|e| MatchSyncError::Store(e.to_string()))
 }
 
 pub fn load_config(app: &AppHandle) -> Result<MatchSyncConfig, MatchSyncError> {
@@ -71,7 +70,11 @@ pub fn set_enabled(app: &AppHandle, enabled: bool) -> Result<(), MatchSyncError>
 
 pub fn load_full_sync_complete(app: &AppHandle, steam_id64: u64) -> bool {
   match store(app) {
-    Ok(store) => get_bool(&store, &format!("{KEY_FULL_SYNC_COMPLETE}::{steam_id64}"), false),
+    Ok(store) => get_bool(
+      &store,
+      &format!("{KEY_FULL_SYNC_COMPLETE}::{steam_id64}"),
+      false,
+    ),
     Err(_) => false,
   }
 }

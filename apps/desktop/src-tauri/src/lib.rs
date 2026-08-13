@@ -15,11 +15,13 @@ mod flatpak;
 mod game_presence;
 mod hero_detector;
 mod ingest_tool;
+mod live_match;
 mod logs;
 mod match_sync;
 mod mod_manager;
 pub mod proxy;
 mod reports;
+mod steam_user;
 mod updater_channel;
 mod utils;
 
@@ -195,11 +197,14 @@ pub fn run() {
       game_presence::start_game_presence_watcher,
       game_presence::stop_game_presence_watcher,
       commands::match_sync::get_match_sync_status,
+      commands::match_sync::get_local_match_history,
       commands::match_sync::set_match_sync_consent,
       commands::match_sync::set_match_sync_enabled,
       commands::match_sync::start_full_match_sync,
       commands::match_sync::cancel_full_match_sync,
       commands::match_sync::resume_match_sync_monitoring,
+      commands::steam_user::get_steam_accounts,
+      commands::live_match::get_live_match,
       commands::profiles::create_profile_folder,
       commands::profiles::delete_profile_folder,
       commands::profiles::switch_profile,

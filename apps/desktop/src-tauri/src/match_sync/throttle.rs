@@ -18,6 +18,17 @@ impl Throttle {
     }
   }
 
+  /// Non-blocking variant: `false` when the interval has not elapsed yet.
+  /// Interactive callers use this rather than making the user wait out a sleep.
+  pub async fn try_acquire(&self) -> bool {
+    let mut last = self.last.lock().await;
+    if last.is_some_and(|prev| prev.elapsed() < self.min_interval) {
+      return false;
+    }
+    *last = Some(Instant::now());
+    true
+  }
+
   pub async fn acquire(&self) {
     let mut last = self.last.lock().await;
     if let Some(prev) = *last {

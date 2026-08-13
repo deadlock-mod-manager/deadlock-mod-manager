@@ -16,6 +16,7 @@ import {
 import {
   ArticleIcon,
   BugBeetleIcon,
+  ChartLineUpIcon,
   CodeIcon,
   CrosshairIcon,
   DiscordLogoIcon,
@@ -35,7 +36,10 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
-import { useFeatureFlag } from "@/hooks/use-feature-flags";
+import {
+  useFeatureFlag,
+  usePlayerStatsEnabled,
+} from "@/hooks/use-feature-flags";
 import { DISCORD_URL } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus } from "@/types/mods";
@@ -175,6 +179,14 @@ const getSidebarItems = (
       icon: ArticleIcon,
       group: "customization",
     },
+    {
+      id: "stats",
+      title: () => <span>{t("navigation.stats")}</span>,
+      tooltipLabel: t("navigation.stats"),
+      url: "/stats",
+      icon: ChartLineUpIcon,
+      group: "customization",
+    },
     ...(developerMode
       ? [
           {
@@ -307,11 +319,13 @@ export const AppSidebar = () => {
     "server-browser",
     false,
   );
+  const { isEnabled: isPlayerStatsEnabled } = usePlayerStatsEnabled();
 
   const allItems = getSidebarItems(t, developerMode).filter(
     (item) =>
       (item.id !== "maps" || isCustomMapsEnabled) &&
-      (item.id !== "servers" || isServerBrowserEnabled),
+      (item.id !== "servers" || isServerBrowserEnabled) &&
+      (item.id !== "stats" || isPlayerStatsEnabled),
   );
 
   const groupLabels: Record<GroupId, string> = {
