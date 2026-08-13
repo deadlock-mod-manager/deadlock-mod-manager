@@ -55,6 +55,8 @@ dotenvy = "0.15"
 tauri-plugin-machine-uid = "0.1.3"
 vpk-parser = { path = "../../../packages/vpk-parser" }
 hero-parser = { path = "../../../packages/hero-parser" }
+source2-model = { path = "../../../packages/source2-model" }
+vpkmanager = { path = "../../../packages/vpkmanager" }
 dmp-parser = { path = "../../../packages/dmp-parser" }
 deadlock-discord-presence = { path = "../../../packages/deadlock-discord-presence" }
 tokio = { version = "1.50.0", features = ["full"] }
@@ -76,6 +78,7 @@ cbc = { version = "0.1", features = ["alloc"] }
 crc32fast = "1.4"
 hex = "0.4"
 base64 = "0.22"
+image = { version = "0.25", default-features = false, features = ["png"] }
 keyvalues-parser = "0.2"
 prost = "0.14"
 steam-vent = { git = "https://github.com/deadlock-api/steam-vent", rev = "1d7b274f5c2f648aba5dab474b80c1156b409bca" }

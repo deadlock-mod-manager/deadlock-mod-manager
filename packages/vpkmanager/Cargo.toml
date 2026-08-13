@@ -1,0 +1,42 @@
+[package]
+name = "vpkmanager"
+version = "0.1.0"
+edition = "2024"
+description = "Writing Deadlock VPKs and the compiled Source 2 assets inside them"
+
+[lib]
+name = "vpkmanager"
+crate-type = ["rlib"]
+path = "src/lib.rs"
+
+[dependencies]
+thiserror = "2.0"
+crc = "3.0"
+# Vendored Source 2 codecs (see src/source2). These are their dependencies.
+bitflags = "2"
+byteorder = "1"
+bytemuck = "1"
+half = { version = "2", features = ["bytemuck"] }
+# Source 2 ships binary KV3 with LZ4- and zstd-compressed buffers.
+lz4_flex = { version = "0.11", default-features = false, features = ["std"] }
+ruzstd = "0.8.3"
+# Pure-Rust BC1..BC7 decode, and the Intel ISPC texture compressor for the
+# re-encode. `intel_tex_2` ships prebuilt object files, so no ISPC toolchain is
+# needed to build.
+bcdec_rs = "0.2"
+intel_tex_2 = "0.5"
+# BCn blocks are independent, so a large mip's re-encode is split across cores.
+rayon = "1"
+# Inline PNG/JPEG/WebP textures store a literal compressed image, and user
+# replacements arrive as ordinary image files.
+image = { version = "0.25", default-features = false, features = [
+  "bmp",
+  "ico",
+  "jpeg",
+  "png",
+  "pnm",
+  "qoi",
+  "tga",
+  "tiff",
+  "webp",
+] }

@@ -631,10 +631,14 @@ impl DownloadManager {
             "Mod has single VPK file, copying directly for mod: {}",
             task.mod_id
           );
-          let copied = vpk_manager.copy_vpks_with_prefix(&extracted_dir, &destination_path, &task.mod_id)?;
+          let copied =
+            vpk_manager.copy_vpks_with_prefix(&extracted_dir, &destination_path, &task.mod_id)?;
           let prefix = format!("{}_", task.mod_id);
           for vpk_name in &copied {
-            let original = vpk_name.strip_prefix(&prefix).unwrap_or(vpk_name).to_string();
+            let original = vpk_name
+              .strip_prefix(&prefix)
+              .unwrap_or(vpk_name)
+              .to_string();
             vpk_archive_map.insert(original, archive_name.clone());
           }
           Self::cleanup_extracted(&extracted_dir, file_path);
@@ -645,10 +649,14 @@ impl DownloadManager {
             task.mod_id,
             e
           );
-          let copied = vpk_manager.copy_vpks_with_prefix(&extracted_dir, &destination_path, &task.mod_id)?;
+          let copied =
+            vpk_manager.copy_vpks_with_prefix(&extracted_dir, &destination_path, &task.mod_id)?;
           let prefix = format!("{}_", task.mod_id);
           for vpk_name in &copied {
-            let original = vpk_name.strip_prefix(&prefix).unwrap_or(vpk_name).to_string();
+            let original = vpk_name
+              .strip_prefix(&prefix)
+              .unwrap_or(vpk_name)
+              .to_string();
             vpk_archive_map.insert(original, archive_name.clone());
           }
           Self::cleanup_extracted(&extracted_dir, file_path);

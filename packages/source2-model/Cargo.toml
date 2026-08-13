@@ -1,0 +1,35 @@
+[package]
+name = "source2-model"
+version = "0.1.0"
+edition = "2024"
+description = "Decoder and writer for the Source 2 compiled assets used by the Mod Foundry"
+
+[lib]
+name = "source2_model"
+crate-type = ["rlib"]
+path = "src/lib.rs"
+
+[dependencies]
+vpk-parser = { path = "../vpk-parser" }
+texture2ddecoder = "0.1"
+lz4_flex = "0.11"
+image = { version = "0.25", default-features = false, features = [
+  "bmp",
+  "ico",
+  "png",
+  "jpeg",
+  "pnm",
+  "qoi",
+  "tga",
+  "tiff",
+  "webp",
+] }
+serde_json = "1"
+serde = { version = "1", features = ["derive"] }
+thiserror = "2.0"
+log = "0.4"
+meshopt = "0.6.2"
+zstd = "0.13"
+
+[dev-dependencies]
+env_logger = "0.11"

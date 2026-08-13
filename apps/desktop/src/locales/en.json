@@ -33,7 +33,8 @@
     "multiplayer": "Custom Servers",
     "general": "General",
     "earlyAccess": "Early Access",
-    "mods": "Mods"
+    "mods": "Mods",
+    "foundry": "Mod Foundry"
   },
   "skins": {
     "title": "Hero Skins",
@@ -570,7 +571,19 @@
       "all": "All",
       "installed": "Installed",
       "downloaded": "Downloaded"
-    }
+    },
+    "vpkLimitBadgeNear": "Near limit",
+    "vpkLimitBadgeAtLimit": "At limit",
+    "modLimitTooltipP1": "Deadlock limits how many addon files the game can load at once. The usual cap is {{max}}.",
+    "modLimitTooltipP2": "Your library can still list more mods than that, because one mod can ship several addon files.",
+    "modLimitTooltipP3": "The first pair is enabled mods versus your full library. The second is how many addon files those enabled mods use, next to the cap.",
+    "modLimitTooltipStatHeading": "What each number is:",
+    "modLimitTooltipStatEnabled_one": "{{count}} mod enabled.",
+    "modLimitTooltipStatEnabled_other": "{{count}} mods enabled.",
+    "modLimitTooltipStatLibrary_one": "{{count}} mod in your library.",
+    "modLimitTooltipStatLibrary_other": "{{count}} mods in your library.",
+    "modLimitTooltipStatVpks_one": "{{count}} addon file from enabled mods.",
+    "modLimitTooltipStatVpks_other": "{{count}} addon files from enabled mods."
   },
   "modOrdering": {
     "manageOrderTooltip": "Manage the order in which mods are loaded",
@@ -2505,7 +2518,8 @@
       "copyJson": "Copy JSON",
       "copied": "Diagnostics copied to clipboard.",
       "unavailable": "No shard diagnostics available."
-    }
+    },
+    "placeholder": "Developer tools will be available here"
   },
   "contextMenu": {
     "shareUrl": "Share",
@@ -2978,5 +2992,225 @@
       "removeOverride": "Reset to default",
       "inheritPlaceholder": "Leave empty to use the default"
     }
+  },
+  "foundry": {
+    "title": "Mod Foundry",
+    "subtitle": "Import a hero skin, preview its 3D model, and swap cards, textures and sounds into a new VPK",
+    "empty": {
+      "title": "Craft your hero skin",
+      "description": "Build a skin here in the Mod Foundry, or open Deadlock Forge for the wider community toolset.",
+      "foundryTitle": "DMM Foundry",
+      "foundryDescription": "Import an installed skin, recolor its body and weapon, swap its cards and sounds, and export a working VPK.",
+      "forgeTitle": "Deadlock Forge",
+      "forgeDescription": "The community's skin workshop and asset browser. Opens in your browser.",
+      "forgeAction": "Open deadlockforge.net",
+      "hint": "Map mods aren't supported here — the Foundry is for hero skins."
+    },
+    "import": {
+      "cta": "Import skin",
+      "analyzing": "Analyzing…",
+      "browseTitle": "Select a skin VPK",
+      "browseCta": "Choose VPK file",
+      "dialogTitle": "Import a hero skin",
+      "dialogDescription": "Pick one of your hero skins or import a local VPK. Only hero skins are shown — maps and audio mods are excluded.",
+      "defaultSkins": "Default",
+      "fromLibrary": "My Mods",
+      "fromFile": "Local file",
+      "searchPlaceholder": "Search your skins…",
+      "noDefaultSkins": "No default skins match your search.",
+      "noHeroSkins": "No hero skins found in your library yet. Install a hero skin, or import a local VPK.",
+      "fileHint": "Import any hero-skin VPK from disk. Map mods will be rejected.",
+      "preview3dLabel": "Load the 3D preview",
+      "preview3dHint": "Turn this off to open skins faster; you can still paint, swap cards and change sounds.",
+      "preview3dWarning": "The preview decodes the whole character model and renders it on your GPU. It is the slowest part of opening a skin, and not every skin can be decoded — an unusual or broken model may fail to load or, rarely, upset the graphics driver. Switch it off if a skin refuses to open."
+    },
+    "toolbar": {
+      "entryCount": "{{count}} files",
+      "changeSkin": "Change skin",
+      "clear": "Clear",
+      "export": "Export VPK",
+      "editCount": "{{count}} edited"
+    },
+    "tabs": {
+      "assets": "Assets",
+      "assetsHint": "Everything in this VPK — pick the model to preview",
+      "assetsEmpty": "This VPK is empty.",
+      "paint": "Paint",
+      "paintHint": "Recolor the body, the gun and the ability effects",
+      "paintEmpty": "Nothing in this skin can be painted.",
+      "cards": "Cards",
+      "cardsHint": "Selection and portrait images",
+      "cardsEmpty": "No card textures found in this skin.",
+      "sounds": "Sounds",
+      "soundsHint": "Grouped by ability, voice and weapon",
+      "soundsEmpty": "No sound files found for this hero."
+    },
+    "cards": {
+      "loading": "Loading card art…",
+      "loadFailed": "Couldn't load the card art for this skin.",
+      "modCards": "Mod cards",
+      "defaultCards": "Default cards",
+      "noModCards": "No mod card art found for this hero.",
+      "noDefaultCards": "No default card art found for this hero.",
+      "variants": {
+        "card": "Card",
+        "vertical": "Vertical",
+        "card_critical": "Low HP",
+        "card_gloat": "Gloat",
+        "minimap": "Minimap",
+        "small": "Small",
+        "other": "Other"
+      }
+    },
+    "preview": {
+      "empty": "Import a skin to see it here",
+      "placeholder": "Select a model to preview {{hero}}",
+      "unknownHero": "Unknown hero",
+      "loading": "Loading model…",
+      "decoding": "Decoding texture…",
+      "decodeFailed": "Couldn't decode this texture.",
+      "modelDecodeFailed": "Couldn't decode this model.",
+      "selectCard": "Select a card to preview it",
+      "soundsPlaceholder": "Select a sound to inspect and replace it",
+      "alt": "Skin preview",
+      "startSpin": "Auto-rotate",
+      "stopSpin": "Stop rotation",
+      "painting": "Painting…",
+      "disabled": "3D preview is off",
+      "disabledHint": "Nothing was decoded, so this skin opened faster. Painting, cards and sounds all still work.",
+      "enable": "Turn the preview on"
+    },
+    "inspector": {
+      "title": "Properties",
+      "noSelection": "Select an item to see its details.",
+      "file": "File",
+      "path": "Path",
+      "type": "Type",
+      "size": "Size",
+      "dimensions": "Dimensions",
+      "vertices": "Vertices",
+      "triangles": "Triangles",
+      "source": "Source",
+      "sources": {
+        "mod": "Mod",
+        "default": "Base game",
+        "workspace": "Edited"
+      }
+    },
+    "errors": {
+      "notHeroSkinTitle": "Not a hero skin",
+      "notHeroSkinDescription": "This VPK doesn't look like a hero skin. The Mod Foundry only supports hero skins.",
+      "analyzeFailedTitle": "Couldn't read that VPK",
+      "analyzeFailedDescription": "The file could not be parsed. Make sure it's a valid Deadlock VPK."
+    },
+    "edited": "Edited",
+    "sounds": {
+      "play": "Play",
+      "pause": "Pause",
+      "volume": "Preview volume",
+      "mute": "Mute",
+      "unmute": "Unmute"
+    },
+    "editor": {
+      "replaceLabel": "Replace",
+      "replace": "Choose file…",
+      "replaceTitle": "Choose a replacement file",
+      "replaceImageHint": "Pick a PNG or JPG — it's cropped and re-encoded into this texture.",
+      "replaceFileHint": "Pick a .{{ext}} file to swap in.",
+      "replaced": "Replaced {{file}}",
+      "replaceFailed": "Couldn't replace that file.",
+      "revert": "Revert",
+      "reverted": "Reverted {{file}}",
+      "revertFailed": "Couldn't revert that file.",
+      "workspacePending": "Preparing the editable copy of this skin…",
+      "replaceSoundHint": "Pick an MP3 or WAV — it's rebuilt into this clip's container.",
+      "primaryLabel": "Primary model",
+      "primaryHint": "The model the preview opens on and the export is named after.",
+      "setPrimary": "Mark as primary",
+      "isPrimary": "Primary model"
+    },
+    "export": {
+      "dialogTitle": "Export this skin",
+      "dialogDescription": "The same VPK is built either way — pick where it should land.",
+      "destinations": {
+        "file": {
+          "title": "Save to a file",
+          "description": "Write the VPK anywhere on disk."
+        },
+        "newMod": {
+          "title": "Add as a new mod",
+          "description": "Put it in your library as a local mod, ready to install."
+        },
+        "replaceSource": {
+          "title": "Replace the original mod",
+          "description": "Overwrite the VPK this skin was loaded from.",
+          "unavailable": "This skin came from the base game, so there is no mod to replace."
+        }
+      },
+      "modNameLabel": "Mod name",
+      "defaultModName": "{{hero}} (Foundry)",
+      "replaceWarning": "This overwrites the mod's VPK in place. The original is kept beside it as a .bak file.",
+      "confirm": "Export",
+      "title": "Export the skin as a VPK",
+      "success": "Exported {{count}} files to a working VPK.",
+      "addedToLibrary": "Added {{name}} to your library.",
+      "addedToLibraryHint": "Install it from the Mods page like any other mod.",
+      "replaced": "Replaced the mod's VPK.",
+      "replacedHint": "Restart Deadlock for the change to take effect.",
+      "failed": "Couldn't build the VPK.",
+      "modDescription": "Created in the Mod Foundry.",
+      "building": "Building the VPK…"
+    },
+    "paint": {
+      "targets": {
+        "body": "Body",
+        "weapon": "Weapon",
+        "bodyAndWeapon": "Body & weapon",
+        "abilities": "Ability effects"
+      },
+      "coverage": "{{count}} textures",
+      "coverage_one": "1 texture",
+      "nothingToPaint": "Not in this skin",
+      "colorLabel": "Color",
+      "red": "R",
+      "green": "G",
+      "blue": "B",
+      "eyedropper": "Pick a color from the screen",
+      "apply": "Paint {{target}}",
+      "failed": "Couldn't paint that part.",
+      "hint": "Painting rewrites every color map the part covers. Turn on Preview to try a color on the model; nothing is written until you apply.",
+      "saturationLabel": "Saturation",
+      "brightnessLabel": "Brightness",
+      "preview": "Preview",
+      "previewHint": "Show this color on the model without applying it. Nothing is written until you apply.",
+      "previewUnavailable": "Patterns cannot be previewed live — apply to see the result.",
+      "patternLabel": "Pattern",
+      "patternOverridesColor": "The pattern brings its own colors and replaces the color set above.",
+      "patternOverridesColorExceptEffects": "The pattern replaces the color on the textures. The color above still tints the effect particles, which cannot carry a pattern.",
+      "patternIntensity": "Pattern strength",
+      "patternPhase": "Pattern shift",
+      "patterns": {
+        "none": "None",
+        "liquid": "Liquid",
+        "moire": "Moiré",
+        "kaleido": "Kaleido",
+        "holo": "Holo",
+        "glitch": "Glitch",
+        "thermal": "Thermal",
+        "camo": "Camo",
+        "carbon": "Carbon",
+        "galaxy": "Galaxy",
+        "halftone": "Halftone",
+        "lava": "Lava",
+        "vaporwave": "Vaporwave",
+        "viscous": "Viscous",
+        "darkmatter": "Dark matter",
+        "monochrome": "Mono",
+        "deco": "Deco",
+        "frost": "Frost",
+        "circuit": "Circuit"
+      }
+    },
+    "primary": "Primary"
   }
 }

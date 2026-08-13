@@ -48,6 +48,11 @@ export type SettingsState = {
   developerMode: boolean;
   ingestToolEnabled: boolean;
   autoUpdateEnabled: boolean;
+  /** Whether the Mod Foundry decodes and renders a skin's 3D model. Off skips
+   *  the decode entirely, which is the slow part of opening a skin. */
+  foundry3dPreviewEnabled: boolean;
+  /** Playback volume for the Foundry sound browser, 0..1. */
+  foundrySoundVolume: number;
   crosshairsEnabled: boolean;
   linuxGpuOptimization: "auto" | "on" | "off";
   enabledPlugins: Record<string, boolean>; // pluginId -> isEnabled
@@ -83,6 +88,8 @@ export type SettingsState = {
 
   // Auto-update management
   setAutoUpdateEnabled: (enabled: boolean) => void;
+  setFoundry3dPreviewEnabled: (enabled: boolean) => void;
+  setFoundrySoundVolume: (volume: number) => void;
 
   // Crosshairs management
   setCrosshairsEnabled: (enabled: boolean) => void;
@@ -133,6 +140,8 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   developerMode: false,
   ingestToolEnabled: true,
   autoUpdateEnabled: true,
+  foundry3dPreviewEnabled: true,
+  foundrySoundVolume: 0.8,
   crosshairsEnabled: true,
   linuxGpuOptimization: "auto",
   enabledPlugins: { themes: true },
@@ -246,6 +255,18 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   setAutoUpdateEnabled: (enabled: boolean) =>
     set(() => ({
       autoUpdateEnabled: enabled,
+    })),
+
+  // Mod Foundry 3D preview
+  setFoundry3dPreviewEnabled: (enabled: boolean) =>
+    set(() => ({
+      foundry3dPreviewEnabled: enabled,
+    })),
+
+  // Mod Foundry sound preview volume
+  setFoundrySoundVolume: (volume: number) =>
+    set(() => ({
+      foundrySoundVolume: Math.min(1, Math.max(0, volume)),
     })),
 
   // Crosshairs management
