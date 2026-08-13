@@ -229,18 +229,6 @@
     "libraryModsNoun_one": "mod",
     "libraryModsNoun_other": "mods",
     "vpkFilesNoun": "",
-    "vpkLimitBadgeNear": "Près de la limite",
-    "vpkLimitBadgeAtLimit": "",
-    "modLimitTooltipP1": "Deadlock limite combien de fichiers d'extension peuvent être chargés à la fois. Le maximum habituel est {{max}}.",
-    "modLimitTooltipP2": "",
-    "modLimitTooltipP3": "",
-    "modLimitTooltipStatHeading": "",
-    "modLimitTooltipStatEnabled_one": "",
-    "modLimitTooltipStatEnabled_other": "",
-    "modLimitTooltipStatLibrary_one": "",
-    "modLimitTooltipStatLibrary_other": "",
-    "modLimitTooltipStatVpks_one": "",
-    "modLimitTooltipStatVpks_other": "",
     "updateAll": "",
     "updateAllDescription": "",
     "updateAvailableCount_one": "",
@@ -2163,8 +2151,7 @@
   },
   "developer": {
     "title": "",
-    "description": "",
-    "placeholder": ""
+    "description": ""
   },
   "contextMenu": {
     "shareUrl": "Partager",

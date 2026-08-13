@@ -229,18 +229,6 @@
     "libraryModsNoun_one": "мод",
     "libraryModsNoun_other": "модове",
     "vpkFilesNoun": "addon файлове",
-    "vpkLimitBadgeNear": "Близо до лимита",
-    "vpkLimitBadgeAtLimit": "Лимит достигнат",
-    "modLimitTooltipP1": "",
-    "modLimitTooltipP2": "Вашата библиотека може да съдържа повече модове, тъй като един мод може да включва няколко допълнителни файла.",
-    "modLimitTooltipP3": "Първата двойка показва активираните модове в сравнение с цялата ви библиотека. Втората показва колко addon файла използват тези активирани модове, в сравнение с максималния брой.",
-    "modLimitTooltipStatHeading": "Какво означава всяка цифра:",
-    "modLimitTooltipStatEnabled_one": "",
-    "modLimitTooltipStatEnabled_other": "",
-    "modLimitTooltipStatLibrary_one": "",
-    "modLimitTooltipStatLibrary_other": "",
-    "modLimitTooltipStatVpks_one": "",
-    "modLimitTooltipStatVpks_other": "",
     "updateAll": "Актуализиране на всички",
     "updateAllDescription": "Изтегляне и инсталиране на най-новата версия на всички ваши модове",
     "updateAvailableCount_one": "",
@@ -2163,8 +2151,7 @@
   },
   "developer": {
     "title": "",
-    "description": "",
-    "placeholder": ""
+    "description": ""
   },
   "contextMenu": {
     "shareUrl": "",

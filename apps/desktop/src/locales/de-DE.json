@@ -229,18 +229,6 @@
     "libraryModsNoun_one": "mod",
     "libraryModsNoun_other": "mods",
     "vpkFilesNoun": "Addon-Dateien",
-    "vpkLimitBadgeNear": "Der Obergrenze nah",
-    "vpkLimitBadgeAtLimit": "Auf der Obergrenze",
-    "modLimitTooltipP1": "Deadlock begrenzt, wie viele Addon-Dateien das Spiel auf einmal laden kann. Die übliche Obergrenze ist {{max}}.",
-    "modLimitTooltipP2": "Deine Bibliothek kann immer noch mehr Mods auflisten, da ein Mod mehrere Addon-Dateien beinhalten kann.",
-    "modLimitTooltipP3": "Das erster Paar sind aktivierte Mods gegen die Anzahl an Mods in deiner Mo",
-    "modLimitTooltipStatHeading": "Was jede Nummer ist:",
-    "modLimitTooltipStatEnabled_one": "{{count}} Mod aktiviert.",
-    "modLimitTooltipStatEnabled_other": "{{count}} Mods aktiviert.",
-    "modLimitTooltipStatLibrary_one": "{{count}} Mod in deiner Bibliothek.",
-    "modLimitTooltipStatLibrary_other": "{{count}} Mods in deiner Bibliothek.",
-    "modLimitTooltipStatVpks_one": "{{count}} Addon-Datei von aktivierten Mods.",
-    "modLimitTooltipStatVpks_other": "{{count}} Addon-Dateien von aktivierten Mods.",
     "updateAll": "Alle updaten",
     "updateAllDescription": "Lade die neuesten Versionen deiner Mods herunter und installiere sie",
     "updateAvailableCount_one": "{{count}} Update verfügbar",
@@ -2163,8 +2151,7 @@
   },
   "developer": {
     "title": "Entwicklertools",
-    "description": "",
-    "placeholder": ""
+    "description": ""
   },
   "contextMenu": {
     "shareUrl": "Teilen",
