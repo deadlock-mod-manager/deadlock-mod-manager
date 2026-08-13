@@ -127,6 +127,16 @@ describe("plugin exclusion via manifest disabledPlugins", () => {
     expect(result.pluginSettings).toEqual({ themes: themeSettings(undefined) });
   });
 
+  it("treats a non-string active theme as no selection", () => {
+    const result = applyPluginSettings(
+      { enabledPlugins: { background: true }, pluginSettings: {} },
+      "themes",
+      { activeSection: "pre-defined", activeTheme: null },
+    );
+
+    expect(result.enabledPlugins).toBeUndefined();
+  });
+
   it("settings for a plugin with its own toggle never change enablement", () => {
     const result = applyPluginSettings(
       { enabledPlugins: { background: true }, pluginSettings: {} },

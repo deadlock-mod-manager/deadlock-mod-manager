@@ -30,14 +30,17 @@ const getExcludedPluginIds = (
   ]);
 
 const hasActiveTheme = (value: unknown): value is ThemePluginSettings =>
-  typeof value === "object" && value !== null && "activeTheme" in value;
+  typeof value === "object" &&
+  value !== null &&
+  "activeTheme" in value &&
+  typeof value.activeTheme === "string";
 
 const clearActiveTheme = (
   pluginSettings: State["pluginSettings"],
   pluginId: string,
 ): State["pluginSettings"] => {
   const settings = pluginSettings[pluginId];
-  if (!hasActiveTheme(settings) || settings.activeTheme === undefined) {
+  if (!hasActiveTheme(settings)) {
     return pluginSettings;
   }
 
@@ -94,7 +97,7 @@ export const applyPluginSettings = (
   value: unknown,
 ): Partial<PluginSliceState> => {
   const pluginSettings = { ...state.pluginSettings, [pluginId]: value };
-  if (!hasActiveTheme(value) || value.activeTheme === undefined) {
+  if (!hasActiveTheme(value)) {
     return { pluginSettings };
   }
 
