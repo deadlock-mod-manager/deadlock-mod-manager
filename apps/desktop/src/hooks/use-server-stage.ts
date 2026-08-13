@@ -1,6 +1,7 @@
 import type { ServerBrowserEntry } from "@deadlock-mods/shared";
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useRef, useState } from "react";
+import { deadworksRegistryFor } from "@/components/server-browser/server-join/deadworks-content";
 import { getModDownloads } from "@/lib/api-client";
 import { downloadManager } from "@/lib/download/manager";
 import logger from "@/lib/logger";
@@ -21,6 +22,7 @@ export type ServerStagingPhase =
   | "awaiting-file-selection"
   | "awaiting-custom-confirm"
   | "downloading-custom"
+  | "downloading-server-content"
   | "patching-gameinfo"
   | "ready"
   | "error";
@@ -328,6 +330,20 @@ export const useServerStage = () => {
               "User declined custom-provider downloads; skipping them",
             );
           }
+        }
+
+        const deadworksRegistry = deadworksRegistryFor(server);
+        if (deadworksRegistry) {
+          setState((s) => ({
+            ...s,
+            phase: "downloading-server-content",
+            currentRequirement: null,
+          }));
+          await invoke("download_deadworks_content", {
+            registryUrl: deadworksRegistry,
+            serverId: server.id,
+            serverFolder: folderName,
+          });
         }
 
         setState((s) => ({

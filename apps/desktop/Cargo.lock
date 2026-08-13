@@ -1366,6 +1366,7 @@ version = "1.1.0"
 dependencies = [
  "aes 0.8.4",
  "base64 0.22.1",
+ "bzip2",
  "cbc 0.1.2",
  "chrono",
  "clap",

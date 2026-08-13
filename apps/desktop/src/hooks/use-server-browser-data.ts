@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useDeferredValue, useMemo } from "react";
 import type { ServerFiltersValue } from "@/components/server-browser/server-filters";
 import { getRelaysHealth, getServerFacets, getServers } from "@/lib/api-client";
+import { useServerPings } from "./use-server-pings";
 
 const SERVERS_REFETCH_INTERVAL_MS = 15_000;
 const RELAYS_REFETCH_INTERVAL_MS = 30_000;
@@ -53,6 +54,7 @@ export const useServerBrowserData = (filters: ServerFiltersValue) => {
   });
 
   const rawServers = serversQuery.data?.servers ?? [];
+  const { pings, query: pingsQuery } = useServerPings(rawServers);
   const relays = relaysQuery.data?.relays ?? [];
   const facets = facetsQuery.data;
 
@@ -64,16 +66,27 @@ export const useServerBrowserData = (filters: ServerFiltersValue) => {
     return rawServers.filter((s) => s.player_count < s.max_players);
   }, [rawServers, isJoinablePreset]);
 
-  const availableGameModes = facets?.game_modes ?? [];
-  const availableRegions =
-    facets?.regions ??
-    Array.from(
-      new Set(
-        relays
-          .map((r) => (r.region ?? "").trim().toLowerCase())
-          .filter((r) => r.length > 0),
-      ),
-    ).sort();
+  const availableGameModes = Array.from(
+    new Set([
+      ...(facets?.game_modes ?? []),
+      ...rawServers.map((server) => server.game_mode.trim()).filter(Boolean),
+    ]),
+  ).sort();
+  const availableRegions = Array.from(
+    new Set([
+      ...(facets?.regions ?? []),
+      ...relays
+        .map((relay) => (relay.region ?? "").trim().toLowerCase())
+        .filter(Boolean),
+      ...rawServers
+        .map((server) => (server.source_region ?? "").trim().toLowerCase())
+        .filter(Boolean),
+    ]),
+  ).sort();
+
+  const registryDegraded = serversQuery.data?.registry_degraded ?? false;
+  const registrySnapshotAgeMs =
+    serversQuery.data?.registry_snapshot_age_ms ?? null;
 
   const allRelaysFailed =
     !!serversQuery.data &&
@@ -89,6 +102,10 @@ export const useServerBrowserData = (filters: ServerFiltersValue) => {
     serversQuery,
     relaysQuery,
     facetsQuery,
+    pings,
+    pingsQuery,
     allRelaysFailed,
+    registryDegraded,
+    registrySnapshotAgeMs,
   };
 };

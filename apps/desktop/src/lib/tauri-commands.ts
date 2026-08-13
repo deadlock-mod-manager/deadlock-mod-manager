@@ -4,6 +4,16 @@ import type { ProfileVpkFile } from "@/types/profiles";
 import { BASE_URL } from "./api-client";
 import logger from "./logger";
 
+export interface ServerPingTarget {
+  id: string;
+  address: string;
+}
+
+export interface ServerPingResult {
+  id: string;
+  latencyMs: number | null;
+}
+
 export const initializeApiUrl = async (): Promise<void> => {
   try {
     await invoke("set_api_url", { apiUrl: BASE_URL });
@@ -54,6 +64,12 @@ export const isFlatpak = async (): Promise<boolean> => {
 
 export const updateFlatpak = async (url: string): Promise<void> => {
   return await invoke("update_flatpak", { url });
+};
+
+export const pingServers = async (
+  targets: ServerPingTarget[],
+): Promise<ServerPingResult[]> => {
+  return await invoke<ServerPingResult[]>("ping_servers", { targets });
 };
 
 export const analyzeLocalAddons = async (

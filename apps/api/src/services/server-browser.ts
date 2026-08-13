@@ -1,16 +1,21 @@
-import type { ServerBrowserFacetsResponse } from "@deadlock-mods/shared";
+import type {
+  ServerBrowserEntry,
+  ServerBrowserFacetsResponse,
+} from "@deadlock-mods/shared";
 import {
   CircuitOpenError,
   RelayHttpError,
   type ServerListItem,
 } from "@deadlock-mods/relay-client";
 import { CACHE_TTL } from "../lib/constants";
+import { env } from "../lib/env";
 import { logger as mainLogger } from "../lib/logger";
 import { cache } from "../lib/redis";
 import {
   relayRequestDurationSeconds,
   relayRequestsTotal,
 } from "../lib/relay-metrics";
+import { fetchDeadworksRegistryServers } from "./deadworks-registry";
 import { RelayDiscoveryService } from "./relay-discovery";
 
 const logger = mainLogger.child().withContext({
@@ -194,6 +199,13 @@ export class ServerBrowserService {
       }
     }
 
+    const registryServers = await this.fetchRegistryServers();
+    const registryServer = registryServers.find((server) => server.id === id);
+    if (registryServer) {
+      await cache.set(cacheKey, registryServer, CACHE_TTL.SERVER_DETAIL);
+      return registryServer;
+    }
+
     return null;
   }
 
@@ -209,6 +221,7 @@ export class ServerBrowserService {
     const relays = await this.discovery.getRelays();
     const client = this.discovery.getClient();
 
+    const registryServersPromise = this.fetchRegistryServers();
     const results = await Promise.all(
       relays.map(async (relay) => {
         const base = normalize(relay.url);
@@ -270,6 +283,7 @@ export class ServerBrowserService {
         }
       }),
     );
+    const registryServers = await registryServersPromise;
 
     const dedup = new Map<string, AggregatedServer>();
     let relaysQueried = 0;
@@ -297,11 +311,39 @@ export class ServerBrowserService {
       }
     }
 
+    for (const server of registryServers) {
+      const existing = dedup.get(server.id);
+      if (
+        !existing ||
+        new Date(server.last_seen).getTime() >
+          new Date(existing.last_seen).getTime()
+      ) {
+        dedup.set(server.id, server);
+      }
+    }
+
     return {
       servers: Array.from(dedup.values()),
       relaysQueried,
       relaysFailed,
     };
+  }
+
+  private async fetchRegistryServers(): Promise<ServerBrowserEntry[]> {
+    try {
+      const registryUrl = normalize(env.DEADWORKS_REGISTRY_URL);
+      return await cache.wrap(
+        `server-browser:v2:registry:${registryUrl}`,
+        () => fetchDeadworksRegistryServers(registryUrl),
+        CACHE_TTL.SERVERS_LIST,
+      );
+    } catch (error) {
+      logger
+        .withError(error)
+        .withMetadata({ registry: env.DEADWORKS_REGISTRY_URL })
+        .warn("Deadworks registry request failed");
+      return [];
+    }
   }
 
   private applyFilters(
@@ -323,6 +365,15 @@ export class ServerBrowserService {
     if (filters.region) {
       const region = filters.region.toLowerCase();
       out = out.filter((s) => s.source_region?.toLowerCase() === region);
+    }
+
+    if (filters.game_mode) {
+      const gameMode = filters.game_mode.toLowerCase();
+      out = out.filter((s) => s.game_mode.toLowerCase() === gameMode);
+    }
+
+    if (filters.has_players) {
+      out = out.filter((s) => s.player_count > 0);
     }
 
     if (typeof filters.password === "boolean") {

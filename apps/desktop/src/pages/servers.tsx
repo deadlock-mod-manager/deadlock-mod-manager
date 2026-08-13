@@ -12,6 +12,7 @@ import ServerTable from "@/components/server-browser/server-table";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
 import { useServerBrowserData } from "@/hooks/use-server-browser-data";
+import { useServerConnectProgress } from "@/hooks/use-server-connect-progress";
 
 const DEFAULT_FILTERS: ServerFiltersValue = {
   search: "",
@@ -26,13 +27,18 @@ const Servers = () => {
   const [filters, setFilters] = useState<ServerFiltersValue>(DEFAULT_FILTERS);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  useServerConnectProgress();
+
   const {
     servers,
     total,
     availableGameModes,
     availableRegions,
     serversQuery,
+    pings,
     allRelaysFailed,
+    registryDegraded,
+    registrySnapshotAgeMs,
   } = useServerBrowserData(filters);
 
   const selectedServer: ServerBrowserEntry | null = useMemo(() => {
@@ -75,6 +81,22 @@ const Servers = () => {
         </Alert>
       )}
 
+      {registryDegraded && (
+        <Alert>
+          <WarningIcon className='size-4' />
+          <AlertDescription>
+            {registrySnapshotAgeMs === null
+              ? t("servers.empty.registryDegraded")
+              : t("servers.empty.registryStale", {
+                  minutes: Math.max(
+                    1,
+                    Math.round(registrySnapshotAgeMs / 60000),
+                  ),
+                })}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <ErrorBoundary>
         <div className='flex min-h-0 flex-1 gap-4'>
           <ServerTable
@@ -83,6 +105,7 @@ const Servers = () => {
             onSelect={(s) => setSelectedId(s.id)}
             selectedId={selectedId}
             servers={servers}
+            pings={pings}
           />
 
           {servers.length > 0 && (

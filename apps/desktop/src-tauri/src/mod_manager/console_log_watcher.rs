@@ -7,7 +7,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 const CONSOLE_LOG_FILENAME: &str = "console.log";
 const POLL_INTERVAL_MS: u64 = 1500;
 
-fn get_console_log_path(game_path: &Path) -> PathBuf {
+pub(crate) fn get_console_log_path(game_path: &Path) -> PathBuf {
   game_path
     .join("game")
     .join("citadel")
@@ -15,7 +15,7 @@ fn get_console_log_path(game_path: &Path) -> PathBuf {
 }
 
 /// Polls `console.log` from `last_offset`, returns any new bytes appended.
-fn read_new_content(path: &Path, last_offset: &mut u64) -> Option<String> {
+pub(crate) fn read_new_content(path: &Path, last_offset: &mut u64) -> Option<String> {
   let mut file = std::fs::File::open(path).ok()?;
   let metadata = file.metadata().ok()?;
   let current_len = metadata.len();
