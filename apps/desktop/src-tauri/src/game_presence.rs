@@ -171,7 +171,9 @@ fn spawn_watcher(app_handle: &AppHandle, presence_enabled: bool) -> Result<(), E
     // Only clear shared status if we are still the active watcher (not superseded
     // by a restart), otherwise we'd stomp the newer watcher's state.
     if let Ok(mut current) = CURRENT_RUNNING.lock()
-      && current.as_ref().is_some_and(|flag| Arc::ptr_eq(flag, &done_flag))
+      && current
+        .as_ref()
+        .is_some_and(|flag| Arc::ptr_eq(flag, &done_flag))
     {
       current.take();
       STATUS.store(Status::Inactive as u8, Ordering::Relaxed);

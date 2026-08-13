@@ -95,7 +95,10 @@ const NON_HERO_TOKENS: &[&str] = &[
   "gingerbread",
 ];
 
-fn is_weapon_path(path: &str) -> bool {
+/// Whether a lowercased path names a weapon rather than the hero's body. Shared
+/// with `vdata`, which uses it to keep a gun out of the preview slot when the
+/// authoritative model lookup has nothing to say.
+pub(crate) fn is_weapon_path(path: &str) -> bool {
   WEAPON_TOKENS.iter().any(|token| path.contains(token))
 }
 
@@ -305,8 +308,18 @@ pub(crate) fn paint_target(
   let mut painted = Vec::new();
   let mut skipped = Vec::new();
 
+  // A pattern brings its own palette, so it replaces the picked color rather
+  // than sitting on top of it. Particles are the exception: there is no way to
+  // express a pattern in a particle color parameter, so ability effects keep
+  // taking the color even when the textures beside them take the pattern.
+  let texture_recolor = if pattern.is_some() {
+    None
+  } else {
+    Some(recolor)
+  };
+
   for entry_path in &plan.textures {
-    match repaint_texture(&archive, &files_dir, entry_path, recolor, pattern) {
+    match repaint_texture(&archive, &files_dir, entry_path, texture_recolor, pattern) {
       Ok(()) => painted.push(entry_path.clone()),
       Err(error) => {
         // One unpaintable texture (an HDR map, an exotic format) must not sink
@@ -329,15 +342,14 @@ pub(crate) fn paint_target(
   }
 
   log::info!(
-    "[Foundry] Painted {} ({} entries, {} skipped) at hue {:.0}{}",
+    "[Foundry] Painted {} ({} entries, {} skipped) {}",
     target.id(),
     painted.len(),
     skipped.len(),
-    recolor.hue,
-    pattern.map_or(String::new(), |pattern| format!(
-      " with pattern {:?}",
-      pattern.style
-    )),
+    match pattern {
+      Some(pattern) => format!("with pattern {:?}", pattern.style),
+      None => format!("at hue {:.0}", recolor.hue),
+    },
   );
 
   Ok(FoundryPaintResult {
@@ -356,7 +368,7 @@ fn write_workspace_entry(files_dir: &Path, entry_path: &str, bytes: &[u8]) -> Re
   Ok(())
 }
 
-/// Recolor a texture and lay the pattern over it, in one decode/encode pass.
+/// Recolor a texture, lay a pattern over it, or both — in one decode/encode pass.
 ///
 /// The re-encode is the whole cost of a paint (seconds per 2K BC7 texture), so
 /// the two transforms deliberately share a single decode rather than running as
@@ -365,7 +377,7 @@ fn repaint_texture(
   archive: &source2_model::vpk_extract::VpkArchive,
   files_dir: &Path,
   entry_path: &str,
-  recolor: vpkmanager::Recolor,
+  recolor: Option<vpkmanager::Recolor>,
   pattern: Option<vpkmanager::Pattern>,
 ) -> Result<(), Error> {
   let original = archive

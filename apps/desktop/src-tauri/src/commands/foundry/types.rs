@@ -51,6 +51,10 @@ pub struct FoundryManifest {
   pub other: Vec<FoundryEntry>,
   /// Sounds grouped into ability / voice / weapon buckets for the sound tab.
   pub sound_groups: Vec<FoundrySoundGroup>,
+  /// The hero's body model, resolved through `scripts/heroes.vdata_c` rather
+  /// than guessed from the file list. What the preview opens on. `None` when
+  /// the skin ships no model at all.
+  pub primary_model_path: Option<String>,
 }
 
 /// One bucket in the sound browser: an ability slot, the hero's voice lines, or

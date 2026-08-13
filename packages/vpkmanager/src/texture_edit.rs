@@ -141,27 +141,33 @@ fn finish(original: &[u8], image: &Image) -> Result<EditedTexture> {
 /// Set every colored pixel's hue and scale its saturation/brightness, then
 /// rebuild the mip chain. The mode for skins and weapons: shading survives.
 pub fn recolor_texture(original: &[u8], recolor: Recolor) -> Result<EditedTexture> {
-    paint_texture(original, recolor, None)
+    paint_texture(original, Some(recolor), None)
 }
 
-/// Recolor a texture and, when given one, lay a pattern over the result — in a
-/// single decode/encode pass.
+/// Apply a recolor, a pattern, or both — in a single decode/encode pass.
 ///
 /// Chaining `recolor_texture` into `pattern_texture` would decode the texture,
 /// re-encode its whole mip chain, then decode and re-encode it again. The BCn
 /// encode is essentially the entire cost of a paint, so paying it twice doubles
 /// the wait for no benefit: both transforms are per-pixel and compose.
 ///
-/// The order is recolor first, pattern second. That way the pattern is shaped to
-/// the brightness of the *recolored* pixel; patterning first would let the hue
-/// set flatten the pattern back onto one colour.
+/// A pattern carries its own colors, so the caller passes `recolor: None` when
+/// one is in play: the pattern then lays over the texture's original pixels
+/// instead of over a hue-shifted version of them. Tinting first would push the
+/// base color through wherever the pattern blends below full strength, which
+/// reads as the picked hue contaminating the palette.
+///
+/// When both are given the recolor runs first, so the pattern is shaped to the
+/// brightness of the recolored pixel rather than being flattened by it.
 pub fn paint_texture(
     original: &[u8],
-    recolor: Recolor,
+    recolor: Option<Recolor>,
     pattern: Option<crate::pattern::Pattern>,
 ) -> Result<EditedTexture> {
     let mut image = source2::decode(original)?;
-    map_pixels(&mut image, |rgb| set_color(rgb, recolor))?;
+    if let Some(recolor) = recolor {
+        map_pixels(&mut image, |rgb| set_color(rgb, recolor))?;
+    }
     if let Some(pattern) = pattern {
         crate::pattern::paint_image(&mut image, pattern)?;
     }
