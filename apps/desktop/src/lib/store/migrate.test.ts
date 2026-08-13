@@ -149,7 +149,24 @@ describe("safeMigrate", () => {
   it("LATEST_VERSION matches the highest step target", () => {
     const max = Math.max(...MIGRATION_STEPS.map((s) => s.to));
     expect(LATEST_VERSION).toBe(max);
-    expect(LATEST_VERSION).toBe(24);
+    expect(LATEST_VERSION).toBe(25);
+  });
+
+  it("v25 (themes switch): drops the leftover enabledPlugins.themes entry", () => {
+    const state: Record<string, unknown> = {
+      enabledPlugins: { themes: false, background: true },
+    };
+
+    const result = safeMigrate(state, 24) as Record<string, unknown>;
+
+    const enabledPlugins = result.enabledPlugins as Record<string, boolean>;
+    expect("themes" in enabledPlugins).toBe(false);
+    expect(enabledPlugins.background).toBe(true);
+  });
+
+  it("v25 (themes switch): tolerates a missing enabledPlugins map", () => {
+    const result = safeMigrate({}, 24) as Record<string, unknown>;
+    expect(result.enabledPlugins).toBeUndefined();
   });
 
   describe("specific step idempotency", () => {

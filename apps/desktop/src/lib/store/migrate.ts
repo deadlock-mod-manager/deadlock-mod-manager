@@ -374,6 +374,15 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       state.steamPath ??= "";
     },
   },
+  {
+    to: 25,
+    label: "remove-themes-plugin-switch",
+    apply: (state) => {
+      // Themes is alwaysEnabled now, so nothing reads this persisted switch.
+      if (!isPlainObject(state.enabledPlugins)) return;
+      delete state.enabledPlugins.themes;
+    },
+  },
 ];
 
 const STEP_TARGET_VERSIONS: readonly number[] = MIGRATION_STEPS.map(
