@@ -24,6 +24,7 @@ mod reports;
 mod steam_user;
 mod updater_channel;
 mod utils;
+mod vpk_backfill;
 
 use tauri_plugin_log::{Target, TargetKind};
 use tauri_plugin_store::StoreExt;

@@ -8020,9 +8020,14 @@ dependencies = [
  "half",
  "image",
  "intel_tex_2",
+ "log",
  "lz4_flex",
  "rayon",
  "ruzstd",
+ "serde",
+ "serde_json",
+ "sha2 0.10.9",
+ "tempfile",
  "thiserror 2.0.18",
 ]
 

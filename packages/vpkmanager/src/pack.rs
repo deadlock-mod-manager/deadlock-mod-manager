@@ -20,6 +20,11 @@ const INLINE_ARCHIVE_INDEX: u16 = 0x7fff;
 const ENTRY_TERMINATOR: u16 = 0xffff;
 const CRC32: Crc<u32> = Crc::<u32>::new(&CRC_32_ISO_HDLC);
 
+/// The CRC-32 a VPK directory entry records for its file's bytes.
+pub(crate) fn checksum(bytes: &[u8]) -> u32 {
+    CRC32.checksum(bytes)
+}
+
 struct PackedEntry {
     filename: String,
     crc32: u32,

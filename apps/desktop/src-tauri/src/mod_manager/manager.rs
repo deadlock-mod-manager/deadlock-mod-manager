@@ -10,9 +10,6 @@ use crate::mod_manager::{
   mod_repository::{Mod, ModRepository},
   shard::{self, ProfileBase, ShardIndex, ShardLocator},
   steam_manager::SteamManager,
-  vpk_manager::staging::VpkStaging,
-  vpk_manager::{MissingVpkPolicy, ShardAssignment, ShardPlacement, SwapRequest, VpkManager},
-  vpk_manifest::{ProfileVpkManifest, ProfileVpkManifestEntry},
 };
 use log;
 use std::{
@@ -20,6 +17,11 @@ use std::{
   path::{Component, Path, PathBuf},
 };
 use tauri::Manager;
+use vpkmanager::ledger::{ModEntry, ProfileLedger};
+use vpkmanager::naming;
+use vpkmanager::ops::{self, MissingVpkPolicy, ShardAssignment, ShardPlacement, SwapRequest};
+use vpkmanager::reconcile::Trust;
+use vpkmanager::staging::VpkStaging;
 
 mod gameinfo;
 mod lifecycle;
@@ -29,7 +31,6 @@ pub struct ModManager {
   steam_manager: SteamManager,
   process_manager: GameProcessManager,
   config_manager: GameConfigManager,
-  vpk_manager: VpkManager,
   file_tree_analyzer: FileTreeAnalyzer,
   filesystem: FileSystemHelper,
   mod_repository: ModRepository,
@@ -55,7 +56,6 @@ impl ModManager {
       steam_manager: SteamManager::new(),
       process_manager: GameProcessManager::new(),
       config_manager: GameConfigManager::new(),
-      vpk_manager: VpkManager::new(),
       file_tree_analyzer: FileTreeAnalyzer::new(),
       filesystem: FileSystemHelper::new(),
       mod_repository: ModRepository::new(),
@@ -130,7 +130,7 @@ impl ModManager {
       }
       None => addons_path,
     };
-    ProfileBase::new(profile_path)
+    Ok(ProfileBase::new(profile_path)?)
   }
 
   /// Profile folders may nest (`profiles/imported`), so this permits separators
@@ -222,11 +222,12 @@ impl ModManager {
   pub fn clear_mods(&mut self, profile_folder: Option<String>) -> Result<(), Error> {
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
 
-    let pending = self.vpk_manager.stage_clear_all_vpks(&addons_path)?;
-    if let Err(error) = ProfileVpkManifest::default().save(&addons_path) {
-      return Err(pending.rollback(error));
+    let pending = ops::stage_clear_all_vpks(&addons_path)?;
+    if let Err(error) = ProfileLedger::default().save(&addons_path) {
+      return Err(pending.rollback(error).into());
     }
     pending.commit();
+    self.sync_after_change(profile_folder.as_deref());
     Ok(())
   }
 
@@ -327,10 +328,7 @@ impl ModManager {
       .app_handle
       .as_ref()
       .ok_or(Error::AppHandleNotInitialized)?;
-    app_handle
-      .path()
-      .app_local_data_dir()
-      .map_err(Error::Tauri)
+    app_handle.path().app_local_data_dir().map_err(Error::Tauri)
   }
 
   pub fn get_mods_store_path(&self) -> Result<std::path::PathBuf, Error> {
@@ -340,9 +338,9 @@ impl ModManager {
   pub fn get_profile_vpk_manifest(
     &self,
     profile_folder: Option<String>,
-  ) -> Result<ProfileVpkManifest, Error> {
+  ) -> Result<ProfileLedger, Error> {
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
-    ProfileVpkManifest::load(&addons_path)
+    Ok(ProfileLedger::load(&addons_path)?)
   }
 
   /// Validate and canonicalize a path to ensure it's within the allowed mods directory.
@@ -470,7 +468,7 @@ fn dir_size(path: &std::path::Path) -> u64 {
 #[cfg(test)]
 mod tests {
   use crate::mod_manager::shard::ShardIndex;
-  use crate::mod_manager::vpk_manifest::{ProfileVpkManifest, ProfileVpkManifestEntry};
+  use vpkmanager::ledger::{ModEntry, ProfileLedger};
 
   use super::*;
   use std::fs;
@@ -486,7 +484,6 @@ mod tests {
       steam_manager: SteamManager::new(),
       process_manager: GameProcessManager::new(),
       config_manager: GameConfigManager::new(),
-      vpk_manager: VpkManager::new(),
       file_tree_analyzer: FileTreeAnalyzer::new(),
       filesystem: FileSystemHelper::new(),
       mod_repository: ModRepository::new(),
@@ -519,7 +516,7 @@ mod tests {
   }
 
   fn count_enabled(dir: &std::path::Path) -> u32 {
-    crate::mod_manager::vpk_manager::VpkManager::count_enabled_vpks(dir)
+    naming::count_enabled_vpks(dir)
   }
 
   fn addons_base(temp: &tempfile::TempDir) -> crate::mod_manager::shard::ProfileBase {
@@ -576,7 +573,7 @@ mod tests {
   fn reorder_manifest_reconciliation_disables_entries_without_existing_vpks() {
     let temp = tempfile::tempdir().unwrap();
     let base = addons_base(&temp);
-    let mut entry = ProfileVpkManifestEntry {
+    let mut entry = ModEntry {
       enabled: true,
       current_vpks: vec!["pak01_dir.vpk".to_string()],
       ..Default::default()
@@ -594,7 +591,7 @@ mod tests {
     let temp = tempfile::tempdir().unwrap();
     let base = addons_base(&temp);
     write_vpk(&base, "pak01_dir.vpk");
-    let mut entry = ProfileVpkManifestEntry {
+    let mut entry = ModEntry {
       enabled: false,
       current_vpks: vec!["pak01_dir.vpk".to_string()],
       ..Default::default()
@@ -612,7 +609,7 @@ mod tests {
   /// exactly the order the engine was already loading it.
   #[test]
   fn legacy_profile_without_install_order_keeps_its_pak_order() {
-    let mut manifest = ProfileVpkManifest::default();
+    let mut manifest = ProfileLedger::default();
     for (mod_id, vpk) in [
       ("third", "pak03_dir.vpk"),
       ("first", "pak01_dir.vpk"),
@@ -620,7 +617,7 @@ mod tests {
     ] {
       manifest.mods.insert(
         mod_id.to_string(),
-        ProfileVpkManifestEntry {
+        ModEntry {
           enabled: true,
           current_vpks: vec![vpk.to_string()],
           ..Default::default()
@@ -643,10 +640,10 @@ mod tests {
   /// that never got one are appended behind them rather than interleaved.
   #[test]
   fn explicit_install_order_precedes_unordered_mods() {
-    let mut manifest = ProfileVpkManifest::default();
+    let mut manifest = ProfileLedger::default();
     manifest.mods.insert(
       "unordered".to_string(),
-      ProfileVpkManifestEntry {
+      ModEntry {
         enabled: true,
         current_vpks: vec!["pak01_dir.vpk".to_string()],
         ..Default::default()
@@ -654,7 +651,7 @@ mod tests {
     );
     manifest.mods.insert(
       "ordered".to_string(),
-      ProfileVpkManifestEntry {
+      ModEntry {
         enabled: true,
         order: Some(7),
         current_vpks: vec!["pak09_dir.vpk".to_string()],
@@ -677,7 +674,7 @@ mod tests {
   /// sharded profile is not reshuffled by a reorder that changes nothing.
   #[test]
   fn unordered_mods_sort_by_shard_then_pak_number() {
-    let mut manifest = ProfileVpkManifest::default();
+    let mut manifest = ProfileLedger::default();
     for (mod_id, shard, vpk) in [
       ("shard2_low", 2, "pak01_dir.vpk"),
       ("shard1_high", 1, "pak80_dir.vpk"),
@@ -685,7 +682,7 @@ mod tests {
     ] {
       manifest.mods.insert(
         mod_id.to_string(),
-        ProfileVpkManifestEntry {
+        ModEntry {
           enabled: true,
           shard: ShardIndex::new(shard).unwrap(),
           current_vpks: vec![vpk.to_string()],
@@ -707,10 +704,10 @@ mod tests {
 
   #[test]
   fn disabled_and_empty_entries_are_not_assigned_a_slot() {
-    let mut manifest = ProfileVpkManifest::default();
+    let mut manifest = ProfileLedger::default();
     manifest.mods.insert(
       "disabled".to_string(),
-      ProfileVpkManifestEntry {
+      ModEntry {
         enabled: false,
         current_vpks: vec!["pak01_dir.vpk".to_string()],
         ..Default::default()
@@ -718,7 +715,7 @@ mod tests {
     );
     manifest.mods.insert(
       "enabled_but_empty".to_string(),
-      ProfileVpkManifestEntry {
+      ModEntry {
         enabled: true,
         ..Default::default()
       },
@@ -753,13 +750,11 @@ mod tests {
     .unwrap();
 
     let base = crate::mod_manager::shard::ProfileBase::new(&base_path).unwrap();
-    let mut manifest = ProfileVpkManifest::load(&base).unwrap();
+    let mut manifest = ProfileLedger::load(&base).unwrap();
     let assignments = ModManager::ordered_assignments(&manifest);
     assert_eq!(assignments.len(), 150);
 
-    let placements = crate::mod_manager::vpk_manager::VpkManager::new()
-      .reorder_vpks_sharded(&assignments, &base)
-      .unwrap();
+    let placements = ops::reorder_vpks_sharded(&assignments, &base).unwrap();
 
     // Load order is unchanged: mod N still loads Nth overall.
     assert_eq!(

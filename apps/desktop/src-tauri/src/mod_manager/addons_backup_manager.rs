@@ -1,7 +1,6 @@
 use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 use crate::mod_manager::shard;
-use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use chrono::{DateTime, Local};
 use log;
 use serde::{Deserialize, Serialize};
@@ -10,21 +9,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::Emitter;
-
-#[derive(Default)]
-struct BackupStats {
-  bytes: u64,
-  files: u64,
-  vpks: u32,
-}
-
-impl BackupStats {
-  fn add(&mut self, other: Self) {
-    self.bytes += other.bytes;
-    self.files += other.files;
-    self.vpks += other.vpks;
-  }
-}
+use vpkmanager::ledger::ProfileLedger;
+use vpkmanager::reconcile::Trust;
+use vpkmanager::snapshot::{self, SnapshotStats as BackupStats};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AddonsBackup {
@@ -174,13 +161,14 @@ impl AddonsBackupManager {
       let root_name = source_root
         .file_name()
         .ok_or_else(|| Error::BackupCreationFailed("Addon shard root has no name".to_string()))?;
-      let copied = Self::copy_tree(source_root, &staging_path.join(root_name)).map_err(|e| {
-        let _ = fs::remove_dir_all(&staging_path);
-        Error::BackupCreationFailed(format!(
-          "Failed to copy addon folder {}: {e}",
-          source_root.display()
-        ))
-      })?;
+      let copied =
+        snapshot::copy_tree(source_root, &staging_path.join(root_name)).map_err(|e| {
+          let _ = fs::remove_dir_all(&staging_path);
+          Error::BackupCreationFailed(format!(
+            "Failed to copy addon folder {}: {e}",
+            source_root.display()
+          ))
+        })?;
       stats.add(copied);
 
       let progress = 20 + (((index + 1) * 70 / shard_roots.len().max(1)) as u32);
@@ -270,84 +258,28 @@ impl AddonsBackupManager {
     format!("addons-backup-{}", now.format("%Y-%m-%d_%H-%M-%S"))
   }
 
-  fn copy_tree(source: &Path, destination: &Path) -> std::io::Result<BackupStats> {
-    fs::create_dir_all(destination)?;
-    let mut stats = BackupStats::default();
-
-    for entry in fs::read_dir(source)? {
-      let entry = entry?;
-      let source_path = entry.path();
-      let entry_name = entry.file_name();
-      let entry_name = entry_name.to_string_lossy();
-      if entry_name.as_ref() == ".dmm.json.tmp" {
-        // A temp manifest with no canonical `.dmm.json` sibling is the only
-        // surviving record of this profile's mod ownership (the process crashed
-        // between writing the temp file and renaming it into place). Canonicalize
-        // it into the backup as `.dmm.json` so restore and validation see it.
-        // When `.dmm.json` already exists the temp file is stale and skipped.
-        if !source.join(".dmm.json").exists() {
-          let destination_path = destination.join(".dmm.json");
-          let bytes = fs::copy(&source_path, &destination_path)?;
-          stats.bytes += bytes;
-          stats.files += 1;
-        }
-        continue;
-      }
-      if shard::is_internal_artifact(entry_name.as_ref()) {
-        continue;
-      }
-      let file_type = entry.file_type()?;
-      if file_type.is_symlink() {
-        log::warn!("Skipping symlink while copying addons backup: {source_path:?}");
-        continue;
-      }
-
-      let destination_path = destination.join(entry.file_name());
-      if file_type.is_dir() {
-        stats.add(Self::copy_tree(&source_path, &destination_path)?);
-      } else if file_type.is_file() {
-        let bytes = fs::copy(&source_path, &destination_path)?;
-        stats.bytes += bytes;
-        stats.files += 1;
-        if source_path
-          .extension()
-          .is_some_and(|extension| extension.eq_ignore_ascii_case("vpk"))
-        {
-          stats.vpks += 1;
-        }
+  /// A restore swaps out every VPK in the install at once, from a snapshot that
+  /// may be months old. The files carry their own fingerprints, so reconciling
+  /// each profile afterwards is what tells the app which mods it just got back.
+  fn reconcile_restored_profiles(addons_path: &Path) {
+    for base in shard::profiles_in(addons_path) {
+      match vpkmanager::reconcile::sync_profile(&base, Trust::EveryFile) {
+        Ok(report) if !report.is_clean() => log::info!(
+          "Reconciled restored profile {}: {}",
+          base.path().display(),
+          report.summary()
+        ),
+        Ok(_) => {}
+        Err(error) => log::warn!(
+          "Could not reconcile restored profile {}: {error}",
+          base.path().display()
+        ),
       }
     }
-
-    Ok(stats)
-  }
-
-  fn tree_stats(path: &Path) -> std::io::Result<BackupStats> {
-    let mut stats = BackupStats::default();
-    for entry in fs::read_dir(path)? {
-      let entry = entry?;
-      let entry_path = entry.path();
-      let file_type = entry.file_type()?;
-      if file_type.is_symlink() {
-        continue;
-      }
-      if file_type.is_dir() {
-        stats.add(Self::tree_stats(&entry_path)?);
-      } else if file_type.is_file() {
-        stats.bytes += entry.metadata()?.len();
-        stats.files += 1;
-        if entry_path
-          .extension()
-          .is_some_and(|extension| extension.eq_ignore_ascii_case("vpk"))
-        {
-          stats.vpks += 1;
-        }
-      }
-    }
-    Ok(stats)
   }
 
   fn validate_snapshot(root: &Path) -> Result<(), Error> {
-    ProfileVpkManifest::validate_tree(root)
+    ProfileLedger::validate_tree(root)
       .map_err(|error| Error::BackupRestoreFailed(error.to_string()))
   }
 
@@ -438,7 +370,7 @@ impl AddonsBackupManager {
         && let Some(filename) = path.file_name().and_then(|n| n.to_str())
         && filename.starts_with("addons-backup-")
       {
-        let stats = Self::tree_stats(&path).unwrap_or_default();
+        let stats = snapshot::tree_stats(&path).unwrap_or_default();
 
         let created_at = if let Some(timestamp) = self.parse_backup_filename(filename) {
           timestamp
@@ -533,13 +465,12 @@ impl AddonsBackupManager {
     let restore_result = (|| -> Result<(), Error> {
       if matches!(strategy, RestoreStrategy::Merge) {
         for root_name in &staged_roots {
-          Self::copy_tree(&staging_path.join(root_name), &citadel_path.join(root_name)).map_err(
-            |error| {
+          snapshot::copy_tree(&staging_path.join(root_name), &citadel_path.join(root_name))
+            .map_err(|error| {
               Error::BackupRestoreFailed(format!(
                 "Failed to prepare existing addon folder for merge: {error}"
               ))
-            },
-          )?;
+            })?;
         }
       }
 
@@ -548,13 +479,13 @@ impl AddonsBackupManager {
           let root_name = shard_index.root_name();
           let source = backup_path.join(&root_name);
           if source.exists() {
-            Self::copy_tree(&source, &citadel_path.join(root_name)).map_err(|error| {
+            snapshot::copy_tree(&source, &citadel_path.join(root_name)).map_err(|error| {
               Error::BackupRestoreFailed(format!("Failed to restore addon folder: {error}"))
             })?;
           }
         }
       } else {
-        Self::copy_tree(&backup_path, &addons_path).map_err(|error| {
+        snapshot::copy_tree(&backup_path, &addons_path).map_err(|error| {
           Error::BackupRestoreFailed(format!("Failed to restore legacy addon backup: {error}"))
         })?;
       }
@@ -585,6 +516,8 @@ impl AddonsBackupManager {
         staging_path.display()
       );
     }
+
+    Self::reconcile_restored_profiles(&addons_path);
 
     log::info!("Backup restored successfully");
     Ok(())
@@ -642,7 +575,7 @@ impl AddonsBackupManager {
     }
 
     let metadata = fs::metadata(&backup_path)?;
-    let stats = Self::tree_stats(&backup_path)?;
+    let stats = snapshot::tree_stats(&backup_path)?;
 
     let created_at = if let Some(timestamp) = self.parse_backup_filename(file_name) {
       timestamp
@@ -695,7 +628,7 @@ mod tests {
     let citadel = temp.path().join("citadel");
     let profile = "profile_x";
 
-    let mut manifest = ProfileVpkManifest::default();
+    let mut manifest = ProfileLedger::default();
     manifest.mark_enabled(
       "on_base",
       vec!["pak01_dir.vpk".to_string()],
@@ -728,7 +661,7 @@ mod tests {
     for root_name in shard::all_shards().map(|index| index.root_name()) {
       let source = citadel.join(&root_name);
       if source.exists() {
-        stats.add(AddonsBackupManager::copy_tree(&source, &destination.join(&root_name)).unwrap());
+        stats.add(snapshot::copy_tree(&source, &destination.join(&root_name)).unwrap());
       }
     }
     stats
@@ -769,7 +702,7 @@ mod tests {
     let citadel = sharded_citadel(&temp);
     let snapshot = temp.path().join("snapshot");
 
-    AddonsBackupManager::copy_tree(&citadel.join("addons"), &snapshot.join("addons")).unwrap();
+    snapshot::copy_tree(&citadel.join("addons"), &snapshot.join("addons")).unwrap();
 
     let error = AddonsBackupManager::validate_snapshot(&snapshot).unwrap_err();
     assert!(error.to_string().contains("references missing VPKs"));
@@ -814,7 +747,7 @@ mod tests {
     let temp = tempfile::tempdir().unwrap();
     let citadel = temp.path().join("citadel");
     let base = citadel.join("addons").join("profile_x");
-    let mut manifest = ProfileVpkManifest::default();
+    let mut manifest = ProfileLedger::default();
     manifest.mark_enabled(
       "123",
       vec!["pak01_dir.vpk".to_string()],
@@ -830,7 +763,7 @@ mod tests {
     write(&base.join("pak01_dir.vpk"), b"vpk");
     let snapshot = temp.path().join("snapshot");
 
-    AddonsBackupManager::copy_tree(&citadel.join("addons"), &snapshot.join("addons")).unwrap();
+    snapshot::copy_tree(&citadel.join("addons"), &snapshot.join("addons")).unwrap();
 
     let restored = snapshot.join("addons").join("profile_x");
     assert!(restored.join(".dmm.json").is_file());

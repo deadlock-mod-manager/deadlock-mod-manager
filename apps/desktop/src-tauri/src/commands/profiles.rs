@@ -3,9 +3,10 @@ use crate::download_manager::DownloadTask;
 use crate::errors::Error;
 use crate::mod_manager::Mod;
 use crate::mod_manager::shard::{ShardIndex, ShardLocator};
-use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use serde::{Deserialize, Serialize};
 use tauri::{Emitter, Manager};
+use vpkmanager::ledger::ProfileLedger;
+use vpkmanager::ops;
 
 use super::downloads::get_download_manager;
 use super::mods::InstalledModInfo;
@@ -176,28 +177,15 @@ pub async fn get_profile_installed_vpks(
     return Ok(Vec::new());
   }
 
-  let mut vpk_files = Vec::new();
-
   let profile_base = crate::mod_manager::shard::ProfileBase::new(addons_path)?;
-
-  for (shard_index, dir) in profile_base.existing_shards() {
-    for entry in std::fs::read_dir(&dir)? {
-      let path = entry?.path();
-
-      if path.is_file()
-        && let Some(file_name) = path.file_name().and_then(|n| n.to_str())
-        && file_name.ends_with(".vpk")
-      {
-        let locator = ShardLocator::new(shard_index, file_name);
-        vpk_files.push(ProfileVpkFile {
-          shard: shard_index,
-          filename: file_name.to_string(),
-          locator: locator.to_wire(),
-        });
-        log::debug!("Found VPK file: {file_name}");
-      }
-    }
-  }
+  let vpk_files: Vec<ProfileVpkFile> = vpkmanager::scan::scan_profile(&profile_base)?
+    .into_iter()
+    .map(|vpk| ProfileVpkFile {
+      locator: ShardLocator::new(vpk.shard, &vpk.filename).to_wire(),
+      shard: vpk.shard,
+      filename: vpk.filename,
+    })
+    .collect();
 
   log::info!("Found {} VPK files in profile", vpk_files.len());
   Ok(vpk_files)
@@ -272,7 +260,7 @@ pub async fn delete_profile_vpk(
 ) -> Result<(), Error> {
   log::info!("Deleting VPK {vpk_name} from profile {profile_folder:?}");
   let resolved = resolve_profile_vpk_path(profile_folder, &vpk_name)?;
-  let manifest = ProfileVpkManifest::open_for_write(&resolved.profile_base)?;
+  let manifest = ProfileLedger::open_for_write(&resolved.profile_base)?;
   let is_managed = manifest.mods.values().any(|entry| {
     if entry.enabled {
       entry.shard == resolved.shard && entry.current_vpks.contains(&resolved.filename)
@@ -429,13 +417,12 @@ pub async fn import_profile_batch(
         .join("addons")
         .join(&final_profile_folder);
 
-      let vpk_manager = crate::mod_manager::vpk_manager::VpkManager::new();
       let mut vpks_found = false;
       let max_retries = 10;
       let mut retry_delay_ms = 100;
 
       for attempt in 0..max_retries {
-        match vpk_manager.find_prefixed_vpks(&verify_path, &mod_data.mod_id) {
+        match ops::find_prefixed_vpks(&verify_path, &mod_data.mod_id) {
           Ok(vpks) if !vpks.is_empty() => {
             log::info!(
               "Download completed for mod: {} (found {} VPKs after {} attempts)",
@@ -580,18 +567,28 @@ pub async fn import_profile_batch(
 #[tauri::command]
 pub async fn get_profile_vpk_manifest(
   profile_folder: Option<String>,
-) -> Result<ProfileVpkManifest, Error> {
+) -> Result<ProfileLedger, Error> {
   log::info!("Getting VPK manifest for profile: {profile_folder:?}");
 
-  let mut mod_manager = MANAGER.lock().unwrap();
-  mod_manager.hydrate_mods_from_manifest(profile_folder.clone())?;
-  mod_manager.get_profile_vpk_manifest(profile_folder)
+  let manifest = {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    mod_manager.hydrate_mods_from_manifest(profile_folder.clone())?;
+    mod_manager.get_profile_vpk_manifest(profile_folder.clone())?
+  };
+  // Opening a profile is also when we notice which of its VPKs still have no
+  // fingerprint. Stamping them is slow, so it happens behind the user.
+  crate::vpk_backfill::spawn_for_profile(profile_folder);
+  Ok(manifest)
 }
 
 #[tauri::command]
 pub async fn hydrate_mods_from_manifest(profile_folder: Option<String>) -> Result<usize, Error> {
-  let mut mod_manager = MANAGER.lock().unwrap();
-  mod_manager.hydrate_mods_from_manifest(profile_folder)
+  let hydrated = {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    mod_manager.hydrate_mods_from_manifest(profile_folder.clone())?
+  };
+  crate::vpk_backfill::spawn_for_profile(profile_folder);
+  Ok(hydrated)
 }
 
 #[derive(Debug, Deserialize)]
@@ -627,7 +624,7 @@ pub async fn seed_profile_vpk_manifest_entries(
 
   let mod_manager = MANAGER.lock().unwrap();
   let addons_path = mod_manager.get_addons_path(profile_folder.as_deref())?;
-  let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
+  let mut manifest = ProfileLedger::open_for_write(&addons_path)?;
   let mut changed = false;
 
   for entry in entries {
