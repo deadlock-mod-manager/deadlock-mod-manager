@@ -340,12 +340,12 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
             <TooltipTrigger asChild>
               <Button
                 aria-label={t("mods.removeMod")}
+                icon={<Trash className='h-4 w-4' />}
                 isLoading={deleting}
                 onClick={deleteMod}
                 size='icon'
-                variant='destructive'>
-                <Trash className='h-4 w-4' />
-              </Button>
+                variant='destructive'
+              />
             </TooltipTrigger>
             <TooltipContent>{t("mods.removeMod")}</TooltipContent>
           </Tooltip>
@@ -492,12 +492,12 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
                   <Button
                     aria-label={t("mods.removeMod")}
                     disabled={isInstalling || deleting}
+                    icon={<Trash className='h-4 w-4' />}
                     isLoading={deleting}
                     onClick={deleteMod}
                     size='icon'
-                    variant='destructive'>
-                    <Trash className='h-4 w-4' />
-                  </Button>
+                    variant='destructive'
+                  />
                 </TooltipTrigger>
                 <TooltipContent>{t("mods.removeMod")}</TooltipContent>
               </Tooltip>

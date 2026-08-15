@@ -298,6 +298,7 @@ const ActionIconButton = ({
         <Button
           aria-label={label}
           disabled={disabled}
+          icon={icon}
           isLoading={isLoading}
           onClick={onClick}
           size='icon'
@@ -306,9 +307,8 @@ const ActionIconButton = ({
             "h-8 w-8 rounded-md border border-transparent transition-colors",
             "hover:border-border/60",
             toneClass[tone],
-          )}>
-          {icon}
-        </Button>
+          )}
+        />
       </TooltipTrigger>
       <TooltipContent side='top' className='text-xs'>
         {label}
