@@ -11,7 +11,7 @@ finish-args:
   - --share=network
   - --share=ipc
   - --socket=wayland
-  - --socket=fallback-x11
+  - --socket=x11
   - --device=dri
   - --filesystem=~/.steam
   - --filesystem=~/.local/share/Steam
