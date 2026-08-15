@@ -19,7 +19,7 @@ use valveprotos::deadlock::{
 };
 
 use super::error::MatchSyncError;
-use super::model::{AuthContext, DEADLOCK_APP_ID, MatchHistoryPage, MatchSalts};
+use super::model::{AuthContext, DEADLOCK_APP_ID, LocalMatch, MatchHistoryPage, MatchSalts};
 
 // A stalled discover/login/job call must not block cancel/disable indefinitely.
 const GC_CALL_TIMEOUT: Duration = Duration::from_secs(30);
@@ -90,7 +90,9 @@ impl SteamGcClient {
     guard: &mut Option<GcSession>,
     ctx: &AuthContext,
   ) -> Result<(), MatchSyncError> {
-    let stale = guard.as_ref().is_none_or(|s| s.steam_id64 != ctx.steam_id64);
+    let stale = guard
+      .as_ref()
+      .is_none_or(|s| s.steam_id64 != ctx.steam_id64);
     if stale {
       *guard = Some(Self::connect(ctx).await?);
     }
@@ -107,11 +109,11 @@ impl SteamGcClient {
   ) -> Result<RawNetMessage, MatchSyncError> {
     let sent = tokio::time::timeout(
       GC_CALL_TIMEOUT,
-      guard
-        .as_ref()
-        .expect("connected above")
-        .gc
-        .job_untyped(UntypedMessage(req_bytes), kind, true),
+      guard.as_ref().expect("connected above").gc.job_untyped(
+        UntypedMessage(req_bytes),
+        kind,
+        true,
+      ),
     )
     .await;
 
@@ -119,7 +121,9 @@ impl SteamGcClient {
       Ok(Ok(raw)) => Ok(raw),
       Ok(Err(e)) => {
         *guard = None;
-        Err(MatchSyncError::GcUnavailable(format!("{label} request failed: {e}")))
+        Err(MatchSyncError::GcUnavailable(format!(
+          "{label} request failed: {e}"
+        )))
       }
       Err(_) => {
         *guard = None;
@@ -160,7 +164,35 @@ impl GcMatchClient for SteamGcClient {
     }
 
     Ok(MatchHistoryPage {
-      match_ids: resp.matches.iter().filter_map(|m| m.match_id).collect(),
+      // An entry without a match id is not addressable at all, so it is dropped
+      // rather than defaulted to 0.
+      matches: resp
+        .matches
+        .iter()
+        .filter_map(|m| {
+          Some(LocalMatch {
+            match_id: m.match_id?,
+            hero_id: m.hero_id.unwrap_or_default(),
+            hero_level: m.hero_level.unwrap_or_default(),
+            start_time: m.start_time.unwrap_or_default(),
+            game_mode: m.game_mode.unwrap_or_default(),
+            match_mode: m.match_mode.unwrap_or_default(),
+            player_team: m.player_team.unwrap_or_default(),
+            player_kills: m.player_kills.unwrap_or_default(),
+            player_deaths: m.player_deaths.unwrap_or_default(),
+            player_assists: m.player_assists.unwrap_or_default(),
+            denies: m.denies.unwrap_or_default(),
+            net_worth: m.net_worth.unwrap_or_default(),
+            last_hits: m.last_hits.unwrap_or_default(),
+            match_duration_s: m.match_duration_s.unwrap_or_default(),
+            match_result: m.match_result.unwrap_or_default(),
+            team_abandoned: m.team_abandoned,
+            abandoned_time_s: m.abandoned_time_s,
+            objectives_mask_team0: m.objectives_mask_team0.unwrap_or_default(),
+            objectives_mask_team1: m.objectives_mask_team1.unwrap_or_default(),
+          })
+        })
+        .collect(),
       next_cursor: resp.continue_cursor.filter(|&c| c != 0),
     })
   }

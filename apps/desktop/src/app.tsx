@@ -10,6 +10,7 @@ import { Outlet } from "react-router";
 import { FontInstallDialog } from "./components/downloads/font-install-dialog";
 import { ProgressProvider } from "./components/downloads/progress-indicator";
 import { GamePresenceRenderer } from "./components/game-presence-renderer";
+import { LiveMatchRenderer } from "./components/live-match-renderer";
 import { MatchSyncRenderer } from "./components/match-sync-renderer";
 import GlobalPluginRenderer from "./components/global-plugin-renderer";
 import { UpdateDialog } from "./components/layout/update-dialog";
@@ -147,6 +148,7 @@ const App = () => {
                     <GlobalPluginRenderer />
                     <GamePresenceRenderer />
                     <MatchSyncRenderer />
+                    <LiveMatchRenderer />
                     <UpdateDialog
                       downloadProgress={downloadProgress}
                       isDownloading={isDownloading}

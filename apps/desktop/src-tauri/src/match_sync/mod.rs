@@ -1,5 +1,5 @@
 mod api_client;
-mod auth;
+pub mod auth;
 mod error;
 mod game_check;
 mod gc_client;
@@ -22,8 +22,11 @@ use crate::app_runtime::AppHandle;
 
 use api_client::ApiClient;
 use auth::FixedAccountAuth;
+use game_check::GameRunningCheck;
 use game_check::SysGameRunningCheck;
+use gc_client::GcMatchClient;
 use gc_client::SteamGcClient;
+pub use model::LocalMatch;
 use model::{AccountStatus, AuthContext, FETCH_QUOTA_LIMIT, FETCH_QUOTA_WINDOW_SECS, SyncProgress};
 use sync::{SyncEngine, SyncPersistence};
 use throttle::Throttle;
@@ -59,8 +62,7 @@ static FULL_SYNC_CANCEL: AtomicBool = AtomicBool::new(false);
 static BACKGROUND_RUNNING: AtomicBool = AtomicBool::new(false);
 static BACKGROUND_CANCEL: AtomicBool = AtomicBool::new(false);
 // Aggregate across all accounts: session_fetches is a simple per-session total.
-static GC_REQUEST_COUNTER: LazyLock<Arc<AtomicU64>> =
-  LazyLock::new(|| Arc::new(AtomicU64::new(0)));
+static GC_REQUEST_COUNTER: LazyLock<Arc<AtomicU64>> = LazyLock::new(|| Arc::new(AtomicU64::new(0)));
 
 // Each account gets its own independent throttle (2-min GC spacing) and its own GC
 // session, keyed by steam_id64. Never hold this lock across an `.await`.
@@ -285,10 +287,7 @@ pub fn status(app: &AppHandle) -> Result<MatchSyncStatusDto, MatchSyncError> {
         quota_remaining: quota.remaining(now) as u32,
         quota_reset_at: quota.reset_at(now),
         full_sync_complete: settings::load_full_sync_complete(app, steam_id64),
-        gc_unavailable: gc_backoff_active(
-          settings::load_gc_backoff_until(app, steam_id64),
-          now,
-        ),
+        gc_unavailable: gc_backoff_active(settings::load_gc_backoff_until(app, steam_id64), now),
       }
     })
     .collect();
@@ -300,6 +299,60 @@ pub fn status(app: &AppHandle) -> Result<MatchSyncStatusDto, MatchSyncError> {
     session_fetches: GC_REQUEST_COUNTER.load(Ordering::Relaxed),
     accounts,
   })
+}
+
+/// The most recent matches straight from Valve's Game Coordinator, for one
+/// specific account.
+///
+/// deadlock-api ingests matches with a delay of up to a day, so today's games are
+/// missing from its history. The GC already knows them, and the app already holds
+/// a Steam session for match sync - this reuses both to fill that gap.
+///
+/// `account_id` is the Steam3 id the Stats page is showing. Asking for it makes
+/// the answer unambiguous: matches only ever come back for the account they will
+/// be merged into, never for whichever remembered session happened to answer
+/// first.
+///
+/// Returns an empty list rather than an error whenever it cannot run: match sync
+/// is opt-in (this touches the Steam session, so it stays behind that consent),
+/// the GC refuses while Deadlock is running because Steam routes its traffic to
+/// the game, and the requested account may simply not have a usable session.
+pub async fn recent_local_matches(app: &AppHandle, account_id: u32) -> Vec<LocalMatch> {
+  match settings::load_config(app) {
+    Ok(config) if config.is_active() => {}
+    _ => return Vec::new(),
+  }
+
+  if SysGameRunningCheck::new().is_game_running() {
+    return Vec::new();
+  }
+
+  let contexts = match auth::recover_all() {
+    Ok(contexts) => contexts,
+    Err(e) => {
+      log::debug!("match-sync: no Steam session for local history: {e}");
+      return Vec::new();
+    }
+  };
+
+  let Some(ctx) = contexts.into_iter().find(|c| c.account_id() == account_id) else {
+    log::debug!("match-sync: no Steam session for account {account_id}");
+    return Vec::new();
+  };
+
+  let resources = resources_for(ctx.steam_id64);
+  // The same 2-minute spacing the sync engine uses; a stats page refresh must
+  // not hammer the GC.
+  if !resources.throttle.try_acquire().await {
+    return Vec::new();
+  }
+  match resources.gc_client.fetch_match_history(&ctx, None).await {
+    Ok(page) => page.matches,
+    Err(e) => {
+      log::debug!("match-sync: local history unavailable: {e}");
+      Vec::new()
+    }
+  }
 }
 
 pub fn set_consent(app: &AppHandle, accepted: bool) -> Result<(), MatchSyncError> {
@@ -411,10 +464,19 @@ async fn run_account_batch<F, Fut>(
       continue;
     }
     let gc_error_seen = Arc::new(AtomicBool::new(false));
-    let engine = build_engine(app.clone(), ctx, i as u32 + 1, total, Arc::clone(&gc_error_seen));
+    let engine = build_engine(
+      app.clone(),
+      ctx,
+      i as u32 + 1,
+      total,
+      Arc::clone(&gc_error_seen),
+    );
     let result = run_engine(engine).await;
     match &result {
-      Ok(Some(p)) => log::info!("match-sync: {label} finished for {}: {p:?}", ctx.account_name),
+      Ok(Some(p)) => log::info!(
+        "match-sync: {label} finished for {}: {p:?}",
+        ctx.account_name
+      ),
       Ok(None) => {}
       Err(e) => {
         log::warn!("match-sync: {label} failed for {}: {e}", ctx.account_name);
@@ -423,7 +485,13 @@ async fn run_account_batch<F, Fut>(
         }
       }
     }
-    apply_gc_backoff(app, ctx, backoff, gc_error_seen.load(Ordering::Relaxed), now);
+    apply_gc_backoff(
+      app,
+      ctx,
+      backoff,
+      gc_error_seen.load(Ordering::Relaxed),
+      now,
+    );
     if let BatchControl::Abort = batch_control(&result) {
       break;
     }
@@ -588,8 +656,7 @@ mod batch_tests {
 
   #[test]
   fn game_running_aborts_the_whole_batch() {
-    let results: Vec<Result<(), MatchSyncError>> =
-      vec![Err(MatchSyncError::GameRunning), Ok(())];
+    let results: Vec<Result<(), MatchSyncError>> = vec![Err(MatchSyncError::GameRunning), Ok(())];
     assert_eq!(drive_batch(&results, |_| false), vec![0]);
   }
 
@@ -602,8 +669,7 @@ mod batch_tests {
 
   #[test]
   fn generic_error_on_first_account_still_runs_the_second() {
-    let results: Vec<Result<(), MatchSyncError>> =
-      vec![Err(MatchSyncError::Disabled), Ok(())];
+    let results: Vec<Result<(), MatchSyncError>> = vec![Err(MatchSyncError::Disabled), Ok(())];
     assert_eq!(drive_batch(&results, |_| false), vec![0, 1]);
   }
 }
