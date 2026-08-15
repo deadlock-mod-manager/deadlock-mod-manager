@@ -20,6 +20,7 @@ pub mod match_sync;
 pub mod mods;
 pub mod profiles;
 pub mod reports;
+pub mod server_browser;
 pub mod server_profiles;
 pub mod steam_user;
 pub mod vpk;

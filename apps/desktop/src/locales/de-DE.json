@@ -689,7 +689,10 @@
       "title": "Keine Server gefunden",
       "description": "Versuchen Sie einige Filter zu löschen oder versuchen Sie es gleich erneut. Die Liste aktualisiert sich automatisch.",
       "errorTitle": "Server konnten nicht geladen werden",
-      "errorDescription": "Wir können die Server momentan nicht laden. Bitte versuchen Sie es in einem Moment erneut."
+      "errorDescription": "Wir können die Server momentan nicht laden. Bitte versuchen Sie es in einem Moment erneut.",
+      "registryDegraded": "Die Deadworks-Serverliste ist gerade nicht erreichbar, deshalb fehlen deren Server in dieser Liste. Die Störung liegt auf deren Seite, erneutes Laden hilft nicht.",
+      "registryStale_one": "Die Deadworks-Serverliste ist nicht erreichbar. Deren Server stammen aus einem {{minutes}} Minute alten Stand und existieren möglicherweise nicht mehr.",
+      "registryStale_other": "Die Deadworks-Serverliste ist nicht erreichbar. Deren Server stammen aus einem {{minutes}} Minuten alten Stand und existieren möglicherweise nicht mehr."
     },
     "relayBar": {
       "online": "online",

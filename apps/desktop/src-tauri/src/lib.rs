@@ -270,6 +270,7 @@ pub fn run() {
       commands::archive::read_dropped_mod_file,
       commands::app::check_filesystem_writable,
       commands::downloads::test_fileserver_latency,
+      commands::server_browser::ping_servers,
       proxy::set_proxy_config,
       proxy::get_proxy_config,
       proxy::test_proxy_connection,
