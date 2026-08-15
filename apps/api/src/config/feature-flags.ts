@@ -59,4 +59,11 @@ export const featureFlagDefinitions: FeatureFlagDefinition[] = [
     defaultValue: false,
     exposed: true,
   },
+  {
+    name: "mod-foundry",
+    description: "Enable Mod Foundry for creating and editing skin mods",
+    type: "boolean",
+    defaultValue: false,
+    exposed: true,
+  },
 ];

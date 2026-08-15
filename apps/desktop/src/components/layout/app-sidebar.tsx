@@ -338,12 +338,17 @@ export const AppSidebar = () => {
     false,
   );
   const { isEnabled: isPlayerStatsEnabled } = usePlayerStatsEnabled();
+  const { isEnabled: isModFoundryEnabled } = useFeatureFlag(
+    "mod-foundry",
+    false,
+  );
 
   const allItems = getSidebarItems(t, developerMode).filter(
     (item) =>
       (item.id !== "maps" || isCustomMapsEnabled) &&
       (item.id !== "servers" || isServerBrowserEnabled) &&
-      (item.id !== "stats" || isPlayerStatsEnabled),
+      (item.id !== "stats" || isPlayerStatsEnabled) &&
+      (item.id !== "foundry" || isModFoundryEnabled),
   );
 
   const groupLabels: Record<GroupId, string> = {

@@ -56,6 +56,14 @@ const ServersRouteGate = () => {
   return <Servers />;
 };
 
+const FoundryRouteGate = () => {
+  const { isEnabled } = useFeatureFlag("mod-foundry", false);
+  if (!isEnabled) {
+    return <Navigate replace to='/' />;
+  }
+  return <Foundry />;
+};
+
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
@@ -79,7 +87,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<Crosshairs />} path='/crosshairs' />
               <Route element={<Skins />} path='/skins' />
               <Route element={<StatsRouteGate />} path='/stats' />
-              <Route element={<Foundry />} path='/foundry' />
+              <Route element={<FoundryRouteGate />} path='/foundry' />
               <Route
                 element={<CustomSettings value='autoexec' />}
                 path='/settings/autoexec'
