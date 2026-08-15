@@ -61,6 +61,11 @@ dmp-parser = { path = "../../../packages/dmp-parser" }
 deadlock-discord-presence = { path = "../../../packages/deadlock-discord-presence" }
 tokio = { version = "1.50.0", features = ["full"] }
 tokio-util = "0.7"
+# Already in the tree via reqwest; the loopback forge bridge only needs the
+# server half of the same versions, so this adds features rather than crates.
+hyper = { version = "1", features = ["server", "http1"] }
+hyper-util = { version = "0.1", features = ["tokio"] }
+http-body-util = "0.1"
 reqwest = { version = "0.12", features = ["json", "stream", "socks"] }
 futures = "0.3"
 tauri-plugin-dialog = "2.7.1"

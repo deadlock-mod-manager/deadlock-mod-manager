@@ -8,6 +8,7 @@ pub mod backups;
 pub mod deep_link;
 pub mod downloads;
 pub mod folders;
+pub mod forge;
 pub mod fonts;
 pub mod foundry;
 pub mod game;

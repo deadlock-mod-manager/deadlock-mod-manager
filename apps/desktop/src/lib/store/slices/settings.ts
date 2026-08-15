@@ -61,6 +61,7 @@ export type SettingsState = {
   linuxGpuOptimization: "auto" | "on" | "off";
   enabledPlugins: Record<string, boolean>; // pluginId -> isEnabled
   gamePresenceEnabled: boolean;
+  forgeInstallEnabled: boolean;
   gamePresenceTextTemplates: PresenceTextTemplates;
   gamePresenceHeroOverrides: GamePresenceHeroOverrides;
   backupEnabled: boolean;
@@ -102,6 +103,7 @@ export type SettingsState = {
   setLinuxGpuOptimization: (value: "auto" | "on" | "off") => void;
 
   setGamePresenceEnabled: (enabled: boolean) => void;
+  setForgeInstallEnabled: (enabled: boolean) => void;
   setGamePresenceTextTemplates: (templates: PresenceTextTemplates) => void;
   setGamePresenceHeroOverrides: (
     heroOverrides: GamePresenceHeroOverrides,
@@ -150,6 +152,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   linuxGpuOptimization: "auto",
   enabledPlugins: {},
   gamePresenceEnabled: true,
+  forgeInstallEnabled: false,
   gamePresenceTextTemplates: createDefaultGamePresenceTextTemplates(),
   gamePresenceHeroOverrides: {},
   backupEnabled: true,
@@ -288,6 +291,11 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   setGamePresenceEnabled: (enabled: boolean) =>
     set(() => ({
       gamePresenceEnabled: enabled,
+    })),
+
+  setForgeInstallEnabled: (enabled: boolean) =>
+    set(() => ({
+      forgeInstallEnabled: enabled,
     })),
 
   setGamePresenceTextTemplates: (templates: PresenceTextTemplates) =>

@@ -17,7 +17,7 @@ import {
   VPK_PATTERN,
 } from "@/lib/file-patterns";
 import {
-  type DetectedSource,
+  type ModSource,
   ensureDirectory,
   getFileBaseName,
   fileToBytes,
@@ -140,7 +140,7 @@ export const useModProcessor = () => {
 
   const validateFiles = async (
     filesDir: string,
-    detectedSource: DetectedSource,
+    detectedSource: ModSource,
   ): Promise<boolean> => {
     const filesList = await readDir(filesDir, {
       baseDir: BaseDirectory.AppLocalData,
@@ -171,7 +171,7 @@ export const useModProcessor = () => {
   const processMod = async (
     metadata: ModMetadata,
     category: ModCategory,
-    detectedSource: DetectedSource,
+    detectedSource: ModSource,
   ): Promise<void> => {
     setProcessing(true, t("addMods.validatingMetadata"));
 
@@ -193,23 +193,30 @@ export const useModProcessor = () => {
     );
 
     setProcessing(true, t("addMods.processingFiles"));
-    try {
-      if (detectedSource.kind === "vpk") {
+    if (detectedSource.kind === "vpkPath") {
+      await invoke("place_forge_payload", {
+        path: detectedSource.path,
+        destination: await join(filesDir, detectedSource.fileName),
+      });
+    } else {
+      try {
+        if (detectedSource.kind === "vpk") {
+          const fileName = getFileBaseName(detectedSource.file);
+          await writeFileBytes(
+            await join(filesDir, fileName),
+            await readSourceFileBytes(detectedSource.file),
+          );
+        } else {
+          await processArchive(detectedSource.file, filesDir, modDir);
+        }
+      } catch {
         const fileName = getFileBaseName(detectedSource.file);
+        toast.error(t("addMods.failedToProcessArchive"));
         await writeFileBytes(
-          await join(filesDir, fileName),
+          await join(modDir, fileName),
           await readSourceFileBytes(detectedSource.file),
         );
-      } else {
-        await processArchive(detectedSource.file, filesDir, modDir);
       }
-    } catch {
-      const fileName = getFileBaseName(detectedSource.file);
-      toast.error(t("addMods.failedToProcessArchive"));
-      await writeFileBytes(
-        await join(modDir, fileName),
-        await readSourceFileBytes(detectedSource.file),
-      );
     }
 
     setProcessing(true, t("addMods.validatingFiles"));
