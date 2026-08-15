@@ -37,8 +37,8 @@ pub async fn set_language(app_handle: AppHandle, language: String) -> Result<(),
   log::info!("Setting language to: {language}");
 
   let supported_languages = [
-    "en", "de-DE", "fr-FR", "ar-SA", "pl-PL", "de-CH", "th-TH", "tr-TR", "ru-RU", "zh-CN",
-    "zh-TW", "es-ES", "pt-BR", "it-IT", "ja-JP", "ko-KR", "bg-BG", "be-BY",
+    "en", "de-DE", "fr-FR", "ar-SA", "pl-PL", "de-CH", "th-TH", "tr-TR", "ru-RU", "zh-CN", "zh-TW",
+    "es-ES", "pt-BR", "it-IT", "ja-JP", "ko-KR", "bg-BG", "be-BY",
   ];
   if !supported_languages.contains(&language.as_str()) {
     return Err(Error::InvalidInput(format!(
@@ -79,11 +79,7 @@ pub async fn is_linux_gpu_optimization_active() -> Result<bool, Error> {
 
 #[tauri::command]
 pub fn get_runtime_kind() -> &'static str {
-  if cfg!(feature = "cef") {
-    "cef"
-  } else {
-    "wry"
-  }
+  if cfg!(feature = "cef") { "cef" } else { "wry" }
 }
 
 #[tauri::command]

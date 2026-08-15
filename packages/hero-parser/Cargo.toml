@@ -3,6 +3,7 @@ name = "hero-parser"
 version = "0.1.0"
 edition = "2024"
 description = "Hero detection for Deadlock mod VPK files"
+license = "GPL-3.0"
 
 [lib]
 name = "hero_parser"

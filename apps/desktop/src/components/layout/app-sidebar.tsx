@@ -21,7 +21,9 @@ import {
   CrosshairIcon,
   DiscordLogoIcon,
   DownloadIcon,
+  FlagIcon,
   GearIcon,
+  HammerIcon,
   HardDrivesIcon,
   HouseIcon,
   type Icon,
@@ -172,6 +174,14 @@ const getSidebarItems = (
       group: "customization",
     },
     {
+      id: "foundry",
+      title: () => <span>{t("navigation.foundry")}</span>,
+      tooltipLabel: t("navigation.foundry"),
+      url: "/foundry",
+      icon: HammerIcon,
+      group: "customization",
+    },
+    {
       id: "autoexec",
       title: () => <span>{t("navigation.autoexec")}</span>,
       tooltipLabel: t("navigation.autoexec"),
@@ -217,6 +227,14 @@ const getSidebarItems = (
       tooltipLabel: t("help.documentation"),
       external: "https://docs.deadlockmods.app/",
       icon: QuestionIcon,
+      group: "developer",
+    },
+    {
+      id: "experimental",
+      title: () => <span>{t("settings.experimental")}</span>,
+      tooltipLabel: t("settings.experimental"),
+      url: "/settings/experimental",
+      icon: FlagIcon,
       group: "developer",
     },
     {
@@ -320,12 +338,17 @@ export const AppSidebar = () => {
     false,
   );
   const { isEnabled: isPlayerStatsEnabled } = usePlayerStatsEnabled();
+  const { isEnabled: isModFoundryEnabled } = useFeatureFlag(
+    "mod-foundry",
+    false,
+  );
 
   const allItems = getSidebarItems(t, developerMode).filter(
     (item) =>
       (item.id !== "maps" || isCustomMapsEnabled) &&
       (item.id !== "servers" || isServerBrowserEnabled) &&
-      (item.id !== "stats" || isPlayerStatsEnabled),
+      (item.id !== "stats" || isPlayerStatsEnabled) &&
+      (item.id !== "foundry" || isModFoundryEnabled),
   );
 
   const groupLabels: Record<GroupId, string> = {

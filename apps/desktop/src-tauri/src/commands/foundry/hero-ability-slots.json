@@ -1,0 +1,835 @@
+{
+  "slots": {
+    "abrams": {
+      "1": {
+        "token": "heal",
+        "display": "Siphon Life"
+      },
+      "2": {
+        "token": "charge",
+        "display": "Shoulder Charge"
+      },
+      "3": {
+        "token": "beefy",
+        "display": "Infernal Resilience"
+      },
+      "4": {
+        "token": "leap",
+        "display": "Seismic Impact"
+      }
+    },
+    "astro": {
+      "1": {
+        "token": "barrel",
+        "display": "Powder Keg"
+      },
+      "2": {
+        "token": "pad",
+        "display": "Bounce Pad"
+      },
+      "3": {
+        "token": "crackshot",
+        "display": "Crackshot"
+      },
+      "4": {
+        "token": "lasso",
+        "display": "Spirit Lasso"
+      }
+    },
+    "bebop": {
+      "1": {
+        "token": "uppercut",
+        "display": "Exploding Uppercut"
+      },
+      "2": {
+        "token": "bomb",
+        "display": "Sticky Bomb"
+      },
+      "3": {
+        "token": "hook",
+        "display": "Grapple Arm"
+      },
+      "4": {
+        "token": "laser_beam",
+        "display": "Hyper Beam"
+      }
+    },
+    "bookworm": {
+      "1": {
+        "token": "dragonfire",
+        "display": "Bookwyrm"
+      },
+      "2": {
+        "token": "knightbarrier",
+        "display": "Plot Armor"
+      },
+      "3": {
+        "token": "aoemagic",
+        "display": "Captivating Read"
+      },
+      "4": {
+        "token": "knightcharge",
+        "display": "Rallying Charge"
+      }
+    },
+    "cadence": {
+      "1": {
+        "token": "ability_anthem",
+        "display": "cadence_ability_anthem"
+      },
+      "2": {
+        "token": "ability_silencecontraptions",
+        "display": "cadence_ability_silencecontraptions"
+      },
+      "3": {
+        "token": "ability_lullaby",
+        "display": "cadence_ability_lullaby"
+      },
+      "4": {
+        "token": "ability_crescendo",
+        "display": "cadence_ability_crescendo"
+      }
+    },
+    "chrono": {
+      "1": {
+        "token": "pulse_grenade",
+        "display": "Pulse Grenade"
+      },
+      "2": {
+        "token": "time_wall",
+        "display": "Time Wall"
+      },
+      "3": {
+        "token": "kinetic_carbine",
+        "display": "Kinetic Carbine"
+      },
+      "4": {
+        "token": "swap",
+        "display": "Paradoxical Swap"
+      }
+    },
+    "doorman": {
+      "1": {
+        "token": "bomb",
+        "display": "Call Bell"
+      },
+      "2": {
+        "token": "doorway",
+        "display": "Doorway"
+      },
+      "3": {
+        "token": "luggage_cart",
+        "display": "Luggage Cart"
+      },
+      "4": {
+        "token": "hotel",
+        "display": "Hotel Guest"
+      }
+    },
+    "drifter": {
+      "1": {
+        "token": "blood_blast",
+        "display": "Rend"
+      },
+      "2": {
+        "token": "shadow_mark",
+        "display": "Stalker's Mark"
+      },
+      "3": {
+        "token": "hunger",
+        "display": "Bloodscent"
+      },
+      "4": {
+        "token": "darkness",
+        "display": "Eternal Night"
+      }
+    },
+    "dynamo": {
+      "1": {
+        "token": "stomp",
+        "display": "Kinetic Pulse"
+      },
+      "2": {
+        "token": "sphere",
+        "display": "Quantum Entanglement"
+      },
+      "3": {
+        "token": "nikuman",
+        "display": "Rejuvenating Aurora"
+      },
+      "4": {
+        "token": "vacuum",
+        "display": "Singularity"
+      }
+    },
+    "familiar": {
+      "1": {
+        "token": "ability02",
+        "display": "Pillow Toss"
+      },
+      "2": {
+        "token": "attach",
+        "display": "Tag Along"
+      },
+      "3": {
+        "token": "helpinghands",
+        "display": "Lil Helpers"
+      },
+      "4": {
+        "token": "ability01",
+        "display": "Naptime"
+      }
+    },
+    "fathom": {
+      "1": {
+        "token": "scalding_spray",
+        "display": ""
+      },
+      "2": {
+        "token": "breach",
+        "display": ""
+      },
+      "3": {
+        "token": "reefdweller_harpoon",
+        "display": ""
+      },
+      "4": {
+        "token": "lurkers_ambush",
+        "display": ""
+      }
+    },
+    "fencer": {
+      "1": {
+        "token": "throwblade",
+        "display": "Disengaging Sigil"
+      },
+      "2": {
+        "token": "riposte",
+        "display": "Riposte"
+      },
+      "3": {
+        "token": "lunge",
+        "display": "Flawless Advance"
+      },
+      "4": {
+        "token": "ultimate",
+        "display": "Itani Lo Sahn"
+      }
+    },
+    "forge": {
+      "1": {
+        "token": "shieldedsentry",
+        "display": "Mini Turret"
+      },
+      "2": {
+        "token": "resupply",
+        "display": "Medicinal Specter"
+      },
+      "3": {
+        "token": "wall",
+        "display": "Spectral Wall"
+      },
+      "4": {
+        "token": "barrage",
+        "display": "Heavy Barrage"
+      }
+    },
+    "frank": {
+      "1": {
+        "token": "shocktarget2",
+        "display": "Pain Battery"
+      },
+      "2": {
+        "token": "selfzap",
+        "display": "Jumpstart"
+      },
+      "3": {
+        "token": "painaura",
+        "display": "Aura of Suffering"
+      },
+      "4": {
+        "token": "revive",
+        "display": "Shocking Reanimation"
+      }
+    },
+    "ghost": {
+      "1": {
+        "token": "bomb",
+        "display": "Essence Bomb"
+      },
+      "2": {
+        "token": "drain",
+        "display": "Life Drain"
+      },
+      "3": {
+        "token": "shards",
+        "display": "Malice"
+      },
+      "4": {
+        "token": "swap",
+        "display": "Soul Exchange"
+      }
+    },
+    "gigawatt": {
+      "1": {
+        "token": "ball",
+        "display": "Lightning Ball"
+      },
+      "2": {
+        "token": "charge",
+        "display": "Static Charge"
+      },
+      "3": {
+        "token": "surge",
+        "display": "Power Surge"
+      },
+      "4": {
+        "token": "cloud",
+        "display": "Storm Cloud"
+      }
+    },
+    "haze": {
+      "1": {
+        "token": "dagger",
+        "display": "Sleep Dagger"
+      },
+      "2": {
+        "token": "bomb",
+        "display": "Smoke Bomb"
+      },
+      "3": {
+        "token": "damage",
+        "display": "Fixation"
+      },
+      "4": {
+        "token": "flurry",
+        "display": "Bullet Dance"
+      }
+    },
+    "hornet": {
+      "1": {
+        "token": "chain",
+        "display": "Stake"
+      },
+      "2": {
+        "token": "leap",
+        "display": "Flight"
+      },
+      "3": {
+        "token": "sting",
+        "display": "Crow Familiar"
+      },
+      "4": {
+        "token": "snipe",
+        "display": "Assassinate"
+      }
+    },
+    "inferno": {
+      "1": {
+        "token": "projectile",
+        "display": "Napalm"
+      },
+      "2": {
+        "token": "dash",
+        "display": "Flame Dash"
+      },
+      "3": {
+        "token": "afterburn",
+        "display": "Afterburn"
+      },
+      "4": {
+        "token": "bomb",
+        "display": "Concussive Combustion"
+      }
+    },
+    "kali": {
+      "1": {
+        "token": "spinning_blade",
+        "display": "citadel_ability_kali_spinning_blade"
+      },
+      "2": {
+        "token": "disruptive_charge",
+        "display": "citadel_ability_kali_disruptive_charge"
+      },
+      "3": {
+        "token": "dust_storm",
+        "display": "ability_kali_dust_storm"
+      },
+      "4": {
+        "token": "trappers_bolo",
+        "display": "ability_kali_trappers_bolo"
+      }
+    },
+    "kelvin": {
+      "1": {
+        "token": "grenade",
+        "display": "Frost Grenade"
+      },
+      "2": {
+        "token": "icepath",
+        "display": "Ice Path"
+      },
+      "3": {
+        "token": "icebeam",
+        "display": "Arctic Beam"
+      },
+      "4": {
+        "token": "dome",
+        "display": "Frozen Shelter"
+      }
+    },
+    "lash": {
+      "1": {
+        "token": "down_strike",
+        "display": "Ground Strike"
+      },
+      "2": {
+        "token": "lash",
+        "display": "Grapple"
+      },
+      "3": {
+        "token": "flog",
+        "display": "Flog"
+      },
+      "4": {
+        "token": "ultimate",
+        "display": "Death Slam"
+      }
+    },
+    "magician": {
+      "1": {
+        "token": "magicbolt",
+        "display": "Vexing Bolt"
+      },
+      "2": {
+        "token": "cloneturret",
+        "display": "Spectral Assistant"
+      },
+      "3": {
+        "token": "animalhexarea",
+        "display": "Rabbit Hex"
+      },
+      "4": {
+        "token": "copyult",
+        "display": "Audience Participation"
+      }
+    },
+    "mirage": {
+      "1": {
+        "token": "fire_beetles",
+        "display": "Fire Scarabs"
+      },
+      "2": {
+        "token": "tornado",
+        "display": "Dust Devil"
+      },
+      "3": {
+        "token": "sand_phantom",
+        "display": "Djinn's Mark"
+      },
+      "4": {
+        "token": "teleport",
+        "display": "Traveler"
+      }
+    },
+    "mokrill": {
+      "1": {
+        "token": "intimidate",
+        "display": "Scorn"
+      },
+      "2": {
+        "token": "burrow",
+        "display": "Burrow"
+      },
+      "3": {
+        "token": "sand",
+        "display": "Sand Blast"
+      },
+      "4": {
+        "token": "combo",
+        "display": "Combo"
+      }
+    },
+    "nano": {
+      "1": {
+        "token": "clustergrenade",
+        "display": "Gloom Bombs"
+      },
+      "2": {
+        "token": "dash",
+        "display": "Leaping Slash"
+      },
+      "3": {
+        "token": "catform",
+        "display": "Ava"
+      },
+      "4": {
+        "token": "shadow_pulse",
+        "display": "Return to Shadows"
+      }
+    },
+    "necro": {
+      "1": {
+        "token": "hauntingskull",
+        "display": "Jar of Dead"
+      },
+      "2": {
+        "token": "zombiewall",
+        "display": "Grasping Hands"
+      },
+      "3": {
+        "token": "fear",
+        "display": "Essence Theft"
+      },
+      "4": {
+        "token": "gravestone",
+        "display": "Borrowed Decree"
+      }
+    },
+    "operative": {
+      "1": {
+        "token": "blindside",
+        "display": "Blindside"
+      },
+      "2": {
+        "token": "umbrella_maneuver",
+        "display": "Umbrella Maneuver"
+      },
+      "3": {
+        "token": "rapidfire",
+        "display": "Full Auto"
+      },
+      "4": {
+        "token": "revelation",
+        "display": "Revelation"
+      }
+    },
+    "orion": {
+      "1": {
+        "token": "shot",
+        "display": "Charged Shot"
+      },
+      "2": {
+        "token": "jump",
+        "display": "Rain of Arrows"
+      },
+      "3": {
+        "token": "trap",
+        "display": "Spirit Snare"
+      },
+      "4": {
+        "token": "arrow",
+        "display": "Guided Owl"
+      }
+    },
+    "priest": {
+      "1": {
+        "token": "flashbang",
+        "display": "Consecrating Grenade"
+      },
+      "2": {
+        "token": "knockback",
+        "display": "Gutshot"
+      },
+      "3": {
+        "token": "beartrap",
+        "display": "Hex-Lined Snap Trap"
+      },
+      "4": {
+        "token": "weaponswap",
+        "display": "Ira Domini"
+      }
+    },
+    "punkgoat": {
+      "1": {
+        "token": "ult",
+        "display": "Bashdown"
+      },
+      "2": {
+        "token": "goatflip",
+        "display": "Rising Ram"
+      },
+      "3": {
+        "token": "blasted",
+        "display": "Blasted"
+      },
+      "4": {
+        "token": "tether",
+        "display": "Chain Gang"
+      }
+    },
+    "shiv": {
+      "1": {
+        "token": "dagger",
+        "display": "Serrated Knives"
+      },
+      "2": {
+        "token": "dash",
+        "display": "Slice and Dice"
+      },
+      "3": {
+        "token": "defer_damage",
+        "display": "Bloodletting"
+      },
+      "4": {
+        "token": "killing_blow",
+        "display": "Killing Blow"
+      }
+    },
+    "synth": {
+      "1": {
+        "token": "barrage",
+        "display": "Barrage"
+      },
+      "2": {
+        "token": "plasma_flux",
+        "display": "Flying Cloak"
+      },
+      "3": {
+        "token": "pulse",
+        "display": "Enchanter's Satchel"
+      },
+      "4": {
+        "token": "affliction",
+        "display": "Affliction"
+      }
+    },
+    "tengu": {
+      "1": {
+        "token": "urn",
+        "display": "Entangling Thorns"
+      },
+      "2": {
+        "token": "tangotether",
+        "display": "Kudzu Connection"
+      },
+      "3": {
+        "token": "stone_form",
+        "display": "Stone Form"
+      },
+      "4": {
+        "token": "airlift",
+        "display": "Air Drop"
+      }
+    },
+    "tokamak": {
+      "1": {
+        "token": "hot_shot",
+        "display": "tokamak_hot_shot"
+      },
+      "2": {
+        "token": "dying_star",
+        "display": "tokamak_dying_star"
+      },
+      "3": {
+        "token": "radiance",
+        "display": "tokamak_radiance"
+      },
+      "4": {
+        "token": "crimson_cannon",
+        "display": "tokamak_crimson_cannon"
+      }
+    },
+    "trapper": {
+      "1": {
+        "token": "poisonjar",
+        "display": "Bottled Phantasmicide"
+      },
+      "2": {
+        "token": "webwall",
+        "display": "Silktrap"
+      },
+      "3": {
+        "token": "spidershield",
+        "display": "Pest Barrier"
+      },
+      "4": {
+        "token": "spiderwave",
+        "display": "Crawling Plague"
+      }
+    },
+    "unicorn": {
+      "1": {
+        "token": "radiantblast",
+        "display": "Light Eater"
+      },
+      "2": {
+        "token": "prismaticguard",
+        "display": "Dazzling Trick"
+      },
+      "3": {
+        "token": "luminousstrike",
+        "display": "Radiant Daggers"
+      },
+      "4": {
+        "token": "dazzlingorb",
+        "display": "Shining Wonder"
+      }
+    },
+    "vampirebat": {
+      "1": {
+        "token": "steallife",
+        "display": "Rake"
+      },
+      "2": {
+        "token": "batblink",
+        "display": "Sanguine Retreat"
+      },
+      "3": {
+        "token": "lovebites",
+        "display": "Love Bites"
+      },
+      "4": {
+        "token": "batswarm",
+        "display": "Nox Nostra"
+      }
+    },
+    "viper": {
+      "1": {
+        "token": "debuffdagger",
+        "display": "Screwjab Dagger"
+      },
+      "2": {
+        "token": "venom",
+        "display": "Lethal Venom"
+      },
+      "3": {
+        "token": "snakedash",
+        "display": "Slither"
+      },
+      "4": {
+        "token": "petrifybola",
+        "display": "Petrifying Bola"
+      }
+    },
+    "viscous": {
+      "1": {
+        "token": "goo_grenade",
+        "display": "Splatter"
+      },
+      "2": {
+        "token": "restorative_goo",
+        "display": "The Cube"
+      },
+      "3": {
+        "token": "telepunch",
+        "display": "Puddle Punch"
+      },
+      "4": {
+        "token": "goo_bowling_ball",
+        "display": "Goo Ball"
+      }
+    },
+    "warden": {
+      "1": {
+        "token": "crowd_control",
+        "display": "Alchemical Flask"
+      },
+      "2": {
+        "token": "high_alert",
+        "display": "Willpower"
+      },
+      "3": {
+        "token": "lock_down",
+        "display": "Binding Word"
+      },
+      "4": {
+        "token": "riot_protocol",
+        "display": "Last Stand"
+      }
+    },
+    "werewolf": {
+      "1": {
+        "token": "unloadgun",
+        "display": "Slam Fire"
+      },
+      "2": {
+        "token": "kickflip",
+        "display": "Boot Kick"
+      },
+      "3": {
+        "token": "netshot",
+        "display": "Entangling Bola"
+      },
+      "4": {
+        "token": "transformation",
+        "display": "Lycan Curse"
+      }
+    },
+    "wraith": {
+      "1": {
+        "token": "toss",
+        "display": "Card Trick"
+      },
+      "2": {
+        "token": "projectmind",
+        "display": "Project Mind"
+      },
+      "3": {
+        "token": "rapidfire",
+        "display": "Full Auto"
+      },
+      "4": {
+        "token": "lift",
+        "display": "Telekinesis"
+      }
+    },
+    "wrecker": {
+      "1": {
+        "token": "bouldergrenade",
+        "display": "Wrecking Ball"
+      },
+      "2": {
+        "token": "salvage",
+        "display": "Consume"
+      },
+      "3": {
+        "token": "blast",
+        "display": "Bio Blast"
+      },
+      "4": {
+        "token": "garbage_suck",
+        "display": "Overload"
+      }
+    },
+    "yamato": {
+      "1": {
+        "token": "slash",
+        "display": "Power Slash"
+      },
+      "2": {
+        "token": "strike",
+        "display": "Flying Slash"
+      },
+      "3": {
+        "token": "slash",
+        "display": "Crimson Slash"
+      },
+      "4": {
+        "token": "slash",
+        "display": "Shadow Transformation"
+      }
+    }
+  },
+  "legacy": {
+    "archer": "orion",
+    "geist": "ghost",
+    "pocket": "synth"
+  },
+  "curation": {
+    "magician": {
+      "animalcurse": 3
+    },
+    "nano": {
+      "ava": 3
+    },
+    "warden": {
+      "lockdown": 3
+    },
+    "wraith": {
+      "psychic": 2,
+      "psychicpulse": 2,
+      "royalflush": 1
+    }
+  }
+}

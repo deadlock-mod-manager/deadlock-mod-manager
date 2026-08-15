@@ -15,6 +15,7 @@ import Dashboard from "./pages/dashboard";
 import Debug from "./pages/debug";
 import Developer from "./pages/developer";
 import Downloads from "./pages/downloads";
+import Foundry from "./pages/foundry";
 
 import Mod from "./pages/mod";
 import GetMods, { GetMaps } from "./pages/mods";
@@ -55,6 +56,14 @@ const ServersRouteGate = () => {
   return <Servers />;
 };
 
+const FoundryRouteGate = () => {
+  const { isEnabled } = useFeatureFlag("mod-foundry", false);
+  if (!isEnabled) {
+    return <Navigate replace to='/' />;
+  }
+  return <Foundry />;
+};
+
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
@@ -78,9 +87,14 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<Crosshairs />} path='/crosshairs' />
               <Route element={<Skins />} path='/skins' />
               <Route element={<StatsRouteGate />} path='/stats' />
+              <Route element={<FoundryRouteGate />} path='/foundry' />
               <Route
                 element={<CustomSettings value='autoexec' />}
                 path='/settings/autoexec'
+              />
+              <Route
+                element={<CustomSettings value='experimental' />}
+                path='/settings/experimental'
               />
             </Route>
           </Routes>

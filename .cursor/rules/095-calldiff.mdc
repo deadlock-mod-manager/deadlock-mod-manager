@@ -1,0 +1,40 @@
+---
+description: Calldiff: include call-stack diffs in plans, design docs, and change summaries when call flow changes
+alwaysApply: true
+---
+
+# Call-stack diffs with calldiff
+
+When writing a plan, design doc, PR description, or end-of-task change summary, include a call-stack diff so reviewers can see how call flow changed.
+
+## When to use
+
+Run calldiff when the change rewires call flow: new, removed, or moved callees; refactored control flow; extracted or inlined functions.
+
+Skip for pure UI/copy, styling, config, dependency, translation, and docs-only changes.
+
+## How to run
+
+Use `npx calldiff@latest`. Defaults compare HEAD vs the working tree.
+
+```bash
+npx calldiff@latest diff --file apps/desktop/src/pages/settings.tsx
+npx calldiff@latest diff main --entry install_mod
+```
+
+Other useful commands:
+
+```bash
+npx calldiff@latest tree --entry install_mod
+npx calldiff@latest reach --entry install_mod --to persist_vpk
+```
+
+Scope with `--file` / `--entry` and `--maxDepth`. Keep the pasted tree to the entrypoints that changed.
+
+Paste the output in a fenced `diff` block.
+
+## Caveats
+
+- Calldiff is syntactic (tree-sitter). Dynamic calls and trait-object dispatch will not resolve.
+- Grammars download on first use into `~/.cache/calldiff/grammars`.
+- If calldiff produces nothing useful, say so in one line and fall back to a hand-written call tree per the [show-me](../../.agents/skills/show-me/SKILL.md) skill rather than omitting the flow.

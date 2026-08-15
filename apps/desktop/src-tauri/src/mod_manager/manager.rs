@@ -1008,16 +1008,16 @@ impl ModManager {
     self.app_handle = Some(app_handle);
   }
 
-  pub fn get_mods_store_path(&self) -> Result<std::path::PathBuf, Error> {
+  pub fn get_app_local_data_path(&self) -> Result<std::path::PathBuf, Error> {
     let app_handle = self
       .app_handle
       .as_ref()
       .ok_or(Error::AppHandleNotInitialized)?;
-    let app_local_data_dir = app_handle
-      .path()
-      .app_local_data_dir()
-      .map_err(Error::Tauri)?;
-    Ok(app_local_data_dir.join("mods"))
+    app_handle.path().app_local_data_dir().map_err(Error::Tauri)
+  }
+
+  pub fn get_mods_store_path(&self) -> Result<std::path::PathBuf, Error> {
+    Ok(self.get_app_local_data_path()?.join("mods"))
   }
 
   pub fn get_profile_vpk_manifest(
@@ -1061,9 +1061,7 @@ impl ModManager {
     }
 
     if hydrated > 0 {
-      log::info!(
-        "Hydrated {hydrated} mods from manifest for profile {profile_folder:?}"
-      );
+      log::info!("Hydrated {hydrated} mods from manifest for profile {profile_folder:?}");
     }
 
     Ok(hydrated)
@@ -1123,9 +1121,7 @@ impl ModManager {
 
     let mut manifest = ProfileVpkManifest::load(&addons_path)?;
     if installed_vpks.is_empty() {
-      let prefixed_vpks = self
-        .vpk_manager
-        .find_prefixed_vpks(&addons_path, &mod_id)?;
+      let prefixed_vpks = self.vpk_manager.find_prefixed_vpks(&addons_path, &mod_id)?;
       manifest.mark_disabled(&mod_id, prefixed_vpks, new_original_names);
     } else {
       manifest.mark_enabled(&mod_id, installed_vpks, new_original_names, None);

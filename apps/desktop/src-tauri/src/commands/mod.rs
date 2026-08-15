@@ -9,6 +9,7 @@ pub mod deep_link;
 pub mod downloads;
 pub mod folders;
 pub mod fonts;
+pub mod foundry;
 pub mod game;
 pub mod gameinfo;
 pub mod ingest;

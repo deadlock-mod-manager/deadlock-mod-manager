@@ -14,6 +14,16 @@ export type MigrationStep = {
 // (use ??= or shape guards rather than unconditional assignment) so that
 // bumping the store version to re-run prior steps for already-migrated users
 // is safe.
+//
+// A brand-new top-level key does NOT need a step: buildPersistMerge seeds from
+// the slice defaults and only overlays keys present in the persisted blob, so a
+// key the blob has never seen keeps its default. Several steps below predate
+// that merge and are redundant; they are kept because removing one would strand
+// users mid-chain. Add a step when the merge cannot cover the change:
+//   - renaming, removing, or transforming an existing key
+//   - a new field inside an already-persisted object that is not listed in a
+//     slice's deepMergeKeys, since the persisted object wins wholesale
+//   - a one-shot data reset
 export const MIGRATION_STEPS: readonly MigrationStep[] = [
   {
     to: 2,
