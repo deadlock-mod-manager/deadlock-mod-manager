@@ -185,13 +185,27 @@ impl SteamManager {
   /// Launch Deadlock through Steam with optional arguments
   pub fn launch_game(&self, additional_args: &str) -> Result<(), Error> {
     let steam_uri = format!("steam://run/{DEADLOCK_APP_ID}//{additional_args}");
-    log::info!("Launching game with URI: {steam_uri}");
+    log::info!(
+      "Launching game with URI: {}",
+      redacted_steam_uri(&steam_uri)
+    );
+    self.open_steam_uri(&steam_uri)
+  }
+
+  /// Hand a `steam://` URI to the Steam client.
+  ///
+  /// `steam://connect/<ip:port>` is the only join path Steam treats as
+  /// first-class: it launches the game when it is closed and hands the
+  /// address to an already running client, which `steam://run//+connect`
+  /// cannot do.
+  pub fn open_steam_uri(&self, steam_uri: &str) -> Result<(), Error> {
+    log::info!("Opening Steam URI: {}", redacted_steam_uri(steam_uri));
 
     #[cfg(target_os = "windows")]
     {
       let steam_exe = self.get_steam_executable()?;
       std::process::Command::new(steam_exe)
-        .arg(&steam_uri)
+        .arg(steam_uri)
         .spawn()
         .map_err(|e| Error::GameLaunchFailed(e.to_string()))?;
     }
@@ -199,7 +213,7 @@ impl SteamManager {
     #[cfg(target_os = "linux")]
     {
       std::process::Command::new("xdg-open")
-        .arg(&steam_uri)
+        .arg(steam_uri)
         .stdout(std::process::Stdio::null())
         .stderr(std::process::Stdio::null())
         .spawn()
@@ -209,7 +223,7 @@ impl SteamManager {
     #[cfg(target_os = "macos")]
     {
       std::process::Command::new("open")
-        .arg(&steam_uri)
+        .arg(steam_uri)
         .spawn()
         .map_err(|e| Error::GameLaunchFailed(e.to_string()))?;
     }
@@ -249,6 +263,63 @@ impl SteamManager {
 impl Default for SteamManager {
   fn default() -> Self {
     Self::new()
+  }
+}
+
+/// Drop credentials from a Steam URI before it is written to the log file.
+fn redacted_steam_uri(uri: &str) -> String {
+  let without_connect_password = match uri.strip_prefix("steam://connect/") {
+    Some(rest) => {
+      let addr = rest.split('/').next().unwrap_or(rest);
+      format!("steam://connect/{addr}")
+    }
+    None => uri.to_string(),
+  };
+
+  redact_password_args(&without_connect_password)
+}
+
+fn redact_password_args(uri: &str) -> String {
+  let mut parts = uri.split(' ').peekable();
+  let mut out = Vec::new();
+  while let Some(part) = parts.next() {
+    out.push(part.to_string());
+    if part.eq_ignore_ascii_case("+password") && parts.peek().is_some() {
+      parts.next();
+      out.push("<redacted>".to_string());
+    }
+  }
+  out.join(" ")
+}
+
+#[cfg(test)]
+mod redaction_tests {
+  use super::*;
+
+  #[test]
+  fn drops_the_password_segment_from_a_connect_uri() {
+    assert_eq!(
+      redacted_steam_uri("steam://connect/203.0.113.10:27015/hunter2"),
+      "steam://connect/203.0.113.10:27015"
+    );
+  }
+
+  #[test]
+  fn leaves_a_connect_uri_without_a_password_unchanged() {
+    assert_eq!(
+      redacted_steam_uri("steam://connect/203.0.113.10:27015"),
+      "steam://connect/203.0.113.10:27015"
+    );
+  }
+
+  #[test]
+  fn redacts_a_password_launch_option() {
+    assert_eq!(
+      redacted_steam_uri(
+        "steam://run/1422450//+connect 203.0.113.10:27015 +password hunter2 -condebug"
+      ),
+      "steam://run/1422450//+connect 203.0.113.10:27015 +password <redacted> -condebug"
+    );
   }
 }
 

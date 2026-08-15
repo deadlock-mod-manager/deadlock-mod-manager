@@ -5,6 +5,7 @@ import { listen } from "@tauri-apps/api/event";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { stopHeroDetection } from "@/hooks/use-hero-detection";
+import { restoreProfileGameinfo } from "@/lib/gameinfo";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { getAdditionalArgs } from "@/lib/utils";
@@ -95,20 +96,8 @@ export const useLaunch = () => {
         ? null
         : (activeProfile?.folderName ?? null);
 
-      // Restore the active profile in gameinfo.gi in case the previous run
-      // staged a server folder. No-op when no stale server entries exist.
-      try {
-        const reverted = await invoke<boolean>(
-          "cleanup_stale_server_gameinfo",
-          { activeProfileFolder: profileFolder },
-        );
-        if (reverted) {
-          clearLastJoin();
-        }
-      } catch (cleanupError) {
-        logger
-          .withError(cleanupError)
-          .warn("Stale server gameinfo cleanup failed; launching anyway");
+      if (await restoreProfileGameinfo(profileFolder)) {
+        clearLastJoin();
       }
 
       stopHeroDetection();

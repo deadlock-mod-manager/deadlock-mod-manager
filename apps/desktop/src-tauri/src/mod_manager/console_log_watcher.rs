@@ -14,28 +14,50 @@ fn get_console_log_path(game_path: &Path) -> PathBuf {
     .join(CONSOLE_LOG_FILENAME)
 }
 
-/// Polls `console.log` from `last_offset`, returns any new bytes appended.
-fn read_new_content(path: &Path, last_offset: &mut u64) -> Option<String> {
-  let mut file = std::fs::File::open(path).ok()?;
-  let metadata = file.metadata().ok()?;
-  let current_len = metadata.len();
+/// A cursor over `console.log` that yields whatever the game appended since
+/// the last read. Callers pick where to start: `from_start` for a cold launch
+/// (the game truncates the log, so the early lines are all ours), `from_end`
+/// when the client is already up and only new activity is interesting.
+pub(crate) struct ConsoleLogTail {
+  path: PathBuf,
+  offset: u64,
+}
 
-  if current_len < *last_offset {
-    // File was truncated / rotated; start from scratch.
-    *last_offset = 0;
+impl ConsoleLogTail {
+  pub(crate) fn from_start(game_path: &Path) -> Self {
+    Self {
+      path: get_console_log_path(game_path),
+      offset: 0,
+    }
   }
 
-  if current_len <= *last_offset {
-    return None;
+  pub(crate) fn from_end(game_path: &Path) -> Self {
+    let path = get_console_log_path(game_path);
+    let offset = std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
+    Self { path, offset }
   }
 
-  file.seek(SeekFrom::Start(*last_offset)).ok()?;
-  let to_read = (current_len - *last_offset) as usize;
-  let mut buf = vec![0u8; to_read];
-  file.read_exact(&mut buf).ok()?;
-  *last_offset = current_len;
+  pub(crate) fn read_new(&mut self) -> Option<String> {
+    let mut file = std::fs::File::open(&self.path).ok()?;
+    let current_len = file.metadata().ok()?.len();
 
-  String::from_utf8(buf).ok()
+    if current_len < self.offset {
+      // File was truncated / rotated; start from scratch.
+      self.offset = 0;
+    }
+
+    if current_len <= self.offset {
+      return None;
+    }
+
+    file.seek(SeekFrom::Start(self.offset)).ok()?;
+    let to_read = (current_len - self.offset) as usize;
+    let mut buf = vec![0u8; to_read];
+    file.read_exact(&mut buf).ok()?;
+    self.offset = current_len;
+
+    String::from_utf8(buf).ok()
+  }
 }
 
 /// Watches the console log for `ServerSteamID=\[...\]` until found or stopped.
@@ -44,12 +66,8 @@ pub async fn watch_for_connect_code(
   game_path: &Path,
   running_flag: Arc<AtomicBool>,
 ) -> Option<String> {
-  let log_path = get_console_log_path(game_path);
   let re = Regex::new(r"ServerSteamID=(\[A:\d+:\d+:\d+\])").expect("invalid regex");
-
-  // Start reading from the current end of the file (or 0 if it doesn't exist yet)
-  // so we don't pick up stale IDs from a previous session.
-  let mut offset: u64 = std::fs::metadata(&log_path).map(|m| m.len()).unwrap_or(0);
+  let mut tail = ConsoleLogTail::from_end(game_path);
 
   loop {
     if !running_flag.load(Ordering::Relaxed) {
@@ -57,7 +75,7 @@ pub async fn watch_for_connect_code(
       return None;
     }
 
-    if let Some(chunk) = read_new_content(&log_path, &mut offset)
+    if let Some(chunk) = tail.read_new()
       && let Some(caps) = re.captures(&chunk)
     {
       let code = caps.get(1).map(|m| m.as_str().to_string());

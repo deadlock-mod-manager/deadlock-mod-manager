@@ -12,6 +12,7 @@ import ServerTable from "@/components/server-browser/server-table";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
 import { useServerBrowserData } from "@/hooks/use-server-browser-data";
+import { useServerConnectProgress } from "@/hooks/use-server-connect-progress";
 
 const DEFAULT_FILTERS: ServerFiltersValue = {
   search: "",
@@ -25,6 +26,8 @@ const Servers = () => {
   const { t } = useTranslation();
   const [filters, setFilters] = useState<ServerFiltersValue>(DEFAULT_FILTERS);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  useServerConnectProgress();
 
   const {
     servers,
