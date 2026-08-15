@@ -167,6 +167,27 @@ export class CronService {
     await this.queue.scheduleRecurring(jobName, cronPattern, template);
   }
 
+  /**
+   * Queues a single immediate run of a scheduled job, bypassing its pattern.
+   * The caller does not have to own the worker, so this works from a CLI while
+   * the service that defined the job picks the run up.
+   */
+  async triggerJob(
+    jobName: string,
+    jobData: Record<string, unknown> = {},
+  ): Promise<string | undefined> {
+    const job = await this.queue.add(jobName, {
+      jobData,
+      metadata: { jobType: jobName, trigger: "manual" },
+    });
+
+    this.logger
+      .withMetadata({ jobId: job.id })
+      .info(`Triggered cron job: ${jobName}`);
+
+    return job.id;
+  }
+
   async enableJob(jobName: string): Promise<void> {
     const definition = this.jobs.get(jobName);
     if (!definition) {

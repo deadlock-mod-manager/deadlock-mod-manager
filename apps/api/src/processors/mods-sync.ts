@@ -60,15 +60,16 @@ export class ModsSyncProcessor extends BaseProcessor<CronJobData> {
         const result = await syncService.synchronizeMods();
 
         wide.merge({ success: result.success, resultMessage: result.message });
-        wide.emit();
 
         if (result.success) {
+          wide.emit("success");
           return this.handleJobSuccess(jobData, checkInId);
         }
 
         // The schedule leaves a wide margin over a normal run, so a lock still
         // held by the previous run means it overran or wedged. Report it to
         // Sentry, but succeed the job: retrying would only hit the same lock.
+        wide.emit("error");
         this.reportCheckIn(checkInId, "error");
 
         if (result.locked) {
