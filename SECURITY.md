@@ -40,15 +40,35 @@ For security vulnerabilities, please report them **privately** through:
 ### Application Security
 
 - **Tauri Framework**: Sandboxed environment with capability-based permissions
-- **Network Access**: Limited to trusted domains (gamebanana.com, deadlockmods.app, deadlock-api.com)
-- **File System**: Restricted access to app data and user-selected mod directories
+- **Network Access**: Limited to trusted domains (gamebanana.com, deadlockmods.app, deadlock-api.com, deadworks.net) plus Valve's Steam servers when match sync is enabled. Deadworks hosts community server listings and their content manifests.
+- **File System**: Restricted access to app data, user-selected mod directories, and — when match sync is enabled — the Steam configuration files described below
 - **Input Validation**: All user inputs are validated and sanitized
+
+### Steam Account Access (Match Sync)
+
+Match sync is **opt-in and disabled by default**. It requires an explicit consent step, and turning it off stops all background work immediately. When you enable it:
+
+- **Credentials read locally**: The app reads Steam's `config/loginusers.vdf` to list remembered accounts, and reads the `ConnectCache` blob from `local.vdf` to recover each account's Steam refresh token. The token is decrypted with the same OS-bound mechanism Steam itself uses — DPAPI on Windows, AES-256 derived from the account name on Linux and macOS — so it can only be recovered on your own machine, under your own user account.
+- **Token handling**: The refresh token is a live account credential. It is held **in memory only** for the duration of a sync — never logged, never written to disk by us, and never transmitted to our servers or any third party other than Valve.
+- **What it is used for**: The token authenticates a session against Valve's Steam servers (CM + Deadlock Game Coordinator) so the app can request your own match history and per-match salts, exactly as the game client would.
+- **We never ask for your Steam password**: The app has no login form and never prompts for Steam credentials. It only reuses the session Steam already stored when you chose "remember me".
+- **Rate limiting**: Requests to the Game Coordinator are throttled and capped per account (40 match fetches per rolling 24 hours) to stay well within Valve's limits.
+
+### Data Shared by Match Sync
+
+When match sync is enabled, the following is sent to `api.deadlock-api.com`:
+
+- Your Steam3 account id, used to ask which of your matches still need data
+- Match ids and their replay/metadata salts and cluster ids
+
+No Steam credentials, tokens, personal messages, friend lists, or account details are transmitted. Match ids and salts are public match identifiers, not private account data.
 
 ### User Privacy
 
-- **No Personal Data Collection**: We don't collect or store personal information
-- **Local Storage**: All data stored locally on your device
+- **No Telemetry by Default**: We don't collect or store personal information unless you opt in to match sync
+- **Local Storage**: All app data — including mods, settings, and sync state — is stored locally on your device
 - **Optional Analytics**: Can be disabled in settings
+- **Revocable**: Disabling match sync stops all Steam session use and data sharing. You can also revoke the app's access at any time from Steam by signing out of "remember me" or deauthorizing your devices in Steam account settings.
 
 ### Mod Safety
 
@@ -81,6 +101,8 @@ New releases may trigger Windows SmartScreen warnings due to the code signing pr
 
 Some antivirus software may flag the application due to file system access and network features. We work to minimize false positives.
 
+With match sync enabled, the app reads and decrypts Steam's stored session token — the same behaviour credential-stealing malware exhibits — so some security software may flag it. This is why the feature is opt-in, why the token never leaves your machine, and why the relevant code lives in a small, auditable module ([`apps/desktop/src-tauri/src/match_sync/auth.rs`](apps/desktop/src-tauri/src/match_sync/auth.rs)). If you are not comfortable with this trade-off, leave match sync disabled; the rest of the app is unaffected.
+
 ### Mod Execution Risks
 
 - Mods can execute code within the game environment
@@ -96,6 +118,6 @@ Some antivirus software may flag the application due to file system access and n
 
 ---
 
-**Last Updated**: December 2024
+**Last Updated**: August 2026
 
 > **Note**: This security policy is regularly reviewed and updated. Check this document periodically for the latest information.
