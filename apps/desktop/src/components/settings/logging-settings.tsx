@@ -229,16 +229,16 @@ export const LoggingSettings = () => {
             <Button
               onClick={() => openLogsFolderMutation.mutate()}
               variant='outline'
-              isLoading={openLogsFolderMutation.isPending}>
-              <FolderOpenIcon className='h-4 w-4' />
+              isLoading={openLogsFolderMutation.isPending}
+              icon={<FolderOpenIcon className='h-4 w-4' />}>
               {t("settings.openLogsFolder")}
             </Button>
             <Button
               onClick={() => openLogFileMutation.mutate()}
               variant='outline'
               isLoading={openLogFileMutation.isPending}
+              icon={<PencilIcon className='h-4 w-4' />}
               disabled={!logInfo?.files.length}>
-              <PencilIcon className='h-4 w-4' />
               {t("settings.openLogFile")}
             </Button>
           </div>
@@ -263,16 +263,16 @@ export const LoggingSettings = () => {
             <Button
               onClick={() => openCrashDumpsFolderMutation.mutate()}
               variant='outline'
-              isLoading={openCrashDumpsFolderMutation.isPending}>
-              <FolderOpenIcon className='h-4 w-4' />
+              isLoading={openCrashDumpsFolderMutation.isPending}
+              icon={<FolderOpenIcon className='h-4 w-4' />}>
               {t("settings.openLogsFolder")}
             </Button>
             {crashDumpInfo && crashDumpInfo.total_count > 0 && (
               <Button
                 onClick={() => openLatestCrashDumpMutation.mutate()}
                 variant='outline'
-                isLoading={openLatestCrashDumpMutation.isPending}>
-                <PencilIcon className='h-4 w-4' />
+                isLoading={openLatestCrashDumpMutation.isPending}
+                icon={<PencilIcon className='h-4 w-4' />}>
                 {t("settings.openLatestCrashDump")}
               </Button>
             )}
@@ -351,6 +351,7 @@ export const LoggingSettings = () => {
             onClick={handleAskAi}
             variant='outline'
             isLoading={askAiMutation.isPending}
+            icon={<RobotIcon className='h-4 w-4' />}
             disabled={
               (selectedLogSource === "dmm" && !logInfo?.files.length) ||
               (selectedLogSource === "crash" && !crashDumpInfo?.total_count) ||
@@ -358,7 +359,6 @@ export const LoggingSettings = () => {
                 !logInfo?.files.length &&
                 !crashDumpInfo?.total_count)
             }>
-            <RobotIcon className='h-4 w-4' />
             {t("settings.askAiButton")}
           </Button>
         </div>

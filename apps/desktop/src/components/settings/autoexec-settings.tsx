@@ -301,30 +301,30 @@ export const AutoexecSettings = () => {
 
             <div className='flex gap-2'>
               <Button
+                icon={<FolderOpenIcon className='h-4 w-4' />}
                 isLoading={openFolderMutation.isPending}
                 onClick={handleOpenFolder}
                 type='button'
                 variant='outline'>
-                <FolderOpenIcon className='h-4 w-4' />
                 {t("settings.openInFolder")}
               </Button>
               <Button
+                icon={<PencilIcon className='h-4 w-4' />}
                 isLoading={openEditorMutation.isPending}
                 onClick={handleOpenEditor}
                 type='button'
                 variant='outline'>
-                <PencilIcon className='h-4 w-4' />
                 {t("settings.openInEditor")}
               </Button>
               <Button
                 disabled={
                   clearMutation.isPending || watchedContent.trim().length === 0
                 }
+                icon={<TrashIcon className='h-4 w-4' />}
                 isLoading={clearMutation.isPending}
                 onClick={handleClear}
                 type='button'
                 variant='outline'>
-                <TrashIcon className='h-4 w-4' />
                 {t("settings.autoexecClear")}
               </Button>
               <Button

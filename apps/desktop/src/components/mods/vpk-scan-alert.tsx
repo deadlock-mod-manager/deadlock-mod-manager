@@ -294,13 +294,11 @@ export const VpkScanAlert = ({
                               variant='ghost'
                               className='h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive'
                               disabled={isPending}
+                              icon={<PhosphorIcons.Trash className='h-4 w-4' />}
                               isLoading={isPending}
                               onClick={() => handleDelete(vpk)}
-                              aria-label={t("mods.vpkScanAlert.delete")}>
-                              {!isPending && (
-                                <PhosphorIcons.Trash className='h-4 w-4' />
-                              )}
-                            </Button>
+                              aria-label={t("mods.vpkScanAlert.delete")}
+                            />
                           </TooltipTrigger>
                           <TooltipContent side='top'>
                             {t("mods.vpkScanAlert.delete")}
