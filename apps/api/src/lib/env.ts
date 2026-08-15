@@ -40,6 +40,10 @@ export const envSchema = z.object({
     .string()
     .url("RELAYS_JSON_URL must be a valid URL")
     .default("https://deadworks-relay.deadlockmods.app/relays.json"),
+  DEADWORKS_REGISTRY_URL: z
+    .string()
+    .url("DEADWORKS_REGISTRY_URL must be a valid URL")
+    .default("https://api.deadworks.net"),
 });
 
 export const env = envSchema.parse(process.env);

@@ -36,6 +36,12 @@ export const CACHE_TTL = {
   SERVERS_FACETS: 60 * 1000,
   /** Server browser - single server detail TTL (30s) */
   SERVER_DETAIL: 30 * 1000,
+  /**
+   * Server browser - last-good Deadworks registry snapshot (3h). Registry
+   * outages have lasted until a provider quota reset, so the window has to
+   * outlive one; responses carry the snapshot's age so the UI can say it's stale.
+   */
+  REGISTRY_SNAPSHOT: 3 * 60 * 60 * 1000,
   /** Server browser - relays.json manifest TTL (10 min) */
   RELAYS_MANIFEST: 10 * 60 * 1000,
   /** Relay mesh health snapshot TTL (1 day) */
