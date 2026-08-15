@@ -626,6 +626,11 @@
       "ping": "",
       "tags": ""
     },
+    "ping": {
+      "loading": "",
+      "unavailable": "",
+      "ms": ""
+    },
     "badges": {
       "password": "",
       "auth": "",
@@ -665,6 +670,29 @@
       "unknown": "",
       "keepMyMods": ""
     },
+    "join": {
+      "summaryTitle": "",
+      "summaryMods_one": "",
+      "summaryMods_other": "",
+      "summaryRestore": "",
+      "summaryLaunch": "",
+      "launching": "",
+      "launched": "",
+      "stopping": "",
+      "manual": "",
+      "passwordSkipped": "",
+      "gameStillRunning": "",
+      "gameRunning": {
+        "title": "",
+        "body": "",
+        "restart": ""
+      },
+      "launchedWatched": "",
+      "summaryServerContent": "",
+      "summaryServerContentCounted_one": "",
+      "summaryServerContentCounted_other": "",
+      "noConnectMethod": ""
+    },
     "staging": {
       "creatingFolder": "",
       "installing": "",
@@ -676,7 +704,10 @@
       "customConfirm": "",
       "customSkip": "",
       "downloadingCustom": "",
-      "applying": ""
+      "applying": "",
+      "downloadingServerContent": "",
+      "contentItemProgress": "",
+      "decompressing": ""
     },
     "requirementRow": {
       "customProvider": "",
@@ -689,7 +720,10 @@
       "title": "",
       "description": "",
       "errorTitle": "",
-      "errorDescription": ""
+      "errorDescription": "",
+      "registryDegraded": "",
+      "registryStale_one": "",
+      "registryStale_other": ""
     },
     "relayBar": {
       "online": "",
@@ -703,6 +737,11 @@
       "description": "",
       "action": "",
       "openError": ""
+    },
+    "connect": {
+      "retrying": "",
+      "connected": "",
+      "timedOut": ""
     }
   },
   "menu": {

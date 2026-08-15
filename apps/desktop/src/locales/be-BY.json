@@ -626,6 +626,11 @@
       "ping": "Пінг",
       "tags": "Тэгі"
     },
+    "ping": {
+      "loading": "",
+      "unavailable": "",
+      "ms": ""
+    },
     "badges": {
       "password": "Пароль",
       "auth": "Патрабуецца аўтарызацыя",
@@ -665,6 +670,29 @@
       "unknown": "Невядомы",
       "keepMyMods": "Захаваць мае ўсталяваныя моды ўключанымі (накласці моды сервера на твой актыўны профіль)"
     },
+    "join": {
+      "summaryTitle": "",
+      "summaryMods_one": "",
+      "summaryMods_other": "",
+      "summaryRestore": "",
+      "summaryLaunch": "",
+      "launching": "",
+      "launched": "",
+      "stopping": "",
+      "manual": "",
+      "passwordSkipped": "",
+      "gameStillRunning": "",
+      "gameRunning": {
+        "title": "",
+        "body": "",
+        "restart": ""
+      },
+      "launchedWatched": "",
+      "summaryServerContent": "",
+      "summaryServerContentCounted_one": "",
+      "summaryServerContentCounted_other": "",
+      "noConnectMethod": ""
+    },
     "staging": {
       "creatingFolder": "Падрыхтоўка каталога дадаткаў сервера...",
       "installing": "Усталёўваюцца неабходныя моды...",
@@ -676,7 +704,10 @@
       "customConfirm": "Дазволіць спампоўванні",
       "customSkip": "Прапусціць карыстальніцкія моды",
       "downloadingCustom": "Спампоўваюцца моды ад карыстальніцкага правайдэра...",
-      "applying": "Прымяненне серверных модаў да gameinfo.gi..."
+      "applying": "Прымяненне серверных модаў да gameinfo.gi...",
+      "downloadingServerContent": "",
+      "contentItemProgress": "",
+      "decompressing": ""
     },
     "requirementRow": {
       "customProvider": "Кастомны",
@@ -689,7 +720,10 @@
       "title": "Сэрвераў не знойдзена",
       "description": "Спрабуйце ачысціць некаторыя фільтры або праверце зноў праз хвіліну. Спіс абнаўляецца аўтаматычна.",
       "errorTitle": "Не ўдалося загрузіць серверы",
-      "errorDescription": "Зараз не ўдалося загрузіць серверы. Калі ласка, паспрабуйце зноў праз хвіліну."
+      "errorDescription": "Зараз не ўдалося загрузіць серверы. Калі ласка, паспрабуйце зноў праз хвіліну.",
+      "registryDegraded": "",
+      "registryStale_one": "",
+      "registryStale_other": ""
     },
     "relayBar": {
       "online": "анлайн",
@@ -703,6 +737,11 @@
       "description": "Падзяліцеся ім тут, каб іншыя гульцы маглі знайсці і далучыцца да яго.",
       "action": "Дадаць сервер у спіс",
       "openError": "Не атрымалася адкрыць старонку хостынгу сервера."
+    },
+    "connect": {
+      "retrying": "",
+      "connected": "",
+      "timedOut": ""
     }
   },
   "menu": {

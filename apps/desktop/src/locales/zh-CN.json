@@ -626,6 +626,11 @@
       "ping": "延迟",
       "tags": "标签"
     },
+    "ping": {
+      "loading": "",
+      "unavailable": "",
+      "ms": ""
+    },
     "badges": {
       "password": "密码",
       "auth": "需要授权",
@@ -665,6 +670,29 @@
       "unknown": "未知",
       "keepMyMods": "保持已安装的模组为启用 (服务器模组优先于你的的活动配置文件)"
     },
+    "join": {
+      "summaryTitle": "",
+      "summaryMods_one": "",
+      "summaryMods_other": "",
+      "summaryRestore": "",
+      "summaryLaunch": "",
+      "launching": "",
+      "launched": "",
+      "stopping": "",
+      "manual": "",
+      "passwordSkipped": "",
+      "gameStillRunning": "",
+      "gameRunning": {
+        "title": "",
+        "body": "",
+        "restart": ""
+      },
+      "launchedWatched": "",
+      "summaryServerContent": "",
+      "summaryServerContentCounted_one": "",
+      "summaryServerContentCounted_other": "",
+      "noConnectMethod": ""
+    },
     "staging": {
       "creatingFolder": "正在准备服务器插件文件夹……",
       "installing": "正在安装依赖的模组……",
@@ -676,7 +704,10 @@
       "customConfirm": "允许下载",
       "customSkip": "跳过自定义模组",
       "downloadingCustom": "正在下载来自自定义提供方的模组……",
-      "applying": "正在将服务器模组应用到 gameinfo.gi...custom-provider……"
+      "applying": "正在将服务器模组应用到 gameinfo.gi...custom-provider……",
+      "downloadingServerContent": "",
+      "contentItemProgress": "",
+      "decompressing": ""
     },
     "requirementRow": {
       "customProvider": "自定义",
@@ -689,7 +720,10 @@
       "title": "找不到服务器",
       "description": "尝试清除一些过滤条件，或稍后再回来查看。列表会自动刷新。",
       "errorTitle": "无法加载服务器",
-      "errorDescription": "暂时无法加载服务器，请稍后重试。"
+      "errorDescription": "暂时无法加载服务器，请稍后重试。",
+      "registryDegraded": "",
+      "registryStale_one": "",
+      "registryStale_other": ""
     },
     "relayBar": {
       "online": "可用",
@@ -703,6 +737,11 @@
       "description": "在此分享它，让其他玩家可以找到并加入。",
       "action": "列出您的服务器",
       "openError": "无法打开服务器托管页面。"
+    },
+    "connect": {
+      "retrying": "",
+      "connected": "",
+      "timedOut": ""
     }
   },
   "menu": {

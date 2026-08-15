@@ -626,6 +626,11 @@
       "ping": "",
       "tags": ""
     },
+    "ping": {
+      "loading": "",
+      "unavailable": "",
+      "ms": ""
+    },
     "badges": {
       "password": "",
       "auth": "",
@@ -665,6 +670,29 @@
       "unknown": "Inconnu",
       "keepMyMods": "Garder mes mods installés activés (ceux du serveur seront activés au-dessus les vôtres)"
     },
+    "join": {
+      "summaryTitle": "",
+      "summaryMods_one": "",
+      "summaryMods_other": "",
+      "summaryRestore": "",
+      "summaryLaunch": "",
+      "launching": "",
+      "launched": "",
+      "stopping": "",
+      "manual": "",
+      "passwordSkipped": "",
+      "gameStillRunning": "",
+      "gameRunning": {
+        "title": "",
+        "body": "",
+        "restart": ""
+      },
+      "launchedWatched": "",
+      "summaryServerContent": "",
+      "summaryServerContentCounted_one": "",
+      "summaryServerContentCounted_other": "",
+      "noConnectMethod": ""
+    },
     "staging": {
       "creatingFolder": "",
       "installing": "Installation des mods requis en cours...",
@@ -676,7 +704,10 @@
       "customConfirm": "Autoriser les téléchargements",
       "customSkip": "Ignorer les mods personnalisés",
       "downloadingCustom": "",
-      "applying": ""
+      "applying": "",
+      "downloadingServerContent": "",
+      "contentItemProgress": "",
+      "decompressing": ""
     },
     "requirementRow": {
       "customProvider": "",
@@ -689,7 +720,10 @@
       "title": "Aucun serveur trouvé",
       "description": "Essayez de supprimer des filtres ou revenez dans un instant. La liste se rafraîchit automatiquement.",
       "errorTitle": "Impossible de charger les serveurs",
-      "errorDescription": "Nous n'avons pas pu charger les serveurs maintenant. Veuillez réessayer dans un instant."
+      "errorDescription": "Nous n'avons pas pu charger les serveurs maintenant. Veuillez réessayer dans un instant.",
+      "registryDegraded": "",
+      "registryStale_one": "",
+      "registryStale_other": ""
     },
     "relayBar": {
       "online": "en ligne",
@@ -703,6 +737,11 @@
       "description": "Partagez-le ici pour que d'autres joueurs puissent le trouver et le rejoindre.",
       "action": "L'ajouter à la liste",
       "openError": ""
+    },
+    "connect": {
+      "retrying": "",
+      "connected": "",
+      "timedOut": ""
     }
   },
   "menu": {

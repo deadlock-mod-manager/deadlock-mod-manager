@@ -626,6 +626,11 @@
       "ping": "Латентност",
       "tags": "Тагове"
     },
+    "ping": {
+      "loading": "",
+      "unavailable": "",
+      "ms": ""
+    },
     "badges": {
       "password": "Парола",
       "auth": "Изисква се удостоверяване",
@@ -665,6 +670,29 @@
       "unknown": "Неизвестно",
       "keepMyMods": "Запази моите изтеглени модове включени ("
     },
+    "join": {
+      "summaryTitle": "",
+      "summaryMods_one": "",
+      "summaryMods_other": "",
+      "summaryRestore": "",
+      "summaryLaunch": "",
+      "launching": "",
+      "launched": "",
+      "stopping": "",
+      "manual": "",
+      "passwordSkipped": "",
+      "gameStillRunning": "",
+      "gameRunning": {
+        "title": "",
+        "body": "",
+        "restart": ""
+      },
+      "launchedWatched": "",
+      "summaryServerContent": "",
+      "summaryServerContentCounted_one": "",
+      "summaryServerContentCounted_other": "",
+      "noConnectMethod": ""
+    },
     "staging": {
       "creatingFolder": "Подготвяне на addons папката за сървъра",
       "installing": "Инсталиране на нужните модове...",
@@ -676,7 +704,10 @@
       "customConfirm": "Разрешаване на изтеглянията",
       "customSkip": "Пропускане на персонализирани модове",
       "downloadingCustom": "Изтегляне на модове за персонализирани доставчици...",
-      "applying": "Прилагане на сървърни модове към gameinfo.gi..."
+      "applying": "Прилагане на сървърни модове към gameinfo.gi...",
+      "downloadingServerContent": "",
+      "contentItemProgress": "",
+      "decompressing": ""
     },
     "requirementRow": {
       "customProvider": "Персонализиран",
@@ -689,7 +720,10 @@
       "title": "Няма намерени сървъри",
       "description": "Опитайте да изчистите някои филтри или пробвайте отново след малко. Списъкът се обновява автоматично.",
       "errorTitle": "Сървърите не можаха да бъдат заредени",
-      "errorDescription": "Не можахме да заредим сървърите в момента. Моля, опитайте пак след малко."
+      "errorDescription": "Не можахме да заредим сървърите в момента. Моля, опитайте пак след малко.",
+      "registryDegraded": "",
+      "registryStale_one": "",
+      "registryStale_other": ""
     },
     "relayBar": {
       "online": "на линия",
@@ -703,6 +737,11 @@
       "description": "Споделете го тук, за да може други играчи да го намерят и да се присъединят.",
       "action": "Избройте вашия сървър",
       "openError": "Страницата за хостинг на сървъра не можа да бъде отворена."
+    },
+    "connect": {
+      "retrying": "",
+      "connected": "",
+      "timedOut": ""
     }
   },
   "menu": {
