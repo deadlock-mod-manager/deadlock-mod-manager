@@ -21,7 +21,7 @@ COPY packages ./packages
 COPY tools ./tools
 COPY apps/bot ./apps/bot
 
-RUN pnpm install
+RUN pnpm install --frozen-lockfile
 
 WORKDIR /usr/src/app/apps/bot
 

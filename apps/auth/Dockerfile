@@ -24,8 +24,7 @@ COPY packages ./packages
 COPY tools ./tools
 COPY apps/auth ./apps/auth
 
-# Install dependencies (handle lockfile config mismatch)
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # Build the client application
 RUN pnpm --filter @deadlock-mods/auth build
@@ -76,8 +75,7 @@ COPY --chown=appuser:appuser --from=builder /usr/src/app/apps/auth ./apps/auth
 RUN mkdir -p /usr/src/app/apps/auth/dist/client && \
     chown -R appuser:appuser /usr/src/app/apps/auth/dist
 
-# Install only production dependencies (as non-root user)
-RUN pnpm install --no-frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile --prod
 
 EXPOSE 3004
 

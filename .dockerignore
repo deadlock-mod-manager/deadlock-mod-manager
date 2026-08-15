@@ -1,43 +1,94 @@
 # Dependencies
 node_modules
 **/node_modules
+.pnpm-store
+**/.pnpm-store
 
-# Development files
+# VCS / editors / agents
 .git
 .gitignore
-README.md
-docs/
-.vscode/
-.cursor/
+.gitattributes
+.github
+.vscode
+.idea
+.cursor
+.agents
+.claude
+.codex
+*.swp
+*.swo
+*~
 
-# Environment files
+# Environment and secrets — never bake into images
 .env
 .env.*
+**/.env
+**/.env.*
 !.env.example
+!**/.env.example
+.npmrc
+**/.npmrc
+.yarnrc
+.yarnrc.yml
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa
+id_ed25519
+**/credentials
+**/credentials.*
+kubeconfig
+**/kubeconfig
+.aws
+.ssh
+.vault-token
 
-# Build artifacts
+# Docs and repo meta (not needed at build time)
+README.md
+**/README.md
+CONTRIBUTING.md
+AI_POLICY.md
+AGENTS.md
+SECURITY.md
+LICENSE
+docs
+apps/docs
+.changeset
+.coderabbit.yaml
+lefthook.yml
+netlify.toml
+
+# Build artifacts / caches
 dist
+**/dist
 build
+**/build
 .turbo
+**/.turbo
+.cache
+**/.cache
+.next
+**/.next
 **/target
+coverage
+**/.nyc_output
+*.tsbuildinfo
+**/*.tsbuildinfo
 
 # OS files
 .DS_Store
+**/.DS_Store
 Thumbs.db
-
-# IDE files
-*.swp
-*.swo
+ehthumbs.db
 
 # Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Testing
-coverage
-.nyc_output
-
-# Desktop app
+# Apps not used by service Docker builds
 apps/desktop
+apps/docs

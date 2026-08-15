@@ -41,7 +41,7 @@ runs:
 
     - name: Install dependencies
       working-directory: ./apps/${{ inputs.service-name }}
-      run: pnpm install
+      run: pnpm install --frozen-lockfile
       shell: bash
 
     - name: Read version from package.json
