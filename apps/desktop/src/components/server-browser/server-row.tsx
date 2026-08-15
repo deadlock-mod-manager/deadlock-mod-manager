@@ -4,23 +4,30 @@ import {
   LockKeyIcon,
   MapPinIcon,
   PuzzlePieceIcon,
+  CellSignalFullIcon,
   ShieldCheckIcon,
+  SpinnerGapIcon,
   UsersThreeIcon,
 } from "@phosphor-icons/react";
 import type { KeyboardEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import CapacityBar from "./capacity-bar";
-import { modeTone } from "./mode-tones";
 import RegionFlag from "./region-flag";
 
 interface ServerRowProps {
   server: ServerBrowserEntry;
   isSelected: boolean;
+  pingMs: number | null | undefined;
   onSelect: (server: ServerBrowserEntry) => void;
 }
 
-const ServerRow = ({ server, isSelected, onSelect }: ServerRowProps) => {
+const ServerRow = ({
+  server,
+  isSelected,
+  pingMs,
+  onSelect,
+}: ServerRowProps) => {
   const { t } = useTranslation();
 
   const fillRatio =
@@ -32,7 +39,14 @@ const ServerRow = ({ server, isSelected, onSelect }: ServerRowProps) => {
         ? "text-amber-300"
         : "text-foreground";
 
-  const tone = modeTone(server.game_mode);
+  const pingTone =
+    pingMs === undefined || pingMs === null
+      ? "text-muted-foreground"
+      : pingMs < 60
+        ? "text-emerald-400"
+        : pingMs < 120
+          ? "text-amber-400"
+          : "text-rose-400";
 
   const handleKeyDown = (event: KeyboardEvent<HTMLTableRowElement>) => {
     if (event.key === "Enter" || event.key === " ") {
@@ -121,23 +135,24 @@ const ServerRow = ({ server, isSelected, onSelect }: ServerRowProps) => {
         </div>
       </td>
 
-      <td className='w-[140px] px-3 py-2.5'>
-        {server.game_mode && tone ? (
-          <span
-            className={cn(
-              "inline-flex max-w-full items-center  px-2 py-0.5 text-[11px] font-medium capitalize",
-              tone.bg,
-              tone.text,
-            )}>
-            <span className='truncate'>
-              {server.game_mode.replace(/_/g, " ")}
-            </span>
-          </span>
-        ) : (
-          <span className='text-muted-foreground'>
-            {t("servers.detail.unknown")}
-          </span>
-        )}
+      <td className='w-[100px] px-3 py-2.5'>
+        <div
+          className={cn(
+            "flex items-center justify-center gap-1.5 font-mono text-xs tabular-nums",
+            pingTone,
+          )}>
+          <CellSignalFullIcon className='size-3.5' weight='bold' />
+          {pingMs === undefined ? (
+            <>
+              <SpinnerGapIcon className='size-3 animate-spin' />
+              <span className='sr-only'>{t("servers.ping.loading")}</span>
+            </>
+          ) : pingMs === null ? (
+            t("servers.ping.unavailable")
+          ) : (
+            t("servers.ping.ms", { ms: pingMs })
+          )}
+        </div>
       </td>
 
       <td className='w-[110px] px-3 py-2.5 text-right'>

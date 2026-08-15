@@ -32,7 +32,10 @@ const Servers = () => {
     availableGameModes,
     availableRegions,
     serversQuery,
+    pings,
     allRelaysFailed,
+    registryDegraded,
+    registrySnapshotAgeMs,
   } = useServerBrowserData(filters);
 
   const selectedServer: ServerBrowserEntry | null = useMemo(() => {
@@ -75,6 +78,22 @@ const Servers = () => {
         </Alert>
       )}
 
+      {registryDegraded && (
+        <Alert>
+          <WarningIcon className='size-4' />
+          <AlertDescription>
+            {registrySnapshotAgeMs === null
+              ? t("servers.empty.registryDegraded")
+              : t("servers.empty.registryStale", {
+                  minutes: Math.max(
+                    1,
+                    Math.round(registrySnapshotAgeMs / 60000),
+                  ),
+                })}
+          </AlertDescription>
+        </Alert>
+      )}
+
       <ErrorBoundary>
         <div className='flex min-h-0 flex-1 gap-4'>
           <ServerTable
@@ -83,6 +102,7 @@ const Servers = () => {
             onSelect={(s) => setSelectedId(s.id)}
             selectedId={selectedId}
             servers={servers}
+            pings={pings}
           />
 
           {servers.length > 0 && (

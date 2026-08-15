@@ -626,6 +626,11 @@
       "ping": "Ping",
       "tags": "Tags"
     },
+    "ping": {
+      "loading": "Checking...",
+      "unavailable": "n/a",
+      "ms": "{{ms}} ms"
+    },
     "badges": {
       "password": "Password",
       "auth": "Auth required",
@@ -689,7 +694,10 @@
       "title": "No servers found",
       "description": "Try clearing some filters or check back in a moment. The list refreshes automatically.",
       "errorTitle": "Could not load servers",
-      "errorDescription": "We couldn't load servers right now. Please try again in a moment."
+      "errorDescription": "We couldn't load servers right now. Please try again in a moment.",
+      "registryDegraded": "The Deadworks server registry is unreachable right now, so its servers are missing from this list. This is an outage on their side, so retrying won't help.",
+      "registryStale_one": "The Deadworks server registry is unreachable. Its servers are shown from a snapshot {{minutes}} minute old and may already be gone.",
+      "registryStale_other": "The Deadworks server registry is unreachable. Its servers are shown from a snapshot {{minutes}} minutes old and may already be gone."
     },
     "relayBar": {
       "online": "online",
