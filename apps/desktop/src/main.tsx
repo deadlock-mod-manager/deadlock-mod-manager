@@ -84,6 +84,10 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
                 element={<CustomSettings value='autoexec' />}
                 path='/settings/autoexec'
               />
+              <Route
+                element={<CustomSettings value='experimental' />}
+                path='/settings/experimental'
+              />
             </Route>
           </Routes>
         </BrowserRouter>

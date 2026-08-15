@@ -439,6 +439,12 @@ const CustomSettings = ({ value }: { value?: string }) => {
     (location.state as { activeTab?: string } | null)?.activeTab ??
     "launch-options";
   const [activeTab, setActiveTab] = useState(initialTab);
+
+  useEffect(() => {
+    if (value) {
+      setActiveTab(value);
+    }
+  }, [value]);
   // Hooks für Default Sort
   const defaultSort = usePersistedStore((s) => s.defaultSort);
   const setDefaultSort = usePersistedStore((s) => s.setDefaultSort);

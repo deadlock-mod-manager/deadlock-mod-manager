@@ -21,6 +21,7 @@ import {
   CrosshairIcon,
   DiscordLogoIcon,
   DownloadIcon,
+  FlagIcon,
   GearIcon,
   HammerIcon,
   HardDrivesIcon,
@@ -226,6 +227,14 @@ const getSidebarItems = (
       tooltipLabel: t("help.documentation"),
       external: "https://docs.deadlockmods.app/",
       icon: QuestionIcon,
+      group: "developer",
+    },
+    {
+      id: "experimental",
+      title: () => <span>{t("settings.experimental")}</span>,
+      tooltipLabel: t("settings.experimental"),
+      url: "/settings/experimental",
+      icon: FlagIcon,
       group: "developer",
     },
     {
