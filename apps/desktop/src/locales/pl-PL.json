@@ -626,6 +626,11 @@
       "ping": "Ping",
       "tags": "Tagi"
     },
+    "ping": {
+      "loading": "",
+      "unavailable": "",
+      "ms": ""
+    },
     "badges": {
       "password": "Hasło",
       "auth": "Wymagane uwierzytelnienie",
@@ -665,6 +670,29 @@
       "unknown": "Nieznany",
       "keepMyMods": "Zachowaj włączone moje zainstalowane modyfikacje (modyfikacje serwerów warstw na górze aktywnego profilu)"
     },
+    "join": {
+      "summaryTitle": "",
+      "summaryMods_one": "",
+      "summaryMods_other": "",
+      "summaryRestore": "",
+      "summaryLaunch": "",
+      "launching": "",
+      "launched": "",
+      "stopping": "",
+      "manual": "",
+      "passwordSkipped": "",
+      "gameStillRunning": "",
+      "gameRunning": {
+        "title": "",
+        "body": "",
+        "restart": ""
+      },
+      "launchedWatched": "",
+      "summaryServerContent": "",
+      "summaryServerContentCounted_one": "",
+      "summaryServerContentCounted_other": "",
+      "noConnectMethod": ""
+    },
     "staging": {
       "creatingFolder": "Przygotowywanie folderu dodatków do serwera...",
       "installing": "Instalowanie wymaganych modyfikacji...",
@@ -676,7 +704,10 @@
       "customConfirm": "Zezwól na pobieranie",
       "customSkip": "Pomiń modyfikacje niestandardowe",
       "downloadingCustom": "Pobieranie modyfikacji zewnętrznych...",
-      "applying": "Stosowanie modyfikacji serwera do gameinfo.gi..."
+      "applying": "Stosowanie modyfikacji serwera do gameinfo.gi...",
+      "downloadingServerContent": "",
+      "contentItemProgress": "",
+      "decompressing": ""
     },
     "requirementRow": {
       "customProvider": "Własne",
@@ -689,7 +720,10 @@
       "title": "Nie znaleziono serwerów",
       "description": "Spróbuj wyczyścić filtry lub spróbować ponownie za chwilę. Lista odświeża się automatycznie.",
       "errorTitle": "Nie można załadować serwerów",
-      "errorDescription": "Nie mogliśmy teraz załadować serwerów. Spróbuj ponownie za chwilę."
+      "errorDescription": "Nie mogliśmy teraz załadować serwerów. Spróbuj ponownie za chwilę.",
+      "registryDegraded": "",
+      "registryStale_one": "",
+      "registryStale_other": ""
     },
     "relayBar": {
       "online": "online",
@@ -703,6 +737,11 @@
       "description": "Udostępnij tutaj, aby inni gracze mogli go znaleźć i dołączyć.",
       "action": "Wyświetl swój serwer",
       "openError": "Nie można otworzyć strony hostingu serwera."
+    },
+    "connect": {
+      "retrying": "",
+      "connected": "",
+      "timedOut": ""
     }
   },
   "menu": {
