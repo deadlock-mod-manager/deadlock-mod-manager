@@ -10,9 +10,9 @@ const BONE_FLAG_PROCEDURAL: u32 = 0x400000;
 /// and the glTF skin writer needs the decomposed TRS of each bone matrix.
 #[derive(Debug, Clone, Copy)]
 pub struct BoneTransform {
-  pub translation: [f32; 3],
-  pub rotation: [f32; 4],
-  pub scale: [f32; 3],
+    pub translation: [f32; 3],
+    pub rotation: [f32; 4],
+    pub scale: [f32; 3],
 }
 
 #[derive(Debug, Clone)]
@@ -97,49 +97,49 @@ impl Skeleton {
         })
     }
 
-  /// Source 2 drives procedural cloth roots with a solver the Foundry does not
-  /// run. Without it those bones fall back to their bind transform and the
-  /// cloth detaches from the body, so mirror the renderer's fallback: copy the
-  /// skinning transform from the first non-procedural bone marked as a cloth
-  /// anchor. This is a static fix-up of one pose, not simulation.
-  pub fn pin_procedural_cloth_roots(&self, pose: &mut [BoneTransform]) {
-    if pose.len() < self.bones.len() {
-      return;
-    }
+    /// Source 2 drives procedural cloth roots with a solver the Foundry does not
+    /// run. Without it those bones fall back to their bind transform and the
+    /// cloth detaches from the body, so mirror the renderer's fallback: copy the
+    /// skinning transform from the first non-procedural bone marked as a cloth
+    /// anchor. This is a static fix-up of one pose, not simulation.
+    pub fn pin_procedural_cloth_roots(&self, pose: &mut [BoneTransform]) {
+        if pose.len() < self.bones.len() {
+            return;
+        }
 
-    let mut model_matrices = Vec::with_capacity(self.bones.len());
-    for (index, bone) in self.bones.iter().enumerate() {
-      let transform = pose[index];
-      let local = mat4_from_trs(transform.translation, transform.rotation, transform.scale);
-      let model = if bone.parent >= 0 {
-        model_matrices
-          .get(bone.parent as usize)
-          .map(|parent| mat4_mul(parent, &local))
-          .unwrap_or(local)
-      } else {
-        local
-      };
-      model_matrices.push(model);
+        let mut model_matrices = Vec::with_capacity(self.bones.len());
+        for (index, bone) in self.bones.iter().enumerate() {
+            let transform = pose[index];
+            let local = mat4_from_trs(transform.translation, transform.rotation, transform.scale);
+            let model = if bone.parent >= 0 {
+                model_matrices
+                    .get(bone.parent as usize)
+                    .map(|parent| mat4_mul(parent, &local))
+                    .unwrap_or(local)
+            } else {
+                local
+            };
+            model_matrices.push(model);
+        }
+        let Some(anchor_index) = self.bones.iter().position(|bone| {
+            bone.flags & BONE_FLAG_CLOTH != 0 && bone.flags & BONE_FLAG_PROCEDURAL == 0
+        }) else {
+            return;
+        };
+        let cloth_skinning = mat4_mul(
+            &model_matrices[anchor_index],
+            &self.inverse_bind_matrices[anchor_index],
+        );
+        for (index, bone) in self.bones.iter().enumerate() {
+            if bone.parent < 0
+                && bone.flags & (BONE_FLAG_CLOTH | BONE_FLAG_PROCEDURAL)
+                    == (BONE_FLAG_CLOTH | BONE_FLAG_PROCEDURAL)
+            {
+                let pinned = mat4_mul(&cloth_skinning, &bone.model_bind_matrix);
+                pose[index] = decompose_trs(&pinned);
+            }
+        }
     }
-    let Some(anchor_index) = self.bones.iter().position(|bone| {
-      bone.flags & BONE_FLAG_CLOTH != 0 && bone.flags & BONE_FLAG_PROCEDURAL == 0
-    }) else {
-      return;
-    };
-    let cloth_skinning = mat4_mul(
-      &model_matrices[anchor_index],
-      &self.inverse_bind_matrices[anchor_index],
-    );
-    for (index, bone) in self.bones.iter().enumerate() {
-      if bone.parent < 0
-        && bone.flags & (BONE_FLAG_CLOTH | BONE_FLAG_PROCEDURAL)
-          == (BONE_FLAG_CLOTH | BONE_FLAG_PROCEDURAL)
-      {
-        let pinned = mat4_mul(&cloth_skinning, &bone.model_bind_matrix);
-        pose[index] = decompose_trs(&pinned);
-      }
-    }
-  }
 }
 
 pub fn parse_model_skeleton(res: &Resource) -> Result<Option<Skeleton>> {

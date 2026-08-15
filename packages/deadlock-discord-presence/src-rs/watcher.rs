@@ -209,8 +209,7 @@ async fn update_presence(
     last_hash: &mut Option<String>,
 ) {
     let Some(activity_data) = build_presence(state, hero_store, presence_config) else {
-        if let Err(error) = discord_presence.clear_activity().await
-        {
+        if let Err(error) = discord_presence.clear_activity().await {
             log::debug!("[GamePresence] Discord clear skipped: {error}");
         }
         *last_hash = None;
@@ -237,8 +236,7 @@ async fn update_presence(
     if let Err(error) = result {
         log::warn!("[GamePresence] Failed to set activity: {error}");
         emit_phase(status_callback, PresencePhase::Error);
-        if let Err(disconnect_error) = discord_presence.disconnect().await
-        {
+        if let Err(disconnect_error) = discord_presence.disconnect().await {
             log::debug!("[GamePresence] Discord disconnect skipped: {disconnect_error}");
         }
         *last_hash = None;

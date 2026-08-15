@@ -15,6 +15,6 @@ pub use log_parser::LogParser;
 pub use presence_builder::build_presence;
 pub use state::{GamePhase, GameState, MatchMode};
 pub use watcher::{
-    GameExitCallback, GamePresenceWatcher, PresencePhase, PresenceStatusCallback,
-    console_log_path, is_game_running,
+    GameExitCallback, GamePresenceWatcher, PresencePhase, PresenceStatusCallback, console_log_path,
+    is_game_running,
 };

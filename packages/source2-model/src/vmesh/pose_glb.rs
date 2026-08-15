@@ -1,7 +1,7 @@
 use serde_json::Value;
 
-use crate::skeleton::BoneTransform;
 use crate::error::{Result, Source2Error};
+use crate::skeleton::BoneTransform;
 use crate::skeleton::Skeleton;
 
 use super::ModelGlb;

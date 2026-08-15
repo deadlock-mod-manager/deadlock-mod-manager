@@ -1,6 +1,6 @@
 use super::*;
-use crate::skeleton::BoneTransform;
 use crate::error::{Result, Source2Error};
+use crate::skeleton::BoneTransform;
 
 impl NmAnimation {
     pub fn reference_pose(&self) -> Vec<BoneTransform> {

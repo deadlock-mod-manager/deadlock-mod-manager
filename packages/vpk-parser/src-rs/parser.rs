@@ -35,7 +35,8 @@ impl VpkParser {
         let mut header_buf = [0u8; 28];
         file.read_exact(&mut header_buf[..12])?;
 
-        let signature = u32::from_le_bytes([header_buf[0], header_buf[1], header_buf[2], header_buf[3]]);
+        let signature =
+            u32::from_le_bytes([header_buf[0], header_buf[1], header_buf[2], header_buf[3]]);
         if signature != VPK_SIGNATURE {
             return Err(VpkError::InvalidSignature {
                 expected: VPK_SIGNATURE,
@@ -43,8 +44,10 @@ impl VpkParser {
             });
         }
 
-        let version = u32::from_le_bytes([header_buf[4], header_buf[5], header_buf[6], header_buf[7]]);
-        let tree_length = u32::from_le_bytes([header_buf[8], header_buf[9], header_buf[10], header_buf[11]]);
+        let version =
+            u32::from_le_bytes([header_buf[4], header_buf[5], header_buf[6], header_buf[7]]);
+        let tree_length =
+            u32::from_le_bytes([header_buf[8], header_buf[9], header_buf[10], header_buf[11]]);
 
         let header_size: usize = if version >= 2 {
             file.seek(SeekFrom::Start(0))?;

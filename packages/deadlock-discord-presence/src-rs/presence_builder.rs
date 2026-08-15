@@ -100,9 +100,10 @@ pub fn build_presence(
 
             if state.phase == GamePhase::InMatch
                 && !matches!(state.match_mode, MatchMode::Sandbox | MatchMode::Tutorial)
-                && let Some(match_start) = state.match_start_time {
-                    start_timestamp = Some(match_start as i64);
-                }
+                && let Some(match_start) = state.match_start_time
+            {
+                start_timestamp = Some(match_start as i64);
+            }
             if state.in_party() {
                 &config.templates.party_match
             } else {
@@ -142,9 +143,10 @@ pub fn build_presence(
     state_text = render_template_or_default(&template_pair.state, state_text, &render_context);
 
     if start_timestamp.is_none()
-        && let Some(session_start) = state.session_start_time {
-            start_timestamp = Some(session_start as i64);
-        }
+        && let Some(session_start) = state.session_start_time
+    {
+        start_timestamp = Some(session_start as i64);
+    }
 
     Some(DiscordActivity {
         details,

@@ -3,11 +3,11 @@ mod cache;
 mod mapping;
 mod types;
 
-pub use batch::{detect_heroes_batch, BatchDetectionItem, BatchDetectionResult};
+pub use batch::{BatchDetectionItem, BatchDetectionResult, detect_heroes_batch};
 pub use cache::VpkEntryCache;
 pub use types::HeroDetectionResult;
 
-use mapping::{lookup_hero, HERO_PATH_PREFIXES};
+use mapping::{HERO_PATH_PREFIXES, lookup_hero};
 use std::collections::HashMap;
 use std::path::Path;
 use vpk_parser::VpkEntry;
@@ -221,9 +221,7 @@ mod tests {
 
     #[test]
     fn test_detect_staging_hero() {
-        let paths = vec![
-            "models/heroes_staging/gigawatt/model.vmdl_c".to_string(),
-        ];
+        let paths = vec!["models/heroes_staging/gigawatt/model.vmdl_c".to_string()];
         let result = detect_hero_from_paths(&paths);
         assert_eq!(result.hero, Some("Seven".to_string()));
         assert_eq!(result.hero_display, Some("Seven".to_string()));

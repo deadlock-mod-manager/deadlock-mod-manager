@@ -68,13 +68,14 @@ impl LogParser {
 
         if self.local_account_id.is_none()
             && let Some(caps) = p.local_account_id.captures(line)
-                && let Ok(id) = caps[1].parse::<u64>() {
-                    self.local_account_id = Some(id);
-                    if self.party_id.is_some() {
-                        self.party_members.insert(id);
-                        self.set_party_size_from_members(state, 2);
-                    }
-                }
+            && let Ok(id) = caps[1].parse::<u64>()
+        {
+            self.local_account_id = Some(id);
+            if self.party_id.is_some() {
+                self.party_members.insert(id);
+                self.set_party_size_from_members(state, 2);
+            }
+        }
 
         if let Some(caps) = p.party_event.captures(line) {
             let party_id: u64 = caps[1].parse().unwrap_or(0);
@@ -268,9 +269,10 @@ impl LogParser {
         let mapped_mode = MAP_TO_MODE.iter().find(|m| m.map == map_trimmed);
 
         if let Some(mapped) = mapped_mode
-            && mapped.mode != MatchMode::Unknown {
-                state.match_mode = mapped.mode;
-            }
+            && mapped.mode != MatchMode::Unknown
+        {
+            state.match_mode = mapped.mode;
+        }
 
         if HIDEOUT_MAPS.contains(&map_trimmed) {
             state.enter_hideout();

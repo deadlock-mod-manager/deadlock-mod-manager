@@ -85,9 +85,11 @@ impl HeroDataStore {
 
     pub fn hideout_text(&self, codename: &str) -> String {
         if let Some(info) = self.get(codename)
-            && !info.hideout_text.is_empty() && info.hideout_text != "In the Hideout" {
-                return info.hideout_text.clone();
-            }
+            && !info.hideout_text.is_empty()
+            && info.hideout_text != "In the Hideout"
+        {
+            return info.hideout_text.clone();
+        }
         "In the Hideout".to_string()
     }
 
