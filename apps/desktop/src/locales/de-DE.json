@@ -665,6 +665,26 @@
       "unknown": "Unbekannt",
       "keepMyMods": "Meine installierten Mods aktiviert halten (Die Server Mods über dem aktiven Profil laden)"
     },
+    "join": {
+      "summaryTitle": "Was jetzt passiert",
+      "summaryMods_one": "{{count}} benötigter Mod wird für diesen Server heruntergeladen und aktiviert",
+      "summaryMods_other": "{{count}} benötigte Mods werden für diesen Server heruntergeladen und aktiviert",
+      "summaryRestore": "Dein eigenes Mod-Profil bleibt aktiv",
+      "summaryLaunch": "Deadlock startet und verbindet sich automatisch mit dem Server",
+      "launching": "Deadlock wird gestartet und verbindet sich...",
+      "launched": "Deadlock startet und verbindet sich mit {{name}}",
+      "stopping": "Deadlock wird beendet...",
+      "manual": "Automatisches Verbinden hat nicht geklappt. Der Connect-Code ist kopiert. Öffne Deadlock, drücke F7 und füge ein: connect {{code}}",
+      "passwordSkipped": "Dein Passwort lässt sich nicht beim Start übergeben. Drücke in Deadlock F7 und tippe: password <dein Passwort>",
+      "gameStillRunning": "Deadlock läuft noch. Beende das Spiel und versuche es erneut.",
+      "gameRunning": {
+        "title": "Deadlock muss neu starten",
+        "body": "Server-Mods werden nur beim Spielstart geladen. Deadlock wird beendet und direkt auf diesem Server neu gestartet.",
+        "restart": "Beenden und beitreten"
+      },
+      "launchedWatched": "{{name}} wird gestartet. DMM verbindet dich, sobald das Spiel bereit ist",
+      "noConnectMethod": "Dieser Server hat keine Adresse zum Verbinden veröffentlicht."
+    },
     "staging": {
       "creatingFolder": "Bereite den Ordner für Server-Addons vor...",
       "installing": "Benötigte Mods werden installiert...",
@@ -706,6 +726,11 @@
       "description": "Teile ihn hier damit andere Spieler ihn finden und ihm beitreten können.",
       "action": "Server auflisten",
       "openError": "Konnte die Server-Hosting-Seite nicht öffnen."
+    },
+    "connect": {
+      "retrying": "Deadlock hat sich nicht selbst verbunden. Neuer Versuch mit {{address}}",
+      "connected": "Mit {{address}} verbunden",
+      "timedOut": "Automatischer Beitritt zu {{address}} fehlgeschlagen. Öffne die Konsole im Spiel und führe aus: connect {{address}}"
     }
   },
   "menu": {

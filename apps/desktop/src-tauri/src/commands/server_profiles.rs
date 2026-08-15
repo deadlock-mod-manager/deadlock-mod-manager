@@ -31,6 +31,36 @@ pub(crate) fn sanitize_server_id(server_id: &str) -> Result<String, Error> {
   Ok(trimmed_sanitized.to_string())
 }
 
+/// Addons folder for a server: `server_` plus the sanitized id. Deterministic
+/// so preview can look at already-installed files before staging creates it.
+pub(crate) fn server_addons_folder_name(server_id: &str) -> Result<String, Error> {
+  let sanitized = sanitize_server_id(server_id)?;
+  Ok(format!("{SERVER_FOLDER_PREFIX}{sanitized}"))
+}
+
+/// Server ids are case-sensitive upstream, so anything that ends up in a
+/// registry URL has to be validated rather than sanitized — lowercasing turns a
+/// valid id into a 404. Folder names still go through `sanitize_server_id`.
+pub(crate) fn validate_remote_server_id(server_id: &str) -> Result<String, Error> {
+  let trimmed = server_id.trim();
+  if trimmed.is_empty() || trimmed.len() > 64 {
+    return Err(Error::InvalidInput(format!(
+      "Invalid server id: {server_id}"
+    )));
+  }
+
+  if !trimmed
+    .chars()
+    .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_')
+  {
+    return Err(Error::InvalidInput(format!(
+      "Server id contains unsupported characters: {server_id}"
+    )));
+  }
+
+  Ok(trimmed.to_string())
+}
+
 pub(crate) fn validate_addons_subfolder(folder_name: &str) -> Result<(), Error> {
   if folder_name.is_empty() || folder_name == "." || folder_name == ".." {
     return Err(Error::InvalidInput(
@@ -57,8 +87,7 @@ pub(crate) fn validate_addons_subfolder(folder_name: &str) -> Result<(), Error> 
 pub async fn create_server_addons_folder(server_id: String) -> Result<String, Error> {
   log::info!("Creating server addons folder for server: {server_id}");
 
-  let sanitized = sanitize_server_id(&server_id)?;
-  let folder_name = format!("{}{}", SERVER_FOLDER_PREFIX, sanitized);
+  let folder_name = server_addons_folder_name(&server_id)?;
 
   let mod_manager = MANAGER.lock().unwrap();
   let game_path = mod_manager
@@ -84,8 +113,7 @@ pub async fn create_server_addons_folder(server_id: String) -> Result<String, Er
 pub async fn delete_server_addons_folder(server_id: String) -> Result<(), Error> {
   log::info!("Deleting server addons folder for server: {server_id}");
 
-  let sanitized = sanitize_server_id(&server_id)?;
-  let folder_name = format!("{}{}", SERVER_FOLDER_PREFIX, sanitized);
+  let folder_name = server_addons_folder_name(&server_id)?;
   validate_addons_subfolder(&folder_name)?;
 
   let mod_manager = MANAGER.lock().unwrap();
@@ -296,6 +324,32 @@ mod tests {
   fn sanitize_server_id_strips_leading_trailing_separators() {
     let out = sanitize_server_id("--abc--").expect("ok");
     assert_eq!(out, "abc");
+  }
+
+  #[test]
+  fn server_addons_folder_name_is_deterministic() {
+    let out = server_addons_folder_name("JvVSN4Bw-l0-").expect("ok");
+    assert_eq!(out, "server_jvvsn4bw-l0");
+  }
+
+  #[test]
+  fn validate_remote_server_id_preserves_case() {
+    let out = validate_remote_server_id("qXazkPzcGy8T").expect("ok");
+    assert_eq!(out, "qXazkPzcGy8T");
+  }
+
+  #[test]
+  fn validate_remote_server_id_rejects_path_and_query_characters() {
+    assert!(validate_remote_server_id("../secrets").is_err());
+    assert!(validate_remote_server_id("abc/def").is_err());
+    assert!(validate_remote_server_id("abc?x=1").is_err());
+    assert!(validate_remote_server_id("abc def").is_err());
+  }
+
+  #[test]
+  fn validate_remote_server_id_rejects_empty() {
+    assert!(validate_remote_server_id("").is_err());
+    assert!(validate_remote_server_id("   ").is_err());
   }
 
   #[test]
