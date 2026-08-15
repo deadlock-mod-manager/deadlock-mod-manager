@@ -69,6 +69,8 @@ const main = async () => {
     enabled: true,
   });
 
+  cronService.start();
+
   logger
     .withMetadata({
       validationIntervalHours,

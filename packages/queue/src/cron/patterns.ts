@@ -7,6 +7,15 @@ export function validateCronPattern(pattern: string): boolean {
   return CRON_REGEX_6_FIELD.test(pattern) || CRON_REGEX_5_FIELD.test(pattern);
 }
 
+/**
+ * Drops the leading seconds field so a pattern can be handed to consumers that
+ * only accept the standard 5-field crontab, such as Sentry cron monitors.
+ */
+export function toStandardCronPattern(pattern: string): string {
+  const fields = pattern.trim().split(/\s+/);
+  return fields.length === 6 ? fields.slice(1).join(" ") : pattern;
+}
+
 export const CronPatterns = {
   EVERY_MINUTE: "0 * * * * *",
   EVERY_5_MINUTES: "0 */5 * * * *",

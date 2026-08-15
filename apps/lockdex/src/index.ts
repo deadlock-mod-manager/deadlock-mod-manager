@@ -46,6 +46,8 @@ const main = async () => {
     enabled: true,
   });
 
+  cronService.start();
+
   process.on("SIGTERM", async () => {
     logger.info("SIGTERM received, initiating graceful shutdown");
 

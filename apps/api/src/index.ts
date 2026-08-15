@@ -137,6 +137,9 @@ const main = async () => {
     pattern: ModsSyncProcessor.cronPattern,
     processor: ModsSyncProcessor.getInstance(),
     enabled: true,
+    // A full sweep runs for over an hour, so a retry would overlap the next
+    // scheduled run and deadlock on the sync lock. The schedule is the retry.
+    jobOptions: { attempts: 1 },
   });
 
   await cronService.defineJob({
@@ -152,6 +155,8 @@ const main = async () => {
     processor: RelayDiscoveryProcessor.getInstance(),
     enabled: true,
   });
+
+  cronService.start();
 
   process.on("SIGTERM", async () => {
     await cronService.shutdown();

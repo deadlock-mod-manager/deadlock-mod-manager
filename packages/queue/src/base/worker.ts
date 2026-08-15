@@ -3,38 +3,60 @@ import type { Logger } from "@deadlock-mods/logging";
 import { type Job, Worker } from "bullmq";
 import type { Redis } from "ioredis";
 import type { BaseJobData } from "../types/jobs";
+import {
+  type ProcessorResolver,
+  resolveProcessorOrThrow,
+  toProcessorResolver,
+} from "./dispatch";
 import type { BaseProcessor } from "./processor";
 
 export class BaseWorker<T extends BaseJobData> {
   protected worker: Worker;
   protected logger: Logger;
-  protected processor: BaseProcessor<T>;
+  protected resolveProcessor: ProcessorResolver<T>;
 
   constructor(
     queueName: string,
     redis: Redis,
     logger: Logger,
-    processor: BaseProcessor<T>,
+    processor: BaseProcessor<T> | ProcessorResolver<T>,
     concurrency = 1,
+    autorun = true,
   ) {
     this.worker = new Worker(queueName, this.processJob.bind(this), {
       connection: redis,
       concurrency,
+      autorun,
     });
     this.logger = logger.child().withContext({
       worker: `${queueName}-worker`,
       queue: queueName,
     });
-    this.processor = processor;
+    this.resolveProcessor = toProcessorResolver(processor);
 
     this.setupEventListeners();
+  }
+
+  /**
+   * Only for workers constructed with `autorun: false`. `run()` resolves when
+   * the worker stops, so it is deliberately not awaited.
+   */
+  start(): void {
+    void this.worker.run().catch((error) => {
+      this.logger.withError(error).error("Worker stopped unexpectedly");
+    });
   }
 
   private async processJob(job: Job<T>) {
     this.logger.info(`Processing job ${job.id} of type ${job.name}`);
 
     try {
-      const result = await this.processor.process(job.data);
+      const processor = resolveProcessorOrThrow(
+        this.resolveProcessor,
+        job.name,
+        this.worker.name,
+      );
+      const result = await processor.process(job.data);
 
       if (!result.success) {
         throw new RuntimeError(result.error || "Processing failed");

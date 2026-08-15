@@ -40,52 +40,6 @@ export class CronQueue extends BaseQueue<CronJobData> {
   }
 
   /**
-   * Schedule a job to run at a specific interval (in milliseconds) with Job Scheduler
-   * @param schedulerId - Unique identifier for the job scheduler
-   * @param intervalMs - Interval in milliseconds
-   * @param template - Job template with name, data, and options
-   * @param options - Additional scheduler options
-   */
-  async scheduleInterval(
-    schedulerId: string,
-    intervalMs: number,
-    template?: CronJobTemplate,
-    options?: Omit<JobSchedulerOptions, "every">,
-  ) {
-    const schedulerOptions: JobSchedulerOptions = {
-      every: intervalMs,
-      tz: template?.data?.timezone || options?.tz,
-      endDate: template?.data?.endDate || options?.endDate,
-      limit: template?.data?.limit || options?.limit,
-    };
-
-    return this.queue.upsertJobScheduler(
-      schedulerId,
-      schedulerOptions,
-      template,
-    );
-  }
-
-  /**
-   * Schedule a one-time job with delay
-   * @param jobName - Name of the job
-   * @param data - Job data
-   * @param delayMs - Delay in milliseconds
-   * @param options - Additional job options
-   */
-  async scheduleDelayed(
-    jobName: string,
-    data: CronJobData,
-    delayMs: number,
-    options?: JobsOptions,
-  ) {
-    return this.add(jobName, data, {
-      ...options,
-      delay: delayMs,
-    });
-  }
-
-  /**
    * Remove a job scheduler
    * @param schedulerId - Unique identifier of the job scheduler to remove
    */

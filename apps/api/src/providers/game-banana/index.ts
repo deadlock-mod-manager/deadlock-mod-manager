@@ -24,10 +24,12 @@ import {
   buildMetadata,
   categoryFromGameBananaProfile,
   classifyNSFW,
+  gameBananaTimestampToDate,
   heroFromGameBananaProfile,
   mapGameBananaFileserverState,
   parseRequirements,
   parseTags,
+  resolveRemoteTimestamps,
   submitterDisplayName,
 } from "./utils";
 
@@ -347,8 +349,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       remoteUrl: profile._sProfileUrl,
       category: categoryFromGameBananaProfile(profile),
       downloadable: (profile._aFiles?.length ?? 0) > 0,
-      remoteAddedAt: new Date(profile._tsDateAdded * 1000),
-      remoteUpdatedAt: new Date(profile._tsDateModified * 1000),
+      ...resolveRemoteTimestamps(profile._tsDateAdded, profile._tsDateModified),
       images: [],
       isNSFW: classifyNSFW(profile),
       isObsolete: profile._bIsObsolete ?? false,
@@ -393,8 +394,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       remoteUrl: profile._sProfileUrl,
       category,
       downloadable: (profile._aFiles?.length ?? 0) > 0,
-      remoteAddedAt: new Date(profile._tsDateAdded * 1000),
-      remoteUpdatedAt: new Date(profile._tsDateModified * 1000),
+      ...resolveRemoteTimestamps(profile._tsDateAdded, profile._tsDateModified),
       images:
         profile._aPreviewMedia?._aImages?.map(
           (image) => `${image._sBaseUrl}/${image._sFile}`,
@@ -430,8 +430,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       remoteUrl: profile._sProfileUrl,
       category: "",
       downloadable: false,
-      remoteAddedAt: new Date(profile._tsDateAdded * 1000),
-      remoteUpdatedAt: new Date(profile._tsDateModified * 1000),
+      ...resolveRemoteTimestamps(profile._tsDateAdded, profile._tsDateModified),
       images: [],
       isNSFW: false,
       isObsolete: false,
@@ -573,17 +572,20 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         })
         .debug("Processing mod downloads");
 
-      const downloadEntries = download._aFiles.map((file) => ({
-        remoteId: file._idRow.toString(),
-        url: file._sDownloadUrl,
-        file: file._sFile,
-        size: file._nFilesize,
-        description: file._sDescription || null,
-        modId: dbMod.id,
-        md5Checksum: file._sMd5Checksum ?? null,
-        createdAt: new Date(file._tsDateAdded * 1000),
-        updatedAt: new Date(file._tsDateAdded * 1000),
-      }));
+      const downloadEntries = download._aFiles.map((file) => {
+        const addedAt = gameBananaTimestampToDate(file._tsDateAdded);
+        return {
+          remoteId: file._idRow.toString(),
+          url: file._sDownloadUrl,
+          file: file._sFile,
+          size: file._nFilesize,
+          description: file._sDescription || null,
+          modId: dbMod.id,
+          md5Checksum: file._sMd5Checksum ?? null,
+          createdAt: addedAt,
+          updatedAt: addedAt,
+        };
+      });
 
       await modDownloadRepository.upsertMultipleByModId(
         dbMod.id,

@@ -1,5 +1,6 @@
+import { RuntimeError } from "@deadlock-mods/common";
 import { BaseProcessor, type CronJobData } from "@deadlock-mods/queue";
-import { CronPatterns } from "@deadlock-mods/queue/cron";
+import { CronPatterns, toStandardCronPattern } from "@deadlock-mods/queue/cron";
 import * as Sentry from "@sentry/node";
 import { MonitorSlug, SERVER_TIMEZONE } from "@/lib/constants";
 import {
@@ -38,7 +39,7 @@ export class RelayDiscoveryProcessor extends BaseProcessor<CronJobData> {
       {
         schedule: {
           type: "crontab",
-          value: RelayDiscoveryProcessor.cronPattern,
+          value: toStandardCronPattern(RelayDiscoveryProcessor.cronPattern),
         },
         checkinMargin: 1,
         maxRuntime: 5,
@@ -61,7 +62,7 @@ export class RelayDiscoveryProcessor extends BaseProcessor<CronJobData> {
       } catch (error) {
         wide.emit("error", error);
         return this.handleJobError(
-          error instanceof Error ? error : new Error(String(error)),
+          error instanceof Error ? error : new RuntimeError(String(error)),
           checkInId,
         );
       }

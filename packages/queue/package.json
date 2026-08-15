@@ -8,6 +8,9 @@
     ".": "./src/index.ts",
     "./cron": "./src/cron/index.ts"
   },
+  "scripts": {
+    "test": "bun test"
+  },
   "dependencies": {
     "@deadlock-mods/common": "workspace:*",
     "@deadlock-mods/logging": "workspace:*",
@@ -15,6 +18,7 @@
     "ioredis": "^5.10.1"
   },
   "devDependencies": {
-    "@deadlock-mods/typescript-config": "workspace:*"
+    "@deadlock-mods/typescript-config": "workspace:*",
+    "@types/bun": "^1.3.11"
   }
 }

@@ -1,5 +1,6 @@
 import { NotFoundError } from "@deadlock-mods/common";
 import type { Logger } from "@deadlock-mods/logging";
+import type { JobsOptions } from "bullmq";
 import type { Redis } from "ioredis";
 import type { BaseProcessor } from "../base/processor";
 import type { CronJobData } from "../types/jobs";
@@ -11,27 +12,33 @@ export interface CronJobDefinition {
   name: string;
   pattern: string;
   processor: BaseProcessor<CronJobData>;
-  concurrency?: number;
   timezone?: string;
   endDate?: Date;
   limit?: number;
   jobData?: Record<string, unknown>;
   metadata?: Record<string, unknown>;
   enabled?: boolean;
+  /** Overrides the queue defaults. Recurring jobs usually want `attempts: 1`. */
+  jobOptions?: JobsOptions;
 }
 
 export type CronServiceQueueOptions = Pick<QueueConfig, "defaultJobOptions">;
 
 export class CronService {
   private queue: CronQueue;
-  private workers: Map<string, CronWorker> = new Map();
+  private worker: CronWorker | null = null;
   private jobs: Map<string, CronJobDefinition> = new Map();
-  private defaultConcurrency: number;
+  private concurrency: number;
   private pausedSchedulers: Awaited<ReturnType<CronQueue["getJobSchedulers"]>> =
     [];
   private logger: Logger;
   private redis: Redis;
 
+  /**
+   * @param concurrency How many cron jobs this service may run at once. A long
+   * job holds a slot for its whole run, so this needs to be at least the number
+   * of jobs defined or a slow job will starve the rest.
+   */
   constructor(
     queueName: string,
     redis: Redis,
@@ -42,7 +49,7 @@ export class CronService {
     this.queue = new CronQueue(queueName, redis, {
       defaultJobOptions: queueOptions?.defaultJobOptions,
     });
-    this.defaultConcurrency = concurrency;
+    this.concurrency = concurrency;
     this.logger = logger.child().withContext({
       service: "CronService",
       queue: queueName,
@@ -55,31 +62,18 @@ export class CronService {
       name,
       pattern,
       processor,
-      concurrency,
       timezone,
       endDate,
       limit,
       jobData = {},
       metadata = {},
       enabled = true,
+      jobOptions,
     } = definition;
 
     // Store the job definition
     this.jobs.set(name, definition);
-
-    const jobConcurrency = concurrency ?? this.defaultConcurrency;
-    const workerKey = `${processor.constructor.name}-${jobConcurrency}`;
-
-    if (!this.workers.has(workerKey)) {
-      const worker = new CronWorker(
-        this.queue.getQueue().name,
-        this.redis,
-        this.logger,
-        processor,
-        jobConcurrency,
-      );
-      this.workers.set(workerKey, worker);
-    }
+    this.ensureWorker();
 
     // Schedule the job if enabled
     if (enabled) {
@@ -89,6 +83,7 @@ export class CronService {
         limit,
         jobData,
         metadata: { ...metadata, jobType: name },
+        jobOptions,
       });
     }
 
@@ -99,7 +94,6 @@ export class CronService {
         endDate: endDate?.toISOString(),
         limit,
         processor: processor.constructor.name,
-        concurrency: jobConcurrency,
       })
       .info(`Defined cron job: ${name} with pattern: ${pattern}`);
   }
@@ -107,6 +101,40 @@ export class CronService {
   async defineJobs(definitions: CronJobDefinition[]): Promise<void> {
     const promises = definitions.map((def) => this.defineJob(def));
     await Promise.all(promises);
+  }
+
+  /**
+   * Begins consuming the queue. Call once every job is defined, since the
+   * worker dispatches on job name and can only resolve jobs it knows about.
+   */
+  start(): void {
+    if (!this.worker) {
+      throw new NotFoundError("No cron jobs defined, nothing to start");
+    }
+
+    this.worker.start();
+    this.logger
+      .withMetadata({ jobs: this.jobs.size, concurrency: this.concurrency })
+      .info("Cron service started");
+  }
+
+  /**
+   * A cron queue carries jobs for many processors, so a single worker consumes
+   * it and dispatches on job name. Giving each processor its own worker would
+   * let any worker claim any job and run it through the wrong processor.
+   */
+  private ensureWorker(): void {
+    if (this.worker) {
+      return;
+    }
+
+    this.worker = new CronWorker(
+      this.queue.getQueue().name,
+      this.redis,
+      this.logger,
+      (jobName) => this.jobs.get(jobName)?.processor,
+      this.concurrency,
+    );
   }
 
   private async upsertJob(
@@ -118,6 +146,7 @@ export class CronService {
       limit?: number;
       jobData?: Record<string, unknown>;
       metadata?: Record<string, unknown>;
+      jobOptions?: JobsOptions;
     },
   ): Promise<void> {
     const cronJobData: CronJobData = {
@@ -132,6 +161,7 @@ export class CronService {
     const template = {
       name: jobName,
       data: cronJobData,
+      opts: options.jobOptions,
     };
 
     await this.queue.scheduleRecurring(jobName, cronPattern, template);
@@ -143,20 +173,7 @@ export class CronService {
       throw new NotFoundError(`Job not found: ${jobName}`);
     }
 
-    // Ensure worker exists for this processor with the correct concurrency
-    const jobConcurrency = definition.concurrency ?? this.defaultConcurrency;
-    const workerKey = `${definition.processor.constructor.name}-${jobConcurrency}`;
-
-    if (!this.workers.has(workerKey)) {
-      const worker = new CronWorker(
-        this.queue.getQueue().name,
-        this.redis,
-        this.logger,
-        definition.processor,
-        jobConcurrency,
-      );
-      this.workers.set(workerKey, worker);
-    }
+    this.ensureWorker();
 
     definition.enabled = true;
     await this.upsertJob(jobName, definition.pattern, {
@@ -165,6 +182,7 @@ export class CronService {
       limit: definition.limit,
       jobData: definition.jobData,
       metadata: { ...definition.metadata, jobType: jobName },
+      jobOptions: definition.jobOptions,
     });
 
     this.logger.info(`Enabled cron job: ${jobName}`);
@@ -216,67 +234,9 @@ export class CronService {
         limit: scheduler.limit,
         next: scheduler.next,
         processor: definition?.processor?.constructor.name,
-        concurrency: definition?.concurrency,
         enabled: definition?.enabled ?? true,
       };
     });
-  }
-
-  async scheduleOneTime(
-    jobName: string,
-    delayMs: number,
-    jobData: Record<string, unknown> = {},
-    metadata: Record<string, unknown> = {},
-  ): Promise<void> {
-    const cronJobData: CronJobData = {
-      jobData,
-      metadata: { ...metadata, jobType: jobName },
-    };
-
-    await this.queue.scheduleDelayed(jobName, cronJobData, delayMs);
-    this.logger.info(
-      `Scheduled one-time job: ${jobName} with delay: ${delayMs}ms`,
-    );
-  }
-
-  async scheduleInterval(
-    jobName: string,
-    intervalMs: number,
-    jobData: Record<string, unknown> = {},
-    options: {
-      timezone?: string;
-      endDate?: Date;
-      limit?: number;
-      metadata?: Record<string, unknown>;
-      immediately?: boolean;
-    } = {},
-  ): Promise<void> {
-    const cronJobData: CronJobData = {
-      timezone: options.timezone,
-      endDate: options.endDate,
-      limit: options.limit,
-      jobData,
-      metadata: { ...options.metadata, jobType: jobName },
-    };
-
-    const template = {
-      name: jobName,
-      data: cronJobData,
-    };
-
-    await this.queue.scheduleInterval(jobName, intervalMs, template, {
-      immediately: options.immediately,
-    });
-
-    this.logger
-      .withMetadata({
-        intervalMs,
-        immediately: options.immediately,
-        timezone: options.timezone,
-        endDate: options.endDate?.toISOString(),
-        limit: options.limit,
-      })
-      .info(`Scheduled interval job: ${jobName} every ${intervalMs}ms`);
   }
 
   async pauseAll(): Promise<void> {
@@ -394,16 +354,13 @@ export class CronService {
       enabledJobs: Array.from(this.jobs.values()).filter((job) => job.enabled)
         .length,
       scheduledJobs: scheduledJobs.length,
-      workers: this.workers.size,
+      concurrency: this.worker ? this.concurrency : 0,
     };
   }
 
   async shutdown(): Promise<void> {
-    const workerClosePromises = Array.from(this.workers.values()).map(
-      (worker) => worker.close(),
-    );
-    await Promise.all([...workerClosePromises, this.queue.close()]);
-    this.workers.clear();
+    await Promise.all([this.worker?.close(), this.queue.close()]);
+    this.worker = null;
     this.logger.info("Cron service shutdown complete");
   }
 }

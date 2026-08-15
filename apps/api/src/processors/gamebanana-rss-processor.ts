@@ -1,5 +1,5 @@
 import { BaseProcessor, type CronJobData } from "@deadlock-mods/queue";
-import { CronPatterns } from "@deadlock-mods/queue/cron";
+import { CronPatterns, toStandardCronPattern } from "@deadlock-mods/queue/cron";
 import * as Sentry from "@sentry/node";
 import { MonitorSlug, SERVER_TIMEZONE } from "@/lib/constants";
 import {
@@ -38,7 +38,7 @@ export class GamebananaRssProcessor extends BaseProcessor<CronJobData> {
       {
         schedule: {
           type: "crontab",
-          value: GamebananaRssProcessor.cronPattern,
+          value: toStandardCronPattern(GamebananaRssProcessor.cronPattern),
         },
         checkinMargin: 1,
         maxRuntime: 10,

@@ -4,7 +4,6 @@ import {
   DistributedLockService,
 } from "@deadlock-mods/distributed-lock";
 import type { GameBanana } from "@deadlock-mods/shared";
-import * as Sentry from "@sentry/node";
 import { env } from "../lib/env";
 import { logger as mainLogger, wideEventContext } from "../lib/logger";
 import { providerRegistry } from "../providers";
@@ -18,7 +17,6 @@ export class ModSyncService {
   private static instance: ModSyncService;
   private readonly lockService: DistributedLockService;
   private readonly JOB_NAME = "synchronize-mods"; // TODO: we'll refactor this to the processor
-  private readonly MONITOR_SLUG = "synchronize-mods-cron";
 
   constructor() {
     this.lockService = new DistributedLockService(db, logger, {
@@ -92,6 +90,10 @@ export class ModSyncService {
       };
     } catch (error) {
       wide?.set("outcomeReason", "error");
+      logger
+        .withMetadata({ remoteId })
+        .withError(error)
+        .error("Mod synchronization failed");
 
       return {
         success: false,
@@ -103,6 +105,10 @@ export class ModSyncService {
           await lock.release();
         } catch (releaseError) {
           wide?.set("lockReleaseError", true);
+          logger
+            .withMetadata({ remoteId })
+            .withError(releaseError)
+            .error("Failed to release mod synchronization lock");
         }
       }
     }
@@ -111,15 +117,9 @@ export class ModSyncService {
   async synchronizeMods(
     options: {
       skipLock?: boolean;
-      checkInId?: string;
-      monitorSlug?: string;
     } = {},
   ): Promise<{ success: boolean; message: string; locked?: boolean }> {
-    const {
-      skipLock = false,
-      checkInId,
-      monitorSlug = this.MONITOR_SLUG,
-    } = options;
+    const { skipLock = false } = options;
 
     const wide = wideEventContext.get();
     wide?.merge({
@@ -139,6 +139,9 @@ export class ModSyncService {
 
         if (!lock) {
           wide?.set("outcomeReason", "already_locked");
+          logger.warn(
+            "Skipping mod synchronization, another run is still holding the lock",
+          );
           return {
             success: false,
             message:
@@ -159,28 +162,13 @@ export class ModSyncService {
         );
       await provider.synchronize();
 
-      if (checkInId) {
-        Sentry.captureCheckIn({
-          checkInId,
-          monitorSlug,
-          status: "ok",
-        });
-      }
-
       return {
         success: true,
         message: "Mod synchronization completed successfully",
       };
     } catch (error) {
       wide?.set("outcomeReason", "error");
-
-      if (checkInId) {
-        Sentry.captureCheckIn({
-          checkInId,
-          monitorSlug,
-          status: "error",
-        });
-      }
+      logger.withError(error).error("Mod synchronization failed");
 
       return {
         success: false,
@@ -192,6 +180,9 @@ export class ModSyncService {
           await lock.release();
         } catch (releaseError) {
           wide?.set("lockReleaseError", true);
+          logger
+            .withError(releaseError)
+            .error("Failed to release mod synchronization lock");
         }
       }
     }

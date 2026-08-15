@@ -1,6 +1,6 @@
 import type { Logger } from "@deadlock-mods/logging";
 import type { Redis } from "ioredis";
-import type { BaseProcessor } from "../base/processor";
+import type { ProcessorResolver } from "../base/dispatch";
 import { BaseWorker } from "../base/worker";
 import type { CronJobData } from "../types/jobs";
 
@@ -9,9 +9,11 @@ export class CronWorker extends BaseWorker<CronJobData> {
     queueName: string,
     redis: Redis,
     logger: Logger,
-    processor: BaseProcessor<CronJobData>,
+    resolveProcessor: ProcessorResolver<CronJobData>,
     concurrency = 1,
   ) {
-    super(queueName, redis, logger, processor, concurrency);
+    // Held until every job is registered, otherwise a due job can be claimed
+    // before its processor is resolvable
+    super(queueName, redis, logger, resolveProcessor, concurrency, false);
   }
 }

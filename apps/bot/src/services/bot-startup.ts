@@ -62,6 +62,8 @@ export class BotStartupService {
       processor: NightlyTestersSyncProcessor.instance,
       enabled: true,
     });
+
+    cronService.start();
   }
 
   private async loginToDiscord(client: SapphireClient): Promise<void> {

@@ -7,8 +7,10 @@ import {
   donationLinksFromMethods,
   extractDonationLinksFromDescription,
   extractMapName,
+  gameBananaTimestampToDate,
   heroFromGameBananaProfile,
   parseRequirements,
+  resolveRemoteTimestamps,
 } from "./utils";
 
 type GameBananaCategory = GameBanana.GameBananaModProfile["_aCategory"];
@@ -763,5 +765,57 @@ describe("parseRequirements", () => {
         ],
       ]),
     ).toEqual([]);
+  });
+});
+
+describe("gameBananaTimestampToDate", () => {
+  it("converts a unix timestamp in seconds to a date", () => {
+    expect(gameBananaTimestampToDate(1_726_000_000)).toEqual(
+      new Date(1_726_000_000_000),
+    );
+  });
+
+  it("returns null for missing timestamps", () => {
+    expect(gameBananaTimestampToDate(null)).toBeNull();
+    expect(gameBananaTimestampToDate(undefined)).toBeNull();
+  });
+
+  it("returns null for values that would produce an invalid date", () => {
+    expect(gameBananaTimestampToDate(Number.NaN)).toBeNull();
+    expect(gameBananaTimestampToDate(Number.POSITIVE_INFINITY)).toBeNull();
+    expect(gameBananaTimestampToDate(Number.MAX_VALUE)).toBeNull();
+  });
+
+  it("treats zero and negative timestamps as missing", () => {
+    expect(gameBananaTimestampToDate(0)).toBeNull();
+    expect(gameBananaTimestampToDate(-1)).toBeNull();
+  });
+});
+
+describe("resolveRemoteTimestamps", () => {
+  it("keeps both timestamps when both are present", () => {
+    expect(resolveRemoteTimestamps(1_700_000_000, 1_726_000_000)).toEqual({
+      remoteAddedAt: new Date(1_700_000_000_000),
+      remoteUpdatedAt: new Date(1_726_000_000_000),
+    });
+  });
+
+  it("falls back to the sibling timestamp when one is missing", () => {
+    expect(resolveRemoteTimestamps(null, 1_726_000_000)).toEqual({
+      remoteAddedAt: new Date(1_726_000_000_000),
+      remoteUpdatedAt: new Date(1_726_000_000_000),
+    });
+
+    expect(resolveRemoteTimestamps(1_700_000_000, null)).toEqual({
+      remoteAddedAt: new Date(1_700_000_000_000),
+      remoteUpdatedAt: new Date(1_700_000_000_000),
+    });
+  });
+
+  it("falls back to the epoch when both are missing", () => {
+    expect(resolveRemoteTimestamps(null, undefined)).toEqual({
+      remoteAddedAt: new Date(0),
+      remoteUpdatedAt: new Date(0),
+    });
   });
 });

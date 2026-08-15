@@ -176,6 +176,45 @@ export const classifyNSFW = (
   return hintScore >= 2;
 };
 
+/**
+ * GameBanana sometimes sends null or zero timestamps even though its schema
+ * promises a number. `new Date(null * 1000)` is an Invalid Date, and drizzle
+ * throws a RangeError while encoding it, which silently drops the whole mod
+ * from the sync.
+ */
+export const gameBananaTimestampToDate = (
+  seconds: number | null | undefined,
+): Date | null => {
+  if (
+    typeof seconds !== "number" ||
+    !Number.isFinite(seconds) ||
+    seconds <= 0
+  ) {
+    return null;
+  }
+  const date = new Date(seconds * 1000);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+/**
+ * `mod.remoteAddedAt` and `mod.remoteUpdatedAt` are NOT NULL, so a missing
+ * timestamp falls back to its sibling and then to the epoch. The epoch rather
+ * than now() keeps undated mods from surfacing as recently updated.
+ */
+export const resolveRemoteTimestamps = (
+  addedAtSeconds: number | null | undefined,
+  updatedAtSeconds: number | null | undefined,
+): { remoteAddedAt: Date; remoteUpdatedAt: Date } => {
+  const addedAt = gameBananaTimestampToDate(addedAtSeconds);
+  const updatedAt = gameBananaTimestampToDate(updatedAtSeconds);
+  const fallback = addedAt ?? updatedAt ?? new Date(0);
+
+  return {
+    remoteAddedAt: addedAt ?? fallback,
+    remoteUpdatedAt: updatedAt ?? fallback,
+  };
+};
+
 export const buildDownloadSignature = (downloads: ModDownload[]): string => {
   return downloads
     .map(
@@ -198,7 +237,7 @@ export const buildDownloadSignatureFromPayload = (
   return files
     .map(
       (f) =>
-        `${f._idRow}|${f._sFile}|${f._nFilesize}|${f._sMd5Checksum ?? ""}|${f._tsDateAdded * 1000}`,
+        `${f._idRow}|${f._sFile}|${f._nFilesize}|${f._sMd5Checksum ?? ""}|${gameBananaTimestampToDate(f._tsDateAdded)?.getTime()}`,
     )
     .sort()
     .join(";");

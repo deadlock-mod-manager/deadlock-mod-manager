@@ -27,7 +27,7 @@ export const queueConfigs: Record<string, QueueConfig> = {
     },
   },
   cron: {
-    name: "cron-queue",
+    name: "lockdex-cron-queue",
     defaultJobOptions: {
       attempts: 2,
       backoff: {
