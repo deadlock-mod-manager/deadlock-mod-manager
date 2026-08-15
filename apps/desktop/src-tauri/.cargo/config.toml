@@ -1,0 +1,5 @@
+[env]
+# Where `#[derive(TS)]` writes its bindings. Relative to this crate, so
+# `pnpm --filter @deadlock-mods/desktop generate-types` lands them in the
+# frontend source tree.
+TS_RS_EXPORT_DIR = { value = "../src/types/generated", relative = true }

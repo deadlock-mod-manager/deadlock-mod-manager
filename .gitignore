@@ -65,6 +65,8 @@ distribution/aur/deadlock-modmanager-git/deadlock-modmanager-git/
 
 # Nix development environment
 .cargo/
+# ...but the desktop crate's cargo config is project configuration, not a Nix artifact.
+!apps/desktop/src-tauri/.cargo/
 .rustup/
 opensrc/
 

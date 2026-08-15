@@ -13,65 +13,12 @@
 use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
-use serde::{Deserialize, Serialize};
-
 use crate::errors::Error;
 
 use super::archive_cache::open_archive;
 use super::hero::{panorama_codenames, sound_codename_for_hero};
-use super::types::{FoundryPaintResult, FoundryPaintTargetInfo};
+use super::types::{FoundryPaintResult, FoundryPaintTargetInfo, PaintTarget};
 use super::workspace::{safe_entry_relative, workspace_files_dir};
-
-/// The parts of a hero the paint tab can recolor.
-///
-/// Deliberately three, not more. Deadlock ships a hero's weapon as a single
-/// material (`bebop_weapon`, `haze_v2_gun`, `fencer_sword`) — no hero in the
-/// roster splits it into a frame and fittings — so a finer breakdown would be a
-/// permanently empty bucket rather than a useful control.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub(crate) enum PaintTarget {
-  /// The character: outfit, skin, hair, cloth.
-  Body,
-  /// Whatever the hero holds: gun, sword, bow, and its projectiles.
-  Weapon,
-  /// Character and weapon together, for one colour across the whole silhouette.
-  /// A selection, not a classification: no material is ever *categorised* as
-  /// this, it is the union of the other two.
-  BodyAndWeapon,
-  /// Ability VFX: the particle color parameters plus the effect textures.
-  Abilities,
-}
-
-impl PaintTarget {
-  pub(crate) fn id(self) -> &'static str {
-    match self {
-      Self::Body => "body",
-      Self::Weapon => "weapon",
-      Self::BodyAndWeapon => "bodyAndWeapon",
-      Self::Abilities => "abilities",
-    }
-  }
-
-  pub(crate) fn parse(value: &str) -> Result<Self, Error> {
-    match value {
-      "body" => Ok(Self::Body),
-      "weapon" => Ok(Self::Weapon),
-      "bodyAndWeapon" => Ok(Self::BodyAndWeapon),
-      "abilities" => Ok(Self::Abilities),
-      other => Err(Error::InvalidInput(format!(
-        "unknown paint target: {other}"
-      ))),
-    }
-  }
-
-  pub(crate) const ALL: [Self; 4] = [
-    Self::Body,
-    Self::Weapon,
-    Self::BodyAndWeapon,
-    Self::Abilities,
-  ];
-}
 
 /// Path tokens that mark a material as belonging to a weapon.
 const WEAPON_TOKENS: &[&str] = &[
@@ -276,7 +223,7 @@ pub(crate) fn describe_paint_targets(
       .map(|target| {
         let plan = plans.plan_for(target);
         FoundryPaintTargetInfo {
-          id: target.id().to_string(),
+          id: target,
           texture_count: plan.textures.len(),
           particle_count: plan.particles.len(),
         }
@@ -343,7 +290,7 @@ pub(crate) fn paint_target(
 
   log::info!(
     "[Foundry] Painted {} ({} entries, {} skipped) {}",
-    target.id(),
+    target,
     painted.len(),
     skipped.len(),
     match pattern {
@@ -353,7 +300,7 @@ pub(crate) fn paint_target(
   );
 
   Ok(FoundryPaintResult {
-    target: target.id().to_string(),
+    target,
     painted_paths: painted,
     skipped_paths: skipped,
   })
@@ -481,11 +428,13 @@ mod tests {
   }
 
   #[test]
-  fn every_target_round_trips_through_its_id() {
+  fn every_target_round_trips_through_serde() {
     for target in PaintTarget::ALL {
-      assert_eq!(PaintTarget::parse(target.id()).unwrap(), target);
+      let json = serde_json::to_string(&target).unwrap();
+      let parsed: PaintTarget = serde_json::from_str(&json).unwrap();
+      assert_eq!(parsed, target);
     }
-    assert!(PaintTarget::parse("gunBody").is_err());
+    assert!(serde_json::from_str::<PaintTarget>(r#""gunBody""#).is_err());
   }
 
   #[test]

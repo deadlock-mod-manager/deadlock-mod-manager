@@ -13,11 +13,12 @@
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
+use ts_rs::TS;
 
 use crate::commands::state::MANAGER;
 use crate::errors::Error;
 
-use super::types::FoundryBuildResult;
+use super::types::{ExportDestinationKind, FoundryBuildResult};
 use super::workspace::{build_workspace_vpk, sanitize_workspace_name};
 
 /// Where the built VPK should land.
@@ -30,10 +31,11 @@ pub(crate) enum ExportDestination {
 /// What an export produced, on top of the build itself. `mod_id` is set for a
 /// new mod so the frontend can add it to the library; `backup_path` is set when
 /// an existing VPK was replaced.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export, rename_all = "camelCase")]
 #[serde(rename_all = "camelCase")]
 pub struct FoundryExportResult {
-  pub destination: String,
+  pub destination: ExportDestinationKind,
   pub output_path: String,
   pub file_count: usize,
   pub size: u64,
@@ -117,7 +119,7 @@ pub(crate) fn export_workspace(
   match destination {
     ExportDestination::File { output_path } => {
       let build = build_workspace_vpk(workspace_root, Some(output_path), name)?;
-      Ok(result("file", build, None, None, None))
+      Ok(result(ExportDestinationKind::File, build, None, None, None))
     }
 
     ExportDestination::NewMod { name } => {
@@ -136,7 +138,13 @@ pub(crate) fn export_workspace(
       write_preview(&mod_dir, &name)?;
 
       log::info!("[Foundry] Exported as new mod {mod_id} ({name})");
-      Ok(result("newMod", build, Some(mod_id), Some(name), None))
+      Ok(result(
+        ExportDestinationKind::NewMod,
+        build,
+        Some(mod_id),
+        Some(name),
+        None,
+      ))
     }
 
     ExportDestination::ReplaceSource { source_path } => {
@@ -166,7 +174,7 @@ pub(crate) fn export_workspace(
         backup_path.display(),
       );
       Ok(result(
-        "replaceSource",
+        ExportDestinationKind::ReplaceSource,
         build,
         None,
         None,
@@ -177,14 +185,14 @@ pub(crate) fn export_workspace(
 }
 
 fn result(
-  destination: &str,
+  destination: ExportDestinationKind,
   build: FoundryBuildResult,
   mod_id: Option<String>,
   mod_name: Option<String>,
   backup_path: Option<String>,
 ) -> FoundryExportResult {
   FoundryExportResult {
-    destination: destination.to_string(),
+    destination,
     output_path: build.output_path,
     file_count: build.file_count,
     size: build.size,

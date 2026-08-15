@@ -17,9 +17,8 @@ use super::staging::{stage_source_vpk, staged_base_game_vpk};
 use super::vdata::primary_model_path;
 
 use super::types::{
-  CARD_SOURCE_DEFAULT, CARD_SOURCE_MOD, CATEGORY_CARD, CATEGORY_MATERIAL, CATEGORY_MODEL,
-  CATEGORY_OTHER, CATEGORY_SOUND, CATEGORY_TEXTURE, ENTRY_SOURCE_DEFAULT, ENTRY_SOURCE_MOD,
-  FoundryCardPreview, FoundryEntry, FoundryManifest, VARIANT_ORDER,
+  FoundryCardPreview, FoundryCardSource, FoundryCategory, FoundryEntry, FoundryEntrySource,
+  FoundryManifest, VARIANT_ORDER,
 };
 
 pub(crate) fn is_hero_card_path(path: &str, prefixes: &[String]) -> bool {
@@ -85,11 +84,11 @@ pub(crate) fn variant_rank(variant: &str) -> usize {
 /// Particle (`.vpcf_c`) and physics (`.vphys_c`) entries land in `other`: the
 /// Foundry previews a static character model only, so they are carried through
 /// an export untouched but never surfaced as something to edit.
-pub(crate) fn classify(ext: &str, full_path: &str, card_prefixes: &[String]) -> &'static str {
+pub(crate) fn classify(ext: &str, full_path: &str, card_prefixes: &[String]) -> FoundryCategory {
   let lower = full_path.to_ascii_lowercase();
   match ext {
-    "vmdl_c" | "vmesh_c" | "vmorf_c" => CATEGORY_MODEL,
-    "vmat_c" => CATEGORY_MATERIAL,
+    "vmdl_c" | "vmesh_c" | "vmorf_c" => FoundryCategory::Model,
+    "vmat_c" => FoundryCategory::Material,
     "vtex_c" => {
       if is_hero_card_path(&lower, card_prefixes)
         || lower.contains("hero_card")
@@ -98,39 +97,39 @@ pub(crate) fn classify(ext: &str, full_path: &str, card_prefixes: &[String]) -> 
         || lower.contains("_card")
         || lower.contains("selection")
       {
-        CATEGORY_CARD
+        FoundryCategory::Card
       } else {
-        CATEGORY_TEXTURE
+        FoundryCategory::Texture
       }
     }
-    "vsnd_c" | "vsndevts_c" | "vsndstck_c" => CATEGORY_SOUND,
-    _ => CATEGORY_OTHER,
+    "vsnd_c" | "vsndevts_c" | "vsndstck_c" => FoundryCategory::Sound,
+    _ => FoundryCategory::Other,
   }
 }
 
 fn foundry_entry_from_vpk_entry(
   entry: &vpk_parser::VpkEntry,
-  category: &str,
-  source: &str,
+  category: FoundryCategory,
+  source: FoundryEntrySource,
 ) -> FoundryEntry {
   FoundryEntry {
     path: entry.full_path.clone(),
     filename: entry.filename.clone(),
     ext: entry.ext.clone(),
     size: entry.entry_length + u32::from(entry.preload_bytes),
-    category: category.to_string(),
-    source: source.to_string(),
+    category,
+    source,
   }
 }
 
 fn push_manifest_entry(manifest: &mut FoundryManifest, entry: FoundryEntry) {
-  match entry.category.as_str() {
-    CATEGORY_MODEL => manifest.models.push(entry),
-    CATEGORY_MATERIAL => manifest.materials.push(entry),
-    CATEGORY_TEXTURE => manifest.textures.push(entry),
-    CATEGORY_CARD => manifest.cards.push(entry),
-    CATEGORY_SOUND => manifest.sounds.push(entry),
-    _ => manifest.other.push(entry),
+  match entry.category {
+    FoundryCategory::Model => manifest.models.push(entry),
+    FoundryCategory::Material => manifest.materials.push(entry),
+    FoundryCategory::Texture => manifest.textures.push(entry),
+    FoundryCategory::Card => manifest.cards.push(entry),
+    FoundryCategory::Sound => manifest.sounds.push(entry),
+    FoundryCategory::Other => manifest.other.push(entry),
   }
 }
 
@@ -191,7 +190,7 @@ fn append_default_hero_sounds(
     if !is_default_hero_asset(&entry.full_path, &prefixes, &terms) {
       continue;
     }
-    if classify(&entry.ext, &entry.full_path, &prefixes) != CATEGORY_SOUND {
+    if classify(&entry.ext, &entry.full_path, &prefixes) != FoundryCategory::Sound {
       continue;
     }
     if !existing.insert(entry.full_path.to_ascii_lowercase()) {
@@ -199,7 +198,7 @@ fn append_default_hero_sounds(
     }
     push_manifest_entry(
       manifest,
-      foundry_entry_from_vpk_entry(entry, CATEGORY_SOUND, ENTRY_SOURCE_DEFAULT),
+      foundry_entry_from_vpk_entry(entry, FoundryCategory::Sound, FoundryEntrySource::Default),
     );
     manifest.entry_count += 1;
   }
@@ -266,7 +265,7 @@ pub(crate) fn analyze_vpk_path(path: &Path) -> Result<FoundryManifest, Error> {
     let category = classify(&entry.ext, &entry.full_path, &prefixes);
     push_manifest_entry(
       &mut manifest,
-      foundry_entry_from_vpk_entry(entry, category, ENTRY_SOURCE_MOD),
+      foundry_entry_from_vpk_entry(entry, category, FoundryEntrySource::Mod),
     );
   }
 
@@ -307,7 +306,7 @@ pub(crate) fn analyze_default_hero(hero_display: String) -> Result<FoundryManife
     manifest.entry_count += 1;
     push_manifest_entry(
       &mut manifest,
-      foundry_entry_from_vpk_entry(entry, category, ENTRY_SOURCE_DEFAULT),
+      foundry_entry_from_vpk_entry(entry, category, FoundryEntrySource::Default),
     );
   }
 
@@ -316,7 +315,7 @@ pub(crate) fn analyze_default_hero(hero_display: String) -> Result<FoundryManife
 }
 
 struct CardDecodeJob {
-  source: String,
+  source: FoundryCardSource,
   vpk_path: PathBuf,
   entry_path: String,
   filename: String,
@@ -339,7 +338,7 @@ fn decode_card_preview(job: CardDecodeJob) -> Option<FoundryCardPreview> {
 
 fn collect_card_jobs(
   vpk_path: &Path,
-  source: &str,
+  source: FoundryCardSource,
   codenames: &[&str],
 ) -> Result<Vec<CardDecodeJob>, Error> {
   let prefixes = card_prefixes(codenames);
@@ -349,7 +348,7 @@ fn collect_card_jobs(
     .into_iter()
     .filter(|entry_path| is_hero_card_path(entry_path, &prefixes))
     .map(|entry_path| CardDecodeJob {
-      source: source.to_string(),
+      source,
       filename: Path::new(&entry_path)
         .file_name()
         .and_then(|name| name.to_str())
@@ -410,10 +409,10 @@ pub(crate) fn decode_foundry_cards(
   {
     Vec::new()
   } else {
-    collect_card_jobs(&file_path, CARD_SOURCE_MOD, &codenames)?
+    collect_card_jobs(&file_path, FoundryCardSource::Mod, &codenames)?
   };
   if let Some(default_vpk) = default_vpk {
-    match collect_card_jobs(&default_vpk, CARD_SOURCE_DEFAULT, &codenames) {
+    match collect_card_jobs(&default_vpk, FoundryCardSource::Default, &codenames) {
       Ok(default_jobs) => jobs.extend(default_jobs),
       Err(error) => log::warn!("[Foundry] Failed to collect default cards: {error}"),
     }
@@ -423,7 +422,7 @@ pub(crate) fn decode_foundry_cards(
   // gallery reflects what an export would actually contain.
   if let Some(files_dir) = workspace_root.map(|root| root.join("files")) {
     for job in &mut jobs {
-      if job.source != CARD_SOURCE_MOD {
+      if job.source != FoundryCardSource::Mod {
         continue;
       }
       let Ok(relative) = super::workspace::safe_entry_relative(&job.entry_path) else {
@@ -452,7 +451,7 @@ mod tests {
         "panorama/images/heroes/haze_card.vtex_c",
         &prefixes
       ),
-      CATEGORY_CARD
+      FoundryCategory::Card
     );
     assert_eq!(
       classify(
@@ -460,7 +459,7 @@ mod tests {
         "materials/models/heroes/haze/body_color.vtex_c",
         &prefixes
       ),
-      CATEGORY_TEXTURE
+      FoundryCategory::Texture
     );
   }
 
@@ -468,15 +467,15 @@ mod tests {
   fn particles_and_physics_are_not_editable_categories() {
     assert_eq!(
       classify("vpcf_c", "particles/abilities/haze.vpcf_c", &[]),
-      CATEGORY_OTHER
+      FoundryCategory::Other
     );
     assert_eq!(
       classify("vphys_c", "models/heroes/haze/haze.vphys_c", &[]),
-      CATEGORY_OTHER
+      FoundryCategory::Other
     );
     assert_eq!(
       classify("vanim_c", "models/heroes/haze/idle.vanim_c", &[]),
-      CATEGORY_OTHER
+      FoundryCategory::Other
     );
   }
 

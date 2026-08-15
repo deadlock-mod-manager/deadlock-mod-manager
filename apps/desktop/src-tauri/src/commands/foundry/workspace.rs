@@ -18,8 +18,8 @@ use super::analyze::classify;
 use super::game::foundry_workspace_root;
 use super::staging::staged_base_game_vpk;
 use super::types::{
-  CATEGORY_CARD, ENTRY_SOURCE_WORKSPACE, FoundryBuildResult, FoundryEntry,
-  FoundryReplacementResult, FoundryTexture, FoundryWorkspace,
+  FoundryBuildResult, FoundryCategory, FoundryEntry, FoundryEntrySource, FoundryReplacementResult,
+  FoundryTexture, FoundryWorkspace,
 };
 
 /// Sanitize a human name (hero / mod name) into a folder-safe workspace id
@@ -144,10 +144,10 @@ pub(crate) fn is_supported_image(ext: &str) -> bool {
   )
 }
 
-fn workspace_category(entry_path: &str, ext: &str) -> &'static str {
+fn workspace_category(entry_path: &str, ext: &str) -> FoundryCategory {
   let lower = entry_path.to_ascii_lowercase();
   if ext == "vtex_c" && lower.starts_with("panorama/images/heroes/") {
-    return CATEGORY_CARD;
+    return FoundryCategory::Card;
   }
   classify(ext, entry_path, &[])
 }
@@ -319,8 +319,8 @@ fn replacement_result(
       filename,
       ext: target_ext,
       size: metadata.len().min(u64::from(u32::MAX)) as u32,
-      category: category.to_string(),
-      source: ENTRY_SOURCE_WORKSPACE.to_string(),
+      category,
+      source: FoundryEntrySource::Workspace,
     },
     texture,
   })

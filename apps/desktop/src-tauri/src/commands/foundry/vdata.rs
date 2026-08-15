@@ -251,6 +251,7 @@ pub(crate) fn primary_model_path(
 
 #[cfg(test)]
 mod tests {
+  use super::super::types::{FoundryCategory, FoundryEntrySource};
   use super::*;
 
   fn model(path: &str) -> FoundryEntry {
@@ -259,8 +260,8 @@ mod tests {
       filename: file_name_of(path).to_string(),
       ext: "vmdl_c".to_string(),
       size: 0,
-      category: "model".to_string(),
-      source: "mod".to_string(),
+      category: FoundryCategory::Model,
+      source: FoundryEntrySource::Mod,
     }
   }
 

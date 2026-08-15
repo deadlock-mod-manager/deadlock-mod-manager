@@ -16,13 +16,7 @@
 //! user.
 
 use super::hero::{ability_slots, canonical_sound_codename, curated_slot, sound_codename_for_hero};
-use super::types::{FoundryEntry, FoundrySoundGroup};
-
-const GROUP_KIND_ABILITY: &str = "ability";
-const GROUP_KIND_VOICE: &str = "voice";
-const GROUP_KIND_WEAPON: &str = "weapon";
-const GROUP_KIND_EVENTS: &str = "soundevents";
-const GROUP_KIND_OTHER: &str = "other";
+use super::types::{FoundryEntry, FoundrySoundGroup, FoundrySoundGroupKind};
 
 /// The `sounds/abilities/<codename>/` prefix, returning the codename.
 fn ability_codename(path: &str) -> Option<String> {
@@ -173,13 +167,13 @@ fn resolve_ability_slot(codename: &str, path: &str) -> Option<u8> {
 fn push_group(
   groups: &mut Vec<FoundrySoundGroup>,
   id: &str,
-  kind: &str,
+  kind: FoundrySoundGroupKind,
   slot: Option<u8>,
   label: String,
 ) {
   groups.push(FoundrySoundGroup {
     id: id.to_string(),
-    kind: kind.to_string(),
+    kind,
     slot,
     label,
     entries: Vec::new(),
@@ -210,7 +204,7 @@ pub(crate) fn group_sounds(
       push_group(
         &mut groups,
         &format!("ability-{slot}"),
-        GROUP_KIND_ABILITY,
+        FoundrySoundGroupKind::Ability,
         Some(slot),
         label,
       );
@@ -219,35 +213,35 @@ pub(crate) fn group_sounds(
   push_group(
     &mut groups,
     "ability-unmapped",
-    GROUP_KIND_ABILITY,
+    FoundrySoundGroupKind::Ability,
     None,
     "Other abilities".to_string(),
   );
   push_group(
     &mut groups,
     "voice",
-    GROUP_KIND_VOICE,
+    FoundrySoundGroupKind::Voice,
     None,
     "Voice lines".to_string(),
   );
   push_group(
     &mut groups,
     "weapon",
-    GROUP_KIND_WEAPON,
+    FoundrySoundGroupKind::Weapon,
     None,
     "Weapon".to_string(),
   );
   push_group(
     &mut groups,
     "soundevents",
-    GROUP_KIND_EVENTS,
+    FoundrySoundGroupKind::Soundevents,
     None,
     "Sound events".to_string(),
   );
   push_group(
     &mut groups,
     "other",
-    GROUP_KIND_OTHER,
+    FoundrySoundGroupKind::Other,
     None,
     "Other sounds".to_string(),
   );
@@ -318,6 +312,7 @@ pub(crate) fn find_mp3_payload(bytes: &[u8]) -> Option<&[u8]> {
 
 #[cfg(test)]
 mod tests {
+  use super::super::types::{FoundryCategory, FoundryEntrySource};
   use super::*;
 
   fn entry(path: &str) -> FoundryEntry {
@@ -326,8 +321,8 @@ mod tests {
       filename: path.rsplit('/').next().unwrap_or(path).to_string(),
       ext: "vsnd_c".to_string(),
       size: 0,
-      category: "sound".to_string(),
-      source: "mod".to_string(),
+      category: FoundryCategory::Sound,
+      source: FoundryEntrySource::Mod,
     }
   }
 

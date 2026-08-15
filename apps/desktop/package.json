@@ -21,7 +21,8 @@
     "build:cef:deb": "bun scripts/cef-patch.ts cargo tauri build --bundles deb,updater",
     "cef:setup": "cargo install tauri-cli --git https://github.com/tauri-apps/tauri --branch feat/cef",
     "cef:cleanup": "bun scripts/cef-patch.ts cleanup",
-    "format:rust": "cd src-tauri && rustfmt"
+    "format:rust": "cd src-tauri && rustfmt",
+    "generate-types": "cd src-tauri && cargo test --lib export_bindings --quiet && cd .. && pnpm exec oxfmt src/types/generated --write"
   },
   "dependencies": {
     "@deadlock-mods/common": "workspace:*",

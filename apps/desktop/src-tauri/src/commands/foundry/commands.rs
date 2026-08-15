@@ -16,13 +16,13 @@ use crate::errors::Error;
 use super::analyze::{analyze_default_hero, analyze_vpk_path, decode_foundry_cards};
 use super::archive_cache::{clear_archive_cache, open_archive};
 use super::export::{ExportDestination, FoundryExportResult, export_workspace};
-use super::paint::{PaintTarget, describe_paint_targets, paint_target};
+use super::paint::{describe_paint_targets, paint_target};
 use super::sounds::find_mp3_payload;
 use super::staging::staged_base_game_vpk;
 use super::types::{
-  FoundryBuildResult, FoundryCardPreview, FoundryManifest, FoundryModel, FoundryPaintResult,
-  FoundryPaintTargetInfo, FoundryReplacementResult, FoundrySoundPreview, FoundryTexture,
-  FoundryWorkspace,
+  ExportDestinationKind, FoundryBuildResult, FoundryCardPreview, FoundryManifest, FoundryModel,
+  FoundryPaintResult, FoundryPaintTargetInfo, FoundryReplacementResult, FoundrySoundPreview,
+  FoundryTexture, FoundryWorkspace, PaintTarget,
 };
 use super::workspace::{
   build_workspace_vpk, entry_bytes_from_sources, hue_of, parse_hex_color, prepare_workspace,
@@ -86,36 +86,30 @@ pub async fn foundry_build_workspace_vpk(
 /// Pack the workspace and deliver it: to a file the user picked, to a new local
 /// mod in the library, or over the VPK the Foundry loaded.
 ///
-/// `destination` is `file`, `newMod` or `replaceSource`. Replacing keeps a
-/// `.bak` of the original beside it.
+/// Replacing keeps a `.bak` of the original beside it.
 #[tauri::command]
 pub async fn foundry_export_workspace(
   workspace_root: String,
-  destination: String,
+  destination: ExportDestinationKind,
   name: Option<String>,
   output_path: Option<String>,
   source_path: Option<String>,
 ) -> Result<FoundryExportResult, Error> {
   let display_name = name.clone().unwrap_or_else(|| "Foundry skin".to_string());
-  let destination = match destination.as_str() {
-    "file" => ExportDestination::File {
+  let destination = match destination {
+    ExportDestinationKind::File => ExportDestination::File {
       output_path: PathBuf::from(output_path.ok_or_else(|| {
         Error::InvalidInput("exporting to a file needs an output path".to_string())
       })?),
     },
-    "newMod" => ExportDestination::NewMod { name: display_name },
-    "replaceSource" => ExportDestination::ReplaceSource {
+    ExportDestinationKind::NewMod => ExportDestination::NewMod { name: display_name },
+    ExportDestinationKind::ReplaceSource => ExportDestination::ReplaceSource {
       source_path: PathBuf::from(source_path.filter(|path| !path.is_empty()).ok_or_else(|| {
         Error::InvalidInput(
           "this skin was not loaded from a mod, so there is nothing to replace".to_string(),
         )
       })?),
     },
-    other => {
-      return Err(Error::InvalidInput(format!(
-        "unknown export destination: {other}"
-      )));
-    }
   };
 
   tauri::async_runtime::spawn_blocking(move || {
@@ -180,7 +174,7 @@ pub async fn foundry_paint_targets(
 pub async fn foundry_paint_target(
   workspace_root: String,
   file_path: String,
-  target: String,
+  target: PaintTarget,
   hero_display: Option<String>,
   color_hex: String,
   saturation: Option<f32>,
@@ -189,7 +183,6 @@ pub async fn foundry_paint_target(
   pattern_intensity: Option<f32>,
   pattern_phase: Option<f32>,
 ) -> Result<FoundryPaintResult, Error> {
-  let target = PaintTarget::parse(&target)?;
   let color = parse_hex_color(&color_hex)?;
   let recolor = vpkmanager::Recolor::new(
     f64::from(hue_of(color)),
