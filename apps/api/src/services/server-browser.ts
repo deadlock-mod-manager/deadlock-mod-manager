@@ -1,21 +1,36 @@
-import type { ServerBrowserFacetsResponse } from "@deadlock-mods/shared";
+import type {
+  ServerBrowserEntry,
+  ServerBrowserFacetsResponse,
+} from "@deadlock-mods/shared";
 import {
   CircuitOpenError,
   RelayHttpError,
   type ServerListItem,
 } from "@deadlock-mods/relay-client";
 import { CACHE_TTL } from "../lib/constants";
+import { env } from "../lib/env";
 import { logger as mainLogger } from "../lib/logger";
 import { cache } from "../lib/redis";
 import {
   relayRequestDurationSeconds,
   relayRequestsTotal,
 } from "../lib/relay-metrics";
+import { fetchDeadworksRegistryServers } from "./deadworks-registry";
 import { RelayDiscoveryService } from "./relay-discovery";
 
 const logger = mainLogger.child().withContext({
   service: "server-browser",
 });
+
+/**
+ * Most registry servers report the game's default name, so surfacing the ones
+ * that bothered to set a name keeps community servers from being buried under
+ * an anonymous wall of "Deadlock".
+ */
+const DEFAULT_SERVER_NAME = "deadlock";
+
+const hasCustomName = (name: string): boolean =>
+  name.trim().toLowerCase() !== DEFAULT_SERVER_NAME;
 
 export interface ServerBrowserFilters {
   game_mode?: string;
@@ -38,12 +53,36 @@ export interface ServerBrowserListResult {
   cursor: number | null;
   relays_queried: number;
   relays_failed: number;
+  /** The Deadworks registry couldn't be refreshed; its servers may be stale. */
+  registry_degraded: boolean;
+  /** Age of the stale registry snapshot in ms, if one is being served. */
+  registry_snapshot_age_ms: number | null;
+}
+
+interface RegistrySnapshot {
+  servers: ServerBrowserEntry[];
+  fetchedAt: number;
+}
+
+interface RegistryResult {
+  servers: ServerBrowserEntry[];
+  degraded: boolean;
+  snapshotAgeMs: number | null;
 }
 
 const DEFAULT_LIMIT = 100;
 const MAX_LIMIT = 500;
 
 const normalize = (url: string) => url.replace(/\/+$/, "");
+
+/**
+ * Registry entries can arrive without a heartbeat, and an unparseable date must
+ * not win a freshness comparison by being NaN — treat it as the oldest possible.
+ */
+const lastSeenAt = (server: { last_seen: string }): number => {
+  const parsed = new Date(server.last_seen).getTime();
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
 
 export class ServerBrowserService {
   private static instance: ServerBrowserService | null = null;
@@ -80,6 +119,8 @@ export class ServerBrowserService {
       cursor: nextCursor,
       relays_queried: aggregated.relaysQueried,
       relays_failed: aggregated.relaysFailed,
+      registry_degraded: aggregated.registry.degraded,
+      registry_snapshot_age_ms: aggregated.registry.snapshotAgeMs,
     };
 
     await cache.set(cacheKey, result, CACHE_TTL.SERVERS_LIST);
@@ -194,6 +235,13 @@ export class ServerBrowserService {
       }
     }
 
+    const registry = await this.fetchRegistryServers();
+    const registryServer = registry.servers.find((server) => server.id === id);
+    if (registryServer) {
+      await cache.set(cacheKey, registryServer, CACHE_TTL.SERVER_DETAIL);
+      return registryServer;
+    }
+
     return null;
   }
 
@@ -205,10 +253,12 @@ export class ServerBrowserService {
     servers: AggregatedServer[];
     relaysQueried: number;
     relaysFailed: number;
+    registry: RegistryResult;
   }> {
     const relays = await this.discovery.getRelays();
     const client = this.discovery.getClient();
 
+    const registryServersPromise = this.fetchRegistryServers();
     const results = await Promise.all(
       relays.map(async (relay) => {
         const base = normalize(relay.url);
@@ -270,6 +320,7 @@ export class ServerBrowserService {
         }
       }),
     );
+    const registry = await registryServersPromise;
 
     const dedup = new Map<string, AggregatedServer>();
     let relaysQueried = 0;
@@ -283,11 +334,7 @@ export class ServerBrowserService {
       relaysQueried += 1;
       for (const server of result.servers) {
         const existing = dedup.get(server.id);
-        if (
-          !existing ||
-          new Date(server.last_seen).getTime() >
-            new Date(existing.last_seen).getTime()
-        ) {
+        if (!existing || lastSeenAt(server) > lastSeenAt(existing)) {
           dedup.set(server.id, {
             ...server,
             source_relay: result.base,
@@ -297,11 +344,59 @@ export class ServerBrowserService {
       }
     }
 
+    for (const server of registry.servers) {
+      const existing = dedup.get(server.id);
+      if (!existing || lastSeenAt(server) > lastSeenAt(existing)) {
+        dedup.set(server.id, server);
+      }
+    }
+
     return {
       servers: Array.from(dedup.values()),
       relaysQueried,
       relaysFailed,
+      registry,
     };
+  }
+
+  /**
+   * A failed refresh must not blank the browser: the last good snapshot is
+   * served instead, flagged so clients can say why it may be stale.
+   */
+  private async fetchRegistryServers(): Promise<RegistryResult> {
+    const registryUrl = normalize(env.DEADWORKS_REGISTRY_URL);
+    const listKey = `server-browser:v2:registry:${registryUrl}`;
+    const snapshotKey = `${listKey}:last-good`;
+
+    const cached = await cache.get<ServerBrowserEntry[]>(listKey);
+    if (cached)
+      return { servers: cached, degraded: false, snapshotAgeMs: null };
+
+    try {
+      const servers = await fetchDeadworksRegistryServers(registryUrl);
+      await cache.set(listKey, servers, CACHE_TTL.SERVERS_LIST);
+      await cache.set(
+        snapshotKey,
+        { servers, fetchedAt: Date.now() },
+        CACHE_TTL.REGISTRY_SNAPSHOT,
+      );
+      return { servers, degraded: false, snapshotAgeMs: null };
+    } catch (error) {
+      logger
+        .withError(error)
+        .withMetadata({ registry: registryUrl })
+        .warn("Deadworks registry request failed");
+
+      const snapshot = await cache.get<RegistrySnapshot>(snapshotKey);
+      if (!snapshot) {
+        return { servers: [], degraded: true, snapshotAgeMs: null };
+      }
+      return {
+        servers: snapshot.servers,
+        degraded: true,
+        snapshotAgeMs: Date.now() - snapshot.fetchedAt,
+      };
+    }
   }
 
   private applyFilters(
@@ -325,11 +420,23 @@ export class ServerBrowserService {
       out = out.filter((s) => s.source_region?.toLowerCase() === region);
     }
 
+    if (filters.game_mode) {
+      const gameMode = filters.game_mode.toLowerCase();
+      out = out.filter((s) => s.game_mode.toLowerCase() === gameMode);
+    }
+
+    if (filters.has_players) {
+      out = out.filter((s) => s.player_count > 0);
+    }
+
     if (typeof filters.password === "boolean") {
       out = out.filter((s) => s.password_protected === filters.password);
     }
 
     out = [...out].sort((a, b) => {
+      const aNamed = hasCustomName(a.name);
+      const bNamed = hasCustomName(b.name);
+      if (aNamed !== bNamed) return aNamed ? -1 : 1;
       const aPlayers = a.player_count ?? 0;
       const bPlayers = b.player_count ?? 0;
       if (aPlayers !== bPlayers) return bPlayers - aPlayers;
