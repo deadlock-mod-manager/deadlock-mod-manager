@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 esoc
+// SPDX-FileCopyrightText: 2015 ValveResourceFormat Contributors
+// SPDX-License-Identifier: MIT
+
 //! Uncompressed RGBA8888 / BGRA8888 encoders.
 //!
 //! These are the inverse of [`crate::source2::texture::decode::rgba8`]. RGBA8888 is a

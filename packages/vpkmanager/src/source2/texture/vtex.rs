@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 esoc
+// SPDX-FileCopyrightText: 2015 ValveResourceFormat Contributors
+// SPDX-License-Identifier: MIT
+
 //! New `.vtex_c` resource writers.
 //!
 //! This starts with the smallest format useful for generated soul-container

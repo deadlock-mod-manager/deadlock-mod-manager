@@ -3,6 +3,7 @@ name = "vpk-parser"
 version = "0.1.0"
 edition = "2024"
 description = "Native VPK parser library for Bun FFI"
+license = "GPL-3.0"
 
 [lib]
 name = "vpk_parser"

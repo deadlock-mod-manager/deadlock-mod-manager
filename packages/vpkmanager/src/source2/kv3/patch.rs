@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 esoc
+// SPDX-FileCopyrightText: 2015 ValveResourceFormat Contributors
+// SPDX-License-Identifier: MIT
+
 //! Surgical, byte-faithful KV3 edits.
 //!
 //! Re-encoding a model `MDAT` from the decoded [`Value`](super::Value) tree is too

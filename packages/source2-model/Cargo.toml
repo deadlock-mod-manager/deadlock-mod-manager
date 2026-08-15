@@ -3,6 +3,7 @@ name = "source2-model"
 version = "0.1.0"
 edition = "2024"
 description = "Decoder and writer for the Source 2 compiled assets used by the Mod Foundry"
+license = "GPL-3.0"
 
 [lib]
 name = "source2_model"

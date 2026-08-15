@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 esoc
+// SPDX-FileCopyrightText: 2015 ValveResourceFormat Contributors
+// SPDX-License-Identifier: MIT
+
 //! Mint a Source 2 `.vsnd_c` from an MP3 payload by patching a donor container.
 //!
 //! A compiled sound resource is laid out as

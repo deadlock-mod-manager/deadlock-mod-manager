@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 esoc
+// SPDX-FileCopyrightText: 2015 ValveResourceFormat Contributors
+// SPDX-License-Identifier: MIT
+
 //! Block-compressed encoders backed by `intel_tex_2` (Intel's ISPC texture
 //! compressor). Inverse of [`crate::source2::texture::decode::bcn`].
 //!

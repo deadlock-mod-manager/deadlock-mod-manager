@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 esoc
+// SPDX-FileCopyrightText: 2015 ValveResourceFormat Contributors
+// SPDX-License-Identifier: MIT
+
 //! Source 2 resource container: header + block table.
 //!
 //! See [`header`] for the binary layout. We only need DATA for texture

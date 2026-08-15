@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 esoc
+// SPDX-FileCopyrightText: 2015 ValveResourceFormat Contributors
+// SPDX-License-Identifier: MIT
+
 //! Texture-specific decode: composes [`crate::source2::resource`] + per-format pixel
 //! decoders under [`decode`].
 //!

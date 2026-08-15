@@ -81,7 +81,7 @@ import PageTitle from "@/components/shared/page-title";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { getCustomSettings } from "@/lib/api-client";
 import { AUTOEXEC_LAUNCH_OPTION_ID } from "@/lib/autoexec/constants";
-import { SortType } from "@/lib/constants";
+import { GITHUB_REPO, SortType } from "@/lib/constants";
 import logger from "@/lib/logger";
 import { STALE_TIME_LOCAL } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
@@ -946,11 +946,44 @@ const CustomSettings = ({ value }: { value?: string }) => {
                   url='https://ui.shadcn.com/'
                 />
                 <CreditCard
+                  buttonLabel={t("about.visitVpkmerge")}
+                  description={t("about.vpkmergeDescription")}
+                  title='vpkmerge'
+                  url='https://github.com/Slush97/vpkmerge'
+                />
+                <CreditCard
+                  buttonLabel={t("about.visitValveResourceFormat")}
+                  description={t("about.valveResourceFormatDescription")}
+                  title='ValveResourceFormat'
+                  url='https://github.com/ValveResourceFormat/ValveResourceFormat'
+                />
+                <CreditCard
                   buttonLabel={t("about.visitTailwind")}
                   description={t("about.tailwindDescription")}
                   title='Tailwind CSS'
                   url='https://tailwindcss.com/'
                 />
+                <div className='rounded-lg border border-border/50 bg-card/50 p-4 sm:col-span-2'>
+                  <div className='flex flex-col gap-2'>
+                    <h3 className='font-semibold'>
+                      {t("about.thirdPartyNotices")}
+                    </h3>
+                    <p className='text-muted-foreground text-sm'>
+                      {t("about.thirdPartyNoticesDescription")}
+                    </p>
+                    <Button
+                      className='mt-2 w-fit'
+                      onClick={() =>
+                        openUrl(
+                          `${GITHUB_REPO}/blob/main/THIRD-PARTY-NOTICES.md`,
+                        )
+                      }
+                      size='sm'
+                      variant='outline'>
+                      {t("about.viewThirdPartyNotices")}
+                    </Button>
+                  </div>
+                </div>
                 <div className='rounded-lg border border-border/50 bg-card/50 p-4 sm:col-span-2'>
                   <div className='flex flex-col gap-2'>
                     <h3 className='font-semibold'>

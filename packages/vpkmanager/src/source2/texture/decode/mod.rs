@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 esoc
+// SPDX-FileCopyrightText: 2015 ValveResourceFormat Contributors
+// SPDX-License-Identifier: MIT
+
 //! Pixel decode dispatch. Each format gets its own submodule; the dispatcher
 //! lives here and is intentionally exhaustive so adding a format requires
 //! either implementing it or extending the match.

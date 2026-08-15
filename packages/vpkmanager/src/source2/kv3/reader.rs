@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 esoc
+// SPDX-FileCopyrightText: 2015 ValveResourceFormat Contributors
+// SPDX-License-Identifier: MIT
+
 //! Binary KV3 reader, ported from `ValveResourceFormat`'s `BinaryKV3` (MIT).
 //!
 //! Handles versions 1..=5. Real Deadlock files (e.g. `.vsndevts_c`) are v5 with

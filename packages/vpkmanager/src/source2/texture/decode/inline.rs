@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 esoc
+// SPDX-FileCopyrightText: 2015 ValveResourceFormat Contributors
+// SPDX-License-Identifier: MIT
+
 //! Inline image formats: the payload following the DATA block is a literal
 //! PNG or JPEG file. VRF treats all of `PNG_RGBA8888`, `PNG_DXT5`,
 //! `JPEG_DXT5`, `JPEG_RGBA8888` identically: read the bytes, hand them to

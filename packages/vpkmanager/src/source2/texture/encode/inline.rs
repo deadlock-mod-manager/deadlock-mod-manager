@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 esoc
+// SPDX-FileCopyrightText: 2015 ValveResourceFormat Contributors
+// SPDX-License-Identifier: MIT
+
 //! Inline image format encoder.
 //!
 //! `PngRgba8888` textures store a literal PNG payload in place of a mip

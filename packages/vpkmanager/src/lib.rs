@@ -7,8 +7,9 @@
 //!
 //! The codecs under [`source2`] are vendored from the MIT-licensed
 //! [vpkmerge](https://github.com/Slush97/vpkmerge) project (its `morphic` crate),
-//! whose algorithms are adapted from ValveResourceFormat (MIT). See that module
-//! for what was and was not taken.
+//! whose algorithms are adapted from ValveResourceFormat (MIT). Full license
+//! texts live in `LICENSE-vpkmerge` and `LICENSE-ValveResourceFormat`. See the
+//! `source2` module for what was and was not taken.
 
 pub mod audio;
 pub mod error;

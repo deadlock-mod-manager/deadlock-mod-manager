@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 esoc
+// SPDX-FileCopyrightText: 2015 ValveResourceFormat Contributors
+// SPDX-License-Identifier: MIT
+
 //! Binary KV3 writer, ported from `ValveResourceFormat`'s `BinaryKV3.Serialize`
 //! (MIT). Emits **version 4, uncompressed** (`compressionMethod = 0`) exactly as
 //! the reference does: the spec permits uncompressed buffers, so this avoids

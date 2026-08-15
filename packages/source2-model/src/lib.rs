@@ -5,6 +5,10 @@
 //! Animation, particle and physics decoding are intentionally not part of this
 //! crate — the Foundry previews a static character model only — and the write
 //! side (recolor, replace, pack) lives in `vpkmanager`.
+//!
+//! Decode and export behavior is adapted from the MIT-licensed
+//! [ValveResourceFormat](https://github.com/ValveResourceFormat/ValveResourceFormat)
+//! project. The full license text is in `LICENSE-ValveResourceFormat`.
 
 pub mod error;
 pub mod kv3;
@@ -357,8 +361,8 @@ fn try_pose_model_at_rest(
 ) -> Result<Option<ModelGlb>> {
     // The skin's own VPK carries the skeleton when it ships the model; a
     // default-hero load reads it from the base game instead.
-    let Some(skeleton) = skeleton_from_archive(skin, entry_path)
-        .or_else(|| skeleton_from_archive(base, entry_path))
+    let Some(skeleton) =
+        skeleton_from_archive(skin, entry_path).or_else(|| skeleton_from_archive(base, entry_path))
     else {
         return Ok(None);
     };

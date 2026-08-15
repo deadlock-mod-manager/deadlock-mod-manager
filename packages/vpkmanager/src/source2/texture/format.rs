@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 esoc
+// SPDX-FileCopyrightText: 2015 ValveResourceFormat Contributors
+// SPDX-License-Identifier: MIT
+
 //! Texture format enum + flag bits.
 //!
 //! Variant names match VRF's `VTexFormat` strings (which is also what the C#

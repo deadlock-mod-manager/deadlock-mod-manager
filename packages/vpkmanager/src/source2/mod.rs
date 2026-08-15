@@ -1,8 +1,13 @@
+// SPDX-FileCopyrightText: 2026 esoc
+// SPDX-FileCopyrightText: 2015 ValveResourceFormat Contributors
+// SPDX-License-Identifier: MIT
+
 //! Source 2 container, texture, KV3 and sound codecs.
 //!
 //! Vendored from the `morphic` crate of the MIT-licensed
 //! [vpkmerge](https://github.com/Slush97/vpkmerge) project, whose algorithms are
-//! in turn adapted from ValveResourceFormat (MIT). Only the parts the mod
+//! in turn adapted from ValveResourceFormat (MIT). Full license texts live in
+//! `LICENSE-vpkmerge` and `LICENSE-ValveResourceFormat`. Only the parts the mod
 //! manager writes through are kept: the resource container, the `.vtex_c`
 //! decoder/encoder (including the BCn mip-chain re-encode), binary KV3, and the
 //! `.vsnd_c` codec. The model exporter, material compiler and VFX expression

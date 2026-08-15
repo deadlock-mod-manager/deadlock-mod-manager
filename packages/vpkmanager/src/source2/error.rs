@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 esoc
+// SPDX-FileCopyrightText: 2015 ValveResourceFormat Contributors
+// SPDX-License-Identifier: MIT
+
 use crate::source2::texture::format::TextureFormat;
 
 #[derive(thiserror::Error, Debug)]

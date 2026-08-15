@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 esoc
+// SPDX-FileCopyrightText: 2015 ValveResourceFormat Contributors
+// SPDX-License-Identifier: MIT
+
 //! `BCn` block decompression via `bcdec_rs` (safe pure-Rust port of bcdec.h).
 //!
 //! The caller (`texture::pixel_data`) has already sliced `pixels` to exactly

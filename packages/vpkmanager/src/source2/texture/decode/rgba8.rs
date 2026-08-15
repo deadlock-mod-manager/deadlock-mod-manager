@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 esoc
+// SPDX-FileCopyrightText: 2015 ValveResourceFormat Contributors
+// SPDX-License-Identifier: MIT
+
 use crate::source2::error::DecodeError;
 use crate::source2::texture::{Image, ImageData, TextureInfo};
 

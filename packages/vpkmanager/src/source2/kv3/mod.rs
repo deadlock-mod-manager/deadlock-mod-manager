@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 esoc
+// SPDX-FileCopyrightText: 2015 ValveResourceFormat Contributors
+// SPDX-License-Identifier: MIT
+
 //! Binary `KeyValues3` codec for Source 2 resources.
 //!
 //! [`decode`] reads a binary KV3 DATA payload (the `DATA` block of a `.vsndevts_c`,

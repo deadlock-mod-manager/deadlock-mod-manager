@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 esoc
+// SPDX-FileCopyrightText: 2015 ValveResourceFormat Contributors
+// SPDX-License-Identifier: MIT
+
 //! Faithful KV3 re-wrap: take a compiled binary KV3 block and re-emit it
 //! **uncompressed**, preserving every other byte of structure verbatim (type
 //! stream, value flags, typed-array tags, string table, scalar lanes).

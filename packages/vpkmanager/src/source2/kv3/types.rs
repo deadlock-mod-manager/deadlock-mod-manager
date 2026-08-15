@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 esoc
+// SPDX-FileCopyrightText: 2015 ValveResourceFormat Contributors
+// SPDX-License-Identifier: MIT
+
 //! The decoded `KeyValues3` value tree.
 //!
 //! Objects keep insertion order (a `Vec` of pairs, not a map) because Source 2
