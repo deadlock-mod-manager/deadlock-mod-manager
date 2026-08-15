@@ -688,6 +688,9 @@
         "restart": "Close and join"
       },
       "launchedWatched": "Launching {{name}}. DMM will connect you as soon as the game is ready",
+      "summaryServerContent": "Download and activate the maps and addons this server requires",
+      "summaryServerContentCounted_one": "Download {{count}} of {{total}} maps and addons ({{size}})",
+      "summaryServerContentCounted_other": "Download {{count}} of {{total}} maps and addons ({{size}})",
       "noConnectMethod": "This server didn't publish an address to connect to."
     },
     "staging": {
@@ -701,7 +704,10 @@
       "customConfirm": "Allow downloads",
       "customSkip": "Skip custom mods",
       "downloadingCustom": "Downloading custom-provider mods...",
-      "applying": "Applying server mods to gameinfo.gi..."
+      "applying": "Applying server mods to gameinfo.gi...",
+      "downloadingServerContent": "Downloading the maps and addons this server needs...",
+      "contentItemProgress": "{{current}} of {{total}}",
+      "decompressing": "Unpacking {{name}}..."
     },
     "requirementRow": {
       "customProvider": "Custom",

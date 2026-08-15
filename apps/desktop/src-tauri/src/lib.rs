@@ -272,6 +272,8 @@ pub fn run() {
       commands::app::check_filesystem_writable,
       commands::downloads::test_fileserver_latency,
       commands::server_browser::ping_servers,
+      commands::deadworks_content::download_deadworks_content,
+      commands::deadworks_content::preview_deadworks_content,
       commands::server_connect::resolve_connect_address,
       commands::server_connect::watch_server_connect,
       proxy::set_proxy_config,
