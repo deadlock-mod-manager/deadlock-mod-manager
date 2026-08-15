@@ -36,6 +36,7 @@ Key directories:
 - Use `react-i18next` for any user-facing strings (check `apps/desktop/src/locales/`)
 - Use React Query mutations for async operations, not manual useState loading (see 030-coding-style.mdc)
 - When debugging or verifying desktop UI, IPC, or Tauri commands, use **tauri-mcp-server** (see [056-tauri-mcp-debugging.mdc](.cursor/rules/056-tauri-mcp-debugging.mdc)); ask the user to start the dev server — do not start it yourself
+- When documenting a code change (plan, design doc, PR description, summary) that alters call flow, include a `npx calldiff@latest diff` call-stack diff (see [095-calldiff.mdc](.cursor/rules/095-calldiff.mdc))
 
 ### DON'T
 

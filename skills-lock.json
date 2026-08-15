@@ -64,6 +64,12 @@
       "skillPath": "skills/.curated/security-threat-model/SKILL.md",
       "computedHash": "b3ad2dc0b2eee1f189680fdb8cf3b17853f12ab3403d389393f4237ebc6f9821"
     },
+    "show-me": {
+      "source": "humanlayer/skills",
+      "sourceType": "github",
+      "skillPath": "plugins/show-me/skills/show-me/SKILL.md",
+      "computedHash": "de32a72f802801f08a84641b467f2c6306d35a58ce5e59ea607ac3a993a18c91"
+    },
     "skill-creator": {
       "source": "getsentry/skills",
       "sourceType": "github",
