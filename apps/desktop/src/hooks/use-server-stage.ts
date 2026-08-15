@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useRef, useState } from "react";
 import { getModDownloads } from "@/lib/api-client";
 import { downloadManager } from "@/lib/download/manager";
+import { getErrorMessage } from "@/lib/errors";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import type { StagedServer } from "@/lib/store/slices/server-profiles";
@@ -21,6 +22,7 @@ export type ServerStagingPhase =
   | "awaiting-file-selection"
   | "awaiting-custom-confirm"
   | "downloading-custom"
+  | "downloading-server-content"
   | "patching-gameinfo"
   | "ready"
   | "error";
@@ -311,13 +313,10 @@ export const useServerStage = () => {
                   .warn("Custom provider download failed");
               }
               const summary = failures
-                .map(({ result, preview }) => {
-                  const message =
-                    result.reason instanceof Error
-                      ? result.reason.message
-                      : String(result.reason);
-                  return `${preview.requirementName}: ${message}`;
-                })
+                .map(
+                  ({ result, preview }) =>
+                    `${preview.requirementName}: ${getErrorMessage(result.reason)}`,
+                )
                 .join("; ");
               throw new Error(
                 `Failed to download ${failures.length} custom provider mod(s): ${summary}`,
@@ -328,6 +327,18 @@ export const useServerStage = () => {
               "User declined custom-provider downloads; skipping them",
             );
           }
+        }
+
+        if (server.managed_content) {
+          setState((s) => ({
+            ...s,
+            phase: "downloading-server-content",
+            currentRequirement: null,
+          }));
+          await invoke("download_deadworks_content", {
+            serverId: server.id,
+            serverFolder: folderName,
+          });
         }
 
         setState((s) => ({
@@ -364,8 +375,7 @@ export const useServerStage = () => {
         });
         return staged;
       } catch (error) {
-        const message =
-          error instanceof Error ? error.message : String(error ?? "");
+        const message = getErrorMessage(error);
         logger
           .withMetadata({ serverId: server.id })
           .withError(error)

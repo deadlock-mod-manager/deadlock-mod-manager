@@ -9,7 +9,7 @@ use tauri::Manager;
 
 use super::mods::InstalledModInfo;
 use super::server_profiles::validate_addons_subfolder;
-use super::state::{DOWNLOAD_MANAGER, MANAGER};
+use super::state::{DOWNLOAD_MANAGER, MANAGER, game_path};
 
 pub(crate) async fn get_download_manager(app_handle: AppHandle) -> &'static DownloadManager {
   DOWNLOAD_MANAGER
@@ -123,7 +123,10 @@ fn validate_custom_file_name(file_name: &str) -> Result<(), Error> {
   Ok(())
 }
 
-async fn validate_custom_provider_url(url_str: &str) -> Result<(), Error> {
+/// Rejects anything that is not a public https endpoint, including hosts that
+/// resolve to loopback/private/link-local addresses. Every command that
+/// downloads from a caller- or manifest-supplied URL must go through this.
+pub(crate) async fn validate_custom_provider_url(url_str: &str) -> Result<(), Error> {
   let parsed = reqwest::Url::parse(url_str)
     .map_err(|e| Error::InvalidInput(format!("Invalid custom provider URL: {e}")))?;
 
@@ -193,16 +196,7 @@ pub async fn download_custom_provider_mod(
   validate_custom_file_name(&file_name)?;
   validate_custom_provider_url(&url).await?;
 
-  let game_path = {
-    let mod_manager = MANAGER.lock().unwrap();
-    mod_manager
-      .get_steam_manager()
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?
-      .clone()
-  };
-
-  let addons_path = game_path.join("game").join("citadel").join("addons");
+  let addons_path = game_path()?.join("game").join("citadel").join("addons");
   let folder_path = addons_path.join(&server_folder);
   std::fs::create_dir_all(&folder_path)?;
 

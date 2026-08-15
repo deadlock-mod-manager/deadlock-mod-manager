@@ -683,6 +683,7 @@
         "restart": "Beenden und beitreten"
       },
       "launchedWatched": "{{name}} wird gestartet. DMM verbindet dich, sobald das Spiel bereit ist",
+      "summaryServerContent": "Maps und Addons dieses Servers herunterladen und aktivieren",
       "noConnectMethod": "Dieser Server hat keine Adresse zum Verbinden veröffentlicht."
     },
     "staging": {
@@ -696,7 +697,8 @@
       "customConfirm": "Downloads erlauben",
       "customSkip": "Benutzerdefinierte Mods überspringen",
       "downloadingCustom": "Lade benutzerdefinierte Provider-Mods herunter...",
-      "applying": "Server-Mods werden auf gameinfo.gi appliziert..."
+      "applying": "Server-Mods werden auf gameinfo.gi appliziert...",
+      "downloadingServerContent": "Maps und Addons dieses Servers werden heruntergeladen..."
     },
     "requirementRow": {
       "customProvider": "Benutzerdefiniert",
