@@ -21,30 +21,28 @@ const main = async () => {
     queueConfigs.mods.name,
     redis,
     logger,
-    modProcessor,
-    1,
+    () => modProcessor,
   );
   const modFileWorker = new BaseWorker(
     queueConfigs.modFileProcessing.name,
     redis,
     logger,
-    modFileProcessor,
-    1,
+    () => modFileProcessor,
   );
 
-  await cronService.defineJob({
-    name: "mods-scheduler",
-    pattern: CronPatterns.EVERY_HOUR,
-    processor: modsSchedulerProcessor,
-    enabled: true,
-  });
-
-  await cronService.defineJob({
-    name: "temp-cleanup",
-    pattern: CronPatterns.EVERY_30_MINUTES,
-    processor: tempCleanupProcessor,
-    enabled: true,
-  });
+  await cronService.defineJobs([
+    {
+      name: "mods-scheduler",
+      pattern: CronPatterns.EVERY_HOUR,
+      processor: modsSchedulerProcessor,
+    },
+    {
+      name: "temp-cleanup",
+      pattern: CronPatterns.EVERY_30_MINUTES,
+      processor: tempCleanupProcessor,
+    },
+  ]);
+  cronService.start();
 
   process.on("SIGTERM", async () => {
     logger.info("SIGTERM received, initiating graceful shutdown");

@@ -47,21 +47,20 @@ export class BotStartupService {
   }
 
   private async setupCronJobs(): Promise<void> {
-    logger.info("Defining documentation sync cron job");
-    await cronService.defineJob({
-      name: DocumentationSyncProcessor.name,
-      pattern: DocumentationSyncProcessor.cronPattern,
-      processor: DocumentationSyncProcessor.instance,
-      enabled: true,
-    });
-
-    logger.info("Defining nightly testers sync cron job");
-    await cronService.defineJob({
-      name: NightlyTestersSyncProcessor.name,
-      pattern: NightlyTestersSyncProcessor.cronPattern,
-      processor: NightlyTestersSyncProcessor.instance,
-      enabled: true,
-    });
+    logger.info("Defining cron jobs");
+    await cronService.defineJobs([
+      {
+        name: DocumentationSyncProcessor.name,
+        pattern: DocumentationSyncProcessor.cronPattern,
+        processor: DocumentationSyncProcessor.instance,
+      },
+      {
+        name: NightlyTestersSyncProcessor.name,
+        pattern: NightlyTestersSyncProcessor.cronPattern,
+        processor: NightlyTestersSyncProcessor.instance,
+      },
+    ]);
+    cronService.start();
   }
 
   private async loginToDiscord(client: SapphireClient): Promise<void> {

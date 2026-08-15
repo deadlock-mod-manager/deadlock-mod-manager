@@ -54,20 +54,19 @@ const main = async () => {
       ? CronPatterns.EVERY_HOUR
       : `0 0 */${validationIntervalHours} * * *`;
 
-  await cronService.defineJob({
-    name: "validation-worker",
-    pattern: validationPattern,
-    processor: validationProcessor,
-    enabled: true,
-  });
-
-  // Define cleanup job to run daily at 2 AM
-  await cronService.defineJob({
-    name: "cleanup-worker",
-    pattern: CronPatterns.MAINTENANCE_DAILY,
-    processor: cleanupProcessor,
-    enabled: true,
-  });
+  await cronService.defineJobs([
+    {
+      name: "validation-worker",
+      pattern: validationPattern,
+      processor: validationProcessor,
+    },
+    {
+      name: "cleanup-worker",
+      pattern: CronPatterns.MAINTENANCE_DAILY,
+      processor: cleanupProcessor,
+    },
+  ]);
+  cronService.start();
 
   logger
     .withMetadata({

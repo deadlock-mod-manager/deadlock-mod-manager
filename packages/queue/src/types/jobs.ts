@@ -9,10 +9,15 @@ export enum JobStatus {
   Failed = "failed",
 }
 
+export interface CronJobMetadata extends Record<string, unknown> {
+  jobType: string;
+}
+
 export interface CronJobData extends BaseJobData {
   cronPattern?: string;
   timezone?: string;
   endDate?: Date;
   limit?: number;
   jobData: Record<string, unknown>;
+  metadata?: CronJobMetadata;
 }
