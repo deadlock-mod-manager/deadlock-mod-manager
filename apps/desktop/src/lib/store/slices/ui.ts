@@ -1,7 +1,11 @@
 import type { StateCreator } from "zustand";
 import { SortType, TimePeriod } from "@/lib/constants";
-import { getPlugins } from "@/lib/plugins";
 import type { State } from "..";
+import {
+  applyPluginSettings,
+  disablePlugin,
+  enablePlugin,
+} from "../utils/plugin-slice";
 
 export type FilterMode = "include" | "exclude";
 
@@ -95,7 +99,7 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   hasCompletedOnboarding: false,
   showOccultGeometry: true,
   animateOccultGeometry: true,
-  enabledPlugins: { themes: true },
+  enabledPlugins: {},
   pluginSettings: {},
 
   forceShowWhatsNew: () =>
@@ -155,32 +159,10 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
     })),
 
   setEnabledPlugin: (id: string, enabled: boolean) =>
-    set((state) => {
-      if (!enabled) {
-        return { enabledPlugins: { ...state.enabledPlugins, [id]: false } };
-      }
-      const all = getPlugins().map((p) => p.manifest);
-      const manifest = all.find((m) => m.id === id);
-      const forwardDisable = Array.isArray(manifest?.disabledPlugins)
-        ? manifest!.disabledPlugins!
-        : [];
-      const reverseDisable = all
-        .filter(
-          (m) =>
-            Array.isArray(m.disabledPlugins) && m.disabledPlugins!.includes(id),
-        )
-        .map((m) => m.id);
-      const next = { ...state.enabledPlugins, [id]: true } as Record<
-        string,
-        boolean
-      >;
-      for (const target of forwardDisable) next[target] = false;
-      for (const target of reverseDisable) next[target] = false;
-      return { enabledPlugins: next };
-    }),
+    set((state) =>
+      enabled ? enablePlugin(state, id) : disablePlugin(state, id),
+    ),
 
   setPluginSettings: (id: string, value: unknown) =>
-    set((state) => ({
-      pluginSettings: { ...state.pluginSettings, [id]: value },
-    })),
+    set((state) => applyPluginSettings(state, id, value)),
 });

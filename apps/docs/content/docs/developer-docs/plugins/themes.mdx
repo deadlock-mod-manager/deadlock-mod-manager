@@ -23,7 +23,8 @@ Technical reference for the Themes plugin which provides pre-defined themes, cus
   "icon": "public/icon.svg",
   "tags": ["official"],
   "entry": "./index.tsx",
-  "disabledPlugins": ["background"]
+  "disabledPlugins": ["background"],
+  "alwaysEnabled": true
 }
 ```
 
@@ -264,13 +265,16 @@ setSettings(manifest.id, {
 
 ## Plugin Conflicts
 
-The Themes plugin automatically disables the Background plugin to prevent conflicts:
+Themes and Background both paint a fullscreen layer, so only one of them can be active at a time:
 
 ```json
 {
-  "disabledPlugins": ["background"]
+  "disabledPlugins": ["background"],
+  "alwaysEnabled": true
 }
 ```
+
+Themes is `alwaysEnabled`: it has no switch in the plugins list, so the exclusion is driven by the theme selection instead. Selecting a theme disables the Background plugin, and enabling Background clears the active theme.
 
 ## Image Handling
 
