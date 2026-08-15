@@ -48,6 +48,33 @@ services:
       - postgres
       - redis
 
+  worker:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: deadlock_worker
+    restart: unless-stopped
+    # Replaces the image ENTRYPOINT; a `command:` override would append to it.
+    entrypoint: ["pnpm", "start:worker"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9001/health/live"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    ports:
+      - "9001:9001"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://turborepo:123456789@postgres:5432/turborepo
+      REDIS_URL: redis://redis:6379
+      SENTRY_DSN: https://68ca3d16310ec3b252293d44ecf5fe21@o84215.ingest.us.sentry.io/4508546052915200
+    depends_on:
+      - postgres
+      - redis
+
   mirror-service:
     build:
       context: .

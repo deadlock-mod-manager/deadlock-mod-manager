@@ -73,7 +73,6 @@ export class CronService {
 
     // Store the job definition
     this.jobs.set(name, definition);
-    this.ensureWorker();
 
     // Schedule the job if enabled
     if (enabled) {
@@ -106,16 +105,26 @@ export class CronService {
   /**
    * Begins consuming the queue. Call once every job is defined, since the
    * worker dispatches on job name and can only resolve jobs it knows about.
+   * Defining jobs without calling this leaves the service a producer.
    */
   start(): void {
-    if (!this.worker) {
+    if (this.jobs.size === 0) {
       throw new NotFoundError("No cron jobs defined, nothing to start");
     }
 
-    this.worker.start();
+    this.ensureWorker().start();
     this.logger
       .withMetadata({ jobs: this.jobs.size, concurrency: this.concurrency })
       .info("Cron service started");
+  }
+
+  /** False for a producer that never started, and once a run loop has exited. */
+  isRunning(): boolean {
+    return this.worker?.isRunning() ?? false;
+  }
+
+  getWorkerError(): Error | null {
+    return this.worker?.getLastError() ?? null;
   }
 
   /**
@@ -123,18 +132,18 @@ export class CronService {
    * it and dispatches on job name. Giving each processor its own worker would
    * let any worker claim any job and run it through the wrong processor.
    */
-  private ensureWorker(): void {
-    if (this.worker) {
-      return;
+  private ensureWorker(): CronWorker {
+    if (!this.worker) {
+      this.worker = new CronWorker(
+        this.queue.getQueue().name,
+        this.redis,
+        this.logger,
+        (jobName) => this.jobs.get(jobName)?.processor,
+        this.concurrency,
+      );
     }
 
-    this.worker = new CronWorker(
-      this.queue.getQueue().name,
-      this.redis,
-      this.logger,
-      (jobName) => this.jobs.get(jobName)?.processor,
-      this.concurrency,
-    );
+    return this.worker;
   }
 
   private async upsertJob(
@@ -193,8 +202,6 @@ export class CronService {
     if (!definition) {
       throw new NotFoundError(`Job not found: ${jobName}`);
     }
-
-    this.ensureWorker();
 
     definition.enabled = true;
     await this.upsertJob(jobName, definition.pattern, {

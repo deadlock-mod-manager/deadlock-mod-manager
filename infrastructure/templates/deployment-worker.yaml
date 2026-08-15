@@ -1,0 +1,101 @@
+{{- $port := .Values.deployments.worker.port | default 80 }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Chart.Name }}-worker
+  annotations:
+    reloader.stakater.com/auto: "true"
+spec:
+  replicas: {{ .Values.deployments.worker.replicas }}
+  {{- if .Values.deployments.worker.strategy }}
+  strategy:
+    type: {{ .Values.deployments.worker.strategy.type | default "RollingUpdate" }}
+    {{- if eq (.Values.deployments.worker.strategy.type | default "RollingUpdate") "RollingUpdate" }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.deployments.worker.strategy.maxUnavailable | default 1 }}
+      maxSurge: {{ .Values.deployments.worker.strategy.maxSurge | default 1 }}
+    {{- end }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ .Chart.Name }}-worker
+  template:
+    metadata:
+      labels:
+        app: {{ .Chart.Name }}-worker
+      annotations:
+        linkerd.io/inject: enabled
+        config.linkerd.io/proxy-memory-limit: "1Gi"
+        config.linkerd.io/proxy-memory-request: "128Mi"
+        kubectl.kubernetes.io/default-container: worker
+    spec:
+      {{- if .Values.deployments.worker.restartPolicy }}
+      restartPolicy: {{ .Values.deployments.worker.restartPolicy }}
+      {{- end }}
+      {{- if .Values.deployments.worker.terminationGracePeriodSeconds }}
+      terminationGracePeriodSeconds: {{ .Values.deployments.worker.terminationGracePeriodSeconds }}
+      {{- end }}
+      imagePullSecrets:
+        - name: regcred
+      containers:
+        - name: worker
+          image: {{ .Values.deployments.worker.image }}
+          {{- if .Values.deployments.worker.command }}
+          command:
+            {{- range .Values.deployments.worker.command | split " " }}
+            - {{ . | quote }}
+            {{- end }}
+          {{- end }}
+          ports:
+            - containerPort: {{ $port }}
+          {{- if .Values.deployments.worker.healthCheck.startup.enabled }}
+          startupProbe:
+            httpGet:
+              path: {{ .Values.deployments.worker.healthCheck.startup.path }}
+              port: {{ .Values.deployments.worker.healthCheck.startup.port | default $port }}
+            initialDelaySeconds: {{ .Values.deployments.worker.healthCheck.startup.initialDelaySeconds | default 0 }}
+            periodSeconds: {{ .Values.deployments.worker.healthCheck.startup.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.deployments.worker.healthCheck.startup.timeoutSeconds | default 1 }}
+            successThreshold: {{ .Values.deployments.worker.healthCheck.startup.successThreshold | default 1 }}
+            failureThreshold: {{ .Values.deployments.worker.healthCheck.startup.failureThreshold | default 3 }}
+          {{- end }}
+          {{- if .Values.deployments.worker.healthCheck.readiness.enabled }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.deployments.worker.healthCheck.readiness.path }}
+              port: {{ .Values.deployments.worker.healthCheck.readiness.port | default $port }}
+            initialDelaySeconds: {{ .Values.deployments.worker.healthCheck.readiness.initialDelaySeconds | default 0 }}
+            periodSeconds: {{ .Values.deployments.worker.healthCheck.readiness.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.deployments.worker.healthCheck.readiness.timeoutSeconds | default 1 }}
+            successThreshold: {{ .Values.deployments.worker.healthCheck.readiness.successThreshold | default 1 }}
+            failureThreshold: {{ .Values.deployments.worker.healthCheck.readiness.failureThreshold | default 3 }}
+          {{- end }}
+          {{- if .Values.deployments.worker.healthCheck.liveness.enabled }}
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.deployments.worker.healthCheck.liveness.path }}
+              port: {{ .Values.deployments.worker.healthCheck.liveness.port | default $port }}
+            initialDelaySeconds: {{ .Values.deployments.worker.healthCheck.liveness.initialDelaySeconds | default 0 }}
+            periodSeconds: {{ .Values.deployments.worker.healthCheck.liveness.periodSeconds | default 10 }}
+            timeoutSeconds: {{ .Values.deployments.worker.healthCheck.liveness.timeoutSeconds | default 1 }}
+            successThreshold: {{ .Values.deployments.worker.healthCheck.liveness.successThreshold | default 1 }}
+            failureThreshold: {{ .Values.deployments.worker.healthCheck.liveness.failureThreshold | default 3 }}
+          {{- end }}
+          resources:
+            requests:
+              memory: {{ .Values.deployments.worker.memory.request | default .Values.deployments.worker.memory }}
+              cpu: {{ .Values.deployments.worker.cpu }}
+            limits:
+              memory: {{ .Values.deployments.worker.memory.limit | default .Values.deployments.worker.memory }}
+          envFrom: {{ .Values.envFrom | toYaml | nindent 12 }}
+          env:
+            {{- if .Values.env }}
+            {{- .Values.env | toYaml | nindent 12 }}
+            {{- end }}
+            {{- if .Values.deployments.worker.env }}
+            {{- .Values.deployments.worker.env | toYaml | nindent 12 }}
+            {{- end }}
+            - name: PORT
+              value: "{{ $port }}"
+            - name: WORKER_PORT
+              value: "{{ $port }}"

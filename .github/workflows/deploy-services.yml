@@ -93,6 +93,13 @@ jobs:
           kubeconfig: ${{ secrets.KUBECONFIG }}
           namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
 
+      - name: Restart Kubernetes worker deployment
+        uses: ./.github/actions/k8s-restart-deployment
+        with:
+          service-name: worker
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+          namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
+
   deploy-auth:
     environment:
       name: production

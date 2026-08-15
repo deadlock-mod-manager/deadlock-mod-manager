@@ -14,6 +14,7 @@ export class BaseWorker<T extends BaseJobData> {
   protected worker: Worker;
   protected logger: Logger;
   protected resolveProcessor: ProcessorResolver<T>;
+  private lastError: Error | null = null;
 
   constructor(
     queueName: string,
@@ -43,8 +44,22 @@ export class BaseWorker<T extends BaseJobData> {
    */
   start(): void {
     void this.worker.run().catch((error) => {
+      this.lastError =
+        error instanceof Error ? error : new RuntimeError(String(error));
       this.logger.withError(error).error("Worker stopped unexpectedly");
     });
+  }
+
+  /**
+   * BullMQ clears its running flag when the run loop exits for any reason, so
+   * this tells a process that is still consuming from one that is only alive.
+   */
+  isRunning(): boolean {
+    return this.worker.isRunning();
+  }
+
+  getLastError(): Error | null {
+    return this.lastError;
   }
 
   private async processJob(job: Job<T>) {

@@ -73,28 +73,36 @@ export class RelayDiscoveryService {
   }
 
   async getRelays(): Promise<RelaysManifestEntry[]> {
-    if (this.cachedManifest) {
+    if (this.cachedManifest && !this.isCacheStale()) {
       return this.filterForEnv(this.cachedManifest);
     }
 
     const fromRedis = await this.loadManifestFromRedis();
     if (fromRedis) {
       this.cachedManifest = fromRedis;
+      this.cachedAt = Date.now();
       return this.filterForEnv(fromRedis);
     }
 
-    // First-run cold start: try to fetch synchronously so the API has at
-    // least one relay to query. Cron will keep us fresh from then on.
+    // Cold start, or Redis lost the manifest: fetch synchronously so the API
+    // has at least one relay to query.
     try {
       await this.refreshManifest();
     } catch (error) {
       logger
         .withError(error)
-        .error("Initial relay manifest fetch failed; serving empty list");
-      return [];
+        .error("Relay manifest fetch failed; serving the last known manifest");
     }
 
     return this.filterForEnv(this.cachedManifest ?? []);
+  }
+
+  /**
+   * The in-process copy has to expire on its own: the cron that refreshes it
+   * runs in the worker, so nothing in an API process would ever replace it.
+   */
+  private isCacheStale(): boolean {
+    return Date.now() - this.cachedAt >= CACHE_TTL.RELAYS_MANIFEST;
   }
 
   async refreshManifest(): Promise<RelaysManifestEntry[]> {

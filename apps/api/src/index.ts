@@ -22,16 +22,12 @@ import {
 import { createContext } from "./lib/context";
 import { env } from "./lib/env";
 import { logger, loggerContext, wideEventContext } from "./lib/logger";
-import { GamebananaRssProcessor } from "./processors/gamebanana-rss-processor";
-import { ModsSyncProcessor } from "./processors/mods-sync";
-import { RelayDiscoveryProcessor } from "./processors/relay-discovery";
 import artifactsRouter from "./routers/legacy/artifacts";
 import customSettingsRouter from "./routers/legacy/custom-settings";
 import docsRouter from "./routers/legacy/docs";
 import healthRouter from "./routers/legacy/health";
 import modsRouter from "./routers/legacy/mods";
 import redirectRouter from "./routers/redirect";
-import { cronService } from "./services/cron";
 import { featureFlagsService } from "./services/feature-flags";
 
 const { printMetrics, registerMetrics } = prometheus();
@@ -130,37 +126,6 @@ const main = async () => {
       .withError(bootstrapResult.error)
       .error("Failed to bootstrap feature flags");
   }
-
-  logger.info("Defining cron jobs");
-  await cronService.defineJob({
-    name: ModsSyncProcessor.name,
-    pattern: ModsSyncProcessor.cronPattern,
-    processor: ModsSyncProcessor.getInstance(),
-    enabled: true,
-    // A full sweep runs for over an hour, so a retry would overlap the next
-    // scheduled run and deadlock on the sync lock. The schedule is the retry.
-    jobOptions: { attempts: 1 },
-  });
-
-  await cronService.defineJob({
-    name: GamebananaRssProcessor.name,
-    pattern: GamebananaRssProcessor.cronPattern,
-    processor: GamebananaRssProcessor.getInstance(),
-    enabled: true,
-  });
-
-  await cronService.defineJob({
-    name: RelayDiscoveryProcessor.name,
-    pattern: RelayDiscoveryProcessor.cronPattern,
-    processor: RelayDiscoveryProcessor.getInstance(),
-    enabled: true,
-  });
-
-  cronService.start();
-
-  process.on("SIGTERM", async () => {
-    await cronService.shutdown();
-  });
 
   logger.withMetadata({ port: env.PORT }).info("Server started");
 

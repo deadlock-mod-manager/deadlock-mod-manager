@@ -1,10 +1,11 @@
 #!/usr/bin/env bun
 
 /**
- * Queues an immediate run of a cron job on the API cron queue. The API process
- * owns the worker, so it has to be running for the job to be picked up. Use
- * this to exercise the full queue path; `sync-mods` calls the service directly
- * and skips the worker, dispatch and Sentry check-in.
+ * Queues an immediate run of a cron job on the API cron queue. The worker
+ * deployment owns the consumer, so it has to be running for the job to be
+ * picked up, and the run shows up in its logs rather than the API's. Use this
+ * to exercise the full queue path; `sync-mods` calls the service directly and
+ * skips the worker, dispatch and Sentry check-in.
  *
  * Usage:
  * pnpm --filter api trigger-cron            # defaults to the mod sync
@@ -22,7 +23,7 @@ const triggerCron = async () => {
 
   logger
     .withMetadata({ jobName, jobId })
-    .info("Queued cron job, watch the API logs for the run");
+    .info("Queued cron job, watch the worker logs for the run");
 
   await cronService.shutdown();
   process.exit(0);
