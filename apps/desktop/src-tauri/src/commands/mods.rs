@@ -11,6 +11,7 @@ use serde::{Deserialize, Serialize};
 use tauri::{Emitter, Manager};
 use vpkmanager::ledger::ProfileLedger;
 use vpkmanager::ops;
+use vpkmanager::ops::PrefixedVpkCopyStatus;
 use vpkmanager::staging::VpkSnapshot;
 
 use super::downloads::get_download_manager;
@@ -630,6 +631,18 @@ fn resolve_addons_path(game_path: &std::path::Path, profile_folder: Option<&str>
   }
 }
 
+fn vpk_original_names(vpk_files: &[(PathBuf, u64)]) -> Vec<String> {
+  vpk_files
+    .iter()
+    .filter_map(|(path, _)| {
+      path
+        .file_name()
+        .and_then(|s| s.to_str())
+        .map(|s| s.to_string())
+    })
+    .collect()
+}
+
 #[tauri::command]
 pub async fn get_mod_available_options(
   mod_id: String,
@@ -848,28 +861,41 @@ pub async fn fetch_missing_mod_variants(
     let filesystem = FileSystemHelper::new();
     let vpk_files = filesystem.find_files_recursive(&extract_dir, "vpk")?;
 
-    let mut by_name: std::collections::HashMap<String, std::path::PathBuf> =
-      std::collections::HashMap::new();
-    for (path, _) in vpk_files {
-      if let Some(name) = path.file_name().and_then(|s| s.to_str()) {
-        by_name.insert(name.to_string(), path);
-      }
-    }
+    let available_originals: HashSet<String> = vpk_original_names(&vpk_files).into_iter().collect();
 
-    for original in to_fetch {
-      match by_name.get(&original) {
-        Some(src) => {
-          let dest = addons_path.join(format!("{mod_id}_{original}"));
-          filesystem.copy_file(src, &dest)?;
-          log::info!("Staged missing VPK {original} -> {}", dest.display());
-          staged.push(original);
+    let available_to_fetch: Vec<String> = to_fetch
+      .iter()
+      .filter(|original| available_originals.contains(*original))
+      .cloned()
+      .collect();
+
+    for copy in ops::copy_named_vpks_with_prefix(
+      &extract_dir,
+      &addons_path,
+      &mod_id,
+      &available_to_fetch,
+      false,
+    )? {
+      match copy.status {
+        PrefixedVpkCopyStatus::Copied => {
+          log::info!(
+            "Staged missing VPK {} -> {}",
+            copy.original_name,
+            copy.prefixed_name
+          );
+          staged.push(copy.original_name);
         }
-        None => {
+        PrefixedVpkCopyStatus::AlreadyExists => {
+          log::info!("Skipping already-staged VPK: {}", copy.original_name);
+          skipped.push(copy.original_name);
+        }
+        PrefixedVpkCopyStatus::MissingSource => {
           log::warn!(
-            "Requested VPK {original} not found in archive {}",
+            "Requested VPK {} not found in archive {}",
+            copy.original_name,
             archive.archive_name
           );
-          missing.push(original);
+          missing.push(copy.original_name);
         }
       }
     }
@@ -955,20 +981,32 @@ pub async fn stage_download_archive(
     )));
   }
 
-  let prefix = format!("{mod_id}_");
   let mut staged: Vec<String> = Vec::new();
 
-  for (path, _) in &vpk_files {
-    if let Some(original) = path.file_name().and_then(|s| s.to_str()) {
-      let dest = addons_path.join(format!("{prefix}{original}"));
-      if dest.exists() {
-        log::info!("Skipping already-staged VPK: {original}");
-        staged.push(original.to_string());
-        continue;
+  let originals = vpk_original_names(&vpk_files);
+
+  for copy in
+    ops::copy_named_vpks_with_prefix(&extract_dir, &addons_path, &mod_id, &originals, false)?
+  {
+    match copy.status {
+      PrefixedVpkCopyStatus::Copied => {
+        log::info!(
+          "Staged VPK {} -> {}",
+          copy.original_name,
+          copy.prefixed_name
+        );
+        staged.push(copy.original_name);
       }
-      filesystem.copy_file(path, &dest)?;
-      log::info!("Staged VPK {original} -> {}", dest.display());
-      staged.push(original.to_string());
+      PrefixedVpkCopyStatus::AlreadyExists => {
+        log::info!("Skipping already-staged VPK: {}", copy.original_name);
+        staged.push(copy.original_name);
+      }
+      PrefixedVpkCopyStatus::MissingSource => {
+        log::warn!(
+          "Skipping VPK missing from extracted archive: {}",
+          copy.original_name
+        );
+      }
     }
   }
 
@@ -1062,15 +1100,7 @@ pub async fn switch_mod_download_variant(
   let filesystem = FileSystemHelper::new();
   let vpk_files = filesystem.find_files_recursive(&extract_dir, "vpk")?;
 
-  let new_originals: Vec<String> = vpk_files
-    .iter()
-    .filter_map(|(path, _)| {
-      path
-        .file_name()
-        .and_then(|s| s.to_str())
-        .map(|s| s.to_string())
-    })
-    .collect();
+  let new_originals = vpk_original_names(&vpk_files);
 
   if new_originals.is_empty() {
     return Err(Error::InvalidInput(format!(

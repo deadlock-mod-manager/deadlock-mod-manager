@@ -71,7 +71,7 @@ async fn resolve_address(address: &str) -> Option<SocketAddr> {
   lookup_host(address)
     .await
     .ok()?
-    .find(|candidate| is_public_target(candidate))
+    .find(is_public_target)
 }
 
 async fn ping_address(address: &str) -> Option<u64> {

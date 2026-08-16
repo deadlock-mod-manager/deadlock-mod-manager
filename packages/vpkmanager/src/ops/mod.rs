@@ -15,7 +15,10 @@ mod import;
 mod reorder;
 mod toggle;
 
-pub use import::{copy_vpks_with_prefix, find_prefixed_vpks};
+pub use import::{
+    PrefixedVpkCopy, PrefixedVpkCopyStatus, copy_named_vpks_with_prefix, copy_vpks_with_prefix,
+    delete_unmanaged_vpk, find_prefixed_vpks,
+};
 pub use reorder::{prune_empty_shard_dirs, reorder_vpks_sharded, stage_reorder_vpks_sharded};
 pub use toggle::{
     disable_vpks_in, enable_vpks_in, replace_vpks, stage_clear_all_vpks, stage_enabled_vpk_swap,

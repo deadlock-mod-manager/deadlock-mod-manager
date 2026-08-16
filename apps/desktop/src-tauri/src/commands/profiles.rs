@@ -275,7 +275,7 @@ pub async fn delete_profile_vpk(
     )));
   }
 
-  std::fs::remove_file(&resolved.path)?;
+  ops::delete_unmanaged_vpk(&resolved.profile_base, resolved.shard, &resolved.filename)?;
   log::info!("Deleted unmanaged VPK file: {:?}", resolved.path);
   Ok(())
 }
