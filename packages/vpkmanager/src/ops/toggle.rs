@@ -111,52 +111,29 @@ pub fn disable_vpks_in(
         )));
     }
 
-    let missing_vpks: Vec<String> = installed_vpks
-        .iter()
-        .map(|vpk_name| naming::file_name_of(vpk_name))
-        .filter(|vpk_name| !enabled_dir.join(vpk_name).exists())
-        .collect();
-
-    if !missing_vpks.is_empty() {
-        match missing_policy {
-            MissingVpkPolicy::Strict => {
-                return Err(VpkManagerError::Vpk(format!(
-                    "Cannot disable mod because enabled VPK files are missing: {}",
-                    missing_vpks.join(", ")
-                )));
-            }
-            MissingVpkPolicy::Reconcile => {
-                if missing_vpks.len() == installed_vpks.len() {
-                    log::warn!(
-                        "Mod {mod_id} is marked enabled but none of its enabled VPK files exist; marking it disabled without renaming files"
-                    );
-                    return Ok(Vec::new());
-                }
-
-                log::warn!(
-                    "Mod {mod_id} is missing some enabled VPK files; disabling only the files that still exist"
-                );
-            }
+    let mut vpk_pairs: Vec<(String, String)> = Vec::new();
+    let mut missing_vpks: Vec<String> = Vec::new();
+    for (installed_vpk, original_name) in installed_vpks.iter().zip(original_names.iter()) {
+        let vpk_name = naming::file_name_of(installed_vpk);
+        if enabled_dir.join(&vpk_name).exists() {
+            vpk_pairs.push((vpk_name, original_name.clone()));
+        } else {
+            missing_vpks.push(vpk_name);
         }
     }
 
-    let vpk_pairs: Vec<(String, String)> = installed_vpks
-        .iter()
-        .zip(original_names.iter())
-        .map(|(installed_vpk, original_name)| {
-            (naming::file_name_of(installed_vpk), original_name.clone())
-        })
-        .filter(|(vpk_name, _)| match missing_policy {
-            MissingVpkPolicy::Strict => true,
-            MissingVpkPolicy::Reconcile => {
-                let exists = enabled_dir.join(vpk_name).exists();
-                if !exists {
-                    log::warn!("Enabled VPK file missing during disable: {vpk_name}");
-                }
-                exists
-            }
-        })
-        .collect();
+    if !missing_vpks.is_empty() {
+        if missing_policy == MissingVpkPolicy::Strict {
+            return Err(VpkManagerError::Vpk(format!(
+                "Cannot disable mod because enabled VPK files are missing: {}",
+                missing_vpks.join(", ")
+            )));
+        }
+        log::warn!(
+            "Mod {mod_id} is missing enabled VPK files, disabling only the ones that still exist: {}",
+            missing_vpks.join(", ")
+        );
+    }
 
     if vpk_pairs.is_empty() {
         return Ok(Vec::new());

@@ -115,6 +115,10 @@ pub async fn copy_selected_vpks_from_archive(
     &mod_id,
     Some(&file_tree.selected_paths()),
   )?;
+  MANAGER
+    .lock()
+    .unwrap()
+    .sync_after_change(profile_folder.as_deref());
 
   log::info!("Removing extracted directory: {extracted_dir:?}");
   std::fs::remove_dir_all(&extracted_dir)?;
@@ -177,6 +181,10 @@ pub async fn copy_local_mod_vpks(
   drop(mod_manager);
 
   let prefixed_vpks = ops::copy_vpks_with_prefix(&files_dir, &destination_path, &mod_id, None)?;
+  MANAGER
+    .lock()
+    .unwrap()
+    .sync_after_change(profile_folder.as_deref());
 
   if prefixed_vpks.is_empty() {
     log::warn!("No VPK files found in mod files directory: {files_dir:?}");

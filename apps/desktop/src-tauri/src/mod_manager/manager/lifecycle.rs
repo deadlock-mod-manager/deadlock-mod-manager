@@ -536,7 +536,6 @@ impl ModManager {
       Vec::new()
     };
 
-    // Use VpkManager to replace the files
     ops::replace_vpks(
       &addons_path,
       &enabled_dir,

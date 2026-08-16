@@ -46,7 +46,6 @@ fn sort_store_candidates(candidates: &mut [PathBuf]) {
 #[tauri::command]
 pub fn foundry_resolve_mod_vpk(
   mod_id: String,
-  _installed_vpks: Option<Vec<String>>,
   profile_folder: Option<String>,
 ) -> Result<String, Error> {
   let (store_path, addons_path) = {

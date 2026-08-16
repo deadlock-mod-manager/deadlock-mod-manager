@@ -14,6 +14,7 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -32,7 +33,25 @@ pub const FINGERPRINT_NAME: &str = "fingerprint";
 pub const FINGERPRINT_VERSION: u32 = 1;
 
 /// Distinguishes two stamps issued in the same second for identical content.
-static ISSUE_COUNTER: AtomicU64 = AtomicU64::new(0);
+///
+/// Seeded from the process id and start time: a plain counter would restart at
+/// zero, so two runs of the app stamping copies of one download within the same
+/// second would mint the same id and the ledger would lose one of the files.
+static ISSUE_COUNTER: LazyLock<AtomicU64> = LazyLock::new(|| {
+    let mut hasher = Sha256::new();
+    hasher.update(std::process::id().to_le_bytes());
+    hasher.update(
+        SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|since| since.as_nanos())
+            .unwrap_or_default()
+            .to_le_bytes(),
+    );
+    let digest = hasher.finalize();
+    AtomicU64::new(u64::from_le_bytes(
+        digest[..8].try_into().unwrap_or_default(),
+    ))
+});
 
 /// The stamp carried by a VPK the mod manager has taken responsibility for.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

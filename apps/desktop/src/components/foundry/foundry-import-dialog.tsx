@@ -197,7 +197,6 @@ export const FoundryImportDialog = ({
       try {
         const result = await importMod(
           modId,
-          mod.installedVpks ?? [],
           activeProfile?.folderName ?? null,
         );
         if (result) onOpenChange(false);

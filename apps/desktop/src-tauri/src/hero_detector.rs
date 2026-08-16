@@ -47,10 +47,7 @@ fn addons_root() -> Option<PathBuf> {
 }
 
 #[tauri::command]
-pub async fn detect_mod_hero(
-  mod_id: String,
-  _installed_vpks: Option<Vec<String>>,
-) -> Result<HeroDetectionResult, Error> {
+pub async fn detect_mod_hero(mod_id: String) -> Result<HeroDetectionResult, Error> {
   let addons_root = addons_root();
   tauri::async_runtime::spawn_blocking(move || {
     log::info!("Detecting hero for mod: {mod_id}");
@@ -75,11 +72,6 @@ pub async fn detect_mod_hero(
 #[serde(rename_all = "camelCase")]
 pub struct ModDetectionRequest {
   pub mod_id: String,
-  /// Still sent by the frontend, and still accepted so older callers keep
-  /// working — but no longer used: the VPK ledger knows where a mod's files
-  /// are, including the ones the frontend's list is stale about.
-  #[allow(dead_code)]
-  pub installed_vpks: Option<Vec<String>>,
 }
 
 #[derive(Serialize)]

@@ -33,6 +33,18 @@ fn key_for(profile_folder: Option<&str>) -> String {
   profile_folder.unwrap_or("<default>").to_string()
 }
 
+/// Frees the profile's slot even if the task unwinds, so a panic cannot leave
+/// backfill switched off for the rest of the process.
+struct RunningSlot(String);
+
+impl Drop for RunningSlot {
+  fn drop(&mut self) {
+    if let Ok(mut running) = RUNNING.lock() {
+      running.remove(&self.0);
+    }
+  }
+}
+
 /// Start working through `profile_folder`'s unstamped VPKs, unless a task for
 /// that profile is already doing so.
 pub fn spawn_for_profile(profile_folder: Option<String>) {
@@ -42,8 +54,8 @@ pub fn spawn_for_profile(profile_folder: Option<String>) {
   }
 
   tauri::async_runtime::spawn(async move {
+    let _slot = RunningSlot(key);
     run(profile_folder).await;
-    RUNNING.lock().unwrap().remove(&key);
   });
 }
 

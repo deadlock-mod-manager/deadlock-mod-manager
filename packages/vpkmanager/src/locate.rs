@@ -90,16 +90,23 @@ fn collect(dir: &std::path::Path, found: &mut Vec<PathBuf>) {
         return;
     };
     for entry in entries.filter_map(|entry| entry.ok()) {
+        // These directories come from outside — an extracted archive, a mod's
+        // download folder — so symlinks are left alone: following one that
+        // points at an ancestor would recurse until the stack gave out.
+        let Ok(file_type) = entry.file_type() else {
+            continue;
+        };
         let path = entry.path();
-        if path.is_dir() {
+        if file_type.is_dir() {
             collect(&path, found);
-        } else if path
-            .file_name()
-            .and_then(|name| name.to_str())
-            .is_some_and(|name| {
-                name.to_ascii_lowercase().ends_with(".vpk")
-                    && !crate::profile::is_internal_artifact(name)
-            })
+        } else if file_type.is_file()
+            && path
+                .file_name()
+                .and_then(|name| name.to_str())
+                .is_some_and(|name| {
+                    name.to_ascii_lowercase().ends_with(".vpk")
+                        && !crate::profile::is_internal_artifact(name)
+                })
         {
             found.push(path);
         }

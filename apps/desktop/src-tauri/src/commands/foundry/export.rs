@@ -183,10 +183,15 @@ pub(crate) fn export_workspace(
         && let Err(error) =
           vpkmanager::fingerprint::stamp(&source_path, &previous.mod_id, &previous.original_name)
       {
-        log::warn!(
-          "[Foundry] Replaced {} but could not carry its fingerprint over: {error}",
+        // The replacement is in place but carries no identity, so the profile
+        // that installed this file would stop recognizing it. Put the original
+        // back rather than leave the mod orphaned.
+        std::fs::copy(&backup_path, &source_path)?;
+        let _ = std::fs::remove_file(&backup_path);
+        return Err(Error::ModInvalid(format!(
+          "Could not carry the mod identity of {} over to the exported VPK ({error}); the original was restored",
           source_path.display()
-        );
+        )));
       }
       log::info!(
         "[Foundry] Replaced {} (backup at {})",

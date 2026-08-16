@@ -46,12 +46,10 @@ export const analyzeDefaultFoundryHero = async (
  */
 export const resolveModVpk = async (
   modId: string,
-  installedVpks: string[] = [],
   profileFolder: string | null = null,
 ): Promise<string> => {
   return await invoke<string>("foundry_resolve_mod_vpk", {
     modId,
-    installedVpks,
     profileFolder,
   });
 };

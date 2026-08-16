@@ -5,7 +5,6 @@ use std::fs;
 use std::fs::{File, OpenOptions};
 use std::io;
 use std::path::{Path, PathBuf};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::error::{Result, VpkManagerError};
 use crate::fingerprint;
@@ -75,12 +74,16 @@ pub fn copy_vpks_with_prefix(
     Ok(copied)
 }
 
+/// Copy specific VPKs by their shipped filenames, reporting per file whether it
+/// landed, was already staged, or was not in `source_dir` at all.
+///
+/// An existing `{mod_id}_{name}` is never overwritten; that file is the one the
+/// profile already knows about.
 pub fn copy_named_vpks_with_prefix(
     source_dir: &Path,
     destination_dir: &Path,
     mod_id: &str,
     original_names: &[String],
-    overwrite_existing: bool,
 ) -> Result<Vec<PrefixedVpkCopy>> {
     if original_names.is_empty() {
         return Ok(Vec::new());
@@ -122,42 +125,22 @@ pub fn copy_named_vpks_with_prefix(
     let mut copied = Vec::new();
     for original_name in original_names {
         let prefixed_name = format!("{mod_id}_{original_name}");
-        let Some(source) = by_name.get(original_name) else {
-            copied.push(PrefixedVpkCopy {
-                original_name: original_name.clone(),
-                prefixed_name,
-                status: PrefixedVpkCopyStatus::MissingSource,
-            });
-            continue;
-        };
-
-        let destination = destination_dir.join(&prefixed_name);
-        if destination.exists() && !overwrite_existing {
-            copied.push(PrefixedVpkCopy {
-                original_name: original_name.clone(),
-                prefixed_name,
-                status: PrefixedVpkCopyStatus::AlreadyExists,
-            });
-            continue;
-        }
-
-        match copy_prefixed_vpk(source, destination_dir, mod_id, original_name) {
-            Ok(_) => copied.push(PrefixedVpkCopy {
-                original_name: original_name.clone(),
-                prefixed_name,
-                status: PrefixedVpkCopyStatus::Copied,
-            }),
-            Err(VpkManagerError::Io(error))
-                if error.kind() == io::ErrorKind::AlreadyExists && !overwrite_existing =>
+        let status = match by_name.get(original_name) {
+            None => PrefixedVpkCopyStatus::MissingSource,
+            Some(source) => match copy_prefixed_vpk(source, destination_dir, mod_id, original_name)
             {
-                copied.push(PrefixedVpkCopy {
-                    original_name: original_name.clone(),
-                    prefixed_name,
-                    status: PrefixedVpkCopyStatus::AlreadyExists,
-                });
-            }
-            Err(error) => return Err(error),
-        }
+                Ok(_) => PrefixedVpkCopyStatus::Copied,
+                Err(VpkManagerError::Io(error)) if error.kind() == io::ErrorKind::AlreadyExists => {
+                    PrefixedVpkCopyStatus::AlreadyExists
+                }
+                Err(error) => return Err(error),
+            },
+        };
+        copied.push(PrefixedVpkCopy {
+            original_name: original_name.clone(),
+            prefixed_name,
+            status,
+        });
     }
 
     Ok(copied)
@@ -174,11 +157,7 @@ fn copy_prefixed_vpk(
 
     let prefixed_name = format!("{mod_id}_{original_name}");
     let destination = destination_dir.join(&prefixed_name);
-    let temp = unique_copy_temp_path(destination_dir, &prefixed_name);
-    if let Err(error) = copy_through_temp(source, &temp, &destination) {
-        let _ = fs::remove_file(&temp);
-        return Err(VpkManagerError::Io(error));
-    }
+    copy_into_new_file(source, &destination).map_err(VpkManagerError::Io)?;
 
     // Stamp on the way in: from here on this file is identifiable no matter
     // what it is later renamed to.
@@ -219,36 +198,23 @@ fn validate_original_vpk_name(original_name: &str) -> Result<()> {
     Ok(())
 }
 
-fn unique_copy_temp_path(destination_dir: &Path, prefixed_name: &str) -> PathBuf {
-    let nonce = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_nanos())
-        .unwrap_or_default();
-    destination_dir.join(format!(".{prefixed_name}.{nonce}.copying"))
-}
+/// Copy `source` to `destination`, claiming the name with `create_new` so an
+/// existing VPK is never overwritten, and leaving nothing behind if the copy
+/// itself fails.
+fn copy_into_new_file(source: &Path, destination: &Path) -> io::Result<()> {
+    let mut target = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(destination)?;
 
-fn copy_through_temp(source: &Path, temp: &Path, destination: &Path) -> io::Result<()> {
-    fs::copy(source, temp).inspect_err(|_| {
-        let _ = fs::remove_file(temp);
-    })?;
-
-    let mut created_destination = false;
-    let publish = (|| {
-        let mut source = File::open(temp)?;
-        let mut destination = OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(destination)?;
-        created_destination = true;
-        io::copy(&mut source, &mut destination)?;
-        destination.sync_all()
-    })();
-
-    let _ = fs::remove_file(temp);
-    if publish.is_err() && created_destination {
+    let written = File::open(source)
+        .and_then(|mut source| io::copy(&mut source, &mut target))
+        .and_then(|_| target.sync_all());
+    if written.is_err() {
+        drop(target);
         let _ = fs::remove_file(destination);
     }
-    publish
+    written
 }
 
 /// Find all VPK files with a specific mod ID prefix in `addons_path`.
@@ -275,15 +241,7 @@ pub fn find_prefixed_vpks(addons_path: &Path, mod_id: &str) -> Result<Vec<String
 }
 
 pub fn delete_unmanaged_vpk(base: &ProfileBase, shard: ShardIndex, filename: &str) -> Result<()> {
-    if filename.is_empty()
-        || filename.contains('/')
-        || filename.contains('\\')
-        || !filename.to_lowercase().ends_with(".vpk")
-    {
-        return Err(VpkManagerError::Invalid(format!(
-            "Invalid VPK file name: {filename}"
-        )));
-    }
+    validate_original_vpk_name(filename)?;
 
     let shard_dir = base.shard_dir(shard);
     let path = shard_dir.join(filename);
@@ -312,13 +270,16 @@ pub fn delete_unmanaged_vpk(base: &ProfileBase, shard: ShardIndex, filename: &st
         )));
     }
 
-    match fingerprint::read(&path)? {
-        Some(_) => {
+    // A file that cannot be read as a VPK carries no identity to protect, and
+    // refusing here would leave a corrupt stray with no way to remove it.
+    match fingerprint::read(&path) {
+        Ok(Some(_)) => {
             return Err(VpkManagerError::Invalid(format!(
                 "Cannot delete fingerprinted VPK as an unmatched file: {filename}"
             )));
         }
-        None => {}
+        Ok(None) => {}
+        Err(error) => log::warn!("Could not read a fingerprint from {filename}: {error}"),
     }
 
     let label = path.display().to_string();
@@ -328,12 +289,17 @@ pub fn delete_unmanaged_vpk(base: &ProfileBase, shard: ShardIndex, filename: &st
 }
 
 /// Every `.vpk` under `dir`, recursively.
+///
+/// Extracted archives are untrusted input, so symlinks are not followed: one
+/// pointing at an ancestor would recurse until the stack gave out.
 fn collect_vpks(dir: &Path, found: &mut Vec<PathBuf>) -> Result<()> {
     for entry in fs::read_dir(dir)? {
-        let path = entry?.path();
-        if path.is_dir() {
+        let entry = entry?;
+        let file_type = entry.file_type()?;
+        let path = entry.path();
+        if file_type.is_dir() {
             collect_vpks(&path, found)?;
-        } else if path.extension().is_some_and(|ext| ext == "vpk") {
+        } else if file_type.is_file() && path.extension().is_some_and(|ext| ext == "vpk") {
             found.push(path);
         }
     }
@@ -409,7 +375,6 @@ mod tests {
             &base,
             "650634",
             &["first.vpk".to_string(), "second.vpk".to_string()],
-            false,
         )
         .unwrap();
 
@@ -449,14 +414,9 @@ mod tests {
         real_vpk(&extracted.join("nested").join("ignored.vpk"));
         let base = profile(&temp);
 
-        let copied = copy_named_vpks_with_prefix(
-            &extracted,
-            &base,
-            "650634",
-            &["keep.vpk".to_string()],
-            false,
-        )
-        .unwrap();
+        let copied =
+            copy_named_vpks_with_prefix(&extracted, &base, "650634", &["keep.vpk".to_string()])
+                .unwrap();
 
         assert_eq!(copied.len(), 1);
         assert_eq!(copied[0].prefixed_name, "650634_keep.vpk");
@@ -475,7 +435,6 @@ mod tests {
             &base,
             "650634",
             &["first.vpk".to_string(), "first.vpk".to_string()],
-            false,
         )
         .unwrap_err();
 
@@ -494,7 +453,6 @@ mod tests {
             &base,
             "650634",
             &["../escape.vpk".to_string()],
-            false,
         )
         .unwrap_err();
 
@@ -508,14 +466,9 @@ mod tests {
         fs::create_dir_all(&extracted).unwrap();
         let base = profile(&temp);
 
-        let copied = copy_named_vpks_with_prefix(
-            &extracted,
-            &base,
-            "650634",
-            &["missing.vpk".to_string()],
-            false,
-        )
-        .unwrap();
+        let copied =
+            copy_named_vpks_with_prefix(&extracted, &base, "650634", &["missing.vpk".to_string()])
+                .unwrap();
 
         assert_eq!(
             copied,
@@ -550,6 +503,19 @@ mod tests {
 
         assert!(matches!(error, VpkManagerError::Invalid(_)));
         assert!(path.exists());
+    }
+
+    /// A truncated download is unreadable as a VPK, so it carries no identity
+    /// worth protecting — and refusing would leave the user unable to remove it.
+    #[test]
+    fn unmanaged_vpk_delete_removes_a_file_that_is_not_a_vpk() {
+        let temp = tempfile::tempdir().unwrap();
+        let base = profile(&temp);
+        fs::write(base.join("truncated.vpk"), b"not a vpk at all").unwrap();
+
+        delete_unmanaged_vpk(&base, ShardIndex::FIRST, "truncated.vpk").unwrap();
+
+        assert!(!base.join("truncated.vpk").exists());
     }
 
     #[test]

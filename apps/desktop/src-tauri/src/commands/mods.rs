@@ -858,24 +858,7 @@ pub async fn fetch_missing_mod_variants(
     let extractor = ArchiveExtractor::new();
     extractor.extract_archive(&archive_path, &extract_dir)?;
 
-    let filesystem = FileSystemHelper::new();
-    let vpk_files = filesystem.find_files_recursive(&extract_dir, "vpk")?;
-
-    let available_originals: HashSet<String> = vpk_original_names(&vpk_files).into_iter().collect();
-
-    let available_to_fetch: Vec<String> = to_fetch
-      .iter()
-      .filter(|original| available_originals.contains(*original))
-      .cloned()
-      .collect();
-
-    for copy in ops::copy_named_vpks_with_prefix(
-      &extract_dir,
-      &addons_path,
-      &mod_id,
-      &available_to_fetch,
-      false,
-    )? {
+    for copy in ops::copy_named_vpks_with_prefix(&extract_dir, &addons_path, &mod_id, &to_fetch)? {
       match copy.status {
         PrefixedVpkCopyStatus::Copied => {
           log::info!(
@@ -985,9 +968,7 @@ pub async fn stage_download_archive(
 
   let originals = vpk_original_names(&vpk_files);
 
-  for copy in
-    ops::copy_named_vpks_with_prefix(&extract_dir, &addons_path, &mod_id, &originals, false)?
-  {
+  for copy in ops::copy_named_vpks_with_prefix(&extract_dir, &addons_path, &mod_id, &originals)? {
     match copy.status {
       PrefixedVpkCopyStatus::Copied => {
         log::info!(
