@@ -35,7 +35,7 @@ alwaysApply: true
   ```
 
 - Verify that no regressions are introduced by your changes
-- When summarizing a change that rewires call flow (plan, design doc, PR description, or end-of-task summary), include a `npx calldiff@latest diff` call-stack diff — see [095-calldiff.mdc](mdc:.cursor/rules/095-calldiff.mdc)
+- For plans, design docs, or PR descriptions where call flow actually changed and a tree would help reviewers, optionally include a `npx calldiff@latest diff` — see [095-calldiff.mdc](mdc:.cursor/rules/095-calldiff.mdc). Do not add call-stack diffs to routine chat summaries.
 
 ## Available Rules
 
@@ -55,7 +55,7 @@ The following rules are available in the `.cursor/rules` directory:
 - **070-comments-defensive-programming.mdc** - Comments and defensive programming guidelines
 - **080-ai-interaction.mdc** - AI interaction guidelines and communication style rules
 - **090-changesets.mdc** - Changeset management for features and fixes
-- **095-calldiff.mdc** - Include calldiff call-stack diffs when documenting call-flow changes
+- **095-calldiff.mdc** - Optionally include calldiff call-stack diffs in plans/PRs when call flow changed; skip routine chat summaries
 
 ### Special Rules
 

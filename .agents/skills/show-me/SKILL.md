@@ -81,7 +81,7 @@ For a file-layout change:
 +    └── stream.ts
 ```
 
-For a call-tree or call-stack change, generate the diff with `npx calldiff@latest diff` when the code is committed or working-tree resolvable. Hand-write the tree only for hypothetical or unresolvable flow (see [095-calldiff.mdc](../../../.cursor/rules/095-calldiff.mdc)):
+For a call-tree or call-stack change that is worth showing (not a routine chat wrap-up), generate the diff with `npx calldiff@latest diff` when the code is committed or working-tree resolvable. Hand-write the tree only for hypothetical or unresolvable flow (see [095-calldiff.mdc](../../../.cursor/rules/095-calldiff.mdc)):
 
 ```diff
  submitForm

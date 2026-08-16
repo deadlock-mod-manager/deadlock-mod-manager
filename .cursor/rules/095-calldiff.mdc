@@ -1,17 +1,28 @@
 ---
-description: Calldiff: include call-stack diffs in plans, design docs, and change summaries when call flow changes
+description: Calldiff: optionally include a call-stack diff in plans, design docs, and PR descriptions when call flow actually changed and a tree would help
 alwaysApply: true
 ---
 
 # Call-stack diffs with calldiff
 
-When writing a plan, design doc, PR description, or end-of-task change summary, include a call-stack diff so reviewers can see how call flow changed.
+Calldiff is optional. Use it only when a call-stack tree would help a reviewer understand a real call-flow change. Do **not** include it in routine chat summaries, status updates, or wrap-ups.
 
 ## When to use
 
-Run calldiff when the change rewires call flow: new, removed, or moved callees; refactored control flow; extracted or inlined functions.
+Include a call-stack diff in a plan, design doc, or PR description when **all** of these are true:
 
-Skip for pure UI/copy, styling, config, dependency, translation, and docs-only changes.
+- The change rewires call flow: new, removed, or moved callees; refactored control flow; extracted or inlined functions
+- The new vs old call tree is not obvious from the code or a short prose description
+- The audience is a reviewer who needs to see how control flow moved
+
+## When to skip
+
+Skip calldiff (do not run it, do not paste a tree, do not mention that you skipped it) when:
+
+- The message is a normal chat reply, task wrap-up, or end-of-turn summary
+- The change is UI/copy, styling, config, dependency, translation, tests, or docs
+- The call-flow change is small or obvious (renames, extra args, a single new call)
+- calldiff would produce noise, an empty tree, or no useful signal
 
 ## How to run
 
@@ -37,4 +48,4 @@ Paste the output in a fenced `diff` block.
 
 - Calldiff is syntactic (tree-sitter). Dynamic calls and trait-object dispatch will not resolve.
 - Grammars download on first use into `~/.cache/calldiff/grammars`.
-- If calldiff produces nothing useful, say so in one line and fall back to a hand-written call tree per the [show-me](../../.agents/skills/show-me/SKILL.md) skill rather than omitting the flow.
+- If you chose to run calldiff and it produces nothing useful, fall back to a short hand-written call tree per the [show-me](../../.agents/skills/show-me/SKILL.md) skill, or omit the tree entirely.
