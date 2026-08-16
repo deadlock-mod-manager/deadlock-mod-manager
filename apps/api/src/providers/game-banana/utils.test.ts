@@ -9,6 +9,7 @@ import {
   extractMapName,
   gameBananaTimestampToDate,
   heroFromGameBananaProfile,
+  isUnavailableProfile,
   parseRequirements,
   resolveRemoteTimestamps,
 } from "./utils";
@@ -247,6 +248,24 @@ describe("categoryFromGameBananaProfile", () => {
     delete profile._aSuperCategory;
 
     expect(categoryFromGameBananaProfile(profile)).toBe("Skins");
+  });
+});
+
+describe("isUnavailableProfile", () => {
+  it("treats a normal live profile as available", () => {
+    expect(isUnavailableProfile(buildGameBananaModProfile({}))).toBe(false);
+  });
+
+  it("treats a private submission as unavailable", () => {
+    const profile = buildGameBananaModProfile({ _bIsPrivate: true });
+
+    expect(isUnavailableProfile(profile)).toBe(true);
+  });
+
+  it("treats a withheld submission as unavailable", () => {
+    const profile = buildGameBananaModProfile({ _bIsWithheld: true });
+
+    expect(isUnavailableProfile(profile)).toBe(true);
   });
 });
 

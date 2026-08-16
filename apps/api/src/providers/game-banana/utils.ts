@@ -12,6 +12,7 @@ import type { GameBananaSubmission } from "./types";
 export {
   categoryFromGameBananaProfile,
   heroFromGameBananaProfile,
+  isUnavailableProfile,
   parseTags,
   submitterDisplayName,
 } from "./profile";

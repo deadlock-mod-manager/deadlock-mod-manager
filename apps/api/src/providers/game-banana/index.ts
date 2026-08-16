@@ -26,6 +26,7 @@ import {
   classifyNSFW,
   gameBananaTimestampToDate,
   heroFromGameBananaProfile,
+  isUnavailableProfile,
   mapGameBananaFileserverState,
   parseRequirements,
   parseTags,
@@ -334,6 +335,8 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       return this.createTrashedPayload(profile);
     }
 
+    if (isUnavailableProfile(profile)) return null;
+
     const description = profile._sText || profile._sDescription || "";
     const dependencies = parseRequirements(profile._aRequirements);
 
@@ -376,6 +379,8 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     if (profile._bIsTrashed === true) {
       return this.createTrashedPayload(profile);
     }
+
+    if (isUnavailableProfile(profile)) return null;
 
     const description = profile._sText || profile._sDescription || "";
     const category = categoryFromGameBananaProfile(profile);

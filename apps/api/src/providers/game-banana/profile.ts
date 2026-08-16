@@ -35,6 +35,17 @@ export function submitterDisplayName(
   return profile._aSubmitter?._sName?.trim() || "Unknown";
 }
 
+/**
+ * Private and withheld submissions come back as a stub carrying a name and a
+ * few flags: no URL, author, dates, files or images. There is nothing worth
+ * publishing, and the missing URL fails the `remote_url` not-null constraint.
+ */
+export function isUnavailableProfile(
+  profile: GameBananaProfileForCategory,
+): boolean {
+  return profile._bIsPrivate === true || profile._bIsWithheld === true;
+}
+
 export const parseTags = (
   tags: GameBanana.GameBananaSubmission["_aTags"],
 ): string[] => {
