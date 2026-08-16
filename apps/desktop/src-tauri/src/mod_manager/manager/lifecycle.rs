@@ -19,9 +19,7 @@ impl ModManager {
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
 
     // Find prefixed VPKs in addons (mod is downloaded but not enabled)
-    let mut prefixed_vpks = self
-      .vpk_manager
-      .find_prefixed_vpks(&addons_path, &deadlock_mod.id)?;
+    let mut prefixed_vpks = ops::find_prefixed_vpks(&addons_path, &deadlock_mod.id)?;
 
     // Recover older local imports that were added before prefixed VPKs were copied.
     if prefixed_vpks.is_empty() && deadlock_mod.id.starts_with("local-") {
@@ -36,11 +34,8 @@ impl ModManager {
           deadlock_mod.id,
           local_files_dir
         );
-        prefixed_vpks = self.vpk_manager.copy_vpks_with_prefix(
-          &local_files_dir,
-          &addons_path,
-          &deadlock_mod.id,
-        )?;
+        prefixed_vpks =
+          ops::copy_vpks_with_prefix(&local_files_dir, &addons_path, &deadlock_mod.id, None)?;
       }
     }
 
@@ -53,16 +48,12 @@ impl ModManager {
 
     log::info!("Found {} prefixed VPKs, enabling them", prefixed_vpks.len());
 
-    let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
+    let mut manifest = ProfileLedger::open_for_write(&addons_path)?;
     let target_shard = Self::choose_shard_for(&addons_path, None, prefixed_vpks.len() as u32)?;
     let enabled_dir = addons_path.shard_dir(target_shard);
 
-    let installed_vpks = self.vpk_manager.enable_vpks_in(
-      &addons_path,
-      &enabled_dir,
-      &deadlock_mod.id,
-      &prefixed_vpks,
-    )?;
+    let installed_vpks =
+      ops::enable_vpks_in(&addons_path, &enabled_dir, &deadlock_mod.id, &prefixed_vpks)?;
 
     deadlock_mod.installed_vpks = installed_vpks;
     deadlock_mod.original_vpk_names = prefixed_vpks
@@ -103,7 +94,7 @@ impl ModManager {
       target_shard,
     );
     if let Err(save_error) = manifest.save(&addons_path) {
-      let rollback = self.vpk_manager.disable_vpks_in(
+      let rollback = ops::disable_vpks_in(
         &enabled_dir,
         &addons_path,
         &deadlock_mod.id,
@@ -112,7 +103,7 @@ impl ModManager {
         MissingVpkPolicy::Strict,
       );
       return match rollback {
-        Ok(_) => Err(save_error),
+        Ok(_) => Err(save_error.into()),
         Err(rollback_error) => Err(Error::RollbackFailed(format!(
           "Failed to save manifest: {save_error}. Failed to disable newly enabled VPKs: {rollback_error}"
         ))),
@@ -129,7 +120,7 @@ impl ModManager {
     if deadlock_mod.install_order.is_some() {
       log::info!("Mod has install order, triggering reorder to maintain sequence");
       match self.reorder_all_mods_for_profile(profile_folder.clone()) {
-        Ok(()) => match ProfileVpkManifest::load(&addons_path) {
+        Ok(()) => match ProfileLedger::load(&addons_path) {
           Ok(reordered_manifest) => {
             if let Some(entry) = reordered_manifest.mods.get(&deadlock_mod.id) {
               deadlock_mod.installed_vpks = entry.current_vpks.clone();
@@ -152,6 +143,7 @@ impl ModManager {
       }
     }
 
+    self.sync_after_change(profile_folder.as_deref());
     log::info!("Mod installation (enable) completed successfully");
     Ok(deadlock_mod)
   }
@@ -170,7 +162,7 @@ impl ModManager {
       return Err(Error::GamePathNotSet);
     }
 
-    let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
+    let mut manifest = ProfileLedger::open_for_write(&addons_path)?;
     let manifest_entry = manifest.mods.get(&mod_id).cloned();
 
     let (installed_vpks, original_vpk_names) = if let Some(entry) = manifest_entry.as_ref()
@@ -221,7 +213,7 @@ impl ModManager {
       .unwrap_or(ShardIndex::FIRST);
     let enabled_dir = addons_path.shard_dir(shard_index);
 
-    let prefixed_vpks = self.vpk_manager.disable_vpks_in(
+    let prefixed_vpks = ops::disable_vpks_in(
       &enabled_dir,
       &addons_path,
       &mod_id,
@@ -232,12 +224,9 @@ impl ModManager {
 
     manifest.mark_disabled(&mod_id, prefixed_vpks.clone(), original_vpk_names);
     if let Err(save_error) = manifest.save(&addons_path) {
-      let rollback =
-        self
-          .vpk_manager
-          .enable_vpks_in(&addons_path, &enabled_dir, &mod_id, &prefixed_vpks);
+      let rollback = ops::enable_vpks_in(&addons_path, &enabled_dir, &mod_id, &prefixed_vpks);
       return match rollback {
-        Ok(_) => Err(save_error),
+        Ok(_) => Err(save_error.into()),
         Err(rollback_error) => Err(Error::RollbackFailed(format!(
           "Failed to save manifest: {save_error}. Failed to re-enable VPKs: {rollback_error}"
         ))),
@@ -245,13 +234,14 @@ impl ModManager {
     }
 
     // The mod's shard may now be empty; drop stray empty shard folders.
-    VpkManager::prune_empty_shard_dirs(&addons_path);
+    ops::prune_empty_shard_dirs(&addons_path);
 
     if let Some(mut local_mod) = self.mod_repository.get_mod(&mod_id).cloned() {
       local_mod.installed_vpks = Vec::new();
       self.mod_repository.add_mod(local_mod);
     }
 
+    self.sync_after_change(profile_folder.as_deref());
     log::info!(
       "Disabled mod {mod_id} with {} prefixed VPKs",
       prefixed_vpks.len()
@@ -320,7 +310,7 @@ impl ModManager {
     Self::ensure_safe_mod_id(mod_id)?;
 
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
-    let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
+    let mut manifest = ProfileLedger::open_for_write(&addons_path)?;
     let manifest_entry = manifest.mods.get(mod_id).cloned();
     let install_order = manifest_entry.as_ref().and_then(|entry| entry.order);
     let mut sources = HashSet::new();
@@ -333,7 +323,7 @@ impl ModManager {
       }
     }
 
-    for prefixed_vpk in self.vpk_manager.find_prefixed_vpks(&addons_path, mod_id)? {
+    for prefixed_vpk in ops::find_prefixed_vpks(&addons_path, mod_id)? {
       let path = addons_path.join(prefixed_vpk);
       if path.is_file() {
         sources.insert(path);
@@ -367,18 +357,19 @@ impl ModManager {
     let removed_count = ordered_sources.len();
     for source in &ordered_sources {
       if let Err(error) = staging.stage(&addons_path, source) {
-        return Err(staging.rollback(error));
+        return Err(staging.rollback(error).into());
       }
     }
 
     manifest.remove_mod(mod_id);
     if let Err(error) = manifest.save(&addons_path) {
-      return Err(staging.rollback(error));
+      return Err(staging.rollback(error).into());
     }
 
     staging.commit();
     self.mod_repository.remove_mod(mod_id);
-    VpkManager::prune_empty_shard_dirs(&addons_path);
+    ops::prune_empty_shard_dirs(&addons_path);
+    self.sync_after_change(profile_folder.as_deref());
 
     Ok(RemovedModVpks {
       count: removed_count,
@@ -386,13 +377,91 @@ impl ModManager {
     })
   }
 
+  /// Make the profile ledger agree with what is on disk, following files the
+  /// user moved or renamed and dropping the ones they deleted.
+  ///
+  /// Cheap when nothing changed — a directory listing and a stat per file — so
+  /// it is safe to call before any read of a profile's state and after anything
+  /// that writes to one.
+  pub fn sync_profile_ledger(&self, profile_folder: Option<&str>) -> Result<(), Error> {
+    let addons_path = self.get_addons_path(profile_folder)?;
+    if !addons_path.exists() {
+      return Ok(());
+    }
+
+    let report = vpkmanager::reconcile::sync_profile(&addons_path, Trust::Stat)?;
+    if !report.is_clean() {
+      log::info!(
+        "Profile {profile_folder:?} drifted from its ledger and was reconciled: {}",
+        report.summary()
+      );
+      for relocation in &report.relocated {
+        log::info!(
+          "Mod {} followed {} -> {}",
+          relocation.mod_id,
+          relocation.from.1,
+          relocation.to.1
+        );
+      }
+      for vanished in &report.vanished {
+        log::warn!(
+          "VPK {} of mod {} is gone from the profile",
+          vanished.filename,
+          vanished.mod_id
+        );
+      }
+    }
+    Ok(())
+  }
+
+  /// Reconcile after an operation that changed the profile.
+  ///
+  /// The operation has already succeeded on disk by this point, so a failure to
+  /// update the book is logged rather than reported: the next read reconciles
+  /// again anyway.
+  pub(crate) fn sync_after_change(&self, profile_folder: Option<&str>) {
+    if let Err(error) = self.sync_profile_ledger(profile_folder) {
+      log::warn!("Could not reconcile the profile ledger after a change: {error}");
+    }
+  }
+
+  /// Fingerprint a bounded number of the profile's VPKs that do not carry one
+  /// yet. Returns whether more remain, so a background caller knows to come
+  /// back.
+  pub fn backfill_fingerprints(
+    &self,
+    profile_folder: Option<&str>,
+    budget: usize,
+  ) -> Result<bool, Error> {
+    let addons_path = self.get_addons_path(profile_folder)?;
+    if !addons_path.exists() {
+      return Ok(false);
+    }
+
+    let (_, outcome) = vpkmanager::backfill::run_pass(&addons_path, budget)?;
+    if outcome.stamped > 0 {
+      log::info!(
+        "Fingerprinted {} VPK(s) in profile {profile_folder:?}, {} still to go",
+        outcome.stamped,
+        outcome.remaining
+      );
+    }
+    for (path, error) in &outcome.failed {
+      log::warn!("Could not fingerprint {}: {error}", path.display());
+    }
+    Ok(outcome.has_more())
+  }
+
   pub fn hydrate_mods_from_manifest(
     &mut self,
     profile_folder: Option<String>,
   ) -> Result<usize, Error> {
     self.migrate_profile_to_shards(profile_folder.clone())?;
+    // Whatever the user did to the folder since we last looked, the ledger
+    // describes reality again before anything reads it.
+    self.sync_profile_ledger(profile_folder.as_deref())?;
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
-    let manifest = ProfileVpkManifest::load(&addons_path)?;
+    let manifest = ProfileLedger::load(&addons_path)?;
 
     let mut hydrated = 0usize;
     for (mod_id, entry) in &manifest.mods {
@@ -440,7 +509,7 @@ impl ModManager {
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
 
     // Use VPK info from frontend first, then try repository, then look for prefixed VPKs
-    let manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
+    let manifest = ProfileLedger::open_for_write(&addons_path)?;
     let target_shard = manifest
       .mods
       .get(&mod_id)
@@ -468,7 +537,7 @@ impl ModManager {
     };
 
     // Use VpkManager to replace the files
-    self.vpk_manager.replace_vpks(
+    ops::replace_vpks(
       &addons_path,
       &enabled_dir,
       &mod_id,
@@ -481,9 +550,9 @@ impl ModManager {
       .filter_map(|p| p.file_name().map(|f| f.to_string_lossy().to_string()))
       .collect();
 
-    let mut manifest = ProfileVpkManifest::load(&addons_path)?;
+    let mut manifest = ProfileLedger::load(&addons_path)?;
     if installed_vpks.is_empty() {
-      let prefixed_vpks = self.vpk_manager.find_prefixed_vpks(&addons_path, &mod_id)?;
+      let prefixed_vpks = ops::find_prefixed_vpks(&addons_path, &mod_id)?;
       manifest.mark_disabled(&mod_id, prefixed_vpks, new_original_names);
     } else {
       manifest.mark_enabled(
@@ -495,6 +564,7 @@ impl ModManager {
       );
     }
     manifest.save(&addons_path)?;
+    self.sync_after_change(profile_folder.as_deref());
 
     log::info!("Successfully replaced VPK files for mod: {mod_id}");
     Ok(())

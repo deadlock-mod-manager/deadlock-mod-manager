@@ -3,7 +3,7 @@
 use super::state::MANAGER;
 use crate::errors::Error;
 use crate::mod_manager::shard_report::{self, ShardReport, ShardReportInput};
-use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
+use vpkmanager::ledger::ProfileLedger;
 
 #[tauri::command]
 pub async fn get_shard_diagnostics(profile_folder: Option<String>) -> Result<ShardReport, Error> {
@@ -14,7 +14,7 @@ pub async fn get_shard_diagnostics(profile_folder: Option<String>) -> Result<Sha
     .ok_or(Error::GamePathNotSet)?
     .clone();
   let base = mod_manager.get_addons_path(profile_folder.as_deref())?;
-  let manifest = ProfileVpkManifest::load(&base)?;
+  let manifest = ProfileLedger::load(&base)?;
 
   Ok(shard_report::analyze(ShardReportInput {
     base: &base,

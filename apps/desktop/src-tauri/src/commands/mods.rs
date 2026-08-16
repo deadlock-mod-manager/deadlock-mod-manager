@@ -7,11 +7,11 @@ use crate::mod_manager::archive_extractor::ArchiveExtractor;
 use crate::mod_manager::file_tree::ModFileTree;
 use crate::mod_manager::filesystem_helper::FileSystemHelper;
 use crate::mod_manager::shard;
-use crate::mod_manager::vpk_manager::VpkManager;
-use crate::mod_manager::vpk_manager::staging::VpkSnapshot;
-use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use serde::{Deserialize, Serialize};
 use tauri::{Emitter, Manager};
+use vpkmanager::ledger::ProfileLedger;
+use vpkmanager::ops;
+use vpkmanager::staging::VpkSnapshot;
 
 use super::downloads::get_download_manager;
 use super::fonts::{apply_font_cleanup, prepare_font_cleanup};
@@ -324,7 +324,6 @@ pub async fn batch_update_mods(
       addons_path.join(&profile_folder)
     };
 
-    let vpk_manager = crate::mod_manager::vpk_manager::VpkManager::new();
     let profile_folder_option = if profile_folder.is_empty() {
       None
     } else {
@@ -427,7 +426,7 @@ pub async fn batch_update_mods(
     let mut retry_delay_ms = 100;
 
     for attempt in 0..max_retries {
-      match vpk_manager.find_prefixed_vpks(&addons_path_for_profile, &mod_data.mod_id) {
+      match ops::find_prefixed_vpks(&addons_path_for_profile, &mod_data.mod_id) {
         Ok(vpks) if !vpks.is_empty() => {
           log::info!(
             "Download completed for mod: {} (found {} VPKs after {} attempts)",
@@ -561,7 +560,7 @@ pub async fn register_analyzed_mod(
   let mut mod_manager = MANAGER.lock().unwrap();
 
   let addons_path = mod_manager.get_addons_path(profile_folder.as_deref())?;
-  let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
+  let mut manifest = ProfileLedger::open_for_write(&addons_path)?;
 
   let install_order = manifest.mods.get(&mod_id).and_then(|e| e.order);
 
@@ -657,8 +656,7 @@ pub async fn get_mod_available_options(
     return Err(Error::GamePathNotSet);
   }
 
-  let vpk_manager = VpkManager::new();
-  let prefixed_vpks = vpk_manager.find_prefixed_vpks(&addons_path, &mod_id)?;
+  let prefixed_vpks = ops::find_prefixed_vpks(&addons_path, &mod_id)?;
 
   let prefix = format!("{mod_id}_");
   let disabled_originals: Vec<String> = prefixed_vpks
@@ -772,11 +770,9 @@ pub async fn fetch_missing_mod_variants(
     return Err(Error::GamePathNotSet);
   }
 
-  let vpk_manager = VpkManager::new();
   let prefix = format!("{mod_id}_");
 
-  let existing_disabled: HashSet<String> = vpk_manager
-    .find_prefixed_vpks(&addons_path, &mod_id)?
+  let existing_disabled: HashSet<String> = ops::find_prefixed_vpks(&addons_path, &mod_id)?
     .into_iter()
     .filter_map(|n| n.strip_prefix(&prefix).map(|s| s.to_string()))
     .collect();
@@ -1113,18 +1109,22 @@ pub async fn switch_mod_download_variant(
     }
   }
 
+  // Capture the destinations before anything writes to them, so a failure part
+  // way through puts back whatever variant was already staged there.
   let prefix = format!("{mod_id}_");
   let mut deployment = VpkSnapshot::new()?;
-  for (original, staged_path) in &staged_pairs {
-    let prefixed = format!("{prefix}{original}");
-    let dest = addons_path.join(&prefixed);
+  for (original, _) in &staged_pairs {
+    let dest = addons_path.join(format!("{prefix}{original}"));
     if let Err(error) = deployment.capture(&dest) {
-      return Err(deployment.rollback(error));
+      return Err(deployment.rollback(Error::from(error)));
     }
-    if let Err(error) = filesystem.copy_file(staged_path, &dest) {
-      return Err(deployment.rollback(error));
-    }
-    log::info!("Staged VPK {original} -> {}", dest.display());
+  }
+
+  // The VPK layer does the copying: it applies the prefix and fingerprints each
+  // file, so a variant is identifiable from the moment it lands in the profile.
+  match ops::copy_vpks_with_prefix(staging_dir.path(), &addons_path, &mod_id, None) {
+    Ok(staged) => log::info!("Staged {} variant VPK(s): {staged:?}", staged.len()),
+    Err(error) => return Err(deployment.rollback(Error::from(error))),
   }
 
   let variant_result = match MANAGER.lock().unwrap().apply_variant_selection(
