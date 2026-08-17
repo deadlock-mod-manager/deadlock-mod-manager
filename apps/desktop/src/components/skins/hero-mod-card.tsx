@@ -1,33 +1,49 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Card } from "@deadlock-mods/ui/components/card";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@deadlock-mods/ui/components/dropdown-menu";
+import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
-import { Check, Trash2 } from "@deadlock-mods/ui/icons";
+import { Check, EyeOff, MoreVertical, Trash2 } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { NSFWBlur } from "@/components/mod-browsing/nsfw-blur";
 import { SkinVariantControls } from "@/components/skins/skin-variant-controls";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
+import { getModCategoryDisplayName } from "@/lib/constants";
+import type { HeroModKind } from "@/lib/mods/hero-mods";
 import { cn } from "@/lib/utils";
 import type { LocalMod } from "@/types/mods";
 
-interface SkinCardProps {
+interface HeroModCardProps {
   mod: LocalMod;
+  hero: string;
+  kind: HeroModKind;
   isActive: boolean;
   disabled: boolean;
   onSelect: () => void;
+  /** Takes it off this hero's list without touching the download. */
+  onRemove: () => void;
   onDelete: () => void;
 }
 
-export const SkinCard = ({
+export const HeroModCard = ({
   mod,
+  hero,
+  kind,
   isActive,
   disabled,
   onSelect,
+  onRemove,
   onDelete,
-}: SkinCardProps) => {
+}: HeroModCardProps) => {
   const { t } = useTranslation();
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
@@ -61,24 +77,38 @@ export const SkinCard = ({
       }}
       role='button'
       tabIndex={disabled ? -1 : 0}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            aria-label={t("skins.deleteSkin")}
-            className='absolute top-2 right-2 z-10 h-7 w-7 opacity-0 transition-opacity focus-visible:opacity-100 group-hover/skin:opacity-100 group-focus-within/skin:opacity-100'
-            disabled={disabled}
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            onKeyDown={(e) => e.stopPropagation()}
-            size='icon'
-            variant='destructive'>
-            <Trash2 className='h-3.5 w-3.5' />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>{t("skins.deleteSkin")}</TooltipContent>
-      </Tooltip>
+      <DropdownMenu>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DropdownMenuTrigger asChild>
+              <Button
+                aria-label={t("skins.modActions")}
+                className='absolute top-2 right-2 z-10 h-7 w-7 opacity-0 transition-opacity focus-visible:opacity-100 group-hover/skin:opacity-100 group-focus-within/skin:opacity-100 data-[state=open]:opacity-100'
+                disabled={disabled}
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+                size='icon'
+                variant='secondary'>
+                <MoreVertical className='h-3.5 w-3.5' />
+              </Button>
+            </DropdownMenuTrigger>
+          </TooltipTrigger>
+          <TooltipContent>{t("skins.modActions")}</TooltipContent>
+        </Tooltip>
+        <DropdownMenuContent align='end' onClick={(e) => e.stopPropagation()}>
+          <DropdownMenuItem onSelect={onRemove}>
+            <EyeOff className='h-4 w-4' />
+            {t("skins.removeFromHero", { hero })}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className='text-destructive focus:bg-destructive/10 focus:text-destructive'
+            onSelect={onDelete}>
+            <Trash2 className='h-4 w-4' />
+            {t("skins.deleteMod")}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       {mod.images.length > 0 ? (
         <NSFWBlur
           blurStrength={nsfwSettings.blurStrength}
@@ -103,7 +133,11 @@ export const SkinCard = ({
         <div className='min-w-0'>
           <div className='truncate font-medium text-sm'>{mod.name}</div>
           <div className='truncate text-muted-foreground text-xs'>
-            {mod.author}
+            {/* An extra's category is what tells a killsound apart from a voice
+                pack, which its author and name often do not. */}
+            {kind === "extra"
+              ? getModCategoryDisplayName(mod.category)
+              : mod.author}
           </div>
         </div>
         {isActive && <Check className='h-4 w-4 shrink-0 text-primary' />}

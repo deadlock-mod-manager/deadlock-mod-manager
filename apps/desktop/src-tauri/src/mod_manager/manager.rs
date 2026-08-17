@@ -647,14 +647,21 @@ impl ModManager {
     log::info!("Purging mod: {mod_id} (profile: {profile_folder:?})");
     Self::ensure_safe_mod_id(&mod_id)?;
 
-    let addons_path = self.get_addons_path(profile_folder.as_deref())?;
-
-    // A mod whose download failed never reached the addons directory, which
-    // may not exist at all yet. Its downloaded files still have to go.
-    if addons_path.exists() {
-      self.purge_mod_vpks(&mod_id, vpks, &addons_path)?;
-    } else {
-      log::info!("Addons path does not exist, skipping VPK cleanup: {addons_path:?}");
+    // A mod whose download failed never reached the addons directory, which may
+    // not exist at all yet - and without a game path there is no addons
+    // directory to speak of. Nothing was installed in either case, but the
+    // downloaded files still have to go, so neither may fail the purge.
+    match self.get_addons_path(profile_folder.as_deref()) {
+      Ok(addons_path) if addons_path.exists() => {
+        self.purge_mod_vpks(&mod_id, vpks, &addons_path)?;
+      }
+      Ok(addons_path) => {
+        log::info!("Addons path does not exist, skipping VPK cleanup: {addons_path:?}");
+      }
+      Err(Error::GamePathNotSet) => {
+        log::info!("Game path not set, skipping VPK cleanup for mod: {mod_id}");
+      }
+      Err(e) => return Err(e),
     }
 
     self.mod_repository.remove_mod(&mod_id);
@@ -1268,7 +1275,18 @@ mod tests {
   /// Builds a manager pointing at a throwaway game install, bypassing the
   /// Steam lookup and the app handle that `ModManager::new` depends on.
   fn test_manager(game_path: &Path) -> ModManager {
-    let mut manager = ModManager {
+    let mut manager = test_manager_without_game_path();
+
+    manager
+      .steam_manager
+      .set_game_path(game_path.to_path_buf())
+      .unwrap();
+
+    manager
+  }
+
+  fn test_manager_without_game_path() -> ModManager {
+    ModManager {
       steam_manager: SteamManager::new(),
       process_manager: GameProcessManager::new(),
       config_manager: GameConfigManager::new(),
@@ -1279,14 +1297,7 @@ mod tests {
       addons_backup_manager: AddonsBackupManager::new(),
       autoexec_manager: AutoexecManager::new(),
       app_handle: None,
-    };
-
-    manager
-      .steam_manager
-      .set_game_path(game_path.to_path_buf())
-      .unwrap();
-
-    manager
+    }
   }
 
   fn game_dir() -> tempfile::TempDir {
@@ -1583,6 +1594,19 @@ mod tests {
         .join("addons")
         .exists()
     );
+
+    manager
+      .purge_mod_from("650634".to_string(), Vec::new(), None, mods_store.path())
+      .unwrap();
+
+    assert!(!mod_dir.exists());
+  }
+
+  #[test]
+  fn purge_deletes_downloaded_files_when_game_path_is_not_set() {
+    let mods_store = tempfile::tempdir().unwrap();
+    let mod_dir = downloaded_mod(mods_store.path(), "650634");
+    let mut manager = test_manager_without_game_path();
 
     manager
       .purge_mod_from("650634".to_string(), Vec::new(), None, mods_store.path())

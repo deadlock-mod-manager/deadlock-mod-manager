@@ -58,6 +58,10 @@ export type SettingsState = {
   /** Playback volume for the Foundry sound browser, 0..1. */
   foundrySoundVolume: number;
   crosshairsEnabled: boolean;
+  /** Whether a hero can keep several skins installed instead of exactly one. */
+  multipleSkinsEnabled: boolean;
+  /** Whether weapon skins, sounds and the like get listed under a hero too. */
+  heroExtrasEnabled: boolean;
   linuxGpuOptimization: "auto" | "on" | "off";
   enabledPlugins: Record<string, boolean>; // pluginId -> isEnabled
   gamePresenceEnabled: boolean;
@@ -98,6 +102,10 @@ export type SettingsState = {
 
   // Crosshairs management
   setCrosshairsEnabled: (enabled: boolean) => void;
+
+  // Hero page management
+  setMultipleSkinsEnabled: (enabled: boolean) => void;
+  setHeroExtrasEnabled: (enabled: boolean) => void;
 
   // Linux GPU optimization management
   setLinuxGpuOptimization: (value: "auto" | "on" | "off") => void;
@@ -149,6 +157,8 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   foundry3dPreviewEnabled: true,
   foundrySoundVolume: 0.8,
   crosshairsEnabled: true,
+  multipleSkinsEnabled: false,
+  heroExtrasEnabled: false,
   linuxGpuOptimization: "auto",
   enabledPlugins: {},
   gamePresenceEnabled: true,
@@ -280,6 +290,17 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   setCrosshairsEnabled: (enabled: boolean) =>
     set(() => ({
       crosshairsEnabled: enabled,
+    })),
+
+  // Hero page management
+  setMultipleSkinsEnabled: (enabled: boolean) =>
+    set(() => ({
+      multipleSkinsEnabled: enabled,
+    })),
+
+  setHeroExtrasEnabled: (enabled: boolean) =>
+    set(() => ({
+      heroExtrasEnabled: enabled,
     })),
 
   // Linux GPU optimization management
