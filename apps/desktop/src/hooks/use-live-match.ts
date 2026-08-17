@@ -1,7 +1,13 @@
 import { RuntimeError } from "@deadlock-mods/common/client-errors";
 import { useQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
-import { useCallback, useEffect, useMemo, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { getPlayerHeroStats, getSteamProfiles } from "@/lib/stats/api";
 import { cachedFetch, STATS_TTL } from "@/lib/stats/cache";
@@ -60,6 +66,12 @@ const QUEUED_INTERVAL_MS = 2_000;
 const BROADCAST_TTL = 6 * 60 * 60 * 1000;
 /** How long the roster has to hold still before it counts as the final lobby. */
 const LOBBY_SETTLE_MS = 2_000;
+/**
+ * A cached refetch can resolve in a few milliseconds, which is short enough that
+ * a press leaves no trace at all. The button holds its spinner for at least this
+ * long so asking for a check always looks like it did something.
+ */
+const REFRESH_FEEDBACK_MS = 600;
 
 export const useLiveMatchDetection = (enabled: boolean) =>
   useQuery({
@@ -83,6 +95,7 @@ export const useLiveMatchDetection = (enabled: boolean) =>
  * which is what makes opening the tab instant instead of a fresh connect.
  */
 export const useLiveMatch = () => {
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const detection = useLiveMatchDetection(true);
   const matchId = detection.data?.current?.matchId ?? null;
 
@@ -207,13 +220,21 @@ export const useLiveMatch = () => {
    * usually closes early again, and doing that on a timer would spend the
    * endpoint's budget on a match that is over.
    */
-  const refresh = useCallback(() => {
-    void refetch();
-    if (broadcastFailed) {
-      void refetchBroadcast();
-    } else if (matchId !== null && broadcastUrl !== null) {
-      reopenLiveStream();
-      connectLiveStream(matchId, broadcastUrl);
+  const refresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      const pending = [
+        refetch(),
+        broadcastFailed ? refetchBroadcast() : Promise.resolve(),
+        new Promise((resolve) => setTimeout(resolve, REFRESH_FEEDBACK_MS)),
+      ];
+      if (!broadcastFailed && matchId !== null && broadcastUrl !== null) {
+        reopenLiveStream();
+        connectLiveStream(matchId, broadcastUrl);
+      }
+      await Promise.all(pending);
+    } finally {
+      setIsRefreshing(false);
     }
   }, [refetch, refetchBroadcast, broadcastFailed, matchId, broadcastUrl]);
 
@@ -239,6 +260,8 @@ export const useLiveMatch = () => {
     ranks: lobby.ranks,
     heroStats: lobby.heroStats,
     isDetecting: detection.isPending,
+    /** A check the user asked for, as opposed to the poll running underneath. */
+    isRefreshing,
     broadcastError: broadcast.error,
     isResolvingBroadcast: broadcast.isPending && matchId !== null,
     refresh,
