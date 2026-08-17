@@ -7,10 +7,13 @@ import {
 } from "@deadlock-mods/ui/components/context-menu";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { FolderOpen } from "@deadlock-mods/ui/icons";
+import { ArrowClockwiseIcon } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { FaShare } from "react-icons/fa";
+import { useReinstallAction } from "@/hooks/use-reinstall-action";
 import { usePersistedStore } from "@/lib/store";
+import { cn } from "@/lib/utils";
 import type { LocalMod } from "@/types/mods";
 
 interface ModContextMenuProps {
@@ -21,6 +24,11 @@ interface ModContextMenuProps {
 export const ModContextMenu = ({ mod, children }: ModContextMenuProps) => {
   const { t } = useTranslation();
   const { getActiveProfile } = usePersistedStore();
+  const {
+    reinstall: handleReinstall,
+    isReinstalling,
+    isBusy: isReinstallBusy,
+  } = useReinstallAction(mod);
 
   const handleShareMod = async () => {
     if (mod.remoteUrl) {
@@ -73,6 +81,12 @@ export const ModContextMenu = ({ mod, children }: ModContextMenuProps) => {
         <ContextMenuItem onClick={handleOpenInGame}>
           <FolderOpen className='mr-2 h-4 w-4' />
           {t("contextMenu.openInGame")}
+        </ContextMenuItem>
+        <ContextMenuItem disabled={isReinstallBusy} onClick={handleReinstall}>
+          <ArrowClockwiseIcon
+            className={cn("mr-2 h-4 w-4", isReinstalling && "animate-spin")}
+          />
+          {t("reinstall.action")}
         </ContextMenuItem>
       </ContextMenuContent>
     </ContextMenu>
