@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { AnalyzeAddonsResult } from "@/types/mods";
+import type { ProfileVpkFile } from "@/types/profiles";
 import { BASE_URL } from "./api-client";
 import logger from "./logger";
 
@@ -80,7 +81,10 @@ export const analyzeLocalAddons = async (
 export const getProfileInstalledVpks = async (
   profileFolder: string | null = null,
 ): Promise<string[]> => {
-  return await invoke("get_profile_installed_vpks", { profileFolder });
+  const files = await invoke<ProfileVpkFile[]>("get_profile_installed_vpks", {
+    profileFolder,
+  });
+  return files.map((file) => file.locator);
 };
 
 export const deleteProfileVpk = async (

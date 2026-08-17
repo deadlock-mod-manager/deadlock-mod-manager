@@ -35,15 +35,6 @@ impl FileSystemHelper {
     Ok(())
   }
 
-  /// Remove a single file
-  pub fn remove_file(&self, path: &Path) -> Result<(), Error> {
-    if path.exists() {
-      log::info!("Removing file: {:?}", path);
-      fs::remove_file(path)?;
-    }
-    Ok(())
-  }
-
   /// Copy a file from source to destination
   pub fn copy_file(&self, src: &Path, dest: &Path) -> Result<(), Error> {
     if let Some(parent) = dest.parent() {
@@ -53,31 +44,6 @@ impl FileSystemHelper {
     log::debug!("Copying file from {:?} to {:?}", src, dest);
     fs::copy(src, dest)?;
     Ok(())
-  }
-
-  /// Get all files in a directory with a specific extension
-  pub fn get_files_with_extension(
-    &self,
-    dir: &Path,
-    extension: &str,
-  ) -> Result<Vec<std::path::PathBuf>, Error> {
-    let mut files = Vec::new();
-
-    if !dir.exists() {
-      return Ok(files);
-    }
-
-    for entry in fs::read_dir(dir)? {
-      let entry = entry?;
-      let path = entry.path();
-
-      if path.is_file() && path.extension().is_some_and(|ext| ext == extension) {
-        files.push(path);
-      }
-    }
-
-    files.sort();
-    Ok(files)
   }
 
   /// Recursively find all files with a specific extension

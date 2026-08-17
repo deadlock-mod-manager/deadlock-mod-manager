@@ -1,12 +1,17 @@
 use crate::app_runtime::AppHandle;
 use crate::errors::Error;
+use crate::mod_manager::shard;
 use chrono::{DateTime, Local};
 use log;
 use serde::{Deserialize, Serialize};
+use std::cmp::Reverse;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::Emitter;
+use vpkmanager::ledger::ProfileLedger;
+use vpkmanager::reconcile::Trust;
+use vpkmanager::snapshot::{self, SnapshotStats as BackupStats};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AddonsBackup {
@@ -94,24 +99,52 @@ impl AddonsBackupManager {
     })?;
 
     let backup_path = backup_dir.join(&filename);
+    if backup_path.exists() {
+      return Err(Error::BackupCreationFailed(format!(
+        "Backup already exists: {}",
+        backup_path.display()
+      )));
+    }
+    // Build into a hidden staging directory and only rename it to the final
+    // (listable) name after validation succeeds, so an interrupted or invalid
+    // backup can never be listed, restored, deleted, or pruned. The name does
+    // not start with `addons-backup-`, so `list_backups` ignores it.
+    //
+    // Claim the staging directory atomically via exclusive creation and retry
+    // under a fresh name on collision. This never removes or reuses an existing
+    // directory, so a concurrent backup (which may share the same second-
+    // resolution filename) can't have its in-progress staging clobbered, and a
+    // stale leftover can't be copied into the new backup.
+    let staging_path = {
+      let mut attempt = 0u32;
+      loop {
+        let candidate = backup_dir.join(format!(".{filename}.staging-{attempt}"));
+        match fs::create_dir(&candidate) {
+          Ok(()) => break candidate,
+          Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+            attempt += 1;
+            if attempt > 1000 {
+              return Err(Error::BackupCreationFailed(
+                "Failed to claim a unique backup staging directory".to_string(),
+              ));
+            }
+          }
+          Err(e) => {
+            return Err(Error::BackupCreationFailed(format!(
+              "Failed to create backup folder: {e}"
+            )));
+          }
+        }
+      }
+    };
 
-    // Create backup directory
-    fs::create_dir_all(&backup_path)
-      .map_err(|e| Error::BackupCreationFailed(format!("Failed to create backup folder: {e}")))?;
-
-    // Count VPK files
-    let entries: Vec<_> = fs::read_dir(&addons_path)
-      .map_err(|e| Error::BackupCreationFailed(format!("Failed to read addons directory: {e}")))?
-      .filter_map(|entry| entry.ok())
-      .filter(|entry| entry.path().is_file())
+    let citadel_path = addons_path.parent().ok_or_else(|| {
+      Error::BackupCreationFailed("Addons folder has no parent directory".to_string())
+    })?;
+    let shard_roots: Vec<PathBuf> = shard::all_shards()
+      .map(|index| citadel_path.join(index.root_name()))
+      .filter(|path| path.exists())
       .collect();
-
-    let vpk_count = entries
-      .iter()
-      .filter(|entry| entry.path().extension().is_some_and(|ext| ext == "vpk"))
-      .count();
-
-    let total_files = entries.len();
 
     // Emit progress: copying
     let _ = app_handle.emit(
@@ -119,39 +152,49 @@ impl AddonsBackupManager {
       serde_json::json!({
         "stage": "copying",
         "progress": 20,
-        "message": format!("Copying {vpk_count} VPK files...")
+        "message": "Copying addon folders..."
       }),
     );
 
-    log::info!(
-      "Copying {total_files} files ({vpk_count} VPK files) from {addons_path:?} to {backup_path:?}"
-    );
+    let mut stats = BackupStats::default();
+    for (index, source_root) in shard_roots.iter().enumerate() {
+      let root_name = source_root
+        .file_name()
+        .ok_or_else(|| Error::BackupCreationFailed("Addon shard root has no name".to_string()))?;
+      let copied =
+        snapshot::copy_tree(source_root, &staging_path.join(root_name)).map_err(|e| {
+          let _ = fs::remove_dir_all(&staging_path);
+          Error::BackupCreationFailed(format!(
+            "Failed to copy addon folder {}: {e}",
+            source_root.display()
+          ))
+        })?;
+      stats.add(copied);
 
-    // Copy all files
-    let mut total_size = 0u64;
-    for (i, entry) in entries.iter().enumerate() {
-      let path = entry.path();
-      if let Some(file_name) = path.file_name() {
-        let dest_path = backup_path.join(file_name);
+      let progress = 20 + (((index + 1) * 70 / shard_roots.len().max(1)) as u32);
+      let _ = app_handle.emit(
+        "backup-progress",
+        serde_json::json!({
+          "stage": "copying",
+          "progress": progress,
+          "message": format!("Copying addon folders... ({}/{})", index + 1, shard_roots.len())
+        }),
+      );
+    }
 
-        fs::copy(&path, &dest_path)
-          .map_err(|e| Error::BackupCreationFailed(format!("Failed to copy file: {e}")))?;
+    if let Err(error) = Self::validate_snapshot(&staging_path) {
+      let _ = fs::remove_dir_all(&staging_path);
+      return Err(Error::BackupCreationFailed(format!(
+        "Created backup is inconsistent: {error}"
+      )));
+    }
 
-        if let Ok(metadata) = fs::metadata(&path) {
-          total_size += metadata.len();
-        }
-
-        // Update progress
-        let progress = 20 + ((i + 1) * 70 / total_files) as u32;
-        let _ = app_handle.emit(
-          "backup-progress",
-          serde_json::json!({
-            "stage": "copying",
-            "progress": progress,
-            "message": format!("Copying files... ({}/{total_files})", i + 1)
-          }),
-        );
-      }
+    // Publish the validated snapshot atomically.
+    if let Err(error) = fs::rename(&staging_path, &backup_path) {
+      let _ = fs::remove_dir_all(&staging_path);
+      return Err(Error::BackupCreationFailed(format!(
+        "Failed to finalize backup: {error}"
+      )));
     }
 
     // Emit progress: finalizing
@@ -180,15 +223,18 @@ impl AddonsBackupManager {
     );
 
     log::info!(
-      "Backup created successfully: {filename} ({total_size} bytes, {total_files} files, {vpk_count} VPK files)"
+      "Backup created successfully: {filename} ({} bytes, {} files, {} VPK files)",
+      stats.bytes,
+      stats.files,
+      stats.vpks
     );
 
     Ok(AddonsBackup {
       file_name: filename,
       file_path: backup_path.to_string_lossy().to_string(),
       created_at,
-      file_size: total_size,
-      addons_count: vpk_count as u32,
+      file_size: stats.bytes,
+      addons_count: stats.vpks,
     })
   }
 
@@ -212,9 +258,67 @@ impl AddonsBackupManager {
     format!("addons-backup-{}", now.format("%Y-%m-%d_%H-%M-%S"))
   }
 
+  /// A restore swaps out every VPK in the install at once, from a snapshot that
+  /// may be months old. The files carry their own fingerprints, so reconciling
+  /// each profile afterwards is what tells the app which mods it just got back.
+  fn reconcile_restored_profiles(addons_path: &Path) {
+    for base in shard::profiles_in(addons_path) {
+      match vpkmanager::reconcile::sync_profile(&base, Trust::EveryFile) {
+        Ok(report) if !report.is_clean() => log::info!(
+          "Reconciled restored profile {}: {}",
+          base.path().display(),
+          report.summary()
+        ),
+        Ok(_) => {}
+        Err(error) => log::warn!(
+          "Could not reconcile restored profile {}: {error}",
+          base.path().display()
+        ),
+      }
+    }
+  }
+
+  fn validate_snapshot(root: &Path) -> Result<(), Error> {
+    ProfileLedger::validate_tree(root)
+      .map_err(|error| Error::BackupRestoreFailed(error.to_string()))
+  }
+
+  fn restore_staged_roots(
+    citadel_path: &Path,
+    staging_path: &Path,
+    staged_roots: &[String],
+    remove_current_roots: bool,
+  ) -> Vec<String> {
+    let mut failures = Vec::new();
+    if remove_current_roots {
+      for shard_index in shard::all_shards() {
+        let current = citadel_path.join(shard_index.root_name());
+        if current.exists()
+          && let Err(error) = fs::remove_dir_all(&current)
+        {
+          failures.push(format!("failed to remove {}: {error}", current.display()));
+        }
+      }
+    }
+
+    for root_name in staged_roots.iter().rev() {
+      let current = citadel_path.join(root_name);
+      let staged = staging_path.join(root_name);
+      if staged.exists()
+        && let Err(error) = fs::rename(&staged, &current)
+      {
+        failures.push(format!(
+          "failed to restore {} to {}: {error}",
+          staged.display(),
+          current.display()
+        ));
+      }
+    }
+    failures
+  }
+
   fn parse_backup_filename(&self, filename: &str) -> Option<u64> {
-    // Extract timestamp from filename format: addons-backup-YYYY-MM-DD_HH-MM-SS.7z
-    let without_ext = filename.strip_suffix(".7z")?;
+    let without_ext = filename.strip_suffix(".7z").unwrap_or(filename);
     let without_prefix = without_ext.strip_prefix("addons-backup-")?;
 
     let datetime_str = without_prefix.replace('_', " ").replace('-', ":");
@@ -247,17 +351,6 @@ impl AddonsBackupManager {
     Some(datetime.timestamp() as u64)
   }
 
-  fn count_vpk_files_in_archive(&self, backup_path: &Path) -> Result<u32, Error> {
-    // Count VPK files in backup directory
-    let count = fs::read_dir(backup_path)
-      .map_err(|e| Error::BackupRestoreFailed(format!("Failed to read backup directory: {e}")))?
-      .filter_map(|entry| entry.ok())
-      .filter(|entry| entry.path().extension().is_some_and(|ext| ext == "vpk"))
-      .count();
-
-    Ok(count as u32)
-  }
-
   pub fn list_backups(&self) -> Result<Vec<AddonsBackup>, Error> {
     let backup_dir = self.get_backup_directory()?;
 
@@ -277,17 +370,7 @@ impl AddonsBackupManager {
         && let Some(filename) = path.file_name().and_then(|n| n.to_str())
         && filename.starts_with("addons-backup-")
       {
-        // Calculate total size of all files in the backup directory
-        let mut file_size = 0u64;
-        if let Ok(entries) = fs::read_dir(&path) {
-          for entry in entries.flatten() {
-            if let Ok(metadata) = entry.metadata()
-              && metadata.is_file()
-            {
-              file_size += metadata.len();
-            }
-          }
-        }
+        let stats = snapshot::tree_stats(&path).unwrap_or_default();
 
         let created_at = if let Some(timestamp) = self.parse_backup_filename(filename) {
           timestamp
@@ -302,19 +385,17 @@ impl AddonsBackupManager {
             .as_secs()
         };
 
-        let addons_count = self.count_vpk_files_in_archive(&path).unwrap_or(0);
-
         backups.push(AddonsBackup {
           file_name: filename.to_string(),
           file_path: path.to_string_lossy().to_string(),
           created_at,
-          file_size,
-          addons_count,
+          file_size: stats.bytes,
+          addons_count: stats.vpks,
         });
       }
     }
 
-    backups.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+    backups.sort_by_key(|backup| Reverse(backup.created_at));
 
     log::info!("Found {} backup(s)", backups.len());
     Ok(backups)
@@ -329,45 +410,114 @@ impl AddonsBackupManager {
       }
     );
 
-    let backup_dir = self.get_backup_directory()?;
-    let backup_path = backup_dir.join(file_name);
+    let backup_path = self.resolve_backup_path(file_name)?;
 
     if !backup_path.exists() {
       return Err(Error::BackupNotFound);
     }
 
     let addons_path = self.get_addons_path()?;
+    let citadel_path = addons_path.parent().ok_or_else(|| {
+      Error::BackupRestoreFailed("Addons folder has no parent directory".to_string())
+    })?;
+    let is_structured_backup = backup_path.join("addons").is_dir();
+    let staging_path = citadel_path.join(".dmm-restore-staging");
+    if staging_path.exists() {
+      return Err(Error::BackupRestoreFailed(format!(
+        "A previous restore staging directory still exists at {}",
+        staging_path.display()
+      )));
+    }
+    fs::create_dir_all(&staging_path).map_err(|error| {
+      Error::BackupRestoreFailed(format!(
+        "Failed to create restore staging directory: {error}"
+      ))
+    })?;
 
-    if matches!(strategy, RestoreStrategy::Replace) {
-      if addons_path.exists() {
-        log::info!("Clearing addons folder before restore");
-        fs::remove_dir_all(&addons_path)
-          .map_err(|e| Error::BackupRestoreFailed(format!("Failed to clear addons folder: {e}")))?;
+    let mut staged_roots = Vec::new();
+    for shard_index in shard::all_shards() {
+      let root_name = shard_index.root_name();
+      let shard_root = citadel_path.join(&root_name);
+      if !shard_root.exists() {
+        continue;
       }
-      fs::create_dir_all(&addons_path)
-        .map_err(|e| Error::BackupRestoreFailed(format!("Failed to create addons folder: {e}")))?;
-    } else {
-      fs::create_dir_all(&addons_path)
-        .map_err(|e| Error::BackupRestoreFailed(format!("Failed to create addons folder: {e}")))?;
+      if let Err(error) = fs::rename(&shard_root, staging_path.join(&root_name)) {
+        let rollback_failures =
+          Self::restore_staged_roots(citadel_path, &staging_path, &staged_roots, false);
+        let _ = fs::remove_dir(&staging_path);
+        if rollback_failures.is_empty() {
+          return Err(Error::BackupRestoreFailed(format!(
+            "Failed to stage addon folder {}: {error}",
+            shard_root.display()
+          )));
+        }
+        return Err(Error::RollbackFailed(format!(
+          "Failed to stage addon folder {}: {error}. Failed to restore: {}",
+          shard_root.display(),
+          rollback_failures.join(", ")
+        )));
+      }
+      staged_roots.push(root_name);
     }
 
     log::info!("Restoring backup from {backup_path:?} to {addons_path:?}");
 
-    for entry in fs::read_dir(&backup_path)
-      .map_err(|e| Error::BackupRestoreFailed(format!("Failed to read backup directory: {e}")))?
-    {
-      let entry = entry
-        .map_err(|e| Error::BackupRestoreFailed(format!("Failed to read directory entry: {e}")))?;
-      let path = entry.path();
-
-      if path.is_file()
-        && let Some(file_name) = path.file_name()
-      {
-        let dest_path = addons_path.join(file_name);
-        fs::copy(&path, &dest_path)
-          .map_err(|e| Error::BackupRestoreFailed(format!("Failed to restore file: {e}")))?;
+    let restore_result = (|| -> Result<(), Error> {
+      if matches!(strategy, RestoreStrategy::Merge) {
+        for root_name in &staged_roots {
+          snapshot::copy_tree(&staging_path.join(root_name), &citadel_path.join(root_name))
+            .map_err(|error| {
+              Error::BackupRestoreFailed(format!(
+                "Failed to prepare existing addon folder for merge: {error}"
+              ))
+            })?;
+        }
       }
+
+      if is_structured_backup {
+        for shard_index in shard::all_shards() {
+          let root_name = shard_index.root_name();
+          let source = backup_path.join(&root_name);
+          if source.exists() {
+            snapshot::copy_tree(&source, &citadel_path.join(root_name)).map_err(|error| {
+              Error::BackupRestoreFailed(format!("Failed to restore addon folder: {error}"))
+            })?;
+          }
+        }
+      } else {
+        snapshot::copy_tree(&backup_path, &addons_path).map_err(|error| {
+          Error::BackupRestoreFailed(format!("Failed to restore legacy addon backup: {error}"))
+        })?;
+      }
+
+      Self::validate_snapshot(citadel_path)
+    })();
+
+    if let Err(error) = restore_result {
+      let rollback_failures =
+        Self::restore_staged_roots(citadel_path, &staging_path, &staged_roots, true);
+      let _ = fs::remove_dir_all(&staging_path);
+      if rollback_failures.is_empty() {
+        return Err(error);
+      }
+      return Err(Error::RollbackFailed(format!(
+        "Restore failed: {error}. Failed to restore previous addon folders: {}",
+        rollback_failures.join(", ")
+      )));
     }
+
+    // The restore is already committed: the backup roots are active and the
+    // old roots only survive as leftovers in the staging dir. Removing them is
+    // best-effort cleanup and must never turn a successful restore into a
+    // failure.
+    if let Err(error) = fs::remove_dir_all(&staging_path) {
+      log::warn!(
+        "Backup restored successfully, but failed to remove restore staging directory {}: {error}",
+        staging_path.display()
+      );
+    }
+
+    Self::reconcile_restored_profiles(&addons_path);
 
     log::info!("Backup restored successfully");
     Ok(())
@@ -376,8 +526,7 @@ impl AddonsBackupManager {
   pub fn delete_backup(&self, file_name: &str) -> Result<(), Error> {
     log::info!("Deleting backup: {file_name}");
 
-    let backup_dir = self.get_backup_directory()?;
-    let backup_path = backup_dir.join(file_name);
+    let backup_path = self.resolve_backup_path(file_name)?;
 
     if !backup_path.exists() {
       return Err(Error::BackupNotFound);
@@ -419,15 +568,14 @@ impl AddonsBackupManager {
   }
 
   pub fn get_backup_info(&self, file_name: &str) -> Result<AddonsBackup, Error> {
-    let backup_dir = self.get_backup_directory()?;
-    let backup_path = backup_dir.join(file_name);
+    let backup_path = self.resolve_backup_path(file_name)?;
 
     if !backup_path.exists() {
       return Err(Error::BackupNotFound);
     }
 
     let metadata = fs::metadata(&backup_path)?;
-    let file_size = metadata.len();
+    let stats = snapshot::tree_stats(&backup_path)?;
 
     let created_at = if let Some(timestamp) = self.parse_backup_filename(file_name) {
       timestamp
@@ -441,14 +589,185 @@ impl AddonsBackupManager {
         .as_secs()
     };
 
-    let addons_count = self.count_vpk_files_in_archive(&backup_path).unwrap_or(0);
-
     Ok(AddonsBackup {
       file_name: file_name.to_string(),
       file_path: backup_path.to_string_lossy().to_string(),
       created_at,
-      file_size,
-      addons_count,
+      file_size: stats.bytes,
+      addons_count: stats.vpks,
     })
+  }
+
+  fn resolve_backup_path(&self, file_name: &str) -> Result<PathBuf, Error> {
+    if !file_name.starts_with("addons-backup-")
+      || file_name.contains("..")
+      || file_name.contains('/')
+      || file_name.contains('\\')
+    {
+      return Err(Error::InvalidInput(
+        "Invalid addons backup name".to_string(),
+      ));
+    }
+    Ok(self.get_backup_directory()?.join(file_name))
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::mod_manager::shard::ShardIndex;
+
+  fn write(path: &Path, contents: &[u8]) {
+    fs::create_dir_all(path.parent().unwrap()).unwrap();
+    fs::write(path, contents).unwrap();
+  }
+
+  /// A sharded profile spans sibling `addons`/`addonsN` roots, so a backup that
+  /// only walked `addons` would silently drop every overflow mod.
+  fn sharded_citadel(temp: &tempfile::TempDir) -> PathBuf {
+    let citadel = temp.path().join("citadel");
+    let profile = "profile_x";
+
+    let mut manifest = ProfileLedger::default();
+    manifest.mark_enabled(
+      "on_base",
+      vec!["pak01_dir.vpk".to_string()],
+      vec!["base.vpk".to_string()],
+      Some(0),
+      ShardIndex::FIRST,
+    );
+    manifest.mark_enabled(
+      "on_shard_two",
+      vec!["pak01_dir.vpk".to_string()],
+      vec!["overflow.vpk".to_string()],
+      Some(1),
+      ShardIndex::new(2).unwrap(),
+    );
+    let base = citadel.join("addons").join(profile);
+    fs::create_dir_all(&base).unwrap();
+    manifest.save(&base).unwrap();
+
+    write(&base.join("pak01_dir.vpk"), b"base vpk");
+    write(&base.join("some_mod_disabled.vpk"), b"disabled vpk");
+    write(
+      &citadel.join("addons2").join(profile).join("pak01_dir.vpk"),
+      b"overflow vpk",
+    );
+    citadel
+  }
+
+  fn copy_all_shards(citadel: &Path, destination: &Path) -> BackupStats {
+    let mut stats = BackupStats::default();
+    for root_name in shard::all_shards().map(|index| index.root_name()) {
+      let source = citadel.join(&root_name);
+      if source.exists() {
+        stats.add(snapshot::copy_tree(&source, &destination.join(&root_name)).unwrap());
+      }
+    }
+    stats
+  }
+
+  #[test]
+  fn backup_captures_every_shard_and_validates() {
+    let temp = tempfile::tempdir().unwrap();
+    let citadel = sharded_citadel(&temp);
+    let snapshot = temp.path().join("snapshot");
+
+    let stats = copy_all_shards(&citadel, &snapshot);
+
+    assert_eq!(stats.vpks, 3);
+    assert_eq!(
+      fs::read(snapshot.join("addons/profile_x/pak01_dir.vpk")).unwrap(),
+      b"base vpk"
+    );
+    assert_eq!(
+      fs::read(snapshot.join("addons2/profile_x/pak01_dir.vpk")).unwrap(),
+      b"overflow vpk"
+    );
+    assert!(
+      snapshot
+        .join("addons/profile_x/some_mod_disabled.vpk")
+        .is_file()
+    );
+
+    // The snapshot must satisfy the same check restore runs against it.
+    AddonsBackupManager::validate_snapshot(&snapshot).unwrap();
+  }
+
+  /// A backup that captured a shard root but not the files a manifest points at
+  /// would restore a broken profile, so validation has to reject it.
+  #[test]
+  fn validation_rejects_a_snapshot_missing_an_overflow_shard() {
+    let temp = tempfile::tempdir().unwrap();
+    let citadel = sharded_citadel(&temp);
+    let snapshot = temp.path().join("snapshot");
+
+    snapshot::copy_tree(&citadel.join("addons"), &snapshot.join("addons")).unwrap();
+
+    let error = AddonsBackupManager::validate_snapshot(&snapshot).unwrap_err();
+    assert!(error.to_string().contains("references missing VPKs"));
+  }
+
+  /// In-progress staging directories belong to an interrupted operation, not to
+  /// the user's addons; restoring them would resurrect a half-finished move.
+  #[test]
+  fn backup_skips_internal_staging_artifacts() {
+    let temp = tempfile::tempdir().unwrap();
+    let citadel = sharded_citadel(&temp);
+    let base = citadel.join("addons").join("profile_x");
+    write(
+      &base.join(".dmm-reorder").join("s1__pak01_dir.vpk.pending"),
+      b"staged",
+    );
+    write(
+      &base.join(".dmm-clear").join("s1__pak02_dir.vpk.pending"),
+      b"staged",
+    );
+    write(
+      &base
+        .join(".dmm-update-123")
+        .join("s1__pak03_dir.vpk.pending"),
+      b"staged",
+    );
+    let snapshot = temp.path().join("snapshot");
+
+    copy_all_shards(&citadel, &snapshot);
+
+    let restored = snapshot.join("addons").join("profile_x");
+    assert!(!restored.join(".dmm-reorder").exists());
+    assert!(!restored.join(".dmm-clear").exists());
+    assert!(!restored.join(".dmm-update-123").exists());
+    assert!(restored.join("pak01_dir.vpk").is_file());
+  }
+
+  /// A crash between writing the temp manifest and renaming it leaves the temp
+  /// file as the only record of shard ownership; the backup must keep it.
+  #[test]
+  fn backup_canonicalizes_an_orphaned_temp_manifest() {
+    let temp = tempfile::tempdir().unwrap();
+    let citadel = temp.path().join("citadel");
+    let base = citadel.join("addons").join("profile_x");
+    let mut manifest = ProfileLedger::default();
+    manifest.mark_enabled(
+      "123",
+      vec!["pak01_dir.vpk".to_string()],
+      vec!["m.vpk".to_string()],
+      Some(0),
+      ShardIndex::FIRST,
+    );
+    fs::create_dir_all(&base).unwrap();
+    write(
+      &base.join(".dmm.json.tmp"),
+      serde_json::to_string(&manifest).unwrap().as_bytes(),
+    );
+    write(&base.join("pak01_dir.vpk"), b"vpk");
+    let snapshot = temp.path().join("snapshot");
+
+    snapshot::copy_tree(&citadel.join("addons"), &snapshot.join("addons")).unwrap();
+
+    let restored = snapshot.join("addons").join("profile_x");
+    assert!(restored.join(".dmm.json").is_file());
+    assert!(!restored.join(".dmm.json.tmp").exists());
+    AddonsBackupManager::validate_snapshot(&snapshot).unwrap();
   }
 }

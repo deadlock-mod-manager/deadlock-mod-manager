@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use crate::errors::Error;
 use crate::mod_manager::archive_extractor::ArchiveExtractor;
+use vpkmanager::ops;
 
 use super::state::MANAGER;
 
@@ -34,18 +35,12 @@ pub async fn extract_archive(
 }
 
 fn find_vpk_files(dir: &PathBuf, vpk_files: &mut Vec<String>) -> Result<(), Error> {
-  if dir.is_dir() {
-    for entry in std::fs::read_dir(dir)? {
-      let entry = entry?;
-      let path = entry.path();
-
-      if path.is_dir() {
-        find_vpk_files(&path, vpk_files)?;
-      } else if path.extension().and_then(|e| e.to_str()) == Some("vpk") {
-        vpk_files.push(path.file_name().unwrap().to_string_lossy().to_string());
-      }
-    }
-  }
+  vpk_files.extend(
+    vpkmanager::locate::vpks_under(dir)
+      .iter()
+      .filter_map(|path| path.file_name())
+      .map(|name| name.to_string_lossy().to_string()),
+  );
   Ok(())
 }
 
@@ -57,7 +52,6 @@ pub async fn copy_selected_vpks_from_archive(
   _is_map: bool,
 ) -> Result<(), Error> {
   use crate::mod_manager::archive_extractor::ArchiveExtractor;
-  use crate::mod_manager::vpk_manager::VpkManager;
 
   log::info!(
     "Copying selected VPKs from extracted directory for mod: {} (profile: {profile_folder:?})",
@@ -115,13 +109,16 @@ pub async fn copy_selected_vpks_from_archive(
 
   drop(mod_manager);
 
-  let vpk_manager = VpkManager::new();
-  vpk_manager.copy_selected_vpks_with_prefix(
+  ops::copy_vpks_with_prefix(
     &extracted_dir,
     &destination_path,
     &mod_id,
-    &file_tree,
+    Some(&file_tree.selected_paths()),
   )?;
+  MANAGER
+    .lock()
+    .unwrap()
+    .sync_after_change(profile_folder.as_deref());
 
   log::info!("Removing extracted directory: {extracted_dir:?}");
   std::fs::remove_dir_all(&extracted_dir)?;
@@ -147,8 +144,6 @@ pub async fn copy_local_mod_vpks(
   profile_folder: Option<String>,
   _is_map: bool,
 ) -> Result<Vec<String>, Error> {
-  use crate::mod_manager::vpk_manager::VpkManager;
-
   log::info!(
     "Copying VPKs from local mod files directory for mod: {} (profile: {profile_folder:?})",
     mod_id
@@ -185,8 +180,11 @@ pub async fn copy_local_mod_vpks(
 
   drop(mod_manager);
 
-  let vpk_manager = VpkManager::new();
-  let prefixed_vpks = vpk_manager.copy_vpks_with_prefix(&files_dir, &destination_path, &mod_id)?;
+  let prefixed_vpks = ops::copy_vpks_with_prefix(&files_dir, &destination_path, &mod_id, None)?;
+  MANAGER
+    .lock()
+    .unwrap()
+    .sync_after_change(profile_folder.as_deref());
 
   if prefixed_vpks.is_empty() {
     log::warn!("No VPK files found in mod files directory: {files_dir:?}");

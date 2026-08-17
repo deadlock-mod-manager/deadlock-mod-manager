@@ -110,9 +110,6 @@ import { type LocalMod, ModStatus } from "@/types/mods";
 const PAGE_SIZE = 20;
 const MODS_STORE_PAGINATION_SETTING_ID = "mods-store-pagination";
 
-const ENGINE_VPK_LIMIT = 99;
-const VPK_LIMIT_WARNING_THRESHOLD = 85;
-
 function ModsPagination({
   page,
   totalPages,
@@ -749,13 +746,6 @@ const MyMods = () => {
     .filter(isInstalledModWithVpks)
     .reduce((sum, mod) => sum + (mod.installedVpks?.length ?? 0), 0);
 
-  const vpkStatSubordinateClass =
-    enabledVpkFileCount >= ENGINE_VPK_LIMIT
-      ? "text-destructive/80"
-      : enabledVpkFileCount >= VPK_LIMIT_WARNING_THRESHOLD
-        ? "text-orange-700/90 dark:text-orange-400/90"
-        : "text-muted-foreground";
-
   useLayoutEffect(() => {
     if (scrollContainerRef.current && scrollPositionRef.current > 0) {
       scrollContainerRef.current.scrollTop = scrollPositionRef.current;
@@ -786,110 +776,28 @@ const MyMods = () => {
               <TooltipContent>{t("settings.openModsFolder")}</TooltipContent>
             </Tooltip>
             {mods.length > 0 && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div
-                    className={cn(
-                      "inline-flex max-w-full cursor-help flex-wrap items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm shadow-sm",
-                      "border-border/80 bg-muted/40 transition-colors hover:bg-muted/55",
-                    )}>
-                    <div className='flex items-baseline gap-1.5 tabular-nums'>
-                      <span className='inline-flex items-baseline gap-px font-semibold text-foreground'>
-                        <span>{enabledModsCount}</span>
-                        <span className='font-normal text-muted-foreground'>
-                          /{mods.length}
-                        </span>
-                      </span>
-                      <span className='font-normal text-muted-foreground'>
-                        {t("myMods.libraryModsNoun", {
-                          count: mods.length,
-                        })}
-                      </span>
-                    </div>
-                    <span
-                      aria-hidden
-                      className='h-3.5 w-px shrink-0 bg-border'
-                    />
-                    <div className='flex flex-wrap items-center gap-2'>
-                      <div
-                        className={cn(
-                          "flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 tabular-nums",
-                          enabledVpkFileCount >= ENGINE_VPK_LIMIT
-                            ? "text-destructive"
-                            : enabledVpkFileCount >= VPK_LIMIT_WARNING_THRESHOLD
-                              ? "text-orange-600 dark:text-orange-500"
-                              : "text-foreground",
-                        )}>
-                        <span className='inline-flex items-baseline gap-px font-semibold'>
-                          <span>{enabledVpkFileCount}</span>
-                          <span
-                            className={cn(
-                              "font-normal",
-                              vpkStatSubordinateClass,
-                            )}>
-                            /{ENGINE_VPK_LIMIT}
-                          </span>
-                        </span>
-                        <span
-                          className={cn(
-                            "font-normal",
-                            vpkStatSubordinateClass,
-                          )}>
-                          {t("myMods.vpkFilesNoun")}
-                        </span>
-                      </div>
-                      {enabledVpkFileCount >= VPK_LIMIT_WARNING_THRESHOLD && (
-                        <Badge
-                          className='shrink-0 py-0 text-xs font-medium'
-                          variant={
-                            enabledVpkFileCount >= ENGINE_VPK_LIMIT
-                              ? "destructive"
-                              : "secondary"
-                          }>
-                          {enabledVpkFileCount >= ENGINE_VPK_LIMIT
-                            ? t("myMods.vpkLimitBadgeAtLimit")
-                            : t("myMods.vpkLimitBadgeNear")}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent className='max-w-sm'>
-                  <div className='flex flex-col gap-3 text-sm'>
-                    <p className='text-pretty'>
-                      {t("myMods.modLimitTooltipP1", {
-                        max: ENGINE_VPK_LIMIT,
-                      })}
-                    </p>
-                    <p className='text-pretty'>
-                      {t("myMods.modLimitTooltipP2")}
-                    </p>
-                    <p className='text-pretty'>
-                      {t("myMods.modLimitTooltipP3")}
-                    </p>
-                    <p className='text-muted-foreground text-pretty'>
-                      {t("myMods.modLimitTooltipStatHeading")}
-                    </p>
-                    <ul className='list-disc space-y-1.5 pl-4 text-pretty'>
-                      <li>
-                        {t("myMods.modLimitTooltipStatEnabled", {
-                          count: enabledModsCount,
-                        })}
-                      </li>
-                      <li>
-                        {t("myMods.modLimitTooltipStatLibrary", {
-                          count: mods.length,
-                        })}
-                      </li>
-                      <li>
-                        {t("myMods.modLimitTooltipStatVpks", {
-                          count: enabledVpkFileCount,
-                        })}
-                      </li>
-                    </ul>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
+              <div className='border-border/80 bg-muted/40 inline-flex max-w-full flex-wrap items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm shadow-sm'>
+                <div className='flex items-baseline gap-1.5 tabular-nums'>
+                  <span className='inline-flex items-baseline gap-px font-semibold text-foreground'>
+                    <span>{enabledModsCount}</span>
+                    <span className='font-normal text-muted-foreground'>
+                      /{mods.length}
+                    </span>
+                  </span>
+                  <span className='font-normal text-muted-foreground'>
+                    {t("myMods.libraryModsNoun", { count: mods.length })}
+                  </span>
+                </div>
+                <span aria-hidden className='h-3.5 w-px shrink-0 bg-border' />
+                <div className='flex items-baseline gap-1.5 tabular-nums'>
+                  <span className='font-semibold text-foreground'>
+                    {enabledVpkFileCount}
+                  </span>
+                  <span className='font-normal text-muted-foreground'>
+                    {t("myMods.vpkFilesNoun")}
+                  </span>
+                </div>
+              </div>
             )}
           </div>
           <p className='text-muted-foreground'>{t("myMods.subtitle")}</p>

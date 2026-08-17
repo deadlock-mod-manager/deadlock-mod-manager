@@ -15,6 +15,7 @@ import {
   type ModProfileEntry,
   type ProfileId,
   type ProfileSwitchResult,
+  type ProfileVpkFile,
   type SeedManifestEntry,
   type VpkManifest,
 } from "@/types/profiles";
@@ -751,9 +752,12 @@ export const createProfilesSlice: StateCreator<
         })
         .info("Syncing profile enabled mods with filesystem");
 
-      const allVpks = await invoke<string[]>("get_profile_installed_vpks", {
-        profileFolder: profile.folderName,
-      });
+      const allVpks = await invoke<ProfileVpkFile[]>(
+        "get_profile_installed_vpks",
+        {
+          profileFolder: profile.folderName,
+        },
+      );
       let manifest: VpkManifest = { version: 0, mods: {} };
       try {
         manifest = await invoke<VpkManifest>("get_profile_vpk_manifest", {
@@ -776,13 +780,12 @@ export const createProfilesSlice: StateCreator<
         })
         .info("Found VPKs in profile folder");
 
-      // Enabled VPKs follow the pattern pak##_dir.vpk
-      // Disabled (prefixed) VPKs follow the pattern {modid}_*.vpk
       const enabledVpkPattern = /^pak\d+_dir\.vpk$/i;
-      const enabledVpkSet = new Set(
-        allVpks.filter((vpk) => enabledVpkPattern.test(vpk)),
+      const enabledVpkLocators = new Set(
+        allVpks
+          .filter((vpk) => enabledVpkPattern.test(vpk.filename))
+          .map((vpk) => `${vpk.shard}:${vpk.filename}`),
       );
-
       const updatedEnabledMods: Record<string, ModProfileEntry> = {};
       const updatedLocalMods: LocalMod[] = [];
       const seedEntries: SeedManifestEntry[] = [];
@@ -794,7 +797,10 @@ export const createProfilesSlice: StateCreator<
           const currentVpks = manifestEntry.currentVpks ?? [];
           const hasEnabledVpks =
             manifestEntry.enabled &&
-            currentVpks.some((vpk) => enabledVpkSet.has(vpk));
+            currentVpks.length > 0 &&
+            currentVpks.every((vpk) =>
+              enabledVpkLocators.has(`${manifestEntry.shard}:${vpk}`),
+            );
 
           if (hasEnabledVpks) {
             updatedEnabledMods[mod.remoteId] = {
@@ -816,8 +822,9 @@ export const createProfilesSlice: StateCreator<
                   profileId,
                   remoteId: mod.remoteId,
                   currentVpks,
-                  enabledVpkCount: enabledVpkSet.size,
-                  enabledVpkSample: Array.from(enabledVpkSet).slice(0, 10),
+                  shard: manifestEntry.shard,
+                  enabledVpkCount: enabledVpkLocators.size,
+                  enabledVpkSample: Array.from(enabledVpkLocators).slice(0, 10),
                 })
                 .warn(
                   "Manifest entry marked enabled but no matching enabled VPKs on disk; treating as downloaded",
@@ -835,14 +842,34 @@ export const createProfilesSlice: StateCreator<
           continue;
         }
 
-        const disabledVpksForMod = allVpks.filter((vpk) =>
-          vpk.startsWith(`${mod.remoteId}_`),
+        const disabledVpksForMod = allVpks
+          .filter(
+            (vpk) =>
+              vpk.shard === 1 && vpk.filename.startsWith(`${mod.remoteId}_`),
+          )
+          .map((vpk) => vpk.filename);
+        const enabledVpkFilesForMod = allVpks.filter(
+          (vpk) =>
+            enabledVpkPattern.test(vpk.filename) &&
+            (mod.installedVpks?.some((installedVpk) => {
+              const normalized = installedVpk.replaceAll("\\", "/");
+              return normalized.includes("/")
+                ? normalized === vpk.locator
+                : normalized === vpk.filename;
+            }) ??
+              false),
         );
+        const enabledShards = new Set(
+          enabledVpkFilesForMod.map((vpk) => vpk.shard),
+        );
+        const enabledShard =
+          enabledShards.size === 1
+            ? enabledVpkFilesForMod[0]?.shard
+            : undefined;
         const enabledVpksForMod =
-          mod.installedVpks?.filter((installedVpk) => {
-            const filename = installedVpk.split(/[\\/]/).pop() || "";
-            return enabledVpkSet.has(filename);
-          }) ?? [];
+          enabledShard === undefined
+            ? []
+            : enabledVpkFilesForMod.map((vpk) => vpk.filename);
 
         const hasVpksInProfile =
           disabledVpksForMod.length > 0 || enabledVpksForMod.length > 0;
@@ -880,6 +907,7 @@ export const createProfilesSlice: StateCreator<
           seedEntries.push({
             modId: mod.remoteId,
             enabled: true,
+            shard: enabledShard ?? 1,
             currentVpks: enabledVpksForMod,
             disabledVpks: [],
             originalVpkNames: [],
@@ -899,6 +927,7 @@ export const createProfilesSlice: StateCreator<
           seedEntries.push({
             modId: mod.remoteId,
             enabled: false,
+            shard: 1,
             currentVpks: [],
             disabledVpks: disabledVpksForMod,
             originalVpkNames: [],

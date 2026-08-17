@@ -10,6 +10,7 @@ use std::sync::Arc;
 use tauri::Emitter;
 use tokio::sync::Mutex;
 use tokio_util::sync::CancellationToken;
+use vpkmanager::ops;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DownloadFileDto {
@@ -391,7 +392,6 @@ impl DownloadManager {
   ) -> Result<(), Error> {
     use crate::commands::state::MANAGER;
     use crate::mod_manager::archive_extractor::ArchiveExtractor;
-    use crate::mod_manager::vpk_manager::VpkManager;
 
     log::info!("Processing downloaded files for mod: {}", task.mod_id);
 
@@ -426,7 +426,6 @@ impl DownloadManager {
 
     use crate::mod_manager::file_tree::FileTreeAnalyzer;
 
-    let vpk_manager = VpkManager::new();
     let file_tree_analyzer = FileTreeAnalyzer::new();
     let font_manager = crate::mod_manager::FontManager::new();
     let stash_dir = task.target_dir.join("fonts");
@@ -574,11 +573,11 @@ impl DownloadManager {
                   task.mod_id
                 );
 
-                let copied_vpks = vpk_manager.copy_selected_vpks_with_prefix(
+                let copied_vpks = ops::copy_vpks_with_prefix(
                   &extracted_dir,
                   &destination_path,
                   &task.mod_id,
-                  provided_file_tree,
+                  Some(&provided_file_tree.selected_paths()),
                 )?;
 
                 log::info!(
@@ -632,7 +631,7 @@ impl DownloadManager {
             task.mod_id
           );
           let copied =
-            vpk_manager.copy_vpks_with_prefix(&extracted_dir, &destination_path, &task.mod_id)?;
+            ops::copy_vpks_with_prefix(&extracted_dir, &destination_path, &task.mod_id, None)?;
           let prefix = format!("{}_", task.mod_id);
           for vpk_name in &copied {
             let original = vpk_name
@@ -650,7 +649,7 @@ impl DownloadManager {
             e
           );
           let copied =
-            vpk_manager.copy_vpks_with_prefix(&extracted_dir, &destination_path, &task.mod_id)?;
+            ops::copy_vpks_with_prefix(&extracted_dir, &destination_path, &task.mod_id, None)?;
           let prefix = format!("{}_", task.mod_id);
           for vpk_name in &copied {
             let original = vpk_name
@@ -665,7 +664,7 @@ impl DownloadManager {
     }
 
     if !task.is_profile_import {
-      let prefixed_vpks = vpk_manager.find_prefixed_vpks(&destination_path, &task.mod_id)?;
+      let prefixed_vpks = ops::find_prefixed_vpks(&destination_path, &task.mod_id)?;
 
       if !prefixed_vpks.is_empty() {
         let prefix = format!("{}_", task.mod_id);

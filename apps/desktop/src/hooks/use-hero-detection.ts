@@ -16,7 +16,6 @@ const BATCH_SIZE = 10;
 
 interface ModDetectionRequest {
   modId: string;
-  installedVpks: string[] | null;
 }
 
 interface ModDetectionResponse {
@@ -139,7 +138,6 @@ const runBatchedDetection = async (mods: LocalMod[], signal: AbortSignal) => {
 
     const requests: ModDetectionRequest[] = batch.map((mod) => ({
       modId: mod.remoteId,
-      installedVpks: mod.installedVpks ?? null,
     }));
 
     try {
@@ -165,7 +163,6 @@ const runBatchedDetection = async (mods: LocalMod[], signal: AbortSignal) => {
         try {
           const result = await invoke<HeroDetectionResult>("detect_mod_hero", {
             modId: mod.remoteId,
-            installedVpks: mod.installedVpks ?? null,
           });
           setDetectedHero(
             mod.remoteId,
@@ -212,11 +209,9 @@ const runBackgroundScan = (mods: LocalMod[]) => {
 
 export const detectHeroForMod = async (
   remoteId: string,
-  installedVpks?: string[],
 ): Promise<HeroDetectionResult> => {
   return invoke<HeroDetectionResult>("detect_mod_hero", {
     modId: remoteId,
-    installedVpks: installedVpks ?? null,
   });
 };
 

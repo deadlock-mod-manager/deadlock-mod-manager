@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { getProfileInstalledVpks } from "@/lib/tauri-commands";
+import { findUnmatchedVpks } from "@/lib/vpk-scan";
 import { usePersistedStore } from "@/lib/store";
 
 export const useVpkScan = () => {
@@ -24,40 +25,18 @@ export const useVpkScan = () => {
     refetchOnMount: true,
   });
 
-  const unmatchedVpkData = useMemo(() => {
-    if (!vpkFiles || vpkFiles.length === 0) {
-      return { count: 0, files: [] };
-    }
-
-    const matchedVpks = new Set<string>();
-
-    for (const mod of localMods) {
-      if (mod.installedVpks) {
-        for (const installedVpk of mod.installedVpks) {
-          const filename = installedVpk.split(/[\\/]/).pop() || installedVpk;
-          matchedVpks.add(filename);
-        }
-      }
-
-      for (const vpk of vpkFiles) {
-        if (vpk.startsWith(`${mod.remoteId}_`)) {
-          matchedVpks.add(vpk);
-        }
-      }
-    }
-
-    const unmatchedVpks = vpkFiles.filter((vpk) => !matchedVpks.has(vpk));
-
-    return { count: unmatchedVpks.length, files: unmatchedVpks };
-  }, [vpkFiles, localMods]);
+  const unmatchedVpks = useMemo(
+    () => findUnmatchedVpks(vpkFiles ?? [], localMods),
+    [vpkFiles, localMods],
+  );
 
   return {
-    unmatchedVpkCount: unmatchedVpkData.count,
-    unmatchedVpks: unmatchedVpkData.files,
+    unmatchedVpkCount: unmatchedVpks.length,
+    unmatchedVpks,
     isLoading,
     isRefetching,
     error,
-    hasUnmatchedVpks: unmatchedVpkData.count > 0,
+    hasUnmatchedVpks: unmatchedVpks.length > 0,
     refetch,
     activeProfileFolder: activeProfile?.folderName ?? null,
   };

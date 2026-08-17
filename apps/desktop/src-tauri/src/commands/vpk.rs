@@ -77,15 +77,12 @@ pub async fn check_addons_exist(profile_folder: Option<String>) -> Result<bool, 
     return Ok(false);
   }
 
-  for entry in std::fs::read_dir(addons_path)? {
-    let entry = entry?;
-    if entry.path().extension().and_then(|e| e.to_str()) == Some("vpk") {
-      log::info!("Found VPK file in addons folder");
-      return Ok(true);
-    }
+  let profile_base = crate::mod_manager::shard::ProfileBase::new(addons_path)?;
+  let has_vpks = !vpkmanager::scan::scan_profile(&profile_base)?.is_empty();
+  if has_vpks {
+    log::info!("Found VPK file in addons folder");
   }
-
-  Ok(false)
+  Ok(has_vpks)
 }
 
 #[tauri::command]

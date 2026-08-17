@@ -1,70 +1,25 @@
 //! Resolving a mod-manager mod id to the VPK on disk the Foundry should open.
 
 use std::collections::HashSet;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use crate::errors::Error;
-use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
+use vpkmanager::{locate, naming};
 
 use crate::commands::state::MANAGER;
 
-/// Recursively collect `.vpk` files under `dir` (bounded depth), skipping the
-/// multi-part companion archives (`*_NNN.vpk`) so only dir/standalone VPKs match.
-fn collect_vpks(dir: &std::path::Path, depth: usize, out: &mut Vec<PathBuf>) {
-  if depth > 6 {
-    return;
-  }
-  let Ok(entries) = std::fs::read_dir(dir) else {
-    return;
-  };
-  for entry in entries.flatten() {
-    let path = entry.path();
-    if path.is_dir() {
-      collect_vpks(&path, depth + 1, out);
-    } else if path.extension().and_then(|e| e.to_str()) == Some("vpk") {
-      let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
-      // Skip `<base>_003.vpk` numbered archives; keep `_dir.vpk` and plain names.
-      let is_numbered_archive = stem
-        .rsplit_once('_')
-        .map(|(_, tail)| tail.len() == 3 && tail.chars().all(|c| c.is_ascii_digit()))
-        .unwrap_or(false);
-      if !is_numbered_archive {
-        out.push(path);
-      }
-    }
-  }
-}
-
-fn collect_vpks_shallow(dir: &Path, out: &mut Vec<PathBuf>) {
-  let Ok(entries) = std::fs::read_dir(dir) else {
-    return;
-  };
-  for entry in entries.flatten() {
-    let path = entry.path();
-    if path.is_file() && path.extension().and_then(|e| e.to_str()) == Some("vpk") {
-      out.push(path);
-    }
-  }
+/// A VPK the Foundry could open: not a `_NNN.vpk` companion, which holds data
+/// but no directory of its own.
+fn is_openable(path: &std::path::Path) -> bool {
+  path
+    .file_name()
+    .and_then(|name| name.to_str())
+    .is_some_and(|name| !naming::is_multipart_companion(name))
 }
 
 fn push_candidate(out: &mut Vec<PathBuf>, seen: &mut HashSet<PathBuf>, path: PathBuf) {
   if path.exists() && seen.insert(path.clone()) {
     out.push(path);
-  }
-}
-
-fn push_named_vpks(
-  out: &mut Vec<PathBuf>,
-  seen: &mut HashSet<PathBuf>,
-  base_dir: &Path,
-  names: &[String],
-) {
-  for name in names {
-    let filename = Path::new(name)
-      .file_name()
-      .map(PathBuf::from)
-      .unwrap_or_else(|| PathBuf::from(name));
-    push_candidate(out, seen, base_dir.join(filename));
   }
 }
 
@@ -91,7 +46,6 @@ fn sort_store_candidates(candidates: &mut [PathBuf]) {
 #[tauri::command]
 pub fn foundry_resolve_mod_vpk(
   mod_id: String,
-  installed_vpks: Option<Vec<String>>,
   profile_folder: Option<String>,
 ) -> Result<String, Error> {
   let (store_path, addons_path) = {
@@ -107,46 +61,27 @@ pub fn foundry_resolve_mod_vpk(
   let mut candidates = Vec::new();
   let mut seen = HashSet::new();
 
+  // What the mod has installed in this profile, wherever those files now are.
   if let Some(addons_path) = addons_path.as_ref().filter(|path| path.exists()) {
-    if let Ok(manifest) = ProfileVpkManifest::load(addons_path)
-      && let Some(entry) = manifest.mods.get(&mod_id)
+    for path in locate::mod_vpks(addons_path, &mod_id)?
+      .into_iter()
+      .filter(|path| is_openable(path))
     {
-      push_named_vpks(&mut candidates, &mut seen, addons_path, &entry.current_vpks);
-      push_named_vpks(
-        &mut candidates,
-        &mut seen,
-        addons_path,
-        &entry.disabled_vpks,
-      );
-    }
-
-    if let Some(installed_vpks) = installed_vpks.as_ref() {
-      push_named_vpks(&mut candidates, &mut seen, addons_path, installed_vpks);
+      push_candidate(&mut candidates, &mut seen, path);
     }
   }
 
+  // Then the copy in the mod's own download folder, preferring a `_dir.vpk`
+  // and, among equals, the largest file.
   let mod_dir = store_path.join(&mod_id);
   if mod_dir.exists() {
-    let mut store_candidates = Vec::new();
-    collect_vpks(&mod_dir, 0, &mut store_candidates);
+    let mut store_candidates: Vec<PathBuf> = locate::vpks_under(&mod_dir)
+      .into_iter()
+      .filter(|path| is_openable(path))
+      .collect();
     sort_store_candidates(&mut store_candidates);
     for candidate in store_candidates {
       push_candidate(&mut candidates, &mut seen, candidate);
-    }
-  }
-
-  if let Some(addons_path) = addons_path.as_ref().filter(|path| path.exists()) {
-    let mut prefixed = Vec::new();
-    collect_vpks_shallow(addons_path, &mut prefixed);
-    prefixed.sort();
-    for candidate in prefixed {
-      let filename = candidate
-        .file_name()
-        .and_then(|s| s.to_str())
-        .unwrap_or_default();
-      if filename.starts_with(&format!("{mod_id}_")) {
-        push_candidate(&mut candidates, &mut seen, candidate);
-      }
     }
   }
 

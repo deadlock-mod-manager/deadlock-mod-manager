@@ -1,6 +1,5 @@
-use crate::errors::Error;
-
 use super::state::MANAGER;
+use crate::errors::Error;
 
 #[tauri::command]
 pub async fn show_in_folder(path: String) -> Result<(), Error> {
@@ -21,25 +20,24 @@ pub async fn show_mod_in_store(mod_id: String) -> Result<(), Error> {
 
 #[tauri::command]
 pub async fn show_mod_in_game(
+  mod_id: String,
   vpk_files: Vec<String>,
   profile_folder: Option<String>,
   _is_map: Option<bool>,
 ) -> Result<(), Error> {
   let mod_manager = MANAGER.lock().unwrap();
-  let game_path = mod_manager
-    .get_steam_manager()
-    .get_game_path()
-    .ok_or(Error::GamePathNotSet)?;
-
-  let target_path = if let Some(ref folder) = profile_folder {
-    game_path
-      .join("game")
-      .join("citadel")
-      .join("addons")
-      .join(folder)
-  } else {
-    game_path.join("game").join("citadel").join("addons")
-  };
+  let base = mod_manager.get_addons_path(profile_folder.as_deref())?;
+  let manifest = vpkmanager::ledger::ProfileLedger::load(&base)?;
+  let shard_index = manifest
+    .mods
+    .get(&mod_id)
+    .map(|entry| entry.shard)
+    .ok_or_else(|| {
+      Error::ModInvalid(format!(
+        "Cannot locate mod {mod_id}: refresh the VPK scan first"
+      ))
+    })?;
+  let target_path = base.shard_dir(shard_index);
 
   if !target_path.exists() {
     return Err(Error::GamePathNotSet);
