@@ -26,6 +26,7 @@ import { ModPageSkeleton } from "@/components/mod-detail/mod-page-skeleton";
 import { ModOptionsDialog } from "@/components/mod-management/mod-options-dialog";
 import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-warning";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
+import { ReinstallModButton } from "@/components/mod-management/reinstall-mod-button";
 import { StaleModWarning } from "@/components/mod-management/stale-mod-warning";
 import { BatchUpdateDialog } from "@/components/my-mods/batch-update-dialog";
 import { BrokenModButton } from "@/components/reports/report-button";
@@ -316,6 +317,9 @@ const Mod = () => {
                     variant='outline'>
                     {t("modDetail.forceUpdate")}
                   </Button>
+                )}
+                {localMod && !localMod.remoteId.startsWith("local-") && (
+                  <ReinstallModButton mod={localMod} variant='default' />
                 )}
                 <ModButton remoteMod={mod} variant='default' />
                 {!!localMod?.status && (
