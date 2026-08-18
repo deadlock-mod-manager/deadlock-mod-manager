@@ -28,6 +28,7 @@ export const ModContextMenu = ({ mod, children }: ModContextMenuProps) => {
     reinstall: handleReinstall,
     isReinstalling,
     isBusy: isReinstallBusy,
+    canReinstall,
   } = useReinstallAction(mod);
 
   const handleShareMod = async () => {
@@ -82,12 +83,14 @@ export const ModContextMenu = ({ mod, children }: ModContextMenuProps) => {
           <FolderOpen className='mr-2 h-4 w-4' />
           {t("contextMenu.openInGame")}
         </ContextMenuItem>
-        <ContextMenuItem disabled={isReinstallBusy} onClick={handleReinstall}>
-          <ArrowClockwiseIcon
-            className={cn("mr-2 h-4 w-4", isReinstalling && "animate-spin")}
-          />
-          {t("reinstall.action")}
-        </ContextMenuItem>
+        {canReinstall && (
+          <ContextMenuItem disabled={isReinstallBusy} onClick={handleReinstall}>
+            <ArrowClockwiseIcon
+              className={cn("mr-2 h-4 w-4", isReinstalling && "animate-spin")}
+            />
+            {t("reinstall.action")}
+          </ContextMenuItem>
+        )}
       </ContextMenuContent>
     </ContextMenu>
   );

@@ -3,6 +3,7 @@ import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { type ReinstallStep, useReinstallMod } from "@/hooks/use-reinstall-mod";
+import { isLocalMod } from "@/lib/mods/installed-helpers";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
 /** Nothing to reinstall while the mod is already busy doing something. */
@@ -26,9 +27,12 @@ export const useReinstallAction = (mod: LocalMod) => {
 
   const isReinstalling = step !== null;
   const isBusy = isReinstalling || BUSY_STATUSES.has(mod.status);
+  // A local mod has no source to download from, so a reinstall would only
+  // delete it.
+  const canReinstall = !isLocalMod(mod);
 
   const reinstall = useCallback(async () => {
-    if (isBusy) {
+    if (isBusy || !canReinstall) {
       return;
     }
 
@@ -68,9 +72,9 @@ export const useReinstallAction = (mod: LocalMod) => {
     } finally {
       setStep(null);
     }
-  }, [confirm, isBusy, mod, reinstallMod, t]);
+  }, [canReinstall, confirm, isBusy, mod, reinstallMod, t]);
 
   const label = step ? t(`reinstall.step.${step}`) : t("reinstall.action");
 
-  return { reinstall, isReinstalling, isBusy, step, label };
+  return { reinstall, isReinstalling, isBusy, canReinstall, step, label };
 };

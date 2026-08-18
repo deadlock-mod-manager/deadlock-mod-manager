@@ -1610,7 +1610,8 @@
       "clearingCache": "Clearing download cache...",
       "clearingState": "Clearing mod state...",
       "reinstalling": "Downloading and reinstalling mods...",
-      "done": "Finished"
+      "done": "Finished",
+      "failed": "Stopped after an error"
     },
     "outcome": {
       "pending": "Waiting",
@@ -1620,7 +1621,8 @@
       "downloadedOnly": "Downloaded",
       "manual": "Needs file selection",
       "failed": "Failed"
-    }
+    },
+    "aborted": "The run stopped early: {{reason}}. Some mods may still be missing."
   },
   "matchSync": {
     "title": "Match Data Sharing",
