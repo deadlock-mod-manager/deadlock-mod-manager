@@ -33,6 +33,11 @@ export type ModsState = {
   localMods: LocalMod[];
   modProgress: Record<string, ModProgress>;
   defaultSort: SortType;
+  /**
+   * Mods the user took off a hero's list on the Hero Skins page. They stay in
+   * the library and can be put back from there, they are just not listed.
+   */
+  hiddenHeroMods: Record<string, true>;
   // Analysis dialog state
   analysisResult: AnalyzeAddonsResult | null;
   analysisDialogOpen: boolean;
@@ -83,6 +88,8 @@ export type ModsState = {
   ) => void;
   clearAllDetectedHeroes: () => void;
   setHeroDetection: (progress: Partial<HeroDetectionProgress>) => void;
+  hideHeroMod: (remoteId: string) => void;
+  restoreHeroMod: (remoteId: string) => void;
 };
 
 export const modsDeepMergeKeys =
@@ -94,6 +101,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 ) => ({
   localMods: [],
   modProgress: {},
+  hiddenHeroMods: {},
   analysisResult: null,
   analysisDialogOpen: false,
   heroDetection: { status: "idle", current: 0, total: 0, currentModName: null },
@@ -278,6 +286,9 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     set((state) => {
       const newProgress = { ...state.modProgress };
       delete newProgress[remoteId];
+      // Dropped along with the mod, so re-downloading it does not come back
+      // already hidden from its hero.
+      const { [remoteId]: _hidden, ...hiddenHeroMods } = state.hiddenHeroMods;
 
       const { activeProfileId, profiles } = state;
       const currentProfile = profiles[activeProfileId];
@@ -291,6 +302,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         return {
           localMods: state.localMods.filter((mod) => mod.remoteId !== remoteId),
           modProgress: newProgress,
+          hiddenHeroMods,
           profiles: {
             ...state.profiles,
             [activeProfileId]: updatedProfile,
@@ -301,12 +313,13 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       return {
         localMods: state.localMods.filter((mod) => mod.remoteId !== remoteId),
         modProgress: newProgress,
+        hiddenHeroMods,
       };
     }),
 
   setMods: (mods) => set({ localMods: mods }),
 
-  clearMods: () => set({ localMods: [], modProgress: {} }),
+  clearMods: () => set({ localMods: [], modProgress: {}, hiddenHeroMods: {} }),
 
   setModProgress: (remoteId, progress) =>
     set((state) => ({
@@ -574,4 +587,15 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     set((state) => ({
       heroDetection: { ...state.heroDetection, ...progress },
     })),
+
+  hideHeroMod: (remoteId) =>
+    set((state) => ({
+      hiddenHeroMods: { ...state.hiddenHeroMods, [remoteId]: true },
+    })),
+
+  restoreHeroMod: (remoteId) =>
+    set((state) => {
+      const { [remoteId]: _hidden, ...hiddenHeroMods } = state.hiddenHeroMods;
+      return { hiddenHeroMods };
+    }),
 });

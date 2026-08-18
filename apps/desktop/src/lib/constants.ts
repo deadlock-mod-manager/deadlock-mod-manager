@@ -53,6 +53,30 @@ export const MOD_CATEGORY_ORDER = [
   ModCategory.OTHER_MISC,
 ] as const;
 
+/**
+ * Translation keys under `modCategories`, for the places that render a category
+ * to the user rather than matching on it. Categories the API invents outside
+ * this list have no key and fall back to their raw name.
+ */
+const MOD_CATEGORY_LABEL_KEYS: Partial<Record<ModCategory, string>> = {
+  [ModCategory.MAPS]: "maps",
+  [ModCategory.SKINS]: "skins",
+  [ModCategory.GAMEPLAY_MODIFICATIONS]: "gameplay",
+  [ModCategory.HUD]: "hud",
+  [ModCategory.MODEL_REPLACEMENT]: "models",
+  [ModCategory.MUSIC]: "music",
+  [ModCategory.ABILITY_SOUNDS]: "abilitySounds",
+  [ModCategory.WEAPON_SOUNDS]: "weaponSounds",
+  [ModCategory.VOICE_LINES]: "voiceLines",
+  [ModCategory.KILL_SOUNDS]: "killSounds",
+  [ModCategory.KILLSTREAK_MUSIC]: "killstreakMusic",
+  [ModCategory.OTHER_MISC]: "other",
+};
+
+export function getModCategoryLabelKey(category: string): string | null {
+  return MOD_CATEGORY_LABEL_KEYS[category as ModCategory] ?? null;
+}
+
 export function getModCategoryDisplayName(category: string): string {
   switch (category) {
     case ModCategory.MAPS:

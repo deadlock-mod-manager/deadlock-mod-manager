@@ -12,7 +12,8 @@ import { cn } from "@/lib/utils";
 
 export interface HeroListEntry {
   hero: string;
-  skinCount: number;
+  /** Skins and extras together - everything listed under the hero. */
+  modCount: number;
   activeNames: string[];
   conflicted: boolean;
 }
@@ -31,7 +32,9 @@ const HeroListRow = ({ entry, isSelected, onSelect }: HeroListRowProps) => {
 
   const subtitle = entry.conflicted
     ? t("skins.conflict")
-    : (entry.activeNames[0] ?? t("skins.default"));
+    : entry.activeNames.length > 0
+      ? entry.activeNames.join(", ")
+      : t("skins.default");
 
   return (
     <button
@@ -46,7 +49,7 @@ const HeroListRow = ({ entry, isSelected, onSelect }: HeroListRowProps) => {
           "h-9 w-9",
           // Dim only the portrait so heroes without skins still read as
           // selectable rows.
-          entry.skinCount === 0 && "opacity-50 grayscale",
+          entry.modCount === 0 && "opacity-50 grayscale",
         )}>
         {heroImage && <AvatarImage alt={entry.hero} src={heroImage} />}
         <AvatarFallback>{entry.hero.charAt(0)}</AvatarFallback>
@@ -60,16 +63,16 @@ const HeroListRow = ({ entry, isSelected, onSelect }: HeroListRowProps) => {
           )}>
           {entry.conflicted && <TriangleAlert className='h-3 w-3 shrink-0' />}
           <span className='truncate'>
-            {entry.skinCount === 0 ? t("skins.noSkins") : subtitle}
+            {entry.modCount === 0 ? t("skins.noSkins") : subtitle}
           </span>
         </div>
       </div>
-      {entry.skinCount > 0 && (
+      {entry.modCount > 0 && (
         <span className='shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-muted-foreground text-xs tabular-nums'>
           <span className='sr-only'>
-            {t("skins.skinCount", { count: entry.skinCount })}
+            {t("skins.modCount", { count: entry.modCount })}
           </span>
-          <span aria-hidden='true'>{entry.skinCount}</span>
+          <span aria-hidden='true'>{entry.modCount}</span>
         </span>
       )}
     </button>

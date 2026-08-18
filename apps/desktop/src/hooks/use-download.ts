@@ -3,6 +3,7 @@ import { resolveDetectedHeroLabel } from "@deadlock-mods/hero-parser";
 import type { z } from "zod";
 import { ModDownloadDtoSchema } from "@deadlock-mods/shared";
 import { toast } from "@deadlock-mods/ui/components/sonner";
+import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { detectHeroForMod } from "@/hooks/use-hero-detection";
@@ -29,7 +30,15 @@ export const useDownload = (
 
   const localMod = localMods.find((m) => m.remoteId === mod?.remoteId);
 
-  const downloadSelectedFiles = async (selectedFiles: ModDownloadItem[]) => {
+  const downloadSelectedFiles = async (
+    selectedFiles: ModDownloadItem[],
+    /**
+     * The retry path pins the profile it cleaned up for: switching profiles
+     * while the purge runs would otherwise queue the download into a folder
+     * that was never cleared.
+     */
+    pinnedProfileFolder?: string | null,
+  ) => {
     if (!mod || selectedFiles.length === 0) {
       return;
     }
@@ -39,8 +48,10 @@ export const useDownload = (
       selectedDownloads: selectedFiles,
     });
 
-    const activeProfile = getActiveProfile();
-    const profileFolder = activeProfile?.folderName ?? null;
+    const profileFolder =
+      pinnedProfileFolder === undefined
+        ? (getActiveProfile()?.folderName ?? null)
+        : pinnedProfileFolder;
 
     return downloadManager.addToQueue({
       ...(mod as unknown as ModDto),
@@ -122,7 +133,18 @@ export const useDownload = (
     }
   };
 
-  const retryDownload = () => {
+  /**
+   * Starts the download over from nothing. What a failed attempt leaves on disk
+   * - a truncated archive, a stale `.partial`, a half-extracted folder - is what
+   * makes a plain re-queue fail in the same place again, which is why the way
+   * out used to be deleting the mod and downloading it a second time. The store
+   * entry stays, so the file selection and the mod's place in the library do too.
+   *
+   * The exception is a mod that already has files in the game: that is a failed
+   * update, and clearing the slate there would take the working version with it.
+   * Those retry the way they always have, on top of what is installed.
+   */
+  const retryDownload = async () => {
     if (!mod) {
       toast.error(t("downloads.retryFetchError"));
       return;
@@ -144,7 +166,17 @@ export const useDownload = (
     }
 
     setModStatus(mod.remoteId, ModStatus.Downloading);
-    downloadSelectedFiles(retryFiles).catch((err: unknown) => {
+    const profileFolder = getActiveProfile()?.folderName ?? null;
+    try {
+      if ((localMod?.installedVpks?.length ?? 0) === 0) {
+        await invoke("purge_mod", {
+          modId: mod.remoteId,
+          vpks: [],
+          profileFolder,
+        });
+      }
+      await downloadSelectedFiles(retryFiles, profileFolder);
+    } catch (err) {
       const message = getErrorMessage(err);
       logger
         .withMetadata({ mod: mod.remoteId })
@@ -152,7 +184,7 @@ export const useDownload = (
         .error("Failed to retry download");
       setModStatus(mod.remoteId, ModStatus.FailedToDownload);
       toast.error(t("downloads.retryError", { message }));
-    });
+    }
   };
 
   return {

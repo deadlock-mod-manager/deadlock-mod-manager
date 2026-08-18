@@ -137,7 +137,7 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
   const handleRetry = (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     e.preventDefault();
-    retryDownload();
+    void retryDownload();
   };
 
   return (
