@@ -41,6 +41,7 @@ import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { useScrollBackButton } from "@/hooks/use-scroll-back-button";
 import useUninstall from "@/hooks/use-uninstall";
 import { getErrorMessage } from "@/lib/errors";
+import { isLocalMod } from "@/lib/mods/installed-helpers";
 import { usePersistedStore } from "@/lib/store";
 import { useCheckUpdates } from "@/hooks/use-check-updates";
 import { isModOutdated, isModStale } from "@/lib/utils";
@@ -318,7 +319,7 @@ const Mod = () => {
                     {t("modDetail.forceUpdate")}
                   </Button>
                 )}
-                {localMod && !localMod.remoteId.startsWith("local-") && (
+                {localMod && !isLocalMod(localMod) && (
                   <ReinstallModButton mod={localMod} variant='default' />
                 )}
                 <ModButton remoteMod={mod} variant='default' />

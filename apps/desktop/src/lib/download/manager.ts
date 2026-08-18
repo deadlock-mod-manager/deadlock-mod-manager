@@ -360,7 +360,12 @@ class DownloadManager {
   async cancelDownload(modId: string) {
     try {
       await invoke("cancel_download", { modId });
+      const mod = this.pendingDownloads.get(modId);
       this.pendingDownloads.delete(modId);
+      // The aborted task still emits download-error, but by then the entry is
+      // gone and the callbacks would never run - so settle the waiting caller
+      // here instead of leaving it hanging forever.
+      mod?.onError(new Error("Download cancelled"));
       logger.withMetadata({ mod: modId }).info("Download cancelled");
     } catch (error) {
       logger.withError(error).error("Failed to cancel download");

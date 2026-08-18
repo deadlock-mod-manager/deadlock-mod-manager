@@ -1,3 +1,4 @@
+import { ValidationError } from "@deadlock-mods/common/client-errors";
 import { invoke } from "@tauri-apps/api/core";
 import { appLocalDataDir, join } from "@tauri-apps/api/path";
 import { useCallback } from "react";
@@ -152,7 +153,7 @@ const resolveDownloadFiles = async (mod: LocalMod) => {
 
   const fallback = mod.selectedDownloads ?? [];
   if (fallback.length === 0) {
-    throw new Error("No download files available for this mod");
+    throw new ValidationError("No download files available for this mod");
   }
   return { available: fallback, files: fallback };
 };

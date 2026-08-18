@@ -24,6 +24,7 @@ import {
   type NukeModOutcome,
   useNukeReinstall,
 } from "@/hooks/use-nuke-reinstall";
+import { isLocalMod } from "@/lib/mods/installed-helpers";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
@@ -63,9 +64,7 @@ export const NukeReinstall = () => {
   const localMods = usePersistedStore((store) => store.localMods);
 
   const plan = useMemo(() => {
-    const remote = localMods.filter(
-      (mod) => !mod.remoteId.startsWith("local-"),
-    );
+    const remote = localMods.filter((mod) => !isLocalMod(mod));
     return {
       total: remote.length,
       installed: remote.filter((mod) => mod.status === ModStatus.Installed)
@@ -83,6 +82,8 @@ export const NukeReinstall = () => {
       failed: counted("failed"),
     };
   }, [state.mods]);
+
+  const isFinished = state.phase === "done" || state.phase === "failed";
 
   const closeDialog = () => {
     if (state.isRunning) {
@@ -167,8 +168,15 @@ export const NukeReinstall = () => {
                 </ScrollArea>
               )}
 
-              {state.phase === "done" && (
+              {isFinished && (
                 <div className='space-y-1 rounded-md border bg-card/50 p-3 text-xs text-muted-foreground'>
+                  {state.phase === "failed" && (
+                    <p className='text-destructive'>
+                      {state.error
+                        ? t("nuke.aborted", { reason: state.error })
+                        : t("nuke.phase.failed")}
+                    </p>
+                  )}
                   <p>
                     {t("nuke.summary", {
                       restored: summary.restored,
@@ -218,7 +226,7 @@ export const NukeReinstall = () => {
                   : t("nuke.stopAfterCurrent")}
               </Button>
             )}
-            {state.phase === "done" && (
+            {isFinished && (
               <Button onClick={closeDialog}>{t("common.close")}</Button>
             )}
           </DialogFooter>
