@@ -46,6 +46,8 @@
     "skinsDownloaded_other": "{{count}} skins downloaded",
     "skinCount_one": "{{count}} skin",
     "skinCount_other": "{{count}} skins",
+    "modCount_one": "{{count}} mod",
+    "modCount_other": "{{count}} mods",
     "noSkins": "No skins downloaded",
     "noSkinsHint": "Download skins from the Mods Store. If a downloaded skin isn't listed here, set its hero override from your Mods Library.",
     "conflict": "Multiple skins active",
@@ -3223,5 +3225,19 @@
     "enabled": "1-click installs enabled. Click the button on the site again.",
     "alreadyEnabled": "1-click installs are already on.",
     "fallbackName": "DeadlockForge mod"
+  },
+  "modCategories": {
+    "maps": "Maps",
+    "skins": "Skins",
+    "gameplay": "Gameplay",
+    "hud": "HUD",
+    "models": "Models",
+    "music": "Music",
+    "abilitySounds": "Ability Sounds",
+    "weaponSounds": "Weapon Sounds",
+    "voiceLines": "Voice Lines",
+    "killSounds": "Kill Sounds",
+    "killstreakMusic": "Killstreak Music",
+    "other": "Other"
   }
 }

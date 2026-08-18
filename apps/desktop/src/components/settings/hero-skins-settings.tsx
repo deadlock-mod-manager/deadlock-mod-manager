@@ -21,14 +21,18 @@ const HeroSkinsToggle = ({
   return (
     <div className='flex items-center justify-between'>
       <div className='space-y-1'>
-        <Label className='font-bold text-sm'>{label}</Label>
+        <Label className='font-bold text-sm' htmlFor={id}>
+          {label}
+        </Label>
         <p className='text-muted-foreground text-sm'>{description}</p>
       </div>
       <div className='flex items-center gap-2'>
         <Switch checked={checked} id={id} onCheckedChange={onCheckedChange} />
-        <Label htmlFor={id}>
+        {/* The switch already reports its own state, so this reads as the
+            setting's name plus a visual echo rather than a second label. */}
+        <span aria-hidden='true' className='text-sm'>
           {checked ? t("status.enabled") : t("status.disabled")}
-        </Label>
+        </span>
       </div>
     </div>
   );
