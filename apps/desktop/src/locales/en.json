@@ -1562,6 +1562,60 @@
     "confirmRestore": "Are you sure you want to restore gameinfo.gi from backup? This will overwrite the current file.",
     "confirmReset": "Are you sure you want to reset gameinfo.gi to vanilla state? This will remove all mod configurations and restore the original game settings."
   },
+  "reinstall": {
+    "action": "Reinstall",
+    "confirmTitle": "Reinstall {{modName}}?",
+    "confirmBody": "The mod files are deleted and downloaded again, then the mod is put back the way it is now. Use this when the mod is broken or no longer matches what is on disk.",
+    "success": "{{modName}} reinstalled",
+    "failed": "Failed to reinstall {{modName}}",
+    "failedWithReason": "Failed to reinstall {{modName}}: {{reason}}",
+    "needsFileSelection": "{{modName}} was downloaded again, but you need to pick which files to install.",
+    "step": {
+      "purging": "Removing files...",
+      "downloading": "Downloading...",
+      "installing": "Installing..."
+    }
+  },
+  "nuke": {
+    "title": "Nuke & Reinstall Mods",
+    "description": "Wipes cache, mod state and mod files, then downloads and reinstalls everything the manager had. Use this when the app and your game folder are out of sync.",
+    "action": "Nuke & Reinstall",
+    "confirmAction": "Nuke it",
+    "confirmBody_one": "{{count}} mod will be removed and reinstalled ({{installed}} of them currently installed).",
+    "confirmBody_other": "{{count}} mods will be removed and reinstalled ({{installed}} of them currently installed).",
+    "confirmDetails": "Every mod file, the download cache and the stored mod state are deleted first, then each mod is downloaded and installed again in its original load order. Mods that are already missing from disk are skipped without error.",
+    "localModsPreserved_one": "{{count}} locally added mod is kept untouched - it cannot be downloaded again.",
+    "localModsPreserved_other": "{{count}} locally added mods are kept untouched - they cannot be downloaded again.",
+    "stopAfterCurrent": "Stop after current mod",
+    "stopping": "Stopping...",
+    "summary": "{{restored}} of {{total}} mods restored.",
+    "summaryMissing_one": "{{count}} mod was already gone from disk.",
+    "summaryMissing_other": "{{count}} mods were already gone from disk.",
+    "summaryManual_one": "{{count}} mod needs a manual file selection before installing.",
+    "summaryManual_other": "{{count}} mods need a manual file selection before installing.",
+    "summaryFailed_one": "{{count}} mod could not be restored.",
+    "summaryFailed_other": "{{count}} mods could not be restored.",
+    "phase": {
+      "idle": "Ready",
+      "snapshot": "Recording installed mods...",
+      "purging": "Removing mod files...",
+      "clearingCache": "Clearing download cache...",
+      "clearingState": "Clearing mod state...",
+      "reinstalling": "Downloading and reinstalling mods...",
+      "done": "Finished",
+      "failed": "Stopped after an error"
+    },
+    "outcome": {
+      "pending": "Waiting",
+      "downloading": "Downloading",
+      "installing": "Installing",
+      "restored": "Restored",
+      "downloadedOnly": "Downloaded",
+      "manual": "Needs file selection",
+      "failed": "Failed"
+    },
+    "aborted": "The run stopped early: {{reason}}. Some mods may still be missing."
+  },
   "matchSync": {
     "title": "Match Data Sharing",
     "description": "Optionally fetch your own Deadlock match data from your machine and contribute it to deadlock-api trackers.",

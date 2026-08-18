@@ -51,6 +51,7 @@ export type ModsState = {
   setModStatus: (remoteId: string, status: ModStatus) => void;
   setModProgress: (remoteId: string, progress: Progress) => void;
   clearMods: () => void;
+  nukeModsState: (keepRemoteIds: string[]) => void;
   setInstalledVpks: (
     remoteId: string,
     vpks: string[],
@@ -307,6 +308,46 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
   setMods: (mods) => set({ localMods: mods }),
 
   clearMods: () => set({ localMods: [], modProgress: {} }),
+
+  // clearMods only empties localMods, which leaves the active profile still
+  // holding its own copy of every mod - exactly the drift a nuke is supposed to
+  // remove. This wipes both, keeping only the mods the caller wants to survive
+  // (local mods, which cannot be re-downloaded).
+  nukeModsState: (keepRemoteIds) =>
+    set((state) => {
+      const keep = new Set(keepRemoteIds);
+      const localMods = state.localMods.filter((mod) => keep.has(mod.remoteId));
+      const profile = state.profiles[state.activeProfileId];
+
+      logger
+        .withMetadata({
+          profileId: state.activeProfileId,
+          removed: state.localMods.length - localMods.length,
+          kept: localMods.length,
+        })
+        .info("Nuking mods state");
+
+      if (!profile) {
+        return { localMods, modProgress: {} };
+      }
+
+      return {
+        localMods,
+        modProgress: {},
+        profiles: {
+          ...state.profiles,
+          [state.activeProfileId]: {
+            ...profile,
+            mods: profile.mods.filter((mod) => keep.has(mod.remoteId)),
+            enabledMods: Object.fromEntries(
+              Object.entries(profile.enabledMods).filter(([remoteId]) =>
+                keep.has(remoteId),
+              ),
+            ),
+          },
+        },
+      };
+    }),
 
   setModProgress: (remoteId, progress) =>
     set((state) => ({
