@@ -70,7 +70,7 @@ const HeroListRow = ({ entry, isSelected, onSelect }: HeroListRowProps) => {
       {entry.modCount > 0 && (
         <span className='shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-muted-foreground text-xs tabular-nums'>
           <span className='sr-only'>
-            {t("skins.skinCount", { count: entry.modCount })}
+            {t("skins.modCount", { count: entry.modCount })}
           </span>
           <span aria-hidden='true'>{entry.modCount}</span>
         </span>

@@ -18,7 +18,7 @@ import { useTranslation } from "react-i18next";
 import { NSFWBlur } from "@/components/mod-browsing/nsfw-blur";
 import { SkinVariantControls } from "@/components/skins/skin-variant-controls";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
-import { getModCategoryDisplayName } from "@/lib/constants";
+import { getModCategoryLabelKey } from "@/lib/constants";
 import type { HeroModKind } from "@/lib/mods/hero-mods";
 import { cn } from "@/lib/utils";
 import type { LocalMod } from "@/types/mods";
@@ -82,6 +82,10 @@ export const HeroModCard = ({
 }: HeroModCardProps) => {
   const { t } = useTranslation();
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
+  const categoryKey = getModCategoryLabelKey(mod.category);
+  const categoryLabel = categoryKey
+    ? t(`modCategories.${categoryKey}`)
+    : mod.category;
 
   const handleSelect = () => {
     if (!disabled) {
@@ -181,9 +185,7 @@ export const HeroModCard = ({
           <div className='truncate text-muted-foreground text-xs'>
             {/* An extra's category is what tells a killsound apart from a voice
                 pack, which its author and name often do not. */}
-            {kind === "extra"
-              ? getModCategoryDisplayName(mod.category)
-              : mod.author}
+            {kind === "extra" ? categoryLabel : mod.author}
           </div>
         </div>
         {isActive && <Check className='h-4 w-4 shrink-0 text-primary' />}

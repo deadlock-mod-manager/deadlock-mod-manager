@@ -30,7 +30,15 @@ export const useDownload = (
 
   const localMod = localMods.find((m) => m.remoteId === mod?.remoteId);
 
-  const downloadSelectedFiles = async (selectedFiles: ModDownloadItem[]) => {
+  const downloadSelectedFiles = async (
+    selectedFiles: ModDownloadItem[],
+    /**
+     * The retry path pins the profile it cleaned up for: switching profiles
+     * while the purge runs would otherwise queue the download into a folder
+     * that was never cleared.
+     */
+    pinnedProfileFolder?: string | null,
+  ) => {
     if (!mod || selectedFiles.length === 0) {
       return;
     }
@@ -40,8 +48,10 @@ export const useDownload = (
       selectedDownloads: selectedFiles,
     });
 
-    const activeProfile = getActiveProfile();
-    const profileFolder = activeProfile?.folderName ?? null;
+    const profileFolder =
+      pinnedProfileFolder === undefined
+        ? (getActiveProfile()?.folderName ?? null)
+        : pinnedProfileFolder;
 
     return downloadManager.addToQueue({
       ...(mod as unknown as ModDto),
@@ -156,16 +166,17 @@ export const useDownload = (
     }
 
     setModStatus(mod.remoteId, ModStatus.Downloading);
+    const profileFolder = getActiveProfile()?.folderName ?? null;
     try {
       if ((localMod?.installedVpks?.length ?? 0) === 0) {
         await invoke("purge_mod", {
           modId: mod.remoteId,
           vpks: [],
-          profileFolder: getActiveProfile()?.folderName ?? null,
+          profileFolder,
         });
       }
-      await downloadSelectedFiles(retryFiles);
-    } catch (err: unknown) {
+      await downloadSelectedFiles(retryFiles, profileFolder);
+    } catch (err) {
       const message = getErrorMessage(err);
       logger
         .withMetadata({ mod: mod.remoteId })

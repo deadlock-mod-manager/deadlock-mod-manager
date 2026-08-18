@@ -1,5 +1,5 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   type UseInstallActionReturn,
@@ -76,13 +76,29 @@ export const useHeroSelection = (): {
   const installAction = useInstallAction();
   const hideHeroMod = usePersistedStore((state) => state.hideHeroMod);
   const [busyHero, setBusyHero] = useState<string | null>(null);
+  // Two clicks in the same render both read the same `busyHero`, so the state
+  // alone cannot keep a second swap out while the first is still running.
+  const busyRef = useRef<string | null>(null);
+
+  const beginBusy = useCallback((hero: string) => {
+    if (busyRef.current !== null) {
+      return false;
+    }
+    busyRef.current = hero;
+    setBusyHero(hero);
+    return true;
+  }, []);
+
+  const endBusy = useCallback(() => {
+    busyRef.current = null;
+    setBusyHero(null);
+  }, []);
 
   const select = useCallback(
     async (hero: string, target: LocalMod | null, kind: HeroModKind) => {
-      if (busyHero !== null) {
+      if (!beginBusy(hero)) {
         return;
       }
-      setBusyHero(hero);
       try {
         // Read the store fresh so a conflicted state (several installed skins)
         // is fully collapsed even if the rendered props were stale.
@@ -119,10 +135,10 @@ export const useHeroSelection = (): {
         logger.errorOnly(error);
         toast.error(t("skins.swapFailed"));
       } finally {
-        setBusyHero(null);
+        endBusy();
       }
     },
-    [busyHero, uninstall, installAction, t],
+    [beginBusy, endBusy, uninstall, installAction, t],
   );
 
   /**
@@ -132,10 +148,9 @@ export const useHeroSelection = (): {
    */
   const remove = useCallback(
     async (hero: string, mod: LocalMod) => {
-      if (busyHero !== null) {
+      if (!beginBusy(hero)) {
         return;
       }
-      setBusyHero(hero);
       try {
         if (mod.status === ModStatus.Installed) {
           const result = await applyHeroSelection(
@@ -154,10 +169,10 @@ export const useHeroSelection = (): {
         logger.errorOnly(error);
         toast.error(t("skins.swapFailed"));
       } finally {
-        setBusyHero(null);
+        endBusy();
       }
     },
-    [busyHero, uninstall, installAction, hideHeroMod, t],
+    [beginBusy, endBusy, uninstall, installAction, hideHeroMod, t],
   );
 
   return { select, remove, busyHero, installAction };
