@@ -5,10 +5,13 @@ import {
   HammerIcon,
   UploadSimpleIcon,
 } from "@phosphor-icons/react";
+import { toast } from "@deadlock-mods/ui/components/sonner";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useConfirm } from "@/components/providers/alert-dialog";
 import logger from "@/lib/logger";
+import { usePersistedStore } from "@/lib/store";
 import { useFoundry } from "./foundry-context";
 import { FoundryImportDialog } from "./foundry-import-dialog";
 import { FoundryLoadingBar } from "./foundry-loading-bar";
@@ -81,8 +84,46 @@ const EntryCard = ({
 export const FoundryEmptyState = () => {
   const { t } = useTranslation();
   const { status } = useFoundry();
+  const confirm = useConfirm();
+  const forgeInstallEnabled = usePersistedStore(
+    (state) => state.forgeInstallEnabled,
+  );
+  const setForgeInstallEnabled = usePersistedStore(
+    (state) => state.setForgeInstallEnabled,
+  );
   const [importOpen, setImportOpen] = useState(false);
   const analyzing = status === "analyzing";
+
+  const openForge = () => {
+    openUrl(DEADLOCK_FORGE_URL).catch((error) => {
+      logger.withError(error).error("[Foundry] Could not open Deadlock Forge");
+    });
+  };
+
+  // The 1-click handoff only works if the bridge is on, and the site gives no
+  // hint that it is off. Offer the switch here, then leave for the site either
+  // way.
+  const handleForgeClick = async () => {
+    if (forgeInstallEnabled) {
+      openForge();
+      return;
+    }
+
+    const accepted = !!(await confirm({
+      title: t("forge.openTitle"),
+      body: t("forge.openBody"),
+      actionButton: t("forge.openAction"),
+      actionButtonVariant: "default",
+      cancelButton: t("forge.openCancel"),
+    }));
+
+    if (accepted) {
+      setForgeInstallEnabled(true);
+      toast.success(t("forge.openEnabled"));
+    }
+
+    openForge();
+  };
 
   return (
     <div className='flex h-full w-full flex-col items-center justify-center gap-8 p-8'>
@@ -115,13 +156,7 @@ export const FoundryEmptyState = () => {
           description={t("foundry.empty.forgeDescription")}
           external
           icon={<FireIcon className='h-8 w-8' weight='duotone' />}
-          onClick={() => {
-            openUrl(DEADLOCK_FORGE_URL).catch((error) => {
-              logger
-                .withError(error)
-                .error("[Foundry] Could not open Deadlock Forge");
-            });
-          }}
+          onClick={handleForgeClick}
           title={t("foundry.empty.forgeTitle")}
         />
       </div>

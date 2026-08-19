@@ -3199,6 +3199,11 @@
     "enableCancel": "Not now",
     "enabled": "1-click installs enabled. Click the button on the site again.",
     "alreadyEnabled": "1-click installs are already on.",
+    "openTitle": "1-click installs from DeadlockForge",
+    "openBody": "Let deadlockforge.net send mods you build straight to Deadlock Mod Manager. Nothing installs without asking you first. Turn it on now so the 1-click button on the site works, or open the site without it.",
+    "openAction": "Turn on and open",
+    "openCancel": "Open without it",
+    "openEnabled": "1-click installs enabled.",
     "fallbackName": "DeadlockForge mod"
   }
 }
