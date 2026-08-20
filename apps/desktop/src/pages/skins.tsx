@@ -6,7 +6,7 @@ import { FileSelectorDialog } from "@/components/downloads/file-selector-dialog"
 import PageTitle from "@/components/shared/page-title";
 import { HeroList, type HeroListEntry } from "@/components/skins/hero-list";
 import { SkinGrid } from "@/components/skins/skin-grid";
-import { deriveActiveArchiveNames } from "@/hooks/use-mod-options";
+import { deriveActiveArchiveNames } from "@/lib/mods/mod-variants";
 import { useSkinSwap } from "@/hooks/use-skin-swap";
 import useUninstall from "@/hooks/use-uninstall";
 import { groupSkinsByHero } from "@/lib/mods/skin-selection";

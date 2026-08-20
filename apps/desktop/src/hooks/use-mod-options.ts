@@ -8,6 +8,10 @@ import { invoke } from "@tauri-apps/api/core";
 import { useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { createLogger } from "@/lib/logger";
+import {
+  deriveActiveArchiveNames,
+  deriveActiveVariantCount,
+} from "@/lib/mods/mod-variants";
 import { usePersistedStore } from "@/lib/store";
 import {
   type LocalMod,
@@ -154,28 +158,6 @@ const deriveOriginalsForArchive = (
     .map((f) => f.name);
 };
 
-export const deriveActiveArchiveNames = (mod: LocalMod | null): Set<string> => {
-  const names = new Set<string>();
-  for (const f of mod?.installedFileTree?.files ?? []) {
-    if (f.is_selected && f.archive_name) names.add(f.archive_name);
-  }
-  if (names.size === 0 && mod?.activeVariantArchive) {
-    for (const part of mod.activeVariantArchive.split(",")) {
-      if (part) names.add(part);
-    }
-  }
-  if (
-    names.size === 0 &&
-    mod?.selectedDownloads &&
-    mod.selectedDownloads.length > 0
-  ) {
-    for (const d of mod.selectedDownloads) {
-      names.add(d.name);
-    }
-  }
-  return names;
-};
-
 export const useModOptions = (mod: LocalMod | null) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
@@ -201,6 +183,16 @@ export const useModOptions = (mod: LocalMod | null) => {
   const activeArchiveNames = useMemo(
     () => deriveActiveArchiveNames(mod),
     [mod?.installedFileTree, mod?.activeVariantArchive, mod?.selectedDownloads],
+  );
+
+  const activeVariantCount = useMemo(
+    () => deriveActiveVariantCount(mod),
+    [
+      mod?.installedFileTree,
+      mod?.activeVariantArchive,
+      mod?.selectedDownloads,
+      mod?.installedVpks,
+    ],
   );
 
   const showButton =
@@ -329,9 +321,7 @@ export const useModOptions = (mod: LocalMod | null) => {
 
       setInstalledVpks(mod.remoteId, result.installed_vpks, mergedTree);
 
-      if (allCheckedArchiveNames.length > 0) {
-        setActiveVariantArchive(mod.remoteId, allCheckedArchiveNames.join(","));
-      }
+      setActiveVariantArchive(mod.remoteId, allCheckedArchiveNames.join(","));
 
       if (selectedArchives.length > 0) {
         const existingNames = new Set(
@@ -386,5 +376,6 @@ export const useModOptions = (mod: LocalMod | null) => {
     downloads,
     onDiskArchiveNames,
     activeArchiveNames,
+    activeVariantCount,
   };
 };
