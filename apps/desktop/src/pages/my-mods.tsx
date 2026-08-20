@@ -48,7 +48,6 @@ import {
   EllipsisVertical,
   FolderOpen,
   LayoutGrid,
-  Settings,
   LayoutList,
   Loader2,
   PowerOff,
@@ -66,6 +65,7 @@ import ModButton from "@/components/mod-browsing/mod-button";
 import NSFWBlur from "@/components/mod-browsing/nsfw-blur";
 import AudioPlayerPreview from "@/components/mod-management/audio-player-preview";
 import { ModContextMenu } from "@/components/mod-management/mod-context-menu";
+import { ModOptionsButton } from "@/components/mod-management/mod-options-button";
 import { ModOptionsDialog } from "@/components/mod-management/mod-options-dialog";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
 import SearchBar from "@/components/mod-browsing/search-bar";
@@ -316,21 +316,10 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
           <div className='flex items-center gap-2'>
             <ModButton remoteMod={mod} variant='iconOnly' />
             {modOptions.showButton && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type='button'
-                    aria-label={t("modOptions.openTooltip")}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      modOptions.open();
-                    }}
-                    className='flex items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground'>
-                    <Settings className='h-3.5 w-3.5' />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent>{t("modOptions.openTooltip")}</TooltipContent>
-              </Tooltip>
+              <ModOptionsButton
+                activeCount={modOptions.activeVariantCount}
+                onOpen={modOptions.open}
+              />
             )}
           </div>
           <Tooltip>
@@ -465,23 +454,10 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
               <div className='flex items-center gap-2'>
                 <ModButton remoteMod={mod} variant='iconOnly' />
                 {modOptions.showButton && (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        type='button'
-                        aria-label={t("modOptions.openTooltip")}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          modOptions.open();
-                        }}
-                        className='flex items-center justify-center rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground'>
-                        <Settings className='h-3.5 w-3.5' />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {t("modOptions.openTooltip")}
-                    </TooltipContent>
-                  </Tooltip>
+                  <ModOptionsButton
+                    activeCount={modOptions.activeVariantCount}
+                    onOpen={modOptions.open}
+                  />
                 )}
               </div>
               <Tooltip>

@@ -17,6 +17,7 @@ interface SkinVariantControlsProps {
 export const SkinVariantControls = ({ mod }: SkinVariantControlsProps) => {
   const { t } = useTranslation();
   const modOptions = useModOptions(mod);
+  const activeCount = modOptions.activeVariantCount;
 
   if (!modOptions.showButton) {
     return null;
@@ -35,14 +36,23 @@ export const SkinVariantControls = ({ mod }: SkinVariantControlsProps) => {
         <TooltipTrigger asChild>
           <Button
             aria-label={t("skins.variants")}
-            className='h-8 w-8 shrink-0'
+            className='h-8 shrink-0 gap-1 px-2'
             icon={<Settings className='h-3 w-3' />}
             onClick={modOptions.open}
-            size='icon'
-            variant='outline'
-          />
+            size='sm'
+            variant='outline'>
+            {activeCount > 0 && (
+              <span className='font-medium text-xs tabular-nums leading-none'>
+                {activeCount}
+              </span>
+            )}
+          </Button>
         </TooltipTrigger>
-        <TooltipContent>{t("skins.variants")}</TooltipContent>
+        <TooltipContent>
+          {activeCount > 0
+            ? t("skins.variantsWithCount", { count: activeCount })
+            : t("skins.variants")}
+        </TooltipContent>
       </Tooltip>
       <ModOptionsDialog
         activeArchiveNames={modOptions.activeArchiveNames}
