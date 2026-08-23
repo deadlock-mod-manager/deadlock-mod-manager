@@ -57,7 +57,24 @@
     "addSkin": "Add Skin",
     "addSkinFor": "Browse skins for {{hero}}",
     "emptyTitle": "No skins for {{hero}} yet",
-    "deleteSkin": "Delete skin"
+    "deleteSkin": "Delete skin",
+    "preview": {
+      "title": "3D preview",
+      "nothingSelected": "No skin selected",
+      "placeholder": "Pick a skin to see it in 3D",
+      "defaultLabel": "{{hero}} — default skin",
+      "previewSkin": "Show in 3D",
+      "previewDefault": "Show the default skin in 3D",
+      "loading": "Loading model…",
+      "unsupported": "This VPK holds no hero model.",
+      "failed": "Couldn't decode this skin.",
+      "failedHint": "Not every skin can be decoded — an unusual or broken model may fail to load. The skin still installs and works in-game.",
+      "retry": "Try again",
+      "hide": "Hide the 3D preview",
+      "disabled": "3D preview is off",
+      "disabledHint": "Turn it on to see the selected skin's model here. It can be switched off again under Settings › Application › Appearance.",
+      "enable": "Turn the preview on"
+    }
   },
   "stats": {
     "title": "Stats",
@@ -1534,7 +1551,10 @@
     "external": "External",
     "syntax": "Syntax",
     "forgeInstall": "1-click installs from DeadlockForge",
-    "forgeInstallDescription": "Let deadlockforge.net send mods you build straight to Deadlock Mod Manager. Nothing installs without asking you first."
+    "forgeInstallDescription": "Let deadlockforge.net send mods you build straight to Deadlock Mod Manager. Nothing installs without asking you first.",
+    "modelPreview": "3D model preview",
+    "modelPreviewDescription": "Render skin models in the Hero Skins panel and the Mod Foundry.",
+    "modelPreviewWarning": "The preview decodes a whole character model and renders it on your GPU. It is the slowest part of opening a skin, and not every skin can be decoded — an unusual or broken model may fail to load or, rarely, upset the graphics driver. Behaviour varies between graphics drivers and platforms; switch this off if previews are slow, blank or crash."
   },
   "featureFlags": {
     "title": "Experimental Features",

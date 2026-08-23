@@ -17,7 +17,10 @@ interface SkinGridProps {
   skins: LocalMod[];
   activeIds: Set<string>;
   disabled: boolean;
+  /** Which skin the 3D panel is showing: a mod id, or null for the default. */
+  previewedId: string | null;
   onSelect: (mod: LocalMod | null) => void;
+  onPreview: (mod: LocalMod | null) => void;
   onAddSkin: () => void;
   onDelete: (mod: LocalMod) => void;
 }
@@ -27,7 +30,9 @@ export const SkinGrid = ({
   skins,
   activeIds,
   disabled,
+  previewedId,
   onSelect,
+  onPreview,
   onAddSkin,
   onDelete,
 }: SkinGridProps) => {
@@ -72,15 +77,19 @@ export const SkinGrid = ({
           <DefaultSkinCard
             disabled={disabled}
             isActive={activeIds.size === 0}
+            isPreviewing={previewedId === null}
+            onPreview={() => onPreview(null)}
             onSelect={() => onSelect(null)}
           />
           {skins.map((mod) => (
             <SkinCard
               disabled={disabled}
               isActive={activeIds.has(mod.remoteId)}
+              isPreviewing={previewedId === mod.remoteId}
               key={mod.remoteId}
               mod={mod}
               onDelete={() => onDelete(mod)}
+              onPreview={() => onPreview(mod)}
               onSelect={() => onSelect(mod)}
             />
           ))}

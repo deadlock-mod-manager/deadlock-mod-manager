@@ -67,6 +67,7 @@ import { LoggingSettings } from "@/components/settings/logging-settings";
 import OccultGeometrySettings from "@/components/settings/occult-geometry-settings";
 import { PluginList } from "@/components/settings/plugin-list";
 import { MatchSyncSettings } from "@/components/settings/match-sync-settings";
+import { ModelPreviewToggle } from "@/components/settings/model-preview-toggle";
 import PrivacySettings from "@/components/settings/privacy-settings";
 import { ProxySettings } from "@/components/settings/proxy-settings";
 import Section, { SectionSkeleton } from "@/components/settings/section";
@@ -727,6 +728,8 @@ const CustomSettings = ({ value }: { value?: string }) => {
                 </div>
 
                 <VolumeControl />
+
+                <ModelPreviewToggle />
 
                 <OccultGeometrySettings />
               </div>

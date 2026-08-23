@@ -251,3 +251,21 @@ export const decodeFoundrySound = async (
     workspaceRoot,
   });
 };
+
+/**
+ * The model that stands in for a whole skin: the hero's body.
+ *
+ * The backend resolves the hero's actual body model through the game's
+ * `heroes.vdata_c`, so `primaryModelPath` is an answer rather than a guess and
+ * is used whenever it is there. The local fallback only covers a manifest from
+ * an older backend or a skin with no hero: a `.vmdl_c` assembles the whole
+ * character, so it beats a lone `.vmesh_c`, which is one body part.
+ */
+export const getPrimaryModelPath = (
+  manifest: FoundryManifest,
+): string | null => {
+  if (manifest.primaryModelPath) return manifest.primaryModelPath;
+  const model = manifest.models.find((entry) => entry.path.endsWith(".vmdl_c"));
+  const mesh = manifest.models.find((entry) => entry.path.endsWith(".vmesh_c"));
+  return model?.path ?? mesh?.path ?? manifest.models[0]?.path ?? null;
+};
