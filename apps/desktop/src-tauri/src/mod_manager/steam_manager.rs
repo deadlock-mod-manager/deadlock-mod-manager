@@ -7,6 +7,23 @@ use std::path::PathBuf;
 
 const DEADLOCK_APP_ID: u32 = 1422450;
 
+#[cfg(target_os = "linux")]
+fn flatpak_game_launch_args(additional_args: &str) -> String {
+  let additional_args = additional_args.trim();
+  if additional_args
+    .split_ascii_whitespace()
+    .any(|argument| argument == "-condebug")
+  {
+    return additional_args.to_string();
+  }
+
+  if additional_args.is_empty() {
+    "-condebug".to_string()
+  } else {
+    format!("{additional_args} -condebug")
+  }
+}
+
 /// Manages Steam integration and game path detection
 pub struct SteamManager {
   steam_dir: Option<steamlocate::SteamDir>,
@@ -211,6 +228,18 @@ impl SteamManager {
 
   /// Prepare a request to launch Deadlock through Steam with optional arguments.
   pub fn game_launch_request(&self, additional_args: &str) -> Result<SteamUriLaunchRequest, Error> {
+    #[cfg(target_os = "linux")]
+    let additional_args = if crate::flatpak::running_in_flatpak() {
+      // Flatpak cannot see the host's process table, so console.log is the
+      // startup signal used to distinguish a running game from a false launch.
+      flatpak_game_launch_args(additional_args)
+    } else {
+      additional_args.to_string()
+    };
+
+    #[cfg(not(target_os = "linux"))]
+    let additional_args = additional_args.to_string();
+
     let steam_uri = format!("steam://run/{DEADLOCK_APP_ID}//{additional_args}");
     self.uri_launch_request(&steam_uri)
   }
@@ -449,5 +478,22 @@ mod tests {
     let request = manager.linux_uri_launch_request("steam://run/1422450//", true);
     assert_eq!(request.program(), Path::new("xdg-open"));
     assert!(request.uses_portal_timeout());
+  }
+
+  #[test]
+  fn flatpak_launch_args_include_console_logging_for_startup_confirmation() {
+    assert_eq!(flatpak_game_launch_args(""), "-condebug");
+    assert_eq!(
+      flatpak_game_launch_args("-novid +exec autoexec"),
+      "-novid +exec autoexec -condebug"
+    );
+    assert_eq!(
+      flatpak_game_launch_args("-novid -condebug"),
+      "-novid -condebug"
+    );
+    assert_eq!(
+      flatpak_game_launch_args("-condebuglog"),
+      "-condebuglog -condebug"
+    );
   }
 }

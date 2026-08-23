@@ -5,7 +5,6 @@ use std::time::Duration;
 use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 use crate::mod_manager::steam_uri_launcher::SteamUriLaunchMonitor;
-use futures::FutureExt;
 use tauri::Emitter;
 
 use super::game_process::{GAME_START_TIMEOUT, GameStartOutcome, wait_for_game_start};
@@ -15,25 +14,28 @@ use super::state::MANAGER;
 const GAME_LAUNCH_POLL_INTERVAL: Duration = Duration::from_secs(2);
 
 async fn await_launched_game(monitor: SteamUriLaunchMonitor) -> Result<(), Error> {
-  let launcher = monitor.wait().fuse();
-  let game = wait_for_game_start(GAME_START_TIMEOUT, GAME_LAUNCH_POLL_INTERVAL, pending()).fuse();
-  futures::pin_mut!(launcher, game);
+  let launcher = monitor.wait();
+  let game = wait_for_game_start(GAME_START_TIMEOUT, GAME_LAUNCH_POLL_INTERVAL, pending());
+  tokio::pin!(launcher, game);
 
-  loop {
-    futures::select! {
-      launcher_result = launcher => launcher_result?,
-      game_result = game => return match game_result? {
-        GameStartOutcome::Running => {
-          log::info!("Confirmed Deadlock process started");
-          Ok(())
-        }
-        GameStartOutcome::TimedOut => Err(Error::GameLaunchFailed(format!(
-          "Steam accepted the launch request, but Deadlock did not start within {} seconds",
-          GAME_START_TIMEOUT.as_secs()
-        ))),
-        GameStartOutcome::Cancelled => unreachable!("normal game launches are not cancellable"),
-      }
+  let outcome = tokio::select! {
+    launcher_result = &mut launcher => {
+      launcher_result?;
+      game.await?
     }
+    game_result = &mut game => game_result?,
+  };
+
+  match outcome {
+    GameStartOutcome::Running => {
+      log::info!("Confirmed Deadlock process started");
+      Ok(())
+    }
+    GameStartOutcome::TimedOut => Err(Error::GameLaunchFailed(format!(
+      "Steam accepted the launch request, but Deadlock did not start within {} seconds",
+      GAME_START_TIMEOUT.as_secs()
+    ))),
+    GameStartOutcome::Cancelled => unreachable!("normal game launches are not cancellable"),
   }
 }
 

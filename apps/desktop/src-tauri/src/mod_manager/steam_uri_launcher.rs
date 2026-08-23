@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
-use std::process::ExitStatus;
+use std::process::{ExitStatus, Stdio};
 use std::time::Duration;
 
 use tokio::io::{AsyncBufReadExt, BufReader};
@@ -12,13 +12,11 @@ use crate::errors::Error;
 const PORTAL_TIMEOUT: Duration = Duration::from_secs(15);
 const CAPTURED_STDERR_LINES: usize = 20;
 
-#[derive(Debug, PartialEq, Eq)]
 enum CompletionPolicy {
   Observe,
   Timeout(Duration),
 }
 
-#[derive(Debug, PartialEq, Eq)]
 pub(crate) struct SteamUriLaunchRequest {
   program: PathBuf,
   uri: String,
@@ -48,8 +46,6 @@ impl SteamUriLaunchRequest {
   }
 
   pub(crate) fn spawn(self) -> Result<SteamUriLaunchMonitor, Error> {
-    use std::process::Stdio;
-
     let mut child = Command::new(&self.program)
       .arg(&self.uri)
       .stdout(Stdio::null())
@@ -129,8 +125,9 @@ async fn monitor_child(
     return Ok(());
   }
 
-  let message = unsuccessful_exit_message(program, status, &stderr);
-  Err(Error::GameLaunchFailed(message))
+  Err(Error::GameLaunchFailed(unsuccessful_exit_message(
+    program, status, &stderr,
+  )))
 }
 
 async fn wait_with_timeout(

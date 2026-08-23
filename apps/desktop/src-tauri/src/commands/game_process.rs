@@ -27,14 +27,11 @@ pub(super) async fn is_game_running() -> Result<bool, Error> {
   .map_err(|error| Error::BackgroundTaskFailed(format!("Process check task failed: {error}")))?
 }
 
-pub(super) async fn wait_for_game_start<Cancel>(
+pub(super) async fn wait_for_game_start(
   timeout: Duration,
   poll_interval: Duration,
-  cancel: Cancel,
-) -> Result<GameStartOutcome, Error>
-where
-  Cancel: Future<Output = ()>,
-{
+  cancel: impl Future<Output = ()>,
+) -> Result<GameStartOutcome, Error> {
   if running_in_flatpak() {
     let mut console_log = ConsoleLogTail::from_end(&game_path()?);
     return wait_for_game_start_with_check(
@@ -49,16 +46,15 @@ where
   wait_for_game_start_with_check(timeout, poll_interval, is_game_running, cancel).await
 }
 
-async fn wait_for_game_start_with_check<Check, CheckFuture, Cancel>(
+async fn wait_for_game_start_with_check<Check, CheckFuture>(
   timeout: Duration,
   poll_interval: Duration,
   mut check: Check,
-  cancel: Cancel,
+  cancel: impl Future<Output = ()>,
 ) -> Result<GameStartOutcome, Error>
 where
   Check: FnMut() -> CheckFuture,
   CheckFuture: Future<Output = Result<bool, Error>>,
-  Cancel: Future<Output = ()>,
 {
   let deadline = tokio::time::sleep(timeout);
   tokio::pin!(deadline);

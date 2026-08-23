@@ -62,7 +62,7 @@ pub async fn is_flatpak() -> Result<bool, Error> {
   Ok(running_in_flatpak())
 }
 
-pub fn running_in_flatpak() -> bool {
+pub(crate) fn running_in_flatpak() -> bool {
   std::env::var_os("FLATPAK_ID").is_some()
 }
 
