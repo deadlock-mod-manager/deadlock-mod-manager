@@ -23,10 +23,9 @@ use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 use crate::mod_manager::console_log_watcher::ConsoleLogTail;
 
+use super::game_process::{self, GAME_START_TIMEOUT, GameStartOutcome};
 use super::state::{MANAGER, SERVER_CONNECT_WATCHDOG, game_path};
 
-/// How long we wait for the Deadlock process to show up after launching.
-const GAME_START_TIMEOUT: Duration = Duration::from_secs(180);
 /// Overall budget for getting connected once the process is up.
 const CONNECT_TIMEOUT: Duration = Duration::from_secs(240);
 /// Grace period after the client reaches the menu before we re-issue connect.
@@ -87,17 +86,6 @@ fn emit(app: &AppHandle, status: ConnectStatus, address: &str, attempt: u32) {
   }
 }
 
-async fn is_game_running() -> Result<bool, Error> {
-  tokio::task::spawn_blocking(|| {
-    let mut manager = MANAGER
-      .lock()
-      .map_err(|_| Error::BackgroundTaskFailed("Mod manager lock poisoned".to_string()))?;
-    manager.is_game_running()
-  })
-  .await
-  .map_err(|e| Error::BackgroundTaskFailed(format!("Process check task failed: {e}")))?
-}
-
 fn open_steam_connect(address: &str, password: Option<&str>) -> Result<(), Error> {
   let uri = match password {
     Some(password) if !password.is_empty() => {
@@ -109,10 +97,14 @@ fn open_steam_connect(address: &str, password: Option<&str>) -> Result<(), Error
     _ => format!("steam://connect/{address}"),
   };
 
-  let manager = MANAGER
-    .lock()
-    .map_err(|_| Error::BackgroundTaskFailed("Mod manager lock poisoned".to_string()))?;
-  manager.get_steam_manager().open_steam_uri(&uri)
+  let request = {
+    let manager = MANAGER
+      .lock()
+      .map_err(|_| Error::BackgroundTaskFailed("Mod manager lock poisoned".to_string()))?;
+    manager.get_steam_manager().uri_launch_request(&uri)?
+  };
+  request.spawn()?;
+  Ok(())
 }
 
 /// Turn whatever the relay handed us into the literal `ip:port` Steam's
@@ -237,23 +229,20 @@ async fn run_watchdog(
 /// Waits for the Deadlock process to appear. Returns false if we gave up or
 /// were cancelled, having already emitted the terminal event in the former case.
 async fn await_game_start(app: &AppHandle, address: &str, cancel: &CancellationToken) -> bool {
-  let deadline = Instant::now() + GAME_START_TIMEOUT;
-
-  loop {
-    match is_game_running().await {
-      Ok(true) => return true,
-      Ok(false) => {}
-      Err(error) => log::warn!("Could not check whether Deadlock is running: {error}"),
-    }
-
-    if Instant::now() >= deadline {
+  match game_process::wait_for_game_start(GAME_START_TIMEOUT, LIVENESS_INTERVAL, cancel.cancelled())
+    .await
+  {
+    Ok(GameStartOutcome::Running) => true,
+    Ok(GameStartOutcome::Cancelled) => false,
+    Ok(GameStartOutcome::TimedOut) => {
       log::warn!("Deadlock never started; giving up on auto-connect to {address}");
       emit(app, ConnectStatus::TimedOut, address, 0);
-      return false;
+      false
     }
-
-    if sleep_or_cancel(LIVENESS_INTERVAL, cancel).await {
-      return false;
+    Err(error) => {
+      log::warn!("Could not check whether Deadlock is running: {error}");
+      emit(app, ConnectStatus::TimedOut, address, 0);
+      false
     }
   }
 }
@@ -284,7 +273,7 @@ async fn drive_connect(
 
     if last_liveness_check.elapsed() >= LIVENESS_INTERVAL {
       last_liveness_check = Instant::now();
-      match is_game_running().await {
+      match game_process::is_game_running().await {
         // Cold start already waited for the process, so a miss here means the
         // player quit — nothing left to connect.
         Ok(false) => {

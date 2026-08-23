@@ -1,11 +1,41 @@
+use std::future::pending;
 use std::path::PathBuf;
+use std::time::Duration;
 
 use crate::app_runtime::AppHandle;
 use crate::errors::Error;
+use crate::mod_manager::steam_uri_launcher::SteamUriLaunchMonitor;
+use futures::FutureExt;
 use tauri::Emitter;
 
+use super::game_process::{GAME_START_TIMEOUT, GameStartOutcome, wait_for_game_start};
 use super::gameinfo::reset_to_vanilla_internal;
 use super::state::MANAGER;
+
+const GAME_LAUNCH_POLL_INTERVAL: Duration = Duration::from_secs(2);
+
+async fn await_launched_game(monitor: SteamUriLaunchMonitor) -> Result<(), Error> {
+  let launcher = monitor.wait().fuse();
+  let game = wait_for_game_start(GAME_START_TIMEOUT, GAME_LAUNCH_POLL_INTERVAL, pending()).fuse();
+  futures::pin_mut!(launcher, game);
+
+  loop {
+    futures::select! {
+      launcher_result = launcher => launcher_result?,
+      game_result = game => return match game_result? {
+        GameStartOutcome::Running => {
+          log::info!("Confirmed Deadlock process started");
+          Ok(())
+        }
+        GameStartOutcome::TimedOut => Err(Error::GameLaunchFailed(format!(
+          "Steam accepted the launch request, but Deadlock did not start within {} seconds",
+          GAME_START_TIMEOUT.as_secs()
+        ))),
+        GameStartOutcome::Cancelled => unreachable!("normal game launches are not cancellable"),
+      }
+    }
+  }
+}
 
 #[tauri::command]
 pub async fn find_game_path() -> Result<String, Error> {
@@ -75,24 +105,29 @@ pub async fn start_game(
 
   let first_result = {
     let mut mod_manager = MANAGER.lock().unwrap();
-    mod_manager.run_game(vanilla, additional_args.clone(), profile_folder.clone())
+    mod_manager.prepare_game_launch(vanilla, additional_args.clone(), profile_folder.clone())
   };
 
-  if let Err(Error::GameConfigParse(ref msg)) = first_result {
-    log::warn!("Game config parse failed: {msg}, attempting auto-reset to vanilla");
+  let request = match first_result {
+    Ok(request) => request,
+    Err(Error::GameConfigParse(msg)) => {
+      log::warn!("Game config parse failed: {msg}, attempting auto-reset to vanilla");
 
-    reset_to_vanilla_internal().await?;
+      reset_to_vanilla_internal().await?;
 
-    let mut mod_manager = MANAGER.lock().unwrap();
-    mod_manager.run_game(vanilla, additional_args, profile_folder)?;
+      let request = {
+        let mut mod_manager = MANAGER.lock().unwrap();
+        mod_manager.prepare_game_launch(vanilla, additional_args, profile_folder)?
+      };
 
-    app_handle.emit("gameinfo-auto-reset", ()).ok();
-    log::info!("Auto-recovery succeeded, game launched after gameinfo reset");
+      app_handle.emit("gameinfo-auto-reset", ()).ok();
+      log::info!("Auto-recovery succeeded after gameinfo reset");
+      request
+    }
+    Err(error) => return Err(error),
+  };
 
-    return Ok(());
-  }
-
-  first_result
+  await_launched_game(request.spawn()?).await
 }
 
 /// Launch the game without touching `gameinfo.gi`.
@@ -105,10 +140,14 @@ pub async fn start_game(
 pub async fn launch_game_direct(additional_args: String) -> Result<(), Error> {
   log::info!("Launching game without gameinfo changes, args: {additional_args:?}");
 
-  let mod_manager = MANAGER.lock().unwrap();
-  mod_manager
-    .get_steam_manager()
-    .launch_game(&additional_args)
+  let request = {
+    let mod_manager = MANAGER.lock().unwrap();
+    mod_manager
+      .get_steam_manager()
+      .game_launch_request(&additional_args)?
+  };
+
+  await_launched_game(request.spawn()?).await
 }
 
 #[tauri::command]

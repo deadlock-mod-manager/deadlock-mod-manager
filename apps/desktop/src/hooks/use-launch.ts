@@ -6,11 +6,11 @@ import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { stopHeroDetection } from "@/hooks/use-hero-detection";
 import { restoreProfileGameinfo } from "@/lib/gameinfo";
+import { getLaunchErrorMessage } from "@/lib/launch-error";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { getAdditionalArgs } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
-import type { ErrorKind } from "@/types/tauri";
 
 export const useLaunch = () => {
   const { t } = useTranslation();
@@ -128,7 +128,13 @@ export const useLaunch = () => {
     } catch (error) {
       console.error(error);
       logger.errorOnly(error);
-      toast.error((error as ErrorKind).message);
+      toast.error(
+        getLaunchErrorMessage(
+          error,
+          t("errors.gameLaunchFailed"),
+          t("errors.genericMessage"),
+        ),
+      );
     }
   };
 
