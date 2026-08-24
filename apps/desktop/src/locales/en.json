@@ -1960,6 +1960,7 @@
   },
   "errors": {
     "genericMessage": "Something went wrong.",
+    "gameLaunchFailed": "Deadlock couldn't be launched. Make sure Steam is running, then try again.",
     "errorCode": "Error code:",
     "tryAgain": "Try again",
     "goBack": "Go back",
