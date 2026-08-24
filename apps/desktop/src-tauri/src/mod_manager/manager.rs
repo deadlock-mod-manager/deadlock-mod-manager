@@ -405,12 +405,12 @@ impl ModManager {
     Ok(())
   }
 
-  pub fn run_game(
+  pub fn prepare_game_launch(
     &mut self,
     vanilla: bool,
     additional_args: String,
     profile_folder: Option<String>,
-  ) -> Result<(), Error> {
+  ) -> Result<super::steam_uri_launcher::SteamUriLaunchRequest, Error> {
     // Ensure game path is found
     let game_path = self.find_game()?;
 
@@ -426,10 +426,7 @@ impl ModManager {
         .update_mod_path(&game_path, profile_folder)?;
     }
 
-    // Launch the game through Steam
-    self.steam_manager.launch_game(&additional_args)?;
-
-    Ok(())
+    self.steam_manager.game_launch_request(&additional_args)
   }
 
   pub fn get_mod_file_tree(&self, mod_path: &PathBuf) -> Result<ModFileTree, Error> {

@@ -1,3 +1,4 @@
+use std::ffi::OsStr;
 use std::thread;
 use std::time::Duration;
 
@@ -6,6 +7,22 @@ use log;
 use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
 
 const DEADLOCK_PROCESS_NAME: &str = "deadlock.exe";
+
+fn executable_name(value: &OsStr) -> Option<&str> {
+  value
+    .to_str()?
+    .rsplit(['/', '\\'])
+    .next()
+    .filter(|name| !name.is_empty())
+}
+
+fn is_deadlock_process(name: &OsStr, command: &[std::ffi::OsString]) -> bool {
+  executable_name(name).is_some_and(|name| name.eq_ignore_ascii_case(DEADLOCK_PROCESS_NAME))
+    || command
+      .first()
+      .and_then(|argument| executable_name(argument))
+      .is_some_and(|name| name.eq_ignore_ascii_case(DEADLOCK_PROCESS_NAME))
+}
 
 /// Manages game process lifecycle
 pub struct GameProcessManager {
@@ -29,7 +46,9 @@ impl GameProcessManager {
 
     let process_count = self
       .system
-      .processes_by_name(DEADLOCK_PROCESS_NAME.as_ref())
+      .processes()
+      .values()
+      .filter(|process| is_deadlock_process(process.name(), process.cmd()))
       .count();
 
     log::debug!("Found {process_count} game processes");
@@ -57,7 +76,9 @@ impl GameProcessManager {
     log::info!("Stopping game...");
     let processes: Vec<_> = self
       .system
-      .processes_by_name(DEADLOCK_PROCESS_NAME.as_ref())
+      .processes()
+      .values()
+      .filter(|process| is_deadlock_process(process.name(), process.cmd()))
       .collect();
 
     if processes.is_empty() {
@@ -91,5 +112,37 @@ impl GameProcessManager {
 impl Default for GameProcessManager {
   fn default() -> Self {
     Self::new()
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use std::ffi::{OsStr, OsString};
+
+  use super::is_deadlock_process;
+
+  #[test]
+  fn detects_native_process_name() {
+    assert!(is_deadlock_process(OsStr::new("deadlock.exe"), &[]));
+  }
+
+  #[test]
+  fn detects_proton_process_by_windows_argv_zero() {
+    let command = [OsString::from(
+      r"S:\steamapps\common\Deadlock\game\bin\win64\deadlock.exe",
+    )];
+
+    assert!(is_deadlock_process(OsStr::new("MainThrd"), &command));
+  }
+
+  #[test]
+  fn ignores_wrapper_processes_that_only_reference_deadlock_later() {
+    let command = [
+      OsString::from("python3"),
+      OsString::from("/steam/Proton/proton"),
+      OsString::from("/steam/Deadlock/game/bin/win64/deadlock.exe"),
+    ];
+
+    assert!(!is_deadlock_process(OsStr::new("python3"), &command));
   }
 }

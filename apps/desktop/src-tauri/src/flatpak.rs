@@ -59,13 +59,18 @@ async fn cleanup_bundle(path: &PathBuf) {
 
 #[tauri::command]
 pub async fn is_flatpak() -> Result<bool, Error> {
-  Ok(std::env::var("FLATPAK_ID").is_ok())
+  Ok(running_in_flatpak())
+}
+
+pub(crate) fn running_in_flatpak() -> bool {
+  std::env::var_os("FLATPAK_ID").is_some()
 }
 
 #[tauri::command]
 pub async fn update_flatpak(app_handle: AppHandle, url: String) -> Result<(), Error> {
-  std::env::var("FLATPAK_ID")
-    .map_err(|_| Error::InvalidInput("Not running as a Flatpak".to_string()))?;
+  if !running_in_flatpak() {
+    return Err(Error::InvalidInput("Not running as a Flatpak".to_string()));
+  }
 
   let validated_url = validate_update_url(&url)?;
   let path = bundle_path();

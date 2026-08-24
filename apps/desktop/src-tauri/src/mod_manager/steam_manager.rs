@@ -1,10 +1,28 @@
 use crate::errors::Error;
+use crate::mod_manager::steam_uri_launcher::{SteamUriLaunchRequest, redacted_steam_uri};
 use log;
 #[cfg(target_os = "linux")]
 use std::path::Path;
 use std::path::PathBuf;
 
 const DEADLOCK_APP_ID: u32 = 1422450;
+
+#[cfg(target_os = "linux")]
+fn flatpak_game_launch_args(additional_args: &str) -> String {
+  let additional_args = additional_args.trim();
+  if additional_args
+    .split_ascii_whitespace()
+    .any(|argument| argument == "-condebug")
+  {
+    return additional_args.to_string();
+  }
+
+  if additional_args.is_empty() {
+    "-condebug".to_string()
+  } else {
+    format!("{additional_args} -condebug")
+  }
+}
 
 /// Manages Steam integration and game path detection
 pub struct SteamManager {
@@ -182,14 +200,48 @@ impl SteamManager {
     }
   }
 
-  /// Launch Deadlock through Steam with optional arguments
-  pub fn launch_game(&self, additional_args: &str) -> Result<(), Error> {
+  #[cfg(target_os = "linux")]
+  fn linux_uri_launch_request(
+    &self,
+    steam_uri: &str,
+    running_in_flatpak: bool,
+  ) -> SteamUriLaunchRequest {
+    if running_in_flatpak {
+      log::info!("Launching Steam URI through the Flatpak portal");
+      return SteamUriLaunchRequest::portal(PathBuf::from("xdg-open"), steam_uri.to_string());
+    }
+
+    match self.get_steam_executable() {
+      Ok(steam_exe) => {
+        log::info!(
+          "Launching via Steam executable directly: {}",
+          steam_exe.display()
+        );
+        SteamUriLaunchRequest::direct(steam_exe, steam_uri.to_string())
+      }
+      Err(_) => {
+        log::info!("No Steam executable found, falling back to xdg-open");
+        SteamUriLaunchRequest::portal(PathBuf::from("xdg-open"), steam_uri.to_string())
+      }
+    }
+  }
+
+  /// Prepare a request to launch Deadlock through Steam with optional arguments.
+  pub fn game_launch_request(&self, additional_args: &str) -> Result<SteamUriLaunchRequest, Error> {
+    #[cfg(target_os = "linux")]
+    let additional_args = if crate::flatpak::running_in_flatpak() {
+      // Flatpak cannot see the host's process table, so console.log is the
+      // startup signal used to distinguish a running game from a false launch.
+      flatpak_game_launch_args(additional_args)
+    } else {
+      additional_args.to_string()
+    };
+
+    #[cfg(not(target_os = "linux"))]
+    let additional_args = additional_args.to_string();
+
     let steam_uri = format!("steam://run/{DEADLOCK_APP_ID}//{additional_args}");
-    log::info!(
-      "Launching game with URI: {}",
-      redacted_steam_uri(&steam_uri)
-    );
-    self.open_steam_uri(&steam_uri)
+    self.uri_launch_request(&steam_uri)
   }
 
   /// Hand a `steam://` URI to the Steam client.
@@ -198,37 +250,35 @@ impl SteamManager {
   /// first-class: it launches the game when it is closed and hands the
   /// address to an already running client, which `steam://run//+connect`
   /// cannot do.
-  pub fn open_steam_uri(&self, steam_uri: &str) -> Result<(), Error> {
+  pub fn uri_launch_request(&self, steam_uri: &str) -> Result<SteamUriLaunchRequest, Error> {
     log::info!("Opening Steam URI: {}", redacted_steam_uri(steam_uri));
 
     #[cfg(target_os = "windows")]
     {
       let steam_exe = self.get_steam_executable()?;
-      std::process::Command::new(steam_exe)
-        .arg(steam_uri)
-        .spawn()
-        .map_err(|e| Error::GameLaunchFailed(e.to_string()))?;
+      Ok(SteamUriLaunchRequest::direct(
+        steam_exe,
+        steam_uri.to_string(),
+      ))
     }
 
     #[cfg(target_os = "linux")]
     {
-      std::process::Command::new("xdg-open")
-        .arg(steam_uri)
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .spawn()
-        .map_err(|e| Error::GameLaunchFailed(e.to_string()))?;
+      Ok(self.linux_uri_launch_request(steam_uri, crate::flatpak::running_in_flatpak()))
     }
 
     #[cfg(target_os = "macos")]
     {
-      std::process::Command::new("open")
-        .arg(steam_uri)
-        .spawn()
-        .map_err(|e| Error::GameLaunchFailed(e.to_string()))?;
+      Ok(SteamUriLaunchRequest::direct(
+        PathBuf::from("open"),
+        steam_uri.to_string(),
+      ))
     }
 
-    Ok(())
+    #[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "macos")))]
+    Err(Error::GameLaunchFailed(
+      "Steam URI launching is unsupported on this platform".to_string(),
+    ))
   }
 
   fn candidate_steam_dirs(&self) -> Vec<steamlocate::SteamDir> {
@@ -263,63 +313,6 @@ impl SteamManager {
 impl Default for SteamManager {
   fn default() -> Self {
     Self::new()
-  }
-}
-
-/// Drop credentials from a Steam URI before it is written to the log file.
-fn redacted_steam_uri(uri: &str) -> String {
-  let without_connect_password = match uri.strip_prefix("steam://connect/") {
-    Some(rest) => {
-      let addr = rest.split('/').next().unwrap_or(rest);
-      format!("steam://connect/{addr}")
-    }
-    None => uri.to_string(),
-  };
-
-  redact_password_args(&without_connect_password)
-}
-
-fn redact_password_args(uri: &str) -> String {
-  let mut parts = uri.split(' ').peekable();
-  let mut out = Vec::new();
-  while let Some(part) = parts.next() {
-    out.push(part.to_string());
-    if part.eq_ignore_ascii_case("+password") && parts.peek().is_some() {
-      parts.next();
-      out.push("<redacted>".to_string());
-    }
-  }
-  out.join(" ")
-}
-
-#[cfg(test)]
-mod redaction_tests {
-  use super::*;
-
-  #[test]
-  fn drops_the_password_segment_from_a_connect_uri() {
-    assert_eq!(
-      redacted_steam_uri("steam://connect/203.0.113.10:27015/hunter2"),
-      "steam://connect/203.0.113.10:27015"
-    );
-  }
-
-  #[test]
-  fn leaves_a_connect_uri_without_a_password_unchanged() {
-    assert_eq!(
-      redacted_steam_uri("steam://connect/203.0.113.10:27015"),
-      "steam://connect/203.0.113.10:27015"
-    );
-  }
-
-  #[test]
-  fn redacts_a_password_launch_option() {
-    assert_eq!(
-      redacted_steam_uri(
-        "steam://run/1422450//+connect 203.0.113.10:27015 +password hunter2 -condebug"
-      ),
-      "steam://run/1422450//+connect 203.0.113.10:27015 +password <redacted> -condebug"
-    );
   }
 }
 
@@ -447,5 +440,60 @@ mod tests {
 
     let result = manager.set_steam_dir(temp_dir.path().to_path_buf());
     assert!(result.is_err());
+  }
+
+  #[test]
+  fn resolve_uri_launcher_prefers_the_steam_executable_on_native_linux() {
+    let (temp_dir, steam_dir) = temp_steam_dir("Steam", false);
+    let steam_sh = steam_dir.path().join("steam.sh");
+    fs::write(&steam_sh, "").unwrap();
+    let mut manager = SteamManager::new();
+    manager
+      .set_steam_dir(temp_dir.path().join("Steam"))
+      .unwrap();
+
+    let request = manager.linux_uri_launch_request("steam://run/1422450//", false);
+    assert_eq!(request.program(), steam_sh);
+    assert!(!request.uses_portal_timeout());
+  }
+
+  #[test]
+  fn resolve_uri_launcher_falls_back_to_xdg_open_without_a_steam_executable() {
+    let manager = SteamManager::new();
+
+    let request = manager.linux_uri_launch_request("steam://run/1422450//", false);
+    assert_eq!(request.program(), Path::new("xdg-open"));
+    assert!(request.uses_portal_timeout());
+  }
+
+  #[test]
+  fn resolve_uri_launcher_uses_xdg_open_inside_flatpak() {
+    let (temp_dir, steam_dir) = temp_steam_dir("Steam", false);
+    fs::write(steam_dir.path().join("steam.sh"), "").unwrap();
+    let mut manager = SteamManager::new();
+    manager
+      .set_steam_dir(temp_dir.path().join("Steam"))
+      .unwrap();
+
+    let request = manager.linux_uri_launch_request("steam://run/1422450//", true);
+    assert_eq!(request.program(), Path::new("xdg-open"));
+    assert!(request.uses_portal_timeout());
+  }
+
+  #[test]
+  fn flatpak_launch_args_include_console_logging_for_startup_confirmation() {
+    assert_eq!(flatpak_game_launch_args(""), "-condebug");
+    assert_eq!(
+      flatpak_game_launch_args("-novid +exec autoexec"),
+      "-novid +exec autoexec -condebug"
+    );
+    assert_eq!(
+      flatpak_game_launch_args("-novid -condebug"),
+      "-novid -condebug"
+    );
+    assert_eq!(
+      flatpak_game_launch_args("-condebuglog"),
+      "-condebuglog -condebug"
+    );
   }
 }

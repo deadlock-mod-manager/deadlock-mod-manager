@@ -1,12 +1,15 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
+import { useTranslation } from "react-i18next";
 import { enableAutoexecLaunchOptionIfDisabled } from "@/lib/autoexec/launch-option";
+import { getLaunchErrorMessage } from "@/lib/launch-error";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { getAdditionalArgs } from "@/lib/utils";
 
 export const useLaunchMap = (onSuccess?: () => void) => {
+  const { t } = useTranslation();
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
   const queryClient = useQueryClient();
 
@@ -42,7 +45,11 @@ export const useLaunchMap = (onSuccess?: () => void) => {
     onError: (error) => {
       logger.errorOnly(error);
       toast.error(
-        error instanceof Error ? error.message : "An unexpected error occurred",
+        getLaunchErrorMessage(
+          error,
+          t("errors.gameLaunchFailed"),
+          t("errors.genericMessage"),
+        ),
       );
     },
   });
