@@ -166,12 +166,10 @@ export const ProfileManagerDialog = ({
 
     const enabledMods: ModInfo[] = enabledEntries
       .map((entry) => {
-        const localMod = localMods.find(
-          (mod) => mod.remoteId === entry.remoteId,
-        );
-        return localMod
-          ? { name: localMod.name, remoteId: entry.remoteId }
-          : null;
+        const mod =
+          (profile.mods ?? []).find((m) => m.remoteId === entry.remoteId) ??
+          localMods.find((m) => m.remoteId === entry.remoteId);
+        return mod ? { name: mod.name, remoteId: entry.remoteId } : null;
       })
       .filter((mod): mod is ModInfo => mod !== null);
 
@@ -299,7 +297,7 @@ export const ProfileManagerDialog = ({
                           {getEnabledModsInfo(profile).count}
                         </Badge>
                       </div>
-                      {getEnabledModsInfo(profile).count > 0 && (
+                      {getEnabledModsInfo(profile).mods.length > 0 && (
                         <button
                           onClick={() => toggleProfileExpanded(profile.id)}
                           className='flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors cursor-pointer'>
