@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Human-in-the-loop Linux measurement loop for issue #640.
+# Linux measurement loop for issue #640.
 # Usage: bash apps/desktop/scripts/perf-prototype-640/hitl-linux.sh
 
 set -euo pipefail
@@ -29,7 +29,11 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/../../../.." && pwd)"
 SAMPLE_COUNT="${DMM_PERF_SAMPLES:-5}"
 FIXTURE_COUNT="${DMM_PERF_FIXTURE_COUNT:-250}"
+SETTLE_SECONDS="${DMM_PERF_SETTLE_SECONDS:-15}"
 MEASUREMENT_BLOCK="${DMM_PERF_BLOCK:-0}"
+CASE_FILTER="${DMM_PERF_CASE:-all}"
+PROBE_CLOCK="${DMM_PERF_PROBE_CLOCK:-animation-frame}"
+AUTOMATE="${DMM_PERF_AUTOMATE:-1}"
 INSPECTOR_PORT="${DMM_PERF_INSPECTOR_PORT:-2999}"
 RUN_STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 RESULT_ROOT="$REPO_ROOT/result/issue-640"
@@ -42,11 +46,24 @@ ACTIVE_SAMPLER_PID=""
 [[ "$(uname -s)" == "Linux" ]] || fail "This harness must run on Linux"
 [[ "$SAMPLE_COUNT" =~ ^[0-9]+$ && "$SAMPLE_COUNT" -gt 0 ]] || fail "DMM_PERF_SAMPLES must be a positive integer"
 [[ "$FIXTURE_COUNT" =~ ^[0-9]+$ && "$FIXTURE_COUNT" -gt 0 ]] || fail "DMM_PERF_FIXTURE_COUNT must be a positive integer"
+[[ "$SETTLE_SECONDS" =~ ^[0-9]+$ ]] || fail "DMM_PERF_SETTLE_SECONDS must be a non-negative integer"
 [[ "$MEASUREMENT_BLOCK" =~ ^[012]$ ]] || fail "DMM_PERF_BLOCK must be 0, 1, or 2"
+case "$CASE_FILTER" in
+  all | paginated-animated | paginated-static | paginated-occult-off | unpaginated-animated) ;;
+  *) fail "DMM_PERF_CASE must be all or a known case name" ;;
+esac
+case "$PROBE_CLOCK" in
+  animation-frame | timer) ;;
+  *) fail "DMM_PERF_PROBE_CLOCK must be animation-frame or timer" ;;
+esac
+[[ "$AUTOMATE" =~ ^[01]$ ]] || fail "DMM_PERF_AUTOMATE must be 0 or 1"
 
 for required in awk bash cat curl date find grep mv pgrep ps python3 sed setsid sha256sum sleep tr uname; do
   require_command "$required"
 done
+if [[ "$AUTOMATE" == "1" ]]; then
+  require_command node
+fi
 if ! command -v dpkg-deb >/dev/null 2>&1; then
   require_command bsdtar
 fi
@@ -66,7 +83,8 @@ NIGHTLY_URL="https://github.com/deadlock-mod-manager/deadlock-mod-manager/releas
 NIGHTLY_SHA="14e887792248128a6be0e5336628dc8c4c70ac257704c74b65c950ca530fdbf0"
 
 download_verified() {
-  local name="$1" url="$2" expected="$3" destination="$CACHE_ROOT/$name"
+  local name="$1" url="$2" expected="$3"
+  local destination="$CACHE_ROOT/$name"
   if [[ ! -f "$destination" ]]; then
     printf 'Downloading %s\n' "$name" >&2
     curl --fail --location --retry 3 --output "$destination.part-$RUN_STAMP" "$url"
@@ -82,7 +100,8 @@ download_verified() {
 }
 
 extract_deb() {
-  local label="$1" package="$2" digest="$3" destination="$EXTRACT_ROOT/$label-$digest"
+  local label="$1" package="$2" digest="$3"
+  local destination="$EXTRACT_ROOT/$label-$digest"
   if [[ ! -d "$destination" ]]; then
     mkdir "$destination"
     if command -v dpkg-deb >/dev/null 2>&1; then
@@ -114,7 +133,11 @@ write_environment() {
     printf 'wayland_display=%s\n' "${WAYLAND_DISPLAY:-unset}"
     printf 'samples=%s\n' "$SAMPLE_COUNT"
     printf 'fixture_count=%s\n' "$FIXTURE_COUNT"
+    printf 'settle_seconds=%s\n' "$SETTLE_SECONDS"
     printf 'measurement_block=%s\n' "$MEASUREMENT_BLOCK"
+    printf 'case_filter=%s\n' "$CASE_FILTER"
+    printf 'probe_clock=%s\n' "$PROBE_CLOCK"
+    printf 'automated=%s\n' "$AUTOMATE"
     printf 'stable_sha256=%s\n' "$STABLE_SHA"
     printf 'nightly_sha256=%s\n' "$NIGHTLY_SHA"
     printf '\n[os-release]\n'
@@ -149,7 +172,7 @@ stop_run() {
   wait "$sampler_pid" 2>/dev/null || true
   kill -TERM -- "-$process_group" >/dev/null 2>&1 || true
   for _ in 1 2 3 4 5; do
-    kill -0 -- "-$process_group" >/dev/null 2>&1 || return
+    kill -0 -- "-$process_group" >/dev/null 2>&1 || return 0
     sleep 0.2
   done
   kill -KILL -- "-$process_group" >/dev/null 2>&1 || true
@@ -178,9 +201,14 @@ run_case() {
     --pagination "$pagination" \
     --occult "$occult" >"$case_root/fixture-path.txt"
   printf 'epoch_ms,event\n' >"$events"
+  local timer_driven=false
+  if [[ "$PROBE_CLOCK" == "timer" ]]; then
+    timer_driven=true
+  fi
   sed \
     -e "s/__DMM_SAMPLE_COUNT__/$SAMPLE_COUNT/g" \
     -e "s/__DMM_FIXTURE_COUNT__/$FIXTURE_COUNT/g" \
+    -e "s/__DMM_TIMER_DRIVEN__/$timer_driven/g" \
     "$SCRIPT_DIR/webview-probe.js" >"$case_root/webview-probe.js"
 
   printf '\n=== %s / %s (pagination=%s, occult=%s) ===\n' "$artifact_label" "$case_label" "$pagination" "$occult"
@@ -205,31 +233,47 @@ run_case() {
   ACTIVE_PROCESS_GROUP="$process_group"
   ACTIVE_SAMPLER_PID="$sampler_pid"
 
-  step "Wait for the app to become interactive, open My Mods from the sidebar, and leave the pointer still."
-  record_event "$events" "my_mods_ready"
-  capture FIXTURE_VISIBLE "Does My Mods show the isolated $FIXTURE_COUNT-mod fixture without an error? (y/n)"
-  if [[ "$FIXTURE_VISIBLE" != "y" && "$FIXTURE_VISIBLE" != "Y" ]]; then
-    record_event "$events" "fixture_failed"
-    cleanup_active_run
-    fail "Fixture did not render for $artifact_label/$case_label"
+  if [[ "$AUTOMATE" == "1" ]]; then
+    node "$SCRIPT_DIR/webkit-remote.mjs" prepare \
+      --port "$INSPECTOR_PORT" >"$case_root/prepare.json"
+  else
+    step "Wait for the app to become interactive, open My Mods from the sidebar, and leave the pointer still."
+    capture FIXTURE_VISIBLE "Does My Mods show the isolated $FIXTURE_COUNT-mod fixture without an error? (y/n)"
+    if [[ "$FIXTURE_VISIBLE" != "y" && "$FIXTURE_VISIBLE" != "Y" ]]; then
+      record_event "$events" "fixture_failed"
+      cleanup_active_run
+      fail "Fixture did not render for $artifact_label/$case_label"
+    fi
   fi
+  record_event "$events" "my_mods_ready"
 
+  record_event "$events" "settle_start"
+  printf 'Allowing %s seconds for startup caches to settle...\n' "$SETTLE_SECONDS"
+  sleep "$SETTLE_SECONDS"
+  record_event "$events" "settle_complete"
   record_event "$events" "idle_start"
   printf 'Sampling an enforced 15-second idle window...\n'
   sleep 15
   record_event "$events" "idle_complete"
-  if command -v wl-copy >/dev/null 2>&1; then
-    wl-copy <"$case_root/webview-probe.js"
-    printf 'The probe is now on the clipboard.\n'
-  elif command -v xclip >/dev/null 2>&1; then
-    xclip -selection clipboard <"$case_root/webview-probe.js"
-    printf 'The probe is now on the clipboard.\n'
+  if [[ "$AUTOMATE" == "1" ]]; then
+    record_event "$events" "probe_requested"
+    PROBE_JSON="$(node "$SCRIPT_DIR/webkit-remote.mjs" probe \
+      --port "$INSPECTOR_PORT" \
+      --script "$case_root/webview-probe.js")"
   else
-    printf 'Probe file: %s\n' "$case_root/webview-probe.js"
+    if command -v wl-copy >/dev/null 2>&1; then
+      wl-copy <"$case_root/webview-probe.js"
+      printf 'The probe is now on the clipboard.\n'
+    elif command -v xclip >/dev/null 2>&1; then
+      xclip -selection clipboard <"$case_root/webview-probe.js"
+      printf 'The probe is now on the clipboard.\n'
+    else
+      printf 'Probe file: %s\n' "$case_root/webview-probe.js"
+    fi
+    printf 'Inspector target page: http://127.0.0.1:%s\n' "$INSPECTOR_PORT"
+    record_event "$events" "probe_prompted"
+    capture PROBE_JSON "Open the inspector target, paste the probe in the inspected My Mods console, then paste only the JSON after DMM_ISSUE_640_RESULT="
   fi
-  printf 'Inspector target page: http://127.0.0.1:%s\n' "$INSPECTOR_PORT"
-  record_event "$events" "probe_prompted"
-  capture PROBE_JSON "Open the inspector target, paste the probe in the inspected My Mods console, then paste only the JSON after DMM_ISSUE_640_RESULT="
   PROBE_JSON="$PROBE_JSON" python3 - "$probe_file" <<'PY'
 import json
 import os
@@ -255,6 +299,8 @@ printf '\nIssue #640 exploratory pass\n'
 printf 'Results: %s\n' "$RUN_ROOT"
 printf 'Samples per console-probe case: %s (3 warmups)\n' "$SAMPLE_COUNT"
 printf 'Measurement block: %s (0 means exploratory)\n' "$MEASUREMENT_BLOCK"
+printf 'Case filter: %s\n' "$CASE_FILTER"
+printf 'Probe clock: %s\n' "$PROBE_CLOCK"
 printf 'Close unrelated heavy workloads and keep the same display/power setup throughout.\n'
 
 run_artifact_pair() {
@@ -268,12 +314,19 @@ run_artifact_pair() {
   fi
 }
 
+run_selected_artifact_pair() {
+  local case_label="$1" pagination="$2" occult="$3"
+  if [[ "$CASE_FILTER" == "all" || "$CASE_FILTER" == "$case_label" ]]; then
+    run_artifact_pair "$case_label" "$pagination" "$occult"
+  fi
+}
+
 # Block 1 is stable -> nightly; block 2 reverses each pair. The cases isolate
 # animated/static/disabled occult rendering and unpaginated library rendering.
-run_artifact_pair paginated-animated on animated
-run_artifact_pair paginated-static on static
-run_artifact_pair paginated-occult-off on off
-run_artifact_pair unpaginated-animated off animated
+run_selected_artifact_pair paginated-animated on animated
+run_selected_artifact_pair paginated-static on static
+run_selected_artifact_pair paginated-occult-off on off
+run_selected_artifact_pair unpaginated-animated off animated
 python3 "$SCRIPT_DIR/summarize_run.py" "$RUN_ROOT"
 
 printf '\n--- Captured ---\n'

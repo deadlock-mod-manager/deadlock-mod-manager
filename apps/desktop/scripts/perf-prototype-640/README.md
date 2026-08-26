@@ -1,6 +1,6 @@
 # Issue #640 Linux desktop measurement prototype
 
-This is a throwaway, human-in-the-loop measurement harness for GitHub issue
+This is a throwaway measurement harness for GitHub issue
 [#640](https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues/640).
 It does not install either application package and it does not read or write the
 normal Deadlock Mod Manager data directory.
@@ -21,10 +21,28 @@ bash apps/desktop/scripts/perf-prototype-640/hitl-linux.sh
 ```
 
 The script starts with five measured samples so an exploratory pass stays
-short. It will prompt you to open My Mods, open the WebKit inspector, and paste
-`webview-probe.js` into the inspected page's console. The probe prints one line
-beginning with `DMM_ISSUE_640_RESULT=`; paste the JSON portion back into the
-terminal.
+short. It drives the app through WebKit's loopback inspector, opens My Mods,
+verifies the fixture, runs the probe, and captures the result without manual
+interaction. A 15-second stabilization window keeps initial shader/WebKit cache
+writes out of the measured idle window. Set `DMM_PERF_AUTOMATE=0` only when
+debugging the probe by hand.
+
+To run only the stable/nightly pair for one case, set `DMM_PERF_CASE` to
+`paginated-animated`, `paginated-static`, `paginated-occult-off`, or
+`unpaginated-animated`:
+
+```bash
+DMM_PERF_CASE=paginated-animated bash apps/desktop/scripts/perf-prototype-640/hitl-linux.sh
+```
+
+For an agent-driven comparison where the inspected app may be backgrounded,
+use the timer-driven probe clock. Search-settle and process measurements remain
+valid, but frame timing is explicitly recorded as unavailable:
+
+```bash
+DMM_PERF_CASE=paginated-animated DMM_PERF_PROBE_CLOCK=timer \
+  bash apps/desktop/scripts/perf-prototype-640/hitl-linux.sh
+```
 
 When an exploratory result crosses a materiality floor, rerun the affected
 cases as two balanced decision-grade blocks. Block 2 reverses the artifact

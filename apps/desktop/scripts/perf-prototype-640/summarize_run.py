@@ -95,14 +95,18 @@ def main() -> None:
         search_all = row["searchToAll"]
         frames = row["frames"]
         idle = row["idle"]
+        frame_p95 = f"{frames['p95Ms']:.2f}" if frames.get("valid", True) else "n/a"
+        over_50 = (
+            f"{frames['over50Percent']:.2f}" if frames.get("valid", True) else "n/a"
+        )
         lines.append(
-            "| {artifact} | {case} | {one:.2f} | {all:.2f} | {frame:.2f} | {over:.2f} | {cpu:.2f} | {rss:.2f} | {writes:.0f} |".format(
+            "| {artifact} | {case} | {one:.2f} | {all:.2f} | {frame} | {over} | {cpu:.2f} | {rss:.2f} | {writes:.0f} |".format(
                 artifact=row["artifact"],
                 case=row["case"],
                 one=search_one["medianMs"],
                 all=search_all["medianMs"],
-                frame=frames["p95Ms"],
-                over=frames["over50Percent"],
+                frame=frame_p95,
+                over=over_50,
                 cpu=idle.get("cpuMedianPercentOneCore", 0.0),
                 rss=idle.get("rssMedianMiB", 0.0),
                 writes=idle.get("writeBytesDelta", 0.0),

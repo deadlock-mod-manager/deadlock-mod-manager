@@ -1,13 +1,20 @@
-// Paste into the inspected app page's console while My Mods is visible.
 // The terminal harness replaces the sample and fixture placeholders before use.
+/* oxlint-disable unicorn/consistent-function-scoping -- Keep helpers inside the rerunnable console probe. */
+globalThis["__DMM_ISSUE_640_RESULT__"] = null;
 (async () => {
   const warmups = 3;
   const samples = __DMM_SAMPLE_COUNT__;
   const fixtureCount = __DMM_FIXTURE_COUNT__;
+  const timerDriven = __DMM_TIMER_DRIVEN__;
   const targetIndex = String(Math.max(0, fixtureCount - 1)).padStart(4, "0");
   const targetQuery = `Fixture Mod ${targetIndex}`;
   const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-  const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
+  const frame = () =>
+    timerDriven
+      ? new Promise((resolve) =>
+          setTimeout(() => resolve(performance.now()), 16),
+        )
+      : new Promise((resolve) => requestAnimationFrame(resolve));
   const percentile = (values, fraction) => {
     const sorted = [...values].sort((left, right) => left - right);
     return sorted[
@@ -153,6 +160,8 @@
     searchToOne: summarize(searchToOne),
     searchToAll: summarize(searchToAll),
     frames: {
+      valid: !timerDriven,
+      clock: timerDriven ? "timer" : "animation-frame",
       ...summarize(frameIntervals),
       over33Ms: frameIntervals.filter((value) => value > 33).length,
       over50Ms: frameIntervals.filter((value) => value > 50).length,
@@ -161,6 +170,11 @@
         frameIntervals.length,
     },
   };
+  globalThis["__DMM_ISSUE_640_RESULT__"] = result;
   console.log(`DMM_ISSUE_640_RESULT=${JSON.stringify(result)}`);
   return result;
-})();
+})().catch((error) => {
+  globalThis["__DMM_ISSUE_640_RESULT__"] = {
+    error: error instanceof Error ? error.stack : String(error),
+  };
+});
