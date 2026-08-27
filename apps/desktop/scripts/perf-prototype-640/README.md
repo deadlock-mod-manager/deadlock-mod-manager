@@ -11,6 +11,9 @@ with isolated XDG data/config/cache directories. Each run receives the same
 synthetic library and records the entire app/WebKit process group's CPU, RSS,
 process count, and `/proc` I/O counters every 250 ms.
 
+Decision-grade reuse of this harness for the Tier 1 matrix is recorded in
+[`TIER1-MATRIX.md`](./TIER1-MATRIX.md).
+
 ## First CachyOS pass
 
 Close any running Deadlock Mod Manager instance, then run from the repository
@@ -26,6 +29,15 @@ verifies the fixture, runs the probe, and captures the result without manual
 interaction. A 15-second stabilization window keeps initial shader/WebKit cache
 writes out of the measured idle window. Set `DMM_PERF_AUTOMATE=0` only when
 debugging the probe by hand.
+
+CPU comparisons involving focus-aware animation must set
+`DMM_PERF_FOCUS=focused`. Focus the native Tauri window when each artifact
+launches; the harness waits for and records the resulting document focus and
+visibility state:
+
+```bash
+DMM_PERF_FOCUS=focused bash apps/desktop/scripts/perf-prototype-640/hitl-linux.sh
+```
 
 To run only the stable/nightly pair for one case, set `DMM_PERF_CASE` to
 `paginated-animated`, `paginated-static`, `paginated-occult-off`, or

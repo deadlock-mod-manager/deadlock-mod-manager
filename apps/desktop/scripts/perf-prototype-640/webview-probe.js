@@ -149,6 +149,10 @@ globalThis["__DMM_ISSUE_640_RESULT__"] = null;
     userAgent: navigator.userAgent,
     devicePixelRatio,
     viewport: { width: innerWidth, height: innerHeight },
+    focus: {
+      hasFocus: document.hasFocus(),
+      visibilityState: document.visibilityState,
+    },
     fixture: {
       expectedCount: fixtureCount,
       visibleTextMatch: document.body.innerText.includes(String(fixtureCount)),

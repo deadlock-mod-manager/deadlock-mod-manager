@@ -16,13 +16,15 @@ if (typeof WebSocket !== "function") {
 
 function parseArguments(argv) {
   const [action, ...rest] = argv;
-  const options = { action, port: 2999, script: undefined };
+  const options = { action, focus: false, port: 2999, script: undefined };
   for (let index = 0; index < rest.length; index += 1) {
     const argument = rest[index];
     if (argument === "--port") {
       options.port = Number(rest[++index]);
     } else if (argument === "--script") {
       options.script = rest[++index];
+    } else if (argument === "--focus") {
+      options.focus = true;
     } else {
       fail(`Unknown argument: ${argument}`);
     }
@@ -38,6 +40,23 @@ function parseArguments(argv) {
     fail("probe requires --script");
   }
   return options;
+}
+
+async function focusWindow(remote) {
+  const deadline = Date.now() + 30_000;
+  while (Date.now() < deadline) {
+    const state = await remote.evaluate(`({
+      hasFocus: document.hasFocus(),
+      visibilityState: document.visibilityState,
+    })`);
+    if (state.hasFocus && state.visibilityState === "visible") {
+      return;
+    }
+    await sleep(POLL_INTERVAL_MS);
+  }
+  throw new Error(
+    "App window did not become focused within 30 seconds; focus it through the compositor",
+  );
 }
 
 const sleep = (milliseconds) =>
@@ -151,7 +170,10 @@ class WebKitRemote {
   }
 }
 
-async function prepare(remote) {
+async function prepare(remote, focus) {
+  if (focus) {
+    await focusWindow(remote);
+  }
   const deadline = Date.now() + 30_000;
   while (Date.now() < deadline) {
     const state = await remote.evaluate(`(() => {
@@ -166,6 +188,8 @@ async function prepare(remote) {
         path: location.pathname,
         hasSearch: Boolean(document.querySelector("input#search")),
         hasFixture: document.body.innerText.includes("Fixture Mod 0000"),
+        hasFocus: document.hasFocus(),
+        visibilityState: document.visibilityState,
       };
     })()`);
     if (state.path === "/my-mods" && state.hasSearch && state.hasFixture) {
@@ -179,7 +203,10 @@ async function prepare(remote) {
   );
 }
 
-async function probe(remote, scriptPath) {
+async function probe(remote, scriptPath, focus) {
+  if (focus) {
+    await focusWindow(remote);
+  }
   const script = await readFile(scriptPath, "utf8");
   await remote.evaluate(script);
   const deadline = Date.now() + 60_000;
@@ -203,9 +230,9 @@ try {
   remote = new WebKitRemote(await inspectorSocketUrl(options.port));
   await remote.connect();
   if (options.action === "prepare") {
-    await prepare(remote);
+    await prepare(remote, options.focus);
   } else {
-    await probe(remote, options.script);
+    await probe(remote, options.script, options.focus);
   }
   remote.close();
 } catch (error) {

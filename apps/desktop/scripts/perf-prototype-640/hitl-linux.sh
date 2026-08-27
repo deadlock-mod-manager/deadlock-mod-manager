@@ -34,6 +34,7 @@ MEASUREMENT_BLOCK="${DMM_PERF_BLOCK:-0}"
 CASE_FILTER="${DMM_PERF_CASE:-all}"
 PROBE_CLOCK="${DMM_PERF_PROBE_CLOCK:-animation-frame}"
 AUTOMATE="${DMM_PERF_AUTOMATE:-1}"
+FOCUS_MODE="${DMM_PERF_FOCUS:-preserve}"
 INSPECTOR_PORT="${DMM_PERF_INSPECTOR_PORT:-2999}"
 RUN_STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 RESULT_ROOT="$REPO_ROOT/result/issue-640"
@@ -57,6 +58,10 @@ case "$PROBE_CLOCK" in
   *) fail "DMM_PERF_PROBE_CLOCK must be animation-frame or timer" ;;
 esac
 [[ "$AUTOMATE" =~ ^[01]$ ]] || fail "DMM_PERF_AUTOMATE must be 0 or 1"
+case "$FOCUS_MODE" in
+  preserve | focused) ;;
+  *) fail "DMM_PERF_FOCUS must be preserve or focused" ;;
+esac
 
 for required in awk bash cat curl date find grep mv pgrep ps python3 sed setsid sha256sum sleep tr uname; do
   require_command "$required"
@@ -138,6 +143,7 @@ write_environment() {
     printf 'case_filter=%s\n' "$CASE_FILTER"
     printf 'probe_clock=%s\n' "$PROBE_CLOCK"
     printf 'automated=%s\n' "$AUTOMATE"
+    printf 'focus_mode=%s\n' "$FOCUS_MODE"
     printf 'stable_sha256=%s\n' "$STABLE_SHA"
     printf 'nightly_sha256=%s\n' "$NIGHTLY_SHA"
     printf '\n[os-release]\n'
@@ -234,8 +240,14 @@ run_case() {
   ACTIVE_SAMPLER_PID="$sampler_pid"
 
   if [[ "$AUTOMATE" == "1" ]]; then
+    local focus_args=()
+    if [[ "$FOCUS_MODE" == "focused" ]]; then
+      focus_args+=(--focus)
+      printf 'Waiting for the native app window to be focused...\n'
+    fi
     node "$SCRIPT_DIR/webkit-remote.mjs" prepare \
-      --port "$INSPECTOR_PORT" >"$case_root/prepare.json"
+      --port "$INSPECTOR_PORT" \
+      "${focus_args[@]}" >"$case_root/prepare.json"
   else
     step "Wait for the app to become interactive, open My Mods from the sidebar, and leave the pointer still."
     capture FIXTURE_VISIBLE "Does My Mods show the isolated $FIXTURE_COUNT-mod fixture without an error? (y/n)"
@@ -259,7 +271,8 @@ run_case() {
     record_event "$events" "probe_requested"
     PROBE_JSON="$(node "$SCRIPT_DIR/webkit-remote.mjs" probe \
       --port "$INSPECTOR_PORT" \
-      --script "$case_root/webview-probe.js")"
+      --script "$case_root/webview-probe.js" \
+      "${focus_args[@]}")"
   else
     if command -v wl-copy >/dev/null 2>&1; then
       wl-copy <"$case_root/webview-probe.js"
