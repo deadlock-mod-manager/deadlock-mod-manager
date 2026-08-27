@@ -75,19 +75,23 @@ sudo pacman -S --needed \
 
 **Note for Linux users:**
 
-The application automatically sets WebKitGTK environment variables on Linux to handle:
+The Wry application can set WebKitGTK environment variables on Linux to handle:
 
 - NVIDIA GPU rendering issues (GBM buffer errors)
 - Blank page rendering on X11
 - Wayland compatibility (including Hyprland)
 
-These fixes are configured in `src-tauri/src/lib.rs` and applied automatically:
+Auto mode enables the workaround when NVIDIA hardware is detected. Users can
+force it on or off from Settings, and CEF builds do not apply WebKit variables.
+The startup logic is configured in `src-tauri/src/main.rs`:
 
 ```bash
 pnpm dev
 ```
 
-**Performance Note:** To ensure compatibility across different GPU drivers and display servers, hardware acceleration is partially disabled. This may result in reduced UI performance, which is a known trade-off for webkit2gtk compatibility on Linux.
+**Performance Note:** The workaround partially disables hardware acceleration and
+can reduce UI performance. Avoid forcing it on unless the Wry window renders
+blank or incorrectly.
 
 The above packages include GStreamer plugins needed for media playback in webkit2gtk.
 

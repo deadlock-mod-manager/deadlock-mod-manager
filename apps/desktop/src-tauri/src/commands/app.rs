@@ -64,14 +64,14 @@ pub async fn is_auto_update_disabled() -> Result<bool, Error> {
 
 #[tauri::command]
 pub async fn is_linux_gpu_optimization_active() -> Result<bool, Error> {
-  #[cfg(target_os = "linux")]
+  #[cfg(all(target_os = "linux", not(feature = "cef")))]
   {
     let active = std::env::var("WEBKIT_DISABLE_DMABUF_RENDERER").is_ok();
     log::info!("Linux GPU compat workaround active: {active}");
     Ok(active)
   }
 
-  #[cfg(not(target_os = "linux"))]
+  #[cfg(any(not(target_os = "linux"), feature = "cef"))]
   {
     Ok(false)
   }

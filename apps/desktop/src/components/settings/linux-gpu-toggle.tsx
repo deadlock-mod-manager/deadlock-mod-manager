@@ -11,12 +11,13 @@ import { platform } from "@tauri-apps/plugin-os";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePersistedStore } from "@/lib/store";
+import { getRuntimeKind } from "@/lib/tauri-commands";
 
 type GpuCompatMode = "auto" | "on" | "off";
 
 export const LinuxGpuToggle = () => {
   const { t } = useTranslation();
-  const [isLinux, setIsLinux] = useState(false);
+  const [isSupported, setIsSupported] = useState(false);
   const [isActive, setIsActive] = useState(false);
   const linuxGpuOptimization = usePersistedStore(
     (state) => state.linuxGpuOptimization,
@@ -28,24 +29,29 @@ export const LinuxGpuToggle = () => {
   useEffect(() => {
     const checkPlatform = async () => {
       const currentPlatform = platform();
-      setIsLinux(currentPlatform === "linux");
+      if (currentPlatform !== "linux") {
+        return;
+      }
 
-      if (currentPlatform === "linux") {
-        try {
-          const active = await invoke<boolean>(
-            "is_linux_gpu_optimization_active",
-          );
-          setIsActive(active);
-        } catch {
-          setIsActive(false);
+      try {
+        if ((await getRuntimeKind()) !== "wry") {
+          return;
         }
+
+        setIsSupported(true);
+        const active = await invoke<boolean>(
+          "is_linux_gpu_optimization_active",
+        );
+        setIsActive(active);
+      } catch {
+        setIsActive(false);
       }
     };
 
     checkPlatform();
   }, []);
 
-  if (!isLinux) {
+  if (!isSupported) {
     return null;
   }
 

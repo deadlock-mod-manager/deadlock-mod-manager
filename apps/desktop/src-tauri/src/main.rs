@@ -28,6 +28,22 @@ fn is_nvidia_gpu_present() -> bool {
 }
 
 #[cfg(target_os = "linux")]
+fn gpu_compat_enabled(
+  setting: &str,
+  cli_disabled: bool,
+  is_wry: bool,
+  nvidia_present: bool,
+) -> bool {
+  is_wry
+    && !cli_disabled
+    && match setting {
+      "on" => true,
+      "off" => false,
+      _ => nvidia_present,
+    }
+}
+
+#[cfg(target_os = "linux")]
 fn read_gpu_compat_setting() -> String {
   let data_dir = match std::env::var_os("XDG_DATA_HOME")
     .map(std::path::PathBuf::from)
@@ -92,8 +108,15 @@ fn read_gpu_compat_setting() -> String {
 #[cfg(target_os = "linux")]
 fn should_enable_gpu_compat_workaround() -> bool {
   let cli_args = desktop_lib::cli::get_cli_args();
+  let is_wry = cfg!(not(feature = "cef"));
 
-  if cli_args.disable_linux_gpu_optimization {
+  if !is_wry {
+    eprintln!("[GPU Compat] Skipping WebKit workaround for CEF runtime");
+    return false;
+  }
+
+  let cli_disabled = cli_args.disable_linux_gpu_optimization;
+  if cli_disabled {
     eprintln!("[GPU Compat] Disabled via --disable-linux-gpu-optimization CLI flag");
     return false;
   }
@@ -104,16 +127,17 @@ fn should_enable_gpu_compat_workaround() -> bool {
   match setting.as_str() {
     "on" => {
       eprintln!("[GPU Compat] Forced ON via settings");
-      true
+      gpu_compat_enabled(setting.as_str(), cli_disabled, is_wry, false)
     }
     "off" => {
       eprintln!("[GPU Compat] Forced OFF via settings");
-      false
+      gpu_compat_enabled(setting.as_str(), cli_disabled, is_wry, false)
     }
     _ => {
       let session_type = std::env::var("XDG_SESSION_TYPE").unwrap_or_default();
       eprintln!("[GPU Compat] Auto-detecting NVIDIA on {session_type}...");
-      is_nvidia_gpu_present()
+      let nvidia_present = is_nvidia_gpu_present();
+      gpu_compat_enabled(setting.as_str(), cli_disabled, is_wry, nvidia_present)
     }
   }
 }
@@ -128,7 +152,7 @@ fn main() {
   {
     eprintln!("[GPU Compat] Checking if WebKit DMA-BUF workaround should be enabled");
     if should_enable_gpu_compat_workaround() {
-      eprintln!("[GPU Compat] Enabling WebKit workaround for NVIDIA + Wayland compatibility");
+      eprintln!("[GPU Compat] Enabling WebKit workaround for NVIDIA compatibility");
       unsafe {
         std::env::set_var("WEBKIT_DISABLE_DMABUF_RENDERER", "1");
         std::env::set_var("WEBKIT_DISABLE_COMPOSITING_MODE", "1");
@@ -137,4 +161,32 @@ fn main() {
   }
 
   desktop_lib::run()
+}
+
+#[cfg(all(test, target_os = "linux"))]
+mod tests {
+  use super::gpu_compat_enabled;
+
+  #[test]
+  fn gpu_compat_is_never_enabled_for_cef() {
+    assert!(!gpu_compat_enabled("on", false, false, true));
+  }
+
+  #[test]
+  fn cli_override_disables_all_wry_modes() {
+    assert!(!gpu_compat_enabled("on", true, true, true));
+  }
+
+  #[test]
+  fn forced_modes_override_gpu_detection_on_wry() {
+    assert!(gpu_compat_enabled("on", false, true, false));
+    assert!(!gpu_compat_enabled("off", false, true, true));
+  }
+
+  #[test]
+  fn auto_mode_follows_nvidia_detection_on_wry() {
+    assert!(gpu_compat_enabled("auto", false, true, true));
+    assert!(!gpu_compat_enabled("auto", false, true, false));
+    assert!(gpu_compat_enabled("invalid", false, true, true));
+  }
 }

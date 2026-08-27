@@ -158,15 +158,23 @@ makepkg -si
 ```
 
 <Callout type="info" title="Linux Compatibility Note">
-If you experience issues with the application not displaying correctly or crashing on Wayland, particularly with NVIDIA GPUs, the Flatpak distribution already includes the required `WEBKIT_DISABLE_DMABUF_RENDERER=1` workaround automatically.
+Wry builds automatically enable the NVIDIA compatibility workaround when the GPU
+can be detected. This applies to native packages and Flatpak on Wayland or X11.
 
-For non-Flatpak installs (.deb / AUR / RPM), you can apply it manually:
+If a native Wry window is blank before you can change Settings to **Force On**,
+launch it once with:
 
 ```bash
-WEBKIT_DISABLE_DMABUF_RENDERER=1 deadlock-mod-manager
+WEBKIT_DISABLE_DMABUF_RENDERER=1 WEBKIT_DISABLE_COMPOSITING_MODE=1 deadlock-mod-manager
 ```
 
-AUR users have this automatically handled via the `.desktop` file.
+For Flatpak, persist the same fallback with:
+
+```bash
+flatpak override --user --env=WEBKIT_DISABLE_DMABUF_RENDERER=1 --env=WEBKIT_DISABLE_COMPOSITING_MODE=1 dev.stormix.deadlock-mod-manager
+```
+
+CEF builds do not use these WebKit variables.
 
 </Callout>
 
