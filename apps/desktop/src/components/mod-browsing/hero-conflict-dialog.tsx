@@ -85,7 +85,9 @@ export const HeroConflictDialog = ({
 
   return (
     <AlertDialog onOpenChange={handleOpenChange} open={open}>
-      <AlertDialogContent className='gap-0 overflow-hidden p-0 sm:max-w-2xl'>
+      <AlertDialogContent
+        className='gap-0 overflow-hidden p-0 sm:max-w-2xl'
+        onClick={(e) => e.stopPropagation()}>
         <div className='flex items-start gap-3 border-b border-border/60 bg-muted/30 px-6 pt-5 pb-4'>
           <Avatar className='size-10 ring-1 ring-border/60'>
             {heroImage && <AvatarImage alt={heroName} src={heroImage} />}
