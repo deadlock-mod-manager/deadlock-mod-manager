@@ -100,8 +100,64 @@ comparison; no build-attributable CPU improvement or regression is claimed.
 - **Invalid and corrected diagnostically:** uncontrolled-focus CPU values from
   the main blocks.
 
-This completes only the physical CachyOS/RX 7900 XT Wry decision-grade stress
-search/scroll cell, with exploratory small and representative fixture checks.
-It does not cover the clean fixture; lifecycle, import, download, or updater
-journeys; CEF; or either required Windows 11 physical cell. Those limits
-prevent closing the matrix ticket or claiming full Tier 1 coverage.
+## Windows 11 QEMU NSIS smoke
+
+### Environment and artifacts
+
+- Windows 11 Pro 64-bit, build 26200, under QEMU/KVM with two logical Ryzen 7
+  5800X3D processors and 6 GiB RAM.
+- Red Hat VirtIO GPU plus the Microsoft Remote Display Adapter over RDP.
+- Microsoft Edge WebView2 `151.0.4129.107`.
+- Stable `1.1.0` NSIS artifact, SHA-256
+  `11e8a0996099e04fcc1a6059f2b5b04ebdc8b572356cb955763b2b8ea5b2d948`.
+- Nightly `1.2.0-nightly.20260825.db775912` NSIS artifact, SHA-256
+  `dfff75eef3398735478c26be95a6a870acb2259b7d40d346222ece48f1c43463`.
+
+The stable Authenticode signature validated to SignPath Foundation. The
+nightly checksum matched its GitHub release asset, but Windows reported
+`UnknownError` for its embedded untrusted test certificate. The nightly is
+therefore identity-matched but not trust-equivalent to the stable artifact.
+
+### Package prerequisite
+
+The VM initially lacked the Microsoft Visual C++ runtime. Installing stable
+completed successfully, but launching it failed with missing `MSVCP140.dll`.
+After installing the current Microsoft x64 Visual C++ redistributable, whose
+Authenticode status was `Valid`, both artifacts installed and launched. This
+is a reproducible package-prerequisite blocker on an otherwise working Windows
+11/WebView2 environment; the DMM NSIS installer did not supply the dependency.
+
+### Exploratory install and launch smoke
+
+Each artifact received a fresh application-data root. Five process-cold
+launches measured process start to the first responsive native window. These
+samples do not establish first-interactive-shell latency or a decision-grade
+performance verdict:
+
+| Metric                        |     Stable |   Nightly |
+| ----------------------------- | ---------: | --------: |
+| Silent install, single sample |     5.64 s |    6.65 s |
+| Responsive launches           |        5/5 |       5/5 |
+| First launch after install    |     743 ms |    818 ms |
+| Remaining four launch median  |     114 ms |    106 ms |
+| Remaining four launch range   | 102-117 ms | 85-115 ms |
+
+No relative launch failure appeared. Installer timing is unbalanced and has no
+predeclared materiality floor, so the observed difference is not a regression
+claim. Raw environment, per-launch, installer, signature, and hash data remain
+in the ignored local `result/issue-633/windows-vm/` packet.
+
+### Functional correctness finding
+
+The nightly rendered its onboarding/dashboard shell, but the What's New dialog
+displayed `whatsNew.versions.1.2.0-nightly.20260825.db775912.title` as visible
+text. The running version is used directly as an i18n lookup key while the
+English locale has no matching nightly entry. This is a visually reproduced
+nightly correctness failure and remains separate from the performance verdict.
+
+This completes the physical CachyOS/RX 7900 XT Wry decision-grade stress
+search/scroll cell, exploratory small and representative fixture checks, and
+the permitted Windows 11 QEMU NSIS/install/launch smoke. It does not cover the
+clean fixture; lifecycle, import, download, or updater journeys; CEF; or either
+required Windows 11 physical GPU/rendering cell. Those limits prevent closing
+the matrix ticket or claiming full Tier 1 coverage.
