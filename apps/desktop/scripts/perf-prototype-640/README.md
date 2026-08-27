@@ -47,6 +47,15 @@ To run only the stable/nightly pair for one case, set `DMM_PERF_CASE` to
 DMM_PERF_CASE=paginated-animated bash apps/desktop/scripts/perf-prototype-640/hitl-linux.sh
 ```
 
+The default fixture is the 250-mod stress corpus. Set
+`DMM_PERF_FIXTURE_COUNT` to run the same controlled search/scroll journey with
+another corpus size, such as the 25-mod small or 75-mod representative fixture:
+
+```bash
+DMM_PERF_FIXTURE_COUNT=75 DMM_PERF_CASE=paginated-animated \
+  bash apps/desktop/scripts/perf-prototype-640/hitl-linux.sh
+```
+
 For an agent-driven comparison where the inspected app may be backgrounded,
 use the timer-driven probe clock. Search-settle and process measurements remain
 valid, but frame timing is explicitly recorded as unavailable:
@@ -71,8 +80,10 @@ existing run.
 
 ## Deliberate limits
 
-- The fixture exercises My Mods deterministically at 250 entries. Get Mods uses
-  live API data and is not treated as a fixed-fixture comparison in this pass.
+- The fixture exercises My Mods deterministically and defaults to the 250-entry
+  stress corpus. The Tier 1 matrix also uses 25-entry small and 75-entry
+  representative variants. Get Mods uses live API data and is not treated as a
+  fixed-fixture comparison in this pass.
 - The first pass compares Wry packages. A CEF run is added only after an exact
   matching CEF artifact is available.
 - The console probe measures search-to-settled-render latency and animation

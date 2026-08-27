@@ -56,6 +56,23 @@ budget. The shared `useSearch` path has an unchanged 300 ms debounce, so this
 is an inherited absolute-budget failure rather than a stable-to-nightly
 regression. Scrolling remains within budget.
 
+### Fixture-breadth check
+
+Five-sample exploratory pairs checked whether the stress result was peculiar to
+the 250-mod fixture. Both pairs used the same focused, paginated, animated
+search/scroll journey and passed the focus and visibility checks:
+
+| Fixture        | Stable search median/p95 | Nightly search median/p95 | Stable frame p95 | Nightly frame p95 |
+| -------------- | -----------------------: | ------------------------: | ---------------: | ----------------: |
+| Small, 25 mods |               439/449 ms |                437/440 ms |            18 ms |             18 ms |
+| Rep., 75 mods  |               448/450 ms |                449/449 ms |            18 ms |             18 ms |
+
+Neither exploratory pair crosses the relative or absolute materiality gates,
+so the protocol does not trigger a 20-sample confirmation. Together with the
+stress result, they show that the unchanged 300 ms debounce dominates observed
+search latency at these fixture sizes. The raw captures are
+`20260827T001119Z` and `20260827T001308Z` under the ignored local result tree.
+
 ### Focus control correction
 
 The two main blocks did not preserve native window focus in their result
@@ -83,8 +100,8 @@ comparison; no build-attributable CPU improvement or regression is claimed.
 - **Invalid and corrected diagnostically:** uncontrolled-focus CPU values from
   the main blocks.
 
-This completes only the physical CachyOS/RX 7900 XT Wry stress-search/scroll
-cell. It does not cover clean, small, or representative fixtures; lifecycle,
-import, download, or updater journeys; CEF; or either required Windows 11
-physical cell. Those limits prevent closing the matrix ticket or claiming full
-Tier 1 coverage.
+This completes only the physical CachyOS/RX 7900 XT Wry decision-grade stress
+search/scroll cell, with exploratory small and representative fixture checks.
+It does not cover the clean fixture; lifecycle, import, download, or updater
+journeys; CEF; or either required Windows 11 physical cell. Those limits
+prevent closing the matrix ticket or claiming full Tier 1 coverage.
