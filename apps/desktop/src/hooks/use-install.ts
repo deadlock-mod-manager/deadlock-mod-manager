@@ -1,8 +1,12 @@
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback } from "react";
+import { getErrorMessage } from "@/lib/errors";
+import { createLogger } from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { type InstallableMod, type LocalMod, ModStatus } from "@/types/mods";
-import type { ErrorKind } from "@/types/tauri";
+import { type ErrorKind, isTauriError } from "@/types/tauri";
+
+const logger = createLogger("use-install");
 
 export type InstallOptions = {
   onStart: (mod: LocalMod) => void;
@@ -43,18 +47,13 @@ const useInstall = () => {
 
         return result;
       } catch (error: unknown) {
-        if (error instanceof Error) {
-          options.onError(mod, {
-            kind: "unknown",
-            message: error.message,
-          });
-        } else if (
-          typeof error === "object" &&
-          error !== null &&
-          "kind" in error
-        ) {
-          options.onError(mod, error as ErrorKind);
-        }
+        logger
+          .withMetadata({ error, modId: mod.remoteId })
+          .error("Failed to install mod");
+        const installError: ErrorKind = isTauriError(error)
+          ? error
+          : { kind: "unknown", message: getErrorMessage(error) };
+        options.onError(mod, installError);
         return null;
       }
     },

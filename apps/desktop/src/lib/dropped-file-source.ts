@@ -1,8 +1,12 @@
-import { type DetectedSource, detectSource } from "./file-utils";
+import {
+  type DetectedSource,
+  detectPathSource,
+  detectSource,
+} from "./file-utils";
 
 interface DroppedFileSourceResolvers {
   getFilesFromItems?: () => Promise<File[]>;
-  getFilesFromUriList?: () => Promise<File[]>;
+  getPathsFromUriList?: () => Promise<string[]>;
 }
 
 export const resolveDroppedModSource = async (
@@ -10,23 +14,26 @@ export const resolveDroppedModSource = async (
   resolvers: DroppedFileSourceResolvers = {},
 ): Promise<DetectedSource | null> => {
   const initialSource = detectSource(initialFiles);
-  if (initialSource) {
+  if (initialSource?.source.type === "nativePath") {
     return initialSource;
   }
 
+  let browserFallback = initialSource;
+
   if (resolvers.getFilesFromItems) {
     const itemSource = detectSource(await resolvers.getFilesFromItems());
-    if (itemSource) {
+    if (itemSource?.source.type === "nativePath") {
       return itemSource;
     }
+    browserFallback ??= itemSource;
   }
 
-  if (resolvers.getFilesFromUriList) {
-    const uriSource = detectSource(await resolvers.getFilesFromUriList());
+  if (resolvers.getPathsFromUriList) {
+    const uriSource = detectPathSource(await resolvers.getPathsFromUriList());
     if (uriSource) {
       return uriSource;
     }
   }
 
-  return null;
+  return browserFallback;
 };

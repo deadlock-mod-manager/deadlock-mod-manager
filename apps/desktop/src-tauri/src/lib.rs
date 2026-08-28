@@ -27,8 +27,11 @@ pub mod proxy;
 mod reports;
 pub mod runtime_environment;
 mod steam_user;
+mod update_target;
 mod updater_channel;
 mod utils;
+#[cfg(all(windows, feature = "tauri-wry"))]
+mod webview_recovery;
 
 use tauri::Manager;
 use tauri_plugin_log::{Target, TargetKind};
@@ -185,6 +188,8 @@ pub fn run() {
       app.manage(commands::policy::PolicyState::open(
         runtime_environment::app_local_data_dir(app.handle())?.join("policy-manifest-v1.json"),
       ));
+      #[cfg(all(windows, feature = "tauri-wry"))]
+      webview_recovery::setup(app)?;
 
       {
         let mut mod_manager = commands::state::MANAGER
@@ -379,7 +384,7 @@ pub fn run() {
       commands::logs::parse_crash_dump,
       commands::logs::parse_latest_crash_dump,
       commands::logs::open_latest_crash_dump_parsed,
-      commands::archive::read_dropped_mod_file,
+      commands::archive::import_path_backed_mod_file,
       commands::app::check_filesystem_writable,
       commands::downloads::test_fileserver_latency,
       commands::server_browser::ping_servers,
@@ -392,6 +397,7 @@ pub fn run() {
       proxy::test_proxy_connection,
       updater_channel::get_update_channel,
       updater_channel::set_update_channel,
+      updater_channel::get_update_target,
       #[cfg(feature = "e2e-harness")]
       commands::e2e::e2e_status
     ])

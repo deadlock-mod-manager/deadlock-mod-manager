@@ -33,6 +33,13 @@ inputs:
     description: "Path to metainfo.xml to copy into flatpak dir"
     required: false
     default: "apps/desktop/src-tauri/dev.stormix.deadlock-mod-manager.metainfo.xml"
+  app-version:
+    description: "Desktop package version to embed as the newest AppStream release"
+    required: true
+  runtime-kind:
+    description: "Runtime variant written to the verified self-update marker (wry or cef)"
+    required: false
+    default: "wry"
 
 runs:
   using: composite
@@ -50,7 +57,17 @@ runs:
         REPO_DIR="${{ inputs.repo-directory }}"
         BUILD_DIR="${{ inputs.build-directory }}"
         METAINFO_SOURCE="${{ inputs.metainfo-source }}"
+        APP_VERSION="${{ inputs.app-version }}"
+        RUNTIME_KIND="${{ inputs.runtime-kind }}"
         FLATPAK_DIR="$(dirname "${MANIFEST}")"
+
+        case "${RUNTIME_KIND}" in
+          wry|cef) ;;
+          *)
+            echo "ERROR: runtime-kind must be 'wry' or 'cef', got '${RUNTIME_KIND}'"
+            exit 1
+            ;;
+        esac
 
         shopt -s nullglob
         debs=($DEB_GLOB)
@@ -60,7 +77,38 @@ runs:
         fi
 
         cp "${debs[0]}" "${FLATPAK_DIR}/deadlock-mod-manager.deb"
-        cp "${METAINFO_SOURCE}" "${FLATPAK_DIR}/"
+        python3 - "${METAINFO_SOURCE}" "${FLATPAK_DIR}/dev.stormix.deadlock-mod-manager.metainfo.xml" "${APP_VERSION}" <<'PY'
+        import datetime
+        import sys
+        import xml.etree.ElementTree as ET
+
+        source, destination, version = sys.argv[1:]
+        tree = ET.parse(source)
+        root = tree.getroot()
+        releases = root.find("releases")
+        if releases is None:
+            raise SystemExit("metainfo.xml does not contain a <releases> element")
+
+        release = next((item for item in releases if item.get("version") == version), None)
+        if release is None:
+            release = ET.Element(
+                "release",
+                version=version,
+                date=datetime.date.today().isoformat(),
+            )
+            details = ET.SubElement(release, "url", type="details")
+            details.text = "https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases"
+            description = ET.SubElement(release, "description")
+            paragraph = ET.SubElement(description, "p")
+            paragraph.text = "See the full release notes on GitHub."
+        else:
+            releases.remove(release)
+
+        releases.insert(0, release)
+        ET.indent(tree, space="  ")
+        tree.write(destination, encoding="UTF-8", xml_declaration=True)
+        PY
+        printf '%s\n' "${RUNTIME_KIND}" > "${FLATPAK_DIR}/self-update-verified"
 
         flatpak-builder --user --force-clean --repo="${REPO_DIR}" "${BUILD_DIR}" "${MANIFEST}"
         flatpak build-bundle "${REPO_DIR}" "${BUNDLE_FILENAME}" "${APP_ID}"

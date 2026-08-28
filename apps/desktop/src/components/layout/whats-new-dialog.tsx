@@ -23,7 +23,11 @@ import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useAbout from "@/hooks/use-about";
 import { APP_NAME, GITHUB_REPO } from "@/lib/constants";
-import { getWhatsNewVideoId } from "@/lib/whats-new-versions";
+import {
+  getWhatsNewFeaturesKey,
+  getWhatsNewTitleKey,
+  getWhatsNewVideoId,
+} from "@/lib/whats-new-versions";
 
 type WhatsNewDialogProps = {
   onClose: () => void;
@@ -124,16 +128,11 @@ const categorizeFeatures = (features: string[]): FeatureCategory[] => {
 };
 
 const getFeatures = (
-  t: (
-    key: string,
-    options?: { returnObjects?: boolean; defaultValue?: string[] },
-  ) => string | string[],
-  version: string,
+  t: (key: string, options?: { returnObjects?: boolean }) => string | string[],
+  featuresKey: string | null,
 ): string[] => {
-  const features = t(`whatsNew.versions.${version}.features`, {
-    returnObjects: true,
-    defaultValue: [],
-  });
+  if (!featuresKey) return [];
+  const features = t(featuresKey, { returnObjects: true });
   if (!Array.isArray(features)) return [];
   return features.filter((f): f is string => typeof f === "string");
 };
@@ -235,14 +234,15 @@ export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
 
   const version = data?.version || "0.10.0";
 
-  const title = t(`whatsNew.versions.${version}.title`, { defaultValue: "" });
+  const title = t(getWhatsNewTitleKey(version));
+  const featuresKey = getWhatsNewFeaturesKey(version);
   const videoId = getWhatsNewVideoId(version);
 
   const categories = useMemo(() => {
-    const features = getFeatures(t, version);
+    const features = getFeatures(t, featuresKey);
     if (features.length === 0) return [];
     return categorizeFeatures(features);
-  }, [t, version]);
+  }, [featuresKey, t]);
 
   return (
     <DialogContent className='wn-dialog-enter max-h-[85dvh] max-w-lg flex flex-col gap-0 overflow-hidden border-primary/15 p-0'>
@@ -265,7 +265,7 @@ export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
         </div>
 
         <DialogTitle className='relative mt-2 font-primary font-bold text-[1.65rem] leading-[1.15] tracking-tight text-foreground'>
-          {title || t("whatsNew.title")}
+          {title}
         </DialogTitle>
 
         <DialogDescription className='mt-1.5 text-muted-foreground text-xs leading-relaxed'>

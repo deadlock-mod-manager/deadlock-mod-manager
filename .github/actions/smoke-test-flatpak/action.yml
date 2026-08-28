@@ -1,0 +1,170 @@
+name: Smoke test Flatpak bundle
+description: Installs and launches a Flatpak bundle under headless Wayland before publication.
+
+inputs:
+  bundle-path:
+    description: "Path to the candidate .flatpak bundle"
+    required: true
+  expected-version:
+    description: "Version expected in the bundle's newest AppStream release"
+    required: true
+  runtime-kind:
+    description: "Runtime variant used to label diagnostics (wry or cef)"
+    required: true
+  app-id:
+    description: "Flatpak application ID"
+    required: false
+    default: "dev.stormix.deadlock-mod-manager"
+  startup-seconds:
+    description: "Seconds the application must remain alive"
+    required: false
+    default: "15"
+
+runs:
+  using: composite
+  steps:
+    - name: Install and launch Flatpak candidate
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        BUNDLE_PATH="${{ inputs.bundle-path }}"
+        EXPECTED_VERSION="${{ inputs.expected-version }}"
+        RUNTIME_KIND="${{ inputs.runtime-kind }}"
+        APP_ID="${{ inputs.app-id }}"
+        STARTUP_SECONDS="${{ inputs.startup-seconds }}"
+        LOG_DIR="${RUNNER_TEMP}/flatpak-smoke-${RUNTIME_KIND}"
+        RUNTIME_DIR="${LOG_DIR}/runtime"
+
+        mkdir -p "${LOG_DIR}"
+        rm -rf "${RUNTIME_DIR}"
+        mkdir -m 700 "${RUNTIME_DIR}"
+
+        print_diagnostics() {
+          echo "::group::Flatpak smoke diagnostics (${RUNTIME_KIND})"
+          flatpak info --user "${APP_ID}" || true
+          flatpak ps || true
+          for log in "${LOG_DIR}"/*.log; do
+            [ -f "${log}" ] || continue
+            echo "--- ${log} ---"
+            cat "${log}"
+          done
+          echo "::endgroup::"
+        }
+
+        cleanup() {
+          local status=$?
+          trap - EXIT
+          flatpak kill "${APP_ID}" 2>/dev/null || true
+          if [ -n "${WESTON_PID:-}" ]; then
+            kill "${WESTON_PID}" 2>/dev/null || true
+          fi
+          if [ "${status}" -ne 0 ]; then
+            print_diagnostics
+          fi
+          exit "${status}"
+        }
+        trap cleanup EXIT
+
+        if [ ! -s "${BUNDLE_PATH}" ]; then
+          echo "ERROR: Flatpak candidate is missing or empty: ${BUNDLE_PATH}"
+          exit 1
+        fi
+        if ! [[ "${STARTUP_SECONDS}" =~ ^[1-9][0-9]*$ ]]; then
+          echo "ERROR: startup-seconds must be a positive integer"
+          exit 1
+        fi
+
+        flatpak install --user --noninteractive --reinstall "${BUNDLE_PATH}"
+
+        INSTALL_DIR="$(flatpak info --user --show-location "${APP_ID}")"
+        METAINFO_PATH="${INSTALL_DIR}/files/share/metainfo/${APP_ID}.metainfo.xml"
+        python3 - "${METAINFO_PATH}" "${EXPECTED_VERSION}" <<'PY'
+        import sys
+        import xml.etree.ElementTree as ET
+
+        path, expected = sys.argv[1:]
+        root = ET.parse(path).getroot()
+        releases = root.find("releases")
+        actual = releases[0].get("version") if releases is not None and len(releases) else None
+        if actual != expected:
+            raise SystemExit(
+                f"AppStream version mismatch: expected {expected!r}, found {actual!r} in {path}"
+            )
+        print(f"Verified AppStream version {actual}")
+        PY
+
+        PERMISSIONS="$(flatpak info --user --show-permissions "${APP_ID}")"
+        SOCKETS="$(sed -n 's/^sockets=//p' <<< "${PERMISSIONS}" | tr ';' '\n')"
+        if ! grep -Fxq 'wayland' <<< "${SOCKETS}"; then
+          echo "ERROR: Flatpak manifest does not grant the Wayland socket"
+          exit 1
+        fi
+        if ! grep -Fxq 'x11' <<< "${SOCKETS}"; then
+          echo "ERROR: Flatpak manifest does not grant the X11 socket"
+          exit 1
+        fi
+        if grep -Fxq 'fallback-x11' <<< "${SOCKETS}"; then
+          echo "ERROR: Flatpak manifest still grants fallback-x11"
+          exit 1
+        fi
+
+        export XDG_RUNTIME_DIR="${RUNTIME_DIR}"
+        export WAYLAND_DISPLAY="wayland-dmm-smoke"
+        unset DISPLAY
+
+        weston \
+          --backend=headless-backend.so \
+          --socket="${WAYLAND_DISPLAY}" \
+          --idle-time=0 \
+          --log="${LOG_DIR}/weston.log" &
+        WESTON_PID=$!
+
+        for _ in $(seq 1 20); do
+          [ -S "${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}" ] && break
+          kill -0 "${WESTON_PID}" 2>/dev/null || {
+            echo "ERROR: Weston exited before creating its Wayland socket"
+            exit 1
+          }
+          sleep 0.5
+        done
+        if [ ! -S "${XDG_RUNTIME_DIR}/${WAYLAND_DISPLAY}" ]; then
+          echo "ERROR: Timed out waiting for Weston's Wayland socket"
+          exit 1
+        fi
+
+        dbus-run-session -- flatpak run "${APP_ID}" > "${LOG_DIR}/app.log" 2>&1 &
+        APP_PID=$!
+
+        for _ in $(seq 1 "${STARTUP_SECONDS}"); do
+          if ! kill -0 "${APP_PID}" 2>/dev/null; then
+            wait "${APP_PID}" || status=$?
+            echo "ERROR: ${RUNTIME_KIND} Flatpak exited during startup (status ${status:-0})"
+            exit 1
+          fi
+          sleep 1
+        done
+
+        if ! flatpak ps --columns=application | grep -Fxq "${APP_ID}"; then
+          echo "ERROR: ${RUNTIME_KIND} Flatpak was not alive after ${STARTUP_SECONDS} seconds"
+          exit 1
+        fi
+
+        timeout 15s flatpak run "${APP_ID}" \
+          "deadlock-mod-manager://forge/launch" > "${LOG_DIR}/deep-link.log" 2>&1
+        for _ in $(seq 1 20); do
+          grep -Fq '[DeepLink] Processing deep link URL: deadlock-mod-manager://forge/launch' \
+            "${LOG_DIR}/app.log" && break
+          sleep 0.25
+        done
+        if ! grep -Fq '[DeepLink] Processing deep link URL: deadlock-mod-manager://forge/launch' \
+          "${LOG_DIR}/app.log"; then
+          echo "ERROR: ${RUNTIME_KIND} Flatpak did not route a deep link to the running app"
+          exit 1
+        fi
+        if grep -Fq 'Failed to run OS command xdg-mime' "${LOG_DIR}/app.log"; then
+          echo "ERROR: ${RUNTIME_KIND} Flatpak attempted redundant xdg-mime registration"
+          exit 1
+        fi
+
+        echo "${RUNTIME_KIND} Flatpak remained alive for ${STARTUP_SECONDS} seconds"

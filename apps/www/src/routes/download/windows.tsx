@@ -1,6 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import {
+  selectExactDownload,
+  selectRecommendedDownload,
+} from "@/lib/release-downloads";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/download/windows")({
@@ -35,9 +39,26 @@ function DownloadWindowsComponent() {
       return;
     }
 
-    const preferredDownload =
-      windowsDownloads.find((download) => download.architecture === "x64") ||
-      windowsDownloads[0];
+    const search = new URLSearchParams(window.location.search);
+    const runtime = search.get("runtime");
+    const installer = search.get("installer");
+    const exactTargetRequested =
+      (runtime === "wry" || runtime === "cef") &&
+      (installer === "exe" || installer === "msi");
+    const preferredDownload = exactTargetRequested
+      ? selectExactDownload(
+          windowsDownloads,
+          "windows",
+          "x64",
+          runtime,
+          installer,
+        )
+      : selectRecommendedDownload(windowsDownloads, "windows", "x64");
+
+    if (!preferredDownload) {
+      navigate({ to: "/download" });
+      return;
+    }
 
     window.location.href = preferredDownload.url;
   }, [releases, isLoading, error, navigate]);

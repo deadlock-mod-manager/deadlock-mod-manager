@@ -1,9 +1,11 @@
 import { describe, expect, test } from "vitest";
 import type { PlatformDownload } from "@/types/releases";
 import {
+  getDownloadDescription,
   getDownloadRuntime,
   getRuntimeName,
   getRuntimeStatus,
+  selectExactDownload,
   selectRecommendedDownload,
 } from "./release-downloads";
 
@@ -140,5 +142,42 @@ describe("selectRecommendedDownload", () => {
 
   test("returns no recommendation for an unknown platform", () => {
     expect(selectRecommendedDownload([], "unknown", "unknown")).toBeNull();
+  });
+});
+
+describe("getDownloadDescription", () => {
+  test("describes packages and updater signatures", () => {
+    const cefDeb = createDownload(
+      "deadlock-mod-manager_1.2.3_amd64-cef.deb",
+      "deb",
+      "cef",
+    );
+    const signature = createDownload(
+      "deadlock-mod-manager_1.2.3_amd64.deb.sig",
+      "sig",
+      "wry",
+    );
+
+    expect(getDownloadDescription(cefDeb)).toBe(
+      "Package for Debian and Ubuntu",
+    );
+    expect(getDownloadDescription(signature)).toBe(
+      "Updater signature, not an installer",
+    );
+  });
+});
+
+describe("selectExactDownload", () => {
+  test("does not cross runtime or installer boundaries", () => {
+    const wryDeb = createDownload("deadlock-mod-manager.deb", "deb", "wry");
+    const cefDeb = createDownload("deadlock-mod-manager-cef.deb", "deb", "cef");
+    const downloads = [wryDeb, cefDeb];
+
+    expect(selectExactDownload(downloads, "linux", "x64", "cef", "deb")).toBe(
+      cefDeb,
+    );
+    expect(
+      selectExactDownload(downloads, "linux", "x64", "cef", "rpm"),
+    ).toBeNull();
   });
 });

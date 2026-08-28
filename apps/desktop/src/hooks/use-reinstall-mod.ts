@@ -8,6 +8,7 @@ import { downloadManager } from "@/lib/download/manager";
 import { getErrorMessage } from "@/lib/errors";
 import { createLogger } from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
+import { useModProgressStore } from "@/lib/store/mod-progress";
 import {
   type LocalMod,
   type ModDownloadItem,
@@ -199,7 +200,7 @@ const redownload = (
           .setModStatus(mod.remoteId, ModStatus.Downloading);
       },
       onProgress: (progress) => {
-        usePersistedStore.getState().setModProgress(mod.remoteId, progress);
+        useModProgressStore.getState().setModProgress(mod.remoteId, progress);
         onFraction?.(progress.percentage / 100);
       },
       onComplete: () => {

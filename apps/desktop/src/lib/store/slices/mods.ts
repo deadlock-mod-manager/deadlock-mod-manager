@@ -9,19 +9,14 @@ import {
   type ModDownloadItem,
   type ModFileTree,
   ModStatus,
-  type Progress,
 } from "@/types/mods";
 import type { ProfileId } from "@/types/profiles";
 import type { State } from "..";
+import { useModProgressStore } from "../mod-progress";
 import {
   applyToModsAndAllProfiles,
   applyToModsInProfile,
 } from "../utils/mod-slice";
-
-export type ModProgress = {
-  percentage: number;
-  speed?: number;
-};
 
 export type HeroDetectionProgress = {
   status: "idle" | "scanning";
@@ -37,7 +32,6 @@ export type IdentityMigration = {
 
 export type ModsState = {
   localMods: LocalMod[];
-  modProgress: Record<string, ModProgress>;
   defaultSort: SortType;
   /**
    * Mods the user took off a hero's list on the Hero Skins page. They stay in
@@ -69,7 +63,6 @@ export type ModsState = {
     status: ModStatus,
     profileId?: ProfileId,
   ) => void;
-  setModProgress: (remoteId: string, progress: Progress) => void;
   clearMods: () => void;
   nukeModsState: (keepRemoteIds: string[], profileId?: ProfileId) => void;
   setInstalledVpks: (
@@ -93,7 +86,6 @@ export type ModsState = {
     archiveName: string,
     profileId?: ProfileId,
   ) => void;
-  getModProgress: (remoteId: string) => ModProgress | undefined;
   setAnalysisResult: (result: AnalyzeAddonsResult | null) => void;
   setAnalysisDialogOpen: (open: boolean) => void;
   clearAnalysisDialog: () => void;
@@ -130,7 +122,6 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
   get,
 ) => ({
   localMods: [],
-  modProgress: {},
   hiddenHeroMods: {},
   pendingIdentityMigrations: [],
   analysisResult: null,
@@ -323,12 +314,14 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
   },
 
   removeMod: (remoteId, requestedProfileId) => {
-    get().bumpProfileSyncRevision(requestedProfileId ?? get().activeProfileId);
+    const targetProfileId = requestedProfileId ?? get().activeProfileId;
+    get().bumpProfileSyncRevision(targetProfileId);
+    if (targetProfileId === get().activeProfileId) {
+      useModProgressStore.getState().removeModProgress(remoteId);
+    }
     set((state) => {
       const profileId = requestedProfileId ?? state.activeProfileId;
       const isActive = profileId === state.activeProfileId;
-      const newProgress = { ...state.modProgress };
-      delete newProgress[remoteId];
       // Dropped along with the mod, so re-downloading it does not come back
       // already hidden from its hero.
       const { [remoteId]: _hidden, ...hiddenHeroMods } = state.hiddenHeroMods;
@@ -350,7 +343,6 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
             state.activeProfileId === profileId
               ? state.localMods.filter((mod) => mod.remoteId !== remoteId)
               : state.localMods,
-          modProgress: isActive ? newProgress : state.modProgress,
           hiddenHeroMods: isActive ? hiddenHeroMods : state.hiddenHeroMods,
           profiles: {
             ...state.profiles,
@@ -362,7 +354,6 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       if (!isActive) return state;
       return {
         localMods: state.localMods.filter((mod) => mod.remoteId !== remoteId),
-        modProgress: newProgress,
         hiddenHeroMods,
       };
     });
@@ -370,13 +361,13 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 
   setMods: (mods) => set({ localMods: mods }),
 
-  clearMods: () =>
+  clearMods: () => {
+    useModProgressStore.getState().clearModProgress();
     set((state) => {
       const currentProfile = state.profiles[state.activeProfileId];
 
       return {
         localMods: [],
-        modProgress: {},
         hiddenHeroMods: {},
         profiles: currentProfile
           ? {
@@ -389,14 +380,19 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
             }
           : state.profiles,
       };
-    }),
+    });
+  },
 
   // clearMods only empties localMods, which leaves the active profile still
   // holding its own copy of every mod - exactly the drift a nuke is supposed to
   // remove. This wipes both, keeping only the mods the caller wants to survive
   // (local mods, which cannot be re-downloaded).
   nukeModsState: (keepRemoteIds, requestedProfileId) => {
-    get().bumpProfileSyncRevision(requestedProfileId ?? get().activeProfileId);
+    const targetProfileId = requestedProfileId ?? get().activeProfileId;
+    get().bumpProfileSyncRevision(targetProfileId);
+    if (targetProfileId === get().activeProfileId) {
+      useModProgressStore.getState().clearModProgress();
+    }
     return set((state) => {
       const profileId = requestedProfileId ?? state.activeProfileId;
       const isActive = profileId === state.activeProfileId;
@@ -415,7 +411,6 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
             ),
           )
         : state.hiddenHeroMods;
-      const modProgress = isActive ? {} : state.modProgress;
 
       logger
         .withMetadata({
@@ -426,12 +421,11 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         .info("Nuking mods state");
 
       if (!profile) {
-        return { localMods, modProgress, hiddenHeroMods };
+        return { localMods, hiddenHeroMods };
       }
 
       return {
         localMods,
-        modProgress,
         hiddenHeroMods,
         profiles: {
           ...state.profiles,
@@ -448,19 +442,6 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       };
     });
   },
-
-  setModProgress: (remoteId, progress) =>
-    set((state) => ({
-      modProgress: {
-        ...state.modProgress,
-        [remoteId]: {
-          percentage: progress?.percentage ?? 0,
-          speed: progress?.transferSpeed,
-        },
-      },
-    })),
-
-  getModProgress: (remoteId) => get().modProgress[remoteId],
 
   setInstalledVpks: (remoteId, vpks, fileTree, requestedProfileId) => {
     get().bumpProfileSyncRevision(requestedProfileId ?? get().activeProfileId);

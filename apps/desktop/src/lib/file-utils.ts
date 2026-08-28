@@ -21,14 +21,24 @@ export type FileWithPath = File & {
   webkitRelativePath?: string;
 };
 
+export type BrowserFileSource = { type: "browserFile"; file: File };
+export type NativePathSource = {
+  type: "nativePath";
+  path: string;
+  fileName: string;
+};
+export type ImportSource = BrowserFileSource | NativePathSource;
+
 export type DetectedSource =
-  | { kind: "archive"; file: File }
-  | { kind: "vpk"; file: File };
+  | { kind: "archive"; source: ImportSource }
+  | { kind: "vpk"; source: ImportSource };
 
 // A VPK already on disk, placed natively rather than read through the renderer.
 export type StagedSource = { kind: "vpkPath"; path: string; fileName: string };
 
 export type ModSource = DetectedSource | StagedSource;
+
+export const MAX_BROWSER_MOD_FILE_BYTES = 64 * 1024 * 1024;
 
 /**
  * File utility functions
@@ -42,6 +52,13 @@ export const getFileBaseName = (file: File): string => {
 
   return segments.at(-1) || file.name || "mod";
 };
+
+export const getImportSourceFileName = (source: ImportSource): string =>
+  source.type === "nativePath" ? source.fileName : getFileBaseName(source.file);
+
+export const exceedsBrowserModFileLimit = (source: DetectedSource): boolean =>
+  source.source.type === "browserFile" &&
+  source.source.file.size > MAX_BROWSER_MOD_FILE_BYTES;
 
 export const fileToBytes = async (file: File): Promise<Uint8Array> =>
   new Uint8Array(await file.arrayBuffer());
@@ -80,25 +97,88 @@ export const fileToDataUrl = (file: File): Promise<string> =>
 /**
  * Detects the source type from uploaded files
  */
+const isAbsoluteLocalPath = (path: string | undefined): path is string =>
+  Boolean(
+    path &&
+    (path.startsWith("/") ||
+      path.startsWith("\\\\") ||
+      path.startsWith("//") ||
+      /^[a-zA-Z]:[\\/]/.test(path)),
+  );
+
+const getNativeFilePath = (file: File): string | null => {
+  if (file.path && isAbsoluteLocalPath(file.path)) {
+    return file.path;
+  }
+
+  return isAbsoluteLocalPath(file.webkitRelativePath)
+    ? file.webkitRelativePath
+    : null;
+};
+
+const detectSourceKind = (fileName: string): DetectedSource["kind"] | null => {
+  if (VPK_PATTERN.test(fileName)) {
+    return "vpk";
+  }
+
+  return ARCHIVE_PATTERN.test(fileName) ? "archive" : null;
+};
+
+export const detectPathSource = (paths: string[]): DetectedSource | null => {
+  for (const kind of ["vpk", "archive"] as const) {
+    for (const path of paths) {
+      if (!isAbsoluteLocalPath(path)) {
+        continue;
+      }
+
+      const fileName = path.split(/[\\/]/).filter(Boolean).at(-1) ?? "mod";
+      if (detectSourceKind(fileName) === kind) {
+        return {
+          kind,
+          source: { type: "nativePath", path, fileName },
+        };
+      }
+    }
+  }
+
+  return null;
+};
+
 export const detectSource = (files: File[]): DetectedSource | null => {
   if (!files?.length) {
     return null;
   }
 
   const validFiles = files.filter(Boolean);
+  const nativeSource = detectPathSource(
+    validFiles.flatMap((file) => {
+      const path = getNativeFilePath(file);
+      return path ? [path] : [];
+    }),
+  );
+  if (nativeSource) {
+    return nativeSource;
+  }
+
   const vpkFile = validFiles.find((file) =>
     VPK_PATTERN.test(getFileBaseName(file)),
   );
 
   if (vpkFile) {
-    return { kind: "vpk", file: vpkFile };
+    return {
+      kind: "vpk",
+      source: { type: "browserFile", file: vpkFile },
+    };
   }
 
   const archiveFile = validFiles.find((file) =>
     ARCHIVE_PATTERN.test(getFileBaseName(file)),
   );
   if (archiveFile) {
-    return { kind: "archive", file: archiveFile };
+    return {
+      kind: "archive",
+      source: { type: "browserFile", file: archiveFile },
+    };
   }
 
   return null;

@@ -384,6 +384,10 @@ impl GameConfigManager {
     log::info!("Applying vanilla gameinfo.gi content");
 
     let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
+    let vanilla_content = match fs::read_to_string(&gameinfo_path) {
+      Ok(current) => Self::match_line_endings(&vanilla_content, &current),
+      Err(_) => vanilla_content,
+    };
 
     // Validate the downloaded content
     let temp_path = gameinfo_path.with_extension("gi.tmp");
@@ -1090,6 +1094,24 @@ mod tests {
 
   fn vanilla_fixture(newline: &str) -> String {
     "\"GameInfo\"\n{\n  // Deadlock \u{2014} configuration\n  FileSystem\n  {\n\t\tSearchPaths\n    {\n      Game citadel\n    }\n  }\n}".replace("\n", newline)
+  }
+
+  #[test]
+  fn apply_vanilla_gameinfo_keeps_the_installed_line_endings() {
+    for newline in ["\n", "\r\n"] {
+      let (_dir, game_path) = setup_game_dir();
+      write_gameinfo(&game_path, &vanilla_fixture(newline));
+      let mut mgr = GameConfigManager::new();
+
+      mgr
+        .apply_vanilla_gameinfo(&game_path, vanilla_fixture("\n"))
+        .expect("vanilla reset");
+
+      let content =
+        fs::read_to_string(game_path.join("game").join("citadel").join("gameinfo.gi")).unwrap();
+      assert_line_endings(&content, newline);
+      assert!(!mgr.is_game_setup());
+    }
   }
 
   #[test]

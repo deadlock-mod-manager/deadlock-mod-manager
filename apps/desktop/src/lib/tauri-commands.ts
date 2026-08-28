@@ -14,6 +14,17 @@ export interface ServerPingResult {
   latencyMs: number | null;
 }
 
+export interface UpdateTarget {
+  channel: "stable" | "nightly";
+  runtime: "wry" | "cef";
+  operatingSystem: "windows" | "linux" | "unsupported";
+  architecture: "x86_64" | "aarch64" | "unsupported";
+  installer: "nsis" | "deb" | "rpm" | "flatpak" | "aur" | "nix" | "unknown";
+  installationStrategy: "native" | "flatpak" | "packageManager" | "unsupported";
+  manifestTarget: string;
+  flatpakAsset: string | null;
+}
+
 export const initializeApiUrl = async (apiUrl = BASE_URL): Promise<void> => {
   try {
     await invoke("set_api_url", { apiUrl });
@@ -65,6 +76,10 @@ export const isAutoUpdateDisabled = async (): Promise<boolean> => {
 
 export const getRuntimeKind = async (): Promise<"wry" | "cef"> => {
   return await invoke("get_runtime_kind");
+};
+
+export const getUpdateTarget = async (): Promise<UpdateTarget> => {
+  return await invoke("get_update_target");
 };
 
 export const isFlatpak = async (): Promise<boolean> => {

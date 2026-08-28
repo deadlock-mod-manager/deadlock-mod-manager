@@ -118,7 +118,6 @@ export const usePersistedStore = create<State>()(
       },
       partialize: (state) => {
         const {
-          modProgress: _modProgress,
           isSwitching: _isSwitching,
           profileSyncRevisions: _profileSyncRevisions,
           showWhatsNew: _showWhatsNew,

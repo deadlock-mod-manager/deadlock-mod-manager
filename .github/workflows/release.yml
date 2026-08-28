@@ -177,7 +177,8 @@ jobs:
             libappindicator3-dev \
             librsvg2-dev \
             flatpak \
-            flatpak-builder
+            flatpak-builder \
+            weston
 
       - name: Install Flatpak SDK (ubuntu only)
         if: matrix.platform == 'ubuntu-24.04'
@@ -211,6 +212,15 @@ jobs:
         uses: ./.github/actions/build-flatpak-bundle
         with:
           bundle-filename: deadlock-mod-manager.flatpak
+          app-version: ${{ needs.create-release.outputs.package_version }}
+
+      - name: Smoke test Flatpak bundle (Linux)
+        if: matrix.platform == 'ubuntu-24.04'
+        uses: ./.github/actions/smoke-test-flatpak
+        with:
+          bundle-path: deadlock-mod-manager.flatpak
+          expected-version: ${{ needs.create-release.outputs.package_version }}
+          runtime-kind: wry
 
       - name: Upload Flatpak to release (Linux)
         if: matrix.platform == 'ubuntu-24.04'

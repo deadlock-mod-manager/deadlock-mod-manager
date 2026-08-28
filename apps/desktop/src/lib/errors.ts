@@ -6,9 +6,9 @@ export function getErrorMessage(error: unknown): string {
     typeof error === "object" &&
     error !== null &&
     "message" in error &&
-    typeof (error as Record<string, unknown>).message === "string"
+    typeof error.message === "string"
   ) {
-    return (error as Record<string, unknown>).message as string;
+    return error.message;
   }
   if (typeof error === "string" && error) {
     return error;

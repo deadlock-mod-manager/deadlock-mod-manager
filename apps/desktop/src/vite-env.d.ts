@@ -9,3 +9,8 @@ interface EyeDropperConstructor {
 interface Window {
   EyeDropper?: EyeDropperConstructor;
 }
+
+interface File {
+  /** Native path supplied by Tauri/WebView drag-and-drop implementations. */
+  readonly path?: string;
+}

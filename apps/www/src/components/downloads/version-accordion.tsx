@@ -10,6 +10,7 @@ import { Download } from "@deadlock-mods/ui/icons";
 import { FaLinux, FaWindows } from "react-icons/fa";
 import { formatFileSize } from "@/lib/os-detection";
 import {
+  getDownloadDescription,
   getDownloadRuntime,
   getRuntimeName,
   getRuntimeStatus,
@@ -50,20 +51,23 @@ const PlatformColumn = ({
                 <Badge className='text-[10px]' variant='outline'>
                   {getRuntimeName(download)}
                 </Badge>
-                {getDownloadRuntime(download) === "cef" ? (
-                  <Badge
-                    className='border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-700 dark:text-amber-300'
-                    variant='outline'>
-                    {getRuntimeStatus(download)}
-                  </Badge>
-                ) : download.installerType !== "sig" ? (
-                  <Badge className='text-[10px]' variant='secondary'>
-                    {getRuntimeStatus(download)}
-                  </Badge>
-                ) : null}
+                {download.installerType !== "sig" &&
+                  (getDownloadRuntime(download) === "cef" ? (
+                    <Badge
+                      className='border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-700 dark:text-amber-300'
+                      variant='outline'>
+                      {getRuntimeStatus(download)}
+                    </Badge>
+                  ) : (
+                    <Badge className='text-[10px]' variant='secondary'>
+                      {getRuntimeStatus(download)}
+                    </Badge>
+                  ))}
               </div>
-              <div className='text-muted-foreground text-xs'>
-                {formatFileSize(download.size)}
+              <div className='mt-1 flex flex-wrap items-center gap-x-1.5 text-muted-foreground text-xs'>
+                <span>{getDownloadDescription(download)}</span>
+                <span aria-hidden='true'>·</span>
+                <span>{formatFileSize(download.size)}</span>
               </div>
             </div>
             <Button asChild size='sm' variant='ghost'>

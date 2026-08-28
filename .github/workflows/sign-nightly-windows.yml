@@ -30,8 +30,6 @@ permissions:
 jobs:
   sign-windows:
     runs-on: windows-latest
-    outputs:
-      has-cef: ${{ steps.download-cef.outcome == 'success' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -56,60 +54,40 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: ./unsigned-regular
 
-      - name: Download unsigned CEF Windows artifact
-        id: download-cef
-        continue-on-error: true
-        uses: actions/download-artifact@v8
-        with:
-          name: windows-unsigned-cef-nightly
-          run-id: ${{ inputs.source_run_id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          path: ./unsigned-cef
-
       - name: Collect unsigned executables
         shell: bash
         run: |
-          mkdir -p ./unsigned-combined
+          mkdir -p ./unsigned-regular-only
           shopt -s nullglob
           for f in ./unsigned-regular/*.exe; do
-            cp "$f" "./unsigned-combined/$(basename "$f")"
-          done
-          for f in ./unsigned-cef/*.exe; do
-            cp "$f" "./unsigned-combined/$(basename "$f")"
+            cp "$f" "./unsigned-regular-only/$(basename "$f")"
           done
 
-          echo "Combined unsigned executables:"
-          ls -la ./unsigned-combined
+          echo "Wry unsigned executables:"
+          ls -la ./unsigned-regular-only
 
       - name: Sign Windows executables
         uses: ./.github/actions/signpath-sign
         with:
-          unsigned-artifact-path: ./unsigned-combined/*.exe
-          output-directory: ./signed-all
+          unsigned-artifact-path: ./unsigned-regular-only/*.exe
+          output-directory: ./signed-wry
           signpath-api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
           signpath-organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
           signpath-project-slug: deadlock-mod-manager
           signpath-signing-policy: test-signing
           tauri-private-key: ${{ secrets.TAURI_PRIVATE_KEY }}
 
-      - name: Split signed artifacts
+      - name: Collect signed Wry artifacts
         shell: bash
         run: |
-          mkdir -p ./artifact-output ./cef-artifacts
+          mkdir -p ./artifact-output
           shopt -s nullglob
-          for file in ./signed-all/*; do
-            base="$(basename "$file")"
-            if [[ "$base" == *-cef-setup.exe* ]]; then
-              mv "$file" "./cef-artifacts/$base"
-            else
-              mv "$file" "./artifact-output/$base"
-            fi
+          for file in ./signed-wry/*; do
+            mv "$file" "./artifact-output/$(basename "$file")"
           done
 
-          echo "Regular signed artifacts:"
+          echo "Wry signed artifacts:"
           ls -la ./artifact-output
-          echo "CEF signed artifacts:"
-          ls -la ./cef-artifacts
 
       - name: Upload signed regular artifacts to release
         uses: actions/github-script@v9
@@ -139,37 +117,6 @@ jobs:
                   data: content
                 });
                 console.log(`Uploaded ${sanitizedName}`);
-              }
-            }
-
-      - name: Upload signed CEF artifacts to release
-        if: steps.download-cef.outcome == 'success'
-        uses: actions/github-script@v9
-        env:
-          RELEASE_ID: ${{ inputs.release_id }}
-        with:
-          script: |
-            const fs = require('fs');
-            const path = require('path');
-
-            const releaseId = parseInt(process.env.RELEASE_ID);
-            const artifactDir = './cef-artifacts';
-            const files = fs.readdirSync(artifactDir);
-
-            for (const file of files) {
-              const filePath = path.join(artifactDir, file);
-              const stats = fs.statSync(filePath);
-
-              if (stats.isFile()) {
-                const content = fs.readFileSync(filePath);
-                await github.rest.repos.uploadReleaseAsset({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  release_id: releaseId,
-                  name: file,
-                  data: content
-                });
-                console.log(`Uploaded CEF artifact ${file}`);
               }
             }
 
@@ -276,22 +223,6 @@ jobs:
             });
 
             console.log('Successfully uploaded latest.json (Windows-only nightly)');
-
-  update-latest-cef-json:
-    needs: sign-windows
-    if: needs.sign-windows.outputs.has-cef == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Update latest-cef.json
-        uses: ./.github/actions/update-latest-cef-json
-        with:
-          release-id: ${{ inputs.release_id }}
-          version: nightly
-          app-version: ${{ inputs.nightly_version }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   publish-nightly:
     needs:

@@ -6,7 +6,7 @@ import {
 } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import type { ResolvedRequirementStatus } from "@/hooks/use-server-join";
-import { usePersistedStore } from "@/lib/store";
+import { useModProgressStore } from "@/lib/store/mod-progress";
 
 interface RequirementRowProps {
   requirement: ResolvedRequirementStatus;
@@ -14,8 +14,10 @@ interface RequirementRowProps {
 
 const RequirementRow = ({ requirement }: RequirementRowProps) => {
   const { t } = useTranslation();
-  const progress = usePersistedStore((s) =>
-    requirement.remoteId ? s.modProgress[requirement.remoteId] : undefined,
+  const progress = useModProgressStore((state) =>
+    requirement.remoteId
+      ? state.progressByRemoteId[requirement.remoteId]
+      : undefined,
   );
 
   const statusBadge = (() => {

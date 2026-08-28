@@ -256,7 +256,7 @@ fn decrypt_blob(blob: &[u8], account: &str) -> Result<String, MatchSyncError> {
     let slice = std::slice::from_raw_parts(data_out.pbData, data_out.cbData as usize);
     let token =
       String::from_utf8(slice.to_vec()).map_err(|e| err(format!("token is not valid UTF-8: {e}")));
-    let _ = LocalFree(HLOCAL(data_out.pbData as *mut core::ffi::c_void));
+    let _ = LocalFree(Some(HLOCAL(data_out.pbData as *mut core::ffi::c_void)));
     token
   }
 }

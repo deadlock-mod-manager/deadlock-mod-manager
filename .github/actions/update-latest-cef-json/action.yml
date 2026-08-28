@@ -1,5 +1,5 @@
 name: "Update latest-cef.json"
-description: "Build latest-cef.json from CEF release assets (Windows NSIS + Linux .deb) and upload it to the release."
+description: "Build latest-cef.json only from CEF assets carrying exact verification attestations."
 
 inputs:
   release-id:
@@ -49,12 +49,14 @@ runs:
           console.log(`Release has ${assets.length} assets`);
 
           const platforms = {};
+          const windowsVerification = assets.find(a => a.name === 'deadlock-mod-manager-cef-windows-x86_64-nsis.verified.json');
+          const linuxFlatpakVerification = assets.find(a => a.name === 'deadlock-mod-manager-cef-linux-x86_64-flatpak.verified.json');
 
           // Windows: find *-cef-setup.exe and its .sig
           const windowsExe = assets.find(a => a.name.endsWith('-cef-setup.exe') || a.name.endsWith('-cef-setup.exe'.replace(/-/g, '.')));
           const windowsSig = assets.find(a => a.name.endsWith('-cef-setup.exe.sig') || a.name.endsWith('-cef-setup.exe.sig'.replace(/-/g, '.')));
 
-          if (windowsExe && windowsSig) {
+          if (windowsVerification && windowsExe && windowsSig) {
             const sigResponse = await github.rest.repos.getReleaseAsset({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -68,31 +70,19 @@ runs:
             platforms['windows-x86_64-nsis'] = { signature, url };
             console.log(`Added Windows CEF platform: ${url}`);
           } else {
-            console.log('No Windows CEF artifacts found in release assets');
+            console.log('No verified Windows CEF NSIS target found');
           }
 
-          // Linux: find *-cef.deb and its .sig
-          const linuxDeb = assets.find(a => a.name.endsWith('-cef.deb'));
-          const linuxSig = assets.find(a => a.name.endsWith('-cef.deb.sig'));
+          // Linux: publish only the exact Flatpak target exercised by the smoke test.
+          const linuxFlatpak = assets.find(a => a.name === 'deadlock-mod-manager-cef.flatpak');
 
-          if (linuxDeb) {
-            const signature = linuxSig
-              ? await (async () => {
-                  const sigResponse = await github.rest.repos.getReleaseAsset({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    asset_id: linuxSig.id,
-                    headers: { Accept: 'application/octet-stream' }
-                  });
-                  return Buffer.from(sigResponse.data).toString('utf8').trim();
-                })()
-              : '';
-            const url = `${baseDownloadUrl}/${toGitHubAssetName(linuxDeb.name)}`;
+          if (linuxFlatpakVerification && linuxFlatpak) {
+            const url = `${baseDownloadUrl}/${toGitHubAssetName(linuxFlatpak.name)}`;
 
-            platforms['linux-x86_64'] = { signature, url };
-            console.log(`Added Linux CEF platform: ${url}`);
+            platforms['linux-x86_64-flatpak'] = { signature: '', url };
+            console.log(`Added verified Linux CEF Flatpak target: ${url}`);
           } else {
-            console.log('No Linux CEF artifacts found in release assets');
+            console.log('No verified Linux CEF Flatpak target found');
           }
 
           if (Object.keys(platforms).length === 0) {

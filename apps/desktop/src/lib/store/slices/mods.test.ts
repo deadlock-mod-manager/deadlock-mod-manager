@@ -19,6 +19,7 @@ import type { LocalMod, Progress } from "@/types/mods";
 import { ModStatus } from "@/types/mods";
 import type { ModProfile, ProfileId } from "@/types/profiles";
 import { createProfileId } from "@/types/profiles";
+import { useModProgressStore } from "../mod-progress";
 import { createModsSlice, type ModsState } from "./mods";
 
 type TestState = ModsState & {
@@ -87,21 +88,26 @@ beforeEach(() => {
   store = createTestStore();
   store.setState({
     localMods: [modFor("1"), modFor("2")],
-    modProgress: { "1": { percentage: 100 } },
     profiles: {
       default: profileFor("default", ["1", "2"]),
       secondary: profileFor("secondary", ["1"]),
     },
     activeProfileId: createProfileId("default"),
   });
+  useModProgressStore.setState({
+    progressByRemoteId: { "1": { percentage: 100 } },
+  });
 });
+
+const modProgress = () => useModProgressStore.getState().progressByRemoteId;
 
 describe("removeMod", () => {
   it("preserves active progress and visibility when removing from another profile", () => {
     store.setState({ hiddenHeroMods: { "1": true } });
     const before = store.getState();
+    const progressBefore = modProgress();
     store.getState().removeMod("1", createProfileId("secondary"));
-    expect(store.getState().modProgress).toBe(before.modProgress);
+    expect(modProgress()).toBe(progressBefore);
     expect(store.getState().hiddenHeroMods).toBe(before.hiddenHeroMods);
     expect(store.getState().localMods).toBe(before.localMods);
     expect(store.getState().profiles.secondary.mods).toEqual([]);
@@ -110,8 +116,9 @@ describe("removeMod", () => {
   it("preserves active progress and visibility when nuking another profile", () => {
     store.setState({ hiddenHeroMods: { "1": true } });
     const before = store.getState();
+    const progressBefore = modProgress();
     store.getState().nukeModsState([], createProfileId("secondary"));
-    expect(store.getState().modProgress).toBe(before.modProgress);
+    expect(modProgress()).toBe(progressBefore);
     expect(store.getState().hiddenHeroMods).toBe(before.hiddenHeroMods);
     expect(store.getState().localMods).toBe(before.localMods);
     expect(store.getState().profiles.secondary.mods).toEqual([]);
@@ -126,7 +133,7 @@ describe("removeMod", () => {
     expect(store.getState().localMods.map((mod) => mod.remoteId)).toEqual([
       "2",
     ]);
-    expect(store.getState().modProgress["1"]).toBeUndefined();
+    expect(modProgress()["1"]).toBeUndefined();
   });
 
   it("leaves other profiles alone, since their copy is still installed", () => {
@@ -154,22 +161,22 @@ describe("removeMod", () => {
 
 describe("setModProgress", () => {
   it("reports the backend's percentage, not the byte ratio beside it", () => {
-    store
+    useModProgressStore
       .getState()
       .setModProgress(
         "2",
         progressFor(25, { progressTotal: 900, total: 1000 }),
       );
 
-    expect(store.getState().modProgress["2"].percentage).toBe(25);
+    expect(modProgress()["2"].percentage).toBe(25);
   });
 
   it("reports it even when the byte ratio would not divide", () => {
-    store
+    useModProgressStore
       .getState()
       .setModProgress("2", progressFor(25, { progressTotal: 900, total: 0 }));
 
-    expect(store.getState().modProgress["2"].percentage).toBe(25);
+    expect(modProgress()["2"].percentage).toBe(25);
   });
 });
 
@@ -179,7 +186,7 @@ describe("clearMods", () => {
 
     const active = store.getState().profiles.default;
     expect(store.getState().localMods).toEqual([]);
-    expect(store.getState().modProgress).toEqual({});
+    expect(modProgress()).toEqual({});
     expect(active.mods).toEqual([]);
     expect(active.enabledMods).toEqual({});
   });

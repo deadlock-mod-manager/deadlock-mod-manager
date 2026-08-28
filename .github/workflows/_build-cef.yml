@@ -192,7 +192,8 @@ jobs:
             xdg-utils \
             file \
             flatpak \
-            flatpak-builder
+            flatpak-builder \
+            weston
 
       - name: Install Flatpak SDK (Linux only)
         if: matrix.os == 'linux'
@@ -210,6 +211,11 @@ jobs:
       - name: Update version with commit hash (nightly only)
         if: inputs.nightly == true || (github.event_name == 'workflow_dispatch')
         run: pnpm version:nightly
+
+      - name: Resolve desktop package version
+        id: desktop-version
+        shell: bash
+        run: echo "version=$(node -p \"require('./apps/desktop/package.json').version\")" >> "$GITHUB_OUTPUT"
 
       - name: Build CEF (Linux)
         if: matrix.os == 'linux'
@@ -251,6 +257,8 @@ jobs:
           repo-directory: flatpak-repo-cef
           build-directory: flatpak-build-cef
           manifest: apps/desktop/flatpak/dev.stormix.deadlock-mod-manager.cef.yml
+          app-version: ${{ steps.desktop-version.outputs.version }}
+          runtime-kind: cef
 
       - name: Verify CEF Linux artifacts (Linux)
         if: matrix.os == 'linux'
@@ -268,6 +276,22 @@ jobs:
           fi
           echo "CEF Linux artifacts verified:"
           ls -la cef-artifacts/
+
+      - name: Smoke test CEF Flatpak bundle (Linux)
+        if: matrix.os == 'linux'
+        uses: ./.github/actions/smoke-test-flatpak
+        with:
+          bundle-path: cef-artifacts/deadlock-mod-manager-cef.flatpak
+          expected-version: ${{ steps.desktop-version.outputs.version }}
+          runtime-kind: cef
+
+      - name: Attest verified CEF Flatpak (Linux)
+        if: matrix.os == 'linux'
+        shell: bash
+        run: |
+          printf '{"runtime":"cef","platform":"linux","architecture":"x86_64","installer":"flatpak","version":"%s"}\n' \
+            '${{ steps.desktop-version.outputs.version }}' \
+            > cef-artifacts/deadlock-mod-manager-cef-linux-x86_64-flatpak.verified.json
 
       - name: Build CEF (Windows)
         if: matrix.os == 'windows'
@@ -330,7 +354,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload CEF artifacts to release
-        if: inputs.release_id != '' && (matrix.os == 'linux' || inputs.sign_windows != false)
+        if: inputs.release_id != '' && matrix.os == 'linux'
         uses: actions/github-script@v9
         env:
           RELEASE_ID: ${{ inputs.release_id }}
@@ -341,6 +365,10 @@ jobs:
 
             const releaseId = parseInt(process.env.RELEASE_ID);
             const artifactDir = './cef-artifacts';
+            const publishableFiles = new Set([
+              'deadlock-mod-manager-cef.flatpak',
+              'deadlock-mod-manager-cef-linux-x86_64-flatpak.verified.json'
+            ]);
 
             if (!fs.existsSync(artifactDir)) {
               console.log('No cef-artifacts directory found, skipping upload');
@@ -351,6 +379,11 @@ jobs:
             console.log(`Files to upload: ${JSON.stringify(files)}`);
 
             for (const file of files) {
+              if (!publishableFiles.has(file)) {
+                console.log(`Withholding unverified CEF artifact ${file}`);
+                continue;
+              }
+
               const filePath = path.join(artifactDir, file);
               const stats = fs.statSync(filePath);
 

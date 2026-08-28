@@ -1,14 +1,22 @@
-import Fuse, { type FuseOptionKey } from "fuse.js";
-import { useCallback, useMemo, useRef } from "react";
-import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import type { FuseOptionKey } from "fuse.js";
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { SortType } from "@/lib/constants";
+import {
+  FuseIndexCache,
+  LatestTaskScheduler,
+  searchFuseIndex,
+} from "@/lib/search-runtime";
 import { usePersistedStore } from "@/lib/store";
-import { sortMods } from "@/lib/utils";
+import { sortMods, type SortableMod } from "@/lib/utils";
 import type { LocalMod } from "@/types/mods";
 
-const FUSE_MOD_SEARCH_THRESHOLD = 0.35;
-
-type UseSearchProps<T> = {
+type UseSearchProps<T extends SortableMod> = {
   data: T[];
   keys: FuseOptionKey<T>[];
   queryState?: {
@@ -19,7 +27,7 @@ type UseSearchProps<T> = {
   };
 };
 
-export const useSearch = <T = LocalMod>({
+export const useSearch = <T extends SortableMod = LocalMod>({
   data,
   keys,
   queryState,
@@ -29,27 +37,28 @@ export const useSearch = <T = LocalMod>({
     (state) => state.updateModsFilters,
   );
   const query = queryState?.query ?? modsFilters.searchQuery ?? "";
-  const debouncedQuery = useDebouncedValue(query, 300);
   const sortType = queryState?.sortType ?? modsFilters.currentSort;
   const preSearchSortRef = useRef<SortType | null>(null);
+  const indexCacheRef = useRef<FuseIndexCache<T> | null>(null);
+  const schedulerRef = useRef<LatestTaskScheduler | null>(null);
 
-  const fuse = useMemo(
-    () =>
-      new Fuse(data, {
-        keys,
-        threshold: FUSE_MOD_SEARCH_THRESHOLD,
-        shouldSort: true,
-        useExtendedSearch: true,
-      }),
-    [data, keys],
-  );
+  if (!indexCacheRef.current) {
+    indexCacheRef.current = new FuseIndexCache<T>();
+  }
+  if (!schedulerRef.current) {
+    schedulerRef.current = new LatestTaskScheduler(
+      (task) => window.requestAnimationFrame(task),
+      (handle) => window.cancelAnimationFrame(handle),
+    );
+  }
+  const fuse = indexCacheRef.current.get(data, keys);
 
   const search = useCallback(
     (q: string) => {
       if (!q || !q.trim()) {
-        return sortMods(data as LocalMod[], sortType);
+        return sortMods(data, sortType);
       }
-      const results = fuse.search(q).map((result) => result.item) as LocalMod[];
+      const results = searchFuseIndex(fuse, data, q);
       // DEFAULT sort preserves Fuse.js relevance order during search
       if (sortType === SortType.DEFAULT) {
         return results;
@@ -59,10 +68,19 @@ export const useSearch = <T = LocalMod>({
     [fuse, data, sortType],
   );
 
-  const results = useMemo(
-    () => search(debouncedQuery),
-    [search, debouncedQuery],
-  );
+  const [results, setResults] = useState(() => search(query));
+
+  useEffect(() => {
+    const scheduler = schedulerRef.current;
+    if (!scheduler) return;
+    scheduler.schedule(
+      () => search(query),
+      (nextResults) => {
+        startTransition(() => setResults(nextResults));
+      },
+    );
+    return () => scheduler.cancel();
+  }, [query, search]);
 
   const setQuery = (newQuery: string) => {
     const trimmed = newQuery.trim();

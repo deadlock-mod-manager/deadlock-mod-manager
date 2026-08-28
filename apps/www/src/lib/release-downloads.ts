@@ -29,6 +29,29 @@ export const getDownloadRuntime = (download: PlatformDownload): "wry" | "cef" =>
   download.runtime ??
   (/(?:^|[._-])cef(?:[._-]|$)/i.test(download.filename) ? "cef" : "wry");
 
+export const getDownloadDescription = (download: PlatformDownload): string => {
+  if (download.installerType === "sig") {
+    return "Updater signature, not an installer";
+  }
+
+  switch (download.installerType) {
+    case "flatpak":
+      return "Sandboxed bundle for most Linux systems";
+    case "deb":
+      return "Package for Debian and Ubuntu";
+    case "rpm":
+      return "Package for Fedora, RHEL, and openSUSE";
+    case "exe":
+      return "Windows installer";
+    case "msi":
+      return "Windows Installer package";
+    case "dmg":
+      return "macOS disk image";
+    default:
+      return "Download package";
+  }
+};
+
 export const getRuntimeName = (download: PlatformDownload): "Wry" | "CEF" =>
   getDownloadRuntime(download) === "cef" ? "CEF" : "Wry";
 
@@ -36,6 +59,21 @@ export const getRuntimeStatus = (
   download: PlatformDownload,
 ): "Recommended" | "Experimental" =>
   getDownloadRuntime(download) === "cef" ? "Experimental" : "Recommended";
+
+export const selectExactDownload = (
+  downloads: PlatformDownload[],
+  platform: PlatformDownload["platform"],
+  architecture: PlatformDownload["architecture"],
+  runtime: "wry" | "cef",
+  installerType: NonNullable<PlatformDownload["installerType"]>,
+): PlatformDownload | null =>
+  downloads.find(
+    (download) =>
+      download.platform === platform &&
+      download.architecture === architecture &&
+      getDownloadRuntime(download) === runtime &&
+      download.installerType === installerType,
+  ) ?? null;
 
 export const selectRecommendedDownload = (
   downloads: PlatformDownload[],
