@@ -36,16 +36,21 @@ describe("GitHubReleasesService runtime policy", () => {
     ).toBe("cef");
   });
 
-  test("withholds CEF assets without an exact verification attestation", () => {
+  test("lists published CEF assets without requiring release metadata", () => {
     const release = createRelease([
       createAsset("deadlock-mod-manager-cef.flatpak"),
       createAsset("deadlock-mod-manager-cef-setup.exe"),
     ]);
 
-    expect(transformReleaseAssets(release)).toEqual([]);
+    const downloads = transformReleaseAssets(release);
+
+    expect(downloads.map((download) => download.runtime)).toEqual([
+      "cef",
+      "cef",
+    ]);
   });
 
-  test("publishes an attested CEF target after the Wry default", () => {
+  test("lists CEF targets after the Wry default", () => {
     const release = createRelease([
       createAsset("deadlock-mod-manager-cef.flatpak"),
       createAsset("deadlock-mod-manager.flatpak"),
@@ -56,6 +61,7 @@ describe("GitHubReleasesService runtime policy", () => {
 
     const downloads = transformReleaseAssets(release);
 
+    expect(downloads).toHaveLength(2);
     expect(downloads.map((download) => download.runtime)).toEqual([
       "wry",
       "cef",

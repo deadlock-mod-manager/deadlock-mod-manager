@@ -56,6 +56,9 @@ export const getRuntimeStatus = (
 ): "Recommended" | "Experimental" =>
   download.runtime === "cef" ? "Experimental" : "Recommended";
 
+export const isNightlyDownload = (download: PlatformDownload): boolean =>
+  /(?:^|[.-])nightly(?:[.-]|$)/i.test(download.filename);
+
 export const selectExactDownload = (
   downloads: PlatformDownload[],
   platform: PlatformDownload["platform"],

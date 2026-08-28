@@ -13,6 +13,7 @@ import {
   getDownloadDescription,
   getRuntimeName,
   getRuntimeStatus,
+  isNightlyDownload,
 } from "@/lib/release-downloads";
 import type { PlatformDownload, Release } from "@/types/releases";
 
@@ -50,18 +51,22 @@ const PlatformColumn = ({
                 <Badge className='text-[10px]' variant='outline'>
                   {getRuntimeName(download)}
                 </Badge>
-                {download.installerType !== "sig" &&
-                  (download.runtime === "cef" ? (
-                    <Badge
-                      className='border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-700 dark:text-amber-300'
-                      variant='outline'>
-                      {getRuntimeStatus(download)}
-                    </Badge>
-                  ) : (
-                    <Badge className='text-[10px]' variant='secondary'>
-                      {getRuntimeStatus(download)}
-                    </Badge>
-                  ))}
+                {download.runtime === "cef" ? (
+                  <Badge
+                    className='border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-700 dark:text-amber-300'
+                    variant='outline'>
+                    {getRuntimeStatus(download)}
+                  </Badge>
+                ) : download.installerType !== "sig" ? (
+                  <Badge className='text-[10px]' variant='secondary'>
+                    {getRuntimeStatus(download)}
+                  </Badge>
+                ) : null}
+                {isNightlyDownload(download) ? (
+                  <Badge className='text-[10px]' variant='outline'>
+                    Nightly
+                  </Badge>
+                ) : null}
               </div>
               <div className='mt-1 flex flex-wrap items-center gap-x-1.5 text-muted-foreground text-xs'>
                 <span>{getDownloadDescription(download)}</span>

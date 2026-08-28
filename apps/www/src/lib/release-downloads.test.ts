@@ -4,6 +4,7 @@ import {
   getDownloadDescription,
   getRuntimeName,
   getRuntimeStatus,
+  isNightlyDownload,
   selectExactDownload,
   selectRecommendedDownload,
 } from "./release-downloads";
@@ -74,6 +75,16 @@ describe("selectRecommendedDownload", () => {
     expect(getDownloadDescription(signature)).toBe(
       "Updater signature, not an installer",
     );
+    expect(isNightlyDownload(cefDeb)).toBe(false);
+    expect(
+      isNightlyDownload(
+        createDownload(
+          "Deadlock.Mod.Manager_1.2.0-nightly.20260801.a633e8e_amd64-cef.deb",
+          "deb",
+          "cef",
+        ),
+      ),
+    ).toBe(true);
   });
 });
 

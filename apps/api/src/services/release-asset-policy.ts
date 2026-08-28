@@ -4,12 +4,6 @@ import type {
   RuntimeKind,
 } from "../types/github-releases";
 
-const CEF_LINUX_FLATPAK_VERIFICATION_ASSET =
-  "deadlock-mod-manager-cef-linux-x86_64-flatpak.verified.json";
-const CEF_LINUX_FLATPAK_ASSET = "deadlock-mod-manager-cef.flatpak";
-const CEF_WINDOWS_NSIS_VERIFICATION_ASSET =
-  "deadlock-mod-manager-cef-windows-x86_64-nsis.verified.json";
-
 export interface ParsedReleaseAsset {
   platform: "windows" | "macos" | "linux";
   architecture: "x64" | "arm64" | "universal";
@@ -126,42 +120,14 @@ export const parseReleaseAsset = (
   return null;
 };
 
-const isPublishable = (
-  asset: ParsedReleaseAsset,
-  assetName: string,
-  assetNames: Set<string>,
-): boolean => {
-  if (asset.runtime === "wry") {
-    return true;
-  }
-
-  if (
-    asset.platform === "linux" &&
-    asset.installerType === "flatpak" &&
-    assetName === CEF_LINUX_FLATPAK_ASSET
-  ) {
-    return assetNames.has(CEF_LINUX_FLATPAK_VERIFICATION_ASSET);
-  }
-
-  if (
-    asset.platform === "windows" &&
-    (asset.installerType === "exe" || asset.installerType === "sig")
-  ) {
-    return assetNames.has(CEF_WINDOWS_NSIS_VERIFICATION_ASSET);
-  }
-
-  return false;
-};
-
 export const transformReleaseAssets = (
   release: GitHubRelease,
 ): PlatformDownload[] => {
-  const assetNames = new Set(release.assets.map((asset) => asset.name));
   const downloads: PlatformDownload[] = [];
 
   for (const asset of release.assets) {
     const parsedAsset = parseReleaseAsset(asset.name);
-    if (!parsedAsset || !isPublishable(parsedAsset, asset.name, assetNames)) {
+    if (!parsedAsset) {
       continue;
     }
 
