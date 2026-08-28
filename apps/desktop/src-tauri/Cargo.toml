@@ -102,9 +102,13 @@ tauri-plugin-single-instance = { version = "2.4.2", features = ["deep-link"] }
 
 [target.'cfg(windows)'.dependencies]
 junction = "1"
-windows = { version = "0.58", features = [
+webview2-com = "0.38.2"
+windows = { version = "0.61", features = [
   "Win32_Security_Cryptography",
   "Win32_Foundation",
+  "Win32_Graphics_Direct3D11",
+  "Win32_Graphics_Dxgi",
+  "Win32_UI_WindowsAndMessaging",
 ] }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]

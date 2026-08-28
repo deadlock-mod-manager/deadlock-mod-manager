@@ -176,7 +176,7 @@ export const ProfileManagerDialog = ({
       .filter((mod): mod is ModInfo => mod !== null);
 
     return {
-      count: enabledEntries.length,
+      count: enabledMods.length,
       mods: enabledMods,
     };
   };

@@ -5,15 +5,14 @@ import { resolveDroppedModSource } from "@/lib/dropped-file-source";
 import { createLogger } from "@/lib/logger";
 import {
   type DetectedSource,
+  MAX_BROWSER_MOD_FILE_BYTES,
+  detectPathSource,
   detectSource,
+  exceedsBrowserModFileLimit,
   readFromDataTransferItems,
 } from "@/lib/file-utils";
 
 const logger = createLogger("use-file-drop");
-
-interface PathBackedFile extends File {
-  path?: string;
-}
 
 const readStringItem = (item: DataTransferItem): Promise<string> =>
   new Promise((resolve) => {
@@ -30,15 +29,6 @@ const readStringPayloads = async (items: DataTransferItem[]) => {
   );
 
   return payloads.filter((payload) => payload.value.trim().length > 0);
-};
-
-const getPathFileName = (filePath: string): string =>
-  filePath.split(/[\\/]/).filter(Boolean).at(-1) ?? "mod";
-
-const createPathBackedFile = (filePath: string): File => {
-  const file = new File([], getPathFileName(filePath)) as PathBackedFile;
-  file.path = filePath;
-  return file;
 };
 
 const parseFileUri = (value: string): string | null => {
@@ -213,10 +203,10 @@ export const useFileDrop = (
           getFilesFromItems: droppedItems.length
             ? () => readFromDataTransferItems(droppedItems)
             : undefined,
-          getFilesFromUriList:
+          getPathsFromUriList:
             droppedUriList || extractedStringPaths.length
               ? async () => {
-                  const paths = droppedUriList
+                  return droppedUriList
                     ? droppedUriList
                         .split(/\r?\n/)
                         .map((line) => line.trim())
@@ -224,8 +214,6 @@ export const useFileDrop = (
                         .map(normalizeDroppedPath)
                         .filter((path): path is string => Boolean(path))
                     : extractedStringPaths;
-
-                  return paths.map(createPathBackedFile);
                 }
               : undefined,
         });
@@ -238,6 +226,15 @@ export const useFileDrop = (
       if (!detectedSource) {
         onError(
           `${t("addMods.unsupportedFiles")} ${t("addMods.supportedFormats")}`,
+        );
+        return;
+      }
+
+      if (exceedsBrowserModFileLimit(detectedSource)) {
+        onError(
+          t("addMods.browserFileTooLarge", {
+            limit: MAX_BROWSER_MOD_FILE_BYTES / 1024 / 1024,
+          }),
         );
         return;
       }
@@ -255,6 +252,15 @@ export const useFileDrop = (
       if (!detectedSource) {
         onError(
           `${t("addMods.unsupportedSelection")} ${t("addMods.supportedFormats")}`,
+        );
+        return;
+      }
+
+      if (exceedsBrowserModFileLimit(detectedSource)) {
+        onError(
+          t("addMods.browserFileTooLarge", {
+            limit: MAX_BROWSER_MOD_FILE_BYTES / 1024 / 1024,
+          }),
         );
         return;
       }
@@ -277,8 +283,7 @@ export const useFileDrop = (
 
     if (!selected) return;
 
-    const file = createPathBackedFile(selected);
-    const detectedSource = detectSource([file]);
+    const detectedSource = detectPathSource([selected]);
 
     if (!detectedSource) {
       onError(

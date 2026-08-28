@@ -9,6 +9,11 @@ import { Button } from "@deadlock-mods/ui/components/button";
 import { Download } from "@deadlock-mods/ui/icons";
 import { FaLinux, FaWindows } from "react-icons/fa";
 import { formatFileSize } from "@/lib/os-detection";
+import {
+  getDownloadDescription,
+  getRuntimeName,
+  getRuntimeStatus,
+} from "@/lib/release-downloads";
 import type { PlatformDownload, Release } from "@/types/releases";
 
 interface VersionAccordionProps {
@@ -37,12 +42,31 @@ const PlatformColumn = ({
           <div
             className='flex items-center justify-between rounded-md border border-border/50 p-3 hover:bg-muted/50'
             key={`${download.platform}-${download.architecture}-${download.filename}`}>
-            <div>
-              <div className='font-medium text-sm'>
-                {getDownloadDisplayName(download)}
+            <div className='min-w-0'>
+              <div className='flex flex-wrap items-center gap-1.5'>
+                <span className='font-medium text-sm'>
+                  {getDownloadDisplayName(download)}
+                </span>
+                <Badge className='text-[10px]' variant='outline'>
+                  {getRuntimeName(download)}
+                </Badge>
+                {download.installerType !== "sig" &&
+                  (download.runtime === "cef" ? (
+                    <Badge
+                      className='border-amber-500/30 bg-amber-500/10 text-[10px] text-amber-700 dark:text-amber-300'
+                      variant='outline'>
+                      {getRuntimeStatus(download)}
+                    </Badge>
+                  ) : (
+                    <Badge className='text-[10px]' variant='secondary'>
+                      {getRuntimeStatus(download)}
+                    </Badge>
+                  ))}
               </div>
-              <div className='text-muted-foreground text-xs'>
-                {formatFileSize(download.size)}
+              <div className='mt-1 flex flex-wrap items-center gap-x-1.5 text-muted-foreground text-xs'>
+                <span>{getDownloadDescription(download)}</span>
+                <span aria-hidden='true'>·</span>
+                <span>{formatFileSize(download.size)}</span>
               </div>
             </div>
             <Button asChild size='sm' variant='ghost'>

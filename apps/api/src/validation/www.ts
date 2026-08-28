@@ -27,6 +27,7 @@ export const PlatformDownloadSchema = z.object({
   platform: z.enum(["windows", "macos", "linux"]),
   architecture: z.enum(["x64", "arm64", "universal"]),
   installerType: z.enum(["exe", "msi", "dmg", "deb", "rpm", "flatpak", "sig"]),
+  runtime: z.enum(["wry", "cef"]),
   url: z.string(),
   filename: z.string(),
   size: z.number(),

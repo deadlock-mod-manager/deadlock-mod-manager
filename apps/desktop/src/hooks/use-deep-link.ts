@@ -7,6 +7,7 @@ import { getMod } from "@/lib/api-client";
 import { downloadManager } from "@/lib/download/manager";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
+import { useModProgressStore } from "@/lib/store/mod-progress";
 import { ModStatus } from "@/types/mods";
 import useInstall from "./use-install";
 
@@ -98,10 +99,10 @@ export const useDeepLink = () => {
   const {
     addLocalMod: addMod,
     setModStatus,
-    setModProgress,
     setInstalledVpks,
     getActiveProfile,
   } = usePersistedStore();
+  const setModProgress = useModProgressStore((state) => state.setModProgress);
   const { install } = useInstall();
   const processingRef = useRef<Set<string>>(new Set());
 

@@ -10,6 +10,7 @@ import { downloadManager } from "@/lib/download/manager";
 import { getErrorMessage } from "@/lib/errors";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
+import { useModProgressStore } from "@/lib/store/mod-progress";
 import { type ModDownloadItem, ModStatus } from "@/types/mods";
 
 type ModDownloadDto = z.infer<typeof ModDownloadDtoSchema>;
@@ -22,7 +23,7 @@ export const useDownload = (
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const addLocalMod = usePersistedStore((state) => state.addLocalMod);
   const localMods = usePersistedStore((state) => state.localMods);
-  const setModProgress = usePersistedStore((state) => state.setModProgress);
+  const setModProgress = useModProgressStore((state) => state.setModProgress);
   const setModStatus = usePersistedStore((state) => state.setModStatus);
   const setDetectedHero = usePersistedStore((state) => state.setDetectedHero);
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);

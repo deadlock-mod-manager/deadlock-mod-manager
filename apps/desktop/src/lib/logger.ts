@@ -2,16 +2,49 @@ import { debug, error, info, trace, warn } from "@tauri-apps/plugin-log";
 import { BlankTransport, ConsoleTransport, LogLayer, LogLevel } from "loglayer";
 import { serializeError } from "serialize-error";
 
-const canShipToTauriLogger =
+const MAX_SHIPPED_MESSAGE_LENGTH = 2_048;
+
+const canShipToTauriLogger = () =>
   typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+
+export const formatShippedMessage = (messages: readonly string[]): string => {
+  const message = messages
+    .join(" ")
+    .replace(
+      /\b(authorization|token|password|secret|api[_-]?key)(\s*[=:]\s*)\S+/gi,
+      "$1$2[REDACTED]",
+    )
+    .replace(/:\/\/[^\s/:]+:[^\s/@]+@/g, "://[REDACTED]@")
+    .replace(/\b[A-Za-z]:[\\/][^\s"'<>|]+/g, "<local-path>")
+    .replace(/(^|\s)\/(?:[^\s/]+\/)*[^\s/]+/g, "$1<local-path>")
+    .replace(/[\r\n\t]+/g, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  return message.slice(0, MAX_SHIPPED_MESSAGE_LENGTH);
+};
 
 const serializeKeyValues = (
   data: Record<string, unknown>,
 ): Record<string, string> => {
   const result: Record<string, string> = {};
   for (const [key, value] of Object.entries(data)) {
+    if (
+      key === "error" &&
+      value &&
+      typeof value === "object" &&
+      "message" in value &&
+      typeof value.message === "string"
+    ) {
+      const errorName =
+        "name" in value && typeof value.name === "string"
+          ? value.name
+          : "Error";
+      result[key] = formatShippedMessage([`${errorName}: ${value.message}`]);
+      continue;
+    }
     if (typeof value === "string") {
-      result[key] = value;
+      result[key] = formatShippedMessage([value]);
     } else if (value === null || value === undefined) {
       result[key] = String(value);
     } else if (typeof value === "object") {
@@ -25,7 +58,7 @@ const serializeKeyValues = (
 
 const logger = new LogLayer({
   errorFieldName: "error",
-  copyMsgOnOnlyError: false,
+  copyMsgOnOnlyError: true,
   errorFieldInMetadata: false,
   errorSerializer: serializeError,
   transport: [
@@ -34,13 +67,15 @@ const logger = new LogLayer({
     }),
     new BlankTransport({
       shipToLogger: ({ logLevel, messages, data, hasData }) => {
-        if (!canShipToTauriLogger) {
+        if (!canShipToTauriLogger()) {
           return messages;
         }
 
-        const message = messages
-          .join(" ") // + (hasData ? JSON.stringify(data) : "")
-          .trim();
+        const message =
+          formatShippedMessage(messages) ||
+          (logLevel === LogLevel.error
+            ? "Frontend error (details preserved in structured metadata)"
+            : "Frontend log event (details preserved in structured metadata)");
         const options = {
           keyValues: data && hasData ? serializeKeyValues(data) : undefined,
         };

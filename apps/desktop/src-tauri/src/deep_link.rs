@@ -1,6 +1,6 @@
 use crate::app_runtime::{AppHandle, AppRuntime};
 use serde::Serialize;
-use std::collections::HashMap;
+use std::{collections::HashMap, ffi::OsStr};
 use tauri::{Emitter, Manager};
 use tauri_plugin_deep_link::DeepLinkExt;
 
@@ -24,6 +24,31 @@ pub const PATH_FORGE_LAUNCH: &str = "//forge/launch";
 
 pub const GAMEBANANA_DOMAIN: &str = "gamebanana.com";
 pub const MOD_ID_PARTS_COUNT: usize = 3;
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[cfg_attr(
+  not(test),
+  allow(
+    dead_code,
+    reason = "non-host variants remain available for the cross-platform registration policy tests"
+  )
+)]
+enum ProtocolRegistrationPlatform {
+  Linux,
+  Windows,
+  Other,
+}
+
+fn should_register_protocols(
+  platform: ProtocolRegistrationPlatform,
+  flatpak_id: Option<&OsStr>,
+) -> bool {
+  match platform {
+    ProtocolRegistrationPlatform::Linux => flatpak_id.is_none(),
+    ProtocolRegistrationPlatform::Windows => true,
+    ProtocolRegistrationPlatform::Other => false,
+  }
+}
 
 pub fn parse_query_params(query: &str) -> HashMap<String, String> {
   query
@@ -198,11 +223,28 @@ pub fn handle_deep_link_url(
 }
 
 pub fn setup(app: &tauri::App<AppRuntime>) -> Result<(), Box<dyn std::error::Error>> {
-  #[cfg(any(target_os = "linux", target_os = "windows"))]
+  #[cfg(target_os = "linux")]
   {
-    log::info!("[DeepLink] Registering deep link protocols...");
-    if let Err(e) = app.deep_link().register_all() {
-      log::error!("[DeepLink] Failed to register protocols: {e}");
+    if should_register_protocols(
+      ProtocolRegistrationPlatform::Linux,
+      std::env::var_os("FLATPAK_ID").as_deref(),
+    ) {
+      log::info!("[DeepLink] Registering deep link protocols...");
+      if let Err(e) = app.deep_link().register_all() {
+        log::error!("[DeepLink] Failed to register protocols: {e}");
+      }
+    } else {
+      log::info!("[DeepLink] Using Flatpak desktop-file protocol associations");
+    }
+  }
+
+  #[cfg(target_os = "windows")]
+  {
+    if should_register_protocols(ProtocolRegistrationPlatform::Windows, None) {
+      log::info!("[DeepLink] Registering deep link protocols...");
+      if let Err(e) = app.deep_link().register_all() {
+        log::error!("[DeepLink] Failed to register protocols: {e}");
+      }
     }
   }
 
@@ -233,7 +275,10 @@ pub fn setup(app: &tauri::App<AppRuntime>) -> Result<(), Box<dyn std::error::Err
 
 #[cfg(test)]
 mod tests {
-  use super::{PATH_FORGE_LAUNCH, strip_scheme};
+  use super::{
+    PATH_FORGE_LAUNCH, ProtocolRegistrationPlatform, should_register_protocols, strip_scheme,
+  };
+  use std::ffi::OsStr;
 
   #[test]
   fn recognises_the_forge_launch_url_the_site_fires() {
@@ -242,5 +287,29 @@ mod tests {
     let stripped =
       strip_scheme("deadlock-mod-manager://forge/launch").expect("scheme should be recognised");
     assert!(stripped.starts_with(PATH_FORGE_LAUNCH));
+  }
+
+  #[test]
+  fn skips_runtime_registration_for_flatpak_linux() {
+    assert!(!should_register_protocols(
+      ProtocolRegistrationPlatform::Linux,
+      Some(OsStr::new("dev.stormix.deadlock-mod-manager")),
+    ));
+    assert!(should_register_protocols(
+      ProtocolRegistrationPlatform::Linux,
+      None,
+    ));
+  }
+
+  #[test]
+  fn preserves_registration_policy_on_other_platforms() {
+    assert!(should_register_protocols(
+      ProtocolRegistrationPlatform::Windows,
+      Some(OsStr::new("ignored")),
+    ));
+    assert!(!should_register_protocols(
+      ProtocolRegistrationPlatform::Other,
+      None,
+    ));
   }
 }
