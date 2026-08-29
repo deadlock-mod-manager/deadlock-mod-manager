@@ -20,6 +20,7 @@ const BULK_FIELDS: &[&str] = &[
   "text",
 ];
 
+#[derive(Clone)]
 pub struct GameBananaClient {
   transport: GameBananaTransport,
 }

@@ -34,11 +34,16 @@ import SearchBarSkeleton from "@/components/mod-browsing/search-bar-skeleton";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
 import { useFeatureFlag } from "@/hooks/use-feature-flags";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useResponsiveColumns } from "@/hooks/use-responsive-columns";
 import { useScrollPosition } from "@/hooks/use-scroll-position";
 import { useSearch } from "@/hooks/use-search";
 import { getMods } from "@/lib/api-client";
-import { ModCategory, TimePeriod } from "@/lib/constants";
+import {
+  type DirectCatalogPage,
+  queryGameBananaCatalog,
+} from "@/lib/gamebanana-catalog";
+import { ModCategory, SortType, TimePeriod } from "@/lib/constants";
 import { matchesHeroFilter, resolveModHero } from "@/lib/mods/hero-resolution";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
@@ -49,6 +54,7 @@ import type {
   MapQuickFilter,
 } from "@/lib/store/slices/ui";
 import { cn, isModOutdated } from "@/lib/utils";
+import type { CatalogQuery } from "@/types/generated/CatalogQuery";
 import { ChevronLeft, ChevronRight } from "@deadlock-mods/ui/icons";
 
 const SEARCH_KEYS = ["name", "description", "author"];
@@ -57,6 +63,24 @@ const MODS_STORE_PAGE_KEY = "/mods:page";
 const MAPS_STORE_PAGE_KEY = "/maps:page";
 const MODS_STORE_PAGINATION_SETTING_ID = "mods-store-pagination";
 const MOD_ROW_ESTIMATED_HEIGHT = 340;
+const MOD_OUTDATED_CUTOFF_SECONDS = Math.floor(
+  new Date("2026-01-22").getTime() / 1_000,
+);
+
+const catalogSort = (sort: SortType): CatalogQuery["sort"] => {
+  switch (sort) {
+    case SortType.LAST_UPDATED:
+      return "lastUpdated";
+    case SortType.DOWNLOADS:
+      return "downloadCount";
+    case SortType.RATING:
+      return "rating";
+    case SortType.RELEASE_DATE:
+      return "releaseDate";
+    default:
+      return "default";
+  }
+};
 
 function ModsPagination({
   page,
@@ -144,16 +168,14 @@ function ModsPagination({
 
 const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
   const { t } = useTranslation();
+  const { isEnabled: isDirectClientEnabled } = useFeatureFlag(
+    "gamebanana-direct-client",
+    false,
+  );
   const { isEnabled: isCustomMapsEnabled } = useFeatureFlag(
     "custom-maps",
     false,
   );
-  const { data, error } = useSuspenseQuery({
-    queryKey: ["mods"],
-    queryFn: getMods,
-    staleTime: STALE_TIME_API,
-    retry: 3,
-  });
   const nsfwSettings = usePersistedStore((state) => state.nsfwSettings);
   const modsFilters = usePersistedStore((state) => state.modsFilters);
   const modsStorePaginationEnabled = usePersistedStore(
@@ -177,6 +199,8 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     timePeriod = TimePeriod.ALL_TIME,
     filterMode,
     showFavoritesOnly = false,
+    searchQuery = "",
+    currentSort,
   } = modsFilters;
   const favorites = usePersistedStore((state) => state.favorites);
   const localMods = usePersistedStore((state) => state.localMods);
@@ -190,6 +214,72 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
   const paginationEnabled =
     modsStorePaginationEnabled ?? platform() === "linux";
   const [page, setPage] = useState(() => getPersistedPage(pageKey));
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
+  const catalogQuery = useMemo<CatalogQuery>(() => {
+    const timePeriodCutoff = getTimePeriodCutoff(timePeriod);
+    const timePeriodCutoffSeconds = timePeriodCutoff
+      ? Math.floor(timePeriodCutoff.getTime() / 1_000)
+      : null;
+    const updatedAfter = hideOutdated
+      ? Math.max(timePeriodCutoffSeconds ?? 0, MOD_OUTDATED_CUTOFF_SECONDS)
+      : timePeriodCutoffSeconds;
+    return {
+      search: debouncedSearchQuery,
+      categories: selectedCategories,
+      heroes: selectedHeroes,
+      excludeFilters: filterMode === "exclude",
+      isAudio: audioQuickFilter === "off" ? null : audioQuickFilter === "only",
+      isMap:
+        effectiveMapQuickFilter === "off"
+          ? null
+          : effectiveMapQuickFilter === "only",
+      hideNsfw: nsfwSettings.hideNSFW || hideNSFW,
+      hideObsolete: hideOutdated,
+      updatedAfter,
+      favorites: showFavoritesOnly ? favorites : [],
+      sort: catalogSort(currentSort),
+      page: paginationEnabled ? page : 0,
+      pageSize: paginationEnabled ? PAGE_SIZE : 5_000,
+    };
+  }, [
+    audioQuickFilter,
+    currentSort,
+    debouncedSearchQuery,
+    effectiveMapQuickFilter,
+    favorites,
+    filterMode,
+    hideNSFW,
+    hideOutdated,
+    nsfwSettings.hideNSFW,
+    page,
+    paginationEnabled,
+    selectedCategories,
+    selectedHeroes,
+    showFavoritesOnly,
+    timePeriod,
+  ]);
+  const { data: catalogPage, error } = useSuspenseQuery({
+    queryKey: isDirectClientEnabled
+      ? ["mods", "gamebanana-direct", catalogQuery]
+      : ["mods"],
+    queryFn: async (): Promise<DirectCatalogPage> => {
+      if (isDirectClientEnabled) {
+        return queryGameBananaCatalog(catalogQuery);
+      }
+      const items = await getMods();
+      return {
+        items,
+        total: items.length,
+        page: 0,
+        pageSize: items.length,
+        stale: false,
+      };
+    },
+    staleTime: STALE_TIME_API,
+    retry: 3,
+    refetchInterval: (query) => (query.state.data?.stale ? 3_000 : false),
+  });
+  const data = catalogPage.items;
   const parentRef = useRef<HTMLDivElement>(null);
   const previousFilterSignatureRef = useRef<string | null>(null);
   // Defer the mod list so background refetches (staleTime expiry) don't
@@ -216,6 +306,9 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     [localMods],
   );
   const filteredResults = useMemo(() => {
+    if (isDirectClientEnabled) {
+      return deferredData;
+    }
     const predefinedCategorySet =
       selectedCategories.length > 0
         ? new Set<string>(Object.values(ModCategory))
@@ -279,17 +372,22 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     timePeriod,
     showFavoritesOnly,
     favorites,
+    isDirectClientEnabled,
+    deferredData,
   ]);
 
   const totalPages = paginationEnabled
-    ? Math.ceil(filteredResults.length / PAGE_SIZE)
+    ? Math.ceil(
+        (isDirectClientEnabled ? catalogPage.total : filteredResults.length) /
+          PAGE_SIZE,
+      )
     : 1;
   const displayedMods = useMemo(
     () =>
-      paginationEnabled
+      paginationEnabled && !isDirectClientEnabled
         ? filteredResults.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
         : filteredResults,
-    [filteredResults, page, paginationEnabled],
+    [filteredResults, isDirectClientEnabled, page, paginationEnabled],
   );
   const modRows = useMemo(() => {
     if (paginationEnabled) {
@@ -454,6 +552,16 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
         onShowFavoritesOnlyChange={handleShowFavoritesOnlyChange}
         hideMapFilter={mapsOnly || !isCustomMapsEnabled}
       />
+      {isDirectClientEnabled && catalogPage.stale ? (
+        <Alert variant='warning'>
+          <Warning className='h-4 w-4' />
+          <AlertDescription>
+            {catalogPage.total === 0
+              ? t("mods.catalogSyncing")
+              : t("mods.catalogStale")}
+          </AlertDescription>
+        </Alert>
+      ) : null}
       {filteredResults.length === 0 ? (
         <Empty className='py-12'>
           <EmptyHeader>
