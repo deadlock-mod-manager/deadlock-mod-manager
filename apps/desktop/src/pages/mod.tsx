@@ -7,7 +7,7 @@ import { Warning } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate, useParams } from "react-router";
+import { useLocation, useNavigate, useParams } from "react-router";
 import FavoriteButton from "@/components/mod-browsing/favorite-button";
 import ModButton from "@/components/mod-browsing/mod-button";
 import { InstalledFilesDisplay } from "@/components/mod-detail/installed-files-display";
@@ -42,6 +42,10 @@ import { useScrollBackButton } from "@/hooks/use-scroll-back-button";
 import useUninstall from "@/hooks/use-uninstall";
 import { getErrorMessage } from "@/lib/errors";
 import { isLocalMod } from "@/lib/mods/installed-helpers";
+import {
+  type ModDetailNavigationState,
+  resolveAuthorProfileBackNavigation,
+} from "@/lib/mods/mod-detail-navigation";
 import { usePersistedStore } from "@/lib/store";
 import { useCheckUpdates } from "@/hooks/use-check-updates";
 import { isModOutdated, isModStale } from "@/lib/utils";
@@ -50,7 +54,24 @@ import { ModStatus } from "@/types/mods";
 const Mod = () => {
   const params = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
+  const navigationState: ModDetailNavigationState | null = location.state;
+  const backNavigation = navigationState?.backNavigation;
+  const authorProfileBackNavigation =
+    resolveAuthorProfileBackNavigation(navigationState);
+  const backLabel =
+    backNavigation?.kind === "author"
+      ? t("modDetail.backToAuthorMods", {
+          author: backNavigation.authorName,
+        })
+      : backNavigation?.kind === "library"
+        ? t("modDetail.backToLibrary")
+        : backNavigation?.kind === "favorites"
+          ? t("modDetail.backToFavorites")
+          : backNavigation?.kind === "dashboard"
+            ? t("modDetail.backToDashboard")
+            : t("mods.backToMods");
   const { isEnabled: isCustomMapsEnabled } = useFeatureFlag(
     "custom-maps",
     false,
@@ -63,9 +84,9 @@ const Mod = () => {
     if (window.history.length > 1) {
       navigate(-1);
     } else {
-      navigate("/mods");
+      navigate(backNavigation?.path ?? "/mods");
     }
-  }, [navigate]);
+  }, [backNavigation?.path, navigate]);
 
   const handleBackClick = useCallback(() => {
     goBack();
@@ -174,7 +195,9 @@ const Mod = () => {
                 size='sm'
                 variant='ghost'>
                 <ArrowLeft className='h-4 w-4' />
-                {t("modDetail.backToMods")}
+                <span className='max-w-96 truncate' title={backLabel}>
+                  {backLabel}
+                </span>
               </Button>
             </div>
 
@@ -225,7 +248,9 @@ const Mod = () => {
               size='sm'
               variant='ghost'>
               <ArrowLeft className='h-4 w-4' />
-              {t("mods.backToMods")}
+              <span className='max-w-96 truncate' title={backLabel}>
+                {backLabel}
+              </span>
             </Button>
           </div>
           {mod.isObsolete && (
@@ -266,6 +291,7 @@ const Mod = () => {
               hasHero={hasHero}
               mod={mod}
               activeArchiveNames={modOptions.activeArchiveNames}
+              authorProfileBackNavigation={authorProfileBackNavigation}
               totalDownloads={modOptions.downloads.length}
             />
             {mod.metadata?.donationLinks &&

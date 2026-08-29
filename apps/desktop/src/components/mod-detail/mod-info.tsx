@@ -20,6 +20,7 @@ import {
 import {
   Calendar,
   CalendarPlus,
+  ChevronRight,
   Download,
   Heart,
   Package,
@@ -27,8 +28,10 @@ import {
   User,
 } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 import { useHero } from "@/hooks/use-hero";
 import { getModCategoryDisplayName } from "@/lib/constants";
+import type { CollectionModDetailBackNavigation } from "@/lib/mods/mod-detail-navigation";
 import {
   type ResolvedModHero,
   resolveModHero,
@@ -43,6 +46,7 @@ interface ModInfoProps {
   hasHero?: boolean;
   activeArchiveNames?: Set<string>;
   totalDownloads?: number;
+  authorProfileBackNavigation: CollectionModDetailBackNavigation;
 }
 
 const formatNumber = (value: number) => new Intl.NumberFormat().format(value);
@@ -53,8 +57,10 @@ export const ModInfo = ({
   hasHero = false,
   activeArchiveNames = EMPTY_ARCHIVE_NAMES,
   totalDownloads = 0,
+  authorProfileBackNavigation,
 }: ModInfoProps) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const showHeader = hasHero ? false : !mod.isAudio;
   const localMod = usePersistedStore((state) =>
     state.localMods.find((m) => m.remoteId === mod.remoteId),
@@ -93,10 +99,17 @@ export const ModInfo = ({
                 canOverride={localMod !== undefined}
               />
             )}
-            <PrimaryStat
+            <AuthorStat
+              authorId={mod.metadata?.author?.id}
               icon={<User className='h-4 w-4' />}
               label={t("modDetail.authorLabel")}
-              value={mod.author}
+              name={mod.author}
+              onSelect={(authorPath) =>
+                navigate(authorPath, {
+                  state: { backNavigation: authorProfileBackNavigation },
+                })
+              }
+              profileLabel={t("authorPage.viewProfile")}
             />
             <PrimaryStat
               icon={<Download className='h-4 w-4' />}
@@ -242,6 +255,52 @@ interface PrimaryStatProps {
   label: string;
   value: React.ReactNode;
 }
+
+interface AuthorStatProps {
+  authorId?: number;
+  icon: React.ReactNode;
+  label: string;
+  name: string;
+  onSelect: (authorPath: string) => void;
+  profileLabel: string;
+}
+
+const AuthorStat = ({
+  authorId,
+  icon,
+  label,
+  name,
+  onSelect,
+  profileLabel,
+}: AuthorStatProps) => {
+  const authorPath = authorId
+    ? `/authors/${authorId}`
+    : `/authors/by-name/${encodeURIComponent(name)}`;
+
+  return (
+    <button
+      aria-label={`${profileLabel}: ${name}`}
+      className='group flex w-full items-center gap-3 rounded-lg border border-border/50 bg-muted/30 px-3 py-2.5 text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background'
+      onClick={() => onSelect(authorPath)}
+      type='button'>
+      <span className='flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-background/80 text-muted-foreground transition-colors group-hover:text-foreground'>
+        {icon}
+      </span>
+      <span className='flex min-w-0 flex-1 flex-col'>
+        <span className='text-muted-foreground text-xs uppercase tracking-wide'>
+          {label}
+        </span>
+        <span className='truncate font-medium text-foreground text-sm'>
+          {name}
+        </span>
+      </span>
+      <span className='flex shrink-0 items-center gap-1 text-muted-foreground text-xs transition-colors group-hover:text-foreground'>
+        {profileLabel}
+        <ChevronRight className='h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5' />
+      </span>
+    </button>
+  );
+};
 
 const PrimaryStat = ({ icon, label, value }: PrimaryStatProps) => (
   <div className='group flex items-center gap-3 rounded-lg border border-border/50 bg-muted/30 px-3 py-2.5 transition-colors hover:bg-muted/60'>

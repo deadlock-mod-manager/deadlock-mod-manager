@@ -51,6 +51,8 @@ const baseGameBananaModProfile = {
     _bHasRipe: false,
     _sProfileUrl: "https://gamebanana.com/members/1",
     _sAvatarUrl: "https://gamebanana.com/avatar.png",
+    _sHdAvatarUrl: "https://gamebanana.com/avatar-hd.png",
+    _sUpicUrl: "https://gamebanana.com/upic.png",
     _sUserTitle: "",
     _sHonoraryTitle: "",
     _tsJoinDate: 0,
@@ -605,14 +607,23 @@ describe("buildDonationLinks", () => {
 });
 
 describe("buildMetadata", () => {
-  it("returns null when no metadata fields are populated", () => {
+  it("returns author identity when no mod-specific metadata is populated", () => {
     expect(
       buildMetadata({
         description: "Nothing useful here.",
         isMap: false,
         donationMethods: [],
+        submitter: baseGameBananaModProfile._aSubmitter,
       }),
-    ).toBeNull();
+    ).toEqual({
+      author: {
+        id: 1,
+        profileUrl: "https://gamebanana.com/members/1",
+        avatarUrl: "https://gamebanana.com/avatar.png",
+        hdAvatarUrl: "https://gamebanana.com/avatar-hd.png",
+        upicUrl: "https://gamebanana.com/upic.png",
+      },
+    });
   });
 
   it("returns mapName when isMap is true", () => {
@@ -620,8 +631,10 @@ describe("buildMetadata", () => {
       description: 'type "map my_arena" to play',
       isMap: true,
       donationMethods: [],
+      submitter: baseGameBananaModProfile._aSubmitter,
     });
-    expect(result).toEqual({ mapName: "my_arena" });
+    expect(result.mapName).toBe("my_arena");
+    expect(result.author?.id).toBe(1);
   });
 
   it("returns donationLinks when present", () => {
@@ -629,6 +642,7 @@ describe("buildMetadata", () => {
       description: "No map here.",
       isMap: false,
       donationMethods: [kofiMethod],
+      submitter: baseGameBananaModProfile._aSubmitter,
     });
     expect(result?.donationLinks).toHaveLength(1);
     expect(result?.donationLinks?.[0].platform).toBe("Ko-fi");
@@ -640,6 +654,7 @@ describe("buildMetadata", () => {
       description: 'type "map my_arena" to play',
       isMap: true,
       donationMethods: [kofiMethod],
+      submitter: baseGameBananaModProfile._aSubmitter,
     });
     expect(result?.mapName).toBe("my_arena");
     expect(result?.donationLinks).toHaveLength(1);

@@ -13,10 +13,13 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { Suspense, useCallback, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import ModCard from "@/components/mod-browsing/mod-card";
+import ModCard, {
+  type ModAuthorLink,
+} from "@/components/mod-browsing/mod-card";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
 import { getMods } from "@/lib/api-client";
+import { FAVORITES_BACK_NAVIGATION } from "@/lib/mods/mod-detail-navigation";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 
@@ -29,6 +32,18 @@ const FavoritesData = () => {
     retry: 3,
   });
   const favorites = usePersistedStore((state) => state.favorites);
+  const navigate = useNavigate();
+
+  const handleAuthorSelect = useCallback(
+    (author: ModAuthorLink) =>
+      navigate(
+        author.id === null
+          ? `/authors/by-name/${encodeURIComponent(author.name)}`
+          : `/authors/${author.id}`,
+        { state: { backNavigation: FAVORITES_BACK_NAVIGATION } },
+      ),
+    [navigate],
+  );
 
   const favoritedMods = useMemo(() => {
     if (!data) return [];
@@ -59,7 +74,12 @@ const FavoritesData = () => {
   return (
     <div className='grid grid-cols-1 gap-4 px-1 pb-24 pr-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
       {favoritedMods.map((mod) => (
-        <ModCard key={mod.id} mod={mod} />
+        <ModCard
+          key={mod.id}
+          mod={mod}
+          detailBackNavigation={FAVORITES_BACK_NAVIGATION}
+          onAuthorSelect={handleAuthorSelect}
+        />
       ))}
     </div>
   );
