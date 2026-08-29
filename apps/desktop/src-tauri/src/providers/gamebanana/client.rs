@@ -1,4 +1,4 @@
-use super::models::{DownloadPage, IndexPage, Profile};
+use super::models::{BulkHydration, DownloadPage, IndexPage, Profile};
 use super::transport::{GameBananaTransport, TransportConfig};
 use crate::errors::Error;
 use crate::providers::{SubmissionProvider, SubmissionRef, SubmissionType};
@@ -8,6 +8,17 @@ const API_BASE: &str = "https://gamebanana.com/apiv11/";
 const DEADLOCK_GAME_ID: u64 = 20_948;
 const INDEX_PAGE_SIZE: u32 = 50;
 const MAX_INDEX_PAGE: u32 = 250;
+const MAX_BULK_ITEMS: usize = 50;
+const MAX_BULK_URL_BYTES: usize = 7_000;
+const BULK_FIELDS: &[&str] = &[
+  "name",
+  "downloads",
+  "Category().name",
+  "RootCategory().name",
+  "Nsfw().bIsNsfw()",
+  "description",
+  "text",
+];
 
 pub struct GameBananaClient {
   transport: GameBananaTransport,
@@ -71,6 +82,61 @@ impl GameBananaClient {
     let url = submission_url(submission, "DownloadPage")?;
     self.transport.get_json("download page", url, cancel).await
   }
+
+  pub async fn bulk_hydrate(
+    &self,
+    submissions: &[SubmissionRef],
+    cancel: &CancellationToken,
+  ) -> Result<Vec<Option<BulkHydration>>, Error> {
+    let first = submissions.first().ok_or_else(|| {
+      Error::ProviderInvalidResponse("bulk hydration requires at least one submission".to_string())
+    })?;
+    if submissions.len() > MAX_BULK_ITEMS
+      || first.provider != SubmissionProvider::Gamebanana
+      || submissions.iter().any(|submission| {
+        submission.provider != SubmissionProvider::Gamebanana
+          || submission.submission_type != first.submission_type
+          || submission.submission_id.parse::<u64>().is_err()
+      })
+    {
+      return Err(Error::ProviderInvalidResponse(
+        "bulk hydration requires up to 50 GameBanana submissions of one type".to_string(),
+      ));
+    }
+
+    let mut url = reqwest::Url::parse(&format!("{API_BASE}Core/Item/Data"))
+      .map_err(|error| Error::ProviderInvalidResponse(error.to_string()))?;
+    {
+      let mut query = url.query_pairs_mut();
+      for submission in submissions {
+        query
+          .append_pair("itemtype[]", model_name(submission.submission_type))
+          .append_pair("itemid[]", &submission.submission_id);
+      }
+      for field in BULK_FIELDS {
+        query.append_pair("fields[]", field);
+      }
+    }
+    if url.as_str().len() > MAX_BULK_URL_BYTES {
+      return Err(Error::ProviderInvalidResponse(
+        "bulk hydration request exceeds the URL safety limit".to_string(),
+      ));
+    }
+
+    let value = self
+      .transport
+      .get_json::<serde_json::Value>("bulk hydration", url, cancel)
+      .await?;
+    let records = BulkHydration::parse_many(value);
+    if records.len() != submissions.len() {
+      return Err(Error::ProviderInvalidResponse(format!(
+        "bulk hydration returned {} records for {} submissions",
+        records.len(),
+        submissions.len()
+      )));
+    }
+    Ok(records)
+  }
 }
 
 fn submission_url(submission: &SubmissionRef, operation: &str) -> Result<reqwest::Url, Error> {
@@ -104,7 +170,7 @@ fn model_name(submission_type: SubmissionType) -> &'static str {
 
 #[cfg(test)]
 mod tests {
-  use super::{MAX_INDEX_PAGE, model_name, submission_url};
+  use super::{MAX_BULK_ITEMS, MAX_BULK_URL_BYTES, MAX_INDEX_PAGE, model_name, submission_url};
   use crate::providers::{SubmissionRef, SubmissionType};
 
   #[test]
@@ -120,5 +186,7 @@ mod tests {
       SubmissionRef::parse_slug("local-550e8400-e29b-41d4-a716-446655440000").unwrap();
     assert!(submission_url(&local, "ProfilePage").is_err());
     assert_eq!(MAX_INDEX_PAGE, 250);
+    assert_eq!(MAX_BULK_ITEMS, 50);
+    assert_eq!(MAX_BULK_URL_BYTES, 7_000);
   }
 }

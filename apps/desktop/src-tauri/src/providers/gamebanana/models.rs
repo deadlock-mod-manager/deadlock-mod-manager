@@ -39,11 +39,22 @@ pub struct IndexSubmission {
   #[serde(rename = "_sName")]
   pub name: String,
   #[serde(rename = "_sProfileUrl")]
+  #[serde(default)]
   pub profile_url: String,
   #[serde(rename = "_tsDateAdded", default)]
   pub date_added: Option<i64>,
   #[serde(rename = "_tsDateModified", default)]
   pub date_modified: Option<i64>,
+  #[serde(rename = "_aSubmitter", default)]
+  pub submitter: Option<Submitter>,
+  #[serde(rename = "_aRootCategory", default)]
+  pub root_category: Option<Category>,
+  #[serde(rename = "_aSubCategory", default)]
+  pub sub_category: Option<Category>,
+  #[serde(rename = "_bHasFiles", default)]
+  pub has_files: bool,
+  #[serde(rename = "_bIsObsolete", default)]
+  pub is_obsolete: bool,
 }
 
 impl IndexSubmission {
@@ -51,7 +62,7 @@ impl IndexSubmission {
     self.id > 0
       && matches!(self.model_name.as_str(), "Mod" | "Sound")
       && !self.name.trim().is_empty()
-      && self.profile_url.starts_with("https://gamebanana.com/")
+      && (self.profile_url.is_empty() || self.profile_url.starts_with("https://gamebanana.com/"))
   }
 }
 
@@ -189,9 +200,66 @@ pub struct DownloadPage {
   pub files: Vec<SubmissionFile>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct BulkHydration {
+  pub name: String,
+  pub download_count: u64,
+  pub category: String,
+  pub root_category: String,
+  pub is_nsfw: bool,
+  pub description: String,
+  pub text: String,
+}
+
+impl BulkHydration {
+  pub fn parse_many(value: serde_json::Value) -> Vec<Option<Self>> {
+    match value {
+      serde_json::Value::Array(records) => records.into_iter().map(Self::from_array).collect(),
+      serde_json::Value::Object(fields) => vec![Self::from_object(&fields)],
+      _ => Vec::new(),
+    }
+  }
+
+  fn from_array(value: serde_json::Value) -> Option<Self> {
+    let values = value.as_array()?;
+    Some(Self {
+      name: values.first()?.as_str()?.to_string(),
+      download_count: values.get(1)?.as_u64()?,
+      category: values.get(2)?.as_str().unwrap_or_default().to_string(),
+      root_category: values.get(3)?.as_str().unwrap_or_default().to_string(),
+      is_nsfw: values.get(4)?.as_bool().unwrap_or_default(),
+      description: values.get(5)?.as_str().unwrap_or_default().to_string(),
+      text: values.get(6)?.as_str().unwrap_or_default().to_string(),
+    })
+  }
+
+  fn from_object(fields: &serde_json::Map<String, serde_json::Value>) -> Option<Self> {
+    Some(Self {
+      name: fields.get("name")?.as_str()?.to_string(),
+      download_count: fields.get("downloads")?.as_u64()?,
+      category: string_field(fields, "Category().name"),
+      root_category: string_field(fields, "RootCategory().name"),
+      is_nsfw: fields
+        .get("Nsfw().bIsNsfw()")
+        .and_then(serde_json::Value::as_bool)
+        .unwrap_or_default(),
+      description: string_field(fields, "description"),
+      text: string_field(fields, "text"),
+    })
+  }
+}
+
+fn string_field(fields: &serde_json::Map<String, serde_json::Value>, key: &str) -> String {
+  fields
+    .get(key)
+    .and_then(serde_json::Value::as_str)
+    .unwrap_or_default()
+    .to_string()
+}
+
 #[cfg(test)]
 mod tests {
-  use super::IndexPage;
+  use super::{BulkHydration, IndexPage};
 
   #[test]
   fn malformed_index_records_do_not_discard_the_page() {
@@ -207,5 +275,20 @@ mod tests {
 
     assert_eq!(page.valid_records().len(), 1);
     assert_eq!(page.metadata.record_count, 2);
+  }
+
+  #[test]
+  fn bulk_hydration_accepts_multicall_and_single_item_shapes() {
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+      "../../../tests/fixtures/gamebanana/core-item-data.json"
+    ))
+    .unwrap();
+    let multi = BulkHydration::parse_many(fixture["modMulticall"].clone());
+    let single = BulkHydration::parse_many(fixture["sound"].clone());
+
+    assert_eq!(multi.len(), 2);
+    assert_eq!(multi[0].as_ref().unwrap().category, "Drifter");
+    assert_eq!(single.len(), 1);
+    assert_eq!(single[0].as_ref().unwrap().category, "Abilities");
   }
 }
