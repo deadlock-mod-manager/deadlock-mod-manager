@@ -14,9 +14,12 @@
 pub mod audio;
 pub mod error;
 pub mod fingerprint;
+pub mod fs_retry;
+pub mod naming;
 pub mod pack;
 pub mod particle_edit;
 pub mod pattern;
+pub mod profile;
 pub mod sound_edit;
 pub mod source2;
 pub mod texture_edit;
@@ -27,6 +30,7 @@ pub use fingerprint::VpkFingerprint;
 pub use pack::pack_directory;
 pub use particle_edit::recolor_particle_colors;
 pub use pattern::{Pattern, PatternStyle, pattern_swatch, pattern_texture};
+pub use profile::{ProfileBase, ShardIndex, ShardLocator};
 pub use sound_edit::{SoundInput, classify_sound_input, swap_sound};
 pub use texture_edit::{
     EditedTexture, Recolor, paint_texture, recolor_texture, replace_texture_image,

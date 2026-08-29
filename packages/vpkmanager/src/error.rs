@@ -18,6 +18,16 @@ pub enum VpkManagerError {
     Vpk(String),
     #[error("{0}")]
     Invalid(String),
+    /// A VPK the ledger expects is not on disk.
+    #[error("VPK file not found: {0}")]
+    NotFound(String),
+    /// The game (or another process) is holding a VPK open.
+    #[error("VPK files are in use: {0}")]
+    InUse(String),
+    /// An operation failed *and* undoing it failed, so the profile may be in a
+    /// state neither the caller nor the ledger describes.
+    #[error("operation failed and rollback was incomplete: {0}")]
+    RollbackFailed(String),
 }
 
 pub type Result<T> = std::result::Result<T, VpkManagerError>;
