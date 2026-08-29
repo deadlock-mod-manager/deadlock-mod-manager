@@ -39,6 +39,33 @@ export interface ModDependency {
   level: "required" | "recommended" | null;
 }
 
+export const modAuthors = pgTable(
+  "mod_author",
+  {
+    id: typeId("id", "mod_author")
+      .primaryKey()
+      .$defaultFn(() => generateId("mod_author").toString()),
+    provider: text("provider").notNull(),
+    remoteId: text("remote_id").notNull(),
+    name: text("name").notNull(),
+    profileUrl: text("profile_url").notNull(),
+    avatarUrl: text("avatar_url").notNull(),
+    hdAvatarUrl: text("hd_avatar_url"),
+    upicUrl: text("upic_url"),
+    signatureUrl: text("signature_url"),
+    title: text("title"),
+    joinedAt: integer("joined_at"),
+    subscriberCount: integer("subscriber_count"),
+    ...timestamps,
+  },
+  (table) => [
+    uniqueIndex("mod_author_provider_remote_id_idx").on(
+      table.provider,
+      table.remoteId,
+    ),
+  ],
+);
+
 export const mods = pgTable(
   "mod",
   {
@@ -52,6 +79,7 @@ export const mods = pgTable(
     category: text("category").notNull(),
     likes: integer("likes").notNull().default(0),
     author: text("author").notNull(),
+    modAuthorId: text("mod_author_id").references(() => modAuthors.id),
     downloadable: boolean("downloadable").notNull().default(false),
     remoteAddedAt: timestamp("remote_added_at", { mode: "date" }).notNull(),
     remoteUpdatedAt: timestamp("remote_updated_at", { mode: "date" }).notNull(),
@@ -73,17 +101,6 @@ export const mods = pgTable(
     metadata: jsonb("metadata").$type<{
       mapName?: string;
       donationLinks?: Array<{ url: string; platform: string }>;
-      author?: {
-        id: number;
-        profileUrl: string;
-        avatarUrl: string;
-        hdAvatarUrl?: string;
-        upicUrl?: string;
-        signatureUrl?: string;
-        title?: string;
-        joinedAt?: number;
-        subscriberCount?: number;
-      };
     }>(),
     overrides: jsonb("overrides").$type<ModOverrides>(),
     dependencies: jsonb("dependencies").$type<ModDependency[]>(),
@@ -92,6 +109,7 @@ export const mods = pgTable(
   (table) => [
     index("idx_mod_created_at").on(table.createdAt),
     index("idx_mod_updated_at").on(table.updatedAt),
+    index("idx_mod_author_id").on(table.modAuthorId),
     index("idx_mod_blacklisted_remote_updated").on(
       table.isBlacklisted,
       table.remoteUpdatedAt,
@@ -132,6 +150,9 @@ export const modDownloads = pgTable(
 
 export type Mod = typeof mods.$inferSelect;
 export type NewMod = typeof mods.$inferInsert;
+
+export type ModAuthor = typeof modAuthors.$inferSelect;
+export type NewModAuthor = typeof modAuthors.$inferInsert;
 
 export type ModDownload = typeof modDownloads.$inferSelect;
 export type NewModDownload = typeof modDownloads.$inferInsert;

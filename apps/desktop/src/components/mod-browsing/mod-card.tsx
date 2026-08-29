@@ -17,9 +17,10 @@ import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-war
 import { useThemeOverride } from "@/components/providers/theme-overrides";
 import ModCardSkeleton from "@/components/skeletons/mod-card";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
-import type {
-  CollectionModDetailBackNavigation,
-  ModDetailBackNavigation,
+import {
+  getBackNavigation,
+  MODS_STORE_NAVIGATION_TRAIL,
+  type NavigationTrail,
 } from "@/lib/mods/mod-detail-navigation";
 import { prefetchModDetail } from "@/lib/mods/mod-detail-prefetch";
 import { usePersistedStore } from "@/lib/store";
@@ -37,23 +38,14 @@ import { NSFWBlur } from "./nsfw-blur";
 interface ModCardProps {
   mod?: ModDto;
   readOnly?: boolean;
-  onAuthorSelect?: (author: ModAuthorLink) => void;
-  detailBackNavigation?: ModDetailBackNavigation;
-  authorProfileBackNavigation?: CollectionModDetailBackNavigation;
-}
-
-export interface ModAuthorLink {
-  id: number | null;
-  name: string;
+  navigationTrail?: NavigationTrail;
 }
 
 const ModCard = memo((props: ModCardProps) => {
   const {
     mod,
     readOnly = false,
-    onAuthorSelect,
-    detailBackNavigation,
-    authorProfileBackNavigation,
+    navigationTrail = MODS_STORE_NAVIGATION_TRAIL,
   } = props;
   const { t } = useTranslation();
   const localMod = usePersistedStore((state) =>
@@ -62,7 +54,6 @@ const ModCard = memo((props: ModCardProps) => {
   const CardWrapper = useThemeOverride("cardWrapper");
 
   const status = localMod?.status;
-  const authorMetadata = mod?.metadata?.author;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
@@ -73,17 +64,15 @@ const ModCard = memo((props: ModCardProps) => {
 
   const openModDetail = () => {
     void prefetchModDetail(queryClient, mod.remoteId);
-    if (detailBackNavigation) {
-      navigate(`/mods/${mod.remoteId}`, {
-        state: {
-          backNavigation: detailBackNavigation,
-          authorProfileBackNavigation,
-        },
-      });
-      return;
-    }
-    navigate(`/mods/${mod.remoteId}`);
+    navigate(`/mods/${mod.remoteId}`, {
+      state: { navigationTrail },
+    });
   };
+
+  const currentNavigation = getBackNavigation(navigationTrail);
+  const modAuthorId = mod.modAuthorId;
+  const showAuthorLink =
+    !readOnly && modAuthorId !== null && currentNavigation.kind !== "author";
 
   const cardContent = (
     <Card
@@ -169,7 +158,7 @@ const ModCard = memo((props: ModCardProps) => {
                 {mod.isMap && (
                   <Badge variant='secondary'>{t("mods.mapBadge")}</Badge>
                 )}
-                {!readOnly && onAuthorSelect ? (
+                {showAuthorLink ? (
                   <button
                     aria-label={t("mods.showMoreByAuthor", {
                       author: mod.author,
@@ -177,9 +166,8 @@ const ModCard = memo((props: ModCardProps) => {
                     className='overflow-clip text-ellipsis text-nowrap rounded-sm text-left text-muted-foreground text-sm underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
                     onClick={(event) => {
                       event.stopPropagation();
-                      onAuthorSelect({
-                        id: authorMetadata?.id ?? null,
-                        name: mod.author,
+                      navigate(`/authors/${modAuthorId}`, {
+                        state: { navigationTrail },
                       });
                     }}
                     title={t("mods.showMoreByAuthor", { author: mod.author })}
