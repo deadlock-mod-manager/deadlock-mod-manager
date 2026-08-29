@@ -3001,6 +3001,7 @@
   "modDetail": {
     "backToAuthorMods": "Back to {{author}}'s mods",
     "backToLibrary": "Back to Mods Library",
+    "backToMaps": "Back to Maps",
     "backToFavorites": "Back to Favorites",
     "backToDashboard": "Back to Dashboard",
     "mapHowToPlay": {

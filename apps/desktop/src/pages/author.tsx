@@ -31,6 +31,7 @@ import ModCard from "@/components/mod-browsing/mod-card";
 import ModCardSkeleton from "@/components/skeletons/mod-card";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { getModAuthor } from "@/lib/api-client";
+import { returnNullForNotFound } from "@/lib/http-error";
 import {
   appendNavigation,
   type AuthorNavigationTarget,
@@ -96,34 +97,38 @@ const AuthorPageContent = ({
 }) => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const {
-    data: { author, mods: authorMods },
-  } = useSuspenseQuery({
+  const { data: profile } = useSuspenseQuery({
     queryKey: ["mod-author", authorId],
-    queryFn: () => getModAuthor(authorId),
+    queryFn: () => getModAuthor(authorId).catch(returnNullForNotFound),
     staleTime: STALE_TIME_API,
     retry: 3,
   });
 
-  const displayName = author.name;
-  const headerImage = authorMods.find(
-    (mod) => !mod.isNSFW && mod.images.length > 0,
-  )?.images[0];
   const totals = useMemo(() => {
     let downloads = 0;
     let likes = 0;
-    for (const mod of authorMods) {
+    for (const mod of profile?.mods ?? []) {
       downloads += mod.downloadCount;
       likes += mod.likes;
     }
     return { downloads, likes };
-  }, [authorMods]);
+  }, [profile?.mods]);
 
   const backNavigation = getBackNavigation(navigationTrail);
   const goBack = useCallback(
     () => navigate(backNavigation.path),
     [backNavigation.path, navigate],
   );
+
+  if (!profile) {
+    return <AuthorNotFound backLabel={backLabel} onBack={goBack} />;
+  }
+
+  const { author, mods: authorMods } = profile;
+  const displayName = author.name;
+  const headerImage = authorMods.find(
+    (mod) => !mod.isNSFW && mod.images.length > 0,
+  )?.images[0];
 
   const avatarUrl = author.hdAvatarUrl || author.avatarUrl;
   const canOpenProfile = isTrustedExternalUrl(author.profileUrl);
