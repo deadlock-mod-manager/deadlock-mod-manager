@@ -22,6 +22,7 @@ pub mod pattern;
 pub mod profile;
 pub mod sound_edit;
 pub mod source2;
+pub mod staging;
 pub mod texture_edit;
 pub mod vpkdir;
 
