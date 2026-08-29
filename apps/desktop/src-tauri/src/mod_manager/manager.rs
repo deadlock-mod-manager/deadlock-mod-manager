@@ -476,7 +476,18 @@ mod tests {
   /// Builds a manager pointing at a throwaway game install, bypassing the
   /// Steam lookup and the app handle that `ModManager::new` depends on.
   fn test_manager(game_path: &Path) -> ModManager {
-    let mut manager = ModManager {
+    let mut manager = test_manager_without_game_path();
+
+    manager
+      .steam_manager
+      .set_game_path(game_path.to_path_buf())
+      .unwrap();
+
+    manager
+  }
+
+  fn test_manager_without_game_path() -> ModManager {
+    ModManager {
       steam_manager: SteamManager::new(),
       process_manager: GameProcessManager::new(),
       config_manager: GameConfigManager::new(),
@@ -487,14 +498,7 @@ mod tests {
       addons_backup_manager: AddonsBackupManager::new(),
       autoexec_manager: AutoexecManager::new(),
       app_handle: None,
-    };
-
-    manager
-      .steam_manager
-      .set_game_path(game_path.to_path_buf())
-      .unwrap();
-
-    manager
+    }
   }
 
   fn game_dir() -> tempfile::TempDir {
@@ -914,6 +918,19 @@ mod tests {
         .join("addons")
         .exists()
     );
+
+    manager
+      .purge_mod_from("650634".to_string(), Vec::new(), None, mods_store.path())
+      .unwrap();
+
+    assert!(!mod_dir.exists());
+  }
+
+  #[test]
+  fn purge_deletes_downloaded_files_when_game_path_is_not_set() {
+    let mods_store = tempfile::tempdir().unwrap();
+    let mod_dir = downloaded_mod(mods_store.path(), "650634");
+    let mut manager = test_manager_without_game_path();
 
     manager
       .purge_mod_from("650634".to_string(), Vec::new(), None, mods_store.path())

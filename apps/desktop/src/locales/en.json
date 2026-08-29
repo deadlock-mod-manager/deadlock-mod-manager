@@ -48,6 +48,8 @@
     "variantsWithCount_other": "Variants · {{count}} active",
     "skinCount_one": "{{count}} skin",
     "skinCount_other": "{{count}} skins",
+    "modCount_one": "{{count}} mod",
+    "modCount_other": "{{count}} mods",
     "noSkins": "No skins downloaded",
     "noSkinsHint": "Download skins from the Mods Store. If a downloaded skin isn't listed here, set its hero override from your Mods Library.",
     "conflict": "Multiple skins active",
@@ -76,7 +78,24 @@
       "disabled": "3D preview is off",
       "disabledHint": "Turn it on to see the selected skin's model here. It can be switched off again under Settings › Application › Appearance.",
       "enable": "Turn the preview on"
-    }
+    },
+    "modActions": "Mod actions",
+    "removeFromHero": "Remove from {{hero}}",
+    "removeFromHeroSuccess": "{{mod}} is no longer listed here. It stays in your library.",
+    "deleteMod": "Delete mod",
+    "extras": "Sounds and other mods",
+    "extrasHint": "These sit next to a skin, so you can switch each one on or off on its own.",
+    "extrasCount_one": "{{count}} other mod",
+    "extrasCount_other": "{{count}} other mods",
+    "assignMod": "Assign Mod",
+    "assignTitle": "Assign a mod to {{hero}}",
+    "assignDescription": "Pick a mod from your library to list under this hero — a skin or sound that wasn't recognised, or something you removed from the list earlier.",
+    "assignSearchPlaceholder": "Search your library...",
+    "assignEmpty": "Nothing left to assign.",
+    "assignCurrent": "Detected as {{hero}}",
+    "assignUnrecognized": "No hero",
+    "assignRemoved": "Removed",
+    "assignSuccess": "{{mod}} is now listed under {{hero}}"
   },
   "stats": {
     "title": "Stats",
@@ -112,6 +131,7 @@
       "waitingTitle": "No match running",
       "waitingDescription": "Start a Deadlock match and this fills up with everyone in your lobby. The match is read from the game's console log, so nothing needs to be typed in.",
       "checkNow": "Check now",
+      "checking": "Checking…",
       "matchId": "Match {{id}}",
       "lastMatch": "Your last match",
       "resolving": "Requesting the live broadcast…",
@@ -1544,7 +1564,13 @@
     "forgeInstallDescription": "Let deadlockforge.net send mods you build straight to Deadlock Mod Manager. Nothing installs without asking you first.",
     "modelPreview": "3D model preview",
     "modelPreviewDescription": "Render skin models in the Hero Skins panel and the Mod Foundry.",
-    "modelPreviewWarning": "The preview decodes a whole character model and renders it on your GPU. It is the slowest part of opening a skin, and not every skin can be decoded — an unusual or broken model may fail to load or, rarely, upset the graphics driver. Behaviour varies between graphics drivers and platforms; switch this off if previews are slow, blank or crash."
+    "modelPreviewWarning": "The preview decodes a whole character model and renders it on your GPU. It is the slowest part of opening a skin, and not every skin can be decoded — an unusual or broken model may fail to load or, rarely, upset the graphics driver. Behaviour varies between graphics drivers and platforms; switch this off if previews are slow, blank or crash.",
+    "heroSkins": "Hero Skins Page",
+    "heroSkinsDescription": "What the Hero Skins page lists, and how picking an entry there behaves.",
+    "multipleSkins": "Allow several skins per hero",
+    "multipleSkinsDescription": "Picking a skin adds it instead of replacing the one already on. Only useful for skins that change different parts of a hero — two full skins will fight over the same files.",
+    "heroExtras": "Sort sounds and weapon skins by hero",
+    "heroExtrasDescription": "Try to match weapon skins, ability sounds and voice lines to a hero and list them there too. This is a guess more often than a skin's hero is, so use \"Assign Mod\" on the page to correct it."
   },
   "featureFlags": {
     "title": "Experimental Features",
@@ -3312,5 +3338,19 @@
     "openCancel": "Open without it",
     "openEnabled": "1-click installs enabled.",
     "fallbackName": "DeadlockForge mod"
+  },
+  "modCategories": {
+    "maps": "Maps",
+    "skins": "Skins",
+    "gameplay": "Gameplay",
+    "hud": "HUD",
+    "models": "Models",
+    "music": "Music",
+    "abilitySounds": "Ability Sounds",
+    "weaponSounds": "Weapon Sounds",
+    "voiceLines": "Voice Lines",
+    "killSounds": "Kill Sounds",
+    "killstreakMusic": "Killstreak Music",
+    "other": "Other"
   }
 }

@@ -59,6 +59,7 @@ import { SteamPathSettings } from "@/components/settings/steam-path-settings";
 import { GamePresenceSettings } from "@/components/settings/game-presence-settings";
 import GameInfoManagement from "@/components/settings/gameinfo-management";
 import { HeroParserSettings } from "@/components/settings/hero-parser-settings";
+import { HeroSkinsSettings } from "@/components/settings/hero-skins-settings";
 import { ForgeInstallToggle } from "@/components/settings/forge-install-toggle";
 import { IngestToolToggle } from "@/components/settings/ingest-tool-toggle";
 import { LanguageSettings } from "@/components/settings/language-settings";
@@ -775,6 +776,12 @@ const CustomSettings = ({ value }: { value?: string }) => {
                   </SelectContent>
                 </Select>
               </div>
+            </Section>
+
+            <Section
+              description={t("settings.heroSkinsDescription")}
+              title={t("settings.heroSkins")}>
+              <HeroSkinsSettings />
             </Section>
           </TabsContent>
 

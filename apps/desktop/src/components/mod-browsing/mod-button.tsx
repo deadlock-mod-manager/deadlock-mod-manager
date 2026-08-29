@@ -215,7 +215,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
           analytics.trackModUninstalled(localMod.remoteId, "user_choice");
           break;
         case ModStatus.FailedToDownload:
-          retryDownload();
+          await retryDownload();
           break;
         case ModStatus.Error:
           removeMod(localMod.remoteId);

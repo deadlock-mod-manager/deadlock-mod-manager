@@ -103,14 +103,18 @@ export const LiveTab = ({
 
   // The one way out of every dead end this tab can reach, so it is the same
   // button in all of them rather than one that only exists before a match.
+  const isChecking = live.isDetecting || live.isRefreshing;
   const checkNowButton = (
-    <Button onClick={live.refresh} variant='outline'>
-      {live.isDetecting ? (
+    <Button
+      disabled={isChecking}
+      onClick={() => void live.refresh()}
+      variant='outline'>
+      {isChecking ? (
         <Loader2 className='h-4 w-4 animate-spin' />
       ) : (
         <Radio className='h-4 w-4' />
       )}
-      {t("stats.live.checkNow")}
+      {isChecking ? t("stats.live.checking") : t("stats.live.checkNow")}
     </Button>
   );
 

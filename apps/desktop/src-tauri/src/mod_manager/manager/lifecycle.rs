@@ -284,12 +284,20 @@ impl ModManager {
     Self::ensure_safe_mod_id(&mod_id)?;
 
     // A mod whose download failed never reached the addons directory, which
-    // may not exist at all yet. Its downloaded files still have to go.
-    let addons_path = self.get_addons_path(profile_folder.as_deref())?;
-    if addons_path.path().exists() {
-      self.remove_mod_vpks(&mod_id, &vpks, profile_folder)?;
-    } else {
-      log::info!("Addons path does not exist, skipping VPK cleanup: {addons_path:?}");
+    // may not exist at all yet - and without a game path there is no addons
+    // directory to speak of. Nothing was installed in either case, but the
+    // downloaded files still have to go, so neither may fail the purge.
+    match self.get_addons_path(profile_folder.as_deref()) {
+      Ok(addons_path) if addons_path.path().exists() => {
+        self.remove_mod_vpks(&mod_id, &vpks, profile_folder)?;
+      }
+      Ok(addons_path) => {
+        log::info!("Addons path does not exist, skipping VPK cleanup: {addons_path:?}");
+      }
+      Err(Error::GamePathNotSet) => {
+        log::info!("Game path not set, skipping VPK cleanup for mod: {mod_id}");
+      }
+      Err(e) => return Err(e),
     }
 
     self.mod_repository.remove_mod(&mod_id);
