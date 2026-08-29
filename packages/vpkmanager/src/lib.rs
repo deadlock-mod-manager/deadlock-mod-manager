@@ -18,6 +18,7 @@ pub mod fs_retry;
 pub mod ledger;
 pub mod locate;
 pub mod naming;
+pub mod ops;
 pub mod pack;
 pub mod particle_edit;
 pub mod pattern;
