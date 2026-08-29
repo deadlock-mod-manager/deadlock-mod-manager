@@ -437,20 +437,31 @@ export function buildMetadata({
   description,
   isMap,
   donationMethods,
+  submitter,
 }: {
   description: string;
   isMap: boolean;
   donationMethods: GameBanana.GameBananaDonationMethod[];
-}): ModMetadata | null {
+  submitter: GameBanana.GameBananaModProfile["_aSubmitter"];
+}): ModMetadata {
   const mapName = isMap ? extractMapName(description) : undefined;
   const donationLinks = buildDonationLinks({
     methods: donationMethods,
     description,
   });
 
-  if (!mapName && donationLinks.length === 0) return null;
-
-  const metadata: ModMetadata = {};
+  const metadata: ModMetadata = {
+    author: {
+      id: submitter._idRow,
+      profileUrl: submitter._sProfileUrl,
+      avatarUrl: submitter._sAvatarUrl,
+      ...(submitter._sHdAvatarUrl
+        ? { hdAvatarUrl: submitter._sHdAvatarUrl }
+        : {}),
+      ...(submitter._sUpicUrl ? { upicUrl: submitter._sUpicUrl } : {}),
+      ...(submitter._sUserTitle ? { title: submitter._sUserTitle } : {}),
+    },
+  };
   if (mapName) metadata.mapName = mapName;
   if (donationLinks.length > 0) metadata.donationLinks = donationLinks;
   return metadata;

@@ -14,6 +14,7 @@ import {
 } from "@deadlock-mods/ui/components/empty";
 import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
 import { toast } from "@deadlock-mods/ui/components/sonner";
+import { ChevronLeft, ChevronRight } from "@deadlock-mods/ui/icons";
 import { MagnifyingGlass, Warning } from "@phosphor-icons/react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -28,7 +29,10 @@ import {
 } from "react";
 import { platform } from "@tauri-apps/plugin-os";
 import { useTranslation } from "react-i18next";
-import ModCard from "@/components/mod-browsing/mod-card";
+import { useNavigate } from "react-router";
+import ModCard, {
+  type ModAuthorLink,
+} from "@/components/mod-browsing/mod-card";
 import SearchBar from "@/components/mod-browsing/search-bar";
 import SearchBarSkeleton from "@/components/mod-browsing/search-bar-skeleton";
 import ErrorBoundary from "@/components/shared/error-boundary";
@@ -52,7 +56,6 @@ import type {
 } from "@/lib/store/slices/ui";
 import { cn, getTimePeriodCutoff } from "@/lib/utils";
 import type { CatalogQuery } from "@/types/generated/CatalogQuery";
-import { ChevronLeft, ChevronRight } from "@deadlock-mods/ui/icons";
 
 const SEARCH_KEYS = ["name", "description", "author"];
 const PAGE_SIZE = 50;
@@ -165,6 +168,7 @@ function ModsPagination({
 
 const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { isEnabled: isCustomMapsEnabled } = useFeatureFlag(
     "custom-maps",
     false,
@@ -393,6 +397,15 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     (heroes: string[]) => updateModsFilters({ selectedHeroes: heroes }),
     [updateModsFilters],
   );
+  const handleAuthorSelect = useCallback(
+    (author: ModAuthorLink) =>
+      navigate(
+        author.id === null
+          ? `/authors/by-name/${encodeURIComponent(author.name)}`
+          : `/authors/${author.id}`,
+      ),
+    [navigate],
+  );
   const handleAudioQuickFilterChange = useCallback(
     (value: AudioQuickFilter) => updateModsFilters({ audioQuickFilter: value }),
     [updateModsFilters],
@@ -507,7 +520,11 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
               )}
               <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
                 {displayedMods.map((mod) => (
-                  <ModCard key={mod.id} mod={mod} />
+                  <ModCard
+                    key={mod.id}
+                    mod={mod}
+                    onAuthorSelect={handleAuthorSelect}
+                  />
                 ))}
               </div>
               {totalPages > 1 && (
@@ -543,7 +560,11 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
                   }}>
                   <div className='grid grid-cols-1 gap-4 px-1 pr-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
                     {modRows[virtualRow.index]?.map((mod) => (
-                      <ModCard key={mod.id} mod={mod} />
+                      <ModCard
+                        key={mod.id}
+                        mod={mod}
+                        onAuthorSelect={handleAuthorSelect}
+                      />
                     ))}
                   </div>
                 </div>

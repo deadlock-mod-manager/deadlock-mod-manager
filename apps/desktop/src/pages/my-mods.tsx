@@ -97,6 +97,7 @@ import {
   matchesHeroFilter,
   resolveLocalModHero,
 } from "@/lib/mods/hero-resolution";
+import { MODS_LIBRARY_BACK_NAVIGATION } from "@/lib/mods/mod-detail-navigation";
 import { usePersistedStore } from "@/lib/store";
 import type {
   AudioQuickFilter,
@@ -245,7 +246,11 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
         <div className={cn("relative", isDisabled && "grayscale")}>
           <div
             className='cursor-pointer'
-            onClick={() => navigate(`/mods/${mod.remoteId}`)}>
+            onClick={() =>
+              navigate(`/mods/${mod.remoteId}`, {
+                state: { backNavigation: MODS_LIBRARY_BACK_NAVIGATION },
+              })
+            }>
             {mod.isAudio ? (
               <AudioPlayerPreview
                 audioUrl={mod.audioUrl || ""}
@@ -300,7 +305,11 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
             <div className='flex flex-col'>
               <CardTitle
                 className='w-48 cursor-pointer overflow-clip text-ellipsis text-nowrap'
-                onClick={() => navigate(`/mods/${mod.remoteId}`)}
+                onClick={() =>
+                  navigate(`/mods/${mod.remoteId}`, {
+                    state: { backNavigation: MODS_LIBRARY_BACK_NAVIGATION },
+                  })
+                }
                 title={mod.name}>
                 {mod.name}
               </CardTitle>
@@ -384,7 +393,11 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
                 "relative h-24 w-24 min-w-24",
                 isDisabled && "grayscale",
               )}
-              onClick={() => navigate(`/mods/${mod.remoteId}`)}>
+              onClick={() =>
+                navigate(`/mods/${mod.remoteId}`, {
+                  state: { backNavigation: MODS_LIBRARY_BACK_NAVIGATION },
+                })
+              }>
               {mod.isAudio ? (
                 <AudioPlayerPreview
                   audioUrl={mod.audioUrl || ""}
@@ -440,7 +453,11 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
               <div>
                 <h3
                   className='cursor-pointer font-semibold text-lg'
-                  onClick={() => navigate(`/mods/${mod.remoteId}`)}>
+                  onClick={() =>
+                    navigate(`/mods/${mod.remoteId}`, {
+                      state: { backNavigation: MODS_LIBRARY_BACK_NAVIGATION },
+                    })
+                  }>
                   {mod.name}
                 </h3>
                 <p className='text-muted-foreground text-sm'>

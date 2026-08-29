@@ -365,6 +365,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         description,
         isMap: false,
         donationMethods: profile._aSubmitter?._aDonationMethods ?? [],
+        submitter: profile._aSubmitter,
       }),
     };
   }
@@ -414,6 +415,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         description,
         isMap,
         donationMethods: profile._aSubmitter?._aDonationMethods ?? [],
+        submitter: profile._aSubmitter,
       }),
     };
   }

@@ -73,6 +73,14 @@ export const mods = pgTable(
     metadata: jsonb("metadata").$type<{
       mapName?: string;
       donationLinks?: Array<{ url: string; platform: string }>;
+      author?: {
+        id: number;
+        profileUrl: string;
+        avatarUrl: string;
+        hdAvatarUrl?: string;
+        upicUrl?: string;
+        title?: string;
+      };
     }>(),
     overrides: jsonb("overrides").$type<ModOverrides>(),
     dependencies: jsonb("dependencies").$type<ModDependency[]>(),
