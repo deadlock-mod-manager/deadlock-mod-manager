@@ -13,7 +13,8 @@ impl VpkManager {
     Ok(
       self
         .stage_reorder_vpks_sharded(ordered_mods, base)?
-        .commit(),
+        .commit()
+        .placements,
     )
   }
 
@@ -21,7 +22,7 @@ impl VpkManager {
     &self,
     ordered_mods: &[ShardAssignment],
     base: &Path,
-  ) -> Result<PendingVpkOperation<Vec<ShardPlacement>>, Error> {
+  ) -> Result<PendingVpkOperation<ShardReorderOutcome>, Error> {
     if !base.exists() {
       return Err(Error::Io(std::io::Error::new(
         std::io::ErrorKind::NotFound,
@@ -83,9 +84,9 @@ impl VpkManager {
     let result = Self::reorder_sharded_inner(ordered_mods, orphan_sources, &base, &mut staging);
 
     match result {
-      Ok(placements) => {
+      Ok(outcome) => {
         Self::prune_empty_shard_dirs(&base);
-        Ok(PendingVpkOperation::with_staging(placements, staging))
+        Ok(PendingVpkOperation::with_staging(outcome, staging))
       }
       Err(error) => {
         let error = staging.rollback(error);
@@ -102,9 +103,9 @@ impl VpkManager {
     orphan_sources: Vec<(ShardIndex, PathBuf)>,
     base: &ProfileBase,
     staging: &mut VpkStaging,
-  ) -> Result<Vec<ShardPlacement>, Error> {
+  ) -> Result<ShardReorderOutcome, Error> {
     let mut staged_by_mod: Vec<(String, Vec<PathBuf>)> = Vec::new();
-    let mut orphan_staged = Vec::new();
+    let mut orphan_staged: Vec<((ShardIndex, String), PathBuf)> = Vec::new();
 
     for assignment in ordered_mods {
       let dir = base.shard_dir(assignment.shard);
@@ -115,8 +116,9 @@ impl VpkManager {
       staged_by_mod.push((assignment.mod_id.clone(), staged));
     }
 
-    for (_, source) in orphan_sources {
-      orphan_staged.push(staging.stage(base, &source)?);
+    for (shard_index, source) in orphan_sources {
+      let filename = Self::vpk_filename(&source.to_string_lossy());
+      orphan_staged.push(((shard_index, filename), staging.stage(base, &source)?));
     }
 
     let mut placements = Vec::new();
@@ -133,17 +135,24 @@ impl VpkManager {
       });
     }
 
-    for orphan in &orphan_staged {
-      Self::place_staged_group(
+    let mut orphan_renames = BTreeMap::new();
+    for (origin, staged) in &orphan_staged {
+      let (shard_used, names) = Self::place_staged_group(
         base,
         staging,
         &mut current_shard,
         &mut used,
-        std::slice::from_ref(orphan),
+        std::slice::from_ref(staged),
       )?;
+      if let Some(new_name) = names.into_iter().next() {
+        orphan_renames.insert(origin.clone(), (shard_used, new_name));
+      }
     }
 
-    Ok(placements)
+    Ok(ShardReorderOutcome {
+      placements,
+      orphan_renames,
+    })
   }
 
   /// Move a group of staged files into the current shard, opening a new shard

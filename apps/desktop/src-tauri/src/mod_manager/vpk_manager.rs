@@ -35,6 +35,17 @@ pub struct ShardAssignment {
   pub vpks: Vec<String>,
 }
 
+/// Where a sharded reorder moved everything it touched.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct ShardReorderOutcome {
+  /// Final placement of every mod in the requested assignments.
+  pub placements: Vec<ShardPlacement>,
+  /// Enabled VPKs no assignment claimed, as old `(shard, filename)` to new
+  /// `(shard, filename)`. A reorder renumbers these too, so records that still
+  /// name them have to follow them.
+  pub orphan_renames: BTreeMap<(ShardIndex, String), (ShardIndex, String)>,
+}
+
 pub struct SwapRequest<'a> {
   pub base: &'a ProfileBase,
   pub current_shard: ShardIndex,

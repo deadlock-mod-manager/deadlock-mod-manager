@@ -16,7 +16,7 @@ use crate::mod_manager::{
 };
 use log;
 use std::{
-  collections::HashSet,
+  collections::{BTreeMap, HashSet},
   path::{Component, Path, PathBuf},
 };
 use tauri::Manager;
@@ -719,6 +719,91 @@ mod tests {
     );
 
     assert!(ModManager::ordered_assignments(&manifest).is_empty());
+  }
+
+  fn enabled_entry(order: u32, vpk: &str) -> ProfileVpkManifestEntry {
+    ProfileVpkManifestEntry {
+      enabled: true,
+      order: Some(order),
+      current_vpks: vec![vpk.to_string()],
+      ..Default::default()
+    }
+  }
+
+  /// A VPK claimed by two mods is a stale record, not a reason to give up: the
+  /// reorder used to abort, which left the profile permanently unorderable.
+  #[test]
+  fn reorder_recovers_when_two_mods_claim_the_same_vpk() {
+    let game = game_dir();
+    let base_path = game.path().join("game").join("citadel").join("addons");
+    fs::create_dir_all(&base_path).unwrap();
+    let base = ProfileBase::new(&base_path).unwrap();
+    write_vpk(&base_path, "pak01_dir.vpk");
+
+    let mut manifest = ProfileVpkManifest::default();
+    manifest
+      .mods
+      .insert("first".to_string(), enabled_entry(1, "pak01_dir.vpk"));
+    manifest
+      .mods
+      .insert("second".to_string(), enabled_entry(2, "pak01_dir.vpk"));
+    manifest.save(&base).unwrap();
+
+    let mut manager = test_manager(game.path());
+    manager.reorder_all_mods_for_profile(None).unwrap();
+
+    let manifest = ProfileVpkManifest::load(&base).unwrap();
+    assert!(manifest.mods["first"].enabled);
+    assert_eq!(
+      manifest.mods["first"].current_vpks,
+      vec!["pak01_dir.vpk".to_string()]
+    );
+    assert!(!manifest.mods["second"].enabled);
+    assert!(manifest.mods["second"].current_vpks.is_empty());
+    assert!(base_path.join("pak01_dir.vpk").exists());
+  }
+
+  /// An entry the reorder skipped still names files the reorder renumbers. Its
+  /// record has to follow them, or it ends up claiming a file that now belongs
+  /// to another mod and the next reorder sees a duplicate.
+  #[test]
+  fn reorder_resyncs_entries_it_did_not_move() {
+    let game = game_dir();
+    let base_path = game.path().join("game").join("citadel").join("addons");
+    fs::create_dir_all(&base_path).unwrap();
+    let base = ProfileBase::new(&base_path).unwrap();
+    write_vpk(&base_path, "pak01_dir.vpk");
+    write_vpk(&base_path, "pak05_dir.vpk");
+
+    let mut manifest = ProfileVpkManifest::default();
+    manifest
+      .mods
+      .insert("mapped".to_string(), enabled_entry(1, "pak01_dir.vpk"));
+    manifest.mods.insert(
+      "unmapped".to_string(),
+      ProfileVpkManifestEntry {
+        enabled: false,
+        current_vpks: vec!["pak05_dir.vpk".to_string()],
+        ..Default::default()
+      },
+    );
+    manifest.save(&base).unwrap();
+
+    let mut manager = test_manager(game.path());
+    manager.reorder_all_mods_for_profile(None).unwrap();
+
+    let manifest = ProfileVpkManifest::load(&base).unwrap();
+    assert_eq!(
+      manifest.mods["mapped"].current_vpks,
+      vec!["pak01_dir.vpk".to_string()]
+    );
+    // pak05 was compacted to pak02 as an unclaimed file; the record follows it
+    // instead of pointing at the file "mapped" now owns.
+    assert_eq!(
+      manifest.mods["unmapped"].current_vpks,
+      vec!["pak02_dir.vpk".to_string()]
+    );
+    assert!(base_path.join("pak02_dir.vpk").exists());
   }
 
   /// The full upgrade, as an existing install experiences it: a v1 manifest and

@@ -130,6 +130,122 @@ impl ModManager {
     changed
   }
 
+  /// Drop VPK claims recorded by more than one mod, keeping the first claimant
+  /// in load order.
+  ///
+  /// A VPK file has exactly one owner on disk, so a shared claim always means a
+  /// stale record. Refusing to reorder in that case leaves the profile
+  /// permanently unorderable, so the later claimants give up the claim instead
+  /// and are reconciled as uninstalled.
+  fn dedupe_assignments(
+    assignments: Vec<ShardAssignment>,
+  ) -> (Vec<ShardAssignment>, Vec<ShardAssignment>) {
+    let mut claimed: HashSet<(ShardIndex, String)> = HashSet::new();
+    let mut deduped = Vec::new();
+    let mut dropped = Vec::new();
+
+    for mut assignment in assignments {
+      let mod_id = assignment.mod_id.clone();
+      let shard = assignment.shard;
+      assignment.vpks.retain(|vpk| {
+        let filename = Self::vpk_filename(vpk);
+        if claimed.insert((shard, filename.clone())) {
+          return true;
+        }
+        log::warn!(
+          "Dropping stale claim on {filename} by mod {mod_id}: already owned by another mod"
+        );
+        false
+      });
+
+      if assignment.vpks.is_empty() {
+        dropped.push(assignment);
+      } else {
+        deduped.push(assignment);
+      }
+    }
+
+    (deduped, dropped)
+  }
+
+  /// Record mods that lost every claim as uninstalled, and report them back so
+  /// callers drop the stale VPK names from their own state too.
+  fn release_dropped_claims(
+    manifest: &mut ProfileVpkManifest,
+    dropped: Vec<ShardAssignment>,
+  ) -> Vec<ShardPlacement> {
+    dropped
+      .into_iter()
+      .map(|assignment| {
+        if let Some(entry) = manifest.mods.get_mut(&assignment.mod_id) {
+          entry.current_vpks.clear();
+          entry.enabled = false;
+        }
+        ShardPlacement {
+          mod_id: assignment.mod_id,
+          shard: assignment.shard,
+          vpks: Vec::new(),
+        }
+      })
+      .collect()
+  }
+
+  /// Rewrite manifest entries that took no part in a reorder.
+  ///
+  /// A reorder renumbers every enabled VPK in the profile, including files
+  /// these entries still reference. Without this their recorded names end up
+  /// pointing at another mod's file, and the next reorder sees a duplicate
+  /// claim it cannot resolve.
+  fn resync_unmapped_manifest_entries(
+    manifest: &mut ProfileVpkManifest,
+    mapped_mod_ids: &HashSet<String>,
+    orphan_renames: &BTreeMap<(ShardIndex, String), (ShardIndex, String)>,
+  ) {
+    for (mod_id, entry) in &mut manifest.mods {
+      if mapped_mod_ids.contains(mod_id) {
+        continue;
+      }
+
+      let mut resynced = Vec::new();
+      let mut resynced_shard: Option<ShardIndex> = None;
+      for vpk in &entry.current_vpks {
+        let filename = Self::vpk_filename(vpk);
+
+        // Disabled (prefixed) VPKs are never touched by a reorder.
+        if VpkManager::enabled_vpk_number(&filename).is_none() {
+          resynced.push(filename);
+          continue;
+        }
+
+        let Some((shard, renamed)) = orphan_renames.get(&(entry.shard, filename.clone())) else {
+          log::warn!("Dropping stale VPK {filename} from unmapped mod {mod_id} after reorder");
+          continue;
+        };
+
+        match resynced_shard {
+          Some(existing) if existing != *shard => {
+            log::warn!(
+              "Dropping {filename} from unmapped mod {mod_id}: the reorder split its files across shards"
+            );
+          }
+          _ => {
+            log::info!("Resynced {filename} -> {renamed} for unmapped mod {mod_id}");
+            resynced_shard = Some(*shard);
+            resynced.push(renamed.clone());
+          }
+        }
+      }
+
+      if let Some(shard) = resynced_shard {
+        entry.shard = shard;
+      }
+      entry.current_vpks = resynced;
+      if entry.current_vpks.is_empty() {
+        entry.enabled = false;
+      }
+    }
+  }
+
   fn apply_placements_to_manifest(
     manifest: &mut ProfileVpkManifest,
     placements: &[ShardPlacement],
@@ -188,16 +304,33 @@ impl ModManager {
     &mut self,
     base: &ProfileBase,
     manifest: &mut ProfileVpkManifest,
-    assignments: &[ShardAssignment],
+    assignments: Vec<ShardAssignment>,
   ) -> Result<Vec<ShardPlacement>, Error> {
-    let pending = self
-      .vpk_manager
-      .stage_reorder_vpks_sharded(assignments, base)?;
-    Self::apply_placements_to_manifest(manifest, pending.value());
-    if let Err(error) = manifest.save(base) {
-      return Err(pending.rollback(error));
+    let (assignments, dropped) = Self::dedupe_assignments(assignments);
+    let mut placements = Self::release_dropped_claims(manifest, dropped);
+
+    if assignments.is_empty() {
+      manifest.save(base)?;
+    } else {
+      let mapped_mod_ids: HashSet<String> = assignments
+        .iter()
+        .map(|assignment| assignment.mod_id.clone())
+        .collect();
+
+      let pending = self
+        .vpk_manager
+        .stage_reorder_vpks_sharded(&assignments, base)?;
+      Self::apply_placements_to_manifest(manifest, &pending.value().placements);
+      Self::resync_unmapped_manifest_entries(
+        manifest,
+        &mapped_mod_ids,
+        &pending.value().orphan_renames,
+      );
+      if let Err(error) = manifest.save(base) {
+        return Err(pending.rollback(error));
+      }
+      placements.extend(pending.commit().placements);
     }
-    let placements = pending.commit();
 
     for placement in &placements {
       if let Some(mut mod_entry) = self.mod_repository.remove_mod(&placement.mod_id) {
@@ -323,7 +456,7 @@ impl ModManager {
       return Ok(());
     }
 
-    self.commit_reorder(&addons_path, &mut manifest, &assignments)?;
+    self.commit_reorder(&addons_path, &mut manifest, assignments)?;
 
     log::info!("All mods reordered successfully");
     Ok(())
@@ -377,7 +510,7 @@ impl ModManager {
       return Ok(Vec::new());
     }
 
-    let placements = self.commit_reorder(&addons_path, &mut manifest, &mod_vpk_mapping)?;
+    let placements = self.commit_reorder(&addons_path, &mut manifest, mod_vpk_mapping)?;
 
     log::info!("Mod reordering by remote ID completed successfully");
     Ok(
@@ -442,7 +575,7 @@ impl ModManager {
 
     // `commit_reorder` has already written the new VPK names into the
     // repository, so the reordered mods can just be read back out.
-    let placements = self.commit_reorder(&addons_path, &mut manifest, &mod_vpk_mapping)?;
+    let placements = self.commit_reorder(&addons_path, &mut manifest, mod_vpk_mapping)?;
     let result_mods: Vec<Mod> = placements
       .iter()
       .filter_map(|placement| self.mod_repository.get_mod(&placement.mod_id).cloned())
