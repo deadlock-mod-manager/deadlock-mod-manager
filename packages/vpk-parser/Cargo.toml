@@ -21,6 +21,10 @@ ts-rs = { version = "11.1.0", features = ["serde-compat", "chrono-impl"] }
 
 libc = "0.2"
 
+[dev-dependencies]
+tempfile = "3"
+vpkmanager = { path = "../vpkmanager" }
+
 [profile.release]
 lto = true
 opt-level = "z" # Optimize for size
