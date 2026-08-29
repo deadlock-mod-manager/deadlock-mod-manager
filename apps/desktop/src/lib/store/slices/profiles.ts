@@ -853,9 +853,10 @@ export const createProfilesSlice: StateCreator<
             enabledVpkPattern.test(vpk.filename) &&
             (mod.installedVpks?.some((installedVpk) => {
               const normalized = installedVpk.replaceAll("\\", "/");
-              return normalized.includes("/")
-                ? normalized === vpk.locator
-                : normalized === vpk.filename;
+              return (
+                normalized === vpk.locator ||
+                normalized.split("/").pop() === vpk.filename
+              );
             }) ??
               false),
         );

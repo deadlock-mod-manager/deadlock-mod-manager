@@ -1,0 +1,768 @@
+//! Turning a mod's VPKs on and off, and swapping which variant is on.
+//!
+//! An enabled VPK is named `pak##_dir.vpk` in a shard directory; a disabled one
+//! keeps its shipped name behind a `{mod_id}_` prefix in the profile base. Every
+//! function here is one of those two renamings, done so that a failure part way
+//! through puts every file back.
+
+use std::collections::HashSet;
+use std::fs;
+use std::path::{Path, PathBuf};
+
+use super::{MissingVpkPolicy, SwapRequest};
+use crate::error::{Result, VpkManagerError};
+use crate::fingerprint;
+use crate::fs_retry;
+use crate::naming;
+use crate::profile::{CLEAR_STAGING_DIR, ProfileBase, SHARD_CAPACITY};
+use crate::staging::{PendingVpkOperation, RenameTransaction, VpkSnapshot, VpkStaging};
+
+/// Enable VPKs, taking the prefixed sources from `disabled_dir` (always the
+/// profile base) and writing the enabled `pak##_dir.vpk` into `enabled_dir`
+/// (the target shard directory). The two are equal for shard 1.
+pub fn enable_vpks_in(
+    disabled_dir: &Path,
+    enabled_dir: &Path,
+    mod_id: &str,
+    prefixed_vpks: &[String],
+) -> Result<PendingVpkOperation<Vec<String>>> {
+    if prefixed_vpks.is_empty() {
+        return Ok(PendingVpkOperation::ready(Vec::new()));
+    }
+
+    // Reject any missing source before touching the filesystem so a mod can
+    // never be left partially enabled with silently dropped VPKs.
+    let missing: Vec<String> = prefixed_vpks
+        .iter()
+        .filter(|name| !disabled_dir.join(name).exists())
+        .cloned()
+        .collect();
+    if !missing.is_empty() {
+        return Err(VpkManagerError::Vpk(format!(
+            "Cannot enable mod {mod_id} because source VPK files are missing: {}",
+            missing.join(", ")
+        )));
+    }
+
+    if enabled_dir != disabled_dir {
+        fs::create_dir_all(enabled_dir)?;
+    }
+
+    let source_count = prefixed_vpks.len() as u32;
+    let used = naming::count_enabled_vpks(enabled_dir);
+    if used + source_count > SHARD_CAPACITY {
+        return Err(VpkManagerError::Vpk(format!(
+            "Enabling mod {mod_id} would exceed the {SHARD_CAPACITY} VPK files allowed in one addon folder"
+        )));
+    }
+
+    // Track successful renames (enabled path, original prefixed path) for rollback.
+    let mut renamed = RenameTransaction::new();
+    let mut new_names = Vec::new();
+
+    for prefixed_name in prefixed_vpks {
+        let old_path = disabled_dir.join(prefixed_name);
+        let new_name = naming::next_free_enabled_vpk_name(enabled_dir)?;
+        let new_path = enabled_dir.join(&new_name);
+
+        if let Err(e) = fs_retry::retry_file_operation("rename", prefixed_name, || {
+            fs::rename(&old_path, &new_path)
+        }) {
+            log::error!(
+                "Failed to enable VPK {prefixed_name}: {e}, rolling back {count} already-renamed file(s)",
+                count = renamed.len()
+            );
+            return Err(renamed.rollback(fs_retry::map_file_lock_error(
+                "enable",
+                prefixed_name,
+                e,
+            )));
+        }
+
+        renamed.record(new_path, old_path);
+        new_names.push(new_name.clone());
+        log::info!("Enabled VPK for mod {mod_id}: {prefixed_name} -> {new_name}");
+    }
+
+    Ok(PendingVpkOperation::with_rename(new_names, renamed))
+}
+
+/// Disable VPKs, reading the enabled `pak##_dir.vpk` from `enabled_dir` (the
+/// mod's current shard) and writing the prefixed `{mod_id}_*.vpk` results into
+/// `disabled_dir` (always the profile base). The two are equal for shard 1.
+pub fn disable_vpks_in(
+    enabled_dir: &Path,
+    disabled_dir: &Path,
+    mod_id: &str,
+    installed_vpks: &[String],
+    original_names: &[String],
+    missing_policy: MissingVpkPolicy,
+) -> Result<PendingVpkOperation<Vec<String>>> {
+    if installed_vpks.is_empty() {
+        return Ok(PendingVpkOperation::ready(Vec::new()));
+    }
+
+    ensure_plain_path_component("mod id", mod_id)?;
+    for original_name in original_names {
+        ensure_plain_path_component("VPK filename", original_name)?;
+    }
+
+    if original_names.len() != installed_vpks.len() {
+        return Err(VpkManagerError::Vpk(format!(
+            "Cannot disable mod because original VPK name count ({}) does not match installed VPK count ({})",
+            original_names.len(),
+            installed_vpks.len()
+        )));
+    }
+
+    let mut vpk_pairs: Vec<(String, String)> = Vec::new();
+    let mut missing_vpks: Vec<String> = Vec::new();
+    for (installed_vpk, original_name) in installed_vpks.iter().zip(original_names.iter()) {
+        let vpk_name = naming::file_name_of(installed_vpk);
+        if enabled_dir.join(&vpk_name).exists() {
+            vpk_pairs.push((vpk_name, original_name.clone()));
+        } else {
+            missing_vpks.push(vpk_name);
+        }
+    }
+
+    if !missing_vpks.is_empty() {
+        if missing_policy == MissingVpkPolicy::Strict {
+            return Err(VpkManagerError::Vpk(format!(
+                "Cannot disable mod because enabled VPK files are missing: {}",
+                missing_vpks.join(", ")
+            )));
+        }
+        log::warn!(
+            "Mod {mod_id} is missing enabled VPK files, disabling only the ones that still exist: {}",
+            missing_vpks.join(", ")
+        );
+    }
+
+    if vpk_pairs.is_empty() {
+        return Ok(PendingVpkOperation::ready(Vec::new()));
+    }
+
+    if enabled_dir != disabled_dir {
+        fs::create_dir_all(disabled_dir)?;
+    }
+
+    // Track successful renames (prefixed path, original enabled path) for rollback.
+    let mut renamed = RenameTransaction::new();
+    // Deletions cannot be undone by a rename, so their bytes are copied aside.
+    let mut deleted = VpkSnapshot::new()?;
+    let mut prefixed_out = Vec::new();
+
+    for (vpk_name, original_name) in vpk_pairs {
+        let old_path = enabled_dir.join(&vpk_name);
+        let prefixed_name = format!("{mod_id}_{original_name}");
+        let new_path = disabled_dir.join(&prefixed_name);
+
+        if new_path.exists() {
+            log::info!(
+                "Prefixed destination already exists (newly staged variant), removing old active VPK: {vpk_name}"
+            );
+            // `new_path` already existed and is not ours to move, so the active
+            // copy has to go. Snapshot it first: rolling the rename back would
+            // move the pre-existing staged variant into the active slot, but
+            // dropping the file outright would lose the current variant.
+            if let Err(e) = deleted.capture(&old_path) {
+                return Err(renamed.rollback(deleted.rollback(e)));
+            }
+            if let Err(e) =
+                fs_retry::retry_file_operation("remove", &vpk_name, || fs::remove_file(&old_path))
+            {
+                log::error!(
+                    "Failed to remove old active VPK {vpk_name}: {e}, rolling back {count} already-renamed file(s)",
+                    count = renamed.len()
+                );
+                let error = fs_retry::map_file_lock_error("disable", &vpk_name, e);
+                return Err(renamed.rollback(deleted.rollback(error)));
+            }
+        } else {
+            if let Err(e) = fs_retry::retry_file_operation("rename", &vpk_name, || {
+                fs::rename(&old_path, &new_path)
+            }) {
+                log::error!(
+                    "Failed to disable VPK {vpk_name}: {e}, rolling back {count} already-renamed file(s)",
+                    count = renamed.len()
+                );
+                let error = fs_retry::map_file_lock_error("disable", &vpk_name, e);
+                return Err(renamed.rollback(deleted.rollback(error)));
+            }
+            renamed.record(new_path, old_path);
+        }
+
+        prefixed_out.push(prefixed_name.clone());
+        log::info!("Disabled VPK for mod {mod_id}: {vpk_name} -> {prefixed_name}");
+    }
+
+    Ok(PendingVpkOperation::with_rename(prefixed_out, renamed)
+        .absorb(PendingVpkOperation::with_snapshot((), deleted)))
+}
+
+/// Move every VPK in every shard aside, ready to be deleted on commit.
+pub fn stage_clear_all_vpks(addons_path: &Path) -> Result<PendingVpkOperation<()>> {
+    let base = ProfileBase::new(addons_path)?;
+
+    let mut sources = Vec::new();
+    for (_, dir) in base.existing_shards() {
+        sources.extend(vpks_directly_in(&dir)?);
+    }
+
+    let mut staging = VpkStaging::claim(&base, CLEAR_STAGING_DIR)?;
+    for source in sources {
+        if let Err(error) = staging.stage(&base, &source) {
+            return Err(staging.rollback(error));
+        }
+    }
+
+    super::prune_empty_shard_dirs(&base);
+    Ok(PendingVpkOperation::with_staging((), staging))
+}
+
+/// Swap which of a mod's variants is enabled, in one reversible step.
+pub fn stage_enabled_vpk_swap(
+    request: SwapRequest<'_>,
+) -> Result<PendingVpkOperation<Vec<String>>> {
+    if !request.base.exists() {
+        return Err(VpkManagerError::Io(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("Addons path not found: {:?}", request.base.path()),
+        )));
+    }
+
+    log::info!(
+        "Swapping enabled VPKs for mod {}: {} currently enabled -> {} newly selected",
+        request.mod_id,
+        request.current_installed_vpks.len(),
+        request.selected_original_names.len()
+    );
+    let unique_selection: HashSet<&String> = request.selected_original_names.iter().collect();
+    if unique_selection.len() != request.selected_original_names.len() {
+        return Err(VpkManagerError::Invalid(
+            "Selected VPK filenames must be unique".to_string(),
+        ));
+    }
+
+    swap_inner(&request)
+}
+
+/// Disable the mod's current variant and enable the selected one, absorbing
+/// both rename guards so a failure restores the exact original filenames.
+fn swap_inner(request: &SwapRequest<'_>) -> Result<PendingVpkOperation<Vec<String>>> {
+    let current_enabled_dir = request.base.shard_dir(request.current_shard);
+    let target_enabled_dir = request.base.shard_dir(request.target_shard);
+
+    let mut pending = PendingVpkOperation::ready(Vec::<String>::new());
+
+    if !request.current_installed_vpks.is_empty() {
+        let disabled = disable_vpks_in(
+            &current_enabled_dir,
+            request.base,
+            request.mod_id,
+            request.current_installed_vpks,
+            request.current_original_names,
+            MissingVpkPolicy::Strict,
+        )?;
+        pending = pending.absorb(disabled);
+    }
+
+    let prefixed_to_enable: Vec<String> = request
+        .selected_original_names
+        .iter()
+        .map(|name| format!("{}_{name}", request.mod_id))
+        .collect();
+
+    let enabled = enable_vpks_in(
+        request.base,
+        &target_enabled_dir,
+        request.mod_id,
+        &prefixed_to_enable,
+    )?;
+    let installed = enabled.value().clone();
+    Ok(pending.absorb(enabled).map_value(installed))
+}
+
+/// Replace a mod's VPK files with new ones, in place.
+///
+/// Handles both enabled (`pak##_dir.vpk`) and disabled (`{mod_id}_*.vpk`) mods.
+/// Every file overwritten is snapshotted first, so the caller can undo the whole
+/// replacement if its ledger write then fails.
+pub fn stage_replace_vpks(
+    addons_path: &Path,
+    enabled_dir: &Path,
+    mod_id: &str,
+    source_vpk_paths: &[PathBuf],
+    installed_vpks: &[String],
+) -> Result<PendingVpkOperation<()>> {
+    let destinations = replacement_destinations(
+        addons_path,
+        enabled_dir,
+        mod_id,
+        source_vpk_paths,
+        installed_vpks,
+    )?;
+
+    let mut snapshot = VpkSnapshot::new()?;
+    match replace_inner(mod_id, source_vpk_paths, &destinations, &mut snapshot) {
+        Ok(()) => Ok(PendingVpkOperation::with_snapshot((), snapshot)),
+        Err(error) => Err(snapshot.rollback(error)),
+    }
+}
+
+/// The files a replacement will overwrite, refusing the job outright if any of
+/// them is missing: a partial replacement is not something the caller can undo.
+fn replacement_destinations(
+    addons_path: &Path,
+    enabled_dir: &Path,
+    mod_id: &str,
+    source_vpk_paths: &[PathBuf],
+    installed_vpks: &[String],
+) -> Result<Vec<PathBuf>> {
+    if source_vpk_paths.is_empty() {
+        return Err(VpkManagerError::Invalid(
+            "No VPK files provided for replacement".into(),
+        ));
+    }
+
+    if !addons_path.exists() {
+        return Err(VpkManagerError::Io(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            format!("Addons path not found: {addons_path:?}"),
+        )));
+    }
+
+    // A mod with installed VPKs is enabled; otherwise its files are parked under
+    // the prefix.
+    let destinations: Vec<PathBuf> = if !installed_vpks.is_empty() {
+        if source_vpk_paths.len() != installed_vpks.len() {
+            return Err(VpkManagerError::Invalid(format!(
+                "Replacement VPK count ({}) does not match installed VPK count ({})",
+                source_vpk_paths.len(),
+                installed_vpks.len()
+            )));
+        }
+        installed_vpks
+            .iter()
+            .map(|vpk| enabled_dir.join(naming::file_name_of(vpk)))
+            .collect()
+    } else {
+        let prefixed_vpks = super::find_prefixed_vpks(addons_path, mod_id)?;
+        if prefixed_vpks.is_empty() {
+            return Err(VpkManagerError::NotFound(format!(
+                "no {mod_id}_*.vpk files in {}",
+                addons_path.display()
+            )));
+        }
+        if source_vpk_paths.len() != prefixed_vpks.len() {
+            return Err(VpkManagerError::Invalid(format!(
+                "Replacement VPK count ({}) does not match mod VPK count ({})",
+                source_vpk_paths.len(),
+                prefixed_vpks.len()
+            )));
+        }
+        prefixed_vpks
+            .iter()
+            .map(|vpk| addons_path.join(vpk))
+            .collect()
+    };
+
+    let missing: Vec<String> = destinations
+        .iter()
+        .filter(|destination| !destination.is_file())
+        .map(|destination| destination.display().to_string())
+        .collect();
+    if !missing.is_empty() {
+        return Err(VpkManagerError::NotFound(format!(
+            "cannot replace VPKs for mod {mod_id}, these files are gone: {}",
+            missing.join(", ")
+        )));
+    }
+
+    Ok(destinations)
+}
+
+/// Overwrite each destination with its replacement. Uses `?` throughout; the
+/// caller turns any early return into a full restore.
+fn replace_inner(
+    mod_id: &str,
+    source_vpk_paths: &[PathBuf],
+    destinations: &[PathBuf],
+    snapshot: &mut VpkSnapshot,
+) -> Result<()> {
+    for destination in destinations {
+        snapshot.capture(destination)?;
+    }
+
+    for (source, destination) in source_vpk_paths.iter().zip(destinations.iter()) {
+        let original_name = source
+            .file_name()
+            .and_then(|name| name.to_str())
+            .ok_or_else(|| {
+                VpkManagerError::Invalid(format!(
+                    "replacement source has no usable file name: {}",
+                    source.display()
+                ))
+            })?;
+
+        fs_retry::copy(source, destination)?;
+
+        // The replacement is different bytes in the same slot, so the old
+        // fingerprint no longer describes it.
+        if let Err(error) = fingerprint::stamp(destination, mod_id, original_name) {
+            log::warn!(
+                "Replaced {} but could not re-fingerprint it ({error}); the background backfill will retry",
+                destination.display()
+            );
+        }
+    }
+
+    Ok(())
+}
+
+/// Every `.vpk` directly inside `dir`, sorted.
+fn vpks_directly_in(dir: &Path) -> Result<Vec<PathBuf>> {
+    let mut files = Vec::new();
+    if !dir.exists() {
+        return Ok(files);
+    }
+    for entry in fs::read_dir(dir)? {
+        let path = entry?.path();
+        if path.is_file() && path.extension().is_some_and(|ext| ext == "vpk") {
+            files.push(path);
+        }
+    }
+    files.sort();
+    Ok(files)
+}
+
+fn ensure_plain_path_component(label: &str, value: &str) -> Result<()> {
+    if value.is_empty()
+        || value.contains('/')
+        || value.contains('\\')
+        || Path::new(value).is_absolute()
+        || Path::new(value).file_name().and_then(|name| name.to_str()) != Some(value)
+    {
+        return Err(VpkManagerError::Invalid(format!(
+            "Invalid {label} path component: {value}"
+        )));
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::super::test_support::{addons_base, profile, real_vpk, write_vpk};
+    use super::*;
+    use crate::profile::ShardIndex;
+
+    #[test]
+    fn disable_rejects_a_traversing_mod_id() {
+        let temp = tempfile::tempdir().unwrap();
+        write_vpk(temp.path(), "pak01_dir.vpk");
+
+        let err = disable_vpks_in(
+            temp.path(),
+            temp.path(),
+            "../evil",
+            &["pak01_dir.vpk".to_string()],
+            &["original.vpk".to_string()],
+            MissingVpkPolicy::Strict,
+        )
+        .unwrap_err();
+
+        assert!(err.to_string().contains("mod id"));
+    }
+
+    #[test]
+    fn disable_rejects_a_traversing_original_name() {
+        let temp = tempfile::tempdir().unwrap();
+        write_vpk(temp.path(), "pak01_dir.vpk");
+
+        let err = disable_vpks_in(
+            temp.path(),
+            temp.path(),
+            "123456",
+            &["pak01_dir.vpk".to_string()],
+            &["../escape.vpk".to_string()],
+            MissingVpkPolicy::Strict,
+        )
+        .unwrap_err();
+
+        assert!(err.to_string().contains("VPK filename"));
+    }
+
+    #[test]
+    fn disable_errors_when_enabled_vpk_is_missing() {
+        let temp = tempfile::tempdir().unwrap();
+
+        let err = disable_vpks_in(
+            temp.path(),
+            temp.path(),
+            "123456",
+            &["pak01_dir.vpk".to_string()],
+            &["original.vpk".to_string()],
+            MissingVpkPolicy::Strict,
+        )
+        .unwrap_err();
+
+        assert!(err.to_string().contains("enabled VPK files are missing"));
+    }
+
+    #[test]
+    fn disable_errors_when_original_name_count_does_not_match() {
+        let temp = tempfile::tempdir().unwrap();
+        write_vpk(temp.path(), "pak01_dir.vpk");
+        write_vpk(temp.path(), "pak02_dir.vpk");
+
+        let err = disable_vpks_in(
+            temp.path(),
+            temp.path(),
+            "123456",
+            &["pak01_dir.vpk".to_string(), "pak02_dir.vpk".to_string()],
+            &["first.vpk".to_string()],
+            MissingVpkPolicy::Strict,
+        )
+        .unwrap_err();
+
+        assert!(
+            err.to_string()
+                .contains("original VPK name count (1) does not match installed VPK count (2)")
+        );
+    }
+
+    #[test]
+    fn disable_reconciles_when_enabled_vpk_is_missing() {
+        let temp = tempfile::tempdir().unwrap();
+
+        let result = disable_vpks_in(
+            temp.path(),
+            temp.path(),
+            "123456",
+            &["pak01_dir.vpk".to_string()],
+            &["original.vpk".to_string()],
+            MissingVpkPolicy::Reconcile,
+        )
+        .unwrap()
+        .commit();
+
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn disable_reconciles_partial_missing() {
+        let temp = tempfile::tempdir().unwrap();
+        write_vpk(temp.path(), "pak01_dir.vpk");
+
+        let result = disable_vpks_in(
+            temp.path(),
+            temp.path(),
+            "123456",
+            &["pak01_dir.vpk".to_string(), "pak02_dir.vpk".to_string()],
+            &["first.vpk".to_string(), "second.vpk".to_string()],
+            MissingVpkPolicy::Reconcile,
+        )
+        .unwrap()
+        .commit();
+
+        assert_eq!(result, vec!["123456_first.vpk".to_string()]);
+        assert!(temp.path().join("123456_first.vpk").exists());
+        assert!(!temp.path().join("pak01_dir.vpk").exists());
+    }
+
+    /// Fix regression guard: disabling a mod whose prefixed destination already
+    /// exists (a newly staged variant) must remove the active copy and keep the
+    /// pre-existing variant intact — never clobber it via a bogus rollback rename.
+    #[test]
+    fn disable_with_existing_prefixed_destination_removes_active_copy() {
+        let temp = tempfile::tempdir().unwrap();
+        let addons_path = addons_base(&temp);
+        let addons_path = addons_path.as_path();
+        write_vpk(addons_path, "pak01_dir.vpk"); // active
+        write_vpk(addons_path, "123456_original.vpk"); // pre-existing staged variant
+
+        let out = disable_vpks_in(
+            addons_path,
+            addons_path,
+            "123456",
+            &["pak01_dir.vpk".to_string()],
+            &["original.vpk".to_string()],
+            MissingVpkPolicy::Strict,
+        )
+        .unwrap()
+        .commit();
+
+        assert_eq!(out, vec!["123456_original.vpk".to_string()]);
+        assert!(!addons_path.join("pak01_dir.vpk").exists()); // active removed
+        assert!(addons_path.join("123456_original.vpk").exists()); // preserved
+    }
+
+    /// The active copy removed above cannot be put back by reversing a rename,
+    /// so rolling the operation back has to restore it from its own bytes.
+    #[test]
+    fn rolling_back_a_disable_restores_the_removed_active_copy() {
+        let temp = tempfile::tempdir().unwrap();
+        let addons_path = addons_base(&temp);
+        let addons_path = addons_path.as_path();
+        write_vpk(addons_path, "pak01_dir.vpk"); // active
+        write_vpk(addons_path, "123456_original.vpk"); // pre-existing staged variant
+        let active_bytes = fs::read(addons_path.join("pak01_dir.vpk")).unwrap();
+
+        let pending = disable_vpks_in(
+            addons_path,
+            addons_path,
+            "123456",
+            &["pak01_dir.vpk".to_string()],
+            &["original.vpk".to_string()],
+            MissingVpkPolicy::Strict,
+        )
+        .unwrap();
+        assert!(!addons_path.join("pak01_dir.vpk").exists());
+
+        let error = pending.rollback(VpkManagerError::Vpk("ledger save failed".to_string()));
+
+        assert!(error.to_string().contains("ledger save failed"));
+        assert_eq!(
+            fs::read(addons_path.join("pak01_dir.vpk")).unwrap(),
+            active_bytes
+        );
+        assert!(addons_path.join("123456_original.vpk").exists());
+    }
+
+    /// Fix regression guard: enabling must reject a missing source up front
+    /// instead of warn-and-skip, so a mod can never be left partially enabled.
+    #[test]
+    fn enable_rejects_missing_source_before_renaming() {
+        let temp = tempfile::tempdir().unwrap();
+        let addons_path = addons_base(&temp);
+        let addons_path = addons_path.as_path();
+        write_vpk(addons_path, "123456_a.vpk"); // 123456_b.vpk is intentionally missing
+
+        let err = enable_vpks_in(
+            addons_path,
+            addons_path,
+            "123456",
+            &["123456_a.vpk".to_string(), "123456_b.vpk".to_string()],
+        )
+        .unwrap_err();
+
+        assert!(err.to_string().contains("source VPK files are missing"));
+        // Nothing was renamed: existing source untouched, no pak## created.
+        assert!(addons_path.join("123456_a.vpk").exists());
+        assert!(!addons_path.join("pak01_dir.vpk").exists());
+    }
+
+    /// Disabled copies always live in the profile base, whatever shard the mod is
+    /// enabled in — otherwise re-enabling could not find its sources.
+    #[test]
+    fn enabling_and_disabling_cross_the_shard_boundary() {
+        let temp = tempfile::tempdir().unwrap();
+        let base = profile(&temp);
+        let shard_two = base.shard_dir(ShardIndex::new(2).unwrap());
+        write_vpk(&base, "123456_overflow.vpk");
+
+        let enabled = enable_vpks_in(
+            &base,
+            &shard_two,
+            "123456",
+            &["123456_overflow.vpk".to_string()],
+        )
+        .unwrap()
+        .commit();
+
+        assert_eq!(enabled, vec!["pak01_dir.vpk".to_string()]);
+        assert!(shard_two.join("pak01_dir.vpk").is_file());
+        assert!(!base.join("123456_overflow.vpk").exists());
+
+        let disabled = disable_vpks_in(
+            &shard_two,
+            &base,
+            "123456",
+            &enabled,
+            &["overflow.vpk".to_string()],
+            MissingVpkPolicy::Strict,
+        )
+        .unwrap()
+        .commit();
+
+        assert_eq!(disabled, vec!["123456_overflow.vpk".to_string()]);
+        assert!(base.join("123456_overflow.vpk").is_file());
+        assert!(!shard_two.join("pak01_dir.vpk").exists());
+    }
+
+    /// Clearing a profile has to empty every shard, not just the base, or the
+    /// engine would keep loading whatever was left behind in `addons2`.
+    #[test]
+    fn clearing_a_profile_empties_every_shard() {
+        let temp = tempfile::tempdir().unwrap();
+        let base = profile(&temp);
+        let shard_two = base.shard_dir(ShardIndex::new(2).unwrap());
+        fs::create_dir_all(&shard_two).unwrap();
+        write_vpk(&base, "pak01_dir.vpk");
+        write_vpk(&base, "123456_disabled.vpk");
+        write_vpk(&shard_two, "pak01_dir.vpk");
+
+        stage_clear_all_vpks(&base).unwrap().commit();
+
+        assert_eq!(naming::count_enabled_vpks(&base), 0);
+        assert!(!base.join("123456_disabled.vpk").exists());
+        assert!(!shard_two.join("pak01_dir.vpk").exists());
+    }
+
+    /// A replacement that cannot reach every file it was asked to replace used
+    /// to overwrite the ones it could and report success.
+    #[test]
+    fn replace_rejects_a_missing_destination_before_writing_anything() {
+        let temp = tempfile::tempdir().unwrap();
+        let base = profile(&temp);
+        write_vpk(&base, "pak01_dir.vpk");
+        let sources = temp.path().join("sources");
+        fs::create_dir_all(&sources).unwrap();
+        real_vpk(&sources.join("first.vpk"));
+        real_vpk(&sources.join("second.vpk"));
+
+        let Err(err) = stage_replace_vpks(
+            &base,
+            &base,
+            "123456",
+            &[sources.join("first.vpk"), sources.join("second.vpk")],
+            &["pak01_dir.vpk".to_string(), "pak02_dir.vpk".to_string()],
+        ) else {
+            panic!("replacing a mod with a missing destination should fail");
+        };
+
+        assert!(err.to_string().contains("pak02_dir.vpk"), "{err}");
+        assert_eq!(fs::read(base.join("pak01_dir.vpk")).unwrap(), b"test vpk");
+    }
+
+    /// The ledger write happens after the files change, so until it lands the
+    /// replacement has to be undoable in full.
+    #[test]
+    fn replace_rolls_back_every_file_when_the_ledger_write_fails() {
+        let temp = tempfile::tempdir().unwrap();
+        let base = profile(&temp);
+        write_vpk(&base, "pak01_dir.vpk");
+        write_vpk(&base, "pak02_dir.vpk");
+        let sources = temp.path().join("sources");
+        fs::create_dir_all(&sources).unwrap();
+        real_vpk(&sources.join("first.vpk"));
+        real_vpk(&sources.join("second.vpk"));
+
+        let Ok(pending) = stage_replace_vpks(
+            &base,
+            &base,
+            "123456",
+            &[sources.join("first.vpk"), sources.join("second.vpk")],
+            &["pak01_dir.vpk".to_string(), "pak02_dir.vpk".to_string()],
+        ) else {
+            panic!("replacing both VPKs should succeed");
+        };
+        assert_ne!(fs::read(base.join("pak01_dir.vpk")).unwrap(), b"test vpk");
+
+        pending.rollback(VpkManagerError::Invalid("ledger failed".to_string()));
+
+        assert_eq!(fs::read(base.join("pak01_dir.vpk")).unwrap(), b"test vpk");
+        assert_eq!(fs::read(base.join("pak02_dir.vpk")).unwrap(), b"test vpk");
+    }
+}

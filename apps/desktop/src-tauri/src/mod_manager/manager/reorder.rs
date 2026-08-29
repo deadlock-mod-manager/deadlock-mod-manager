@@ -1,4 +1,5 @@
 use super::*;
+use std::collections::BTreeMap;
 
 impl ModManager {
   /// Pick the last active shard when it has room, otherwise append a new shard.
@@ -17,8 +18,7 @@ impl ModManager {
     }
     if let Some((current_shard, current_count)) = current_mod {
       let current_dir = base.shard_dir(current_shard);
-      let used_without_mod =
-        VpkManager::count_enabled_vpks(&current_dir).saturating_sub(current_count);
+      let used_without_mod = naming::count_enabled_vpks(&current_dir).saturating_sub(current_count);
       if shard::SHARD_CAPACITY.saturating_sub(used_without_mod) >= needed {
         return Ok(current_shard);
       }
@@ -27,18 +27,18 @@ impl ModManager {
     let mut last_active_shard = ShardIndex::FIRST;
     for shard_index in shard::all_shards().skip(1) {
       let dir = base.shard_dir(shard_index);
-      if VpkManager::count_enabled_vpks(&dir) > 0 {
+      if naming::count_enabled_vpks(&dir) > 0 {
         last_active_shard = shard_index;
       }
     }
 
     let active_dir = base.shard_dir(last_active_shard);
-    let used = VpkManager::count_enabled_vpks(&active_dir);
+    let used = naming::count_enabled_vpks(&active_dir);
     if shard::SHARD_CAPACITY.saturating_sub(used) >= needed {
       return Ok(last_active_shard);
     }
     if last_active_shard.get() < shard::MAX_SHARDS {
-      return ShardIndex::new(last_active_shard.get() + 1);
+      return Ok(ShardIndex::new(last_active_shard.get() + 1)?);
     }
 
     Err(Error::ModInvalid(format!(
@@ -49,14 +49,7 @@ impl ModManager {
   }
 
   pub(super) fn vpk_filenames(vpks: &[String]) -> Vec<String> {
-    vpks.iter().map(|vpk| Self::vpk_filename(vpk)).collect()
-  }
-
-  fn vpk_filename(vpk: &str) -> String {
-    std::path::Path::new(vpk)
-      .file_name()
-      .map(|filename| filename.to_string_lossy().to_string())
-      .unwrap_or_else(|| vpk.to_string())
+    vpks.iter().map(|vpk| naming::file_name_of(vpk)).collect()
   }
 
   fn existing_vpk_filenames(addons_path: &Path, vpks: &[String]) -> Vec<String> {
@@ -96,7 +89,7 @@ impl ModManager {
 
   pub(super) fn reconcile_manifest_entry_for_reorder(
     base: &ProfileBase,
-    entry: &mut ProfileVpkManifestEntry,
+    entry: &mut ModEntry,
     fallback_vpks: &[String],
   ) -> bool {
     let enabled_dir = base.shard_dir(entry.shard);
@@ -148,7 +141,7 @@ impl ModManager {
       let mod_id = assignment.mod_id.clone();
       let shard = assignment.shard;
       assignment.vpks.retain(|vpk| {
-        let filename = Self::vpk_filename(vpk);
+        let filename = naming::file_name_of(vpk);
         if claimed.insert((shard, filename.clone())) {
           return true;
         }
@@ -171,7 +164,7 @@ impl ModManager {
   /// Record mods that lost every claim as uninstalled, and report them back so
   /// callers drop the stale VPK names from their own state too.
   fn release_dropped_claims(
-    manifest: &mut ProfileVpkManifest,
+    manifest: &mut ProfileLedger,
     dropped: Vec<ShardAssignment>,
   ) -> Vec<ShardPlacement> {
     dropped
@@ -197,7 +190,7 @@ impl ModManager {
   /// pointing at another mod's file, and the next reorder sees a duplicate
   /// claim it cannot resolve.
   fn resync_unmapped_manifest_entries(
-    manifest: &mut ProfileVpkManifest,
+    manifest: &mut ProfileLedger,
     mapped_mod_ids: &HashSet<String>,
     orphan_renames: &BTreeMap<(ShardIndex, String), (ShardIndex, String)>,
   ) {
@@ -209,10 +202,10 @@ impl ModManager {
       let mut resynced = Vec::new();
       let mut resynced_shard: Option<ShardIndex> = None;
       for vpk in &entry.current_vpks {
-        let filename = Self::vpk_filename(vpk);
+        let filename = naming::file_name_of(vpk);
 
         // Disabled (prefixed) VPKs are never touched by a reorder.
-        if VpkManager::enabled_vpk_number(&filename).is_none() {
+        if naming::enabled_vpk_number(&filename).is_none() {
           resynced.push(filename);
           continue;
         }
@@ -246,10 +239,7 @@ impl ModManager {
     }
   }
 
-  fn apply_placements_to_manifest(
-    manifest: &mut ProfileVpkManifest,
-    placements: &[ShardPlacement],
-  ) {
+  fn apply_placements_to_manifest(manifest: &mut ProfileLedger, placements: &[ShardPlacement]) {
     for placement in placements {
       if let Some(entry) = manifest.mods.get_mut(&placement.mod_id) {
         entry.enabled = true;
@@ -264,7 +254,7 @@ impl ModManager {
   /// an explicit install order first and in that order, then the rest in the
   /// position they already occupy on disk, so a partially ordered profile does
   /// not get shuffled.
-  pub(super) fn ordered_assignments(manifest: &ProfileVpkManifest) -> Vec<ShardAssignment> {
+  pub(super) fn ordered_assignments(manifest: &ProfileLedger) -> Vec<ShardAssignment> {
     let mut ordered: Vec<((u8, u32, u32), ShardAssignment)> = manifest
       .mods
       .iter()
@@ -273,7 +263,7 @@ impl ModManager {
         let first_vpk = entry
           .current_vpks
           .iter()
-          .filter_map(|vpk| VpkManager::enabled_vpk_number(&Self::vpk_filename(vpk)))
+          .filter_map(|vpk| naming::enabled_vpk_number(&naming::file_name_of(vpk)))
           .min()
           .unwrap_or(u32::MAX);
         let sort_key = match entry.order {
@@ -303,7 +293,7 @@ impl ModManager {
   fn commit_reorder(
     &mut self,
     base: &ProfileBase,
-    manifest: &mut ProfileVpkManifest,
+    manifest: &mut ProfileLedger,
     assignments: Vec<ShardAssignment>,
   ) -> Result<Vec<ShardPlacement>, Error> {
     let (assignments, dropped) = Self::dedupe_assignments(assignments);
@@ -317,9 +307,7 @@ impl ModManager {
         .map(|assignment| assignment.mod_id.clone())
         .collect();
 
-      let pending = self
-        .vpk_manager
-        .stage_reorder_vpks_sharded(&assignments, base)?;
+      let pending = ops::stage_reorder_vpks_sharded(&assignments, base)?;
       Self::apply_placements_to_manifest(manifest, &pending.value().placements);
       Self::resync_unmapped_manifest_entries(
         manifest,
@@ -327,7 +315,7 @@ impl ModManager {
         &pending.value().orphan_renames,
       );
       if let Err(error) = manifest.save(base) {
-        return Err(pending.rollback(error));
+        return Err(pending.rollback(error).into());
       }
       placements.extend(pending.commit().placements);
     }
@@ -337,6 +325,12 @@ impl ModManager {
         mod_entry.installed_vpks = placement.vpks.clone();
         self.mod_repository.add_mod(mod_entry);
       }
+    }
+    // A reorder renames nearly every enabled VPK, and routinely gives one file
+    // the name another just had — at the same size and modified time. Only
+    // re-reading each file can tell which is which afterwards.
+    if let Err(error) = vpkmanager::reconcile::sync_profile(base, Trust::EveryFile) {
+      log::warn!("Could not reconcile the profile ledger after a reorder: {error}");
     }
     Ok(placements)
   }
@@ -350,7 +344,7 @@ impl ModManager {
     selected_original_names: Vec<String>,
   ) -> Result<VariantChangeResult, Error> {
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
-    let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
+    let mut manifest = ProfileLedger::open_for_write(&addons_path)?;
     let current_shard = manifest.shard_of(mod_id);
     let target_shard = Self::choose_shard_for(
       &addons_path,
@@ -358,7 +352,7 @@ impl ModManager {
       selected_original_names.len() as u32,
     )?;
 
-    let pending = self.vpk_manager.stage_enabled_vpk_swap(SwapRequest {
+    let pending = ops::stage_enabled_vpk_swap(SwapRequest {
       base: &addons_path,
       current_shard,
       target_shard,
@@ -375,13 +369,13 @@ impl ModManager {
       target_shard,
     );
     if let Err(error) = manifest.save(&addons_path) {
-      return Err(pending.rollback(error));
+      return Err(pending.rollback(error).into());
     }
     let installed = pending.commit();
 
     let prefix = format!("{mod_id}_");
     let mut available = selected_original_names.clone();
-    for name in self.vpk_manager.find_prefixed_vpks(&addons_path, mod_id)? {
+    for name in ops::find_prefixed_vpks(&addons_path, mod_id)? {
       if let Some(original) = name.strip_prefix(&prefix)
         && !available.iter().any(|available| available == original)
       {
@@ -393,7 +387,7 @@ impl ModManager {
     let file_tree = ModFileTree::from_options(&available, &selected);
 
     self.reorder_all_mods_for_profile(profile_folder)?;
-    let reordered_manifest = ProfileVpkManifest::load(&addons_path)?;
+    let reordered_manifest = ProfileLedger::load(&addons_path)?;
     let installed_vpks = reordered_manifest
       .mods
       .get(mod_id)
@@ -432,7 +426,7 @@ impl ModManager {
 
     log::info!("Reordering all mods based on install order for profile: {profile_folder:?}");
 
-    let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
+    let mut manifest = ProfileLedger::open_for_write(&addons_path)?;
     let mut manifest_changed = false;
     for entry in manifest.mods.values_mut() {
       manifest_changed |= Self::reconcile_manifest_entry_for_reorder(&addons_path, entry, &[]);
@@ -446,9 +440,14 @@ impl ModManager {
       // Enabled VPKs the manifest does not know about still need compacting, or
       // a legacy profile would keep its out-of-range pak numbers forever.
       let has_unmanaged_enabled_vpks = shard::all_shards()
-        .any(|shard_index| VpkManager::count_enabled_vpks(&addons_path.shard_dir(shard_index)) > 0);
+        .any(|shard_index| naming::count_enabled_vpks(&addons_path.shard_dir(shard_index)) > 0);
       if has_unmanaged_enabled_vpks {
-        self.vpk_manager.reorder_vpks_sharded(&[], &addons_path)?;
+        ops::reorder_vpks_sharded(&[], &addons_path)?;
+        if let Err(error) = vpkmanager::reconcile::sync_profile(&addons_path, Trust::EveryFile) {
+          log::warn!(
+            "Could not reconcile the profile ledger after reordering unmanaged VPKs: {error}"
+          );
+        }
         log::info!("Reordered unmanaged enabled VPKs without manifest entries");
       } else {
         log::info!("No enabled VPKs need reordering");
@@ -479,7 +478,7 @@ impl ModManager {
     let mut sorted_data = mod_order_data;
     sorted_data.sort_by_key(|(_, _, order)| *order);
 
-    let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
+    let mut manifest = ProfileLedger::open_for_write(&addons_path)?;
     let mut mod_vpk_mapping = Vec::new();
     let mut manifest_changed = false;
     for (remote_id, vpk_files, order) in sorted_data {
@@ -537,7 +536,7 @@ impl ModManager {
     let mut sorted_order = mod_order_data;
     sorted_order.sort_by_key(|(_, order)| *order);
 
-    let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
+    let mut manifest = ProfileLedger::open_for_write(&addons_path)?;
     let mut mod_vpk_mapping = Vec::new();
     let mut manifest_changed = false;
 

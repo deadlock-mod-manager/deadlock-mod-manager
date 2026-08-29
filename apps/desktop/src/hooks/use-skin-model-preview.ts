@@ -30,11 +30,7 @@ const decodeSkinModel = async (
 ): Promise<SkinModel> => {
   const manifest = mod
     ? await analyzeFoundryVpk(
-        await resolveModVpk(
-          mod.remoteId ?? mod.id,
-          mod.installedVpks ?? [],
-          profileFolder,
-        ),
+        await resolveModVpk(mod.remoteId ?? mod.id, profileFolder),
       )
     : await analyzeDefaultFoundryHero(hero);
 

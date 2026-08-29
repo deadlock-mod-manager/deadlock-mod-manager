@@ -2,6 +2,7 @@ use std::path::PathBuf;
 
 use crate::errors::Error;
 use crate::mod_manager::archive_extractor::ArchiveExtractor;
+use vpkmanager::ops;
 
 use super::state::MANAGER;
 
@@ -26,27 +27,14 @@ pub async fn extract_archive(
   let extractor = ArchiveExtractor::new();
   extractor.extract_archive(&archive_path, &validated_target_path)?;
 
-  let mut vpk_files = Vec::new();
-  find_vpk_files(&validated_target_path, &mut vpk_files)?;
+  let vpk_files: Vec<String> = vpkmanager::locate::vpks_under(&validated_target_path)
+    .iter()
+    .filter_map(|path| path.file_name())
+    .map(|name| name.to_string_lossy().to_string())
+    .collect();
 
   log::info!("Extracted {} VPK files", vpk_files.len());
   Ok(vpk_files)
-}
-
-fn find_vpk_files(dir: &PathBuf, vpk_files: &mut Vec<String>) -> Result<(), Error> {
-  if dir.is_dir() {
-    for entry in std::fs::read_dir(dir)? {
-      let entry = entry?;
-      let path = entry.path();
-
-      if path.is_dir() {
-        find_vpk_files(&path, vpk_files)?;
-      } else if path.extension().and_then(|e| e.to_str()) == Some("vpk") {
-        vpk_files.push(path.file_name().unwrap().to_string_lossy().to_string());
-      }
-    }
-  }
-  Ok(())
 }
 
 #[tauri::command]
@@ -57,7 +45,6 @@ pub async fn copy_selected_vpks_from_archive(
   _is_map: bool,
 ) -> Result<(), Error> {
   use crate::mod_manager::archive_extractor::ArchiveExtractor;
-  use crate::mod_manager::vpk_manager::VpkManager;
 
   log::info!(
     "Copying selected VPKs from extracted directory for mod: {} (profile: {profile_folder:?})",
@@ -93,21 +80,7 @@ pub async fn copy_selected_vpks_from_archive(
     log::info!("Using already-extracted directory: {extracted_dir:?}");
   }
 
-  let game_path = mod_manager
-    .get_steam_manager()
-    .get_game_path()
-    .ok_or(Error::GamePathNotSet)?
-    .clone();
-
-  let destination_path = if let Some(ref folder) = profile_folder {
-    game_path
-      .join("game")
-      .join("citadel")
-      .join("addons")
-      .join(folder)
-  } else {
-    game_path.join("game").join("citadel").join("addons")
-  };
+  let destination_path = mod_manager.get_addons_path(profile_folder.as_deref())?;
 
   if !destination_path.exists() {
     std::fs::create_dir_all(&destination_path)?;
@@ -115,13 +88,16 @@ pub async fn copy_selected_vpks_from_archive(
 
   drop(mod_manager);
 
-  let vpk_manager = VpkManager::new();
-  vpk_manager.copy_selected_vpks_with_prefix(
+  ops::copy_vpks_with_prefix(
     &extracted_dir,
     &destination_path,
     &mod_id,
-    &file_tree,
+    Some(&file_tree.selected_paths()),
   )?;
+  MANAGER
+    .lock()
+    .unwrap()
+    .sync_after_change(profile_folder.as_deref());
 
   log::info!("Removing extracted directory: {extracted_dir:?}");
   std::fs::remove_dir_all(&extracted_dir)?;
@@ -147,8 +123,6 @@ pub async fn copy_local_mod_vpks(
   profile_folder: Option<String>,
   _is_map: bool,
 ) -> Result<Vec<String>, Error> {
-  use crate::mod_manager::vpk_manager::VpkManager;
-
   log::info!(
     "Copying VPKs from local mod files directory for mod: {} (profile: {profile_folder:?})",
     mod_id
@@ -163,21 +137,7 @@ pub async fn copy_local_mod_vpks(
     return Err(Error::ModFileNotFound);
   }
 
-  let game_path = mod_manager
-    .get_steam_manager()
-    .get_game_path()
-    .ok_or(Error::GamePathNotSet)?
-    .clone();
-
-  let destination_path = if let Some(ref folder) = profile_folder {
-    game_path
-      .join("game")
-      .join("citadel")
-      .join("addons")
-      .join(folder)
-  } else {
-    game_path.join("game").join("citadel").join("addons")
-  };
+  let destination_path = mod_manager.get_addons_path(profile_folder.as_deref())?;
 
   if !destination_path.exists() {
     std::fs::create_dir_all(&destination_path)?;
@@ -185,8 +145,11 @@ pub async fn copy_local_mod_vpks(
 
   drop(mod_manager);
 
-  let vpk_manager = VpkManager::new();
-  let prefixed_vpks = vpk_manager.copy_vpks_with_prefix(&files_dir, &destination_path, &mod_id)?;
+  let prefixed_vpks = ops::copy_vpks_with_prefix(&files_dir, &destination_path, &mod_id, None)?;
+  MANAGER
+    .lock()
+    .unwrap()
+    .sync_after_change(profile_folder.as_deref());
 
   if prefixed_vpks.is_empty() {
     log::warn!("No VPK files found in mod files directory: {files_dir:?}");

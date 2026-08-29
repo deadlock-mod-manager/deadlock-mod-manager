@@ -3,40 +3,17 @@ use std::path::PathBuf;
 use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 use crate::mod_manager::Mod;
-use crate::mod_manager::archive_extractor::ArchiveExtractor;
 use crate::mod_manager::file_tree::ModFileTree;
-use crate::mod_manager::filesystem_helper::FileSystemHelper;
 use crate::mod_manager::shard;
-use crate::mod_manager::vpk_manager::VpkManager;
-use crate::mod_manager::vpk_manager::staging::VpkSnapshot;
-use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use serde::{Deserialize, Serialize};
 use tauri::{Emitter, Manager};
+use vpkmanager::ledger::ProfileLedger;
+use vpkmanager::ops;
 
 use super::downloads::get_download_manager;
 use super::fonts::{apply_font_cleanup, prepare_font_cleanup};
 use super::state::MANAGER;
 use crate::download_manager::{DownloadFileDto, DownloadTask};
-
-const ALLOWED_DOWNLOAD_HOSTS: &[&str] = &["gamebanana.com", "deadlockmods.app"];
-
-fn sanitize_archive_name(name: &str) -> Result<String, Error> {
-  if name.is_empty() {
-    return Err(Error::InvalidInput(
-      "Archive name cannot be empty".to_string(),
-    ));
-  }
-  if name.contains('/') || name.contains('\\') || name.contains("..") {
-    return Err(Error::InvalidInput(format!(
-      "Archive name contains path separators or parent components: {name}"
-    )));
-  }
-  let path = std::path::Path::new(name);
-  match path.file_name().and_then(|f| f.to_str()) {
-    Some(f) if f == name => Ok(f.to_string()),
-    _ => Err(Error::InvalidInput(format!("Invalid archive name: {name}"))),
-  }
-}
 
 /// A VPK value is safe to join onto a shard directory and persist in the
 /// manifest only if it is exactly one normal filename component: no separators,
@@ -49,36 +26,6 @@ fn is_plain_vpk_filename(name: &str) -> bool {
       .file_name()
       .and_then(|f| f.to_str())
       == Some(name)
-}
-
-fn validate_download_url(url: &str) -> Result<(), Error> {
-  let parsed = reqwest::Url::parse(url)
-    .map_err(|e| Error::InvalidInput(format!("Invalid download URL: {e}")))?;
-
-  match parsed.scheme() {
-    "http" | "https" => {}
-    scheme => {
-      return Err(Error::InvalidInput(format!(
-        "Download URL scheme must be http or https, got: {scheme}"
-      )));
-    }
-  }
-
-  let host = parsed
-    .host_str()
-    .ok_or_else(|| Error::InvalidInput(format!("Download URL has no host: {url}")))?;
-
-  let is_allowed = ALLOWED_DOWNLOAD_HOSTS
-    .iter()
-    .any(|allowed| host == *allowed || host.ends_with(&format!(".{allowed}")));
-
-  if !is_allowed {
-    return Err(Error::InvalidInput(format!(
-      "Download URL host not in allowlist: {host}"
-    )));
-  }
-
-  Ok(())
 }
 
 #[tauri::command]
@@ -324,7 +271,6 @@ pub async fn batch_update_mods(
       addons_path.join(&profile_folder)
     };
 
-    let vpk_manager = crate::mod_manager::vpk_manager::VpkManager::new();
     let profile_folder_option = if profile_folder.is_empty() {
       None
     } else {
@@ -427,7 +373,7 @@ pub async fn batch_update_mods(
     let mut retry_delay_ms = 100;
 
     for attempt in 0..max_retries {
-      match vpk_manager.find_prefixed_vpks(&addons_path_for_profile, &mod_data.mod_id) {
+      match ops::find_prefixed_vpks(&addons_path_for_profile, &mod_data.mod_id) {
         Ok(vpks) if !vpks.is_empty() => {
           log::info!(
             "Download completed for mod: {} (found {} VPKs after {} attempts)",
@@ -561,7 +507,7 @@ pub async fn register_analyzed_mod(
   let mut mod_manager = MANAGER.lock().unwrap();
 
   let addons_path = mod_manager.get_addons_path(profile_folder.as_deref())?;
-  let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
+  let mut manifest = ProfileLedger::open_for_write(&addons_path)?;
 
   let install_order = manifest.mods.get(&mod_id).and_then(|e| e.order);
 
@@ -623,12 +569,10 @@ pub async fn register_analyzed_mod(
   Ok(())
 }
 
-fn resolve_addons_path(game_path: &std::path::Path, profile_folder: Option<&str>) -> PathBuf {
-  let base = game_path.join("game").join("citadel").join("addons");
-  match profile_folder {
-    Some(folder) => base.join(folder),
-    None => base,
-  }
+pub(crate) fn resolve_addons_path(
+  profile_folder: Option<&str>,
+) -> Result<vpkmanager::profile::ProfileBase, Error> {
+  MANAGER.lock().unwrap().get_addons_path(profile_folder)
 }
 
 #[tauri::command]
@@ -643,22 +587,13 @@ pub async fn get_mod_available_options(
     current_installed_vpks.len()
   );
 
-  let game_path = {
-    let manager = MANAGER.lock().unwrap();
-    manager
-      .get_steam_manager()
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?
-      .clone()
-  };
-  let addons_path = resolve_addons_path(&game_path, profile_folder.as_deref());
+  let addons_path = resolve_addons_path(profile_folder.as_deref())?;
 
   if !addons_path.exists() {
     return Err(Error::GamePathNotSet);
   }
 
-  let vpk_manager = VpkManager::new();
-  let prefixed_vpks = vpk_manager.find_prefixed_vpks(&addons_path, &mod_id)?;
+  let prefixed_vpks = ops::find_prefixed_vpks(&addons_path, &mod_id)?;
 
   let prefix = format!("{mod_id}_");
   let disabled_originals: Vec<String> = prefixed_vpks
@@ -728,423 +663,5 @@ pub async fn swap_mod_options(
     installed_vpks: result.installed_vpks,
     original_vpk_names: result.original_vpk_names,
     file_tree: result.file_tree,
-  })
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct MissingVariantArchive {
-  pub url: String,
-  pub archive_name: String,
-  pub wanted_originals: Vec<String>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct FetchMissingModVariantsResult {
-  pub staged_originals: Vec<String>,
-  pub skipped_originals: Vec<String>,
-  pub missing_originals: Vec<String>,
-}
-
-#[tauri::command]
-pub async fn fetch_missing_mod_variants(
-  mod_id: String,
-  profile_folder: Option<String>,
-  archives: Vec<MissingVariantArchive>,
-) -> Result<FetchMissingModVariantsResult, Error> {
-  use std::collections::HashSet;
-
-  log::info!(
-    "Fetching missing mod variants for {mod_id} (profile: {profile_folder:?}, {} archives)",
-    archives.len()
-  );
-
-  let game_path = {
-    let manager = MANAGER.lock().unwrap();
-    manager
-      .get_steam_manager()
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?
-      .clone()
-  };
-  let addons_path = resolve_addons_path(&game_path, profile_folder.as_deref());
-
-  if !addons_path.exists() {
-    return Err(Error::GamePathNotSet);
-  }
-
-  let vpk_manager = VpkManager::new();
-  let prefix = format!("{mod_id}_");
-
-  let existing_disabled: HashSet<String> = vpk_manager
-    .find_prefixed_vpks(&addons_path, &mod_id)?
-    .into_iter()
-    .filter_map(|n| n.strip_prefix(&prefix).map(|s| s.to_string()))
-    .collect();
-
-  let mut staged: Vec<String> = Vec::new();
-  let mut skipped: Vec<String> = Vec::new();
-  let mut missing: Vec<String> = Vec::new();
-
-  let client = reqwest::Client::builder()
-    .build()
-    .map_err(|e| Error::Network(format!("Failed to build HTTP client: {e}")))?;
-
-  for archive in archives {
-    let to_fetch: Vec<String> = archive
-      .wanted_originals
-      .iter()
-      .filter(|name| !existing_disabled.contains(*name) && !staged.contains(name))
-      .cloned()
-      .collect();
-
-    for name in &archive.wanted_originals {
-      if existing_disabled.contains(name) || staged.contains(name) {
-        skipped.push(name.clone());
-      }
-    }
-
-    if to_fetch.is_empty() {
-      log::info!(
-        "Archive {} has no missing originals to fetch (all already staged)",
-        archive.archive_name
-      );
-      continue;
-    }
-
-    validate_download_url(&archive.url)?;
-    let safe_archive_name = sanitize_archive_name(&archive.archive_name)?;
-
-    log::info!(
-      "Downloading archive {} from {} for {} missing originals",
-      safe_archive_name,
-      archive.url,
-      to_fetch.len()
-    );
-
-    let response = client
-      .get(&archive.url)
-      .send()
-      .await
-      .map_err(|e| Error::Network(format!("Failed to fetch {}: {e}", archive.url)))?;
-
-    if !response.status().is_success() {
-      return Err(Error::DownloadFailed(format!(
-        "{} returned status {}",
-        archive.url,
-        response.status()
-      )));
-    }
-
-    let bytes = response.bytes().await.map_err(|e| {
-      Error::DownloadFailed(format!("Failed reading body for {}: {e}", archive.url))
-    })?;
-
-    let temp_dir = tempfile::tempdir()?;
-    let archive_path = temp_dir.path().join(&safe_archive_name);
-    std::fs::write(&archive_path, &bytes)?;
-
-    let extract_dir = temp_dir.path().join("extracted");
-
-    let extractor = ArchiveExtractor::new();
-    extractor.extract_archive(&archive_path, &extract_dir)?;
-
-    let filesystem = FileSystemHelper::new();
-    let vpk_files = filesystem.find_files_recursive(&extract_dir, "vpk")?;
-
-    let mut by_name: std::collections::HashMap<String, std::path::PathBuf> =
-      std::collections::HashMap::new();
-    for (path, _) in vpk_files {
-      if let Some(name) = path.file_name().and_then(|s| s.to_str()) {
-        by_name.insert(name.to_string(), path);
-      }
-    }
-
-    for original in to_fetch {
-      match by_name.get(&original) {
-        Some(src) => {
-          let dest = addons_path.join(format!("{mod_id}_{original}"));
-          filesystem.copy_file(src, &dest)?;
-          log::info!("Staged missing VPK {original} -> {}", dest.display());
-          staged.push(original);
-        }
-        None => {
-          log::warn!(
-            "Requested VPK {original} not found in archive {}",
-            archive.archive_name
-          );
-          missing.push(original);
-        }
-      }
-    }
-  }
-
-  Ok(FetchMissingModVariantsResult {
-    staged_originals: staged,
-    skipped_originals: skipped,
-    missing_originals: missing,
-  })
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct StageDownloadArchiveResult {
-  pub staged_originals: Vec<String>,
-}
-
-#[tauri::command]
-pub async fn stage_download_archive(
-  mod_id: String,
-  profile_folder: Option<String>,
-  archive_url: String,
-  archive_name: String,
-) -> Result<StageDownloadArchiveResult, Error> {
-  log::info!("Staging download archive for {mod_id} (profile: {profile_folder:?}): {archive_name}");
-
-  let game_path = {
-    let manager = MANAGER.lock().unwrap();
-    manager
-      .get_steam_manager()
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?
-      .clone()
-  };
-  let addons_path = resolve_addons_path(&game_path, profile_folder.as_deref());
-
-  if !addons_path.exists() {
-    return Err(Error::GamePathNotSet);
-  }
-
-  validate_download_url(&archive_url)?;
-  let safe_archive_name = sanitize_archive_name(&archive_name)?;
-
-  let client = reqwest::Client::builder()
-    .build()
-    .map_err(|e| Error::Network(format!("Failed to build HTTP client: {e}")))?;
-
-  let response = client
-    .get(&archive_url)
-    .send()
-    .await
-    .map_err(|e| Error::Network(format!("Failed to fetch {}: {e}", archive_url)))?;
-
-  if !response.status().is_success() {
-    return Err(Error::DownloadFailed(format!(
-      "{} returned status {}",
-      archive_url,
-      response.status()
-    )));
-  }
-
-  let bytes = response
-    .bytes()
-    .await
-    .map_err(|e| Error::DownloadFailed(format!("Failed reading body for {}: {e}", archive_url)))?;
-
-  let temp_dir = tempfile::tempdir()?;
-  let archive_path = temp_dir.path().join(&safe_archive_name);
-  std::fs::write(&archive_path, &bytes)?;
-
-  let extract_dir = temp_dir.path().join("extracted");
-
-  let extractor = ArchiveExtractor::new();
-  extractor.extract_archive(&archive_path, &extract_dir)?;
-
-  let filesystem = FileSystemHelper::new();
-  let vpk_files = filesystem.find_files_recursive(&extract_dir, "vpk")?;
-
-  if vpk_files.is_empty() {
-    return Err(Error::InvalidInput(format!(
-      "No VPK files found in archive {safe_archive_name}"
-    )));
-  }
-
-  let prefix = format!("{mod_id}_");
-  let mut staged: Vec<String> = Vec::new();
-
-  for (path, _) in &vpk_files {
-    if let Some(original) = path.file_name().and_then(|s| s.to_str()) {
-      let dest = addons_path.join(format!("{prefix}{original}"));
-      if dest.exists() {
-        log::info!("Skipping already-staged VPK: {original}");
-        staged.push(original.to_string());
-        continue;
-      }
-      filesystem.copy_file(path, &dest)?;
-      log::info!("Staged VPK {original} -> {}", dest.display());
-      staged.push(original.to_string());
-    }
-  }
-
-  log::info!(
-    "Staged {} VPK(s) from archive {archive_name}: {:?}",
-    staged.len(),
-    staged
-  );
-
-  Ok(StageDownloadArchiveResult {
-    staged_originals: staged,
-  })
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct SwitchDownloadVariantResult {
-  pub installed_vpks: Vec<String>,
-  pub original_vpk_names: Vec<String>,
-  pub file_tree: ModFileTree,
-}
-
-#[tauri::command]
-pub async fn switch_mod_download_variant(
-  mod_id: String,
-  profile_folder: Option<String>,
-  archive_url: String,
-  archive_name: String,
-  current_installed_vpks: Vec<String>,
-  current_original_names: Vec<String>,
-) -> Result<SwitchDownloadVariantResult, Error> {
-  log::info!(
-    "Switching download variant for {mod_id} (profile: {profile_folder:?}) to archive {archive_name}"
-  );
-
-  let game_path = {
-    let manager = MANAGER.lock().unwrap();
-    manager
-      .get_steam_manager()
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?
-      .clone()
-  };
-  let addons_path = resolve_addons_path(&game_path, profile_folder.as_deref());
-
-  if !addons_path.exists() {
-    return Err(Error::GamePathNotSet);
-  }
-
-  validate_download_url(&archive_url)?;
-  let safe_archive_name = sanitize_archive_name(&archive_name)?;
-
-  log::info!(
-    "Downloading archive {} from {}",
-    safe_archive_name,
-    archive_url
-  );
-
-  let client = reqwest::Client::builder()
-    .build()
-    .map_err(|e| Error::Network(format!("Failed to build HTTP client: {e}")))?;
-
-  let response = client
-    .get(&archive_url)
-    .send()
-    .await
-    .map_err(|e| Error::Network(format!("Failed to fetch {}: {e}", archive_url)))?;
-
-  if !response.status().is_success() {
-    return Err(Error::DownloadFailed(format!(
-      "{} returned status {}",
-      archive_url,
-      response.status()
-    )));
-  }
-
-  let bytes = response
-    .bytes()
-    .await
-    .map_err(|e| Error::DownloadFailed(format!("Failed reading body for {}: {e}", archive_url)))?;
-
-  let temp_dir = tempfile::tempdir()?;
-  let archive_path = temp_dir.path().join(&safe_archive_name);
-  std::fs::write(&archive_path, &bytes)?;
-
-  let extract_dir = temp_dir.path().join("extracted");
-
-  let extractor = ArchiveExtractor::new();
-  extractor.extract_archive(&archive_path, &extract_dir)?;
-
-  let filesystem = FileSystemHelper::new();
-  let vpk_files = filesystem.find_files_recursive(&extract_dir, "vpk")?;
-
-  let new_originals: Vec<String> = vpk_files
-    .iter()
-    .filter_map(|(path, _)| {
-      path
-        .file_name()
-        .and_then(|s| s.to_str())
-        .map(|s| s.to_string())
-    })
-    .collect();
-
-  if new_originals.is_empty() {
-    return Err(Error::InvalidInput(format!(
-      "No VPK files found in archive {safe_archive_name}"
-    )));
-  }
-  let mut unique_originals = std::collections::HashSet::new();
-  if new_originals
-    .iter()
-    .any(|name| !unique_originals.insert(name.as_str()))
-  {
-    return Err(Error::InvalidInput(format!(
-      "Archive {safe_archive_name} contains duplicate VPK filenames"
-    )));
-  }
-
-  log::info!(
-    "Found {} VPK(s) in archive: {:?}",
-    new_originals.len(),
-    new_originals
-  );
-
-  let staging_dir = tempfile::tempdir()?;
-  let mut staged_pairs: Vec<(String, PathBuf)> = Vec::new();
-  for original in &new_originals {
-    if let Some(src) = vpk_files.iter().find_map(|(path, _)| {
-      path
-        .file_name()
-        .and_then(|s| s.to_str())
-        .filter(|s| *s == original.as_str())
-        .map(|_| path)
-    }) {
-      let staged_path = staging_dir.path().join(original);
-      filesystem.copy_file(src, &staged_path)?;
-      staged_pairs.push((original.clone(), staged_path));
-    }
-  }
-
-  let prefix = format!("{mod_id}_");
-  let mut deployment = VpkSnapshot::new()?;
-  for (original, staged_path) in &staged_pairs {
-    let prefixed = format!("{prefix}{original}");
-    let dest = addons_path.join(&prefixed);
-    if let Err(error) = deployment.capture(&dest) {
-      return Err(deployment.rollback(error));
-    }
-    if let Err(error) = filesystem.copy_file(staged_path, &dest) {
-      return Err(deployment.rollback(error));
-    }
-    log::info!("Staged VPK {original} -> {}", dest.display());
-  }
-
-  let variant_result = match MANAGER.lock().unwrap().apply_variant_selection(
-    &mod_id,
-    profile_folder,
-    &current_installed_vpks,
-    &current_original_names,
-    new_originals,
-  ) {
-    Ok(result) => result,
-    Err(error) => return Err(deployment.rollback(error)),
-  };
-  deployment.commit();
-
-  log::info!(
-    "Variant switch complete: {} VPKs enabled as {:?}",
-    variant_result.installed_vpks.len(),
-    variant_result.installed_vpks
-  );
-
-  Ok(SwitchDownloadVariantResult {
-    installed_vpks: variant_result.installed_vpks,
-    original_vpk_names: variant_result.original_vpk_names,
-    file_tree: variant_result.file_tree,
   })
 }

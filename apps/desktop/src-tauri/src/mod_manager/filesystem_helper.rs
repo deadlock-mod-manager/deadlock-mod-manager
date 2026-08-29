@@ -46,31 +46,6 @@ impl FileSystemHelper {
     Ok(())
   }
 
-  /// Get all files in a directory with a specific extension
-  pub fn get_files_with_extension(
-    &self,
-    dir: &Path,
-    extension: &str,
-  ) -> Result<Vec<std::path::PathBuf>, Error> {
-    let mut files = Vec::new();
-
-    if !dir.exists() {
-      return Ok(files);
-    }
-
-    for entry in fs::read_dir(dir)? {
-      let entry = entry?;
-      let path = entry.path();
-
-      if path.is_file() && path.extension().is_some_and(|ext| ext == extension) {
-        files.push(path);
-      }
-    }
-
-    files.sort();
-    Ok(files)
-  }
-
   /// Recursively find all files with a specific extension
   pub fn find_files_recursive(
     &self,

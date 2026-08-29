@@ -487,20 +487,8 @@ impl FontManager {
   }
 
   fn walk_for_vpk_fonts(&self, dir: &Path, result: &mut Vec<(String, Vec<u8>)>) {
-    let Ok(entries) = fs::read_dir(dir) else {
-      return;
-    };
-    for entry in entries.flatten() {
-      let path = entry.path();
-      if path.is_dir() {
-        self.walk_for_vpk_fonts(&path, result);
-      } else if path
-        .extension()
-        .and_then(|e| e.to_str())
-        .is_some_and(|e| e.eq_ignore_ascii_case("vpk"))
-      {
-        result.extend(self.extract_fonts_from_vpk(&path));
-      }
+    for path in vpkmanager::locate::vpks_under(dir) {
+      result.extend(self.extract_fonts_from_vpk(&path));
     }
   }
 

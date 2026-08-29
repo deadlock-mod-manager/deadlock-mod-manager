@@ -3,18 +3,20 @@
 use super::state::MANAGER;
 use crate::errors::Error;
 use crate::mod_manager::shard_report::{self, ShardReport, ShardReportInput};
-use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
+use vpkmanager::ledger::ProfileLedger;
 
 #[tauri::command]
 pub async fn get_shard_diagnostics(profile_folder: Option<String>) -> Result<ShardReport, Error> {
-  let mod_manager = MANAGER.lock().unwrap();
+  let mod_manager = MANAGER
+    .lock()
+    .map_err(|_| Error::BackgroundTaskFailed("Mod manager lock poisoned".to_string()))?;
   let game_path = mod_manager
     .get_steam_manager()
     .get_game_path()
     .ok_or(Error::GamePathNotSet)?
     .clone();
   let base = mod_manager.get_addons_path(profile_folder.as_deref())?;
-  let manifest = ProfileVpkManifest::load(&base)?;
+  let manifest = ProfileLedger::load(&base)?;
 
   Ok(shard_report::analyze(ShardReportInput {
     base: &base,
@@ -33,7 +35,9 @@ pub async fn get_shard_diagnostics(profile_folder: Option<String>) -> Result<Sha
 #[tauri::command]
 pub async fn resync_profile_shards(profile_folder: Option<String>) -> Result<(), Error> {
   log::info!("Resyncing shards for profile: {profile_folder:?}");
-  let mut mod_manager = MANAGER.lock().unwrap();
+  let mut mod_manager = MANAGER
+    .lock()
+    .map_err(|_| Error::BackgroundTaskFailed("Mod manager lock poisoned".to_string()))?;
   mod_manager.migrate_profile_to_shards(profile_folder.clone())?;
   mod_manager.apply_profile_gameinfo(profile_folder)
 }

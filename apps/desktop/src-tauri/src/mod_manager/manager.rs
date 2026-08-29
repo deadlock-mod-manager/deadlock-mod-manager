@@ -10,16 +10,18 @@ use crate::mod_manager::{
   mod_repository::{Mod, ModRepository},
   shard::{self, ProfileBase, ShardIndex, ShardLocator},
   steam_manager::SteamManager,
-  vpk_manager::staging::VpkStaging,
-  vpk_manager::{MissingVpkPolicy, ShardAssignment, ShardPlacement, SwapRequest, VpkManager},
-  vpk_manifest::{ProfileVpkManifest, ProfileVpkManifestEntry},
 };
 use log;
 use std::{
-  collections::{BTreeMap, HashSet},
+  collections::HashSet,
   path::{Component, Path, PathBuf},
 };
 use tauri::Manager;
+use vpkmanager::ledger::{ModEntry, ProfileLedger};
+use vpkmanager::naming;
+use vpkmanager::ops::{self, MissingVpkPolicy, ShardAssignment, ShardPlacement, SwapRequest};
+use vpkmanager::reconcile::Trust;
+use vpkmanager::staging::VpkStaging;
 
 mod gameinfo;
 mod lifecycle;
@@ -29,7 +31,6 @@ pub struct ModManager {
   steam_manager: SteamManager,
   process_manager: GameProcessManager,
   config_manager: GameConfigManager,
-  vpk_manager: VpkManager,
   file_tree_analyzer: FileTreeAnalyzer,
   filesystem: FileSystemHelper,
   mod_repository: ModRepository,
@@ -41,6 +42,36 @@ pub struct ModManager {
 pub struct RemovedModVpks {
   pub count: usize,
   pub install_order: Option<u32>,
+}
+
+/// Resolve a profile directory from the game install, rejecting folder names
+/// that would escape `citadel/addons`.
+pub(crate) fn profile_base(
+  steam: &SteamManager,
+  profile_folder: Option<&str>,
+) -> Result<ProfileBase, Error> {
+  let game_path = steam.get_game_path().ok_or(Error::GamePathNotSet)?;
+  profile_base_from_game(game_path, profile_folder)
+}
+
+/// Same as [`profile_base`], for callers that already hold the game path.
+pub(crate) fn profile_base_from_game(
+  game_path: &Path,
+  profile_folder: Option<&str>,
+) -> Result<ProfileBase, Error> {
+  let addons_path = game_path.join("game").join("citadel").join("addons");
+  let profile_path = match profile_folder {
+    Some(folder) => {
+      if !ModManager::is_safe_profile_folder(folder) {
+        return Err(Error::InvalidInput(format!(
+          "Invalid profile folder path: {folder}"
+        )));
+      }
+      addons_path.join(folder)
+    }
+    None => addons_path,
+  };
+  Ok(ProfileBase::new(profile_path)?)
 }
 
 pub struct VariantChangeResult {
@@ -55,7 +86,6 @@ impl ModManager {
       steam_manager: SteamManager::new(),
       process_manager: GameProcessManager::new(),
       config_manager: GameConfigManager::new(),
-      vpk_manager: VpkManager::new(),
       file_tree_analyzer: FileTreeAnalyzer::new(),
       filesystem: FileSystemHelper::new(),
       mod_repository: ModRepository::new(),
@@ -113,30 +143,13 @@ impl ModManager {
   }
 
   pub(crate) fn get_addons_path(&self, profile_folder: Option<&str>) -> Result<ProfileBase, Error> {
-    let game_path = self
-      .steam_manager
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?;
-
-    let addons_path = game_path.join("game").join("citadel").join("addons");
-    let profile_path = match profile_folder {
-      Some(folder) => {
-        if !Self::is_safe_profile_folder(folder) {
-          return Err(Error::InvalidInput(format!(
-            "Invalid profile folder path: {folder}"
-          )));
-        }
-        addons_path.join(folder)
-      }
-      None => addons_path,
-    };
-    ProfileBase::new(profile_path)
+    profile_base(&self.steam_manager, profile_folder)
   }
 
   /// Profile folders may nest (`profiles/imported`), so this permits separators
   /// and only rejects components that escape the addons directory. It is not a
   /// mod-ID check; use [`Self::ensure_safe_mod_id`] for those.
-  fn is_safe_profile_folder(folder: &str) -> bool {
+  pub(crate) fn is_safe_profile_folder(folder: &str) -> bool {
     !folder.is_empty()
       && Path::new(folder)
         .components()
@@ -218,12 +231,14 @@ impl ModManager {
 
   pub fn clear_mods(&mut self, profile_folder: Option<String>) -> Result<(), Error> {
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
+    ProfileLedger::recover_profile(&addons_path)?;
 
-    let pending = self.vpk_manager.stage_clear_all_vpks(&addons_path)?;
-    if let Err(error) = ProfileVpkManifest::default().save(&addons_path) {
-      return Err(pending.rollback(error));
+    let pending = ops::stage_clear_all_vpks(&addons_path)?;
+    if let Err(error) = ProfileLedger::default().save(&addons_path) {
+      return Err(pending.rollback(error).into());
     }
     pending.commit();
+    self.sync_after_change(profile_folder.as_deref());
     Ok(())
   }
 
@@ -334,9 +349,9 @@ impl ModManager {
   pub fn get_profile_vpk_manifest(
     &self,
     profile_folder: Option<String>,
-  ) -> Result<ProfileVpkManifest, Error> {
+  ) -> Result<ProfileLedger, Error> {
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
-    ProfileVpkManifest::load(&addons_path)
+    Ok(ProfileLedger::load(&addons_path)?)
   }
 
   /// Validate and canonicalize a path to ensure it's within the allowed mods directory.
@@ -464,7 +479,7 @@ fn dir_size(path: &std::path::Path) -> u64 {
 #[cfg(test)]
 mod tests {
   use crate::mod_manager::shard::ShardIndex;
-  use crate::mod_manager::vpk_manifest::{ProfileVpkManifest, ProfileVpkManifestEntry};
+  use vpkmanager::ledger::{ModEntry, ProfileLedger};
 
   use super::*;
   use std::fs;
@@ -491,7 +506,6 @@ mod tests {
       steam_manager: SteamManager::new(),
       process_manager: GameProcessManager::new(),
       config_manager: GameConfigManager::new(),
-      vpk_manager: VpkManager::new(),
       file_tree_analyzer: FileTreeAnalyzer::new(),
       filesystem: FileSystemHelper::new(),
       mod_repository: ModRepository::new(),
@@ -517,7 +531,7 @@ mod tests {
   }
 
   fn count_enabled(dir: &std::path::Path) -> u32 {
-    crate::mod_manager::vpk_manager::VpkManager::count_enabled_vpks(dir)
+    naming::count_enabled_vpks(dir)
   }
 
   fn addons_base(temp: &tempfile::TempDir) -> crate::mod_manager::shard::ProfileBase {
@@ -539,6 +553,17 @@ mod tests {
 
     #[cfg(windows)]
     assert!(!ModManager::is_safe_profile_folder("C:\\tmp\\profile_123"));
+  }
+
+  #[test]
+  fn profile_base_from_game_rejects_a_traversing_folder() {
+    let temp = tempfile::tempdir().unwrap();
+    let game = temp.path();
+    fs::create_dir_all(game.join("game").join("citadel").join("addons")).unwrap();
+
+    assert!(profile_base_from_game(game, Some("profile_ok")).is_ok());
+    assert!(profile_base_from_game(game, Some("../escape")).is_err());
+    assert!(profile_base_from_game(game, Some("..")).is_err());
   }
 
   #[test]
@@ -574,7 +599,7 @@ mod tests {
   fn reorder_manifest_reconciliation_disables_entries_without_existing_vpks() {
     let temp = tempfile::tempdir().unwrap();
     let base = addons_base(&temp);
-    let mut entry = ProfileVpkManifestEntry {
+    let mut entry = ModEntry {
       enabled: true,
       current_vpks: vec!["pak01_dir.vpk".to_string()],
       ..Default::default()
@@ -592,7 +617,7 @@ mod tests {
     let temp = tempfile::tempdir().unwrap();
     let base = addons_base(&temp);
     write_vpk(&base, "pak01_dir.vpk");
-    let mut entry = ProfileVpkManifestEntry {
+    let mut entry = ModEntry {
       enabled: false,
       current_vpks: vec!["pak01_dir.vpk".to_string()],
       ..Default::default()
@@ -610,7 +635,7 @@ mod tests {
   /// exactly the order the engine was already loading it.
   #[test]
   fn legacy_profile_without_install_order_keeps_its_pak_order() {
-    let mut manifest = ProfileVpkManifest::default();
+    let mut manifest = ProfileLedger::default();
     for (mod_id, vpk) in [
       ("third", "pak03_dir.vpk"),
       ("first", "pak01_dir.vpk"),
@@ -618,7 +643,7 @@ mod tests {
     ] {
       manifest.mods.insert(
         mod_id.to_string(),
-        ProfileVpkManifestEntry {
+        ModEntry {
           enabled: true,
           current_vpks: vec![vpk.to_string()],
           ..Default::default()
@@ -641,10 +666,10 @@ mod tests {
   /// that never got one are appended behind them rather than interleaved.
   #[test]
   fn explicit_install_order_precedes_unordered_mods() {
-    let mut manifest = ProfileVpkManifest::default();
+    let mut manifest = ProfileLedger::default();
     manifest.mods.insert(
       "unordered".to_string(),
-      ProfileVpkManifestEntry {
+      ModEntry {
         enabled: true,
         current_vpks: vec!["pak01_dir.vpk".to_string()],
         ..Default::default()
@@ -652,7 +677,7 @@ mod tests {
     );
     manifest.mods.insert(
       "ordered".to_string(),
-      ProfileVpkManifestEntry {
+      ModEntry {
         enabled: true,
         order: Some(7),
         current_vpks: vec!["pak09_dir.vpk".to_string()],
@@ -675,7 +700,7 @@ mod tests {
   /// sharded profile is not reshuffled by a reorder that changes nothing.
   #[test]
   fn unordered_mods_sort_by_shard_then_pak_number() {
-    let mut manifest = ProfileVpkManifest::default();
+    let mut manifest = ProfileLedger::default();
     for (mod_id, shard, vpk) in [
       ("shard2_low", 2, "pak01_dir.vpk"),
       ("shard1_high", 1, "pak80_dir.vpk"),
@@ -683,7 +708,7 @@ mod tests {
     ] {
       manifest.mods.insert(
         mod_id.to_string(),
-        ProfileVpkManifestEntry {
+        ModEntry {
           enabled: true,
           shard: ShardIndex::new(shard).unwrap(),
           current_vpks: vec![vpk.to_string()],
@@ -705,10 +730,10 @@ mod tests {
 
   #[test]
   fn disabled_and_empty_entries_are_not_assigned_a_slot() {
-    let mut manifest = ProfileVpkManifest::default();
+    let mut manifest = ProfileLedger::default();
     manifest.mods.insert(
       "disabled".to_string(),
-      ProfileVpkManifestEntry {
+      ModEntry {
         enabled: false,
         current_vpks: vec!["pak01_dir.vpk".to_string()],
         ..Default::default()
@@ -716,7 +741,7 @@ mod tests {
     );
     manifest.mods.insert(
       "enabled_but_empty".to_string(),
-      ProfileVpkManifestEntry {
+      ModEntry {
         enabled: true,
         ..Default::default()
       },
@@ -725,8 +750,8 @@ mod tests {
     assert!(ModManager::ordered_assignments(&manifest).is_empty());
   }
 
-  fn enabled_entry(order: u32, vpk: &str) -> ProfileVpkManifestEntry {
-    ProfileVpkManifestEntry {
+  fn enabled_entry(order: u32, vpk: &str) -> ModEntry {
+    ModEntry {
       enabled: true,
       order: Some(order),
       current_vpks: vec![vpk.to_string()],
@@ -744,7 +769,7 @@ mod tests {
     let base = ProfileBase::new(&base_path).unwrap();
     write_vpk(&base_path, "pak01_dir.vpk");
 
-    let mut manifest = ProfileVpkManifest::default();
+    let mut manifest = ProfileLedger::default();
     manifest
       .mods
       .insert("first".to_string(), enabled_entry(1, "pak01_dir.vpk"));
@@ -756,20 +781,26 @@ mod tests {
     let mut manager = test_manager(game.path());
     manager.reorder_all_mods_for_profile(None).unwrap();
 
-    let manifest = ProfileVpkManifest::load(&base).unwrap();
+    let manifest = ProfileLedger::load(&base).unwrap();
     assert!(manifest.mods["first"].enabled);
     assert_eq!(
       manifest.mods["first"].current_vpks,
       vec!["pak01_dir.vpk".to_string()]
     );
-    assert!(!manifest.mods["second"].enabled);
-    assert!(manifest.mods["second"].current_vpks.is_empty());
+    // The later claimant gave up its stale claim. Nothing of it is left in the
+    // profile, so reconciliation disables the entry, but keeps it so the user's
+    // install order survives.
+    let second = &manifest.mods["second"];
+    assert!(!second.enabled);
+    assert!(second.current_vpks.is_empty());
+    assert_eq!(second.order, Some(2));
     assert!(base_path.join("pak01_dir.vpk").exists());
   }
 
-  /// An entry the reorder skipped still names files the reorder renumbers. Its
-  /// record has to follow them, or it ends up claiming a file that now belongs
-  /// to another mod and the next reorder sees a duplicate.
+  /// A reorder renumbers every enabled VPK in the profile, not just the ones it
+  /// was asked about. An enabled mod left out of the request still has to have
+  /// its record follow its files, or it ends up claiming a file that now
+  /// belongs to another mod and the next reorder sees a duplicate.
   #[test]
   fn reorder_resyncs_entries_it_did_not_move() {
     let game = game_dir();
@@ -779,24 +810,21 @@ mod tests {
     write_vpk(&base_path, "pak01_dir.vpk");
     write_vpk(&base_path, "pak05_dir.vpk");
 
-    let mut manifest = ProfileVpkManifest::default();
+    let mut manifest = ProfileLedger::default();
     manifest
       .mods
       .insert("mapped".to_string(), enabled_entry(1, "pak01_dir.vpk"));
-    manifest.mods.insert(
-      "unmapped".to_string(),
-      ProfileVpkManifestEntry {
-        enabled: false,
-        current_vpks: vec!["pak05_dir.vpk".to_string()],
-        ..Default::default()
-      },
-    );
+    manifest
+      .mods
+      .insert("unmapped".to_string(), enabled_entry(2, "pak05_dir.vpk"));
     manifest.save(&base).unwrap();
 
     let mut manager = test_manager(game.path());
-    manager.reorder_all_mods_for_profile(None).unwrap();
+    manager
+      .reorder_mods(vec![("mapped".to_string(), 1)], None)
+      .unwrap();
 
-    let manifest = ProfileVpkManifest::load(&base).unwrap();
+    let manifest = ProfileLedger::load(&base).unwrap();
     assert_eq!(
       manifest.mods["mapped"].current_vpks,
       vec!["pak01_dir.vpk".to_string()]
@@ -836,13 +864,11 @@ mod tests {
     .unwrap();
 
     let base = crate::mod_manager::shard::ProfileBase::new(&base_path).unwrap();
-    let mut manifest = ProfileVpkManifest::load(&base).unwrap();
+    let mut manifest = ProfileLedger::load(&base).unwrap();
     let assignments = ModManager::ordered_assignments(&manifest);
     assert_eq!(assignments.len(), 150);
 
-    let placements = crate::mod_manager::vpk_manager::VpkManager::new()
-      .reorder_vpks_sharded(&assignments, &base)
-      .unwrap();
+    let placements = ops::reorder_vpks_sharded(&assignments, &base).unwrap();
 
     // Load order is unchanged: mod N still loads Nth overall.
     assert_eq!(

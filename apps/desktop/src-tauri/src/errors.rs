@@ -77,6 +77,37 @@ pub enum Error {
   },
 }
 
+/// Map the VPK layer's errors onto the variants the frontend already knows.
+///
+/// The `kind` string in the serialized error is part of the UI's contract, so
+/// each package error is unwrapped to its message and re-wrapped rather than
+/// nested, which would double up the prefix in the text the user sees.
+impl From<vpkmanager::VpkManagerError> for Error {
+  fn from(error: vpkmanager::VpkManagerError) -> Self {
+    use vpkmanager::VpkManagerError as Vpk;
+    match error {
+      Vpk::Io(error) => Error::Io(error),
+      Vpk::Invalid(message) => Error::InvalidInput(message),
+      Vpk::Vpk(message) => Error::ModInvalid(message),
+      Vpk::NotFound(_) => Error::ModFileNotFound,
+      Vpk::InUse(message) => Error::VpkInUse(message),
+      Vpk::RollbackFailed(message) => Error::RollbackFailed(message),
+      Vpk::Decode(error) => Error::InvalidInput(error.to_string()),
+      Vpk::Encode(error) => Error::FileWriteFailed(error.to_string()),
+      Vpk::Image(error) => Error::InvalidInput(error.to_string()),
+      Vpk::Audio(message) => Error::InvalidInput(message),
+    }
+  }
+}
+
+/// Lets the VPK layer's transactions roll back around an app error and hand it
+/// back unchanged, so a failure keeps the kind the frontend branches on.
+impl vpkmanager::staging::RollbackError for Error {
+  fn rollback_failed(message: String) -> Self {
+    Error::RollbackFailed(message)
+  }
+}
+
 impl serde::Serialize for Error {
   fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
   where

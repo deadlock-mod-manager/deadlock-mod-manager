@@ -4,7 +4,7 @@ use super::*;
 /// that holds enabled VPKs. Always includes shard 1.
 fn search_paths_for(
   base: &ProfileBase,
-  manifest: &ProfileVpkManifest,
+  manifest: &ProfileLedger,
   profile_folder: Option<&str>,
 ) -> Vec<String> {
   let mut max_shard = ShardIndex::FIRST;
@@ -17,7 +17,7 @@ fn search_paths_for(
   // Indexes, not existing directories: skipping the first *existing* shard
   // would drop `addons2` for a profile whose base directory is gone.
   for (shard_index, dir) in base.shards().skip(1) {
-    if VpkManager::count_enabled_vpks(&dir) > 0 {
+    if naming::count_enabled_vpks(&dir) > 0 {
       max_shard = max_shard.max(shard_index);
     }
   }
@@ -32,8 +32,8 @@ fn search_paths_for(
 /// directory than the engine loads, or `pak100_dir.vpk` and beyond.
 fn needs_shard_migration(base: &ProfileBase) -> bool {
   base.shards().any(|(_, dir)| {
-    VpkManager::count_enabled_vpks(&dir) > shard::SHARD_CAPACITY
-      || VpkManager::has_out_of_range_enabled_vpks(&dir)
+    naming::count_enabled_vpks(&dir) > shard::SHARD_CAPACITY
+      || naming::has_out_of_range_enabled_vpks(&dir)
   })
 }
 
@@ -46,7 +46,7 @@ impl ModManager {
     let base = self.get_addons_path(profile_folder.as_deref())?;
     // A missing manifest loads as an empty default; a malformed or unsupported
     // one must fail loudly rather than silently emit truncated search paths.
-    let manifest = ProfileVpkManifest::load(&base)?;
+    let manifest = ProfileLedger::load(&base)?;
     Ok(search_paths_for(
       &base,
       &manifest,
@@ -67,7 +67,7 @@ impl ModManager {
     // writing. Without this a crash would leave VPKs parked in a staging
     // directory and the game would start with those mods silently missing.
     if base.exists() {
-      ProfileVpkManifest::recover_profile(&base)?;
+      ProfileLedger::recover_profile(&base)?;
     }
     if needs_shard_migration(&base) {
       log::info!("Migrating legacy VPK numbering into addon shards for profile {profile_folder:?}");
@@ -134,7 +134,7 @@ mod tests {
       None => addons,
     })
     .unwrap();
-    search_paths_for(&base, &ProfileVpkManifest::default(), profile_folder)
+    search_paths_for(&base, &ProfileLedger::default(), profile_folder)
   }
 
   /// The payoff of sharding: every shard holding enabled VPKs must get its own
@@ -170,7 +170,7 @@ mod tests {
     let citadel = citadel(&temp);
     let base = ProfileBase::new(citadel.join("addons")).unwrap();
 
-    let mut manifest = ProfileVpkManifest::default();
+    let mut manifest = ProfileLedger::default();
     manifest.mark_enabled(
       "123",
       vec!["pak01_dir.vpk".to_string()],
