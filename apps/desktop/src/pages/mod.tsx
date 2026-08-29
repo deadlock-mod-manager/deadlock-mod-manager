@@ -67,11 +67,13 @@ const Mod = () => {
         })
       : backNavigation.kind === "library"
         ? t("modDetail.backToLibrary")
-        : backNavigation.kind === "favorites"
-          ? t("modDetail.backToFavorites")
-          : backNavigation.kind === "dashboard"
-            ? t("modDetail.backToDashboard")
-            : t("mods.backToMods");
+        : backNavigation.kind === "maps"
+          ? t("modDetail.backToMaps")
+          : backNavigation.kind === "favorites"
+            ? t("modDetail.backToFavorites")
+            : backNavigation.kind === "dashboard"
+              ? t("modDetail.backToDashboard")
+              : t("mods.backToMods");
   const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
