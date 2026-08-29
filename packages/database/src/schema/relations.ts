@@ -3,7 +3,7 @@ import { user } from "./auth";
 import { crosshairLikes, crosshairs } from "./crosshairs";
 import { featureFlags, userFeatureFlagOverrides } from "./feature-flags";
 import { mirroredFiles } from "./mirrored-files";
-import { modDownloads, mods } from "./mods";
+import { modAuthors, modDownloads, mods } from "./mods";
 
 export const mirroredFilesRelations = relations(mirroredFiles, ({ one }) => ({
   modDownload: one(modDownloads, {
@@ -26,6 +26,18 @@ export const modDownloadsRelations = relations(
     mirroredFiles: many(mirroredFiles),
   }),
 );
+
+export const modAuthorsRelations = relations(modAuthors, ({ many }) => ({
+  mods: many(mods),
+}));
+
+export const modsRelations = relations(mods, ({ one, many }) => ({
+  author: one(modAuthors, {
+    fields: [mods.modAuthorId],
+    references: [modAuthors.id],
+  }),
+  downloads: many(modDownloads),
+}));
 
 export const userFeatureFlagOverridesRelations = relations(
   userFeatureFlagOverrides,

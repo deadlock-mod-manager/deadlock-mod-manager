@@ -917,6 +917,7 @@
   "authorPage": {
     "viewProfile": "View profile",
     "backToMods": "Back to Mod Store",
+    "backToMaps": "Back to Maps",
     "backToLibrary": "Back to Mods Library",
     "backToFavorites": "Back to Favorites",
     "backToDashboard": "Back to Dashboard",
@@ -933,6 +934,7 @@
     "upicAlt": "{{author}}'s profile image",
     "signatureAlt": "{{author}}'s signature",
     "viewOnGameBanana": "View on GameBanana",
+    "openProfileError": "Failed to open the GameBanana profile",
     "modsBy": "Mods by {{author}}",
     "resultCount_one": "{{count}} mod",
     "resultCount_other": "{{count}} mods",

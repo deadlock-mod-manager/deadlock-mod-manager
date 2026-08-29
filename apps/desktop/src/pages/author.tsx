@@ -4,6 +4,7 @@ import {
   AvatarImage,
 } from "@deadlock-mods/ui/components/avatar";
 import { Button } from "@deadlock-mods/ui/components/button";
+import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
   Empty,
   EmptyDescription,
@@ -29,12 +30,14 @@ import { useLocation, useNavigate, useParams } from "react-router";
 import ModCard from "@/components/mod-browsing/mod-card";
 import ModCardSkeleton from "@/components/skeletons/mod-card";
 import ErrorBoundary from "@/components/shared/error-boundary";
-import { getMods } from "@/lib/api-client";
+import { getModAuthor } from "@/lib/api-client";
 import {
-  type AuthorModDetailBackNavigation,
-  type CollectionModDetailBackNavigation,
+  appendNavigation,
+  type AuthorNavigationTarget,
+  getBackNavigation,
   type ModDetailNavigationState,
-  resolveAuthorProfileBackNavigation,
+  MODS_STORE_NAVIGATION_TRAIL,
+  type NavigationTrail,
 } from "@/lib/mods/mod-detail-navigation";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { isTrustedExternalUrl } from "@/lib/trusted-external-url";
@@ -84,35 +87,25 @@ const AuthorNotFound = ({
 
 const AuthorPageContent = ({
   authorId,
-  authorName,
-  backNavigation,
+  navigationTrail,
   backLabel,
 }: {
-  authorId?: number;
-  authorName?: string;
-  backNavigation: CollectionModDetailBackNavigation;
+  authorId: string;
+  navigationTrail: NavigationTrail;
   backLabel: string;
 }) => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const { data: mods } = useSuspenseQuery({
-    queryKey: ["mods"],
-    queryFn: getMods,
+  const {
+    data: { author, mods: authorMods },
+  } = useSuspenseQuery({
+    queryKey: ["mod-author", authorId],
+    queryFn: () => getModAuthor(authorId),
     staleTime: STALE_TIME_API,
     retry: 3,
   });
 
-  const authorMods = useMemo(
-    () =>
-      mods.filter((mod) =>
-        authorId === undefined
-          ? mod.author === authorName
-          : mod.metadata?.author?.id === authorId,
-      ),
-    [authorId, authorName, mods],
-  );
-  const author = authorMods[0]?.metadata?.author;
-  const displayName = authorMods[0]?.author;
+  const displayName = author.name;
   const headerImage = authorMods.find(
     (mod) => !mod.isNSFW && mod.images.length > 0,
   )?.images[0];
@@ -126,26 +119,23 @@ const AuthorPageContent = ({
     return { downloads, likes };
   }, [authorMods]);
 
+  const backNavigation = getBackNavigation(navigationTrail);
   const goBack = useCallback(
     () => navigate(backNavigation.path),
     [backNavigation.path, navigate],
   );
 
-  if (!displayName) {
-    return <AuthorNotFound backLabel={backLabel} onBack={goBack} />;
-  }
-
-  const avatarUrl = author ? author.hdAvatarUrl || author.avatarUrl : undefined;
-  const canOpenProfile = isTrustedExternalUrl(author?.profileUrl);
-  const authorPath =
-    authorId === undefined
-      ? `/authors/by-name/${encodeURIComponent(displayName)}`
-      : `/authors/${authorId}`;
-  const detailBackNavigation: AuthorModDetailBackNavigation = {
+  const avatarUrl = author.hdAvatarUrl || author.avatarUrl;
+  const canOpenProfile = isTrustedExternalUrl(author.profileUrl);
+  const authorNavigation: AuthorNavigationTarget = {
     kind: "author",
-    authorName: displayName,
-    path: authorPath,
+    label: displayName,
+    path: `/authors/${author.id}`,
   };
+  const detailNavigationTrail = appendNavigation(
+    navigationTrail,
+    authorNavigation,
+  );
 
   return (
     <div className='flex h-full min-h-0 w-full flex-col px-4'>
@@ -254,7 +244,13 @@ const AuthorPageContent = ({
               )}
               {canOpenProfile && (
                 <Button
-                  onClick={() => author && void openUrl(author.profileUrl)}
+                  onClick={async () => {
+                    try {
+                      await openUrl(author.profileUrl);
+                    } catch {
+                      toast.error(t("authorPage.openProfileError"));
+                    }
+                  }}
                   variant='outline'>
                   {t("authorPage.viewOnGameBanana")}
                   <ExternalLink className='h-4 w-4' />
@@ -278,8 +274,7 @@ const AuthorPageContent = ({
             <ModCard
               key={mod.id}
               mod={mod}
-              authorProfileBackNavigation={backNavigation}
-              detailBackNavigation={detailBackNavigation}
+              navigationTrail={detailNavigationTrail}
             />
           ))}
         </div>
@@ -321,25 +316,26 @@ const Author = () => {
   const location = useLocation();
   const { t } = useTranslation();
   const navigationState: ModDetailNavigationState | null = location.state;
-  const backNavigation = resolveAuthorProfileBackNavigation(navigationState);
+  const navigationTrail =
+    navigationState?.navigationTrail ?? MODS_STORE_NAVIGATION_TRAIL;
+  const backNavigation = getBackNavigation(navigationTrail);
   const backLabel =
     backNavigation.kind === "library"
       ? t("authorPage.backToLibrary")
-      : backNavigation.kind === "favorites"
-        ? t("authorPage.backToFavorites")
-        : backNavigation.kind === "dashboard"
-          ? t("authorPage.backToDashboard")
-          : t("authorPage.backToMods");
-  const authorId = Number(params.id);
-  const authorName = params.name?.trim();
+      : backNavigation.kind === "maps"
+        ? t("authorPage.backToMaps")
+        : backNavigation.kind === "favorites"
+          ? t("authorPage.backToFavorites")
+          : backNavigation.kind === "dashboard"
+            ? t("authorPage.backToDashboard")
+            : t("authorPage.backToMods");
+  const authorId = params.id?.trim();
   const goBack = useCallback(
     () => navigate(backNavigation.path),
     [backNavigation.path, navigate],
   );
 
-  const hasValidAuthorId = Number.isSafeInteger(authorId) && authorId > 0;
-
-  if (!authorName && !hasValidAuthorId) {
+  if (!authorId) {
     return <AuthorNotFound backLabel={backLabel} onBack={goBack} />;
   }
 
@@ -347,10 +343,9 @@ const Author = () => {
     <Suspense fallback={<AuthorPageSkeleton />}>
       <ErrorBoundary>
         <AuthorPageContent
-          authorId={hasValidAuthorId ? authorId : undefined}
-          authorName={authorName}
+          authorId={authorId}
           backLabel={backLabel}
-          backNavigation={backNavigation}
+          navigationTrail={navigationTrail}
         />
       </ErrorBoundary>
     </Suspense>

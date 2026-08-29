@@ -43,8 +43,8 @@ import useUninstall from "@/hooks/use-uninstall";
 import { getErrorMessage } from "@/lib/errors";
 import { isLocalMod } from "@/lib/mods/installed-helpers";
 import {
+  getBackNavigation,
   type ModDetailNavigationState,
-  resolveAuthorProfileBackNavigation,
 } from "@/lib/mods/mod-detail-navigation";
 import { usePersistedStore } from "@/lib/store";
 import { useCheckUpdates } from "@/hooks/use-check-updates";
@@ -57,19 +57,18 @@ const Mod = () => {
   const location = useLocation();
   const { t } = useTranslation();
   const navigationState: ModDetailNavigationState | null = location.state;
-  const backNavigation = navigationState?.backNavigation;
-  const authorProfileBackNavigation =
-    resolveAuthorProfileBackNavigation(navigationState);
+  const navigationTrail = navigationState?.navigationTrail;
+  const backNavigation = getBackNavigation(navigationTrail);
   const backLabel =
-    backNavigation?.kind === "author"
+    backNavigation.kind === "author"
       ? t("modDetail.backToAuthorMods", {
-          author: backNavigation.authorName,
+          author: backNavigation.label,
         })
-      : backNavigation?.kind === "library"
+      : backNavigation.kind === "library"
         ? t("modDetail.backToLibrary")
-        : backNavigation?.kind === "favorites"
+        : backNavigation.kind === "favorites"
           ? t("modDetail.backToFavorites")
-          : backNavigation?.kind === "dashboard"
+          : backNavigation.kind === "dashboard"
             ? t("modDetail.backToDashboard")
             : t("mods.backToMods");
   const { isEnabled: isCustomMapsEnabled } = useFeatureFlag(
@@ -81,12 +80,8 @@ const Mod = () => {
   const { data: mod, error, isLoading } = useMod(params.id);
 
   const goBack = useCallback(() => {
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate(backNavigation?.path ?? "/mods");
-    }
-  }, [backNavigation?.path, navigate]);
+    navigate(backNavigation.path);
+  }, [backNavigation.path, navigate]);
 
   const handleBackClick = useCallback(() => {
     goBack();
@@ -291,7 +286,7 @@ const Mod = () => {
               hasHero={hasHero}
               mod={mod}
               activeArchiveNames={modOptions.activeArchiveNames}
-              authorProfileBackNavigation={authorProfileBackNavigation}
+              navigationTrail={navigationTrail}
               totalDownloads={modOptions.downloads.length}
             />
             {mod.metadata?.donationLinks &&

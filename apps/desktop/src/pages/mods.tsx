@@ -29,10 +29,7 @@ import {
 } from "react";
 import { platform } from "@tauri-apps/plugin-os";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
-import ModCard, {
-  type ModAuthorLink,
-} from "@/components/mod-browsing/mod-card";
+import ModCard from "@/components/mod-browsing/mod-card";
 import SearchBar from "@/components/mod-browsing/search-bar";
 import SearchBarSkeleton from "@/components/mod-browsing/search-bar-skeleton";
 import ErrorBoundary from "@/components/shared/error-boundary";
@@ -44,6 +41,7 @@ import { useSearch } from "@/hooks/use-search";
 import { getMods } from "@/lib/api-client";
 import { ModCategory, TimePeriod } from "@/lib/constants";
 import { matchesHeroFilter, resolveModHero } from "@/lib/mods/hero-resolution";
+import { getModsCollectionNavigationTrail } from "@/lib/mods/mod-detail-navigation";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import type {
@@ -146,7 +144,6 @@ function ModsPagination({
 
 const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { isEnabled: isCustomMapsEnabled } = useFeatureFlag(
     "custom-maps",
     false,
@@ -190,6 +187,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
       : "off";
   const pageKey = mapsOnly ? MAPS_STORE_PAGE_KEY : MODS_STORE_PAGE_KEY;
   const scrollKey = mapsOnly ? "/maps" : "/mods";
+  const navigationTrail = getModsCollectionNavigationTrail(mapsOnly === true);
   const paginationEnabled =
     modsStorePaginationEnabled ?? platform() === "linux";
   const [page, setPage] = useState(() => getPersistedPage(pageKey));
@@ -401,15 +399,6 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     (heroes: string[]) => updateModsFilters({ selectedHeroes: heroes }),
     [updateModsFilters],
   );
-  const handleAuthorSelect = useCallback(
-    (author: ModAuthorLink) =>
-      navigate(
-        author.id === null
-          ? `/authors/by-name/${encodeURIComponent(author.name)}`
-          : `/authors/${author.id}`,
-      ),
-    [navigate],
-  );
   const handleAudioQuickFilterChange = useCallback(
     (value: AudioQuickFilter) => updateModsFilters({ audioQuickFilter: value }),
     [updateModsFilters],
@@ -517,7 +506,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
                   <ModCard
                     key={mod.id}
                     mod={mod}
-                    onAuthorSelect={handleAuthorSelect}
+                    navigationTrail={navigationTrail}
                   />
                 ))}
               </div>
@@ -557,7 +546,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
                       <ModCard
                         key={mod.id}
                         mod={mod}
-                        onAuthorSelect={handleAuthorSelect}
+                        navigationTrail={navigationTrail}
                       />
                     ))}
                   </div>

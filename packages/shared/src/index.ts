@@ -5,6 +5,7 @@ export * from "./dto/announcement.dto";
 export * from "./dto/crosshair.dto";
 export * from "./dto/custom-settings.dto";
 export * from "./dto/mod.dto";
+export * from "./dto/mod-author.dto";
 export * from "./dto/profile.dto";
 export * from "./dto/report.dto";
 export * from "./events";

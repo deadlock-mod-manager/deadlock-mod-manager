@@ -31,7 +31,10 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { useHero } from "@/hooks/use-hero";
 import { getModCategoryDisplayName } from "@/lib/constants";
-import type { CollectionModDetailBackNavigation } from "@/lib/mods/mod-detail-navigation";
+import {
+  getCollectionNavigationTrail,
+  type NavigationTrail,
+} from "@/lib/mods/mod-detail-navigation";
 import {
   type ResolvedModHero,
   resolveModHero,
@@ -46,7 +49,7 @@ interface ModInfoProps {
   hasHero?: boolean;
   activeArchiveNames?: Set<string>;
   totalDownloads?: number;
-  authorProfileBackNavigation: CollectionModDetailBackNavigation;
+  navigationTrail?: NavigationTrail;
 }
 
 const formatNumber = (value: number) => new Intl.NumberFormat().format(value);
@@ -57,7 +60,7 @@ export const ModInfo = ({
   hasHero = false,
   activeArchiveNames = EMPTY_ARCHIVE_NAMES,
   totalDownloads = 0,
-  authorProfileBackNavigation,
+  navigationTrail,
 }: ModInfoProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -99,18 +102,28 @@ export const ModInfo = ({
                 canOverride={localMod !== undefined}
               />
             )}
-            <AuthorStat
-              authorId={mod.metadata?.author?.id}
-              icon={<User className='h-4 w-4' />}
-              label={t("modDetail.authorLabel")}
-              name={mod.author}
-              onSelect={(authorPath) =>
-                navigate(authorPath, {
-                  state: { backNavigation: authorProfileBackNavigation },
-                })
-              }
-              profileLabel={t("authorPage.viewProfile")}
-            />
+            {mod.modAuthorId ? (
+              <AuthorStat
+                icon={<User className='h-4 w-4' />}
+                label={t("modDetail.authorLabel")}
+                name={mod.author}
+                onSelect={() =>
+                  navigate(`/authors/${mod.modAuthorId}`, {
+                    state: {
+                      navigationTrail:
+                        getCollectionNavigationTrail(navigationTrail),
+                    },
+                  })
+                }
+                profileLabel={t("authorPage.viewProfile")}
+              />
+            ) : (
+              <PrimaryStat
+                icon={<User className='h-4 w-4' />}
+                label={t("modDetail.authorLabel")}
+                value={mod.author}
+              />
+            )}
             <PrimaryStat
               icon={<Download className='h-4 w-4' />}
               label={t("modDetail.downloadsLabel")}
@@ -257,31 +270,25 @@ interface PrimaryStatProps {
 }
 
 interface AuthorStatProps {
-  authorId?: number;
   icon: React.ReactNode;
   label: string;
   name: string;
-  onSelect: (authorPath: string) => void;
+  onSelect: () => void;
   profileLabel: string;
 }
 
 const AuthorStat = ({
-  authorId,
   icon,
   label,
   name,
   onSelect,
   profileLabel,
 }: AuthorStatProps) => {
-  const authorPath = authorId
-    ? `/authors/${authorId}`
-    : `/authors/by-name/${encodeURIComponent(name)}`;
-
   return (
     <button
       aria-label={`${profileLabel}: ${name}`}
       className='group flex w-full items-center gap-3 rounded-lg border border-border/50 bg-muted/30 px-3 py-2.5 text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background'
-      onClick={() => onSelect(authorPath)}
+      onClick={onSelect}
       type='button'>
       <span className='flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-background/80 text-muted-foreground transition-colors group-hover:text-foreground'>
         {icon}

@@ -3,6 +3,7 @@ import { DeadlockHeroes, type GameBanana } from "@deadlock-mods/shared";
 import {
   buildDonationLinks,
   buildMetadata,
+  buildModAuthor,
   categoryFromGameBananaProfile,
   donationLinksFromMethods,
   extractDonationLinksFromDescription,
@@ -607,23 +608,14 @@ describe("buildDonationLinks", () => {
 });
 
 describe("buildMetadata", () => {
-  it("returns author identity when no mod-specific metadata is populated", () => {
+  it("returns null when no mod-specific metadata is populated", () => {
     expect(
       buildMetadata({
         description: "Nothing useful here.",
         isMap: false,
         donationMethods: [],
-        submitter: baseGameBananaModProfile._aSubmitter,
       }),
-    ).toEqual({
-      author: {
-        id: 1,
-        profileUrl: "https://gamebanana.com/members/1",
-        avatarUrl: "https://gamebanana.com/avatar.png",
-        hdAvatarUrl: "https://gamebanana.com/avatar-hd.png",
-        upicUrl: "https://gamebanana.com/upic.png",
-      },
-    });
+    ).toBeNull();
   });
 
   it("returns mapName when isMap is true", () => {
@@ -631,30 +623,8 @@ describe("buildMetadata", () => {
       description: 'type "map my_arena" to play',
       isMap: true,
       donationMethods: [],
-      submitter: baseGameBananaModProfile._aSubmitter,
     });
-    expect(result.mapName).toBe("my_arena");
-    expect(result.author?.id).toBe(1);
-  });
-
-  it("returns optional author profile media and membership details", () => {
-    const result = buildMetadata({
-      description: "Nothing useful here.",
-      isMap: false,
-      donationMethods: [],
-      submitter: {
-        ...baseGameBananaModProfile._aSubmitter,
-        _sSigUrl: "https://gamebanana.com/signature.png",
-        _tsJoinDate: 1_700_000_000,
-        _nSubscriberCount: 42,
-      },
-    });
-
-    expect(result.author).toMatchObject({
-      signatureUrl: "https://gamebanana.com/signature.png",
-      joinedAt: 1_700_000_000,
-      subscriberCount: 42,
-    });
+    expect(result?.mapName).toBe("my_arena");
   });
 
   it("returns donationLinks when present", () => {
@@ -662,7 +632,6 @@ describe("buildMetadata", () => {
       description: "No map here.",
       isMap: false,
       donationMethods: [kofiMethod],
-      submitter: baseGameBananaModProfile._aSubmitter,
     });
     expect(result?.donationLinks).toHaveLength(1);
     expect(result?.donationLinks?.[0].platform).toBe("Ko-fi");
@@ -674,10 +643,75 @@ describe("buildMetadata", () => {
       description: 'type "map my_arena" to play',
       isMap: true,
       donationMethods: [kofiMethod],
-      submitter: baseGameBananaModProfile._aSubmitter,
     });
     expect(result?.mapName).toBe("my_arena");
     expect(result?.donationLinks).toHaveLength(1);
+  });
+});
+
+describe("buildModAuthor", () => {
+  it("omits author metadata when submitter data is unavailable", () => {
+    expect(buildModAuthor()).toBeUndefined();
+    expect(buildModAuthor(null)).toBeUndefined();
+  });
+
+  it("maps provider identity and profile fields", () => {
+    expect(buildModAuthor(baseGameBananaModProfile._aSubmitter)).toEqual({
+      provider: "gamebanana",
+      remoteId: "1",
+      name: "author",
+      profileUrl: "https://gamebanana.com/members/1",
+      avatarUrl: "https://gamebanana.com/avatar.png",
+      hdAvatarUrl: "https://gamebanana.com/avatar-hd.png",
+      upicUrl: "https://gamebanana.com/upic.png",
+      signatureUrl: null,
+      title: null,
+      joinedAt: null,
+      subscriberCount: 0,
+    });
+  });
+
+  it("maps optional profile details", () => {
+    const author = buildModAuthor({
+      ...baseGameBananaModProfile._aSubmitter,
+      _sSigUrl: "https://gamebanana.com/signature.png",
+      _tsJoinDate: 1_700_000_000,
+      _nSubscriberCount: 42,
+    });
+
+    expect(author?.signatureUrl).toBe("https://gamebanana.com/signature.png");
+    expect(author?.joinedAt).toBe(1_700_000_000);
+    expect(author?.subscriberCount).toBe(42);
+  });
+
+  it("omits the author when required identity URLs are untrusted", () => {
+    expect(
+      buildModAuthor({
+        ...baseGameBananaModProfile._aSubmitter,
+        _sProfileUrl: "https://gamebanana.com.example.com/members/1",
+      }),
+    ).toBeUndefined();
+    expect(
+      buildModAuthor({
+        ...baseGameBananaModProfile._aSubmitter,
+        _sAvatarUrl: "http://images.gamebanana.com/avatar.png",
+      }),
+    ).toBeUndefined();
+  });
+
+  it("keeps trusted CDN media and drops untrusted optional media", () => {
+    const author = buildModAuthor({
+      ...baseGameBananaModProfile._aSubmitter,
+      _sHdAvatarUrl: "https://images.gamebanana.com/avatar-hd.png",
+      _sUpicUrl: "https://example.com/upic.png",
+      _sSigUrl: "data:image/png;base64,unsafe",
+    });
+
+    expect(author?.hdAvatarUrl).toBe(
+      "https://images.gamebanana.com/avatar-hd.png",
+    );
+    expect(author?.upicUrl).toBeNull();
+    expect(author?.signatureUrl).toBeNull();
   });
 });
 
