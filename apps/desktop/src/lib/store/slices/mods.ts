@@ -283,9 +283,13 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       const currentProfile = profiles[activeProfileId];
 
       if (currentProfile) {
+        const { [remoteId]: _removed, ...remainingEnabledMods } =
+          currentProfile.enabledMods ?? {};
+
         const updatedProfile = {
           ...currentProfile,
           mods: currentProfile.mods.filter((mod) => mod.remoteId !== remoteId),
+          enabledMods: remainingEnabledMods,
         };
 
         return {
@@ -306,7 +310,25 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 
   setMods: (mods) => set({ localMods: mods }),
 
-  clearMods: () => set({ localMods: [], modProgress: {} }),
+  clearMods: () =>
+    set((state) => {
+      const currentProfile = state.profiles[state.activeProfileId];
+
+      return {
+        localMods: [],
+        modProgress: {},
+        profiles: currentProfile
+          ? {
+              ...state.profiles,
+              [state.activeProfileId]: {
+                ...currentProfile,
+                mods: [],
+                enabledMods: {},
+              },
+            }
+          : state.profiles,
+      };
+    }),
 
   setModProgress: (remoteId, progress) =>
     set((state) => ({
