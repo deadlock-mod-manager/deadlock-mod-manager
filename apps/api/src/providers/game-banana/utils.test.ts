@@ -637,6 +637,26 @@ describe("buildMetadata", () => {
     expect(result.author?.id).toBe(1);
   });
 
+  it("returns optional author profile media and membership details", () => {
+    const result = buildMetadata({
+      description: "Nothing useful here.",
+      isMap: false,
+      donationMethods: [],
+      submitter: {
+        ...baseGameBananaModProfile._aSubmitter,
+        _sSigUrl: "https://gamebanana.com/signature.png",
+        _tsJoinDate: 1_700_000_000,
+        _nSubscriberCount: 42,
+      },
+    });
+
+    expect(result.author).toMatchObject({
+      signatureUrl: "https://gamebanana.com/signature.png",
+      joinedAt: 1_700_000_000,
+      subscriberCount: 42,
+    });
+  });
+
   it("returns donationLinks when present", () => {
     const result = buildMetadata({
       description: "No map here.",

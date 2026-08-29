@@ -9,7 +9,10 @@ export interface ModAuthorMetadata {
   avatarUrl: string;
   hdAvatarUrl?: string;
   upicUrl?: string;
+  signatureUrl?: string;
   title?: string;
+  joinedAt?: number;
+  subscriberCount?: number;
 }
 
 export interface ModMetadata {
