@@ -27,6 +27,7 @@ mod steam_user;
 mod updater_channel;
 mod utils;
 
+use tauri::Manager;
 use tauri_plugin_log::{Target, TargetKind};
 use tauri_plugin_store::StoreExt;
 
@@ -99,6 +100,15 @@ pub fn run() {
       let _store = app.store("state.json")?;
       deep_link::setup(app)?;
 
+      let catalog_path = app
+        .path()
+        .app_local_data_dir()?
+        .join("gamebanana-catalog.db");
+      let catalog_state = tauri::async_runtime::block_on(
+        commands::gamebanana_catalog::GameBananaCatalogState::open(catalog_path),
+      );
+      app.manage(catalog_state);
+
       {
         let mut mod_manager = commands::state::MANAGER
           .lock()
@@ -111,6 +121,14 @@ pub fn run() {
     })
     .invoke_handler(tauri::generate_handler![
       commands::game::find_game_path,
+      commands::gamebanana_catalog::synchronize_gamebanana_catalog,
+      commands::gamebanana_catalog::query_gamebanana_catalog,
+      commands::gamebanana_catalog::get_gamebanana_submission_detail,
+      commands::gamebanana_catalog::get_gamebanana_submission_files,
+      commands::gamebanana_catalog::check_gamebanana_catalog_updates,
+      commands::gamebanana_catalog::resolve_gamebanana_download_candidates,
+      commands::gamebanana_catalog::inspect_gamebanana_catalog_state,
+      commands::gamebanana_catalog::invalidate_gamebanana_catalog_state,
       commands::game::find_steam_path,
       commands::game::set_game_path,
       commands::game::set_steam_path,

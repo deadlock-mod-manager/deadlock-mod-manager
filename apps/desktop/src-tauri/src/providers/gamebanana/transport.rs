@@ -41,6 +41,7 @@ impl Default for TransportConfig {
   }
 }
 
+#[derive(Clone)]
 pub struct GameBananaTransport {
   client: reqwest::Client,
   concurrency: Arc<Semaphore>,

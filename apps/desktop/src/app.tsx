@@ -31,6 +31,7 @@ import { useIngestToolInit } from "./hooks/use-ingest-tool-init";
 import { useLanguageListener } from "./hooks/use-language-listener";
 import { useDownloadsMigration } from "./hooks/use-downloads-migration";
 import { useHeroDetection } from "./hooks/use-hero-detection";
+import { useGameBananaDirectClient } from "./hooks/use-feature-flags";
 import { useModOrderMigration } from "./hooks/use-mod-order-migration";
 import { Layout } from "./layout";
 import { initializeApiUrl } from "./lib/tauri-commands";
@@ -49,6 +50,7 @@ interface PendingFontInstall {
 }
 
 const App = () => {
+  useGameBananaDirectClient();
   useDeepLink();
   useLanguageListener();
   useModOrderMigration();
