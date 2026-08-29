@@ -29,11 +29,8 @@ import {
 } from "react";
 import { platform } from "@tauri-apps/plugin-os";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
 import ContentTypeTabs from "@/components/mod-browsing/content-type-tabs";
-import ModCard, {
-  type ModAuthorLink,
-} from "@/components/mod-browsing/mod-card";
+import ModCard from "@/components/mod-browsing/mod-card";
 import SearchBar from "@/components/mod-browsing/search-bar";
 import SearchBarSkeleton from "@/components/mod-browsing/search-bar-skeleton";
 import ErrorBoundary from "@/components/shared/error-boundary";
@@ -52,6 +49,7 @@ import {
   SortType,
   TimePeriod,
 } from "@/lib/constants";
+import { getModsCollectionNavigationTrail } from "@/lib/mods/mod-detail-navigation";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import type {
@@ -192,7 +190,6 @@ function ModsPagination({
 
 const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
   const nsfwSettings = usePersistedStore((state) => state.nsfwSettings);
   const modsFilters = usePersistedStore((state) => state.modsFilters);
@@ -226,6 +223,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     : resolveContentType(modsFilters.contentType, isCustomMapsEnabled);
   const pageKey = mapsOnly ? MAPS_STORE_PAGE_KEY : MODS_STORE_PAGE_KEY;
   const scrollKey = mapsOnly ? "/maps" : "/mods";
+  const navigationTrail = getModsCollectionNavigationTrail(mapsOnly === true);
   const paginationEnabled =
     modsStorePaginationEnabled ?? platform() === "linux";
   const [page, setPage] = useState(() => getPersistedPage(pageKey));
@@ -431,15 +429,6 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     (heroes: string[]) => updateModsFilters({ selectedHeroes: heroes }),
     [updateModsFilters],
   );
-  const handleAuthorSelect = useCallback(
-    (author: ModAuthorLink) =>
-      navigate(
-        author.id === null
-          ? `/authors/by-name/${encodeURIComponent(author.name)}`
-          : `/authors/${author.id}`,
-      ),
-    [navigate],
-  );
   const handleHideNSFWChange = useCallback(
     (hideNSFW: boolean) => updateModsFilters({ hideNSFW }),
     [updateModsFilters],
@@ -565,7 +554,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
                     <ModCard
                       key={mod.id}
                       mod={mod}
-                      onAuthorSelect={handleAuthorSelect}
+                      navigationTrail={navigationTrail}
                     />
                   ))}
                 </div>
@@ -605,7 +594,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
                         <ModCard
                       key={mod.id}
                       mod={mod}
-                      onAuthorSelect={handleAuthorSelect}
+                      navigationTrail={navigationTrail}
                     />
                       ))}
                     </div>

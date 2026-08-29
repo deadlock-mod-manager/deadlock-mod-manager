@@ -11,6 +11,27 @@ export const ModDependencySchema = z.object({
   level: z.enum(["required", "recommended"]).nullable(),
 });
 
+export const ModAuthorIdParamSchema = z.object({
+  id: z.string(),
+});
+
+export const ModAuthorSchema = z.object({
+  id: z.string(),
+  provider: z.string(),
+  remoteId: z.string(),
+  name: z.string(),
+  profileUrl: z.string(),
+  avatarUrl: z.string(),
+  hdAvatarUrl: z.string().nullable(),
+  upicUrl: z.string().nullable(),
+  signatureUrl: z.string().nullable(),
+  title: z.string().nullable(),
+  joinedAt: z.number().int().positive().nullable(),
+  subscriberCount: z.number().int().nonnegative().nullable(),
+});
+
+export type ModAuthorDto = z.infer<typeof ModAuthorSchema>;
+
 // ModDto schema (matches the raw Mod type from database)
 export const ModDtoSchema = z.object({
   id: z.string(),
@@ -21,6 +42,7 @@ export const ModDtoSchema = z.object({
   category: z.string(),
   likes: z.number().int(),
   author: z.string(),
+  modAuthorId: z.string().nullable().default(null),
   downloadable: z.boolean(),
   remoteAddedAt: coercedDate,
   remoteUpdatedAt: coercedDate,
@@ -43,19 +65,6 @@ export const ModDtoSchema = z.object({
             platform: z.string(),
           }),
         )
-        .optional(),
-      author: z
-        .object({
-          id: z.number().int(),
-          profileUrl: z.string(),
-          avatarUrl: z.string(),
-          hdAvatarUrl: z.string().optional(),
-          upicUrl: z.string().optional(),
-          signatureUrl: z.string().optional(),
-          title: z.string().optional(),
-          joinedAt: z.number().int().positive().optional(),
-          subscriberCount: z.number().int().positive().optional(),
-        })
         .optional(),
     })
     .nullable()
@@ -94,6 +103,11 @@ export const ModIdParamSchema = z.object({
 
 // API response schemas
 export const ModsListResponseSchema = z.array(ModDtoSchema);
+export const ModAuthorResponseSchema = z.object({
+  author: ModAuthorSchema,
+  mods: ModsListResponseSchema,
+});
+
 export const ModDownloadsResponseSchema = z.array(ModDownloadDtoSchema);
 export const CustomSettingsResponseSchema = z.array(CustomSettingDtoSchema);
 

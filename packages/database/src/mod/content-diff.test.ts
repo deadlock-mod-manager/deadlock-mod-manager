@@ -12,6 +12,7 @@ const baseMod = (): Mod =>
     category: "Skins",
     likes: 10,
     author: "Author",
+    modAuthorId: "mod_author_1",
     downloadable: true,
     remoteAddedAt: new Date("2024-01-01T00:00:00.000Z"),
     remoteUpdatedAt: new Date("2024-01-02T00:00:00.000Z"),
@@ -60,6 +61,12 @@ describe("modContentDiffers", () => {
   it("returns true when hero changes", () => {
     const before = baseMod();
     const after = { ...before, hero: "Seven" };
+    expect(modContentDiffers(before, after)).toBe(true);
+  });
+
+  it("returns true when the author relation changes", () => {
+    const before = baseMod();
+    const after = { ...before, modAuthorId: "mod_author_2" };
     expect(modContentDiffers(before, after)).toBe(true);
   });
 });
