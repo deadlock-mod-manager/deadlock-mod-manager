@@ -13,6 +13,7 @@
 
 pub mod audio;
 pub mod error;
+pub mod fingerprint;
 pub mod pack;
 pub mod particle_edit;
 pub mod pattern;
@@ -22,6 +23,7 @@ pub mod texture_edit;
 pub mod vpkdir;
 
 pub use error::{Result, VpkManagerError};
+pub use fingerprint::VpkFingerprint;
 pub use pack::pack_directory;
 pub use particle_edit::recolor_particle_colors;
 pub use pattern::{Pattern, PatternStyle, pattern_swatch, pattern_texture};
