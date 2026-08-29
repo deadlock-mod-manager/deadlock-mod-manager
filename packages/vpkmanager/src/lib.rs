@@ -12,6 +12,7 @@
 //! `source2` module for what was and was not taken.
 
 pub mod audio;
+pub mod backfill;
 pub mod error;
 pub mod fingerprint;
 pub mod fs_retry;
@@ -23,6 +24,7 @@ pub mod pack;
 pub mod particle_edit;
 pub mod pattern;
 pub mod profile;
+pub mod reconcile;
 pub mod scan;
 pub mod snapshot;
 pub mod sound_edit;

@@ -1,16 +1,39 @@
 # vpkmanager
 
-The shared **write** half of the mod manager's VPK work: recoloring and
-replacing compiled textures, swapping sounds, and packing a directory tree back
-into a loadable VPK. The read/render half — decoding models to glTF for the 3D
-preview — lives in `source2-model`.
+Everything the mod manager does to a VPK, and the record of where every VPK is.
 
-Each VPK the manager takes responsibility for is stamped with a fingerprint
-stored *inside* it, at `.dmm/fingerprint.dmm`. Stamping is additive: the entry
-is appended to the VPK's directory tree and its bytes to the end of the data
-section. VPK entry offsets are relative to the data section, so every existing
-file keeps its offset, and entries in `_NNN.vpk` companions are not touched at
-all. A stamped VPK loads exactly as the unstamped one did.
+Nothing outside this crate may rename, copy or delete a file inside a
+`citadel/addonsN` folder. Callers say what they want — install this mod, disable
+that one, reorder all of them — and the crate performs it and writes down what
+happened. That is what lets the app answer "where is this mod right now?" without
+guessing.
+
+## The two halves
+
+**Operations** (`ops`, `staging`, `naming`, `profile`) — enabling, disabling,
+reordering across shard folders, clearing a profile. Every one of them is
+transactional: it finishes, or it puts the profile back the way it found it, and
+a crash mid-operation is recovered on the next load.
+
+**Bookkeeping** (`fingerprint`, `ledger`, `scan`, `reconcile`, `backfill`) —
+each VPK the manager takes responsibility for is stamped with a fingerprint
+stored *inside* it, at `.dmm/fingerprint.dmm`. The profile's `.dmm.json` ledger
+records where every fingerprint was last seen. When the user renames a pak file,
+drags one between `addons` folders, restores a backup or deletes something in
+Explorer, reconciliation reads the fingerprints back and follows the files
+instead of losing them.
+
+Stamping is additive: the entry is appended to the VPK's directory tree and its
+bytes to the end of the data section. VPK entry offsets are relative to the data
+section, so every existing file keeps its offset, and entries in `_NNN.vpk`
+companions are not touched at all. A stamped VPK loads exactly as the unstamped
+one did.
+
+Editing the assets inside a VPK — recoloring and replacing compiled textures,
+swapping sounds, packing a directory tree into a loadable VPK — lives here too
+(`pack`, `texture_edit`, `sound_edit`, `particle_edit`, `pattern`). The
+read/render half, decoding models to glTF for the 3D preview, lives in
+`source2-model`.
 
 ## Third-party code
 
