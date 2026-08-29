@@ -6,6 +6,7 @@ import { FileSelectorDialog } from "@/components/downloads/file-selector-dialog"
 import PageTitle from "@/components/shared/page-title";
 import { HeroList, type HeroListEntry } from "@/components/skins/hero-list";
 import { SkinGrid } from "@/components/skins/skin-grid";
+import { SkinPreviewPanel } from "@/components/skins/skin-preview-panel";
 import { deriveActiveArchiveNames } from "@/hooks/use-mod-options";
 import { useSkinSwap } from "@/hooks/use-skin-swap";
 import useUninstall from "@/hooks/use-uninstall";
@@ -23,6 +24,11 @@ const Skins = () => {
   const { selectSkin, swappingHero, installAction } = useSkinSwap();
   const { uninstall } = useUninstall();
   const [selectedHero, setSelectedHero] = useState<string | null>(null);
+  // The skin the 3D panel shows, per hero, so coming back to a hero returns to
+  // what was on screen. A null entry is a deliberate pick of the default skin.
+  const [previewedByHero, setPreviewedByHero] = useState<
+    Map<string, string | null>
+  >(new Map());
 
   const groups = useMemo(() => groupSkinsByHero(localMods), [localMods]);
 
@@ -61,8 +67,26 @@ const Skins = () => {
     null;
   const selectedGroup = effectiveHero ? groups.get(effectiveHero) : undefined;
 
+  // Without a pick of their own, the panel shows what the hero currently wears.
+  const previewedId =
+    effectiveHero && previewedByHero.has(effectiveHero)
+      ? (previewedByHero.get(effectiveHero) ?? null)
+      : (selectedGroup?.active[0]?.remoteId ?? null);
+  const previewedMod =
+    selectedGroup?.skins.find((skin) => skin.remoteId === previewedId) ?? null;
+
+  const handlePreview = (mod: LocalMod | null) => {
+    if (effectiveHero) {
+      setPreviewedByHero((current) =>
+        new Map(current).set(effectiveHero, mod?.remoteId ?? null),
+      );
+    }
+  };
+
   const handleSelect = (mod: LocalMod | null) => {
     if (effectiveHero) {
+      // Making a skin active is also a way of picking it, so the panel follows.
+      handlePreview(mod);
       void selectSkin(effectiveHero, mod);
     }
   };
@@ -106,9 +130,14 @@ const Skins = () => {
             hero={effectiveHero}
             onAddSkin={handleAddSkin}
             onDelete={handleDelete}
+            onPreview={handlePreview}
             onSelect={handleSelect}
+            previewedId={previewedId}
             skins={selectedGroup?.skins ?? []}
           />
+        )}
+        {effectiveHero && (
+          <SkinPreviewPanel hero={effectiveHero} mod={previewedMod} />
         )}
       </div>
       <p className='shrink-0 py-3 text-muted-foreground text-xs'>

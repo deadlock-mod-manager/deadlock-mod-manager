@@ -6,6 +6,7 @@ import {
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
 import { Check, Trash2 } from "@deadlock-mods/ui/icons";
+import { CubeIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { NSFWBlur } from "@/components/mod-browsing/nsfw-blur";
 import { SkinVariantControls } from "@/components/skins/skin-variant-controls";
@@ -13,11 +14,44 @@ import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { cn } from "@/lib/utils";
 import type { LocalMod } from "@/types/mods";
 
+const PreviewButton = ({
+  label,
+  disabled,
+  onPreview,
+}: {
+  label: string;
+  disabled: boolean;
+  onPreview: () => void;
+}) => (
+  <Tooltip>
+    <TooltipTrigger asChild>
+      <Button
+        aria-label={label}
+        className='h-7 w-7'
+        disabled={disabled}
+        onClick={(e) => {
+          e.stopPropagation();
+          onPreview();
+        }}
+        onKeyDown={(e) => e.stopPropagation()}
+        size='icon'
+        variant='secondary'>
+        <CubeIcon className='h-3.5 w-3.5' weight='duotone' />
+      </Button>
+    </TooltipTrigger>
+    <TooltipContent>{label}</TooltipContent>
+  </Tooltip>
+);
+
 interface SkinCardProps {
   mod: LocalMod;
   isActive: boolean;
   disabled: boolean;
+  /** True while this skin is the one the 3D panel is showing. */
+  isPreviewing: boolean;
   onSelect: () => void;
+  /** Show this skin in the 3D panel without making it the active one. */
+  onPreview: () => void;
   onDelete: () => void;
 }
 
@@ -25,7 +59,9 @@ export const SkinCard = ({
   mod,
   isActive,
   disabled,
+  isPreviewing,
   onSelect,
+  onPreview,
   onDelete,
 }: SkinCardProps) => {
   const { t } = useTranslation();
@@ -45,6 +81,7 @@ export const SkinCard = ({
         "group/skin relative cursor-pointer overflow-hidden shadow-none transition-colors hover:border-primary",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         isActive && "ring-2 ring-primary",
+        !isActive && isPreviewing && "ring-1 ring-primary/50",
         disabled && "pointer-events-none opacity-60",
       )}
       onClick={handleSelect}
@@ -61,24 +98,31 @@ export const SkinCard = ({
       }}
       role='button'
       tabIndex={disabled ? -1 : 0}>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            aria-label={t("skins.deleteSkin")}
-            className='absolute top-2 right-2 z-10 h-7 w-7 opacity-0 transition-opacity focus-visible:opacity-100 group-hover/skin:opacity-100 group-focus-within/skin:opacity-100'
-            disabled={disabled}
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            onKeyDown={(e) => e.stopPropagation()}
-            size='icon'
-            variant='destructive'>
-            <Trash2 className='h-3.5 w-3.5' />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>{t("skins.deleteSkin")}</TooltipContent>
-      </Tooltip>
+      <div className='absolute top-2 right-2 z-10 flex gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover/skin:opacity-100 group-focus-within/skin:opacity-100'>
+        <PreviewButton
+          disabled={disabled}
+          label={t("skins.preview.previewSkin")}
+          onPreview={onPreview}
+        />
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              aria-label={t("skins.deleteSkin")}
+              className='h-7 w-7'
+              disabled={disabled}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              onKeyDown={(e) => e.stopPropagation()}
+              size='icon'
+              variant='destructive'>
+              <Trash2 className='h-3.5 w-3.5' />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{t("skins.deleteSkin")}</TooltipContent>
+        </Tooltip>
+      </div>
       {mod.images.length > 0 ? (
         <NSFWBlur
           blurStrength={nsfwSettings.blurStrength}
@@ -116,13 +160,17 @@ export const SkinCard = ({
 interface DefaultSkinCardProps {
   isActive: boolean;
   disabled: boolean;
+  isPreviewing: boolean;
   onSelect: () => void;
+  onPreview: () => void;
 }
 
 export const DefaultSkinCard = ({
   isActive,
   disabled,
+  isPreviewing,
   onSelect,
+  onPreview,
 }: DefaultSkinCardProps) => {
   const { t } = useTranslation();
 
@@ -137,9 +185,10 @@ export const DefaultSkinCard = ({
       aria-disabled={disabled}
       aria-pressed={isActive}
       className={cn(
-        "cursor-pointer overflow-hidden shadow-none transition-colors hover:border-primary",
+        "group/skin relative cursor-pointer overflow-hidden shadow-none transition-colors hover:border-primary",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         isActive && "ring-2 ring-primary",
+        !isActive && isPreviewing && "ring-1 ring-primary/50",
         disabled && "pointer-events-none opacity-60",
       )}
       onClick={handleSelect}
@@ -151,6 +200,13 @@ export const DefaultSkinCard = ({
       }}
       role='button'
       tabIndex={disabled ? -1 : 0}>
+      <div className='absolute top-2 right-2 z-10 opacity-0 transition-opacity focus-within:opacity-100 group-hover/skin:opacity-100 group-focus-within/skin:opacity-100'>
+        <PreviewButton
+          disabled={disabled}
+          label={t("skins.preview.previewDefault")}
+          onPreview={onPreview}
+        />
+      </div>
       <div className='flex h-32 w-full items-center justify-center bg-muted text-muted-foreground'>
         {t("skins.default")}
       </div>
