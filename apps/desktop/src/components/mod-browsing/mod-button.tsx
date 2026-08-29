@@ -35,6 +35,7 @@ import useUninstall from "@/hooks/use-uninstall";
 import logger from "@/lib/logger";
 import { resolveLocalModHero } from "@/lib/mods/hero-resolution";
 import { usePersistedStore } from "@/lib/store";
+import { useModProgressStore } from "@/lib/store/mod-progress";
 import { cn } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
@@ -129,8 +130,10 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
     currentMod,
   } = useInstallAction();
   const { uninstall } = useUninstall();
-  const modProgress = usePersistedStore((state) =>
-    remoteMod?.remoteId ? state.modProgress[remoteMod.remoteId] : undefined,
+  const modProgress = useModProgressStore((state) =>
+    remoteMod?.remoteId
+      ? state.progressByRemoteId[remoteMod.remoteId]
+      : undefined,
   );
   const removeMod = usePersistedStore((state) => state.removeMod);
   const [ref, hovering] = useHover();

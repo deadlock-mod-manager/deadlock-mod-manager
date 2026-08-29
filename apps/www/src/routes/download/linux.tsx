@@ -1,6 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import {
+  selectExactDownload,
+  selectRecommendedDownload,
+} from "@/lib/release-downloads";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/download/linux")({
@@ -36,9 +40,20 @@ function DownloadLinuxComponent() {
       return;
     }
 
-    const preferredDownload =
-      linuxDownloads.find((download) => download.architecture === "x64") ||
-      linuxDownloads[0];
+    const search = new URLSearchParams(window.location.search);
+    const runtime = search.get("runtime");
+    const installer = search.get("installer");
+    const exactTargetRequested =
+      (runtime === "wry" || runtime === "cef") &&
+      (installer === "deb" || installer === "rpm" || installer === "flatpak");
+    const preferredDownload = exactTargetRequested
+      ? selectExactDownload(linuxDownloads, "linux", "x64", runtime, installer)
+      : selectRecommendedDownload(linuxDownloads, "linux", "x64");
+
+    if (!preferredDownload) {
+      navigate({ to: "/download" });
+      return;
+    }
 
     window.location.href = preferredDownload.url;
   }, [releases, isLoading, error, navigate]);

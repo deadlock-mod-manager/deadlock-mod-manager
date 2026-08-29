@@ -70,7 +70,6 @@ pub struct GameInfoValidation {
 /// Manages game configuration files and mod setup
 pub struct GameConfigManager {
   filesystem: FileSystemHelper,
-  game_setup: bool,
   backups: HashMap<PathBuf, GameInfoBackup>,
 }
 
@@ -78,8 +77,35 @@ impl GameConfigManager {
   pub fn new() -> Self {
     Self {
       filesystem: FileSystemHelper::new(),
-      game_setup: false,
       backups: HashMap::new(),
+    }
+  }
+
+  fn line_ending(content: &str) -> &'static str {
+    if content.contains("\r\n") {
+      "\r\n"
+    } else {
+      "\n"
+    }
+  }
+
+  fn normalize_line_endings(content: &str, line_ending: &str) -> String {
+    let normalized = content.replace("\r\n", "\n").replace('\r', "\n");
+    if line_ending == "\n" {
+      normalized
+    } else {
+      normalized.replace('\n', line_ending)
+    }
+  }
+
+  fn include_preceding_line_ending(content: &str, index: usize) -> usize {
+    let preceding = &content[..index];
+    if preceding.ends_with("\r\n") {
+      index - 2
+    } else if preceding.ends_with('\n') {
+      index - 1
+    } else {
+      index
     }
   }
 
@@ -372,6 +398,10 @@ impl GameConfigManager {
     log::info!("Applying vanilla gameinfo.gi content");
 
     let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
+    let line_ending = fs::read_to_string(&gameinfo_path)
+      .map(|content| Self::line_ending(&content))
+      .unwrap_or_else(|_| Self::line_ending(&vanilla_content));
+    let vanilla_content = Self::normalize_line_endings(&vanilla_content, line_ending);
 
     // Validate the downloaded content
     let temp_path = gameinfo_path.with_extension("gi.tmp");
@@ -512,7 +542,7 @@ impl GameConfigManager {
 
   /// Setup the game for mods by creating necessary directories and modifying config
   pub fn setup_game_for_mods(&mut self, game_path: &Path) -> Result<(), Error> {
-    if self.game_setup {
+    if self.is_game_setup(game_path)? {
       log::info!("Game already setup");
       return Ok(());
     }
@@ -553,8 +583,6 @@ impl GameConfigManager {
       return Err(e);
     }
 
-    // Mark game as setup
-    self.game_setup = true;
     log::info!("Game setup for mods completed successfully");
 
     Ok(())
@@ -605,6 +633,7 @@ impl GameConfigManager {
 
     // Read and validate current file
     let gameinfo_content = fs::read_to_string(gameinfo_path)?;
+    let line_ending = Self::line_ending(&gameinfo_content);
     let validation = self.validate_gameinfo_syntax(gameinfo_path)?;
 
     if !validation.is_valid {
@@ -634,12 +663,7 @@ impl GameConfigManager {
         let marker_end = marker_end_pos + MOD_MANAGER_MARKER_END.len();
 
         // Find the actual start (include preceding whitespace/newline)
-        let actual_start =
-          if marker_start > 0 && gameinfo_content.chars().nth(marker_start - 1) == Some('\n') {
-            marker_start - 1
-          } else {
-            marker_start
-          };
+        let actual_start = Self::include_preceding_line_ending(&gameinfo_content, marker_start);
 
         (
           actual_start,
@@ -690,6 +714,7 @@ impl GameConfigManager {
     } else {
       format!("\n{MOD_MANAGER_MARKER_START}\n{base_search_paths}\n{MOD_MANAGER_MARKER_END}")
     };
+    let replacement_content = Self::normalize_line_endings(&replacement_content, line_ending);
 
     // Replace the identified section with the new content
     let mut new_gameinfo_content = gameinfo_content.clone();
@@ -818,9 +843,20 @@ impl GameConfigManager {
     Ok(())
   }
 
-  /// Check if the game has been set up for mods
-  pub fn is_game_setup(&self) -> bool {
-    self.game_setup
+  /// Check current on-disk state instead of caching setup across external rewrites.
+  pub fn is_game_setup(&self, game_path: &Path) -> Result<bool, Error> {
+    let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
+    if !gameinfo_path.exists() {
+      return Ok(false);
+    }
+
+    let content = fs::read_to_string(&gameinfo_path)?;
+    let validation = self.validate_gameinfo_syntax(&gameinfo_path)?;
+    Ok(
+      validation.is_valid
+        && self.has_mod_manager_markers(&content)
+        && content.contains("citadel/addons"),
+    )
   }
 
   /// Each entry produces one `Game citadel/addons[/<folder>]` line, in order.
@@ -918,7 +954,7 @@ impl GameConfigManager {
   ) -> Result<(), Error> {
     log::info!("Updating mod path for folders: {folders:?}");
 
-    if !self.game_setup {
+    if !self.is_game_setup(game_path)? {
       log::info!("Game not setup yet, setting up for mods...");
       self.setup_game_for_mods(game_path)?;
     }
@@ -937,6 +973,7 @@ impl GameConfigManager {
 
     // Read current content
     let gameinfo_content = fs::read_to_string(&gameinfo_path)?;
+    let line_ending = Self::line_ending(&gameinfo_content);
 
     // Create backup if it doesn't exist
     let backup_path = gameinfo_path.with_extension("gi.bak");
@@ -950,7 +987,12 @@ impl GameConfigManager {
       if let Some(start_pos) = gameinfo_content.find(MOD_MANAGER_MARKER_START) {
         if let Some(end_pos) = gameinfo_content.find(MOD_MANAGER_MARKER_END) {
           let end_pos = end_pos + MOD_MANAGER_MARKER_END.len();
-          (start_pos, end_pos, &gameinfo_content[start_pos..end_pos])
+          let section_start = Self::include_preceding_line_ending(&gameinfo_content, start_pos);
+          (
+            section_start,
+            end_pos,
+            &gameinfo_content[section_start..end_pos],
+          )
         } else {
           log::warn!(
             "Found start marker but not end marker, replacing from marker to end of SearchPaths"
@@ -975,6 +1017,7 @@ impl GameConfigManager {
     let modded_search_paths = Self::generate_modded_search_paths_multi(folders);
     let replacement_content =
       format!("\n{MOD_MANAGER_MARKER_START}\n{modded_search_paths}\n{MOD_MANAGER_MARKER_END}");
+    let replacement_content = Self::normalize_line_endings(&replacement_content, line_ending);
 
     // Replace the section
     let mut new_gameinfo_content = gameinfo_content.clone();
@@ -1215,13 +1258,94 @@ mod tests {
     )
   }
 
+  fn fixture_vanilla_gameinfo(line_ending: &str) -> String {
+    let content = r#""GameInfo"
+{
+  game        "Deadlock"
+  title       "Deadlock"
+  FileSystem
+  {
+    SearchPaths
+    {
+      Game_Language       citadel_*LANGUAGE*
+      Game                citadel
+      Write               citadel
+      Game                core
+    }
+  }
+}
+"#;
+    GameConfigManager::normalize_line_endings(content, line_ending)
+  }
+
+  fn assert_only_line_ending(content: &str, line_ending: &str) {
+    if line_ending == "\r\n" {
+      let without_crlf = content.replace("\r\n", "");
+      assert!(!without_crlf.contains('\r'), "found a bare CR byte");
+      assert!(!without_crlf.contains('\n'), "found a bare LF byte");
+    } else {
+      assert!(!content.contains('\r'), "LF source gained CR bytes");
+    }
+  }
+
+  fn assert_reset_enable_cycles_preserve_line_endings(line_ending: &str) {
+    let (_dir, game_path) = setup_game_dir();
+    let vanilla = fixture_vanilla_gameinfo(line_ending);
+    write_gameinfo(&game_path, &vanilla);
+    let mut manager = GameConfigManager::new();
+
+    manager
+      .setup_game_for_mods(&game_path)
+      .expect("initial enable should succeed");
+    assert!(
+      manager.is_game_setup(&game_path).expect("setup state"),
+      "enabled markers should be derived from disk"
+    );
+
+    for cycle in 0..2 {
+      manager
+        .apply_vanilla_gameinfo(&game_path, vanilla.clone())
+        .unwrap_or_else(|error| panic!("reset cycle {cycle} should succeed: {error}"));
+      assert!(
+        !manager.is_game_setup(&game_path).expect("reset state"),
+        "vanilla reset should immediately invalidate setup state"
+      );
+      let reset_content =
+        fs::read_to_string(game_path.join("game").join("citadel").join("gameinfo.gi"))
+          .expect("reset content should be readable");
+      assert_only_line_ending(&reset_content, line_ending);
+
+      manager
+        .update_mod_path(&game_path, Some("profile_default".to_string()))
+        .unwrap_or_else(|error| panic!("re-enable cycle {cycle} should succeed: {error}"));
+      assert!(
+        manager.is_game_setup(&game_path).expect("re-enabled state"),
+        "immediate re-enable should restore setup markers"
+      );
+      let enabled_content =
+        fs::read_to_string(game_path.join("game").join("citadel").join("gameinfo.gi"))
+          .expect("enabled content should be readable");
+      assert_only_line_ending(&enabled_content, line_ending);
+      assert!(enabled_content.contains("citadel/addons/profile_default"));
+    }
+  }
+
+  #[test]
+  fn reset_and_immediate_reenable_preserve_lf() {
+    assert_reset_enable_cycles_preserve_line_endings("\n");
+  }
+
+  #[test]
+  fn reset_and_immediate_reenable_preserve_crlf() {
+    assert_reset_enable_cycles_preserve_line_endings("\r\n");
+  }
+
   #[test]
   fn update_mod_path_multi_replaces_stale_server_with_profile() {
     let (_dir, game_path) = setup_game_dir();
     write_gameinfo(&game_path, &fixture_gameinfo_with_server_entry());
 
     let mut mgr = GameConfigManager::new();
-    mgr.game_setup = true; // skip setup_game_for_mods (which expects vanilla layout)
 
     mgr
       .update_mod_path(&game_path, Some("profile_default".to_string()))
@@ -1241,7 +1365,6 @@ mod tests {
     write_gameinfo(&game_path, &fixture_gameinfo_with_server_entry());
 
     let mut mgr = GameConfigManager::new();
-    mgr.game_setup = true;
 
     mgr
       .update_mod_path_multi(
@@ -1270,7 +1393,6 @@ mod tests {
     write_gameinfo(&game_path, &fixture_gameinfo_with_server_entry());
 
     let mut mgr = GameConfigManager::new();
-    mgr.game_setup = true;
 
     mgr
       .update_mod_path(&game_path, None)

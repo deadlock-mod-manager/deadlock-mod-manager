@@ -9,18 +9,13 @@ import {
   type ModDownloadItem,
   type ModFileTree,
   ModStatus,
-  type Progress,
 } from "@/types/mods";
 import type { State } from "..";
+import { useModProgressStore } from "../mod-progress";
 import {
   applyToModsAndActiveProfile,
   applyToModsAndAllProfiles,
 } from "../utils/mod-slice";
-
-export type ModProgress = {
-  percentage: number;
-  speed?: number;
-};
 
 export type HeroDetectionProgress = {
   status: "idle" | "scanning";
@@ -31,7 +26,6 @@ export type HeroDetectionProgress = {
 
 export type ModsState = {
   localMods: LocalMod[];
-  modProgress: Record<string, ModProgress>;
   defaultSort: SortType;
   // Analysis dialog state
   analysisResult: AnalyzeAddonsResult | null;
@@ -49,7 +43,6 @@ export type ModsState = {
   removeMod: (remoteId: string) => void;
   setMods: (mods: LocalMod[]) => void;
   setModStatus: (remoteId: string, status: ModStatus) => void;
-  setModProgress: (remoteId: string, progress: Progress) => void;
   clearMods: () => void;
   setInstalledVpks: (
     remoteId: string,
@@ -62,7 +55,6 @@ export type ModsState = {
   ) => void;
   setModDownloads: (remoteId: string, downloads: ModDownloadItem[]) => void;
   setActiveVariantArchive: (remoteId: string, archiveName: string) => void;
-  getModProgress: (remoteId: string) => ModProgress | undefined;
   setAnalysisResult: (result: AnalyzeAddonsResult | null) => void;
   setAnalysisDialogOpen: (open: boolean) => void;
   clearAnalysisDialog: () => void;
@@ -93,7 +85,6 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
   get,
 ) => ({
   localMods: [],
-  modProgress: {},
   analysisResult: null,
   analysisDialogOpen: false,
   heroDetection: { status: "idle", current: 0, total: 0, currentModName: null },
@@ -274,53 +265,46 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     }));
   },
 
-  removeMod: (remoteId) =>
+  removeMod: (remoteId) => {
+    useModProgressStore.getState().removeModProgress(remoteId);
     set((state) => {
-      const newProgress = { ...state.modProgress };
-      delete newProgress[remoteId];
+      const profiles = Object.fromEntries(
+        Object.entries(state.profiles).map(([profileId, profile]) => {
+          const enabledMods = { ...profile.enabledMods };
+          delete enabledMods[remoteId];
 
-      const { activeProfileId, profiles } = state;
-      const currentProfile = profiles[activeProfileId];
-
-      if (currentProfile) {
-        const updatedProfile = {
-          ...currentProfile,
-          mods: currentProfile.mods.filter((mod) => mod.remoteId !== remoteId),
-        };
-
-        return {
-          localMods: state.localMods.filter((mod) => mod.remoteId !== remoteId),
-          modProgress: newProgress,
-          profiles: {
-            ...state.profiles,
-            [activeProfileId]: updatedProfile,
-          },
-        };
-      }
+          return [
+            profileId,
+            {
+              ...profile,
+              mods: profile.mods.filter((mod) => mod.remoteId !== remoteId),
+              enabledMods,
+            },
+          ];
+        }),
+      );
 
       return {
         localMods: state.localMods.filter((mod) => mod.remoteId !== remoteId),
-        modProgress: newProgress,
+        profiles,
       };
-    }),
+    });
+  },
 
   setMods: (mods) => set({ localMods: mods }),
 
-  clearMods: () => set({ localMods: [], modProgress: {} }),
-
-  setModProgress: (remoteId, progress) =>
+  clearMods: () => {
+    useModProgressStore.getState().clearModProgress();
     set((state) => ({
-      modProgress: {
-        ...state.modProgress,
-        [remoteId]: {
-          percentage:
-            ((progress?.progressTotal ?? 0) / (progress?.total ?? 1)) * 100,
-          speed: progress?.transferSpeed,
-        },
-      },
-    })),
-
-  getModProgress: (remoteId) => get().modProgress[remoteId],
+      localMods: [],
+      profiles: Object.fromEntries(
+        Object.entries(state.profiles).map(([profileId, profile]) => [
+          profileId,
+          { ...profile, mods: [], enabledMods: {} },
+        ]),
+      ),
+    }));
+  },
 
   setInstalledVpks: (
     remoteId: string,

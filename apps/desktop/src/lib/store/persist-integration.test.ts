@@ -2,12 +2,19 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const memory = new Map<string, string>();
 const noop = () => undefined;
+let countPluginWrites = false;
+let pluginSetCalls = 0;
+let pluginSaveCalls = 0;
 
 mock.module("@tauri-apps/plugin-store", () => ({
   getStore: async () => ({
     get: async (k: string) => memory.get(k),
     set: async (k: string, v: string) => {
+      if (countPluginWrites) pluginSetCalls += 1;
       memory.set(k, v);
+    },
+    save: async () => {
+      if (countPluginWrites) pluginSaveCalls += 1;
     },
     delete: async (k: string) => {
       memory.delete(k);
@@ -169,6 +176,9 @@ const importStoreFreshly = async () => {
 describe("persisted store integration with real production fixture", () => {
   beforeEach(() => {
     memory.clear();
+    countPluginWrites = false;
+    pluginSetCalls = 0;
+    pluginSaveCalls = 0;
   });
 
   it("upgrading from v15 with populated state preserves all user-set settings", async () => {
@@ -290,5 +300,84 @@ describe("persisted store integration with real production fixture", () => {
       analyticsEnabled: true,
       hasSeenTelemetryPrompt: true,
     });
+  });
+
+  it("removing one mod clears its enablement metadata from every profile", async () => {
+    const secondaryProfile = {
+      ...seededState.profiles.default,
+      id: "secondary",
+      name: "Secondary Profile",
+      enabledMods: {
+        ...seededState.profiles.default.enabledMods,
+        "2": { remoteId: "2", enabled: true, lastModified: "2026-04-20" },
+      },
+    };
+    seedFromVersion(25, {
+      ...seededState,
+      profiles: {
+        ...seededState.profiles,
+        secondary: secondaryProfile,
+      },
+    });
+
+    const { usePersistedStore } = await importStoreFreshly();
+    await usePersistedStore.persist.rehydrate();
+    usePersistedStore.getState().removeMod("1");
+
+    const state = usePersistedStore.getState();
+    expect(state.localMods.map((mod) => mod.remoteId)).toEqual(["2"]);
+    for (const profile of Object.values(state.profiles)) {
+      expect(profile.mods.map((mod) => mod.remoteId)).not.toContain("1");
+      expect(profile.enabledMods["1"]).toBeUndefined();
+    }
+    expect(state.profiles.secondary?.enabledMods["2"]?.enabled).toBe(true);
+  });
+
+  it("clearing mods also clears profile lists and enabled counts", async () => {
+    seedFromVersion(25, seededState);
+    const { usePersistedStore } = await importStoreFreshly();
+    await usePersistedStore.persist.rehydrate();
+
+    usePersistedStore.getState().clearMods();
+
+    const state = usePersistedStore.getState();
+    expect(state.localMods).toEqual([]);
+    for (const profile of Object.values(state.profiles)) {
+      expect(profile.mods).toEqual([]);
+      expect(profile.enabledMods).toEqual({});
+    }
+  });
+
+  it("does not persist transient progress but saves a setting change once", async () => {
+    const { usePersistedStore } = await importStoreFreshly();
+    await usePersistedStore.persist.rehydrate();
+    const { useModProgressStore } = await import("./mod-progress");
+    useModProgressStore.getState().clearModProgress();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    countPluginWrites = true;
+    for (let index = 1; index <= 20; index += 1) {
+      useModProgressStore.getState().setModProgress("mod-a", {
+        progress: index,
+        progressTotal: index,
+        total: 20,
+        transferSpeed: 1_024,
+      });
+    }
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(pluginSetCalls).toBe(0);
+    expect(pluginSaveCalls).toBe(0);
+
+    usePersistedStore.getState().setDeveloperMode(true);
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(pluginSetCalls).toBe(1);
+    expect(pluginSaveCalls).toBe(1);
+    countPluginWrites = false;
   });
 });

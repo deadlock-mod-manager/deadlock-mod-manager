@@ -18,8 +18,11 @@ import {
 } from "@/lib/file-patterns";
 import {
   type ModSource,
+  MAX_BROWSER_MOD_FILE_BYTES,
   ensureDirectory,
+  exceedsBrowserModFileLimit,
   getFileBaseName,
+  getImportSourceFileName,
   fileToBytes,
   fileToDataUrl,
   writeFileBytes,
@@ -29,10 +32,6 @@ import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus, type ModFileTree } from "@/types/mods";
 
-interface PathBackedFile extends File {
-  path?: string;
-}
-
 export interface ModMetadata {
   name: string;
   author?: string;
@@ -40,21 +39,6 @@ export interface ModMetadata {
   description?: string;
   imageFile?: File | null;
 }
-
-const getSourceFilePath = (file: File): string | null => {
-  const filePath = (file as PathBackedFile).path;
-  return typeof filePath === "string" && filePath.length > 0 ? filePath : null;
-};
-
-const readSourceFileBytes = async (file: File): Promise<Uint8Array> => {
-  const filePath = getSourceFilePath(file);
-  if (!filePath) {
-    return fileToBytes(file);
-  }
-
-  const bytes = await invoke<number[]>("read_dropped_mod_file", { filePath });
-  return new Uint8Array(bytes);
-};
 
 export const useModProcessor = () => {
   const { t } = useTranslation();
@@ -73,7 +57,7 @@ export const useModProcessor = () => {
   ): Promise<void> => {
     const fileBaseName = getFileBaseName(file);
     const fileName = fileBaseName.toLowerCase();
-    const fileBytes = await readSourceFileBytes(file);
+    const fileBytes = await fileToBytes(file);
 
     if (fileName.endsWith(".zip")) {
       const zip = await JSZip.loadAsync(fileBytes);
@@ -154,7 +138,9 @@ export const useModProcessor = () => {
     }
 
     if (detectedSource.kind === "archive") {
-      const fileName = getFileBaseName(detectedSource.file).toLowerCase();
+      const fileName = getImportSourceFileName(
+        detectedSource.source,
+      ).toLowerCase();
       if (fileName.endsWith(".rar") || fileName.endsWith(".7z")) {
         toast.info(t("addMods.archiveWillBeProcessed"));
         return true;
@@ -198,23 +184,68 @@ export const useModProcessor = () => {
         path: detectedSource.path,
         destination: await join(filesDir, detectedSource.fileName),
       });
+    } else if (detectedSource.source.type === "nativePath") {
+      let importedVpkFiles: string[];
+      try {
+        importedVpkFiles = await invoke<string[]>(
+          "import_path_backed_mod_file",
+          {
+            filePath: detectedSource.source.path,
+            modId,
+          },
+        );
+      } catch (error) {
+        logger
+          .withMetadata({
+            fileName: detectedSource.source.fileName,
+            modId,
+            sourceKind: detectedSource.kind,
+          })
+          .withError(error)
+          .error("Failed to import path-backed mod file");
+        toast.error(t("addMods.failedToImportMod"));
+        throw error;
+      }
+
+      if (detectedSource.kind === "archive") {
+        const format = detectedSource.source.fileName
+          .split(".")
+          .at(-1)
+          ?.toUpperCase();
+        toast.success(t("addMods.archiveExtractedSuccess", { format }));
+      }
+
+      if (importedVpkFiles.length === 0) {
+        toast.error(t("addMods.noVpkFoundInContent"));
+        setProcessing(false);
+        return;
+      }
     } else {
+      if (exceedsBrowserModFileLimit(detectedSource)) {
+        throw new Error(
+          t("addMods.browserFileTooLarge", {
+            limit: MAX_BROWSER_MOD_FILE_BYTES / 1024 / 1024,
+          }),
+        );
+      }
+
+      const browserFile = detectedSource.source.file;
       try {
         if (detectedSource.kind === "vpk") {
-          const fileName = getFileBaseName(detectedSource.file);
+          const fileName = getFileBaseName(browserFile);
           await writeFileBytes(
             await join(filesDir, fileName),
-            await readSourceFileBytes(detectedSource.file),
+            await fileToBytes(browserFile),
           );
         } else {
-          await processArchive(detectedSource.file, filesDir, modDir);
+          await processArchive(browserFile, filesDir, modDir);
         }
       } catch {
-        const fileName = getFileBaseName(detectedSource.file);
+        const fileName = getFileBaseName(browserFile);
         toast.error(t("addMods.failedToProcessArchive"));
         await writeFileBytes(
           await join(modDir, fileName),
-          await readSourceFileBytes(detectedSource.file),
+          await fileToBytes(browserFile),
         );
       }
     }

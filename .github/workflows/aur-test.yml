@@ -55,3 +55,12 @@ jobs:
       - name: Build package
         working-directory: distribution/aur/deadlock-modmanager-bin
         run: su builder -c "makepkg -sf --noconfirm"
+
+      - name: Verify every binary package source is pinned
+        run: |
+          if grep -q "'SKIP'\|\"SKIP\"" distribution/aur/deadlock-modmanager-bin/PKGBUILD; then
+            echo "ERROR: binary PKGBUILD contains an unverified source"
+            exit 1
+          fi
+          grep -Fq 'raw.githubusercontent.com/deadlock-mod-manager/deadlock-mod-manager/v${_pkgver}' \
+            distribution/aur/deadlock-modmanager-bin/PKGBUILD

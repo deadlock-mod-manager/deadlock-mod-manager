@@ -96,6 +96,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
   preFixup = ''
     gappsWrapperArgs+=(
       --set FONTCONFIG_FILE "${fontconfig.out}/etc/fonts/fonts.conf"
+      --set DMM_INSTALLER_FORMAT nix
 --set TAURI_DIST_DIR "$out/share/deadlock-modmanager/dist"
 
       --set DISABLE_UPDATE_DESKTOP_DATABASE 1

@@ -23,8 +23,11 @@ mod mod_manager;
 pub mod proxy;
 mod reports;
 mod steam_user;
+mod update_target;
 mod updater_channel;
 mod utils;
+#[cfg(all(windows, feature = "tauri-wry"))]
+mod webview_recovery;
 
 use tauri_plugin_log::{Target, TargetKind};
 use tauri_plugin_store::StoreExt;
@@ -97,6 +100,8 @@ pub fn run() {
     .setup(|app| {
       let _store = app.store("state.json")?;
       deep_link::setup(app)?;
+      #[cfg(all(windows, feature = "tauri-wry"))]
+      webview_recovery::setup(app)?;
 
       {
         let mut mod_manager = commands::state::MANAGER
@@ -268,7 +273,7 @@ pub fn run() {
       commands::logs::parse_crash_dump,
       commands::logs::parse_latest_crash_dump,
       commands::logs::open_latest_crash_dump_parsed,
-      commands::archive::read_dropped_mod_file,
+      commands::archive::import_path_backed_mod_file,
       commands::app::check_filesystem_writable,
       commands::downloads::test_fileserver_latency,
       commands::server_browser::ping_servers,
@@ -280,7 +285,8 @@ pub fn run() {
       proxy::get_proxy_config,
       proxy::test_proxy_connection,
       updater_channel::get_update_channel,
-      updater_channel::set_update_channel
+      updater_channel::set_update_channel,
+      updater_channel::get_update_target
     ])
     .run(context)
     .expect("error while running tauri application");

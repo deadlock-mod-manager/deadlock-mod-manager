@@ -64,6 +64,9 @@ jobs:
           # Update the source PKGBUILD in-repo
           sed -i "s/^_pkgver=.*/_pkgver=${{ steps.version.outputs.version }}/" ${{ matrix.pkgbuild_dir }}/PKGBUILD
           sed -i -E "s/^pkgrel=.*/pkgrel=1/" ${{ matrix.pkgbuild_dir }}/PKGBUILD
+          if [ "${{ matrix.pkgname }}" = "deadlock-modmanager-bin" ]; then
+            bash distribution/aur/update-bin-checksums.sh ${{ matrix.pkgbuild_dir }}/PKGBUILD
+          fi
           # Copy for AUR deploy
           cp -r ${{ matrix.pkgbuild_dir }} ./${{ matrix.pkgname }}
 

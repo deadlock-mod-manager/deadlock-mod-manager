@@ -54,11 +54,7 @@ import {
   ModCategory,
 } from "@/lib/constants";
 import { ALL_SUPPORTED_PATTERN } from "@/lib/file-patterns";
-import {
-  type DetectedSource,
-  getFileBaseName,
-  getFileName,
-} from "@/lib/file-utils";
+import { type DetectedSource, getImportSourceFileName } from "@/lib/file-utils";
 import logger from "@/lib/logger";
 import { cn } from "@/lib/utils";
 import { type AddModFormValues, addModSchema } from "@/types/add-mods";
@@ -82,7 +78,7 @@ const AddMods = () => {
   });
 
   const handleFilesDetected = (detectedSource: DetectedSource) => {
-    const baseName = getFileBaseName(detectedSource.file).replace(
+    const baseName = getImportSourceFileName(detectedSource.source).replace(
       ALL_SUPPORTED_PATTERN,
       "",
     );
@@ -252,12 +248,12 @@ const AddMods = () => {
               detected?.kind === "archive" ? (
                 <div>
                   <span className='font-medium'>{t("addMods.source")}:</span>{" "}
-                  Archive → {detected.file.name}
+                  Archive → {getImportSourceFileName(detected.source)}
                 </div>
               ) : detected?.kind === "vpk" ? (
                 <div>
                   <span className='font-medium'>{t("addMods.source")}:</span>{" "}
-                  VPK → {getFileName(detected.file)}
+                  VPK → {getImportSourceFileName(detected.source)}
                 </div>
               ) : null}
             </div>

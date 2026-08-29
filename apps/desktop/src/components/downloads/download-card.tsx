@@ -8,7 +8,7 @@ import { useNavigate } from "react-router";
 import { downloadManager } from "@/lib/download/manager";
 import { useDownload } from "@/hooks/use-download";
 import { getErrorMessage } from "@/lib/errors";
-import { usePersistedStore } from "@/lib/store";
+import { useModProgressStore } from "@/lib/store/mod-progress";
 import { cn, formatSize, formatSpeed } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
@@ -97,8 +97,9 @@ const StatusChip = ({ status }: { status: ModStatus }) => {
 const DownloadCard = ({ download }: DownloadCardProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { getModProgress } = usePersistedStore();
-  const modProgress = getModProgress(download.remoteId);
+  const modProgress = useModProgressStore(
+    (state) => state.progressByRemoteId[download.remoteId],
+  );
   const isDownloading = download.status === ModStatus.Downloading;
   const isPaused = download.status === ModStatus.Paused;
   const isExtracting = download.status === ModStatus.Extracting;

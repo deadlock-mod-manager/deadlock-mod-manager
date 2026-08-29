@@ -23,7 +23,10 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { getErrorMessage } from "@/lib/errors";
+import { createLogger } from "@/lib/logger";
 import { STALE_TIME_POLL } from "@/lib/query-constants";
+
+const logger = createLogger("gameinfo-management");
 
 type GameInfoStatus = {
   current_hash: string;
@@ -131,6 +134,7 @@ const GameInfoManagement = () => {
       await refetch();
       toast.success(t("game.backupCreatedSuccess"));
     } catch (error) {
+      logger.withMetadata({ error }).error("Failed to create gameinfo backup");
       toast.error(`Failed to create backup: ${getErrorMessage(error)}`);
     } finally {
       setIsOperating(false);
@@ -148,6 +152,7 @@ const GameInfoManagement = () => {
       await refetch();
       toast.success(t("game.restoreSuccess"));
     } catch (error) {
+      logger.withMetadata({ error }).error("Failed to restore gameinfo backup");
       toast.error(`Failed to restore backup: ${getErrorMessage(error)}`);
     } finally {
       setIsOperating(false);
@@ -165,6 +170,9 @@ const GameInfoManagement = () => {
       await refetch();
       toast.success(t("game.resetSuccess"));
     } catch (error) {
+      logger
+        .withMetadata({ error })
+        .error("Failed to reset gameinfo to vanilla");
       toast.error(`Failed to reset to vanilla: ${getErrorMessage(error)}`);
     } finally {
       setIsOperating(false);
@@ -179,6 +187,7 @@ const GameInfoManagement = () => {
       await refetch();
       toast.success(t("game.validationPassed"));
     } catch (error) {
+      logger.withMetadata({ error }).error("Failed to validate gameinfo");
       toast.error(`Validation failed: ${getErrorMessage(error)}`);
     } finally {
       setIsOperating(false);
@@ -191,6 +200,7 @@ const GameInfoManagement = () => {
       await invoke("open_gameinfo_editor");
       toast.success(t("game.openedInEditor"));
     } catch (error) {
+      logger.withMetadata({ error }).error("Failed to open gameinfo editor");
       toast.error(`Failed to open editor: ${getErrorMessage(error)}`);
     } finally {
       setIsOperating(false);

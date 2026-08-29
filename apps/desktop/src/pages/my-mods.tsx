@@ -109,6 +109,7 @@ import { type LocalMod, ModStatus } from "@/types/mods";
 
 const PAGE_SIZE = 20;
 const MODS_STORE_PAGINATION_SETTING_ID = "mods-store-pagination";
+const MY_MODS_SEARCH_KEYS = ["name", "description", "author"];
 
 const ENGINE_VPK_LIMIT = 99;
 const VPK_LIMIT_WARNING_THRESHOLD = 85;
@@ -624,7 +625,7 @@ const MyMods = () => {
 
   const { results, query, setQuery } = useSearch({
     data: mods,
-    keys: ["name", "description", "author"],
+    keys: MY_MODS_SEARCH_KEYS,
     queryState: {
       query: librarySearchQuery,
       setQuery: setLibrarySearchQuery,

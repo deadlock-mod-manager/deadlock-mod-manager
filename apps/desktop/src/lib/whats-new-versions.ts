@@ -10,6 +10,16 @@ const versionEntries: Record<
 export const getWhatsNewVideoId = (version: string): string =>
   versionEntries[version]?.videoId ?? "";
 
+export const getWhatsNewTitleKey = (version: string): string =>
+  versionEntries[version] !== undefined
+    ? `whatsNew.versions.${version}.title`
+    : "whatsNew.title";
+
+export const getWhatsNewFeaturesKey = (version: string): string | null =>
+  versionEntries[version] !== undefined
+    ? `whatsNew.versions.${version}.features`
+    : null;
+
 export const getRecentWhatsNewVersions = (
   count = WHATS_NEW_RIBBON_VERSION_COUNT,
 ): string[] => {

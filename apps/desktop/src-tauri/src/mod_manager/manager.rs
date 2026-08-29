@@ -382,12 +382,11 @@ impl ModManager {
     // Ensure game is not running before setup
     self.process_manager.ensure_game_not_running()?;
 
-    if self.config_manager.is_game_setup() {
+    let game_path = self.steam_manager.find_game()?;
+    if self.config_manager.is_game_setup(game_path)? {
       log::info!("Game already setup");
       return Ok(());
     }
-
-    let game_path = self.steam_manager.find_game()?;
     self.config_manager.validate_game_files(game_path)?;
     self.config_manager.setup_game_for_mods(game_path)?;
 
@@ -443,7 +442,12 @@ impl ModManager {
       deadlock_mod.name,
     );
 
-    if !self.config_manager.is_game_setup() {
+    let game_path = self
+      .steam_manager
+      .get_game_path()
+      .ok_or(Error::GamePathNotSet)?
+      .clone();
+    if !self.config_manager.is_game_setup(&game_path)? {
       log::info!("Setting up game for mods...");
       self.setup_game_for_mods()?;
     }

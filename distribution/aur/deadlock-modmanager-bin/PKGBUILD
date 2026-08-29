@@ -14,14 +14,30 @@ provides=('deadlock-modmanager')
 conflicts=('deadlock-modmanager' 'deadlock-modmanager-git')
 options=('!strip')
 source=("deadlock-modmanager-${pkgver}.deb::https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/download/v${_pkgver}/Deadlock.Mod.Manager_${_pkgver}_amd64.deb"
-        "deadlock-modmanager.desktop::https://raw.githubusercontent.com/deadlock-mod-manager/deadlock-mod-manager/main/distribution/aur/deadlock-modmanager.desktop"
-        "dev.stormix.deadlock-mod-manager.metainfo.xml::https://raw.githubusercontent.com/deadlock-mod-manager/deadlock-mod-manager/main/apps/desktop/src-tauri/dev.stormix.deadlock-mod-manager.metainfo.xml")
-sha256sums=('SKIP'
-            'SKIP'
-            'SKIP')
+        "deadlock-modmanager.desktop::https://raw.githubusercontent.com/deadlock-mod-manager/deadlock-mod-manager/v${_pkgver}/distribution/aur/deadlock-modmanager.desktop"
+        "dev.stormix.deadlock-mod-manager.metainfo.xml::https://raw.githubusercontent.com/deadlock-mod-manager/deadlock-mod-manager/v${_pkgver}/apps/desktop/src-tauri/dev.stormix.deadlock-mod-manager.metainfo.xml")
+_deb_sha256=18a1eb0e68d794365ff67be2e9a733b93de0902246d956b17b73cc6430205009
+_desktop_sha256=74f91f52da072e31df1dd9df8e7339aa6328e8f6ed11e9b565858c6b9fab0740
+_metainfo_sha256=9972534fb418587adc14ec23c231f60c0082bc317072c5ae69a6e1e48018a7c5
+sha256sums=("${_deb_sha256}"
+            "${_desktop_sha256}"
+            "${_metainfo_sha256}")
 
 package() {
     tar xf data.tar.gz -C "${pkgdir}"
+
+    local desktop_dir="${pkgdir}/usr/share/applications"
+    local -a upstream_desktop_entries=()
+    mapfile -d '' upstream_desktop_entries < <(
+        find "${desktop_dir}" -maxdepth 1 -type f \
+            -iname '*deadlock*mod*manager*.desktop' -print0
+    )
+    if (( ${#upstream_desktop_entries[@]} != 1 )); then
+        printf 'ERROR: expected exactly one upstream Deadlock Mod Manager desktop entry, found %d:\n' \
+            "${#upstream_desktop_entries[@]}" >&2
+        printf '  %s\n' "${upstream_desktop_entries[@]:-<none>}" >&2
+        return 1
+    fi
 
     # Rename binary and icons to match package name
     mv "${pkgdir}/usr/bin/deadlock-mod-manager" \
@@ -31,13 +47,45 @@ package() {
         mv "${icon}" "${icon%deadlock-mod-manager.png}deadlock-modmanager.png"
     done
 
-    # Replace .deb's desktop entry with ours (correct binary name)
-    rm -f "${pkgdir}/usr/share/applications/deadlock-mod-manager.desktop"
+    # Replace the .deb entry regardless of spaces or filename case.
+    rm -f -- "${upstream_desktop_entries[0]}"
     install -Dm644 "${srcdir}/deadlock-modmanager.desktop" \
-        "${pkgdir}/usr/share/applications/deadlock-modmanager.desktop"
+        "${desktop_dir}/deadlock-modmanager.desktop"
 
     install -Dm644 "${srcdir}/dev.stormix.deadlock-mod-manager.metainfo.xml" \
         "${pkgdir}/usr/share/metainfo/dev.stormix.deadlock-mod-manager.metainfo.xml"
+
+    local -a packaged_desktop_entries=()
+    mapfile -d '' packaged_desktop_entries < <(
+        find "${desktop_dir}" -maxdepth 1 -type f \
+            -iname '*deadlock*mod*manager*.desktop' -print0
+    )
+    if (( ${#packaged_desktop_entries[@]} != 1 )) ||
+        [[ "${packaged_desktop_entries[0]:-}" != "${desktop_dir}/deadlock-modmanager.desktop" ]]; then
+        printf 'ERROR: repackaged application must contain exactly one canonical desktop entry:\n' >&2
+        printf '  %s\n' "${packaged_desktop_entries[@]:-<none>}" >&2
+        return 1
+    fi
+
+    local desktop_entry="${packaged_desktop_entries[0]}"
+    desktop-file-validate "${desktop_entry}"
+    grep -Fxq 'Exec=deadlock-modmanager %u' "${desktop_entry}" || {
+        printf 'ERROR: desktop entry does not target deadlock-modmanager %%u\n' >&2
+        return 1
+    }
+    grep -Fxq 'Icon=deadlock-modmanager' "${desktop_entry}" || {
+        printf 'ERROR: desktop entry does not target the packaged icon\n' >&2
+        return 1
+    }
+    [[ -x "${pkgdir}/usr/bin/deadlock-modmanager" ]] || {
+        printf 'ERROR: desktop entry executable is missing or not executable\n' >&2
+        return 1
+    }
+    find "${pkgdir}/usr/share/icons/hicolor" -type f \
+        -path '*/apps/deadlock-modmanager.png' -print -quit | grep -q . || {
+        printf 'ERROR: desktop entry icon is missing\n' >&2
+        return 1
+    }
 }
 
 post_install() {
