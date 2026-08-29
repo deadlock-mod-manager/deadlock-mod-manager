@@ -13,10 +13,12 @@ import {
 } from "@deadlock-mods/ui/components/empty";
 import {
   ArrowLeft,
+  CalendarDays,
   Download,
   ExternalLink,
   Heart,
   Package,
+  Users,
 } from "@deadlock-mods/ui/icons";
 import { UserCircle } from "@phosphor-icons/react";
 import { useSuspenseQuery } from "@tanstack/react-query";
@@ -45,6 +47,12 @@ const getInitials = (name: string) =>
     .slice(0, 2)
     .join("")
     .toUpperCase();
+
+const formatMemberSince = (joinedAt: number, locale: string) =>
+  new Intl.DateTimeFormat(locale, {
+    month: "short",
+    year: "numeric",
+  }).format(new Date(joinedAt * 1000));
 
 const AuthorNotFound = ({
   backLabel,
@@ -85,7 +93,7 @@ const AuthorPageContent = ({
   backNavigation: CollectionModDetailBackNavigation;
   backLabel: string;
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { data: mods } = useSuspenseQuery({
     queryKey: ["mods"],
@@ -127,9 +135,7 @@ const AuthorPageContent = ({
     return <AuthorNotFound backLabel={backLabel} onBack={goBack} />;
   }
 
-  const avatarUrl = author
-    ? author.hdAvatarUrl || author.upicUrl || author.avatarUrl
-    : undefined;
+  const avatarUrl = author ? author.hdAvatarUrl || author.avatarUrl : undefined;
   const canOpenProfile = isTrustedExternalUrl(author?.profileUrl);
   const authorPath =
     authorId === undefined
@@ -187,6 +193,33 @@ const AuthorPageContent = ({
                   </span>
                 )}
               </div>
+              {author?.upicUrl && (
+                <img
+                  alt={t("authorPage.upicAlt", { author: displayName })}
+                  className='mt-2 max-h-10 max-w-56 object-contain object-left'
+                  src={author.upicUrl}
+                />
+              )}
+              {(author?.joinedAt || author?.subscriberCount) && (
+                <div className='mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground text-xs'>
+                  {author.joinedAt && (
+                    <span className='inline-flex items-center gap-1.5'>
+                      <CalendarDays className='h-3.5 w-3.5' />
+                      {t("authorPage.memberSince", {
+                        date: formatMemberSince(author.joinedAt, i18n.language),
+                      })}
+                    </span>
+                  )}
+                  {author.subscriberCount && (
+                    <span className='inline-flex items-center gap-1.5'>
+                      <Users className='h-3.5 w-3.5' />
+                      {t("authorPage.subscriberCount", {
+                        count: author.subscriberCount,
+                      })}
+                    </span>
+                  )}
+                </div>
+              )}
               <div className='mt-3 flex flex-wrap items-center gap-2'>
                 <AuthorStatPill
                   icon={<Package className='h-3.5 w-3.5' />}
@@ -209,15 +242,25 @@ const AuthorPageContent = ({
                 />
               </div>
             </div>
-            {canOpenProfile && (
-              <Button
-                className='shrink-0'
-                onClick={() => author && void openUrl(author.profileUrl)}
-                variant='outline'>
-                {t("authorPage.viewOnGameBanana")}
-                <ExternalLink className='h-4 w-4' />
-              </Button>
-            )}
+            <div className='flex shrink-0 flex-col items-end gap-3'>
+              {author?.signatureUrl && (
+                <img
+                  alt={t("authorPage.signatureAlt", {
+                    author: displayName,
+                  })}
+                  className='max-h-14 max-w-56 object-contain object-right'
+                  src={author.signatureUrl}
+                />
+              )}
+              {canOpenProfile && (
+                <Button
+                  onClick={() => author && void openUrl(author.profileUrl)}
+                  variant='outline'>
+                  {t("authorPage.viewOnGameBanana")}
+                  <ExternalLink className='h-4 w-4' />
+                </Button>
+              )}
+            </div>
           </div>
         </section>
 

@@ -459,7 +459,16 @@ export function buildMetadata({
         ? { hdAvatarUrl: submitter._sHdAvatarUrl }
         : {}),
       ...(submitter._sUpicUrl ? { upicUrl: submitter._sUpicUrl } : {}),
+      ...(submitter._sSigUrl ? { signatureUrl: submitter._sSigUrl } : {}),
       ...(submitter._sUserTitle ? { title: submitter._sUserTitle } : {}),
+      ...(Number.isSafeInteger(submitter._tsJoinDate) &&
+      submitter._tsJoinDate > 0
+        ? { joinedAt: submitter._tsJoinDate }
+        : {}),
+      ...(Number.isSafeInteger(submitter._nSubscriberCount) &&
+      submitter._nSubscriberCount > 0
+        ? { subscriberCount: submitter._nSubscriberCount }
+        : {}),
     },
   };
   if (mapName) metadata.mapName = mapName;
