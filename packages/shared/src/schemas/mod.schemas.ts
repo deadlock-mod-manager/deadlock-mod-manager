@@ -44,6 +44,16 @@ export const ModDtoSchema = z.object({
           }),
         )
         .optional(),
+      author: z
+        .object({
+          id: z.number().int(),
+          profileUrl: z.string(),
+          avatarUrl: z.string(),
+          hdAvatarUrl: z.string().optional(),
+          upicUrl: z.string().optional(),
+          title: z.string().optional(),
+        })
+        .optional(),
     })
     .nullable()
     .optional(),
