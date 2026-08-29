@@ -26,6 +26,7 @@ import { ModPageSkeleton } from "@/components/mod-detail/mod-page-skeleton";
 import { ModOptionsDialog } from "@/components/mod-management/mod-options-dialog";
 import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-warning";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
+import { ReinstallModButton } from "@/components/mod-management/reinstall-mod-button";
 import { StaleModWarning } from "@/components/mod-management/stale-mod-warning";
 import { BatchUpdateDialog } from "@/components/my-mods/batch-update-dialog";
 import { BrokenModButton } from "@/components/reports/report-button";
@@ -40,6 +41,7 @@ import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { useScrollBackButton } from "@/hooks/use-scroll-back-button";
 import useUninstall from "@/hooks/use-uninstall";
 import { getErrorMessage } from "@/lib/errors";
+import { isLocalMod } from "@/lib/mods/installed-helpers";
 import { usePersistedStore } from "@/lib/store";
 import { useCheckUpdates } from "@/hooks/use-check-updates";
 import { isModOutdated, isModStale } from "@/lib/utils";
@@ -316,6 +318,9 @@ const Mod = () => {
                     variant='outline'>
                     {t("modDetail.forceUpdate")}
                   </Button>
+                )}
+                {localMod && !isLocalMod(localMod) && (
+                  <ReinstallModButton mod={localMod} variant='default' />
                 )}
                 <ModButton remoteMod={mod} variant='default' />
                 {!!localMod?.status && (

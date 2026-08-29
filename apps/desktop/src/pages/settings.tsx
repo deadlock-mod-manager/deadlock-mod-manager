@@ -68,6 +68,7 @@ import OccultGeometrySettings from "@/components/settings/occult-geometry-settin
 import { PluginList } from "@/components/settings/plugin-list";
 import { MatchSyncSettings } from "@/components/settings/match-sync-settings";
 import { ModelPreviewToggle } from "@/components/settings/model-preview-toggle";
+import { NukeReinstall } from "@/components/settings/nuke-reinstall";
 import PrivacySettings from "@/components/settings/privacy-settings";
 import { ProxySettings } from "@/components/settings/proxy-settings";
 import Section, { SectionSkeleton } from "@/components/settings/section";
@@ -867,6 +868,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
                         label={t("settings.clearAllMods")}
                         onClick={clearAllMods}
                       />
+                      <NukeReinstall />
                     </div>
                   </div>
                 </div>
