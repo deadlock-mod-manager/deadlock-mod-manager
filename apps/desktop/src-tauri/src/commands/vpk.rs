@@ -57,38 +57,21 @@ pub fn parse_vpk_file(
 #[tauri::command]
 pub async fn check_addons_exist(profile_folder: Option<String>) -> Result<bool, Error> {
   let mod_manager = MANAGER.lock().unwrap();
-  let game_path = match mod_manager.get_steam_manager().get_game_path() {
-    Some(path) => path.clone(),
-    None => return Ok(false),
+  let profile_base = match mod_manager.get_addons_path(profile_folder.as_deref()) {
+    Ok(path) => path,
+    Err(Error::GamePathNotSet) => return Ok(false),
+    Err(error) => return Err(error),
   };
   drop(mod_manager);
 
-  let addons_path = if let Some(ref folder) = profile_folder {
-    game_path
-      .join("game")
-      .join("citadel")
-      .join("addons")
-      .join(folder)
-  } else {
-    game_path.join("game").join("citadel").join("addons")
-  };
-
-  if !addons_path.exists() {
+  if !profile_base.exists() {
     return Ok(false);
   }
-
-  let profile_base = crate::mod_manager::shard::ProfileBase::new(addons_path)?;
-  for (_, shard_path) in profile_base.existing_shards() {
-    for entry in std::fs::read_dir(shard_path)? {
-      let entry = entry?;
-      if entry.path().extension().and_then(|e| e.to_str()) == Some("vpk") {
-        log::info!("Found VPK file in addons folder");
-        return Ok(true);
-      }
-    }
+  let has_vpks = !vpkmanager::scan::scan_profile(&profile_base)?.is_empty();
+  if has_vpks {
+    log::info!("Found VPK file in addons folder");
   }
-
-  Ok(false)
+  Ok(has_vpks)
 }
 
 #[tauri::command]

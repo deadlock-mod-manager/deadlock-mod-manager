@@ -68,10 +68,7 @@ fn is_public_target(addr: &SocketAddr) -> bool {
 }
 
 async fn resolve_address(address: &str) -> Option<SocketAddr> {
-  lookup_host(address)
-    .await
-    .ok()?
-    .find(|candidate| is_public_target(candidate))
+  lookup_host(address).await.ok()?.find(is_public_target)
 }
 
 async fn ping_address(address: &str) -> Option<u64> {

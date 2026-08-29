@@ -95,8 +95,7 @@ pub async fn create_server_addons_folder(server_id: String) -> Result<String, Er
     .get_game_path()
     .ok_or(Error::GamePathNotSet)?;
 
-  let addons_path = game_path.join("game").join("citadel").join("addons");
-  let folder_path = addons_path.join(&folder_name);
+  let folder_path = crate::mod_manager::profile_base_from_game(game_path, Some(&folder_name))?;
 
   if folder_path.exists() {
     log::warn!("Server addons folder already exists: {folder_path:?}");
@@ -122,11 +121,7 @@ pub async fn delete_server_addons_folder(server_id: String) -> Result<(), Error>
     .get_game_path()
     .ok_or(Error::GamePathNotSet)?;
 
-  let base = game_path
-    .join("game")
-    .join("citadel")
-    .join("addons")
-    .join(&folder_name);
+  let base = crate::mod_manager::profile_base_from_game(game_path, Some(&folder_name))?;
   let removed = crate::mod_manager::shard::remove_profile_shards(&base)?;
   if removed {
     log::info!("Deleted server shard folders for: {folder_name}");
@@ -147,7 +142,7 @@ pub async fn list_server_addons_folders() -> Result<Vec<String>, Error> {
     .get_game_path()
     .ok_or(Error::GamePathNotSet)?;
 
-  let addons_path = game_path.join("game").join("citadel").join("addons");
+  let addons_path = crate::mod_manager::profile_base_from_game(game_path, None)?;
 
   if !addons_path.exists() {
     return Ok(Vec::new());

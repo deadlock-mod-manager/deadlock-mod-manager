@@ -25,9 +25,11 @@ pub async fn show_mod_in_game(
   profile_folder: Option<String>,
   _is_map: Option<bool>,
 ) -> Result<(), Error> {
-  let mod_manager = MANAGER.lock().unwrap();
+  let mod_manager = MANAGER
+    .lock()
+    .map_err(|_| Error::BackgroundTaskFailed("Mod manager lock poisoned".to_string()))?;
   let base = mod_manager.get_addons_path(profile_folder.as_deref())?;
-  let manifest = crate::mod_manager::vpk_manifest::ProfileVpkManifest::load(&base)?;
+  let manifest = vpkmanager::ledger::ProfileLedger::load(&base)?;
   let shard_index = manifest
     .mods
     .get(&mod_id)

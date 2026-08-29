@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use tauri::Emitter;
 use tokio::task;
 use vpk_parser::{VpkParseOptions, VpkParsed, VpkParser};
+use vpkmanager::naming;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -237,18 +238,11 @@ impl AddonAnalyzer {
       5,
     );
 
-    let addons_path = if let Some(ref folder) = profile_folder {
-      game_path
-        .join("game")
-        .join("citadel")
-        .join("addons")
-        .join(folder)
-    } else {
-      game_path.join("game").join("citadel").join("addons")
-    };
+    let profile_base =
+      crate::mod_manager::profile_base_from_game(&game_path, profile_folder.as_deref())?;
 
-    if !addons_path.exists() {
-      log::warn!("Addons folder does not exist: {:?}", addons_path);
+    if !profile_base.exists() {
+      log::warn!("Addons folder does not exist: {:?}", profile_base);
       return Ok(AnalyzeAddonsResult {
         addons: Vec::new(),
         total_count: 0,
@@ -256,23 +250,16 @@ impl AddonAnalyzer {
       });
     }
 
-    let profile_base = crate::mod_manager::shard::ProfileBase::new(&addons_path)?;
-    let recursive = profile_folder.is_some();
-    let mut vpk_file_paths = Vec::new();
-    for (shard_index, shard_path) in profile_base.existing_shards() {
-      let scan_result = if recursive {
-        self.find_vpk_file_paths(&shard_path, &mut vpk_file_paths)
-      } else {
-        Self::find_vpk_file_paths_shallow(&shard_path, &mut vpk_file_paths)
-      };
-      if let Err(e) = scan_result {
+    let vpk_file_paths: Vec<PathBuf> = match vpkmanager::scan::scan_profile(&profile_base) {
+      Ok(found) => found.into_iter().map(|vpk| vpk.path).collect(),
+      Err(e) => {
         return Ok(AnalyzeAddonsResult {
           addons: Vec::new(),
           total_count: 0,
-          errors: vec![format!("Failed to scan addon shard {shard_index}: {e}")],
+          errors: vec![format!("Failed to scan addon shards: {e}")],
         });
       }
-    }
+    };
 
     // Separate prefixed VPKs from non-prefixed ones
     let mut prefixed_vpk_paths = Vec::new();
@@ -556,41 +543,9 @@ impl AddonAnalyzer {
     })
   }
 
-  /// Recursively find all VPK file paths in a directory
-  fn find_vpk_file_paths(&self, dir: &PathBuf, vpk_paths: &mut Vec<PathBuf>) -> Result<(), Error> {
-    if dir.is_dir() {
-      for entry in std::fs::read_dir(dir)? {
-        let entry = entry?;
-        let path = entry.path();
-
-        if path.is_dir() {
-          self.find_vpk_file_paths(&path, vpk_paths)?;
-        } else if path.extension().and_then(|e| e.to_str()) == Some("vpk") {
-          vpk_paths.push(path);
-        }
-      }
-    }
-    Ok(())
-  }
-
-  fn find_vpk_file_paths_shallow(dir: &PathBuf, vpk_paths: &mut Vec<PathBuf>) -> Result<(), Error> {
-    if !dir.is_dir() {
-      return Ok(());
-    }
-    for entry in std::fs::read_dir(dir)? {
-      let path = entry?.path();
-      if path.is_file() && path.extension().and_then(|extension| extension.to_str()) == Some("vpk")
-      {
-        vpk_paths.push(path);
-      }
-    }
-    Ok(())
-  }
-
   /// Check if a VPK filename has a mod ID prefix and extract it
   fn extract_mod_id_from_filename(filename: &str) -> Option<String> {
-    use crate::mod_manager::vpk_manager::VpkManager;
-    VpkManager::extract_mod_id_from_prefix(filename)
+    naming::mod_id_from_prefix(filename)
   }
 
   /// Fast VPK parsing with minimal data extraction for identification

@@ -26,6 +26,17 @@ pub struct ModFileTree {
 }
 
 impl ModFileTree {
+  /// Paths of the files the user chose to install, relative to the extracted
+  /// mod directory — what the VPK layer needs to know which files to copy.
+  pub fn selected_paths(&self) -> Vec<String> {
+    self
+      .files
+      .iter()
+      .filter(|file| file.is_selected)
+      .map(|file| file.path.clone())
+      .collect()
+  }
+
   pub fn from_options(
     available_originals: &[String],
     selected_originals: &std::collections::HashSet<String>,

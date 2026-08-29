@@ -116,7 +116,6 @@ interface FoundryContextValue {
   importVpk: (filePath: string) => Promise<FoundryManifest | null>;
   importMod: (
     modId: string,
-    installedVpks?: string[],
     profileFolder?: string | null,
   ) => Promise<FoundryManifest | null>;
   importDefaultHero: (heroDisplay: string) => Promise<FoundryManifest | null>;
@@ -465,17 +464,9 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const importMod = useCallback(
-    (
-      modId: string,
-      installedVpks: string[] = [],
-      profileFolder: string | null = null,
-    ) =>
+    (modId: string, profileFolder: string | null = null) =>
       loadManifest(async () => {
-        const resolved = await resolveModVpk(
-          modId,
-          installedVpks,
-          profileFolder,
-        );
+        const resolved = await resolveModVpk(modId, profileFolder);
         return await analyzeFoundryVpk(resolved);
       }, true),
     [loadManifest],

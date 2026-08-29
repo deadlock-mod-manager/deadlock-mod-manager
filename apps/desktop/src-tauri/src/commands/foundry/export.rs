@@ -167,7 +167,32 @@ pub(crate) fn export_workspace(
       let backup_path = source_path.with_extension("vpk.bak");
       std::fs::copy(&source_path, &backup_path)?;
 
+      // The file we are about to overwrite may be installed in a profile. Carry
+      // its identity over to the replacement, so the profile ledger keeps
+      // pointing at the right mod instead of seeing a stranger appear.
+      let previous = vpkmanager::fingerprint::read(&source_path)
+        .inspect_err(|error| {
+          log::warn!("[Foundry] Could not read the fingerprint of the VPK being replaced: {error}");
+        })
+        .ok()
+        .flatten();
+
       let build = build_workspace_vpk(workspace_root, Some(source_path.clone()), name)?;
+
+      if let Some(previous) = previous
+        && let Err(error) =
+          vpkmanager::fingerprint::stamp(&source_path, &previous.mod_id, &previous.original_name)
+      {
+        // The replacement is in place but carries no identity, so the profile
+        // that installed this file would stop recognizing it. Put the original
+        // back rather than leave the mod orphaned.
+        std::fs::copy(&backup_path, &source_path)?;
+        let _ = std::fs::remove_file(&backup_path);
+        return Err(Error::ModInvalid(format!(
+          "Could not carry the mod identity of {} over to the exported VPK ({error}); the original was restored",
+          source_path.display()
+        )));
+      }
       log::info!(
         "[Foundry] Replaced {} (backup at {})",
         source_path.display(),

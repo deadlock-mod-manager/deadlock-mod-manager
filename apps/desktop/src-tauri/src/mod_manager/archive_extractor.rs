@@ -169,12 +169,23 @@ impl ArchiveExtractor {
       .canonicalize()
       .map_err(|_| Error::UnauthorizedPath("Unable to resolve output directory".to_string()))?;
 
-    self.validate_directory_recursive(output_dir, &canonical_output)?;
+    self.validate_directory_recursive(output_dir, &canonical_output, 0)?;
     Ok(())
   }
 
   /// Recursively validate that all files in a directory are within the allowed path
-  fn validate_directory_recursive(&self, dir: &Path, allowed_root: &Path) -> Result<(), Error> {
+  fn validate_directory_recursive(
+    &self,
+    dir: &Path,
+    allowed_root: &Path,
+    depth: usize,
+  ) -> Result<(), Error> {
+    const MAX_EXTRACT_WALK_DEPTH: usize = 32;
+    if depth > MAX_EXTRACT_WALK_DEPTH {
+      return Err(Error::UnauthorizedPath(format!(
+        "Archive directory tree exceeds {MAX_EXTRACT_WALK_DEPTH} levels"
+      )));
+    }
     for entry in std::fs::read_dir(dir)? {
       let entry = entry?;
       let path = entry.path();
@@ -192,7 +203,7 @@ impl ArchiveExtractor {
 
       // `file_type` does not follow links, so a link cannot send this walk into a cycle.
       if entry.file_type()?.is_dir() {
-        self.validate_directory_recursive(&path, allowed_root)?;
+        self.validate_directory_recursive(&path, allowed_root, depth + 1)?;
       }
     }
     Ok(())

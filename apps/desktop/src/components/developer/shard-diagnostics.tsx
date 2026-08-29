@@ -102,8 +102,12 @@ const ShardDiagnostics = () => {
   };
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
-    toast.success(t("developer.shards.copied"));
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+      toast.success(t("developer.shards.copied"));
+    } catch (copyError) {
+      toast.error(getErrorMessage(copyError));
+    }
   };
 
   if (isLoading) {

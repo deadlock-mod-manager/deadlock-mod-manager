@@ -6,9 +6,9 @@
 //! wrong rather than a wall of numbers to eyeball.
 
 use crate::mod_manager::shard::{self, ProfileBase};
-use crate::mod_manager::vpk_manager::VpkManager;
-use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use serde::Serialize;
+use vpkmanager::ledger::ProfileLedger;
+use vpkmanager::naming;
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -56,7 +56,7 @@ pub struct ShardReport {
 pub struct ShardReportInput<'a> {
   pub base: &'a ProfileBase,
   pub profile_folder: Option<String>,
-  pub manifest: &'a ProfileVpkManifest,
+  pub manifest: &'a ProfileLedger,
   pub expected_search_paths: Vec<String>,
   pub gameinfo_search_paths: Vec<String>,
   pub needs_migration: bool,
@@ -70,7 +70,7 @@ pub fn analyze(input: ShardReportInput<'_>) -> ShardReport {
   let mut shards_in_use = 0;
 
   for (index, directory) in input.base.shards() {
-    let enabled_vpks = VpkManager::count_enabled_vpks(&directory);
+    let enabled_vpks = naming::count_enabled_vpks(&directory);
     let manifest_mods = input
       .manifest
       .mods
@@ -79,7 +79,7 @@ pub fn analyze(input: ShardReportInput<'_>) -> ShardReport {
       .count() as u32;
     let search_path = index.search_path(profile_folder.as_deref());
     let in_gameinfo = input.gameinfo_search_paths.contains(&search_path);
-    let out_of_range_vpks = VpkManager::has_out_of_range_enabled_vpks(&directory);
+    let out_of_range_vpks = naming::has_out_of_range_enabled_vpks(&directory);
 
     total_enabled_vpks += enabled_vpks;
     if enabled_vpks > 0 {
@@ -177,7 +177,7 @@ mod tests {
     fs::write(dir.join(name), b"vpk").unwrap();
   }
 
-  fn report(base: &ProfileBase, manifest: &ProfileVpkManifest, gameinfo: &[&str]) -> ShardReport {
+  fn report(base: &ProfileBase, manifest: &ProfileLedger, gameinfo: &[&str]) -> ShardReport {
     analyze(ShardReportInput {
       base,
       profile_folder: Some("profile_x".to_string()),
@@ -191,8 +191,8 @@ mod tests {
     })
   }
 
-  fn two_shard_manifest() -> ProfileVpkManifest {
-    let mut manifest = ProfileVpkManifest::default();
+  fn two_shard_manifest() -> ProfileLedger {
+    let mut manifest = ProfileLedger::default();
     manifest.mark_enabled(
       "base",
       vec!["pak01_dir.vpk".to_string()],
@@ -289,7 +289,7 @@ mod tests {
 
     let report = report(
       &base,
-      &ProfileVpkManifest::default(),
+      &ProfileLedger::default(),
       &["citadel/addons/profile_x", "citadel/addons2/profile_x"],
     );
 

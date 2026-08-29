@@ -25,6 +25,7 @@ mod reports;
 mod steam_user;
 mod updater_channel;
 mod utils;
+mod vpk_backfill;
 
 use tauri_plugin_log::{Target, TargetKind};
 use tauri_plugin_store::StoreExt;
@@ -202,9 +203,9 @@ pub fn run() {
       commands::archive::copy_local_mod_vpks,
       commands::mods::get_mod_available_options,
       commands::mods::swap_mod_options,
-      commands::mods::fetch_missing_mod_variants,
-      commands::mods::stage_download_archive,
-      commands::mods::switch_mod_download_variant,
+      commands::variants::fetch_missing_mod_variants,
+      commands::variants::stage_download_archive,
+      commands::variants::switch_mod_download_variant,
       commands::ingest::trigger_cache_scan,
       commands::ingest::start_cache_watcher,
       commands::ingest::stop_cache_watcher,

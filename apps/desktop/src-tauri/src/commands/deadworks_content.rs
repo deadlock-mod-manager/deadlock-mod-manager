@@ -206,10 +206,11 @@ async fn validate_manifest(manifest: &ContentManifest) -> Result<(), Error> {
 }
 
 fn citadel_dirs(server_folder: &str) -> Result<(PathBuf, PathBuf, PathBuf), Error> {
-  let citadel = game_path()?.join("game").join("citadel");
+  let game = game_path()?;
+  let addons_dir = crate::mod_manager::profile_base_from_game(&game, Some(server_folder))?;
+  let citadel = game.join("game").join("citadel");
   let maps_dir = citadel.join("maps");
-  let addons_dir = citadel.join("addons").join(server_folder);
-  Ok((citadel, maps_dir, addons_dir))
+  Ok((citadel, maps_dir, addons_dir.to_path_buf()))
 }
 
 fn verify_vpk_magic(path: &Path) -> Result<(), Error> {
