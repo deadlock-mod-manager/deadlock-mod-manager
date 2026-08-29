@@ -79,7 +79,10 @@ export const mods = pgTable(
         avatarUrl: string;
         hdAvatarUrl?: string;
         upicUrl?: string;
+        signatureUrl?: string;
         title?: string;
+        joinedAt?: number;
+        subscriberCount?: number;
       };
     }>(),
     overrides: jsonb("overrides").$type<ModOverrides>(),

@@ -51,7 +51,10 @@ export const ModDtoSchema = z.object({
           avatarUrl: z.string(),
           hdAvatarUrl: z.string().optional(),
           upicUrl: z.string().optional(),
+          signatureUrl: z.string().optional(),
           title: z.string().optional(),
+          joinedAt: z.number().int().positive().optional(),
+          subscriberCount: z.number().int().positive().optional(),
         })
         .optional(),
     })
