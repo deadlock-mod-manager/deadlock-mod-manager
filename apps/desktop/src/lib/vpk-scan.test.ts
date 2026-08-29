@@ -52,4 +52,16 @@ describe("findUnmatchedVpks", () => {
 
     expect(unmatched).toEqual([]);
   });
+
+  it("does not let malformed submission slugs claim prefixed files", () => {
+    const unmatched = findUnmatchedVpks(
+      ["01_original.vpk", "local-_original.vpk"],
+      [
+        { remoteId: "01", installedVpks: [] },
+        { remoteId: "local-", installedVpks: [] },
+      ],
+    );
+
+    expect(unmatched).toEqual(["01_original.vpk", "local-_original.vpk"]);
+  });
 });
