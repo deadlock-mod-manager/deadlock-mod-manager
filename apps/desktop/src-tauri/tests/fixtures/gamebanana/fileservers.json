@@ -1,0 +1,23 @@
+{
+  "_aMetadata": {
+    "_nRecordCount": 2,
+    "_bIsComplete": true,
+    "_nPerpage": 50
+  },
+  "_aRecords": [
+    {
+      "_idRow": 6,
+      "_sDomain": "filecache31",
+      "_sState": "up",
+      "_tsLastCheck": 1788034801,
+      "_tsLastSuccess": 1788034801
+    },
+    {
+      "_idRow": 2,
+      "_sDomain": "filecache25",
+      "_sState": "terminated",
+      "_tsLastCheck": 1769219204,
+      "_tsLastSuccess": 1769218508
+    }
+  ]
+}
