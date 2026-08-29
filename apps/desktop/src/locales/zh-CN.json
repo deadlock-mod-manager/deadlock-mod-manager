@@ -768,18 +768,6 @@
     "libraryModsNoun_one": "模组",
     "libraryModsNoun_other": "模组",
     "vpkFilesNoun": "插件文件",
-    "vpkLimitBadgeNear": "接近上限",
-    "vpkLimitBadgeAtLimit": "已达上限",
-    "modLimitTooltipP1": "Deadlock 限制了游戏一次可以加载的插件文件数量。通常的上限为 {{max}}。",
-    "modLimitTooltipP2": "您的库仍然可以列出比那更多的模组，因为一个模组可以附带多个附加文件。",
-    "modLimitTooltipP3": "第一对是已启用的模组与完整库的对比。第二对是这些已启用的模组所使用的插件文件数量，旁边标注了上限。",
-    "modLimitTooltipStatHeading": "每个数字代表什么：",
-    "modLimitTooltipStatEnabled_one": "{{count}} 模组已启用。",
-    "modLimitTooltipStatEnabled_other": "已启用 {{count}} 个模组。",
-    "modLimitTooltipStatLibrary_one": "你的库中有 {{count}} 个模组。",
-    "modLimitTooltipStatLibrary_other": "你的库中有 {{count}} 个模组。",
-    "modLimitTooltipStatVpks_one": "来自已启用模组的 {{count}} 个附加档案。",
-    "modLimitTooltipStatVpks_other": "来自已启用模组的 {{count}} 个插件文件。",
     "updateAll": "全部更新",
     "updateAllDescription": "下载并安装所有模组的最新版本",
     "updateAvailableCount_one": "{{count}} 个更新可用",
@@ -2711,8 +2699,7 @@
   },
   "developer": {
     "title": "开发者工具",
-    "description": "面向开发者的高级工具和功能",
-    "placeholder": "开发者工具将在此处可用。"
+    "description": "面向开发者的高级工具和功能"
   },
   "contextMenu": {
     "shareUrl": "分享",
