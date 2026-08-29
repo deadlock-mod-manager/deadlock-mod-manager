@@ -1,3 +1,4 @@
+pub mod gamebanana;
 mod submission_ref;
 
 pub use submission_ref::{
