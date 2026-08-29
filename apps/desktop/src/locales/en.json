@@ -44,6 +44,8 @@
     "defaultDescription": "Vanilla appearance, no skin mod",
     "skinsDownloaded_one": "{{count}} skin downloaded",
     "skinsDownloaded_other": "{{count}} skins downloaded",
+    "variantsWithCount_one": "Variants · {{count}} active",
+    "variantsWithCount_other": "Variants · {{count}} active",
     "skinCount_one": "{{count}} skin",
     "skinCount_other": "{{count}} skins",
     "noSkins": "No skins downloaded",
@@ -3128,7 +3130,9 @@
     "fetchMissingUnresolved": "Some selected files cannot be located: {{names}}",
     "fetchMissingNotFound": "Some files were not found in their source archives: {{names}}",
     "installedFiles": "Installed files:",
-    "installedFilesCount": "{{count}} of {{total}} files enabled"
+    "installedFilesCount": "{{count}} of {{total}} files enabled",
+    "openTooltipWithCount_one": "Manage files · {{count}} active variant",
+    "openTooltipWithCount_other": "Manage files · {{count}} active variants"
   },
   "fileSelector": {
     "selectFilesToInstall": "Select Files to Install: {{modName}}",
