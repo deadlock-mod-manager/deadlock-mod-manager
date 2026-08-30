@@ -16,6 +16,8 @@ pub struct DownloadFileDto {
   pub url: String,
   pub name: String,
   pub size: u64,
+  #[serde(default, rename = "md5Checksum")]
+  pub md5_checksum: Option<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -227,6 +229,7 @@ impl DownloadManager {
       let target_path = task.target_dir.join(&file.name);
       let url = file.url.clone();
       let file_size = file.size;
+      let md5_checksum = file.md5_checksum.clone();
       let mod_id_clone = mod_id.clone();
       let app_handle_clone = app_handle.clone();
       let cancel_token_clone = cancel_token.clone();
@@ -297,7 +300,13 @@ impl DownloadManager {
           },
           cancel_token_clone,
           pause_clone,
-          None,
+          Some(if file_size == 0 {
+            2 * 1024 * 1024 * 1024
+          } else {
+            file_size.min(2 * 1024 * 1024 * 1024)
+          }),
+          md5_checksum.as_deref(),
+          true,
         )
         .await;
 

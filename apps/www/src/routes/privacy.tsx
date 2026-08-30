@@ -238,13 +238,17 @@ function PrivacyComponent() {
                 <ul className='space-y-2 text-muted-foreground ml-6 mb-4'>
                   <li className='list-disc'>
                     <strong className='text-foreground'>Mod Discovery:</strong>{" "}
-                    When browsing and searching for mods, requests are made to
-                    our API to fetch mod information and metadata
+                    During the direct-catalog rollout, catalog, detail, and
+                    update requests may be sent directly from the app to the
+                    GameBanana API. These requests do not include a stable
+                    Deadlock Mod Manager user identifier
                   </li>
                   <li className='list-disc'>
                     <strong className='text-foreground'>Mod Downloads:</strong>{" "}
-                    Download requests are processed through our API to provide
-                    mod files from third-party sources
+                    Mod archives are downloaded directly from GameBanana or its
+                    selected file server. GameBanana receives the network
+                    information normally included in an HTTPS request, such as
+                    your IP address and user agent
                   </li>
                   <li className='list-disc'>
                     <strong className='text-foreground'>

@@ -129,6 +129,7 @@ pub fn run() {
       commands::gamebanana_catalog::resolve_gamebanana_download_candidates,
       commands::gamebanana_catalog::inspect_gamebanana_catalog_state,
       commands::gamebanana_catalog::invalidate_gamebanana_catalog_state,
+      commands::gamebanana_catalog::get_gamebanana_fileservers,
       commands::game::find_steam_path,
       commands::game::set_game_path,
       commands::game::set_steam_path,
