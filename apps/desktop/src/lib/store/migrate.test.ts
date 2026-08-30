@@ -108,6 +108,77 @@ describe("safeMigrate", () => {
     expect(result.heroParserIntervalSeconds).toBe(5);
   });
 
+  it("v26 namespaces sound identities across every persisted reference", () => {
+    const state = {
+      localMods: [
+        { remoteId: "42", isAudio: true, status: "installed" },
+        { remoteId: "42", isAudio: false, status: "installed" },
+        { remoteId: "99", isAudio: true, status: "installed" },
+      ],
+      hiddenHeroMods: { "42": true, "7": true },
+      favorites: ["42", "7", "snd-42"],
+      perItemNSFWOverrides: { "42": false, "7": true },
+      profiles: {
+        default: {
+          enabledMods: {
+            "42": { remoteId: "42", enabled: true },
+            "7": { remoteId: "7", enabled: true },
+          },
+          mods: [{ remoteId: "99", isAudio: true }],
+        },
+      },
+      stagedServers: {
+        server: { requiredModIds: ["42", "7", "snd-42"] },
+      },
+      scrollPositions: { "/mods/42": 120, "/mods/7": 20 },
+    };
+
+    const migrated = safeMigrate(state, 25) as typeof state & {
+      pendingIdentityMigrations: Array<{ from: string; to: string }>;
+    };
+
+    expect(migrated.localMods.map((mod) => mod.remoteId)).toEqual([
+      "snd-42",
+      "42",
+      "snd-99",
+    ]);
+    expect(migrated.hiddenHeroMods).toEqual({ "snd-42": true, "7": true });
+    expect(migrated.favorites).toEqual(["snd-42", "7"]);
+    expect(migrated.perItemNSFWOverrides).toEqual({
+      "snd-42": false,
+      "7": true,
+    });
+    expect(migrated.profiles.default.enabledMods).toEqual({
+      "snd-42": { remoteId: "snd-42", enabled: true },
+      "7": { remoteId: "7", enabled: true },
+    });
+    expect(migrated.profiles.default.mods[0].remoteId).toBe("snd-99");
+    expect(migrated.stagedServers.server.requiredModIds).toEqual([
+      "snd-42",
+      "7",
+    ]);
+    expect(migrated.scrollPositions).toEqual({
+      "/mods/snd-42": 120,
+      "/mods/7": 20,
+    });
+    expect(migrated.pendingIdentityMigrations).toEqual([
+      { from: "42", to: "snd-42" },
+      { from: "99", to: "snd-99" },
+    ]);
+  });
+
+  it("v26 preserves pending disk work when rerun after state identities changed", () => {
+    const state = {
+      localMods: [{ remoteId: "snd-42", isAudio: true }],
+      pendingIdentityMigrations: [{ from: "42", to: "snd-42" }],
+    };
+
+    expect(safeMigrate(state, 25)).toMatchObject({
+      localMods: [{ remoteId: "snd-42", isAudio: true }],
+      pendingIdentityMigrations: [{ from: "42", to: "snd-42" }],
+    });
+  });
+
   it("snapshot+revert: a malformed value that breaks one step doesn't poison later steps", () => {
     // Force the v9->v10 step to encounter a non-plain `localMods` entry. We
     // can do that by giving `localMods` a wrong shape that the guarded code
@@ -149,7 +220,7 @@ describe("safeMigrate", () => {
   it("LATEST_VERSION matches the highest step target", () => {
     const max = Math.max(...MIGRATION_STEPS.map((s) => s.to));
     expect(LATEST_VERSION).toBe(max);
-    expect(LATEST_VERSION).toBe(25);
+    expect(LATEST_VERSION).toBe(26);
   });
 
   it("v25 (themes switch): drops the leftover enabledPlugins.themes entry", () => {

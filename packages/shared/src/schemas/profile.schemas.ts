@@ -31,6 +31,12 @@ export const profileModSchema = z.object({
   fileTree: profileModFileTreeSchema.optional(),
 });
 
+export const submissionTypeSchema = z.enum(["mod", "sound"]);
+
+export const v3ProfileModSchema = profileModSchema.extend({
+  submissionType: submissionTypeSchema,
+});
+
 export const v1ProfileSchema = z.object({
   version: z.literal("1"),
   payload: z.object({
@@ -46,7 +52,20 @@ export const v2ProfileSchema = z.object({
   }),
 });
 
-export const profileSchema = z.union([v1ProfileSchema, v2ProfileSchema]);
+export const v3ProfileSchema = z.object({
+  version: z.literal("3"),
+  payload: z.object({
+    mods: z.array(v3ProfileModSchema),
+    loadOrder: z.array(z.string()),
+  }),
+});
+
+export const profileSchema = z.union([
+  v1ProfileSchema,
+  v2ProfileSchema,
+  v3ProfileSchema,
+]);
 
 export type SharedProfile = z.infer<typeof profileSchema>;
 export type ProfileModDownload = z.infer<typeof profileModDownloadSchema>;
+export type SubmissionType = z.infer<typeof submissionTypeSchema>;

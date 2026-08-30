@@ -31,4 +31,32 @@ describe("profileSchema", () => {
     expect(profile.payload.mods).toHaveLength(3);
     expect(profile.payload.loadOrder).toEqual(["mod-a", "mod-b", "mod-c"]);
   });
+
+  it("parses v3 profiles with explicit submission namespaces", () => {
+    const profile = profileSchema.parse({
+      version: "3",
+      payload: {
+        mods: [
+          { remoteId: "42", submissionType: "mod" },
+          { remoteId: "snd-42", submissionType: "sound" },
+        ],
+        loadOrder: ["42", "snd-42"],
+      },
+    });
+
+    expect(profile.version).toBe("3");
+    expect(profile.payload.mods[1]).toMatchObject({
+      remoteId: "snd-42",
+      submissionType: "sound",
+    });
+  });
+
+  it("rejects v3 profiles without a submission type", () => {
+    expect(
+      profileSchema.safeParse({
+        version: "3",
+        payload: { mods: [{ remoteId: "42" }], loadOrder: ["42"] },
+      }).success,
+    ).toBe(false);
+  });
 });

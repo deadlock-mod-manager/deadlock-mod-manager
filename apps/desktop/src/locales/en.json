@@ -848,6 +848,7 @@
     "vpkCount": "{{count}} VPK(s)"
   },
   "mods": {
+    "invalidDeepLink": "This 1-click download link is invalid.",
     "manageOrder": "Change Mods Order",
     "searchPlaceholder": "Search mods",
     "noPreviewAvailable": "No preview available",
@@ -2916,6 +2917,12 @@
     "importDescription": "Enter a Profile ID to import a shared profile from another user.",
     "importPreview": "Import Profile Preview",
     "importPreviewDescription": "Review the profile contents before importing. Choose how to save this profile.",
+    "legacyIdentityTitle": "Choose the matching GameBanana item",
+    "legacyIdentityDescription": "This older profile ID exists as both a mod and a sound.",
+    "legacyIdentityPlaceholder": "Select mod or sound",
+    "legacyIdentityRequired": "Choose whether each ambiguous item is a mod or sound.",
+    "submissionTypeMod": "Mod",
+    "submissionTypeSound": "Sound",
     "profileIdPlaceholder": "Enter Profile ID (e.g., abc123def456)",
     "profileIdRequired": "Profile ID is required",
     "importSuccess": "Profile imported successfully!",
