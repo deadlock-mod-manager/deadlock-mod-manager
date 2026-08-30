@@ -3,9 +3,7 @@ import { authRouter } from "./auth";
 import { crosshairsRouter } from "./crosshairs";
 import { dashboardRouter } from "./dashboard";
 import { featureFlagsRouter } from "./feature-flags";
-import { fileserversRouter } from "./fileservers";
 import { kvRouter } from "./kv";
-import { modsRouter } from "./mods";
 import { policyRouter } from "./policy";
 import { profilesRouter } from "./profiles";
 import { reportsRouter } from "./reports";
@@ -17,9 +15,7 @@ export const v2Router = {
   ...authRouter,
   ...crosshairsRouter,
   ...dashboardRouter,
-  ...fileserversRouter,
   ...kvRouter,
-  ...modsRouter,
   ...policyRouter,
   ...vpkRouter,
   ...profilesRouter,

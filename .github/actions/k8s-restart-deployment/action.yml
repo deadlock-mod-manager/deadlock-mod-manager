@@ -2,7 +2,7 @@ name: "Kubernetes Restart Deployment"
 description: "Restart Kubernetes deployment after Docker image update"
 inputs:
   service-name:
-    description: "Name of the service (api, auth, bot, lockdex, mirror, www)"
+    description: "Name of the service (api, auth, bot, lockdex, www)"
     required: true
   kubeconfig:
     description: "Base64 encoded kubeconfig file"

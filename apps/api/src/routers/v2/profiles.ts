@@ -2,7 +2,7 @@ import { db, ProfileRepository } from "@deadlock-mods/database";
 import { profileSchema, toProfileDto } from "@deadlock-mods/shared";
 import { ORPCError } from "@orpc/server";
 import { logger } from "@/lib/logger";
-import { generateHash } from "@/lib/utils";
+import { generateHash } from "@/lib/hash";
 import { publicProcedure } from "../../lib/orpc";
 import { featureFlagsService } from "../../services/feature-flags";
 import {
