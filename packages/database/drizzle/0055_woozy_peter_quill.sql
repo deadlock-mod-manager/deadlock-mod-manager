@@ -1,0 +1,2 @@
+ALTER TABLE "policy_rule" ADD COLUMN "active" boolean DEFAULT true NOT NULL;--> statement-breakpoint
+CREATE INDEX "policy_rule_active_updated_at_idx" ON "policy_rule" USING btree ("active","updated_at");
