@@ -7,11 +7,9 @@ import type {
   ModFileTree,
   Progress,
 } from "@/types/mods";
-import { getGameBananaFileservers } from "../api-client";
 import { createLogger } from "../logger";
 import { usePersistedStore } from "../store";
 import { ModStatus } from "@/types/mods";
-import { resolveDownloadFileUrls } from "./fileserver";
 
 const logger = createLogger("download-manager");
 
@@ -323,36 +321,19 @@ class DownloadManager {
 
     const profileFolder = mod.profileFolder ?? null;
 
-    const { fileserverPreference, fileserverLatencyMs } =
-      usePersistedStore.getState();
-
-    let files = mod.downloads.map((d) => ({
+    const files = mod.downloads.map((d) => ({
       url: d.url,
       name: d.name,
       size: d.size || 0,
+      md5Checksum: d.md5Checksum,
     }));
-
-    if (fileserverPreference !== "default") {
-      try {
-        const fileservers = await getGameBananaFileservers();
-        files = resolveDownloadFileUrls({
-          files,
-          preference: fileserverPreference,
-          fileservers,
-          latencyMs: fileserverLatencyMs,
-          isAudio: mod.isAudio,
-        });
-      } catch (error) {
-        logger
-          .withError(error)
-          .warn("Failed to resolve fileserver URLs; using original URLs");
-      }
-    }
+    const { fileserverPreference } = usePersistedStore.getState();
 
     await invoke("queue_download", {
       modId: mod.remoteId,
       files,
       profileFolder,
+      fileserverPreference,
       isMap: mod.isMap,
     });
   }

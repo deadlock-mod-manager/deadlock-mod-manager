@@ -1,4 +1,6 @@
-use super::models::{BulkHydration, DownloadPage, IndexPage, Profile};
+use super::models::{
+  BulkHydration, DownloadPage, FileserverPage, IndexPage, Profile, UpdateSnapshot,
+};
 use super::transport::{GameBananaTransport, TransportConfig};
 use crate::errors::Error;
 use crate::providers::{SubmissionProvider, SubmissionRef, SubmissionType};
@@ -19,6 +21,7 @@ const BULK_FIELDS: &[&str] = &[
   "description",
   "text",
 ];
+const UPDATE_FIELDS: &[&str] = &["Url().sProfileUrl()", "mdate", "Files().aFiles()"];
 
 #[derive(Clone)]
 pub struct GameBananaClient {
@@ -84,6 +87,12 @@ impl GameBananaClient {
     self.transport.get_json("download page", url, cancel).await
   }
 
+  pub async fn fileservers(&self, cancel: &CancellationToken) -> Result<FileserverPage, Error> {
+    let url = reqwest::Url::parse(&format!("{API_BASE}Util/Fileservers?_nPage=1"))
+      .map_err(|error| Error::ProviderInvalidResponse(error.to_string()))?;
+    self.transport.get_json("fileservers", url, cancel).await
+  }
+
   pub async fn bulk_hydrate(
     &self,
     submissions: &[SubmissionRef],
@@ -135,6 +144,56 @@ impl GameBananaClient {
         records.len(),
         submissions.len()
       )));
+    }
+    Ok(records)
+  }
+
+  pub async fn bulk_updates(
+    &self,
+    submissions: &[SubmissionRef],
+    cancel: &CancellationToken,
+  ) -> Result<Vec<Option<UpdateSnapshot>>, Error> {
+    let first = submissions.first().ok_or_else(|| {
+      Error::ProviderInvalidResponse("bulk update requires submissions".to_string())
+    })?;
+    if submissions.len() > MAX_BULK_ITEMS
+      || submissions.iter().any(|submission| {
+        submission.provider != SubmissionProvider::Gamebanana
+          || submission.submission_type != first.submission_type
+          || submission.submission_id.parse::<u64>().is_err()
+      })
+    {
+      return Err(Error::ProviderInvalidResponse(
+        "bulk update requires up to 50 GameBanana submissions of one type".to_string(),
+      ));
+    }
+    let mut url = reqwest::Url::parse(&format!("{API_BASE}Core/Item/Data"))
+      .map_err(|error| Error::ProviderInvalidResponse(error.to_string()))?;
+    {
+      let mut query = url.query_pairs_mut();
+      for submission in submissions {
+        query
+          .append_pair("itemtype[]", model_name(submission.submission_type))
+          .append_pair("itemid[]", &submission.submission_id);
+      }
+      for field in UPDATE_FIELDS {
+        query.append_pair("fields[]", field);
+      }
+    }
+    if url.as_str().len() > MAX_BULK_URL_BYTES {
+      return Err(Error::ProviderInvalidResponse(
+        "bulk update request exceeds the URL safety limit".to_string(),
+      ));
+    }
+    let value = self
+      .transport
+      .get_json::<serde_json::Value>("bulk updates", url, cancel)
+      .await?;
+    let records = UpdateSnapshot::parse_many(value, submissions);
+    if records.len() != submissions.len() {
+      return Err(Error::ProviderInvalidResponse(
+        "bulk update response length did not match the request".to_string(),
+      ));
     }
     Ok(records)
   }
