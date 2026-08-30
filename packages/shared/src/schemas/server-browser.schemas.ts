@@ -141,7 +141,13 @@ export const ResolvedRequirementSchema = z.object({
   resolved: z.boolean(),
   remoteId: z.string().optional(),
   reason: z
-    .enum(["unknown_scheme", "not_in_database", "custom_provider"])
+    .enum([
+      "unknown_scheme",
+      "not_found",
+      "provider_failure",
+      "policy_blocked",
+      "custom_provider",
+    ])
     .optional(),
   mod: z.unknown().optional(),
 });

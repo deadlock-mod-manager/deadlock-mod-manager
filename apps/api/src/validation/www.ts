@@ -53,25 +53,18 @@ export const ReleasesResponseSchema = z.object({
 });
 
 export const StatsResponseSchema = z.object({
-  totalMods: z.number(),
-  modDownloads: z.number(),
   appDownloads: z.number(),
+  totalUsers: z.number(),
 });
 
 export const TransparencyStatsResponseSchema = z.object({
-  totalMods: z.number(),
-  modDownloads: z.number(),
   appDownloads: z.number(),
   totalUsers: z.number(),
-  totalModFiles: z.number(),
 });
 
 export const AnalyticsDataPointSchema = z.object({
   date: z.string(),
-  mods: z.number(),
-  downloads: z.number(),
   users: z.number(),
-  modFiles: z.number(),
 });
 
 export const AnalyticsResponseSchema = z.array(AnalyticsDataPointSchema);
@@ -79,9 +72,7 @@ export const AnalyticsResponseSchema = z.array(AnalyticsDataPointSchema);
 export const AnalyticsWithTotalsSchema = z.object({
   data: z.array(AnalyticsDataPointSchema),
   totals: z.object({
-    mods: z.number(),
-    downloads: z.number(),
     users: z.number(),
-    modFiles: z.number(),
+    appDownloads: z.number(),
   }),
 });
