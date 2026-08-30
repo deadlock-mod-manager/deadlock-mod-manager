@@ -19,7 +19,7 @@ pub struct DeepLinkDebugInfo {
 
 #[tauri::command]
 pub async fn parse_deep_link(url: String) -> Result<DeepLinkData, Error> {
-  log::info!("Parsing deep link: {url}");
+  log::info!("Parsing mod installation deep link");
 
   let data_part = strip_scheme(&url).ok_or_else(|| {
     Error::InvalidInput(format!(
@@ -34,7 +34,7 @@ pub async fn parse_deep_link(url: String) -> Result<DeepLinkData, Error> {
     )
   })?;
 
-  log::info!("Parsed deep link - Download URL: {download_url}, Type: {mod_type}, Mod ID: {mod_id}");
+  log::info!("Parsed deep link for {mod_type} {mod_id}");
 
   Ok(DeepLinkData {
     download_url,

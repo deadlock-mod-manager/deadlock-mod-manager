@@ -393,7 +393,153 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       delete state.enabledPlugins.themes;
     },
   },
+  {
+    to: 26,
+    label: "namespace-gamebanana-sounds",
+    apply: (state) => {
+      const soundIds = collectLegacySoundIds(state);
+      const remap = new Map(
+        [...soundIds].map((remoteId) => [remoteId, `snd-${remoteId}`]),
+      );
+
+      migrateModArray(state.localMods, remap);
+      if (isPlainObject(state.profiles)) {
+        for (const profile of Object.values(state.profiles)) {
+          if (!isPlainObject(profile)) continue;
+          migrateModArray(profile.mods, remap);
+          remapRecordKeys(profile.enabledMods, remap, true);
+        }
+      }
+
+      remapRecordKeys(state.hiddenHeroMods, remap, false);
+      remapRecordKeys(state.perItemNSFWOverrides, remap, false);
+      if (Array.isArray(state.favorites)) {
+        state.favorites = uniqueStrings(
+          state.favorites.map((value) =>
+            typeof value === "string" ? (remap.get(value) ?? value) : value,
+          ),
+        );
+      }
+      if (isPlainObject(state.stagedServers)) {
+        for (const server of Object.values(state.stagedServers)) {
+          if (!isPlainObject(server) || !Array.isArray(server.requiredModIds)) {
+            continue;
+          }
+          server.requiredModIds = uniqueStrings(
+            server.requiredModIds.map((value) =>
+              typeof value === "string" ? (remap.get(value) ?? value) : value,
+            ),
+          );
+        }
+      }
+      if (isPlainObject(state.scrollPositions)) {
+        for (const [from, to] of remap) {
+          const oldKey = `/mods/${from}`;
+          const newKey = `/mods/${to}`;
+          if (state.scrollPositions[oldKey] !== undefined) {
+            state.scrollPositions[newKey] ??= state.scrollPositions[oldKey];
+            delete state.scrollPositions[oldKey];
+          }
+        }
+      }
+
+      const pending = Array.isArray(state.pendingIdentityMigrations)
+        ? state.pendingIdentityMigrations.filter(isIdentityMigration)
+        : [];
+      const pendingBySource = new Map(
+        pending.map((migration) => [migration.from, migration]),
+      );
+      for (const [from, to] of remap) {
+        pendingBySource.set(from, { from, to });
+      }
+      if (pendingBySource.size > 0) {
+        state.pendingIdentityMigrations = [...pendingBySource.values()].sort(
+          (left, right) => left.from.localeCompare(right.from),
+        );
+      }
+    },
+  },
 ];
+
+const LEGACY_GAMEBANANA_ID = /^[1-9]\d*$/;
+
+const collectLegacySoundIds = (state: MutableState): Set<string> => {
+  const ids = new Set<string>();
+  const collect = (mods: MutableState[string]) => {
+    if (!Array.isArray(mods)) return;
+    for (const mod of mods) {
+      if (
+        isPlainObject(mod) &&
+        mod.isAudio === true &&
+        typeof mod.remoteId === "string" &&
+        LEGACY_GAMEBANANA_ID.test(mod.remoteId)
+      ) {
+        ids.add(mod.remoteId);
+      }
+    }
+  };
+  collect(state.localMods);
+  if (isPlainObject(state.profiles)) {
+    for (const profile of Object.values(state.profiles)) {
+      if (isPlainObject(profile)) collect(profile.mods);
+    }
+  }
+  return ids;
+};
+
+const migrateModArray = (
+  mods: MutableState[string],
+  remap: ReadonlyMap<string, string>,
+) => {
+  if (!Array.isArray(mods)) return;
+  for (const mod of mods) {
+    if (
+      !isPlainObject(mod) ||
+      mod.isAudio !== true ||
+      typeof mod.remoteId !== "string"
+    ) {
+      continue;
+    }
+    const migrated = remap.get(mod.remoteId);
+    if (migrated) mod.remoteId = migrated;
+  }
+};
+
+const remapRecordKeys = (
+  value: MutableState[string],
+  remap: ReadonlyMap<string, string>,
+  rewriteRemoteId: boolean,
+): void => {
+  if (!isPlainObject(value)) return;
+  for (const [from, to] of remap) {
+    if (!(from in value)) continue;
+    const entry = value[from];
+    value[to] ??= entry;
+    if (
+      rewriteRemoteId &&
+      isPlainObject(value[to]) &&
+      value[to].remoteId === from
+    ) {
+      value[to].remoteId = to;
+    }
+    delete value[from];
+  }
+};
+
+const uniqueStrings = (
+  values: MutableState[string][],
+): MutableState[string][] =>
+  values.filter(
+    (value, index) =>
+      typeof value !== "string" || values.indexOf(value) === index,
+  );
+
+const isIdentityMigration = (
+  value: MutableState[string],
+): value is { from: string; to: string } =>
+  isPlainObject(value) &&
+  typeof value.from === "string" &&
+  typeof value.to === "string";
 
 const STEP_TARGET_VERSIONS: readonly number[] = MIGRATION_STEPS.map(
   (step) => step.to,

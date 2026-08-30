@@ -16,6 +16,7 @@ pub mod game;
 mod game_process;
 pub mod gamebanana_catalog;
 pub mod gameinfo;
+pub mod identity_migration;
 pub mod ingest;
 pub mod live_match;
 pub mod logs;
