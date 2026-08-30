@@ -379,6 +379,20 @@
       "when": 1784644302365,
       "tag": "0053_legal_beast",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1788104092427,
+      "tag": "0054_windy_maggott",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1788104327076,
+      "tag": "0055_woozy_peter_quill",
+      "breakpoints": true
     }
   ]
 }

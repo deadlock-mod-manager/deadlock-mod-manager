@@ -22,6 +22,7 @@ pub(crate) async fn get_download_manager(app_handle: AppHandle) -> &'static Down
 pub async fn queue_download(
   app_handle: AppHandle,
   catalog_state: State<'_, super::gamebanana_catalog::GameBananaCatalogState>,
+  policy: State<'_, super::policy::PolicyState>,
   mod_id: String,
   files: Vec<DownloadFileDto>,
   profile_folder: Option<String>,
@@ -35,6 +36,7 @@ pub async fn queue_download(
 
   crate::providers::SubmissionRef::parse_slug(&mod_id)
     .map_err(|_| Error::InvalidInput("Invalid download identity".to_string()))?;
+  policy.ensure_download_allowed(&mod_id)?;
   if files.is_empty() || files.len() > 100 {
     return Err(Error::InvalidInput(
       "A download must contain between 1 and 100 files".to_string(),
