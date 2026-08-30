@@ -393,6 +393,27 @@
       "when": 1788104327076,
       "tag": "0055_woozy_peter_quill",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1788105094766,
+      "tag": "0056_bumpy_robin_chapel",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1788105620578,
+      "tag": "0057_premium_red_hulk",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1788106385704,
+      "tag": "0058_narrow_darkstar",
+      "breakpoints": true
     }
   ]
 }
