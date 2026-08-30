@@ -4,7 +4,6 @@ import type {
   CustomSettingDto,
   FeatureFlag,
   FileserverDto,
-  ModDto,
   PublishedCrosshairDto,
   RelaysHealthResponse,
   ResolveModsResponse,
@@ -14,11 +13,6 @@ import type {
   ServerBrowserListResponse,
   SharedProfile,
 } from "@deadlock-mods/shared";
-import {
-  FileserversResponseSchema,
-  ModDownloadDtoSchema,
-} from "@deadlock-mods/shared";
-import type { z } from "zod";
 import { ensureValidToken } from "./auth/token";
 import { fetch } from "./fetch";
 import { HttpError } from "./http-error";
@@ -29,10 +23,7 @@ import {
   getGameBananaCatalogMod,
   getGameBananaCatalogMods,
   getDirectGameBananaFileservers,
-  isGameBananaDirectClientEnabled,
 } from "./gamebanana-catalog";
-
-type ModDownloadDto = z.infer<typeof ModDownloadDtoSchema>;
 
 export const BASE_URL =
   import.meta.env.VITE_API_URL ?? "https://api.deadlockmods.app";
@@ -80,44 +71,23 @@ export const getAnnouncements = async () => {
 };
 
 export const getMods = async () => {
-  if (isGameBananaDirectClientEnabled()) {
-    return getGameBananaCatalogMods();
-  }
-  return await apiRequest<ModDto[]>("/api/v2/mods");
+  return getGameBananaCatalogMods();
 }; // TODO: pagination
 
 export const getMod = async (remoteId: string) => {
-  if (isGameBananaDirectClientEnabled()) {
-    return getGameBananaCatalogMod(remoteId);
-  }
-  return await apiRequest<ModDto>(`/api/v2/mods/${remoteId}`);
+  return getGameBananaCatalogMod(remoteId);
 };
 
 export const getModDownload = async (remoteId: string) => {
-  if (isGameBananaDirectClientEnabled()) {
-    return (await getGameBananaCatalogDownloads(remoteId)).downloads;
-  }
-  return await apiRequest<ModDownloadDto[]>(
-    `/api/v2/mods/${remoteId}/download`,
-  );
+  return (await getGameBananaCatalogDownloads(remoteId)).downloads;
 };
 
 export const getModDownloads = async (remoteId: string) => {
-  if (isGameBananaDirectClientEnabled()) {
-    return getGameBananaCatalogDownloads(remoteId);
-  }
-  return await apiRequest<{
-    downloads: ModDownloadDto[];
-    count: number;
-  }>(`/api/v2/mods/${remoteId}/downloads`);
+  return getGameBananaCatalogDownloads(remoteId);
 };
 
 export const getGameBananaFileservers = async (): Promise<FileserverDto[]> => {
-  if (isGameBananaDirectClientEnabled()) {
-    return getDirectGameBananaFileservers();
-  }
-  const data = await apiRequest<unknown>("/api/v2/fileservers/gamebanana");
-  return FileserversResponseSchema.parse(data);
+  return getDirectGameBananaFileservers();
 };
 
 export const checkModUpdates = async (
@@ -127,23 +97,13 @@ export const checkModUpdates = async (
     selectedFileIds: string[];
   }>,
 ) => {
-  if (isGameBananaDirectClientEnabled()) {
-    return checkDirectGameBananaUpdates(
-      mods.map((mod) => ({
-        remoteId: mod.remoteId,
-        installedAt: Math.floor(mod.installedAt.getTime() / 1_000),
-        selectedFileIds: mod.selectedFileIds,
-      })),
-    );
-  }
-  return await apiRequest<{
-    updates: Array<{
-      mod: ModDto;
-      downloads: ModDownloadDto[];
-    }>;
-  }>("/api/v2/mods/check-updates", {
-    mods: mods.map(({ remoteId, installedAt }) => ({ remoteId, installedAt })),
-  });
+  return checkDirectGameBananaUpdates(
+    mods.map((mod) => ({
+      remoteId: mod.remoteId,
+      installedAt: Math.floor(mod.installedAt.getTime() / 1_000),
+      selectedFileIds: mod.selectedFileIds,
+    })),
+  );
 };
 
 export const getCustomSettings = async () => {

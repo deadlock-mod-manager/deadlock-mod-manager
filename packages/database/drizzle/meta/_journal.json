@@ -414,6 +414,13 @@
       "when": 1788106385704,
       "tag": "0058_narrow_darkstar",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1788125964361,
+      "tag": "0059_tough_william_stryker",
+      "breakpoints": true
     }
   ]
 }

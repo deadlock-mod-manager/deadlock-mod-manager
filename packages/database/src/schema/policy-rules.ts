@@ -7,8 +7,24 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { generateId, typeId } from "../extensions/typeid";
-import type { ModOverrides } from "./mods";
 import { timestamps } from "./shared/timestamps";
+
+export interface ModOverrides {
+  name?: string;
+  description?: string;
+  category?: string;
+  hero?: string;
+  isMap?: boolean;
+  isAudio?: boolean;
+  isNSFW?: boolean;
+  isObsolete?: boolean;
+  tags?: string[];
+  metadata?: {
+    mapName?: string;
+    donationLinks?: Array<{ url: string; platform: string }>;
+  };
+  downloads?: Array<{ url: string; file: string }>;
+}
 
 export const policyProviders = ["gamebanana"] as const;
 export const policySubmissionTypes = ["mod", "sound"] as const;

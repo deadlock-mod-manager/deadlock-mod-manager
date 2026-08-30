@@ -9,10 +9,7 @@
     "dev": "dotenv -e ../../.env -- bun run --watch --preload ./src/instrument.ts ./src/index.ts",
     "start:worker": "dotenv -e ../../.env -- bun run --preload ./src/instrument.ts ./src/worker.ts",
     "dev:worker": "dotenv -e ../../.env -- bun run --watch --preload ./src/instrument.ts ./src/worker.ts",
-    "calculate-mod-sizes": "dotenv -e ../../.env -- bun run ./src/scripts/calculate-mod-sizes.ts",
-    "sync-mods": "dotenv -e ../../.env -- bun run ./src/scripts/sync-mods.ts",
     "trigger-cron": "dotenv -e ../../.env -- bun run ./src/scripts/trigger-cron.ts",
-    "set-mod-overrides": "dotenv -e ../../.env -- bun run ./src/scripts/set-mod-overrides.ts",
     "desktop:dev": "pnpm dev",
     "version:generate": "genversion -f -p ./package.json --es6 ./src/version.ts"
   },
@@ -20,7 +17,6 @@
     "@better-fetch/fetch": "^1.1.21",
     "@deadlock-mods/common": "workspace:*",
     "@deadlock-mods/database": "workspace:*",
-    "@deadlock-mods/distributed-lock": "workspace:*",
     "@deadlock-mods/feature-flags": "workspace:*",
     "@deadlock-mods/instrumentation": "workspace:*",
     "@deadlock-mods/kv-parser": "workspace:*",

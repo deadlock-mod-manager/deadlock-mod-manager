@@ -7,7 +7,6 @@ import { modFileProcessor } from "./processors/mod-file-processor";
 import { tempCleanupProcessor } from "./processors/temp-cleanup-processor";
 import { cronService } from "./services/cron";
 import { diskHealthMonitor } from "./services/disk-health-monitor";
-import { modFilesSubscriber } from "./services/mod-files-subscriber";
 import { modFileProcessingQueue } from "./services/queue";
 import { tempCleanupService } from "./services/temp-cleanup";
 
@@ -32,7 +31,6 @@ const main = async () => {
   });
 
   cronService.start();
-  await modFilesSubscriber.start();
 
   process.on("SIGTERM", async () => {
     logger.info("SIGTERM received, initiating graceful shutdown");
@@ -42,7 +40,6 @@ const main = async () => {
     await Promise.all([
       modFileWorker.close(),
       modFileProcessingQueue.close(),
-      modFilesSubscriber.stop(),
       cronService.shutdown(),
       diskHealthMonitor.stop(),
     ]);
