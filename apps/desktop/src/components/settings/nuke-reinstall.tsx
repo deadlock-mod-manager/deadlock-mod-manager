@@ -10,10 +10,10 @@ import {
 import { Progress } from "@deadlock-mods/ui/components/progress";
 import { ScrollArea } from "@deadlock-mods/ui/components/scroll-area";
 import {
-  Bomb,
   CheckCircle2,
   CircleDashed,
   Loader2,
+  TrashIcon,
   XCircle,
 } from "@deadlock-mods/ui/icons";
 import { WarningCircle } from "@phosphor-icons/react";
@@ -109,7 +109,7 @@ export const NukeReinstall = () => {
           onClick={() => setOpen(true)}
           size='sm'
           variant='destructive'>
-          <Bomb className='h-3.5 w-3.5' />
+          <TrashIcon className='h-3.5 w-3.5' />
           {t("nuke.action")}
         </Button>
       </div>
@@ -120,7 +120,7 @@ export const NukeReinstall = () => {
         <DialogContent className='sm:max-w-lg'>
           <DialogHeader>
             <DialogTitle className='flex items-center gap-2'>
-              <Bomb className='h-4 w-4 text-destructive' />
+              <TrashIcon className='h-4 w-4 text-destructive' />
               {t("nuke.title")}
             </DialogTitle>
             <DialogDescription>
@@ -159,7 +159,7 @@ export const NukeReinstall = () => {
               </div>
 
               {state.mods.length > 0 && (
-                <ScrollArea className='max-h-56 rounded-md border px-3'>
+                <ScrollArea className='rounded-md border px-3 [&>[data-radix-scroll-area-viewport]]:max-h-56'>
                   <div className='divide-y divide-border/50'>
                     {state.mods.map((entry) => (
                       <ModRow entry={entry} key={entry.remoteId} />
@@ -211,7 +211,7 @@ export const NukeReinstall = () => {
                   disabled={plan.total === 0}
                   onClick={run}
                   variant='destructive'>
-                  <Bomb className='h-3.5 w-3.5' />
+                  <TrashIcon className='h-3.5 w-3.5' />
                   {t("nuke.confirmAction")}
                 </Button>
               </>
