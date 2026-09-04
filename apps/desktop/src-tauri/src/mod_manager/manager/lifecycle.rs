@@ -528,4 +528,117 @@ impl ModManager {
     log::info!("Successfully replaced VPK files for mod: {mod_id}");
     Ok(())
   }
+
+  /// Replace a working install with already-extracted VPKs without deleting the
+  /// old files first. Old paths are staged, new files are written, and the
+  /// manifest is committed in one journaled operation.
+  pub fn update_mod_from_prepared(
+    &mut self,
+    mod_id: &str,
+    mod_name: &str,
+    prepared_vpks: &[PathBuf],
+    file_tree: Option<ModFileTree>,
+    profile_folder: Option<String>,
+  ) -> Result<Mod, Error> {
+    Self::ensure_safe_mod_id(mod_id)?;
+    if prepared_vpks.is_empty() {
+      return Err(Error::InvalidInput(
+        "No prepared VPKs provided for update".to_string(),
+      ));
+    }
+
+    let addons_path = self.get_addons_path(profile_folder.as_deref())?;
+    let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
+    let existing = manifest.mods.get(mod_id).cloned();
+    let install_order = existing.as_ref().and_then(|entry| entry.order);
+    let old_count = existing
+      .as_ref()
+      .filter(|entry| entry.enabled)
+      .map(|entry| entry.current_vpks.len() as u32)
+      .unwrap_or(0);
+    let target_shard = Self::choose_shard_for(
+      &addons_path,
+      existing
+        .as_ref()
+        .map(|entry| (entry.shard, old_count)),
+      prepared_vpks.len() as u32,
+    )?;
+    let enabled_dir = addons_path.shard_dir(target_shard);
+    std::fs::create_dir_all(&enabled_dir)?;
+
+    let reuse_names = existing.as_ref().is_some_and(|entry| {
+      entry.enabled
+        && entry.shard == target_shard
+        && entry.current_vpks.len() == prepared_vpks.len()
+    });
+    let staging_name = format!("{}{mod_id}", shard::UPDATE_STAGING_PREFIX);
+    let mut staging = VpkStaging::claim(&addons_path, &staging_name)?;
+
+    if let Some(entry) = &existing {
+      for path in entry.file_paths(&addons_path) {
+        if path.is_file()
+          && let Err(error) = staging.stage(&addons_path, &path)
+        {
+          return Err(staging.rollback(error));
+        }
+      }
+    }
+
+    let dest_names = if reuse_names {
+      existing
+        .as_ref()
+        .map(|entry| entry.current_vpks.clone())
+        .unwrap_or_default()
+    } else {
+      match crate::mod_manager::vpk_manager::allocate_enabled_vpk_names(
+        &enabled_dir,
+        prepared_vpks.len(),
+      ) {
+        Ok(names) => names,
+        Err(error) => return Err(staging.rollback(error)),
+      }
+    };
+
+    for (source, dest_name) in prepared_vpks.iter().zip(dest_names.iter()) {
+      let dest = enabled_dir.join(dest_name);
+      if let Err(error) = staging.track_created(&dest) {
+        return Err(staging.rollback(error));
+      }
+      if let Err(error) = std::fs::copy(source, &dest).map_err(Error::from) {
+        return Err(staging.rollback(error));
+      }
+    }
+
+    let original_vpk_names: Vec<String> = prepared_vpks
+      .iter()
+      .filter_map(|path| {
+        path
+          .file_name()
+          .map(|name| name.to_string_lossy().into_owned())
+      })
+      .collect();
+
+    manifest.mark_enabled(
+      mod_id,
+      dest_names.clone(),
+      original_vpk_names.clone(),
+      install_order,
+      target_shard,
+    );
+
+    let pending = PendingVpkOperation::with_staging((), staging);
+    pending.commit_manifest(&manifest, &addons_path)?;
+
+    let updated = Mod {
+      id: mod_id.to_string(),
+      name: mod_name.to_string(),
+      is_map: false,
+      installed_vpks: dest_names,
+      file_tree,
+      install_order,
+      original_vpk_names,
+    };
+    self.mod_repository.add_mod(updated.clone());
+    Ok(updated)
+  }
 }

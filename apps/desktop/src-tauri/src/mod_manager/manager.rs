@@ -10,7 +10,7 @@ use crate::mod_manager::{
   mod_repository::{Mod, ModRepository},
   shard::{self, ProfileBase, ShardIndex, ShardLocator},
   steam_manager::SteamManager,
-  vpk_manager::staging::VpkStaging,
+  vpk_manager::staging::{PendingVpkOperation, VpkStaging},
   vpk_manager::{MissingVpkPolicy, ShardAssignment, ShardPlacement, SwapRequest, VpkManager},
   vpk_manifest::{ProfileVpkManifest, ProfileVpkManifestEntry},
 };
@@ -1151,5 +1151,51 @@ mod tests {
     let after = ProfileVpkManifest::load(&base).unwrap();
     assert!(after.mods.contains_key("other"));
     assert!(!after.mods.contains_key("target"));
+  }
+
+  #[test]
+  fn update_mod_from_prepared_replaces_files_without_touching_other_mods() {
+    let game = game_dir();
+    let addons_path = game.path().join("game").join("citadel").join("addons");
+    fs::create_dir_all(&addons_path).unwrap();
+    let base = crate::mod_manager::shard::ProfileBase::new(&addons_path).unwrap();
+    let mut manifest = ProfileVpkManifest::default();
+    write_owned_mod(
+      &base,
+      &mut manifest,
+      "target",
+      ShardIndex::FIRST,
+      "pak01_dir.vpk",
+      b"old-target",
+    );
+    write_owned_mod(
+      &base,
+      &mut manifest,
+      "other",
+      ShardIndex::FIRST,
+      "pak02_dir.vpk",
+      b"other",
+    );
+    manifest.save(&base).unwrap();
+
+    let prepared_dir = game.path().join("prepared");
+    fs::create_dir_all(&prepared_dir).unwrap();
+    let prepared = prepared_dir.join("replacement.vpk");
+    fs::write(&prepared, b"new-target").unwrap();
+
+    let mut manager = test_manager(game.path());
+    let updated = manager
+      .update_mod_from_prepared("target", "Target", &[prepared], None, None)
+      .unwrap();
+
+    assert_eq!(updated.installed_vpks, vec!["pak01_dir.vpk".to_string()]);
+    assert_eq!(fs::read(base.join("pak01_dir.vpk")).unwrap(), b"new-target");
+    assert_eq!(fs::read(base.join("pak02_dir.vpk")).unwrap(), b"other");
+    let after = ProfileVpkManifest::load(&base).unwrap();
+    assert_eq!(
+      after.mods["target"].original_vpk_names,
+      vec!["replacement.vpk".to_string()]
+    );
+    assert!(after.mods.contains_key("other"));
   }
 }
