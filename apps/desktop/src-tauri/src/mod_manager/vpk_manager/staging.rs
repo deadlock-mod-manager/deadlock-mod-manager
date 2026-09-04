@@ -442,7 +442,7 @@ pub struct PendingVpkOperation<T> {
 }
 
 impl<T> PendingVpkOperation<T> {
-  pub(super) fn with_staging(value: T, staging: VpkStaging) -> Self {
+  pub(crate) fn with_staging(value: T, staging: VpkStaging) -> Self {
     Self {
       value,
       guard: PendingGuard::Staging(staging),

@@ -333,60 +333,11 @@ pub async fn batch_update_mods(
       }
     };
     let progress_pct = (index as f64 / total_mods as f64) * 100.0;
-
-    app_handle
-      .emit(
-        "batch-update-progress",
-        BatchUpdateProgressEvent {
-          current_step: "cleaning".to_string(),
-          current_mod_index: index,
-          total_mods,
-          current_mod_name: mod_data.mod_name.clone(),
-          overall_progress: progress_pct,
-        },
-      )
-      .ok();
-
-    let addons_path_for_profile = if profile_folder.is_empty() {
-      addons_path.clone()
-    } else {
-      addons_path.join(&profile_folder)
-    };
-
-    let vpk_manager = crate::mod_manager::vpk_manager::VpkManager::new();
     let profile_folder_option = if profile_folder.is_empty() {
       None
     } else {
       Some(profile_folder.clone())
     };
-    let removed = {
-      let mut mod_manager = MANAGER.lock().unwrap();
-      match mod_manager.remove_mod_vpks(
-        &mod_data.mod_id,
-        &mod_data.installed_vpks,
-        profile_folder_option.clone(),
-      ) {
-        Ok(result) => result,
-        Err(error) => {
-          log::error!(
-            "Failed to prepare mod {} for update: {:?}",
-            mod_data.mod_id,
-            error
-          );
-          failed.push((
-            mod_data.mod_id.clone(),
-            format!("Failed to remove old VPKs: {error:?}"),
-          ));
-          continue;
-        }
-      }
-    };
-    log::info!(
-      "Removed {} old VPKs for mod {} before update",
-      removed.count,
-      mod_data.mod_id
-    );
-    let install_order = removed.install_order;
 
     app_handle
       .emit(
@@ -396,7 +347,7 @@ pub async fn batch_update_mods(
           current_mod_index: index,
           total_mods,
           current_mod_name: mod_data.mod_name.clone(),
-          overall_progress: progress_pct + (1.0 / total_mods as f64) * 30.0,
+          overall_progress: progress_pct,
         },
       )
       .ok();
@@ -417,94 +368,17 @@ pub async fn batch_update_mods(
     };
 
     let manager = get_download_manager(app_handle.clone()).await;
-    manager.queue_download(task).await?;
-
-    let mut download_complete = false;
-    let mut download_error: Option<String> = None;
-    let start_time = std::time::Instant::now();
-    let timeout_duration = std::time::Duration::from_secs(600);
-
-    while !download_complete && start_time.elapsed() < timeout_duration {
-      tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-
-      match manager.get_download_status(&mod_data.mod_id).await {
-        Ok(Some(status)) => {
-          if status.status == "downloading" {
-            continue;
-          }
-          download_complete = true;
-        }
-        Ok(None) => {
-          download_complete = true;
-        }
-        Err(e) => {
-          download_error = Some(format!("Failed to check download status: {:?}", e));
-          break;
-        }
-      }
-    }
-
-    if !download_complete || download_error.is_some() {
-      let err_msg = download_error.unwrap_or_else(|| "Download timeout".to_string());
-      log::error!("Download failed for mod {}: {}", mod_data.mod_id, err_msg);
-      failed.push((mod_data.mod_id.clone(), err_msg));
-      continue;
-    }
-
-    let mut vpks_found = false;
-    let max_retries = 10;
-    let mut retry_delay_ms = 100;
-
-    for attempt in 0..max_retries {
-      match vpk_manager.find_prefixed_vpks(&addons_path_for_profile, &mod_data.mod_id) {
-        Ok(vpks) if !vpks.is_empty() => {
-          log::info!(
-            "Download completed for mod: {} (found {} VPKs after {} attempts)",
-            mod_data.mod_id,
-            vpks.len(),
-            attempt + 1
-          );
-          vpks_found = true;
-          break;
-        }
-        Ok(_) => {
-          if attempt < max_retries - 1 {
-            log::debug!(
-              "VPKs not found yet for mod {} (attempt {}/{}), waiting {}ms",
-              mod_data.mod_id,
-              attempt + 1,
-              max_retries,
-              retry_delay_ms
-            );
-            tokio::time::sleep(std::time::Duration::from_millis(retry_delay_ms)).await;
-            retry_delay_ms = std::cmp::min(retry_delay_ms * 2, 1000);
-          }
-        }
-        Err(e) => {
-          log::error!("Failed to check VPKs for mod {}: {:?}", mod_data.mod_id, e);
-          failed.push((
-            mod_data.mod_id.clone(),
-            format!("Failed to verify download: {:?}", e),
-          ));
-          break;
-        }
-      }
-    }
-
-    if !vpks_found {
-      if !failed.iter().any(|(id, _)| id == &mod_data.mod_id) {
+    let prepared = match manager.queue_download_and_prepare(task).await {
+      Ok(prepared) => prepared,
+      Err(error) => {
         log::error!(
-          "Download completed but no VPKs found for mod: {} after {} retries",
-          mod_data.mod_id,
-          max_retries
+          "Failed to prepare update for mod {}: {error}",
+          mod_data.mod_id
         );
-        failed.push((
-          mod_data.mod_id.clone(),
-          "Download completed but no VPKs found".to_string(),
-        ));
+        failed.push((mod_data.mod_id.clone(), error.to_string()));
+        continue;
       }
-      continue;
-    }
+    };
 
     app_handle
       .emit(
@@ -521,17 +395,13 @@ pub async fn batch_update_mods(
 
     let install_result = {
       let mut mod_manager = MANAGER.lock().unwrap();
-      let deadlock_mod = Mod {
-        id: mod_data.mod_id.clone(),
-        name: mod_data.mod_name.clone(),
-        is_map: mod_data.is_map,
-        installed_vpks: Vec::new(),
-        file_tree: mod_data.file_tree.clone(),
-        install_order,
-        original_vpk_names: Vec::new(),
-      };
-
-      mod_manager.install_mod(deadlock_mod, profile_folder_option)
+      mod_manager.update_mod_from_prepared(
+        &mod_data.mod_id,
+        &mod_data.mod_name,
+        &prepared.vpk_paths,
+        mod_data.file_tree.clone(),
+        profile_folder_option,
+      )
     };
 
     match install_result {

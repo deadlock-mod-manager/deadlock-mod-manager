@@ -18,6 +18,8 @@ mod operations;
 mod reorder;
 pub(crate) mod staging;
 
+pub(crate) use naming::allocate_enabled_vpk_names;
+
 /// Final placement of a mod's enabled VPKs after a sharded reorder.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ShardPlacement {
