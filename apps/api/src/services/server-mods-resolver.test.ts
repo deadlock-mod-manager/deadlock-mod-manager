@@ -47,4 +47,34 @@ describe("ServerModsResolver", () => {
     });
     expect(result.missing).toHaveLength(1);
   });
+
+  it("bounds provider concurrency and leaves excess requirements unresolved", async () => {
+    let active = 0;
+    let maxActive = 0;
+    let calls = 0;
+    const resolver = new ServerModsResolver(
+      async () => {
+        calls += 1;
+        active += 1;
+        maxActive = Math.max(maxActive, active);
+        await new Promise((resolve) => setTimeout(resolve, 1));
+        active -= 1;
+        return null;
+      },
+      () => Promise.resolve([]),
+    );
+    const result = await resolver.resolve(
+      Array.from({ length: 55 }, (_, index) => ({
+        id: `required-${index + 1}`,
+        provider: "gamebanana" as const,
+        url: `https://gamebanana.com/mods/${index + 1}`,
+      })),
+    );
+
+    expect(calls).toBe(50);
+    expect(maxActive).toBeLessThanOrEqual(4);
+    expect(result.resolved).toHaveLength(55);
+    expect(result.resolved.at(-1)?.reason).toBe("too_many_requirements");
+    expect(result.missing).toHaveLength(55);
+  });
 });

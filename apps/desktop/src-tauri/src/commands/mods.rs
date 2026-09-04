@@ -11,9 +11,9 @@ use crate::mod_manager::vpk_manager::VpkManager;
 use crate::mod_manager::vpk_manager::staging::VpkSnapshot;
 use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use serde::{Deserialize, Serialize};
-use tauri::{Emitter, Manager};
+use tauri::{Emitter, Manager, State};
 
-use super::downloads::get_download_manager;
+use super::downloads::{get_download_manager, resolve_download_files};
 use super::fonts::{apply_font_cleanup, prepare_font_cleanup};
 use super::state::MANAGER;
 use crate::download_manager::{DownloadFileDto, DownloadTask};
@@ -217,6 +217,8 @@ pub struct InstalledModInfo {
 #[tauri::command]
 pub async fn batch_update_mods(
   app_handle: AppHandle,
+  catalog_state: State<'_, super::gamebanana_catalog::GameBananaCatalogState>,
+  policy: State<'_, super::policy::PolicyState>,
   mods: Vec<BatchUpdateMod>,
   profile_folder: String,
   skip_backup: bool,
@@ -237,6 +239,20 @@ pub async fn batch_update_mods(
     return Err(Error::InvalidInput(
       "No mods provided for update".to_string(),
     ));
+  }
+
+  let mut resolved_downloads = Vec::with_capacity(total_mods);
+  for mod_data in &mods {
+    resolved_downloads.push(
+      resolve_download_files(
+        &catalog_state,
+        &policy,
+        &mod_data.mod_id,
+        &mod_data.download_files,
+        None,
+      )
+      .await?,
+    );
   }
 
   let (addons_path, filename) = {
@@ -302,7 +318,7 @@ pub async fn batch_update_mods(
   let mut failed = Vec::new();
   let mut installed_mods = Vec::new();
 
-  for (index, mod_data) in mods.iter().enumerate() {
+  for (index, (mod_data, download_files)) in mods.iter().zip(resolved_downloads).enumerate() {
     let progress_pct = (index as f64 / total_mods as f64) * 100.0;
 
     app_handle
@@ -380,7 +396,7 @@ pub async fn batch_update_mods(
 
     let task = DownloadTask {
       mod_id: mod_data.mod_id.clone(),
-      files: mod_data.download_files.clone(),
+      files: download_files,
       target_dir,
       profile_folder: profile_folder_option.clone(),
       is_profile_import: false,

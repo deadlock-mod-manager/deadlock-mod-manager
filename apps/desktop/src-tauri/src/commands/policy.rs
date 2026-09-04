@@ -222,13 +222,7 @@ impl PolicyState {
     {
       return Err(Error::Network("Policy manifest is too large".to_string()));
     }
-    let bytes = response
-      .bytes()
-      .await
-      .map_err(|error| Error::Network(error.to_string()))?;
-    if bytes.len() > MAX_POLICY_BYTES {
-      return Err(Error::Network("Policy manifest is too large".to_string()));
-    }
+    let bytes = read_bounded_response(response, MAX_POLICY_BYTES).await?;
     let next = parse_manifest(&bytes)?;
     let current_revision = self
       .manifest
@@ -246,6 +240,30 @@ impl PolicyState {
       .map_err(|_| Error::BackgroundTaskFailed("Policy lock poisoned".to_string()))? = next;
     Ok(true)
   }
+}
+
+async fn read_bounded_response(
+  mut response: reqwest::Response,
+  max_bytes: usize,
+) -> Result<Vec<u8>, Error> {
+  let mut body = Vec::with_capacity(
+    response
+      .content_length()
+      .and_then(|length| usize::try_from(length).ok())
+      .unwrap_or_default()
+      .min(max_bytes),
+  );
+  while let Some(chunk) = response
+    .chunk()
+    .await
+    .map_err(|error| Error::Network(error.to_string()))?
+  {
+    if body.len().saturating_add(chunk.len()) > max_bytes {
+      return Err(Error::Network("Policy manifest is too large".to_string()));
+    }
+    body.extend_from_slice(&chunk);
+  }
+  Ok(body)
 }
 
 fn should_replace(current_revision: u64, next_revision: u64) -> bool {

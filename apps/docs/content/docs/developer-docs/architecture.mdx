@@ -208,32 +208,31 @@ graph TD
 
 ```mermaid
 sequenceDiagram
-    participant C as Client
-    participant API as API Server
-    participant DB as PostgreSQL
+    participant UI as Desktop UI
+    participant Tauri as Tauri Backend
+    participant Catalog as Local SQLite Catalog
     participant GB as GameBanana
-    participant Cache as Redis
+    participant API as DMM API
 
-    C->>API: Request mod data
-    API->>Cache: Check cache
-    alt Cache hit
-        Cache->>API: Return cached data
-        API->>C: Return response
-    else Cache miss
-        API->>DB: Query database
-        alt Data exists
-            DB->>API: Return data
-            API->>Cache: Update cache
-            API->>C: Return response
-        else Data missing
-            API->>GB: Fetch from GameBanana
-            GB->>API: Return external data
-            API->>DB: Store data
-            API->>Cache: Update cache
-            API->>C: Return response
-        end
+    UI->>Tauri: Browse or search submissions
+    Tauri->>Catalog: Query cached metadata
+    Catalog-->>Tauri: Return page
+    Tauri-->>UI: Return results
+
+    opt Catalog refresh is due
+        Tauri->>GB: Fetch index and profile data
+        GB-->>Tauri: Return submissions
+        Tauri->>Catalog: Upsert and reconcile snapshot
     end
+
+    Tauri->>API: Refresh moderation policy
+    API-->>Tauri: Return policy manifest
+    Tauri->>Catalog: Apply policy when reading results
 ```
+
+The public API no longer mirrors the GameBanana catalog. The desktop app owns a
+local catalog for responsive and offline browsing, while the API remains the
+source of project policy and other Deadlock Mod Manager services.
 
 ## Data Architecture
 

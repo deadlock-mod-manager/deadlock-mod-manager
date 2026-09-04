@@ -1,4 +1,4 @@
-use super::store::{Catalog, CatalogRecord};
+use super::store::{Catalog, CatalogRecord, INCOMPLETE_SNAPSHOT};
 use crate::errors::Error;
 use crate::providers::gamebanana::hero_registry;
 use crate::providers::gamebanana::{BulkHydration, GameBananaClient, IndexPage};
@@ -97,6 +97,19 @@ impl CatalogSync {
   ) -> Result<SyncOutcome, Error> {
     let _sync_guard = self.sync_lock.lock().await;
     if force_reconcile
+      || self
+        .catalog
+        .cursor(SubmissionType::Mod)
+        .await?
+        .snapshot_id
+        .is_some()
+      || self
+        .catalog
+        .cursor(SubmissionType::Sound)
+        .await?
+        .snapshot_id
+        .is_some()
+      || self.catalog.state(INCOMPLETE_SNAPSHOT).await?.is_some()
       || self.catalog.count_visible().await? == 0
       || self.full_reconciliation_due().await?
     {
@@ -130,6 +143,15 @@ impl CatalogSync {
           .index(submission_type, page_number, false, cancel)
           .await?;
         let index_records = page.valid_records();
+        if index_records.len() != page.records.len() {
+          self
+            .catalog
+            .set_state(INCOMPLETE_SNAPSHOT, snapshot_id.clone())
+            .await?;
+          log::warn!(
+            "GameBanana index skipped invalid records; retaining unseen catalog entries for this snapshot"
+          );
+        }
         let high_water_mark = index_records
           .iter()
           .filter_map(|record| record.date_modified)
@@ -170,10 +192,12 @@ impl CatalogSync {
     }
 
     self.catalog.complete_snapshot(snapshot_id).await?;
-    self
-      .catalog
-      .set_state(LAST_FULL_SYNC_AT, unix_timestamp().to_string())
-      .await?;
+    if self.catalog.state(INCOMPLETE_SNAPSHOT).await?.is_none() {
+      self
+        .catalog
+        .set_state(LAST_FULL_SYNC_AT, unix_timestamp().to_string())
+        .await?;
+    }
     Ok(())
   }
 
@@ -528,6 +552,13 @@ mod tests {
       ])),
     };
     let sync = CatalogSync::with_source(catalog.clone(), first_source);
+    catalog
+      .set_state(
+        super::LAST_FULL_SYNC_AT,
+        super::unix_timestamp().to_string(),
+      )
+      .await
+      .unwrap();
     assert!(sync.full_sync(&CancellationToken::new()).await.is_err());
     assert_eq!(catalog.count_visible().await.unwrap(), 1);
     assert_eq!(
@@ -539,7 +570,13 @@ mod tests {
       pages: Mutex::new(VecDeque::from([Ok(page(2, true)), Ok(page(3, true))])),
     };
     let sync = CatalogSync::with_source(catalog.clone(), resumed_source);
-    sync.full_sync(&CancellationToken::new()).await.unwrap();
+    assert_eq!(
+      sync
+        .synchronize(false, false, &CancellationToken::new())
+        .await
+        .unwrap(),
+      super::SyncOutcome::Full
+    );
     assert_eq!(catalog.count_visible().await.unwrap(), 3);
     assert!(
       catalog
@@ -548,6 +585,78 @@ mod tests {
         .unwrap()
         .snapshot_id
         .is_none()
+    );
+  }
+
+  #[tokio::test]
+  async fn malformed_rows_do_not_tombstone_cached_entries_after_resuming() {
+    let directory = tempdir().unwrap();
+    let catalog = super::Catalog::open(directory.path().join("catalog.sqlite3"), 2)
+      .await
+      .unwrap();
+    let initial = CatalogSync::with_source(
+      catalog.clone(),
+      FakeSource {
+        pages: Mutex::new(VecDeque::from([Ok(page(1, true)), Ok(page(4, true))])),
+      },
+    );
+    initial.full_sync(&CancellationToken::new()).await.unwrap();
+
+    let mut malformed = page(2, false);
+    malformed.records.push(serde_json::json!({
+      "_idRow": 1,
+      "_sModelName": "Mod",
+      "_sName": []
+    }));
+    let interrupted = CatalogSync::with_source(
+      catalog.clone(),
+      FakeSource {
+        pages: Mutex::new(VecDeque::from([
+          Ok(malformed),
+          Err(Error::ProviderUnavailable("offline".to_string())),
+        ])),
+      },
+    );
+    assert!(
+      interrupted
+        .full_sync(&CancellationToken::new())
+        .await
+        .is_err()
+    );
+
+    let resumed = CatalogSync::with_source(
+      catalog.clone(),
+      FakeSource {
+        pages: Mutex::new(VecDeque::from([Ok(page(3, true)), Ok(page(4, true))])),
+      },
+    );
+    resumed.full_sync(&CancellationToken::new()).await.unwrap();
+    assert_eq!(catalog.count_visible().await.unwrap(), 4);
+    assert!(
+      catalog
+        .state(super::INCOMPLETE_SNAPSHOT)
+        .await
+        .unwrap()
+        .is_some()
+    );
+
+    let clean = CatalogSync::with_source(
+      catalog.clone(),
+      FakeSource {
+        pages: Mutex::new(VecDeque::from([Ok(page(2, true)), Ok(page(4, true))])),
+      },
+    );
+    assert_eq!(
+      clean
+        .synchronize(false, false, &CancellationToken::new())
+        .await
+        .unwrap(),
+      super::SyncOutcome::Full
+    );
+    assert_eq!(catalog.count_visible().await.unwrap(), 2);
+    assert_eq!(
+      catalog.state(super::INCOMPLETE_SNAPSHOT).await.unwrap(),
+      None
     );
   }
 

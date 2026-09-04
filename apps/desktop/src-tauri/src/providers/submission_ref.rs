@@ -18,7 +18,7 @@ pub enum SubmissionType {
   Sound,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
 #[ts(export, rename_all = "camelCase")]
 #[serde(rename_all = "camelCase")]
 pub struct SubmissionRef {
@@ -69,16 +69,63 @@ impl SubmissionRef {
   }
 
   pub fn to_slug(&self) -> String {
+    self
+      .try_to_slug()
+      .expect("SubmissionRef must contain a valid provider, type, and ID")
+  }
+
+  fn try_to_slug(&self) -> Result<String, ParseSubmissionRefError> {
     match (self.provider, self.submission_type) {
-      (SubmissionProvider::Gamebanana, SubmissionType::Mod) => self.submission_id.clone(),
+      (SubmissionProvider::Gamebanana, SubmissionType::Mod)
+        if is_canonical_gamebanana_id(&self.submission_id) =>
+      {
+        Ok(self.submission_id.clone())
+      }
       (SubmissionProvider::Gamebanana, SubmissionType::Sound) => {
-        format!("snd-{}", self.submission_id)
+        is_canonical_gamebanana_id(&self.submission_id)
+          .then(|| format!("snd-{}", self.submission_id))
+          .ok_or_else(|| self.invalid())
       }
-      (SubmissionProvider::Local, SubmissionType::Mod) => {
-        format!("local-{}", self.submission_id)
+      (SubmissionProvider::Local, SubmissionType::Mod) if is_uuid(&self.submission_id) => {
+        Ok(format!("local-{}", self.submission_id))
       }
-      _ => String::new(),
+      _ => Err(self.invalid()),
     }
+  }
+
+  fn invalid(&self) -> ParseSubmissionRefError {
+    ParseSubmissionRefError {
+      slug: format!(
+        "{:?}:{:?}:{}",
+        self.provider, self.submission_type, self.submission_id
+      ),
+    }
+  }
+}
+
+impl<'de> Deserialize<'de> for SubmissionRef {
+  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+  where
+    D: serde::Deserializer<'de>,
+  {
+    #[derive(Deserialize)]
+    #[serde(rename_all = "camelCase")]
+    struct Fields {
+      provider: SubmissionProvider,
+      submission_type: SubmissionType,
+      submission_id: String,
+    }
+
+    let fields = Fields::deserialize(deserializer)?;
+    let submission = Self {
+      provider: fields.provider,
+      submission_type: fields.submission_type,
+      submission_id: fields.submission_id,
+    };
+    submission
+      .try_to_slug()
+      .map(|_| submission)
+      .map_err(serde::de::Error::custom)
   }
 }
 
@@ -165,6 +212,24 @@ mod tests {
       "mod-1",
     ] {
       assert!(SubmissionRef::parse_slug(slug).is_err(), "accepted {slug}");
+    }
+  }
+
+  #[test]
+  fn deserialization_rejects_invalid_provider_type_and_id_combinations() {
+    for value in [
+      serde_json::json!({
+        "provider": "local",
+        "submissionType": "sound",
+        "submissionId": "550e8400-e29b-41d4-a716-446655440000"
+      }),
+      serde_json::json!({
+        "provider": "gamebanana",
+        "submissionType": "mod",
+        "submissionId": "01"
+      }),
+    ] {
+      assert!(serde_json::from_value::<SubmissionRef>(value).is_err());
     }
   }
 }
