@@ -11,10 +11,11 @@ import {
   ModStatus,
   type Progress,
 } from "@/types/mods";
+import type { ProfileId } from "@/types/profiles";
 import type { State } from "..";
 import {
-  applyToModsAndActiveProfile,
   applyToModsAndAllProfiles,
+  applyToModsInProfile,
 } from "../utils/mod-slice";
 
 export type ModProgress = {
@@ -51,36 +52,57 @@ export type ModsState = {
   heroDetection: HeroDetectionProgress;
 
   setDefaultSort: (sortType: SortType) => void;
-  addLocalMod: (mod: ModDto, additional?: Partial<LocalMod>) => void;
+  addLocalMod: (
+    mod: ModDto,
+    additional?: Partial<LocalMod>,
+    profileId?: ProfileId,
+  ) => void;
   addIdentifiedLocalMod: (
     mod: ModDto,
     filePath: string,
     markAsInstalled?: boolean,
   ) => void;
-  removeMod: (remoteId: string) => void;
+  removeMod: (remoteId: string, profileId?: ProfileId) => void;
   setMods: (mods: LocalMod[]) => void;
-  setModStatus: (remoteId: string, status: ModStatus) => void;
+  setModStatus: (
+    remoteId: string,
+    status: ModStatus,
+    profileId?: ProfileId,
+  ) => void;
   setModProgress: (remoteId: string, progress: Progress) => void;
   clearMods: () => void;
-  nukeModsState: (keepRemoteIds: string[]) => void;
+  nukeModsState: (keepRemoteIds: string[], profileId?: ProfileId) => void;
   setInstalledVpks: (
     remoteId: string,
     vpks: string[],
     fileTree?: ModFileTree,
+    profileId?: ProfileId,
   ) => void;
   setSelectedDownloads: (
     remoteId: string,
     downloads: ModDownloadItem[],
+    profileId?: ProfileId,
   ) => void;
-  setModDownloads: (remoteId: string, downloads: ModDownloadItem[]) => void;
-  setActiveVariantArchive: (remoteId: string, archiveName: string) => void;
+  setModDownloads: (
+    remoteId: string,
+    downloads: ModDownloadItem[],
+    profileId?: ProfileId,
+  ) => void;
+  setActiveVariantArchive: (
+    remoteId: string,
+    archiveName: string,
+    profileId?: ProfileId,
+  ) => void;
   getModProgress: (remoteId: string) => ModProgress | undefined;
   setAnalysisResult: (result: AnalyzeAddonsResult | null) => void;
   setAnalysisDialogOpen: (open: boolean) => void;
   clearAnalysisDialog: () => void;
-  setModOrder: (remoteId: string, order: number) => void;
-  reorderMods: (orderedRemoteIds: string[]) => void;
-  updateModVpksAfterReorder: (vpkMappings: Array<[string, string[]]>) => void;
+  setModOrder: (remoteId: string, order: number, profileId?: ProfileId) => void;
+  reorderMods: (orderedRemoteIds: string[], profileId?: ProfileId) => void;
+  updateModVpksAfterReorder: (
+    vpkMappings: Array<[string, string[]]>,
+    profileId?: ProfileId,
+  ) => void;
   getOrderedMods: () => LocalMod[];
   getNextInstallOrder: () => number;
   migrateLegacyMods: () => void;
@@ -119,15 +141,20 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 
   defaultSort: SortType.LAST_UPDATED,
   setDefaultSort: (sortType: SortType) => set({ defaultSort: sortType }),
-  addLocalMod: (mod, additional) =>
+  addLocalMod: (mod, additional, requestedProfileId) => {
+    get().bumpProfileSyncRevision();
     set((state) => {
-      if (state.localMods.some((m) => m.id === mod.id)) {
+      const profileId = requestedProfileId ?? state.activeProfileId;
+      const profile = state.profiles[profileId];
+      const profileMods = profile?.mods ?? state.localMods;
+
+      if (profileMods.some((m) => m.id === mod.id)) {
         return state;
       }
 
       const maxOrder =
-        state.localMods.length > 0
-          ? Math.max(...state.localMods.map((m) => m.installOrder ?? -1))
+        profileMods.length > 0
+          ? Math.max(...profileMods.map((m) => m.installOrder ?? -1))
           : -1;
       const installOrder = additional?.installOrder ?? maxOrder + 1;
 
@@ -143,20 +170,14 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         selectedDownloads: additional?.selectedDownloads,
       };
 
-      const { activeProfileId, profiles } = state;
-      const currentProfile = profiles[activeProfileId];
-
-      if (currentProfile) {
-        const updatedProfile = {
-          ...currentProfile,
-          mods: [...currentProfile.mods, newMod],
-        };
-
+      if (profile) {
+        const nextMods = [...profile.mods, newMod];
         return {
-          localMods: [...state.localMods, newMod],
+          localMods:
+            state.activeProfileId === profileId ? nextMods : state.localMods,
           profiles: {
             ...state.profiles,
-            [activeProfileId]: updatedProfile,
+            [profileId]: { ...profile, mods: nextMods },
           },
         };
       }
@@ -164,7 +185,8 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       return {
         localMods: [...state.localMods, newMod],
       };
-    }),
+    });
+  },
 
   addIdentifiedLocalMod: (mod, filePath, markAsInstalled = true) =>
     set((state) => {
@@ -257,8 +279,12 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       };
     }),
 
-  setModStatus: (remoteId, status) => {
-    const mod = get().localMods.find((m) => m.remoteId === remoteId);
+  setModStatus: (remoteId, status, requestedProfileId) => {
+    const state = get();
+    const profileId = requestedProfileId ?? state.activeProfileId;
+    const mod = state.profiles[profileId]?.mods.find(
+      (candidate) => candidate.remoteId === remoteId,
+    );
     if (!mod) {
       logger.withMetadata({ remoteId }).error("Mod not found");
       return;
@@ -276,33 +302,36 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       return;
     }
 
-    return set((state) => ({
-      localMods: state.localMods.map((mod) => {
-        if (mod.remoteId !== remoteId) return mod;
-        return {
-          ...mod,
-          status,
-          downloadedAt:
-            (status === ModStatus.Downloaded &&
-              mod.status !== ModStatus.Installed) ||
-            (status === ModStatus.Installed && !mod.downloadedAt)
-              ? new Date()
-              : mod.downloadedAt,
-        };
-      }),
-    }));
+    return set((state) =>
+      applyToModsInProfile(state, profileId, (mods) =>
+        mods.map((mod) => {
+          if (mod.remoteId !== remoteId) return mod;
+          return {
+            ...mod,
+            status,
+            downloadedAt:
+              (status === ModStatus.Downloaded &&
+                mod.status !== ModStatus.Installed) ||
+              (status === ModStatus.Installed && !mod.downloadedAt)
+                ? new Date()
+                : mod.downloadedAt,
+          };
+        }),
+      ),
+    );
   },
 
-  removeMod: (remoteId) =>
+  removeMod: (remoteId, requestedProfileId) => {
+    get().bumpProfileSyncRevision();
     set((state) => {
+      const profileId = requestedProfileId ?? state.activeProfileId;
       const newProgress = { ...state.modProgress };
       delete newProgress[remoteId];
       // Dropped along with the mod, so re-downloading it does not come back
       // already hidden from its hero.
       const { [remoteId]: _hidden, ...hiddenHeroMods } = state.hiddenHeroMods;
 
-      const { activeProfileId, profiles } = state;
-      const currentProfile = profiles[activeProfileId];
+      const currentProfile = state.profiles[profileId];
 
       if (currentProfile) {
         const { [remoteId]: _removed, ...remainingEnabledMods } =
@@ -315,12 +344,15 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         };
 
         return {
-          localMods: state.localMods.filter((mod) => mod.remoteId !== remoteId),
+          localMods:
+            state.activeProfileId === profileId
+              ? state.localMods.filter((mod) => mod.remoteId !== remoteId)
+              : state.localMods,
           modProgress: newProgress,
           hiddenHeroMods,
           profiles: {
             ...state.profiles,
-            [activeProfileId]: updatedProfile,
+            [profileId]: updatedProfile,
           },
         };
       }
@@ -330,7 +362,8 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         modProgress: newProgress,
         hiddenHeroMods,
       };
-    }),
+    });
+  },
 
   setMods: (mods) => set({ localMods: mods }),
 
@@ -359,11 +392,17 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
   // holding its own copy of every mod - exactly the drift a nuke is supposed to
   // remove. This wipes both, keeping only the mods the caller wants to survive
   // (local mods, which cannot be re-downloaded).
-  nukeModsState: (keepRemoteIds) =>
+  nukeModsState: (keepRemoteIds, requestedProfileId) =>
     set((state) => {
+      const profileId = requestedProfileId ?? state.activeProfileId;
       const keep = new Set(keepRemoteIds);
-      const localMods = state.localMods.filter((mod) => keep.has(mod.remoteId));
-      const profile = state.profiles[state.activeProfileId];
+      const profile = state.profiles[profileId];
+      const profileMods = profile?.mods ?? state.localMods;
+      const nextProfileMods = profileMods.filter((mod) =>
+        keep.has(mod.remoteId),
+      );
+      const localMods =
+        state.activeProfileId === profileId ? nextProfileMods : state.localMods;
       const hiddenHeroMods = Object.fromEntries(
         Object.entries(state.hiddenHeroMods).filter(([remoteId]) =>
           keep.has(remoteId),
@@ -372,9 +411,9 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 
       logger
         .withMetadata({
-          profileId: state.activeProfileId,
-          removed: state.localMods.length - localMods.length,
-          kept: localMods.length,
+          profileId,
+          removed: profileMods.length - nextProfileMods.length,
+          kept: nextProfileMods.length,
         })
         .info("Nuking mods state");
 
@@ -388,9 +427,9 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         hiddenHeroMods,
         profiles: {
           ...state.profiles,
-          [state.activeProfileId]: {
+          [profileId]: {
             ...profile,
-            mods: profile.mods.filter((mod) => keep.has(mod.remoteId)),
+            mods: nextProfileMods,
             enabledMods: Object.fromEntries(
               Object.entries(profile.enabledMods).filter(([remoteId]) =>
                 keep.has(remoteId),
@@ -415,76 +454,91 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 
   getModProgress: (remoteId) => get().modProgress[remoteId],
 
-  setInstalledVpks: (
-    remoteId: string,
-    vpks: string[],
-    fileTree?: ModFileTree,
-  ) =>
-    set((state) => ({
-      localMods: state.localMods.map((mod) => ({
-        ...mod,
-        status:
-          mod.remoteId === remoteId && vpks.length > 0
-            ? ModStatus.Installed
-            : mod.status,
-        installedVpks: mod.remoteId === remoteId ? vpks : mod.installedVpks,
-        installedFileTree:
-          mod.remoteId === remoteId ? fileTree : mod.installedFileTree,
-      })),
-    })),
+  setInstalledVpks: (remoteId, vpks, fileTree, requestedProfileId) =>
+    set((state) => {
+      const profileId = requestedProfileId ?? state.activeProfileId;
+      return applyToModsInProfile(state, profileId, (mods) =>
+        mods.map((mod) => ({
+          ...mod,
+          status:
+            mod.remoteId === remoteId && vpks.length > 0
+              ? ModStatus.Installed
+              : mod.status,
+          installedVpks: mod.remoteId === remoteId ? vpks : mod.installedVpks,
+          installedFileTree:
+            mod.remoteId === remoteId ? fileTree : mod.installedFileTree,
+        })),
+      );
+    }),
 
-  setSelectedDownloads: (remoteId: string, downloads: ModDownloadItem[]) =>
-    set((state) => ({
-      localMods: state.localMods.map((mod) => ({
-        ...mod,
-        selectedDownloads:
-          mod.remoteId === remoteId ? downloads : mod.selectedDownloads,
-      })),
-    })),
+  setSelectedDownloads: (remoteId, downloads, requestedProfileId) =>
+    set((state) => {
+      const profileId = requestedProfileId ?? state.activeProfileId;
+      return applyToModsInProfile(state, profileId, (mods) =>
+        mods.map((mod) => ({
+          ...mod,
+          selectedDownloads:
+            mod.remoteId === remoteId ? downloads : mod.selectedDownloads,
+        })),
+      );
+    }),
 
-  setModDownloads: (remoteId: string, downloads: ModDownloadItem[]) =>
-    set((state) => ({
-      localMods: state.localMods.map((mod) => ({
-        ...mod,
-        downloads: mod.remoteId === remoteId ? downloads : mod.downloads,
-      })),
-    })),
+  setModDownloads: (remoteId, downloads, requestedProfileId) =>
+    set((state) => {
+      const profileId = requestedProfileId ?? state.activeProfileId;
+      return applyToModsInProfile(state, profileId, (mods) =>
+        mods.map((mod) => ({
+          ...mod,
+          downloads: mod.remoteId === remoteId ? downloads : mod.downloads,
+        })),
+      );
+    }),
 
-  setActiveVariantArchive: (remoteId: string, archiveName: string) =>
-    set((state) => ({
-      localMods: state.localMods.map((mod) => ({
-        ...mod,
-        activeVariantArchive:
-          mod.remoteId === remoteId ? archiveName : mod.activeVariantArchive,
-      })),
-    })),
+  setActiveVariantArchive: (remoteId, archiveName, requestedProfileId) =>
+    set((state) => {
+      const profileId = requestedProfileId ?? state.activeProfileId;
+      return applyToModsInProfile(state, profileId, (mods) =>
+        mods.map((mod) => ({
+          ...mod,
+          activeVariantArchive:
+            mod.remoteId === remoteId ? archiveName : mod.activeVariantArchive,
+        })),
+      );
+    }),
 
   setAnalysisResult: (result) => set({ analysisResult: result }),
   setAnalysisDialogOpen: (open) => set({ analysisDialogOpen: open }),
   clearAnalysisDialog: () =>
     set({ analysisResult: null, analysisDialogOpen: false }),
 
-  setModOrder: (remoteId: string, order: number) =>
-    set((state) => ({
-      localMods: state.localMods.map((mod) => ({
-        ...mod,
-        installOrder: mod.remoteId === remoteId ? order : mod.installOrder,
-      })),
-    })),
-
-  reorderMods: (orderedRemoteIds: string[]) =>
-    set((state) => ({
-      localMods: state.localMods.map((mod) => {
-        const newOrder = orderedRemoteIds.indexOf(mod.remoteId);
-        return {
-          ...mod,
-          installOrder: newOrder >= 0 ? newOrder : mod.installOrder,
-        };
-      }),
-    })),
-
-  updateModVpksAfterReorder: (vpkMappings: Array<[string, string[]]>) =>
+  setModOrder: (remoteId, order, requestedProfileId) =>
     set((state) => {
+      const profileId = requestedProfileId ?? state.activeProfileId;
+      return applyToModsInProfile(state, profileId, (mods) =>
+        mods.map((mod) => ({
+          ...mod,
+          installOrder: mod.remoteId === remoteId ? order : mod.installOrder,
+        })),
+      );
+    }),
+
+  reorderMods: (orderedRemoteIds, requestedProfileId) =>
+    set((state) => {
+      const profileId = requestedProfileId ?? state.activeProfileId;
+      return applyToModsInProfile(state, profileId, (mods) =>
+        mods.map((mod) => {
+          const newOrder = orderedRemoteIds.indexOf(mod.remoteId);
+          return {
+            ...mod,
+            installOrder: newOrder >= 0 ? newOrder : mod.installOrder,
+          };
+        }),
+      );
+    }),
+
+  updateModVpksAfterReorder: (vpkMappings, requestedProfileId) =>
+    set((state) => {
+      const profileId = requestedProfileId ?? state.activeProfileId;
       logger
         .withMetadata({
           mappingsCount: vpkMappings.length,
@@ -515,7 +569,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
           return mod;
         });
 
-      return applyToModsAndActiveProfile(state, updateMods);
+      return applyToModsInProfile(state, profileId, updateMods);
     }),
 
   getOrderedMods: () => {

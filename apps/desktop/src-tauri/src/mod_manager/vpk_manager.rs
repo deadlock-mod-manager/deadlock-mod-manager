@@ -18,6 +18,8 @@ mod operations;
 mod reorder;
 pub(crate) mod staging;
 
+pub(crate) use naming::allocate_enabled_vpk_names;
+
 /// Final placement of a mod's enabled VPKs after a sharded reorder.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ShardPlacement {
@@ -440,7 +442,13 @@ mod tests {
     fs::create_dir_all(&reorder).unwrap();
     fs::write(reorder.join("s1__pak01_dir.vpk"), b"staged").unwrap();
 
-    recover_staging_directory(&base, &reorder, RecoveryMode::AvoidEnabledCollisions).unwrap();
+    recover_staging_directory(
+      &base,
+      &reorder,
+      RecoveryMode::AvoidEnabledCollisions,
+      &crate::mod_manager::vpk_manifest::ProfileVpkManifest::default(),
+    )
+    .unwrap();
 
     // Neither file is lost: the placed file keeps its slot, the staged file is
     // recovered into a free one.

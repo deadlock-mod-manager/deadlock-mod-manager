@@ -424,7 +424,7 @@ impl ModManager {
     })
   }
 
-  pub(super) fn reorder_all_mods_for_profile(
+  pub fn reorder_all_mods_for_profile(
     &mut self,
     profile_folder: Option<String>,
   ) -> Result<(), Error> {
