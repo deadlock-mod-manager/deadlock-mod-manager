@@ -251,9 +251,11 @@ pub async fn batch_update_mods(
         &mod_data.download_files,
         None,
       )
-      .await?,
+      .await
+      .map_err(|error| format!("Failed to resolve download files: {error:?}")),
     );
   }
+  let has_updatable_mods = resolved_downloads.iter().any(Result::is_ok);
 
   let (addons_path, filename) = {
     let mut mod_manager = MANAGER.lock().unwrap();
@@ -266,7 +268,7 @@ pub async fn batch_update_mods(
     (addons_path, filename)
   };
 
-  if !skip_backup {
+  if !skip_backup && has_updatable_mods {
     log::info!("Creating addons backup before updating mods");
 
     let backup_dir = {
@@ -319,6 +321,17 @@ pub async fn batch_update_mods(
   let mut installed_mods = Vec::new();
 
   for (index, (mod_data, download_files)) in mods.iter().zip(resolved_downloads).enumerate() {
+    let download_files = match download_files {
+      Ok(files) => files,
+      Err(reason) => {
+        log::error!(
+          "Failed to resolve downloads for mod {}: {reason}",
+          mod_data.mod_id
+        );
+        failed.push((mod_data.mod_id.clone(), reason));
+        continue;
+      }
+    };
     let progress_pct = (index as f64 / total_mods as f64) * 100.0;
 
     app_handle
