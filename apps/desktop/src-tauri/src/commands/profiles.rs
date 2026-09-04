@@ -337,7 +337,8 @@ pub async fn import_profile_batch(
         &mod_data.download_files,
         None,
       )
-      .await?,
+      .await
+      .map_err(|error| format!("Failed to resolve download files: {error:?}")),
     );
   }
 
@@ -374,6 +375,19 @@ pub async fn import_profile_batch(
   let mut download_results: Vec<Result<(), String>> = Vec::new();
 
   for (index, (mod_data, download_files)) in mods.iter().zip(resolved_downloads).enumerate() {
+    // download_results stays index-aligned with mods; the install loop below zips them.
+    let download_files = match download_files {
+      Ok(files) => files,
+      Err(reason) => {
+        log::error!(
+          "Failed to resolve downloads for mod {}: {reason}",
+          mod_data.mod_id
+        );
+        download_results.push(Err(reason));
+        continue;
+      }
+    };
+
     app_handle
       .emit(
         "profile-import-progress",
