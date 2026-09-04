@@ -13,6 +13,8 @@ import {
 
 const CACHE_TTL_MS = 5 * 60 * 1_000;
 const CACHE_MAX_ENTRIES = 256;
+const RESOLVE_CONCURRENCY = 4;
+const MAX_REQUIREMENTS = 50;
 
 export interface ResolvedRequirement {
   name: string;
@@ -27,6 +29,7 @@ export interface ResolvedRequirement {
     | "not_found"
     | "provider_failure"
     | "policy_blocked"
+    | "too_many_requirements"
     | "custom_provider";
 }
 
@@ -103,6 +106,15 @@ const applyPolicy = (
     if (correction.isNSFW !== undefined) {
       corrected.mod.isNSFW = correction.isNSFW;
     }
+    if (correction.isObsolete !== undefined) {
+      corrected.mod.isObsolete = correction.isObsolete;
+    }
+    if (correction.metadata !== undefined) {
+      corrected.mod.metadata = {
+        ...corrected.mod.metadata,
+        ...correction.metadata,
+      };
+    }
     if (correction.tags !== undefined) corrected.mod.tags = correction.tags;
   }
   return corrected;
@@ -144,11 +156,31 @@ export class ServerModsResolver {
       return { resolved: [], installed: [], missing: [] };
     }
     const rules = await this.loadPolicy();
-    const resolved = await Promise.all(
-      required.map((requirement) =>
-        this.resolveRequirement(requirement, rules),
-      ),
-    );
+    const bounded = required.slice(0, MAX_REQUIREMENTS);
+    const resolved: ResolvedRequirement[] = [];
+    for (
+      let offset = 0;
+      offset < bounded.length;
+      offset += RESOLVE_CONCURRENCY
+    ) {
+      resolved.push(
+        ...(await Promise.all(
+          bounded
+            .slice(offset, offset + RESOLVE_CONCURRENCY)
+            .map((requirement) => this.resolveRequirement(requirement, rules)),
+        )),
+      );
+    }
+    for (const requirement of required.slice(MAX_REQUIREMENTS)) {
+      resolved.push({
+        name: requirement.id,
+        provider: requirement.provider,
+        url: requirement.url,
+        version: requirement.version,
+        resolved: false,
+        reason: "too_many_requirements",
+      });
+    }
     return {
       resolved,
       installed: [],
