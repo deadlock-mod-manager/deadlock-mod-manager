@@ -89,6 +89,13 @@ export const Footer = () => {
                 target='_blank'>
                 Deadlock API
               </a>
+              <a
+                className='text-sm opacity-60 hover:opacity-100 transition-opacity'
+                href='https://deadlockskins.gg/?utm_source=deadlock-modmanager&utm_medium=footer&utm_campaign=partners'
+                rel='noopener noreferrer'
+                target='_blank'>
+                DeadlockSkins.gg
+              </a>
             </div>
           </div>
         </div>
