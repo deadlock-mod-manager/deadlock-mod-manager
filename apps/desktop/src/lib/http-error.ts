@@ -13,3 +13,8 @@ export class HttpError extends Error {
     this.endpoint = endpoint;
   }
 }
+
+export const returnNullForNotFound = (error: Error): null => {
+  if (error instanceof HttpError && error.status === 404) return null;
+  throw error;
+};

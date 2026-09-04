@@ -6,6 +6,7 @@ import { featureFlagsRouter } from "./feature-flags";
 import { fileserversRouter } from "./fileservers";
 import { kvRouter } from "./kv";
 import { modsRouter } from "./mods";
+import { modAuthorsRouter } from "./mod-authors";
 import { profilesRouter } from "./profiles";
 import { reportsRouter } from "./reports";
 import { serversRouter } from "./servers";
@@ -19,6 +20,7 @@ export const v2Router = {
   ...fileserversRouter,
   ...kvRouter,
   ...modsRouter,
+  ...modAuthorsRouter,
   ...vpkRouter,
   ...profilesRouter,
   ...reportsRouter,

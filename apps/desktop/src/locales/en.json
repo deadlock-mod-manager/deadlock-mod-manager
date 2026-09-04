@@ -849,10 +849,11 @@
   },
   "mods": {
     "manageOrder": "Change Mods Order",
-    "searchPlaceholder": "Search mods",
+    "searchPlaceholder": "Search mods or authors",
     "noPreviewAvailable": "No preview available",
     "audio": "Audio",
     "by": "By",
+    "showMoreByAuthor": "Show more mods by {{author}}",
     "backToMods": "Back to Mods",
     "audioMod": "Audio Mod",
     "mapBadge": "Map",
@@ -912,6 +913,33 @@
       "deleteAllSuccess": "Deleted {{count}} unrecognized mod file(s)",
       "deleteAllError": "Failed to delete some mod files"
     }
+  },
+  "authorPage": {
+    "viewProfile": "View profile",
+    "backToMods": "Back to Mod Store",
+    "backToMaps": "Back to Maps",
+    "backToLibrary": "Back to Mods Library",
+    "backToFavorites": "Back to Favorites",
+    "backToDashboard": "Back to Dashboard",
+    "submittedBy": "Submitted by",
+    "modStat_one": "mod",
+    "modStat_other": "mods",
+    "downloadStat_one": "download",
+    "downloadStat_other": "downloads",
+    "likeStat_one": "like",
+    "likeStat_other": "likes",
+    "memberSince": "Member since {{date}}",
+    "subscriberCount_one": "{{count}} GameBanana subscriber",
+    "subscriberCount_other": "{{count}} GameBanana subscribers",
+    "upicAlt": "{{author}}'s profile image",
+    "signatureAlt": "{{author}}'s signature",
+    "viewOnGameBanana": "View on GameBanana",
+    "openProfileError": "Failed to open the GameBanana profile",
+    "modsBy": "Mods by {{author}}",
+    "resultCount_one": "{{count}} mod",
+    "resultCount_other": "{{count}} mods",
+    "notFoundTitle": "Author not found",
+    "notFoundDescription": "This author is not available in the current mod catalog."
   },
   "pagination": {
     "previous": "Previous",
@@ -2953,6 +2981,11 @@
     "cancel": "Cancel"
   },
   "modDetail": {
+    "backToAuthorMods": "Back to {{author}}'s mods",
+    "backToLibrary": "Back to Mods Library",
+    "backToMaps": "Back to Maps",
+    "backToFavorites": "Back to Favorites",
+    "backToDashboard": "Back to Dashboard",
     "mapHowToPlay": {
       "title": "How to Play This Map",
       "step1": "Enable the Developer Console in Deadlock settings.",

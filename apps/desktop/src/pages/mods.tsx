@@ -14,6 +14,7 @@ import {
 } from "@deadlock-mods/ui/components/empty";
 import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
 import { toast } from "@deadlock-mods/ui/components/sonner";
+import { ChevronLeft, ChevronRight } from "@deadlock-mods/ui/icons";
 import { MagnifyingGlass, Warning } from "@phosphor-icons/react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -40,16 +41,15 @@ import { useSearch } from "@/hooks/use-search";
 import { getMods } from "@/lib/api-client";
 import { ModCategory, TimePeriod } from "@/lib/constants";
 import { matchesHeroFilter, resolveModHero } from "@/lib/mods/hero-resolution";
+import { getModsCollectionNavigationTrail } from "@/lib/mods/mod-detail-navigation";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
-import { getTimePeriodCutoff } from "@/lib/utils";
 import type {
   AudioQuickFilter,
   FilterMode,
   MapQuickFilter,
 } from "@/lib/store/slices/ui";
-import { cn, isModOutdated } from "@/lib/utils";
-import { ChevronLeft, ChevronRight } from "@deadlock-mods/ui/icons";
+import { cn, getTimePeriodCutoff, isModOutdated } from "@/lib/utils";
 
 const SEARCH_KEYS = ["name", "description", "author"];
 const PAGE_SIZE = 50;
@@ -187,6 +187,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
       : "off";
   const pageKey = mapsOnly ? MAPS_STORE_PAGE_KEY : MODS_STORE_PAGE_KEY;
   const scrollKey = mapsOnly ? "/maps" : "/mods";
+  const navigationTrail = getModsCollectionNavigationTrail(mapsOnly === true);
   const paginationEnabled =
     modsStorePaginationEnabled ?? platform() === "linux";
   const [page, setPage] = useState(() => getPersistedPage(pageKey));
@@ -502,7 +503,11 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
               )}
               <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
                 {displayedMods.map((mod) => (
-                  <ModCard key={mod.id} mod={mod} />
+                  <ModCard
+                    key={mod.id}
+                    mod={mod}
+                    navigationTrail={navigationTrail}
+                  />
                 ))}
               </div>
               {totalPages > 1 && (
@@ -538,7 +543,11 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
                   }}>
                   <div className='grid grid-cols-1 gap-4 px-1 pr-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
                     {modRows[virtualRow.index]?.map((mod) => (
-                      <ModCard key={mod.id} mod={mod} />
+                      <ModCard
+                        key={mod.id}
+                        mod={mod}
+                        navigationTrail={navigationTrail}
+                      />
                     ))}
                   </div>
                 </div>

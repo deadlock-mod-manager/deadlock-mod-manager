@@ -8,6 +8,7 @@ import NSFWBlur, { NSFWBadge } from "@/components/mod-browsing/nsfw-blur";
 import AudioPlayerPreview from "@/components/mod-management/audio-player-preview";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { shouldShowNsfwBadgeAlongsideBlurPreview } from "@/lib/nsfw-blur-display";
+import { DASHBOARD_NAVIGATION_TRAIL } from "@/lib/mods/mod-detail-navigation";
 
 interface LatestModItemProps {
   mod: ModDto;
@@ -19,7 +20,9 @@ export const LatestModItem = ({ mod }: LatestModItemProps) => {
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
   const handleClick = () => {
-    navigate(`/mods/${mod.remoteId}`);
+    navigate(`/mods/${mod.remoteId}`, {
+      state: { navigationTrail: DASHBOARD_NAVIGATION_TRAIL },
+    });
   };
 
   return (

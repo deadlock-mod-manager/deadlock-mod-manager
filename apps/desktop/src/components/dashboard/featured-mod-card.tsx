@@ -16,6 +16,7 @@ import NSFWBlur, { NSFWBadge } from "@/components/mod-browsing/nsfw-blur";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { shouldShowNsfwBadgeAlongsideBlurPreview } from "@/lib/nsfw-blur-display";
 import { getModCategoryDisplayName } from "@/lib/constants";
+import { DASHBOARD_NAVIGATION_TRAIL } from "@/lib/mods/mod-detail-navigation";
 import { prefetchModDetail } from "@/lib/mods/mod-detail-prefetch";
 import { cn } from "@/lib/utils";
 
@@ -43,7 +44,9 @@ export const FeaturedModCard = ({ mod, isLoading }: Props) => {
   const heroImage = mod.images[0];
   const handleClick = () => {
     void prefetchModDetail(queryClient, mod.remoteId);
-    navigate(`/mods/${mod.remoteId}`);
+    navigate(`/mods/${mod.remoteId}`, {
+      state: { navigationTrail: DASHBOARD_NAVIGATION_TRAIL },
+    });
   };
 
   return (
