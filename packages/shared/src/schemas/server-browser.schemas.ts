@@ -149,6 +149,7 @@ export const ResolvedRequirementSchema = z.object({
       "policy_blocked",
       "too_many_requirements",
       "custom_provider",
+      "timed_out",
     ])
     .optional(),
   mod: ModDtoSchema.optional(),

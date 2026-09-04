@@ -77,4 +77,59 @@ describe("ServerModsResolver", () => {
     expect(result.resolved.at(-1)?.reason).toBe("too_many_requirements");
     expect(result.missing).toHaveLength(55);
   });
+
+  it("does not let one slow lookup stall unrelated lookups", async () => {
+    const completed: string[] = [];
+    const resolver = new ServerModsResolver(
+      async (identity) => {
+        await new Promise((resolve) =>
+          setTimeout(resolve, identity.submissionId === "1" ? 200 : 1),
+        );
+        completed.push(identity.submissionId);
+        return null;
+      },
+      () => Promise.resolve([]),
+    );
+
+    await resolver.resolve(
+      Array.from({ length: 8 }, (_, index) => ({
+        id: `required-${index + 1}`,
+        provider: "gamebanana" as const,
+        url: `https://gamebanana.com/mods/${index + 1}`,
+      })),
+    );
+
+    expect(completed).toHaveLength(8);
+    expect(completed.at(-1)).toBe("1");
+  });
+
+  it("returns partial results once the deadline elapses", async () => {
+    const resolver = new ServerModsResolver(
+      async (identity) => {
+        if (Number(identity.submissionId) > 2) {
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+        return null;
+      },
+      () => Promise.resolve([]),
+      50,
+    );
+
+    const startedAt = Date.now();
+    const result = await resolver.resolve(
+      Array.from({ length: 6 }, (_, index) => ({
+        id: `required-${index + 1}`,
+        provider: "gamebanana" as const,
+        url: `https://gamebanana.com/mods/${index + 1}`,
+      })),
+    );
+
+    expect(Date.now() - startedAt).toBeLessThan(400);
+    expect(result.resolved).toHaveLength(6);
+    expect(result.resolved[0]?.reason).toBe("not_found");
+    expect(result.resolved[1]?.reason).toBe("not_found");
+    expect(
+      result.resolved.filter((item) => item.reason === "timed_out").length,
+    ).toBeGreaterThan(0);
+  });
 });
