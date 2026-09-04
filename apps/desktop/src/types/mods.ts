@@ -155,6 +155,7 @@ export interface BatchUpdateResult {
   succeeded: string[];
   failed: Array<[string, string]>;
   installedMods: InstalledModInfo[];
+  vpkMappings?: Array<[string, string[]]>;
 }
 
 export interface BatchUpdateProgressEvent {

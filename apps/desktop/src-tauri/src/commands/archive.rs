@@ -57,7 +57,6 @@ pub async fn copy_selected_vpks_from_archive(
   _is_map: bool,
 ) -> Result<(), Error> {
   use crate::mod_manager::archive_extractor::ArchiveExtractor;
-  use crate::mod_manager::vpk_manager::VpkManager;
 
   log::info!(
     "Copying selected VPKs from extracted directory for mod: {} (profile: {profile_folder:?})",
@@ -115,13 +114,14 @@ pub async fn copy_selected_vpks_from_archive(
 
   drop(mod_manager);
 
-  let vpk_manager = VpkManager::new();
-  vpk_manager.copy_selected_vpks_with_prefix(
+  let vpk_manager = crate::mod_manager::vpk_manager::VpkManager::new();
+  let prefixed_vpks = vpk_manager.copy_selected_vpks_with_prefix(
     &extracted_dir,
     &destination_path,
     &mod_id,
     &file_tree,
   )?;
+  persist_prefixed_import(&destination_path, &mod_id, prefixed_vpks)?;
 
   log::info!("Removing extracted directory: {extracted_dir:?}");
   std::fs::remove_dir_all(&extracted_dir)?;
@@ -195,12 +195,35 @@ pub async fn copy_local_mod_vpks(
     ));
   }
 
+  persist_prefixed_import(&destination_path, &mod_id, prefixed_vpks.clone())?;
+
   log::info!(
     "Successfully copied {} VPKs for local mod: {}",
     prefixed_vpks.len(),
     mod_id
   );
   Ok(prefixed_vpks)
+}
+
+fn persist_prefixed_import(
+  destination_path: &std::path::Path,
+  mod_id: &str,
+  prefixed_vpks: Vec<String>,
+) -> Result<(), Error> {
+  let mut manifest = crate::mod_manager::vpk_manifest::ProfileVpkManifest::open_for_write(
+    destination_path,
+  )?;
+  let original_names: Vec<String> = prefixed_vpks
+    .iter()
+    .map(|name| {
+      name
+        .strip_prefix(&format!("{mod_id}_"))
+        .unwrap_or(name)
+        .to_string()
+    })
+    .collect();
+  manifest.mark_disabled(mod_id, prefixed_vpks, original_names);
+  manifest.save(destination_path)
 }
 
 #[tauri::command]

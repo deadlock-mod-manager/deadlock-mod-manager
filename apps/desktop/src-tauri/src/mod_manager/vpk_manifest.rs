@@ -116,7 +116,8 @@ impl ProfileVpkManifest {
       }
       let base = ProfileBase::from_snapshot(&profile_path)?;
       let manifest = Self::load(&profile_path)?;
-      for (mod_id, entry) in manifest.mods {
+      let mut claimed = std::collections::BTreeMap::<String, String>::new();
+      for (mod_id, entry) in &manifest.mods {
         let missing: Vec<String> = entry
           .file_paths(&base)
           .into_iter()
@@ -128,6 +129,14 @@ impl ProfileVpkManifest {
             "Manifest entry {mod_id} references missing VPKs: {}",
             missing.join(", ")
           )));
+        }
+        for path in entry.file_paths(&base) {
+          let key = path.display().to_string();
+          if let Some(owner) = claimed.insert(key.clone(), mod_id.clone()) {
+            return Err(Error::ModInvalid(format!(
+              "Manifest entries {owner} and {mod_id} both claim {key}"
+            )));
+          }
         }
       }
     }
