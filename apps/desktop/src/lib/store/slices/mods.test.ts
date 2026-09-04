@@ -24,6 +24,8 @@ import { createModsSlice, type ModsState } from "./mods";
 type TestState = ModsState & {
   profiles: Record<string, ModProfile>;
   activeProfileId: ProfileId;
+  profileSyncRevision: number;
+  bumpProfileSyncRevision: () => number;
 };
 
 const modFor = (remoteId: string): LocalMod =>
@@ -59,6 +61,12 @@ const createTestStore = () =>
     ),
     profiles: {},
     activeProfileId: createProfileId("default"),
+    profileSyncRevision: 0,
+    bumpProfileSyncRevision: () => {
+      const next = (get().profileSyncRevision ?? 0) + 1;
+      set({ profileSyncRevision: next });
+      return next;
+    },
   }));
 
 let store: ReturnType<typeof createTestStore>;

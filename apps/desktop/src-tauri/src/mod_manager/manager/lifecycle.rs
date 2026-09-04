@@ -496,7 +496,18 @@ impl ModManager {
       Vec::new()
     };
 
-    // Use VpkManager to replace the files
+    if !installed_vpks.is_empty() {
+      self.update_mod_from_prepared(
+        &mod_id,
+        &mod_id,
+        &source_vpk_paths,
+        None,
+        profile_folder,
+      )?;
+      log::info!("Successfully replaced VPK files for mod: {mod_id}");
+      return Ok(());
+    }
+
     self.vpk_manager.replace_vpks(
       &addons_path,
       &enabled_dir,
@@ -511,18 +522,8 @@ impl ModManager {
       .collect();
 
     let mut manifest = ProfileVpkManifest::load(&addons_path)?;
-    if installed_vpks.is_empty() {
-      let prefixed_vpks = self.vpk_manager.find_prefixed_vpks(&addons_path, &mod_id)?;
-      manifest.mark_disabled(&mod_id, prefixed_vpks, new_original_names);
-    } else {
-      manifest.mark_enabled(
-        &mod_id,
-        installed_vpks,
-        new_original_names,
-        None,
-        target_shard,
-      );
-    }
+    let prefixed_vpks = self.vpk_manager.find_prefixed_vpks(&addons_path, &mod_id)?;
+    manifest.mark_disabled(&mod_id, prefixed_vpks, new_original_names);
     manifest.save(&addons_path)?;
 
     log::info!("Successfully replaced VPK files for mod: {mod_id}");

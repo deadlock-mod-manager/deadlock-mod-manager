@@ -192,6 +192,8 @@ pub struct BatchUpdateResult {
   pub succeeded: Vec<String>,
   pub failed: Vec<(String, String)>,
   pub installed_mods: Vec<InstalledModInfo>,
+  #[serde(default)]
+  pub vpk_mappings: Vec<(String, Vec<String>)>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -436,6 +438,35 @@ pub async fn batch_update_mods(
     )
     .ok();
 
+  let profile_folder_option = if profile_folder.is_empty() {
+    None
+  } else {
+    Some(profile_folder.clone())
+  };
+  let mut vpk_mappings = Vec::new();
+  if !succeeded.is_empty() {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    if let Err(error) = mod_manager.reorder_all_mods_for_profile(profile_folder_option.clone())
+    {
+      log::warn!("Post-batch reorder failed: {error}");
+    }
+    if let Ok(addons_path) = mod_manager.get_addons_path(profile_folder_option.as_deref())
+      && let Ok(manifest) = ProfileVpkManifest::load(&addons_path)
+    {
+      for info in &mut installed_mods {
+        if let Some(entry) = manifest.mods.get(&info.mod_id) {
+          info.installed_vpks = entry.current_vpks.clone();
+        }
+      }
+      vpk_mappings = manifest
+        .mods
+        .iter()
+        .filter(|(_, entry)| entry.enabled && !entry.current_vpks.is_empty())
+        .map(|(mod_id, entry)| (mod_id.clone(), entry.current_vpks.clone()))
+        .collect();
+    }
+  }
+
   log::info!(
     "Batch mod update completed: {} succeeded, {} failed",
     succeeded.len(),
@@ -447,6 +478,7 @@ pub async fn batch_update_mods(
     succeeded,
     failed,
     installed_mods,
+    vpk_mappings,
   })
 }
 

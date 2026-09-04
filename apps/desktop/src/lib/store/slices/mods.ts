@@ -141,7 +141,8 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 
   defaultSort: SortType.LAST_UPDATED,
   setDefaultSort: (sortType: SortType) => set({ defaultSort: sortType }),
-  addLocalMod: (mod, additional, requestedProfileId) =>
+  addLocalMod: (mod, additional, requestedProfileId) => {
+    get().bumpProfileSyncRevision();
     set((state) => {
       const profileId = requestedProfileId ?? state.activeProfileId;
       const profile = state.profiles[profileId];
@@ -184,7 +185,8 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       return {
         localMods: [...state.localMods, newMod],
       };
-    }),
+    });
+  },
 
   addIdentifiedLocalMod: (mod, filePath, markAsInstalled = true) =>
     set((state) => {
@@ -319,7 +321,8 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     );
   },
 
-  removeMod: (remoteId, requestedProfileId) =>
+  removeMod: (remoteId, requestedProfileId) => {
+    get().bumpProfileSyncRevision();
     set((state) => {
       const profileId = requestedProfileId ?? state.activeProfileId;
       const newProgress = { ...state.modProgress };
@@ -359,7 +362,8 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         modProgress: newProgress,
         hiddenHeroMods,
       };
-    }),
+    });
+  },
 
   setMods: (mods) => set({ localMods: mods }),
 
