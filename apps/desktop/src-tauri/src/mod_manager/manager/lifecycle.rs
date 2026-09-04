@@ -331,34 +331,15 @@ impl ModManager {
     let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
     let manifest_entry = manifest.mods.get(mod_id).cloned();
     let install_order = manifest_entry.as_ref().and_then(|entry| entry.order);
-    let mut sources = HashSet::new();
-
-    if let Some(entry) = &manifest_entry {
-      for path in entry.file_paths(&addons_path) {
-        if path.is_file() {
-          sources.insert(path);
-        }
-      }
-    }
-
-    for prefixed_vpk in self.vpk_manager.find_prefixed_vpks(&addons_path, mod_id)? {
-      let path = addons_path.join(prefixed_vpk);
-      if path.is_file() {
-        sources.insert(path);
-      }
-    }
-
-    let mut fallback_names = fallback_vpks.to_vec();
-    if let Some(repository_mod) = self.mod_repository.get_mod(mod_id) {
-      fallback_names.extend(repository_mod.installed_vpks.clone());
-    }
-    for fallback in fallback_names {
-      let locator = ShardLocator::from_legacy_name(&fallback);
-      let path = addons_path.locator_path(&locator);
-      if path.is_file() {
-        sources.insert(path);
-      }
-    }
+    let sources = if let Some(entry) = &manifest_entry {
+      entry
+        .file_paths(&addons_path)
+        .into_iter()
+        .filter(|path| path.is_file())
+        .collect::<HashSet<_>>()
+    } else {
+      self.discover_unowned_mod_vpks(mod_id, fallback_vpks, &addons_path, &manifest)?
+    };
 
     if sources.is_empty() && manifest_entry.is_none() {
       self.mod_repository.remove_mod(mod_id);
@@ -392,6 +373,46 @@ impl ModManager {
       count: removed_count,
       install_order,
     })
+  }
+
+  /// Discover VPKs for a mod that has no manifest entry, without touching
+  /// files another entry already claims. Bare fallback names resolve to shard 1,
+  /// so this filter is what stops a stale `pak01_dir.vpk` from deleting a
+  /// different mod's file.
+  fn discover_unowned_mod_vpks(
+    &self,
+    mod_id: &str,
+    fallback_vpks: &[String],
+    addons_path: &ProfileBase,
+    manifest: &ProfileVpkManifest,
+  ) -> Result<HashSet<PathBuf>, Error> {
+    let claimed: HashSet<PathBuf> = manifest
+      .mods
+      .values()
+      .flat_map(|entry| entry.file_paths(addons_path))
+      .collect();
+    let mut sources = HashSet::new();
+
+    for prefixed_vpk in self.vpk_manager.find_prefixed_vpks(addons_path, mod_id)? {
+      let path = addons_path.join(prefixed_vpk);
+      if path.is_file() && !claimed.contains(&path) {
+        sources.insert(path);
+      }
+    }
+
+    let mut fallback_names = fallback_vpks.to_vec();
+    if let Some(repository_mod) = self.mod_repository.get_mod(mod_id) {
+      fallback_names.extend(repository_mod.installed_vpks.clone());
+    }
+    for fallback in fallback_names {
+      let locator = ShardLocator::from_legacy_name(&fallback);
+      let path = addons_path.locator_path(&locator);
+      if path.is_file() && !claimed.contains(&path) {
+        sources.insert(path);
+      }
+    }
+
+    Ok(sources)
   }
 
   pub fn hydrate_mods_from_manifest(
