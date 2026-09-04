@@ -23,6 +23,7 @@ pub mod logs;
 pub mod match_sync;
 pub mod mods;
 pub mod policy;
+pub mod profile_snapshot;
 pub mod profiles;
 pub mod reports;
 pub mod server_browser;

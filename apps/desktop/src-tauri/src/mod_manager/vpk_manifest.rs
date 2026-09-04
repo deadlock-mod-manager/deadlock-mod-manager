@@ -243,7 +243,7 @@ impl ProfileVpkManifest {
       if manifest.mods.is_empty() {
         fs::remove_dir_all(&clear_staging)?;
       } else {
-        recover_staging_directory(&base, &clear_staging, RecoveryMode::Strict)?;
+        recover_staging_directory(&base, &clear_staging, RecoveryMode::Strict, manifest)?;
       }
     }
 
@@ -253,6 +253,7 @@ impl ProfileVpkManifest {
         &base,
         &reorder_staging,
         RecoveryMode::AvoidEnabledCollisions,
+        manifest,
       )?;
     }
 
@@ -271,7 +272,7 @@ impl ProfileVpkManifest {
         continue;
       };
       if manifest.mods.contains_key(mod_id) {
-        recover_staging_directory(&base, &path, RecoveryMode::Strict)?;
+        recover_staging_directory(&base, &path, RecoveryMode::Strict, manifest)?;
       } else {
         fs::remove_dir_all(path)?;
       }
