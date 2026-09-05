@@ -2,6 +2,9 @@ use crate::ingest_tool::error::IngestError;
 use serde::Serialize;
 use tokio::time::{Duration, sleep};
 
+pub const CACHE_SCAN_USERNAME: &str = "Mod Manager (Cache)";
+pub const LIVE_WATCHER_USERNAME: &str = "Mod Manager (Live)";
+
 #[derive(Serialize, Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Salts {
   pub match_id: u64,
@@ -12,7 +15,7 @@ pub struct Salts {
 }
 
 impl Salts {
-  pub fn from_url(url: &str) -> Option<Self> {
+  pub fn from_url(url: &str, username: &str) -> Option<Self> {
     // Expect URLs like: http://replay404.valve.net/1422450/37959196_937530290.meta.bz2 or http://replay183.valve.net/1422450/42476710_428480166.dem.bz2
     // Strip query parameters if present
     let base_url = url.split_once('?').map_or(url, |(path, _)| path);
@@ -31,7 +34,7 @@ impl Salts {
         match_id: match_str.parse().ok()?,
         metadata_salt: salt_str.parse().ok(),
         replay_salt: None,
-        username: "Mod Manager".to_string(),
+        username: username.to_string(),
       })
     } else if name.ends_with(".dem.bz2") {
       let name = name.strip_suffix(".dem.bz2")?;
@@ -42,7 +45,7 @@ impl Salts {
         match_id: match_str.parse().ok()?,
         replay_salt: salt_str.parse().ok(),
         metadata_salt: None,
-        username: "Mod Manager".to_string(),
+        username: username.to_string(),
       })
     } else {
       None
@@ -171,7 +174,7 @@ mod tests {
     ];
 
     for &(url, cluster_id, match_id, metadata_salt, replay_salt) in cases {
-      let salts = Salts::from_url(url).unwrap();
+      let salts = Salts::from_url(url, "test").unwrap();
       assert_eq!(salts.cluster_id, cluster_id);
       assert_eq!(salts.match_id, match_id);
       assert_eq!(salts.metadata_salt, metadata_salt);

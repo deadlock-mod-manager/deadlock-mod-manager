@@ -1,5 +1,5 @@
 use crate::ingest_tool::ingestion_cache;
-use crate::ingest_tool::utils::Salts;
+use crate::ingest_tool::utils::{CACHE_SCAN_USERNAME, LIVE_WATCHER_USERNAME, Salts};
 use memchr::{memchr, memmem};
 use notify::event::{CreateKind, ModifyKind};
 use notify::{EventKind, RecursiveMode, Watcher};
@@ -109,7 +109,7 @@ pub async fn initial_cache_dir_ingest(cache_dir: &Path) {
   scan_directory(cache_dir, &mut results);
   let salts = results
     .into_iter()
-    .filter_map(|url| Salts::from_url(&url))
+    .filter_map(|url| Salts::from_url(&url, CACHE_SCAN_USERNAME))
     .collect::<Vec<_>>();
 
   if salts.is_empty() {
@@ -158,7 +158,7 @@ pub async fn watch_cache_dir(
         tokio::time::sleep(std::time::Duration::from_millis(200)).await;
         for path in event.paths {
           if let Some(url) = extract_replay_url(&path)
-            && let Some(salts) = Salts::from_url(&url)
+            && let Some(salts) = Salts::from_url(&url, LIVE_WATCHER_USERNAME)
           {
             // Check if we've already ingested this salt using the shared cache
             let is_new_metadata =
