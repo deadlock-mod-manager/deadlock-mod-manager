@@ -1,0 +1,40 @@
+{
+  "fields": [
+    "name",
+    "downloads",
+    "Category().name",
+    "RootCategory().name",
+    "Nsfw().bIsNsfw()",
+    "description",
+    "text"
+  ],
+  "modMulticall": [
+    [
+      "Pink Drifter",
+      1,
+      "Drifter",
+      "Skins",
+      false,
+      "",
+      "Gives drifter a pink retexture and pink vfx"
+    ],
+    [
+      "Profile Win Rate",
+      229,
+      "HUD",
+      "HUD",
+      false,
+      "Know your win rates without doing maths !",
+      "This mod adds an extra stat to the profile page."
+    ]
+  ],
+  "sound": {
+    "name": "Peacemaker S1 intro over blasted",
+    "downloads": 0,
+    "Category().name": "Abilities",
+    "RootCategory().name": "Abilities",
+    "Nsfw().bIsNsfw()": false,
+    "description": "",
+    "text": "redone for the intro edit"
+  }
+}

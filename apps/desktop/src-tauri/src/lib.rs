@@ -20,6 +20,7 @@ mod live_match;
 mod logs;
 mod match_sync;
 mod mod_manager;
+pub mod providers;
 pub mod proxy;
 mod reports;
 mod steam_user;
