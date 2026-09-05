@@ -295,6 +295,26 @@ impl Catalog {
       .await
   }
 
+  pub async fn invalidate_sync_state(&self) -> Result<(), Error> {
+    self
+      .pool
+      .run(|connection| {
+        connection.transaction::<_, Error, _>(|connection| {
+          diesel::delete(sync_state::table).execute(connection)?;
+          diesel::update(sync_cursor::table)
+            .set((
+              sync_cursor::next_page.eq(1_i64),
+              sync_cursor::snapshot_id.eq(Option::<String>::None),
+              sync_cursor::snapshot_complete.eq(false),
+              sync_cursor::high_water_mark.eq(0_i64),
+            ))
+            .execute(connection)?;
+          Ok(())
+        })
+      })
+      .await
+  }
+
   #[cfg(test)]
   pub async fn search_slugs(&self, query: String) -> Result<Vec<String>, Error> {
     self
