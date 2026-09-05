@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ModDtoSchema } from "./mod.schemas";
 
 const ModProviderSchema = z.enum(["gamebanana", "custom"]);
 
@@ -149,7 +150,7 @@ export const ResolvedRequirementSchema = z.object({
       "custom_provider",
     ])
     .optional(),
-  mod: z.unknown().optional(),
+  mod: ModDtoSchema.optional(),
 });
 
 export const ResolveModsInputSchema = z.object({

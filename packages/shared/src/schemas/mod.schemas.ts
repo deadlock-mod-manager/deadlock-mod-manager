@@ -11,7 +11,7 @@ export const ModDependencySchema = z.object({
   level: z.enum(["required", "recommended"]).nullable(),
 });
 
-// ModDto schema (matches the raw Mod type from database)
+// Canonical catalog model normalized by the desktop GameBanana client.
 export const ModDtoSchema = z.object({
   id: z.string(),
   remoteId: z.string(),
@@ -32,6 +32,11 @@ export const ModDtoSchema = z.object({
   audioUrl: z.string().nullable(),
   downloadCount: z.number().int(),
   isNSFW: z.boolean(),
+  isObsolete: z.boolean().default(false),
+  isBlacklisted: z.boolean().default(false),
+  blacklistReason: z.string().nullable().default(null),
+  blacklistedAt: coercedDateNullable.default(null),
+  blacklistedBy: z.string().nullable().default(null),
   filesUpdatedAt: coercedDateNullable,
   metadata: z
     .object({
@@ -48,71 +53,22 @@ export const ModDtoSchema = z.object({
     .nullable()
     .optional(),
   dependencies: z.array(ModDependencySchema).nullable().optional(),
+  overrides: z.null().default(null),
   createdAt: coercedDateNullable,
   updatedAt: coercedDateNullable,
 });
 
-// ModDownloadDto schema (matches the transformed output from toModDownloadDto)
+// Canonical archive model normalized by the desktop GameBanana client.
 export const ModDownloadDtoSchema = z.object({
   url: z.string(),
   size: z.number().int(),
-  name: z.string(), // This comes from the 'file' field in the database
+  name: z.string(),
   description: z.string().nullable().optional(),
   createdAt: coercedDateNullable,
   updatedAt: coercedDateNullable,
   md5Checksum: z.string().nullable(),
 });
 
-// CustomSettingDto schema (matches the raw CustomSetting type from database)
-export const CustomSettingDtoSchema = z.object({
-  id: z.string(),
-  key: z.string(),
-  value: z.string(),
-  type: z.string(),
-  description: z.string().nullable(),
-  createdAt: coercedDate,
-  updatedAt: coercedDate,
-});
-
-// Input schemas for route parameters
-export const ModIdParamSchema = z.object({
-  id: z.string(),
-});
-
-// API response schemas
-export const ModsListResponseSchema = z.array(ModDtoSchema);
-export const ModDownloadsResponseSchema = z.array(ModDownloadDtoSchema);
-export const CustomSettingsResponseSchema = z.array(CustomSettingDtoSchema);
-
-// V2 downloads response with count
-export const ModDownloadsV2ResponseSchema = z.object({
-  downloads: z.array(ModDownloadDtoSchema),
-  count: z.number().int(),
-});
-
-export const ErrorResponseSchema = z.object({
-  error: z.string(),
-});
-
-// Check updates schemas
-export const CheckUpdatesInputSchema = z.object({
-  mods: z.array(
-    z.object({
-      remoteId: z.string(),
-      installedAt: coercedDate,
-    }),
-  ),
-});
-
-export const CheckUpdatesResponseSchema = z.object({
-  updates: z.array(
-    z.object({
-      mod: ModDtoSchema,
-      downloads: z.array(ModDownloadDtoSchema),
-    }),
-  ),
-});
-
-export const ModSchema = ModDtoSchema;
-export const ModDownloadSchema = ModDownloadDtoSchema;
-export const CustomSettingSchema = CustomSettingDtoSchema;
+export type ModDependency = z.infer<typeof ModDependencySchema>;
+export type ModDto = z.infer<typeof ModDtoSchema>;
+export type ModDownloadDto = z.infer<typeof ModDownloadDtoSchema>;

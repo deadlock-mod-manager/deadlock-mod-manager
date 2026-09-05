@@ -1,5 +1,4 @@
 import type {
-  ModDto,
   ResolvedRequirement,
   ServerBrowserEntry,
 } from "@deadlock-mods/shared";
@@ -9,11 +8,7 @@ import { resolveServerMods } from "@/lib/api-client";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus } from "@/types/mods";
 
-export interface ResolvedRequirementStatus extends Omit<
-  ResolvedRequirement,
-  "mod"
-> {
-  mod?: ModDto;
+export interface ResolvedRequirementStatus extends ResolvedRequirement {
   inLibrary: boolean;
   isEnabled: boolean;
   status?: ModStatus;
@@ -42,7 +37,6 @@ export const useServerJoin = (server: ServerBrowserEntry | null) => {
 
       return {
         ...r,
-        mod: r.mod as ModDto | undefined,
         inLibrary: !!local,
         isEnabled: local?.status === ModStatus.Installed,
         status: local?.status,

@@ -31,7 +31,6 @@ jobs:
       auth: ${{ steps.filter.outputs.auth }}
       bot: ${{ steps.filter.outputs.bot }}
       lockdex: ${{ steps.filter.outputs.lockdex }}
-      mirror: ${{ steps.filter.outputs.mirror }}
       www: ${{ steps.filter.outputs.www }}
     steps:
       - name: Checkout repository
@@ -53,9 +52,6 @@ jobs:
               - 'packages/**'
             lockdex:
               - 'apps/lockdex/**'
-              - 'packages/**'
-            mirror:
-              - 'apps/mirror-service/**'
               - 'packages/**'
             www:
               - 'apps/www/**'
@@ -194,38 +190,6 @@ jobs:
         uses: ./.github/actions/k8s-restart-deployment
         with:
           service-name: lockdex
-          kubeconfig: ${{ secrets.KUBECONFIG }}
-          namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
-
-  deploy-mirror:
-    environment:
-      name: production
-    name: Deploy Mirror
-    runs-on: depot-ubuntu-24.04
-    needs: changes
-    if: ${{ needs.changes.outputs.mirror == 'true' || github.event.inputs.force-deploy == 'true' }}
-    permissions:
-      packages: write
-      contents: read
-      attestations: write
-      id-token: write
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Build and push Docker image
-        id: docker-build
-        uses: ./.github/actions/docker-build-push
-        with:
-          service-name: mirror-service
-          docker-username: ${{ secrets.DOCKER_USERNAME }}
-          docker-password: ${{ secrets.DOCKER_PASSWORD }}
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Restart Kubernetes deployment
-        uses: ./.github/actions/k8s-restart-deployment
-        with:
-          service-name: mirror
           kubeconfig: ${{ secrets.KUBECONFIG }}
           namespace: ${{ secrets.K8S_NAMESPACE || 'default' }}
 
