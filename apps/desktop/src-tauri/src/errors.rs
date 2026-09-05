@@ -40,6 +40,18 @@ pub enum Error {
   UnauthorizedPath(String),
   #[error("Network error: {0}")]
   Network(String),
+  #[error("GameBanana rate limit reached; retry in {retry_after_secs} seconds")]
+  ProviderRateLimited { retry_after_secs: u64 },
+  #[error("GameBanana refused automatic requests")]
+  ProviderRefused,
+  #[error("GameBanana is unavailable: {0}")]
+  ProviderUnavailable(String),
+  #[error("GameBanana returned an invalid response: {0}")]
+  ProviderInvalidResponse(String),
+  #[error("GameBanana response exceeded the {limit}-byte safety limit")]
+  ProviderResponseTooLarge { limit: usize },
+  #[error("GameBanana request was cancelled")]
+  ProviderCancelled,
   #[error("Tauri error: {0}")]
   Tauri(#[from] tauri::Error),
   #[error("Failed to create backup: {0}")]
@@ -106,6 +118,12 @@ impl serde::Serialize for Error {
       Error::InvalidInput(_) => "invalidInput",
       Error::UnauthorizedPath(_) => "unauthorizedPath",
       Error::Network(_) => "networkError",
+      Error::ProviderRateLimited { .. } => "providerRateLimited",
+      Error::ProviderRefused => "providerRefused",
+      Error::ProviderUnavailable(_) => "providerUnavailable",
+      Error::ProviderInvalidResponse(_) => "providerInvalidResponse",
+      Error::ProviderResponseTooLarge { .. } => "providerResponseTooLarge",
+      Error::ProviderCancelled => "providerCancelled",
       Error::Tauri(_) => "tauri",
       Error::BackupCreationFailed(_) => "backupCreationFailed",
       Error::BackupRestoreFailed(_) => "backupRestoreFailed",
@@ -158,5 +176,36 @@ mod tests {
     let json = serde_json::to_value(&err).unwrap();
     assert_eq!(json["kind"], "gameNotFound");
     assert!(json["matchSyncKind"].is_null());
+  }
+
+  #[test]
+  fn provider_errors_have_stable_serialized_kinds() {
+    let cases = [
+      (
+        Error::ProviderRateLimited {
+          retry_after_secs: 30,
+        },
+        "providerRateLimited",
+      ),
+      (Error::ProviderRefused, "providerRefused"),
+      (
+        Error::ProviderUnavailable("offline".into()),
+        "providerUnavailable",
+      ),
+      (
+        Error::ProviderInvalidResponse("bad json".into()),
+        "providerInvalidResponse",
+      ),
+      (
+        Error::ProviderResponseTooLarge { limit: 1024 },
+        "providerResponseTooLarge",
+      ),
+      (Error::ProviderCancelled, "providerCancelled"),
+    ];
+
+    for (error, expected_kind) in cases {
+      let json = serde_json::to_value(error).unwrap();
+      assert_eq!(json["kind"], expected_kind);
+    }
   }
 }
