@@ -18,18 +18,13 @@ export const StatsSection = () => {
   const statsData = [
     {
       id: 1,
-      name: "Available Mods",
-      value: stats ? formatNumber(stats.totalMods) : "...",
+      name: "App Downloads",
+      value: stats ? `${formatNumber(stats.appDownloads)}+` : "...",
     },
     {
       id: 2,
-      name: "Mod Downloads",
-      value: stats ? `${formatNumber(stats.modDownloads)}+` : "...",
-    },
-    {
-      id: 3,
-      name: "App Downloads",
-      value: stats ? `${formatNumber(stats.appDownloads)}+` : "...",
+      name: "Registered Users",
+      value: stats ? formatNumber(stats.totalUsers) : "...",
     },
   ];
 
@@ -47,11 +42,10 @@ export const StatsSection = () => {
               By the numbers
             </h2>
             <p className='mt-4 text-base text-muted-foreground sm:text-lg/8'>
-              A growing library of mods and an active community making Deadlock
-              better every day.
+              An active community using Deadlock Mod Manager every day.
             </p>
           </div>
-          <dl className='mt-12 grid grid-cols-1 gap-0.5 overflow-hidden rounded-2xl text-center sm:mt-16 lg:grid-cols-3'>
+          <dl className='mt-12 grid grid-cols-1 gap-0.5 overflow-hidden rounded-2xl text-center sm:mt-16 sm:grid-cols-2'>
             {statsData.map((stat) => (
               <div
                 key={stat.id}

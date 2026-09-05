@@ -1,8 +1,4 @@
-import {
-  type CachedVPKWithMod,
-  db,
-  VpkRepository,
-} from "@deadlock-mods/database";
+import { type CachedVPK, db, VpkRepository } from "@deadlock-mods/database";
 import { type VpkParsed, VpkParser } from "@deadlock-mods/vpk-parser";
 
 type MatchType =
@@ -12,28 +8,28 @@ type MatchType =
   | "merkleRoot";
 
 type ModMatchResult = {
-  vpkEntry: CachedVPKWithMod;
+  vpkEntry: CachedVPK;
   certainty: number;
   matchType: MatchType;
-  alternativeMatches?: CachedVPKWithMod[];
+  alternativeMatches?: CachedVPK[];
 };
 
 type VpkAnalysisResult = {
   vpk: VpkParsed;
-  matchedVpk?: CachedVPKWithMod;
+  matchedVpk?: CachedVPK;
   match?: {
     certainty: number;
     matchType: MatchType;
-    alternativeMatches?: CachedVPKWithMod[];
+    alternativeMatches?: CachedVPK[];
   };
 };
 
 type HashAnalysisResult = {
-  matchedVpk: CachedVPKWithMod;
+  matchedVpk: CachedVPK;
   match: {
     certainty: number;
     matchType: MatchType;
-    alternativeMatches?: CachedVPKWithMod[];
+    alternativeMatches?: CachedVPK[];
   };
 };
 
@@ -152,7 +148,7 @@ export class ModAnalyser {
   }
 
   private calculateMatchScore(
-    vpkEntry: CachedVPKWithMod,
+    vpkEntry: CachedVPK,
     fingerprint: VpkParsed["fingerprint"],
   ): number {
     let score = 0;
@@ -347,7 +343,7 @@ export class ModAnalyser {
   }
 
   private calculateHashMatchScore(
-    vpkEntry: CachedVPKWithMod,
+    vpkEntry: CachedVPK,
     hashes: {
       sha256?: string;
       contentSignature: string;

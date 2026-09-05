@@ -1,0 +1,1 @@
+DROP TABLE "rss_item" CASCADE;

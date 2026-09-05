@@ -19,6 +19,14 @@ export class ModSyncHooksService {
 
   async onModFilesUpdated(mod: Mod, filesUpdatedAt: Date): Promise<void> {
     const wide = wideEventContext.get();
+    const submissionType: "mod" | "sound" =
+      mod.isAudio || mod.remoteId.startsWith("snd-") ? "sound" : "mod";
+    const submissionId = mod.remoteId.replace(/^snd-/, "");
+    const identity = {
+      provider: "gamebanana" as const,
+      submissionType,
+      submissionId,
+    };
     wide?.merge({
       hook: "onModFilesUpdated",
       modId: mod.id,
@@ -26,7 +34,7 @@ export class ModSyncHooksService {
     });
 
     try {
-      const deletedCount = await reportRepository.deleteByModId(mod.id);
+      const deletedCount = await reportRepository.deleteByIdentity(identity);
       wide?.set("deletedReportCount", deletedCount);
     } catch (error) {
       logger
@@ -41,8 +49,9 @@ export class ModSyncHooksService {
         JSON.stringify({
           type: "mod_files_updated",
           data: {
-            modId: mod.id,
-            remoteId: mod.remoteId,
+            ...identity,
+            slug:
+              submissionType === "sound" ? `snd-${submissionId}` : submissionId,
             modName: mod.name,
             filesUpdatedAt: filesUpdatedAt.toISOString(),
           },

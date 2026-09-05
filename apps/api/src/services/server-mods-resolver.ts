@@ -1,11 +1,18 @@
-import { db, ModRepository } from "@deadlock-mods/database";
+import {
+  db,
+  type PolicyRule,
+  PolicyRuleRepository,
+} from "@deadlock-mods/database";
 import type { ServerRequiredMod } from "@deadlock-mods/shared";
-import { toModDto } from "@deadlock-mods/shared";
-import { logger as mainLogger } from "../lib/logger";
+import {
+  type DirectGameBananaSubmission,
+  fetchGameBananaSubmission,
+  type GameBananaIdentity,
+  gameBananaIdentitySlug,
+} from "./gamebanana-submission";
 
-const logger = mainLogger.child().withContext({
-  service: "server-mods-resolver",
-});
+const CACHE_TTL_MS = 5 * 60 * 1_000;
+const CACHE_MAX_ENTRIES = 256;
 
 export interface ResolvedRequirement {
   name: string;
@@ -14,28 +21,112 @@ export interface ResolvedRequirement {
   version?: string;
   resolved: boolean;
   remoteId?: string;
-  mod?: ReturnType<typeof toModDto>;
-  reason?: "unknown_scheme" | "not_in_database" | "custom_provider";
+  mod?: DirectGameBananaSubmission["mod"];
+  reason?:
+    | "unknown_scheme"
+    | "not_found"
+    | "provider_failure"
+    | "policy_blocked"
+    | "custom_provider";
 }
 
-// GameBanana submission URLs may use any category segment (e.g. `mods`, `sounds`,
-// `maps`, `skins`, `wips`), e.g. `https://gamebanana.com/mods/616792` or
-// `https://gamebanana.com/sounds/12345`.
-const GAMEBANANA_URL_RE =
-  /^https?:\/\/(?:www\.)?gamebanana\.com\/[a-z]+\/(\d+)\/?$/i;
-
-const extractGamebananaId = (url: string): string | null => {
-  const m = url.trim().match(GAMEBANANA_URL_RE);
-  return m ? m[1] : null;
+export const parseGameBananaSubmissionUrl = (
+  rawUrl: string,
+): GameBananaIdentity | null => {
+  try {
+    const url = new URL(rawUrl.trim());
+    if (
+      url.protocol !== "https:" ||
+      !["gamebanana.com", "www.gamebanana.com"].includes(url.hostname) ||
+      url.search.length > 0 ||
+      url.hash.length > 0
+    ) {
+      return null;
+    }
+    const segments = url.pathname.split("/").filter(Boolean);
+    if (segments.length !== 2 || !/^[1-9]\d*$/.test(segments[1] ?? "")) {
+      return null;
+    }
+    const submissionType =
+      segments[0]?.toLowerCase() === "mods"
+        ? "mod"
+        : segments[0]?.toLowerCase() === "sounds"
+          ? "sound"
+          : null;
+    if (!submissionType) return null;
+    return {
+      provider: "gamebanana",
+      submissionType,
+      submissionId: segments[1]!,
+    };
+  } catch {
+    return null;
+  }
 };
+
+const applyPolicy = (
+  submission: DirectGameBananaSubmission,
+  rules: PolicyRule[],
+): DirectGameBananaSubmission | null => {
+  const matching = rules.filter(
+    (rule) =>
+      rule.active &&
+      rule.provider === submission.identity.provider &&
+      rule.submissionType === submission.identity.submissionType &&
+      rule.submissionId === submission.identity.submissionId,
+  );
+  if (
+    matching.some((rule) =>
+      ["hidden", "blacklisted", "takedown", "emergency_disable"].includes(
+        rule.kind,
+      ),
+    )
+  ) {
+    return null;
+  }
+  const corrected = structuredClone(submission);
+  for (const rule of matching) {
+    if (rule.kind !== "metadata_correction" || !rule.correction) continue;
+    const correction = rule.correction;
+    if (correction.name !== undefined) corrected.mod.name = correction.name;
+    if (correction.description !== undefined) {
+      corrected.mod.description = correction.description;
+    }
+    if (correction.category !== undefined) {
+      corrected.mod.category = correction.category;
+    }
+    if (correction.hero !== undefined) corrected.mod.hero = correction.hero;
+    if (correction.isMap !== undefined) corrected.mod.isMap = correction.isMap;
+    if (correction.isAudio !== undefined) {
+      corrected.mod.isAudio = correction.isAudio;
+    }
+    if (correction.isNSFW !== undefined) {
+      corrected.mod.isNSFW = correction.isNSFW;
+    }
+    if (correction.tags !== undefined) corrected.mod.tags = correction.tags;
+  }
+  return corrected;
+};
+
+type FetchSubmission = (
+  identity: GameBananaIdentity,
+) => Promise<DirectGameBananaSubmission | null>;
+type LoadPolicy = () => Promise<PolicyRule[]>;
+
+const policyRepository = new PolicyRuleRepository(db);
+const loadPolicyRules = (): Promise<PolicyRule[]> => policyRepository.listAll();
 
 export class ServerModsResolver {
   private static instance: ServerModsResolver | null = null;
-  private readonly modRepository: ModRepository;
+  private readonly cache = new Map<
+    string,
+    { expiresAt: number; value: DirectGameBananaSubmission | null }
+  >();
 
-  private constructor() {
-    this.modRepository = new ModRepository(db);
-  }
+  constructor(
+    private readonly fetchSubmission: FetchSubmission = fetchGameBananaSubmission,
+    private readonly loadPolicy: LoadPolicy = loadPolicyRules,
+  ) {}
 
   static getInstance(): ServerModsResolver {
     if (!ServerModsResolver.instance) {
@@ -52,77 +143,70 @@ export class ServerModsResolver {
     if (required.length === 0) {
       return { resolved: [], installed: [], missing: [] };
     }
+    const rules = await this.loadPolicy();
+    const resolved = await Promise.all(
+      required.map((requirement) =>
+        this.resolveRequirement(requirement, rules),
+      ),
+    );
+    return {
+      resolved,
+      installed: [],
+      missing: resolved.filter((item) => !item.resolved),
+    };
+  }
 
-    const remoteIds = new Set<string>();
-    const lookup = new Map<string, string | null>();
-    for (const req of required) {
-      if (req.provider !== "gamebanana") {
-        lookup.set(req.id, null);
-        continue;
-      }
-      const id = extractGamebananaId(req.url);
-      lookup.set(req.id, id);
-      if (id) remoteIds.add(id);
+  private async resolveRequirement(
+    requirement: ServerRequiredMod,
+    rules: PolicyRule[],
+  ): Promise<ResolvedRequirement> {
+    const base = {
+      name: requirement.id,
+      provider: requirement.provider,
+      url: requirement.url,
+      version: requirement.version,
+    };
+    if (requirement.provider === "custom") {
+      return { ...base, resolved: false, reason: "custom_provider" };
     }
-
-    const mods =
-      remoteIds.size > 0
-        ? await this.modRepository.findByRemoteIds(Array.from(remoteIds))
-        : [];
-    const modByRemoteId = new Map(mods.map((m) => [m.remoteId, m]));
-
-    const resolved: ResolvedRequirement[] = required.map((req) => {
-      const base = {
-        name: req.id,
-        provider: req.provider,
-        url: req.url,
-        version: req.version,
-      };
-
-      if (req.provider === "custom") {
-        return {
-          ...base,
-          resolved: false,
-          reason: "custom_provider",
-        };
+    const identity = parseGameBananaSubmissionUrl(requirement.url);
+    if (!identity) {
+      return { ...base, resolved: false, reason: "unknown_scheme" };
+    }
+    const remoteId = gameBananaIdentitySlug(identity);
+    try {
+      const submission = await this.getSubmission(identity);
+      if (!submission) {
+        return { ...base, resolved: false, remoteId, reason: "not_found" };
       }
-
-      const remoteId = lookup.get(req.id) ?? null;
-      if (!remoteId) {
-        return {
-          ...base,
-          resolved: false,
-          reason: "unknown_scheme",
-        };
-      }
-      const mod = modByRemoteId.get(remoteId);
-      if (!mod) {
+      const allowed = applyPolicy(submission, rules);
+      if (!allowed) {
         return {
           ...base,
           resolved: false,
           remoteId,
-          reason: "not_in_database",
+          reason: "policy_blocked",
         };
       }
-      return {
-        ...base,
-        resolved: true,
-        remoteId,
-        mod: toModDto(mod),
-      };
-    });
+      return { ...base, resolved: true, remoteId, mod: allowed.mod };
+    } catch {
+      return { ...base, resolved: false, remoteId, reason: "provider_failure" };
+    }
+  }
 
-    logger
-      .withMetadata({
-        total: required.length,
-        resolved: resolved.filter((r) => r.resolved).length,
-      })
-      .debug("Resolved required mods");
-
-    return {
-      resolved,
-      installed: [],
-      missing: resolved.filter((r) => r.resolved),
-    };
+  private async getSubmission(
+    identity: GameBananaIdentity,
+  ): Promise<DirectGameBananaSubmission | null> {
+    const key = gameBananaIdentitySlug(identity);
+    const cached = this.cache.get(key);
+    if (cached && cached.expiresAt > Date.now()) return cached.value;
+    if (cached) this.cache.delete(key);
+    const value = await this.fetchSubmission(identity);
+    if (this.cache.size >= CACHE_MAX_ENTRIES) {
+      const oldest = this.cache.keys().next().value;
+      if (oldest !== undefined) this.cache.delete(oldest);
+    }
+    this.cache.set(key, { expiresAt: Date.now() + CACHE_TTL_MS, value });
+    return value;
   }
 }

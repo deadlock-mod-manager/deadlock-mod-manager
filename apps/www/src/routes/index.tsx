@@ -4,7 +4,6 @@ import { FAQSection } from "@/components/faq";
 import { FeaturesSection } from "@/components/features";
 import { HeroSection } from "@/components/hero";
 // import { LatestUpdateVideoSection } from "@/components/latest-update-video";
-import { ModShowcaseSection } from "@/components/mod-showcase";
 import { StatsSection } from "@/components/stats";
 import { orpc } from "@/utils/orpc";
 import { seo } from "@/utils/seo";
@@ -27,7 +26,6 @@ function HomeComponent() {
       {/* <LatestUpdateVideoSection videoId='I6qBxyum8QY' /> */}
       <FeaturesSection />
       <StatsSection />
-      <ModShowcaseSection />
       <FAQSection />
     </>
   );
