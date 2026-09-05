@@ -39,6 +39,8 @@ pub struct CatalogQuery {
   #[ts(type = "number | null")]
   pub updated_after: Option<i64>,
   pub favorites: Vec<String>,
+  #[ts(skip)]
+  pub excluded_slugs: Vec<String>,
   pub sort: CatalogSort,
   pub page: u32,
   pub page_size: u32,
@@ -145,6 +147,9 @@ fn filtered_query<'a>(
   }
   if let Some(updated_after) = query.updated_after {
     statement = statement.filter(submission::remote_updated_at.ge(updated_after));
+  }
+  if !query.excluded_slugs.is_empty() {
+    statement = statement.filter(submission::slug.ne_all(&query.excluded_slugs));
   }
   if !query.favorites.is_empty() {
     statement = statement.filter(submission::slug.eq_any(&query.favorites));
@@ -406,5 +411,33 @@ mod tests {
       .unwrap()
       .unwrap();
     assert_eq!(sound.name, "Sound");
+  }
+
+  #[tokio::test]
+  async fn policy_exclusions_are_applied_before_counting_and_pagination() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.db"), 1)
+      .await
+      .unwrap();
+    catalog
+      .upsert_records(vec![
+        record("10", "Allowed", "Skins", None),
+        record("snd-10", "Hidden", "VOs", None),
+      ])
+      .await
+      .unwrap();
+
+    let page = catalog
+      .query(CatalogQuery {
+        excluded_slugs: vec!["snd-10".to_string()],
+        page_size: 1,
+        ..CatalogQuery::default()
+      })
+      .await
+      .unwrap();
+
+    assert_eq!(page.total, 1);
+    assert_eq!(page.items.len(), 1);
+    assert_eq!(page.items[0].submission.to_slug(), "10");
   }
 }

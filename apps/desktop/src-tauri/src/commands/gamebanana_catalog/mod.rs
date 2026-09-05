@@ -3,8 +3,9 @@ mod types;
 
 pub use state::GameBananaCatalogState;
 pub use types::{
-  CatalogDownloadDto, CatalogDownloadsDto, CatalogModDto, CatalogPageDto, CatalogSyncStatusDto,
-  CatalogUpdateDto, CatalogUpdatesDto, GameBananaFileserverDto, InstalledSubmissionDto,
+  CatalogDonationLinkDto, CatalogDownloadDto, CatalogDownloadsDto, CatalogModDto,
+  CatalogModMetadataDto, CatalogPageDto, CatalogSyncStatusDto, CatalogUpdateDto, CatalogUpdatesDto,
+  GameBananaFileserverDto, InstalledSubmissionDto,
 };
 
 use crate::errors::Error;
@@ -33,26 +34,29 @@ pub async fn synchronize_gamebanana_catalog(
 #[tauri::command]
 pub async fn query_gamebanana_catalog(
   state: State<'_, GameBananaCatalogState>,
-  query: CatalogQuery,
+  policy: State<'_, super::policy::PolicyState>,
+  mut query: CatalogQuery,
 ) -> Result<CatalogPageDto, Error> {
   let backend = state.backend()?;
   let stale = catalog_is_stale(&backend.catalog).await?;
-  backend
-    .catalog
-    .query(query)
-    .await
-    .map(|page| CatalogPageDto::from_page(page, stale))
+  query.excluded_slugs = policy.unavailable_slugs()?;
+  let mut page = CatalogPageDto::from_page(backend.catalog.query(query).await?, stale);
+  for item in &mut page.items {
+    policy.apply_to_mod(item)?;
+  }
+  Ok(page)
 }
 
 #[tauri::command]
 pub async fn get_gamebanana_submission_detail(
   state: State<'_, GameBananaCatalogState>,
+  policy: State<'_, super::policy::PolicyState>,
   remote_id: String,
 ) -> Result<CatalogModDto, Error> {
   let backend = state.backend()?;
   let submission = parse_submission(&remote_id)?;
   let cancel = CancellationToken::new();
-  match backend.client.profile(&submission, &cancel).await {
+  let mut mod_data = match backend.client.profile(&submission, &cancel).await {
     Ok(profile) => {
       let normalized =
         normalize_profile(&profile, submission.submission_type).ok_or_else(|| {
@@ -66,36 +70,45 @@ pub async fn get_gamebanana_submission_detail(
           normalized.clone(),
         )])
         .await?;
-      Ok(CatalogModDto::from_profile(&profile, normalized))
+      CatalogModDto::from_profile(&profile, normalized)
     }
     Err(provider_error) => backend
       .catalog
       .get(submission)
       .await?
       .map(CatalogModDto::from_record)
-      .ok_or(provider_error),
+      .ok_or(provider_error)?,
+  };
+  if !policy.apply_to_mod(&mut mod_data)? {
+    return Err(Error::InvalidInput(
+      "This submission is unavailable by policy".to_string(),
+    ));
   }
+  Ok(mod_data)
 }
 
 #[tauri::command]
 pub async fn get_gamebanana_submission_files(
   state: State<'_, GameBananaCatalogState>,
+  policy: State<'_, super::policy::PolicyState>,
   remote_id: String,
 ) -> Result<CatalogDownloadsDto, Error> {
-  submission_files(&state, &remote_id).await
+  submission_files(&state, &policy, &remote_id).await
 }
 
 #[tauri::command]
 pub async fn resolve_gamebanana_download_candidates(
   state: State<'_, GameBananaCatalogState>,
+  policy: State<'_, super::policy::PolicyState>,
   remote_id: String,
 ) -> Result<CatalogDownloadsDto, Error> {
-  submission_files(&state, &remote_id).await
+  submission_files(&state, &policy, &remote_id).await
 }
 
 #[tauri::command]
 pub async fn check_gamebanana_catalog_updates(
   state: State<'_, GameBananaCatalogState>,
+  policy: State<'_, super::policy::PolicyState>,
   submissions: Vec<InstalledSubmissionDto>,
 ) -> Result<CatalogUpdatesDto, Error> {
   let backend = state.backend()?;
@@ -189,8 +202,12 @@ pub async fn check_gamebanana_catalog_updates(
     if (snapshot.remote_updated_at > installed.installed_at || file_updated || selected_changed)
       && let Some(record) = backend.catalog.get(submission).await?
     {
+      let mut mod_data = CatalogModDto::from_record(record);
+      if !policy.apply_to_mod(&mut mod_data)? || !mod_data.downloadable {
+        continue;
+      }
       updates.push(CatalogUpdateDto {
-        r#mod: CatalogModDto::from_record(record),
+        r#mod: mod_data,
         downloads: snapshot
           .files
           .into_iter()
@@ -237,8 +254,10 @@ pub async fn get_gamebanana_fileservers(
 
 async fn submission_files(
   state: &State<'_, GameBananaCatalogState>,
+  policy: &State<'_, super::policy::PolicyState>,
   remote_id: &str,
 ) -> Result<CatalogDownloadsDto, Error> {
+  policy.ensure_download_allowed(remote_id)?;
   let backend = state.backend()?;
   let submission = parse_submission(remote_id)?;
   let page = backend
