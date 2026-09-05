@@ -9,12 +9,23 @@ import {
   DialogTrigger,
 } from "@deadlock-mods/ui/components/dialog";
 import { toast } from "@deadlock-mods/ui/components/sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@deadlock-mods/ui/components/select";
 import { ImportIcon } from "@deadlock-mods/ui/icons";
 import { useMutation, useQueries } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useProfileImport } from "@/hooks/use-profile-import";
 import { getMod, getProfile } from "@/lib/api-client";
+import {
+  getProfileModCandidateIds,
+  rewriteProfileIdentities,
+} from "@/lib/profiles/import-profile-shared";
 import {
   ProfileImportForm,
   type ProfileImportFormData,
@@ -26,6 +37,9 @@ export const ProfileImportDialog = () => {
   const [importedProfile, setImportedProfile] = useState<SharedProfile | null>(
     null,
   );
+  const [legacySelections, setLegacySelections] = useState<
+    Record<number, string>
+  >({});
   const { t } = useTranslation();
   const { createProfileFromImport, importProgress } = useProfileImport();
 
@@ -33,6 +47,7 @@ export const ProfileImportDialog = () => {
     mutationFn: (profileId: string) => getProfile(profileId.trim()),
     onSuccess: (data) => {
       setImportedProfile(data);
+      setLegacySelections({});
       toast.success(t("profiles.importSuccess"));
     },
     onError: () => {
@@ -63,17 +78,56 @@ export const ProfileImportDialog = () => {
     ? importedProfile.payload.mods
     : [];
 
+  const candidateEntries = importedProfile
+    ? orderedImportedMods.flatMap((_, modIndex) =>
+        getProfileModCandidateIds(importedProfile, modIndex).map(
+          (remoteId) => ({ modIndex, remoteId }),
+        ),
+      )
+    : [];
+
   const modQueries = useQueries({
-    queries: orderedImportedMods.map((mod) => ({
-      queryKey: ["mod", mod.remoteId],
-      queryFn: () => getMod(mod.remoteId),
+    queries: candidateEntries.map(({ remoteId }) => ({
+      queryKey: ["mod", remoteId],
+      queryFn: () => getMod(remoteId),
     })),
   });
 
   const modsLoading = modQueries.some((query) => query.isPending);
-  const modsData = modQueries
-    .map((query) => query.data)
-    .filter(Boolean) as ModDto[];
+  const availableCandidates = orderedImportedMods.map((_, modIndex) =>
+    candidateEntries.flatMap((entry, queryIndex) => {
+      const mod = modQueries[queryIndex]?.data;
+      return entry.modIndex === modIndex && mod
+        ? [{ remoteId: entry.remoteId, mod }]
+        : [];
+    }),
+  );
+  const ambiguousMods = availableCandidates
+    .map((candidates, modIndex) => ({ candidates, modIndex }))
+    .filter(({ candidates }) => candidates.length > 1);
+  const resolvedIds = importedProfile
+    ? orderedImportedMods.map((mod, modIndex) => {
+        const candidates = availableCandidates[modIndex] ?? [];
+        if (candidates.length > 1) {
+          return legacySelections[modIndex] ?? mod.remoteId;
+        }
+        return (
+          candidates[0]?.remoteId ??
+          getProfileModCandidateIds(importedProfile, modIndex)[0] ??
+          mod.remoteId
+        );
+      })
+    : [];
+  const resolvedProfile = importedProfile
+    ? rewriteProfileIdentities(importedProfile, resolvedIds)
+    : null;
+  const modsData = availableCandidates.flatMap((candidates, modIndex) => {
+    const selectedId = resolvedIds[modIndex];
+    const selected = candidates.find(
+      (candidate) => candidate.remoteId === selectedId,
+    );
+    return selected ? [selected.mod] : [];
+  }) satisfies ModDto[];
 
   const onSubmit = async (values: ProfileImportFormData) => {
     const profileId = values.profileId?.trim();
@@ -88,16 +142,29 @@ export const ProfileImportDialog = () => {
 
   const handleCancel = () => {
     setImportedProfile(null);
+    setLegacySelections({});
     setOpen(false);
   };
 
   const handleCreateNewProfile = () => {
-    if (!importedProfile) return;
+    if (!resolvedProfile) return;
+    if (
+      ambiguousMods.some(
+        ({ modIndex }) => legacySelections[modIndex] === undefined,
+      )
+    ) {
+      toast.error(
+        t("profiles.legacyIdentityRequired", {
+          defaultValue: "Choose whether each ambiguous item is a mod or sound.",
+        }),
+      );
+      return;
+    }
 
     const sourceProfileId = fetchProfileMutation.variables?.trim();
 
     createProfileMutation.mutate({
-      profile: importedProfile,
+      profile: resolvedProfile,
       availableMods: modsData,
       sourceProfileId,
     });
@@ -125,15 +192,63 @@ export const ProfileImportDialog = () => {
         </DialogHeader>
 
         {importedProfile ? (
-          <ProfilePreview
-            importedProfile={importedProfile}
-            modsLoading={modsLoading}
-            modsData={modsData}
-            onCreateNew={handleCreateNewProfile}
-            onCancel={handleCancel}
-            isImporting={createProfileMutation.isPending}
-            importProgress={importProgress}
-          />
+          <>
+            {ambiguousMods.length > 0 && (
+              <div className='space-y-3 rounded-md border border-amber-500/30 bg-amber-500/5 p-3'>
+                <p className='text-sm font-medium'>
+                  {t("profiles.legacyIdentityTitle", {
+                    defaultValue: "Choose the matching GameBanana item",
+                  })}
+                </p>
+                <p className='text-xs text-muted-foreground'>
+                  {t("profiles.legacyIdentityDescription", {
+                    defaultValue:
+                      "This older profile ID exists as both a mod and a sound.",
+                  })}
+                </p>
+                {ambiguousMods.map(({ candidates, modIndex }) => (
+                  <Select
+                    key={candidates
+                      .map((candidate) => candidate.remoteId)
+                      .join("-")}
+                    value={legacySelections[modIndex]}
+                    onValueChange={(remoteId) =>
+                      setLegacySelections((current) => ({
+                        ...current,
+                        [modIndex]: remoteId,
+                      }))
+                    }>
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={t("profiles.legacyIdentityPlaceholder", {
+                          defaultValue: "Select mod or sound",
+                        })}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {candidates.map(({ mod, remoteId }) => (
+                        <SelectItem key={remoteId} value={remoteId}>
+                          {remoteId.startsWith("snd-")
+                            ? t("profiles.submissionTypeSound")
+                            : t("profiles.submissionTypeMod")}
+                          : {mod.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ))}
+              </div>
+            )}
+            <ProfilePreview
+              importedProfile={resolvedProfile ?? importedProfile}
+              modsLoading={modsLoading}
+              modsData={modsData}
+              onCreateNew={handleCreateNewProfile}
+              onCancel={handleCancel}
+              isImporting={createProfileMutation.isPending}
+              importProgress={importProgress}
+            />
+          </>
         ) : (
           <ProfileImportForm
             onSubmit={onSubmit}

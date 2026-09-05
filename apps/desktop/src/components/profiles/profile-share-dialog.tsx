@@ -48,10 +48,12 @@ export const ProfileShareDialog = () => {
 
       const baseModData: {
         remoteId: string;
+        submissionType: "mod" | "sound";
         fileTree?: ModFileTree;
         selectedDownloads?: ProfileModDownload[];
       } = {
         remoteId: mod.remoteId,
+        submissionType: localMod?.isAudio ? "sound" : "mod",
       };
 
       // Add file tree information if available (for any mod that has file tree data)
@@ -88,6 +90,21 @@ export const ProfileShareDialog = () => {
 
       return baseModData;
     });
+  const enabledIds = new Set(enabledMods.map((mod) => mod.remoteId));
+  const orderedIds = [...(activeProfile?.mods ?? [])]
+    .filter((mod) => enabledIds.has(mod.remoteId))
+    .sort(
+      (left, right) =>
+        (left.installOrder ?? Number.MAX_SAFE_INTEGER) -
+        (right.installOrder ?? Number.MAX_SAFE_INTEGER),
+    )
+    .map((mod) => mod.remoteId);
+  const loadOrder = [
+    ...orderedIds,
+    ...enabledMods
+      .map((mod) => mod.remoteId)
+      .filter((remoteId) => !orderedIds.includes(remoteId)),
+  ];
 
   const { mutate, isPending } = useMutation({
     mutationFn: async (params: {
@@ -136,9 +153,10 @@ export const ProfileShareDialog = () => {
       .info("Creating profile with enhanced mod data");
 
     const validatedProfile = profileSchema.safeParse({
-      version: "1",
+      version: "3",
       payload: {
         mods: enabledMods,
+        loadOrder,
       },
     });
 
@@ -146,7 +164,6 @@ export const ProfileShareDialog = () => {
       logger
         .withMetadata({
           profile: validatedProfile.error,
-          enabledMods,
         })
         .error("Invalid profile");
       toast.error(t("profiles.shareError"));
@@ -154,11 +171,7 @@ export const ProfileShareDialog = () => {
     }
 
     logger
-      .withMetadata({
-        validatedProfile: validatedProfile.data,
-        originalEnabledMods: enabledMods,
-        validatedMods: validatedProfile.data.payload.mods,
-      })
+      .withMetadata({ modCount: validatedProfile.data.payload.mods.length })
       .info("Profile validation successful");
 
     if (!validatedProfile || !hardwareId || !version) {
@@ -181,8 +194,8 @@ export const ProfileShareDialog = () => {
 
     logger
       .withMetadata({
-        payload: JSON.stringify(payload, null, 2),
-        profileMods: validatedProfile.data.payload.mods,
+        modCount: validatedProfile.data.payload.mods.length,
+        profileVersion: validatedProfile.data.version,
       })
       .info("Sharing profile");
 

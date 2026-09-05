@@ -29,6 +29,11 @@ export type HeroDetectionProgress = {
   currentModName: string | null;
 };
 
+export type IdentityMigration = {
+  from: string;
+  to: string;
+};
+
 export type ModsState = {
   localMods: LocalMod[];
   modProgress: Record<string, ModProgress>;
@@ -38,6 +43,7 @@ export type ModsState = {
    * the library and can be put back from there, they are just not listed.
    */
   hiddenHeroMods: Record<string, true>;
+  pendingIdentityMigrations: IdentityMigration[];
   // Analysis dialog state
   analysisResult: AnalyzeAddonsResult | null;
   analysisDialogOpen: boolean;
@@ -91,6 +97,7 @@ export type ModsState = {
   setHeroDetection: (progress: Partial<HeroDetectionProgress>) => void;
   hideHeroMod: (remoteId: string) => void;
   restoreHeroMod: (remoteId: string) => void;
+  completeIdentityMigrations: () => void;
 };
 
 export const modsDeepMergeKeys =
@@ -103,9 +110,12 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
   localMods: [],
   modProgress: {},
   hiddenHeroMods: {},
+  pendingIdentityMigrations: [],
   analysisResult: null,
   analysisDialogOpen: false,
   heroDetection: { status: "idle", current: 0, total: 0, currentModName: null },
+
+  completeIdentityMigrations: () => set({ pendingIdentityMigrations: [] }),
 
   defaultSort: SortType.LAST_UPDATED,
   setDefaultSort: (sortType: SortType) => set({ defaultSort: sortType }),
