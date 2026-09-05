@@ -147,14 +147,16 @@ export const ResolvedRequirementSchema = z.object({
       "not_found",
       "provider_failure",
       "policy_blocked",
+      "too_many_requirements",
       "custom_provider",
+      "timed_out",
     ])
     .optional(),
   mod: ModDtoSchema.optional(),
 });
 
 export const ResolveModsInputSchema = z.object({
-  required_mods: z.array(ModRequirementSchema),
+  required_mods: z.array(ModRequirementSchema).max(50),
 });
 
 export const ResolveModsResponseSchema = z.object({

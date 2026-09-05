@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import {
+  fetchGameBananaSubmission,
   fetchGameBananaSubmissionSnapshot,
   parseGameBananaSlug,
 } from "./gamebanana-submission";
@@ -41,6 +42,30 @@ describe("fetchGameBananaSubmissionSnapshot", () => {
       name: "Movement map",
       author: "Mapper",
       isMap: true,
+    });
+  });
+
+  it("keeps direct profile safety metadata", async () => {
+    const submission = await fetchGameBananaSubmission(
+      parseGameBananaSlug("42")!,
+      (() =>
+        Promise.resolve(
+          Response.json({
+            _idRow: 42,
+            _sName: "Movement map",
+            _aSubmitter: { _sName: "Mapper" },
+            _aGame: { _idRow: 20_948 },
+            _aSuperCategory: { _sName: "  " },
+            _aRootCategory: { _sName: "Maps" },
+            _aContentRatings: { nu: "Nudity" },
+          }),
+        )) as typeof fetch,
+    );
+
+    expect(submission?.mod).toMatchObject({
+      category: "Maps",
+      isMap: true,
+      isNSFW: true,
     });
   });
 

@@ -1,3 +1,4 @@
+import { ProviderError } from "@deadlock-mods/common";
 import { z } from "zod";
 import type { ModDto } from "@deadlock-mods/shared";
 
@@ -38,6 +39,7 @@ const profileSnapshotSchema = z
     _bIsWithheld: z.boolean().optional(),
     _bIsTrashed: z.boolean().optional(),
     _bIsObsolete: z.boolean().optional(),
+    _aContentRatings: z.record(z.string(), z.string()).optional(),
     _nLikeCount: z.number().int().optional(),
     _nDownloadCount: z.number().int().optional(),
     _tsDateAdded: z.number().int().optional(),
@@ -87,7 +89,9 @@ export const fetchGameBananaSubmission = async (
   );
   if (response.status === 404) return null;
   if (!response.ok) {
-    throw new Error(`GameBanana profile request failed (${response.status})`);
+    throw new ProviderError(
+      `GameBanana profile request failed (${response.status})`,
+    );
   }
 
   const result = profileSnapshotSchema.safeParse(await response.json());
@@ -103,10 +107,13 @@ export const fetchGameBananaSubmission = async (
     return null;
   }
   const category =
-    profile._aSuperCategory?._sName ||
-    profile._aRootCategory?._sName ||
-    profile._aCategory?._sName ||
-    "Other";
+    [
+      profile._aSuperCategory?._sName,
+      profile._aRootCategory?._sName,
+      profile._aCategory?._sName,
+    ]
+      .map((name) => name?.trim())
+      .find(Boolean) ?? "Other";
   const slug = gameBananaIdentitySlug(identity);
   const addedAt = new Date((profile._tsDateAdded ?? 0) * 1_000);
   const updatedAt = new Date(
@@ -146,7 +153,9 @@ export const fetchGameBananaSubmission = async (
       isMap,
       audioUrl: profile._aPreviewMedia?._aMetadata?._sAudioUrl ?? null,
       downloadCount: profile._nDownloadCount ?? 0,
-      isNSFW: false,
+      isNSFW: Object.keys(profile._aContentRatings ?? {}).some((rating) =>
+        ["st", "sa", "lp", "pn", "nu"].includes(rating),
+      ),
       isObsolete: profile._bIsObsolete ?? false,
       isBlacklisted: false,
       blacklistReason: null,
