@@ -4,7 +4,7 @@ mod types;
 pub use state::GameBananaCatalogState;
 pub use types::{
   CatalogDownloadDto, CatalogDownloadsDto, CatalogModDto, CatalogPageDto, CatalogSyncStatusDto,
-  CatalogUpdateDto, InstalledSubmissionDto,
+  CatalogUpdateDto, CatalogUpdatesDto, GameBananaFileserverDto, InstalledSubmissionDto,
 };
 
 use crate::errors::Error;
@@ -97,21 +97,109 @@ pub async fn resolve_gamebanana_download_candidates(
 pub async fn check_gamebanana_catalog_updates(
   state: State<'_, GameBananaCatalogState>,
   submissions: Vec<InstalledSubmissionDto>,
-) -> Result<Vec<CatalogUpdateDto>, Error> {
+) -> Result<CatalogUpdatesDto, Error> {
   let backend = state.backend()?;
-  let mut updates = Vec::new();
+  let now = unix_timestamp();
+  let mut resolved = Vec::new();
+  let mut pending = Vec::new();
+  let mut unknown = Vec::new();
   for installed in submissions {
     let submission = parse_submission(&installed.remote_id)?;
-    if let Some(record) = backend.catalog.get(submission).await?
-      && record.remote_updated_at > installed.installed_at
+    if resolved.iter().any(
+      |(existing, _, _): &(
+        SubmissionRef,
+        InstalledSubmissionDto,
+        crate::providers::gamebanana::UpdateSnapshot,
+      )| existing == &submission,
+    ) || pending
+      .iter()
+      .any(|(existing, _): &(SubmissionRef, InstalledSubmissionDto)| existing == &submission)
+    {
+      continue;
+    }
+    match backend.catalog.cached_update(submission.clone()).await? {
+      Some(cached) if now.saturating_sub(cached.checked_at) < 6 * 60 * 60 => {
+        resolved.push((submission, installed, cached.snapshot));
+      }
+      _ => pending.push((submission, installed)),
+    }
+  }
+
+  for submission_type in [
+    crate::providers::SubmissionType::Mod,
+    crate::providers::SubmissionType::Sound,
+  ] {
+    let matching = pending
+      .iter()
+      .filter(|(submission, _)| submission.submission_type == submission_type)
+      .cloned()
+      .collect::<Vec<_>>();
+    for batch in matching.chunks(50) {
+      let identities = batch
+        .iter()
+        .map(|(submission, _)| submission.clone())
+        .collect::<Vec<_>>();
+      match backend
+        .client
+        .bulk_updates(&identities, &CancellationToken::new())
+        .await
+      {
+        Ok(snapshots) => {
+          for ((submission, installed), snapshot) in batch.iter().cloned().zip(snapshots) {
+            if let Some(snapshot) = snapshot {
+              backend
+                .catalog
+                .save_cached_update(submission.clone(), snapshot.clone(), now)
+                .await?;
+              resolved.push((submission, installed, snapshot));
+            } else {
+              unknown.push(submission.to_slug());
+            }
+          }
+        }
+        Err(error) => {
+          log::warn!("GameBanana bulk update check failed: {error}");
+          for (submission, installed) in batch.iter().cloned() {
+            if let Some(cached) = backend.catalog.cached_update(submission.clone()).await? {
+              resolved.push((submission, installed, cached.snapshot));
+            } else {
+              unknown.push(submission.to_slug());
+            }
+          }
+        }
+      }
+    }
+  }
+
+  let mut updates = Vec::new();
+  for (submission, installed, snapshot) in resolved {
+    let selected_changed = !installed.selected_file_ids.is_empty()
+      && installed.selected_file_ids.iter().any(|selected| {
+        !snapshot
+          .files
+          .iter()
+          .any(|file| file.id.to_string() == *selected)
+      });
+    let file_updated = snapshot
+      .files
+      .iter()
+      .filter_map(|file| file.date_added)
+      .max()
+      .is_some_and(|updated| updated > installed.installed_at);
+    if (snapshot.remote_updated_at > installed.installed_at || file_updated || selected_changed)
+      && let Some(record) = backend.catalog.get(submission).await?
     {
       updates.push(CatalogUpdateDto {
-        remote_id: installed.remote_id,
-        remote_updated_at: record.remote_updated_at,
+        r#mod: CatalogModDto::from_record(record),
+        downloads: snapshot
+          .files
+          .into_iter()
+          .map(CatalogDownloadDto::from)
+          .collect(),
       });
     }
   }
-  Ok(updates)
+  Ok(CatalogUpdatesDto { updates, unknown })
 }
 
 #[tauri::command]
@@ -137,6 +225,14 @@ pub async fn invalidate_gamebanana_catalog_state(
   state: State<'_, GameBananaCatalogState>,
 ) -> Result<(), Error> {
   state.backend()?.catalog.invalidate_sync_state().await
+}
+
+#[tauri::command]
+pub async fn get_gamebanana_fileservers(
+  state: State<'_, GameBananaCatalogState>,
+  force_refresh: bool,
+) -> Result<Vec<GameBananaFileserverDto>, Error> {
+  state.backend()?.fileservers(force_refresh).await
 }
 
 async fn submission_files(
@@ -202,11 +298,15 @@ async fn timestamp_state(
 }
 
 fn is_stale(timestamp: Option<u64>) -> bool {
-  let now = SystemTime::now()
+  let now = unix_timestamp();
+  timestamp.is_none_or(|value| now.saturating_sub(value) >= STALE_AFTER.as_secs())
+}
+
+fn unix_timestamp() -> u64 {
+  SystemTime::now()
     .duration_since(UNIX_EPOCH)
     .unwrap_or_default()
-    .as_secs();
-  timestamp.is_none_or(|value| now.saturating_sub(value) >= STALE_AFTER.as_secs())
+    .as_secs()
 }
 
 fn parse_submission(remote_id: &str) -> Result<SubmissionRef, Error> {

@@ -1,8 +1,10 @@
+use super::types::{GameBananaFileserverDto, GameBananaFileserverStatsDto};
 use crate::errors::Error;
 use crate::providers::gamebanana::GameBananaClient;
 use crate::providers::gamebanana::catalog::{Catalog, CatalogSync, SyncOutcome};
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex as StdMutex};
+use std::time::{Duration, Instant};
 use tokio_util::sync::CancellationToken;
 
 #[derive(Clone)]
@@ -20,7 +22,13 @@ pub struct CatalogBackend {
   pub catalog: Catalog,
   pub client: GameBananaClient,
   sync: CatalogSync,
-  cancellation: Mutex<CancellationToken>,
+  cancellation: StdMutex<CancellationToken>,
+  fileservers: tokio::sync::Mutex<Option<CachedFileservers>>,
+}
+
+struct CachedFileservers {
+  loaded_at: Instant,
+  values: Vec<GameBananaFileserverDto>,
 }
 
 impl GameBananaCatalogState {
@@ -46,7 +54,8 @@ impl GameBananaCatalogState {
       catalog,
       client,
       sync,
-      cancellation: Mutex::new(CancellationToken::new()),
+      cancellation: StdMutex::new(CancellationToken::new()),
+      fileservers: tokio::sync::Mutex::new(None),
     })
   }
 
@@ -84,5 +93,54 @@ impl CatalogBackend {
       .sync
       .synchronize(force_refresh, force_reconcile, &cancellation)
       .await
+  }
+
+  pub async fn fileservers(&self, force: bool) -> Result<Vec<GameBananaFileserverDto>, Error> {
+    const TTL: Duration = Duration::from_secs(6 * 60 * 60);
+    let mut cache = self.fileservers.lock().await;
+    if !force
+      && let Some(cached) = cache.as_ref()
+      && cached.loaded_at.elapsed() < TTL
+    {
+      return Ok(cached.values.clone());
+    }
+    let page = self.client.fileservers(&CancellationToken::new()).await?;
+    let values = page
+      .records
+      .into_iter()
+      .filter(|record| {
+        !record.domain.is_empty()
+          && record
+            .domain
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || byte == b'-')
+      })
+      .map(|record| {
+        let domain = format!("{}.gamebanana.com", record.domain);
+        let stats = record.stats.hour.map(|stats| GameBananaFileserverStatsDto {
+          rate_bytes: stats.rate.max(0.0).floor() as u64,
+          requests_per_hour: stats.requests,
+        });
+        GameBananaFileserverDto {
+          id: record.id.to_string(),
+          provider: "gamebanana".to_string(),
+          domain: domain.clone(),
+          name: record.domain,
+          state: match record.state.as_str() {
+            "up" => "up",
+            "terminated" => "terminated",
+            _ => "down",
+          }
+          .to_string(),
+          url_template: format!("https://{domain}/{{category}}/{{filename}}"),
+          stats,
+        }
+      })
+      .collect::<Vec<_>>();
+    *cache = Some(CachedFileservers {
+      loaded_at: Instant::now(),
+      values: values.clone(),
+    });
+    Ok(values)
   }
 }

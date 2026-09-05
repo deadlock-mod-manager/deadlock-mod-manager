@@ -130,15 +130,47 @@ pub struct InstalledSubmissionDto {
   pub remote_id: String,
   #[ts(type = "number")]
   pub installed_at: i64,
+  #[serde(default)]
+  pub selected_file_ids: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
 #[ts(export, rename_all = "camelCase")]
 #[serde(rename_all = "camelCase")]
 pub struct CatalogUpdateDto {
-  pub remote_id: String,
+  pub r#mod: CatalogModDto,
+  pub downloads: Vec<CatalogDownloadDto>,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogUpdatesDto {
+  pub updates: Vec<CatalogUpdateDto>,
+  pub unknown: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct GameBananaFileserverDto {
+  pub id: String,
+  pub provider: String,
+  pub domain: String,
+  pub name: String,
+  pub state: String,
+  pub url_template: String,
+  pub stats: Option<GameBananaFileserverStatsDto>,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct GameBananaFileserverStatsDto {
   #[ts(type = "number")]
-  pub remote_updated_at: i64,
+  pub rate_bytes: u64,
+  #[ts(type = "number")]
+  pub requests_per_hour: u64,
 }
 
 impl CatalogModDto {

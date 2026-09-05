@@ -20,7 +20,7 @@ export const useCheckUpdates = (options?: {
     (mod) =>
       mod.status === ModStatus.Installed &&
       mod.remoteId &&
-      !mod.remoteId.startsWith("local://"),
+      !mod.remoteId.startsWith("local-"),
   );
 
   const modsToCheck = installedMods.map((mod) => ({
@@ -30,6 +30,11 @@ export const useCheckUpdates = (options?: {
       mod.selectedDownloads?.[0]?.createdAt ??
       mod.createdAt ??
       new Date(0),
+    selectedFileIds:
+      mod.selectedDownloads?.flatMap((download) => {
+        const match = /^gamebanana-file:\/\/[^/]+\/(\d+)$/.exec(download.url);
+        return match?.[1] ? [match[1]] : [];
+      }) ?? [],
   }));
 
   const query = useQuery({
