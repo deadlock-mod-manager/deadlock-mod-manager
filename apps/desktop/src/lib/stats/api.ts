@@ -1,4 +1,4 @@
-import { ASSETS_BASE_URL, DeadlockApiError } from "@/lib/deadlock-api";
+import { assetsBaseUrl, DeadlockApiError } from "@/lib/deadlock-api";
 import { fetch } from "@/lib/fetch";
 import {
   parseList,
@@ -21,6 +21,7 @@ import {
   steamProfileSchema,
 } from "@/lib/validation/stats-api";
 import type { z } from "zod";
+import { runtimeServiceOrigin } from "@/lib/runtime-bootstrap";
 
 export { DeadlockApiError };
 export type { RankAsset };
@@ -47,6 +48,7 @@ export type {
 } from "@/lib/validation/stats-api";
 
 const BASE_URL = "https://api.deadlock-api.com";
+const apiBaseUrl = (): string => runtimeServiceOrigin("deadlockApi", BASE_URL);
 
 // Endpoints deliberately avoided: /card and /account-stats are Patreon-only and
 // capped at 5 req/min per IP, and match-history?force_refetch=true is 1 req/h.
@@ -63,7 +65,9 @@ export const API_HEADERS: Readonly<Record<string, string>> = {
 };
 
 const request = async (path: string): Promise<unknown> => {
-  const response = await fetch(`${BASE_URL}${path}`, { headers: API_HEADERS });
+  const response = await fetch(`${apiBaseUrl()}${path}`, {
+    headers: API_HEADERS,
+  });
   if (!response.ok) {
     throw new DeadlockApiError(response.status, path);
   }
@@ -210,7 +214,7 @@ export const resolveRank = (
 };
 
 export const getRankAssets = async (): Promise<RankAsset[]> => {
-  const response = await fetch(`${ASSETS_BASE_URL}/v2/ranks`);
+  const response = await fetch(`${assetsBaseUrl()}/v2/ranks`);
   if (!response.ok) {
     throw new DeadlockApiError(response.status, "/v2/ranks");
   }

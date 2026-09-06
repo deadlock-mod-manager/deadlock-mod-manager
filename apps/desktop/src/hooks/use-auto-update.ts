@@ -8,7 +8,7 @@ import useUpdateManager from "./use-update-manager";
 
 const logger = createLogger("auto-update");
 
-export const useAutoUpdate = () => {
+export const useAutoUpdate = (integrationEnabled = true) => {
   const { t } = useTranslation();
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const updateManager = useUpdateManager();
@@ -19,6 +19,9 @@ export const useAutoUpdate = () => {
   // biome-ignore lint/correctness/useExhaustiveDependencies: auto update hook
   useEffect(() => {
     const checkForUpdatesOnLaunch = async () => {
+      if (!integrationEnabled) {
+        return;
+      }
       try {
         // Check if auto-update is disabled via CLI flag
         const disabledViaCli = await isAutoUpdateDisabled();
@@ -63,7 +66,7 @@ export const useAutoUpdate = () => {
     const timeout = setTimeout(checkForUpdatesOnLaunch, 2000);
 
     return () => clearTimeout(timeout);
-  }, [autoUpdateEnabled]);
+  }, [autoUpdateEnabled, integrationEnabled]);
 
   const handleUpdate = async () => {
     try {

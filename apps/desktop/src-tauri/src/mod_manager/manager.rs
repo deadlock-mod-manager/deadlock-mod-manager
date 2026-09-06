@@ -19,7 +19,6 @@ use std::{
   collections::{BTreeMap, HashSet},
   path::{Component, Path, PathBuf},
 };
-use tauri::Manager;
 
 mod gameinfo;
 mod lifecycle;
@@ -64,8 +63,11 @@ impl ModManager {
       app_handle: None,
     };
 
-    // Try to find the game path on initialization
-    if let Err(e) = manager.find_game() {
+    // Harness worlds are configured explicitly during Tauri setup. Never scan
+    // the host for Steam or Deadlock when an isolated runtime is active.
+    if !crate::runtime_environment::is_e2e_active()
+      && let Err(e) = manager.find_game()
+    {
       log::warn!("Failed to find game path during initialization: {e:?}");
     }
 
@@ -324,7 +326,7 @@ impl ModManager {
       .app_handle
       .as_ref()
       .ok_or(Error::AppHandleNotInitialized)?;
-    app_handle.path().app_local_data_dir().map_err(Error::Tauri)
+    crate::runtime_environment::app_local_data_dir(app_handle).map_err(Error::Tauri)
   }
 
   pub fn get_mods_store_path(&self) -> Result<std::path::PathBuf, Error> {

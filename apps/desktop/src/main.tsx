@@ -29,6 +29,13 @@ import Stats from "./pages/stats";
 import "flag-icons/css/flag-icons.min.css";
 import "./index.css";
 import "./lib/i18n";
+import { initializeApplication } from "./lib/application-bootstrap";
+
+if (import.meta.env.VITE_DMM_E2E_HARNESS === "1") {
+  await import("@wdio/tauri-plugin");
+}
+
+const application = await initializeApplication();
 
 const MapsRouteGate = () => {
   const { isEnabled } = useFeatureFlag("custom-maps", false);
@@ -70,7 +77,13 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
       <Suspense fallback={<Splash />}>
         <BrowserRouter>
           <Routes>
-            <Route element={<App />}>
+            <Route
+              element={
+                <App
+                  runtime={application.runtime}
+                  storage={application.storage}
+                />
+              }>
               <Route element={<Dashboard />} path='/' />
               <Route element={<MyMods />} path='/my-mods' />
               <Route element={<GetMods />} path='/mods' />

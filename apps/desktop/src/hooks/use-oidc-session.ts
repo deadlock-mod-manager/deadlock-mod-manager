@@ -11,6 +11,7 @@ import {
 } from "@/lib/auth/token";
 import { AUTH_URL } from "@/lib/config";
 import { HttpError } from "@/lib/http-error";
+import { runtimeServiceOrigin } from "@/lib/runtime-bootstrap";
 
 export type { OIDCSession, OIDCUser };
 
@@ -56,11 +57,14 @@ export function useOIDCSession(): UseOIDCSessionResult {
 
       let response: Response;
       try {
-        response = await fetch(`${AUTH_URL}/api/auth/oauth2/userinfo`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
+        response = await fetch(
+          `${runtimeServiceOrigin("auth", AUTH_URL)}/api/auth/oauth2/userinfo`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
           },
-        });
+        );
       } catch {
         throw new HttpError("auth", 0, "/api/auth/oauth2/userinfo");
       }

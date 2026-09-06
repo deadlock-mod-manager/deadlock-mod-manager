@@ -7,7 +7,7 @@ pub async fn store_auth_token(app_handle: AppHandle, token: String) -> Result<()
   log::info!("Storing authentication token");
 
   let store = app_handle
-    .store("state.json")
+    .store(crate::runtime_environment::state_store_path())
     .map_err(|e| Error::InvalidInput(format!("Failed to access store: {e}")))?;
 
   store.set("auth_token", serde_json::json!(token));
@@ -24,7 +24,7 @@ pub async fn get_auth_token(app_handle: AppHandle) -> Result<Option<String>, Err
   log::debug!("Retrieving authentication token");
 
   let store = app_handle
-    .store("state.json")
+    .store(crate::runtime_environment::state_store_path())
     .map_err(|e| Error::InvalidInput(format!("Failed to access store: {e}")))?;
 
   let token = store.get("auth_token");
@@ -46,7 +46,7 @@ pub async fn clear_auth_token(app_handle: AppHandle) -> Result<(), Error> {
   log::info!("Clearing authentication token");
 
   let store = app_handle
-    .store("state.json")
+    .store(crate::runtime_environment::state_store_path())
     .map_err(|e| Error::InvalidInput(format!("Failed to access store: {e}")))?;
 
   let _ = store.delete("auth_token");

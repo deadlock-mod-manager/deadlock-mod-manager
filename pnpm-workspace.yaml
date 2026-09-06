@@ -48,6 +48,8 @@ allowBuilds:
   puppeteer: true
   sharp: true
   better-sqlite3: false
+  edgedriver: true
+  geckodriver: false
 
 autoInstallPeers: false
 dedupePeerDependents: true

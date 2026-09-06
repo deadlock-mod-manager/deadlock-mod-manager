@@ -17,6 +17,7 @@ import { ensureValidToken } from "./auth/token";
 import { fetch } from "./fetch";
 import { HttpError } from "./http-error";
 import logger from "./logger";
+import { runtimeServiceOrigin } from "./runtime-bootstrap";
 import {
   checkDirectGameBananaUpdates,
   getGameBananaCatalogDownloads,
@@ -44,12 +45,15 @@ const apiRequest = async <T>(
 
   let response: Response;
   try {
-    response = await fetch(`${BASE_URL}${endpoint}`, {
-      method: method ?? (body ? "POST" : "GET"),
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-      credentials: "include",
-    });
+    response = await fetch(
+      `${runtimeServiceOrigin("dmmApi", BASE_URL)}${endpoint}`,
+      {
+        method: method ?? (body ? "POST" : "GET"),
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+        credentials: "include",
+      },
+    );
   } catch (cause) {
     logger.withError(cause).error("API network failure");
     throw new HttpError("backend", 0, endpoint);
