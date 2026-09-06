@@ -5,7 +5,6 @@ use crate::mod_manager::ModFileTree;
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use std::time::Instant;
-use tauri::Manager;
 use tauri::State;
 
 use super::mods::InstalledModInfo;
@@ -43,10 +42,8 @@ pub async fn queue_download(
   )
   .await?;
 
-  let app_local_data_dir = app_handle
-    .path()
-    .app_local_data_dir()
-    .map_err(Error::Tauri)?;
+  let app_local_data_dir =
+    crate::runtime_environment::app_local_data_dir(&app_handle).map_err(Error::Tauri)?;
 
   let target_dir = app_local_data_dir.join("mods").join(&mod_id);
 
