@@ -29,3 +29,16 @@ The external provider currently cannot be required on Windows hosts with WebView
 `@wdio/tauri-service` 1.3.0 also emits a non-fatal `sessionId is required` warning while clearing its mock store after an embedded session has already closed. It does not change the WDIO exit status or leave the application running. Treat it as service noise and remove this note when the package fixes its after-session cleanup.
 
 Native Windows dialogs are outside the webview DOM and cannot be driven by WebDriver. A later harness milestone will add a narrowly scoped FlaUI helper for picker selection while keeping the app's real dialog plugin and Rust continuation in the flow. The current milestone covers isolated runtime configuration, deterministic network and filesystem worlds, synthetic VPKs, UI clicks, real IPC/Rust execution, diagnostics, and process supervision.
+
+## Roadmap
+
+| Milestone | Status | Deliverable | Exit criterion |
+| --- | --- | --- | --- |
+| M1: safe harness foundation | Complete in PR #706 | Compile-gated runtime configuration, owned worlds, root routing, fixture network, filesystem oracle, synthetic VPK builder, supervisor, doctor, and embedded-driver qualification | Ten retry-free fresh UI/IPC runs pass; intentional timeout cleanup succeeds; production cannot activate E2E mode |
+| M2: complete local-mod lifecycle | Next | Drive a synthetic VPK through a narrowly scoped FlaUI native-picker helper, the real Rust parser, import/install, enable/disable, delete, and application restart | UI state, VPK manifest, persisted store, and independent file hashes agree after every step; the final world matches its expected restored state |
+| M3: profiles and ordering | Planned | Two-profile switching plus pointer and keyboard reorder flows | Inactive profiles and protected files remain unchanged; order and profile state survive restart without mocked core IPC |
+| M4: downloads and network failures | Planned; transport foundation exists | Exercise actual Rust downloads against fixture endpoints, including variants, Range resume, pause, cancel, malformed responses, and authentication failures | Every request matches the strict journal; unexpected traffic fails; partial files and state recover correctly |
+| M5: recovery and hostile filesystem cases | Planned | Backup replace/merge, interrupted mutations, shard boundaries, collisions, Windows locks, and crash barriers | Restart recovers retained worlds and the independent oracle proves restoration without normalizing unexpected writes |
+| M6: CI and release coverage | Planned | Serial Windows PR lane, broader nightly matrix, packaged-app/native smoke, and ordinary-release exclusion checks | Clean runners reproduce required flows and ordinary builds contain no harness server, capability, control channel, or fixture policy |
+
+Keep scenarios independent and small even when they share recipes. The final routine-development gate is a composed import/download → enable → profile switch → reorder → backup → modify → restore → restart journey, supported by focused tests for each operation and failure boundary.
