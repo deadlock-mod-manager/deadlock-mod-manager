@@ -5,6 +5,9 @@ import { STORE_NAME } from "../constants";
 
 const RETRY_DELAYS_MS: readonly number[] = [50, 150, 400];
 let stateStorePath = STORE_NAME;
+// Persist supplies whole-state snapshots; overlapping IPC lookups can otherwise
+// let an older snapshot overwrite a newer one.
+let pendingWrite: Promise<void> = Promise.resolve();
 
 export const setStateStorePath = (path: string): void => {
   stateStorePath = path;
@@ -98,16 +101,19 @@ const storage: StateStorage = {
         );
       return;
     }
-    try {
-      const store = await getStore(stateStorePath);
-      await store?.set(key, value);
-      await store?.save();
-    } catch (error) {
-      logger
-        .withError(error)
-        .withMetadata({ key })
-        .error("Persist setItem failed");
-    }
+    pendingWrite = pendingWrite.then(async () => {
+      try {
+        const store = await getStore(stateStorePath);
+        await store?.set(key, value);
+        await store?.save();
+      } catch (error) {
+        logger
+          .withError(error)
+          .withMetadata({ key })
+          .error("Persist setItem failed");
+      }
+    });
+    await pendingWrite;
   },
 
   removeItem: async (key: string): Promise<void> => {
@@ -119,16 +125,19 @@ const storage: StateStorage = {
         );
       return;
     }
-    try {
-      const store = await getStore(stateStorePath);
-      await store?.delete(key);
-      await store?.save();
-    } catch (error) {
-      logger
-        .withError(error)
-        .withMetadata({ key })
-        .error("Persist removeItem failed");
-    }
+    pendingWrite = pendingWrite.then(async () => {
+      try {
+        const store = await getStore(stateStorePath);
+        await store?.delete(key);
+        await store?.save();
+      } catch (error) {
+        logger
+          .withError(error)
+          .withMetadata({ key })
+          .error("Persist removeItem failed");
+      }
+    });
+    await pendingWrite;
   },
 };
 
@@ -138,6 +147,7 @@ export default storage;
 // can exercise the write gate from a clean slate. Not exported from index.
 export const __resetForTests = (): void => {
   stateStorePath = STORE_NAME;
+  pendingWrite = Promise.resolve();
   firstReadDone = false;
   storageReadyPromise = new Promise<StorageReadyStatus>((resolve) => {
     storageReadyResolve = resolve;
