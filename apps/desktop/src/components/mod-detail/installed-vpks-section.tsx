@@ -16,7 +16,9 @@ export const InstalledVpksSection = ({ vpks }: InstalledVpksSectionProps) => {
   const { t } = useTranslation();
 
   return (
-    <Card className='shadow-none [contain:layout_style_paint]'>
+    <Card
+      data-testid='active-vpks'
+      className='shadow-none [contain:layout_style_paint]'>
       <CardHeader>
         <CardTitle className='flex items-center gap-2'>
           <HardDrive className='h-4 w-4' />
@@ -31,6 +33,7 @@ export const InstalledVpksSection = ({ vpks }: InstalledVpksSectionProps) => {
           {vpks.map((vpk) => (
             <div
               key={vpk}
+              data-file-name={vpk}
               className='rounded-md bg-muted/30 px-3 py-1.5 font-mono text-sm'>
               {vpk}
             </div>

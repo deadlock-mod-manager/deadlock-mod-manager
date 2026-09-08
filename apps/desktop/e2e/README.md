@@ -8,16 +8,59 @@ The default and required provider is WDIO's embedded server. The external `tauri
 pnpm --filter @deadlock-mods/desktop e2e:build
 pnpm --filter @deadlock-mods/desktop e2e:doctor
 pnpm --filter @deadlock-mods/desktop e2e:test
+pnpm --filter @deadlock-mods/desktop exec tsx e2e/cli.ts list
+pnpm --filter @deadlock-mods/desktop e2e:test -- --suite gamebanana --keep
 pnpm --filter @deadlock-mods/desktop e2e:qualify -- --provider embedded
 pnpm --filter @deadlock-mods/desktop e2e:qualify -- --provider external
 ```
+
+## Writing scenarios
+
+`support/scenarios.ts` is the scenario registry. Each definition owns its spec, phases, fixture setup, HTTP routes, network assertions, native-input requirement, and expected exit mode. `--suite` selects `all`, a family such as `gamebanana` or `downloads`, or a coverage category (`ui` / `ipc-recovery`). Cases run serially with a separate world per case; restart phases share that case's world. Failures retain their world and the runner continues to report the remaining cases.
+
+Native input requires explicit `--allow-native-input`. This applies to the local-picker and profile-ordering scenarios, including `--suite all`. Those cases control the Windows desktop and require exclusive mouse/keyboard use; never enable the option while someone is working on that desktop. Other cases still launch application windows but do not use the physical input helper. The native executable also checks the supervisor's opt-in environment variable.
+
+Use these modules when adding a flow:
+
+| Module | Responsibility |
+| --- | --- |
+| `application.ts`, `application-exit.ts` | Verify the real application identity, dismiss release notes, record phase startup, and close normally after the scenario finishes |
+| `ui.ts` | Navigate, open ordering through keyboard input, activate profiles, select downloads/install files, and locate installed-file sections |
+| `native-input.ts`, `native-picker.ts` | Owned Windows input for drag/keyboard sensors and native file selection; the picker accepts any fixture path beneath the world's fixtures directory |
+| `observations.ts` | Decode persisted state, hash bytes, compare exact inventory changes, and poll a read-only observation with the last value in timeout errors |
+| `mod-fixtures.ts`, `profile-fixtures.ts` | Build mod records and arbitrary installed profile layouts; the Alpha/Beta recipe is a convenience wrapper |
+| `vpk.ts`, `archive-fixtures.ts`, `fixture-server.ts` | Compose synthetic VPKs, deterministic ZIPs, and strict HTTP responses, including transfer failures |
+| `evidence.ts` | Name meaningful steps and capture independent diagnostics even when another capture fails |
+
+A scenario should read like its user workflow, with domain assertions kept in its oracle:
+
+```typescript
+const runtime = await startApplication();
+await navigate("my-mods");
+await step("enable the imported mod", async () => {
+  await $('[role="switch"]').click();
+  await observeUntil("Installed mod", () => readLifecycleState(runtime.roots.world),
+    (state) => state.localMods[0]?.status === "installed");
+});
+await assertLifecycleDisk(runtime.roots.world, "enabled", modId, "installed");
+await closeApplication(runtime.roots.world, runtime.processId);
+await assertLifecycleDisk(runtime.roots.world, "closed", modId, "installed");
+```
+
+Always verify scenario-specific state and bytes after normal close: a valid store file alone cannot prove that exit-time saving preserved the installed mods. Normal phases require a completion marker and a dead application PID. Interrupted phases verify the started process has exited; transaction crash phases require their explicit crash evidence. Recovery checks observe startup before UI reconciliation and must not invoke a recovery command to make the assertion pass.
+
+Seed only prerequisites for the behavior under test. For example, download retry cases seed a failed transfer, while GameBanana install cases begin with an empty library and obtain mod records through the real catalog. Keep expected payloads and file selections explicit. Use stable semantic selectors or focused `data-*` attributes rather than CSS typography classes; keep native interaction limited to controls that require it.
+
+Run `e2e:check-types` and `e2e:test:world` for harness changes, then the affected native families. `e2e:qualify` checks ten fresh application runs plus WebDriver timeout reporting, retaining the intentional timeout world. Separate process-control tests exercise actual hung-process termination and interruption. The Windows supervisor bounds `taskkill` and its own output wait; if a launcher exits while inherited output handles remain open, it fails with a diagnostic instead of waiting forever or killing a possibly reused PID. It cannot recover arbitrary orphan ownership after the launcher exits.
+
+Step events go to `steps.ndjson`; screenshots and DOM captures include the phase in their filenames. `result.json`, final inventories, filesystem events, and HTTP journals are retained on failures, including launch and oracle failures. Individual capture errors are recorded separately so a dead webview does not prevent disk evidence from being collected.
 
 The local-mod lifecycle uses a .NET 10 Windows helper with locked FlaUI dependencies to operate the real file picker:
 
 ```powershell
 pnpm --filter @deadlock-mods/desktop e2e:build:picker
 pnpm --filter @deadlock-mods/desktop e2e:doctor -- --case local-mod-lifecycle
-pnpm --filter @deadlock-mods/desktop e2e:test -- --case local-mod-lifecycle --keep
+pnpm --filter @deadlock-mods/desktop e2e:test -- --case local-mod-lifecycle --keep --allow-native-input
 ```
 
 The first process imports a synthetic VPK, verifies the real Rust parser, then enables, disables, and re-enables the mod. A second process opens the same world, verifies persisted enabled state, and deletes the mod through the UI. Each step checks the store, `.dmm.json`, exact addon file inventory, and SHA-256 payload hashes. Steam files and a protected game sentinel must remain unchanged. The helper only selects the fixed fixture for the PID returned by the E2E backend; it never substitutes a dialog response or core IPC command. `--case` also works with `e2e:qualify`.

@@ -1,62 +1,12 @@
+import { fingerprint } from "./observations";
+export { fingerprint } from "./observations";
+import { processExists } from "./process-control";
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 import { ALPHA, ALPHA_MODS, profilePayload } from "./profile-fixtures";
 import { assertOwnedWorld, collectFileInventory } from "./world";
-import { readProfileState } from "./profile-oracle";
-
-export const processExists = (pid: number): boolean => {
-  try {
-    process.kill(pid, 0);
-    return true;
-  } catch (error) {
-    if (
-      !(error instanceof Error) ||
-      !("code" in error) ||
-      error.code !== "ESRCH"
-    )
-      throw error;
-    return false;
-  }
-};
-
-export const assertNormalExit = async (
-  world: string,
-  phase: string,
-): Promise<void> => {
-  const { configuration, artifacts } = await filesystemPaths(world);
-  const completed = z
-    .object({
-      processId: z.number().int().positive(),
-      runId: z.string(),
-      caseId: z.string(),
-      phase: z.string(),
-      state: z.json(),
-    })
-    .parse(
-      JSON.parse(
-        await readFile(
-          path.join(artifacts, `phase-completed-${phase}.json`),
-          "utf8",
-        ),
-      ),
-    );
-  assert.equal(completed.runId, configuration.runId);
-  assert.equal(completed.caseId, configuration.caseId);
-  assert.equal(completed.phase, phase);
-  assert.equal(
-    processExists(completed.processId),
-    false,
-    "Normal close must finish before restart",
-  );
-  assert.deepEqual(
-    await readProfileState(world),
-    completed.state,
-    "Store remains intact after normal exit",
-  );
-};
 
 const inventorySchema = z.record(z.string(), z.string());
 const backupEvidenceSchema = z.object({
@@ -77,9 +27,6 @@ export const filesystemManifestSchema = z.object({
     }),
   ),
 });
-export const fingerprint = (bytes: Buffer): string =>
-  `${bytes.length}:${createHash("sha256").update(bytes).digest("hex")}`;
-
 const protectedFiles = (files: Record<string, string>) =>
   Object.fromEntries(
     Object.entries(files).filter(

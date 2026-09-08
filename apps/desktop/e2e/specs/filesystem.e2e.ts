@@ -1,3 +1,5 @@
+import { navigate, activateProfile } from "../support/ui";
+import { startApplication } from "../support/application";
 import assert from "node:assert/strict";
 import { readFile, writeFile, unlink, rmdir } from "node:fs/promises";
 import path from "node:path";
@@ -62,7 +64,7 @@ const reorder = async (
 };
 
 const openBackups = async (): Promise<void> => {
-  await $('a[href="/settings"]').click();
+  await navigate("settings");
   const tab = await $("button=Backups");
   await tab.scrollIntoView({ block: "center" });
   await tab.click();
@@ -71,23 +73,7 @@ const openBackups = async (): Promise<void> => {
 
 describe("filesystem recovery", () => {
   it("preserves owned payloads through a filesystem failure and fresh process", async () => {
-    const dismiss = await $("button=Got it!");
-    const unseenVersion = await browser.execute(
-      async () =>
-        localStorage.getItem("lastSeenVersion") !==
-        (await window.__TAURI_INTERNALS__.invoke<string>("plugin:app|version")),
-    );
-    if (unseenVersion) {
-      await dismiss.waitForDisplayed();
-      await dismiss.click();
-      await expect(dismiss).not.toBeDisplayed();
-    }
-    const runtime = await browser.execute(() =>
-      window.__TAURI_INTERNALS__.invoke<{
-        processId: number;
-        roots: { world: string };
-      }>("e2e_status"),
-    );
+    const runtime = await startApplication();
     const world = runtime.roots.world;
     const { configuration, citadel, alpha, artifacts } =
       await filesystemPaths(world);
@@ -112,31 +98,16 @@ describe("filesystem recovery", () => {
         .object({ processId: z.number() })
         .parse(JSON.parse(await readFile(processFile, "utf8")));
       assert.notEqual(runtime.processId, prior.processId);
-      // The production snapshot command performs journal recovery on the launch path.
-      await browser.execute(
-        (folder) =>
-          window.__TAURI_INTERNALS__.invoke("get_profile_vpk_snapshot", {
-            profileFolder: folder,
-          }),
-        ALPHA.folder,
-      );
       await assertFilesystemLayout(world, "restarted", expectedOrder, extras);
       // Opening the profile selector and reactivating Alpha runs the normal frontend
       // manifest reconciliation, including a commit that outlived its IPC response.
-      await $('a[href="/my-mods"]').click();
-      await $('button[aria-label="Active Profile"]').click();
-      await $(
-        '[role="switch"][aria-label="Activate E2E Beta profile"]',
-      ).click();
+      await navigate("my-mods");
+      await activateProfile("E2E Beta");
       await browser.waitUntil(
         async () =>
           (await readProfileState(world)).activeProfileId !== ALPHA.id,
       );
-      await browser.keys("Escape");
-      await $('button[aria-label="Active Profile"]').click();
-      await $(
-        '[role="switch"][aria-label="Activate E2E Alpha profile"]',
-      ).click();
+      await activateProfile("E2E Alpha");
       await browser.waitUntil(async () => {
         const state = await readProfileState(world);
         return (
@@ -171,7 +142,18 @@ describe("filesystem recovery", () => {
       );
       await expect($(`[title="${expectedOrder[0]}"]`)).toBeDisplayed();
       await assertFilesystemLayout(world, "reconciled", expectedOrder, extras);
-      await closeApplication(world, runtime.processId, original);
+      await closeApplication(world, runtime.processId);
+      assert.deepEqual(
+        await readProfileState(world),
+        state,
+        "Exit must preserve the reconciled profile state",
+      );
+      await assertFilesystemLayout(
+        world,
+        "closed-reconciled",
+        expectedOrder,
+        extras,
+      );
       return;
     }
     assert.equal(process.env.DMM_E2E_PHASE, "mutate");
@@ -296,6 +278,12 @@ describe("filesystem recovery", () => {
       assert.equal(await reorder(world, changed), null);
       await assertFilesystemLayout(world, "retry-succeeded", changed);
     }
-    await closeApplication(world, runtime.processId, original);
+    await closeApplication(world, runtime.processId);
+    await assertFilesystemLayout(
+      world,
+      "closed-mutation",
+      expectedOrder,
+      extras,
+    );
   });
 });

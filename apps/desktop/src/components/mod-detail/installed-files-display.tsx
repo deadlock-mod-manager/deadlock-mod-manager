@@ -34,7 +34,9 @@ export const InstalledFilesDisplay = ({
   const archiveNames = Object.keys(filesByArchive);
 
   return (
-    <Card className='shadow-none [contain:layout_style_paint]'>
+    <Card
+      data-testid='installed-files'
+      className='shadow-none [contain:layout_style_paint]'>
       <CardHeader>
         <CardTitle className='flex items-center gap-2'>
           Installed Files
@@ -47,7 +49,10 @@ export const InstalledFilesDisplay = ({
       <CardContent>
         <div className='space-y-4'>
           {archiveNames.map((archiveName) => (
-            <div className='space-y-2' key={archiveName}>
+            <div
+              data-archive={archiveName}
+              className='space-y-2'
+              key={archiveName}>
               <div className='flex items-center gap-2'>
                 <Archive className='h-4 w-4 text-muted-foreground' />
                 <span className='font-medium text-sm'>{archiveName}</span>
@@ -64,7 +69,11 @@ export const InstalledFilesDisplay = ({
                     key={file.path}>
                     <div className='flex items-center gap-3'>
                       <div className='space-y-1'>
-                        <div className='font-mono text-sm'>{file.name}</div>
+                        <div
+                          data-file-name={file.name}
+                          className='font-mono text-sm'>
+                          {file.name}
+                        </div>
                         {file.path !== file.name && (
                           <div className='text-muted-foreground text-xs'>
                             {file.path}
