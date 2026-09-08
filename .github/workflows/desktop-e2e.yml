@@ -2,6 +2,7 @@ name: Desktop E2E
 
 on:
   pull_request:
+    types: [opened, synchronize, reopened, labeled]
     paths:
       - apps/desktop/**
       - packages/**
@@ -27,6 +28,7 @@ defaults:
 jobs:
   build:
     name: Build isolated harness
+    if: github.event.action != 'labeled' || github.event.label.name == 'e2e-full'
     runs-on: windows-latest
     timeout-minutes: 60
     steps:
@@ -66,7 +68,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: ${{ fromJSON(github.event_name == 'pull_request' && '["ci-pr"]' || '["smoke","local","profiles","downloads","filesystem","gamebanana"]') }}
+        suite: ${{ fromJSON(github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'e2e-full') && '["ci-pr"]' || '["smoke","local","profiles","downloads","filesystem","gamebanana"]') }}
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-desktop-e2e
@@ -94,6 +96,7 @@ jobs:
 
   release:
     name: Ordinary release exclusion
+    if: github.event.action != 'labeled' || github.event.label.name == 'e2e-full'
     runs-on: windows-latest
     timeout-minutes: 75
     steps:
@@ -123,7 +126,9 @@ jobs:
 
   packaged:
     name: Installed NSIS smoke
-    if: github.event_name != 'pull_request'
+    if: >-
+      (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e-full')) &&
+      (github.event.action != 'labeled' || github.event.label.name == 'e2e-full')
     runs-on: windows-latest
     timeout-minutes: 75
     steps:
