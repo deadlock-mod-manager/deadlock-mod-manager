@@ -34,6 +34,8 @@ The first smoke flow uses WebDriver clicks to open Settings and the About dialog
 
 ## Qualification status
 
+The local-mod lifecycle passed 10 consecutive retry-free Windows/Wry runs in 24.5–27.2 seconds per world, with two application processes per run. A final verification after adding bounded inventory retries for transient Windows file locks passed both the lifecycle and the intentional-timeout cleanup probe. The inventory still fails if a file remains locked; it never skips a locked file.
+
 The embedded provider passed 10 consecutive fresh-process runs on Windows/Wry with retries disabled, followed by an intentional timeout that was surfaced and torn down correctly. Fresh runs took 10.6–14.7 seconds (about 11.6 seconds on average), including world creation, application and driver startup, UI and Rust assertions, artifact capture, shutdown, and cleanup across every managed root.
 
 The external provider currently cannot be required on Windows hosts with WebView2 Runtime 150 or newer when the application runs elevated. WebView2 ignores the remote-debugging switch used by `tauri-driver`, so session creation times out even with a matching EdgeDriver. This is tracked upstream in [webdriverio/desktop-mobile#542](https://github.com/webdriverio/desktop-mobile/issues/542) with the Tauri fix in `wry#1782`. Keep embedded as the required provider until that upstream fix reaches DMM's Wry version.
