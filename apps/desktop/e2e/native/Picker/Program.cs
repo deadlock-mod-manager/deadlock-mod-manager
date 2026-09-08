@@ -4,7 +4,7 @@ using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
 using FlaUI.UIA3;
 
-if (args.Length != 2 || !int.TryParse(args[0], out var processId))
+if (args.Length is not (2 or 3) || !int.TryParse(args[0], out var processId))
     throw new ArgumentException("Expected application PID and owned world directory");
 
 var world = Path.GetFullPath(args[1]);
@@ -16,6 +16,12 @@ if (manifest.RootElement.GetProperty("owner").GetString() != "dmm-e2e-harness" |
 using var process = Process.GetProcessById(processId);
 if (!string.Equals(process.MainModule?.FileName, Environment.GetEnvironmentVariable("DMM_E2E_BINARY"), StringComparison.OrdinalIgnoreCase))
     throw new InvalidOperationException("Picker PID does not match the harness binary");
+
+if (args.Length == 3)
+{
+    NativeInput.Run(process, args[2]);
+    return;
+}
 
 var fixture = Path.Combine(world, "fixtures", "e2e-local-mod.vpk");
 if (!File.Exists(fixture)) throw new FileNotFoundException("Lifecycle fixture is missing", fixture);
