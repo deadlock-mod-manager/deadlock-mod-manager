@@ -169,7 +169,7 @@ M6 runs the existing E2E harness in `.github/workflows/desktop-e2e.yml`. It runs
 
 The pipeline builds the debug harness and native helper once, then shares their binaries with six independent Windows jobs covering all 22 scenarios. Each family runs serially with retries disabled. Native input is explicitly enabled only on disposable GitHub-hosted desktops. The CLI's `--report <path>` writes an incremental JSON summary; CI retains reports and diagnostic artifacts for 14 days without uploading control tokens. Missing prerequisites, unmatched requests, timeouts, and failed scenarios remain failures. No release builds, installer smoke tests, signing, or publication are part of this pipeline.
 
-Clean-runner qualification is pending. The local pointer rerun remains skipped at the user's request; its normal scenario is included on the dedicated CI runner.
+Use the six scenario jobs and their per-case reports to verify clean-runner qualification. The local pointer rerun remains skipped at the user's request; its normal scenario is included on the dedicated CI runner.
 
 | Milestone | Status | Deliverable | Exit criterion |
 | --- | --- | --- | --- |
@@ -178,6 +178,6 @@ Clean-runner qualification is pending. The local pointer rerun remains skipped a
 | M3: profiles and ordering | Implemented and validated on Windows/Wry | Two-profile switching plus native pointer and keyboard reorder flows | Inactive profiles and protected files remain unchanged; order and profile state survive restart without mocked core IPC |
 | M4: downloads and network failures | Implemented and validated on Windows/Wry | GameBanana catalog downloads and installation, multi-file and VPK variant selection, installed-file rendering, selected-variant retries, Range resume, pause, cancel, corrupt payloads, authentication failures, redirects, and interrupted-process recovery | Every request matches the strict journal; unexpected traffic fails; installed files and selections survive restart; partial files and state recover correctly |
 | M5: recovery and hostile filesystem cases | Implemented and validated on Windows/Wry | Backup replace/merge, interrupted mutations, shard boundaries, collisions, Windows locks, and crash barriers | Restart recovers retained worlds and the independent oracle proves restoration without normalizing unexpected writes |
-| M6: nightly E2E pipeline | Implemented; clean-runner qualification pending | Nightly/manual Windows E2E matrix and opt-in execution on this PR | All 22 existing scenarios pass on clean runners with retained failure evidence |
+| M6: nightly E2E pipeline | Implemented; qualification tracked in CI | Nightly/manual Windows E2E matrix and opt-in execution on this PR | All 22 existing scenarios pass on clean runners with retained failure evidence |
 
 Keep scenarios independent and small even when they share recipes. The final routine-development gate is a composed import/download → enable → profile switch → reorder → backup → modify → restore → restart journey, supported by focused tests for each operation and failure boundary.
