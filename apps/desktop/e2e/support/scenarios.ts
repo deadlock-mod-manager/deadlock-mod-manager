@@ -1,4 +1,7 @@
 export type ScenarioId =
+  | "gamebanana-single"
+  | "gamebanana-multifile"
+  | "gamebanana-variants"
   | "filesystem-backup-replace"
   | "filesystem-backup-merge"
   | "filesystem-lock"
@@ -21,6 +24,9 @@ export type ScenarioId =
 
 export const parseScenarioId = (value = "about-smoke"): ScenarioId => {
   if (
+    value === "gamebanana-single" ||
+    value === "gamebanana-multifile" ||
+    value === "gamebanana-variants" ||
     value === "filesystem-backup-replace" ||
     value === "filesystem-backup-merge" ||
     value === "filesystem-lock" ||
@@ -46,23 +52,27 @@ export const parseScenarioId = (value = "about-smoke"): ScenarioId => {
 };
 
 export const scenarioPhases = (scenario: ScenarioId): readonly string[] =>
-  scenario.startsWith("filesystem-")
-    ? ["mutate", "restart-filesystem"]
-    : scenario.startsWith("downloads-")
-      ? ["transfer", "restart-download"]
-      : scenario === "local-mod-lifecycle"
-        ? ["import-toggle", "restart-delete"]
-        : scenario === "about-smoke"
-          ? ["smoke"]
-          : ["reorder-switch", "restart-profiles"];
+  scenario.startsWith("gamebanana-")
+    ? ["catalog-install", "restart-catalog"]
+    : scenario.startsWith("filesystem-")
+      ? ["mutate", "restart-filesystem"]
+      : scenario.startsWith("downloads-")
+        ? ["transfer", "restart-download"]
+        : scenario === "local-mod-lifecycle"
+          ? ["import-toggle", "restart-delete"]
+          : scenario === "about-smoke"
+            ? ["smoke"]
+            : ["reorder-switch", "restart-profiles"];
 
 export const scenarioSpec = (scenario: ScenarioId): string =>
-  scenario.startsWith("filesystem-")
-    ? "./specs/filesystem.e2e.ts"
-    : scenario.startsWith("downloads-")
-      ? "./specs/downloads.e2e.ts"
-      : scenario === "local-mod-lifecycle"
-        ? "./specs/local-mod-lifecycle.e2e.ts"
-        : scenario === "about-smoke"
-          ? "./specs/about.e2e.ts"
-          : "./specs/profiles-ordering.e2e.ts";
+  scenario.startsWith("gamebanana-")
+    ? "./specs/gamebanana.e2e.ts"
+    : scenario.startsWith("filesystem-")
+      ? "./specs/filesystem.e2e.ts"
+      : scenario.startsWith("downloads-")
+        ? "./specs/downloads.e2e.ts"
+        : scenario === "local-mod-lifecycle"
+          ? "./specs/local-mod-lifecycle.e2e.ts"
+          : scenario === "about-smoke"
+            ? "./specs/about.e2e.ts"
+            : "./specs/profiles-ordering.e2e.ts";
