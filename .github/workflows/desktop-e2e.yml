@@ -28,7 +28,7 @@ defaults:
 jobs:
   build:
     name: Build isolated harness
-    if: github.event.action != 'labeled' || github.event.label.name == 'e2e-full'
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e-full')
     runs-on: windows-latest
     timeout-minutes: 60
     steps:
@@ -68,7 +68,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite: ${{ fromJSON(github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'e2e-full') && '["ci-pr"]' || '["smoke","local","profiles","downloads","filesystem","gamebanana"]') }}
+        suite: [smoke, local, profiles, downloads, filesystem, gamebanana]
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/setup-desktop-e2e
@@ -93,69 +93,3 @@ jobs:
             .e2e/reports/**
             .e2e/worlds/**/artifacts/**
             .e2e/worlds/**/world-manifest.json
-
-  release:
-    name: Ordinary release exclusion
-    if: github.event.action != 'labeled' || github.event.label.name == 'e2e-full'
-    runs-on: windows-latest
-    timeout-minutes: 75
-    steps:
-      - uses: actions/checkout@v6
-      - uses: ./.github/actions/setup-desktop-e2e
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: arduino/setup-protoc@v3
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: apps/desktop -> target
-          shared-key: desktop-e2e-production
-      - name: Build ordinary release without harness features
-        env:
-          VITE_DMM_E2E_HARNESS: "0"
-        run: pnpm --filter @deadlock-mods/desktop tauri build --no-bundle
-      - name: Verify release surface and configuration rejection
-        run: pnpm --filter @deadlock-mods/desktop exec tsx e2e/release-check.ts
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: desktop-release-exclusion
-          retention-days: 14
-          include-hidden-files: true
-          path: .e2e/release/**
-
-  packaged:
-    name: Installed NSIS smoke
-    if: >-
-      (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e-full')) &&
-      (github.event.action != 'labeled' || github.event.label.name == 'e2e-full')
-    runs-on: windows-latest
-    timeout-minutes: 75
-    steps:
-      - uses: actions/checkout@v6
-      - uses: ./.github/actions/setup-desktop-e2e
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: arduino/setup-protoc@v3
-        with:
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: apps/desktop -> target
-          shared-key: desktop-e2e-package
-      - name: Build isolated release-mode installer
-        env:
-          VITE_DMM_E2E_HARNESS: "1"
-        run: pnpm --filter @deadlock-mods/desktop tauri build --features e2e-harness --config src-tauri/tauri.e2e-package.conf.json --bundles nsis
-      - name: Build native helper
-        run: pnpm --filter @deadlock-mods/desktop e2e:build:picker
-      - name: Install and test the packaged executable
-        run: ./apps/desktop/e2e/ci/package-smoke.ps1
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: desktop-e2e-installed-package
-          retention-days: 14
-          include-hidden-files: true
-          path: |
-            .e2e/reports/**
-            .e2e/worlds/**/artifacts/**

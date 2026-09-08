@@ -17,10 +17,6 @@ describe("scenario selection", () => {
       expect(new Set(scenarioPhases(id)).size).toBe(scenarioPhases(id).length);
     }
     expect(selectScenarios("gamebanana")).toHaveLength(3);
-    const prCases = selectScenarios("ci-pr");
-    expect(prCases).toHaveLength(6);
-    expect(new Set(prCases).size).toBe(prCases.length);
-    expect(prCases.every((id) => ids.includes(id))).toBe(true);
     expect(scenarios["profiles-pointer"].nativeInput).toBe(true);
     expect(scenarios["filesystem-crash-placed"].exit("mutate")).toBe("crash");
     expect(scenarios["downloads-restart"].exit("transfer")).toBe("interrupt");
