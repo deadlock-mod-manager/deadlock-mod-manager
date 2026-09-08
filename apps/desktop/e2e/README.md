@@ -64,7 +64,33 @@ Each world starts with a failed download record and persisted file selection, so
 
 The E2E-only download policy accepts exact configured fixture origins (including port and scheme) for initial requests and redirects. Ordinary builds retain the HTTPS trusted-host allowlist. The same downloader, checksum checks, staging files, pause gate, and cancellation logic run in both builds.
 
+## Filesystem recovery scenarios
+
+M5 runs with the same `e2e:test -- --case <case> --keep` command after `e2e:build`. Run these serially on Windows/Wry.
+
+| Case | Behavior checked |
+| --- | --- |
+| `filesystem-backup-replace` | Create and restore through Settings; restore original VPK order, manifest, and overwritten sentinel; remove a file added after backup |
+| `filesystem-backup-merge` | Restore the backup's colliding files and manifest while preserving a file added after backup |
+| `filesystem-lock` | Hold the third VPK with Windows `FileShare.None`; fail after staging an earlier VPK, prove exact rollback, release the handle, and retry |
+| `filesystem-collision` | A protected directory occupies the next destination filename; fail during placement, prove exact rollback, remove only the fixture obstruction, and retry |
+| `filesystem-shards` | Rotate 100 distinct installed payloads across the 99-file boundary; verify ownership of identically named slots in different shards and both game search paths |
+| `filesystem-crash-placed` | Abrupt exit after the first real placement, leaving two parked VPKs; a fresh process restores the original layout |
+| `filesystem-crash-committed` | Abrupt exit after the manifest is saved but before staging cleanup; a fresh process retains the committed layout |
+
+Backups use UI controls. Filesystem mutations use the existing `reorder_mods_by_remote_id` IPC command so each fault lands at a precise boundary; M3 covers the native ordering gestures. Restart uses the production snapshot/recovery path, then switches Beta → Alpha through the profile selector to exercise frontend reconciliation. The oracle checks persisted order, exact file inventories, distinct payload hashes, manifest slots and shards, protected Beta/Steam files, and game search paths. Backup sources must match the initial recipe and remain unchanged after restore and restart. Opening Settings normally creates an empty `cfg/autoexec.cfg`; this exact write is included in the backup cases' expected inventory.
+
+The compile-gated `e2e_faults` module only accepts a PID-bound arm file for the matching crash case in its owned world. It writes and syncs a checkpoint marker, then exits without running destructors. The supervisor verifies the marker's PID/run/profile, the exact stage/place/manifest journal, and the payloads still on disk. There is no crash hook in an ordinary build, no mocked core IPC, and no harness rewrite of a failed transaction's files or manifest.
+
+Ordinary M5 restarts close the main window through Tauri, wait for the process to exit, and verify the persisted profile store. WDIO's Windows teardown sends a terminating signal that can interrupt a store write during background hero detection; it is unsuitable for an ordinary restart. After proving process exit, the worker retires its dead WebDriver session so teardown does not send DELETE to the closed embedded server. Every phase still requires a zero WDIO exit status. Normal-exit evidence is checked again by the supervisor; timeouts, signals, missing markers, or failed assertions fail the run. Switching profiles creates `gameinfo.gi.bak`, which must match the initial gameinfo bytes exactly.
+
+Artifacts include `filesystem-baseline.json`, per-step `filesystem-*.json`, `filesystem-rollback.json`, `phase-completed-*.json`, backup evidence, and crash marker/journal/disk evidence. Lock handles are released in `finally`; the helper also has a bounded lifetime. Worlds with failures remain available for diagnosis. Synthetic profile archives contain no hero assets and are seeded as already indexed, keeping unrelated background discovery out of these scenarios.
+
+These cases cover reorder interruption at placement and manifest commit, rather than every possible write boundary. Interrupting a backup restore during its copy phase and simulating power-loss durability remain additional coverage opportunities.
+
 ## Qualification status
+
+All seven M5 cases passed repeated retry-free Windows/Wry worlds, with a fresh process for recovery and independent disk/store evidence. The final backup replace and merge cases each passed two consecutive worlds; the 100-mod shard case passed three consecutive worlds after fixing normal shutdown and preindexing the synthetic fixtures. Successful M5 worlds took approximately 20–26 seconds and had no unmatched fixture requests. These cases exposed two production defects that are fixed here: completed rollbacks left their transaction journal behind, and reorder bypassed the journal-aware manifest commit method. The Rust mod-manager suite passes all 122 tests; the harness suite passes 19 tests, including checks that reject wrong payloads, false shard ownership, unexpected files, and foreign/live crash markers.
 
 All eight M4 cases passed two consecutive retry-free Windows/Wry worlds each, including a new application process in every world. The final pass took approximately 20–30 seconds per world with no unmatched requests. Harness unit tests cover binary Range responses, truncated streams, wrong-variant bytes, and leftover partial files; Rust tests cover fixture-origin restrictions and the ordinary-build allowlist.
 
@@ -88,7 +114,7 @@ Native Windows dialogs are outside the webview DOM and cannot be driven by WebDr
 | M2: complete local-mod lifecycle | Implemented and validated on Windows/Wry | Drive a synthetic VPK through a narrowly scoped FlaUI native-picker helper, the real Rust parser, import/install, enable/disable, delete, and application restart | UI state, VPK manifest, persisted store, and independent file hashes agree after every step; the final world matches its expected restored state |
 | M3: profiles and ordering | Implemented and validated on Windows/Wry | Two-profile switching plus native pointer and keyboard reorder flows | Inactive profiles and protected files remain unchanged; order and profile state survive restart without mocked core IPC |
 | M4: downloads and network failures | Implemented and validated on Windows/Wry | Real Rust downloads against binary fixtures: selected-variant retries, Range resume, pause, cancel, corrupt payloads, authentication failures, redirects, and interrupted-process recovery | Every request matches the strict journal; unexpected traffic fails; partial files and state recover correctly |
-| M5: recovery and hostile filesystem cases | Planned | Backup replace/merge, interrupted mutations, shard boundaries, collisions, Windows locks, and crash barriers | Restart recovers retained worlds and the independent oracle proves restoration without normalizing unexpected writes |
+| M5: recovery and hostile filesystem cases | Implemented and validated on Windows/Wry | Backup replace/merge, interrupted mutations, shard boundaries, collisions, Windows locks, and crash barriers | Restart recovers retained worlds and the independent oracle proves restoration without normalizing unexpected writes |
 | M6: CI and release coverage | Planned | Serial Windows PR lane, broader nightly matrix, packaged-app/native smoke, and ordinary-release exclusion checks | Clean runners reproduce required flows and ordinary builds contain no harness server, capability, control channel, or fixture policy |
 
 Keep scenarios independent and small even when they share recipes. The final routine-development gate is a composed import/download → enable → profile switch → reorder → backup → modify → restore → restart journey, supported by focused tests for each operation and failure boundary.

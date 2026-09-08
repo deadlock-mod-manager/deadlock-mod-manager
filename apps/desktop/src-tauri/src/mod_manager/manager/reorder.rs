@@ -326,10 +326,7 @@ impl ModManager {
         &mapped_mod_ids,
         &pending.value().orphan_renames,
       );
-      if let Err(error) = manifest.save(base) {
-        return Err(pending.rollback(error));
-      }
-      placements.extend(pending.commit().placements);
+      placements.extend(pending.commit_manifest(manifest, base)?.placements);
     }
 
     for placement in &placements {

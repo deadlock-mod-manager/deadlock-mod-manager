@@ -10,6 +10,8 @@ mod commands;
 mod deep_link;
 mod download_manager;
 mod dropped_mod_file;
+#[cfg(feature = "e2e-harness")]
+mod e2e_faults;
 mod errors;
 mod flatpak;
 mod forge_bridge;

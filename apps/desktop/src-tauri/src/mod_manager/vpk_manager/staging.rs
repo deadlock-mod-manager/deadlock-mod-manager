@@ -320,6 +320,8 @@ impl VpkStaging {
     })?;
     fs::rename(staged, destination)?;
     self.files[index].current = destination.to_path_buf();
+    #[cfg(feature = "e2e-harness")]
+    crate::e2e_faults::checkpoint("placed", &self.base)?;
     Ok(())
   }
 
@@ -496,6 +498,8 @@ impl<T> PendingVpkOperation<T> {
     if let Err(error) = manifest.save(addons_path) {
       return Err(self.rollback(error));
     }
+    #[cfg(feature = "e2e-harness")]
+    crate::e2e_faults::checkpoint("committed", addons_path)?;
     Ok(self.commit())
   }
 
@@ -713,6 +717,25 @@ mod tests {
     assert!(matches!(error, Error::InvalidInput(_)));
     assert_eq!(fs::read(original).unwrap(), b"vpk");
     assert!(!placed.exists());
+    assert!(!base.join(".test-staging").exists());
+  }
+
+  #[test]
+  fn incomplete_rollback_retains_journal_and_payload_for_recovery() {
+    let temp = tempfile::tempdir().unwrap();
+    let base = base(&temp);
+    let original = base.join("pak01_dir.vpk");
+    fs::write(&original, b"retained").unwrap();
+    let mut staging = VpkStaging::claim(&base, ".test-staging").unwrap();
+    let parked = staging.stage(&base, &original).unwrap();
+    fs::create_dir(&original).unwrap();
+    fs::write(original.join("blocker"), b"protected").unwrap();
+
+    let error = staging.rollback(Error::InvalidInput("interrupted".into()));
+    assert!(matches!(error, Error::RollbackFailed(_)));
+    assert_eq!(fs::read(&parked).unwrap(), b"retained");
+    assert!(base.join(".test-staging").join(JOURNAL_FILENAME).is_file());
+    assert_eq!(fs::read(original.join("blocker")).unwrap(), b"protected");
   }
 
   #[test]

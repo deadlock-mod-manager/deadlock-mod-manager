@@ -5,6 +5,8 @@ import type { DriverProvider } from "./contracts";
 import { scenarioPhases, type ScenarioId } from "./scenarios";
 import { writeSyntheticVpk } from "./vpk";
 import { prepareProfileWorld } from "./profile-fixtures";
+import { prepareFilesystemWorld } from "./filesystem-fixtures";
+import { assertCrashEvidence, assertNormalExit } from "./filesystem-oracle";
 import {
   assertDownloadNetwork,
   downloadRoutes,
@@ -157,7 +159,10 @@ const spawnWdio = async (
     process.removeListener("SIGTERM", onTermination);
   }
   await writeFile(outputPath, output);
-  return { exitCode: supervisorTerminated ? 1 : exitCode, output };
+  return {
+    exitCode: supervisorTerminated ? 1 : exitCode,
+    output,
+  };
 };
 
 const terminateProcessTree = (child: ChildProcess): void => {
@@ -203,7 +208,8 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
       ...(options.caseId.startsWith("downloads-")
         ? downloadRoutes(options.caseId)
         : []),
-      ...(options.caseId.startsWith("profiles-")
+      ...(options.caseId.startsWith("profiles-") ||
+      options.caseId.startsWith("filesystem-")
         ? [
             {
               method: "GET",
@@ -222,6 +228,8 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
       fixtureOrigin: fixtureServer.origin,
     });
     const roots = world.configuration.roots;
+    if (options.caseId.startsWith("filesystem-"))
+      await prepareFilesystemWorld(world);
     if (options.caseId.startsWith("downloads-"))
       await prepareDownloadWorld(world, fixtureServer.origin, options.caseId);
     if (options.caseId.startsWith("profiles-"))
@@ -292,6 +300,18 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
         },
         path.join(world.artifactsDirectory, `wdio-${phase}.log`),
       );
+      if (
+        phaseResult.exitCode === 0 &&
+        phase === "mutate" &&
+        options.caseId.startsWith("filesystem-crash-")
+      ) {
+        await assertCrashEvidence(world.directory);
+      } else if (
+        phaseResult.exitCode === 0 &&
+        options.caseId.startsWith("filesystem-")
+      ) {
+        await assertNormalExit(world.directory, phase);
+      }
       wdioResult = {
         exitCode: phaseResult.exitCode,
         output: wdioResult.output + phaseResult.output,
