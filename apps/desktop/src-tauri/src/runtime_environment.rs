@@ -230,6 +230,15 @@ impl E2eConfiguration {
     self.roots.app_data.join("state.json")
   }
 
+  #[cfg(feature = "e2e-harness")]
+  pub fn permits_download_url(&self, url: &reqwest::Url) -> bool {
+    url.username().is_empty()
+      && url.password().is_none()
+      && self.endpoints.iter().any(|endpoint| {
+        reqwest::Url::parse(&endpoint.origin).is_ok_and(|origin| origin.origin() == url.origin())
+      })
+  }
+
   pub fn endpoint(&self, service: ServiceName) -> &str {
     self
       .endpoints
@@ -596,6 +605,29 @@ mod tests {
       configuration.endpoint(ServiceName::DmmApi),
       "http://127.0.0.1:43199"
     );
+  }
+
+  #[cfg(feature = "e2e-harness")]
+  #[test]
+  fn download_urls_must_match_a_configured_fixture_origin() {
+    let world = test_world(|_| {});
+    let configuration = E2eConfiguration::from_file(&world.config_path).unwrap();
+    assert!(
+      configuration.permits_download_url(
+        &reqwest::Url::parse("http://127.0.0.1:43199/files/mod.vpk").unwrap()
+      )
+    );
+    for value in [
+      "http://127.0.0.1:43200/files/mod.vpk",
+      "https://127.0.0.1:43199/files/mod.vpk",
+      "http://user:password@127.0.0.1:43199/files/mod.vpk",
+      "https://gamebanana.com/mod.vpk",
+    ] {
+      assert!(
+        !configuration.permits_download_url(&reqwest::Url::parse(value).unwrap()),
+        "accepted {value}"
+      );
+    }
   }
 
   #[test]

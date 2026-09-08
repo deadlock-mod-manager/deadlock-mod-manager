@@ -45,6 +45,82 @@ const proxyRequest = async (
 };
 
 describe("fixture network", () => {
+  it("serves exact binary ranges and deterministic failure sequences", async () => {
+    const body = Buffer.from([0, 255, 128, 1, 2, 3, 4, 5]);
+    const good = {
+      status: 200,
+      body,
+      range: true,
+      headers: { etag: '"fixture"' },
+    };
+    const server = await startFixtureServer([
+      {
+        method: "GET",
+        path: "/file",
+        ...good,
+        sequence: [{ status: 401, body: "denied" }, good],
+      },
+    ]);
+    try {
+      const denied = await fetch(`${server.origin}/file`);
+      expect(denied.status).toBe(401);
+      await denied.text();
+      const resumed = await fetch(`${server.origin}/file`, {
+        headers: { range: "bytes=3-" },
+      });
+      expect(resumed.status).toBe(206);
+      expect(resumed.headers.get("content-range")).toBe("bytes 3-7/8");
+      expect(Buffer.from(await resumed.arrayBuffer())).toEqual(
+        body.subarray(3),
+      );
+      const invalid = await fetch(`${server.origin}/file`, {
+        headers: { range: "bytes=99-" },
+      });
+      expect(invalid.status).toBe(416);
+      await invalid.text();
+      expect(server.requests().map((entry) => entry.responseStatus)).toEqual([
+        401, 206, 416,
+      ]);
+      expect(server.unmatchedRequests()).toHaveLength(0);
+    } finally {
+      await server.close();
+    }
+  });
+
+  it("cuts a streamed response short and permits its remaining range", async () => {
+    const body = Buffer.alloc(65536, 7);
+    const good = { status: 200, body, range: true };
+    const server = await startFixtureServer([
+      {
+        method: "GET",
+        path: "/file",
+        ...good,
+        sequence: [
+          {
+            ...good,
+            disconnectAfterBytes: 16384,
+            chunkBytes: 8192,
+            chunkDelayMs: 20,
+          },
+          good,
+        ],
+      },
+    ]);
+    try {
+      const broken = await fetch(`${server.origin}/file`);
+      await expect(broken.arrayBuffer()).rejects.toThrow();
+      const resumed = await fetch(`${server.origin}/file`, {
+        headers: { range: "bytes=16384-" },
+      });
+      expect(Buffer.from(await resumed.arrayBuffer())).toEqual(
+        body.subarray(16384),
+      );
+      expect(server.requests()[0].responseBytes).toBe(16384);
+    } finally {
+      await server.close();
+    }
+  });
+
   it("serves registered responses and journals matched and unmatched requests", async () => {
     const artifacts = await mkdtemp(
       path.join(os.tmpdir(), "dmm-network-test-"),
