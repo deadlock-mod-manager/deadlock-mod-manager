@@ -26,6 +26,7 @@
     "generate:gamebanana-heroes": "bun scripts/generate-gamebanana-hero-registry.ts",
     "e2e:build": "cross-env VITE_DMM_E2E_HARNESS=1 pnpm tauri build --debug --no-bundle --features e2e-harness --config src-tauri/tauri.e2e.conf.json",
     "e2e:doctor": "tsx e2e/cli.ts doctor",
+    "e2e:build:picker": "dotnet build e2e/native/Picker/Picker.csproj -c Release -p:RestoreLockedMode=true",
     "e2e:test": "tsx e2e/cli.ts run",
     "e2e:qualify": "tsx e2e/cli.ts qualify",
     "e2e:test:world": "bun test ./e2e",

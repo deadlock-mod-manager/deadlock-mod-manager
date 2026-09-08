@@ -2,6 +2,8 @@ import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { DriverProvider } from "./contracts";
+import { scenarioPhases, type ScenarioId } from "./scenarios";
+import { writeSyntheticVpk } from "./vpk";
 import { startFilesystemJournal } from "./filesystem-journal";
 import { startFixtureServer, type FixtureRoute } from "./fixture-server";
 import {
@@ -25,7 +27,7 @@ export const defaultBinaryPath = path.join(
 type RunOptions = {
   provider: DriverProvider;
   runId: string;
-  caseId: string;
+  caseId: ScenarioId;
   attempt: number;
   binaryPath?: string;
   retainPassedWorld?: boolean;
@@ -201,6 +203,21 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
       fixtureOrigin: fixtureServer.origin,
     });
     const roots = world.configuration.roots;
+    if (options.caseId === "local-mod-lifecycle") {
+      await writeSyntheticVpk(
+        path.join(world.directory, "fixtures", "e2e-local-mod.vpk"),
+        [
+          {
+            path: "scripts/e2e-lifecycle.txt",
+            contents: "DMM synthetic lifecycle fixture v1\n",
+          },
+        ],
+      );
+      await writeFile(
+        path.join(roots.game, "protected.txt"),
+        "Never change this game file\n",
+      );
+    }
     const inventoryRoots = {
       game: roots.game,
       steam: roots.steam,
@@ -231,24 +248,37 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
     );
 
     const proxyBypass = "127.0.0.1,localhost";
-    const wdioResult = await spawnWdio(
-      {
-        ...process.env,
-        DMM_E2E_CONFIG: world.configPath,
-        DMM_E2E_BINARY: path.resolve(options.binaryPath ?? defaultBinaryPath),
-        DMM_E2E_PROVIDER: options.provider,
-        DMM_E2E_ARTIFACTS: world.artifactsDirectory,
-        DMM_E2E_RUN_ID: world.configuration.runId,
-        DMM_E2E_CASE_ID: world.configuration.caseId,
-        DMM_E2E_INTENTIONAL_TIMEOUT: options.intentionalTimeout ? "1" : "0",
-        HTTP_PROXY: fixtureServer.origin,
-        HTTPS_PROXY: fixtureServer.origin,
-        ALL_PROXY: fixtureServer.origin,
-        NO_PROXY: proxyBypass,
-        no_proxy: proxyBypass,
-      },
-      path.join(world.artifactsDirectory, "wdio.log"),
-    );
+    let wdioResult = { exitCode: 0, output: "" };
+    for (const phase of scenarioPhases(options.caseId)) {
+      const phaseResult = await spawnWdio(
+        {
+          ...process.env,
+          DMM_E2E_CONFIG: world.configPath,
+          DMM_E2E_BINARY: path.resolve(options.binaryPath ?? defaultBinaryPath),
+          DMM_E2E_PROVIDER: options.provider,
+          DMM_E2E_ARTIFACTS: world.artifactsDirectory,
+          DMM_E2E_RUN_ID: world.configuration.runId,
+          DMM_E2E_CASE_ID: world.configuration.caseId,
+          DMM_E2E_PHASE: phase,
+          DMM_E2E_INTENTIONAL_TIMEOUT: options.intentionalTimeout ? "1" : "0",
+          HTTP_PROXY: fixtureServer.origin,
+          HTTPS_PROXY: fixtureServer.origin,
+          ALL_PROXY: fixtureServer.origin,
+          NO_PROXY: proxyBypass,
+          no_proxy: proxyBypass,
+        },
+        path.join(world.artifactsDirectory, `wdio-${phase}.log`),
+      );
+      wdioResult = {
+        exitCode: phaseResult.exitCode,
+        output: wdioResult.output + phaseResult.output,
+      };
+      if (
+        phaseResult.exitCode !== 0 ||
+        fixtureServer.unmatchedRequests().length > 0
+      )
+        break;
+    }
     await closeResources();
     const after = Object.fromEntries(
       await Promise.all(
@@ -295,7 +325,8 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
     } catch (cleanupError) {
       throw new AggregateError(
         [runError, cleanupError],
-        "E2E run failed and resource cleanup also failed", { cause: cleanupError },
+        "E2E run failed and resource cleanup also failed",
+        { cause: cleanupError },
       );
     }
     throw runError;

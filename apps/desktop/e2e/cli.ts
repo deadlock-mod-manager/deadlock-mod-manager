@@ -14,6 +14,8 @@ import { fileURLToPath } from "node:url";
 import type { DriverProvider } from "./support/contracts";
 import { defaultBinaryPath, runE2eWorld } from "./support/supervisor";
 import { WORLDS_ROOT } from "./support/world";
+import { parseScenarioId } from "./support/scenarios";
+import { nativePickerBinary } from "./support/native-picker";
 
 const argumentsList = process.argv.slice(2);
 const command = argumentsList[0] ?? "run";
@@ -134,6 +136,21 @@ const doctor = async (): Promise<void> => {
   const binaryPath = valueAfter("--binary") ?? defaultBinaryPath;
   const selectedProvider = provider();
   const checks: Array<{ name: string; ok: boolean; detail: string }> = [];
+  if (parseScenarioId(valueAfter("--case")) === "local-mod-lifecycle") {
+    let pickerExists = true;
+    try {
+      await access(nativePickerBinary);
+    } catch {
+      pickerExists = false;
+    }
+    checks.push({
+      name: "native picker",
+      ok: pickerExists,
+      detail: pickerExists
+        ? nativePickerBinary
+        : "run pnpm e2e:build:picker (.NET 10 SDK required)",
+    });
+  }
   checks.push({
     name: "platform",
     ok: process.platform === "win32",
@@ -243,7 +260,7 @@ const run = async (): Promise<void> => {
   const result = await runE2eWorld({
     provider: provider(),
     runId: `local-${Date.now()}`,
-    caseId: "about-smoke",
+    caseId: parseScenarioId(valueAfter("--case")),
     attempt: 1,
     binaryPath: valueAfter("--binary"),
     retainPassedWorld: argumentsList.includes("--keep"),
@@ -266,7 +283,7 @@ const qualify = async (): Promise<void> => {
     const result = await runE2eWorld({
       provider: selectedProvider,
       runId,
-      caseId: "about-smoke",
+      caseId: parseScenarioId(valueAfter("--case")),
       attempt,
       binaryPath: valueAfter("--binary"),
     });
@@ -284,7 +301,7 @@ const qualify = async (): Promise<void> => {
   const timeoutResult = await runE2eWorld({
     provider: selectedProvider,
     runId,
-    caseId: "intentional-timeout",
+    caseId: "about-smoke",
     attempt: 11,
     binaryPath: valueAfter("--binary"),
     intentionalTimeout: true,

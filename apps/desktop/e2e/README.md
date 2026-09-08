@@ -12,6 +12,18 @@ pnpm --filter @deadlock-mods/desktop e2e:qualify -- --provider embedded
 pnpm --filter @deadlock-mods/desktop e2e:qualify -- --provider external
 ```
 
+The local-mod lifecycle uses a .NET 10 Windows helper with locked FlaUI dependencies to operate the real file picker:
+
+```powershell
+pnpm --filter @deadlock-mods/desktop e2e:build:picker
+pnpm --filter @deadlock-mods/desktop e2e:doctor -- --case local-mod-lifecycle
+pnpm --filter @deadlock-mods/desktop e2e:test -- --case local-mod-lifecycle --keep
+```
+
+The first process imports a synthetic VPK, verifies the real Rust parser, then enables, disables, and re-enables the mod. A second process opens the same world, verifies persisted enabled state, and deletes the mod through the UI. Each step checks the store, `.dmm.json`, exact addon file inventory, and SHA-256 payload hashes. Steam files and a protected game sentinel must remain unchanged. The helper only selects the fixed fixture for the PID returned by the E2E backend; it never substitutes a dialog response or core IPC command. `--case` also works with `e2e:qualify`.
+
+Retained worlds contain `wdio-<phase>.log`, `native-picker.log`, per-step `lifecycle-*.json` evidence, and screenshots plus DOM HTML on failure. Without `--keep`, successful worlds and their artifacts are deleted.
+
 Successful worlds are deleted after their artifacts and filesystem inventories are written. Failed worlds are retained and printed by the CLI. `--keep` retains a successful single run for inspection. Cleanup only operates on directories beneath `.e2e/worlds` whose manifest identifies the harness as owner. Each run records live changes in `artifacts/filesystem.ndjson` and writes complete before/after SHA-256 inventories for every managed root. Restoring a test means deleting its disposable world; a test never edits the developer's real installation.
 
 The fixture server records all requests to `artifacts/network.ndjson`, returns a hard failure for any unregistered fixture, and is also installed as the child process HTTP(S) proxy. Absolute-form HTTP proxy requests and HTTPS `CONNECT` tunnels are blocked, recorded, and fail the run. Every application service origin is injected as a loopback fixture URL, and the E2E-only Tauri HTTP capability allows only those validated origins. A passing run therefore has a deterministic response for every observed request and no production-service traffic.
@@ -28,14 +40,14 @@ The external provider currently cannot be required on Windows hosts with WebView
 
 `@wdio/tauri-service` 1.3.0 also emits a non-fatal `sessionId is required` warning while clearing its mock store after an embedded session has already closed. It does not change the WDIO exit status or leave the application running. Treat it as service noise and remove this note when the package fixes its after-session cleanup.
 
-Native Windows dialogs are outside the webview DOM and cannot be driven by WebDriver. A later harness milestone will add a narrowly scoped FlaUI helper for picker selection while keeping the app's real dialog plugin and Rust continuation in the flow. The current milestone covers isolated runtime configuration, deterministic network and filesystem worlds, synthetic VPKs, UI clicks, real IPC/Rust execution, diagnostics, and process supervision.
+Native Windows dialogs are outside the webview DOM and cannot be driven by WebDriver. The lifecycle scenario uses the narrowly scoped FlaUI helper for picker selection while keeping the app's real dialog plugin and Rust continuation in the flow.
 
 ## Roadmap
 
 | Milestone | Status | Deliverable | Exit criterion |
 | --- | --- | --- | --- |
-| M1: safe harness foundation | Complete in PR #706 | Compile-gated runtime configuration, owned worlds, root routing, fixture network, filesystem oracle, synthetic VPK builder, supervisor, doctor, and embedded-driver qualification | Ten retry-free fresh UI/IPC runs pass; intentional timeout cleanup succeeds; production cannot activate E2E mode |
-| M2: complete local-mod lifecycle | Next | Drive a synthetic VPK through a narrowly scoped FlaUI native-picker helper, the real Rust parser, import/install, enable/disable, delete, and application restart | UI state, VPK manifest, persisted store, and independent file hashes agree after every step; the final world matches its expected restored state |
+| M1: safe harness foundation | Complete in PR #707 (replaces #706) | Compile-gated runtime configuration, owned worlds, root routing, fixture network, filesystem oracle, synthetic VPK builder, supervisor, doctor, and embedded-driver qualification | Ten retry-free fresh UI/IPC runs pass; intentional timeout cleanup succeeds; production cannot activate E2E mode |
+| M2: complete local-mod lifecycle | Implemented and validated on Windows/Wry | Drive a synthetic VPK through a narrowly scoped FlaUI native-picker helper, the real Rust parser, import/install, enable/disable, delete, and application restart | UI state, VPK manifest, persisted store, and independent file hashes agree after every step; the final world matches its expected restored state |
 | M3: profiles and ordering | Planned | Two-profile switching plus pointer and keyboard reorder flows | Inactive profiles and protected files remain unchanged; order and profile state survive restart without mocked core IPC |
 | M4: downloads and network failures | Planned; transport foundation exists | Exercise actual Rust downloads against fixture endpoints, including variants, Range resume, pause, cancel, malformed responses, and authentication failures | Every request matches the strict journal; unexpected traffic fails; partial files and state recover correctly |
 | M5: recovery and hostile filesystem cases | Planned | Backup replace/merge, interrupted mutations, shard boundaries, collisions, Windows locks, and crash barriers | Restart recovers retained worlds and the independent oracle proves restoration without normalizing unexpected writes |

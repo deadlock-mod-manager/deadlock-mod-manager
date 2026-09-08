@@ -72,7 +72,7 @@ const writeInitialFilesystem = async (roots: E2eRoots): Promise<void> => {
   await mkdir(addons, { recursive: true });
   await writeFile(
     path.join(roots.game, "game", "citadel", "gameinfo.gi"),
-    'GameInfo\n{\n  game "Deadlock"\n}\n',
+    'GameInfo\n{\n  game "Deadlock"\n  FileSystem\n  {\n    SearchPaths\n    {\n      Game citadel\n      Game core\n      Mod citadel\n      Write citadel\n    }\n  }\n}\n',
   );
   await mkdir(path.join(roots.steam, "steamapps"), { recursive: true });
   await Promise.all([
