@@ -1,5 +1,9 @@
+import {
+  readPersistedDocument,
+  assertInventoryChanges,
+  fingerprint,
+} from "./observations";
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
@@ -27,17 +31,6 @@ const modSchema = z.object({
   installedFileTree: z.object({ files: z.array(fileSchema) }).optional(),
 });
 export const readCatalogState = async (world: string) => {
-  const { configuration } = await assertOwnedWorld(world);
-  const store = z
-    .object({ "local-config": z.string() })
-    .parse(
-      JSON.parse(
-        await readFile(
-          path.join(configuration.roots.appData, "state.json"),
-          "utf8",
-        ),
-      ),
-    );
   return z
     .object({
       state: z.object({
@@ -55,7 +48,7 @@ export const readCatalogState = async (world: string) => {
         ),
       }),
     })
-    .parse(JSON.parse(store["local-config"])).state;
+    .parse(await readPersistedDocument(world)).state;
 };
 
 export const assertCatalogDisk = async (
@@ -126,10 +119,7 @@ export const assertCatalogDisk = async (
     Object.keys(inventory).sort(),
     [".dmm.json", ...entry.currentVpks].sort(),
   );
-  const hash = (name: string) => {
-    const bytes = catalogVpk(name);
-    return `${bytes.length}:${createHash("sha256").update(bytes).digest("hex")}`;
-  };
+  const hash = (name: string) => fingerprint(catalogVpk(name));
   assert.deepEqual(
     entry.currentVpks.map((vpk) => inventory[vpk]).sort(),
     names.map(hash).sort(),
@@ -155,9 +145,19 @@ export const assertCatalogDisk = async (
       ),
     );
   const game = await collectFileInventory(roots.game);
-  for (const [name, value] of Object.entries(before.game))
-    if (!name.endsWith("gameinfo.gi"))
-      assert.equal(game[name], value, `Protected game file changed: ${name}`);
+  const gameinfoPath = "game/citadel/gameinfo.gi";
+  assertInventoryChanges(before.game, game, [
+    gameinfoPath,
+    "game/citadel/gameinfo.gi.bak",
+    ...Object.keys(inventory).map((name) => `game/citadel/addons/${name}`),
+  ]);
+  const gameinfo = await readFile(path.join(roots.game, gameinfoPath), "utf8");
+  assert.match(gameinfo, /Game\s+citadel\/addons/);
+  if (game["game/citadel/gameinfo.gi.bak"])
+    assert.equal(
+      game["game/citadel/gameinfo.gi.bak"],
+      before.game[gameinfoPath],
+    );
   assert.deepEqual(await collectFileInventory(roots.steam), before.steam);
   assert.deepEqual(
     await collectFileInventory(roots.steamHttpCache),

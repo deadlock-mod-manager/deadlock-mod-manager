@@ -14,6 +14,7 @@ export type FixtureRequest = {
   bodyBytes: number;
   responseStatus?: number;
   responseBytes?: number;
+  error?: string;
 };
 
 export type FixtureResponse = {
@@ -153,21 +154,29 @@ export const startFixtureServer = async (
   const journal: FixtureRequest[] = [];
   const unmatched: FixtureRequest[] = [];
   const occurrences = new Map<FixtureRoute, number>();
-  const server = createServer(async (request, response) => {
-    let bodyBytes = 0;
-    for await (const chunk of request) {
-      bodyBytes += Buffer.isBuffer(chunk)
-        ? chunk.byteLength
-        : Buffer.byteLength(chunk);
-    }
+  const handleRequest = async (
+    request: IncomingMessage,
+    response: ServerResponse,
+  ): Promise<void> => {
     const record: FixtureRequest = {
       at: new Date().toISOString(),
       method: request.method ?? "GET",
       url: redactUrl(request.url ?? "/"),
       headers: headersFrom(request),
-      bodyBytes,
+      bodyBytes: 0,
     };
     journal.push(record);
+    try {
+      for await (const chunk of request)
+        record.bodyBytes += Buffer.isBuffer(chunk)
+          ? chunk.byteLength
+          : Buffer.byteLength(chunk);
+    } catch (error) {
+      record.error = error instanceof Error ? error.message : String(error);
+      unmatched.push(record);
+      response.destroy();
+      return;
+    }
 
     if (request.url === "/__health") {
       respond(response, 200, JSON.stringify({ ok: true }));
@@ -217,7 +226,39 @@ export const startFixtureServer = async (
         url: record.url,
       }),
     );
+  };
+  const sockets = new Set<import("node:net").Socket>();
+  const server = createServer((request, response) => {
+    void handleRequest(request, response).catch((error) => {
+      const record: FixtureRequest = {
+        at: new Date().toISOString(),
+        method: request.method ?? "GET",
+        url: redactUrl(request.url ?? "/"),
+        headers: headersFrom(request),
+        bodyBytes: 0,
+        error: error instanceof Error ? error.message : String(error),
+      };
+      journal.push(record);
+      unmatched.push(record);
+      response.destroy();
+    });
   });
+  server.on("connection", (socket) => {
+    sockets.add(socket);
+    socket.once("close", () => sockets.delete(socket));
+  });
+  const closeServer = async (): Promise<void> => {
+    const deadline = setTimeout(() => {
+      for (const socket of sockets) socket.destroy();
+    }, 1000);
+    try {
+      await new Promise<void>((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve())),
+      );
+    } finally {
+      clearTimeout(deadline);
+    }
+  };
   server.on("connect", (request, socket) => {
     socket.on("error", () => {
       // A blocked HTTPS client commonly resets the denied tunnel. The request
@@ -246,15 +287,18 @@ export const startFixtureServer = async (
     throw new Error("Fixture server did not bind a TCP port");
   }
   const origin = `http://127.0.0.1:${address.port}`;
-  routes = typeof recipe === "function" ? recipe(origin) : recipe;
+  try {
+    routes = typeof recipe === "function" ? recipe(origin) : recipe;
+  } catch (error) {
+    await closeServer();
+    throw error;
+  }
   return {
     origin,
     unmatchedRequests: () => unmatched,
     requests: () => journal,
     close: async (artifactsDirectory) => {
-      await new Promise<void>((resolve, reject) =>
-        server.close((error) => (error ? reject(error) : resolve())),
-      );
+      await closeServer();
       if (artifactsDirectory === undefined) return;
       await mkdir(artifactsDirectory, { recursive: true });
       await writeFile(

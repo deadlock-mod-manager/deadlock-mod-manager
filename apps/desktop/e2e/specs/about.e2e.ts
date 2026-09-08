@@ -1,18 +1,9 @@
+import { startApplication } from "../support/application";
+import { closeApplication } from "../support/application-exit";
 import { $, browser, expect } from "@wdio/globals";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
-
-declare global {
-  interface Window {
-    __TAURI_INTERNALS__: {
-      invoke: <TResult, TArguments extends object = object>(
-        command: string,
-        argumentsValue?: TArguments,
-      ) => Promise<TResult>;
-    };
-  }
-}
 
 type E2eStatus = {
   runId: string;
@@ -52,11 +43,7 @@ describe("DMM native smoke", () => {
             ?.hasCompletedOnboarding,
     ).toBe(true);
 
-    const whatsNewDismiss = await $("button=Got it!");
-    if (await whatsNewDismiss.isDisplayed()) {
-      await whatsNewDismiss.click();
-    }
-
+    const application = await startApplication();
     const settingsLink = await $('a[href="/settings"]');
     await settingsLink.waitForClickable();
     await settingsLink.click();
@@ -112,5 +99,6 @@ describe("DMM native smoke", () => {
         timeoutMsg: "intentional harness timeout",
       });
     }
+    await closeApplication(application.roots.world, application.processId);
   });
 });
