@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Deadlock Mod Manager E2E",
+  "identifier": "dev.stormix.deadlock-mod-manager.e2e.package",
+  "app": { "withGlobalTauri": true },
+  "bundle": {
+    "createUpdaterArtifacts": false,
+    "targets": ["nsis"],
+    "windows": { "nsis": { "installMode": "currentUser" } }
+  },
+  "plugins": { "deep-link": { "desktop": { "schemes": [] } } }
+}

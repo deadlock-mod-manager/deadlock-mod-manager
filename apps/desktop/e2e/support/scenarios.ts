@@ -156,6 +156,15 @@ export const scenarioPhases = (id: ScenarioId) => scenarios[id].phases;
 export const scenarioSpec = (id: ScenarioId) =>
   `./specs/${scenarios[id].spec}.e2e.ts`;
 export const selectScenarios = (suite: string): ScenarioId[] => {
+  if (suite === "ci-pr")
+    return [
+      "about-smoke",
+      "local-mod-lifecycle",
+      "downloads-range",
+      "downloads-restart",
+      "gamebanana-variants",
+      "filesystem-crash-committed",
+    ];
   const ids = Object.keys(scenarios)
     .filter(isScenario)
     .filter(
