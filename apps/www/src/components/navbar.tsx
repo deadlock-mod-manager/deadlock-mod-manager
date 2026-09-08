@@ -34,10 +34,6 @@ const routeList: RouteProps[] = [
     label: "Browse Mods",
   },
   {
-    href: "/commissions",
-    label: "Commissions",
-  },
-  {
     href: "/transparency",
     label: "Transparency",
   },
