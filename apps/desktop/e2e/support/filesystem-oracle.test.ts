@@ -18,6 +18,31 @@ afterEach(async () => {
   for (const world of worlds.splice(0)) await removeOwnedWorld(world);
 });
 
+it("verifies the exact gameinfo backup before and after reconciled application exit", async () => {
+  const world = await createWorld({
+    runId: "unit-run",
+    caseId: "filesystem-lock",
+    attempt: 1,
+    fixtureOrigin: "http://127.0.0.1:43123",
+  });
+  worlds.push(world.directory);
+  await prepareFilesystemWorld(world);
+  const { citadel } = await filesystemPaths(world.directory);
+  const backup = path.join(citadel, "gameinfo.gi.bak");
+  await writeFile(backup, await readFile(path.join(citadel, "gameinfo.gi")));
+  const order = filesystemModIds("filesystem-lock");
+  await expect(
+    assertFilesystemLayout(world.directory, "initial", order),
+  ).rejects.toThrow();
+  for (const step of ["reconciled", "closed-reconciled"])
+    await assertFilesystemLayout(world.directory, step, order);
+  await writeFile(backup, "Unexpected backup bytes");
+  for (const step of ["reconciled", "closed-reconciled"])
+    await expect(
+      assertFilesystemLayout(world.directory, step, order),
+    ).rejects.toThrow();
+});
+
 it("rejects swapped shard payloads, false manifest ownership, and unexpected files", async () => {
   const world = await createWorld({
     runId: "unit-run",
