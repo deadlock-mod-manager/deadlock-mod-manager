@@ -49,7 +49,7 @@ export const catalogRecipe = (scenario: string): CatalogArchive[] => {
       },
     ];
   if (scenario === "gamebanana-force-update")
-    return catalogRecipe("gamebanana-multifile");
+    return catalogRecipe("gamebanana-combined");
   if (
     [
       "gamebanana-reselect",

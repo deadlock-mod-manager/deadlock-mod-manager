@@ -67,8 +67,10 @@ export const installCatalog = (
         "aria-checked",
         "false",
       );
-      await toggle.waitForClickable();
-      await toggle.click();
+      const readyToggle = await $('[role="switch"]');
+      await reveal(readyToggle);
+      await readyToggle.waitForClickable();
+      await readyToggle.click();
     }
     if (
       recipe
@@ -203,7 +205,7 @@ export const reinstallCatalog = async (world: string, enabled: boolean) => {
   const button = await $('button[aria-label="Reinstall"]');
   await reveal(button);
   await button.click();
-  const dialog = await $('[role="dialog"]');
+  const dialog = await $('[role="alertdialog"]');
   await expect(dialog).toHaveText(
     expect.stringContaining(`Reinstall ${CATALOG_MOD_NAME}?`),
   );

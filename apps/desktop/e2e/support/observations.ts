@@ -28,17 +28,27 @@ export const fingerprint = (bytes: Uint8Array): string =>
 
 export const readPersistedDocument = async (world: string) => {
   const { configuration } = await assertOwnedWorld(world);
-  const store = z
-    .object({ "local-config": z.string() })
-    .parse(
-      JSON.parse(
-        await readFile(
-          path.join(configuration.roots.appData, "state.json"),
-          "utf8",
-        ),
-      ),
-    );
-  return z.json().parse(JSON.parse(store["local-config"]));
+  const deadline = Date.now() + 2_000;
+  // Tauri's store rewrites the file in place; observers can see a partial write.
+  for (;;) {
+    try {
+      const store = z
+        .object({ "local-config": z.string() })
+        .parse(
+          JSON.parse(
+            await readFile(
+              path.join(configuration.roots.appData, "state.json"),
+              "utf8",
+            ),
+          ),
+        );
+      return z.json().parse(JSON.parse(store["local-config"]));
+    } catch (error) {
+      if (!(error instanceof SyntaxError) || Date.now() >= deadline)
+        throw error;
+      await setTimeout(50);
+    }
+  }
 };
 
 export const assertInventoryChanges = (

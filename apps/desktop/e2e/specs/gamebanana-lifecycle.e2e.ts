@@ -70,7 +70,9 @@ describe("catalog installation lifecycle", () => {
           await chooseArchives(["common.zip", "red.zip"]);
           await dialog.$("button=Apply").click();
           await expect(
-            $('//*[@data-sonner-toast and contains(., "503")]'),
+            $(
+              '//*[@data-sonner-toast and contains(., "Failed to update mod files")]',
+            ),
           ).toBeDisplayed();
           await expect(dialog).toBeDisplayed();
           await dialog.$("button=Cancel").click();
@@ -136,7 +138,7 @@ describe("catalog installation lifecycle", () => {
         const remove = await $("button=Delete Mod");
         await reveal(remove);
         await remove.click();
-        await $('[role="dialog"]').$("button=Delete").click();
+        await $('[role="alertdialog"]').$("button=Delete").click();
         await observeUntil(
           "Deleted catalog mod",
           () => readCatalogState(world),

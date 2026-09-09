@@ -88,6 +88,22 @@ The fixture server records all requests to `artifacts/network.ndjson`, returns a
 
 The first smoke flow uses WebDriver clicks to open Settings and the About dialog, then invokes the compile-gated `e2e_status` command to prove the UI process is connected to the real Rust backend and isolated world. It also prepares a real Steam launch request through Rust, verifies that the `record` policy writes the redacted intent to `artifacts/game-launches.ndjson`, and proves that game liveness/stop operations cannot inspect or terminate a host game in the default E2E world.
 
+## Settings, content, and launch scenarios
+
+Run `pnpm --filter @deadlock-mods/desktop e2e:test -- --suite settings --keep` to exercise seven scenarios through real settings controls and fresh application processes:
+
+| Case | Behavior checked |
+| --- | --- |
+| `settings-application` | Application feature toggles, automatic reapply, pagination, hero conflict warnings, volume, theme, and update channel persist and render after restart |
+| `settings-privacy` | Global hiding, likely-content preference, blur controls, per-item memory, and analytics preference persist |
+| `settings-backups-presence` | Automatic backups, retained backup count, and game presence preference persist |
+| `settings-language` | Language selection changes the interface and survives restart |
+| `content-visibility` | Safe and synthetic adult fixtures across dashboard, catalog, library, skins, and direct mod links; global hiding survives restart without deleting installed mods |
+| `content-blur` | Actual preview blur, remembered reveal after restart, ignoring per-item overrides, and disabling/re-enabling blur |
+| `game-launch-modes` | Create and edit a custom launch option; modded/vanilla launch arguments, vanilla without arguments, profile gameinfo paths, and unchanged installed VPKs across restart |
+
+Launch tests run the real launch preparation and record the resulting Steam request using the existing isolated runtime policy. They do not start Steam or the game. Presence tests seed the normal hero-data cache; they do not connect to Discord. Analytics and update-channel assertions cover preferences rather than external delivery or updater installation. Content images are plain synthetic rectangles.
+
 ## Download scenarios
 
 M4 uses real Rust HTTP transfers against binary fixture responses. Run any case with `pnpm --filter @deadlock-mods/desktop e2e:test -- --case <case> --keep` after rebuilding the E2E application. These cases do not require the native input helper.
@@ -169,9 +185,9 @@ Native Windows dialogs are outside the webview DOM and cannot be driven by WebDr
 
 M6 runs the existing E2E harness in `.github/workflows/desktop-e2e.yml`. It runs nightly at 03:23 UTC, on manual dispatch, and on PRs carrying the `e2e-full` label. Regular PRs do not build or run the pipeline automatically. This PR carries the label for qualification before merge.
 
-The pipeline builds the debug harness and native helper once, then shares their binaries with six independent Windows jobs covering all 29 scenarios. Each family runs serially with retries disabled. Native input is explicitly enabled only on disposable GitHub-hosted desktops. The CLI's `--report <path>` writes an incremental JSON summary; CI retains reports and diagnostic artifacts for 14 days without uploading control tokens. Missing prerequisites, unmatched requests, timeouts, and failed scenarios remain failures. No release builds, installer smoke tests, signing, or publication are part of this pipeline.
+The pipeline builds the debug harness and native helper once, then shares their binaries with seven independent Windows jobs covering all 36 scenarios. Each family runs serially with retries disabled. Native input is explicitly enabled only on disposable GitHub-hosted desktops. The CLI's `--report <path>` writes an incremental JSON summary; CI retains reports and diagnostic artifacts for 14 days without uploading control tokens. Missing prerequisites, unmatched requests, timeouts, and failed scenarios remain failures. No release builds, installer smoke tests, signing, or publication are part of this pipeline.
 
-Use the six scenario jobs and their per-case reports to verify clean-runner qualification. The local pointer rerun remains skipped at the user's request; its normal scenario is included on the dedicated CI runner.
+Use the seven scenario jobs and their per-case reports to verify clean-runner qualification. Full local runs require explicit native-input authorization and the same strict network and filesystem checks as CI.
 
 | Milestone | Status | Deliverable | Exit criterion |
 | --- | --- | --- | --- |
@@ -180,6 +196,6 @@ Use the six scenario jobs and their per-case reports to verify clean-runner qual
 | M3: profiles and ordering | Implemented and validated on Windows/Wry | Two-profile switching plus native pointer and keyboard reorder flows | Inactive profiles and protected files remain unchanged; order and profile state survive restart without mocked core IPC |
 | M4: downloads and network failures | Implemented and validated on Windows/Wry | GameBanana catalog downloads and installation, multi-file and VPK variant selection, installed-file rendering, selected-variant retries, Range resume, pause, cancel, corrupt payloads, authentication failures, redirects, and interrupted-process recovery | Every request matches the strict journal; unexpected traffic fails; installed files and selections survive restart; partial files and state recover correctly |
 | M5: recovery and hostile filesystem cases | Implemented and validated on Windows/Wry | Backup replace/merge, interrupted mutations, shard boundaries, collisions, Windows locks, and crash barriers | Restart recovers retained worlds and the independent oracle proves restoration without normalizing unexpected writes |
-| M6: nightly E2E pipeline | Implemented; qualification tracked in CI | Nightly/manual Windows E2E matrix and opt-in execution on this PR | All 29 registered scenarios pass on clean runners with retained failure evidence |
+| M6: nightly E2E pipeline | Implemented; qualification tracked in CI | Nightly/manual Windows E2E matrix and opt-in execution on this PR | All 36 registered scenarios pass on clean runners with retained failure evidence |
 
 Keep scenarios independent and small even when they share recipes. The final routine-development gate is a composed import/download → enable → profile switch → reorder → backup → modify → restore → restart journey, supported by focused tests for each operation and failure boundary.

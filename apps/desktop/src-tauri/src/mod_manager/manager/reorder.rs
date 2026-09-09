@@ -348,6 +348,19 @@ impl ModManager {
   ) -> Result<VariantChangeResult, Error> {
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
     let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
+    // The UI file tree may be sorted differently from the numbered VPKs.
+    // Preserve the manifest's positional mapping when staging a later swap.
+    let (current_installed_vpks, current_original_names) = manifest
+      .mods
+      .get(mod_id)
+      .filter(|entry| entry.enabled)
+      .map(|entry| {
+        (
+          entry.current_vpks.as_slice(),
+          entry.original_vpk_names.as_slice(),
+        )
+      })
+      .unwrap_or((current_installed_vpks, current_original_names));
     let current_shard = manifest.shard_of(mod_id);
     let target_shard = Self::choose_shard_for(
       &addons_path,
