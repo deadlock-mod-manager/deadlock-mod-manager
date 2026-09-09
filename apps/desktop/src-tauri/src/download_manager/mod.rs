@@ -271,7 +271,9 @@ impl DownloadManager {
             }
 
             if let Some(completion) = queued.completion {
-              completion.send(result.map_err(|error| error.to_string())).ok();
+              completion
+                .send(result.map_err(|error| error.to_string()))
+                .ok();
             }
           }
           None => break,
@@ -496,7 +498,7 @@ impl DownloadManager {
 
       for (archive_index, downloaded_file) in downloaded_files.iter().enumerate() {
         if !extractor.is_supported_archive(downloaded_file) {
-          if downloaded_file.extension().and_then(|extension| extension.to_str()) == Some("vpk")
+          if Self::is_vpk_path(downloaded_file)
             && Self::downloaded_vpk_is_selected(downloaded_file, task.file_tree.as_ref())
           {
             Self::copy_prepared_vpk(downloaded_file, &prepared_dir, &mut prepared_paths)?;
@@ -513,27 +515,20 @@ impl DownloadManager {
           )
           .ok();
 
-        let extracted_dir = task
-          .target_dir
-          .join(format!("prepared-extracted-{operation_id}-{archive_index}"));
-        if extracted_dir.exists() {
-          std::fs::remove_dir_all(&extracted_dir)?;
-        }
-        std::fs::create_dir_all(&extracted_dir)?;
-
         let archive_path = downloaded_file.clone();
-        let extract_target = extracted_dir.clone();
+        let extract_target = task.target_dir.clone();
+        let extract_prefix = format!("prepared-extracted-{operation_id}-{archive_index}-");
         const EXTRACTION_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(600);
         let extraction_result = tokio::time::timeout(
           EXTRACTION_TIMEOUT,
           tokio::task::spawn_blocking(move || {
-            ArchiveExtractor::new().extract_archive(&archive_path, &extract_target)
+            Self::extract_prepared_archive(&archive_path, &extract_target, &extract_prefix)
           }),
         )
         .await;
 
-        match extraction_result {
-          Ok(Ok(Ok(()))) => {}
+        let extracted_dir = match extraction_result {
+          Ok(Ok(Ok(directory))) => directory,
           Ok(Ok(Err(error))) => return Err(error),
           Ok(Err(error)) => {
             return Err(Error::ModExtractionFailed(format!(
@@ -547,15 +542,19 @@ impl DownloadManager {
               task.mod_id
             )));
           }
-        }
+        };
 
         let archive_name = downloaded_file
           .file_name()
           .and_then(|name| name.to_str())
           .unwrap_or_default();
-        let extracted_tree = analyzer.get_file_tree_from_extracted(&extracted_dir, archive_name)?;
-        let selected_paths =
-          Self::selected_extracted_vpks(&extracted_dir, &extracted_tree, task.file_tree.as_ref());
+        let extracted_tree =
+          analyzer.get_file_tree_from_extracted(extracted_dir.path(), archive_name)?;
+        let selected_paths = Self::selected_extracted_vpks(
+          extracted_dir.path(),
+          &extracted_tree,
+          task.file_tree.as_ref(),
+        );
 
         if extracted_tree.has_multiple_files && task.file_tree.is_none() {
           return Err(Error::InvalidInput(format!(
@@ -568,7 +567,7 @@ impl DownloadManager {
           Self::copy_prepared_vpk(&selected_path, &prepared_dir, &mut prepared_paths)?;
         }
 
-        std::fs::remove_dir_all(&extracted_dir)?;
+        extracted_dir.close()?;
       }
 
       if prepared_paths.is_empty() {
@@ -581,16 +580,38 @@ impl DownloadManager {
     }
     .await;
 
-    if prepare_result.is_err() && prepared_dir.exists()
-      && let Err(error) = std::fs::remove_dir_all(&prepared_dir) {
-        log::warn!(
-          "Failed to remove incomplete prepared update directory {}: {}",
-          prepared_dir.display(),
-          error
-        );
-      }
+    if prepare_result.is_err()
+      && prepared_dir.exists()
+      && let Err(error) = std::fs::remove_dir_all(&prepared_dir)
+    {
+      log::warn!(
+        "Failed to remove incomplete prepared update directory {}: {}",
+        prepared_dir.display(),
+        error
+      );
+    }
 
     prepare_result
+  }
+
+  fn is_vpk_path(path: &std::path::Path) -> bool {
+    path
+      .extension()
+      .and_then(|extension| extension.to_str())
+      .is_some_and(|extension| extension.eq_ignore_ascii_case("vpk"))
+  }
+
+  // The blocking worker owns cleanup until extraction finishes, including when
+  // its async caller times out and drops the receiver.
+  fn extract_prepared_archive(
+    archive: &std::path::Path,
+    target: &std::path::Path,
+    prefix: &str,
+  ) -> Result<tempfile::TempDir, Error> {
+    let directory = tempfile::Builder::new().prefix(prefix).tempdir_in(target)?;
+    crate::mod_manager::archive_extractor::ArchiveExtractor::new()
+      .extract_archive(archive, directory.path())?;
+    Ok(directory)
   }
 
   fn selected_extracted_vpks(
@@ -1122,6 +1143,54 @@ mod tests {
   use super::*;
   use crate::mod_manager::file_tree::{ModFile, ModFileTree};
 
+  #[test]
+  fn direct_vpk_downloads_accept_mixed_case_extensions() {
+    assert!(DownloadManager::is_vpk_path(std::path::Path::new(
+      "MOD.VPK"
+    )));
+    assert!(DownloadManager::is_vpk_path(std::path::Path::new(
+      "mod.VpK"
+    )));
+    assert!(!DownloadManager::is_vpk_path(std::path::Path::new(
+      "mod.vpk.zip"
+    )));
+  }
+
+  #[test]
+  fn failed_prepared_extraction_removes_partial_directory() {
+    let root = tempfile::tempdir().unwrap();
+    let archive = root.path().join("broken.zip");
+    std::fs::write(&archive, b"invalid archive").unwrap();
+    assert!(
+      DownloadManager::extract_prepared_archive(&archive, root.path(), "prepared-extracted-")
+        .is_err()
+    );
+    let remaining = std::fs::read_dir(root.path())
+      .unwrap()
+      .map(|entry| entry.unwrap().file_name())
+      .collect::<Vec<_>>();
+    assert_eq!(remaining, vec![std::ffi::OsString::from("broken.zip")]);
+  }
+
+  #[test]
+  fn prepared_extraction_is_cleaned_when_its_consumer_exits() {
+    use std::io::Write;
+    let root = tempfile::tempdir().unwrap();
+    let archive = root.path().join("mod.zip");
+    let mut zip = zip::ZipWriter::new(std::fs::File::create(&archive).unwrap());
+    zip
+      .start_file("mod.vpk", zip::write::SimpleFileOptions::default())
+      .unwrap();
+    zip.write_all(b"fixture").unwrap();
+    zip.finish().unwrap();
+    let directory =
+      DownloadManager::extract_prepared_archive(&archive, root.path(), "prepared-extracted-")
+        .unwrap();
+    let path = directory.path().to_path_buf();
+    assert_eq!(std::fs::read(path.join("mod.vpk")).unwrap(), b"fixture");
+    drop(directory);
+    assert!(!path.exists());
+  }
   fn tree(files: Vec<ModFile>) -> ModFileTree {
     let total_files = files.len();
     ModFileTree {

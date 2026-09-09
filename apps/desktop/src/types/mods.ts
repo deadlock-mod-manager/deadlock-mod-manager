@@ -29,6 +29,7 @@ export enum ModStatus {
 }
 
 export interface LocalMod extends ModDto {
+  metadataPending?: boolean;
   status: ModStatus;
   downloadedAt?: Date;
   downloads?: ModDownloadItem[];

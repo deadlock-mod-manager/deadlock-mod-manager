@@ -51,7 +51,9 @@ pub async fn get_profile_vpk_snapshot(
 ) -> Result<ProfileVpkSnapshot, Error> {
   // Keep the filesystem listing and manifest in the same critical section:
   // a reorder between separate IPC reads would compare two different layouts.
-  let mut manager = MANAGER.lock().unwrap();
+  let mut manager = MANAGER
+    .lock()
+    .map_err(|_| Error::BackgroundTaskFailed("Mod manager lock poisoned".to_string()))?;
   manager.migrate_profile_to_shards(profile_folder.clone())?;
   let base = manager.get_addons_path(profile_folder.as_deref())?;
   ProfileVpkSnapshot::read(&base)
@@ -71,7 +73,13 @@ mod tests {
       std::fs::write(base.shard_dir(shard).join("pak01_dir.vpk"), b"fixture").unwrap();
     }
     let mut manifest = ProfileVpkManifest::default();
-    manifest.mark_enabled("mod", vec!["pak01_dir.vpk".into()], vec![], Some(0), shard_two);
+    manifest.mark_enabled(
+      "mod",
+      vec!["pak01_dir.vpk".into()],
+      vec![],
+      Some(0),
+      shard_two,
+    );
     manifest.save(&base).unwrap();
 
     let snapshot = ProfileVpkSnapshot::read(&base).unwrap();

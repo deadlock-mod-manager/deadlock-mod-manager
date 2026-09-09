@@ -497,11 +497,18 @@ impl ModManager {
     };
 
     if !installed_vpks.is_empty() {
+      let existing_mod = self.mod_repository.get_mod(&mod_id).cloned();
+      let mod_name = existing_mod
+        .as_ref()
+        .map(|mod_info| mod_info.name.as_str())
+        .unwrap_or(&mod_id);
       self.update_mod_from_prepared(
         &mod_id,
-        &mod_id,
+        mod_name,
         &source_vpk_paths,
-        None,
+        existing_mod
+          .as_ref()
+          .and_then(|mod_info| mod_info.file_tree.clone()),
         profile_folder,
       )?;
       log::info!("Successfully replaced VPK files for mod: {mod_id}");
@@ -559,9 +566,7 @@ impl ModManager {
       .unwrap_or(0);
     let target_shard = Self::choose_shard_for(
       &addons_path,
-      existing
-        .as_ref()
-        .map(|entry| (entry.shard, old_count)),
+      existing.as_ref().map(|entry| (entry.shard, old_count)),
       prepared_vpks.len() as u32,
     )?;
     let enabled_dir = addons_path.shard_dir(target_shard);
@@ -630,12 +635,13 @@ impl ModManager {
     let pending = PendingVpkOperation::with_staging((), staging);
     pending.commit_manifest(&manifest, &addons_path)?;
 
+    let previous_mod = self.mod_repository.get_mod(mod_id);
     let updated = Mod {
       id: mod_id.to_string(),
       name: mod_name.to_string(),
-      is_map: false,
+      is_map: previous_mod.is_some_and(|mod_info| mod_info.is_map),
       installed_vpks: dest_names,
-      file_tree,
+      file_tree: file_tree.or_else(|| previous_mod.and_then(|mod_info| mod_info.file_tree.clone())),
       install_order,
       original_vpk_names,
     };

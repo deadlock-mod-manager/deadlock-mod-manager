@@ -1067,10 +1067,7 @@ mod tests {
 
     assert_eq!(result.count, 1);
     assert!(!base.shard_dir(shard_two).join("pak01_dir.vpk").exists());
-    assert_eq!(
-      fs::read(base.join("pak01_dir.vpk")).unwrap(),
-      b"other"
-    );
+    assert_eq!(fs::read(base.join("pak01_dir.vpk")).unwrap(), b"other");
     let after = ProfileVpkManifest::load(&base).unwrap();
     assert!(!after.mods.contains_key("target"));
     assert!(after.mods.contains_key("other"));
@@ -1107,10 +1104,7 @@ mod tests {
 
     assert_eq!(result.count, 1);
     assert!(!base.shard_dir(shard_two).join("pak01_dir.vpk").exists());
-    assert_eq!(
-      fs::read(base.join("pak01_dir.vpk")).unwrap(),
-      b"other"
-    );
+    assert_eq!(fs::read(base.join("pak01_dir.vpk")).unwrap(), b"other");
   }
 
   /// Without a manifest entry, fallback names are still shard-1-resolved, but
@@ -1143,10 +1137,7 @@ mod tests {
       .unwrap();
 
     assert_eq!(result.count, 1);
-    assert_eq!(
-      fs::read(base.join("pak01_dir.vpk")).unwrap(),
-      b"other"
-    );
+    assert_eq!(fs::read(base.join("pak01_dir.vpk")).unwrap(), b"other");
     assert!(!base.join("pak02_dir.vpk").exists());
     let after = ProfileVpkManifest::load(&base).unwrap();
     assert!(after.mods.contains_key("other"));
@@ -1184,9 +1175,36 @@ mod tests {
     fs::write(&prepared, b"new-target").unwrap();
 
     let mut manager = test_manager(game.path());
+    let preserved_tree = crate::mod_manager::file_tree::ModFileTree {
+      files: vec![],
+      total_files: 0,
+      has_multiple_files: false,
+    };
+    manager.mod_repository.add_mod(Mod {
+      id: "target".into(),
+      name: "Original map".into(),
+      is_map: true,
+      installed_vpks: vec!["pak01_dir.vpk".into()],
+      file_tree: Some(preserved_tree.clone()),
+      install_order: Some(0),
+      original_vpk_names: vec!["original.vpk".into()],
+    });
     let updated = manager
-      .update_mod_from_prepared("target", "Target", &[prepared], None, None)
+      .update_mod_from_prepared(
+        "target",
+        "Target",
+        std::slice::from_ref(&prepared),
+        None,
+        None,
+      )
       .unwrap();
+
+    assert!(updated.is_map);
+    assert_eq!(
+      updated.file_tree.as_ref().unwrap().total_files,
+      preserved_tree.total_files
+    );
+    assert_eq!(updated.name, "Target");
 
     assert_eq!(updated.installed_vpks, vec!["pak01_dir.vpk".to_string()]);
     assert_eq!(fs::read(base.join("pak01_dir.vpk")).unwrap(), b"new-target");
@@ -1197,5 +1215,12 @@ mod tests {
       vec!["replacement.vpk".to_string()]
     );
     assert!(after.mods.contains_key("other"));
+    manager
+      .replace_mod_vpks("target".into(), vec![prepared], vec![], None)
+      .unwrap();
+    let replaced = manager.mod_repository.get_mod("target").unwrap();
+    assert_eq!(replaced.name, "Target");
+    assert!(replaced.is_map);
+    assert!(replaced.file_tree.is_some());
   }
 }

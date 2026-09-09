@@ -120,7 +120,7 @@ export const usePersistedStore = create<State>()(
         const {
           modProgress: _modProgress,
           isSwitching: _isSwitching,
-          profileSyncRevision: _profileSyncRevision,
+          profileSyncRevisions: _profileSyncRevisions,
           showWhatsNew: _showWhatsNew,
           lastSeenVersion: _lastSeenVersion,
           forceShowWhatsNew: _forceShowWhatsNew,

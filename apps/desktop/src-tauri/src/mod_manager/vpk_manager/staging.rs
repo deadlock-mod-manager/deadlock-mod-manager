@@ -131,9 +131,7 @@ fn recover_journaled_staging(
       JournalEvent::Create { path } => {
         created.insert(path);
       }
-      JournalEvent::Manifest {
-        manifest: expected,
-      } => expected_manifest = Some(expected),
+      JournalEvent::Manifest { manifest: expected } => expected_manifest = Some(expected),
     }
   }
 
@@ -350,9 +348,8 @@ impl VpkStaging {
   }
 
   pub fn rollback(mut self, original_error: Error) -> Error {
-    let failures = self.restore_files();
+    let failures = self.restore_and_clean_up();
     self.finalized = true;
-    let _ = fs::remove_dir(&self.dir);
     if failures.is_empty() {
       original_error
     } else {
@@ -361,6 +358,23 @@ impl VpkStaging {
         failures.join("; ")
       ))
     }
+  }
+
+  fn restore_and_clean_up(&mut self) -> Vec<String> {
+    let mut failures = self.restore_files();
+    // Keep the journal and parked payloads when restoration is incomplete.
+    // A completed rollback must discard its journal before the next mutation
+    // can mistake the old placements for an interrupted transaction.
+    if failures.is_empty() {
+      if let Err(error) = fs::remove_file(self.dir.join(JOURNAL_FILENAME)) {
+        failures.push(format!("failed to remove rolled-back journal: {error}"));
+      } else if let Err(error) = fs::remove_dir(&self.dir) {
+        failures.push(format!(
+          "failed to remove rolled-back staging directory: {error}"
+        ));
+      }
+    }
+    failures
   }
 
   fn restore_files(&mut self) -> Vec<String> {
@@ -404,7 +418,10 @@ impl VpkStaging {
       if file.original.is_file()
         && let Err(error) = fs::remove_file(&file.original)
       {
-        failures.push(format!("failed to remove {}: {error}", file.original.display()));
+        failures.push(format!(
+          "failed to remove {}: {error}",
+          file.original.display()
+        ));
         continue;
       }
       if let Err(error) = fs::rename(&file.parked, &file.original) {
@@ -661,10 +678,9 @@ impl Drop for VpkStaging {
     if self.finalized {
       return;
     }
-    for failure in self.restore_files() {
+    for failure in self.restore_and_clean_up() {
       log::error!("Failed to roll back dropped VPK staging transaction: {failure}");
     }
-    let _ = fs::remove_dir(&self.dir);
   }
 }
 
@@ -697,6 +713,24 @@ mod tests {
     assert!(matches!(error, Error::InvalidInput(_)));
     assert_eq!(fs::read(original).unwrap(), b"vpk");
     assert!(!placed.exists());
+  }
+
+  #[test]
+  fn incomplete_rollback_retains_journal_and_payload_for_recovery() {
+    let temp = tempfile::tempdir().unwrap();
+    let base = base(&temp);
+    let original = base.join("pak01_dir.vpk");
+    fs::write(&original, b"retained").unwrap();
+    let mut staging = VpkStaging::claim(&base, ".test-staging").unwrap();
+    let parked = staging.stage(&base, &original).unwrap();
+    fs::create_dir(&original).unwrap();
+    fs::write(original.join("blocker"), b"protected").unwrap();
+
+    let error = staging.rollback(Error::InvalidInput("interrupted".into()));
+    assert!(matches!(error, Error::RollbackFailed(_)));
+    assert_eq!(fs::read(&parked).unwrap(), b"retained");
+    assert!(base.join(".test-staging").join(JOURNAL_FILENAME).is_file());
+    assert_eq!(fs::read(original.join("blocker")).unwrap(), b"protected");
   }
 
   /// A reorder routinely gives file A the slot file B came from. Rolling that
