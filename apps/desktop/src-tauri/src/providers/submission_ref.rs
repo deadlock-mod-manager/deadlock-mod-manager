@@ -68,16 +68,20 @@ impl SubmissionRef {
     })
   }
 
-  pub fn to_slug(&self) -> String {
+  pub fn to_slug(&self) -> Result<String, ParseSubmissionRefError> {
     match (self.provider, self.submission_type) {
-      (SubmissionProvider::Gamebanana, SubmissionType::Mod) => self.submission_id.clone(),
-      (SubmissionProvider::Gamebanana, SubmissionType::Sound) => {
-        format!("snd-{}", self.submission_id)
+      (SubmissionProvider::Gamebanana, SubmissionType::Mod)
+        if is_canonical_gamebanana_id(&self.submission_id) => Ok(self.submission_id.clone()),
+      (SubmissionProvider::Gamebanana, SubmissionType::Sound)
+        if is_canonical_gamebanana_id(&self.submission_id) => {
+        Ok(format!("snd-{}", self.submission_id))
       }
-      (SubmissionProvider::Local, SubmissionType::Mod) => {
-        format!("local-{}", self.submission_id)
+      (SubmissionProvider::Local, SubmissionType::Mod) if is_uuid(&self.submission_id) => {
+        Ok(format!("local-{}", self.submission_id.to_ascii_lowercase()))
       }
-      _ => String::new(),
+      _ => Err(ParseSubmissionRefError {
+        slug: format!("{:?}:{:?}:{}", self.provider, self.submission_type, self.submission_id),
+      }),
     }
   }
 }
@@ -114,7 +118,7 @@ mod tests {
     assert_eq!(submission.provider, SubmissionProvider::Gamebanana);
     assert_eq!(submission.submission_type, SubmissionType::Mod);
     assert_eq!(submission.submission_id, "123456");
-    assert_eq!(submission.to_slug(), "123456");
+    assert_eq!(submission.to_slug().unwrap(), "123456");
   }
 
   #[test]
@@ -124,7 +128,7 @@ mod tests {
     assert_eq!(submission.provider, SubmissionProvider::Gamebanana);
     assert_eq!(submission.submission_type, SubmissionType::Sound);
     assert_eq!(submission.submission_id, "123456");
-    assert_eq!(submission.to_slug(), "snd-123456");
+    assert_eq!(submission.to_slug().unwrap(), "snd-123456");
   }
 
   #[test]
@@ -139,9 +143,20 @@ mod tests {
       "550e8400-e29b-41d4-a716-446655440000"
     );
     assert_eq!(
-      submission.to_slug(),
+      submission.to_slug().unwrap(),
       "local-550e8400-e29b-41d4-a716-446655440000"
     );
+  }
+
+  #[test]
+  fn serialization_rejects_invalid_pairs_and_canonicalizes_local_ids() {
+    let mut submission = SubmissionRef::parse_slug("local-550E8400-E29B-41D4-A716-446655440000").unwrap();
+    assert_eq!(submission.to_slug().unwrap(), "local-550e8400-e29b-41d4-a716-446655440000");
+    submission.submission_type = SubmissionType::Sound;
+    assert!(submission.to_slug().is_err());
+    submission.provider = SubmissionProvider::Gamebanana;
+    submission.submission_id = "01".into();
+    assert!(submission.to_slug().is_err());
   }
 
   #[test]

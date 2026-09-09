@@ -7,6 +7,7 @@ const LOCAL_ID_PATTERN =
 const matchesEntireValue = (pattern: RegExp, value: string): boolean =>
   pattern.exec(value)?.[0] === value;
 
+/** Parses numeric Mod IDs, snd- Sound IDs, or local- UUIDs; returns null for invalid slugs. */
 export function parseSubmissionSlug(slug: string): SubmissionRef | null {
   if (matchesEntireValue(GAMEBANANA_ID_PATTERN, slug)) {
     return {
@@ -37,6 +38,7 @@ export function parseSubmissionSlug(slug: string): SubmissionRef | null {
   return null;
 }
 
+/** Returns a validated slug, lowercasing local UUIDs, or null for unsupported identities. */
 export function serializeSubmissionRef(
   submission: SubmissionRef,
 ): string | null {
@@ -56,9 +58,10 @@ export function serializeSubmissionRef(
     return null;
   }
 
-  return `local-${submission.submissionId}`;
+  return `local-${submission.submissionId.toLowerCase()}`;
 }
 
+/** Extracts a canonical identity from an identity-prefixed filename, or null if absent. */
 export function extractSubmissionSlugFromFilename(
   filename: string,
 ): string | null {
@@ -67,5 +70,6 @@ export function extractSubmissionSlugFromFilename(
   if (separatorIndex < 1) return null;
 
   const slug = basename.slice(0, separatorIndex);
-  return parseSubmissionSlug(slug) ? slug : null;
+  const submission = parseSubmissionSlug(slug);
+  return submission ? serializeSubmissionRef(submission) : null;
 }

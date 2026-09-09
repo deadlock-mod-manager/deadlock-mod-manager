@@ -1,8 +1,9 @@
 import { describe, expect, it } from "bun:test";
+import type { SubmissionRef } from "@/types/generated/SubmissionRef";
 import { parseSubmissionSlug, serializeSubmissionRef } from "./submission-ref";
 
 describe("submission slugs", () => {
-  it.each([
+  const roundTrips: readonly (readonly [string, SubmissionRef])[] = [
     [
       "123456",
       {
@@ -27,7 +28,8 @@ describe("submission slugs", () => {
         submissionId: "550e8400-e29b-41d4-a716-446655440000",
       },
     ],
-  ] as const)("round-trips %s", (slug, expected) => {
+  ];
+  it.each(roundTrips)("round-trips %s", (slug, expected) => {
     const parsed = parseSubmissionSlug(slug);
 
     expect(parsed).toEqual(expected);

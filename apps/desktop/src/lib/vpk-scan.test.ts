@@ -2,6 +2,16 @@ import { describe, expect, it } from "bun:test";
 import { findUnmatchedVpks } from "./vpk-scan";
 
 describe("findUnmatchedVpks", () => {
+  it("matches local UUID ownership across accepted casing differences", () => {
+    const lower = "local-550e8400-e29b-41d4-a716-446655440000";
+    const upper = "local-550E8400-E29B-41D4-A716-446655440000";
+    expect(
+      findUnmatchedVpks([`${upper}_original.vpk`], [{ remoteId: lower }]),
+    ).toEqual([]);
+    expect(
+      findUnmatchedVpks([`${lower}_original.vpk`], [{ remoteId: upper }]),
+    ).toEqual([]);
+  });
   it("reports files no installed mod owns", () => {
     const unmatched = findUnmatchedVpks(
       ["pak01_dir.vpk", "stranger.vpk"],
