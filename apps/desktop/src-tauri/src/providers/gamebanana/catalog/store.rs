@@ -318,7 +318,7 @@ impl Catalog {
 
 impl SubmissionRow {
   fn from_record(record: CatalogRecord) -> Result<Self, Error> {
-    let slug = record.submission.to_slug();
+    let slug = record.submission.to_slug().map_err(|error| Error::InvalidInput(error.to_string()))?;
     Ok(Self {
       provider: provider_name(record.submission.provider).to_string(),
       submission_type: submission_type_name(record.submission.submission_type).to_string(),
