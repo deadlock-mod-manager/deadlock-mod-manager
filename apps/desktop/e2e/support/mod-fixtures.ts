@@ -23,6 +23,8 @@ export const fixtureMod = (modId: string, index: number): LocalMod => ({
   blacklistedAt: null,
   blacklistedBy: null,
   filesUpdatedAt: null,
+  metadata: null,
+  dependencies: null,
   overrides: null,
   createdAt: new Date(0),
   updatedAt: new Date(0),
