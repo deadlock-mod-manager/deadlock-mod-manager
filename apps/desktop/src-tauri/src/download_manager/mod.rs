@@ -628,7 +628,13 @@ impl DownloadManager {
             selected.is_selected
               && (selected.archive_name.is_empty()
                 || selected.archive_name == candidate.archive_name)
-              && selected.path.replace('\\', "/") == candidate.path.replace('\\', "/")
+              && (selected.path.replace('\\', "/") == candidate.path.replace('\\', "/")
+                || selected.path.replace('\\', "/")
+                  == format!(
+                    "{}/{}",
+                    candidate.archive_name,
+                    candidate.path.replace('\\', "/")
+                  ))
           })
         })
       })
@@ -678,6 +684,7 @@ impl DownloadManager {
     downloaded_files: &[PathBuf],
     app_handle: &AppHandle,
   ) -> Result<(), Error> {
+    use crate::commands::archive::persist_prefixed_import;
     use crate::commands::state::MANAGER;
     use crate::mod_manager::archive_extractor::ArchiveExtractor;
     use crate::mod_manager::vpk_manager::VpkManager;
@@ -721,7 +728,12 @@ impl DownloadManager {
     let stash_dir = task.target_dir.join("fonts");
     let mut found_font_infos: Vec<crate::mod_manager::FontInfo> = Vec::new();
     let mut seen_font_files = HashSet::new();
-    let mut vpk_archive_map: HashMap<String, String> = HashMap::new();
+    let mut collected_files = Vec::new();
+    let mut needs_selection = false;
+    let extraction_root = task.target_dir.join("extracted");
+    if extraction_root.exists() {
+      std::fs::remove_dir_all(&extraction_root)?;
+    }
 
     let emit_fonts_found = |font_infos: &[crate::mod_manager::FontInfo]| {
       if font_infos.is_empty() {
@@ -760,7 +772,11 @@ impl DownloadManager {
 
       log::info!("Extracting archive: {file_path:?}");
 
-      let extracted_dir = task.target_dir.join("extracted");
+      let archive_name = file_path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| Error::InvalidInput("Archive filename is invalid".into()))?;
+      let extracted_dir = extraction_root.join(archive_name);
       if extracted_dir.exists() {
         log::warn!("Extracted directory already exists, removing: {extracted_dir:?}");
         std::fs::remove_dir_all(&extracted_dir)?;
@@ -841,13 +857,7 @@ impl DownloadManager {
         }
       }
 
-      let archive_name = file_path
-        .file_name()
-        .and_then(|n| n.to_str())
-        .unwrap_or("unknown")
-        .to_string();
-
-      match file_tree_analyzer.get_file_tree_from_extracted(&extracted_dir, &archive_name) {
+      match file_tree_analyzer.get_file_tree_from_extracted(&extracted_dir, archive_name) {
         Ok(file_tree) => {
           log::info!(
             "Analyzed file tree: {} files, has_multiple: {}",
@@ -855,81 +865,36 @@ impl DownloadManager {
             file_tree.has_multiple_files
           );
 
-          if file_tree.has_multiple_files {
-            if task.is_profile_import {
-              if let Some(ref provided_file_tree) = task.file_tree {
-                log::info!(
-                  "Profile import: File tree provided with selections, copying selected VPKs for mod: {}",
-                  task.mod_id
-                );
-
-                let copied_vpks = vpk_manager.copy_selected_vpks_with_prefix(
-                  &extracted_dir,
-                  &destination_path,
-                  &task.mod_id,
-                  provided_file_tree,
-                )?;
-
-                log::info!(
-                  "Copied {} VPKs for mod {}: {:?}",
-                  copied_vpks.len(),
-                  task.mod_id,
-                  copied_vpks
-                );
-
-                if copied_vpks.is_empty() {
-                  log::error!("No VPKs were copied for mod: {}", task.mod_id);
-                  return Err(Error::InvalidInput(
-                    "No VPKs matched the file tree selection".to_string(),
-                  ));
-                }
-
-                emit_fonts_found(&found_font_infos);
-                Self::cleanup_extracted(&extracted_dir, file_path);
-                return Ok(());
-              } else {
-                log::info!(
-                  "Profile import: Mod has multiple VPK files, skipping file tree event for mod: {}",
-                  task.mod_id
-                );
-                emit_fonts_found(&found_font_infos);
-                return Ok(());
-              }
+          if !task.is_profile_import {
+            needs_selection |= file_tree.has_multiple_files;
+            for mut file in file_tree.files {
+              file.path = format!("{archive_name}/{}", file.path);
+              collected_files.push(file);
             }
+            continue;
+          }
 
-            log::info!(
-              "Mod has multiple VPK files, emitting file tree event for mod: {}",
-              task.mod_id
-            );
-
-            app_handle
-              .emit(
-                "download-file-tree",
-                DownloadFileTreeEvent {
-                  mod_id: task.mod_id.clone(),
-                  file_tree: file_tree.clone(),
-                },
-              )
-              .ok();
-
+          if file_tree.has_multiple_files && task.file_tree.is_none() {
             emit_fonts_found(&found_font_infos);
             return Ok(());
           }
-
-          log::info!(
-            "Mod has single VPK file, copying directly for mod: {}",
-            task.mod_id
-          );
-          let copied =
-            vpk_manager.copy_vpks_with_prefix(&extracted_dir, &destination_path, &task.mod_id)?;
-          let prefix = format!("{}_", task.mod_id);
-          for vpk_name in &copied {
-            let original = vpk_name
-              .strip_prefix(&prefix)
-              .unwrap_or(vpk_name)
-              .to_string();
-            vpk_archive_map.insert(original, archive_name.clone());
+          let selected_paths =
+            Self::selected_extracted_vpks(&extracted_dir, &file_tree, task.file_tree.as_ref());
+          let mut selection = file_tree;
+          for file in &mut selection.files {
+            file.is_selected = selected_paths.contains(&extracted_dir.join(&file.path));
           }
+          vpk_manager.copy_selected_vpks_with_prefix(
+            &extracted_dir,
+            &destination_path,
+            &task.mod_id,
+            &selection,
+          )?;
+          persist_prefixed_import(
+            &destination_path,
+            &task.mod_id,
+            vpk_manager.find_prefixed_vpks(&destination_path, &task.mod_id)?,
+          )?;
           Self::cleanup_extracted(&extracted_dir, file_path);
         }
         Err(e) => {
@@ -938,73 +903,46 @@ impl DownloadManager {
             task.mod_id,
             e
           );
-          let copied =
-            vpk_manager.copy_vpks_with_prefix(&extracted_dir, &destination_path, &task.mod_id)?;
-          let prefix = format!("{}_", task.mod_id);
-          for vpk_name in &copied {
-            let original = vpk_name
-              .strip_prefix(&prefix)
-              .unwrap_or(vpk_name)
-              .to_string();
-            vpk_archive_map.insert(original, archive_name.clone());
-          }
+          vpk_manager.copy_vpks_with_prefix(&extracted_dir, &destination_path, &task.mod_id)?;
+          persist_prefixed_import(
+            &destination_path,
+            &task.mod_id,
+            vpk_manager.find_prefixed_vpks(&destination_path, &task.mod_id)?,
+          )?;
+
           Self::cleanup_extracted(&extracted_dir, file_path);
         }
       }
     }
 
-    if !task.is_profile_import {
-      let prefixed_vpks = vpk_manager.find_prefixed_vpks(&destination_path, &task.mod_id)?;
-
-      if !prefixed_vpks.is_empty() {
-        let prefix = format!("{}_", task.mod_id);
-        let files: Vec<crate::mod_manager::file_tree::ModFile> = prefixed_vpks
-          .iter()
-          .map(|vpk_name| {
-            let original_name = vpk_name
-              .strip_prefix(&prefix)
-              .unwrap_or(vpk_name)
-              .to_string();
-            let size = std::fs::metadata(destination_path.join(vpk_name))
-              .map(|m| m.len())
-              .unwrap_or(0);
-            let archive = vpk_archive_map
-              .get(&original_name)
-              .cloned()
-              .unwrap_or_default();
-            crate::mod_manager::file_tree::ModFile {
-              name: original_name.clone(),
-              path: original_name,
-              size,
-              is_selected: true,
-              archive_name: archive,
-            }
-          })
-          .collect();
-
-        let total_files = files.len();
-        let aggregated_tree = crate::mod_manager::file_tree::ModFileTree {
-          files,
-          total_files,
-          has_multiple_files: false,
-        };
-
-        log::info!(
-          "Emitting aggregated file tree for mod {}: {} files",
-          task.mod_id,
-          total_files
-        );
-
-        app_handle
-          .emit(
-            "download-file-tree",
-            DownloadFileTreeEvent {
-              mod_id: task.mod_id.clone(),
-              file_tree: aggregated_tree,
-            },
-          )
-          .ok();
+    if !task.is_profile_import && !collected_files.is_empty() {
+      let total_files = collected_files.len();
+      let aggregated_tree = crate::mod_manager::file_tree::ModFileTree {
+        files: collected_files,
+        total_files,
+        has_multiple_files: needs_selection,
+      };
+      if !needs_selection {
+        let copied = vpk_manager.copy_selected_vpks_with_prefix(
+          &extraction_root,
+          &destination_path,
+          &task.mod_id,
+          &aggregated_tree,
+        )?;
+        persist_prefixed_import(&destination_path, &task.mod_id, copied)?;
+        for file_path in downloaded_files {
+          Self::cleanup_extracted(&extraction_root, file_path);
+        }
       }
+      app_handle
+        .emit(
+          "download-file-tree",
+          DownloadFileTreeEvent {
+            mod_id: task.mod_id.clone(),
+            file_tree: aggregated_tree,
+          },
+        )
+        .ok();
     }
 
     emit_fonts_found(&found_font_infos);
@@ -1242,6 +1180,20 @@ mod tests {
         std::path::Path::new("extracted"),
         &extracted,
         Some(&selection),
+      ),
+      vec![std::path::Path::new("extracted").join("variants/main.vpk")]
+    );
+  }
+
+  #[test]
+  fn update_selection_accepts_paths_scoped_to_the_source_archive() {
+    let extracted = tree(vec![file("mod.zip", "variants/main.vpk", true)]);
+    let selection = tree(vec![file("mod.zip", "mod.zip/variants/main.vpk", true)]);
+    assert_eq!(
+      DownloadManager::selected_extracted_vpks(
+        std::path::Path::new("extracted"),
+        &extracted,
+        Some(&selection)
       ),
       vec![std::path::Path::new("extracted").join("variants/main.vpk")]
     );

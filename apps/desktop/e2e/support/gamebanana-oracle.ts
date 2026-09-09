@@ -155,10 +155,44 @@ export const assertCatalogDisk = async (
       ),
     );
   const game = await collectFileInventory(roots.game);
+  const backupPaths = Object.keys(game).filter((name) =>
+    name.startsWith("game/citadel/addons-backups/"),
+  );
+  if (scenario === "gamebanana-force-update" && phase !== "initial-install") {
+    const initial = z
+      .object({ inventory: z.record(z.string(), z.string()) })
+      .parse(
+        JSON.parse(
+          await readFile(
+            path.join(world, "artifacts", "catalog-initial-install.json"),
+            "utf8",
+          ),
+        ),
+      );
+    assert.equal(
+      new Set(backupPaths.map((name) => name.split("/")[3])).size,
+      1,
+    );
+    assert.deepEqual(
+      Object.fromEntries(
+        backupPaths.map((name) => [
+          name.split("/").slice(4).join("/"),
+          game[name],
+        ]),
+      ),
+      Object.fromEntries(
+        Object.entries(initial.inventory).map(([name, hash]) => [
+          `addons/${name}`,
+          hash,
+        ]),
+      ),
+    );
+  } else assert.deepEqual(backupPaths, []);
   const gameinfoPath = "game/citadel/gameinfo.gi";
   assertInventoryChanges(before.game, game, [
     gameinfoPath,
     "game/citadel/gameinfo.gi.bak",
+    ...backupPaths,
     ...Object.keys(inventory).map((name) => `game/citadel/addons/${name}`),
   ]);
   const gameinfo = await readFile(path.join(roots.game, gameinfoPath), "utf8");
