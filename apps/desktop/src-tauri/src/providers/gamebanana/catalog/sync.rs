@@ -13,6 +13,8 @@ const FULL_RECONCILIATION_INTERVAL: Duration = Duration::from_secs(7 * 24 * 60 *
 const HYDRATION_BATCH_SIZE: usize = 50;
 const LAST_INCREMENTAL_AT: &str = "last_incremental_at";
 const LAST_FULL_SYNC_AT: &str = "last_full_sync_at";
+const LAST_INCOMPLETE_SNAPSHOT_AT: &str = "last_incomplete_snapshot_at";
+const INCOMPLETE_RETRY_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60);
 
 type SourceFuture<'a, T> = Pin<Box<dyn Future<Output = Result<T, Error>> + Send + 'a>>;
 
@@ -96,6 +98,21 @@ impl CatalogSync {
     cancel: &CancellationToken,
   ) -> Result<SyncOutcome, Error> {
     let _sync_guard = self.sync_lock.lock().await;
+    // A completed but malformed snapshot retains cached entries. Avoid crawling
+    // the same malformed index again on every catalog request, including when
+    // the catalog is empty or its last successful full sync is overdue.
+    if !force_reconcile && self.catalog.state(INCOMPLETE_SNAPSHOT).await?.is_some() {
+      let last_attempt = self
+        .catalog
+        .state(LAST_INCOMPLETE_SNAPSHOT_AT)
+        .await?
+        .and_then(|value| value.parse::<u64>().ok());
+      if last_attempt.is_some_and(|last| {
+        unix_timestamp().saturating_sub(last) < INCOMPLETE_RETRY_INTERVAL.as_secs()
+      }) {
+        return Ok(SyncOutcome::Throttled);
+      }
+    }
     if force_reconcile
       || self
         .catalog
@@ -196,6 +213,11 @@ impl CatalogSync {
       self
         .catalog
         .set_state(LAST_FULL_SYNC_AT, unix_timestamp().to_string())
+        .await?;
+    } else {
+      self
+        .catalog
+        .set_state(LAST_INCOMPLETE_SNAPSHOT_AT, unix_timestamp().to_string())
         .await?;
     }
     Ok(())
@@ -640,6 +662,32 @@ mod tests {
         .is_some()
     );
 
+    let throttled = CatalogSync::with_source(
+      catalog.clone(),
+      FakeSource {
+        pages: Mutex::new(VecDeque::new()),
+      },
+    );
+    assert_eq!(
+      throttled
+        .synchronize(false, false, &CancellationToken::new())
+        .await
+        .unwrap(),
+      super::SyncOutcome::Throttled
+    );
+    assert_eq!(
+      throttled
+        .synchronize(true, false, &CancellationToken::new())
+        .await
+        .unwrap(),
+      super::SyncOutcome::Throttled
+    );
+    // Expire only the retry timestamp, without waiting in the test.
+    catalog
+      .set_state(super::LAST_INCOMPLETE_SNAPSHOT_AT, "0".to_string())
+      .await
+      .unwrap();
+
     let clean = CatalogSync::with_source(
       catalog.clone(),
       FakeSource {
@@ -658,6 +706,71 @@ mod tests {
       catalog.state(super::INCOMPLETE_SNAPSHOT).await.unwrap(),
       None
     );
+  }
+
+  #[tokio::test]
+  async fn incomplete_empty_catalog_retries_are_persisted_and_explicitly_overridable() {
+    let directory = tempdir().unwrap();
+    let catalog = super::Catalog::open(directory.path().join("catalog.sqlite3"), 2)
+      .await
+      .unwrap();
+    let mut malformed = page(1, true);
+    malformed.records = vec![serde_json::json!({"_idRow": "invalid"})];
+    let sync = CatalogSync::with_source(
+      catalog.clone(),
+      FakeSource {
+        pages: Mutex::new(VecDeque::from([Ok(malformed.clone()), Ok(malformed)])),
+      },
+    );
+    sync
+      .synchronize(false, false, &CancellationToken::new())
+      .await
+      .unwrap();
+    assert_eq!(catalog.count_visible().await.unwrap(), 0);
+    assert!(
+      catalog
+        .state(super::LAST_FULL_SYNC_AT)
+        .await
+        .unwrap()
+        .is_none()
+    );
+    drop(sync);
+    // A fresh synchronizer reads the persisted backoff and makes no request.
+    let restarted = CatalogSync::with_source(
+      catalog.clone(),
+      FakeSource {
+        pages: Mutex::new(VecDeque::from([Ok(page(2, true)), Ok(page(4, true))])),
+      },
+    );
+    assert_eq!(
+      restarted
+        .synchronize(false, false, &CancellationToken::new())
+        .await
+        .unwrap(),
+      super::SyncOutcome::Throttled
+    );
+    assert_eq!(
+      restarted
+        .synchronize(false, true, &CancellationToken::new())
+        .await
+        .unwrap(),
+      super::SyncOutcome::Full
+    );
+    assert!(
+      catalog
+        .state(super::INCOMPLETE_SNAPSHOT)
+        .await
+        .unwrap()
+        .is_none()
+    );
+    assert!(
+      catalog
+        .state(super::LAST_FULL_SYNC_AT)
+        .await
+        .unwrap()
+        .is_some()
+    );
+    assert_eq!(catalog.count_visible().await.unwrap(), 2);
   }
 
   #[tokio::test]
