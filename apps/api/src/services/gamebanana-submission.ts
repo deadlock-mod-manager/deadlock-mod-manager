@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { ModDto } from "@deadlock-mods/shared";
+import type { ResolvedRequirement } from "@deadlock-mods/shared";
 import {
   DEADLOCK_GAME_ID,
   GAME_BANANA_BASE_URL,
@@ -20,7 +20,7 @@ export interface GameBananaSubmissionSnapshot {
 }
 
 export interface DirectGameBananaSubmission extends GameBananaSubmissionSnapshot {
-  mod: ModDto;
+  mod: NonNullable<ResolvedRequirement["mod"]>;
 }
 
 const profileSnapshotSchema = z
