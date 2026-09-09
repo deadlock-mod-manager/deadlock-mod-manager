@@ -127,19 +127,22 @@ impl PolicyState {
       .manifest
       .read()
       .map_err(|_| Error::BackgroundTaskFailed("Policy lock poisoned".to_string()))?;
-    Ok(
-      manifest
-        .rules
-        .iter()
-        .filter(|rule| {
-          matches!(
-            rule.kind,
-            PolicyRuleKind::Hidden | PolicyRuleKind::Blacklisted | PolicyRuleKind::Takedown
-          )
-        })
-        .map(|rule| rule.submission().to_slug().map_err(|error| Error::InvalidInput(error.to_string())))
-        .collect::<Result<Vec<_>, _>>()?,
-    )
+    manifest
+      .rules
+      .iter()
+      .filter(|rule| {
+        matches!(
+          rule.kind,
+          PolicyRuleKind::Hidden | PolicyRuleKind::Blacklisted | PolicyRuleKind::Takedown
+        )
+      })
+      .map(|rule| {
+        rule
+          .submission()
+          .to_slug()
+          .map_err(|error| Error::InvalidInput(error.to_string()))
+      })
+      .collect::<Result<Vec<_>, _>>()
   }
 
   pub fn apply_to_mod(&self, mod_data: &mut CatalogModDto) -> Result<bool, Error> {
@@ -148,10 +151,12 @@ impl PolicyState {
       .read()
       .map_err(|_| Error::BackgroundTaskFailed("Policy lock poisoned".to_string()))?;
     let remote_id = mod_data.remote_id.clone();
-    let rules = manifest
-      .rules
-      .iter()
-      .filter(|rule| rule.submission().to_slug().is_ok_and(|slug| slug == remote_id));
+    let rules = manifest.rules.iter().filter(|rule| {
+      rule
+        .submission()
+        .to_slug()
+        .is_ok_and(|slug| slug == remote_id)
+    });
     for rule in rules {
       match rule.kind {
         PolicyRuleKind::Hidden | PolicyRuleKind::Blacklisted | PolicyRuleKind::Takedown => {
@@ -174,7 +179,10 @@ impl PolicyState {
       .read()
       .map_err(|_| Error::BackgroundTaskFailed("Policy lock poisoned".to_string()))?;
     if manifest.rules.iter().any(|rule| {
-      rule.submission().to_slug().is_ok_and(|identity| identity == slug)
+      rule
+        .submission()
+        .to_slug()
+        .is_ok_and(|identity| identity == slug)
         && matches!(
           rule.kind,
           PolicyRuleKind::Hidden
@@ -337,7 +345,12 @@ fn validate_manifest(manifest: &PolicyManifest) -> Result<(), Error> {
     {
       return Err(Error::InvalidInput("Invalid policy identity".to_string()));
     }
-    if !identities.insert((submission.to_slug().map_err(|error| Error::InvalidInput(error.to_string()))?, rule.kind)) {
+    if !identities.insert((
+      submission
+        .to_slug()
+        .map_err(|error| Error::InvalidInput(error.to_string()))?,
+      rule.kind,
+    )) {
       return Err(Error::InvalidInput("Duplicate policy rule".to_string()));
     }
     if (rule.kind == PolicyRuleKind::MetadataCorrection) != rule.correction.is_some() {
