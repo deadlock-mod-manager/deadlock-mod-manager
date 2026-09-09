@@ -19,12 +19,18 @@ export const holdVpkLock = async (
     [
       "-NoProfile",
       "-NonInteractive",
+      "-ExecutionPolicy",
+      "Bypass",
       "-File",
       script,
       path.join(alpha, "pak03_dir.vpk"),
     ],
     { windowsHide: true, stdio: ["ignore", "pipe", "pipe"] },
   );
+  let stderr = "";
+  child.stderr.on("data", (data: Buffer) => {
+    stderr += data.toString();
+  });
   const closed = new Promise<void>((resolve) =>
     child.once("close", () => resolve()),
   );
@@ -47,9 +53,9 @@ export const holdVpkLock = async (
         clearTimeout(deadline);
         reject(error);
       });
-      child.once("exit", (code) => {
+      child.once("close", (code) => {
         clearTimeout(deadline);
-        reject(new Error(`Windows lock exited: ${code}`));
+        reject(new Error(`Windows lock exited: ${code}\n${stderr.trim()}`));
       });
     });
     return release;

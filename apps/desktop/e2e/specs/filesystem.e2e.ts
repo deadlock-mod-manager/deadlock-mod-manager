@@ -11,6 +11,7 @@ import {
   filesystemManifestSchema,
   filesystemPaths,
   fingerprint,
+  shardSlot,
 } from "../support/filesystem-oracle";
 import { collectFileInventory } from "../support/world";
 import { holdVpkLock } from "../support/windows-lock";
@@ -151,9 +152,7 @@ describe("filesystem recovery", () => {
         remoteId,
         status: "installed",
         installOrder: index,
-        installedVpks: [
-          `pak${String((index % 99) + 1).padStart(2, "0")}_dir.vpk`,
-        ],
+        installedVpks: [shardSlot(index).filename],
       }));
       assert.deepEqual(
         state.localMods.toSorted((a, b) => a.installOrder - b.installOrder),

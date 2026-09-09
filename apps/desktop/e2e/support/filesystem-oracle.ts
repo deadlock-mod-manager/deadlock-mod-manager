@@ -7,6 +7,11 @@ import { ALPHA, ALPHA_MODS, profilePayload } from "./profile-fixtures";
 import { assertOwnedWorld, collectFileInventory } from "./world";
 import { readProfileState } from "./profile-oracle";
 
+export const shardSlot = (index: number) => ({
+  shard: Math.floor(index / 99) + 1,
+  filename: `pak${String((index % 99) + 1).padStart(2, "0")}_dir.vpk`,
+});
+
 export const processExists = (pid: number): boolean => {
   try {
     process.kill(pid, 0);
@@ -118,8 +123,7 @@ export const assertFilesystemLayout = async (
     ...extras,
   };
   for (const [index, id] of order.entries()) {
-    const shard = Math.floor(index / 99) + 1;
-    const filename = `pak${String((index % 99) + 1).padStart(2, "0")}_dir.vpk`;
+    const { shard, filename } = shardSlot(index);
     assert.deepEqual(manifest.mods[id], {
       enabled: true,
       order: index,
@@ -335,10 +339,6 @@ export const assertCrashEvidence = async (world: string): Promise<void> => {
   );
   await writeFile(
     path.join(artifacts, "filesystem-crash-disk.json"),
-    JSON.stringify(
-      { marker, journal, inventory: await collectFileInventory(alpha) },
-      null,
-      2,
-    ),
+    JSON.stringify({ marker, journal, inventory }, null, 2),
   );
 };

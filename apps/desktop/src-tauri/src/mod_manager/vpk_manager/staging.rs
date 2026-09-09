@@ -488,9 +488,22 @@ impl<T> PendingVpkOperation<T> {
   }
 
   pub fn commit_manifest(
+    self,
+    manifest: &ProfileVpkManifest,
+    addons_path: &Path,
+  ) -> Result<T, Error> {
+    self.commit_manifest_with_checkpoint(manifest, addons_path, || {
+      #[cfg(feature = "e2e-harness")]
+      crate::e2e_faults::checkpoint("committed", addons_path)?;
+      Ok(())
+    })
+  }
+
+  fn commit_manifest_with_checkpoint(
     mut self,
     manifest: &ProfileVpkManifest,
     addons_path: &Path,
+    checkpoint: impl FnOnce() -> Result<(), Error>,
   ) -> Result<T, Error> {
     if let PendingGuard::Staging(staging) = &mut self.guard {
       staging.prepare_manifest_commit(manifest)?;
@@ -498,9 +511,11 @@ impl<T> PendingVpkOperation<T> {
     if let Err(error) = manifest.save(addons_path) {
       return Err(self.rollback(error));
     }
-    #[cfg(feature = "e2e-harness")]
-    crate::e2e_faults::checkpoint("committed", addons_path)?;
-    Ok(self.commit())
+    let checkpoint_result = checkpoint();
+    // The manifest is durable. A returning checkpoint error must not undo its files.
+    let value = self.commit();
+    checkpoint_result?;
+    Ok(value)
   }
 
   pub fn rollback(self, original_error: Error) -> Error {
@@ -801,6 +816,31 @@ mod tests {
 
     assert!(!original.exists());
     assert!(!base.join(".test-staging").exists());
+  }
+
+  #[test]
+  fn checkpoint_error_preserves_files_after_manifest_commit() {
+    let temp = tempfile::tempdir().unwrap();
+    let base = base(&temp);
+    let original = base.join("pak01_dir.vpk");
+    fs::write(&original, b"vpk").unwrap();
+    let mut staging = VpkStaging::claim(&base, ".test-staging").unwrap();
+    staging.stage(&base, &original).unwrap();
+    let manifest = ProfileVpkManifest::default();
+    let pending = PendingVpkOperation::with_staging((), staging);
+
+    let error = pending
+      .commit_manifest_with_checkpoint(&manifest, base.path(), || {
+        Err(Error::InvalidInput("crash marker write failed".to_string()))
+      })
+      .unwrap_err();
+
+    assert!(matches!(error, Error::InvalidInput(_)));
+    assert!(!original.exists(), "committed deletion must not roll back");
+    assert!(!base.join(".test-staging").exists());
+    let saved: ProfileVpkManifest =
+      serde_json::from_slice(&fs::read(base.join(".dmm.json")).unwrap()).unwrap();
+    assert_eq!(saved, manifest);
   }
 
   #[test]

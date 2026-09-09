@@ -41,6 +41,8 @@ export const fixtureMod = (modId: string, index: number): LocalMod => ({
   author: "E2E",
   downloadable: false,
   tags: [],
+  dependencies: [],
+  metadata: null,
   images: [],
   hero: null,
   isAudio: false,
