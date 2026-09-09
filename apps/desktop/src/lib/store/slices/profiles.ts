@@ -149,6 +149,8 @@ const placeholderModFromManifest = (
     blacklistedAt: null,
     blacklistedBy: null,
     filesUpdatedAt: null,
+    metadata: null,
+    dependencies: null,
     overrides: null,
     createdAt: now,
     updatedAt: now,
