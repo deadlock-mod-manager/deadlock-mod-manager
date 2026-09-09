@@ -153,7 +153,7 @@ pub async fn check_gamebanana_catalog_updates(
                 .await?;
               resolved.push((submission, installed, snapshot));
             } else {
-              unknown.push(submission.to_slug());
+              unknown.push(submission.to_slug().map_err(|error| Error::InvalidInput(error.to_string()))?);
             }
           }
         }
@@ -163,7 +163,7 @@ pub async fn check_gamebanana_catalog_updates(
             if let Some(cached) = backend.catalog.cached_update(submission.clone()).await? {
               resolved.push((submission, installed, cached.snapshot));
             } else {
-              unknown.push(submission.to_slug());
+              unknown.push(submission.to_slug().map_err(|error| Error::InvalidInput(error.to_string()))?);
             }
           }
         }
@@ -190,7 +190,7 @@ pub async fn check_gamebanana_catalog_updates(
       && let Some(record) = backend.catalog.get(submission).await?
     {
       updates.push(CatalogUpdateDto {
-        r#mod: CatalogModDto::from_record(record),
+        r#mod: CatalogModDto::from_record(record)?,
         downloads: snapshot
           .files
           .into_iter()
