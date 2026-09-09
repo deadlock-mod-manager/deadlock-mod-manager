@@ -17,7 +17,12 @@ export const processExists = (pid: number): boolean => {
 };
 
 export const terminateProcessTree = (child: ChildProcess): void => {
-  if (child.pid === undefined || child.exitCode !== null) return;
+  if (
+    child.pid === undefined ||
+    child.exitCode !== null ||
+    child.signalCode !== null
+  )
+    return;
   if (process.platform === "win32")
     spawnSync("taskkill.exe", ["/pid", String(child.pid), "/t", "/f"], {
       windowsHide: true,
@@ -59,13 +64,17 @@ export const runProcess = async (options: {
     if (termination) return;
     termination = reason;
     output += `\nSupervisor termination: ${reason}\n`;
-    if (child.exitCode !== null)
+    const exited = child.exitCode !== null || child.signalCode !== null;
+    if (exited)
       output +=
         "Launcher already exited; descendant pipe ownership cannot be recovered. Releasing output handles and failing this run.\n";
+    // Sending a kill signal does not mean the process has exited yet. Reap the
+    // child before reporting completion, even after releasing inherited pipes.
+    if (!exited) child.once("exit", finishTermination);
     terminateProcessTree(child);
     child.stdout.destroy();
     child.stderr.destroy();
-    finishTermination();
+    if (exited) finishTermination();
   };
   const interrupt = () => terminate("interrupted");
   process.once("SIGINT", interrupt);
