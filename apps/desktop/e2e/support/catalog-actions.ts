@@ -22,7 +22,7 @@ const selectInstallFiles = async (names: string[]) => {
     const checkbox = await row.$('[role="checkbox"]');
     const checked = (await checkbox.getAttribute("aria-checked")) === "true";
     if (checked !== names.includes(name)) {
-      await reveal(dialog.$(`[data-install-file="${name}"]`));
+      await reveal(await dialog.$(`[data-install-file="${name}"]`));
       await row.click();
     }
     await expect(checkbox).toHaveAttribute(
@@ -63,7 +63,10 @@ export const installCatalog = (
       await expect(dialog.$("button=Install Selected")).toBeDisabled();
       await dialog.$("button=Cancel").click();
       await waitCatalogStatus(world, "downloaded");
-      await expect(toggle).toHaveAttribute("aria-checked", "false");
+      await expect($('[role="switch"]')).toHaveAttribute(
+        "aria-checked",
+        "false",
+      );
       await toggle.waitForClickable();
       await toggle.click();
     }
@@ -74,7 +77,7 @@ export const installCatalog = (
     )
       await chooseInstallFiles(files);
     await waitCatalogStatus(world, "installed");
-    await expect(toggle).toHaveAttribute("aria-checked", "true");
+    await expect($('[role="switch"]')).toHaveAttribute("aria-checked", "true");
   });
 
 export const checkCatalog = async (
@@ -164,7 +167,7 @@ export const chooseArchives = async (names: string[]) => {
       ((await checkbox.getAttribute("aria-checked")) === "true") !==
       names.includes(name)
     ) {
-      await reveal(dialog.$(`[data-download-archive="${name}"]`));
+      await reveal(await dialog.$(`[data-download-archive="${name}"]`));
       await row.click();
     }
     await expect(checkbox).toHaveAttribute(
@@ -188,7 +191,10 @@ export const toggleCatalog = async (world: string, enabled: boolean) => {
   await reveal(toggle);
   await toggle.waitForClickable();
   await toggle.click();
-  await expect(toggle).toHaveAttribute("aria-checked", String(enabled));
+  await expect($('[role="switch"]')).toHaveAttribute(
+    "aria-checked",
+    String(enabled),
+  );
   await waitCatalogStatus(world, enabled ? "installed" : "downloaded");
   await expect($('[role="dialog"]')).not.toBeDisplayed();
 };
