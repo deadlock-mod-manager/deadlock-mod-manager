@@ -66,11 +66,16 @@ export const selectDownloads = (names: readonly string[]) =>
     await dialog.$("button=Download Selected").click();
     await expect(dialog).not.toBeDisplayed();
   });
-export const deselectInstallFile = (name: string) =>
-  step(`deselect ${name}`, async () => {
+export const deselectInstallFile = (archiveName: string, filePath: string) =>
+  step(`deselect ${archiveName}: ${filePath}`, async () => {
     const dialog = await $('[role="dialog"]');
     await dialog.waitForDisplayed();
-    const row = await dialog.$(`[data-install-file="${name}"]`);
+    const identity = JSON.stringify([archiveName, filePath]);
+    const selector = await browser.execute(
+      (value: string) => `[data-install-file="${CSS.escape(value)}"]`,
+      identity,
+    );
+    const row = await dialog.$(selector);
     await row.click();
     await expect(row.$('[role="checkbox"]')).toHaveAttribute(
       "aria-checked",

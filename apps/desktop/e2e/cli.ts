@@ -267,6 +267,11 @@ const run = async (): Promise<void> => {
   const ids = valueAfter("--suite")
     ? selectScenarios(valueAfter("--suite") ?? "all")
     : [parseScenarioId(valueAfter("--case"))];
+  const nativeCases = ids.filter((id) => scenarios[id].nativeInput);
+  if (nativeCases.length > 0 && !argumentsList.includes("--allow-native-input"))
+    throw new Error(
+      `Selected scenarios require --allow-native-input: ${nativeCases.join(", ")}`,
+    );
   const summary = [];
   for (const caseId of ids) {
     const result = await runE2eWorld({

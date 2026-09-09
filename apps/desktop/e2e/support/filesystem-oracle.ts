@@ -12,7 +12,6 @@ export const shardSlot = (index: number) => ({
   filename: `pak${String((index % 99) + 1).padStart(2, "0")}_dir.vpk`,
 });
 
-
 const inventorySchema = z.record(z.string(), z.string());
 const backupEvidenceSchema = z.object({
   fileName: z.string().regex(/^addons-backup-[\d_-]+$/),

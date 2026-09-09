@@ -31,7 +31,7 @@ if (args.Length == 4 && args[2] != "--fixture") throw new ArgumentException("Exp
 var fixture = Path.GetFullPath(args.Length == 4 ? args[3] : Path.Combine(fixtureRoot, "e2e-local-mod.vpk"));
 if (!fixture.StartsWith(fixtureRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
     throw new InvalidOperationException("Picker fixture must remain inside the owned fixtures directory");
-for (var cursor = fixture; cursor != world; cursor = Path.GetDirectoryName(cursor) ?? throw new InvalidOperationException("Invalid fixture path"))
+for (var cursor = fixture; !string.Equals(cursor, world, StringComparison.OrdinalIgnoreCase); cursor = Path.GetDirectoryName(cursor) ?? throw new InvalidOperationException("Invalid fixture path"))
     if ((File.GetAttributes(cursor) & FileAttributes.ReparsePoint) != 0) throw new InvalidOperationException("Picker fixture cannot traverse reparse points");
 if (!File.Exists(fixture)) throw new FileNotFoundException("Lifecycle fixture is missing", fixture);
 Console.WriteLine("Waiting for the owned native file picker");

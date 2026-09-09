@@ -39,9 +39,7 @@ it("terminates a hung process and its descendant and retains output", async () =
   expect(result.termination).toBe("timeout");
   expect(result.exitCode).not.toBe(0);
   expect(processExists(pids.parent)).toBe(false);
-  if (process.platform === "win32")
-    expect(processExists(pids.child)).toBe(false);
-  else process.kill(pids.child);
+  expect(processExists(pids.child)).toBe(false);
   expect(await readFile(options.outputPath, "utf8")).toContain(
     "Supervisor termination: timeout",
   );

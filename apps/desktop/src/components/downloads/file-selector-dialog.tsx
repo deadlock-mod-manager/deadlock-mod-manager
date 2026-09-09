@@ -254,7 +254,10 @@ export const FileSelectorDialog = ({
                               type='button'
                               className='flex w-full items-center justify-between rounded-md px-3 py-2 text-left hover:bg-muted/50'
                               key={file.path}
-                              data-install-file={file.name}
+                              data-install-file={JSON.stringify([
+                                file.archive_name,
+                                file.path,
+                              ])}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleFileToggle(
@@ -305,7 +308,10 @@ export const FileSelectorDialog = ({
                         type='button'
                         className='flex w-full items-center justify-between rounded-md px-3 py-2 text-left hover:bg-muted/50'
                         key={file.path}
-                        data-install-file={file.name}
+                        data-install-file={JSON.stringify([
+                          file.archive_name,
+                          file.path,
+                        ])}
                         onClick={(e) => {
                           e.stopPropagation();
                           handleFileToggle(index, !file.is_selected, e);

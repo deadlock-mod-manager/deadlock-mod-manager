@@ -56,7 +56,14 @@ describe("GameBanana catalog installation", () => {
       if (scenario === "gamebanana-variants") {
         const dialog = await $('[role="dialog"]');
         await dialog.waitForDisplayed();
-        await deselectInstallFile("red.vpk");
+        const red = (
+          await readCatalogState(world)
+        ).localMods[0].installedFileTree?.files.find(
+          (file) =>
+            file.archive_name === "variants.zip" && file.name === "red.vpk",
+        );
+        assert(red);
+        await deselectInstallFile(red.archive_name, red.path);
         await dialog.$("button=Install Selected").click();
         await expect(dialog).not.toBeDisplayed();
       }

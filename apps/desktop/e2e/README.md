@@ -72,8 +72,8 @@ Profile ordering has separate pointer and keyboard scenarios, each with two prei
 ```powershell
 pnpm --filter @deadlock-mods/desktop e2e:build:picker
 pnpm --filter @deadlock-mods/desktop e2e:doctor -- --case profiles-pointer
-pnpm --filter @deadlock-mods/desktop e2e:test -- --case profiles-pointer --keep
-pnpm --filter @deadlock-mods/desktop e2e:test -- --case profiles-keyboard --keep
+pnpm --filter @deadlock-mods/desktop e2e:test -- --case profiles-pointer --keep --allow-native-input
+pnpm --filter @deadlock-mods/desktop e2e:test -- --case profiles-keyboard --keep --allow-native-input
 ```
 
 Each scenario moves Alpha's first mod to last through the ordering dialog, saves through the real Rust command, switches to Beta, restarts with Beta active, and switches back to Alpha. The oracle checks persisted profile and library state, manifest slots, exact file inventories, distinct VPK payload hashes, protected files, and active game search paths. Beta remains byte-identical to its initial fixture; Alpha remains byte-identical after its reorder while switching and restarting. Artifacts include `profiles-*.json` checkpoints and `native-input.log`.
