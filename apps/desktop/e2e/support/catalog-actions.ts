@@ -13,7 +13,7 @@ export const waitCatalogStatus = (world: string, status: string) =>
     (state) => state.localMods[0]?.status === status,
   );
 
-export const chooseInstallFiles = async (names: string[]) => {
+const selectInstallFiles = async (names: string[]) => {
   const dialog = await $('[role="dialog"]');
   await dialog.waitForDisplayed();
   for (const row of await dialog.$$("[data-install-file]")) {
@@ -30,6 +30,11 @@ export const chooseInstallFiles = async (names: string[]) => {
       String(names.includes(name)),
     );
   }
+  return dialog;
+};
+
+export const chooseInstallFiles = async (names: string[]) => {
+  const dialog = await selectInstallFiles(names);
   await expect(dialog.$("button=Install Selected")).toBeEnabled();
   await dialog.$("button=Install Selected").click();
   await expect(dialog).not.toBeDisplayed();
@@ -53,6 +58,15 @@ export const installCatalog = (
     const toggle = await $('[role="switch"]');
     await toggle.waitForClickable();
     await toggle.click();
+    if (scenario === "gamebanana-combined") {
+      const dialog = await selectInstallFiles([]);
+      await expect(dialog.$("button=Install Selected")).toBeDisabled();
+      await dialog.$("button=Cancel").click();
+      await waitCatalogStatus(world, "downloaded");
+      await expect(toggle).toHaveAttribute("aria-checked", "false");
+      await toggle.waitForClickable();
+      await toggle.click();
+    }
     if (
       recipe
         .filter((archive) => archive.selected)
