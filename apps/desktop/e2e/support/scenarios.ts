@@ -118,6 +118,11 @@ const catalog: Definition = {
     );
   },
 };
+const catalogLifecycle: Definition = {
+  ...catalog,
+  spec: "gamebanana-lifecycle",
+  phases: ["catalog-change", "restart-changed"],
+};
 export const scenarios = {
   "about-smoke": smoke,
   "local-mod-lifecycle": local,
@@ -144,6 +149,13 @@ export const scenarios = {
   "gamebanana-single": catalog,
   "gamebanana-multifile": catalog,
   "gamebanana-variants": catalog,
+  "gamebanana-combined": catalogLifecycle,
+  "gamebanana-switch": catalogLifecycle,
+  "gamebanana-switch-failure": catalogLifecycle,
+  "gamebanana-reselect": catalogLifecycle,
+  "gamebanana-reinstall": catalogLifecycle,
+  "gamebanana-reinstall-disabled": catalogLifecycle,
+  "gamebanana-force-update": catalogLifecycle,
 } satisfies Record<string, Definition>;
 export type ScenarioId = keyof typeof scenarios;
 const isScenario = (value: string): value is ScenarioId =>

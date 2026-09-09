@@ -8,7 +8,56 @@ export const CATALOG_MOD_ID = "900001";
 export const CATALOG_MOD_NAME = "E2E GameBanana Mod";
 const timestamp = 1_780_000_000;
 
-export const catalogRecipe = (scenario: string) => {
+type CatalogArchive = {
+  id: number;
+  name: string;
+  files: string[];
+  selected: boolean;
+};
+export const catalogRecipe = (scenario: string): CatalogArchive[] => {
+  if (scenario.startsWith("gamebanana-switch"))
+    return [
+      { id: 910001, name: "common.zip", files: ["common.vpk"], selected: true },
+      { id: 910002, name: "blue.zip", files: ["blue.vpk"], selected: true },
+      { id: 910003, name: "red.zip", files: ["red.vpk"], selected: false },
+      {
+        id: 910004,
+        name: "extras.zip",
+        files: ["extra.vpk", "spark.vpk"],
+        selected: false,
+      },
+    ];
+  if (scenario === "gamebanana-combined")
+    return [
+      {
+        id: 910001,
+        name: "base.zip",
+        files: ["base.vpk", "base-extra.vpk"],
+        selected: true,
+      },
+      {
+        id: 910002,
+        name: "effects.zip",
+        files: ["effects.vpk", "effects-extra.vpk"],
+        selected: true,
+      },
+      {
+        id: 910003,
+        name: "alternate.zip",
+        files: ["alternate.vpk"],
+        selected: false,
+      },
+    ];
+  if (scenario === "gamebanana-force-update")
+    return catalogRecipe("gamebanana-multifile");
+  if (
+    [
+      "gamebanana-reselect",
+      "gamebanana-reinstall",
+      "gamebanana-reinstall-disabled",
+    ].includes(scenario)
+  )
+    return catalogRecipe("gamebanana-variants");
   if (scenario === "gamebanana-single")
     return [
       { id: 910001, name: "base.zip", files: ["base.vpk"], selected: true },
@@ -144,13 +193,22 @@ export const createCatalogRoutes = async (scenario: string) => {
         '{"total":0,"open":0,"resolved":0,"dismissed":0}',
       ),
       ...archives
-        .filter((archive) => archive.selected)
-        .map((archive) => ({
-          method: "GET",
-          path: `/dl/${archive.id}`,
-          status: 200,
-          body: archive.body,
-        })),
+        .filter(
+          (archive) =>
+            archive.selected || scenario.startsWith("gamebanana-switch"),
+        )
+        .map((archive) => (Object.assign({
+	method: 'GET',
+	path: `/dl/${archive.id}`,
+	status: 200,
+	body: archive.body
+}, scenario === 'gamebanana-switch-failure' && archive.name === 'red.zip' ? { sequence: [{
+	status: 503,
+	body: 'Fixture variant temporarily unavailable'
+}, {
+	status: 200,
+	body: archive.body
+}] } : {}))),
     ];
   };
 };
@@ -159,14 +217,35 @@ export const assertCatalogNetwork = (
   scenario: string,
   requests: readonly FixtureRequest[],
 ): void => {
+  const expected = catalogRecipe(scenario)
+    .filter((archive) => archive.selected)
+    .map((archive) => ({ path: `/dl/${archive.id}`, status: 200 }));
+  if (
+    [
+      "gamebanana-reselect",
+      "gamebanana-reinstall",
+      "gamebanana-reinstall-disabled",
+      "gamebanana-force-update",
+    ].includes(scenario)
+  )
+    expected.push(...expected.map((request) => ({ ...request })));
+  if (scenario === "gamebanana-switch")
+    expected.push(
+      { path: "/dl/910003", status: 200 },
+      { path: "/dl/910004", status: 200 },
+      { path: "/dl/910002", status: 200 },
+    );
+  if (scenario === "gamebanana-switch-failure")
+    expected.push(
+      { path: "/dl/910003", status: 503 },
+      { path: "/dl/910003", status: 200 },
+    );
   assert.deepEqual(
     requests
       .filter((request) => request.url.startsWith("/dl/"))
       .map((request) => ({ path: request.url, status: request.responseStatus }))
       .sort((a, b) => a.path.localeCompare(b.path)),
-    catalogRecipe(scenario)
-      .filter((archive) => archive.selected)
-      .map((archive) => ({ path: `/dl/${archive.id}`, status: 200 })),
+    expected.sort((a, b) => a.path.localeCompare(b.path)),
   );
   for (const endpoint of [
     "/apiv11/Mod/Index",

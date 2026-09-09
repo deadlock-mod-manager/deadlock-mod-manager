@@ -109,6 +109,8 @@ The E2E-only download policy accepts exact configured fixture origins (including
 
 ## GameBanana catalog installation scenarios
 
+The lifecycle cases also exercise installed archive changes, cancelled and failed changes, disable/re-enable, force update, and reinstall. `gamebanana-combined` selects VPKs across two multi-file archives. `gamebanana-switch` adds, replaces, revisits, and removes archives while retaining exact inactive-file hashes. `gamebanana-switch-failure` requires a 503 to leave the existing installation unchanged before retry succeeds. `gamebanana-reselect` deletes and reinstalls a single archive with a different VPK selection: the current UI does not offer an installed per-VPK editor for a single download. `gamebanana-reinstall` restores an enabled selection, while `gamebanana-reinstall-disabled` remains downloaded and inactive. `gamebanana-force-update` checks that the update dialog retains the chosen downloads. Every case restarts the app and verifies its final state.
+
 These cases start with an empty library and use the real catalog UI, GameBanana provider, downloader, archive extraction, and installation commands. Only HTTP responses are mocked. Run each with `pnpm --filter @deadlock-mods/desktop e2e:test -- --case <case> --keep` after `e2e:build`.
 
 | Case | Behavior checked |
@@ -167,7 +169,7 @@ Native Windows dialogs are outside the webview DOM and cannot be driven by WebDr
 
 M6 runs the existing E2E harness in `.github/workflows/desktop-e2e.yml`. It runs nightly at 03:23 UTC, on manual dispatch, and on PRs carrying the `e2e-full` label. Regular PRs do not build or run the pipeline automatically. This PR carries the label for qualification before merge.
 
-The pipeline builds the debug harness and native helper once, then shares their binaries with six independent Windows jobs covering all 22 scenarios. Each family runs serially with retries disabled. Native input is explicitly enabled only on disposable GitHub-hosted desktops. The CLI's `--report <path>` writes an incremental JSON summary; CI retains reports and diagnostic artifacts for 14 days without uploading control tokens. Missing prerequisites, unmatched requests, timeouts, and failed scenarios remain failures. No release builds, installer smoke tests, signing, or publication are part of this pipeline.
+The pipeline builds the debug harness and native helper once, then shares their binaries with six independent Windows jobs covering all 29 scenarios. Each family runs serially with retries disabled. Native input is explicitly enabled only on disposable GitHub-hosted desktops. The CLI's `--report <path>` writes an incremental JSON summary; CI retains reports and diagnostic artifacts for 14 days without uploading control tokens. Missing prerequisites, unmatched requests, timeouts, and failed scenarios remain failures. No release builds, installer smoke tests, signing, or publication are part of this pipeline.
 
 Use the six scenario jobs and their per-case reports to verify clean-runner qualification. The local pointer rerun remains skipped at the user's request; its normal scenario is included on the dedicated CI runner.
 
@@ -178,6 +180,6 @@ Use the six scenario jobs and their per-case reports to verify clean-runner qual
 | M3: profiles and ordering | Implemented and validated on Windows/Wry | Two-profile switching plus native pointer and keyboard reorder flows | Inactive profiles and protected files remain unchanged; order and profile state survive restart without mocked core IPC |
 | M4: downloads and network failures | Implemented and validated on Windows/Wry | GameBanana catalog downloads and installation, multi-file and VPK variant selection, installed-file rendering, selected-variant retries, Range resume, pause, cancel, corrupt payloads, authentication failures, redirects, and interrupted-process recovery | Every request matches the strict journal; unexpected traffic fails; installed files and selections survive restart; partial files and state recover correctly |
 | M5: recovery and hostile filesystem cases | Implemented and validated on Windows/Wry | Backup replace/merge, interrupted mutations, shard boundaries, collisions, Windows locks, and crash barriers | Restart recovers retained worlds and the independent oracle proves restoration without normalizing unexpected writes |
-| M6: nightly E2E pipeline | Implemented; qualification tracked in CI | Nightly/manual Windows E2E matrix and opt-in execution on this PR | All 22 existing scenarios pass on clean runners with retained failure evidence |
+| M6: nightly E2E pipeline | Implemented; qualification tracked in CI | Nightly/manual Windows E2E matrix and opt-in execution on this PR | All 29 registered scenarios pass on clean runners with retained failure evidence |
 
 Keep scenarios independent and small even when they share recipes. The final routine-development gate is a composed import/download → enable → profile switch → reorder → backup → modify → restore → restart journey, supported by focused tests for each operation and failure boundary.
