@@ -94,7 +94,7 @@ pub fn normalize_profile(
     submission_type,
     submission_id: profile.id.to_string(),
   }
-  .to_slug();
+  .to_slug().ok()?;
 
   let description = if profile.text.is_empty() {
     profile.description.clone()
