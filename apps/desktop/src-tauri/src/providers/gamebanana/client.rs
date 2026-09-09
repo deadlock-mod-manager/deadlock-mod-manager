@@ -31,25 +31,7 @@ impl GameBananaClient {
     latest_modified: bool,
     cancel: &CancellationToken,
   ) -> Result<IndexPage, Error> {
-    if !(1..=MAX_INDEX_PAGE).contains(&page) {
-      return Err(Error::ProviderInvalidResponse(format!(
-        "index page must be between 1 and {MAX_INDEX_PAGE}"
-      )));
-    }
-
-    let model = model_name(submission_type);
-    let mut url = reqwest::Url::parse(&format!("{API_BASE}{model}/Index"))
-      .map_err(|error| Error::ProviderInvalidResponse(error.to_string()))?;
-    {
-      let mut query = url.query_pairs_mut();
-      query
-        .append_pair("_nPerpage", &INDEX_PAGE_SIZE.to_string())
-        .append_pair("_aFilters[Generic_Game]", &DEADLOCK_GAME_ID.to_string())
-        .append_pair("_nPage", &page.to_string());
-      if latest_modified {
-        query.append_pair("_sSort", "Generic_LatestModified");
-      }
-    }
+    let url = index_url(submission_type, page, latest_modified)?;
 
     self.transport.get_json("index", url, cancel).await
   }
@@ -71,6 +53,34 @@ impl GameBananaClient {
     let url = submission_url(submission, "DownloadPage")?;
     self.transport.get_json("download page", url, cancel).await
   }
+}
+
+fn index_url(
+  submission_type: SubmissionType,
+  page: u32,
+  latest_modified: bool,
+) -> Result<reqwest::Url, Error> {
+  if !(1..=MAX_INDEX_PAGE).contains(&page) {
+    return Err(Error::ProviderInvalidResponse(format!(
+      "index page must be between 1 and {MAX_INDEX_PAGE}"
+    )));
+  }
+
+  let model = model_name(submission_type);
+  let mut url = reqwest::Url::parse(&format!("{API_BASE}{model}/Index"))
+    .map_err(|error| Error::ProviderInvalidResponse(error.to_string()))?;
+  {
+    let mut query = url.query_pairs_mut();
+    query
+      .append_pair("_nPerpage", &INDEX_PAGE_SIZE.to_string())
+      .append_pair("_aFilters[Generic_Game]", &DEADLOCK_GAME_ID.to_string())
+      .append_pair("_nPage", &page.to_string());
+    if latest_modified {
+      query.append_pair("_sSort", "Generic_LatestModified");
+    }
+  }
+
+  Ok(url)
 }
 
 fn submission_url(submission: &SubmissionRef, operation: &str) -> Result<reqwest::Url, Error> {
@@ -104,7 +114,7 @@ fn model_name(submission_type: SubmissionType) -> &'static str {
 
 #[cfg(test)]
 mod tests {
-  use super::{MAX_INDEX_PAGE, model_name, submission_url};
+  use super::{MAX_INDEX_PAGE, index_url, model_name, submission_url};
   use crate::providers::{SubmissionRef, SubmissionType};
 
   #[test]
@@ -116,9 +126,27 @@ mod tests {
       "https://gamebanana.com/apiv11/Sound/42/ProfilePage"
     );
 
-    let local =
-      SubmissionRef::parse_slug("local-550e8400-e29b-41d4-a716-446655440000").unwrap();
+    let local = SubmissionRef::parse_slug("local-550e8400-e29b-41d4-a716-446655440000").unwrap();
     assert!(submission_url(&local, "ProfilePage").is_err());
     assert_eq!(MAX_INDEX_PAGE, 250);
+  }
+  #[test]
+  fn index_query_preserves_wire_format_and_pagination() {
+    let url = index_url(SubmissionType::Sound, 3, true).unwrap();
+    assert_eq!(
+      url.as_str(),
+      "https://gamebanana.com/apiv11/Sound/Index?_nPerpage=50&_aFilters%5BGeneric_Game%5D=20948&_nPage=3&_sSort=Generic_LatestModified"
+    );
+    let request = reqwest::Client::new().get(url.clone()).build().unwrap();
+    assert_eq!(request.url(), &url);
+    assert!(
+      !index_url(SubmissionType::Mod, 1, false)
+        .unwrap()
+        .query()
+        .unwrap()
+        .contains("_sSort")
+    );
+    assert!(index_url(SubmissionType::Mod, 0, false).is_err());
+    assert!(index_url(SubmissionType::Mod, MAX_INDEX_PAGE + 1, false).is_err());
   }
 }

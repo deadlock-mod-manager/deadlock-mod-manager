@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use std::collections::BTreeMap;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Default)]
 pub struct PageMetadata {
   #[serde(rename = "_nRecordCount", default)]
   pub record_count: u64,
@@ -13,7 +13,7 @@ pub struct PageMetadata {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct IndexPage {
-  #[serde(rename = "_aMetadata")]
+  #[serde(rename = "_aMetadata", default)]
   pub metadata: PageMetadata,
   #[serde(rename = "_aRecords", default)]
   pub records: Vec<serde_json::Value>,
@@ -129,6 +129,21 @@ pub struct SubmissionFile {
   pub md5: Option<String>,
 }
 
+// A malformed file must not hide other usable downloads in the response.
+fn deserialize_files<'de, D>(deserializer: D) -> Result<Vec<SubmissionFile>, D::Error>
+where
+  D: serde::Deserializer<'de>,
+{
+  let entries = Vec::<serde_json::Value>::deserialize(deserializer)?;
+  Ok(
+    entries
+      .into_iter()
+      .filter_map(|entry| serde_json::from_value::<SubmissionFile>(entry).ok())
+      .filter(|file| file.id > 0)
+      .collect(),
+  )
+}
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct Profile {
   #[serde(rename = "_idRow")]
@@ -173,7 +188,7 @@ pub struct Profile {
   pub submitter: Option<Submitter>,
   #[serde(rename = "_aPreviewMedia", default)]
   pub preview_media: PreviewMedia,
-  #[serde(rename = "_aFiles", default)]
+  #[serde(rename = "_aFiles", default, deserialize_with = "deserialize_files")]
   pub files: Vec<SubmissionFile>,
   #[serde(rename = "_aRequirements", default)]
   pub requirements: Vec<Vec<String>>,
@@ -185,13 +200,13 @@ pub struct DownloadPage {
   pub is_trashed: bool,
   #[serde(rename = "_bIsWithheld", default)]
   pub is_withheld: bool,
-  #[serde(rename = "_aFiles", default)]
+  #[serde(rename = "_aFiles", default, deserialize_with = "deserialize_files")]
   pub files: Vec<SubmissionFile>,
 }
 
 #[cfg(test)]
 mod tests {
-  use super::IndexPage;
+  use super::{DownloadPage, IndexPage, Profile};
 
   #[test]
   fn malformed_index_records_do_not_discard_the_page() {
@@ -207,5 +222,35 @@ mod tests {
 
     assert_eq!(page.valid_records().len(), 1);
     assert_eq!(page.metadata.record_count, 2);
+  }
+  #[test]
+  fn missing_index_metadata_preserves_valid_records() {
+    let page: IndexPage = serde_json::from_value(serde_json::json!({
+      "_aRecords": [{"_idRow": 1, "_sModelName": "Mod", "_sName": "Valid", "_sProfileUrl": "https://gamebanana.com/mods/1"}]
+    }))
+    .unwrap();
+    assert_eq!(page.valid_records().len(), 1);
+    assert_eq!(page.metadata.record_count, 0);
+    assert!(!page.metadata.is_complete);
+  }
+
+  #[test]
+  fn malformed_download_entries_preserve_valid_files() {
+    let payload = serde_json::json!({"_idRow": 42, "_aFiles": [
+      {"_idRow": 1, "_sFile": "valid.vpk"},
+      {"_sFile": "missing-id.vpk"},
+      {"_idRow": "invalid"},
+      {"_idRow": 0},
+      {"_idRow": 2, "_nFilesize": "invalid"},
+      {"_idRow": 3, "_sFile": "another.vpk"}
+    ]});
+    let profile: Profile = serde_json::from_value(payload.clone()).unwrap();
+    let download: DownloadPage = serde_json::from_value(payload).unwrap();
+    for files in [profile.files, download.files] {
+      assert_eq!(
+        files.iter().map(|file| file.id).collect::<Vec<_>>(),
+        vec![1, 3]
+      );
+    }
   }
 }
