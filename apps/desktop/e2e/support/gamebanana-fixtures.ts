@@ -197,18 +197,31 @@ export const createCatalogRoutes = async (scenario: string) => {
           (archive) =>
             archive.selected || scenario.startsWith("gamebanana-switch"),
         )
-        .map((archive) => (Object.assign({
-	method: 'GET',
-	path: `/dl/${archive.id}`,
-	status: 200,
-	body: archive.body
-}, scenario === 'gamebanana-switch-failure' && archive.name === 'red.zip' ? { sequence: [{
-	status: 503,
-	body: 'Fixture variant temporarily unavailable'
-}, {
-	status: 200,
-	body: archive.body
-}] } : {}))),
+        .map((archive) =>
+          Object.assign(
+            {
+              method: "GET",
+              path: `/dl/${archive.id}`,
+              status: 200,
+              body: archive.body,
+            },
+            scenario === "gamebanana-switch-failure" &&
+              archive.name === "red.zip"
+              ? {
+                  sequence: [
+                    {
+                      status: 503,
+                      body: "Fixture variant temporarily unavailable",
+                    },
+                    {
+                      status: 200,
+                      body: archive.body,
+                    },
+                  ],
+                }
+              : {},
+          ),
+        ),
     ];
   };
 };
