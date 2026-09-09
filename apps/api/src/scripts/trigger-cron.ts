@@ -8,14 +8,15 @@
  * skips the worker, dispatch and Sentry check-in.
  *
  * Usage:
- * pnpm --filter api trigger-cron relay-discovery
+ * pnpm --filter api trigger-cron            # defaults to the mod sync
  */
 
 import { logger } from "@/lib/logger";
+import { ModsSyncProcessor } from "@/processors/mods-sync";
 import { cronService } from "@/services/cron";
 
 const triggerCron = async () => {
-  const jobName = process.argv[2] ?? "relay-discovery";
+  const jobName = process.argv[2] ?? ModsSyncProcessor.name;
 
   const jobId = await cronService.triggerJob(jobName);
 
