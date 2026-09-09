@@ -55,6 +55,13 @@ export const assertCatalogDisk = async (
   world: string,
   scenario: string,
   phase: string,
+  expected: { files: string[]; downloads: string[]; dormant: string[] } = {
+    files: installedCatalogFiles(scenario),
+    downloads: catalogRecipe(scenario)
+      .filter((archive) => archive.selected)
+      .map((archive) => archive.name),
+    dormant: [],
+  },
 ): Promise<void> => {
   const {
     configuration: { roots },
@@ -70,12 +77,9 @@ export const assertCatalogDisk = async (
   assert.equal(profile.enabledMods[CATALOG_MOD_ID]?.enabled, true);
   assert.deepEqual(
     mod.selectedDownloads.map((download) => download.name).sort(),
-    catalogRecipe(scenario)
-      .filter((archive) => archive.selected)
-      .map((archive) => archive.name)
-      .sort(),
+    expected.downloads.toSorted(),
   );
-  const names = installedCatalogFiles(scenario);
+  const names = expected.files.toSorted();
   assert(mod.installedFileTree);
   assert.deepEqual(
     mod.installedFileTree.files
@@ -117,9 +121,15 @@ export const assertCatalogDisk = async (
   const inventory = await collectFileInventory(addons);
   assert.deepEqual(
     Object.keys(inventory).sort(),
-    [".dmm.json", ...entry.currentVpks].sort(),
+    [
+      ".dmm.json",
+      ...entry.currentVpks,
+      ...expected.dormant.map((name) => `${CATALOG_MOD_ID}_${name}`),
+    ].sort(),
   );
   const hash = (name: string) => fingerprint(catalogVpk(name));
+  for (const name of expected.dormant)
+    assert.equal(inventory[`${CATALOG_MOD_ID}_${name}`], hash(name));
   assert.deepEqual(
     entry.currentVpks.map((vpk) => inventory[vpk]).sort(),
     names.map(hash).sort(),

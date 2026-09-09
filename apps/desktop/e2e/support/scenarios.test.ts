@@ -10,13 +10,13 @@ import {
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(22);
+    expect(ids).toHaveLength(29);
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
       expect(scenarioSpec(id)).toContain("./specs/");
       expect(new Set(scenarioPhases(id)).size).toBe(scenarioPhases(id).length);
     }
-    expect(selectScenarios("gamebanana")).toHaveLength(3);
+    expect(selectScenarios("gamebanana")).toHaveLength(10);
     expect(scenarios["profiles-pointer"].nativeInput).toBe(true);
     expect(scenarios["filesystem-crash-placed"].exit("mutate")).toBe("crash");
     expect(scenarios["downloads-restart"].exit("transfer")).toBe("interrupt");
