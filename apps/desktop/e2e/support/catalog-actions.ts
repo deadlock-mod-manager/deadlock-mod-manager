@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { $, expect } from "@wdio/globals";
+import { $, browser, expect } from "@wdio/globals";
+import type { ModFile } from "../../src/types/mods";
 import { catalogRecipe, CATALOG_MOD_NAME } from "./gamebanana-fixtures";
 import { readCatalogState, assertCatalogDisk } from "./gamebanana-oracle";
 import { observeUntil } from "./observations";
@@ -13,28 +14,36 @@ export const waitCatalogStatus = (world: string, status: string) =>
     (state) => state.localMods[0]?.status === status,
   );
 
-const selectInstallFiles = async (names: string[]) => {
+type InstallFile = Pick<ModFile, "archive_name" | "path">;
+const selectInstallFiles = async (files: InstallFile[]) => {
+  const identities = new Set(
+    files.map((file) => JSON.stringify([file.archive_name, file.path])),
+  );
   const dialog = await $('[role="dialog"]');
   await dialog.waitForDisplayed();
   for (const row of await dialog.$$("[data-install-file]")) {
-    const name = await row.getAttribute("data-install-file");
-    assert(name);
+    const identity = await row.getAttribute("data-install-file");
+    assert(identity);
     const checkbox = await row.$('[role="checkbox"]');
     const checked = (await checkbox.getAttribute("aria-checked")) === "true";
-    if (checked !== names.includes(name)) {
-      await reveal(await dialog.$(`[data-install-file="${name}"]`));
+    if (checked !== identities.has(identity)) {
+      const selector = await browser.execute(
+        (value: string) => `[data-install-file="${CSS.escape(value)}"]`,
+        identity,
+      );
+      await reveal(await dialog.$(selector));
       await row.click();
     }
     await expect(checkbox).toHaveAttribute(
       "aria-checked",
-      String(names.includes(name)),
+      String(identities.has(identity)),
     );
   }
   return dialog;
 };
 
-export const chooseInstallFiles = async (names: string[]) => {
-  const dialog = await selectInstallFiles(names);
+export const chooseInstallFiles = async (files: InstallFile[]) => {
+  const dialog = await selectInstallFiles(files);
   await expect(dialog.$("button=Install Selected")).toBeEnabled();
   await dialog.$("button=Install Selected").click();
   await expect(dialog).not.toBeDisplayed();
@@ -76,8 +85,21 @@ export const installCatalog = (
       recipe
         .filter((archive) => archive.selected)
         .some((archive) => archive.files.length > 1)
-    )
-      await chooseInstallFiles(files);
+    ) {
+      const tree = (await readCatalogState(world)).localMods[0]
+        .installedFileTree;
+      assert(tree);
+      const selection = files.map((name) => {
+        const matches = tree.files.filter((file) => file.name === name);
+        assert.equal(
+          matches.length,
+          1,
+          `Fixture filename must be unambiguous: ${name}`,
+        );
+        return matches[0];
+      });
+      await chooseInstallFiles(selection);
+    }
     await waitCatalogStatus(world, "installed");
     await expect($('[role="switch"]')).toHaveAttribute("aria-checked", "true");
   });
