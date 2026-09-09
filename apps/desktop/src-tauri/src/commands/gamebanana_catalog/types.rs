@@ -1,3 +1,4 @@
+use crate::errors::Error;
 use crate::providers::gamebanana::catalog::{CatalogPage, CatalogRecord};
 use crate::providers::gamebanana::{
   NormalizedSubmission, Profile, SubmissionFile, donation_links, extract_map_name,
@@ -142,9 +143,9 @@ pub struct CatalogUpdateDto {
 }
 
 impl CatalogModDto {
-  pub fn from_record(record: CatalogRecord) -> Self {
-    let slug = record.submission.to_slug();
-    Self {
+  pub fn from_record(record: CatalogRecord) -> Result<Self, Error> {
+    let slug = record.submission.to_slug().map_err(|error| Error::InvalidInput(error.to_string()))?;
+    Ok(Self {
       id: slug.clone(),
       remote_id: slug,
       name: record.name,
@@ -170,7 +171,7 @@ impl CatalogModDto {
       dependencies: Vec::new(),
       created_at: None,
       updated_at: None,
-    }
+    })
   }
 
   pub fn from_profile(profile: &Profile, normalized: NormalizedSubmission) -> Self {
@@ -242,18 +243,18 @@ impl CatalogModDto {
 }
 
 impl CatalogPageDto {
-  pub fn from_page(page: CatalogPage, stale: bool) -> Self {
-    Self {
+  pub fn from_page(page: CatalogPage, stale: bool) -> Result<Self, Error> {
+    Ok(Self {
       items: page
         .items
         .into_iter()
         .map(CatalogModDto::from_record)
-        .collect(),
+        .collect::<Result<Vec<_>, _>>()?,
       total: page.total,
       page: page.page,
       page_size: page.page_size,
       stale,
-    }
+    })
   }
 }
 

@@ -383,7 +383,7 @@ mod tests {
       .unwrap();
 
     assert_eq!(page.total, 1);
-    assert_eq!(page.items[0].submission.to_slug(), "10");
+    assert_eq!(page.items[0].submission.to_slug().unwrap(), "10");
   }
 
   #[tokio::test]

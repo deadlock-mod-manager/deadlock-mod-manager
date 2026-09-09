@@ -41,7 +41,7 @@ pub async fn query_gamebanana_catalog(
     .catalog
     .query(query)
     .await
-    .map(|page| CatalogPageDto::from_page(page, stale))
+    .and_then(|page| CatalogPageDto::from_page(page, stale))
 }
 
 #[tauri::command]
@@ -72,7 +72,7 @@ pub async fn get_gamebanana_submission_detail(
       .catalog
       .get(submission)
       .await?
-      .map(CatalogModDto::from_record)
+      .map(CatalogModDto::from_record).transpose()?
       .ok_or(provider_error),
   }
 }
