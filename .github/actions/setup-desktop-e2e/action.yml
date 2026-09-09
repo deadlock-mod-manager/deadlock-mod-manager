@@ -3,12 +3,12 @@ description: Install the JavaScript and native helper runtimes without starting 
 runs:
   using: composite
   steps:
-    - uses: actions/setup-node@v7
+    - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
       with:
         node-version: "24.8.0"
-    - uses: pnpm/action-setup@v6
-    - uses: oven-sh/setup-bun@v2
-    - uses: actions/setup-dotnet@v5
+    - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+    - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+    - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
       with:
         dotnet-version: "10.0.x"
     - shell: pwsh

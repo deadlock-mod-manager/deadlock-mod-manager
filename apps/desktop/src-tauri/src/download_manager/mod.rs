@@ -920,7 +920,7 @@ impl DownloadManager {
       let aggregated_tree = crate::mod_manager::file_tree::ModFileTree {
         files: collected_files,
         total_files,
-        has_multiple_files: needs_selection,
+        has_multiple_files: total_files > 1,
       };
       if !needs_selection {
         let copied = vpk_manager.copy_selected_vpks_with_prefix(

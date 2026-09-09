@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { appLocalDataDir, join } from "@tauri-apps/api/path";
 import { useState } from "react";
 import { createLogger } from "@/lib/logger";
+import { requiresFileSelection } from "@/lib/mods/mod-variants";
 import { usePersistedStore } from "@/lib/store";
 import type {
   InstallableMod,
@@ -194,7 +195,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         options.onFileTreeAnalyzed?.(mod, mod.installedFileTree);
 
         // If mod has multiple files, check if we already have a previous selection
-        if (mod.installedFileTree.has_multiple_files) {
+        if (requiresFileSelection(mod.installedFileTree)) {
           // If mod already has installedVpks, it means user previously selected files
           // Use that selection instead of prompting again
           if (mod.installedVpks && mod.installedVpks.length > 0) {

@@ -869,7 +869,11 @@ pub async fn stage_download_archive(
     |_| {},
     tokio_util::sync::CancellationToken::new(),
     crate::download_manager::downloader::PauseHandle::new(),
-    None,
+    Some(if file.size == 0 {
+      2 * 1024 * 1024 * 1024
+    } else {
+      file.size.min(2 * 1024 * 1024 * 1024)
+    }),
     file.md5_checksum.as_deref(),
     true,
   )
