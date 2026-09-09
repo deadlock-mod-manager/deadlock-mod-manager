@@ -49,7 +49,7 @@ function PrivacyComponent() {
           </p>
           <div className='mx-auto mt-6 h-1 w-24 bg-primary'></div>
           <p className='text-muted-foreground text-sm mt-4'>
-            Last updated: September 24, 2025
+            Last updated: August 30, 2026
           </p>
         </div>
 
@@ -238,15 +238,14 @@ function PrivacyComponent() {
                 <ul className='space-y-2 text-muted-foreground ml-6 mb-4'>
                   <li className='list-disc'>
                     <strong className='text-foreground'>Mod Discovery:</strong>{" "}
-                    During the direct-catalog rollout, catalog, detail, and
-                    update requests may be sent directly from the app to the
-                    GameBanana API. These requests do not include a stable
-                    Deadlock Mod Manager user identifier
+                    Catalog, detail, and update requests are sent directly from
+                    the app to the GameBanana API. These requests do not include
+                    a stable Deadlock Mod Manager user identifier
                   </li>
                   <li className='list-disc'>
                     <strong className='text-foreground'>Mod Downloads:</strong>{" "}
-                    Mod archives are downloaded directly from GameBanana or its
-                    selected file server. GameBanana receives the network
+                    Archive requests and downloads go directly to GameBanana or
+                    its selected file server. GameBanana receives the network
                     information normally included in an HTTPS request, such as
                     your IP address and user agent
                   </li>

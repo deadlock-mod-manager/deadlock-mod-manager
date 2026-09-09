@@ -1,10 +1,9 @@
 import { ProviderError } from "@deadlock-mods/common";
 import { z } from "zod";
-import type { ResolvedRequirement } from "@deadlock-mods/shared";
-import {
-  DEADLOCK_GAME_ID,
-  GAME_BANANA_BASE_URL,
-} from "@/providers/game-banana/constants";
+import type { ModDto } from "@deadlock-mods/shared";
+
+const DEADLOCK_GAME_ID = 20_948;
+const GAME_BANANA_BASE_URL = "https://gamebanana.com/apiv11";
 
 export interface GameBananaIdentity {
   provider: "gamebanana";
@@ -21,7 +20,7 @@ export interface GameBananaSubmissionSnapshot {
 }
 
 export interface DirectGameBananaSubmission extends GameBananaSubmissionSnapshot {
-  mod: NonNullable<ResolvedRequirement["mod"]>;
+  mod: ModDto;
 }
 
 const profileSnapshotSchema = z

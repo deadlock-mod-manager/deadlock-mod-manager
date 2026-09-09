@@ -152,16 +152,7 @@ export const ResolvedRequirementSchema = z.object({
       "timed_out",
     ])
     .optional(),
-  mod: ModDtoSchema.extend({
-    metadata: ModDtoSchema.shape.metadata.default(null),
-    dependencies: ModDtoSchema.shape.dependencies.default(null),
-    isObsolete: z.boolean().default(false),
-    isBlacklisted: z.boolean().default(false),
-    blacklistReason: z.string().nullable().default(null),
-    blacklistedAt: z.coerce.date().nullable().default(null),
-    blacklistedBy: z.string().nullable().default(null),
-    overrides: z.null().default(null),
-  }).optional(),
+  mod: ModDtoSchema.optional(),
 });
 
 export const ResolveModsInputSchema = z.object({
