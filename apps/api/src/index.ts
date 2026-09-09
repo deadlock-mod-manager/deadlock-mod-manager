@@ -14,11 +14,7 @@ import { trimTrailingSlash } from "hono/trailing-slash";
 import { featureFlagDefinitions } from "./config/feature-flags";
 import { apiHandler } from "./handlers/api";
 import { rpcHandler } from "./handlers/rpc";
-import {
-  MODS_CACHE_CONFIG,
-  SENTRY_OPTIONS,
-  VPK_CONSTANTS,
-} from "./lib/constants";
+import { SENTRY_OPTIONS, VPK_CONSTANTS } from "./lib/constants";
 import { createContext } from "./lib/context";
 import { env } from "./lib/env";
 import { logger, loggerContext, wideEventContext } from "./lib/logger";
@@ -26,8 +22,6 @@ import artifactsRouter from "./routers/legacy/artifacts";
 import customSettingsRouter from "./routers/legacy/custom-settings";
 import docsRouter from "./routers/legacy/docs";
 import healthRouter from "./routers/legacy/health";
-import modsRouter from "./routers/legacy/mods";
-import redirectRouter from "./routers/redirect";
 import { featureFlagsService } from "./services/feature-flags";
 
 const { printMetrics, registerMetrics } = prometheus();
@@ -91,26 +85,14 @@ app
     });
 
     if (apiResult.matched) {
-      const response = c.newResponse(
-        apiResult.response.body,
-        apiResult.response,
-      );
-
-      if (c.req.path.includes("/mods")) {
-        response.headers.set("Cache-Control", MODS_CACHE_CONFIG.cacheControl);
-        response.headers.set("Vary", MODS_CACHE_CONFIG.vary);
-      }
-
-      return response;
+      return c.newResponse(apiResult.response.body, apiResult.response);
     }
 
     await next();
   })
-  .route("/mods", modsRouter)
   .route("/custom-settings", customSettingsRouter)
   .route("/", healthRouter)
   .route("/docs", docsRouter)
-  .route("/redirect", redirectRouter)
   .route("/artifacts", artifactsRouter);
 
 const main = async () => {
