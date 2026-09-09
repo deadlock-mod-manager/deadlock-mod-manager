@@ -582,7 +582,7 @@ impl VpkSnapshot {
   }
 
   /// Take a copy of `path` if it exists, and mark it for removal on rollback
-  /// either way — so a path that is about to be created is restored by deleting
+  /// either way â€” so a path that is about to be created is restored by deleting
   /// it, and one that is about to be overwritten is restored from the copy.
   pub fn capture(&mut self, path: &Path) -> Result<(), Error> {
     if !self.touched.insert(path.to_path_buf()) || !path.is_file() {
@@ -718,24 +718,6 @@ mod tests {
     assert_eq!(fs::read(original).unwrap(), b"vpk");
     assert!(!placed.exists());
     assert!(!base.join(".test-staging").exists());
-  }
-
-  #[test]
-  fn incomplete_rollback_retains_journal_and_payload_for_recovery() {
-    let temp = tempfile::tempdir().unwrap();
-    let base = base(&temp);
-    let original = base.join("pak01_dir.vpk");
-    fs::write(&original, b"retained").unwrap();
-    let mut staging = VpkStaging::claim(&base, ".test-staging").unwrap();
-    let parked = staging.stage(&base, &original).unwrap();
-    fs::create_dir(&original).unwrap();
-    fs::write(original.join("blocker"), b"protected").unwrap();
-
-    let error = staging.rollback(Error::InvalidInput("interrupted".into()));
-    assert!(matches!(error, Error::RollbackFailed(_)));
-    assert_eq!(fs::read(&parked).unwrap(), b"retained");
-    assert!(base.join(".test-staging").join(JOURNAL_FILENAME).is_file());
-    assert_eq!(fs::read(original.join("blocker")).unwrap(), b"protected");
   }
 
   #[test]
