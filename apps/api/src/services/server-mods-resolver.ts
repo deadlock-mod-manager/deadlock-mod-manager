@@ -13,6 +13,11 @@ import {
 
 const CACHE_TTL_MS = 5 * 60 * 1_000;
 const CACHE_MAX_ENTRIES = 256;
+const RESOLVE_CONCURRENCY = 4;
+const MAX_REQUIREMENTS = 50;
+// Kept below the server's idle timeout so a slow provider yields partial
+// results instead of a closed connection.
+const RESOLVE_DEADLINE_MS = 8_000;
 
 export interface ResolvedRequirement {
   name: string;
@@ -27,7 +32,9 @@ export interface ResolvedRequirement {
     | "not_found"
     | "provider_failure"
     | "policy_blocked"
-    | "custom_provider";
+    | "too_many_requirements"
+    | "custom_provider"
+    | "timed_out";
 }
 
 export const parseGameBananaSubmissionUrl = (
@@ -103,10 +110,28 @@ const applyPolicy = (
     if (correction.isNSFW !== undefined) {
       corrected.mod.isNSFW = correction.isNSFW;
     }
+    if (correction.isObsolete !== undefined) {
+      corrected.mod.isObsolete = correction.isObsolete;
+    }
+    if (correction.metadata !== undefined) {
+      corrected.mod.metadata = {
+        ...corrected.mod.metadata,
+        ...correction.metadata,
+      };
+    }
     if (correction.tags !== undefined) corrected.mod.tags = correction.tags;
   }
   return corrected;
 };
+
+const requirementBase = (requirement: ServerRequiredMod) => ({
+  name: requirement.id,
+  provider: requirement.provider,
+  url: requirement.url,
+  version: requirement.version,
+});
+
+const DEADLINE_REACHED = Symbol("resolve-deadline");
 
 type FetchSubmission = (
   identity: GameBananaIdentity,
@@ -126,6 +151,7 @@ export class ServerModsResolver {
   constructor(
     private readonly fetchSubmission: FetchSubmission = fetchGameBananaSubmission,
     private readonly loadPolicy: LoadPolicy = loadPolicyRules,
+    private readonly deadlineMs: number = RESOLVE_DEADLINE_MS,
   ) {}
 
   static getInstance(): ServerModsResolver {
@@ -144,11 +170,15 @@ export class ServerModsResolver {
       return { resolved: [], installed: [], missing: [] };
     }
     const rules = await this.loadPolicy();
-    const resolved = await Promise.all(
-      required.map((requirement) =>
-        this.resolveRequirement(requirement, rules),
-      ),
-    );
+    const bounded = required.slice(0, MAX_REQUIREMENTS);
+    const resolved = await this.resolveBounded(bounded, rules);
+    for (const requirement of required.slice(MAX_REQUIREMENTS)) {
+      resolved.push({
+        ...requirementBase(requirement),
+        resolved: false,
+        reason: "too_many_requirements",
+      });
+    }
     return {
       resolved,
       installed: [],
@@ -156,16 +186,63 @@ export class ServerModsResolver {
     };
   }
 
+  /**
+   * Resolves requirements with a fixed number of workers pulling from one
+   * shared iterator, so a slow provider lookup occupies a single slot instead
+   * of stalling a whole batch. Results start out as `timed_out` and are
+   * overwritten as each lookup lands, so a deadline miss returns partial
+   * results instead of holding the response open past the server's idle
+   * timeout.
+   */
+  private async resolveBounded(
+    bounded: ServerRequiredMod[],
+    rules: PolicyRule[],
+  ): Promise<ResolvedRequirement[]> {
+    const results: ResolvedRequirement[] = bounded.map((requirement) => ({
+      ...requirementBase(requirement),
+      resolved: false,
+      reason: "timed_out",
+    }));
+    let expired = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const deadline = new Promise<typeof DEADLINE_REACHED>((resolveDeadline) => {
+      timer = setTimeout(() => {
+        expired = true;
+        resolveDeadline(DEADLINE_REACHED);
+      }, this.deadlineMs);
+    });
+
+    const queue = bounded.entries();
+    const worker = async (): Promise<void> => {
+      for (const [index, requirement] of queue) {
+        if (expired) break;
+        const outcome = await Promise.race([
+          this.resolveRequirement(requirement, rules),
+          deadline,
+        ]);
+        if (outcome === DEADLINE_REACHED) break;
+        results[index] = outcome;
+      }
+    };
+
+    try {
+      await Promise.all(
+        Array.from(
+          { length: Math.min(RESOLVE_CONCURRENCY, bounded.length) },
+          () => worker(),
+        ),
+      );
+    } finally {
+      clearTimeout(timer);
+    }
+    return results;
+  }
+
   private async resolveRequirement(
     requirement: ServerRequiredMod,
     rules: PolicyRule[],
   ): Promise<ResolvedRequirement> {
-    const base = {
-      name: requirement.id,
-      provider: requirement.provider,
-      url: requirement.url,
-      version: requirement.version,
-    };
+    const base = requirementBase(requirement);
     if (requirement.provider === "custom") {
       return { ...base, resolved: false, reason: "custom_provider" };
     }

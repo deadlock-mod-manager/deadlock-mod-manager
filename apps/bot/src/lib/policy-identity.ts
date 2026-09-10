@@ -2,11 +2,12 @@ import { ValidationError } from "@deadlock-mods/common";
 import type { PolicyIdentity } from "@deadlock-mods/database";
 
 export const parsePolicyIdentity = (input: string): PolicyIdentity => {
-  if (/^[1-9]\d*$/.test(input)) {
+  const slug = /^(snd-)?([1-9]\d*)$/.exec(input.trim());
+  if (slug?.[2]) {
     return {
       provider: "gamebanana",
-      submissionType: "mod",
-      submissionId: input,
+      submissionType: slug[1] ? "sound" : "mod",
+      submissionId: slug[2],
     };
   }
 

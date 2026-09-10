@@ -10,6 +10,14 @@ describe("parsePolicyIdentity", () => {
     });
   });
 
+  it("accepts the canonical sound slug", () => {
+    expect(parsePolicyIdentity("snd-42")).toEqual({
+      provider: "gamebanana",
+      submissionType: "sound",
+      submissionId: "42",
+    });
+  });
+
   it("accepts both GameBanana mod and sound URLs", () => {
     expect(parsePolicyIdentity("https://gamebanana.com/mods/42")).toMatchObject(
       {
