@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { appLocalDataDir, join } from "@tauri-apps/api/path";
 import { useState } from "react";
 import { createLogger } from "@/lib/logger";
+import { requiresFileSelection } from "@/lib/mods/mod-variants";
 import { usePersistedStore } from "@/lib/store";
 import type {
   InstallableMod,
@@ -194,7 +195,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         options.onFileTreeAnalyzed?.(mod, mod.installedFileTree);
 
         // If mod has multiple files, check if we already have a previous selection
-        if (mod.installedFileTree.has_multiple_files) {
+        if (requiresFileSelection(mod.installedFileTree)) {
           // If mod already has installedVpks, it means user previously selected files
           // Use that selection instead of prompting again
           if (mod.installedVpks && mod.installedVpks.length > 0) {
@@ -205,35 +206,13 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
               })
               .info("Mod has previous VPK selection, using it for re-enable");
 
-            // Create a new file tree with only previously selected files marked as selected
-            const previouslySelectedFiles = new Set(
-              mod.installedVpks.map((vpkPath) => {
-                // Extract the original filename from the path
-                const filename = vpkPath.split(/[\\/]/).pop() || "";
-                // Remove the mod prefix if present (e.g., "modId_file.vpk" -> "file.vpk")
-                return filename.replace(new RegExp(`^${mod.remoteId}_`), "");
-              }),
+            // Installed VPKs have pakXX names. The stored tree retains the
+            // original names and selection; renumbered paths cannot recover it.
+            return await performInstallation(
+              mod,
+              options,
+              mod.installedFileTree,
             );
-
-            const updatedFileTree: ModFileTree = {
-              ...mod.installedFileTree,
-              files: mod.installedFileTree.files.map((file) => ({
-                ...file,
-                is_selected: previouslySelectedFiles.has(file.name),
-              })),
-            };
-
-            logger
-              .withMetadata({
-                modId: mod.remoteId,
-                selectedFiles: updatedFileTree.files.filter(
-                  (f) => f.is_selected,
-                ).length,
-                totalFiles: updatedFileTree.total_files,
-              })
-              .info("Using previous VPK selection for re-enable");
-
-            return await performInstallation(mod, options, updatedFileTree);
           }
 
           // No previous selection - show file selector dialog

@@ -3,7 +3,7 @@ import type { ChainablePromiseElement } from "webdriverio";
 import { step } from "./evidence";
 
 export const navigate = (
-  destination: "mods" | "my-mods" | "downloads" | "settings",
+  destination: "mods" | "my-mods" | "downloads" | "settings" | "skins",
 ) =>
   step(`open ${destination}`, async () => {
     const link = await $(`a[href="/${destination}"]`);
@@ -14,6 +14,7 @@ export const navigate = (
 export const reveal = async (
   element: ChainablePromiseElement,
 ): Promise<void> => {
+  await element.waitForExist();
   await browser.execute(
     (node: HTMLElement) =>
       node.scrollIntoView({ block: "center", behavior: "instant" }),

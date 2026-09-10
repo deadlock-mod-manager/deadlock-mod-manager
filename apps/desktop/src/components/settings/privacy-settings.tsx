@@ -25,6 +25,7 @@ const PrivacySettings = () => {
           </div>
         </div>
         <Switch
+          aria-label={t("privacy.hideNSFWContent")}
           checked={nsfwSettings.hideNSFW}
           onCheckedChange={(checked) =>
             updateNSFWSettings({ hideNSFW: checked })
@@ -40,6 +41,7 @@ const PrivacySettings = () => {
           </div>
         </div>
         <Switch
+          aria-label={t("privacy.showLikelyNSFW")}
           checked={nsfwSettings.showLikelyNSFW}
           onCheckedChange={(checked) =>
             updateNSFWSettings({ showLikelyNSFW: checked })
@@ -55,6 +57,7 @@ const PrivacySettings = () => {
           </div>
         </div>
         <Switch
+          aria-label={t("privacy.disableNSFWBlur")}
           checked={nsfwSettings.disableBlur}
           onCheckedChange={(checked) =>
             updateNSFWSettings({ disableBlur: checked })
@@ -72,6 +75,7 @@ const PrivacySettings = () => {
           </div>
           <div className='px-3'>
             <Slider
+              aria-label={t("privacy.blurStrength")}
               className='w-full'
               max={32}
               min={4}
@@ -100,6 +104,7 @@ const PrivacySettings = () => {
           </div>
         </div>
         <Switch
+          aria-label={t("privacy.rememberPerItemChoices")}
           checked={nsfwSettings.rememberPerItemOverrides}
           onCheckedChange={(checked) =>
             updateNSFWSettings({ rememberPerItemOverrides: checked })
@@ -124,6 +129,7 @@ const PrivacySettings = () => {
               </div>
             </div>
             <Switch
+              aria-label={t("privacy.analyticsEnabled")}
               checked={telemetrySettings.analyticsEnabled}
               onCheckedChange={(checked) => {
                 const oldValue = telemetrySettings.analyticsEnabled;

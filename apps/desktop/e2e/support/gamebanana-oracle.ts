@@ -28,7 +28,13 @@ const modSchema = z.object({
   status: z.string(),
   selectedDownloads: z.array(z.object({ name: z.string() })),
   installedVpks: z.array(z.string()).optional(),
-  installedFileTree: z.object({ files: z.array(fileSchema) }).optional(),
+  installedFileTree: z
+    .object({
+      files: z.array(fileSchema),
+      total_files: z.number().int(),
+      has_multiple_files: z.boolean(),
+    })
+    .optional(),
 });
 export const readCatalogState = async (world: string) => {
   return z
@@ -55,6 +61,13 @@ export const assertCatalogDisk = async (
   world: string,
   scenario: string,
   phase: string,
+  expected: { files: string[]; downloads: string[]; dormant: string[] } = {
+    files: installedCatalogFiles(scenario),
+    downloads: catalogRecipe(scenario)
+      .filter((archive) => archive.selected)
+      .map((archive) => archive.name),
+    dormant: [],
+  },
 ): Promise<void> => {
   const {
     configuration: { roots },
@@ -70,13 +83,18 @@ export const assertCatalogDisk = async (
   assert.equal(profile.enabledMods[CATALOG_MOD_ID]?.enabled, true);
   assert.deepEqual(
     mod.selectedDownloads.map((download) => download.name).sort(),
-    catalogRecipe(scenario)
-      .filter((archive) => archive.selected)
-      .map((archive) => archive.name)
-      .sort(),
+    expected.downloads.toSorted(),
   );
-  const names = installedCatalogFiles(scenario);
+  const names = expected.files.toSorted();
   assert(mod.installedFileTree);
+  assert.equal(
+    mod.installedFileTree.total_files,
+    mod.installedFileTree.files.length,
+  );
+  assert.equal(
+    mod.installedFileTree.has_multiple_files,
+    mod.installedFileTree.total_files > 1,
+  );
   assert.deepEqual(
     mod.installedFileTree.files
       .filter((file) => file.is_selected)
@@ -117,9 +135,15 @@ export const assertCatalogDisk = async (
   const inventory = await collectFileInventory(addons);
   assert.deepEqual(
     Object.keys(inventory).sort(),
-    [".dmm.json", ...entry.currentVpks].sort(),
+    [
+      ".dmm.json",
+      ...entry.currentVpks,
+      ...expected.dormant.map((name) => `${CATALOG_MOD_ID}_${name}`),
+    ].sort(),
   );
   const hash = (name: string) => fingerprint(catalogVpk(name));
+  for (const name of expected.dormant)
+    assert.equal(inventory[`${CATALOG_MOD_ID}_${name}`], hash(name));
   assert.deepEqual(
     entry.currentVpks.map((vpk) => inventory[vpk]).sort(),
     names.map(hash).sort(),
@@ -145,10 +169,44 @@ export const assertCatalogDisk = async (
       ),
     );
   const game = await collectFileInventory(roots.game);
+  const backupPaths = Object.keys(game).filter((name) =>
+    name.startsWith("game/citadel/addons-backups/"),
+  );
+  if (scenario === "gamebanana-force-update" && phase !== "initial-install") {
+    const initial = z
+      .object({ inventory: z.record(z.string(), z.string()) })
+      .parse(
+        JSON.parse(
+          await readFile(
+            path.join(world, "artifacts", "catalog-initial-install.json"),
+            "utf8",
+          ),
+        ),
+      );
+    assert.equal(
+      new Set(backupPaths.map((name) => name.split("/")[3])).size,
+      1,
+    );
+    assert.deepEqual(
+      Object.fromEntries(
+        backupPaths.map((name) => [
+          name.split("/").slice(4).join("/"),
+          game[name],
+        ]),
+      ),
+      Object.fromEntries(
+        Object.entries(initial.inventory).map(([name, hash]) => [
+          `addons/${name}`,
+          hash,
+        ]),
+      ),
+    );
+  } else assert.deepEqual(backupPaths, []);
   const gameinfoPath = "game/citadel/gameinfo.gi";
   assertInventoryChanges(before.game, game, [
     gameinfoPath,
     "game/citadel/gameinfo.gi.bak",
+    ...backupPaths,
     ...Object.keys(inventory).map((name) => `game/citadel/addons/${name}`),
   ]);
   const gameinfo = await readFile(path.join(roots.game, gameinfoPath), "utf8");

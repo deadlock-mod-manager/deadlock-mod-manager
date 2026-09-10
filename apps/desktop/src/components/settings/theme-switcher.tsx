@@ -43,6 +43,7 @@ export function ThemeSwitcher() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
+          aria-label={t("settings.theme")}
           className='w-32 justify-start gap-2'
           size='sm'
           variant='outline'>

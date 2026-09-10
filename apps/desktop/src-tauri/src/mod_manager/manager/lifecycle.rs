@@ -44,6 +44,28 @@ impl ModManager {
       }
     }
 
+    if let Some(tree) = deadlock_mod
+      .file_tree
+      .as_ref()
+      .filter(|tree| !tree.files.is_empty())
+    {
+      let selected: HashSet<&str> = tree
+        .files
+        .iter()
+        .filter(|file| file.is_selected)
+        .map(|file| file.name.as_str())
+        .collect();
+      let prefix = format!("{}_", deadlock_mod.id);
+      prefixed_vpks.retain(|name| {
+        name
+          .strip_prefix(&prefix)
+          .is_some_and(|name| selected.contains(name))
+      });
+      if prefixed_vpks.len() != selected.len() {
+        return Err(Error::ModFileNotFound);
+      }
+    }
+
     if prefixed_vpks.is_empty() {
       log::error!("No prefixed VPKs found for mod {}", deadlock_mod.id);
       return Err(Error::ModInvalid(

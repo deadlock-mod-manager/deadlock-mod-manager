@@ -106,6 +106,9 @@ describe("real Rust downloads", () => {
           "downloads-redirect",
         ].includes(scenario ?? "")
       ) {
+        // The seed is already failed. Wait for this attempt's UI result before
+        // accepting the same status from the asynchronous persisted store.
+        await expect(card().$("button=Retry")).toBeDisplayed();
         await waitStatus(world, "failedToDownload");
         const directory = await downloadDirectory(world);
         await observeUntil(
@@ -114,7 +117,6 @@ describe("real Rust downloads", () => {
           (files) => Object.keys(files).length === 0,
         );
         await assertDownloadDisk(world, "failed", "failedToDownload");
-        await expect(card().$("button=Retry")).toBeDisplayed();
         await retry();
         await waitStatus(world, "downloaded");
       } else await waitStatus(world, "downloaded");

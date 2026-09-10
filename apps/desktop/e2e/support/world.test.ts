@@ -61,6 +61,7 @@ describe("isolated E2E worlds", () => {
         await closed;
       }
     },
+    20_000,
   );
 
   it("creates every configured path beneath an owned world", async () => {

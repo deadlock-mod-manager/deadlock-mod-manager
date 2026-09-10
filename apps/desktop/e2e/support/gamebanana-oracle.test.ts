@@ -51,6 +51,8 @@ it("rejects wrong variant bytes and extra installed files even when UI state say
               selectedDownloads: [{ name: "base.zip" }],
               installedVpks: ["pak01_dir.vpk"],
               installedFileTree: {
+                total_files: 1,
+                has_multiple_files: false,
                 files: [
                   {
                     name: "base.vpk",

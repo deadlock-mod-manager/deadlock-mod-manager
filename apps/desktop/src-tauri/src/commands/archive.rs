@@ -133,7 +133,6 @@ pub async fn copy_selected_vpks_from_archive(
     if extractor.is_supported_archive(&path) {
       log::info!("Removing archive: {path:?}");
       std::fs::remove_file(&path)?;
-      break;
     }
   }
 
@@ -205,7 +204,7 @@ pub async fn copy_local_mod_vpks(
   Ok(prefixed_vpks)
 }
 
-fn persist_prefixed_import(
+pub(crate) fn persist_prefixed_import(
   destination_path: &std::path::Path,
   mod_id: &str,
   prefixed_vpks: Vec<String>,
