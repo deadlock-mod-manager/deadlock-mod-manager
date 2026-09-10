@@ -8,6 +8,8 @@ use diesel::sqlite::Sqlite;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
+pub(super) const INCOMPLETE_SNAPSHOT: &str = "snapshot_with_invalid_records";
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CatalogRecord {
@@ -174,17 +176,26 @@ impl Catalog {
       .pool
       .run(move |connection| {
         connection.transaction::<_, Error, _>(|connection| {
-          let tombstoned = diesel::update(
-            submission::table
-              .filter(submission::is_tombstoned.eq(false))
-              .filter(
-                submission::last_seen_snapshot
-                  .is_null()
-                  .or(submission::last_seen_snapshot.ne(&snapshot_id)),
-              ),
-          )
-          .set(submission::is_tombstoned.eq(true))
-          .execute(connection)?;
+          let incomplete_snapshot = sync_state::table
+            .find(INCOMPLETE_SNAPSHOT)
+            .select(sync_state::value)
+            .first::<String>(connection)
+            .optional()?;
+          let tombstoned = if incomplete_snapshot.as_deref() == Some(snapshot_id.as_str()) {
+            0
+          } else {
+            diesel::update(
+              submission::table
+                .filter(submission::is_tombstoned.eq(false))
+                .filter(
+                  submission::last_seen_snapshot
+                    .is_null()
+                    .or(submission::last_seen_snapshot.ne(&snapshot_id)),
+                ),
+            )
+            .set(submission::is_tombstoned.eq(true))
+            .execute(connection)?
+          };
           diesel::update(sync_cursor::table)
             .set((
               sync_cursor::next_page.eq(1_i64),
@@ -192,6 +203,9 @@ impl Catalog {
               sync_cursor::snapshot_complete.eq(false),
             ))
             .execute(connection)?;
+          if incomplete_snapshot.as_deref() != Some(snapshot_id.as_str()) {
+            diesel::delete(sync_state::table.find(INCOMPLETE_SNAPSHOT)).execute(connection)?;
+          }
           Ok(tombstoned)
         })
       })

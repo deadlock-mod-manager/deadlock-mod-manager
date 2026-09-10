@@ -5,9 +5,9 @@ use crate::mod_manager::Mod;
 use crate::mod_manager::shard::{ShardIndex, ShardLocator};
 use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use serde::{Deserialize, Serialize};
-use tauri::{Emitter, Manager};
+use tauri::{Emitter, Manager, State};
 
-use super::downloads::get_download_manager;
+use super::downloads::{get_download_manager, resolve_download_files};
 use super::mods::InstalledModInfo;
 use super::state::MANAGER;
 
@@ -305,6 +305,8 @@ pub async fn show_profile_vpk_in_folder(
 #[tauri::command]
 pub async fn import_profile_batch(
   app_handle: AppHandle,
+  catalog_state: State<'_, super::gamebanana_catalog::GameBananaCatalogState>,
+  policy: State<'_, super::policy::PolicyState>,
   profile_name: String,
   _profile_description: String,
   profile_folder: String,
@@ -323,6 +325,21 @@ pub async fn import_profile_batch(
     return Err(Error::InvalidInput(
       "No mods provided for import".to_string(),
     ));
+  }
+
+  let mut resolved_downloads = Vec::with_capacity(total_mods);
+  for mod_data in &mods {
+    resolved_downloads.push(
+      resolve_download_files(
+        &catalog_state,
+        &policy,
+        &mod_data.mod_id,
+        &mod_data.download_files,
+        None,
+      )
+      .await
+      .map_err(|error| format!("Failed to resolve download files: {error:?}")),
+    );
   }
 
   let final_profile_folder = if import_type == "create" {
@@ -357,7 +374,20 @@ pub async fn import_profile_batch(
 
   let mut download_results: Vec<Result<(), String>> = Vec::new();
 
-  for (index, mod_data) in mods.iter().enumerate() {
+  for (index, (mod_data, download_files)) in mods.iter().zip(resolved_downloads).enumerate() {
+    // download_results stays index-aligned with mods; the install loop below zips them.
+    let download_files = match download_files {
+      Ok(files) => files,
+      Err(reason) => {
+        log::error!(
+          "Failed to resolve downloads for mod {}: {reason}",
+          mod_data.mod_id
+        );
+        download_results.push(Err(reason));
+        continue;
+      }
+    };
+
     app_handle
       .emit(
         "profile-import-progress",
@@ -379,7 +409,7 @@ pub async fn import_profile_batch(
 
     let task = DownloadTask {
       mod_id: mod_data.mod_id.clone(),
-      files: mod_data.download_files.clone(),
+      files: download_files,
       target_dir,
       profile_folder: Some(final_profile_folder.clone()),
       is_profile_import: true,

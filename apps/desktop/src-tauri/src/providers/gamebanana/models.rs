@@ -16,7 +16,7 @@ pub struct PageMetadata {
 pub struct IndexPage {
   #[serde(rename = "_aMetadata", default)]
   pub metadata: PageMetadata,
-  #[serde(rename = "_aRecords", default)]
+  #[serde(rename = "_aRecords")]
   pub records: Vec<serde_json::Value>,
 }
 
@@ -417,6 +417,15 @@ mod tests {
         vec![1, 3]
       );
     }
+  }
+
+  #[test]
+  fn missing_index_records_are_not_an_empty_catalog() {
+    let response = serde_json::json!({
+      "_aMetadata": {"_bIsComplete": true}
+    });
+
+    assert!(serde_json::from_value::<IndexPage>(response).is_err());
   }
 
   #[test]
