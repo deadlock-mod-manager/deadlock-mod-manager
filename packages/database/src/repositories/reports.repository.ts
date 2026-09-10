@@ -1,7 +1,19 @@
-import { and, count, desc, eq, sql } from "@deadlock-mods/database";
+import { and, count, desc, eq } from "@deadlock-mods/database";
 import type { Database } from "../client";
-import { mods } from "../schema/mods";
 import { type NewReport, type Report, reports } from "../schema/reports";
+
+export interface ReportIdentity {
+  provider: "gamebanana";
+  submissionType: "mod" | "sound";
+  submissionId: string;
+}
+
+const identityPredicate = (identity: ReportIdentity) =>
+  and(
+    eq(reports.provider, identity.provider),
+    eq(reports.submissionType, identity.submissionType),
+    eq(reports.submissionId, identity.submissionId),
+  );
 
 export class ReportRepository {
   constructor(private db: Database) {}
@@ -20,16 +32,16 @@ export class ReportRepository {
     return report || null;
   }
 
-  async findByModId(modId: string): Promise<Report[]> {
+  async findByIdentity(identity: ReportIdentity): Promise<Report[]> {
     return this.db
       .select()
       .from(reports)
-      .where(eq(reports.modId, modId))
+      .where(identityPredicate(identity))
       .orderBy(desc(reports.createdAt));
   }
 
-  async findByModIdAndReporter(
-    modId: string,
+  async findByIdentityAndReporter(
+    identity: ReportIdentity,
     reporterHardwareId: string,
   ): Promise<Report | null> {
     const [report] = await this.db
@@ -37,7 +49,7 @@ export class ReportRepository {
       .from(reports)
       .where(
         and(
-          eq(reports.modId, modId),
+          identityPredicate(identity),
           eq(reports.reporterHardwareId, reporterHardwareId),
         ),
       )
@@ -45,38 +57,37 @@ export class ReportRepository {
     return report || null;
   }
 
-  async getReportCount(modId: string): Promise<number> {
+  async getReportCount(identity: ReportIdentity): Promise<number> {
     const [result] = await this.db
       .select({ count: count() })
       .from(reports)
-      .where(eq(reports.modId, modId));
+      .where(identityPredicate(identity));
     return result?.count ?? 0;
   }
 
-  async getRecentReports(
-    limit = 50,
-  ): Promise<Array<Report & { modName: string; modAuthor: string }>> {
+  async getRecentReports(limit = 50): Promise<Report[]> {
     return this.db
       .select({
         id: reports.id,
-        modId: reports.modId,
+        provider: reports.provider,
+        submissionType: reports.submissionType,
+        submissionId: reports.submissionId,
         reporterHardwareId: reports.reporterHardwareId,
         discordMessageId: reports.discordMessageId,
         createdAt: reports.createdAt,
         updatedAt: reports.updatedAt,
-        modName: mods.name,
-        modAuthor: mods.author,
+        modName: reports.modName,
+        modAuthor: reports.modAuthor,
       })
       .from(reports)
-      .innerJoin(mods, eq(reports.modId, mods.id))
       .orderBy(desc(reports.createdAt))
       .limit(limit);
   }
 
-  async deleteByModId(modId: string): Promise<number> {
+  async deleteByIdentity(identity: ReportIdentity): Promise<number> {
     const result = await this.db
       .delete(reports)
-      .where(eq(reports.modId, modId))
+      .where(identityPredicate(identity))
       .returning({ id: reports.id });
     return result.length;
   }
@@ -97,7 +108,7 @@ export class ReportRepository {
     return report || null;
   }
 
-  async getModsWithReportCounts(): Promise<
+  async getSubmissionsWithReportCounts(): Promise<
     Array<{
       modId: string;
       modName: string;
@@ -105,17 +116,32 @@ export class ReportRepository {
       totalReports: number;
     }>
   > {
-    return this.db
+    const rows = await this.db
       .select({
-        modId: mods.id,
-        modName: mods.name,
-        modAuthor: mods.author,
+        provider: reports.provider,
+        submissionType: reports.submissionType,
+        submissionId: reports.submissionId,
+        modName: reports.modName,
+        modAuthor: reports.modAuthor,
         totalReports: count(reports.id),
       })
-      .from(mods)
-      .leftJoin(reports, eq(mods.id, reports.modId))
-      .groupBy(mods.id, mods.name, mods.author)
-      .having(sql`count(${reports.id}) > 0`)
+      .from(reports)
+      .groupBy(
+        reports.provider,
+        reports.submissionType,
+        reports.submissionId,
+        reports.modName,
+        reports.modAuthor,
+      )
       .orderBy(desc(count(reports.id)));
+    return rows.map((row) => ({
+      modId:
+        row.submissionType === "sound"
+          ? `snd-${row.submissionId}`
+          : row.submissionId,
+      modName: row.modName,
+      modAuthor: row.modAuthor,
+      totalReports: row.totalReports,
+    }));
   }
 }
