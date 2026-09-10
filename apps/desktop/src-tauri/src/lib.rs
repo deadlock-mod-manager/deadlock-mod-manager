@@ -108,6 +108,12 @@ pub fn run() {
         commands::gamebanana_catalog::GameBananaCatalogState::open(catalog_path),
       );
       app.manage(catalog_state);
+      app.manage(commands::policy::PolicyState::open(
+        app
+          .path()
+          .app_local_data_dir()?
+          .join("policy-manifest-v1.json"),
+      ));
 
       {
         let mut mod_manager = commands::state::MANAGER
@@ -131,6 +137,7 @@ pub fn run() {
       commands::gamebanana_catalog::invalidate_gamebanana_catalog_state,
       commands::gamebanana_catalog::get_gamebanana_fileservers,
       commands::identity_migration::migrate_submission_identities,
+      commands::policy::refresh_policy_manifest,
       commands::game::find_steam_path,
       commands::game::set_game_path,
       commands::game::set_steam_path,

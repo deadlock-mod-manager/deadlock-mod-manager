@@ -91,6 +91,11 @@ const App = () => {
     }
     await initializeApiUrl();
     await syncProxyConfigToBackend();
+    void invoke("refresh_policy_manifest").catch((error) => {
+      logger
+        .withError(error)
+        .warn("Policy refresh failed; keeping the last cached policy");
+    });
     await downloadManager.init();
 
     logger.debug(
