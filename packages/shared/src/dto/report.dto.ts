@@ -30,9 +30,14 @@ export interface ReportCountsDto {
   dismissed: number;
 }
 
+const reportSlug = (report: Report): string =>
+  report.submissionType === "sound"
+    ? `snd-${report.submissionId}`
+    : report.submissionId;
+
 export const toReportDto = (report: Report): ReportDto => ({
   id: report.id,
-  modId: report.modId,
+  modId: reportSlug(report),
   type: "broken",
   status: "verified",
   reason: "",
@@ -40,9 +45,7 @@ export const toReportDto = (report: Report): ReportDto => ({
   updatedAt: report.updatedAt?.toISOString() || new Date().toISOString(),
 });
 
-export const toReportWithModDto = (
-  report: Report & { modName: string; modAuthor: string },
-): ReportWithModDto => ({
+export const toReportWithModDto = (report: Report): ReportWithModDto => ({
   ...toReportDto(report),
   modName: report.modName,
   modAuthor: report.modAuthor,

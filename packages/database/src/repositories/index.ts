@@ -13,5 +13,4 @@ export * from "./profile.repository";
 export * from "./policy-rule.repository";
 export * from "./quick-answer.repository";
 export * from "./reports.repository";
-export * from "./rss-item.repository";
 export * from "./vpk.repository";

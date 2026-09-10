@@ -13,7 +13,6 @@ import { Route as VpkAnalyzerRouteImport } from './routes/vpk-analyzer'
 import { Route as TransparencyRouteImport } from './routes/transparency'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as StatusRouteImport } from './routes/status'
-import { Route as SitemapModsDotxmlRouteImport } from './routes/sitemap-mods[.]xml'
 import { Route as RandomizerRouteImport } from './routes/randomizer'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as LoginRouteImport } from './routes/login'
@@ -26,7 +25,6 @@ import { Route as CrosshairGeneratorRouteImport } from './routes/crosshair-gener
 import { Route as R403RouteImport } from './routes/403'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as ModsIndexRouteImport } from './routes/mods/index'
 import { Route as DownloadIndexRouteImport } from './routes/download/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as ModIdRouteImport } from './routes/mod/$id'
@@ -53,11 +51,6 @@ const TermsRoute = TermsRouteImport.update({
 const StatusRoute = StatusRouteImport.update({
   id: '/status',
   path: '/status',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const SitemapModsDotxmlRoute = SitemapModsDotxmlRouteImport.update({
-  id: '/sitemap-mods.xml',
-  path: '/sitemap-mods.xml',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RandomizerRoute = RandomizerRouteImport.update({
@@ -120,11 +113,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ModsIndexRoute = ModsIndexRouteImport.update({
-  id: '/mods/',
-  path: '/mods/',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const DownloadIndexRoute = DownloadIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -174,7 +162,6 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/randomizer': typeof RandomizerRoute
-  '/sitemap-mods.xml': typeof SitemapModsDotxmlRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
   '/transparency': typeof TransparencyRoute
@@ -186,7 +173,6 @@ export interface FileRoutesByFullPath {
   '/mod/$id': typeof ModIdRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/download/': typeof DownloadIndexRoute
-  '/mods/': typeof ModsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -199,7 +185,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/randomizer': typeof RandomizerRoute
-  '/sitemap-mods.xml': typeof SitemapModsDotxmlRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
   '/transparency': typeof TransparencyRoute
@@ -211,7 +196,6 @@ export interface FileRoutesByTo {
   '/mod/$id': typeof ModIdRoute
   '/dashboard': typeof DashboardIndexRoute
   '/download': typeof DownloadIndexRoute
-  '/mods': typeof ModsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -227,7 +211,6 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
   '/randomizer': typeof RandomizerRoute
-  '/sitemap-mods.xml': typeof SitemapModsDotxmlRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
   '/transparency': typeof TransparencyRoute
@@ -239,7 +222,6 @@ export interface FileRoutesById {
   '/mod/$id': typeof ModIdRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/download/': typeof DownloadIndexRoute
-  '/mods/': typeof ModsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -256,7 +238,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/randomizer'
-    | '/sitemap-mods.xml'
     | '/status'
     | '/terms'
     | '/transparency'
@@ -268,7 +249,6 @@ export interface FileRouteTypes {
     | '/mod/$id'
     | '/dashboard/'
     | '/download/'
-    | '/mods/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -281,7 +261,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/randomizer'
-    | '/sitemap-mods.xml'
     | '/status'
     | '/terms'
     | '/transparency'
@@ -293,7 +272,6 @@ export interface FileRouteTypes {
     | '/mod/$id'
     | '/dashboard'
     | '/download'
-    | '/mods'
   id:
     | '__root__'
     | '/'
@@ -308,7 +286,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/privacy'
     | '/randomizer'
-    | '/sitemap-mods.xml'
     | '/status'
     | '/terms'
     | '/transparency'
@@ -320,7 +297,6 @@ export interface FileRouteTypes {
     | '/mod/$id'
     | '/dashboard/'
     | '/download/'
-    | '/mods/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -336,14 +312,12 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
   RandomizerRoute: typeof RandomizerRoute
-  SitemapModsDotxmlRoute: typeof SitemapModsDotxmlRoute
   StatusRoute: typeof StatusRoute
   TermsRoute: typeof TermsRoute
   TransparencyRoute: typeof TransparencyRoute
   VpkAnalyzerRoute: typeof VpkAnalyzerRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   ModIdRoute: typeof ModIdRoute
-  ModsIndexRoute: typeof ModsIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -374,13 +348,6 @@ declare module '@tanstack/react-router' {
       path: '/status'
       fullPath: '/status'
       preLoaderRoute: typeof StatusRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/sitemap-mods.xml': {
-      id: '/sitemap-mods.xml'
-      path: '/sitemap-mods.xml'
-      fullPath: '/sitemap-mods.xml'
-      preLoaderRoute: typeof SitemapModsDotxmlRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/randomizer': {
@@ -465,13 +432,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mods/': {
-      id: '/mods/'
-      path: '/mods'
-      fullPath: '/mods/'
-      preLoaderRoute: typeof ModsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/download/': {
@@ -569,14 +529,12 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
   RandomizerRoute: RandomizerRoute,
-  SitemapModsDotxmlRoute: SitemapModsDotxmlRoute,
   StatusRoute: StatusRoute,
   TermsRoute: TermsRoute,
   TransparencyRoute: TransparencyRoute,
   VpkAnalyzerRoute: VpkAnalyzerRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   ModIdRoute: ModIdRoute,
-  ModsIndexRoute: ModsIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

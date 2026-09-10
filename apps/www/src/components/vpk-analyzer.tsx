@@ -59,9 +59,13 @@ export function VpkAnalyzer() {
           status: "completed" as const,
         });
 
-        if (result.matchedVpk?.mod) {
+        if (result.matchedVpk) {
+          const slug =
+            result.matchedVpk.submissionType === "sound"
+              ? `snd-${result.matchedVpk.submissionId}`
+              : result.matchedVpk.submissionId;
           toast.success(
-            `${fileState.file.name}: Matched mod "${result.matchedVpk.mod.name}"`,
+            `${fileState.file.name}: Matched GameBanana submission ${slug}`,
           );
         } else {
           toast.info(`${fileState.file.name}: No matching mod found`);
@@ -106,7 +110,7 @@ export function VpkAnalyzer() {
           const endTime = Date.now();
           const durationSeconds = (endTime - startTime) / 1000;
           const identifiedCount = fileAnalysesRef.current.filter(
-            (analysis) => analysis.result?.matchedVpk?.mod,
+            (analysis) => analysis.result?.matchedVpk,
           ).length;
 
           analytics.trackVpkAnalysisCompleted(
@@ -383,7 +387,7 @@ export function VpkAnalyzer() {
                     </div>
                   </div>
 
-                  {fileAnalysis.result.matchedVpk?.mod &&
+                  {fileAnalysis.result.matchedVpk &&
                   fileAnalysis.result.match ? (
                     <div>
                       <h3 className='mb-3 font-semibold text-lg'>
@@ -395,23 +399,23 @@ export function VpkAnalyzer() {
                             <div className='flex items-start justify-between'>
                               <div className='space-y-1'>
                                 <h4 className='font-semibold text-xl'>
-                                  {fileAnalysis.result.matchedVpk.mod.name}
+                                  GameBanana{" "}
+                                  {
+                                    fileAnalysis.result.matchedVpk
+                                      .submissionType
+                                  }{" "}
+                                  {fileAnalysis.result.matchedVpk.submissionId}
                                 </h4>
                                 <div className='flex items-center gap-2'>
                                   <Badge variant='outline'>
                                     {
-                                      fileAnalysis.result.matchedVpk.mod
-                                        .category
+                                      fileAnalysis.result.matchedVpk
+                                        .submissionType
                                     }
                                   </Badge>
                                   <Badge variant='secondary'>
-                                    by{" "}
-                                    {fileAnalysis.result.matchedVpk.mod.author}
+                                    File {fileAnalysis.result.matchedVpk.fileId}
                                   </Badge>
-                                  {fileAnalysis.result.matchedVpk.mod
-                                    .isAudio && (
-                                    <Badge variant='outline'>Audio Mod</Badge>
-                                  )}
                                 </div>
                               </div>
                               <div className='text-right'>
@@ -428,100 +432,20 @@ export function VpkAnalyzer() {
                               </div>
                             </div>
 
-                            {fileAnalysis.result.matchedVpk.mod.images &&
-                              fileAnalysis.result.matchedVpk.mod.images.length >
-                                0 && (
-                                <div className='relative aspect-video overflow-hidden rounded-lg border border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10'>
-                                  <img
-                                    alt={`${fileAnalysis.result.matchedVpk.mod.name} preview`}
-                                    className='h-full w-full object-cover'
-                                    onError={(e) => {
-                                      const target =
-                                        e.target as HTMLImageElement;
-                                      target.style.display = "none";
-                                      const fallback =
-                                        target.nextElementSibling as HTMLElement;
-                                      if (fallback)
-                                        fallback.style.display = "flex";
-                                    }}
-                                    src={
-                                      fileAnalysis.result.matchedVpk.mod
-                                        .images[0]
-                                    }
-                                  />
-                                  <div
-                                    className='absolute inset-0 flex items-center justify-center'
-                                    style={{ display: "none" }}>
-                                    <div className='text-center'>
-                                      <div className='mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-muted'>
-                                        <span className='text-lg text-muted-foreground'>
-                                          📷
-                                        </span>
-                                      </div>
-                                      <p className='text-muted-foreground text-sm'>
-                                        Image failed to load
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                            <div className='grid grid-cols-1 gap-4 md:grid-cols-3'>
-                              <div className='space-y-1'>
-                                <span className='text-muted-foreground text-sm'>
-                                  Downloads
-                                </span>
-                                <p className='font-medium'>
-                                  {fileAnalysis.result.matchedVpk.mod.downloadCount?.toLocaleString() ??
-                                    "Unknown"}
-                                </p>
-                              </div>
-                              <div className='space-y-1'>
-                                <span className='text-muted-foreground text-sm'>
-                                  Likes
-                                </span>
-                                <p className='font-medium'>
-                                  {fileAnalysis.result.matchedVpk.mod.likes ??
-                                    "Unknown"}
-                                </p>
-                              </div>
-                              <div className='space-y-1'>
-                                <span className='text-muted-foreground text-sm'>
-                                  Created
-                                </span>
-                                <p className='font-medium text-sm'>
-                                  {new Date(
-                                    fileAnalysis.result.matchedVpk.mod
-                                      .remoteAddedAt,
-                                  ).toLocaleDateString()}
-                                </p>
-                              </div>
-                            </div>
-
                             <div className='flex gap-2 pt-2'>
                               <Button asChild>
                                 <a
-                                  href={
-                                    fileAnalysis.result.matchedVpk.mod.remoteUrl
-                                  }
+                                  href={`https://gamebanana.com/${
+                                    fileAnalysis.result.matchedVpk
+                                      .submissionType === "sound"
+                                      ? "sounds"
+                                      : "mods"
+                                  }/${fileAnalysis.result.matchedVpk.submissionId}`}
                                   rel='noopener noreferrer'
                                   target='_blank'>
                                   View on GameBanana
                                 </a>
                               </Button>
-                              {fileAnalysis.result.matchedVpk.mod.audioUrl && (
-                                <Button asChild variant='outline'>
-                                  <a
-                                    href={
-                                      fileAnalysis.result.matchedVpk.mod
-                                        .audioUrl
-                                    }
-                                    rel='noopener noreferrer'
-                                    target='_blank'>
-                                    Preview Audio
-                                  </a>
-                                </Button>
-                              )}
                             </div>
                           </div>
                         </CardContent>

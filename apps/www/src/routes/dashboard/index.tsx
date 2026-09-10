@@ -91,38 +91,11 @@ function DashboardPage() {
         timeRange={timeRange}
         totals={totals}
       />
-      <div className='grid gap-6 md:grid-cols-3 lg:grid-cols-4'>
-        <DashboardChart
-          title='Total Mods'
-          description='Number of mods added over time'
-          dataKey='mods'
-          color='hsl(var(--primary))'
-          timeRange={timeRange}
-          data={analyticsData}
-          isLoading={analyticsQuery.isLoading}
-        />
-        <DashboardChart
-          title='Mod Downloads'
-          description='Total mod downloads over time'
-          dataKey='downloads'
-          color='hsl(var(--primary))'
-          timeRange={timeRange}
-          data={analyticsData}
-          isLoading={analyticsQuery.isLoading}
-        />
+      <div className='grid gap-6'>
         <DashboardChart
           title='Users'
           description='New user registrations over time'
           dataKey='users'
-          color='hsl(var(--primary))'
-          timeRange={timeRange}
-          data={analyticsData}
-          isLoading={analyticsQuery.isLoading}
-        />
-        <DashboardChart
-          title='Mod Files'
-          description='Number of mod files added over time'
-          dataKey='modFiles'
           color='hsl(var(--primary))'
           timeRange={timeRange}
           data={analyticsData}
