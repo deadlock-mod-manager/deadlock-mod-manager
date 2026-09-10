@@ -52,6 +52,8 @@ pub enum Error {
   ProviderResponseTooLarge { limit: usize },
   #[error("GameBanana request was cancelled")]
   ProviderCancelled,
+  #[error("Catalog error: {0}")]
+  Catalog(String),
   #[error("Tauri error: {0}")]
   Tauri(#[from] tauri::Error),
   #[error("Failed to create backup: {0}")]
@@ -89,6 +91,12 @@ pub enum Error {
   },
 }
 
+impl From<diesel::result::Error> for Error {
+  fn from(error: diesel::result::Error) -> Self {
+    Self::Catalog(error.to_string())
+  }
+}
+
 impl serde::Serialize for Error {
   fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
   where
@@ -124,6 +132,7 @@ impl serde::Serialize for Error {
       Error::ProviderInvalidResponse(_) => "providerInvalidResponse",
       Error::ProviderResponseTooLarge { .. } => "providerResponseTooLarge",
       Error::ProviderCancelled => "providerCancelled",
+      Error::Catalog(_) => "catalogError",
       Error::Tauri(_) => "tauri",
       Error::BackupCreationFailed(_) => "backupCreationFailed",
       Error::BackupRestoreFailed(_) => "backupRestoreFailed",
@@ -201,6 +210,10 @@ mod tests {
         "providerResponseTooLarge",
       ),
       (Error::ProviderCancelled, "providerCancelled"),
+      (
+        Error::Catalog("database unavailable".into()),
+        "catalogError",
+      ),
     ];
 
     for (error, expected_kind) in cases {
