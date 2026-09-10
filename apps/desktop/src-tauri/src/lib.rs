@@ -136,6 +136,20 @@ pub fn run() {
           .window("main")
           .permission("wdio:default")
           .permission_scoped(
+            "fs:scope",
+            {
+              let app_data = &runtime_environment::current()
+                .e2e()
+                .expect("e2e-harness builds require an E2E configuration")
+                .roots.app_data;
+              vec![
+                serde_json::json!({ "path": app_data }),
+                serde_json::json!({ "path": app_data.join("**") }),
+              ]
+            },
+            Vec::<serde_json::Value>::new(),
+          )
+          .permission_scoped(
             "http:default",
             runtime_environment::current()
               .e2e()
