@@ -212,6 +212,21 @@ const Mod = () => {
     );
   }
 
+  if (nsfwSettings.hideNSFW && mod.isNSFW) {
+    return (
+      <Alert>
+        <AlertDescription>{t("privacy.hideNSFWContent")}</AlertDescription>
+        <Button
+          onClick={() =>
+            navigate("/settings", { state: { activeTab: "privacy" } })
+          }
+          variant='outline'>
+          {t("navigation.settings")}
+        </Button>
+      </Alert>
+    );
+  }
+
   return (
     <ErrorBoundary>
       <div

@@ -273,6 +273,9 @@ const run = async (): Promise<void> => {
       `Selected scenarios require --allow-native-input: ${nativeCases.join(", ")}`,
     );
   const summary = [];
+  const reportPath = valueAfter("--report");
+  if (reportPath)
+    await mkdir(path.dirname(path.resolve(reportPath)), { recursive: true });
   for (const caseId of ids) {
     const result = await runE2eWorld({
       provider: provider(),
@@ -293,6 +296,8 @@ const run = async (): Promise<void> => {
       console.log(`Retained requested world: ${result.worldDirectory}`);
     }
     summary.push({ caseId, ...result });
+    if (reportPath)
+      await writeFile(reportPath, JSON.stringify(summary, null, 2));
   }
   console.table(
     summary.map(({ caseId, passed, elapsedMs, worldDirectory }) => ({

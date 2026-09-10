@@ -589,6 +589,9 @@ const MyMods = () => {
     ? mapQuickFilter
     : "off";
   const [hideNSFW, setHideNSFW] = useState(false);
+  const globallyHideNSFW = usePersistedStore(
+    (state) => state.nsfwSettings.hideNSFW,
+  );
   const [hideOutdated, setHideOutdated] = useState(false);
   const [filterMode, setFilterMode] = useState<FilterMode>("include");
   const [librarySearchQuery, setLibrarySearchQuery] = useState("");
@@ -633,7 +636,7 @@ const MyMods = () => {
         if (filterMode === "include" ? !matchesHero : matchesHero) return false;
       }
 
-      if (hideNSFW && mod.isNSFW) return false;
+      if ((globallyHideNSFW || hideNSFW) && mod.isNSFW) return false;
 
       if (audioQuickFilter === "only" && !mod.isAudio) return false;
       if (audioQuickFilter === "exclude" && mod.isAudio) return false;
@@ -668,6 +671,7 @@ const MyMods = () => {
     filterMode,
     audioQuickFilter,
     effectiveMapQuickFilter,
+    globallyHideNSFW,
     hideNSFW,
     hideOutdated,
     query,

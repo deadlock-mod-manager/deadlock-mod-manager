@@ -820,6 +820,8 @@ pub struct StageDownloadArchiveResult {
 
 #[tauri::command]
 pub async fn stage_download_archive(
+  catalog_state: State<'_, super::gamebanana_catalog::GameBananaCatalogState>,
+  policy: State<'_, super::policy::PolicyState>,
   mod_id: String,
   profile_folder: Option<String>,
   archive_url: String,
@@ -841,35 +843,41 @@ pub async fn stage_download_archive(
     return Err(Error::GamePathNotSet);
   }
 
-  validate_download_url(&archive_url)?;
   let safe_archive_name = sanitize_archive_name(&archive_name)?;
-
-  let client = reqwest::Client::builder()
-    .build()
-    .map_err(|e| Error::Network(format!("Failed to build HTTP client: {e}")))?;
-
-  let response = client
-    .get(&archive_url)
-    .send()
-    .await
-    .map_err(|e| Error::Network(format!("Failed to fetch {}: {e}", archive_url)))?;
-
-  if !response.status().is_success() {
-    return Err(Error::DownloadFailed(format!(
-      "{} returned status {}",
-      archive_url,
-      response.status()
-    )));
-  }
-
-  let bytes = response
-    .bytes()
-    .await
-    .map_err(|e| Error::DownloadFailed(format!("Failed reading body for {}: {e}", archive_url)))?;
-
+  let file = resolve_download_files(
+    &catalog_state,
+    &policy,
+    &mod_id,
+    &[DownloadFileDto {
+      url: archive_url,
+      name: safe_archive_name.clone(),
+      size: 0,
+      md5_checksum: None,
+    }],
+    None,
+  )
+  .await?
+  .into_iter()
+  .next()
+  .ok_or(Error::ModFileNotFound)?;
   let temp_dir = tempfile::tempdir()?;
   let archive_path = temp_dir.path().join(&safe_archive_name);
-  std::fs::write(&archive_path, &bytes)?;
+  crate::download_manager::downloader::download_file_resumable(
+    &file.url,
+    &archive_path,
+    file.size,
+    |_| {},
+    tokio_util::sync::CancellationToken::new(),
+    crate::download_manager::downloader::PauseHandle::new(),
+    Some(if file.size == 0 {
+      2 * 1024 * 1024 * 1024
+    } else {
+      file.size.min(2 * 1024 * 1024 * 1024)
+    }),
+    file.md5_checksum.as_deref(),
+    true,
+  )
+  .await?;
 
   let extract_dir = temp_dir.path().join("extracted");
 

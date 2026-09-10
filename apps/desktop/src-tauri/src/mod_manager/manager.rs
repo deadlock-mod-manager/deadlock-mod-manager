@@ -529,6 +529,90 @@ mod tests {
   }
 
   #[test]
+  fn variant_swap_uses_manifest_mapping_instead_of_ui_tree_order() {
+    let game = game_dir();
+    let addons = game.path().join("game/citadel/addons");
+    fs::create_dir_all(&addons).unwrap();
+    fs::write(addons.join("pak01_dir.vpk"), b"blue bytes").unwrap();
+    fs::write(addons.join("pak02_dir.vpk"), b"red bytes").unwrap();
+    let base = crate::mod_manager::shard::ProfileBase::new(addons.clone()).unwrap();
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_enabled(
+      "42",
+      vec!["pak01_dir.vpk".into(), "pak02_dir.vpk".into()],
+      vec!["blue.vpk".into(), "red.vpk".into()],
+      Some(0),
+      shard::ShardIndex::FIRST,
+    );
+    manifest.save(&base).unwrap();
+    let result = test_manager(game.path())
+      .apply_variant_selection(
+        "42",
+        None,
+        &["pak01_dir.vpk".into(), "pak02_dir.vpk".into()],
+        &["red.vpk".into(), "blue.vpk".into()],
+        vec!["blue.vpk".into()],
+      )
+      .unwrap();
+    assert_eq!(result.original_vpk_names, vec!["blue.vpk"]);
+    assert_eq!(
+      fs::read(addons.join(&result.installed_vpks[0])).unwrap(),
+      b"blue bytes"
+    );
+    assert_eq!(fs::read(addons.join("42_red.vpk")).unwrap(), b"red bytes");
+    let saved = ProfileVpkManifest::load(&base).unwrap();
+    assert_eq!(saved.mods["42"].original_vpk_names, vec!["blue.vpk"]);
+    assert_eq!(saved.mods["42"].current_vpks, result.installed_vpks);
+  }
+
+  #[test]
+  fn reenable_keeps_deselected_variants_inactive() {
+    let game = game_dir();
+    let citadel = game.path().join("game/citadel");
+    fs::write(
+      citadel.join("gameinfo.gi"),
+      "\"GameInfo\"\n{\n\"FileSystem\"\n{\nSearchPaths\n{\nGame citadel\n}\n}\n}\n",
+    )
+    .unwrap();
+    let addons = citadel.join("addons");
+    fs::create_dir_all(&addons).unwrap();
+    fs::write(addons.join("42_blue.vpk"), b"chosen blue").unwrap();
+    fs::write(addons.join("42_red.vpk"), b"inactive red").unwrap();
+    let file_tree = ModFileTree::from_options(
+      &["blue.vpk".into(), "red.vpk".into()],
+      &HashSet::from(["blue.vpk".into()]),
+    );
+    let mut manager = test_manager(game.path());
+    let installed = manager
+      .install_mod(
+        Mod {
+          id: "42".into(),
+          name: "Variant fixture".into(),
+          is_map: false,
+          installed_vpks: Vec::new(),
+          file_tree: Some(file_tree),
+          install_order: None,
+          original_vpk_names: Vec::new(),
+        },
+        None,
+      )
+      .unwrap();
+    assert_eq!(installed.original_vpk_names, vec!["blue.vpk"]);
+    assert_eq!(installed.installed_vpks.len(), 1);
+    assert_eq!(
+      fs::read(addons.join(&installed.installed_vpks[0])).unwrap(),
+      b"chosen blue"
+    );
+    assert_eq!(
+      fs::read(addons.join("42_red.vpk")).unwrap(),
+      b"inactive red"
+    );
+    let manifest = ProfileVpkManifest::load(&ProfileBase::new(addons).unwrap()).unwrap();
+    assert_eq!(manifest.mods["42"].original_vpk_names, vec!["blue.vpk"]);
+    assert_eq!(manifest.mods["42"].current_vpks, installed.installed_vpks);
+  }
+
+  #[test]
   fn profile_folder_validation_rejects_path_escape_components() {
     assert!(ModManager::is_safe_profile_folder("profile_123"));
     assert!(ModManager::is_safe_profile_folder("server_abc"));

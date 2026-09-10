@@ -16,6 +16,8 @@ import { prepareFilesystemWorld } from "./filesystem-fixtures";
 import { assertCrashEvidence } from "./filesystem-oracle";
 import { assertNormalExit, assertInterruptedExit } from "./phase-evidence";
 import { writeSyntheticVpk } from "./vpk";
+import { contentRoutes, prepareContentWorld } from "./content-fixtures";
+import { preparePresenceCache } from "./settings-fixtures";
 
 type Definition = {
   family: string;
@@ -118,7 +120,47 @@ const catalog: Definition = {
     );
   },
 };
+const catalogLifecycle: Definition = {
+  ...catalog,
+  spec: "gamebanana-lifecycle",
+  phases: ["catalog-change", "restart-changed"],
+};
+const settings: Definition = {
+  ...defaults,
+  family: "settings",
+  spec: "settings",
+  phases: ["configure", "restart-settings"],
+  prepare: preparePresenceCache,
+};
 export const scenarios = {
+  "content-blur": {
+    ...settings,
+    spec: "content-blur",
+    phases: ["reveal-content", "restart-blur"],
+    routes: contentRoutes,
+    prepare: prepareContentWorld,
+  },
+  "content-visibility": {
+    ...settings,
+    spec: "content-visibility",
+    phases: ["content-preferences", "restart-content"],
+    routes: contentRoutes,
+    prepare: prepareContentWorld,
+  },
+  "game-launch-modes": {
+    ...settings,
+    spec: "game-launch",
+    phases: ["launch-modes", "restart-launch"],
+    routes: profileRoutes,
+    prepare: async (world: CreatedWorld) => {
+      await prepareProfileWorld(world);
+      await preparePresenceCache(world);
+    },
+  },
+  "settings-application": settings,
+  "settings-privacy": settings,
+  "settings-backups-presence": settings,
+  "settings-language": settings,
   "about-smoke": smoke,
   "local-mod-lifecycle": local,
   "profiles-pointer": profiles,
@@ -144,6 +186,13 @@ export const scenarios = {
   "gamebanana-single": catalog,
   "gamebanana-multifile": catalog,
   "gamebanana-variants": catalog,
+  "gamebanana-combined": catalogLifecycle,
+  "gamebanana-switch": catalogLifecycle,
+  "gamebanana-switch-failure": catalogLifecycle,
+  "gamebanana-reselect": catalogLifecycle,
+  "gamebanana-reinstall": catalogLifecycle,
+  "gamebanana-reinstall-disabled": catalogLifecycle,
+  "gamebanana-force-update": catalogLifecycle,
 } satisfies Record<string, Definition>;
 export type ScenarioId = keyof typeof scenarios;
 const isScenario = (value: string): value is ScenarioId =>

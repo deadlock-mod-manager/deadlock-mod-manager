@@ -362,7 +362,9 @@ export const AddonsBackupManagement = () => {
           <Select
             value={String(maxBackupCount)}
             onValueChange={handleMaxBackupCountChange}>
-            <SelectTrigger className='w-32'>
+            <SelectTrigger
+              aria-label={t("settings.maxBackupCount")}
+              className='w-32'>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

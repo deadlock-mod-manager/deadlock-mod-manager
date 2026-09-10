@@ -109,7 +109,7 @@ export const assertFilesystemLayout = async (
       ),
     );
   const expectedProtected = protectedFiles(initial.citadel);
-  if (step === "reconciled")
+  if (step === "reconciled" || step === "closed-reconciled")
     expectedProtected["gameinfo.gi.bak"] = initial.citadel["gameinfo.gi"];
   if (
     configuration.caseId.startsWith("filesystem-backup-") &&
