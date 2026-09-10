@@ -14,7 +14,11 @@ import { fileURLToPath } from "node:url";
 import type { DriverProvider } from "./support/contracts";
 import { defaultBinaryPath, runE2eWorld } from "./support/supervisor";
 import { WORLDS_ROOT } from "./support/world";
-import { parseScenarioId } from "./support/scenarios";
+import {
+  parseScenarioId,
+  selectScenarios,
+  scenarios,
+} from "./support/scenarios";
 import { nativePickerBinary } from "./support/native-picker";
 
 const argumentsList = process.argv.slice(2);
@@ -137,7 +141,7 @@ const doctor = async (): Promise<void> => {
   const selectedProvider = provider();
   const checks: Array<{ name: string; ok: boolean; detail: string }> = [];
   const scenario = parseScenarioId(valueAfter("--case"));
-  if (scenario === "local-mod-lifecycle" || scenario.startsWith("profiles-")) {
+  if (scenarios[scenario].nativeInput) {
     let pickerExists = true;
     try {
       await access(nativePickerBinary);
@@ -258,23 +262,46 @@ const doctor = async (): Promise<void> => {
 };
 
 const run = async (): Promise<void> => {
-  const result = await runE2eWorld({
-    provider: provider(),
-    runId: `local-${Date.now()}`,
-    caseId: parseScenarioId(valueAfter("--case")),
-    attempt: 1,
-    binaryPath: valueAfter("--binary"),
-    retainPassedWorld: argumentsList.includes("--keep"),
-  });
-  console.log(
-    `${result.passed ? "PASS" : "FAIL"} in ${(result.elapsedMs / 1000).toFixed(1)}s`,
-  );
-  if (!result.passed) {
-    console.log(`Retained failure world: ${result.worldDirectory}`);
-    process.exitCode = 1;
-  } else if (argumentsList.includes("--keep")) {
-    console.log(`Retained requested world: ${result.worldDirectory}`);
+  if (valueAfter("--suite") && valueAfter("--case"))
+    throw new Error("Choose --suite or --case, not both");
+  const ids = valueAfter("--suite")
+    ? selectScenarios(valueAfter("--suite") ?? "all")
+    : [parseScenarioId(valueAfter("--case"))];
+  const nativeCases = ids.filter((id) => scenarios[id].nativeInput);
+  if (nativeCases.length > 0 && !argumentsList.includes("--allow-native-input"))
+    throw new Error(
+      `Selected scenarios require --allow-native-input: ${nativeCases.join(", ")}`,
+    );
+  const summary = [];
+  for (const caseId of ids) {
+    const result = await runE2eWorld({
+      provider: provider(),
+      runId: `local-${Date.now()}`,
+      caseId,
+      attempt: 1,
+      binaryPath: valueAfter("--binary"),
+      retainPassedWorld: argumentsList.includes("--keep"),
+      allowNativeInput: argumentsList.includes("--allow-native-input"),
+    });
+    console.log(
+      `${result.passed ? "PASS" : "FAIL"} in ${(result.elapsedMs / 1000).toFixed(1)}s`,
+    );
+    if (!result.passed) {
+      console.log(`Retained failure world: ${result.worldDirectory}`);
+      process.exitCode = 1;
+    } else if (argumentsList.includes("--keep")) {
+      console.log(`Retained requested world: ${result.worldDirectory}`);
+    }
+    summary.push({ caseId, ...result });
   }
+  console.table(
+    summary.map(({ caseId, passed, elapsedMs, worldDirectory }) => ({
+      caseId,
+      passed,
+      elapsedMs,
+      worldDirectory,
+    })),
+  );
 };
 
 const qualify = async (): Promise<void> => {
@@ -286,6 +313,7 @@ const qualify = async (): Promise<void> => {
       runId,
       caseId: parseScenarioId(valueAfter("--case")),
       attempt,
+      allowNativeInput: argumentsList.includes("--allow-native-input"),
       binaryPath: valueAfter("--binary"),
     });
     if (!result.passed) {
@@ -315,11 +343,22 @@ const qualify = async (): Promise<void> => {
     return;
   }
   console.log(
-    `PASS ${selectedProvider}: 10/10 fresh runs and intentional-timeout teardown`,
+    `PASS ${selectedProvider}: 10/10 fresh runs and WebDriver timeout reporting; supervisor termination is covered by process-control tests`,
   );
+  console.log(`Retained timeout evidence: ${timeoutResult.worldDirectory}`);
 };
 
-if (command === "doctor") await doctor();
+if (command === "list")
+  console.table(
+    selectScenarios(valueAfter("--suite") ?? "all").map((id) => ({
+      id,
+      family: scenarios[id].family,
+      coverage: scenarios[id].coverage,
+      phases: scenarios[id].phases.join(", "),
+      nativeInput: scenarios[id].nativeInput,
+    })),
+  );
+else if (command === "doctor") await doctor();
 else if (command === "run") await run();
 else if (command === "qualify") await qualify();
 else throw new Error(`Unknown E2E command '${command}'`);

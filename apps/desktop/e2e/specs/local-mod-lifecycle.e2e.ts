@@ -1,3 +1,6 @@
+import { startApplication } from "../support/application";
+import { observeUntil } from "../support/observations";
+import { closeApplication } from "../support/application-exit";
 import { $, browser, expect } from "@wdio/globals";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -21,19 +24,16 @@ const waitForStatus = async (
   world: string,
   status: string,
 ): Promise<string> => {
-  await browser.waitUntil(
-    async () => {
-      const state = await readLifecycleState(world);
+  const state = await observeUntil(
+    "Persisted lifecycle state did not reach " + status,
+    () => readLifecycleState(world),
+    (state) => {
       return status === "deleted"
         ? state.localMods.length === 0
         : state.localMods[0]?.status === status;
     },
-    {
-      timeout: 15_000,
-      timeoutMsg: `Persisted lifecycle state did not reach ${status}`,
-    },
   );
-  return (await readLifecycleState(world)).localMods[0]?.remoteId ?? "";
+  return state.localMods[0]?.remoteId ?? "";
 };
 
 const toggle = async (
@@ -56,14 +56,7 @@ const toggle = async (
 
 describe("local mod lifecycle", () => {
   it("keeps UI, manifest, store, and bytes consistent across a fresh process", async () => {
-    const dismiss = await $("button=Got it!");
-    if (await dismiss.isDisplayed()) await dismiss.click();
-    const runtime = await browser.execute(() =>
-      window.__TAURI_INTERNALS__.invoke<{
-        processId: number;
-        roots: { world: string };
-      }>("e2e_status"),
-    );
+    const runtime = await startApplication();
     const world = runtime.roots.world;
     const checkpointPath = path.join(
       world,
@@ -140,5 +133,15 @@ describe("local mod lifecycle", () => {
     } else {
       throw new Error("Unknown lifecycle phase");
     }
+    await closeApplication(world, runtime.processId);
+    const checkpoint = checkpointSchema.parse(
+      JSON.parse(await readFile(checkpointPath, "utf8")),
+    );
+    await assertLifecycleDisk(
+      world,
+      `closed-${process.env.DMM_E2E_PHASE}`,
+      checkpoint.modId,
+      process.env.DMM_E2E_PHASE === "import-toggle" ? "installed" : "deleted",
+    );
   });
 });

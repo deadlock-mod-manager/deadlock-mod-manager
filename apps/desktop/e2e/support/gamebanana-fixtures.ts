@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import JSZip from "jszip";
+import { createArchive } from "./archive-fixtures";
 import type { FixtureRequest, FixtureRoute } from "./fixture-server";
 import { buildSyntheticVpk } from "./vpk";
 
@@ -59,17 +59,13 @@ export const installedCatalogFiles = (scenario: string): string[] =>
 export const createCatalogRoutes = async (scenario: string) => {
   const archives = await Promise.all(
     catalogRecipe(scenario).map(async (recipe) => {
-      const zip = new JSZip();
-      for (const name of recipe.files)
-        zip.file(name, catalogVpk(name), {
-          date: new Date("2020-01-01T00:00:00Z"),
-        });
       return {
         ...recipe,
-        body: await zip.generateAsync({
-          type: "nodebuffer",
-          compression: "STORE",
-        }),
+        body: await createArchive(
+          Object.fromEntries(
+            recipe.files.map((name) => [name, catalogVpk(name)]),
+          ),
+        ),
       };
     }),
   );

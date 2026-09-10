@@ -1,7 +1,9 @@
+import { readPersistedDocument } from "./observations";
+import { fixtureMod } from "./mod-fixtures";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
-import { ModStatus, type LocalMod } from "../../src/types/mods";
+import { type LocalMod } from "../../src/types/mods";
 import { buildSyntheticVpk } from "./vpk";
 import { collectFileInventory, type CreatedWorld } from "./world";
 
@@ -30,51 +32,36 @@ export const profilePayload = (modId: string): Buffer =>
     },
   ]);
 
-export const fixtureMod = (modId: string, index: number): LocalMod => ({
-  id: modId,
-  remoteId: modId,
-  name: modId,
-  description: "E2E profile fixture",
-  remoteUrl: "local://manual",
-  category: "Skins",
-  likes: 0,
-  author: "E2E",
-  downloadable: false,
-  tags: [],
-  dependencies: [],
-  metadata: null,
-  images: [],
-  hero: null,
-  isAudio: false,
-  isMap: false,
-  audioUrl: null,
-  downloadCount: 0,
-  isNSFW: false,
-  isObsolete: false,
-  isBlacklisted: false,
-  blacklistReason: null,
-  blacklistedAt: null,
-  blacklistedBy: null,
-  filesUpdatedAt: null,
-  overrides: null,
-  createdAt: new Date(0),
-  updatedAt: new Date(0),
-  remoteAddedAt: new Date(0),
-  remoteUpdatedAt: new Date(0),
-  status: ModStatus.Installed,
-  installedVpks: [`pak${String(index + 1).padStart(2, "0")}_dir.vpk`],
-  installOrder: index,
-  // These synthetic script archives contain no hero assets. Model them as
-  // already indexed so unrelated background scans cannot race a test restart.
-  detectedHero: null,
-  usesCriticalPaths: false,
-});
-
-export const prepareProfileWorld = async (
+export const prepareInstalledProfiles = async (
   world: CreatedWorld,
-  alphaModIds: string[] = ALPHA_MODS,
-  alphaSlots?: number[],
+  layout: readonly {
+    profile: typeof ALPHA;
+    modIds: string[];
+    slots?: number[];
+  }[],
+  activeProfileId: string,
 ): Promise<void> => {
+  const active = layout.find(({ profile }) => profile.id === activeProfileId);
+  if (!active)
+    throw new Error("Active profile is missing from the fixture recipe");
+  if (
+    new Set(layout.map(({ profile }) => profile.id)).size !== layout.length ||
+    new Set(layout.map(({ profile }) => profile.folder)).size !== layout.length
+  )
+    throw new Error("Profile recipe identities and folders must be unique");
+  for (const { profile, modIds, slots } of layout) {
+    if (profile.id === "default" || !/^[a-z0-9_-]+$/i.test(profile.folder))
+      throw new Error("Unsafe fixture profile folder");
+    if (new Set(modIds).size !== modIds.length)
+      throw new Error("Duplicate fixture mod identity");
+    if (
+      slots &&
+      (slots.length !== modIds.length ||
+        new Set(slots).size !== slots.length ||
+        slots.some((slot) => !Number.isInteger(slot) || slot < 1 || slot > 99))
+    )
+      throw new Error("Invalid fixture VPK slots");
+  }
   const profiles: Record<
     string,
     {
@@ -100,10 +87,7 @@ export const prepareProfileWorld = async (
       enabledMods: {},
     },
   };
-  for (const { profile, modIds } of [
-    { profile: ALPHA, modIds: alphaModIds },
-    { profile: BETA, modIds: BETA_MODS },
-  ]) {
+  for (const { profile, modIds, slots } of layout) {
     const directory = path.join(
       world.configuration.roots.game,
       "game",
@@ -113,12 +97,7 @@ export const prepareProfileWorld = async (
     );
     await mkdir(directory, { recursive: true });
     const mods = modIds.map((id, index) =>
-      fixtureMod(
-        id,
-        profile.id === ALPHA.id && alphaSlots
-          ? alphaSlots[index] - 1
-          : index % 99,
-      ),
+      fixtureMod(id, slots ? slots[index] - 1 : index % 99),
     );
     const entries: Record<
       string,
@@ -133,7 +112,7 @@ export const prepareProfileWorld = async (
     > = {};
     for (const [index, mod] of mods.entries()) {
       mod.installOrder = index;
-      const filename = `pak${String(profile.id === ALPHA.id && alphaSlots ? alphaSlots[index] : (index % 99) + 1).padStart(2, "0")}_dir.vpk`;
+      const filename = `pak${String(slots ? slots[index] : (index % 99) + 1).padStart(2, "0")}_dir.vpk`;
       const shard = Math.floor(index / 99) + 1;
       const shardDirectory =
         shard === 1
@@ -183,12 +162,9 @@ export const prepareProfileWorld = async (
     };
   }
   const storePath = path.join(world.configuration.roots.appData, "state.json");
-  const store = z
-    .object({ "local-config": z.string() })
-    .parse(JSON.parse(await readFile(storePath, "utf8")));
   const persisted = z
     .object({ state: z.record(z.string(), z.json()), version: z.number() })
-    .parse(JSON.parse(store["local-config"]));
+    .parse(await readPersistedDocument(world.directory));
   await writeFile(
     storePath,
     JSON.stringify({
@@ -197,8 +173,8 @@ export const prepareProfileWorld = async (
         state: {
           ...persisted.state,
           profiles,
-          activeProfileId: ALPHA.id,
-          localMods: profiles[ALPHA.id].mods,
+          activeProfileId,
+          localMods: profiles[activeProfileId].mods,
         },
       }),
     }),
@@ -213,8 +189,23 @@ export const prepareProfileWorld = async (
     gameinfo,
     (await readFile(gameinfo, "utf8")).replace(
       "Game citadel",
-      `${Array.from({ length: Math.ceil(alphaModIds.length / 99) }, (_, index) => `Game citadel/${index === 0 ? "addons" : `addons${index + 1}`}/${ALPHA.folder}`).join("\n      ")}\n      Game citadel`,
+      `${Array.from({ length: Math.max(1, Math.ceil(active.modIds.length / 99)) }, (_, index) => `Game citadel/${index === 0 ? "addons" : `addons${index + 1}`}/${active.profile.folder}`).join("\n      ")}\n      Game citadel`,
     ),
+  );
+};
+
+export const prepareProfileWorld = async (
+  world: CreatedWorld,
+  alphaModIds: string[] = ALPHA_MODS,
+  alphaSlots?: number[],
+): Promise<void> => {
+  await prepareInstalledProfiles(
+    world,
+    [
+      { profile: ALPHA, modIds: alphaModIds, slots: alphaSlots },
+      { profile: BETA, modIds: BETA_MODS },
+    ],
+    ALPHA.id,
   );
   await writeFile(
     path.join(world.artifactsDirectory, "profiles-initial.json"),

@@ -1,21 +1,14 @@
-import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { DriverProvider } from "./contracts";
-import { scenarioPhases, type ScenarioId } from "./scenarios";
 import {
-  createCatalogRoutes,
-  assertCatalogNetwork,
-} from "./gamebanana-fixtures";
-import { writeSyntheticVpk } from "./vpk";
-import { prepareProfileWorld } from "./profile-fixtures";
-import { prepareFilesystemWorld } from "./filesystem-fixtures";
-import { assertCrashEvidence, assertNormalExit } from "./filesystem-oracle";
-import {
-  assertDownloadNetwork,
-  downloadRoutes,
-  prepareDownloadWorld,
-} from "./download-fixtures";
+  scenarioPhases,
+  scenarios,
+  verifyPhase,
+  type ScenarioId,
+} from "./scenarios";
+import { runProcess } from "./process-control";
+import { captureEvidence } from "./evidence";
 import { startFilesystemJournal } from "./filesystem-journal";
 import { startFixtureServer, type FixtureRoute } from "./fixture-server";
 import {
@@ -44,7 +37,12 @@ type RunOptions = {
   binaryPath?: string;
   retainPassedWorld?: boolean;
   intentionalTimeout?: boolean;
+  allowNativeInput?: boolean;
   fixtureRoutes?: readonly FixtureRoute[];
+  runPhase?: (
+    environment: NodeJS.ProcessEnv,
+    outputPath: string,
+  ) => Promise<{ exitCode: number; output: string }>;
 };
 
 export type RunResult = {
@@ -93,94 +91,25 @@ const startupFixtureRoutes: readonly FixtureRoute[] = [
   },
 ];
 
-const spawnWdio = async (
-  environment: NodeJS.ProcessEnv,
-  outputPath: string,
-): Promise<{ exitCode: number; output: string }> => {
-  const wdioEntry = path.join(
-    desktopRoot,
-    "node_modules",
-    "@wdio",
-    "cli",
-    "bin",
-    "wdio.js",
-  );
-  const child = spawn(
-    process.execPath,
-    [wdioEntry, "run", "e2e/wdio.conf.ts"],
-    {
-      cwd: desktopRoot,
-      env: environment,
-      stdio: ["ignore", "pipe", "pipe"],
-      windowsHide: true,
-    },
-  );
-  let output = "";
-  let supervisorTerminated = false;
-  child.stdout.on("data", (chunk: Buffer) => {
-    const text = chunk.toString();
-    output += text;
-    process.stdout.write(text);
+const spawnWdio = (environment: NodeJS.ProcessEnv, outputPath: string) =>
+  runProcess({
+    executable: process.execPath,
+    args: [
+      path.join(desktopRoot, "node_modules", "@wdio", "cli", "bin", "wdio.js"),
+      "run",
+      "e2e/wdio.conf.ts",
+    ],
+    cwd: desktopRoot,
+    environment,
+    outputPath,
+    timeoutMs: WDIO_PROCESS_TIMEOUT_MS,
   });
-  child.stderr.on("data", (chunk: Buffer) => {
-    const text = chunk.toString();
-    output += text;
-    process.stderr.write(text);
-  });
-  const terminateForSignal = (signal: NodeJS.Signals): void => {
-    supervisorTerminated = true;
-    const message = `\nE2E supervisor received ${signal}; terminating WDIO process tree\n`;
-    output += message;
-    process.stderr.write(message);
-    terminateProcessTree(child);
-  };
-  const onInterrupt = (): void => terminateForSignal("SIGINT");
-  const onTermination = (): void => terminateForSignal("SIGTERM");
-  process.once("SIGINT", onInterrupt);
-  process.once("SIGTERM", onTermination);
-
-  let exitCode: number;
-  try {
-    exitCode = await new Promise<number>((resolve, reject) => {
-      const deadline = setTimeout(() => {
-        supervisorTerminated = true;
-        const message = `\nE2E supervisor exceeded ${WDIO_PROCESS_TIMEOUT_MS}ms; terminating WDIO process tree\n`;
-        output += message;
-        process.stderr.write(message);
-        terminateProcessTree(child);
-      }, WDIO_PROCESS_TIMEOUT_MS);
-      child.once("error", (error) => {
-        clearTimeout(deadline);
-        reject(error);
-      });
-      child.once("exit", (code) => {
-        clearTimeout(deadline);
-        resolve(code ?? 1);
-      });
-    });
-  } finally {
-    process.removeListener("SIGINT", onInterrupt);
-    process.removeListener("SIGTERM", onTermination);
-  }
-  await writeFile(outputPath, output);
-  return {
-    exitCode: supervisorTerminated ? 1 : exitCode,
-    output,
-  };
-};
-
-const terminateProcessTree = (child: ChildProcess): void => {
-  if (child.pid === undefined || child.exitCode !== null) return;
-  if (process.platform === "win32") {
-    spawnSync("taskkill.exe", ["/pid", String(child.pid), "/t", "/f"], {
-      stdio: "ignore",
-      windowsHide: true,
-    });
-  }
-  if (child.exitCode === null) child.kill("SIGKILL");
-};
 
 export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
+  if (scenarios[options.caseId].nativeInput && !options.allowNativeInput)
+    throw new Error(
+      `${options.caseId} controls the Windows desktop. Run with --allow-native-input only when the desktop is available for testing.`,
+    );
   const startedAt = Date.now();
   let fixtureServer: Awaited<ReturnType<typeof startFixtureServer>> | undefined;
   let world: Awaited<ReturnType<typeof createWorld>> | undefined;
@@ -207,26 +136,11 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
   };
 
   try {
-    const catalogRoutes = options.caseId.startsWith("gamebanana-")
-      ? await createCatalogRoutes(options.caseId)
-      : () => [];
+    const definition = scenarios[options.caseId];
+    const routes = await definition.routes(options.caseId);
     fixtureServer = await startFixtureServer((origin) => [
-      ...catalogRoutes(origin),
       ...(options.fixtureRoutes ?? []),
-      ...(options.caseId.startsWith("downloads-")
-        ? downloadRoutes(options.caseId)
-        : []),
-      ...(options.caseId.startsWith("profiles-") ||
-      options.caseId.startsWith("filesystem-")
-        ? [
-            {
-              method: "GET",
-              path: "/api/v2/feature-flags",
-              status: 200,
-              body: '[{"name":"profile-management","enabled":true}]',
-            },
-          ]
-        : []),
+      ...routes(origin),
       ...startupFixtureRoutes,
     ]);
     world = await createWorld({
@@ -236,32 +150,7 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
       fixtureOrigin: fixtureServer.origin,
     });
     const roots = world.configuration.roots;
-    if (options.caseId.startsWith("gamebanana-"))
-      await writeFile(
-        path.join(roots.game, "protected.txt"),
-        "Keep the synthetic game intact\n",
-      );
-    if (options.caseId.startsWith("filesystem-"))
-      await prepareFilesystemWorld(world);
-    if (options.caseId.startsWith("downloads-"))
-      await prepareDownloadWorld(world, fixtureServer.origin, options.caseId);
-    if (options.caseId.startsWith("profiles-"))
-      await prepareProfileWorld(world);
-    if (options.caseId === "local-mod-lifecycle") {
-      await writeSyntheticVpk(
-        path.join(world.directory, "fixtures", "e2e-local-mod.vpk"),
-        [
-          {
-            path: "scripts/e2e-lifecycle.txt",
-            contents: "DMM synthetic lifecycle fixture v1\n",
-          },
-        ],
-      );
-      await writeFile(
-        path.join(roots.game, "protected.txt"),
-        "Never change this game file\n",
-      );
-    }
+    await definition.prepare(world, fixtureServer.origin);
     const inventoryRoots = {
       game: roots.game,
       steam: roots.steam,
@@ -294,7 +183,7 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
     const proxyBypass = "127.0.0.1,localhost";
     let wdioResult = { exitCode: 0, output: "" };
     for (const phase of scenarioPhases(options.caseId)) {
-      const phaseResult = await spawnWdio(
+      const phaseResult = await (options.runPhase ?? spawnWdio)(
         {
           ...process.env,
           DMM_E2E_CONFIG: world.configPath,
@@ -305,6 +194,7 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
           DMM_E2E_CASE_ID: world.configuration.caseId,
           DMM_E2E_PHASE: phase,
           DMM_E2E_INTENTIONAL_TIMEOUT: options.intentionalTimeout ? "1" : "0",
+          DMM_E2E_ALLOW_NATIVE_INPUT: options.allowNativeInput ? "1" : "0",
           HTTP_PROXY: fixtureServer.origin,
           HTTPS_PROXY: fixtureServer.origin,
           ALL_PROXY: fixtureServer.origin,
@@ -313,18 +203,8 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
         },
         path.join(world.artifactsDirectory, `wdio-${phase}.log`),
       );
-      if (
-        phaseResult.exitCode === 0 &&
-        phase === "mutate" &&
-        options.caseId.startsWith("filesystem-crash-")
-      ) {
-        await assertCrashEvidence(world.directory);
-      } else if (
-        phaseResult.exitCode === 0 &&
-        options.caseId.startsWith("filesystem-")
-      ) {
-        await assertNormalExit(world.directory, phase);
-      }
+      if (phaseResult.exitCode === 0)
+        await verifyPhase(options.caseId, world.directory, phase);
       wdioResult = {
         exitCode: phaseResult.exitCode,
         output: wdioResult.output + phaseResult.output,
@@ -335,10 +215,8 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
       )
         break;
     }
-    if (wdioResult.exitCode === 0 && options.caseId.startsWith("downloads-"))
-      assertDownloadNetwork(options.caseId, fixtureServer.requests());
-    if (wdioResult.exitCode === 0 && options.caseId.startsWith("gamebanana-"))
-      assertCatalogNetwork(options.caseId, fixtureServer.requests());
+    if (wdioResult.exitCode === 0)
+      definition.verifyNetwork(options.caseId, fixtureServer.requests());
     await closeResources();
     const after = Object.fromEntries(
       await Promise.all(
@@ -375,20 +253,58 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
       path.join(world.artifactsDirectory, "result.json"),
       JSON.stringify(result, null, 2),
     );
-    if (passed && options.retainPassedWorld !== true) {
+    if (
+      passed &&
+      !options.intentionalTimeout &&
+      options.retainPassedWorld !== true
+    ) {
       await removeOwnedWorld(world.directory);
     }
     return result;
   } catch (runError) {
-    try {
+    if (!world) {
       await closeResources();
-    } catch (cleanupError) {
-      throw new AggregateError(
-        [runError, cleanupError],
-        "E2E run failed and resource cleanup also failed",
-        { cause: cleanupError },
-      );
+      throw runError;
     }
-    throw runError;
+    const retained = world;
+    const failures = await captureEvidence(retained.artifactsDirectory, {
+      resources: closeResources,
+      inventory: async () => {
+        const roots = Object.entries(retained.configuration.roots).filter(
+          ([name]) => name !== "world",
+        );
+        const snapshots: Record<string, Record<string, string>> = {};
+        const errors = await captureEvidence(
+          retained.artifactsDirectory,
+          Object.fromEntries(
+            roots.map(([name, directory]) => [
+              name,
+              async () => {
+                snapshots[name] = await collectFileInventory(directory);
+              },
+            ]),
+          ),
+        );
+        await writeFile(
+          path.join(retained.artifactsDirectory, "files-after.json"),
+          JSON.stringify({ ...snapshots, captureErrors: errors }, null, 2),
+        );
+      },
+    });
+    const result = {
+      passed: false,
+      expectedFailureObserved: false,
+      exitCode: 1,
+      worldDirectory: retained.directory,
+      elapsedMs: Date.now() - startedAt,
+      unexpectedRequests: fixtureServer?.unmatchedRequests().length ?? 0,
+      error: runError instanceof Error ? runError.stack : String(runError),
+      captureErrors: failures,
+    };
+    await writeFile(
+      path.join(retained.artifactsDirectory, "result.json"),
+      JSON.stringify(result, null, 2),
+    );
+    return result;
   }
 };
