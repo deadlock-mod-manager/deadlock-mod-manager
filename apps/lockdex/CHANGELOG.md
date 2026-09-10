@@ -1,5 +1,29 @@
 # @deadlock-mods/lockdex
 
+## 0.3.0
+
+### Minor Changes
+
+- 437e943: Detach reports, Lockdex ingestion, server requirements, website surfaces, statistics, and Discord announcements from the mirrored GameBanana catalog.
+
+### Patch Changes
+
+- daa9b5f: Fix mod catalog updates being skipped for hours at a time
+- Updated dependencies [2130368]
+- Updated dependencies [1f98b35]
+- Updated dependencies [cbab84a]
+- Updated dependencies [34cbd98]
+- Updated dependencies [55be2ff]
+- Updated dependencies [437e943]
+- Updated dependencies [daa9b5f]
+- Updated dependencies [cbab84a]
+- Updated dependencies [fd4234f]
+  - @deadlock-mods/queue@0.2.0
+  - @deadlock-mods/database@2.2.0
+  - @deadlock-mods/shared@2.2.0
+  - @deadlock-mods/distributed-lock@1.0.11
+  - @deadlock-mods/instrumentation@0.1.11
+
 ## 0.2.10
 
 ### Patch Changes

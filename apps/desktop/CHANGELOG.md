@@ -1,5 +1,82 @@
 # desktop
 
+## 2.0.0
+
+### Major Changes
+
+- Ship 2.0 with a local catalog and new addon folder layout
+
+### Minor Changes
+
+- edf83d7: Add an items tab, live match charts and Deadlock API key support to Stats
+- 1f98b35: Show catalog sync activity and add a clear-and-resync action in Settings Tools.
+- edf83d7: Add detailed match history and interactive item timelines to player stats
+- 615beb0: Add a feature-flagged local GameBanana catalog for mod browsing
+- 8b9bcee: Add a Shards page to developer mode for inspecting addon folders
+- 12e5de0: Add an Experimental shortcut to the sidebar for quicker access to experimental features
+- 8ad9a4b: Manage every mod for a hero on the Hero Skins page, and retry failed downloads
+- 5c14a56: Add and delete hero skins directly from the Skins page
+- fc07a56: Download and check GameBanana mods directly with verified, locally cached metadata.
+- 34cbd98: Add provider-identity policy rules, a versioned policy manifest, desktop enforcement, legacy-rule backfill, and Mod/Sound blacklist management.
+- edf83d7: Add a Stats page with performance, hero and teammate dashboards
+- 3240213: Add opt-in 1-click installs from DeadlockForge, with confirmation.
+- 12e5de0: Add an opt-in feature flag for Mod Foundry (hidden by default)
+- 55be2ff: Namespace GameBanana Sound identities across persisted desktop state, installed files, deep links, and shared profile v3 imports.
+- 437e943: Detach reports, Lockdex ingestion, server requirements, website surfaces, statistics, and Discord announcements from the mirrored GameBanana catalog.
+- edf83d7: Add a live tab to Stats showing ranks and stats for everyone in your match
+- fd012ce: Add tools to reinstall broken mods and rebuild mod state
+- 8b9bcee: Migrate existing profiles to the new addon folder layout on first use
+- 1e1cadf: Show download progress and remaining content count in the server join dialog
+- 8b9bcee: Allow more than 99 enabled addons by spreading them across addon folders
+- edf83d7: Keep the live match board across restarts, show the matchmaking queue beside it, and cut the cost of following a running match
+
+### Patch Changes
+
+- cbab84a: Report failed download lookups per mod instead of aborting the whole batch update or profile import
+- c864567: Turn off the Background plugin when a theme is selected
+- 1d8e407: Process every selected archive when installing multi-file mods. Preserve selected variants and their exact file mappings when switching, re-enabling, and updating mods.
+
+  Report accurate file counts for multiple single-VPK downloads without an extra selection prompt, and cap direct variant downloads at 2 GiB.
+
+- 5aaf4f8: Install a Deadworks server's maps and addons before joining it
+- 29f1e21: Fix enabled mod counts and profile mod names
+- cbab84a: Fix direct GameBanana downloads, catalog recovery, and policy metadata.
+- ab1339d: Fix Flatpak startup crashes on Wayland compositors
+- 573b665: Fix buttons showing a spinner next to their icon while loading
+- db77591: Report Steam launch failures and confirm Deadlock starts after each request
+- 8b9bcee: Fix addon backups being modified while being validated, and reject mod IDs containing path separators
+- 0097615: Respect remembered NSFW show/hide choices only when enabled
+- 5beaed9: Recover from stale VPK records instead of failing the mod load order save
+- fc3f7b4: Show the active variant count next to a mod's file settings button
+- c864567: Fix themes turning off permanently when the Background plugin is enabled
+- 8b9bcee: Show mods whose addon files are missing as downloaded, not enabled
+- 1e1cadf: Fix server content progress showing "0.00 B" while unpacking maps and addons
+- 1d8e407: Apply the global NSFW hide preference to the mod library, hero skins, assignment choices, and direct mod-detail links.
+- 17aba1b: Fix Mod Foundry type drift by generating its IPC types from the Rust source
+- 12e5de0: Credit vpkmerge and ValveResourceFormat in Settings → About
+- 0097615: Fix hidden NSFW mods appearing on the dashboard
+- 1d8e407: Fix older saves overwriting recent mod installation and download state
+- 1872459: Show only selected VPKs in the mod page's installed files list.
+- 99b4b6b: Fix a security issue where a malicious mod archive could write files outside the extraction folder. Archives whose entries use absolute paths or `..` segments are now rejected instead of installed.
+- 9c43d25: Join the server you clicked instead of landing in the hideout
+- 123de66: Use the direct GameBanana catalog in the desktop while retaining the legacy API and mirror infrastructure for existing clients.
+- 9c43d25: Keep server passwords out of logs and launch-option injection
+- d91d030: Fix VPK state drift during deletes, batch updates, profile switches, and restore
+- d91d030: Preserve mod metadata during VPK replacement, clean up failed update extractions, and recognize uppercase VPK downloads. Reconcile profiles without overwriting concurrent changes, verify restored files on disk, and retry unavailable mod metadata. Keep inactive-profile cleanup from clearing active-profile progress and visibility.
+- edf83d7: Improve Stats dashboard and player card loading performance
+- 1f98b35: Show GameBanana preview images and likes on the Mods Store and Dashboard
+- fd4234f: Show Deadworks community servers with live ping and their custom maps
+- a83049b: Fix hero mod swaps from the mod store not applying
+- Updated dependencies [1f98b35]
+- Updated dependencies [cbab84a]
+- Updated dependencies [34cbd98]
+- Updated dependencies [55be2ff]
+- Updated dependencies [437e943]
+- Updated dependencies [cbab84a]
+- Updated dependencies [fd4234f]
+  - @deadlock-mods/shared@2.2.0
+  - @deadlock-mods/crosshair@0.2.5
+
 ## 1.1.0
 
 ### Minor Changes
@@ -402,6 +479,7 @@
 ### Minor Changes
 
 - 45d2f75: Major desktop UI features and enhancements
+
   - Add new bottom bar component for improved navigation
   - Implement filter mode for enhanced mod browsing experience
   - Add file drag-and-drop functionality for easier mod processing
@@ -416,6 +494,7 @@
   - Improved dialog handling for multi-file downloads
 
 - 45d2f75: Comprehensive internationalization support
+
   - Add multiple new language support with locale files
   - Add confirmation messages for mod deletion and disabling across all languages
   - Support for Arabic, German, French, Polish, Russian, Turkish, and Swiss German
@@ -434,12 +513,14 @@
 ### Patch Changes
 
 - 45d2f75: Dependencies and maintenance updates
+
   - Update dependencies in Cargo.lock and Cargo.toml for Rust components
   - Update dependencies and scripts across multiple packages
   - Improve code formatting and consistency across files
   - General maintenance and dependency updates for better security and performance
 
 - 45d2f75: Desktop refactoring and performance optimizations
+
   - Optimize useDeepLink and useInstall hooks for better performance
   - Replace static fallback SVG with dynamic generation
   - Remove unused DownloadProgress component and update related UI elements
@@ -458,27 +539,32 @@
 - 7f379a5: ## 🎉 Major Features
 
   ### Multi-File Download System
+
   - **Multi-file download support**: Mods can now have multiple download files per version
   - **File selection dialogs**: Choose which files to install when mods have multiple archives or VPK files
   - **Streamlined download handling**: Improved UI and backend processing for better user experience
 
   ### Content Management & Safety
+
   - **NSFW content detection and filtering**: Automatic detection and filtering of NSFW content with user controls
   - **Gameinfo.gi management**: Advanced gameinfo.gi section replacement and management features
   - **Enhanced mod descriptions**: Rich text support using Interweave for better mod descriptions
 
   ### New Logging System
+
   - **Dedicated logging package**: New `@deadlock-mods/logging` package for better error tracking and debugging across all applications
 
   ## 🎨 UI/UX Improvements
 
   ### Visual Updates
+
   - **New logo design**: Updated logo across desktop and web applications with modern design
   - **Enhanced settings layout**: Improved settings page styling and organization
   - **Launch button animation**: Added smooth animations to launch buttons
   - **Improved button styling**: Better visual feedback and animation handling throughout the app
 
   ### Enhanced Navigation & Performance
+
   - **Scroll position management**: Maintains scroll position in mod cards and mods page for better navigation
   - **Improved search sorting**: Enhanced search results relevance and sorting capabilities
   - **Better mod card functionality**: Enhanced mod card components with improved interactions
@@ -486,14 +572,17 @@
   ## 🔧 Technical Improvements
 
   ### API Enhancements
+
   - **Version handling in health checks**: Better API version management and health check responses
   - **Enhanced backend structure**: Improved API architecture to support new multi-file features
 
   ### Web Application Updates
+
   - **Fixed image sources**: Corrected image references in web HeroSection component
   - **Updated documentation**: Improved README with better development instructions and screenshots
 
   ## 🛠️ Development & Maintenance
+
   - **Package.json updates**: Refined build scripts and development workflow
   - **Documentation updates**: Updated README with new screenshots and development instructions
   - **Code quality improvements**: Various refactoring and optimization across the codebase
