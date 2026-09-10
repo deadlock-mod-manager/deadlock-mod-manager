@@ -14,6 +14,7 @@ pub mod forge;
 pub mod foundry;
 pub mod game;
 mod game_process;
+pub mod gamebanana_catalog;
 pub mod gameinfo;
 pub mod ingest;
 pub mod live_match;

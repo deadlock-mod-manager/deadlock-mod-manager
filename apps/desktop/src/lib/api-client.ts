@@ -23,6 +23,12 @@ import { ensureValidToken } from "./auth/token";
 import { fetch } from "./fetch";
 import { HttpError } from "./http-error";
 import logger from "./logger";
+import {
+  getGameBananaCatalogDownloads,
+  getGameBananaCatalogMod,
+  getGameBananaCatalogMods,
+  isGameBananaDirectClientEnabled,
+} from "./gamebanana-catalog";
 
 type ModDownloadDto = z.infer<typeof ModDownloadDtoSchema>;
 
@@ -72,20 +78,32 @@ export const getAnnouncements = async () => {
 };
 
 export const getMods = async () => {
+  if (isGameBananaDirectClientEnabled()) {
+    return getGameBananaCatalogMods();
+  }
   return await apiRequest<ModDto[]>("/api/v2/mods");
 }; // TODO: pagination
 
 export const getMod = async (remoteId: string) => {
+  if (isGameBananaDirectClientEnabled()) {
+    return getGameBananaCatalogMod(remoteId);
+  }
   return await apiRequest<ModDto>(`/api/v2/mods/${remoteId}`);
 };
 
 export const getModDownload = async (remoteId: string) => {
+  if (isGameBananaDirectClientEnabled()) {
+    return (await getGameBananaCatalogDownloads(remoteId)).downloads;
+  }
   return await apiRequest<ModDownloadDto[]>(
     `/api/v2/mods/${remoteId}/download`,
   );
 };
 
 export const getModDownloads = async (remoteId: string) => {
+  if (isGameBananaDirectClientEnabled()) {
+    return getGameBananaCatalogDownloads(remoteId);
+  }
   return await apiRequest<{
     downloads: ModDownloadDto[];
     count: number;
