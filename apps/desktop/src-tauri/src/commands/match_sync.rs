@@ -5,6 +5,15 @@ use crate::match_sync::{self, LocalMatch, MatchSyncStatusDto};
 
 #[tauri::command]
 pub async fn get_match_sync_status(app_handle: AppHandle) -> Result<MatchSyncStatusDto, Error> {
+  if crate::runtime_environment::is_e2e_active() {
+    return Ok(MatchSyncStatusDto {
+      enabled: false,
+      consent_accepted: false,
+      full_sync_running: false,
+      session_fetches: 0,
+      accounts: Vec::new(),
+    });
+  }
   Ok(match_sync::status(&app_handle)?)
 }
 
@@ -16,17 +25,26 @@ pub async fn get_local_match_history(
   app_handle: AppHandle,
   account_id: u32,
 ) -> Result<Vec<LocalMatch>, Error> {
+  if crate::runtime_environment::is_e2e_active() {
+    return Ok(Vec::new());
+  }
   Ok(match_sync::recent_local_matches(&app_handle, account_id).await)
 }
 
 #[tauri::command]
 pub async fn set_match_sync_consent(app_handle: AppHandle, accepted: bool) -> Result<(), Error> {
+  if crate::runtime_environment::is_e2e_active() {
+    return Ok(());
+  }
   match_sync::set_consent(&app_handle, accepted)?;
   Ok(())
 }
 
 #[tauri::command]
 pub async fn set_match_sync_enabled(app_handle: AppHandle, enabled: bool) -> Result<(), Error> {
+  if crate::runtime_environment::is_e2e_active() {
+    return Ok(());
+  }
   match_sync::set_enabled(&app_handle, enabled)?;
   // Enabling starts (and disabling stops) the game-exit detect-only watcher.
   game_presence::sync_monitoring_watcher(&app_handle);
@@ -35,12 +53,18 @@ pub async fn set_match_sync_enabled(app_handle: AppHandle, enabled: bool) -> Res
 
 #[tauri::command]
 pub async fn start_full_match_sync(app_handle: AppHandle) -> Result<(), Error> {
+  if crate::runtime_environment::is_e2e_active() {
+    return Ok(());
+  }
   match_sync::spawn_full_sync(app_handle)?;
   Ok(())
 }
 
 #[tauri::command]
 pub async fn cancel_full_match_sync() -> Result<(), Error> {
+  if crate::runtime_environment::is_e2e_active() {
+    return Ok(());
+  }
   match_sync::cancel_full_sync();
   Ok(())
 }
@@ -49,6 +73,9 @@ pub async fn cancel_full_match_sync() -> Result<(), Error> {
 // game-exit watcher iff the user previously opted in. A no-op otherwise.
 #[tauri::command]
 pub async fn resume_match_sync_monitoring(app_handle: AppHandle) -> Result<(), Error> {
+  if crate::runtime_environment::is_e2e_active() {
+    return Ok(());
+  }
   // Startup-only cleanup of persisted state for accounts removed from Steam entirely.
   match_sync::prune_forgotten_accounts(&app_handle);
   match_sync::start_background_worker(app_handle.clone());

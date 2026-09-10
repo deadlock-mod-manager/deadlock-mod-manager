@@ -9,10 +9,12 @@ import {
 import { fetch } from "../fetch";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { AUTH_URL } from "../config";
+import { runtimeServiceOrigin } from "../runtime-bootstrap";
 import { HttpError } from "../http-error";
 
 const CLIENT_ID = "deadlockmods-desktop";
-const REDIRECT_URI = `${AUTH_URL}/auth/desktop-callback`;
+const authOrigin = (): string => runtimeServiceOrigin("auth", AUTH_URL);
+const redirectUri = (): string => `${authOrigin()}/auth/desktop-callback`;
 
 export { parseOIDCState, type OIDCState, type TokenResponse };
 
@@ -27,7 +29,7 @@ export async function initiateOIDCLogin(): Promise<void> {
 
   const params = new URLSearchParams({
     client_id: CLIENT_ID,
-    redirect_uri: REDIRECT_URI,
+    redirect_uri: redirectUri(),
     response_type: "code",
     scope: "openid profile email offline_access",
     state: encodedState,
@@ -35,7 +37,7 @@ export async function initiateOIDCLogin(): Promise<void> {
     code_challenge_method: "S256",
   });
 
-  const authUrl = `${AUTH_URL}/api/auth/oauth2/authorize?${params}`;
+  const authUrl = `${authOrigin()}/api/auth/oauth2/authorize?${params}`;
   await openUrl(authUrl);
 }
 
@@ -48,11 +50,11 @@ export async function exchangeCodeForTokens(
     throw new Error("Code verifier not found. Please initiate login again.");
   }
 
-  const tokenUrl = `${AUTH_URL}/api/auth/oauth2/token`;
+  const tokenUrl = `${authOrigin()}/api/auth/oauth2/token`;
   const body = new URLSearchParams({
     grant_type: "authorization_code",
     code,
-    redirect_uri: REDIRECT_URI,
+    redirect_uri: redirectUri(),
     client_id: CLIENT_ID,
     code_verifier: codeVerifier,
   }).toString();
@@ -88,7 +90,7 @@ export class TokenRefreshError extends HttpError {
 export async function refreshTokens(
   refreshToken: string,
 ): Promise<TokenResponse> {
-  const response = await fetch(`${AUTH_URL}/api/auth/oauth2/token`, {
+  const response = await fetch(`${authOrigin()}/api/auth/oauth2/token`, {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",

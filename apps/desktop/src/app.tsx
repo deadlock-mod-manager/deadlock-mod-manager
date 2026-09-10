@@ -2,10 +2,8 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { TooltipProvider } from "@deadlock-mods/ui/components/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
-import { load } from "@tauri-apps/plugin-store";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import usePromise from "react-promise-suspense";
 import { Outlet } from "react-router";
 import { FontInstallDialog } from "./components/downloads/font-install-dialog";
 import { ProgressProvider } from "./components/downloads/progress-indicator";
@@ -34,14 +32,11 @@ import { useHeroDetection } from "./hooks/use-hero-detection";
 import { useGameBananaCatalogSync } from "./hooks/use-gamebanana-catalog-sync";
 import { useModOrderMigration } from "./hooks/use-mod-order-migration";
 import { Layout } from "./layout";
-import { initializeApiUrl } from "./lib/tauri-commands";
 import { queryClient } from "./lib/client";
-import { STORE_NAME } from "./lib/constants";
 import { downloadManager } from "./lib/download/manager";
 import logger from "./lib/logger";
-import { syncProxyConfigToBackend } from "./lib/proxy";
-import { usePersistedStore } from "./lib/store";
-import { markStorageReady, storageReady } from "./lib/store/storage";
+import type { RuntimeBootstrap } from "./lib/runtime-bootstrap";
+import type { StorageReadyStatus } from "./lib/store/storage";
 import type { FontInfo } from "./types/mods";
 
 interface PendingFontInstall {
@@ -49,7 +44,13 @@ interface PendingFontInstall {
   fonts: FontInfo[];
 }
 
-const App = () => {
+type AppProps = {
+  runtime: RuntimeBootstrap;
+  storage: StorageReadyStatus;
+};
+
+const App = ({ runtime, storage }: AppProps) => {
+  const integrations = runtime.integrations;
   useDeepLink();
   useLanguageListener();
   useModOrderMigration();
@@ -57,8 +58,9 @@ const App = () => {
   useCrosshairConfigReconciliation();
   useHeroDetection();
   useGameBananaCatalogSync();
-  useIngestToolInit();
+  useIngestToolInit(integrations?.ingestion !== "disabled");
   const { t } = useTranslation();
+  const hasReportedStorageFailure = useRef(false);
 
   const [pendingFontInstalls, setPendingFontInstalls] = useState<
     PendingFontInstall[]
@@ -72,38 +74,18 @@ const App = () => {
     downloadProgress,
     handleUpdate,
     handleDismiss,
-  } = useAutoUpdate();
+  } = useAutoUpdate(integrations?.updater !== "disabled");
 
-  const hydrateStore = async () => {
-    await load(STORE_NAME, { autoSave: true, defaults: {} });
-    try {
-      await usePersistedStore.persist.rehydrate();
-    } finally {
-      markStorageReady();
-    }
-    const status = await storageReady();
-    if (!status.ok) {
+  useEffect(() => {
+    if (!storage.ok && !hasReportedStorageFailure.current) {
+      hasReportedStorageFailure.current = true;
       toast.error(t("persist.loadFailed"), {
         description: t("persist.loadFailedDescription", {
-          reason: status.reason ?? "unknown",
+          reason: storage.reason ?? "unknown",
         }),
       });
     }
-    await initializeApiUrl();
-    await syncProxyConfigToBackend();
-    void invoke("refresh_policy_manifest").catch((error) => {
-      logger
-        .withError(error)
-        .warn("Policy refresh failed; keeping the last cached policy");
-    });
-    await downloadManager.init();
-
-    logger.debug(
-      "Store rehydrated, API URL initialized, and download manager ready",
-    );
-  };
-
-  usePromise(hydrateStore, []);
+  }, [storage, t]);
 
   const dequeuePendingFontInstall = useCallback(() => {
     setPendingFontInstalls((currentQueue) => currentQueue.slice(1));
@@ -157,9 +139,15 @@ const App = () => {
                       </FoundryProvider>
                     </ThemeOverridesProvider>
                     <GlobalPluginRenderer />
-                    <GamePresenceRenderer />
-                    <MatchSyncRenderer />
-                    <LiveMatchRenderer />
+                    {integrations?.presence !== "disabled" && (
+                      <GamePresenceRenderer />
+                    )}
+                    {integrations?.matchSync !== "disabled" && (
+                      <>
+                        <MatchSyncRenderer />
+                        <LiveMatchRenderer />
+                      </>
+                    )}
                     <ForgeInstallRenderer />
                     <UpdateDialog
                       downloadProgress={downloadProgress}

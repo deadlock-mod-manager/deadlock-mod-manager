@@ -26,16 +26,33 @@ const UPDATE_FIELDS: &[&str] = &["Url().sProfileUrl()", "mdate", "Files().aFiles
 #[derive(Clone)]
 pub struct GameBananaClient {
   transport: GameBananaTransport,
+  api_base: String,
 }
 
 impl GameBananaClient {
   pub fn new() -> Result<Self, Error> {
-    Self::with_config(TransportConfig::default())
+    let api_base = crate::runtime_environment::current()
+      .e2e()
+      .map(|configuration| {
+        format!(
+          "{}/apiv11/",
+          configuration
+            .endpoint(crate::runtime_environment::ServiceName::Gamebanana)
+            .trim_end_matches('/')
+        )
+      })
+      .unwrap_or_else(|| API_BASE.to_string());
+    Self::with_base_and_config(api_base, TransportConfig::default())
   }
 
   pub fn with_config(config: TransportConfig) -> Result<Self, Error> {
+    Self::with_base_and_config(API_BASE.to_string(), config)
+  }
+
+  fn with_base_and_config(api_base: String, config: TransportConfig) -> Result<Self, Error> {
     Ok(Self {
       transport: GameBananaTransport::new(config)?,
+      api_base,
     })
   }
 
@@ -46,7 +63,7 @@ impl GameBananaClient {
     latest_modified: bool,
     cancel: &CancellationToken,
   ) -> Result<IndexPage, Error> {
-    let url = index_url(submission_type, page, latest_modified)?;
+    let url = index_url(&self.api_base, submission_type, page, latest_modified)?;
 
     self.transport.get_json("index", url, cancel).await
   }
@@ -56,7 +73,7 @@ impl GameBananaClient {
     submission: &SubmissionRef,
     cancel: &CancellationToken,
   ) -> Result<Profile, Error> {
-    let url = submission_url(submission, "ProfilePage")?;
+    let url = submission_url(&self.api_base, submission, "ProfilePage")?;
     self.transport.get_json("profile", url, cancel).await
   }
 
@@ -65,12 +82,12 @@ impl GameBananaClient {
     submission: &SubmissionRef,
     cancel: &CancellationToken,
   ) -> Result<DownloadPage, Error> {
-    let url = submission_url(submission, "DownloadPage")?;
+    let url = submission_url(&self.api_base, submission, "DownloadPage")?;
     self.transport.get_json("download page", url, cancel).await
   }
 
   pub async fn fileservers(&self, cancel: &CancellationToken) -> Result<FileserverPage, Error> {
-    let url = reqwest::Url::parse(&format!("{API_BASE}Util/Fileservers?_nPage=1"))
+    let url = reqwest::Url::parse(&format!("{}Util/Fileservers?_nPage=1", self.api_base))
       .map_err(|error| Error::ProviderInvalidResponse(error.to_string()))?;
     self.transport.get_json("fileservers", url, cancel).await
   }
@@ -96,7 +113,7 @@ impl GameBananaClient {
       ));
     }
 
-    let mut url = reqwest::Url::parse(&format!("{API_BASE}Core/Item/Data"))
+    let mut url = reqwest::Url::parse(&format!("{}Core/Item/Data", self.api_base))
       .map_err(|error| Error::ProviderInvalidResponse(error.to_string()))?;
     {
       let mut query = url.query_pairs_mut();
@@ -149,7 +166,7 @@ impl GameBananaClient {
         "bulk update requires up to 50 GameBanana submissions of one type".to_string(),
       ));
     }
-    let mut url = reqwest::Url::parse(&format!("{API_BASE}Core/Item/Data"))
+    let mut url = reqwest::Url::parse(&format!("{}Core/Item/Data", self.api_base))
       .map_err(|error| Error::ProviderInvalidResponse(error.to_string()))?;
     {
       let mut query = url.query_pairs_mut();
@@ -182,6 +199,7 @@ impl GameBananaClient {
 }
 
 fn index_url(
+  api_base: &str,
   submission_type: SubmissionType,
   page: u32,
   latest_modified: bool,
@@ -193,7 +211,7 @@ fn index_url(
   }
 
   let model = model_name(submission_type);
-  let mut url = reqwest::Url::parse(&format!("{API_BASE}{model}/Index"))
+  let mut url = reqwest::Url::parse(&format!("{api_base}{model}/Index"))
     .map_err(|error| Error::ProviderInvalidResponse(error.to_string()))?;
   {
     let mut query = url.query_pairs_mut();
@@ -209,7 +227,11 @@ fn index_url(
   Ok(url)
 }
 
-fn submission_url(submission: &SubmissionRef, operation: &str) -> Result<reqwest::Url, Error> {
+fn submission_url(
+  api_base: &str,
+  submission: &SubmissionRef,
+  operation: &str,
+) -> Result<reqwest::Url, Error> {
   if submission.provider != SubmissionProvider::Gamebanana
     || submission
       .submission_id
@@ -224,7 +246,7 @@ fn submission_url(submission: &SubmissionRef, operation: &str) -> Result<reqwest
   }
 
   reqwest::Url::parse(&format!(
-    "{API_BASE}{}/{}/{operation}",
+    "{api_base}{}/{}/{operation}",
     model_name(submission.submission_type),
     submission.submission_id
   ))
@@ -240,7 +262,10 @@ fn model_name(submission_type: SubmissionType) -> &'static str {
 
 #[cfg(test)]
 mod tests {
-  use super::{MAX_BULK_ITEMS, MAX_BULK_URL_BYTES, MAX_INDEX_PAGE, index_url, model_name, submission_url};
+  use super::{
+    API_BASE, MAX_BULK_ITEMS, MAX_BULK_URL_BYTES, MAX_INDEX_PAGE, index_url, model_name,
+    submission_url,
+  };
   use crate::providers::{SubmissionRef, SubmissionType};
 
   #[test]
@@ -248,19 +273,21 @@ mod tests {
     let sound = SubmissionRef::parse_slug("snd-42").unwrap();
     assert_eq!(model_name(SubmissionType::Sound), "Sound");
     assert_eq!(
-      submission_url(&sound, "ProfilePage").unwrap().as_str(),
+      submission_url(API_BASE, &sound, "ProfilePage")
+        .unwrap()
+        .as_str(),
       "https://gamebanana.com/apiv11/Sound/42/ProfilePage"
     );
 
     let local = SubmissionRef::parse_slug("local-550e8400-e29b-41d4-a716-446655440000").unwrap();
-    assert!(submission_url(&local, "ProfilePage").is_err());
+    assert!(submission_url(API_BASE, &local, "ProfilePage").is_err());
     assert_eq!(MAX_INDEX_PAGE, 250);
     assert_eq!(MAX_BULK_ITEMS, 50);
     assert_eq!(MAX_BULK_URL_BYTES, 7_000);
   }
   #[test]
   fn index_query_preserves_wire_format_and_pagination() {
-    let url = index_url(SubmissionType::Sound, 3, true).unwrap();
+    let url = index_url(API_BASE, SubmissionType::Sound, 3, true).unwrap();
     assert_eq!(
       url.as_str(),
       "https://gamebanana.com/apiv11/Sound/Index?_nPerpage=50&_aFilters%5BGeneric_Game%5D=20948&_nPage=3&_sSort=Generic_LatestModified"
@@ -268,13 +295,13 @@ mod tests {
     let request = reqwest::Client::new().get(url.clone()).build().unwrap();
     assert_eq!(request.url(), &url);
     assert!(
-      !index_url(SubmissionType::Mod, 1, false)
+      !index_url(API_BASE, SubmissionType::Mod, 1, false)
         .unwrap()
         .query()
         .unwrap()
         .contains("_sSort")
     );
-    assert!(index_url(SubmissionType::Mod, 0, false).is_err());
-    assert!(index_url(SubmissionType::Mod, MAX_INDEX_PAGE + 1, false).is_err());
+    assert!(index_url(API_BASE, SubmissionType::Mod, 0, false).is_err());
+    assert!(index_url(API_BASE, SubmissionType::Mod, MAX_INDEX_PAGE + 1, false).is_err());
   }
 }
