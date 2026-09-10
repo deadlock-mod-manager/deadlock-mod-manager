@@ -5,6 +5,10 @@ import type { CatalogModDto } from "@/types/generated/CatalogModDto";
 import type { CatalogPageDto } from "@/types/generated/CatalogPageDto";
 import type { CatalogQuery } from "@/types/generated/CatalogQuery";
 import type { CatalogSyncStatusDto } from "@/types/generated/CatalogSyncStatusDto";
+import type { CatalogUpdatesDto } from "@/types/generated/CatalogUpdatesDto";
+import type { GameBananaFileserverDto } from "@/types/generated/GameBananaFileserverDto";
+import type { InstalledSubmissionDto } from "@/types/generated/InstalledSubmissionDto";
+import type { FileserverDto } from "@deadlock-mods/shared";
 import type { ModDownloadItem } from "@/types/mods";
 
 export type DirectCatalogPage = {
@@ -75,16 +79,33 @@ export const getGameBananaCatalogDownloads = async (
     { remoteId },
   );
   return {
-    downloads: result.downloads.map((download) => ({
-      url: `gamebanana-file://${encodeURIComponent(remoteId)}/${download.fileId}`,
-      size: download.size,
-      name: download.name,
-      description: download.description,
-      createdAt: secondsToNullableDate(download.createdAt),
-      updatedAt: secondsToNullableDate(download.updatedAt),
-      md5Checksum: download.md5Checksum,
-    })),
+    downloads: result.downloads.map((download) =>
+      catalogDownloadToModDownload(remoteId, download),
+    ),
     count: result.count,
+  };
+};
+
+const startupUpdateCheckJitter = new Promise<void>((resolve) => {
+  globalThis.setTimeout(resolve, Math.floor(Math.random() * 10_000));
+});
+
+export const checkDirectGameBananaUpdates = async (
+  submissions: InstalledSubmissionDto[],
+) => {
+  await startupUpdateCheckJitter;
+  const result = await invoke<CatalogUpdatesDto>(
+    "check_gamebanana_catalog_updates",
+    { submissions },
+  );
+  return {
+    updates: result.updates.map((update) => ({
+      mod: catalogModToModDto(update.mod),
+      downloads: update.downloads.map((download) =>
+        catalogDownloadToModDownload(update.mod.remoteId, download),
+      ),
+    })),
+    unknown: result.unknown,
   };
 };
 
@@ -96,6 +117,29 @@ export const synchronizeGameBananaCatalog = () =>
     forceRefresh: false,
     forceReconcile: false,
   });
+
+export const getDirectGameBananaFileservers = async (): Promise<
+  FileserverDto[]
+> => {
+  const servers = await invoke<GameBananaFileserverDto[]>(
+    "get_gamebanana_fileservers",
+    { forceRefresh: false },
+  );
+  return servers.map((server) => ({
+    id: server.id,
+    provider: server.provider,
+    domain: server.domain,
+    name: server.name,
+    state:
+      server.state === "up"
+        ? "up"
+        : server.state === "terminated"
+          ? "terminated"
+          : "down",
+    urlTemplate: server.urlTemplate,
+    stats: server.stats ?? undefined,
+  }));
+};
 
 const catalogModToModDto = (mod: CatalogModDto): ModDto => ({
   id: mod.id,
@@ -138,6 +182,19 @@ const catalogModToModDto = (mod: CatalogModDto): ModDto => ({
   overrides: null,
   createdAt: secondsToNullableDate(mod.createdAt),
   updatedAt: secondsToNullableDate(mod.updatedAt),
+});
+
+const catalogDownloadToModDownload = (
+  remoteId: string,
+  download: CatalogDownloadsDto["downloads"][number],
+): ModDownloadItem => ({
+  url: `gamebanana-file://${encodeURIComponent(remoteId)}/${download.fileId}`,
+  size: download.size,
+  name: download.name,
+  description: download.description,
+  createdAt: secondsToNullableDate(download.createdAt),
+  updatedAt: secondsToNullableDate(download.updatedAt),
+  md5Checksum: download.md5Checksum,
 });
 
 const secondsToDate = (value: number) => new Date(value * 1_000);
