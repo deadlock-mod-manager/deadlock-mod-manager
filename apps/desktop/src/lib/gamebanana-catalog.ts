@@ -19,14 +19,6 @@ export type DirectCatalogPage = {
   stale: boolean;
 };
 
-let directClientEnabled = false;
-
-export const setGameBananaDirectClientEnabled = (enabled: boolean) => {
-  directClientEnabled = enabled;
-};
-
-export const isGameBananaDirectClientEnabled = () => directClientEnabled;
-
 export const queryGameBananaCatalog = async (
   query: CatalogQuery,
 ): Promise<DirectCatalogPage> => {
