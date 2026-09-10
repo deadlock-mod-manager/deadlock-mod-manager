@@ -1,5 +1,6 @@
 use crate::errors::Error;
 use futures::StreamExt;
+use md5::{Digest, Md5};
 use reqwest::header::{HeaderMap, RANGE};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
@@ -7,13 +8,37 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
 use tokio::fs::{File, OpenOptions};
-use tokio::io::AsyncWriteExt;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::Notify;
 use tokio_util::sync::CancellationToken;
 
 #[allow(dead_code)]
 const BUFFER_SIZE: usize = 64 * 1024; // 64KB buffer for future use
 const PROGRESS_THROTTLE_MS: u128 = 500; // Emit progress every 500ms
+const MAX_REDIRECTS: usize = 5;
+
+pub fn validate_download_url(url: &str) -> Result<(), Error> {
+  let parsed = reqwest::Url::parse(url)
+    .map_err(|_| Error::InvalidInput("Invalid download URL".to_string()))?;
+  if !is_allowed_download_url(&parsed) {
+    return Err(Error::InvalidInput(
+      "Download URL must use HTTPS on a trusted host".to_string(),
+    ));
+  }
+  Ok(())
+}
+
+fn is_allowed_download_url(url: &reqwest::Url) -> bool {
+  if url.scheme() != "https" || !url.username().is_empty() || url.password().is_some() {
+    return false;
+  }
+  url.host_str().is_some_and(|host| {
+    host == "gamebanana.com"
+      || host.ends_with(".gamebanana.com")
+      || host == "deadlockmods.app"
+      || host.ends_with(".deadlockmods.app")
+  })
+}
 
 #[derive(Clone, Debug)]
 pub struct DownloadProgress {
@@ -160,6 +185,8 @@ where
     cancel_token,
     pause,
     max_bytes,
+    None,
+    false,
   )
   .await
 }
@@ -174,12 +201,14 @@ pub async fn download_file_resumable<F>(
   cancel_token: CancellationToken,
   pause: PauseHandle,
   max_bytes: Option<u64>,
+  expected_md5: Option<&str>,
+  trusted_hosts_only: bool,
 ) -> Result<(), Error>
 where
   F: Fn(DownloadProgress) + Send + 'static,
 {
   log::info!(
-    "Starting resumable download from {url} to {target_path:?} (expected_size={expected_size}, max_bytes={max_bytes:?})"
+    "Starting resumable download to {target_path:?} (expected_size={expected_size}, max_bytes={max_bytes:?})"
   );
 
   let partial_path = partial_download_path(target_path);
@@ -189,9 +218,27 @@ where
     tokio::fs::create_dir_all(parent).await.map_err(Error::Io)?;
   }
 
+  if trusted_hosts_only {
+    validate_download_url(url)?;
+  }
   let client = crate::proxy::build_http_client(|b| {
-    b.connect_timeout(std::time::Duration::from_secs(30))
-      .read_timeout(std::time::Duration::from_secs(60))
+    let builder = b
+      .connect_timeout(std::time::Duration::from_secs(30))
+      .read_timeout(std::time::Duration::from_secs(60));
+    if trusted_hosts_only {
+      builder.redirect(reqwest::redirect::Policy::custom(|attempt| {
+        if attempt.previous().len() >= MAX_REDIRECTS {
+          return attempt.error("download redirect limit exceeded");
+        }
+        if is_allowed_download_url(attempt.url()) {
+          attempt.follow()
+        } else {
+          attempt.error("download redirect left the trusted host allowlist")
+        }
+      }))
+    } else {
+      builder.redirect(reqwest::redirect::Policy::none())
+    }
   })?;
 
   let mut chunk_retries: u32 = 0;
@@ -226,7 +273,7 @@ where
     let response = request
       .send()
       .await
-      .map_err(|e| Error::Network(format!("Failed to send request: {e}")))?;
+      .map_err(|e| Error::Network(format!("Failed to send request: {}", e.without_url())))?;
 
     let status = response.status();
 
@@ -406,14 +453,9 @@ where
 
     drop(file);
 
-    if tokio::fs::metadata(&partial_path)
-      .await
-      .map(|m| m.len())
-      .unwrap_or(0)
-      == 0
-    {
+    if let Err(error) = verify_download(&partial_path, expected_size, expected_md5).await {
       remove_partial_pair(&partial_path, &meta_path).await;
-      return Err(Error::Network("Downloaded empty file".to_string()));
+      return Err(error);
     }
 
     if let Err(e) = tokio::fs::rename(&partial_path, target_path).await {
@@ -426,6 +468,45 @@ where
     log::info!("Download completed: {target_path:?}");
     return Ok(());
   }
+}
+
+async fn md5_file(path: &Path) -> Result<String, Error> {
+  let mut file = File::open(path).await.map_err(Error::Io)?;
+  let mut digest = Md5::new();
+  let mut buffer = vec![0_u8; 64 * 1024];
+  loop {
+    let read = file.read(&mut buffer).await.map_err(Error::Io)?;
+    if read == 0 {
+      break;
+    }
+    digest.update(&buffer[..read]);
+  }
+  Ok(hex::encode(digest.finalize()))
+}
+
+async fn verify_download(
+  path: &Path,
+  expected_size: u64,
+  expected_md5: Option<&str>,
+) -> Result<(), Error> {
+  let final_size = tokio::fs::metadata(path).await.map_err(Error::Io)?.len();
+  if final_size == 0 {
+    return Err(Error::Network("Downloaded empty file".to_string()));
+  }
+  if expected_size > 0 && final_size != expected_size {
+    return Err(Error::DownloadFailed(format!(
+      "Downloaded file size mismatch: expected {expected_size}, received {final_size}"
+    )));
+  }
+  if let Some(expected_md5) = expected_md5 {
+    let actual_md5 = md5_file(path).await?;
+    if !actual_md5.eq_ignore_ascii_case(expected_md5) {
+      return Err(Error::DownloadFailed(
+        "Downloaded file checksum did not match GameBanana metadata".to_string(),
+      ));
+    }
+  }
+  Ok(())
 }
 
 #[cfg(test)]
@@ -442,25 +523,33 @@ mod tests {
     assert_eq!(parse_content_range_total(&headers), Some(9_360_840));
   }
 
+  #[test]
+  fn download_allowlist_rejects_scheme_host_and_credential_escapes() {
+    assert!(validate_download_url("https://gamebanana.com/dl/1").is_ok());
+    assert!(validate_download_url("https://files.gamebanana.com/file.zip").is_ok());
+    assert!(validate_download_url("http://gamebanana.com/dl/1").is_err());
+    assert!(validate_download_url("https://gamebanana.com.evil.test/dl/1").is_err());
+    assert!(validate_download_url("https://user@gamebanana.com/dl/1").is_err());
+  }
+
   #[tokio::test]
-  async fn test_download_file() {
+  async fn verifies_size_and_md5_before_finalizing() {
     use tempfile::tempdir;
 
     let dir = tempdir().unwrap();
     let file_path = dir.path().join("test.txt");
-    let cancel_token = CancellationToken::new();
+    tokio::fs::write(&file_path, b"hello").await.unwrap();
 
-    let result = download_file(
-      "https://httpbin.org/bytes/1024",
-      &file_path,
-      |progress| {
-        println!("Downloaded: {} bytes", progress.downloaded);
-      },
-      cancel_token,
-    )
-    .await;
-
-    assert!(result.is_ok());
-    assert!(file_path.exists());
+    assert!(
+      verify_download(&file_path, 5, Some("5d41402abc4b2a76b9719d911017c592"))
+        .await
+        .is_ok()
+    );
+    assert!(verify_download(&file_path, 4, None).await.is_err());
+    assert!(
+      verify_download(&file_path, 5, Some("00000000000000000000000000000000"))
+        .await
+        .is_err()
+    );
   }
 }
