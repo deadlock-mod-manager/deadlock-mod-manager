@@ -12,20 +12,95 @@ export type FixtureRequest = {
   url: string;
   headers: Record<string, string | string[]>;
   bodyBytes: number;
+  responseStatus?: number;
+  responseBytes?: number;
 };
 
-export type FixtureRoute = {
-  method: string;
-  path: string;
+export type FixtureResponse = {
   status: number;
   headers?: Record<string, string>;
-  body: string;
+  body: string | Buffer;
+  range?: boolean;
+  chunkBytes?: number;
+  chunkDelayMs?: number;
+  disconnectAfterBytes?: number;
+};
+
+export type FixtureRoute = FixtureResponse & {
+  method: string;
+  path: string;
+  sequence?: readonly FixtureResponse[];
 };
 
 export type FixtureServer = {
   origin: string;
   unmatchedRequests: () => readonly FixtureRequest[];
+  requests: () => readonly FixtureRequest[];
   close: (artifactsDirectory?: string) => Promise<void>;
+};
+
+const sendFixture = async (
+  request: IncomingMessage,
+  response: ServerResponse,
+  fixture: FixtureResponse,
+  record: FixtureRequest,
+): Promise<void> => {
+  const body = Buffer.isBuffer(fixture.body)
+    ? fixture.body
+    : Buffer.from(fixture.body);
+  let offset = 0;
+  let status = fixture.status;
+  const headers = {
+    "content-type": Buffer.isBuffer(fixture.body)
+      ? "application/octet-stream"
+      : "application/json",
+    ...fixture.headers,
+  };
+  if (fixture.range && request.headers.range) {
+    const match = /^bytes=(\d+)-$/.exec(request.headers.range);
+    offset = match ? Number(match[1]) : body.length;
+    if (!Number.isSafeInteger(offset) || offset >= body.length) {
+      record.responseStatus = 416;
+      record.responseBytes = 0;
+      response.writeHead(416, { "content-range": `bytes */${body.length}` });
+      response.end();
+      return;
+    }
+    status = 206;
+    response.setHeader(
+      "content-range",
+      `bytes ${offset}-${body.length - 1}/${body.length}`,
+    );
+  }
+  record.responseStatus = status;
+  record.responseBytes = 0;
+  response.writeHead(status, {
+    "content-length": String(body.length - offset),
+    ...headers,
+  });
+  const limit =
+    fixture.disconnectAfterBytes === undefined
+      ? body.length
+      : Math.min(body.length, offset + fixture.disconnectAfterBytes);
+  const chunkBytes = fixture.chunkBytes ?? (body.length || 1);
+  while (offset < limit && !response.destroyed) {
+    const chunk = body.subarray(offset, Math.min(offset + chunkBytes, limit));
+    response.write(chunk);
+    record.responseBytes += chunk.length;
+    offset += chunk.length;
+    if (fixture.chunkDelayMs)
+      await new Promise<void>((resolve) => {
+        const done = () => {
+          clearTimeout(timer);
+          response.off("close", done);
+          resolve();
+        };
+        const timer = setTimeout(done, fixture.chunkDelayMs);
+        response.once("close", done);
+      });
+  }
+  if (fixture.disconnectAfterBytes !== undefined) response.destroy();
+  else response.end();
 };
 
 const isSensitiveHeader = (name: string): boolean =>
@@ -73,6 +148,7 @@ export const startFixtureServer = async (
 ): Promise<FixtureServer> => {
   const journal: FixtureRequest[] = [];
   const unmatched: FixtureRequest[] = [];
+  const occurrences = new Map<FixtureRoute, number>();
   const server = createServer(async (request, response) => {
     let bodyBytes = 0;
     for await (const chunk of request) {
@@ -118,7 +194,11 @@ export const startFixtureServer = async (
         candidate.path === requestPath,
     );
     if (route) {
-      respond(response, route.status, route.body, route.headers);
+      const index = occurrences.get(route) ?? 0;
+      occurrences.set(route, index + 1);
+      const fixture =
+        route.sequence?.[Math.min(index, route.sequence.length - 1)] ?? route;
+      await sendFixture(request, response, fixture, record);
       return;
     }
     unmatched.push(record);
@@ -162,6 +242,7 @@ export const startFixtureServer = async (
   return {
     origin: `http://127.0.0.1:${address.port}`,
     unmatchedRequests: () => unmatched,
+    requests: () => journal,
     close: async (artifactsDirectory) => {
       await new Promise<void>((resolve, reject) =>
         server.close((error) => (error ? reject(error) : resolve())),
