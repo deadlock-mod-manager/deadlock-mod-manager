@@ -30,7 +30,7 @@ export const profilePayload = (modId: string): Buffer =>
     },
   ]);
 
-const fixtureMod = (modId: string, index: number): LocalMod => ({
+export const fixtureMod = (modId: string, index: number): LocalMod => ({
   id: modId,
   remoteId: modId,
   name: modId,
