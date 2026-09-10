@@ -98,7 +98,11 @@ const SortableModItem = ({ mod, index }: SortableModItemProps) => {
 
       <div className='flex-1 min-w-0'>
         <div className='flex items-center space-x-2'>
-          <p className='font-medium text-sm truncate'>{mod.name}</p>
+          <p
+            data-testid='ordered-mod-name'
+            className='font-medium text-sm truncate'>
+            {mod.name}
+          </p>
           {mod.isAudio && <Badge variant='secondary'>Audio</Badge>}
           {mod.remoteUrl?.startsWith("local://") && (
             <Badge variant='outline'>Custom</Badge>

@@ -1,5 +1,5 @@
 import { afterEach, expect, it } from "bun:test";
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { assertCatalogDisk } from "./gamebanana-oracle";
 import {
@@ -65,6 +65,14 @@ it("rejects wrong variant bytes and extra installed files even when UI state say
         },
       }),
     }),
+  );
+  const gameinfo = path.join(roots.game, "game", "citadel", "gameinfo.gi");
+  await writeFile(
+    gameinfo,
+    (await readFile(gameinfo, "utf8")).replace(
+      "Game citadel",
+      "Game citadel/addons\n      Game citadel",
+    ),
   );
   const addons = path.join(roots.game, "game", "citadel", "addons");
   await writeFile(

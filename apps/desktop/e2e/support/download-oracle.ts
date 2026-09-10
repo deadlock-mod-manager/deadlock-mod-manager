@@ -1,5 +1,5 @@
+import { readPersistedDocument, fingerprint } from "./observations";
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
@@ -11,16 +11,6 @@ import {
 import { assertOwnedWorld, collectFileInventory } from "./world";
 
 export const readDownloadState = async (world: string) => {
-  const {
-    configuration: { roots },
-  } = await assertOwnedWorld(world);
-  const store = z
-    .object({ "local-config": z.string() })
-    .parse(
-      JSON.parse(
-        await readFile(path.join(roots.appData, "state.json"), "utf8"),
-      ),
-    );
   return z
     .object({
       state: z.object({
@@ -34,7 +24,7 @@ export const readDownloadState = async (world: string) => {
         ),
       }),
     })
-    .parse(JSON.parse(store["local-config"])).state.localMods;
+    .parse(await readPersistedDocument(world)).state.localMods;
 };
 export const downloadDirectory = async (world: string): Promise<string> => {
   const {
@@ -62,7 +52,7 @@ export const assertDownloadDisk = async (
   const payload = downloadPayload();
   if (status === "downloaded") {
     assert.deepEqual(inventory, {
-      [DOWNLOAD_FILE]: `${payload.length}:${createHash("sha256").update(payload).digest("hex")}`,
+      [DOWNLOAD_FILE]: fingerprint(payload),
     });
   } else if (status === "paused" || retainedPartial) {
     const partial = await readFile(

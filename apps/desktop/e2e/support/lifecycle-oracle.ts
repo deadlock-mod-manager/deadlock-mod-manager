@@ -1,3 +1,4 @@
+import { readPersistedDocument } from "./observations";
 import assert from "node:assert/strict";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -39,18 +40,7 @@ const manifestSchema = z.object({
 });
 
 export const readLifecycleState = async (world: string) => {
-  const { configuration } = await assertOwnedWorld(world);
-  const store = z
-    .object({ "local-config": z.string() })
-    .parse(
-      JSON.parse(
-        await readFile(
-          path.join(configuration.roots.appData, "state.json"),
-          "utf8",
-        ),
-      ),
-    );
-  return stateSchema.parse(JSON.parse(store["local-config"])).state;
+  return stateSchema.parse(await readPersistedDocument(world)).state;
 };
 
 export const assertLifecycleDisk = async (
