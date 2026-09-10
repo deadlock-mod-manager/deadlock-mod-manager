@@ -10,6 +10,7 @@ import {
 } from "node:fs/promises";
 import path from "node:path";
 import { pipeline } from "node:stream/promises";
+import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import {
   type E2eConfiguration,
@@ -72,7 +73,7 @@ const writeInitialFilesystem = async (roots: E2eRoots): Promise<void> => {
   await mkdir(addons, { recursive: true });
   await writeFile(
     path.join(roots.game, "game", "citadel", "gameinfo.gi"),
-    'GameInfo\n{\n  game "Deadlock"\n}\n',
+    'GameInfo\n{\n  game "Deadlock"\n  FileSystem\n  {\n    SearchPaths\n    {\n      Game citadel\n      Game core\n      Mod citadel\n      Write citadel\n    }\n  }\n}\n',
   );
   await mkdir(path.join(roots.steam, "steamapps"), { recursive: true });
   await Promise.all([
@@ -225,16 +226,32 @@ export const collectFileInventory = async (
       if (entry.isDirectory()) {
         await visit(absolute);
       } else if (entry.isFile()) {
-        try {
-          const metadata = await stat(absolute);
-          const hash = createHash("sha256");
-          await pipeline(createReadStream(absolute), hash);
-          const digest = hash.digest("hex");
-          inventory[path.relative(root, absolute).replaceAll("\\", "/")] =
-            `${metadata.size}:${digest}`;
-        } catch (error) {
-          if (error instanceof Error && isMissingEntry(error)) continue;
-          throw error;
+        for (let attempt = 0; ; attempt += 1) {
+          try {
+            const metadata = await stat(absolute);
+            const hash = createHash("sha256");
+            await pipeline(createReadStream(absolute), hash);
+            const digest = hash.digest("hex");
+            inventory[path.relative(root, absolute).replaceAll("\\", "/")] =
+              `${metadata.size}:${digest}`;
+            break;
+          } catch (error) {
+            if (error instanceof Error && isMissingEntry(error)) break;
+            // WebView2 can release its file handles shortly after WDIO exits.
+            // Retry the read, never omit a locked file from the inventory.
+            if (
+              error instanceof Error &&
+              "code" in error &&
+              error.code === "EBUSY" &&
+              attempt < 10
+            ) {
+              await delay(250);
+              continue;
+            }
+            throw new Error(`Failed to inventory ${absolute}`, {
+              cause: error,
+            });
+          }
         }
       }
     }

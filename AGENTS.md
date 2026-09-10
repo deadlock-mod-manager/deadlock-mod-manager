@@ -32,6 +32,7 @@ Key directories:
 - Write tests for new and existing functionality
 - Use oxfmt for formatting and oxlint for linting (not ESLint/Prettier/Biome)
 - Follow the existing commit convention: `type(scope): description` (see [.cursor/skills/git-conventions/SKILL.md](.cursor/skills/git-conventions/SKILL.md)); commit on the current branch unless the user asks to use a feature branch
+- When creating a requested branch, use a descriptive prefix such as `feature/`, `bugfix/`, or `chore/`; never use `codex/`.
 - Respect TypeScript strict mode — never use `any` or `unknown`, use proper types (see 031-never-use-any.mdc)
 - Use `react-i18next` for any user-facing strings (check `apps/desktop/src/locales/`)
 - Use React Query mutations for async operations, not manual useState loading (see 030-coding-style.mdc)
