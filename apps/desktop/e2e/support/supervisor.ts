@@ -4,6 +4,7 @@ import path from "node:path";
 import type { DriverProvider } from "./contracts";
 import { scenarioPhases, type ScenarioId } from "./scenarios";
 import { writeSyntheticVpk } from "./vpk";
+import { prepareProfileWorld } from "./profile-fixtures";
 import { startFilesystemJournal } from "./filesystem-journal";
 import { startFixtureServer, type FixtureRoute } from "./fixture-server";
 import {
@@ -194,6 +195,16 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
   try {
     fixtureServer = await startFixtureServer([
       ...(options.fixtureRoutes ?? []),
+      ...(options.caseId.startsWith("profiles-")
+        ? [
+            {
+              method: "GET",
+              path: "/api/v2/feature-flags",
+              status: 200,
+              body: '[{"name":"profile-management","enabled":true}]',
+            },
+          ]
+        : []),
       ...startupFixtureRoutes,
     ]);
     world = await createWorld({
@@ -203,6 +214,8 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
       fixtureOrigin: fixtureServer.origin,
     });
     const roots = world.configuration.roots;
+    if (options.caseId.startsWith("profiles-"))
+      await prepareProfileWorld(world);
     if (options.caseId === "local-mod-lifecycle") {
       await writeSyntheticVpk(
         path.join(world.directory, "fixtures", "e2e-local-mod.vpk"),

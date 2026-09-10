@@ -136,7 +136,7 @@ const doctor = async (): Promise<void> => {
   const binaryPath = valueAfter("--binary") ?? defaultBinaryPath;
   const selectedProvider = provider();
   const checks: Array<{ name: string; ok: boolean; detail: string }> = [];
-  if (parseScenarioId(valueAfter("--case")) === "local-mod-lifecycle") {
+  if (parseScenarioId(valueAfter("--case")) !== "about-smoke") {
     let pickerExists = true;
     try {
       await access(nativePickerBinary);
@@ -144,7 +144,7 @@ const doctor = async (): Promise<void> => {
       pickerExists = false;
     }
     checks.push({
-      name: "native picker",
+      name: "native input helper",
       ok: pickerExists,
       detail: pickerExists
         ? nativePickerBinary
