@@ -15,33 +15,13 @@
  *   pnpm --filter api set-mod-overrides -- 12345 --clear
  */
 
-import { db, ModRepository } from "@deadlock-mods/database";
-import type { ModOverrides } from "@deadlock-mods/database";
+import { db, PolicyRuleRepository } from "@deadlock-mods/database";
+import {
+  type PolicyMetadataCorrection,
+  policyMetadataCorrectionSchema,
+} from "@deadlock-mods/shared";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
-
-const ModOverridesSchema = z
-  .object({
-    name: z.string().optional(),
-    description: z.string().optional(),
-    category: z.string().optional(),
-    hero: z.string().optional(),
-    isMap: z.boolean().optional(),
-    isAudio: z.boolean().optional(),
-    isNSFW: z.boolean().optional(),
-    isObsolete: z.boolean().optional(),
-    tags: z.array(z.string()).optional(),
-    metadata: z.object({ mapName: z.string().optional() }).optional(),
-    downloads: z
-      .array(
-        z.object({
-          url: z.string().url(),
-          file: z.string(),
-        }),
-      )
-      .optional(),
-  })
-  .strict();
 
 const setModOverrides = async () => {
   const args = process.argv.slice(2);
@@ -55,45 +35,57 @@ const setModOverrides = async () => {
 
   const remoteId = args[0];
   const overridesArg = args[1];
+  const match = /^(snd-)?([1-9]\d*)$/.exec(remoteId);
+  if (!match?.[2]) {
+    console.error("remoteId must be a numeric mod ID or snd-{id} sound slug.");
+    process.exit(1);
+  }
+  const identity = {
+    provider: "gamebanana" as const,
+    submissionType: match[1] ? ("sound" as const) : ("mod" as const),
+    submissionId: match[2],
+  };
 
-  const modRepository = new ModRepository(db);
+  const policyRepository = new PolicyRuleRepository(db);
 
   try {
-    const existing =
-      await modRepository.findByRemoteIdIncludingBlacklisted(remoteId);
-    if (!existing) {
-      console.error(`Mod with remoteId "${remoteId}" not found.`);
-      process.exit(1);
-    }
+    const existing = await policyRepository.find(
+      identity,
+      "metadata_correction",
+    );
+    console.log(`Current correction: ${JSON.stringify(existing?.correction)}`);
 
-    console.log(`\nMod: ${existing.name} (remoteId: ${remoteId})`);
-    console.log(`Current overrides: ${JSON.stringify(existing.overrides)}`);
-
-    let overrides: ModOverrides | null;
+    let overrides: PolicyMetadataCorrection | null;
 
     if (overridesArg === "--clear") {
       overrides = null;
       console.log("\nClearing overrides...");
     } else {
       const parsed = JSON.parse(overridesArg);
-      const validated = ModOverridesSchema.parse(parsed);
+      const validated = policyMetadataCorrectionSchema.parse(parsed);
       overrides = validated;
       console.log(`\nSetting overrides: ${JSON.stringify(overrides)}`);
     }
 
-    const updated = await modRepository.updateByRemoteId(remoteId, {
-      overrides,
-    });
+    if (overrides) {
+      await policyRepository.upsert({
+        ...identity,
+        kind: "metadata_correction",
+        correction: overrides,
+      });
+    } else {
+      await policyRepository.delete(identity, "metadata_correction");
+    }
 
     logger
       .withMetadata({
         remoteId,
-        modName: updated.name,
-        overrides: updated.overrides,
+        submissionType: identity.submissionType,
+        submissionId: identity.submissionId,
       })
       .info("Updated mod overrides");
 
-    console.log(`\nUpdated overrides: ${JSON.stringify(updated.overrides)}`);
+    console.log("\nPolicy metadata correction updated.");
     process.exit(0);
   } catch (error) {
     if (error instanceof z.ZodError) {
