@@ -1,4 +1,4 @@
-use super::store::{Catalog, CatalogRecord};
+use super::store::{Catalog, CatalogRecord, INCOMPLETE_SNAPSHOT};
 use crate::errors::Error;
 use crate::providers::gamebanana::hero_registry;
 use crate::providers::gamebanana::{BulkHydration, GameBananaClient, IndexPage};
@@ -13,6 +13,8 @@ const FULL_RECONCILIATION_INTERVAL: Duration = Duration::from_secs(7 * 24 * 60 *
 const HYDRATION_BATCH_SIZE: usize = 50;
 const LAST_INCREMENTAL_AT: &str = "last_incremental_at";
 const LAST_FULL_SYNC_AT: &str = "last_full_sync_at";
+const LAST_INCOMPLETE_SNAPSHOT_AT: &str = "last_incomplete_snapshot_at";
+const INCOMPLETE_RETRY_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60);
 
 type SourceFuture<'a, T> = Pin<Box<dyn Future<Output = Result<T, Error>> + Send + 'a>>;
 
@@ -96,7 +98,35 @@ impl CatalogSync {
     cancel: &CancellationToken,
   ) -> Result<SyncOutcome, Error> {
     let _sync_guard = self.sync_lock.lock().await;
+    // A completed but malformed snapshot retains cached entries. Avoid crawling
+    // the same malformed index again on every catalog request, including when
+    // the catalog is empty or its last successful full sync is overdue.
+    if !force_reconcile && self.catalog.state(INCOMPLETE_SNAPSHOT).await?.is_some() {
+      let last_attempt = self
+        .catalog
+        .state(LAST_INCOMPLETE_SNAPSHOT_AT)
+        .await?
+        .and_then(|value| value.parse::<u64>().ok());
+      if last_attempt.is_some_and(|last| {
+        unix_timestamp().saturating_sub(last) < INCOMPLETE_RETRY_INTERVAL.as_secs()
+      }) {
+        return Ok(SyncOutcome::Throttled);
+      }
+    }
     if force_reconcile
+      || self
+        .catalog
+        .cursor(SubmissionType::Mod)
+        .await?
+        .snapshot_id
+        .is_some()
+      || self
+        .catalog
+        .cursor(SubmissionType::Sound)
+        .await?
+        .snapshot_id
+        .is_some()
+      || self.catalog.state(INCOMPLETE_SNAPSHOT).await?.is_some()
       || self.catalog.count_visible().await? == 0
       || self.full_reconciliation_due().await?
     {
@@ -130,6 +160,15 @@ impl CatalogSync {
           .index(submission_type, page_number, false, cancel)
           .await?;
         let index_records = page.valid_records();
+        if index_records.len() != page.records.len() {
+          self
+            .catalog
+            .set_state(INCOMPLETE_SNAPSHOT, snapshot_id.clone())
+            .await?;
+          log::warn!(
+            "GameBanana index skipped invalid records; retaining unseen catalog entries for this snapshot"
+          );
+        }
         let high_water_mark = index_records
           .iter()
           .filter_map(|record| record.date_modified)
@@ -170,10 +209,17 @@ impl CatalogSync {
     }
 
     self.catalog.complete_snapshot(snapshot_id).await?;
-    self
-      .catalog
-      .set_state(LAST_FULL_SYNC_AT, unix_timestamp().to_string())
-      .await?;
+    if self.catalog.state(INCOMPLETE_SNAPSHOT).await?.is_none() {
+      self
+        .catalog
+        .set_state(LAST_FULL_SYNC_AT, unix_timestamp().to_string())
+        .await?;
+    } else {
+      self
+        .catalog
+        .set_state(LAST_INCOMPLETE_SNAPSHOT_AT, unix_timestamp().to_string())
+        .await?;
+    }
     Ok(())
   }
 
@@ -528,6 +574,13 @@ mod tests {
       ])),
     };
     let sync = CatalogSync::with_source(catalog.clone(), first_source);
+    catalog
+      .set_state(
+        super::LAST_FULL_SYNC_AT,
+        super::unix_timestamp().to_string(),
+      )
+      .await
+      .unwrap();
     assert!(sync.full_sync(&CancellationToken::new()).await.is_err());
     assert_eq!(catalog.count_visible().await.unwrap(), 1);
     assert_eq!(
@@ -539,7 +592,13 @@ mod tests {
       pages: Mutex::new(VecDeque::from([Ok(page(2, true)), Ok(page(3, true))])),
     };
     let sync = CatalogSync::with_source(catalog.clone(), resumed_source);
-    sync.full_sync(&CancellationToken::new()).await.unwrap();
+    assert_eq!(
+      sync
+        .synchronize(false, false, &CancellationToken::new())
+        .await
+        .unwrap(),
+      super::SyncOutcome::Full
+    );
     assert_eq!(catalog.count_visible().await.unwrap(), 3);
     assert!(
       catalog
@@ -549,6 +608,169 @@ mod tests {
         .snapshot_id
         .is_none()
     );
+  }
+
+  #[tokio::test]
+  async fn malformed_rows_do_not_tombstone_cached_entries_after_resuming() {
+    let directory = tempdir().unwrap();
+    let catalog = super::Catalog::open(directory.path().join("catalog.sqlite3"), 2)
+      .await
+      .unwrap();
+    let initial = CatalogSync::with_source(
+      catalog.clone(),
+      FakeSource {
+        pages: Mutex::new(VecDeque::from([Ok(page(1, true)), Ok(page(4, true))])),
+      },
+    );
+    initial.full_sync(&CancellationToken::new()).await.unwrap();
+
+    let mut malformed = page(2, false);
+    malformed.records.push(serde_json::json!({
+      "_idRow": 1,
+      "_sModelName": "Mod",
+      "_sName": []
+    }));
+    let interrupted = CatalogSync::with_source(
+      catalog.clone(),
+      FakeSource {
+        pages: Mutex::new(VecDeque::from([
+          Ok(malformed),
+          Err(Error::ProviderUnavailable("offline".to_string())),
+        ])),
+      },
+    );
+    assert!(
+      interrupted
+        .full_sync(&CancellationToken::new())
+        .await
+        .is_err()
+    );
+
+    let resumed = CatalogSync::with_source(
+      catalog.clone(),
+      FakeSource {
+        pages: Mutex::new(VecDeque::from([Ok(page(3, true)), Ok(page(4, true))])),
+      },
+    );
+    resumed.full_sync(&CancellationToken::new()).await.unwrap();
+    assert_eq!(catalog.count_visible().await.unwrap(), 4);
+    assert!(
+      catalog
+        .state(super::INCOMPLETE_SNAPSHOT)
+        .await
+        .unwrap()
+        .is_some()
+    );
+
+    let throttled = CatalogSync::with_source(
+      catalog.clone(),
+      FakeSource {
+        pages: Mutex::new(VecDeque::new()),
+      },
+    );
+    assert_eq!(
+      throttled
+        .synchronize(false, false, &CancellationToken::new())
+        .await
+        .unwrap(),
+      super::SyncOutcome::Throttled
+    );
+    assert_eq!(
+      throttled
+        .synchronize(true, false, &CancellationToken::new())
+        .await
+        .unwrap(),
+      super::SyncOutcome::Throttled
+    );
+    // Expire only the retry timestamp, without waiting in the test.
+    catalog
+      .set_state(super::LAST_INCOMPLETE_SNAPSHOT_AT, "0".to_string())
+      .await
+      .unwrap();
+
+    let clean = CatalogSync::with_source(
+      catalog.clone(),
+      FakeSource {
+        pages: Mutex::new(VecDeque::from([Ok(page(2, true)), Ok(page(4, true))])),
+      },
+    );
+    assert_eq!(
+      clean
+        .synchronize(false, false, &CancellationToken::new())
+        .await
+        .unwrap(),
+      super::SyncOutcome::Full
+    );
+    assert_eq!(catalog.count_visible().await.unwrap(), 2);
+    assert_eq!(
+      catalog.state(super::INCOMPLETE_SNAPSHOT).await.unwrap(),
+      None
+    );
+  }
+
+  #[tokio::test]
+  async fn incomplete_empty_catalog_retries_are_persisted_and_explicitly_overridable() {
+    let directory = tempdir().unwrap();
+    let catalog = super::Catalog::open(directory.path().join("catalog.sqlite3"), 2)
+      .await
+      .unwrap();
+    let mut malformed = page(1, true);
+    malformed.records = vec![serde_json::json!({"_idRow": "invalid"})];
+    let sync = CatalogSync::with_source(
+      catalog.clone(),
+      FakeSource {
+        pages: Mutex::new(VecDeque::from([Ok(malformed.clone()), Ok(malformed)])),
+      },
+    );
+    sync
+      .synchronize(false, false, &CancellationToken::new())
+      .await
+      .unwrap();
+    assert_eq!(catalog.count_visible().await.unwrap(), 0);
+    assert!(
+      catalog
+        .state(super::LAST_FULL_SYNC_AT)
+        .await
+        .unwrap()
+        .is_none()
+    );
+    drop(sync);
+    // A fresh synchronizer reads the persisted backoff and makes no request.
+    let restarted = CatalogSync::with_source(
+      catalog.clone(),
+      FakeSource {
+        pages: Mutex::new(VecDeque::from([Ok(page(2, true)), Ok(page(4, true))])),
+      },
+    );
+    assert_eq!(
+      restarted
+        .synchronize(false, false, &CancellationToken::new())
+        .await
+        .unwrap(),
+      super::SyncOutcome::Throttled
+    );
+    assert_eq!(
+      restarted
+        .synchronize(false, true, &CancellationToken::new())
+        .await
+        .unwrap(),
+      super::SyncOutcome::Full
+    );
+    assert!(
+      catalog
+        .state(super::INCOMPLETE_SNAPSHOT)
+        .await
+        .unwrap()
+        .is_none()
+    );
+    assert!(
+      catalog
+        .state(super::LAST_FULL_SYNC_AT)
+        .await
+        .unwrap()
+        .is_some()
+    );
+    assert_eq!(catalog.count_visible().await.unwrap(), 2);
   }
 
   #[tokio::test]
