@@ -148,6 +148,7 @@ const SettingsNavItem = ({
   label,
 }: SettingsNavItemProps) => (
   <TabsTrigger
+    data-settings-tab={value}
     className={cn(
       "relative h-10 w-full justify-start gap-3 rounded-md px-3 py-2 font-medium text-sm",
       "text-muted-foreground transition-colors",
