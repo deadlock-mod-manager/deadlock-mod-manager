@@ -75,6 +75,19 @@ impl GameBananaCatalogState {
 }
 
 impl CatalogBackend {
+  pub async fn sync_progress(&self) -> (Option<String>, Option<u32>) {
+    self.sync.progress().await
+  }
+
+  pub async fn clear(&self) -> Result<(), Error> {
+    self
+      .cancellation
+      .lock()
+      .map_err(|error| Error::Catalog(format!("sync cancellation lock failed: {error}")))?
+      .cancel();
+    self.sync.clear().await
+  }
+
   pub async fn synchronize(
     &self,
     force_refresh: bool,

@@ -104,6 +104,9 @@ export const checkDirectGameBananaUpdates = async (
 export const inspectGameBananaCatalog = () =>
   invoke<CatalogSyncStatusDto>("inspect_gamebanana_catalog_state");
 
+export const clearGameBananaCatalog = () =>
+  invoke<void>("clear_gamebanana_catalog");
+
 export const synchronizeGameBananaCatalog = () =>
   invoke<CatalogSyncStatusDto>("synchronize_gamebanana_catalog", {
     forceRefresh: false,
