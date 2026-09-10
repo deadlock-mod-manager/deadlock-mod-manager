@@ -1,5 +1,25 @@
 # @deadlock-mods/mirror-service
 
+## 1.1.10
+
+### Patch Changes
+
+- Updated dependencies [2130368]
+- Updated dependencies [1f98b35]
+- Updated dependencies [cbab84a]
+- Updated dependencies [34cbd98]
+- Updated dependencies [55be2ff]
+- Updated dependencies [437e943]
+- Updated dependencies [daa9b5f]
+- Updated dependencies [cbab84a]
+- Updated dependencies [fd4234f]
+  - @deadlock-mods/queue@0.2.0
+  - @deadlock-mods/database@2.2.0
+  - @deadlock-mods/shared@2.2.0
+  - @deadlock-mods/distributed-lock@1.0.11
+  - @deadlock-mods/feature-flags@0.2.9
+  - @deadlock-mods/instrumentation@0.1.11
+
 ## 1.1.9
 
 ### Patch Changes
@@ -134,6 +154,7 @@
 ### Minor Changes
 
 - 921a7a8: Add background workers for mirror service validation and cleanup
+
   - Validation worker runs every hour (configurable) to check for stale files by comparing mirroredFiles with modDownloads
   - Cleanup worker runs daily to remove unused files older than 14 days (configurable)
   - Added Redis configuration and cron job scheduling using @deadlock-mods/queue
