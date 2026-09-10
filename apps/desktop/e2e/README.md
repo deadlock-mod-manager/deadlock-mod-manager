@@ -64,6 +64,20 @@ Each world starts with a failed download record and persisted file selection, so
 
 The E2E-only download policy accepts exact configured fixture origins (including port and scheme) for initial requests and redirects. Ordinary builds retain the HTTPS trusted-host allowlist. The same downloader, checksum checks, staging files, pause gate, and cancellation logic run in both builds.
 
+## GameBanana catalog installation scenarios
+
+These cases start with an empty library and use the real catalog UI, GameBanana provider, downloader, archive extraction, and installation commands. Only HTTP responses are mocked. Run each with `pnpm --filter @deadlock-mods/desktop e2e:test -- --case <case> --keep` after `e2e:build`.
+
+| Case | Behavior checked |
+| --- | --- |
+| `gamebanana-single` | Browse a synthetic GameBanana submission, download its ZIP, and enable its single VPK |
+| `gamebanana-multifile` | Choose two of three downloads, install both VPKs, and show their respective source archives; the unselected download has no route |
+| `gamebanana-variants` | Download an archive with common, blue, and red VPKs; deselect red and install only common and blue |
+
+Every case checks the mod page's Installed Files list and Active Mod files section, closes the application normally, and repeats the rendering and disk checks in a new process. Installed filenames, archive groups, selected downloads, profile state, manifest entries, and exact VPK bytes must agree. Network assertions require the real provider metadata endpoints and exactly the selected payload requests, with no download repeated on restart. Screenshots, DOM snapshots, and `catalog-*.json` disk evidence are retained with `--keep`.
+
+The variant scenario caught an Installed Files rendering bug: the stored file tree retains unselected options, and the page previously displayed all of them. The display now groups only selected files, including the per-archive file counts.
+
 ## Filesystem recovery scenarios
 
 M5 runs with the same `e2e:test -- --case <case> --keep` command after `e2e:build`. Run these serially on Windows/Wry.
@@ -113,7 +127,7 @@ Native Windows dialogs are outside the webview DOM and cannot be driven by WebDr
 | M1: safe harness foundation | Complete in PR #707 (replaces #706) | Compile-gated runtime configuration, owned worlds, root routing, fixture network, filesystem oracle, synthetic VPK builder, supervisor, doctor, and embedded-driver qualification | Ten retry-free fresh UI/IPC runs pass; intentional timeout cleanup succeeds; production cannot activate E2E mode |
 | M2: complete local-mod lifecycle | Implemented and validated on Windows/Wry | Drive a synthetic VPK through a narrowly scoped FlaUI native-picker helper, the real Rust parser, import/install, enable/disable, delete, and application restart | UI state, VPK manifest, persisted store, and independent file hashes agree after every step; the final world matches its expected restored state |
 | M3: profiles and ordering | Implemented and validated on Windows/Wry | Two-profile switching plus native pointer and keyboard reorder flows | Inactive profiles and protected files remain unchanged; order and profile state survive restart without mocked core IPC |
-| M4: downloads and network failures | Implemented and validated on Windows/Wry | Real Rust downloads against binary fixtures: selected-variant retries, Range resume, pause, cancel, corrupt payloads, authentication failures, redirects, and interrupted-process recovery | Every request matches the strict journal; unexpected traffic fails; partial files and state recover correctly |
+| M4: downloads and network failures | Implemented and validated on Windows/Wry | GameBanana catalog downloads and installation, multi-file and VPK variant selection, installed-file rendering, selected-variant retries, Range resume, pause, cancel, corrupt payloads, authentication failures, redirects, and interrupted-process recovery | Every request matches the strict journal; unexpected traffic fails; installed files and selections survive restart; partial files and state recover correctly |
 | M5: recovery and hostile filesystem cases | Implemented and validated on Windows/Wry | Backup replace/merge, interrupted mutations, shard boundaries, collisions, Windows locks, and crash barriers | Restart recovers retained worlds and the independent oracle proves restoration without normalizing unexpected writes |
 | M6: CI and release coverage | Planned | Serial Windows PR lane, broader nightly matrix, packaged-app/native smoke, and ordinary-release exclusion checks | Clean runners reproduce required flows and ordinary builds contain no harness server, capability, control channel, or fixture policy |
 
