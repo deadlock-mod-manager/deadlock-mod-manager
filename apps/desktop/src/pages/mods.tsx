@@ -38,22 +38,19 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useResponsiveColumns } from "@/hooks/use-responsive-columns";
 import { useScrollPosition } from "@/hooks/use-scroll-position";
 import { useSearch } from "@/hooks/use-search";
-import { getMods } from "@/lib/api-client";
 import {
   type DirectCatalogPage,
   queryGameBananaCatalog,
 } from "@/lib/gamebanana-catalog";
-import { ModCategory, SortType, TimePeriod } from "@/lib/constants";
-import { matchesHeroFilter, resolveModHero } from "@/lib/mods/hero-resolution";
+import { SortType, TimePeriod } from "@/lib/constants";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
-import { getTimePeriodCutoff } from "@/lib/utils";
 import type {
   AudioQuickFilter,
   FilterMode,
   MapQuickFilter,
 } from "@/lib/store/slices/ui";
-import { cn, isModOutdated } from "@/lib/utils";
+import { cn, getTimePeriodCutoff } from "@/lib/utils";
 import type { CatalogQuery } from "@/types/generated/CatalogQuery";
 import { ChevronLeft, ChevronRight } from "@deadlock-mods/ui/icons";
 
@@ -168,10 +165,6 @@ function ModsPagination({
 
 const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
   const { t } = useTranslation();
-  const { isEnabled: isDirectClientEnabled } = useFeatureFlag(
-    "gamebanana-direct-client",
-    false,
-  );
   const { isEnabled: isCustomMapsEnabled } = useFeatureFlag(
     "custom-maps",
     false,
@@ -203,7 +196,6 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     currentSort,
   } = modsFilters;
   const favorites = usePersistedStore((state) => state.favorites);
-  const localMods = usePersistedStore((state) => state.localMods);
   const effectiveMapQuickFilter: MapQuickFilter = mapsOnly
     ? "only"
     : isCustomMapsEnabled
@@ -259,22 +251,9 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     timePeriod,
   ]);
   const { data: catalogPage, error } = useSuspenseQuery({
-    queryKey: isDirectClientEnabled
-      ? ["mods", "gamebanana-direct", catalogQuery]
-      : ["mods"],
-    queryFn: async (): Promise<DirectCatalogPage> => {
-      if (isDirectClientEnabled) {
-        return queryGameBananaCatalog(catalogQuery);
-      }
-      const items = await getMods();
-      return {
-        items,
-        total: items.length,
-        page: 0,
-        pageSize: items.length,
-        stale: false,
-      };
-    },
+    queryKey: ["mods", "gamebanana-direct", catalogQuery],
+    queryFn: (): Promise<DirectCatalogPage> =>
+      queryGameBananaCatalog(catalogQuery),
     staleTime: STALE_TIME_API,
     retry: 3,
     refetchInterval: (query) => (query.state.data?.stale ? 3_000 : false),
@@ -297,98 +276,16 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
       restoreScrollPosition();
     }
   }, [paginationEnabled, restoreScrollPosition, setScrollElement]);
-  const { results, query, setQuery, sortType, setSortType } = useSearch({
+  const { query, setQuery, sortType, setSortType } = useSearch({
     data: deferredData,
     keys: SEARCH_KEYS,
   });
-  const localModsByRemoteId = useMemo(
-    () => new Map(localMods.map((mod) => [mod.remoteId, mod])),
-    [localMods],
-  );
-  const filteredResults = useMemo(() => {
-    if (isDirectClientEnabled) {
-      return deferredData;
-    }
-    const predefinedCategorySet =
-      selectedCategories.length > 0
-        ? new Set<string>(Object.values(ModCategory))
-        : null;
-    const cutoff = getTimePeriodCutoff(timePeriod);
-    const cutoffTime = cutoff?.getTime();
-    const favSet =
-      showFavoritesOnly && favorites.length > 0 ? new Set(favorites) : null;
-    const shouldHideNSFW = nsfwSettings.hideNSFW || hideNSFW;
-
-    return results.filter((mod) => {
-      if (selectedCategories.length > 0 && predefinedCategorySet) {
-        let matchesCategory = selectedCategories.includes(mod.category);
-        if (
-          !matchesCategory &&
-          selectedCategories.includes(ModCategory.OTHER_MISC)
-        ) {
-          matchesCategory = !predefinedCategorySet.has(mod.category);
-        }
-        if (filterMode === "include" ? !matchesCategory : matchesCategory)
-          return false;
-      }
-
-      if (selectedHeroes.length > 0) {
-        const resolvedHero = resolveModHero(
-          mod,
-          localModsByRemoteId.get(mod.remoteId),
-        ).hero;
-        const matchesHero = matchesHeroFilter(resolvedHero, selectedHeroes);
-        if (filterMode === "include" ? !matchesHero : matchesHero) return false;
-      }
-
-      if (shouldHideNSFW && mod.isNSFW) return false;
-
-      if (audioQuickFilter === "only" && !mod.isAudio) return false;
-      if (audioQuickFilter === "exclude" && mod.isAudio) return false;
-
-      if (effectiveMapQuickFilter === "only" && !mod.isMap) return false;
-      if (effectiveMapQuickFilter === "exclude" && mod.isMap) return false;
-
-      if (hideOutdated && (mod.isObsolete || isModOutdated(mod))) return false;
-
-      if (cutoffTime && new Date(mod.remoteUpdatedAt).getTime() < cutoffTime)
-        return false;
-
-      if (favSet && !favSet.has(mod.remoteId)) return false;
-
-      return true;
-    });
-  }, [
-    results,
-    localModsByRemoteId,
-    selectedCategories,
-    selectedHeroes,
-    filterMode,
-    nsfwSettings.hideNSFW,
-    hideNSFW,
-    audioQuickFilter,
-    effectiveMapQuickFilter,
-    hideOutdated,
-    timePeriod,
-    showFavoritesOnly,
-    favorites,
-    isDirectClientEnabled,
-    deferredData,
-  ]);
+  const filteredResults = deferredData;
 
   const totalPages = paginationEnabled
-    ? Math.ceil(
-        (isDirectClientEnabled ? catalogPage.total : filteredResults.length) /
-          PAGE_SIZE,
-      )
+    ? Math.ceil(catalogPage.total / PAGE_SIZE)
     : 1;
-  const displayedMods = useMemo(
-    () =>
-      paginationEnabled && !isDirectClientEnabled
-        ? filteredResults.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
-        : filteredResults,
-    [filteredResults, isDirectClientEnabled, page, paginationEnabled],
-  );
+  const displayedMods = useMemo(() => filteredResults, [filteredResults]);
   const modRows = useMemo(() => {
     if (paginationEnabled) {
       return [] as (typeof filteredResults)[];
@@ -552,7 +449,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
         onShowFavoritesOnlyChange={handleShowFavoritesOnlyChange}
         hideMapFilter={mapsOnly || !isCustomMapsEnabled}
       />
-      {isDirectClientEnabled && catalogPage.stale ? (
+      {catalogPage.stale ? (
         <Alert variant='warning'>
           <Warning className='h-4 w-4' />
           <AlertDescription>
