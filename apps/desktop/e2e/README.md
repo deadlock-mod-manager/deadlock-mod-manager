@@ -45,7 +45,28 @@ The fixture server records all requests to `artifacts/network.ndjson`, returns a
 
 The first smoke flow uses WebDriver clicks to open Settings and the About dialog, then invokes the compile-gated `e2e_status` command to prove the UI process is connected to the real Rust backend and isolated world. It also prepares a real Steam launch request through Rust, verifies that the `record` policy writes the redacted intent to `artifacts/game-launches.ndjson`, and proves that game liveness/stop operations cannot inspect or terminate a host game in the default E2E world.
 
+## Download scenarios
+
+M4 uses real Rust HTTP transfers against binary fixture responses. Run any case with `pnpm --filter @deadlock-mods/desktop e2e:test -- --case <case> --keep` after rebuilding the E2E application. These cases do not require the native input helper.
+
+| Case | Behavior checked |
+| --- | --- |
+| `downloads-pause` | UI pause freezes a valid partial prefix; UI resume completes the payload |
+| `downloads-range` | A connection cut after 65,536 bytes triggers an exact Range request and byte-correct completion |
+| `downloads-cancel` | Cancel a paused transfer through the existing Rust command, verify partial cleanup, restart, and retry through the UI |
+| `downloads-restart` | Restart while paused, verify stale status becomes failed while partial evidence remains, then retry from scratch |
+| `downloads-auth` | A 401 response fails visibly; UI retry completes after the fixture permits it |
+| `downloads-corrupt` | A same-length corrupt payload fails MD5 validation without publishing a file; UI retry succeeds |
+| `downloads-redirect` | Reject a redirect to a production host without making an external request; UI retry succeeds |
+| `downloads-variants` | Retry preserves a previously selected variant, including after a 401 and restart; the unselected URL has no registered fixture |
+
+Each world starts with a failed download record and persisted file selection, so Retry exercises the real frontend purge/queue flow without depending on the remote catalog. Variant coverage here is persisted selection and retry, not the initial catalog file chooser. Cancellation uses real IPC because the current UI does not expose a cancel control. Successful transfers are checked again in a new application process. The oracle compares SHA-256 hashes, partial prefixes and metadata, exact cache contents, the empty addon manifest, and protected game/Steam files. `download-*.json` captures disk/state evidence; `network.ndjson` includes Range headers, response status and bytes sent. UI retries deliberately purge stale data; only interrupted transfers within a running process resume with Range.
+
+The E2E-only download policy accepts exact configured fixture origins (including port and scheme) for initial requests and redirects. Ordinary builds retain the HTTPS trusted-host allowlist. The same downloader, checksum checks, staging files, pause gate, and cancellation logic run in both builds.
+
 ## Qualification status
+
+All eight M4 cases passed two consecutive retry-free Windows/Wry worlds each, including a new application process in every world. The final pass took approximately 20–30 seconds per world with no unmatched requests. Harness unit tests cover binary Range responses, truncated streams, wrong-variant bytes, and leftover partial files; Rust tests cover fixture-origin restrictions and the ordinary-build allowlist.
 
 The profile pointer and keyboard scenarios each passed three consecutive retry-free Windows/Wry worlds, with two application processes per world. These six runs took 32.6–36.6 seconds and had no unmatched fixture requests.
 
@@ -66,7 +87,7 @@ Native Windows dialogs are outside the webview DOM and cannot be driven by WebDr
 | M1: safe harness foundation | Complete in PR #707 (replaces #706) | Compile-gated runtime configuration, owned worlds, root routing, fixture network, filesystem oracle, synthetic VPK builder, supervisor, doctor, and embedded-driver qualification | Ten retry-free fresh UI/IPC runs pass; intentional timeout cleanup succeeds; production cannot activate E2E mode |
 | M2: complete local-mod lifecycle | Implemented and validated on Windows/Wry | Drive a synthetic VPK through a narrowly scoped FlaUI native-picker helper, the real Rust parser, import/install, enable/disable, delete, and application restart | UI state, VPK manifest, persisted store, and independent file hashes agree after every step; the final world matches its expected restored state |
 | M3: profiles and ordering | Implemented and validated on Windows/Wry | Two-profile switching plus native pointer and keyboard reorder flows | Inactive profiles and protected files remain unchanged; order and profile state survive restart without mocked core IPC |
-| M4: downloads and network failures | Planned; transport foundation exists | Exercise actual Rust downloads against fixture endpoints, including variants, Range resume, pause, cancel, malformed responses, and authentication failures | Every request matches the strict journal; unexpected traffic fails; partial files and state recover correctly |
+| M4: downloads and network failures | Implemented and validated on Windows/Wry | Real Rust downloads against binary fixtures: selected-variant retries, Range resume, pause, cancel, corrupt payloads, authentication failures, redirects, and interrupted-process recovery | Every request matches the strict journal; unexpected traffic fails; partial files and state recover correctly |
 | M5: recovery and hostile filesystem cases | Planned | Backup replace/merge, interrupted mutations, shard boundaries, collisions, Windows locks, and crash barriers | Restart recovers retained worlds and the independent oracle proves restoration without normalizing unexpected writes |
 | M6: CI and release coverage | Planned | Serial Windows PR lane, broader nightly matrix, packaged-app/native smoke, and ordinary-release exclusion checks | Clean runners reproduce required flows and ordinary builds contain no harness server, capability, control channel, or fixture policy |
 

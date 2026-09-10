@@ -5,6 +5,11 @@ import type { DriverProvider } from "./contracts";
 import { scenarioPhases, type ScenarioId } from "./scenarios";
 import { writeSyntheticVpk } from "./vpk";
 import { prepareProfileWorld } from "./profile-fixtures";
+import {
+  assertDownloadNetwork,
+  downloadRoutes,
+  prepareDownloadWorld,
+} from "./download-fixtures";
 import { startFilesystemJournal } from "./filesystem-journal";
 import { startFixtureServer, type FixtureRoute } from "./fixture-server";
 import {
@@ -195,6 +200,9 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
   try {
     fixtureServer = await startFixtureServer([
       ...(options.fixtureRoutes ?? []),
+      ...(options.caseId.startsWith("downloads-")
+        ? downloadRoutes(options.caseId)
+        : []),
       ...(options.caseId.startsWith("profiles-")
         ? [
             {
@@ -214,6 +222,8 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
       fixtureOrigin: fixtureServer.origin,
     });
     const roots = world.configuration.roots;
+    if (options.caseId.startsWith("downloads-"))
+      await prepareDownloadWorld(world, fixtureServer.origin, options.caseId);
     if (options.caseId.startsWith("profiles-"))
       await prepareProfileWorld(world);
     if (options.caseId === "local-mod-lifecycle") {
@@ -292,6 +302,8 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
       )
         break;
     }
+    if (wdioResult.exitCode === 0 && options.caseId.startsWith("downloads-"))
+      assertDownloadNetwork(options.caseId, fixtureServer.requests());
     await closeResources();
     const after = Object.fromEntries(
       await Promise.all(

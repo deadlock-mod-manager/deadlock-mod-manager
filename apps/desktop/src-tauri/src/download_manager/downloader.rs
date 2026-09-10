@@ -29,6 +29,12 @@ pub fn validate_download_url(url: &str) -> Result<(), Error> {
 }
 
 fn is_allowed_download_url(url: &reqwest::Url) -> bool {
+  #[cfg(feature = "e2e-harness")]
+  if crate::runtime_environment::is_e2e_active() {
+    return crate::runtime_environment::current()
+      .e2e()
+      .is_some_and(|configuration| configuration.permits_download_url(url));
+  }
   if url.scheme() != "https" || !url.username().is_empty() || url.password().is_some() {
     return false;
   }
@@ -530,6 +536,8 @@ mod tests {
     assert!(validate_download_url("http://gamebanana.com/dl/1").is_err());
     assert!(validate_download_url("https://gamebanana.com.evil.test/dl/1").is_err());
     assert!(validate_download_url("https://user@gamebanana.com/dl/1").is_err());
+    assert!(validate_download_url("http://127.0.0.1:43199/files/mod.vpk").is_err());
+    assert!(validate_download_url("https://127.0.0.1:43199/files/mod.vpk").is_err());
   }
 
   #[tokio::test]
