@@ -1,11 +1,12 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { listen } from "@tauri-apps/api/event";
-import { fetch } from "@/lib/fetch";
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { getMod } from "@/lib/api-client";
 import { downloadManager } from "@/lib/download/manager";
 import logger from "@/lib/logger";
+import { serializeSubmissionRef } from "@/lib/mods/submission-ref";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus } from "@/types/mods";
 import useInstall from "./use-install";
@@ -16,85 +17,12 @@ type DeepLinkData = {
   mod_id: string;
 };
 
-type FileInfo = {
-  name: string;
-  size: number;
-};
-
-// Regex for GameBanana download IDs
-const GAMEBANANA_MMDL_REGEX = /\/mmdl\/(\d+)/;
-
-const getFileInfoFromHeaders = async (url: string): Promise<FileInfo> => {
-  logger.withMetadata({ url }).info("Fetching file info from headers for URL");
-
-  try {
-    // Make a HEAD request to get headers without downloading the file
-    const response = await fetch(url, {
-      method: "HEAD",
-    });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    // Get file size from Content-Length header
-    const contentLength =
-      response.headers.get("content-length") ||
-      response.headers.get("Content-Length");
-    const size = contentLength ? Number.parseInt(contentLength, 10) : 0;
-
-    // Determine file extension from Content-Type header
-    const contentType =
-      response.headers.get("content-type") ||
-      response.headers.get("Content-Type") ||
-      "";
-    let extension = ".zip"; // Default fallback
-
-    if (
-      contentType.includes("application/x-rar-compressed") ||
-      contentType.includes("application/x-rar")
-    ) {
-      extension = ".rar";
-    } else if (
-      contentType.includes("application/x-7z-compressed") ||
-      contentType.includes("application/x-7z")
-    ) {
-      extension = ".7z";
-    } else if (contentType.includes("application/zip")) {
-      extension = ".zip";
-    }
-
-    // Generate filename from GameBanana download ID
-    let name = `download${extension}`;
-    if (url.includes("gamebanana.com/mmdl/")) {
-      const match = url.match(GAMEBANANA_MMDL_REGEX);
-      if (match?.[1]) {
-        name = `gamebanana-${match[1]}${extension}`;
-      }
-    }
-
-    logger
-      .withMetadata({ name, size, contentType })
-      .info("File info extracted from headers");
-    return { name, size };
-  } catch (error) {
-    logger.withError(error).error("Failed to get file info from headers");
-
-    // Fallback to URL-based extraction if header request fails
-    let name = "download.zip";
-    if (url.includes("gamebanana.com/mmdl/")) {
-      const match = url.match(GAMEBANANA_MMDL_REGEX);
-      if (match?.[1]) {
-        name = `gamebanana-${match[1]}.zip`;
-      }
-    }
-
-    return { name, size: 0 };
-  }
-};
+const GAMEBANANA_MMDL_REGEX =
+  /^https:\/\/(?:[^/]+\.)?gamebanana\.com\/mmdl\/(\d+)(?:[/?#]|$)/i;
 
 export const useDeepLink = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const {
     addLocalMod: addMod,
     setModStatus,
@@ -116,27 +44,43 @@ export const useDeepLink = () => {
         unlisten = await listen<DeepLinkData>(
           "deep-link-received",
           async (event) => {
-            const { download_url, mod_id } = event.payload;
+            const { download_url, mod_id, mod_type } = event.payload;
+            const submissionType = mod_type.toLowerCase();
+            const slug =
+              submissionType === "mod" || submissionType === "sound"
+                ? serializeSubmissionRef({
+                    provider: "gamebanana",
+                    submissionType,
+                    submissionId: mod_id,
+                  })
+                : null;
+            const fileId = download_url.match(GAMEBANANA_MMDL_REGEX)?.[1];
+
+            if (!slug || !fileId) {
+              logger.warn("Rejected invalid deep-link payload");
+              toast.error(t("mods.invalidDeepLink"));
+              return;
+            }
 
             // Prevent duplicate processing of the same mod
-            if (processingRef.current.has(mod_id)) {
+            if (processingRef.current.has(slug)) {
               logger
-                .withMetadata({ modId: mod_id })
+                .withMetadata({ remoteId: slug })
                 .warn("Already processing deep link for mod");
               return;
             }
 
-            processingRef.current.add(mod_id);
+            processingRef.current.add(slug);
             logger
-              .withMetadata({ payload: event.payload })
+              .withMetadata({ remoteId: slug, fileId })
               .info("Deep link received");
 
             try {
               // Navigate to the mod page first
-              navigate(`/mods/${mod_id}`);
+              navigate(`/mods/${slug}`);
 
               // Fetch mod details from the API
-              const modData = await getMod(mod_id);
+              const modData = await getMod(slug);
 
               // Check if mod is already installed BEFORE downloading
               const currentMods = usePersistedStore.getState().localMods;
@@ -151,21 +95,19 @@ export const useDeepLink = () => {
                   );
                 toast.success(`${modData.name} is already installed!`);
                 // Just navigate to the mod page to show it's installed
-                navigate(`/mods/${mod_id}`);
+                navigate(`/mods/${slug}`);
                 // Remove from processing set since we're done
-                processingRef.current.delete(mod_id);
+                processingRef.current.delete(slug);
                 return;
               }
 
-              // Get file info from HTTP headers
               toast.success("Preparing 1-click mod download...");
-              const fileInfo = await getFileInfoFromHeaders(download_url);
 
               const downloadFiles = [
                 {
-                  url: download_url,
-                  name: fileInfo.name,
-                  size: fileInfo.size,
+                  url: `gamebanana-file://${slug}/${fileId}`,
+                  name: `gamebanana-${fileId}.zip`,
+                  size: 0,
                   md5Checksum: null,
                   createdAt: new Date(),
                   updatedAt: new Date(),
@@ -237,7 +179,7 @@ export const useDeepLink = () => {
                           .withMetadata({ remoteId: mod.remoteId })
                           .info("Auto-installation completed for mod");
                         // Remove from processing set when fully complete
-                        processingRef.current.delete(mod_id);
+                        processingRef.current.delete(slug);
                       },
                       onError: (mod, error) => {
                         setModStatus(mod.remoteId, ModStatus.Downloaded);
@@ -249,7 +191,7 @@ export const useDeepLink = () => {
                           .withError(error)
                           .error("Auto-installation failed for mod");
                         // Remove from processing set on error
-                        processingRef.current.delete(mod_id);
+                        processingRef.current.delete(slug);
                       },
                     });
                   } catch (error) {
@@ -260,7 +202,7 @@ export const useDeepLink = () => {
                       `Downloaded but failed to install ${modData.name}. You can install it manually.`,
                     );
                     // Remove from processing set on error
-                    processingRef.current.delete(mod_id);
+                    processingRef.current.delete(slug);
                   }
                 },
                 onError: (error) => {
@@ -273,7 +215,7 @@ export const useDeepLink = () => {
                     .withError(error)
                     .error("Direct download failed for mod");
                   // Remove from processing set on error
-                  processingRef.current.delete(mod_id);
+                  processingRef.current.delete(slug);
                 },
               });
             } catch (error) {
@@ -282,7 +224,7 @@ export const useDeepLink = () => {
                 "Failed to process 1-click download. The mod may not exist or be unavailable.",
               );
               // Remove from processing set on error
-              processingRef.current.delete(mod_id);
+              processingRef.current.delete(slug);
             }
           },
         );
