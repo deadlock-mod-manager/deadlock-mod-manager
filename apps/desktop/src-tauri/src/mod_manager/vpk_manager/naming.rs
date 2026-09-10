@@ -78,6 +78,40 @@ pub(super) fn enabled_vpk_name(number: u32) -> String {
   format!("pak{number:02}_dir.vpk")
 }
 
+/// Lowest unused `pak##_dir.vpk` names in `dir`, filling gaps left by disabled mods.
+pub(crate) fn allocate_enabled_vpk_names(dir: &Path, count: usize) -> Result<Vec<String>, Error> {
+  let mut used = std::collections::HashSet::new();
+  if dir.exists() {
+    for entry in fs::read_dir(dir)? {
+      let path = entry?.path();
+      if path.is_file()
+        && let Some(name) = path.file_name().and_then(|name| name.to_str())
+        && let Some(number) = VpkManager::enabled_vpk_number(name)
+      {
+        used.insert(number);
+      }
+    }
+  }
+
+  let mut names = Vec::with_capacity(count);
+  let mut number = 1u32;
+  while names.len() < count {
+    if number > shard::SHARD_CAPACITY {
+      return Err(Error::ModInvalid(format!(
+        "Cannot allocate {count} enabled VPK names in {}; shard capacity is {}",
+        dir.display(),
+        shard::SHARD_CAPACITY
+      )));
+    }
+    if !used.contains(&number) {
+      names.push(enabled_vpk_name(number));
+      used.insert(number);
+    }
+    number += 1;
+  }
+  Ok(names)
+}
+
 /// Lowest `pak##_dir.vpk` name not yet taken in `dir`, filling gaps left by
 /// disabled mods.
 pub(super) fn next_free_enabled_vpk_name(dir: &Path) -> Result<String, Error> {

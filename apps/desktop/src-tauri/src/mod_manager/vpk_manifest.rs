@@ -116,7 +116,8 @@ impl ProfileVpkManifest {
       }
       let base = ProfileBase::from_snapshot(&profile_path)?;
       let manifest = Self::load(&profile_path)?;
-      for (mod_id, entry) in manifest.mods {
+      let mut claimed = std::collections::BTreeMap::<String, String>::new();
+      for (mod_id, entry) in &manifest.mods {
         let missing: Vec<String> = entry
           .file_paths(&base)
           .into_iter()
@@ -128,6 +129,14 @@ impl ProfileVpkManifest {
             "Manifest entry {mod_id} references missing VPKs: {}",
             missing.join(", ")
           )));
+        }
+        for path in entry.file_paths(&base) {
+          let key = path.display().to_string();
+          if let Some(owner) = claimed.insert(key.clone(), mod_id.clone()) {
+            return Err(Error::ModInvalid(format!(
+              "Manifest entries {owner} and {mod_id} both claim {key}"
+            )));
+          }
         }
       }
     }
@@ -243,7 +252,7 @@ impl ProfileVpkManifest {
       if manifest.mods.is_empty() {
         fs::remove_dir_all(&clear_staging)?;
       } else {
-        recover_staging_directory(&base, &clear_staging, RecoveryMode::Strict)?;
+        recover_staging_directory(&base, &clear_staging, RecoveryMode::Strict, manifest)?;
       }
     }
 
@@ -253,6 +262,7 @@ impl ProfileVpkManifest {
         &base,
         &reorder_staging,
         RecoveryMode::AvoidEnabledCollisions,
+        manifest,
       )?;
     }
 
@@ -271,7 +281,7 @@ impl ProfileVpkManifest {
         continue;
       };
       if manifest.mods.contains_key(mod_id) {
-        recover_staging_directory(&base, &path, RecoveryMode::Strict)?;
+        recover_staging_directory(&base, &path, RecoveryMode::Strict, manifest)?;
       } else {
         fs::remove_dir_all(path)?;
       }
