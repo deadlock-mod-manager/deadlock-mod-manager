@@ -29,6 +29,7 @@ export enum ModStatus {
 }
 
 export interface LocalMod extends ModDto {
+  metadataPending?: boolean;
   status: ModStatus;
   downloadedAt?: Date;
   downloads?: ModDownloadItem[];
@@ -155,6 +156,7 @@ export interface BatchUpdateResult {
   succeeded: string[];
   failed: Array<[string, string]>;
   installedMods: InstalledModInfo[];
+  vpkMappings?: Array<[string, string[]]>;
 }
 
 export interface BatchUpdateProgressEvent {

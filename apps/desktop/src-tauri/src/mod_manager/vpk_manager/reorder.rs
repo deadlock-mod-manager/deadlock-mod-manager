@@ -39,7 +39,13 @@ impl VpkManager {
     let temp_dir = base.join(shard::REORDER_STAGING_DIR);
     if temp_dir.exists() {
       log::warn!("Recovering VPK files left by an interrupted reorder");
-      recover_staging_directory(&base, &temp_dir, RecoveryMode::AvoidEnabledCollisions)?;
+      let manifest = crate::mod_manager::vpk_manifest::ProfileVpkManifest::load(&base)?;
+      recover_staging_directory(
+        &base,
+        &temp_dir,
+        RecoveryMode::AvoidEnabledCollisions,
+        &manifest,
+      )?;
     }
 
     let duplicate_assignments = Self::duplicate_sharded_assignments(ordered_mods);

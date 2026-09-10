@@ -268,6 +268,7 @@ pub fn run() {
       commands::downloads::download_custom_provider_mod,
       commands::profiles::get_profile_installed_vpks,
       commands::profiles::get_profile_vpk_manifest,
+      commands::profile_snapshot::get_profile_vpk_snapshot,
       commands::profiles::hydrate_mods_from_manifest,
       commands::shards::get_shard_diagnostics,
       commands::shards::resync_profile_shards,
