@@ -1,4 +1,6 @@
 import path from "node:path";
+import { writeFile } from "node:fs/promises";
+import { parseScenarioId, scenarioSpec } from "./support/scenarios";
 
 interface TauriCapability {
   browserName: "tauri";
@@ -28,7 +30,9 @@ const artifacts = path.resolve(requiredEnvironment("DMM_E2E_ARTIFACTS"));
 
 export const config: TauriWdioConfig = {
   runner: "local",
-  specs: ["./specs/about.e2e.ts"],
+  specs: [
+    scenarioSpec(parseScenarioId(requiredEnvironment("DMM_E2E_CASE_ID"))),
+  ],
   maxInstances: 1,
   capabilities: [
     {
@@ -74,6 +78,10 @@ export const config: TauriWdioConfig = {
     if (!result.passed) {
       const name = test.title.replace(/[^a-z0-9_-]+/gi, "-").toLowerCase();
       await browser.saveScreenshot(path.join(artifacts, `${name}.png`));
+      await writeFile(
+        path.join(artifacts, `${name}.html`),
+        await browser.getPageSource(),
+      );
     }
   },
 };
