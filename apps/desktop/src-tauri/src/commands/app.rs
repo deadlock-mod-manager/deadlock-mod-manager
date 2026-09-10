@@ -11,6 +11,41 @@ pub struct FilesystemWritableStatus {
   pub gameinfo_writable: bool,
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RuntimeBootstrap {
+  pub mode: &'static str,
+  pub state_store_path: String,
+  pub app_data_path: Option<String>,
+  pub endpoints: Vec<crate::runtime_environment::ServiceEndpoint>,
+  pub integrations: Option<crate::runtime_environment::IntegrationPolicy>,
+}
+
+#[tauri::command]
+pub fn get_runtime_bootstrap() -> RuntimeBootstrap {
+  let environment = crate::runtime_environment::current();
+  RuntimeBootstrap {
+    mode: if environment.e2e().is_some() {
+      "e2e"
+    } else {
+      "production"
+    },
+    state_store_path: crate::runtime_environment::state_store_path()
+      .to_string_lossy()
+      .into_owned(),
+    app_data_path: environment
+      .e2e()
+      .map(|configuration| configuration.roots.app_data.to_string_lossy().into_owned()),
+    endpoints: environment
+      .e2e()
+      .map(|configuration| configuration.endpoints.clone())
+      .unwrap_or_default(),
+    integrations: environment
+      .e2e()
+      .map(|configuration| configuration.integrations),
+  }
+}
+
 #[tauri::command]
 pub async fn set_api_url(api_url: String) -> Result<(), Error> {
   log::info!("Setting API URL to: {api_url}");

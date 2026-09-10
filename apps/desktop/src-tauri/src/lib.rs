@@ -23,6 +23,7 @@ mod mod_manager;
 pub mod providers;
 pub mod proxy;
 mod reports;
+pub mod runtime_environment;
 mod steam_user;
 mod updater_channel;
 mod utils;
@@ -33,16 +34,21 @@ use tauri_plugin_store::StoreExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+  runtime_environment::initialize().expect("failed to initialize runtime environment");
+  runtime_environment::configure_process();
+
   #[cfg(debug_assertions)]
   {
-    if let Err(e) = dotenvy::dotenv() {
-      if e.not_found() {
-        log::debug!("No .env file found, continuing without it");
+    if runtime_environment::current().e2e().is_none() {
+      if let Err(e) = dotenvy::dotenv() {
+        if e.not_found() {
+          log::debug!("No .env file found, continuing without it");
+        } else {
+          log::warn!("Failed to load .env file: {e}");
+        }
       } else {
-        log::warn!("Failed to load .env file: {e}");
+        log::info!("Loaded environment variables from .env file");
       }
-    } else {
-      log::info!("Loaded environment variables from .env file");
     }
   }
 
@@ -51,21 +57,36 @@ pub fn run() {
 
   #[cfg(all(debug_assertions, desktop))]
   {
-    builder = builder.plugin(
-      tauri_plugin_mcp_bridge::Builder::new()
-        .bind_address("127.0.0.1")
-        .build(),
-    );
+    if runtime_environment::current().e2e().is_none() {
+      builder = builder.plugin(
+        tauri_plugin_mcp_bridge::Builder::new()
+          .bind_address("127.0.0.1")
+          .build(),
+      );
+    }
   }
 
   #[cfg(desktop)]
   {
-    builder = builder.plugin(tauri_plugin_single_instance::init(
-      deep_link::on_second_instance,
-    ));
+    if runtime_environment::current().e2e().is_none() {
+      builder = builder.plugin(tauri_plugin_single_instance::init(
+        deep_link::on_second_instance,
+      ));
+    }
   }
   let mut context: tauri::Context<app_runtime::AppRuntime> = tauri::generate_context!();
+  runtime_environment::apply_to_context(&mut context);
   updater_channel::apply_to_context(&mut context);
+
+  let log_file_target = runtime_environment::current()
+    .e2e()
+    .map(|configuration| TargetKind::Folder {
+      path: configuration.roots.app_logs.clone(),
+      file_name: Some("deadlock-mod-manager".into()),
+    })
+    .unwrap_or(TargetKind::LogDir {
+      file_name: Some("deadlock-mod-manager".into()),
+    });
 
   builder = builder
     .plugin(tauri_plugin_deep_link::init())
@@ -82,43 +103,80 @@ pub fn run() {
         .clear_targets()
         .targets([
           Target::new(TargetKind::Stdout),
-          Target::new(TargetKind::LogDir {
-            file_name: Some("deadlock-mod-manager".into()),
-          }),
+          Target::new(log_file_target),
         ])
         .max_file_size(1_000_000)
         .level(log::LevelFilter::Info)
         .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepAll)
         .filter(|metadata| metadata.target() != "tracing")
         .build(),
-    )
-    .plugin(tauri_plugin_machine_uid::init());
+    );
+
+  if runtime_environment::current().e2e().is_none() {
+    builder = builder.plugin(tauri_plugin_machine_uid::init());
+  }
+
+  #[cfg(feature = "e2e-harness")]
+  {
+    // tauri-plugin-wdio installs a fallback logger during setup. Register it
+    // after the application logger so the plugin observes the existing logger
+    // instead of preventing tauri-plugin-log from initializing.
+    builder = builder.plugin(tauri_plugin_wdio::init());
+    if std::env::var("WDIO_EMBEDDED_SERVER").as_deref() == Ok("true") {
+      builder = builder.plugin(tauri_plugin_wdio_webdriver::init());
+    }
+  }
 
   builder
     .manage(game_presence::DiscordState::new())
     .setup(|app| {
-      let _store = app.store("state.json")?;
-      deep_link::setup(app)?;
+      #[cfg(feature = "e2e-harness")]
+      {
+        let capability = tauri::ipc::CapabilityBuilder::new("e2e-wdio")
+          .window("main")
+          .permission("wdio:default")
+          .permission_scoped(
+            "http:default",
+            runtime_environment::current()
+              .e2e()
+              .expect("e2e-harness builds require an E2E configuration")
+              .endpoints
+              .iter()
+              .map(|endpoint| serde_json::json!({ "url": format!("{}/**", endpoint.origin) }))
+              .collect(),
+            Vec::<serde_json::Value>::new(),
+          );
+        let capability = if std::env::var("WDIO_EMBEDDED_SERVER").as_deref() == Ok("true") {
+          capability.permission("wdio-webdriver:default")
+        } else {
+          capability
+        };
+        app.add_capability(capability)?;
+      }
 
-      let catalog_path = app
-        .path()
-        .app_local_data_dir()?
-        .join("gamebanana-catalog.db");
+      let _store = app.store(runtime_environment::state_store_path())?;
+      if runtime_environment::current().e2e().is_none() {
+        deep_link::setup(app)?;
+      }
+
+      let catalog_path =
+        runtime_environment::app_local_data_dir(app.handle())?.join("gamebanana-catalog.db");
       let catalog_state = tauri::async_runtime::block_on(
         commands::gamebanana_catalog::GameBananaCatalogState::open(catalog_path),
       );
       app.manage(catalog_state);
       app.manage(commands::policy::PolicyState::open(
-        app
-          .path()
-          .app_local_data_dir()?
-          .join("policy-manifest-v1.json"),
+        runtime_environment::app_local_data_dir(app.handle())?.join("policy-manifest-v1.json"),
       ));
 
       {
         let mut mod_manager = commands::state::MANAGER
           .lock()
           .map_err(|e| format!("Failed to acquire mod manager lock: {e}"))?;
+        if let Some(configuration) = runtime_environment::current().e2e() {
+          mod_manager.set_steam_path(configuration.roots.steam.clone())?;
+          mod_manager.set_game_path(configuration.roots.game.clone())?;
+        }
         mod_manager.set_app_handle(app.handle().clone());
       }
 
@@ -178,6 +236,7 @@ pub fn run() {
       commands::gameinfo::open_gameinfo_editor,
       commands::app::set_language,
       commands::app::set_api_url,
+      commands::app::get_runtime_bootstrap,
       commands::app::is_auto_update_disabled,
       commands::app::get_runtime_kind,
       flatpak::is_flatpak,
@@ -311,7 +370,9 @@ pub fn run() {
       proxy::get_proxy_config,
       proxy::test_proxy_connection,
       updater_channel::get_update_channel,
-      updater_channel::set_update_channel
+      updater_channel::set_update_channel,
+      #[cfg(feature = "e2e-harness")]
+      commands::e2e::e2e_status
     ])
     .run(context)
     .expect("error while running tauri application");

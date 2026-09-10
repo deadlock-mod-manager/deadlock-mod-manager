@@ -4,6 +4,11 @@ import logger from "@/lib/logger";
 import { STORE_NAME } from "../constants";
 
 const RETRY_DELAYS_MS: readonly number[] = [50, 150, 400];
+let stateStorePath = STORE_NAME;
+
+export const setStateStorePath = (path: string): void => {
+  stateStorePath = path;
+};
 
 export type StorageReadyStatus = {
   ok: boolean;
@@ -42,7 +47,7 @@ const tryRead = async (key: string): Promise<string | null> => {
   let lastError: unknown;
   for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
     try {
-      const store = await getStore(STORE_NAME);
+      const store = await getStore(stateStorePath);
       const value = await store?.get<string>(key);
       return value ?? null;
     } catch (error) {
@@ -94,7 +99,7 @@ const storage: StateStorage = {
       return;
     }
     try {
-      const store = await getStore(STORE_NAME);
+      const store = await getStore(stateStorePath);
       await store?.set(key, value);
       await store?.save();
     } catch (error) {
@@ -115,7 +120,7 @@ const storage: StateStorage = {
       return;
     }
     try {
-      const store = await getStore(STORE_NAME);
+      const store = await getStore(stateStorePath);
       await store?.delete(key);
       await store?.save();
     } catch (error) {
@@ -132,6 +137,7 @@ export default storage;
 // Test-only escape hatch. Resets module state between test cases so each test
 // can exercise the write gate from a clean slate. Not exported from index.
 export const __resetForTests = (): void => {
+  stateStorePath = STORE_NAME;
   firstReadDone = false;
   storageReadyPromise = new Promise<StorageReadyStatus>((resolve) => {
     storageReadyResolve = resolve;
