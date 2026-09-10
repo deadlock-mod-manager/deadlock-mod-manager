@@ -27,6 +27,7 @@ export const useBatchUpdate = () => {
     getActiveProfile,
     setInstalledVpks,
     setSelectedDownloads: setStoreSelectedDownloads,
+    updateModVpksAfterReorder,
     localMods,
     backupEnabled,
     maxBackupCount,
@@ -181,6 +182,11 @@ export const useBatchUpdate = () => {
       });
 
       const result = BatchUpdateResultSchema.parse(rawResult);
+      const activeProfileId = activeProfile?.id;
+
+      if (result.vpkMappings && result.vpkMappings.length > 0) {
+        updateModVpksAfterReorder(result.vpkMappings, activeProfileId);
+      }
 
       for (const installedModInfo of result.installedMods) {
         const updatableMod = updatableMods.find(

@@ -82,6 +82,13 @@ export const AddonsBackupManagement = () => {
   const setMaxBackupCount = usePersistedStore(
     (state) => state.setMaxBackupCount,
   );
+  const restoreModsFromManifest = usePersistedStore(
+    (state) => state.restoreModsFromManifest,
+  );
+  const syncProfileEnabledMods = usePersistedStore(
+    (state) => state.syncProfileEnabledMods,
+  );
+  const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
 
   const loadBackups = useCallback(async () => {
     try {
@@ -167,6 +174,11 @@ export const AddonsBackupManagement = () => {
         fileName: selectedBackup,
         strategy,
       });
+      const activeProfile = getActiveProfile();
+      if (activeProfile) {
+        await restoreModsFromManifest();
+        await syncProfileEnabledMods(activeProfile.id);
+      }
       toast.dismiss();
       toast.success(t("settings.backupRestored"));
       logger

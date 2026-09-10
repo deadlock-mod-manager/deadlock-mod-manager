@@ -24,6 +24,8 @@ import { createModsSlice, type ModsState } from "./mods";
 type TestState = ModsState & {
   profiles: Record<string, ModProfile>;
   activeProfileId: ProfileId;
+  profileSyncRevisions: Record<ProfileId, number>;
+  bumpProfileSyncRevision: (profileId: ProfileId) => number;
 };
 
 const modFor = (remoteId: string): LocalMod =>
@@ -59,6 +61,13 @@ const createTestStore = () =>
     ),
     profiles: {},
     activeProfileId: createProfileId("default"),
+    profileSyncRevisions: {},
+    bumpProfileSyncRevision: (profileId) => {
+      const revisions = get().profileSyncRevisions;
+      const next = (revisions[profileId] ?? 0) + 1;
+      set({ profileSyncRevisions: { ...revisions, [profileId]: next } });
+      return next;
+    },
   }));
 
 let store: ReturnType<typeof createTestStore>;
@@ -77,6 +86,25 @@ beforeEach(() => {
 });
 
 describe("removeMod", () => {
+  it("preserves active progress and visibility when removing from another profile", () => {
+    store.setState({ hiddenHeroMods: { "1": true } });
+    const before = store.getState();
+    store.getState().removeMod("1", createProfileId("secondary"));
+    expect(store.getState().modProgress).toBe(before.modProgress);
+    expect(store.getState().hiddenHeroMods).toBe(before.hiddenHeroMods);
+    expect(store.getState().localMods).toBe(before.localMods);
+    expect(store.getState().profiles.secondary.mods).toEqual([]);
+  });
+
+  it("preserves active progress and visibility when nuking another profile", () => {
+    store.setState({ hiddenHeroMods: { "1": true } });
+    const before = store.getState();
+    store.getState().nukeModsState([], createProfileId("secondary"));
+    expect(store.getState().modProgress).toBe(before.modProgress);
+    expect(store.getState().hiddenHeroMods).toBe(before.hiddenHeroMods);
+    expect(store.getState().localMods).toBe(before.localMods);
+    expect(store.getState().profiles.secondary.mods).toEqual([]);
+  });
   it("clears the mod from the active profile's enabled mods", () => {
     store.getState().removeMod("1");
 

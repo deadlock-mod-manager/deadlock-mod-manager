@@ -40,6 +40,11 @@ export interface ProfileVpkFile {
   locator: string;
 }
 
+export interface ProfileVpkSnapshot {
+  manifest: VpkManifest;
+  files: ProfileVpkFile[];
+}
+
 export interface SeedManifestEntry {
   modId: string;
   enabled: boolean;
