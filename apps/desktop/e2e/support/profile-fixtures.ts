@@ -41,6 +41,8 @@ export const fixtureMod = (modId: string, index: number): LocalMod => ({
   author: "E2E",
   downloadable: false,
   tags: [],
+  dependencies: [],
+  metadata: null,
   images: [],
   hero: null,
   isAudio: false,
@@ -62,10 +64,16 @@ export const fixtureMod = (modId: string, index: number): LocalMod => ({
   status: ModStatus.Installed,
   installedVpks: [`pak${String(index + 1).padStart(2, "0")}_dir.vpk`],
   installOrder: index,
+  // These synthetic script archives contain no hero assets. Model them as
+  // already indexed so unrelated background scans cannot race a test restart.
+  detectedHero: null,
+  usesCriticalPaths: false,
 });
 
 export const prepareProfileWorld = async (
   world: CreatedWorld,
+  alphaModIds: string[] = ALPHA_MODS,
+  alphaSlots?: number[],
 ): Promise<void> => {
   const profiles: Record<
     string,
@@ -93,7 +101,7 @@ export const prepareProfileWorld = async (
     },
   };
   for (const { profile, modIds } of [
-    { profile: ALPHA, modIds: ALPHA_MODS },
+    { profile: ALPHA, modIds: alphaModIds },
     { profile: BETA, modIds: BETA_MODS },
   ]) {
     const directory = path.join(
@@ -104,7 +112,14 @@ export const prepareProfileWorld = async (
       profile.folder,
     );
     await mkdir(directory, { recursive: true });
-    const mods = modIds.map(fixtureMod);
+    const mods = modIds.map((id, index) =>
+      fixtureMod(
+        id,
+        profile.id === ALPHA.id && alphaSlots
+          ? alphaSlots[index] - 1
+          : index % 99,
+      ),
+    );
     const entries: Record<
       string,
       {
@@ -117,15 +132,28 @@ export const prepareProfileWorld = async (
       }
     > = {};
     for (const [index, mod] of mods.entries()) {
-      const filename = `pak${String(index + 1).padStart(2, "0")}_dir.vpk`;
+      mod.installOrder = index;
+      const filename = `pak${String(profile.id === ALPHA.id && alphaSlots ? alphaSlots[index] : (index % 99) + 1).padStart(2, "0")}_dir.vpk`;
+      const shard = Math.floor(index / 99) + 1;
+      const shardDirectory =
+        shard === 1
+          ? directory
+          : path.join(
+              world.configuration.roots.game,
+              "game",
+              "citadel",
+              `addons${shard}`,
+              profile.folder,
+            );
+      await mkdir(shardDirectory, { recursive: true });
       await writeFile(
-        path.join(directory, filename),
+        path.join(shardDirectory, filename),
         profilePayload(mod.remoteId),
       );
       entries[mod.remoteId] = {
         enabled: true,
         order: index,
-        shard: 1,
+        shard,
         currentVpks: [filename],
         disabledVpks: [],
         originalVpkNames: [`${mod.remoteId}.vpk`],
@@ -185,7 +213,7 @@ export const prepareProfileWorld = async (
     gameinfo,
     (await readFile(gameinfo, "utf8")).replace(
       "Game citadel",
-      `Game citadel/addons/${ALPHA.folder}\n      Game citadel`,
+      `${Array.from({ length: Math.ceil(alphaModIds.length / 99) }, (_, index) => `Game citadel/${index === 0 ? "addons" : `addons${index + 1}`}/${ALPHA.folder}`).join("\n      ")}\n      Game citadel`,
     ),
   );
   await writeFile(

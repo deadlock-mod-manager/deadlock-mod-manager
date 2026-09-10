@@ -1,4 +1,11 @@
 export type ScenarioId =
+  | "filesystem-backup-replace"
+  | "filesystem-backup-merge"
+  | "filesystem-lock"
+  | "filesystem-collision"
+  | "filesystem-shards"
+  | "filesystem-crash-placed"
+  | "filesystem-crash-committed"
   | "about-smoke"
   | "local-mod-lifecycle"
   | "profiles-pointer"
@@ -14,6 +21,13 @@ export type ScenarioId =
 
 export const parseScenarioId = (value = "about-smoke"): ScenarioId => {
   if (
+    value === "filesystem-backup-replace" ||
+    value === "filesystem-backup-merge" ||
+    value === "filesystem-lock" ||
+    value === "filesystem-collision" ||
+    value === "filesystem-shards" ||
+    value === "filesystem-crash-placed" ||
+    value === "filesystem-crash-committed" ||
     value === "about-smoke" ||
     value === "local-mod-lifecycle" ||
     value === "profiles-pointer" ||
@@ -32,19 +46,23 @@ export const parseScenarioId = (value = "about-smoke"): ScenarioId => {
 };
 
 export const scenarioPhases = (scenario: ScenarioId): readonly string[] =>
-  scenario.startsWith("downloads-")
-    ? ["transfer", "restart-download"]
-    : scenario === "local-mod-lifecycle"
-      ? ["import-toggle", "restart-delete"]
-      : scenario === "about-smoke"
-        ? ["smoke"]
-        : ["reorder-switch", "restart-profiles"];
+  scenario.startsWith("filesystem-")
+    ? ["mutate", "restart-filesystem"]
+    : scenario.startsWith("downloads-")
+      ? ["transfer", "restart-download"]
+      : scenario === "local-mod-lifecycle"
+        ? ["import-toggle", "restart-delete"]
+        : scenario === "about-smoke"
+          ? ["smoke"]
+          : ["reorder-switch", "restart-profiles"];
 
 export const scenarioSpec = (scenario: ScenarioId): string =>
-  scenario.startsWith("downloads-")
-    ? "./specs/downloads.e2e.ts"
-    : scenario === "local-mod-lifecycle"
-      ? "./specs/local-mod-lifecycle.e2e.ts"
-      : scenario === "about-smoke"
-        ? "./specs/about.e2e.ts"
-        : "./specs/profiles-ordering.e2e.ts";
+  scenario.startsWith("filesystem-")
+    ? "./specs/filesystem.e2e.ts"
+    : scenario.startsWith("downloads-")
+      ? "./specs/downloads.e2e.ts"
+      : scenario === "local-mod-lifecycle"
+        ? "./specs/local-mod-lifecycle.e2e.ts"
+        : scenario === "about-smoke"
+          ? "./specs/about.e2e.ts"
+          : "./specs/profiles-ordering.e2e.ts";
