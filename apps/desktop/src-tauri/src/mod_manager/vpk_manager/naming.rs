@@ -1,4 +1,5 @@
 use super::*;
+use crate::providers::SubmissionRef;
 
 impl VpkManager {
   /// Count enabled `pak##_dir.vpk` files directly inside `dir` (non-recursive).
@@ -40,9 +41,7 @@ impl VpkManager {
 
     if let Some(underscore_pos) = filename.find('_') {
       let potential_id = &filename[..underscore_pos];
-      if !potential_id.is_empty()
-        && (potential_id.chars().all(|c| c.is_ascii_digit()) || potential_id.starts_with("local-"))
-      {
+      if SubmissionRef::parse_slug(potential_id).is_ok() {
         return Some(potential_id.to_string());
       }
     }

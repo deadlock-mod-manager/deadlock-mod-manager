@@ -1,0 +1,32 @@
+{
+  "mod": {
+    "_bIsTrashed": false,
+    "_bIsWithheld": false,
+    "_aFiles": [
+      {
+        "_idRow": 1801337,
+        "_sFile": "pak52_dir_3154a.zip",
+        "_nFilesize": 7493240,
+        "_tsDateAdded": 1788032691,
+        "_nDownloadCount": 2,
+        "_sDownloadUrl": "https://gamebanana.com/dl/1801337",
+        "_sMd5Checksum": "03f6e9f9e25675d14521c84e010a33c2"
+      }
+    ]
+  },
+  "sound": {
+    "_bIsTrashed": false,
+    "_bIsWithheld": false,
+    "_aFiles": [
+      {
+        "_idRow": 1801416,
+        "_sFile": "blastedpeacemaker1.rar",
+        "_nFilesize": 3112379,
+        "_tsDateAdded": 1788037019,
+        "_nDownloadCount": 0,
+        "_sDownloadUrl": "https://gamebanana.com/dl/1801416",
+        "_sMd5Checksum": "6e2d1c578615d7be46c321330abec73e"
+      }
+    ]
+  }
+}

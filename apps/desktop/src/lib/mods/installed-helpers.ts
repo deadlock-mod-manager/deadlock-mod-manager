@@ -1,4 +1,5 @@
 import { type LocalMod, ModStatus } from "@/types/mods";
+import { parseSubmissionSlug } from "./submission-ref";
 
 export function isInstalledModWithVpks(mod: LocalMod): boolean {
   return (
@@ -10,5 +11,5 @@ export function isInstalledModWithVpks(mod: LocalMod): boolean {
 
 /** Local mods only exist on disk, so they can never be downloaded again. */
 export function isLocalMod(mod: Pick<LocalMod, "remoteId">): boolean {
-  return mod.remoteId.startsWith("local-");
+  return parseSubmissionSlug(mod.remoteId)?.provider === "local";
 }
