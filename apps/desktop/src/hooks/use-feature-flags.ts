@@ -1,16 +1,11 @@
 import type { FeatureFlag } from "@deadlock-mods/shared";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useRef } from "react";
 import {
   deleteFeatureFlagUserOverride,
   getFeatureFlags,
   setFeatureFlagUserOverride,
 } from "@/lib/api-client";
 import logger from "@/lib/logger";
-import {
-  setGameBananaDirectClientEnabled,
-  synchronizeGameBananaCatalog,
-} from "@/lib/gamebanana-catalog";
 
 const DEV_ALWAYS_ON_FLAGS = new Set([
   "custom-maps",
@@ -58,37 +53,6 @@ export const useFeatureFlag = (
  * One helper so the three call sites cannot drift on that default.
  */
 export const usePlayerStatsEnabled = () => useFeatureFlag("player-stats", true);
-
-export const useGameBananaDirectClient = () => {
-  const queryClient = useQueryClient();
-  const previousEnabled = useRef(false);
-  const flag = useFeatureFlag("gamebanana-direct-client", false);
-  const synchronizeCatalog = useMutation({
-    mutationFn: synchronizeGameBananaCatalog,
-    meta: { skipGlobalErrorHandler: true },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["mods"] });
-    },
-    onError: (error) => {
-      logger.withError(error).warn("GameBanana catalog refresh failed");
-    },
-  });
-
-  useEffect(() => {
-    if (!flag.isFetched) return;
-    setGameBananaDirectClientEnabled(flag.isEnabled);
-    if (previousEnabled.current !== flag.isEnabled) {
-      previousEnabled.current = flag.isEnabled;
-      void queryClient.invalidateQueries({ queryKey: ["mods"] });
-      void queryClient.invalidateQueries({ queryKey: ["mod"] });
-      if (flag.isEnabled) {
-        synchronizeCatalog.mutate();
-      }
-    }
-  }, [flag.isEnabled, flag.isFetched, queryClient, synchronizeCatalog.mutate]);
-
-  return flag;
-};
 
 export const useFeatureFlagMutation = () => {
   const queryClient = useQueryClient();
