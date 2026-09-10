@@ -20,16 +20,16 @@ export const InstalledFilesDisplay = ({
   fileTree,
   modName,
 }: InstalledFilesDisplayProps) => {
-  const filesByArchive = fileTree.files.reduce(
-    (acc, file) => {
-      if (!acc[file.archive_name]) {
-        acc[file.archive_name] = [];
-      }
-      acc[file.archive_name].push(file);
-      return acc;
-    },
-    {} as Record<string, typeof fileTree.files>,
-  );
+  const filesByArchive = fileTree.files.reduce<
+    Record<string, ModFileTree["files"]>
+  >((acc, file) => {
+    if (!file.is_selected) return acc;
+    if (!acc[file.archive_name]) {
+      acc[file.archive_name] = [];
+    }
+    acc[file.archive_name].push(file);
+    return acc;
+  }, {});
 
   const archiveNames = Object.keys(filesByArchive);
 
