@@ -9,13 +9,12 @@ export enum JobStatus {
   Failed = "failed",
 }
 
-export interface ModsJobData extends BaseJobData {
-  modId: string;
-}
-
 export interface ModFileProcessingJobData extends BaseJobData {
-  modId: string;
-  modDownloadId: string;
+  provider: "gamebanana";
+  submissionType: "mod" | "sound";
+  submissionId: string;
+  fileId: string;
+  upstreamUpdatedAt: string;
   url: string;
   file: string;
   size: number;

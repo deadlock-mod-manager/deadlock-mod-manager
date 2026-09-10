@@ -51,7 +51,7 @@ export const vpkRouter = {
 
         wide?.merge({
           hasMatch: !!result.matchedVpk,
-          modName: result.matchedVpk?.mod?.name,
+          submissionId: result.matchedVpk?.submissionId,
         });
 
         return result;

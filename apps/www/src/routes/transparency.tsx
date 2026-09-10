@@ -227,7 +227,7 @@ function TransparencyComponent() {
 
                 {statsQuery.isLoading ? (
                   <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
-                    {[1, 2, 3, 4, 5].map((i) => (
+                    {[1, 2].map((i) => (
                       <div
                         key={i}
                         className='rounded-lg border bg-card p-6 animate-pulse'>
@@ -246,15 +246,6 @@ function TransparencyComponent() {
                   <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3'>
                     {[
                       {
-                        label: "Total Mods",
-                        value: statsQuery.data?.totalMods || 0,
-                      },
-                      {
-                        label: "Mod Downloads",
-                        value: statsQuery.data?.modDownloads || 0,
-                        suffix: "+",
-                      },
-                      {
                         label: "App Downloads",
                         value: statsQuery.data?.appDownloads || 0,
                         suffix: "+",
@@ -262,10 +253,6 @@ function TransparencyComponent() {
                       {
                         label: "Registered Users",
                         value: statsQuery.data?.totalUsers || 0,
-                      },
-                      {
-                        label: "Mod Files",
-                        value: statsQuery.data?.totalModFiles || 0,
                       },
                     ].map((stat) => (
                       <div

@@ -13,10 +13,7 @@ import { TrendingDown, TrendingUp } from "lucide-react";
 
 type AnalyticsDataPoint = {
   date: string;
-  mods: number;
-  downloads: number;
   users: number;
-  modFiles: number;
 };
 
 type SectionCardProps = {
@@ -145,34 +142,17 @@ type SectionCardsProps = {
   data: AnalyticsDataPoint[];
   timeRange: "1h" | "1d" | "7d" | "30d" | "90d" | "all";
   totals?: {
-    mods: number;
-    downloads: number;
     users: number;
-    modFiles: number;
+    appDownloads: number;
   };
 };
 
 export function SectionCards({ data, timeRange, totals }: SectionCardsProps) {
-  const modsTrend =
-    timeRange === "all"
-      ? { trend: 0, current: 0, previous: 0 }
-      : calculateTrend(data, "mods", timeRange);
-  const downloadsTrend =
-    timeRange === "all"
-      ? { trend: 0, current: 0, previous: 0 }
-      : calculateTrend(data, "downloads", timeRange);
   const usersTrend =
     timeRange === "all"
       ? { trend: 0, current: 0, previous: 0 }
       : calculateTrend(data, "users", timeRange);
-  const modFilesTrend =
-    timeRange === "all"
-      ? { trend: 0, current: 0, previous: 0 }
-      : calculateTrend(data, "modFiles", timeRange);
-
-  const totalMods = totals?.mods ?? 0;
-  const totalDownloads = totals?.downloads ?? 0;
-  const totalModFiles = totals?.modFiles ?? 0;
+  const appDownloads = totals?.appDownloads ?? 0;
   const totalUsers = totals?.users ?? 0;
 
   const trendLabelPrefix =
@@ -187,40 +167,13 @@ export function SectionCards({ data, timeRange, totals }: SectionCardsProps) {
             : "vs previous week";
 
   return (
-    <div className='*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-flow-col gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs  auto-cols-fr'>
+    <div className='*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card dark:*:data-[slot=card]:bg-card grid grid-flow-col gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs auto-cols-fr'>
       <SectionCard
-        title='Total Mods'
-        value={totalMods}
-        trend={modsTrend.trend}
-        trendLabel={
-          timeRange === "all"
-            ? "All time"
-            : modsTrend.trend >= 0
-              ? `Up ${modsTrend.trend.toFixed(1)}% ${trendLabelPrefix}`
-              : `Down ${Math.abs(modsTrend.trend).toFixed(1)}% ${trendLabelPrefix}`
-        }
-        description={
-          timeRange === "all"
-            ? "Total mods in the platform"
-            : "Mods created in the selected time period"
-        }
-      />
-      <SectionCard
-        title='Mod Downloads'
-        value={totalDownloads}
-        trend={downloadsTrend.trend}
-        trendLabel={
-          timeRange === "all"
-            ? "All time"
-            : downloadsTrend.trend >= 0
-              ? `Up ${downloadsTrend.trend.toFixed(1)}% ${trendLabelPrefix}`
-              : `Down ${Math.abs(downloadsTrend.trend).toFixed(1)}% ${trendLabelPrefix}`
-        }
-        description={
-          timeRange === "all"
-            ? "Total mod downloads"
-            : "Mod downloads in the selected time period"
-        }
+        title='App Downloads'
+        value={appDownloads}
+        trend={0}
+        trendLabel='All time'
+        description='Downloads across published app releases'
       />
       <SectionCard
         title='Users'
@@ -237,23 +190,6 @@ export function SectionCards({ data, timeRange, totals }: SectionCardsProps) {
           timeRange === "all"
             ? "Total users"
             : "New users in the selected time period"
-        }
-      />
-      <SectionCard
-        title='Mod Files'
-        value={totalModFiles}
-        trend={modFilesTrend.trend}
-        trendLabel={
-          timeRange === "all"
-            ? "All time"
-            : modFilesTrend.trend >= 0
-              ? `Up ${modFilesTrend.trend.toFixed(1)}% ${trendLabelPrefix}`
-              : `Down ${Math.abs(modFilesTrend.trend).toFixed(1)}% ${trendLabelPrefix}`
-        }
-        description={
-          timeRange === "all"
-            ? "Total mod files"
-            : "Mod files added in the selected time period"
         }
       />
     </div>

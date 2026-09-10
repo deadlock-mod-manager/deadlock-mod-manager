@@ -40,6 +40,29 @@ export class ModRepository {
     return result.length > 0 ? result[0] : null;
   }
 
+  async findBySubmissionIdentity(
+    submissionType: "mod" | "sound",
+    submissionId: string,
+  ): Promise<Mod | null> {
+    const candidates =
+      submissionType === "sound"
+        ? [submissionId, `snd-${submissionId}`]
+        : [submissionId];
+    const [mod] = await this.db
+      .select()
+      .from(mods)
+      .where(
+        and(
+          inArray(mods.remoteId, candidates),
+          eq(mods.isAudio, submissionType === "sound"),
+          eq(mods.isBlacklisted, false),
+          eq(mods.isTrashed, false),
+        ),
+      )
+      .limit(1);
+    return mod ?? null;
+  }
+
   async findByRemoteIdIncludingBlacklisted(
     remoteId: string,
   ): Promise<Mod | null> {

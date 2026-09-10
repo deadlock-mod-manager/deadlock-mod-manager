@@ -4,12 +4,11 @@ import { queueConfigs } from "./config/queues";
 import { logger } from "./lib/logger";
 import redis from "./lib/redis";
 import { modFileProcessor } from "./processors/mod-file-processor";
-import { modProcessor } from "./processors/mod-processor";
-import { modsSchedulerProcessor } from "./processors/mods-scheduler";
 import { tempCleanupProcessor } from "./processors/temp-cleanup-processor";
 import { cronService } from "./services/cron";
 import { diskHealthMonitor } from "./services/disk-health-monitor";
-import { modFileProcessingQueue, modsQueue } from "./services/queue";
+import { modFilesSubscriber } from "./services/mod-files-subscriber";
+import { modFileProcessingQueue } from "./services/queue";
 import { tempCleanupService } from "./services/temp-cleanup";
 
 const main = async () => {
@@ -17,13 +16,6 @@ const main = async () => {
   await tempCleanupService.initialize();
   diskHealthMonitor.start();
 
-  const modsWorker = new BaseWorker(
-    queueConfigs.mods.name,
-    redis,
-    logger,
-    modProcessor,
-    1,
-  );
   const modFileWorker = new BaseWorker(
     queueConfigs.modFileProcessing.name,
     redis,
@@ -33,13 +25,6 @@ const main = async () => {
   );
 
   await cronService.defineJob({
-    name: "mods-scheduler",
-    pattern: CronPatterns.EVERY_HOUR,
-    processor: modsSchedulerProcessor,
-    enabled: true,
-  });
-
-  await cronService.defineJob({
     name: "temp-cleanup",
     pattern: CronPatterns.EVERY_30_MINUTES,
     processor: tempCleanupProcessor,
@@ -47,6 +32,7 @@ const main = async () => {
   });
 
   cronService.start();
+  await modFilesSubscriber.start();
 
   process.on("SIGTERM", async () => {
     logger.info("SIGTERM received, initiating graceful shutdown");
@@ -54,10 +40,9 @@ const main = async () => {
     await tempCleanupService.cleanupOldTempDirectories();
 
     await Promise.all([
-      modsWorker.close(),
       modFileWorker.close(),
-      modsQueue.close(),
       modFileProcessingQueue.close(),
+      modFilesSubscriber.stop(),
       cronService.shutdown(),
       diskHealthMonitor.stop(),
     ]);
