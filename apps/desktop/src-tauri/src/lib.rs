@@ -202,6 +202,7 @@ pub fn run() {
     .invoke_handler(tauri::generate_handler![
       commands::game::find_game_path,
       commands::gamebanana_catalog::synchronize_gamebanana_catalog,
+      commands::gamebanana_catalog::clear_gamebanana_catalog,
       commands::gamebanana_catalog::query_gamebanana_catalog,
       commands::gamebanana_catalog::get_gamebanana_submission_detail,
       commands::gamebanana_catalog::get_gamebanana_submission_files,

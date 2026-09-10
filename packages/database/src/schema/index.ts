@@ -15,5 +15,6 @@ export * from "./profiles";
 export * from "./quick-answers";
 export * from "./relations";
 export * from "./reports";
+export * from "./rss-items";
 export * from "./segments";
 export * from "./vpk";

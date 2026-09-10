@@ -1,5 +1,7 @@
-import { and, count, desc, eq } from "@deadlock-mods/database";
+import { RuntimeError } from "@deadlock-mods/common";
+import { and, count, desc, eq, getTableColumns, sql } from "drizzle-orm";
 import type { Database } from "../client";
+import { mods } from "../schema/mods";
 import { type NewReport, type Report, reports } from "../schema/reports";
 
 export interface ReportIdentity {
@@ -68,18 +70,14 @@ export class ReportRepository {
   async getRecentReports(limit = 50): Promise<Report[]> {
     return this.db
       .select({
-        id: reports.id,
-        provider: reports.provider,
-        submissionType: reports.submissionType,
-        submissionId: reports.submissionId,
-        reporterHardwareId: reports.reporterHardwareId,
-        discordMessageId: reports.discordMessageId,
-        createdAt: reports.createdAt,
-        updatedAt: reports.updatedAt,
-        modName: reports.modName,
-        modAuthor: reports.modAuthor,
+        ...getTableColumns(reports),
+        modName: sql<string | null>`coalesce(${reports.modName}, ${mods.name})`,
+        modAuthor: sql<
+          string | null
+        >`coalesce(${reports.modAuthor}, ${mods.author})`,
       })
       .from(reports)
+      .leftJoin(mods, eq(reports.modId, mods.id))
       .orderBy(desc(reports.createdAt))
       .limit(limit);
   }
@@ -116,32 +114,45 @@ export class ReportRepository {
       totalReports: number;
     }>
   > {
+    const modId = sql<string | null>`coalesce(
+      case when ${reports.submissionType} = 'sound'
+        then 'snd-' || ${reports.submissionId}
+        else ${reports.submissionId} end,
+      ${reports.modId}
+    )`;
+    const modName = sql<
+      string | null
+    >`coalesce(${reports.modName}, ${mods.name})`;
+    const modAuthor = sql<
+      string | null
+    >`coalesce(${reports.modAuthor}, ${mods.author})`;
     const rows = await this.db
       .select({
-        provider: reports.provider,
-        submissionType: reports.submissionType,
-        submissionId: reports.submissionId,
-        modName: reports.modName,
-        modAuthor: reports.modAuthor,
+        modId,
+        modName,
+        modAuthor,
         totalReports: count(reports.id),
       })
       .from(reports)
-      .groupBy(
-        reports.provider,
-        reports.submissionType,
-        reports.submissionId,
-        reports.modName,
-        reports.modAuthor,
-      )
+      .leftJoin(mods, eq(reports.modId, mods.id))
+      .groupBy(modId, modName, modAuthor)
       .orderBy(desc(count(reports.id)));
-    return rows.map((row) => ({
-      modId:
-        row.submissionType === "sound"
-          ? `snd-${row.submissionId}`
-          : row.submissionId,
-      modName: row.modName,
-      modAuthor: row.modAuthor,
-      totalReports: row.totalReports,
-    }));
+    return rows.map((row) => {
+      if (
+        row.modId === null ||
+        row.modName === null ||
+        row.modAuthor === null
+      ) {
+        throw new RuntimeError(
+          "Report is missing both submission metadata and a legacy mod",
+        );
+      }
+      return {
+        modId: row.modId,
+        modName: row.modName,
+        modAuthor: row.modAuthor,
+        totalReports: row.totalReports,
+      };
+    });
   }
 }

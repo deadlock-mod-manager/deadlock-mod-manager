@@ -14,11 +14,14 @@ const HYDRATION_BATCH_SIZE: usize = 50;
 const LAST_INCREMENTAL_AT: &str = "last_incremental_at";
 const LAST_FULL_SYNC_AT: &str = "last_full_sync_at";
 const LAST_INCOMPLETE_SNAPSHOT_AT: &str = "last_incomplete_snapshot_at";
+const PREVIEW_IMAGES_VERSION: &str = "preview_images_v1";
 const INCOMPLETE_RETRY_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60);
 
 type SourceFuture<'a, T> = Pin<Box<dyn Future<Output = Result<T, Error>> + Send + 'a>>;
 
 trait CatalogSource: Send + Sync {
+  fn record_counts<'a>(&'a self, cancel: &'a CancellationToken) -> SourceFuture<'a, [u64; 2]>;
+
   fn index<'a>(
     &'a self,
     submission_type: SubmissionType,
@@ -35,6 +38,14 @@ trait CatalogSource: Send + Sync {
 }
 
 impl CatalogSource for GameBananaClient {
+  fn record_counts<'a>(&'a self, cancel: &'a CancellationToken) -> SourceFuture<'a, [u64; 2]> {
+    Box::pin(async move {
+      let mods = self.index(SubmissionType::Mod, 1, false, cancel).await?;
+      let sounds = self.index(SubmissionType::Sound, 1, false, cancel).await?;
+      Ok([mods.metadata.record_count, sounds.metadata.record_count])
+    })
+  }
+
   fn index<'a>(
     &'a self,
     submission_type: SubmissionType,
@@ -71,6 +82,7 @@ pub struct CatalogSync {
   catalog: Catalog,
   source: Box<dyn CatalogSource>,
   sync_lock: tokio::sync::Mutex<()>,
+  progress: tokio::sync::Mutex<(Option<String>, Option<u32>)>,
 }
 
 impl CatalogSync {
@@ -79,6 +91,7 @@ impl CatalogSync {
       catalog,
       source: Box::new(source),
       sync_lock: tokio::sync::Mutex::new(()),
+      progress: tokio::sync::Mutex::new((None, None)),
     }
   }
 
@@ -88,6 +101,7 @@ impl CatalogSync {
       catalog,
       source: Box::new(source),
       sync_lock: tokio::sync::Mutex::new(()),
+      progress: tokio::sync::Mutex::new((None, None)),
     }
   }
 
@@ -98,6 +112,30 @@ impl CatalogSync {
     cancel: &CancellationToken,
   ) -> Result<SyncOutcome, Error> {
     let _sync_guard = self.sync_lock.lock().await;
+    *self.progress.lock().await = (None, None);
+    let result = self.run_sync(force_refresh, force_reconcile, cancel).await;
+    *self.progress.lock().await = (None, None);
+    result
+  }
+
+  pub async fn progress(&self) -> (Option<String>, Option<u32>) {
+    self.progress.lock().await.clone()
+  }
+
+  async fn report_progress(&self, submission_type: SubmissionType, percentage: Option<u32>) {
+    let phase = match submission_type {
+      SubmissionType::Mod => "mods",
+      SubmissionType::Sound => "sounds",
+    };
+    *self.progress.lock().await = (Some(phase.to_string()), percentage);
+  }
+
+  async fn run_sync(
+    &self,
+    force_refresh: bool,
+    force_reconcile: bool,
+    cancel: &CancellationToken,
+  ) -> Result<SyncOutcome, Error> {
     // A completed but malformed snapshot retains cached entries. Avoid crawling
     // the same malformed index again on every catalog request, including when
     // the catalog is empty or its last successful full sync is overdue.
@@ -129,6 +167,7 @@ impl CatalogSync {
       || self.catalog.state(INCOMPLETE_SNAPSHOT).await?.is_some()
       || self.catalog.count_visible().await? == 0
       || self.full_reconciliation_due().await?
+      || self.catalog.state(PREVIEW_IMAGES_VERSION).await?.is_none()
     {
       self.full_sync(cancel).await?;
       return Ok(SyncOutcome::Full);
@@ -137,15 +176,27 @@ impl CatalogSync {
     self.incremental_sync(force_refresh, cancel).await
   }
 
+  pub async fn clear(&self) -> Result<(), Error> {
+    let _sync_guard = self.sync_lock.lock().await;
+    self.catalog.clear().await
+  }
+
   async fn full_sync(&self, cancel: &CancellationToken) -> Result<(), Error> {
+    let counts = self.source.record_counts(cancel).await?;
+    let total = counts[0].saturating_add(counts[1]);
+    let mut completed = 0_u64;
     let mod_cursor = self.catalog.cursor(SubmissionType::Mod).await?;
     let sound_cursor = self.catalog.cursor(SubmissionType::Sound).await?;
     let snapshot_id = resumable_snapshot(&mod_cursor.snapshot_id, &sound_cursor.snapshot_id)
       .unwrap_or_else(new_snapshot_id);
 
-    for submission_type in [SubmissionType::Mod, SubmissionType::Sound] {
+    for (submission_type, count) in [SubmissionType::Mod, SubmissionType::Sound]
+      .into_iter()
+      .zip(counts)
+    {
       let cursor = self.catalog.cursor(submission_type).await?;
       if cursor.snapshot_id.as_deref() == Some(snapshot_id.as_str()) && cursor.snapshot_complete {
+        completed = completed.saturating_add(count);
         continue;
       }
       let mut page_number = if cursor.snapshot_id.as_deref() == Some(snapshot_id.as_str()) {
@@ -154,11 +205,27 @@ impl CatalogSync {
         1
       };
 
+      self
+        .report_progress(submission_type, catalog_percentage(completed, total))
+        .await;
+
       loop {
         let page = self
           .source
           .index(submission_type, page_number, false, cancel)
           .await?;
+        self
+          .report_progress(
+            submission_type,
+            catalog_percentage(
+              completed.saturating_add(
+                (u64::from(page_number.saturating_sub(1)) * u64::from(page.metadata.per_page))
+                  .min(count),
+              ),
+              total,
+            ),
+          )
+          .await;
         let index_records = page.valid_records();
         if index_records.len() != page.records.len() {
           self
@@ -201,11 +268,25 @@ impl CatalogSync {
           )
           .await;
 
+        self
+          .report_progress(
+            submission_type,
+            catalog_percentage(
+              completed.saturating_add(if page.metadata.is_complete {
+                count
+              } else {
+                (u64::from(page_number) * u64::from(page.metadata.per_page)).min(count)
+              }),
+              total,
+            ),
+          )
+          .await;
         if page.metadata.is_complete {
           break;
         }
         page_number = page_number.saturating_add(1);
       }
+      completed = completed.saturating_add(count);
     }
 
     self.catalog.complete_snapshot(snapshot_id).await?;
@@ -213,6 +294,10 @@ impl CatalogSync {
       self
         .catalog
         .set_state(LAST_FULL_SYNC_AT, unix_timestamp().to_string())
+        .await?;
+      self
+        .catalog
+        .set_state(PREVIEW_IMAGES_VERSION, "1".to_string())
         .await?;
     } else {
       self
@@ -251,6 +336,7 @@ impl CatalogSync {
 
     for submission_type in [SubmissionType::Mod, SubmissionType::Sound] {
       let high_water_mark = self.catalog.cursor(submission_type).await?.high_water_mark;
+      self.report_progress(submission_type, None).await;
       let mut newest = high_water_mark;
       let mut page_number = 1;
       loop {
@@ -331,6 +417,13 @@ impl CatalogSync {
   }
 }
 
+fn catalog_percentage(completed: u64, total: u64) -> Option<u32> {
+  if total == 0 {
+    return None;
+  }
+  Some((completed.saturating_mul(100) / total).min(99) as u32)
+}
+
 fn from_index(
   record: &crate::providers::gamebanana::models::IndexSubmission,
   submission_type: SubmissionType,
@@ -378,7 +471,8 @@ fn from_index(
     is_hydrated: false,
     has_files: record.has_files,
     download_count: 0,
-    likes: 0,
+    likes: record.likes,
+    images: record.preview_media.image_urls(),
     remote_added_at: record
       .date_added
       .filter(|value| *value > 0)
@@ -470,6 +564,19 @@ fn unix_timestamp() -> u64 {
 
 #[cfg(test)]
 mod tests {
+  #[test]
+  fn progress_weights_mods_and_sounds_by_their_combined_record_count() {
+    let mods = 800;
+    let sounds = 200;
+    let total = mods + sounds;
+    assert_eq!(super::catalog_percentage(0, total), Some(0));
+    assert_eq!(super::catalog_percentage(400, total), Some(40));
+    assert_eq!(super::catalog_percentage(mods, total), Some(80));
+    assert_eq!(super::catalog_percentage(mods + 100, total), Some(90));
+    assert_eq!(super::catalog_percentage(total, total), Some(99));
+    assert_eq!(super::catalog_percentage(0, 0), None);
+  }
+
   use super::{CatalogSource, CatalogSync, SourceFuture};
   use crate::errors::Error;
   use crate::providers::gamebanana::{BulkHydration, IndexPage};
@@ -484,6 +591,10 @@ mod tests {
   }
 
   impl CatalogSource for FakeSource {
+    fn record_counts<'a>(&'a self, _cancel: &'a CancellationToken) -> SourceFuture<'a, [u64; 2]> {
+      Box::pin(async { Ok([800, 200]) })
+    }
+
     fn index<'a>(
       &'a self,
       _submission_type: SubmissionType,
@@ -810,6 +921,109 @@ mod tests {
     assert_eq!(
       sync
         .incremental_sync(false, &CancellationToken::new())
+        .await
+        .unwrap(),
+      super::SyncOutcome::Throttled
+    );
+  }
+
+  fn page_with_preview(id: u64) -> IndexPage {
+    serde_json::from_value(serde_json::json!({
+      "_aMetadata": {
+        "_nRecordCount": 1,
+        "_nPerpage": 1,
+        "_bIsComplete": true
+      },
+      "_aRecords": [{
+        "_idRow": id,
+        "_sModelName": "Mod",
+        "_sName": format!("Submission {id}"),
+        "_sProfileUrl": format!("https://gamebanana.com/mods/{id}"),
+        "_nLikeCount": 7,
+        "_aPreviewMedia": {
+          "_aImages": [{
+            "_sBaseUrl": "https://images.gamebanana.com/img/ss/mods",
+            "_sFile": format!("{id}.jpg")
+          }]
+        }
+      }]
+    }))
+    .unwrap()
+  }
+
+  #[tokio::test]
+  async fn completed_catalog_recrawls_once_to_backfill_preview_images() {
+    let directory = tempdir().unwrap();
+    let catalog = super::Catalog::open(directory.path().join("catalog.sqlite3"), 2)
+      .await
+      .unwrap();
+    catalog
+      .upsert_records(vec![super::from_index(
+        &page(11, true).valid_records()[0],
+        SubmissionType::Mod,
+        None,
+      )])
+      .await
+      .unwrap();
+    catalog
+      .set_state(
+        super::LAST_FULL_SYNC_AT,
+        super::unix_timestamp().to_string(),
+      )
+      .await
+      .unwrap();
+
+    let sync = CatalogSync::with_source(
+      catalog.clone(),
+      FakeSource {
+        pages: Mutex::new(VecDeque::from([
+          Ok(page_with_preview(11)),
+          Ok(page(12, true)),
+        ])),
+      },
+    );
+    assert_eq!(
+      sync
+        .synchronize(false, false, &CancellationToken::new())
+        .await
+        .unwrap(),
+      super::SyncOutcome::Full
+    );
+    let stored = catalog
+      .get(SubmissionRef::parse_slug("11").unwrap())
+      .await
+      .unwrap()
+      .unwrap();
+    assert_eq!(
+      stored.images,
+      ["https://images.gamebanana.com/img/ss/mods/11.jpg"]
+    );
+    assert_eq!(stored.likes, 7);
+    assert_eq!(
+      catalog
+        .state(super::PREVIEW_IMAGES_VERSION)
+        .await
+        .unwrap()
+        .as_deref(),
+      Some("1")
+    );
+
+    catalog
+      .set_state(
+        super::LAST_INCREMENTAL_AT,
+        super::unix_timestamp().to_string(),
+      )
+      .await
+      .unwrap();
+    let throttled = CatalogSync::with_source(
+      catalog.clone(),
+      FakeSource {
+        pages: Mutex::new(VecDeque::new()),
+      },
+    );
+    assert_eq!(
+      throttled
+        .synchronize(false, false, &CancellationToken::new())
         .await
         .unwrap(),
       super::SyncOutcome::Throttled

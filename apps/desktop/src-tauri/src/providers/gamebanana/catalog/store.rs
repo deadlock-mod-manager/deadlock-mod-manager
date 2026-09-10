@@ -29,6 +29,7 @@ pub struct CatalogRecord {
   pub has_files: bool,
   pub download_count: u64,
   pub likes: u64,
+  pub images: Vec<String>,
   pub remote_added_at: i64,
   pub remote_updated_at: i64,
   pub files_updated_at: i64,
@@ -75,6 +76,7 @@ pub(super) struct SubmissionRow {
   pub has_files: bool,
   pub download_count: i64,
   pub likes: i64,
+  pub images: String,
   pub remote_added_at: i64,
   pub remote_updated_at: i64,
   pub files_updated_at: i64,
@@ -309,6 +311,21 @@ impl Catalog {
       .await
   }
 
+  pub async fn clear(&self) -> Result<(), Error> {
+    self
+      .pool
+      .run(|connection| {
+        connection.transaction::<_, Error, _>(|connection| {
+          diesel::delete(submission::table).execute(connection)?;
+          diesel::delete(super::schema::update_cache::table).execute(connection)?;
+          diesel::delete(sync_state::table).execute(connection)?;
+          diesel::delete(sync_cursor::table).execute(connection)?;
+          Ok(())
+        })
+      })
+      .await
+  }
+
   pub async fn invalidate_sync_state(&self) -> Result<(), Error> {
     self
       .pool
@@ -352,7 +369,10 @@ impl Catalog {
 
 impl SubmissionRow {
   fn from_record(record: CatalogRecord) -> Result<Self, Error> {
-    let slug = record.submission.to_slug().map_err(|error| Error::InvalidInput(error.to_string()))?;
+    let slug = record
+      .submission
+      .to_slug()
+      .map_err(|error| Error::InvalidInput(error.to_string()))?;
     Ok(Self {
       provider: provider_name(record.submission.provider).to_string(),
       submission_type: submission_type_name(record.submission.submission_type).to_string(),
@@ -375,6 +395,7 @@ impl SubmissionRow {
         .map_err(|_| Error::Catalog("download count exceeds SQLite range".to_string()))?,
       likes: i64::try_from(record.likes)
         .map_err(|_| Error::Catalog("like count exceeds SQLite range".to_string()))?,
+      images: encode_images(&record.images)?,
       remote_added_at: record.remote_added_at,
       remote_updated_at: record.remote_updated_at,
       files_updated_at: record.files_updated_at,
@@ -424,6 +445,11 @@ impl SubmissionRow {
         self.download_count
       },
       likes: self.likes.max(incoming.likes),
+      images: if incoming.images == "[]" {
+        self.images
+      } else {
+        incoming.images
+      },
       remote_added_at: incoming.remote_added_at,
       remote_updated_at: self.remote_updated_at.max(incoming.remote_updated_at),
       files_updated_at: self.files_updated_at.max(incoming.files_updated_at),
@@ -490,6 +516,26 @@ pub(super) fn submission_type_name(submission_type: SubmissionType) -> &'static 
   }
 }
 
+pub(super) fn encode_images(images: &[String]) -> Result<String, Error> {
+  let urls = images
+    .iter()
+    .filter(|url| url.starts_with("https://"))
+    .cloned()
+    .collect::<Vec<_>>();
+  serde_json::to_string(&urls).map_err(|error| Error::Catalog(error.to_string()))
+}
+
+pub(super) fn decode_images(value: &str) -> Result<Vec<String>, Error> {
+  let urls: Vec<String> =
+    serde_json::from_str(value).map_err(|error| Error::Catalog(error.to_string()))?;
+  Ok(
+    urls
+      .into_iter()
+      .filter(|url| url.starts_with("https://"))
+      .collect(),
+  )
+}
+
 #[cfg(test)]
 mod tests {
   use super::{Catalog, CatalogRecord};
@@ -514,11 +560,56 @@ mod tests {
       has_files: true,
       download_count: 10,
       likes: 2,
+      images: Vec::new(),
       remote_added_at: 100,
       remote_updated_at: 200,
       files_updated_at: 0,
       last_seen_snapshot: Some(snapshot.to_string()),
     }
+  }
+
+  #[tokio::test]
+  async fn clear_removes_entries_search_and_sync_state() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.sqlite3"), 1)
+      .await
+      .unwrap();
+    catalog
+      .upsert_page(
+        vec![record("1", "Cached entry", "snapshot-a")],
+        crate::providers::SubmissionType::Mod,
+        2,
+        Some("snapshot-a".to_string()),
+        false,
+      )
+      .await
+      .unwrap();
+    catalog
+      .set_state("last_full_sync_at", "123".to_string())
+      .await
+      .unwrap();
+    catalog.clear().await.unwrap();
+    assert_eq!(catalog.count_visible().await.unwrap(), 0);
+    assert!(
+      catalog
+        .search_slugs("Cached".to_string())
+        .await
+        .unwrap()
+        .is_empty()
+    );
+    assert_eq!(catalog.state("last_full_sync_at").await.unwrap(), None);
+    let cursor = catalog
+      .cursor(crate::providers::SubmissionType::Mod)
+      .await
+      .unwrap();
+    assert_eq!(cursor.next_page, 1);
+    assert_eq!(cursor.snapshot_id, None);
+    assert_eq!(cursor.high_water_mark, 0);
+    catalog
+      .upsert_records(vec![record("2", "Rebuilt entry", "snapshot-b")])
+      .await
+      .unwrap();
+    assert_eq!(catalog.count_visible().await.unwrap(), 1);
   }
 
   #[tokio::test]
@@ -631,5 +722,45 @@ mod tests {
       .unwrap();
 
     assert_eq!(catalog.count_visible().await.unwrap(), 2);
+  }
+
+  #[tokio::test]
+  async fn preview_images_round_trip_and_empty_updates_keep_them() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.sqlite3"), 1)
+      .await
+      .unwrap();
+    let mut with_images = record("42", "Pink Drifter", "snapshot-a");
+    with_images.images = vec![
+      "https://images.gamebanana.com/img/ss/mods/a.jpg".to_string(),
+      "http://insecure.example/img.jpg".to_string(),
+    ];
+    with_images.likes = 4;
+    catalog.upsert_records(vec![with_images]).await.unwrap();
+
+    let stored = catalog
+      .get(SubmissionRef::parse_slug("42").unwrap())
+      .await
+      .unwrap()
+      .unwrap();
+    assert_eq!(
+      stored.images,
+      ["https://images.gamebanana.com/img/ss/mods/a.jpg"]
+    );
+    assert_eq!(stored.likes, 4);
+
+    let mut without_images = record("42", "Pink Drifter", "snapshot-b");
+    without_images.likes = 1;
+    catalog.upsert_records(vec![without_images]).await.unwrap();
+    let stored = catalog
+      .get(SubmissionRef::parse_slug("42").unwrap())
+      .await
+      .unwrap()
+      .unwrap();
+    assert_eq!(
+      stored.images,
+      ["https://images.gamebanana.com/img/ss/mods/a.jpg"]
+    );
+    assert_eq!(stored.likes, 4);
   }
 }

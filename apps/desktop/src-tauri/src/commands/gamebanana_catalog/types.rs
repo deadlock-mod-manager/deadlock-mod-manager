@@ -112,6 +112,8 @@ pub struct CatalogDownloadsDto {
 #[ts(export, rename_all = "camelCase")]
 #[serde(rename_all = "camelCase")]
 pub struct CatalogSyncStatusDto {
+  pub sync_phase: Option<String>,
+  pub sync_percentage: Option<u32>,
   pub available: bool,
   #[ts(type = "number")]
   pub count: u64,
@@ -176,7 +178,10 @@ pub struct GameBananaFileserverStatsDto {
 
 impl CatalogModDto {
   pub fn from_record(record: CatalogRecord) -> Result<Self, Error> {
-    let slug = record.submission.to_slug().map_err(|error| Error::InvalidInput(error.to_string()))?;
+    let slug = record
+      .submission
+      .to_slug()
+      .map_err(|error| Error::InvalidInput(error.to_string()))?;
     Ok(Self {
       id: slug.clone(),
       remote_id: slug,
@@ -190,7 +195,7 @@ impl CatalogModDto {
       remote_added_at: record.remote_added_at,
       remote_updated_at: record.remote_updated_at,
       tags: Vec::new(),
-      images: Vec::new(),
+      images: record.images,
       hero: record.hero,
       is_audio: record.is_audio,
       is_map: record.is_map,
@@ -207,12 +212,7 @@ impl CatalogModDto {
   }
 
   pub fn from_profile(profile: &Profile, normalized: NormalizedSubmission) -> Self {
-    let images = profile
-      .preview_media
-      .images
-      .iter()
-      .filter_map(|image| image_url(&image.base_url, &image.file))
-      .collect();
+    let images = profile.preview_media.image_urls();
     let dependencies = parse_requirements(&profile.requirements)
       .into_iter()
       .map(|dependency| CatalogDependencyDto {
@@ -302,15 +302,4 @@ impl From<SubmissionFile> for CatalogDownloadDto {
       md5_checksum: file.md5,
     }
   }
-}
-
-fn image_url(base_url: &str, file: &str) -> Option<String> {
-  if !base_url.starts_with("https://") || file.is_empty() {
-    return None;
-  }
-  Some(format!(
-    "{}/{}",
-    base_url.trim_end_matches('/'),
-    file.trim_start_matches('/')
-  ))
 }

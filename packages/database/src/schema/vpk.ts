@@ -9,6 +9,7 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { generateId, typeId } from "../extensions/typeid";
+import { modDownloads, mods } from "./mods";
 import { policyProviders, policySubmissionTypes } from "./policy-rules";
 import { timestamps } from "./shared/timestamps";
 
@@ -20,15 +21,20 @@ export const vpk = pgTable(
     id: typeId("id", "vpk")
       .primaryKey()
       .$defaultFn(() => generateId("vpk").toString()),
-    provider: text("provider", { enum: policyProviders }).notNull(),
+    // Retained while the deployed Lockdex still writes catalog references.
+    modId: text("mod_id").references(() => mods.id, { onDelete: "cascade" }),
+    modDownloadId: text("mod_download_id").references(() => modDownloads.id, {
+      onDelete: "set null",
+    }),
+    provider: text("provider", { enum: policyProviders }),
     submissionType: text("submission_type", {
       enum: policySubmissionTypes,
-    }).notNull(),
-    submissionId: text("submission_id").notNull(),
-    fileId: text("file_id").notNull(),
+    }),
+    submissionId: text("submission_id"),
+    fileId: text("file_id"),
     upstreamUpdatedAt: timestamp("upstream_updated_at", {
       mode: "date",
-    }).notNull(),
+    }),
     sourcePath: text("source_path").notNull(), // e.g. "weapons_pack_dir.vpk" or "mods/weapons_pack_dir.vpk"
     sizeBytes: integer("size_bytes").notNull(),
     fastHash: text("fast_hash").notNull(), // xxhash64 hex (16 chars) or blake3 16/32
@@ -48,13 +54,14 @@ export const vpk = pgTable(
   },
   (table) => [
     // one VPK identity per whole file
-    index("vpk_sha256_idx").on(table.sha256),
+    uniqueIndex("vpk_sha256_uk").on(table.sha256),
 
     // content-level identity across repackaged files (filename changes, same inner content)
     index("vpk_content_sig_idx").on(table.contentSig),
 
     // speed up “did we already parse this VPK in this download at this path?”
-    uniqueIndex("vpk_src_uk").on(
+    uniqueIndex("vpk_src_uk").on(table.modDownloadId, table.sourcePath),
+    index("vpk_identity_source_idx").on(
       table.provider,
       table.submissionType,
       table.submissionId,

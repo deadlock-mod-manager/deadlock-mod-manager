@@ -76,7 +76,8 @@ pub async fn get_gamebanana_submission_detail(
       .catalog
       .get(submission)
       .await?
-      .map(CatalogModDto::from_record).transpose()?
+      .map(CatalogModDto::from_record)
+      .transpose()?
       .ok_or(provider_error)?,
   };
   if !policy.apply_to_mod(&mut mod_data)? {
@@ -166,7 +167,11 @@ pub async fn check_gamebanana_catalog_updates(
                 .await?;
               resolved.push((submission, installed, snapshot));
             } else {
-              unknown.push(submission.to_slug().map_err(|error| Error::InvalidInput(error.to_string()))?);
+              unknown.push(
+                submission
+                  .to_slug()
+                  .map_err(|error| Error::InvalidInput(error.to_string()))?,
+              );
             }
           }
         }
@@ -176,7 +181,11 @@ pub async fn check_gamebanana_catalog_updates(
             if let Some(cached) = backend.catalog.cached_update(submission.clone()).await? {
               resolved.push((submission, installed, cached.snapshot));
             } else {
-              unknown.push(submission.to_slug().map_err(|error| Error::InvalidInput(error.to_string()))?);
+              unknown.push(
+                submission
+                  .to_slug()
+                  .map_err(|error| Error::InvalidInput(error.to_string()))?,
+              );
             }
           }
         }
@@ -226,6 +235,8 @@ pub async fn inspect_gamebanana_catalog_state(
   match state.backend() {
     Ok(backend) => inspect_ready_state(&backend, None).await,
     Err(_) => Ok(CatalogSyncStatusDto {
+      sync_phase: None,
+      sync_percentage: None,
       available: false,
       count: 0,
       stale: true,
@@ -235,6 +246,13 @@ pub async fn inspect_gamebanana_catalog_state(
       unavailable_reason: state.unavailable_reason(),
     }),
   }
+}
+
+#[tauri::command]
+pub async fn clear_gamebanana_catalog(
+  state: State<'_, GameBananaCatalogState>,
+) -> Result<(), Error> {
+  state.backend()?.clear().await
 }
 
 #[tauri::command]
@@ -285,7 +303,10 @@ async fn inspect_ready_state(
 ) -> Result<CatalogSyncStatusDto, Error> {
   let last_incremental_at = timestamp_state(&backend.catalog, LAST_INCREMENTAL_AT).await?;
   let last_full_sync_at = timestamp_state(&backend.catalog, LAST_FULL_SYNC_AT).await?;
+  let (sync_phase, sync_percentage) = backend.sync_progress().await;
   Ok(CatalogSyncStatusDto {
+    sync_phase,
+    sync_percentage,
     available: true,
     count: backend.catalog.count_visible().await?,
     stale: is_stale(last_incremental_at.or(last_full_sync_at)),
@@ -361,6 +382,7 @@ fn record_from_profile(
     has_files: !profile.files.is_empty(),
     download_count: normalized.download_count,
     likes: normalized.likes,
+    images: profile.preview_media.image_urls(),
     remote_added_at: normalized.remote_added_at,
     remote_updated_at: normalized.remote_updated_at,
     files_updated_at: profile

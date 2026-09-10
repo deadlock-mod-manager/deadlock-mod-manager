@@ -56,6 +56,10 @@ pub struct IndexSubmission {
   pub has_files: bool,
   #[serde(rename = "_bIsObsolete", default)]
   pub is_obsolete: bool,
+  #[serde(rename = "_nLikeCount", default)]
+  pub likes: u64,
+  #[serde(rename = "_aPreviewMedia", default)]
+  pub preview_media: PreviewMedia,
 }
 
 impl IndexSubmission {
@@ -111,6 +115,19 @@ pub struct PreviewImage {
   pub file: String,
 }
 
+impl PreviewImage {
+  pub fn url(&self) -> Option<String> {
+    if !self.base_url.starts_with("https://") || self.file.is_empty() {
+      return None;
+    }
+    Some(format!(
+      "{}/{}",
+      self.base_url.trim_end_matches('/'),
+      self.file.trim_start_matches('/')
+    ))
+  }
+}
+
 #[derive(Debug, Clone, Deserialize, Default)]
 pub struct PreviewMetadata {
   #[serde(rename = "_sAudioUrl", default)]
@@ -123,6 +140,12 @@ pub struct PreviewMedia {
   pub images: Vec<PreviewImage>,
   #[serde(rename = "_aMetadata", default)]
   pub metadata: PreviewMetadata,
+}
+
+impl PreviewMedia {
+  pub fn image_urls(&self) -> Vec<String> {
+    self.images.iter().filter_map(PreviewImage::url).collect()
+  }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -388,6 +411,39 @@ mod tests {
     assert_eq!(page.valid_records().len(), 1);
     assert_eq!(page.metadata.record_count, 2);
   }
+
+  #[test]
+  fn index_preview_media_and_likes_are_parsed() {
+    let page: IndexPage = serde_json::from_value(serde_json::json!({
+      "_aRecords": [{
+        "_idRow": 715800,
+        "_sModelName": "Mod",
+        "_sName": "Freezie Arctic Blast",
+        "_sProfileUrl": "https://gamebanana.com/mods/715800",
+        "_nLikeCount": 1,
+        "_aPreviewMedia": {
+          "_aImages": [
+            {
+              "_sBaseUrl": "https://images.gamebanana.com/img/ss/mods",
+              "_sFile": "6aa29695c5905.jpg"
+            },
+            {
+              "_sBaseUrl": "http://insecure.example/img",
+              "_sFile": "ignored.jpg"
+            }
+          ]
+        }
+      }]
+    }))
+    .unwrap();
+    let record = &page.valid_records()[0];
+    assert_eq!(record.likes, 1);
+    assert_eq!(
+      record.preview_media.image_urls(),
+      ["https://images.gamebanana.com/img/ss/mods/6aa29695c5905.jpg"]
+    );
+  }
+
   #[test]
   fn missing_index_metadata_preserves_valid_records() {
     let page: IndexPage = serde_json::from_value(serde_json::json!({
