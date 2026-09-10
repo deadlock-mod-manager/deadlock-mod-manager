@@ -1,3 +1,8 @@
+import { navigate } from "../support/ui";
+import { observeUntil } from "../support/observations";
+import { collectFileInventory } from "../support/world";
+import { startApplication } from "../support/application";
+import { closeApplication } from "../support/application-exit";
 import { $, browser, expect } from "@wdio/globals";
 import { readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -15,9 +20,11 @@ import {
 
 const card = () => $(`[role="button"][aria-label="Open ${DOWNLOAD_NAME}"]`);
 const waitStatus = async (world: string, status: string): Promise<void> => {
-  await browser.waitUntil(
-    async () => (await readDownloadState(world))[0]?.status === status,
-    { timeout: 20_000, timeoutMsg: `Download did not reach ${status}` },
+  await observeUntil(
+    `Download did not reach ${status}`,
+    () => readDownloadState(world),
+    (mods) => mods[0]?.status === status,
+    20_000,
   );
 };
 const retry = async (): Promise<void> => {
@@ -61,14 +68,7 @@ const pause = async (world: string): Promise<void> => {
 
 describe("real Rust downloads", () => {
   it("keeps UI, partial files and selected payload consistent across failure and restart", async () => {
-    const dismiss = await $("button=Got it!");
-    if (await dismiss.isDisplayed()) await dismiss.click();
-    const runtime = await browser.execute(() =>
-      window.__TAURI_INTERNALS__.invoke<{
-        processId: number;
-        roots: { world: string };
-      }>("e2e_status"),
-    );
+    const runtime = await startApplication();
     const world = runtime.roots.world;
     const scenario = process.env.DMM_E2E_CASE_ID;
     const checkpointPath = path.join(
@@ -76,7 +76,7 @@ describe("real Rust downloads", () => {
       "artifacts",
       "download-checkpoint.json",
     );
-    await $('a[href="/downloads"]').click();
+    await navigate("downloads");
     await card().waitForDisplayed();
     if (process.env.DMM_E2E_PHASE === "transfer") {
       await retry();
@@ -107,6 +107,12 @@ describe("real Rust downloads", () => {
         ].includes(scenario ?? "")
       ) {
         await waitStatus(world, "failedToDownload");
+        const directory = await downloadDirectory(world);
+        await observeUntil(
+          "Failed download cleanup",
+          () => collectFileInventory(directory),
+          (files) => Object.keys(files).length === 0,
+        );
         await assertDownloadDisk(world, "failed", "failedToDownload");
         await expect(card().$("button=Retry")).toBeDisplayed();
         await retry();
@@ -137,5 +143,21 @@ describe("real Rust downloads", () => {
       await assertDownloadDisk(world, "restarted", "downloaded");
       await expect(card()).toHaveText(expect.stringContaining("Completed"));
     } else throw new Error("Unknown download phase");
+    if (
+      !(
+        scenario === "downloads-restart" &&
+        process.env.DMM_E2E_PHASE === "transfer"
+      )
+    ) {
+      await closeApplication(world, runtime.processId);
+      await assertDownloadDisk(
+        world,
+        `closed-${process.env.DMM_E2E_PHASE}`,
+        scenario === "downloads-cancel" &&
+          process.env.DMM_E2E_PHASE === "transfer"
+          ? "failedToDownload"
+          : "downloaded",
+      );
+    }
   });
 });

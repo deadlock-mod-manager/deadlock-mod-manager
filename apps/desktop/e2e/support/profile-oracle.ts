@@ -1,5 +1,5 @@
+import { readPersistedDocument, fingerprint } from "./observations";
 import assert from "node:assert/strict";
-import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
@@ -14,16 +14,6 @@ const modSchema = z.object({
 });
 const inventorySchema = z.record(z.string(), z.string());
 export const readProfileState = async (world: string) => {
-  const {
-    configuration: { roots },
-  } = await assertOwnedWorld(world);
-  const store = z
-    .object({ "local-config": z.string() })
-    .parse(
-      JSON.parse(
-        await readFile(path.join(roots.appData, "state.json"), "utf8"),
-      ),
-    );
   return z
     .object({
       state: z.object({
@@ -41,7 +31,7 @@ export const readProfileState = async (world: string) => {
         ),
       }),
     })
-    .parse(JSON.parse(store["local-config"])).state;
+    .parse(await readPersistedDocument(world)).state;
 };
 
 export const assertProfilesDisk = async (
@@ -131,7 +121,7 @@ export const assertProfilesDisk = async (
       const payload = profilePayload(mod.remoteId);
       assert.equal(
         inventory[mod.installedVpks[0]],
-        `${payload.length}:${createHash("sha256").update(payload).digest("hex")}`,
+        fingerprint(payload),
         `Wrong bytes for ${mod.remoteId}`,
       );
       assert.deepEqual(manifest.mods[mod.remoteId], {

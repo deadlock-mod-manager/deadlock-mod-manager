@@ -1,10 +1,11 @@
+import { readPersistedDocument } from "./observations";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { readFile, writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 import { ModStatus, type ModDownloadItem } from "../../src/types/mods";
-import { fixtureMod } from "./profile-fixtures";
+import { fixtureMod } from "./mod-fixtures";
 import type {
   FixtureRequest,
   FixtureResponse,
@@ -107,12 +108,9 @@ export const prepareDownloadWorld = async (
     selectedDownloads: [selected],
   };
   const storePath = path.join(world.configuration.roots.appData, "state.json");
-  const store = z
-    .object({ "local-config": z.string() })
-    .parse(JSON.parse(await readFile(storePath, "utf8")));
   const persisted = z
     .object({ state: z.record(z.string(), z.json()), version: z.number() })
-    .parse(JSON.parse(store["local-config"]));
+    .parse(await readPersistedDocument(world.directory));
   const profile = {
     id: "default",
     name: "Default Profile",

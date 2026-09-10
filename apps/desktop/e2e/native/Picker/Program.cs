@@ -4,7 +4,10 @@ using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
 using FlaUI.UIA3;
 
-if (args.Length is not (2 or 3) || !int.TryParse(args[0], out var processId))
+if (Environment.GetEnvironmentVariable("DMM_E2E_ALLOW_NATIVE_INPUT") != "1")
+    throw new InvalidOperationException("Native desktop input requires --allow-native-input");
+
+if (args.Length is not (2 or 3 or 4) || !int.TryParse(args[0], out var processId))
     throw new ArgumentException("Expected application PID and owned world directory");
 
 var world = Path.GetFullPath(args[1]);
@@ -23,8 +26,15 @@ if (args.Length == 3)
     return;
 }
 
-var fixture = Path.Combine(world, "fixtures", "e2e-local-mod.vpk");
+var fixtureRoot = Path.GetFullPath(Path.Combine(world, "fixtures"));
+if (args.Length == 4 && args[2] != "--fixture") throw new ArgumentException("Expected --fixture");
+var fixture = Path.GetFullPath(args.Length == 4 ? args[3] : Path.Combine(fixtureRoot, "e2e-local-mod.vpk"));
+if (!fixture.StartsWith(fixtureRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+    throw new InvalidOperationException("Picker fixture must remain inside the owned fixtures directory");
+for (var cursor = fixture; !string.Equals(cursor, world, StringComparison.OrdinalIgnoreCase); cursor = Path.GetDirectoryName(cursor) ?? throw new InvalidOperationException("Invalid fixture path"))
+    if ((File.GetAttributes(cursor) & FileAttributes.ReparsePoint) != 0) throw new InvalidOperationException("Picker fixture cannot traverse reparse points");
 if (!File.Exists(fixture)) throw new FileNotFoundException("Lifecycle fixture is missing", fixture);
+Console.WriteLine("Waiting for the owned native file picker");
 using var automation = new UIA3Automation();
 var deadline = Stopwatch.StartNew();
 AutomationElement? dialog = null;
@@ -52,6 +62,7 @@ var edit = filename.ControlType == ControlType.Edit
     ? filename.AsTextBox()
     : filename.FindFirstDescendant(cf => cf.ByControlType(ControlType.Edit))?.AsTextBox();
 if (edit == null) throw new InvalidOperationException("Native picker filename edit is missing");
+Console.WriteLine("Selecting fixture in the owned picker");
 edit.Text = fixture;
 var open = dialog.FindFirstDescendant(cf => cf.ByAutomationId("1").And(cf.ByControlType(ControlType.Button)))?.AsButton()
     ?? throw new InvalidOperationException("Native picker Open button is missing");

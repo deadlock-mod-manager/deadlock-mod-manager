@@ -1,5 +1,5 @@
 import { spawn } from "node:child_process";
-import { access, writeFile } from "node:fs/promises";
+import { access, realpath, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { assertOwnedWorld, REPOSITORY_ROOT } from "./world";
 
@@ -20,13 +20,25 @@ export const selectNativeFixture = async (
   processId: number,
   world: string,
   openPicker: () => Promise<void>,
+  fixtureName = "e2e-local-mod.vpk",
 ): Promise<void> => {
   await assertOwnedWorld(world);
   await access(nativePickerBinary);
-  const child = spawn(nativePickerBinary, [String(processId), world], {
-    stdio: ["ignore", "pipe", "pipe"],
-    windowsHide: true,
-  });
+  const fixtureRoot = await realpath(path.join(world, "fixtures"));
+  const fixture = await realpath(path.resolve(fixtureRoot, fixtureName));
+  const relative = path.relative(fixtureRoot, fixture);
+  if (!relative || relative.startsWith("..") || path.isAbsolute(relative))
+    throw new Error(
+      "Picker fixture must remain inside the owned fixtures directory",
+    );
+  const child = spawn(
+    nativePickerBinary,
+    [String(processId), world, "--fixture", fixture],
+    {
+      stdio: ["ignore", "pipe", "pipe"],
+      windowsHide: true,
+    },
+  );
   let output = "";
   child.stdout.on("data", (chunk: Buffer) => {
     output += chunk.toString();
@@ -41,7 +53,10 @@ export const selectNativeFixture = async (
     });
     child.once("close", (code) => resolve(code ?? 1));
   });
-  const deadline = setTimeout(() => child.kill(), 20_000);
+  const deadline = setTimeout(() => {
+    output += "Native picker exceeded its 20 second deadline\n";
+    child.kill();
+  }, 20_000);
   try {
     await openPicker();
     if ((await result) !== 0)

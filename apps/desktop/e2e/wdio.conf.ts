@@ -1,6 +1,7 @@
 import path from "node:path";
 import { writeFile } from "node:fs/promises";
 import { parseScenarioId, scenarioSpec } from "./support/scenarios";
+import { captureEvidence } from "./support/evidence";
 
 interface TauriCapability {
   browserName: "tauri";
@@ -76,12 +77,20 @@ export const config: TauriWdioConfig = {
     result: { passed: boolean },
   ): Promise<void> => {
     if (!result.passed) {
-      const name = test.title.replace(/[^a-z0-9_-]+/gi, "-").toLowerCase();
-      await browser.saveScreenshot(path.join(artifacts, `${name}.png`));
-      await writeFile(
-        path.join(artifacts, `${name}.html`),
-        await browser.getPageSource(),
-      );
+      const name = `${process.env.DMM_E2E_PHASE}-${test.title}`
+        .replace(/[^a-z0-9_-]+/gi, "-")
+        .toLowerCase();
+      await captureEvidence(artifacts, {
+        screenshot: async () => {
+          await browser.saveScreenshot(path.join(artifacts, `${name}.png`));
+        },
+        dom: async () => {
+          await writeFile(
+            path.join(artifacts, `${name}.html`),
+            await browser.getPageSource(),
+          );
+        },
+      });
     }
   },
 };

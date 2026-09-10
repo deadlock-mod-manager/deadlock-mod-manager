@@ -1,3 +1,6 @@
+import { navigate, openOrdering, activateProfile } from "../support/ui";
+import { startApplication } from "../support/application";
+import { closeApplication } from "../support/application-exit";
 import { $, $$, browser, expect } from "@wdio/globals";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -15,21 +18,9 @@ import {
 } from "../support/profile-oracle";
 
 const reordered = [ALPHA_MODS[1], ALPHA_MODS[2], ALPHA_MODS[0]];
-const openOrdering = async (): Promise<void> => {
-  const menu = await $("button=Add Local Mod").$(
-    './following-sibling::button[@aria-haspopup="menu"]',
-  );
-  await menu.waitForClickable();
-  await nativeInput("click", menu);
-  await expect(menu).toHaveAttribute("aria-expanded", "true");
-  await $(
-    '//*[@role="menuitem" and normalize-space()="Change Mods Order"]',
-  ).click();
-  await $('[aria-roledescription="sortable"]').waitForDisplayed();
-};
 const assertOrder = async (order: string[]): Promise<void> => {
   const names = await $('[role="dialog"]')
-    .$$("p.font-medium")
+    .$$('[data-testid="ordered-mod-name"]')
     .map((element) => element.getText());
   expect(names).toEqual(order);
 };
@@ -37,19 +28,9 @@ const switchProfile = async (
   world: string,
   profile: typeof ALPHA,
 ): Promise<void> => {
-  await $('button[aria-label="Active Profile"]').click();
-  const control = await $(
-    `[role="switch"][aria-label="Activate ${profile.name} profile"]`,
-  );
-  await control.waitForClickable();
-  await control.click();
+  await activateProfile(profile.name);
   await browser.waitUntil(
     async () => (await readProfileState(world)).activeProfileId === profile.id,
-  );
-  await expect(control).toHaveAttribute("aria-checked", "true");
-  await browser.keys("Escape");
-  await expect($('button[aria-label="Active Profile"]')).toHaveText(
-    expect.stringContaining(profile.name),
   );
   for (const modId of profile.id === ALPHA.id ? ALPHA_MODS : BETA_MODS)
     await expect($(`[title="${modId}"]`)).toBeDisplayed();
@@ -59,16 +40,9 @@ const switchProfile = async (
 
 describe("profile ordering", () => {
   it("persists native ordering and isolates profiles across process restart", async () => {
-    const dismiss = await $("button=Got it!");
-    if (await dismiss.isDisplayed()) await dismiss.click();
-    const runtime = await browser.execute(() =>
-      window.__TAURI_INTERNALS__.invoke<{
-        processId: number;
-        roots: { world: string };
-      }>("e2e_status"),
-    );
+    const runtime = await startApplication();
     const world = runtime.roots.world;
-    await $('a[href="/my-mods"]').click();
+    await navigate("my-mods");
     const checkpointPath = path.join(
       world,
       "artifacts",
@@ -130,5 +104,12 @@ describe("profile ordering", () => {
       await assertOrder(reordered);
       await browser.keys("Escape");
     } else throw new Error("Unknown profile phase");
+    await closeApplication(world, runtime.processId);
+    await assertProfilesDisk(
+      world,
+      `closed-${process.env.DMM_E2E_PHASE}`,
+      process.env.DMM_E2E_PHASE === "reorder-switch" ? BETA.id : ALPHA.id,
+      reordered,
+    );
   });
 });
