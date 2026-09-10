@@ -29,6 +29,7 @@ export type FixtureResponse = {
 export type FixtureRoute = FixtureResponse & {
   method: string;
   path: string;
+  query?: Record<string, string>;
   sequence?: readonly FixtureResponse[];
 };
 
@@ -144,8 +145,11 @@ const respond = (
 };
 
 export const startFixtureServer = async (
-  routes: readonly FixtureRoute[] = [],
+  recipe:
+    | readonly FixtureRoute[]
+    | ((origin: string) => readonly FixtureRoute[]) = [],
 ): Promise<FixtureServer> => {
+  let routes: readonly FixtureRoute[] = [];
   const journal: FixtureRequest[] = [];
   const unmatched: FixtureRequest[] = [];
   const occurrences = new Map<FixtureRoute, number>();
@@ -186,12 +190,14 @@ export const startFixtureServer = async (
       );
       return;
     }
-    const requestPath = new URL(request.url ?? "/", "http://127.0.0.1")
-      .pathname;
+    const requestUrl = new URL(request.url ?? "/", "http://127.0.0.1");
     const route = routes.find(
       (candidate) =>
         candidate.method.toUpperCase() === record.method.toUpperCase() &&
-        candidate.path === requestPath,
+        candidate.path === requestUrl.pathname &&
+        Object.entries(candidate.query ?? {}).every(([key, value]) =>
+          requestUrl.searchParams.getAll(key).includes(value),
+        ),
     );
     if (route) {
       const index = occurrences.get(route) ?? 0;
@@ -239,8 +245,10 @@ export const startFixtureServer = async (
   if (address === null || typeof address === "string") {
     throw new Error("Fixture server did not bind a TCP port");
   }
+  const origin = `http://127.0.0.1:${address.port}`;
+  routes = typeof recipe === "function" ? recipe(origin) : recipe;
   return {
-    origin: `http://127.0.0.1:${address.port}`,
+    origin,
     unmatchedRequests: () => unmatched,
     requests: () => journal,
     close: async (artifactsDirectory) => {

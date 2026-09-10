@@ -3,6 +3,10 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { DriverProvider } from "./contracts";
 import { scenarioPhases, type ScenarioId } from "./scenarios";
+import {
+  createCatalogRoutes,
+  assertCatalogNetwork,
+} from "./gamebanana-fixtures";
 import { writeSyntheticVpk } from "./vpk";
 import { prepareProfileWorld } from "./profile-fixtures";
 import { prepareFilesystemWorld } from "./filesystem-fixtures";
@@ -203,7 +207,11 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
   };
 
   try {
-    fixtureServer = await startFixtureServer([
+    const catalogRoutes = options.caseId.startsWith("gamebanana-")
+      ? await createCatalogRoutes(options.caseId)
+      : () => [];
+    fixtureServer = await startFixtureServer((origin) => [
+      ...catalogRoutes(origin),
       ...(options.fixtureRoutes ?? []),
       ...(options.caseId.startsWith("downloads-")
         ? downloadRoutes(options.caseId)
@@ -228,6 +236,11 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
       fixtureOrigin: fixtureServer.origin,
     });
     const roots = world.configuration.roots;
+    if (options.caseId.startsWith("gamebanana-"))
+      await writeFile(
+        path.join(roots.game, "protected.txt"),
+        "Keep the synthetic game intact\n",
+      );
     if (options.caseId.startsWith("filesystem-"))
       await prepareFilesystemWorld(world);
     if (options.caseId.startsWith("downloads-"))
@@ -324,6 +337,8 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
     }
     if (wdioResult.exitCode === 0 && options.caseId.startsWith("downloads-"))
       assertDownloadNetwork(options.caseId, fixtureServer.requests());
+    if (wdioResult.exitCode === 0 && options.caseId.startsWith("gamebanana-"))
+      assertCatalogNetwork(options.caseId, fixtureServer.requests());
     await closeResources();
     const after = Object.fromEntries(
       await Promise.all(
