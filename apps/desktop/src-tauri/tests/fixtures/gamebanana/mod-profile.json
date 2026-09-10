@@ -1,0 +1,57 @@
+{
+  "_idRow": 711387,
+  "_bIsPrivate": false,
+  "_bIsTrashed": false,
+  "_bIsWithheld": false,
+  "_sName": "Pink Drifter",
+  "_tsDateModified": 1788032789,
+  "_tsDateAdded": 1788032789,
+  "_sProfileUrl": "https://gamebanana.com/mods/711387",
+  "_sInitialVisibility": "show",
+  "_nDownloadCount": 2,
+  "_nLikeCount": 0,
+  "_sText": "Gives drifter a pink retexture and pink vfx",
+  "_bIsObsolete": false,
+  "_aTags": [],
+  "_aContentRatings": {},
+  "_aPreviewMedia": {
+    "_aImages": [
+      {
+        "_sType": "screenshot",
+        "_sBaseUrl": "https://images.gamebanana.com/img/ss/mods",
+        "_sFile": "6a9336e69731d.jpg"
+      }
+    ]
+  },
+  "_aFiles": [
+    {
+      "_idRow": 1801337,
+      "_sFile": "pak52_dir_3154a.zip",
+      "_nFilesize": 7493240,
+      "_tsDateAdded": 1788032691,
+      "_nDownloadCount": 2,
+      "_sDownloadUrl": "https://gamebanana.com/dl/1801337",
+      "_sMd5Checksum": "03f6e9f9e25675d14521c84e010a33c2"
+    }
+  ],
+  "_aSubmitter": {
+    "_idRow": 4766964,
+    "_sName": "Seaotterdawn",
+    "_aDonationMethods": []
+  },
+  "_aGame": {
+    "_idRow": 20948,
+    "_sName": "Deadlock"
+  },
+  "_aCategory": {
+    "_idRow": 41492,
+    "_sName": "Drifter",
+    "_sModelName": "ModCategory"
+  },
+  "_aSuperCategory": {
+    "_idRow": 33295,
+    "_sName": "Skins",
+    "_sModelName": "ModCategory"
+  },
+  "_aRequirements": []
+}

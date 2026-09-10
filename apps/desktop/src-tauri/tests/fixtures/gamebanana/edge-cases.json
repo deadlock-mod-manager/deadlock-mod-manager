@@ -1,0 +1,38 @@
+{
+  "malformed": {
+    "_idRow": "not-a-number",
+    "_sName": ["wrong shape"],
+    "_tsDateModified": "yesterday",
+    "_aFiles": {}
+  },
+  "nullFields": {
+    "_idRow": 100,
+    "_sName": null,
+    "_tsDateAdded": null,
+    "_tsDateModified": null,
+    "_aSubmitter": null,
+    "_aPreviewMedia": null,
+    "_aTags": null
+  },
+  "trashed": {
+    "_idRow": 101,
+    "_sName": "Removed submission",
+    "_bIsTrashed": true,
+    "_bIsWithheld": false,
+    "_bIsPrivate": false
+  },
+  "withheld": {
+    "_idRow": 102,
+    "_sName": "Withheld submission",
+    "_bIsTrashed": false,
+    "_bIsWithheld": true,
+    "_bIsPrivate": false
+  },
+  "private": {
+    "_idRow": 103,
+    "_sName": "Private submission",
+    "_bIsTrashed": false,
+    "_bIsWithheld": false,
+    "_bIsPrivate": true
+  }
+}
