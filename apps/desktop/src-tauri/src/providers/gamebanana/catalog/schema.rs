@@ -25,6 +25,7 @@ diesel::table! {
     has_files -> Bool,
     download_count -> BigInt,
     likes -> BigInt,
+    images -> Text,
     remote_added_at -> BigInt,
     remote_updated_at -> BigInt,
     files_updated_at -> BigInt,
@@ -94,7 +95,7 @@ mod tests {
     .get_result::<bool>(&mut connection)
     .unwrap();
 
-    assert_eq!(applied.len(), 2);
+    assert_eq!(applied.len(), 3);
     assert!(catalog_tables_exist);
   }
 }

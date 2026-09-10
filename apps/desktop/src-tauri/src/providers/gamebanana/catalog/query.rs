@@ -1,5 +1,7 @@
 use super::schema::submission;
-use super::store::{Catalog, CatalogRecord, SubmissionRow, provider_name, submission_type_name};
+use super::store::{
+  Catalog, CatalogRecord, SubmissionRow, decode_images, provider_name, submission_type_name,
+};
 use crate::errors::Error;
 use crate::providers::{SubmissionProvider, SubmissionRef, SubmissionType};
 use diesel::OptionalExtension;
@@ -321,6 +323,7 @@ impl TryFrom<SubmissionRow> for CatalogRecord {
         .map_err(|_| Error::Catalog("catalog download count was negative".to_string()))?,
       likes: u64::try_from(row.likes)
         .map_err(|_| Error::Catalog("catalog like count was negative".to_string()))?,
+      images: decode_images(&row.images)?,
       remote_added_at: row.remote_added_at,
       remote_updated_at: row.remote_updated_at,
       files_updated_at: row.files_updated_at,
@@ -354,6 +357,7 @@ mod tests {
       has_files: true,
       download_count: slug.len() as u64,
       likes: 1,
+      images: Vec::new(),
       remote_added_at: 10,
       remote_updated_at: 20,
       files_updated_at: 0,

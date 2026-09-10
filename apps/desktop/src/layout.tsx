@@ -6,6 +6,7 @@ import {
 import { Toaster } from "@deadlock-mods/ui/components/sonner";
 import { AppSidebar } from "./components/layout/app-sidebar";
 import { BottomBar } from "./components/layout/bottom-bar";
+import { CatalogSyncProgress } from "./components/layout/catalog-sync-progress";
 import { OccultGeometry } from "./components/layout/occult-geometry";
 import { Titlebar } from "./components/layout/titlebar";
 import { WhatsNewDialog } from "./components/layout/whats-new-dialog";
@@ -29,6 +30,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
               <AppSidebar />
               <SidebarInset className='flex min-h-0 flex-1 flex-col'>
                 <div className='relative z-[2] flex min-h-0 flex-1 flex-col overflow-hidden'>
+                  <CatalogSyncProgress />
                   {children}
                 </div>
               </SidebarInset>
