@@ -42,6 +42,14 @@ pub(crate) fn game_path() -> Result<PathBuf, Error> {
 }
 
 pub fn get_api_url() -> String {
+  if let Some(configuration) = crate::runtime_environment::current().e2e()
+    && let Some(endpoint) = configuration
+      .endpoints
+      .iter()
+      .find(|endpoint| endpoint.service == crate::runtime_environment::ServiceName::DmmApi)
+  {
+    return endpoint.origin.clone();
+  }
   match API_URL.lock() {
     Ok(url) => url.clone(),
     Err(_) => {

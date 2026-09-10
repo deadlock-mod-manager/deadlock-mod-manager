@@ -7,7 +7,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
 use std::fs;
 use std::path::Path;
-use tauri::Manager;
 
 const JOURNAL_FILE: &str = "gamebanana-identity-migration-v1.json";
 const MAX_MIGRATIONS: usize = 10_000;
@@ -32,10 +31,8 @@ pub async fn migrate_submission_identities(
   app_handle: AppHandle,
   migrations: Vec<IdentityMigration>,
 ) -> Result<(), Error> {
-  let app_data = app_handle
-    .path()
-    .app_local_data_dir()
-    .map_err(Error::Tauri)?;
+  let app_data =
+    crate::runtime_environment::app_local_data_dir(&app_handle).map_err(Error::Tauri)?;
   let game_path = super::state::game_path()?;
   tokio::task::spawn_blocking(move || migrate_on_disk(&app_data, &game_path, migrations))
     .await

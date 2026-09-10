@@ -7,14 +7,13 @@ import {
   parseList,
 } from "./validation/deadlock-api";
 import { fetch } from "./fetch";
+import { runtimeServiceOrigin } from "./runtime-bootstrap";
 
 export type { DeadlockHero, DeadlockItem };
 
 export const ASSETS_BASE_URL = "https://assets.deadlock-api.com";
-
-const HEROES_API = `${ASSETS_BASE_URL}/v2/heroes`;
-const ITEMS_API = `${ASSETS_BASE_URL}/v2/items`;
-const HERO_API = `${HEROES_API}/by-name`;
+export const assetsBaseUrl = (): string =>
+  runtimeServiceOrigin("assets", ASSETS_BASE_URL);
 
 /**
  * Every deadlock-api failure, on the app's shared error hierarchy. Lives here
@@ -32,7 +31,7 @@ export class DeadlockApiError extends ProviderError {
 
 /** Every playable hero, for id -> name/portrait lookups. Changes only per patch. */
 export const getHeroes = async (): Promise<DeadlockHero[]> => {
-  const res = await fetch(`${HEROES_API}?only_active=true`);
+  const res = await fetch(`${assetsBaseUrl()}/v2/heroes?only_active=true`);
   if (!res.ok) {
     throw new DeadlockApiError(res.status, "/v2/heroes");
   }
@@ -45,7 +44,7 @@ export const getHeroes = async (): Promise<DeadlockHero[]> => {
  * ever reaches the cache.
  */
 export const getItems = async (): Promise<DeadlockItem[]> => {
-  const res = await fetch(`${ITEMS_API}?only_active=true`);
+  const res = await fetch(`${assetsBaseUrl()}/v2/items?only_active=true`);
   if (!res.ok) {
     throw new DeadlockApiError(res.status, "/v2/items");
   }
@@ -66,7 +65,9 @@ export const getItems = async (): Promise<DeadlockItem[]> => {
 export const getHeroByName = async (
   name: string,
 ): Promise<DeadlockHero | null> => {
-  const res = await fetch(`${HERO_API}/${encodeURIComponent(name)}`);
+  const res = await fetch(
+    `${assetsBaseUrl()}/v2/heroes/by-name/${encodeURIComponent(name)}`,
+  );
   if (!res.ok) {
     return null;
   }

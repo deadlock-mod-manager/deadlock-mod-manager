@@ -5,7 +5,7 @@ use crate::mod_manager::Mod;
 use crate::mod_manager::shard::{ShardIndex, ShardLocator};
 use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use serde::{Deserialize, Serialize};
-use tauri::{Emitter, Manager, State};
+use tauri::{Emitter, State};
 
 use super::downloads::{get_download_manager, resolve_download_files};
 use super::mods::InstalledModInfo;
@@ -401,10 +401,8 @@ pub async fn import_profile_batch(
       )
       .ok();
 
-    let app_local_data_dir = app_handle
-      .path()
-      .app_local_data_dir()
-      .map_err(Error::Tauri)?;
+    let app_local_data_dir =
+      crate::runtime_environment::app_local_data_dir(&app_handle).map_err(Error::Tauri)?;
     let target_dir = app_local_data_dir.join("mods").join(&mod_data.mod_id);
 
     let task = DownloadTask {

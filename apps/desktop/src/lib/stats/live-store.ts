@@ -1,4 +1,5 @@
 import { load, type Store } from "@tauri-apps/plugin-store";
+import { resolveStorePath } from "@/lib/runtime-bootstrap";
 import { createLogger } from "@/lib/logger";
 import {
   type LiveMatchSample,
@@ -209,7 +210,9 @@ type PersistedBoard = {
 
 let storePromise: Promise<Store> | null = null;
 const getStore = (): Promise<Store> => {
-  storePromise ??= load(PERSIST_FILE, { autoSave: false, defaults: {} });
+  storePromise ??= resolveStorePath(PERSIST_FILE).then((storePath) =>
+    load(storePath, { autoSave: false, defaults: {} }),
+  );
   return storePromise;
 };
 

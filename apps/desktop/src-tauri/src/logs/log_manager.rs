@@ -3,7 +3,6 @@ use crate::errors::Error;
 use crate::logs::crash_dumps;
 use crate::utils;
 use serde::{Deserialize, Serialize};
-use tauri::Manager;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct LogFileInfo {
@@ -22,9 +21,7 @@ pub struct LogInfo {
 pub async fn get_log_info(app_handle: &AppHandle) -> Result<LogInfo, Error> {
   log::info!("Getting log info");
 
-  let log_dir = app_handle
-    .path()
-    .app_log_dir()
+  let log_dir = crate::runtime_environment::app_log_dir(app_handle)
     .map_err(|e| Error::InvalidInput(format!("Failed to get log directory: {e}")))?;
 
   let mut files = Vec::new();
@@ -67,9 +64,7 @@ pub async fn get_log_info(app_handle: &AppHandle) -> Result<LogInfo, Error> {
 pub fn open_logs_folder(app_handle: &AppHandle) -> Result<(), Error> {
   log::info!("Opening logs folder");
 
-  let log_dir = app_handle
-    .path()
-    .app_log_dir()
+  let log_dir = crate::runtime_environment::app_log_dir(app_handle)
     .map_err(|e| Error::InvalidInput(format!("Failed to get log directory: {e}")))?;
 
   if !log_dir.exists() {
@@ -83,9 +78,7 @@ pub fn open_logs_folder(app_handle: &AppHandle) -> Result<(), Error> {
 pub fn open_log_file(app_handle: &AppHandle) -> Result<(), Error> {
   log::info!("Opening latest log file");
 
-  let log_dir = app_handle
-    .path()
-    .app_log_dir()
+  let log_dir = crate::runtime_environment::app_log_dir(app_handle)
     .map_err(|e| Error::InvalidInput(format!("Failed to get log directory: {e}")))?;
 
   let main_log = log_dir.join("deadlock-mod-manager.log");
@@ -115,9 +108,7 @@ pub async fn get_logs_for_ai(
   let include_crash = log_source == "crash" || log_source == "combined";
 
   if include_dmm {
-    let log_dir = app_handle
-      .path()
-      .app_log_dir()
+    let log_dir = crate::runtime_environment::app_log_dir(app_handle)
       .map_err(|e| Error::InvalidInput(format!("Failed to get log directory: {e}")))?;
 
     let main_log = log_dir.join("deadlock-mod-manager.log");

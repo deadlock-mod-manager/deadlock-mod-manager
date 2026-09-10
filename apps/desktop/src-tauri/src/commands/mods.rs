@@ -11,7 +11,7 @@ use crate::mod_manager::vpk_manager::VpkManager;
 use crate::mod_manager::vpk_manager::staging::VpkSnapshot;
 use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use serde::{Deserialize, Serialize};
-use tauri::{Emitter, Manager, State};
+use tauri::{Emitter, State};
 
 use super::downloads::{get_download_manager, resolve_download_files};
 use super::fonts::{apply_font_cleanup, prepare_font_cleanup};
@@ -354,10 +354,8 @@ pub async fn batch_update_mods(
       )
       .ok();
 
-    let app_local_data_dir = app_handle
-      .path()
-      .app_local_data_dir()
-      .map_err(Error::Tauri)?;
+    let app_local_data_dir =
+      crate::runtime_environment::app_local_data_dir(&app_handle).map_err(Error::Tauri)?;
     let target_dir = app_local_data_dir.join("mods").join(&mod_data.mod_id);
 
     let task = DownloadTask {
@@ -446,8 +444,7 @@ pub async fn batch_update_mods(
   let mut vpk_mappings = Vec::new();
   if !succeeded.is_empty() {
     let mut mod_manager = MANAGER.lock().unwrap();
-    if let Err(error) = mod_manager.reorder_all_mods_for_profile(profile_folder_option.clone())
-    {
+    if let Err(error) = mod_manager.reorder_all_mods_for_profile(profile_folder_option.clone()) {
       log::warn!("Post-batch reorder failed: {error}");
     }
     if let Ok(addons_path) = mod_manager.get_addons_path(profile_folder_option.as_deref())

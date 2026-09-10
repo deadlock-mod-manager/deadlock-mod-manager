@@ -2,7 +2,6 @@ use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 use crate::forge_bridge;
 use std::path::{Component, Path, PathBuf};
-use tauri::Manager;
 
 #[tauri::command]
 pub async fn start_forge_bridge(app_handle: AppHandle) -> Result<u16, Error> {
@@ -24,9 +23,7 @@ pub async fn place_forge_payload(
   destination: String,
 ) -> Result<(), Error> {
   let staged = forge_bridge::peek_staged(&path)?;
-  let mods_root = app_handle
-    .path()
-    .app_local_data_dir()
+  let mods_root = crate::runtime_environment::app_local_data_dir(&app_handle)
     .map_err(Error::Tauri)?
     .join("mods");
   let destination = contained_destination(&mods_root, &destination)?;

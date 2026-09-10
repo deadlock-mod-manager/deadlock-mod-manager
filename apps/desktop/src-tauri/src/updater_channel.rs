@@ -43,7 +43,7 @@ struct ChannelConfig {
 }
 
 fn channel_config_path(identifier: &str) -> Option<PathBuf> {
-  dirs::config_dir().map(|config_dir| config_dir.join(identifier).join(CHANNEL_FILE))
+  crate::runtime_environment::app_config_dir(identifier).map(|path| path.join(CHANNEL_FILE))
 }
 
 pub fn resolve_channel(identifier: &str) -> UpdateChannel {
@@ -55,6 +55,22 @@ pub fn resolve_channel(identifier: &str) -> UpdateChannel {
 }
 
 pub fn apply_to_context(context: &mut tauri::Context<AppRuntime>) {
+  if let Some(configuration) = crate::runtime_environment::current().e2e() {
+    let endpoints = match configuration.integrations.updater {
+      crate::runtime_environment::UpdaterPolicy::Disabled => serde_json::json!([]),
+      crate::runtime_environment::UpdaterPolicy::Fixture => serde_json::json!([format!(
+        "{}/updater/latest.json",
+        configuration
+          .endpoint(crate::runtime_environment::ServiceName::Downloads)
+          .trim_end_matches('/')
+      )]),
+    };
+    if let Some(updater) = context.config_mut().plugins.0.get_mut("updater") {
+      updater["endpoints"] = endpoints;
+    }
+    return;
+  }
+
   let identifier = context.config().identifier.clone();
   let channel = resolve_channel(&identifier);
 
