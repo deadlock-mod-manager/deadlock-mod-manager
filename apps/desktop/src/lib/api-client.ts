@@ -24,9 +24,11 @@ import { fetch } from "./fetch";
 import { HttpError } from "./http-error";
 import logger from "./logger";
 import {
+  checkDirectGameBananaUpdates,
   getGameBananaCatalogDownloads,
   getGameBananaCatalogMod,
   getGameBananaCatalogMods,
+  getDirectGameBananaFileservers,
   isGameBananaDirectClientEnabled,
 } from "./gamebanana-catalog";
 
@@ -111,19 +113,37 @@ export const getModDownloads = async (remoteId: string) => {
 };
 
 export const getGameBananaFileservers = async (): Promise<FileserverDto[]> => {
+  if (isGameBananaDirectClientEnabled()) {
+    return getDirectGameBananaFileservers();
+  }
   const data = await apiRequest<unknown>("/api/v2/fileservers/gamebanana");
   return FileserversResponseSchema.parse(data);
 };
 
 export const checkModUpdates = async (
-  mods: Array<{ remoteId: string; installedAt: Date }>,
+  mods: Array<{
+    remoteId: string;
+    installedAt: Date;
+    selectedFileIds: string[];
+  }>,
 ) => {
+  if (isGameBananaDirectClientEnabled()) {
+    return checkDirectGameBananaUpdates(
+      mods.map((mod) => ({
+        remoteId: mod.remoteId,
+        installedAt: Math.floor(mod.installedAt.getTime() / 1_000),
+        selectedFileIds: mod.selectedFileIds,
+      })),
+    );
+  }
   return await apiRequest<{
     updates: Array<{
       mod: ModDto;
       downloads: ModDownloadDto[];
     }>;
-  }>("/api/v2/mods/check-updates", { mods });
+  }>("/api/v2/mods/check-updates", {
+    mods: mods.map(({ remoteId, installedAt }) => ({ remoteId, installedAt })),
+  });
 };
 
 export const getCustomSettings = async () => {

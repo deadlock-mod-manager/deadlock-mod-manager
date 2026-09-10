@@ -49,7 +49,17 @@ diesel::table! {
   }
 }
 
-diesel::allow_tables_to_appear_in_same_query!(submission, sync_cursor, sync_state);
+diesel::table! {
+  update_cache (provider, submission_type, submission_id) {
+    provider -> Text,
+    submission_type -> Text,
+    submission_id -> Text,
+    payload -> Text,
+    checked_at -> BigInt,
+  }
+}
+
+diesel::allow_tables_to_appear_in_same_query!(submission, sync_cursor, sync_state, update_cache);
 
 pub fn migrate(connection: &mut SqliteConnection) -> Result<(), Error> {
   connection
@@ -71,19 +81,20 @@ mod tests {
   use diesel_migrations::MigrationHarness;
 
   #[test]
-  fn migrations_create_fts_and_are_idempotent() {
+  fn migrations_create_catalog_tables_and_are_idempotent() {
     let mut connection = SqliteConnection::establish(":memory:").unwrap();
     migrate(&mut connection).unwrap();
     migrate(&mut connection).unwrap();
 
     let applied = connection.applied_migrations().unwrap();
-    let fts_exists = diesel::select(diesel::dsl::sql::<diesel::sql_types::Bool>(
-      "EXISTS(SELECT 1 FROM sqlite_master WHERE name = 'submission_fts')",
+    let catalog_tables_exist = diesel::select(diesel::dsl::sql::<diesel::sql_types::Bool>(
+      "EXISTS(SELECT 1 FROM sqlite_master WHERE name = 'submission_fts')
+       AND EXISTS(SELECT 1 FROM sqlite_master WHERE name = 'update_cache')",
     ))
     .get_result::<bool>(&mut connection)
     .unwrap();
 
-    assert_eq!(applied.len(), 1);
-    assert!(fts_exists);
+    assert_eq!(applied.len(), 2);
+    assert!(catalog_tables_exist);
   }
 }
