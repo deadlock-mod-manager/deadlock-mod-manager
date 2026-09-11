@@ -1665,7 +1665,7 @@
   },
   "matchSync": {
     "title": "Match Data Sharing",
-    "description": "Optionally fetch your own Deadlock match data from your machine and contribute it to deadlock-api trackers.",
+    "description": "Automatically upload your Deadlock matches to trackers like Statlocker, Tracklock and deadlock-api, so your match history and stats there are complete.",
     "about": {
       "reads": "Reads your local Steam login (the auto-login token already stored on this machine) to talk to Steam on your behalf.",
       "sends": "Sends only match IDs and match salts to deadlock-api, never your token, password, or personal data.",
