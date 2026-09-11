@@ -314,7 +314,7 @@ pub fn status(app: &AppHandle) -> Result<MatchSyncStatusDto, MatchSyncError> {
 /// first.
 ///
 /// Returns an empty list rather than an error whenever it cannot run: match sync
-/// is opt-in (this touches the Steam session, so it stays behind that consent),
+/// may be turned off (this touches the Steam session, so it stays behind that setting),
 /// the GC refuses while Deadlock is running because Steam routes its traffic to
 /// the game, and the requested account may simply not have a usable session.
 pub async fn recent_local_matches(app: &AppHandle, account_id: u32) -> Vec<LocalMatch> {
