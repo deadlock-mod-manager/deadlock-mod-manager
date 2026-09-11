@@ -1674,7 +1674,7 @@
     },
     "enable": {
       "title": "Enable match data sharing",
-      "description": "On by default. Turn this off to stop reading your Steam login and sending match data."
+      "description": "On by default. Turn this off to stop sharing your match data."
     },
     "consent": {
       "title": "Enable match data sharing?",
