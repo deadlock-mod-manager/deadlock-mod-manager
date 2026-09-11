@@ -27,10 +27,8 @@ export const OnboardingStepMatchSync = ({ onComplete }: MatchSyncStepProps) => {
         </p>
       </div>
 
-      <div className='space-y-1 rounded-lg border border-border bg-muted/30 p-4 text-muted-foreground text-sm'>
-        <p>{t("matchSync.about.reads")}</p>
-        <p>{t("matchSync.about.sends")}</p>
-        <p className='text-amber-500/90'>{t("matchSync.about.risk")}</p>
+      <div className='rounded-lg border border-border bg-muted/30 p-4 text-sm'>
+        <p className='text-amber-500/90'>{t("matchSync.about.summary")}</p>
       </div>
 
       <div className='flex items-center justify-between rounded-lg border border-border p-4'>
