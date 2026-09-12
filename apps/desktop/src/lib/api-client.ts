@@ -4,6 +4,7 @@ import type {
   CustomSettingDto,
   FeatureFlag,
   FileserverDto,
+  ModAuthorDto,
   ModDto,
   PublishedCrosshairDto,
   RelaysHealthResponse,
@@ -77,6 +78,12 @@ export const getMods = async () => {
 
 export const getMod = async (remoteId: string) => {
   return await apiRequest<ModDto>(`/api/v2/mods/${remoteId}`);
+};
+
+export const getModAuthor = async (id: string) => {
+  return await apiRequest<{ author: ModAuthorDto; mods: ModDto[] }>(
+    `/api/v2/mod-authors/${encodeURIComponent(id)}`,
+  );
 };
 
 export const getModDownload = async (remoteId: string) => {

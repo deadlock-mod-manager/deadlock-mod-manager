@@ -17,6 +17,7 @@ import ModCard from "@/components/mod-browsing/mod-card";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
 import { getMods } from "@/lib/api-client";
+import { FAVORITES_NAVIGATION_TRAIL } from "@/lib/mods/mod-detail-navigation";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 
@@ -59,7 +60,11 @@ const FavoritesData = () => {
   return (
     <div className='grid grid-cols-1 gap-4 px-1 pb-24 pr-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
       {favoritedMods.map((mod) => (
-        <ModCard key={mod.id} mod={mod} />
+        <ModCard
+          key={mod.id}
+          mod={mod}
+          navigationTrail={FAVORITES_NAVIGATION_TRAIL}
+        />
       ))}
     </div>
   );

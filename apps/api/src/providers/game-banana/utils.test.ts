@@ -3,6 +3,7 @@ import { DeadlockHeroes, type GameBanana } from "@deadlock-mods/shared";
 import {
   buildDonationLinks,
   buildMetadata,
+  buildModAuthor,
   categoryFromGameBananaProfile,
   donationLinksFromMethods,
   extractDonationLinksFromDescription,
@@ -51,6 +52,8 @@ const baseGameBananaModProfile = {
     _bHasRipe: false,
     _sProfileUrl: "https://gamebanana.com/members/1",
     _sAvatarUrl: "https://gamebanana.com/avatar.png",
+    _sHdAvatarUrl: "https://gamebanana.com/avatar-hd.png",
+    _sUpicUrl: "https://gamebanana.com/upic.png",
     _sUserTitle: "",
     _sHonoraryTitle: "",
     _tsJoinDate: 0,
@@ -605,7 +608,7 @@ describe("buildDonationLinks", () => {
 });
 
 describe("buildMetadata", () => {
-  it("returns null when no metadata fields are populated", () => {
+  it("returns null when no mod-specific metadata is populated", () => {
     expect(
       buildMetadata({
         description: "Nothing useful here.",
@@ -621,7 +624,7 @@ describe("buildMetadata", () => {
       isMap: true,
       donationMethods: [],
     });
-    expect(result).toEqual({ mapName: "my_arena" });
+    expect(result?.mapName).toBe("my_arena");
   });
 
   it("returns donationLinks when present", () => {
@@ -643,6 +646,72 @@ describe("buildMetadata", () => {
     });
     expect(result?.mapName).toBe("my_arena");
     expect(result?.donationLinks).toHaveLength(1);
+  });
+});
+
+describe("buildModAuthor", () => {
+  it("omits author metadata when submitter data is unavailable", () => {
+    expect(buildModAuthor()).toBeUndefined();
+    expect(buildModAuthor(null)).toBeUndefined();
+  });
+
+  it("maps provider identity and profile fields", () => {
+    expect(buildModAuthor(baseGameBananaModProfile._aSubmitter)).toEqual({
+      provider: "gamebanana",
+      remoteId: "1",
+      name: "author",
+      profileUrl: "https://gamebanana.com/members/1",
+      avatarUrl: "https://gamebanana.com/avatar.png",
+      hdAvatarUrl: "https://gamebanana.com/avatar-hd.png",
+      upicUrl: "https://gamebanana.com/upic.png",
+      signatureUrl: null,
+      title: null,
+      joinedAt: null,
+      subscriberCount: 0,
+    });
+  });
+
+  it("maps optional profile details", () => {
+    const author = buildModAuthor({
+      ...baseGameBananaModProfile._aSubmitter,
+      _sSigUrl: "https://gamebanana.com/signature.png",
+      _tsJoinDate: 1_700_000_000,
+      _nSubscriberCount: 42,
+    });
+
+    expect(author?.signatureUrl).toBe("https://gamebanana.com/signature.png");
+    expect(author?.joinedAt).toBe(1_700_000_000);
+    expect(author?.subscriberCount).toBe(42);
+  });
+
+  it("omits the author when required identity URLs are untrusted", () => {
+    expect(
+      buildModAuthor({
+        ...baseGameBananaModProfile._aSubmitter,
+        _sProfileUrl: "https://gamebanana.com.example.com/members/1",
+      }),
+    ).toBeUndefined();
+    expect(
+      buildModAuthor({
+        ...baseGameBananaModProfile._aSubmitter,
+        _sAvatarUrl: "http://images.gamebanana.com/avatar.png",
+      }),
+    ).toBeUndefined();
+  });
+
+  it("keeps trusted CDN media and drops untrusted optional media", () => {
+    const author = buildModAuthor({
+      ...baseGameBananaModProfile._aSubmitter,
+      _sHdAvatarUrl: "https://images.gamebanana.com/avatar-hd.png",
+      _sUpicUrl: "https://example.com/upic.png",
+      _sSigUrl: "data:image/png;base64,unsafe",
+    });
+
+    expect(author?.hdAvatarUrl).toBe(
+      "https://images.gamebanana.com/avatar-hd.png",
+    );
+    expect(author?.upicUrl).toBeNull();
+    expect(author?.signatureUrl).toBeNull();
   });
 });
 

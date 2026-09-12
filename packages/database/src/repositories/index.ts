@@ -8,6 +8,7 @@ export * from "./documentation-sync.repository";
 export * from "./message-pattern-embedding.repository";
 export * from "./mirrored-file.repository";
 export * from "./mod.repository";
+export * from "./mod-author.repository";
 export * from "./mod-download.repository";
 export * from "./profile.repository";
 export * from "./quick-answer.repository";

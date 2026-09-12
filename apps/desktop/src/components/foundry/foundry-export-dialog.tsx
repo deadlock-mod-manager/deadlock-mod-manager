@@ -148,6 +148,7 @@ export const FoundryExportDialog = ({
             description: t("foundry.export.modDescription"),
             remoteUrl: "local://foundry",
             author: "Mod Foundry",
+            modAuthorId: null,
             downloadable: false,
             remoteAddedAt: now,
             remoteUpdatedAt: now,

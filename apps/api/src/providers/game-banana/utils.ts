@@ -1,4 +1,8 @@
-import type { ModDependency, ModDownload } from "@deadlock-mods/database";
+import type {
+  ModDependency,
+  ModDownload,
+  NewModAuthor,
+} from "@deadlock-mods/database";
 import type {
   DonationLink,
   FileserverDto,
@@ -455,3 +459,78 @@ export function buildMetadata({
   if (donationLinks.length > 0) metadata.donationLinks = donationLinks;
   return metadata;
 }
+
+export function buildModAuthor(
+  submitter?: Partial<GameBanana.GameBananaModProfile["_aSubmitter"]> | null,
+): NewModAuthor | undefined {
+  if (!submitter) return undefined;
+
+  const remoteId = submitter._idRow;
+  const name = submitter._sName?.trim();
+  const profileUrl = trustedGameBananaUrl(submitter._sProfileUrl);
+  const avatarUrl = trustedGameBananaUrl(submitter._sAvatarUrl);
+  const joinedAt = submitter._tsJoinDate;
+  const subscriberCount = submitter._nSubscriberCount;
+
+  if (
+    typeof remoteId !== "number" ||
+    !Number.isSafeInteger(remoteId) ||
+    remoteId <= 0 ||
+    !name ||
+    !profileUrl ||
+    !avatarUrl
+  ) {
+    return undefined;
+  }
+
+  return {
+    provider: "gamebanana",
+    remoteId: remoteId.toString(),
+    name,
+    profileUrl,
+    avatarUrl,
+    hdAvatarUrl: trustedGameBananaUrl(submitter._sHdAvatarUrl),
+    upicUrl: trustedGameBananaUrl(submitter._sUpicUrl),
+    signatureUrl: trustedGameBananaUrl(submitter._sSigUrl),
+    title: submitter._sUserTitle || null,
+    joinedAt:
+      typeof joinedAt === "number" &&
+      Number.isSafeInteger(joinedAt) &&
+      joinedAt > 0
+        ? joinedAt
+        : null,
+    subscriberCount:
+      typeof subscriberCount === "number" &&
+      Number.isSafeInteger(subscriberCount) &&
+      subscriberCount >= 0
+        ? subscriberCount
+        : null,
+  };
+}
+
+const trustedGameBananaUrl = (
+  value: string | null | undefined,
+): string | null => {
+  if (!value) return null;
+
+  try {
+    const url = new URL(value);
+    const hostname = url.hostname.toLowerCase();
+    const isGameBananaHost =
+      hostname === "gamebanana.com" || hostname.endsWith(".gamebanana.com");
+
+    if (
+      url.protocol !== "https:" ||
+      !isGameBananaHost ||
+      url.username ||
+      url.password ||
+      url.port
+    ) {
+      return null;
+    }
+
+    return url.href;
+  } catch {
+    return null;
+  }
+};
