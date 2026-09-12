@@ -5,6 +5,9 @@
 <div align="center">
 <h1> Deadlock Mod Manager</h1>
 </div>
+<p align="center">
+  <a href="./README.md">English</a> | <a href="./docs/translations/zh-CN/README.md">简体中文</a>
+</p>
 <!-- Project Stats -->
 <div align="center">
 

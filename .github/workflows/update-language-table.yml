@@ -57,7 +57,8 @@ jobs:
       - name: Check for changes
         id: check-changes
         run: |
-          if git diff --quiet HEAD -- README*.md; then
+          shopt -s nullglob
+          if git diff --quiet HEAD -- README*.md docs/translations/*/README*.md; then
             echo "changes=false" >> $GITHUB_OUTPUT
             echo "No changes detected in README files"
           else
@@ -70,7 +71,8 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add README*.md
+          shopt -s nullglob
+          git add README*.md docs/translations/*/README*.md
           git commit -m "chore: update language table with Crowdin progress"
           git push
 
@@ -82,7 +84,7 @@ jobs:
             echo "✅ Language table was updated successfully" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "### Updated Files:" >> $GITHUB_STEP_SUMMARY
-            echo "- All README*.md files" >> $GITHUB_STEP_SUMMARY
+            echo "- All README*.md files and docs/translations/*/README*.md files" >> $GITHUB_STEP_SUMMARY
           else
             echo "ℹ️ No changes were needed - language table is already up to date" >> $GITHUB_STEP_SUMMARY
           fi
