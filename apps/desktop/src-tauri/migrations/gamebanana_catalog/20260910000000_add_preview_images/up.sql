@@ -1,0 +1,1 @@
+ALTER TABLE submission ADD COLUMN images TEXT NOT NULL DEFAULT '[]';

@@ -1,0 +1,307 @@
+use super::models::{
+  BulkHydration, DownloadPage, FileserverPage, IndexPage, Profile, UpdateSnapshot,
+};
+use super::transport::{GameBananaTransport, TransportConfig};
+use crate::errors::Error;
+use crate::providers::{SubmissionProvider, SubmissionRef, SubmissionType};
+use tokio_util::sync::CancellationToken;
+
+const API_BASE: &str = "https://gamebanana.com/apiv11/";
+const DEADLOCK_GAME_ID: u64 = 20_948;
+const INDEX_PAGE_SIZE: u32 = 50;
+const MAX_INDEX_PAGE: u32 = 250;
+const MAX_BULK_ITEMS: usize = 50;
+const MAX_BULK_URL_BYTES: usize = 7_000;
+const BULK_FIELDS: &[&str] = &[
+  "name",
+  "downloads",
+  "Category().name",
+  "RootCategory().name",
+  "Nsfw().bIsNsfw()",
+  "description",
+  "text",
+];
+const UPDATE_FIELDS: &[&str] = &["Url().sProfileUrl()", "mdate", "Files().aFiles()"];
+
+#[derive(Clone)]
+pub struct GameBananaClient {
+  transport: GameBananaTransport,
+  api_base: String,
+}
+
+impl GameBananaClient {
+  pub fn new() -> Result<Self, Error> {
+    let api_base = crate::runtime_environment::current()
+      .e2e()
+      .map(|configuration| {
+        format!(
+          "{}/apiv11/",
+          configuration
+            .endpoint(crate::runtime_environment::ServiceName::Gamebanana)
+            .trim_end_matches('/')
+        )
+      })
+      .unwrap_or_else(|| API_BASE.to_string());
+    Self::with_base_and_config(api_base, TransportConfig::default())
+  }
+
+  pub fn with_config(config: TransportConfig) -> Result<Self, Error> {
+    Self::with_base_and_config(API_BASE.to_string(), config)
+  }
+
+  fn with_base_and_config(api_base: String, config: TransportConfig) -> Result<Self, Error> {
+    Ok(Self {
+      transport: GameBananaTransport::new(config)?,
+      api_base,
+    })
+  }
+
+  pub async fn index(
+    &self,
+    submission_type: SubmissionType,
+    page: u32,
+    latest_modified: bool,
+    cancel: &CancellationToken,
+  ) -> Result<IndexPage, Error> {
+    let url = index_url(&self.api_base, submission_type, page, latest_modified)?;
+
+    self.transport.get_json("index", url, cancel).await
+  }
+
+  pub async fn profile(
+    &self,
+    submission: &SubmissionRef,
+    cancel: &CancellationToken,
+  ) -> Result<Profile, Error> {
+    let url = submission_url(&self.api_base, submission, "ProfilePage")?;
+    self.transport.get_json("profile", url, cancel).await
+  }
+
+  pub async fn download_page(
+    &self,
+    submission: &SubmissionRef,
+    cancel: &CancellationToken,
+  ) -> Result<DownloadPage, Error> {
+    let url = submission_url(&self.api_base, submission, "DownloadPage")?;
+    self.transport.get_json("download page", url, cancel).await
+  }
+
+  pub async fn fileservers(&self, cancel: &CancellationToken) -> Result<FileserverPage, Error> {
+    let url = reqwest::Url::parse(&format!("{}Util/Fileservers?_nPage=1", self.api_base))
+      .map_err(|error| Error::ProviderInvalidResponse(error.to_string()))?;
+    self.transport.get_json("fileservers", url, cancel).await
+  }
+
+  pub async fn bulk_hydrate(
+    &self,
+    submissions: &[SubmissionRef],
+    cancel: &CancellationToken,
+  ) -> Result<Vec<Option<BulkHydration>>, Error> {
+    let first = submissions.first().ok_or_else(|| {
+      Error::ProviderInvalidResponse("bulk hydration requires at least one submission".to_string())
+    })?;
+    if submissions.len() > MAX_BULK_ITEMS
+      || first.provider != SubmissionProvider::Gamebanana
+      || submissions.iter().any(|submission| {
+        submission.provider != SubmissionProvider::Gamebanana
+          || submission.submission_type != first.submission_type
+          || submission.submission_id.parse::<u64>().is_err()
+      })
+    {
+      return Err(Error::ProviderInvalidResponse(
+        "bulk hydration requires up to 50 GameBanana submissions of one type".to_string(),
+      ));
+    }
+
+    let mut url = reqwest::Url::parse(&format!("{}Core/Item/Data", self.api_base))
+      .map_err(|error| Error::ProviderInvalidResponse(error.to_string()))?;
+    {
+      let mut query = url.query_pairs_mut();
+      for submission in submissions {
+        query
+          .append_pair("itemtype[]", model_name(submission.submission_type))
+          .append_pair("itemid[]", &submission.submission_id);
+      }
+      for field in BULK_FIELDS {
+        query.append_pair("fields[]", field);
+      }
+    }
+    if url.as_str().len() > MAX_BULK_URL_BYTES {
+      return Err(Error::ProviderInvalidResponse(
+        "bulk hydration request exceeds the URL safety limit".to_string(),
+      ));
+    }
+
+    let value = self
+      .transport
+      .get_json::<serde_json::Value>("bulk hydration", url, cancel)
+      .await?;
+    let records = BulkHydration::parse_many(value);
+    if records.len() != submissions.len() {
+      return Err(Error::ProviderInvalidResponse(format!(
+        "bulk hydration returned {} records for {} submissions",
+        records.len(),
+        submissions.len()
+      )));
+    }
+    Ok(records)
+  }
+
+  pub async fn bulk_updates(
+    &self,
+    submissions: &[SubmissionRef],
+    cancel: &CancellationToken,
+  ) -> Result<Vec<Option<UpdateSnapshot>>, Error> {
+    let first = submissions.first().ok_or_else(|| {
+      Error::ProviderInvalidResponse("bulk update requires submissions".to_string())
+    })?;
+    if submissions.len() > MAX_BULK_ITEMS
+      || submissions.iter().any(|submission| {
+        submission.provider != SubmissionProvider::Gamebanana
+          || submission.submission_type != first.submission_type
+          || submission.submission_id.parse::<u64>().is_err()
+      })
+    {
+      return Err(Error::ProviderInvalidResponse(
+        "bulk update requires up to 50 GameBanana submissions of one type".to_string(),
+      ));
+    }
+    let mut url = reqwest::Url::parse(&format!("{}Core/Item/Data", self.api_base))
+      .map_err(|error| Error::ProviderInvalidResponse(error.to_string()))?;
+    {
+      let mut query = url.query_pairs_mut();
+      for submission in submissions {
+        query
+          .append_pair("itemtype[]", model_name(submission.submission_type))
+          .append_pair("itemid[]", &submission.submission_id);
+      }
+      for field in UPDATE_FIELDS {
+        query.append_pair("fields[]", field);
+      }
+    }
+    if url.as_str().len() > MAX_BULK_URL_BYTES {
+      return Err(Error::ProviderInvalidResponse(
+        "bulk update request exceeds the URL safety limit".to_string(),
+      ));
+    }
+    let value = self
+      .transport
+      .get_json::<serde_json::Value>("bulk updates", url, cancel)
+      .await?;
+    let records = UpdateSnapshot::parse_many(value, submissions);
+    if records.len() != submissions.len() {
+      return Err(Error::ProviderInvalidResponse(
+        "bulk update response length did not match the request".to_string(),
+      ));
+    }
+    Ok(records)
+  }
+}
+
+fn index_url(
+  api_base: &str,
+  submission_type: SubmissionType,
+  page: u32,
+  latest_modified: bool,
+) -> Result<reqwest::Url, Error> {
+  if !(1..=MAX_INDEX_PAGE).contains(&page) {
+    return Err(Error::ProviderInvalidResponse(format!(
+      "index page must be between 1 and {MAX_INDEX_PAGE}"
+    )));
+  }
+
+  let model = model_name(submission_type);
+  let mut url = reqwest::Url::parse(&format!("{api_base}{model}/Index"))
+    .map_err(|error| Error::ProviderInvalidResponse(error.to_string()))?;
+  {
+    let mut query = url.query_pairs_mut();
+    query
+      .append_pair("_nPerpage", &INDEX_PAGE_SIZE.to_string())
+      .append_pair("_aFilters[Generic_Game]", &DEADLOCK_GAME_ID.to_string())
+      .append_pair("_nPage", &page.to_string());
+    if latest_modified {
+      query.append_pair("_sSort", "Generic_LatestModified");
+    }
+  }
+
+  Ok(url)
+}
+
+fn submission_url(
+  api_base: &str,
+  submission: &SubmissionRef,
+  operation: &str,
+) -> Result<reqwest::Url, Error> {
+  if submission.provider != SubmissionProvider::Gamebanana
+    || submission
+      .submission_id
+      .parse::<u64>()
+      .ok()
+      .filter(|id| *id > 0)
+      .is_none()
+  {
+    return Err(Error::ProviderInvalidResponse(
+      "operation requires a GameBanana submission".to_string(),
+    ));
+  }
+
+  reqwest::Url::parse(&format!(
+    "{api_base}{}/{}/{operation}",
+    model_name(submission.submission_type),
+    submission.submission_id
+  ))
+  .map_err(|error| Error::ProviderInvalidResponse(error.to_string()))
+}
+
+fn model_name(submission_type: SubmissionType) -> &'static str {
+  match submission_type {
+    SubmissionType::Mod => "Mod",
+    SubmissionType::Sound => "Sound",
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::{
+    API_BASE, MAX_BULK_ITEMS, MAX_BULK_URL_BYTES, MAX_INDEX_PAGE, index_url, model_name,
+    submission_url,
+  };
+  use crate::providers::{SubmissionRef, SubmissionType};
+
+  #[test]
+  fn endpoints_are_derived_from_validated_provider_identity() {
+    let sound = SubmissionRef::parse_slug("snd-42").unwrap();
+    assert_eq!(model_name(SubmissionType::Sound), "Sound");
+    assert_eq!(
+      submission_url(API_BASE, &sound, "ProfilePage")
+        .unwrap()
+        .as_str(),
+      "https://gamebanana.com/apiv11/Sound/42/ProfilePage"
+    );
+
+    let local = SubmissionRef::parse_slug("local-550e8400-e29b-41d4-a716-446655440000").unwrap();
+    assert!(submission_url(API_BASE, &local, "ProfilePage").is_err());
+    assert_eq!(MAX_INDEX_PAGE, 250);
+    assert_eq!(MAX_BULK_ITEMS, 50);
+    assert_eq!(MAX_BULK_URL_BYTES, 7_000);
+  }
+  #[test]
+  fn index_query_preserves_wire_format_and_pagination() {
+    let url = index_url(API_BASE, SubmissionType::Sound, 3, true).unwrap();
+    assert_eq!(
+      url.as_str(),
+      "https://gamebanana.com/apiv11/Sound/Index?_nPerpage=50&_aFilters%5BGeneric_Game%5D=20948&_nPage=3&_sSort=Generic_LatestModified"
+    );
+    let request = reqwest::Client::new().get(url.clone()).build().unwrap();
+    assert_eq!(request.url(), &url);
+    assert!(
+      !index_url(API_BASE, SubmissionType::Mod, 1, false)
+        .unwrap()
+        .query()
+        .unwrap()
+        .contains("_sSort")
+    );
+    assert!(index_url(API_BASE, SubmissionType::Mod, 0, false).is_err());
+    assert!(index_url(API_BASE, SubmissionType::Mod, MAX_INDEX_PAGE + 1, false).is_err());
+  }
+}

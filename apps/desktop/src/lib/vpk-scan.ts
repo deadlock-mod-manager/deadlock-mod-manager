@@ -1,3 +1,9 @@
+import {
+  extractSubmissionSlugFromFilename,
+  parseSubmissionSlug,
+  serializeSubmissionRef,
+} from "./mods/submission-ref";
+
 const basename = (value: string) => value.split(/[\\/]/).pop() || value;
 
 /**
@@ -14,16 +20,24 @@ export const findUnmatchedVpks = (
   localMods: { remoteId: string; installedVpks?: string[] | null }[],
 ): string[] => {
   const owned = new Set<string>();
+  const installedSubmissionSlugs = new Set<string>();
 
   for (const mod of localMods) {
+    const submission = parseSubmissionSlug(mod.remoteId);
+    const slug = submission && serializeSubmissionRef(submission);
+    if (slug) {
+      installedSubmissionSlugs.add(slug);
+    }
     for (const installedVpk of mod.installedVpks ?? []) {
       owned.add(basename(installedVpk));
     }
-    for (const vpk of vpkFiles) {
-      const name = basename(vpk);
-      if (name.startsWith(`${mod.remoteId}_`)) {
-        owned.add(name);
-      }
+  }
+
+  for (const vpk of vpkFiles) {
+    const name = basename(vpk);
+    const slug = extractSubmissionSlugFromFilename(name);
+    if (slug && installedSubmissionSlugs.has(slug)) {
+      owned.add(name);
     }
   }
 

@@ -5,7 +5,7 @@ use crate::mod_manager::ModFileTree;
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use std::time::Instant;
-use tauri::Manager;
+use tauri::State;
 
 use super::mods::InstalledModInfo;
 use super::server_profiles::validate_addons_subfolder;
@@ -20,9 +20,12 @@ pub(crate) async fn get_download_manager(app_handle: AppHandle) -> &'static Down
 #[tauri::command]
 pub async fn queue_download(
   app_handle: AppHandle,
+  catalog_state: State<'_, super::gamebanana_catalog::GameBananaCatalogState>,
+  policy: State<'_, super::policy::PolicyState>,
   mod_id: String,
   files: Vec<DownloadFileDto>,
   profile_folder: Option<String>,
+  fileserver_preference: Option<String>,
   _is_map: bool,
 ) -> Result<(), Error> {
   log::info!(
@@ -30,16 +33,23 @@ pub async fn queue_download(
     files.len()
   );
 
-  let app_local_data_dir = app_handle
-    .path()
-    .app_local_data_dir()
-    .map_err(Error::Tauri)?;
+  let resolved_files = resolve_download_files(
+    &catalog_state,
+    &policy,
+    &mod_id,
+    &files,
+    fileserver_preference.as_deref(),
+  )
+  .await?;
+
+  let app_local_data_dir =
+    crate::runtime_environment::app_local_data_dir(&app_handle).map_err(Error::Tauri)?;
 
   let target_dir = app_local_data_dir.join("mods").join(&mod_id);
 
   let task = DownloadTask {
     mod_id,
-    files,
+    files: resolved_files,
     target_dir,
     profile_folder,
     is_profile_import: false,
@@ -48,6 +58,172 @@ pub async fn queue_download(
 
   let manager = get_download_manager(app_handle).await;
   manager.queue_download(task).await
+}
+
+pub(crate) async fn resolve_download_files(
+  catalog_state: &super::gamebanana_catalog::GameBananaCatalogState,
+  policy: &super::policy::PolicyState,
+  mod_id: &str,
+  files: &[DownloadFileDto],
+  fileserver_preference: Option<&str>,
+) -> Result<Vec<DownloadFileDto>, Error> {
+  crate::providers::SubmissionRef::parse_slug(mod_id)
+    .map_err(|_| Error::InvalidInput("Invalid download identity".to_string()))?;
+  policy.ensure_download_allowed(mod_id)?;
+  if files.is_empty() || files.len() > 100 {
+    return Err(Error::InvalidInput(
+      "A download must contain between 1 and 100 files".to_string(),
+    ));
+  }
+
+  let mut resolved_files = Vec::with_capacity(files.len());
+  for file in files {
+    let resolved = if file.url.starts_with("gamebanana-file://") {
+      resolve_gamebanana_file(catalog_state, mod_id, &file.url, fileserver_preference).await?
+    } else {
+      validate_download_file_name(&file.name)?;
+      crate::download_manager::downloader::validate_download_url(&file.url)?;
+      file.clone()
+    };
+    resolved_files.push(resolved);
+  }
+
+  Ok(resolved_files)
+}
+
+async fn resolve_gamebanana_file(
+  state: &super::gamebanana_catalog::GameBananaCatalogState,
+  mod_id: &str,
+  token: &str,
+  fileserver_preference: Option<&str>,
+) -> Result<DownloadFileDto, Error> {
+  let (submission, file_id) = parse_gamebanana_file_token(mod_id, token)?;
+  let page = state
+    .backend()?
+    .client
+    .download_page(&submission, &tokio_util::sync::CancellationToken::new())
+    .await?;
+  if page.is_trashed || page.is_withheld {
+    return Err(Error::ProviderInvalidResponse(
+      "GameBanana files are not publicly available".to_string(),
+    ));
+  }
+  let file = page
+    .files
+    .into_iter()
+    .find(|candidate| candidate.id == file_id)
+    .ok_or_else(|| Error::ProviderInvalidResponse("GameBanana file was not found".to_string()))?;
+  validate_download_file_name(&file.name)?;
+  let mut download_url = file.download_url;
+  if let Some(preference) = fileserver_preference.filter(|value| *value != "default") {
+    match state.backend()?.fileservers(false).await {
+      Ok(servers) => {
+        let selected = if preference == "auto" {
+          servers
+            .iter()
+            .filter(|server| server.state == "up")
+            .max_by_key(|server| {
+              server
+                .stats
+                .as_ref()
+                .map(|stats| stats.rate_bytes)
+                .unwrap_or_default()
+            })
+        } else {
+          servers
+            .iter()
+            .find(|server| server.id == preference && server.state != "terminated")
+        };
+        if let Some(server) = selected {
+          let category = match submission.submission_type {
+            crate::providers::SubmissionType::Mod => "mods",
+            crate::providers::SubmissionType::Sound => "sounds",
+          };
+          download_url = format!(
+            "https://{}/{}/{}",
+            server.domain,
+            category,
+            urlencoding::encode(&file.name)
+          );
+        }
+      }
+      Err(error) => {
+        log::warn!("GameBanana fileserver directory unavailable; using canonical URL: {error}");
+      }
+    }
+  }
+  crate::download_manager::downloader::validate_download_url(&download_url)?;
+  Ok(DownloadFileDto {
+    url: download_url,
+    name: file.name,
+    size: file.size,
+    md5_checksum: file.md5,
+  })
+}
+
+fn parse_gamebanana_file_token(
+  mod_id: &str,
+  token: &str,
+) -> Result<(crate::providers::SubmissionRef, u64), Error> {
+  let parsed = reqwest::Url::parse(token)
+    .map_err(|_| Error::InvalidInput("Invalid GameBanana file token".to_string()))?;
+  if parsed.scheme() != "gamebanana-file"
+    || parsed.query().is_some()
+    || parsed.fragment().is_some()
+    || !parsed.username().is_empty()
+    || parsed.password().is_some()
+    || parsed.port().is_some()
+  {
+    return Err(Error::InvalidInput(
+      "Invalid GameBanana file token".to_string(),
+    ));
+  }
+  let slug = parsed
+    .host_str()
+    .ok_or_else(|| Error::InvalidInput("GameBanana file token has no submission".to_string()))?;
+  let segments = parsed
+    .path_segments()
+    .map(Iterator::collect::<Vec<_>>)
+    .ok_or_else(|| Error::InvalidInput("GameBanana file token has no file".to_string()))?;
+  let [file_id] = segments.as_slice() else {
+    return Err(Error::InvalidInput(
+      "Invalid GameBanana file token".to_string(),
+    ));
+  };
+  if file_id.is_empty() {
+    return Err(Error::InvalidInput(
+      "GameBanana file token has no file".to_string(),
+    ));
+  }
+  let submission = crate::providers::SubmissionRef::parse_slug(slug)
+    .map_err(|_| Error::InvalidInput("Invalid GameBanana submission".to_string()))?;
+  if slug != mod_id || submission.provider != crate::providers::SubmissionProvider::Gamebanana {
+    return Err(Error::InvalidInput(
+      "GameBanana file token does not match the requested submission".to_string(),
+    ));
+  }
+  let file_id = file_id
+    .parse::<u64>()
+    .map_err(|_| Error::InvalidInput("Invalid GameBanana file identity".to_string()))?;
+  Ok((submission, file_id))
+}
+
+fn validate_download_file_name(file_name: &str) -> Result<(), Error> {
+  if file_name.is_empty()
+    || file_name.len() > 255
+    || file_name.contains('/')
+    || file_name.contains('\\')
+    || file_name.contains("..")
+    || file_name.chars().any(|character| {
+      character.is_control() || matches!(character, '<' | '>' | ':' | '"' | '|' | '?' | '*')
+    })
+    || file_name.ends_with(['.', ' '])
+  {
+    return Err(Error::InvalidInput(
+      "Invalid download file name".to_string(),
+    ));
+  }
+  Ok(())
 }
 
 #[tauri::command]
@@ -265,6 +441,7 @@ pub async fn debug_queue_local_zip(
       url: String::new(),
       name: file_name,
       size,
+      md5_checksum: None,
     }],
     target_dir,
     profile_folder: None,
@@ -294,7 +471,10 @@ pub struct FileserverLatencyResult {
 pub async fn test_fileserver_latency(
   servers: Vec<FileserverLatencyRequest>,
 ) -> Result<Vec<FileserverLatencyResult>, Error> {
-  let client = crate::proxy::build_http_client(|b| b.timeout(std::time::Duration::from_secs(5)))?;
+  let client = crate::proxy::build_http_client(|b| {
+    b.timeout(std::time::Duration::from_secs(5))
+      .redirect(reqwest::redirect::Policy::none())
+  })?;
 
   let futures_iter = servers.into_iter().map(|req| {
     let c = client.clone();
@@ -308,6 +488,13 @@ async fn test_one_fileserver(
   client: &reqwest::Client,
   req: FileserverLatencyRequest,
 ) -> FileserverLatencyResult {
+  if crate::download_manager::downloader::validate_download_url(&req.test_url).is_err() {
+    return FileserverLatencyResult {
+      id: req.id,
+      latency_ms: None,
+      reachable: false,
+    };
+  }
   let start = Instant::now();
   match client.head(&req.test_url).send().await {
     Ok(_response) => FileserverLatencyResult {
@@ -382,5 +569,36 @@ mod tests {
     assert!(validate_custom_file_name("foo/bar.vpk").is_err());
     assert!(validate_custom_file_name("foo\\bar.vpk").is_err());
     assert!(validate_custom_file_name("").is_err());
+  }
+
+  #[test]
+  fn validate_download_file_name_rejects_cross_platform_unsafe_names() {
+    assert!(validate_download_file_name("archive.zip").is_ok());
+    for name in [
+      "../archive.zip",
+      "folder/archive.zip",
+      "folder\\archive.zip",
+      "drive:archive.zip",
+      "archive?.zip",
+      "archive.zip ",
+      "",
+    ] {
+      assert!(
+        validate_download_file_name(name).is_err(),
+        "accepted {name:?}"
+      );
+    }
+  }
+
+  #[test]
+  fn gamebanana_file_tokens_must_match_the_requested_submission() {
+    let (submission, file_id) =
+      parse_gamebanana_file_token("snd-42", "gamebanana-file://snd-42/7").unwrap();
+    assert_eq!(submission.to_slug().unwrap(), "snd-42");
+    assert_eq!(file_id, 7);
+
+    assert!(parse_gamebanana_file_token("42", "gamebanana-file://snd-42/7").is_err());
+    assert!(parse_gamebanana_file_token("42", "gamebanana-file://43/7").is_err());
+    assert!(parse_gamebanana_file_token("42", "gamebanana-file://42/7?mirror=evil").is_err());
   }
 }

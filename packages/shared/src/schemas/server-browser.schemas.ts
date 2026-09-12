@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ModDtoSchema } from "./mod.schemas";
 
 const ModProviderSchema = z.enum(["gamebanana", "custom"]);
 
@@ -141,13 +142,30 @@ export const ResolvedRequirementSchema = z.object({
   resolved: z.boolean(),
   remoteId: z.string().optional(),
   reason: z
-    .enum(["unknown_scheme", "not_in_database", "custom_provider"])
+    .enum([
+      "unknown_scheme",
+      "not_found",
+      "provider_failure",
+      "policy_blocked",
+      "too_many_requirements",
+      "custom_provider",
+      "timed_out",
+    ])
     .optional(),
-  mod: z.unknown().optional(),
+  mod: ModDtoSchema.extend({
+    metadata: ModDtoSchema.shape.metadata.default(null),
+    dependencies: ModDtoSchema.shape.dependencies.default(null),
+    isObsolete: z.boolean().default(false),
+    isBlacklisted: z.boolean().default(false),
+    blacklistReason: z.string().nullable().default(null),
+    blacklistedAt: z.coerce.date().nullable().default(null),
+    blacklistedBy: z.string().nullable().default(null),
+    overrides: z.null().default(null),
+  }).optional(),
 });
 
 export const ResolveModsInputSchema = z.object({
-  required_mods: z.array(ModRequirementSchema),
+  required_mods: z.array(ModRequirementSchema).max(50),
 });
 
 export const ResolveModsResponseSchema = z.object({

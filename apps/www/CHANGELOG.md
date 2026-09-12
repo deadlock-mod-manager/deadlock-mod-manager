@@ -1,5 +1,25 @@
 # web
 
+## 0.5.0
+
+### Minor Changes
+
+- 437e943: Detach reports, Lockdex ingestion, server requirements, website surfaces, statistics, and Discord announcements from the mirrored GameBanana catalog.
+
+### Patch Changes
+
+- fc07a56: Download and check GameBanana mods directly with verified, locally cached metadata.
+- e9ef733: Add DeadlockSkins.gg to the website footer partners list
+- Updated dependencies [1f98b35]
+- Updated dependencies [cbab84a]
+- Updated dependencies [34cbd98]
+- Updated dependencies [55be2ff]
+- Updated dependencies [437e943]
+- Updated dependencies [cbab84a]
+- Updated dependencies [fd4234f]
+  - @deadlock-mods/shared@2.2.0
+  - @deadlock-mods/crosshair@0.2.5
+
 ## 0.4.2
 
 ### Patch Changes

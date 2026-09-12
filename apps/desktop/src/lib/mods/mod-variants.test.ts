@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   deriveActiveArchiveNames,
   deriveActiveVariantCount,
+  requiresFileSelection,
 } from "@/lib/mods/mod-variants";
 import type { LocalMod, ModFile } from "@/types/mods";
 
@@ -33,6 +34,41 @@ const withTree = (files: ModFile[], rest: Partial<LocalMod> = {}): LocalMod =>
     },
     ...rest,
   });
+
+describe("requiresFileSelection", () => {
+  const needsSelection = (files: ModFile[]) =>
+    requiresFileSelection({
+      files,
+      total_files: files.length,
+      has_multiple_files: files.length > 1,
+    });
+
+  it("installs single-VPK downloads without another file choice", () => {
+    expect(needsSelection([file("base.vpk", true, "base.zip")])).toBe(false);
+    expect(
+      needsSelection([
+        file("base.vpk", true, "base.zip"),
+        file("effects.vpk", true, "effects.zip"),
+      ]),
+    ).toBe(false);
+  });
+
+  it("offers selection when a chosen archive contains multiple VPKs", () => {
+    expect(
+      needsSelection([
+        file("base.vpk", true, "base.zip"),
+        file("blue.vpk", true, "variants.zip"),
+        file("red.vpk", true, "variants.zip"),
+      ]),
+    ).toBe(true);
+  });
+
+  it("preserves selection for local and legacy trees without archive names", () => {
+    expect(
+      needsSelection([file("base.vpk", true), file("extra.vpk", true)]),
+    ).toBe(true);
+  });
+});
 
 describe("deriveActiveArchiveNames", () => {
   it("collects the archives of the selected files", () => {

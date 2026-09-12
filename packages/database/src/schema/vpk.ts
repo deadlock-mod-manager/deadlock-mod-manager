@@ -1,4 +1,3 @@
-import { relations } from "drizzle-orm";
 import {
   boolean,
   index,
@@ -10,7 +9,8 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { generateId, typeId } from "../extensions/typeid";
-import { type Mod, modDownloads, mods } from "./mods";
+import { modDownloads, mods } from "./mods";
+import { policyProviders, policySubmissionTypes } from "./policy-rules";
 import { timestamps } from "./shared/timestamps";
 
 export const vpkStateEnum = pgEnum("vpk_state", ["ok", "duplicate", "corrupt"]);
@@ -21,11 +21,19 @@ export const vpk = pgTable(
     id: typeId("id", "vpk")
       .primaryKey()
       .$defaultFn(() => generateId("vpk").toString()),
-    modId: text("mod_id")
-      .notNull()
-      .references(() => mods.id, { onDelete: "cascade" }),
+    // Retained while the deployed Lockdex still writes catalog references.
+    modId: text("mod_id").references(() => mods.id, { onDelete: "cascade" }),
     modDownloadId: text("mod_download_id").references(() => modDownloads.id, {
       onDelete: "set null",
+    }),
+    provider: text("provider", { enum: policyProviders }),
+    submissionType: text("submission_type", {
+      enum: policySubmissionTypes,
+    }),
+    submissionId: text("submission_id"),
+    fileId: text("file_id"),
+    upstreamUpdatedAt: timestamp("upstream_updated_at", {
+      mode: "date",
     }),
     sourcePath: text("source_path").notNull(), // e.g. "weapons_pack_dir.vpk" or "mods/weapons_pack_dir.vpk"
     sizeBytes: integer("size_bytes").notNull(),
@@ -53,25 +61,55 @@ export const vpk = pgTable(
 
     // speed up “did we already parse this VPK in this download at this path?”
     uniqueIndex("vpk_src_uk").on(table.modDownloadId, table.sourcePath),
+    index("vpk_identity_source_idx").on(
+      table.provider,
+      table.submissionType,
+      table.submissionId,
+      table.fileId,
+      table.sourcePath,
+    ),
 
     // helpful for quick prefilter
     index("vpk_fast_size_idx").on(table.fastHash, table.sizeBytes),
   ],
 );
 
-export const vpkRelations = relations(vpk, ({ one }) => ({
-  mod: one(mods, {
-    fields: [vpk.modId],
-    references: [mods.id],
-  }),
-  modDownload: one(modDownloads, {
-    fields: [vpk.modDownloadId],
-    references: [modDownloads.id],
-  }),
-}));
+export const vpkIngestions = pgTable(
+  "vpk_ingestion",
+  {
+    id: typeId("id", "vpk_ingestion")
+      .primaryKey()
+      .$defaultFn(() => generateId("vpk_ingestion").toString()),
+    provider: text("provider", { enum: policyProviders }).notNull(),
+    submissionType: text("submission_type", {
+      enum: policySubmissionTypes,
+    }).notNull(),
+    submissionId: text("submission_id").notNull(),
+    fileId: text("file_id").notNull(),
+    upstreamUpdatedAt: timestamp("upstream_updated_at", {
+      mode: "date",
+    }).notNull(),
+    completedAt: timestamp("completed_at", { mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("vpk_ingestion_identity_file_marker_idx").on(
+      table.provider,
+      table.submissionType,
+      table.submissionId,
+      table.fileId,
+      table.upstreamUpdatedAt,
+    ),
+  ],
+);
 
 export type CachedVPK = typeof vpk.$inferSelect;
 export type NewCachedVPK = typeof vpk.$inferInsert;
-export type CachedVPKWithMod = CachedVPK & {
-  mod: Mod;
-};
+export type VpkIngestion = typeof vpkIngestions.$inferSelect;
+
+export interface VpkIdentity {
+  provider: "gamebanana";
+  submissionType: "mod" | "sound";
+  submissionId: string;
+}

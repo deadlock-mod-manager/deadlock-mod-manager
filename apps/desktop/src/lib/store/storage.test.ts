@@ -1,9 +1,11 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { setImmediate } from "node:timers/promises";
 
 type BackingStore = {
   get: (key: string) => Promise<string | undefined>;
   set: (key: string, value: string) => Promise<void>;
   delete: (key: string) => Promise<void>;
+  save: () => Promise<void>;
 };
 
 const memory = new Map<string, string>();
@@ -15,6 +17,7 @@ let getStoreImpl: () => Promise<BackingStore> = async () => ({
   delete: async (k) => {
     memory.delete(k);
   },
+  save: async () => {},
 });
 
 mock.module("@tauri-apps/plugin-store", () => ({
@@ -53,12 +56,62 @@ describe("storage write gate", () => {
       delete: async (k) => {
         memory.delete(k);
       },
+      save: async () => {},
     });
   });
 
   it("drops setItem before any getItem has completed", async () => {
     await storage.setItem("local-config", JSON.stringify({ ghost: true }));
     expect(memory.has("local-config")).toBe(false);
+  });
+
+  it("preserves snapshot order when the first store lookup is delayed", async () => {
+    storageModule.markStorageReady();
+    const backend = await getStoreImpl();
+    const firstLookup = Promise.withResolvers<void>();
+    let lookups = 0;
+    getStoreImpl = async () => {
+      if (++lookups === 1) await firstLookup.promise;
+      return backend;
+    };
+    const older = storage.setItem("local-config", "installed");
+    const newer = storage.setItem("local-config", "installed-and-enabled");
+    await setImmediate();
+    firstLookup.resolve();
+    await Promise.all([older, newer]);
+    expect(memory.get("local-config")).toBe("installed-and-enabled");
+  });
+
+  it("does not resurrect state when deletion follows a delayed write", async () => {
+    storageModule.markStorageReady();
+    const backend = await getStoreImpl();
+    const firstLookup = Promise.withResolvers<void>();
+    let lookups = 0;
+    getStoreImpl = async () => {
+      if (++lookups === 1) await firstLookup.promise;
+      return backend;
+    };
+    const write = storage.setItem("local-config", "obsolete");
+    const deletion = storage.removeItem("local-config");
+    await setImmediate();
+    firstLookup.resolve();
+    await Promise.all([write, deletion]);
+    expect(memory.has("local-config")).toBe(false);
+  });
+
+  it("continues saving after a queued write fails", async () => {
+    storageModule.markStorageReady();
+    const backend = await getStoreImpl();
+    let lookups = 0;
+    getStoreImpl = async () => {
+      if (++lookups === 1) throw new Error("write rejected");
+      return backend;
+    };
+    await Promise.all([
+      storage.setItem("local-config", "failed"),
+      storage.setItem("local-config", "latest"),
+    ]);
+    expect(memory.get("local-config")).toBe("latest");
   });
 
   it("drops removeItem before any getItem has completed", async () => {
@@ -122,6 +175,7 @@ describe("storage write gate", () => {
         get: async () => "v-from-retry",
         set: async () => {},
         delete: async () => {},
+        save: async () => {},
       };
     };
 

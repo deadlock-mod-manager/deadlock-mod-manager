@@ -1,4 +1,8 @@
-import { db, ModRepository, ReportRepository } from "@deadlock-mods/database";
+import {
+  db,
+  PolicyRuleRepository,
+  ReportRepository,
+} from "@deadlock-mods/database";
 import {
   REPORT_DISABLED_MOD_IDS,
   toReportDto,
@@ -8,6 +12,10 @@ import { ORPCError } from "@orpc/server";
 import { CACHE_TTL } from "@/lib/constants";
 import { logger, wideEventContext } from "@/lib/logger";
 import { cache } from "@/lib/redis";
+import {
+  fetchGameBananaSubmissionSnapshot,
+  parseGameBananaSlug,
+} from "@/services/gamebanana-submission";
 import { publicProcedure } from "../../lib/orpc";
 import {
   CreateReportInputSchema,
@@ -21,7 +29,17 @@ import {
 } from "../../validation/reports";
 
 const reportRepository = new ReportRepository(db);
-const modRepository = new ModRepository(db);
+const policyRepository = new PolicyRuleRepository(db);
+
+const requireIdentity = (slug: string) => {
+  const identity = parseGameBananaSlug(slug);
+  if (!identity) {
+    throw new ORPCError("BAD_REQUEST", {
+      message: "Invalid GameBanana submission ID",
+    });
+  }
+  return identity;
+};
 
 export const reportsRouter = {
   createReport: publicProcedure
@@ -36,18 +54,28 @@ export const reportsRouter = {
       });
 
       try {
-        const mod = await modRepository.findById(input.modId);
-        if (!mod) {
+        const identity = requireIdentity(input.modId);
+        const submission = await fetchGameBananaSubmissionSnapshot(identity);
+        if (!submission) {
           wide?.set("outcomeReason", "mod_not_found");
           throw new ORPCError("NOT_FOUND", {
             message: "Mod not found",
           });
         }
 
-        if (mod.isMap || REPORT_DISABLED_MOD_IDS.has(mod.remoteId)) {
+        const blockingRules = await Promise.all(
+          (
+            ["hidden", "blacklisted", "takedown", "emergency_disable"] as const
+          ).map((kind) => policyRepository.find(identity, kind)),
+        );
+        if (
+          submission.isMap ||
+          REPORT_DISABLED_MOD_IDS.has(submission.slug) ||
+          blockingRules.some(Boolean)
+        ) {
           wide?.merge({
-            remoteId: mod.remoteId,
-            outcomeReason: mod.isMap
+            remoteId: submission.slug,
+            outcomeReason: submission.isMap
               ? "reports_disabled_for_maps"
               : "reports_disabled",
           });
@@ -59,10 +87,11 @@ export const reportsRouter = {
         }
 
         if (input.reporterHardwareId) {
-          const existingReport = await reportRepository.findByModIdAndReporter(
-            input.modId,
-            input.reporterHardwareId,
-          );
+          const existingReport =
+            await reportRepository.findByIdentityAndReporter(
+              identity,
+              input.reporterHardwareId,
+            );
           if (existingReport) {
             wide?.merge({
               existingReportId: existingReport.id,
@@ -77,13 +106,15 @@ export const reportsRouter = {
         }
 
         const report = await reportRepository.create({
-          modId: input.modId,
+          ...identity,
+          modName: submission.name,
+          modAuthor: submission.author,
           reporterHardwareId: input.reporterHardwareId,
         });
 
         wide?.merge({
           reportId: report.id,
-          modName: mod.name,
+          modName: submission.name,
         });
 
         return {
@@ -112,10 +143,11 @@ export const reportsRouter = {
     .output(ReportResponseSchema.array())
     .handler(async ({ input }) => {
       try {
+        const identity = requireIdentity(input.modId);
         return await cache.wrap(
           `reports:mod:${input.modId}`,
           async () => {
-            const reports = await reportRepository.findByModId(input.modId);
+            const reports = await reportRepository.findByIdentity(identity);
             return reports.map(toReportDto);
           },
           CACHE_TTL.REPORT_COUNTS,
@@ -137,10 +169,11 @@ export const reportsRouter = {
     .output(ReportCountsResponseSchema)
     .handler(async ({ input }) => {
       try {
+        const identity = requireIdentity(input.modId);
         return await cache.wrap(
           `reports:counts:${input.modId}`,
           async () => {
-            const total = await reportRepository.getReportCount(input.modId);
+            const total = await reportRepository.getReportCount(identity);
             return { total, verified: 0, unverified: 0, dismissed: 0 };
           },
           CACHE_TTL.REPORT_COUNTS,

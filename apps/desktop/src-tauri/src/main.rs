@@ -123,6 +123,11 @@ fn main() {
   let _ = fix_path_env::fix();
 
   desktop_lib::cli::get_cli_args();
+  if let Err(error) = desktop_lib::runtime_environment::initialize() {
+    eprintln!("[E2E] Refusing to start: {error}");
+    std::process::exit(2);
+  }
+  desktop_lib::runtime_environment::configure_process();
 
   #[cfg(target_os = "linux")]
   {

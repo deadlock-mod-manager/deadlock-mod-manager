@@ -92,14 +92,21 @@ import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import ThemesPlugin from "@/plugins/themes/index";
 import type { LocalSetting } from "@/types/settings";
+import { useCatalogSyncMutation } from "@/hooks/use-gamebanana-catalog-sync";
 
 type DangerActionProps = {
+  disabled?: boolean;
   label: string;
   description: string;
   onClick: () => void;
 };
 
-const DangerAction = ({ label, description, onClick }: DangerActionProps) => (
+const DangerAction = ({
+  label,
+  description,
+  onClick,
+  disabled,
+}: DangerActionProps) => (
   <div className='group flex items-center gap-4 py-3'>
     <div className='min-w-0 flex-1'>
       <p className='text-sm font-medium text-foreground/90'>{label}</p>
@@ -110,6 +117,7 @@ const DangerAction = ({ label, description, onClick }: DangerActionProps) => (
     <Button
       className='shrink-0 gap-1.5 shadow-sm transition-all hover:shadow-destructive/20'
       onClick={onClick}
+      disabled={disabled}
       size='sm'
       variant='destructive'>
       <TrashIcon className='h-3.5 w-3.5' />
@@ -148,6 +156,7 @@ const SettingsNavItem = ({
   label,
 }: SettingsNavItemProps) => (
   <TabsTrigger
+    data-settings-tab={value}
     className={cn(
       "relative h-10 w-full justify-start gap-3 rounded-md px-3 py-2 font-medium text-sm",
       "text-muted-foreground transition-colors",
@@ -419,6 +428,7 @@ const CustomSettingsData = ({
 
 const CustomSettings = ({ value }: { value?: string }) => {
   const { t } = useTranslation();
+  const catalogSync = useCatalogSyncMutation();
   const { clearMods, localMods: mods, getActiveProfile } = usePersistedStore();
 
   const clearModsState = async () => {
@@ -853,6 +863,12 @@ const CustomSettings = ({ value }: { value?: string }) => {
                     </p>
 
                     <div className='flex flex-col divide-y divide-destructive/10 px-5 pt-2 pb-2'>
+                      <DangerAction
+                        description={t("settings.clearCatalogDescription")}
+                        label={t("settings.clearCatalog")}
+                        disabled={catalogSync.isPending}
+                        onClick={() => catalogSync.mutate(true)}
+                      />
                       <DangerAction
                         description={t(
                           "settings.clearDownloadCacheDescription",

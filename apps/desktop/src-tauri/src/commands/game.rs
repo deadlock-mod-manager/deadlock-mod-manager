@@ -14,6 +14,10 @@ use super::state::MANAGER;
 const GAME_LAUNCH_POLL_INTERVAL: Duration = Duration::from_secs(2);
 
 async fn await_launched_game(monitor: SteamUriLaunchMonitor) -> Result<(), Error> {
+  if monitor.was_recorded() {
+    return monitor.wait().await;
+  }
+
   let launcher = monitor.wait();
   let game = wait_for_game_start(GAME_START_TIMEOUT, GAME_LAUNCH_POLL_INTERVAL, pending());
   tokio::pin!(launcher, game);
@@ -42,6 +46,14 @@ async fn await_launched_game(monitor: SteamUriLaunchMonitor) -> Result<(), Error
 #[tauri::command]
 pub async fn find_game_path() -> Result<String, Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
+  if crate::runtime_environment::is_e2e_active() {
+    let configuration = crate::runtime_environment::current()
+      .e2e()
+      .expect("active E2E runtime has a configuration");
+    let game_path = mod_manager.set_game_path(configuration.roots.game.clone())?;
+    mod_manager.set_steam_path(configuration.roots.steam.clone())?;
+    return Ok(game_path.to_string_lossy().into_owned());
+  }
   match (mod_manager.find_steam(), mod_manager.find_game()) {
     (Ok(_), Ok(game_path)) => {
       log::info!("Found game at: {game_path:?}");
@@ -62,6 +74,8 @@ pub async fn find_game_path() -> Result<String, Error> {
 pub async fn set_game_path(path: String) -> Result<String, Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
   let path_buf = PathBuf::from(&path);
+  crate::runtime_environment::ensure_e2e_managed_path(&path_buf)
+    .map_err(Error::UnauthorizedPath)?;
   let game_path = mod_manager.set_game_path(path_buf)?;
   log::info!("Game path manually set to: {game_path:?}");
   Ok(game_path.to_string_lossy().to_string())
@@ -70,6 +84,13 @@ pub async fn set_game_path(path: String) -> Result<String, Error> {
 #[tauri::command]
 pub async fn find_steam_path() -> Result<String, Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
+  if crate::runtime_environment::is_e2e_active() {
+    let configuration = crate::runtime_environment::current()
+      .e2e()
+      .expect("active E2E runtime has a configuration");
+    let steam_path = mod_manager.set_steam_path(configuration.roots.steam.clone())?;
+    return Ok(steam_path.to_string_lossy().into_owned());
+  }
   let steam_path = mod_manager.find_steam_path()?;
   log::info!("Found Steam at: {steam_path:?}");
   Ok(steam_path.to_string_lossy().to_string())
@@ -79,6 +100,8 @@ pub async fn find_steam_path() -> Result<String, Error> {
 pub async fn set_steam_path(path: String) -> Result<String, Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
   let path_buf = PathBuf::from(&path);
+  crate::runtime_environment::ensure_e2e_managed_path(&path_buf)
+    .map_err(Error::UnauthorizedPath)?;
   let steam_path = mod_manager.set_steam_path(path_buf)?;
   log::info!("Steam path manually set to: {steam_path:?}");
   Ok(steam_path.to_string_lossy().to_string())
@@ -87,6 +110,13 @@ pub async fn set_steam_path(path: String) -> Result<String, Error> {
 #[tauri::command]
 pub async fn clear_steam_path() -> Result<(), Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
+  if crate::runtime_environment::is_e2e_active() {
+    let configuration = crate::runtime_environment::current()
+      .e2e()
+      .expect("active E2E runtime has a configuration");
+    mod_manager.set_steam_path(configuration.roots.steam.clone())?;
+    return Ok(());
+  }
   mod_manager.clear_steam_path();
   Ok(())
 }
@@ -154,12 +184,18 @@ pub async fn launch_game_direct(additional_args: String) -> Result<(), Error> {
 
 #[tauri::command]
 pub async fn stop_game() -> Result<(), Error> {
+  if crate::runtime_environment::records_game_launches() {
+    return Ok(());
+  }
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.stop_game()
 }
 
 #[tauri::command]
 pub async fn is_game_running() -> Result<bool, Error> {
+  if crate::runtime_environment::records_game_launches() {
+    return Ok(false);
+  }
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.is_game_running()
 }

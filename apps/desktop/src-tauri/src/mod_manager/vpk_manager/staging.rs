@@ -1,10 +1,33 @@
 use super::naming;
 use crate::errors::Error;
 use crate::mod_manager::fs_retry;
-use crate::mod_manager::shard::{ProfileBase, StagedName};
+use crate::mod_manager::shard::{ProfileBase, ShardLocator, StagedName};
+use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
+use serde::{Deserialize, Serialize};
 use std::collections::BTreeSet;
-use std::fs;
+use std::fs::{self, OpenOptions};
+use std::io::Write;
 use std::path::{Path, PathBuf};
+
+const JOURNAL_FILENAME: &str = ".transaction.jsonl";
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(tag = "event", rename_all = "camelCase")]
+enum JournalEvent {
+  Stage {
+    original: String,
+  },
+  Place {
+    original: String,
+    destination: String,
+  },
+  Create {
+    path: String,
+  },
+  Manifest {
+    manifest: ProfileVpkManifest,
+  },
+}
 
 pub enum RecoveryMode {
   /// Fail if a staged file's original slot is occupied. Used where the caller
@@ -20,9 +43,15 @@ pub fn recover_staging_directory(
   base: &ProfileBase,
   staging_dir: &Path,
   mode: RecoveryMode,
+  manifest: &ProfileVpkManifest,
 ) -> Result<(), Error> {
   if !staging_dir.is_dir() {
     return Ok(());
+  }
+
+  let journal_path = staging_dir.join(JOURNAL_FILENAME);
+  if journal_path.is_file() {
+    return recover_journaled_staging(base, staging_dir, &journal_path, manifest);
   }
 
   for entry in fs::read_dir(staging_dir)? {
@@ -54,7 +83,116 @@ pub fn recover_staging_directory(
   Ok(())
 }
 
+fn recover_journaled_staging(
+  base: &ProfileBase,
+  staging_dir: &Path,
+  journal_path: &Path,
+  manifest: &ProfileVpkManifest,
+) -> Result<(), Error> {
+  let contents = fs::read_to_string(journal_path)?;
+  let lines: Vec<&str> = contents.lines().collect();
+  let mut originals = Vec::new();
+  let mut placements = std::collections::BTreeMap::new();
+  let mut created = BTreeSet::new();
+  let mut expected_manifest = None;
+
+  for (index, line) in lines.iter().enumerate() {
+    if line.trim().is_empty() {
+      continue;
+    }
+    let event = match serde_json::from_str::<JournalEvent>(line) {
+      Ok(event) => event,
+      Err(error) if index + 1 == lines.len() && !contents.ends_with('\n') => {
+        log::warn!(
+          "Ignoring incomplete final VPK transaction journal record at {}: {error}",
+          journal_path.display()
+        );
+        break;
+      }
+      Err(error) => {
+        return Err(Error::ModInvalid(format!(
+          "Invalid VPK transaction journal at {}: {error}",
+          journal_path.display()
+        )));
+      }
+    };
+    match event {
+      JournalEvent::Stage { original } => {
+        if !originals.contains(&original) {
+          originals.push(original);
+        }
+      }
+      JournalEvent::Place {
+        original,
+        destination,
+      } => {
+        placements.insert(original, destination);
+      }
+      JournalEvent::Create { path } => {
+        created.insert(path);
+      }
+      JournalEvent::Manifest { manifest: expected } => expected_manifest = Some(expected),
+    }
+  }
+
+  if expected_manifest.as_ref() == Some(manifest) {
+    fs::remove_dir_all(staging_dir)?;
+    return Ok(());
+  }
+
+  let mut files = Vec::new();
+  for original in originals {
+    let locator = ShardLocator::parse(&original)?;
+    let parked = staging_dir.join(StagedName::new(locator.shard, &locator.filename).encode());
+    let current = placements
+      .get(&original)
+      .map(|path| ShardLocator::parse(path))
+      .transpose()?
+      .map(|path| base.locator_path(&path))
+      .unwrap_or_else(|| parked.clone());
+    files.push((base.locator_path(&locator), parked, current));
+  }
+
+  for (_, parked, current) in &files {
+    if current == parked || !current.exists() {
+      continue;
+    }
+    if parked.exists() {
+      return Err(Error::ModInvalid(format!(
+        "Cannot recover VPK transaction because both {} and {} exist",
+        current.display(),
+        parked.display()
+      )));
+    }
+    fs::rename(current, parked)?;
+  }
+
+  for path in created {
+    let locator = ShardLocator::parse(&path)?;
+    let path = base.locator_path(&locator);
+    if path.is_file() {
+      fs::remove_file(path)?;
+    }
+  }
+
+  for (original, parked, _) in files.into_iter().rev() {
+    if !parked.exists() {
+      continue;
+    }
+    if original.is_file() {
+      fs::remove_file(&original)?;
+    }
+    if let Some(parent) = original.parent() {
+      fs::create_dir_all(parent)?;
+    }
+    fs::rename(parked, original)?;
+  }
+  fs::remove_dir_all(staging_dir)?;
+  Ok(())
+}
+
 struct StagedFile {
+  original_locator: String,
   original: PathBuf,
   current: PathBuf,
   /// Where this file sits while parked in the staging directory. Always a
@@ -67,8 +205,10 @@ struct StagedFile {
 /// committed, including on an unwind. Files parked here survive a crash: the
 /// next manifest load recovers them via [`recover_staging_directory`].
 pub struct VpkStaging {
+  base: ProfileBase,
   dir: PathBuf,
   files: Vec<StagedFile>,
+  created: BTreeSet<PathBuf>,
   finalized: bool,
 }
 
@@ -87,11 +227,47 @@ impl VpkStaging {
       }
     })?;
 
+    OpenOptions::new()
+      .create_new(true)
+      .write(true)
+      .open(dir.join(JOURNAL_FILENAME))?
+      .sync_all()?;
+
     Ok(Self {
+      base: base.clone(),
       dir,
       files: Vec::new(),
+      created: BTreeSet::new(),
       finalized: false,
     })
+  }
+
+  fn append_journal(&self, event: &JournalEvent) -> Result<(), Error> {
+    let mut journal = OpenOptions::new()
+      .append(true)
+      .open(self.dir.join(JOURNAL_FILENAME))?;
+    serde_json::to_writer(&mut journal, event)
+      .map_err(|error| Error::ModInvalid(format!("Failed to write VPK journal: {error}")))?;
+    journal.write_all(b"\n")?;
+    journal.sync_all()?;
+    Ok(())
+  }
+
+  fn locator_for(&self, path: &Path) -> Result<String, Error> {
+    let shard = path
+      .parent()
+      .and_then(|parent| self.base.shard_of_dir(parent))
+      .ok_or_else(|| {
+        Error::ModInvalid(format!(
+          "Cannot journal VPK outside profile shards: {}",
+          path.display()
+        ))
+      })?;
+    let filename = path
+      .file_name()
+      .and_then(|name| name.to_str())
+      .ok_or_else(|| Error::ModInvalid("VPK filename is not valid UTF-8".to_string()))?;
+    Ok(ShardLocator::new(shard, filename).to_wire())
   }
 
   pub fn stage(&mut self, base: &ProfileBase, source: &Path) -> Result<PathBuf, Error> {
@@ -109,12 +285,17 @@ impl VpkStaging {
       .and_then(|name| name.to_str())
       .ok_or_else(|| Error::ModInvalid("VPK filename is not valid UTF-8".to_string()))?;
     let staged = self.dir.join(StagedName::new(shard, filename).encode());
-    fs::rename(source, &staged)?;
+    let original_locator = ShardLocator::new(shard, filename).to_wire();
+    self.append_journal(&JournalEvent::Stage {
+      original: original_locator.clone(),
+    })?;
     self.files.push(StagedFile {
+      original_locator,
       original: source.to_path_buf(),
       current: staged.clone(),
       parked: staged.clone(),
     });
+    fs::rename(source, &staged)?;
     Ok(staged)
   }
 
@@ -128,14 +309,34 @@ impl VpkStaging {
     if let Some(parent) = destination.parent() {
       fs::create_dir_all(parent)?;
     }
-    fs::rename(staged, destination)?;
-    let file = self
+    let index = self
       .files
-      .iter_mut()
-      .find(|file| file.current == staged)
+      .iter()
+      .position(|file| file.current == staged)
       .ok_or_else(|| Error::ModInvalid(format!("Untracked staged VPK: {}", staged.display())))?;
-    file.current = destination.to_path_buf();
+    self.append_journal(&JournalEvent::Place {
+      original: self.files[index].original_locator.clone(),
+      destination: self.locator_for(destination)?,
+    })?;
+    fs::rename(staged, destination)?;
+    self.files[index].current = destination.to_path_buf();
+    #[cfg(feature = "e2e-harness")]
+    crate::e2e_faults::checkpoint("placed", &self.base)?;
     Ok(())
+  }
+
+  pub fn track_created(&mut self, path: &Path) -> Result<(), Error> {
+    let locator = self.locator_for(path)?;
+    if self.created.insert(path.to_path_buf()) {
+      self.append_journal(&JournalEvent::Create { path: locator })?;
+    }
+    Ok(())
+  }
+
+  fn prepare_manifest_commit(&self, manifest: &ProfileVpkManifest) -> Result<(), Error> {
+    self.append_journal(&JournalEvent::Manifest {
+      manifest: manifest.clone(),
+    })
   }
 
   pub fn commit(mut self) {
@@ -149,9 +350,8 @@ impl VpkStaging {
   }
 
   pub fn rollback(mut self, original_error: Error) -> Error {
-    let failures = self.restore_files();
+    let failures = self.restore_and_clean_up();
     self.finalized = true;
-    let _ = fs::remove_dir(&self.dir);
     if failures.is_empty() {
       original_error
     } else {
@@ -160,6 +360,23 @@ impl VpkStaging {
         failures.join("; ")
       ))
     }
+  }
+
+  fn restore_and_clean_up(&mut self) -> Vec<String> {
+    let mut failures = self.restore_files();
+    // Keep the journal and parked payloads when restoration is incomplete.
+    // A completed rollback must discard its journal before the next mutation
+    // can mistake the old placements for an interrupted transaction.
+    if failures.is_empty() {
+      if let Err(error) = fs::remove_file(self.dir.join(JOURNAL_FILENAME)) {
+        failures.push(format!("failed to remove rolled-back journal: {error}"));
+      } else if let Err(error) = fs::remove_dir(&self.dir) {
+        failures.push(format!(
+          "failed to remove rolled-back staging directory: {error}"
+        ));
+      }
+    }
+    failures
   }
 
   fn restore_files(&mut self) -> Vec<String> {
@@ -182,8 +399,16 @@ impl VpkStaging {
       file.current = file.parked.clone();
     }
 
+    for path in &self.created {
+      if path.is_file()
+        && let Err(error) = fs::remove_file(path)
+      {
+        failures.push(format!("failed to remove {}: {error}", path.display()));
+      }
+    }
+
     for file in self.files.iter().rev() {
-      if !file.current.exists() || file.current == file.original {
+      if !file.parked.exists() {
         continue;
       }
       if let Some(parent) = file.original.parent()
@@ -192,10 +417,19 @@ impl VpkStaging {
         failures.push(format!("failed to create {}: {error}", parent.display()));
         continue;
       }
-      if let Err(error) = fs::rename(&file.current, &file.original) {
+      if file.original.is_file()
+        && let Err(error) = fs::remove_file(&file.original)
+      {
+        failures.push(format!(
+          "failed to remove {}: {error}",
+          file.original.display()
+        ));
+        continue;
+      }
+      if let Err(error) = fs::rename(&file.parked, &file.original) {
         failures.push(format!(
           "{} -> {}: {error}",
-          file.current.display(),
+          file.parked.display(),
           file.original.display()
         ));
       }
@@ -227,7 +461,7 @@ pub struct PendingVpkOperation<T> {
 }
 
 impl<T> PendingVpkOperation<T> {
-  pub(super) fn with_staging(value: T, staging: VpkStaging) -> Self {
+  pub(crate) fn with_staging(value: T, staging: VpkStaging) -> Self {
     Self {
       value,
       guard: PendingGuard::Staging(staging),
@@ -251,6 +485,37 @@ impl<T> PendingVpkOperation<T> {
       PendingGuard::Snapshot(snapshot) => snapshot.commit(),
     }
     self.value
+  }
+
+  pub fn commit_manifest(
+    self,
+    manifest: &ProfileVpkManifest,
+    addons_path: &Path,
+  ) -> Result<T, Error> {
+    self.commit_manifest_with_checkpoint(manifest, addons_path, || {
+      #[cfg(feature = "e2e-harness")]
+      crate::e2e_faults::checkpoint("committed", addons_path)?;
+      Ok(())
+    })
+  }
+
+  fn commit_manifest_with_checkpoint(
+    mut self,
+    manifest: &ProfileVpkManifest,
+    addons_path: &Path,
+    checkpoint: impl FnOnce() -> Result<(), Error>,
+  ) -> Result<T, Error> {
+    if let PendingGuard::Staging(staging) = &mut self.guard {
+      staging.prepare_manifest_commit(manifest)?;
+    }
+    if let Err(error) = manifest.save(addons_path) {
+      return Err(self.rollback(error));
+    }
+    let checkpoint_result = checkpoint();
+    // The manifest is durable. A returning checkpoint error must not undo its files.
+    let value = self.commit();
+    checkpoint_result?;
+    Ok(value)
   }
 
   pub fn rollback(self, original_error: Error) -> Error {
@@ -332,7 +597,7 @@ impl VpkSnapshot {
   }
 
   /// Take a copy of `path` if it exists, and mark it for removal on rollback
-  /// either way — so a path that is about to be created is restored by deleting
+  /// either way â€” so a path that is about to be created is restored by deleting
   /// it, and one that is about to be overwritten is restored from the copy.
   pub fn capture(&mut self, path: &Path) -> Result<(), Error> {
     if !self.touched.insert(path.to_path_buf()) || !path.is_file() {
@@ -432,10 +697,9 @@ impl Drop for VpkStaging {
     if self.finalized {
       return;
     }
-    for failure in self.restore_files() {
+    for failure in self.restore_and_clean_up() {
       log::error!("Failed to roll back dropped VPK staging transaction: {failure}");
     }
-    let _ = fs::remove_dir(&self.dir);
   }
 }
 
@@ -468,6 +732,25 @@ mod tests {
     assert!(matches!(error, Error::InvalidInput(_)));
     assert_eq!(fs::read(original).unwrap(), b"vpk");
     assert!(!placed.exists());
+    assert!(!base.join(".test-staging").exists());
+  }
+
+  #[test]
+  fn incomplete_rollback_retains_journal_and_payload_for_recovery() {
+    let temp = tempfile::tempdir().unwrap();
+    let base = base(&temp);
+    let original = base.join("pak01_dir.vpk");
+    fs::write(&original, b"retained").unwrap();
+    let mut staging = VpkStaging::claim(&base, ".test-staging").unwrap();
+    let parked = staging.stage(&base, &original).unwrap();
+    fs::create_dir(&original).unwrap();
+    fs::write(original.join("blocker"), b"protected").unwrap();
+
+    let error = staging.rollback(Error::InvalidInput("interrupted".into()));
+    assert!(matches!(error, Error::RollbackFailed(_)));
+    assert_eq!(fs::read(&parked).unwrap(), b"retained");
+    assert!(base.join(".test-staging").join(JOURNAL_FILENAME).is_file());
+    assert_eq!(fs::read(original.join("blocker")).unwrap(), b"protected");
   }
 
   /// A reorder routinely gives file A the slot file B came from. Rolling that
@@ -533,6 +816,31 @@ mod tests {
 
     assert!(!original.exists());
     assert!(!base.join(".test-staging").exists());
+  }
+
+  #[test]
+  fn checkpoint_error_preserves_files_after_manifest_commit() {
+    let temp = tempfile::tempdir().unwrap();
+    let base = base(&temp);
+    let original = base.join("pak01_dir.vpk");
+    fs::write(&original, b"vpk").unwrap();
+    let mut staging = VpkStaging::claim(&base, ".test-staging").unwrap();
+    staging.stage(&base, &original).unwrap();
+    let manifest = ProfileVpkManifest::default();
+    let pending = PendingVpkOperation::with_staging((), staging);
+
+    let error = pending
+      .commit_manifest_with_checkpoint(&manifest, base.path(), || {
+        Err(Error::InvalidInput("crash marker write failed".to_string()))
+      })
+      .unwrap_err();
+
+    assert!(matches!(error, Error::InvalidInput(_)));
+    assert!(!original.exists(), "committed deletion must not roll back");
+    assert!(!base.join(".test-staging").exists());
+    let saved: ProfileVpkManifest =
+      serde_json::from_slice(&fs::read(base.join(".dmm.json")).unwrap()).unwrap();
+    assert_eq!(saved, manifest);
   }
 
   #[test]

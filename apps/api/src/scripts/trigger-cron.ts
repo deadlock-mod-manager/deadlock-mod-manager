@@ -9,7 +9,6 @@
  *
  * Usage:
  * pnpm --filter api trigger-cron            # defaults to the mod sync
- * pnpm --filter api trigger-cron GamebananaRssProcessor
  */
 
 import { logger } from "@/lib/logger";

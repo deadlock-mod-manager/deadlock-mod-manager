@@ -10,7 +10,7 @@ use crate::mod_manager::{
   mod_repository::{Mod, ModRepository},
   shard::{self, ProfileBase, ShardIndex, ShardLocator},
   steam_manager::SteamManager,
-  vpk_manager::staging::VpkStaging,
+  vpk_manager::staging::{PendingVpkOperation, VpkStaging},
   vpk_manager::{MissingVpkPolicy, ShardAssignment, ShardPlacement, SwapRequest, VpkManager},
   vpk_manifest::{ProfileVpkManifest, ProfileVpkManifestEntry},
 };
@@ -19,7 +19,6 @@ use std::{
   collections::{BTreeMap, HashSet},
   path::{Component, Path, PathBuf},
 };
-use tauri::Manager;
 
 mod gameinfo;
 mod lifecycle;
@@ -64,8 +63,11 @@ impl ModManager {
       app_handle: None,
     };
 
-    // Try to find the game path on initialization
-    if let Err(e) = manager.find_game() {
+    // Harness worlds are configured explicitly during Tauri setup. Never scan
+    // the host for Steam or Deadlock when an isolated runtime is active.
+    if !crate::runtime_environment::is_e2e_active()
+      && let Err(e) = manager.find_game()
+    {
       log::warn!("Failed to find game path during initialization: {e:?}");
     }
 
@@ -324,7 +326,7 @@ impl ModManager {
       .app_handle
       .as_ref()
       .ok_or(Error::AppHandleNotInitialized)?;
-    app_handle.path().app_local_data_dir().map_err(Error::Tauri)
+    crate::runtime_environment::app_local_data_dir(app_handle).map_err(Error::Tauri)
   }
 
   pub fn get_mods_store_path(&self) -> Result<std::path::PathBuf, Error> {
@@ -524,6 +526,90 @@ mod tests {
     let path = temp.path().join("citadel").join("addons");
     fs::create_dir_all(&path).unwrap();
     crate::mod_manager::shard::ProfileBase::new(path).unwrap()
+  }
+
+  #[test]
+  fn variant_swap_uses_manifest_mapping_instead_of_ui_tree_order() {
+    let game = game_dir();
+    let addons = game.path().join("game/citadel/addons");
+    fs::create_dir_all(&addons).unwrap();
+    fs::write(addons.join("pak01_dir.vpk"), b"blue bytes").unwrap();
+    fs::write(addons.join("pak02_dir.vpk"), b"red bytes").unwrap();
+    let base = crate::mod_manager::shard::ProfileBase::new(addons.clone()).unwrap();
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_enabled(
+      "42",
+      vec!["pak01_dir.vpk".into(), "pak02_dir.vpk".into()],
+      vec!["blue.vpk".into(), "red.vpk".into()],
+      Some(0),
+      shard::ShardIndex::FIRST,
+    );
+    manifest.save(&base).unwrap();
+    let result = test_manager(game.path())
+      .apply_variant_selection(
+        "42",
+        None,
+        &["pak01_dir.vpk".into(), "pak02_dir.vpk".into()],
+        &["red.vpk".into(), "blue.vpk".into()],
+        vec!["blue.vpk".into()],
+      )
+      .unwrap();
+    assert_eq!(result.original_vpk_names, vec!["blue.vpk"]);
+    assert_eq!(
+      fs::read(addons.join(&result.installed_vpks[0])).unwrap(),
+      b"blue bytes"
+    );
+    assert_eq!(fs::read(addons.join("42_red.vpk")).unwrap(), b"red bytes");
+    let saved = ProfileVpkManifest::load(&base).unwrap();
+    assert_eq!(saved.mods["42"].original_vpk_names, vec!["blue.vpk"]);
+    assert_eq!(saved.mods["42"].current_vpks, result.installed_vpks);
+  }
+
+  #[test]
+  fn reenable_keeps_deselected_variants_inactive() {
+    let game = game_dir();
+    let citadel = game.path().join("game/citadel");
+    fs::write(
+      citadel.join("gameinfo.gi"),
+      "\"GameInfo\"\n{\n\"FileSystem\"\n{\nSearchPaths\n{\nGame citadel\n}\n}\n}\n",
+    )
+    .unwrap();
+    let addons = citadel.join("addons");
+    fs::create_dir_all(&addons).unwrap();
+    fs::write(addons.join("42_blue.vpk"), b"chosen blue").unwrap();
+    fs::write(addons.join("42_red.vpk"), b"inactive red").unwrap();
+    let file_tree = ModFileTree::from_options(
+      &["blue.vpk".into(), "red.vpk".into()],
+      &HashSet::from(["blue.vpk".into()]),
+    );
+    let mut manager = test_manager(game.path());
+    let installed = manager
+      .install_mod(
+        Mod {
+          id: "42".into(),
+          name: "Variant fixture".into(),
+          is_map: false,
+          installed_vpks: Vec::new(),
+          file_tree: Some(file_tree),
+          install_order: None,
+          original_vpk_names: Vec::new(),
+        },
+        None,
+      )
+      .unwrap();
+    assert_eq!(installed.original_vpk_names, vec!["blue.vpk"]);
+    assert_eq!(installed.installed_vpks.len(), 1);
+    assert_eq!(
+      fs::read(addons.join(&installed.installed_vpks[0])).unwrap(),
+      b"chosen blue"
+    );
+    assert_eq!(
+      fs::read(addons.join("42_red.vpk")).unwrap(),
+      b"inactive red"
+    );
+    let manifest = ProfileVpkManifest::load(&ProfileBase::new(addons).unwrap()).unwrap();
+    assert_eq!(manifest.mods["42"].original_vpk_names, vec!["blue.vpk"]);
+    assert_eq!(manifest.mods["42"].current_vpks, installed.installed_vpks);
   }
 
   #[test]
@@ -1000,5 +1086,227 @@ mod tests {
 
       assert!(matches!(result, Err(Error::InvalidInput(_))), "{mod_id}");
     }
+  }
+
+  fn write_owned_mod(
+    addons_path: &crate::mod_manager::shard::ProfileBase,
+    manifest: &mut ProfileVpkManifest,
+    mod_id: &str,
+    shard: ShardIndex,
+    filename: &str,
+    contents: &[u8],
+  ) {
+    let dir = addons_path.shard_dir(shard);
+    fs::create_dir_all(&dir).unwrap();
+    fs::write(dir.join(filename), contents).unwrap();
+    manifest.mark_enabled(
+      mod_id,
+      vec![filename.to_string()],
+      vec![format!("{mod_id}.vpk")],
+      None,
+      shard,
+    );
+  }
+
+  /// A stale frontend `pak01_dir.vpk` used to resolve to shard 1 even when the
+  /// target lived in shard 2, deleting another mod's file.
+  #[test]
+  fn remove_mod_vpks_ignores_stale_filename_when_manifest_owns_the_mod() {
+    let game = game_dir();
+    let addons_path = game.path().join("game").join("citadel").join("addons");
+    fs::create_dir_all(&addons_path).unwrap();
+    let base = crate::mod_manager::shard::ProfileBase::new(&addons_path).unwrap();
+    let shard_two = ShardIndex::new(2).unwrap();
+    let mut manifest = ProfileVpkManifest::default();
+    write_owned_mod(
+      &base,
+      &mut manifest,
+      "target",
+      shard_two,
+      "pak01_dir.vpk",
+      b"target",
+    );
+    write_owned_mod(
+      &base,
+      &mut manifest,
+      "other",
+      ShardIndex::FIRST,
+      "pak01_dir.vpk",
+      b"other",
+    );
+    manifest.save(&base).unwrap();
+
+    let mut manager = test_manager(game.path());
+    manager.mod_repository.add_mod(Mod {
+      id: "target".into(),
+      name: "target".into(),
+      is_map: false,
+      installed_vpks: vec!["pak01_dir.vpk".into()],
+      file_tree: None,
+      install_order: None,
+      original_vpk_names: vec!["target.vpk".into()],
+    });
+
+    let result = manager
+      .remove_mod_vpks("target", &["pak01_dir.vpk".into()], None)
+      .unwrap();
+
+    assert_eq!(result.count, 1);
+    assert!(!base.shard_dir(shard_two).join("pak01_dir.vpk").exists());
+    assert_eq!(fs::read(base.join("pak01_dir.vpk")).unwrap(), b"other");
+    let after = ProfileVpkManifest::load(&base).unwrap();
+    assert!(!after.mods.contains_key("target"));
+    assert!(after.mods.contains_key("other"));
+  }
+
+  #[test]
+  fn remove_mod_vpks_does_not_cross_shards_for_identical_filenames() {
+    let game = game_dir();
+    let addons_path = game.path().join("game").join("citadel").join("addons");
+    fs::create_dir_all(&addons_path).unwrap();
+    let base = crate::mod_manager::shard::ProfileBase::new(&addons_path).unwrap();
+    let shard_two = ShardIndex::new(2).unwrap();
+    let mut manifest = ProfileVpkManifest::default();
+    write_owned_mod(
+      &base,
+      &mut manifest,
+      "target",
+      shard_two,
+      "pak01_dir.vpk",
+      b"target",
+    );
+    write_owned_mod(
+      &base,
+      &mut manifest,
+      "other",
+      ShardIndex::FIRST,
+      "pak01_dir.vpk",
+      b"other",
+    );
+    manifest.save(&base).unwrap();
+
+    let mut manager = test_manager(game.path());
+    let result = manager.remove_mod_vpks("target", &[], None).unwrap();
+
+    assert_eq!(result.count, 1);
+    assert!(!base.shard_dir(shard_two).join("pak01_dir.vpk").exists());
+    assert_eq!(fs::read(base.join("pak01_dir.vpk")).unwrap(), b"other");
+  }
+
+  /// Without a manifest entry, fallback names are still shard-1-resolved, but
+  /// they must not delete a file another entry already claims.
+  #[test]
+  fn remove_mod_vpks_skips_fallback_paths_claimed_by_another_mod() {
+    let game = game_dir();
+    let addons_path = game.path().join("game").join("citadel").join("addons");
+    fs::create_dir_all(&addons_path).unwrap();
+    let base = crate::mod_manager::shard::ProfileBase::new(&addons_path).unwrap();
+    let mut manifest = ProfileVpkManifest::default();
+    write_owned_mod(
+      &base,
+      &mut manifest,
+      "other",
+      ShardIndex::FIRST,
+      "pak01_dir.vpk",
+      b"other",
+    );
+    fs::write(base.join("pak02_dir.vpk"), b"orphan").unwrap();
+    manifest.save(&base).unwrap();
+
+    let mut manager = test_manager(game.path());
+    let result = manager
+      .remove_mod_vpks(
+        "target",
+        &["pak01_dir.vpk".into(), "pak02_dir.vpk".into()],
+        None,
+      )
+      .unwrap();
+
+    assert_eq!(result.count, 1);
+    assert_eq!(fs::read(base.join("pak01_dir.vpk")).unwrap(), b"other");
+    assert!(!base.join("pak02_dir.vpk").exists());
+    let after = ProfileVpkManifest::load(&base).unwrap();
+    assert!(after.mods.contains_key("other"));
+    assert!(!after.mods.contains_key("target"));
+  }
+
+  #[test]
+  fn update_mod_from_prepared_replaces_files_without_touching_other_mods() {
+    let game = game_dir();
+    let addons_path = game.path().join("game").join("citadel").join("addons");
+    fs::create_dir_all(&addons_path).unwrap();
+    let base = crate::mod_manager::shard::ProfileBase::new(&addons_path).unwrap();
+    let mut manifest = ProfileVpkManifest::default();
+    write_owned_mod(
+      &base,
+      &mut manifest,
+      "target",
+      ShardIndex::FIRST,
+      "pak01_dir.vpk",
+      b"old-target",
+    );
+    write_owned_mod(
+      &base,
+      &mut manifest,
+      "other",
+      ShardIndex::FIRST,
+      "pak02_dir.vpk",
+      b"other",
+    );
+    manifest.save(&base).unwrap();
+
+    let prepared_dir = game.path().join("prepared");
+    fs::create_dir_all(&prepared_dir).unwrap();
+    let prepared = prepared_dir.join("replacement.vpk");
+    fs::write(&prepared, b"new-target").unwrap();
+
+    let mut manager = test_manager(game.path());
+    let preserved_tree = crate::mod_manager::file_tree::ModFileTree {
+      files: vec![],
+      total_files: 0,
+      has_multiple_files: false,
+    };
+    manager.mod_repository.add_mod(Mod {
+      id: "target".into(),
+      name: "Original map".into(),
+      is_map: true,
+      installed_vpks: vec!["pak01_dir.vpk".into()],
+      file_tree: Some(preserved_tree.clone()),
+      install_order: Some(0),
+      original_vpk_names: vec!["original.vpk".into()],
+    });
+    let updated = manager
+      .update_mod_from_prepared(
+        "target",
+        "Target",
+        std::slice::from_ref(&prepared),
+        None,
+        None,
+      )
+      .unwrap();
+
+    assert!(updated.is_map);
+    assert_eq!(
+      updated.file_tree.as_ref().unwrap().total_files,
+      preserved_tree.total_files
+    );
+    assert_eq!(updated.name, "Target");
+
+    assert_eq!(updated.installed_vpks, vec!["pak01_dir.vpk".to_string()]);
+    assert_eq!(fs::read(base.join("pak01_dir.vpk")).unwrap(), b"new-target");
+    assert_eq!(fs::read(base.join("pak02_dir.vpk")).unwrap(), b"other");
+    let after = ProfileVpkManifest::load(&base).unwrap();
+    assert_eq!(
+      after.mods["target"].original_vpk_names,
+      vec!["replacement.vpk".to_string()]
+    );
+    assert!(after.mods.contains_key("other"));
+    manager
+      .replace_mod_vpks("target".into(), vec![prepared], vec![], None)
+      .unwrap();
+    let replaced = manager.mod_repository.get_mod("target").unwrap();
+    assert_eq!(replaced.name, "Target");
+    assert!(replaced.is_map);
+    assert!(replaced.file_tree.is_some());
   }
 }

@@ -1,5 +1,40 @@
 # api
 
+## 3.2.0
+
+### Minor Changes
+
+- 2130368: Run scheduled jobs in a dedicated worker instead of the API pods
+- 34cbd98: Add provider-identity policy rules, a versioned policy manifest, desktop enforcement, legacy-rule backfill, and Mod/Sound blacklist management.
+- 437e943: Detach reports, Lockdex ingestion, server requirements, website surfaces, statistics, and Discord announcements from the mirrored GameBanana catalog.
+
+### Patch Changes
+
+- daa9b5f: Fix mods with missing GameBanana timestamps missing from the catalog
+- 615beb0: Add a feature-flagged local GameBanana catalog for mod browsing
+- cbab84a: Fix direct GameBanana downloads, catalog recovery, and policy metadata.
+- daa9b5f: Report a skipped or failed mod sync as a failed cron check-in
+- 12e5de0: Add an opt-in feature flag for Mod Foundry (hidden by default)
+- d91ea9d: Skip private and withheld GameBanana submissions instead of failing the sync on them
+- daa9b5f: Fix mod catalog updates being skipped for hours at a time
+- cbab84a: Return partial server mod requirements when provider lookups run long instead of closing the connection
+- fd4234f: Show Deadworks community servers with live ping and their custom maps
+- Updated dependencies [2130368]
+- Updated dependencies [1f98b35]
+- Updated dependencies [cbab84a]
+- Updated dependencies [34cbd98]
+- Updated dependencies [55be2ff]
+- Updated dependencies [437e943]
+- Updated dependencies [daa9b5f]
+- Updated dependencies [cbab84a]
+- Updated dependencies [fd4234f]
+  - @deadlock-mods/queue@0.2.0
+  - @deadlock-mods/database@2.2.0
+  - @deadlock-mods/shared@2.2.0
+  - @deadlock-mods/distributed-lock@1.0.11
+  - @deadlock-mods/feature-flags@0.2.9
+  - @deadlock-mods/instrumentation@0.1.11
+
 ## 3.1.1
 
 ### Patch Changes
@@ -147,6 +182,7 @@
 
 - d61e80f: Disable automatic hourly database backups in GitHub Actions
 - 9c0bbf1: Optimize database queries and add Redis caching for high-volume endpoints
+
   - Change OAuth access token indexes to unique indexes for faster lookups
   - Add Redis caching to report counts endpoint with 24h TTL
   - Add Redis caching to individual mod lookup endpoint
@@ -287,27 +323,32 @@
 - 7f379a5: ## 🎉 Major Features
 
   ### Multi-File Download System
+
   - **Multi-file download support**: Mods can now have multiple download files per version
   - **File selection dialogs**: Choose which files to install when mods have multiple archives or VPK files
   - **Streamlined download handling**: Improved UI and backend processing for better user experience
 
   ### Content Management & Safety
+
   - **NSFW content detection and filtering**: Automatic detection and filtering of NSFW content with user controls
   - **Gameinfo.gi management**: Advanced gameinfo.gi section replacement and management features
   - **Enhanced mod descriptions**: Rich text support using Interweave for better mod descriptions
 
   ### New Logging System
+
   - **Dedicated logging package**: New `@deadlock-mods/logging` package for better error tracking and debugging across all applications
 
   ## 🎨 UI/UX Improvements
 
   ### Visual Updates
+
   - **New logo design**: Updated logo across desktop and web applications with modern design
   - **Enhanced settings layout**: Improved settings page styling and organization
   - **Launch button animation**: Added smooth animations to launch buttons
   - **Improved button styling**: Better visual feedback and animation handling throughout the app
 
   ### Enhanced Navigation & Performance
+
   - **Scroll position management**: Maintains scroll position in mod cards and mods page for better navigation
   - **Improved search sorting**: Enhanced search results relevance and sorting capabilities
   - **Better mod card functionality**: Enhanced mod card components with improved interactions
@@ -315,14 +356,17 @@
   ## 🔧 Technical Improvements
 
   ### API Enhancements
+
   - **Version handling in health checks**: Better API version management and health check responses
   - **Enhanced backend structure**: Improved API architecture to support new multi-file features
 
   ### Web Application Updates
+
   - **Fixed image sources**: Corrected image references in web HeroSection component
   - **Updated documentation**: Improved README with better development instructions and screenshots
 
   ## 🛠️ Development & Maintenance
+
   - **Package.json updates**: Refined build scripts and development workflow
   - **Documentation updates**: Updated README with new screenshots and development instructions
   - **Code quality improvements**: Various refactoring and optimization across the codebase

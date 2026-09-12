@@ -54,7 +54,10 @@ export const LanguageSettings = () => {
           <Select
             onValueChange={handleLanguageChange}
             value={currentLanguage.code}>
-            <SelectTrigger className='w-48'>
+            <SelectTrigger
+              id='settings-language'
+              aria-label={t("settings.language")}
+              className='w-48'>
               <SelectValue>
                 <div className='flex items-center gap-2'>
                   <span>{currentLanguage.flag}</span>

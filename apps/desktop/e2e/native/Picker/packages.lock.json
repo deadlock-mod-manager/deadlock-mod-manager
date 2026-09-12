@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net10.0-windows7.0": {
+      "FlaUI.UIA3": {
+        "type": "Direct",
+        "requested": "[5.0.0, )",
+        "resolved": "5.0.0",
+        "contentHash": "s1Yy1RsRJ0OXvmtxQlNJd0cu4sfvN3PFFu6skBGK8VlwPl/b38E0V5kCbo2gvkuhRIu4Itfxjdo7DUMF7qJw4Q==",
+        "dependencies": {
+          "FlaUI.Core": "5.0.0",
+          "Interop.UIAutomationClient": "10.19041.0"
+        }
+      },
+      "FlaUI.Core": {
+        "type": "Transitive",
+        "resolved": "5.0.0",
+        "contentHash": "VWWYqwjsYkii2BrUsz5+bpXEp27NherKhLt19hTxHwJP4KrfyZoeo1FdBov4ZTh655wZAKDGIjR7NJLDesuzeg==",
+        "dependencies": {
+          "System.Management": "8.0.0"
+        }
+      },
+      "Interop.UIAutomationClient": {
+        "type": "Transitive",
+        "resolved": "10.19041.0",
+        "contentHash": "Me5vKNZ1JSg6txTsPQXaWx7fVNh+fmcUPPwtDKJtqvbMM0N8aoa/l/QPolkJIRnasCabCNt4v2zG4p1Q9HU98A=="
+      },
+      "System.Management": {
+        "type": "Transitive",
+        "resolved": "8.0.0",
+        "contentHash": "jrK22i5LRzxZCfGb+tGmke2VH7oE0DvcDlJ1HAKYU8cPmD8XnpUT0bYn2Gy98GEhGjtfbR/sxKTVb+dE770pfA=="
+      }
+    }
+  }
+}

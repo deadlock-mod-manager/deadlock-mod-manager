@@ -10,7 +10,7 @@ export * from "./mirrored-file.repository";
 export * from "./mod.repository";
 export * from "./mod-download.repository";
 export * from "./profile.repository";
+export * from "./policy-rule.repository";
 export * from "./quick-answer.repository";
 export * from "./reports.repository";
-export * from "./rss-item.repository";
 export * from "./vpk.repository";

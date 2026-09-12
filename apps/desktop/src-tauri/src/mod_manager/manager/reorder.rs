@@ -326,10 +326,7 @@ impl ModManager {
         &mapped_mod_ids,
         &pending.value().orphan_renames,
       );
-      if let Err(error) = manifest.save(base) {
-        return Err(pending.rollback(error));
-      }
-      placements.extend(pending.commit().placements);
+      placements.extend(pending.commit_manifest(manifest, base)?.placements);
     }
 
     for placement in &placements {
@@ -351,6 +348,19 @@ impl ModManager {
   ) -> Result<VariantChangeResult, Error> {
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
     let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
+    // The UI file tree may be sorted differently from the numbered VPKs.
+    // Preserve the manifest's positional mapping when staging a later swap.
+    let (current_installed_vpks, current_original_names) = manifest
+      .mods
+      .get(mod_id)
+      .filter(|entry| entry.enabled)
+      .map(|entry| {
+        (
+          entry.current_vpks.as_slice(),
+          entry.original_vpk_names.as_slice(),
+        )
+      })
+      .unwrap_or((current_installed_vpks, current_original_names));
     let current_shard = manifest.shard_of(mod_id);
     let target_shard = Self::choose_shard_for(
       &addons_path,
@@ -424,7 +434,7 @@ impl ModManager {
     })
   }
 
-  pub(super) fn reorder_all_mods_for_profile(
+  pub fn reorder_all_mods_for_profile(
     &mut self,
     profile_folder: Option<String>,
   ) -> Result<(), Error> {
