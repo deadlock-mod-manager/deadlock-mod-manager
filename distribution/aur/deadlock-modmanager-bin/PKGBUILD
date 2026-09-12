@@ -3,7 +3,7 @@ pkgname=deadlock-modmanager-bin
 pkgdesc='A mod manager for the Valve game Deadlock (binary)'
 _pkgver=1.1.0
 pkgver=${_pkgver}
-pkgrel=2
+pkgrel=3
 arch=('x86_64')
 url='https://github.com/deadlock-mod-manager/deadlock-mod-manager'
 license=('GPL-3.0-only')
@@ -23,16 +23,26 @@ sha256sums=('18a1eb0e68d794365ff67be2e9a733b93de0902246d956b17b73cc6430205009'
 package() {
     tar xf data.tar.gz -C "${pkgdir}"
 
+    local _hicolor="${pkgdir}/usr/share/icons/hicolor"
+
     # Rename binary and icons to match package name
     mv "${pkgdir}/usr/bin/deadlock-mod-manager" \
         "${pkgdir}/usr/bin/deadlock-modmanager"
-    for icon in "${pkgdir}"/usr/share/icons/hicolor/*/apps/deadlock-mod-manager.png; do
+
+    # The .deb's 2x icon lands in "256x256@2", which no icon theme reads
+    if [ -d "${_hicolor}/256x256@2/apps" ]; then
+        install -d "${_hicolor}/256x256/apps"
+        mv "${_hicolor}/256x256@2/apps/"*.png "${_hicolor}/256x256/apps/"
+        rm -rf "${_hicolor}/256x256@2"
+    fi
+
+    for icon in "${_hicolor}"/*/apps/deadlock-mod-manager.png; do
         [ -f "${icon}" ] || continue
         mv "${icon}" "${icon%deadlock-mod-manager.png}deadlock-modmanager.png"
     done
 
-    # Replace .deb's desktop entry with ours (correct binary name)
-    rm -f "${pkgdir}/usr/share/applications/deadlock-mod-manager.desktop"
+    # Drop the .deb's own entry (named after productName) and install ours
+    rm -f "${pkgdir}"/usr/share/applications/*.desktop
     install -Dm644 "${srcdir}/deadlock-modmanager.desktop" \
         "${pkgdir}/usr/share/applications/deadlock-modmanager.desktop"
 

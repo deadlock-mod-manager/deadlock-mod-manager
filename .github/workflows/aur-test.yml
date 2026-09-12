@@ -55,3 +55,35 @@ jobs:
       - name: Build package
         working-directory: distribution/aur/deadlock-modmanager-bin
         run: su builder -c "makepkg -sf --noconfirm"
+
+      - name: Verify packaged file layout
+        working-directory: distribution/aur/deadlock-modmanager-bin
+        run: |
+          set -euo pipefail
+          pkg=$(find . -maxdepth 1 -name 'deadlock-modmanager-bin-*.pkg.tar.zst' | head -1)
+          if [ -z "$pkg" ]; then
+            echo "ERROR: No built package found!"
+            exit 1
+          fi
+          contents=$(tar -tf "$pkg")
+
+          desktops=$(echo "$contents" | grep 'usr/share/applications/.*\.desktop$' || true)
+          if [ "$desktops" != "usr/share/applications/deadlock-modmanager.desktop" ]; then
+            echo "ERROR: Expected exactly one desktop entry, got:"
+            echo "$desktops"
+            exit 1
+          fi
+
+          icons=$(echo "$contents" | grep 'usr/share/icons/.*\.png$' || true)
+          if [ -z "$icons" ]; then
+            echo "ERROR: No icons packaged!"
+            exit 1
+          fi
+          bad_icons=$(echo "$icons" | grep -vE '^usr/share/icons/hicolor/[0-9]+x[0-9]+/apps/deadlock-modmanager\.png$' || true)
+          if [ -n "$bad_icons" ]; then
+            echo "ERROR: Icons outside the expected hicolor layout:"
+            echo "$bad_icons"
+            exit 1
+          fi
+          echo "Package layout verified:"
+          echo "$contents"

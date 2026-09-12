@@ -61,9 +61,12 @@ jobs:
       - name: Prepare PKGBUILD
         if: steps.check_version.outputs.is_newer == 'true' || github.event.inputs.allow_backfill == 'true'
         run: |
-          # Update the source PKGBUILD in-repo
-          sed -i "s/^_pkgver=.*/_pkgver=${{ steps.version.outputs.version }}/" ${{ matrix.pkgbuild_dir }}/PKGBUILD
-          sed -i -E "s/^pkgrel=.*/pkgrel=1/" ${{ matrix.pkgbuild_dir }}/PKGBUILD
+          # Only reset pkgrel for a new version; on a backfill the repo's pkgrel
+          # carries packaging fixes and must ship as-is to stay upgradable.
+          if [ "${{ steps.check_version.outputs.is_newer }}" = "true" ]; then
+            sed -i "s/^_pkgver=.*/_pkgver=${{ steps.version.outputs.version }}/" ${{ matrix.pkgbuild_dir }}/PKGBUILD
+            sed -i -E "s/^pkgrel=.*/pkgrel=1/" ${{ matrix.pkgbuild_dir }}/PKGBUILD
+          fi
           # Copy for AUR deploy
           cp -r ${{ matrix.pkgbuild_dir }} ./${{ matrix.pkgname }}
 

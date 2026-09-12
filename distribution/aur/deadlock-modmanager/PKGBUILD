@@ -3,11 +3,11 @@ pkgname=deadlock-modmanager
 pkgdesc='A mod manager for the Valve game Deadlock'
 _pkgver=1.1.0
 pkgver=${_pkgver}
-pkgrel=2
+pkgrel=3
 arch=('x86_64')
 url='https://github.com/deadlock-mod-manager/deadlock-mod-manager'
 license=('GPL-3.0-only')
-makedepends=('cargo' 'cargo-tauri' 'pnpm')
+makedepends=('cargo' 'cargo-tauri' 'pnpm' 'protobuf')
 depends=('webkit2gtk-4.1' 'cairo' 'desktop-file-utils' 'xdg-utils' 'gdk-pixbuf2'
          'glib2' 'gtk3' 'libsoup3' 'pango' 'openssl' 'bzip2' 'hicolor-icon-theme'
          'gst-plugins-good' 'glibc' 'libgcc' 'libstdc++' 'dbus')
