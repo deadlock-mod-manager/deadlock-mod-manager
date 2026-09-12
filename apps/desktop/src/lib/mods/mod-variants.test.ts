@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyDownloadTimeSelection,
   deriveActiveArchiveNames,
   deriveActiveVariantCount,
 } from "@/lib/mods/mod-variants";
@@ -137,5 +138,103 @@ describe("deriveActiveVariantCount", () => {
 
   it("returns zero for mods with no variant information at all", () => {
     expect(deriveActiveVariantCount(mod({ installedVpks: [] }))).toBe(0);
+  });
+});
+
+const tree = (files: ModFile[]) => ({
+  files,
+  total_files: files.length,
+  has_multiple_files: files.length > 1,
+});
+
+const downloads = (...names: string[]) =>
+  names.map((name) => ({ name })) as LocalMod["downloads"];
+
+describe("applyDownloadTimeSelection", () => {
+  it("keeps only the files of the archive picked during download", () => {
+    const result = applyDownloadTimeSelection(
+      mod({
+        downloads: downloads("red.zip", "blue.zip"),
+        selectedDownloads: downloads("red.zip"),
+      }),
+      tree([
+        file("pak01_dir.vpk", true, "red.zip"),
+        file("pak02_dir.vpk", true, "blue.zip"),
+      ]),
+    );
+
+    expect(result?.files.map((f) => f.is_selected)).toEqual([true, false]);
+  });
+
+  it("selects every file of the picked archive", () => {
+    const result = applyDownloadTimeSelection(
+      mod({
+        downloads: downloads("red.zip", "blue.zip"),
+        selectedDownloads: downloads("red.zip"),
+      }),
+      tree([
+        file("pak01_dir.vpk", true, "red.zip"),
+        file("pak02_dir.vpk", true, "red.zip"),
+      ]),
+    );
+
+    expect(result?.files.map((f) => f.is_selected)).toEqual([true, true]);
+  });
+
+  it("falls back to the active variant archive", () => {
+    const result = applyDownloadTimeSelection(
+      mod({
+        downloads: downloads("red.zip", "blue.zip"),
+        activeVariantArchive: "blue.zip",
+      }),
+      tree([
+        file("pak01_dir.vpk", true, "red.zip"),
+        file("pak02_dir.vpk", true, "blue.zip"),
+      ]),
+    );
+
+    expect(result?.files.map((f) => f.is_selected)).toEqual([false, true]);
+  });
+
+  it("defers to the file selector when the mod only had one download", () => {
+    expect(
+      applyDownloadTimeSelection(
+        mod({
+          downloads: downloads("red.zip"),
+          selectedDownloads: downloads("red.zip"),
+        }),
+        tree([
+          file("pak01_dir.vpk", true, "red.zip"),
+          file("pak02_dir.vpk", true, "red.zip"),
+        ]),
+      ),
+    ).toBeNull();
+  });
+
+  it("defers to the file selector when the stored archive is gone", () => {
+    expect(
+      applyDownloadTimeSelection(
+        mod({
+          downloads: downloads("red.zip", "blue.zip"),
+          selectedDownloads: downloads("green.zip"),
+        }),
+        tree([
+          file("pak01_dir.vpk", true, "red.zip"),
+          file("pak02_dir.vpk", true, "blue.zip"),
+        ]),
+      ),
+    ).toBeNull();
+  });
+
+  it("defers to the file selector when the files carry no archive names", () => {
+    expect(
+      applyDownloadTimeSelection(
+        mod({
+          downloads: downloads("red.zip", "blue.zip"),
+          selectedDownloads: downloads("red.zip"),
+        }),
+        tree([file("pak01_dir.vpk", true), file("pak02_dir.vpk", true)]),
+      ),
+    ).toBeNull();
   });
 });

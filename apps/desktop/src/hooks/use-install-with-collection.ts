@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { appLocalDataDir, join } from "@tauri-apps/api/path";
 import { useState } from "react";
 import { createLogger } from "@/lib/logger";
+import { applyDownloadTimeSelection } from "@/lib/mods/mod-variants";
 import { usePersistedStore } from "@/lib/store";
 import type {
   InstallableMod,
@@ -236,6 +237,30 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
             return await performInstallation(mod, options, updatedFileTree);
           }
 
+          // The variant picked in the download dialog already answers this
+          // question, so don't ask it a second time on activation.
+          const downloadTimeSelection = applyDownloadTimeSelection(
+            mod,
+            mod.installedFileTree,
+          );
+          if (downloadTimeSelection) {
+            logger
+              .withMetadata({
+                modId: mod.remoteId,
+                selectedFiles: downloadTimeSelection.files.filter(
+                  (f) => f.is_selected,
+                ).length,
+                totalFiles: downloadTimeSelection.total_files,
+              })
+              .info("Using variant selected during download");
+
+            return await performInstallation(
+              mod,
+              options,
+              downloadTimeSelection,
+            );
+          }
+
           // No previous selection - show file selector dialog
           logger
             .withMetadata({
@@ -300,6 +325,31 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
 
         // If mod has multiple files, show file selector dialog
         if (fileTree.has_multiple_files) {
+          // Same as above: a variant chosen at download time still counts here,
+          // where the tree was rebuilt from the archives left in the mod folder.
+          const downloadTimeSelection = applyDownloadTimeSelection(
+            mod,
+            fileTree,
+          );
+          if (downloadTimeSelection) {
+            logger
+              .withMetadata({
+                modId: mod.remoteId,
+                selectedFiles: downloadTimeSelection.files.filter(
+                  (f) => f.is_selected,
+                ).length,
+                totalFiles: downloadTimeSelection.total_files,
+              })
+              .info("Using variant selected during download");
+
+            setIsAnalyzing(false);
+            return await performInstallation(
+              mod,
+              options,
+              downloadTimeSelection,
+            );
+          }
+
           logger
             .withMetadata({
               modId: mod.remoteId,
