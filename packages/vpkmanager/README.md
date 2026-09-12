@@ -5,6 +5,13 @@ replacing compiled textures, swapping sounds, and packing a directory tree back
 into a loadable VPK. The read/render half — decoding models to glTF for the 3D
 preview — lives in `source2-model`.
 
+Each VPK the manager takes responsibility for is stamped with a fingerprint
+stored *inside* it, at `.dmm/fingerprint.dmm`. Stamping is additive: the entry
+is appended to the VPK's directory tree and its bytes to the end of the data
+section. VPK entry offsets are relative to the data section, so every existing
+file keeps its offset, and entries in `_NNN.vpk` companions are not touched at
+all. A stamped VPK loads exactly as the unstamped one did.
+
 ## Third-party code
 
 `src/source2/` is vendored from the `morphic` crate of
