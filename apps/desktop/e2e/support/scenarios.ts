@@ -13,6 +13,7 @@ import {
 } from "./download-fixtures";
 import { prepareProfileWorld } from "./profile-fixtures";
 import { prepareFilesystemWorld } from "./filesystem-fixtures";
+import { prepareManifestRepairWorld } from "./manifest-repair-fixtures";
 import { assertCrashEvidence } from "./filesystem-oracle";
 import { assertNormalExit, assertInterruptedExit } from "./phase-evidence";
 import { writeSyntheticVpk } from "./vpk";
@@ -106,6 +107,12 @@ const crash: Definition = {
   ...filesystem,
   exit: (phase) => (phase === "mutate" ? "crash" : "normal"),
 };
+const manifestRepair: Definition = {
+  ...filesystem,
+  spec: "manifest-repair",
+  phases: ["repair", "restart-repair"],
+  prepare: async (world) => prepareManifestRepairWorld(world),
+};
 const catalog: Definition = {
   ...defaults,
   family: "gamebanana",
@@ -183,6 +190,7 @@ export const scenarios = {
   "filesystem-shards": filesystem,
   "filesystem-crash-placed": crash,
   "filesystem-crash-committed": crash,
+  "filesystem-manifest-repair": manifestRepair,
   "gamebanana-single": catalog,
   "gamebanana-multifile": catalog,
   "gamebanana-variants": catalog,

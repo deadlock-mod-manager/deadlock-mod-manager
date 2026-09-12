@@ -10,15 +10,20 @@ import {
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(36);
+    expect(ids).toHaveLength(37);
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
       expect(scenarioSpec(id)).toContain("./specs/");
       expect(new Set(scenarioPhases(id)).size).toBe(scenarioPhases(id).length);
     }
     expect(selectScenarios("gamebanana")).toHaveLength(10);
+    expect(selectScenarios("filesystem")).toHaveLength(8);
     expect(scenarios["profiles-pointer"].nativeInput).toBe(true);
+    expect(scenarios["filesystem-manifest-repair"].nativeInput).toBe(false);
     expect(scenarios["filesystem-crash-placed"].exit("mutate")).toBe("crash");
+    expect(scenarios["filesystem-manifest-repair"].exit("repair")).toBe(
+      "normal",
+    );
     expect(scenarios["downloads-restart"].exit("transfer")).toBe("interrupt");
     expect(() => selectScenarios("not-a-suite")).toThrow();
   });
