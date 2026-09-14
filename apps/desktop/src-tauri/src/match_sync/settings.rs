@@ -1,4 +1,4 @@
-//! Persisted, off-by-default state for match-sync, in its own store file so writes
+//! Persisted, on-by-default state for match-sync, in its own store file so writes
 //! never race the zustand-managed `state.json`. The quota timestamps live here too,
 //! which is what makes the daily fetch cap survive reboots and app restarts.
 
@@ -14,7 +14,7 @@ use super::quota::QuotaWindow;
 
 const STORE_FILE: &str = "match-sync.json";
 
-const KEY_ENABLED: &str = "enabled";
+const KEY_ENABLED: &str = "enabled_v2";
 const KEY_CONSENT: &str = "consent_accepted";
 const KEY_FETCHED_IDS: &str = "fetched_ids";
 const KEY_QUOTA_HITS: &str = "quota_hits";

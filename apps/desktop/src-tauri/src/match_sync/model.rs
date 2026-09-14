@@ -123,11 +123,20 @@ impl MatchHistoryPage {
   }
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MatchSyncConfig {
   pub enabled: bool,
   pub consent_accepted: bool,
+}
+
+impl Default for MatchSyncConfig {
+  fn default() -> Self {
+    Self {
+      enabled: true,
+      consent_accepted: true,
+    }
+  }
 }
 
 impl MatchSyncConfig {
