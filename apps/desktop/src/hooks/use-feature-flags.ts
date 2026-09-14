@@ -31,7 +31,8 @@ export const useFeatureFlag = (
   const { data: featureFlags, ...rest } = useFeatureFlags();
 
   const flag = featureFlags?.find((flag) => flag.name === flagName);
-  const fromApi = flag?.enabled ?? defaultValue;
+  const fromApi =
+    typeof flag?.enabled === "boolean" ? flag.enabled : defaultValue;
   const isEnabled =
     import.meta.env.DEV && DEV_ALWAYS_ON_FLAGS.has(flagName) ? true : fromApi;
 

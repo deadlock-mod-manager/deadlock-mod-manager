@@ -34,21 +34,24 @@ import SearchBarSkeleton from "@/components/mod-browsing/search-bar-skeleton";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
 import { useFeatureFlag } from "@/hooks/use-feature-flags";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useResponsiveColumns } from "@/hooks/use-responsive-columns";
 import { useScrollPosition } from "@/hooks/use-scroll-position";
 import { useSearch } from "@/hooks/use-search";
-import { getMods } from "@/lib/api-client";
-import { ModCategory, TimePeriod } from "@/lib/constants";
-import { matchesHeroFilter, resolveModHero } from "@/lib/mods/hero-resolution";
+import {
+  type DirectCatalogPage,
+  queryGameBananaCatalog,
+} from "@/lib/gamebanana-catalog";
+import { SortType, TimePeriod } from "@/lib/constants";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
-import { getTimePeriodCutoff } from "@/lib/utils";
 import type {
   AudioQuickFilter,
   FilterMode,
   MapQuickFilter,
 } from "@/lib/store/slices/ui";
-import { cn, isModOutdated } from "@/lib/utils";
+import { cn, getTimePeriodCutoff } from "@/lib/utils";
+import type { CatalogQuery } from "@/types/generated/CatalogQuery";
 import { ChevronLeft, ChevronRight } from "@deadlock-mods/ui/icons";
 
 const SEARCH_KEYS = ["name", "description", "author"];
@@ -57,6 +60,24 @@ const MODS_STORE_PAGE_KEY = "/mods:page";
 const MAPS_STORE_PAGE_KEY = "/maps:page";
 const MODS_STORE_PAGINATION_SETTING_ID = "mods-store-pagination";
 const MOD_ROW_ESTIMATED_HEIGHT = 340;
+const MOD_OUTDATED_CUTOFF_SECONDS = Math.floor(
+  new Date("2026-01-22").getTime() / 1_000,
+);
+
+const catalogSort = (sort: SortType): CatalogQuery["sort"] => {
+  switch (sort) {
+    case SortType.LAST_UPDATED:
+      return "lastUpdated";
+    case SortType.DOWNLOADS:
+      return "downloadCount";
+    case SortType.RATING:
+      return "rating";
+    case SortType.RELEASE_DATE:
+      return "releaseDate";
+    default:
+      return "default";
+  }
+};
 
 function ModsPagination({
   page,
@@ -148,12 +169,6 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     "custom-maps",
     false,
   );
-  const { data, error } = useSuspenseQuery({
-    queryKey: ["mods"],
-    queryFn: getMods,
-    staleTime: STALE_TIME_API,
-    retry: 3,
-  });
   const nsfwSettings = usePersistedStore((state) => state.nsfwSettings);
   const modsFilters = usePersistedStore((state) => state.modsFilters);
   const modsStorePaginationEnabled = usePersistedStore(
@@ -177,9 +192,10 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     timePeriod = TimePeriod.ALL_TIME,
     filterMode,
     showFavoritesOnly = false,
+    searchQuery = "",
+    currentSort,
   } = modsFilters;
   const favorites = usePersistedStore((state) => state.favorites);
-  const localMods = usePersistedStore((state) => state.localMods);
   const effectiveMapQuickFilter: MapQuickFilter = mapsOnly
     ? "only"
     : isCustomMapsEnabled
@@ -190,6 +206,59 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
   const paginationEnabled =
     modsStorePaginationEnabled ?? platform() === "linux";
   const [page, setPage] = useState(() => getPersistedPage(pageKey));
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 300);
+  const catalogQuery = useMemo<CatalogQuery>(() => {
+    const timePeriodCutoff = getTimePeriodCutoff(timePeriod);
+    const timePeriodCutoffSeconds = timePeriodCutoff
+      ? Math.floor(timePeriodCutoff.getTime() / 1_000)
+      : null;
+    const updatedAfter = hideOutdated
+      ? Math.max(timePeriodCutoffSeconds ?? 0, MOD_OUTDATED_CUTOFF_SECONDS)
+      : timePeriodCutoffSeconds;
+    return {
+      search: debouncedSearchQuery,
+      categories: selectedCategories,
+      heroes: selectedHeroes,
+      excludeFilters: filterMode === "exclude",
+      isAudio: audioQuickFilter === "off" ? null : audioQuickFilter === "only",
+      isMap:
+        effectiveMapQuickFilter === "off"
+          ? null
+          : effectiveMapQuickFilter === "only",
+      hideNsfw: nsfwSettings.hideNSFW || hideNSFW,
+      hideObsolete: hideOutdated,
+      updatedAfter,
+      favorites: showFavoritesOnly ? favorites : [],
+      sort: catalogSort(currentSort),
+      page: paginationEnabled ? page : 0,
+      pageSize: paginationEnabled ? PAGE_SIZE : 5_000,
+    };
+  }, [
+    audioQuickFilter,
+    currentSort,
+    debouncedSearchQuery,
+    effectiveMapQuickFilter,
+    favorites,
+    filterMode,
+    hideNSFW,
+    hideOutdated,
+    nsfwSettings.hideNSFW,
+    page,
+    paginationEnabled,
+    selectedCategories,
+    selectedHeroes,
+    showFavoritesOnly,
+    timePeriod,
+  ]);
+  const { data: catalogPage, error } = useSuspenseQuery({
+    queryKey: ["mods", "gamebanana-direct", catalogQuery],
+    queryFn: (): Promise<DirectCatalogPage> =>
+      queryGameBananaCatalog(catalogQuery),
+    staleTime: STALE_TIME_API,
+    retry: 3,
+    refetchInterval: (query) => (query.state.data?.stale ? 3_000 : false),
+  });
+  const data = catalogPage.items;
   const parentRef = useRef<HTMLDivElement>(null);
   const previousFilterSignatureRef = useRef<string | null>(null);
   // Defer the mod list so background refetches (staleTime expiry) don't
@@ -207,90 +276,16 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
       restoreScrollPosition();
     }
   }, [paginationEnabled, restoreScrollPosition, setScrollElement]);
-  const { results, query, setQuery, sortType, setSortType } = useSearch({
+  const { query, setQuery, sortType, setSortType } = useSearch({
     data: deferredData,
     keys: SEARCH_KEYS,
   });
-  const localModsByRemoteId = useMemo(
-    () => new Map(localMods.map((mod) => [mod.remoteId, mod])),
-    [localMods],
-  );
-  const filteredResults = useMemo(() => {
-    const predefinedCategorySet =
-      selectedCategories.length > 0
-        ? new Set<string>(Object.values(ModCategory))
-        : null;
-    const cutoff = getTimePeriodCutoff(timePeriod);
-    const cutoffTime = cutoff?.getTime();
-    const favSet =
-      showFavoritesOnly && favorites.length > 0 ? new Set(favorites) : null;
-    const shouldHideNSFW = nsfwSettings.hideNSFW || hideNSFW;
-
-    return results.filter((mod) => {
-      if (selectedCategories.length > 0 && predefinedCategorySet) {
-        let matchesCategory = selectedCategories.includes(mod.category);
-        if (
-          !matchesCategory &&
-          selectedCategories.includes(ModCategory.OTHER_MISC)
-        ) {
-          matchesCategory = !predefinedCategorySet.has(mod.category);
-        }
-        if (filterMode === "include" ? !matchesCategory : matchesCategory)
-          return false;
-      }
-
-      if (selectedHeroes.length > 0) {
-        const resolvedHero = resolveModHero(
-          mod,
-          localModsByRemoteId.get(mod.remoteId),
-        ).hero;
-        const matchesHero = matchesHeroFilter(resolvedHero, selectedHeroes);
-        if (filterMode === "include" ? !matchesHero : matchesHero) return false;
-      }
-
-      if (shouldHideNSFW && mod.isNSFW) return false;
-
-      if (audioQuickFilter === "only" && !mod.isAudio) return false;
-      if (audioQuickFilter === "exclude" && mod.isAudio) return false;
-
-      if (effectiveMapQuickFilter === "only" && !mod.isMap) return false;
-      if (effectiveMapQuickFilter === "exclude" && mod.isMap) return false;
-
-      if (hideOutdated && (mod.isObsolete || isModOutdated(mod))) return false;
-
-      if (cutoffTime && new Date(mod.remoteUpdatedAt).getTime() < cutoffTime)
-        return false;
-
-      if (favSet && !favSet.has(mod.remoteId)) return false;
-
-      return true;
-    });
-  }, [
-    results,
-    localModsByRemoteId,
-    selectedCategories,
-    selectedHeroes,
-    filterMode,
-    nsfwSettings.hideNSFW,
-    hideNSFW,
-    audioQuickFilter,
-    effectiveMapQuickFilter,
-    hideOutdated,
-    timePeriod,
-    showFavoritesOnly,
-    favorites,
-  ]);
+  const filteredResults = deferredData;
 
   const totalPages = paginationEnabled
-    ? Math.ceil(filteredResults.length / PAGE_SIZE)
+    ? Math.ceil(catalogPage.total / PAGE_SIZE)
     : 1;
-  const displayedMods = useMemo(
-    () =>
-      paginationEnabled
-        ? filteredResults.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
-        : filteredResults,
-    [filteredResults, page, paginationEnabled],
-  );
+  const displayedMods = useMemo(() => filteredResults, [filteredResults]);
   const modRows = useMemo(() => {
     if (paginationEnabled) {
       return [] as (typeof filteredResults)[];
@@ -454,6 +449,16 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
         onShowFavoritesOnlyChange={handleShowFavoritesOnlyChange}
         hideMapFilter={mapsOnly || !isCustomMapsEnabled}
       />
+      {catalogPage.stale ? (
+        <Alert variant='warning'>
+          <Warning className='h-4 w-4' />
+          <AlertDescription>
+            {catalogPage.total === 0
+              ? t("mods.catalogSyncing")
+              : t("mods.catalogStale")}
+          </AlertDescription>
+        </Alert>
+      ) : null}
       {filteredResults.length === 0 ? (
         <Empty className='py-12'>
           <EmptyHeader>

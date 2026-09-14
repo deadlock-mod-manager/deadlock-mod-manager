@@ -80,7 +80,24 @@ export const AppProvider = ({ children, ...props }: AppProviderProps) => {
       }
     };
 
+    const migrateSubmissionIdentities = async () => {
+      const { pendingIdentityMigrations, completeIdentityMigrations } =
+        usePersistedStore.getState();
+      if (pendingIdentityMigrations.length === 0) {
+        return;
+      }
+
+      await invoke("migrate_submission_identities", {
+        migrations: pendingIdentityMigrations,
+      });
+      completeIdentityMigrations();
+      logger
+        .withMetadata({ count: pendingIdentityMigrations.length })
+        .info("Completed persisted submission identity migration");
+    };
+
     Promise.all([resolveGamePath(), resolveSteamPath()])
+      .then(migrateSubmissionIdentities)
       .then(cleanupStaleServerGameinfo)
       .then(() => usePersistedStore.getState().restoreModsFromManifest())
       .catch((error) => {

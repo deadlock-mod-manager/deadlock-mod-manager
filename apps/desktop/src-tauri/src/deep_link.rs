@@ -66,7 +66,10 @@ pub fn is_deep_link(url: &str) -> bool {
 
 #[cfg(desktop)]
 pub fn on_second_instance(app_handle: &AppHandle, argv: Vec<String>, _cwd: String) {
-  log::info!("[DeepLink] Single instance callback triggered with argv: {argv:?}");
+  log::info!(
+    "[DeepLink] Single instance callback triggered with {} argument(s)",
+    argv.len()
+  );
 
   for arg in &argv {
     if is_deep_link(arg) {
@@ -94,11 +97,15 @@ pub fn validate_mod_deep_link(data_part: &str) -> Option<(String, String, String
     return None;
   }
 
-  let download_url = parts[0].to_string();
-  let mod_type = parts[1].to_string();
+  let download_url = reqwest::Url::parse(parts[0]).ok()?;
+  let mod_type = parts[1].to_ascii_lowercase();
   let mod_id = parts[2].to_string();
 
-  if !download_url.contains(GAMEBANANA_DOMAIN) {
+  let host = download_url.host_str()?;
+  if download_url.scheme() != "https"
+    || (host != GAMEBANANA_DOMAIN && !host.ends_with(&format!(".{GAMEBANANA_DOMAIN}")))
+    || !matches!(mod_type.as_str(), "mod" | "sound")
+  {
     return None;
   }
 
@@ -106,14 +113,14 @@ pub fn validate_mod_deep_link(data_part: &str) -> Option<(String, String, String
     return None;
   }
 
-  Some((download_url, mod_type, mod_id))
+  Some((download_url.to_string(), mod_type, mod_id))
 }
 
 pub fn handle_deep_link_url(
   app_handle: &AppHandle,
   url: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-  log::info!("[DeepLink] Processing deep link URL: {url}");
+  log::info!("[DeepLink] Processing deep link URL");
 
   let data_part = match strip_scheme(url) {
     Some(part) => part,
@@ -210,7 +217,10 @@ pub fn setup(app: &tauri::App<AppRuntime>) -> Result<(), Box<dyn std::error::Err
   let start_urls = app.deep_link().get_current()?;
 
   if let Some(urls) = start_urls {
-    log::info!("[DeepLink] App started with deep link URLs: {urls:?}");
+    log::info!(
+      "[DeepLink] App started with {} deep link URL(s)",
+      urls.len()
+    );
     for url in urls {
       if let Err(e) = handle_deep_link_url(handle, url.as_ref()) {
         log::error!("[DeepLink] Failed to handle startup deep link: {e}");
@@ -221,7 +231,7 @@ pub fn setup(app: &tauri::App<AppRuntime>) -> Result<(), Box<dyn std::error::Err
   let deep_link_handle = app.app_handle().clone();
   app.deep_link().on_open_url(move |event| {
     for url in event.urls() {
-      log::info!("[DeepLink] Received open URL event: {url}");
+      log::info!("[DeepLink] Received open URL event");
       if let Err(e) = handle_deep_link_url(&deep_link_handle, url.as_ref()) {
         log::error!("[DeepLink] Failed to handle open URL: {e}");
       }
@@ -233,7 +243,7 @@ pub fn setup(app: &tauri::App<AppRuntime>) -> Result<(), Box<dyn std::error::Err
 
 #[cfg(test)]
 mod tests {
-  use super::{PATH_FORGE_LAUNCH, strip_scheme};
+  use super::{PATH_FORGE_LAUNCH, strip_scheme, validate_mod_deep_link};
 
   #[test]
   fn recognises_the_forge_launch_url_the_site_fires() {
@@ -242,5 +252,19 @@ mod tests {
     let stripped =
       strip_scheme("deadlock-mod-manager://forge/launch").expect("scheme should be recognised");
     assert!(stripped.starts_with(PATH_FORGE_LAUNCH));
+  }
+
+  #[test]
+  fn validates_mod_and_sound_install_links() {
+    assert!(validate_mod_deep_link("https://gamebanana.com/mmdl/12,Mod,42").is_some());
+    let sound = validate_mod_deep_link("https://files.gamebanana.com/mmdl/13,Sound,42").unwrap();
+    assert_eq!(sound.1, "sound");
+  }
+
+  #[test]
+  fn rejects_untrusted_or_unknown_install_links() {
+    assert!(validate_mod_deep_link("https://gamebanana.com.evil.test/mmdl/12,Mod,42").is_none());
+    assert!(validate_mod_deep_link("http://gamebanana.com/mmdl/12,Mod,42").is_none());
+    assert!(validate_mod_deep_link("https://gamebanana.com/mmdl/12,Map,42").is_none());
   }
 }

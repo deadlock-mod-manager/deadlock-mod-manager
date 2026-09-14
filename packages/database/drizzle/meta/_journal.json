@@ -379,6 +379,13 @@
       "when": 1784644302365,
       "tag": "0053_legal_beast",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1789049301355,
+      "tag": "0054_tricky_proteus",
+      "breakpoints": true
     }
   ]
 }

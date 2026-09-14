@@ -26,6 +26,7 @@ pub(crate) struct SteamUriLaunchRequest {
 #[derive(Debug)]
 pub(crate) struct SteamUriLaunchMonitor {
   task: JoinHandle<Result<(), Error>>,
+  recorded: bool,
 }
 
 impl SteamUriLaunchRequest {
@@ -46,6 +47,17 @@ impl SteamUriLaunchRequest {
   }
 
   pub(crate) fn spawn(self) -> Result<SteamUriLaunchMonitor, Error> {
+    if crate::runtime_environment::records_game_launches() {
+      crate::runtime_environment::record_game_launch(&self.program, &redacted_steam_uri(&self.uri))
+        .map_err(|error| {
+          Error::GameLaunchFailed(format!("failed to record E2E game launch: {error}"))
+        })?;
+      return Ok(SteamUriLaunchMonitor {
+        task: tokio::spawn(async { Ok(()) }),
+        recorded: true,
+      });
+    }
+
     let mut child = Command::new(&self.program)
       .arg(&self.uri)
       .stdout(Stdio::null())
@@ -80,7 +92,10 @@ impl SteamUriLaunchRequest {
       outcome
     });
 
-    Ok(SteamUriLaunchMonitor { task })
+    Ok(SteamUriLaunchMonitor {
+      task,
+      recorded: false,
+    })
   }
 
   #[cfg(test)]
@@ -95,6 +110,10 @@ impl SteamUriLaunchRequest {
 }
 
 impl SteamUriLaunchMonitor {
+  pub(crate) fn was_recorded(&self) -> bool {
+    self.recorded
+  }
+
   pub(crate) async fn wait(self) -> Result<(), Error> {
     self.task.await.map_err(|error| {
       Error::BackgroundTaskFailed(format!("Steam URI launcher task failed: {error}"))

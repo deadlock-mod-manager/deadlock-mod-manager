@@ -1,4 +1,15 @@
-import type { LocalMod } from "@/types/mods";
+import type { LocalMod, ModFileTree } from "@/types/mods";
+
+/** Selected downloads with one VPK each need no further file choice. */
+export const requiresFileSelection = (tree: ModFileTree): boolean => {
+  if (!tree.has_multiple_files) return false;
+  const archives = new Set<string>();
+  for (const file of tree.files) {
+    if (!file.archive_name || archives.has(file.archive_name)) return true;
+    archives.add(file.archive_name);
+  }
+  return false;
+};
 
 export const deriveActiveArchiveNames = (mod: LocalMod | null): Set<string> => {
   const names = new Set<string>();

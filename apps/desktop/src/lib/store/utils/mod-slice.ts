@@ -1,4 +1,5 @@
 import type { LocalMod } from "@/types/mods";
+import type { ProfileId } from "@/types/profiles";
 import type { State } from "..";
 
 export type ModSliceState = Pick<
@@ -23,6 +24,35 @@ export const applyToModsAndActiveProfile = (
           },
         }
       : state.profiles,
+  };
+};
+
+export const applyToModsInProfile = (
+  state: ModSliceState,
+  profileId: ProfileId,
+  updateMods: (mods: LocalMod[]) => LocalMod[],
+) => {
+  const profile = state.profiles[profileId];
+
+  if (!profile) {
+    return {
+      localMods: state.localMods,
+      profiles: state.profiles,
+    };
+  }
+
+  const profileMods = updateMods(profile.mods);
+
+  return {
+    localMods:
+      state.activeProfileId === profileId ? profileMods : state.localMods,
+    profiles: {
+      ...state.profiles,
+      [profileId]: {
+        ...profile,
+        mods: profileMods,
+      },
+    },
   };
 };
 

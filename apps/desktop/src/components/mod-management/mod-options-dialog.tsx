@@ -131,6 +131,7 @@ export const ModOptionsDialog = ({
 
                 return (
                   <div
+                    data-download-archive={download.name}
                     className={cn(
                       "flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2.5 text-left hover:bg-muted/50",
                       isSaving && "pointer-events-none opacity-50",

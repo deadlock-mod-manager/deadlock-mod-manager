@@ -46,7 +46,9 @@ export const UpdateChannelSelect = () => {
         </p>
       </div>
       <Select onValueChange={setChannel} value={channel}>
-        <SelectTrigger className='w-36'>
+        <SelectTrigger
+          aria-label={t("settings.updateChannel")}
+          className='w-36'>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>

@@ -13,4 +13,5 @@ export const BatchUpdateResultSchema = z.object({
   succeeded: z.array(z.string()),
   failed: z.array(z.tuple([z.string(), z.string()])),
   installedMods: z.array(InstalledModInfoSchema),
+  vpkMappings: z.array(z.tuple([z.string(), z.array(z.string())])).optional(),
 });

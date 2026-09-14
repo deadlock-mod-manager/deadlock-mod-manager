@@ -1,7 +1,7 @@
 //! Sync orchestration. Generic over its dependencies so the whole pipeline is
 //! unit-testable with spies. All GC fetches funnel through `fetch_one`, the single
 //! choke point that enforces: already-fetched skip → persisted quota → throttle →
-//! counter. `*_if_enabled` are the off-by-default gate.
+//! counter. `*_if_enabled` are the enabled/consent gate.
 
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -659,7 +659,7 @@ mod tests {
   }
 
   #[tokio::test]
-  async fn off_by_default_does_nothing() {
+  async fn disabled_does_nothing() {
     let eng = engine(
       SpyGc::default(),
       SpyBackfill {
@@ -668,7 +668,10 @@ mod tests {
         calls: AtomicU64::new(0),
       },
     );
-    let config = MatchSyncConfig::default();
+    let config = MatchSyncConfig {
+      enabled: false,
+      consent_accepted: false,
+    };
 
     let out = eng
       .run_background_pass(&config, &AtomicBool::new(false))

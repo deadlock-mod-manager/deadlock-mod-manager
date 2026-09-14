@@ -18,6 +18,8 @@ mod operations;
 mod reorder;
 pub(crate) mod staging;
 
+pub(crate) use naming::allocate_enabled_vpk_names;
+
 /// Final placement of a mod's enabled VPKs after a sharded reorder.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ShardPlacement {
@@ -112,12 +114,18 @@ mod tests {
   #[test]
   fn detects_disabled_local_mod_prefixes() {
     assert_eq!(
-      VpkManager::extract_mod_id_from_prefix("local-abc-123_mod.vpk"),
-      Some("local-abc-123".to_string())
+      VpkManager::extract_mod_id_from_prefix(
+        "local-550e8400-e29b-41d4-a716-446655440000_mod.vpk"
+      ),
+      Some("local-550e8400-e29b-41d4-a716-446655440000".to_string())
     );
     assert_eq!(
       VpkManager::extract_mod_id_from_prefix("123456_mod.vpk"),
       Some("123456".to_string())
+    );
+    assert_eq!(
+      VpkManager::extract_mod_id_from_prefix("snd-123456_mod.vpk"),
+      Some("snd-123456".to_string())
     );
     assert_eq!(
       VpkManager::extract_mod_id_from_prefix("pak01_dir.vpk"),
@@ -131,7 +139,10 @@ mod tests {
     let addons_path = addons_base(&temp);
     let addons_path = addons_path.as_path();
     write_vpk(addons_path, "pak01_dir.vpk");
-    write_vpk(addons_path, "local-abc-123_original.vpk");
+    write_vpk(
+      addons_path,
+      "local-550e8400-e29b-41d4-a716-446655440000_original.vpk",
+    );
 
     let manager = VpkManager::new();
     let updated = manager
@@ -142,7 +153,11 @@ mod tests {
     assert_eq!(updated[0].mod_id, "123456");
     assert_eq!(updated[0].shard, ShardIndex::FIRST);
     assert_eq!(updated[0].vpks, vec!["pak01_dir.vpk".to_string()]);
-    assert!(addons_path.join("local-abc-123_original.vpk").exists());
+    assert!(
+      addons_path
+        .join("local-550e8400-e29b-41d4-a716-446655440000_original.vpk")
+        .exists()
+    );
     assert!(!addons_path.join("pak02_dir.vpk").exists());
   }
 
@@ -427,7 +442,13 @@ mod tests {
     fs::create_dir_all(&reorder).unwrap();
     fs::write(reorder.join("s1__pak01_dir.vpk"), b"staged").unwrap();
 
-    recover_staging_directory(&base, &reorder, RecoveryMode::AvoidEnabledCollisions).unwrap();
+    recover_staging_directory(
+      &base,
+      &reorder,
+      RecoveryMode::AvoidEnabledCollisions,
+      &crate::mod_manager::vpk_manifest::ProfileVpkManifest::default(),
+    )
+    .unwrap();
 
     // Neither file is lost: the placed file keeps its slot, the staged file is
     // recovered into a free one.

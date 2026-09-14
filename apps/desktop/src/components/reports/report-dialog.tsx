@@ -62,7 +62,7 @@ export const BrokenModDialog = ({
   const handleSubmitBroken = () => {
     createReport(
       {
-        modId: mod.id,
+        modId: mod.remoteId,
         reporterHardwareId: hardwareId || undefined,
       },
       {

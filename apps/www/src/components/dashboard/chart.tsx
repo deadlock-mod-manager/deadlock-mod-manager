@@ -17,16 +17,13 @@ import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
 type AnalyticsDataPoint = {
   date: string;
-  mods: number;
-  downloads: number;
   users: number;
-  modFiles: number;
 };
 
 type DashboardChartProps = {
   title: string;
   description: string;
-  dataKey: "mods" | "downloads" | "users" | "modFiles";
+  dataKey: "users";
   color: string;
   timeRange: "1h" | "1d" | "7d" | "30d" | "90d" | "all";
   data: AnalyticsDataPoint[];

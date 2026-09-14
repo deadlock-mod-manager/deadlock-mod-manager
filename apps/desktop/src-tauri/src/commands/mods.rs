@@ -11,9 +11,9 @@ use crate::mod_manager::vpk_manager::VpkManager;
 use crate::mod_manager::vpk_manager::staging::VpkSnapshot;
 use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use serde::{Deserialize, Serialize};
-use tauri::{Emitter, Manager};
+use tauri::{Emitter, State};
 
-use super::downloads::get_download_manager;
+use super::downloads::{get_download_manager, resolve_download_files};
 use super::fonts::{apply_font_cleanup, prepare_font_cleanup};
 use super::state::MANAGER;
 use crate::download_manager::{DownloadFileDto, DownloadTask};
@@ -192,6 +192,8 @@ pub struct BatchUpdateResult {
   pub succeeded: Vec<String>,
   pub failed: Vec<(String, String)>,
   pub installed_mods: Vec<InstalledModInfo>,
+  #[serde(default)]
+  pub vpk_mappings: Vec<(String, Vec<String>)>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -217,6 +219,8 @@ pub struct InstalledModInfo {
 #[tauri::command]
 pub async fn batch_update_mods(
   app_handle: AppHandle,
+  catalog_state: State<'_, super::gamebanana_catalog::GameBananaCatalogState>,
+  policy: State<'_, super::policy::PolicyState>,
   mods: Vec<BatchUpdateMod>,
   profile_folder: String,
   skip_backup: bool,
@@ -239,6 +243,22 @@ pub async fn batch_update_mods(
     ));
   }
 
+  let mut resolved_downloads = Vec::with_capacity(total_mods);
+  for mod_data in &mods {
+    resolved_downloads.push(
+      resolve_download_files(
+        &catalog_state,
+        &policy,
+        &mod_data.mod_id,
+        &mod_data.download_files,
+        None,
+      )
+      .await
+      .map_err(|error| format!("Failed to resolve download files: {error:?}")),
+    );
+  }
+  let has_updatable_mods = resolved_downloads.iter().any(Result::is_ok);
+
   let (addons_path, filename) = {
     let mut mod_manager = MANAGER.lock().unwrap();
     mod_manager.set_backup_manager_app_handle(app_handle.clone());
@@ -250,7 +270,7 @@ pub async fn batch_update_mods(
     (addons_path, filename)
   };
 
-  if !skip_backup {
+  if !skip_backup && has_updatable_mods {
     log::info!("Creating addons backup before updating mods");
 
     let backup_dir = {
@@ -302,62 +322,24 @@ pub async fn batch_update_mods(
   let mut failed = Vec::new();
   let mut installed_mods = Vec::new();
 
-  for (index, mod_data) in mods.iter().enumerate() {
-    let progress_pct = (index as f64 / total_mods as f64) * 100.0;
-
-    app_handle
-      .emit(
-        "batch-update-progress",
-        BatchUpdateProgressEvent {
-          current_step: "cleaning".to_string(),
-          current_mod_index: index,
-          total_mods,
-          current_mod_name: mod_data.mod_name.clone(),
-          overall_progress: progress_pct,
-        },
-      )
-      .ok();
-
-    let addons_path_for_profile = if profile_folder.is_empty() {
-      addons_path.clone()
-    } else {
-      addons_path.join(&profile_folder)
+  for (index, (mod_data, download_files)) in mods.iter().zip(resolved_downloads).enumerate() {
+    let download_files = match download_files {
+      Ok(files) => files,
+      Err(reason) => {
+        log::error!(
+          "Failed to resolve downloads for mod {}: {reason}",
+          mod_data.mod_id
+        );
+        failed.push((mod_data.mod_id.clone(), reason));
+        continue;
+      }
     };
-
-    let vpk_manager = crate::mod_manager::vpk_manager::VpkManager::new();
+    let progress_pct = (index as f64 / total_mods as f64) * 100.0;
     let profile_folder_option = if profile_folder.is_empty() {
       None
     } else {
       Some(profile_folder.clone())
     };
-    let removed = {
-      let mut mod_manager = MANAGER.lock().unwrap();
-      match mod_manager.remove_mod_vpks(
-        &mod_data.mod_id,
-        &mod_data.installed_vpks,
-        profile_folder_option.clone(),
-      ) {
-        Ok(result) => result,
-        Err(error) => {
-          log::error!(
-            "Failed to prepare mod {} for update: {:?}",
-            mod_data.mod_id,
-            error
-          );
-          failed.push((
-            mod_data.mod_id.clone(),
-            format!("Failed to remove old VPKs: {error:?}"),
-          ));
-          continue;
-        }
-      }
-    };
-    log::info!(
-      "Removed {} old VPKs for mod {} before update",
-      removed.count,
-      mod_data.mod_id
-    );
-    let install_order = removed.install_order;
 
     app_handle
       .emit(
@@ -367,20 +349,18 @@ pub async fn batch_update_mods(
           current_mod_index: index,
           total_mods,
           current_mod_name: mod_data.mod_name.clone(),
-          overall_progress: progress_pct + (1.0 / total_mods as f64) * 30.0,
+          overall_progress: progress_pct,
         },
       )
       .ok();
 
-    let app_local_data_dir = app_handle
-      .path()
-      .app_local_data_dir()
-      .map_err(Error::Tauri)?;
+    let app_local_data_dir =
+      crate::runtime_environment::app_local_data_dir(&app_handle).map_err(Error::Tauri)?;
     let target_dir = app_local_data_dir.join("mods").join(&mod_data.mod_id);
 
     let task = DownloadTask {
       mod_id: mod_data.mod_id.clone(),
-      files: mod_data.download_files.clone(),
+      files: download_files,
       target_dir,
       profile_folder: profile_folder_option.clone(),
       is_profile_import: false,
@@ -388,94 +368,17 @@ pub async fn batch_update_mods(
     };
 
     let manager = get_download_manager(app_handle.clone()).await;
-    manager.queue_download(task).await?;
-
-    let mut download_complete = false;
-    let mut download_error: Option<String> = None;
-    let start_time = std::time::Instant::now();
-    let timeout_duration = std::time::Duration::from_secs(600);
-
-    while !download_complete && start_time.elapsed() < timeout_duration {
-      tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-
-      match manager.get_download_status(&mod_data.mod_id).await {
-        Ok(Some(status)) => {
-          if status.status == "downloading" {
-            continue;
-          }
-          download_complete = true;
-        }
-        Ok(None) => {
-          download_complete = true;
-        }
-        Err(e) => {
-          download_error = Some(format!("Failed to check download status: {:?}", e));
-          break;
-        }
-      }
-    }
-
-    if !download_complete || download_error.is_some() {
-      let err_msg = download_error.unwrap_or_else(|| "Download timeout".to_string());
-      log::error!("Download failed for mod {}: {}", mod_data.mod_id, err_msg);
-      failed.push((mod_data.mod_id.clone(), err_msg));
-      continue;
-    }
-
-    let mut vpks_found = false;
-    let max_retries = 10;
-    let mut retry_delay_ms = 100;
-
-    for attempt in 0..max_retries {
-      match vpk_manager.find_prefixed_vpks(&addons_path_for_profile, &mod_data.mod_id) {
-        Ok(vpks) if !vpks.is_empty() => {
-          log::info!(
-            "Download completed for mod: {} (found {} VPKs after {} attempts)",
-            mod_data.mod_id,
-            vpks.len(),
-            attempt + 1
-          );
-          vpks_found = true;
-          break;
-        }
-        Ok(_) => {
-          if attempt < max_retries - 1 {
-            log::debug!(
-              "VPKs not found yet for mod {} (attempt {}/{}), waiting {}ms",
-              mod_data.mod_id,
-              attempt + 1,
-              max_retries,
-              retry_delay_ms
-            );
-            tokio::time::sleep(std::time::Duration::from_millis(retry_delay_ms)).await;
-            retry_delay_ms = std::cmp::min(retry_delay_ms * 2, 1000);
-          }
-        }
-        Err(e) => {
-          log::error!("Failed to check VPKs for mod {}: {:?}", mod_data.mod_id, e);
-          failed.push((
-            mod_data.mod_id.clone(),
-            format!("Failed to verify download: {:?}", e),
-          ));
-          break;
-        }
-      }
-    }
-
-    if !vpks_found {
-      if !failed.iter().any(|(id, _)| id == &mod_data.mod_id) {
+    let prepared = match manager.queue_download_and_prepare(task).await {
+      Ok(prepared) => prepared,
+      Err(error) => {
         log::error!(
-          "Download completed but no VPKs found for mod: {} after {} retries",
-          mod_data.mod_id,
-          max_retries
+          "Failed to prepare update for mod {}: {error}",
+          mod_data.mod_id
         );
-        failed.push((
-          mod_data.mod_id.clone(),
-          "Download completed but no VPKs found".to_string(),
-        ));
+        failed.push((mod_data.mod_id.clone(), error.to_string()));
+        continue;
       }
-      continue;
-    }
+    };
 
     app_handle
       .emit(
@@ -492,17 +395,13 @@ pub async fn batch_update_mods(
 
     let install_result = {
       let mut mod_manager = MANAGER.lock().unwrap();
-      let deadlock_mod = Mod {
-        id: mod_data.mod_id.clone(),
-        name: mod_data.mod_name.clone(),
-        is_map: mod_data.is_map,
-        installed_vpks: Vec::new(),
-        file_tree: mod_data.file_tree.clone(),
-        install_order,
-        original_vpk_names: Vec::new(),
-      };
-
-      mod_manager.install_mod(deadlock_mod, profile_folder_option)
+      mod_manager.update_mod_from_prepared(
+        &mod_data.mod_id,
+        &mod_data.mod_name,
+        &prepared.vpk_paths,
+        mod_data.file_tree.clone(),
+        profile_folder_option,
+      )
     };
 
     match install_result {
@@ -537,6 +436,34 @@ pub async fn batch_update_mods(
     )
     .ok();
 
+  let profile_folder_option = if profile_folder.is_empty() {
+    None
+  } else {
+    Some(profile_folder.clone())
+  };
+  let mut vpk_mappings = Vec::new();
+  if !succeeded.is_empty() {
+    let mut mod_manager = MANAGER.lock().unwrap();
+    if let Err(error) = mod_manager.reorder_all_mods_for_profile(profile_folder_option.clone()) {
+      log::warn!("Post-batch reorder failed: {error}");
+    }
+    if let Ok(addons_path) = mod_manager.get_addons_path(profile_folder_option.as_deref())
+      && let Ok(manifest) = ProfileVpkManifest::load(&addons_path)
+    {
+      for info in &mut installed_mods {
+        if let Some(entry) = manifest.mods.get(&info.mod_id) {
+          info.installed_vpks = entry.current_vpks.clone();
+        }
+      }
+      vpk_mappings = manifest
+        .mods
+        .iter()
+        .filter(|(_, entry)| entry.enabled && !entry.current_vpks.is_empty())
+        .map(|(mod_id, entry)| (mod_id.clone(), entry.current_vpks.clone()))
+        .collect();
+    }
+  }
+
   log::info!(
     "Batch mod update completed: {} succeeded, {} failed",
     succeeded.len(),
@@ -548,6 +475,7 @@ pub async fn batch_update_mods(
     succeeded,
     failed,
     installed_mods,
+    vpk_mappings,
   })
 }
 
@@ -892,6 +820,8 @@ pub struct StageDownloadArchiveResult {
 
 #[tauri::command]
 pub async fn stage_download_archive(
+  catalog_state: State<'_, super::gamebanana_catalog::GameBananaCatalogState>,
+  policy: State<'_, super::policy::PolicyState>,
   mod_id: String,
   profile_folder: Option<String>,
   archive_url: String,
@@ -913,35 +843,41 @@ pub async fn stage_download_archive(
     return Err(Error::GamePathNotSet);
   }
 
-  validate_download_url(&archive_url)?;
   let safe_archive_name = sanitize_archive_name(&archive_name)?;
-
-  let client = reqwest::Client::builder()
-    .build()
-    .map_err(|e| Error::Network(format!("Failed to build HTTP client: {e}")))?;
-
-  let response = client
-    .get(&archive_url)
-    .send()
-    .await
-    .map_err(|e| Error::Network(format!("Failed to fetch {}: {e}", archive_url)))?;
-
-  if !response.status().is_success() {
-    return Err(Error::DownloadFailed(format!(
-      "{} returned status {}",
-      archive_url,
-      response.status()
-    )));
-  }
-
-  let bytes = response
-    .bytes()
-    .await
-    .map_err(|e| Error::DownloadFailed(format!("Failed reading body for {}: {e}", archive_url)))?;
-
+  let file = resolve_download_files(
+    &catalog_state,
+    &policy,
+    &mod_id,
+    &[DownloadFileDto {
+      url: archive_url,
+      name: safe_archive_name.clone(),
+      size: 0,
+      md5_checksum: None,
+    }],
+    None,
+  )
+  .await?
+  .into_iter()
+  .next()
+  .ok_or(Error::ModFileNotFound)?;
   let temp_dir = tempfile::tempdir()?;
   let archive_path = temp_dir.path().join(&safe_archive_name);
-  std::fs::write(&archive_path, &bytes)?;
+  crate::download_manager::downloader::download_file_resumable(
+    &file.url,
+    &archive_path,
+    file.size,
+    |_| {},
+    tokio_util::sync::CancellationToken::new(),
+    crate::download_manager::downloader::PauseHandle::new(),
+    Some(if file.size == 0 {
+      2 * 1024 * 1024 * 1024
+    } else {
+      file.size.min(2 * 1024 * 1024 * 1024)
+    }),
+    file.md5_checksum.as_deref(),
+    true,
+  )
+  .await?;
 
   let extract_dir = temp_dir.path().join("extracted");
 

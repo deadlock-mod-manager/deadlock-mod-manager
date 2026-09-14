@@ -17,6 +17,7 @@ import {
   type LiveBroadcast,
   liveBroadcastSchema,
 } from "@/lib/validation/live-match";
+import { runtimeServiceOrigin } from "@/lib/runtime-bootstrap";
 
 // The scoreboard model itself lives in `live-players`; re-exported so callers
 // keep one import for the whole live feature.
@@ -26,6 +27,7 @@ export type { LiveBroadcast };
 const logger = createLogger("live-match");
 
 const BASE_URL = "https://api.deadlock-api.com";
+const apiBaseUrl = (): string => runtimeServiceOrigin("deadlockApi", BASE_URL);
 
 /**
  * Resolving this makes the API spectate the lobby, which is why it is capped at
@@ -34,9 +36,12 @@ const BASE_URL = "https://api.deadlock-api.com";
 export const getLiveBroadcast = async (
   matchId: string,
 ): Promise<LiveBroadcast> => {
-  const response = await fetch(`${BASE_URL}/v1/matches/${matchId}/live/url`, {
-    headers: API_HEADERS,
-  });
+  const response = await fetch(
+    `${apiBaseUrl()}/v1/matches/${matchId}/live/url`,
+    {
+      headers: API_HEADERS,
+    },
+  );
   if (!response.ok) {
     throw new DeadlockApiError(response.status, "/live/url");
   }
@@ -84,7 +89,7 @@ export const subscribeToLiveMatch = (
   onStatus: (status: LiveStatus) => void,
   onSamples?: (samples: LiveMatchSample[]) => void,
 ): (() => void) => {
-  const url = new URL(`${BASE_URL}/v1/matches/demo/live/query`);
+  const url = new URL(`${apiBaseUrl()}/v1/matches/demo/live/query`);
   url.searchParams.set("query", LIVE_QUERY);
   url.searchParams.set("broadcast_url", broadcastUrl);
 

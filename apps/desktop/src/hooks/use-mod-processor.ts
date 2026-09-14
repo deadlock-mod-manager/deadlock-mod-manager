@@ -26,6 +26,7 @@ import {
   writeFileText,
 } from "@/lib/file-utils";
 import logger from "@/lib/logger";
+import { getRuntimeBootstrap } from "@/lib/runtime-bootstrap";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus, type ModFileTree } from "@/types/mods";
 
@@ -176,7 +177,8 @@ export const useModProcessor = () => {
     setProcessing(true, t("addMods.validatingMetadata"));
 
     const modId = `local-${crypto.randomUUID()}`;
-    const base = await appLocalDataDir();
+    const base =
+      (await getRuntimeBootstrap()).appDataPath ?? (await appLocalDataDir());
     const modsRoot = await join(base, "mods");
     const modDir = await join(modsRoot, modId);
     const filesDir = await join(modDir, "files");
@@ -343,7 +345,8 @@ export const useModProcessor = () => {
     setProcessing(true, t("addMods.validatingMetadata"));
 
     const modId = `local-${crypto.randomUUID()}`;
-    const base = await appLocalDataDir();
+    const base =
+      (await getRuntimeBootstrap()).appDataPath ?? (await appLocalDataDir());
     const modsRoot = await join(base, "mods");
     const modDir = await join(modsRoot, modId);
 

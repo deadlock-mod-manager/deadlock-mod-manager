@@ -13,6 +13,7 @@ import { useHeroSelection } from "@/hooks/use-hero-selection";
 import useUninstall from "@/hooks/use-uninstall";
 import { groupModsByHero, type HeroModGroup } from "@/lib/mods/hero-mods";
 import { deriveActiveArchiveNames } from "@/lib/mods/mod-variants";
+import { filterHiddenNSFWItems } from "@/lib/mods/nsfw-visibility";
 import { usePersistedStore } from "@/lib/store";
 import type { LocalMod } from "@/types/mods";
 
@@ -27,6 +28,11 @@ const Skins = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const localMods = usePersistedStore((state) => state.localMods);
+  const hideNSFW = usePersistedStore((state) => state.nsfwSettings.hideNSFW);
+  const visibleMods = useMemo(
+    () => filterHiddenNSFWItems(localMods, hideNSFW) ?? [],
+    [localMods, hideNSFW],
+  );
   const hiddenHeroMods = usePersistedStore((state) => state.hiddenHeroMods);
   const heroExtrasEnabled = usePersistedStore(
     (state) => state.heroExtrasEnabled,
@@ -56,11 +62,11 @@ const Skins = () => {
 
   const groups = useMemo(
     () =>
-      groupModsByHero(localMods, {
+      groupModsByHero(visibleMods, {
         includeExtras: heroExtrasEnabled,
         hidden,
       }),
-    [localMods, heroExtrasEnabled, hidden],
+    [visibleMods, heroExtrasEnabled, hidden],
   );
 
   const entries = useMemo<HeroListEntry[]>(() => {
@@ -198,7 +204,7 @@ const Skins = () => {
         <AssignModDialog
           hero={effectiveHero}
           hidden={hidden}
-          mods={localMods}
+          mods={visibleMods}
           onAssign={handleAssign}
           onOpenChange={setAssigning}
           open={assigning}

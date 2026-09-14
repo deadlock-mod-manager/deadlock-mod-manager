@@ -14,9 +14,9 @@ export interface ServerPingResult {
   latencyMs: number | null;
 }
 
-export const initializeApiUrl = async (): Promise<void> => {
+export const initializeApiUrl = async (apiUrl = BASE_URL): Promise<void> => {
   try {
-    await invoke("set_api_url", { apiUrl: BASE_URL });
+    await invoke("set_api_url", { apiUrl });
   } catch (error) {
     logger.withError(error).error("Failed to set API URL in Rust backend");
   }

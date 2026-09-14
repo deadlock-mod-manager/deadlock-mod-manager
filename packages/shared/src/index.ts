@@ -17,6 +17,7 @@ export * from "./schemas/crosshair.schemas";
 export * from "./schemas/feature-flag.schemas";
 export * from "./schemas/fileserver.schemas";
 export * from "./schemas/mod.schemas";
+export * from "./schemas/policy.schemas";
 export * from "./schemas/profile.schemas";
 export * from "./schemas/report.schemas";
 export * from "./schemas/server-browser.schemas";

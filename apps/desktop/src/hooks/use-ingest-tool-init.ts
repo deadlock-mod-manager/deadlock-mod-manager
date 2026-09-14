@@ -6,7 +6,7 @@ import { usePersistedStore } from "@/lib/store";
 /**
  * Hook to initialize the ingest tool on app startup if enabled
  */
-export const useIngestToolInit = () => {
+export const useIngestToolInit = (integrationEnabled = true) => {
   const ingestToolEnabled = usePersistedStore(
     (state) => state.ingestToolEnabled,
   );
@@ -14,7 +14,7 @@ export const useIngestToolInit = () => {
 
   useEffect(() => {
     const initializeIngestTool = async () => {
-      if (!ingestToolEnabled) {
+      if (!integrationEnabled || !ingestToolEnabled) {
         logger.debug("Ingest tool is disabled, skipping initialization");
         return;
       }
@@ -33,5 +33,5 @@ export const useIngestToolInit = () => {
     };
 
     initializeIngestTool();
-  }, [ingestToolEnabled]);
+  }, [ingestToolEnabled, integrationEnabled]);
 };

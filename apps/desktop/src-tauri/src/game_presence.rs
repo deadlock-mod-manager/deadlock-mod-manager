@@ -184,6 +184,12 @@ fn spawn_watcher(app_handle: &AppHandle, presence_enabled: bool) -> Result<(), E
 }
 
 pub(crate) fn ensure_watcher(app_handle: &AppHandle) -> Result<(), Error> {
+  if crate::runtime_environment::is_e2e_active() {
+    PRESENCE_DESIRED.store(false, Ordering::Relaxed);
+    MONITORING_DESIRED.store(false, Ordering::Relaxed);
+    stop_current(Some(app_handle));
+    return Ok(());
+  }
   let _guard = COORDINATOR_LOCK
     .lock()
     .unwrap_or_else(std::sync::PoisonError::into_inner);

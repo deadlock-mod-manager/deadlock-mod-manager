@@ -1,5 +1,8 @@
-import { ValidationError } from "@deadlock-mods/common";
-import { db, ModRepository } from "@deadlock-mods/database";
+import {
+  db,
+  type PolicyIdentity,
+  PolicyRuleRepository,
+} from "@deadlock-mods/database";
 import { Command } from "@sapphire/framework";
 import { type GuildMember } from "discord.js";
 import { logger as mainLogger } from "../lib/logger";
@@ -7,12 +10,13 @@ import {
   getBlacklistRequiredPermissionsDisplay,
   hasBlacklistPermission,
 } from "../lib/permissions";
+import { parsePolicyIdentity } from "../lib/policy-identity";
 
 const logger = mainLogger.child().withContext({
   service: "blacklist-command",
 });
 
-const modRepository = new ModRepository(db);
+const policyRepository = new PolicyRuleRepository(db);
 
 export class BlacklistCommand extends Command {
   constructor(context: Command.LoaderContext, options: Command.Options) {
@@ -31,7 +35,7 @@ export class BlacklistCommand extends Command {
             .addStringOption((option) =>
               option
                 .setName("mod_id_or_url")
-                .setDescription("GameBanana mod ID or URL")
+                .setDescription("GameBanana mod/sound ID or URL")
                 .setRequired(true),
             )
             .addStringOption((option) =>
@@ -48,7 +52,7 @@ export class BlacklistCommand extends Command {
             .addStringOption((option) =>
               option
                 .setName("mod_id_or_url")
-                .setDescription("GameBanana mod ID or URL")
+                .setDescription("GameBanana mod/sound ID or URL")
                 .setRequired(true),
             ),
         ),
@@ -72,13 +76,13 @@ export class BlacklistCommand extends Command {
 
     try {
       // Extract mod ID from URL if needed
-      const modId = this.extractModId(modIdOrUrl);
+      const identity = parsePolicyIdentity(modIdOrUrl);
 
       if (subcommand === "add") {
         const reason = interaction.options.getString("reason", true);
-        return await this.handleAdd(interaction, modId, reason);
+        return await this.handleAdd(interaction, identity, reason);
       } else if (subcommand === "remove") {
-        return await this.handleRemove(interaction, modId);
+        return await this.handleRemove(interaction, identity);
       }
     } catch (error) {
       logger
@@ -97,97 +101,70 @@ export class BlacklistCommand extends Command {
     }
   }
 
-  private extractModId(input: string): string {
-    // If it's already just a number, return it
-    if (/^\d+$/.test(input)) {
-      return input;
-    }
-
-    // Extract from GameBanana URL
-    const gamebananaMatch = input.match(/gamebanana\.com\/mods\/(\d+)/i);
-    if (gamebananaMatch) {
-      return gamebananaMatch[1];
-    }
-
-    // If we can't extract a valid ID, throw an error
-    throw new ValidationError("Invalid mod ID or URL format");
-  }
-
   private async handleAdd(
     interaction: Command.ChatInputCommandInteraction,
-    modId: string,
+    identity: PolicyIdentity,
     reason: string,
   ) {
     const { user } = interaction;
 
-    // Check if mod exists
-    const mod = await modRepository.findByRemoteIdIncludingBlacklisted(modId);
-    if (!mod) {
+    const existing = await policyRepository.find(identity, "blacklisted");
+    if (existing) {
       return interaction.reply({
-        content: `Mod with ID \`${modId}\` not found.`,
+        content: `${this.displayIdentity(identity)} is already blacklisted.`,
       });
     }
 
-    // Check if already blacklisted
-    if (mod.isBlacklisted) {
-      return interaction.reply({
-        content: `Mod \`${mod.name}\` is already blacklisted.`,
-      });
-    }
-
-    // Blacklist the mod
-    await modRepository.blacklistMod(modId, reason, user.id);
+    await policyRepository.upsert({
+      ...identity,
+      kind: "blacklisted",
+      reason,
+      createdBy: user.id,
+    });
 
     logger
       .withMetadata({
         userId: user.id,
         username: user.username,
-        modId,
-        modName: mod.name,
-        reason,
+        submissionType: identity.submissionType,
+        submissionId: identity.submissionId,
       })
       .info("Mod blacklisted");
 
     return interaction.reply({
-      content: `Successfully blacklisted mod \`${mod.name}\` (ID: \`${modId}\`)\n**Reason:** ${reason}`,
+      content: `Successfully blacklisted ${this.displayIdentity(identity)}.\n**Reason:** ${reason}`,
     });
   }
 
   private async handleRemove(
     interaction: Command.ChatInputCommandInteraction,
-    modId: string,
+    identity: PolicyIdentity,
   ) {
     const { user } = interaction;
 
-    // Check if mod exists
-    const mod = await modRepository.findByRemoteIdIncludingBlacklisted(modId);
-    if (!mod) {
+    const removed = await policyRepository.delete(identity, "blacklisted");
+    if (!removed) {
       return interaction.reply({
-        content: `Mod with ID \`${modId}\` not found.`,
+        content: `${this.displayIdentity(identity)} is not blacklisted.`,
       });
     }
-
-    // Check if not blacklisted
-    if (!mod.isBlacklisted) {
-      return interaction.reply({
-        content: `Mod \`${mod.name}\` is not blacklisted.`,
-      });
-    }
-
-    // Unblacklist the mod
-    await modRepository.unblacklistMod(modId);
 
     logger
       .withMetadata({
         userId: user.id,
         username: user.username,
-        modId,
-        modName: mod.name,
+        submissionType: identity.submissionType,
+        submissionId: identity.submissionId,
       })
       .info("Mod unblacklisted");
 
     return interaction.reply({
-      content: `Successfully removed mod \`${mod.name}\` (ID: \`${modId}\`) from blacklist.`,
+      content: `Successfully removed ${this.displayIdentity(identity)} from the blacklist.`,
     });
+  }
+
+  private displayIdentity(identity: PolicyIdentity): string {
+    const type = identity.submissionType === "sound" ? "sound" : "mod";
+    return `${type} ID \`${identity.submissionId}\``;
   }
 }

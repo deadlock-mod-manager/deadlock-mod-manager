@@ -27,6 +27,7 @@ export const useBatchUpdate = () => {
     getActiveProfile,
     setInstalledVpks,
     setSelectedDownloads: setStoreSelectedDownloads,
+    updateModVpksAfterReorder,
     localMods,
     backupEnabled,
     maxBackupCount,
@@ -80,26 +81,7 @@ export const useBatchUpdate = () => {
           selectedDownloads = matched.length > 0 ? matched : update.downloads;
         }
 
-        let selectedFileTree = localMod?.installedFileTree;
-        if (
-          selectedFileTree &&
-          localMod?.installedVpks &&
-          localMod.installedVpks.length > 0
-        ) {
-          const installedNames = new Set(
-            localMod.installedVpks.map((vpkPath) => {
-              const filename = vpkPath.split(/[\\/]/).pop() || "";
-              return filename.replace(new RegExp(`^${localMod.remoteId}_`), "");
-            }),
-          );
-          selectedFileTree = {
-            ...selectedFileTree,
-            files: selectedFileTree.files.map((f) => ({
-              ...f,
-              is_selected: installedNames.has(f.name),
-            })),
-          };
-        }
+        const selectedFileTree = localMod?.installedFileTree;
 
         return {
           mod: update.mod,
@@ -181,6 +163,11 @@ export const useBatchUpdate = () => {
       });
 
       const result = BatchUpdateResultSchema.parse(rawResult);
+      const activeProfileId = activeProfile?.id;
+
+      if (result.vpkMappings && result.vpkMappings.length > 0) {
+        updateModVpksAfterReorder(result.vpkMappings, activeProfileId);
+      }
 
       for (const installedModInfo of result.installedMods) {
         const updatableMod = updatableMods.find(

@@ -1,0 +1,38 @@
+{
+  "_aMetadata": {
+    "_nRecordCount": 3606,
+    "_bIsComplete": false,
+    "_nPerpage": 1
+  },
+  "_aRecords": [
+    {
+      "_idRow": 92659,
+      "_sModelName": "Sound",
+      "_sName": "Peacemaker S1 intro over blasted",
+      "_sProfileUrl": "https://gamebanana.com/sounds/92659",
+      "_tsDateAdded": 1788037055,
+      "_tsDateModified": 1788037055,
+      "_bHasFiles": true,
+      "_aTags": [],
+      "_aPreviewMedia": {
+        "_aMetadata": {
+          "_sAudioUrl": "https://files.gamebanana.com/preview/sounds/peacemaker-opening-credits-hbo-max-.mp3"
+        }
+      },
+      "_aSubmitter": {
+        "_idRow": 4198210,
+        "_sName": "suckiez"
+      },
+      "_aGame": {
+        "_idRow": 20948,
+        "_sName": "Deadlock"
+      },
+      "_aRootCategory": {
+        "_sName": "Abilities"
+      },
+      "_bIsObsolete": false,
+      "_sInitialVisibility": "show",
+      "_bHasContentRatings": false
+    }
+  ]
+}

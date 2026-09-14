@@ -848,6 +848,7 @@
     "vpkCount": "{{count}} VPK(s)"
   },
   "mods": {
+    "invalidDeepLink": "This 1-click download link is invalid.",
     "manageOrder": "Change Mods Order",
     "searchPlaceholder": "Search mods",
     "noPreviewAvailable": "No preview available",
@@ -868,6 +869,14 @@
     "subtitle": "Updated hourly, with new mods added every hour.",
     "mapsSubtitle": "Browse custom maps for Deadlock",
     "mapsWarning": "Custom maps are experimental and largely depend on how their authors package them. Not all maps will work out of the box through the mod manager.",
+    "catalogSyncing": "The local GameBanana catalog is still syncing. Results will appear as pages are saved.",
+    "catalogSyncTitle": "Syncing GameBanana catalog…",
+    "catalogSyncPercentage": "{{percentage}}%",
+    "catalogSyncDetails": "Mod details and images may be incomplete while syncing. They will appear as the catalog updates.",
+    "catalogSyncCount": "{{count}} entries saved",
+    "catalogSyncFailed": "Catalog sync interrupted",
+    "catalogSyncRetryHint": "Saved entries are still available. Retry to continue syncing.",
+    "catalogStale": "Showing the last saved GameBanana catalog while fresh provider data is unavailable.",
     "noModsFound": "No mods found",
     "noModsMatchFilters": "No mods match your current search and filters",
     "noModsAvailable": "No mods available",
@@ -1150,6 +1159,8 @@
     "openGameFolder": "Open Game Folder",
     "openModsFolder": "Open Mods Folder",
     "openModsDataFolder": "Open App Data Folder",
+    "clearCatalog": "Clear catalog and resync",
+    "clearCatalogDescription": "Delete the local GameBanana catalog and rebuild it from scratch. Installed mods and profiles are kept.",
     "clearDownloadCache": "Clear Download Cache",
     "clearDownloadCacheDescription": "Removes cached download files. Your installed mods are not affected.",
     "confirmClearDownloadCache": "This will remove downloaded archives and extracted files for remote mods. Local mods are preserved.",
@@ -1654,16 +1665,17 @@
   },
   "matchSync": {
     "title": "Match Data Sharing",
-    "description": "Optionally fetch your own Deadlock match data from your machine and contribute it to deadlock-api trackers.",
+    "description": "Automatically upload your Deadlock matches to trackers like Statlocker, Tracklock and deadlock-api, so your match history and stats there are complete.",
     "about": {
       "reads": "Reads your local Steam login (the auto-login token already stored on this machine) to talk to Steam on your behalf.",
-      "sends": "Sends only match IDs and match salts to deadlock-api, never your token, password, or personal data.",
+      "sends": "Sends only match IDs and salts to deadlock-api, never your login or personal data.",
       "limit": "Strictly rate-limited to {{limit}} match fetches per 24 hours, shared across everything below.",
-      "risk": "This acts through your real Steam account, so the risk is low but not zero. Enable it only if you accept that."
+      "risk": "Uses your Steam account. Low risk, but not zero.",
+      "summary": "Uses your Steam account, but only shares match IDs, never your login or personal data."
     },
     "enable": {
       "title": "Enable match data sharing",
-      "description": "Nothing is read from your machine or sent anywhere until you turn this on."
+      "description": "On by default. Turn this off to stop sharing your match data."
     },
     "consent": {
       "title": "Enable match data sharing?",
@@ -2914,6 +2926,12 @@
     "importDescription": "Enter a Profile ID to import a shared profile from another user.",
     "importPreview": "Import Profile Preview",
     "importPreviewDescription": "Review the profile contents before importing. Choose how to save this profile.",
+    "legacyIdentityTitle": "Choose the matching GameBanana item",
+    "legacyIdentityDescription": "This older profile ID exists as both a mod and a sound.",
+    "legacyIdentityPlaceholder": "Select mod or sound",
+    "legacyIdentityRequired": "Choose whether each ambiguous item is a mod or sound.",
+    "submissionTypeMod": "Mod",
+    "submissionTypeSound": "Sound",
     "profileIdPlaceholder": "Enter Profile ID (e.g., abc123def456)",
     "profileIdRequired": "Profile ID is required",
     "importSuccess": "Profile imported successfully!",

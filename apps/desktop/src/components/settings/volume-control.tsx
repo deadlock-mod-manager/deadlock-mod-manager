@@ -35,6 +35,7 @@ const VolumeControl = () => {
         {getVolumeIcon()}
         <div className='flex-1'>
           <Slider
+            aria-label={t("settings.audioVolume")}
             className='w-full'
             max={100}
             min={0}

@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, fs, io::ErrorKind, path::Path};
 
 const MANIFEST_FILENAME: &str = ".dmm.json";
-const CURRENT_MANIFEST_VERSION: u32 = 2;
+const CURRENT_MANIFEST_VERSION: u32 = 3;
 
 const fn current_manifest_version() -> u32 {
   CURRENT_MANIFEST_VERSION
@@ -116,7 +116,8 @@ impl ProfileVpkManifest {
       }
       let base = ProfileBase::from_snapshot(&profile_path)?;
       let manifest = Self::load(&profile_path)?;
-      for (mod_id, entry) in manifest.mods {
+      let mut claimed = std::collections::BTreeMap::<String, String>::new();
+      for (mod_id, entry) in &manifest.mods {
         let missing: Vec<String> = entry
           .file_paths(&base)
           .into_iter()
@@ -128,6 +129,14 @@ impl ProfileVpkManifest {
             "Manifest entry {mod_id} references missing VPKs: {}",
             missing.join(", ")
           )));
+        }
+        for path in entry.file_paths(&base) {
+          let key = path.display().to_string();
+          if let Some(owner) = claimed.insert(key.clone(), mod_id.clone()) {
+            return Err(Error::ModInvalid(format!(
+              "Manifest entries {owner} and {mod_id} both claim {key}"
+            )));
+          }
         }
       }
     }
@@ -243,7 +252,7 @@ impl ProfileVpkManifest {
       if manifest.mods.is_empty() {
         fs::remove_dir_all(&clear_staging)?;
       } else {
-        recover_staging_directory(&base, &clear_staging, RecoveryMode::Strict)?;
+        recover_staging_directory(&base, &clear_staging, RecoveryMode::Strict, manifest)?;
       }
     }
 
@@ -253,6 +262,7 @@ impl ProfileVpkManifest {
         &base,
         &reorder_staging,
         RecoveryMode::AvoidEnabledCollisions,
+        manifest,
       )?;
     }
 
@@ -271,7 +281,7 @@ impl ProfileVpkManifest {
         continue;
       };
       if manifest.mods.contains_key(mod_id) {
-        recover_staging_directory(&base, &path, RecoveryMode::Strict)?;
+        recover_staging_directory(&base, &path, RecoveryMode::Strict, manifest)?;
       } else {
         fs::remove_dir_all(path)?;
       }
@@ -343,6 +353,33 @@ impl ProfileVpkManifest {
 
   pub fn remove_mod(&mut self, mod_id: &str) {
     self.mods.remove(mod_id);
+  }
+
+  pub fn migrate_mod_identity(&mut self, from: &str, to: &str) -> Result<(), Error> {
+    if from == to {
+      return Ok(());
+    }
+
+    if self.mods.contains_key(from) && self.mods.contains_key(to) {
+      if self.mods.get(from) != self.mods.get(to) {
+        return Err(Error::ModInvalid(format!(
+          "VPK manifest contains conflicting entries for {from} and {to}"
+        )));
+      }
+      self.mods.remove(from);
+    } else if let Some(entry) = self.mods.remove(from) {
+      self.mods.insert(to.to_string(), entry);
+    }
+
+    if let Some(entry) = self.mods.get_mut(to) {
+      for file_name in &mut entry.disabled_vpks {
+        if let Some(suffix) = file_name.strip_prefix(&format!("{from}_")) {
+          *file_name = format!("{to}_{suffix}");
+        }
+      }
+    }
+    self.version = CURRENT_MANIFEST_VERSION;
+    Ok(())
   }
 }
 
@@ -445,6 +482,49 @@ mod tests {
     assert!(written.contains(&format!("\"version\": {CURRENT_MANIFEST_VERSION}")));
     assert!(written.contains("\"shard\": 1"));
     assert_eq!(ProfileVpkManifest::load(&base).unwrap(), loaded);
+  }
+
+  #[test]
+  fn v3_manifest_migrates_sound_keys_and_disabled_file_names_idempotently() {
+    let mut manifest = ProfileVpkManifest {
+      version: 2,
+      mods: BTreeMap::from([(
+        "42".to_string(),
+        ProfileVpkManifestEntry {
+          disabled_vpks: vec!["42_voice.vpk".to_string()],
+          ..ProfileVpkManifestEntry::default()
+        },
+      )]),
+    };
+
+    manifest.migrate_mod_identity("42", "snd-42").unwrap();
+    manifest.migrate_mod_identity("42", "snd-42").unwrap();
+
+    assert_eq!(manifest.version, CURRENT_MANIFEST_VERSION);
+    assert!(!manifest.mods.contains_key("42"));
+    assert_eq!(
+      manifest.mods["snd-42"].disabled_vpks,
+      vec!["snd-42_voice.vpk"]
+    );
+  }
+
+  #[test]
+  fn identity_migration_rejects_conflicting_manifest_entries() {
+    let mut manifest = ProfileVpkManifest {
+      version: 2,
+      mods: BTreeMap::from([
+        ("42".to_string(), ProfileVpkManifestEntry::default()),
+        (
+          "snd-42".to_string(),
+          ProfileVpkManifestEntry {
+            enabled: true,
+            ..ProfileVpkManifestEntry::default()
+          },
+        ),
+      ]),
+    };
+
+    assert!(manifest.migrate_mod_identity("42", "snd-42").is_err());
   }
 
   /// A manifest written by a newer build must not be silently mis-parsed into

@@ -15,6 +15,9 @@ pub struct IngestStatus {
 
 #[tauri::command]
 pub async fn trigger_cache_scan() -> Result<(), Error> {
+  if crate::runtime_environment::is_e2e_active() {
+    return Ok(());
+  }
   log::info!("Triggering cache scan");
 
   let cache_dir = ingest_tool::get_cache_directory()
@@ -29,6 +32,9 @@ pub async fn trigger_cache_scan() -> Result<(), Error> {
 
 #[tauri::command]
 pub async fn start_cache_watcher() -> Result<(), Error> {
+  if crate::runtime_environment::is_e2e_active() {
+    return Ok(());
+  }
   log::info!("Starting cache watcher");
 
   let cache_dir = ingest_tool::get_cache_directory()
@@ -95,6 +101,15 @@ pub async fn stop_cache_watcher() -> Result<(), Error> {
 
 #[tauri::command]
 pub async fn get_ingest_status() -> Result<IngestStatus, Error> {
+  if crate::runtime_environment::is_e2e_active() {
+    let configuration = crate::runtime_environment::current()
+      .e2e()
+      .expect("active E2E runtime has a configuration");
+    return Ok(IngestStatus {
+      is_running: false,
+      cache_directory: Some(configuration.roots.steam_http_cache.display().to_string()),
+    });
+  }
   let is_running = INGEST_WATCHER_RUNNING.load(Ordering::Relaxed);
   let cache_directory = ingest_tool::get_cache_directory().map(|p| p.display().to_string());
 
@@ -106,6 +121,9 @@ pub async fn get_ingest_status() -> Result<IngestStatus, Error> {
 
 #[tauri::command]
 pub async fn initialize_ingest_tool() -> Result<(), Error> {
+  if crate::runtime_environment::is_e2e_active() {
+    return Ok(());
+  }
   log::info!("Initializing ingest tool on startup");
 
   if INGEST_WATCHER_RUNNING.load(Ordering::Relaxed) {

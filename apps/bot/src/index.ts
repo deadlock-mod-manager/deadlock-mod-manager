@@ -8,7 +8,6 @@ import { ProcessManager } from "@/lib/process-manager";
 import healthRouter from "@/routers/health";
 import { BotStartupService } from "@/services/bot-startup";
 import { HealthService } from "@/services/health";
-import { RedisSubscriberService } from "@/services/redis-subscriber";
 import client from "./lib/discord";
 
 const app = new Hono();
@@ -30,19 +29,16 @@ const main = async () => {
   const startupService = new BotStartupService();
   await startupService.initialize(client);
 
-  const redisSubscriber = RedisSubscriberService.getInstance();
   const healthService = HealthService.getInstance();
 
   const processManager = new ProcessManager();
   processManager.setClient(client);
-  processManager.registerShutdownHandler(redisSubscriber);
   processManager.setupSignalHandlers();
 
   client.once("clientReady", async () => {
     logger.info(`Logged in as ${client.user?.tag}`);
 
     try {
-      await redisSubscriber.start();
       logger.info("Bot is fully initialized and ready");
       healthService.markAsReady();
     } catch (error) {

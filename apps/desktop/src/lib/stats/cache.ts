@@ -1,5 +1,6 @@
 import { load, type Store } from "@tauri-apps/plugin-store";
 import { createLogger } from "@/lib/logger";
+import { resolveStorePath } from "@/lib/runtime-bootstrap";
 
 const logger = createLogger("stats-cache");
 
@@ -60,16 +61,16 @@ const evictExpired = async (store: Store): Promise<void> => {
 };
 
 const getCacheStore = (): Promise<Store> => {
-  storePromise ??= load(STORE_FILE, { autoSave: true, defaults: {} }).then(
-    async (store) => {
+  storePromise ??= resolveStorePath(STORE_FILE)
+    .then((storePath) => load(storePath, { autoSave: true, defaults: {} }))
+    .then(async (store) => {
       try {
         await evictExpired(store);
       } catch (error) {
         logger.withError(error).warn("Cache eviction failed");
       }
       return store;
-    },
-  );
+    });
   return storePromise;
 };
 

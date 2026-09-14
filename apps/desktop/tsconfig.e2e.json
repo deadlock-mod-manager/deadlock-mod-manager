@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2023", "DOM"],
+    "noEmit": true,
+    "types": ["node", "@wdio/globals/types", "bun", "mocha"]
+  },
+  "include": ["e2e/**/*.ts"],
+  "exclude": ["node_modules", "dist", "src-tauri"]
+}

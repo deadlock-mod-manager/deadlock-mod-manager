@@ -4,7 +4,6 @@ import type {
   CustomSettingDto,
   FeatureFlag,
   FileserverDto,
-  ModDto,
   PublishedCrosshairDto,
   RelaysHealthResponse,
   ResolveModsResponse,
@@ -14,17 +13,18 @@ import type {
   ServerBrowserListResponse,
   SharedProfile,
 } from "@deadlock-mods/shared";
-import {
-  FileserversResponseSchema,
-  ModDownloadDtoSchema,
-} from "@deadlock-mods/shared";
-import type { z } from "zod";
 import { ensureValidToken } from "./auth/token";
 import { fetch } from "./fetch";
 import { HttpError } from "./http-error";
 import logger from "./logger";
-
-type ModDownloadDto = z.infer<typeof ModDownloadDtoSchema>;
+import { runtimeServiceOrigin } from "./runtime-bootstrap";
+import {
+  checkDirectGameBananaUpdates,
+  getGameBananaCatalogDownloads,
+  getGameBananaCatalogMod,
+  getGameBananaCatalogMods,
+  getDirectGameBananaFileservers,
+} from "./gamebanana-catalog";
 
 export const BASE_URL =
   import.meta.env.VITE_API_URL ?? "https://api.deadlockmods.app";
@@ -45,12 +45,15 @@ const apiRequest = async <T>(
 
   let response: Response;
   try {
-    response = await fetch(`${BASE_URL}${endpoint}`, {
-      method: method ?? (body ? "POST" : "GET"),
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-      credentials: "include",
-    });
+    response = await fetch(
+      `${runtimeServiceOrigin("dmmApi", BASE_URL)}${endpoint}`,
+      {
+        method: method ?? (body ? "POST" : "GET"),
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+        credentials: "include",
+      },
+    );
   } catch (cause) {
     logger.withError(cause).error("API network failure");
     throw new HttpError("backend", 0, endpoint);
@@ -72,40 +75,39 @@ export const getAnnouncements = async () => {
 };
 
 export const getMods = async () => {
-  return await apiRequest<ModDto[]>("/api/v2/mods");
+  return getGameBananaCatalogMods();
 }; // TODO: pagination
 
 export const getMod = async (remoteId: string) => {
-  return await apiRequest<ModDto>(`/api/v2/mods/${remoteId}`);
+  return getGameBananaCatalogMod(remoteId);
 };
 
 export const getModDownload = async (remoteId: string) => {
-  return await apiRequest<ModDownloadDto[]>(
-    `/api/v2/mods/${remoteId}/download`,
-  );
+  return (await getGameBananaCatalogDownloads(remoteId)).downloads;
 };
 
 export const getModDownloads = async (remoteId: string) => {
-  return await apiRequest<{
-    downloads: ModDownloadDto[];
-    count: number;
-  }>(`/api/v2/mods/${remoteId}/downloads`);
+  return getGameBananaCatalogDownloads(remoteId);
 };
 
 export const getGameBananaFileservers = async (): Promise<FileserverDto[]> => {
-  const data = await apiRequest<unknown>("/api/v2/fileservers/gamebanana");
-  return FileserversResponseSchema.parse(data);
+  return getDirectGameBananaFileservers();
 };
 
 export const checkModUpdates = async (
-  mods: Array<{ remoteId: string; installedAt: Date }>,
+  mods: Array<{
+    remoteId: string;
+    installedAt: Date;
+    selectedFileIds: string[];
+  }>,
 ) => {
-  return await apiRequest<{
-    updates: Array<{
-      mod: ModDto;
-      downloads: ModDownloadDto[];
-    }>;
-  }>("/api/v2/mods/check-updates", { mods });
+  return checkDirectGameBananaUpdates(
+    mods.map((mod) => ({
+      remoteId: mod.remoteId,
+      installedAt: Math.floor(mod.installedAt.getTime() / 1_000),
+      selectedFileIds: mod.selectedFileIds,
+    })),
+  );
 };
 
 export const getCustomSettings = async () => {

@@ -1,5 +1,12 @@
 # @deadlock-mods/queue
 
+## 0.2.0
+
+### Minor Changes
+
+- 2130368: Run scheduled jobs in a dedicated worker instead of the API pods
+- daa9b5f: Fix mod catalog updates being skipped for hours at a time
+
 ## 0.1.3
 
 ### Patch Changes

@@ -1,5 +1,31 @@
 # @deadlock-mods/bot
 
+## 1.4.0
+
+### Minor Changes
+
+- 34cbd98: Add provider-identity policy rules, a versioned policy manifest, desktop enforcement, legacy-rule backfill, and Mod/Sound blacklist management.
+- 437e943: Detach reports, Lockdex ingestion, server requirements, website surfaces, statistics, and Discord announcements from the mirrored GameBanana catalog.
+
+### Patch Changes
+
+- cbab84a: Fix direct GameBanana downloads, catalog recovery, and policy metadata.
+- daa9b5f: Fix mod catalog updates being skipped for hours at a time
+- Updated dependencies [2130368]
+- Updated dependencies [1f98b35]
+- Updated dependencies [cbab84a]
+- Updated dependencies [34cbd98]
+- Updated dependencies [55be2ff]
+- Updated dependencies [437e943]
+- Updated dependencies [daa9b5f]
+- Updated dependencies [cbab84a]
+- Updated dependencies [fd4234f]
+  - @deadlock-mods/queue@0.2.0
+  - @deadlock-mods/database@2.2.0
+  - @deadlock-mods/shared@2.2.0
+  - @deadlock-mods/feature-flags@0.2.9
+  - @deadlock-mods/instrumentation@0.1.11
+
 ## 1.3.0
 
 ### Minor Changes

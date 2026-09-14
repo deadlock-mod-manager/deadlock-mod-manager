@@ -1,11 +1,7 @@
 import { readdir, stat } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { RuntimeError } from "@deadlock-mods/common";
-import {
-  db,
-  ModDownloadRepository,
-  VpkRepository,
-} from "@deadlock-mods/database";
+import { db, VpkRepository } from "@deadlock-mods/database";
 import { BaseProcessor } from "@deadlock-mods/queue";
 import { VpkParser } from "@deadlock-mods/vpk-parser";
 import { logger } from "@/lib/logger";
@@ -22,7 +18,6 @@ const MAX_FILE_SIZE = 256 * 1024 * 1024; // 256 MiB
 
 export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
   private static instance: ModFileProcessor | null = null;
-  protected modDownloadRepository: ModDownloadRepository;
   protected vpkRepository: VpkRepository;
 
   private constructor() {
@@ -32,7 +27,6 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
     archiveExtractorFactory.registerExtractor(rarExtractor);
     archiveExtractorFactory.registerExtractor(sevenZipExtractor);
 
-    this.modDownloadRepository = new ModDownloadRepository(db);
     this.vpkRepository = new VpkRepository(db);
   }
 
@@ -45,29 +39,30 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
 
   async process(jobData: ModFileProcessingJobData) {
     try {
-      const modDownload = await this.modDownloadRepository.findById(
-        jobData.modDownloadId,
-      );
-      if (!modDownload) {
-        this.logger.info(
-          `Skipping mod file job: ModDownload not found (record removed or stale queue): ${jobData.modDownloadId}`,
-        );
-        return this.handleSuccess(jobData);
+      const identity = {
+        provider: jobData.provider,
+        submissionType: jobData.submissionType,
+        submissionId: jobData.submissionId,
+      };
+      const upstreamUpdatedAt = new Date(jobData.upstreamUpdatedAt);
+      if (Number.isNaN(upstreamUpdatedAt.getTime())) {
+        throw new RuntimeError("Invalid upstream update marker");
       }
-
-      // Check if this mod download has already been processed by looking for VPK entries
-      const existingVpks = await this.vpkRepository.findByModDownloadId(
-        jobData.modDownloadId,
-      );
-      if (existingVpks.length > 0) {
+      if (
+        await this.vpkRepository.isIngestionComplete(
+          identity,
+          jobData.fileId,
+          upstreamUpdatedAt,
+        )
+      ) {
         this.logger.info(
-          `Skipping already processed mod file: ${jobData.file} for modDownloadId: ${jobData.modDownloadId} (found ${existingVpks.length} existing VPK entries)`,
+          `Skipping completed GameBanana file ${jobData.fileId} at ${jobData.upstreamUpdatedAt}`,
         );
         return this.handleSuccess(jobData);
       }
 
       this.logger.info(
-        `Processing mod file: ${jobData.file} (${jobData.size} bytes) for modDownloadId: ${jobData.modDownloadId}`,
+        `Processing GameBanana file ${jobData.fileId}: ${jobData.file} (${jobData.size} bytes)`,
       );
 
       // Check disk space before processing
@@ -116,7 +111,17 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
 
         try {
           await this.listExtractedFiles(extractionResult.path);
-          await this.parseVpkFiles(extractionResult.path, modDownload);
+          await this.parseVpkFiles(
+            extractionResult.path,
+            identity,
+            jobData.fileId,
+            upstreamUpdatedAt,
+          );
+          await this.vpkRepository.markIngestionComplete(
+            identity,
+            jobData.fileId,
+            upstreamUpdatedAt,
+          );
 
           return this.handleSuccess(jobData);
         } finally {
@@ -216,7 +221,13 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
    */
   private async parseVpkFiles(
     dirPath: string,
-    modDownload: { id: string; modId: string },
+    identity: {
+      provider: "gamebanana";
+      submissionType: "mod" | "sound";
+      submissionId: string;
+    },
+    fileId: string,
+    upstreamUpdatedAt: Date,
   ): Promise<void> {
     const vpkFiles = await this.findVpkFiles(dirPath);
 
@@ -230,8 +241,9 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
     for (const vpkPath of vpkFiles) {
       await this.parseVpkFile(
         vpkPath,
-        modDownload.modId,
-        modDownload.id,
+        identity,
+        fileId,
+        upstreamUpdatedAt,
         dirPath,
       );
     }
@@ -261,6 +273,7 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
         this.logger
           .withError(error)
           .error(`Failed to search directory for VPK files: ${currentPath}`);
+        throw error;
       }
     };
 
@@ -273,8 +286,13 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
    */
   private async parseVpkFile(
     vpkPath: string,
-    modId: string,
-    modDownloadId: string,
+    identity: {
+      provider: "gamebanana";
+      submissionType: "mod" | "sound";
+      submissionId: string;
+    },
+    fileId: string,
+    upstreamUpdatedAt: Date,
     extractionDir: string,
   ): Promise<void> {
     try {
@@ -296,8 +314,9 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
       const sourcePath = relative(extractionDir, vpkPath);
       const fp = parsed.fingerprint;
       const vpkData = {
-        modId,
-        modDownloadId,
+        ...identity,
+        fileId,
+        upstreamUpdatedAt,
         sourcePath,
         sizeBytes: fp.fileSize,
         fastHash: fp.fastHash,
@@ -312,28 +331,19 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
         fileMtime: fp.lastModified ? new Date(fp.lastModified) : null,
       };
 
-      const storedVpk =
-        await this.vpkRepository.upsertByModDownloadIdAndSourcePath(
-          modDownloadId,
-          sourcePath,
-          vpkData,
-        );
+      const storedVpk = await this.vpkRepository.upsertBySource(
+        identity,
+        fileId,
+        sourcePath,
+        vpkData,
+      );
 
-      if (
-        storedVpk.modDownloadId === modDownloadId &&
-        storedVpk.sourcePath === sourcePath
-      ) {
-        this.logger.info(`Stored VPK in database with ID: ${storedVpk.id}`);
-      } else {
-        this.logger.warn(
-          `VPK file ${vpkPath} has duplicate content (SHA256: ${vpkData.sha256}). ` +
-            `Using existing VPK record (ID: ${storedVpk.id}) from modDownloadId: ${storedVpk.modDownloadId}`,
-        );
-      }
+      this.logger.info(`Stored VPK in database with ID: ${storedVpk.id}`);
     } catch (error) {
       this.logger
         .withError(error)
         .error(`Failed to parse VPK file: ${vpkPath}`);
+      throw error;
     }
   }
 }
