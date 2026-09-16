@@ -5,6 +5,7 @@ import { dashboardRouter } from "./dashboard";
 import { featureFlagsRouter } from "./feature-flags";
 import { fileserversRouter } from "./fileservers";
 import { kvRouter } from "./kv";
+import { modAuthorsRouter } from "./mod-authors";
 import { modsRouter } from "./mods";
 import { policyRouter } from "./policy";
 import { profilesRouter } from "./profiles";
@@ -19,6 +20,7 @@ export const v2Router = {
   ...dashboardRouter,
   ...fileserversRouter,
   ...kvRouter,
+  ...modAuthorsRouter,
   ...modsRouter,
   ...policyRouter,
   ...vpkRouter,

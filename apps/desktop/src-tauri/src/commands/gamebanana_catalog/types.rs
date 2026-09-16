@@ -20,6 +20,7 @@ pub struct CatalogModDto {
   #[ts(type = "number")]
   pub likes: u64,
   pub author: String,
+  pub author_remote_id: Option<String>,
   pub downloadable: bool,
   #[ts(type = "number")]
   pub remote_added_at: i64,
@@ -191,6 +192,7 @@ impl CatalogModDto {
       category: record.category,
       likes: record.likes,
       author: record.author,
+      author_remote_id: record.author_remote_id,
       downloadable: record.has_files,
       remote_added_at: record.remote_added_at,
       remote_updated_at: record.remote_updated_at,
@@ -250,6 +252,10 @@ impl CatalogModDto {
       category: normalized.category,
       likes: normalized.likes,
       author: normalized.author,
+      author_remote_id: profile
+        .submitter
+        .as_ref()
+        .and_then(|submitter| (submitter.id > 0).then(|| submitter.id.to_string())),
       downloadable: !profile.files.is_empty(),
       remote_added_at: normalized.remote_added_at,
       remote_updated_at: normalized.remote_updated_at,

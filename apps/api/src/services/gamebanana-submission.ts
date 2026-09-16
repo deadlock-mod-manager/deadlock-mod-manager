@@ -141,6 +141,7 @@ export const fetchGameBananaSubmission = async (
       category,
       likes: profile._nLikeCount ?? 0,
       author: snapshot.author,
+      modAuthorId: null,
       downloadable: (profile._aFiles?.length ?? 0) > 0,
       remoteAddedAt: addedAt,
       remoteUpdatedAt: updatedAt,

@@ -369,6 +369,10 @@ fn record_from_profile(
     submission,
     name: normalized.name,
     author: normalized.author,
+    author_remote_id: profile
+      .submitter
+      .as_ref()
+      .and_then(|submitter| (submitter.id > 0).then(|| submitter.id.to_string())),
     description: normalized.description,
     profile_url: profile.profile_url.clone(),
     category: normalized.category,

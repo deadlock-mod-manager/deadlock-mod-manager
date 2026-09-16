@@ -22,6 +22,7 @@ export const modContentDiffers = (before: Mod, after: Mod): boolean =>
   before.name !== after.name ||
   before.description !== after.description ||
   before.author !== after.author ||
+  before.modAuthorId !== after.modAuthorId ||
   before.likes !== after.likes ||
   before.hero !== after.hero ||
   before.downloadCount !== after.downloadCount ||

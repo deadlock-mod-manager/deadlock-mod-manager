@@ -59,7 +59,7 @@ const FavoritesData = () => {
   return (
     <div className='grid grid-cols-1 gap-4 px-1 pb-24 pr-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
       {favoritedMods.map((mod) => (
-        <ModCard key={mod.id} mod={mod} />
+        <ModCard key={mod.id} mod={mod} collection='favorites' />
       ))}
     </div>
   );

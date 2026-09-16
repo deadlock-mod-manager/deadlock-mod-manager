@@ -459,6 +459,10 @@ fn from_index(
       .filter(|author| !author.is_empty())
       .unwrap_or("Unknown")
       .to_string(),
+    author_remote_id: record
+      .submitter
+      .as_ref()
+      .and_then(|submitter| (submitter.id > 0).then(|| submitter.id.to_string())),
     description: String::new(),
     profile_url,
     category,

@@ -5,7 +5,7 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { ArrowLeft, RefreshCw, Settings, Trash } from "@deadlock-mods/ui/icons";
 import { Warning } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
 import FavoriteButton from "@/components/mod-browsing/favorite-button";
@@ -33,6 +33,7 @@ import { BrokenModButton } from "@/components/reports/report-button";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { useMod } from "@/hooks/use-mod";
+import { useModDetailNavigation } from "@/hooks/use-mod-detail-navigation";
 import { useResolvedDependencies } from "@/hooks/use-mod-dependencies";
 import { useModOptions } from "@/hooks/use-mod-options";
 import { useModDownloads } from "@/hooks/use-mod-downloads";
@@ -51,6 +52,7 @@ const Mod = () => {
   const params = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { collection, backLabel, goBack } = useModDetailNavigation();
   const { isEnabled: isCustomMapsEnabled } = useFeatureFlag(
     "custom-maps",
     false,
@@ -59,23 +61,11 @@ const Mod = () => {
 
   const { data: mod, error, isLoading } = useMod(params.id);
 
-  const goBack = useCallback(() => {
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate("/mods");
-    }
-  }, [navigate]);
-
-  const handleBackClick = useCallback(() => {
-    goBack();
-  }, [goBack]);
-
   useScrollBackButton({
     threshold: 100,
     enabled: true,
     scrollContainerRef,
-    onBackClick: handleBackClick,
+    onBackClick: goBack,
   });
 
   const { availableFiles } = useModDownloads({
@@ -174,7 +164,9 @@ const Mod = () => {
                 size='sm'
                 variant='ghost'>
                 <ArrowLeft className='h-4 w-4' />
-                {t("modDetail.backToMods")}
+                <span className='max-w-96 truncate' title={backLabel}>
+                  {backLabel}
+                </span>
               </Button>
             </div>
 
@@ -240,7 +232,9 @@ const Mod = () => {
               size='sm'
               variant='ghost'>
               <ArrowLeft className='h-4 w-4' />
-              {t("mods.backToMods")}
+              <span className='max-w-96 truncate' title={backLabel}>
+                {backLabel}
+              </span>
             </Button>
           </div>
           {mod.isObsolete && (
@@ -281,6 +275,7 @@ const Mod = () => {
               hasHero={hasHero}
               mod={mod}
               activeArchiveNames={modOptions.activeArchiveNames}
+              collection={collection}
               totalDownloads={modOptions.downloads.length}
             />
             {mod.metadata?.donationLinks &&
