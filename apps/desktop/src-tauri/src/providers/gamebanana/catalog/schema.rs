@@ -12,6 +12,7 @@ diesel::table! {
     slug -> Text,
     name -> Text,
     author -> Text,
+    author_remote_id -> Nullable<Text>,
     description -> Text,
     profile_url -> Text,
     category -> Text,

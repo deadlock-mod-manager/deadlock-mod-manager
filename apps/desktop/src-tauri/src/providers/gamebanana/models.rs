@@ -138,6 +138,8 @@ pub struct Category {
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Submitter {
+  #[serde(rename = "_idRow", default)]
+  pub id: u64,
   #[serde(rename = "_sName", default)]
   pub name: String,
   #[serde(rename = "_aDonationMethods", default)]

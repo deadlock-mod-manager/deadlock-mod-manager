@@ -6,9 +6,21 @@ import {
   toModDto,
 } from "@deadlock-mods/shared";
 import { ORPCError } from "@orpc/server";
+import { parseModAuthorLookup } from "../../lib/mod-author-lookup";
 import { publicProcedure } from "../../lib/orpc";
 
 const modAuthorRepository = new ModAuthorRepository(db);
+
+const getModAuthorProfile = (lookupId: string) => {
+  const lookup = parseModAuthorLookup(lookupId);
+  if (!lookup) return null;
+  return lookup.kind === "id"
+    ? modAuthorRepository.findProfileById(lookup.id)
+    : modAuthorRepository.findProfileByProviderRemoteId(
+        lookup.provider,
+        lookup.remoteId,
+      );
+};
 
 export const modAuthorsRouter = {
   getModAuthorV2: publicProcedure
@@ -16,7 +28,7 @@ export const modAuthorsRouter = {
     .input(ModAuthorIdParamSchema)
     .output(ModAuthorResponseSchema)
     .handler(async ({ input }) => {
-      const profile = await modAuthorRepository.findProfileById(input.id);
+      const profile = await getModAuthorProfile(input.id);
       if (!profile) {
         throw new ORPCError("NOT_FOUND");
       }
