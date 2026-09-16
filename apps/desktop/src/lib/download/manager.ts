@@ -269,7 +269,12 @@ class DownloadManager {
       ModStatus.Paused,
       ModStatus.Extracting,
     ]);
-    const staleMods = store.localMods.filter(
+    // setModStatus resolves a mod through the active profile's list, so the scan
+    // has to read from there as well: a mod present only in localMods would be
+    // flagged here and then dropped by the writer as "Mod not found".
+    const trackedMods =
+      store.profiles[store.activeProfileId]?.mods ?? store.localMods;
+    const staleMods = trackedMods.filter(
       (mod) => staleStatuses.has(mod.status) && !activeIds.has(mod.remoteId),
     );
 

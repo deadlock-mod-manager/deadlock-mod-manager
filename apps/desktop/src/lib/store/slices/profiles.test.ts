@@ -152,6 +152,91 @@ describe("profile snapshot reconciliation", () => {
     ]);
   });
 
+  it("repairs a tracked mod whose install state lost the manifest's VPKs", async () => {
+    const store = createTestStore();
+    const stale = {
+      ...modFor("42"),
+      status: ModStatus.Downloading,
+      installedVpks: undefined,
+    };
+    store.setState({
+      profiles: { default: profileFor("default", [stale]) },
+      localMods: [stale],
+    });
+    await store.getState().restoreModsFromManifest();
+    expect(store.getState().localMods).toHaveLength(1);
+    expect(store.getState().localMods[0].status).toBe(ModStatus.Installed);
+    expect(store.getState().localMods[0].installedVpks).toEqual([
+      "pak01_dir.vpk",
+    ]);
+    expect(store.getState().profiles.default.enabledMods["42"]?.enabled).toBe(
+      true,
+    );
+  });
+
+  it("drops install state the manifest's files no longer back", async () => {
+    const store = createTestStore();
+    profileTestBackend.readSnapshot = async () => ({
+      ...snapshotFor(),
+      files: [],
+    });
+    const installed = {
+      ...modFor("42"),
+      status: ModStatus.Installed,
+      installedVpks: ["pak01_dir.vpk"],
+    };
+    store.setState({
+      profiles: { default: profileFor("default", [installed]) },
+      localMods: [installed],
+    });
+    await store.getState().restoreModsFromManifest();
+    expect(store.getState().localMods[0].status).toBe(ModStatus.Downloaded);
+    expect(store.getState().localMods[0].installedVpks).toEqual([]);
+    expect(store.getState().profiles.default.enabledMods["42"]).toBeUndefined();
+  });
+
+  it("repairs a profile the user is not in, without a catalog lookup", async () => {
+    const store = createTestStore();
+    const healthy = {
+      ...modFor("42"),
+      status: ModStatus.Installed,
+      installedVpks: ["pak01_dir.vpk"],
+    };
+    const stale = { ...modFor("42"), status: ModStatus.Downloading };
+    store.setState({
+      profiles: {
+        default: profileFor("default", [healthy]),
+        secondary: profileFor("secondary", [stale]),
+      },
+      localMods: [healthy],
+    });
+    profileTestBackend.readMetadata = async () => {
+      throw new Error("A repair must not consult the catalog");
+    };
+    await store.getState().restoreModsFromManifest();
+    const repaired = store.getState().profiles.secondary;
+    expect(repaired.mods[0].status).toBe(ModStatus.Installed);
+    expect(repaired.mods[0].installedVpks).toEqual(["pak01_dir.vpk"]);
+    expect(repaired.enabledMods["42"]?.enabled).toBe(true);
+    expect(store.getState().localMods).toEqual([healthy]);
+  });
+
+  it("leaves a tracked mod alone while it is being installed", async () => {
+    const store = createTestStore();
+    const installing = {
+      ...modFor("42"),
+      status: ModStatus.Installing,
+      installedVpks: undefined,
+    };
+    store.setState({
+      profiles: { default: profileFor("default", [installing]) },
+      localMods: [installing],
+    });
+    await store.getState().restoreModsFromManifest();
+    expect(store.getState().localMods[0].status).toBe(ModStatus.Installing);
+    expect(store.getState().localMods[0].installedVpks).toBeUndefined();
+  });
+
   it("does not resurrect a mod removed during metadata lookup", async () => {
     const store = createTestStore();
     const started = deferred<void>();
