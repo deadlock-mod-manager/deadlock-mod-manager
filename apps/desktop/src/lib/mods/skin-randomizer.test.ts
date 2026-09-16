@@ -4,6 +4,7 @@ import type { ModFileTree } from "@/types/mods";
 import {
   bulkSelectableSkins,
   canRandomizeSkin,
+  currentOutcome,
   isRandomizedPool,
   pickRandomOutcome,
   randomizerPool,
@@ -139,13 +140,60 @@ describe("pickRandomOutcome", () => {
   const pool = [null, skin("a"), skin("b")];
 
   it("maps the random range evenly onto the pool", () => {
-    expect(pickRandomOutcome(pool, () => 0)).toBeNull();
-    expect(pickRandomOutcome(pool, () => 0.5)?.remoteId).toBe("a");
-    expect(pickRandomOutcome(pool, () => 0.99)?.remoteId).toBe("b");
+    expect(pickRandomOutcome(pool, undefined, () => 0)).toBeNull();
+    expect(pickRandomOutcome(pool, undefined, () => 0.5)?.remoteId).toBe("a");
+    expect(pickRandomOutcome(pool, undefined, () => 0.99)?.remoteId).toBe("b");
   });
 
   it("stays in range for a random source that returns 1", () => {
-    expect(pickRandomOutcome(pool, () => 1)?.remoteId).toBe("b");
+    expect(pickRandomOutcome(pool, undefined, () => 1)?.remoteId).toBe("b");
+  });
+
+  it("never repeats the skin the hero wore last", () => {
+    for (const roll of [0, 0.4, 0.6, 0.99]) {
+      expect(pickRandomOutcome(pool, skin("a"), () => roll)?.remoteId).not.toBe(
+        "a",
+      );
+    }
+  });
+
+  it("never repeats the default look the hero wore last", () => {
+    for (const roll of [0, 0.4, 0.6, 0.99]) {
+      expect(pickRandomOutcome(pool, null, () => roll)).not.toBeNull();
+    }
+  });
+
+  it("alternates when the pool holds two", () => {
+    expect(
+      pickRandomOutcome([skin("a"), skin("b")], skin("b"), () => 0.99)
+        ?.remoteId,
+    ).toBe("a");
+  });
+
+  it("rolls from the whole pool when last time is not in it", () => {
+    expect(pickRandomOutcome(pool, skin("z"), () => 0.99)?.remoteId).toBe("b");
+  });
+});
+
+describe("currentOutcome", () => {
+  it("is the default look when no skin is installed", () => {
+    expect(currentOutcome(group(skin("a")))).toBeNull();
+  });
+
+  it("is the one installed skin", () => {
+    expect(
+      currentOutcome({ ...group(skin("a")), activeSkins: [skin("a")] })
+        ?.remoteId,
+    ).toBe("a");
+  });
+
+  it("is unknown with several skins installed", () => {
+    expect(
+      currentOutcome({
+        ...group(skin("a"), skin("b")),
+        activeSkins: [skin("a"), skin("b")],
+      }),
+    ).toBeUndefined();
   });
 });
 
