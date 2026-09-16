@@ -44,7 +44,6 @@ import {
   queryGameBananaCatalog,
 } from "@/lib/gamebanana-catalog";
 import { SortType, TimePeriod } from "@/lib/constants";
-import { getModsCollectionNavigationTrail } from "@/lib/mods/mod-detail-navigation";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import type {
@@ -204,7 +203,6 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
       : "off";
   const pageKey = mapsOnly ? MAPS_STORE_PAGE_KEY : MODS_STORE_PAGE_KEY;
   const scrollKey = mapsOnly ? "/maps" : "/mods";
-  const navigationTrail = getModsCollectionNavigationTrail(mapsOnly === true);
   const paginationEnabled =
     modsStorePaginationEnabled ?? platform() === "linux";
   const [page, setPage] = useState(() => getPersistedPage(pageKey));
@@ -513,7 +511,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
                   <ModCard
                     key={mod.id}
                     mod={mod}
-                    navigationTrail={navigationTrail}
+                    collection={mapsOnly ? "maps" : "mods"}
                   />
                 ))}
               </div>
@@ -553,7 +551,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
                       <ModCard
                         key={mod.id}
                         mod={mod}
-                        navigationTrail={navigationTrail}
+                        collection={mapsOnly ? "maps" : "mods"}
                       />
                     ))}
                   </div>

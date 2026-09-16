@@ -9,6 +9,7 @@ import { Client, Pool } from "pg";
 import baselineSnapshot from "../../drizzle/meta/0053_snapshot.json";
 import journal from "../../drizzle/meta/_journal.json";
 import { ReportRepository } from "../repositories/reports.repository";
+import { ModAuthorRepository } from "../repositories/mod-author.repository";
 import * as schema from "../schema";
 
 const migrationsFolder = fileURLToPath(
@@ -199,6 +200,50 @@ describe.skipIf(!testDatabaseUrl)("pre-v2 migration compatibility", () => {
       metadata: {},
     });
     expect(result.rows[0]?.mod_author_id).toStartWith("mod_author_");
+  });
+
+  it("loads the same visible author mods through either identity", async () => {
+    const database = drizzle(pool, { schema });
+    const repository = new ModAuthorRepository(database);
+    const author = await repository.upsert({
+      provider: "gamebanana",
+      remoteId: "99",
+      name: "Profile author",
+      profileUrl: "https://gamebanana.com/members/99",
+      avatarUrl: "https://images.gamebanana.com/avatar.jpg",
+    });
+    await database.insert(schema.mods).values(
+      ["older", "newer", "blacklisted", "trashed", "unrelated"].map(
+        (remoteId, index) => ({
+          remoteId,
+          name: remoteId,
+          remoteUrl: `https://gamebanana.com/mods/${remoteId}`,
+          category: "Skins",
+          author: author.name,
+          modAuthorId: remoteId === "unrelated" ? null : author.id,
+          remoteAddedAt: new Date(0),
+          remoteUpdatedAt: new Date(index * 1_000),
+          isBlacklisted: remoteId === "blacklisted",
+          isTrashed: remoteId === "trashed",
+          tags: [],
+          images: [],
+        }),
+      ),
+    );
+
+    const byId = await repository.findProfileById(author.id);
+    const byProvider = await repository.findProfileByProviderRemoteId(
+      "gamebanana",
+      "99",
+    );
+
+    expect(byId?.author).toEqual(author);
+    expect(byId?.mods.map((mod) => mod.remoteId)).toEqual(["newer", "older"]);
+    expect(byProvider).toEqual(byId);
+    expect(await repository.findProfileById("missing")).toBeNull();
+    expect(
+      await repository.findProfileByProviderRemoteId("other-provider", "99"),
+    ).toBeNull();
   });
 
   it("preserves foreign keys and their legacy delete behavior", async () => {

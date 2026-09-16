@@ -27,7 +27,7 @@ describe("resolveModAuthorProfile", () => {
   test("hydrates a missing GameBanana author before resolving the profile", async () => {
     const profile: ModAuthorProfile = { author, mods: [] };
     const findProfileByProviderRemoteId = mock(
-      async () => null as ModAuthorProfile | null,
+      async (): Promise<ModAuthorProfile | null> => null,
     );
     const findProfileById = mock(async () => profile);
     const upsert = mock(async (_value: NewModAuthor) => author);

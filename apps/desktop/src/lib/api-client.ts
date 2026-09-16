@@ -22,7 +22,6 @@ import logger from "./logger";
 import { runtimeServiceOrigin } from "./runtime-bootstrap";
 import {
   checkDirectGameBananaUpdates,
-  getGameBananaCatalogModsByAuthor,
   getGameBananaCatalogDownloads,
   getGameBananaCatalogMod,
   getGameBananaCatalogMods,
@@ -89,9 +88,8 @@ export const getModAuthor = async (id: string) => {
   const profile = await apiRequest<{ author: ModAuthorDto; mods: ModDto[] }>(
     `/api/v2/mod-authors/${encodeURIComponent(id)}`,
   );
-  const gameBananaMatch = /^gamebanana:([1-9]\d*)$/.exec(id);
-  if (!gameBananaMatch?.[1]) return profile;
-  const mods = await getGameBananaCatalogModsByAuthor(gameBananaMatch[1]);
+  if (profile.author.provider !== "gamebanana") return profile;
+  const mods = await getGameBananaCatalogMods(profile.author.remoteId);
   return { ...profile, mods };
 };
 

@@ -925,11 +925,6 @@
   },
   "authorPage": {
     "viewProfile": "View profile",
-    "backToMods": "Back to Mod Store",
-    "backToMaps": "Back to Maps",
-    "backToLibrary": "Back to Mods Library",
-    "backToFavorites": "Back to Favorites",
-    "backToDashboard": "Back to Dashboard",
     "submittedBy": "Submitted by",
     "modStat_one": "mod",
     "modStat_other": "mods",

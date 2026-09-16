@@ -34,28 +34,8 @@ export const queryGameBananaCatalog = async (
   };
 };
 
-export const getGameBananaCatalogMods = async (): Promise<ModDto[]> => {
-  const page = await queryGameBananaCatalog({
-    search: "",
-    categories: [],
-    heroes: [],
-    authorRemoteId: null,
-    excludeFilters: false,
-    isAudio: null,
-    isMap: null,
-    hideNsfw: false,
-    hideObsolete: false,
-    updatedAfter: null,
-    favorites: [],
-    sort: "default",
-    page: 0,
-    pageSize: 5_000,
-  });
-  return page.items;
-};
-
-export const getGameBananaCatalogModsByAuthor = async (
-  authorRemoteId: string,
+export const getGameBananaCatalogMods = async (
+  authorRemoteId: string | null = null,
 ): Promise<ModDto[]> => {
   const page = await queryGameBananaCatalog({
     search: "",
