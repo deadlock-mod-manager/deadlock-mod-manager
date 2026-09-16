@@ -6,6 +6,7 @@ pub struct Patterns {
     pub hideout_lobby_state: Regex,
     pub party_event: Regex,
     pub local_account_id: Regex,
+    pub local_steam_id: Regex,
     pub server_connect: Regex,
     pub server_disconnect: Regex,
     pub server_shutdown: Regex,
@@ -30,12 +31,16 @@ pub struct Patterns {
 }
 
 pub static PATTERNS: LazyLock<Patterns> = LazyLock::new(|| Patterns {
-    change_game_state: re(r"ChangeGameState:\s+(\w+)\s+\((\d+)\)"),
+    // Server-side `ChangeGameState` only shows up for locally hosted games; clients of
+    // dedicated servers log `OnGameStateChanged` instead.
+    change_game_state: re(r"(?:ChangeGameState|OnGameStateChanged):\s+(\w+)\s+\((\d+)\)"),
     hideout_lobby_state: re(r"\[Hideout\] Hideout Lobby Connection State:\s+(\w+)\s+\((-?\d+)\)"),
     party_event: re(
         r"CMsgGCToClientPartyEvent:\s+\{\s*party_id:\s+(\d+)\s+event:\s+(k_e\w+)\s+initiator_account_id:\s+(\d+)\s*\}",
     ),
     local_account_id: re(r"\[U:1:(\d+)\]"),
+    // Logged at startup before any party event; the game server's own id starts with 9.
+    local_steam_id: re(r"AuthStatus \(steamid:(7656119\d{10})\)"),
     server_connect: re(r"\[Client\] CL:\s+Connected to '([^']+)'"),
     server_disconnect: re(r"\[Client\] Disconnecting from server:\s+(\S+)"),
     server_shutdown: re(r"\[Server\] SV:\s+Server shutting down:\s+(\S+)"),
