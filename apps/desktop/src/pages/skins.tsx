@@ -12,7 +12,7 @@ import { SkinPreviewPanel } from "@/components/skins/skin-preview-panel";
 import { useHeroSelection } from "@/hooks/use-hero-selection";
 import useUninstall from "@/hooks/use-uninstall";
 import { groupModsByHero, type HeroModGroup } from "@/lib/mods/hero-mods";
-import { deriveActiveArchiveNames } from "@/lib/mods/mod-variants";
+import { isRandomizedPool, randomizerPool } from "@/lib/mods/skin-randomizer";
 import { filterHiddenNSFWItems } from "@/lib/mods/nsfw-visibility";
 import { usePersistedStore } from "@/lib/store";
 import type { LocalMod } from "@/types/mods";
@@ -43,6 +43,19 @@ const Skins = () => {
   const updateModsFilters = usePersistedStore(
     (state) => state.updateModsFilters,
   );
+  const previewEnabled = usePersistedStore(
+    (state) => state.foundry3dPreviewEnabled,
+  );
+  const setPreviewEnabled = usePersistedStore(
+    (state) => state.setFoundry3dPreviewEnabled,
+  );
+  const randomizerEnabled = usePersistedStore(
+    (state) => state.skinRandomizerEnabled,
+  );
+  const randomizerSkins = usePersistedStore((state) => state.randomizerSkins);
+  const randomizerDefaultHeroes = usePersistedStore(
+    (state) => state.randomizerDefaultHeroes,
+  );
   const setHeroOverride = usePersistedStore((state) => state.setHeroOverride);
   const restoreHeroMod = usePersistedStore((state) => state.restoreHeroMod);
   const { select, remove, busyHero, installAction } = useHeroSelection();
@@ -69,6 +82,21 @@ const Skins = () => {
     [visibleMods, heroExtrasEnabled, hidden],
   );
 
+  // Heroes the next modded launch will roll a skin for.
+  const randomizedHeroes = useMemo(() => {
+    const selection = {
+      skins: randomizerSkins,
+      defaultHeroes: randomizerDefaultHeroes,
+    };
+    return new Set(
+      [...groups]
+        .filter(([hero, group]) =>
+          isRandomizedPool(randomizerPool(hero, group, selection)),
+        )
+        .map(([hero]) => hero),
+    );
+  }, [groups, randomizerSkins, randomizerDefaultHeroes]);
+
   const entries = useMemo<HeroListEntry[]>(() => {
     const knownHeroes: ReadonlySet<string> = new Set(
       Object.values(DeadlockHeroes),
@@ -79,26 +107,28 @@ const Skins = () => {
       .sort();
     const all = [...knownHeroes, ...extraHeroes].map((hero) => {
       const group = groups.get(hero) ?? EMPTY_GROUP;
+      // The rolled skin is a surprise for the game, not for this list.
+      const randomized = randomizerEnabled && randomizedHeroes.has(hero);
       return {
         hero,
         modCount: group.skins.length + group.extras.length,
-        activeNames: [...group.activeSkins, ...group.activeExtras].map(
-          (mod) => mod.name,
-        ),
+        activeNames: [
+          ...(randomized ? [] : group.activeSkins),
+          ...group.activeExtras,
+        ].map((mod) => mod.name),
+        randomized,
         // Several skins at once is only a conflict while the user expects one.
+        // Several archives of one mod are not: authors often split a skin
+        // into a model download and a sounds download that belong together.
         conflicted:
-          !multipleSkinsEnabled &&
-          (group.activeSkins.length > 1 ||
-            group.activeSkins.some(
-              (mod) => deriveActiveArchiveNames(mod).size > 1,
-            )),
+          !randomized && !multipleSkinsEnabled && group.activeSkins.length > 1,
       };
     });
     return [
       ...all.filter((entry) => entry.modCount > 0),
       ...all.filter((entry) => entry.modCount === 0),
     ];
-  }, [groups, multipleSkinsEnabled]);
+  }, [groups, multipleSkinsEnabled, randomizerEnabled, randomizedHeroes]);
 
   const effectiveHero =
     selectedHero ??
@@ -108,11 +138,16 @@ const Skins = () => {
 
   const selectedGroup = groups.get(effectiveHero ?? "") ?? EMPTY_GROUP;
 
-  // Without a pick of their own, the panel shows what the hero currently wears.
+  // Without a pick of their own, the panel shows what the hero currently wears,
+  // unless the randomizer rolled it and it is meant to stay unseen.
+  const hideWornSkin =
+    randomizerEnabled && randomizedHeroes.has(effectiveHero ?? "");
   const previewedId =
     effectiveHero && previewedByHero.has(effectiveHero)
       ? (previewedByHero.get(effectiveHero) ?? null)
-      : (selectedGroup.activeSkins[0]?.remoteId ?? null);
+      : hideWornSkin
+        ? null
+        : (selectedGroup.activeSkins[0]?.remoteId ?? null);
   const previewedMod =
     selectedGroup.skins.find((skin) => skin.remoteId === previewedId) ?? null;
 
@@ -122,6 +157,12 @@ const Skins = () => {
         new Map(current).set(effectiveHero, mod?.remoteId ?? null),
       );
     }
+  };
+
+  // Asking to see a skin in 3D is reason enough to bring the panel back.
+  const handleShowInPreview = (mod: LocalMod | null) => {
+    handlePreview(mod);
+    setPreviewEnabled(true);
   };
 
   const handleSelect = (mod: LocalMod | null, kind: "skin" | "extra") => {
@@ -179,17 +220,22 @@ const Skins = () => {
           <HeroModGrid
             disabled={busyHero !== null}
             group={groups.get(effectiveHero) ?? EMPTY_GROUP}
+            groups={groups}
             hero={effectiveHero}
             onAssignMod={() => setAssigning(true)}
             onBrowseSkins={handleBrowseSkins}
             onDelete={handleDelete}
-            onPreview={handlePreview}
+            onPreview={handleShowInPreview}
             onRemove={(mod) => void remove(effectiveHero, mod)}
             onSelect={handleSelect}
+            onShowPreview={
+              previewEnabled ? undefined : () => setPreviewEnabled(true)
+            }
             previewedId={previewedId}
+            randomizedHeroCount={randomizedHeroes.size}
           />
         )}
-        {effectiveHero && (
+        {effectiveHero && previewEnabled && (
           <SkinPreviewPanel hero={effectiveHero} mod={previewedMod} />
         )}
       </div>

@@ -1,5 +1,6 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Card } from "@deadlock-mods/ui/components/card";
+import { Checkbox } from "@deadlock-mods/ui/components/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,7 +13,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
-import { Check, EyeOff, MoreVertical, Trash2 } from "@deadlock-mods/ui/icons";
+import {
+  Check,
+  EyeOff,
+  MoreVertical,
+  Shuffle,
+  Trash2,
+} from "@deadlock-mods/ui/icons";
 import { CubeIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { NSFWBlur } from "@/components/mod-browsing/nsfw-blur";
@@ -52,6 +59,57 @@ const PreviewButton = ({
   </Tooltip>
 );
 
+export interface RandomizerMembership {
+  selected: boolean;
+  /** False for a skin that cannot be put on without a dialog. */
+  available: boolean;
+  onToggle: (selected: boolean) => void;
+}
+
+/**
+ * The tick that puts a card in its hero's randomizer pool. It only shows on
+ * hover until ticked, so the page reads as a plain skin picker to anyone who
+ * never uses the randomizer.
+ */
+const RandomizerCheckbox = ({
+  membership,
+  label,
+  unavailableLabel,
+}: {
+  membership: RandomizerMembership;
+  label: string;
+  unavailableLabel: string;
+}) => (
+  <Tooltip>
+    <TooltipTrigger asChild>
+      {/* The wrapper keeps the tooltip alive on a disabled checkbox and keeps
+          clicks from reaching the card's select handler. */}
+      <span
+        className={cn(
+          "absolute top-2 left-2 z-10 flex h-7 items-center gap-1.5 rounded-md bg-secondary px-1.5 transition-opacity",
+          membership.selected && "ring-1 ring-primary",
+          !membership.selected &&
+            "opacity-0 focus-within:opacity-100 group-hover/skin:opacity-100",
+        )}
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => e.stopPropagation()}>
+        {membership.selected && (
+          <Shuffle aria-hidden='true' className='h-3.5 w-3.5 text-primary' />
+        )}
+        <Checkbox
+          aria-label={membership.available ? label : unavailableLabel}
+          checked={membership.selected}
+          disabled={!membership.available}
+          onCheckedChange={(checked) => membership.onToggle(checked === true)}
+        />
+      </span>
+    </TooltipTrigger>
+    <TooltipContent>
+      {membership.available ? label : unavailableLabel}
+    </TooltipContent>
+  </Tooltip>
+);
+
 interface HeroModCardProps {
   mod: LocalMod;
   hero: string;
@@ -66,6 +124,8 @@ interface HeroModCardProps {
   /** Takes it off this hero's list without touching the download. */
   onRemove: () => void;
   onDelete: () => void;
+  /** Skins only: whether it is in the hero's randomizer pool. */
+  randomizer?: RandomizerMembership;
 }
 
 export const HeroModCard = ({
@@ -79,6 +139,7 @@ export const HeroModCard = ({
   onPreview,
   onRemove,
   onDelete,
+  randomizer,
 }: HeroModCardProps) => {
   const { t } = useTranslation();
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
@@ -100,6 +161,7 @@ export const HeroModCard = ({
       className={cn(
         "group/skin relative cursor-pointer overflow-hidden shadow-none transition-colors hover:border-primary",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        randomizer?.selected && "border-primary/60 bg-primary/[0.06]",
         isActive && "ring-2 ring-primary",
         !isActive && isPreviewing && "ring-1 ring-primary/50",
         disabled && "pointer-events-none opacity-60",
@@ -118,6 +180,13 @@ export const HeroModCard = ({
       }}
       role='button'
       tabIndex={disabled ? -1 : 0}>
+      {randomizer && (
+        <RandomizerCheckbox
+          label={t("skins.randomizer.inPool")}
+          membership={randomizer}
+          unavailableLabel={t("skins.randomizer.unavailable")}
+        />
+      )}
       <div className='absolute top-2 right-2 z-10 flex gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover/skin:opacity-100 group-focus-within/skin:opacity-100'>
         {kind === "skin" && onPreview && (
           <PreviewButton
@@ -201,6 +270,7 @@ interface DefaultSkinCardProps {
   isPreviewing: boolean;
   onSelect: () => void;
   onPreview: () => void;
+  randomizer: RandomizerMembership;
 }
 
 export const DefaultSkinCard = ({
@@ -209,6 +279,7 @@ export const DefaultSkinCard = ({
   isPreviewing,
   onSelect,
   onPreview,
+  randomizer,
 }: DefaultSkinCardProps) => {
   const { t } = useTranslation();
 
@@ -225,6 +296,7 @@ export const DefaultSkinCard = ({
       className={cn(
         "group/skin relative cursor-pointer overflow-hidden shadow-none transition-colors hover:border-primary",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        randomizer?.selected && "border-primary/60 bg-primary/[0.06]",
         isActive && "ring-2 ring-primary",
         !isActive && isPreviewing && "ring-1 ring-primary/50",
         disabled && "pointer-events-none opacity-60",
@@ -238,6 +310,11 @@ export const DefaultSkinCard = ({
       }}
       role='button'
       tabIndex={disabled ? -1 : 0}>
+      <RandomizerCheckbox
+        label={t("skins.randomizer.defaultInPool")}
+        membership={randomizer}
+        unavailableLabel={t("skins.randomizer.unavailable")}
+      />
       <div className='absolute top-2 right-2 z-10 opacity-0 transition-opacity focus-within:opacity-100 group-hover/skin:opacity-100 group-focus-within/skin:opacity-100'>
         <PreviewButton
           disabled={disabled}

@@ -15,6 +15,8 @@ export interface HeroListEntry {
   /** Skins and extras together - everything listed under the hero. */
   modCount: number;
   activeNames: string[];
+  /** The skin is rolled on launch, so the row names no skin. */
+  randomized: boolean;
   conflicted: boolean;
 }
 
@@ -32,9 +34,11 @@ const HeroListRow = ({ entry, isSelected, onSelect }: HeroListRowProps) => {
 
   const subtitle = entry.conflicted
     ? t("skins.conflict")
-    : entry.activeNames.length > 0
-      ? entry.activeNames.join(", ")
-      : t("skins.default");
+    : entry.randomized
+      ? t("skins.randomizer.listSubtitle")
+      : entry.activeNames.length > 0
+        ? entry.activeNames.join(", ")
+        : t("skins.default");
 
   return (
     <button
