@@ -33,6 +33,7 @@ pub struct CatalogQuery {
   pub search: String,
   pub categories: Vec<String>,
   pub heroes: Vec<String>,
+  pub author_remote_id: Option<String>,
   pub exclude_filters: bool,
   pub is_audio: Option<bool>,
   pub is_map: Option<bool>,
@@ -132,6 +133,9 @@ fn filtered_query<'a>(
       .bind::<Text, _>(search)
       .sql(")"),
     );
+  }
+  if let Some(author_remote_id) = &query.author_remote_id {
+    statement = statement.filter(submission::author_remote_id.eq(author_remote_id));
   }
   statement = filter_categories(statement, &query.categories, query.exclude_filters);
   statement = filter_heroes(statement, &query.heroes, query.exclude_filters);
@@ -418,6 +422,35 @@ mod tests {
       .unwrap();
     assert_eq!(sound.name, "Sound");
     assert_eq!(sound.author_remote_id.as_deref(), Some("42"));
+  }
+
+  #[tokio::test]
+  async fn author_filter_matches_the_provider_member_id() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.db"), 1)
+      .await
+      .unwrap();
+    let mut other_author = record("11", "Other Author", "Skins", None);
+    other_author.author_remote_id = Some("99".to_string());
+    catalog
+      .upsert_records(vec![
+        record("10", "Matching Mod", "Skins", None),
+        other_author,
+      ])
+      .await
+      .unwrap();
+
+    let page = catalog
+      .query(CatalogQuery {
+        author_remote_id: Some("42".to_string()),
+        page_size: 10,
+        ..CatalogQuery::default()
+      })
+      .await
+      .unwrap();
+
+    assert_eq!(page.total, 1);
+    assert_eq!(page.items[0].name, "Matching Mod");
   }
 
   #[tokio::test]

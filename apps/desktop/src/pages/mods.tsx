@@ -221,6 +221,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
       search: debouncedSearchQuery,
       categories: selectedCategories,
       heroes: selectedHeroes,
+      authorRemoteId: null,
       excludeFilters: filterMode === "exclude",
       isAudio: audioQuickFilter === "off" ? null : audioQuickFilter === "only",
       isMap:
