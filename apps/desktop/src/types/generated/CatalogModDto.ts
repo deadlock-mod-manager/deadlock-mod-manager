@@ -11,6 +11,7 @@ export type CatalogModDto = {
   category: string;
   likes: number;
   author: string;
+  authorRemoteId: string | null;
   downloadable: boolean;
   remoteAddedAt: number;
   remoteUpdatedAt: number;

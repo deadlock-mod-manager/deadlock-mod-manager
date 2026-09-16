@@ -12,6 +12,7 @@ diesel::table! {
     slug -> Text,
     name -> Text,
     author -> Text,
+    author_remote_id -> Nullable<Text>,
     description -> Text,
     profile_url -> Text,
     category -> Text,
@@ -95,7 +96,7 @@ mod tests {
     .get_result::<bool>(&mut connection)
     .unwrap();
 
-    assert_eq!(applied.len(), 3);
+    assert_eq!(applied.len(), 4);
     assert!(catalog_tables_exist);
   }
 }

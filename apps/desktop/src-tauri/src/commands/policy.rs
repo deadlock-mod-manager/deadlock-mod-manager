@@ -492,6 +492,7 @@ mod tests {
       category: "VOs".to_string(),
       likes: 0,
       author: "author".to_string(),
+      author_remote_id: Some("42".to_string()),
       downloadable: true,
       remote_added_at: 0,
       remote_updated_at: 0,

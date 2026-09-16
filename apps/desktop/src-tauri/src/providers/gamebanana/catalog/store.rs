@@ -16,6 +16,7 @@ pub struct CatalogRecord {
   pub submission: SubmissionRef,
   pub name: String,
   pub author: String,
+  pub author_remote_id: Option<String>,
   pub description: String,
   pub profile_url: String,
   pub category: String,
@@ -63,6 +64,7 @@ pub(super) struct SubmissionRow {
   pub slug: String,
   pub name: String,
   pub author: String,
+  pub author_remote_id: Option<String>,
   pub description: String,
   pub profile_url: String,
   pub category: String,
@@ -380,6 +382,7 @@ impl SubmissionRow {
       slug,
       name: record.name,
       author: record.author,
+      author_remote_id: record.author_remote_id,
       description: record.description,
       profile_url: record.profile_url,
       category: record.category,
@@ -412,6 +415,7 @@ impl SubmissionRow {
       slug: incoming.slug,
       name: incoming.name,
       author: incoming.author,
+      author_remote_id: incoming.author_remote_id.or(self.author_remote_id),
       description: if hydrated {
         incoming.description
       } else {
@@ -547,6 +551,7 @@ mod tests {
       submission: SubmissionRef::parse_slug(slug).unwrap(),
       name: name.to_string(),
       author: "DMM".to_string(),
+      author_remote_id: Some("42".to_string()),
       description: "searchable catalog text".to_string(),
       profile_url: format!("https://gamebanana.com/mods/{slug}"),
       category: "Skins".to_string(),

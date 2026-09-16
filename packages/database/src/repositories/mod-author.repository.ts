@@ -30,6 +30,23 @@ export class ModAuthorRepository {
     return author ? { author, mods: authorMods } : null;
   }
 
+  async findProfileByProviderRemoteId(
+    provider: string,
+    remoteId: string,
+  ): Promise<ModAuthorProfile | null> {
+    const [author] = await this.db
+      .select()
+      .from(modAuthors)
+      .where(
+        and(
+          eq(modAuthors.provider, provider),
+          eq(modAuthors.remoteId, remoteId),
+        ),
+      )
+      .limit(1);
+    return author ? this.findProfileById(author.id) : null;
+  }
+
   async upsert(author: NewModAuthor): Promise<ModAuthor> {
     const [result] = await this.db
       .insert(modAuthors)

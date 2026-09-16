@@ -308,6 +308,7 @@ impl TryFrom<SubmissionRow> for CatalogRecord {
       },
       name: row.name,
       author: row.author,
+      author_remote_id: row.author_remote_id,
       description: row.description,
       profile_url: row.profile_url,
       category: row.category,
@@ -344,6 +345,7 @@ mod tests {
       submission: SubmissionRef::parse_slug(slug).unwrap(),
       name: name.to_string(),
       author: "Author".to_string(),
+      author_remote_id: Some("42".to_string()),
       description: "searchable description".to_string(),
       profile_url: format!("https://gamebanana.com/mods/{slug}"),
       category: category.to_string(),
@@ -415,6 +417,7 @@ mod tests {
       .unwrap()
       .unwrap();
     assert_eq!(sound.name, "Sound");
+    assert_eq!(sound.author_remote_id.as_deref(), Some("42"));
   }
 
   #[tokio::test]

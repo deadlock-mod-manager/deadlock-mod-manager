@@ -145,6 +145,7 @@ const catalogModToModDto = (mod: CatalogModDto): ModDto => ({
   category: mod.category,
   likes: mod.likes,
   author: mod.author,
+  modAuthorId: mod.authorRemoteId ? `gamebanana:${mod.authorRemoteId}` : null,
   downloadable: mod.downloadable,
   remoteAddedAt: secondsToDate(mod.remoteAddedAt),
   remoteUpdatedAt: secondsToDate(mod.remoteUpdatedAt),

@@ -132,6 +132,7 @@ const placeholderModFromManifest = (
     category: "local",
     likes: 0,
     author: "",
+    modAuthorId: null,
     downloadable: false,
     remoteAddedAt: now,
     remoteUpdatedAt: now,
