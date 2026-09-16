@@ -241,6 +241,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
       search: debouncedSearchQuery,
       categories: selectedCategories,
       heroes: selectedHeroes,
+      authorRemoteId: null,
       excludeFilters: filterMode === "exclude",
       // Sounds are picked by submissionType; maps only by the Maps tab, and
       // Mods leaves them out once that tab exists.
