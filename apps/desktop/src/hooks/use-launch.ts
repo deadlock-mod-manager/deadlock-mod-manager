@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { MOD_PATHS_KEY } from "@/hooks/use-game-config-alert";
 import { stopHeroDetection } from "@/hooks/use-hero-detection";
+import { useSkinRandomizer } from "@/hooks/use-skin-randomizer";
 import { restoreProfileGameinfo } from "@/lib/gameinfo";
 import { getLaunchErrorMessage } from "@/lib/launch-error";
 import logger from "@/lib/logger";
@@ -29,6 +30,7 @@ export const useLaunch = () => {
   const setLastLaunchVanilla = usePersistedStore((s) => s.setLastLaunchVanilla);
   const queryClient = useQueryClient();
   const confirm = useConfirm();
+  const { randomizeSkins } = useSkinRandomizer();
   const launchVanillaNoArgs =
     settings?.["launch-vanilla-no-args"]?.enabled ?? false;
 
@@ -93,6 +95,10 @@ export const useLaunch = () => {
     try {
       await checkMapCommandInAutoexec();
       await disableInstalledMapMods();
+      // A vanilla launch loads no mods, so there is nothing to dress up.
+      if (!vanilla) {
+        await randomizeSkins();
+      }
 
       const activeProfile = getActiveProfile();
       const profileFolder = vanilla

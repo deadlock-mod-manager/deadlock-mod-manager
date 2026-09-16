@@ -7,10 +7,23 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@deadlock-mods/ui/components/empty";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deadlock-mods/ui/components/tooltip";
 import { Link2, Plus, Shirt } from "@deadlock-mods/ui/icons";
+import { CubeIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { DefaultSkinCard, HeroModCard } from "@/components/skins/hero-mod-card";
+import { HeroRandomizerBar } from "@/components/skins/skin-randomizer-controls";
 import type { HeroModGroup, HeroModKind } from "@/lib/mods/hero-mods";
+import {
+  canRandomizeSkin,
+  isRandomizedPool,
+  randomizerPool,
+} from "@/lib/mods/skin-randomizer";
+import { usePersistedStore } from "@/lib/store";
 import type { LocalMod } from "@/types/mods";
 
 interface HeroModGridProps {
@@ -25,6 +38,12 @@ interface HeroModGridProps {
   onAssignMod: () => void;
   onRemove: (mod: LocalMod) => void;
   onDelete: (mod: LocalMod) => void;
+  /** Every hero's mods, for the randomizer's selections across heroes. */
+  groups: ReadonlyMap<string, HeroModGroup<LocalMod>>;
+  /** How many heroes the next launch rolls a skin for. */
+  randomizedHeroCount: number;
+  /** Set while the 3D panel is off, to offer turning it back on. */
+  onShowPreview?: () => void;
 }
 
 export const HeroModGrid = ({
@@ -38,11 +57,37 @@ export const HeroModGrid = ({
   onAssignMod,
   onRemove,
   onDelete,
+  groups,
+  randomizedHeroCount,
+  onShowPreview,
 }: HeroModGridProps) => {
   const { t } = useTranslation();
   const { skins, extras } = group;
+  const randomizerEnabled = usePersistedStore(
+    (state) => state.skinRandomizerEnabled,
+  );
+  const randomizerSkins = usePersistedStore((state) => state.randomizerSkins);
+  const randomizerDefaultHeroes = usePersistedStore(
+    (state) => state.randomizerDefaultHeroes,
+  );
+  const setRandomizerSkins = usePersistedStore(
+    (state) => state.setRandomizerSkins,
+  );
+  const setRandomizerDefaultHeroes = usePersistedStore(
+    (state) => state.setRandomizerDefaultHeroes,
+  );
+
+  const pool = randomizerPool(hero, group, {
+    skins: randomizerSkins,
+    defaultHeroes: randomizerDefaultHeroes,
+  });
+  // Which skin the last launch rolled is meant to be found in game, so the
+  // page stops pointing at it while the randomizer owns this hero.
+  const hideActiveSkin = randomizerEnabled && isRandomizedPool(pool);
   const activeIds = new Set(
-    [...group.activeSkins, ...group.activeExtras].map((mod) => mod.remoteId),
+    [...(hideActiveSkin ? [] : group.activeSkins), ...group.activeExtras].map(
+      (mod) => mod.remoteId,
+    ),
   );
 
   const renderCards = (mods: LocalMod[], kind: HeroModKind) =>
@@ -59,6 +104,16 @@ export const HeroModGrid = ({
         onPreview={kind === "skin" ? () => onPreview(mod) : undefined}
         onRemove={() => onRemove(mod)}
         onSelect={() => onSelect(mod, kind)}
+        randomizer={
+          kind === "skin"
+            ? {
+                selected: randomizerSkins[mod.remoteId] === true,
+                available: canRandomizeSkin(mod),
+                onToggle: (selected) =>
+                  setRandomizerSkins([mod.remoteId], selected),
+              }
+            : undefined
+        }
       />
     ));
 
@@ -86,6 +141,21 @@ export const HeroModGrid = ({
           </p>
         </div>
         <div className='flex shrink-0 gap-2'>
+          {onShowPreview && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  aria-label={t("skins.preview.enable")}
+                  className='h-8 w-8'
+                  onClick={onShowPreview}
+                  size='icon'
+                  variant='outline'>
+                  <CubeIcon className='h-4 w-4' weight='duotone' />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>{t("skins.preview.enable")}</TooltipContent>
+            </Tooltip>
+          )}
           {assignButton}
           <Button disabled={disabled} onClick={onBrowseSkins} size='sm'>
             <Plus className='h-4 w-4' />
@@ -93,6 +163,14 @@ export const HeroModGrid = ({
           </Button>
         </div>
       </div>
+
+      <HeroRandomizerBar
+        group={group}
+        groups={groups}
+        hero={hero}
+        poolSize={pool.length}
+        randomizedHeroCount={randomizedHeroCount}
+      />
 
       {skins.length === 0 && extras.length === 0 ? (
         <Empty className='py-12'>
@@ -121,10 +199,16 @@ export const HeroModGrid = ({
             <div className='grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4'>
               <DefaultSkinCard
                 disabled={disabled}
-                isActive={group.activeSkins.length === 0}
+                isActive={!hideActiveSkin && group.activeSkins.length === 0}
                 isPreviewing={previewedId === null}
                 onPreview={() => onPreview(null)}
                 onSelect={() => onSelect(null, "skin")}
+                randomizer={{
+                  selected: randomizerDefaultHeroes[hero] === true,
+                  available: true,
+                  onToggle: (selected) =>
+                    setRandomizerDefaultHeroes([hero], selected),
+                }}
               />
               {renderCards(skins, "skin")}
             </div>
