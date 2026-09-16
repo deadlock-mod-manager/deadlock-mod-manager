@@ -55,12 +55,44 @@ export function randomizerPool<
 export const isRandomizedPool = (pool: readonly unknown[]): boolean =>
   pool.length >= RANDOMIZER_MIN_POOL;
 
-export function pickRandomOutcome<T>(
+/**
+ * What the hero wears right now, as a pool outcome: its one installed skin, or
+ * null for the default look. Undefined when several skins are installed, since
+ * that matches no single outcome.
+ */
+export function currentOutcome<T extends { remoteId: string }>(
+  group: HeroModGroup<T>,
+): RandomizerOutcome<T> | undefined {
+  if (group.activeSkins.length > 1) {
+    return undefined;
+  }
+  return group.activeSkins[0] ?? null;
+}
+
+const sameOutcome = <T extends { remoteId: string }>(
+  a: RandomizerOutcome<T>,
+  b: RandomizerOutcome<T>,
+) => (a === null || b === null ? a === b : a.remoteId === b.remoteId);
+
+/**
+ * Rolls one outcome from the pool. What the hero wore last time is left out,
+ * so no two launches in a row land on the same look.
+ */
+export function pickRandomOutcome<T extends { remoteId: string }>(
   pool: readonly RandomizerOutcome<T>[],
+  previous?: RandomizerOutcome<T>,
   random: () => number = Math.random,
 ): RandomizerOutcome<T> {
-  const index = Math.min(Math.floor(random() * pool.length), pool.length - 1);
-  return pool[index] ?? null;
+  const fresh =
+    previous === undefined
+      ? pool
+      : pool.filter((outcome) => !sameOutcome(outcome, previous));
+  const candidates = fresh.length > 0 ? fresh : pool;
+  const index = Math.min(
+    Math.floor(random() * candidates.length),
+    candidates.length - 1,
+  );
+  return candidates[index] ?? null;
 }
 
 /**

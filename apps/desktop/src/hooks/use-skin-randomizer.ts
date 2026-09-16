@@ -8,6 +8,7 @@ import { createLogger } from "@/lib/logger";
 import { groupModsByHero } from "@/lib/mods/hero-mods";
 import { applyHeroSelection } from "@/lib/mods/hero-selection";
 import {
+  currentOutcome,
   isRandomizedPool,
   pickRandomOutcome,
   randomizerPool,
@@ -119,7 +120,7 @@ export const useSkinRandomizer = () => {
       if (!isRandomizedPool(pool)) {
         continue;
       }
-      const pick = pickRandomOutcome(pool);
+      const pick = pickRandomOutcome(pool, currentOutcome(group));
       try {
         const result = await applyHeroSelection(
           group.activeSkins,
