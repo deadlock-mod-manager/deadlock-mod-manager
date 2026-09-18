@@ -69,7 +69,7 @@ jobs:
       fail-fast: false
       matrix:
         suite:
-          [smoke, local, profiles, downloads, filesystem, gamebanana, settings]
+          [smoke, local, profiles, downloads, filesystem, gamebanana, settings, skins]
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - uses: ./.github/actions/setup-desktop-e2e
