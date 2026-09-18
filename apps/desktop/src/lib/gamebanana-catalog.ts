@@ -1,5 +1,7 @@
 import type { ModDto } from "@deadlock-mods/shared";
 import { invoke } from "@tauri-apps/api/core";
+import type { CatalogChangelogDto } from "@/types/generated/CatalogChangelogDto";
+import type { CatalogCommentsDto } from "@/types/generated/CatalogCommentsDto";
 import type { CatalogDownloadsDto } from "@/types/generated/CatalogDownloadsDto";
 import type { CatalogModDto } from "@/types/generated/CatalogModDto";
 import type { CatalogPageDto } from "@/types/generated/CatalogPageDto";
@@ -80,6 +82,18 @@ export const getGameBananaCatalogDownloads = async (
     count: result.count,
   };
 };
+
+export const getGameBananaComments = (remoteId: string, page: number) =>
+  invoke<CatalogCommentsDto>("get_gamebanana_submission_comments", {
+    remoteId,
+    page,
+  });
+
+export const getGameBananaChangelog = (remoteId: string, page: number) =>
+  invoke<CatalogChangelogDto>("get_gamebanana_submission_changelog", {
+    remoteId,
+    page,
+  });
 
 const startupUpdateCheckJitter = new Promise<void>((resolve) => {
   globalThis.setTimeout(resolve, Math.floor(Math.random() * 10_000));

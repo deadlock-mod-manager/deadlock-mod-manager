@@ -823,7 +823,11 @@
       "updating": "Updating mods...",
       "complete": "Update complete",
       "partialSuccess": "{{succeeded}} updated, {{failed}} failed",
-      "error": "Failed to update mods"
+      "error": "Failed to update mods",
+      "changelogLoading": "Loading changelog…",
+      "changelogEmpty": "The author didn't post changelog notes since your install.",
+      "changelogTitle_one": "What's new since your install ({{count}} update)",
+      "changelogTitle_other": "What's new since your install ({{count}} updates)"
     },
     "disableAll": "Disable all mods",
     "disableAllConfirmTitle": "Disable all mods?",
@@ -3059,6 +3063,25 @@
       "success": "VPK files replaced successfully",
       "error": "Failed to replace VPK files",
       "countMismatch": "Expected {{expected}} file(s), got {{actual}}"
+    },
+    "changelog": {
+      "title": "Changelog",
+      "description": "Updates the author posted on GameBanana.",
+      "newSinceInstall": "New since your install",
+      "showMore": "Show older updates",
+      "loadError": "Couldn't load the changelog from GameBanana."
+    },
+    "comments": {
+      "title": "Comments",
+      "description": "What players are saying on GameBanana.",
+      "hidden": "The author turned comments off for this mod on GameBanana.",
+      "empty": "No comments yet.",
+      "loadError": "Couldn't load comments from GameBanana.",
+      "loadMore": "Load more comments",
+      "replyOnGameBanana": "Reply on GameBanana",
+      "pinned": "Pinned",
+      "replies_one": "{{count}} reply on GameBanana",
+      "replies_other": "{{count}} replies on GameBanana"
     }
   },
   "modDependencies": {

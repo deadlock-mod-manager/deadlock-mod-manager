@@ -206,6 +206,8 @@ pub fn run() {
       commands::gamebanana_catalog::query_gamebanana_catalog,
       commands::gamebanana_catalog::get_gamebanana_submission_detail,
       commands::gamebanana_catalog::get_gamebanana_submission_files,
+      commands::gamebanana_catalog::get_gamebanana_submission_comments,
+      commands::gamebanana_catalog::get_gamebanana_submission_changelog,
       commands::gamebanana_catalog::check_gamebanana_catalog_updates,
       commands::gamebanana_catalog::resolve_gamebanana_download_candidates,
       commands::gamebanana_catalog::inspect_gamebanana_catalog_state,
