@@ -51,6 +51,19 @@ const heroNames = [
   "Wrecker",
   "Yamato",
 ];
+// The skins page lists every hero and loads each one's portrait.
+export const heroRoutes = (icon: string): FixtureRoute[] =>
+  heroNames.map((name, index) => ({
+    method: "GET",
+    path: `/v2/heroes/by-name/${encodeURIComponent(name)}`,
+    status: 200,
+    body: JSON.stringify({
+      id: index + 1,
+      name,
+      class_name: `hero_${name.toLowerCase()}`,
+      images: { icon_hero_card: icon },
+    }),
+  }));
 export const contentRoutes =
   async () =>
   (origin: string): FixtureRoute[] => {
@@ -79,14 +92,7 @@ export const contentRoutes =
       body: JSON.stringify(body),
     });
     return [
-      ...heroNames.map((name, index) =>
-        json(`/v2/heroes/by-name/${encodeURIComponent(name)}`, {
-          id: index + 1,
-          name,
-          class_name: `hero_${name.toLowerCase()}`,
-          images: { icon_hero_card: `${origin}/images/920001.svg` },
-        }),
-      ),
+      ...heroRoutes(`${origin}/images/920001.svg`),
       json("/api/v2/feature-flags", [
         { name: "profile-management", enabled: true },
       ]),

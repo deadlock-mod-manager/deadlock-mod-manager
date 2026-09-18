@@ -16,7 +16,7 @@ pnpm --filter @deadlock-mods/desktop e2e:qualify -- --provider external
 
 ## Writing scenarios
 
-`support/scenarios.ts` is the scenario registry. Each definition owns its spec, phases, fixture setup, HTTP routes, network assertions, native-input requirement, and expected exit mode. `--suite` selects `all`, a family such as `gamebanana` or `downloads`, or a coverage category (`ui` / `ipc-recovery`). Cases run serially with a separate world per case; restart phases share that case's world. Failures retain their world and the runner continues to report the remaining cases.
+`support/scenarios.ts` is the scenario registry. Each definition owns its spec, phases, fixture setup, HTTP routes, network assertions, native-input requirement, and expected exit mode. `--suite` selects `all`, a family such as `gamebanana`, `downloads`, or `skins`, or a coverage category (`ui` / `ipc-recovery`). Cases run serially with a separate world per case; restart phases share that case's world. Failures retain their world and the runner continues to report the remaining cases.
 
 Native input requires explicit `--allow-native-input`. This applies to the local-picker and profile-ordering scenarios, including `--suite all`. Those cases control the Windows desktop and require exclusive mouse/keyboard use; never enable the option while someone is working on that desktop. Other cases still launch application windows but do not use the physical input helper. The native executable also checks the supervisor's opt-in environment variable.
 
@@ -104,6 +104,14 @@ Run `pnpm --filter @deadlock-mods/desktop e2e:test -- --suite settings --keep` t
 
 Launch tests run the real launch preparation and record the resulting Steam request using the existing isolated runtime policy. They do not start Steam or the game. Presence tests seed the normal hero-data cache; they do not connect to Discord. Analytics and update-channel assertions cover preferences rather than external delivery or updater installation. Content images are plain synthetic rectangles.
 
+## Skin randomizer scenario
+
+Run `pnpm --filter @deadlock-mods/desktop e2e:test -- --case skin-randomizer --keep` (or `--suite skins`) after `e2e:build`. It needs no native input.
+
+The world holds one profile with four Haze skins: Classic is installed, while Midnight, Ember, and a skin that writes to critical paths are downloaded and disabled. The first process builds the pool through the Skins page: "Select all" ticks the three eligible skins and leaves the critical-path checkbox disabled, and the per-hero switch adds the default look. A modded launch with the randomizer still off must leave Classic in place. After the randomizer switch is turned on, the hero list reads "Random skin" instead of naming the worn skin. Two modded launches must each land on a different outcome than the one before, and a vanilla launch must leave the rolled skin alone. A second process verifies the persisted switch and the last outcome, then rolls once more.
+
+Each launch waits for the recorded Steam request, which the app makes only after randomizing. After every launch and after each normal close, `randomizer-oracle.ts` checks that the store, profile enablement, manifest, and SHA-256 payloads agree on exactly one outcome. The worn skin's bytes must sit in an enabled pak slot, and every other Haze skin must stay parked under its prefixed name. The critical-path skin must never be put on. The rolls are random, but every assertion holds for any outcome in the pool, because the randomizer never repeats the previous look. `randomizer-*.json` records each checkpoint.
+
 ## Download scenarios
 
 M4 uses real Rust HTTP transfers against binary fixture responses. Run any case with `pnpm --filter @deadlock-mods/desktop e2e:test -- --case <case> --keep` after rebuilding the E2E application. These cases do not require the native input helper.
@@ -185,9 +193,9 @@ Native Windows dialogs are outside the webview DOM and cannot be driven by WebDr
 
 M6 runs the existing E2E harness in `.github/workflows/desktop-e2e.yml`. It runs nightly at 03:23 UTC, on manual dispatch, and on PRs carrying the `e2e-full` label. Regular PRs do not build or run the pipeline automatically. This PR carries the label for qualification before merge.
 
-The pipeline builds the debug harness and native helper once, then shares their binaries with seven independent Windows jobs covering all 36 scenarios. Each family runs serially with retries disabled. Native input is explicitly enabled only on disposable GitHub-hosted desktops. The CLI's `--report <path>` writes an incremental JSON summary; CI retains reports and diagnostic artifacts for 14 days without uploading control tokens. Missing prerequisites, unmatched requests, timeouts, and failed scenarios remain failures. No release builds, installer smoke tests, signing, or publication are part of this pipeline.
+The pipeline builds the debug harness and native helper once, then shares their binaries with eight independent Windows jobs covering all 37 scenarios. Each family runs serially with retries disabled. Native input is explicitly enabled only on disposable GitHub-hosted desktops. The CLI's `--report <path>` writes an incremental JSON summary; CI retains reports and diagnostic artifacts for 14 days without uploading control tokens. Missing prerequisites, unmatched requests, timeouts, and failed scenarios remain failures. No release builds, installer smoke tests, signing, or publication are part of this pipeline.
 
-Use the seven scenario jobs and their per-case reports to verify clean-runner qualification. Full local runs require explicit native-input authorization and the same strict network and filesystem checks as CI.
+Use the eight scenario jobs and their per-case reports to verify clean-runner qualification. Full local runs require explicit native-input authorization and the same strict network and filesystem checks as CI.
 
 | Milestone | Status | Deliverable | Exit criterion |
 | --- | --- | --- | --- |
@@ -196,6 +204,6 @@ Use the seven scenario jobs and their per-case reports to verify clean-runner qu
 | M3: profiles and ordering | Implemented and validated on Windows/Wry | Two-profile switching plus native pointer and keyboard reorder flows | Inactive profiles and protected files remain unchanged; order and profile state survive restart without mocked core IPC |
 | M4: downloads and network failures | Implemented and validated on Windows/Wry | GameBanana catalog downloads and installation, multi-file and VPK variant selection, installed-file rendering, selected-variant retries, Range resume, pause, cancel, corrupt payloads, authentication failures, redirects, and interrupted-process recovery | Every request matches the strict journal; unexpected traffic fails; installed files and selections survive restart; partial files and state recover correctly |
 | M5: recovery and hostile filesystem cases | Implemented and validated on Windows/Wry | Backup replace/merge, interrupted mutations, shard boundaries, collisions, Windows locks, and crash barriers | Restart recovers retained worlds and the independent oracle proves restoration without normalizing unexpected writes |
-| M6: nightly E2E pipeline | Implemented; qualification tracked in CI | Nightly/manual Windows E2E matrix and opt-in execution on this PR | All 36 registered scenarios pass on clean runners with retained failure evidence |
+| M6: nightly E2E pipeline | Implemented; qualification tracked in CI | Nightly/manual Windows E2E matrix and opt-in execution on this PR | All 37 registered scenarios pass on clean runners with retained failure evidence |
 
 Keep scenarios independent and small even when they share recipes. The final routine-development gate is a composed import/download → enable → profile switch → reorder → backup → modify → restore → restart journey, supported by focused tests for each operation and failure boundary.
