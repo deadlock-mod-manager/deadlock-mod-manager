@@ -33,6 +33,9 @@ const MAX_PARTY_SIZE: u32 = 6;
 // A Street Brawl lobby holds 8 players, so anything above that is a 6v6 lobby.
 const STREET_BRAWL_MAX_PLAYERS: u32 = 8;
 const STREET_BRAWL_MIN_PLAYERS: u32 = 5;
+// Matchmade dedicated servers always report one bot ("Players: 7 (1 bots)"), so only
+// more than that means the match is actually played against bots.
+const MATCHMADE_SERVER_BOTS: u32 = 1;
 const STEAM_ID64_BASE: u64 = 76_561_197_960_265_728;
 
 // EGameState from client.dll: Invalid, Init, WaitingForPlayersToJoin, HeroSelection,
@@ -252,7 +255,9 @@ impl LogParser {
         } else if let Some(caps) = p.player_info.captures(line) {
             let players: u32 = caps[1].parse().unwrap_or(0);
             let bots: u32 = caps[2].parse().unwrap_or(0);
-            let humans = players.saturating_sub(bots);
+            // Bots are reported separately and not included in the player count, e.g. a
+            // party of two in the hideout logs "Players: 2 (3 bots)".
+            let humans = players;
             log::debug!(
                 "[GamePresence] Server info: players={players} bots={bots} max={} map={current_map} phase={:?}",
                 &caps[3],
@@ -456,7 +461,9 @@ impl LogParser {
         let peak = self.match_peak_players;
 
         match state.match_mode {
-            MatchMode::Unknown if bots > 0 => state.match_mode = MatchMode::BotMatch,
+            MatchMode::Unknown if bots > MATCHMADE_SERVER_BOTS => {
+                state.match_mode = MatchMode::BotMatch;
+            }
             MatchMode::Unknown | MatchMode::StreetBrawl if peak > STREET_BRAWL_MAX_PLAYERS => {
                 state.match_mode = MatchMode::Unranked;
             }
@@ -686,6 +693,37 @@ mod tests {
             &["[Client] Players: 8 (0 bots) / 31 humans"],
         );
         assert_eq!(state.match_mode, MatchMode::Unranked);
+    }
+
+    #[test]
+    fn matchmade_street_brawl_with_server_bot_is_not_a_bot_match() {
+        let mut parser = LogParser::new();
+        let mut state = GameState::new();
+        feed(
+            &mut parser,
+            &mut state,
+            &[
+                "[Client] CL:  Connected to '=[A:1:3958069254:51454]'",
+                "[Client] Map: \"dl_hideout\"",
+                "[Client] Players: 2 (3 bots) / 32 humans",
+            ],
+        );
+        assert_eq!(state.party_size, 2);
+        assert_eq!(state.phase, GamePhase::PartyHideout);
+
+        feed(
+            &mut parser,
+            &mut state,
+            &[
+                "Lobby 174141136703762847 for Match 106401183 created",
+                "[Client] CL:  Connected to '=[A:1:4084361237:51454]'",
+                "[Client] Map: \"start\"",
+                "[Client] Players: 7 (1 bots) / 32 humans",
+            ],
+        );
+
+        assert_eq!(state.match_mode, MatchMode::StreetBrawl);
+        assert_eq!(state.party_size, 2);
     }
 
     #[test]
