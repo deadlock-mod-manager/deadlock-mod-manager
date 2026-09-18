@@ -17,6 +17,10 @@ import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-war
 import { useThemeOverride } from "@/components/providers/theme-overrides";
 import ModCardSkeleton from "@/components/skeletons/mod-card";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
+import type {
+  AuthorNavigationTarget,
+  ModsCollection,
+} from "@/lib/mods/mod-detail-navigation";
 import { prefetchModDetail } from "@/lib/mods/mod-detail-prefetch";
 import { usePersistedStore } from "@/lib/store";
 import {
@@ -33,9 +37,12 @@ import { NSFWBlur } from "./nsfw-blur";
 interface ModCardProps {
   mod?: ModDto;
   readOnly?: boolean;
+  collection?: ModsCollection;
+  author?: AuthorNavigationTarget;
 }
 
-const ModCard = memo(({ mod, readOnly = false }: ModCardProps) => {
+const ModCard = memo((props: ModCardProps) => {
+  const { mod, readOnly = false, collection = "mods", author } = props;
   const { t } = useTranslation();
   const localMod = usePersistedStore((state) =>
     state.localMods.find((m) => m.remoteId === mod?.remoteId),
@@ -53,8 +60,13 @@ const ModCard = memo(({ mod, readOnly = false }: ModCardProps) => {
 
   const openModDetail = () => {
     void prefetchModDetail(queryClient, mod.remoteId);
-    navigate(`/mods/${mod.remoteId}`);
+    navigate(`/mods/${mod.remoteId}`, {
+      state: { collection, author },
+    });
   };
+
+  const modAuthorId = mod.modAuthorId;
+  const showAuthorLink = !readOnly && modAuthorId !== null && !author;
 
   const cardContent = (
     <Card
@@ -140,11 +152,29 @@ const ModCard = memo(({ mod, readOnly = false }: ModCardProps) => {
                 {mod.isMap && (
                   <Badge variant='secondary'>{t("mods.mapBadge")}</Badge>
                 )}
-                <span
-                  className='overflow-clip text-ellipsis text-nowrap text-muted-foreground text-sm'
-                  title={mod.author}>
-                  {t("mods.by")} {mod.author}
-                </span>
+                {showAuthorLink ? (
+                  <button
+                    aria-label={t("mods.showMoreByAuthor", {
+                      author: mod.author,
+                    })}
+                    className='overflow-clip text-ellipsis text-nowrap rounded-sm text-left text-muted-foreground text-sm underline-offset-2 hover:text-foreground hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring'
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      navigate(`/authors/${modAuthorId}`, {
+                        state: { collection },
+                      });
+                    }}
+                    title={t("mods.showMoreByAuthor", { author: mod.author })}
+                    type='button'>
+                    {t("mods.by")} {mod.author}
+                  </button>
+                ) : (
+                  <span
+                    className='overflow-clip text-ellipsis text-nowrap text-muted-foreground text-sm'
+                    title={mod.author}>
+                    {t("mods.by")} {mod.author}
+                  </span>
+                )}
               </div>
             </div>
 

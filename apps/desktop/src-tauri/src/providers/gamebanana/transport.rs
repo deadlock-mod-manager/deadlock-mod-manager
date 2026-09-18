@@ -85,6 +85,40 @@ impl GameBananaTransport {
   where
     T: DeserializeOwned,
   {
+    let response = self.fetch(operation, url, cancel, false).await?;
+    parse_json_body(&response.body)
+  }
+
+  pub async fn get_json_or_rejection<T>(
+    &self,
+    operation: &'static str,
+    url: reqwest::Url,
+    cancel: &CancellationToken,
+  ) -> Result<ApiResponse<T>, Error>
+  where
+    T: DeserializeOwned,
+  {
+    let response = self.fetch(operation, url, cancel, true).await?;
+    if response.status.is_success() {
+      return parse_json_body(&response.body).map(ApiResponse::Ok);
+    }
+    parse_json_body::<ApiErrorBody>(&response.body)
+      .ok()
+      .and_then(|body| body.code)
+      .filter(|code| !code.trim().is_empty())
+      .map(|code| ApiResponse::Rejected { code })
+      .ok_or_else(|| {
+        Error::ProviderInvalidResponse(format!("{operation} failed with HTTP {}", response.status))
+      })
+  }
+
+  async fn fetch(
+    &self,
+    operation: &'static str,
+    url: reqwest::Url,
+    cancel: &CancellationToken,
+    read_client_errors: bool,
+  ) -> Result<FetchedBody, Error> {
     for attempt in 0..=self.config.max_retries {
       self.budget.acquire(cancel).await?;
       let permit = tokio::select! {
@@ -134,7 +168,7 @@ impl GameBananaTransport {
         continue;
       }
 
-      if !status.is_success() {
+      if !(status.is_success() || read_client_errors && status.is_client_error()) {
         return Err(Error::ProviderInvalidResponse(format!(
           "{operation} failed with HTTP {status}"
         )));
@@ -165,14 +199,42 @@ impl GameBananaTransport {
       }
       drop(permit);
 
-      return serde_json::from_slice(&body)
-        .map_err(|error| Error::ProviderInvalidResponse(error.to_string()));
+      return Ok(FetchedBody { status, body });
     }
 
     Err(Error::ProviderUnavailable(format!(
       "{operation} exhausted its retry budget"
     )))
   }
+}
+
+pub enum ApiResponse<T> {
+  Ok(T),
+  Rejected { code: String },
+}
+
+struct FetchedBody {
+  status: reqwest::StatusCode,
+  body: Vec<u8>,
+}
+
+#[derive(serde::Deserialize)]
+struct ApiErrorBody {
+  #[serde(rename = "_sErrorCode", default)]
+  code: Option<String>,
+}
+
+fn parse_json_body<T: DeserializeOwned>(body: &[u8]) -> Result<T, Error> {
+  serde_json::from_slice(body).or_else(|error| {
+    // GameBanana occasionally prints PHP warnings ahead of the JSON payload.
+    // The payload itself still starts on its own line, so retry from there.
+    body
+      .iter()
+      .enumerate()
+      .find(|(index, byte)| *index > 0 && matches!(byte, b'{' | b'[') && body[index - 1] == b'\n')
+      .and_then(|(index, _)| serde_json::from_slice(&body[index..]).ok())
+      .ok_or_else(|| Error::ProviderInvalidResponse(error.to_string()))
+  })
 }
 
 struct RequestBudget {
@@ -268,7 +330,8 @@ fn error_without_url(error: &reqwest::Error) -> String {
 #[cfg(test)]
 mod tests {
   use super::{
-    GameBananaTransport, RequestBudget, TransportConfig, parse_retry_after, retry_delay,
+    ApiResponse, GameBananaTransport, RequestBudget, TransportConfig, parse_json_body,
+    parse_retry_after, retry_delay,
   };
   use crate::errors::Error;
   use serde_json::Value;
@@ -410,6 +473,41 @@ mod tests {
       .get_json::<Value>("profile", invalid, &cancel)
       .await;
     assert!(matches!(result, Err(Error::ProviderInvalidResponse(_))));
+  }
+
+  #[test]
+  fn json_payloads_survive_leading_php_warnings() {
+    let body = b"\nWarning: Undefined array key \"images\" in /x.php on line 87\n{\"a\":[1]}";
+    let value: Value = parse_json_body(body).unwrap();
+    assert_eq!(value["a"][0], 1);
+    assert!(parse_json_body::<Value>(b"Warning: nope").is_err());
+  }
+
+  #[tokio::test]
+  async fn client_errors_expose_only_the_provider_error_code() {
+    let config = TransportConfig {
+      max_retries: 0,
+      ..TransportConfig::default()
+    };
+    let transport = GameBananaTransport::new(config).unwrap();
+    let cancel = CancellationToken::new();
+
+    let hidden = serve_once(
+      "HTTP/1.1 400 Bad Request\r\nContent-Length: 37\r\n\r\n{\"_sErrorCode\":\"COMMENT_MODE_HIDDEN\"}",
+    )
+    .await;
+    let result = transport
+      .get_json_or_rejection::<Value>("posts", hidden, &cancel)
+      .await;
+    assert!(matches!(&result, Ok(ApiResponse::Rejected { code }) if code == "COMMENT_MODE_HIDDEN"));
+
+    let opaque = serve_once("HTTP/1.1 400 Bad Request\r\nContent-Length: 6\r\n\r\nsecret").await;
+    let result = transport
+      .get_json_or_rejection::<Value>("posts", opaque, &cancel)
+      .await;
+    assert!(
+      matches!(result, Err(Error::ProviderInvalidResponse(message)) if !message.contains("secret"))
+    );
   }
 
   async fn serve_once(response: &'static str) -> reqwest::Url {

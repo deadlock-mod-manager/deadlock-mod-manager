@@ -5,7 +5,7 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { ArrowLeft, RefreshCw, Settings, Trash } from "@deadlock-mods/ui/icons";
 import { Warning } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
 import FavoriteButton from "@/components/mod-browsing/favorite-button";
@@ -13,6 +13,8 @@ import ModButton from "@/components/mod-browsing/mod-button";
 import { InstalledFilesDisplay } from "@/components/mod-detail/installed-files-display";
 import { InstalledVpksSection } from "@/components/mod-detail/installed-vpks-section";
 import { ModAudioPreview } from "@/components/mod-detail/mod-audio-preview";
+import { ModChangelog } from "@/components/mod-detail/mod-changelog";
+import { ModComments } from "@/components/mod-detail/mod-comments";
 import { ModDependencies } from "@/components/mod-detail/mod-dependencies";
 import { ModDescription } from "@/components/mod-detail/mod-description";
 import { ModFiles } from "@/components/mod-detail/mod-files";
@@ -33,6 +35,7 @@ import { BrokenModButton } from "@/components/reports/report-button";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useFeatureFlag } from "@/hooks/use-feature-flags";
 import { useMod } from "@/hooks/use-mod";
+import { useModDetailNavigation } from "@/hooks/use-mod-detail-navigation";
 import { useResolvedDependencies } from "@/hooks/use-mod-dependencies";
 import { useModOptions } from "@/hooks/use-mod-options";
 import { useModDownloads } from "@/hooks/use-mod-downloads";
@@ -51,6 +54,7 @@ const Mod = () => {
   const params = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { collection, backLabel, goBack } = useModDetailNavigation();
   const { isEnabled: isCustomMapsEnabled } = useFeatureFlag(
     "custom-maps",
     false,
@@ -59,29 +63,18 @@ const Mod = () => {
 
   const { data: mod, error, isLoading } = useMod(params.id);
 
-  const goBack = useCallback(() => {
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate("/mods");
-    }
-  }, [navigate]);
-
-  const handleBackClick = useCallback(() => {
-    goBack();
-  }, [goBack]);
-
   useScrollBackButton({
     threshold: 100,
     enabled: true,
     scrollContainerRef,
-    onBackClick: handleBackClick,
+    onBackClick: goBack,
   });
 
+  const isGameBananaMod = !!params.id && !params.id.includes("local");
   const { availableFiles } = useModDownloads({
     remoteId: params.id,
     isDownloadable: mod?.downloadable,
-    enabled: !!params.id && !params.id?.includes("local"),
+    enabled: isGameBananaMod,
   });
 
   const localMods = usePersistedStore((state) => state.localMods);
@@ -174,7 +167,9 @@ const Mod = () => {
                 size='sm'
                 variant='ghost'>
                 <ArrowLeft className='h-4 w-4' />
-                {t("modDetail.backToMods")}
+                <span className='max-w-96 truncate' title={backLabel}>
+                  {backLabel}
+                </span>
               </Button>
             </div>
 
@@ -240,7 +235,9 @@ const Mod = () => {
               size='sm'
               variant='ghost'>
               <ArrowLeft className='h-4 w-4' />
-              {t("mods.backToMods")}
+              <span className='max-w-96 truncate' title={backLabel}>
+                {backLabel}
+              </span>
             </Button>
           </div>
           {mod.isObsolete && (
@@ -281,6 +278,7 @@ const Mod = () => {
               hasHero={hasHero}
               mod={mod}
               activeArchiveNames={modOptions.activeArchiveNames}
+              collection={collection}
               totalDownloads={modOptions.downloads.length}
             />
             {mod.metadata?.donationLinks &&
@@ -365,6 +363,21 @@ const Mod = () => {
           )}
 
           {mod.description && <ModDescription description={mod.description} />}
+
+          {isGameBananaMod && (
+            <ModChangelog
+              installedAt={
+                isInstalled && localMod?.downloadedAt
+                  ? new Date(localMod.downloadedAt)
+                  : undefined
+              }
+              remoteId={mod.remoteId}
+            />
+          )}
+
+          {isGameBananaMod && (
+            <ModComments remoteId={mod.remoteId} remoteUrl={mod.remoteUrl} />
+          )}
 
           {developerMode && localMod && (
             <VpkReplacementSection mod={localMod} />

@@ -9,6 +9,7 @@ import { Client, Pool } from "pg";
 import baselineSnapshot from "../../drizzle/meta/0053_snapshot.json";
 import journal from "../../drizzle/meta/_journal.json";
 import { ReportRepository } from "../repositories/reports.repository";
+import { ModAuthorRepository } from "../repositories/mod-author.repository";
 import * as schema from "../schema";
 
 const migrationsFolder = fileURLToPath(
@@ -59,9 +60,10 @@ describe.skipIf(!testDatabaseUrl)("pre-v2 migration compatibility", () => {
     }
     await pool.query(`
       INSERT INTO mod (id, remote_id, name, remote_url, category, author,
-        remote_added_at, remote_updated_at, tags, images)
+        remote_added_at, remote_updated_at, tags, images, metadata)
       VALUES ('mod_legacy', '123', 'Legacy mod', 'https://example.com/123',
-        'Skins', 'Legacy author', now(), now(), '{}', '{}');
+        'Skins', 'Legacy author', now(), now(), '{}', '{}',
+        '{"author":{"id":"42","profileUrl":"https://gamebanana.com/members/42","avatarUrl":"https://images.gamebanana.com/avatar.jpg"}}');
       INSERT INTO mod_download (id, mod_id, remote_id, file, url, size)
       VALUES ('download_legacy', 'mod_legacy', '456', 'mod.vpk',
         'https://example.com/mod.vpk', 100);
@@ -177,6 +179,73 @@ describe.skipIf(!testDatabaseUrl)("pre-v2 migration compatibility", () => {
     });
   });
 
+  it("normalizes legacy author metadata and links the existing mod", async () => {
+    const result = await pool.query<{
+      mod_author_id: string | null;
+      provider: string;
+      remote_id: string;
+      metadata: Record<string, object> | null;
+    }>(`
+      SELECT mod.mod_author_id, mod.metadata,
+        mod_author.provider, mod_author.remote_id
+      FROM mod
+      JOIN mod_author ON mod_author.id = mod.mod_author_id
+      WHERE mod.id = 'mod_legacy'
+    `);
+
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0]).toMatchObject({
+      provider: "gamebanana",
+      remote_id: "42",
+      metadata: {},
+    });
+    expect(result.rows[0]?.mod_author_id).toStartWith("mod_author_");
+  });
+
+  it("loads the same visible author mods through either identity", async () => {
+    const database = drizzle(pool, { schema });
+    const repository = new ModAuthorRepository(database);
+    const author = await repository.upsert({
+      provider: "gamebanana",
+      remoteId: "99",
+      name: "Profile author",
+      profileUrl: "https://gamebanana.com/members/99",
+      avatarUrl: "https://images.gamebanana.com/avatar.jpg",
+    });
+    await database.insert(schema.mods).values(
+      ["older", "newer", "blacklisted", "trashed", "unrelated"].map(
+        (remoteId, index) => ({
+          remoteId,
+          name: remoteId,
+          remoteUrl: `https://gamebanana.com/mods/${remoteId}`,
+          category: "Skins",
+          author: author.name,
+          modAuthorId: remoteId === "unrelated" ? null : author.id,
+          remoteAddedAt: new Date(0),
+          remoteUpdatedAt: new Date(index * 1_000),
+          isBlacklisted: remoteId === "blacklisted",
+          isTrashed: remoteId === "trashed",
+          tags: [],
+          images: [],
+        }),
+      ),
+    );
+
+    const byId = await repository.findProfileById(author.id);
+    const byProvider = await repository.findProfileByProviderRemoteId(
+      "gamebanana",
+      "99",
+    );
+
+    expect(byId?.author).toEqual(author);
+    expect(byId?.mods.map((mod) => mod.remoteId)).toEqual(["newer", "older"]);
+    expect(byProvider).toEqual(byId);
+    expect(await repository.findProfileById("missing")).toBeNull();
+    expect(
+      await repository.findProfileByProviderRemoteId("other-provider", "99"),
+    ).toBeNull();
+  });
+
   it("preserves foreign keys and their legacy delete behavior", async () => {
     await expect(
       pool.query(`
@@ -221,6 +290,10 @@ it("keeps all pending migrations free of destructive legacy changes", async () =
     expect(sql).not.toMatch(
       /DROP\s+(?:TABLE|COLUMN|CONSTRAINT|INDEX)|SET\s+NOT\s+NULL/i,
     );
-    expect(sql).not.toMatch(/\b(?:DELETE|TRUNCATE|UPDATE)\b/i);
+    const destructiveDataChanges =
+      entry.idx === 55
+        ? /(?:^|\n)\s*(?:DELETE|TRUNCATE)\b/im
+        : /(?:^|\n)\s*(?:DELETE|TRUNCATE|UPDATE)\b/im;
+    expect(sql).not.toMatch(destructiveDataChanges);
   }
 });

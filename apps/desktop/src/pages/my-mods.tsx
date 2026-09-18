@@ -208,6 +208,11 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
   const CardWrapper = useThemeOverride("cardWrapper");
   const modOptions = useModOptions(mod);
 
+  const openModDetail = () =>
+    navigate(`/mods/${mod.remoteId}`, {
+      state: { collection: "library" },
+    });
+
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
   const deleteMod = async () => {
@@ -243,9 +248,7 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
     <ModContextMenu mod={mod}>
       <Card className='shadow h-full'>
         <div className={cn("relative", isDisabled && "grayscale")}>
-          <div
-            className='cursor-pointer'
-            onClick={() => navigate(`/mods/${mod.remoteId}`)}>
+          <div className='cursor-pointer' onClick={openModDetail}>
             {mod.isAudio ? (
               <AudioPlayerPreview
                 audioUrl={mod.audioUrl || ""}
@@ -300,7 +303,7 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
             <div className='flex flex-col'>
               <CardTitle
                 className='w-48 cursor-pointer overflow-clip text-ellipsis text-nowrap'
-                onClick={() => navigate(`/mods/${mod.remoteId}`)}
+                onClick={openModDetail}
                 title={mod.name}>
                 {mod.name}
               </CardTitle>
@@ -357,6 +360,11 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
   const [deleting, setDeleting] = useState(false);
   const modOptions = useModOptions(mod);
 
+  const openModDetail = () =>
+    navigate(`/mods/${mod.remoteId}`, {
+      state: { collection: "library" },
+    });
+
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
   const deleteMod = async () => {
@@ -384,7 +392,7 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
                 "relative h-24 w-24 min-w-24",
                 isDisabled && "grayscale",
               )}
-              onClick={() => navigate(`/mods/${mod.remoteId}`)}>
+              onClick={openModDetail}>
               {mod.isAudio ? (
                 <AudioPlayerPreview
                   audioUrl={mod.audioUrl || ""}
@@ -440,7 +448,7 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
               <div>
                 <h3
                   className='cursor-pointer font-semibold text-lg'
-                  onClick={() => navigate(`/mods/${mod.remoteId}`)}>
+                  onClick={openModDetail}>
                   {mod.name}
                 </h3>
                 <p className='text-muted-foreground text-sm'>

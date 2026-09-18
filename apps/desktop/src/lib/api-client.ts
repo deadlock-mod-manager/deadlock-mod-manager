@@ -4,6 +4,8 @@ import type {
   CustomSettingDto,
   FeatureFlag,
   FileserverDto,
+  ModAuthorDto,
+  ModDto,
   PublishedCrosshairDto,
   RelaysHealthResponse,
   ResolveModsResponse,
@@ -82,6 +84,15 @@ export const getMod = async (remoteId: string) => {
   return getGameBananaCatalogMod(remoteId);
 };
 
+export const getModAuthor = async (id: string) => {
+  const profile = await apiRequest<{ author: ModAuthorDto; mods: ModDto[] }>(
+    `/api/v2/mod-authors/${encodeURIComponent(id)}`,
+  );
+  if (profile.author.provider !== "gamebanana") return profile;
+  const mods = await getGameBananaCatalogMods(profile.author.remoteId);
+  return { ...profile, mods };
+};
+
 export const getModDownload = async (remoteId: string) => {
   return (await getGameBananaCatalogDownloads(remoteId)).downloads;
 };
@@ -104,7 +115,7 @@ export const checkModUpdates = async (
   return checkDirectGameBananaUpdates(
     mods.map((mod) => ({
       remoteId: mod.remoteId,
-      installedAt: Math.floor(mod.installedAt.getTime() / 1_000),
+      installedAt: Math.floor(new Date(mod.installedAt).getTime() / 1_000),
       selectedFileIds: mod.selectedFileIds,
     })),
   );
