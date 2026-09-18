@@ -3,7 +3,6 @@ use crate::config::{PresenceBuildConfig, PresenceTextTemplatePair, PresenceTextT
 use crate::hero_data::HeroDataStore;
 use crate::state::{GamePhase, GameState, MatchMode};
 
-const PARTY_MAX: u32 = 6;
 const LOGO_ASSET: &str = "deadlock_logo";
 const LOGO_TEXT: &str = "Deadlock";
 const DISCORD_ACTIVITY_TEXT_MAX_LEN: usize = 128;
@@ -33,9 +32,10 @@ pub fn build_presence(
     let mut details: Option<String>;
     let mut state_text: Option<String> = None;
     let mut start_timestamp: Option<i64> = None;
+    let party_max = state.match_mode.max_party_size();
     let party_size = state
         .in_party()
-        .then_some([state.party_size as i32, PARTY_MAX as i32]);
+        .then_some([state.party_size.min(party_max) as i32, party_max as i32]);
 
     if hero_display.is_some() {
         small_image_key = Some(LOGO_ASSET.to_string());
@@ -60,7 +60,7 @@ pub fn build_presence(
 
         GamePhase::Hideout => {
             details = Some(hero_presence());
-            state_text = Some(format!("Playing Solo (1 of {PARTY_MAX})"));
+            state_text = Some(format!("Playing Solo (1 of {party_max})"));
             small_image_key = None;
             small_image_text = None;
             &config.templates.solo_hideout
@@ -137,7 +137,7 @@ pub fn build_presence(
         hero_presence: &hero_presence_text,
         mode: state.match_mode.display_text(),
         party_size: state.party_size,
-        party_max: PARTY_MAX,
+        party_max,
     };
     details = render_template_or_default(&template_pair.details, details, &render_context);
     state_text = render_template_or_default(&template_pair.state, state_text, &render_context);
@@ -290,6 +290,19 @@ mod tests {
             .expect("presence should be built");
 
         assert_eq!(presence.party_size, Some([3, 6]));
+    }
+
+    #[test]
+    fn caps_discord_party_size_at_four_in_street_brawl() {
+        let hero_store = HeroDataStore::new(Path::new("."));
+        let mut state = GameState::new();
+        state.set_party_size(3);
+        state.start_match(MatchMode::StreetBrawl);
+
+        let presence = build_presence(&state, &hero_store, &default_config())
+            .expect("presence should be built");
+
+        assert_eq!(presence.party_size, Some([3, 4]));
     }
 
     #[test]

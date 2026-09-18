@@ -42,6 +42,13 @@ impl MatchMode {
             Self::StreetBrawl => "Playing Street Brawl (4v4)",
         }
     }
+
+    pub fn max_party_size(&self) -> u32 {
+        match self {
+            Self::StreetBrawl => 4,
+            _ => 6,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -131,13 +138,13 @@ impl GameState {
             self.match_start_time = Some(now_epoch());
         }
         self.queue_start_time = None;
-        self.game_state_id = Some(5);
+        self.game_state_id = Some(7);
     }
 
     pub fn end_match(&mut self) {
         self.phase = GamePhase::PostMatch;
         self.match_start_time = None;
-        self.game_state_id = Some(6);
+        self.game_state_id = Some(8);
     }
 
     pub fn set_hero(&mut self, hero_key: &str) {
