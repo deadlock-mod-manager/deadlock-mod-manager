@@ -115,7 +115,7 @@ export const checkModUpdates = async (
   return checkDirectGameBananaUpdates(
     mods.map((mod) => ({
       remoteId: mod.remoteId,
-      installedAt: Math.floor(mod.installedAt.getTime() / 1_000),
+      installedAt: Math.floor(new Date(mod.installedAt).getTime() / 1_000),
       selectedFileIds: mod.selectedFileIds,
     })),
   );

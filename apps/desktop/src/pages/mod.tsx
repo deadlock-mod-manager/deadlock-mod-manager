@@ -14,6 +14,7 @@ import { InstalledFilesDisplay } from "@/components/mod-detail/installed-files-d
 import { InstalledVpksSection } from "@/components/mod-detail/installed-vpks-section";
 import { ModAudioPreview } from "@/components/mod-detail/mod-audio-preview";
 import { ModChangelog } from "@/components/mod-detail/mod-changelog";
+import { ModComments } from "@/components/mod-detail/mod-comments";
 import { ModDependencies } from "@/components/mod-detail/mod-dependencies";
 import { ModDescription } from "@/components/mod-detail/mod-description";
 import { ModFiles } from "@/components/mod-detail/mod-files";
@@ -66,10 +67,11 @@ const Mod = () => {
     onBackClick: goBack,
   });
 
+  const isGameBananaMod = !!params.id && !params.id.includes("local");
   const { availableFiles } = useModDownloads({
     remoteId: params.id,
     isDownloadable: mod?.downloadable,
-    enabled: !!params.id && !params.id?.includes("local"),
+    enabled: isGameBananaMod,
   });
 
   const localMods = usePersistedStore((state) => state.localMods);
@@ -359,7 +361,20 @@ const Mod = () => {
 
           {mod.description && <ModDescription description={mod.description} />}
 
-          <ModChangelog remoteId={mod.remoteId} />
+          {isGameBananaMod && (
+            <ModChangelog
+              installedAt={
+                isInstalled && localMod?.downloadedAt
+                  ? new Date(localMod.downloadedAt)
+                  : undefined
+              }
+              remoteId={mod.remoteId}
+            />
+          )}
+
+          {isGameBananaMod && (
+            <ModComments remoteId={mod.remoteId} remoteUrl={mod.remoteUrl} />
+          )}
 
           {developerMode && localMod && (
             <VpkReplacementSection mod={localMod} />

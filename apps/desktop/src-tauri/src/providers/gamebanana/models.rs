@@ -362,77 +362,6 @@ pub struct FileserverStatsBucket {
   pub requests: u64,
 }
 
-#[derive(Debug, Clone, Deserialize)]
-pub struct UpdatesPage {
-  #[serde(rename = "_aMetadata", default)]
-  pub metadata: PageMetadata,
-  #[serde(rename = "_aRecords", default)]
-  pub records: Vec<serde_json::Value>,
-}
-
-impl UpdatesPage {
-  pub fn public_records(&self) -> Vec<SubmissionUpdate> {
-    self
-      .records
-      .iter()
-      .filter_map(|record| serde_json::from_value::<SubmissionUpdate>(record.clone()).ok())
-      .filter(|update| !update.is_private && !update.is_trashed)
-      .collect()
-  }
-}
-
-/// A GameBanana "Update" post: an author-written changelog attached to a submission.
-#[derive(Debug, Clone, Deserialize)]
-pub struct SubmissionUpdate {
-  #[serde(rename = "_idRow")]
-  pub id: u64,
-  #[serde(rename = "_sName", default)]
-  pub name: String,
-  #[serde(rename = "_sVersion", default)]
-  pub version: Option<String>,
-  #[serde(rename = "_sText", default)]
-  pub text: Option<String>,
-  #[serde(rename = "_tsDateAdded", default)]
-  pub date_added: Option<i64>,
-  #[serde(rename = "_bIsPrivate", default)]
-  pub is_private: bool,
-  #[serde(rename = "_bIsTrashed", default)]
-  pub is_trashed: bool,
-  #[serde(
-    rename = "_aChangeLog",
-    default,
-    deserialize_with = "deserialize_change_log"
-  )]
-  pub change_log: Vec<ChangeLogEntry>,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct ChangeLogEntry {
-  #[serde(default)]
-  pub text: String,
-  #[serde(default)]
-  pub cat: Option<String>,
-}
-
-fn deserialize_change_log<'de, D>(deserializer: D) -> Result<Vec<ChangeLogEntry>, D::Error>
-where
-  D: serde::Deserializer<'de>,
-{
-  let value = serde_json::Value::deserialize(deserializer)?;
-  let entries = match value {
-    serde_json::Value::Array(entries) => entries,
-    serde_json::Value::Object(entries) => entries.into_iter().map(|(_, entry)| entry).collect(),
-    _ => Vec::new(),
-  };
-  Ok(
-    entries
-      .into_iter()
-      .filter_map(|entry| serde_json::from_value::<ChangeLogEntry>(entry).ok())
-      .filter(|entry| !entry.text.trim().is_empty())
-      .collect(),
-  )
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct UpdateSnapshot {
   pub remote_updated_at: i64,
@@ -571,32 +500,9 @@ fn string_field(fields: &serde_json::Map<String, serde_json::Value>, key: &str) 
 #[cfg(test)]
 mod tests {
   use super::{
-    BulkHydration, DownloadPage, FileserverPage, IndexPage, Profile, UpdateSnapshot, UpdatesPage,
-    core_error,
+    BulkHydration, DownloadPage, FileserverPage, IndexPage, Profile, UpdateSnapshot, core_error,
   };
   use crate::providers::SubmissionRef;
-
-  #[test]
-  fn updates_page_keeps_public_changelogs_and_skips_malformed_entries() {
-    let json = r#"{
-      "_aMetadata":{"_nRecordCount":3,"_nPerpage":10,"_bIsComplete":true},
-      "_aRecords":[
-        {"_idRow":2,"_sName":"Patch","_sVersion":"1.7","_sText":"","_tsDateAdded":1791039512,
-         "_aChangeLog":[{"text":"Fixed icons","cat":"Bugfix"},{"text":"  ","cat":"Addition"},{"cat":"Bugfix"}]},
-        {"_idRow":3,"_sName":"Hidden","_bIsPrivate":true,"_aChangeLog":[]},
-        {"_idRow":"broken"}
-      ]
-    }"#;
-
-    let page: UpdatesPage = serde_json::from_str(json).unwrap();
-    let updates = page.public_records();
-
-    assert_eq!(page.metadata.record_count, 3);
-    assert_eq!(updates.len(), 1);
-    assert_eq!(updates[0].version.as_deref(), Some("1.7"));
-    assert_eq!(updates[0].change_log.len(), 1);
-    assert_eq!(updates[0].change_log[0].cat.as_deref(), Some("Bugfix"));
-  }
 
   #[test]
   fn malformed_index_records_do_not_discard_the_page() {
