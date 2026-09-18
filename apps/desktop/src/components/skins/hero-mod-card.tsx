@@ -76,10 +76,12 @@ const RandomizerCheckbox = ({
   membership,
   label,
   unavailableLabel,
+  disabled,
 }: {
   membership: RandomizerMembership;
   label: string;
   unavailableLabel: string;
+  disabled: boolean;
 }) => (
   <Tooltip>
     <TooltipTrigger asChild>
@@ -100,7 +102,7 @@ const RandomizerCheckbox = ({
         <Checkbox
           aria-label={membership.available ? label : unavailableLabel}
           checked={membership.selected}
-          disabled={!membership.available}
+          disabled={disabled || !membership.available}
           onCheckedChange={(checked) => membership.onToggle(checked === true)}
         />
       </span>
@@ -184,6 +186,7 @@ export const HeroModCard = ({
       tabIndex={disabled ? -1 : 0}>
       {randomizer && (
         <RandomizerCheckbox
+          disabled={disabled}
           label={t("skins.randomizer.inPool")}
           membership={randomizer}
           unavailableLabel={t("skins.randomizer.unavailable")}
@@ -313,6 +316,7 @@ export const DefaultSkinCard = ({
       role='button'
       tabIndex={disabled ? -1 : 0}>
       <RandomizerCheckbox
+        disabled={disabled}
         label={t("skins.randomizer.defaultInPool")}
         membership={randomizer}
         unavailableLabel={t("skins.randomizer.unavailable")}
