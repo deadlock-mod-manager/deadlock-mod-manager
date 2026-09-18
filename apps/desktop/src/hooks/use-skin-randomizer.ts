@@ -56,21 +56,15 @@ export const useSkinRandomizer = () => {
       return true;
     } catch (error) {
       logger
-        .withMetadata({ modId: mod.remoteId, error })
+        .withMetadata({ modId: mod.remoteId })
+        .withError(error)
         .error("Failed to take off a randomized skin");
       return false;
     }
   }, []);
 
   const installSkin = useCallback(
-    async (mod: LocalMod) => {
-      const fileTree = await silentFileTree(mod).catch(() => null);
-      if (!fileTree) {
-        logger
-          .withMetadata({ modId: mod.remoteId })
-          .warn("Skipping a randomized skin that needs a file selection");
-        return false;
-      }
+    async (mod: LocalMod, fileTree: ModFileTree) => {
       const state = usePersistedStore.getState();
       const result = await install(
         mod,
@@ -88,7 +82,8 @@ export const useSkinRandomizer = () => {
           onError: (m, error) => {
             state.setModStatus(m.remoteId, ModStatus.Downloaded);
             logger
-              .withMetadata({ modId: m.remoteId, error })
+              .withMetadata({ modId: m.remoteId })
+              .withError(error)
               .error("Failed to put on a randomized skin");
           },
         },
@@ -120,16 +115,49 @@ export const useSkinRandomizer = () => {
       if (!isRandomizedPool(pool)) {
         continue;
       }
-      const pick = pickRandomOutcome(pool, currentOutcome(group));
+      // Check every skin before anything is taken off, so a skin that turns
+      // out to need a file pick is never rolled and the hero keeps its look.
+      const fileTrees = new Map<string, ModFileTree>();
+      const installable: typeof pool = [];
+      for (const outcome of pool) {
+        if (outcome === null) {
+          installable.push(outcome);
+          continue;
+        }
+        const fileTree = await silentFileTree(outcome).catch(() => null);
+        if (fileTree) {
+          fileTrees.set(outcome.remoteId, fileTree);
+          installable.push(outcome);
+        } else {
+          logger
+            .withMetadata({ modId: outcome.remoteId })
+            .warn("Skipping a randomized skin that needs a file selection");
+        }
+      }
+      if (installable.length === 0) {
+        continue;
+      }
+      const pick = pickRandomOutcome(installable, currentOutcome(group));
       try {
         const result = await applyHeroSelection(
           group.activeSkins,
           pick ? [pick] : [],
-          { uninstall: uninstallSkin, install: installSkin },
+          {
+            uninstall: uninstallSkin,
+            install: (mod) => {
+              const fileTree = fileTrees.get(mod.remoteId);
+              return fileTree
+                ? installSkin(mod, fileTree)
+                : Promise.resolve(false);
+            },
+          },
         );
         failed ||= result === "aborted";
       } catch (error) {
-        logger.withMetadata({ hero, error }).error("Randomizing a hero failed");
+        logger
+          .withMetadata({ hero })
+          .withError(error)
+          .error("Randomizing a hero failed");
         failed = true;
       }
     }
