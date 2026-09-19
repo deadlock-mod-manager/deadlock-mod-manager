@@ -88,6 +88,40 @@ fn migrate_on_disk(
   )
 }
 
+/// Give one mod a new id everywhere it lives: the mod store and every profile
+/// (parked files, manifests, font markers). Used when the user links an
+/// imported local mod to its GameBanana page. Refuses when the new id is
+/// already in use, so two mods never merge by accident.
+pub(crate) fn relabel_mod_on_disk(
+  app_data: &Path,
+  game_path: &Path,
+  from: &str,
+  to: &str,
+) -> Result<(), Error> {
+  let addons = game_path.join("game").join("citadel").join("addons");
+  if addons.exists() {
+    for profile in profile_bases(&addons)? {
+      if ProfileVpkManifest::load(&profile)?.mods.contains_key(to) {
+        return Err(Error::ModInvalid(format!(
+          "{to} is already in your library ({})",
+          profile.display()
+        )));
+      }
+    }
+  }
+  if app_data.join("mods").join(to).exists() {
+    return Err(Error::ModInvalid(format!(
+      "Downloaded files for {to} already exist; remove that mod first"
+    )));
+  }
+  let migrations = vec![IdentityMigration {
+    from: from.to_string(),
+    to: to.to_string(),
+  }];
+  migrate_mod_cache(&app_data.join("mods"), &migrations)?;
+  migrate_game_files(game_path, &migrations)
+}
+
 fn validate_migrations(
   migrations: Vec<IdentityMigration>,
 ) -> Result<Vec<IdentityMigration>, Error> {

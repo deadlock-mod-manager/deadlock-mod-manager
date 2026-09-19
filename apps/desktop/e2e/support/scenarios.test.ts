@@ -10,7 +10,7 @@ import {
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(38);
+    expect(ids).toHaveLength(39);
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
       expect(scenarioSpec(id)).toContain("./specs/");
@@ -18,6 +18,7 @@ describe("scenario selection", () => {
     }
     expect(selectScenarios("gamebanana")).toHaveLength(10);
     expect(selectScenarios("filesystem")).toHaveLength(8);
+    expect(selectScenarios("interchange")).toEqual(["grimoire-import"]);
     expect(scenarios["profiles-pointer"].nativeInput).toBe(true);
     expect(scenarios["filesystem-manifest-repair"].nativeInput).toBe(false);
     expect(scenarios["conflicts-resolve"].nativeInput).toBe(false);
@@ -44,5 +45,15 @@ describe("scenario selection", () => {
       "./specs/local-mod-lifecycle.e2e.ts",
     );
     expect(scenarioPhases("about-smoke")).toEqual(["smoke"]);
+  });
+
+  it("imports Grimoire in one process and verifies it in a fresh one", () => {
+    expect(scenarioPhases("grimoire-import")).toEqual([
+      "import",
+      "restart-import",
+    ]);
+    expect(scenarioSpec("grimoire-import")).toBe(
+      "./specs/grimoire-import.e2e.ts",
+    );
   });
 });
