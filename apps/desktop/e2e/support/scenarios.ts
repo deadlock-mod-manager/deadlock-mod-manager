@@ -18,6 +18,7 @@ import { assertNormalExit, assertInterruptedExit } from "./phase-evidence";
 import { writeSyntheticVpk } from "./vpk";
 import { contentRoutes, prepareContentWorld } from "./content-fixtures";
 import { preparePresenceCache } from "./settings-fixtures";
+import { grimoireRoutes, prepareGrimoireWorld } from "./interchange-fixtures";
 
 type Definition = {
   family: string;
@@ -125,6 +126,14 @@ const catalogLifecycle: Definition = {
   spec: "gamebanana-lifecycle",
   phases: ["catalog-change", "restart-changed"],
 };
+const interchange: Definition = {
+  ...defaults,
+  family: "interchange",
+  spec: "grimoire-import",
+  phases: ["import", "restart-import"],
+  routes: grimoireRoutes,
+  prepare: async (world) => prepareGrimoireWorld(world),
+};
 const settings: Definition = {
   ...defaults,
   family: "settings",
@@ -193,6 +202,7 @@ export const scenarios = {
   "gamebanana-reinstall": catalogLifecycle,
   "gamebanana-reinstall-disabled": catalogLifecycle,
   "gamebanana-force-update": catalogLifecycle,
+  "grimoire-import": interchange,
 } satisfies Record<string, Definition>;
 export type ScenarioId = keyof typeof scenarios;
 const isScenario = (value: string): value is ScenarioId =>

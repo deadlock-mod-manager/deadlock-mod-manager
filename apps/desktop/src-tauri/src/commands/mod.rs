@@ -23,6 +23,7 @@ pub mod ingest;
 pub mod live_match;
 pub mod logs;
 pub mod match_sync;
+pub mod mod_interchange;
 pub mod mods;
 pub mod policy;
 pub mod profile_snapshot;

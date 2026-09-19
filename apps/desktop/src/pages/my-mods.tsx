@@ -46,6 +46,7 @@ import {
   ChevronRight,
   Download,
   EllipsisVertical,
+  FileOutput,
   FolderOpen,
   LayoutGrid,
   LayoutList,
@@ -73,6 +74,8 @@ import { VpkScanAlert } from "@/components/mods/vpk-scan-alert";
 import { AnalysisProgressToast } from "@/components/my-mods/analysis-progress-toast";
 import { AnalysisResultsDialog } from "@/components/my-mods/analysis-results-dialog";
 import { BatchUpdateDialog } from "@/components/my-mods/batch-update-dialog";
+import { ExportDialog } from "@/components/mod-interchange/export-dialog";
+import { ImportSourceMenu } from "@/components/mod-interchange/import-source-menu";
 import { MyModsEmptyState } from "@/components/my-mods/empty-state";
 import { ModOrderingDialog } from "@/components/my-mods/mod-ordering-dialog";
 import ErrorBoundary from "@/components/shared/error-boundary";
@@ -579,6 +582,7 @@ const MyMods = () => {
   const [activeTab, setActiveTab] = useState<ModFilter>(ModFilter.All);
   const [showBatchUpdateDialog, setShowBatchUpdateDialog] = useState(false);
   const [showModOrdering, setShowModOrdering] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
   const [page, setPage] = useState(0);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedHeroes, setSelectedHeroes] = useState<string[]>([]);
@@ -816,6 +820,7 @@ const MyMods = () => {
             icon={<UploadSimple className='h-4 w-4' />}>
             {t("navigation.addMods")}
           </Button>
+          <ImportSourceMenu />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size='icon' variant='outline'>
@@ -842,6 +847,12 @@ const MyMods = () => {
                 disabled={enabledModsCount === 0 || isDisablingAll}>
                 <PowerOff className='h-4 w-4' />
                 {t("myMods.disableAll")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setShowExportDialog(true)}
+                disabled={mods.length === 0}>
+                <FileOutput className='h-4 w-4' />
+                {t("interchange.exportMenu")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -1035,6 +1046,10 @@ const MyMods = () => {
           <ModOrderingDialog
             open={showModOrdering}
             onOpenChange={setShowModOrdering}
+          />
+          <ExportDialog
+            open={showExportDialog}
+            onOpenChange={setShowExportDialog}
           />
           {analysisProgress && (
             <AnalysisProgressToast

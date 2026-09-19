@@ -139,6 +139,16 @@ Every case checks the mod page's Installed Files list and Active Mod files secti
 
 The variant scenario caught an Installed Files rendering bug: the stored file tree retains unselected options, and the page previously displayed all of them. The display now groups only selected files, including the per-archive file counts.
 
+## Mod manager interchange scenario
+
+`grimoire-import` seeds a Grimoire install inside the world (`foreign-apps/grimoire` userData with two profiles, a profile crosshair, autoexec commands and a crosshair preset, plus VPKs in the shared `citadel/addons`, the Grimoire overflow root `addons1`, and `.disabled`). It picks Grimoire from the **Import from other mod managers** menu and walks the whole wizard: choose mods, profiles and crosshairs, watch the progress, analyze the local mods (the hash lookup finds nothing), link one to its GameBanana page by hand and skip the other. The oracle checks the library (catalog enrichment, the stale-fingerprint fallback, the copied overflow mod, the failed catalog lookup), both recreated profiles with their own enabled states (one renamed to avoid DMM's default profile name, one with a dangling entry dropped), the linked identity in every profile, the mod store and the import ledger, the crosshair history, exact addon inventories and bytes, and that Grimoire's own data stays byte-identical. A second import must offer nothing new, and a fresh process must show the same state.
+
+Enabling mods requires that Deadlock is not running on the host: DMM refuses to enable while the game runs, and the import then parks mods disabled (the wizard warns about this).
+
+```powershell
+pnpm --filter @deadlock-mods/desktop e2e:test -- --case grimoire-import --keep
+```
+
 ## Filesystem recovery scenarios
 
 M5 runs with the same `e2e:test -- --case <case> --keep` command after `e2e:build`. Run these serially on Windows/Wry.

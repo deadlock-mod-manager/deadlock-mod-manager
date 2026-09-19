@@ -593,6 +593,20 @@ impl AddonAnalyzer {
     VpkManager::extract_mod_id_from_prefix(filename)
   }
 
+  /// Identify one VPK through the hash analysis API, the same lookup the
+  /// "Analyze local addons" action runs for every addon.
+  pub async fn identify_file(
+    &self,
+    path: &std::path::Path,
+  ) -> Result<Option<(String, MatchInfo)>, Error> {
+    let owned = path.to_path_buf();
+    let info = task::spawn_blocking(move || Self::parse_vpk_file_fast(&owned))
+      .await
+      .map_err(|e| Error::BackgroundTaskFailed(e.to_string()))?
+      .map_err(Error::InvalidInput)?;
+    self.analyze_hashes(&info.vpk_parsed).await
+  }
+
   /// Fast VPK parsing with minimal data extraction for identification
   fn parse_vpk_file_fast(file_path: &PathBuf) -> Result<LocalAddonInfo, String> {
     let file_name = file_path
