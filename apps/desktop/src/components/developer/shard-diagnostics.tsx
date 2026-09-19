@@ -18,6 +18,7 @@ import Section, { SectionSkeleton } from "@/components/settings/section";
 import { getErrorMessage } from "@/lib/errors";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
+import { invokeGuarded } from "@/lib/game-guard";
 
 type ShardInfo = {
   index: number;
@@ -91,7 +92,7 @@ const ShardDiagnostics = () => {
   const handleResync = async () => {
     try {
       setIsResyncing(true);
-      await invoke("resync_profile_shards", { profileFolder });
+      await invokeGuarded("resync_profile_shards", { profileFolder });
       await refetch();
       toast.success(t("developer.shards.resyncSuccess"));
     } catch (resyncError) {

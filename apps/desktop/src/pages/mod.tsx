@@ -56,6 +56,7 @@ import { findLocalMod } from "@/lib/store/selectors";
 import { useCheckUpdates } from "@/hooks/use-check-updates";
 import { isModOutdated, isModStale } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
+import { NetworkDiagnosticsButton } from "@/components/shared/network-diagnostics-dialog";
 
 const Mod = () => {
   const params = useParams();
@@ -203,6 +204,7 @@ const Mod = () => {
                   <Button onClick={() => window.location.reload()}>
                     {t("errors.tryAgain")}
                   </Button>
+                  <NetworkDiagnosticsButton size='sm' />
                   <Button onClick={goBack} variant='ghost'>
                     {t("modDetail.goBackHome")}
                   </Button>

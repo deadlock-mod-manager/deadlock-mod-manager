@@ -12,6 +12,7 @@ import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { getAdditionalArgs } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
+import { invokeGuarded } from "@/lib/game-guard";
 
 export const useLaunch = () => {
   const { t } = useTranslation();
@@ -77,7 +78,7 @@ export const useLaunch = () => {
       const profileFolder = activeProfile?.folderName ?? null;
 
       for (const mapMod of installedMapMods) {
-        await invoke("uninstall_mod", {
+        await invokeGuarded("uninstall_mod", {
           modId: mapMod.remoteId,
           vpks: mapMod.installedVpks ?? [],
           profileFolder,

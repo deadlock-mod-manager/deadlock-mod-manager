@@ -8,6 +8,7 @@ import { Outlet } from "react-router";
 import { FontInstallDialog } from "./components/downloads/font-install-dialog";
 import { ProgressProvider } from "./components/downloads/progress-indicator";
 import { ForgeInstallRenderer } from "./components/forge-install-renderer";
+import { GameGuardRenderer } from "./components/game-guard-renderer";
 import { FoundryProvider } from "./components/foundry/foundry-context";
 import { GamePresenceRenderer } from "./components/game-presence-renderer";
 import { LiveMatchRenderer } from "./components/live-match-renderer";
@@ -18,6 +19,7 @@ import { TauriAppWindowProvider } from "./components/layout/window-controls/wind
 import { OnboardingWizard } from "./components/onboarding/onboarding-wizard";
 import { TelemetryConsentDialog } from "./components/telemetry/telemetry-consent-dialog";
 import { AlertDialogProvider } from "./components/providers/alert-dialog";
+import { invokeGuarded, isGameRunningError } from "@/lib/game-guard";
 import { AppProvider } from "./components/providers/app";
 import { ThemeProvider } from "./components/providers/theme";
 import { ThemeOverridesProvider } from "./components/providers/theme-overrides";
@@ -111,9 +113,15 @@ const App = ({ runtime, storage }: AppProps) => {
       if (!activePendingFontInstall) return;
       const { modId } = activePendingFontInstall;
       try {
-        await invoke(command, { modId });
+        // Discarding only clears the stash in app data, so it is not guarded.
+        await (command === "install_mod_fonts"
+          ? invokeGuarded(command, { modId })
+          : invoke(command, { modId }));
         dequeuePendingFontInstall();
       } catch (error) {
+        // The user declined the override: a choice, not a failure. The dialog
+        // stays up so they can install once the game is closed.
+        if (isGameRunningError(error)) return;
         logger
           .withMetadata({ modId })
           .withError(error)
@@ -151,6 +159,7 @@ const App = ({ runtime, storage }: AppProps) => {
                       </>
                     )}
                     <ForgeInstallRenderer />
+                    <GameGuardRenderer />
                     <UpdateDialog
                       downloadProgress={downloadProgress}
                       isDownloading={isDownloading}

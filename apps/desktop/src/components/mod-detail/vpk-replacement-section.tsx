@@ -9,7 +9,6 @@ import {
   FileIcon,
   Upload,
 } from "@deadlock-mods/ui/icons";
-import { invoke } from "@tauri-apps/api/core";
 import { join } from "@tauri-apps/api/path";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { useState } from "react";
@@ -17,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import { fileToBytes, writeFileBytes } from "@/lib/file-utils";
 import { usePersistedStore } from "@/lib/store";
 import type { LocalMod } from "@/types/mods";
+import { invokeGuarded } from "@/lib/game-guard";
 
 interface VpkReplacementSectionProps {
   mod: LocalMod;
@@ -127,7 +127,7 @@ export const VpkReplacementSection = ({
       const activeProfile = getActiveProfile();
       const profileFolder = activeProfile?.folderName ?? null;
 
-      await invoke("replace_mod_vpks", {
+      await invokeGuarded("replace_mod_vpks", {
         modId: modIdentifier,
         sourceVpkPaths: paths,
         installedVpks: mod.installedVpks || null,

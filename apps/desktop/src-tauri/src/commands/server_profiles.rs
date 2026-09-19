@@ -85,6 +85,7 @@ pub(crate) fn validate_addons_subfolder(folder_name: &str) -> Result<(), Error> 
 
 #[tauri::command]
 pub async fn create_server_addons_folder(server_id: String) -> Result<String, Error> {
+  crate::game_guard::ensure_game_idle_locked()?;
   log::info!("Creating server addons folder for server: {server_id}");
 
   let folder_name = server_addons_folder_name(&server_id)?;
@@ -111,6 +112,7 @@ pub async fn create_server_addons_folder(server_id: String) -> Result<String, Er
 
 #[tauri::command]
 pub async fn delete_server_addons_folder(server_id: String) -> Result<(), Error> {
+  crate::game_guard::ensure_game_idle_locked()?;
   log::info!("Deleting server addons folder for server: {server_id}");
 
   let folder_name = server_addons_folder_name(&server_id)?;
@@ -175,6 +177,7 @@ pub async fn apply_server_gameinfo(
   server_folder: String,
   also_include_profile: Option<String>,
 ) -> Result<(), Error> {
+  crate::game_guard::ensure_game_idle_locked()?;
   log::info!("Applying server gameinfo: server={server_folder}, profile={also_include_profile:?}");
 
   if !server_folder.starts_with(SERVER_FOLDER_PREFIX) {

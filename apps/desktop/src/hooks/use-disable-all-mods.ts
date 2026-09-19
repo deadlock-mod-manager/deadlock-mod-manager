@@ -1,12 +1,12 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useMutation } from "@tanstack/react-query";
-import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import logger from "@/lib/logger";
 import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus } from "@/types/mods";
+import { invokeGuarded } from "@/lib/game-guard";
 
 export const useDisableAllMods = () => {
   const { t } = useTranslation();
@@ -37,7 +37,7 @@ export const useDisableAllMods = () => {
       const profileFolder = activeProfile?.folderName ?? null;
 
       for (const mod of enabledMods) {
-        await invoke("uninstall_mod", {
+        await invokeGuarded("uninstall_mod", {
           modId: mod.remoteId,
           vpks: mod.installedVpks ?? [],
           profileFolder,

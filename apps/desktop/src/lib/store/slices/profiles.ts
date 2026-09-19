@@ -29,6 +29,7 @@ import {
   placeholderModFromManifest,
 } from "../utils/manifest-install-state";
 import { applyToModsInProfile } from "../utils/mod-slice";
+import { invokeGuarded } from "@/lib/game-guard";
 
 export interface ProfilesState {
   profiles: Record<ProfileId, ModProfile>;
@@ -343,7 +344,7 @@ export const createProfilesSlice: StateCreator<
     let folderName: string | null = null;
 
     try {
-      folderName = await invoke<string>("create_profile_folder", {
+      folderName = await invokeGuarded<string>("create_profile_folder", {
         profileId,
         profileName: name.trim(),
       });
@@ -395,7 +396,7 @@ export const createProfilesSlice: StateCreator<
       if (isDeletingActiveProfile) {
         set({ isSwitching: true });
 
-        await invoke("switch_profile", {
+        await invokeGuarded("switch_profile", {
           profileFolder: fallbackProfile.folderName,
         });
         switchedToFallback = true;
@@ -409,7 +410,7 @@ export const createProfilesSlice: StateCreator<
       }
 
       if (profile.folderName) {
-        await invoke("delete_profile_folder", {
+        await invokeGuarded("delete_profile_folder", {
           profileFolder: profile.folderName,
         });
         logger
@@ -538,7 +539,7 @@ export const createProfilesSlice: StateCreator<
     profileId: ProfileId,
     profileName: string,
   ): Promise<string> => {
-    const folderName = await invoke<string>("create_profile_folder", {
+    const folderName = await invokeGuarded<string>("create_profile_folder", {
       profileId,
       profileName,
     });
@@ -680,7 +681,7 @@ export const createProfilesSlice: StateCreator<
     try {
       get().saveCurrentModsToProfile();
 
-      await invoke("switch_profile", {
+      await invokeGuarded("switch_profile", {
         profileFolder: targetProfile.folderName,
       });
       logger

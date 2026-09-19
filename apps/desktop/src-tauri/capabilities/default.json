@@ -70,6 +70,12 @@
         },
         {
           "url": "https://api.steampowered.com/ISteamNews/**"
+        },
+        {
+          "url": "https://1.1.1.1/cdn-cgi/trace"
+        },
+        {
+          "url": "https://www.cloudflare.com/cdn-cgi/trace"
         }
       ]
     },
