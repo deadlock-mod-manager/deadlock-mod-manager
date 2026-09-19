@@ -3,7 +3,6 @@ import { resolveDetectedHeroLabel } from "@deadlock-mods/hero-parser";
 import type { z } from "zod";
 import { ModDownloadDtoSchema } from "@deadlock-mods/shared";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { detectHeroForMod } from "@/hooks/use-hero-detection";
@@ -13,6 +12,7 @@ import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { findLocalMod } from "@/lib/store/selectors";
 import { type ModDownloadItem, ModStatus } from "@/types/mods";
+import { invokeGuarded } from "@/lib/game-guard";
 
 type ModDownloadDto = z.infer<typeof ModDownloadDtoSchema>;
 
@@ -182,7 +182,7 @@ export const useDownload = (
     const profileFolder = getActiveProfile()?.folderName ?? null;
     try {
       if ((localMod?.installedVpks?.length ?? 0) === 0) {
-        await invoke("purge_mod", {
+        await invokeGuarded("purge_mod", {
           modId: mod.remoteId,
           vpks: [],
           profileFolder,

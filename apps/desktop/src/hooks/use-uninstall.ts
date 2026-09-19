@@ -1,6 +1,5 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useQueryClient } from "@tanstack/react-query";
-import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import logger from "@/lib/logger";
@@ -8,6 +7,7 @@ import { usePersistedStore } from "@/lib/store";
 import { type LocalMod, ModStatus } from "@/types/mods";
 import { isTauriError } from "@/types/tauri";
 import { PROFILE_VPKS_QUERY_KEY } from "./use-vpk-scan";
+import { invokeGuarded } from "@/lib/game-guard";
 
 const useUninstall = () => {
   const { t } = useTranslation();
@@ -49,13 +49,13 @@ const useUninstall = () => {
           })
           .info("Uninstalling mod");
         if (remove) {
-          await invoke("purge_mod", {
+          await invokeGuarded("purge_mod", {
             modId: mod.remoteId,
             vpks: mod.installedVpks ?? [],
             profileFolder,
           });
         } else {
-          await invoke("uninstall_mod", {
+          await invokeGuarded("uninstall_mod", {
             modId: mod.remoteId,
             vpks: mod.installedVpks ?? [],
             profileFolder,
@@ -67,7 +67,7 @@ const useUninstall = () => {
         logger
           .withMetadata({ modId: mod.remoteId, profileFolder })
           .info("Purging disabled mod");
-        await invoke("purge_mod", {
+        await invokeGuarded("purge_mod", {
           modId: mod.remoteId,
           vpks: [],
           profileFolder,

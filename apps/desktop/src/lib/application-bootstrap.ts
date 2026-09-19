@@ -7,6 +7,7 @@ import {
   type RuntimeBootstrap,
   getRuntimeServiceOrigin,
 } from "./runtime-bootstrap";
+import { applyGameGuardSetting } from "./game-guard";
 import { syncProxyConfigToBackend } from "./proxy";
 import { usePersistedStore } from "./store";
 import {
@@ -42,6 +43,12 @@ const bootstrapApplication = async (): Promise<ApplicationBootstrap> => {
 
   await initializeApiUrl(getRuntimeServiceOrigin(runtime, "dmmApi"));
   await syncProxyConfigToBackend();
+  // The backend starts enforced, so a failed sync leaves the guard on.
+  await applyGameGuardSetting(
+    usePersistedStore.getState().blockActionsWhileGameRunning,
+  ).catch((error) => {
+    logger.withError(error).warn("Failed to sync the game guard setting");
+  });
   void invoke("refresh_policy_manifest").catch((error) => {
     logger
       .withError(error)

@@ -83,6 +83,18 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
     ],
   },
   {
+    id: "game-guard",
+    tab: "game",
+    titleKey: "settings.gameGuardSectionTitle",
+    descriptionKey: "settings.gameGuardSectionDescription",
+    settings: [
+      {
+        titleKey: "settings.gameGuard",
+        descriptionKey: "settings.gameGuardDescription",
+      },
+    ],
+  },
+  {
     id: "hero-parser",
     tab: "game",
     titleKey: "heroParser.settingsTitle",
@@ -258,6 +270,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
       { titleKey: "settings.openGameFolder" },
       { titleKey: "settings.openModsFolder" },
       { titleKey: "settings.openModsDataFolder" },
+      {
+        titleKey: "settings.troubleshooting",
+        descriptionKey: "settings.troubleshootingDescription",
+      },
       {
         titleKey: "settings.clearCatalog",
         descriptionKey: "settings.clearCatalogDescription",

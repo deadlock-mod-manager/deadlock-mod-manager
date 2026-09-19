@@ -15,6 +15,7 @@ import type {
 } from "@/types/mods";
 import { ModStatus } from "@/types/mods";
 import type { ErrorKind } from "@/types/tauri";
+import { invokeGuarded, isGameRunningError } from "@/lib/game-guard";
 
 const logger = createLogger("install-with-collection");
 
@@ -100,13 +101,16 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
           .info("Copying selected VPKs from archive");
 
         try {
-          await invoke("copy_selected_vpks_from_archive", {
+          await invokeGuarded("copy_selected_vpks_from_archive", {
             modId: mod.remoteId,
             fileTree,
             profileFolder,
             isMap: mod.isMap,
           });
         } catch (error: unknown) {
+          // The user declined the override; installing anyway would only ask
+          // again for the very next step.
+          if (isGameRunningError(error)) throw error;
           logger
             .withMetadata({ modId: mod.remoteId })
             .withError(error)
@@ -121,7 +125,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         file_tree: fileTree,
       };
 
-      const result = (await invoke("install_mod", {
+      const result = (await invokeGuarded("install_mod", {
         deadlockMod: {
           id: modData.remoteId,
           name: modData.name,

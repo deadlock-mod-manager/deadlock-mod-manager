@@ -35,6 +35,7 @@ import { RestoreBackupDialog } from "@/components/settings/restore-backup-dialog
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import type { AddonsBackup, RestoreStrategy } from "@/types/backup";
+import { invokeGuarded } from "@/lib/game-guard";
 
 const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return "0 B";
@@ -170,7 +171,7 @@ export const AddonsBackupManagement = () => {
 
     try {
       toast.loading(t("settings.restoringBackup"));
-      await invoke("restore_addons_backup", {
+      await invokeGuarded("restore_addons_backup", {
         fileName: selectedBackup,
         strategy,
       });

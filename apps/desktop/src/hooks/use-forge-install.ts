@@ -1,5 +1,4 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
@@ -8,6 +7,7 @@ import { ModCategory } from "@/lib/constants";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { useModProcessor } from "./use-mod-processor";
+import { invokeGuarded } from "@/lib/game-guard";
 
 const FORGE_INSTALL_EVENT = "forge-install-requested";
 const FORGE_AUTHOR = "DeadlockForge";
@@ -27,7 +27,7 @@ const toDisplayName = (name: string, fallback: string): string =>
 
 const finishInstall = async (path: string): Promise<void> => {
   try {
-    await invoke("finish_forge_install", { path });
+    await invokeGuarded("finish_forge_install", { path });
   } catch (error) {
     logger.withError(error).warn("Failed to release the forge install slot");
   }

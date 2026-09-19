@@ -1,5 +1,6 @@
-import i18n from "@/lib/i18n";
+import { isGameRunningError } from "@/lib/game-guard";
 import { HttpError } from "@/lib/http-error";
+import i18n from "@/lib/i18n";
 
 export type ErrorCategory =
   | "connection"
@@ -8,6 +9,7 @@ export type ErrorCategory =
   | "auth"
   | "not-found"
   | "game-config"
+  | "game-running"
   | "unknown";
 
 type Resource = "mods" | "profile" | "server" | "crosshair" | null;
@@ -43,6 +45,14 @@ function isGameConfigError(error: Error): boolean {
 }
 
 export function formatUserError(error: unknown): FormattedError {
+  if (isGameRunningError(error)) {
+    return {
+      title: i18n.t("gameGuard.blockedTitle"),
+      description: i18n.t("gameGuard.blockedDescription"),
+      category: "game-running",
+    };
+  }
+
   if (error instanceof Error && isGameConfigError(error)) {
     return {
       title: i18n.t("errors.genericMessage"),

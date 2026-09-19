@@ -1,6 +1,5 @@
 import type { ModDto } from "@deadlock-mods/shared";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -16,6 +15,7 @@ import type {
   UpdatableMod,
 } from "@/types/mods";
 import { ModStatus } from "@/types/mods";
+import { invokeGuarded } from "@/lib/game-guard";
 
 export const useBatchUpdate = () => {
   const [updateProgress, setUpdateProgress] = useState<UpdateProgress | null>(
@@ -155,7 +155,7 @@ export const useBatchUpdate = () => {
     });
 
     try {
-      const rawResult = await invoke("batch_update_mods", {
+      const rawResult = await invokeGuarded("batch_update_mods", {
         mods: batchUpdateMods,
         profileFolder,
         skipBackup: !backupEnabled,

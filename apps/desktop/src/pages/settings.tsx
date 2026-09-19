@@ -54,6 +54,7 @@ import { AutoexecSettings } from "@/components/settings/autoexec-settings";
 import { DeveloperModeToggle } from "@/components/settings/developer-mode-toggle";
 import { FeatureFlagsSettings } from "@/components/settings/feature-flags-settings";
 import { FileserverSettings } from "@/components/settings/fileserver-settings";
+import { GameGuardToggle } from "@/components/settings/game-guard-toggle";
 import { GamePathSettings } from "@/components/settings/game-path-settings";
 import { SteamPathSettings } from "@/components/settings/steam-path-settings";
 import { GamePresenceSettings } from "@/components/settings/game-presence-settings";
@@ -83,6 +84,7 @@ import ThemeSwitcher from "@/components/settings/theme-switcher";
 import { UpdateChannelSelect } from "@/components/settings/update-channel-select";
 import VolumeControl from "@/components/settings/volume-control";
 import ErrorBoundary from "@/components/shared/error-boundary";
+import { NetworkDiagnosticsButton } from "@/components/shared/network-diagnostics-dialog";
 import PageTitle from "@/components/shared/page-title";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { getCustomSettings } from "@/lib/api-client";
@@ -96,6 +98,7 @@ import { cn } from "@/lib/utils";
 import ThemesPlugin from "@/plugins/themes/index";
 import type { LocalSetting } from "@/types/settings";
 import { useCatalogSyncMutation } from "@/hooks/use-gamebanana-catalog-sync";
+import { invokeGuarded } from "@/lib/game-guard";
 
 type DangerActionProps = {
   disabled?: boolean;
@@ -535,7 +538,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
       return;
     }
     try {
-      const freedBytes = await invoke<number>("clear_all_mods_data");
+      const freedBytes = await invokeGuarded<number>("clear_all_mods_data");
       const freedMB = (freedBytes / 1024 / 1024).toFixed(1);
       toast.success(`${t("settings.clearAllModsData")}: ${freedMB} MB freed`);
     } catch (error) {
@@ -560,7 +563,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
 
       await Promise.all(
         mods.map((mod) =>
-          invoke("purge_mod", {
+          invokeGuarded("purge_mod", {
             modId: mod.remoteId,
             vpks: mod.installedVpks ?? [],
             profileFolder,
@@ -737,6 +740,13 @@ const CustomSettings = ({ value }: { value?: string }) => {
             </Section>
 
             <Section
+              description={t("settings.gameGuardSectionDescription")}
+              searchId='game-guard'
+              title={t("settings.gameGuardSectionTitle")}>
+              <GameGuardToggle />
+            </Section>
+
+            <Section
               description={t("heroParser.settingsDescription")}
               searchId='hero-parser'
               title={t("heroParser.settingsTitle")}>
@@ -896,6 +906,16 @@ const CustomSettings = ({ value }: { value?: string }) => {
                       {t("settings.openModsDataFolder")}
                     </Button>
                   </div>
+                </div>
+
+                <div className='flex flex-col gap-2'>
+                  <p className='text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70'>
+                    {t("settings.troubleshooting")}
+                  </p>
+                  <p className='text-muted-foreground text-xs'>
+                    {t("settings.troubleshootingDescription")}
+                  </p>
+                  <NetworkDiagnosticsButton className='w-fit' />
                 </div>
 
                 <div className='relative overflow-hidden rounded-lg border border-destructive/30 bg-gradient-to-b from-destructive/8 to-destructive/3'>
