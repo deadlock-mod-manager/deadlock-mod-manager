@@ -7,6 +7,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { NetworkDiagnosticsButton } from "@/components/shared/network-diagnostics-dialog";
 import { getApiHealth } from "@/lib/api-client";
 import logger from "@/lib/logger";
 
@@ -124,6 +125,7 @@ export const OnboardingStepApi = ({ onComplete, onError }: ApiStepProps) => {
               className='w-full'>
               {t("onboarding.api.retry")}
             </Button>
+            <NetworkDiagnosticsButton className='w-full' size='sm' />
           </div>
         )}
       </div>

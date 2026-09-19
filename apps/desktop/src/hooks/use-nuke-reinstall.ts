@@ -9,6 +9,7 @@ import { createLogger } from "@/lib/logger";
 import { isLocalMod } from "@/lib/mods/installed-helpers";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus } from "@/types/mods";
+import { invokeGuarded } from "@/lib/game-guard";
 
 const logger = createLogger("nuke-reinstall");
 
@@ -154,7 +155,7 @@ export const useNukeReinstall = () => {
       for (const mod of targets) {
         setState((current) => ({ ...current, currentMod: mod.name }));
         try {
-          await invoke("purge_mod", {
+          await invokeGuarded("purge_mod", {
             modId: mod.remoteId,
             vpks: mod.installedVpks ?? [],
             profileFolder,

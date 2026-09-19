@@ -3,6 +3,7 @@ import type { AnalyzeAddonsResult } from "@/types/mods";
 import type { ProfileVpkFile } from "@/types/profiles";
 import { BASE_URL } from "./api-client";
 import logger from "./logger";
+import { invokeGuarded } from "@/lib/game-guard";
 
 export interface ServerPingTarget {
   id: string;
@@ -31,11 +32,11 @@ export const backupGameInfo = async () => {
 };
 
 export const restoreGameInfoBackup = async () => {
-  return await invoke("restore_gameinfo_backup");
+  return await invokeGuarded("restore_gameinfo_backup");
 };
 
 export const resetToVanilla = async () => {
-  return await invoke("reset_to_vanilla");
+  return await invokeGuarded("reset_to_vanilla");
 };
 
 export const validateGameInfoPatch = async (expectedVanilla: boolean) => {
@@ -91,7 +92,7 @@ export const deleteProfileVpk = async (
   vpkName: string,
   profileFolder: string | null = null,
 ): Promise<void> => {
-  return await invoke("delete_profile_vpk", { profileFolder, vpkName });
+  return await invokeGuarded("delete_profile_vpk", { profileFolder, vpkName });
 };
 
 export const showProfileVpkInFolder = async (

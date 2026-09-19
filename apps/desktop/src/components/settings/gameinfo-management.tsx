@@ -24,6 +24,7 @@ import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { getErrorMessage } from "@/lib/errors";
 import { STALE_TIME_POLL } from "@/lib/query-constants";
+import { invokeGuarded } from "@/lib/game-guard";
 
 type GameInfoStatus = {
   current_hash: string;
@@ -144,7 +145,7 @@ const GameInfoManagement = () => {
 
     try {
       setIsOperating(true);
-      await invoke("restore_gameinfo_backup");
+      await invokeGuarded("restore_gameinfo_backup");
       await refetch();
       toast.success(t("game.restoreSuccess"));
     } catch (error) {
@@ -161,7 +162,7 @@ const GameInfoManagement = () => {
 
     try {
       setIsOperating(true);
-      await invoke("reset_to_vanilla");
+      await invokeGuarded("reset_to_vanilla");
       await refetch();
       toast.success(t("game.resetSuccess"));
     } catch (error) {

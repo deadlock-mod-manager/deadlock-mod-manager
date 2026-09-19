@@ -1,8 +1,8 @@
-import { invoke } from "@tauri-apps/api/core";
 import { useCallback } from "react";
 import { usePersistedStore } from "@/lib/store";
 import { type InstallableMod, type LocalMod, ModStatus } from "@/types/mods";
 import type { ErrorKind } from "@/types/tauri";
+import { invokeGuarded } from "@/lib/game-guard";
 
 export type InstallOptions = {
   onStart: (mod: LocalMod) => void;
@@ -30,7 +30,7 @@ const useInstall = () => {
         const activeProfile = getActiveProfile();
         const profileFolder = activeProfile?.folderName ?? null;
 
-        const result = (await invoke("install_mod", {
+        const result = (await invokeGuarded("install_mod", {
           deadlockMod: {
             id: mod.remoteId,
             name: mod.name,

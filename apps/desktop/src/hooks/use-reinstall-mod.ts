@@ -14,6 +14,7 @@ import {
   type ModFileTree,
   ModStatus,
 } from "@/types/mods";
+import { invokeGuarded } from "@/lib/game-guard";
 
 const logger = createLogger("reinstall-mod");
 
@@ -71,7 +72,7 @@ export const useReinstallMod = () => {
         try {
           // Removes both the installed VPKs and the cached download, so the
           // mod really is fetched again instead of restored from cache.
-          await invoke("purge_mod", {
+          await invokeGuarded("purge_mod", {
             modId: target.remoteId,
             vpks: target.installedVpks ?? [],
             profileFolder,
