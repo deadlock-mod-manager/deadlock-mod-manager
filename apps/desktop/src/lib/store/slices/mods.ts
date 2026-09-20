@@ -454,8 +454,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       modProgress: {
         ...state.modProgress,
         [remoteId]: {
-          percentage:
-            ((progress?.progressTotal ?? 0) / (progress?.total ?? 1)) * 100,
+          percentage: progress?.percentage ?? 0,
           speed: progress?.transferSpeed,
         },
       },

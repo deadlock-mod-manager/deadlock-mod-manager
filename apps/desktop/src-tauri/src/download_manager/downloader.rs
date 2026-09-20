@@ -50,6 +50,8 @@ fn is_allowed_download_url(url: &reqwest::Url) -> bool {
 pub struct DownloadProgress {
   pub downloaded: u64,
   pub speed: f64,
+  /// `None` until a response states the entity's size; a declared size is not one.
+  pub total: Option<u64>,
 }
 
 /// Shared pause gate for in-flight downloads (one per mod).
@@ -269,7 +271,8 @@ where
 
     let base_offset = resume_from;
     let mut session_downloaded: u64 = 0;
-    let mut total_entity_size = expected_size;
+    let mut confirmed_entity_size: Option<u64> = None;
+    let mut completion_reported = false;
 
     let mut request = client.get(url);
     if resume_from > 0 {
@@ -319,7 +322,7 @@ where
       }
 
       if let Some(total) = parse_content_range_total(&headers) {
-        total_entity_size = total_entity_size.max(total);
+        confirmed_entity_size = Some(total);
         if let Some(limit) = max_bytes
           && total > limit
         {
@@ -338,11 +341,20 @@ where
         }
       }
 
-      let cl = response.content_length().unwrap_or(0);
-      if cl > 0 {
-        total_entity_size = total_entity_size.max(cl);
+      if let Some(total) = response.content_length().filter(|&total| total > 0) {
+        confirmed_entity_size = Some(total);
       }
     }
+
+    let assumed_total_size = confirmed_entity_size.unwrap_or(expected_size);
+
+    // A resumed file already holds `base_offset` bytes, which the bar reads as zero until
+    // its first chunk lands.
+    on_progress(DownloadProgress {
+      downloaded: base_offset,
+      speed: 0.0,
+      total: confirmed_entity_size,
+    });
 
     let mut file = if resume_from > 0 {
       OpenOptions::new()
@@ -421,9 +433,13 @@ where
       let now = Instant::now();
       let elapsed_since_last = now.duration_since(last_progress_time).as_millis();
 
-      let is_complete = total_entity_size > 0 && downloaded_total >= total_entity_size;
+      // One report on reaching the assumed size, not one per chunk past it: a declared size
+      // that understates the file leaves every remaining chunk complete and unthrottled.
+      let is_complete = assumed_total_size > 0 && downloaded_total >= assumed_total_size;
+      let report_completion = is_complete && !completion_reported;
+      completion_reported |= is_complete;
 
-      if is_complete || elapsed_since_last >= PROGRESS_THROTTLE_MS {
+      if report_completion || elapsed_since_last >= PROGRESS_THROTTLE_MS {
         let elapsed_total = start_time.elapsed().as_secs_f64();
         let speed = if elapsed_total > 0.0 {
           session_downloaded as f64 / elapsed_total
@@ -434,6 +450,7 @@ where
         on_progress(DownloadProgress {
           downloaded: downloaded_total,
           speed,
+          total: confirmed_entity_size,
         });
 
         last_progress_time = now;
@@ -441,15 +458,19 @@ where
     }
 
     let final_total = base_offset.saturating_add(session_downloaded);
+
     let elapsed_total = start_time.elapsed().as_secs_f64();
     let final_speed = if elapsed_total > 0.0 {
       session_downloaded as f64 / elapsed_total
     } else {
       0.0
     };
+    // Falling back to the bytes read: a declared size that overstated the file, and that no
+    // response corrected, would otherwise leave the bar short of 100% for good.
     on_progress(DownloadProgress {
       downloaded: final_total,
       speed: final_speed,
+      total: confirmed_entity_size.or(Some(final_total)),
     });
 
     file
@@ -538,6 +559,21 @@ mod tests {
     assert!(validate_download_url("https://user@gamebanana.com/dl/1").is_err());
     assert!(validate_download_url("http://127.0.0.1:43199/files/mod.vpk").is_err());
     assert!(validate_download_url("https://127.0.0.1:43199/files/mod.vpk").is_err());
+  }
+
+  #[test]
+  fn a_sub_range_withholding_its_total_confirms_nothing() {
+    let mut headers = HeaderMap::new();
+    headers.insert(
+      reqwest::header::CONTENT_RANGE,
+      reqwest::header::HeaderValue::from_static("bytes 600000-1648575/*"),
+    );
+
+    assert_eq!(
+      parse_content_range_total(&headers),
+      None,
+      "a slice that withheld the total was sized at its own end, confirming a fragment as the whole entity"
+    );
   }
 
   #[tokio::test]
