@@ -11,6 +11,7 @@ export type Progress = {
   progressTotal: number;
   total: number;
   transferSpeed: number;
+  percentage: number;
 };
 
 export enum ModStatus {

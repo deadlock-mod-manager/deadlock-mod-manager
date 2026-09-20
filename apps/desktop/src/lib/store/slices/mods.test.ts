@@ -15,7 +15,7 @@ mock.module("@/lib/logger", () => ({
   default: loggerMock,
 }));
 
-import type { LocalMod } from "@/types/mods";
+import type { LocalMod, Progress } from "@/types/mods";
 import { ModStatus } from "@/types/mods";
 import type { ModProfile, ProfileId } from "@/types/profiles";
 import { createProfileId } from "@/types/profiles";
@@ -36,6 +36,17 @@ const modFor = (remoteId: string): LocalMod =>
     status: ModStatus.Installed,
     installedVpks: [`pak0${remoteId}_dir.vpk`],
   }) as LocalMod;
+
+const progressFor = (
+  percentage: number,
+  bytes: { progressTotal: number; total: number },
+): Progress => ({
+  progress: bytes.progressTotal,
+  progressTotal: bytes.progressTotal,
+  total: bytes.total,
+  transferSpeed: 1_000,
+  percentage,
+});
 
 const profileFor = (id: string, remoteIds: string[]): ModProfile => ({
   id: createProfileId(id),
@@ -138,6 +149,27 @@ describe("removeMod", () => {
     expect(Object.keys(store.getState().profiles.default.enabledMods)).toEqual([
       "2",
     ]);
+  });
+});
+
+describe("setModProgress", () => {
+  it("reports the backend's percentage, not the byte ratio beside it", () => {
+    store
+      .getState()
+      .setModProgress(
+        "2",
+        progressFor(25, { progressTotal: 900, total: 1000 }),
+      );
+
+    expect(store.getState().modProgress["2"].percentage).toBe(25);
+  });
+
+  it("reports it even when the byte ratio would not divide", () => {
+    store
+      .getState()
+      .setModProgress("2", progressFor(25, { progressTotal: 900, total: 0 }));
+
+    expect(store.getState().modProgress["2"].percentage).toBe(25);
   });
 });
 
