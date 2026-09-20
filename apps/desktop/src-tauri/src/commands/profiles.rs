@@ -16,6 +16,7 @@ pub async fn create_profile_folder(
   profile_id: String,
   profile_name: String,
 ) -> Result<String, Error> {
+  crate::game_guard::ensure_game_idle_locked("create_profile_folder")?;
   log::info!("Creating profile folder for: {profile_id} - {profile_name}");
 
   let sanitized_name = profile_name
@@ -58,6 +59,7 @@ pub async fn create_profile_folder(
 
 #[tauri::command]
 pub async fn delete_profile_folder(profile_folder: String) -> Result<(), Error> {
+  crate::game_guard::ensure_game_idle_locked("delete_profile_folder")?;
   log::info!("Deleting profile folder: {profile_folder}");
 
   if profile_folder.is_empty() || profile_folder == "." || profile_folder == ".." {
@@ -103,6 +105,7 @@ pub async fn delete_profile_folder(profile_folder: String) -> Result<(), Error> 
 
 #[tauri::command]
 pub async fn switch_profile(profile_folder: Option<String>) -> Result<(), Error> {
+  crate::game_guard::ensure_game_idle_locked("switch_profile")?;
   log::info!("Switching to profile folder: {profile_folder:?}");
 
   let mut mod_manager = MANAGER.lock().unwrap();
@@ -270,6 +273,7 @@ pub async fn delete_profile_vpk(
   profile_folder: Option<String>,
   vpk_name: String,
 ) -> Result<(), Error> {
+  crate::game_guard::ensure_game_idle_locked("delete_profile_vpk")?;
   log::info!("Deleting VPK {vpk_name} from profile {profile_folder:?}");
   let resolved = resolve_profile_vpk_path(profile_folder, &vpk_name)?;
   let manifest = ProfileVpkManifest::open_for_write(&resolved.profile_base)?;
@@ -313,6 +317,7 @@ pub async fn import_profile_batch(
   mods: Vec<super::downloads::ProfileImportMod>,
   import_type: String,
 ) -> Result<super::downloads::ProfileImportResult, Error> {
+  crate::game_guard::ensure_game_idle_locked("import_profile_batch")?;
   log::info!(
     "Starting batch profile import: {} mods, type: {}, folder: {}",
     mods.len(),

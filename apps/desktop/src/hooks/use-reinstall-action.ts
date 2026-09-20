@@ -3,8 +3,12 @@ import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { type ReinstallStep, useReinstallMod } from "@/hooks/use-reinstall-mod";
+import { getErrorMessage } from "@/lib/errors";
+import { createLogger } from "@/lib/logger";
 import { isLocalMod } from "@/lib/mods/installed-helpers";
 import { type LocalMod, ModStatus } from "@/types/mods";
+
+const logger = createLogger("reinstall-action");
 
 /** Nothing to reinstall while the mod is already busy doing something. */
 const BUSY_STATUSES = new Set<ModStatus>([
@@ -69,6 +73,16 @@ export const useReinstallAction = (mod: LocalMod) => {
           );
           break;
       }
+    } catch (error) {
+      // Thrown when the reinstall was stopped before it could touch anything,
+      // a guard block being the usual reason. The mod is left as it was.
+      logger.withError(error).warn("Reinstall aborted");
+      toast.error(
+        t("reinstall.failedWithReason", {
+          modName: mod.name,
+          reason: getErrorMessage(error),
+        }),
+      );
     } finally {
       setStep(null);
     }

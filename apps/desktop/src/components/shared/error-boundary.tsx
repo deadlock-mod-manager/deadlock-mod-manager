@@ -24,6 +24,7 @@ import {
   ErrorBoundary as ReactErrorBoundary,
 } from "react-error-boundary";
 import { useTranslation } from "react-i18next";
+import { NetworkDiagnosticsButton } from "@/components/shared/network-diagnostics-dialog";
 
 const STATUS_PAGE_URL = "https://status.deadlockmods.app";
 
@@ -56,8 +57,19 @@ const CATEGORY_ICONS: Record<ErrorCategory, ReactNode> = {
   auth: <LockIcon className='size-12' weight='duotone' />,
   "not-found": <WarningIcon className='size-12' weight='duotone' />,
   "game-config": <WarningIcon className='size-12' weight='duotone' />,
+  "game-running": <WarningIcon className='size-12' weight='duotone' />,
   unknown: <WarningIcon className='size-12' weight='duotone' />,
 };
+
+// Only categories that came from a failed request. "unknown" is the catch-all
+// for anything that never reached the network, like a broken gameinfo.gi.
+const NETWORK_CATEGORIES = new Set<ErrorCategory>([
+  "connection",
+  "server",
+  "rate-limit",
+  "auth",
+  "not-found",
+]);
 
 const FallbackComponent = ({ error, resetErrorBoundary }: FallbackProps) => {
   const { t } = useTranslation();
@@ -91,7 +103,7 @@ const FallbackComponent = ({ error, resetErrorBoundary }: FallbackProps) => {
       )}
 
       <EmptyContent>
-        <div className='flex gap-3'>
+        <div className='flex flex-wrap justify-center gap-3'>
           <Button
             onClick={resetErrorBoundary}
             icon={<ArrowClockwiseIcon className='h-4 w-4' />}>
@@ -103,6 +115,9 @@ const FallbackComponent = ({ error, resetErrorBoundary }: FallbackProps) => {
             icon={<ArrowLeftIcon className='h-4 w-4' />}>
             {t("errors.goBack")}
           </Button>
+          {NETWORK_CATEGORIES.has(userError.category) && (
+            <NetworkDiagnosticsButton />
+          )}
         </div>
       </EmptyContent>
     </Empty>

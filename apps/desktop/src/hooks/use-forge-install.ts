@@ -27,6 +27,8 @@ const toDisplayName = (name: string, fallback: string): string =>
 
 const finishInstall = async (path: string): Promise<void> => {
   try {
+    // Unguarded on purpose: this only clears the staged payload, and a block
+    // here would strand the bridge's in-flight slot.
     await invoke("finish_forge_install", { path });
   } catch (error) {
     logger.withError(error).warn("Failed to release the forge install slot");

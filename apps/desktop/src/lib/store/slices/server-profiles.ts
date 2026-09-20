@@ -1,7 +1,7 @@
-import { invoke } from "@tauri-apps/api/core";
 import type { StateCreator } from "zustand";
 import logger from "@/lib/logger";
 import type { State } from "..";
+import { invokeGuarded } from "@/lib/game-guard";
 
 export const MAX_STAGED_SERVERS = 5;
 
@@ -64,7 +64,7 @@ export const createServerProfilesSlice: StateCreator<
     if (!entry) return;
 
     try {
-      await invoke("delete_server_addons_folder", { serverId });
+      await invokeGuarded("delete_server_addons_folder", { serverId });
     } catch (error) {
       logger
         .withMetadata({ serverId, folderName: entry.folderName })

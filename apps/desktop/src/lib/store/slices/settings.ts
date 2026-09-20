@@ -66,6 +66,10 @@ export type SettingsState = {
   enabledPlugins: Record<string, boolean>; // pluginId -> isEnabled
   gamePresenceEnabled: boolean;
   forgeInstallEnabled: boolean;
+  /** Whether changing mods is refused while Deadlock is running. The game holds
+   *  its VPKs open, so renaming or deleting them mid-session corrupts the load
+   *  order. Users who know what they are doing can turn this off. */
+  blockActionsWhileGameRunning: boolean;
   gamePresenceTextTemplates: PresenceTextTemplates;
   gamePresenceHeroOverrides: GamePresenceHeroOverrides;
   backupEnabled: boolean;
@@ -112,6 +116,7 @@ export type SettingsState = {
 
   setGamePresenceEnabled: (enabled: boolean) => void;
   setForgeInstallEnabled: (enabled: boolean) => void;
+  setBlockActionsWhileGameRunning: (enabled: boolean) => void;
   setGamePresenceTextTemplates: (templates: PresenceTextTemplates) => void;
   setGamePresenceHeroOverrides: (
     heroOverrides: GamePresenceHeroOverrides,
@@ -163,6 +168,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   enabledPlugins: {},
   gamePresenceEnabled: true,
   forgeInstallEnabled: false,
+  blockActionsWhileGameRunning: true,
   gamePresenceTextTemplates: createDefaultGamePresenceTextTemplates(),
   gamePresenceHeroOverrides: {},
   backupEnabled: true,
@@ -317,6 +323,11 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   setForgeInstallEnabled: (enabled: boolean) =>
     set(() => ({
       forgeInstallEnabled: enabled,
+    })),
+
+  setBlockActionsWhileGameRunning: (enabled: boolean) =>
+    set(() => ({
+      blockActionsWhileGameRunning: enabled,
     })),
 
   setGamePresenceTextTemplates: (templates: PresenceTextTemplates) =>

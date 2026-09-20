@@ -1,6 +1,5 @@
 import type { ModDto, SharedProfile } from "@deadlock-mods/shared";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { invoke } from "@tauri-apps/api/core";
 import type { TFunction } from "i18next";
 import logger from "@/lib/logger";
 import { prepareProfileImportMods } from "@/lib/profiles/import-profile-prep";
@@ -13,6 +12,7 @@ import type { State } from "@/lib/store";
 import type { ProfileImportResult } from "@/types/mods";
 import type { ModProfile, ProfileId } from "@/types/profiles";
 import { createProfileId } from "@/types/profiles";
+import { invokeGuarded } from "@/lib/game-guard";
 
 export interface ProfileImportFlowDeps {
   setImportProgress: (progress: ImportProgress | null) => void;
@@ -108,13 +108,16 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
       };
 
       if (preparedMods.length > 0) {
-        result = await invoke<ProfileImportResult>("import_profile_batch", {
-          profileName,
-          profileDescription: t("profiles.importedProfileDescription"),
-          profileFolder: folderName,
-          mods: preparedMods.map((entry) => entry.profileImportMod),
-          importType: "override",
-        });
+        result = await invokeGuarded<ProfileImportResult>(
+          "import_profile_batch",
+          {
+            profileName,
+            profileDescription: t("profiles.importedProfileDescription"),
+            profileFolder: folderName,
+            mods: preparedMods.map((entry) => entry.profileImportMod),
+            importType: "override",
+          },
+        );
 
         if (result.profileFolder && result.profileFolder !== folderName) {
           setProfileFolderName(newProfileId, result.profileFolder);
@@ -218,13 +221,16 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
       };
 
       if (preparedMods.length > 0) {
-        result = await invoke<ProfileImportResult>("import_profile_batch", {
-          profileName: activeProfile.name,
-          profileDescription: activeProfile.description || "",
-          profileFolder: activeProfile.folderName || "",
-          mods: preparedMods.map((entry) => entry.profileImportMod),
-          importType: "override",
-        });
+        result = await invokeGuarded<ProfileImportResult>(
+          "import_profile_batch",
+          {
+            profileName: activeProfile.name,
+            profileDescription: activeProfile.description || "",
+            profileFolder: activeProfile.folderName || "",
+            mods: preparedMods.map((entry) => entry.profileImportMod),
+            importType: "override",
+          },
+        );
 
         applyImportInstalledModsToProfile(
           activeProfile.id,

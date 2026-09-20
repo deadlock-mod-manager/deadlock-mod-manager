@@ -22,6 +22,7 @@ pub async fn place_forge_payload(
   path: String,
   destination: String,
 ) -> Result<(), Error> {
+  crate::game_guard::ensure_game_idle_locked("place_forge_payload")?;
   let staged = forge_bridge::peek_staged(&path)?;
   let mods_root = crate::runtime_environment::app_local_data_dir(&app_handle)
     .map_err(Error::Tauri)?
@@ -55,6 +56,9 @@ fn contained_destination(mods_root: &Path, destination: &str) -> Result<PathBuf,
   Ok(destination)
 }
 
+/// Cleanup only, and deliberately unguarded: it touches the staged payload in
+/// app data, never the game install. Blocking it while Deadlock runs would
+/// leave the in-flight slot held and the bridge refusing every later install.
 #[tauri::command]
 pub async fn finish_forge_install(path: String) -> Result<(), Error> {
   let staged = forge_bridge::staged_path(&path)?;

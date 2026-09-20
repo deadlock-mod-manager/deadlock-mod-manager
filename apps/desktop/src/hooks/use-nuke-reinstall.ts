@@ -9,6 +9,7 @@ import { createLogger } from "@/lib/logger";
 import { isLocalMod } from "@/lib/mods/installed-helpers";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus } from "@/types/mods";
+import { invokeGuarded, isGameRunningError } from "@/lib/game-guard";
 
 const logger = createLogger("nuke-reinstall");
 
@@ -154,12 +155,15 @@ export const useNukeReinstall = () => {
       for (const mod of targets) {
         setState((current) => ({ ...current, currentMod: mod.name }));
         try {
-          await invoke("purge_mod", {
+          await invokeGuarded("purge_mod", {
             modId: mod.remoteId,
             vpks: mod.installedVpks ?? [],
             profileFolder,
           });
         } catch (error) {
+          // A guard block is not drift: the files are in use. Aborting here
+          // leaves the state intact instead of nuking it for nothing.
+          if (isGameRunningError(error)) throw error;
           // Expected whenever the manager's state is ahead of the file system.
           missingOnDisk += 1;
           logger

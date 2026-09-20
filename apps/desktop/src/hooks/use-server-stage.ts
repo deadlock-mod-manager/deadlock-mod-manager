@@ -14,6 +14,7 @@ import {
   ModStatus,
 } from "@/types/mods";
 import type { ResolvedRequirementStatus } from "./use-server-join";
+import { invokeGuarded } from "@/lib/game-guard";
 
 export type ServerStagingPhase =
   | "idle"
@@ -95,7 +96,7 @@ const installModIntoServerFolder = (
   mod: LocalMod,
   serverFolder: string,
 ): Promise<InstallableMod> =>
-  invoke<InstallableMod>("install_mod", {
+  invokeGuarded<InstallableMod>("install_mod", {
     deadlockMod: {
       id: mod.remoteId,
       name: mod.name,
@@ -240,9 +241,12 @@ export const useServerStage = () => {
       });
       let folderName: string | null = null;
       try {
-        folderName = await invoke<string>("create_server_addons_folder", {
-          serverId: server.id,
-        });
+        folderName = await invokeGuarded<string>(
+          "create_server_addons_folder",
+          {
+            serverId: server.id,
+          },
+        );
 
         const resolvedGB = options.requirements.filter(
           (r) => r.resolved && r.provider === "gamebanana" && r.mod,
@@ -335,7 +339,7 @@ export const useServerStage = () => {
             phase: "downloading-server-content",
             currentRequirement: null,
           }));
-          await invoke("download_deadworks_content", {
+          await invokeGuarded("download_deadworks_content", {
             serverId: server.id,
             serverFolder: folderName,
           });
@@ -349,7 +353,7 @@ export const useServerStage = () => {
         const activeProfileFolder = options.layered
           ? (getActiveProfile()?.folderName ?? null)
           : null;
-        await invoke("apply_server_gameinfo", {
+        await invokeGuarded("apply_server_gameinfo", {
           serverFolder: folderName,
           alsoIncludeProfile: activeProfileFolder,
         });
@@ -385,7 +389,7 @@ export const useServerStage = () => {
         // stagedServers, so clean up the orphan ourselves.
         if (folderName) {
           try {
-            await invoke("delete_server_addons_folder", {
+            await invokeGuarded("delete_server_addons_folder", {
               serverId: server.id,
             });
           } catch (cleanupError) {
