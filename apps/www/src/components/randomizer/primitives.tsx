@@ -29,13 +29,18 @@ export const formatSouls = (souls: number): string =>
   souls.toLocaleString("en-US");
 
 /** Shop descriptions ship with Panorama markup the page has no use for. */
-export const stripMarkup = (value: string | undefined): string =>
-  value
-    ? value
-        .replaceAll(/<[^>]*>/g, "")
-        .replaceAll(/\s+/g, " ")
-        .trim()
-    : "";
+export const stripMarkup = (value: string | undefined): string => {
+  if (!value) return "";
+
+  let sanitized = value;
+  let previous: string;
+  do {
+    previous = sanitized;
+    sanitized = sanitized.replaceAll(/<[^>]*>/g, "");
+  } while (sanitized !== previous);
+
+  return sanitized.replaceAll(/\s+/g, " ").trim();
+};
 
 export const MicroLabel = ({
   children,
