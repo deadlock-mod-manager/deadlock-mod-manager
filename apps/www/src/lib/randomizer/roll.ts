@@ -131,10 +131,13 @@ const rollBuild = (
 ): RolledItem[] => {
   const draft = hero.item_draft_bucketing;
   // Heroes carry their own draft pool, so the shop is not the same for all of
-  // them. A hero with no draft data at all still gets the whole shop.
-  const draftable = Object.keys(draft).length
-    ? upgrades.filter((item) => draft[item.class_name] !== undefined)
-    : upgrades;
+  // them. The whole shop stands in when a hero has no draft data, and equally
+  // when its data matches nothing we can buy - renamed class names after a
+  // patch would otherwise leave the build empty.
+  const drafted = upgrades.filter(
+    (item) => draft[item.class_name] !== undefined,
+  );
+  const draftable = drafted.length > 0 ? drafted : upgrades;
   const maxTier = draftable.reduce((max, u) => Math.max(max, u.item_tier), 1);
   const blocked = new Set<string>();
 

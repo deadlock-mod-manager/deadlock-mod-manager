@@ -40,10 +40,10 @@ export const CHALLENGES: Challenge[] = [
       "Until your first tier 2 item is bought, melee is your only way to damage an enemy player.",
   },
   {
-    id: "ult-last",
-    title: "Ultimate last",
+    id: "ult-on-cooldown",
+    title: "Never bank the ultimate",
     detail:
-      "Your ultimate is the final ability you may spend points on. Everything else gets maxed first.",
+      "Your ultimate goes out the moment it comes up. Saving it for a better moment is a fail.",
   },
   {
     id: "no-retreat",

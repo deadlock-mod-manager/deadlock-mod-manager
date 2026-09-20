@@ -14,8 +14,9 @@ import {
   Link2,
   ScrollText,
   SlidersHorizontal,
+  X,
 } from "@deadlock-mods/ui/icons";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CATEGORY_LABELS,
   type DeadlockAbility,
@@ -50,23 +51,50 @@ interface RandomizerViewProps {
   onSectionsChange: (sections: Sections) => void;
 }
 
+/** `--hero` drives every accent on the page, so it is typed rather than cast. */
+interface HeroStyle extends React.CSSProperties {
+  "--hero": string;
+}
+
 const titleCase = (value: string): string =>
   value.charAt(0).toUpperCase() + value.slice(1);
 
+const COPY_FEEDBACK_MS = 2000;
+
 const CopyLinkButton = () => {
-  const [copied, setCopied] = useState(false);
+  // The clipboard is a permission the browser can refuse, so the button says
+  // which of the two happened rather than silently claiming success.
+  const [result, setResult] = useState<"idle" | "copied" | "failed">("idle");
+  const timeout = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  useEffect(() => () => clearTimeout(timeout.current), []);
+
+  const flash = (next: "copied" | "failed") => {
+    setResult(next);
+    clearTimeout(timeout.current);
+    timeout.current = setTimeout(() => setResult("idle"), COPY_FEEDBACK_MS);
+  };
 
   const copy = () => {
-    void navigator.clipboard.writeText(window.location.href).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+    navigator.clipboard.writeText(window.location.href).then(
+      () => flash("copied"),
+      () => flash("failed"),
+    );
   };
+
+  const icon = {
+    idle: <Link2 className='size-4' />,
+    copied: <Check className='size-4' />,
+    failed: <X className='size-4' />,
+  }[result];
+  const label = { idle: "Copy link", copied: "Copied", failed: "Copy failed" }[
+    result
+  ];
 
   return (
     <Button onClick={copy} size='sm' variant='outline'>
-      {copied ? <Check className='size-4' /> : <Link2 className='size-4' />}
-      {copied ? "Copied" : "Copy link"}
+      {icon}
+      {label}
     </Button>
   );
 };
@@ -172,10 +200,10 @@ export const RandomizerView = ({
   const firstBuy = roll.build[0];
   const tags = hero.tags ?? [];
 
+  const heroStyle: HeroStyle = { "--hero": heroAccent(hero) };
+
   return (
-    <div
-      className='relative'
-      style={{ "--hero": heroAccent(hero) } as React.CSSProperties}>
+    <div className='relative' style={heroStyle}>
       <div
         aria-hidden='true'
         className='dl-grain pointer-events-none absolute inset-x-0 top-0 h-[680px] overflow-hidden'>

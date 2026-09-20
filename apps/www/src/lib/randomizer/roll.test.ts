@@ -292,6 +292,18 @@ describe("rollLoadout", () => {
     }
   });
 
+  it("falls back to the whole shop when the draft map matches nothing", () => {
+    const strangerHero = makeHero(51, {
+      item_draft_bucketing: {
+        upgrade_renamed_by_a_patch: { bucket: "Good", weight: 1 },
+      },
+    });
+    const { build, draftPoolSize } = rollLoadout(9, [strangerHero], UPGRADES);
+
+    expect(build).toHaveLength(SLOTS_PER_CATEGORY * ITEM_CATEGORIES.length);
+    expect(draftPoolSize).toBe(UPGRADES.length);
+  });
+
   it("falls back to the whole shop when a hero has no draft data", () => {
     const heroWithoutDraft = makeHero(50, { item_draft_bucketing: {} });
     const { build, draftPoolSize } = rollLoadout(

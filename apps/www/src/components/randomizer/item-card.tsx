@@ -37,12 +37,14 @@ export const ItemCard = ({ entry, order, imbueTarget }: ItemCardProps) => {
     <HoverCard closeDelay={80} openDelay={120}>
       <HoverCardTrigger asChild>
         <article
+          aria-label={`${item.name}, ${CATEGORY_LABELS[category]} tier ${item.item_tier}`}
           className={cn(
             "dl-notch-sm animate-dl-rise relative flex items-start gap-3 border bg-background-dark/80 p-3 transition-colors",
             CATEGORY_BORDER[category],
-            "hover:bg-background-dark",
+            "hover:bg-background-dark focus-visible:outline-2 focus-visible:outline-[rgb(var(--hero))]",
           )}
-          style={{ animationDelay: `${order * 45}ms` }}>
+          style={{ animationDelay: `${order * 45}ms` }}
+          tabIndex={0}>
           <span className='absolute top-2.5 right-3 font-mono text-[10px] text-muted-foreground/45 tabular-nums'>
             {String(order).padStart(2, "0")}
           </span>

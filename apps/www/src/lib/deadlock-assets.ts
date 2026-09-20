@@ -1,3 +1,4 @@
+import { ProviderError } from "@deadlock-mods/common/client-errors";
 import { z } from "zod";
 
 /**
@@ -127,29 +128,44 @@ export type DeadlockHero = z.infer<typeof heroSchema>;
 export type DeadlockUpgrade = z.infer<typeof upgradeSchema>;
 export type DeadlockAbility = z.infer<typeof abilitySchema>;
 
-export class DeadlockAssetsError extends Error {
+/** On the app's shared error hierarchy, so it carries a stable error code. */
+export class DeadlockAssetsError extends ProviderError {
   constructor(
     readonly endpoint: string,
     readonly status: number,
   ) {
     super(`deadlock assets ${endpoint} responded ${status}`);
-    this.name = "DeadlockAssetsError";
   }
 }
 
 /**
  * A single hero or item that no longer matches its schema is dropped instead of
  * failing the request - the assets API ships new fields every patch, and one
- * unparsable entry should not empty the whole roster.
+ * unparsable entry should not empty the whole roster. A response that yields
+ * nothing usable throws rather than returning an empty list, because the page
+ * cannot tell an empty roster from a roster it is still waiting for and would
+ * sit on its loading state forever.
  */
-const parseList = <T>(schema: z.ZodType<T>, data: unknown): T[] => {
+const parseList = <T>(
+  schema: z.ZodType<T>,
+  data: unknown,
+  endpoint: string,
+): T[] => {
   if (!Array.isArray(data)) {
-    return [];
+    throw new ProviderError(
+      `deadlock assets ${endpoint} did not return a list`,
+    );
   }
-  return data.flatMap((entry) => {
+  const parsed = data.flatMap((entry) => {
     const result = schema.safeParse(entry);
     return result.success ? [result.data] : [];
   });
+  if (data.length > 0 && parsed.length === 0) {
+    throw new ProviderError(
+      `deadlock assets ${endpoint} returned nothing usable`,
+    );
+  }
+  return parsed;
 };
 
 const request = async (endpoint: string): Promise<unknown> => {
@@ -161,10 +177,8 @@ const request = async (endpoint: string): Promise<unknown> => {
 };
 
 export const getHeroes = async (): Promise<DeadlockHero[]> => {
-  const heroes = parseList(
-    heroSchema,
-    await request("/heroes?only_active=true"),
-  );
+  const endpoint = "/heroes?only_active=true";
+  const heroes = parseList(heroSchema, await request(endpoint), endpoint);
   return heroes.filter(
     (hero) => hero.player_selectable && !hero.disabled && !hero.in_development,
   );
@@ -185,10 +199,8 @@ export const isBuyable = (upgrade: DeadlockUpgrade): boolean =>
   upgrade.cost !== UNPRICED_ITEM_COST;
 
 export const getUpgrades = async (): Promise<DeadlockUpgrade[]> => {
-  const upgrades = parseList(
-    upgradeSchema,
-    await request("/items/by-type/upgrade"),
-  );
+  const endpoint = "/items/by-type/upgrade";
+  const upgrades = parseList(upgradeSchema, await request(endpoint), endpoint);
   return upgrades.filter(isBuyable);
 };
 
@@ -199,10 +211,8 @@ export const getUpgrades = async (): Promise<DeadlockUpgrade[]> => {
  * rerolling quickly would outrun the API.
  */
 export const getAbilities = async (): Promise<Map<string, DeadlockAbility>> => {
-  const abilities = parseList(
-    abilitySchema,
-    await request("/items/by-type/ability"),
-  );
+  const endpoint = "/items/by-type/ability";
+  const abilities = parseList(abilitySchema, await request(endpoint), endpoint);
   return new Map(
     abilities
       .filter(

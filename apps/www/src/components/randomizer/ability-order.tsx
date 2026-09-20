@@ -127,6 +127,10 @@ export const AbilityPointTrack = ({ steps, abilities }: AbilityOrderProps) => (
             className='aspect-square w-full'
             slot={step.slot}
           />
+          <span className='sr-only'>
+            {abilities[step.slot - 1]?.name ?? `Ability ${step.slot}`}, upgrade{" "}
+            {step.step}
+          </span>
           <span className='font-mono text-[11px] text-[rgb(var(--hero))] tabular-nums'>
             +{step.apCost} AP
           </span>
