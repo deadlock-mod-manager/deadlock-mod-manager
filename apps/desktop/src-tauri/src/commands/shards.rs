@@ -31,8 +31,11 @@ pub async fn get_shard_diagnostics(profile_folder: Option<String>) -> Result<Sha
 /// Force the shard layout and gameinfo.gi search paths back into agreement with
 /// the manifest, without waiting for a profile switch.
 #[tauri::command]
-pub async fn resync_profile_shards(profile_folder: Option<String>) -> Result<(), Error> {
-  crate::game_guard::ensure_game_idle_locked()?;
+pub async fn resync_profile_shards(
+  profile_folder: Option<String>,
+  guard_permit: Option<String>,
+) -> Result<(), Error> {
+  crate::game_guard::ensure_game_idle_locked("resync_profile_shards", guard_permit.as_deref())?;
   log::info!("Resyncing shards for profile: {profile_folder:?}");
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.migrate_profile_to_shards(profile_folder.clone())?;

@@ -116,8 +116,8 @@ pub(crate) fn apply_font_cleanup(cleanup: PreparedFontCleanup) -> Result<(), Err
 }
 
 #[tauri::command]
-pub async fn install_mod_fonts(mod_id: String) -> Result<(), Error> {
-  crate::game_guard::ensure_game_idle_locked()?;
+pub async fn install_mod_fonts(mod_id: String, guard_permit: Option<String>) -> Result<(), Error> {
+  crate::game_guard::ensure_game_idle_locked("install_mod_fonts", guard_permit.as_deref())?;
   use crate::mod_manager::FontManager;
 
   log::info!("Installing fonts for mod: {mod_id}");
@@ -152,9 +152,10 @@ pub async fn install_mod_fonts(mod_id: String) -> Result<(), Error> {
   Ok(())
 }
 
+/// Unguarded: it only clears the stash in app data, so skipping a font install
+/// still works while Deadlock is running.
 #[tauri::command]
 pub async fn discard_mod_fonts(mod_id: String) -> Result<(), Error> {
-  crate::game_guard::ensure_game_idle_locked()?;
   use crate::mod_manager::FontManager;
 
   log::info!("Discarding stashed fonts for mod: {mod_id}");

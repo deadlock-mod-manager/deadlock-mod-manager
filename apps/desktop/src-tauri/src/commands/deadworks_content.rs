@@ -271,8 +271,12 @@ pub async fn download_deadworks_content(
   app: AppHandle,
   server_id: String,
   server_folder: String,
+  guard_permit: Option<String>,
 ) -> Result<ContentResult, Error> {
-  crate::game_guard::ensure_game_idle_locked()?;
+  crate::game_guard::ensure_game_idle_locked(
+    "download_deadworks_content",
+    guard_permit.as_deref(),
+  )?;
   let server_id = validate_remote_server_id(&server_id)?;
   validate_addons_subfolder(&server_folder)?;
 

@@ -15,14 +15,14 @@ pub async fn stop_forge_bridge() -> Result<(), Error> {
 }
 
 /// Kept out of the renderer: bytes cross the IPC boundary as a JSON number
-/// array, so a large sound build would cost gigabytes there.
+/// array, so a large sound build would cost gigabytes there. Unguarded: the
+/// payload lands in app data, and the later install into the game is guarded.
 #[tauri::command]
 pub async fn place_forge_payload(
   app_handle: AppHandle,
   path: String,
   destination: String,
 ) -> Result<(), Error> {
-  crate::game_guard::ensure_game_idle_locked()?;
   let staged = forge_bridge::peek_staged(&path)?;
   let mods_root = crate::runtime_environment::app_local_data_dir(&app_handle)
     .map_err(Error::Tauri)?
@@ -56,9 +56,11 @@ fn contained_destination(mods_root: &Path, destination: &str) -> Result<PathBuf,
   Ok(destination)
 }
 
+/// Cleanup only, and deliberately unguarded: it touches the staged payload in
+/// app data, never the game install. Blocking it while Deadlock runs would
+/// leave the in-flight slot held and the bridge refusing every later install.
 #[tauri::command]
 pub async fn finish_forge_install(path: String) -> Result<(), Error> {
-  crate::game_guard::ensure_game_idle_locked()?;
   let staged = forge_bridge::staged_path(&path)?;
 
   // Freed before the delete: a file still held open would otherwise leave the

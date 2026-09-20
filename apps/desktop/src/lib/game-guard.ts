@@ -33,7 +33,6 @@ export type GuardedCommand =
   | "copy_local_mod_vpks"
   | "replace_mod_vpks"
   | "install_mod_fonts"
-  | "finish_forge_install"
   | "resync_profile_shards"
   | "download_deadworks_content";
 
@@ -66,8 +65,13 @@ export const runGuarded = async <T>(
   } catch (error) {
     if (!isGameRunningError(error)) throw error;
     if (!(await deps.confirmOverride())) throw error;
-    await deps.invoke("allow_next_game_file_operation");
-    return await deps.invoke<T>(command, args);
+    // The token ties the permit to this retry, so another guarded call running
+    // alongside it, even of the same command, cannot claim the confirmation.
+    const guardPermit = await deps.invoke<string>(
+      "allow_next_game_file_operation",
+      { operation: command },
+    );
+    return await deps.invoke<T>(command, { ...args, guardPermit });
   }
 };
 
