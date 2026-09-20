@@ -34,6 +34,10 @@ const routeList: RouteProps[] = [
     label: "Browse Mods",
   },
   {
+    href: "/randomizer",
+    label: "Randomizer",
+  },
+  {
     href: "/transparency",
     label: "Transparency",
   },
