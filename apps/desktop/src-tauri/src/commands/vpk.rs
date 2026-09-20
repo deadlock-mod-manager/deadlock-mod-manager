@@ -112,8 +112,8 @@ pub async fn analyze_local_addons(
 }
 
 #[tauri::command]
-pub async fn clear_all_mods_data() -> Result<u64, Error> {
-  crate::game_guard::ensure_game_idle_locked()?;
+pub async fn clear_all_mods_data(guard_permit: Option<String>) -> Result<u64, Error> {
+  crate::game_guard::ensure_game_idle_locked("clear_all_mods_data", guard_permit.as_deref())?;
   let mod_manager = MANAGER.lock().unwrap();
   mod_manager.clear_all_mods_data()
 }

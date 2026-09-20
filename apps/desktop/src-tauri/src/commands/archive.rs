@@ -55,8 +55,12 @@ pub async fn copy_selected_vpks_from_archive(
   file_tree: crate::mod_manager::file_tree::ModFileTree,
   profile_folder: Option<String>,
   _is_map: bool,
+  guard_permit: Option<String>,
 ) -> Result<(), Error> {
-  crate::game_guard::ensure_game_idle_locked()?;
+  crate::game_guard::ensure_game_idle_locked(
+    "copy_selected_vpks_from_archive",
+    guard_permit.as_deref(),
+  )?;
   use crate::mod_manager::archive_extractor::ArchiveExtractor;
 
   log::info!(
@@ -146,8 +150,9 @@ pub async fn copy_local_mod_vpks(
   mod_id: String,
   profile_folder: Option<String>,
   _is_map: bool,
+  guard_permit: Option<String>,
 ) -> Result<Vec<String>, Error> {
-  crate::game_guard::ensure_game_idle_locked()?;
+  crate::game_guard::ensure_game_idle_locked("copy_local_mod_vpks", guard_permit.as_deref())?;
   use crate::mod_manager::vpk_manager::VpkManager;
 
   log::info!(
@@ -232,8 +237,9 @@ pub async fn replace_mod_vpks(
   source_vpk_paths: Vec<String>,
   installed_vpks: Option<Vec<String>>,
   profile_folder: Option<String>,
+  guard_permit: Option<String>,
 ) -> Result<(), Error> {
-  crate::game_guard::ensure_game_idle_locked()?;
+  crate::game_guard::ensure_game_idle_locked("replace_mod_vpks", guard_permit.as_deref())?;
   log::info!(
     "Replacing VPK files for mod {mod_id}: {} files (profile: {profile_folder:?})",
     source_vpk_paths.len()

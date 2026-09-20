@@ -82,8 +82,12 @@ fn validate_download_url(url: &str) -> Result<(), Error> {
 }
 
 #[tauri::command]
-pub async fn install_mod(deadlock_mod: Mod, profile_folder: Option<String>) -> Result<Mod, Error> {
-  crate::game_guard::ensure_game_idle_locked()?;
+pub async fn install_mod(
+  deadlock_mod: Mod,
+  profile_folder: Option<String>,
+  guard_permit: Option<String>,
+) -> Result<Mod, Error> {
+  crate::game_guard::ensure_game_idle_locked("install_mod", guard_permit.as_deref())?;
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.install_mod(deadlock_mod, profile_folder)
 }
@@ -93,8 +97,9 @@ pub async fn uninstall_mod(
   mod_id: String,
   vpks: Vec<String>,
   profile_folder: Option<String>,
+  guard_permit: Option<String>,
 ) -> Result<(), Error> {
-  crate::game_guard::ensure_game_idle_locked()?;
+  crate::game_guard::ensure_game_idle_locked("uninstall_mod", guard_permit.as_deref())?;
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.uninstall_mod(mod_id, vpks, profile_folder)
 }
@@ -104,8 +109,9 @@ pub async fn purge_mod(
   mod_id: String,
   vpks: Vec<String>,
   profile_folder: Option<String>,
+  guard_permit: Option<String>,
 ) -> Result<(), Error> {
-  crate::game_guard::ensure_game_idle_locked()?;
+  crate::game_guard::ensure_game_idle_locked("purge_mod", guard_permit.as_deref())?;
   let game_path = {
     let mod_manager = MANAGER.lock().unwrap();
     mod_manager.get_steam_manager().get_game_path().cloned()
@@ -134,8 +140,9 @@ pub async fn purge_mod(
 pub async fn reorder_mods(
   mod_order_data: Vec<(String, u32)>,
   profile_folder: Option<String>,
+  guard_permit: Option<String>,
 ) -> Result<Vec<Mod>, Error> {
-  crate::game_guard::ensure_game_idle_locked()?;
+  crate::game_guard::ensure_game_idle_locked("reorder_mods", guard_permit.as_deref())?;
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.reorder_mods(mod_order_data, profile_folder)
 }
@@ -144,15 +151,19 @@ pub async fn reorder_mods(
 pub async fn reorder_mods_by_remote_id(
   mod_order_data: Vec<(String, Vec<String>, u32)>,
   profile_folder: Option<String>,
+  guard_permit: Option<String>,
 ) -> Result<Vec<(String, Vec<String>)>, Error> {
-  crate::game_guard::ensure_game_idle_locked()?;
+  crate::game_guard::ensure_game_idle_locked("reorder_mods_by_remote_id", guard_permit.as_deref())?;
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.reorder_mods_by_remote_id(mod_order_data, profile_folder)
 }
 
 #[tauri::command]
-pub async fn clear_mods(profile_folder: Option<String>) -> Result<(), Error> {
-  crate::game_guard::ensure_game_idle_locked()?;
+pub async fn clear_mods(
+  profile_folder: Option<String>,
+  guard_permit: Option<String>,
+) -> Result<(), Error> {
+  crate::game_guard::ensure_game_idle_locked("clear_mods", guard_permit.as_deref())?;
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.clear_mods(profile_folder)
 }
@@ -222,6 +233,8 @@ pub struct InstalledModInfo {
   pub file_tree: Option<ModFileTree>,
 }
 
+// Tauri commands take their IPC arguments flat.
+#[allow(clippy::too_many_arguments)]
 #[tauri::command]
 pub async fn batch_update_mods(
   app_handle: AppHandle,
@@ -231,8 +244,9 @@ pub async fn batch_update_mods(
   profile_folder: String,
   skip_backup: bool,
   max_backups: u32,
+  guard_permit: Option<String>,
 ) -> Result<BatchUpdateResult, Error> {
-  crate::game_guard::ensure_game_idle_locked()?;
+  crate::game_guard::ensure_game_idle_locked("batch_update_mods", guard_permit.as_deref())?;
   use crate::mod_manager::addons_backup_manager::AddonsBackupManager;
 
   log::info!(
@@ -638,8 +652,9 @@ pub async fn swap_mod_options(
   current_installed_vpks: Vec<String>,
   current_original_names: Vec<String>,
   selected_original_names: Vec<String>,
+  guard_permit: Option<String>,
 ) -> Result<SwapModOptionsResult, Error> {
-  crate::game_guard::ensure_game_idle_locked()?;
+  crate::game_guard::ensure_game_idle_locked("swap_mod_options", guard_permit.as_deref())?;
   log::info!(
     "Swapping options for mod {mod_id} (profile: {profile_folder:?}): {} -> {} files",
     current_installed_vpks.len(),
@@ -944,8 +959,12 @@ pub async fn switch_mod_download_variant(
   archive_name: String,
   current_installed_vpks: Vec<String>,
   current_original_names: Vec<String>,
+  guard_permit: Option<String>,
 ) -> Result<SwitchDownloadVariantResult, Error> {
-  crate::game_guard::ensure_game_idle_locked()?;
+  crate::game_guard::ensure_game_idle_locked(
+    "switch_mod_download_variant",
+    guard_permit.as_deref(),
+  )?;
   log::info!(
     "Switching download variant for {mod_id} (profile: {profile_folder:?}) to archive {archive_name}"
   );

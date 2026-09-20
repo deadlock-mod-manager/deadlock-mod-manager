@@ -14,7 +14,7 @@ import {
   type ModFileTree,
   ModStatus,
 } from "@/types/mods";
-import { invokeGuarded } from "@/lib/game-guard";
+import { invokeGuarded, isGameRunningError } from "@/lib/game-guard";
 
 const logger = createLogger("reinstall-mod");
 
@@ -78,6 +78,9 @@ export const useReinstallMod = () => {
             profileFolder,
           });
         } catch (error) {
+          // A guard block means the files are still there and still in use;
+          // wiping the state and downloading again would only lose track.
+          if (isGameRunningError(error)) throw error;
           missingOnDisk = true;
           logger
             .withMetadata({ mod: target.remoteId })

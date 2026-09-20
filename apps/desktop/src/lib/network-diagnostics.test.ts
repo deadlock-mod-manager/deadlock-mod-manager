@@ -187,8 +187,8 @@ describe("runNetworkDiagnostics", () => {
     expect(calls.filter((url) => url === DNS_PROBE_URL)).toHaveLength(1);
   });
 
-  it("detects broken DNS when the bare IP answers but hostnames do not", async () => {
-    const { fetch } = fakeFetch({ [DNS_PROBE_URL]: "fail" });
+  it("detects broken DNS when the bare IP answers but lookups do not", async () => {
+    const { fetch } = fakeFetch({ [DNS_PROBE_URL]: "dns" });
     const results = await runNetworkDiagnostics(deps({ fetch }));
 
     expect(byId(results, "internet").status).toBe("ok");
@@ -196,6 +196,41 @@ describe("runNetworkDiagnostics", () => {
       status: "error",
       message: "dnsFailed",
       fixes: ["changeDns", "flushDnsCache", "restartRouter"],
+    });
+  });
+
+  it("reports a hanging lookup as a timeout, not as broken DNS", async () => {
+    const { fetch } = fakeFetch({ [DNS_PROBE_URL]: "hang" });
+    const results = await runNetworkDiagnostics(deps({ fetch }));
+
+    const dns = byId(results, "dns");
+    expect(dns.status).toBe("error");
+    expect(dns.message).toBe("timeout");
+    expect(dns.fixes).not.toContain("changeDns");
+    expect(dns.fixes).not.toContain("flushDnsCache");
+  });
+
+  it("does not blame DNS for a host that resolved but refused", async () => {
+    const { fetch } = fakeFetch({ [DNS_PROBE_URL]: "fail" });
+    const results = await runNetworkDiagnostics(deps({ fetch }));
+
+    // The bare IP still answers, so the internet is up and this is a
+    // reachability problem rather than a resolver one.
+    expect(byId(results, "internet").status).toBe("ok");
+    expect(byId(results, "dns")).toMatchObject({
+      status: "error",
+      message: "unreachable",
+      fixes: ["checkConnection", "disableVpnFirewall"],
+    });
+  });
+
+  it("points at the internet first when nothing answers at all", async () => {
+    const { fetch } = fakeFetch({ "https://": "fail" });
+    const results = await runNetworkDiagnostics(deps({ fetch }));
+
+    expect(byId(results, "dns")).toMatchObject({
+      status: "error",
+      fixes: ["fixInternetFirst"],
     });
   });
 

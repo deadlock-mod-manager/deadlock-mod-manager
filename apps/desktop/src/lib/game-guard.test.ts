@@ -10,21 +10,24 @@ const gameRunning = { kind: "gameRunning", message: "Game is running" };
 
 type Call = { command: string; args?: Record<string, unknown> };
 
-/** Fails the guarded command until the one-shot override has been armed. */
+const PERMIT = "permit-1";
+
+/** Fails the guarded command unless it carries the token the override issued. */
 const backend = (options: { blocked: boolean }) => {
   const calls: Call[] = [];
-  let armed = false;
+  let issued: string | null = null;
   const invoke = async <T>(
     command: string,
     args?: Record<string, unknown>,
   ): Promise<T> => {
     calls.push({ command, args });
     if (command === "allow_next_game_file_operation") {
-      armed = true;
-      return undefined as T;
+      issued = PERMIT;
+      return PERMIT as T;
     }
-    if (options.blocked && !armed) throw gameRunning;
-    armed = false;
+    const permitted = issued !== null && args?.guardPermit === issued;
+    if (options.blocked && !permitted) throw gameRunning;
+    if (permitted) issued = null;
     return "done" as T;
   };
   return { invoke, calls };
@@ -87,6 +90,20 @@ describe("runGuarded", () => {
     ]);
   });
 
+  it("arms the override for the command it confirmed", async () => {
+    const dependencies = deps({
+      blocked: true,
+      confirmOverride: async () => true,
+    });
+
+    await runGuarded(dependencies, COMMAND);
+
+    expect(dependencies.calls[1]).toEqual({
+      command: "allow_next_game_file_operation",
+      args: { operation: COMMAND },
+    });
+  });
+
   it("keeps the block when the user cancels", async () => {
     const dependencies = deps({
       blocked: true,
@@ -97,6 +114,21 @@ describe("runGuarded", () => {
       kind: "gameRunning",
     });
     expect(dependencies.calls.map((call) => call.command)).toEqual([COMMAND]);
+  });
+
+  it("passes the issued permit back only on the retry", async () => {
+    const dependencies = deps({
+      blocked: true,
+      confirmOverride: async () => true,
+    });
+
+    await runGuarded(dependencies, COMMAND, { profileFolder: null });
+
+    expect(dependencies.calls[0]?.args).toEqual({ profileFolder: null });
+    expect(dependencies.calls.at(-1)?.args).toEqual({
+      profileFolder: null,
+      guardPermit: PERMIT,
+    });
   });
 
   it("passes the original arguments to the retry", async () => {
@@ -110,7 +142,7 @@ describe("runGuarded", () => {
 
     expect(dependencies.calls.at(-1)).toEqual({
       command: "uninstall_mod",
-      args,
+      args: { ...args, guardPermit: PERMIT },
     });
   });
 
