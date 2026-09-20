@@ -293,6 +293,25 @@ mod tests {
   }
 
   #[test]
+  fn a_size_confirmed_after_a_sibling_reported_widens_the_denominator() {
+    let aggregator = ProgressAggregator::new(&[CHUNK * 10, 0]);
+
+    let before = record(&aggregator, 0, CHUNK * 10, SPEED);
+    assert_eq!(
+      before.percentage, 100.0,
+      "a file whose size nothing has stated yet was counted in the denominator"
+    );
+
+    let after = record_with_total(&aggregator, 1, 0, CHUNK * 10, SPEED);
+
+    assert_eq!(after.total_size, CHUNK * 20);
+    assert_eq!(
+      after.percentage, 50.0,
+      "the denominator was frozen at its first published value, which is also what would stall the bar below 100% when a response corrects an overstated size"
+    );
+  }
+
+  #[test]
   fn a_file_that_overruns_its_size_cannot_push_past_one_hundred() {
     let aggregator = ProgressAggregator::new(&[CHUNK, CHUNK]);
 
