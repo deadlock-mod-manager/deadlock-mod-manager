@@ -51,7 +51,7 @@ pub async fn list_addons_backups() -> Result<Vec<AddonsBackup>, Error> {
 
 #[tauri::command]
 pub async fn restore_addons_backup(file_name: String, strategy: String) -> Result<(), Error> {
-  crate::game_guard::ensure_game_idle_locked()?;
+  crate::game_guard::ensure_game_idle_locked("restore_addons_backup")?;
   log::info!("Restoring addons backup: {file_name} with strategy: {strategy}");
   let mut mod_manager = MANAGER.lock().unwrap();
   let backup_manager = mod_manager.get_addons_backup_manager();

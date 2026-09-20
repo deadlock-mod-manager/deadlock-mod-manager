@@ -87,6 +87,20 @@ describe("runGuarded", () => {
     ]);
   });
 
+  it("arms the override for the command it confirmed", async () => {
+    const dependencies = deps({
+      blocked: true,
+      confirmOverride: async () => true,
+    });
+
+    await runGuarded(dependencies, COMMAND);
+
+    expect(dependencies.calls[1]).toEqual({
+      command: "allow_next_game_file_operation",
+      args: { operation: COMMAND },
+    });
+  });
+
   it("keeps the block when the user cancels", async () => {
     const dependencies = deps({
       blocked: true,

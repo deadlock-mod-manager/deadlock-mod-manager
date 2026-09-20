@@ -35,7 +35,6 @@ export type GuardedCommand =
   | "install_mod_fonts"
   | "discard_mod_fonts"
   | "place_forge_payload"
-  | "finish_forge_install"
   | "resync_profile_shards"
   | "download_deadworks_content";
 
@@ -68,7 +67,9 @@ export const runGuarded = async <T>(
   } catch (error) {
     if (!isGameRunningError(error)) throw error;
     if (!(await deps.confirmOverride())) throw error;
-    await deps.invoke("allow_next_game_file_operation");
+    // Tied to this command, so a guarded call running alongside it cannot
+    // claim a confirmation the user gave for something else.
+    await deps.invoke("allow_next_game_file_operation", { operation: command });
     return await deps.invoke<T>(command, args);
   }
 };

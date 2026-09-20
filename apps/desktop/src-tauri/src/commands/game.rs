@@ -179,7 +179,6 @@ pub async fn launch_game_direct(additional_args: String) -> Result<(), Error> {
       .game_launch_request(&additional_args)?
   };
 
-  crate::game_guard::invalidate_cache();
   await_launched_game(request.spawn()?).await
 }
 
@@ -188,7 +187,6 @@ pub async fn stop_game() -> Result<(), Error> {
   if crate::runtime_environment::records_game_launches() {
     return Ok(());
   }
-  crate::game_guard::invalidate_cache();
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.stop_game()
 }
@@ -212,7 +210,7 @@ pub async fn set_game_file_guard(enabled: bool) -> Result<(), Error> {
 
 /// Arms the one-shot override behind the warning dialog's "continue anyway".
 #[tauri::command]
-pub async fn allow_next_game_file_operation() -> Result<(), Error> {
-  crate::game_guard::allow_next();
+pub async fn allow_next_game_file_operation(operation: String) -> Result<(), Error> {
+  crate::game_guard::allow_next(operation);
   Ok(())
 }

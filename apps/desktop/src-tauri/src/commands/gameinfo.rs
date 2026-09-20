@@ -61,7 +61,7 @@ pub async fn backup_gameinfo() -> Result<(), Error> {
 
 #[tauri::command]
 pub async fn restore_gameinfo_backup() -> Result<(), Error> {
-  crate::game_guard::ensure_game_idle_locked()?;
+  crate::game_guard::ensure_game_idle_locked("restore_gameinfo_backup")?;
   let mut mod_manager = MANAGER.lock().unwrap();
   let game_path = match mod_manager.get_steam_manager().get_game_path() {
     Some(path) => path.clone(),
@@ -74,7 +74,7 @@ pub async fn restore_gameinfo_backup() -> Result<(), Error> {
 
 #[tauri::command]
 pub async fn reset_to_vanilla() -> Result<(), Error> {
-  crate::game_guard::ensure_game_idle_locked()?;
+  crate::game_guard::ensure_game_idle_locked("reset_to_vanilla")?;
   reset_to_vanilla_internal().await
 }
 

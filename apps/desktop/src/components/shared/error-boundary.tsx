@@ -61,14 +61,14 @@ const CATEGORY_ICONS: Record<ErrorCategory, ReactNode> = {
   unknown: <WarningIcon className='size-12' weight='duotone' />,
 };
 
-// Local failures like a broken gameinfo.gi have nothing to do with the network.
+// Only categories that came from a failed request. "unknown" is the catch-all
+// for anything that never reached the network, like a broken gameinfo.gi.
 const NETWORK_CATEGORIES = new Set<ErrorCategory>([
   "connection",
   "server",
   "rate-limit",
   "auth",
   "not-found",
-  "unknown",
 ]);
 
 const FallbackComponent = ({ error, resetErrorBoundary }: FallbackProps) => {

@@ -32,7 +32,7 @@ pub async fn get_shard_diagnostics(profile_folder: Option<String>) -> Result<Sha
 /// the manifest, without waiting for a profile switch.
 #[tauri::command]
 pub async fn resync_profile_shards(profile_folder: Option<String>) -> Result<(), Error> {
-  crate::game_guard::ensure_game_idle_locked()?;
+  crate::game_guard::ensure_game_idle_locked("resync_profile_shards")?;
   log::info!("Resyncing shards for profile: {profile_folder:?}");
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.migrate_profile_to_shards(profile_folder.clone())?;

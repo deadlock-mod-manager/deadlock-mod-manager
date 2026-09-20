@@ -304,17 +304,31 @@ const checkDns = async (context: RunContext): Promise<NetworkCheckResult> => {
     };
   }
 
+  // Only a resolver error says anything about DNS. A timeout or a refused
+  // connection to a host that did resolve is a reachability problem, and
+  // sending the user off to change nameservers over it wastes their time.
+  const dnsFailed = outcome.kind === "failed" && outcome.dns;
+  const message = dnsFailed
+    ? "dnsFailed"
+    : outcome.kind === "timeout"
+      ? "timeout"
+      : "unreachable";
+
+  const fixes: NetworkFix[] = dnsFailed
+    ? ["changeDns", "flushDnsCache", "restartRouter"]
+    : context.internetUp
+      ? withProxyFix(context.deps, ["checkConnection", "disableVpnFirewall"])
+      : ["fixInternetFirst"];
+
   return {
     id: "dns",
     status: "error",
-    message: context.internetUp ? "dnsFailed" : "unreachable",
+    message,
     params: { host },
     latencyMs: outcome.latencyMs,
     url,
     host,
-    fixes: context.internetUp
-      ? ["changeDns", "flushDnsCache", "restartRouter"]
-      : ["fixInternetFirst"],
+    fixes,
   };
 };
 
