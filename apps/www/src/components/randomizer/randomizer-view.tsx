@@ -94,7 +94,7 @@ const CopyLinkButton = () => {
   return (
     <Button onClick={copy} size='sm' variant='outline'>
       {icon}
-      {label}
+      <span aria-live='polite'>{label}</span>
     </Button>
   );
 };

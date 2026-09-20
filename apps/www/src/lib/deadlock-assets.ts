@@ -168,6 +168,20 @@ const parseList = <T>(
   return parsed;
 };
 
+/**
+ * A response that parsed fine but filtered down to nothing means the API
+ * changed shape under us: a build with no heroes or no items is worse than an
+ * error, so it is reported as one. A genuinely empty response stays valid.
+ */
+const requireSome = <T>(parsed: T[], kept: T[], endpoint: string): T[] => {
+  if (parsed.length > 0 && kept.length === 0) {
+    throw new ProviderError(
+      `deadlock assets ${endpoint} returned nothing usable`,
+    );
+  }
+  return kept;
+};
+
 const request = async (endpoint: string): Promise<unknown> => {
   const response = await fetch(`${ASSETS_BASE_URL}${endpoint}`);
   if (!response.ok) {
@@ -179,9 +193,10 @@ const request = async (endpoint: string): Promise<unknown> => {
 export const getHeroes = async (): Promise<DeadlockHero[]> => {
   const endpoint = "/heroes?only_active=true";
   const heroes = parseList(heroSchema, await request(endpoint), endpoint);
-  return heroes.filter(
+  const selectable = heroes.filter(
     (hero) => hero.player_selectable && !hero.disabled && !hero.in_development,
   );
+  return requireSome(heroes, selectable, endpoint);
 };
 
 /**
@@ -201,7 +216,7 @@ export const isBuyable = (upgrade: DeadlockUpgrade): boolean =>
 export const getUpgrades = async (): Promise<DeadlockUpgrade[]> => {
   const endpoint = "/items/by-type/upgrade";
   const upgrades = parseList(upgradeSchema, await request(endpoint), endpoint);
-  return upgrades.filter(isBuyable);
+  return requireSome(upgrades, upgrades.filter(isBuyable), endpoint);
 };
 
 /**
