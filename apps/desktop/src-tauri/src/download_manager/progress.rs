@@ -307,7 +307,7 @@ mod tests {
     assert_eq!(after.total_size, CHUNK * 20);
     assert_eq!(
       after.percentage, 50.0,
-      "the denominator was frozen at its first published value, which is also what would stall the bar below 100% when a response corrects an overstated size"
+      "the denominator was frozen at the value published before the second file stated its size"
     );
   }
 
