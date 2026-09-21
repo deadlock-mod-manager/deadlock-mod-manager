@@ -39,7 +39,7 @@ jobs:
             accept-flake-config = true
 
       - name: Enable Magic Nix Cache
-        uses: DeterminateSystems/magic-nix-cache-action@v14
+        uses: DeterminateSystems/magic-nix-cache-action@v15
 
       - name: Check flake
         run: nix flake check --all-systems --show-trace
@@ -69,7 +69,7 @@ jobs:
             accept-flake-config = true
 
       - name: Enable Magic Nix Cache
-        uses: DeterminateSystems/magic-nix-cache-action@v14
+        uses: DeterminateSystems/magic-nix-cache-action@v15
 
       - name: Install nix-update
         run: nix profile install nixpkgs#nix-update
@@ -148,7 +148,7 @@ jobs:
             accept-flake-config = true
 
       - name: Enable Magic Nix Cache
-        uses: DeterminateSystems/magic-nix-cache-action@v14
+        uses: DeterminateSystems/magic-nix-cache-action@v15
 
       - name: Build nightly package
         run: |
@@ -186,7 +186,7 @@ jobs:
             accept-flake-config = true
 
       - name: Enable Magic Nix Cache
-        uses: DeterminateSystems/magic-nix-cache-action@v14
+        uses: DeterminateSystems/magic-nix-cache-action@v15
 
       - name: Build development shell
         run: |
