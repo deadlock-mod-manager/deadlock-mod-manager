@@ -104,10 +104,11 @@ const CopyLinkButton = () => {
  * artwork, so it is used as a mask over an accent fill; the hidden image behind
  * it is what gives the block its natural aspect ratio.
  */
-const HeroWordmark = ({ hero }: { hero: DeadlockHero }) => {
+export const HeroWordmark = ({ hero }: { hero: DeadlockHero }) => {
   const source = heroImage(hero, "name");
+  const [failedSource, setFailedSource] = useState<string | null>(null);
 
-  if (!source) {
+  if (!source || failedSource === source) {
     return (
       <span className='font-bold font-primary text-[rgb(var(--hero))] text-5xl italic md:text-7xl'>
         {hero.name}
@@ -121,6 +122,8 @@ const HeroWordmark = ({ hero }: { hero: DeadlockHero }) => {
         alt=''
         aria-hidden='true'
         className='h-full w-auto opacity-0'
+        crossOrigin='anonymous'
+        onError={() => setFailedSource(source)}
         src={source}
       />
       <span
