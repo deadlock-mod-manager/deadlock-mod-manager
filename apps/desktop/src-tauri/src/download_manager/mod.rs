@@ -1,8 +1,10 @@
 pub mod downloader;
+mod progress;
 
 use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 use downloader::{DownloadProgress as FileProgress, PauseHandle, download_file_resumable};
+use progress::{AcceptedProgress, ProgressAggregator};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;
@@ -50,6 +52,26 @@ pub struct DownloadProgressEvent {
   pub total: u64,
   pub transfer_speed: f64,
   pub percentage: f64,
+}
+
+impl DownloadProgressEvent {
+  fn from_accepted(
+    accepted: AcceptedProgress,
+    mod_id: &str,
+    file_index: usize,
+    total_files: usize,
+  ) -> Self {
+    Self {
+      mod_id: mod_id.to_string(),
+      file_index,
+      total_files,
+      progress: accepted.file_downloaded,
+      progress_total: accepted.total_downloaded,
+      total: accepted.total_size,
+      transfer_speed: accepted.total_speed,
+      percentage: accepted.percentage,
+    }
+  }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -103,16 +125,12 @@ pub struct DownloadResumedEvent {
 pub struct DownloadStatus {
   pub mod_id: String,
   pub status: String,
-  pub progress: f64,
-  pub speed: f64,
 }
 
 struct ActiveDownload {
   cancel_token: CancellationToken,
   pause: PauseHandle,
   status: String,
-  progress: f64,
-  speed: f64,
 }
 
 #[derive(Clone, Debug)]
@@ -304,8 +322,6 @@ impl DownloadManager {
           cancel_token: cancel_token.clone(),
           pause: pause.clone(),
           status: "downloading".to_string(),
-          progress: 0.0,
-          speed: 0.0,
         },
       );
     }
@@ -323,13 +339,9 @@ impl DownloadManager {
 
     let total_files = task.files.len();
     let mut downloaded_files = Vec::new();
-    let mut file_sizes = Vec::new();
-    let mut file_downloaded = Vec::new();
+    let declared_sizes: Vec<u64> = task.files.iter().map(|f| f.size).collect();
 
-    for file in &task.files {
-      file_sizes.push(file.size);
-      file_downloaded.push(0u64);
-    }
+    let aggregator = Arc::new(ProgressAggregator::new(&declared_sizes));
 
     let mut handles = Vec::new();
 
@@ -342,9 +354,7 @@ impl DownloadManager {
       let app_handle_clone = app_handle.clone();
       let cancel_token_clone = cancel_token.clone();
       let pause_clone = pause.clone();
-      let active_downloads_clone = Arc::clone(&active_downloads);
-      let file_sizes_clone = file_sizes.clone();
-      let file_downloaded_shared = Arc::new(Mutex::new(file_downloaded.clone()));
+      let aggregator_shared = Arc::clone(&aggregator);
 
       let handle = tokio::spawn(async move {
         let result = download_file_resumable(
@@ -354,56 +364,18 @@ impl DownloadManager {
           {
             let app_handle = app_handle_clone.clone();
             let mod_id = mod_id_clone.clone();
-            let active_downloads = Arc::clone(&active_downloads_clone);
-            let file_downloaded = Arc::clone(&file_downloaded_shared);
+            let aggregator = Arc::clone(&aggregator_shared);
 
             move |progress: FileProgress| {
-              let app_handle = app_handle.clone();
-              let mod_id = mod_id.clone();
-              let active_downloads = Arc::clone(&active_downloads);
-              let file_downloaded = Arc::clone(&file_downloaded);
-              let file_sizes = file_sizes_clone.clone();
-
-              tokio::spawn(async move {
-                {
-                  let mut downloaded = file_downloaded.lock().await;
-                  downloaded[file_index] = progress.downloaded;
-                }
-
-                let downloaded = file_downloaded.lock().await;
-                let total_downloaded: u64 = downloaded.iter().sum();
-                let total_size: u64 = file_sizes.iter().sum();
-
-                let overall_percentage = if total_size > 0 {
-                  (total_downloaded as f64 / total_size as f64) * 100.0
-                } else {
-                  0.0
-                };
-
-                {
-                  let mut active = active_downloads.lock().await;
-                  if let Some(download) = active.get_mut(&mod_id) {
-                    download.progress = overall_percentage;
-                    download.speed = progress.speed;
-                  }
-                }
-
-                app_handle
-                  .emit(
-                    "download-progress",
-                    DownloadProgressEvent {
-                      mod_id: mod_id.clone(),
-                      file_index,
-                      total_files,
-                      progress: progress.downloaded,
-                      progress_total: total_downloaded,
-                      total: total_size,
-                      transfer_speed: progress.speed,
-                      percentage: overall_percentage,
-                    },
-                  )
-                  .ok();
-              });
+              aggregator.record(
+                file_index,
+                progress.downloaded,
+                progress.total,
+                progress.speed,
+                |accepted| {
+                  Self::publish_progress(accepted, &mod_id, file_index, total_files, &app_handle);
+                },
+              );
             }
           },
           cancel_token_clone,
@@ -417,6 +389,18 @@ impl DownloadManager {
           true,
         )
         .await;
+
+        // Unconditional: `finish` is the only thing that zeroes the slot's rate, so a file
+        // that failed mid-transfer would keep donating its last observed speed.
+        aggregator_shared.finish(file_index, |accepted| {
+          Self::publish_progress(
+            accepted,
+            &mod_id_clone,
+            file_index,
+            total_files,
+            &app_handle_clone,
+          );
+        });
 
         result.map(|_| target_path)
       });
@@ -677,6 +661,21 @@ impl DownloadManager {
     std::fs::copy(source, &destination)?;
     prepared_paths.push(destination);
     Ok(())
+  }
+
+  fn publish_progress(
+    accepted: AcceptedProgress,
+    mod_id: &str,
+    file_index: usize,
+    total_files: usize,
+    app_handle: &AppHandle,
+  ) {
+    app_handle
+      .emit(
+        "download-progress",
+        DownloadProgressEvent::from_accepted(accepted, mod_id, file_index, total_files),
+      )
+      .ok();
   }
 
   async fn process_downloaded_files(
@@ -1045,8 +1044,6 @@ impl DownloadManager {
     Ok(active.get(mod_id).map(|download| DownloadStatus {
       mod_id: mod_id.to_string(),
       status: download.status.clone(),
-      progress: download.progress,
-      speed: download.speed,
     }))
   }
 
@@ -1058,8 +1055,6 @@ impl DownloadManager {
         .map(|(mod_id, download)| DownloadStatus {
           mod_id: mod_id.clone(),
           status: download.status.clone(),
-          progress: download.progress,
-          speed: download.speed,
         })
         .collect(),
     )
@@ -1196,6 +1191,40 @@ mod tests {
         Some(&selection)
       ),
       vec![std::path::Path::new("extracted").join("variants/main.vpk")]
+    );
+  }
+
+  #[test]
+  fn each_aggregate_figure_reaches_its_own_event_field() {
+    let event = DownloadProgressEvent::from_accepted(
+      AcceptedProgress {
+        file_downloaded: 1,
+        total_downloaded: 2,
+        total_size: 3,
+        total_speed: 4.0,
+        percentage: 5.0,
+      },
+      "mod-7",
+      8,
+      9,
+    );
+
+    assert_eq!(event.mod_id, "mod-7");
+    assert_eq!(event.file_index, 8);
+    assert_eq!(event.total_files, 9);
+    assert_eq!(
+      event.progress, 1,
+      "the three byte counts are mutually assignable, so a transposition among them compiles and no reader on the frontend would catch it"
+    );
+    assert_eq!(event.progress_total, 2);
+    assert_eq!(event.total, 3);
+    assert_eq!(
+      event.transfer_speed, 4.0,
+      "the speed and the percentage are the only two figures the UI reads, and each accepts the other's value"
+    );
+    assert_eq!(
+      event.percentage, 5.0,
+      "the bar was driven by the transfer rate"
     );
   }
 }

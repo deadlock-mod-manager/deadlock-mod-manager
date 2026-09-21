@@ -95,6 +95,7 @@ class DownloadManager {
             progressTotal: event.payload.progressTotal,
             total: event.payload.total,
             transferSpeed: event.payload.transferSpeed,
+            percentage: event.payload.percentage,
           };
           mod.onProgress(progress);
         }
