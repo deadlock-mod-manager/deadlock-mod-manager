@@ -14,6 +14,7 @@ import { Route as TransparencyRouteImport } from './routes/transparency'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as StatusRouteImport } from './routes/status'
 import { Route as SitemapModsDotxmlRouteImport } from './routes/sitemap-mods[.]xml'
+import { Route as RandomizerRouteImport } from './routes/randomizer'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as KvParserRouteImport } from './routes/kv-parser'
@@ -57,6 +58,11 @@ const StatusRoute = StatusRouteImport.update({
 const SitemapModsDotxmlRoute = SitemapModsDotxmlRouteImport.update({
   id: '/sitemap-mods.xml',
   path: '/sitemap-mods.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RandomizerRoute = RandomizerRouteImport.update({
+  id: '/randomizer',
+  path: '/randomizer',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -167,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/kv-parser': typeof KvParserRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
+  '/randomizer': typeof RandomizerRoute
   '/sitemap-mods.xml': typeof SitemapModsDotxmlRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
@@ -191,6 +198,7 @@ export interface FileRoutesByTo {
   '/kv-parser': typeof KvParserRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
+  '/randomizer': typeof RandomizerRoute
   '/sitemap-mods.xml': typeof SitemapModsDotxmlRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
@@ -218,6 +226,7 @@ export interface FileRoutesById {
   '/kv-parser': typeof KvParserRoute
   '/login': typeof LoginRoute
   '/privacy': typeof PrivacyRoute
+  '/randomizer': typeof RandomizerRoute
   '/sitemap-mods.xml': typeof SitemapModsDotxmlRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
@@ -246,6 +255,7 @@ export interface FileRouteTypes {
     | '/kv-parser'
     | '/login'
     | '/privacy'
+    | '/randomizer'
     | '/sitemap-mods.xml'
     | '/status'
     | '/terms'
@@ -270,6 +280,7 @@ export interface FileRouteTypes {
     | '/kv-parser'
     | '/login'
     | '/privacy'
+    | '/randomizer'
     | '/sitemap-mods.xml'
     | '/status'
     | '/terms'
@@ -296,6 +307,7 @@ export interface FileRouteTypes {
     | '/kv-parser'
     | '/login'
     | '/privacy'
+    | '/randomizer'
     | '/sitemap-mods.xml'
     | '/status'
     | '/terms'
@@ -323,6 +335,7 @@ export interface RootRouteChildren {
   KvParserRoute: typeof KvParserRoute
   LoginRoute: typeof LoginRoute
   PrivacyRoute: typeof PrivacyRoute
+  RandomizerRoute: typeof RandomizerRoute
   SitemapModsDotxmlRoute: typeof SitemapModsDotxmlRoute
   StatusRoute: typeof StatusRoute
   TermsRoute: typeof TermsRoute
@@ -368,6 +381,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap-mods.xml'
       fullPath: '/sitemap-mods.xml'
       preLoaderRoute: typeof SitemapModsDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/randomizer': {
+      id: '/randomizer'
+      path: '/randomizer'
+      fullPath: '/randomizer'
+      preLoaderRoute: typeof RandomizerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -548,6 +568,7 @@ const rootRouteChildren: RootRouteChildren = {
   KvParserRoute: KvParserRoute,
   LoginRoute: LoginRoute,
   PrivacyRoute: PrivacyRoute,
+  RandomizerRoute: RandomizerRoute,
   SitemapModsDotxmlRoute: SitemapModsDotxmlRoute,
   StatusRoute: StatusRoute,
   TermsRoute: TermsRoute,

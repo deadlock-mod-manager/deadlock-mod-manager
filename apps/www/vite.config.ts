@@ -33,6 +33,7 @@ const config = defineConfig({
         '/discord',
         '/docs',
         '/crosshair-generator', 
+        '/randomizer',
       ],
       exclude: [
         '/login',
@@ -50,6 +51,7 @@ const config = defineConfig({
         '/discord': 'monthly',
         '/docs': 'weekly',
         '/crosshair-generator': 'weekly',
+        '/randomizer': 'weekly',
         '*': 'weekly',
       },
       priority: {
@@ -65,6 +67,7 @@ const config = defineConfig({
         '/terms': 0.5,
         '/discord': 0.7,
         '/crosshair-generator': 0.7,
+        '/randomizer': 0.8,
         '*': 0.6,
       },
       generateRobotsTxt: false,
