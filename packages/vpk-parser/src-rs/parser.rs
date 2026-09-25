@@ -244,6 +244,7 @@ impl VpkParser {
     fn generate_manifest_hash(&self, entries: &[VpkEntry]) -> String {
         let mut lines: Vec<String> = entries
             .iter()
+            .filter(|entry| !is_mod_manager_stamp(entry))
             .map(|entry| {
                 format!(
                     "{}\x00{}\n",
@@ -289,7 +290,10 @@ impl VpkParser {
             sha256,
             content_signature,
             vpk_version: self.get_vpk_version(),
-            file_count: entries.len(),
+            file_count: entries
+                .iter()
+                .filter(|entry| !is_mod_manager_stamp(entry))
+                .count(),
             has_multiparts,
             has_inline_data,
             merkle_root,
@@ -319,6 +323,9 @@ impl VpkParser {
         let filtered_entries: Vec<&VpkEntry> = entries
             .iter()
             .filter(|entry| {
+                if is_mod_manager_stamp(entry) {
+                    return false;
+                }
                 let filename = entry.filename.to_lowercase();
                 let full_path = entry.full_path.to_lowercase();
                 if junk_files.contains(filename.as_str()) {
@@ -350,6 +357,7 @@ impl VpkParser {
     fn generate_merkle_hash(&self, entries: &[VpkEntry]) -> MerkleData {
         let leaves: Vec<String> = entries
             .iter()
+            .filter(|entry| !is_mod_manager_stamp(entry))
             .map(|entry| {
                 let entry_data = format!(
                     "{}|{}|{}",
@@ -445,5 +453,70 @@ impl VpkParser {
             Ok(s) => Ok(s),
             Err(_) => Ok(string_bytes.iter().map(|&b| b as char).collect()),
         }
+    }
+}
+
+/// The desktop manager stamps `.dmm/fingerprint.dmm` into VPKs it owns.
+/// Those entries must not participate in lockdex content hashes: the stored
+/// `vpk` table is built from unstamped GameBanana downloads, so a stamp would
+/// miss every match tier that is derived from the entry list.
+fn is_mod_manager_stamp(entry: &VpkEntry) -> bool {
+    entry.ext.eq_ignore_ascii_case("dmm") && entry.path.eq_ignore_ascii_case(".dmm")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn entry(full_path: &str, path: &str, filename: &str, ext: &str, length: u32) -> VpkEntry {
+        VpkEntry {
+            full_path: full_path.to_string(),
+            path: path.to_string(),
+            filename: filename.to_string(),
+            ext: ext.to_string(),
+            crc32_hex: "aabbccdd".to_string(),
+            preload_bytes: 0,
+            archive_index: 0x7fff,
+            entry_offset: 0,
+            entry_length: length,
+            terminator: 0xffff,
+        }
+    }
+
+    fn stamp_entry() -> VpkEntry {
+        entry(".dmm/fingerprint.dmm", ".dmm", "fingerprint", "dmm", 128)
+    }
+
+    fn skin_entry() -> VpkEntry {
+        entry("models/heroes/skin.vmdl_c", "models/heroes", "skin", "vmdl_c", 64)
+    }
+
+    #[test]
+    fn content_signature_and_merkle_ignore_mod_manager_stamps() {
+        let parser = VpkParser::new(Vec::new());
+        let without = [skin_entry()];
+        let with_stamp = [skin_entry(), stamp_entry()];
+
+        assert_eq!(
+            parser.generate_content_signature(&without),
+            parser.generate_content_signature(&with_stamp)
+        );
+        assert_eq!(
+            parser.generate_merkle_hash(&without).root,
+            parser.generate_merkle_hash(&with_stamp).root
+        );
+        assert_eq!(
+            parser.generate_manifest_hash(&without),
+            parser.generate_manifest_hash(&with_stamp)
+        );
+    }
+
+    #[test]
+    fn file_count_excludes_mod_manager_stamps() {
+        let parser = VpkParser::new(vec![0, 0, 0, 0, 2, 0, 0, 0]);
+        let fingerprint = parser
+            .generate_fingerprint(&[skin_entry(), stamp_entry()], "mod.vpk", None, true)
+            .unwrap();
+        assert_eq!(fingerprint.file_count, 1);
     }
 }
