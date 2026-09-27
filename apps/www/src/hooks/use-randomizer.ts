@@ -52,16 +52,21 @@ export const useRandomizer = (
   const abilitiesByClassName = abilitiesQuery.data;
 
   // The abilities decide which heroes can use the charge items, so the roll
-  // waits for them rather than rolling once without and again with them.
+  // waits for them rather than rolling once without and again with them. If
+  // they fail to load, it rolls without them instead of not rolling at all.
+  const abilitiesFailed = abilitiesQuery.isError;
   const roll = useMemo(() => {
-    if (!heroes?.length || !upgrades?.length || !abilitiesByClassName) {
+    if (!heroes?.length || !upgrades?.length) {
+      return null;
+    }
+    if (!abilitiesByClassName && !abilitiesFailed) {
       return null;
     }
     return rollLoadout(seed, heroes, upgrades, {
       heroSlug,
       abilities: abilitiesByClassName,
     });
-  }, [seed, heroSlug, heroes, upgrades, abilitiesByClassName]);
+  }, [seed, heroSlug, heroes, upgrades, abilitiesByClassName, abilitiesFailed]);
 
   const abilities = useMemo(() => {
     if (!roll || !abilitiesByClassName) {
@@ -80,7 +85,8 @@ export const useRandomizer = (
       heroesQuery.isPending ||
       upgradesQuery.isPending ||
       abilitiesQuery.isPending,
-    error: heroesQuery.error ?? upgradesQuery.error ?? abilitiesQuery.error,
+    // Abilities are optional to a roll, so their failure is not surfaced here.
+    error: heroesQuery.error ?? upgradesQuery.error,
     retry: () => {
       void heroesQuery.refetch();
       void upgradesQuery.refetch();

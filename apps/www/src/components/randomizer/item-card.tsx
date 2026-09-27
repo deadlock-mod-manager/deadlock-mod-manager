@@ -52,7 +52,7 @@ const ItemFace = ({
     <HoverCard closeDelay={80} openDelay={120}>
       <HoverCardTrigger asChild>
         <div
-          className='flex min-w-0 cursor-default items-center gap-3 outline-none'
+          className='flex min-w-0 cursor-default items-center gap-3 outline-none focus-visible:outline-1 focus-visible:outline-offset-2 focus-visible:outline-[rgb(var(--hero))]'
           tabIndex={0}>
           <div
             className={cn(
