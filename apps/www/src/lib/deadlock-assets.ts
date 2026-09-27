@@ -54,6 +54,16 @@ const draftBucketSchema = z.object({
   weight: z.number().default(1),
 });
 
+/**
+ * One step of the hero's level table. Each level hands out either an ability
+ * unlock or an ability point, and the order they come in decides which
+ * abilities can take points first.
+ */
+const levelSchema = z.object({
+  required_gold: z.number().default(0),
+  bonus_currencies: z.array(z.string()).default([]),
+});
+
 export const heroSchema = z.object({
   id: z.number(),
   class_name: z.string(),
@@ -76,6 +86,7 @@ export const heroSchema = z.object({
   items: z.record(z.string(), z.string()).default({}),
   item_slot_info: z.record(z.string(), slotInfoSchema).default({}),
   item_draft_bucketing: z.record(z.string(), draftBucketSchema).default({}),
+  level_info: z.record(z.string(), levelSchema).default({}),
   colors: z
     .object({
       ui: z.array(z.number()).optional(),
@@ -93,6 +104,40 @@ export const heroSchema = z.object({
     .nullish(),
 });
 
+/**
+ * One stat an item can show in its tooltip. Prefix and postfix are the shop's
+ * own formatting - `{s:sign}` asks for an explicit plus on positive values.
+ */
+const itemPropertySchema = z
+  .object({
+    value: z.union([z.string(), z.number()]).nullish(),
+    label: z.string().nullish(),
+    prefix: z.string().nullish(),
+    postfix: z.string().nullish(),
+  })
+  .catch({});
+
+/**
+ * How the shop lays out an item's tooltip: an innate block of stats, then a
+ * passive or active block with its text and the stats that belong to it. Many
+ * items have no `description` at all and only exist here.
+ */
+const tooltipSectionSchema = z
+  .object({
+    section_type: z.string().nullish(),
+    section_attributes: z
+      .array(
+        z.object({
+          loc_string: z.string().nullish(),
+          properties: z.array(z.string()).nullish(),
+          elevated_properties: z.array(z.string()).nullish(),
+          important_properties: z.array(z.string()).nullish(),
+        }),
+      )
+      .default([]),
+  })
+  .catch({ section_attributes: [] });
+
 export const upgradeSchema = z.object({
   id: z.number(),
   class_name: z.string(),
@@ -107,12 +152,36 @@ export const upgradeSchema = z.object({
   component_items: z.array(z.string()).nullish(),
   shop_image: z.string().nullish(),
   shop_image_webp: z.string().nullish(),
+  properties: z.record(z.string(), itemPropertySchema).catch({}).default({}),
+  tooltip_sections: z.array(tooltipSectionSchema).catch([]).default([]),
   description: z
     .object({
       desc: z.string().nullish(),
     })
     .default({}),
 });
+
+/**
+ * Property values arrive as strings or numbers depending on the property. An
+ * entry that does not fit is dropped instead of failing the whole ability, so
+ * a new property shape never costs the page its ability icons.
+ */
+const propertyValueSchema = z
+  .object({ value: z.union([z.string(), z.number()]).nullish() })
+  .catch({});
+
+const abilityUpgradeSchema = z
+  .object({
+    property_upgrades: z
+      .array(
+        z.object({
+          name: z.string(),
+          bonus: z.union([z.string(), z.number()]).nullish(),
+        }),
+      )
+      .default([]),
+  })
+  .catch({ property_upgrades: [] });
 
 export const abilitySchema = z.object({
   id: z.number(),
@@ -122,6 +191,8 @@ export const abilitySchema = z.object({
   ability_type: z.string().nullish(),
   image: z.string().nullish(),
   image_webp: z.string().nullish(),
+  properties: z.record(z.string(), propertyValueSchema).catch({}).default({}),
+  upgrades: z.array(abilityUpgradeSchema).catch([]).default([]),
 });
 
 export type DeadlockHero = z.infer<typeof heroSchema>;
@@ -239,6 +310,27 @@ export const getAbilities = async (): Promise<Map<string, DeadlockAbility>> => {
   );
 };
 
+/**
+ * Whether an ability runs on charges, either from the start or once one of its
+ * own upgrades adds them. Items like Extra Charge only ever touch abilities
+ * like these, so a hero without one gets nothing out of them.
+ */
+export const isChargedAbility = (ability: DeadlockAbility): boolean =>
+  Number(ability.properties.AbilityCharges?.value ?? 0) > 0 ||
+  ability.upgrades.some((upgrade) =>
+    upgrade.property_upgrades.some(
+      (property) =>
+        property.name === "AbilityCharges" && Number(property.bonus ?? 0) > 0,
+    ),
+  );
+
+/** A readable, stable URL key for a hero - `mo-krill`, `the-doorman`. */
+export const heroSlug = (hero: DeadlockHero): string =>
+  hero.name
+    .toLowerCase()
+    .replaceAll(/[^a-z0-9]+/g, "-")
+    .replaceAll(/^-+|-+$/g, "");
+
 export const heroImage = (
   hero: DeadlockHero,
   key: "card" | "background" | "vertical" | "small" | "minimap" | "name",
@@ -261,6 +353,58 @@ export const heroImage = (
       return images.name_image;
   }
 };
+
+export interface TooltipStat {
+  label: string;
+  value: string;
+}
+
+export interface TooltipSection {
+  /** `innate`, `passive` or `active`, as the shop names them. */
+  kind?: string;
+  /** Still carries the shop's markup; strip it before rendering. */
+  text?: string;
+  stats: TooltipStat[];
+}
+
+/** A stat as the shop prints it, or nothing when it has no real value. */
+const formatStat = (
+  property: DeadlockUpgrade["properties"][string] | undefined,
+): TooltipStat | undefined => {
+  const number = Number(property?.value);
+  if (!property?.label || !Number.isFinite(number) || number === 0) {
+    return undefined;
+  }
+  const sign =
+    property.prefix === "{s:sign}"
+      ? number > 0
+        ? "+"
+        : ""
+      : (property.prefix ?? "");
+  return {
+    label: property.label,
+    value: `${sign}${number}${property.postfix ?? ""}`,
+  };
+};
+
+/** The item's tooltip, section by section, the way the shop shows it. */
+export const itemTooltip = (item: DeadlockUpgrade): TooltipSection[] =>
+  item.tooltip_sections
+    .flatMap((section) =>
+      section.section_attributes.map((attribute) => ({
+        kind: section.section_type ?? undefined,
+        text: attribute.loc_string ?? undefined,
+        stats: [
+          ...(attribute.elevated_properties ?? []),
+          ...(attribute.important_properties ?? []),
+          ...(attribute.properties ?? []),
+        ].flatMap((name) => {
+          const stat = formatStat(item.properties[name]);
+          return stat ? [stat] : [];
+        }),
+      })),
+    )
+    .filter((section) => section.text || section.stats.length > 0);
 
 export const itemImage = (item: DeadlockUpgrade): string | undefined =>
   item.shop_image_webp ?? item.shop_image ?? undefined;

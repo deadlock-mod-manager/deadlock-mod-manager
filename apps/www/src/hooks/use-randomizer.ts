@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import {
   type DeadlockAbility,
+  type DeadlockHero,
   getAbilities,
   getHeroes,
   getUpgrades,
@@ -13,6 +14,8 @@ const ASSET_STALE_TIME = 60 * 60 * 1000;
 
 export interface RandomizerState {
   roll: Roll | null;
+  /** Every hero a roll can land on, for the hero picker. */
+  heroes: DeadlockHero[];
   /** Signature abilities in `signature1`..`signature4` order. */
   abilities: (DeadlockAbility | undefined)[];
   isLoading: boolean;
@@ -20,7 +23,10 @@ export interface RandomizerState {
   retry: () => void;
 }
 
-export const useRandomizer = (seed: number): RandomizerState => {
+export const useRandomizer = (
+  seed: number,
+  heroSlug?: string,
+): RandomizerState => {
   const heroesQuery = useQuery({
     queryKey: ["deadlock-assets", "heroes"],
     queryFn: getHeroes,
@@ -45,12 +51,17 @@ export const useRandomizer = (seed: number): RandomizerState => {
   const upgrades = upgradesQuery.data;
   const abilitiesByClassName = abilitiesQuery.data;
 
+  // The abilities decide which heroes can use the charge items, so the roll
+  // waits for them rather than rolling once without and again with them.
   const roll = useMemo(() => {
-    if (!heroes?.length || !upgrades?.length) {
+    if (!heroes?.length || !upgrades?.length || !abilitiesByClassName) {
       return null;
     }
-    return rollLoadout(seed, heroes, upgrades);
-  }, [seed, heroes, upgrades]);
+    return rollLoadout(seed, heroes, upgrades, {
+      heroSlug,
+      abilities: abilitiesByClassName,
+    });
+  }, [seed, heroSlug, heroes, upgrades, abilitiesByClassName]);
 
   const abilities = useMemo(() => {
     if (!roll || !abilitiesByClassName) {
@@ -63,6 +74,7 @@ export const useRandomizer = (seed: number): RandomizerState => {
 
   return {
     roll,
+    heroes: heroes ?? [],
     abilities,
     isLoading:
       heroesQuery.isPending ||

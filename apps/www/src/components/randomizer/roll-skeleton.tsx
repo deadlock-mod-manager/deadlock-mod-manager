@@ -18,9 +18,9 @@ export const RollSkeleton = () => (
       </div>
       <Bar className='h-72 lg:col-span-5' />
     </div>
-    <div className='mt-16 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
+    <div className='mt-16 grid gap-3 sm:grid-cols-2 xl:grid-cols-3'>
       {Array.from({ length: 12 }, (_, index) => (
-        <Bar className='h-24' key={index} />
+        <Bar className='h-28' key={index} />
       ))}
     </div>
   </div>
