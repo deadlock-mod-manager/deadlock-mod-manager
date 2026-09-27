@@ -20,6 +20,8 @@ import { seo } from "@/utils/seo";
 interface RandomizerSearch {
   s?: string;
   p?: string;
+  /** Slug of the hero the rolls are locked to. */
+  h?: string;
 }
 
 export const Route = createFileRoute("/randomizer")({
@@ -27,6 +29,7 @@ export const Route = createFileRoute("/randomizer")({
   validateSearch: (search: Record<string, unknown>): RandomizerSearch => ({
     s: typeof search.s === "string" ? search.s : undefined,
     p: typeof search.p === "string" ? search.p : undefined,
+    h: typeof search.h === "string" ? search.h : undefined,
   }),
   head: () =>
     seo({
@@ -53,26 +56,38 @@ function RandomizerPage() {
     if (seed === null) {
       void navigate({
         to: "/randomizer",
-        search: { s: encodeSeed(randomSeed()), p: search.p },
+        search: { s: encodeSeed(randomSeed()), p: search.p, h: search.h },
         replace: true,
       });
     }
-  }, [seed, search.p, navigate]);
+  }, [seed, search.p, search.h, navigate]);
 
-  const { roll, abilities, isLoading, error, retry } = useRandomizer(seed ?? 0);
+  const { roll, heroes, abilities, isLoading, error, retry } = useRandomizer(
+    seed ?? 0,
+    search.h,
+  );
 
   const reroll = () => {
     void navigate({
       to: "/randomizer",
-      search: { s: encodeSeed(randomSeed()), p: search.p },
+      search: { s: encodeSeed(randomSeed()), p: search.p, h: search.h },
     });
   };
 
   const setSections = (next: Sections) => {
     void navigate({
       to: "/randomizer",
-      search: { s: search.s, p: encodeSections(next) },
+      search: { s: search.s, p: encodeSections(next), h: search.h },
       replace: true,
+    });
+  };
+
+  // Picking a hero is a new roll for that hero, so it gets a fresh seed and
+  // its own history entry like a reroll does.
+  const setHero = (slug: string | undefined) => {
+    void navigate({
+      to: "/randomizer",
+      search: { s: encodeSeed(randomSeed()), p: search.p, h: slug },
     });
   };
 
@@ -102,6 +117,9 @@ function RandomizerPage() {
   return (
     <RandomizerView
       abilities={abilities}
+      heroes={heroes}
+      lockedHero={search.h}
+      onHeroChange={setHero}
       onReroll={reroll}
       onSectionsChange={setSections}
       roll={roll}

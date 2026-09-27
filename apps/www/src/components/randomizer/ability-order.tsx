@@ -1,14 +1,14 @@
+import { LockOpen } from "@deadlock-mods/ui/icons";
 import {
   abilityImage,
   type DeadlockAbility,
   ULTIMATE_SLOT,
 } from "@/lib/deadlock-assets";
-import { ABILITY_SLOTS, type AbilityStep } from "@/lib/randomizer/roll";
+import type { SkillStep } from "@/lib/randomizer/roll";
 import { cn } from "@/lib/utils";
-import { MicroLabel } from "./primitives";
 
 interface AbilityOrderProps {
-  steps: AbilityStep[];
+  steps: SkillStep[];
   abilities: (DeadlockAbility | undefined)[];
 }
 
@@ -44,8 +44,13 @@ const AbilityIcon = ({
   );
 };
 
-/** Which point in the order buys each of an ability's three upgrades. */
-const positionsBySlot = (steps: AbilityStep[]) => {
+const abilityName = (
+  abilities: (DeadlockAbility | undefined)[],
+  slot: number,
+): string => abilities[slot - 1]?.name ?? `Ability ${slot}`;
+
+/** Where in the skill order each of an ability's four steps comes. */
+const positionsBySlot = (steps: SkillStep[]) => {
   const positions = new Map<number, number[]>();
   steps.forEach((step, index) => {
     const existing = positions.get(step.slot) ?? [];
@@ -55,17 +60,22 @@ const positionsBySlot = (steps: AbilityStep[]) => {
   return positions;
 };
 
-export const AbilityPriority = ({ steps, abilities }: AbilityOrderProps) => {
+const stepLabel = (step: SkillStep): string =>
+  step.kind === "unlock" ? "Unlock" : `+${step.apCost} AP`;
+
+export const AbilityPriority = ({
+  steps,
+  abilities,
+  unlockOrder,
+}: AbilityOrderProps & { unlockOrder: number[] }) => {
   const positions = positionsBySlot(steps);
   const maxedFirst = [...positions.entries()].sort(
-    (a, b) => (a[1][2] ?? 99) - (b[1][2] ?? 99),
+    (a, b) => (a[1].at(-1) ?? 99) - (b[1].at(-1) ?? 99),
   )[0]?.[0];
 
   return (
     <div className='space-y-2'>
-      {Array.from({ length: ABILITY_SLOTS }, (_, index) => {
-        const slot = index + 1;
-        const ability = abilities[index];
+      {unlockOrder.map((slot) => {
         const slotPositions = positions.get(slot) ?? [];
         const isPriority = slot === maxedFirst;
 
@@ -78,32 +88,45 @@ export const AbilityPriority = ({ steps, abilities }: AbilityOrderProps) => {
                 ? "border-[rgb(var(--hero)/0.45)] bg-[rgb(var(--hero)/0.07)]"
                 : "border-border/60 bg-background-dark/50",
             )}>
-            <AbilityIcon ability={ability} className='size-10' slot={slot} />
+            <AbilityIcon
+              ability={abilities[slot - 1]}
+              className='size-10'
+              slot={slot}
+            />
             <div className='min-w-0 flex-1'>
               <div className='flex items-baseline gap-2'>
                 <span className='truncate font-medium text-dl-offwhite text-sm'>
-                  {ability?.name ?? `Ability ${slot}`}
+                  {abilityName(abilities, slot)}
                 </span>
                 {slot === ULTIMATE_SLOT ? (
                   <span className='dl-label shrink-0 text-dl-gold/60'>Ult</span>
                 ) : null}
+                {isPriority ? (
+                  <span className='dl-label ml-auto shrink-0 text-[rgb(var(--hero))]'>
+                    Max first
+                  </span>
+                ) : null}
               </div>
-              <div className='mt-1 flex items-center gap-1'>
-                {slotPositions.map((position, pipIndex) => (
+              <div className='mt-1.5 flex items-center gap-1'>
+                {slotPositions.map((position, index) => (
                   <span
                     key={position}
-                    className='font-mono text-[10px] text-muted-foreground/70 tabular-nums'
-                    title={`Upgrade ${pipIndex + 1} at point ${position}`}>
-                    {pipIndex > 0 ? "·" : null} {position}
+                    className={cn(
+                      "grid h-5 min-w-7 place-items-center px-1 font-mono text-[10px] tabular-nums",
+                      index === 0
+                        ? "border border-dl-gold/40 border-dashed text-dl-gold/80"
+                        : "bg-[rgb(var(--hero)/0.12)] text-dl-offwhite/80",
+                    )}
+                    title={
+                      index === 0
+                        ? `Unlocked at step ${position}`
+                        : `Upgrade ${index} at step ${position}`
+                    }>
+                    {position}
                   </span>
                 ))}
               </div>
             </div>
-            {isPriority ? (
-              <span className='dl-label shrink-0 text-[rgb(var(--hero))]'>
-                Max first
-              </span>
-            ) : null}
           </div>
         );
       })}
@@ -111,37 +134,52 @@ export const AbilityPriority = ({ steps, abilities }: AbilityOrderProps) => {
   );
 };
 
-export const AbilityPointTrack = ({ steps, abilities }: AbilityOrderProps) => (
+export const SkillTrack = ({ steps, abilities }: AbilityOrderProps) => (
   <div className='dl-notch border border-[rgb(var(--hero)/0.18)] bg-background-dark/60 p-4'>
-    <div className='grid grid-cols-4 gap-2 sm:grid-cols-6 lg:grid-cols-12'>
-      {steps.map((step, index) => (
-        <div
-          key={`${step.slot}-${step.step}`}
-          className='animate-dl-rise flex flex-col items-center gap-1.5'
-          style={{ animationDelay: `${index * 35}ms` }}>
-          <span className='font-mono text-[10px] text-muted-foreground/50 tabular-nums'>
-            {index + 1}
-          </span>
-          <AbilityIcon
-            ability={abilities[step.slot - 1]}
-            className='aspect-square w-full'
-            slot={step.slot}
-          />
-          <span className='sr-only'>
-            {abilities[step.slot - 1]?.name ?? `Ability ${step.slot}`}, upgrade{" "}
-            {step.step}
-          </span>
-          <span className='font-mono text-[11px] text-[rgb(var(--hero))] tabular-nums'>
-            +{step.apCost} AP
-          </span>
-          <span className='font-mono text-[10px] text-muted-foreground/45 tabular-nums'>
-            {step.apSpent}
-          </span>
-        </div>
-      ))}
+    <div className='grid grid-cols-4 gap-2 sm:grid-cols-8 lg:grid-cols-16'>
+      {steps.map((step, index) => {
+        const isUnlock = step.kind === "unlock";
+        return (
+          <div
+            key={`${step.slot}-${step.kind === "unlock" ? 0 : step.step}`}
+            className='animate-dl-rise flex flex-col items-center gap-1.5'
+            style={{ animationDelay: `${index * 35}ms` }}>
+            <span className='font-mono text-[10px] text-muted-foreground/50 tabular-nums'>
+              {index + 1}
+            </span>
+            <div className='relative w-full'>
+              <AbilityIcon
+                ability={abilities[step.slot - 1]}
+                className={cn(
+                  "aspect-square w-full",
+                  isUnlock && "border-dl-gold/50 border-dashed bg-dl-gold/5",
+                )}
+                slot={step.slot}
+              />
+              {isUnlock ? (
+                <LockOpen
+                  aria-hidden='true'
+                  className='absolute -top-1 -right-1 size-3.5 text-dl-gold'
+                />
+              ) : null}
+            </div>
+            <span className='sr-only'>
+              {abilityName(abilities, step.slot)},{" "}
+              {isUnlock ? "unlock" : `upgrade ${step.step}`}
+            </span>
+            <span
+              className={cn(
+                "font-mono text-[11px] tabular-nums",
+                isUnlock ? "text-dl-gold/90" : "text-[rgb(var(--hero))]",
+              )}>
+              {stepLabel(step)}
+            </span>
+            <span className='font-mono text-[10px] text-muted-foreground/45 tabular-nums'>
+              {isUnlock ? "–" : `${step.apSpent} AP`}
+            </span>
+          </div>
+        );
+      })}
     </div>
-    <MicroLabel className='mt-3'>
-      Upgrade number · ability · points spent · running total
-    </MicroLabel>
   </div>
 );

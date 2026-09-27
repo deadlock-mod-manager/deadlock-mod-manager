@@ -6,7 +6,7 @@ import tailwindcss from '@tailwindcss/vite'
 import sitemap from 'vite-plugin-sitemap';
 import { copyCrosshairBackgrounds } from './tools/vite-plugin-copy-backgrounds';
 
-const config = defineConfig({
+const config = defineConfig(({ command }) => ({
   plugins: [
     copyCrosshairBackgrounds(),
     viteTsConfigPaths({
@@ -17,7 +17,7 @@ const config = defineConfig({
     }),
     viteReact(),
     tailwindcss(),
-    sitemap({
+    command === 'build' && sitemap({
       hostname: 'https://deadlockmods.app',
       outDir: 'dist/client',
       dynamicRoutes: [
@@ -73,6 +73,6 @@ const config = defineConfig({
       generateRobotsTxt: false,
     }),
   ],
-})
+}))
 
 export default config

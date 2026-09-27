@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getHeroes, getUpgrades } from "./deadlock-assets";
+import {
+  getHeroes,
+  getUpgrades,
+  itemTooltip,
+  upgradeSchema,
+} from "./deadlock-assets";
 
 const respond = (body: unknown, ok = true) => {
   vi.stubGlobal(
@@ -78,5 +83,58 @@ describe("getUpgrades", () => {
     ]);
     const upgrades = await getUpgrades();
     expect(upgrades.map((u) => u.class_name)).toEqual(["upgrade_real"]);
+  });
+});
+
+describe("itemTooltip", () => {
+  it("builds the tooltip from sections when the item has no description", () => {
+    const item = upgradeSchema.parse({
+      id: 3,
+      class_name: "upgrade_dispel_magic",
+      name: "Dispel Magic",
+      type: "upgrade",
+      item_slot_type: "vitality",
+      item_tier: 3,
+      cost: 3200,
+      shopable: true,
+      properties: {
+        TechResist: {
+          value: "10",
+          label: "Spirit Resist",
+          prefix: "{s:sign}",
+          postfix: "%",
+        },
+        AbilityCooldown: { value: 45, label: "Cooldown", postfix: "s" },
+        Unused: { value: "0", label: "Nothing" },
+      },
+      tooltip_sections: [
+        {
+          section_type: "innate",
+          section_attributes: [{ elevated_properties: ["TechResist"] }],
+        },
+        {
+          section_type: "active",
+          section_attributes: [
+            {
+              loc_string: "Purge <span>negative effects</span>.",
+              properties: ["AbilityCooldown", "Unused"],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(itemTooltip(item)).toEqual([
+      {
+        kind: "innate",
+        text: undefined,
+        stats: [{ label: "Spirit Resist", value: "+10%" }],
+      },
+      {
+        kind: "active",
+        text: "Purge <span>negative effects</span>.",
+        stats: [{ label: "Cooldown", value: "45s" }],
+      },
+    ]);
   });
 });

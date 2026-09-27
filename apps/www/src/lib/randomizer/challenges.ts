@@ -14,7 +14,7 @@ export const CHALLENGES: Challenge[] = [
     id: "exact-order",
     title: "Buy in order",
     detail:
-      "Purchase the build strictly top to bottom. No skipping ahead, even when you can afford the next tier.",
+      "Purchase the build strictly top to bottom. No skipping ahead, even when you can afford the next tier. Upgrades come whenever you can pay for them.",
   },
   {
     id: "no-recall",
@@ -55,7 +55,7 @@ export const CHALLENGES: Challenge[] = [
     id: "soul-cap",
     title: "Spend it all",
     detail:
-      "Never hold more than 1,000 unspent souls once your first item is bought.",
+      "The moment you can afford the next item in your build, go buy it. Banking souls past its price is a fail.",
   },
   {
     id: "one-lane",
@@ -79,6 +79,6 @@ export const CHALLENGES: Challenge[] = [
     id: "no-heal",
     title: "Denied",
     detail:
-      "No healing from the rejuvenator crates in your own base. Regen and lifesteal only.",
+      "Never heal up in your own base. Regen, lifesteal and healing items only.",
   },
 ];

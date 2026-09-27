@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import {
   type DeadlockAbility,
+  type DeadlockHero,
   getAbilities,
   getHeroes,
   getUpgrades,
@@ -13,6 +14,8 @@ const ASSET_STALE_TIME = 60 * 60 * 1000;
 
 export interface RandomizerState {
   roll: Roll | null;
+  /** Every hero a roll can land on, for the hero picker. */
+  heroes: DeadlockHero[];
   /** Signature abilities in `signature1`..`signature4` order. */
   abilities: (DeadlockAbility | undefined)[];
   isLoading: boolean;
@@ -20,7 +23,10 @@ export interface RandomizerState {
   retry: () => void;
 }
 
-export const useRandomizer = (seed: number): RandomizerState => {
+export const useRandomizer = (
+  seed: number,
+  heroSlug?: string,
+): RandomizerState => {
   const heroesQuery = useQuery({
     queryKey: ["deadlock-assets", "heroes"],
     queryFn: getHeroes,
@@ -45,12 +51,22 @@ export const useRandomizer = (seed: number): RandomizerState => {
   const upgrades = upgradesQuery.data;
   const abilitiesByClassName = abilitiesQuery.data;
 
+  // The abilities decide which heroes can use the charge items, so the roll
+  // waits for them rather than rolling once without and again with them. If
+  // they fail to load, it rolls without them instead of not rolling at all.
+  const abilitiesFailed = abilitiesQuery.isError;
   const roll = useMemo(() => {
     if (!heroes?.length || !upgrades?.length) {
       return null;
     }
-    return rollLoadout(seed, heroes, upgrades);
-  }, [seed, heroes, upgrades]);
+    if (!abilitiesByClassName && !abilitiesFailed) {
+      return null;
+    }
+    return rollLoadout(seed, heroes, upgrades, {
+      heroSlug,
+      abilities: abilitiesByClassName,
+    });
+  }, [seed, heroSlug, heroes, upgrades, abilitiesByClassName, abilitiesFailed]);
 
   const abilities = useMemo(() => {
     if (!roll || !abilitiesByClassName) {
@@ -63,12 +79,14 @@ export const useRandomizer = (seed: number): RandomizerState => {
 
   return {
     roll,
+    heroes: heroes ?? [],
     abilities,
     isLoading:
       heroesQuery.isPending ||
       upgradesQuery.isPending ||
       abilitiesQuery.isPending,
-    error: heroesQuery.error ?? upgradesQuery.error ?? abilitiesQuery.error,
+    // Abilities are optional to a roll, so their failure is not surfaced here.
+    error: heroesQuery.error ?? upgradesQuery.error,
     retry: () => {
       void heroesQuery.refetch();
       void upgradesQuery.refetch();

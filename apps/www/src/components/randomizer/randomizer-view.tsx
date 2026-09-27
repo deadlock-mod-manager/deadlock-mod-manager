@@ -4,6 +4,8 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@deadlock-mods/ui/components/dropdown-menu";
@@ -14,6 +16,7 @@ import {
   Link2,
   ScrollText,
   SlidersHorizontal,
+  UserRound,
   X,
 } from "@deadlock-mods/ui/icons";
 import { useEffect, useRef, useState } from "react";
@@ -23,6 +26,7 @@ import {
   type DeadlockHero,
   heroAccent,
   heroImage,
+  heroSlug,
   ITEM_CATEGORIES,
 } from "@/lib/deadlock-assets";
 import type { Roll } from "@/lib/randomizer/roll";
@@ -32,7 +36,7 @@ import {
   type Sections,
 } from "@/lib/randomizer/sections";
 import { cn } from "@/lib/utils";
-import { AbilityPointTrack, AbilityPriority } from "./ability-order";
+import { AbilityPriority, SkillTrack } from "./ability-order";
 import { ItemCard } from "./item-card";
 import {
   CATEGORY_BAR,
@@ -45,11 +49,17 @@ import {
 
 interface RandomizerViewProps {
   roll: Roll;
+  heroes: DeadlockHero[];
+  /** Slug of the hero rolls are locked to, straight from the URL. */
+  lockedHero?: string;
   abilities: (DeadlockAbility | undefined)[];
   sections: Sections;
+  onHeroChange: (slug: string | undefined) => void;
   onReroll: () => void;
   onSectionsChange: (sections: Sections) => void;
 }
+
+const ANY_HERO = "any";
 
 /** `--hero` drives every accent on the page, so it is typed rather than cast. */
 interface HeroStyle extends React.CSSProperties {
@@ -177,6 +187,66 @@ const SectionPicker = ({
   </DropdownMenu>
 );
 
+const HeroPicker = ({
+  heroes,
+  locked,
+  onChange,
+}: {
+  heroes: DeadlockHero[];
+  locked?: DeadlockHero;
+  onChange: (slug: string | undefined) => void;
+}) => {
+  const sorted = [...heroes].sort((a, b) => a.name.localeCompare(b.name));
+  const lockedIcon = locked ? heroImage(locked, "small") : undefined;
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button size='sm' variant='outline'>
+          {lockedIcon ? (
+            <img alt='' className='size-4 object-contain' src={lockedIcon} />
+          ) : (
+            <UserRound className='size-4' />
+          )}
+          {locked ? locked.name : "Any hero"}
+          <ChevronDown className='size-3.5 opacity-60' />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent
+        align='end'
+        className='max-h-[min(28rem,70vh)] w-56 overflow-y-auto'>
+        <DropdownMenuLabel>Roll builds for</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuRadioGroup
+          onValueChange={(value) =>
+            onChange(value === ANY_HERO ? undefined : value)
+          }
+          value={locked ? heroSlug(locked) : ANY_HERO}>
+          <DropdownMenuRadioItem value={ANY_HERO}>
+            Any hero
+          </DropdownMenuRadioItem>
+          {sorted.map((hero) => {
+            const icon = heroImage(hero, "small");
+            return (
+              <DropdownMenuRadioItem key={hero.id} value={heroSlug(hero)}>
+                {icon ? (
+                  <img
+                    alt=''
+                    className='size-5 object-contain'
+                    loading='lazy'
+                    src={icon}
+                  />
+                ) : null}
+                {hero.name}
+              </DropdownMenuRadioItem>
+            );
+          })}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
 const Fact = ({
   label,
   children,
@@ -192,15 +262,18 @@ const Fact = ({
 
 export const RandomizerView = ({
   roll,
+  heroes,
+  lockedHero,
   abilities,
   sections,
+  onHeroChange,
   onReroll,
   onSectionsChange,
 }: RandomizerViewProps) => {
   const { hero } = roll;
+  const locked = heroes.find((entry) => heroSlug(entry) === lockedHero);
   const card = heroImage(hero, "card");
   const background = heroImage(hero, "background") ?? card;
-  const firstBuy = roll.build[0];
   const tags = hero.tags ?? [];
 
   const heroStyle: HeroStyle = { "--hero": heroAccent(hero) };
@@ -223,6 +296,7 @@ export const RandomizerView = ({
       <div className='container relative mx-auto px-4 py-10'>
         <div className='mb-6 flex flex-wrap items-center justify-end gap-2 md:absolute md:top-10 md:right-4 md:mb-0'>
           <CopyLinkButton />
+          <HeroPicker heroes={heroes} locked={locked} onChange={onHeroChange} />
           <SectionPicker onChange={onSectionsChange} sections={sections} />
           <Button onClick={onReroll} size='sm'>
             <Dices className='size-4' />
@@ -332,7 +406,13 @@ export const RandomizerView = ({
             ) : null}
 
             {sections.build ? (
-              <Fact label='Souls by category'>
+              <Fact label='Build cost'>
+                <div className='mb-3 flex items-baseline gap-2'>
+                  <span className='font-mono text-3xl text-dl-souls tabular-nums'>
+                    {formatSouls(roll.totalSouls)}
+                  </span>
+                  <span className='text-muted-foreground text-sm'>souls</span>
+                </div>
                 <div className='space-y-2'>
                   {ITEM_CATEGORIES.map((category) => {
                     const souls = roll.soulsByCategory[category];
@@ -361,12 +441,6 @@ export const RandomizerView = ({
                 </div>
               </Fact>
             ) : null}
-
-            {sections.build && firstBuy ? (
-              <Fact label='Open with'>
-                <ItemCard entry={firstBuy} order={1} />
-              </Fact>
-            ) : null}
           </div>
 
           {sections.abilities ? (
@@ -375,17 +449,14 @@ export const RandomizerView = ({
                 <div className='mb-3 flex items-center justify-between'>
                   <MicroLabel>Ability priority</MicroLabel>
                   <span className='dl-label text-muted-foreground/60'>
-                    32 points
+                    4 unlocks · 32 points
                   </span>
                 </div>
                 <AbilityPriority
                   abilities={abilities}
-                  steps={roll.abilityOrder}
+                  steps={roll.skillOrder}
+                  unlockOrder={roll.unlockOrder}
                 />
-                <p className='mt-3 text-[11px] text-muted-foreground/70 leading-relaxed'>
-                  Numbers are the order you spend points in. Each ability takes
-                  1, 2 and 5 points for its three upgrades.
-                </p>
               </Panel>
             </div>
           ) : null}
@@ -395,17 +466,17 @@ export const RandomizerView = ({
           <section className='mt-16'>
             <SectionHeading
               aside={
-                <span>
-                  Exact sequence · no substitutions ·{" "}
-                  <span className='font-mono text-dl-souls tabular-nums'>
-                    {formatSouls(roll.totalSouls)}
-                  </span>{" "}
-                  souls
-                </span>
+                <div className='text-right'>
+                  <MicroLabel>Total</MicroLabel>
+                  <div className='font-mono text-dl-souls text-xl tabular-nums'>
+                    {formatSouls(roll.totalSouls)}{" "}
+                    <span className='text-muted-foreground text-sm'>souls</span>
+                  </div>
+                </div>
               }
               title='Build, in order.'
             />
-            <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'>
+            <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-3'>
               {roll.build.map((entry, index) => (
                 <ItemCard
                   key={entry.item.class_name}
@@ -417,33 +488,19 @@ export const RandomizerView = ({
                 />
               ))}
             </div>
-            <p className='mt-3 text-[11px] text-muted-foreground/60'>
-              Drawn from the {roll.draftPoolSize} shop items {hero.name}
-              actually drafts, never pairing an item with a component it already
-              contains.
-            </p>
           </section>
         ) : null}
 
         {sections.abilities ? (
           <section className='mt-16'>
-            <SectionHeading
-              aside='Spend each point exactly as shown'
-              title='Ability points, 1–32.'
-            />
-            <AbilityPointTrack
-              abilities={abilities}
-              steps={roll.abilityOrder}
-            />
+            <SectionHeading title='Skill order, 1–16.' />
+            <SkillTrack abilities={abilities} steps={roll.skillOrder} />
           </section>
         ) : null}
 
         {sections.rules ? (
           <section className='mt-16'>
-            <SectionHeading
-              aside='Break one and the roll does not count'
-              title='The rules.'
-            />
+            <SectionHeading title='The rules.' />
             <div className='grid gap-3 md:grid-cols-3'>
               {roll.challenges.map((challenge, index) => (
                 <div

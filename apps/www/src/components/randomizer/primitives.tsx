@@ -81,9 +81,7 @@ export const SectionHeading = ({
     <h2 className='font-primary font-bold text-3xl text-dl-offwhite'>
       {title}
     </h2>
-    {aside ? (
-      <div className='text-muted-foreground text-xs'>{aside}</div>
-    ) : null}
+    {aside}
   </div>
 );
 
