@@ -91,6 +91,7 @@ pub async fn delete_profile_folder(profile_folder: String) -> Result<(), Error> 
     .join("addons")
     .join(&profile_folder);
   let removed = crate::mod_manager::shard::remove_profile_shards(&base)?;
+  mod_manager.delete_localization_overlay(Some(&profile_folder))?;
 
   if removed {
     log::info!("Deleted profile shard folders for: {profile_folder}");
@@ -678,6 +679,7 @@ pub async fn seed_profile_vpk_manifest_entries(
 
   if changed {
     manifest.save(&addons_path)?;
+    mod_manager.invalidate_localization_overlay(profile_folder.as_deref());
   }
 
   Ok(())

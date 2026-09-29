@@ -21,6 +21,7 @@ pub mod gameinfo;
 pub mod identity_migration;
 pub mod ingest;
 pub mod live_match;
+pub mod localization;
 pub mod logs;
 pub mod match_sync;
 pub mod mods;

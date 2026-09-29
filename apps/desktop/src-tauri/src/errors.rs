@@ -32,6 +32,8 @@ pub enum Error {
   GameNotRunning,
   #[error("Failed to launch game: {0}")]
   GameLaunchFailed(String),
+  #[error("Merged mod data must be reviewed before launching")]
+  ModDataReviewRequired,
   #[error("Failed to extract mod: {0}")]
   ModExtractionFailed(String),
   #[error("Invalid input: {0}")]
@@ -122,6 +124,7 @@ impl serde::Serialize for Error {
       Error::GameRunning => "gameRunning",
       Error::GameNotRunning => "gameNotRunning",
       Error::GameLaunchFailed(_) => "gameLaunchFailed",
+      Error::ModDataReviewRequired => "modDataReviewRequired",
       Error::ModExtractionFailed(_) => "modExtractionFailed",
       Error::InvalidInput(_) => "invalidInput",
       Error::UnauthorizedPath(_) => "unauthorizedPath",
@@ -220,5 +223,11 @@ mod tests {
       let json = serde_json::to_value(error).unwrap();
       assert_eq!(json["kind"], expected_kind);
     }
+  }
+
+  #[test]
+  fn mod_data_review_error_has_a_stable_kind() {
+    let json = serde_json::to_value(Error::ModDataReviewRequired).unwrap();
+    assert_eq!(json["kind"], "modDataReviewRequired");
   }
 }

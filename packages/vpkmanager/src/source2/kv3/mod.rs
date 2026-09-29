@@ -6,9 +6,9 @@
 //!
 //! [`decode`] reads a binary KV3 DATA payload (the `DATA` block of a `.vsndevts_c`,
 //! `.vmat_c`, etc.) into a [`Value`] tree. [`encode`] writes a tree back out as a
-//! valid **uncompressed v4** payload. The pair round-trips: decoding Valve's
-//! LZ4-packed v5 file and re-encoding yields an uncompressed file the engine
-//! still loads.
+//! valid **uncompressed v4** payload. For schema-sensitive game data,
+//! [`decode_preserving`] and [`encode_preserving`] retain the original flags,
+//! numeric widths, and typed-array structure across that v5-to-v4 rebuild.
 //!
 //! This is format-generic. Soundevents-specific helpers (path swaps, VPK I/O,
 //! JSON projection) live in `vpkmerge-core`, not here.
@@ -27,9 +27,20 @@ pub use patch::{
     set_floats, set_scalars, set_sole_blob, set_strings, set_strings_adding,
 };
 pub use rewrap::rewrap_uncompressed;
-pub use types::Value;
+pub use types::{Encoding, EncodingChildren, Value};
 
 use crate::source2::error::DecodeError;
+
+/// Structural encoding details that are not represented by [`Value`].
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct EncodingStats {
+    pub version: u32,
+    pub nodes: usize,
+    pub flagged_nodes: usize,
+    pub typed_arrays: usize,
+    pub auxiliary_arrays: usize,
+    pub narrow_numbers: usize,
+}
 
 /// Numeric tags for KV3 binary node types (VRF `KV3BinaryNodeType`). Shared by
 /// the reader and writer so the two never drift.
@@ -88,9 +99,29 @@ pub fn decode(data: &[u8]) -> Result<Value, DecodeError> {
     reader::decode(data)
 }
 
+/// Decode values together with their engine-significant wire encodings.
+pub fn decode_preserving(data: &[u8]) -> Result<(Value, Encoding), DecodeError> {
+    reader::decode_preserving(data)
+}
+
+/// Inspect wire-level KV3 structure while decoding the value tree.
+pub fn encoding_stats(data: &[u8]) -> Result<EncodingStats, DecodeError> {
+    reader::encoding_stats(data)
+}
+
 /// Encode a [`Value`] tree into an uncompressed binary KV3 v4 DATA payload,
 /// stamped with `format`.
 #[must_use]
 pub fn encode(value: &Value, format: &Format) -> Vec<u8> {
     writer::encode(value, format)
+}
+
+/// Encode a value tree while retaining flags, numeric widths, and typed arrays.
+#[must_use]
+pub fn encode_preserving(
+    value: &Value,
+    encoding: &Encoding,
+    format: &Format,
+) -> Result<Vec<u8>, DecodeError> {
+    writer::encode_preserving(value, encoding, format)
 }

@@ -174,6 +174,7 @@ impl ModManager {
       }
     }
 
+    self.invalidate_localization_overlay(profile_folder.as_deref());
     log::info!("Mod installation (enable) completed successfully");
     Ok(deadlock_mod)
   }
@@ -279,6 +280,7 @@ impl ModManager {
       prefixed_vpks.len()
     );
 
+    self.invalidate_localization_overlay(profile_folder.as_deref());
     Ok(())
   }
 
@@ -352,6 +354,7 @@ impl ModManager {
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
     let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
     let manifest_entry = manifest.mods.get(mod_id).cloned();
+    let affects_overlay = manifest_entry.as_ref().is_some_and(|entry| entry.enabled);
     let install_order = manifest_entry.as_ref().and_then(|entry| entry.order);
     let sources = if let Some(entry) = &manifest_entry {
       entry
@@ -390,6 +393,9 @@ impl ModManager {
     staging.commit();
     self.mod_repository.remove_mod(mod_id);
     VpkManager::prune_empty_shard_dirs(&addons_path);
+    if affects_overlay {
+      self.invalidate_localization_overlay(profile_folder.as_deref());
+    }
 
     Ok(RemovedModVpks {
       count: removed_count,
@@ -555,6 +561,7 @@ impl ModManager {
     manifest.mark_disabled(&mod_id, prefixed_vpks, new_original_names);
     manifest.save(&addons_path)?;
 
+    self.invalidate_localization_overlay(profile_folder.as_deref());
     log::info!("Successfully replaced VPK files for mod: {mod_id}");
     Ok(())
   }
@@ -668,6 +675,7 @@ impl ModManager {
       original_vpk_names,
     };
     self.mod_repository.add_mod(updated.clone());
+    self.invalidate_localization_overlay(profile_folder.as_deref());
     Ok(updated)
   }
 }

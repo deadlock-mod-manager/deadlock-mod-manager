@@ -23,6 +23,8 @@ mod logs;
 mod match_sync;
 mod mod_manager;
 pub mod providers;
+#[doc(hidden)]
+pub use mod_manager::vdata_history::encode_history_index;
 pub mod proxy;
 mod reports;
 pub mod runtime_environment;
@@ -242,6 +244,8 @@ pub fn run() {
       commands::mods::purge_mod,
       commands::mods::reorder_mods,
       commands::mods::reorder_mods_by_remote_id,
+      commands::localization::analyze_localization_overlay,
+      commands::localization::apply_localization_overlay,
       commands::game::is_game_running,
       commands::deep_link::parse_deep_link,
       commands::deep_link::get_deep_link_debug_info,

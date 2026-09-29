@@ -10,9 +10,9 @@
 //! linear scan, which is fine for the small trees these files hold.
 //!
 //! Numeric values are folded to three kinds (`Int`/`UInt`/`Double`). The binary
-//! KV3 reader emits narrower tags (`INT32`, `FLOAT`, `INT16`, ...) but widening
-//! to i64/u64/f64 is value-preserving, and the encoder re-emits the wide tags;
-//! KV3 consumers coerce numbers by key, so the game reads them identically.
+//! KV3 reader emits narrower tags (`INT32`, `FLOAT`, `INT16`, ...), so callers
+//! that must rebuild engine data can retain those tags in the parallel
+//! [`Encoding`] tree.
 
 /// A decoded KV3 value tree.
 #[derive(Debug, Clone, PartialEq)]
@@ -29,6 +29,74 @@ pub enum Value {
     Array(Vec<Value>),
     /// Insertion-ordered key/value pairs.
     Object(Vec<(String, Value)>),
+}
+
+/// Wire encoding metadata for a decoded [`Value`] node.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Encoding {
+    pub(crate) datatype: u8,
+    pub(crate) flag: u8,
+    pub children: EncodingChildren,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum EncodingChildren {
+    None,
+    Array(Vec<Encoding>),
+    Object(Vec<(String, Encoding)>),
+}
+
+impl Encoding {
+    #[must_use]
+    pub fn get(&self, key: &str) -> Option<&Encoding> {
+        match &self.children {
+            EncodingChildren::Object(pairs) => pairs
+                .iter()
+                .find(|(name, _)| name == key)
+                .map(|(_, value)| value),
+            _ => None,
+        }
+    }
+
+    pub fn get_mut(&mut self, key: &str) -> Option<&mut Encoding> {
+        match &mut self.children {
+            EncodingChildren::Object(pairs) => pairs
+                .iter_mut()
+                .find(|(name, _)| name == key)
+                .map(|(_, value)| value),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub fn as_array(&self) -> Option<&[Encoding]> {
+        match &self.children {
+            EncodingChildren::Array(items) => Some(items),
+            _ => None,
+        }
+    }
+
+    pub fn as_array_mut(&mut self) -> Option<&mut [Encoding]> {
+        match &mut self.children {
+            EncodingChildren::Array(items) => Some(items),
+            _ => None,
+        }
+    }
+
+    #[must_use]
+    pub fn as_object(&self) -> Option<&[(String, Encoding)]> {
+        match &self.children {
+            EncodingChildren::Object(fields) => Some(fields),
+            _ => None,
+        }
+    }
+
+    pub fn as_object_mut(&mut self) -> Option<&mut Vec<(String, Encoding)>> {
+        match &mut self.children {
+            EncodingChildren::Object(fields) => Some(fields),
+            _ => None,
+        }
+    }
 }
 
 impl Value {

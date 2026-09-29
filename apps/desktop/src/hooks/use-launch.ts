@@ -11,6 +11,7 @@ import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { getAdditionalArgs } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
+import { isTauriError } from "@/types/tauri";
 
 export const useLaunch = () => {
   const { t } = useTranslation();
@@ -128,6 +129,10 @@ export const useLaunch = () => {
     } catch (error) {
       console.error(error);
       logger.errorOnly(error);
+      if (isTauriError(error) && error.kind === "modDataReviewRequired") {
+        toast.error(t("errors.modDataReviewRequired"));
+        return;
+      }
       toast.error(
         getLaunchErrorMessage(
           error,

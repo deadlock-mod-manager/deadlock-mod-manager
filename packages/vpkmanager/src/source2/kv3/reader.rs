@@ -8,9 +8,11 @@
 //! LZ4-compressed buffers; our own encoder emits v4 uncompressed. Both paths are
 //! exercised by the round-trip test.
 //!
-//! Two simplifications vs the reference, neither reached by soundevents data:
-//! - KV3 value flags (`Resource`, `SoundEvent`, ...) are consumed but discarded;
-//!   the [`Value`](super::Value) tree has no slot for them.
+//! The semantic [`Value`](super::Value) tree widens numeric values, while the
+//! parallel [`Encoding`](super::Encoding) tree retains flags, numeric widths,
+//! and typed-array structure for callers that need an engine-faithful rebuild.
+//!
+//! One simplification vs the reference, not reached by soundevents data:
 //! - Binary blobs (`countBlocks > 0`) decode for v5 and for uncompressed v4
 //!   (our own writer's output); other blob-bearing combinations are rejected.
 
@@ -22,8 +24,9 @@
     clippy::cast_sign_loss
 )]
 
+use super::EncodingStats;
 use super::node;
-use super::types::Value;
+use super::types::{Encoding, EncodingChildren, Value};
 use crate::source2::error::DecodeError;
 
 /// Legacy pre-versioned VKV3 magic (0x03 'V' 'K' 'V'). Unsupported.
@@ -37,6 +40,19 @@ const LZ4_FRAME_SIZE: u16 = 16384;
 /// Decode a binary KV3 DATA payload into a [`Value`] tree.
 #[allow(clippy::too_many_lines)]
 pub(super) fn decode(data: &[u8]) -> Result<Value, DecodeError> {
+    decode_with_stats(data).map(|(value, _, _)| value)
+}
+
+pub(super) fn decode_preserving(data: &[u8]) -> Result<(Value, Encoding), DecodeError> {
+    decode_with_stats(data).map(|(value, encoding, _)| (value, encoding))
+}
+
+pub(super) fn encoding_stats(data: &[u8]) -> Result<EncodingStats, DecodeError> {
+    decode_with_stats(data).map(|(_, _, stats)| stats)
+}
+
+#[allow(clippy::too_many_lines)]
+fn decode_with_stats(data: &[u8]) -> Result<(Value, Encoding, EncodingStats), DecodeError> {
     let mut h = Cursor::new(data);
     let magic = h.u32()?;
     if magic == MAGIC_LEGACY {
@@ -176,6 +192,10 @@ pub(super) fn decode(data: &[u8]) -> Result<Value, DecodeError> {
         };
         Ctx {
             version,
+            stats: EncodingStats {
+                version,
+                ..EncodingStats::default()
+            },
             strings,
             types: Cursor::new(types),
             object_lengths: Cursor::new(object_lengths),
@@ -215,8 +235,9 @@ pub(super) fn decode(data: &[u8]) -> Result<Value, DecodeError> {
         ctx
     };
 
-    let (root_type, _flag) = read_type(&mut ctx)?;
-    read_value(&mut ctx, root_type)
+    let (root_type, root_flag) = read_type(&mut ctx)?;
+    let (value, encoding) = read_value(&mut ctx, root_type, root_flag)?;
+    Ok((value, encoding, ctx.stats))
 }
 
 #[derive(Default, Clone, Copy)]
@@ -237,6 +258,7 @@ struct Buffers<'a> {
 
 struct Ctx<'a> {
     version: u32,
+    stats: EncodingStats,
     strings: Vec<String>,
     types: Cursor<'a>,
     /// v5 only: per-OBJECT member counts. Empty for v<5 (counts come from b4).
@@ -539,6 +561,10 @@ fn layout_single(
     };
     let ctx = Ctx {
         version,
+        stats: EncodingStats {
+            version,
+            ..EncodingStats::default()
+        },
         strings,
         types: Cursor::new(types),
         object_lengths: Cursor::new(&[]),
@@ -560,47 +586,77 @@ fn read_type(ctx: &mut Ctx) -> Result<(u8, u8), DecodeError> {
     let mut flag = 0u8;
     if databyte & 0x80 != 0 {
         // v>=3 masks 0x3F, older versions 0x7F; node ids are < 0x3F so the
-        // result is identical for every type we model. The flag byte is
-        // consumed (to stay aligned) but not retained.
+        // result is identical for every type we model.
         databyte &= if ctx.version >= 3 { 0x3F } else { 0x7F };
         flag = ctx.types.u8()?;
     }
+    ctx.stats.nodes += 1;
+    ctx.stats.flagged_nodes += usize::from(flag != 0);
+    ctx.stats.typed_arrays += usize::from(matches!(
+        databyte,
+        node::ARRAY_TYPED | node::ARRAY_TYPE_BYTE_LENGTH | node::ARRAY_TYPE_AUXILIARY_BUFFER
+    ));
+    ctx.stats.auxiliary_arrays += usize::from(databyte == node::ARRAY_TYPE_AUXILIARY_BUFFER);
+    ctx.stats.narrow_numbers += usize::from(matches!(
+        databyte,
+        node::INT32 | node::UINT32 | node::FLOAT | node::INT16 | node::UINT16 | node::INT32_AS_BYTE
+    ));
     Ok((databyte, flag))
 }
 
 #[allow(clippy::wildcard_imports)]
-fn read_value(ctx: &mut Ctx, datatype: u8) -> Result<Value, DecodeError> {
+fn read_value(ctx: &mut Ctx, datatype: u8, flag: u8) -> Result<(Value, Encoding), DecodeError> {
     use node::*;
+    let leaf = |value| {
+        Ok((
+            value,
+            Encoding {
+                datatype,
+                flag,
+                children: EncodingChildren::None,
+            },
+        ))
+    };
     match datatype {
-        NULL => Ok(Value::Null),
-        BOOLEAN_TRUE => Ok(Value::Bool(true)),
-        BOOLEAN_FALSE => Ok(Value::Bool(false)),
-        INT64_ZERO => Ok(Value::Int(0)),
-        INT64_ONE => Ok(Value::Int(1)),
-        DOUBLE_ZERO => Ok(Value::Double(0.0)),
-        DOUBLE_ONE => Ok(Value::Double(1.0)),
-        BOOLEAN => Ok(Value::Bool(ctx.main.b1.u8()? == 1)),
-        INT32_AS_BYTE => Ok(Value::Int(i64::from(ctx.main.b1.u8()?))),
-        INT16 => Ok(Value::Int(i64::from(ctx.main.b2.u16()? as i16))),
-        UINT16 => Ok(Value::UInt(u64::from(ctx.main.b2.u16()?))),
-        INT32 => Ok(Value::Int(i64::from(ctx.main.b4.u32()? as i32))),
-        UINT32 => Ok(Value::UInt(u64::from(ctx.main.b4.u32()?))),
-        FLOAT => Ok(Value::Double(f64::from(f32::from_bits(ctx.main.b4.u32()?)))),
-        INT64 => Ok(Value::Int(ctx.main.b8.u64()? as i64)),
-        UINT64 => Ok(Value::UInt(ctx.main.b8.u64()?)),
-        DOUBLE => Ok(Value::Double(f64::from_bits(ctx.main.b8.u64()?))),
+        NULL => leaf(Value::Null),
+        BOOLEAN_TRUE => leaf(Value::Bool(true)),
+        BOOLEAN_FALSE => leaf(Value::Bool(false)),
+        INT64_ZERO => leaf(Value::Int(0)),
+        INT64_ONE => leaf(Value::Int(1)),
+        DOUBLE_ZERO => leaf(Value::Double(0.0)),
+        DOUBLE_ONE => leaf(Value::Double(1.0)),
+        BOOLEAN => leaf(Value::Bool(ctx.main.b1.u8()? == 1)),
+        INT32_AS_BYTE => leaf(Value::Int(i64::from(ctx.main.b1.u8()?))),
+        INT16 => leaf(Value::Int(i64::from(ctx.main.b2.u16()? as i16))),
+        UINT16 => leaf(Value::UInt(u64::from(ctx.main.b2.u16()?))),
+        INT32 => leaf(Value::Int(i64::from(ctx.main.b4.u32()? as i32))),
+        UINT32 => leaf(Value::UInt(u64::from(ctx.main.b4.u32()?))),
+        FLOAT => leaf(Value::Double(f64::from(f32::from_bits(ctx.main.b4.u32()?)))),
+        INT64 => leaf(Value::Int(ctx.main.b8.u64()? as i64)),
+        UINT64 => leaf(Value::UInt(ctx.main.b8.u64()?)),
+        DOUBLE => leaf(Value::Double(f64::from_bits(ctx.main.b8.u64()?))),
         STRING => {
             let id = ctx.main.b4.u32()? as i32;
-            Ok(Value::String(lookup_string(ctx, id)?))
+            leaf(Value::String(lookup_string(ctx, id)?))
         }
         ARRAY => {
             let n = ctx.main.b4.u32()?;
             let mut items = Vec::with_capacity(n as usize);
+            let mut encodings = Vec::with_capacity(n as usize);
             for _ in 0..n {
-                let (t, _f) = read_type(ctx)?;
-                items.push(read_value(ctx, t)?);
+                let (item_type, item_flag) = read_type(ctx)?;
+                let (value, encoding) = read_value(ctx, item_type, item_flag)?;
+                items.push(value);
+                encodings.push(encoding);
             }
-            Ok(Value::Array(items))
+            Ok((
+                Value::Array(items),
+                Encoding {
+                    datatype,
+                    flag,
+                    children: EncodingChildren::Array(encodings),
+                },
+            ))
         }
         ARRAY_TYPED | ARRAY_TYPE_BYTE_LENGTH => {
             let n = if datatype == ARRAY_TYPE_BYTE_LENGTH {
@@ -608,22 +664,36 @@ fn read_value(ctx: &mut Ctx, datatype: u8) -> Result<Value, DecodeError> {
             } else {
                 ctx.main.b4.u32()?
             };
-            let (sub, _f) = read_type(ctx)?;
+            let (sub, sub_flag) = read_type(ctx)?;
             let mut items = Vec::with_capacity(n as usize);
+            let mut encodings = Vec::with_capacity(n as usize);
             for _ in 0..n {
-                items.push(read_value(ctx, sub)?);
+                let (value, encoding) = read_value(ctx, sub, sub_flag)?;
+                items.push(value);
+                encodings.push(encoding);
             }
-            Ok(Value::Array(items))
+            Ok((
+                Value::Array(items),
+                Encoding {
+                    datatype,
+                    flag,
+                    children: EncodingChildren::Array(encodings),
+                },
+            ))
         }
         ARRAY_TYPE_AUXILIARY_BUFFER => {
             let n = u32::from(ctx.main.b1.u8()?);
-            let (sub, _f) = read_type(ctx)?;
+            let (sub, sub_flag) = read_type(ctx)?;
             std::mem::swap(&mut ctx.main, &mut ctx.aux);
             let mut items = Vec::with_capacity(n as usize);
+            let mut encodings = Vec::with_capacity(n as usize);
             let mut err = None;
             for _ in 0..n {
-                match read_value(ctx, sub) {
-                    Ok(v) => items.push(v),
+                match read_value(ctx, sub, sub_flag) {
+                    Ok((value, encoding)) => {
+                        items.push(value);
+                        encodings.push(encoding);
+                    }
                     Err(e) => {
                         err = Some(e);
                         break;
@@ -634,7 +704,14 @@ fn read_value(ctx: &mut Ctx, datatype: u8) -> Result<Value, DecodeError> {
             if let Some(e) = err {
                 return Err(e);
             }
-            Ok(Value::Array(items))
+            Ok((
+                Value::Array(items),
+                Encoding {
+                    datatype,
+                    flag,
+                    children: EncodingChildren::Array(encodings),
+                },
+            ))
         }
         OBJECT => {
             let n = if ctx.version >= 5 {
@@ -643,13 +720,23 @@ fn read_value(ctx: &mut Ctx, datatype: u8) -> Result<Value, DecodeError> {
                 ctx.main.b4.u32()?
             };
             let mut pairs = Vec::with_capacity(n as usize);
+            let mut encodings = Vec::with_capacity(n as usize);
             for _ in 0..n {
-                let (vt, _f) = read_type(ctx)?;
+                let (value_type, value_flag) = read_type(ctx)?;
                 let id = ctx.main.b4.u32()? as i32;
                 let name = lookup_string(ctx, id)?;
-                pairs.push((name, read_value(ctx, vt)?));
+                let (value, encoding) = read_value(ctx, value_type, value_flag)?;
+                encodings.push((name.clone(), encoding));
+                pairs.push((name, value));
             }
-            Ok(Value::Object(pairs))
+            Ok((
+                Value::Object(pairs),
+                Encoding {
+                    datatype,
+                    flag,
+                    children: EncodingChildren::Object(encodings),
+                },
+            ))
         }
         BINARY_BLOB => {
             let blob = ctx
@@ -658,7 +745,7 @@ fn read_value(ctx: &mut Ctx, datatype: u8) -> Result<Value, DecodeError> {
                 .map(std::mem::take)
                 .ok_or(DecodeError::Kv3("blob index out of range"))?;
             ctx.next_blob += 1;
-            Ok(Value::Binary(blob))
+            leaf(Value::Binary(blob))
         }
         other => Err(DecodeError::Kv3NodeType(other)),
     }
