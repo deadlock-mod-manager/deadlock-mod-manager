@@ -88,7 +88,7 @@ image = { version = "0.25", default-features = false, features = ["png"] }
 keyvalues-parser = "0.2"
 prost = "0.14"
 steam-vent = { git = "https://github.com/deadlock-api/steam-vent", rev = "1d7b274f5c2f648aba5dab474b80c1156b409bca" }
-valveprotos = { git = "https://github.com/deadlock-api/valveprotos-rs", rev = "b14c831f324e20653e50ff60372478d427800d45", features = [
+valveprotos = { git = "https://github.com/deadlock-api/deadlock-api", rev = "b14c831f324e20653e50ff60372478d427800d45", features = [
   "gc-common",
   "gc-client",
   "serde",
