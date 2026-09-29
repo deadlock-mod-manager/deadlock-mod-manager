@@ -162,6 +162,10 @@ export const useLaunch = () => {
       );
       console.error(error);
       logger.errorOnly(error);
+      if (isTauriError(error) && error.kind === "modDataReviewRequired") {
+        toast.error(t("errors.modDataReviewRequired"));
+        return;
+      }
       toast.error(
         getLaunchErrorMessage(
           error,

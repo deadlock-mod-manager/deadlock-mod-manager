@@ -571,6 +571,7 @@ pub async fn register_analyzed_mod(
     entry.original_vpk_names.clear();
   }
   manifest.save(&addons_path)?;
+  mod_manager.invalidate_localization_overlay(profile_folder.as_deref());
   log::info!("Persisted analyzed mod {mod_id} to profile manifest");
 
   Ok(())

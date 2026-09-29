@@ -19,10 +19,12 @@ use log;
 use std::{
   collections::{BTreeMap, HashSet},
   path::{Component, Path, PathBuf},
+  sync::Mutex,
 };
 
 mod gameinfo;
 mod lifecycle;
+mod localization;
 mod reorder;
 
 pub struct ModManager {
@@ -36,6 +38,7 @@ pub struct ModManager {
   addons_backup_manager: AddonsBackupManager,
   autoexec_manager: AutoexecManager,
   app_handle: Option<AppHandle>,
+  localization_overlay_plan_cache: Mutex<Option<localization::CachedLocalizationOverlayPlan>>,
 }
 
 pub struct VariantChangeResult {
@@ -57,6 +60,7 @@ impl ModManager {
       addons_backup_manager: AddonsBackupManager::new(),
       autoexec_manager: AutoexecManager::new(),
       app_handle: None,
+      localization_overlay_plan_cache: Mutex::new(None),
     };
 
     // Harness worlds are configured explicitly during Tauri setup. Never scan
@@ -204,6 +208,7 @@ impl ModManager {
       // lines would be missing and the engine would silently drop everything
       // past the 99th pak file.
       self.migrate_profile_to_shards(profile_folder.clone())?;
+      self.ensure_localization_overlay_for_launch(profile_folder.as_deref())?;
       self.apply_profile_gameinfo(profile_folder)?;
     }
 
@@ -222,6 +227,7 @@ impl ModManager {
       return Err(pending.rollback(error));
     }
     pending.commit();
+    self.invalidate_localization_overlay(profile_folder.as_deref());
     Ok(())
   }
 
@@ -496,6 +502,7 @@ mod tests {
       addons_backup_manager: AddonsBackupManager::new(),
       autoexec_manager: AutoexecManager::new(),
       app_handle: None,
+      localization_overlay_plan_cache: Mutex::new(None),
     }
   }
 
@@ -1271,6 +1278,13 @@ mod tests {
       install_order: Some(0),
       original_vpk_names: vec!["original.vpk".into()],
     });
+    let overlay_path = game
+      .path()
+      .join("game")
+      .join(ModManager::localization_overlay_search_path(None))
+      .join(crate::mod_manager::localization_overlay::OVERLAY_VPK_NAME);
+    fs::create_dir_all(overlay_path.parent().unwrap()).unwrap();
+    fs::write(&overlay_path, b"stale merged data").unwrap();
     let updated = manager
       .update_mod_from_prepared(
         "target",
@@ -1281,6 +1295,10 @@ mod tests {
       )
       .unwrap();
 
+    assert!(
+      !overlay_path.exists(),
+      "updating a mod must invalidate merged data"
+    );
     assert!(updated.is_map);
     assert_eq!(
       updated.file_tree.as_ref().unwrap().total_files,

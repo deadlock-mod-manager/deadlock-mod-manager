@@ -33,6 +33,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useMutation } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -40,6 +41,11 @@ import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { usePersistedStore } from "@/lib/store";
 import type { LocalMod } from "@/types/mods";
 import { getModCoverImage } from "@/lib/mods/mod-images";
+import {
+  type LocalizationChoice,
+  LocalizationConflictReview,
+  type LocalizationOverlayAnalysis,
+} from "./localization-conflict-review";
 
 interface ModOrderingDialogProps {
   children?: React.ReactNode;
@@ -50,6 +56,28 @@ interface ModOrderingDialogProps {
 interface SortableModItemProps {
   mod: LocalMod;
   index: number;
+}
+
+interface LocalizationResolution {
+  conflictKey: string;
+  winnerModId: string | null;
+  winnerValue: string | null;
+  winnerSourceVpk: string | null;
+  useVanilla: boolean;
+}
+
+interface LocalizationOverlayApplyResult {
+  hasOverlay: boolean;
+  outputPath: string | null;
+  packedFiles: number;
+  appliedTokens: number;
+  appliedCompiledRows: number;
+}
+
+interface SaveOrderResult {
+  analysis: LocalizationOverlayAnalysis;
+  orderedRemoteIds: string[];
+  updatedVpkMappings: Array<[string, string[]]>;
 }
 
 const SortableModItem = ({ mod, index }: SortableModItemProps) => {
@@ -137,9 +165,13 @@ export const ModOrderingDialog = ({
     getActiveProfile,
   } = usePersistedStore();
   const [orderedMods, setOrderedMods] = useState<LocalMod[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [internalOpen, setInternalOpen] = useState(false);
   const [reorderStartTime, setReorderStartTime] = useState<number | null>(null);
+  const [localizationAnalysis, setLocalizationAnalysis] =
+    useState<LocalizationOverlayAnalysis | null>(null);
+  const [localizationChoices, setLocalizationChoices] = useState<
+    Record<string, LocalizationChoice>
+  >({});
 
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
@@ -156,6 +188,10 @@ export const ModOrderingDialog = ({
   }, [open]);
 
   const handleOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      setLocalizationAnalysis(null);
+      setLocalizationChoices({});
+    }
     setOpen(isOpen);
   };
 
@@ -178,10 +214,8 @@ export const ModOrderingDialog = ({
     }
   };
 
-  const handleSave = async () => {
-    try {
-      setIsLoading(true);
-
+  const saveOrderMutation = useMutation<SaveOrderResult, Error>({
+    mutationFn: async () => {
       const activeProfile = getActiveProfile();
       const profileFolder = activeProfile?.folderName ?? null;
 
@@ -196,11 +230,27 @@ export const ModOrderingDialog = ({
         "reorder_mods_by_remote_id",
         { modOrderData, profileFolder },
       );
-
-      // Update the frontend store with the new install order
       const orderedRemoteIds = orderedMods.map((mod) => mod.remoteId);
+      const analysis = await invoke<LocalizationOverlayAnalysis>(
+        "analyze_localization_overlay",
+        { profileFolder },
+      );
+      if (
+        analysis.conflicts.length === 0 &&
+        analysis.compiledDataConflicts.length === 0 &&
+        analysis.heroIdReassignments.length === 0 &&
+        analysis.snapshotWarnings.length === 0 &&
+        analysis.parseWarnings.length === 0
+      ) {
+        await invoke<LocalizationOverlayApplyResult>(
+          "apply_localization_overlay",
+          { profileFolder, resolutions: [] },
+        );
+      }
+      return { analysis, orderedRemoteIds, updatedVpkMappings };
+    },
+    onSuccess: ({ analysis, orderedRemoteIds, updatedVpkMappings }) => {
       reorderMods(orderedRemoteIds);
-
       updateModVpksAfterReorder(updatedVpkMappings);
 
       const durationSeconds = reorderStartTime
@@ -213,22 +263,132 @@ export const ModOrderingDialog = ({
         duration_seconds: durationSeconds,
       });
 
+      if (
+        analysis.conflicts.length > 0 ||
+        analysis.compiledDataConflicts.length > 0 ||
+        analysis.heroIdReassignments.length > 0 ||
+        analysis.snapshotWarnings.length > 0 ||
+        analysis.parseWarnings.length > 0
+      ) {
+        setLocalizationAnalysis(analysis);
+        setLocalizationChoices({});
+        return;
+      }
       toast.success(t("modOrdering.orderSaved"));
       setOpen(false);
-    } catch (error) {
+    },
+    onError: (error) => {
       toast.error(t("modOrdering.orderSaveFailed"), {
-        description: error instanceof Error ? error.message : String(error),
+        description: error.message,
       });
       console.error("Failed to save mod order:", error);
-    } finally {
-      setIsLoading(false);
+    },
+  });
+
+  const applyLocalizationMutation = useMutation<
+    LocalizationOverlayApplyResult,
+    Error,
+    LocalizationResolution[]
+  >({
+    mutationFn: async (resolutions) => {
+      const activeProfile = getActiveProfile();
+      const profileFolder = activeProfile?.folderName ?? null;
+      return await invoke<LocalizationOverlayApplyResult>(
+        "apply_localization_overlay",
+        { profileFolder, resolutions },
+      );
+    },
+    onSuccess: (result) => {
+      toast.success(t("modOrdering.localization.applied"), {
+        description: t("modOrdering.localization.appliedDescription", {
+          count: result.appliedTokens,
+          rows: result.appliedCompiledRows,
+        }),
+      });
+      setLocalizationAnalysis(null);
+      setLocalizationChoices({});
+      setOpen(false);
+    },
+    onError: (error) => {
+      toast.error(t("modOrdering.localization.applyFailed"), {
+        description: error.message,
+      });
+    },
+  });
+
+  const handleSave = () => {
+    saveOrderMutation.mutate();
+  };
+
+  const handleApplyLocalization = () => {
+    if (!localizationAnalysis) return;
+    const resolutions = localizationAnalysis.conflicts.reduce<
+      LocalizationResolution[]
+    >((current, conflict) => {
+      const choice = localizationChoices[conflict.key] ?? "load-order";
+      if (choice === "load-order") return current;
+      if (choice === "vanilla") {
+        current.push({
+          conflictKey: conflict.key,
+          winnerModId: null,
+          winnerValue: null,
+          winnerSourceVpk: null,
+          useVanilla: true,
+        });
+        return current;
+      }
+      const candidateIndex = Number(choice.slice("candidate:".length));
+      const candidate = conflict.candidates[candidateIndex];
+      if (!candidate) return current;
+      current.push({
+        conflictKey: conflict.key,
+        winnerModId: candidate.modId,
+        winnerValue: candidate.value,
+        winnerSourceVpk: candidate.sourceVpk,
+        useVanilla: false,
+      });
+      return current;
+    }, []);
+    for (const conflict of localizationAnalysis.compiledDataConflicts) {
+      const choice = localizationChoices[conflict.key] ?? "load-order";
+      if (choice === "load-order") continue;
+      if (choice === "vanilla") {
+        resolutions.push({
+          conflictKey: conflict.key,
+          winnerModId: null,
+          winnerValue: null,
+          winnerSourceVpk: null,
+          useVanilla: true,
+        });
+        continue;
+      }
+      const candidateIndex = Number(choice.slice("candidate:".length));
+      const candidate = conflict.candidates[candidateIndex];
+      if (!candidate) continue;
+      resolutions.push({
+        conflictKey: conflict.key,
+        winnerModId: candidate.modId,
+        winnerValue: null,
+        winnerSourceVpk: candidate.sourceVpk,
+        useVanilla: false,
+      });
     }
+    applyLocalizationMutation.mutate(resolutions);
   };
 
   const handleCancel = () => {
+    if (localizationAnalysis) {
+      setLocalizationAnalysis(null);
+      setLocalizationChoices({});
+      return;
+    }
     setOrderedMods(getOrderedMods());
     setOpen(false);
   };
+
+  const isLoading =
+    saveOrderMutation.isPending || applyLocalizationMutation.isPending;
+  const modNames = new Map(orderedMods.map((mod) => [mod.remoteId, mod.name]));
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -240,14 +400,34 @@ export const ModOrderingDialog = ({
           <TooltipContent>{t("modOrdering.manageOrderTooltip")}</TooltipContent>
         </Tooltip>
       )}
-      <DialogContent className='max-w-2xl max-h-[80vh] flex flex-col'>
-        <DialogHeader>
-          <DialogTitle>{t("modOrdering.title")}</DialogTitle>
-          <DialogDescription>{t("modOrdering.description")}</DialogDescription>
+      <DialogContent className='flex max-h-[82vh] max-w-2xl flex-col overflow-hidden'>
+        <DialogHeader className='shrink-0 gap-1 space-y-0 pr-8'>
+          <DialogTitle className='leading-snug'>
+            {localizationAnalysis
+              ? t("modOrdering.localization.title")
+              : t("modOrdering.title")}
+          </DialogTitle>
+          <DialogDescription className='max-w-[68ch] leading-relaxed'>
+            {localizationAnalysis
+              ? t("modOrdering.localization.description")
+              : t("modOrdering.description")}
+          </DialogDescription>
         </DialogHeader>
 
-        <div className='flex-1 overflow-hidden'>
-          {orderedMods.length === 0 ? (
+        <div className='flex min-h-0 flex-1 overflow-hidden'>
+          {localizationAnalysis ? (
+            <LocalizationConflictReview
+              analysis={localizationAnalysis}
+              choices={localizationChoices}
+              modNames={modNames}
+              onChoiceChange={(conflictKey, choice) =>
+                setLocalizationChoices((current) => ({
+                  ...current,
+                  [conflictKey]: choice,
+                }))
+              }
+            />
+          ) : orderedMods.length === 0 ? (
             <div className='flex items-center justify-center py-8 text-muted-foreground'>
               {t("modOrdering.noMods")}
             </div>
@@ -273,20 +453,24 @@ export const ModOrderingDialog = ({
           )}
         </div>
 
-        <DialogFooter className='flex justify-between'>
+        <DialogFooter className='flex shrink-0 justify-between border-t pt-4'>
           <Button variant='outline' onClick={handleCancel} disabled={isLoading}>
             <X className='mr-2 h-4 w-4' />
-            {t("common.cancel")}
+            {localizationAnalysis ? t("common.back") : t("common.cancel")}
           </Button>
           <Button
-            onClick={handleSave}
+            onClick={
+              localizationAnalysis ? handleApplyLocalization : handleSave
+            }
             disabled={isLoading || orderedMods.length === 0}>
             {isLoading ? (
               <Loader2 className='mr-2 h-4 w-4 animate-spin' />
             ) : (
               <Save className='mr-2 h-4 w-4' />
             )}
-            {t("common.save")}
+            {localizationAnalysis
+              ? t("modOrdering.localization.apply")
+              : t("common.save")}
           </Button>
         </DialogFooter>
       </DialogContent>

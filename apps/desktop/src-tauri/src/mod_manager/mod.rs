@@ -12,6 +12,7 @@ pub mod fs_retry;
 pub mod game_config_manager;
 pub mod game_process_manager;
 mod hero_settings;
+pub mod localization_overlay;
 pub mod manager;
 pub mod missing_vpks;
 pub mod mod_repository;
@@ -19,6 +20,7 @@ pub mod shard;
 pub mod shard_report;
 pub mod steam_manager;
 pub(crate) mod steam_uri_launcher;
+pub mod vdata_history;
 pub mod vpk_manager;
 pub mod vpk_manifest;
 

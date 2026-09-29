@@ -3,7 +3,7 @@ use std::fs;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 
-use vpk_parser::{VpkParseOptions, VpkParser};
+use vpk_parser::VpkParser;
 
 use crate::error::{Result, Source2Error};
 
@@ -14,6 +14,7 @@ struct EntryInfo {
     archive_index: u16,
     entry_offset: u32,
     entry_length: u32,
+    preload_bytes: u16,
 }
 
 /// Suffix of the sidecar that redirects companion-archive lookups: a file named
@@ -80,22 +81,17 @@ impl VpkArchive {
         let tree_start: usize = if version >= 2 { 28 } else { 12 };
         let data_section_start = tree_start + tree_length;
 
-        let options = VpkParseOptions {
-            include_entries: true,
-            file_path: vpk_path.to_string_lossy().to_string(),
-            ..Default::default()
-        };
-        let parsed = VpkParser::parse(buffer.clone(), options)
-            .map_err(|e| Source2Error::Vpk(format!("failed to parse VPK: {e}")))?;
+        let parsed_entries = VpkParser::parse_directory_from_file(vpk_path)
+            .map_err(|e| Source2Error::Vpk(format!("failed to parse VPK directory: {e}")))?;
 
-        let entries: Vec<EntryInfo> = parsed
-            .entries
+        let entries: Vec<EntryInfo> = parsed_entries
             .into_iter()
             .map(|entry| EntryInfo {
                 full_path: entry.full_path,
                 archive_index: entry.archive_index,
                 entry_offset: entry.entry_offset,
                 entry_length: entry.entry_length,
+                preload_bytes: entry.preload_bytes,
             })
             .collect();
         let mut entry_index = HashMap::new();
@@ -153,6 +149,17 @@ impl VpkArchive {
             || self
                 .entry_index
                 .contains_key(&entry_path.replace('\\', "/").to_ascii_lowercase())
+    }
+
+    /// Whether an entry stores bytes inline in the directory tree before its
+    /// normal archive payload. Callers that cannot preserve those bytes can use
+    /// this to reject the entry instead of extracting incomplete data.
+    pub fn has_preload_bytes(&self, entry_path: &str) -> bool {
+        let key = entry_path.replace('\\', "/").to_ascii_lowercase();
+        self.entry_index
+            .get(&key)
+            .and_then(|index| self.entries.get(*index))
+            .is_some_and(|entry| entry.preload_bytes > 0)
     }
 
     pub fn extract_entry(&self, entry_path: &str) -> Result<Vec<u8>> {
@@ -293,6 +300,27 @@ pub fn extract_entries(vpk_path: &Path, dest_dir: &Path, entry_paths: &[String])
 mod tests {
     use super::*;
 
+    fn inline_vpk(preload: &[u8], data: &[u8]) -> Vec<u8> {
+        let mut tree = Vec::new();
+        tree.extend_from_slice(b"txt\0folder\0sample\0");
+        tree.extend_from_slice(&0u32.to_le_bytes());
+        tree.extend_from_slice(&u16::try_from(preload.len()).unwrap().to_le_bytes());
+        tree.extend_from_slice(&0x7fffu16.to_le_bytes());
+        tree.extend_from_slice(&0u32.to_le_bytes());
+        tree.extend_from_slice(&u32::try_from(data.len()).unwrap().to_le_bytes());
+        tree.extend_from_slice(&0xffffu16.to_le_bytes());
+        tree.extend_from_slice(preload);
+        tree.extend_from_slice(b"\0\0\0");
+
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&VPK_SIGNATURE.to_le_bytes());
+        bytes.extend_from_slice(&1u32.to_le_bytes());
+        bytes.extend_from_slice(&u32::try_from(tree.len()).unwrap().to_le_bytes());
+        bytes.extend_from_slice(&tree);
+        bytes.extend_from_slice(data);
+        bytes
+    }
+
     fn scratch_dir(label: &str) -> PathBuf {
         let unique = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
@@ -345,5 +373,25 @@ mod tests {
             sidecar.file_name().and_then(|name| name.to_str()),
             Some("pak01_dir.vpk.origin"),
         );
+    }
+
+    #[test]
+    fn directory_only_open_preserves_entries_and_preload_metadata() {
+        let dir = scratch_dir("directory-only");
+        let ordinary_path = dir.join("ordinary_dir.vpk");
+        fs::write(&ordinary_path, inline_vpk(&[], b"payload")).expect("write ordinary VPK");
+        let ordinary = VpkArchive::open(&ordinary_path).expect("open ordinary VPK");
+        assert_eq!(ordinary.list_entries(), vec!["folder/sample.txt"]);
+        assert!(!ordinary.has_preload_bytes("FOLDER\\SAMPLE.TXT"));
+        assert_eq!(
+            ordinary.extract_entry("folder/sample.txt").unwrap(),
+            b"payload"
+        );
+
+        let preload_path = dir.join("preload_dir.vpk");
+        fs::write(&preload_path, inline_vpk(b"prefix", b"payload")).expect("write preload VPK");
+        let preload = VpkArchive::open(&preload_path).expect("open preload VPK");
+        assert!(preload.has_preload_bytes("folder/sample.txt"));
+        let _ = fs::remove_dir_all(&dir);
     }
 }
