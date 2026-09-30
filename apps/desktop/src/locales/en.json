@@ -820,6 +820,21 @@
     "at": "at"
   },
   "myMods": {
+    "compatibility": {
+      "enable": "Enable Compatibility",
+      "description": "Merge shared game data and apply verified model fixes before launch. Original mod files stay unchanged.",
+      "review": "Review Compatibility",
+      "reviewDescription": "Review shared game-data changes and model repairs for your enabled mods. Original mod files stay unchanged.",
+      "closeGame": "Close Deadlock to change compatibility. You can still review the planned repairs.",
+      "checking": "Checking mods against your installed game...",
+      "loadFailed": "Could not load your compatibility preference. Try again.",
+      "checkFailed": "Could not check mod compatibility.",
+      "retry": "Try Again",
+      "changeFailed": "Could not change compatibility.",
+      "enableAndApply": "Enable and Apply",
+      "apply": "Apply Compatibility",
+      "applied": "Compatibility is ready for the next launch."
+    },
     "checkForUpdates": "Check for updates",
     "checkForUpdatesTooltip": "Check if your mods have updates",
     "checkForUpdatesError": "Failed to check for mod updates",
@@ -950,6 +965,25 @@
     "orderSaveFailed": "Failed to save mod order",
     "manageOrder": "Change Mods Order",
     "vpkCount": "{{count}} VPK(s)",
+    "compatibility": {
+      "title": "Model compatibility",
+      "description": "The manager checks models against your installed game and prepares verified repairs automatically. Original mod files stay unchanged.",
+      "repairs": {
+        "animationSkeleton": "Animation skeleton updated",
+        "animationSkeletonRebased": "Animation layout updated; custom settings preserved",
+        "cameraInterface": "Missing camera interface restored"
+      },
+      "warnings": {
+        "unverifiedSkeleton": "Animation layout differs; automatic update skipped",
+        "invalidSkeleton": "Invalid bone hierarchy or reference poses",
+        "invalidBoneRemapping": "Invalid mesh bone mapping",
+        "invalidAttachment": "Attachment references an invalid bone or influence",
+        "invalidHitbox": "Hitbox references a missing bone",
+        "missingResource": "Referenced resource is unavailable",
+        "unreadableResource": "This resource could not be checked"
+      },
+      "warningDescription": "These findings have no verified automatic repair. Missing references may use game fallbacks. If this mod misbehaves, disable it or contact its author with the file and detail shown here."
+    },
     "localization": {
       "title": "Combine Shared Mod Changes",
       "description": "Some mods edit the same shared files. DMM can combine their separate changes so one mod does not hide another.",
@@ -2411,7 +2445,7 @@
   "errors": {
     "genericMessage": "Something went wrong.",
     "gameLaunchFailed": "Deadlock couldn't be launched. Make sure Steam is running, then try again.",
-    "modDataReviewRequired": "Shared mod data changed. Open Mods Library → Change Mods Order, review the merged data, and apply it before launching.",
+    "modDataReviewRequired": "Shared mod data changed. Open Mods Library → Review Compatibility and apply the changes before launching. You can also turn off Enable Compatibility to use the original mod files.",
     "errorCode": "Error code:",
     "tryAgain": "Try again",
     "goBack": "Go back",

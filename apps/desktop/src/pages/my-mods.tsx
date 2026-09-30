@@ -83,6 +83,7 @@ import { ConflictsPanel } from "@/components/my-mods/conflicts/conflicts-panel";
 import { ModConflictBadge } from "@/components/my-mods/conflicts/mod-conflict-badge";
 import { MyModsEmptyState } from "@/components/my-mods/empty-state";
 import { ModOrderingDialog } from "@/components/my-mods/mod-ordering-dialog";
+import { ModCompatibilityControl } from "@/components/my-mods/mod-compatibility-control";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useAddonAnalysis } from "@/hooks/use-addon-analysis";
 import { useDisableAllMods } from "@/hooks/use-disable-all-mods";
@@ -935,6 +936,11 @@ const MyMods = () => {
           </DropdownMenu>
         </div>
       </div>
+
+      <ModCompatibilityControl
+        profileFolder={activeProfileFolder}
+        hasMods={enabledModsCount > 0}
+      />
 
       <div
         className='min-h-0 flex-1 overflow-y-auto overflow-x-hidden pt-8 pb-4'

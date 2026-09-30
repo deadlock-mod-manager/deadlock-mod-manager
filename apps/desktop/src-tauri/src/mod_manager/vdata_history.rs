@@ -140,6 +140,14 @@ impl VdataBaselineMatch {
   }
 
   #[must_use]
+  pub fn row_matches(&self, row_name: &str, value: &Kv3Value) -> bool {
+    self
+      .rows
+      .get(&row_key(row_name))
+      .is_some_and(|known| *known == value_fingerprint(value))
+  }
+
+  #[must_use]
   pub fn field_matches(&self, row_name: &str, path: &[Kv3Seg], value: &Kv3Value) -> bool {
     self
       .fields

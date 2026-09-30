@@ -13,6 +13,15 @@ use vpkmanager::pack_directory;
 use vpkmanager::source2::kv3::{self, Encoding as Kv3Encoding, Seg as Kv3Seg, Value as Kv3Value};
 use vpkmanager::source2::resource::Resource;
 
+mod animation_masks;
+mod animation_model_evidence;
+mod animation_poses;
+mod animation_skeleton;
+pub mod asset_compatibility;
+mod enum_compatibility;
+mod hero_rebase;
+mod model_camera;
+
 pub const OVERLAY_VPK_NAME: &str = "pak01_dir.vpk";
 const STALE_SNAPSHOT_CHANGE_THRESHOLD: usize = 50;
 const HEROES_VDATA_PATH: &str = "scripts/heroes.vdata_c";
@@ -110,9 +119,11 @@ pub struct LocalizationOverlayAnalysis {
   pub hero_id_reassignments: Vec<HeroIdReassignment>,
   pub snapshot_warnings: Vec<LocalizationSnapshotWarning>,
   pub parse_warnings: Vec<LocalizationParseWarning>,
+  pub asset_repairs: Vec<asset_compatibility::AssetRepair>,
+  pub asset_warnings: Vec<asset_compatibility::AssetWarning>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LocalizationResolution {
   pub conflict_key: String,
@@ -254,6 +265,8 @@ pub struct LocalizationOverlayPlan {
   bases: BTreeMap<String, LocalizationFile>,
   groups: BTreeMap<String, CandidateGroup>,
   compiled_data: Vec<CompiledDataTable>,
+  animation_skeletons: BTreeMap<String, Vec<u8>>,
+  camera_models: BTreeMap<String, Vec<u8>>,
 }
 
 impl LocalizationOverlayPlan {
@@ -278,6 +291,11 @@ impl LocalizationOverlayPlan {
     let mut snapshot_warnings = Vec::new();
     let mut parse_warnings = Vec::new();
     let mut compiled_sources: BTreeMap<String, Vec<CompiledDataSource>> = BTreeMap::new();
+    let mut skeleton_sources: BTreeMap<String, Vec<CompiledDataSource>> = BTreeMap::new();
+    let mut available_resources = BTreeSet::new();
+    let mut mesh_sources: BTreeMap<String, Vec<CompiledDataSource>> = BTreeMap::new();
+    let mut camera_sources: BTreeMap<String, Vec<CompiledDataSource>> = BTreeMap::new();
+    let mut animation_inputs = animation_model_evidence::AnimationInputs::default();
 
     for (priority, mod_input) in mods.iter().enumerate() {
       for vpk_path in &mod_input.vpks {
@@ -295,15 +313,89 @@ impl LocalizationOverlayPlan {
           .to_string();
         let mut localization_paths = Vec::new();
         let mut compiled_paths = Vec::new();
+        let mut skeleton_paths = Vec::new();
+        let mut model_paths = Vec::new();
+        let mut mesh_paths = Vec::new();
         for entry_path in archive.list_entries() {
+          animation_inputs.record(&entry_path, &mod_input.mod_id);
+          available_resources.insert(normalize_path(&entry_path));
           if is_localization_path(&entry_path) {
             localization_paths.push(entry_path);
           } else if is_mergeable_compiled_data_path(&entry_path) {
             compiled_paths.push(entry_path);
+          } else if animation_skeleton::is_path(&entry_path) {
+            skeleton_paths.push(entry_path);
+          } else if model_camera::is_path(&entry_path) {
+            model_paths.push(entry_path);
+          } else if asset_compatibility::is_mesh_path(&entry_path) {
+            mesh_paths.push(entry_path);
           }
         }
         localization_paths.sort();
         compiled_paths.sort();
+        skeleton_paths.sort();
+        model_paths.sort();
+        for file_path in mesh_paths {
+          let bytes = if archive.has_preload_bytes(&file_path) {
+            Vec::new()
+          } else {
+            archive.extract_entry(&file_path).map_err(|error| {
+              Error::ModInvalid(format!("Failed to extract mesh {file_path}: {error}"))
+            })?
+          };
+          mesh_sources
+            .entry(normalize_path(&file_path))
+            .or_default()
+            .push(CompiledDataSource {
+              mod_id: mod_input.mod_id.clone(),
+              source_vpk: source_name.clone(),
+              priority,
+              bytes,
+            });
+        }
+        for file_path in model_paths {
+          let bytes = if archive.has_preload_bytes(&file_path) {
+            Vec::new()
+          } else {
+            archive.extract_entry(&file_path).map_err(|error| {
+              Error::ModInvalid(format!(
+                "Failed to extract model camera data {file_path}: {error}"
+              ))
+            })?
+          };
+          camera_sources
+            .entry(normalize_path(&file_path))
+            .or_default()
+            .push(CompiledDataSource {
+              mod_id: mod_input.mod_id.clone(),
+              source_vpk: source_name.clone(),
+              priority,
+              bytes,
+            });
+        }
+
+        for file_path in skeleton_paths {
+          // Preloaded resources cannot be compared reliably by this extractor.
+          // Keep a placeholder so another source cannot override this authored rig.
+          let bytes = if archive.has_preload_bytes(&file_path) {
+            Vec::new()
+          } else {
+            archive.extract_entry(&file_path).map_err(|error| {
+              Error::ModInvalid(format!(
+                "Failed to extract animation skeleton {file_path}: {error}"
+              ))
+            })?
+          };
+          skeleton_sources
+            .entry(normalize_path(&file_path))
+            .or_default()
+            .push(CompiledDataSource {
+              mod_id: mod_input.mod_id.clone(),
+              source_vpk: source_name.clone(),
+              priority,
+              bytes,
+            });
+        }
 
         for file_path in compiled_paths {
           if archive.has_preload_bytes(&file_path) {
@@ -423,6 +515,31 @@ impl LocalizationOverlayPlan {
     }
 
     let compiled_data = build_compiled_data(citadel_dir, compiled_sources)?;
+    let mut asset_repairs = Vec::new();
+    let mut asset_warnings = Vec::new();
+    let animation_skeletons = animation_skeleton::prepare(
+      citadel_dir,
+      &skeleton_sources,
+      &camera_sources,
+      &animation_inputs,
+      &mut asset_repairs,
+      &mut asset_warnings,
+    )?;
+    let camera_models = model_camera::prepare(citadel_dir, &camera_sources, &mut asset_repairs)?;
+    let mut asset_sources = skeleton_sources;
+    asset_sources.extend(camera_sources);
+    asset_sources.extend(mesh_sources);
+    let repaired_assets = animation_skeletons
+      .iter()
+      .chain(&camera_models)
+      .map(|(path, bytes)| (path.as_str(), bytes.as_slice()))
+      .collect();
+    asset_warnings.extend(asset_compatibility::analyze(
+      citadel_dir,
+      &asset_sources,
+      &mut available_resources,
+      &repaired_assets,
+    )?);
     let mut changed_tokens = 0usize;
     let mut new_tokens = 0usize;
     let mut conflicts = Vec::new();
@@ -475,10 +592,14 @@ impl LocalizationOverlayPlan {
         hero_id_reassignments,
         snapshot_warnings,
         parse_warnings,
+        asset_repairs,
+        asset_warnings,
       },
       bases,
       groups,
       compiled_data,
+      animation_skeletons,
+      camera_models,
     })
   }
 
@@ -534,8 +655,19 @@ impl LocalizationOverlayPlan {
     for compiled_data in &self.compiled_data {
       applied_compiled_rows += compiled_data.write_to_directory(workspace.path(), resolutions)?;
     }
+    for (file_path, bytes) in self.animation_skeletons.iter().chain(&self.camera_models) {
+      let output_file = workspace.path().join(file_path);
+      if let Some(parent) = output_file.parent() {
+        fs::create_dir_all(parent)?;
+      }
+      fs::write(output_file, bytes)?;
+    }
 
-    if output_files.is_empty() && applied_compiled_rows == 0 {
+    if output_files.is_empty()
+      && self.compiled_data.is_empty()
+      && self.animation_skeletons.is_empty()
+      && self.camera_models.is_empty()
+    {
       if output_path.is_file() {
         fs::remove_file(output_path)?;
       }
@@ -660,8 +792,15 @@ fn build_compiled_table(
       ))
     })?;
 
-    for (row_name, value) in mod_rows {
-      let row_encoding = encoding_get_case_insensitive(mod_row_encodings, &row_name)
+    let enum_compatibility =
+      enum_compatibility::EnumCompatibility::learn(base_rows, base_row_encodings, &mod_rows);
+    let mut migrated_enums = 0;
+    let hero_rebaser =
+      hero_rebase::HeroRebaser::new(base_rows, base_row_encodings, &mod_rows, baseline.as_ref());
+    for (row_name, original_value) in &mod_rows {
+      let row_name = row_name.clone();
+      let mut value = original_value.clone();
+      let mut row_encoding = encoding_get_case_insensitive(mod_row_encodings, &row_name)
         .ok_or_else(|| {
           Error::ModInvalid(format!(
             "{mod_id}:{source_vpk}:{file_path} has no encoding for row {row_name}"
@@ -669,6 +808,22 @@ fn build_compiled_table(
         })?
         .clone();
       let vanilla_value = object_get_case_insensitive(base_rows, &row_name);
+      if vanilla_value.is_none()
+        && baseline
+          .as_ref()
+          .is_some_and(|baseline| baseline.row_matches(&row_name, original_value))
+      {
+        ignored_vanilla_rows += 1;
+        continue;
+      }
+      if file_path == HEROES_VDATA_PATH
+        && vanilla_value.is_none()
+        && let Some((rebased, encoding)) = hero_rebaser.rebase(&value, &row_encoding)?
+      {
+        value = rebased;
+        row_encoding = encoding;
+      }
+      migrated_enums += enum_compatibility.normalize(&mut value, &mut row_encoding)?;
       let vanilla_encoding = encoding_get_case_insensitive(base_row_encodings, &row_name);
       if vanilla_value.is_some_and(|vanilla| runtime_values_equal(vanilla, &value)) {
         ignored_vanilla_rows += 1;
@@ -754,6 +909,11 @@ fn build_compiled_table(
           encoding,
         });
       }
+    }
+    if migrated_enums > 0 {
+      log::info!(
+        "Migrated {migrated_enums} known enum names to current game data for {mod_id}:{source_vpk}:{file_path}"
+      );
     }
   }
 
@@ -895,6 +1055,13 @@ impl CompiledDataTable {
       applied_rows.insert(group.row_name.to_ascii_lowercase());
     }
     if applied_rows.is_empty() {
+      // The original mod still overrides this table through the addons search path.
+      // Emit current bytes even when all stale data was ignored or vanilla was selected.
+      let output_file = output_root.join(&self.file_path);
+      if let Some(parent) = output_file.parent() {
+        fs::create_dir_all(parent)?;
+      }
+      fs::write(output_file, &self.base_bytes)?;
       return Ok(0);
     }
 
@@ -1837,7 +2004,7 @@ mod tests {
     }
   }
 
-  fn compiled_resource(rows: Vec<(String, Kv3Value)>) -> Vec<u8> {
+  pub(super) fn compiled_resource(rows: Vec<(String, Kv3Value)>) -> Vec<u8> {
     let payload = kv3::encode(&Kv3Value::Object(rows), &kv3::Format([0; 16]));
     let payload_offset = 32usize;
     let total_len = payload_offset + payload.len();
@@ -2557,6 +2724,203 @@ mod tests {
   }
 
   #[test]
+  fn does_not_resurrect_unchanged_rows_removed_from_current_game_data() {
+    let mut historical_rows = stale_snapshot_rows(34, 1);
+    historical_rows.push((
+      "retired_ability".into(),
+      Kv3Value::Object(vec![(
+        "m_eLosCheck".into(),
+        Kv3Value::String("ELOSCheck_Head_IgnoreObscureBlockers".into()),
+      )]),
+    ));
+    let history = VdataHistoryIndex::from_bytes(
+      &crate::mod_manager::vdata_history::encode_history_index(&[(
+        ABILITIES_VDATA_PATH.into(),
+        vec![(6683, Kv3Value::Object(historical_rows.clone()))],
+      )])
+      .unwrap(),
+    )
+    .unwrap();
+    let mut mod_rows = historical_rows;
+    mod_rows.push(("authored_ability".into(), ability(2, 100)));
+    let table = build_compiled_table(
+      ABILITIES_VDATA_PATH,
+      compiled_resource(stale_snapshot_rows(34, 1)),
+      vec![CompiledDataSource {
+        mod_id: "old-mod".into(),
+        source_vpk: "old-mod.vpk".into(),
+        priority: 0,
+        bytes: compiled_resource(mod_rows),
+      }],
+      Some(&history),
+    )
+    .unwrap();
+    let temp = tempfile::tempdir().unwrap();
+    table.write_to_directory(temp.path(), &[]).unwrap();
+    let bytes = fs::read(temp.path().join(ABILITIES_VDATA_PATH)).unwrap();
+    let (_, root, _) = decode_compiled_data(&bytes, "removed historical row").unwrap();
+    assert!(root.get("retired_ability").is_none());
+    assert_eq!(root.get("authored_ability"), Some(&ability(2, 100)));
+  }
+
+  #[test]
+  fn normalizes_known_enum_renames_without_dropping_authored_changes() {
+    fn row(los: &str, damage: i64) -> Kv3Value {
+      Kv3Value::Object(vec![(
+        "m_AuraModifier".into(),
+        Kv3Value::Object(vec![
+          ("_class".into(), Kv3Value::String("modifier_aura".into())),
+          ("m_eLosCheck".into(), Kv3Value::String(los.into())),
+          ("damage".into(), Kv3Value::Int(damage)),
+        ]),
+      )])
+    }
+    let table = build_compiled_table(
+      ABILITIES_VDATA_PATH,
+      compiled_resource(vec![
+        ("ability_head".into(), row("Head_IgnoreObscureBlockers", 1)),
+        ("ability_center".into(), row("Center", 1)),
+      ]),
+      vec![CompiledDataSource {
+        mod_id: "old-mod".into(),
+        source_vpk: "old-mod.vpk".into(),
+        priority: 0,
+        bytes: compiled_resource(vec![
+          (
+            "ability_head".into(),
+            row("ELOSCheck_Head_IgnoreObscureBlockers", 100),
+          ),
+          ("ability_center".into(), row("ELOSCheck_Center", 1)),
+          ("ability_custom".into(), row("ELOSCheck_Center", 200)),
+        ]),
+      }],
+      None,
+    )
+    .unwrap();
+    let temp = tempfile::tempdir().unwrap();
+    table.write_to_directory(temp.path(), &[]).unwrap();
+    let bytes = fs::read(temp.path().join(ABILITIES_VDATA_PATH)).unwrap();
+    let (_, root, _) = decode_compiled_data(&bytes, "current enum output").unwrap();
+    let head = root
+      .get("ability_head")
+      .unwrap()
+      .get("m_AuraModifier")
+      .unwrap();
+    let custom = root
+      .get("ability_custom")
+      .unwrap()
+      .get("m_AuraModifier")
+      .unwrap();
+    assert_eq!(
+      head.get("m_eLosCheck"),
+      Some(&Kv3Value::String("Head_IgnoreObscureBlockers".into()))
+    );
+    assert_eq!(head.get("damage"), Some(&Kv3Value::Int(100)));
+    assert_eq!(
+      custom.get("m_eLosCheck"),
+      Some(&Kv3Value::String("Center".into()))
+    );
+    assert_eq!(custom.get("damage"), Some(&Kv3Value::Int(200)));
+  }
+
+  #[test]
+  fn rebases_added_hero_clones_onto_the_current_donor() {
+    let model = "models/heroes_staging/chrono/chrono.vmdl";
+    let old_hero = Kv3Value::Object(vec![
+      (
+        "_class".into(),
+        Kv3Value::String("CitadelHeroData_t".into()),
+      ),
+      ("m_HeroID".into(), Kv3Value::Int(10)),
+      ("m_strModelName".into(), Kv3Value::String(model.into())),
+      ("m_bPlayerSelectable".into(), Kv3Value::Bool(true)),
+      (
+        "m_strIconHeroCard".into(),
+        Kv3Value::String("chrono.psd".into()),
+      ),
+    ]);
+    let mut historical_rows = stale_snapshot_rows(34, 1);
+    historical_rows.push(("hero_chrono".into(), old_hero.clone()));
+    // Development heroes can reuse a released hero's model without being its donor.
+    let mut shared_model_hero = old_hero.clone();
+    let Kv3Value::Object(fields) = &mut shared_model_hero else {
+      unreachable!()
+    };
+    object_set_case_insensitive(fields, "m_HeroID", Kv3Value::Int(20));
+    object_set_case_insensitive(fields, "m_bPlayerSelectable", Kv3Value::Bool(false));
+    object_set_case_insensitive(fields, "m_strGunTag", Kv3Value::String("other_gun".into()));
+    historical_rows.push(("hero_shared_model".into(), shared_model_hero));
+    let mut current_rows = historical_rows.clone();
+    object_set_case_insensitive(
+      &mut current_rows,
+      "hero_chrono",
+      Kv3Value::Object(vec![
+        (
+          "_class".into(),
+          Kv3Value::String("CitadelHeroData_t".into()),
+        ),
+        ("m_HeroID".into(), Kv3Value::Int(10)),
+        ("m_strModelName".into(), Kv3Value::String(model.into())),
+        (
+          "m_eHeroDevelopmentState".into(),
+          Kv3Value::String("EHeroDevState_Release".into()),
+        ),
+        (
+          "m_strIconHeroCard".into(),
+          Kv3Value::String("chrono.psd".into()),
+        ),
+      ]),
+    );
+    let mut added_hero = old_hero;
+    let Kv3Value::Object(fields) = &mut added_hero else {
+      unreachable!()
+    };
+    object_set_case_insensitive(fields, "m_HeroID", Kv3Value::Int(108));
+    object_set_case_insensitive(
+      fields,
+      "m_strIconHeroCard",
+      Kv3Value::String("dio.psd".into()),
+    );
+    let mut mod_rows = historical_rows.clone();
+    mod_rows.push(("hero_dio".into(), added_hero));
+    let history = VdataHistoryIndex::from_bytes(
+      &crate::mod_manager::vdata_history::encode_history_index(&[(
+        HEROES_VDATA_PATH.into(),
+        vec![(6683, Kv3Value::Object(historical_rows))],
+      )])
+      .unwrap(),
+    )
+    .unwrap();
+    let table = build_compiled_table(
+      HEROES_VDATA_PATH,
+      compiled_resource(current_rows),
+      vec![CompiledDataSource {
+        mod_id: "dio".into(),
+        source_vpk: "dio.vpk".into(),
+        priority: 0,
+        bytes: compiled_resource(mod_rows),
+      }],
+      Some(&history),
+    )
+    .unwrap();
+    let temp = tempfile::tempdir().unwrap();
+    table.write_to_directory(temp.path(), &[]).unwrap();
+    let bytes = fs::read(temp.path().join(HEROES_VDATA_PATH)).unwrap();
+    let (_, root, _) = decode_compiled_data(&bytes, "rebased hero clone").unwrap();
+    let hero = root.get("hero_dio").unwrap();
+    assert_eq!(
+      hero.get("m_eHeroDevelopmentState"),
+      Some(&Kv3Value::String("EHeroDevState_Release".into()))
+    );
+    assert_eq!(
+      hero.get("m_strIconHeroCard"),
+      Some(&Kv3Value::String("dio.psd".into()))
+    );
+    assert_eq!(hero.get("m_HeroID"), Some(&Kv3Value::Int(108)));
+    assert!(hero.get("m_bPlayerSelectable").is_none());
+  }
+
+  #[test]
   fn restores_an_intentional_subtree_when_the_current_parent_is_missing() {
     let file_path = ABILITIES_VDATA_PATH;
     let mut historical_rows = stale_snapshot_rows(34, 1);
@@ -2610,6 +2974,113 @@ mod tests {
       Some(&Kv3Value::Array(vec![Kv3Value::String(
         "lockon".to_string()
       )]))
+    );
+  }
+
+  #[test]
+  fn does_not_guess_between_equally_close_hero_donors() {
+    let template = |id: i64| {
+      Kv3Value::Object(vec![
+        (
+          "_class".into(),
+          Kv3Value::String("CitadelHeroData_t".into()),
+        ),
+        ("m_HeroID".into(), Kv3Value::Int(id)),
+        (
+          "m_strModelName".into(),
+          Kv3Value::String("shared.vmdl".into()),
+        ),
+      ])
+    };
+    let mut historical = stale_snapshot_rows(34, 1);
+    historical.push(("hero_a".into(), template(10)));
+    historical.push(("hero_b".into(), template(20)));
+    let history = VdataHistoryIndex::from_bytes(
+      &crate::mod_manager::vdata_history::encode_history_index(&[(
+        HEROES_VDATA_PATH.into(),
+        vec![(6683, Kv3Value::Object(historical.clone()))],
+      )])
+      .unwrap(),
+    )
+    .unwrap();
+    let baseline = history
+      .match_baseline(HEROES_VDATA_PATH, &Kv3Value::Object(historical.clone()))
+      .unwrap();
+    let mut current = historical.clone();
+    for name in ["hero_a", "hero_b"] {
+      let Kv3Value::Object(fields) = object_get_case_insensitive_mut(&mut current, name).unwrap()
+      else {
+        unreachable!()
+      };
+      object_set_case_insensitive(
+        fields,
+        "m_eHeroDevelopmentState",
+        Kv3Value::String("EHeroDevState_Release".into()),
+      );
+    }
+    let (_, _, current_encoding) =
+      decode_compiled_data(&compiled_resource(current.clone()), "current donors").unwrap();
+    let (_, added, added_encoding) = decode_compiled_data(
+      &compiled_resource(vec![("hero_custom".into(), template(108))]),
+      "custom hero",
+    )
+    .unwrap();
+    let rebaser = hero_rebase::HeroRebaser::new(
+      &current,
+      current_encoding.as_object().unwrap(),
+      &historical,
+      Some(&baseline),
+    );
+    assert!(
+      rebaser
+        .rebase(
+          added.get("hero_custom").unwrap(),
+          encoding_get_case_insensitive(added_encoding.as_object().unwrap(), "hero_custom")
+            .unwrap()
+        )
+        .unwrap()
+        .is_none()
+    );
+  }
+
+  #[test]
+  fn emits_current_table_when_enum_migration_leaves_no_authored_changes() {
+    let temp = tempfile::tempdir().unwrap();
+    let citadel = temp.path().join("citadel");
+    let base_path = citadel.join(ABILITIES_VDATA_PATH);
+    fs::create_dir_all(base_path.parent().unwrap()).unwrap();
+    let row =
+      |value: &str| Kv3Value::Object(vec![("m_eLosCheck".into(), Kv3Value::String(value.into()))]);
+    let current = compiled_resource(vec![("ability_aura".into(), row("Head"))]);
+    fs::write(&base_path, &current).unwrap();
+    let base_vpk = temp.path().join("base_dir.vpk");
+    pack_directory(&citadel, &base_vpk).unwrap();
+    fs::rename(base_vpk, citadel.join("pak01_dir.vpk")).unwrap();
+    let mod_vpk = pack_vdata_at(
+      temp.path(),
+      "old-enum",
+      ABILITIES_VDATA_PATH,
+      vec![("ability_aura".into(), row("ELOSCheck_Head"))],
+    );
+    let plan = LocalizationOverlayPlan::build(
+      &citadel,
+      &[LocalizationModInput {
+        mod_id: "old-enum".into(),
+        vpks: vec![mod_vpk],
+      }],
+    )
+    .unwrap();
+    let output = temp.path().join("overlay_dir.vpk");
+    let result = plan.write(&output, &[]).unwrap();
+    assert!(
+      result.has_overlay,
+      "the overlay must shadow the original stale table"
+    );
+    assert_eq!(result.applied_compiled_rows, 0);
+    let archive = VpkArchive::open(&output).unwrap();
+    assert_eq!(
+      archive.extract_entry(ABILITIES_VDATA_PATH).unwrap(),
+      current
     );
   }
 
@@ -2669,5 +3140,90 @@ mod tests {
       started.elapsed(),
       serde_json::to_string_pretty(&applied).unwrap()
     );
+    if let Ok(skeleton_path) = std::env::var("DMM_REAL_SKELETON_PATH") {
+      let base = VpkArchive::open(&citadel.join("pak01_dir.vpk")).unwrap();
+      let overlay = VpkArchive::open(&output).unwrap();
+      assert_eq!(
+        overlay.extract_entry(&skeleton_path).unwrap(),
+        base.extract_entry(&skeleton_path).unwrap(),
+        "compatible stale skeleton must inherit today's indexed animation layout"
+      );
+    }
+    if let Ok(model_path) = std::env::var("DMM_REAL_CAMERA_MODEL_PATH") {
+      let original = VpkArchive::open(&PathBuf::from(
+        std::env::var("DMM_REAL_CAMERA_MOD").unwrap(),
+      ))
+      .unwrap();
+      let overlay = VpkArchive::open(&output).unwrap();
+      let original_bytes = original.extract_entry(&model_path).unwrap();
+      let repaired_bytes = overlay.extract_entry(&model_path).unwrap();
+      let (_, source, _) = decode_compiled_data(&original_bytes, "original camera model").unwrap();
+      let (_, repaired, _) =
+        decode_compiled_data(&repaired_bytes, "repaired camera model").unwrap();
+      assert_eq!(
+        source.get("m_vecNmSkeletonRefs"),
+        repaired.get("m_vecNmSkeletonRefs")
+      );
+      for (name, value) in source.as_object().unwrap() {
+        if name != "m_modelInfo" {
+          assert_eq!(Some(value), repaired.get(name));
+        }
+      }
+      let source_mesh = kv3::decode(
+        Resource::parse(&original_bytes)
+          .unwrap()
+          .find_block(*b"MDAT")
+          .unwrap(),
+      )
+      .unwrap();
+      let repaired_mesh = kv3::decode(
+        Resource::parse(&repaired_bytes)
+          .unwrap()
+          .find_block(*b"MDAT")
+          .unwrap(),
+      )
+      .unwrap();
+      for (name, value) in source_mesh.as_object().unwrap() {
+        if name != "m_attachments" {
+          assert_eq!(Some(value), repaired_mesh.get(name));
+        }
+      }
+      let old_attachments = source_mesh
+        .get("m_attachments")
+        .unwrap()
+        .as_array()
+        .unwrap();
+      let new_attachments = repaired_mesh
+        .get("m_attachments")
+        .unwrap()
+        .as_array()
+        .unwrap();
+      assert_eq!(new_attachments.len(), old_attachments.len() + 5);
+      assert_eq!(&new_attachments[..old_attachments.len()], old_attachments);
+      let text = repaired
+        .get("m_modelInfo")
+        .unwrap()
+        .get("m_keyValueText")
+        .unwrap()
+        .as_str()
+        .unwrap();
+      assert!(text.contains("CitadelCameraSettings_t"));
+      assert!(text.contains("AttachmentCameraData"));
+      let source_resource = Resource::parse(&original_bytes).unwrap();
+      let repaired_resource = Resource::parse(&repaired_bytes).unwrap();
+      for (a, b) in source_resource
+        .blocks()
+        .iter()
+        .zip(repaired_resource.blocks())
+      {
+        assert_eq!(a.kind, b.kind);
+        if a.kind != *b"DATA" && a.kind != *b"MDAT" {
+          assert_eq!(
+            &original_bytes[a.offset as usize..(a.offset + a.size) as usize],
+            &repaired_bytes[b.offset as usize..(b.offset + b.size) as usize]
+          );
+        }
+      }
+    }
   }
 }

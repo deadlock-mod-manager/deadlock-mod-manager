@@ -19,6 +19,12 @@ import {
 } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 
+import {
+  AssetCompatibilityReport,
+  type AssetRepair,
+  type AssetWarning,
+} from "./asset-compatibility-report";
+
 interface LocalizationCandidate {
   modId: string;
   sourceVpk: string;
@@ -86,6 +92,8 @@ export interface LocalizationOverlayAnalysis {
   heroIdReassignments: HeroIdReassignment[];
   snapshotWarnings: LocalizationSnapshotWarning[];
   parseWarnings: LocalizationParseWarning[];
+  assetRepairs: AssetRepair[];
+  assetWarnings: AssetWarning[];
 }
 
 export type LocalizationChoice =
@@ -151,6 +159,12 @@ export function LocalizationConflictReview({
           </div>
         </div>
       </div>
+
+      <AssetCompatibilityReport
+        repairs={analysis.assetRepairs}
+        warnings={analysis.assetWarnings}
+        modNames={modNames}
+      />
 
       {analysis.ignoredHistoricalTokens > 0 ? (
         <section className='space-y-1 rounded-md border border-emerald-500/20 bg-emerald-500/5 px-4 py-3'>
