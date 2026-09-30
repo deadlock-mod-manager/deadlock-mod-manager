@@ -255,7 +255,10 @@ fn preserved_datatype(value: &Value, preferred: u8) -> u8 {
         (Value::Array(items), ARRAY_TYPE_BYTE_LENGTH) if items.len() > usize::from(u8::MAX) => {
             ARRAY_TYPED
         }
-        (Value::Array(items), ARRAY_TYPED | ARRAY_TYPE_BYTE_LENGTH) if items.is_empty() => ARRAY,
+        (
+            Value::Array(items),
+            ARRAY_TYPED | ARRAY_TYPE_BYTE_LENGTH | ARRAY_TYPE_AUXILIARY_BUFFER,
+        ) if items.is_empty() => ARRAY,
         _ => compatible_datatype(value, preferred),
     }
 }
@@ -464,6 +467,35 @@ mod tests {
             datatype,
             flag,
             children: EncodingChildren::None,
+        }
+    }
+
+    #[test]
+    fn preserving_encoder_handles_empty_auxiliary_arrays() {
+        for datatype in [
+            node::ARRAY_TYPED,
+            node::ARRAY_TYPE_BYTE_LENGTH,
+            node::ARRAY_TYPE_AUXILIARY_BUFFER,
+        ] {
+            let value = Value::Object(vec![("weights".into(), Value::Array(Vec::new()))]);
+            let encoding = Encoding {
+                datatype: node::OBJECT,
+                flag: 0,
+                children: EncodingChildren::Object(vec![(
+                    "weights".into(),
+                    Encoding {
+                        datatype,
+                        flag: 0,
+                        children: EncodingChildren::Array(Vec::new()),
+                    },
+                )]),
+            };
+            let bytes = encode_preserving(&value, &encoding, &Format([0; 16])).unwrap();
+            assert_eq!(super::super::decode(&bytes).unwrap(), value);
+            assert_eq!(
+                super::super::encoding_stats(&bytes).unwrap().typed_arrays,
+                0
+            );
         }
     }
 

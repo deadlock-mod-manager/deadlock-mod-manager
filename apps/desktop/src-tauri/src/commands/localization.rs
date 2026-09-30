@@ -6,6 +6,22 @@ use crate::mod_manager::localization_overlay::{
 use super::state::MANAGER;
 
 #[tauri::command]
+pub async fn get_mod_compatibility_enabled() -> Result<bool, Error> {
+  MANAGER.lock().unwrap().mod_compatibility_enabled()
+}
+
+#[tauri::command]
+pub async fn set_mod_compatibility_enabled(
+  enabled: bool,
+  profile_folder: Option<String>,
+) -> Result<(), Error> {
+  MANAGER
+    .lock()
+    .unwrap()
+    .set_mod_compatibility_enabled(enabled, profile_folder)
+}
+
+#[tauri::command]
 pub async fn analyze_localization_overlay(
   profile_folder: Option<String>,
 ) -> Result<LocalizationOverlayAnalysis, Error> {

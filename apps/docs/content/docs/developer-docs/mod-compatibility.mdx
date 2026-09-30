@@ -1,0 +1,162 @@
+---
+title: Mod compatibility repairs
+description: Deterministic checks and reversible repairs for compiled mod resources
+---
+
+The desktop manager compares enabled mod resources with the locally installed
+Deadlock files before creating its merged overlay. These checks run in the Rust
+backend in release builds. They require no AI agent, network service, or diagnostic
+tools on the user's computer.
+
+Compatibility is opt-in and off by default. Mods Library exposes an
+**Enable Compatibility** switch and a **Review Compatibility** action. The switch
+is an app-wide preference saved in the existing application store. It controls
+both shared game-data merging and verified model repairs.
+
+Enabling compatibility opens the review for the active library. Users can also
+review while it is off and select **Enable and Apply**. Review does not reorder
+mods. Saving mod order no longer runs compatibility analysis or applies repairs.
+When compatibility is off, launch bypasses preparation and ignores existing
+repair packages in every profile's search paths. Disabling it removes the active
+library's package and receipt and refreshes the game's search paths. Changing the
+preference or applying repairs requires Deadlock to be closed; review remains
+available while the game runs.
+
+## Automatic repairs
+
+Animation skeletons can inherit today's vanilla resource when the surviving bone
+names, named parents, reference poses, masks, and existing metadata agree. Compiler
+rounding, quaternion sign changes, index reordering, and removal of terminal
+`_end`, `_end_L`, or `_end_R` leaf bones are supported. A current `attachWorld`
+leaf on an unchanged root and retired `*_TWIST` leaf helpers whose parents match
+their name stems are also supported. The retired `scapulaAimUp_JNT` helper is
+recognized only as a leaf under `spine_3`. Retired `knee_helper_L` and
+`knee_helper_R` leaves are recognized only beneath the corresponding
+`leg_upper_L` or `leg_upper_R`. Removed helpers cannot have children, and their
+parents must survive. Arbitrary added or removed custom bones prevent replacement.
+
+When only mask settings differ, the manager can rebase onto the current sampled
+layout while preserving the mod's named primary weights and extra masks. It drops
+retired bone references, inherits weights for newly added bones, and adds masks
+required by the current game. Changed weight-list metadata and secondary masks
+prevent this repair. If several mods provide a skeleton, their repairs must
+produce identical bytes; competing custom settings remain unresolved.
+
+A small pose-drift rebase can also update the sampled layout while keeping the
+mod's exact named reference poses and their encoding. Local translation and scale
+differences are limited to `0.001`; normalized quaternion rotation differences are
+limited to `0.0002` radians (about `0.011` degrees). Model-space translations must
+fit the displacement bound from the named parent's translation, rotation, scale,
+and the child offset. Larger pose changes, invalid quaternions, unrelated
+model-space movement, and changed hierarchy prevent automatic repair. The narrow
+bounds select a repair; they do not authorize overwriting the mod's poses.
+
+When those narrow checks reject a sampling change, the manager can use the mod's
+full model rig as additional evidence. It requires one unambiguous model at a
+matching game path, owned by the same source archive, with the same active NM
+animation graph references. Custom animation data in the source mod, or active
+animation overrides from any enabled mod, prevent this broader migration.
+Unrelated legacy animation graphs cannot replace these active NM graphs.
+
+This model-backed rebase supports three structural patterns:
+
+- Retired sampling branches with no surviving descendants. Their deformation
+  bones must remain unchanged in both full model rigs, or be virtual samples
+  absent from both. The manager never removes bones from the model itself.
+- Added leaf controls absent from the old model, with zero bone sphere radius and
+  no use in the current embedded meshes, attachments, hitboxes, or constraints.
+  Their retained parent bind and sampled world poses must agree. External meshes,
+  missing mesh evidence, or nonempty constraints prevent this control migration.
+- Larger authored reference-pose differences that match each resource's own model
+  bind poses. Each sampled world pose must agree with its local and parent
+  transforms, both before and after repair. The mod's exact named poses and mask
+  weights survive; the current game supplies the sampling layout and new controls.
+
+Model-backed migrations still reject changed surviving parents, unsupported mask
+metadata, and competing model or skeleton sources. An available model is evidence
+for these checks, not permission to replace a custom deformation rig.
+
+Models missing the complete camera interface can inherit today's camera metadata
+and attachment points when their rigs are equivalent. Existing camera interfaces,
+attachments, mesh buffers, animation references, and authored poses are preserved.
+Conflicting model sources keep addon precedence and are not automatically repaired.
+
+The rules operate on resource structure rather than mod IDs or hero names. The
+installed game provides the current reference data. Unknown differences do not
+become speculative repairs.
+
+## Generalization requirements
+
+A repair is selected by resource structure and a matching installed-game resource
+path. Mod IDs, display names, authors, hero names, and archive filenames do not
+select a repair. The IDs and filenames in the report identify the affected input.
+A custom resource with no matching game counterpart has no baseline for these
+repairs.
+
+Bone names such as `attachWorld`, `scapulaAimUp_JNT`, and `knee_helper_L` are narrow game conventions,
+not evidence that any added or removed leaf is safe. The twist rule supports any
+bone stem when the retired leaf is named `<parent>_TWIST` with an optional numeric
+suffix and its actual parent matches that stem. Broader helper recognition needs
+additional evidence about deformation and animation dependencies, as in the
+model-backed sampling checks above.
+
+To extend a rule:
+
+1. Capture a reproducible incompatibility and compare the mod with the installed
+   game or a known historical game resource.
+2. Identify which structure changed and which authored data must survive.
+3. Add regression cases with unrelated mod IDs, resource paths, and bone names,
+   plus cases that preserve custom poses, hierarchy, metadata, and conflicting
+   mod settings.
+4. Verify the compiled overlay and the original in-game symptom before enabling
+   the rule automatically.
+
+The skeleton pipeline tests exercise VPK scanning, repair selection, diagnostics,
+overlay packing, and decoding with unrelated robot and creature fixtures. Their
+source VPKs must remain byte-identical. Separate tests protect custom joints,
+poses, masks, and unsupported metadata. Structural findings without such a
+verified transformation remain diagnostics rather than automatic repairs.
+
+## Compatibility report
+
+The compatibility review in Mods Library shows the affected mod and resource for each
+planned repair or finding. The backend also checks skeleton parent ranges and
+cycles, duplicate bone names, reference-pose dimensions, model bone-remapping
+indices, attachment influences, hitbox bone references, and direct model resource
+dependencies. Embedded mesh checks use the full model skeleton because each mesh
+may contain only a subset of its bones.
+
+Required resource names are resolved against the game, core archives, and every
+enabled mod. Missing references may have engine fallbacks; a finding is not proof
+of a crash. Unreadable resources and skeleton layouts without a verified repair
+are reported and left unchanged. Users can review the findings and continue, or
+disable an affected mod and contact its author.
+
+These checks do not validate every vertex weight, shader, animation clip, or game
+behavior. New repair rules still need a reproducible game test and regression
+coverage before they can be applied automatically.
+
+## Overlay lifecycle
+
+Original mod VPKs are read, never patched. Repaired resources are packed into a
+separate `dmm_localization_*` overlay that precedes addons in the game's search
+paths. This is preparation before launch, not runtime code injection.
+
+A `compatibility.json` receipt beside the overlay records:
+
+- The ordered enabled-mod inputs and their file stamps
+- Game/core VPK indexes and numbered data chunks, plus `steam.inf`
+- The repair-rule revision and overlay SHA-256
+- Reviewed conflict resolutions and the compatibility report
+
+When compatibility is enabled, launch reuses an overlay only when its receipt,
+inputs, and output hash match.
+Changed inputs or missing/outdated receipts trigger analysis again. Verified
+repairs are automatic. Conflicts and unresolved findings use the existing review
+flow. Previously reviewed choices can restore a damaged overlay only when its
+inputs still match; choices are not carried across changed inputs.
+
+The manager stages overlay and receipt writes before replacing their destination
+files. Mod changes and overlay deletion invalidate both files. Increment
+`REPAIR_REVISION` in `manager/localization/receipt.rs` when changing repair rules or
+output semantics so already-installed overlays are regenerated.
