@@ -11,10 +11,15 @@ export const HERO_DEFINITIONS: HeroDefinitions = {
     fuzzyTokens: ["brams"],
   },
   [DeadlockHeroes.Apollo]: { aliases: ["fencer"] },
+  [DeadlockHeroes.Baba]: {},
   [DeadlockHeroes.Bebop]: {},
   [DeadlockHeroes.Billy]: { aliases: ["punkgoat"] },
   [DeadlockHeroes.Calico]: { aliases: ["cadence", "nano"] },
   [DeadlockHeroes.Celeste]: { aliases: ["unicorn"] },
+  [DeadlockHeroes.DeadmanDanny]: {
+    aliases: ["deadmandanny", "deadpack"],
+    phrases: [["deadman", "danny"]],
+  },
   [DeadlockHeroes.Doorman]: { aliases: ["doorman v2"] },
   [DeadlockHeroes.Drifter]: {},
   [DeadlockHeroes.Dynamo]: { aliases: ["prof dynamo"] },
@@ -51,12 +56,22 @@ export const HERO_DEFINITIONS: HeroDefinitions = {
     ],
     regexSnippets: ["mo[^a-z0-9]*krill"],
   },
+  // Codenames "nurse" (Nurse Harrow) and "artist" (Violet) are common words in
+  // mod titles, so they are not aliases.
+  [DeadlockHeroes.NurseHarrow]: {
+    aliases: ["nurseharrow"],
+    phrases: [["nurse", "harrow"]],
+  },
   [DeadlockHeroes.Paige]: { aliases: ["bookworm"] },
   [DeadlockHeroes.Paradox]: {
     aliases: ["chrono"],
     fuzzyTokens: ["dox"],
   },
   [DeadlockHeroes.Pocket]: { aliases: ["synth"] },
+  [DeadlockHeroes.RatKing]: {
+    aliases: ["ratking"],
+    phrases: [["rat", "king"]],
+  },
   [DeadlockHeroes.Rem]: { aliases: ["familiar"] },
   [DeadlockHeroes.Seven]: {
     aliases: ["7", "gigawatt", "gigawatt prisoner"],
@@ -64,9 +79,11 @@ export const HERO_DEFINITIONS: HeroDefinitions = {
   [DeadlockHeroes.Shiv]: { aliases: ["shiv ult"] },
   [DeadlockHeroes.Silver]: { aliases: ["werewolf"] },
   [DeadlockHeroes.Sinclair]: { aliases: ["magician", "magician v2"] },
+  [DeadlockHeroes.Solomon]: { aliases: ["chessmaster"] },
   [DeadlockHeroes.Venator]: { aliases: ["priest"] },
   [DeadlockHeroes.Victor]: { aliases: ["frank", "frank v2", "viktor"] },
   [DeadlockHeroes.Vindicta]: { aliases: ["hornet", "hornet v3"] },
+  [DeadlockHeroes.Violet]: {},
   [DeadlockHeroes.Viscous]: {},
   [DeadlockHeroes.Vyper]: { aliases: ["viper"] },
   [DeadlockHeroes.Warden]: {},

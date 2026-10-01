@@ -113,4 +113,24 @@ mod tests {
       Some("Drifter".to_string())
     );
   }
+
+  #[test]
+  fn resolves_heroes_by_codename_and_multi_word_name() {
+    assert_eq!(
+      resolve_from_skin_category(Some("Skins"), Some("RatKing"), "Recolor"),
+      Some("Rat King".to_string())
+    );
+    assert_eq!(normalize("chessmaster"), Some("Solomon".to_string()));
+    assert_eq!(
+      guess("Deadman Danny Crash Test"),
+      Some("Deadman Danny".to_string())
+    );
+    assert_eq!(guess("Nurse Harrow VO"), Some("Nurse Harrow".to_string()));
+    assert_eq!(guess("Violet Painter Outfit"), Some("Violet".to_string()));
+    assert_eq!(
+      guess("Warden as Makina from Deadman Wonderland"),
+      Some("Warden".to_string())
+    );
+    assert_eq!(guess("Harrow Grey Talon"), Some("Grey Talon".to_string()));
+  }
 }
