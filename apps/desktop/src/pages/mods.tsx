@@ -42,7 +42,11 @@ import {
   type DirectCatalogPage,
   queryGameBananaCatalog,
 } from "@/lib/gamebanana-catalog";
-import { SortType, TimePeriod } from "@/lib/constants";
+import {
+  MOD_OUTDATED_CUTOFF_SECONDS,
+  SortType,
+  TimePeriod,
+} from "@/lib/constants";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import type {
@@ -60,9 +64,6 @@ const MODS_STORE_PAGE_KEY = "/mods:page";
 const MAPS_STORE_PAGE_KEY = "/maps:page";
 const MODS_STORE_PAGINATION_SETTING_ID = "mods-store-pagination";
 const MOD_ROW_ESTIMATED_HEIGHT = 340;
-const MOD_OUTDATED_CUTOFF_SECONDS = Math.floor(
-  new Date("2026-01-22").getTime() / 1_000,
-);
 
 const catalogSort = (sort: SortType): CatalogQuery["sort"] => {
   switch (sort) {
