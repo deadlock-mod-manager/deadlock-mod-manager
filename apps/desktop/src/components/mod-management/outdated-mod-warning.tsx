@@ -1,5 +1,6 @@
 import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
 import { AlertTriangle } from "@deadlock-mods/ui/icons";
+import { useTranslation } from "react-i18next";
 
 type OutdatedModWarningProps = {
   variant?: "indicator" | "alert";
@@ -10,8 +11,8 @@ export const OutdatedModWarning = ({
   variant = "indicator",
   className,
 }: OutdatedModWarningProps) => {
-  const warningText =
-    "This mod hasn't been updated since the Old Gods, New Blood update and may not work properly";
+  const { t } = useTranslation();
+  const warningText = t("warnings.outdatedDescription");
 
   if (variant === "alert") {
     return (

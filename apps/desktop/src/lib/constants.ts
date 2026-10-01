@@ -113,3 +113,8 @@ export const UPDATED_RECENTLY_MS = UPDATED_RECENTLY_DAYS * 24 * 60 * 60 * 1000;
 export const UPDATED_RECENTLY_THRESHOLD = new Date("2026-02-07T17:00:00Z");
 export const STALE_MOD_REPORT_THRESHOLD = 5;
 export const STALE_MOD_DAYS = 30;
+
+// City Never Sleeps update: https://store.steampowered.com/news/app/1422450/view/694273194214819790
+export const MOD_OUTDATED_CUTOFF_SECONDS = Math.floor(
+  new Date("2026-09-29").getTime() / 1_000,
+);

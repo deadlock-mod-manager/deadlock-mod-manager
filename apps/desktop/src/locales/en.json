@@ -968,6 +968,7 @@
     "failedToOpenForumPost": "Failed to open forum post"
   },
   "warnings": {
+    "outdatedDescription": "This mod hasn't been updated since the City Never Sleeps update (September 29, 2026) and may not work properly.",
     "obsoleteLabel": "Obsolete",
     "obsoleteDescription": "This mod is no longer available on the mods store and may not work with the current game version.",
     "staleModDescription": "This mod has {{count}} unresolved reports and hasn't been updated since {{date}}. It may be broken with the current game version.",

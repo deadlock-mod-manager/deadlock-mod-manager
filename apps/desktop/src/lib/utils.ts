@@ -12,6 +12,7 @@ import { type LocalMod, ModStatus } from "@/types/mods";
 import type { LocalSetting } from "@/types/settings";
 import { AUTOEXEC_LAUNCH_OPTION_ID } from "@/lib/autoexec/constants";
 import {
+  MOD_OUTDATED_CUTOFF_SECONDS,
   STALE_MOD_DAYS,
   STALE_MOD_REPORT_THRESHOLD,
   SortType,
@@ -125,9 +126,8 @@ export const getTimePeriodCutoff = (period: TimePeriod): Date | null => {
 };
 
 export const isModOutdated = (mod: ModDto): boolean => {
-  const cutoffDate = new Date("2026-01-22");
   const modUpdatedDate = new Date(mod.remoteUpdatedAt);
-  return modUpdatedDate < cutoffDate;
+  return modUpdatedDate.getTime() < MOD_OUTDATED_CUTOFF_SECONDS * 1_000;
 };
 
 export type StaleModResult = {
