@@ -264,23 +264,30 @@ pub struct MatchSyncStatusDto {
   pub accounts: Vec<AccountStatus>,
 }
 
+/// Discover accounts only after opt-in, pruning resources only from a successful inventory.
 fn discover_accounts(
   config: &model::MatchSyncConfig,
   discover: impl FnOnce() -> Result<Vec<(u64, String)>, MatchSyncError>,
+  prune: impl FnOnce(&[u64]),
 ) -> Vec<(u64, String)> {
   if !config.is_active() {
     return Vec::new();
   }
-  discover().unwrap_or_default()
+  let Ok(accounts) = discover() else {
+    return Vec::new();
+  };
+  // Suppressed or failed discovery is not an empty inventory: keep the existing
+  // per-account throttle so toggling sync cannot reset GC request spacing.
+  let ids: Vec<u64> = accounts.iter().map(|(id, _)| *id).collect();
+  prune(&ids);
+  accounts
 }
 
 pub fn status(app: &AppHandle) -> Result<MatchSyncStatusDto, MatchSyncError> {
   let config = settings::load_config(app)?;
   let now = settings::now_secs();
   // Opt-out must also prevent reads of Steam's saved-session configuration.
-  let available = discover_accounts(&config, auth::list_available_accounts);
-  let ids: Vec<u64> = available.iter().map(|(id, _)| *id).collect();
-  prune_resources(&ids);
+  let available = discover_accounts(&config, auth::list_available_accounts, prune_resources);
 
   let accounts = available
     .into_iter()
@@ -644,7 +651,11 @@ mod discovery_tests {
         enabled,
         consent_accepted,
       };
-      let accounts = discover_accounts(&config, || panic!("Steam account discovery must not run"));
+      let accounts = discover_accounts(
+        &config,
+        || panic!("Steam account discovery must not run"),
+        |_| panic!("Inactive sync must retain account resources"),
+      );
       assert!(accounts.is_empty());
     }
   }
@@ -656,10 +667,16 @@ mod discovery_tests {
       consent_accepted: true,
     };
     let expected = vec![(123, "test-account".to_string())];
+    let mut pruned_ids = Vec::new();
     assert_eq!(
-      discover_accounts(&config, || Ok(expected.clone())),
+      discover_accounts(
+        &config,
+        || Ok(expected.clone()),
+        |ids| pruned_ids.extend_from_slice(ids),
+      ),
       expected
     );
+    assert_eq!(pruned_ids, vec![123]);
   }
 
   #[test]
@@ -669,11 +686,32 @@ mod discovery_tests {
       consent_accepted: true,
     };
     assert!(
-      discover_accounts(&config, || {
-        Err(MatchSyncError::AuthUnavailable("Steam unavailable".into()))
-      })
+      discover_accounts(
+        &config,
+        || Err(MatchSyncError::AuthUnavailable("Steam unavailable".into())),
+        |_| panic!("Failed discovery must retain account resources"),
+      )
       .is_empty()
     );
+  }
+
+  #[test]
+  fn successful_empty_inventory_still_prunes_resources() {
+    let config = model::MatchSyncConfig {
+      enabled: true,
+      consent_accepted: true,
+    };
+    let mut pruned = false;
+    let accounts = discover_accounts(
+      &config,
+      || Ok(Vec::new()),
+      |ids| {
+        assert!(ids.is_empty());
+        pruned = true;
+      },
+    );
+    assert!(accounts.is_empty());
+    assert!(pruned);
   }
 }
 
