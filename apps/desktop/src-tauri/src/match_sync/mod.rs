@@ -264,12 +264,21 @@ pub struct MatchSyncStatusDto {
   pub accounts: Vec<AccountStatus>,
 }
 
+fn discover_accounts(
+  config: &model::MatchSyncConfig,
+  discover: impl FnOnce() -> Result<Vec<(u64, String)>, MatchSyncError>,
+) -> Vec<(u64, String)> {
+  if !config.is_active() {
+    return Vec::new();
+  }
+  discover().unwrap_or_default()
+}
+
 pub fn status(app: &AppHandle) -> Result<MatchSyncStatusDto, MatchSyncError> {
   let config = settings::load_config(app)?;
   let now = settings::now_secs();
-  // Cheap, no-decrypt discovery: an unreachable Steam/vdf is a valid empty state, not
-  // a reason to fail the ~2s frontend poll.
-  let available = auth::list_available_accounts().unwrap_or_default();
+  // Opt-out must also prevent reads of Steam's saved-session configuration.
+  let available = discover_accounts(&config, auth::list_available_accounts);
   let ids: Vec<u64> = available.iter().map(|(id, _)| *id).collect();
   prune_resources(&ids);
 
@@ -381,6 +390,9 @@ pub fn set_enabled(app: &AppHandle, enabled: bool) -> Result<(), MatchSyncError>
 // for accounts no longer remembered in loginusers.vdf AT ALL. Startup-only: temporarily
 // non-decryptable accounts stay remembered, so they are never pruned here.
 pub fn prune_forgotten_accounts(app: &AppHandle) {
+  if !should_monitor(app) {
+    return;
+  }
   match auth::all_remembered_accounts() {
     Ok(accounts) => {
       let ids: Vec<u64> = accounts.iter().map(|(id, _)| *id).collect();
@@ -618,6 +630,50 @@ mod config_tests {
     assert!(!c.is_active());
     c.consent_accepted = true;
     assert!(c.is_active());
+  }
+}
+
+#[cfg(test)]
+mod discovery_tests {
+  use super::*;
+
+  #[test]
+  fn inactive_status_never_reads_steam_accounts() {
+    for (enabled, consent_accepted) in [(false, false), (false, true), (true, false)] {
+      let config = model::MatchSyncConfig {
+        enabled,
+        consent_accepted,
+      };
+      let accounts = discover_accounts(&config, || panic!("Steam account discovery must not run"));
+      assert!(accounts.is_empty());
+    }
+  }
+
+  #[test]
+  fn active_status_discovers_accounts() {
+    let config = model::MatchSyncConfig {
+      enabled: true,
+      consent_accepted: true,
+    };
+    let expected = vec![(123, "test-account".to_string())];
+    assert_eq!(
+      discover_accounts(&config, || Ok(expected.clone())),
+      expected
+    );
+  }
+
+  #[test]
+  fn unavailable_steam_remains_an_empty_status() {
+    let config = model::MatchSyncConfig {
+      enabled: true,
+      consent_accepted: true,
+    };
+    assert!(
+      discover_accounts(&config, || {
+        Err(MatchSyncError::AuthUnavailable("Steam unavailable".into()))
+      })
+      .is_empty()
+    );
   }
 }
 
