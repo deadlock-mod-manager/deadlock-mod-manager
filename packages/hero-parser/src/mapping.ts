@@ -6,7 +6,11 @@ type HeroMapping = {
 const HERO_MAP: Record<string, HeroMapping> = {
   // heroes_wip
   abrams: { enumKey: "Abrams", displayName: "Abrams" },
+  artist: { enumKey: "Violet", displayName: "Violet" },
+  baba: { enumKey: "Baba", displayName: "Baba" },
   bookworm: { enumKey: "Paige", displayName: "Paige" },
+  chessmaster: { enumKey: "Solomon", displayName: "Solomon" },
+  deadpack: { enumKey: "DeadmanDanny", displayName: "Deadman Danny" },
   doorman: { enumKey: "Doorman", displayName: "Doorman" },
   doorman_v2: { enumKey: "Doorman", displayName: "Doorman" },
   drifter: { enumKey: "Drifter", displayName: "Drifter" },
@@ -22,9 +26,11 @@ const HERO_MAP: Record<string, HeroMapping> = {
   lash: { enumKey: "Lash", displayName: "Lash" },
   mcginnis: { enumKey: "McGinnis", displayName: "McGinnis" },
   necro: { enumKey: "Graves", displayName: "Graves" },
+  nurse: { enumKey: "NurseHarrow", displayName: "Nurse Harrow" },
   pocket: { enumKey: "Pocket", displayName: "Pocket" },
   priest: { enumKey: "Venator", displayName: "Venator" },
   punkgoat: { enumKey: "Billy", displayName: "Billy" },
+  ratking: { enumKey: "RatKing", displayName: "Rat King" },
   unicorn: { enumKey: "Celeste", displayName: "Celeste" },
   vampirebat: { enumKey: "Mina", displayName: "Mina" },
   werewolf: { enumKey: "Silver", displayName: "Silver" },
