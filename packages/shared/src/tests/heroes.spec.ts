@@ -35,6 +35,29 @@ test("guessHero avoids common substring false positives", () => {
   expect(guessHero("Remodel pack")).toBeNull();
 });
 
+test("resolves heroes by codename, enum key and multi-word name", () => {
+  expect(normalizeHero("RatKing")).toBe(DeadlockHeroes.RatKing);
+  expect(normalizeHero("NurseHarrow")).toBe(DeadlockHeroes.NurseHarrow);
+  expect(normalizeHero("deadpack")).toBe(DeadlockHeroes.DeadmanDanny);
+  expect(normalizeHero("chessmaster")).toBe(DeadlockHeroes.Solomon);
+  expect(guessHero("Violet Painter Outfit")).toBe(DeadlockHeroes.Violet);
+  expect(guessHero("Deadman Danny Crash Test")).toBe(
+    DeadlockHeroes.DeadmanDanny,
+  );
+  expect(guessHero("Nurse Harrow VO")).toBe(DeadlockHeroes.NurseHarrow);
+  expect(guessHero("Rat King recolor")).toBe(DeadlockHeroes.RatKing);
+  expect(guessHero("NurseHarrow skin")).toBe(DeadlockHeroes.NurseHarrow);
+  expect(guessHero("Baba tea set")).toBe(DeadlockHeroes.Baba);
+});
+
+test("one word of a two-word hero name or a common-word codename doesn't match", () => {
+  expect(guessHero("Warden as Makina from Deadman Wonderland")).toBe(
+    DeadlockHeroes.Warden,
+  );
+  expect(guessHero("Harrow Grey Talon")).toBe(DeadlockHeroes.GreyTalon);
+  expect(guessHero("Nurse outfit for Ivy")).toBe(DeadlockHeroes.Ivy);
+});
+
 test("resolveHeroFromSkinCategory", () => {
   expect(resolveHeroFromSkinCategory("Skins", "Seven", "Toon Seven")).toBe(
     DeadlockHeroes.Seven,

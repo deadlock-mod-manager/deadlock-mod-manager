@@ -13,7 +13,11 @@ static HERO_MAP: LazyLock<HashMap<&'static str, HeroMapping>> = LazyLock::new(||
         // heroes_wip
         //Deadlock internal name => Deadlock enum key => Deadlock display name
         ("abrams", "Abrams", "Abrams"),
+        ("artist", "Violet", "Violet"),
+        ("baba", "Baba", "Baba"),
         ("bookworm", "Paige", "Paige"),
+        ("chessmaster", "Solomon", "Solomon"),
+        ("deadpack", "DeadmanDanny", "Deadman Danny"),
         ("doorman", "Doorman", "Doorman"),
         ("doorman_v2", "Doorman", "Doorman"),
         ("drifter", "Drifter", "Drifter"),
@@ -29,9 +33,11 @@ static HERO_MAP: LazyLock<HashMap<&'static str, HeroMapping>> = LazyLock::new(||
         ("lash", "Lash", "Lash"),
         ("mcginnis", "McGinnis", "McGinnis"),
         ("necro", "Graves", "Graves"),
+        ("nurse", "NurseHarrow", "Nurse Harrow"),
         ("pocket", "Pocket", "Pocket"),
         ("priest", "Venator", "Venator"),
         ("punkgoat", "Billy", "Billy"),
+        ("ratking", "RatKing", "Rat King"),
         ("unicorn", "Celeste", "Celeste"),
         ("vampirebat", "Mina", "Mina"),
         ("werewolf", "Silver", "Silver"),
