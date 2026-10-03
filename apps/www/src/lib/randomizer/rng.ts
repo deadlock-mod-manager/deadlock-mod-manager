@@ -33,9 +33,6 @@ export const decodeSeed = (value: string | undefined): number | null => {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed >>> 0 : null;
 };
 
-export const formatSeed = (seed: number): string =>
-  seed.toLocaleString("en-US");
-
 export const pick = <T>(rng: Rng, values: readonly T[]): T =>
   values[Math.floor(rng() * values.length)];
 

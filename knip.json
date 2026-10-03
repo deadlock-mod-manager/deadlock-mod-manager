@@ -3,7 +3,8 @@
   "workspaces": {
     ".": {
       "entry": ["scripts/*.{ts,mjs}"],
-      "project": ["scripts/**/*.{ts,mjs}"]
+      "project": ["scripts/**/*.{ts,mjs}"],
+      "ignoreDependencies": ["node-gyp"]
     },
     "apps/desktop": {
       "entry": [

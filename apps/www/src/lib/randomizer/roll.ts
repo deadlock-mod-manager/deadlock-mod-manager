@@ -69,7 +69,7 @@ export const CHARGE_ITEMS: ReadonlySet<string> = new Set([
  */
 const DEFAULT_UNLOCK_GATES = [1, 2, 3, 5];
 
-export interface Mandate {
+interface Mandate {
   label: string;
   blurb: string;
 }
@@ -106,7 +106,7 @@ export interface RolledItem {
   recommended: boolean;
 }
 
-export interface AbilityStep {
+interface AbilityStep {
   /** 1-based signature slot, matching `hero.items.signature{n}`. */
   slot: number;
   /** 1, 2 or 3 - which of the ability's three upgrades this point buys. */

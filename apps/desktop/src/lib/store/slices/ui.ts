@@ -1,5 +1,5 @@
 import type { StateCreator } from "zustand";
-import { SortType, TimePeriod } from "@/lib/constants";
+import { EXPERIMENTAL_FEATURES, SortType, TimePeriod } from "@/lib/constants";
 import type { State } from "..";
 import {
   applyPluginSettings,
@@ -42,17 +42,6 @@ export type ModsFilters = {
   searchQuery: string;
   showFavoritesOnly: boolean;
 };
-
-// Client-side toggles for features that are still settling. Stored locally so
-// anyone can opt in from Settings without signing in.
-export const EXPERIMENTAL_FEATURES = [
-  "custom-maps",
-  "server-browser",
-  "mod-foundry",
-  "player-stats",
-  "profile-management",
-  "profile-sharing",
-] as const;
 
 export type ExperimentalFeature = (typeof EXPERIMENTAL_FEATURES)[number];
 

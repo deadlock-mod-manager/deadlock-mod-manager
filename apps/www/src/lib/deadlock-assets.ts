@@ -8,7 +8,7 @@ import { z } from "zod";
  * roll then does arithmetic on.
  */
 
-export const ASSETS_BASE_URL = "https://api.deadlock-api.com/v1/assets";
+const ASSETS_BASE_URL = "https://api.deadlock-api.com/v1/assets";
 
 export const ITEM_CATEGORIES = ["weapon", "vitality", "spirit"] as const;
 
@@ -200,7 +200,7 @@ export type DeadlockUpgrade = z.infer<typeof upgradeSchema>;
 export type DeadlockAbility = z.infer<typeof abilitySchema>;
 
 /** On the app's shared error hierarchy, so it carries a stable error code. */
-export class DeadlockAssetsError extends ProviderError {
+class DeadlockAssetsError extends ProviderError {
   constructor(
     readonly endpoint: string,
     readonly status: number,
@@ -275,9 +275,9 @@ export const getHeroes = async (): Promise<DeadlockHero[]> => {
  * placeholder cost. They are not buyable in a match, so the randomizer must
  * never put one in a build.
  */
-export const UNPRICED_ITEM_COST = 9999;
+const UNPRICED_ITEM_COST = 9999;
 
-export const isBuyable = (upgrade: DeadlockUpgrade): boolean =>
+const isBuyable = (upgrade: DeadlockUpgrade): boolean =>
   upgrade.shopable &&
   upgrade.cost !== null &&
   upgrade.cost !== undefined &&
@@ -354,7 +354,7 @@ export const heroImage = (
   }
 };
 
-export interface TooltipStat {
+interface TooltipStat {
   label: string;
   value: string;
 }

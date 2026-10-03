@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import type { ModDto } from "@deadlock-mods/shared";
 import { ModDtoSchema } from "@deadlock-mods/shared";
+import { MOD_OUTDATED_CUTOFF_SECONDS } from "@/lib/constants";
 import { getIsoWeekParts, pickFeaturedMod } from "./use-featured-mod";
 
 function makeMod(
@@ -9,7 +10,8 @@ function makeMod(
   options?: { isObsolete?: boolean; remoteUpdatedAt?: Date },
 ): ModDto {
   const remoteUpdatedAt =
-    options?.remoteUpdatedAt ?? new Date("2026-01-23T00:00:00.000Z");
+    options?.remoteUpdatedAt ??
+    new Date((MOD_OUTDATED_CUTOFF_SECONDS + 86400) * 1000);
   const parsed = ModDtoSchema.parse({
     id,
     remoteId: id,
@@ -38,6 +40,13 @@ function makeMod(
   return {
     ...parsed,
     isObsolete: options?.isObsolete ?? false,
+    isBlacklisted: false,
+    blacklistReason: null,
+    blacklistedAt: null,
+    blacklistedBy: null,
+    overrides: null,
+    dependencies: null,
+    metadata: null,
   };
 }
 
@@ -78,7 +87,9 @@ describe("pickFeaturedMod", () => {
   it("returns stable pick for the same instant", () => {
     const pool = [makeMod("a", 100), makeMod("b", 99)];
     const at = new Date("2025-06-15T12:00:00.000Z");
-    expect(pickFeaturedMod(pool, at)?.id).toBe(pickFeaturedMod(pool, at)?.id);
+    const picked = pickFeaturedMod(pool, at);
+    expect(picked).toBeDefined();
+    expect(picked?.id).toBe(pickFeaturedMod(pool, at)?.id);
   });
 
   it("uses many distinct mods across ISO weeks in a year", () => {
@@ -101,21 +112,21 @@ describe("pickFeaturedMod", () => {
 
   it("excludes ineligible mods from the pool", () => {
     const ok = makeMod("ok", 100);
-    const noVisuals = ModDtoSchema.parse({
+    const noVisuals: ModDto = {
       ...ok,
       id: "nov",
       remoteId: "nov",
       images: [],
       hero: null,
       downloadCount: 999_999,
-    });
-    const nsfw = ModDtoSchema.parse({
+    };
+    const nsfw: ModDto = {
       ...ok,
       id: "nsfw",
       remoteId: "nsfw",
       isNSFW: true,
       downloadCount: 999_998,
-    });
+    };
     const pool = [nsfw, noVisuals, ok];
     const at = new Date("2025-03-01T00:00:00.000Z");
     expect(pickFeaturedMod(pool, at)?.id).toBe("ok");
@@ -125,7 +136,7 @@ describe("pickFeaturedMod", () => {
     const ok = makeMod("ok", 100);
     const obsolete = makeMod("obs", 999_997, { isObsolete: true });
     const outdated = makeMod("old", 999_996, {
-      remoteUpdatedAt: new Date("2026-01-01T00:00:00.000Z"),
+      remoteUpdatedAt: new Date((MOD_OUTDATED_CUTOFF_SECONDS - 86400) * 1000),
     });
     const pool = [obsolete, outdated, ok];
     const at = new Date("2025-03-01T00:00:00.000Z");
