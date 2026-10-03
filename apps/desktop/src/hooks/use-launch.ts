@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
+import { MOD_PATHS_KEY } from "@/hooks/use-game-config-alert";
 import { stopHeroDetection } from "@/hooks/use-hero-detection";
 import { restoreProfileGameinfo } from "@/lib/gameinfo";
 import { getLaunchErrorMessage } from "@/lib/launch-error";
@@ -24,6 +25,7 @@ export const useLaunch = () => {
     setModEnabledInCurrentProfile,
   } = usePersistedStore();
   const clearLastJoin = usePersistedStore((s) => s.clearLastJoin);
+  const setLastLaunchVanilla = usePersistedStore((s) => s.setLastLaunchVanilla);
   const queryClient = useQueryClient();
   const confirm = useConfirm();
   const launchVanillaNoArgs =
@@ -122,9 +124,11 @@ export const useLaunch = () => {
         unlisten();
       }
 
+      setLastLaunchVanilla(vanilla);
       await queryClient.invalidateQueries({
         queryKey: ["is-game-running"],
       });
+      await queryClient.invalidateQueries({ queryKey: MOD_PATHS_KEY });
     } catch (error) {
       console.error(error);
       logger.errorOnly(error);

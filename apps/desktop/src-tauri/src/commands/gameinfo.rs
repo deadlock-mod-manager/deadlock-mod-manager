@@ -88,6 +88,22 @@ pub async fn validate_gameinfo_patch(expected_vanilla: bool) -> Result<(), Error
     .validate_gameinfo_patch(&game_path, expected_vanilla)
 }
 
+/// Whether gameinfo.gi still lists our addon search paths. Polled by the
+/// broken-mods banner, so it reads the file without holding the manager lock.
+#[tauri::command]
+pub async fn gameinfo_has_mod_paths() -> Result<bool, Error> {
+  let game_path = MANAGER
+    .lock()
+    .unwrap()
+    .get_steam_manager()
+    .get_game_path()
+    .cloned()
+    .ok_or(Error::GamePathNotSet)?;
+  let content =
+    std::fs::read_to_string(game_path.join("game").join("citadel").join("gameinfo.gi"))?;
+  Ok(content.contains("citadel/addons"))
+}
+
 #[tauri::command]
 pub async fn get_gameinfo_status()
 -> Result<crate::mod_manager::game_config_manager::GameInfoStatus, Error> {

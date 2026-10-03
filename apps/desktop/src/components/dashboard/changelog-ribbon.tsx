@@ -1,7 +1,8 @@
-import { ArrowRightIcon, SparkleIcon } from "@phosphor-icons/react";
+import { SparkleIcon } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
 import { useWhatsNew } from "@/hooks/use-whats-new";
+import { SectionHeader } from "./section-header";
 import { GITHUB_REPO } from "@/lib/constants";
 import { getRecentWhatsNewVersions } from "@/lib/whats-new-versions";
 import { cn } from "@/lib/utils";
@@ -134,26 +135,12 @@ export const ChangelogRibbon = () => {
 
   return (
     <section className='relative w-full'>
-      <header className='mb-3 flex items-center justify-between border-primary/20 border-b pb-2'>
-        <div className='flex items-center gap-2'>
-          <SparkleIcon className='size-4 text-primary' weight='duotone' />
-          <span
-            className='font-bold text-[11px] text-primary uppercase tracking-[0.4em]'
-            style={{ fontFamily: '"Forevs Demo", serif' }}>
-            {t("dashboard.changelog")}
-          </span>
-        </div>
-        <button
-          className='group flex items-center gap-1.5 text-[10px] text-muted-foreground uppercase tracking-[0.25em] transition-colors hover:text-primary'
-          onClick={() => openUrl(`${GITHUB_REPO}/releases`)}
-          type='button'>
-          {t("whatsNew.fullReleaseNotes")}
-          <ArrowRightIcon
-            className='size-3 transition-transform group-hover:translate-x-0.5'
-            weight='bold'
-          />
-        </button>
-      </header>
+      <SectionHeader
+        icon={SparkleIcon}
+        linkLabel={t("whatsNew.fullReleaseNotes")}
+        linkUrl={`${GITHUB_REPO}/releases`}
+        title={t("dashboard.changelog")}
+      />
 
       <div className='grid grid-cols-1 lg:grid-cols-3'>
         {releases.map((entry, idx) => (

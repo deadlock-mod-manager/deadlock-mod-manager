@@ -8,6 +8,12 @@ export type GameState = {
   steamPath: string;
   setUseCustomSteamPath: (enabled: boolean) => void;
   setSteamPath: (path: string) => void;
+  /** Steam build id the user has already been told about. */
+  knownGameBuildId: number | null;
+  setKnownGameBuildId: (buildId: number) => void;
+  /** Vanilla launches strip our search paths on purpose, so they aren't a breakage. */
+  lastLaunchVanilla: boolean;
+  setLastLaunchVanilla: (vanilla: boolean) => void;
 };
 
 export const gameDeepMergeKeys =
@@ -27,4 +33,9 @@ export const createGameSlice: StateCreator<State, [], [], GameState> = (
         : { useCustomSteamPath: false, steamPath: "" },
     ),
   setSteamPath: (path: string) => set({ steamPath: path }),
+  knownGameBuildId: null,
+  setKnownGameBuildId: (buildId: number) => set({ knownGameBuildId: buildId }),
+  lastLaunchVanilla: false,
+  setLastLaunchVanilla: (vanilla: boolean) =>
+    set({ lastLaunchVanilla: vanilla }),
 });

@@ -67,6 +67,9 @@
         },
         {
           "url": "https://api.deadlock-api.com/**"
+        },
+        {
+          "url": "https://api.steampowered.com/ISteamNews/**"
         }
       ]
     },

@@ -202,6 +202,7 @@ pub fn run() {
     })
     .invoke_handler(tauri::generate_handler![
       commands::game::find_game_path,
+      commands::game::get_installed_build_id,
       commands::gamebanana_catalog::synchronize_gamebanana_catalog,
       commands::gamebanana_catalog::clear_gamebanana_catalog,
       commands::gamebanana_catalog::query_gamebanana_catalog,
@@ -252,6 +253,7 @@ pub fn run() {
       commands::gameinfo::reset_to_vanilla,
       commands::gameinfo::validate_gameinfo_patch,
       commands::gameinfo::get_gameinfo_status,
+      commands::gameinfo::gameinfo_has_mod_paths,
       commands::gameinfo::open_gameinfo_editor,
       commands::app::set_language,
       commands::app::set_api_url,

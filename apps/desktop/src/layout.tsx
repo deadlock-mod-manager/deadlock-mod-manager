@@ -7,6 +7,7 @@ import { Toaster } from "@deadlock-mods/ui/components/sonner";
 import { AppSidebar } from "./components/layout/app-sidebar";
 import { BottomBar } from "./components/layout/bottom-bar";
 import { CatalogSyncProgress } from "./components/layout/catalog-sync-progress";
+import { GameConfigBanner } from "./components/layout/game-config-banner";
 import { OccultGeometry } from "./components/layout/occult-geometry";
 import { Titlebar } from "./components/layout/titlebar";
 import { WhatsNewDialog } from "./components/layout/whats-new-dialog";
@@ -26,6 +27,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
         <ScrollBackButtonProvider>
           <SidebarProvider className='flex min-h-0 flex-1 flex-col overflow-hidden'>
             <Titlebar />
+            <GameConfigBanner />
             <div className='relative flex min-h-0 flex-1 overflow-hidden'>
               <AppSidebar />
               <SidebarInset className='flex min-h-0 flex-1 flex-col'>

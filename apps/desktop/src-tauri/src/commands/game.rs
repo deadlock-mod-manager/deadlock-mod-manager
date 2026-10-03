@@ -4,6 +4,7 @@ use std::time::Duration;
 
 use crate::app_runtime::AppHandle;
 use crate::errors::Error;
+use crate::mod_manager::steam_manager::installed_build_id;
 use crate::mod_manager::steam_uri_launcher::SteamUriLaunchMonitor;
 use tauri::Emitter;
 
@@ -198,4 +199,15 @@ pub async fn is_game_running() -> Result<bool, Error> {
   }
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.is_game_running()
+}
+
+#[tauri::command]
+pub async fn get_installed_build_id() -> Result<Option<u64>, Error> {
+  let game_path = MANAGER
+    .lock()
+    .unwrap()
+    .get_steam_manager()
+    .get_game_path()
+    .cloned();
+  Ok(game_path.and_then(|path| installed_build_id(&path)))
 }
