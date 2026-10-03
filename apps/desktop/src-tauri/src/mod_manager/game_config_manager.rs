@@ -108,6 +108,16 @@ impl GameConfigManager {
     content.contains(MOD_MANAGER_MARKER_START) && content.contains(MOD_MANAGER_MARKER_END)
   }
 
+  fn match_line_endings(content: &str, original: &str) -> String {
+    let content = content.replace("\r\n", "\n");
+    let first_newline = original.find('\n');
+    if first_newline.is_some_and(|index| index > 0 && original.as_bytes()[index - 1] == b'\r') {
+      content.replace("\n", "\r\n")
+    } else {
+      content
+    }
+  }
+
   fn ensure_game_language_search_path(search_paths: &str) -> String {
     if search_paths.contains("Game_Language") {
       return search_paths.to_string();
@@ -638,12 +648,14 @@ impl GameConfigManager {
         let marker_end = marker_end_pos + MOD_MANAGER_MARKER_END.len();
 
         // Find the actual start (include preceding whitespace/newline)
-        let actual_start =
-          if marker_start > 0 && gameinfo_content.chars().nth(marker_start - 1) == Some('\n') {
-            marker_start - 1
-          } else {
-            marker_start
-          };
+        let preceding_content = &gameinfo_content[..marker_start];
+        let actual_start = if preceding_content.ends_with("\r\n") {
+          marker_start - 2
+        } else if preceding_content.ends_with('\n') {
+          marker_start - 1
+        } else {
+          marker_start
+        };
 
         (
           actual_start,
@@ -694,6 +706,8 @@ impl GameConfigManager {
     } else {
       format!("\n{MOD_MANAGER_MARKER_START}\n{base_search_paths}\n{MOD_MANAGER_MARKER_END}")
     };
+
+    let replacement_content = Self::match_line_endings(&replacement_content, &gameinfo_content);
 
     // Replace the identified section with the new content
     let mut new_gameinfo_content = gameinfo_content.clone();
@@ -974,6 +988,8 @@ impl GameConfigManager {
     let replacement_content =
       format!("\n{MOD_MANAGER_MARKER_START}\n{modded_search_paths}\n{MOD_MANAGER_MARKER_END}");
 
+    let replacement_content = Self::match_line_endings(&replacement_content, &gameinfo_content);
+
     // Replace the section
     let mut new_gameinfo_content = gameinfo_content.clone();
     new_gameinfo_content.replace_range(section_start..section_end, &replacement_content);
@@ -1061,6 +1077,83 @@ mod tests {
   fn write_gameinfo(game_path: &Path, body: &str) {
     let path = game_path.join("game").join("citadel").join("gameinfo.gi");
     std::fs::write(path, body).expect("write gameinfo");
+  }
+
+  fn assert_line_endings(content: &str, newline: &str) {
+    assert!(content.contains(newline));
+    if newline == "\r\n" {
+      assert!(!content.replace("\r\n", "").contains(['\r', '\n']));
+    } else {
+      assert!(!content.contains('\r'));
+    }
+  }
+
+  fn vanilla_fixture(newline: &str) -> String {
+    "\"GameInfo\"\n{\n  // Deadlock \u{2014} configuration\n  FileSystem\n  {\n\t\tSearchPaths\n    {\n      Game citadel\n    }\n  }\n}".replace("\n", newline)
+  }
+
+  #[test]
+  fn toggle_mods_preserves_line_endings_and_surrounding_content() {
+    for newline in ["\r\n", "\n"] {
+      let (_dir, game_path) = setup_game_dir();
+      let original = vanilla_fixture(newline);
+      write_gameinfo(&game_path, &original);
+      let gameinfo_path = game_path.join("game/citadel/gameinfo.gi");
+      let prefix = original.split("\t\tSearchPaths").next().unwrap();
+      let suffix = format!("{newline}  }}{newline}}}");
+      let mut mgr = GameConfigManager::new();
+
+      for vanilla in [false, false, true, false, true] {
+        mgr.toggle_mods(&game_path, vanilla).expect("toggle mods");
+        let content = fs::read_to_string(&gameinfo_path).expect("read gameinfo");
+        assert_line_endings(&content, newline);
+        assert!(content.starts_with(prefix));
+        assert!(content.ends_with(&suffix));
+        assert_eq!(content.contains("citadel/addons"), !vanilla);
+        assert!(content.contains("Game_Language"));
+      }
+
+      assert_eq!(
+        fs::read_to_string(gameinfo_path.with_extension("gi.bak")).unwrap(),
+        original
+      );
+    }
+  }
+
+  #[test]
+  fn update_mod_paths_preserves_line_endings_across_repeated_updates() {
+    for newline in ["\r\n", "\n"] {
+      let (_dir, game_path) = setup_game_dir();
+      let original = vanilla_fixture(newline);
+      write_gameinfo(&game_path, &original);
+      let gameinfo_path = game_path.join("game/citadel/gameinfo.gi");
+      let paths = vec![
+        "citadel/addons/server_new".to_string(),
+        "citadel/addons2/profile_default".to_string(),
+      ];
+      let mut mgr = GameConfigManager::new();
+      mgr.game_setup = true;
+
+      for _ in 0..3 {
+        mgr
+          .update_mod_paths(&game_path, &paths)
+          .expect("update paths");
+        let content = fs::read_to_string(&gameinfo_path).expect("read gameinfo");
+        assert_line_endings(&content, newline);
+        assert_eq!(mgr.marker_addons_paths(&game_path).unwrap(), paths);
+        assert!(content.contains("Game_Language"));
+        assert!(!content.ends_with('\n'));
+      }
+
+      mgr
+        .toggle_mods(&game_path, true)
+        .expect("return to vanilla");
+      assert_line_endings(&fs::read_to_string(&gameinfo_path).unwrap(), newline);
+      assert_eq!(
+        fs::read_to_string(gameinfo_path.with_extension("gi.bak")).unwrap(),
+        original
+      );
+    }
   }
 
   #[test]
