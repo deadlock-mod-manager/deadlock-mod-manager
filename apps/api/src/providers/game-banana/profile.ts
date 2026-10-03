@@ -1,5 +1,6 @@
 import type { DeadlockHeroes, GameBanana } from "@deadlock-mods/shared";
 import { heroRegistry } from "@deadlock-mods/shared";
+import { DEADLOCK_GAME_ID } from "./constants";
 
 type GameBananaProfileForCategory =
   | GameBanana.GameBananaModProfile
@@ -43,7 +44,11 @@ export function submitterDisplayName(
 export function isUnavailableProfile(
   profile: GameBananaProfileForCategory,
 ): boolean {
-  return profile._bIsPrivate === true || profile._bIsWithheld === true;
+  return (
+    profile._bIsPrivate === true ||
+    profile._bIsWithheld === true ||
+    (profile._aGame !== undefined && profile._aGame._idRow !== DEADLOCK_GAME_ID)
+  );
 }
 
 export const parseTags = (

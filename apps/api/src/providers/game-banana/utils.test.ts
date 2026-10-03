@@ -73,9 +73,9 @@ const baseGameBananaModProfile = {
     _bAccessorIsSubscribed: false,
   },
   _aGame: {
-    _idRow: 1,
+    _idRow: 20_948,
     _sName: "Deadlock",
-    _sProfileUrl: "https://gamebanana.com/games/1",
+    _sProfileUrl: "https://gamebanana.com/games/20948",
     _sIconUrl: "https://gamebanana.com/game-icon.png",
     _sAbbreviation: "DL",
     _sBannerUrl: "https://gamebanana.com/banner.png",
@@ -264,6 +264,13 @@ describe("isUnavailableProfile", () => {
 
   it("treats a withheld submission as unavailable", () => {
     const profile = buildGameBananaModProfile({ _bIsWithheld: true });
+
+    expect(isUnavailableProfile(profile)).toBe(true);
+  });
+
+  it("treats a submission from another game as unavailable", () => {
+    const profile = buildGameBananaModProfile({});
+    profile._aGame = { ...profile._aGame, _idRow: 2 };
 
     expect(isUnavailableProfile(profile)).toBe(true);
   });
