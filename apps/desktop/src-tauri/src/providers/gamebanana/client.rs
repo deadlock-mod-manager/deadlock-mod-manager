@@ -1,8 +1,9 @@
+use super::activity::ActivityPage;
 use super::models::{
-  BulkHydration, DownloadPage, FileserverPage, IndexPage, Profile, UpdateSnapshot, UpdatesPage,
+  BulkHydration, DownloadPage, FileserverPage, IndexPage, Profile, UpdateSnapshot,
   core_error,
 };
-use super::transport::{GameBananaTransport, TransportConfig};
+use super::transport::{ApiResponse, GameBananaTransport, TransportConfig};
 use crate::errors::Error;
 use crate::providers::{SubmissionProvider, SubmissionRef, SubmissionType};
 use tokio_util::sync::CancellationToken;
@@ -14,10 +15,12 @@ pub(crate) const DEADLOCK_GAME_ID: u64 = 20_948;
 const INDEX_PAGE_SIZE: u32 = 50;
 const MAX_INDEX_PAGE: u32 = 250;
 const MAX_BULK_ITEMS: usize = 50;
-const UPDATES_PAGE_SIZE: u32 = 10;
 // Each item repeats the full field list; 50 hydration items exceed the URL limit (GameBanana answers 414).
 pub(crate) const MAX_HYDRATION_ITEMS: usize = 40;
 const MAX_BULK_URL_BYTES: usize = 7_000;
+const POSTS_PAGE_SIZE: u32 = 15;
+const UPDATES_PAGE_SIZE: u32 = 20;
+const MAX_ACTIVITY_PAGE: u32 = 500;
 const BULK_FIELDS: &[&str] = &[
   "name",
   "downloads",
@@ -92,17 +95,32 @@ impl GameBananaClient {
     self.transport.get_json("download page", url, cancel).await
   }
 
+  pub async fn posts(
+    &self,
+    submission: &SubmissionRef,
+    page: u32,
+    cancel: &CancellationToken,
+  ) -> Result<ApiResponse<ActivityPage>, Error> {
+    let url = activity_url(&self.api_base, submission, "Posts", page, POSTS_PAGE_SIZE)?;
+    self
+      .transport
+      .get_json_or_rejection("posts", url, cancel)
+      .await
+  }
+
   pub async fn updates(
     &self,
     submission: &SubmissionRef,
     page: u32,
     cancel: &CancellationToken,
-  ) -> Result<UpdatesPage, Error> {
-    let mut url = submission_url(&self.api_base, submission, "Updates")?;
-    url
-      .query_pairs_mut()
-      .append_pair("_nPage", &page.max(1).to_string())
-      .append_pair("_nPerpage", &UPDATES_PAGE_SIZE.to_string());
+  ) -> Result<ActivityPage, Error> {
+    let url = activity_url(
+      &self.api_base,
+      submission,
+      "Updates",
+      page,
+      UPDATES_PAGE_SIZE,
+    )?;
     self.transport.get_json("updates", url, cancel).await
   }
 
@@ -280,6 +298,26 @@ fn submission_url(
   .map_err(|error| Error::ProviderInvalidResponse(error.to_string()))
 }
 
+fn activity_url(
+  api_base: &str,
+  submission: &SubmissionRef,
+  operation: &str,
+  page: u32,
+  per_page: u32,
+) -> Result<reqwest::Url, Error> {
+  if !(1..=MAX_ACTIVITY_PAGE).contains(&page) {
+    return Err(Error::InvalidInput(format!(
+      "page must be between 1 and {MAX_ACTIVITY_PAGE}"
+    )));
+  }
+  let mut url = submission_url(api_base, submission, operation)?;
+  url
+    .query_pairs_mut()
+    .append_pair("_nPage", &page.to_string())
+    .append_pair("_nPerpage", &per_page.to_string());
+  Ok(url)
+}
+
 fn model_name(submission_type: SubmissionType) -> &'static str {
   match submission_type {
     SubmissionType::Mod => "Mod",
@@ -291,8 +329,9 @@ fn model_name(submission_type: SubmissionType) -> &'static str {
 #[cfg(test)]
 mod tests {
   use super::{
-    API_BASE, BULK_FIELDS, LEGACY_API_BASE, MAX_BULK_ITEMS, MAX_BULK_URL_BYTES,
-    MAX_HYDRATION_ITEMS, MAX_INDEX_PAGE, index_url, item_data_url, model_name, submission_url,
+    API_BASE, BULK_FIELDS, LEGACY_API_BASE, MAX_ACTIVITY_PAGE, MAX_BULK_ITEMS, MAX_BULK_URL_BYTES,
+    MAX_HYDRATION_ITEMS, MAX_INDEX_PAGE, activity_url, index_url, item_data_url, model_name,
+    submission_url,
   };
   use crate::providers::{SubmissionRef, SubmissionType};
 
@@ -365,5 +404,18 @@ mod tests {
       )
       .is_ok()
     );
+  }
+
+  #[test]
+  fn activity_urls_are_paged_and_bounded() {
+    let sound = SubmissionRef::parse_slug("snd-42").unwrap();
+    assert_eq!(
+      activity_url(API_BASE, &sound, "Posts", 2, 15)
+        .unwrap()
+        .as_str(),
+      "https://gamebanana.com/apiv11/Sound/42/Posts?_nPage=2&_nPerpage=15"
+    );
+    assert!(activity_url(API_BASE, &sound, "Updates", 0, 20).is_err());
+    assert!(activity_url(API_BASE, &sound, "Updates", MAX_ACTIVITY_PAGE + 1, 20).is_err());
   }
 }

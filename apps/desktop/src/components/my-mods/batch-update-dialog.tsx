@@ -23,6 +23,7 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation } from "@tanstack/react-query";
 import { DateDisplay } from "@/components/date-display";
+import { UpdateChangelog } from "@/components/my-mods/update-changelog";
 import { formatSize } from "@/lib/utils";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
@@ -180,6 +181,10 @@ const UpdateModCard = ({ update, onSelectDownloads }: UpdateModCardProps) => {
     onSelectDownloads(update.mod.remoteId, [sortedDownloads[0]]);
   };
 
+  const installedAt = localMod?.downloadedAt
+    ? new Date(localMod.downloadedAt)
+    : undefined;
+
   const totalSize = update.selectedDownloads.reduce(
     (sum, d) => sum + (d.size || 0),
     0,
@@ -211,7 +216,7 @@ const UpdateModCard = ({ update, onSelectDownloads }: UpdateModCardProps) => {
           <div className='flex items-center gap-1.5 text-muted-foreground'>
             <Calendar className='h-3.5 w-3.5' />
             <span>{t("myMods.batchUpdate.installedAt")}:</span>
-            <DateDisplay date={localMod?.downloadedAt} inverse />
+            <DateDisplay date={installedAt} inverse />
           </div>
           <div className='flex items-center gap-1.5 text-muted-foreground'>
             <RefreshCw className='h-3.5 w-3.5' />
@@ -219,6 +224,11 @@ const UpdateModCard = ({ update, onSelectDownloads }: UpdateModCardProps) => {
             <DateDisplay date={update.mod.filesUpdatedAt} inverse />
           </div>
         </div>
+
+        <UpdateChangelog
+          installedAt={installedAt}
+          remoteId={update.mod.remoteId}
+        />
 
         {update.downloads.length > 1 && (
           <div className='space-y-2'>
