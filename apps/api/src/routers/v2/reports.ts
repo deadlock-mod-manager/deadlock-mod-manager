@@ -14,8 +14,10 @@ import { logger, wideEventContext } from "@/lib/logger";
 import { cache } from "@/lib/redis";
 import {
   fetchGameBananaSubmissionSnapshot,
+  gameBananaIdentitySlug,
   parseGameBananaSlug,
 } from "@/services/gamebanana-submission";
+import { resolveLegacyModId } from "@/services/legacy-client-compat";
 import { publicProcedure } from "../../lib/orpc";
 import {
   CreateReportInputSchema,
@@ -31,8 +33,11 @@ import {
 const reportRepository = new ReportRepository(db);
 const policyRepository = new PolicyRuleRepository(db);
 
-const requireIdentity = (slug: string) => {
-  const identity = parseGameBananaSlug(slug);
+const requireIdentity = async (modId: string) => {
+  const identity =
+    parseGameBananaSlug(modId) ??
+    // Legacy desktop compatibility: remove with the catalog retirement (#715).
+    (await resolveLegacyModId(modId));
   if (!identity) {
     throw new ORPCError("BAD_REQUEST", {
       message: "Invalid GameBanana submission ID",
@@ -54,7 +59,7 @@ export const reportsRouter = {
       });
 
       try {
-        const identity = requireIdentity(input.modId);
+        const identity = await requireIdentity(input.modId);
         const submission = await fetchGameBananaSubmissionSnapshot(identity);
         if (!submission) {
           wide?.set("outcomeReason", "mod_not_found");
@@ -143,9 +148,9 @@ export const reportsRouter = {
     .output(ReportResponseSchema.array())
     .handler(async ({ input }) => {
       try {
-        const identity = requireIdentity(input.modId);
+        const identity = await requireIdentity(input.modId);
         return await cache.wrap(
-          `reports:mod:${input.modId}`,
+          `reports:mod:${gameBananaIdentitySlug(identity)}`,
           async () => {
             const reports = await reportRepository.findByIdentity(identity);
             return reports.map(toReportDto);
@@ -153,6 +158,9 @@ export const reportsRouter = {
           CACHE_TTL.REPORT_COUNTS,
         );
       } catch (error) {
+        if (error instanceof ORPCError) {
+          throw error;
+        }
         logger
           .withError(error)
           .withMetadata({ modId: input.modId })
@@ -169,9 +177,9 @@ export const reportsRouter = {
     .output(ReportCountsResponseSchema)
     .handler(async ({ input }) => {
       try {
-        const identity = requireIdentity(input.modId);
+        const identity = await requireIdentity(input.modId);
         return await cache.wrap(
-          `reports:counts:${input.modId}`,
+          `reports:counts:${gameBananaIdentitySlug(identity)}`,
           async () => {
             const total = await reportRepository.getReportCount(identity);
             return { total, verified: 0, unverified: 0, dismissed: 0 };
@@ -179,6 +187,9 @@ export const reportsRouter = {
           CACHE_TTL.REPORT_COUNTS,
         );
       } catch (error) {
+        if (error instanceof ORPCError) {
+          throw error;
+        }
         logger
           .withError(error)
           .withMetadata({ modId: input.modId })

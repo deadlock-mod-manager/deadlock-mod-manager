@@ -1,6 +1,7 @@
 import { ORPCError } from "@orpc/server";
 import { VPK_CONSTANTS } from "@/lib/constants";
 import { wideEventContext } from "@/lib/logger";
+import { withLegacyVpkMods } from "@/services/legacy-client-compat";
 import { ModAnalyser } from "@/services/mod-analyser";
 import { publicProcedure } from "../../lib/orpc";
 import {
@@ -21,7 +22,8 @@ export const vpkRouter = {
         merkleRoot: input.merkleRoot,
       };
       const results = await ModAnalyser.instance.analyseHashes(hashes);
-      return results;
+      // Legacy desktop compatibility: remove with the catalog retirement (#715).
+      return Promise.all(results.map((result) => withLegacyVpkMods(result)));
     }),
   analyseVPK: publicProcedure
     .route({ method: "POST", path: "/v2/vpk-analyse" })
@@ -54,7 +56,8 @@ export const vpkRouter = {
           submissionId: result.matchedVpk?.submissionId,
         });
 
-        return result;
+        // Legacy compatibility: remove with the catalog retirement (#715).
+        return await withLegacyVpkMods(result);
       } catch (error) {
         wide?.set("outcomeReason", "analysis_failed");
         throw error;
