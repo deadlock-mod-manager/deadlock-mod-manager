@@ -329,7 +329,6 @@
 ["types","apps/desktop/src/lib/stats/derive.ts",[["","Tone"]]]
 ["types","apps/desktop/src/lib/store/slices/mods.ts",[["","HeroDetectionProgress"]]]
 ["types","apps/desktop/src/lib/store/slices/mods.ts",[["","IdentityMigration"]]]
-["types","apps/desktop/src/lib/store/slices/mods.ts",[["","ModProgress"]]]
 ["types","apps/desktop/src/lib/store/slices/server-profiles.ts",[["","LastServerJoin"]]]
 ["types","apps/desktop/src/lib/store/slices/settings.ts",[["","GamePresenceHeroOverrides"]]]
 ["types","apps/desktop/src/lib/store/slices/settings.ts",[["","TelemetrySettings"]]]

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { Progress } from "@/types/mods";
 
-export type ModProgress = {
+type ModProgress = {
   percentage: number;
   speed?: number;
 };

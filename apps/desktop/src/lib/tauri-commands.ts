@@ -82,10 +82,6 @@ export const getUpdateTarget = async (): Promise<UpdateTarget> => {
   return await invoke("get_update_target");
 };
 
-export const isFlatpak = async (): Promise<boolean> => {
-  return await invoke("is_flatpak");
-};
-
 export const updateFlatpak = async (url: string): Promise<void> => {
   return await invoke("update_flatpak", { url });
 };

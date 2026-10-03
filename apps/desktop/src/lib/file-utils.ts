@@ -17,12 +17,12 @@ export type DataTransferItemWithEntry = DataTransferItem & {
   webkitGetAsEntry?: () => FileSystemEntry | null;
 };
 
-export type FileWithPath = File & {
+type FileWithPath = File & {
   webkitRelativePath?: string;
 };
 
-export type BrowserFileSource = { type: "browserFile"; file: File };
-export type NativePathSource = {
+type BrowserFileSource = { type: "browserFile"; file: File };
+type NativePathSource = {
   type: "nativePath";
   path: string;
   fileName: string;
@@ -43,7 +43,7 @@ export const MAX_BROWSER_MOD_FILE_BYTES = 64 * 1024 * 1024;
 /**
  * File utility functions
  */
-export const getFileName = (file: File): string =>
+const getFileName = (file: File): string =>
   (file as FileWithPath).webkitRelativePath || file.name;
 
 export const getFileBaseName = (file: File): string => {
