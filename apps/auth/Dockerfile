@@ -22,6 +22,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 # Copy all source code (monorepo structure requires all packages for dependency resolution)
 COPY packages ./packages
 COPY tools ./tools
+COPY scripts ./scripts
 COPY apps/auth ./apps/auth
 
 RUN pnpm install --frozen-lockfile
@@ -69,6 +70,7 @@ COPY --chown=appuser:appuser package.json pnpm-lock.yaml pnpm-workspace.yaml tur
 # Copy built application and dependencies from builder stage with correct ownership
 COPY --chown=appuser:appuser --from=builder /usr/src/app/packages ./packages
 COPY --chown=appuser:appuser --from=builder /usr/src/app/tools ./tools
+COPY --chown=appuser:appuser --from=builder /usr/src/app/scripts ./scripts
 COPY --chown=appuser:appuser --from=builder /usr/src/app/apps/auth ./apps/auth
 
 # Ensure the dist/client directory exists and has correct ownership

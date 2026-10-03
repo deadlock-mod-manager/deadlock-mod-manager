@@ -23,6 +23,7 @@ async function statLink(path) {
 export async function linkClaudeSkills(workspace = root) {
   const source = join(workspace, ".agents", "skills");
   const destination = join(workspace, ".claude", "skills");
+  if (!(await statLink(source))) return;
   const entries = await readdir(source, { withFileTypes: true });
   await mkdir(destination, { recursive: true });
   for (const entry of entries) {
