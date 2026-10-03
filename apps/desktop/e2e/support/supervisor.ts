@@ -72,6 +72,13 @@ const startupFixtureRoutes: readonly FixtureRoute[] = [
   { method: "GET", path: "/custom-settings", status: 200, body: "[]" },
   {
     method: "GET",
+    path: "/v1/assets/heroes",
+    query: { only_active: "true" },
+    status: 200,
+    body: "[]",
+  },
+  {
+    method: "GET",
     path: "/api/v2/relays/health",
     status: 200,
     body: '{"relays":[]}',
