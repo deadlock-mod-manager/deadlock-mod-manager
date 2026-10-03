@@ -7,6 +7,27 @@ use std::path::PathBuf;
 
 const DEADLOCK_APP_ID: u32 = 1422450;
 
+/// Steam build id from the `appmanifest_1422450.acf` next to the install. It
+/// changes on every game update, which is also when Steam rewrites
+/// `gameinfo.gi` and drops our search paths.
+pub fn installed_build_id(game_path: &std::path::Path) -> Option<u64> {
+  let manifest = game_path
+    .parent()?
+    .parent()?
+    .join(format!("appmanifest_{DEADLOCK_APP_ID}.acf"));
+  parse_manifest_build_id(&std::fs::read_to_string(manifest).ok()?)
+}
+
+fn parse_manifest_build_id(manifest: &str) -> Option<u64> {
+  manifest.lines().find_map(|line| {
+    let mut fields = line.split('"').filter(|field| !field.trim().is_empty());
+    match (fields.next(), fields.next()) {
+      (Some(key), Some(value)) if key.eq_ignore_ascii_case("buildid") => value.parse().ok(),
+      _ => None,
+    }
+  })
+}
+
 #[cfg(target_os = "linux")]
 fn flatpak_game_launch_args(additional_args: &str) -> String {
   let additional_args = additional_args.trim();
@@ -313,6 +334,31 @@ impl SteamManager {
 impl Default for SteamManager {
   fn default() -> Self {
     Self::new()
+  }
+}
+
+#[cfg(test)]
+mod manifest_tests {
+  #[test]
+  fn parse_manifest_build_id_reads_the_build_line() {
+    let manifest = "\"AppState\"
+{
+	\"appid\"		\"1422450\"
+	\"buildid\"		\"20481530\"
+}";
+    assert_eq!(super::parse_manifest_build_id(manifest), Some(20481530));
+  }
+
+  #[test]
+  fn parse_manifest_build_id_returns_none_without_a_build_line() {
+    assert_eq!(
+      super::parse_manifest_build_id(
+        "\"AppState\"
+{
+}"
+      ),
+      None
+    );
   }
 }
 

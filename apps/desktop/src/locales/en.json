@@ -2854,6 +2854,32 @@
       "Other": "Other"
     }
   },
+  "gameConfig": {
+    "resetByUpdateTitle": "Deadlock updated and switched your mods off.",
+    "resetByUpdateBody_one": "Steam replaced <file>gameinfo.gi</file>, so your enabled mod won't load until it's re-applied.",
+    "resetByUpdateBody_other": "Steam replaced <file>gameinfo.gi</file>, so your {{count}} enabled mods won't load until they're re-applied.",
+    "detachedTitle": "Deadlock isn't loading your mods.",
+    "detachedBody_one": "<file>gameinfo.gi</file> was changed outside DMM, so your enabled mod is skipped until it's re-applied.",
+    "detachedBody_other": "<file>gameinfo.gi</file> was changed outside DMM, so your {{count}} enabled mods are skipped until they're re-applied.",
+    "updatedTitle": "Deadlock updated.",
+    "updatedBody": "Patches can break mods. If something looks off in game, check My Mods for updates.",
+    "reapply": "Re-apply mods",
+    "reapplying": "Re-applying",
+    "reapplied": "Mods re-applied. They'll load next time you start Deadlock.",
+    "reapplyFailed": "Couldn't re-apply your mods",
+    "patchNotes": "Patch notes",
+    "dismiss": "Dismiss"
+  },
+  "patchNotes": {
+    "title": "Deadlock patch notes",
+    "allOnSteam": "All on Steam",
+    "kindPatch": "Patch notes",
+    "kindAnnouncement": "Announcement",
+    "openOnSteam": "Open on Steam",
+    "read": "Read post",
+    "loadFailed": "Couldn't load the latest posts from Steam.",
+    "empty": "No posts from Valve yet."
+  },
   "debug": {
     "title": "Debug",
     "description": "Debug tools and utilities for development and troubleshooting.",

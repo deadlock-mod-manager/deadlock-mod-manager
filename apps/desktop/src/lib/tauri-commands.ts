@@ -46,6 +46,15 @@ export const getGameInfoStatus = async () => {
   return await invoke("get_gameinfo_status");
 };
 
+export const gameinfoHasModPaths = () =>
+  invoke<boolean>("gameinfo_has_mod_paths");
+
+export const getInstalledBuildId = () =>
+  invoke<number | null>("get_installed_build_id");
+
+export const resyncProfileShards = (profileFolder: string | null) =>
+  invoke<void>("resync_profile_shards", { profileFolder });
+
 export const openGameInfoEditor = async () => {
   return await invoke("open_gameinfo_editor");
 };

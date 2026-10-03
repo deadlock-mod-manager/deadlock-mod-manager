@@ -6,6 +6,7 @@ import { AnnouncementsTicker } from "@/components/dashboard/announcements-ticker
 import { ChangelogRibbon } from "@/components/dashboard/changelog-ribbon";
 import { FeaturedModCard } from "@/components/dashboard/featured-mod-card";
 import { LatestModsCard } from "@/components/dashboard/latest-mods-card";
+import { PatchNotesSection } from "@/components/dashboard/patch-notes-section";
 import { QuickStatsStrip } from "@/components/dashboard/quick-stats-strip";
 import { TrendingCategoryRail } from "@/components/dashboard/trending-category-rail";
 import { WhatsNewCard } from "@/components/dashboard/whats-new-card";
@@ -88,6 +89,8 @@ const Dashboard = () => {
                 />
               ))}
         </div>
+
+        <PatchNotesSection />
 
         <ChangelogRibbon />
       </div>
