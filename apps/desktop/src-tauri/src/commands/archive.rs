@@ -209,9 +209,8 @@ pub(crate) fn persist_prefixed_import(
   mod_id: &str,
   prefixed_vpks: Vec<String>,
 ) -> Result<(), Error> {
-  let mut manifest = crate::mod_manager::vpk_manifest::ProfileVpkManifest::open_for_write(
-    destination_path,
-  )?;
+  let mut manifest =
+    crate::mod_manager::vpk_manifest::ProfileVpkManifest::open_for_write(destination_path)?;
   let original_names: Vec<String> = prefixed_vpks
     .iter()
     .map(|name| {

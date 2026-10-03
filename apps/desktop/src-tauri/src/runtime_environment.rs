@@ -598,9 +598,11 @@ mod tests {
     let configuration = E2eConfiguration::from_file(&world.config_path).unwrap();
 
     assert_eq!(configuration.schema_version, 1);
-    assert!(configuration
-      .state_store_path()
-      .ends_with("app-data/state.json"));
+    assert!(
+      configuration
+        .state_store_path()
+        .ends_with("app-data/state.json")
+    );
     assert_eq!(
       configuration.endpoint(ServiceName::DmmApi),
       "http://127.0.0.1:43199"
@@ -638,9 +640,11 @@ mod tests {
     });
 
     let error = E2eConfiguration::from_file(&world.config_path).unwrap_err();
-    assert!(error
-      .to_string()
-      .contains("roots.appLogs resolves outside roots.world"));
+    assert!(
+      error
+        .to_string()
+        .contains("roots.appLogs resolves outside roots.world")
+    );
   }
 
   #[test]
@@ -681,8 +685,10 @@ mod tests {
     std::fs::copy(&world.config_path, &outside_config).unwrap();
 
     let error = E2eConfiguration::from_file(&outside_config).unwrap_err();
-    assert!(error
-      .to_string()
-      .contains("configuration file resolves outside roots.world"));
+    assert!(
+      error
+        .to_string()
+        .contains("configuration file resolves outside roots.world")
+    );
   }
 }

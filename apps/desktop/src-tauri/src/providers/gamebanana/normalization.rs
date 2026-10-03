@@ -94,7 +94,8 @@ pub fn normalize_profile(
     submission_type,
     submission_id: profile.id.to_string(),
   }
-  .to_slug().ok()?;
+  .to_slug()
+  .ok()?;
 
   let description = if profile.text.is_empty() {
     profile.description.clone()
@@ -305,11 +306,11 @@ fn category(profile: &Profile) -> String {
     profile.root_category.as_ref(),
     profile.category.as_ref(),
   ]
-    .into_iter()
-    .filter_map(|value| value.map(|category| category.name.trim()))
-    .find(|value| !value.is_empty())
-    .unwrap_or("Other")
-    .to_string()
+  .into_iter()
+  .filter_map(|value| value.map(|category| category.name.trim()))
+  .find(|value| !value.is_empty())
+  .unwrap_or("Other")
+  .to_string()
 }
 
 fn normalize_timestamps(added: Option<i64>, updated: Option<i64>) -> (i64, i64) {

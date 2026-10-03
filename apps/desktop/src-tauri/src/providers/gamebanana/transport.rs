@@ -369,10 +369,9 @@ mod tests {
     };
     let transport = GameBananaTransport::new(config).unwrap();
     let cancel = CancellationToken::new();
-    let limited = serve_once(
-      "HTTP/1.1 429 Too Many Requests\r\nRetry-After: 120\r\nContent-Length: 0\r\n\r\n",
-    )
-    .await;
+    let limited =
+      serve_once("HTTP/1.1 429 Too Many Requests\r\nRetry-After: 120\r\nContent-Length: 0\r\n\r\n")
+        .await;
 
     let result = transport
       .get_json::<Value>("profile", limited, &cancel)
