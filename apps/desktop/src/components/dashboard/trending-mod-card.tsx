@@ -7,7 +7,6 @@ import NSFWBlur, { NSFWBadge } from "@/components/mod-browsing/nsfw-blur";
 import AudioPlayerPreview from "@/components/mod-management/audio-player-preview";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { shouldShowNsfwBadgeAlongsideBlurPreview } from "@/lib/nsfw-blur-display";
-import { DASHBOARD_NAVIGATION_TRAIL } from "@/lib/mods/mod-detail-navigation";
 import { prefetchModDetail } from "@/lib/mods/mod-detail-prefetch";
 
 type Props = {
@@ -24,7 +23,7 @@ export const TrendingModCard = ({ mod }: Props) => {
   const handleClick = () => {
     void prefetchModDetail(queryClient, mod.remoteId);
     navigate(`/mods/${mod.remoteId}`, {
-      state: { navigationTrail: DASHBOARD_NAVIGATION_TRAIL },
+      state: { collection: "dashboard" },
     });
   };
 

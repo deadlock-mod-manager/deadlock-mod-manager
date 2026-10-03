@@ -49,7 +49,6 @@ import {
   SortType,
   TimePeriod,
 } from "@/lib/constants";
-import { getModsCollectionNavigationTrail } from "@/lib/mods/mod-detail-navigation";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import type {
@@ -65,7 +64,6 @@ import {
 } from "@/lib/utils";
 import type { CatalogQuery } from "@/types/generated/CatalogQuery";
 import type { SubmissionType } from "@/types/generated/SubmissionType";
-import { ChevronLeft, ChevronRight } from "@deadlock-mods/ui/icons";
 
 const SEARCH_KEYS = ["name", "description", "author"];
 const PAGE_SIZE = 50;
@@ -223,7 +221,6 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     : resolveContentType(modsFilters.contentType, isCustomMapsEnabled);
   const pageKey = mapsOnly ? MAPS_STORE_PAGE_KEY : MODS_STORE_PAGE_KEY;
   const scrollKey = mapsOnly ? "/maps" : "/mods";
-  const navigationTrail = getModsCollectionNavigationTrail(mapsOnly === true);
   const paginationEnabled =
     modsStorePaginationEnabled ?? platform() === "linux";
   const [page, setPage] = useState(() => getPersistedPage(pageKey));
@@ -555,7 +552,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
                     <ModCard
                       key={mod.id}
                       mod={mod}
-                      navigationTrail={navigationTrail}
+                      collection={mapsOnly ? "maps" : "mods"}
                     />
                   ))}
                 </div>
@@ -593,10 +590,10 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
                     <div className='grid grid-cols-1 gap-4 px-1 pr-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
                       {modRows[virtualRow.index]?.map((mod) => (
                         <ModCard
-                      key={mod.id}
-                      mod={mod}
-                      navigationTrail={navigationTrail}
-                    />
+                          key={mod.id}
+                          mod={mod}
+                          collection={mapsOnly ? "maps" : "mods"}
+                        />
                       ))}
                     </div>
                   </div>

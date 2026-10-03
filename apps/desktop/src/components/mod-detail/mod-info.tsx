@@ -15,7 +15,6 @@ import {
 import {
   Calendar,
   CalendarPlus,
-  ChevronRight,
   Download,
   Heart,
   Package,
@@ -26,16 +25,14 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { HeroIcon } from "@/components/heroes/hero-icon";
 import { getModCategoryDisplayName } from "@/lib/constants";
-import {
-  getCollectionNavigationTrail,
-  type NavigationTrail,
-} from "@/lib/mods/mod-detail-navigation";
+import type { ModsCollection } from "@/lib/mods/mod-detail-navigation";
 import {
   type ResolvedModHero,
   resolveModHero,
 } from "@/lib/mods/hero-resolution";
 import { usePersistedStore } from "@/lib/store";
 import { DateDisplay } from "../date-display";
+import { AuthorStat } from "./author-stat";
 import { HeroOverridePicker } from "./hero-override-picker";
 import { HeroSourceBadge } from "./hero-source-badge";
 
@@ -44,7 +41,7 @@ interface ModInfoProps {
   hasHero?: boolean;
   activeArchiveNames?: Set<string>;
   totalDownloads?: number;
-  navigationTrail?: NavigationTrail;
+  collection: ModsCollection;
 }
 
 const formatNumber = (value: number) => new Intl.NumberFormat().format(value);
@@ -55,7 +52,7 @@ export const ModInfo = ({
   hasHero = false,
   activeArchiveNames = EMPTY_ARCHIVE_NAMES,
   totalDownloads = 0,
-  navigationTrail,
+  collection,
 }: ModInfoProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -104,10 +101,7 @@ export const ModInfo = ({
                 name={mod.author}
                 onSelect={() =>
                   navigate(`/authors/${mod.modAuthorId}`, {
-                    state: {
-                      navigationTrail:
-                        getCollectionNavigationTrail(navigationTrail),
-                    },
+                    state: { collection },
                   })
                 }
                 profileLabel={t("authorPage.viewProfile")}
@@ -257,46 +251,6 @@ interface PrimaryStatProps {
   label: string;
   value: React.ReactNode;
 }
-
-interface AuthorStatProps {
-  icon: React.ReactNode;
-  label: string;
-  name: string;
-  onSelect: () => void;
-  profileLabel: string;
-}
-
-const AuthorStat = ({
-  icon,
-  label,
-  name,
-  onSelect,
-  profileLabel,
-}: AuthorStatProps) => {
-  return (
-    <button
-      aria-label={`${profileLabel}: ${name}`}
-      className='group flex w-full items-center gap-3 rounded-lg border border-border/50 bg-muted/30 px-3 py-2.5 text-left transition-colors hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background'
-      onClick={onSelect}
-      type='button'>
-      <span className='flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-background/80 text-muted-foreground transition-colors group-hover:text-foreground'>
-        {icon}
-      </span>
-      <span className='flex min-w-0 flex-1 flex-col'>
-        <span className='text-muted-foreground text-xs uppercase tracking-wide'>
-          {label}
-        </span>
-        <span className='truncate font-medium text-foreground text-sm'>
-          {name}
-        </span>
-      </span>
-      <span className='flex shrink-0 items-center gap-1 text-muted-foreground text-xs transition-colors group-hover:text-foreground'>
-        {profileLabel}
-        <ChevronRight className='h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5' />
-      </span>
-    </button>
-  );
-};
 
 const PrimaryStat = ({ icon, label, value }: PrimaryStatProps) => (
   <div className='group flex items-center gap-3 rounded-lg border border-border/50 bg-muted/30 px-3 py-2.5 transition-colors hover:bg-muted/60'>

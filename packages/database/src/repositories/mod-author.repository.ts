@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, type SQL } from "drizzle-orm";
 import type { Database } from "../client";
 import type { Mod, ModAuthor, NewModAuthor } from "../schema/mods";
 import { modAuthors, mods } from "../schema/mods";
@@ -11,40 +11,35 @@ export interface ModAuthorProfile {
 export class ModAuthorRepository {
   constructor(private readonly db: Database) {}
 
-  async findProfileById(id: string): Promise<ModAuthorProfile | null> {
-    const [authors, authorMods] = await Promise.all([
-      this.db.select().from(modAuthors).where(eq(modAuthors.id, id)).limit(1),
-      this.db
-        .select()
-        .from(mods)
-        .where(
-          and(
-            eq(mods.modAuthorId, id),
-            eq(mods.isBlacklisted, false),
-            eq(mods.isTrashed, false),
-          ),
-        )
-        .orderBy(desc(mods.remoteUpdatedAt)),
-    ]);
-    const author = authors[0];
-    return author ? { author, mods: authorMods } : null;
+  findProfileById(id: string): Promise<ModAuthorProfile | null> {
+    return this.findProfile(eq(modAuthors.id, id));
   }
 
-  async findProfileByProviderRemoteId(
+  findProfileByProviderRemoteId(
     provider: string,
     remoteId: string,
   ): Promise<ModAuthorProfile | null> {
-    const [author] = await this.db
-      .select()
-      .from(modAuthors)
-      .where(
-        and(
-          eq(modAuthors.provider, provider),
-          eq(modAuthors.remoteId, remoteId),
-        ),
-      )
-      .limit(1);
-    return author ? this.findProfileById(author.id) : null;
+    return this.findProfile(
+      eq(modAuthors.provider, provider),
+      eq(modAuthors.remoteId, remoteId),
+    );
+  }
+
+  private async findProfile(
+    ...conditions: SQL[]
+  ): Promise<ModAuthorProfile | null> {
+    const profile = await this.db.query.modAuthors.findFirst({
+      where: and(...conditions),
+      with: {
+        mods: {
+          where: and(eq(mods.isBlacklisted, false), eq(mods.isTrashed, false)),
+          orderBy: desc(mods.remoteUpdatedAt),
+        },
+      },
+    });
+    if (!profile) return null;
+    const { mods: authorMods, ...author } = profile;
+    return { author, mods: authorMods };
   }
 
   async upsert(author: NewModAuthor): Promise<ModAuthor> {

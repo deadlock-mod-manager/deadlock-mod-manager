@@ -1,7 +1,10 @@
 import { ProviderError } from "@deadlock-mods/common";
 import type { NewModAuthor } from "@deadlock-mods/database";
 import { z } from "zod";
-import { GAME_BANANA_BASE_URL } from "@/providers/game-banana/constants";
+import {
+  DEADLOCK_GAME_ID,
+  GAME_BANANA_BASE_URL,
+} from "@/providers/game-banana/constants";
 import { buildModAuthor } from "@/providers/game-banana/utils";
 
 const memberProfileSchema = z
@@ -36,7 +39,7 @@ const hasDeadlockSubmission = async (
 ): Promise<boolean> => {
   const url = new URL(`${GAME_BANANA_BASE_URL}/${model}/Index`);
   url.searchParams.set("_nPerpage", "1");
-  url.searchParams.set("_aFilters[Generic_Game]", "20948");
+  url.searchParams.set("_aFilters[Generic_Game]", DEADLOCK_GAME_ID.toString());
   url.searchParams.set("_aFilters[Generic_Submitter]", remoteId);
   const response = await fetcher(url, { signal: AbortSignal.timeout(10_000) });
   if (!response.ok) {

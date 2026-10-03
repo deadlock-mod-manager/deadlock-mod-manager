@@ -1,18 +1,14 @@
 import type {
-  ModAuthor,
+  ModAuthorRepository,
   ModAuthorProfile,
   NewModAuthor,
 } from "@deadlock-mods/database";
 import { parseModAuthorLookup } from "@/lib/mod-author-lookup";
 
-export interface ModAuthorProfileStore {
-  findProfileById(id: string): Promise<ModAuthorProfile | null>;
-  findProfileByProviderRemoteId(
-    provider: string,
-    remoteId: string,
-  ): Promise<ModAuthorProfile | null>;
-  upsert(author: NewModAuthor): Promise<ModAuthor>;
-}
+type ModAuthorProfileStore = Pick<
+  ModAuthorRepository,
+  "findProfileById" | "findProfileByProviderRemoteId" | "upsert"
+>;
 
 type FetchGameBananaMember = (remoteId: string) => Promise<NewModAuthor | null>;
 

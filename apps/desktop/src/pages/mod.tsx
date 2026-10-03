@@ -5,9 +5,9 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { ArrowLeft, RefreshCw, Settings, Trash } from "@deadlock-mods/ui/icons";
 import { Warning } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useLocation, useNavigate, useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import FavoriteButton from "@/components/mod-browsing/favorite-button";
 import ModButton from "@/components/mod-browsing/mod-button";
 import { InstalledFilesDisplay } from "@/components/mod-detail/installed-files-display";
@@ -34,6 +34,7 @@ import { BrokenModButton } from "@/components/reports/report-button";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useMod } from "@/hooks/use-mod";
+import { useModDetailNavigation } from "@/hooks/use-mod-detail-navigation";
 import { useResolvedDependencies } from "@/hooks/use-mod-dependencies";
 import { useModOptions } from "@/hooks/use-mod-options";
 import { useModDownloads } from "@/hooks/use-mod-downloads";
@@ -43,10 +44,6 @@ import { useScrollBackButton } from "@/hooks/use-scroll-back-button";
 import useUninstall from "@/hooks/use-uninstall";
 import { getErrorMessage } from "@/lib/errors";
 import { isLocalMod } from "@/lib/mods/installed-helpers";
-import {
-  getBackNavigation,
-  type ModDetailNavigationState,
-} from "@/lib/mods/mod-detail-navigation";
 import { usePersistedStore } from "@/lib/store";
 import { useCheckUpdates } from "@/hooks/use-check-updates";
 import { isModOutdated, isModStale } from "@/lib/utils";
@@ -55,43 +52,18 @@ import { ModStatus } from "@/types/mods";
 const Mod = () => {
   const params = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
   const { t } = useTranslation();
-  const navigationState: ModDetailNavigationState | null = location.state;
-  const navigationTrail = navigationState?.navigationTrail;
-  const backNavigation = getBackNavigation(navigationTrail);
-  const backLabel =
-    backNavigation.kind === "author"
-      ? t("modDetail.backToAuthorMods", {
-          author: backNavigation.label,
-        })
-      : backNavigation.kind === "library"
-        ? t("modDetail.backToLibrary")
-        : backNavigation.kind === "maps"
-          ? t("modDetail.backToMaps")
-          : backNavigation.kind === "favorites"
-            ? t("modDetail.backToFavorites")
-            : backNavigation.kind === "dashboard"
-              ? t("modDetail.backToDashboard")
-              : t("mods.backToMods");
+  const { collection, backLabel, goBack } = useModDetailNavigation();
   const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const { data: mod, error, isLoading } = useMod(params.id);
 
-  const goBack = useCallback(() => {
-    navigate(backNavigation.path);
-  }, [backNavigation.path, navigate]);
-
-  const handleBackClick = useCallback(() => {
-    goBack();
-  }, [goBack]);
-
   useScrollBackButton({
     threshold: 100,
     enabled: true,
     scrollContainerRef,
-    onBackClick: handleBackClick,
+    onBackClick: goBack,
   });
 
   const { availableFiles } = useModDownloads({
@@ -301,7 +273,7 @@ const Mod = () => {
               hasHero={hasHero}
               mod={mod}
               activeArchiveNames={modOptions.activeArchiveNames}
-              navigationTrail={navigationTrail}
+              collection={collection}
               totalDownloads={modOptions.downloads.length}
             />
             {mod.metadata?.donationLinks &&

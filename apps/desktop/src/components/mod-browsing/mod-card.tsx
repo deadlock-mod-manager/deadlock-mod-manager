@@ -17,10 +17,9 @@ import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-war
 import { useThemeOverride } from "@/components/providers/theme-overrides";
 import ModCardSkeleton from "@/components/skeletons/mod-card";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
-import {
-  getBackNavigation,
-  MODS_STORE_NAVIGATION_TRAIL,
-  type NavigationTrail,
+import type {
+  AuthorNavigationTarget,
+  ModsCollection,
 } from "@/lib/mods/mod-detail-navigation";
 import { prefetchModDetail } from "@/lib/mods/mod-detail-prefetch";
 import { usePersistedStore } from "@/lib/store";
@@ -38,15 +37,12 @@ import { NSFWBlur } from "./nsfw-blur";
 interface ModCardProps {
   mod?: ModDto;
   readOnly?: boolean;
-  navigationTrail?: NavigationTrail;
+  collection?: ModsCollection;
+  author?: AuthorNavigationTarget;
 }
 
 const ModCard = memo((props: ModCardProps) => {
-  const {
-    mod,
-    readOnly = false,
-    navigationTrail = MODS_STORE_NAVIGATION_TRAIL,
-  } = props;
+  const { mod, readOnly = false, collection = "mods", author } = props;
   const { t } = useTranslation();
   const localMod = usePersistedStore((state) =>
     state.localMods.find((m) => m.remoteId === mod?.remoteId),
@@ -65,14 +61,12 @@ const ModCard = memo((props: ModCardProps) => {
   const openModDetail = () => {
     void prefetchModDetail(queryClient, mod.remoteId);
     navigate(`/mods/${mod.remoteId}`, {
-      state: { navigationTrail },
+      state: { collection, author },
     });
   };
 
-  const currentNavigation = getBackNavigation(navigationTrail);
   const modAuthorId = mod.modAuthorId;
-  const showAuthorLink =
-    !readOnly && modAuthorId !== null && currentNavigation.kind !== "author";
+  const showAuthorLink = !readOnly && modAuthorId !== null && !author;
 
   const cardContent = (
     <Card
@@ -167,7 +161,7 @@ const ModCard = memo((props: ModCardProps) => {
                     onClick={(event) => {
                       event.stopPropagation();
                       navigate(`/authors/${modAuthorId}`, {
-                        state: { navigationTrail },
+                        state: { collection },
                       });
                     }}
                     title={t("mods.showMoreByAuthor", { author: mod.author })}

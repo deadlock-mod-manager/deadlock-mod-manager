@@ -631,7 +631,7 @@ describe("buildMetadata", () => {
       isMap: true,
       donationMethods: [],
     });
-    expect(result?.mapName).toBe("my_arena");
+    expect(result).toEqual({ mapName: "my_arena" });
   });
 
   it("returns donationLinks when present", () => {

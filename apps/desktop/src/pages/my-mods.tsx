@@ -97,7 +97,6 @@ import {
   matchesHeroFilter,
   resolveLocalModHero,
 } from "@/lib/mods/hero-resolution";
-import { MODS_LIBRARY_NAVIGATION_TRAIL } from "@/lib/mods/mod-detail-navigation";
 import { usePersistedStore } from "@/lib/store";
 import type {
   AudioQuickFilter,
@@ -211,7 +210,7 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
 
   const openModDetail = () =>
     navigate(`/mods/${mod.remoteId}`, {
-      state: { navigationTrail: MODS_LIBRARY_NAVIGATION_TRAIL },
+      state: { collection: "library" },
     });
 
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
@@ -363,7 +362,7 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
 
   const openModDetail = () =>
     navigate(`/mods/${mod.remoteId}`, {
-      state: { navigationTrail: MODS_LIBRARY_NAVIGATION_TRAIL },
+      state: { collection: "library" },
     });
 
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
