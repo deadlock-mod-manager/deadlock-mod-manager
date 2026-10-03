@@ -45,6 +45,11 @@ export class GitHubReleasesService {
   } | null {
     const name = filename.toLowerCase();
 
+    // Standalone downloads are offered on GitHub, outside the installer-only website flow.
+    if (name.endsWith("-portable.exe") || name.endsWith("-portable.exe.sig")) {
+      return null;
+    }
+
     // Windows patterns
     if (name.endsWith(".msi.sig")) {
       const arch = name.includes("arm64") ? "arm64" : "x64";
