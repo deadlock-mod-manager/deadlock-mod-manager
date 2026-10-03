@@ -200,9 +200,7 @@ const redownload = (
       },
       onProgress: (progress) => {
         usePersistedStore.getState().setModProgress(mod.remoteId, progress);
-        onFraction?.(
-          progress.total > 0 ? progress.progressTotal / progress.total : 0,
-        );
+        onFraction?.(progress.percentage / 100);
       },
       onComplete: () => {
         usePersistedStore
