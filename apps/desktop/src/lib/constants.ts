@@ -108,6 +108,9 @@ export enum TimePeriod {
   PAST_YEAR = "past year",
 }
 
+export const timePeriodLabelKey = (period: TimePeriod) =>
+  `timePeriod.${period.replaceAll(/[\s/]+/g, "").toLowerCase()}`;
+
 export const UPDATED_RECENTLY_DAYS = 3;
 export const UPDATED_RECENTLY_MS = UPDATED_RECENTLY_DAYS * 24 * 60 * 60 * 1000;
 export const UPDATED_RECENTLY_THRESHOLD = new Date("2026-02-07T17:00:00Z");

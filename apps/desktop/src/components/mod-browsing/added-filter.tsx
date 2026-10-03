@@ -36,6 +36,10 @@ const ADDED_PERIODS: AddedPeriod[] = [
   "custom",
 ];
 
+// Label column + control column, shared by the rows in the filters menu.
+export const FILTER_ROW_CLASS =
+  "grid grid-cols-[4.5rem_minmax(0,1fr)] items-center gap-x-3 gap-y-2";
+
 // Deadlock mods on GameBanana start in 2024; no need to offer earlier years.
 const FIRST_MONTH = new Date(2024, 0);
 
@@ -116,12 +120,16 @@ const AddedFilter = ({ value, onChange }: AddedFilterProps) => {
   return (
     // Keep the dropdown menu's typeahead and arrow-key navigation away from
     // the date pickers.
-    <div className='flex flex-col gap-2' onKeyDown={(e) => e.stopPropagation()}>
-      <Label className='font-medium text-sm'>{t("filters.added")}</Label>
+    <div className={FILTER_ROW_CLASS} onKeyDown={(e) => e.stopPropagation()}>
+      <Label
+        className='font-normal text-muted-foreground text-sm'
+        htmlFor='addedPeriod'>
+        {t("filters.added")}
+      </Label>
       <Select
         onValueChange={(period: AddedPeriod) => onChange({ ...value, period })}
         value={value.period}>
-        <SelectTrigger className='w-full'>
+        <SelectTrigger className='h-8 w-full' id='addedPeriod'>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -133,7 +141,7 @@ const AddedFilter = ({ value, onChange }: AddedFilterProps) => {
         </SelectContent>
       </Select>
       {value.period === "custom" && (
-        <div className='grid grid-cols-2 gap-2'>
+        <div className='col-span-2 grid grid-cols-2 gap-2'>
           <DatePicker
             id='addedFrom'
             label={t("filters.addedFrom")}

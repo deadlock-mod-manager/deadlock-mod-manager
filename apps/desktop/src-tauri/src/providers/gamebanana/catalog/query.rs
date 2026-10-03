@@ -47,6 +47,9 @@ pub struct CatalogQuery {
   pub added_before: Option<i64>,
   pub favorites: Vec<String>,
   pub include_wips: bool,
+  /// Restricts results to one submission type. Selecting `Wip` returns WIPs
+  /// regardless of `include_wips`.
+  pub submission_type: Option<SubmissionType>,
   #[ts(skip)]
   pub excluded_slugs: Vec<String>,
   pub sort: CatalogSort,
@@ -126,9 +129,16 @@ fn filtered_query<'a>(
   let mut statement = submission::table
     .filter(submission::is_tombstoned.eq(false))
     .into_boxed();
-  if !query.include_wips {
-    statement =
-      statement.filter(submission::submission_type.ne(submission_type_name(SubmissionType::Wip)));
+  match query.submission_type {
+    Some(submission_type) => {
+      statement =
+        statement.filter(submission::submission_type.eq(submission_type_name(submission_type)));
+    }
+    None if !query.include_wips => {
+      statement =
+        statement.filter(submission::submission_type.ne(submission_type_name(SubmissionType::Wip)));
+    }
+    None => {}
   }
   if let Some(search) = search {
     statement = statement.filter(
@@ -360,8 +370,8 @@ impl TryFrom<SubmissionRow> for CatalogRecord {
 #[cfg(test)]
 mod tests {
   use super::{CatalogQuery, CatalogSort};
-  use crate::providers::SubmissionRef;
   use crate::providers::gamebanana::catalog::{Catalog, CatalogRecord};
+  use crate::providers::{SubmissionRef, SubmissionType};
   use tempfile::tempdir;
 
   fn record(slug: &str, name: &str, category: &str, hero: Option<&str>) -> CatalogRecord {
@@ -491,6 +501,39 @@ mod tests {
       .unwrap();
     assert_eq!(stored.development_state.as_deref(), Some("In Development"));
     assert_eq!(stored.completion_percentage, Some(40));
+  }
+
+  #[tokio::test]
+  async fn submission_type_restricts_results_to_one_type() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.db"), 1)
+      .await
+      .unwrap();
+    catalog
+      .upsert_records(vec![
+        record("10", "Mod", "Skins", None),
+        record("snd-10", "Sound", "VOs", None),
+        record("wip-10", "Wip", "Skins", None),
+      ])
+      .await
+      .unwrap();
+
+    for (submission_type, slug) in [
+      (SubmissionType::Mod, "10"),
+      (SubmissionType::Sound, "snd-10"),
+      (SubmissionType::Wip, "wip-10"),
+    ] {
+      let page = catalog
+        .query(CatalogQuery {
+          submission_type: Some(submission_type),
+          page_size: 10,
+          ..CatalogQuery::default()
+        })
+        .await
+        .unwrap();
+      assert_eq!(page.total, 1, "{submission_type:?}");
+      assert_eq!(page.items[0].submission.to_slug().unwrap(), slug);
+    }
   }
 
   #[tokio::test]

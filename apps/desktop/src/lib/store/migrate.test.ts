@@ -220,7 +220,7 @@ describe("safeMigrate", () => {
   it("LATEST_VERSION matches the highest step target", () => {
     const max = Math.max(...MIGRATION_STEPS.map((s) => s.to));
     expect(LATEST_VERSION).toBe(max);
-    expect(LATEST_VERSION).toBe(26);
+    expect(LATEST_VERSION).toBe(27);
   });
 
   it("v25 (themes switch): drops the leftover enabledPlugins.themes entry", () => {
@@ -287,8 +287,8 @@ describe("safeMigrate", () => {
       };
       const result = safeMigrate(state, 14) as Record<string, unknown>;
       const filters = result.modsFilters as Record<string, unknown>;
-      expect(filters.audioQuickFilter).toBe("exclude");
-      expect(filters.mapQuickFilter).toBe("exclude");
+      // v27 then folds the "exclude" quick filters into the Mods tab.
+      expect(filters.contentType).toBe("mod");
       expect(filters.hideAudio).toBeUndefined();
       expect(filters.hideMap).toBeUndefined();
     });
@@ -299,8 +299,26 @@ describe("safeMigrate", () => {
       };
       const result = safeMigrate(state, 14) as Record<string, unknown>;
       const filters = result.modsFilters as Record<string, unknown>;
-      expect(filters.audioQuickFilter).toBe("only");
-      expect(filters.mapQuickFilter).toBe("off");
+      expect(filters.contentType).toBe("sound");
+    });
+
+    it("v27 (content type): turns an only-quick-filter into its tab", () => {
+      const mapsOnly = safeMigrate(
+        { modsFilters: { audioQuickFilter: "off", mapQuickFilter: "only" } },
+        26,
+      ) as Record<string, unknown>;
+      expect(mapsOnly.modsFilters).toEqual({ contentType: "map" });
+
+      const alreadySet = safeMigrate(
+        {
+          modsFilters: {
+            contentType: "wip",
+            audioQuickFilter: "only",
+          },
+        },
+        26,
+      ) as Record<string, unknown>;
+      expect(alreadySet.modsFilters).toEqual({ contentType: "wip" });
     });
 
     it("v23 (telemetry settings): adds default telemetrySettings when missing", () => {

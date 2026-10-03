@@ -28,6 +28,7 @@ import {
 } from "react";
 import { platform } from "@tauri-apps/plugin-os";
 import { useTranslation } from "react-i18next";
+import ContentTypeTabs from "@/components/mod-browsing/content-type-tabs";
 import ModCard from "@/components/mod-browsing/mod-card";
 import SearchBar from "@/components/mod-browsing/search-bar";
 import SearchBarSkeleton from "@/components/mod-browsing/search-bar-skeleton";
@@ -51,9 +52,8 @@ import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import type {
   AddedFilter,
-  AudioQuickFilter,
+  ContentType,
   FilterMode,
-  MapQuickFilter,
 } from "@/lib/store/slices/ui";
 import {
   cn,
@@ -62,6 +62,7 @@ import {
   isAddedFilterActive,
 } from "@/lib/utils";
 import type { CatalogQuery } from "@/types/generated/CatalogQuery";
+import type { SubmissionType } from "@/types/generated/SubmissionType";
 import { ChevronLeft, ChevronRight } from "@deadlock-mods/ui/icons";
 
 const SEARCH_KEYS = ["name", "description", "author"];
@@ -70,6 +71,21 @@ const MODS_STORE_PAGE_KEY = "/mods:page";
 const MAPS_STORE_PAGE_KEY = "/maps:page";
 const MODS_STORE_PAGINATION_SETTING_ID = "mods-store-pagination";
 const MOD_ROW_ESTIMATED_HEIGHT = 340;
+
+const CONTENT_SUBMISSION_TYPE = {
+  mod: "mod",
+  sound: "sound",
+  map: "mod",
+  wip: "wip",
+} satisfies Record<ContentType, SubmissionType>;
+
+// Without the custom-maps feature there is no Maps tab, so a stored "map"
+// falls back to Mods (where maps stay mixed in).
+const resolveContentType = (
+  stored: ContentType | undefined,
+  isCustomMapsEnabled: boolean,
+): ContentType =>
+  stored === "map" && !isCustomMapsEnabled ? "mod" : (stored ?? "mod");
 
 const catalogSort = (sort: SortType): CatalogQuery["sort"] => {
   switch (sort) {
@@ -190,7 +206,6 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
   const {
     selectedCategories,
     selectedHeroes,
-    audioQuickFilter,
     hideNSFW,
     hideOutdated,
     timePeriod = TimePeriod.ALL_TIME,
@@ -201,11 +216,9 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     currentSort,
   } = modsFilters;
   const favorites = usePersistedStore((state) => state.favorites);
-  const effectiveMapQuickFilter: MapQuickFilter = mapsOnly
-    ? "only"
-    : isCustomMapsEnabled
-      ? modsFilters.mapQuickFilter
-      : "off";
+  const contentType: ContentType = mapsOnly
+    ? "map"
+    : resolveContentType(modsFilters.contentType, isCustomMapsEnabled);
   const pageKey = mapsOnly ? MAPS_STORE_PAGE_KEY : MODS_STORE_PAGE_KEY;
   const scrollKey = mapsOnly ? "/maps" : "/mods";
   const paginationEnabled =
@@ -226,11 +239,15 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
       categories: selectedCategories,
       heroes: selectedHeroes,
       excludeFilters: filterMode === "exclude",
-      isAudio: audioQuickFilter === "off" ? null : audioQuickFilter === "only",
+      // Sounds are picked by submissionType; maps only by the Maps tab, and
+      // Mods leaves them out once that tab exists.
+      isAudio: null,
       isMap:
-        effectiveMapQuickFilter === "off"
-          ? null
-          : effectiveMapQuickFilter === "only",
+        contentType === "map"
+          ? true
+          : contentType === "mod" && isCustomMapsEnabled
+            ? false
+            : null,
       hideNsfw: nsfwSettings.hideNSFW || hideNSFW,
       hideObsolete: hideOutdated,
       updatedAfter,
@@ -238,20 +255,21 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
       addedBefore: addedRange.before,
       favorites: showFavoritesOnly ? favorites : [],
       includeWips: false,
+      submissionType: CONTENT_SUBMISSION_TYPE[contentType],
       sort: catalogSort(currentSort),
       page: paginationEnabled ? page : 0,
       pageSize: paginationEnabled ? PAGE_SIZE : 5_000,
     };
   }, [
     addedFilter,
-    audioQuickFilter,
+    contentType,
     currentSort,
     debouncedSearchQuery,
-    effectiveMapQuickFilter,
     favorites,
     filterMode,
     hideNSFW,
     hideOutdated,
+    isCustomMapsEnabled,
     nsfwSettings.hideNSFW,
     page,
     paginationEnabled,
@@ -260,10 +278,15 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     showFavoritesOnly,
     timePeriod,
   ]);
+  // Querying with a deferred value keeps the current results on screen while a
+  // new filter/search/page loads, instead of suspending back to the skeleton.
+  // Only the very first load (nothing to show yet) hits the Suspense fallback.
+  const deferredCatalogQuery = useDeferredValue(catalogQuery);
+  const isUpdatingResults = deferredCatalogQuery !== catalogQuery;
   const { data: catalogPage, error } = useSuspenseQuery({
-    queryKey: ["mods", "gamebanana-direct", catalogQuery],
+    queryKey: ["mods", "gamebanana-direct", deferredCatalogQuery],
     queryFn: (): Promise<DirectCatalogPage> =>
-      queryGameBananaCatalog(catalogQuery),
+      queryGameBananaCatalog(deferredCatalogQuery),
     staleTime: STALE_TIME_API,
     retry: 3,
     refetchInterval: (query) => (query.state.data?.stale ? 3_000 : false),
@@ -318,8 +341,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     () =>
       JSON.stringify({
         filterMode,
-        audioQuickFilter,
-        mapQuickFilter: effectiveMapQuickFilter,
+        contentType,
         hideNSFW,
         hideOutdated,
         query,
@@ -332,8 +354,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     [
       addedFilter,
       filterMode,
-      audioQuickFilter,
-      effectiveMapQuickFilter,
+      contentType,
       hideNSFW,
       hideOutdated,
       query,
@@ -405,14 +426,6 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     (heroes: string[]) => updateModsFilters({ selectedHeroes: heroes }),
     [updateModsFilters],
   );
-  const handleAudioQuickFilterChange = useCallback(
-    (value: AudioQuickFilter) => updateModsFilters({ audioQuickFilter: value }),
-    [updateModsFilters],
-  );
-  const handleMapQuickFilterChange = useCallback(
-    (value: MapQuickFilter) => updateModsFilters({ mapQuickFilter: value }),
-    [updateModsFilters],
-  );
   const handleHideNSFWChange = useCallback(
     (hideNSFW: boolean) => updateModsFilters({ hideNSFW }),
     [updateModsFilters],
@@ -440,8 +453,6 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
   const hasActiveFilters =
     selectedCategories.length > 0 ||
     selectedHeroes.length > 0 ||
-    audioQuickFilter !== "off" ||
-    effectiveMapQuickFilter !== "off" ||
     hideNSFW ||
     hideOutdated ||
     showFavoritesOnly ||
@@ -458,8 +469,6 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
         onCategoriesChange={handleCategoriesChange}
         onFilterModeChange={handleFilterModeChange}
         onHeroesChange={handleHeroesChange}
-        onAudioQuickFilterChange={handleAudioQuickFilterChange}
-        onMapQuickFilterChange={handleMapQuickFilterChange}
         onHideNSFWChange={handleHideNSFWChange}
         onHideOutdatedChange={handleHideOutdatedChange}
         query={query}
@@ -467,15 +476,12 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
         selectedHeroes={selectedHeroes}
         setQuery={setQuery}
         setSortType={setSortType}
-        audioQuickFilter={audioQuickFilter}
-        mapQuickFilter={effectiveMapQuickFilter}
         hideNSFW={hideNSFW}
         hideOutdated={hideOutdated}
         sortType={sortType}
         showFavoritesFilter={!mapsOnly}
         showFavoritesOnly={showFavoritesOnly}
         onShowFavoritesOnlyChange={handleShowFavoritesOnlyChange}
-        hideMapFilter={mapsOnly || !isCustomMapsEnabled}
         addedFilter={addedFilter}
         onAddedFilterChange={handleAddedFilterChange}
       />
@@ -489,84 +495,105 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
           </AlertDescription>
         </Alert>
       ) : null}
-      {filteredResults.length === 0 ? (
-        <Empty className='py-12'>
-          <EmptyHeader>
-            <EmptyMedia variant='default'>
-              <MagnifyingGlass className='h-16 w-16' />
-            </EmptyMedia>
-            <EmptyTitle>{t("mods.noModsFound")}</EmptyTitle>
-            <EmptyDescription>
-              {query.trim() || hasActiveFilters
-                ? t("mods.noModsMatchFilters")
-                : t("mods.noModsAvailable")}
-            </EmptyDescription>
-            {hasActiveFilters && (
-              <EmptyDescription className='text-xs'>
-                {t("mods.emptyClearFilters")}
+      <div
+        aria-busy={isUpdatingResults}
+        className='relative flex min-h-0 flex-1 flex-col'>
+        <div
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute inset-x-0 -top-2 z-10 h-0.5 overflow-hidden rounded-full opacity-0 transition-opacity duration-200",
+            isUpdatingResults && "opacity-100 delay-150",
+          )}>
+          <div className='h-full w-1/3 animate-results-loading rounded-full bg-primary/70 motion-reduce:w-full motion-reduce:animate-none motion-reduce:bg-primary/40' />
+        </div>
+        {filteredResults.length === 0 ? (
+          <Empty
+            className={cn(
+              "py-12 transition-opacity duration-200",
+              isUpdatingResults && "opacity-50 delay-150",
+            )}>
+            <EmptyHeader>
+              <EmptyMedia variant='default'>
+                <MagnifyingGlass className='h-16 w-16' />
+              </EmptyMedia>
+              <EmptyTitle>{t("mods.noModsFound")}</EmptyTitle>
+              <EmptyDescription>
+                {query.trim() || hasActiveFilters
+                  ? t("mods.noModsMatchFilters")
+                  : t("mods.noModsAvailable")}
               </EmptyDescription>
-            )}
-          </EmptyHeader>
-        </Empty>
-      ) : (
-        <div className='min-h-0 flex-1 overflow-auto' ref={parentRef}>
-          {paginationEnabled ? (
-            <div className='flex flex-col gap-4 px-1 pb-24 pr-2'>
-              {totalPages > 1 && (
-                <ModsPagination
-                  className='mb-4'
-                  onPageChange={handlePageChange}
-                  page={page}
-                  totalPages={totalPages}
-                />
+              {hasActiveFilters && (
+                <EmptyDescription className='text-xs'>
+                  {t("mods.emptyClearFilters")}
+                </EmptyDescription>
               )}
-              <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
-                {displayedMods.map((mod) => (
-                  <ModCard key={mod.id} mod={mod} />
+            </EmptyHeader>
+          </Empty>
+        ) : (
+          <div
+            className={cn(
+              "min-h-0 flex-1 overflow-auto transition-opacity duration-200",
+              isUpdatingResults && "opacity-50 delay-150",
+            )}
+            ref={parentRef}>
+            {paginationEnabled ? (
+              <div className='flex flex-col gap-4 px-1 pb-24 pr-2'>
+                {totalPages > 1 && (
+                  <ModsPagination
+                    className='mb-4'
+                    onPageChange={handlePageChange}
+                    page={page}
+                    totalPages={totalPages}
+                  />
+                )}
+                <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
+                  {displayedMods.map((mod) => (
+                    <ModCard key={mod.id} mod={mod} />
+                  ))}
+                </div>
+                {totalPages > 1 && (
+                  <ModsPagination
+                    className='mt-6 pb-12'
+                    onPageChange={handlePageChange}
+                    page={page}
+                    totalPages={totalPages}
+                  />
+                )}
+              </div>
+            ) : (
+              <div
+                className='will-change-transform'
+                style={{
+                  height: `${rowVirtualizer.getTotalSize()}px`,
+                  position: "relative",
+                  width: "100%",
+                }}>
+                {rowVirtualizer.getVirtualItems().map((virtualRow) => (
+                  <div
+                    key={virtualRow.key}
+                    style={{
+                      contain: "strict",
+                      containIntrinsicSize: `auto ${virtualRow.size}px`,
+                      contentVisibility: "auto",
+                      height: `${virtualRow.size}px`,
+                      left: 0,
+                      position: "absolute",
+                      top: 0,
+                      transform: `translateY(${virtualRow.start}px)`,
+                      width: "100%",
+                    }}>
+                    <div className='grid grid-cols-1 gap-4 px-1 pr-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
+                      {modRows[virtualRow.index]?.map((mod) => (
+                        <ModCard key={mod.id} mod={mod} />
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
-              {totalPages > 1 && (
-                <ModsPagination
-                  className='mt-6 pb-12'
-                  onPageChange={handlePageChange}
-                  page={page}
-                  totalPages={totalPages}
-                />
-              )}
-            </div>
-          ) : (
-            <div
-              className='will-change-transform'
-              style={{
-                height: `${rowVirtualizer.getTotalSize()}px`,
-                position: "relative",
-                width: "100%",
-              }}>
-              {rowVirtualizer.getVirtualItems().map((virtualRow) => (
-                <div
-                  key={virtualRow.key}
-                  style={{
-                    contain: "strict",
-                    containIntrinsicSize: `auto ${virtualRow.size}px`,
-                    contentVisibility: "auto",
-                    height: `${virtualRow.size}px`,
-                    left: 0,
-                    position: "absolute",
-                    top: 0,
-                    transform: `translateY(${virtualRow.start}px)`,
-                    width: "100%",
-                  }}>
-                  <div className='grid grid-cols-1 gap-4 px-1 pr-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
-                    {modRows[virtualRow.index]?.map((mod) => (
-                      <ModCard key={mod.id} mod={mod} />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -586,14 +613,39 @@ const ModsPageSkeleton = () => (
 
 const GetMods = () => {
   const { t } = useTranslation();
+  const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
+  const storedContentType = usePersistedStore(
+    (state) => state.modsFilters.contentType,
+  );
+  const updateModsFilters = usePersistedStore(
+    (state) => state.updateModsFilters,
+  );
+  const contentType = resolveContentType(
+    storedContentType,
+    isCustomMapsEnabled,
+  );
+  const handleContentTypeChange = useCallback(
+    (next: ContentType) => updateModsFilters({ contentType: next }),
+    [updateModsFilters],
+  );
 
   return (
     <div className='flex h-full min-h-0 w-full flex-col px-4'>
-      <PageTitle
-        className='mb-8'
-        subtitle={t("mods.subtitle")}
-        title={t("navigation.getMods")}
-      />
+      {/* Sections are scope, not filters: they sit with the title and share
+          one hairline with it, leaving a single toolbar row below. */}
+      <div className='mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 border-border/60 border-b'>
+        <PageTitle
+          className='pb-3'
+          subtitle={t("mods.subtitle")}
+          title={t("navigation.getMods")}
+        />
+        <ContentTypeTabs
+          className='-mb-px'
+          onChange={handleContentTypeChange}
+          showMaps={isCustomMapsEnabled}
+          value={contentType}
+        />
+      </div>
       <Suspense fallback={<ModsPageSkeleton />}>
         <ErrorBoundary>
           <GetModsData />

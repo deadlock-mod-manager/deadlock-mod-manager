@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@deadlock-mods/ui/components/select";
-import { ArrowUpDown, Clock, Star, X } from "@deadlock-mods/ui/icons";
+import { ArrowUpDown, Star, X } from "@deadlock-mods/ui/icons";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { HeroIcon } from "@/components/heroes/hero-icon";
@@ -20,6 +20,7 @@ import {
   getModCategoryDisplayName,
   SortType,
   TimePeriod,
+  timePeriodLabelKey,
 } from "@/lib/constants";
 import {
   type AddedFilter,
@@ -28,7 +29,9 @@ import {
   type FilterMode,
   type MapQuickFilter,
 } from "@/lib/store/slices/ui";
+import CategoryFilter from "./category-filter";
 import FiltersDropdown from "./filters-dropdown";
+import HeroFilter from "./hero-filter";
 
 type SearchBarProps = {
   className?: string;
@@ -46,10 +49,11 @@ type SearchBarProps = {
   onHeroesChange: (heroes: string[]) => void;
   hideNSFW: boolean;
   onHideNSFWChange: (hideNSFW: boolean) => void;
-  audioQuickFilter: AudioQuickFilter;
-  onAudioQuickFilterChange: (value: AudioQuickFilter) => void;
-  mapQuickFilter: MapQuickFilter;
-  onMapQuickFilterChange: (value: MapQuickFilter) => void;
+  // Local libraries filter by audio/map flags; the store has section tabs.
+  audioQuickFilter?: AudioQuickFilter;
+  onAudioQuickFilterChange?: (value: AudioQuickFilter) => void;
+  mapQuickFilter?: MapQuickFilter;
+  onMapQuickFilterChange?: (value: MapQuickFilter) => void;
   hideOutdated: boolean;
   onHideOutdatedChange: (hideOutdated: boolean) => void;
   timePeriod?: TimePeriod;
@@ -127,8 +131,8 @@ const SearchBar = ({
     onCategoriesChange([]);
     onHeroesChange([]);
     onHideNSFWChange(false);
-    onAudioQuickFilterChange("off");
-    onMapQuickFilterChange("off");
+    onAudioQuickFilterChange?.("off");
+    onMapQuickFilterChange?.("off");
     onHideOutdatedChange(false);
     onTimePeriodChange?.(TimePeriod.ALL_TIME);
     onFilterModeChange("include");
@@ -152,107 +156,101 @@ const SearchBar = ({
     selectedCategories.length > 0 ||
     selectedHeroes.length > 0 ||
     hideNSFW ||
-    audioQuickFilter !== "off" ||
-    (!hideMapFilter && mapQuickFilter !== "off") ||
+    (audioQuickFilter ?? "off") !== "off" ||
+    (!hideMapFilter && (mapQuickFilter ?? "off") !== "off") ||
     hideOutdated ||
     showFavoritesOnly ||
     addedActive ||
     (showTimePeriodControl && effectiveTimePeriod !== TimePeriod.ALL_TIME);
 
+  const showTrailing =
+    showFavoritesFilter || Boolean(showSortControl && sortType && setSortType);
+
   return (
     <div className={cn("flex flex-col gap-3", className)}>
-      <div className='flex items-center justify-between gap-4'>
-        <div className={cn("flex items-center gap-3", inputGroupClassName)}>
-          <div
-            className={cn(
-              "min-w-0 overflow-visible",
-              searchContainerClassName,
-            )}>
-            <SearchInput
-              className={cn("w-80", searchInputClassName)}
-              id='search'
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder={t("mods.searchPlaceholder")}
-              value={query}
-            />
-          </div>
-          <FiltersDropdown
-            filterMode={filterMode}
-            mods={mods}
-            onCategoriesChange={onCategoriesChange}
-            onFilterModeChange={onFilterModeChange}
-            onHeroesChange={onHeroesChange}
-            onAudioQuickFilterChange={onAudioQuickFilterChange}
-            onMapQuickFilterChange={onMapQuickFilterChange}
-            onHideNSFWChange={onHideNSFWChange}
-            onHideOutdatedChange={onHideOutdatedChange}
-            selectedCategories={selectedCategories}
-            selectedHeroes={selectedHeroes}
-            audioQuickFilter={audioQuickFilter}
-            mapQuickFilter={mapQuickFilter}
-            hideNSFW={hideNSFW}
-            hideOutdated={hideOutdated}
-            hideMapFilter={hideMapFilter}
-            addedFilter={addedFilter}
-            onAddedFilterChange={onAddedFilterChange}
+      <div
+        className={cn(
+          "flex flex-wrap items-center gap-2",
+          inputGroupClassName,
+        )}>
+        <div
+          className={cn(
+            "min-w-48 max-w-sm flex-1 overflow-visible",
+            searchContainerClassName,
+          )}>
+          <SearchInput
+            className={cn("w-full", searchInputClassName)}
+            id='search'
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t("mods.searchPlaceholder")}
+            value={query}
           />
         </div>
-        {(showTimePeriodControl || showSortControl || showFavoritesFilter) && (
-          <div className='flex items-center gap-4'>
+        <HeroFilter
+          mods={mods}
+          onHeroesChange={onHeroesChange}
+          selectedHeroes={selectedHeroes}
+        />
+        <CategoryFilter
+          mods={mods}
+          onCategoriesChange={onCategoriesChange}
+          selectedCategories={selectedCategories}
+        />
+        <FiltersDropdown
+          addedFilter={addedFilter}
+          audioQuickFilter={audioQuickFilter}
+          filterMode={filterMode}
+          hideMapFilter={hideMapFilter}
+          hideNSFW={hideNSFW}
+          hideOutdated={hideOutdated}
+          mapQuickFilter={mapQuickFilter}
+          onAddedFilterChange={onAddedFilterChange}
+          onAudioQuickFilterChange={onAudioQuickFilterChange}
+          onFilterModeChange={onFilterModeChange}
+          onHideNSFWChange={onHideNSFWChange}
+          onHideOutdatedChange={onHideOutdatedChange}
+          onMapQuickFilterChange={onMapQuickFilterChange}
+          onTimePeriodChange={
+            showTimePeriodControl ? onTimePeriodChange : undefined
+          }
+          timePeriod={effectiveTimePeriod}
+        />
+        {showTrailing && (
+          <div className='ml-auto flex items-center gap-2'>
             {showFavoritesFilter && (
               <Button
+                aria-pressed={showFavoritesOnly}
                 className={cn(
-                  showFavoritesOnly &&
-                    "border-yellow-500/50 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 hover:text-yellow-300",
+                  "gap-2 px-3",
+                  showFavoritesOnly
+                    ? "border-yellow-500/50 bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 hover:text-yellow-300"
+                    : "font-normal text-muted-foreground hover:text-foreground",
                 )}
                 onClick={() => onShowFavoritesOnlyChange?.(!showFavoritesOnly)}
-                size='default'
                 variant='outline'>
                 <Star
                   className={cn(
-                    "mr-2 h-4 w-4",
+                    "h-4 w-4",
                     showFavoritesOnly && "fill-yellow-400 text-yellow-400",
                   )}
                 />
-                <span>{t("favorites.title")}</span>
+                {t("favorites.title")}
                 {favoritesCount > 0 && (
-                  <Badge className='ml-2 px-1 py-0 text-xs' variant='secondary'>
+                  <span className='rounded-full bg-muted px-1.5 text-[11px] text-muted-foreground tabular-nums leading-4'>
                     {favoritesCount}
-                  </Badge>
+                  </span>
                 )}
               </Button>
             )}
-            {showTimePeriodControl && onTimePeriodChange && (
-              <Select
-                onValueChange={onTimePeriodChange}
-                value={effectiveTimePeriod}>
-                <SelectTrigger className='w-fit gap-1'>
-                  <Clock className='mr-2 h-4 w-4' />
-                  <SelectValue placeholder={t("timePeriod.alltime")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {Object.values(TimePeriod).map((period) => (
-                      <SelectItem
-                        className='capitalize'
-                        key={period}
-                        value={period}>
-                        {t(
-                          `timePeriod.${period.replaceAll(/[\s/]+/g, "").toLowerCase()}`,
-                        )}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            )}
             {showSortControl && sortType && setSortType && (
               <Select onValueChange={setSortType} value={sortType}>
-                <SelectTrigger className='w-fit gap-1'>
-                  <ArrowUpDown className='mr-2 h-4 w-4' />
+                <SelectTrigger
+                  aria-label={t("filters.sortBy")}
+                  className='w-fit gap-1'>
+                  <ArrowUpDown className='mr-1.5 h-4 w-4 text-muted-foreground' />
                   <SelectValue placeholder={t("filters.sortBy")} />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent align='end'>
                   <SelectGroup>
                     {Object.values(SortType).map((type) => (
                       <SelectItem
@@ -329,28 +327,28 @@ const SearchBar = ({
           )}
 
           {/* Audio filter badge */}
-          {audioQuickFilter !== "off" && (
+          {audioQuickFilter && audioQuickFilter !== "off" && (
             <Badge className='flex items-center gap-1' variant='secondary'>
               {audioQuickFilter === "only"
                 ? t("filters.audioModsOnly")
                 : t("filters.excludeAudioMods")}
               <button
                 className='ml-1 rounded-full p-0.5 hover:bg-muted'
-                onClick={() => onAudioQuickFilterChange("off")}
+                onClick={() => onAudioQuickFilterChange?.("off")}
                 type='button'>
                 <X className='h-3 w-3' />
               </button>
             </Badge>
           )}
 
-          {!hideMapFilter && mapQuickFilter !== "off" && (
+          {!hideMapFilter && mapQuickFilter && mapQuickFilter !== "off" && (
             <Badge className='flex items-center gap-1' variant='secondary'>
               {mapQuickFilter === "only"
                 ? t("filters.mapsModsOnly")
                 : t("filters.excludeMapsMods")}
               <button
                 className='ml-1 rounded-full p-0.5 hover:bg-muted'
-                onClick={() => onMapQuickFilterChange("off")}
+                onClick={() => onMapQuickFilterChange?.("off")}
                 type='button'>
                 <X className='h-3 w-3' />
               </button>
@@ -374,9 +372,7 @@ const SearchBar = ({
           {showTimePeriodControl &&
             effectiveTimePeriod !== TimePeriod.ALL_TIME && (
               <Badge className='flex items-center gap-1' variant='secondary'>
-                {t(
-                  `timePeriod.${effectiveTimePeriod.replaceAll(/[\s/]+/g, "").toLowerCase()}`,
-                )}
+                {t(timePeriodLabelKey(effectiveTimePeriod))}
                 <button
                   className='ml-1 rounded-full p-0.5 hover:bg-muted'
                   onClick={() => onTimePeriodChange?.(TimePeriod.ALL_TIME)}

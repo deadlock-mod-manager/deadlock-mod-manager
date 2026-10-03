@@ -1860,7 +1860,19 @@
       "month": "This month",
       "custom": "Custom range"
     },
-    "clearAll": "Clear all"
+    "clearAll": "Clear all",
+    "contentType": "Content type",
+    "contentTypes": {
+      "mod": "Mods",
+      "sound": "Sounds",
+      "map": "Maps",
+      "wip": "WiPs"
+    },
+    "updated": "Updated",
+    "match": "Match",
+    "reset": "Reset",
+    "matchIncludeHint": "Show only mods that match your hero and category picks.",
+    "matchExcludeHint": "Hide mods that match your hero and category picks."
   },
   "sorting": {
     "default": "Default",
