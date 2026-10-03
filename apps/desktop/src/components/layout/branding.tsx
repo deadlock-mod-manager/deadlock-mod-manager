@@ -138,11 +138,6 @@ export const BrandingHeader = ({
                 v{version}
               </span>
             ))}
-          <Badge
-            className='h-4 px-1.5 py-0 font-medium text-[10px]'
-            variant='outline'>
-            {t("navigation.earlyAccess")}
-          </Badge>
         </div>
       </div>
     </div>
