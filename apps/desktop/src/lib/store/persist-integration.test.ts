@@ -299,3 +299,24 @@ describe("persisted store integration with real production fixture", () => {
     });
   });
 });
+
+describe("NSFW choice reset", () => {
+  it("clears show and hide choices while preserving global NSFW settings", async () => {
+    seedFromVersion(15, seededState);
+    const { usePersistedStore } = await importStoreFreshly();
+    await usePersistedStore.persist.rehydrate();
+    const settings = usePersistedStore.getState().nsfwSettings;
+    usePersistedStore.getState().setPerItemNSFWOverride("653713", true);
+    usePersistedStore.getState().setPerItemNSFWOverride("another-mod", false);
+
+    usePersistedStore.getState().clearPerItemNSFWOverrides();
+
+    expect(usePersistedStore.getState().perItemNSFWOverrides).toEqual({});
+    expect(
+      usePersistedStore.getState().getPerItemNSFWOverride("653713"),
+    ).toBeUndefined();
+    expect(usePersistedStore.getState().nsfwSettings).toEqual(settings);
+    await usePersistedStore.persist.rehydrate();
+    expect(usePersistedStore.getState().perItemNSFWOverrides).toEqual({});
+  });
+});

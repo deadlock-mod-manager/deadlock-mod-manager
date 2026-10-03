@@ -1745,6 +1745,12 @@
     "blurStrengthDescription": "How much to blur NSFW content when visible (pixels)",
     "rememberPerItemChoices": "Remember Per-Item Choices",
     "rememberPerItemChoicesDescription": "Remember when you choose to show/hide specific NSFW items",
+    "savedPerItemChoices": "Saved NSFW Choices",
+    "savedPerItemChoicesDescription_one": "{{count}} saved choice. Clear to use your current NSFW settings for all previews.",
+    "savedPerItemChoicesDescription_other": "{{count}} saved choices. Clear to use your current NSFW settings for all previews.",
+    "clearPerItemChoices": "Clear Saved Choices",
+    "clearPerItemChoicesConfirm_one": "Clear {{count}} saved NSFW show/hide choice? Previews will follow your current NSFW settings.",
+    "clearPerItemChoicesConfirm_other": "Clear {{count}} saved NSFW show/hide choices? Previews will follow your current NSFW settings.",
     "telemetryTitle": "Usage Analytics",
     "analyticsEnabled": "Google Analytics",
     "analyticsEnabledDescription": "Help improve the application by sending anonymous usage statistics and feature analytics"
