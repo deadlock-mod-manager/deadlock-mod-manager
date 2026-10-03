@@ -23,6 +23,11 @@ export const parseReleaseAsset = (
   const name = filename.toLowerCase();
   const runtime = getRuntime(name);
 
+  // Standalone downloads are offered on GitHub, outside the installer-only website flow.
+  if (name.endsWith("-portable.exe") || name.endsWith("-portable.exe.sig")) {
+    return null;
+  }
+
   if (name.endsWith(".msi.sig")) {
     return {
       platform: "windows",

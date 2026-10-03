@@ -5,6 +5,10 @@ inputs:
   unsigned-artifact-path:
     description: "Path to the unsigned executable(s)"
     required: true
+  artifact-name:
+    description: "Unsigned artifact name prefix, unique across signing jobs in a workflow run"
+    required: false
+    default: "windows-unsigned"
   output-directory:
     description: "Directory to output signed artifacts"
     required: true
@@ -59,12 +63,12 @@ runs:
       id: upload-unsigned
       uses: actions/upload-artifact@v4
       with:
-        name: windows-unsigned-${{ github.run_id }}
+        name: ${{ inputs.artifact-name }}-${{ github.run_id }}
         path: ./signpath-staging/*.exe
         if-no-files-found: error
 
     - name: Submit to SignPath
-      uses: signpath/github-action-submit-signing-request@v2
+      uses: signpath/github-action-submit-signing-request@v3
       with:
         api-token: ${{ inputs.signpath-api-token }}
         organization-id: ${{ inputs.signpath-organization-id }}
@@ -73,6 +77,21 @@ runs:
         github-artifact-id: ${{ steps.upload-unsigned.outputs.artifact-id }}
         wait-for-completion: true
         output-artifact-directory: "./signpath-signed-output"
+
+    - name: Verify signed executables
+      shell: pwsh
+      env:
+        SIGNING_POLICY: ${{ inputs.signpath-signing-policy }}
+      run: |
+        $unsignedFiles = Get-ChildItem -LiteralPath ./signpath-staging -Filter *.exe
+        foreach ($file in $unsignedFiles) {
+          $signedPath = Join-Path ./signpath-signed-output $file.Name
+          $signature = Get-AuthenticodeSignature -LiteralPath $signedPath
+          $testCertificate = $env:SIGNING_POLICY -eq 'test-signing' -and $signature.Status -eq 'NotTrusted' -and $null -ne $signature.SignerCertificate
+          if ($signature.Status -ne 'Valid' -and -not $testCertificate) {
+            throw "Missing or invalid Authenticode signature for $($file.Name): $($signature.Status)"
+          }
+        }
 
     - name: Create output directory
       shell: bash

@@ -40,7 +40,7 @@ jobs:
               }
               
               // List assets for debugging
-              const exeAssets = release.assets.filter(asset => asset.name.endsWith('.exe'));
+              const exeAssets = release.assets.filter(asset => asset.name.endsWith('-setup.exe') && !asset.name.endsWith('-cef-setup.exe'));
               console.log(`EXE assets found: ${exeAssets.map(a => a.name).join(', ')}`);
               
               if (exeAssets.length === 0) {
@@ -67,6 +67,7 @@ jobs:
           identifier: Stormix.DeadlockModManager
           fork-user: stormix
           release-tag: ${{ inputs.release_tag }}
+          installers-regex: '(?i)^(?!.*-cef-).*[-.]setup\.exe$'
           max-versions-to-keep: 5
           token: ${{ secrets.WINGET_TOKEN }}
 
