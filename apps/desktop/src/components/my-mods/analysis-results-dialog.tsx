@@ -88,7 +88,8 @@ const AddonInfo = ({ addon, isIdentified }: AddonInfoProps) => {
           {addon.matchInfo?.modName}
         </p>
         <p className='text-xs text-muted-foreground'>
-          by {addon.matchInfo?.modAuthor} • {addon.matchInfo?.certainty}% match
+          {addon.matchInfo?.modAuthor && `by ${addon.matchInfo.modAuthor} • `}
+          {addon.matchInfo?.certainty}% match
         </p>
       </div>
     );
