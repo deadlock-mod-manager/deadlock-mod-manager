@@ -1,6 +1,7 @@
 import { ProviderError } from "@deadlock-mods/common/client-errors";
 import { z } from "zod";
 import { fetch } from "./fetch";
+import { runtimeServiceOrigin } from "./runtime-bootstrap";
 import {
   steamBbcodeExcerpt,
   steamBbcodeFirstImage,
@@ -9,8 +10,7 @@ import {
 
 const DEADLOCK_APP_ID = 1422450;
 export const STEAM_NEWS_PAGE = `https://store.steampowered.com/news/app/${DEADLOCK_APP_ID}`;
-const STEAM_NEWS_URL =
-  "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/";
+const STEAM_NEWS_ORIGIN = "https://api.steampowered.com";
 
 class SteamNewsError extends ProviderError {
   constructor(readonly status: number) {
@@ -52,7 +52,8 @@ export const getPatchNotes = async (count = 5): Promise<PatchNote[]> => {
     feeds: "steam_community_announcements",
     format: "json",
   });
-  const res = await fetch(`${STEAM_NEWS_URL}?${params}`);
+  const origin = runtimeServiceOrigin("steamNews", STEAM_NEWS_ORIGIN);
+  const res = await fetch(`${origin}/ISteamNews/GetNewsForApp/v2/?${params}`);
   if (!res.ok) {
     throw new SteamNewsError(res.status);
   }

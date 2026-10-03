@@ -1,3 +1,4 @@
+import { z } from "zod";
 import logger from "@/lib/logger";
 import { isPlainObject } from "./merge";
 
@@ -477,6 +478,27 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       }
       delete modsFilters.audioQuickFilter;
       delete modsFilters.mapQuickFilter;
+    },
+  },
+  {
+    to: 28,
+    label: "active-profile-library-snapshot",
+    apply: (state) => {
+      // V1 updated localMods without updating the active profile's snapshot.
+      // V2 mutations read that snapshot, so importing it unchanged loses the
+      // installed files and statuses on the first enable/disable operation.
+      const profileId = z.string().safeParse(state.activeProfileId);
+      if (
+        !Array.isArray(state.localMods) ||
+        !isPlainObject(state.profiles) ||
+        !profileId.success
+      ) {
+        return;
+      }
+      const profile = state.profiles[profileId.data];
+      if (isPlainObject(profile)) {
+        profile.mods = structuredClone(state.localMods);
+      }
     },
   },
 ];

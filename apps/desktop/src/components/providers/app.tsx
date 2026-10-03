@@ -100,6 +100,10 @@ export const AppProvider = ({ children, ...props }: AppProviderProps) => {
       .then(migrateSubmissionIdentities)
       .then(cleanupStaleServerGameinfo)
       .then(() => usePersistedStore.getState().restoreModsFromManifest())
+      .then(() => {
+        const state = usePersistedStore.getState();
+        return state.syncProfileEnabledMods(state.activeProfileId);
+      })
       .catch((error) => {
         logger.withError(error).debug("App bootstrap initialization skipped");
       });
