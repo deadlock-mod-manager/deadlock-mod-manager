@@ -847,6 +847,7 @@
     "vpkCount": ""
   },
   "mods": {
+    "invalidDeepLink": "",
     "manageOrder": "",
     "searchPlaceholder": "Mod ara",
     "noPreviewAvailable": "Önizleme yok",
@@ -867,6 +868,14 @@
     "subtitle": "Her güncelleniyor, her hafta yeni modlarla.",
     "mapsSubtitle": "",
     "mapsWarning": "",
+    "catalogSyncing": "",
+    "catalogSyncTitle": "",
+    "catalogSyncPercentage": "",
+    "catalogSyncDetails": "",
+    "catalogSyncCount": "",
+    "catalogSyncFailed": "",
+    "catalogSyncRetryHint": "",
+    "catalogStale": "",
     "noModsFound": "Mod bulunamadı",
     "noModsMatchFilters": "Aramanıza ve filtrelere uygun mod yok",
     "noModsAvailable": "Mod mevcut değil",
@@ -958,6 +967,7 @@
     "failedToOpenForumPost": ""
   },
   "warnings": {
+    "outdatedDescription": "",
     "obsoleteLabel": "Kullanımdan kalkmış",
     "obsoleteDescription": "Bu mod artık mod mağazasında mevcut değil ve mevcut oyun sürümüyle çalışmayabilir.",
     "staleModDescription": "",
@@ -1037,8 +1047,8 @@
     "open": ""
   },
   "settings": {
-    "searchPlaceholder": "Ayarlarda ara",
-    "searchNoResults": "Eşleşen ayar yok",
+    "searchPlaceholder": "",
+    "searchNoResults": "",
     "language": "Dil",
     "languageDescription": "Uygulama arayüzü için tercih ettiğiniz dili seçin",
     "languageSettings": "Dil ayarları",
@@ -1147,6 +1157,8 @@
     "openGameFolder": "Oyun klasörünü aç",
     "openModsFolder": "Mod klasörünü aç",
     "openModsDataFolder": "",
+    "clearCatalog": "",
+    "clearCatalogDescription": "",
     "clearDownloadCache": "",
     "clearDownloadCacheDescription": "",
     "confirmClearDownloadCache": "",
@@ -1571,7 +1583,33 @@
   },
   "featureFlags": {
     "title": "",
-    "description": ""
+    "description": "",
+    "features": {
+      "custom-maps": {
+        "title": "",
+        "description": ""
+      },
+      "server-browser": {
+        "title": "",
+        "description": ""
+      },
+      "mod-foundry": {
+        "title": "",
+        "description": ""
+      },
+      "player-stats": {
+        "title": "",
+        "description": ""
+      },
+      "profile-management": {
+        "title": "",
+        "description": ""
+      },
+      "profile-sharing": {
+        "title": "",
+        "description": ""
+      }
+    }
   },
   "game": {
     "createBackup": "Yedek oluştur",
@@ -1650,7 +1688,8 @@
       "reads": "",
       "sends": "",
       "limit": "",
-      "risk": ""
+      "risk": "",
+      "summary": ""
     },
     "enable": {
       "title": "",
@@ -1706,6 +1745,12 @@
     "blurStrengthDescription": "NSFW içerikleri görünür olduğunda ne kadar bulanıklaştırılacağını belirleyin (piksel)",
     "rememberPerItemChoices": "Öğe bazlı seçimleri hatırla",
     "rememberPerItemChoicesDescription": "Belirli NSFW içerikleri göster/gizle seçimlerinizi hatırla",
+    "savedPerItemChoices": "",
+    "savedPerItemChoicesDescription_one": "",
+    "savedPerItemChoicesDescription_other": "",
+    "clearPerItemChoices": "",
+    "clearPerItemChoicesConfirm_one": "",
+    "clearPerItemChoicesConfirm_other": "",
     "telemetryTitle": "Kullanım Analitiği",
     "analyticsEnabled": "",
     "analyticsEnabledDescription": "Anonim kullanım istatistikleri ve özellik analitiği göndererek uygulamayı geliştirmemize yardımcı olun"
@@ -1717,7 +1762,8 @@
   },
   "branding": {
     "nightlyBuild": "",
-    "fullBuildVersion": ""
+    "fullBuildVersion": "",
+    "byAuthor": ""
   },
   "about": {
     "title": "Bilgi",
@@ -1805,7 +1851,34 @@
     "hideMap": "",
     "hideOutdatedBadge": "Eskileri gizle",
     "showOutdatedBadge": "Eskileri göster",
-    "clearAll": "Hepsini temizle"
+    "added": "",
+    "addedLabel": "",
+    "addedFrom": "",
+    "addedTo": "",
+    "pickDate": "",
+    "addedBetween": "",
+    "addedSince": "",
+    "addedUntil": "",
+    "addedPeriod": {
+      "any": "",
+      "today": "",
+      "week": "",
+      "month": "",
+      "custom": ""
+    },
+    "clearAll": "Hepsini temizle",
+    "contentType": "",
+    "contentTypes": {
+      "mod": "",
+      "sound": "",
+      "map": "",
+      "wip": ""
+    },
+    "updated": "",
+    "match": "",
+    "reset": "",
+    "matchIncludeHint": "",
+    "matchExcludeHint": ""
   },
   "sorting": {
     "default": "Varsayılan",
@@ -2781,6 +2854,32 @@
       "Other": ""
     }
   },
+  "gameConfig": {
+    "resetByUpdateTitle": "",
+    "resetByUpdateBody_one": "",
+    "resetByUpdateBody_other": "",
+    "detachedTitle": "",
+    "detachedBody_one": "",
+    "detachedBody_other": "",
+    "updatedTitle": "",
+    "updatedBody": "",
+    "reapply": "",
+    "reapplying": "",
+    "reapplied": "",
+    "reapplyFailed": "",
+    "patchNotes": "",
+    "dismiss": ""
+  },
+  "patchNotes": {
+    "title": "",
+    "allOnSteam": "",
+    "kindPatch": "",
+    "kindAnnouncement": "",
+    "openOnSteam": "",
+    "read": "",
+    "loadFailed": "",
+    "empty": ""
+  },
   "debug": {
     "title": "",
     "description": "Geliştirme ve sorun giderme için debug araçları ve yardımcı programları.",
@@ -2905,6 +3004,12 @@
     "importDescription": "Başka bir kullanıcıdan paylaşılan profili içe aktarmak için bir Profil ID'si girin.",
     "importPreview": "Profil İçe Aktarma Önizlemesi",
     "importPreviewDescription": "İçe aktarmadan önce profil içeriğini inceleyin. Bu profili nasıl kaydedeceğinizi seçin.",
+    "legacyIdentityTitle": "",
+    "legacyIdentityDescription": "",
+    "legacyIdentityPlaceholder": "",
+    "legacyIdentityRequired": "",
+    "submissionTypeMod": "",
+    "submissionTypeSound": "",
     "profileIdPlaceholder": "Profil ID'si girin (örn. abc123def456)",
     "profileIdRequired": "Profil ID'si gerekli",
     "importSuccess": "Profil başarıyla içe aktarıldı!",
@@ -2993,6 +3098,11 @@
     "checkingForUpdate": "",
     "noUpdateAvailable": "",
     "checkUpdateError": "",
+    "changelog": {
+      "title": "",
+      "latest": "",
+      "loadMore": ""
+    },
     "vpkReplacement": {
       "title": "VPK Dosyalarını Değiştir",
       "description": "Geliştirme sırasında hızlı iterasyon için mod dosyalarını değiştirin",
