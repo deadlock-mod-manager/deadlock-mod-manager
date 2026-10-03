@@ -1,6 +1,6 @@
 ---
 title: Features Overview
-description: Key features that make Deadlock Mod Manager simple and powerful for mod management
+description: Discover mod management, customization, profiles, and community features
 ---
 
 import { Card, Cards } from "fumadocs-ui/components/card";
@@ -8,122 +8,125 @@ import { Callout } from "fumadocs-ui/components/callout";
 
 # Features Overview
 
-Deadlock Mod Manager provides essential features to make mod management simple, safe, and efficient. Here are the core capabilities available to enhance your Deadlock experience.
+Deadlock Mod Manager helps you discover, download, and manage mods, customize heroes, and launch Deadlock with your chosen setup.
 
-## Core Features
+## Mod Discovery
 
-### 🔍 Mod Discovery & Search
+![Loaded Mods Store showing section tabs, filters, favorites, and sorting](/assets/v2-mods-store.png)
 
-![Mods Browser Interface](/assets/mods.png)
+Open **Mods Store** to browse the Mods Store. Switch between mods, sounds, and works in progress (WIPs). With **Custom Maps** enabled, maps also have their own section.
 
-**Find Mods Easily:**
+- Search by name, author, or description, and save favorites for later.
+- Include or exclude categories and heroes, and filter outdated content.
+- Sort by downloads, rating, release date, or last update.
+- Use the **Added** filter to narrow results by when submissions were published.
+- Open a mod to inspect its description, media, available downloads, requirements, and author changelog when provided.
 
-- **Text Search**: Find mods by name, author, or description
-- **Category Filters**: Browse by mod type and categories
-- **Sorting Options**: Sort by popularity, date, rating, or downloads
-- **Advanced Filtering**: Filter by compatibility, age rating, and more
+The catalog is cached locally and refreshed from GameBanana. Downloading new files and refreshing listings require an internet connection.
 
-**Detailed Mod Information:**
+## Installation and Downloads
 
-- **Preview Images**: Screenshots and media galleries
-- **Complete Descriptions**: Detailed mod information and features
-- **Compatibility Info**: Game version requirements and compatibility status
-- **Download Statistics**: See popular and trending mods
+Download a mod, choose its files or variants, then enable it in **Mods Library**. The Downloads page shows progress and lets you pause, resume, or retry downloads. You can also add local mods rather than downloading them from the store.
 
-### ⚡ Mod Installation Without Manual File Handling
+Mods with several VPK files or sharded VPK archives are supported. Select the variants you want when installing; the manager handles the associated files.
 
-**Simple Installation Process:**
+See [Getting Started](/using-mod-manager/getting-started) for installation and launch instructions.
 
-- **Few-Click Installation**: Install any mod with just a few clicks - no manual file copying
-- **Toggle Mods On/Off**: Enable or disable mods instantly without uninstalling
-- **Automatic File Management**: All file operations handled automatically in the background
-- **Safe Installation**: Mods are installed safely without touching original game files
+## Managing Your Library
 
-**Advanced Installation Features:**
+From **Mods Library**, you can enable or disable mods, uninstall them, change load order, analyze existing local addons, and check for updates. When updates are available, review the files to install in the batch update dialog.
 
-- **Download Queue**: Queue multiple mods for installation
-- **Multi-File Mod Support**: For mods with multiple variants, choose exactly which version to install
-- **Easy Mod Removal**: Uninstall mods cleanly with one click - no leftover files
+Use **Reinstall Mod** on a downloaded mod to rebuild its installation from its downloaded files. For backups and recovery tools, see [Updating Mods and Backups](/using-mod-manager/getting-started#updating-mods).
 
-### 💾 Download Management
+See [Mods Library and Files](/using-mod-manager/library) for local imports, favorites, variants, conflict warnings, VPK replacement, and reporting broken mods.
 
-![Download Management](/assets/downloads.png)
+## Hero Skins and Customization
 
-- **Queue Management**: Download multiple mods in an organized queue
-- **Parallel Downloads**: Download several mods simultaneously
-- **Download History**: Track all your download activity
-- **Progress Tracking**: Real-time download progress and status
+**Hero Skins** groups downloaded skins by hero and lets you choose the active skin or return to the default appearance. You can manage variants, assign unrecognized mods to a hero, and toggle sounds and other hero mods separately.
 
-### 🔄 Mod Load Order
+**Crosshairs** provides a crosshair editor and saved configurations. **Autoexec Config** lets you edit startup console commands and browse a command library. Plugins provide themes and other interface customization.
 
-**Load Order Management:**
+See [Customization](/using-mod-manager/customization) for instructions, including the Mod Foundry skin editor.
 
-- **Visual Load Order**: Easy-to-use drag-and-drop interface for mod ordering
+## Profiles and Sharing
 
-### 🌐 Multi-Language Support
+Profiles keep separate mod setups, including enabled mods and load order. Create a profile, activate it, and manage its mods in Mods Library. Share a Profile ID with friends or preview and import one they send you.
 
-**Internationalization:**
+See [Profiles and Sharing](/using-mod-manager/profiles) for the workflow and sharing limitations.
 
-- **Language Selection**: Choose from multiple supported languages
-- **Community Translations**: High-quality translations from the community
-- **Localized Interface**: Complete UI translation including menus and dialogs
-- **Regional Formatting**: Dates, numbers, and text adapt to your locale
+## Community Servers and Player Stats
 
-**Currently Supported Languages:**
+The **Server Browser** lists community servers with player counts and ping information. Its join flow checks required maps and addons before connecting.
 
-- English (Default)
-- German (Deutsch)
-- French (Français)
-- Russian (Русский)
-- Arabic (العربية)
-- Polish (Polski)
-- Swiss German (Schwiizerdütsch)
-- Thai (ไทย)
-- Turkish (Türkçe)
-- Chinese Simplified (简体中文)
+**Stats** offers an overview of your matches, hero and item statistics, squad information, and a live-match view. Optional **Match Data Sharing** can contribute missing match data to deadlock-api.
 
-### 📊 Local Addon Analysis
+See [Servers and Stats](/using-mod-manager/community) for setup and privacy details.
 
-**Local Collection Management:**
+## Settings and Experimental Features
 
-- **Installation Analysis**: Analyze installed mods and match them with mods in the database
-- **Mod Inventory**: Complete overview of all installed mods
-- **Custom Mods**: Add custom mods manually and specify information about them
+![Experimental feature settings](/assets/v2-experimental.png)
 
-## Upcoming Features
+See [Settings and Recovery](/using-mod-manager/settings) for launch options, game configuration, Discord presence, networking, hero detection, content controls, and recovery tools.
 
-<Callout type='info' title='Coming Soon'>
-  The following features are currently in development. Join our
-  [Discord](https://discord.gg/WbFNt8CCr8) to stay updated on progress!
+Settings has a search field to help find options. You can configure language, appearance, content filtering, network options, backups, and logging. **Privacy & Content** includes NSFW filtering and a reset for saved per-item choices.
+
+<Callout type='info' title='Feature availability'>
+  Open **Settings → Experimental** to control Custom Maps, Server Browser, Mod
+  Foundry, Player Stats, Profile Management, and Profile Sharing. Maps and
+  Server Browser are off by default; the other switches are on by default for a
+  fresh setup. Your saved preferences may differ. These switches are local and
+  do not require signing in. Experimental features may change between releases.
 </Callout>
 
-### 📁 Profile Management and Sharing (Coming Soon)
+Stable and nightly builds can differ. See [Update Channels](/using-mod-manager/update-channels) if a feature described here is missing from your installed version.
 
-**Mod Profiles:**
+## Feature Guide Index
 
-- **Multiple Profiles**: Create different mod configurations for various gameplay styles
-- **Quick Profile Switching**: Switch between mod setups instantly
-- **Profile Backup**: Save and restore profile configurations
+| Feature group                                                             | Guide                                                 |
+| ------------------------------------------------------------------------- | ----------------------------------------------------- |
+| Installation and alternate CEF runtime                                    | [Installation](/using-mod-manager/installation)       |
+| Discovery, filters, favorites, local imports, and mod details             | [Mods Library and Files](/using-mod-manager/library)  |
+| Download progress, pause/resume, retry, installation, and updates         | [Getting Started](/using-mod-manager/getting-started) |
+| Variants, load order, conflicts, unrecognized addons, and VPK replacement | [Mods Library and Files](/using-mod-manager/library)  |
+| Profiles, sharing, and import                                             | [Profiles and Sharing](/using-mod-manager/profiles)   |
+| Hero skins, Foundry, Forge installs, crosshairs, and autoexec             | [Customization](/using-mod-manager/customization)     |
+| Discord presence, interface themes, and plugins                           | [Customization](/using-mod-manager/customization)     |
+| Custom maps, invites, and server joining                                  | [Servers and Stats](/using-mod-manager/community)     |
+| Stats, Steam match sharing, and cached-matchdata ingestion                | [Servers and Stats](/using-mod-manager/community)     |
+| Game setup, launch, network, privacy, backups, and diagnostics            | [Settings and Recovery](/using-mod-manager/settings)  |
+| App updates and release channels                                          | [Update Channels](/using-mod-manager/update-channels) |
 
-**Profile Sharing:**
-
-- **Export Profiles**: Share your mod configurations with friends
-- **Import Profiles**: Use mod setups shared by the community
-- **Community Profiles**: Browse popular mod configurations
-
-## Getting Help
-
-Need assistance with any of these features?
+## Learn More
 
 <Cards>
   <Card
-    title='User Guide'
-    description='Detailed guides for each feature'
-    href='/docs/using-mod-manager/getting-started'
+    title='Getting Started'
+    description='Install, enable, update, and launch mods'
+    href='/using-mod-manager/getting-started'
   />
   <Card
-    title='Join Discord'
-    description='Get help from the community'
-    href='https://discord.gg/WbFNt8CCr8'
+    title='Mods Library and Files'
+    description='Imports, favorites, variants, and conflicts'
+    href='/using-mod-manager/library'
+  />
+  <Card
+    title='Settings and Recovery'
+    description='Launch, network, privacy, and recovery controls'
+    href='/using-mod-manager/settings'
+  />
+  <Card
+    title='Profiles and Sharing'
+    description='Create separate setups and import shared profiles'
+    href='/using-mod-manager/profiles'
+  />
+  <Card
+    title='Customization'
+    description='Hero skins, Foundry, crosshairs, and autoexec'
+    href='/using-mod-manager/customization'
+  />
+  <Card
+    title='Servers and Stats'
+    description='Join community servers and explore match data'
+    href='/using-mod-manager/community'
   />
 </Cards>

@@ -1,0 +1,99 @@
+---
+title: Customization
+description: Manage hero skins, edit skins in Foundry, and configure crosshairs and autoexec
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Customization
+
+## Hero Skins
+
+![Hero Skins with no downloaded skins and a fully loaded default Abrams 3D preview](/assets/v2-hero-skins.png)
+
+1. Download a hero skin from **Mods Store**.
+2. Open **Hero Skins** and find the hero using search.
+3. Select a downloaded skin, or choose **Default** for the vanilla appearance.
+4. If the skin has variants, select the ones you want active.
+5. Restart Deadlock if it is running to see the change.
+
+Sounds and other mods appear separately from skins so you can toggle them independently. If a mod is missing or listed under the wrong hero, use **Assign Mod** or set its hero override in Mods Library. **Remove from hero** removes the association while keeping the mod in your library; deleting the mod is a separate action.
+
+**Settings → Hero Skins** can group sounds and weapon skins by hero or allow several skins per hero. Use multiple skins only when they change complementary parts; two full skins can conflict.
+
+The optional **3D preview** shows supported hero models. You can turn it off under **Settings → Application → Appearance**. A preview decoding failure does not by itself mean the skin will fail in-game.
+
+## Mod Foundry
+
+![Foundry editor with stock Abrams loaded, asset list, and Paint, Cards, and Sounds tabs](/assets/v2-foundry-editor.png)
+
+Foundry edits hero skins and exports the result as a VPK. Enable **Mod Foundry** under **Settings → Experimental** if its navigation entry is hidden.
+
+![Foundry import dialog with Default, My Mods, and Local file tabs](/assets/v2-foundry-import.png)
+
+1. Open **Mod Foundry** and choose **Import skin**.
+2. Choose a default skin, a downloaded hero skin from the **My Mods** tab, or a **Local file** VPK. Map mods are not accepted as skin inputs.
+3. Recolor the body and weapon, change cards, or swap sounds using the editor panels.
+4. Choose **Export** and select a destination.
+
+| Destination              | Result                                                                           |
+| ------------------------ | -------------------------------------------------------------------------------- |
+| Save to a file           | Writes a VPK to a location you choose.                                           |
+| Add as a new mod         | Adds a local mod to your library for installation.                               |
+| Replace the original mod | Overwrites the source mod VPK and keeps the original beside it as a `.bak` file. |
+
+A default skin imported from the base game has no original mod to replace. Install and enable exported mods before launching; restart Deadlock after replacing an active skin.
+
+You can disable **Load the 3D preview** during import if a model is slow or fails to decode. Painting, cards, and sound editing remain available.
+
+## DeadlockForge Installs
+
+[DeadlockForge](https://deadlockforge.net) is a separate community workshop. To send a mod from the website to the manager:
+
+1. Keep Deadlock Mod Manager open.
+2. Use Settings search to find **1-click installs from DeadlockForge** and enable it.
+3. Use the website's install action and review the manager's confirmation.
+4. Accept the import, then enable the new mod in Mods Library when you are ready to use it.
+
+Imported mods stay disabled until you enable them. The manager asks before installing each mod, and you can turn the integration off in Settings.
+
+## Crosshairs
+
+![Crosshair editor with preview, import, apply, and publish controls](/assets/v2-crosshair-editor.png)
+
+Open **Crosshairs** to create and save a crosshair configuration. Use the editor's preview to adjust its appearance and the saved crosshair controls to choose the configuration to apply.
+
+The page includes a community crosshair library with search/filter controls. In the editor, use **Import** to load an existing crosshair configuration and **Apply** to use your design. To **Publish** a crosshair to the community library, sign in and fill in its name, description, tags, and hero choices. Publishing requires an internet connection and authentication.
+
+Crosshair settings are written to the managed section of `autoexec.cfg`. Enable the **Autoexec Config** launch option in game settings so it runs when Deadlock launches.
+
+## Autoexec Config
+
+![Autoexec command library and category filters](/assets/v2-autoexec.png)
+
+![Current Autoexec Config editor below the command library](/assets/v2-autoexec-editor.png)
+
+Open **Autoexec Config** from the sidebar or Settings to edit startup console commands.
+
+1. Browse or search the **Command Library** and choose **Add** for a command you want.
+2. Review its value in **Current Autoexec Config**, or enter your own commands.
+3. Save the config and enable the **Autoexec Config** launch option.
+4. Restart Deadlock for the commands to take effect.
+
+<Callout type='warning' title='Keep managed sections intact'>
+  Sections marked DO NOT EDIT are managed by the app and restored when saving.
+  Keep the config nonempty when the autoexec launch option is enabled. Commands
+  are community-sourced and can change or stop working after game updates.
+</Callout>
+
+## Discord Game Presence
+
+![Discord game presence templates and preview](/assets/v2-discord-presence.png)
+
+Open **Settings → Discord** to enable Discord Game Presence and customize how your live Deadlock status appears on Discord. It can display hero, match mode, party size, and other game information.
+
+Enable **Console Debug Log** in Launch Options so the manager can read game status. Keep Discord and the manager running. Use the top-line and bottom-line templates, placeholders, per-hero overrides, and preview to customize the text, then save changes. Empty template fields fall back to defaults.
+
+## Plugins and Themes
+
+Open **Settings → Themes** for predefined themes, accent controls, and the custom theme builder with a live preview. Save a custom theme as a predefined entry to activate or edit it later. See [Themes](/plugins/themes) and [Plugins](/plugins) for background and Flashbang plugin instructions. Plugin customization changes the manager's interface; hero skins and Foundry change game content.

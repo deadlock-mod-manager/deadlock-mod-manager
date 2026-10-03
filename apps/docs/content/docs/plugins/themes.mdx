@@ -3,22 +3,19 @@ title: Themes Plugin
 description: Pre-defined and custom themes with background and accent controls
 ---
 
-import { Callout } from "fumadocs-ui/components/callout";
-
 # Themes Plugin
 
 The Themes plugin provides pre-defined visual themes and a comprehensive custom theme builder. It controls background imagery, accent lines, icons, and preview assets, and can disable conflicting plugins (e.g., Background) when active.
 
 ## Quick Start
 
-1. Go to Settings → Plugins
-2. Enable "Themes"
-3. Click "Open" to configure
-4. Choose between Pre-defined or Custom themes
+1. Go to **Settings → Themes**. Themes has its own settings section and is hidden from the Plugins list.
+2. Choose **Pre-defined** to activate an existing theme, or **Custom** to open the theme builder.
+3. Use the live preview to review your changes before saving a custom theme.
 
 ## Pre-defined Themes
 
-![Themes Plugin – Pre-defined Section](/assets/plugins-themes-pre-1.png)
+![Pre-defined theme grid with activation switches](/assets/v2-themes.png)
 
 The Pre-defined section includes official themes and your custom exported themes:
 
@@ -28,6 +25,7 @@ The Pre-defined section includes official themes and your custom exported themes
 - **Bloodmoon**: A dark theme with black-red gradients and crimson accents
 - **Tea**: A cozy beige theme created for the YouTuber and Twitch streamer Snipztea
 - **Arcane**: A sleek dark theme with elegant pink-red glow effects inspired by the Arcane aesthetic
+- **Deadlock API**: A theme inspired by the community API
 
 ### Arcane Theme - Accent Color Customization
 
@@ -51,47 +49,45 @@ The accent color affects:
 
 ### Using Pre-defined Themes
 
-![Themes Plugin – Active Pre-defined Theme](/assets/plugins-themes-pre-2.png)
-
 1. Select the Pre-defined tab
 2. Choose a theme from the grid
-3. Click "Activate" to apply the theme
-4. Click "Deactivate" to return to default
+3. Turn on the theme card's switch to apply it
+4. Turn the switch off to return to default
 
 ### Custom Exported Themes
-
-![Themes Plugin – Custom Theme in Pre-defined](/assets/plugins-themes-pre-3.png)
 
 Custom themes you've exported appear in the Pre-defined section with additional options:
 
 - **Edit**: Modify the theme settings
 - **Delete**: Remove the custom theme (only for user-created themes)
-- **Activate/Deactivate**: Same as official themes
+- **Activation switch**: Apply or turn off the theme, as with official themes
 
-**Note**: Official themes (Nightshift, Bloodmoon, Tea, Arcane) cannot be deleted.
+**Note**: Official themes (Nightshift, Bloodmoon, Tea, Arcane, Deadlock API) cannot be deleted.
 
 ## Custom Theme Builder
 
-![Themes Plugin – Custom Builder](/assets/plugins-themes-custom-1.png)
+![Custom Theme Builder with palette controls and live app preview](/assets/v2-theme-builder.png)
 
 Switch to the Custom tab to create your own themes:
 
-### Theme Components
+### Live Preview and Palette
 
-- **Accent Line Color**: Choose the color for UI accent lines
-- **Theme Icon**: Upload a custom icon displayed in the top-left corner
-- **Background Image**: Set via URL or upload local file
-- **Background Opacity**: Control transparency (0-100%)
+The custom builder previews changes in an app-shaped layout. Adjust accent and border colors, card and popover surfaces, secondary and muted colors, and text colors. Review the preview before exporting the theme.
 
-### Background Options
+### Palette and Appearance Controls
 
-- **URL Source**: Enter direct image URL
-- **Local Upload**: Choose image from your computer
-- **Opacity Control**: Adjust background transparency with slider
+- **Accent color** and **Line color** control highlights and borders.
+- **Card surface**, **Base surface**, **Secondary surface**, and **Muted surface** control the background palette.
+- **Primary text** and **Secondary text** control foreground colors.
+- **Sidebar transparency** adjusts the sidebar surface.
+- **Ambient background**, **Ambient accent**, **Strength**, and **Spread** control the ambient glow.
+- **Corner radius** adjusts rounding.
+
+Use **Apply draft** to apply the previewed custom theme or **Clear** to reset the draft. For a separate background image, see the [Background plugin](/plugins/background).
 
 ### Export to Pre-defined
 
-![Themes Plugin – Export Dialog](/assets/plugins-themes-custom-2.png)
+![Export Custom Theme dialog with captured preview and metadata fields](/assets/v2-theme-export.png)
 
 Export your custom theme to make it permanent:
 
@@ -101,7 +97,7 @@ Export your custom theme to make it permanent:
    - **Name**: Theme name
    - **Description**: Theme description
    - **Sub Description**: Additional details
-   - **Preview Image**: Upload preview image (optional)
+   - **Preview Image**: Captured from the live preview
 4. Click "Save" to add to Pre-defined themes
 
 ## Theme Management
@@ -110,41 +106,20 @@ Export your custom theme to make it permanent:
 
 - Custom themes in Pre-defined section can be edited
 - Click "Edit" to modify settings
-- Changes are applied immediately
-- Use "Save" or "Cancel" to confirm changes
+- Review changes in the live preview before applying or exporting the draft
 
 ### Deleting Themes
 
 - Only user-created themes can be deleted
-- Official themes (Nightshift, Bloodmoon, Tea, Arcane) are permanent
+- Official themes (Nightshift, Bloodmoon, Tea, Arcane, Deadlock API) are permanent
 - Deleted themes cannot be recovered
 
-## Tips
+## Tips and Troubleshooting
 
-- Background-heavy themes work best with lower opacity (20-40%)
-- Use high-resolution images for large displays
-- Optimize file sizes for better performance
-- Preview images help identify themes quickly
-- When Themes is active, Background plugin may be disabled
+Check text contrast against each surface in the live preview, including muted text and active buttons. Use a descriptive name when exporting so you can identify the theme later.
 
-## Troubleshooting
-
-<Callout type='warning'>
-  **Theme Not Applying** - Ensure plugin is enabled - Check if Background plugin
-  conflicts - Verify theme settings are saved - Try switching between themes
-</Callout>
-
-<Callout type='warning'>
-  **Background Not Visible** - Check opacity settings - Verify image URL is
-  accessible - Try uploading local image instead - Ensure image format is
-  supported
-</Callout>
-
-<Callout type='warning'>
-  **Export Issues** - Verify theme name is not empty - Check image file size
-  limits - Ensure all required fields are filled - Try different image formats
-</Callout>
+If a theme does not apply, check its activation switch under **Settings → Themes** and whether the Background plugin conflicts with it. If export fails, fill in the required metadata shown in the dialog and try again.
 
 ## Learn More
 
-- Developer documentation: [Click Here](/docs/developer-docs/plugins/themes)
+- Developer documentation: [Click Here](/developer-docs/plugins/themes)
