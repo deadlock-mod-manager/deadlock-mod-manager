@@ -6,6 +6,7 @@ import { BULK_HYDRATION_FIELDS } from "./gamebanana-fixtures";
 import type { CreatedWorld } from "./world";
 import { prepareInstalledProfiles, ALPHA } from "./profile-fixtures";
 import { readPersistedDocument } from "./observations";
+import { buildSyntheticVpk } from "./vpk";
 
 export const contentMods = [
   { id: "920001", name: "E2E Safe Skin", nsfw: false },
@@ -61,6 +62,12 @@ const heroNames = [
 export const contentRoutes =
   async () =>
   (origin: string): FixtureRoute[] => {
+    const fileBody = buildSyntheticVpk([
+      {
+        path: "scripts/e2e-content.txt",
+        contents: "Synthetic content visibility fixture",
+      },
+    ]);
     const profiles = contentMods.map((mod) => ({
       _idRow: Number(mod.id),
       _sModelName: "Mod",
@@ -78,7 +85,15 @@ export const contentRoutes =
       _aPreviewMedia: {
         _aImages: [{ _sBaseUrl: `${origin}/images`, _sFile: `${mod.id}.svg` }],
       },
-      _aFiles: [],
+      _aFiles: [
+        {
+          _idRow: Number(mod.id),
+          _sFile: "skin.vpk",
+          _nFilesize: fileBody.length,
+          _sDownloadUrl: `${origin}/dl/${mod.id}`,
+          _tsDateAdded: 1780000000,
+        },
+      ],
     }));
     const json = (path: string, body: object): FixtureRoute => ({
       method: "GET",
@@ -108,23 +123,35 @@ export const contentRoutes =
       {
         ...json(
           "/Core/Item/Data",
-          contentMods.map((mod) => [
-            mod.name,
+          profiles.map(({ _sName: name, _aFiles: files }) => [
+            name,
             0,
             "Infernus",
             "Skins",
             "Synthetic fixture",
             "Synthetic fixture",
-            [],
+            files,
           ]),
         ),
         query: { "fields[]": BULK_HYDRATION_FIELDS },
       },
       json("/apiv11/Util/Fileservers", { _aRecords: [] }),
-      ...profiles.flatMap((profile) => [
-        json(`/apiv11/Mod/${profile._idRow}/ProfilePage`, profile),
-        json(`/apiv11/Mod/${profile._idRow}/DownloadPage`, { _aFiles: [] }),
-        json(`/api/v2/reports/mod/${profile._idRow}/counts`, {
+      ...profiles.flatMap(({ _idRow: id, _aFiles: files, ...profile }) => [
+        json(`/apiv11/Mod/${id}/ProfilePage`, {
+          _idRow: id,
+          _aFiles: files,
+          ...profile,
+        }),
+        json(`/apiv11/Mod/${id}/DownloadPage`, {
+          _aFiles: files,
+        }),
+        {
+          method: "GET",
+          path: `/dl/${id}`,
+          status: 200,
+          body: fileBody,
+        },
+        json(`/api/v2/reports/mod/${id}/counts`, {
           total: 0,
           open: 0,
           resolved: 0,
@@ -132,7 +159,7 @@ export const contentRoutes =
         }),
         {
           method: "GET",
-          path: `/images/${profile._idRow}.svg`,
+          path: `/images/${id}.svg`,
           status: 200,
           headers: { "content-type": "image/svg+xml" },
           body: '<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180"><rect width="320" height="180" fill="#547090"/></svg>',

@@ -61,3 +61,28 @@ for (const fault of ["launch", "oracle"]) {
     ).toBe("");
   });
 }
+
+it("serves hero assets used after installs and launch preparation without unexpected requests", async () => {
+  let checked = false;
+  const result = await runE2eWorld({
+    provider: "embedded",
+    runId: "hero-assets",
+    caseId: "about-smoke",
+    attempt: 1,
+    runPhase: async (environment) => {
+      const response = await fetch(
+        `${environment.HTTP_PROXY}/v1/assets/heroes?only_active=true`,
+      );
+      expect(response.status).toBe(200);
+      expect(await response.json()).toEqual([]);
+      checked = true;
+      return {
+        exitCode: 1,
+        output: "fixture contract checked without launching the app",
+      };
+    },
+  });
+  worlds.push(result.worldDirectory);
+  expect(result.unexpectedRequests).toBe(0);
+  expect(checked).toBe(true);
+});
