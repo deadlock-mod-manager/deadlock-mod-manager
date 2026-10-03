@@ -7,15 +7,15 @@ import { Callout } from "fumadocs-ui/components/callout";
 
 # Mods Library and Files
 
-## Favorites and Browsing
+## Favorites and browsing
 
 ![Mods Library before adding any mods](/assets/v2-mods-library.png)
 
 Use the favorite button on a mod card or detail page to save it, then enable the favorites filter in the store to narrow your results. Favorites are separate from downloads and enabled mods.
 
-In **Mods Library** (called My Mods in earlier versions), switch between **All**, **Downloaded**, and **Installed**. Search and filter the list, or switch between grid and list views. **Paginated Browsing** in Settings applies to both the store and library; turn it off for continuous scrolling. Settings also provides a default sort preference.
+In **Mods Library**, switch between **All**, **Downloaded**, and **Installed**. Search and filter the list, or switch between grid and list views. **Paginated Browsing** in Settings applies to both the store and library; turn it off for continuous scrolling. Settings also provides a default sort preference.
 
-## Add Local Mods
+## Add local mods
 
 ![Add Local Mod upload area](/assets/v2-local-import.png)
 
@@ -25,15 +25,15 @@ In **Mods Library** (called My Mods in earlier versions), switch between **All**
 4. Review the metadata and category. Only the name is required.
 5. Add the mod to the library, then select its files and enable it as needed.
 
-Local mods do not automatically check for GameBanana updates. Keep a separate copy of custom sources if you want to preserve them.
+The manager does not check local mods for GameBanana updates. Keep a separate copy of any custom source files you want to preserve.
 
-If a mod includes fonts, the manager can offer **Install Fonts** or **Skip**. Review that prompt before choosing whether to use the bundled fonts.
+For mods with bundled fonts, choose **Install Fonts** to install them or **Skip** to leave them out.
 
-## Variants and Installed Files
+## Variants and installed files
 
 > **Screenshot pending:** Manage Files dialog showing selected variants.
 
-Open the mod's file-management button to use **Manage Files**. Select the archive files or variants you want and choose **Apply**. Files that have not been downloaded are marked **needs download**.
+Open **Manage Files** from the mod's file-management button, select the archive files or variants you want, and choose **Apply**. Files that have not been downloaded are marked **needs download**.
 
 The detail page lists installed VPK filenames and selected files. A mod may have several active variants; the Hero Skins page shows their active count. Sharded VPKs have associated files that the manager handles together.
 
@@ -42,35 +42,35 @@ The detail page lists installed VPK filenames and selected files. A mod may have
   the changed files on its next launch.
 </Callout>
 
-## Conflicts and Load Order
+## Conflicts and load order
 
-If **Hero Conflict Warning** is enabled in Settings, enabling another mod for the same hero can prompt you to **Swap mods**, **Keep both**, or cancel. Keeping both does not ensure they can work together: mods replacing the same files can conflict.
+If **Hero Conflict Warning** is enabled in Settings, enabling another mod for the same hero can prompt you to **Swap mods**, **Keep both**, or cancel. Mods that replace the same files can still conflict if you keep both.
 
 Use **Change Mods Order** in Mods Library to arrange the load order and save it. The library sorts by load order by default. Use **Disable all mods** to turn off the active profile's mods without individually toggling them.
 
 See [Hero Skins](/using-mod-manager/customization#hero-skins) for per-hero assignment and the option to allow several complementary skins.
 
-## Unrecognized Addons
+## Unrecognized addons
 
 > **Screenshot pending:** Unrecognized addons alert with review and analyze actions.
 
 The **Unrecognized mod files found** alert means addon files are not linked to library entries. Choose **Analyze** to try to match them with the catalog, or **Review files** to inspect filenames and show them in their folder.
 
-You can delete individual unrecognized files or use **Delete all**. These actions delete files from disk; back up anything you want to keep first. Dismissing the alert only hides it until new files appear.
+You can delete individual unrecognized files or use **Delete all**. Back up anything you want to keep before deleting files from disk. Dismissing the alert only hides it until new files appear.
 
-## Replace a Local Mod's VPKs
+## Replace a local mod's VPKs
 
 When the detail page offers VPK replacement, expand the section and select or drop replacement `.vpk` files. For a mod with multiple VPKs, select the targets and supply the expected number of replacement files.
 
-This replaces local content. Preserve the original files separately before using it, then restart Deadlock to test the replacement. Foundry also offers its own [export destinations](/using-mod-manager/customization#mod-foundry).
+VPK replacement overwrites local files. Keep a copy of the originals, then restart Deadlock to test the replacement. Foundry also offers its own [export destinations](/using-mod-manager/customization#mod-foundry).
 
-## Updates, Reinstalling, and Context Actions
+## Updates, reinstalling, and context actions
 
 Use **Check for updates** in Mods Library or **Update Mod** on a detail page to review available files. **Force Update**, when offered, opens the update flow even when no newer update was detected. **Reinstall Mod** rebuilds an installation from downloaded files.
 
 Right-click a library mod for actions such as sharing its source URL or showing its installed files in the game folder. See [Getting Started](/using-mod-manager/getting-started#updating-mods) for updates, uninstalling, and backups.
 
-## Mod Information and Reports
+## Mod information and reports
 
 A mod's detail page can include image and video galleries, audio previews, dependencies, an author changelog, and a **View Original Post** link. **Support Author** appears when donation links are available.
 

@@ -3,18 +3,17 @@ title: Features Overview
 description: Discover mod management, customization, profiles, and community features
 ---
 
-import { Card, Cards } from "fumadocs-ui/components/card";
 import { Callout } from "fumadocs-ui/components/callout";
 
 # Features Overview
 
-Deadlock Mod Manager helps you discover, download, and manage mods, customize heroes, and launch Deadlock with your chosen setup.
+Browse and manage Deadlock mods, customize your heroes, and launch the game with your chosen setup.
 
-## Mod Discovery
+## Mod discovery
 
-![Loaded Mods Store showing section tabs, filters, favorites, and sorting](/assets/v2-mods-store.png)
+![Mods Store showing section tabs, filters, favorites, and sorting](/assets/v2-mods-store.png)
 
-Open **Mods Store** to browse the Mods Store. Switch between mods, sounds, and works in progress (WIPs). With **Custom Maps** enabled, maps also have their own section.
+Open **Mods Store** to browse the catalog. Switch between mods, sounds, and works in progress (WIPs). With **Custom Maps** enabled, maps also have their own section.
 
 - Search by name, author, or description, and save favorites for later.
 - Include or exclude categories and heroes, and filter outdated content.
@@ -22,17 +21,17 @@ Open **Mods Store** to browse the Mods Store. Switch between mods, sounds, and w
 - Use the **Added** filter to narrow results by when submissions were published.
 - Open a mod to inspect its description, media, available downloads, requirements, and author changelog when provided.
 
-The catalog is cached locally and refreshed from GameBanana. Downloading new files and refreshing listings require an internet connection.
+The manager caches the GameBanana catalog locally. You need an internet connection to refresh listings or download new files.
 
-## Installation and Downloads
+## Installation and downloads
 
-Download a mod, choose its files or variants, then enable it in **Mods Library**. The Downloads page shows progress and lets you pause, resume, or retry downloads. You can also add local mods rather than downloading them from the store.
+Download a mod, choose its files or variants, then enable it in **Mods Library**. The Downloads page shows progress and lets you pause, resume, or retry downloads. You can also import local mod files.
 
 Mods with several VPK files or sharded VPK archives are supported. Select the variants you want when installing; the manager handles the associated files.
 
 See [Getting Started](/using-mod-manager/getting-started) for installation and launch instructions.
 
-## Managing Your Library
+## Managing your library
 
 From **Mods Library**, you can enable or disable mods, uninstall them, change load order, analyze existing local addons, and check for updates. When updates are available, review the files to install in the batch update dialog.
 
@@ -40,35 +39,33 @@ Use **Reinstall Mod** on a downloaded mod to rebuild its installation from its d
 
 See [Mods Library and Files](/using-mod-manager/library) for local imports, favorites, variants, conflict warnings, VPK replacement, and reporting broken mods.
 
-## Hero Skins and Customization
+## Hero Skins and customization
 
 **Hero Skins** groups downloaded skins by hero and lets you choose the active skin or return to the default appearance. You can manage variants, assign unrecognized mods to a hero, and toggle sounds and other hero mods separately.
 
-**Crosshairs** provides a crosshair editor and saved configurations. **Autoexec Config** lets you edit startup console commands and browse a command library. Plugins provide themes and other interface customization.
+Use the **Crosshairs** editor to create and save configurations. In **Autoexec Config**, edit startup console commands or choose them from the command library. Plugins let you customize the manager with themes and other visual settings.
 
 See [Customization](/using-mod-manager/customization) for instructions, including the Mod Foundry skin editor.
 
-## Profiles and Sharing
+## Profiles and sharing
 
 Profiles keep separate mod setups, including enabled mods and load order. Create a profile, activate it, and manage its mods in Mods Library. Share a Profile ID with friends or preview and import one they send you.
 
 See [Profiles and Sharing](/using-mod-manager/profiles) for the workflow and sharing limitations.
 
-## Community Servers and Player Stats
+## Community servers and player stats
 
 The **Server Browser** lists community servers with player counts and ping information. Its join flow checks required maps and addons before connecting.
 
-**Stats** offers an overview of your matches, hero and item statistics, squad information, and a live-match view. Optional **Match Data Sharing** can contribute missing match data to deadlock-api.
+**Stats** has a match overview, hero and item statistics, squad information, and a live-match view. Optional **Match Data Sharing** can contribute missing match data to deadlock-api.
 
 See [Servers and Stats](/using-mod-manager/community) for setup and privacy details.
 
-## Settings and Experimental Features
+## Settings and experimental features
 
 ![Experimental feature settings](/assets/v2-experimental.png)
 
-See [Settings and Recovery](/using-mod-manager/settings) for launch options, game configuration, Discord presence, networking, hero detection, content controls, and recovery tools.
-
-Settings has a search field to help find options. You can configure language, appearance, content filtering, network options, backups, and logging. **Privacy & Content** includes NSFW filtering and a reset for saved per-item choices.
+Use Settings search to find language, appearance, network, backup, and logging options. **Privacy & Content** controls NSFW filtering and saved per-item choices. See [Settings and Recovery](/using-mod-manager/settings) for details.
 
 <Callout type='info' title='Feature availability'>
   Open **Settings → Experimental** to control Custom Maps, Server Browser, Mod
@@ -80,7 +77,7 @@ Settings has a search field to help find options. You can configure language, ap
 
 Stable and nightly builds can differ. See [Update Channels](/using-mod-manager/update-channels) if a feature described here is missing from your installed version.
 
-## Feature Guide Index
+## Feature guide index
 
 | Feature group                                                             | Guide                                                 |
 | ------------------------------------------------------------------------- | ----------------------------------------------------- |
@@ -95,38 +92,3 @@ Stable and nightly builds can differ. See [Update Channels](/using-mod-manager/u
 | Stats, Steam match sharing, and cached-matchdata ingestion                | [Servers and Stats](/using-mod-manager/community)     |
 | Game setup, launch, network, privacy, backups, and diagnostics            | [Settings and Recovery](/using-mod-manager/settings)  |
 | App updates and release channels                                          | [Update Channels](/using-mod-manager/update-channels) |
-
-## Learn More
-
-<Cards>
-  <Card
-    title='Getting Started'
-    description='Install, enable, update, and launch mods'
-    href='/using-mod-manager/getting-started'
-  />
-  <Card
-    title='Mods Library and Files'
-    description='Imports, favorites, variants, and conflicts'
-    href='/using-mod-manager/library'
-  />
-  <Card
-    title='Settings and Recovery'
-    description='Launch, network, privacy, and recovery controls'
-    href='/using-mod-manager/settings'
-  />
-  <Card
-    title='Profiles and Sharing'
-    description='Create separate setups and import shared profiles'
-    href='/using-mod-manager/profiles'
-  />
-  <Card
-    title='Customization'
-    description='Hero skins, Foundry, crosshairs, and autoexec'
-    href='/using-mod-manager/customization'
-  />
-  <Card
-    title='Servers and Stats'
-    description='Join community servers and explore match data'
-    href='/using-mod-manager/community'
-  />
-</Cards>

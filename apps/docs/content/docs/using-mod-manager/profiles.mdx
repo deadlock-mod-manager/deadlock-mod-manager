@@ -7,13 +7,13 @@ import { Callout } from "fumadocs-ui/components/callout";
 
 # Profiles and Sharing
 
-A profile is a named mod setup with its own mod membership, enabled variants, and load order. Use profiles to keep different setups for testing mods or playing with friends.
+Each profile has its own mods, enabled variants, and load order. You can keep one setup for testing and another for playing with friends.
 
-## Enable Profile Features
+## Enable profile features
 
-Open **Settings → Experimental** and enable **Profile Management**. Enable **Profile Sharing** as well if you want to share or import setups. Both are enabled by default on a fresh setup, but your saved preferences may differ.
+Open **Settings → Experimental** and enable **Profile Management**. Enable **Profile Sharing** as well if you want to share or import setups. Both are on by default in a new installation. Existing installations keep their saved preferences.
 
-## Create and Switch Profiles
+## Create and switch profiles
 
 ![Manage Profiles dialog with the default profile and create and import actions](/assets/v2-profiles.png)
 
@@ -25,9 +25,9 @@ Open **Settings → Experimental** and enable **Profile Management**. Enable **P
 
 Check the active profile before changing mods or load order. Close Deadlock before switching setups so the next launch loads the intended files.
 
-You can edit a profile's name and description or delete it from Manage Profiles. The default profile has additional restrictions: only its description can be edited. Review the confirmation before deleting another profile.
+Manage Profiles lets you rename, edit, or delete profiles. For the default profile, you can only edit the description. Check the confirmation before deleting a profile.
 
-## Share a Profile
+## Share a profile
 
 1. Activate the profile you want to share and enable the mods you want included.
 2. Choose **Share Profile**.
@@ -35,13 +35,13 @@ You can edit a profile's name and description or delete it from Manage Profiles.
 
 Sharing requires an internet connection and at least one enabled mod.
 
-<Callout type='info' title='Sharing is not a file backup'>
+<Callout type='info' title='What a Profile ID contains'>
   A Profile ID describes a setup; it does not upload your local VPK files. The
   recipient needs access to the referenced downloads. Keep separate backups of
   local or custom mods.
 </Callout>
 
-## Import a Shared Profile
+## Import a shared profile
 
 ![Import Profile dialog waiting for a shared profile ID](/assets/v2-profile-import.png)
 
@@ -55,6 +55,6 @@ Older shared profiles can contain an ID that exists as both a GameBanana mod and
 
 <Callout type='warning' title='Check the import destination'>
   Override Active Profile changes your current setup. Create a new profile if
-  you want to preserve it. A removed or unavailable download may prevent a
-  shared setup from being reproduced completely.
+  you want to preserve it. If a download is unavailable, you may be unable to
+  recreate the full setup.
 </Callout>
