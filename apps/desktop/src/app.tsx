@@ -1,13 +1,13 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { TooltipProvider } from "@deadlock-mods/ui/components/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Outlet } from "react-router";
 import { FontInstallDialog } from "./components/downloads/font-install-dialog";
 import { ProgressProvider } from "./components/downloads/progress-indicator";
 import { ForgeInstallRenderer } from "./components/forge-install-renderer";
+import { GameGuardRenderer } from "./components/game-guard-renderer";
 import { FoundryProvider } from "./components/foundry/foundry-context";
 import { GamePresenceRenderer } from "./components/game-presence-renderer";
 import { LiveMatchRenderer } from "./components/live-match-renderer";
@@ -18,6 +18,7 @@ import { TauriAppWindowProvider } from "./components/layout/window-controls/wind
 import { OnboardingWizard } from "./components/onboarding/onboarding-wizard";
 import { TelemetryConsentDialog } from "./components/telemetry/telemetry-consent-dialog";
 import { AlertDialogProvider } from "./components/providers/alert-dialog";
+import { invokeGuarded } from "@/lib/game-guard";
 import { AppProvider } from "./components/providers/app";
 import { ThemeProvider } from "./components/providers/theme";
 import { ThemeOverridesProvider } from "./components/providers/theme-overrides";
@@ -109,7 +110,7 @@ const App = ({ runtime, storage }: AppProps) => {
       if (!activePendingFontInstall) return;
       const { modId } = activePendingFontInstall;
       try {
-        await invoke(command, { modId });
+        await invokeGuarded(command, { modId });
         dequeuePendingFontInstall();
       } catch (error) {
         logger
@@ -149,6 +150,7 @@ const App = ({ runtime, storage }: AppProps) => {
                       </>
                     )}
                     <ForgeInstallRenderer />
+                    <GameGuardRenderer />
                     <UpdateDialog
                       downloadProgress={downloadProgress}
                       isDownloading={isDownloading}

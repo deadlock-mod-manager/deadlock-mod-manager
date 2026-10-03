@@ -29,6 +29,7 @@ import logger from "@/lib/logger";
 import { getRuntimeBootstrap } from "@/lib/runtime-bootstrap";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus, type ModFileTree } from "@/types/mods";
+import { invokeGuarded } from "@/lib/game-guard";
 
 interface PathBackedFile extends File {
   path?: string;
@@ -196,7 +197,7 @@ export const useModProcessor = () => {
 
     setProcessing(true, t("addMods.processingFiles"));
     if (detectedSource.kind === "vpkPath") {
-      await invoke("place_forge_payload", {
+      await invokeGuarded("place_forge_payload", {
         path: detectedSource.path,
         destination: await join(filesDir, detectedSource.fileName),
       });
@@ -234,7 +235,7 @@ export const useModProcessor = () => {
       const activeProfile = getActiveProfile();
       const profileFolder = activeProfile?.folderName ?? null;
 
-      await invoke("copy_local_mod_vpks", {
+      await invokeGuarded("copy_local_mod_vpks", {
         modId: modId,
         profileFolder,
         isMap: category === ModCategory.MAPS,

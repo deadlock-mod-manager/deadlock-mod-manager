@@ -7,6 +7,7 @@ import {
   type RuntimeBootstrap,
   getRuntimeServiceOrigin,
 } from "./runtime-bootstrap";
+import { applyGameGuardSetting } from "./game-guard";
 import { syncProxyConfigToBackend } from "./proxy";
 import { usePersistedStore } from "./store";
 import {
@@ -42,6 +43,9 @@ const bootstrapApplication = async (): Promise<ApplicationBootstrap> => {
 
   await initializeApiUrl(getRuntimeServiceOrigin(runtime, "dmmApi"));
   await syncProxyConfigToBackend();
+  await applyGameGuardSetting(
+    usePersistedStore.getState().blockActionsWhileGameRunning,
+  );
   void invoke("refresh_policy_manifest").catch((error) => {
     logger
       .withError(error)

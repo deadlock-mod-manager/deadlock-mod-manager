@@ -20,6 +20,7 @@ import {
   type ModFileTree,
   ModStatus,
 } from "@/types/mods";
+import { invokeGuarded } from "@/lib/game-guard";
 
 const logger = createLogger("use-mod-options");
 
@@ -298,7 +299,7 @@ export const useModOptions = (mod: LocalMod | null) => {
         })
         .info("Applying unified file selection");
 
-      return await invoke<SwapModOptionsResult>("swap_mod_options", {
+      return await invokeGuarded<SwapModOptionsResult>("swap_mod_options", {
         modId: mod.remoteId,
         profileFolder,
         currentInstalledVpks: installedVpks,

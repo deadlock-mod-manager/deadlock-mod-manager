@@ -199,3 +199,18 @@ pub async fn is_game_running() -> Result<bool, Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.is_game_running()
 }
+
+/// Mirrors the "block actions while Deadlock is running" setting into the
+/// backend, which is where the guard actually runs.
+#[tauri::command]
+pub async fn set_game_file_guard(enabled: bool) -> Result<(), Error> {
+  crate::game_guard::set_enforced(enabled);
+  Ok(())
+}
+
+/// Arms the one-shot override behind the warning dialog's "continue anyway".
+#[tauri::command]
+pub async fn allow_next_game_file_operation(operation: String) -> Result<(), Error> {
+  crate::game_guard::allow_next(operation);
+  Ok(())
+}

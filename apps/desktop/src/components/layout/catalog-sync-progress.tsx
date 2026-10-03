@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { NetworkDiagnosticsButton } from "@/components/shared/network-diagnostics-dialog";
 import {
   CATALOG_SYNC_KEY,
   useCatalogSyncMutation,
@@ -62,12 +63,15 @@ export const CatalogSyncProgress = () => {
               t("mods.catalogSyncCount", { count: catalog.data.count })}
           </span>
         ) : (
-          <Button
-            size='sm'
-            variant='outline'
-            onClick={() => retry.mutate(false)}>
-            {t("common.retry")}
-          </Button>
+          <div className='flex shrink-0 gap-2'>
+            <NetworkDiagnosticsButton size='sm' variant='ghost' />
+            <Button
+              size='sm'
+              variant='outline'
+              onClick={() => retry.mutate(false)}>
+              {t("common.retry")}
+            </Button>
+          </div>
         )}
       </div>
       {syncing && (

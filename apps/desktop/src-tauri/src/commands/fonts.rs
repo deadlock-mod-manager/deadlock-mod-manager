@@ -117,6 +117,7 @@ pub(crate) fn apply_font_cleanup(cleanup: PreparedFontCleanup) -> Result<(), Err
 
 #[tauri::command]
 pub async fn install_mod_fonts(mod_id: String) -> Result<(), Error> {
+  crate::game_guard::ensure_game_idle_locked("install_mod_fonts")?;
   use crate::mod_manager::FontManager;
 
   log::info!("Installing fonts for mod: {mod_id}");
@@ -153,6 +154,7 @@ pub async fn install_mod_fonts(mod_id: String) -> Result<(), Error> {
 
 #[tauri::command]
 pub async fn discard_mod_fonts(mod_id: String) -> Result<(), Error> {
+  crate::game_guard::ensure_game_idle_locked("discard_mod_fonts")?;
   use crate::mod_manager::FontManager;
 
   log::info!("Discarding stashed fonts for mod: {mod_id}");

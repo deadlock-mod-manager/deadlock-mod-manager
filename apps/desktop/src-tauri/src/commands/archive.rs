@@ -56,6 +56,7 @@ pub async fn copy_selected_vpks_from_archive(
   profile_folder: Option<String>,
   _is_map: bool,
 ) -> Result<(), Error> {
+  crate::game_guard::ensure_game_idle_locked("copy_selected_vpks_from_archive")?;
   use crate::mod_manager::archive_extractor::ArchiveExtractor;
 
   log::info!(
@@ -146,6 +147,7 @@ pub async fn copy_local_mod_vpks(
   profile_folder: Option<String>,
   _is_map: bool,
 ) -> Result<Vec<String>, Error> {
+  crate::game_guard::ensure_game_idle_locked("copy_local_mod_vpks")?;
   use crate::mod_manager::vpk_manager::VpkManager;
 
   log::info!(
@@ -232,6 +234,7 @@ pub async fn replace_mod_vpks(
   installed_vpks: Option<Vec<String>>,
   profile_folder: Option<String>,
 ) -> Result<(), Error> {
+  crate::game_guard::ensure_game_idle_locked("replace_mod_vpks")?;
   log::info!(
     "Replacing VPK files for mod {mod_id}: {} files (profile: {profile_folder:?})",
     source_vpk_paths.len()

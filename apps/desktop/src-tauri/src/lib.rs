@@ -15,6 +15,7 @@ mod e2e_faults;
 mod errors;
 mod flatpak;
 mod forge_bridge;
+mod game_guard;
 mod game_presence;
 mod hero_detector;
 mod ingest_tool;
@@ -243,6 +244,8 @@ pub fn run() {
       commands::mods::reorder_mods,
       commands::mods::reorder_mods_by_remote_id,
       commands::game::is_game_running,
+      commands::game::set_game_file_guard,
+      commands::game::allow_next_game_file_operation,
       commands::deep_link::parse_deep_link,
       commands::deep_link::get_deep_link_debug_info,
       commands::gameinfo::backup_gameinfo,
