@@ -1,0 +1,134 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "workspaces": {
+    ".": {
+      "entry": ["scripts/*.{ts,mjs}"],
+      "project": ["scripts/**/*.{ts,mjs}"]
+    },
+    "apps/desktop": {
+      "entry": [
+        "src/main.tsx",
+        "**/*.{test,spec}.{ts,tsx}",
+        "scripts/**/*.{ts,mjs}",
+        "*.config.{ts,mjs}",
+        "e2e/cli.ts",
+        "e2e/wdio.conf.ts",
+        "e2e/specs/**/*.e2e.ts"
+      ],
+      "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts", "e2e/**/*.ts"],
+      "ignore": ["src/types/generated/**", "src/components/ui/**"],
+      "ignoreBinaries": ["where.exe", "taskkill.exe", "rustfmt"],
+      "ignoreDependencies": [
+        "@fontsource-variable/geist",
+        "@fontsource-variable/geist-mono",
+        "@wdio/cli",
+        "@wdio/local-runner",
+        "@wdio/mocha-framework",
+        "@wdio/spec-reporter",
+        "@wdio/tauri-service"
+      ],
+      "webdriver-io": {
+        "config": []
+      }
+    },
+    "apps/docs": {
+      "ignore": [".source/**", ".next/**", "scripts/content/**"],
+      "entry": [
+        "src/index.{ts,tsx,js}",
+        "src/main.{ts,tsx,js}",
+        "**/*.{test,spec}.{ts,tsx}",
+        "src/scripts/**/*.ts",
+        "scripts/**/*.{ts,mjs}",
+        "*.config.{ts,mjs}"
+      ]
+    },
+    "apps/bot": {
+      "entry": [
+        "src/index.ts",
+        "**/*.{test,spec}.{ts,tsx}",
+        "src/scripts/**/*.ts",
+        "scripts/**/*.{ts,mjs}",
+        "*.config.{ts,mjs}",
+        "src/commands/**/*.ts",
+        "src/listeners/**/*.ts"
+      ]
+    },
+    "tools/oxlint-plugins": {
+      "entry": ["src/plugins/anti-slop/index.ts"]
+    },
+    "apps/*": {
+      "entry": [
+        "src/index.{ts,tsx,js}",
+        "src/main.{ts,tsx,js}",
+        "**/*.{test,spec}.{ts,tsx}",
+        "src/scripts/**/*.ts",
+        "scripts/**/*.{ts,mjs}",
+        "*.config.{ts,mjs}"
+      ]
+    },
+    "packages/*": {
+      "entry": [
+        "src/index.{ts,tsx,js}",
+        "src/main.{ts,tsx,js}",
+        "**/*.{test,spec}.{ts,tsx}",
+        "src/scripts/**/*.ts",
+        "scripts/**/*.{ts,mjs}",
+        "*.config.{ts,mjs}"
+      ]
+    },
+    "tools/*": {
+      "entry": [
+        "src/index.{ts,tsx,js}",
+        "src/main.{ts,tsx,js}",
+        "**/*.{test,spec}.{ts,tsx}",
+        "src/scripts/**/*.ts",
+        "scripts/**/*.{ts,mjs}",
+        "*.config.{ts,mjs}"
+      ]
+    },
+    "apps/lockdex": {
+      "entry": [
+        "src/index.{ts,tsx,js}",
+        "src/main.{ts,tsx,js}",
+        "**/*.{test,spec}.{ts,tsx}",
+        "src/scripts/**/*.ts",
+        "scripts/**/*.{ts,mjs}",
+        "*.config.{ts,mjs}",
+        "src/instrument.ts"
+      ]
+    },
+    "apps/auth": {
+      "entry": [
+        "src/index.{ts,tsx,js}",
+        "src/main.{ts,tsx,js}",
+        "**/*.{test,spec}.{ts,tsx}",
+        "src/scripts/**/*.ts",
+        "scripts/**/*.{ts,mjs}",
+        "*.config.{ts,mjs}",
+        "src/routes/**/*.{ts,tsx}"
+      ]
+    },
+    "apps/www": {
+      "entry": [
+        "src/index.{ts,tsx,js}",
+        "src/main.{ts,tsx,js}",
+        "**/*.{test,spec}.{ts,tsx}",
+        "src/scripts/**/*.ts",
+        "scripts/**/*.{ts,mjs}",
+        "*.config.{ts,mjs}",
+        "src/routes/**/*.{ts,tsx}"
+      ]
+    }
+  },
+  "ignore": [
+    "**/dist/**",
+    "**/build/**",
+    "**/target/**",
+    "**/src/generated/**"
+  ],
+  "drizzle": false,
+  "ignoreIssues": {
+    "**/routeTree.gen.ts": ["exports", "types"]
+  },
+  "ignoreWorkspaces": ["apps/dmodpkg"]
+}

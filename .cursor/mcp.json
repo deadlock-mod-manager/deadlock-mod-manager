@@ -5,6 +5,13 @@
       "args": [
         "@hypothesi/tauri-mcp-server"
       ]
+    },
+    "transcripts": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "transcripts-mcp@0.1.0"
+      ]
     }
   }
 }

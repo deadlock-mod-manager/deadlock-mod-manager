@@ -1,0 +1,18 @@
+{
+  "name": "@deadlock-mods/oxlint-plugins",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./anti-slop": "./src/plugins/anti-slop/index.ts"
+  },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@oxlint/plugins": "1.65.0"
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
+  }
+}

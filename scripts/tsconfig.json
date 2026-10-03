@@ -1,0 +1,16 @@
+{
+  "extends": "../tools/typescript/base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "types": [
+      "bun"
+    ],
+    "incremental": false
+  },
+  "include": [
+    "tests/*.test.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
