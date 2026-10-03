@@ -11,9 +11,13 @@ import { PromptSyncService } from "@/services/prompt-sync";
 
 export class BotStartupService {
   async initialize(client: SapphireClient): Promise<void> {
-    await this.syncPrompts();
-    await this.bootstrapFeatureFlags();
-    await this.initializePatternSync();
+    if (env.AI_SUPPORT_ENABLED) {
+      await this.syncPrompts();
+      await this.bootstrapFeatureFlags();
+      await this.initializePatternSync();
+    } else {
+      logger.info("AI support is disabled");
+    }
     await this.setupCronJobs();
     await this.loginToDiscord(client);
   }
@@ -52,7 +56,7 @@ export class BotStartupService {
       name: DocumentationSyncProcessor.name,
       pattern: DocumentationSyncProcessor.cronPattern,
       processor: DocumentationSyncProcessor.instance,
-      enabled: true,
+      enabled: env.AI_SUPPORT_ENABLED,
     });
 
     logger.info("Defining nightly testers sync cron job");
@@ -60,8 +64,13 @@ export class BotStartupService {
       name: NightlyTestersSyncProcessor.name,
       pattern: NightlyTestersSyncProcessor.cronPattern,
       processor: NightlyTestersSyncProcessor.instance,
-      enabled: true,
+      enabled: env.AI_SUPPORT_ENABLED,
     });
+
+    if (!env.AI_SUPPORT_ENABLED) {
+      await cronService.disableJob(DocumentationSyncProcessor.name);
+      await cronService.disableJob(NightlyTestersSyncProcessor.name);
+    }
 
     cronService.start();
   }

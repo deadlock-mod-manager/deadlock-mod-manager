@@ -2,6 +2,7 @@ import { db, MessagePatternRepository } from "@deadlock-mods/database";
 import { OpenAIEmbeddings } from "@langchain/openai";
 import { Command } from "@sapphire/framework";
 import { type GuildMember, MessageFlags } from "discord.js";
+import { env } from "../lib/env";
 import { logger as mainLogger } from "../lib/logger";
 import {
   getBlacklistRequiredPermissionsDisplay,
@@ -65,6 +66,13 @@ export class PatternCommand extends Command {
   override async chatInputRun(
     interaction: Command.ChatInputCommandInteraction,
   ) {
+    if (!env.AI_SUPPORT_ENABLED) {
+      return interaction.reply({
+        content: "AI support is currently disabled.",
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+
     const { user, member } = interaction;
 
     if (!hasBlacklistPermission(user, member as GuildMember)) {

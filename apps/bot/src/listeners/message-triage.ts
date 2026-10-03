@@ -28,7 +28,9 @@ export class MessageTriageListener extends Listener {
       env.BUG_REPORT_CHANNEL_ID,
     ]);
 
-    this.initializeService();
+    if (env.AI_SUPPORT_ENABLED) {
+      this.initializeService();
+    }
   }
 
   private async initializeService() {
@@ -65,7 +67,7 @@ export class MessageTriageListener extends Listener {
   }
 
   public async run(message: Message) {
-    if (!this.shouldProcess(message)) {
+    if (!env.AI_SUPPORT_ENABLED || !this.shouldProcess(message)) {
       return;
     }
 

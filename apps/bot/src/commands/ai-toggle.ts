@@ -1,5 +1,6 @@
 import { Command } from "@sapphire/framework";
 import { MessageFlags, PermissionFlagsBits } from "discord.js";
+import { env } from "../lib/env";
 import { logger as mainLogger } from "../lib/logger";
 import { FeatureFlagsService } from "../services/feature-flags";
 
@@ -34,6 +35,13 @@ export class AiToggleCommand extends Command {
   override async chatInputRun(
     interaction: Command.ChatInputCommandInteraction,
   ) {
+    if (!env.AI_SUPPORT_ENABLED) {
+      return interaction.reply({
+        content: "AI support is currently disabled.",
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+
     const { user } = interaction;
     const subcommand = interaction.options.getSubcommand();
 

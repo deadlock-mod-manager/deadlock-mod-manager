@@ -23,6 +23,27 @@ const sentryClient = Sentry.init({
   tracesSampleRate: 1,
 })!;
 
+const spanProcessors: (SentrySpanProcessor | LangfuseSpanProcessor)[] = [
+  new SentrySpanProcessor(),
+];
+
+if (env.AI_SUPPORT_ENABLED) {
+  spanProcessors.push(
+    new LangfuseSpanProcessor({
+      environment: env.NODE_ENV,
+      secretKey: env.LANGFUSE_SECRET_KEY,
+      publicKey: env.LANGFUSE_PUBLIC_KEY,
+      baseUrl: env.LANGFUSE_BASE_URL,
+      shouldExportSpan: ({ otelSpan }) => {
+        return ["langfuse-sdk", "ai", "langchain"].includes(
+          otelSpan.instrumentationScope.name,
+        );
+      },
+      exportMode: "immediate",
+    }),
+  );
+}
+
 const sdk = new NodeSDK({
   serviceName: "bot",
   instrumentations: [
@@ -41,21 +62,7 @@ const sdk = new NodeSDK({
     propagators: [new W3CTraceContextPropagator(), new SentryPropagator()],
   }),
   sampler: sentryClient ? new SentrySampler(sentryClient) : undefined,
-  spanProcessors: [
-    new SentrySpanProcessor(),
-    new LangfuseSpanProcessor({
-      environment: env.NODE_ENV,
-      secretKey: env.LANGFUSE_SECRET_KEY,
-      publicKey: env.LANGFUSE_PUBLIC_KEY,
-      baseUrl: env.LANGFUSE_BASE_URL,
-      shouldExportSpan: ({ otelSpan }) => {
-        return ["langfuse-sdk", "ai", "langchain"].includes(
-          otelSpan.instrumentationScope.name,
-        );
-      },
-      exportMode: "immediate",
-    }),
-  ],
+  spanProcessors,
 });
 
 sdk.start();

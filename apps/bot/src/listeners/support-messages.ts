@@ -1,6 +1,7 @@
 import { Listener } from "@sapphire/framework";
 import type { Message, TextChannel } from "discord.js";
 import { supportAgent } from "@/ai/agents/support";
+import { env } from "@/lib/env";
 import { logger as mainLogger } from "@/lib/logger";
 import { FeatureFlagsService } from "@/services/feature-flags";
 
@@ -20,6 +21,10 @@ export class SupportMessageListener extends Listener {
   }
 
   public async shouldRespond(message: Message) {
+    if (!env.AI_SUPPORT_ENABLED) {
+      return false;
+    }
+
     const aiEnabled = await FeatureFlagsService.instance
       .getService()
       .isFeatureFlagEnabled("ai_replies_enabled");

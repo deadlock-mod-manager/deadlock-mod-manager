@@ -1,15 +1,10 @@
 import { REST } from "@discordjs/rest";
 import { SapphireClient } from "@sapphire/framework";
-import { GatewayIntentBits } from "discord.js";
+import { getBotIntents } from "../config/ai-support";
 import { env } from "./env";
 
 const client = new SapphireClient({
-  intents: [
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.GuildMembers,
-  ],
+  intents: getBotIntents(env.AI_SUPPORT_ENABLED),
   loadMessageCommandListeners: true,
 });
 
