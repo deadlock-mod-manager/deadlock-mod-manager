@@ -2,11 +2,14 @@
 //!
 //! Grimoire (an Electron mod manager) keeps no mod library of its own. The
 //! game folder is the library:
-//! - enabled mods are `pakNN_dir.vpk` in `citadel/addons` and the overflow
-//!   roots `citadel/addons1..9`,
+//! - enabled mods are `pakNN_dir.vpk` in `citadel/addons`, the overflow roots
+//!   `citadel/addons1..9`, and the "Global" priority root `citadel/grimoire`
+//!   (slots 5+; 1-4 are Locker output), which the game searches first,
 //! - disabled mods are free-form `*_dir.vpk` files in `citadel/addons/.disabled`,
 //! - identity lives in `<userData>/mod-metadata.json`, keyed by the file name
-//!   (`addonsN/<file>` for overflow roots) and fingerprinted with `sha256`.
+//!   (`addonsN/<file>` and `grimoire/<file>` outside the base folder) and
+//!   fingerprinted with `sha256`. Grimoire can "imprint" a VPK, which changes
+//!   its bytes; the original hash then travels inside it as `addoninfo.txt`.
 //!
 //! Every Grimoire version writes the same shape, but the sidecar drifts: slots
 //! get reused by other tools and entries go stale. So an entry whose `sha256`
@@ -41,6 +44,16 @@ static OVERFLOW_ROOT: LazyLock<Regex> =
   LazyLock::new(|| Regex::new(r"(?i)^addons(\d+)$").expect("valid regex"));
 static VPK_CHUNK: LazyLock<Regex> =
   LazyLock::new(|| Regex::new(r"(?i)_\d{3}\.vpk$").expect("valid regex"));
+/// Grimoire's staging names while it moves files (`tmp<hex>_<n>_<name>`).
+static STAGING_TEMP: LazyLock<Regex> =
+  LazyLock::new(|| Regex::new(r"(?i)^tmp[0-9a-f]{8}_\d+_").expect("valid regex"));
+static EMBEDDED_ORIGINAL: LazyLock<Regex> = LazyLock::new(|| {
+  Regex::new(r#"(?i)"?(?:grimoire)?originalsha256"?\s+"?([0-9a-f]{64})"?"#).expect("valid regex")
+});
+
+/// Grimoire's priority root and its first slot for user ("Global") mods.
+const PRIORITY_ROOT: &str = "grimoire";
+const PRIORITY_FIRST_SLOT: u64 = 5;
 
 /// Metadata flags that mark a VPK Grimoire generates itself (Locker output).
 /// These are rebuilt from Grimoire's own state and mean nothing elsewhere.
@@ -101,7 +114,21 @@ pub fn detect(explicit: Option<PathBuf>, fallback_game_path: Option<&Path>) -> G
     .iter()
     .map(|path| path.display().to_string())
     .collect();
+  let fallback_dir = candidates.first().cloned();
   let Some(dir) = candidates.into_iter().find(|dir| looks_like_user_data(dir)) else {
+    // Grimoire's own data is gone (uninstalled and cleaned up), but its mods
+    // may still be in the game folder: read them from there, by file only.
+    if let Some(game) = fallback_game_path.filter(|game| has_grimoire_mods(game))
+      && let Some(dir) = fallback_dir
+    {
+      return GrimoireDetection {
+        found: true,
+        user_data_dir: Some(dir.display().to_string()),
+        deadlock_path: Some(game.display().to_string()),
+        has_metadata: false,
+        searched,
+      };
+    }
     return GrimoireDetection {
       found: false,
       user_data_dir: None,
@@ -118,6 +145,18 @@ pub fn detect(explicit: Option<PathBuf>, fallback_game_path: Option<&Path>) -> G
     deadlock_path: deadlock_path.map(|path| path.display().to_string()),
     searched,
   }
+}
+
+/// Grimoire's own folders in the game: `.disabled` parking and the priority
+/// root. Neither is created by the game or by DMM.
+fn has_grimoire_mods(game: &Path) -> bool {
+  let citadel = game.join("game").join("citadel");
+  [
+    citadel.join("addons").join(".disabled"),
+    citadel.join(PRIORITY_ROOT),
+  ]
+  .iter()
+  .any(|dir| !vpk_files_in(dir).is_empty())
 }
 
 fn read_settings(user_data_dir: &Path) -> Map<String, Value> {
@@ -222,10 +261,13 @@ struct Candidate {
   file_name: String,
   meta_key: String,
   enabled: bool,
-  /// Global load position: folder * 100 + pak number for enabled files.
+  /// Global load position: the priority root first, then each addon folder
+  /// (folder * 100 + pak number), then everything that is not loaded.
   load_position: u64,
 }
 
+/// The `*_dir.vpk` files Grimoire lists from one folder (its scan ignores any
+/// other `.vpk`), minus its own transient staging files.
 fn vpk_files_in(dir: &Path) -> Vec<(PathBuf, String)> {
   let mut files: Vec<(PathBuf, String)> = fs::read_dir(dir)
     .map(|entries| {
@@ -235,8 +277,9 @@ fn vpk_files_in(dir: &Path) -> Vec<(PathBuf, String)> {
         .filter_map(|entry| {
           let name = entry.file_name().to_str()?.to_string();
           let lower = name.to_ascii_lowercase();
-          (lower.ends_with(".vpk")
-            && !VPK_CHUNK.is_match(&name)
+          (lower.ends_with("_dir.vpk")
+            && !name.starts_with('.')
+            && !STAGING_TEMP.is_match(&name)
             && !lower.contains(".merge-rebuild"))
           .then(|| (entry.path(), name))
         })
@@ -245,6 +288,34 @@ fn vpk_files_in(dir: &Path) -> Vec<(PathBuf, String)> {
     .unwrap_or_default();
   files.sort_by(|a, b| a.1.cmp(&b.1));
   files
+}
+
+/// Whether a `_dir.vpk` has `_000.vpk`-style archive parts next to it. DMM
+/// moves and copies single files only, so such a mod would arrive broken.
+fn has_archive_parts(path: &Path) -> bool {
+  let Some(name) = path.file_name().and_then(|n| n.to_str()) else {
+    return false;
+  };
+  let Some(stem) = name
+    .len()
+    .checked_sub("_dir.vpk".len())
+    .map(|end| name[..end].to_ascii_lowercase())
+  else {
+    return false;
+  };
+  let Some(dir) = path.parent() else {
+    return false;
+  };
+  fs::read_dir(dir).is_ok_and(|entries| {
+    entries.flatten().any(|entry| {
+      entry.file_name().to_str().is_some_and(|other| {
+        let other = other.to_ascii_lowercase();
+        other
+          .strip_prefix(&stem)
+          .is_some_and(|rest| VPK_CHUNK.is_match(rest) && rest.len() == "_000.vpk".len())
+      })
+    })
+  })
 }
 
 /// Files the DMM default profile already owns. When both managers share
@@ -278,7 +349,16 @@ fn is_dmm_prefixed(file_name: &str) -> bool {
 fn collect_candidates(citadel: &Path, warnings: &mut Vec<String>) -> Vec<Candidate> {
   let addons = citadel.join("addons");
   let owned = dmm_owned_files(&addons);
-  let mut roots: Vec<(u64, PathBuf, Option<String>)> = vec![(0, addons.clone(), None)];
+  // (load rank, folder, metadata key prefix). The priority root is searched
+  // before every addon folder; overflow folders follow the base folder.
+  let mut roots: Vec<(u64, PathBuf, Option<String>)> = vec![
+    (
+      0,
+      citadel.join(PRIORITY_ROOT),
+      Some(PRIORITY_ROOT.to_string()),
+    ),
+    (1, addons.clone(), None),
+  ];
   if let Ok(entries) = fs::read_dir(citadel) {
     for entry in entries.flatten() {
       let Some(name) = entry.file_name().to_str().map(str::to_string) else {
@@ -288,45 +368,63 @@ fn collect_candidates(citadel: &Path, warnings: &mut Vec<String>) -> Vec<Candida
         && entry.path().is_dir()
         && let Ok(index) = captures[1].parse::<u64>()
       {
-        roots.push((index, entry.path(), Some(name)));
+        roots.push((index + 1, entry.path(), Some(name)));
       }
     }
   }
-  roots.sort_by_key(|(index, _, _)| *index);
+  roots.sort_by_key(|(rank, _, _)| *rank);
 
   let mut candidates = Vec::new();
   let mut skipped_dmm = 0usize;
-  for (folder_index, root, root_name) in &roots {
+  let mut multipart = Vec::new();
+  let mut unloaded = 0u64;
+  for (rank, root, root_name) in &roots {
+    let is_priority_root = *rank == 0;
     for (path, file_name) in vpk_files_in(root) {
-      if owned.contains(&normalize(&path)) {
+      if owned.contains(&normalize(&path)) || is_dmm_prefixed(&file_name) {
         skipped_dmm += 1;
         continue;
       }
-      let Some(captures) = ENABLED_PAK.captures(&file_name) else {
-        // A DMM-parked `<id>_<name>.vpk`, a `.bak`, or anything else the
-        // game does not load from this folder: not part of Grimoire's list.
-        if is_dmm_prefixed(&file_name) {
-          skipped_dmm += 1;
-        }
-        continue;
-      };
-      let pak: u64 = captures[1].parse().unwrap_or(99);
       let meta_key = match root_name {
         Some(root_name) => format!("{root_name}/{file_name}"),
         None => file_name.clone(),
+      };
+      let slot = ENABLED_PAK
+        .captures(&file_name)
+        .and_then(|captures| captures[1].parse::<u64>().ok());
+      if is_priority_root && slot.is_none_or(|slot| slot < PRIORITY_FIRST_SLOT) {
+        // Locker output (pak01-04) and anything the game does not mount.
+        continue;
+      }
+      if has_archive_parts(&path) {
+        multipart.push(file_name);
+        continue;
+      }
+      // Grimoire lists any `*_dir.vpk` in an addon folder, but the game only
+      // mounts `pakNN_dir.vpk`: anything else is imported as disabled.
+      let (enabled, load_position) = match slot {
+        Some(slot) => (true, rank * 100 + slot),
+        None => {
+          unloaded += 1;
+          (false, 50_000 + unloaded)
+        }
       };
       candidates.push(Candidate {
         path,
         file_name,
         meta_key,
-        enabled: true,
-        load_position: folder_index * 100 + pak,
+        enabled,
+        load_position,
       });
     }
   }
 
   let disabled_dir = addons.join(".disabled");
   for (index, (path, file_name)) in vpk_files_in(&disabled_dir).into_iter().enumerate() {
+    if has_archive_parts(&path) {
+      multipart.push(file_name);
+      continue;
+    }
     candidates.push(Candidate {
       meta_key: file_name.clone(),
       file_name,
@@ -339,6 +437,13 @@ fn collect_candidates(citadel: &Path, warnings: &mut Vec<String>) -> Vec<Candida
   if skipped_dmm > 0 {
     warnings.push(format!(
       "{skipped_dmm} file(s) in the shared addons folder belong to Deadlock Mod Manager and were left out"
+    ));
+  }
+  if !multipart.is_empty() {
+    warnings.push(format!(
+      "{} mod(s) are split into several archive parts, which Deadlock Mod Manager cannot load, and were left out: {}",
+      multipart.len(),
+      multipart.join(", ")
     ));
   }
   candidates
@@ -375,6 +480,8 @@ enum SubmissionKindOrd {
 struct Resolved {
   candidate: Candidate,
   sha256: String,
+  /// Grimoire's identity for the file (see [`embedded_original_sha256`]).
+  canonical: String,
   size: u64,
   meta: Option<Map<String, Value>>,
 }
@@ -427,6 +534,12 @@ pub fn read_with(
 
   let metadata = load_metadata(user_data_dir);
   document.warnings.extend(metadata.warning);
+  if !looks_like_user_data(user_data_dir) {
+    document.warnings.push(
+      "Grimoire's settings were not found; mods are read from the game folder only, without names, profiles or crosshairs"
+        .to_string(),
+    );
+  }
 
   let mut resolved = Vec::new();
   let mut stale = 0usize;
@@ -474,9 +587,12 @@ pub fn read_with(
         continue;
       }
     };
+    // The identity Grimoire matches on: the original hash an imprint carries,
+    // else the live bytes.
+    let canonical = embedded_original_sha256(&candidate.path).unwrap_or_else(|| sha256.clone());
     if let Some(entry) = &meta
       && let Some(recorded) = meta_str(entry, "sha256")
-      && !recorded.eq_ignore_ascii_case(&sha256)
+      && !recorded.eq_ignore_ascii_case(&canonical)
     {
       stale += 1;
       meta = None;
@@ -484,6 +600,7 @@ pub fn read_with(
     resolved.push(Resolved {
       candidate,
       sha256,
+      canonical,
       size,
       meta,
     });
@@ -527,14 +644,31 @@ pub fn read_with(
   }
 
   let mut mods = Vec::new();
-  // Every file name / metaKey Grimoire might use in a profile, per entry key.
-  let mut key_by_file: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+  let mut lookup = ProfileLookup::default();
   for (key, mut items) in groups {
     items.sort_by_key(|item| (!item.candidate.enabled, item.candidate.load_position));
     let entry_key = group_entry_key(&key);
     for item in &items {
-      key_by_file.insert(item.candidate.meta_key.to_lowercase(), entry_key.clone());
-      key_by_file.insert(item.candidate.file_name.to_lowercase(), entry_key.clone());
+      // Grimoire only matches a profile entry by file name when neither side
+      // carries a GameBanana id (pakNN names are reused after every reorder).
+      if matches!(key, GroupKey::Local(_)) {
+        lookup
+          .by_file
+          .insert(item.candidate.meta_key.to_lowercase(), entry_key.clone());
+        lookup
+          .by_file
+          .insert(item.candidate.file_name.to_lowercase(), entry_key.clone());
+      }
+      lookup
+        .by_hash
+        .insert(item.canonical.to_lowercase(), entry_key.clone());
+      if item
+        .candidate
+        .meta_key
+        .starts_with(&format!("{PRIORITY_ROOT}/"))
+      {
+        lookup.global.insert(entry_key.clone());
+      }
     }
     // Byte-identical copies (Grimoire re-imports, leftovers) collapse to one.
     let mut seen_hashes = HashSet::new();
@@ -554,12 +688,22 @@ pub fn read_with(
     })
     .collect();
 
-  read_profiles(user_data_dir, &settings, &key_by_file, &mut document);
+  read_profiles(user_data_dir, &settings, &lookup, &mut document);
   read_crosshair_presets(user_data_dir, &mut document);
   let mut warnings = Vec::new();
   drop_dangling_profile_entries(&document.mods, &mut document.profiles, &mut warnings);
   document.warnings.extend(warnings);
   Ok(document)
+}
+
+/// The pre-imprint hash Grimoire embeds in `addoninfo.txt` when it tags a
+/// VPK in place. Only read for files that carry one.
+fn embedded_original_sha256(path: &Path) -> Option<String> {
+  let bytes = source2_model::vpk_extract::extract_entry(path, "addoninfo.txt").ok()?;
+  let text = String::from_utf8_lossy(&bytes);
+  EMBEDDED_ORIGINAL
+    .captures(&text)
+    .map(|captures| captures[1].to_ascii_lowercase())
 }
 
 fn group_entry_key(key: &GroupKey) -> String {
@@ -627,10 +771,21 @@ fn read_json_array(path: &Path) -> Vec<Value> {
 /// Grimoire profiles are snapshots of which installed files were enabled, in
 /// which order, plus an optional crosshair and autoexec commands. Entries are
 /// matched to library mods by GameBanana id first (stable), then by file name.
+/// How Grimoire's profile entries find their library mod.
+#[derive(Default)]
+struct ProfileLookup {
+  /// File name or metadata key -> entry key, local mods only.
+  by_file: std::collections::HashMap<String, String>,
+  /// Canonical sha256 -> entry key.
+  by_hash: std::collections::HashMap<String, String>,
+  /// Entry keys of "Global" mods, which load before every addon folder.
+  global: HashSet<String>,
+}
+
 fn read_profiles(
   user_data_dir: &Path,
   settings: &Map<String, Value>,
-  key_by_file: &std::collections::HashMap<String, String>,
+  lookup: &ProfileLookup,
   document: &mut InterchangeDocument,
 ) {
   let active_id = settings.get("activeProfileId").and_then(Value::as_str);
@@ -646,51 +801,68 @@ fn read_profiles(
       .filter(|n| !n.trim().is_empty())
       .unwrap_or(id)
       .to_string();
-    let mut mods: Vec<InterchangeProfileMod> = Vec::new();
     let entries = raw
       .get("mods")
       .and_then(Value::as_array)
       .cloned()
       .unwrap_or_default();
+    // (global first, saved priority, position) -> entry, like Grimoire's apply.
+    let mut matched: Vec<((bool, u64, usize), InterchangeProfileMod)> = Vec::new();
     for (index, entry) in entries.iter().enumerate() {
-      let by_id = entry
-        .get("gameBananaId")
-        .and_then(Value::as_u64)
-        .and_then(|gb| {
-          [
-            format!("gamebanana:mod:{gb}"),
-            format!("gamebanana:sound:{gb}"),
-          ]
-          .into_iter()
-          .find(|key| library_keys.contains(key))
-        });
+      let gb_id = entry.get("gameBananaId").and_then(Value::as_u64);
+      let by_id = gb_id.and_then(|gb| {
+        [
+          format!("gamebanana:mod:{gb}"),
+          format!("gamebanana:sound:{gb}"),
+        ]
+        .into_iter()
+        .find(|key| library_keys.contains(key))
+      });
+      let by_hash = || {
+        entry
+          .get("sha256")
+          .and_then(Value::as_str)
+          .and_then(|hash| lookup.by_hash.get(&hash.to_lowercase()).cloned())
+      };
       let by_file = || {
+        gb_id.is_none().then_some(())?;
         entry
           .get("fileName")
           .and_then(Value::as_str)
-          .and_then(|file| key_by_file.get(&file.to_lowercase()).cloned())
+          .and_then(|file| lookup.by_file.get(&file.to_lowercase()).cloned())
       };
-      let Some(mod_key) = by_id.or_else(by_file) else {
+      let Some(mod_key) = by_id.or_else(by_hash).or_else(by_file) else {
         unresolved += 1;
         continue;
       };
-      if mods.iter().any(|m| m.mod_key == mod_key) {
+      if matched.iter().any(|(_, m)| m.mod_key == mod_key) {
         continue;
       }
-      let order = entry
+      let priority = entry
         .get("priority")
         .and_then(Value::as_u64)
-        .unwrap_or(index as u64) as u32;
-      mods.push(InterchangeProfileMod {
-        mod_key,
-        enabled: entry
-          .get("enabled")
-          .and_then(Value::as_bool)
-          .unwrap_or(false),
-        order,
-      });
+        .unwrap_or(index as u64);
+      matched.push((
+        (!lookup.global.contains(&mod_key), priority, index),
+        InterchangeProfileMod {
+          mod_key,
+          enabled: entry
+            .get("enabled")
+            .and_then(Value::as_bool)
+            .unwrap_or(false),
+          order: 0,
+        },
+      ));
     }
-    mods.sort_by_key(|m| m.order);
+    matched.sort_by_key(|(rank, _)| *rank);
+    let mods: Vec<InterchangeProfileMod> = matched
+      .into_iter()
+      .enumerate()
+      .map(|(order, (_, mut entry))| {
+        entry.order = order as u32;
+        entry
+      })
+      .collect();
 
     let key = format!("profile:{id}");
     let crosshair_key = raw

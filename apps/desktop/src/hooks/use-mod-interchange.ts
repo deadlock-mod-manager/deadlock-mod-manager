@@ -182,6 +182,13 @@ const importIntoProfile = async (
         profileFolder: profile?.folderName ?? null,
         startOrder,
         knownModIds: libraryMods.map((mod) => mod.remoteId),
+        existingOrders: Object.fromEntries(
+          libraryMods.flatMap((mod) =>
+            typeof mod.installOrder === "number"
+              ? [[mod.remoteId, mod.installOrder]]
+              : [],
+          ),
+        ),
       },
     },
   );

@@ -160,12 +160,15 @@ finishes, even when the source data is incomplete or out of date:
 3. Missing names fall back to the source file name. Missing GameBanana
    metadata is fetched from the catalog when available and otherwise kept from
    the document.
-4. The importer never moves, renames or deletes source files. When a source
-   file already sits in a slot the target manager loads (both managers share
-   `citadel/addons`), it is adopted in place instead of loading a second copy.
-   Everything else is copied.
+4. The importer never deletes source files and never touches files outside
+   the folders it manages itself. Both managers share `citadel/addons`, so a
+   source file may already sit where the target manager lists its own mods:
+   such a file is adopted in place (and moved within those folders when the
+   document asks for another state, e.g. disabled), never copied, so the game
+   does not load a stray second copy. Everything else is copied.
 5. Load order is preserved relative to the other imported entries and placed
-   after the mods already in the target profile.
+   after the mods already in the target profile. Readers take the order the
+   source manager shows, not incidental file or key order.
 6. An importer remembers which document key became which mod in its library.
    Re-importing after the user re-identified a mod (local to GameBanana) must
    not bring the old copy back.

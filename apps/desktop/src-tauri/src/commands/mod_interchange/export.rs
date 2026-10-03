@@ -231,6 +231,17 @@ pub fn export(
   request: InterchangeExportRequest,
   progress: &dyn Fn(ExportProgress),
 ) -> Result<InterchangeExportReport, Error> {
+  let store = manager.get_mods_store_path()?;
+  export_from(manager, &store, request, progress)
+}
+
+/// [`export`] with DMM's mod store folder given.
+pub fn export_from(
+  manager: &ModManager,
+  store: &Path,
+  request: InterchangeExportRequest,
+  progress: &dyn Fn(ExportProgress),
+) -> Result<InterchangeExportReport, Error> {
   let destination = PathBuf::from(&request.destination_dir);
   if !destination.is_dir() {
     return Err(Error::InvalidInput(format!(
@@ -238,7 +249,6 @@ pub fn export(
       destination.display()
     )));
   }
-  let store = manager.get_mods_store_path()?;
 
   let mut profiles = request.profiles;
   // Active profile first: its state becomes the library's enabled/order.
@@ -325,7 +335,7 @@ pub fn export(
     let mut files_on_disk = source_files(
       source.manifest.as_ref(),
       &source.base,
-      &store,
+      store,
       &plan.input.mod_id,
     );
     if files_on_disk.is_empty() {
@@ -334,7 +344,7 @@ pub fn export(
         files_on_disk = source_files(
           other.manifest.as_ref(),
           &other.base,
-          &store,
+          store,
           &plan.input.mod_id,
         );
         if !files_on_disk.is_empty() {
