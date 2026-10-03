@@ -37,6 +37,7 @@ import {
 import ArcaneTheme from "./pre-defined/arcane/arcane.tsx";
 import BloodmoonTheme from "./pre-defined/bloodmoon/bloodmoon.tsx";
 import DeadlockApiTheme from "./pre-defined/deadlock-api/deadlock-api.tsx";
+import LovelockTheme from "./pre-defined/lovelock/lovelock.tsx";
 import NightshiftTheme from "./pre-defined/nightshift/nightshift.tsx";
 import TeaTheme from "./pre-defined/tea/tea.tsx";
 
@@ -55,6 +56,10 @@ const nightshiftPreview = getPluginAssetUrl(
 const bloodmoonPreview = getPluginAssetUrl(
   "themes",
   "public/pre-defined/bloodmoon/preview.png",
+);
+const lovelockPreview = getPluginAssetUrl(
+  "themes",
+  "public/pre-defined/lovelock/preview.png",
 );
 const teaPreview = getPluginAssetUrl(
   "themes",
@@ -118,6 +123,15 @@ const PRE_DEFINED_THEMES = [
     descriptionKey: "plugins.deadlockApi.description",
     component: DeadlockApiTheme,
     previewImage: deadlockApiPreview,
+  },
+  {
+    id: "lovelock",
+    name: "Lovelock",
+    description:
+      "A cozy plum theme with soft pink glow, inspired by Lovelock Companion.",
+    descriptionKey: "plugins.lovelock.description",
+    component: LovelockTheme,
+    previewImage: lovelockPreview,
   },
 ] as const;
 
@@ -409,6 +423,30 @@ const Settings = () => {
                             }
                           }}
                         />
+                      </div>
+                    ) : theme.id === "lovelock" ? (
+                      <div className='text-sm text-muted-foreground mb-4'>
+                        <span className='mr-1'>
+                          {t("plugins.lovelock.visit")}
+                        </span>
+                        <button
+                          className='text-primary hover:underline mr-3'
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void openUrl("https://gamebanana.com/wips/103268");
+                          }}
+                          type='button'>
+                          Asteria
+                        </button>
+                        <button
+                          className='text-primary hover:underline'
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void openUrl("https://ko-fi.com/asteriaxo");
+                          }}
+                          type='button'>
+                          {t("plugins.lovelock.kofi")}
+                        </button>
                       </div>
                     ) : theme.id === "deadlock-api" ? (
                       <div className='text-sm text-muted-foreground mb-4'>

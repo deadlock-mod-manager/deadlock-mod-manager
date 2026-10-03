@@ -1248,6 +1248,72 @@
   background: rgba(250, 68, 84, 0.6);
 }
 
+/* Lovelock Theme Styles */
+.lovelock-theme-active {
+  --background: 300 19% 11%;
+  --foreground: 330 40% 95%;
+  --card: 296 17% 16% / 0.92;
+  --card-foreground: 330 40% 95%;
+  --popover: 296 18% 15%;
+  --popover-foreground: 330 40% 95%;
+  --secondary: 296 15% 21%;
+  --secondary-foreground: 330 35% 92%;
+  --muted: 296 14% 20%;
+  --muted-foreground: 320 15% 70%;
+  --primary: 333 100% 77%;
+  --primary-foreground: 300 25% 12%;
+  --accent: 318 31% 30%;
+  --accent-foreground: 330 40% 95%;
+  --border: 300 14% 25%;
+  --input: 300 14% 24%;
+  --ring: 333 100% 77%;
+  --sidebar-background: 300 19% 10% / 0.7;
+  --sidebar-foreground: 330 40% 95%;
+  --sidebar-primary: 333 100% 77%;
+  --sidebar-primary-foreground: 300 25% 12%;
+  --sidebar-accent: 318 31% 30%;
+  --sidebar-accent-foreground: 330 40% 95%;
+  --sidebar-border: 300 14% 22%;
+}
+
+.lovelock-theme-active body,
+.lovelock-theme-active main,
+.lovelock-theme-active .group\/sidebar-wrapper,
+.lovelock-theme-active .group\/sidebar-wrapper > div,
+.lovelock-theme-active [data-sidebar-header="true"],
+.lovelock-theme-active [data-titlebar="true"],
+.lovelock-theme-active [data-sidebar="content"],
+.lovelock-theme-active [data-sidebar="footer"],
+.lovelock-theme-active [data-sidebar="group"],
+.lovelock-theme-active [data-sidebar="group-content"],
+.lovelock-theme-active [data-sidebar="menu"],
+.lovelock-theme-active [data-sidebar="menu-item"] {
+  background-color: transparent;
+}
+
+/* Sidebar glow accent */
+.lovelock-theme-active [data-sidebar="menu-button"][data-active="true"] {
+  box-shadow:
+    inset 0 0 0 1px hsl(var(--primary) / 0.7),
+    0 0 14px hsl(var(--primary) / 0.25);
+}
+
+/* Toggles glow when on */
+.lovelock-theme-active button[role="switch"][data-state="checked"] {
+  box-shadow: 0 0 10px hsl(var(--primary) / 0.45);
+}
+
+.lovelock-theme-active *:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px hsl(var(--primary) / 0.6),
+    0 0 10px hsl(var(--primary) / 0.35);
+}
+
+.lovelock-theme-active ::selection {
+  background: hsl(var(--primary) / 0.35);
+}
+
 /* What's New Dialog Animations */
 @keyframes wn-dialog-enter {
   from {

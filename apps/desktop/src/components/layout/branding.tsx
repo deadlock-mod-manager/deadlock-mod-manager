@@ -37,6 +37,7 @@ const predefinedThemeIcons = {
     "public/pre-defined/bloodmoon/icon.png",
   ),
   tea: getPluginAssetUrl("themes", "public/pre-defined/tea/logo.png"),
+  lovelock: getPluginAssetUrl("themes", "public/pre-defined/lovelock/icon.png"),
 } as const;
 
 const AUTHOR_GITHUB_URL = "https://github.com/Stormix";
