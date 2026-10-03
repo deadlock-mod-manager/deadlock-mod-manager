@@ -40,6 +40,16 @@ impl KvValue {
         self.as_i64().and_then(|value| u32::try_from(value).ok())
     }
 
+    /// The value as a 64-bit bit set. Signed values keep their bit pattern, so
+    /// a mask stored as `-1` reads as all bits set.
+    pub fn as_u64(&self) -> Option<u64> {
+        match self {
+            KvValue::Int(value) => Some(*value as u64),
+            KvValue::UInt(value) => Some(*value),
+            _ => None,
+        }
+    }
+
     pub fn as_string(&self) -> Option<&str> {
         match self {
             KvValue::String(value) => Some(value),

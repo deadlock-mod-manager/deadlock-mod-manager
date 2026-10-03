@@ -217,6 +217,36 @@ pub(crate) fn build_glb(
             }));
             attributes["TEXCOORD_0"] = json!(accessor_index);
         }
+        // glTF multiplies COLOR_0 into every material's base colour, so only
+        // export it where the Source 2 material actually reads vertex colours.
+        let material_reads_colors = primitive
+            .material
+            .checked_sub(1)
+            .and_then(|index| textures.get(index))
+            .is_some_and(|texture| texture.vertex_color);
+        if let Some(color_values) = primitive
+            .colors
+            .filter(|values| material_reads_colors && values.len() == vertex_count * 4)
+        {
+            let offset = bin.len();
+            write_f32_slice(&mut bin, color_values);
+            push_padding(&mut bin, 0);
+            let view_index = buffer_views.len();
+            buffer_views.push(json!({
+                "buffer": 0,
+                "byteOffset": offset,
+                "byteLength": color_values.len() * 4,
+                "target": GL_ARRAY_BUFFER
+            }));
+            let accessor_index = accessors.len();
+            accessors.push(json!({
+                "bufferView": view_index,
+                "componentType": GL_FLOAT,
+                "count": vertex_count,
+                "type": "VEC4"
+            }));
+            attributes["COLOR_0"] = json!(accessor_index);
+        }
         let joint_stride = primitive
             .joints
             .map_or(0, |values| values.len() / vertex_count.max(1));
@@ -580,6 +610,7 @@ pub(crate) fn model_from_decoded_primitives(
             positions: &primitive.positions,
             normals: primitive.normals.as_deref(),
             texcoords: primitive.texcoords.as_deref(),
+            colors: primitive.colors.as_deref(),
             joints: primitive.joints.as_deref(),
             weights: primitive.weights.as_deref(),
             indices: &primitive.indices,
@@ -672,6 +703,7 @@ pub(crate) fn decode_mesh_glb_from_resource_with_skeleton(
         positions,
         normals,
         texcoords,
+        colors: None,
         joints,
         weights,
         indices: indices[..index_count
@@ -691,6 +723,7 @@ pub(crate) fn decode_mesh_glb_from_resource_with_skeleton(
         positions: &decoded.positions,
         normals: decoded.normals.as_deref(),
         texcoords: decoded.texcoords.as_deref(),
+        colors: None,
         joints: decoded.joints.as_deref(),
         weights: decoded.weights.as_deref(),
         indices: &decoded.indices,

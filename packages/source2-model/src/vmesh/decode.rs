@@ -48,6 +48,8 @@ pub(crate) fn read_vertex_set(
         matching("NORMAL", false).and_then(|(buffer, field)| read_normals(buffer, field).ok());
     let texcoords =
         matching("TEXCOORD", true).and_then(|(buffer, field)| read_texcoords(buffer, field).ok());
+    let colors =
+        matching("COLOR", false).and_then(|(buffer, field)| read_colors(buffer, field).ok());
     let joint_stream = matching("BLENDINDICES", true);
     let weight_stream = matching("BLENDWEIGHT", true);
     let skinning = match (joint_stream, weight_stream) {
@@ -70,6 +72,7 @@ pub(crate) fn read_vertex_set(
         positions,
         normals,
         texcoords,
+        colors,
         joints,
         weights,
     })
@@ -101,6 +104,7 @@ pub(crate) fn compact_primitive(
     let mut positions = Vec::<f32>::new();
     let mut normals = vertices.normals.as_ref().map(|_| Vec::<f32>::new());
     let mut texcoords = vertices.texcoords.as_ref().map(|_| Vec::<f32>::new());
+    let mut colors = vertices.colors.as_ref().map(|_| Vec::<f32>::new());
     let mut joints = vertices.joints.as_ref().map(|_| Vec::<u16>::new());
     let mut weights = vertices.weights.as_ref().map(|_| Vec::<f32>::new());
 
@@ -114,6 +118,9 @@ pub(crate) fn compact_primitive(
             }
             if let (Some(source), Some(out)) = (&vertices.texcoords, &mut texcoords) {
                 out.extend_from_slice(&source[index * 2..index * 2 + 2]);
+            }
+            if let (Some(source), Some(out)) = (&vertices.colors, &mut colors) {
+                out.extend_from_slice(&source[index * 4..index * 4 + 4]);
             }
             if let (Some(source), Some(out)) = (&vertices.joints, &mut joints) {
                 let start = index * joint_stride;
@@ -139,6 +146,7 @@ pub(crate) fn compact_primitive(
         positions,
         normals,
         texcoords,
+        colors,
         joints,
         weights,
         indices: index_bytes,
@@ -244,6 +252,8 @@ pub(crate) fn decode_vbib_primitive(
         .and_then(|field| read_normals(vertex_buffer, field).ok());
     let texcoords = find_field_prefix(vertex_buffer, "TEXCOORD")
         .and_then(|field| read_texcoords(vertex_buffer, field).ok());
+    let colors =
+        find_field(vertex_buffer, "COLOR").and_then(|field| read_colors(vertex_buffer, field).ok());
     let skinning = find_field_prefix(vertex_buffer, "BLENDINDICES")
         .zip(
             find_field_prefix(vertex_buffer, "BLENDWEIGHT")
@@ -277,6 +287,7 @@ pub(crate) fn decode_vbib_primitive(
         positions,
         normals,
         texcoords,
+        colors,
         joints,
         weights,
         indices: indices[..index_count * index_size].to_vec(),
@@ -453,7 +464,7 @@ pub fn decode_embedded_model_render_model_from_resource(
     let mesh_group_masks = default_mesh_group_masks(res);
     let default_mesh_group_mask = mesh_group_masks
         .as_ref()
-        .map_or(u64::MAX, |(mask, _)| u64::from(*mask));
+        .map_or(u64::MAX, |(mask, _)| *mask);
     let mut selected_meshes = meshes
         .iter()
         .enumerate()
@@ -467,7 +478,7 @@ pub fn decode_embedded_model_render_model_from_resource(
             let group_mask = mesh_group_masks
                 .as_ref()
                 .and_then(|(_, masks)| masks.get(source_index))
-                .map_or(u64::MAX, |mask| u64::from(*mask));
+                .map_or(u64::MAX, |mask| *mask);
             (!is_lod_mesh(&name)).then_some((mesh_index, name, mesh, group_mask))
         })
         .collect::<Vec<_>>();

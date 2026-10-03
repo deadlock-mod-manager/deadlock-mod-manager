@@ -15,6 +15,7 @@ pub mod kv3;
 mod material_preview;
 pub mod nm_anim;
 pub mod resource;
+mod rest_pose;
 pub mod skeleton;
 pub mod vmesh;
 pub mod vpk_extract;
@@ -242,9 +243,7 @@ fn decode_model_render_model_from_archive(
     if !mesh_paths.is_empty() {
         let skeleton = skeleton::parse_model_skeleton(&res)?;
         let mesh_groups = vmesh::default_mesh_group_masks(&res);
-        let default_mesh_group_mask = mesh_groups
-            .as_ref()
-            .map_or(u64::MAX, |(mask, _)| u64::from(*mask));
+        let default_mesh_group_mask = mesh_groups.as_ref().map_or(u64::MAX, |(mask, _)| *mask);
         let mut primitives = Vec::new();
         let mut materials = vec![RenderMaterial {
             name: "default".into(),
@@ -277,7 +276,7 @@ fn decode_model_render_model_from_archive(
                 primitive.mesh_group_mask = mesh_groups
                     .as_ref()
                     .and_then(|(_, masks)| masks.get(mesh_index))
-                    .map_or(u64::MAX, |mask| u64::from(*mask));
+                    .map_or(u64::MAX, |mask| *mask);
             }
             primitives.append(&mut render_model.primitives);
             materials.extend(render_model.materials.into_iter().skip(1));
@@ -368,14 +367,24 @@ fn try_pose_model_at_rest(
     };
 
     // Clips live beside the model in the base pak, never in a skin mod.
-    let Some(resolved) =
-        nm_anim::resolve_nm_clip_from_archive(base, entry_path, Some(REST_POSE_CLIP), None)?
-    else {
-        return Ok(None);
+    let mut pose = match nm_anim::resolve_nm_clip_from_archive(
+        base,
+        entry_path,
+        Some(REST_POSE_CLIP),
+        None,
+    )? {
+        Some(resolved) => {
+            let animation = nm_anim::load_nm_animation_from_archive(base, &resolved.clip_path)?;
+            let frame = animation.sample_frame(0)?;
+            nm_anim::retarget_nm_pose(&animation, &frame, &skeleton)
+        }
+        // No gameplay clips yet: borrow a menu pose, with the weapon put back
+        // in front of the hero and in the hands the menu camera never needed.
+        None => match rest_pose::menu_pose(base, entry_path, &skeleton)? {
+            Some(pose) => pose,
+            None => return Ok(None),
+        },
     };
-    let animation = nm_anim::load_nm_animation_from_archive(base, &resolved.clip_path)?;
-    let frame = animation.sample_frame(0)?;
-    let mut pose = nm_anim::retarget_nm_pose(&animation, &frame, &skeleton);
     skeleton.pin_procedural_cloth_roots(&mut pose);
     vmesh::pose_model_glb(model, &skeleton, &pose).map(Some)
 }
