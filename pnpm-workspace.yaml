@@ -55,6 +55,9 @@ autoInstallPeers: false
 dedupePeerDependents: true
 minimumReleaseAge: 10080
 minimumReleaseAgeStrict: true
+minimumReleaseAgeExclude:
+  # CVE-2026-102989 fix (react-start 1.168.60 / start-server-core 1.169.39) is newer than the release-age window
+  - "@tanstack/*"
 pmOnFail: ignore
 
 peerDependencyRules:
