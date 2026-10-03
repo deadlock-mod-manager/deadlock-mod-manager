@@ -187,8 +187,12 @@ mod tests {
 
   #[test]
   fn serialization_rejects_invalid_pairs_and_canonicalizes_local_ids() {
-    let mut submission = SubmissionRef::parse_slug("local-550E8400-E29B-41D4-A716-446655440000").unwrap();
-    assert_eq!(submission.to_slug().unwrap(), "local-550e8400-e29b-41d4-a716-446655440000");
+    let mut submission =
+      SubmissionRef::parse_slug("local-550E8400-E29B-41D4-A716-446655440000").unwrap();
+    assert_eq!(
+      submission.to_slug().unwrap(),
+      "local-550e8400-e29b-41d4-a716-446655440000"
+    );
     submission.submission_type = SubmissionType::Sound;
     assert!(submission.to_slug().is_err());
     submission.provider = SubmissionProvider::Gamebanana;
