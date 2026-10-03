@@ -63,6 +63,12 @@ const startupFixtureRoutes: readonly FixtureRoute[] = [
   },
   { method: "GET", path: "/api/v2/feature-flags", status: 200, body: "[]" },
   { method: "GET", path: "/api/v2/announcements", status: 200, body: "[]" },
+  {
+    method: "GET",
+    path: "/ISteamNews/GetNewsForApp/v2/",
+    status: 200,
+    body: '{"appnews":{"newsitems":[]}}',
+  },
   { method: "GET", path: "/custom-settings", status: 200, body: "[]" },
   {
     method: "GET",

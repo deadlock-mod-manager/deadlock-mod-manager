@@ -1,4 +1,14 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { ModStatus } from "@/types/mods";
+import { createProfileId } from "@/types/profiles";
+import { SortType, TimePeriod } from "@/lib/constants";
+import type { ProxyConfig } from "./slices/network";
+import type {
+  ModsFilters,
+  AudioQuickFilter,
+  MapQuickFilter,
+  CrosshairFilters,
+} from "./slices/ui";
 
 const memory = new Map<string, string>();
 const noop = () => undefined;
@@ -118,18 +128,21 @@ const seededState = {
     mapQuickFilter: "off",
     hideNSFW: false,
     hideOutdated: false,
-    currentSort: "download count",
-    timePeriod: "all time",
+    currentSort: SortType.DOWNLOADS,
+    timePeriod: TimePeriod.ALL_TIME,
     filterMode: "include",
     searchQuery: "",
-  },
+  } satisfies Omit<
+    ModsFilters,
+    "contentType" | "addedFilter" | "showFavoritesOnly"
+  > & { audioQuickFilter: AudioQuickFilter; mapQuickFilter: MapQuickFilter },
   crosshairFilters: {
     selectedHeroes: [],
     selectedTags: [],
-    currentSort: "last updated",
+    currentSort: SortType.LAST_UPDATED,
     filterMode: "include",
     searchQuery: "",
-  },
+  } satisfies CrosshairFilters,
   hasCompletedOnboarding: true,
   pluginSettings: {},
   scrollPositions: { "/mods": 0 },
@@ -146,7 +159,7 @@ const seededState = {
     username: "",
     password: "",
     noProxy: "",
-  },
+  } satisfies ProxyConfig,
   showOccultGeometry: true,
   animateOccultGeometry: true,
 };
@@ -196,7 +209,7 @@ describe("persisted store integration with real production fixture", () => {
       addedFilter: { period: "any", from: "", to: "" },
     });
     expect(s.crosshairFilters).toEqual(seededState.crosshairFilters);
-    expect(s.linuxGpuOptimization).toBe(seededState.linuxGpuOptimization);
+    expect(s.linuxGpuOptimization).toBe("auto");
     expect(s.backupEnabled).toBe(seededState.backupEnabled);
     expect(s.maxBackupCount).toBe(seededState.maxBackupCount);
     expect(s.showOccultGeometry).toBe(seededState.showOccultGeometry);
@@ -205,7 +218,7 @@ describe("persisted store integration with real production fixture", () => {
 
     // Local mod and profile mod arrays survive the migration with their length.
     expect(s.localMods.length).toBe(seededState.localMods.length);
-    const profile = s.profiles.default;
+    const profile = s.profiles[createProfileId("default")];
     expect(profile).toBeDefined();
     expect(profile?.mods.length).toBe(seededState.profiles.default.mods.length);
   });
@@ -297,6 +310,78 @@ describe("persisted store integration with real production fixture", () => {
       analyticsEnabled: true,
       hasSeenTelemetryPrompt: true,
     });
+  });
+});
+
+describe("V1 active profile upgrade", () => {
+  it("keeps three installed mods when enabling a fourth after hydration", async () => {
+    const localMods = ["1", "2", "3", "4"].map((remoteId, index) =>
+      Object.assign({}, seededState.localMods[0], {
+        id: `mod_${remoteId}`,
+        remoteId,
+        status: index < 3 ? ModStatus.Installed : ModStatus.Downloaded,
+        installedVpks: index < 3 ? [`pak0${remoteId}_dir.vpk`] : [],
+      }),
+    );
+    const inactive = {
+      ...seededState.profiles.default,
+      id: "secondary",
+      mods: [],
+    };
+    seedFromVersion(25, {
+      ...seededState,
+      localMods,
+      profiles: {
+        default: {
+          ...seededState.profiles.default,
+          mods: localMods.map((mod, index) =>
+            Object.assign({}, mod, {
+              status: index < 3 ? "downloaded" : "downloading",
+              installedVpks: [],
+            }),
+          ),
+        },
+        secondary: inactive,
+      },
+    });
+    const { usePersistedStore } = await importStoreFreshly();
+    await usePersistedStore.persist.rehydrate();
+    const state = usePersistedStore.getState();
+    expect(state.profiles[createProfileId("default")].mods).toEqual(
+      state.localMods,
+    );
+    state.setModStatus("4", ModStatus.Installing);
+    expect(usePersistedStore.getState().localMods[3].status).toBe(
+      ModStatus.Installing,
+    );
+    state.setInstalledVpks("4", ["pak04_dir.vpk"]);
+    state.setModStatus("4", ModStatus.Installed);
+    const after = usePersistedStore.getState();
+    expect(after.localMods.map((mod) => mod.status)).toEqual([
+      ModStatus.Installed,
+      ModStatus.Installed,
+      ModStatus.Installed,
+      ModStatus.Installed,
+    ]);
+    expect(
+      after.localMods
+        .slice(0, 3)
+        .map(({ remoteId, status, installedVpks }) => ({
+          remoteId,
+          status,
+          installedVpks,
+        })),
+    ).toEqual(
+      localMods.slice(0, 3).map(({ remoteId, status, installedVpks }) => ({
+        remoteId,
+        status,
+        installedVpks,
+      })),
+    );
+    expect(after.profiles[createProfileId("default")].mods).toEqual(
+      after.localMods,
+    );
+    expect(after.profiles[createProfileId("secondary")].mods).toEqual([]);
   });
 });
 

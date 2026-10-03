@@ -6,7 +6,8 @@ export type ServiceName =
   | "dmmApi"
   | "auth"
   | "deadlockApi"
-  | "assets";
+  | "assets"
+  | "steamNews";
 
 export const SERVICE_NAMES: readonly ServiceName[] = [
   "gamebanana",
@@ -15,6 +16,7 @@ export const SERVICE_NAMES: readonly ServiceName[] = [
   "auth",
   "deadlockApi",
   "assets",
+  "steamNews",
 ];
 
 export type DriverProvider = "embedded" | "external";
@@ -91,6 +93,7 @@ const configurationSchema = z.object({
         "auth",
         "deadlockApi",
         "assets",
+        "steamNews",
       ]),
       origin: z.string(),
     }),

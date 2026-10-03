@@ -6,7 +6,8 @@ export type RuntimeServiceName =
   | "dmmApi"
   | "auth"
   | "deadlockApi"
-  | "assets";
+  | "assets"
+  | "steamNews";
 
 export type RuntimeServiceEndpoint = {
   service: RuntimeServiceName;

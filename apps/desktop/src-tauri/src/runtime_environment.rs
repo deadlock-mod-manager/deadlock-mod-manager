@@ -59,6 +59,7 @@ pub enum ServiceName {
   Auth,
   DeadlockApi,
   Assets,
+  SteamNews,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -207,6 +208,7 @@ impl E2eConfiguration {
       ServiceName::Auth,
       ServiceName::DeadlockApi,
       ServiceName::Assets,
+      ServiceName::SteamNews,
     ];
     let mut observed = HashSet::new();
     for endpoint in &self.endpoints {
@@ -545,6 +547,7 @@ mod tests {
       "auth",
       "deadlockApi",
       "assets",
+      "steamNews",
     ]
     .into_iter()
     .map(|service| json!({ "service": service, "origin": "http://127.0.0.1:43199" }))

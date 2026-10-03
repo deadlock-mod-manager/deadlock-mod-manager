@@ -335,8 +335,6 @@
 ["types","apps/desktop/src/lib/store/slices/server-profiles.ts",[["","LastServerJoin"]]]
 ["types","apps/desktop/src/lib/store/slices/settings.ts",[["","GamePresenceHeroOverrides"]]]
 ["types","apps/desktop/src/lib/store/slices/settings.ts",[["","TelemetrySettings"]]]
-["types","apps/desktop/src/lib/store/slices/ui.ts",[["","CrosshairFilters"]]]
-["types","apps/desktop/src/lib/store/slices/ui.ts",[["","ModsFilters"]]]
 ["types","apps/desktop/src/lib/validation/live-match.ts",[["","LiveRow"]]]
 ["types","apps/desktop/src/lib/validation/stats-api.ts",[["","MatchMetadata"]]]
 ["types","apps/desktop/src/lib/validation/stats-api.ts",[["","SeasonInterval"]]]

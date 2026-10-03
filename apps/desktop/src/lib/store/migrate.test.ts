@@ -142,25 +142,35 @@ describe("safeMigrate", () => {
       "42",
       "snd-99",
     ]);
-    expect(migrated.hiddenHeroMods).toEqual({ "snd-42": true, "7": true });
+    expect(Object.entries(migrated.hiddenHeroMods).sort()).toEqual(
+      Object.entries({ "snd-42": true, "7": true }).sort(),
+    );
     expect(migrated.favorites).toEqual(["snd-42", "7"]);
-    expect(migrated.perItemNSFWOverrides).toEqual({
-      "snd-42": false,
-      "7": true,
-    });
-    expect(migrated.profiles.default.enabledMods).toEqual({
-      "snd-42": { remoteId: "snd-42", enabled: true },
-      "7": { remoteId: "7", enabled: true },
-    });
+    expect(Object.entries(migrated.perItemNSFWOverrides).sort()).toEqual(
+      Object.entries({
+        "snd-42": false,
+        "7": true,
+      }).sort(),
+    );
+    expect(
+      Object.entries(migrated.profiles.default.enabledMods).sort(),
+    ).toEqual(
+      Object.entries({
+        "snd-42": { remoteId: "snd-42", enabled: true },
+        "7": { remoteId: "7", enabled: true },
+      }).sort(),
+    );
     expect(migrated.profiles.default.mods[0].remoteId).toBe("snd-99");
     expect(migrated.stagedServers.server.requiredModIds).toEqual([
       "snd-42",
       "7",
     ]);
-    expect(migrated.scrollPositions).toEqual({
-      "/mods/snd-42": 120,
-      "/mods/7": 20,
-    });
+    expect(Object.entries(migrated.scrollPositions).sort()).toEqual(
+      Object.entries({
+        "/mods/snd-42": 120,
+        "/mods/7": 20,
+      }).sort(),
+    );
     expect(migrated.pendingIdentityMigrations).toEqual([
       { from: "42", to: "snd-42" },
       { from: "99", to: "snd-99" },
@@ -220,7 +230,7 @@ describe("safeMigrate", () => {
   it("LATEST_VERSION matches the highest step target", () => {
     const max = Math.max(...MIGRATION_STEPS.map((s) => s.to));
     expect(LATEST_VERSION).toBe(max);
-    expect(LATEST_VERSION).toBe(27);
+    expect(LATEST_VERSION).toBe(28);
   });
 
   it("v25 (themes switch): drops the leftover enabledPlugins.themes entry", () => {
