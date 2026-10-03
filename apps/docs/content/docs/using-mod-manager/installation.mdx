@@ -145,6 +145,8 @@ flatpak install ./deadlock-mod-manager-*.flatpak
 flatpak install flathub dev.stormix.deadlock-mod-manager
 ```
 
+On Steam Deck or other Linux systems, if the Flatpak crashes when you select the game folder, see [community-reported Flatpak filesystem workaround](./troubleshooting#flatpak-crashes-when-selecting-the-game-folder).
+
 #### Arch Linux (AUR)
 
 ```bash
@@ -158,7 +160,7 @@ makepkg -si
 ```
 
 <Callout type="info" title="Linux Compatibility Note">
-If you experience issues with the application not displaying correctly or crashing on Wayland, particularly with NVIDIA GPUs, the Flatpak distribution already includes the required `WEBKIT_DISABLE_DMABUF_RENDERER=1` workaround automatically.
+If the Flatpak application opens to a grey or blank screen, particularly with an NVIDIA GPU, follow the [community-reported Flatpak rendering workaround](./troubleshooting#flatpak-opens-to-a-grey-screen-on-nvidia). Automatic GPU detection may fail inside the Flatpak sandbox.
 
 For non-Flatpak installs (.deb / AUR / RPM), you can apply it manually:
 

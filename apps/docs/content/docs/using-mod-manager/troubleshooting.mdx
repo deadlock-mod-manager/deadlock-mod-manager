@@ -68,6 +68,43 @@ Having issues with Deadlock Mod Manager? This comprehensive troubleshooting guid
    chmod +x deadlock-modmanager-*.AppImage
    ```
 
+### Flatpak Opens to a Grey Screen on NVIDIA
+
+**Symptoms:** The Flatpak application opens, but its window stays grey or blank on Linux with an NVIDIA GPU.
+
+**Community-reported workaround:** Community member **optimisticlucio** shared this workaround in [issue #281](https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues/281#issuecomment-4524881230). They reported that manually disabling WebKit's DMA-BUF renderer fixed the grey screen, even with matching host and Flatpak NVIDIA drivers. Flatpak's sandbox can prevent automatic NVIDIA detection from enabling this workaround.
+
+#### Apply the Rendering Workaround
+
+Fully quit Deadlock Mod Manager, including any running tray instance. Run these commands in a terminal on your Linux host:
+
+```bash
+flatpak override --user --env=WEBKIT_DISABLE_DMABUF_RENDERER=1 dev.stormix.deadlock-mod-manager
+flatpak run dev.stormix.deadlock-mod-manager
+```
+
+The override persists for your user and applies when launching from the desktop menu too. It disables one WebKit rendering path and may reduce rendering performance.
+
+To remove this override later, fully quit the app, run the following command, and launch it again:
+
+```bash
+flatpak override --user --unset-env=WEBKIT_DISABLE_DMABUF_RENDERER dev.stormix.deadlock-mod-manager
+```
+
+#### If the Screen Still Stays Grey
+
+Community contributor **Mackamuir** also suggested checking for mismatched host and Flatpak NVIDIA drivers in [issue #281](https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues/281#issuecomment-4122315691):
+
+```bash
+nvidia-smi
+flatpak list --runtime | grep nvidia
+flatpak update
+```
+
+Compare the driver version reported by `nvidia-smi` with the installed `org.freedesktop.Platform.GL.nvidia-*` runtime. Flatpak encodes version dots as hyphens: for example, driver `570.124.04` corresponds to `nvidia-570-124-04`. Multiple installed NVIDIA runtimes are normal; look for one matching your host driver. After updating, fully quit and relaunch the app.
+
+If the issue persists, share those command outputs, your Linux distribution, app version, and whether the rendering override helped in [issue #281](https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues/281).
+
 ### Game Detection Problems
 
 **Symptoms:** The mod manager can't find your Deadlock installation.
@@ -83,6 +120,47 @@ Having issues with Deadlock Mod Manager? This comprehensive troubleshooting guid
    - Open Steam Settings > Downloads > Steam Library Folders
    - Note all library locations where games might be installed
    - Look for Deadlock in each library under `steamapps/common/Deadlock`
+
+### Flatpak Crashes When Selecting the Game Folder
+
+**Symptoms:** On Steam Deck or other Linux systems, opening the folder picker in **Settings > Game** briefly shows a dialog and then crashes the app. Automatic game detection may also fail.
+
+**Community-reported workaround:** Community member **Hyperiya** shared the filesystem-permission workaround in [issue #521](https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues/521#issuecomment-4625857908), reporting that granting access through Flatseal or the terminal resolved this problem. **Rubyboat1207** confirmed the host-filesystem override below worked in the related [issue #516](https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues/516#issuecomment-5229993074).
+
+Fully quit Deadlock Mod Manager, including any running tray instance. On Steam Deck, switch to **Desktop Mode** to use Flatseal or a terminal.
+
+#### Grant Access to Your Steam Library
+
+To try a narrower permission first, open **Flatseal**, select **Deadlock Mod Manager**, and add your Steam library's absolute path under **Filesystem > Other files**. Include any library on an SD card or external drive that contains Deadlock. Find the library location in **Steam > Settings > Storage**.
+
+Alternatively, run this in a terminal on your Linux host, replacing the example path with your Steam library's actual path:
+
+```bash
+flatpak override --user --filesystem="/absolute/path/to/SteamLibrary" dev.stormix.deadlock-mod-manager
+```
+
+Relaunch the app and try selecting the game folder again. This grants the app read/write access to that library so it can manage mods there.
+
+#### Community Workaround: Host Filesystem Access
+
+If granting access to just the library does not resolve the crash, try the broader override reported by Rubyboat1207 in issue #516:
+
+```bash
+flatpak override --user --filesystem=host dev.stormix.deadlock-mod-manager
+flatpak run dev.stormix.deadlock-mod-manager
+```
+
+This persistent override grants read/write access to much of your host filesystem, beyond your Steam library. In Flatseal, the equivalent is enabling **Filesystem > All system files** for Deadlock Mod Manager.
+
+To revoke the host access later, fully quit the app, run the following command, and relaunch it:
+
+```bash
+flatpak override --user --nofilesystem=host dev.stormix.deadlock-mod-manager
+```
+
+To revoke a library-specific grant instead, remove its entry in Flatseal or use `--nofilesystem="/absolute/path/to/SteamLibrary"` with the same app ID.
+
+The thread does not confirm a fix for the separate recurring “Something went wrong” notification. If folder selection still crashes after granting access, include your app version, Linux distribution, Steam library location, and permissions tried in [issue #521](https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues/521).
 
 ## Download and Installation Issues
 
