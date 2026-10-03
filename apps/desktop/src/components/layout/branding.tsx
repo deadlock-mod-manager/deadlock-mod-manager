@@ -138,6 +138,9 @@ export const BrandingHeader = ({
                 v{version}
               </span>
             ))}
+          <span className='text-muted-foreground text-xs leading-none'>
+            {t("branding.byAuthor", { author: "Stormix" })}
+          </span>
         </div>
       </div>
     </div>
