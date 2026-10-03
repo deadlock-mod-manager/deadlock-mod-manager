@@ -105,8 +105,11 @@ sudo apt install libwebkit2gtk-4.1-dev \
   libayatana-appindicator3-dev \
   librsvg2-dev \
   libdbus-1-dev \
-  protobuf-compiler
+  protobuf-compiler \
+  libprotobuf-dev
 ```
+
+`libprotobuf-dev` provides protobuf's well-known `.proto` files (`google/protobuf/duration.proto`, etc.), which the `prost-wkt-types` build script needs. Debian's `protobuf-compiler` doesn't ship them, so without it the desktop build fails with `google/protobuf/duration.proto: File not found`.
 
 **Fedora:**
 
