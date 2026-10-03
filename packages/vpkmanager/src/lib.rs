@@ -13,14 +13,17 @@
 
 pub mod audio;
 pub mod error;
+pub mod fingerprint;
 pub mod pack;
 pub mod particle_edit;
 pub mod pattern;
 pub mod sound_edit;
 pub mod source2;
 pub mod texture_edit;
+pub mod vpkdir;
 
 pub use error::{Result, VpkManagerError};
+pub use fingerprint::VpkFingerprint;
 pub use pack::pack_directory;
 pub use particle_edit::recolor_particle_colors;
 pub use pattern::{Pattern, PatternStyle, pattern_swatch, pattern_texture};
@@ -28,6 +31,7 @@ pub use sound_edit::{SoundInput, classify_sound_input, swap_sound};
 pub use texture_edit::{
     EditedTexture, Recolor, paint_texture, recolor_texture, replace_texture_image,
 };
+pub use vpkdir::VpkDir;
 
 /// Parse only a texture's header: its format, stored size and mip count.
 pub fn inspect_texture(bytes: &[u8]) -> Result<(u32, u32, String)> {
