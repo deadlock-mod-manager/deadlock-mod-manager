@@ -76,7 +76,7 @@ pub async fn resume_match_sync_monitoring(app_handle: AppHandle) -> Result<(), E
   if crate::runtime_environment::is_e2e_active() {
     return Ok(());
   }
-  // Startup-only cleanup of persisted state for accounts removed from Steam entirely.
+  // Cleanup of persisted state for accounts removed from Steam entirely.
   match_sync::prune_forgotten_accounts(&app_handle);
   match_sync::start_background_worker(app_handle.clone());
   game_presence::sync_monitoring_watcher(&app_handle);
