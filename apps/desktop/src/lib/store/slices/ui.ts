@@ -11,6 +11,20 @@ export type FilterMode = "include" | "exclude";
 
 export type MapQuickFilter = "off" | "only" | "exclude";
 export type AudioQuickFilter = "off" | "only" | "exclude";
+export type AddedPeriod = "any" | "today" | "week" | "month" | "custom";
+
+export type AddedFilter = {
+  period: AddedPeriod;
+  // Local calendar dates (YYYY-MM-DD) used when period is "custom".
+  from: string;
+  to: string;
+};
+
+export const DEFAULT_ADDED_FILTER: AddedFilter = {
+  period: "any",
+  from: "",
+  to: "",
+};
 
 export type ModsFilters = {
   selectedCategories: string[];
@@ -21,6 +35,7 @@ export type ModsFilters = {
   hideOutdated: boolean;
   currentSort: SortType;
   timePeriod: TimePeriod;
+  addedFilter: AddedFilter;
   filterMode: FilterMode;
   searchQuery: string;
   showFavoritesOnly: boolean;
@@ -99,6 +114,7 @@ const DEFAULT_MODS_FILTERS: ModsFilters = {
   hideOutdated: false,
   currentSort: SortType.LAST_UPDATED,
   timePeriod: TimePeriod.ALL_TIME,
+  addedFilter: DEFAULT_ADDED_FILTER,
   filterMode: "include",
   searchQuery: "",
   showFavoritesOnly: false,

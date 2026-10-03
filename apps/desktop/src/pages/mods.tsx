@@ -50,11 +50,17 @@ import {
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import type {
+  AddedFilter,
   AudioQuickFilter,
   FilterMode,
   MapQuickFilter,
 } from "@/lib/store/slices/ui";
-import { cn, getTimePeriodCutoff } from "@/lib/utils";
+import {
+  cn,
+  getAddedRange,
+  getTimePeriodCutoff,
+  isAddedFilterActive,
+} from "@/lib/utils";
 import type { CatalogQuery } from "@/types/generated/CatalogQuery";
 import { ChevronLeft, ChevronRight } from "@deadlock-mods/ui/icons";
 
@@ -188,6 +194,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     hideNSFW,
     hideOutdated,
     timePeriod = TimePeriod.ALL_TIME,
+    addedFilter,
     filterMode,
     showFavoritesOnly = false,
     searchQuery = "",
@@ -213,6 +220,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     const updatedAfter = hideOutdated
       ? Math.max(timePeriodCutoffSeconds ?? 0, MOD_OUTDATED_CUTOFF_SECONDS)
       : timePeriodCutoffSeconds;
+    const addedRange = getAddedRange(addedFilter);
     return {
       search: debouncedSearchQuery,
       categories: selectedCategories,
@@ -226,12 +234,15 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
       hideNsfw: nsfwSettings.hideNSFW || hideNSFW,
       hideObsolete: hideOutdated,
       updatedAfter,
+      addedAfter: addedRange.after,
+      addedBefore: addedRange.before,
       favorites: showFavoritesOnly ? favorites : [],
       sort: catalogSort(currentSort),
       page: paginationEnabled ? page : 0,
       pageSize: paginationEnabled ? PAGE_SIZE : 5_000,
     };
   }, [
+    addedFilter,
     audioQuickFilter,
     currentSort,
     debouncedSearchQuery,
@@ -315,8 +326,10 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
         selectedHeroes,
         timePeriod,
         showFavoritesOnly,
+        addedFilter,
       }),
     [
+      addedFilter,
       filterMode,
       audioQuickFilter,
       effectiveMapQuickFilter,
@@ -413,10 +426,26 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     [updateModsFilters],
   );
 
+  const handleAddedFilterChange = useCallback(
+    (addedFilter: AddedFilter) => updateModsFilters({ addedFilter }),
+    [updateModsFilters],
+  );
+
   const handleShowFavoritesOnlyChange = useCallback(
     (showFavoritesOnly: boolean) => updateModsFilters({ showFavoritesOnly }),
     [updateModsFilters],
   );
+
+  const hasActiveFilters =
+    selectedCategories.length > 0 ||
+    selectedHeroes.length > 0 ||
+    audioQuickFilter !== "off" ||
+    effectiveMapQuickFilter !== "off" ||
+    hideNSFW ||
+    hideOutdated ||
+    showFavoritesOnly ||
+    isAddedFilterActive(addedFilter) ||
+    timePeriod !== TimePeriod.ALL_TIME;
 
   return (
     <div className='flex min-h-0 flex-1 flex-col gap-4'>
@@ -446,6 +475,8 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
         showFavoritesOnly={showFavoritesOnly}
         onShowFavoritesOnlyChange={handleShowFavoritesOnlyChange}
         hideMapFilter={mapsOnly || !isCustomMapsEnabled}
+        addedFilter={addedFilter}
+        onAddedFilterChange={handleAddedFilterChange}
       />
       {catalogPage.stale ? (
         <Alert variant='warning'>
@@ -465,26 +496,11 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
             </EmptyMedia>
             <EmptyTitle>{t("mods.noModsFound")}</EmptyTitle>
             <EmptyDescription>
-              {query.trim() ||
-              selectedCategories.length > 0 ||
-              selectedHeroes.length > 0 ||
-              audioQuickFilter !== "off" ||
-              effectiveMapQuickFilter !== "off" ||
-              hideNSFW ||
-              hideOutdated ||
-              showFavoritesOnly ||
-              timePeriod !== TimePeriod.ALL_TIME
+              {query.trim() || hasActiveFilters
                 ? t("mods.noModsMatchFilters")
                 : t("mods.noModsAvailable")}
             </EmptyDescription>
-            {(selectedCategories.length > 0 ||
-              selectedHeroes.length > 0 ||
-              audioQuickFilter !== "off" ||
-              effectiveMapQuickFilter !== "off" ||
-              hideNSFW ||
-              hideOutdated ||
-              showFavoritesOnly ||
-              timePeriod !== TimePeriod.ALL_TIME) && (
+            {hasActiveFilters && (
               <EmptyDescription className='text-xs'>
                 {t("mods.emptyClearFilters")}
               </EmptyDescription>

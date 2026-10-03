@@ -40,6 +40,10 @@ pub struct CatalogQuery {
   pub hide_obsolete: bool,
   #[ts(type = "number | null")]
   pub updated_after: Option<i64>,
+  #[ts(type = "number | null")]
+  pub added_after: Option<i64>,
+  #[ts(type = "number | null")]
+  pub added_before: Option<i64>,
   pub favorites: Vec<String>,
   #[ts(skip)]
   pub excluded_slugs: Vec<String>,
@@ -149,6 +153,12 @@ fn filtered_query<'a>(
   }
   if let Some(updated_after) = query.updated_after {
     statement = statement.filter(submission::remote_updated_at.ge(updated_after));
+  }
+  if let Some(added_after) = query.added_after {
+    statement = statement.filter(submission::remote_added_at.ge(added_after));
+  }
+  if let Some(added_before) = query.added_before {
+    statement = statement.filter(submission::remote_added_at.lt(added_before));
   }
   if !query.excluded_slugs.is_empty() {
     statement = statement.filter(submission::slug.ne_all(&query.excluded_slugs));
@@ -393,6 +403,39 @@ mod tests {
 
     assert_eq!(page.total, 1);
     assert_eq!(page.items[0].submission.to_slug().unwrap(), "10");
+  }
+
+  #[tokio::test]
+  async fn added_range_filters_on_remote_added_at() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.db"), 1)
+      .await
+      .unwrap();
+    let added_at = |slug: &str, remote_added_at: i64| CatalogRecord {
+      remote_added_at,
+      ..record(slug, slug, "Skins", None)
+    };
+    catalog
+      .upsert_records(vec![
+        added_at("10", 100),
+        added_at("11", 200),
+        added_at("12", 300),
+      ])
+      .await
+      .unwrap();
+
+    let page = catalog
+      .query(CatalogQuery {
+        added_after: Some(200),
+        added_before: Some(300),
+        page_size: 10,
+        ..CatalogQuery::default()
+      })
+      .await
+      .unwrap();
+
+    assert_eq!(page.total, 1);
+    assert_eq!(page.items[0].submission.to_slug().unwrap(), "11");
   }
 
   #[tokio::test]

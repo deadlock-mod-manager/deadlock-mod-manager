@@ -11,6 +11,8 @@ export type CatalogQuery = {
   hideNsfw: boolean;
   hideObsolete: boolean;
   updatedAfter: number | null;
+  addedAfter: number | null;
+  addedBefore: number | null;
   favorites: Array<string>;
   sort: CatalogSort;
   page: number;
