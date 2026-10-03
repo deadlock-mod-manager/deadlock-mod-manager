@@ -6,6 +6,7 @@ import { FaLinux, FaWindows } from "react-icons/fa";
 import { useAnalyticsContext } from "@/components/analytics-provider";
 import { DOWNLOAD_URL } from "@/lib/constants";
 import { detectOS } from "@/lib/os-detection";
+import { selectRecommendedDownload } from "@/lib/release-downloads";
 import type { OSInfo, PlatformDownload } from "@/types/releases";
 import { orpc } from "@/utils/orpc";
 
@@ -79,57 +80,11 @@ export const PlatformDownloadButton = ({
       return null;
     }
 
-    const release = releases.latest;
-
-    // Filter out signature files - they are not meant for direct download
-    const mainDownloads = release.downloads.filter(
-      (download) => !download.installerType || download.installerType !== "sig",
+    return selectRecommendedDownload(
+      releases.latest.downloads,
+      userOS.os,
+      userOS.architecture,
     );
-
-    // For Windows, prefer exe over msi
-    if (userOS.os === "windows") {
-      const exeMatch = mainDownloads.find(
-        (download) =>
-          download.platform === "windows" &&
-          download.architecture === userOS.architecture &&
-          (!download.installerType || download.installerType === "exe"),
-      );
-      if (exeMatch) {
-        return exeMatch;
-      }
-    }
-
-    // Find exact match first (platform + architecture)
-    const exactMatch = mainDownloads.find(
-      (download) =>
-        download.platform === userOS.os &&
-        download.architecture === userOS.architecture,
-    );
-    if (exactMatch) {
-      return exactMatch;
-    }
-
-    // Fallback to platform match with different architecture
-    const platformMatch = mainDownloads.find(
-      (download) => download.platform === userOS.os,
-    );
-    if (platformMatch) {
-      return platformMatch;
-    }
-
-    // Fallback to universal macOS builds
-    if (userOS.os === "macos") {
-      const universalMatch = mainDownloads.find(
-        (download) =>
-          download.platform === "macos" &&
-          download.architecture === "universal",
-      );
-      if (universalMatch) {
-        return universalMatch;
-      }
-    }
-
-    return null;
   };
 
   const recommendedDownload = getRecommendedDownload();

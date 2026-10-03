@@ -1,10 +1,8 @@
 import { NotFoundError, ProviderError } from "@deadlock-mods/common";
 import { logger as mainLogger } from "../lib/logger";
-import type {
-  GitHubRelease,
-  PlatformDownload,
-  ReleasesResponse,
-} from "../types/github-releases";
+import type { GitHubRelease, ReleasesResponse } from "../types/github-releases";
+import { GitHubReleasesSchema } from "../validation/github-releases";
+import { transformReleaseAssets } from "./release-asset-policy";
 
 const logger = mainLogger.child().withContext({
   service: "github-releases",
@@ -13,12 +11,21 @@ const logger = mainLogger.child().withContext({
 const GITHUB_API_BASE = "https://api.github.com";
 const REPO_OWNER = "deadlock-mod-manager";
 const REPO_NAME = "deadlock-mod-manager";
-const CACHE_TTL = 15 * 60 * 1000; // 15 minutes in milliseconds
+const CACHE_TTL = 15 * 60 * 1000;
 
 interface CacheEntry {
   data: ReleasesResponse;
   timestamp: number;
 }
+
+const transformRelease = (release: GitHubRelease) => ({
+  version: release.tag_name.replace(/^v/, ""),
+  name: release.name,
+  releaseNotes: release.body,
+  publishedAt: release.published_at,
+  downloads: transformReleaseAssets(release),
+  prerelease: release.prerelease,
+});
 
 export class GitHubReleasesService {
   private static instance: GitHubReleasesService;
@@ -36,131 +43,6 @@ export class GitHubReleasesService {
       return false;
     }
     return Date.now() - this.cache.timestamp < CACHE_TTL;
-  }
-
-  private parsePlatformFromFilename(filename: string): {
-    platform: "windows" | "macos" | "linux";
-    architecture: "x64" | "arm64" | "universal";
-    installerType: "exe" | "msi" | "dmg" | "deb" | "rpm" | "flatpak" | "sig";
-  } | null {
-    const name = filename.toLowerCase();
-
-    // Windows patterns
-    if (name.endsWith(".msi.sig")) {
-      const arch = name.includes("arm64") ? "arm64" : "x64";
-      return { platform: "windows", architecture: arch, installerType: "sig" };
-    }
-
-    if (name.endsWith(".msi")) {
-      const arch = name.includes("arm64") ? "arm64" : "x64";
-      return { platform: "windows", architecture: arch, installerType: "msi" };
-    }
-
-    if (name.endsWith(".exe") || name.endsWith(".exe.sig")) {
-      const arch = name.includes("arm64") ? "arm64" : "x64";
-      const installerType = name.endsWith(".sig") ? "sig" : "exe";
-      return { platform: "windows", architecture: arch, installerType };
-    }
-
-    if (
-      name.includes("windows") ||
-      name.includes("win32") ||
-      name.includes("win64")
-    ) {
-      const arch = name.includes("arm64") ? "arm64" : "x64";
-      return { platform: "windows", architecture: arch, installerType: "exe" };
-    }
-
-    // macOS patterns
-    if (
-      name.includes(".dmg") ||
-      name.includes("macos") ||
-      name.includes("darwin")
-    ) {
-      const arch = name.includes("arm64")
-        ? "arm64"
-        : name.includes("x64") || name.includes("x86_64")
-          ? "x64"
-          : "universal";
-      return { platform: "macos", architecture: arch, installerType: "dmg" };
-    }
-
-    // Linux patterns - check .sig files first
-    if (name.endsWith(".deb.sig")) {
-      const arch =
-        name.includes("arm64") || name.includes("aarch64") ? "arm64" : "x64";
-      return { platform: "linux", architecture: arch, installerType: "sig" };
-    }
-
-    if (name.endsWith(".rpm.sig")) {
-      const arch =
-        name.includes("arm64") || name.includes("aarch64") ? "arm64" : "x64";
-      return { platform: "linux", architecture: arch, installerType: "sig" };
-    }
-
-    if (name.endsWith(".flatpak")) {
-      const arch =
-        name.includes("arm64") || name.includes("aarch64") ? "arm64" : "x64";
-      return {
-        platform: "linux",
-        architecture: arch,
-        installerType: "flatpak",
-      };
-    }
-
-    if (name.endsWith(".deb")) {
-      const arch =
-        name.includes("arm64") || name.includes("aarch64") ? "arm64" : "x64";
-      return { platform: "linux", architecture: arch, installerType: "deb" };
-    }
-
-    if (name.endsWith(".rpm")) {
-      const arch =
-        name.includes("arm64") || name.includes("aarch64") ? "arm64" : "x64";
-      return { platform: "linux", architecture: arch, installerType: "rpm" };
-    }
-
-    if (name.includes("linux")) {
-      // Unknown linux artifact — no recognised installer type, skip it
-      return null;
-    }
-
-    return null;
-  }
-
-  private transformRelease(release: GitHubRelease): {
-    version: string;
-    name: string;
-    releaseNotes: string;
-    publishedAt: string;
-    downloads: PlatformDownload[];
-    prerelease: boolean;
-  } {
-    const downloads: PlatformDownload[] = [];
-
-    for (const asset of release.assets) {
-      const platformInfo = this.parsePlatformFromFilename(asset.name);
-      if (platformInfo) {
-        downloads.push({
-          platform: platformInfo.platform,
-          architecture: platformInfo.architecture,
-          installerType: platformInfo.installerType,
-          url: asset.browser_download_url,
-          filename: asset.name,
-          size: asset.size,
-          downloadCount: asset.download_count,
-        });
-      }
-    }
-
-    return {
-      version: release.tag_name.replace(/^v/, ""),
-      name: release.name,
-      releaseNotes: release.body,
-      publishedAt: release.published_at,
-      downloads,
-      prerelease: release.prerelease,
-    };
   }
 
   async fetchReleases(): Promise<ReleasesResponse> {
@@ -188,35 +70,31 @@ export class GitHubReleasesService {
         );
       }
 
-      const releases = (await response.json()) as GitHubRelease[];
+      const releases = GitHubReleasesSchema.parse(await response.json());
 
       if (!releases || releases.length === 0) {
         throw new NotFoundError("No releases found");
       }
 
-      // Filter out drafts and sort by published date
       const publishedReleases = releases
         .filter((release) => !release.draft)
         .sort(
-          (a, b) =>
-            new Date(b.published_at).getTime() -
-            new Date(a.published_at).getTime(),
+          (left, right) =>
+            new Date(right.published_at).getTime() -
+            new Date(left.published_at).getTime(),
         );
 
       if (publishedReleases.length === 0) {
         throw new NotFoundError("No published releases found");
       }
 
-      // Find the latest stable release (non-prerelease)
       const latestStable = publishedReleases.find(
         (release) => !release.prerelease,
       );
       const latest = latestStable || publishedReleases[0];
 
-      const transformedLatest = this.transformRelease(latest);
-      const allVersions = publishedReleases.slice(0, 10).map((release) => ({
-        ...this.transformRelease(release),
-      }));
+      const transformedLatest = transformRelease(latest);
+      const allVersions = publishedReleases.slice(0, 10).map(transformRelease);
 
       const result: ReleasesResponse = {
         latest: {
@@ -229,7 +107,6 @@ export class GitHubReleasesService {
         allVersions,
       };
 
-      // Update cache
       this.cache = {
         data: result,
         timestamp: Date.now(),
