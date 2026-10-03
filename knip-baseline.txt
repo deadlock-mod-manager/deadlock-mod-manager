@@ -282,7 +282,6 @@
 ["types","apps/api/src/services/legacy-client-compat.ts",[["","LegacyVpkMod"]]]
 ["types","apps/api/src/services/mod-cache/service.ts",[["","ModCacheInvalidationScope"]]]
 ["types","apps/api/src/services/mod-cache/service.ts",[["","ModSyncCacheInvalidationOptions"]]]
-["types","apps/api/src/types/github-releases.ts",[["","GitHubAsset"]]]
 ["types","apps/auth/src/lib/auth/index.ts",[["","Auth"]]]
 ["types","apps/auth/src/lib/auth/index.ts",[["","SteamAuth"]]]
 ["types","apps/auth/src/lib/env.ts",[["","Environment"]]]
