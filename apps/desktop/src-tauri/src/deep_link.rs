@@ -205,7 +205,19 @@ pub fn handle_deep_link_url(
 }
 
 pub fn setup(app: &tauri::App<AppRuntime>) -> Result<(), Box<dyn std::error::Error>> {
-  #[cfg(any(target_os = "linux", target_os = "windows"))]
+  #[cfg(target_os = "linux")]
+  {
+    if std::env::var_os("FLATPAK_ID").is_none() {
+      log::info!("[DeepLink] Registering deep link protocols...");
+      if let Err(e) = app.deep_link().register_all() {
+        log::error!("[DeepLink] Failed to register protocols: {e}");
+      }
+    } else {
+      log::info!("[DeepLink] Using Flatpak desktop-file protocol associations");
+    }
+  }
+
+  #[cfg(target_os = "windows")]
   {
     log::info!("[DeepLink] Registering deep link protocols...");
     if let Err(e) = app.deep_link().register_all() {
