@@ -1,0 +1,9 @@
+---
+description: Import boundaries when adding or changing TypeScript workspace imports
+globs: **/*.ts, **/*.tsx
+alwaysApply: false
+---
+
+# Import boundaries
+
+Use workspace package names for cross-package imports. Within a package, use its existing relative imports or local aliases. Import public package exports rather than another package's source files. Packages must not depend on app internals. Keep generated bindings at their existing boundaries.

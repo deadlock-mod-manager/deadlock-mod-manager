@@ -38,10 +38,10 @@
     "docker": "docker compose up -d",
     "format": "oxfmt .",
     "lint": "oxlint .",
-    "format:fix": "oxfmt . --write",
-    "lint:fix": "oxlint . --fix",
+    "format:fix": "oxfmt --write",
+    "lint:fix": "oxlint --fix",
     "check-types": "turbo run check-types",
-    "test": "turbo run test",
+    "test": "pnpm test:tooling && turbo run test",
     "generate-lang-table": "bun run scripts/generate-language-table.ts --update-readme",
     "publish-packages": "turbo run build && changeset version",
     "upgrade-dependencies": "bun run scripts/upgrade-dependencies.ts",
@@ -54,17 +54,30 @@
     "db:generate": "pnpm --filter database db:generate",
     "db:migrations:reset": "git fetch origin && pnpm -s rimraf packages/database/drizzle && git restore --source origin/main -- packages/database/drizzle",
     "clean": "rimraf --glob **/node_modules",
-    "aur:test": "bash scripts/test-aur-packages.sh"
+    "aur:test": "bash scripts/test-aur-packages.sh",
+    "skills:link": "node scripts/link-claude-skills.mjs",
+    "postinstall": "node scripts/link-claude-skills.mjs",
+    "check:toolchain": "node scripts/check-toolchain.mjs",
+    "test:tooling": "bun test scripts/tests/",
+    "knip": "knip",
+    "knip:report": "knip --reporter compact",
+    "format:check": "oxfmt . --check",
+    "check-types:tooling": "pnpm exec tsc --noEmit -p scripts/tsconfig.json",
+    "knip:check": "node scripts/check-knip.mjs",
+    "knip:baseline": "node scripts/check-knip.mjs --update-baseline"
   },
   "dependencies": {
     "@changesets/cli": "^2.30.0",
     "node-gyp": "12.1.0"
   },
   "devDependencies": {
+    "@deadlock-mods/oxlint-plugins": "workspace:*",
+    "@types/bun": "1.3.11",
     "@typescript/native-preview": "catalog:",
     "cross-env": "^10.1.0",
     "dotenv-cli": "^7.4.4",
     "impeccable": "2.1.9",
+    "knip": "6.34.0",
     "lefthook": "^1.13.6",
     "node-gyp": "12.1.0",
     "oxfmt": "0.50.0",
@@ -72,6 +85,10 @@
     "rimraf": "^6.1.3",
     "turbo": "^2.9.6",
     "typescript": "catalog:"
+  },
+  "engines": {
+    "bun": ">=1.4.2",
+    "node": ">=24.8.0"
   },
   "packageManager": "pnpm@11.18.0+sha512.33d83c77da82f49fba836925c6f1b841181ec3132b670639bd012f7075f5c7cf634c5f870147c19aae7478fac01df09d8892e880454896edd23ee9b33757563c"
 }

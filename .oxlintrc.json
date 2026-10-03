@@ -24,5 +24,31 @@
     "packages/kv-parser/src-rs/generated/**",
     "apps/docs/.source/**",
     "infrastructure/templates/**"
+  ],
+  "jsPlugins": ["@deadlock-mods/oxlint-plugins/anti-slop"],
+  "rules": {
+    "anti-slop/no-chained-type-assertions": "warn",
+    "anti-slop/no-conditional-empty-object-spread": "warn",
+    "anti-slop/no-known-value-widening": "warn",
+    "anti-slop/no-object-parameters": "warn",
+    "anti-slop/no-reflect-apply": "warn",
+    "anti-slop/no-reflect-get": "warn",
+    "anti-slop/no-runtime-typeof": "warn",
+    "anti-slop/no-unsafe-dictionary-type": "warn",
+    "anti-slop/no-shape-in-symbol-names": "warn",
+    "anti-slop/no-unknown-parameters": "warn",
+    "anti-slop/no-unknown-returns": "warn",
+    "anti-slop/no-unknown-type-aliases": "warn",
+    "anti-slop/no-widen-then-assert": "warn"
+  },
+  "overrides": [
+    {
+      "files": [
+        "tools/oxlint-plugins/src/plugins/anti-slop/rules/no-runtime-typeof.ts"
+      ],
+      "rules": {
+        "anti-slop/no-runtime-typeof": "off"
+      }
+    }
   ]
 }

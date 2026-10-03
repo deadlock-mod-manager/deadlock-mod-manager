@@ -34,10 +34,22 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: "1.4.2"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Check toolchain pins
+        run: pnpm check:toolchain
+
+      - name: Type check agent tooling
+        run: pnpm check-types:tooling
+
+      - name: Test agent tooling
+        run: pnpm test:tooling
+
+      - name: Check unused code against reviewed baseline
+        run: pnpm knip:check
 
       - name: Run type check
         run: pnpm check-types
@@ -60,7 +72,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: "1.4.2"
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable

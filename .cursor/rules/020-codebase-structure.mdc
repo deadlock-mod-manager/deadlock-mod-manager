@@ -38,7 +38,7 @@ The project follows a monorepo structure using pnpm workspaces:
 - `pnpm-workspace.yaml` - Workspace configuration
 - `turbo.json` - Turborepo configuration
 - `compose.yml` - Docker Compose for local development
-- `biome.jsonc` - Biome configuration for linting and formatting
+- `.oxlintrc.json` - oxlint/oxfmt configuration for linting and formatting
 - `lefthook.yml` - Git hooks configuration
 - `netlify.toml` - Netlify deployment configuration
 - `.gitignore` - Git ignore configuration
@@ -57,8 +57,8 @@ pnpm --filter lockdex dev   # Start Lockdex service development
 pnpm --filter www dev       # Start web development server
 
 # Code Quality
-pnpm lint                  # Run linting with Biome
-pnpm format               # Format code with Biome
+pnpm lint                  # Run linting with oxlint/oxfmt
+pnpm format               # Format code with oxlint/oxfmt
 ```
 
 ### Database Commands

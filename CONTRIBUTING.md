@@ -278,7 +278,7 @@ The Nix flake automatically provides:
 - **Rust toolchain** with rust-analyzer and clippy
 - **Node.js 22** with pnpm and bun
 - **System libraries** for Tauri (GTK, WebKit, etc.)
-- **Development tools** (biome, turbo, lefthook, oxlint, oxfmt)
+- **Development tools** (turbo, lefthook, oxlint, oxfmt)
 - **Database tools** (PostgreSQL, Redis)
 - **Docker & Docker Compose**
 - **Build tools** (gcc, make, pkg-config)
@@ -324,7 +324,7 @@ nix run .#nightly
 | `pnpm api:dev`     | Start API server development        |
 | `pnpm build`       | Build all packages and applications |
 | `pnpm lint`        | Run linting checks                  |
-| `pnpm format`      | Format code with Biome              |
+| `pnpm format`      | Format code with oxlint/oxfmt       |
 | `pnpm check-types` | Run TypeScript type checking        |
 | `pnpm db:push`     | Push schema changes to database     |
 | `pnpm db:seed`     | Seed database with initial data     |
@@ -355,7 +355,7 @@ deadlock-mod-manager/
 - **Backend**: Bun, Hono framework
 - **Database**: PostgreSQL with Drizzle ORM
 - **Build System**: Turborepo
-- **Code Quality**: Biome (linting + formatting)
+- **Code Quality**: oxlint/oxfmt (linting + formatting)
 
 ## Development Workflow
 
@@ -407,7 +407,7 @@ chore(deps): update Tauri to v2.1.0
 
 The project uses Lefthook for git hooks that automatically:
 
-- Format code with Biome
+- Format code with oxlint/oxfmt
 - Run linting checks
 - Stage fixed files
 
@@ -492,7 +492,9 @@ cd ../deadlock-modmanager.fix-mod-conflict && pnpm install
 
 ### Formatting
 
-The project uses Biome with these settings:
+The project uses oxfmt for formatting; see `.oxfmtrc.json` for the authoritative settings. Oxlint configuration lives in `.oxlintrc.json`.
+
+Current formatting settings:
 
 - **Indentation**: 2 spaces
 - **Line Width**: 80 characters

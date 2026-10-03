@@ -1,0 +1,15 @@
+---
+description: Testing and verification for Bun, Rust, and Tauri changes
+globs: **/*.test.ts, **/*.spec.ts, **/*.test.tsx, **/*.rs
+alwaysApply: false
+---
+
+# Testing
+
+Follow the package's existing Bun test layout and naming. Use `bun:test`; Rust tests use Cargo. Prefer observable behavior and failure cases over tests that repeat the implementation.
+
+Run the smallest relevant test file or package suite from the repository root. Use `pnpm --filter @deadlock-mods/<package> test` or `bun test <path>`. Avoid unrelated full suites.
+
+Production tsconfigs may exclude test files. Type-check added tests through a dedicated test config that includes the affected tests and their source. Do not assume a successful production type check validates tests.
+
+For desktop UI, IPC, and Tauri commands, follow [Tauri verification](056-tauri-mcp-debugging.mdc). The user starts the dev app. Static checks are not proof of live UI behavior.
