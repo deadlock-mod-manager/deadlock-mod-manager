@@ -167,6 +167,13 @@ export const createCatalogRoutes = async (scenario: string) => {
         `/apiv11/Mod/${CATALOG_MOD_ID}/DownloadPage`,
         JSON.stringify({ _aFiles: files }),
       ),
+      json(
+        `/apiv11/Mod/${CATALOG_MOD_ID}/Updates`,
+        JSON.stringify({
+          _aMetadata: { _nRecordCount: 0, _nPerpage: 10, _bIsComplete: true },
+          _aRecords: [],
+        }),
+      ),
       {
         ...json(
           "/Core/Item/Data",

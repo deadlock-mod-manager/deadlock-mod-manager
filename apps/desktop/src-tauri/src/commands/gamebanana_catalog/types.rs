@@ -1,8 +1,8 @@
 use crate::errors::Error;
 use crate::providers::gamebanana::catalog::{CatalogPage, CatalogRecord};
 use crate::providers::gamebanana::{
-  NormalizedSubmission, Profile, SubmissionFile, donation_links, extract_map_name,
-  parse_requirements, parse_tags,
+  NormalizedSubmission, Profile, SubmissionFile, SubmissionUpdate, UpdatesPage, donation_links,
+  extract_map_name, parse_requirements, parse_tags,
 };
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
@@ -293,6 +293,73 @@ impl CatalogPageDto {
       page_size: page.page_size,
       stale,
     })
+  }
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct ChangelogChangeDto {
+  pub text: String,
+  pub category: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct ChangelogEntryDto {
+  pub id: String,
+  pub title: String,
+  pub version: Option<String>,
+  pub text: Option<String>,
+  #[ts(type = "number | null")]
+  pub created_at: Option<i64>,
+  pub changes: Vec<ChangelogChangeDto>,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct ChangelogPageDto {
+  pub entries: Vec<ChangelogEntryDto>,
+  #[ts(type = "number")]
+  pub total: u64,
+  pub page: u32,
+  pub has_more: bool,
+}
+
+impl ChangelogPageDto {
+  pub fn from_page(page: UpdatesPage, page_number: u32) -> Self {
+    Self {
+      entries: page
+        .public_records()
+        .into_iter()
+        .map(ChangelogEntryDto::from)
+        .collect(),
+      total: page.metadata.record_count,
+      page: page_number,
+      has_more: !page.metadata.is_complete,
+    }
+  }
+}
+
+impl From<SubmissionUpdate> for ChangelogEntryDto {
+  fn from(update: SubmissionUpdate) -> Self {
+    Self {
+      id: update.id.to_string(),
+      title: update.name,
+      version: update.version.filter(|version| !version.trim().is_empty()),
+      text: update.text.filter(|text| !text.trim().is_empty()),
+      created_at: update.date_added,
+      changes: update
+        .change_log
+        .into_iter()
+        .map(|entry| ChangelogChangeDto {
+          text: entry.text,
+          category: entry.cat.filter(|category| !category.trim().is_empty()),
+        })
+        .collect(),
+    }
   }
 }
 

@@ -3072,6 +3072,11 @@
     "checkingForUpdate": "Checking...",
     "noUpdateAvailable": "No update available",
     "checkUpdateError": "Failed to check for updates",
+    "changelog": {
+      "title": "Changelog",
+      "latest": "Latest: {{title}}",
+      "loadMore": "Load older updates"
+    },
     "vpkReplacement": {
       "title": "Replace VPK Files",
       "description": "Replace mod files for quick iteration during development",

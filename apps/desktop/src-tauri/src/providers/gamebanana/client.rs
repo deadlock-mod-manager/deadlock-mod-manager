@@ -1,5 +1,6 @@
 use super::models::{
-  BulkHydration, DownloadPage, FileserverPage, IndexPage, Profile, UpdateSnapshot, core_error,
+  BulkHydration, DownloadPage, FileserverPage, IndexPage, Profile, UpdateSnapshot, UpdatesPage,
+  core_error,
 };
 use super::transport::{GameBananaTransport, TransportConfig};
 use crate::errors::Error;
@@ -13,6 +14,7 @@ pub(crate) const DEADLOCK_GAME_ID: u64 = 20_948;
 const INDEX_PAGE_SIZE: u32 = 50;
 const MAX_INDEX_PAGE: u32 = 250;
 const MAX_BULK_ITEMS: usize = 50;
+const UPDATES_PAGE_SIZE: u32 = 10;
 // Each item repeats the full field list; 50 hydration items exceed the URL limit (GameBanana answers 414).
 pub(crate) const MAX_HYDRATION_ITEMS: usize = 40;
 const MAX_BULK_URL_BYTES: usize = 7_000;
@@ -88,6 +90,20 @@ impl GameBananaClient {
   ) -> Result<DownloadPage, Error> {
     let url = submission_url(&self.api_base, submission, "DownloadPage")?;
     self.transport.get_json("download page", url, cancel).await
+  }
+
+  pub async fn updates(
+    &self,
+    submission: &SubmissionRef,
+    page: u32,
+    cancel: &CancellationToken,
+  ) -> Result<UpdatesPage, Error> {
+    let mut url = submission_url(&self.api_base, submission, "Updates")?;
+    url
+      .query_pairs_mut()
+      .append_pair("_nPage", &page.max(1).to_string())
+      .append_pair("_nPerpage", &UPDATES_PAGE_SIZE.to_string());
+    self.transport.get_json("updates", url, cancel).await
   }
 
   pub async fn fileservers(&self, cancel: &CancellationToken) -> Result<FileserverPage, Error> {

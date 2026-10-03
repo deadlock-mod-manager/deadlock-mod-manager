@@ -13,6 +13,7 @@ import ModButton from "@/components/mod-browsing/mod-button";
 import { InstalledFilesDisplay } from "@/components/mod-detail/installed-files-display";
 import { InstalledVpksSection } from "@/components/mod-detail/installed-vpks-section";
 import { ModAudioPreview } from "@/components/mod-detail/mod-audio-preview";
+import { ModChangelog } from "@/components/mod-detail/mod-changelog";
 import { ModDependencies } from "@/components/mod-detail/mod-dependencies";
 import { ModDescription } from "@/components/mod-detail/mod-description";
 import { ModFiles } from "@/components/mod-detail/mod-files";
@@ -362,6 +363,8 @@ const Mod = () => {
           )}
 
           {mod.description && <ModDescription description={mod.description} />}
+
+          <ModChangelog remoteId={mod.remoteId} />
 
           {developerMode && localMod && (
             <VpkReplacementSection mod={localMod} />
