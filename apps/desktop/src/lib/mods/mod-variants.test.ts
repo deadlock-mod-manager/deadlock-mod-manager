@@ -1,11 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import {
   applyDownloadTimeSelection,
   deriveActiveArchiveNames,
   deriveActiveVariantCount,
   requiresFileSelection,
 } from "@/lib/mods/mod-variants";
-import type { LocalMod, ModFile } from "@/types/mods";
+import type { LocalMod, ModDownloadItem, ModFile } from "@/types/mods";
 
 const file = (
   name: string,
@@ -183,8 +183,15 @@ const tree = (files: ModFile[]) => ({
   has_multiple_files: files.length > 1,
 });
 
-const downloads = (...names: string[]) =>
-  names.map((name) => ({ name })) as LocalMod["downloads"];
+const downloads = (...names: string[]): ModDownloadItem[] =>
+  names.map((name) => ({
+    url: name,
+    size: 1024,
+    name,
+    createdAt: null,
+    updatedAt: null,
+    md5Checksum: null,
+  }));
 
 describe("applyDownloadTimeSelection", () => {
   it("keeps only the files of the archive picked during download", () => {
