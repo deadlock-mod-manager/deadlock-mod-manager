@@ -73,6 +73,10 @@ export default {
         },
       },
       keyframes: {
+        'results-loading': {
+          from: { transform: 'translateX(-100%)' },
+          to: { transform: 'translateX(300%)' },
+        },
         'accordion-down': {
           from: {
             height: '0',
@@ -146,6 +150,7 @@ export default {
         'pulse-x': 'pulse-x 1.5s ease-in-out infinite',
         heartbeat: 'heartbeat 2s ease-in-out infinite',
         jiggle: 'jiggle 3s ease-in-out infinite',
+        'results-loading': 'results-loading 1.1s ease-in-out infinite',
       },
     },
   },

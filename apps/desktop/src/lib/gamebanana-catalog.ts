@@ -49,6 +49,7 @@ export const getGameBananaCatalogMods = async (): Promise<ModDto[]> => {
     addedBefore: null,
     favorites: [],
     includeWips: false,
+    submissionType: null,
     sort: "default",
     page: 0,
     pageSize: 5_000,

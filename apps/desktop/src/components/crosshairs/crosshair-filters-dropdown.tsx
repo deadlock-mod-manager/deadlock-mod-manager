@@ -23,7 +23,7 @@ import {
 import { Check } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { HeroIcon } from "@/components/heroes/hero-icon";
-import { FilterCountIcon } from "@/components/mod-browsing/filter-count-icon";
+import { FiltersTriggerButton } from "@/components/mod-browsing/filters-trigger-button";
 import type { FilterMode } from "@/lib/store/slices/ui";
 import { cn } from "@/lib/utils";
 
@@ -204,19 +204,12 @@ const CrosshairFiltersDropdown = ({
   onFilterModeChange,
 }: CrosshairFiltersDropdownProps) => {
   const { t } = useTranslation();
-  const hasActiveFilters = selectedHeroes.length > 0 || selectedTags.length > 0;
   const totalActiveFilters = selectedHeroes.length + selectedTags.length;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button
-          className='relative'
-          size='iconExpand'
-          icon={<FilterCountIcon count={totalActiveFilters} />}
-          variant={hasActiveFilters ? "default" : "outline"}>
-          {t("filters.filters")}
-        </Button>
+        <FiltersTriggerButton count={totalActiveFilters} />
       </DropdownMenuTrigger>
       <DropdownMenuContent align='start' className='space-y-4 p-4'>
         <div className='space-y-2'>

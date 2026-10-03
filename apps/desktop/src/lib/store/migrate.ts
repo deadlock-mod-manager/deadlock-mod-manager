@@ -459,6 +459,26 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       }
     },
   },
+  {
+    to: 27,
+    label: "mods-store-content-type",
+    apply: (state) => {
+      // The store's audio/map quick filters became the Mods/Sounds/Maps/WiPs
+      // switcher. Keep an "only" choice; "exclude" is what the Mods tab does.
+      const modsFilters = state.modsFilters;
+      if (!isPlainObject(modsFilters)) return;
+      if (!("contentType" in modsFilters)) {
+        modsFilters.contentType =
+          modsFilters.audioQuickFilter === "only"
+            ? "sound"
+            : modsFilters.mapQuickFilter === "only"
+              ? "map"
+              : "mod";
+      }
+      delete modsFilters.audioQuickFilter;
+      delete modsFilters.mapQuickFilter;
+    },
+  },
 ];
 
 const LEGACY_GAMEBANANA_ID = /^[1-9]\d*$/;

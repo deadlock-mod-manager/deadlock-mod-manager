@@ -8,13 +8,13 @@ import {
   CommandItem,
   CommandList,
 } from "@deadlock-mods/ui/components/command";
-import { Label } from "@deadlock-mods/ui/components/label";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@deadlock-mods/ui/components/popover";
 import { Check } from "@deadlock-mods/ui/icons";
+import { CaretDownIcon, TagIcon } from "@phosphor-icons/react";
 import { memo, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import {
@@ -23,6 +23,7 @@ import {
   ModCategory,
 } from "@/lib/constants";
 import { cn } from "@/lib/utils";
+import { toolbarTriggerClass } from "./filters-trigger-button";
 
 type CategoryFilterProps = {
   mods: ModDto[];
@@ -74,46 +75,48 @@ const CategoryFilter = ({
         : `${selectedCategories.length} ${t("filters.selected")}`;
 
   return (
-    <div className='flex min-w-0 flex-col gap-2'>
-      <Label className='font-medium text-sm'>{t("filters.category")}</Label>
-      <Popover>
-        <PopoverTrigger asChild>
-          <Button
-            className='w-[180px] justify-start'
-            size='sm'
-            variant='outline'>
-            <span className='truncate'>{categoryButtonLabel}</span>
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent align='start' className='w-[240px] p-0'>
-          <Command>
-            <CommandInput placeholder={t("filters.searchCategories")} />
-            <CommandList>
-              <CommandEmpty>{t("filters.noCategoriesFound")}</CommandEmpty>
-              <CommandGroup>
-                {allCategories.map((category) => (
-                  <CommandItem
-                    key={category}
-                    onSelect={() => handleCategoryToggle(category)}>
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4 flex-shrink-0",
-                        selectedCategories.includes(category)
-                          ? "opacity-100"
-                          : "opacity-0",
-                      )}
-                    />
-                    <span className='truncate'>
-                      {getModCategoryDisplayName(category)}
-                    </span>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
-    </div>
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button
+          aria-label={t("filters.category")}
+          className={cn(
+            "max-w-[200px] gap-2 px-3",
+            toolbarTriggerClass(selectedCategories.length > 0),
+          )}
+          variant='outline'>
+          <TagIcon className='h-4 w-4 shrink-0' />
+          <span className='truncate'>{categoryButtonLabel}</span>
+          <CaretDownIcon className='h-3.5 w-3.5 shrink-0 text-muted-foreground' />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent align='start' className='w-[240px] p-0'>
+        <Command>
+          <CommandInput placeholder={t("filters.searchCategories")} />
+          <CommandList>
+            <CommandEmpty>{t("filters.noCategoriesFound")}</CommandEmpty>
+            <CommandGroup>
+              {allCategories.map((category) => (
+                <CommandItem
+                  key={category}
+                  onSelect={() => handleCategoryToggle(category)}>
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4 flex-shrink-0",
+                      selectedCategories.includes(category)
+                        ? "opacity-100"
+                        : "opacity-0",
+                    )}
+                  />
+                  <span className='truncate'>
+                    {getModCategoryDisplayName(category)}
+                  </span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 };
 

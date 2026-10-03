@@ -184,8 +184,14 @@ describe("persisted store integration with real production fixture", () => {
     expect(s.fileserverLatencyMs).toEqual(seededState.fileserverLatencyMs);
     expect(s.fileserverPreference).toBe(seededState.fileserverPreference);
     expect(s.nsfwSettings).toEqual(seededState.nsfwSettings);
+    const {
+      audioQuickFilter: _audioQuickFilter,
+      mapQuickFilter: _mapQuickFilter,
+      ...seededModsFilters
+    } = seededState.modsFilters;
     expect(s.modsFilters).toEqual({
-      ...seededState.modsFilters,
+      ...seededModsFilters,
+      contentType: "mod",
       showFavoritesOnly: false,
       addedFilter: { period: "any", from: "", to: "" },
     });
