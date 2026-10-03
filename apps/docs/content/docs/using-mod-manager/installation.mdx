@@ -37,9 +37,15 @@ The easiest way to install Deadlock Mod Manager is to download the latest releas
   />
 </Cards>
 
-1. Visit the [releases page](https://github.com/stormix/deadlock-modmanager/releases/latest)
+1. Visit the [releases page](https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest)
 2. Download the appropriate installer for your operating system
 3. Run the installer and follow the setup instructions
+
+### Optional CEF Builds
+
+Some releases also include builds using Chromium Embedded Framework (CEF) instead of the standard system webview. Look for release assets with a `-cef` suffix, such as `-cef-setup.exe`, `-cef.deb`, or `deadlock-mod-manager-cef.flatpak`, when available.
+
+CEF is an alternate runtime for the same manager features. Use the release notes to decide which build suits your system, especially when troubleshooting webview rendering. Availability varies by release and platform. Avoid running multiple builds against the same game installation at once.
 
 ### Option 3: Package Managers
 
@@ -232,7 +238,7 @@ If you encounter issues not covered here:
 <Callout type="info" title="Safety Information">
   Deadlock Mod Manager is open source and safe to use. If you have security concerns:
 
-    - **View the source code**: All code is publicly available on [GitHub](https://github.com/stormix/deadlock-modmanager)
+    - **View the source code**: All code is publicly available on [GitHub](https://github.com/deadlock-mod-manager/deadlock-mod-manager)
     - **Scan downloads**: You can run downloaded files through [VirusTotal](https://www.virustotal.com/) for additional peace of mind
     - **Community verified**: The application is used by thousands of users in the community
 
@@ -246,11 +252,11 @@ Once you have successfully installed Deadlock Mod Manager:
   <Card
     title='Getting Started Guide'
     description='Learn how to use the mod manager effectively'
-    href='/user-guide/getting-started'
+    href='/using-mod-manager/getting-started'
   />
   <Card
     title='Features Overview'
     description='Explore all available features and capabilities'
-    href='/user-guide/features'
+    href='/using-mod-manager/features'
   />
 </Cards>

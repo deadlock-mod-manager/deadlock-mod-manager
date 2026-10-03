@@ -20,7 +20,7 @@ Deadlock Mod Manager lets you discover, install, and manage mods for Valve's Dea
 
 Yes, Deadlock Mod Manager is completely safe:
 
-- **Open Source**: All code is publicly available on [GitHub](https://github.com/stormix/deadlock-modmanager)
+- **Open Source**: All code is publicly available on [GitHub](https://github.com/deadlock-mod-manager/deadlock-mod-manager)
 - **Community Verified**: Used by thousands of players in the Deadlock community
 - **No Malware**: Regular security scans and community oversight
 - **Transparent**: Full transparency in what the application does and how it works
@@ -49,14 +49,14 @@ No, Deadlock Mod Manager is an independent, community-developed project. It is n
 
 Installing mods through the mod manager is straightforward - simply browse available mods and click install.
 
-For a complete step-by-step walkthrough with screenshots, see **[Installing Your First Mod](/using-mod-manager/getting-started#installing-your-first-mod)** in our getting started guide.
+For a complete step-by-step walkthrough, see **[Installing Your First Mod](/using-mod-manager/getting-started#installing-your-first-mod)** in our getting started guide.
 
 ### Can I install multiple mods at once?
 
 Yes! You can:
 
 - **Queue multiple downloads** by clicking Install on several mods
-- **Use batch operations** in the My Mods section for updates
+- **Use batch operations** in the Mods Library section for updates
 - **Monitor all active downloads** in the Downloads tab
 
 ### Can I disable mods without uninstalling them?
@@ -67,7 +67,7 @@ For detailed instructions on managing mod states, see **[Enable/Disable Mods](/u
 
 ### How do I uninstall mods?
 
-You can safely remove mods through the My Mods section by clicking the uninstall button and confirming removal.
+You can safely remove mods through the Mods Library section by clicking the uninstall button and confirming removal.
 
 For complete instructions, see **[Uninstalling Mods](/using-mod-manager/getting-started#uninstalling-mods)** in our getting started guide.
 
@@ -75,22 +75,17 @@ For complete instructions, see **[Uninstalling Mods](/using-mod-manager/getting-
 
 ### What happens to my mods when Deadlock updates?
 
-When Deadlock updates:
+The manager warns while Steam is updating Deadlock and provides access to patch notes. Wait for the update to finish before launching. Some mods may need new versions after a game patch; check for updates in Mods Library and disable mods that no longer work. Compatibility is not automatically guaranteed.
 
-- **Most mods continue working** if they don't conflict with changes
-- **Some mods may need updates** to work with new game versions
-- **The mod manager will notify you** of available mod updates
-- **Incompatible mods** may be automatically disabled for safety
+### Can I back up my mods?
 
-### Can I backup my mods?
-
-Yes, copy the addons folder to a safe location. This will later be added as an option to the mod manager.
+Yes. Open **Settings → Backups** to create or restore addons backups and configure automatic backups. A shared Profile ID is a setup description, not a backup of your local files. See [Backups and Recovery](/using-mod-manager/getting-started#backups-and-recovery).
 
 ### Where are mods installed?
 
 Mods are installed directly into your Deadlock game directory:
 
-- **Mod files** are placed in the addons folder withing the game directory
+- **Mod files** are managed in addons and profile folders within the game directory
 - **Mod Archives** are downloaded to local app data
 
 ### How much disk space do mods use?
@@ -134,7 +129,7 @@ For detailed troubleshooting steps including compatibility checks and conflict r
 
 We welcome feedback and bug reports:
 
-1. **Search existing issues** on [GitHub](https://github.com/stormix/deadlock-modmanager/issues) first
+1. **Search existing issues** on [GitHub](https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues) first
 2. **Create a new issue** with detailed information
 3. **Join our Discord** for community support: [Discord Server](https://discord.gg/WbFNt8CCr8)
 4. **Include system info, logs, and steps to reproduce** when reporting bugs
@@ -183,28 +178,24 @@ Currently, Deadlock Mod Manager is specifically designed for Valve's Deadlock ga
 
 Yes! Deadlock Mod Manager is fully open source:
 
-- **GitHub Repository**: [stormix/deadlock-modmanager](https://github.com/stormix/deadlock-modmanager)
+- **GitHub Repository**: [deadlock-mod-manager/deadlock-mod-manager](https://github.com/deadlock-mod-manager/deadlock-mod-manager)
 - **MIT License**: Free to use, modify, and distribute
 - **Community Contributions**: Pull requests welcome
 - **Full Transparency**: All code and development is public
 
 ### Can I create my own mods using this tool?
 
-While the mod manager focuses on installing and managing existing mods, it doesn't include mod creation tools. For creating mods:
+Yes. **Mod Foundry** can import a hero skin, recolor it, swap cards and sounds, and export a VPK. It is controlled by **Settings → Experimental → Mod Foundry**. See [Customization](/using-mod-manager/customization#mod-foundry) for the workflow and export options.
 
-1. **Check Deadlock modding communities** for creation tutorials
-2. **Use appropriate modding tools** for Deadlock development
-3. **Follow Deadlock modding guidelines** from the community
-4. **Share your mods** on GameBanana to make them available through the mod manager
+For other kinds of mods, use the appropriate Deadlock modding tools and community tutorials. Foundry is a hero-skin editor, not a complete editor for every game asset.
 
 ### How is my data handled?
 
-Your privacy is important:
+Mod setup and preferences are stored locally. Browsing updates, downloading mods, sharing Profile IDs, and fetching player stats contact external services and require an internet connection. Cached data and downloaded mods can remain available offline.
 
-- **Local Storage**: All your mod data and preferences are stored locally
-- **No Tracking**: We don't track your usage or collect personal data
-- **No Account Required**: The app works completely offline after installation
-- **Open Source**: You can verify exactly what data is used by reviewing the code
+Control analytics under **Settings → Privacy → Usage Analytics**. **Settings → Logging** provides log files and troubleshooting tools.
+
+**Match Data Sharing** is a separate opt-in under **Settings → Privacy**. It uses your locally stored Steam login to fetch your own matches and sends match IDs and salts to deadlock-api. Read the consent screen before enabling it. A separate **Matchdata Ingest Tool** setting controls cached-matchdata ingestion; review that preference as well. See [Servers and Stats](/using-mod-manager/community#optional-match-data-sharing) for details.
 
 ## Getting More Help
 
@@ -224,7 +215,7 @@ Still have questions? Here are additional resources:
   <Card
     title='GitHub Issues'
     description='Report bugs and request features'
-    href='https://github.com/stormix/deadlock-modmanager/issues'
+    href='https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues'
   />
   <Card
     title='Features Guide'
