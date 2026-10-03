@@ -68,9 +68,7 @@ export const deriveActiveVariantCount = (mod: LocalMod | null): number => {
  * ever offered one download, because then nothing was chosen and there is no
  * decision to carry over.
  */
-export const deriveDownloadTimeArchiveNames = (
-  mod: LocalMod | null,
-): Set<string> => {
+const deriveDownloadTimeArchiveNames = (mod: LocalMod | null): Set<string> => {
   const names = new Set<string>();
   if ((mod?.downloads?.length ?? 0) <= 1) {
     return names;

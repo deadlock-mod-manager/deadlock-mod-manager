@@ -115,7 +115,6 @@
 ["exports","apps/bot/src/repositories/user.repository.ts",[["","findUserIdsByDiscordIds"]]]
 ["exports","apps/bot/src/services/nightly-testers-sync.ts",[["","parseUsername"]]]
 ["exports","apps/desktop/e2e/support/catalog-actions.ts",[["","chooseInstallFiles"]]]
-["exports","apps/desktop/e2e/support/content-fixtures.ts",[["","contentMods"]]]
 ["exports","apps/desktop/e2e/support/observations.ts",[["","inventorySchema"]]]
 ["exports","apps/desktop/src/components/foundry/foundry-assembling.tsx",[["","createAssemblingFigure"]]]
 ["exports","apps/desktop/src/components/hsv-color-picker/color-model.ts",[["","hexToHsv"]]]
@@ -371,5 +370,3 @@
 ["types","apps/www/src/types/analytics.ts",[["","BaseAnalyticsProperties"]]]
 ["types","apps/www/src/types/releases.ts",[["","ReleasesResponse"]]]
 ["types","packages/logging/src/logger/transports/winston/utils.ts",[["","LogMessageError"]]]
-["unlisted","apps/desktop/src/lib/mods/hero-resolution.test.ts",[["","vitest"]]]
-["unlisted","apps/desktop/src/lib/mods/mod-variants.test.ts",[["","vitest"]]]
