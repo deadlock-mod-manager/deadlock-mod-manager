@@ -94,9 +94,7 @@ export const contentRoutes =
           images: { icon_hero_card: `${origin}/images/920001.svg` },
         }),
       ),
-      json("/api/v2/feature-flags", [
-        { name: "profile-management", enabled: true },
-      ]),
+      json("/api/v2/feature-flags", []),
       json("/apiv11/Mod/Index", {
         _aMetadata: {
           _nRecordCount: profiles.length,

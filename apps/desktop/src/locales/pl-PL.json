@@ -1029,12 +1029,8 @@
     "fsUnknown": "Nie można zweryfikować folderu dodatków lub gameinfo.gi",
     "optional": "opcjonalne",
     "required": "Wymagane",
-    "type": "Rodzaj",
-    "currentValue": "Aktualna wartość",
     "enabled": "Włączony",
     "disabled": "Wyłączony",
-    "on": "włączony",
-    "off": "wyłączony",
     "none": "Brak",
     "enable": "Włącz",
     "disable": "Wyłącz",
@@ -1575,13 +1571,7 @@
   },
   "featureFlags": {
     "title": "Funkcje eksperymentalne",
-    "description": "Wybieraj funkcje eksperymentalne i spróbuj nowej funkcjonalności zanim zostanie ona udostępniona wszystkim.",
-    "loginRequired": "Musisz być zalogowany, aby zarządzać flagami funkcji",
-    "noExposedFlags": "Obecnie nie ma dostępnych funkcji eksperymentalnych",
-    "onlyBooleanToggles": "Tylko znaczniki funkcji logicznych mogą być przełączane",
-    "toggleSuccess": "{{name}} {{state}}",
-    "toggleError": "Nie udało się przełączyć flagi funkcji",
-    "nonBooleanFlag": "Wymagana konfiguracja ręczna"
+    "description": "Wybieraj funkcje eksperymentalne i spróbuj nowej funkcjonalności zanim zostanie ona udostępniona wszystkim."
   },
   "game": {
     "createBackup": "Utwórz kopię zapasową",

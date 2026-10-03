@@ -31,7 +31,7 @@ import { StaleModWarning } from "@/components/mod-management/stale-mod-warning";
 import { BatchUpdateDialog } from "@/components/my-mods/batch-update-dialog";
 import { BrokenModButton } from "@/components/reports/report-button";
 import ErrorBoundary from "@/components/shared/error-boundary";
-import { useFeatureFlag } from "@/hooks/use-feature-flags";
+import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useMod } from "@/hooks/use-mod";
 import { useResolvedDependencies } from "@/hooks/use-mod-dependencies";
 import { useModOptions } from "@/hooks/use-mod-options";
@@ -51,10 +51,7 @@ const Mod = () => {
   const params = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { isEnabled: isCustomMapsEnabled } = useFeatureFlag(
-    "custom-maps",
-    false,
-  );
+  const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const { data: mod, error, isLoading } = useMod(params.id);

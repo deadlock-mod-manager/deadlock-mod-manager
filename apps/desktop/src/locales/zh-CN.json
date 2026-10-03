@@ -1029,12 +1029,8 @@
     "fsUnknown": "无法验证addons文件夹或gameinfo.gi",
     "optional": "可选",
     "required": "必填",
-    "type": "类型",
-    "currentValue": "当前值",
     "enabled": "已启用",
     "disabled": "已禁用",
-    "on": "开",
-    "off": "关",
     "none": "无",
     "enable": "启用",
     "disable": "禁用",
@@ -1575,13 +1571,7 @@
   },
   "featureFlags": {
     "title": "实验性功能",
-    "description": "选择加入实验性功能，在功能面向所有人发布之前抢先体验。",
-    "loginRequired": "您需要登录才能管理功能标志。",
-    "noExposedFlags": "当前没有可用的实验性功能",
-    "onlyBooleanToggles": "只有布尔型功能标志可以切换",
-    "toggleSuccess": "{{name}} {{state}}",
-    "toggleError": "切换功能标志失败",
-    "nonBooleanFlag": "需要手动配置"
+    "description": "选择加入实验性功能，在功能面向所有人发布之前抢先体验。"
   },
   "game": {
     "createBackup": "创建备份",

@@ -71,7 +71,7 @@ const profileRoutes = async () => () => [
     method: "GET",
     path: "/api/v2/feature-flags",
     status: 200,
-    body: '[{"name":"profile-management","enabled":true}]',
+    body: "[]",
   },
 ];
 const profiles: Definition = {

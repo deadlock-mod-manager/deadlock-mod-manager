@@ -3,7 +3,7 @@ import { Users } from "@deadlock-mods/ui/icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ProfileManagerDialog } from "@/components/profiles/profile-manager-dialog";
-import { useFeatureFlag } from "@/hooks/use-feature-flags";
+import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
@@ -12,8 +12,8 @@ const Profile = () => {
   const [showProfileManager, setShowProfileManager] = useState(false);
   const { getActiveProfile } = usePersistedStore();
   const activeProfile = getActiveProfile();
-  const { isEnabled: isProfileManagementEnabled } =
-    useFeatureFlag("profile-management");
+  const isProfileManagementEnabled =
+    useExperimentalFeature("profile-management");
 
   const profileName =
     activeProfile?.name || t("profiles.default", "Default Profile");

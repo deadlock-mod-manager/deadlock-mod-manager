@@ -183,7 +183,6 @@
     "confirm": "確認",
     "copy": "複製",
     "create": "建立",
-    "currentValue": "目前值",
     "delete": "刪除",
     "disable": "停用",
     "disabled": "已停用",
@@ -209,8 +208,6 @@
     "never": "從不",
     "no": "否",
     "none": "None",
-    "off": "off",
-    "on": "on",
     "open": "Open",
     "optional": "選填",
     "remove": "移除",
@@ -220,7 +217,6 @@
     "status": "狀態",
     "stopGame": "停止遊戲",
     "success": "成功",
-    "type": "Type",
     "volume": "音量",
     "yes": "是"
   },
@@ -394,13 +390,7 @@
   },
   "featureFlags": {
     "description": "Opt in to experimental features and try new functionality before it's released to everyone.",
-    "loginRequired": "You need to be logged in to manage feature flags",
-    "noExposedFlags": "No experimental features are currently available",
-    "nonBooleanFlag": "Manual configuration required",
-    "onlyBooleanToggles": "Only boolean feature flags can be toggled",
-    "title": "Experimental Features",
-    "toggleError": "Failed to toggle feature flag",
-    "toggleSuccess": "{{name}} {{state}}"
+    "title": "Experimental Features"
   },
   "fileSelector": {
     "analyzingModFiles": "Analyzing mod files, please wait...",

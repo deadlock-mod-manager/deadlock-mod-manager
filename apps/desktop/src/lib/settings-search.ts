@@ -1,3 +1,5 @@
+import { EXPERIMENTAL_FEATURES } from "@/lib/store/slices/ui";
+
 export const SETTINGS_TAB_LABEL_KEYS = {
   "launch-options": "settings.launchOptions",
   autoexec: "settings.autoexec",
@@ -320,6 +322,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
     tab: "experimental",
     titleKey: "featureFlags.title",
     descriptionKey: "featureFlags.description",
+    settings: EXPERIMENTAL_FEATURES.map((feature) => ({
+      titleKey: `featureFlags.features.${feature}.title`,
+      descriptionKey: `featureFlags.features.${feature}.description`,
+    })),
   },
   {
     id: "privacy",

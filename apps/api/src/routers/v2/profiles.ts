@@ -4,7 +4,6 @@ import { ORPCError } from "@orpc/server";
 import { logger } from "@/lib/logger";
 import { generateHash } from "@/lib/utils";
 import { publicProcedure } from "../../lib/orpc";
-import { featureFlagsService } from "../../services/feature-flags";
 import {
   GetProfileInputSchema,
   ShareProfileInputSchema,
@@ -18,29 +17,7 @@ export const profilesRouter = {
     .route({ method: "GET", path: "/v2/profiles/{id}" })
     .input(GetProfileInputSchema)
     .output(profileSchema)
-    .handler(async ({ input, context }) => {
-      const userId = context.session?.user?.id;
-      const featureEnabledResult = await featureFlagsService.isFeatureEnabled(
-        "profile-sharing",
-        userId,
-      );
-
-      if (featureEnabledResult.isErr()) {
-        logger
-          .withError(featureEnabledResult.error)
-          .error("Failed to check profile-sharing feature flag");
-        throw new ORPCError("INTERNAL_SERVER_ERROR", {
-          message: "Failed to check feature availability",
-        });
-      }
-
-      if (!featureEnabledResult.value) {
-        logger.warn("Profile sharing is disabled via feature flag");
-        throw new ORPCError("FORBIDDEN", {
-          message: "Profile sharing is currently disabled",
-        });
-      }
-
+    .handler(async ({ input }) => {
       const profile = await profileRepository.findById(input.id);
       if (!profile) {
         throw new ORPCError("NOT_FOUND");
@@ -51,33 +28,7 @@ export const profilesRouter = {
     .route({ method: "POST", path: "/v2/profiles" })
     .input(ShareProfileInputSchema)
     .output(ShareProfileOutputSchema)
-    .handler(async ({ input, context }) => {
-      const userId = context.session?.user?.id;
-      const featureEnabledResult = await featureFlagsService.isFeatureEnabled(
-        "profile-sharing",
-        userId,
-      );
-
-      if (featureEnabledResult.isErr()) {
-        logger
-          .withError(featureEnabledResult.error)
-          .error("Failed to check profile-sharing feature flag");
-        return {
-          id: null,
-          status: "error",
-          error: "Failed to check feature availability",
-        };
-      }
-
-      if (!featureEnabledResult.value) {
-        logger.warn("Profile sharing is disabled via feature flag");
-        return {
-          id: null,
-          status: "error",
-          error: "Profile sharing is currently disabled",
-        };
-      }
-
+    .handler(async ({ input }) => {
       try {
         const contentHash = generateHash(JSON.stringify(input));
 

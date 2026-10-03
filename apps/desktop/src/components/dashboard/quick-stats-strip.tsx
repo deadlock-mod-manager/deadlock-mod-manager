@@ -11,7 +11,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { ProfileManagerDialog } from "@/components/profiles/profile-manager-dialog";
 import { useCheckUpdates } from "@/hooks/use-check-updates";
-import { useFeatureFlag } from "@/hooks/use-feature-flags";
+import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
@@ -21,10 +21,8 @@ export const QuickStatsStrip = () => {
   const navigate = useNavigate();
   const localMods = usePersistedStore((state) => state.localMods);
   const { updatableCount } = useCheckUpdates();
-  const { isEnabled: isProfileManagementEnabled } = useFeatureFlag(
-    "profile-management",
-    false,
-  );
+  const isProfileManagementEnabled =
+    useExperimentalFeature("profile-management");
   const [showProfileManager, setShowProfileManager] = useState(false);
 
   const installedCount = localMods.filter(

@@ -18,17 +18,6 @@ import { db, eq, schema } from "./client";
       .insert(schema.featureFlags)
       .values([
         {
-          name: "profile-sharing",
-          description: "Enable profile sharing functionality",
-          value: false,
-        },
-        {
-          name: "profile-management",
-          description:
-            "Enable profile management features (create, edit, switch profiles)",
-          value: false,
-        },
-        {
           name: "plugin-themes",
           description: "Enable Themes plugin",
           value: true,

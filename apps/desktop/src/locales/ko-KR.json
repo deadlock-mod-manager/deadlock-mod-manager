@@ -1029,12 +1029,8 @@
     "fsUnknown": "",
     "optional": "선택 과목",
     "required": "필수의",
-    "type": "유형",
-    "currentValue": "현재 가치",
     "enabled": "활성화됨",
     "disabled": "장애가 있는",
-    "on": "~에",
-    "off": "끄다",
     "none": "없음",
     "enable": "할 수 있게 하다",
     "disable": "장애를 입히다",
@@ -1575,13 +1571,7 @@
   },
   "featureFlags": {
     "title": "실험적 기능",
-    "description": "실험적 기능을 선택하고 새로운 기능이 모든 사람에게 출시되기 전에 사용해 보세요.",
-    "loginRequired": "기능 플래그를 관리하려면 로그인해야 합니다.",
-    "noExposedFlags": "현재 사용할 수 있는 실험적 기능이 없습니다.",
-    "onlyBooleanToggles": "부울 기능 플래그만 전환할 수 있습니다.",
-    "toggleSuccess": "",
-    "toggleError": "기능 플래그를 전환하지 못했습니다.",
-    "nonBooleanFlag": "수동 구성 필요"
+    "description": "실험적 기능을 선택하고 새로운 기능이 모든 사람에게 출시되기 전에 사용해 보세요."
   },
   "game": {
     "createBackup": "백업 생성",
