@@ -466,6 +466,13 @@ jobs:
           projectPath: ./apps/desktop
           args: "--bundles nsis,updater"
 
+      - name: Stage standalone Windows executable
+        if: matrix.os == 'windows'
+        shell: pwsh
+        run: |
+          $version = (Get-Content -LiteralPath apps/desktop/package.json -Raw | ConvertFrom-Json).version
+          Copy-Item -LiteralPath apps/desktop/target/release/deadlock-mod-manager.exe -Destination "apps/desktop/target/release/bundle/nsis/Deadlock Mod Manager_${version}_x64-portable.exe"
+
       - name: Upload unsigned Windows artifact
         if: matrix.os == 'windows'
         uses: actions/upload-artifact@v7

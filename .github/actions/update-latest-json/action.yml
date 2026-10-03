@@ -69,14 +69,14 @@ runs:
 
           // Read the new Windows NSIS signature and find the exe file
           const files = fs.readdirSync(artifactPath);
-          const sigFile = files.find(f => f.endsWith('.exe.sig'));
-          const exeFile = files.find(f => f.endsWith('.exe') && !f.endsWith('.exe.sig'));
-
-          if (!sigFile) {
-            throw new Error('No .exe.sig file found in signed artifacts');
+          const installers = files.filter(f => f.endsWith('-setup.exe') && !f.endsWith('-cef-setup.exe'));
+          if (installers.length !== 1) {
+            throw new Error(`Expected one NSIS installer in signed artifacts, found ${installers.length}`);
           }
-          if (!exeFile) {
-            throw new Error('No .exe file found in signed artifacts');
+          const exeFile = installers[0];
+          const sigFile = `${exeFile}.sig`;
+          if (!files.includes(sigFile)) {
+            throw new Error(`Missing updater signature for ${exeFile}`);
           }
 
           const newSignature = fs.readFileSync(path.join(artifactPath, sigFile), 'utf8').trim();
