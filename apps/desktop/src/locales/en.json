@@ -1680,7 +1680,7 @@
     },
     "consent": {
       "title": "Enable match data sharing?",
-      "body": "When enabled, this app reads your local Steam login token from this machine to fetch your own Deadlock matches through your account, then sends the resulting match IDs and salts to deadlock-api. Your token, password, and personal data are never sent or stored. All fetching is throttled and capped at 40 requests per 24 hours. Because it acts through your real Steam account, the risk is low but not zero. Do you want to continue?",
+      "body": "This reads your Steam login token on this machine to fetch your own Deadlock matches through your account.\n\n• Only match IDs and salts are sent to deadlock-api.\n• Your token, password, and personal data are never sent or stored.\n• Fetching is capped at 40 requests per 24 hours.\n\nBecause it acts through your real Steam account, the risk is low but not zero.",
       "accept": "I understand, enable it",
       "decline": "Cancel"
     },

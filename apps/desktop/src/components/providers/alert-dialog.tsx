@@ -190,7 +190,7 @@ export const AlertDialogProvider = ({
                 <div className='flex flex-col gap-1.5'>
                   <AlertDialogTitle>{state.title}</AlertDialogTitle>
                   {state.body ? (
-                    <AlertDialogDescription>
+                    <AlertDialogDescription className='whitespace-pre-line'>
                       {state.body}
                     </AlertDialogDescription>
                   ) : null}
@@ -200,7 +200,9 @@ export const AlertDialogProvider = ({
               <AlertDialogHeader>
                 <AlertDialogTitle>{state.title}</AlertDialogTitle>
                 {state.body ? (
-                  <AlertDialogDescription>{state.body}</AlertDialogDescription>
+                  <AlertDialogDescription className='whitespace-pre-line'>
+                    {state.body}
+                  </AlertDialogDescription>
                 ) : null}
               </AlertDialogHeader>
             )}
