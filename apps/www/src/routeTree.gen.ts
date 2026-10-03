@@ -9,98 +9,33 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as VpkAnalyzerRouteImport } from './routes/vpk-analyzer'
-import { Route as TransparencyRouteImport } from './routes/transparency'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as StatusRouteImport } from './routes/status'
-import { Route as RandomizerRouteImport } from './routes/randomizer'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as KvParserRouteImport } from './routes/kv-parser'
-import { Route as DownloadRouteImport } from './routes/download'
-import { Route as DocsRouteImport } from './routes/docs'
-import { Route as DiscordRouteImport } from './routes/discord'
-import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as CrosshairGeneratorRouteImport } from './routes/crosshair-generator'
-import { Route as R403RouteImport } from './routes/403'
-import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as DownloadIndexRouteImport } from './routes/download/index'
-import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
-import { Route as ModIdRouteImport } from './routes/mod/$id'
-import { Route as DownloadWindowsRouteImport } from './routes/download/windows'
-import { Route as DownloadLinuxRouteImport } from './routes/download/linux'
-import { Route as DashboardAnnouncementsRouteImport } from './routes/dashboard/announcements'
+import { Route as SplatRouteImport } from './routes/$'
+import { Route as R403RouteImport } from './routes/403'
+import { Route as CrosshairGeneratorRouteImport } from './routes/crosshair-generator'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as DiscordRouteImport } from './routes/discord'
+import { Route as DocsRouteImport } from './routes/docs'
+import { Route as DownloadRouteImport } from './routes/download'
+import { Route as KvParserRouteImport } from './routes/kv-parser'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as RandomizerRouteImport } from './routes/randomizer'
+import { Route as StatusRouteImport } from './routes/status'
+import { Route as TermsRouteImport } from './routes/terms'
+import { Route as TransparencyRouteImport } from './routes/transparency'
+import { Route as VpkAnalyzerRouteImport } from './routes/vpk-analyzer'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
+import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
+import { Route as DashboardAnnouncementsRouteImport } from './routes/dashboard/announcements'
+import { Route as DownloadIndexRouteImport } from './routes/download/index'
+import { Route as DownloadLinuxRouteImport } from './routes/download/linux'
+import { Route as DownloadWindowsRouteImport } from './routes/download/windows'
+import { Route as ModIdRouteImport } from './routes/mod/$id'
 
-const VpkAnalyzerRoute = VpkAnalyzerRouteImport.update({
-  id: '/vpk-analyzer',
-  path: '/vpk-analyzer',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TransparencyRoute = TransparencyRouteImport.update({
-  id: '/transparency',
-  path: '/transparency',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const StatusRoute = StatusRouteImport.update({
-  id: '/status',
-  path: '/status',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RandomizerRoute = RandomizerRouteImport.update({
-  id: '/randomizer',
-  path: '/randomizer',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const KvParserRoute = KvParserRouteImport.update({
-  id: '/kv-parser',
-  path: '/kv-parser',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DownloadRoute = DownloadRouteImport.update({
-  id: '/download',
-  path: '/download',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DocsRoute = DocsRouteImport.update({
-  id: '/docs',
-  path: '/docs',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DiscordRoute = DiscordRouteImport.update({
-  id: '/discord',
-  path: '/discord',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DashboardRoute = DashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CrosshairGeneratorRoute = CrosshairGeneratorRouteImport.update({
-  id: '/crosshair-generator',
-  path: '/crosshair-generator',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const R403Route = R403RouteImport.update({
-  id: '/403',
-  path: '/403',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SplatRoute = SplatRouteImport.update({
@@ -108,29 +43,94 @@ const SplatRoute = SplatRouteImport.update({
   path: '/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const R403Route = R403RouteImport.update({
+  id: '/403',
+  path: '/403',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DownloadIndexRoute = DownloadIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => DownloadRoute,
+const CrosshairGeneratorRoute = CrosshairGeneratorRouteImport.update({
+  id: '/crosshair-generator',
+  path: '/crosshair-generator',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DiscordRoute = DiscordRouteImport.update({
+  id: '/discord',
+  path: '/discord',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DocsRoute = DocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DownloadRoute = DownloadRouteImport.update({
+  id: '/download',
+  path: '/download',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KvParserRoute = KvParserRouteImport.update({
+  id: '/kv-parser',
+  path: '/kv-parser',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RandomizerRoute = RandomizerRouteImport.update({
+  id: '/randomizer',
+  path: '/randomizer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StatusRoute = StatusRouteImport.update({
+  id: '/status',
+  path: '/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TransparencyRoute = TransparencyRouteImport.update({
+  id: '/transparency',
+  path: '/transparency',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VpkAnalyzerRoute = VpkAnalyzerRouteImport.update({
+  id: '/vpk-analyzer',
+  path: '/vpk-analyzer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => DashboardRoute,
 } as any)
-const ModIdRoute = ModIdRouteImport.update({
-  id: '/mod/$id',
-  path: '/mod/$id',
-  getParentRoute: () => rootRouteImport,
+const DashboardAnnouncementsRoute = DashboardAnnouncementsRouteImport.update({
+  id: '/announcements',
+  path: '/announcements',
+  getParentRoute: () => DashboardRoute,
 } as any)
-const DownloadWindowsRoute = DownloadWindowsRouteImport.update({
-  id: '/windows',
-  path: '/windows',
+const DownloadIndexRoute = DownloadIndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => DownloadRoute,
 } as any)
 const DownloadLinuxRoute = DownloadLinuxRouteImport.update({
@@ -138,14 +138,14 @@ const DownloadLinuxRoute = DownloadLinuxRouteImport.update({
   path: '/linux',
   getParentRoute: () => DownloadRoute,
 } as any)
-const DashboardAnnouncementsRoute = DashboardAnnouncementsRouteImport.update({
-  id: '/announcements',
-  path: '/announcements',
-  getParentRoute: () => DashboardRoute,
+const DownloadWindowsRoute = DownloadWindowsRouteImport.update({
+  id: '/windows',
+  path: '/windows',
+  getParentRoute: () => DownloadRoute,
 } as any)
-const AuthCallbackRoute = AuthCallbackRouteImport.update({
-  id: '/auth/callback',
-  path: '/auth/callback',
+const ModIdRoute = ModIdRouteImport.update({
+  id: '/mod/$id',
+  path: '/mod/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -322,102 +322,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/vpk-analyzer': {
-      id: '/vpk-analyzer'
-      path: '/vpk-analyzer'
-      fullPath: '/vpk-analyzer'
-      preLoaderRoute: typeof VpkAnalyzerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/transparency': {
-      id: '/transparency'
-      path: '/transparency'
-      fullPath: '/transparency'
-      preLoaderRoute: typeof TransparencyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/status': {
-      id: '/status'
-      path: '/status'
-      fullPath: '/status'
-      preLoaderRoute: typeof StatusRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/randomizer': {
-      id: '/randomizer'
-      path: '/randomizer'
-      fullPath: '/randomizer'
-      preLoaderRoute: typeof RandomizerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/kv-parser': {
-      id: '/kv-parser'
-      path: '/kv-parser'
-      fullPath: '/kv-parser'
-      preLoaderRoute: typeof KvParserRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/download': {
-      id: '/download'
-      path: '/download'
-      fullPath: '/download'
-      preLoaderRoute: typeof DownloadRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/docs': {
-      id: '/docs'
-      path: '/docs'
-      fullPath: '/docs'
-      preLoaderRoute: typeof DocsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/discord': {
-      id: '/discord'
-      path: '/discord'
-      fullPath: '/discord'
-      preLoaderRoute: typeof DiscordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/dashboard': {
-      id: '/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/crosshair-generator': {
-      id: '/crosshair-generator'
-      path: '/crosshair-generator'
-      fullPath: '/crosshair-generator'
-      preLoaderRoute: typeof CrosshairGeneratorRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/403': {
-      id: '/403'
-      path: '/403'
-      fullPath: '/403'
-      preLoaderRoute: typeof R403RouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$': {
@@ -427,19 +336,110 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/403': {
+      id: '/403'
+      path: '/403'
+      fullPath: '/403'
+      preLoaderRoute: typeof R403RouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/download/': {
-      id: '/download/'
-      path: '/'
-      fullPath: '/download/'
-      preLoaderRoute: typeof DownloadIndexRouteImport
-      parentRoute: typeof DownloadRoute
+    '/crosshair-generator': {
+      id: '/crosshair-generator'
+      path: '/crosshair-generator'
+      fullPath: '/crosshair-generator'
+      preLoaderRoute: typeof CrosshairGeneratorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/discord': {
+      id: '/discord'
+      path: '/discord'
+      fullPath: '/discord'
+      preLoaderRoute: typeof DiscordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/docs': {
+      id: '/docs'
+      path: '/docs'
+      fullPath: '/docs'
+      preLoaderRoute: typeof DocsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/download': {
+      id: '/download'
+      path: '/download'
+      fullPath: '/download'
+      preLoaderRoute: typeof DownloadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/kv-parser': {
+      id: '/kv-parser'
+      path: '/kv-parser'
+      fullPath: '/kv-parser'
+      preLoaderRoute: typeof KvParserRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/randomizer': {
+      id: '/randomizer'
+      path: '/randomizer'
+      fullPath: '/randomizer'
+      preLoaderRoute: typeof RandomizerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/status': {
+      id: '/status'
+      path: '/status'
+      fullPath: '/status'
+      preLoaderRoute: typeof StatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/transparency': {
+      id: '/transparency'
+      path: '/transparency'
+      fullPath: '/transparency'
+      preLoaderRoute: typeof TransparencyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vpk-analyzer': {
+      id: '/vpk-analyzer'
+      path: '/vpk-analyzer'
+      fullPath: '/vpk-analyzer'
+      preLoaderRoute: typeof VpkAnalyzerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/dashboard/': {
       id: '/dashboard/'
@@ -448,18 +448,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/mod/$id': {
-      id: '/mod/$id'
-      path: '/mod/$id'
-      fullPath: '/mod/$id'
-      preLoaderRoute: typeof ModIdRouteImport
-      parentRoute: typeof rootRouteImport
+    '/dashboard/announcements': {
+      id: '/dashboard/announcements'
+      path: '/announcements'
+      fullPath: '/dashboard/announcements'
+      preLoaderRoute: typeof DashboardAnnouncementsRouteImport
+      parentRoute: typeof DashboardRoute
     }
-    '/download/windows': {
-      id: '/download/windows'
-      path: '/windows'
-      fullPath: '/download/windows'
-      preLoaderRoute: typeof DownloadWindowsRouteImport
+    '/download/': {
+      id: '/download/'
+      path: '/'
+      fullPath: '/download/'
+      preLoaderRoute: typeof DownloadIndexRouteImport
       parentRoute: typeof DownloadRoute
     }
     '/download/linux': {
@@ -469,18 +469,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DownloadLinuxRouteImport
       parentRoute: typeof DownloadRoute
     }
-    '/dashboard/announcements': {
-      id: '/dashboard/announcements'
-      path: '/announcements'
-      fullPath: '/dashboard/announcements'
-      preLoaderRoute: typeof DashboardAnnouncementsRouteImport
-      parentRoute: typeof DashboardRoute
+    '/download/windows': {
+      id: '/download/windows'
+      path: '/windows'
+      fullPath: '/download/windows'
+      preLoaderRoute: typeof DownloadWindowsRouteImport
+      parentRoute: typeof DownloadRoute
     }
-    '/auth/callback': {
-      id: '/auth/callback'
-      path: '/auth/callback'
-      fullPath: '/auth/callback'
-      preLoaderRoute: typeof AuthCallbackRouteImport
+    '/mod/$id': {
+      id: '/mod/$id'
+      path: '/mod/$id'
+      fullPath: '/mod/$id'
+      preLoaderRoute: typeof ModIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }

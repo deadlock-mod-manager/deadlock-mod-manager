@@ -14,7 +14,7 @@ overrides:
   react: 19.2.0
   react-dom: 19.2.0
   rollup: ">=4.60.0"
-  seroval: ">=1.5.1"
+  seroval: ">=1.6.7"
   tar: ">=7.5.13"
   "@langchain/community@<=1.1.17": ">=1.1.18"
   "@orpc/client@<=1.13.5": ">=1.13.6"
