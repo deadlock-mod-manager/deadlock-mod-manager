@@ -1,4 +1,4 @@
-import { and, eq } from "@deadlock-mods/database";
+import { and, eq, sql } from "@deadlock-mods/database";
 import type { Database } from "../client";
 import {
   type CachedVPK,
@@ -103,6 +103,25 @@ export class VpkRepository {
       .values({ ...vpkData, ...identity, fileId, sourcePath })
       .returning();
     return created;
+  }
+
+  /**
+   * Copies the GameBanana identity onto VPKs that only reference the catalog,
+   * mirroring migration 0055 for rows legacy writers add after it.
+   * Legacy desktop compatibility: remove with the catalog retirement (#715).
+   */
+  async backfillLegacyIdentities(): Promise<number> {
+    const result = await this.db.execute(sql`
+      UPDATE "vpk" SET
+        "provider" = 'gamebanana',
+        "submission_type" = CASE WHEN "mod"."is_audio" OR "mod"."remote_id" LIKE 'snd-%' THEN 'sound' ELSE 'mod' END,
+        "submission_id" = regexp_replace("mod"."remote_id", '^snd-', '')
+      FROM "mod"
+      WHERE "vpk"."mod_id" = "mod"."id"
+        AND "vpk"."submission_id" IS NULL
+        AND "mod"."remote_id" ~ '^(snd-)?[1-9][0-9]*$'
+    `);
+    return result.rowCount ?? 0;
   }
 
   async isIngestionComplete(

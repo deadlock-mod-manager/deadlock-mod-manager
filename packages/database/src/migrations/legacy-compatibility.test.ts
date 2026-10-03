@@ -9,6 +9,7 @@ import { Client, Pool } from "pg";
 import baselineSnapshot from "../../drizzle/meta/0053_snapshot.json";
 import journal from "../../drizzle/meta/_journal.json";
 import { ReportRepository } from "../repositories/reports.repository";
+import { VpkRepository } from "../repositories/vpk.repository";
 import * as schema from "../schema";
 
 const migrationsFolder = fileURLToPath(
@@ -158,7 +159,41 @@ describe.skipIf(!testDatabaseUrl)("pre-v2 migration compatibility", () => {
     expect(oldReport.rowCount).toBe(1);
   });
 
-  it("keeps reporting metadata readable before the identity backfill", async () => {
+  it("backfills submission identities onto legacy rows", async () => {
+    const migrated = await pool.query(
+      "SELECT provider, submission_type, submission_id, mod_name, mod_author FROM report WHERE id = 'report_before'",
+    );
+    expect(migrated.rows).toEqual([
+      {
+        provider: "gamebanana",
+        submission_type: "mod",
+        submission_id: "123",
+        mod_name: "Legacy mod",
+        mod_author: "Legacy author",
+      },
+    ]);
+    const vpk = await pool.query(
+      "SELECT provider, submission_type, submission_id FROM vpk WHERE id = 'vpk_before'",
+    );
+    expect(vpk.rows).toEqual([
+      { provider: "gamebanana", submission_type: "mod", submission_id: "123" },
+    ]);
+
+    // Rows the previous API and Lockdex write during the rollout window.
+    const database = drizzle(pool, { schema });
+    const reports = new ReportRepository(database);
+    expect(await reports.backfillLegacyIdentities()).toBe(1);
+    expect(await new VpkRepository(database).backfillLegacyIdentities()).toBe(
+      1,
+    );
+    expect(await reports.backfillLegacyIdentities()).toBe(0);
+    const pending = await pool.query(
+      "SELECT id FROM report WHERE submission_id IS NULL UNION ALL SELECT id FROM vpk WHERE submission_id IS NULL",
+    );
+    expect(pending.rowCount).toBe(0);
+  });
+
+  it("keeps reporting metadata readable after the identity backfill", async () => {
     const repository = new ReportRepository(drizzle(pool, { schema }));
     const recent = await repository.getRecentReports();
     expect(
@@ -170,11 +205,18 @@ describe.skipIf(!testDatabaseUrl)("pre-v2 migration compatibility", () => {
     });
     const counts = await repository.getSubmissionsWithReportCounts();
     expect(counts).toContainEqual({
-      modId: "mod_legacy",
+      modId: "123",
       modName: "Legacy mod",
       modAuthor: "Legacy author",
       totalReports: 2,
     });
+    expect(
+      await repository.getReportCount({
+        provider: "gamebanana",
+        submissionType: "mod",
+        submissionId: "123",
+      }),
+    ).toBe(2);
   });
 
   it("preserves foreign keys and their legacy delete behavior", async () => {
@@ -221,6 +263,7 @@ it("keeps all pending migrations free of destructive legacy changes", async () =
     expect(sql).not.toMatch(
       /DROP\s+(?:TABLE|COLUMN|CONSTRAINT|INDEX)|SET\s+NOT\s+NULL/i,
     );
-    expect(sql).not.toMatch(/\b(?:DELETE|TRUNCATE|UPDATE)\b/i);
+    // Backfills (UPDATE) are allowed; removing data is not.
+    expect(sql).not.toMatch(/\b(?:DELETE|TRUNCATE)\b/i);
   }
 });
