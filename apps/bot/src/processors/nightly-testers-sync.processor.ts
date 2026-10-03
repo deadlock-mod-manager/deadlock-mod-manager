@@ -1,5 +1,6 @@
 import { BaseProcessor } from "@deadlock-mods/queue";
 import { CronPatterns } from "@deadlock-mods/queue/cron";
+import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { NightlyTestersSyncService } from "@/services/nightly-testers-sync";
 import type { CronJobData } from "@/types/jobs";
@@ -23,6 +24,10 @@ export class NightlyTestersSyncProcessor extends BaseProcessor<CronJobData> {
   }
 
   async process(jobData: CronJobData) {
+    if (!env.AI_SUPPORT_ENABLED) {
+      return this.handleSuccess(jobData);
+    }
+
     try {
       await this.syncService.sync();
       return this.handleSuccess(jobData);

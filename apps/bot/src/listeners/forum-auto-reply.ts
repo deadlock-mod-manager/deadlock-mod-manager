@@ -29,6 +29,10 @@ export class ForumAutoReplyListener extends Listener {
   }
 
   private async shouldRespond(message: Message): Promise<boolean> {
+    if (!env.AI_SUPPORT_ENABLED) {
+      return false;
+    }
+
     const aiEnabled = await FeatureFlagsService.instance
       .getService()
       .isFeatureFlagEnabled("ai_replies_enabled");

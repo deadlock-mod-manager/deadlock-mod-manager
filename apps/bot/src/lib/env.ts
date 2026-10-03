@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { aiSupportEnabledSchema } from "../config/ai-support";
 
 export const envSchema = z.object({
   NODE_ENV: z.enum(["development", "production"]).default("production"),
@@ -13,6 +14,7 @@ export const envSchema = z.object({
   POD_NAME: z.string().optional(),
   BOT_TOKEN: z.string(),
   BOT_ENABLED: z.coerce.boolean().default(false),
+  AI_SUPPORT_ENABLED: aiSupportEnabledSchema,
   FORUM_CHANNEL_ID: z.string().default("1412799289301925908"),
   SUPPORT_CHANNEL_ID: z.string().default("1431734280463188100"),
   BUG_REPORT_CHANNEL_ID: z.string().default("1418618964925480990"),
