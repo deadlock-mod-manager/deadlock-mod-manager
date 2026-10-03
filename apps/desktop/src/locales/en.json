@@ -75,9 +75,7 @@
       "failedHint": "Not every skin can be decoded — an unusual or broken model may fail to load. The skin still installs and works in-game.",
       "retry": "Try again",
       "hide": "Hide the 3D preview",
-      "disabled": "3D preview is off",
-      "disabledHint": "Turn it on to see the selected skin's model here. It can be switched off again under Settings › Application › Appearance.",
-      "enable": "Turn the preview on"
+      "enable": "Show the 3D preview"
     },
     "modActions": "Mod actions",
     "removeFromHero": "Remove from {{hero}}",
@@ -95,7 +93,32 @@
     "assignCurrent": "Detected as {{hero}}",
     "assignUnrecognized": "No hero",
     "assignRemoved": "Removed",
-    "assignSuccess": "{{mod}} is now listed under {{hero}}"
+    "assignSuccess": "{{mod}} is now listed under {{hero}}",
+    "randomizer": {
+      "title": "Skin randomizer",
+      "inactiveSummary": "Off — skins stay as you set them",
+      "activeSummary_one": "{{count}} hero gets a random skin on every launch",
+      "activeSummary_other": "{{count}} heroes get a random skin on every launch",
+      "bulk": "Bulk",
+      "selectAllHeroes": "Select all skins on every hero",
+      "includeDefaultAll": "Include the default skin for every hero",
+      "excludeDefaultAll": "Exclude the default skin for every hero",
+      "clearAll": "Clear the whole selection",
+      "heroNeedsMore_one": "{{count}} in the randomizer pool — pick at least 2 to randomize this hero",
+      "heroNeedsMore_other": "{{count}} in the randomizer pool — pick at least 2 to randomize this hero",
+      "heroReady_one": "{{count}} in the randomizer pool — turn the randomizer on to use it",
+      "heroReady_other": "{{count}} in the randomizer pool — turn the randomizer on to use it",
+      "heroActive_one": "Random pick from {{count}} on every launch",
+      "heroActive_other": "Random pick from {{count}} on every launch",
+      "includeDefault": "Include default skin",
+      "selectAll": "Select all",
+      "selectNone": "Select none",
+      "inPool": "Include in the skin randomizer",
+      "defaultInPool": "Include the default skin in the randomizer",
+      "unavailable": "Can’t be randomized: install it once to pick its files, or it needs a confirmation",
+      "listSubtitle": "Random skin",
+      "launchFailed": "The skin randomizer couldn’t change every hero. The game starts with the skins that were already on."
+    }
   },
   "stats": {
     "title": "Stats",

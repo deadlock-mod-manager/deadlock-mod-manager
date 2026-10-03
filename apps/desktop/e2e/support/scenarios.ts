@@ -18,6 +18,10 @@ import { assertNormalExit, assertInterruptedExit } from "./phase-evidence";
 import { writeSyntheticVpk } from "./vpk";
 import { contentRoutes, prepareContentWorld } from "./content-fixtures";
 import { preparePresenceCache } from "./settings-fixtures";
+import {
+  prepareRandomizerWorld,
+  randomizerRoutes,
+} from "./randomizer-fixtures";
 
 type Definition = {
   family: string;
@@ -156,6 +160,14 @@ export const scenarios = {
       await prepareProfileWorld(world);
       await preparePresenceCache(world);
     },
+  },
+  "skin-randomizer": {
+    ...settings,
+    family: "skins",
+    spec: "skin-randomizer",
+    phases: ["randomize-launch", "restart-randomizer"],
+    routes: randomizerRoutes,
+    prepare: prepareRandomizerWorld,
   },
   "settings-application": settings,
   "settings-privacy": settings,

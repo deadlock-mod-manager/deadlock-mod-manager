@@ -44,6 +44,12 @@ export type ModsState = {
    * the library and can be put back from there, they are just not listed.
    */
   hiddenHeroMods: Record<string, true>;
+  /** Re-rolls the skin of every hero with a pool on each modded launch. */
+  skinRandomizerEnabled: boolean;
+  /** Skins in their hero's randomizer pool, by remoteId. */
+  randomizerSkins: Record<string, true>;
+  /** Heroes whose default look is one of the randomizer's outcomes. */
+  randomizerDefaultHeroes: Record<string, true>;
   pendingIdentityMigrations: IdentityMigration[];
   // Analysis dialog state
   analysisResult: AnalyzeAddonsResult | null;
@@ -119,6 +125,10 @@ export type ModsState = {
   setHeroDetection: (progress: Partial<HeroDetectionProgress>) => void;
   hideHeroMod: (remoteId: string) => void;
   restoreHeroMod: (remoteId: string) => void;
+  setSkinRandomizerEnabled: (enabled: boolean) => void;
+  setRandomizerSkins: (remoteIds: string[], included: boolean) => void;
+  setRandomizerDefaultHeroes: (heroes: string[], included: boolean) => void;
+  clearRandomizerSelection: () => void;
   completeIdentityMigrations: () => void;
 };
 
@@ -132,6 +142,9 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
   localMods: [],
   modProgress: {},
   hiddenHeroMods: {},
+  skinRandomizerEnabled: false,
+  randomizerSkins: {},
+  randomizerDefaultHeroes: {},
   pendingIdentityMigrations: [],
   analysisResult: null,
   analysisDialogOpen: false,
@@ -743,4 +756,44 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       const { [remoteId]: _hidden, ...hiddenHeroMods } = state.hiddenHeroMods;
       return { hiddenHeroMods };
     }),
+
+  setSkinRandomizerEnabled: (enabled) =>
+    set({ skinRandomizerEnabled: enabled }),
+
+  setRandomizerSkins: (remoteIds, included) =>
+    set((state) => ({
+      randomizerSkins: toggleRecordKeys(
+        state.randomizerSkins,
+        remoteIds,
+        included,
+      ),
+    })),
+
+  setRandomizerDefaultHeroes: (heroes, included) =>
+    set((state) => ({
+      randomizerDefaultHeroes: toggleRecordKeys(
+        state.randomizerDefaultHeroes,
+        heroes,
+        included,
+      ),
+    })),
+
+  clearRandomizerSelection: () =>
+    set({ randomizerSkins: {}, randomizerDefaultHeroes: {} }),
 });
+
+const toggleRecordKeys = (
+  record: Record<string, true>,
+  keys: string[],
+  included: boolean,
+): Record<string, true> => {
+  const next = { ...record };
+  for (const key of keys) {
+    if (included) {
+      next[key] = true;
+    } else {
+      delete next[key];
+    }
+  }
+  return next;
+};

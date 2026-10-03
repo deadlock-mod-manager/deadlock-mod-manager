@@ -5,6 +5,7 @@ import { listen } from "@tauri-apps/api/event";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { stopHeroDetection } from "@/hooks/use-hero-detection";
+import { useSkinRandomizer } from "@/hooks/use-skin-randomizer";
 import { restoreProfileGameinfo } from "@/lib/gameinfo";
 import { getLaunchErrorMessage } from "@/lib/launch-error";
 import logger from "@/lib/logger";
@@ -26,6 +27,7 @@ export const useLaunch = () => {
   const clearLastJoin = usePersistedStore((s) => s.clearLastJoin);
   const queryClient = useQueryClient();
   const confirm = useConfirm();
+  const { randomizeSkins } = useSkinRandomizer();
   const launchVanillaNoArgs =
     settings?.["launch-vanilla-no-args"]?.enabled ?? false;
 
@@ -90,6 +92,10 @@ export const useLaunch = () => {
     try {
       await checkMapCommandInAutoexec();
       await disableInstalledMapMods();
+      // A vanilla launch loads no mods, so there is nothing to dress up.
+      if (!vanilla) {
+        await randomizeSkins();
+      }
 
       const activeProfile = getActiveProfile();
       const profileFolder = vanilla
