@@ -1,4 +1,5 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
@@ -6,7 +7,7 @@ import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { type LocalMod, ModStatus } from "@/types/mods";
 import { isTauriError } from "@/types/tauri";
-import { useVpkScan } from "./use-vpk-scan";
+import { PROFILE_VPKS_QUERY_KEY } from "./use-vpk-scan";
 
 const useUninstall = () => {
   const { t } = useTranslation();
@@ -17,7 +18,9 @@ const useUninstall = () => {
     (state) => state.setModEnabledInCurrentProfile,
   );
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
-  const { refetch: refetchVpkScan } = useVpkScan();
+  // Don't call useVpkScan here: this hook mounts in every mod card, and each
+  // subscription would scan the addons folder on mount.
+  const queryClient = useQueryClient();
 
   const uninstall = async (mod: LocalMod, remove: boolean) => {
     try {
@@ -73,7 +76,7 @@ const useUninstall = () => {
 
       if (remove) {
         removeMod(mod.remoteId);
-        refetchVpkScan();
+        queryClient.invalidateQueries({ queryKey: PROFILE_VPKS_QUERY_KEY });
       }
 
       toast.success(
