@@ -1,5 +1,6 @@
 use super::store::{Catalog, CatalogRecord, INCOMPLETE_SNAPSHOT};
 use crate::errors::Error;
+use crate::providers::gamebanana::client::MAX_HYDRATION_ITEMS;
 use crate::providers::gamebanana::hero_registry;
 use crate::providers::gamebanana::{BulkHydration, GameBananaClient, IndexPage};
 use crate::providers::{SubmissionProvider, SubmissionRef, SubmissionType};
@@ -10,11 +11,13 @@ use tokio_util::sync::CancellationToken;
 
 const INCREMENTAL_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60);
 const FULL_RECONCILIATION_INTERVAL: Duration = Duration::from_secs(7 * 24 * 60 * 60);
-const HYDRATION_BATCH_SIZE: usize = 50;
 const LAST_INCREMENTAL_AT: &str = "last_incremental_at";
 const LAST_FULL_SYNC_AT: &str = "last_full_sync_at";
 const LAST_INCOMPLETE_SNAPSHOT_AT: &str = "last_incomplete_snapshot_at";
 const PREVIEW_IMAGES_VERSION: &str = "preview_images_v1";
+const HYDRATION_VERSION: &str = "bulk_hydration_v1";
+// Bumping any of these forces one full resync to backfill existing catalogs.
+const BACKFILL_VERSIONS: [&str; 2] = [PREVIEW_IMAGES_VERSION, HYDRATION_VERSION];
 const INCOMPLETE_RETRY_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60);
 
 type SourceFuture<'a, T> = Pin<Box<dyn Future<Output = Result<T, Error>> + Send + 'a>>;
@@ -167,7 +170,7 @@ impl CatalogSync {
       || self.catalog.state(INCOMPLETE_SNAPSHOT).await?.is_some()
       || self.catalog.count_visible().await? == 0
       || self.full_reconciliation_due().await?
-      || self.catalog.state(PREVIEW_IMAGES_VERSION).await?.is_none()
+      || self.backfill_due().await?
     {
       self.full_sync(cancel).await?;
       return Ok(SyncOutcome::Full);
@@ -266,7 +269,7 @@ impl CatalogSync {
             Some(snapshot_id.clone()),
             cancel,
           )
-          .await;
+          .await?;
 
         self
           .report_progress(
@@ -295,10 +298,9 @@ impl CatalogSync {
         .catalog
         .set_state(LAST_FULL_SYNC_AT, unix_timestamp().to_string())
         .await?;
-      self
-        .catalog
-        .set_state(PREVIEW_IMAGES_VERSION, "1".to_string())
-        .await?;
+      for version in BACKFILL_VERSIONS {
+        self.catalog.set_state(version, "1".to_string()).await?;
+      }
     } else {
       self
         .catalog
@@ -306,6 +308,15 @@ impl CatalogSync {
         .await?;
     }
     Ok(())
+  }
+
+  async fn backfill_due(&self) -> Result<bool, Error> {
+    for version in BACKFILL_VERSIONS {
+      if self.catalog.state(version).await?.is_none() {
+        return Ok(true);
+      }
+    }
+    Ok(false)
   }
 
   async fn full_reconciliation_due(&self) -> Result<bool, Error> {
@@ -368,7 +379,7 @@ impl CatalogSync {
           .await?;
         self
           .hydrate_records(&index_records, submission_type, None, cancel)
-          .await;
+          .await?;
 
         if page.metadata.is_complete || crossed_high_water {
           break;
@@ -393,14 +404,24 @@ impl CatalogSync {
     submission_type: SubmissionType,
     snapshot_id: Option<String>,
     cancel: &CancellationToken,
-  ) {
-    for batch in index_records.chunks(HYDRATION_BATCH_SIZE) {
+  ) -> Result<(), Error> {
+    for batch in index_records.chunks(MAX_HYDRATION_ITEMS) {
       let submissions = batch
         .iter()
         .map(|record| submission_ref(record.id, submission_type))
         .collect::<Vec<_>>();
-      let Ok(hydrated) = self.source.bulk_hydrate(&submissions, cancel).await else {
-        continue;
+      let hydrated = match self.source.bulk_hydrate(&submissions, cancel).await {
+        Ok(hydrated) => hydrated,
+        // Stop instead of hammering GameBanana; the sync resumes on the next run.
+        Err(
+          error @ (Error::ProviderCancelled
+          | Error::ProviderRateLimited { .. }
+          | Error::ProviderRefused),
+        ) => return Err(error),
+        Err(error) => {
+          log::warn!("GameBanana catalog hydration failed: {error}");
+          continue;
+        }
       };
       let records = batch
         .iter()
@@ -414,6 +435,7 @@ impl CatalogSync {
         log::warn!("GameBanana catalog hydration commit failed: {error}");
       }
     }
+    Ok(())
   }
 }
 
@@ -1002,6 +1024,14 @@ mod tests {
     assert_eq!(
       catalog
         .state(super::PREVIEW_IMAGES_VERSION)
+        .await
+        .unwrap()
+        .as_deref(),
+      Some("1")
+    );
+    assert_eq!(
+      catalog
+        .state(super::HYDRATION_VERSION)
         .await
         .unwrap()
         .as_deref(),

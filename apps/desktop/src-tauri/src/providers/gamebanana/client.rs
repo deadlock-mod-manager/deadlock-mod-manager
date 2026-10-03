@@ -7,10 +7,14 @@ use crate::providers::{SubmissionProvider, SubmissionRef, SubmissionType};
 use tokio_util::sync::CancellationToken;
 
 const API_BASE: &str = "https://gamebanana.com/apiv11/";
+// `Core/Item/Data` multicall only exists on the legacy API host, not under apiv11.
+const LEGACY_API_BASE: &str = "https://api.gamebanana.com/";
 const DEADLOCK_GAME_ID: u64 = 20_948;
 const INDEX_PAGE_SIZE: u32 = 50;
 const MAX_INDEX_PAGE: u32 = 250;
 const MAX_BULK_ITEMS: usize = 50;
+// Each item repeats the full field list; 50 hydration items exceed the URL limit (GameBanana answers 414).
+pub(crate) const MAX_HYDRATION_ITEMS: usize = 40;
 const MAX_BULK_URL_BYTES: usize = 7_000;
 const BULK_FIELDS: &[&str] = &[
   "name",
@@ -27,32 +31,32 @@ const UPDATE_FIELDS: &[&str] = &["Url().sProfileUrl()", "mdate", "Files().aFiles
 pub struct GameBananaClient {
   transport: GameBananaTransport,
   api_base: String,
+  legacy_api_base: String,
 }
 
 impl GameBananaClient {
   pub fn new() -> Result<Self, Error> {
-    let api_base = crate::runtime_environment::current()
+    let (api_base, legacy_api_base) = crate::runtime_environment::current()
       .e2e()
       .map(|configuration| {
-        format!(
-          "{}/apiv11/",
-          configuration
-            .endpoint(crate::runtime_environment::ServiceName::Gamebanana)
-            .trim_end_matches('/')
-        )
+        let origin = configuration
+          .endpoint(crate::runtime_environment::ServiceName::Gamebanana)
+          .trim_end_matches('/');
+        (format!("{origin}/apiv11/"), format!("{origin}/"))
       })
-      .unwrap_or_else(|| API_BASE.to_string());
-    Self::with_base_and_config(api_base, TransportConfig::default())
+      .unwrap_or_else(|| (API_BASE.to_string(), LEGACY_API_BASE.to_string()));
+    Self::with_base_and_config(api_base, legacy_api_base, TransportConfig::default())
   }
 
-  pub fn with_config(config: TransportConfig) -> Result<Self, Error> {
-    Self::with_base_and_config(API_BASE.to_string(), config)
-  }
-
-  fn with_base_and_config(api_base: String, config: TransportConfig) -> Result<Self, Error> {
+  fn with_base_and_config(
+    api_base: String,
+    legacy_api_base: String,
+    config: TransportConfig,
+  ) -> Result<Self, Error> {
     Ok(Self {
       transport: GameBananaTransport::new(config)?,
       api_base,
+      legacy_api_base,
     })
   }
 
@@ -97,41 +101,13 @@ impl GameBananaClient {
     submissions: &[SubmissionRef],
     cancel: &CancellationToken,
   ) -> Result<Vec<Option<BulkHydration>>, Error> {
-    let first = submissions.first().ok_or_else(|| {
-      Error::ProviderInvalidResponse("bulk hydration requires at least one submission".to_string())
-    })?;
-    if submissions.len() > MAX_BULK_ITEMS
-      || first.provider != SubmissionProvider::Gamebanana
-      || submissions.iter().any(|submission| {
-        submission.provider != SubmissionProvider::Gamebanana
-          || submission.submission_type != first.submission_type
-          || submission.submission_id.parse::<u64>().is_err()
-      })
-    {
-      return Err(Error::ProviderInvalidResponse(
-        "bulk hydration requires up to 50 GameBanana submissions of one type".to_string(),
-      ));
-    }
-
-    let mut url = reqwest::Url::parse(&format!("{}Core/Item/Data", self.api_base))
-      .map_err(|error| Error::ProviderInvalidResponse(error.to_string()))?;
-    {
-      let mut query = url.query_pairs_mut();
-      for submission in submissions {
-        query
-          .append_pair("itemtype[]", model_name(submission.submission_type))
-          .append_pair("itemid[]", &submission.submission_id);
-      }
-      for field in BULK_FIELDS {
-        query.append_pair("fields[]", field);
-      }
-    }
-    if url.as_str().len() > MAX_BULK_URL_BYTES {
-      return Err(Error::ProviderInvalidResponse(
-        "bulk hydration request exceeds the URL safety limit".to_string(),
-      ));
-    }
-
+    let url = item_data_url(
+      &self.legacy_api_base,
+      submissions,
+      BULK_FIELDS,
+      MAX_HYDRATION_ITEMS,
+      "bulk hydration",
+    )?;
     let value = self
       .transport
       .get_json::<serde_json::Value>("bulk hydration", url, cancel)
@@ -152,38 +128,13 @@ impl GameBananaClient {
     submissions: &[SubmissionRef],
     cancel: &CancellationToken,
   ) -> Result<Vec<Option<UpdateSnapshot>>, Error> {
-    let first = submissions.first().ok_or_else(|| {
-      Error::ProviderInvalidResponse("bulk update requires submissions".to_string())
-    })?;
-    if submissions.len() > MAX_BULK_ITEMS
-      || submissions.iter().any(|submission| {
-        submission.provider != SubmissionProvider::Gamebanana
-          || submission.submission_type != first.submission_type
-          || submission.submission_id.parse::<u64>().is_err()
-      })
-    {
-      return Err(Error::ProviderInvalidResponse(
-        "bulk update requires up to 50 GameBanana submissions of one type".to_string(),
-      ));
-    }
-    let mut url = reqwest::Url::parse(&format!("{}Core/Item/Data", self.api_base))
-      .map_err(|error| Error::ProviderInvalidResponse(error.to_string()))?;
-    {
-      let mut query = url.query_pairs_mut();
-      for submission in submissions {
-        query
-          .append_pair("itemtype[]", model_name(submission.submission_type))
-          .append_pair("itemid[]", &submission.submission_id);
-      }
-      for field in UPDATE_FIELDS {
-        query.append_pair("fields[]", field);
-      }
-    }
-    if url.as_str().len() > MAX_BULK_URL_BYTES {
-      return Err(Error::ProviderInvalidResponse(
-        "bulk update request exceeds the URL safety limit".to_string(),
-      ));
-    }
+    let url = item_data_url(
+      &self.legacy_api_base,
+      submissions,
+      UPDATE_FIELDS,
+      MAX_BULK_ITEMS,
+      "bulk update",
+    )?;
     let value = self
       .transport
       .get_json::<serde_json::Value>("bulk updates", url, cancel)
@@ -227,6 +178,49 @@ fn index_url(
   Ok(url)
 }
 
+/// `Core/Item/Data` pairs `itemtype[i]`, `itemid[i]`, and `fields[i]` by index,
+/// so every item needs its own comma-separated field list.
+fn item_data_url(
+  legacy_api_base: &str,
+  submissions: &[SubmissionRef],
+  fields: &[&str],
+  max_items: usize,
+  label: &str,
+) -> Result<reqwest::Url, Error> {
+  let first = submissions.first().ok_or_else(|| {
+    Error::ProviderInvalidResponse(format!("{label} requires at least one submission"))
+  })?;
+  if submissions.len() > max_items
+    || submissions.iter().any(|submission| {
+      submission.provider != SubmissionProvider::Gamebanana
+        || submission.submission_type != first.submission_type
+        || submission.submission_id.parse::<u64>().is_err()
+    })
+  {
+    return Err(Error::ProviderInvalidResponse(format!(
+      "{label} requires up to {max_items} GameBanana submissions of one type"
+    )));
+  }
+  let mut url = reqwest::Url::parse(&format!("{legacy_api_base}Core/Item/Data"))
+    .map_err(|error| Error::ProviderInvalidResponse(error.to_string()))?;
+  let fields = fields.join(",");
+  {
+    let mut query = url.query_pairs_mut();
+    for submission in submissions {
+      query
+        .append_pair("itemtype[]", model_name(submission.submission_type))
+        .append_pair("itemid[]", &submission.submission_id)
+        .append_pair("fields[]", &fields);
+    }
+  }
+  if url.as_str().len() > MAX_BULK_URL_BYTES {
+    return Err(Error::ProviderInvalidResponse(format!(
+      "{label} request exceeds the URL safety limit"
+    )));
+  }
+  Ok(url)
+}
+
 fn submission_url(
   api_base: &str,
   submission: &SubmissionRef,
@@ -263,8 +257,8 @@ fn model_name(submission_type: SubmissionType) -> &'static str {
 #[cfg(test)]
 mod tests {
   use super::{
-    API_BASE, MAX_BULK_ITEMS, MAX_BULK_URL_BYTES, MAX_INDEX_PAGE, index_url, model_name,
-    submission_url,
+    API_BASE, BULK_FIELDS, LEGACY_API_BASE, MAX_BULK_ITEMS, MAX_BULK_URL_BYTES,
+    MAX_HYDRATION_ITEMS, MAX_INDEX_PAGE, index_url, item_data_url, model_name, submission_url,
   };
   use crate::providers::{SubmissionRef, SubmissionType};
 
@@ -303,5 +297,39 @@ mod tests {
     );
     assert!(index_url(API_BASE, SubmissionType::Mod, 0, false).is_err());
     assert!(index_url(API_BASE, SubmissionType::Mod, MAX_INDEX_PAGE + 1, false).is_err());
+  }
+
+  #[test]
+  fn item_data_targets_legacy_host_with_per_item_fields() {
+    let submissions = ["723531", "707574"]
+      .map(|id| SubmissionRef::parse_slug(id).unwrap())
+      .to_vec();
+    let url = item_data_url(
+      LEGACY_API_BASE,
+      &submissions,
+      &["name", "downloads"],
+      MAX_BULK_ITEMS,
+      "test",
+    )
+    .unwrap();
+    assert_eq!(
+      url.as_str(),
+      "https://api.gamebanana.com/Core/Item/Data?itemtype%5B%5D=Mod&itemid%5B%5D=723531&fields%5B%5D=name%2Cdownloads&itemtype%5B%5D=Mod&itemid%5B%5D=707574&fields%5B%5D=name%2Cdownloads"
+    );
+  }
+
+  #[test]
+  fn full_hydration_batch_fits_the_url_limit() {
+    let submissions = vec![SubmissionRef::parse_slug("9999999").unwrap(); MAX_HYDRATION_ITEMS];
+    assert!(
+      item_data_url(
+        LEGACY_API_BASE,
+        &submissions,
+        BULK_FIELDS,
+        MAX_HYDRATION_ITEMS,
+        "test"
+      )
+      .is_ok()
+    );
   }
 }

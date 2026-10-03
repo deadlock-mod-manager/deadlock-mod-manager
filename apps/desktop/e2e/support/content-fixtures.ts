@@ -2,6 +2,7 @@ import { writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 import type { FixtureRoute } from "./fixture-server";
+import { BULK_HYDRATION_FIELDS } from "./gamebanana-fixtures";
 import type { CreatedWorld } from "./world";
 import { prepareInstalledProfiles, ALPHA } from "./profile-fixtures";
 import { readPersistedDocument } from "./observations";
@@ -106,7 +107,7 @@ export const contentRoutes =
       }),
       {
         ...json(
-          "/apiv11/Core/Item/Data",
+          "/Core/Item/Data",
           contentMods.map((mod) => [
             mod.name,
             0,
@@ -117,7 +118,7 @@ export const contentRoutes =
             "Synthetic fixture",
           ]),
         ),
-        query: { "fields[]": "name" },
+        query: { "fields[]": BULK_HYDRATION_FIELDS },
       },
       json("/apiv11/Util/Fileservers", { _aRecords: [] }),
       ...profiles.flatMap((profile) => [

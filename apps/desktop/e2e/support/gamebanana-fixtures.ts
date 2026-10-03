@@ -6,6 +6,10 @@ import { buildSyntheticVpk } from "./vpk";
 
 export const CATALOG_MOD_ID = "900001";
 export const CATALOG_MOD_NAME = "E2E GameBanana Mod";
+// Mirrors BULK_FIELDS / UPDATE_FIELDS in src-tauri/src/providers/gamebanana/client.rs.
+export const BULK_HYDRATION_FIELDS =
+  "name,downloads,Category().name,RootCategory().name,Nsfw().bIsNsfw(),description,text";
+export const BULK_UPDATE_FIELDS = "Url().sProfileUrl(),mdate,Files().aFiles()";
 const timestamp = 1_780_000_000;
 
 type CatalogArchive = {
@@ -165,7 +169,7 @@ export const createCatalogRoutes = async (scenario: string) => {
       ),
       {
         ...json(
-          "/apiv11/Core/Item/Data",
+          "/Core/Item/Data",
           JSON.stringify([
             [
               CATALOG_MOD_NAME,
@@ -178,14 +182,14 @@ export const createCatalogRoutes = async (scenario: string) => {
             ],
           ]),
         ),
-        query: { "fields[]": "name" },
+        query: { "fields[]": BULK_HYDRATION_FIELDS },
       },
       {
         ...json(
-          "/apiv11/Core/Item/Data",
+          "/Core/Item/Data",
           JSON.stringify([profile._sProfileUrl, timestamp, files]),
         ),
-        query: { "fields[]": "Url().sProfileUrl()" },
+        query: { "fields[]": BULK_UPDATE_FIELDS },
       },
       json("/apiv11/Util/Fileservers", '{"_aRecords":[]}'),
       json(
