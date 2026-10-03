@@ -3,27 +3,18 @@ export const MAPS_CATEGORY_NAME = "Maps";
 export const GAME_BANANA_BASE_URL = "https://gamebanana.com/apiv11";
 export const ACCEPTED_MODELS = ["Mod", "Sound"];
 
-// NSFW detection keywords - case insensitive
-export const NSFW_KEYWORDS = [
-  "nsfw",
-  "adult",
-  "18+",
-  "nude",
-  "nudity",
-  "full nudity",
-  "partial nudity",
-  "lewd",
-  "skimpy",
-  "sex",
-  "sexual",
-  "explicit",
-];
-
-// Direct content rating flags from GameBanana
+// Sexual and suggestive content ratings. Crude language, gore, and other ratings
+// stay visible on GameBanana, so they are not NSFW here either. Mirrors
+// NSFW_CONTENT_RATINGS in apps/desktop/src-tauri/src/providers/gamebanana/normalization.rs.
 export const NSFW_CONTENT_RATINGS = {
   st: "Sexual Themes",
   sa: "Skimpy Attire",
+  sc: "Sexual Content",
+  ft: "Fetishistic",
   lp: "Lewd Angles & Poses",
   pn: "Partial Nudity",
   nu: "Full Nudity",
 };
+
+// GameBanana hides or warns exactly for the ratings above.
+export const NSFW_VISIBILITIES = ["hide", "warn"];

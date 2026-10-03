@@ -170,8 +170,12 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
 
     while (!isComplete) {
       const submissions = await this.getSubmissions(page);
+      // The featured list also carries News, WiPs, and Tutorials, whose ids would
+      // resolve to unrelated Mods.
       for (const submission of submissions._aRecords) {
-        yield { submission, source: "featured" };
+        if (submission._sModelName === "Mod") {
+          yield { submission, source: "featured" };
+        }
       }
       isComplete = submissions._aMetadata._bIsComplete;
       page++;
@@ -184,7 +188,9 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
   }> {
     const submissions = await this.getTopSubmissions();
     for (const submission of submissions) {
-      yield { submission, source: "top" };
+      if (submission._sModelName === "Mod") {
+        yield { submission, source: "top" };
+      }
     }
   }
 
@@ -266,6 +272,12 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     const response = await fetch(
       `${GAME_BANANA_BASE_URL}/${modType}/${remoteId}/ProfilePage`,
     );
+    if (response.status === 404) return null;
+    if (!response.ok) {
+      throw new ProviderError(
+        `HTTP ${response.status} fetching ${modType} ${remoteId}`,
+      );
+    }
     const data = (await response.json()) as D | null;
     return data;
   }
