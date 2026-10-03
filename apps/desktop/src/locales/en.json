@@ -2772,6 +2772,11 @@
       "website": "Website",
       "discord": "Discord"
     },
+    "lovelock": {
+      "description": "A cozy plum theme with soft pink glow, inspired by Lovelock Companion.",
+      "visit": "Inspired by Lovelock Companion by",
+      "kofi": "Ko-fi"
+    },
     "flashbang": {
       "title": "Flashbang Mode",
       "description": "Force Light Mode during a scheduled time window.",
