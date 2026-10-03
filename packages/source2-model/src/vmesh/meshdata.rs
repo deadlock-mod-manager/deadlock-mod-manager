@@ -288,16 +288,21 @@ pub(crate) fn is_lod_mesh(name: &str) -> bool {
     lower.contains("_lod") || lower.ends_with("lod0") || lower.ends_with("lod1")
 }
 
-pub(crate) fn default_mesh_group_masks(res: &Resource) -> Option<(u32, Vec<u32>)> {
+/// The model's default mesh-group mask and one group mask per mesh.
+///
+/// These are 64-bit: a model with many body groups (Rat King's banner, sewer
+/// lid, 19 ammo states and seven guards) sets bits past 32, and reading them as
+/// `u32` dropped the whole table, so every optional mesh rendered at once.
+pub(crate) fn default_mesh_group_masks(res: &Resource) -> Option<(u64, Vec<u64>)> {
     let data = res
         .block_bytes("DATA")
         .and_then(|bytes| crate::kv3::parse(bytes).ok())?;
-    let default_mask = data.get("m_nDefaultMeshGroupMask")?.as_u32()?;
+    let default_mask = data.get("m_nDefaultMeshGroupMask")?.as_u64()?;
     let masks = data
         .get("m_refMeshGroupMasks")?
         .as_array()?
         .iter()
-        .filter_map(KvValue::as_u32)
+        .map(|mask| mask.as_u64().unwrap_or(u64::MAX))
         .collect::<Vec<_>>();
     (!masks.is_empty()).then_some((default_mask, masks))
 }
@@ -305,7 +310,7 @@ pub(crate) fn default_mesh_group_masks(res: &Resource) -> Option<(u32, Vec<u32>)
 pub(crate) fn mesh_is_enabled(
     mesh: &KvValue,
     fallback_index: usize,
-    masks: Option<&(u32, Vec<u32>)>,
+    masks: Option<&(u64, Vec<u64>)>,
 ) -> bool {
     let Some((default_mask, masks)) = masks else {
         return true;

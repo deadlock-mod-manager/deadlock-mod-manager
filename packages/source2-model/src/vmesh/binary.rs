@@ -317,6 +317,50 @@ pub(crate) fn read_texcoords(buffer: &BufferData, field: &LayoutField) -> Result
     Ok(texcoords)
 }
 
+fn srgb_to_linear(value: f32) -> f32 {
+    if value <= 0.04045 {
+        value / 12.92
+    } else {
+        ((value + 0.055) / 1.055).powf(2.4)
+    }
+}
+
+/// Read a COLOR stream as linear RGBA. Source 2 stores vertex colours
+/// gamma-encoded like its colour textures; glTF's COLOR_0 is linear.
+pub(crate) fn read_colors(buffer: &BufferData, field: &LayoutField) -> Result<Vec<f32>> {
+    let mut colors = Vec::with_capacity(buffer.element_count * 4);
+    for i in 0..buffer.element_count {
+        let pos = i * buffer.element_size + field.offset;
+        match field.format {
+            FORMAT_R8G8B8A8_UNORM => {
+                let raw = buffer
+                    .data
+                    .get(pos..pos + 4)
+                    .ok_or_else(|| Source2Error::Resource("vertex colour out of bounds".into()))?;
+                for (channel, byte) in raw.iter().enumerate() {
+                    let value = f32::from(*byte) / 255.0;
+                    colors.push(if channel < 3 {
+                        srgb_to_linear(value)
+                    } else {
+                        value
+                    });
+                }
+            }
+            FORMAT_R32G32B32A32_FLOAT => {
+                for channel in 0..4 {
+                    colors.push(read_f32(&buffer.data, pos + channel * 4)?);
+                }
+            }
+            other => {
+                return Err(Source2Error::UnsupportedFormat(format!(
+                    "unsupported COLOR format {other}"
+                )));
+            }
+        }
+    }
+    Ok(colors)
+}
+
 pub(crate) fn read_joints(buffer: &BufferData, field: &LayoutField) -> Result<Vec<u16>> {
     let mut joints = Vec::with_capacity(buffer.element_count * 4);
     for i in 0..buffer.element_count {

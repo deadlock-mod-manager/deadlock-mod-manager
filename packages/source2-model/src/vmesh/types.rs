@@ -1,5 +1,6 @@
 use crate::skeleton::Skeleton;
 
+pub(crate) const FORMAT_R32G32B32A32_FLOAT: u32 = 2;
 pub(crate) const FORMAT_R32G32B32_FLOAT: u32 = 6;
 pub(crate) const FORMAT_R16G16B16A16_UNORM: u32 = 11;
 pub(crate) const FORMAT_R16G16B16A16_UINT: u32 = 12;
@@ -54,6 +55,9 @@ pub struct PreviewTexture {
     pub normal_png: Option<Vec<u8>>,
     pub orm_png: Option<Vec<u8>>,
     pub emissive_png: Option<Vec<u8>>,
+    /// The material takes its colour from the mesh's vertex colours
+    /// (`F_VERTEX_COLOR`), so its primitives export a COLOR_0 stream.
+    pub vertex_color: bool,
     pub base_color_factor: [f32; 4],
     /// glTF metallicFactor. Source 2 hero materials are non-metallic unless the
     /// VMAT declares `g_flMetalness`; defaulting to 0 avoids the oily/chrome look
@@ -109,6 +113,7 @@ pub(crate) struct GlbPrimitive<'a> {
     pub(crate) positions: &'a [f32],
     pub(crate) normals: Option<&'a [f32]>,
     pub(crate) texcoords: Option<&'a [f32]>,
+    pub(crate) colors: Option<&'a [f32]>,
     pub(crate) joints: Option<&'a [u16]>,
     pub(crate) weights: Option<&'a [f32]>,
     pub(crate) indices: &'a [u8],
@@ -120,6 +125,8 @@ pub(crate) struct DecodedPrimitive {
     pub(crate) positions: Vec<f32>,
     pub(crate) normals: Option<Vec<f32>>,
     pub(crate) texcoords: Option<Vec<f32>>,
+    /// Linear RGBA per vertex, from the mesh's COLOR stream.
+    pub(crate) colors: Option<Vec<f32>>,
     pub(crate) joints: Option<Vec<u16>>,
     pub(crate) weights: Option<Vec<f32>>,
     pub(crate) indices: Vec<u8>,
@@ -142,6 +149,7 @@ pub(crate) struct VertexSet {
     pub(crate) positions: Vec<f32>,
     pub(crate) normals: Option<Vec<f32>>,
     pub(crate) texcoords: Option<Vec<f32>>,
+    pub(crate) colors: Option<Vec<f32>>,
     pub(crate) joints: Option<Vec<u16>>,
     pub(crate) weights: Option<Vec<f32>>,
 }
