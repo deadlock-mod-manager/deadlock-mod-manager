@@ -90,6 +90,27 @@ export class ReportRepository {
     return result.length;
   }
 
+  /**
+   * Copies the GameBanana identity onto reports that only reference the
+   * catalog, mirroring migration 0055 for rows legacy writers add after it.
+   * Legacy desktop compatibility: remove with the catalog retirement (#715).
+   */
+  async backfillLegacyIdentities(): Promise<number> {
+    const result = await this.db.execute(sql`
+      UPDATE "report" SET
+        "provider" = 'gamebanana',
+        "submission_type" = CASE WHEN "mod"."is_audio" OR "mod"."remote_id" LIKE 'snd-%' THEN 'sound' ELSE 'mod' END,
+        "submission_id" = regexp_replace("mod"."remote_id", '^snd-', ''),
+        "mod_name" = COALESCE("report"."mod_name", "mod"."name"),
+        "mod_author" = COALESCE("report"."mod_author", "mod"."author")
+      FROM "mod"
+      WHERE "report"."mod_id" = "mod"."id"
+        AND "report"."submission_id" IS NULL
+        AND "mod"."remote_id" ~ '^(snd-)?[1-9][0-9]*$'
+    `);
+    return result.rowCount ?? 0;
+  }
+
   async updateDiscordMessageId(
     id: string,
     discordMessageId: string,
