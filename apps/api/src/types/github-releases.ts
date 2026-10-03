@@ -16,10 +16,13 @@ export interface GitHubAsset {
   content_type: string;
 }
 
+export type RuntimeKind = "wry" | "cef";
+
 export interface PlatformDownload {
   platform: "windows" | "macos" | "linux";
   architecture: "x64" | "arm64" | "universal";
   installerType: "exe" | "msi" | "dmg" | "deb" | "rpm" | "flatpak" | "sig";
+  runtime: RuntimeKind;
   url: string;
   filename: string;
   size: number;
