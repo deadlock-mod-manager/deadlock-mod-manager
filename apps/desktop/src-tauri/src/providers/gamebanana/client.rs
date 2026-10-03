@@ -1,5 +1,5 @@
 use super::models::{
-  BulkHydration, DownloadPage, FileserverPage, IndexPage, Profile, UpdateSnapshot,
+  BulkHydration, DownloadPage, FileserverPage, IndexPage, Profile, UpdateSnapshot, core_error,
 };
 use super::transport::{GameBananaTransport, TransportConfig};
 use crate::errors::Error;
@@ -9,7 +9,7 @@ use tokio_util::sync::CancellationToken;
 const API_BASE: &str = "https://gamebanana.com/apiv11/";
 // `Core/Item/Data` multicall only exists on the legacy API host, not under apiv11.
 const LEGACY_API_BASE: &str = "https://api.gamebanana.com/";
-const DEADLOCK_GAME_ID: u64 = 20_948;
+pub(crate) const DEADLOCK_GAME_ID: u64 = 20_948;
 const INDEX_PAGE_SIZE: u32 = 50;
 const MAX_INDEX_PAGE: u32 = 250;
 const MAX_BULK_ITEMS: usize = 50;
@@ -21,9 +21,9 @@ const BULK_FIELDS: &[&str] = &[
   "downloads",
   "Category().name",
   "RootCategory().name",
-  "Nsfw().bIsNsfw()",
   "description",
   "text",
+  "Files().aFiles()",
 ];
 const UPDATE_FIELDS: &[&str] = &["Url().sProfileUrl()", "mdate", "Files().aFiles()"];
 
@@ -112,6 +112,11 @@ impl GameBananaClient {
       .transport
       .get_json::<serde_json::Value>("bulk hydration", url, cancel)
       .await?;
+    if let Some(error) = core_error(&value) {
+      return Err(Error::ProviderInvalidResponse(format!(
+        "bulk hydration failed: {error}"
+      )));
+    }
     let records = BulkHydration::parse_many(value);
     if records.len() != submissions.len() {
       return Err(Error::ProviderInvalidResponse(format!(
@@ -139,6 +144,11 @@ impl GameBananaClient {
       .transport
       .get_json::<serde_json::Value>("bulk updates", url, cancel)
       .await?;
+    if let Some(error) = core_error(&value) {
+      return Err(Error::ProviderInvalidResponse(format!(
+        "bulk update failed: {error}"
+      )));
+    }
     let records = UpdateSnapshot::parse_many(value, submissions);
     if records.len() != submissions.len() {
       return Err(Error::ProviderInvalidResponse(
@@ -170,9 +180,16 @@ fn index_url(
       .append_pair("_nPerpage", &INDEX_PAGE_SIZE.to_string())
       .append_pair("_aFilters[Generic_Game]", &DEADLOCK_GAME_ID.to_string())
       .append_pair("_nPage", &page.to_string());
-    if latest_modified {
-      query.append_pair("_sSort", "Generic_LatestModified");
-    }
+    // The default order is unstable near the tail, so full crawls page oldest-first,
+    // where new uploads only append to the end.
+    query.append_pair(
+      "_sSort",
+      if latest_modified {
+        "Generic_LatestModified"
+      } else {
+        "Generic_Oldest"
+      },
+    );
   }
 
   Ok(url)
@@ -251,6 +268,7 @@ fn model_name(submission_type: SubmissionType) -> &'static str {
   match submission_type {
     SubmissionType::Mod => "Mod",
     SubmissionType::Sound => "Sound",
+    SubmissionType::Wip => "Wip",
   }
 }
 
@@ -289,11 +307,11 @@ mod tests {
     let request = reqwest::Client::new().get(url.clone()).build().unwrap();
     assert_eq!(request.url(), &url);
     assert!(
-      !index_url(API_BASE, SubmissionType::Mod, 1, false)
+      index_url(API_BASE, SubmissionType::Mod, 1, false)
         .unwrap()
         .query()
         .unwrap()
-        .contains("_sSort")
+        .ends_with("_sSort=Generic_Oldest")
     );
     assert!(index_url(API_BASE, SubmissionType::Mod, 0, false).is_err());
     assert!(index_url(API_BASE, SubmissionType::Mod, MAX_INDEX_PAGE + 1, false).is_err());

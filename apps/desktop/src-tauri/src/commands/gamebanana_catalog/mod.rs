@@ -72,13 +72,18 @@ pub async fn get_gamebanana_submission_detail(
         .await?;
       CatalogModDto::from_profile(&profile, normalized)
     }
-    Err(provider_error) => backend
-      .catalog
-      .get(submission)
-      .await?
-      .map(CatalogModDto::from_record)
-      .transpose()?
-      .ok_or(provider_error)?,
+    Err(provider_error) => {
+      log::warn!(
+        "GameBanana profile fetch failed for {remote_id}, using the cached record: {provider_error}"
+      );
+      backend
+        .catalog
+        .get(submission)
+        .await?
+        .map(CatalogModDto::from_record)
+        .transpose()?
+        .ok_or(provider_error)?
+    }
   };
   if !policy.apply_to_mod(&mut mod_data)? {
     return Err(Error::InvalidInput(
@@ -139,10 +144,7 @@ pub async fn check_gamebanana_catalog_updates(
     }
   }
 
-  for submission_type in [
-    crate::providers::SubmissionType::Mod,
-    crate::providers::SubmissionType::Sound,
-  ] {
+  for submission_type in crate::providers::SubmissionType::ALL {
     let matching = pending
       .iter()
       .filter(|(submission, _)| submission.submission_type == submission_type)
@@ -392,6 +394,10 @@ fn record_from_profile(
       .max()
       .unwrap_or_default(),
     last_seen_snapshot: None,
+    audio_url: profile.preview_media.audio_url(),
+    tags: crate::providers::gamebanana::parse_tags(&profile.tags),
+    development_state: profile.development_state.clone(),
+    completion_percentage: profile.completion_percentage,
   }
 }
 

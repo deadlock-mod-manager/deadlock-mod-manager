@@ -13,6 +13,6 @@ pub use models::{
 };
 pub use normalization::{
   DonationLink, NormalizedRequirement, NormalizedSubmission, classify_nsfw, donation_links,
-  extract_map_name, normalize_profile, parse_requirements, parse_tags,
+  extract_map_name, is_nsfw_visibility, normalize_profile, parse_requirements, parse_tags,
 };
 pub use transport::TransportConfig;

@@ -24,6 +24,8 @@ export type CatalogModDto = {
   isNsfw: boolean;
   isObsolete: boolean;
   filesUpdatedAt: number | null;
+  developmentState: string | null;
+  completionPercentage: number | null;
   metadata: CatalogModMetadataDto | null;
   dependencies: Array<CatalogDependencyDto>;
   createdAt: number | null;

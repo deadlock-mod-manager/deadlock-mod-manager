@@ -21,6 +21,14 @@ describe("submission slugs", () => {
       },
     ],
     [
+      "wip-103122",
+      {
+        provider: "gamebanana",
+        submissionType: "wip",
+        submissionId: "103122",
+      },
+    ],
+    [
       "local-550e8400-e29b-41d4-a716-446655440000",
       {
         provider: "local",
@@ -43,6 +51,8 @@ describe("submission slugs", () => {
     "snd-",
     "snd-0",
     "snd-one",
+    "wip-",
+    "wip-01",
     "local-",
     "local-abc-123",
     "local--abc",

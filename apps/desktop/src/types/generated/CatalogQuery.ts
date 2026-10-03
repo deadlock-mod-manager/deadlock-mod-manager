@@ -14,6 +14,7 @@ export type CatalogQuery = {
   addedAfter: number | null;
   addedBefore: number | null;
   favorites: Array<string>;
+  includeWips: boolean;
   sort: CatalogSort;
   page: number;
   pageSize: number;

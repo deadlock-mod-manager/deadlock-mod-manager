@@ -34,6 +34,16 @@ pub struct CatalogRecord {
   pub remote_updated_at: i64,
   pub files_updated_at: i64,
   pub last_seen_snapshot: Option<String>,
+  pub audio_url: Option<String>,
+  pub tags: Vec<String>,
+  pub development_state: Option<String>,
+  pub completion_percentage: Option<u8>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SnapshotCoverage {
+  pub seen: u64,
+  pub unhydrated: u64,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -81,6 +91,10 @@ pub(super) struct SubmissionRow {
   pub remote_updated_at: i64,
   pub files_updated_at: i64,
   pub last_seen_snapshot: Option<String>,
+  pub audio_url: Option<String>,
+  pub tags: String,
+  pub development_state: Option<String>,
+  pub completion_percentage: Option<i32>,
 }
 
 #[derive(Debug, Clone, Queryable, Selectable, Identifiable, Insertable, AsChangeset)]
@@ -214,15 +228,99 @@ impl Catalog {
       .await
   }
 
+  pub async fn snapshot_coverage(
+    &self,
+    submission_type: SubmissionType,
+    snapshot_id: String,
+  ) -> Result<SnapshotCoverage, Error> {
+    self
+      .pool
+      .run(move |connection| {
+        let in_snapshot = || {
+          submission::table
+            .filter(submission::submission_type.eq(submission_type_name(submission_type)))
+            .filter(submission::last_seen_snapshot.eq(snapshot_id.clone()))
+        };
+        let seen = in_snapshot().count().get_result::<i64>(connection)?;
+        let unhydrated = in_snapshot()
+          .filter(submission::is_hydrated.eq(false))
+          .count()
+          .get_result::<i64>(connection)?;
+        Ok(SnapshotCoverage {
+          seen: count_to_u64(seen)?,
+          unhydrated: count_to_u64(unhydrated)?,
+        })
+      })
+      .await
+  }
+
+  pub async fn unseen_submissions(
+    &self,
+    submission_type: SubmissionType,
+    snapshot_id: String,
+  ) -> Result<Vec<SubmissionRef>, Error> {
+    self
+      .pool
+      .run(move |connection| {
+        let ids = submission::table
+          .filter(submission::provider.eq(provider_name(SubmissionProvider::Gamebanana)))
+          .filter(submission::submission_type.eq(submission_type_name(submission_type)))
+          .filter(submission::is_tombstoned.eq(false))
+          .filter(
+            submission::last_seen_snapshot
+              .is_null()
+              .or(submission::last_seen_snapshot.ne(&snapshot_id)),
+          )
+          .select(submission::submission_id)
+          .load::<String>(connection)?;
+        Ok(
+          ids
+            .into_iter()
+            .map(|submission_id| SubmissionRef {
+              provider: SubmissionProvider::Gamebanana,
+              submission_type,
+              submission_id,
+            })
+            .collect(),
+        )
+      })
+      .await
+  }
+
+  pub async fn mark_seen(
+    &self,
+    submissions: Vec<SubmissionRef>,
+    snapshot_id: String,
+  ) -> Result<(), Error> {
+    self
+      .pool
+      .run(move |connection| {
+        connection.transaction::<_, Error, _>(|connection| {
+          for submission in submissions {
+            diesel::update(submission::table.find((
+              provider_name(submission.provider),
+              submission_type_name(submission.submission_type),
+              submission.submission_id,
+            )))
+            .set(submission::last_seen_snapshot.eq(&snapshot_id))
+            .execute(connection)?;
+          }
+          Ok(())
+        })
+      })
+      .await
+  }
+
   pub async fn count_visible(&self) -> Result<u64, Error> {
     self
       .pool
       .run(|connection| {
         let count = submission::table
           .filter(submission::is_tombstoned.eq(false))
+          .filter(submission::submission_type.ne(submission_type_name(SubmissionType::Wip)))
           .count()
           .get_result::<i64>(connection)?;
-        u64::try_from(count).map_err(|_| Error::Catalog("catalog count was negative".to_string()))
+        count_to_u64(count)
       })
       .await
   }
@@ -400,6 +498,10 @@ impl SubmissionRow {
       remote_updated_at: record.remote_updated_at,
       files_updated_at: record.files_updated_at,
       last_seen_snapshot: record.last_seen_snapshot,
+      audio_url: record.audio_url,
+      tags: encode_strings(&record.tags)?,
+      development_state: record.development_state,
+      completion_percentage: record.completion_percentage.map(i32::from),
     })
   }
 
@@ -430,11 +532,7 @@ impl SubmissionRow {
       } else {
         self.is_map
       },
-      is_nsfw: if hydrated {
-        incoming.is_nsfw
-      } else {
-        self.is_nsfw
-      },
+      is_nsfw: incoming.is_nsfw,
       is_obsolete: incoming.is_obsolete,
       is_tombstoned: false,
       is_hydrated: self.is_hydrated || hydrated,
@@ -454,6 +552,14 @@ impl SubmissionRow {
       remote_updated_at: self.remote_updated_at.max(incoming.remote_updated_at),
       files_updated_at: self.files_updated_at.max(incoming.files_updated_at),
       last_seen_snapshot: incoming.last_seen_snapshot.or(self.last_seen_snapshot),
+      audio_url: incoming.audio_url,
+      tags: if incoming.tags == "[]" {
+        self.tags
+      } else {
+        incoming.tags
+      },
+      development_state: incoming.development_state,
+      completion_percentage: incoming.completion_percentage,
     }
   }
 }
@@ -513,6 +619,7 @@ pub(super) fn submission_type_name(submission_type: SubmissionType) -> &'static 
   match submission_type {
     SubmissionType::Mod => "mod",
     SubmissionType::Sound => "sound",
+    SubmissionType::Wip => "wip",
   }
 }
 
@@ -523,6 +630,18 @@ pub(super) fn encode_images(images: &[String]) -> Result<String, Error> {
     .cloned()
     .collect::<Vec<_>>();
   serde_json::to_string(&urls).map_err(|error| Error::Catalog(error.to_string()))
+}
+
+fn count_to_u64(count: i64) -> Result<u64, Error> {
+  u64::try_from(count).map_err(|_| Error::Catalog("catalog count was negative".to_string()))
+}
+
+fn encode_strings(values: &[String]) -> Result<String, Error> {
+  serde_json::to_string(values).map_err(|error| Error::Catalog(error.to_string()))
+}
+
+pub(super) fn decode_strings(value: &str) -> Result<Vec<String>, Error> {
+  serde_json::from_str(value).map_err(|error| Error::Catalog(error.to_string()))
 }
 
 pub(super) fn decode_images(value: &str) -> Result<Vec<String>, Error> {
@@ -565,6 +684,10 @@ mod tests {
       remote_updated_at: 200,
       files_updated_at: 0,
       last_seen_snapshot: Some(snapshot.to_string()),
+      audio_url: None,
+      tags: Vec::new(),
+      development_state: None,
+      completion_percentage: None,
     }
   }
 

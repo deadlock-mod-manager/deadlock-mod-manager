@@ -1,3 +1,4 @@
+use super::client::DEADLOCK_GAME_ID;
 use super::hero_registry;
 use super::models::{DonationMethod, Profile, Tag};
 use crate::providers::{SubmissionProvider, SubmissionRef, SubmissionType};
@@ -6,21 +7,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
 use std::sync::LazyLock;
 
-const NSFW_CONTENT_RATINGS: &[&str] = &["st", "sa", "lp", "pn", "nu"];
-const NSFW_KEYWORDS: &[&str] = &[
-  "nsfw",
-  "adult",
-  "18+",
-  "nude",
-  "nudity",
-  "full nudity",
-  "partial nudity",
-  "lewd",
-  "skimpy",
-  "sex",
-  "sexual",
-  "explicit",
-];
+// Sexual and suggestive ratings. Crude language, gore, and other ratings stay visible on
+// GameBanana, so they are not NSFW here either.
+const NSFW_CONTENT_RATINGS: &[&str] = &["st", "sa", "sc", "ft", "lp", "pn", "nu"];
 const NEGATIVE_STATE_CODES: &[&str] = &["2", "4", "6", "8", "10"];
 const NEGATIVE_STATE_LABELS: &[&str] = &["uninstalled", "absent", "disabled", "off", "false"];
 const POSITIVE_STATE_LABELS: &[&str] = &["installed", "present", "enabled", "on", "true"];
@@ -85,6 +74,10 @@ pub fn normalize_profile(
   if profile.id == 0
     || profile.name.trim().is_empty()
     || !profile.profile_url.starts_with("https://gamebanana.com/")
+    || profile
+      .game
+      .as_ref()
+      .is_some_and(|game| game.id != DEADLOCK_GAME_ID)
   {
     return None;
   }
@@ -104,7 +97,7 @@ pub fn normalize_profile(
   };
   let category = category(profile);
   let is_audio = submission_type == SubmissionType::Sound;
-  let is_map = !is_audio && category == "Maps";
+  let is_map = submission_type == SubmissionType::Mod && category == "Maps";
   let (remote_added_at, remote_updated_at) =
     normalize_timestamps(profile.date_added, profile.date_modified);
 
@@ -220,32 +213,17 @@ pub fn parse_requirements(rows: &[Vec<String>]) -> Vec<NormalizedRequirement> {
 }
 
 pub fn classify_nsfw(profile: &Profile) -> bool {
-  if profile
-    .content_ratings
-    .keys()
-    .any(|rating| NSFW_CONTENT_RATINGS.contains(&rating.as_str()))
-  {
-    return true;
-  }
+  is_nsfw_visibility(&profile.initial_visibility)
+    || profile
+      .content_ratings
+      .keys()
+      .any(|rating| NSFW_CONTENT_RATINGS.contains(&rating.as_str()))
+}
 
-  let mut hint_score = usize::from(profile.initial_visibility == "hide");
-  let content = format!(
-    "{} {} {} {}",
-    profile.name,
-    profile.description,
-    profile.text,
-    parse_tags(&profile.tags).join(" ")
-  )
-  .to_lowercase();
-
-  if NSFW_KEYWORDS
-    .iter()
-    .any(|keyword| content.contains(keyword))
-  {
-    hint_score += 1;
-  }
-
-  hint_score >= 2
+/// GameBanana hides or warns exactly for sexual and suggestive ratings, and Index pages
+/// carry the visibility but not the ratings, so this is the catalog-wide NSFW signal.
+pub fn is_nsfw_visibility(initial_visibility: &str) -> bool {
+  matches!(initial_visibility, "hide" | "warn")
 }
 
 pub fn extract_map_name(description: &str) -> Option<String> {

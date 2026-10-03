@@ -89,6 +89,12 @@ const startupFixtureRoutes: readonly FixtureRoute[] = [
     status: 200,
     body: '{"_aMetadata":{"_nRecordCount":0,"_nPerpage":50,"_bIsComplete":true},"_aRecords":[]}',
   },
+  {
+    method: "GET",
+    path: "/apiv11/Wip/Index",
+    status: 200,
+    body: '{"_aMetadata":{"_nRecordCount":0,"_nPerpage":50,"_bIsComplete":true},"_aRecords":[]}',
+  },
 ];
 
 const spawnWdio = (environment: NodeJS.ProcessEnv, outputPath: string) =>

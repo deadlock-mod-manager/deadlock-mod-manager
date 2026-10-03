@@ -74,6 +74,7 @@ export const contentRoutes =
       _aRootCategory: { _sName: "Skins" },
       _aCategory: { _sName: "Infernus" },
       _aContentRatings: mod.nsfw ? { st: "Synthetic rating" } : {},
+      _sInitialVisibility: mod.nsfw ? "hide" : "show",
       _aPreviewMedia: {
         _aImages: [{ _sBaseUrl: `${origin}/images`, _sFile: `${mod.id}.svg` }],
       },
@@ -112,9 +113,9 @@ export const contentRoutes =
             0,
             "Infernus",
             "Skins",
-            mod.nsfw,
             "Synthetic fixture",
             "Synthetic fixture",
+            [],
           ]),
         ),
         query: { "fields[]": BULK_HYDRATION_FIELDS },

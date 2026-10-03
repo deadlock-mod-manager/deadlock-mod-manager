@@ -8,7 +8,7 @@ export const CATALOG_MOD_ID = "900001";
 export const CATALOG_MOD_NAME = "E2E GameBanana Mod";
 // Mirrors BULK_FIELDS / UPDATE_FIELDS in src-tauri/src/providers/gamebanana/client.rs.
 export const BULK_HYDRATION_FIELDS =
-  "name,downloads,Category().name,RootCategory().name,Nsfw().bIsNsfw(),description,text";
+  "name,downloads,Category().name,RootCategory().name,description,text,Files().aFiles()";
 export const BULK_UPDATE_FIELDS = "Url().sProfileUrl(),mdate,Files().aFiles()";
 const timestamp = 1_780_000_000;
 
@@ -176,9 +176,9 @@ export const createCatalogRoutes = async (scenario: string) => {
               0,
               "Skins",
               "Skins",
-              false,
               profile._sText,
               profile._sText,
+              files,
             ],
           ]),
         ),

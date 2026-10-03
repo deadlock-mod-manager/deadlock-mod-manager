@@ -30,6 +30,10 @@ diesel::table! {
     remote_updated_at -> BigInt,
     files_updated_at -> BigInt,
     last_seen_snapshot -> Nullable<Text>,
+    audio_url -> Nullable<Text>,
+    tags -> Text,
+    development_state -> Nullable<Text>,
+    completion_percentage -> Nullable<Integer>,
   }
 }
 
@@ -95,7 +99,7 @@ mod tests {
     .get_result::<bool>(&mut connection)
     .unwrap();
 
-    assert_eq!(applied.len(), 3);
+    assert_eq!(applied.len(), 4);
     assert!(catalog_tables_exist);
   }
 }
