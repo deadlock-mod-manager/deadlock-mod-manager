@@ -1020,6 +1020,8 @@
     "yesItsBroken": "Yes, it's broken"
   },
   "settings": {
+    "searchPlaceholder": "搜尋設定",
+    "searchNoResults": "沒有符合的設定",
     "about": "關於",
     "addSetting": "新增設定",
     "addonsBackup": "模組備份",

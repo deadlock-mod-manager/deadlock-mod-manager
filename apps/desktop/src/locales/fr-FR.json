@@ -1041,6 +1041,8 @@
     "open": ""
   },
   "settings": {
+    "searchPlaceholder": "Rechercher dans les paramètres",
+    "searchNoResults": "Aucun paramètre correspondant",
     "language": "Langue",
     "languageDescription": "Choisissez votre langue préférée pour l'interface de l'application",
     "languageSettings": "Paramètres de langue",

@@ -8,6 +8,7 @@ const Section = ({
   className,
   innerClassName,
   action,
+  searchId,
 }: {
   title: React.ReactNode;
   description?: React.ReactNode;
@@ -15,13 +16,16 @@ const Section = ({
   className?: string;
   innerClassName?: string;
   action?: React.ReactNode;
+  /** Anchor that settings search scrolls to and highlights. Listed in `SETTINGS_SEARCH_INDEX`. */
+  searchId?: string;
 }) => {
   return (
     <section
       className={cn(
-        "flex flex-col rounded-lg border border-border/50 bg-card/50 p-5",
+        "flex scroll-mt-2 flex-col rounded-lg border border-border/50 bg-card/50 p-5",
         className,
-      )}>
+      )}
+      data-settings-section={searchId}>
       <div className='flex w-full flex-row items-start justify-between gap-4 border-b border-border/30 pb-3'>
         <div className='flex min-w-0 flex-col gap-1'>
           <h3 className='font-semibold text-foreground text-lg leading-tight'>
