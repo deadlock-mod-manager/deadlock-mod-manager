@@ -21,6 +21,13 @@ import {
   type VpkManifest,
   type VpkManifestEntry,
 } from "@/types/profiles";
+import {
+  ENABLED_VPK_PATTERN,
+  enabledVpkLocators,
+  installedVpksFromManifest,
+  needsInstallStateRepair,
+  placeholderModFromManifest,
+} from "../utils/manifest-install-state";
 import { applyToModsInProfile } from "../utils/mod-slice";
 
 export interface ProfilesState {
@@ -116,52 +123,6 @@ const getRecoveredProfileDetails = (folderName: string) => {
 const shouldReplaceRecoveredProfileName = (profile: ModProfile) =>
   profile.description === RECOVERED_PROFILE_DESCRIPTION || !profile.name.trim();
 
-const placeholderModFromManifest = (
-  modId: string,
-  entry: VpkManifestEntry,
-  installedVpks: string[],
-): LocalMod => {
-  const now = new Date();
-  const isEnabled = installedVpks.length > 0;
-  return {
-    id: modId,
-    remoteId: modId,
-    name: modId,
-    description: null,
-    remoteUrl: "",
-    category: "local",
-    likes: 0,
-    author: "",
-    downloadable: false,
-    remoteAddedAt: now,
-    remoteUpdatedAt: now,
-    tags: [],
-    images: [],
-    hero: null,
-    isAudio: false,
-    isMap: false,
-    audioUrl: null,
-    downloadCount: 0,
-    isNSFW: false,
-    isObsolete: false,
-    isBlacklisted: false,
-    blacklistReason: null,
-    blacklistedAt: null,
-    blacklistedBy: null,
-    filesUpdatedAt: null,
-    metadata: null,
-    dependencies: null,
-    overrides: null,
-    createdAt: now,
-    updatedAt: now,
-    status: isEnabled ? ModStatus.Installed : ModStatus.Downloaded,
-    installedVpks,
-    metadataPending: true,
-    installOrder: entry.order ?? undefined,
-    downloadedAt: now,
-  };
-};
-
 const pickRecoveredProfileSource = (
   existingProfile: ModProfile | undefined,
   recoveredProfile: ModProfile,
@@ -234,6 +195,124 @@ const normalizeRecoveredProfileIds = (
 
 type ProfilesSliceStore = ProfilesState & {
   localMods: LocalMod[];
+};
+
+type ManifestRepair = {
+  remoteId: string;
+  status: ModStatus;
+  installedVpks: string[];
+  installOrder?: number;
+};
+
+type ManifestReconciliation = {
+  repaired: ManifestRepair[];
+  restored: LocalMod[];
+};
+
+/**
+ * Works out what a profile's library owes its manifest without entering the
+ * store: the snapshot read and any catalog lookup happen here, so the state is
+ * touched once, under the caller's revision guard.
+ *
+ * Adding back a mod the store never had needs catalog metadata, so it stays
+ * opt-in for the profile the user is actually in. Repairing a tracked mod's
+ * install state needs nothing but the manifest and runs for every profile.
+ */
+const planManifestReconciliation = async (
+  profileId: ProfileId,
+  profile: ModProfile,
+  restoreMissing: boolean,
+): Promise<ManifestReconciliation | null> => {
+  let snapshot: ProfileVpkSnapshot;
+  try {
+    snapshot = await invoke<ProfileVpkSnapshot>("get_profile_vpk_snapshot", {
+      profileFolder: profile.folderName,
+    });
+  } catch (error) {
+    logger
+      .withMetadata({ profileId, folderName: profile.folderName })
+      .withError(error)
+      .warn("Failed to load snapshot for restoration");
+    return null;
+  }
+
+  const manifestEntries = Object.entries(snapshot.manifest.mods);
+  if (manifestEntries.length === 0) {
+    return null;
+  }
+
+  const trackedById = new Map<string, LocalMod>(
+    profile.mods.map((mod) => [mod.remoteId, mod]),
+  );
+  const locators = enabledVpkLocators(snapshot.files);
+
+  const missingEntries: [string, VpkManifestEntry][] = [];
+  const repaired: ManifestRepair[] = [];
+  for (const [modId, entry] of manifestEntries) {
+    const tracked = trackedById.get(modId);
+    if (!tracked || tracked.metadataPending) {
+      if (restoreMissing) {
+        missingEntries.push([modId, entry]);
+      }
+      continue;
+    }
+    const installedVpks = installedVpksFromManifest(entry, locators);
+    if (!needsInstallStateRepair(tracked, installedVpks)) {
+      continue;
+    }
+    repaired.push({
+      remoteId: modId,
+      status:
+        installedVpks.length > 0 ? ModStatus.Installed : ModStatus.Downloaded,
+      installedVpks,
+      // Only an order the manifest itself states. Reordering does not bump the
+      // sync revision, so a value read before the snapshot could undo one.
+      ...(entry.order === null || entry.order === undefined
+        ? {}
+        : { installOrder: entry.order }),
+    });
+  }
+  if (missingEntries.length === 0 && repaired.length === 0) {
+    return null;
+  }
+
+  logger
+    .withMetadata({
+      profileId,
+      manifestModCount: manifestEntries.length,
+      missingCount: missingEntries.length,
+      staleCount: repaired.length,
+    })
+    .info("Reconciling mods from manifest");
+
+  const restored: LocalMod[] = [];
+  for (const [modId, entry] of missingEntries) {
+    const installedVpks = installedVpksFromManifest(entry, locators);
+    let restoredMod: LocalMod;
+    try {
+      const modDetails = await getMod(modId);
+      restoredMod = {
+        ...trackedById.get(modId),
+        ...modDetails,
+        metadataPending: false,
+        status:
+          installedVpks.length > 0 ? ModStatus.Installed : ModStatus.Downloaded,
+        installedVpks,
+        installOrder: entry.order ?? profile.mods.length + restored.length,
+        downloadedAt: new Date(),
+      };
+    } catch (error) {
+      logger
+        .withMetadata({ modId })
+        .withError(error)
+        .warn("Using placeholder for unavailable catalog metadata");
+      restoredMod = placeholderModFromManifest(modId, entry, installedVpks);
+    }
+
+    restored.push(restoredMod);
+  }
+
+  return { repaired, restored };
 };
 
 export const createProfilesSlice: StateCreator<
@@ -859,12 +938,7 @@ export const createProfilesSlice: StateCreator<
         })
         .info("Found VPKs in profile folder");
 
-      const enabledVpkPattern = /^pak\d+_dir\.vpk$/i;
-      const enabledVpkLocators = new Set(
-        allVpks
-          .filter((vpk) => enabledVpkPattern.test(vpk.filename))
-          .map((vpk) => `${vpk.shard}:${vpk.filename}`),
-      );
+      const locators = enabledVpkLocators(allVpks);
       const updatedEnabledMods: Record<string, ModProfileEntry> = {};
       const updatedLocalMods: LocalMod[] = [];
       const seedEntries: SeedManifestEntry[] = [];
@@ -873,15 +947,12 @@ export const createProfilesSlice: StateCreator<
         const manifestEntry = manifest.mods[mod.remoteId];
 
         if (manifestEntry) {
-          const currentVpks = manifestEntry.currentVpks ?? [];
-          const hasEnabledVpks =
-            manifestEntry.enabled &&
-            currentVpks.length > 0 &&
-            currentVpks.every((vpk) =>
-              enabledVpkLocators.has(`${manifestEntry.shard}:${vpk}`),
-            );
+          const currentVpks = installedVpksFromManifest(
+            manifestEntry,
+            locators,
+          );
 
-          if (hasEnabledVpks) {
+          if (currentVpks.length > 0) {
             updatedEnabledMods[mod.remoteId] = {
               remoteId: mod.remoteId,
               enabled: true,
@@ -900,10 +971,10 @@ export const createProfilesSlice: StateCreator<
                 .withMetadata({
                   profileId,
                   remoteId: mod.remoteId,
-                  currentVpks,
+                  currentVpks: manifestEntry.currentVpks ?? [],
                   shard: manifestEntry.shard,
-                  enabledVpkCount: enabledVpkLocators.size,
-                  enabledVpkSample: Array.from(enabledVpkLocators).slice(0, 10),
+                  enabledVpkCount: locators.size,
+                  enabledVpkSample: Array.from(locators).slice(0, 10),
                 })
                 .warn(
                   "Manifest entry marked enabled but no matching enabled VPKs on disk; treating as downloaded",
@@ -929,7 +1000,7 @@ export const createProfilesSlice: StateCreator<
           .map((vpk) => vpk.filename);
         const enabledVpkFilesForMod = allVpks.filter(
           (vpk) =>
-            enabledVpkPattern.test(vpk.filename) &&
+            ENABLED_VPK_PATTERN.test(vpk.filename) &&
             (mod.installedVpks?.some((installedVpk) => {
               const normalized = installedVpk.replaceAll("\\", "/");
               return normalized.includes("/")
@@ -1082,138 +1153,94 @@ export const createProfilesSlice: StateCreator<
 
   restoreModsFromManifest: async () => {
     const { activeProfileId, profiles } = get();
-    const profile = profiles[activeProfileId];
-    if (!profile) {
-      return;
-    }
-    const revision = get().bumpProfileSyncRevision(activeProfileId);
-
-    let snapshot: ProfileVpkSnapshot;
-    try {
-      snapshot = await invoke<ProfileVpkSnapshot>("get_profile_vpk_snapshot", {
-        profileFolder: profile.folderName,
-      });
-    } catch (error) {
-      logger
-        .withMetadata({ activeProfileId, folderName: profile.folderName })
-        .withError(error)
-        .warn("Failed to load snapshot for restoration");
-      return;
-    }
-
-    const manifestEntries = Object.entries(snapshot.manifest.mods);
-    if (manifestEntries.length === 0) {
-      return;
-    }
-
-    const trackedById = new Map<string, LocalMod>(
-      profile.mods.map((mod) => [mod.remoteId, mod]),
-    );
-    const missingEntries = manifestEntries.filter(
-      ([modId]) =>
-        !trackedById.has(modId) || trackedById.get(modId)?.metadataPending,
-    );
-    if (missingEntries.length === 0) {
-      return;
-    }
-
-    logger
-      .withMetadata({
-        profileId: activeProfileId,
-        manifestModCount: manifestEntries.length,
-        missingCount: missingEntries.length,
-      })
-      .info("Reconciling missing mods from manifest");
-
-    const restoredMods: LocalMod[] = [];
-    const fileLocators = new Set(
-      snapshot.files.map((file) => `${file.shard}:${file.filename}`),
+    const otherProfileIds = (Object.keys(profiles) as ProfileId[]).filter(
+      (profileId) => profileId !== activeProfileId,
     );
 
-    for (const [modId, entry] of missingEntries) {
-      const claimedVpks = entry.currentVpks ?? [];
-      const installedVpks =
-        entry.enabled &&
-        claimedVpks.length > 0 &&
-        claimedVpks.every((filename) =>
-          fileLocators.has(`${entry.shard}:${filename}`),
-        )
-          ? claimedVpks
-          : [];
-      let restoredMod: LocalMod;
-      try {
-        const modDetails = await getMod(modId);
-        const isEnabled = installedVpks.length > 0;
-        restoredMod = {
-          ...trackedById.get(modId),
-          ...modDetails,
-          metadataPending: false,
-          status: isEnabled ? ModStatus.Installed : ModStatus.Downloaded,
-          installedVpks,
-          installOrder:
-            entry.order ?? profile.mods.length + restoredMods.length,
-          downloadedAt: new Date(),
-        };
-      } catch (error) {
-        logger
-          .withMetadata({ modId })
-          .withError(error)
-          .warn("Using placeholder for unavailable catalog metadata");
-        restoredMod = placeholderModFromManifest(modId, entry, installedVpks);
+    for (const profileId of [activeProfileId, ...otherProfileIds]) {
+      const profile = profiles[profileId];
+      if (!profile) {
+        continue;
       }
 
-      restoredMods.push(restoredMod);
-    }
-
-    set((state) => {
-      const current = state.profiles[activeProfileId];
-      if (
-        !current ||
-        current.folderName !== profile.folderName ||
-        state.profileSyncRevisions[activeProfileId] !== revision
-      ) {
-        return state;
+      const revision = get().bumpProfileSyncRevision(profileId);
+      const plan = await planManifestReconciliation(
+        profileId,
+        profile,
+        profileId === activeProfileId,
+      );
+      if (!plan) {
+        continue;
       }
-      const enabledMods = { ...current.enabledMods };
-      const next = applyToModsInProfile(state, activeProfileId, (mods) => {
-        const reconciled = [...mods];
-        for (const restored of restoredMods) {
-          const index = reconciled.findIndex(
-            (mod) => mod.remoteId === restored.remoteId,
-          );
-          if (index >= 0 && !reconciled[index].metadataPending) continue;
-          if (index >= 0)
-            reconciled[index] = { ...reconciled[index], ...restored };
-          else reconciled.push(restored);
-          if (restored.status === ModStatus.Installed) {
-            enabledMods[restored.remoteId] = {
-              remoteId: restored.remoteId,
-              enabled: true,
-              lastModified: new Date(),
-            };
-          } else delete enabledMods[restored.remoteId];
+
+      set((state) => {
+        const current = state.profiles[profileId];
+        if (
+          !current ||
+          current.folderName !== profile.folderName ||
+          state.profileSyncRevisions[profileId] !== revision
+        ) {
+          return state;
         }
-        return reconciled;
-      });
-      const nextProfile = next.profiles[activeProfileId];
-      if (!nextProfile) {
-        return next;
-      }
-      return {
-        ...next,
-        profiles: {
-          ...next.profiles,
-          [activeProfileId]: {
-            ...nextProfile,
-            enabledMods,
+        const enabledMods = { ...current.enabledMods };
+        const next = applyToModsInProfile(state, profileId, (mods) => {
+          const reconciled = [...mods];
+          for (const repaired of plan.repaired) {
+            const index = reconciled.findIndex(
+              (mod) => mod.remoteId === repaired.remoteId,
+            );
+            if (index < 0) continue;
+            reconciled[index] = { ...reconciled[index], ...repaired };
+            if (repaired.status === ModStatus.Installed) {
+              enabledMods[repaired.remoteId] = {
+                remoteId: repaired.remoteId,
+                enabled: true,
+                lastModified: new Date(),
+              };
+            } else delete enabledMods[repaired.remoteId];
+          }
+          for (const restored of plan.restored) {
+            const index = reconciled.findIndex(
+              (mod) => mod.remoteId === restored.remoteId,
+            );
+            if (index >= 0 && !reconciled[index].metadataPending) continue;
+            if (index >= 0)
+              reconciled[index] = { ...reconciled[index], ...restored };
+            else reconciled.push(restored);
+            if (restored.status === ModStatus.Installed) {
+              enabledMods[restored.remoteId] = {
+                remoteId: restored.remoteId,
+                enabled: true,
+                lastModified: new Date(),
+              };
+            } else delete enabledMods[restored.remoteId];
+          }
+          return reconciled;
+        });
+        const nextProfile = next.profiles[profileId];
+        if (!nextProfile) {
+          return next;
+        }
+        return {
+          ...next,
+          profiles: {
+            ...next.profiles,
+            [profileId]: {
+              ...nextProfile,
+              enabledMods,
+            },
           },
-        },
-      };
-    });
+        };
+      });
 
-    logger
-      .withMetadata({ restoredCount: missingEntries.length })
-      .info("Manifest reconciliation complete");
+      logger
+        .withMetadata({
+          profileId,
+          restoredCount: plan.restored.length,
+          repairedCount: plan.repaired.length,
+        })
+        .info("Manifest reconciliation complete");
+    }
   },
 
   syncProfilesWithFilesystem: async () => {
