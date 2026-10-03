@@ -49,10 +49,29 @@ struct HashAnalysisRequest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct ApiMatchedVpk {
   id: String,
+  submission_type: Option<String>,
+  submission_id: Option<String>,
+  /// Catalog relation the API only attaches for older clients; it goes away
+  /// with the catalog retirement, so it is used for display names only.
   #[serde(rename = "mod")]
-  mod_info: ApiModInfo,
+  mod_info: Option<ApiModInfo>,
+}
+
+impl ApiMatchedVpk {
+  /// GameBanana slug (`123` or `snd-123`) used as the mod's remote ID.
+  fn remote_id(&self) -> Option<String> {
+    match (
+      self.submission_type.as_deref(),
+      self.submission_id.as_deref(),
+    ) {
+      (Some("sound"), Some(id)) => Some(format!("snd-{id}")),
+      (Some(_), Some(id)) => Some(id.to_string()),
+      _ => self.mod_info.as_ref().map(|m| m.remote_id.clone()),
+    }
+  }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -169,7 +188,9 @@ impl AddonAnalyzer {
         if response.status().is_success() {
           match response.json::<Vec<HashAnalysisResponse>>().await {
             Ok(results) => {
-              if let Some(result) = results.first() {
+              if let Some(result) = results.first()
+                && let Some(remote_id) = result.matched_vpk.remote_id()
+              {
                 let alternative_matches =
                   result
                     .match_info
@@ -180,19 +201,28 @@ impl AddonAnalyzer {
                         .iter()
                         .map(|m| AlternativeMatch {
                           id: m.id.clone(),
-                          mod_name: m.mod_info.name.clone(),
-                          mod_author: m.mod_info.author.clone(),
+                          mod_name: m.mod_info.as_ref().map_or_else(
+                            || m.remote_id().unwrap_or_default(),
+                            |info| info.name.clone(),
+                          ),
+                          mod_author: m
+                            .mod_info
+                            .as_ref()
+                            .map(|info| info.author.clone())
+                            .unwrap_or_default(),
                         })
                         .collect()
                     });
 
+                let mod_info = result.matched_vpk.mod_info.as_ref();
+                let mod_name = mod_info.map_or_else(|| remote_id.clone(), |info| info.name.clone());
                 return Ok(Some((
-                  result.matched_vpk.mod_info.remote_id.clone(), // This is the mod's remote ID for API calls
+                  remote_id,
                   MatchInfo {
                     certainty: result.match_info.certainty,
                     match_type: result.match_info.match_type.clone(),
-                    mod_name: Some(result.matched_vpk.mod_info.name.clone()),
-                    mod_author: Some(result.matched_vpk.mod_info.author.clone()),
+                    mod_name: Some(mod_name),
+                    mod_author: mod_info.map(|info| info.author.clone()),
                     alternative_matches,
                   },
                 )));
@@ -647,5 +677,36 @@ impl AddonAnalyzer {
       remote_id: None,
       match_info: None,
     })
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  fn parse(json: &str) -> HashAnalysisResponse {
+    serde_json::from_str::<Vec<HashAnalysisResponse>>(json)
+      .expect("hash analysis response should deserialize")
+      .remove(0)
+  }
+
+  #[test]
+  fn reads_the_submission_identity_without_catalog_mod() {
+    let result = parse(
+      r#"[{"matchedVpk":{"id":"vpk_1","submissionType":"sound","submissionId":"42"},
+          "match":{"certainty":100,"matchType":"sha256"}}]"#,
+    );
+    assert_eq!(result.matched_vpk.remote_id().as_deref(), Some("snd-42"));
+    assert!(result.matched_vpk.mod_info.is_none());
+  }
+
+  #[test]
+  fn falls_back_to_catalog_mod_for_rows_without_identity() {
+    let result = parse(
+      r#"[{"matchedVpk":{"id":"vpk_1","submissionType":null,"submissionId":null,
+            "mod":{"id":"mod_1","remoteId":"123","name":"Mod","author":"Author"}},
+          "match":{"certainty":90,"matchType":"contentSignature"}}]"#,
+    );
+    assert_eq!(result.matched_vpk.remote_id().as_deref(), Some("123"));
   }
 }
