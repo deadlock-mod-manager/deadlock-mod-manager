@@ -214,9 +214,9 @@ export const resolveRank = (
 };
 
 export const getRankAssets = async (): Promise<RankAsset[]> => {
-  const response = await fetch(`${assetsBaseUrl()}/v2/ranks`);
+  const response = await fetch(`${assetsBaseUrl()}/v1/assets/ranks`);
   if (!response.ok) {
-    throw new DeadlockApiError(response.status, "/v2/ranks");
+    throw new DeadlockApiError(response.status, "/v1/assets/ranks");
   }
-  return parseList(rankAssetSchema, await response.json(), "/v2/ranks");
+  return parseList(rankAssetSchema, await response.json(), "/v1/assets/ranks");
 };

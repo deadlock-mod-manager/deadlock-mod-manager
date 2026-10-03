@@ -20,7 +20,7 @@ export const HERO_DEFINITIONS: HeroDefinitions = {
     aliases: ["deadmandanny", "deadpack"],
     phrases: [["deadman", "danny"]],
   },
-  [DeadlockHeroes.Doorman]: { aliases: ["doorman v2"] },
+  [DeadlockHeroes.Doorman]: { aliases: ["doorman v2", "the doorman"] },
   [DeadlockHeroes.Drifter]: {},
   [DeadlockHeroes.Dynamo]: { aliases: ["prof dynamo"] },
   [DeadlockHeroes.Graves]: { aliases: ["necro"] },

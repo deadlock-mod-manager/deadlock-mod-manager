@@ -32,6 +32,7 @@ import { Copy, RotateCcw, Save } from "@deadlock-mods/ui/icons";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { HeroIcon } from "@/components/heroes/hero-icon";
 import { usePersistedStore } from "@/lib/store";
 import { createDefaultGamePresenceTextTemplates } from "@/lib/store/slices/settings";
 import { Trash } from "@phosphor-icons/react";
@@ -714,6 +715,7 @@ export const GamePresenceSettings = () => {
                                 key={hero.codename}
                                 value={hero.codename}>
                                 <span className='flex items-center gap-1.5'>
+                                  <HeroIcon hero={hero.name} />
                                   {hero.name}
                                   {hasOverride && (
                                     <span className='size-1.5 rounded-full bg-primary' />

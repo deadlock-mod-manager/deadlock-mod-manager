@@ -42,11 +42,11 @@ import { useState } from "react";
 import { type FieldValues, type SubmitHandler, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
+import { HeroIcon } from "@/components/heroes/hero-icon";
 import { useAuth } from "@/hooks/use-auth";
 import { publishCrosshair } from "@/lib/api-client";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
-import { cn } from "@/lib/utils";
 import { CrosshairCanvas } from "./crosshair/crosshair-canvas";
 import { CrosshairControls } from "./crosshair/crosshair-controls";
 import { CrosshairImportDialog } from "./crosshair-import-dialog";
@@ -403,19 +403,17 @@ export const CrosshairForm = () => {
                                       key={hero}
                                       disabled={!canSelect}
                                       onSelect={() => handleHeroSelect(hero)}>
-                                      <Check
-                                        className={cn(
-                                          "mr-2 h-4 w-4 flex-shrink-0",
-                                          isSelected
-                                            ? "opacity-100"
-                                            : "opacity-0",
-                                        )}
+                                      <HeroIcon
+                                        hero={isDefault ? null : hero}
                                       />
                                       <span className='truncate'>
-                                        {hero === "Default"
+                                        {isDefault
                                           ? t("crosshairs.form.defaultHero")
                                           : hero}
                                       </span>
+                                      {isSelected && (
+                                        <Check className='ml-auto h-4 w-4 shrink-0' />
+                                      )}
                                     </CommandItem>
                                   );
                                 })}
@@ -430,11 +428,16 @@ export const CrosshairForm = () => {
                             <Badge
                               key={hero}
                               variant='secondary'
-                              className='cursor-pointer'
+                              className='cursor-pointer gap-1.5'
                               onClick={() => handleHeroRemove(hero)}>
-                              {hero === "Default"
-                                ? t("crosshairs.form.defaultHero")
-                                : hero}{" "}
+                              {hero === "Default" ? (
+                                t("crosshairs.form.defaultHero")
+                              ) : (
+                                <>
+                                  <HeroIcon className='h-4 w-4' hero={hero} />
+                                  {hero}
+                                </>
+                              )}{" "}
                               ×
                             </Badge>
                           ))}

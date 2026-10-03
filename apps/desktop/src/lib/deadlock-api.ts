@@ -11,7 +11,8 @@ import { runtimeServiceOrigin } from "./runtime-bootstrap";
 
 export type { DeadlockHero, DeadlockItem };
 
-export const ASSETS_BASE_URL = "https://assets.deadlock-api.com";
+// assets.deadlock-api.com was retired; the asset routes now live under /v1/assets.
+export const ASSETS_BASE_URL = "https://api.deadlock-api.com";
 export const assetsBaseUrl = (): string =>
   runtimeServiceOrigin("assets", ASSETS_BASE_URL);
 
@@ -31,11 +32,13 @@ export class DeadlockApiError extends ProviderError {
 
 /** Every playable hero, for id -> name/portrait lookups. Changes only per patch. */
 export const getHeroes = async (): Promise<DeadlockHero[]> => {
-  const res = await fetch(`${assetsBaseUrl()}/v2/heroes?only_active=true`);
+  const res = await fetch(
+    `${assetsBaseUrl()}/v1/assets/heroes?only_active=true`,
+  );
   if (!res.ok) {
-    throw new DeadlockApiError(res.status, "/v2/heroes");
+    throw new DeadlockApiError(res.status, "/v1/assets/heroes");
   }
-  return parseList(deadlockHeroSchema, await res.json(), "/v2/heroes");
+  return parseList(deadlockHeroSchema, await res.json(), "/v1/assets/heroes");
 };
 
 /**
@@ -44,11 +47,13 @@ export const getHeroes = async (): Promise<DeadlockHero[]> => {
  * ever reaches the cache.
  */
 export const getItems = async (): Promise<DeadlockItem[]> => {
-  const res = await fetch(`${assetsBaseUrl()}/v2/items?only_active=true`);
+  const res = await fetch(
+    `${assetsBaseUrl()}/v1/assets/items?only_active=true`,
+  );
   if (!res.ok) {
-    throw new DeadlockApiError(res.status, "/v2/items");
+    throw new DeadlockApiError(res.status, "/v1/assets/items");
   }
-  return parseList(deadlockItemSchema, await res.json(), "/v2/items")
+  return parseList(deadlockItemSchema, await res.json(), "/v1/assets/items")
     .filter((item) => item.type === "upgrade")
     .map((item) => ({
       id: item.id,
@@ -60,17 +65,4 @@ export const getItems = async (): Promise<DeadlockItem[]> => {
       shop_image_webp: item.shop_image_webp,
       shop_image: item.shop_image,
     }));
-};
-
-export const getHeroByName = async (
-  name: string,
-): Promise<DeadlockHero | null> => {
-  const res = await fetch(
-    `${assetsBaseUrl()}/v2/heroes/by-name/${encodeURIComponent(name)}`,
-  );
-  if (!res.ok) {
-    return null;
-  }
-  const hero = deadlockHeroSchema.safeParse(await res.json());
-  return hero.success ? hero.data : null;
 };

@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime};
 
-const API_URL: &str = "https://assets.deadlock-api.com/v2/heroes?language=english";
+const API_URL: &str = "https://api.deadlock-api.com/v1/assets/heroes?language=english";
 const CACHE_TTL: Duration = Duration::from_secs(24 * 60 * 60);
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(8);
 const CACHE_FILENAME: &str = "hero_presence_cache.json";

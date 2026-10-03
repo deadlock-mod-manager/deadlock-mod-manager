@@ -14,6 +14,7 @@ import { CheckCircleIcon, EyeIcon, TrashIcon } from "@phosphor-icons/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
+import { HeroIcon } from "@/components/heroes/hero-icon";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -217,7 +218,8 @@ export const CrosshairCard = ({
                     <Badge
                       key={`hero-${hero}`}
                       variant='outline'
-                      className='h-5 border-primary/30 px-1.5 text-[10px] font-medium text-foreground/80'>
+                      className='h-5 gap-1 border-primary/30 pr-1.5 pl-0.5 text-[10px] font-medium text-foreground/80'>
+                      <HeroIcon className='h-4 w-4' hero={hero} />
                       {hero}
                     </Badge>
                   ))}

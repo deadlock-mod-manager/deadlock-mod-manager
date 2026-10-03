@@ -19,6 +19,7 @@ import { CheckIcon } from "@deadlock-mods/ui/icons";
 import { ClipboardTextIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { HeroIcon } from "@/components/heroes/hero-icon";
 import { CrosshairCanvas } from "./crosshair/crosshair-canvas";
 
 interface CrosshairPreviewDialogProps {
@@ -170,7 +171,12 @@ export const CrosshairPreviewDialog = ({
                   <span className='text-muted-foreground'>
                     {t("crosshairs.previewDialog.hero")}
                   </span>
-                  <span className='font-medium'>{crosshairConfig.hero}</span>
+                  <span className='flex items-center gap-1.5 font-medium'>
+                    {crosshairConfig.hero !== "Default" && (
+                      <HeroIcon hero={crosshairConfig.hero} />
+                    )}
+                    {crosshairConfig.hero}
+                  </span>
                 </div>
               </div>
             </div>

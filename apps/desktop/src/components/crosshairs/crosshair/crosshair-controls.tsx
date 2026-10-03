@@ -14,7 +14,15 @@ import {
   SelectValue,
 } from "@deadlock-mods/ui/components/select";
 import { Slider } from "@deadlock-mods/ui/components/slider";
+import { HeroIcon } from "@/components/heroes/hero-icon";
 import { ColorPicker } from "./color-picker";
+
+const CROSSHAIR_OVERRIDE_HEROES = [
+  DeadlockHeroes.Abrams,
+  DeadlockHeroes.Yamato,
+  DeadlockHeroes.Shiv,
+  DeadlockHeroes.MoKrill,
+] as const;
 
 interface CrosshairControlsProps {
   readonly config: CrosshairConfig;
@@ -244,18 +252,14 @@ export function CrosshairControls({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value='Default'>Default</SelectItem>
-              <SelectItem value={DeadlockHeroes.Abrams}>
-                {DeadlockHeroes.Abrams}
-              </SelectItem>
-              <SelectItem value={DeadlockHeroes.Yamato}>
-                {DeadlockHeroes.Yamato}
-              </SelectItem>
-              <SelectItem value={DeadlockHeroes.Shiv}>
-                {DeadlockHeroes.Shiv}
-              </SelectItem>
-              <SelectItem value={DeadlockHeroes.MoKrill}>
-                {DeadlockHeroes.MoKrill}
-              </SelectItem>
+              {CROSSHAIR_OVERRIDE_HEROES.map((hero) => (
+                <SelectItem key={hero} value={hero}>
+                  <span className='flex items-center gap-2'>
+                    <HeroIcon hero={hero} />
+                    {hero}
+                  </span>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

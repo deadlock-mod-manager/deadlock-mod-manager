@@ -4,17 +4,12 @@ import {
   AlertDialogDescription,
   AlertDialogTitle,
 } from "@deadlock-mods/ui/components/alert-dialog";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@deadlock-mods/ui/components/avatar";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { ArrowLeftRight, TriangleAlert } from "@deadlock-mods/ui/icons";
 import { cn } from "@deadlock-mods/ui/lib/utils";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useHero } from "@/hooks/use-hero";
+import { HeroIcon } from "@/components/heroes/hero-icon";
 import type { LocalMod } from "@/types/mods";
 import ModCard from "./mod-card";
 
@@ -39,7 +34,6 @@ export const HeroConflictDialog = ({
   onResolve,
 }: HeroConflictDialogProps) => {
   const { t } = useTranslation();
-  const { data: hero } = useHero(open ? heroName : null);
   const [phase, setPhase] = useState<"idle" | "swapping">("idle");
   const resolvedRef = useRef(false);
 
@@ -57,13 +51,6 @@ export const HeroConflictDialog = ({
     resolvedRef.current = true;
     onResolve("swap");
   };
-
-  const heroImage =
-    hero?.images.icon_hero_card_webp ??
-    hero?.images.icon_hero_card ??
-    hero?.images.icon_image_small_webp ??
-    hero?.images.icon_image_small;
-  const heroInitial = heroName.charAt(0).toUpperCase();
 
   const handleSwap = () => {
     if (phase === "swapping") {
@@ -89,10 +76,11 @@ export const HeroConflictDialog = ({
         className='gap-0 overflow-hidden p-0 sm:max-w-2xl'
         onClick={(e) => e.stopPropagation()}>
         <div className='flex items-start gap-3 border-b border-border/60 bg-muted/30 px-6 pt-5 pb-4'>
-          <Avatar className='size-10 ring-1 ring-border/60'>
-            {heroImage && <AvatarImage alt={heroName} src={heroImage} />}
-            <AvatarFallback className='text-sm'>{heroInitial}</AvatarFallback>
-          </Avatar>
+          <HeroIcon
+            className='size-10 rounded-full ring-1 ring-border/60'
+            hero={heroName}
+            variant='card'
+          />
           <div className='flex min-w-0 flex-col gap-0.5'>
             <AlertDialogTitle className='text-base'>
               {t("heroConflict.title", { heroName })}

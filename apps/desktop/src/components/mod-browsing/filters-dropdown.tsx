@@ -8,7 +8,6 @@ import {
 } from "@deadlock-mods/ui/components/dropdown-menu";
 import { Label } from "@deadlock-mods/ui/components/label";
 import { Switch } from "@deadlock-mods/ui/components/switch";
-import { Filter } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import type {
   AudioQuickFilter,
@@ -16,6 +15,7 @@ import type {
   MapQuickFilter,
 } from "@/lib/store/slices/ui";
 import CategoryFilter from "./category-filter";
+import { FilterCountIcon } from "./filter-count-icon";
 import HeroFilter from "./hero-filter";
 
 type FiltersDropdownProps = {
@@ -77,14 +77,9 @@ const FiltersDropdown = ({
         <Button
           className='relative'
           size='iconExpand'
-          icon={<Filter className='h-4 w-4' />}
+          icon={<FilterCountIcon count={totalActiveFilters} />}
           variant={hasActiveFilters ? "default" : "outline"}>
           {t("filters.filters")}
-          {hasActiveFilters && (
-            <span className='ml-1 rounded-full bg-background px-1.5 py-0.5 text-foreground text-xs'>
-              {totalActiveFilters}
-            </span>
-          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='start' className='space-y-4 p-4'>
