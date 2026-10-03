@@ -2,7 +2,7 @@ import { Label } from "@deadlock-mods/ui/components/label";
 import { Switch } from "@deadlock-mods/ui/components/switch";
 import { useTranslation } from "react-i18next";
 import { usePersistedStore } from "@/lib/store";
-import { EXPERIMENTAL_FEATURES } from "@/lib/store/slices/ui";
+import { EXPERIMENTAL_FEATURES } from "@/lib/constants";
 
 export const FeatureFlagsSettings = () => {
   const { t } = useTranslation();

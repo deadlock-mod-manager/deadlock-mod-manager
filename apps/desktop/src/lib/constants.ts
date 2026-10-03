@@ -121,3 +121,14 @@ export const STALE_MOD_DAYS = 30;
 export const MOD_OUTDATED_CUTOFF_SECONDS = Math.floor(
   new Date("2026-09-29").getTime() / 1_000,
 );
+
+// Client-side toggles for features that are still settling. Stored locally so
+// anyone can opt in from Settings without signing in.
+export const EXPERIMENTAL_FEATURES = [
+  "custom-maps",
+  "server-browser",
+  "mod-foundry",
+  "player-stats",
+  "profile-management",
+  "profile-sharing",
+] as const;

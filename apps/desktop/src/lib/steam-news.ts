@@ -12,7 +12,7 @@ export const STEAM_NEWS_PAGE = `https://store.steampowered.com/news/app/${DEADLO
 const STEAM_NEWS_URL =
   "https://api.steampowered.com/ISteamNews/GetNewsForApp/v2/";
 
-export class SteamNewsError extends ProviderError {
+class SteamNewsError extends ProviderError {
   constructor(readonly status: number) {
     super(`Steam news request failed with ${status}`);
   }

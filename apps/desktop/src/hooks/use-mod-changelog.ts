@@ -2,7 +2,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { getGameBananaChangelog } from "@/lib/gamebanana-catalog";
 import { STALE_TIME_API } from "@/lib/query-constants";
 
-export const modChangelogQueryKey = (remoteId: string) =>
+const modChangelogQueryKey = (remoteId: string) =>
   ["mod-changelog", remoteId] as const;
 
 export const useModChangelog = (remoteId: string | undefined) =>

@@ -1,4 +1,4 @@
-import { EXPERIMENTAL_FEATURES } from "@/lib/store/slices/ui";
+import { EXPERIMENTAL_FEATURES } from "@/lib/constants";
 
 export const SETTINGS_TAB_LABEL_KEYS = {
   "launch-options": "settings.launchOptions",
@@ -353,6 +353,8 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
         titleKey: "privacy.rememberPerItemChoices",
         descriptionKey: "privacy.rememberPerItemChoicesDescription",
       },
+      { titleKey: "privacy.savedPerItemChoices" },
+      { titleKey: "privacy.clearPerItemChoices" },
       {
         titleKey: "privacy.analyticsEnabled",
         descriptionKey: "privacy.analyticsEnabledDescription",
