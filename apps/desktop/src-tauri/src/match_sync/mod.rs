@@ -270,14 +270,14 @@ fn discover_accounts(
   discover: impl FnOnce() -> Result<Vec<(u64, String)>, MatchSyncError>,
   prune: impl FnOnce(&[u64]),
 ) -> Vec<(u64, String)> {
+  // Suppressed or failed discovery is not an empty inventory: keep the existing
+  // per-account throttle so toggling sync cannot reset GC request spacing.
   if !config.is_active() {
     return Vec::new();
   }
   let Ok(accounts) = discover() else {
     return Vec::new();
   };
-  // Suppressed or failed discovery is not an empty inventory: keep the existing
-  // per-account throttle so toggling sync cannot reset GC request spacing.
   let ids: Vec<u64> = accounts.iter().map(|(id, _)| *id).collect();
   prune(&ids);
   accounts
@@ -388,14 +388,16 @@ pub fn set_enabled(app: &AppHandle, enabled: bool) -> Result<(), MatchSyncError>
   }
   settings::set_enabled(app, enabled)?;
   if enabled {
+    prune_forgotten_accounts(app);
     start_background_worker(app.clone());
   }
   Ok(())
 }
 
 // Drops persisted per-account state (quota/fetched/completion) and in-memory resources
-// for accounts no longer remembered in loginusers.vdf AT ALL. Startup-only: temporarily
-// non-decryptable accounts stay remembered, so they are never pruned here.
+// for accounts no longer remembered in loginusers.vdf AT ALL. Runs at startup and when
+// sync is enabled, and is a no-op while sync is inactive. Temporarily non-decryptable
+// accounts stay remembered, so they are never pruned here.
 pub fn prune_forgotten_accounts(app: &AppHandle) {
   if !should_monitor(app) {
     return;
