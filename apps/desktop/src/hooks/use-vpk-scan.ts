@@ -4,6 +4,8 @@ import { getProfileInstalledVpks } from "@/lib/tauri-commands";
 import { findUnmatchedVpks } from "@/lib/vpk-scan";
 import { usePersistedStore } from "@/lib/store";
 
+export const PROFILE_VPKS_QUERY_KEY = ["profile-vpks"] as const;
+
 export const useVpkScan = () => {
   const activeProfile = usePersistedStore((state) => {
     const { activeProfileId, profiles } = state;
@@ -18,7 +20,7 @@ export const useVpkScan = () => {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["profile-vpks", activeProfile?.folderName],
+    queryKey: [...PROFILE_VPKS_QUERY_KEY, activeProfile?.folderName],
     queryFn: () => getProfileInstalledVpks(activeProfile?.folderName ?? null),
     enabled: !!activeProfile,
     refetchOnWindowFocus: false,
