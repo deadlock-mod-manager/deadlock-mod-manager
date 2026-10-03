@@ -1,5 +1,5 @@
+import { describe, expect, it } from "bun:test";
 import type { ModDto } from "@deadlock-mods/shared";
-import { describe, expect, it } from "vitest";
 import type { LocalMod } from "@/types/mods";
 import {
   matchesHeroFilter,
