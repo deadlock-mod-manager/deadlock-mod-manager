@@ -108,6 +108,12 @@ struct MaterialPreviewProperties {
     /// Dedicated ambient-occlusion map (glTF occlusion = red channel).
     occlusion_texture: Option<String>,
     emissive_texture: Option<String>,
+    /// How much of the albedo colours the glow (`g_flSelfIllumAlbedoFactor`):
+    /// 0 glows in the tint alone, 1 glows in the surface's own colour.
+    self_illum_albedo_factor: f32,
+    /// `F_VERTEX_COLOR`: the colour lives in the mesh's COLOR stream and the
+    /// colour texture is a flat placeholder.
+    vertex_color: bool,
     base_color_factor: [f32; 4],
     metalness_factor: f32,
     alpha_mode: vmesh::MaterialAlphaMode,
@@ -238,13 +244,32 @@ fn material_preview_properties(
     let metalness_factor = named_f32(&data, "m_floatParams", "g_flMetalness")
         .unwrap_or(0.0)
         .clamp(0.0, 1.0);
-    let self_illum = named_i64(&data, "m_intParams", "F_SELF_ILLUM").unwrap_or(0) != 0;
+    // `F_SELF_ILLUM` only compiles the glow in; `g_flSelfIllumScale` is what
+    // turns it up. Most hero materials ship the flag with a scale of 0 and the
+    // engine's default mask, which is pure red (masks are read from R) — taking
+    // the flag alone painted those surfaces as glowing red.
+    let self_illum_scale = named_f32(&data, "m_floatParams", "g_flSelfIllumScale1")
+        .or_else(|| named_f32(&data, "m_floatParams", "g_flSelfIllumScale"))
+        .unwrap_or(1.0);
+    let self_illum =
+        named_i64(&data, "m_intParams", "F_SELF_ILLUM").unwrap_or(0) != 0 && self_illum_scale > 0.0;
     let emissive_texture = self_illum.then_some(emissive_texture_candidate).flatten();
+    let self_illum_tint = named_vec4(&data, "g_vSelfIllumTint1")
+        .or_else(|| named_vec4(&data, "g_vSelfIllumTint"))
+        .unwrap_or([1.0; 4]);
+    // glTF clamps emissive to 1 without KHR_materials_emissive_strength, so a
+    // scale above 1 saturates rather than blooming.
+    let emissive_strength = self_illum_scale.min(1.0);
     let emissive_factor = self_illum.then_some([
-        base_color_factor[0].clamp(0.0, 1.0),
-        base_color_factor[1].clamp(0.0, 1.0),
-        base_color_factor[2].clamp(0.0, 1.0),
+        (self_illum_tint[0] * emissive_strength).clamp(0.0, 1.0),
+        (self_illum_tint[1] * emissive_strength).clamp(0.0, 1.0),
+        (self_illum_tint[2] * emissive_strength).clamp(0.0, 1.0),
     ]);
+    let self_illum_albedo_factor = named_f32(&data, "m_floatParams", "g_flSelfIllumAlbedoFactor1")
+        .or_else(|| named_f32(&data, "m_floatParams", "g_flSelfIllumAlbedoFactor"))
+        .unwrap_or(1.0)
+        .clamp(0.0, 1.0);
+    let vertex_color = named_i64(&data, "m_intParams", "F_VERTEX_COLOR").unwrap_or(0) != 0;
     Some(MaterialPreviewProperties {
         color_texture,
         normal_texture,
@@ -252,6 +277,8 @@ fn material_preview_properties(
         roughness_in_alpha,
         occlusion_texture,
         emissive_texture,
+        self_illum_albedo_factor,
+        vertex_color,
         base_color_factor,
         metalness_factor,
         alpha_mode,
@@ -292,6 +319,7 @@ fn decode_texture_preview_bytes(
         normal_png: None,
         orm_png: None,
         emissive_png: None,
+        vertex_color: false,
         base_color_factor: [1.0; 4],
         metalness_factor: 0.0,
         alpha_mode: vmesh::MaterialAlphaMode::Opaque,
@@ -311,6 +339,46 @@ fn decode_rgba(bytes: Vec<u8>) -> Option<DecodedTexture> {
     let res = Resource::parse(bytes).ok()?;
     let header = VtexHeader::parse(&res).ok()?;
     header.decode_preview(&res.data, 512).ok()
+}
+
+/// Bake the glTF emissive map for a self-illuminated material.
+///
+/// Source 2 reads the self-illum mask from its red channel and glows in the
+/// albedo blended towards white by `albedo_factor`. Handing the mask over as an
+/// RGB texture instead made every masked texel glow red.
+fn bake_self_illum_png(
+    mask: &DecodedTexture,
+    albedo: Option<&DecodedTexture>,
+    albedo_factor: f32,
+) -> Option<Vec<u8>> {
+    let (w, h) = albedo.map_or((mask.width, mask.height), |t| (t.width, t.height));
+    if w == 0 || h == 0 {
+        return None;
+    }
+    let mut rgba = vec![0u8; (w * h * 4) as usize];
+    for y in 0..h {
+        for x in 0..w {
+            let i = ((y * w + x) * 4) as usize;
+            let strength = f32::from(sample_channel(mask, x, y, w, h, 0)) / 255.0;
+            for ch in 0..3 {
+                let colour = albedo.map_or(1.0, |t| {
+                    let albedo = f32::from(sample_channel(t, x, y, w, h, ch)) / 255.0;
+                    1.0 + (albedo - 1.0) * albedo_factor
+                });
+                rgba[i + ch] = (colour * strength * 255.0).round() as u8;
+            }
+            rgba[i + 3] = 255;
+        }
+    }
+    encode_png_bytes(
+        &DecodedTexture {
+            width: w,
+            height: h,
+            rgba,
+        },
+        512,
+    )
+    .ok()
 }
 
 /// Nearest-neighbour sample of one channel, coords clamped and scaled from the
@@ -457,6 +525,10 @@ fn decode_material_preview_textures(
                     properties,
                 )| {
                     scope.spawn(move || {
+                        let albedo = emissive
+                            .is_some()
+                            .then(|| decode_rgba(bytes.clone()))
+                            .flatten();
                         let mut texture =
                             decode_texture_preview_bytes(texture_path, Some(material_path), bytes)?;
                         texture.normal_png = normal.and_then(decode_preview_png_bytes);
@@ -471,7 +543,14 @@ fn decode_material_preview_textures(
                         } else {
                             None
                         };
-                        texture.emissive_png = emissive.and_then(decode_preview_png_bytes);
+                        texture.emissive_png = emissive.and_then(decode_rgba).and_then(|mask| {
+                            bake_self_illum_png(
+                                &mask,
+                                albedo.as_ref(),
+                                properties.self_illum_albedo_factor,
+                            )
+                        });
+                        texture.vertex_color = properties.vertex_color;
                         texture.base_color_factor = properties.base_color_factor;
                         texture.metalness_factor = properties.metalness_factor;
                         texture.alpha_mode = properties.alpha_mode;
