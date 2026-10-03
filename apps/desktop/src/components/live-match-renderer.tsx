@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { usePlayerStatsEnabled } from "@/hooks/use-feature-flags";
+import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useLiveMatch } from "@/hooks/use-live-match";
 import {
   disconnectLiveStream,
@@ -32,7 +32,7 @@ const LiveMatchWatcher = () => {
  * cover the whole round and not just the part the tab was open for.
  */
 export const LiveMatchRenderer = () => {
-  const { isEnabled } = usePlayerStatsEnabled();
+  const isEnabled = useExperimentalFeature("player-stats");
 
   // Nothing to follow for anyone who cannot reach the page.
   return isEnabled ? <LiveMatchWatcher /> : null;

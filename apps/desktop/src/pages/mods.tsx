@@ -33,7 +33,7 @@ import SearchBar from "@/components/mod-browsing/search-bar";
 import SearchBarSkeleton from "@/components/mod-browsing/search-bar-skeleton";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
-import { useFeatureFlag } from "@/hooks/use-feature-flags";
+import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useResponsiveColumns } from "@/hooks/use-responsive-columns";
 import { useScrollPosition } from "@/hooks/use-scroll-position";
@@ -166,10 +166,7 @@ function ModsPagination({
 
 const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
   const { t } = useTranslation();
-  const { isEnabled: isCustomMapsEnabled } = useFeatureFlag(
-    "custom-maps",
-    false,
-  );
+  const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
   const nsfwSettings = usePersistedStore((state) => state.nsfwSettings);
   const modsFilters = usePersistedStore((state) => state.modsFilters);
   const modsStorePaginationEnabled = usePersistedStore(

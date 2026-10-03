@@ -38,10 +38,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
-import {
-  useFeatureFlag,
-  usePlayerStatsEnabled,
-} from "@/hooks/use-feature-flags";
+import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { DISCORD_URL } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus } from "@/types/mods";
@@ -329,19 +326,10 @@ export const AppSidebar = () => {
   const developerMode = usePersistedStore((state) => state.developerMode);
   const SidebarContentExtra = useThemeOverride("sidebarContentExtra");
   const SidebarFooterExtra = useThemeOverride("sidebarFooterExtra");
-  const { isEnabled: isCustomMapsEnabled } = useFeatureFlag(
-    "custom-maps",
-    false,
-  );
-  const { isEnabled: isServerBrowserEnabled } = useFeatureFlag(
-    "server-browser",
-    false,
-  );
-  const { isEnabled: isPlayerStatsEnabled } = usePlayerStatsEnabled();
-  const { isEnabled: isModFoundryEnabled } = useFeatureFlag(
-    "mod-foundry",
-    false,
-  );
+  const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
+  const isServerBrowserEnabled = useExperimentalFeature("server-browser");
+  const isPlayerStatsEnabled = useExperimentalFeature("player-stats");
+  const isModFoundryEnabled = useExperimentalFeature("mod-foundry");
 
   const allItems = getSidebarItems(t, developerMode).filter(
     (item) =>

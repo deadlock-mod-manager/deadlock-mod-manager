@@ -1029,12 +1029,8 @@
     "fsUnknown": "Не атрымалася праверыць папку дадаткаў або gameinfo.gi",
     "optional": "неабавязковы",
     "required": "Неабходны",
-    "type": "Тып",
-    "currentValue": "Бягучае значэнне",
     "enabled": "Уключаны",
     "disabled": "Адключаны",
-    "on": "укл",
-    "off": "выкл",
     "none": "Няма",
     "enable": "Уключыць",
     "disable": "Адключыць",
@@ -1575,13 +1571,7 @@
   },
   "featureFlags": {
     "title": "",
-    "description": "",
-    "loginRequired": "",
-    "noExposedFlags": "",
-    "onlyBooleanToggles": "",
-    "toggleSuccess": "",
-    "toggleError": "",
-    "nonBooleanFlag": ""
+    "description": ""
   },
   "game": {
     "createBackup": "",

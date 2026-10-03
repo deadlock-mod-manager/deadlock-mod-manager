@@ -1029,12 +1029,8 @@
     "fsUnknown": "",
     "optional": "isteğe bağlı",
     "required": "",
-    "type": "",
-    "currentValue": "Mevcut değer",
     "enabled": "Etkin",
     "disabled": "Devre Dışı",
-    "on": "",
-    "off": "",
     "none": "",
     "enable": "Etkinleştir",
     "disable": "Devre Dışı Bırak",
@@ -1575,13 +1571,7 @@
   },
   "featureFlags": {
     "title": "",
-    "description": "",
-    "loginRequired": "",
-    "noExposedFlags": "",
-    "onlyBooleanToggles": "",
-    "toggleSuccess": "",
-    "toggleError": "",
-    "nonBooleanFlag": ""
+    "description": ""
   },
   "game": {
     "createBackup": "Yedek oluştur",

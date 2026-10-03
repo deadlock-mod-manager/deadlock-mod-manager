@@ -26,6 +26,28 @@ export type ModsFilters = {
   showFavoritesOnly: boolean;
 };
 
+// Client-side toggles for features that are still settling. Stored locally so
+// anyone can opt in from Settings without signing in.
+export const EXPERIMENTAL_FEATURES = [
+  "custom-maps",
+  "server-browser",
+  "mod-foundry",
+  "player-stats",
+  "profile-management",
+  "profile-sharing",
+] as const;
+
+export type ExperimentalFeature = (typeof EXPERIMENTAL_FEATURES)[number];
+
+const DEFAULT_EXPERIMENTAL_FEATURES: Record<ExperimentalFeature, boolean> = {
+  "custom-maps": false,
+  "server-browser": false,
+  "mod-foundry": true,
+  "player-stats": true,
+  "profile-management": true,
+  "profile-sharing": true,
+};
+
 export type CrosshairFilters = {
   selectedHeroes: string[];
   selectedTags: string[];
@@ -43,6 +65,7 @@ export type UIState = {
   hasCompletedOnboarding: boolean;
   showOccultGeometry: boolean;
   animateOccultGeometry: boolean;
+  experimentalFeatures: Record<ExperimentalFeature, boolean>;
 
   // Plugins
   enabledPlugins: Record<string, boolean>;
@@ -59,6 +82,10 @@ export type UIState = {
   setHasCompletedOnboarding: (completed: boolean) => void;
   setShowOccultGeometry: (value: boolean) => void;
   setAnimateOccultGeometry: (value: boolean) => void;
+  setExperimentalFeature: (
+    feature: ExperimentalFeature,
+    enabled: boolean,
+  ) => void;
   setEnabledPlugin: (id: string, enabled: boolean) => void;
   setPluginSettings: (id: string, value: unknown) => void;
 };
@@ -88,6 +115,7 @@ const DEFAULT_CROSSHAIR_FILTERS: CrosshairFilters = {
 export const uiDeepMergeKeys = [
   "modsFilters",
   "crosshairFilters",
+  "experimentalFeatures",
 ] as const satisfies readonly (keyof UIState)[];
 
 export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
@@ -99,6 +127,7 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   hasCompletedOnboarding: false,
   showOccultGeometry: true,
   animateOccultGeometry: true,
+  experimentalFeatures: DEFAULT_EXPERIMENTAL_FEATURES,
   enabledPlugins: {},
   pluginSettings: {},
 
@@ -156,6 +185,14 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   setAnimateOccultGeometry: (value: boolean) =>
     set(() => ({
       animateOccultGeometry: value,
+    })),
+
+  setExperimentalFeature: (feature: ExperimentalFeature, enabled: boolean) =>
+    set((state) => ({
+      experimentalFeatures: {
+        ...state.experimentalFeatures,
+        [feature]: enabled,
+      },
     })),
 
   setEnabledPlugin: (id: string, enabled: boolean) =>

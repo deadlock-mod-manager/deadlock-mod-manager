@@ -140,25 +140,6 @@ export const getFeatureFlags = async () => {
   return await apiRequest<FeatureFlag[]>("/api/v2/feature-flags");
 };
 
-export const setFeatureFlagUserOverride = async (
-  flagId: string,
-  value: unknown,
-) => {
-  return await apiRequest<{ success: boolean }>(
-    `/api/v2/feature-flags/${flagId}/user-override`,
-    { flagId, value },
-    "PUT",
-  );
-};
-
-export const deleteFeatureFlagUserOverride = async (flagId: string) => {
-  return await apiRequest<{ success: boolean }>(
-    `/api/v2/feature-flags/${flagId}/user-override`,
-    { flagId },
-    "DELETE",
-  );
-};
-
 export const getApiHealth = async () => {
   return await apiRequest<{
     status: string;

@@ -14,7 +14,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useScrollBackButtonContext } from "@/contexts/scroll-back-button-context";
-import { useFeatureFlag } from "@/hooks/use-feature-flags";
+import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useLaunch } from "@/hooks/use-launch";
 import { isGameRunning } from "@/lib/tauri-commands";
 import { STALE_TIME_POLL } from "@/lib/query-constants";
@@ -33,8 +33,7 @@ export const Toolbar = () => {
   const [vanillaAnimating, setVanillaAnimating] = useState(false);
   const [moddedAnimating, setModdedAnimating] = useState(false);
   const { showBackButton, onBackClick } = useScrollBackButtonContext();
-  const { isEnabled: isProfileSharingEnabled } =
-    useFeatureFlag("profile-sharing");
+  const isProfileSharingEnabled = useExperimentalFeature("profile-sharing");
 
   const enabledModsCount = getEnabledModsCount();
 

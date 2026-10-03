@@ -79,7 +79,7 @@ import ErrorBoundary from "@/components/shared/error-boundary";
 import { useAddonAnalysis } from "@/hooks/use-addon-analysis";
 import { useDisableAllMods } from "@/hooks/use-disable-all-mods";
 import { useCheckUpdates } from "@/hooks/use-check-updates";
-import { useFeatureFlag } from "@/hooks/use-feature-flags";
+import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { useSearch } from "@/hooks/use-search";
 import { useModOptions } from "@/hooks/use-mod-options";
@@ -525,10 +525,7 @@ const ModsList = ({
 
 const MyMods = () => {
   const { t } = useTranslation();
-  const { isEnabled: isCustomMapsEnabled } = useFeatureFlag(
-    "custom-maps",
-    false,
-  );
+  const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
   const navigate = useNavigate();
   const mods = usePersistedStore((state) => state.localMods);
   const getOrderedMods = usePersistedStore((state) => state.getOrderedMods);

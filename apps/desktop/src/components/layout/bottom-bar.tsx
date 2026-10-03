@@ -39,7 +39,7 @@ import { useApiStatus } from "@/hooks/use-api-status";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { useCheckForUpdates } from "@/hooks/use-check-for-updates";
 import { useFilesystemStatus } from "@/hooks/use-filesystem-status";
-import { useFeatureFlag } from "@/hooks/use-feature-flags";
+import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useDiscordGamePresenceIndicator } from "@/hooks/use-game-presence-status";
 import { useRelaysHealth } from "@/hooks/use-relays-health";
 import { usePersistedStore } from "@/lib/store";
@@ -291,10 +291,7 @@ export const BottomBar = () => {
   const { status: authStatus } = useAuthStatus();
   const { status: fsStatus } = useFilesystemStatus();
   const { relays } = useRelaysHealth();
-  const { isEnabled: isServerBrowserEnabled } = useFeatureFlag(
-    "server-browser",
-    false,
-  );
+  const isServerBrowserEnabled = useExperimentalFeature("server-browser");
 
   const downloadingCount = localMods.filter(
     (mod) =>

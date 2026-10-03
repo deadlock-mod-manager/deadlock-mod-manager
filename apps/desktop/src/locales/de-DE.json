@@ -1029,12 +1029,8 @@
     "fsUnknown": "",
     "optional": "",
     "required": "Erforderlich",
-    "type": "Typ",
-    "currentValue": "Aktueller Wert",
     "enabled": "Aktiviert",
     "disabled": "Deaktiviert",
-    "on": "",
-    "off": "",
     "none": "Keine",
     "enable": "Aktivieren",
     "disable": "Deaktivieren",
@@ -1575,13 +1571,7 @@
   },
   "featureFlags": {
     "title": "Experimentelle Funktionen",
-    "description": "",
-    "loginRequired": "Sie müssen angemeldet sein, um Feature-Flags zu verwalten",
-    "noExposedFlags": "Derzeit sind keine experimentellen Funktionen verfügbar",
-    "onlyBooleanToggles": "Nur boolesche Feature-Flags können umgeschaltet werden",
-    "toggleSuccess": "",
-    "toggleError": "Feature-Flag konnte nicht umgeschaltet werden",
-    "nonBooleanFlag": "Manuelle Konfiguration erforderlich"
+    "description": ""
   },
   "game": {
     "createBackup": "Backup erstellen",

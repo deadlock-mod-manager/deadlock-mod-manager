@@ -1039,12 +1039,8 @@
     "fsUnknown": "Could not verify addons folder or gameinfo.gi",
     "optional": "optional",
     "required": "Required",
-    "type": "Type",
-    "currentValue": "Current value",
     "enabled": "Enabled",
     "disabled": "Disabled",
-    "on": "on",
-    "off": "off",
     "none": "None",
     "enable": "Enable",
     "disable": "Disable",
@@ -1588,12 +1584,32 @@
   "featureFlags": {
     "title": "Experimental Features",
     "description": "Opt in to experimental features and try new functionality before it's released to everyone.",
-    "loginRequired": "You need to be logged in to manage feature flags",
-    "noExposedFlags": "No experimental features are currently available",
-    "onlyBooleanToggles": "Only boolean feature flags can be toggled",
-    "toggleSuccess": "{{name}} {{state}}",
-    "toggleError": "Failed to toggle feature flag",
-    "nonBooleanFlag": "Manual configuration required"
+    "features": {
+      "custom-maps": {
+        "title": "Custom Maps",
+        "description": "Browse and install custom maps from the Maps page."
+      },
+      "server-browser": {
+        "title": "Server Browser",
+        "description": "Find and join community servers."
+      },
+      "mod-foundry": {
+        "title": "Mod Foundry",
+        "description": "Create and package your own mods."
+      },
+      "player-stats": {
+        "title": "Player Stats",
+        "description": "Show the Stats page and follow live matches in the background."
+      },
+      "profile-management": {
+        "title": "Profile Management",
+        "description": "Create and switch between mod profiles."
+      },
+      "profile-sharing": {
+        "title": "Profile Sharing",
+        "description": "Share mod profiles with others and import shared ones."
+      }
+    }
   },
   "game": {
     "createBackup": "Create Backup",

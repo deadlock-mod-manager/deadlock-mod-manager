@@ -1029,12 +1029,8 @@
     "fsUnknown": "",
     "optional": "オプション",
     "required": "必須",
-    "type": "種類",
-    "currentValue": "現在の値",
     "enabled": "有効",
     "disabled": "無効",
-    "on": "オン",
-    "off": "オフ",
     "none": "なし",
     "enable": "有効化",
     "disable": "無効化",
@@ -1575,13 +1571,7 @@
   },
   "featureFlags": {
     "title": "実験的機能",
-    "description": "実験的機能に参加して、全員にリリースされる前に新機能を試す。",
-    "loginRequired": "機能フラグを管理するにはログインが必要です",
-    "noExposedFlags": "現在利用可能な実験的機能はありません",
-    "onlyBooleanToggles": "ブール型の機能フラグのみ切り替え可能です",
-    "toggleSuccess": "",
-    "toggleError": "機能フラグの切り替えに失敗しました",
-    "nonBooleanFlag": "手動設定が必要です"
+    "description": "実験的機能に参加して、全員にリリースされる前に新機能を試す。"
   },
   "game": {
     "createBackup": "バックアップを作成",

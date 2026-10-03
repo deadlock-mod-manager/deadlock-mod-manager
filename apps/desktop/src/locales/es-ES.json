@@ -1029,12 +1029,8 @@
     "fsUnknown": "",
     "optional": "Opcional",
     "required": "",
-    "type": "",
-    "currentValue": "Valor actual",
     "enabled": "Habilitado",
     "disabled": "Deshabilitado",
-    "on": "",
-    "off": "",
     "none": "",
     "enable": "Habilitar",
     "disable": "Deshabilitar",
@@ -1575,13 +1571,7 @@
   },
   "featureFlags": {
     "title": "Funciones experimentales",
-    "description": "",
-    "loginRequired": "Debes iniciar sesión para gestionar las funciones experimentales",
-    "noExposedFlags": "No hay funciones experimentales disponibles actualmente",
-    "onlyBooleanToggles": "Solo las funciones experimentales booleanas se pueden activar",
-    "toggleSuccess": "",
-    "toggleError": "Error al activar la función experimental",
-    "nonBooleanFlag": "Se requiere configuración manual"
+    "description": ""
   },
   "game": {
     "createBackup": "Crear copia de seguridad",

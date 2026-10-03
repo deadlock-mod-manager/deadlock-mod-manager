@@ -4,10 +4,7 @@ import React, { Suspense } from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import App from "./app";
-import {
-  useFeatureFlag,
-  usePlayerStatsEnabled,
-} from "./hooks/use-feature-flags";
+import { useExperimentalFeature } from "./hooks/use-experimental-feature";
 import { queryClient } from "./lib/client";
 import AddMods from "./pages/add-mods";
 import Crosshairs from "./pages/crosshairs";
@@ -38,7 +35,7 @@ if (import.meta.env.VITE_DMM_E2E_HARNESS === "1") {
 const application = await initializeApplication();
 
 const MapsRouteGate = () => {
-  const { isEnabled } = useFeatureFlag("custom-maps", false);
+  const isEnabled = useExperimentalFeature("custom-maps");
   if (!isEnabled) {
     return <Navigate replace to='/mods' />;
   }
@@ -46,9 +43,7 @@ const MapsRouteGate = () => {
 };
 
 const StatsRouteGate = () => {
-  // On by default, so an unanswered flag request renders the page rather than
-  // bouncing anyone who opens /stats on a cold start - no pending state needed.
-  const { isEnabled } = usePlayerStatsEnabled();
+  const isEnabled = useExperimentalFeature("player-stats");
   if (!isEnabled) {
     return <Navigate replace to='/' />;
   }
@@ -56,7 +51,7 @@ const StatsRouteGate = () => {
 };
 
 const ServersRouteGate = () => {
-  const { isEnabled } = useFeatureFlag("server-browser", false);
+  const isEnabled = useExperimentalFeature("server-browser");
   if (!isEnabled) {
     return <Navigate replace to='/' />;
   }
@@ -64,7 +59,7 @@ const ServersRouteGate = () => {
 };
 
 const FoundryRouteGate = () => {
-  const { isEnabled } = useFeatureFlag("mod-foundry", false);
+  const isEnabled = useExperimentalFeature("mod-foundry");
   if (!isEnabled) {
     return <Navigate replace to='/' />;
   }

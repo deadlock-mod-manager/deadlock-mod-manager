@@ -5,18 +5,6 @@ import type { FeatureFlagDefinition } from "@deadlock-mods/feature-flags";
  */
 export const featureFlagDefinitions: FeatureFlagDefinition[] = [
   {
-    name: "profile-sharing",
-    description: "Enable profile sharing functionality",
-    type: "boolean",
-    defaultValue: false,
-  },
-  {
-    name: "profile-management",
-    description: "Enable profile management features",
-    type: "boolean",
-    defaultValue: false,
-  },
-  {
     name: "mod-download-mirroring",
     description: "Enable mod download mirroring functionality",
     type: "boolean",
@@ -51,25 +39,5 @@ export const featureFlagDefinitions: FeatureFlagDefinition[] = [
     description: "Enable discord plugin functionality",
     type: "boolean",
     defaultValue: true,
-  },
-  {
-    name: "custom-maps",
-    description: "Enable custom maps support",
-    type: "boolean",
-    defaultValue: false,
-  },
-  {
-    name: "server-browser",
-    description: "Enable server browser feature",
-    type: "boolean",
-    defaultValue: false,
-    exposed: true,
-  },
-  {
-    name: "mod-foundry",
-    description: "Enable Mod Foundry for creating and editing skin mods",
-    type: "boolean",
-    defaultValue: false,
-    exposed: true,
   },
 ];

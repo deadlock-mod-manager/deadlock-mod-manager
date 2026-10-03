@@ -1029,12 +1029,8 @@
     "fsUnknown": "",
     "optional": "",
     "required": "",
-    "type": "",
-    "currentValue": "Aktuelle Wert",
     "enabled": "Aktiviert",
     "disabled": "Deaktiviert",
-    "on": "",
-    "off": "",
     "none": "",
     "enable": "Aktiviere",
     "disable": "Deaktiviere",
@@ -1575,13 +1571,7 @@
   },
   "featureFlags": {
     "title": "",
-    "description": "",
-    "loginRequired": "",
-    "noExposedFlags": "",
-    "onlyBooleanToggles": "",
-    "toggleSuccess": "",
-    "toggleError": "",
-    "nonBooleanFlag": ""
+    "description": ""
   },
   "game": {
     "createBackup": "Sicherig erstelle",
