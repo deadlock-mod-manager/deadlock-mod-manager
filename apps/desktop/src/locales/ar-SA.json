@@ -1041,6 +1041,8 @@
     "open": "فتح"
   },
   "settings": {
+    "searchPlaceholder": "البحث في الإعدادات",
+    "searchNoResults": "لا توجد إعدادات مطابقة",
     "language": "اللغة",
     "languageDescription": "اختر لغتك المفضلة لواجهة التطبيق",
     "languageSettings": "إعدادات اللغة",

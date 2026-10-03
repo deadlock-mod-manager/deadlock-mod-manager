@@ -1041,6 +1041,8 @@
     "open": ""
   },
   "settings": {
+    "searchPlaceholder": "Iistellige dursueche",
+    "searchNoResults": "Kei passendi Iistellige",
     "language": "Sprache",
     "languageDescription": "Wähled Sie Ihri bevorzugti Sprach für d'Awendigsoberflächi",
     "languageSettings": "Sprachistellige",

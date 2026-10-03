@@ -1041,6 +1041,8 @@
     "open": "Адкрыць"
   },
   "settings": {
+    "searchPlaceholder": "Пошук налад",
+    "searchNoResults": "Няма адпаведных налад",
     "language": "Мова",
     "languageDescription": "Выберыце пажаданую мову для інтэрфейсу праграмы",
     "languageSettings": "Налады мовы",

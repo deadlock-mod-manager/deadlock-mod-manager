@@ -1041,6 +1041,8 @@
     "open": "開く"
   },
   "settings": {
+    "searchPlaceholder": "設定を検索",
+    "searchNoResults": "一致する設定がありません",
     "language": "言語",
     "languageDescription": "アプリの使用言語を選択してください",
     "languageSettings": "言語設定",

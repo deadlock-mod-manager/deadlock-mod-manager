@@ -1051,6 +1051,8 @@
     "open": "Open"
   },
   "settings": {
+    "searchPlaceholder": "Search settings",
+    "searchNoResults": "No matching settings",
     "language": "Language",
     "languageDescription": "Choose your preferred language for the application interface",
     "languageSettings": "Language Settings",

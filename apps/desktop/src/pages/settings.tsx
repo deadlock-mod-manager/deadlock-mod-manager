@@ -42,7 +42,7 @@ import { DiscordLogoIcon } from "@phosphor-icons/react";
 import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { WarningCircle } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router";
@@ -76,6 +76,7 @@ import Section, { SectionSkeleton } from "@/components/settings/section";
 import SettingCard, {
   SettingCardSkeleton,
 } from "@/components/settings/setting-card";
+import { SettingsSearch } from "@/components/settings/settings-search";
 import SystemSettings from "@/components/settings/system-settings";
 import ThemeSwitcher from "@/components/settings/theme-switcher";
 import { UpdateChannelSelect } from "@/components/settings/update-channel-select";
@@ -89,6 +90,7 @@ import { GITHUB_REPO, SortType } from "@/lib/constants";
 import logger from "@/lib/logger";
 import { STALE_TIME_LOCAL } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
+import type { SettingsSearchResult } from "@/lib/settings-search";
 import { cn } from "@/lib/utils";
 import ThemesPlugin from "@/plugins/themes/index";
 import type { LocalSetting } from "@/types/settings";
@@ -143,6 +145,7 @@ const getAutoexecConfig = async () => {
 };
 
 const CONDEBUG_LAUNCH_OPTION_ID = "condebug-launch-option";
+const SEARCH_HIGHLIGHT_MS = 1600;
 
 type SettingsNavItemProps = {
   value: string;
@@ -453,12 +456,41 @@ const CustomSettings = ({ value }: { value?: string }) => {
     (location.state as { activeTab?: string } | null)?.activeTab ??
     "launch-options";
   const [activeTab, setActiveTab] = useState(initialTab);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (value) {
       setActiveTab(value);
     }
   }, [value]);
+
+  const goToSearchResult = ({ tab, sectionId }: SettingsSearchResult) => {
+    setActiveTab(tab);
+    // Radix mounts a newly selected tab's content one render late.
+    requestAnimationFrame(() => {
+      const content = contentRef.current;
+      const section = sectionId
+        ? content?.querySelector<HTMLElement>(
+            `[data-settings-section="${sectionId}"]`,
+          )
+        : null;
+      if (!section) {
+        content?.scrollTo({ top: 0 });
+        return;
+      }
+      section.scrollIntoView({ behavior: "smooth", block: "start" });
+      section.animate(
+        {
+          boxShadow: [
+            "0 0 0 2px hsl(var(--primary) / 0.6)",
+            "0 0 0 2px hsl(var(--primary) / 0)",
+          ],
+        },
+        { duration: SEARCH_HIGHLIGHT_MS, easing: "ease-in" },
+      );
+    });
+  };
+
   // Hooks für Default Sort
   const defaultSort = usePersistedStore((s) => s.defaultSort);
   const setDefaultSort = usePersistedStore((s) => s.setDefaultSort);
@@ -551,89 +583,93 @@ const CustomSettings = ({ value }: { value?: string }) => {
         onValueChange={setActiveTab}
         value={activeTab}>
         <div className='w-52 shrink-0 min-h-0 overflow-y-auto pr-1'>
-          <TabsList className='h-fit w-full flex-col items-stretch gap-1 bg-transparent p-2'>
-            <SettingsNavGroup label={t("settings.label.game")}>
-              <SettingsNavItem
-                icon={Settings}
-                label={t("settings.launchOptions")}
-                value='launch-options'
-              />
-              <SettingsNavItem
-                icon={FileCog}
-                label={t("settings.autoexec")}
-                value='autoexec'
-              />
-              <SettingsNavItem
-                icon={GamepadIcon}
-                label={t("settings.game")}
-                value='game'
-              />
-            </SettingsNavGroup>
+          <SettingsSearch onSelect={goToSearchResult}>
+            <TabsList className='h-fit w-full flex-col items-stretch gap-1 bg-transparent p-2'>
+              <SettingsNavGroup label={t("settings.label.game")}>
+                <SettingsNavItem
+                  icon={Settings}
+                  label={t("settings.launchOptions")}
+                  value='launch-options'
+                />
+                <SettingsNavItem
+                  icon={FileCog}
+                  label={t("settings.autoexec")}
+                  value='autoexec'
+                />
+                <SettingsNavItem
+                  icon={GamepadIcon}
+                  label={t("settings.game")}
+                  value='game'
+                />
+              </SettingsNavGroup>
 
-            <SettingsNavGroup label={t("settings.label.application")}>
-              <SettingsNavItem
-                icon={MonitorIcon}
-                label={t("settings.application")}
-                value='application'
-              />
-              <SettingsNavItem
-                icon={PaletteIcon}
-                label={t("settings.themes")}
-                value='themes'
-              />
-              <SettingsNavItem
-                icon={Globe}
-                label={t("settings.network")}
-                value='network'
-              />
-              <SettingsNavItem
-                icon={PlugIcon}
-                label={t("settings.plugin")}
-                value='plugin'
-              />
-              <SettingsNavItem
-                icon={DiscordLogoIcon}
-                label={t("settings.discord")}
-                value='discord'
-              />
-            </SettingsNavGroup>
+              <SettingsNavGroup label={t("settings.label.application")}>
+                <SettingsNavItem
+                  icon={MonitorIcon}
+                  label={t("settings.application")}
+                  value='application'
+                />
+                <SettingsNavItem
+                  icon={PaletteIcon}
+                  label={t("settings.themes")}
+                  value='themes'
+                />
+                <SettingsNavItem
+                  icon={Globe}
+                  label={t("settings.network")}
+                  value='network'
+                />
+                <SettingsNavItem
+                  icon={PlugIcon}
+                  label={t("settings.plugin")}
+                  value='plugin'
+                />
+                <SettingsNavItem
+                  icon={DiscordLogoIcon}
+                  label={t("settings.discord")}
+                  value='discord'
+                />
+              </SettingsNavGroup>
 
-            <SettingsNavGroup label={t("settings.label.advanced")}>
-              <SettingsNavItem
-                icon={WrenchIcon}
-                label={t("settings.tools")}
-                value='tools'
-              />
-              <SettingsNavItem
-                icon={Archive}
-                label={t("settings.backups")}
-                value='backups'
-              />
-              <SettingsNavItem
-                icon={ScrollTextIcon}
-                label={t("settings.logging")}
-                value='logging'
-              />
-              <SettingsNavItem
-                icon={FlagIcon}
-                label={t("settings.experimental")}
-                value='experimental'
-              />
-              <SettingsNavItem
-                icon={ShieldIcon}
-                label={t("settings.privacy")}
-                value='privacy'
-              />
-              <SettingsNavItem
-                icon={InfoIcon}
-                label={t("settings.information")}
-                value='about'
-              />
-            </SettingsNavGroup>
-          </TabsList>
+              <SettingsNavGroup label={t("settings.label.advanced")}>
+                <SettingsNavItem
+                  icon={WrenchIcon}
+                  label={t("settings.tools")}
+                  value='tools'
+                />
+                <SettingsNavItem
+                  icon={Archive}
+                  label={t("settings.backups")}
+                  value='backups'
+                />
+                <SettingsNavItem
+                  icon={ScrollTextIcon}
+                  label={t("settings.logging")}
+                  value='logging'
+                />
+                <SettingsNavItem
+                  icon={FlagIcon}
+                  label={t("settings.experimental")}
+                  value='experimental'
+                />
+                <SettingsNavItem
+                  icon={ShieldIcon}
+                  label={t("settings.privacy")}
+                  value='privacy'
+                />
+                <SettingsNavItem
+                  icon={InfoIcon}
+                  label={t("settings.information")}
+                  value='about'
+                />
+              </SettingsNavGroup>
+            </TabsList>
+          </SettingsSearch>
         </div>
 
-        <div className='min-h-0 flex-1 overflow-y-auto px-1 pr-4'>
+        <div
+          className='min-h-0 flex-1 overflow-y-auto px-1 pr-4'
+          ref={contentRef}>
           <TabsContent className='mt-0 space-y-4' value='launch-options'>
             <Suspense
               fallback={
@@ -677,24 +713,28 @@ const CustomSettings = ({ value }: { value?: string }) => {
           <TabsContent className='mt-0 space-y-4' value='game'>
             <Section
               description={t("settings.gamePathDescription")}
+              searchId='game-path'
               title={t("settings.gamePath")}>
               <GamePathSettings />
             </Section>
 
             <Section
               description={t("settings.steamPathSectionDescription")}
+              searchId='steam-path'
               title={t("settings.steamPath")}>
               <SteamPathSettings />
             </Section>
 
             <Section
               description={t("settings.gameConfigDescription")}
+              searchId='game-config'
               title={t("settings.gameConfigManagement")}>
               <GameInfoManagement />
             </Section>
 
             <Section
               description={t("heroParser.settingsDescription")}
+              searchId='hero-parser'
               title={t("heroParser.settingsTitle")}>
               <HeroParserSettings />
             </Section>
@@ -711,6 +751,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
           <TabsContent className='mt-0 space-y-4' value='application'>
             <Section
               description={t("settings.systemSettingsDescription")}
+              searchId='system'
               title={t("settings.systemSettings")}>
               <div className='grid grid-cols-1 gap-4'>
                 <SystemSettings />
@@ -725,6 +766,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
 
             <Section
               description={t("settings.appearanceDescription")}
+              searchId='appearance'
               title={t("settings.appearance")}>
               <div className='flex flex-col gap-4'>
                 <div className='flex items-center justify-between'>
@@ -749,12 +791,14 @@ const CustomSettings = ({ value }: { value?: string }) => {
 
             <Section
               description={t("settings.languageSettingsDescription")}
+              searchId='language'
               title={t("settings.languageSettings")}>
               <LanguageSettings />
             </Section>
 
             <Section
               description={t("settings.defaultSortDescription")}
+              searchId='default-sort'
               title={t("settings.defaultSortValue")}>
               <div className='flex flex-col gap-2'>
                 <Label className='font-bold text-sm' id='default-sort-label'>
@@ -790,6 +834,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
 
             <Section
               description={t("settings.heroSkinsDescription")}
+              searchId='hero-skins'
               title={t("settings.heroSkins")}>
               <HeroSkinsSettings />
             </Section>
@@ -798,12 +843,14 @@ const CustomSettings = ({ value }: { value?: string }) => {
           <TabsContent className='mt-0 space-y-4' value='network'>
             <Section
               description={t("settings.networkDescription")}
+              searchId='fileserver'
               title={t("settings.fileserverSectionTitle")}>
               <FileserverSettings />
             </Section>
 
             <Section
               description={t("settings.proxyDescription")}
+              searchId='proxy'
               title={t("settings.proxy")}>
               <ProxySettings />
             </Section>
@@ -926,6 +973,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
           <TabsContent className='mt-0 space-y-4' value='privacy'>
             <Section
               description={t("privacy.description")}
+              searchId='privacy'
               title={t("privacy.title")}>
               <div className='grid grid-cols-1 gap-4'>
                 <PrivacySettings />
@@ -934,6 +982,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
 
             <Section
               description={t("matchSync.description")}
+              searchId='match-sync'
               title={t("matchSync.title")}>
               <MatchSyncSettings />
             </Section>

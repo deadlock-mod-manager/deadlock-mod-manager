@@ -1041,6 +1041,8 @@
     "open": ""
   },
   "settings": {
+    "searchPlaceholder": "Търсене в настройките",
+    "searchNoResults": "Няма съвпадащи настройки",
     "language": "Език",
     "languageDescription": "Изберете предпочитания език за интерфейса на приложението",
     "languageSettings": "Опции за Език",

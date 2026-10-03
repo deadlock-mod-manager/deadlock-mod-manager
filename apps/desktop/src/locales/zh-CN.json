@@ -1041,6 +1041,8 @@
     "open": "打开"
   },
   "settings": {
+    "searchPlaceholder": "搜索设置",
+    "searchNoResults": "没有匹配的设置",
     "language": "语言",
     "languageDescription": "选择应用程序界面的首选语言",
     "languageSettings": "语言设置",

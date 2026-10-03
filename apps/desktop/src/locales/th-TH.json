@@ -1041,6 +1041,8 @@
     "open": ""
   },
   "settings": {
+    "searchPlaceholder": "ค้นหาการตั้งค่า",
+    "searchNoResults": "ไม่พบการตั้งค่าที่ตรงกัน",
     "language": "ภาษา",
     "languageDescription": "เลือกภาษาที่คุณต้องการสำหรับส่วนติดต่อผู้ใช้ของแอปพลิเคชัน",
     "languageSettings": "การตั้งค่าภาษา",

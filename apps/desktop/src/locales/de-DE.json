@@ -1041,6 +1041,8 @@
     "open": "Öffnen"
   },
   "settings": {
+    "searchPlaceholder": "Einstellungen durchsuchen",
+    "searchNoResults": "Keine passenden Einstellungen",
     "language": "Sprache",
     "languageDescription": "Wählen Sie Ihre bevorzugte Sprache für die Anwendungsoberfläche",
     "languageSettings": "Spracheinstellungen",

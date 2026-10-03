@@ -1041,6 +1041,8 @@
     "open": ""
   },
   "settings": {
+    "searchPlaceholder": "Buscar ajustes",
+    "searchNoResults": "No hay ajustes que coincidan",
     "language": "Idioma",
     "languageDescription": "Elige tu idioma preferido para la interfaz de la aplicación",
     "languageSettings": "Configuración de Idioma",

@@ -1041,6 +1041,8 @@
     "open": ""
   },
   "settings": {
+    "searchPlaceholder": "Ayarlarda ara",
+    "searchNoResults": "Eşleşen ayar yok",
     "language": "Dil",
     "languageDescription": "Uygulama arayüzü için tercih ettiğiniz dili seçin",
     "languageSettings": "Dil ayarları",

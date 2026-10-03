@@ -1041,6 +1041,8 @@
     "open": "Apri"
   },
   "settings": {
+    "searchPlaceholder": "Cerca nelle impostazioni",
+    "searchNoResults": "Nessuna impostazione corrispondente",
     "language": "Lingua",
     "languageDescription": "Scegli la tua lingua preferita per l'interfaccia dell'applicazione",
     "languageSettings": "Impostazioni Lingua",
