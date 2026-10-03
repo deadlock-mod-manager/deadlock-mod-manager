@@ -1845,6 +1845,21 @@
     "hideMap": "Hide Maps",
     "hideOutdatedBadge": "Hide Outdated",
     "showOutdatedBadge": "Show Outdated",
+    "added": "Added",
+    "addedLabel": "Added:",
+    "addedFrom": "From",
+    "addedTo": "To",
+    "pickDate": "Pick a date",
+    "addedBetween": "{{from}} – {{to}}",
+    "addedSince": "since {{date}}",
+    "addedUntil": "until {{date}}",
+    "addedPeriod": {
+      "any": "Any time",
+      "today": "Today",
+      "week": "This week",
+      "month": "This month",
+      "custom": "Custom range"
+    },
     "clearAll": "Clear all"
   },
   "sorting": {

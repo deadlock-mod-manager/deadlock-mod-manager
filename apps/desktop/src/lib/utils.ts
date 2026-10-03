@@ -6,10 +6,19 @@ import {
   formatByteSize,
 } from "@deadlock-mods/shared";
 import { invoke } from "@tauri-apps/api/core";
+import {
+  addDays,
+  format,
+  getUnixTime,
+  parse,
+  startOfDay,
+  subDays,
+} from "date-fns";
 import { platform } from "@tauri-apps/plugin-os";
 
 import { type LocalMod, ModStatus } from "@/types/mods";
 import type { LocalSetting } from "@/types/settings";
+import type { AddedFilter } from "@/lib/store/slices/ui";
 import { AUTOEXEC_LAUNCH_OPTION_ID } from "@/lib/autoexec/constants";
 import {
   MOD_OUTDATED_CUTOFF_SECONDS,
@@ -124,6 +133,47 @@ export const getTimePeriodCutoff = (period: TimePeriod): Date | null => {
       return new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
   }
 };
+
+export const ADDED_DATE_FORMAT = "yyyy-MM-dd";
+
+/** Parses an "Added" filter date (YYYY-MM-DD) as local midnight. */
+export const parseAddedDate = (date: string): Date | undefined =>
+  date ? parse(date, ADDED_DATE_FORMAT, new Date()) : undefined;
+
+/** Formats an "Added" filter date for display, e.g. "Sep 1, 2026". */
+export const formatAddedDate = (date: string): string => {
+  const parsed = parseAddedDate(date);
+  return parsed ? format(parsed, "MMM d, yyyy") : "";
+};
+
+// A `[after, before)` range in unix seconds; `null` leaves that side open.
+type AddedRange = { after: number | null; before: number | null };
+
+export const getAddedRange = (filter: AddedFilter): AddedRange => {
+  switch (filter.period) {
+    case "today":
+      return { after: getUnixTime(startOfDay(new Date())), before: null };
+    case "week":
+      return { after: getUnixTime(subDays(new Date(), 7)), before: null };
+    case "month":
+      return { after: getUnixTime(subDays(new Date(), 30)), before: null };
+    case "custom": {
+      const from = parseAddedDate(filter.from);
+      const to = parseAddedDate(filter.to);
+      return {
+        after: from ? getUnixTime(from) : null,
+        // `to` is inclusive, so the range ends at the next local midnight.
+        before: to ? getUnixTime(addDays(to, 1)) : null,
+      };
+    }
+    default:
+      return { after: null, before: null };
+  }
+};
+
+export const isAddedFilterActive = (filter: AddedFilter): boolean =>
+  filter.period !== "any" &&
+  (filter.period !== "custom" || Boolean(filter.from || filter.to));
 
 export const isModOutdated = (mod: ModDto): boolean => {
   const modUpdatedDate = new Date(mod.remoteUpdatedAt);

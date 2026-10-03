@@ -15,16 +15,18 @@ import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { HeroIcon } from "@/components/heroes/hero-icon";
 import { usePersistedStore } from "@/lib/store";
-import { cn } from "@/lib/utils";
+import { cn, formatAddedDate, isAddedFilterActive } from "@/lib/utils";
 import {
   getModCategoryDisplayName,
   SortType,
   TimePeriod,
 } from "@/lib/constants";
-import type {
-  AudioQuickFilter,
-  FilterMode,
-  MapQuickFilter,
+import {
+  type AddedFilter,
+  type AudioQuickFilter,
+  DEFAULT_ADDED_FILTER,
+  type FilterMode,
+  type MapQuickFilter,
 } from "@/lib/store/slices/ui";
 import FiltersDropdown from "./filters-dropdown";
 
@@ -60,6 +62,8 @@ type SearchBarProps = {
   showFavoritesOnly?: boolean;
   onShowFavoritesOnlyChange?: (value: boolean) => void;
   hideMapFilter?: boolean;
+  addedFilter?: AddedFilter;
+  onAddedFilterChange?: (value: AddedFilter) => void;
 };
 
 const SearchBar = ({
@@ -94,8 +98,11 @@ const SearchBar = ({
   showFavoritesOnly = false,
   onShowFavoritesOnlyChange,
   hideMapFilter,
+  addedFilter,
+  onAddedFilterChange,
 }: SearchBarProps) => {
   const { t } = useTranslation();
+  const addedActive = addedFilter ? isAddedFilterActive(addedFilter) : false;
   const effectiveTimePeriod = timePeriod ?? TimePeriod.ALL_TIME;
   const favoritesCount = usePersistedStore((state) => state.favorites.length);
 
@@ -126,6 +133,19 @@ const SearchBar = ({
     onTimePeriodChange?.(TimePeriod.ALL_TIME);
     onFilterModeChange("include");
     onShowFavoritesOnlyChange?.(false);
+    onAddedFilterChange?.(DEFAULT_ADDED_FILTER);
+  };
+
+  const addedFilterLabel = (filter: AddedFilter) => {
+    if (filter.period !== "custom") {
+      return t(`filters.addedPeriod.${filter.period}`);
+    }
+    const from = formatAddedDate(filter.from);
+    const to = formatAddedDate(filter.to);
+    if (from && to) return t("filters.addedBetween", { from, to });
+    return from
+      ? t("filters.addedSince", { date: from })
+      : t("filters.addedUntil", { date: to });
   };
 
   const hasActiveFilters =
@@ -136,6 +156,7 @@ const SearchBar = ({
     (!hideMapFilter && mapQuickFilter !== "off") ||
     hideOutdated ||
     showFavoritesOnly ||
+    addedActive ||
     (showTimePeriodControl && effectiveTimePeriod !== TimePeriod.ALL_TIME);
 
   return (
@@ -172,6 +193,8 @@ const SearchBar = ({
             hideNSFW={hideNSFW}
             hideOutdated={hideOutdated}
             hideMapFilter={hideMapFilter}
+            addedFilter={addedFilter}
+            onAddedFilterChange={onAddedFilterChange}
           />
         </div>
         {(showTimePeriodControl || showSortControl || showFavoritesFilter) && (
@@ -362,6 +385,18 @@ const SearchBar = ({
                 </button>
               </Badge>
             )}
+
+          {addedFilter && addedActive && (
+            <Badge className='flex items-center gap-1' variant='secondary'>
+              {t("filters.addedLabel")} {addedFilterLabel(addedFilter)}
+              <button
+                className='ml-1 rounded-full p-0.5 hover:bg-muted'
+                onClick={() => onAddedFilterChange?.(DEFAULT_ADDED_FILTER)}
+                type='button'>
+                <X className='h-3 w-3' />
+              </button>
+            </Badge>
+          )}
 
           {showFavoritesOnly && (
             <Badge className='flex items-center gap-1' variant='secondary'>

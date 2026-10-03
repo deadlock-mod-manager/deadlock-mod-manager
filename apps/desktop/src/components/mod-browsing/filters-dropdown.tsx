@@ -9,11 +9,14 @@ import {
 import { Label } from "@deadlock-mods/ui/components/label";
 import { Switch } from "@deadlock-mods/ui/components/switch";
 import { useTranslation } from "react-i18next";
+import { isAddedFilterActive } from "@/lib/utils";
 import type {
+  AddedFilter as AddedFilterValue,
   AudioQuickFilter,
   FilterMode,
   MapQuickFilter,
 } from "@/lib/store/slices/ui";
+import AddedFilter from "./added-filter";
 import CategoryFilter from "./category-filter";
 import { FilterCountIcon } from "./filter-count-icon";
 import HeroFilter from "./hero-filter";
@@ -35,6 +38,8 @@ type FiltersDropdownProps = {
   filterMode: FilterMode;
   onFilterModeChange: (filterMode: FilterMode) => void;
   hideMapFilter?: boolean;
+  addedFilter?: AddedFilterValue;
+  onAddedFilterChange?: (value: AddedFilterValue) => void;
 };
 
 const FiltersDropdown = ({
@@ -54,22 +59,27 @@ const FiltersDropdown = ({
   filterMode,
   onFilterModeChange,
   hideMapFilter,
+  addedFilter,
+  onAddedFilterChange,
 }: FiltersDropdownProps) => {
   const { t } = useTranslation();
+  const addedActive = addedFilter ? isAddedFilterActive(addedFilter) : false;
   const hasActiveFilters =
     selectedCategories.length > 0 ||
     selectedHeroes.length > 0 ||
     hideNSFW ||
     audioQuickFilter !== "off" ||
     (!hideMapFilter && mapQuickFilter !== "off") ||
-    hideOutdated;
+    hideOutdated ||
+    addedActive;
   const totalActiveFilters =
     selectedCategories.length +
     selectedHeroes.length +
     (hideNSFW ? 1 : 0) +
     (audioQuickFilter !== "off" ? 1 : 0) +
     (!hideMapFilter && mapQuickFilter !== "off" ? 1 : 0) +
-    (hideOutdated ? 1 : 0);
+    (hideOutdated ? 1 : 0) +
+    (addedActive ? 1 : 0);
 
   return (
     <DropdownMenu>
@@ -111,6 +121,9 @@ const FiltersDropdown = ({
           onHeroesChange={onHeroesChange}
           selectedHeroes={selectedHeroes}
         />
+        {addedFilter && onAddedFilterChange && (
+          <AddedFilter onChange={onAddedFilterChange} value={addedFilter} />
+        )}
         <DropdownMenuSeparator />
         <div className='space-y-2'>
           <Label className='font-medium text-sm'>

@@ -187,6 +187,7 @@ describe("persisted store integration with real production fixture", () => {
     expect(s.modsFilters).toEqual({
       ...seededState.modsFilters,
       showFavoritesOnly: false,
+      addedFilter: { period: "any", from: "", to: "" },
     });
     expect(s.crosshairFilters).toEqual(seededState.crosshairFilters);
     expect(s.linuxGpuOptimization).toBe(seededState.linuxGpuOptimization);
