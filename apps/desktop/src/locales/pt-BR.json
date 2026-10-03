@@ -847,6 +847,7 @@
     "vpkCount": ""
   },
   "mods": {
+    "invalidDeepLink": "",
     "manageOrder": "Alterar Ordem dos Mods",
     "searchPlaceholder": "Buscar Mods",
     "noPreviewAvailable": "Prévia Indisponível",
@@ -867,6 +868,14 @@
     "subtitle": "Atualizado a cada hora, com novos mods adicionados a cada hora.",
     "mapsSubtitle": "",
     "mapsWarning": "",
+    "catalogSyncing": "",
+    "catalogSyncTitle": "",
+    "catalogSyncPercentage": "",
+    "catalogSyncDetails": "",
+    "catalogSyncCount": "",
+    "catalogSyncFailed": "",
+    "catalogSyncRetryHint": "",
+    "catalogStale": "",
     "noModsFound": "Nenhum mod encontrado",
     "noModsMatchFilters": "Nenhum mod corresponde a sua pesquisa e filtros",
     "noModsAvailable": "Nenhum mod disponível",
@@ -958,6 +967,7 @@
     "failedToOpenForumPost": ""
   },
   "warnings": {
+    "outdatedDescription": "",
     "obsoleteLabel": "Obsoleto",
     "obsoleteDescription": "Este mod não está mais disponível na loja de mods e pode não funcionar com a versão atual do jogo.",
     "staleModDescription": "",
@@ -1037,8 +1047,8 @@
     "open": ""
   },
   "settings": {
-    "searchPlaceholder": "Pesquisar configurações",
-    "searchNoResults": "Nenhuma configuração correspondente",
+    "searchPlaceholder": "",
+    "searchNoResults": "",
     "language": "Idiomas",
     "languageDescription": "Selecione o idioma desejado para a aplicação",
     "languageSettings": "Configurações de Idiomas",
@@ -1147,6 +1157,8 @@
     "openGameFolder": "Abrir Pasta do Jogo",
     "openModsFolder": "Abrir Pasta de Mods",
     "openModsDataFolder": "",
+    "clearCatalog": "",
+    "clearCatalogDescription": "",
     "clearDownloadCache": "",
     "clearDownloadCacheDescription": "",
     "confirmClearDownloadCache": "",
@@ -1571,7 +1583,33 @@
   },
   "featureFlags": {
     "title": "",
-    "description": ""
+    "description": "",
+    "features": {
+      "custom-maps": {
+        "title": "",
+        "description": ""
+      },
+      "server-browser": {
+        "title": "",
+        "description": ""
+      },
+      "mod-foundry": {
+        "title": "",
+        "description": ""
+      },
+      "player-stats": {
+        "title": "",
+        "description": ""
+      },
+      "profile-management": {
+        "title": "",
+        "description": ""
+      },
+      "profile-sharing": {
+        "title": "",
+        "description": ""
+      }
+    }
   },
   "game": {
     "createBackup": "Criar Backup",
@@ -1650,7 +1688,8 @@
       "reads": "",
       "sends": "",
       "limit": "",
-      "risk": ""
+      "risk": "",
+      "summary": ""
     },
     "enable": {
       "title": "",
@@ -1706,6 +1745,12 @@
     "blurStrengthDescription": "Define o quanto o conteúdo adulto será desfocado quando visível (em pixels).",
     "rememberPerItemChoices": "Lembrar escolhas por item",
     "rememberPerItemChoicesDescription": "Memoriza quando você optar por mostrar ou ocultar itens adultos específicos.",
+    "savedPerItemChoices": "",
+    "savedPerItemChoicesDescription_one": "",
+    "savedPerItemChoicesDescription_other": "",
+    "clearPerItemChoices": "",
+    "clearPerItemChoicesConfirm_one": "",
+    "clearPerItemChoicesConfirm_other": "",
     "telemetryTitle": "Análise de Uso",
     "analyticsEnabled": "",
     "analyticsEnabledDescription": "Ajude a melhorar a aplicação enviando estatísticas de uso anônimas e análise de recursos"
@@ -1717,7 +1762,8 @@
   },
   "branding": {
     "nightlyBuild": "",
-    "fullBuildVersion": ""
+    "fullBuildVersion": "",
+    "byAuthor": ""
   },
   "about": {
     "title": "Sobre",
@@ -1805,7 +1851,34 @@
     "hideMap": "",
     "hideOutdatedBadge": "",
     "showOutdatedBadge": "",
-    "clearAll": "Limpar Tudo"
+    "added": "",
+    "addedLabel": "",
+    "addedFrom": "",
+    "addedTo": "",
+    "pickDate": "",
+    "addedBetween": "",
+    "addedSince": "",
+    "addedUntil": "",
+    "addedPeriod": {
+      "any": "",
+      "today": "",
+      "week": "",
+      "month": "",
+      "custom": ""
+    },
+    "clearAll": "Limpar Tudo",
+    "contentType": "",
+    "contentTypes": {
+      "mod": "",
+      "sound": "",
+      "map": "",
+      "wip": ""
+    },
+    "updated": "",
+    "match": "",
+    "reset": "",
+    "matchIncludeHint": "",
+    "matchExcludeHint": ""
   },
   "sorting": {
     "default": "Padrão",
@@ -2781,6 +2854,32 @@
       "Other": ""
     }
   },
+  "gameConfig": {
+    "resetByUpdateTitle": "",
+    "resetByUpdateBody_one": "",
+    "resetByUpdateBody_other": "",
+    "detachedTitle": "",
+    "detachedBody_one": "",
+    "detachedBody_other": "",
+    "updatedTitle": "",
+    "updatedBody": "",
+    "reapply": "",
+    "reapplying": "",
+    "reapplied": "",
+    "reapplyFailed": "",
+    "patchNotes": "",
+    "dismiss": ""
+  },
+  "patchNotes": {
+    "title": "",
+    "allOnSteam": "",
+    "kindPatch": "",
+    "kindAnnouncement": "",
+    "openOnSteam": "",
+    "read": "",
+    "loadFailed": "",
+    "empty": ""
+  },
   "debug": {
     "title": "Depuração",
     "description": "Ferramentas de depuração e utilitários para desenvolvimento e solução de problemas.",
@@ -2905,6 +3004,12 @@
     "importDescription": "Digite um ID de Perfil para importar um perfil compartilhado de outro usuário.",
     "importPreview": "Visualização de Importação do Perfil",
     "importPreviewDescription": "Revise o conteúdo do perfil antes de importar. Escolha como salvar este perfil.",
+    "legacyIdentityTitle": "",
+    "legacyIdentityDescription": "",
+    "legacyIdentityPlaceholder": "",
+    "legacyIdentityRequired": "",
+    "submissionTypeMod": "",
+    "submissionTypeSound": "",
     "profileIdPlaceholder": "Digite ID do Perfil (ex., abc123def456)",
     "profileIdRequired": "ID do Perfil é obrigatório",
     "importSuccess": "Perfil importado com sucesso!",
@@ -2993,6 +3098,11 @@
     "checkingForUpdate": "",
     "noUpdateAvailable": "",
     "checkUpdateError": "",
+    "changelog": {
+      "title": "",
+      "latest": "",
+      "loadMore": ""
+    },
     "vpkReplacement": {
       "title": "Substituir Arquivos VPK",
       "description": "Substituir arquivos de mod para iteração rápida durante o desenvolvimento",

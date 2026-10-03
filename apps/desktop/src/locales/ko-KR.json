@@ -847,6 +847,7 @@
     "vpkCount": "{{count}} VPK"
   },
   "mods": {
+    "invalidDeepLink": "",
     "manageOrder": "모드 순서 변경",
     "searchPlaceholder": "모드 검색",
     "noPreviewAvailable": "미리보기를 사용할 수 없습니다.",
@@ -867,6 +868,14 @@
     "subtitle": "매시간 업데이트되며, 매시간 새로운 모드가 추가됩니다.",
     "mapsSubtitle": "Deadlock의 맞춤형 지도를 찾아보세요",
     "mapsWarning": "사용자 정의 지도는 실험적이며 작성자가 지도를 패키지하는 방법에 따라 크게 달라집니다. 모드 관리자를 통해 모든 맵이 기본적으로 작동하는 것은 아닙니다.",
+    "catalogSyncing": "",
+    "catalogSyncTitle": "",
+    "catalogSyncPercentage": "",
+    "catalogSyncDetails": "",
+    "catalogSyncCount": "",
+    "catalogSyncFailed": "",
+    "catalogSyncRetryHint": "",
+    "catalogStale": "",
     "noModsFound": "모드를 찾을 수 없습니다",
     "noModsMatchFilters": "현재 검색 및 필터와 일치하는 모드가 없습니다.",
     "noModsAvailable": "사용 가능한 모드가 없습니다.",
@@ -958,6 +967,7 @@
     "failedToOpenForumPost": "포럼 게시물을 열지 못했습니다."
   },
   "warnings": {
+    "outdatedDescription": "",
     "obsoleteLabel": "더 이상 사용되지 않음",
     "obsoleteDescription": "이 모드는 더 이상 모드 스토어에서 사용할 수 없으며 현재 게임 버전에서는 작동하지 않을 수 있습니다.",
     "staleModDescription": "이 모드에는 {{count}}개의 해결되지 않은 보고서가 있으며 {{date}} 이후 업데이트되지 않았습니다. 현재 게임 버전에서는 깨질 수 있습니다.",
@@ -1037,8 +1047,8 @@
     "open": "열려 있는"
   },
   "settings": {
-    "searchPlaceholder": "설정 검색",
-    "searchNoResults": "일치하는 설정이 없습니다",
+    "searchPlaceholder": "",
+    "searchNoResults": "",
     "language": "언어",
     "languageDescription": "애플리케이션 인터페이스에 대해 선호하는 언어를 선택하세요",
     "languageSettings": "언어 설정",
@@ -1147,6 +1157,8 @@
     "openGameFolder": "게임 폴더 열기",
     "openModsFolder": "Mods 폴더 열기",
     "openModsDataFolder": "앱 데이터 폴더 열기",
+    "clearCatalog": "",
+    "clearCatalogDescription": "",
     "clearDownloadCache": "다운로드 캐시 지우기",
     "clearDownloadCacheDescription": "",
     "confirmClearDownloadCache": "이렇게 하면 원격 모드용으로 다운로드한 아카이브와 추출된 파일이 제거됩니다. 로컬 모드는 보존됩니다.",
@@ -1571,7 +1583,33 @@
   },
   "featureFlags": {
     "title": "실험적 기능",
-    "description": "실험적 기능을 선택하고 새로운 기능이 모든 사람에게 출시되기 전에 사용해 보세요."
+    "description": "실험적 기능을 선택하고 새로운 기능이 모든 사람에게 출시되기 전에 사용해 보세요.",
+    "features": {
+      "custom-maps": {
+        "title": "",
+        "description": ""
+      },
+      "server-browser": {
+        "title": "",
+        "description": ""
+      },
+      "mod-foundry": {
+        "title": "",
+        "description": ""
+      },
+      "player-stats": {
+        "title": "",
+        "description": ""
+      },
+      "profile-management": {
+        "title": "",
+        "description": ""
+      },
+      "profile-sharing": {
+        "title": "",
+        "description": ""
+      }
+    }
   },
   "game": {
     "createBackup": "백업 생성",
@@ -1650,7 +1688,8 @@
       "reads": "",
       "sends": "",
       "limit": "",
-      "risk": ""
+      "risk": "",
+      "summary": ""
     },
     "enable": {
       "title": "",
@@ -1706,6 +1745,12 @@
     "blurStrengthDescription": "NSFW 콘텐츠가 표시될 때 흐리게 처리할 정도(픽셀)",
     "rememberPerItemChoices": "항목별 선택 사항 기억",
     "rememberPerItemChoicesDescription": "특정 NSFW 항목을 표시하거나 숨기도록 선택할 때를 기억하십시오.",
+    "savedPerItemChoices": "",
+    "savedPerItemChoicesDescription_one": "",
+    "savedPerItemChoicesDescription_other": "",
+    "clearPerItemChoices": "",
+    "clearPerItemChoicesConfirm_one": "",
+    "clearPerItemChoicesConfirm_other": "",
     "telemetryTitle": "사용량 분석",
     "analyticsEnabled": "구글애널리틱스",
     "analyticsEnabledDescription": "익명의 사용 통계 및 기능 분석을 보내 애플리케이션 개선에 도움을 주세요."
@@ -1717,7 +1762,8 @@
   },
   "branding": {
     "nightlyBuild": "",
-    "fullBuildVersion": ""
+    "fullBuildVersion": "",
+    "byAuthor": ""
   },
   "about": {
     "title": "에 대한",
@@ -1805,7 +1851,34 @@
     "hideMap": "지도 숨기기",
     "hideOutdatedBadge": "오래된 숨기기",
     "showOutdatedBadge": "오래된 표시",
-    "clearAll": "모두 지우기"
+    "added": "",
+    "addedLabel": "",
+    "addedFrom": "",
+    "addedTo": "",
+    "pickDate": "",
+    "addedBetween": "",
+    "addedSince": "",
+    "addedUntil": "",
+    "addedPeriod": {
+      "any": "",
+      "today": "",
+      "week": "",
+      "month": "",
+      "custom": ""
+    },
+    "clearAll": "모두 지우기",
+    "contentType": "",
+    "contentTypes": {
+      "mod": "",
+      "sound": "",
+      "map": "",
+      "wip": ""
+    },
+    "updated": "",
+    "match": "",
+    "reset": "",
+    "matchIncludeHint": "",
+    "matchExcludeHint": ""
   },
   "sorting": {
     "default": "기본",
@@ -2781,6 +2854,32 @@
       "Other": ""
     }
   },
+  "gameConfig": {
+    "resetByUpdateTitle": "",
+    "resetByUpdateBody_one": "",
+    "resetByUpdateBody_other": "",
+    "detachedTitle": "",
+    "detachedBody_one": "",
+    "detachedBody_other": "",
+    "updatedTitle": "",
+    "updatedBody": "",
+    "reapply": "",
+    "reapplying": "",
+    "reapplied": "",
+    "reapplyFailed": "",
+    "patchNotes": "",
+    "dismiss": ""
+  },
+  "patchNotes": {
+    "title": "",
+    "allOnSteam": "",
+    "kindPatch": "",
+    "kindAnnouncement": "",
+    "openOnSteam": "",
+    "read": "",
+    "loadFailed": "",
+    "empty": ""
+  },
   "debug": {
     "title": "디버그",
     "description": "개발 및 문제 해결을 위한 디버그 도구 및 유틸리티입니다.",
@@ -2905,6 +3004,12 @@
     "importDescription": "다른 사용자로부터 공유 프로필을 가져오려면 프로필 ID를 입력하세요.",
     "importPreview": "프로필 미리보기 가져오기",
     "importPreviewDescription": "가져오기 전에 프로필 내용을 검토하세요. 이 프로필을 저장하는 방법을 선택하세요.",
+    "legacyIdentityTitle": "",
+    "legacyIdentityDescription": "",
+    "legacyIdentityPlaceholder": "",
+    "legacyIdentityRequired": "",
+    "submissionTypeMod": "",
+    "submissionTypeSound": "",
     "profileIdPlaceholder": "프로필 ID 입력(예: abc123def456)",
     "profileIdRequired": "프로필 ID가 필요합니다",
     "importSuccess": "프로필을 성공적으로 가져왔습니다!",
@@ -2993,6 +3098,11 @@
     "checkingForUpdate": "확인 중...",
     "noUpdateAvailable": "사용 가능한 업데이트가 없습니다.",
     "checkUpdateError": "업데이트를 확인하지 못했습니다.",
+    "changelog": {
+      "title": "",
+      "latest": "",
+      "loadMore": ""
+    },
     "vpkReplacement": {
       "title": "VPK 파일 교체",
       "description": "개발 중 빠른 반복을 위해 모드 파일 교체",

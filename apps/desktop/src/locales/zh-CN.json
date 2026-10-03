@@ -47,8 +47,8 @@
     "variantsWithCount_other": "",
     "skinCount_one": "{{count}} 个皮肤",
     "skinCount_other": "{{count}} 个皮肤",
-    "modCount_one": "",
-    "modCount_other": "",
+    "modCount_one": "{{count}} 个模组",
+    "modCount_other": "{{count}} 个模组",
     "noSkins": "没有已下载皮肤",
     "noSkinsHint": "要在此处展示皮肤，请先从模组商店下载。若下载后仍未出现，则需在模组库中为对应模组手动配置英雄覆盖。",
     "conflict": "激活了多个皮肤",
@@ -62,27 +62,27 @@
     "emptyTitle": "没有{{hero}}的皮肤",
     "deleteSkin": "删除皮肤",
     "preview": {
-      "title": "",
-      "nothingSelected": "",
-      "placeholder": "",
+      "title": "3D 预览",
+      "nothingSelected": "未选择皮肤",
+      "placeholder": "选择一个皮肤以在 3D 中查看",
       "defaultLabel": "",
-      "previewSkin": "",
+      "previewSkin": "在3D中显示",
       "previewDefault": "",
-      "loading": "",
-      "unsupported": "",
-      "failed": "",
+      "loading": "正在加载模型…",
+      "unsupported": "此 VPK 没有英雄模型。",
+      "failed": "无法解码此皮肤。",
       "failedHint": "",
-      "retry": "",
-      "hide": "",
-      "disabled": "",
+      "retry": "请重试",
+      "hide": "隐藏3D预览",
+      "disabled": "3D预览关闭",
       "disabledHint": "",
-      "enable": ""
+      "enable": "打开预览"
     },
     "modActions": "",
     "removeFromHero": "",
     "removeFromHeroSuccess": "",
-    "deleteMod": "",
-    "extras": "",
+    "deleteMod": "删除模组",
+    "extras": "声音和其他模组",
     "extrasHint": "",
     "extrasCount_one": "",
     "extrasCount_other": "",
@@ -92,8 +92,8 @@
     "assignSearchPlaceholder": "",
     "assignEmpty": "",
     "assignCurrent": "",
-    "assignUnrecognized": "",
-    "assignRemoved": "",
+    "assignUnrecognized": "无英雄",
+    "assignRemoved": "已移除",
     "assignSuccess": ""
   },
   "stats": {
@@ -130,7 +130,7 @@
       "waitingTitle": "暂无进行中的比赛",
       "waitingDescription": "开始一场 Deadlock 比赛后，这里将显示你大厅中的所有玩家。比赛数据从游戏的控制台日志读取，无需手动输入任何内容。",
       "checkNow": "立即检查",
-      "checking": "",
+      "checking": "检查中...",
       "matchId": "比赛{{id}}",
       "lastMatch": "您的上一场比赛",
       "resolving": "正在请求实时数据…",
@@ -214,7 +214,7 @@
       "ofPlayers": "",
       "protection": "",
       "demotionProtectionHint": "",
-      "placementsLabel": "",
+      "placementsLabel": "放置游戏",
       "placementsHint": "",
       "lastRankedMatch": "",
       "protectionAbsorbed": "",
@@ -847,7 +847,7 @@
     "vpkCount": "{{count}} VPK(s)"
   },
   "mods": {
-    "invalidDeepLink": "这个一键下载链接无效。",
+    "invalidDeepLink": "",
     "manageOrder": "更改Mod顺序",
     "searchPlaceholder": "搜索模组",
     "noPreviewAvailable": "暂无预览",
@@ -868,14 +868,14 @@
     "subtitle": "每小时更新，新模组随时添加。",
     "mapsSubtitle": "浏览 Deadlock 的自定义地图",
     "mapsWarning": "自定义地图属于实验性功能，其表现很大程度上取决于作者打包的方式。并非所有地图都能通过模组管理器直接正常运行。",
-    "catalogSyncing": "本地 GameBanana 目录仍在同步。结果会在各页保存后出现。",
-    "catalogSyncTitle": "正在同步 GameBanana 目录……",
-    "catalogSyncPercentage": "{{percentage}}%",
-    "catalogSyncDetails": "同步期间模组详情和图片可能不完整，会随目录更新而出现。",
-    "catalogSyncCount": "已保存 {{count}} 条",
-    "catalogSyncFailed": "目录同步已中断",
-    "catalogSyncRetryHint": "已保存的条目仍然可用。重试以继续同步。",
-    "catalogStale": "暂时无法获取最新数据，正在显示上次保存的 GameBanana 目录。",
+    "catalogSyncing": "",
+    "catalogSyncTitle": "",
+    "catalogSyncPercentage": "",
+    "catalogSyncDetails": "",
+    "catalogSyncCount": "",
+    "catalogSyncFailed": "",
+    "catalogSyncRetryHint": "",
+    "catalogStale": "",
     "noModsFound": "未找到模组",
     "noModsMatchFilters": "没有符合您当前的搜索和筛选条件的模组",
     "noModsAvailable": "暂无可用模组",
@@ -967,7 +967,7 @@
     "failedToOpenForumPost": "打开论坛帖子失败"
   },
   "warnings": {
-    "outdatedDescription": "此模组自 City Never Sleeps 更新（2026年9月29日）以来未再更新，可能无法正常工作。",
+    "outdatedDescription": "",
     "obsoleteLabel": "已淘汰",
     "obsoleteDescription": "此模组已无法在模组商店获取，可能无法在当前游戏版本中正常运行。",
     "staleModDescription": "此模组有{{count}}条未解决的报告，且自{{date}}以来未更新。可能不兼容当前游戏版本。",
@@ -1047,8 +1047,8 @@
     "open": "打开"
   },
   "settings": {
-    "searchPlaceholder": "搜索设置",
-    "searchNoResults": "没有匹配的设置",
+    "searchPlaceholder": "",
+    "searchNoResults": "",
     "language": "语言",
     "languageDescription": "选择应用程序界面的首选语言",
     "languageSettings": "语言设置",
@@ -1157,8 +1157,8 @@
     "openGameFolder": "打开游戏文件夹",
     "openModsFolder": "打开模组文件夹",
     "openModsDataFolder": "打开应用数据文件夹",
-    "clearCatalog": "清除目录并重新同步",
-    "clearCatalogDescription": "删除本地 GameBanana 目录并从头重建。已安装的模组和配置会保留。",
+    "clearCatalog": "",
+    "clearCatalogDescription": "",
     "clearDownloadCache": "清除下载缓存",
     "clearDownloadCacheDescription": "移除缓存的下载文件。您已安装的模组不受影响。",
     "confirmClearDownloadCache": "这将删除为远程模组下载的压缩包和解压文件。本地模组将被保留。",
@@ -1586,28 +1586,28 @@
     "description": "选择加入实验性功能，在功能面向所有人发布之前抢先体验。",
     "features": {
       "custom-maps": {
-        "title": "自定义地图",
-        "description": "在地图页面浏览并安装自定义地图。"
+        "title": "",
+        "description": ""
       },
       "server-browser": {
-        "title": "服务器浏览器",
-        "description": "查找并加入社区服务器。"
+        "title": "",
+        "description": ""
       },
       "mod-foundry": {
-        "title": "模组工坊",
-        "description": "创建并打包你自己的模组。"
+        "title": "",
+        "description": ""
       },
       "player-stats": {
-        "title": "玩家统计",
-        "description": "显示统计页面，并在后台跟踪进行中的比赛。"
+        "title": "",
+        "description": ""
       },
       "profile-management": {
-        "title": "配置管理",
-        "description": "创建模组配置并在它们之间切换。"
+        "title": "",
+        "description": ""
       },
       "profile-sharing": {
-        "title": "配置分享",
-        "description": "与他人分享模组配置，并导入别人分享的配置。"
+        "title": "",
+        "description": ""
       }
     }
   },
@@ -1689,7 +1689,7 @@
       "sends": "仅向Deadlock api发送比赛 ID及其哈希盐值，而不会发送您的令牌、密码或个人数据。",
       "limit": "严格限制每24小时最多获取 {{limit}} 场比赛数据，该次数限制同样适用于下文所列的所有选项。",
       "risk": "该操作基于您的Steam账户完成，存在一定的风险，该风险较低但绝不为零。启用该操作视作您接受该风险。",
-      "summary": "会使用你的 Steam 账号，但只会分享比赛 ID，不会分享登录信息或个人数据。"
+      "summary": ""
     },
     "enable": {
       "title": "启用比赛数据分享",
@@ -1697,7 +1697,7 @@
     },
     "consent": {
       "title": "是否启用比赛数据分享？",
-      "body": "启用后，本app将会读取您本地的Steam令牌，用于获取您账号的比赛记录，然后向Deadlock api发送比赛 ID及其哈希盐值。我们不会存储或发送您的令牌，密码以及其他个人数据。所有的数据获取操作均受限制，每24小时最多40次请求。该操作基于您的Steam账户完成，存在一定的风险，该风险较低但绝不为零。您是否想要继续？",
+      "body": "",
       "accept": "我已经了解存在的风险，开启这个功能",
       "decline": "取消"
     },
@@ -1745,12 +1745,12 @@
     "blurStrengthDescription": "当NSFW内容可见时的模糊程度（像素）",
     "rememberPerItemChoices": "记住每个项目的选择",
     "rememberPerItemChoicesDescription": "记住您选择显示/隐藏特定NSFW项目的时机",
-    "savedPerItemChoices": "已保存的 NSFW 选择",
-    "savedPerItemChoicesDescription_one": "已保存 {{count}} 个选择。清除后，所有预览将使用你当前的 NSFW 设置。",
-    "savedPerItemChoicesDescription_other": "已保存 {{count}} 个选择。清除后，所有预览将使用你当前的 NSFW 设置。",
-    "clearPerItemChoices": "清除已保存的选择",
-    "clearPerItemChoicesConfirm_one": "清除 {{count}} 个已保存的 NSFW 显示/隐藏选择？预览将遵循你当前的 NSFW 设置。",
-    "clearPerItemChoicesConfirm_other": "清除 {{count}} 个已保存的 NSFW 显示/隐藏选择？预览将遵循你当前的 NSFW 设置。",
+    "savedPerItemChoices": "",
+    "savedPerItemChoicesDescription_one": "",
+    "savedPerItemChoicesDescription_other": "",
+    "clearPerItemChoices": "",
+    "clearPerItemChoicesConfirm_one": "",
+    "clearPerItemChoicesConfirm_other": "",
     "telemetryTitle": "使用情况分析",
     "analyticsEnabled": "谷歌分析",
     "analyticsEnabledDescription": "通过发送匿名的使用统计和功能分析数据来帮助改进应用程序"
@@ -1763,7 +1763,7 @@
   "branding": {
     "nightlyBuild": "夜间构建版",
     "fullBuildVersion": "完整构建：{{version}}",
-    "byAuthor": "由 <author>{{author}}</author>"
+    "byAuthor": ""
   },
   "about": {
     "title": "关于",
@@ -1851,34 +1851,34 @@
     "hideMap": "隐藏地图",
     "hideOutdatedBadge": "隐藏过时",
     "showOutdatedBadge": "包含过时内容",
-    "added": "添加时间",
-    "addedLabel": "添加于：",
-    "addedFrom": "从",
-    "addedTo": "到",
-    "pickDate": "选择日期",
-    "addedBetween": "{{from}} – {{to}}",
-    "addedSince": "自 {{date}} 起",
-    "addedUntil": "直到 {{date}}",
+    "added": "",
+    "addedLabel": "",
+    "addedFrom": "",
+    "addedTo": "",
+    "pickDate": "",
+    "addedBetween": "",
+    "addedSince": "",
+    "addedUntil": "",
     "addedPeriod": {
-      "any": "不限时间",
-      "today": "今天",
-      "week": "本周",
-      "month": "本月",
-      "custom": "自定义范围"
+      "any": "",
+      "today": "",
+      "week": "",
+      "month": "",
+      "custom": ""
     },
     "clearAll": "清除所有",
-    "contentType": "内容类型",
+    "contentType": "",
     "contentTypes": {
-      "mod": "模组",
-      "sound": "音效",
-      "map": "地图",
-      "wip": "制作中"
+      "mod": "",
+      "sound": "",
+      "map": "",
+      "wip": ""
     },
-    "updated": "更新时间",
-    "match": "匹配",
-    "reset": "重置",
-    "matchIncludeHint": "仅显示符合你所选英雄和类别的模组。",
-    "matchExcludeHint": "隐藏符合你所选英雄和类别的模组。"
+    "updated": "",
+    "match": "",
+    "reset": "",
+    "matchIncludeHint": "",
+    "matchExcludeHint": ""
   },
   "sorting": {
     "default": "默认",
@@ -2855,30 +2855,30 @@
     }
   },
   "gameConfig": {
-    "resetByUpdateTitle": "Deadlock 已更新，并关闭了你的模组。",
-    "resetByUpdateBody_one": "Steam 替换了 <file>gameinfo.gi</file>，因此你已启用的模组在重新应用之前不会加载。",
-    "resetByUpdateBody_other": "Steam 替换了 <file>gameinfo.gi</file>，因此你已启用的 {{count}} 个模组在重新应用之前不会加载。",
-    "detachedTitle": "Deadlock 没有加载你的模组。",
-    "detachedBody_one": "<file>gameinfo.gi</file> 在 DMM 之外被修改，因此你已启用的模组在重新应用之前会被跳过。",
-    "detachedBody_other": "<file>gameinfo.gi</file> 在 DMM 之外被修改，因此你已启用的 {{count}} 个模组在重新应用之前会被跳过。",
-    "updatedTitle": "Deadlock 已更新。",
-    "updatedBody": "更新可能会导致模组失效。如果游戏中出现异常，请到「我的模组」检查更新。",
-    "reapply": "重新应用模组",
-    "reapplying": "正在重新应用",
-    "reapplied": "模组已重新应用。下次启动 Deadlock 时会加载它们。",
-    "reapplyFailed": "无法重新应用你的模组",
-    "patchNotes": "更新说明",
-    "dismiss": "关闭"
+    "resetByUpdateTitle": "",
+    "resetByUpdateBody_one": "",
+    "resetByUpdateBody_other": "",
+    "detachedTitle": "",
+    "detachedBody_one": "",
+    "detachedBody_other": "",
+    "updatedTitle": "",
+    "updatedBody": "",
+    "reapply": "",
+    "reapplying": "",
+    "reapplied": "",
+    "reapplyFailed": "",
+    "patchNotes": "",
+    "dismiss": ""
   },
   "patchNotes": {
-    "title": "Deadlock 更新说明",
-    "allOnSteam": "在 Steam 上查看全部",
-    "kindPatch": "更新说明",
-    "kindAnnouncement": "公告",
-    "openOnSteam": "在 Steam 中打开",
-    "read": "阅读帖子",
-    "loadFailed": "无法从 Steam 加载最新帖子。",
-    "empty": "Valve 还没有发布帖子。"
+    "title": "",
+    "allOnSteam": "",
+    "kindPatch": "",
+    "kindAnnouncement": "",
+    "openOnSteam": "",
+    "read": "",
+    "loadFailed": "",
+    "empty": ""
   },
   "debug": {
     "title": "调试",
@@ -3004,12 +3004,12 @@
     "importDescription": "输入配置ID以从其他用户导入共享的配置。",
     "importPreview": "导入配置预览",
     "importPreviewDescription": "在导入前查看配置内容。选择如何保存此配置。",
-    "legacyIdentityTitle": "选择对应的 GameBanana 项目",
-    "legacyIdentityDescription": "这个旧的配置 ID 同时对应一个模组和一个音效。",
-    "legacyIdentityPlaceholder": "选择模组或音效",
-    "legacyIdentityRequired": "请为每个有歧义的项目选择它是模组还是音效。",
-    "submissionTypeMod": "模组",
-    "submissionTypeSound": "音效",
+    "legacyIdentityTitle": "",
+    "legacyIdentityDescription": "",
+    "legacyIdentityPlaceholder": "",
+    "legacyIdentityRequired": "",
+    "submissionTypeMod": "",
+    "submissionTypeSound": "",
     "profileIdPlaceholder": "输入配置 ID（例如：abc123def456）",
     "profileIdRequired": "配置ID是必填项",
     "importSuccess": "配置导入成功！",
@@ -3099,9 +3099,9 @@
     "noUpdateAvailable": "无可用更新",
     "checkUpdateError": "检查更新失败",
     "changelog": {
-      "title": "更新日志",
-      "latest": "最新：{{title}}",
-      "loadMore": "加载更早的更新"
+      "title": "",
+      "latest": "",
+      "loadMore": ""
     },
     "vpkReplacement": {
       "title": "替换 VPK 文件",
