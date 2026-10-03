@@ -42,6 +42,11 @@ pub struct InterchangeImportRequest {
   /// Mod ids already in the library, as the frontend store knows them.
   #[serde(default)]
   pub known_mod_ids: Vec<String>,
+  /// Load order of the mods already in the profile, as the library shows it.
+  /// DMM leaves `order` empty in `.dmm.json` for mods it installed itself;
+  /// without these the imported mods would be laid out ahead of them.
+  #[serde(default)]
+  pub existing_orders: std::collections::BTreeMap<String, u32>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -397,11 +402,21 @@ pub fn import(
   request: InterchangeImportRequest,
   progress: &dyn Fn(ImportProgress),
 ) -> Result<InterchangeImportReport, Error> {
+  let app_data = manager.get_app_local_data_path()?;
+  import_into(manager, &app_data, request, progress)
+}
+
+/// [`import`] with DMM's app data folder (ledger and mod store) given.
+pub fn import_into(
+  manager: &mut ModManager,
+  app_data: &Path,
+  request: InterchangeImportRequest,
+  progress: &dyn Fn(ImportProgress),
+) -> Result<InterchangeImportReport, Error> {
   let base = manager.get_addons_path(request.profile_folder.as_deref())?;
   fs::create_dir_all(base.path())?;
-  let store = manager.get_mods_store_path()?;
-  let app_data = manager.get_app_local_data_path()?;
-  let mut ledger = super::ledger::load(&app_data);
+  let store = app_data.join("mods");
+  let mut ledger = super::ledger::load(app_data);
   let source_manager = if request.document.source.manager.is_empty() {
     "unknown".to_string()
   } else {
@@ -544,7 +559,7 @@ pub fn import(
     name: String::new(),
   });
   let mut warnings = Vec::new();
-  if let Err(error) = super::ledger::save(&app_data, &ledger) {
+  if let Err(error) = super::ledger::save(app_data, &ledger) {
     warnings.push(format!("Could not remember the imported mods: {error}"));
   }
   let imported: Vec<String> = results
@@ -556,6 +571,13 @@ pub fn import(
     // Write the final order once, then let DMM lay the pak files out, instead
     // of reshuffling the profile after every single mod.
     let mut manifest = ProfileVpkManifest::open_for_write(&base)?;
+    for (id, order) in &request.existing_orders {
+      if let Some(saved) = manifest.mods.get_mut(id)
+        && saved.order.is_none()
+      {
+        saved.order = Some(*order);
+      }
+    }
     for result in &results {
       if let (Some(id), Some(order)) = (&result.mod_id, result.install_order)
         && let Some(saved) = manifest.mods.get_mut(id)
