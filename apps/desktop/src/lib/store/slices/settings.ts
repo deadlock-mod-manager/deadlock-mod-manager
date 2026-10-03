@@ -66,6 +66,8 @@ export type SettingsState = {
   enabledPlugins: Record<string, boolean>; // pluginId -> isEnabled
   gamePresenceEnabled: boolean;
   forgeInstallEnabled: boolean;
+  /** Whether gameinfo.gi goes back to vanilla once Deadlock closes. */
+  autoResetGameinfoOnExit: boolean;
   gamePresenceTextTemplates: PresenceTextTemplates;
   gamePresenceHeroOverrides: GamePresenceHeroOverrides;
   backupEnabled: boolean;
@@ -113,6 +115,7 @@ export type SettingsState = {
 
   setGamePresenceEnabled: (enabled: boolean) => void;
   setForgeInstallEnabled: (enabled: boolean) => void;
+  setAutoResetGameinfoOnExit: (enabled: boolean) => void;
   setGamePresenceTextTemplates: (templates: PresenceTextTemplates) => void;
   setGamePresenceHeroOverrides: (
     heroOverrides: GamePresenceHeroOverrides,
@@ -164,6 +167,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   enabledPlugins: {},
   gamePresenceEnabled: true,
   forgeInstallEnabled: false,
+  autoResetGameinfoOnExit: false,
   gamePresenceTextTemplates: createDefaultGamePresenceTextTemplates(),
   gamePresenceHeroOverrides: {},
   backupEnabled: true,
@@ -320,6 +324,11 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   setForgeInstallEnabled: (enabled: boolean) =>
     set(() => ({
       forgeInstallEnabled: enabled,
+    })),
+
+  setAutoResetGameinfoOnExit: (enabled: boolean) =>
+    set(() => ({
+      autoResetGameinfoOnExit: enabled,
     })),
 
   setGamePresenceTextTemplates: (templates: PresenceTextTemplates) =>

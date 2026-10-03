@@ -12,6 +12,7 @@ import type { ResolvedRequirementStatus } from "@/hooks/use-server-join";
 import type { useServerStage } from "@/hooks/use-server-stage";
 import { getErrorMessage } from "@/lib/errors";
 import { restoreProfileGameinfo } from "@/lib/gameinfo";
+import { pauseGameinfoAutoReset } from "@/lib/gameinfo-auto-reset";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { isGameRunning } from "@/lib/tauri-commands";
@@ -121,6 +122,8 @@ export const useJoinServer = (
 
   return useMutation({
     meta: { skipGlobalErrorHandler: true },
+    // A restart here is ours, so it must not trigger the vanilla auto-reset.
+    onMutate: () => pauseGameinfoAutoReset(),
     mutationFn: async ({
       password,
       keepActiveProfile,
@@ -184,7 +187,8 @@ export const useJoinServer = (
       logger.withError(error).error("Server join failed");
       toast.error(getErrorMessage(error));
     },
-    onSettled: () => {
+    onSettled: (_data, _error, _variables, resumeAutoReset) => {
+      resumeAutoReset?.();
       queryClient.invalidateQueries({ queryKey: ["is-game-running"] });
     },
   });

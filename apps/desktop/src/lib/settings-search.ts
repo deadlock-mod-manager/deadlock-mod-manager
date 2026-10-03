@@ -75,6 +75,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
       { titleKey: "game.createBackup" },
       { titleKey: "game.restoreBackup" },
       { titleKey: "game.resetToVanilla" },
+      {
+        titleKey: "settings.autoResetGameinfo",
+        descriptionKey: "settings.autoResetGameinfoDescription",
+      },
       { titleKey: "game.validateConfiguration" },
     ],
   },
