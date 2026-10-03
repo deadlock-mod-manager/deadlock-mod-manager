@@ -6,6 +6,7 @@ import type { CatalogPageDto } from "@/types/generated/CatalogPageDto";
 import type { CatalogQuery } from "@/types/generated/CatalogQuery";
 import type { CatalogSyncStatusDto } from "@/types/generated/CatalogSyncStatusDto";
 import type { CatalogUpdatesDto } from "@/types/generated/CatalogUpdatesDto";
+import type { ChangelogPageDto } from "@/types/generated/ChangelogPageDto";
 import type { GameBananaFileserverDto } from "@/types/generated/GameBananaFileserverDto";
 import type { InstalledSubmissionDto } from "@/types/generated/InstalledSubmissionDto";
 import type { FileserverDto } from "@deadlock-mods/shared";
@@ -66,6 +67,12 @@ export const getGameBananaCatalogMod = async (
   );
   return catalogModToModDto(result);
 };
+
+export const getGameBananaChangelog = (remoteId: string, page: number) =>
+  invoke<ChangelogPageDto>("get_gamebanana_submission_changelog", {
+    remoteId,
+    page,
+  });
 
 export const getGameBananaCatalogDownloads = async (
   remoteId: string,

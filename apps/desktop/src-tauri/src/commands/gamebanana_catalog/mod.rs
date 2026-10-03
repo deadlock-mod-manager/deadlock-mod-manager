@@ -5,7 +5,7 @@ pub use state::GameBananaCatalogState;
 pub use types::{
   CatalogDonationLinkDto, CatalogDownloadDto, CatalogDownloadsDto, CatalogModDto,
   CatalogModMetadataDto, CatalogPageDto, CatalogSyncStatusDto, CatalogUpdateDto, CatalogUpdatesDto,
-  GameBananaFileserverDto, InstalledSubmissionDto,
+  ChangelogPageDto, GameBananaFileserverDto, InstalledSubmissionDto,
 };
 
 use crate::errors::Error;
@@ -91,6 +91,28 @@ pub async fn get_gamebanana_submission_detail(
     ));
   }
   Ok(mod_data)
+}
+
+#[tauri::command]
+pub async fn get_gamebanana_submission_changelog(
+  state: State<'_, GameBananaCatalogState>,
+  policy: State<'_, super::policy::PolicyState>,
+  remote_id: String,
+  page: u32,
+) -> Result<ChangelogPageDto, Error> {
+  if policy.unavailable_slugs()?.contains(&remote_id) {
+    return Err(Error::InvalidInput(
+      "This submission is unavailable by policy".to_string(),
+    ));
+  }
+  let backend = state.backend()?;
+  let submission = parse_submission(&remote_id)?;
+  let page = page.max(1);
+  let updates = backend
+    .client
+    .updates(&submission, page, &CancellationToken::new())
+    .await?;
+  Ok(ChangelogPageDto::from_page(updates, page))
 }
 
 #[tauri::command]
