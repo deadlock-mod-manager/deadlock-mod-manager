@@ -1671,7 +1671,8 @@
       "reads": "Reads your local Steam login (the auto-login token already stored on this machine) to talk to Steam on your behalf.",
       "sends": "Sends only match IDs and match salts to deadlock-api, never your token, password, or personal data.",
       "limit": "Strictly rate-limited to {{limit}} match fetches per 24 hours, shared across everything below.",
-      "risk": "This acts through your real Steam account, so the risk is low but not zero. Enable it only if you accept that."
+      "risk": "This acts through your real Steam account, so the risk is low but not zero. Enable it only if you accept that.",
+      "summary": "Uses your Steam account, but only shares match IDs, never your login or personal data."
     },
     "enable": {
       "title": "Enable match data sharing",
