@@ -4,19 +4,16 @@ description: Set up Deadlock Mod Manager, install mods, and maintain your setup
 ---
 
 import { Card, Cards } from "fumadocs-ui/components/card";
-import { Callout } from "fumadocs-ui/components/callout";
 
 # Getting Started
 
-After [installing the manager](/using-mod-manager/installation), use this guide to set up your game, install mods, and launch your chosen setup.
+After [installing the manager](/using-mod-manager/installation), configure your game path and install your first mod.
 
 ![Dashboard with profile selector, launch buttons, navigation, and status bar](/assets/v2-dashboard.png)
 
-See [Interface and Status Icons](/using-mod-manager/interface) for an explanation of every visible control, counter, and bottom-bar indicator.
+[Interface and Status Icons](/using-mod-manager/interface) explains the controls, counters, and bottom-bar indicators shown here.
 
-## First Time Setup
-
-The setup wizard guides you through game detection, existing addons, network preferences, analytics preferences, and optional match-data sharing.
+## First time setup
 
 1. Let the manager detect your Deadlock installation.
 2. Review the detected path. If it is missing or incorrect, browse to your installation.
@@ -24,48 +21,48 @@ The setup wizard guides you through game detection, existing addons, network pre
 4. Choose your analytics preference and read the separate match-sharing consent before enabling it.
 5. Complete setup and open the Dashboard.
 
-You can change the game path under **Settings â†’ Game**. A custom Steam path is available if automatic Steam detection does not find the right installation. Use **Reset Onboarding** in the information section of Settings to repeat the wizard.
+You can change the game path under **Settings → Game**. If Steam detection finds the wrong installation, set a custom Steam path. Use **Reset Onboarding** in the information section of Settings to repeat the wizard.
 
-### Game Configuration
+### Game configuration
 
-Deadlock's `gameinfo.gi` controls which content folders are loaded. The manager adjusts that configuration for modded and vanilla launches. Under **Settings â†’ Game**, inspect its status and use validation, backup, restore, or reset controls when needed.
+Deadlock's `gameinfo.gi` controls which content folders are loaded. The manager adjusts that configuration for modded and vanilla launches. Under **Settings → Game**, inspect its status and use validation, backup, restore, or reset controls when needed.
 
 If you previously edited `gameinfo.gi` manually, preserve a copy before resetting it or using Steam's **Verify integrity of game files**. Review [Settings and Recovery](/using-mod-manager/settings#game-setup-and-launch) before changing configuration.
 
 ![Game path and gameinfo configuration panel](/assets/v2-game-settings.png)
 
-## Already Have Mods Installed?
+## Already have mods installed?
 
 Open **Mods Library** and choose **Analyze Local Addons** to scan existing addon files and try to match them with catalog submissions. Review the results before managing the detected mods.
 
-Unrecognized files may be custom or modified versions. Use **Review files** in the unrecognized-addons alert to inspect them, or **Add Local Mod** to import a source yourself. See [Mods Library and Files](/using-mod-manager/library#unrecognized-addons).
+Unrecognized files may be custom or modified versions. Use **Review files** in the unrecognized-addons alert to inspect them, or **Add Local Mod** to import your files. See [Mods Library and Files](/using-mod-manager/library#unrecognized-addons).
 
 > **Screenshot pending:** Local addon analysis results and unrecognized-file controls.
 
-## Understanding the Interface
+## Understanding the interface
 
 Use the sidebar to open the main pages:
 
-- **Dashboard** â€” Featured and recent mods, announcements, release information, and game patch notes.
-- **Mods Store** â€” Browse mods, sounds, and works in progress.
-- **Mods Library** â€” Manage downloads and enabled mods in the active profile.
-- **Downloads** â€” Monitor progress and pause, resume, or retry downloads.
-- **Hero Skins**, **Crosshairs**, and **Autoexec Config** â€” Customize your game.
-- **Settings** â€” Search and configure preferences.
+- **Dashboard**: Featured and recent mods, announcements, release information, and game patch notes.
+- **Mods Store**: Browse mods, sounds, and works in progress.
+- **Mods Library**: Manage downloads and enabled mods in the active profile.
+- **Downloads**: Monitor progress and pause, resume, or retry downloads.
+- **Hero Skins**, **Crosshairs**, and **Autoexec Config**: Customize your game.
+- **Settings**: Search and configure preferences.
 
-Maps, Server Browser, Mod Foundry, and Stats depend on switches under **Settings â†’ Experimental**. See [Features](/using-mod-manager/features#settings-and-experimental-features) for availability.
+Maps, Server Browser, Mod Foundry, and Stats depend on switches under **Settings → Experimental**. See [Features](/using-mod-manager/features#settings-and-experimental-features) for availability.
 
-### Mods Browser
+### Mods browser
 
 In Mods Store, choose a section and search by name, author, or description. Include or exclude heroes and categories, filter outdated listings, use **Added** to filter by publication date, or narrow results to favorites. Sort by downloads, rating, release date, or last update.
 
-NSFW visibility and blur are controlled under **Settings â†’ Privacy**. Refreshing the locally cached catalog and downloading new files require an internet connection.
+NSFW visibility and blur are controlled under **Settings → Privacy**. Refreshing the locally cached catalog and downloading new files require an internet connection.
 
-![Loaded Mods Store with section tabs, filters, sorting, and mod cards](/assets/v2-mods-store.png)
+![Mods Store with section tabs, filters, sorting, and mod cards](/assets/v2-mods-store.png)
 
-### Individual Mod Pages
+### Individual mod pages
 
-Open a listing to inspect its available information:
+A mod listing includes:
 
 - Description, author, category, dates, and download statistics.
 - Download files and variants.
@@ -76,7 +73,7 @@ Open a listing to inspect its available information:
 
 ![Enhanced QuickBuy detail page showing author, listing statistics, and download action](/assets/v2-mod-detail.png)
 
-## Installing Your First Mod
+## Installing your first mod
 
 1. Open Mods Store and choose a mod.
 2. Review its description, requirements, and download files.
@@ -87,33 +84,33 @@ Open a listing to inspect its available information:
 
 > **Screenshot pending:** Download selection and installed-mod enable controls.
 
-Download completion and enablement are separate steps. Check the mod's state in your library before launching. If the manager warns about another mod for the same hero, review the conflict choices before continuing.
+Downloaded mods stay disabled until you enable them. If a hero-conflict warning appears, choose whether to swap the existing mod or keep both.
 
-### Monitoring Downloads
+### Monitoring downloads
 
 Open **Downloads** to inspect progress, speed, and extraction status. Use **Pause** and **Resume** for a download you want to defer, or **Retry** after a failure.
 
 > **Screenshot pending:** Download card showing progress and pause/resume/retry actions.
 
-### Verifying Installation
+### Verifying installation
 
 Check the mod's status and installed files in Mods Library or its detail page. Then launch modded Deadlock and verify the result in-game. If Deadlock was already running when you changed files, restart it so it loads the new setup.
 
-## Managing Your Mods
+## Managing your mods
 
-### Enable/Disable Mods
+### Enable/disable mods
 
 Toggle mods from Mods Library. Disabled mods remain downloaded for later use. **Disable all mods** turns off the active profile's setup without toggling entries individually.
 
 Use [profiles](/using-mod-manager/profiles) for separate setups and [Hero Skins](/using-mod-manager/customization#hero-skins) to choose a skin by hero.
 
-### Changing Load Order
+### Changing load order
 
-Choose **Change Mods Order** in Mods Library, drag the entries into the desired order, and save. This controls the ordering of game-visible addon files. Load order can help decide which replacement takes priority, but does not guarantee conflicting mods will work together.
+Choose **Change Mods Order** in Mods Library, drag the entries into the desired order, and save. This controls the ordering of game-visible addon files. Load order determines which replacement takes priority. Conflicting mods may still fail to work together.
 
 > **Screenshot pending:** Change Mods Order dialog.
 
-### Updating Mods
+### Updating mods
 
 1. Choose **Check for updates** in Mods Library.
 2. Open the available-updates action when updates are found.
@@ -122,25 +119,25 @@ Choose **Change Mods Order** in Mods Library, drag the entries into the desired 
 
 You can also use **Update Mod** on a detail page. **Force Update**, when available, opens the update flow without requiring a detected newer version. Updates depend on the author publishing files; they do not guarantee compatibility with the latest game patch.
 
-### Reinstalling a Mod
+### Reinstalling a mod
 
-Use **Reinstall Mod** from a downloaded mod's context menu or detail-page button to rebuild the installation from its downloaded files. This can help when local installed files are missing or damaged.
+If installed files are missing or damaged, use **Reinstall Mod** from the mod's context menu or detail page to rebuild the installation from its downloaded files.
 
-### Uninstalling Mods
+### Uninstalling mods
 
 Choose the mod's uninstall action and review the confirmation. Disable it instead if you want to keep the download for later. See [Mods Library and Files](/using-mod-manager/library) for local imports, variants, VPK replacement, and other file operations.
 
-### Backups and Recovery
+### Backups and recovery
 
-Open **Settings â†’ Backups** to create or restore an addons backup and configure automatic backups and retention. Preserve a backup before changing a setup you want to keep.
+Open **Settings → Backups** to create or restore an addons backup and configure automatic backups and retention. Preserve a backup before changing a setup you want to keep.
 
-**Settings â†’ Tools** offers folder shortcuts and recovery actions. Clearing caches, resetting state, and deleting mod data have different effects. Read [Settings and Recovery](/using-mod-manager/settings#backups-and-recovery) and each confirmation before using them.
+**Settings → Tools** offers folder shortcuts and recovery actions. Clearing caches, resetting state, and deleting mod data have different effects. Read [Settings and Recovery](/using-mod-manager/settings#backups-and-recovery) and each confirmation before using them.
 
-### Game Updates and Patch Notes
+### Game updates and patch notes
 
 The manager warns when Steam is updating Deadlock. Let it finish before launching. Read patch notes on the Dashboard or from the game-update notice. Test your mods after a game update and disable any that no longer work.
 
-## What's Next?
+## What's next?
 
 <Cards>
   <Card
@@ -165,6 +162,6 @@ The manager warns when Steam is updating Deadlock. Let it finish before launchin
   />
 </Cards>
 
-## Getting Help
+## Getting help
 
 Check the [FAQ](/using-mod-manager/faq) and troubleshooting guide, ask in [Discord](https://deadlockmods.app/discord), or report a reproducible manager issue on [GitHub](https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues). Contact the mod author through the original submission for problems specific to their mod.

@@ -7,9 +7,9 @@ import { Callout } from "fumadocs-ui/components/callout";
 
 # Servers and Stats
 
-## Custom Maps and Server Browser
+## Custom maps and Server Browser
 
-![Loaded Server Browser with HeroLock selected, ping results, requirements, and server mods](/assets/v2-servers.png)
+![Server Browser with HeroLock selected, ping results, requirements, and server mods](/assets/v2-servers.png)
 
 Enable **Custom Maps** and **Server Browser** under **Settings → Experimental**. Both are off by default on a fresh setup.
 
@@ -24,13 +24,12 @@ Use **Maps** to browse custom maps. To join a community server:
 The join flow can launch Deadlock, connect through Steam, or open a server's gateway. If automatic connection is unavailable, follow the manual connection instructions shown by the app.
 
 <Callout type='info' title='Server-specific mods'>
-  The join flow stages required content in a server-specific folder. Review
-  whether to include your active profile alongside the server content. Servers
-  and their downloads are maintained by the community and may become
-  unavailable.
+  When you join, the manager places required content in a folder for that
+  server. Choose whether to include your active profile's mods too. Community
+  members maintain the servers and downloads, which may become unavailable.
 </Callout>
 
-## Launch a Custom Map and Invite Friends
+## Launch a custom map and invite friends
 
 ![How to Play This Map instructions for Jump School with console command](/assets/v2-map-instructions.png)
 
@@ -38,27 +37,27 @@ Download and enable a map, then open its detail page's **How to Play This Map** 
 
 After quick launch, the manager can wait for the map server to become ready and display **Invite Friends** with a connect command. Friends can open Deadlock's developer console (F7) and paste the command. They need the required map content installed too.
 
-## Player Stats
+## Player stats
 
-![Loaded player Stats overview with account identifiers removed](/assets/v2-stats.png)
+![Stats overview with winrate, KDA, souls per minute, and form chart](/assets/v2-stats.png)
 
 Enable **Player Stats** under **Settings → Experimental**, then open **Stats**. Select your Steam account to view available data.
 
-The page includes **Overview**, **Heroes**, **Items**, **Squad**, and **Live** tabs. Stats depend on data available from deadlock-api; missing or delayed matches can leave the view incomplete. An internet connection is required to fetch new data.
+The page includes **Overview**, **Heroes**, **Items**, **Squad**, and **Live** tabs. Stats uses deadlock-api data, so missing or delayed matches can leave gaps. You need an internet connection to fetch new data.
 
-### Match Details
+### Match details
 
-Open a match from **Last matches** on the Overview tab. The dialog shows the hero, result, date, duration, K/D/A, damage, healing, accuracy, souls, and other recorded statistics. Use the item-build timeline or play button to inspect how the build changed over the match; the transaction list shows purchases and sales. Data availability depends on the match record.
+Open a match from **Last matches** on the Overview tab. The dialog shows the hero, result, date, duration, K/D/A, damage, healing, accuracy, souls, and other recorded statistics. Use the item-build timeline or play button to follow the build through the match. The transaction list shows purchases and sales. Some matches have incomplete data.
 
-![Match details showing statistics, item-build timeline, and purchase transactions, with identifying information removed](/assets/v2-match-details.png)
+![Match statistics, item-build timeline, and purchase transactions](/assets/v2-match-details.png)
 
 ## Optional Match Data Sharing
 
-![Match Data Sharing explanation and enable switch, cropped above the account list](/assets/v2-match-sharing.png)
+![Match Data Sharing consent information and enable switch](/assets/v2-match-sharing.png)
 
-Viewing stats and enabling Match Data Sharing are separate choices. Sharing is off until you enable it and accept the consent screen, either during onboarding or under **Settings → Privacy → Match Data Sharing**.
+Stats works independently of Match Data Sharing. To enable sharing, accept the consent screen during onboarding or under **Settings → Privacy → Match Data Sharing**.
 
-When enabled, the app reads the Steam auto-login token already stored on your machine to fetch your own Deadlock matches through your account. It sends match IDs and match salts to deadlock-api; it does not send your Steam token or password to that service.
+When enabled, the app reads the Steam auto-login token already stored on your machine to fetch your own Deadlock matches through your account. The app sends match IDs and match salts to deadlock-api. It does not send your Steam token or password to that service.
 
 <Callout type='warning' title='Uses your Steam account'>
   Read the consent screen before enabling sharing. It acts through your real
@@ -68,6 +67,6 @@ When enabled, the app reads the Steam auto-login token already stored on your ma
 
 Use **Fetch all my matches** to fetch missing history. Close Deadlock first. Fetching is rate-limited to 40 requests per rolling 24 hours, and the settings page shows remaining quota and progress. A Steam connection failure or exhausted quota can delay completion.
 
-## Cached Matchdata Ingestion
+## Cached matchdata ingestion
 
 The **Matchdata Ingest Tool** is a separate Application setting for scanning local Steam matchdata cache files and sending match data to the API. Turning off Steam-account Match Data Sharing does not turn off this separate setting. See [Settings and Recovery](/using-mod-manager/settings#content-and-data-controls) for both controls.

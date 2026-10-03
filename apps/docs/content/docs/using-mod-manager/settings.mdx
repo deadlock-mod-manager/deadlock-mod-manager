@@ -7,33 +7,33 @@ import { Callout } from "fumadocs-ui/components/callout";
 
 # Settings and Recovery
 
-## Find a Setting
+## Find a setting
 
 ![Settings search for Hero with matching options](/assets/v2-settings-search.png)
 
-Open **Settings** and search by name or description. Press **Ctrl+F** (or **Cmd+F**) to focus settings search, **Enter** to jump to the first result, or **Escape** to clear it. The sections below describe the main controls; platform-specific options may only appear on the relevant system.
+Open **Settings** and search by name or description. Press **Ctrl+F** (or **Cmd+F**) to focus settings search, **Enter** to jump to the first result, or **Escape** to clear it. Some settings appear only on supported platforms.
 
-## Game Setup and Launch
+## Game setup and launch
 
 ![Game and Steam paths with gameinfo configuration controls](/assets/v2-game-settings.png)
 
 Under **Game**, check the automatically detected **Game Path** or choose another installation. Set a **custom Steam path** if automatic Steam detection is incorrect.
 
-The game configuration panel shows `gameinfo.gi` status and offers **Create Backup**, **Restore Backup**, **Reset to Vanilla**, **Validate Configuration**, and **Open in Editor**. This configuration backup is separate from an addons backup.
+The game configuration panel shows the status of `gameinfo.gi` and has controls for **Create Backup**, **Restore Backup**, **Reset to Vanilla**, **Validate Configuration**, and **Open in Editor**. This configuration backup is separate from an addons backup.
 
 **Launch Options** configures arguments used to start Deadlock, including Autoexec Config and Console Debug Log. **Vanilla Mode** controls whether vanilla launches omit additional arguments. **Auto-Reapply Mods** reapplies mods when the manager starts.
 
 Use **Launch modded** to play with the active setup or **Launch without mods** to play without it. While Deadlock is running, **Stop Game** replaces the modded launch action. If a launch fails, check the displayed error and configuration status before retrying.
 
-## Hero Detection and Conflicts
+## Hero detection and conflicts
 
-**Hero Parser** detects which heroes local mods affect. Its settings show indexing progress and let you start or stop a background scan, index unindexed mods, force a rescan, or clear detected assignments. Immediate scans can make the app less responsive while processing large mods.
+**Hero Parser** detects which heroes local mods affect. You can track indexing progress, start or stop a background scan, index mods that have not been scanned, force a rescan, or clear detected assignments. Immediate scans can make the app less responsive while processing large mods.
 
 **Hero Conflict Warning** controls warnings when enabling another mod for an already-modded hero. **Hero Skins** settings can group sounds and weapon skins by hero and allow several skins per hero. Correct detection mistakes with Assign Mod or a library hero override.
 
-## Appearance and Application Behavior
+## Appearance and application behavior
 
-**Application** includes theme mode, audio-preview volume, optional 3D model previews, decorative geometry and animation controls, language, default sorting, and paginated browsing. The sidebar can be collapsed when you want more room for content.
+**Application** includes theme mode, audio-preview volume, optional 3D model previews, decorative geometry and animation controls, language, default sorting, and paginated browsing. Collapse the sidebar to make more room for the page.
 
 Open **Settings → Themes** for predefined themes and the custom theme builder. **Plugins** manages other plugin features. See [Customization](/using-mod-manager/customization) and [Themes](/plugins/themes).
 
@@ -45,24 +45,24 @@ On Linux, **NVIDIA Wayland Compatibility** supports Auto, Force On, and Force Of
 
 ![File-server routing and proxy settings](/assets/v2-network-settings.png)
 
-**Network** provides file-server routing and proxy preferences. Choose **Default**, **Automatic**, or an available file server. Refresh the server list and use **Test servers** to compare latency. These preferences apply where the selected download provider supports them; they do not make an unavailable file available again.
+In **Network**, configure file-server routing and proxy settings. Choose **Default**, **Automatic**, or an available file server. Refresh the server list and use **Test servers** to compare latency. Routing support depends on the download provider.
 
 For a proxy, choose its protocol, host, and port, add authentication if required, and configure a bypass list. Use **Test Connection** and save the settings. Restore defaults if you no longer want that configuration.
 
-## Content and Data Controls
+## Content and data controls
 
 ![Privacy settings for content filters and usage analytics](/assets/v2-privacy-settings.png)
 
 **Privacy & Content** controls hiding NSFW content, likely-NSFW visibility, preview blur, and blur strength. Saved per-item choices can override visibility decisions; use the reset action to clear those choices. **Usage Analytics** controls analytics collection.
 
-Two separate match-related controls exist:
+Match contribution has two independent controls:
 
 - **Match Data Sharing**, under Privacy, fetches your own matches through your Steam login after consent.
-- **Matchdata Ingest Tool**, under Application, scans locally cached Steam matchdata and contributes data to the API. Its local preference is enabled by default on a fresh setup; availability also depends on the app's ingestion integration policy. It is separate from Steam-account match fetching.
+- **Matchdata Ingest Tool**, under Application, scans locally cached Steam matchdata and contributes data to the API. This setting is on by default in a new installation, though the app's integration policy also controls its availability. It runs independently of Steam-account match fetching.
 
 See [Servers and Stats](/using-mod-manager/community#optional-match-data-sharing) for the sharing consent and limits. Review both controls when choosing whether to contribute match data.
 
-## Backups and Recovery
+## Backups and recovery
 
 ![Addons backups and automatic-backup controls](/assets/v2-backups.png)
 
@@ -85,18 +85,16 @@ See [Servers and Stats](/using-mod-manager/community#optional-match-data-sharing
   again. Keep separate copies of local mods and any files you need to preserve.
 </Callout>
 
-## Account Sign-In
+## Account sign-in
 
 Choose **Sign In** in the app header to open the authentication dialog and continue in your browser. Follow the callback instructions, or paste an authorization code if the dialog offers that fallback. Use the account menu to sign out.
 
-Ordinary local mod management does not require an account. Actions such as publishing a community crosshair do require sign-in. Local experimental-feature switches are available without signing in.
+Sign-in is required to publish community crosshairs. Local mod management and experimental-feature switches work without an account.
 
-## Logs, Developer Tools, and Onboarding
+## Logs, developer tools, and onboarding
 
 **Logging** lets you inspect log files, open their folder, and prepare troubleshooting information, including game crash dumps when available. Review logs before sharing them or opening them with an external AI service.
 
-**Developer Mode** exposes technical tools, including the VPK shard inspector, and additional settings. Launch Options also supports custom settings for technical users. See the [developer documentation](/developer-docs) for implementation details.
+Enable **Developer Mode** to access the VPK shard inspector and other technical tools and settings. You can also add custom settings in Launch Options. See the [developer documentation](/developer-docs) for implementation details.
 
 Under the information section, **Reset Onboarding** makes the setup wizard appear again. Onboarding includes game detection, existing addons, network configuration, analytics preferences, and optional match-sharing consent.
-
-The Dashboard also shows announcements, recent and trending mods, manager release information, and game patch notes. These are useful places to check what changed after an update.
