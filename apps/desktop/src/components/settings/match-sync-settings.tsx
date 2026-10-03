@@ -4,50 +4,20 @@ import { Progress } from "@deadlock-mods/ui/components/progress";
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { Switch } from "@deadlock-mods/ui/components/switch";
-import type { TFunction } from "i18next";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { useConfirm } from "@/components/providers/alert-dialog";
 import { useMatchSync } from "@/hooks/use-match-sync";
+import {
+  matchSyncErrorMessage,
+  rawErrorMessage,
+  useMatchSyncToggle,
+} from "@/hooks/use-match-sync-toggle";
 
 // Mirrors the backend's FETCH_QUOTA_LIMIT; used only until `status.accounts` loads.
 const DEFAULT_QUOTA_LIMIT = 40;
 
-// Subcodes with a stable, localizable message. Anything else (network/store
-// errors) falls back to the raw backend message, since those wrap arbitrary
-// underlying error text that can't be meaningfully translated.
-const MATCH_SYNC_ERROR_KEYS: Record<string, string> = {
-  consentRequired: "matchSync.errors.consentRequired",
-  disabled: "matchSync.errors.disabled",
-  alreadyRunning: "matchSync.errors.alreadyRunning",
-  gcRateLimited: "matchSync.fullSync.rateLimited",
-  gameRunning: "matchSync.errors.gameRunning",
-  quotaReached: "matchSync.errors.quotaReached",
-};
-
-const rawErrorMessage = (error: unknown): string => {
-  if (typeof error === "string") {
-    return error;
-  }
-  if (error && typeof error === "object" && "message" in error) {
-    return String((error as { message: unknown }).message);
-  }
-  return String(error);
-};
-
-const errorMessage = (error: unknown, t: TFunction): string => {
-  if (error && typeof error === "object" && "matchSyncKind" in error) {
-    const kind = (error as { matchSyncKind?: string }).matchSyncKind;
-    if (kind && kind in MATCH_SYNC_ERROR_KEYS) {
-      return t(MATCH_SYNC_ERROR_KEYS[kind] as string);
-    }
-  }
-  return rawErrorMessage(error);
-};
-
 export const MatchSyncSettings = () => {
   const { t } = useTranslation();
-  const confirm = useConfirm();
   const {
     status,
     isLoading,
@@ -60,6 +30,11 @@ export const MatchSyncSettings = () => {
     startFullSync,
     cancelFullSync,
   } = useMatchSync();
+  const handleEnableChange = useMatchSyncToggle({
+    status,
+    setConsent,
+    setEnabled,
+  });
 
   // Announce the outcome once a full sync finishes (esp. hitting the daily limit).
   const wasRunning = useRef(false);
@@ -131,36 +106,12 @@ export const MatchSyncSettings = () => {
   const quotaUsedPct =
     activeLimit > 0 ? ((activeLimit - activeRemaining) / activeLimit) * 100 : 0;
 
-  const handleEnableChange = async (next: boolean) => {
-    try {
-      if (!next) {
-        await setEnabled.mutateAsync(false);
-        return;
-      }
-      if (!status.consentAccepted) {
-        const accepted = await confirm({
-          title: t("matchSync.consent.title"),
-          body: t("matchSync.consent.body"),
-          actionButton: t("matchSync.consent.accept"),
-          cancelButton: t("matchSync.consent.decline"),
-        });
-        if (!accepted) {
-          return;
-        }
-        await setConsent.mutateAsync(true);
-      }
-      await setEnabled.mutateAsync(true);
-    } catch (error) {
-      toast.error(errorMessage(error, t));
-    }
-  };
-
   const handleStartFullSync = async () => {
     try {
       await startFullSync.mutateAsync();
       toast.success(t("matchSync.fullSync.started"));
     } catch (error) {
-      toast.error(errorMessage(error, t));
+      toast.error(matchSyncErrorMessage(error, t));
     }
   };
 
