@@ -1,19 +1,39 @@
+import { Button } from "@deadlock-mods/ui/components/button";
 import { Label } from "@deadlock-mods/ui/components/label";
 import { Slider } from "@deadlock-mods/ui/components/slider";
 import { Switch } from "@deadlock-mods/ui/components/switch";
+import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { useConfirm } from "@/components/providers/alert-dialog";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { usePersistedStore } from "@/lib/store";
 
 const PrivacySettings = () => {
   const { t } = useTranslation();
   const { analytics } = useAnalyticsContext();
+  const confirm = useConfirm();
   const {
     nsfwSettings,
     updateNSFWSettings,
+    perItemNSFWOverrides,
+    clearPerItemNSFWOverrides,
     telemetrySettings,
     updateTelemetrySettings,
   } = usePersistedStore();
+
+  const overrideCount = Object.keys(perItemNSFWOverrides).length;
+  const clearOverrides = useMutation({
+    mutationFn: async () => {
+      const confirmed = await confirm({
+        title: t("privacy.clearPerItemChoices"),
+        body: t("privacy.clearPerItemChoicesConfirm", { count: overrideCount }),
+        actionButton: t("privacy.clearPerItemChoices"),
+        cancelButton: t("common.cancel"),
+        tone: "destructive",
+      });
+      if (confirmed) clearPerItemNSFWOverrides();
+    },
+  });
 
   return (
     <div className='space-y-4'>
@@ -110,6 +130,25 @@ const PrivacySettings = () => {
             updateNSFWSettings({ rememberPerItemOverrides: checked })
           }
         />
+      </div>
+
+      <div className='flex items-center justify-between gap-4'>
+        <div className='space-y-0.5'>
+          <Label className='text-base'>
+            {t("privacy.savedPerItemChoices")}
+          </Label>
+          <div className='text-muted-foreground text-sm'>
+            {t("privacy.savedPerItemChoicesDescription", {
+              count: overrideCount,
+            })}
+          </div>
+        </div>
+        <Button
+          disabled={overrideCount === 0 || clearOverrides.isPending}
+          onClick={() => clearOverrides.mutate()}
+          variant='outline'>
+          {t("privacy.clearPerItemChoices")}
+        </Button>
       </div>
 
       {/* Telemetry Settings */}

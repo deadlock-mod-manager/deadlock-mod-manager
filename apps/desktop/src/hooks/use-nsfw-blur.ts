@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { shouldBlurNSFWItem } from "@/lib/mods/nsfw-visibility";
 import { usePersistedStore } from "@/lib/store";
 
@@ -17,19 +16,17 @@ export function useNSFWBlur(item?: NSFWItem | null) {
   const setPerItemNSFWOverride = usePersistedStore(
     (state) => state.setPerItemNSFWOverride,
   );
-  const getPerItemNSFWOverride = usePersistedStore(
-    (state) => state.getPerItemNSFWOverride,
+  const isVisibleOverride = usePersistedStore((state) =>
+    item ? state.perItemNSFWOverrides[item.remoteId] : undefined,
   );
 
-  const shouldBlur = useMemo(() => {
-    if (!item) return false;
-
-    return shouldBlurNSFWItem({
-      isNSFW: item.isNSFW,
-      isVisibleOverride: getPerItemNSFWOverride(item.remoteId),
-      rememberOverrides: nsfwSettings.rememberPerItemOverrides,
-    });
-  }, [item, nsfwSettings.rememberPerItemOverrides, getPerItemNSFWOverride]);
+  const shouldBlur = item
+    ? shouldBlurNSFWItem({
+        isNSFW: item.isNSFW,
+        isVisibleOverride,
+        rememberOverrides: nsfwSettings.rememberPerItemOverrides,
+      })
+    : false;
 
   const handleNSFWToggle = (visible: boolean) => {
     if (item && nsfwSettings.rememberPerItemOverrides) {

@@ -38,6 +38,12 @@ export const NSFWBlur = ({
   disableBlur = false,
 }: NSFWBlurProps) => {
   const [isVisible, setIsVisible] = useState(false);
+  const [previousIsNSFW, setPreviousIsNSFW] = useState(isNSFW);
+
+  if (previousIsNSFW !== isNSFW) {
+    setPreviousIsNSFW(isNSFW);
+    setIsVisible(false);
+  }
 
   if (!isNSFW || disableBlur) {
     return <div className={className}>{children}</div>;

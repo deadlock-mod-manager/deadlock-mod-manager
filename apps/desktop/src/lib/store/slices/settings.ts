@@ -84,6 +84,7 @@ export type SettingsState = {
   updateNSFWSettings: (updates: Partial<NSFWSettings>) => void;
   setPerItemNSFWOverride: (modId: string, isVisible: boolean) => void;
   removePerItemNSFWOverride: (modId: string) => void;
+  clearPerItemNSFWOverrides: () => void;
   getPerItemNSFWOverride: (modId: string) => boolean | undefined;
 
   // Telemetry settings management
@@ -245,6 +246,8 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
       delete newOverrides[modId];
       return { perItemNSFWOverrides: newOverrides };
     }),
+
+  clearPerItemNSFWOverrides: () => set({ perItemNSFWOverrides: {} }),
 
   getPerItemNSFWOverride: (modId: string) => {
     return get().perItemNSFWOverrides[modId];
