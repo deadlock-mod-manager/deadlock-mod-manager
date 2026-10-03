@@ -3,6 +3,8 @@ import JSZip from "jszip";
 import { z } from "zod";
 import {
   assertCatalogNetwork,
+  BULK_HYDRATION_FIELDS,
+  BULK_UPDATE_FIELDS,
   catalogVpk,
   catalogRecipe,
   createCatalogRoutes,
@@ -26,10 +28,10 @@ it("serves origin-bound GameBanana files, separates bulk queries, and rejects an
       catalogVpk("base.vpk"),
     );
     const hydration = await fetch(
-      `${server.origin}/apiv11/Core/Item/Data?fields[]=name`,
+      `${server.origin}/Core/Item/Data?fields[]=${BULK_HYDRATION_FIELDS}`,
     );
     const updates = await fetch(
-      `${server.origin}/apiv11/Core/Item/Data?fields[]=Url().sProfileUrl()`,
+      `${server.origin}/Core/Item/Data?fields[]=${BULK_UPDATE_FIELDS}`,
     );
     expect(await hydration.text()).not.toEqual(await updates.text());
     const rejected = await fetch(parsed._aFiles[2]._sDownloadUrl);
