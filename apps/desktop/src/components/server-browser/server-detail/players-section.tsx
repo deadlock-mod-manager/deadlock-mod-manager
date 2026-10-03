@@ -1,5 +1,6 @@
 import type { ServerBrowserEntry } from "@deadlock-mods/shared";
 import { useTranslation } from "react-i18next";
+import { HeroIcon } from "@/components/heroes/hero-icon";
 
 interface ServerDetailPlayersSectionProps {
   players: ServerBrowserEntry["players"];
@@ -26,7 +27,8 @@ const ServerDetailPlayersSection = ({
               className='flex items-center justify-between gap-2 rounded-sm bg-card px-2 py-1'>
               <span className='truncate'>{p.name}</span>
               {p.hero && (
-                <span className='shrink-0 truncate font-mono text-[10px] uppercase text-muted-foreground'>
+                <span className='flex shrink-0 items-center gap-1.5 truncate font-mono text-[10px] uppercase text-muted-foreground'>
+                  <HeroIcon className='h-4 w-4' hero={p.hero} />
                   {p.hero}
                 </span>
               )}

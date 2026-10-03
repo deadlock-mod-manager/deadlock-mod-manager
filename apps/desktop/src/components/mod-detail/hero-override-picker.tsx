@@ -22,9 +22,9 @@ import {
 import { Check, RotateCcw, Settings } from "@deadlock-mods/ui/icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { HeroIcon } from "@/components/heroes/hero-icon";
 import type { ResolvedModHero } from "@/lib/mods/hero-resolution";
 import { usePersistedStore } from "@/lib/store";
-import { cn } from "@/lib/utils";
 
 const HERO_OVERRIDE_OPTIONS = Object.values(DeadlockHeroes).sort((a, b) =>
   a.localeCompare(b),
@@ -79,7 +79,7 @@ export const HeroOverridePicker = ({
             <CommandEmpty>{t("filters.noHeroesFound")}</CommandEmpty>
             <CommandGroup>
               <CommandItem onSelect={() => handleOverride(undefined)}>
-                <RotateCcw className='mr-2 h-4 w-4 flex-shrink-0' />
+                <RotateCcw className='h-5 w-5 shrink-0 p-0.5' />
                 <span>
                   {t("modDetail.heroOverrideAutomatic", {
                     defaultValue: "Use automatic",
@@ -87,19 +87,15 @@ export const HeroOverridePicker = ({
                 </span>
               </CommandItem>
               <CommandItem onSelect={() => handleOverride(null)}>
-                <Check
-                  className={cn(
-                    "mr-2 h-4 w-4 flex-shrink-0",
-                    resolvedHero.hasOverride && selectedValue === null
-                      ? "opacity-100"
-                      : "opacity-0",
-                  )}
-                />
+                <HeroIcon hero={null} />
                 <span>
                   {t("modDetail.generalOther", {
                     defaultValue: "General/Other",
                   })}
                 </span>
+                {resolvedHero.hasOverride && selectedValue === null && (
+                  <Check className='ml-auto h-4 w-4 shrink-0' />
+                )}
               </CommandItem>
             </CommandGroup>
             <CommandSeparator />
@@ -108,15 +104,11 @@ export const HeroOverridePicker = ({
                 <CommandItem
                   key={heroName}
                   onSelect={() => handleOverride(heroName)}>
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4 flex-shrink-0",
-                      resolvedHero.hasOverride && selectedValue === heroName
-                        ? "opacity-100"
-                        : "opacity-0",
-                    )}
-                  />
+                  <HeroIcon hero={heroName} />
                   <span className='truncate'>{heroName}</span>
+                  {resolvedHero.hasOverride && selectedValue === heroName && (
+                    <Check className='ml-auto h-4 w-4 shrink-0' />
+                  )}
                 </CommandItem>
               ))}
             </CommandGroup>

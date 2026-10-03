@@ -1,13 +1,8 @@
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@deadlock-mods/ui/components/avatar";
 import { Input } from "@deadlock-mods/ui/components/input";
 import { TriangleAlert } from "@deadlock-mods/ui/icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useHero } from "@/hooks/use-hero";
+import { HeroIcon } from "@/components/heroes/hero-icon";
 import { cn } from "@/lib/utils";
 
 export interface HeroListEntry {
@@ -26,9 +21,6 @@ interface HeroListRowProps {
 
 const HeroListRow = ({ entry, isSelected, onSelect }: HeroListRowProps) => {
   const { t } = useTranslation();
-  const { data: hero } = useHero(entry.hero);
-  const heroImage =
-    hero?.images.icon_image_small_webp ?? hero?.images.icon_image_small;
 
   const subtitle = entry.conflicted
     ? t("skins.conflict")
@@ -44,16 +36,15 @@ const HeroListRow = ({ entry, isSelected, onSelect }: HeroListRowProps) => {
       )}
       onClick={() => onSelect(entry.hero)}
       type='button'>
-      <Avatar
+      <HeroIcon
         className={cn(
-          "h-9 w-9",
+          "h-9 w-9 rounded-full",
           // Dim only the portrait so heroes without skins still read as
           // selectable rows.
           entry.modCount === 0 && "opacity-50 grayscale",
-        )}>
-        {heroImage && <AvatarImage alt={entry.hero} src={heroImage} />}
-        <AvatarFallback>{entry.hero.charAt(0)}</AvatarFallback>
-      </Avatar>
+        )}
+        hero={entry.hero}
+      />
       <div className='min-w-0 flex-1'>
         <div className='truncate font-medium text-sm'>{entry.hero}</div>
         <div

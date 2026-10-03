@@ -11,6 +11,7 @@ import {
 } from "@deadlock-mods/ui/components/select";
 import { ArrowUpDown, X } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
+import { HeroIcon } from "@/components/heroes/hero-icon";
 import { SortType } from "@/lib/constants";
 import type { FilterMode } from "@/lib/store/slices/ui";
 import CrosshairFiltersDropdown from "./crosshair-filters-dropdown";
@@ -121,7 +122,11 @@ const CrosshairSearchBar = ({
               className='flex items-center gap-1'
               key={`hero-${hero}`}
               variant='secondary'>
-              {t("filters.heroLabel")} {getHeroDisplayName(hero)}
+              {t("filters.heroLabel")}
+              {hero !== "Default" && (
+                <HeroIcon className='h-4 w-4' hero={hero} />
+              )}
+              {getHeroDisplayName(hero)}
               <button
                 className='ml-1 rounded-full p-0.5 hover:bg-muted'
                 onClick={() => removeHero(hero)}

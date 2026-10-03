@@ -20,8 +20,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@deadlock-mods/ui/components/popover";
-import { Check, Filter } from "@deadlock-mods/ui/icons";
+import { Check } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
+import { HeroIcon } from "@/components/heroes/hero-icon";
+import { FilterCountIcon } from "@/components/mod-browsing/filter-count-icon";
 import type { FilterMode } from "@/lib/store/slices/ui";
 import { cn } from "@/lib/utils";
 
@@ -106,15 +108,11 @@ const CrosshairHeroFilter = ({
                   <CommandItem
                     key={hero}
                     onSelect={() => handleHeroToggle(hero)}>
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4 flex-shrink-0",
-                        selectedHeroes.includes(hero)
-                          ? "opacity-100"
-                          : "opacity-0",
-                      )}
-                    />
+                    <HeroIcon hero={hero === "Default" ? null : hero} />
                     <span className='truncate'>{getHeroDisplayName(hero)}</span>
+                    {selectedHeroes.includes(hero) && (
+                      <Check className='ml-auto h-4 w-4 shrink-0' />
+                    )}
                   </CommandItem>
                 ))}
               </CommandGroup>
@@ -215,14 +213,9 @@ const CrosshairFiltersDropdown = ({
         <Button
           className='relative'
           size='iconExpand'
-          icon={<Filter className='h-4 w-4' />}
+          icon={<FilterCountIcon count={totalActiveFilters} />}
           variant={hasActiveFilters ? "default" : "outline"}>
           {t("filters.filters")}
-          {hasActiveFilters && (
-            <span className='ml-1 rounded-full bg-background px-1.5 py-0.5 text-foreground text-xs'>
-              {totalActiveFilters}
-            </span>
-          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='start' className='space-y-4 p-4'>

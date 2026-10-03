@@ -1,9 +1,4 @@
 import type { ModDto } from "@deadlock-mods/shared";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@deadlock-mods/ui/components/avatar";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import {
   CardContent,
@@ -27,7 +22,7 @@ import {
   User,
 } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
-import { useHero } from "@/hooks/use-hero";
+import { HeroIcon } from "@/components/heroes/hero-icon";
 import { getModCategoryDisplayName } from "@/lib/constants";
 import {
   type ResolvedModHero,
@@ -204,20 +199,14 @@ const HeroDisplay = ({ mod, resolvedHero, canOverride }: HeroDisplayProps) => {
   const name =
     resolvedHero.hero ??
     t("modDetail.generalOther", { defaultValue: "General/Other" });
-  const { data: hero } = useHero(resolvedHero.hero ?? "");
-  const imageSrc =
-    hero?.images.icon_hero_card_webp ??
-    hero?.images.icon_hero_card ??
-    hero?.images.icon_image_small_webp ??
-    hero?.images.icon_image_small;
-  const initial = name.charAt(0).toUpperCase();
 
   return (
     <div className='group flex items-center gap-3 rounded-lg border border-border/50 bg-muted/30 px-3 py-2.5 transition-colors hover:bg-muted/60'>
-      <Avatar className='h-8 w-8 shrink-0 ring-1 ring-border/60'>
-        {imageSrc && <AvatarImage alt={name} src={imageSrc} />}
-        <AvatarFallback className='text-xs'>{initial}</AvatarFallback>
-      </Avatar>
+      <HeroIcon
+        className='h-8 w-8 rounded-full ring-1 ring-border/60'
+        hero={resolvedHero.hero}
+        variant='card'
+      />
       <div className='flex min-w-0 flex-col'>
         <span className='flex items-center gap-1.5 text-muted-foreground text-xs uppercase tracking-wide'>
           {t("modDetail.detectedHero")}

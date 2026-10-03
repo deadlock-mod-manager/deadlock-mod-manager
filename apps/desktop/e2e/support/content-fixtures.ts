@@ -86,13 +86,14 @@ export const contentRoutes =
       body: JSON.stringify(body),
     });
     return [
-      ...heroNames.map((name, index) =>
-        json(`/v2/heroes/by-name/${encodeURIComponent(name)}`, {
+      json(
+        "/v1/assets/heroes",
+        heroNames.map((name, index) => ({
           id: index + 1,
           name,
           class_name: `hero_${name.toLowerCase()}`,
           images: { icon_hero_card: `${origin}/images/920001.svg` },
-        }),
+        })),
       ),
       json("/api/v2/feature-flags", []),
       json("/apiv11/Mod/Index", {

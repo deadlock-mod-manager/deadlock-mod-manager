@@ -13,6 +13,7 @@ import {
 import { ArrowUpDown, Clock, Star, X } from "@deadlock-mods/ui/icons";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
+import { HeroIcon } from "@/components/heroes/hero-icon";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import {
@@ -279,7 +280,9 @@ const SearchBar = ({
               className='flex items-center gap-1'
               key={`hero-${hero}`}
               variant='secondary'>
-              {t("filters.heroLabel")} {getHeroDisplayName(hero)}
+              {t("filters.heroLabel")}
+              {hero !== "None" && <HeroIcon className='h-4 w-4' hero={hero} />}
+              {getHeroDisplayName(hero)}
               <button
                 className='ml-1 rounded-full p-0.5 hover:bg-muted'
                 onClick={() => removeHero(hero)}

@@ -17,8 +17,8 @@ import {
 import { Check } from "@deadlock-mods/ui/icons";
 import { memo, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { HeroIcon } from "@/components/heroes/hero-icon";
 import { resolveLocalModHero } from "@/lib/mods/hero-resolution";
-import { cn } from "@/lib/utils";
 
 type HeroFilterProps = {
   mods: Array<
@@ -103,15 +103,11 @@ const HeroFilter = ({
                   <CommandItem
                     key={hero}
                     onSelect={() => handleHeroToggle(hero)}>
-                    <Check
-                      className={cn(
-                        "mr-2 h-4 w-4 flex-shrink-0",
-                        selectedHeroes.includes(hero)
-                          ? "opacity-100"
-                          : "opacity-0",
-                      )}
-                    />
+                    <HeroIcon hero={hero === "None" ? null : hero} />
                     <span className='truncate'>{getHeroDisplayName(hero)}</span>
+                    {selectedHeroes.includes(hero) && (
+                      <Check className='ml-auto h-4 w-4 shrink-0' />
+                    )}
                   </CommandItem>
                 ))}
               </CommandGroup>

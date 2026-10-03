@@ -1,4 +1,5 @@
 import { RuntimeError } from "@deadlock-mods/common/client-errors";
+import { normalizeHero } from "@deadlock-mods/shared";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -92,21 +93,44 @@ const usePlayerScopedQuery = <T>(
     },
   );
 
+type HeroCatalogIndex = {
+  byId: Map<number, DeadlockHero>;
+  /** Accepts any registry alias ("Mo & Krill", "The Doorman") or an asset codename ("hero_krill"). */
+  heroByName: (name: string) => DeadlockHero | undefined;
+};
+
+const NO_HEROES: DeadlockHero[] = [];
+// Keyed on the query payload so every HeroIcon on screen shares one index.
+const heroCatalogIndexes = new WeakMap<DeadlockHero[], HeroCatalogIndex>();
+
+const indexHeroCatalog = (heroes: DeadlockHero[]): HeroCatalogIndex => {
+  const cached = heroCatalogIndexes.get(heroes);
+  if (cached) {
+    return cached;
+  }
+  const byId = new Map<number, DeadlockHero>();
+  const byKey = new Map<string, DeadlockHero>();
+  for (const hero of heroes) {
+    byId.set(hero.id, hero);
+    byKey.set(hero.class_name, hero);
+    byKey.set(normalizeHero(hero.name) ?? hero.name, hero);
+  }
+  const index: HeroCatalogIndex = {
+    byId,
+    heroByName: (name) => byKey.get(normalizeHero(name) ?? name),
+  };
+  heroCatalogIndexes.set(heroes, index);
+  return index;
+};
+
 export const useHeroCatalog = () => {
   const query = useStatsQuery(
     { key: "assets:heroes", ttl: STATS_TTL.assets },
     getHeroes,
   );
+  const { byId, heroByName } = indexHeroCatalog(query.data?.data ?? NO_HEROES);
 
-  const byId = useMemo(() => {
-    const map = new Map<number, DeadlockHero>();
-    for (const hero of query.data?.data ?? []) {
-      map.set(hero.id, hero);
-    }
-    return map;
-  }, [query.data]);
-
-  return { heroesById: byId, isPending: query.isPending };
+  return { heroesById: byId, heroByName, isPending: query.isPending };
 };
 
 export const useRankAssets = () =>
