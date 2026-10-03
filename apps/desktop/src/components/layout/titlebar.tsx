@@ -10,6 +10,7 @@ import {
 } from "@deadlock-mods/ui/components/menubar";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { exit } from "@tauri-apps/plugin-process";
 import { openUrl } from "@tauri-apps/plugin-opener";
@@ -26,6 +27,13 @@ import { Toolbar } from "./toolbar";
 import { WindowTitlebar } from "./window-controls/window-titlebar";
 
 const logger = createLogger("titlebar");
+
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 2;
+const ZOOM_STEP = 0.1;
+
+// Tauri can set the webview zoom but not read it, so track it for the webview's lifetime.
+let zoomLevel = 1;
 
 interface MenuItem {
   label: string;
@@ -148,25 +156,25 @@ export const Titlebar = () => {
     }
   };
 
-  const handleZoomIn = () => {
-    const currentZoom = Number.parseFloat(
-      getComputedStyle(document.documentElement).zoom || "1",
-    );
-    const newZoom = Math.min(currentZoom + 0.1, 2);
-    document.documentElement.style.zoom = `${newZoom}`;
+  const applyZoom = async (zoom: number) => {
+    const previous = zoomLevel;
+    const next =
+      Math.round(Math.min(Math.max(zoom, MIN_ZOOM), MAX_ZOOM) * 10) / 10;
+    if (next === previous) return;
+    zoomLevel = next;
+    try {
+      await getCurrentWebview().setZoom(next);
+    } catch (error) {
+      zoomLevel = previous;
+      logger.withError(error).error("Failed to set zoom");
+    }
   };
 
-  const handleZoomOut = () => {
-    const currentZoom = Number.parseFloat(
-      getComputedStyle(document.documentElement).zoom || "1",
-    );
-    const newZoom = Math.max(currentZoom - 0.1, 0.5);
-    document.documentElement.style.zoom = `${newZoom}`;
-  };
+  const handleZoomIn = () => applyZoom(zoomLevel + ZOOM_STEP);
 
-  const handleResetZoom = () => {
-    document.documentElement.style.zoom = "1";
-  };
+  const handleZoomOut = () => applyZoom(zoomLevel - ZOOM_STEP);
+
+  const handleResetZoom = () => applyZoom(1);
 
   const handleDocumentation = () => {
     openUrl("https://docs.deadlockmods.app/");

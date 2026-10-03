@@ -12,6 +12,7 @@
     "core:window:allow-maximize",
     "core:window:allow-start-dragging",
     "core:window:allow-toggle-maximize",
+    "core:webview:allow-set-webview-zoom",
     "core:app:default",
     "core:image:default",
     "core:resources:default",
