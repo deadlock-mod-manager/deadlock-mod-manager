@@ -1763,7 +1763,7 @@
   "branding": {
     "nightlyBuild": "Nightly",
     "fullBuildVersion": "Full build: {{version}}",
-    "byAuthor": "by {{author}}"
+    "byAuthor": "by <author>{{author}}</author>"
   },
   "about": {
     "title": "About",

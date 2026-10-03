@@ -5,7 +5,8 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
-import { useTranslation } from "react-i18next";
+import { openUrl } from "@tauri-apps/plugin-opener";
+import { Trans, useTranslation } from "react-i18next";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
 import useAbout from "@/hooks/use-about";
 import {
@@ -37,6 +38,8 @@ const predefinedThemeIcons = {
   ),
   tea: getPluginAssetUrl("themes", "public/pre-defined/tea/logo.png"),
 } as const;
+
+const AUTHOR_GITHUB_URL = "https://github.com/Stormix";
 
 type PredefinedThemeId = keyof typeof predefinedThemeIcons;
 
@@ -111,7 +114,7 @@ export const BrandingHeader = ({
         <span className='font-primary text-xl leading-none tracking-tight'>
           Deadlock Mod Manager
         </span>
-        <div className='flex flex-wrap items-center gap-1.5'>
+        <div className='flex flex-wrap items-baseline gap-x-1'>
           {version &&
             (isNightlyBuildVersion(version) ? (
               <Tooltip>
@@ -139,7 +142,19 @@ export const BrandingHeader = ({
               </span>
             ))}
           <span className='text-muted-foreground text-xs leading-none'>
-            {t("branding.byAuthor", { author: "Stormix" })}
+            <Trans
+              components={{
+                author: (
+                  <button
+                    className='cursor-pointer transition-colors hover:text-foreground hover:underline'
+                    onClick={() => openUrl(AUTHOR_GITHUB_URL)}
+                    type='button'
+                  />
+                ),
+              }}
+              i18nKey='branding.byAuthor'
+              values={{ author: "Stormix" }}
+            />
           </span>
         </div>
       </div>
