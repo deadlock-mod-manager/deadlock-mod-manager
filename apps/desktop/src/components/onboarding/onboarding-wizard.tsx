@@ -22,7 +22,6 @@ import { OnboardingStepAddons } from "./step-addons";
 import { OnboardingStepApi } from "./step-api";
 import { OnboardingStepDisclaimer } from "./step-disclaimer";
 import { OnboardingStepGamePath } from "./step-game-path";
-import { OnboardingStepMatchSync } from "./step-match-sync";
 import { OnboardingStepNetwork } from "./step-network";
 import { OnboardingStepTelemetry } from "./step-telemetry";
 
@@ -71,12 +70,6 @@ const STEP_CONFIGS: StepConfig[] = [
     step: 6,
     component:
       OnboardingStepTelemetry as React.ComponentType<StepComponentProps>,
-    requiresCompletion: false,
-  },
-  {
-    step: 7,
-    component:
-      OnboardingStepMatchSync as React.ComponentType<StepComponentProps>,
     requiresCompletion: false,
   },
 ];
