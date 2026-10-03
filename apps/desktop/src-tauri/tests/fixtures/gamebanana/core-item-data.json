@@ -4,9 +4,9 @@
     "downloads",
     "Category().name",
     "RootCategory().name",
-    "Nsfw().bIsNsfw()",
     "description",
-    "text"
+    "text",
+    "Files().aFiles()"
   ],
   "modMulticall": [
     [
@@ -14,18 +14,26 @@
       1,
       "Drifter",
       "Skins",
-      false,
       "",
-      "Gives drifter a pink retexture and pink vfx"
+      "Gives drifter a pink retexture and pink vfx",
+      {
+        "1792166": {
+          "_idRow": 1792166,
+          "_sFile": "pink_drifter.zip",
+          "_nFilesize": 1024,
+          "_tsDateAdded": 1787320784,
+          "_sDownloadUrl": "https://gamebanana.com/dl/1792166"
+        }
+      }
     ],
     [
       "Profile Win Rate",
       229,
       "HUD",
       "HUD",
-      false,
       "Know your win rates without doing maths !",
-      "This mod adds an extra stat to the profile page."
+      "This mod adds an extra stat to the profile page.",
+      []
     ]
   ],
   "sound": {
@@ -33,8 +41,19 @@
     "downloads": 0,
     "Category().name": "Abilities",
     "RootCategory().name": "Abilities",
-    "Nsfw().bIsNsfw()": false,
     "description": "",
-    "text": "redone for the intro edit"
+    "text": "redone for the intro edit",
+    "Files().aFiles()": {
+      "1835755": {
+        "_idRow": 1835755,
+        "_sFile": "intro.zip",
+        "_nFilesize": 2048,
+        "_tsDateAdded": 1791033883
+      }
+    }
+  },
+  "invalidFields": {
+    "error": "Unrecognized [fields] `bogusfield`",
+    "error_code": "INVALID_FIELDS_PARAM"
   }
 }

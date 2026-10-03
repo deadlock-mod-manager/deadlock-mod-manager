@@ -237,6 +237,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
       addedAfter: addedRange.after,
       addedBefore: addedRange.before,
       favorites: showFavoritesOnly ? favorites : [],
+      includeWips: false,
       sort: catalogSort(currentSort),
       page: paginationEnabled ? page : 0,
       pageSize: paginationEnabled ? PAGE_SIZE : 5_000,

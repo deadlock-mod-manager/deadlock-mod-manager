@@ -1,6 +1,7 @@
 use super::schema::submission;
 use super::store::{
-  Catalog, CatalogRecord, SubmissionRow, decode_images, provider_name, submission_type_name,
+  Catalog, CatalogRecord, SubmissionRow, decode_images, decode_strings, provider_name,
+  submission_type_name,
 };
 use crate::errors::Error;
 use crate::providers::{SubmissionProvider, SubmissionRef, SubmissionType};
@@ -45,6 +46,7 @@ pub struct CatalogQuery {
   #[ts(type = "number | null")]
   pub added_before: Option<i64>,
   pub favorites: Vec<String>,
+  pub include_wips: bool,
   #[ts(skip)]
   pub excluded_slugs: Vec<String>,
   pub sort: CatalogSort,
@@ -124,6 +126,10 @@ fn filtered_query<'a>(
   let mut statement = submission::table
     .filter(submission::is_tombstoned.eq(false))
     .into_boxed();
+  if !query.include_wips {
+    statement =
+      statement.filter(submission::submission_type.ne(submission_type_name(SubmissionType::Wip)));
+  }
   if let Some(search) = search {
     statement = statement.filter(
       sql::<Bool>(
@@ -308,6 +314,7 @@ impl TryFrom<SubmissionRow> for CatalogRecord {
     let submission_type = match row.submission_type.as_str() {
       "mod" => SubmissionType::Mod,
       "sound" => SubmissionType::Sound,
+      "wip" => SubmissionType::Wip,
       value => return Err(Error::Catalog(format!("unknown submission type: {value}"))),
     };
     Ok(Self {
@@ -338,6 +345,14 @@ impl TryFrom<SubmissionRow> for CatalogRecord {
       remote_updated_at: row.remote_updated_at,
       files_updated_at: row.files_updated_at,
       last_seen_snapshot: row.last_seen_snapshot,
+      audio_url: row.audio_url,
+      tags: decode_strings(&row.tags)?,
+      development_state: row.development_state,
+      completion_percentage: row
+        .completion_percentage
+        .map(u8::try_from)
+        .transpose()
+        .map_err(|_| Error::Catalog("catalog completion percentage out of range".to_string()))?,
     })
   }
 }
@@ -372,6 +387,10 @@ mod tests {
       remote_updated_at: 20,
       files_updated_at: 0,
       last_seen_snapshot: None,
+      audio_url: None,
+      tags: Vec::new(),
+      development_state: None,
+      completion_percentage: None,
     }
   }
 
@@ -436,6 +455,42 @@ mod tests {
 
     assert_eq!(page.total, 1);
     assert_eq!(page.items[0].submission.to_slug().unwrap(), "11");
+  }
+
+  #[tokio::test]
+  async fn wips_are_only_returned_when_requested() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.db"), 1)
+      .await
+      .unwrap();
+    let mut wip = record("wip-10", "Work in progress", "Audio", None);
+    wip.development_state = Some("In Development".to_string());
+    wip.completion_percentage = Some(40);
+    catalog
+      .upsert_records(vec![record("10", "Released", "Skins", None), wip])
+      .await
+      .unwrap();
+
+    let default_page = catalog.query(CatalogQuery::default()).await.unwrap();
+    assert_eq!(default_page.total, 1);
+    assert_eq!(default_page.items[0].submission.to_slug().unwrap(), "10");
+
+    let with_wips = catalog
+      .query(CatalogQuery {
+        include_wips: true,
+        page_size: 10,
+        ..CatalogQuery::default()
+      })
+      .await
+      .unwrap();
+    assert_eq!(with_wips.total, 2);
+    let stored = with_wips
+      .items
+      .iter()
+      .find(|item| item.submission.to_slug().unwrap() == "wip-10")
+      .unwrap();
+    assert_eq!(stored.development_state.as_deref(), Some("In Development"));
+    assert_eq!(stored.completion_percentage, Some(40));
   }
 
   #[tokio::test]

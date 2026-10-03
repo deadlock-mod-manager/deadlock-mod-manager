@@ -60,15 +60,74 @@ pub struct IndexSubmission {
   pub likes: u64,
   #[serde(rename = "_aPreviewMedia", default)]
   pub preview_media: PreviewMedia,
+  #[serde(rename = "_sInitialVisibility", default, deserialize_with = "lenient")]
+  pub initial_visibility: Option<String>,
+  #[serde(rename = "_aTags", default, deserialize_with = "deserialize_tags")]
+  pub tags: Vec<Tag>,
+  #[serde(rename = "_sDevelopmentState", default, deserialize_with = "lenient")]
+  pub development_state: Option<String>,
+  #[serde(
+    rename = "_iCompletionPercentage",
+    default,
+    deserialize_with = "deserialize_percentage"
+  )]
+  pub completion_percentage: Option<u8>,
 }
 
 impl IndexSubmission {
   fn is_valid(&self) -> bool {
     self.id > 0
-      && matches!(self.model_name.as_str(), "Mod" | "Sound")
+      && matches!(self.model_name.as_str(), "Mod" | "Sound" | "Wip")
       && !self.name.trim().is_empty()
       && (self.profile_url.is_empty() || self.profile_url.starts_with("https://gamebanana.com/"))
   }
+}
+
+// Display-only Index fields must not discard the whole record when their shape is unexpected.
+fn lenient<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+  D: serde::Deserializer<'de>,
+  T: serde::de::DeserializeOwned,
+{
+  let value = serde_json::Value::deserialize(deserializer)?;
+  Ok(serde_json::from_value(value).ok())
+}
+
+// GameBanana serializes PHP arrays as either JSON arrays or objects.
+fn deserialize_tags<'de, D>(deserializer: D) -> Result<Vec<Tag>, D::Error>
+where
+  D: serde::Deserializer<'de>,
+{
+  let entries = match serde_json::Value::deserialize(deserializer)? {
+    serde_json::Value::Array(entries) => entries,
+    serde_json::Value::Object(entries) => entries.into_iter().map(|(_, entry)| entry).collect(),
+    _ => Vec::new(),
+  };
+  Ok(
+    entries
+      .into_iter()
+      .filter_map(|entry| serde_json::from_value(entry).ok())
+      .collect(),
+  )
+}
+
+fn deserialize_percentage<'de, D>(deserializer: D) -> Result<Option<u8>, D::Error>
+where
+  D: serde::Deserializer<'de>,
+{
+  let value = Option::<serde_json::Value>::deserialize(deserializer)?;
+  Ok(
+    value
+      .as_ref()
+      .and_then(serde_json::Value::as_u64)
+      .and_then(|percentage| u8::try_from(percentage.min(100)).ok()),
+  )
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct GameRef {
+  #[serde(rename = "_idRow", default)]
+  pub id: u64,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -146,6 +205,14 @@ impl PreviewMedia {
   pub fn image_urls(&self) -> Vec<String> {
     self.images.iter().filter_map(PreviewImage::url).collect()
   }
+
+  pub fn audio_url(&self) -> Option<String> {
+    self
+      .metadata
+      .audio_url
+      .clone()
+      .filter(|url| url.starts_with("https://"))
+  }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -162,6 +229,8 @@ pub struct SubmissionFile {
   pub download_url: String,
   #[serde(rename = "_sMd5Checksum", default)]
   pub md5: Option<String>,
+  #[serde(rename = "_sDescription", default)]
+  pub description: Option<String>,
 }
 
 // A malformed file must not hide other usable downloads in the response.
@@ -170,13 +239,23 @@ where
   D: serde::Deserializer<'de>,
 {
   let entries = Vec::<serde_json::Value>::deserialize(deserializer)?;
-  Ok(
-    entries
-      .into_iter()
-      .filter_map(|entry| serde_json::from_value::<SubmissionFile>(entry).ok())
-      .filter(|file| file.id > 0)
-      .collect(),
-  )
+  Ok(parse_file_entries(entries))
+}
+
+fn parse_file_entries(entries: Vec<serde_json::Value>) -> Vec<SubmissionFile> {
+  let total = entries.len();
+  let files = entries
+    .into_iter()
+    .filter_map(|entry| serde_json::from_value::<SubmissionFile>(entry).ok())
+    .filter(|file| file.id > 0)
+    .collect::<Vec<_>>();
+  if files.len() < total {
+    log::warn!(
+      "GameBanana returned {} malformed file entries out of {total}",
+      total - files.len()
+    );
+  }
+  files
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -211,7 +290,7 @@ pub struct Profile {
   pub initial_visibility: String,
   #[serde(rename = "_aContentRatings", default)]
   pub content_ratings: BTreeMap<String, String>,
-  #[serde(rename = "_aTags", default)]
+  #[serde(rename = "_aTags", default, deserialize_with = "deserialize_tags")]
   pub tags: Vec<Tag>,
   #[serde(rename = "_aCategory", default)]
   pub category: Option<Category>,
@@ -227,6 +306,16 @@ pub struct Profile {
   pub files: Vec<SubmissionFile>,
   #[serde(rename = "_aRequirements", default)]
   pub requirements: Vec<Vec<String>>,
+  #[serde(rename = "_aGame", default)]
+  pub game: Option<GameRef>,
+  #[serde(rename = "_sDevelopmentState", default)]
+  pub development_state: Option<String>,
+  #[serde(
+    rename = "_iCompletionPercentage",
+    default,
+    deserialize_with = "deserialize_percentage"
+  )]
+  pub completion_percentage: Option<u8>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -301,13 +390,14 @@ impl UpdateSnapshot {
   fn parse(value: serde_json::Value, submission: &crate::providers::SubmissionRef) -> Option<Self> {
     let fields = value.as_array()?;
     let profile_url = fields.first()?.as_str()?;
-    let expected_path = match submission.submission_type {
-      crate::providers::SubmissionType::Mod => "mods",
-      crate::providers::SubmissionType::Sound => "sounds",
-    };
     let parsed_url = reqwest::Url::parse(profile_url).ok()?;
     if parsed_url.host_str() != Some("gamebanana.com")
-      || parsed_url.path() != format!("/{expected_path}/{}", submission.submission_id)
+      || parsed_url.path()
+        != format!(
+          "/{}/{}",
+          submission.submission_type.gamebanana_path(),
+          submission.submission_id
+        )
     {
       return None;
     }
@@ -320,18 +410,28 @@ impl UpdateSnapshot {
   }
 }
 
+// Core returns files as an object keyed by file id, or an empty array when there are none.
 fn parse_update_files(value: &serde_json::Value) -> Vec<SubmissionFile> {
   match value {
-    serde_json::Value::Array(files) => files
-      .iter()
-      .filter_map(|file| serde_json::from_value(file.clone()).ok())
-      .collect(),
-    serde_json::Value::Object(files) => files
-      .values()
-      .filter_map(|file| serde_json::from_value(file.clone()).ok())
-      .collect(),
+    serde_json::Value::Array(files) => parse_file_entries(files.clone()),
+    serde_json::Value::Object(files) => parse_file_entries(files.values().cloned().collect()),
     _ => Vec::new(),
   }
+}
+
+/// `Core/Item/Data` reports request-level failures as an HTTP 200 error object.
+pub fn core_error(value: &serde_json::Value) -> Option<String> {
+  let fields = value.as_object()?;
+  let code = fields.get("error_code").and_then(serde_json::Value::as_str);
+  let message = fields.get("error").and_then(serde_json::Value::as_str);
+  if code.is_none() && message.is_none() {
+    return None;
+  }
+  Some(format!(
+    "{}: {}",
+    code.unwrap_or("UNKNOWN"),
+    message.unwrap_or_default()
+  ))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -340,9 +440,9 @@ pub struct BulkHydration {
   pub download_count: u64,
   pub category: String,
   pub root_category: String,
-  pub is_nsfw: bool,
   pub description: String,
   pub text: String,
+  pub files_updated_at: Option<i64>,
 }
 
 impl BulkHydration {
@@ -361,9 +461,9 @@ impl BulkHydration {
       download_count: values.get(1)?.as_u64()?,
       category: values.get(2)?.as_str().unwrap_or_default().to_string(),
       root_category: values.get(3)?.as_str().unwrap_or_default().to_string(),
-      is_nsfw: values.get(4)?.as_bool().unwrap_or_default(),
-      description: values.get(5)?.as_str().unwrap_or_default().to_string(),
-      text: values.get(6)?.as_str().unwrap_or_default().to_string(),
+      description: values.get(4)?.as_str().unwrap_or_default().to_string(),
+      text: values.get(5)?.as_str().unwrap_or_default().to_string(),
+      files_updated_at: latest_file_date(values.get(6)?),
     })
   }
 
@@ -373,14 +473,18 @@ impl BulkHydration {
       download_count: fields.get("downloads")?.as_u64()?,
       category: string_field(fields, "Category().name"),
       root_category: string_field(fields, "RootCategory().name"),
-      is_nsfw: fields
-        .get("Nsfw().bIsNsfw()")
-        .and_then(serde_json::Value::as_bool)
-        .unwrap_or_default(),
       description: string_field(fields, "description"),
       text: string_field(fields, "text"),
+      files_updated_at: fields.get("Files().aFiles()").and_then(latest_file_date),
     })
   }
+}
+
+fn latest_file_date(files: &serde_json::Value) -> Option<i64> {
+  parse_update_files(files)
+    .iter()
+    .filter_map(|file| file.date_added)
+    .max()
 }
 
 fn string_field(fields: &serde_json::Map<String, serde_json::Value>, key: &str) -> String {
@@ -393,7 +497,9 @@ fn string_field(fields: &serde_json::Map<String, serde_json::Value>, key: &str) 
 
 #[cfg(test)]
 mod tests {
-  use super::{BulkHydration, DownloadPage, FileserverPage, IndexPage, Profile, UpdateSnapshot};
+  use super::{
+    BulkHydration, DownloadPage, FileserverPage, IndexPage, Profile, UpdateSnapshot, core_error,
+  };
   use crate::providers::SubmissionRef;
 
   #[test]
@@ -495,8 +601,32 @@ mod tests {
 
     assert_eq!(multi.len(), 2);
     assert_eq!(multi[0].as_ref().unwrap().category, "Drifter");
+    assert_eq!(
+      multi[0].as_ref().unwrap().files_updated_at,
+      Some(1787320784)
+    );
+    assert_eq!(multi[1].as_ref().unwrap().files_updated_at, None);
     assert_eq!(single.len(), 1);
     assert_eq!(single[0].as_ref().unwrap().category, "Abilities");
+    assert_eq!(
+      single[0].as_ref().unwrap().files_updated_at,
+      Some(1791033883)
+    );
+  }
+
+  #[test]
+  fn core_errors_are_detected_instead_of_parsed_as_records() {
+    let fixture: serde_json::Value = serde_json::from_str(include_str!(
+      "../../../tests/fixtures/gamebanana/core-item-data.json"
+    ))
+    .unwrap();
+
+    assert_eq!(
+      core_error(&fixture["invalidFields"]).as_deref(),
+      Some("INVALID_FIELDS_PARAM: Unrecognized [fields] `bogusfield`")
+    );
+    assert_eq!(core_error(&fixture["modMulticall"]), None);
+    assert_eq!(core_error(&fixture["sound"]), None);
   }
 
   #[test]

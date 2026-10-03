@@ -1,4 +1,5 @@
 import type { SubmissionRef } from "@/types/generated/SubmissionRef";
+import type { SubmissionType } from "@/types/generated/SubmissionType";
 
 const GAMEBANANA_ID_PATTERN = /^[1-9]\d*$/;
 const LOCAL_ID_PATTERN =
@@ -7,7 +8,14 @@ const LOCAL_ID_PATTERN =
 const matchesEntireValue = (pattern: RegExp, value: string): boolean =>
   pattern.exec(value)?.[0] === value;
 
-/** Parses numeric Mod IDs, snd- Sound IDs, or local- UUIDs; returns null for invalid slugs. */
+const SLUG_PREFIX: Record<SubmissionType, string> = {
+  mod: "",
+  sound: "snd-",
+  wip: "wip-",
+};
+const PREFIXED_TYPES = ["sound", "wip"] as const;
+
+/** Parses numeric Mod IDs, snd- Sound IDs, wip- WIP IDs, or local- UUIDs; returns null for invalid slugs. */
 export function parseSubmissionSlug(slug: string): SubmissionRef | null {
   if (matchesEntireValue(GAMEBANANA_ID_PATTERN, slug)) {
     return {
@@ -17,13 +25,21 @@ export function parseSubmissionSlug(slug: string): SubmissionRef | null {
     };
   }
 
-  const soundId = slug.startsWith("snd-") ? slug.slice(4) : null;
-  if (soundId && matchesEntireValue(GAMEBANANA_ID_PATTERN, soundId)) {
-    return {
-      provider: "gamebanana",
-      submissionType: "sound",
-      submissionId: soundId,
-    };
+  for (const submissionType of PREFIXED_TYPES) {
+    const prefix = SLUG_PREFIX[submissionType];
+    const submissionId = slug.startsWith(prefix)
+      ? slug.slice(prefix.length)
+      : null;
+    if (
+      submissionId &&
+      matchesEntireValue(GAMEBANANA_ID_PATTERN, submissionId)
+    ) {
+      return {
+        provider: "gamebanana",
+        submissionType,
+        submissionId,
+      };
+    }
   }
 
   const localId = slug.startsWith("local-") ? slug.slice(6) : null;
@@ -46,9 +62,7 @@ export function serializeSubmissionRef(
     if (!matchesEntireValue(GAMEBANANA_ID_PATTERN, submission.submissionId)) {
       return null;
     }
-    return submission.submissionType === "sound"
-      ? `snd-${submission.submissionId}`
-      : submission.submissionId;
+    return `${SLUG_PREFIX[submission.submissionType]}${submission.submissionId}`;
   }
 
   if (

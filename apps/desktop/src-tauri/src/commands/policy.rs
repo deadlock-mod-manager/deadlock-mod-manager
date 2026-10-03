@@ -489,6 +489,8 @@ mod tests {
       name: "Old voice".to_string(),
       description: None,
       remote_url: "https://gamebanana.com/sounds/42".to_string(),
+      development_state: None,
+      completion_percentage: None,
       category: "VOs".to_string(),
       likes: 0,
       author: "author".to_string(),

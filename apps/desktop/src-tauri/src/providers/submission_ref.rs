@@ -16,6 +16,20 @@ pub enum SubmissionProvider {
 pub enum SubmissionType {
   Mod,
   Sound,
+  Wip,
+}
+
+impl SubmissionType {
+  pub const ALL: [Self; 3] = [Self::Mod, Self::Sound, Self::Wip];
+
+  /// Path segment GameBanana uses for this type in profile and fileserver URLs.
+  pub fn gamebanana_path(self) -> &'static str {
+    match self {
+      Self::Mod => "mods",
+      Self::Sound => "sounds",
+      Self::Wip => "wips",
+    }
+  }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
@@ -55,6 +69,16 @@ impl SubmissionRef {
       });
     }
 
+    if let Some(submission_id) = slug.strip_prefix("wip-")
+      && is_canonical_gamebanana_id(submission_id)
+    {
+      return Ok(Self {
+        provider: SubmissionProvider::Gamebanana,
+        submission_type: SubmissionType::Wip,
+        submission_id: submission_id.to_string(),
+      });
+    }
+
     if is_canonical_gamebanana_id(slug) {
       return Ok(Self {
         provider: SubmissionProvider::Gamebanana,
@@ -78,6 +102,11 @@ impl SubmissionRef {
       (SubmissionProvider::Gamebanana, SubmissionType::Sound) => {
         is_canonical_gamebanana_id(&self.submission_id)
           .then(|| format!("snd-{}", self.submission_id))
+          .ok_or_else(|| self.invalid())
+      }
+      (SubmissionProvider::Gamebanana, SubmissionType::Wip) => {
+        is_canonical_gamebanana_id(&self.submission_id)
+          .then(|| format!("wip-{}", self.submission_id))
           .ok_or_else(|| self.invalid())
       }
       (SubmissionProvider::Local, SubmissionType::Mod) if is_uuid(&self.submission_id) => {
@@ -169,6 +198,16 @@ mod tests {
   }
 
   #[test]
+  fn wip_slug_round_trips_without_colliding_with_mod_ids() {
+    let submission = SubmissionRef::parse_slug("wip-103122").unwrap();
+
+    assert_eq!(submission.provider, SubmissionProvider::Gamebanana);
+    assert_eq!(submission.submission_type, SubmissionType::Wip);
+    assert_eq!(submission.submission_id, "103122");
+    assert_eq!(submission.to_slug().unwrap(), "wip-103122");
+  }
+
+  #[test]
   fn local_slug_round_trips_with_its_uuid() {
     let submission =
       SubmissionRef::parse_slug("local-550e8400-e29b-41d4-a716-446655440000").unwrap();
@@ -210,6 +249,9 @@ mod tests {
       "snd-0",
       "snd-01",
       "snd-one",
+      "wip-",
+      "wip-0",
+      "wip-01",
       "local-",
       "local-abc-123",
       "local-550e8400-e29b-41d4-a716-44665544000z",

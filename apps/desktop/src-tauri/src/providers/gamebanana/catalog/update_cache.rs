@@ -131,6 +131,7 @@ mod tests {
     let replacement = UpdateSnapshot {
       remote_updated_at: 300,
       files: vec![SubmissionFile {
+        description: None,
         id: 7,
         name: "sound.zip".to_string(),
         size: 12,

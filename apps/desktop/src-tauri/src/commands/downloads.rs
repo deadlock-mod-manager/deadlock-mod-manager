@@ -135,14 +135,10 @@ async fn resolve_gamebanana_file(
             .find(|server| server.id == preference && server.state != "terminated")
         };
         if let Some(server) = selected {
-          let category = match submission.submission_type {
-            crate::providers::SubmissionType::Mod => "mods",
-            crate::providers::SubmissionType::Sound => "sounds",
-          };
           download_url = format!(
             "https://{}/{}/{}",
             server.domain,
-            category,
+            submission.submission_type.gamebanana_path(),
             urlencoding::encode(&file.name)
           );
         }
