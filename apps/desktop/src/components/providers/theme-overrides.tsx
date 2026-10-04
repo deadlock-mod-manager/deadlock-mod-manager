@@ -1,7 +1,7 @@
 import { type ReactNode, createContext, useContext, useMemo } from "react";
-import { usePersistedStore } from "@/lib/store";
-import { selectActiveTheme } from "@/lib/store/selectors";
+import { useActiveTheme } from "@/hooks/use-active-theme";
 import { overrides as deadlockApiOverrides } from "@/plugins/themes/pre-defined/deadlock-api/overrides";
+import { overrides as remlockOverrides } from "@/plugins/themes/pre-defined/remlock/overrides";
 import { overrides as teaOverrides } from "@/plugins/themes/pre-defined/tea/overrides";
 import type { ThemeOverrides } from "@/types/theme-overrides";
 
@@ -11,18 +11,19 @@ const EMPTY_OVERRIDES: ThemeOverrides = {};
 
 const ThemeOverridesContext = createContext<ThemeOverrides>(EMPTY_OVERRIDES);
 
-const THEME_OVERRIDES_REGISTRY: Record<string, ThemeOverrides> = {
-  "deadlock-api": deadlockApiOverrides,
-  tea: teaOverrides,
-};
+const THEME_OVERRIDES_REGISTRY = new Map<string, ThemeOverrides>([
+  ["deadlock-api", deadlockApiOverrides],
+  ["tea", teaOverrides],
+  ["remlock", remlockOverrides],
+]);
 
 export function ThemeOverridesProvider({ children }: { children: ReactNode }) {
-  const activeTheme = usePersistedStore(selectActiveTheme);
+  const activeTheme = useActiveTheme();
 
   const overrides = useMemo(
     () =>
       activeTheme
-        ? (THEME_OVERRIDES_REGISTRY[activeTheme] ?? EMPTY_OVERRIDES)
+        ? (THEME_OVERRIDES_REGISTRY.get(activeTheme) ?? EMPTY_OVERRIDES)
         : EMPTY_OVERRIDES,
     [activeTheme],
   );
