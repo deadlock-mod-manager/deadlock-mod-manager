@@ -48,14 +48,11 @@ const decodeSkinModel = async (
 
 /**
  * The 3D preview for one hero skin, or for the hero's default look when `mod`
- * is null, as everywhere else on the page. Disabled, nothing is decoded at all
- * — the decode is the expensive part, and that is the point of the setting.
+ * is null, as everywhere else on the page. Only mounted while the preview
+ * setting is on — the decode is the expensive part, and that is the point of
+ * the setting.
  */
-export const useSkinModelPreview = (
-  hero: string,
-  mod: LocalMod | null,
-  enabled: boolean,
-) => {
+export const useSkinModelPreview = (hero: string, mod: LocalMod | null) => {
   const profileFolder = usePersistedStore(
     (state) => state.profiles[state.activeProfileId]?.folderName ?? null,
   );
@@ -76,7 +73,6 @@ export const useSkinModelPreview = (
       profileFolder,
     ],
     queryFn: () => decodeSkinModel(mod, hero, profileFolder),
-    enabled,
     // A skin's model only changes when the skin does, and that changes the key.
     staleTime: Number.POSITIVE_INFINITY,
     gcTime: MODEL_CACHE_TIME_MS,

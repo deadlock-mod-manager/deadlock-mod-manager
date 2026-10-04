@@ -14,7 +14,6 @@ import {
 } from "@deadlock-mods/ui/components/tooltip";
 import {
   ArrowClockwiseIcon,
-  CubeIcon,
   EyeSlashIcon,
   WarningIcon,
 } from "@phosphor-icons/react";
@@ -37,72 +36,48 @@ interface SkinPreviewPanelProps {
  * The 3D turntable beside the skin grid: the selected skin's hero model,
  * decoded from its VPK and rendered with the Foundry's viewer.
  *
- * This is a look, not an editor — nothing here writes to the skin. The whole
- * panel is behind the same setting as the Foundry's preview, because it is the
- * same decode-and-render on the same GPU, and it fails in the same ways.
+ * This is a look, not an editor — nothing here writes to the skin. The page
+ * only mounts the panel while the Foundry's preview setting is on, because it
+ * is the same decode-and-render on the same GPU, and it fails in the same ways.
  */
 export const SkinPreviewPanel = ({ hero, mod }: SkinPreviewPanelProps) => {
   const { t } = useTranslation();
-  const enabled = usePersistedStore((state) => state.foundry3dPreviewEnabled);
   const setEnabled = usePersistedStore(
     (state) => state.setFoundry3dPreviewEnabled,
   );
-  const preview = useSkinModelPreview(hero, mod, enabled);
+  const preview = useSkinModelPreview(hero, mod);
   const label = mod?.name ?? t("skins.preview.defaultLabel", { hero });
 
   return (
     // The panel scales with the window rather than holding one fixed width, so
     // it keeps its share of the page from a small window up to a maximised one.
     <aside className='flex w-[clamp(320px,28vw,640px)] shrink-0 flex-col gap-3'>
-      {enabled && (
-        <div className='flex items-start justify-between gap-2'>
-          <div className='min-w-0'>
-            <h3 className='truncate font-semibold text-sm'>
-              {t("skins.preview.title")}
-            </h3>
-            <p className='truncate text-muted-foreground text-xs' title={label}>
-              {label}
-            </p>
-          </div>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                aria-label={t("skins.preview.hide")}
-                className='h-7 w-7 shrink-0'
-                onClick={() => setEnabled(false)}
-                size='icon'
-                variant='ghost'>
-                <EyeSlashIcon className='h-4 w-4' />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t("skins.preview.hide")}</TooltipContent>
-          </Tooltip>
+      <div className='flex items-start justify-between gap-2'>
+        <div className='min-w-0'>
+          <h3 className='truncate font-semibold text-sm'>
+            {t("skins.preview.title")}
+          </h3>
+          <p className='truncate text-muted-foreground text-xs' title={label}>
+            {label}
+          </p>
         </div>
-      )}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              aria-label={t("skins.preview.hide")}
+              className='h-7 w-7 shrink-0'
+              onClick={() => setEnabled(false)}
+              size='icon'
+              variant='ghost'>
+              <EyeSlashIcon className='h-4 w-4' />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>{t("skins.preview.hide")}</TooltipContent>
+        </Tooltip>
+      </div>
 
       <div className='relative flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-lg border bg-gradient-to-b from-muted/40 to-background'>
-        {enabled ? (
-          <PreviewSurface label={label} preview={preview} />
-        ) : (
-          <PanelNotice
-            action={
-              <Button
-                onClick={() => setEnabled(true)}
-                size='sm'
-                variant='outline'>
-                {t("skins.preview.enable")}
-              </Button>
-            }
-            description={t("skins.preview.disabledHint")}
-            icon={
-              <CubeIcon
-                className='h-12 w-12 text-muted-foreground opacity-40'
-                weight='duotone'
-              />
-            }
-            title={t("skins.preview.disabled")}
-          />
-        )}
+        <PreviewSurface label={label} preview={preview} />
       </div>
     </aside>
   );
