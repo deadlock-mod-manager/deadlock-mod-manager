@@ -68,6 +68,10 @@ export const ModChangelog = ({ remoteId, installedAt }: ModChangelogProps) => {
           <p className='text-muted-foreground text-sm'>
             {t("modDetail.changelog.loadError")}
           </p>
+        ) : entries.length === 0 ? (
+          <p className='text-muted-foreground text-sm'>
+            {t("modDetail.changelog.empty")}
+          </p>
         ) : (
           <div className='space-y-2'>
             <div className='divide-y divide-border/40'>

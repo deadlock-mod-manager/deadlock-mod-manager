@@ -122,11 +122,14 @@ const Mod = () => {
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
 
   const downloadableFileCount = mod?.downloadable ? availableFiles.length : 0;
-  const hasInstalledVpks = isInstalled && !!localMod?.installedVpks?.length;
+  const installedVpks = isInstalled ? localMod?.installedVpks : undefined;
+  const installedFileTree = isInstalled
+    ? localMod?.installedFileTree
+    : undefined;
   const hasFilesTab =
     downloadableFileCount > 0 ||
-    hasInstalledVpks ||
-    (isInstalled && !!localMod?.installedFileTree) ||
+    !!installedVpks?.length ||
+    !!installedFileTree ||
     (developerMode && !!localMod);
 
   const modOptions = useModOptions(localMod ?? null);
@@ -370,21 +373,21 @@ const Mod = () => {
                 {t("modDetail.tabs.overview")}
               </TabsTrigger>
               {isGameBananaMod && (
-                <TabsTrigger className='gap-1.5' value='changelog'>
-                  {t("modDetail.tabs.changelog")}
-                  {hasUpdate && (
-                    <span
-                      aria-label={t("modDetail.tabs.updateAvailable")}
-                      className='h-1.5 w-1.5 rounded-full bg-primary'
-                      role='img'
-                    />
-                  )}
-                </TabsTrigger>
-              )}
-              {isGameBananaMod && (
-                <TabsTrigger value='comments'>
-                  {t("modDetail.tabs.comments")}
-                </TabsTrigger>
+                <>
+                  <TabsTrigger className='gap-1.5' value='changelog'>
+                    {t("modDetail.tabs.changelog")}
+                    {hasUpdate && (
+                      <span
+                        aria-label={t("modDetail.tabs.updateAvailable")}
+                        className='size-1.5 rounded-full bg-primary'
+                        role='img'
+                      />
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value='comments'>
+                    {t("modDetail.tabs.comments")}
+                  </TabsTrigger>
+                </>
               )}
               {hasFilesTab && (
                 <TabsTrigger className='gap-1.5' value='files'>
@@ -427,27 +430,25 @@ const Mod = () => {
               )}
             </TabsContent>
 
-            {/* Tab content only mounts when opened, so GameBanana activity is fetched on demand. */}
             {isGameBananaMod && (
-              <TabsContent className='mt-4' value='changelog'>
-                <ModChangelog
-                  installedAt={
-                    isInstalled && localMod?.downloadedAt
-                      ? new Date(localMod.downloadedAt)
-                      : undefined
-                  }
-                  remoteId={mod.remoteId}
-                />
-              </TabsContent>
-            )}
-
-            {isGameBananaMod && (
-              <TabsContent className='mt-4' value='comments'>
-                <ModComments
-                  remoteId={mod.remoteId}
-                  remoteUrl={mod.remoteUrl}
-                />
-              </TabsContent>
+              <>
+                <TabsContent className='mt-4' value='changelog'>
+                  <ModChangelog
+                    installedAt={
+                      isInstalled && localMod?.downloadedAt
+                        ? new Date(localMod.downloadedAt)
+                        : undefined
+                    }
+                    remoteId={mod.remoteId}
+                  />
+                </TabsContent>
+                <TabsContent className='mt-4' value='comments'>
+                  <ModComments
+                    remoteId={mod.remoteId}
+                    remoteUrl={mod.remoteUrl}
+                  />
+                </TabsContent>
+              </>
             )}
 
             {hasFilesTab && (
@@ -457,13 +458,13 @@ const Mod = () => {
                   isDownloadable={!!mod.downloadable}
                 />
 
-                {hasInstalledVpks && localMod?.installedVpks && (
-                  <InstalledVpksSection vpks={localMod.installedVpks} />
+                {!!installedVpks?.length && (
+                  <InstalledVpksSection vpks={installedVpks} />
                 )}
 
-                {isInstalled && localMod?.installedFileTree && (
+                {installedFileTree && (
                   <InstalledFilesDisplay
-                    fileTree={localMod.installedFileTree}
+                    fileTree={installedFileTree}
                     modName={mod.name}
                   />
                 )}
