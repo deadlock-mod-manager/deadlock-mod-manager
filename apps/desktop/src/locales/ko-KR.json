@@ -1251,6 +1251,13 @@
     "tools": "도구",
     "backups": "백업",
     "toolsDescription": "모드 관리를 위한 유틸리티 기능",
+    "gameGuard": "",
+    "gameGuardDescription": "",
+    "gameGuardSectionTitle": "",
+    "gameGuardSectionDescription": "",
+    "gameGuardSyncFailed": "",
+    "troubleshooting": "",
+    "troubleshootingDescription": "",
     "dangerZone": "",
     "dangerZoneDescription": "",
     "openGameFolder": "게임 폴더 열기",
@@ -2219,6 +2226,80 @@
     "thankYou": "",
     "thankYouDescription": ""
   },
+  "gameGuard": {
+    "title": "",
+    "body": "",
+    "cancel": "",
+    "continueAnyway": "",
+    "blockedTitle": "",
+    "blockedDescription": ""
+  },
+  "networkDiagnostics": {
+    "open": "",
+    "title": "",
+    "description": "",
+    "pending": "",
+    "running": "",
+    "latency": "",
+    "howToFix": "",
+    "copy": "",
+    "copyUrl": "",
+    "urlCopied": "",
+    "copied": "",
+    "runAgain": "",
+    "checks": {
+      "network": "",
+      "internet": "",
+      "dns": "",
+      "dmmApi": "",
+      "gamebanana": "",
+      "deadlockApi": "",
+      "deadlockAssets": "",
+      "catalog": ""
+    },
+    "results": {
+      "online": "",
+      "offline": "",
+      "reachable": "",
+      "slow": "",
+      "timeout": "",
+      "unreachable": "",
+      "blocked": "",
+      "rateLimited": "",
+      "degraded": "",
+      "serverError": "",
+      "httpError": "",
+      "dnsFailed": "",
+      "dnsHostFailed": "",
+      "catalogReady": "",
+      "catalogStale": "",
+      "catalogEmpty": "",
+      "catalogCheckFailed": ""
+    },
+    "fixes": {
+      "checkConnection": "",
+      "restartRouter": "",
+      "disableVpnFirewall": "",
+      "checkProxy": "",
+      "changeDns": "",
+      "flushDnsCache": "",
+      "fixInternetFirst": "",
+      "checkStatusPage": "",
+      "waitAndRetry": "",
+      "tryOtherNetwork": "",
+      "checkGamebanana": "",
+      "checkDeadlockApi": "",
+      "allowFirewall": "",
+      "syncCatalog": "",
+      "restartApp": ""
+    },
+    "verdict": {
+      "running": "",
+      "ok": "",
+      "warning": "",
+      "error": ""
+    }
+  },
   "errors": {
     "genericMessage": "",
     "gameLaunchFailed": "",
@@ -2825,6 +2906,8 @@
       "applyDraftGraceHint": "",
       "applyDraftConfirmKeep": "",
       "accentColor": "",
+      "addCustomColor": "",
+      "resetAccent": "",
       "accentColorDialogTitle": "",
       "accentColorDialogDescription": "",
       "cardColor": "",
@@ -2857,10 +2940,8 @@
     },
     "oled": {
       "description": "",
-      "accentColor": "",
       "customColor": "",
-      "customColorDescription": "",
-      "resetAccent": ""
+      "customColorDescription": ""
     },
     "nightshift": {
       "description": "명확성과 긴 게임 세션을 위해 디자인된 청록색으로 강조된 사이버펑크 테마입니다.",
@@ -2875,10 +2956,8 @@
     "arcane": {
       "description": "아케인 미학에서 영감을 받은 우아한 핑크-레드 글로우 효과를 갖춘 세련된 다크 테마입니다.",
       "visit": "회의론자의 테마",
-      "accentColor": "악센트 색상",
       "customColor": "사용자 정의 색상",
-      "customColorDescription": "Arcane 테마의 사용자 정의 강조 색상을 선택하세요.",
-      "addCustomColor": "맞춤 색상 추가"
+      "customColorDescription": "Arcane 테마의 사용자 정의 강조 색상을 선택하세요."
     },
     "deadlockApi": {
       "description": "Deadlock API 디자인에서 영감을 받은 일렉트릭 레드 글로우 효과를 갖춘 OLED 블랙 테마입니다.",

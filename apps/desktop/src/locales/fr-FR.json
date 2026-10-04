@@ -1251,6 +1251,13 @@
     "tools": "Outils",
     "backups": "Sauvegardes",
     "toolsDescription": "Fonctions utilitaires pour gérer vos mods",
+    "gameGuard": "",
+    "gameGuardDescription": "",
+    "gameGuardSectionTitle": "",
+    "gameGuardSectionDescription": "",
+    "gameGuardSyncFailed": "",
+    "troubleshooting": "",
+    "troubleshootingDescription": "",
     "dangerZone": "",
     "dangerZoneDescription": "",
     "openGameFolder": "Ouvrir le dossier du jeu",
@@ -2219,6 +2226,80 @@
     "thankYou": "",
     "thankYouDescription": ""
   },
+  "gameGuard": {
+    "title": "",
+    "body": "",
+    "cancel": "",
+    "continueAnyway": "",
+    "blockedTitle": "",
+    "blockedDescription": ""
+  },
+  "networkDiagnostics": {
+    "open": "",
+    "title": "",
+    "description": "",
+    "pending": "",
+    "running": "",
+    "latency": "",
+    "howToFix": "",
+    "copy": "",
+    "copyUrl": "",
+    "urlCopied": "",
+    "copied": "",
+    "runAgain": "",
+    "checks": {
+      "network": "",
+      "internet": "",
+      "dns": "",
+      "dmmApi": "",
+      "gamebanana": "",
+      "deadlockApi": "",
+      "deadlockAssets": "",
+      "catalog": ""
+    },
+    "results": {
+      "online": "",
+      "offline": "",
+      "reachable": "",
+      "slow": "",
+      "timeout": "",
+      "unreachable": "",
+      "blocked": "",
+      "rateLimited": "",
+      "degraded": "",
+      "serverError": "",
+      "httpError": "",
+      "dnsFailed": "",
+      "dnsHostFailed": "",
+      "catalogReady": "",
+      "catalogStale": "",
+      "catalogEmpty": "",
+      "catalogCheckFailed": ""
+    },
+    "fixes": {
+      "checkConnection": "",
+      "restartRouter": "",
+      "disableVpnFirewall": "",
+      "checkProxy": "",
+      "changeDns": "",
+      "flushDnsCache": "",
+      "fixInternetFirst": "",
+      "checkStatusPage": "",
+      "waitAndRetry": "",
+      "tryOtherNetwork": "",
+      "checkGamebanana": "",
+      "checkDeadlockApi": "",
+      "allowFirewall": "",
+      "syncCatalog": "",
+      "restartApp": ""
+    },
+    "verdict": {
+      "running": "",
+      "ok": "",
+      "warning": "",
+      "error": ""
+    }
+  },
   "errors": {
     "genericMessage": "",
     "gameLaunchFailed": "",
@@ -2825,6 +2906,8 @@
       "applyDraftGraceHint": "",
       "applyDraftConfirmKeep": "",
       "accentColor": "",
+      "addCustomColor": "",
+      "resetAccent": "",
       "accentColorDialogTitle": "",
       "accentColorDialogDescription": "",
       "cardColor": "",
@@ -2857,10 +2940,8 @@
     },
     "oled": {
       "description": "",
-      "accentColor": "",
       "customColor": "",
-      "customColorDescription": "",
-      "resetAccent": ""
+      "customColorDescription": ""
     },
     "nightshift": {
       "description": "Un thème cyberpunk avec des accents turquoise conçu pour la clarté et les longues sessions de jeu.",
@@ -2875,10 +2956,8 @@
     "arcane": {
       "description": "Un thème sombre élégant avec des effets de lueur rose-rouge inspirés de l'esthétique Arcane.",
       "visit": "Thème par Skeptic",
-      "accentColor": "Couleur d'accent",
       "customColor": "Couleur personnalisée",
-      "customColorDescription": "Choisissez une couleur d'accent personnalisée pour le thème Arcane.",
-      "addCustomColor": "Ajouter une couleur"
+      "customColorDescription": "Choisissez une couleur d'accent personnalisée pour le thème Arcane."
     },
     "deadlockApi": {
       "description": "",

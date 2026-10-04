@@ -1251,6 +1251,13 @@
     "tools": "Araçlar",
     "backups": "Yedekler",
     "toolsDescription": "Modlarınızı yönetmek için yardımıcı fonksiyonlar",
+    "gameGuard": "",
+    "gameGuardDescription": "",
+    "gameGuardSectionTitle": "",
+    "gameGuardSectionDescription": "",
+    "gameGuardSyncFailed": "",
+    "troubleshooting": "",
+    "troubleshootingDescription": "",
     "dangerZone": "",
     "dangerZoneDescription": "",
     "openGameFolder": "Oyun klasörünü aç",
@@ -2219,6 +2226,80 @@
     "thankYou": "",
     "thankYouDescription": ""
   },
+  "gameGuard": {
+    "title": "",
+    "body": "",
+    "cancel": "",
+    "continueAnyway": "",
+    "blockedTitle": "",
+    "blockedDescription": ""
+  },
+  "networkDiagnostics": {
+    "open": "",
+    "title": "",
+    "description": "",
+    "pending": "",
+    "running": "",
+    "latency": "",
+    "howToFix": "",
+    "copy": "",
+    "copyUrl": "",
+    "urlCopied": "",
+    "copied": "",
+    "runAgain": "",
+    "checks": {
+      "network": "",
+      "internet": "",
+      "dns": "",
+      "dmmApi": "",
+      "gamebanana": "",
+      "deadlockApi": "",
+      "deadlockAssets": "",
+      "catalog": ""
+    },
+    "results": {
+      "online": "",
+      "offline": "",
+      "reachable": "",
+      "slow": "",
+      "timeout": "",
+      "unreachable": "",
+      "blocked": "",
+      "rateLimited": "",
+      "degraded": "",
+      "serverError": "",
+      "httpError": "",
+      "dnsFailed": "",
+      "dnsHostFailed": "",
+      "catalogReady": "",
+      "catalogStale": "",
+      "catalogEmpty": "",
+      "catalogCheckFailed": ""
+    },
+    "fixes": {
+      "checkConnection": "",
+      "restartRouter": "",
+      "disableVpnFirewall": "",
+      "checkProxy": "",
+      "changeDns": "",
+      "flushDnsCache": "",
+      "fixInternetFirst": "",
+      "checkStatusPage": "",
+      "waitAndRetry": "",
+      "tryOtherNetwork": "",
+      "checkGamebanana": "",
+      "checkDeadlockApi": "",
+      "allowFirewall": "",
+      "syncCatalog": "",
+      "restartApp": ""
+    },
+    "verdict": {
+      "running": "",
+      "ok": "",
+      "warning": "",
+      "error": ""
+    }
+  },
   "errors": {
     "genericMessage": "",
     "gameLaunchFailed": "",
@@ -2825,6 +2906,8 @@
       "applyDraftGraceHint": "",
       "applyDraftConfirmKeep": "",
       "accentColor": "",
+      "addCustomColor": "",
+      "resetAccent": "",
       "accentColorDialogTitle": "",
       "accentColorDialogDescription": "",
       "cardColor": "",
@@ -2857,10 +2940,8 @@
     },
     "oled": {
       "description": "",
-      "accentColor": "",
       "customColor": "",
-      "customColorDescription": "",
-      "resetAccent": ""
+      "customColorDescription": ""
     },
     "nightshift": {
       "description": "Klarite ve uzun oyun oturumları için tasarlanmış turkuaz vurgulu siberpunk tema.",
@@ -2875,10 +2956,8 @@
     "arcane": {
       "description": "Arcane estetiğinden ilham alan pembe-kırmızı parıltı efektleriyle şık karanlık tema.",
       "visit": "Skeptic tarafından tema",
-      "accentColor": "Vurgu Rengi",
       "customColor": "Özel Renk",
-      "customColorDescription": "Arcane teması için özel bir vurgu rengi seçin.",
-      "addCustomColor": "Renk ekle"
+      "customColorDescription": "Arcane teması için özel bir vurgu rengi seçin."
     },
     "deadlockApi": {
       "description": "",

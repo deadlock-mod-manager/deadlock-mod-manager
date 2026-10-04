@@ -1251,6 +1251,13 @@
     "tools": "工具",
     "backups": "备份",
     "toolsDescription": "用于管理模组的实用功能",
+    "gameGuard": "",
+    "gameGuardDescription": "",
+    "gameGuardSectionTitle": "",
+    "gameGuardSectionDescription": "",
+    "gameGuardSyncFailed": "",
+    "troubleshooting": "",
+    "troubleshootingDescription": "",
     "dangerZone": "危险区域",
     "dangerZoneDescription": "这些操作是永久性的，无法撤销。",
     "openGameFolder": "打开游戏文件夹",
@@ -2219,6 +2226,80 @@
     "thankYou": "谢谢！",
     "thankYouDescription": "您的匿名使用数据帮助我们为所有人改进 Deadlock Mod Manager。"
   },
+  "gameGuard": {
+    "title": "",
+    "body": "",
+    "cancel": "",
+    "continueAnyway": "",
+    "blockedTitle": "",
+    "blockedDescription": ""
+  },
+  "networkDiagnostics": {
+    "open": "",
+    "title": "",
+    "description": "",
+    "pending": "",
+    "running": "",
+    "latency": "",
+    "howToFix": "",
+    "copy": "",
+    "copyUrl": "",
+    "urlCopied": "",
+    "copied": "",
+    "runAgain": "",
+    "checks": {
+      "network": "",
+      "internet": "",
+      "dns": "",
+      "dmmApi": "",
+      "gamebanana": "",
+      "deadlockApi": "",
+      "deadlockAssets": "",
+      "catalog": ""
+    },
+    "results": {
+      "online": "",
+      "offline": "",
+      "reachable": "",
+      "slow": "",
+      "timeout": "",
+      "unreachable": "",
+      "blocked": "",
+      "rateLimited": "",
+      "degraded": "",
+      "serverError": "",
+      "httpError": "",
+      "dnsFailed": "",
+      "dnsHostFailed": "",
+      "catalogReady": "",
+      "catalogStale": "",
+      "catalogEmpty": "",
+      "catalogCheckFailed": ""
+    },
+    "fixes": {
+      "checkConnection": "",
+      "restartRouter": "",
+      "disableVpnFirewall": "",
+      "checkProxy": "",
+      "changeDns": "",
+      "flushDnsCache": "",
+      "fixInternetFirst": "",
+      "checkStatusPage": "",
+      "waitAndRetry": "",
+      "tryOtherNetwork": "",
+      "checkGamebanana": "",
+      "checkDeadlockApi": "",
+      "allowFirewall": "",
+      "syncCatalog": "",
+      "restartApp": ""
+    },
+    "verdict": {
+      "running": "",
+      "ok": "",
+      "warning": "",
+      "error": ""
+    }
+  },
   "errors": {
     "genericMessage": "出了点问题。",
     "gameLaunchFailed": "",
@@ -2825,6 +2906,8 @@
       "applyDraftGraceHint": "草稿主题已应用。点击\"保留\"，否则将自动恢复。",
       "applyDraftConfirmKeep": "保留草稿主题",
       "accentColor": "强调色",
+      "addCustomColor": "",
+      "resetAccent": "",
       "accentColorDialogTitle": "强调色",
       "accentColorDialogDescription": "选择用于高亮和强调的主色调。",
       "cardColor": "卡面",
@@ -2857,10 +2940,8 @@
     },
     "oled": {
       "description": "",
-      "accentColor": "",
       "customColor": "",
-      "customColorDescription": "",
-      "resetAccent": ""
+      "customColorDescription": ""
     },
     "nightshift": {
       "description": "一款带有青色点缀的赛博朋克主题，专为清晰度和长时间游戏而设计。",
@@ -2875,10 +2956,8 @@
     "arcane": {
       "description": "一款优雅的暗黑主题，带有粉红色发光效果，灵感来自Arcane美学。",
       "visit": "Skeptic 制作的主题",
-      "accentColor": "强调色",
       "customColor": "自定义颜色",
-      "customColorDescription": "为Arcane主题选择自定义强调色。",
-      "addCustomColor": "添加颜色"
+      "customColorDescription": "为Arcane主题选择自定义强调色。"
     },
     "deadlockApi": {
       "description": "OLED 黑色主题，具有电光红色发光效果，灵感源自 Deadlock API 设计。",

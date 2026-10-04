@@ -1251,6 +1251,13 @@
     "tools": "Инструменти",
     "backups": "Резервни копия",
     "toolsDescription": "Полезни функции за управление на вашите модове",
+    "gameGuard": "",
+    "gameGuardDescription": "",
+    "gameGuardSectionTitle": "",
+    "gameGuardSectionDescription": "",
+    "gameGuardSyncFailed": "",
+    "troubleshooting": "",
+    "troubleshootingDescription": "",
     "dangerZone": "",
     "dangerZoneDescription": "",
     "openGameFolder": "Отвори папката на играта",
@@ -2219,6 +2226,80 @@
     "thankYou": "",
     "thankYouDescription": ""
   },
+  "gameGuard": {
+    "title": "",
+    "body": "",
+    "cancel": "",
+    "continueAnyway": "",
+    "blockedTitle": "",
+    "blockedDescription": ""
+  },
+  "networkDiagnostics": {
+    "open": "",
+    "title": "",
+    "description": "",
+    "pending": "",
+    "running": "",
+    "latency": "",
+    "howToFix": "",
+    "copy": "",
+    "copyUrl": "",
+    "urlCopied": "",
+    "copied": "",
+    "runAgain": "",
+    "checks": {
+      "network": "",
+      "internet": "",
+      "dns": "",
+      "dmmApi": "",
+      "gamebanana": "",
+      "deadlockApi": "",
+      "deadlockAssets": "",
+      "catalog": ""
+    },
+    "results": {
+      "online": "",
+      "offline": "",
+      "reachable": "",
+      "slow": "",
+      "timeout": "",
+      "unreachable": "",
+      "blocked": "",
+      "rateLimited": "",
+      "degraded": "",
+      "serverError": "",
+      "httpError": "",
+      "dnsFailed": "",
+      "dnsHostFailed": "",
+      "catalogReady": "",
+      "catalogStale": "",
+      "catalogEmpty": "",
+      "catalogCheckFailed": ""
+    },
+    "fixes": {
+      "checkConnection": "",
+      "restartRouter": "",
+      "disableVpnFirewall": "",
+      "checkProxy": "",
+      "changeDns": "",
+      "flushDnsCache": "",
+      "fixInternetFirst": "",
+      "checkStatusPage": "",
+      "waitAndRetry": "",
+      "tryOtherNetwork": "",
+      "checkGamebanana": "",
+      "checkDeadlockApi": "",
+      "allowFirewall": "",
+      "syncCatalog": "",
+      "restartApp": ""
+    },
+    "verdict": {
+      "running": "",
+      "ok": "",
+      "warning": "",
+      "error": ""
+    }
+  },
   "errors": {
     "genericMessage": "",
     "gameLaunchFailed": "",
@@ -2825,6 +2906,8 @@
       "applyDraftGraceHint": "",
       "applyDraftConfirmKeep": "",
       "accentColor": "",
+      "addCustomColor": "",
+      "resetAccent": "",
       "accentColorDialogTitle": "",
       "accentColorDialogDescription": "",
       "cardColor": "",
@@ -2857,10 +2940,8 @@
     },
     "oled": {
       "description": "",
-      "accentColor": "",
       "customColor": "",
-      "customColorDescription": "",
-      "resetAccent": ""
+      "customColorDescription": ""
     },
     "nightshift": {
       "description": "",
@@ -2875,10 +2956,8 @@
     "arcane": {
       "description": "Елегантна тъмна тема с розово-червени светещи ефекти, вдъхновена от естетиката на Arcane.",
       "visit": "Тема от Skeptic",
-      "accentColor": "Акцентен цвят",
       "customColor": "Персонализиран цвят",
-      "customColorDescription": "Изберете персонализиран акцентен цвят за темата Arcane.",
-      "addCustomColor": "Добави цвят"
+      "customColorDescription": "Изберете персонализиран акцентен цвят за темата Arcane."
     },
     "deadlockApi": {
       "description": "",
