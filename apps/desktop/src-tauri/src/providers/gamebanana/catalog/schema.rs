@@ -11,6 +11,8 @@ const ADD_UPDATE_CACHE_VERSION: &str = "20260830000100";
 const ADD_PREVIEW_IMAGES_VERSION: &str = "20260910000000";
 const ADD_CATALOG_METADATA_VERSION: &str = "20261003000000";
 const ADD_AUTHOR_REMOTE_ID_VERSION: &str = "20261004000000";
+const ADD_THUMBNAIL_URL_VERSION: &str = "20261005000000";
+const ADD_BROWSE_INDEXES_VERSION: &str = "20261005000100";
 // Pre-release builds shipped the author_remote_id migration under this version.
 const LEGACY_ADD_AUTHOR_REMOTE_ID_VERSION: &str = "20260916000000";
 
@@ -45,6 +47,7 @@ diesel::table! {
     tags -> Text,
     development_state -> Nullable<Text>,
     completion_percentage -> Nullable<Integer>,
+    thumbnail_url -> Nullable<Text>,
   }
 }
 
@@ -75,7 +78,23 @@ diesel::table! {
   }
 }
 
-diesel::allow_tables_to_appear_in_same_query!(submission, sync_cursor, sync_state, update_cache);
+// FTS5 virtual table; only the key columns are declared so it can be joined.
+diesel::table! {
+  submission_fts (rowid) {
+    rowid -> BigInt,
+    provider -> Text,
+    submission_type -> Text,
+    submission_id -> Text,
+  }
+}
+
+diesel::allow_tables_to_appear_in_same_query!(
+  submission,
+  submission_fts,
+  sync_cursor,
+  sync_state,
+  update_cache
+);
 
 pub fn migrate(connection: &mut SqliteConnection) -> Result<(), Error> {
   baseline_untracked_catalog(connection)?;
@@ -144,6 +163,23 @@ fn baseline_untracked_catalog(connection: &mut SqliteConnection) -> Result<(), E
         connection,
         "EXISTS(
           SELECT 1 FROM pragma_table_info('submission') WHERE name = 'author_remote_id'
+        )",
+      )?,
+    ),
+    (
+      ADD_THUMBNAIL_URL_VERSION,
+      schema_check(
+        connection,
+        "EXISTS(SELECT 1 FROM pragma_table_info('submission') WHERE name = 'thumbnail_url')",
+      )?,
+    ),
+    (
+      ADD_BROWSE_INDEXES_VERSION,
+      schema_check(
+        connection,
+        "EXISTS(
+          SELECT 1 FROM sqlite_master
+          WHERE type = 'index' AND name = 'submission_browse_type_added'
         )",
       )?,
     ),
@@ -230,7 +266,7 @@ mod tests {
     .get_result::<bool>(&mut connection)
     .unwrap();
 
-    assert_eq!(applied.len(), 5);
+    assert_eq!(applied.len(), 7);
     assert!(catalog_tables_exist);
   }
 
@@ -270,7 +306,7 @@ mod tests {
     .get_result::<bool>(&mut connection)
     .unwrap();
 
-    assert_eq!(applied.len(), 5);
+    assert_eq!(applied.len(), 7);
     assert!(retained_submission);
     assert!(author_remote_id_exists);
   }
@@ -294,7 +330,7 @@ mod tests {
       .iter()
       .map(ToString::to_string)
       .collect();
-    assert_eq!(versions.len(), 5);
+    assert_eq!(versions.len(), 7);
     assert!(versions.contains(&"20261004000000".to_string()));
     assert!(!versions.contains(&"20260916000000".to_string()));
   }

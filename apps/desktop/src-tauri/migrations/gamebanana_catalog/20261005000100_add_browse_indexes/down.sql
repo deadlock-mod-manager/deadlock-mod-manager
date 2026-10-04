@@ -1,0 +1,4 @@
+DROP INDEX submission_browse_type_added;
+DROP INDEX submission_browse_type_likes;
+DROP INDEX submission_browse_type_updated;
+DROP INDEX submission_browse_type_downloads;

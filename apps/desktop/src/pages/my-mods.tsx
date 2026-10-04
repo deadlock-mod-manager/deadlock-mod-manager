@@ -104,6 +104,7 @@ import type {
   MapQuickFilter,
 } from "@/lib/store/slices/ui";
 import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
+import { getModCoverImage } from "@/lib/mods/mod-images";
 import { cn, isModOutdated } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
@@ -266,7 +267,7 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
                   alt={mod.name}
                   className='h-48 w-full object-cover'
                   height='192'
-                  src={mod.images[0]}
+                  src={getModCoverImage(mod)}
                   width='320'
                 />
               </NSFWBlur>
@@ -410,7 +411,7 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
                     alt={mod.name}
                     className='h-full w-full object-cover'
                     height='160'
-                    src={mod.images[0]}
+                    src={getModCoverImage(mod)}
                     width='160'
                   />
                 </NSFWBlur>

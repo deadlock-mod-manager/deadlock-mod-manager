@@ -35,6 +35,7 @@ import { usePersistedStore } from "@/lib/store";
 import { type LocalMod, ModStatus } from "@/types/mods";
 import { useFoundry } from "./foundry-context";
 import { FoundryLoadingBar } from "./foundry-loading-bar";
+import { getModCoverImage } from "@/lib/mods/mod-images";
 
 /** A hero skin has a resolved hero and is neither a map nor an audio mod. */
 const isHeroSkin = (mod: LocalMod): boolean =>
@@ -52,6 +53,7 @@ const SkinTile = ({
   onSelect: () => void;
 }) => {
   const { t } = useTranslation();
+  const coverImage = getModCoverImage(mod);
   return (
     <button
       className={cn(
@@ -62,13 +64,13 @@ const SkinTile = ({
       onClick={onSelect}
       type='button'>
       <div className='relative'>
-        {mod.images && mod.images.length > 0 ? (
+        {coverImage ? (
           <img
             alt={mod.name}
             className='h-28 w-full object-cover'
             decoding='async'
             loading='lazy'
-            src={mod.images[0]}
+            src={coverImage}
           />
         ) : (
           <div className='flex h-28 w-full items-center justify-center bg-muted'>

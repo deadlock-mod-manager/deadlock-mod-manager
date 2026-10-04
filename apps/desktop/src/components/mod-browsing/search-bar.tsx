@@ -42,7 +42,13 @@ type SearchBarProps = {
   setQuery: (query: string) => void;
   sortType?: SortType;
   setSortType?: (sortType: SortType) => void;
-  mods: ModDto[];
+  /** Source for the hero and category menus; only these fields are read. */
+  mods: Array<
+    Pick<ModDto, "category" | "hero" | "name"> & {
+      detectedHero?: string | null;
+      heroOverride?: string | null;
+    }
+  >;
   selectedCategories: string[];
   onCategoriesChange: (categories: string[]) => void;
   selectedHeroes: string[];

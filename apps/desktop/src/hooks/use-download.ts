@@ -11,6 +11,7 @@ import { downloadManager } from "@/lib/download/manager";
 import { getErrorMessage } from "@/lib/errors";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
+import { findLocalMod } from "@/lib/store/selectors";
 import { type ModDownloadItem, ModStatus } from "@/types/mods";
 
 type ModDownloadDto = z.infer<typeof ModDownloadDtoSchema>;
@@ -22,13 +23,14 @@ export const useDownload = (
   const { t } = useTranslation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const addLocalMod = usePersistedStore((state) => state.addLocalMod);
-  const localMods = usePersistedStore((state) => state.localMods);
   const setModProgress = usePersistedStore((state) => state.setModProgress);
   const setModStatus = usePersistedStore((state) => state.setModStatus);
   const setDetectedHero = usePersistedStore((state) => state.setDetectedHero);
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
 
-  const localMod = localMods.find((m) => m.remoteId === mod?.remoteId);
+  const localMod = usePersistedStore((state) =>
+    findLocalMod(state.localMods, mod?.remoteId),
+  );
 
   const downloadSelectedFiles = async (
     selectedFiles: ModDownloadItem[],
@@ -38,13 +40,14 @@ export const useDownload = (
      * that was never cleared.
      */
     pinnedProfileFolder?: string | null,
+    allFiles: ModDownloadDto[] = availableFiles,
   ) => {
     if (!mod || selectedFiles.length === 0) {
       return;
     }
 
     addLocalMod(mod as unknown as ModDto, {
-      downloads: availableFiles,
+      downloads: allFiles,
       selectedDownloads: selectedFiles,
     });
 
@@ -95,20 +98,24 @@ export const useDownload = (
     });
   };
 
-  const initiateDownload = () => {
+  /**
+   * `files` lets callers that fetch the file list on click pass it straight
+   * through, since the hook's `availableFiles` only catches up on the next render.
+   */
+  const initiateDownload = (files: ModDownloadDto[] = availableFiles) => {
     if (!mod) {
       toast.error("Failed to fetch mod download data. Try again later.");
       return;
     }
 
-    if (!availableFiles || availableFiles.length === 0) {
+    if (!files || files.length === 0) {
       toast.error("No downloadable files found for this mod.");
       return;
     }
 
     // If only one file, download directly without showing dialog
-    if (availableFiles.length === 1) {
-      return downloadSelectedFiles(availableFiles);
+    if (files.length === 1) {
+      return downloadSelectedFiles(files, undefined, files);
     }
 
     // Multiple files - show selection dialog
@@ -143,8 +150,14 @@ export const useDownload = (
    * The exception is a mod that already has files in the game: that is a failed
    * update, and clearing the slate there would take the working version with it.
    * Those retry the way they always have, on top of what is installed.
+   *
+   * `loadFallbackFiles` is only called when the mod has no persisted file
+   * selection, so callers can defer a network fetch until it is needed.
    */
-  const retryDownload = async () => {
+  const retryDownload = async (
+    loadFallbackFiles: () => Promise<ModDownloadDto[]> = async () =>
+      availableFiles,
+  ) => {
     if (!mod) {
       toast.error(t("downloads.retryFetchError"));
       return;
@@ -158,7 +171,7 @@ export const useDownload = (
         ? selectedDownloads
         : persistedDownloads.length > 0
           ? persistedDownloads
-          : availableFiles;
+          : await loadFallbackFiles();
 
     if (retryFiles.length === 0) {
       toast.error(t("downloads.retryNoFiles"));

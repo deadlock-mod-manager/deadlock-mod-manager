@@ -20,6 +20,7 @@ import ModButton from "@/components/mod-browsing/mod-button";
 import { prefetchModDetail } from "@/lib/mods/mod-detail-prefetch";
 import { isTrustedExternalUrl } from "@/lib/trusted-external-url";
 import type { ModDependency, ResolvedDependency } from "@/types/dependencies";
+import { getModCoverImage } from "@/lib/mods/mod-images";
 
 interface ModDependenciesProps {
   dependencies: ResolvedDependency[];
@@ -93,7 +94,7 @@ const InternalDependencyRow = ({
   const queryClient = useQueryClient();
   const { mod } = dependency;
   const level = dependency.dependency.level;
-  const image = mod.images?.[0];
+  const image = getModCoverImage(mod);
 
   const goToMod = () => {
     prefetchModDetail(queryClient, mod.remoteId);

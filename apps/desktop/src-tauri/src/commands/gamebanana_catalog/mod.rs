@@ -10,7 +10,9 @@ pub use types::{
 
 use crate::errors::Error;
 use crate::providers::SubmissionRef;
-use crate::providers::gamebanana::catalog::{CatalogQuery, CatalogRecord, SyncOutcome};
+use crate::providers::gamebanana::catalog::{
+  CatalogFacet, CatalogQuery, CatalogRecord, SyncOutcome,
+};
 use crate::providers::gamebanana::normalize_profile;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::State;
@@ -41,10 +43,19 @@ pub async fn query_gamebanana_catalog(
   let stale = catalog_is_stale(&backend.catalog).await?;
   query.excluded_slugs = policy.unavailable_slugs()?;
   let mut page = CatalogPageDto::from_page(backend.catalog.query(query).await?, stale)?;
-  for item in &mut page.items {
-    policy.apply_to_mod(item)?;
-  }
+  policy.apply_to_mods(&mut page.items)?;
   Ok(page)
+}
+
+#[tauri::command]
+pub async fn get_gamebanana_catalog_facets(
+  state: State<'_, GameBananaCatalogState>,
+  policy: State<'_, super::policy::PolicyState>,
+  mut query: CatalogQuery,
+) -> Result<Vec<CatalogFacet>, Error> {
+  let backend = state.backend()?;
+  query.excluded_slugs = policy.unavailable_slugs()?;
+  backend.catalog.facets(query).await
 }
 
 #[tauri::command]
@@ -411,6 +422,7 @@ fn record_from_profile(
     download_count: normalized.download_count,
     likes: normalized.likes,
     images: profile.preview_media.image_urls(),
+    thumbnail_url: profile.preview_media.thumbnail_url(),
     remote_added_at: normalized.remote_added_at,
     remote_updated_at: normalized.remote_updated_at,
     files_updated_at: profile

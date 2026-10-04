@@ -16,7 +16,7 @@ import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { ChevronLeft, ChevronRight } from "@deadlock-mods/ui/icons";
 import { MagnifyingGlass, Warning } from "@phosphor-icons/react";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery, useSuspenseInfiniteQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   Suspense,
@@ -39,9 +39,10 @@ import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useResponsiveColumns } from "@/hooks/use-responsive-columns";
 import { useScrollPosition } from "@/hooks/use-scroll-position";
-import { useSearch } from "@/hooks/use-search";
+import { useSearchQueryState } from "@/hooks/use-search";
 import {
-  type DirectCatalogPage,
+  CATALOG_QUERY_DEFAULTS,
+  getGameBananaCatalogFacets,
   queryGameBananaCatalog,
 } from "@/lib/gamebanana-catalog";
 import {
@@ -49,6 +50,7 @@ import {
   SortType,
   TimePeriod,
 } from "@/lib/constants";
+import { MODS_LIST_QUERY_KEY } from "@/lib/mods/mod-query-cache";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import type {
@@ -65,8 +67,12 @@ import {
 import type { CatalogQuery } from "@/types/generated/CatalogQuery";
 import type { SubmissionType } from "@/types/generated/SubmissionType";
 
-const SEARCH_KEYS = ["name", "description", "author"];
 const PAGE_SIZE = 50;
+// Continuous scrolling loads the catalog in slices instead of all ~4k entries
+// at once. Divisible by every column count (1-6) so loaded rows stay full.
+const SCROLL_PAGE_SIZE = 120;
+// Start loading the next slice this many rows before the loaded end.
+const LOAD_MORE_ROW_THRESHOLD = 4;
 const MODS_STORE_PAGE_KEY = "/mods:page";
 const MAPS_STORE_PAGE_KEY = "/maps:page";
 const MODS_STORE_PAGINATION_SETTING_ID = "mods-store-pagination";
@@ -259,7 +265,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
       submissionType: CONTENT_SUBMISSION_TYPE[contentType],
       sort: catalogSort(currentSort),
       page: paginationEnabled ? page : 0,
-      pageSize: paginationEnabled ? PAGE_SIZE : 5_000,
+      pageSize: paginationEnabled ? PAGE_SIZE : SCROLL_PAGE_SIZE,
     };
   }, [
     addedFilter,
@@ -284,19 +290,71 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
   // Only the very first load (nothing to show yet) hits the Suspense fallback.
   const deferredCatalogQuery = useDeferredValue(catalogQuery);
   const isUpdatingResults = deferredCatalogQuery !== catalogQuery;
-  const { data: catalogPage, error } = useSuspenseQuery({
-    queryKey: ["mods", "gamebanana-direct", deferredCatalogQuery],
-    queryFn: (): Promise<DirectCatalogPage> =>
-      queryGameBananaCatalog(deferredCatalogQuery),
+  // Paginated mode loads exactly the requested page; scrolling mode appends
+  // further pages as the virtualized list nears its end.
+  const {
+    data: catalogPages,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+  } = useSuspenseInfiniteQuery({
+    queryKey: [
+      ...MODS_LIST_QUERY_KEY,
+      "gamebanana-direct",
+      deferredCatalogQuery,
+    ],
+    queryFn: ({ pageParam }) =>
+      queryGameBananaCatalog({ ...deferredCatalogQuery, page: pageParam }),
+    initialPageParam: deferredCatalogQuery.page,
+    getNextPageParam: (lastPage) =>
+      (lastPage.page + 1) * lastPage.pageSize < lastPage.total
+        ? lastPage.page + 1
+        : undefined,
     staleTime: STALE_TIME_API,
     retry: 3,
-    refetchInterval: (query) => (query.state.data?.stale ? 3_000 : false),
   });
-  const data = catalogPage.items;
+  const catalogPage = catalogPages.pages[0];
+  const data = useMemo(
+    () => catalogPages.pages.flatMap((loadedPage) => loadedPage.items),
+    [catalogPages.pages],
+  );
+  // Filter menus list every option in the current tab, not just loaded rows.
+  const facetQuery = useMemo<CatalogQuery>(
+    () => ({
+      ...CATALOG_QUERY_DEFAULTS,
+      isAudio: deferredCatalogQuery.isAudio,
+      isMap: deferredCatalogQuery.isMap,
+      includeWips: deferredCatalogQuery.includeWips,
+      submissionType: deferredCatalogQuery.submissionType,
+    }),
+    [
+      deferredCatalogQuery.isAudio,
+      deferredCatalogQuery.isMap,
+      deferredCatalogQuery.includeWips,
+      deferredCatalogQuery.submissionType,
+    ],
+  );
+  const { data: facets } = useQuery({
+    queryKey: [...MODS_LIST_QUERY_KEY, "gamebanana-facets", facetQuery],
+    queryFn: () => getGameBananaCatalogFacets(facetQuery),
+    staleTime: STALE_TIME_API,
+    placeholderData: (previous) => previous,
+  });
+  const filterOptions = useMemo(
+    () =>
+      (facets ?? []).map((facet) => ({
+        category: facet.category,
+        hero: facet.hero,
+        name: "",
+      })),
+    [facets],
+  );
   const parentRef = useRef<HTMLDivElement>(null);
   const previousFilterSignatureRef = useRef<string | null>(null);
   // Defer the mod list so background refetches (staleTime expiry) don't
-  // block the UI while Fuse.js rebuilds its index on 2600+ items.
+  // block the UI while thousands of cards and filter options recompute.
   const deferredData = useDeferredValue(data ?? []);
   const { restoreScrollPosition, setScrollElement, scrollY } =
     useScrollPosition(scrollKey);
@@ -310,10 +368,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
       restoreScrollPosition();
     }
   }, [paginationEnabled, restoreScrollPosition, setScrollElement]);
-  const { query, setQuery, sortType, setSortType } = useSearch({
-    data: deferredData,
-    keys: SEARCH_KEYS,
-  });
+  const { query, setQuery, sortType, setSortType } = useSearchQueryState();
   const filteredResults = deferredData;
 
   const totalPages = paginationEnabled
@@ -338,6 +393,30 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     overscan: 3,
     initialOffset: scrollY,
   });
+  const virtualRows = rowVirtualizer.getVirtualItems();
+  const lastVirtualRowIndex = virtualRows.at(-1)?.index ?? -1;
+
+  useEffect(() => {
+    if (
+      paginationEnabled ||
+      !hasNextPage ||
+      isFetchingNextPage ||
+      // A failed page would otherwise be re-requested as soon as it settles.
+      isFetchNextPageError ||
+      lastVirtualRowIndex < modRows.length - LOAD_MORE_ROW_THRESHOLD
+    ) {
+      return;
+    }
+    void fetchNextPage();
+  }, [
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isFetchNextPageError,
+    lastVirtualRowIndex,
+    modRows.length,
+    paginationEnabled,
+  ]);
   const filterSignature = useMemo(
     () =>
       JSON.stringify({
@@ -464,7 +543,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     <div className='flex min-h-0 flex-1 flex-col gap-4'>
       <SearchBar
         filterMode={filterMode}
-        mods={deferredData}
+        mods={filterOptions}
         timePeriod={timePeriod}
         onTimePeriodChange={handleTimePeriodChange}
         onCategoriesChange={handleCategoriesChange}
@@ -573,7 +652,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
                   position: "relative",
                   width: "100%",
                 }}>
-                {rowVirtualizer.getVirtualItems().map((virtualRow) => (
+                {virtualRows.map((virtualRow) => (
                   <div
                     key={virtualRow.key}
                     style={{

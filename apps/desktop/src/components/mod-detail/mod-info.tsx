@@ -31,6 +31,7 @@ import {
   resolveModHero,
 } from "@/lib/mods/hero-resolution";
 import { usePersistedStore } from "@/lib/store";
+import { findLocalMod } from "@/lib/store/selectors";
 import { DateDisplay } from "../date-display";
 import { AuthorStat } from "./author-stat";
 import { HeroOverridePicker } from "./hero-override-picker";
@@ -58,7 +59,7 @@ export const ModInfo = ({
   const navigate = useNavigate();
   const showHeader = hasHero ? false : !mod.isAudio;
   const localMod = usePersistedStore((state) =>
-    state.localMods.find((m) => m.remoteId === mod.remoteId),
+    findLocalMod(state.localMods, mod.remoteId),
   );
 
   const resolvedHero = resolveModHero(mod, localMod);

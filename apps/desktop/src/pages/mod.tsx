@@ -45,6 +45,7 @@ import useUninstall from "@/hooks/use-uninstall";
 import { getErrorMessage } from "@/lib/errors";
 import { isLocalMod } from "@/lib/mods/installed-helpers";
 import { usePersistedStore } from "@/lib/store";
+import { findLocalMod } from "@/lib/store/selectors";
 import { useCheckUpdates } from "@/hooks/use-check-updates";
 import { isModOutdated, isModStale } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
@@ -72,10 +73,11 @@ const Mod = () => {
     enabled: !!params.id && !params.id?.includes("local"),
   });
 
-  const localMods = usePersistedStore((state) => state.localMods);
   const developerMode = usePersistedStore((state) => state.developerMode);
   const setModDownloads = usePersistedStore((state) => state.setModDownloads);
-  const localMod = localMods.find((m) => m.remoteId === mod?.remoteId);
+  const localMod = usePersistedStore((state) =>
+    findLocalMod(state.localMods, mod?.remoteId),
+  );
   const resolvedDependencies = useResolvedDependencies(
     mod?.dependencies ?? undefined,
   );

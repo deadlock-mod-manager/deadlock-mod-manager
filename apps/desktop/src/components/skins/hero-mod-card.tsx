@@ -22,6 +22,7 @@ import { getModCategoryLabelKey } from "@/lib/constants";
 import type { HeroModKind } from "@/lib/mods/hero-mods";
 import { cn } from "@/lib/utils";
 import type { LocalMod } from "@/types/mods";
+import { getModCoverImage } from "@/lib/mods/mod-images";
 
 const PreviewButton = ({
   label,
@@ -86,6 +87,7 @@ export const HeroModCard = ({
   const categoryLabel = categoryKey
     ? t(`modCategories.${categoryKey}`)
     : mod.category;
+  const coverImage = getModCoverImage(mod);
 
   const handleSelect = () => {
     if (!disabled) {
@@ -159,7 +161,7 @@ export const HeroModCard = ({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      {mod.images.length > 0 ? (
+      {coverImage ? (
         <NSFWBlur
           blurStrength={nsfwSettings.blurStrength}
           className='h-32 w-full overflow-hidden'
@@ -171,7 +173,7 @@ export const HeroModCard = ({
             className='h-32 w-full object-cover'
             decoding='async'
             loading='lazy'
-            src={mod.images[0]}
+            src={coverImage}
           />
         </NSFWBlur>
       ) : (

@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 import { toolbarTriggerClass } from "./filters-trigger-button";
 
 type CategoryFilterProps = {
-  mods: ModDto[];
+  mods: Array<Pick<ModDto, "category">>;
   selectedCategories: string[];
   onCategoriesChange: (categories: string[]) => void;
 };

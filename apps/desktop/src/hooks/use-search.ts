@@ -8,61 +8,32 @@ import type { LocalMod } from "@/types/mods";
 
 const FUSE_MOD_SEARCH_THRESHOLD = 0.35;
 
+type SearchQueryState = {
+  query: string;
+  setQuery: (query: string) => void;
+  sortType: SortType;
+  setSortType: (sortType: SortType) => void;
+};
+
 type UseSearchProps<T> = {
   data: T[];
   keys: FuseOptionKey<T>[];
-  queryState?: {
-    query: string;
-    setQuery: (query: string) => void;
-    sortType: SortType;
-    setSortType: (sortType: SortType) => void;
-  };
+  queryState?: SearchQueryState;
 };
 
-export const useSearch = <T = LocalMod>({
-  data,
-  keys,
-  queryState,
-}: UseSearchProps<T>) => {
+/**
+ * Query and sort state, with the sort set aside while a search is active.
+ * Views that search elsewhere (the catalog searches in SQLite) use this
+ * directly so they don't build a Fuse index they never read.
+ */
+export const useSearchQueryState = (queryState?: SearchQueryState) => {
   const modsFilters = usePersistedStore((state) => state.modsFilters);
   const updateModsFilters = usePersistedStore(
     (state) => state.updateModsFilters,
   );
   const query = queryState?.query ?? modsFilters.searchQuery ?? "";
-  const debouncedQuery = useDebouncedValue(query, 300);
   const sortType = queryState?.sortType ?? modsFilters.currentSort;
   const preSearchSortRef = useRef<SortType | null>(null);
-
-  const fuse = useMemo(
-    () =>
-      new Fuse(data, {
-        keys,
-        threshold: FUSE_MOD_SEARCH_THRESHOLD,
-        shouldSort: true,
-        useExtendedSearch: true,
-      }),
-    [data, keys],
-  );
-
-  const search = useCallback(
-    (q: string) => {
-      if (!q || !q.trim()) {
-        return sortMods(data as LocalMod[], sortType);
-      }
-      const results = fuse.search(q).map((result) => result.item) as LocalMod[];
-      // DEFAULT sort preserves Fuse.js relevance order during search
-      if (sortType === SortType.DEFAULT) {
-        return results;
-      }
-      return sortMods(results, sortType);
-    },
-    [fuse, data, sortType],
-  );
-
-  const results = useMemo(
-    () => search(debouncedQuery),
-    [search, debouncedQuery],
-  );
 
   const setQuery = (newQuery: string) => {
     const trimmed = newQuery.trim();
@@ -115,11 +86,56 @@ export const useSearch = <T = LocalMod>({
   );
 
   return {
-    search,
     query,
     setQuery,
-    results,
     sortType,
     setSortType,
+  };
+};
+
+export const useSearch = <T = LocalMod>({
+  data,
+  keys,
+  queryState,
+}: UseSearchProps<T>) => {
+  const searchQueryState = useSearchQueryState(queryState);
+  const { query, sortType } = searchQueryState;
+  const debouncedQuery = useDebouncedValue(query, 300);
+
+  const fuse = useMemo(
+    () =>
+      new Fuse(data, {
+        keys,
+        threshold: FUSE_MOD_SEARCH_THRESHOLD,
+        shouldSort: true,
+        useExtendedSearch: true,
+      }),
+    [data, keys],
+  );
+
+  const search = useCallback(
+    (q: string) => {
+      if (!q || !q.trim()) {
+        return sortMods(data as LocalMod[], sortType);
+      }
+      const results = fuse.search(q).map((result) => result.item) as LocalMod[];
+      // DEFAULT sort preserves Fuse.js relevance order during search
+      if (sortType === SortType.DEFAULT) {
+        return results;
+      }
+      return sortMods(results, sortType);
+    },
+    [fuse, data, sortType],
+  );
+
+  const results = useMemo(
+    () => search(debouncedQuery),
+    [search, debouncedQuery],
+  );
+
+  return {
+    ...searchQueryState,
+    search,
+    results,
   };
 };

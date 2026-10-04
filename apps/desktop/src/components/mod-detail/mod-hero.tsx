@@ -2,7 +2,6 @@ import type { ModDto } from "@deadlock-mods/shared";
 import type { ReactNode } from "react";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Hash, Music } from "@deadlock-mods/ui/icons";
-import { useMemo } from "react";
 import { getModCategoryDisplayName } from "@/lib/constants";
 import { cn, isUpdateAvailable, isUpdatedRecently } from "@/lib/utils";
 import {
@@ -10,6 +9,7 @@ import {
   UpdatedRecentlyBadge,
 } from "../mod-management/mod-update-badges";
 import { usePersistedStore } from "@/lib/store";
+import { findLocalMod } from "@/lib/store/selectors";
 
 interface ModHeroProps {
   mod: ModDto;
@@ -19,10 +19,8 @@ interface ModHeroProps {
 
 export const ModHero = ({ mod, shouldBlur = false, actions }: ModHeroProps) => {
   const hasImages = mod.images && mod.images.length > 0;
-  const localMods = usePersistedStore((state) => state.localMods);
-  const localMod = useMemo(
-    () => localMods.find((m) => m.remoteId === mod.remoteId),
-    [localMods, mod.remoteId],
+  const localMod = usePersistedStore((state) =>
+    findLocalMod(state.localMods, mod.remoteId),
   );
 
   // Audio mod hero

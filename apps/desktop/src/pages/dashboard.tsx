@@ -14,8 +14,11 @@ import { useThemeOverride } from "@/components/providers/theme-overrides";
 import PageTitle from "@/components/shared/page-title";
 import { useFeaturedMod } from "@/hooks/use-featured-mod";
 import { useTrendingByCategory } from "@/hooks/use-trending-by-category";
-import { getMods } from "@/lib/api-client";
 import { MOD_CATEGORY_ORDER } from "@/lib/constants";
+import {
+  dashboardCatalogQueryKey,
+  getDashboardCatalogMods,
+} from "@/lib/mods/dashboard-catalog";
 import { filterHiddenNSFWItems } from "@/lib/mods/nsfw-visibility";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
@@ -26,8 +29,8 @@ const Dashboard = () => {
   const hideNSFW = usePersistedStore((state) => state.nsfwSettings.hideNSFW);
 
   const { data: mods, isPending } = useQuery({
-    queryKey: ["mods"],
-    queryFn: getMods,
+    queryKey: dashboardCatalogQueryKey(hideNSFW),
+    queryFn: () => getDashboardCatalogMods({ hideNsfw: hideNSFW }),
     staleTime: STALE_TIME_API,
     refetchOnWindowFocus: false,
   });

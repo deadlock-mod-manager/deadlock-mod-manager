@@ -118,6 +118,12 @@ export const STALE_MOD_REPORT_THRESHOLD = 5;
 export const STALE_MOD_DAYS = 30;
 
 // City Never Sleeps update: https://store.steampowered.com/news/app/1422450/view/694273194214819790
+/** Top-downloaded mods the weekly featured pick is drawn from. */
+export const FEATURED_POOL_SIZE = 50;
+/** Trending = updated within this window, ranked by downloads. */
+export const TRENDING_WINDOW_DAYS = 30;
+export const TRENDING_LIMIT = 8;
+
 export const MOD_OUTDATED_CUTOFF_SECONDS = Math.floor(
   new Date("2026-09-29").getTime() / 1_000,
 );

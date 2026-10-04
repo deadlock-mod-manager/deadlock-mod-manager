@@ -25,7 +25,10 @@ import { toolbarTriggerClass } from "./filters-trigger-button";
 
 type HeroFilterProps = {
   mods: Array<
-    ModDto & { detectedHero?: string | null; heroOverride?: string | null }
+    Pick<ModDto, "hero" | "name"> & {
+      detectedHero?: string | null;
+      heroOverride?: string | null;
+    }
   >;
   selectedHeroes: string[];
   onHeroesChange: (heroes: string[]) => void;

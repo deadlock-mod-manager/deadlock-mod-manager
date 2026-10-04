@@ -7,6 +7,7 @@ import {
 } from "@/lib/mods/mod-query-cache";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
+import { findLocalMod } from "@/lib/store/selectors";
 
 interface UseModOptions {
   enabled?: boolean;
@@ -22,7 +23,7 @@ export const useMod = (
   const syncing = useIsMutating({ mutationKey: CATALOG_SYNC_KEY }) > 0;
   const isLocal = modId?.includes("local") ?? false;
   const localMod = usePersistedStore((state) =>
-    modId ? state.localMods.find((m) => m.remoteId === modId) : undefined,
+    findLocalMod(state.localMods, modId),
   );
 
   const query = useQuery({

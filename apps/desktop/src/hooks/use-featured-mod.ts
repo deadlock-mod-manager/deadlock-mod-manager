@@ -1,8 +1,7 @@
 import type { ModDto } from "@deadlock-mods/shared";
 import { useMemo } from "react";
+import { FEATURED_POOL_SIZE } from "@/lib/constants";
 import { isModOutdated } from "@/lib/utils";
-
-const FEATURED_POOL_SIZE = 50;
 
 export type IsoWeekParts = { year: number; week: number };
 

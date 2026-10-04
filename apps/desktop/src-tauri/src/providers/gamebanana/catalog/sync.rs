@@ -18,11 +18,13 @@ const LAST_FULL_SYNC_AT: &str = "last_full_sync_at";
 const LAST_INCOMPLETE_SNAPSHOT_AT: &str = "last_incomplete_snapshot_at";
 const PREVIEW_IMAGES_VERSION: &str = "preview_images_v1";
 const HYDRATION_VERSION: &str = "bulk_hydration_v2";
+const THUMBNAILS_VERSION: &str = "thumbnails_v1";
 const AUTHOR_REMOTE_ID_VERSION: &str = "author_remote_id_v1";
 // Bumping any of these forces one full resync to backfill existing catalogs.
-const BACKFILL_VERSIONS: [&str; 3] = [
+const BACKFILL_VERSIONS: [&str; 4] = [
   PREVIEW_IMAGES_VERSION,
   HYDRATION_VERSION,
+  THUMBNAILS_VERSION,
   AUTHOR_REMOTE_ID_VERSION,
 ];
 const INCOMPLETE_RETRY_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60);
@@ -661,6 +663,7 @@ fn from_index(
     download_count: 0,
     likes: record.likes,
     images: record.preview_media.image_urls(),
+    thumbnail_url: record.preview_media.thumbnail_url(),
     remote_added_at: record
       .date_added
       .filter(|value| *value > 0)
