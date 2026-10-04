@@ -5,6 +5,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
+import { useWipeLocalCatalog } from "@/hooks/use-gamebanana-catalog-sync";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { usePersistedStore } from "@/lib/store";
 
@@ -109,6 +110,7 @@ const Debug = () => {
   } = usePersistedStore();
   const { showOnboarding } = useOnboarding();
   const confirm = useConfirm();
+  const wipeCatalog = useWipeLocalCatalog();
 
   const clearModsState = async () => {
     if (!(await confirm(t("debug.confirmClearModsState")))) {
@@ -124,11 +126,18 @@ const Debug = () => {
 
       <div className='space-y-2'>
         <h2 className='text-lg font-semibold'>Actions:</h2>
-        <div className='flex gap-2'>
+        <div className='flex flex-wrap gap-2'>
           <Button onClick={() => toast("Hello, world!")}>Toast</Button>
           <Button onClick={clearModsState} variant='destructive'>
             <TrashIcon className='h-4 w-4 mr-2' />
             {t("debug.clearModsState")}
+          </Button>
+          <Button
+            onClick={() => void wipeCatalog.requestWipe()}
+            variant='destructive'
+            disabled={wipeCatalog.pending}>
+            <TrashIcon className='h-4 w-4 mr-2' />
+            {t("debug.wipeCatalog")}
           </Button>
           <Button
             onClick={() => setHasCompletedOnboarding(false)}

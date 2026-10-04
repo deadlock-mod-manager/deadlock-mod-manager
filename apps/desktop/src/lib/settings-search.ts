@@ -279,6 +279,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
         descriptionKey: "settings.clearCatalogDescription",
       },
       {
+        titleKey: "debug.wipeCatalog",
+        descriptionKey: "debug.wipeCatalogDescription",
+      },
+      {
         titleKey: "settings.clearDownloadCache",
         descriptionKey: "settings.clearDownloadCacheDescription",
       },

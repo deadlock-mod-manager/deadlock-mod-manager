@@ -97,7 +97,10 @@ import type { SettingsSearchResult } from "@/lib/settings-search";
 import { cn } from "@/lib/utils";
 import ThemesPlugin from "@/plugins/themes/index";
 import type { LocalSetting } from "@/types/settings";
-import { useCatalogSyncMutation } from "@/hooks/use-gamebanana-catalog-sync";
+import {
+  useCatalogSyncMutation,
+  useWipeLocalCatalog,
+} from "@/hooks/use-gamebanana-catalog-sync";
 import { invokeGuarded } from "@/lib/game-guard";
 
 type DangerActionProps = {
@@ -436,6 +439,7 @@ const CustomSettingsData = ({
 const CustomSettings = ({ value }: { value?: string }) => {
   const { t } = useTranslation();
   const catalogSync = useCatalogSyncMutation();
+  const wipeCatalog = useWipeLocalCatalog();
   const { clearMods, localMods: mods, getActiveProfile } = usePersistedStore();
 
   const clearModsState = async () => {
@@ -937,8 +941,14 @@ const CustomSettings = ({ value }: { value?: string }) => {
                       <DangerAction
                         description={t("settings.clearCatalogDescription")}
                         label={t("settings.clearCatalog")}
-                        disabled={catalogSync.isPending}
+                        disabled={catalogSync.isPending || wipeCatalog.pending}
                         onClick={() => catalogSync.mutate(true)}
+                      />
+                      <DangerAction
+                        description={t("debug.wipeCatalogDescription")}
+                        label={t("debug.wipeCatalog")}
+                        disabled={wipeCatalog.pending}
+                        onClick={() => void wipeCatalog.requestWipe()}
                       />
                       <DangerAction
                         description={t(
