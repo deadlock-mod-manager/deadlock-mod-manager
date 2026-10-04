@@ -35,15 +35,23 @@ import { FoundrySoundsPanel } from "./foundry-sounds-panel";
 
 const TABS: FoundryTab[] = ["assets", "paint", "cards", "sounds"];
 
-const TAB_ICONS: Record<FoundryTab, React.ReactNode> = {
-  assets: <CubeIcon className='h-4 w-4' weight='duotone' />,
-  paint: <PaintBrushIcon className='h-4 w-4' weight='duotone' />,
-  cards: <ImageIcon className='h-4 w-4' weight='duotone' />,
-  sounds: <MusicNotesIcon className='h-4 w-4' weight='duotone' />,
-};
+const TAB_ICONS = {
+  assets: (
+    <CubeIcon aria-hidden className='h-4 w-4 shrink-0' weight='duotone' />
+  ),
+  paint: (
+    <PaintBrushIcon aria-hidden className='h-4 w-4 shrink-0' weight='duotone' />
+  ),
+  cards: (
+    <ImageIcon aria-hidden className='h-4 w-4 shrink-0' weight='duotone' />
+  ),
+  sounds: (
+    <MusicNotesIcon aria-hidden className='h-4 w-4 shrink-0' weight='duotone' />
+  ),
+} satisfies Record<FoundryTab, React.ReactNode>;
 
 const TABS_LIST_CLASS_NAME =
-  "grid w-full max-w-[22rem] grid-cols-4 rounded-none rounded-t-lg";
+  "grid h-auto w-full max-w-[22rem] grid-cols-4 gap-1 bg-muted/50 p-1";
 
 /**
  * A `.vmdl_c` assembles the whole character, so it leads the list; the loose
@@ -152,23 +160,29 @@ export const FoundryShell = () => {
           showInspector ? "inspector" : "no-inspector"
         }`}>
         <ResizablePanel
+          className='bg-background/80 backdrop-blur-md'
           defaultSize={showPreviewPanel ? 26 : 74}
           minSize={showPreviewPanel ? 18 : 40}>
           <Tabs
             className='flex h-full flex-col'
             onValueChange={(value) => setActiveTab(value as FoundryTab)}
             value={activeTab}>
-            <TabsList className={TABS_LIST_CLASS_NAME}>
-              {TABS.map((tab) => (
-                <TabsTrigger
-                  className='gap-1.5'
-                  key={tab}
-                  title={t(`foundry.tabs.${tab}`)}
-                  value={tab}>
-                  {TAB_ICONS[tab]}
-                </TabsTrigger>
-              ))}
-            </TabsList>
+            <div className='shrink-0 border-b bg-background/95 p-2'>
+              <TabsList className={TABS_LIST_CLASS_NAME}>
+                {TABS.map((tab) => (
+                  <TabsTrigger
+                    className='h-12 min-w-0 flex-col gap-1 px-1 py-1.5 text-xs transition-colors hover:bg-background/60 hover:text-foreground data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=active]:shadow-none'
+                    key={tab}
+                    title={t(`foundry.tabs.${tab}`)}
+                    value={tab}>
+                    {TAB_ICONS[tab]}
+                    <span className='max-w-full truncate'>
+                      {t(`foundry.tabs.${tab}`)}
+                    </span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
             {TABS.map((tab) => (
               <TabsContent
                 className='mt-0 flex-1 overflow-hidden data-[state=inactive]:hidden'
@@ -223,7 +237,10 @@ export const FoundryShell = () => {
           <>
             <ResizableHandle withHandle />
 
-            <ResizablePanel defaultSize={26} minSize={18}>
+            <ResizablePanel
+              className='bg-background/80 backdrop-blur-md'
+              defaultSize={26}
+              minSize={18}>
               <FoundryInspector />
             </ResizablePanel>
           </>
