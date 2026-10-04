@@ -1067,7 +1067,11 @@
     "none": "None",
     "enable": "Enable",
     "disable": "Disable",
-    "open": "Open"
+    "open": "Open",
+    "retry": "Retry",
+    "dismiss": "Dismiss",
+    "notFound": "Not found",
+    "failedToOpenFolder": "Failed to open folder"
   },
   "settings": {
     "searchPlaceholder": "Search settings",
