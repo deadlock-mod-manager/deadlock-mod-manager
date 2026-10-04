@@ -75,43 +75,46 @@ export interface RandomizerMembership {
 const RandomizerCheckbox = ({
   membership,
   label,
-  unavailableLabel,
   disabled,
 }: {
   membership: RandomizerMembership;
   label: string;
-  unavailableLabel: string;
   disabled: boolean;
-}) => (
-  <Tooltip>
-    <TooltipTrigger asChild>
-      {/* The wrapper keeps the tooltip alive on a disabled checkbox and keeps
-          clicks from reaching the card's select handler. */}
-      <span
-        className={cn(
-          "absolute top-2 left-2 z-10 flex h-7 items-center gap-1.5 rounded-md bg-secondary px-1.5 transition-opacity",
-          membership.selected && "ring-1 ring-primary",
-          !membership.selected &&
-            "opacity-0 focus-within:opacity-100 group-hover/skin:opacity-100",
-        )}
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}>
-        {membership.selected && (
-          <Shuffle aria-hidden='true' className='h-3.5 w-3.5 text-primary' />
-        )}
-        <Checkbox
-          aria-label={membership.available ? label : unavailableLabel}
-          checked={membership.selected}
-          disabled={disabled || !membership.available}
-          onCheckedChange={(checked) => membership.onToggle(checked === true)}
-        />
-      </span>
-    </TooltipTrigger>
-    <TooltipContent>
-      {membership.available ? label : unavailableLabel}
-    </TooltipContent>
-  </Tooltip>
-);
+}) => {
+  const { t } = useTranslation();
+  const tooltip = membership.available
+    ? label
+    : t("skins.randomizer.unavailable");
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        {/* The wrapper keeps the tooltip alive on a disabled checkbox and keeps
+            clicks from reaching the card's select handler. */}
+        <span
+          className={cn(
+            "absolute top-2 left-2 z-10 flex h-7 items-center gap-1.5 rounded-md bg-secondary px-1.5 transition-opacity",
+            membership.selected && "ring-1 ring-primary",
+            !membership.selected &&
+              "opacity-0 focus-within:opacity-100 group-hover/skin:opacity-100",
+          )}
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}>
+          {membership.selected && (
+            <Shuffle aria-hidden='true' className='h-3.5 w-3.5 text-primary' />
+          )}
+          <Checkbox
+            aria-label={tooltip}
+            checked={membership.selected}
+            disabled={disabled || !membership.available}
+            onCheckedChange={(checked) => membership.onToggle(checked === true)}
+          />
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>{tooltip}</TooltipContent>
+    </Tooltip>
+  );
+};
 
 interface HeroModCardProps {
   mod: LocalMod;
@@ -189,7 +192,6 @@ export const HeroModCard = ({
           disabled={disabled}
           label={t("skins.randomizer.inPool")}
           membership={randomizer}
-          unavailableLabel={t("skins.randomizer.unavailable")}
         />
       )}
       <div className='absolute top-2 right-2 z-10 flex gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover/skin:opacity-100 group-focus-within/skin:opacity-100'>
@@ -301,7 +303,7 @@ export const DefaultSkinCard = ({
       className={cn(
         "group/skin relative cursor-pointer overflow-hidden shadow-none transition-colors hover:border-primary",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-        randomizer?.selected && "border-primary/60 bg-primary/[0.06]",
+        randomizer.selected && "border-primary/60 bg-primary/[0.06]",
         isActive && "ring-2 ring-primary",
         !isActive && isPreviewing && "ring-1 ring-primary/50",
         disabled && "pointer-events-none opacity-60",
@@ -319,7 +321,6 @@ export const DefaultSkinCard = ({
         disabled={disabled}
         label={t("skins.randomizer.defaultInPool")}
         membership={randomizer}
-        unavailableLabel={t("skins.randomizer.unavailable")}
       />
       <div className='absolute top-2 right-2 z-10 opacity-0 transition-opacity focus-within:opacity-100 group-hover/skin:opacity-100 group-focus-within/skin:opacity-100'>
         <PreviewButton
