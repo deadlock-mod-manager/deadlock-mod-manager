@@ -122,11 +122,12 @@ pub fn list_accounts() -> Vec<SteamAccountDto> {
     }
   };
   let steam_dir = steam.path().to_path_buf();
+  list_accounts_in(&steam_dir)
+}
 
-  match remembered_accounts(&steam_dir) {
-    Ok(accounts) => rank_accounts(accounts, |account_id| {
-      probe_activity(&steam_dir, account_id)
-    }),
+pub fn list_accounts_in(steam_dir: &Path) -> Vec<SteamAccountDto> {
+  match remembered_accounts(steam_dir) {
+    Ok(accounts) => rank_accounts(accounts, |account_id| probe_activity(steam_dir, account_id)),
     Err(e) => {
       log::warn!("cannot read remembered Steam accounts: {e}");
       Vec::new()

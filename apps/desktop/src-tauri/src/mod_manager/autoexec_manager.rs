@@ -1,3 +1,4 @@
+use super::crosshair_settings::{self, ConfigEdit, CrosshairConfig};
 use crate::errors::Error;
 use crate::mod_manager::filesystem_helper::FileSystemHelper;
 use crate::utils;
@@ -13,6 +14,7 @@ const MANAGED_CROSSHAIR_CONVARS: &[&str] = &[
   "citadel_crosshair_color_g",
   "citadel_crosshair_color_b",
   "citadel_crosshair_pip_border",
+  "citadel_crosshair_pip_outline_border",
   "citadel_crosshair_pip_gap_static",
   "citadel_crosshair_pip_opacity",
   "citadel_crosshair_pip_width",
@@ -298,31 +300,32 @@ impl AutoexecManager {
     self.get_editable_content(game_path)
   }
 
-  pub fn update_crosshair_section(
+  pub fn apply_crosshair(
     &self,
     game_path: &Path,
-    crosshair_config: &str,
+    config: &CrosshairConfig,
+    steam_userdata: Option<&Path>,
   ) -> Result<(), Error> {
-    let mut content = self.read_autoexec_config(game_path)?;
-    let crosshair_section = format!(
+    let mut edits = crosshair_settings::prepare(game_path, Some(config), steam_userdata)?;
+    let path = self.get_autoexec_path(game_path);
+    let mut content = crosshair_settings::read_optional(&path)?.unwrap_or_default();
+    let section = format!(
       "{}\n{}\n{}",
-      CROSSHAIR_SECTION_START, crosshair_config, CROSSHAIR_SECTION_END
+      CROSSHAIR_SECTION_START,
+      config.autoexec()?,
+      CROSSHAIR_SECTION_END
     );
-
-    upsert_managed_section(&mut content, CROSSHAIR_SECTION, &crosshair_section);
-
-    self.write_autoexec_config(game_path, &content)
+    upsert_managed_section(&mut content, CROSSHAIR_SECTION, &section);
+    edits.push(ConfigEdit::new(path, Some(content))?);
+    crosshair_settings::commit(edits)
   }
 
-  pub fn remove_crosshair_section(&self, game_path: &Path) -> Result<(), Error> {
-    let mut content = self.read_autoexec_config(game_path)?;
-
-    remove_managed_section(&mut content, CROSSHAIR_SECTION);
-
-    self.write_autoexec_config(game_path, &content)
-  }
-
-  pub fn disable_custom_crosshairs(&self, game_path: &Path) -> Result<(), Error> {
+  pub fn disable_custom_crosshairs(
+    &self,
+    game_path: &Path,
+    steam_userdata: Option<&Path>,
+  ) -> Result<(), Error> {
+    let mut edits = crosshair_settings::prepare(game_path, None, steam_userdata)?;
     let machine_convars_path = self.get_machine_convars_path(game_path);
     let reset_machine_convars = if machine_convars_path.exists() {
       let content = fs::read_to_string(&machine_convars_path).map_err(|error| {
@@ -336,19 +339,19 @@ impl AutoexecManager {
       None
     };
 
-    let mut autoexec_content = self.read_autoexec_config(game_path)?;
+    let autoexec_path = self.get_autoexec_path(game_path);
+    let mut autoexec_content =
+      crosshair_settings::read_optional(&autoexec_path)?.unwrap_or_default();
     remove_managed_section(&mut autoexec_content, CROSSHAIR_SECTION);
 
     if let Some(content) = reset_machine_convars {
-      fs::write(&machine_convars_path, content).map_err(|error| {
-        Error::CrosshairConfigResetFailed(format!(
-          "Failed to write {}: {error}",
-          machine_convars_path.display()
-        ))
-      })?;
+      edits.push(ConfigEdit::new(machine_convars_path, Some(content))?);
     }
 
-    self.write_autoexec_config(game_path, &autoexec_content)
+    if autoexec_path.exists() || !autoexec_content.is_empty() {
+      edits.push(ConfigEdit::new(autoexec_path, Some(autoexec_content))?);
+    }
+    crosshair_settings::commit(edits)
   }
 
   pub fn add_map_command(&self, game_path: &Path, map_name: &str) -> Result<(), Error> {
@@ -576,7 +579,7 @@ mod tests {
     .expect("autoexec should be written");
 
     manager
-      .disable_custom_crosshairs(&game_path)
+      .disable_custom_crosshairs(&game_path, None)
       .expect("crosshairs should be disabled");
 
     let machine_convars = std::fs::read_to_string(cfg_path.join(MACHINE_CONVARS_FILENAME))
@@ -605,7 +608,7 @@ mod tests {
     std::fs::write(manager.get_autoexec_path(&game_path), &original_autoexec)
       .expect("autoexec should be written");
 
-    let result = manager.disable_custom_crosshairs(&game_path);
+    let result = manager.disable_custom_crosshairs(&game_path, None);
 
     assert!(matches!(result, Err(Error::CrosshairConfigResetFailed(_))));
     let autoexec = std::fs::read_to_string(manager.get_autoexec_path(&game_path))

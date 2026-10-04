@@ -42,7 +42,7 @@ export const CrosshairsToggle = () => {
     onError: (error) => {
       logger.errorOnly(error);
       if (isTauriError(error) && error.kind === "gameRunning") {
-        toast.error(t("crosshairs.stopGameBeforeDisable"));
+        toast.error(t("crosshairs.stopGameBeforeChange"));
         return;
       }
       toast.error(t("crosshairs.toggleError"));

@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "types": ["node", "bun"], "noEmit": true },
+  "include": ["src/config-generator.test.ts"],
+  "exclude": ["node_modules", "dist"]
+}

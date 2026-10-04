@@ -7,6 +7,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import logger from "@/lib/logger";
+import { isTauriError } from "@/types/tauri";
 import { usePersistedStore } from "@/lib/store";
 import { CrosshairCard } from "./crosshair-card";
 import { CrosshairPreviewDialog } from "./crosshair-preview-dialog";
@@ -16,8 +17,11 @@ export const ActiveCrosshairs = () => {
   const activeCrosshairHistory = usePersistedStore(
     (state) => state.activeCrosshairHistory,
   );
-  const { setActiveCrosshair, removeFromActiveCrosshairHistory } =
-    usePersistedStore();
+  const {
+    setActiveCrosshair,
+    removeFromActiveCrosshairHistory,
+    clearActiveCrosshair,
+  } = usePersistedStore();
   const crosshairsEnabled = usePersistedStore(
     (state) => state.crosshairsEnabled,
   );
@@ -43,6 +47,10 @@ export const ActiveCrosshairs = () => {
     },
     onError: (error) => {
       logger.errorOnly(error);
+      if (isTauriError(error) && error.kind === "gameRunning") {
+        toast.error(t("crosshairs.stopGameBeforeChange"));
+        return;
+      }
       if (
         error instanceof Error &&
         error.message === "Custom crosshairs are disabled"
@@ -55,18 +63,24 @@ export const ActiveCrosshairs = () => {
   });
 
   const removeCrosshairMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: (_config: CrosshairConfig) => {
       return invoke("remove_crosshair_from_autoexec");
     },
     meta: {
       skipGlobalErrorHandler: true,
     },
-    onSuccess: () => {
+    onSuccess: (_, config) => {
+      removeFromActiveCrosshairHistory(config);
+      clearActiveCrosshair();
       toast.success(t("crosshairs.removedRestart"));
       queryClient.invalidateQueries({ queryKey: ["autoexec-config"] });
     },
     onError: (error) => {
       logger.errorOnly(error);
+      if (isTauriError(error) && error.kind === "gameRunning") {
+        toast.error(t("crosshairs.stopGameBeforeChange"));
+        return;
+      }
       toast.error(t("crosshairs.form.applyError"));
     },
   });
@@ -77,11 +91,10 @@ export const ActiveCrosshairs = () => {
   };
 
   const handleRemove = (config: CrosshairConfig, isActive: boolean) => {
-    removeFromActiveCrosshairHistory(config);
-
     if (isActive) {
-      removeCrosshairMutation.mutate();
+      removeCrosshairMutation.mutate(config);
     } else {
+      removeFromActiveCrosshairHistory(config);
       toast.success(t("crosshairs.removedFromHistory"));
     }
   };
