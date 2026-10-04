@@ -51,7 +51,7 @@ export type ImportStageProgress = {
   itemName: string;
 };
 
-export type ImportedProfile = {
+type ImportedProfile = {
   name: string;
   profileId: string | null;
   report: InterchangeImportReport | null;
@@ -144,7 +144,7 @@ export const useInterchangeLedger = (enabled = true) =>
     enabled,
   });
 
-export const readInterchangeSource = (source: InterchangeSource) =>
+const readInterchangeSource = (source: InterchangeSource) =>
   source.kind === "manager"
     ? invoke<InterchangeDocument>("read_interchange_source", {
         sourceId: source.id,

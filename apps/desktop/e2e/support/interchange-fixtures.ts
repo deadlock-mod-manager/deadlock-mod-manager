@@ -16,19 +16,19 @@ import { collectFileInventory, type CreatedWorld } from "./world";
  * - an enabled slot whose recorded fingerprint no longer matches (state
  *   drift), so it must arrive as a local mod, never under the stale identity.
  */
-export const GRIMOIRE_SKIN_ID = "900101";
+const GRIMOIRE_SKIN_ID = "900101";
 export const GRIMOIRE_SKIN_FILE_ID = 910101;
-export const GRIMOIRE_SKIN_CATALOG_NAME = "E2E Grimoire Skin (catalog)";
-export const GRIMOIRE_SOUND_ID = "900202";
-export const GRIMOIRE_SOUND_NAME = "E2E Parked Sound";
-export const GRIMOIRE_OVERFLOW_NAME = "E2E Overflow Local";
-export const GRIMOIRE_DRIFTED_NAME = "Grimoire mod (pak02)";
+const GRIMOIRE_SKIN_CATALOG_NAME = "E2E Grimoire Skin (catalog)";
+const GRIMOIRE_SOUND_ID = "900202";
+const GRIMOIRE_SOUND_NAME = "E2E Parked Sound";
+const GRIMOIRE_OVERFLOW_NAME = "E2E Overflow Local";
+const GRIMOIRE_DRIFTED_NAME = "Grimoire mod (pak02)";
 /** The GameBanana submission the user links the overflow mod to by hand. */
 export const LINKED_OVERFLOW_ID = "900404";
 export const LINKED_OVERFLOW_NAME = "E2E Overflow (catalog)";
 /** Grimoire profile names; the second collides with DMM's default profile. */
 export const LOADOUT_PROFILE = "E2E Loadout";
-export const CASUAL_PROFILE = "Default Profile";
+const CASUAL_PROFILE = "Default Profile";
 export const CASUAL_PROFILE_IMPORTED = "Default Profile (2)";
 export const PROFILE_CROSSHAIR = {
   pipGap: 7,

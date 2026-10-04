@@ -11,7 +11,7 @@ import {
 import type { ModProfile } from "@/types/profiles";
 
 /** Mirrors `commands/mod_interchange/format.rs` (rfcs/001-mod-interchange/proposal.md). */
-export type InterchangeFile = {
+type InterchangeFile = {
   name: string;
   path: string;
   sha256?: string;
@@ -19,7 +19,7 @@ export type InterchangeFile = {
   selected?: boolean;
 };
 
-export type InterchangeOrigin =
+type InterchangeOrigin =
   | {
       provider: "gamebanana";
       submissionType: "mod" | "sound";
@@ -45,7 +45,7 @@ export type InterchangeMod = {
   files: InterchangeFile[];
 };
 
-export type InterchangeProfileMod = {
+type InterchangeProfileMod = {
   modKey: string;
   enabled: boolean;
   order: number;
@@ -67,8 +67,6 @@ export type InterchangeCrosshair = {
   active: boolean;
   convars: Record<string, string>;
 };
-
-export type InterchangeSection = "mods" | "profiles" | "crosshairs";
 
 export type InterchangeDocument = {
   format: string;
@@ -92,7 +90,7 @@ export type InterchangeSourceInfo = {
   searched: string[];
 };
 
-export type ImportStatus = "imported" | "skipped" | "failed";
+type ImportStatus = "imported" | "skipped" | "failed";
 
 export type ImportedMod = {
   key: string;
@@ -159,16 +157,6 @@ export type InterchangeExportReport = {
   crosshairs: number;
   skipped: Array<{ modId: string; name: string; reason: string }>;
 };
-
-export const hasSection = (
-  document: InterchangeDocument,
-  section: InterchangeSection,
-) =>
-  section === "mods"
-    ? true
-    : section === "profiles"
-      ? document.profiles.length > 0
-      : document.crosshairs.length > 0;
 
 const LOCAL_ID = /^local-[0-9a-f-]{36}$/i;
 export const isLocalModId = (id: string) => LOCAL_ID.test(id);
@@ -312,7 +300,7 @@ export const placeholderModDto = (
 
 /** Records which GameBanana file the VPKs came from, so update checks compare
  *  against the right version instead of treating the mod as unknown. */
-export const selectedDownloadsForEntry = (
+const selectedDownloadsForEntry = (
   entry: InterchangeMod,
   modId: string,
 ): ModDownloadItem[] | undefined => {
