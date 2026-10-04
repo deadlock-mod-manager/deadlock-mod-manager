@@ -1986,7 +1986,8 @@
       "mod": "",
       "sound": "",
       "map": "",
-      "wip": ""
+      "wip": "",
+      "album": ""
     },
     "updated": "",
     "match": "",
@@ -3347,7 +3348,8 @@
       "pinned": "",
       "replies_one": "",
       "replies_other": ""
-    }
+    },
+    "backToAlbum": ""
   },
   "modDependencies": {
     "title": "必需",
@@ -3705,5 +3707,54 @@
     "killSounds": "",
     "killstreakMusic": "",
     "other": ""
+  },
+  "albums": {
+    "album": "",
+    "itemCount_one": "",
+    "itemCount_other": "",
+    "openSiteError": "",
+    "emptyTitle": "",
+    "emptyDescription": "",
+    "notFoundTitle": "",
+    "notFoundDescription": "",
+    "backToAlbums": "",
+    "viewOnSite": "",
+    "modsInAlbum": "",
+    "modStat_one": "",
+    "modStat_other": "",
+    "inLibraryStat_one": "",
+    "inLibraryStat_other": "",
+    "missingFromCatalog_one": "",
+    "missingFromCatalog_other": "",
+    "download": {
+      "action_one": "",
+      "action_other": "",
+      "allInLibrary": "",
+      "preparing": "",
+      "confirmTitle": "",
+      "confirmBody_one": "",
+      "confirmBody_other": "",
+      "confirmSkipped_one": "",
+      "confirmSkipped_other": "",
+      "confirmOutdated_one": "",
+      "confirmOutdated_other": "",
+      "confirmAction_one": "",
+      "confirmAction_other": "",
+      "queued_one": "",
+      "queued_other": "",
+      "needsFileChoice_one": "",
+      "needsFileChoice_other": "",
+      "failed_one": "",
+      "failed_other": ""
+    },
+    "freshness": {
+      "outdatedLabel": "",
+      "partialLabel_one": "",
+      "partialLabel_other": "",
+      "outdatedDescription": "",
+      "partialDescription_one": "",
+      "partialDescription_other": ""
+    },
+    "providedBy": ""
   }
 }
