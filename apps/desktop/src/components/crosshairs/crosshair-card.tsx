@@ -4,12 +4,6 @@ import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Card, CardContent } from "@deadlock-mods/ui/components/card";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@deadlock-mods/ui/components/tooltip";
 import { CheckCircleIcon, EyeIcon, TrashIcon } from "@phosphor-icons/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
@@ -28,8 +22,6 @@ export interface CrosshairCardProps {
   onPreviewOpen?: () => void;
   onRemove?: () => void;
 }
-
-const SERIF_FONT = { fontFamily: '"Forevs Demo", serif' } as const;
 
 export const CrosshairCard = ({
   crosshair,
@@ -100,226 +92,96 @@ export const CrosshairCard = ({
     displayTags.length;
 
   const isApplying = applyCrosshairMutation.isPending;
-  const authorName = crosshair?.userName ?? "Unknown";
+  const authorName = crosshair?.userName ?? t("crosshairs.unknownAuthor");
 
   return (
-    <TooltipProvider delayDuration={150}>
-      <Card
-        className={cn(
-          "group relative cursor-pointer overflow-hidden border-border/60 bg-card/60 backdrop-blur-sm",
-          "transition-all duration-200 ease-out",
-          "hover:-translate-y-0.5 hover:border-primary/40 hover:bg-card/80",
-          "hover:shadow-lg hover:shadow-primary/5",
-          isActive &&
-            "border-primary/50 shadow-md shadow-primary/10 ring-1 ring-primary/20",
-        )}
-        onClick={handlePreviewOpen}>
-        <CardContent className='relative flex flex-col p-0'>
-          {isActive && !crosshair && (
-            <>
-              <CornerBracket position='top-left' />
-              <CornerBracket position='top-right' />
-              <CornerBracket position='bottom-left' />
-              <CornerBracket position='bottom-right' />
-            </>
-          )}
-
-          <div className='relative h-[200px] w-full'>
-            <div
-              aria-hidden
-              className={cn(
-                "absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary/5 via-transparent to-transparent",
-                "transition-opacity duration-300",
-                "opacity-60 group-hover:opacity-100",
-              )}
-            />
-            <div className='absolute inset-0 flex items-center justify-center'>
-              <CrosshairCanvas
-                config={crosshairConfig}
-                interactive={false}
-                width={200}
-                height={200}
-              />
-            </div>
-
-            <div
-              className={cn(
-                "absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 p-2",
-                "bg-gradient-to-t from-background/95 via-background/70 to-transparent",
-                "opacity-0 transition-opacity duration-200 ease-out",
-                "group-hover:opacity-100",
-              )}>
-              <ActionIconButton
-                icon={<EyeIcon className='h-4 w-4' weight='duotone' />}
-                label={t("crosshairs.preview")}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handlePreviewOpen();
-                }}
-              />
-              <ActionIconButton
-                icon={
-                  <CheckCircleIcon
-                    className='h-4 w-4'
-                    weight={isActive ? "fill" : "duotone"}
-                  />
-                }
-                label={
-                  isActive
-                    ? t("crosshairs.currentlyActive")
-                    : t("crosshairs.form.apply")
-                }
-                disabled={isApplying || isActive}
-                isLoading={isApplying}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleApply();
-                }}
-                tone={isActive ? "active" : "primary"}
-              />
-              {onRemove && (
-                <ActionIconButton
-                  icon={<TrashIcon className='h-4 w-4' weight='duotone' />}
-                  label={t("crosshairs.remove")}
-                  tone='destructive'
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onRemove();
-                  }}
-                />
+    <Card
+      className={cn(
+        "overflow-hidden bg-card",
+        isActive && "border-primary/60",
+      )}>
+      <CardContent className='flex h-full flex-col p-0'>
+        <button
+          type='button'
+          onClick={handlePreviewOpen}
+          aria-label={t("crosshairs.previewNamed", {
+            name: crosshair?.name ?? t("crosshairs.savedPreset"),
+          })}
+          className='relative flex w-full items-center justify-center bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring'>
+          <CrosshairCanvas
+            config={crosshairConfig}
+            interactive={false}
+            height={crosshair ? 128 : 80}
+          />
+        </button>
+        {crosshair && (
+          <div className='flex flex-1 flex-col gap-1.5 px-3 pt-3'>
+            <h3
+              className='truncate text-sm font-semibold'
+              title={crosshair.name}>
+              {crosshair.name}
+            </h3>
+            <p
+              className='truncate text-xs text-muted-foreground'
+              title={authorName}>
+              {t("mods.by")} {authorName}
+            </p>
+            <div className='flex min-h-6 flex-wrap items-center gap-1'>
+              {visibleHeroes.map((hero) => (
+                <Badge key={hero} variant='secondary' className='gap-1 text-xs'>
+                  <HeroIcon className='h-4 w-4' hero={hero} />
+                  {hero}
+                </Badge>
+              ))}
+              {displayTags.map((tag) => (
+                <Badge key={tag} variant='secondary' className='text-xs'>
+                  {tag}
+                </Badge>
+              ))}
+              {remainingChips > 0 && (
+                <span className='text-xs text-muted-foreground'>
+                  +{remainingChips}
+                </span>
               )}
             </div>
           </div>
-
-          {crosshair && (
-            <div className='flex flex-col gap-2 border-t border-border/40 px-3 py-3'>
-              <div className='flex items-baseline justify-between gap-2'>
-                <h3
-                  className='truncate font-bold text-base leading-tight tracking-wide'
-                  style={SERIF_FONT}
-                  title={crosshair.name}>
-                  {crosshair.name}
-                </h3>
-              </div>
-
-              <div className='flex items-center gap-1.5 text-muted-foreground text-xs'>
-                <span
-                  className='font-bold text-[9px] uppercase tracking-[0.25em]'
-                  style={SERIF_FONT}>
-                  {t("mods.by")}
-                </span>
-                <span
-                  className='truncate font-medium text-foreground/80'
-                  title={authorName}>
-                  {authorName}
-                </span>
-              </div>
-
-              {(visibleHeroes.length > 0 ||
-                displayTags.length > 0 ||
-                remainingChips > 0) && (
-                <div className='flex flex-wrap items-center gap-1 pt-0.5'>
-                  {visibleHeroes.map((hero) => (
-                    <Badge
-                      key={`hero-${hero}`}
-                      variant='outline'
-                      className='h-5 gap-1 border-primary/30 pr-1.5 pl-0.5 text-[10px] font-medium text-foreground/80'>
-                      <HeroIcon className='h-4 w-4' hero={hero} />
-                      {hero}
-                    </Badge>
-                  ))}
-                  {displayTags.map((tag) => (
-                    <Badge
-                      key={`tag-${tag}`}
-                      variant='secondary'
-                      className='h-5 px-1.5 text-[10px] font-medium'>
-                      {tag}
-                    </Badge>
-                  ))}
-                  {remainingChips > 0 && (
-                    <Badge
-                      variant='secondary'
-                      className='h-5 px-1.5 text-[10px] font-medium text-muted-foreground'>
-                      +{remainingChips}
-                    </Badge>
-                  )}
-                </div>
-              )}
-            </div>
+        )}
+        <div className='flex items-center gap-1 p-2'>
+          <Button
+            variant='ghost'
+            size='sm'
+            className='flex-1 gap-1.5 px-2'
+            icon={<EyeIcon aria-hidden weight='duotone' />}
+            onClick={handlePreviewOpen}>
+            {t("crosshairs.preview")}
+          </Button>
+          <Button
+            variant={isActive ? "ghost" : "outline"}
+            size='sm'
+            className={cn("flex-1 gap-1.5 px-2", isActive && "text-primary")}
+            icon={
+              <CheckCircleIcon
+                aria-hidden
+                weight={isActive ? "fill" : "duotone"}
+              />
+            }
+            disabled={isApplying || isActive || !crosshairsEnabled}
+            isLoading={isApplying}
+            onClick={handleApply}>
+            {isActive ? t("crosshairs.selected") : t("crosshairs.form.apply")}
+          </Button>
+          {onRemove && (
+            <Button
+              variant='ghost'
+              size='icon'
+              className='h-8 w-8 shrink-0'
+              aria-label={t("crosshairs.removeFromHistory")}
+              onClick={onRemove}>
+              <TrashIcon className='h-4 w-4' />
+            </Button>
           )}
-        </CardContent>
-      </Card>
-    </TooltipProvider>
-  );
-};
-
-type CornerPosition = "top-left" | "top-right" | "bottom-left" | "bottom-right";
-
-const cornerPositionClasses: Record<CornerPosition, string> = {
-  "top-left": "top-1.5 left-1.5 border-t-2 border-l-2",
-  "top-right": "top-1.5 right-1.5 border-t-2 border-r-2",
-  "bottom-left": "bottom-1.5 left-1.5 border-b-2 border-l-2",
-  "bottom-right": "bottom-1.5 right-1.5 border-b-2 border-r-2",
-};
-
-const CornerBracket = ({ position }: { position: CornerPosition }) => (
-  <span
-    aria-hidden
-    className={cn(
-      "pointer-events-none absolute z-10 h-3 w-3 border-primary/60",
-      cornerPositionClasses[position],
-    )}
-  />
-);
-
-type ActionTone = "default" | "primary" | "destructive" | "active";
-
-interface ActionIconButtonProps {
-  icon: React.ReactNode;
-  label: string;
-  tone?: ActionTone;
-  disabled?: boolean;
-  isLoading?: boolean;
-  onClick: (e: React.MouseEvent) => void;
-}
-
-const ActionIconButton = ({
-  icon,
-  label,
-  tone = "default",
-  disabled,
-  isLoading,
-  onClick,
-}: ActionIconButtonProps) => {
-  const toneClass: Record<ActionTone, string> = {
-    default: "text-foreground/80 hover:text-foreground hover:bg-muted",
-    primary: "text-foreground/80 hover:text-primary hover:bg-primary/10",
-    destructive:
-      "text-foreground/80 hover:text-destructive hover:bg-destructive/10",
-    active: "text-primary hover:text-primary",
-  };
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          aria-label={label}
-          disabled={disabled}
-          icon={icon}
-          isLoading={isLoading}
-          onClick={onClick}
-          size='icon'
-          variant='ghost'
-          className={cn(
-            "h-8 w-8 rounded-md border border-transparent transition-colors",
-            "hover:border-border/60",
-            toneClass[tone],
-          )}
-        />
-      </TooltipTrigger>
-      <TooltipContent side='top' className='text-xs'>
-        {label}
-      </TooltipContent>
-    </Tooltip>
+        </div>
+      </CardContent>
+    </Card>
   );
 };

@@ -17,21 +17,21 @@ const Crosshairs = () => {
   };
 
   return (
-    <div className='w-full overflow-y-auto pl-4 pr-2'>
-      <div className='mb-6 flex items-center justify-between'>
+    <div className='w-full overflow-y-auto px-5 pb-6'>
+      <div className='mb-6 flex flex-wrap items-center justify-between gap-3'>
         <PageTitle
           title={t("crosshairs.title")}
           subtitle={t("crosshairs.subtitle")}
         />
         <Button
-          variant='outline'
+          variant='default'
           icon={<CrosshairIcon className='h-4 w-4' />}
           onClick={handleGenerateCrosshair}>
           {t("crosshairs.generate")}
         </Button>
       </div>
       <div className='mb-6'>
-        <CrosshairsToggle />
+        <CrosshairsToggle compact />
       </div>
       <ActiveCrosshairs />
       <CrosshairLibrary />

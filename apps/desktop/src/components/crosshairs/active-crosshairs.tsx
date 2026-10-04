@@ -1,7 +1,12 @@
 import type { CrosshairConfig } from "@deadlock-mods/crosshair/types";
-import { Card, CardContent } from "@deadlock-mods/ui/components/card";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { CrosshairCanvas } from "./crosshair/crosshair-canvas";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { CrosshairIcon } from "@phosphor-icons/react";
+import {
+  ArrowCounterClockwiseIcon,
+  CrosshairIcon,
+  EyeIcon,
+} from "@phosphor-icons/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
@@ -22,6 +27,7 @@ export const ActiveCrosshairs = () => {
     removeFromActiveCrosshairHistory,
     clearActiveCrosshair,
   } = usePersistedStore();
+  const activeCrosshair = usePersistedStore((state) => state.activeCrosshair);
   const crosshairsEnabled = usePersistedStore(
     (state) => state.crosshairsEnabled,
   );
@@ -99,43 +105,81 @@ export const ActiveCrosshairs = () => {
     }
   };
 
-  if (activeCrosshairHistory.length === 0) {
-    return (
-      <div className='mb-6'>
-        <h2 className='text-lg font-semibold mb-4'>
-          {t("crosshairs.activeCrosshairs")}
-        </h2>
-        <Card>
-          <CardContent className='p-8 flex flex-col items-center justify-center gap-2 text-muted-foreground'>
-            <CrosshairIcon className='h-12 w-12 opacity-50' />
-            <p className='text-sm'>{t("crosshairs.noActiveCrosshair")}</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className='mb-6'>
-      <h2 className='text-lg font-semibold mb-4'>
-        {t("crosshairs.activeCrosshairs")}
-      </h2>
-      <div className='flex gap-4 overflow-x-auto pb-2 pt-1'>
-        {activeCrosshairHistory.map(
-          (config: CrosshairConfig, index: number) => (
-            <div
-              key={JSON.stringify(config)}
-              className='flex-shrink-0 w-[200px]'>
-              <CrosshairCard
-                config={config}
-                isActive={index === 0}
-                onPreviewOpen={() => setPreviewConfig(config)}
-                onRemove={() => handleRemove(config, index === 0)}
-              />
+    <section
+      className='mb-6 grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]'
+      aria-label={t("crosshairs.currentCrosshair")}>
+      <div className='flex flex-col overflow-hidden rounded-lg border border-border bg-card sm:flex-row'>
+        <div className='flex items-center justify-center bg-muted/20 sm:w-40 sm:shrink-0'>
+          {activeCrosshair ? (
+            <CrosshairCanvas
+              config={activeCrosshair}
+              interactive={false}
+              height={172}
+              background='bg1'
+            />
+          ) : (
+            <CrosshairIcon className='m-12 h-12 w-12 text-muted-foreground' />
+          )}
+        </div>
+        <div className='flex flex-1 flex-col items-start justify-center gap-2 p-5'>
+          <h2 className='text-base font-semibold'>
+            {t("crosshairs.currentCrosshair")}
+          </h2>
+          <p className='text-sm text-muted-foreground'>
+            {t(
+              !crosshairsEnabled
+                ? "crosshairs.pausedDescription"
+                : activeCrosshair
+                  ? "crosshairs.currentDescription"
+                  : "crosshairs.noActiveCrosshair",
+            )}
+          </p>
+          {activeCrosshair && (
+            <div className='mt-1 flex flex-wrap gap-2'>
+              <Button
+                variant='outline'
+                size='sm'
+                icon={<EyeIcon aria-hidden weight='duotone' />}
+                onClick={() => setPreviewConfig(activeCrosshair)}>
+                {t("crosshairs.preview")}
+              </Button>
+              <Button
+                variant='ghost'
+                size='sm'
+                icon={<ArrowCounterClockwiseIcon aria-hidden />}
+                disabled={removeCrosshairMutation.isPending}
+                isLoading={removeCrosshairMutation.isPending}
+                onClick={() => handleRemove(activeCrosshair, true)}>
+                {t("crosshairs.restorePrevious")}
+              </Button>
             </div>
-          ),
-        )}
+          )}
+        </div>
       </div>
+      {activeCrosshairHistory.length > 0 && (
+        <div className='min-w-0'>
+          <h2 className='mb-3 text-sm font-semibold'>
+            {t("crosshairs.recentlyUsed")}
+          </h2>
+          <div className='flex gap-3 overflow-x-auto pb-2'>
+            {activeCrosshairHistory.map((config: CrosshairConfig) => {
+              const isActive =
+                JSON.stringify(activeCrosshair) === JSON.stringify(config);
+              return (
+                <div key={JSON.stringify(config)} className='w-60 shrink-0'>
+                  <CrosshairCard
+                    config={config}
+                    isActive={isActive}
+                    onPreviewOpen={() => setPreviewConfig(config)}
+                    onRemove={() => handleRemove(config, isActive)}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
       {previewConfig && (
         <CrosshairPreviewDialog
           open={!!previewConfig}
@@ -147,6 +191,6 @@ export const ActiveCrosshairs = () => {
           isApplying={applyCrosshairMutation.isPending}
         />
       )}
-    </div>
+    </section>
   );
 };
