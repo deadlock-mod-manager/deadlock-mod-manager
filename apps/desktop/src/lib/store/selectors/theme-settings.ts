@@ -18,8 +18,3 @@ export function selectThemeSettings(
   if (isThemeSettings(settings)) return settings;
   return undefined;
 }
-
-export function selectActiveTheme(state: PluginState): string | undefined {
-  const settings = selectThemeSettings(state);
-  return settings?.activeTheme;
-}

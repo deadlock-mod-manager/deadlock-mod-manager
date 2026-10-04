@@ -1,0 +1,157 @@
+:root.remlock-theme-active {
+  color-scheme: dark;
+  --background: 236 27% 13%;
+  --foreground: 222 60% 96%;
+  --card: 234 27% 19%;
+  --card-foreground: 222 60% 96%;
+  --popover: 234 27% 19%;
+  --popover-foreground: 222 60% 96%;
+  --primary: 233 98% 80%;
+  --primary-foreground: 234 27% 16%;
+  --secondary: 233 24% 25%;
+  --secondary-foreground: 193 90% 88%;
+  --muted: 234 23% 23%;
+  --muted-foreground: 231 25% 76%;
+  --accent: 193 90% 88%;
+  --accent-foreground: 234 27% 16%;
+  --destructive: 8 72% 40%;
+  --destructive-foreground: 35 80% 96%;
+  --border: 233 22% 34%;
+  --input: 233 22% 34%;
+  --ring: 193 90% 88%;
+  --chart-1: 233 98% 80%;
+  --chart-2: 193 90% 88%;
+  --chart-3: 42 100% 75%;
+  --chart-4: 25 94% 48%;
+  --chart-5: 166 55% 76%;
+  --sidebar-background: 234 27% 16%;
+  --sidebar-foreground: 222 60% 96%;
+  --sidebar-primary: 233 98% 80%;
+  --sidebar-primary-foreground: 234 27% 16%;
+  --sidebar-accent: 193 90% 88%;
+  --sidebar-accent-foreground: 234 27% 16%;
+  --sidebar-border: 233 22% 30%;
+  --sidebar-ring: 193 90% 88%;
+}
+
+.remlock-theme-active main,
+.remlock-theme-active [data-sidebar="sidebar"] {
+  position: relative;
+  isolation: isolate;
+}
+
+.remlock-theme-active main::before,
+.remlock-theme-active [data-sidebar="sidebar"]::before {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  z-index: -1;
+  pointer-events: none;
+  clip-path: inset(6px);
+  background-image:
+    linear-gradient(
+      hsl(236 27% 13% / var(--remlock-pattern-dim, 0.7)),
+      hsl(236 27% 13% / var(--remlock-pattern-dim, 0.7))
+    ),
+    url("../../public/pre-defined/remlock/background.png");
+  background-size: 1224px 1224px;
+  background-position: center;
+  background-repeat: repeat;
+  background-attachment: fixed;
+}
+
+.remlock-theme-active [data-sidebar="sidebar"] {
+  --remlock-pattern-dim: 0.8;
+}
+
+.remlock-theme-active [data-sidebar="sidebar"]::before {
+  filter: blur(2px);
+}
+
+.remlock-theme-active .occult-geometry-container {
+  display: none;
+}
+
+.remlock-theme-active [data-sidebar="menu-button"][data-active="true"] {
+  background-color: hsl(var(--sidebar-accent));
+  color: hsl(var(--sidebar-accent-foreground));
+}
+
+.remlock-theme-active [data-sidebar-header="true"] > div:first-child img {
+  filter: brightness(0) saturate(100%) invert(85%) sepia(18%) saturate(647%)
+    hue-rotate(157deg) brightness(105%) contrast(99%);
+}
+
+.remlock-artwork {
+  aspect-ratio: 1011 / 610;
+  overflow: hidden;
+}
+
+.remlock-artwork img {
+  width: 100%;
+  height: auto;
+}
+
+.remlock-discovery {
+  position: absolute;
+  inset: auto 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.25rem;
+  background: hsl(var(--sidebar-background));
+  color: hsl(42 100% 75%);
+}
+
+.remlock-visitors {
+  display: flex;
+  align-items: center;
+}
+
+.remlock-remling {
+  width: 1.75rem;
+  height: 1.75rem;
+  color: hsl(233 30% 42%);
+}
+
+.remlock-zzz {
+  font-size: 0.625rem;
+  letter-spacing: 0.125rem;
+  color: hsl(193 90% 88%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .remlock-discovery {
+    animation: remlock-discover 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .remlock-visitors .remlock-remling:nth-child(2) {
+    animation: remlock-discover 220ms 60ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .remlock-visitors .remlock-remling:nth-child(3) {
+    animation: remlock-discover 220ms 120ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@keyframes remlock-discover {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.remlock-preview {
+  object-position: top;
+  background-color: hsl(234 27% 19%);
+}
+
+.remlock-theme-active ::selection {
+  background-color: hsl(42 100% 75%);
+  color: hsl(234 27% 16%);
+}

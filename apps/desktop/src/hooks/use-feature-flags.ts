@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { getFeatureFlags } from "@/lib/api-client";
 
 /**
- * Server-side flags. Only the `plugin-<id>` kill switches read these now;
- * product features are local toggles (see `useExperimentalFeature`).
+ * Server-side plugin kill switches and release themes.
+ * Experimental product features use local toggles.
  */
 export const useFeatureFlags = () => {
   return useQuery<FeatureFlag[]>({

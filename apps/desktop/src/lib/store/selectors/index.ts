@@ -1,1 +1,1 @@
-export { selectThemeSettings, selectActiveTheme } from "./theme-settings";
+export { selectThemeSettings } from "./theme-settings";

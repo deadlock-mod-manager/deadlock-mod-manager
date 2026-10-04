@@ -2808,6 +2808,15 @@
       "visit": "Inspired by Lovelock Companion by",
       "kofi": "Ko-fi"
     },
+    "remlock": {
+      "description": "An indigo theme with lavender, cyan and golden accents, featuring Remlock's illustrated artwork.",
+      "artworkAlt": "Remlock artwork with celestial cats, stars and candles",
+      "letRemNap": "Let Rem take a nap",
+      "summonRemlings": "Wake Rem and summon the Remlings",
+      "sendRemlingsHome": "Send the Remlings home",
+      "naptime": "Naptime.",
+      "tagAlong": "Tag along?"
+    },
     "flashbang": {
       "title": "Flashbang Mode",
       "description": "Randomly force Light Mode when the app loads.",

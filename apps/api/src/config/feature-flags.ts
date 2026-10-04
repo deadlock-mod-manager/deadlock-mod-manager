@@ -5,6 +5,14 @@ import type { FeatureFlagDefinition } from "@deadlock-mods/feature-flags";
  */
 export const featureFlagDefinitions: FeatureFlagDefinition[] = [
   {
+    name: "remlock-release",
+    description:
+      "Show Remlock and use it by default for players without a theme",
+    type: "boolean",
+    defaultValue: false,
+    exposed: true,
+  },
+  {
     name: "mod-download-mirroring",
     description: "Enable mod download mirroring functionality",
     type: "boolean",

@@ -9,23 +9,14 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { Trans, useTranslation } from "react-i18next";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
 import useAbout from "@/hooks/use-about";
+import { useActiveTheme } from "@/hooks/use-active-theme";
 import {
   getDisplaySemver,
   isNightlyBuildVersion,
 } from "@/lib/app-version-display";
 import { getPluginAssetUrl } from "@/lib/plugins";
-import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import Logo from "./logo";
-
-type ThemesPluginSettings =
-  | {
-      activeTheme?: string;
-      userThemes?: Array<{
-        id: string;
-      }>;
-    }
-  | undefined;
 
 const predefinedThemeIcons = {
   nightshift: getPluginAssetUrl(
@@ -38,6 +29,7 @@ const predefinedThemeIcons = {
   ),
   tea: getPluginAssetUrl("themes", "public/pre-defined/tea/logo.png"),
   lovelock: getPluginAssetUrl("themes", "public/pre-defined/lovelock/icon.png"),
+  remlock: getPluginAssetUrl("themes", "public/pre-defined/remlock/icon.png"),
 } as const;
 
 const AUTHOR_GITHUB_URL = "https://github.com/Stormix";
@@ -63,10 +55,7 @@ export const BrandingHeader = ({
   const { version } = useAbout();
   const { state } = useSidebar();
   const collapsed = collapsedProp ?? state === "collapsed";
-  const themesSettings = usePersistedStore(
-    (s) => s.pluginSettings.themes,
-  ) as ThemesPluginSettings;
-  const activeTheme = themesSettings?.activeTheme;
+  const activeTheme = useActiveTheme();
   const TopbarLogo = useThemeOverride("topbarLogo");
 
   let themedIconSrc: string | undefined;

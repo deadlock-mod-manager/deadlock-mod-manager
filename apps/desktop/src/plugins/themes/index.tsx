@@ -12,8 +12,13 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
+import {
+  useActiveTheme,
+  useRemlockReleaseEnabled,
+} from "@/hooks/use-active-theme";
 import { getPluginAssetUrl } from "@/lib/plugins";
 import { usePersistedStore } from "@/lib/store";
+import { selectThemeSettings } from "@/lib/store/selectors";
 import type { PluginModule } from "@/plugins/types";
 import {
   beginEditingUserTheme,
@@ -39,6 +44,7 @@ import BloodmoonTheme from "./pre-defined/bloodmoon/bloodmoon.tsx";
 import DeadlockApiTheme from "./pre-defined/deadlock-api/deadlock-api.tsx";
 import LovelockTheme from "./pre-defined/lovelock/lovelock.tsx";
 import NightshiftTheme from "./pre-defined/nightshift/nightshift.tsx";
+import RemlockTheme from "./pre-defined/remlock/remlock.tsx";
 import TeaTheme from "./pre-defined/tea/tea.tsx";
 
 const arcanePreview = getPluginAssetUrl(
@@ -65,6 +71,10 @@ const teaPreview = getPluginAssetUrl(
   "themes",
   "public/pre-defined/tea/preview.png",
 );
+const remlockPreview = getPluginAssetUrl(
+  "themes",
+  "public/pre-defined/remlock/artwork.png",
+);
 
 export const manifest = {
   id: "themes",
@@ -84,6 +94,13 @@ const DEFAULT_SETTINGS: ThemeSettings = {
 };
 
 const PRE_DEFINED_THEMES = [
+  {
+    id: "remlock",
+    name: "Remlock",
+    descriptionKey: "plugins.remlock.description",
+    component: RemlockTheme,
+    previewImage: remlockPreview,
+  },
   {
     id: "nightshift",
     name: "Nightshift",
@@ -152,11 +169,18 @@ function revertDraftTheme() {
 const Settings = () => {
   const { t } = useTranslation();
   const confirm = useConfirm();
-  const settings = usePersistedStore((s) => s.pluginSettings[manifest.id]) as
-    | ThemeSettings
-    | undefined;
+  const settings = usePersistedStore(selectThemeSettings);
+  const activeTheme = useActiveTheme();
+  const remlockEnabled = useRemlockReleaseEnabled();
   const setSettings = usePersistedStore((s) => s.setPluginSettings);
   const current = settings ?? DEFAULT_SETTINGS;
+
+  const selectTheme = (theme: string | undefined) =>
+    setSettings(manifest.id, {
+      ...current,
+      activeTheme: theme,
+      releaseThemeDismissed: theme === undefined,
+    });
 
   const graceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const graceToastIdRef = useRef<string | number | undefined>(undefined);
@@ -239,11 +263,16 @@ const Settings = () => {
           </p>
 
           <div className='grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'>
-            {[...getUserThemes(current), ...PRE_DEFINED_THEMES].map((theme) => (
+            {[
+              ...getUserThemes(current),
+              ...PRE_DEFINED_THEMES.filter(
+                (theme) => theme.id !== "remlock" || remlockEnabled,
+              ),
+            ].map((theme) => (
               <Card
                 key={theme.id}
                 className={
-                  current.activeTheme === theme.id
+                  activeTheme === theme.id
                     ? "border-border h-full flex flex-col"
                     : "border-border h-full flex flex-col"
                 }>
@@ -256,26 +285,19 @@ const Settings = () => {
                     </CardTitle>
                     <div className='flex items-center gap-2'>
                       <Switch
-                        checked={current.activeTheme === theme.id}
+                        checked={activeTheme === theme.id}
                         onCheckedChange={(checked) =>
-                          setSettings(manifest.id, {
-                            ...current,
-                            activeTheme: checked ? theme.id : undefined,
-                          })
+                          selectTheme(checked ? theme.id : undefined)
                         }
                       />
                       <label
                         className='text-sm font-medium cursor-pointer'
                         onClick={() =>
-                          setSettings(manifest.id, {
-                            ...current,
-                            activeTheme:
-                              current.activeTheme === theme.id
-                                ? undefined
-                                : theme.id,
-                          })
+                          selectTheme(
+                            activeTheme === theme.id ? undefined : theme.id,
+                          )
                         }>
-                        {current.activeTheme === theme.id
+                        {activeTheme === theme.id
                           ? t("plugins.themes.active")
                           : t("plugins.themes.inactive")}
                       </label>
@@ -307,7 +329,7 @@ const Settings = () => {
                       <img
                         src={(theme as { previewImage: string }).previewImage}
                         alt={(theme as { name: string }).name}
-                        className='absolute inset-0 h-full w-full object-cover'
+                        className={`absolute inset-0 h-full w-full object-cover ${theme.id === "remlock" ? "remlock-preview" : ""}`}
                         onError={(e) => {
                           e.currentTarget.style.display = "none";
                           e.currentTarget.parentElement!.innerHTML = `<span class="text-muted-foreground text-xs flex items-center justify-center h-full w-full">${t("plugins.themes.previewComingSoon")}</span>`;
@@ -618,27 +640,24 @@ const Settings = () => {
 };
 
 const Render = () => {
-  const settings = usePersistedStore((s) => s.pluginSettings[manifest.id]) as
-    | ThemeSettings
-    | undefined;
+  const settings = usePersistedStore(selectThemeSettings);
+  const selectedTheme = useActiveTheme();
   const current = settings ?? DEFAULT_SETTINGS;
 
-  if (!current.activeTheme) return null;
+  if (!selectedTheme) return null;
 
   // Render exported user-defined themes via CustomTheme override
-  const userTheme = getUserThemes(current).find(
-    (t) => t.id === current.activeTheme,
-  );
+  const userTheme = getUserThemes(current).find((t) => t.id === selectedTheme);
   if (userTheme) {
     return <CustomTheme theme={userTheme} />;
   }
 
-  if (current.activeTheme === "custom") {
+  if (selectedTheme === "custom") {
     return <CustomTheme />;
   }
 
   // Special handling for Arcane theme to pass accent color
-  if (current.activeTheme === "arcane") {
+  if (selectedTheme === "arcane") {
     return (
       <ArcaneTheme
         accentColor={current.arcaneAccentColor ?? DEFAULT_ACCENT_COLOR}
@@ -647,7 +666,7 @@ const Render = () => {
   }
 
   const activeTheme = PRE_DEFINED_THEMES.find(
-    (theme) => theme.id === current.activeTheme,
+    (theme) => theme.id === selectedTheme,
   );
 
   if (!activeTheme || !activeTheme.component) return null;
