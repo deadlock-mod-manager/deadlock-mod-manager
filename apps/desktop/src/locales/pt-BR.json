@@ -833,7 +833,75 @@
     "tabs": {
       "all": "Todos",
       "installed": "Instalados",
-      "downloaded": "Baixados"
+      "downloaded": "Baixados",
+      "conflicts": ""
+    }
+  },
+  "conflicts": {
+    "summary_one": "",
+    "summary_other": "",
+    "summaryModels_one": "",
+    "summaryModels_other": "",
+    "summaryModelsAll_one": "",
+    "summaryModelsAll_other": "",
+    "summaryNone": "",
+    "howItWorks": "",
+    "scanning": "",
+    "scanFailed": "",
+    "noneTitle": "",
+    "noneDescription": "",
+    "noSearchMatches": "",
+    "badge": {
+      "modelHidden": "",
+      "overlap": ""
+    },
+    "badgeTooltip": {
+      "modelHidden": "",
+      "overlap": ""
+    },
+    "title": {
+      "critical_one": "",
+      "critical_other": "",
+      "normal_one": "",
+      "normal_other": "",
+      "low_one": "",
+      "low_other": ""
+    },
+    "moreFiles_one": "",
+    "moreFiles_other": "",
+    "used": "",
+    "skipped": "",
+    "modelHidden": "",
+    "loadedFirst": "",
+    "loadFirst": "",
+    "showFiles_one": "",
+    "showFiles_other": "",
+    "options": "",
+    "ignoreGroup": "",
+    "ignoreMod": "",
+    "ignoreFile": "",
+    "ignoreFailed": "",
+    "ignoredSection": "",
+    "ignoredPair": "",
+    "ignoredModRow": "",
+    "restore": "",
+    "clearIgnores": "",
+    "help": {
+      "assets": {
+        "hat": "",
+        "coat": "",
+        "footsteps": ""
+      },
+      "rows": {
+        "first": "",
+        "second": "",
+        "inGame": ""
+      },
+      "fromMod": "",
+      "skipped": "",
+      "order": "",
+      "models": "",
+      "action": ""
     }
   },
   "modOrdering": {
@@ -1637,6 +1705,10 @@
         "description": ""
       },
       "profile-sharing": {
+        "title": "",
+        "description": ""
+      },
+      "conflict-detection": {
         "title": "",
         "description": ""
       }
@@ -2778,6 +2850,13 @@
       "visit": "Apoie Snipztea:",
       "twitch": "",
       "carrd": ""
+    },
+    "oled": {
+      "description": "",
+      "accentColor": "",
+      "customColor": "",
+      "customColorDescription": "",
+      "resetAccent": ""
     },
     "nightshift": {
       "description": "",
