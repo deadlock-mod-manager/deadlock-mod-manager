@@ -38,6 +38,7 @@ export const prepareInstalledProfiles = async (
     profile: typeof ALPHA;
     modIds: string[];
     slots?: number[];
+    payload?: (modId: string) => Buffer;
   }[],
   activeProfileId: string,
 ): Promise<void> => {
@@ -87,7 +88,7 @@ export const prepareInstalledProfiles = async (
       enabledMods: {},
     },
   };
-  for (const { profile, modIds, slots } of layout) {
+  for (const { profile, modIds, slots, payload = profilePayload } of layout) {
     const directory = path.join(
       world.configuration.roots.game,
       "game",
@@ -127,7 +128,7 @@ export const prepareInstalledProfiles = async (
       await mkdir(shardDirectory, { recursive: true });
       await writeFile(
         path.join(shardDirectory, filename),
-        profilePayload(mod.remoteId),
+        payload(mod.remoteId),
       );
       entries[mod.remoteId] = {
         enabled: true,

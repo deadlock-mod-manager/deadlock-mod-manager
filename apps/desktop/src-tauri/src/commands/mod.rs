@@ -5,6 +5,7 @@ pub mod archive;
 pub mod auth;
 pub mod autoexec;
 pub mod backups;
+pub mod conflicts;
 pub mod deadworks_content;
 pub mod deep_link;
 pub mod downloads;

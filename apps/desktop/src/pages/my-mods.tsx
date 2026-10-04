@@ -53,6 +53,7 @@ import {
   PowerOff,
   RefreshCw,
   ScanSearch,
+  TriangleAlert,
 } from "@deadlock-mods/ui/icons";
 import { Trash, UploadSimple } from "@phosphor-icons/react";
 import { MagnifyingGlass } from "@phosphor-icons/react";
@@ -73,6 +74,8 @@ import { VpkScanAlert } from "@/components/mods/vpk-scan-alert";
 import { AnalysisProgressToast } from "@/components/my-mods/analysis-progress-toast";
 import { AnalysisResultsDialog } from "@/components/my-mods/analysis-results-dialog";
 import { BatchUpdateDialog } from "@/components/my-mods/batch-update-dialog";
+import { ConflictsPanel } from "@/components/my-mods/conflicts/conflicts-panel";
+import { ModConflictBadge } from "@/components/my-mods/conflicts/mod-conflict-badge";
 import { MyModsEmptyState } from "@/components/my-mods/empty-state";
 import { ModOrderingDialog } from "@/components/my-mods/mod-ordering-dialog";
 import ErrorBoundary from "@/components/shared/error-boundary";
@@ -81,6 +84,7 @@ import { useDisableAllMods } from "@/hooks/use-disable-all-mods";
 import { useCheckUpdates } from "@/hooks/use-check-updates";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
+import { useProfileConflicts } from "@/hooks/use-profile-conflicts";
 import { useSearch } from "@/hooks/use-search";
 import { useModOptions } from "@/hooks/use-mod-options";
 import useUninstall from "@/hooks/use-uninstall";
@@ -103,12 +107,15 @@ import type {
   FilterMode,
   MapQuickFilter,
 } from "@/lib/store/slices/ui";
+import type { ModConflictStatus } from "@/lib/mods/conflicts";
 import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
 import { getModCoverImage } from "@/lib/mods/mod-images";
 import { cn, isModOutdated } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
 const PAGE_SIZE = 20;
+const CONFLICTS_TAB = "conflicts";
+type LibraryTab = ModFilter | typeof CONFLICTS_TAB;
 const MODS_STORE_PAGINATION_SETTING_ID = "mods-store-pagination";
 
 function ModsPagination({
@@ -200,7 +207,17 @@ enum ViewMode {
   LIST = "list",
 }
 
-const GridModCard = ({ mod }: { mod: LocalMod }) => {
+type ModCardProps = {
+  mod: LocalMod;
+  conflictStatus: ModConflictStatus | undefined;
+  onShowConflicts: () => void;
+};
+
+const GridModCard = ({
+  mod,
+  conflictStatus,
+  onShowConflicts,
+}: ModCardProps) => {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
   const navigate = useNavigate();
@@ -292,6 +309,12 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
               </Badge>
             )}
             {isModOutdated(mod) && <OutdatedModWarning variant='indicator' />}
+            {conflictStatus && (
+              <ModConflictBadge
+                onClick={onShowConflicts}
+                status={conflictStatus}
+              />
+            )}
           </div>
           {mod.status === ModStatus.Installing && (
             <div className='absolute inset-0 flex items-center justify-center rounded-t-xl bg-black/50'>
@@ -352,7 +375,11 @@ const GridModCard = ({ mod }: { mod: LocalMod }) => {
   );
 };
 
-const ListModCard = ({ mod }: { mod: LocalMod }) => {
+const ListModCard = ({
+  mod,
+  conflictStatus,
+  onShowConflicts,
+}: ModCardProps) => {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
   const isInstalling = mod.status === ModStatus.Installing;
@@ -438,6 +465,13 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
                 {isModOutdated(mod) && (
                   <OutdatedModWarning className='text-xs' variant='indicator' />
                 )}
+                {conflictStatus && (
+                  <ModConflictBadge
+                    className='text-xs'
+                    onClick={onShowConflicts}
+                    status={conflictStatus}
+                  />
+                )}
               </div>
               {mod.status === ModStatus.Installing && (
                 <div className='absolute inset-0 flex items-center justify-center bg-black/50'>
@@ -509,15 +543,24 @@ const ListModCard = ({ mod }: { mod: LocalMod }) => {
 const ModsList = ({
   mods,
   viewMode,
+  conflictStatusByMod,
+  onShowConflicts,
 }: {
   mods: LocalMod[];
   viewMode: ViewMode;
+  conflictStatusByMod: ReadonlyMap<string, ModConflictStatus>;
+  onShowConflicts: () => void;
 }) => {
   if (viewMode === ViewMode.GRID) {
     return (
       <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
         {mods.map((mod) => (
-          <GridModCard key={mod.remoteId ?? mod.id} mod={mod} />
+          <GridModCard
+            conflictStatus={conflictStatusByMod.get(mod.remoteId)}
+            key={mod.remoteId ?? mod.id}
+            mod={mod}
+            onShowConflicts={onShowConflicts}
+          />
         ))}
       </div>
     );
@@ -526,7 +569,12 @@ const ModsList = ({
   return (
     <div className='flex flex-col gap-3'>
       {mods.map((mod) => (
-        <ListModCard key={mod.remoteId ?? mod.id} mod={mod} />
+        <ListModCard
+          conflictStatus={conflictStatusByMod.get(mod.remoteId)}
+          key={mod.remoteId ?? mod.id}
+          mod={mod}
+          onShowConflicts={onShowConflicts}
+        />
       ))}
     </div>
   );
@@ -582,7 +630,12 @@ const MyMods = () => {
   const { disableAll, isPending: isDisablingAll } = useDisableAllMods();
 
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.GRID);
-  const [activeTab, setActiveTab] = useState<ModFilter>(ModFilter.All);
+  const [activeTab, setActiveTab] = useState<LibraryTab>(ModFilter.All);
+  const isConflictsTab = activeTab === CONFLICTS_TAB;
+  const { groups: conflictGroups, statusByMod: conflictStatusByMod } =
+    useProfileConflicts();
+  const conflictCount = conflictGroups.length;
+  const showConflicts = () => setActiveTab(CONFLICTS_TAB);
   const [showBatchUpdateDialog, setShowBatchUpdateDialog] = useState(false);
   const [showModOrdering, setShowModOrdering] = useState(false);
   const [page, setPage] = useState(0);
@@ -657,7 +710,7 @@ const MyMods = () => {
 
     const statusFilteredMods = filterLibraryModsByStatus(
       filteredMods,
-      activeTab,
+      isConflictsTab ? ModFilter.All : activeTab,
     );
 
     if (query.trim()) {
@@ -686,6 +739,11 @@ const MyMods = () => {
     selectedHeroes,
     mods,
   ]);
+
+  const visibleModIds = useMemo(
+    () => new Set(displayMods.map((mod) => mod.remoteId)),
+    [displayMods],
+  );
 
   const totalPages = paginationEnabled
     ? Math.ceil(displayMods.length / PAGE_SIZE)
@@ -869,6 +927,7 @@ const MyMods = () => {
                 case ModFilter.All:
                 case ModFilter.Enabled:
                 case ModFilter.Disabled:
+                case CONFLICTS_TAB:
                   setActiveTab(value);
                   break;
               }
@@ -938,6 +997,18 @@ const MyMods = () => {
                           ({disabledModsCount})
                         </span>
                       </TabsTrigger>
+                      <TabsTrigger value={CONFLICTS_TAB}>
+                        <TriangleAlert
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            conflictCount > 0 && "text-amber-400",
+                          )}
+                        />
+                        {t("myMods.tabs.conflicts")}
+                        <span className='ml-2 text-muted-foreground text-xs'>
+                          ({conflictCount})
+                        </span>
+                      </TabsTrigger>
                     </TabsList>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -978,7 +1049,7 @@ const MyMods = () => {
                   />
                 </div>
 
-                {totalPages > 1 && (
+                {!isConflictsTab && totalPages > 1 && (
                   <ModsPagination
                     className='mb-4'
                     onPageChange={handlePageChange}
@@ -987,7 +1058,7 @@ const MyMods = () => {
                   />
                 )}
 
-                {displayMods.length === 0 && (
+                {!isConflictsTab && displayMods.length === 0 && (
                   <Empty className='py-12'>
                     <EmptyHeader>
                       <EmptyMedia variant='default'>
@@ -1006,30 +1077,51 @@ const MyMods = () => {
 
                 {displayMods.length > 0 && (
                   <TabsContent className='mt-0' value={ModFilter.All}>
-                    <ModsList mods={visibleMods} viewMode={viewMode} />
+                    <ModsList
+                      mods={visibleMods}
+                      conflictStatusByMod={conflictStatusByMod}
+                      onShowConflicts={showConflicts}
+                      viewMode={viewMode}
+                    />
                   </TabsContent>
                 )}
 
                 {displayMods.length > 0 && (
                   <TabsContent className='mt-0' value={ModFilter.Enabled}>
-                    <ModsList mods={visibleMods} viewMode={viewMode} />
+                    <ModsList
+                      mods={visibleMods}
+                      conflictStatusByMod={conflictStatusByMod}
+                      onShowConflicts={showConflicts}
+                      viewMode={viewMode}
+                    />
                   </TabsContent>
                 )}
 
                 {displayMods.length > 0 && (
                   <TabsContent className='mt-0' value={ModFilter.Disabled}>
-                    <ModsList mods={visibleMods} viewMode={viewMode} />
+                    <ModsList
+                      mods={visibleMods}
+                      conflictStatusByMod={conflictStatusByMod}
+                      onShowConflicts={showConflicts}
+                      viewMode={viewMode}
+                    />
                   </TabsContent>
                 )}
 
-                {displayMods.length > 0 && totalPages > 1 && (
-                  <ModsPagination
-                    className='mt-6 pb-4'
-                    onPageChange={handlePageChange}
-                    page={page}
-                    totalPages={totalPages}
-                  />
-                )}
+                <TabsContent className='mt-0' value={CONFLICTS_TAB}>
+                  <ConflictsPanel visibleModIds={visibleModIds} />
+                </TabsContent>
+
+                {!isConflictsTab &&
+                  displayMods.length > 0 &&
+                  totalPages > 1 && (
+                    <ModsPagination
+                      className='mt-6 pb-4'
+                      onPageChange={handlePageChange}
+                      page={page}
+                      totalPages={totalPages}
+                    />
+                  )}
               </div>
             )}
           </Tabs>
