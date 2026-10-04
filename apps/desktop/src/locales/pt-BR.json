@@ -849,10 +849,11 @@
   "mods": {
     "invalidDeepLink": "",
     "manageOrder": "Alterar Ordem dos Mods",
-    "searchPlaceholder": "Buscar Mods",
+    "searchPlaceholder": "",
     "noPreviewAvailable": "Prévia Indisponível",
     "audio": "Áudio",
     "by": "Por",
+    "showMoreByAuthor": "",
     "backToMods": "",
     "audioMod": "Mod de Áudio",
     "mapBadge": "",
@@ -920,6 +921,28 @@
       "deleteAllSuccess": "",
       "deleteAllError": ""
     }
+  },
+  "authorPage": {
+    "viewProfile": "",
+    "submittedBy": "",
+    "modStat_one": "",
+    "modStat_other": "",
+    "downloadStat_one": "",
+    "downloadStat_other": "",
+    "likeStat_one": "",
+    "likeStat_other": "",
+    "memberSince": "",
+    "subscriberCount_one": "",
+    "subscriberCount_other": "",
+    "upicAlt": "",
+    "signatureAlt": "",
+    "viewOnGameBanana": "",
+    "openProfileError": "",
+    "modsBy": "",
+    "resultCount_one": "",
+    "resultCount_other": "",
+    "notFoundTitle": "",
+    "notFoundDescription": ""
   },
   "pagination": {
     "previous": "",
@@ -1044,7 +1067,11 @@
     "none": "Nenhum",
     "enable": "Habilitar",
     "disable": "Desabilitar",
-    "open": ""
+    "open": "",
+    "retry": "",
+    "dismiss": "",
+    "notFound": "",
+    "failedToOpenFolder": ""
   },
   "settings": {
     "searchPlaceholder": "",
@@ -1062,7 +1089,7 @@
     "animateOccultGeometry": "",
     "animateOccultGeometryDescription": "",
     "flashbang": "",
-    "flashbangDescription": "Força o Modo Claro entre 20h e 8h, independente do tema selecionado",
+    "flashbangDescription": "",
     "audioVolume": "Volume do Áudio",
     "audioVolumeDescription": "Ajuste o volume para prévias de áudio e reprodução",
     "launchOptions": "Opções de Inicialização",
@@ -2776,13 +2803,26 @@
       "website": "",
       "discord": ""
     },
+    "lovelock": {
+      "description": "",
+      "visit": "",
+      "kofi": ""
+    },
+    "remlock": {
+      "description": "",
+      "artworkAlt": "",
+      "letRemNap": "",
+      "summonRemlings": "",
+      "sendRemlingsHome": "",
+      "naptime": "",
+      "tagAlong": ""
+    },
     "flashbang": {
       "title": "",
       "description": "",
       "detailedDescription": "",
       "usageInstructions": "",
-      "startHour": "",
-      "endHour": ""
+      "chance": ""
     },
     "background": {
       "title": "",
@@ -3053,6 +3093,11 @@
     "cancel": ""
   },
   "modDetail": {
+    "backToAuthorMods": "",
+    "backToLibrary": "",
+    "backToMaps": "",
+    "backToFavorites": "",
+    "backToDashboard": "",
     "mapHowToPlay": {
       "title": "",
       "step1": "",
@@ -3152,6 +3197,24 @@
   },
   "crosshairs": {
     "title": "",
+    "currentCrosshair": "",
+    "toggleHint": "",
+    "currentDescription": "",
+    "pausedDescription": "",
+    "restorePrevious": "",
+    "recentlyUsed": "",
+    "community": "",
+    "communityDescription": "",
+    "selected": "",
+    "savedPreset": "",
+    "previewNamed": "",
+    "unknownAuthor": "",
+    "generalDefault": "",
+    "removeFilter": "",
+    "resetSearch": "",
+    "resultRange": "",
+    "previousPage": "",
+    "nextPage": "",
     "subtitle": "",
     "generate": "",
     "preview": "",
@@ -3171,6 +3234,7 @@
     "disabledError": "",
     "toggleError": "",
     "stopGameBeforeDisable": "",
+    "stopGameBeforeChange": "",
     "form": {
       "metadata": "",
       "name": "",

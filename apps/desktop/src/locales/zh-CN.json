@@ -849,10 +849,11 @@
   "mods": {
     "invalidDeepLink": "",
     "manageOrder": "更改Mod顺序",
-    "searchPlaceholder": "搜索模组",
+    "searchPlaceholder": "",
     "noPreviewAvailable": "暂无预览",
     "audio": "音频",
     "by": "作者",
+    "showMoreByAuthor": "",
     "backToMods": "返回模组",
     "audioMod": "音频模组",
     "mapBadge": "地图",
@@ -920,6 +921,28 @@
       "deleteAllSuccess": "已删除 {{count}} 个无法识别的模组文件",
       "deleteAllError": "无法删除某些模组文件"
     }
+  },
+  "authorPage": {
+    "viewProfile": "",
+    "submittedBy": "",
+    "modStat_one": "",
+    "modStat_other": "",
+    "downloadStat_one": "",
+    "downloadStat_other": "",
+    "likeStat_one": "",
+    "likeStat_other": "",
+    "memberSince": "",
+    "subscriberCount_one": "",
+    "subscriberCount_other": "",
+    "upicAlt": "",
+    "signatureAlt": "",
+    "viewOnGameBanana": "",
+    "openProfileError": "",
+    "modsBy": "",
+    "resultCount_one": "",
+    "resultCount_other": "",
+    "notFoundTitle": "",
+    "notFoundDescription": ""
   },
   "pagination": {
     "previous": "上一个",
@@ -1044,7 +1067,11 @@
     "none": "无",
     "enable": "启用",
     "disable": "禁用",
-    "open": "打开"
+    "open": "打开",
+    "retry": "",
+    "dismiss": "",
+    "notFound": "",
+    "failedToOpenFolder": ""
   },
   "settings": {
     "searchPlaceholder": "",
@@ -1062,7 +1089,7 @@
     "animateOccultGeometry": "动画化神秘几何",
     "animateOccultGeometryDescription": "缓慢旋转并脉动背景符文。当窗口处于后台时，动画会自动暂停。",
     "flashbang": "闪光弹",
-    "flashbangDescription": "无论选择何种主题，在晚上8点到早上8点之间强制使用浅色模式",
+    "flashbangDescription": "",
     "audioVolume": "音频音量",
     "audioVolumeDescription": "调整音频预览和播放的音量",
     "launchOptions": "启动选项",
@@ -1563,7 +1590,7 @@
     "openLogFileError": "无法打开日志文件",
     "noLogsFound": "未找到日志文件",
     "customCrosshairs": "自定义准星",
-    "customCrosshairsDescription": "在autoexec配置文件中启用或禁用自定义准星设置。禁用后，准星部分将从autoexec文件中移除。",
+    "customCrosshairsDescription": "",
     "backup": "备份",
     "modifications": "修改",
     "modManager": "Mod管理器",
@@ -2776,13 +2803,26 @@
       "website": "网站",
       "discord": "Discord"
     },
+    "lovelock": {
+      "description": "",
+      "visit": "",
+      "kofi": ""
+    },
+    "remlock": {
+      "description": "",
+      "artworkAlt": "",
+      "letRemNap": "",
+      "summonRemlings": "",
+      "sendRemlingsHome": "",
+      "naptime": "",
+      "tagAlong": ""
+    },
     "flashbang": {
       "title": "闪光弹模式",
-      "description": "在设定时间段强制使用浅色主题。",
-      "detailedDescription": "闪光弹模式会在配置的时间段内强制切换为浅色主题，不受主题设置影响。",
-      "usageInstructions": "启用插件并设置开始/结束小时（0–23）。",
-      "startHour": "开始小时（0–23）",
-      "endHour": "结束小时（0–23）"
+      "description": "",
+      "detailedDescription": "",
+      "usageInstructions": "",
+      "chance": ""
     },
     "background": {
       "title": "背景",
@@ -3053,6 +3093,11 @@
     "cancel": "取消"
   },
   "modDetail": {
+    "backToAuthorMods": "",
+    "backToLibrary": "",
+    "backToMaps": "",
+    "backToFavorites": "",
+    "backToDashboard": "",
     "mapHowToPlay": {
       "title": "如何游玩此地图",
       "step1": "在死锁设置中启用开发者控制台。",
@@ -3152,6 +3197,24 @@
   },
   "crosshairs": {
     "title": "准星",
+    "currentCrosshair": "",
+    "toggleHint": "",
+    "currentDescription": "",
+    "pausedDescription": "",
+    "restorePrevious": "",
+    "recentlyUsed": "",
+    "community": "",
+    "communityDescription": "",
+    "selected": "",
+    "savedPreset": "",
+    "previewNamed": "",
+    "unknownAuthor": "",
+    "generalDefault": "",
+    "removeFilter": "",
+    "resetSearch": "",
+    "resultRange": "",
+    "previousPage": "",
+    "nextPage": "",
     "subtitle": "创建并自定义您的十字准星",
     "generate": "生成准星",
     "preview": "预览",
@@ -3166,11 +3229,12 @@
     "remove": "移除",
     "removeFromHistory": "从历史记录中删除",
     "removedFromHistory": "准星已从历史记录中移除",
-    "appliedRestart": "准星已应用！请重启游戏以使更改生效。",
-    "removedRestart": "准星部分已移除！请重启游戏以使更改生效。",
+    "appliedRestart": "",
+    "removedRestart": "",
     "disabledError": "自定义准星已禁用。请在设置中启用它们以应用准星。",
     "toggleError": "切换自定义准星失败",
     "stopGameBeforeDisable": "禁用自定义准星前，请先退出 Deadlock。",
+    "stopGameBeforeChange": "",
     "form": {
       "metadata": "元数据",
       "name": "名称",
