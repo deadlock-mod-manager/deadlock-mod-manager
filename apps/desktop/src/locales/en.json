@@ -1062,7 +1062,7 @@
     "animateOccultGeometry": "Animate occult geometry",
     "animateOccultGeometryDescription": "Slowly rotate and pulse the background sigils. Animations automatically pause when the window is in the background.",
     "flashbang": "Flashbang",
-    "flashbangDescription": "Forces Light Mode between 8 PM and 8 AM, regardless of selected theme",
+    "flashbangDescription": "Randomly forces Light Mode when the app loads, regardless of selected theme",
     "audioVolume": "Audio Volume",
     "audioVolumeDescription": "Adjust the volume for audio previews and playback",
     "launchOptions": "Launch Options",
@@ -2783,11 +2783,10 @@
     },
     "flashbang": {
       "title": "Flashbang Mode",
-      "description": "Force Light Mode during a scheduled time window.",
-      "detailedDescription": "Flashbang mode switches the app to Light Mode during the configured hours, regardless of your theme setting.",
-      "usageInstructions": "Enable the plugin and choose start and end hour (0–23).",
-      "startHour": "Start hour (0–23)",
-      "endHour": "End hour (0–23)"
+      "description": "Randomly force Light Mode when the app loads.",
+      "detailedDescription": "Each time the app loads, Flashbang mode has a chance to switch it to Light Mode for that session, regardless of your theme setting. It can only trigger once per minute.",
+      "usageInstructions": "Enable the plugin and choose how likely it is to trigger on each load.",
+      "chance": "Trigger chance (%)"
     },
     "background": {
       "title": "Background",

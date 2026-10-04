@@ -10,21 +10,37 @@ export const manifest = {
   id: "flashbang",
   nameKey: "plugins.flashbang.title",
   descriptionKey: "plugins.flashbang.description",
-  version: "0.0.2",
+  version: "0.1.0",
   author: "Skeptic",
   icon: "public/icon.png",
 } as const;
 
 type FlashbangSettings = {
   enabled: boolean;
-  startHour?: number; // 0-23
-  endHour?: number; // 0-23
+  chance?: number; // 0-100, percent chance to trigger on load
 };
 
 const DEFAULTS: FlashbangSettings = {
   enabled: false,
-  startHour: 20,
-  endHour: 8,
+  chance: 50,
+};
+
+const COOLDOWN_MS = 60_000;
+const LAST_TRIGGERED_KEY = "deadlock-flashbang-last-triggered";
+
+// Roll once per app load, not on every remount of the plugin renderer.
+let rolledThisLoad = false;
+
+const rollFlashbang = (chance: number) => {
+  const lastTriggered = Number(localStorage.getItem(LAST_TRIGGERED_KEY) ?? 0);
+  if (Date.now() - lastTriggered < COOLDOWN_MS) {
+    return false;
+  }
+  if (Math.random() * 100 >= chance) {
+    return false;
+  }
+  localStorage.setItem(LAST_TRIGGERED_KEY, String(Date.now()));
+  return true;
 };
 
 const Settings = () => {
@@ -35,47 +51,22 @@ const Settings = () => {
       | undefined) ?? DEFAULTS;
   const setSettings = usePersistedStore((s) => s.setPluginSettings);
 
-  useEffect(() => {
-    // sync schedule with provider storage
-    const start = settings.startHour ?? DEFAULTS.startHour!;
-    const end = settings.endHour ?? DEFAULTS.endHour!;
-    localStorage.setItem("deadlock-flashbang-start", String(start));
-    localStorage.setItem("deadlock-flashbang-end", String(end));
-  }, [settings.startHour, settings.endHour]);
-
   return (
     <div className='flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto pl-4 pr-4'>
       <div className='flex flex-col gap-2'>
-        <Label htmlFor='flashbang-start'>
-          {t("plugins.flashbang.startHour")}
+        <Label htmlFor='flashbang-chance'>
+          {t("plugins.flashbang.chance")}
         </Label>
         <Input
-          id='flashbang-start'
+          id='flashbang-chance'
           min={0}
-          max={23}
+          max={100}
           type='number'
-          value={settings.startHour}
+          value={settings.chance ?? DEFAULTS.chance}
           onChange={(e) =>
             setSettings(manifest.id, {
               ...settings,
-              startHour: Math.max(0, Math.min(23, Number(e.target.value))),
-            })
-          }
-        />
-      </div>
-
-      <div className='flex flex-col gap-2'>
-        <Label htmlFor='flashbang-end'>{t("plugins.flashbang.endHour")}</Label>
-        <Input
-          id='flashbang-end'
-          min={0}
-          max={23}
-          type='number'
-          value={settings.endHour}
-          onChange={(e) =>
-            setSettings(manifest.id, {
-              ...settings,
-              endHour: Math.max(0, Math.min(23, Number(e.target.value))),
+              chance: Math.max(0, Math.min(100, Number(e.target.value))),
             })
           }
         />
@@ -92,27 +83,21 @@ const Render = () => {
   const isEnabled = usePersistedStore(
     (s) => s.enabledPlugins[manifest.id] ?? false,
   );
-  const { setFlashbangEnabled } = useTheme();
+  const { setFlashbangActive } = useTheme();
+  const chance = pluginSettings.chance ?? DEFAULTS.chance!;
 
   useEffect(() => {
-    // Enable/disable provider flag based on plugin enable state
-    setFlashbangEnabled(isEnabled);
-
-    // Keep schedule in sync
-    localStorage.setItem(
-      "deadlock-flashbang-start",
-      String(pluginSettings.startHour ?? DEFAULTS.startHour),
-    );
-    localStorage.setItem(
-      "deadlock-flashbang-end",
-      String(pluginSettings.endHour ?? DEFAULTS.endHour),
-    );
-  }, [
-    isEnabled,
-    pluginSettings.startHour,
-    pluginSettings.endHour,
-    setFlashbangEnabled,
-  ]);
+    if (!isEnabled) {
+      rolledThisLoad = false;
+      setFlashbangActive(false);
+      return;
+    }
+    if (rolledThisLoad) {
+      return;
+    }
+    rolledThisLoad = true;
+    setFlashbangActive(rollFlashbang(chance));
+  }, [isEnabled, chance, setFlashbangActive]);
 
   return null;
 };

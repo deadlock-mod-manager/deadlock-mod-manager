@@ -18,15 +18,15 @@ type ThemeProviderProps = {
 type ThemeProviderState = {
   theme: Theme;
   setTheme: (theme: Theme) => void;
-  flashbangEnabled: boolean;
-  setFlashbangEnabled: (enabled: boolean) => void;
+  flashbangActive: boolean;
+  setFlashbangActive: (active: boolean) => void;
 };
 
 const initialState: ThemeProviderState = {
   theme: "dark",
   setTheme: () => null,
-  flashbangEnabled: false,
-  setFlashbangEnabled: () => null,
+  flashbangActive: false,
+  setFlashbangActive: () => null,
 };
 
 const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
@@ -44,32 +44,16 @@ export function ThemeProvider({
     return defaultTheme;
   });
 
-  const [flashbangEnabled, setFlashbangEnabled] = useState<boolean>(false);
+  const [flashbangActive, setFlashbangActive] = useState<boolean>(false);
 
   useEffect(() => {
     const root = globalThis.document.documentElement;
 
     root.classList.remove("light", "dark");
 
-    if (flashbangEnabled) {
-      const now = new Date();
-      const currentHour = now.getHours();
-      // Read schedule from localStorage (defaults 20 -> 8)
-      const startHour = Number(
-        localStorage.getItem("deadlock-flashbang-start") ?? "20",
-      );
-      const endHour = Number(
-        localStorage.getItem("deadlock-flashbang-end") ?? "8",
-      );
-      const inWindow =
-        startHour <= endHour
-          ? currentHour >= startHour && currentHour < endHour
-          : currentHour >= startHour || currentHour < endHour; // overnight window
-
-      if (inWindow) {
-        root.classList.add("light");
-        return;
-      }
+    if (flashbangActive) {
+      root.classList.add("light");
+      return;
     }
 
     if (theme === "system") {
@@ -83,56 +67,7 @@ export function ThemeProvider({
     }
 
     root.classList.add(theme);
-  }, [theme, flashbangEnabled]);
-
-  useEffect(() => {
-    if (!flashbangEnabled) {
-      return;
-    }
-
-    const checkFlashbang = () => {
-      const root = globalThis.document.documentElement;
-      const now = new Date();
-      const currentHour = now.getHours();
-
-      // Read schedule from localStorage (defaults 20 -> 8)
-      const startHour = Number(
-        localStorage.getItem("deadlock-flashbang-start") ?? "20",
-      );
-      const endHour = Number(
-        localStorage.getItem("deadlock-flashbang-end") ?? "8",
-      );
-      const inWindow =
-        startHour <= endHour
-          ? currentHour >= startHour && currentHour < endHour
-          : currentHour >= startHour || currentHour < endHour; // overnight window
-
-      if (inWindow) {
-        root.classList.remove("dark");
-        root.classList.add("light");
-      } else {
-        // Außerhalb der Flashbang-Zeit normale Theme-Logik anwenden
-        root.classList.remove("light", "dark");
-
-        if (theme === "system") {
-          const systemTheme = globalThis.matchMedia(
-            "(prefers-color-scheme: dark)",
-          ).matches
-            ? "dark"
-            : "light";
-          root.classList.add(systemTheme);
-        } else {
-          root.classList.add(theme);
-        }
-      }
-    };
-
-    checkFlashbang();
-
-    const interval = setInterval(checkFlashbang, 60_000);
-
-    return () => clearInterval(interval);
-  }, [flashbangEnabled, theme]);
+  }, [theme, flashbangActive]);
 
   const handleSetTheme = useCallback(
     (theme: Theme) => {
@@ -148,10 +83,10 @@ export function ThemeProvider({
     () => ({
       theme,
       setTheme: handleSetTheme,
-      flashbangEnabled,
-      setFlashbangEnabled,
+      flashbangActive,
+      setFlashbangActive,
     }),
-    [theme, handleSetTheme, flashbangEnabled, setFlashbangEnabled],
+    [theme, handleSetTheme, flashbangActive, setFlashbangActive],
   );
 
   return (
