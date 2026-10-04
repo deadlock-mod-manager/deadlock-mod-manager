@@ -47,7 +47,7 @@ const CrosshairSearchBar = ({
 
   const getHeroDisplayName = (hero: string) => {
     if (hero === "Default") {
-      return "General/Default";
+      return t("crosshairs.generalDefault");
     }
     return hero;
   };
@@ -69,10 +69,11 @@ const CrosshairSearchBar = ({
 
   return (
     <div className='flex flex-col gap-3'>
-      <div className='flex items-center justify-between gap-4'>
-        <div className='flex items-center gap-3'>
+      <div className='flex flex-wrap items-center justify-between gap-3'>
+        <div className='flex min-w-0 flex-1 items-center gap-3'>
           <SearchInput
-            className='w-80'
+            className='w-full min-w-0 max-w-md'
+            aria-label={t("crosshairs.filters.searchPlaceholder")}
             id='crosshair-search'
             onChange={(e) => setQuery(e.target.value)}
             placeholder={t("crosshairs.filters.searchPlaceholder")}
@@ -90,7 +91,7 @@ const CrosshairSearchBar = ({
         </div>
         <div className='flex items-center gap-4'>
           <Select onValueChange={setSortType} value={sortType}>
-            <SelectTrigger>
+            <SelectTrigger aria-label={t("filters.sortBy")}>
               <ArrowUpDown className='mr-2 h-4 w-4' />
               <SelectValue placeholder={t("filters.sortBy")} />
             </SelectTrigger>
@@ -129,6 +130,9 @@ const CrosshairSearchBar = ({
               {getHeroDisplayName(hero)}
               <button
                 className='ml-1 rounded-full p-0.5 hover:bg-muted'
+                aria-label={t("crosshairs.removeFilter", {
+                  name: getHeroDisplayName(hero),
+                })}
                 onClick={() => removeHero(hero)}
                 type='button'>
                 <X className='h-3 w-3' />
@@ -144,6 +148,7 @@ const CrosshairSearchBar = ({
               {t("crosshairs.filters.tagLabel")} {tag}
               <button
                 className='ml-1 rounded-full p-0.5 hover:bg-muted'
+                aria-label={t("crosshairs.removeFilter", { name: tag })}
                 onClick={() => removeTag(tag)}
                 type='button'>
                 <X className='h-3 w-3' />

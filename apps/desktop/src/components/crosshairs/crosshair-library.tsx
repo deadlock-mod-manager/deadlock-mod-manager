@@ -7,20 +7,23 @@ import {
   EmptyTitle,
 } from "@deadlock-mods/ui/components/empty";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { MagnifyingGlassIcon } from "@phosphor-icons/react";
+import {
+  ArrowCounterClockwiseIcon,
+  CaretLeftIcon,
+  CaretRightIcon,
+  MagnifyingGlassIcon,
+} from "@phosphor-icons/react";
 import {
   useMutation,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { Button } from "@deadlock-mods/ui/components/button";
 import { invoke } from "@tauri-apps/api/core";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useCrosshairSearch } from "@/hooks/use-crosshair-search";
-import { useResponsiveColumns } from "@/hooks/use-responsive-columns";
-import { useScrollPosition } from "@/hooks/use-scroll-position";
 import { getCrosshairs } from "@/lib/api-client";
 import logger from "@/lib/logger";
 import { isTauriError } from "@/types/tauri";
@@ -31,7 +34,6 @@ import CrosshairSearchBar from "./crosshair-search-bar";
 
 const CrosshairLibraryData = () => {
   const { t } = useTranslation();
-  const { setScrollElement, scrollY } = useScrollPosition("/crosshairs");
   const {
     activeCrosshair,
     crosshairFilters,
@@ -127,33 +129,14 @@ const CrosshairLibraryData = () => {
     return filtered;
   }, [results, selectedHeroes, selectedTags, filterMode]);
 
-  const parentRef = useRef<HTMLDivElement>(null);
-  const columnsPerRow = useResponsiveColumns();
-
-  const crosshairRows = useMemo(() => {
-    const rows: PublishedCrosshairDto[][] = [];
-    for (let i = 0; i < filteredResults.length; i += columnsPerRow) {
-      rows.push(filteredResults.slice(i, i + columnsPerRow));
-    }
-    return rows;
-  }, [columnsPerRow, filteredResults]);
-
-  const rowVirtualizer = useVirtualizer({
-    count: crosshairRows.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 320,
-    overscan: 2,
-    initialOffset: scrollY,
-  });
-
-  useEffect(() => {
-    if (parentRef.current) {
-      setScrollElement(parentRef.current);
-    }
-  }, [setScrollElement]);
-
   return (
-    <div className='flex h-full min-h-0 flex-col gap-4'>
+    <section className='flex flex-col gap-4'>
+      <div>
+        <h2 className='text-lg font-semibold'>{t("crosshairs.community")}</h2>
+        <p className='mt-1 text-sm text-muted-foreground'>
+          {t("crosshairs.communityDescription")}
+        </p>
+      </div>
       <CrosshairSearchBar
         crosshairs={data ?? []}
         filterMode={filterMode}
@@ -185,51 +168,37 @@ const CrosshairLibraryData = () => {
                 ? t("crosshairs.noCrosshairsMatchFilters")
                 : t("crosshairs.noCrosshairs")}
             </EmptyDescription>
-            {(selectedHeroes.length > 0 || selectedTags.length > 0) && (
-              <EmptyDescription className='text-xs'>
-                {t("crosshairs.tryClearingFilters")}
-              </EmptyDescription>
+            {(query.trim() ||
+              selectedHeroes.length > 0 ||
+              selectedTags.length > 0) && (
+              <Button
+                variant='outline'
+                icon={<ArrowCounterClockwiseIcon aria-hidden />}
+                onClick={() => {
+                  setQuery("");
+                  updateCrosshairFilters({
+                    selectedHeroes: [],
+                    selectedTags: [],
+                  });
+                }}>
+                {t("crosshairs.resetSearch")}
+              </Button>
             )}
           </EmptyHeader>
         </Empty>
       ) : (
-        <div className='min-h-0 flex-1 overflow-auto pt-4' ref={parentRef}>
-          <div
-            style={{
-              height: `${rowVirtualizer.getTotalSize()}px`,
-              width: "100%",
-              position: "relative",
-            }}>
-            {rowVirtualizer.getVirtualItems().map((virtualRow) => (
-              <div
-                key={virtualRow.key}
-                style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  width: "100%",
-                  height: `${virtualRow.size}px`,
-                  transform: `translateY(${virtualRow.start}px)`,
-                }}>
-                <div className='grid grid-cols-1 gap-4 px-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
-                  {crosshairRows[virtualRow.index]?.map((crosshair) => (
-                    <CrosshairCard
-                      key={crosshair.id}
-                      crosshair={crosshair}
-                      isActive={
-                        activeCrosshair
-                          ? JSON.stringify(activeCrosshair) ===
-                            JSON.stringify(crosshair.config)
-                          : false
-                      }
-                      onPreviewOpen={() => setPreviewCrosshair(crosshair)}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        <CrosshairResults
+          key={JSON.stringify([
+            query,
+            sortType,
+            selectedHeroes,
+            selectedTags,
+            filterMode,
+          ])}
+          crosshairs={filteredResults}
+          activeCrosshair={activeCrosshair}
+          onPreview={setPreviewCrosshair}
+        />
       )}
       {previewCrosshair && (
         <CrosshairPreviewDialog
@@ -242,7 +211,73 @@ const CrosshairLibraryData = () => {
           isApplying={applyCrosshairMutation.isPending}
         />
       )}
-    </div>
+    </section>
+  );
+};
+
+const PAGE_SIZE = 24;
+
+const CrosshairResults = ({
+  crosshairs,
+  activeCrosshair,
+  onPreview,
+}: {
+  crosshairs: PublishedCrosshairDto[];
+  activeCrosshair: PublishedCrosshairDto["config"] | null;
+  onPreview: (crosshair: PublishedCrosshairDto) => void;
+}) => {
+  const { t } = useTranslation();
+  const [page, setPage] = useState(0);
+  const currentPage = Math.min(
+    page,
+    Math.max(0, Math.ceil(crosshairs.length / PAGE_SIZE) - 1),
+  );
+  const start = currentPage * PAGE_SIZE;
+  return (
+    <>
+      <div className='flex flex-wrap items-center justify-between gap-2'>
+        <p className='text-sm text-muted-foreground' role='status'>
+          {t("crosshairs.resultRange", {
+            start: start + 1,
+            end: Math.min(start + PAGE_SIZE, crosshairs.length),
+            total: crosshairs.length,
+          })}
+        </p>
+        {crosshairs.length > PAGE_SIZE && (
+          <div className='flex gap-2'>
+            <Button
+              size='sm'
+              variant='outline'
+              disabled={currentPage === 0}
+              icon={<CaretLeftIcon aria-hidden />}
+              onClick={() => setPage(currentPage - 1)}>
+              {t("crosshairs.previousPage")}
+            </Button>
+            <Button
+              size='sm'
+              variant='outline'
+              disabled={start + PAGE_SIZE >= crosshairs.length}
+              onClick={() => setPage(currentPage + 1)}>
+              {t("crosshairs.nextPage")}
+              <CaretRightIcon aria-hidden />
+            </Button>
+          </div>
+        )}
+      </div>
+      <div className='grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-3'>
+        {crosshairs.slice(start, start + PAGE_SIZE).map((crosshair) => (
+          <CrosshairCard
+            key={crosshair.id}
+            crosshair={crosshair}
+            isActive={
+              JSON.stringify(activeCrosshair) ===
+              JSON.stringify(crosshair.config)
+            }
+            onPreviewOpen={() => onPreview(crosshair)}
+          />
+        ))}
+      </div>
+    </>
   );
 };
 

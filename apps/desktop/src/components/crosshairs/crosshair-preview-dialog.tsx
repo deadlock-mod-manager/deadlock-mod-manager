@@ -20,6 +20,7 @@ import { ClipboardTextIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HeroIcon } from "@/components/heroes/hero-icon";
+import { usePersistedStore } from "@/lib/store";
 import { CrosshairCanvas } from "./crosshair/crosshair-canvas";
 
 interface CrosshairPreviewDialogProps {
@@ -40,6 +41,9 @@ export const CrosshairPreviewDialog = ({
   isApplying = false,
 }: CrosshairPreviewDialogProps) => {
   const { t } = useTranslation();
+  const crosshairsEnabled = usePersistedStore(
+    (state) => state.crosshairsEnabled,
+  );
   const [background, setBackground] = useState<BackgroundKey>("bg1");
 
   const crosshairConfig = crosshair?.config ?? config;
@@ -81,8 +85,8 @@ export const CrosshairPreviewDialog = ({
           </DialogTitle>
         </DialogHeader>
         <div className='space-y-3'>
-          <div className='flex flex-row gap-4 items-start'>
-            <div className='flex flex-col gap-2 w-1/3'>
+          <div className='flex flex-col gap-4 items-start md:flex-row'>
+            <div className='flex flex-col gap-2 w-full md:w-1/3'>
               <h4 className='font-semibold text-sm mb-2'>
                 {t("crosshairs.previewDialog.configValues")}
               </h4>
@@ -180,7 +184,7 @@ export const CrosshairPreviewDialog = ({
                 </div>
               </div>
             </div>
-            <div className='flex flex-col gap-2 w-2/3'>
+            <div className='flex flex-col gap-2 w-full md:w-2/3'>
               <div className='flex flex-col justify-center items-center gap-4'>
                 <div className='flex gap-2 flex-wrap '>
                   <Button
@@ -226,7 +230,7 @@ export const CrosshairPreviewDialog = ({
           </Button>
           {onApply && (
             <Button
-              disabled={isApplying}
+              disabled={isApplying || !crosshairsEnabled}
               icon={<CheckIcon className='h-4 w-4' />}
               isLoading={isApplying}
               onClick={onApply}>

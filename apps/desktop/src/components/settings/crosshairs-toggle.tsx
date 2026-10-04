@@ -8,7 +8,11 @@ import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { isTauriError } from "@/types/tauri";
 
-export const CrosshairsToggle = () => {
+export const CrosshairsToggle = ({
+  compact = false,
+}: {
+  compact?: boolean;
+}) => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const crosshairsEnabled = usePersistedStore(
@@ -54,13 +58,19 @@ export const CrosshairsToggle = () => {
   };
 
   return (
-    <div className='flex items-center justify-between'>
-      <div className='space-y-1'>
-        <Label className='font-bold text-sm'>
+    <div className='flex flex-wrap items-center justify-between gap-4'>
+      <div className='min-w-0 flex-1 space-y-1'>
+        <Label
+          htmlFor='toggle-setting-crosshairs'
+          className='font-bold text-sm'>
           {t("settings.customCrosshairs")}
         </Label>
         <p className='text-muted-foreground text-sm'>
-          {t("settings.customCrosshairsDescription")}
+          {t(
+            compact
+              ? "crosshairs.toggleHint"
+              : "settings.customCrosshairsDescription",
+          )}
         </p>
       </div>
       <div className='flex items-center gap-2'>
