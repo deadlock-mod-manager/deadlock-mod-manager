@@ -19,7 +19,9 @@ export const LatestModItem = ({ mod }: LatestModItemProps) => {
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
   const handleClick = () => {
-    navigate(`/mods/${mod.remoteId}`);
+    navigate(`/mods/${mod.remoteId}`, {
+      state: { collection: "dashboard" },
+    });
   };
 
   return (

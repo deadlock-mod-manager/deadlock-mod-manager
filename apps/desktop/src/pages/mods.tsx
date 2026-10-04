@@ -14,6 +14,7 @@ import {
 } from "@deadlock-mods/ui/components/empty";
 import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
 import { toast } from "@deadlock-mods/ui/components/sonner";
+import { ChevronLeft, ChevronRight } from "@deadlock-mods/ui/icons";
 import { MagnifyingGlass, Warning } from "@phosphor-icons/react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -63,7 +64,6 @@ import {
 } from "@/lib/utils";
 import type { CatalogQuery } from "@/types/generated/CatalogQuery";
 import type { SubmissionType } from "@/types/generated/SubmissionType";
-import { ChevronLeft, ChevronRight } from "@deadlock-mods/ui/icons";
 
 const SEARCH_KEYS = ["name", "description", "author"];
 const PAGE_SIZE = 50;
@@ -238,6 +238,7 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
       search: debouncedSearchQuery,
       categories: selectedCategories,
       heroes: selectedHeroes,
+      authorRemoteId: null,
       excludeFilters: filterMode === "exclude",
       // Sounds are picked by submissionType; maps only by the Maps tab, and
       // Mods leaves them out once that tab exists.
@@ -548,7 +549,11 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
                 )}
                 <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
                   {displayedMods.map((mod) => (
-                    <ModCard key={mod.id} mod={mod} />
+                    <ModCard
+                      key={mod.id}
+                      mod={mod}
+                      collection={mapsOnly ? "maps" : "mods"}
+                    />
                   ))}
                 </div>
                 {totalPages > 1 && (
@@ -584,7 +589,11 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
                     }}>
                     <div className='grid grid-cols-1 gap-4 px-1 pr-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
                       {modRows[virtualRow.index]?.map((mod) => (
-                        <ModCard key={mod.id} mod={mod} />
+                        <ModCard
+                          key={mod.id}
+                          mod={mod}
+                          collection={mapsOnly ? "maps" : "mods"}
+                        />
                       ))}
                     </div>
                   </div>

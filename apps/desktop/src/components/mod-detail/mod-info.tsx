@@ -22,14 +22,17 @@ import {
   User,
 } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 import { HeroIcon } from "@/components/heroes/hero-icon";
 import { getModCategoryDisplayName } from "@/lib/constants";
+import type { ModsCollection } from "@/lib/mods/mod-detail-navigation";
 import {
   type ResolvedModHero,
   resolveModHero,
 } from "@/lib/mods/hero-resolution";
 import { usePersistedStore } from "@/lib/store";
 import { DateDisplay } from "../date-display";
+import { AuthorStat } from "./author-stat";
 import { HeroOverridePicker } from "./hero-override-picker";
 import { HeroSourceBadge } from "./hero-source-badge";
 
@@ -38,6 +41,7 @@ interface ModInfoProps {
   hasHero?: boolean;
   activeArchiveNames?: Set<string>;
   totalDownloads?: number;
+  collection: ModsCollection;
 }
 
 const formatNumber = (value: number) => new Intl.NumberFormat().format(value);
@@ -48,8 +52,10 @@ export const ModInfo = ({
   hasHero = false,
   activeArchiveNames = EMPTY_ARCHIVE_NAMES,
   totalDownloads = 0,
+  collection,
 }: ModInfoProps) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const showHeader = hasHero ? false : !mod.isAudio;
   const localMod = usePersistedStore((state) =>
     state.localMods.find((m) => m.remoteId === mod.remoteId),
@@ -88,11 +94,23 @@ export const ModInfo = ({
                 canOverride={localMod !== undefined}
               />
             )}
-            <PrimaryStat
-              icon={<User className='h-4 w-4' />}
-              label={t("modDetail.authorLabel")}
-              value={mod.author}
-            />
+            {mod.modAuthorId ? (
+              <AuthorStat
+                authorId={mod.modAuthorId}
+                mod={mod}
+                onSelect={() =>
+                  navigate(`/authors/${mod.modAuthorId}`, {
+                    state: { collection },
+                  })
+                }
+              />
+            ) : (
+              <PrimaryStat
+                icon={<User className='h-4 w-4' />}
+                label={t("modDetail.authorLabel")}
+                value={mod.author}
+              />
+            )}
             <PrimaryStat
               icon={<Download className='h-4 w-4' />}
               label={t("modDetail.downloadsLabel")}

@@ -26,6 +26,7 @@ export const modFor = (remoteId: string): LocalMod => ({
   category: "Skins",
   likes: 0,
   author: "Fixture",
+  modAuthorId: null,
   downloadable: true,
   remoteAddedAt: new Date(0),
   remoteUpdatedAt: new Date(0),
