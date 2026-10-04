@@ -60,7 +60,7 @@ const PreviewButton = ({
   </Tooltip>
 );
 
-export interface RandomizerMembership {
+interface RandomizerMembership {
   selected: boolean;
   /** False for a skin that cannot be put on without a dialog. */
   available: boolean;
