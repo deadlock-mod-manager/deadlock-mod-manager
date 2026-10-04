@@ -9,8 +9,6 @@ import { MODS_LIST_QUERY_KEY } from "@/lib/mods/mod-query-cache";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { type DeadlockSkinsAlbumMember, parseAlbumMembers } from "./parse";
 
-export type { DeadlockSkinsAlbumMember };
-
 // deadlockskins.gg has no public read API: its `/api/*` routes only serve
 // signed-in album editing. The album pages are server-rendered, and each one
 // carries its full member list as the JSON its own 1-click buttons use, so

@@ -1,6 +1,5 @@
 import type { SVGProps } from "react";
 
-/** DeadlockSkins.gg brand mark, drawn in the current text color like on their site. */
 export const DeadlockSkinsLogo = (props: SVGProps<SVGSVGElement>) => (
   <svg aria-hidden='true' viewBox='0 0 1024 1024' {...props}>
     <path

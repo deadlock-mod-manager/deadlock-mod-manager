@@ -8,11 +8,6 @@ import { useTranslation } from "react-i18next";
 import type { AlbumFreshness } from "@/lib/deadlockskins/album-freshness";
 import { cn } from "@/lib/utils";
 
-/**
- * A quiet chip with the outdated count; the icon color alone tells a fully
- * outdated album from a partly outdated one. Renders nothing while every mod
- * is current. Callers style the chip's surface to match where it sits.
- */
 export const AlbumFreshnessIndicator = ({
   freshness: { status, outdated, total },
   className,

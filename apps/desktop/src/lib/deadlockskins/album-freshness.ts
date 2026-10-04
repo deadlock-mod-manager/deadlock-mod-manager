@@ -9,9 +9,8 @@ export type AlbumFreshness = {
 
 /**
  * How many of an album's mods predate the current game patch, by the same
- * rule the mod store uses. Derived from catalog data on every render, so an
- * author's update clears it once the catalog syncs. Null when the catalog
- * knows none of the album's mods, since there is nothing to judge.
+ * rule the mod store uses. Null when the catalog knows none of the album's
+ * mods, since there is nothing to judge.
  */
 export const getAlbumFreshness = (mods: ModDto[]): AlbumFreshness | null => {
   if (mods.length === 0) return null;

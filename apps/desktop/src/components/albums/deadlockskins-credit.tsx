@@ -7,7 +7,6 @@ import { DEADLOCKSKINS_ORIGIN } from "@/lib/deadlockskins/albums";
 import { cn } from "@/lib/utils";
 import { DeadlockSkinsLogo } from "./deadlockskins-logo";
 
-/** Albums come from deadlockskins.gg, so the source is always credited. */
 export const DeadlockSkinsCredit = ({ className }: { className?: string }) => {
   const { t } = useTranslation();
   const openSite = useMutation({

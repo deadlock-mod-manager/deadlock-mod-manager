@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { queueModDownload } from "@/hooks/use-download";
 import { modDownloadsQueryOptions } from "@/hooks/use-mod-downloads";
-import type { DeadlockSkinsAlbumMember } from "@/lib/deadlockskins/albums";
+import type { DeadlockSkinsAlbumMember } from "@/lib/deadlockskins/parse";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import type { ModDownloadItem } from "@/types/mods";
@@ -34,7 +34,6 @@ type AlbumDownloadInput = {
   members: DeadlockSkinsAlbumMember[];
 };
 
-/** Queues the given album mods for download, in album order. */
 export const useAlbumDownload = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();

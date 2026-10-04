@@ -25,8 +25,6 @@ const useAlbumFreshness = (slug: string) => {
   return mods ? getAlbumFreshness(mods) : null;
 };
 
-// Album covers are 640x853 portrait posters; the title and theme sit on a
-// scrim over the art, the way deadlockskins.gg shows them.
 export const AlbumCard = memo(({ album }: { album: DeadlockSkinsAlbum }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
