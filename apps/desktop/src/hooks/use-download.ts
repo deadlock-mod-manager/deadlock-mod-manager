@@ -16,16 +16,76 @@ import { invokeGuarded } from "@/lib/game-guard";
 
 type ModDownloadDto = z.infer<typeof ModDownloadDtoSchema>;
 
+type QueueModDownloadOptions = {
+  /** Every file the mod offers, kept so the selection can be changed later. */
+  allFiles: ModDownloadItem[];
+  profileFolder: string | null;
+  onComplete?: () => void;
+  onError?: (error: Error) => void;
+};
+
+/**
+ * Adds a mod to the library and queues its selected files. Library status,
+ * progress, and hero detection follow the download; callers only add their
+ * own feedback.
+ */
+export const queueModDownload = (
+  mod: ModDto,
+  selectedFiles: ModDownloadItem[],
+  { allFiles, profileFolder, onComplete, onError }: QueueModDownloadOptions,
+) => {
+  const { addLocalMod, setModStatus, setModProgress, setDetectedHero } =
+    usePersistedStore.getState();
+
+  addLocalMod(mod, { downloads: allFiles, selectedDownloads: selectedFiles });
+
+  return downloadManager.addToQueue({
+    ...mod,
+    downloads: selectedFiles,
+    profileFolder,
+    onStart: () => {
+      logger.withMetadata({ mod: mod.remoteId }).info("Starting download");
+      setModStatus(mod.remoteId, ModStatus.Downloading);
+    },
+    onProgress: (progress) => {
+      setModProgress(mod.remoteId, progress);
+    },
+    onComplete: (path) => {
+      logger
+        .withMetadata({ mod: mod.remoteId, path })
+        .info("Download complete");
+      setModStatus(mod.remoteId, ModStatus.Downloaded);
+      onComplete?.();
+
+      detectHeroForMod(mod.remoteId)
+        .then((result) => {
+          setDetectedHero(
+            mod.remoteId,
+            resolveDetectedHeroLabel(result),
+            result.usesCriticalPaths,
+          );
+        })
+        .catch((err) => {
+          logger
+            .withMetadata({ mod: mod.remoteId })
+            .withError(err instanceof Error ? err : new Error(String(err)))
+            .warn("Failed to detect hero after download");
+        });
+    },
+    onError: (error) => {
+      setModStatus(mod.remoteId, ModStatus.FailedToDownload);
+      onError?.(error);
+    },
+  });
+};
+
 export const useDownload = (
   mod: Pick<ModDto, "remoteId" | "name"> | undefined,
   availableFiles: ModDownloadDto[],
 ) => {
   const { t } = useTranslation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const addLocalMod = usePersistedStore((state) => state.addLocalMod);
-  const setModProgress = usePersistedStore((state) => state.setModProgress);
   const setModStatus = usePersistedStore((state) => state.setModStatus);
-  const setDetectedHero = usePersistedStore((state) => state.setDetectedHero);
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
 
   const localMod = usePersistedStore((state) =>
@@ -46,53 +106,20 @@ export const useDownload = (
       return;
     }
 
-    addLocalMod(mod as unknown as ModDto, {
-      downloads: allFiles,
-      selectedDownloads: selectedFiles,
-    });
-
     const profileFolder =
       pinnedProfileFolder === undefined
         ? (getActiveProfile()?.folderName ?? null)
         : pinnedProfileFolder;
 
-    return downloadManager.addToQueue({
-      ...(mod as unknown as ModDto),
-      downloads: selectedFiles,
+    return queueModDownload(mod as unknown as ModDto, selectedFiles, {
+      allFiles,
       profileFolder,
-      onStart: () => {
-        logger.withMetadata({ mod: mod.remoteId }).info("Starting download");
-        setModStatus(mod.remoteId, ModStatus.Downloading);
-      },
-      onProgress: (progress) => {
-        setModProgress(mod.remoteId, progress);
-      },
-      onComplete: (path) => {
-        logger
-          .withMetadata({ mod: mod.remoteId, path })
-          .info("Download complete");
-        setModStatus(mod.remoteId, ModStatus.Downloaded);
+      onComplete: () => {
         setIsDialogOpen(false);
         toast.success(`${mod.name} downloaded!`);
-
-        detectHeroForMod(mod.remoteId)
-          .then((result) => {
-            setDetectedHero(
-              mod.remoteId,
-              resolveDetectedHeroLabel(result),
-              result.usesCriticalPaths,
-            );
-          })
-          .catch((err) => {
-            logger
-              .withMetadata({ mod: mod.remoteId })
-              .withError(err instanceof Error ? err : new Error(String(err)))
-              .warn("Failed to detect hero after download");
-          });
       },
       onError: (error) => {
         toast.error(`Failed to download ${mod.name}: ${error.message}`);
-        setModStatus(mod.remoteId, ModStatus.FailedToDownload);
         setIsDialogOpen(false);
       },
     });

@@ -1986,7 +1986,8 @@
       "mod": "Mods",
       "sound": "Sounds",
       "map": "Maps",
-      "wip": "WiPs"
+      "wip": "WiPs",
+      "album": "Albums"
     },
     "updated": "Updated",
     "match": "Match",
@@ -3347,7 +3348,8 @@
       "pinned": "Pinned",
       "replies_one": "{{count}} reply on GameBanana",
       "replies_other": "{{count}} replies on GameBanana"
-    }
+    },
+    "backToAlbum": "Back to {{album}}"
   },
   "modDependencies": {
     "title": "Requirements",
@@ -3399,7 +3401,6 @@
     "resultRange": "{{start}} to {{end}} of {{total}} crosshairs",
     "previousPage": "Previous",
     "nextPage": "Next",
-
     "subtitle": "Create and customize your crosshairs",
     "generate": "Generate Crosshair",
     "preview": "Preview",
@@ -3706,5 +3707,54 @@
     "killSounds": "Kill Sounds",
     "killstreakMusic": "Killstreak Music",
     "other": "Other"
+  },
+  "albums": {
+    "album": "Album",
+    "itemCount_one": "{{count}} item",
+    "itemCount_other": "{{count}} items",
+    "openSiteError": "Could not open DeadlockSkins.gg",
+    "emptyTitle": "No albums available",
+    "emptyDescription": "deadlockskins.gg didn't return any albums. Check your connection and try again later.",
+    "notFoundTitle": "Album not found",
+    "notFoundDescription": "This album may have been renamed or removed from deadlockskins.gg.",
+    "backToAlbums": "Back to Albums",
+    "viewOnSite": "View on DeadlockSkins.gg",
+    "modsInAlbum": "Mods in this album",
+    "modStat_one": "mod",
+    "modStat_other": "mods",
+    "inLibraryStat_one": "in library",
+    "inLibraryStat_other": "in library",
+    "missingFromCatalog_one": "{{count}} mod isn't in the catalog",
+    "missingFromCatalog_other": "{{count}} mods aren't in the catalog",
+    "download": {
+      "action_one": "Download {{count}} mod",
+      "action_other": "Download {{count}} mods",
+      "allInLibrary": "All in library",
+      "preparing": "Preparing {{done}}/{{total}}…",
+      "confirmTitle": "Download {{album}}?",
+      "confirmBody_one": "{{count}} mod will be downloaded into your active profile.",
+      "confirmBody_other": "{{count}} mods will be downloaded into your active profile.",
+      "confirmSkipped_one": "{{count}} mod already in your library is skipped.",
+      "confirmSkipped_other": "{{count}} mods already in your library are skipped.",
+      "confirmOutdated_one": "{{count}} of them hasn't been updated since the City Never Sleeps update and may not work.",
+      "confirmOutdated_other": "{{count}} of them haven't been updated since the City Never Sleeps update and may not work.",
+      "confirmAction_one": "Download {{count}} mod",
+      "confirmAction_other": "Download {{count}} mods",
+      "queued_one": "Queued {{count}} mod for download",
+      "queued_other": "Queued {{count}} mods for download",
+      "needsFileChoice_one": "{{count}} mod has several files. Pick one on its mod page: {{mods}}",
+      "needsFileChoice_other": "{{count}} mods have several files. Pick one on their mod pages: {{mods}}",
+      "failed_one": "Could not load the files of {{count}} mod: {{mods}}",
+      "failed_other": "Could not load the files of {{count}} mods: {{mods}}"
+    },
+    "freshness": {
+      "outdatedLabel": "Outdated",
+      "partialLabel_one": "{{count}} outdated",
+      "partialLabel_other": "{{count}} outdated",
+      "outdatedDescription": "None of this album's mods have been updated since the City Never Sleeps update (September 29, 2026). They may not work properly.",
+      "partialDescription_one": "{{count}} of {{total}} mods in this album hasn't been updated since the City Never Sleeps update (September 29, 2026) and may not work properly.",
+      "partialDescription_other": "{{count}} of {{total}} mods in this album haven't been updated since the City Never Sleeps update (September 29, 2026) and may not work properly."
+    },
+    "providedBy": "Provided by"
   }
 }

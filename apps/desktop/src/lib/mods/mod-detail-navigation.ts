@@ -13,20 +13,47 @@ export interface AuthorNavigationTarget {
   name: string;
 }
 
+export interface AlbumNavigationTarget {
+  slug: string;
+  name: string;
+}
+
 export interface ModDetailNavigationState {
   collection: ModsCollection;
   author?: AuthorNavigationTarget;
+  album?: AlbumNavigationTarget;
 }
 
+const getBackTarget = (
+  collection: ModsCollection,
+  author?: AuthorNavigationTarget,
+  album?: AlbumNavigationTarget,
+) => {
+  if (author) {
+    return {
+      path: `/authors/${author.id}`,
+      labelKey: "modDetail.backToAuthorMods",
+      labelValues: { author: author.name },
+    };
+  }
+  if (album) {
+    return {
+      path: `/albums/${album.slug}`,
+      labelKey: "modDetail.backToAlbum",
+      labelValues: { album: album.name },
+    };
+  }
+  return {
+    ...COLLECTION_NAVIGATION[collection],
+    labelValues: {},
+  };
+};
+
 export const getBackNavigation = (
-  { collection, author }: ModDetailNavigationState = { collection: "mods" },
+  { collection, author, album }: ModDetailNavigationState = {
+    collection: "mods",
+  },
 ) => ({
-  path: author
-    ? `/authors/${author.id}`
-    : COLLECTION_NAVIGATION[collection].path,
-  labelKey: author
-    ? "modDetail.backToAuthorMods"
-    : COLLECTION_NAVIGATION[collection].labelKey,
-  labelValues: { author: author?.name },
+  ...getBackTarget(collection, author, album),
   state: { collection },
 });

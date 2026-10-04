@@ -117,15 +117,17 @@ export const UPDATED_RECENTLY_THRESHOLD = new Date("2026-02-07T17:00:00Z");
 export const STALE_MOD_REPORT_THRESHOLD = 5;
 export const STALE_MOD_DAYS = 30;
 
-// City Never Sleeps update: https://store.steampowered.com/news/app/1422450/view/694273194214819790
 /** Top-downloaded mods the weekly featured pick is drawn from. */
 export const FEATURED_POOL_SIZE = 50;
 /** Trending = updated within this window, ranked by downloads. */
 export const TRENDING_WINDOW_DAYS = 30;
 export const TRENDING_LIMIT = 8;
 
+// City Never Sleeps update: https://store.steampowered.com/news/app/1422450/view/694273194214819790
+// The patch went live with this post, so mod updates from earlier that day
+// still target the old game.
 export const MOD_OUTDATED_CUTOFF_SECONDS = Math.floor(
-  new Date("2026-09-29").getTime() / 1_000,
+  new Date("2026-09-29T20:25:11Z").getTime() / 1_000,
 );
 
 // Client-side toggles for features that are still settling. Stored locally so

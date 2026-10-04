@@ -29,6 +29,7 @@ import {
 } from "react";
 import { platform } from "@tauri-apps/plugin-os";
 import { useTranslation } from "react-i18next";
+import { AlbumGrid, AlbumGridSkeleton } from "@/components/albums/album-grid";
 import ContentTypeTabs from "@/components/mod-browsing/content-type-tabs";
 import ModCard from "@/components/mod-browsing/mod-card";
 import SearchBar from "@/components/mod-browsing/search-bar";
@@ -78,12 +79,15 @@ const MAPS_STORE_PAGE_KEY = "/maps:page";
 const MODS_STORE_PAGINATION_SETTING_ID = "mods-store-pagination";
 const MOD_ROW_ESTIMATED_HEIGHT = 340;
 
+// Albums come from deadlockskins.gg, not the catalog.
+type CatalogContentType = Exclude<ContentType, "album">;
+
 const CONTENT_SUBMISSION_TYPE = {
   mod: "mod",
   sound: "sound",
   map: "mod",
   wip: "wip",
-} satisfies Record<ContentType, SubmissionType>;
+} satisfies Record<CatalogContentType, SubmissionType>;
 
 // Without the custom-maps feature there is no Maps tab, so a stored "map"
 // falls back to Mods (where maps stay mixed in).
@@ -192,7 +196,13 @@ function ModsPagination({
   );
 }
 
-const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
+const GetModsData = ({
+  contentType,
+  mapsOnly,
+}: {
+  contentType: CatalogContentType;
+  mapsOnly?: boolean;
+}) => {
   const { t } = useTranslation();
   const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
   const nsfwSettings = usePersistedStore((state) => state.nsfwSettings);
@@ -222,9 +232,6 @@ const GetModsData = ({ mapsOnly }: { mapsOnly?: boolean }) => {
     currentSort,
   } = modsFilters;
   const favorites = usePersistedStore((state) => state.favorites);
-  const contentType: ContentType = mapsOnly
-    ? "map"
-    : resolveContentType(modsFilters.contentType, isCustomMapsEnabled);
   const pageKey = mapsOnly ? MAPS_STORE_PAGE_KEY : MODS_STORE_PAGE_KEY;
   const scrollKey = mapsOnly ? "/maps" : "/mods";
   const paginationEnabled =
@@ -734,11 +741,19 @@ const GetMods = () => {
           value={contentType}
         />
       </div>
-      <Suspense fallback={<ModsPageSkeleton />}>
-        <ErrorBoundary>
-          <GetModsData />
-        </ErrorBoundary>
-      </Suspense>
+      {contentType === "album" ? (
+        <Suspense fallback={<AlbumGridSkeleton />}>
+          <ErrorBoundary>
+            <AlbumGrid />
+          </ErrorBoundary>
+        </Suspense>
+      ) : (
+        <Suspense fallback={<ModsPageSkeleton />}>
+          <ErrorBoundary>
+            <GetModsData contentType={contentType} />
+          </ErrorBoundary>
+        </Suspense>
+      )}
     </div>
   );
 };
@@ -766,7 +781,7 @@ export const GetMaps = () => {
       </Alert>
       <Suspense fallback={<ModsPageSkeleton />}>
         <ErrorBoundary>
-          <GetModsData mapsOnly />
+          <GetModsData contentType='map' mapsOnly />
         </ErrorBoundary>
       </Suspense>
     </div>

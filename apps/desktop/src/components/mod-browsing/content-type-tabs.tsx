@@ -1,6 +1,7 @@
 import { Tabs, TabsList, TabsTrigger } from "@deadlock-mods/ui/components/tabs";
 import {
   BarricadeIcon,
+  CardsThreeIcon,
   CubeIcon,
   type Icon,
   MapTrifoldIcon,
@@ -14,6 +15,7 @@ import { cn } from "@/lib/utils";
 const CONTENT_TYPES: { value: ContentType; Icon: Icon }[] = [
   { value: "mod", Icon: CubeIcon },
   { value: "sound", Icon: MusicNotesIcon },
+  { value: "album", Icon: CardsThreeIcon },
   { value: "map", Icon: MapTrifoldIcon },
   { value: "wip", Icon: BarricadeIcon },
 ];

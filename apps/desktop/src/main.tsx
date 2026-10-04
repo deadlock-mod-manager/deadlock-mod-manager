@@ -7,6 +7,7 @@ import App from "./app";
 import { useExperimentalFeature } from "./hooks/use-experimental-feature";
 import { queryClient } from "./lib/client";
 import AddMods from "./pages/add-mods";
+import Album from "./pages/album";
 import Author from "./pages/author";
 import Crosshairs from "./pages/crosshairs";
 import Dashboard from "./pages/dashboard";
@@ -87,6 +88,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<MapsRouteGate />} path='/maps' />
               <Route element={<Mod />} path='/mods/:id' />
               <Route element={<Author />} path='/authors/:id' />
+              <Route element={<Album />} path='/albums/:slug' />
               <Route element={<AddMods />} path='/add-mods' />
               <Route element={<Downloads />} path='/downloads' />
               <Route element={<ServersRouteGate />} path='/servers' />

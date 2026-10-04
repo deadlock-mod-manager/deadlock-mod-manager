@@ -40,4 +40,19 @@ describe("mod detail navigation", () => {
       expect(getBackNavigation({ collection }).path).toBe(path);
     },
   );
+
+  test("returns to the album a mod was opened from", () => {
+    const backToAlbum = getBackNavigation({
+      collection: "mods",
+      album: { slug: "mann-co", name: "Mann Co." },
+    });
+
+    expect(backToAlbum).toEqual({
+      path: "/albums/mann-co",
+      labelKey: "modDetail.backToAlbum",
+      labelValues: { album: "Mann Co." },
+      state: { collection: "mods" },
+    });
+    expect(getBackNavigation(backToAlbum.state).path).toBe("/mods");
+  });
 });
