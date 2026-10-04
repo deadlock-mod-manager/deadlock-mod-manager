@@ -397,6 +397,24 @@ fn place_mod(
   }
 }
 
+/// A manifest save can fail after writing `.dmm.json.tmp`, which the loader
+/// reads as committed. If the mod is in the profile, it was imported: report
+/// it so, or a later import would skip it as a duplicate without a ledger entry.
+fn committed_despite(base: &ProfileBase, mod_id: &str, error: Error) -> Result<Placed, Error> {
+  let Some(saved) = ProfileVpkManifest::load(base)
+    .ok()
+    .and_then(|manifest| manifest.mods.get(mod_id).cloned())
+  else {
+    return Err(error);
+  };
+  Ok(Placed {
+    enabled: saved.enabled,
+    // Only the in-place path saves an enabled entry before it can fail.
+    adopted_in_place: saved.enabled,
+    reason: Some(format!("profile manifest was not finalized ({error})")),
+  })
+}
+
 pub fn import(
   manager: &mut ModManager,
   request: InterchangeImportRequest,
@@ -511,7 +529,7 @@ pub fn import_into(
     }
 
     let order = next_order;
-    match place_mod(
+    let placed = place_mod(
       manager,
       &base,
       &request.profile_folder,
@@ -519,7 +537,9 @@ pub fn import_into(
       entry,
       &files,
       order,
-    ) {
+    )
+    .or_else(|error| committed_despite(&base, &mod_id, error));
+    match placed {
       Ok(placed) => {
         next_order += 1;
         any_enabled |= placed.enabled;
@@ -629,6 +649,27 @@ pub fn import_into(
 mod tests {
   use super::super::format::{GameBananaOrigin, LocalOrigin};
   use super::*;
+
+  #[test]
+  fn a_readable_temp_manifest_counts_as_imported() {
+    let root = tempfile::tempdir().unwrap();
+    let addons = root.path().join("game/citadel/addons");
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_disabled(
+      "local-1",
+      vec!["local-1_a.vpk".into()],
+      vec!["a.vpk".into()],
+    );
+    manifest.save(&addons).unwrap();
+    // A rename that failed after the temp file was written.
+    fs::rename(addons.join(".dmm.json"), addons.join(".dmm.json.tmp")).unwrap();
+    let base = ProfileBase::new(&addons).unwrap();
+
+    let placed = committed_despite(&base, "local-1", Error::InvalidInput("rename".into())).unwrap();
+    assert!(!placed.enabled);
+    assert!(placed.reason.is_some());
+    assert!(committed_despite(&base, "local-2", Error::InvalidInput("rename".into())).is_err());
+  }
 
   fn entry(origin: InterchangeOrigin, key: &str) -> InterchangeMod {
     InterchangeMod {
