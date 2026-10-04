@@ -193,7 +193,8 @@ jobs:
             xdg-utils \
             file \
             flatpak \
-            flatpak-builder
+            flatpak-builder \
+            weston
 
       - name: Install Flatpak SDK (Linux only)
         if: matrix.os == 'linux'
@@ -213,6 +214,11 @@ jobs:
         # workflow_dispatch stamped manually-started stable releases as nightly.
         if: inputs.nightly == true
         run: pnpm version:nightly
+
+      - name: Resolve desktop package version
+        id: desktop-version
+        shell: bash
+        run: echo "version=$(node -p "require('./apps/desktop/package.json').version")" >> "$GITHUB_OUTPUT"
 
       - name: Build CEF (Linux)
         if: matrix.os == 'linux'
@@ -254,6 +260,7 @@ jobs:
           repo-directory: flatpak-repo-cef
           build-directory: flatpak-build-cef
           manifest: apps/desktop/flatpak/dev.stormix.deadlock-mod-manager.cef.yml
+          app-version: ${{ steps.desktop-version.outputs.version }}
 
       - name: Verify CEF Linux artifacts (Linux)
         if: matrix.os == 'linux'
@@ -271,6 +278,14 @@ jobs:
           fi
           echo "CEF Linux artifacts verified:"
           ls -la cef-artifacts/
+
+      - name: Smoke test CEF Flatpak bundle (Linux)
+        if: matrix.os == 'linux'
+        uses: ./.github/actions/smoke-test-flatpak
+        with:
+          bundle-path: cef-artifacts/deadlock-mod-manager-cef.flatpak
+          expected-version: ${{ steps.desktop-version.outputs.version }}
+          runtime-kind: cef
 
       - name: Build CEF (Windows)
         if: matrix.os == 'windows'
