@@ -1707,6 +1707,10 @@
       "profile-sharing": {
         "title": "Profile Sharing",
         "description": "Share mod profiles with others and import shared ones."
+      },
+      "conflict-detection": {
+        "title": "Conflict Detection",
+        "description": "Flag enabled mods that change the same files and show them in a Conflicts tab in My Mods."
       }
     }
   },
