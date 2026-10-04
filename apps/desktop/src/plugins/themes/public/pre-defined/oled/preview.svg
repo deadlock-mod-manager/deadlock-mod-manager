@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" fill="none">
+  <rect width="640" height="360" fill="#000"/>
+  <path d="M0 32H640M132 32V360" stroke="#2e2e2e"/>
+  <rect x="16" y="13" width="82" height="6" rx="3" fill="#d8c197"/>
+  <rect x="16" y="56" width="98" height="28" rx="4" fill="#212121"/>
+  <rect x="28" y="67" width="68" height="6" rx="3" fill="#d8c197"/>
+  <g fill="#a6a6a6">
+    <rect x="28" y="103" width="56" height="5" rx="2"/>
+    <rect x="28" y="135" width="70" height="5" rx="2"/>
+    <rect x="28" y="167" width="48" height="5" rx="2"/>
+    <rect x="28" y="199" width="62" height="5" rx="2"/>
+    <rect x="28" y="231" width="52" height="5" rx="2"/>
+  </g>
+  <rect x="156" y="56" width="124" height="10" rx="3" fill="#e0e0e0"/>
+  <rect x="156" y="77" width="172" height="5" rx="2" fill="#a6a6a6"/>
+  <rect x="516" y="53" width="100" height="28" rx="4" fill="#d8c197"/>
+  <rect x="538" y="65" width="56" height="5" rx="2" fill="#0a0a0a"/>
+  <g fill="#0a0a0a" stroke="#2e2e2e">
+    <rect x="156" y="104" width="144" height="224" rx="6"/>
+    <rect x="314" y="104" width="144" height="224" rx="6"/>
+    <rect x="472" y="104" width="144" height="224" rx="6"/>
+  </g>
+  <g fill="#1a1a1a">
+    <rect x="168" y="116" width="120" height="116" rx="4"/>
+    <rect x="326" y="116" width="120" height="116" rx="4"/>
+    <rect x="484" y="116" width="120" height="116" rx="4"/>
+  </g>
+  <g fill="#e0e0e0">
+    <rect x="168" y="250" width="88" height="7" rx="2"/>
+    <rect x="326" y="250" width="94" height="7" rx="2"/>
+    <rect x="484" y="250" width="78" height="7" rx="2"/>
+  </g>
+  <g fill="#a6a6a6">
+    <rect x="168" y="268" width="56" height="5" rx="2"/>
+    <rect x="326" y="268" width="62" height="5" rx="2"/>
+    <rect x="484" y="268" width="54" height="5" rx="2"/>
+  </g>
+  <g fill="#d8c197">
+    <rect x="168" y="296" width="120" height="20" rx="3"/>
+    <rect x="326" y="296" width="120" height="20" rx="3"/>
+    <rect x="484" y="296" width="120" height="20" rx="3"/>
+  </g>
+</svg>

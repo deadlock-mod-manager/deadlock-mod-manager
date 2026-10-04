@@ -43,7 +43,7 @@ describe("release theme selection", () => {
     expect(settings.activeTheme).toBeUndefined();
   });
 
-  it.each(["tea", "lovelock", "arcane", "custom", "user-created"])(
+  it.each(["oled", "tea", "lovelock", "arcane", "custom", "user-created"])(
     "preserves the selected %s theme regardless of the release flag",
     (activeTheme) => {
       const selected = { ...settings, activeTheme };

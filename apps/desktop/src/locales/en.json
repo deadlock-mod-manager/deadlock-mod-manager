@@ -2851,6 +2851,13 @@
       "twitch": "Twitch",
       "carrd": "Carrd"
     },
+    "oled": {
+      "description": "True-black backgrounds, subtle charcoal surfaces, and a customizable accent for OLED displays.",
+      "accentColor": "Accent Color",
+      "customColor": "OLED Accent Color",
+      "customColorDescription": "Choose an accent color. Button text contrast adjusts automatically.",
+      "resetAccent": "Reset accent"
+    },
     "nightshift": {
       "description": "A teal-accented cyberpunk theme designed for clarity and long gaming sessions.",
       "visit": "Visit Nightshift:",

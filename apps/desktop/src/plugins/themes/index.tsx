@@ -44,6 +44,9 @@ import BloodmoonTheme from "./pre-defined/bloodmoon/bloodmoon.tsx";
 import DeadlockApiTheme from "./pre-defined/deadlock-api/deadlock-api.tsx";
 import LovelockTheme from "./pre-defined/lovelock/lovelock.tsx";
 import NightshiftTheme from "./pre-defined/nightshift/nightshift.tsx";
+import OledTheme from "./pre-defined/oled/oled.tsx";
+import { DEFAULT_OLED_ACCENT } from "./pre-defined/oled/accent";
+import { OledAccentPicker } from "./pre-defined/oled/accent-picker";
 import RemlockTheme from "./pre-defined/remlock/remlock.tsx";
 import TeaTheme from "./pre-defined/tea/tea.tsx";
 
@@ -75,6 +78,10 @@ const remlockPreview = getPluginAssetUrl(
   "themes",
   "public/pre-defined/remlock/artwork.png",
 );
+const oledPreview = getPluginAssetUrl(
+  "themes",
+  "public/pre-defined/oled/preview.svg",
+);
 
 export const manifest = {
   id: "themes",
@@ -94,6 +101,13 @@ const DEFAULT_SETTINGS: ThemeSettings = {
 };
 
 const PRE_DEFINED_THEMES = [
+  {
+    id: "oled",
+    name: "OLED",
+    descriptionKey: "plugins.oled.description",
+    component: OledTheme,
+    previewImage: oledPreview,
+  },
   {
     id: "remlock",
     name: "Remlock",
@@ -404,6 +418,16 @@ const Settings = () => {
                           Skeptic
                         </button>
                       </div>
+                    ) : theme.id === "oled" ? (
+                      <OledAccentPicker
+                        value={current.oledAccentColor ?? DEFAULT_OLED_ACCENT}
+                        onChange={(color) =>
+                          setSettings(manifest.id, {
+                            ...current,
+                            oledAccentColor: color,
+                          })
+                        }
+                      />
                     ) : theme.id === "arcane" ? (
                       <div className='mb-4'>
                         <div className='text-sm text-muted-foreground mb-2'>
@@ -654,6 +678,10 @@ const Render = () => {
 
   if (selectedTheme === "custom") {
     return <CustomTheme />;
+  }
+
+  if (selectedTheme === "oled") {
+    return <OledTheme accentColor={current.oledAccentColor} />;
   }
 
   // Special handling for Arcane theme to pass accent color

@@ -1,0 +1,42 @@
+:root.oled-theme-active {
+  color-scheme: dark;
+  --background: 0 0% 0%;
+  --foreground: 0 0% 88%;
+  --card: 0 0% 4%;
+  --card-foreground: 0 0% 88%;
+  --popover: 0 0% 6%;
+  --popover-foreground: 0 0% 88%;
+  --primary: var(--oled-accent, 42 45% 72%);
+  --primary-foreground: var(--oled-accent-foreground, 0 0% 0%);
+  --secondary: 0 0% 10%;
+  --secondary-foreground: 0 0% 88%;
+  --muted: 0 0% 10%;
+  --muted-foreground: 0 0% 65%;
+  --accent: 0 0% 13%;
+  --accent-foreground: 0 0% 88%;
+  --destructive: 0 55% 38%;
+  --destructive-foreground: 0 0% 92%;
+  --border: 0 0% 18%;
+  --input: 0 0% 24%;
+  --ring: var(--oled-highlight, 42 45% 72%);
+  --toast-background: 0 0% 6%;
+  --sidebar-background: 0 0% 0%;
+  --sidebar-foreground: 0 0% 88%;
+  --sidebar-primary: var(--oled-accent, 42 45% 72%);
+  --sidebar-primary-foreground: var(--oled-accent-foreground, 0 0% 0%);
+  --sidebar-accent: 0 0% 13%;
+  --sidebar-accent-foreground: var(--oled-highlight, 42 45% 72%);
+  --sidebar-border: 0 0% 18%;
+  --sidebar-ring: var(--oled-highlight, 42 45% 72%);
+}
+
+.oled-theme-active .occult-geometry-container {
+  display: none;
+}
+
+.oled-theme-active :where(*, *::before, *::after) {
+  --tw-shadow: 0 0 #0000;
+  --tw-shadow-colored: 0 0 #0000;
+  box-shadow:
+    var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000) !important;
+}
