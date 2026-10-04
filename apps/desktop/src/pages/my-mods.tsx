@@ -583,6 +583,8 @@ const ModsList = ({
 const MyMods = () => {
   const { t } = useTranslation();
   const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
+  const isConflictDetectionEnabled =
+    useExperimentalFeature("conflict-detection");
   const navigate = useNavigate();
   const mods = usePersistedStore((state) => state.localMods);
   const getOrderedMods = usePersistedStore((state) => state.getOrderedMods);
@@ -997,18 +999,20 @@ const MyMods = () => {
                           ({disabledModsCount})
                         </span>
                       </TabsTrigger>
-                      <TabsTrigger value={CONFLICTS_TAB}>
-                        <TriangleAlert
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            conflictCount > 0 && "text-amber-400",
-                          )}
-                        />
-                        {t("myMods.tabs.conflicts")}
-                        <span className='ml-2 text-muted-foreground text-xs'>
-                          ({conflictCount})
-                        </span>
-                      </TabsTrigger>
+                      {isConflictDetectionEnabled && (
+                        <TabsTrigger value={CONFLICTS_TAB}>
+                          <TriangleAlert
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              conflictCount > 0 && "text-amber-400",
+                            )}
+                          />
+                          {t("myMods.tabs.conflicts")}
+                          <span className='ml-2 text-muted-foreground text-xs'>
+                            ({conflictCount})
+                          </span>
+                        </TabsTrigger>
+                      )}
                     </TabsList>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1108,9 +1112,11 @@ const MyMods = () => {
                   </TabsContent>
                 )}
 
-                <TabsContent className='mt-0' value={CONFLICTS_TAB}>
-                  <ConflictsPanel visibleModIds={visibleModIds} />
-                </TabsContent>
+                {isConflictDetectionEnabled && (
+                  <TabsContent className='mt-0' value={CONFLICTS_TAB}>
+                    <ConflictsPanel visibleModIds={visibleModIds} />
+                  </TabsContent>
+                )}
 
                 {!isConflictsTab &&
                   displayMods.length > 0 &&

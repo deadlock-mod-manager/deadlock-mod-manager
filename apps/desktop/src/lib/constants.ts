@@ -137,4 +137,5 @@ export const EXPERIMENTAL_FEATURES = [
   "player-stats",
   "profile-management",
   "profile-sharing",
+  "conflict-detection",
 ] as const;
