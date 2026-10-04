@@ -90,6 +90,12 @@ pub fn run() {
       file_name: Some("deadlock-mod-manager".into()),
     });
 
+  let stdout_format = if cfg!(debug_assertions) && std::env::var_os("NO_COLOR").is_none() {
+    logs::format::pretty
+  } else {
+    logs::format::plain
+  };
+
   builder = builder
     .plugin(tauri_plugin_deep_link::init())
     .plugin(tauri_plugin_http::init())
@@ -102,10 +108,11 @@ pub fn run() {
     .plugin(tauri_plugin_updater::Builder::new().build())
     .plugin(
       tauri_plugin_log::Builder::new()
+        .clear_format()
         .clear_targets()
         .targets([
-          Target::new(TargetKind::Stdout),
-          Target::new(log_file_target),
+          Target::new(TargetKind::Stdout).format(stdout_format),
+          Target::new(log_file_target).format(logs::format::plain),
         ])
         .max_file_size(1_000_000)
         .level(log::LevelFilter::Info)

@@ -1,4 +1,5 @@
 pub mod crash_dumps;
+pub mod format;
 pub mod log_manager;
 
 pub use crash_dumps::CrashDumpInfo;
