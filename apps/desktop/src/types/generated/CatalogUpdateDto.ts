@@ -4,5 +4,9 @@ import type { CatalogModDto } from "./CatalogModDto";
 
 export type CatalogUpdateDto = {
   mod: CatalogModDto;
+  /**
+   * Unix seconds of the change that triggered this update.
+   */
+  updatedAt: number;
   downloads: Array<CatalogDownloadDto>;
 };

@@ -53,7 +53,7 @@ import { getErrorMessage } from "@/lib/errors";
 import { isLocalMod } from "@/lib/mods/installed-helpers";
 import { usePersistedStore } from "@/lib/store";
 import { findLocalMod } from "@/lib/store/selectors";
-import { useCheckUpdates } from "@/hooks/use-check-updates";
+import { useCheckUpdates, useModHasUpdate } from "@/hooks/use-check-updates";
 import { isModOutdated, isModStale } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
 import { NetworkDiagnosticsButton } from "@/components/shared/network-diagnostics-dialog";
@@ -102,9 +102,7 @@ const Mod = () => {
   }, [localMod, availableFiles, setModDownloads]);
 
   const { updatableMods } = useCheckUpdates();
-  const hasUpdate = updatableMods.some(
-    (update) => update.mod.remoteId === mod?.remoteId,
-  );
+  const hasUpdate = useModHasUpdate(localMod);
 
   const { data: reportCounts } = useReportCounts(
     mod?.isMap ? "" : (mod?.id ?? ""),

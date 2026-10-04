@@ -1,4 +1,3 @@
-import type { ModDto } from "@deadlock-mods/shared";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { listen } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useState } from "react";
@@ -10,6 +9,7 @@ import type {
   BatchUpdateProgressEvent,
   ModDownloadItem,
   ModFileTree,
+  ModUpdateCandidate,
   ProfileImportMod,
   UpdateProgress,
   UpdatableMod,
@@ -56,7 +56,7 @@ export const useBatchUpdate = () => {
   }, []);
 
   const prepareUpdates = useCallback(
-    (updates: Array<{ mod: ModDto; downloads: ModDownloadItem[] }>) => {
+    (updates: ModUpdateCandidate[]) => {
       const prepared = updates.map((update) => {
         const localMod = localMods.find(
           (m) => m.remoteId === update.mod.remoteId,
@@ -85,13 +85,31 @@ export const useBatchUpdate = () => {
 
         return {
           mod: update.mod,
+          updatedAt: update.updatedAt,
           downloads: update.downloads,
           selectedDownloads,
           selectedFileTree,
         };
       });
 
-      setUpdatableMods(prepared);
+      setUpdatableMods((previous) => {
+        if (prepared.length === 0 && previous.length === 0) return previous;
+        return prepared.map((update) => {
+          const existing = previous.find(
+            (m) => m.mod.remoteId === update.mod.remoteId,
+          );
+          const keptDownloads = existing?.selectedDownloads.filter((selected) =>
+            update.downloads.some((d) => d.url === selected.url),
+          );
+          return existing && keptDownloads?.length
+            ? {
+                ...update,
+                selectedDownloads: keptDownloads,
+                selectedFileTree: existing.selectedFileTree,
+              }
+            : update;
+        });
+      });
       return prepared;
     },
     [localMods],

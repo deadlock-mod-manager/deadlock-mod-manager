@@ -16,6 +16,7 @@ import {
   HardDrive,
   Loader2,
   RefreshCw,
+  SkipForward,
   X,
 } from "@deadlock-mods/ui/icons";
 import { toast } from "@deadlock-mods/ui/components/sonner";
@@ -29,13 +30,17 @@ import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { findLocalMod } from "@/lib/store/selectors";
 import { useBatchUpdate } from "@/hooks/use-batch-update";
-import type { ModDownloadItem, UpdatableMod } from "@/types/mods";
+import type {
+  ModDownloadItem,
+  ModUpdateCandidate,
+  UpdatableMod,
+} from "@/types/mods";
 import { getModCoverImage } from "@/lib/mods/mod-images";
 
 interface BatchUpdateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  updates: Array<{ mod: ModDto; downloads: ModDownloadItem[] }>;
+  updates: ModUpdateCandidate[];
   isSingleMod?: boolean;
 }
 
@@ -53,6 +58,7 @@ export const BatchUpdateDialog = ({
     executeBatchUpdate,
     updateProgress,
   } = useBatchUpdate();
+  const skipModUpdate = usePersistedStore((state) => state.skipModUpdate);
 
   const batchUpdateMutation = useMutation({
     mutationFn: executeBatchUpdate,
@@ -72,10 +78,16 @@ export const BatchUpdateDialog = ({
   };
 
   useEffect(() => {
-    if (open && updates.length > 0) {
-      prepareUpdates(updates);
-    }
+    prepareUpdates(open ? updates : []);
   }, [open, updates, prepareUpdates]);
+
+  const handleSkip = (mod: ModDto, updatedAt: number) => {
+    skipModUpdate(mod.remoteId, updatedAt);
+    toast.success(t("myMods.batchUpdate.skipped", { name: mod.name }));
+    if (updatableMods.length <= 1) {
+      onOpenChange(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -121,13 +133,21 @@ export const BatchUpdateDialog = ({
             </div>
 
             <div className='space-y-3'>
-              {updatableMods.map((update) => (
-                <UpdateModCard
-                  key={update.mod.remoteId}
-                  update={update}
-                  onSelectDownloads={setSelectedDownloads}
-                />
-              ))}
+              {updatableMods.map((update) => {
+                const { updatedAt } = update;
+                return (
+                  <UpdateModCard
+                    key={update.mod.remoteId}
+                    update={update}
+                    onSelectDownloads={setSelectedDownloads}
+                    onSkip={
+                      !batchUpdateMutation.isPending && updatedAt !== undefined
+                        ? () => handleSkip(update.mod, updatedAt)
+                        : undefined
+                    }
+                  />
+                );
+              })}
             </div>
           </div>
         )}
@@ -159,9 +179,14 @@ export const BatchUpdateDialog = ({
 interface UpdateModCardProps {
   update: UpdatableMod;
   onSelectDownloads: (remoteId: string, downloads: ModDownloadItem[]) => void;
+  onSkip?: () => void;
 }
 
-const UpdateModCard = ({ update, onSelectDownloads }: UpdateModCardProps) => {
+const UpdateModCard = ({
+  update,
+  onSelectDownloads,
+  onSkip,
+}: UpdateModCardProps) => {
   const { t } = useTranslation();
   const localMod = usePersistedStore((state) =>
     findLocalMod(state.localMods, update.mod.remoteId),
@@ -209,11 +234,23 @@ const UpdateModCard = ({ update, onSelectDownloads }: UpdateModCardProps) => {
       )}
 
       <div className='flex-1 space-y-2'>
-        <div>
-          <h4 className='font-semibold'>{update.mod.name}</h4>
-          <p className='text-sm text-muted-foreground'>
-            {t("mods.by")} {update.mod.author}
-          </p>
+        <div className='flex items-start justify-between gap-2'>
+          <div>
+            <h4 className='font-semibold'>{update.mod.name}</h4>
+            <p className='text-sm text-muted-foreground'>
+              {t("mods.by")} {update.mod.author}
+            </p>
+          </div>
+          {onSkip && (
+            <Button
+              size='sm'
+              variant='ghost'
+              onClick={onSkip}
+              title={t("myMods.batchUpdate.skipDescription")}
+              icon={<SkipForward className='h-4 w-4' />}>
+              {t("myMods.batchUpdate.skip")}
+            </Button>
+          )}
         </div>
 
         <div className='flex items-center gap-4 text-sm'>

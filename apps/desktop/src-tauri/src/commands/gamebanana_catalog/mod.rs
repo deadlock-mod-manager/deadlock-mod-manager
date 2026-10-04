@@ -14,7 +14,7 @@ use crate::providers::SubmissionRef;
 use crate::providers::gamebanana::catalog::{
   CatalogFacet, CatalogQuery, CatalogRecord, SyncOutcome,
 };
-use crate::providers::gamebanana::{ApiResponse, normalize_profile};
+use crate::providers::gamebanana::{ApiResponse, UpdateSnapshot, normalize_profile};
 use activity::{CatalogChangelogDto, CatalogCommentsDto};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::State;
@@ -159,6 +159,43 @@ pub async fn resolve_gamebanana_download_candidates(
   submission_files(&state, &policy, &remote_id).await
 }
 
+/// Returns the timestamp of the newest change that counts as an update, if any.
+/// Installs that recorded their file ids only react to changes in those files,
+/// so optional files added to the same submission don't flag an update.
+fn detect_update(snapshot: &UpdateSnapshot, installed: &InstalledSubmissionDto) -> Option<i64> {
+  let newest_file = snapshot
+    .files
+    .iter()
+    .filter_map(|file| file.date_added)
+    .max();
+  let selected = installed
+    .selected_file_ids
+    .iter()
+    .filter_map(|id| id.parse::<u64>().ok())
+    .collect::<Vec<_>>();
+  if selected.is_empty() {
+    let latest = newest_file.map_or(snapshot.remote_updated_at, |file| {
+      file.max(snapshot.remote_updated_at)
+    });
+    return (latest > installed.installed_at).then_some(latest);
+  }
+
+  // Page edits bump remote_updated_at, so a skipped update keys off file dates.
+  let selected_removed = selected
+    .iter()
+    .any(|id| !snapshot.files.iter().any(|file| file.id == *id));
+  if selected_removed {
+    return Some(newest_file.unwrap_or(snapshot.remote_updated_at));
+  }
+  snapshot
+    .files
+    .iter()
+    .filter(|file| selected.contains(&file.id))
+    .filter_map(|file| file.date_added)
+    .filter(|added| *added > installed.installed_at)
+    .max()
+}
+
 #[tauri::command]
 pub async fn check_gamebanana_catalog_updates(
   state: State<'_, GameBananaCatalogState>,
@@ -245,20 +282,7 @@ pub async fn check_gamebanana_catalog_updates(
 
   let mut updates = Vec::new();
   for (submission, installed, snapshot) in resolved {
-    let selected_changed = !installed.selected_file_ids.is_empty()
-      && installed.selected_file_ids.iter().any(|selected| {
-        !snapshot
-          .files
-          .iter()
-          .any(|file| file.id.to_string() == *selected)
-      });
-    let file_updated = snapshot
-      .files
-      .iter()
-      .filter_map(|file| file.date_added)
-      .max()
-      .is_some_and(|updated| updated > installed.installed_at);
-    if (snapshot.remote_updated_at > installed.installed_at || file_updated || selected_changed)
+    if let Some(updated_at) = detect_update(&snapshot, &installed)
       && let Some(record) = backend.catalog.get(submission).await?
     {
       let mut mod_data = CatalogModDto::from_record(record)?;
@@ -267,6 +291,7 @@ pub async fn check_gamebanana_catalog_updates(
       }
       updates.push(CatalogUpdateDto {
         r#mod: mod_data,
+        updated_at,
         downloads: snapshot
           .files
           .into_iter()
@@ -476,5 +501,63 @@ fn sync_outcome_name(outcome: SyncOutcome) -> &'static str {
     SyncOutcome::Full => "full",
     SyncOutcome::Incremental => "incremental",
     SyncOutcome::Throttled => "throttled",
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::providers::gamebanana::SubmissionFile;
+
+  fn file(id: u64, date_added: i64) -> SubmissionFile {
+    SubmissionFile {
+      id,
+      name: format!("file-{id}.zip"),
+      size: 0,
+      date_added: Some(date_added),
+      download_url: String::new(),
+      md5: None,
+      description: None,
+    }
+  }
+
+  fn installed(installed_at: i64, selected: &[&str]) -> InstalledSubmissionDto {
+    InstalledSubmissionDto {
+      remote_id: "Mod-1".into(),
+      installed_at,
+      selected_file_ids: selected.iter().map(|id| (*id).to_string()).collect(),
+    }
+  }
+
+  fn snapshot(remote_updated_at: i64, files: Vec<SubmissionFile>) -> UpdateSnapshot {
+    UpdateSnapshot {
+      remote_updated_at,
+      files,
+    }
+  }
+
+  #[test]
+  fn new_optional_file_does_not_flag_selected_install() {
+    let snapshot = snapshot(300, vec![file(1, 100), file(2, 300)]);
+    assert_eq!(detect_update(&snapshot, &installed(200, &["1"])), None);
+  }
+
+  #[test]
+  fn newer_selected_file_flags_update() {
+    let snapshot = snapshot(300, vec![file(1, 300), file(2, 100)]);
+    assert_eq!(detect_update(&snapshot, &installed(200, &["1"])), Some(300));
+  }
+
+  #[test]
+  fn removed_selected_file_flags_update() {
+    let snapshot = snapshot(250, vec![file(2, 300)]);
+    assert_eq!(detect_update(&snapshot, &installed(200, &["1"])), Some(300));
+  }
+
+  #[test]
+  fn install_without_file_ids_uses_any_change() {
+    let snapshot = snapshot(250, vec![file(1, 100)]);
+    assert_eq!(detect_update(&snapshot, &installed(200, &[])), Some(250));
+    assert_eq!(detect_update(&snapshot, &installed(300, &[])), None);
   }
 }

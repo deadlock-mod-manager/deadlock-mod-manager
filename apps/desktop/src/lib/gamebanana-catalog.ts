@@ -128,6 +128,7 @@ export const checkDirectGameBananaUpdates = async (
   return {
     updates: result.updates.map((update) => ({
       mod: catalogModToModDto(update.mod),
+      updatedAt: update.updatedAt,
       downloads: update.downloads.map((download) =>
         catalogDownloadToModDownload(update.mod.remoteId, download),
       ),
