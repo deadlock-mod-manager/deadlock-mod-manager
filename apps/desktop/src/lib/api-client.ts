@@ -76,10 +76,6 @@ export const getAnnouncements = async () => {
   return await apiRequest<AnnouncementDto[]>("/api/v2/announcements");
 };
 
-export const getMods = async () => {
-  return getGameBananaCatalogMods();
-}; // TODO: pagination
-
 export const getMod = async (remoteId: string) => {
   return getGameBananaCatalogMod(remoteId);
 };

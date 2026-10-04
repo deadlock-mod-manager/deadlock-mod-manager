@@ -10,25 +10,46 @@ import { Button } from "@deadlock-mods/ui/components/button";
 import { ArrowLeft } from "@deadlock-mods/ui/icons";
 import { Star } from "@phosphor-icons/react";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { Suspense, useCallback, useEffect, useMemo } from "react";
+import {
+  Suspense,
+  useCallback,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import ModCard from "@/components/mod-browsing/mod-card";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
-import { getMods } from "@/lib/api-client";
+import {
+  CATALOG_QUERY_DEFAULTS,
+  queryGameBananaCatalog,
+} from "@/lib/gamebanana-catalog";
+import { MODS_LIST_QUERY_KEY } from "@/lib/mods/mod-query-cache";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 
 const FavoritesData = () => {
   const { t } = useTranslation();
+  const favorites = usePersistedStore((state) => state.favorites);
+  // Unfavoriting re-keys the query; deferring keeps the current cards up (the
+  // filter below drops the removed one at once) instead of suspending.
+  const queriedFavorites = useDeferredValue(favorites);
   const { data, error } = useSuspenseQuery({
-    queryKey: ["mods"],
-    queryFn: getMods,
+    queryKey: [...MODS_LIST_QUERY_KEY, "favorites", queriedFavorites],
+    queryFn: async () => {
+      // An empty favorites filter means "no filter" to the catalog.
+      if (queriedFavorites.length === 0) return [];
+      const page = await queryGameBananaCatalog({
+        ...CATALOG_QUERY_DEFAULTS,
+        favorites: queriedFavorites,
+      });
+      return page.items;
+    },
     staleTime: STALE_TIME_API,
     retry: 3,
   });
-  const favorites = usePersistedStore((state) => state.favorites);
 
   const favoritedMods = useMemo(() => {
     if (!data) return [];

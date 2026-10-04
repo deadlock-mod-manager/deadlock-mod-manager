@@ -4,13 +4,17 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   CATALOG_SYNC_KEY,
   useCatalogSyncMutation,
 } from "@/hooks/use-gamebanana-catalog-sync";
 import { inspectGameBananaCatalog } from "@/lib/gamebanana-catalog";
+
+// Each refresh refetches every loaded store page and the dashboard queries;
+// the sync's own completion triggers a final refresh (see the sync mutation).
+const LIST_REFRESH_INTERVAL_MS = 10_000;
 
 export const CatalogSyncProgress = () => {
   const { t } = useTranslation();
@@ -29,11 +33,18 @@ export const CatalogSyncProgress = () => {
     refetchInterval: syncing ? 2000 : false,
   });
   const percentage = catalog.data?.syncPercentage;
+  const lastListRefreshRef = useRef(0);
 
   useEffect(() => {
-    if (syncing && catalog.dataUpdatedAt) {
-      void queryClient.invalidateQueries({ queryKey: ["mods"] });
+    if (!syncing || !catalog.dataUpdatedAt) return;
+    if (
+      catalog.dataUpdatedAt - lastListRefreshRef.current <
+      LIST_REFRESH_INTERVAL_MS
+    ) {
+      return;
     }
+    lastListRefreshRef.current = catalog.dataUpdatedAt;
+    void queryClient.invalidateQueries({ queryKey: ["mods"] });
   }, [syncing, catalog.dataUpdatedAt, queryClient]);
 
   if (!syncing && status !== "error") return null;

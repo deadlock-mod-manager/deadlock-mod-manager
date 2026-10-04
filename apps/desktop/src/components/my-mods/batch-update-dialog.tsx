@@ -26,8 +26,10 @@ import { DateDisplay } from "@/components/date-display";
 import { formatSize } from "@/lib/utils";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
+import { findLocalMod } from "@/lib/store/selectors";
 import { useBatchUpdate } from "@/hooks/use-batch-update";
 import type { ModDownloadItem, UpdatableMod } from "@/types/mods";
+import { getModCoverImage } from "@/lib/mods/mod-images";
 
 interface BatchUpdateDialogProps {
   open: boolean;
@@ -160,8 +162,9 @@ interface UpdateModCardProps {
 
 const UpdateModCard = ({ update, onSelectDownloads }: UpdateModCardProps) => {
   const { t } = useTranslation();
-  const localMods = usePersistedStore((state) => state.localMods);
-  const localMod = localMods.find((m) => m.remoteId === update.mod.remoteId);
+  const localMod = usePersistedStore((state) =>
+    findLocalMod(state.localMods, update.mod.remoteId),
+  );
 
   const sortedDownloads = [...update.downloads].sort(
     (a, b) => (b.size || 0) - (a.size || 0),
@@ -184,12 +187,13 @@ const UpdateModCard = ({ update, onSelectDownloads }: UpdateModCardProps) => {
     (sum, d) => sum + (d.size || 0),
     0,
   );
+  const coverImage = getModCoverImage(update.mod);
 
   return (
     <div className='flex items-start gap-4 rounded-lg border p-4'>
-      {update.mod.images && update.mod.images.length > 0 ? (
+      {coverImage ? (
         <img
-          src={update.mod.images[0]}
+          src={coverImage}
           alt={update.mod.name}
           className='h-20 w-20 rounded object-cover'
         />

@@ -17,6 +17,7 @@ export type CatalogModDto = {
   remoteUpdatedAt: number;
   tags: Array<string>;
   images: Array<string>;
+  thumbnailUrl: string | null;
   hero: string | null;
   isAudio: boolean;
   isMap: boolean;

@@ -15,6 +15,7 @@ import {
   XIcon,
 } from "@deadlock-mods/ui/icons";
 import { ArrowClockwiseIcon } from "@phosphor-icons/react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useHover } from "@uidotdev/usehooks";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -30,7 +31,10 @@ import ErrorBoundary from "@/components/shared/error-boundary";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { useDownload } from "@/hooks/use-download";
 import { useInstallAction } from "@/hooks/use-install-action";
-import { useModDownloads } from "@/hooks/use-mod-downloads";
+import {
+  modDownloadsQueryOptions,
+  useModDownloads,
+} from "@/hooks/use-mod-downloads";
 import useUninstall from "@/hooks/use-uninstall";
 import logger from "@/lib/logger";
 import { resolveLocalModHero } from "@/lib/mods/hero-resolution";
@@ -102,14 +106,17 @@ export const ModStatusIcon = ({
 const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
   const { t } = useTranslation();
   const { analytics } = useAnalyticsContext();
-  const localMods = usePersistedStore((state) => state.localMods);
   const heroConflictWarningEnabled = usePersistedStore(
     (state) => state.settings["hero-conflict-warning"]?.enabled ?? true,
   );
 
+  const queryClient = useQueryClient();
+  // Every catalog card renders this button, so the file list is fetched on
+  // click rather than per row; the observer still picks up the cached result.
   const { availableFiles } = useModDownloads({
     remoteId: remoteMod?.remoteId,
     isDownloadable: remoteMod?.downloadable,
+    enabled: false,
   });
   const {
     download,
@@ -163,6 +170,16 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
     [],
   );
 
+  const fetchAvailableFiles = useCallback(async () => {
+    if (!remoteMod?.remoteId || remoteMod.downloadable === false) {
+      return [];
+    }
+    const result = await queryClient.fetchQuery(
+      modDownloadsQueryOptions(remoteMod.remoteId),
+    );
+    return result.downloads;
+  }, [queryClient, remoteMod?.remoteId, remoteMod?.downloadable]);
+
   const action = useCallback(async () => {
     if (isActionInProgress) {
       return;
@@ -173,7 +190,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
     try {
       switch (localMod?.status) {
         case undefined:
-          await download();
+          await download(await fetchAvailableFiles());
           analytics.trackModDiscovered(
             remoteMod?.remoteId || "unknown",
             "browse",
@@ -183,12 +200,16 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
         case ModStatus.FailedToInstall: {
           const resolvedHero = resolveLocalModHero(localMod).hero;
           if (resolvedHero && heroConflictWarningEnabled) {
-            const conflictingMod = localMods.find(
-              (m) =>
-                m.remoteId !== localMod.remoteId &&
-                m.status === ModStatus.Installed &&
-                resolveLocalModHero(m).hero === resolvedHero,
-            );
+            // Read at click time: subscribing to the whole library would
+            // re-render every card's button on any mod change.
+            const conflictingMod = usePersistedStore
+              .getState()
+              .localMods.find(
+                (m) =>
+                  m.remoteId !== localMod.remoteId &&
+                  m.status === ModStatus.Installed &&
+                  resolveLocalModHero(m).hero === resolvedHero,
+              );
             if (conflictingMod) {
               const resolution = await askHeroConflict(
                 resolvedHero,
@@ -215,7 +236,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
           analytics.trackModUninstalled(localMod.remoteId, "user_choice");
           break;
         case ModStatus.FailedToDownload:
-          await retryDownload();
+          await retryDownload(fetchAvailableFiles);
           break;
         case ModStatus.Error:
           removeMod(localMod.remoteId);
@@ -231,9 +252,9 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
   }, [
     isActionInProgress,
     localMod,
-    localMods,
     heroConflictWarningEnabled,
     download,
+    fetchAvailableFiles,
     retryDownload,
     uninstall,
     removeMod,

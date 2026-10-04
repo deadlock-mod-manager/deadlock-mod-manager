@@ -1,6 +1,7 @@
 import type { ModDto } from "@deadlock-mods/shared";
 import { invoke } from "@tauri-apps/api/core";
 import type { CatalogDownloadsDto } from "@/types/generated/CatalogDownloadsDto";
+import type { CatalogFacet } from "@/types/generated/CatalogFacet";
 import type { CatalogModDto } from "@/types/generated/CatalogModDto";
 import type { CatalogPageDto } from "@/types/generated/CatalogPageDto";
 import type { CatalogQuery } from "@/types/generated/CatalogQuery";
@@ -35,31 +36,44 @@ export const queryGameBananaCatalog = async (
   };
 };
 
+/** Largest page the catalog serves; only for bounded result sets. */
+const CATALOG_MAX_PAGE_SIZE = 5_000;
+
+/** An unfiltered first page, to spread targeted overrides onto. */
+export const CATALOG_QUERY_DEFAULTS: CatalogQuery = {
+  search: "",
+  categories: [],
+  heroes: [],
+  authorRemoteId: null,
+  excludeFilters: false,
+  isAudio: null,
+  isMap: null,
+  hideNsfw: false,
+  hideObsolete: false,
+  updatedAfter: null,
+  addedAfter: null,
+  addedBefore: null,
+  favorites: [],
+  includeWips: false,
+  submissionType: null,
+  sort: "default",
+  page: 0,
+  pageSize: CATALOG_MAX_PAGE_SIZE,
+};
+
 export const getGameBananaCatalogMods = async (
   authorRemoteId: string | null = null,
 ): Promise<ModDto[]> => {
   const page = await queryGameBananaCatalog({
-    search: "",
-    categories: [],
-    heroes: [],
+    ...CATALOG_QUERY_DEFAULTS,
     authorRemoteId,
-    excludeFilters: false,
-    isAudio: null,
-    isMap: null,
-    hideNsfw: false,
-    hideObsolete: false,
-    updatedAfter: null,
-    addedAfter: null,
-    addedBefore: null,
-    favorites: [],
-    includeWips: false,
-    submissionType: null,
-    sort: "default",
-    page: 0,
-    pageSize: 5_000,
   });
   return page.items;
 };
+
+/** Category/hero pairs for filter menus; only the query's scope applies. */
+export const getGameBananaCatalogFacets = (query: CatalogQuery) =>
+  invoke<CatalogFacet[]>("get_gamebanana_catalog_facets", { query });
 
 export const getGameBananaCatalogMod = async (
   remoteId: string,
@@ -165,6 +179,7 @@ const catalogModToModDto = (mod: CatalogModDto): ModDto => ({
   remoteUpdatedAt: secondsToDate(mod.remoteUpdatedAt),
   tags: mod.tags,
   images: mod.images,
+  thumbnailUrl: mod.thumbnailUrl,
   hero: mod.hero,
   isAudio: mod.isAudio,
   isMap: mod.isMap,

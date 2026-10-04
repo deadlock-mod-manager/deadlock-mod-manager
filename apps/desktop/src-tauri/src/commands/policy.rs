@@ -2,7 +2,7 @@ use super::gamebanana_catalog::{CatalogDonationLinkDto, CatalogModDto, CatalogMo
 use crate::errors::Error;
 use crate::providers::{SubmissionProvider, SubmissionRef, SubmissionType};
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::RwLock;
@@ -157,20 +157,31 @@ impl PolicyState {
         .to_slug()
         .is_ok_and(|slug| slug == remote_id)
     });
-    for rule in rules {
-      match rule.kind {
-        PolicyRuleKind::Hidden | PolicyRuleKind::Blacklisted | PolicyRuleKind::Takedown => {
-          return Ok(false);
-        }
-        PolicyRuleKind::EmergencyDisable => mod_data.downloadable = false,
-        PolicyRuleKind::MetadataCorrection => {
-          if let Some(correction) = &rule.correction {
-            apply_correction(mod_data, correction);
-          }
-        }
+    Ok(apply_rules(mod_data, rules))
+  }
+
+  /// `apply_to_mod` for a whole result page: one lock and one pass over the
+  /// rules, instead of re-deriving every rule's slug for each mod.
+  pub fn apply_to_mods(&self, mods: &mut [CatalogModDto]) -> Result<(), Error> {
+    let manifest = self
+      .manifest
+      .read()
+      .map_err(|_| Error::BackgroundTaskFailed("Policy lock poisoned".to_string()))?;
+    if manifest.rules.is_empty() {
+      return Ok(());
+    }
+    let mut rules_by_slug: HashMap<String, Vec<&PolicyRule>> = HashMap::new();
+    for rule in &manifest.rules {
+      if let Ok(slug) = rule.submission().to_slug() {
+        rules_by_slug.entry(slug).or_default().push(rule);
       }
     }
-    Ok(true)
+    for mod_data in mods {
+      if let Some(rules) = rules_by_slug.get(&mod_data.remote_id) {
+        apply_rules(mod_data, rules.iter().copied());
+      }
+    }
+    Ok(())
   }
 
   pub fn ensure_download_allowed(&self, slug: &str) -> Result<(), Error> {
@@ -281,6 +292,28 @@ fn should_replace(current_revision: u64, next_revision: u64) -> bool {
 #[tauri::command]
 pub async fn refresh_policy_manifest(state: State<'_, PolicyState>) -> Result<bool, Error> {
   state.refresh().await
+}
+
+/// Applies one mod's rules in manifest order. Returns false when a rule hides
+/// the submission entirely.
+fn apply_rules<'a>(
+  mod_data: &mut CatalogModDto,
+  rules: impl IntoIterator<Item = &'a PolicyRule>,
+) -> bool {
+  for rule in rules {
+    match rule.kind {
+      PolicyRuleKind::Hidden | PolicyRuleKind::Blacklisted | PolicyRuleKind::Takedown => {
+        return false;
+      }
+      PolicyRuleKind::EmergencyDisable => mod_data.downloadable = false,
+      PolicyRuleKind::MetadataCorrection => {
+        if let Some(correction) = &rule.correction {
+          apply_correction(mod_data, correction);
+        }
+      }
+    }
+  }
+  true
 }
 
 fn apply_correction(mod_data: &mut CatalogModDto, correction: &PolicyMetadataCorrection) {
@@ -412,6 +445,40 @@ fn write_manifest(path: &Path, manifest: &PolicyManifest) -> Result<(), Error> {
 mod tests {
   use super::*;
 
+  fn sound_mod(remote_id: &str) -> CatalogModDto {
+    CatalogModDto {
+      id: remote_id.to_string(),
+      remote_id: remote_id.to_string(),
+      name: "Old voice".to_string(),
+      description: None,
+      remote_url: "https://gamebanana.com/sounds/42".to_string(),
+      development_state: None,
+      completion_percentage: None,
+      category: "VOs".to_string(),
+      likes: 0,
+      author: "author".to_string(),
+      author_remote_id: Some("42".to_string()),
+      downloadable: true,
+      remote_added_at: 0,
+      remote_updated_at: 0,
+      tags: Vec::new(),
+      images: Vec::new(),
+      thumbnail_url: None,
+      hero: None,
+      is_audio: true,
+      is_map: false,
+      audio_url: None,
+      download_count: 0,
+      is_nsfw: false,
+      is_obsolete: false,
+      files_updated_at: None,
+      metadata: None,
+      dependencies: Vec::new(),
+      created_at: None,
+      updated_at: None,
+    }
+  }
+
   fn manifest(revision: u64, kind: PolicyRuleKind) -> PolicyManifest {
     PolicyManifest {
       version: 1,
@@ -483,40 +550,36 @@ mod tests {
     });
     write_manifest(&path, &value).unwrap();
     let state = PolicyState::open(path);
-    let mut mod_data = CatalogModDto {
-      id: "snd-42".to_string(),
-      remote_id: "snd-42".to_string(),
-      name: "Old voice".to_string(),
-      description: None,
-      remote_url: "https://gamebanana.com/sounds/42".to_string(),
-      development_state: None,
-      completion_percentage: None,
-      category: "VOs".to_string(),
-      likes: 0,
-      author: "author".to_string(),
-      author_remote_id: Some("42".to_string()),
-      downloadable: true,
-      remote_added_at: 0,
-      remote_updated_at: 0,
-      tags: Vec::new(),
-      images: Vec::new(),
-      hero: None,
-      is_audio: true,
-      is_map: false,
-      audio_url: None,
-      download_count: 0,
-      is_nsfw: false,
-      is_obsolete: false,
-      files_updated_at: None,
-      metadata: None,
-      dependencies: Vec::new(),
-      created_at: None,
-      updated_at: None,
-    };
+    let mut mod_data = sound_mod("snd-42");
 
     assert!(state.apply_to_mod(&mut mod_data).unwrap());
     assert_eq!(mod_data.name, "Corrected voice");
     assert!(mod_data.is_nsfw);
     assert_eq!(mod_data.tags, ["curated"]);
+  }
+
+  #[test]
+  fn page_application_only_touches_matching_mods() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("policy.json");
+    let mut value = manifest(1, PolicyRuleKind::EmergencyDisable);
+    value.rules.push(PolicyRule {
+      kind: PolicyRuleKind::MetadataCorrection,
+      correction: Some(PolicyMetadataCorrection {
+        name: Some("Corrected voice".to_string()),
+        ..PolicyMetadataCorrection::default()
+      }),
+      ..value.rules[0].clone()
+    });
+    write_manifest(&path, &value).unwrap();
+    let state = PolicyState::open(path);
+    let mut mods = [sound_mod("snd-42"), sound_mod("snd-7")];
+
+    state.apply_to_mods(&mut mods).unwrap();
+
+    assert!(!mods[0].downloadable);
+    assert_eq!(mods[0].name, "Corrected voice");
+    assert!(mods[1].downloadable);
+    assert_eq!(mods[1].name, "Old voice");
   }
 }

@@ -31,6 +31,7 @@ pub struct CatalogRecord {
   pub download_count: u64,
   pub likes: u64,
   pub images: Vec<String>,
+  pub thumbnail_url: Option<String>,
   pub remote_added_at: i64,
   pub remote_updated_at: i64,
   pub files_updated_at: i64,
@@ -97,6 +98,7 @@ pub(super) struct SubmissionRow {
   pub tags: String,
   pub development_state: Option<String>,
   pub completion_percentage: Option<i32>,
+  pub thumbnail_url: Option<String>,
 }
 
 #[derive(Debug, Clone, Queryable, Selectable, Identifiable, Insertable, AsChangeset)]
@@ -505,11 +507,15 @@ impl SubmissionRow {
       tags: encode_strings(&record.tags)?,
       development_state: record.development_state,
       completion_percentage: record.completion_percentage.map(i32::from),
+      thumbnail_url: record
+        .thumbnail_url
+        .filter(|url| url.starts_with("https://")),
     })
   }
 
   fn merge(self, incoming: Self) -> Self {
     let hydrated = incoming.is_hydrated;
+    let keeps_media = incoming.images == "[]";
     Self {
       provider: incoming.provider,
       submission_type: incoming.submission_type,
@@ -547,7 +553,7 @@ impl SubmissionRow {
         self.download_count
       },
       likes: self.likes.max(incoming.likes),
-      images: if incoming.images == "[]" {
+      images: if keeps_media {
         self.images
       } else {
         incoming.images
@@ -564,6 +570,12 @@ impl SubmissionRow {
       },
       development_state: incoming.development_state,
       completion_percentage: incoming.completion_percentage,
+      // Kept alongside `images`, which also survives updates without media.
+      thumbnail_url: if keeps_media {
+        self.thumbnail_url
+      } else {
+        incoming.thumbnail_url
+      },
     }
   }
 }
@@ -685,6 +697,7 @@ mod tests {
       download_count: 10,
       likes: 2,
       images: Vec::new(),
+      thumbnail_url: None,
       remote_added_at: 100,
       remote_updated_at: 200,
       files_updated_at: 0,
@@ -863,6 +876,8 @@ mod tests {
       "https://images.gamebanana.com/img/ss/mods/a.jpg".to_string(),
       "http://insecure.example/img.jpg".to_string(),
     ];
+    with_images.thumbnail_url =
+      Some("https://images.gamebanana.com/img/ss/mods/530-90_a.jpg".to_string());
     with_images.likes = 4;
     catalog.upsert_records(vec![with_images]).await.unwrap();
 
@@ -874,6 +889,10 @@ mod tests {
     assert_eq!(
       stored.images,
       ["https://images.gamebanana.com/img/ss/mods/a.jpg"]
+    );
+    assert_eq!(
+      stored.thumbnail_url.as_deref(),
+      Some("https://images.gamebanana.com/img/ss/mods/530-90_a.jpg")
     );
     assert_eq!(stored.likes, 4);
 
@@ -888,6 +907,10 @@ mod tests {
     assert_eq!(
       stored.images,
       ["https://images.gamebanana.com/img/ss/mods/a.jpg"]
+    );
+    assert_eq!(
+      stored.thumbnail_url.as_deref(),
+      Some("https://images.gamebanana.com/img/ss/mods/530-90_a.jpg")
     );
     assert_eq!(stored.likes, 4);
   }

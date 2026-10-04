@@ -48,6 +48,7 @@ export const ModDtoSchema = z.object({
   remoteUpdatedAt: coercedDate,
   tags: z.array(z.string()),
   images: z.array(z.string()),
+  thumbnailUrl: z.string().nullable().optional(),
   hero: z.string().nullable(),
   isAudio: z.boolean(),
   isMap: z.boolean().default(false),

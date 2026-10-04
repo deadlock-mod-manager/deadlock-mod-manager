@@ -1,9 +1,12 @@
 import type { ModDto } from "@deadlock-mods/shared";
 import { useMemo } from "react";
-import { MOD_CATEGORY_ORDER, ModCategory } from "@/lib/constants";
+import {
+  MOD_CATEGORY_ORDER,
+  ModCategory,
+  TRENDING_LIMIT,
+  TRENDING_WINDOW_DAYS,
+} from "@/lib/constants";
 
-const TRENDING_WINDOW_DAYS = 30;
-const TRENDING_LIMIT = 8;
 const MIN_RECENT_BEFORE_FALLBACK = 4;
 
 export type TrendingByCategory = Record<string, ModDto[]>;

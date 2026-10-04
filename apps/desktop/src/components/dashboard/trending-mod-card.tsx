@@ -8,6 +8,7 @@ import AudioPlayerPreview from "@/components/mod-management/audio-player-preview
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { shouldShowNsfwBadgeAlongsideBlurPreview } from "@/lib/nsfw-blur-display";
 import { prefetchModDetail } from "@/lib/mods/mod-detail-prefetch";
+import { getModCoverImage } from "@/lib/mods/mod-images";
 
 type Props = {
   mod: ModDto;
@@ -19,7 +20,7 @@ export const TrendingModCard = ({ mod }: Props) => {
   const queryClient = useQueryClient();
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
 
-  const heroImage = mod.images[0];
+  const heroImage = getModCoverImage(mod);
   const handleClick = () => {
     void prefetchModDetail(queryClient, mod.remoteId);
     navigate(`/mods/${mod.remoteId}`, {

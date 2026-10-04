@@ -174,17 +174,25 @@ pub struct PreviewImage {
   pub base_url: String,
   #[serde(rename = "_sFile", default)]
   pub file: String,
+  /// 530px-wide rendition. GameBanana only provides it for the cover image,
+  /// and points it at the original when the upload is already that small.
+  #[serde(rename = "_sFile530", default)]
+  pub file_530: Option<String>,
 }
 
 impl PreviewImage {
   pub fn url(&self) -> Option<String> {
-    if !self.base_url.starts_with("https://") || self.file.is_empty() {
+    self.file_url(&self.file)
+  }
+
+  fn file_url(&self, file: &str) -> Option<String> {
+    if !self.base_url.starts_with("https://") || file.is_empty() {
       return None;
     }
     Some(format!(
       "{}/{}",
       self.base_url.trim_end_matches('/'),
-      self.file.trim_start_matches('/')
+      file.trim_start_matches('/')
     ))
   }
 }
@@ -206,6 +214,16 @@ pub struct PreviewMedia {
 impl PreviewMedia {
   pub fn image_urls(&self) -> Vec<String> {
     self.images.iter().filter_map(PreviewImage::url).collect()
+  }
+
+  /// Card-sized rendition of the cover image; full-size screenshots are
+  /// several hundred KB each and only the detail gallery needs them.
+  pub fn thumbnail_url(&self) -> Option<String> {
+    let cover = self.images.first()?;
+    cover
+      .file_530
+      .as_deref()
+      .and_then(|file| cover.file_url(file))
   }
 
   pub fn audio_url(&self) -> Option<String> {
@@ -643,6 +661,30 @@ mod tests {
     assert_eq!(
       record.preview_media.image_urls(),
       ["https://images.gamebanana.com/img/ss/mods/6aa29695c5905.jpg"]
+    );
+    assert_eq!(record.preview_media.thumbnail_url(), None);
+  }
+
+  #[test]
+  fn thumbnail_comes_from_the_cover_image_rendition() {
+    let media: super::PreviewMedia = serde_json::from_value(serde_json::json!({
+      "_aImages": [
+        {
+          "_sBaseUrl": "https://images.gamebanana.com/img/ss/mods",
+          "_sFile": "cover.jpg",
+          "_sFile530": "530-90_cover.jpg"
+        },
+        {
+          "_sBaseUrl": "https://images.gamebanana.com/img/ss/mods",
+          "_sFile": "second.jpg",
+          "_sFile530": "530-90_second.jpg"
+        }
+      ]
+    }))
+    .unwrap();
+    assert_eq!(
+      media.thumbnail_url().as_deref(),
+      Some("https://images.gamebanana.com/img/ss/mods/530-90_cover.jpg")
     );
   }
 

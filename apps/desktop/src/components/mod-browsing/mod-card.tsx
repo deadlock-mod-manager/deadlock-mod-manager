@@ -16,13 +16,16 @@ import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-war
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
 import ModCardSkeleton from "@/components/skeletons/mod-card";
+import { useModDetailHoverPrefetch } from "@/hooks/use-mod-detail-hover-prefetch";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import type {
   AuthorNavigationTarget,
   ModsCollection,
 } from "@/lib/mods/mod-detail-navigation";
 import { prefetchModDetail } from "@/lib/mods/mod-detail-prefetch";
+import { getModCoverImage } from "@/lib/mods/mod-images";
 import { usePersistedStore } from "@/lib/store";
+import { findLocalMod } from "@/lib/store/selectors";
 import {
   cn,
   isModOutdated,
@@ -45,7 +48,7 @@ const ModCard = memo((props: ModCardProps) => {
   const { mod, readOnly = false, collection = "mods", author } = props;
   const { t } = useTranslation();
   const localMod = usePersistedStore((state) =>
-    state.localMods.find((m) => m.remoteId === mod?.remoteId),
+    findLocalMod(state.localMods, mod?.remoteId),
   );
   const CardWrapper = useThemeOverride("cardWrapper");
 
@@ -53,6 +56,9 @@ const ModCard = memo((props: ModCardProps) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
+  const hoverPrefetch = useModDetailHoverPrefetch(
+    readOnly ? undefined : mod?.remoteId,
+  );
 
   if (!mod) {
     return <ModCardSkeleton />;
@@ -67,6 +73,7 @@ const ModCard = memo((props: ModCardProps) => {
 
   const modAuthorId = mod.modAuthorId;
   const showAuthorLink = !readOnly && modAuthorId !== null && !author;
+  const coverImage = getModCoverImage(mod);
 
   const cardContent = (
     <Card
@@ -74,6 +81,8 @@ const ModCard = memo((props: ModCardProps) => {
         "group shadow-none border [contain:layout_style_paint] h-full",
         !readOnly && "cursor-pointer",
       )}
+      onPointerEnter={hoverPrefetch.onPointerEnter}
+      onPointerLeave={hoverPrefetch.onPointerLeave}
       onClick={
         readOnly
           ? undefined
@@ -89,7 +98,7 @@ const ModCard = memo((props: ModCardProps) => {
             onPlayClick={(e) => e.stopPropagation()}
             variant='default'
           />
-        ) : mod.images.length > 0 ? (
+        ) : coverImage ? (
           <NSFWBlur
             blurStrength={nsfwSettings.blurStrength}
             className='h-48 w-full overflow-hidden rounded-t-xl'
@@ -102,7 +111,7 @@ const ModCard = memo((props: ModCardProps) => {
               decoding='async'
               height='192'
               loading='lazy'
-              src={mod.images[0]}
+              src={coverImage}
               width='320'
             />
           </NSFWBlur>

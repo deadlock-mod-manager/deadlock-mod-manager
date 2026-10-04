@@ -2,37 +2,36 @@ import type { ModDto } from "@deadlock-mods/shared";
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { ClockIcon } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { getMods } from "@/lib/api-client";
-import { filterHiddenNSFWItems } from "@/lib/mods/nsfw-visibility";
+import {
+  CATALOG_QUERY_DEFAULTS,
+  queryGameBananaCatalog,
+} from "@/lib/gamebanana-catalog";
+import { MODS_LIST_QUERY_KEY } from "@/lib/mods/mod-query-cache";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import { DashboardCard } from "./dashboard-card";
 import { LatestModItem } from "./latest-mod-item";
 
+const LATEST_MODS_COUNT = 5;
+
 export const LatestModsCard = () => {
   const { t } = useTranslation();
   const hideNSFW = usePersistedStore((state) => state.nsfwSettings.hideNSFW);
-  const { data: mods, isPending } = useQuery({
-    queryKey: ["mods"],
-    queryFn: getMods,
+  const { data: latestMods, isPending } = useQuery({
+    queryKey: [...MODS_LIST_QUERY_KEY, "latest", { hideNSFW }],
+    queryFn: async () => {
+      const page = await queryGameBananaCatalog({
+        ...CATALOG_QUERY_DEFAULTS,
+        hideNsfw: hideNSFW,
+        sort: "releaseDate",
+        pageSize: LATEST_MODS_COUNT,
+      });
+      return page.items;
+    },
     staleTime: STALE_TIME_API,
     refetchOnWindowFocus: false,
   });
-
-  const latestMods = useMemo(() => {
-    const visibleMods = filterHiddenNSFWItems(mods, hideNSFW);
-    return visibleMods
-      ? [...visibleMods]
-          .sort(
-            (a, b) =>
-              new Date(b.remoteAddedAt).getTime() -
-              new Date(a.remoteAddedAt).getTime(),
-          )
-          .slice(0, 5)
-      : undefined;
-  }, [hideNSFW, mods]);
 
   const modsContent =
     latestMods && latestMods.length > 0 ? (

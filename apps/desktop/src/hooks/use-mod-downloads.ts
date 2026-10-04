@@ -1,9 +1,27 @@
-import { useQuery } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { getModDownloads } from "@/lib/api-client";
 import { usePersistedStore } from "@/lib/store";
+import { findLocalMod } from "@/lib/store/selectors";
 import type { ModDownloadItem } from "@/types/mods";
 
 const EMPTY_DOWNLOADS: ModDownloadItem[] = [];
+
+/**
+ * File lists come from a live GameBanana request that shares the provider's
+ * rate budget with mod details and catalog sync, so list views should fetch
+ * them on demand with `queryClient.fetchQuery` instead of per rendered row.
+ */
+export const modDownloadsQueryOptions = (remoteId: string) =>
+  queryOptions({
+    queryKey: ["mod-downloads", remoteId],
+    queryFn: () => getModDownloads(remoteId),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    retry: false,
+    meta: {
+      skipGlobalErrorHandler: true,
+    },
+  });
 
 interface UseModDownloadsOptions {
   /**
@@ -31,26 +49,13 @@ export const useModDownloads = ({
   isDownloadable = true,
   enabled = true,
 }: UseModDownloadsOptions) => {
-  const localDownloads = usePersistedStore((state) => {
-    if (!remoteId) {
-      return undefined;
-    }
-    const localMod = state.localMods.find((mod) => mod.remoteId === remoteId);
-    return localMod?.downloads;
-  });
+  const localDownloads = usePersistedStore(
+    (state) => findLocalMod(state.localMods, remoteId)?.downloads,
+  );
 
   const query = useQuery({
-    queryKey: ["mod-downloads", remoteId],
-    queryFn: () => {
-      if (!remoteId) {
-        throw new Error("Mod remote ID is required");
-      }
-      return getModDownloads(remoteId);
-    },
+    ...modDownloadsQueryOptions(remoteId ?? ""),
     enabled: enabled && !!remoteId && isDownloadable,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-    retry: false,
     placeholderData: () => {
       if (!localDownloads || localDownloads.length === 0) {
         return undefined;
@@ -59,9 +64,6 @@ export const useModDownloads = ({
         downloads: localDownloads,
         count: localDownloads.length,
       };
-    },
-    meta: {
-      skipGlobalErrorHandler: true,
     },
     throwOnError: false,
   });

@@ -39,6 +39,7 @@ import { useTranslation } from "react-i18next";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { usePersistedStore } from "@/lib/store";
 import type { LocalMod } from "@/types/mods";
+import { getModCoverImage } from "@/lib/mods/mod-images";
 
 interface ModOrderingDialogProps {
   children?: React.ReactNode;
@@ -67,6 +68,7 @@ const SortableModItem = ({ mod, index }: SortableModItemProps) => {
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
+  const coverImage = getModCoverImage(mod);
 
   return (
     <div
@@ -85,9 +87,9 @@ const SortableModItem = ({ mod, index }: SortableModItemProps) => {
       </div>
 
       <div className='flex h-12 w-12 items-center justify-center overflow-hidden rounded bg-secondary'>
-        {mod.images && mod.images.length > 0 ? (
+        {coverImage ? (
           <img
-            src={mod.images[0]}
+            src={coverImage}
             alt={mod.name}
             className='h-full w-full object-cover'
           />

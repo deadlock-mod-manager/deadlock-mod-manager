@@ -3,10 +3,11 @@ import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Volume2 } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { getModCategoryDisplayName } from "@/lib/constants";
+import { getModCoverImage } from "@/lib/mods/mod-images";
 
 export const ProfileModCard = ({ mod }: { mod: ModDto }) => {
   const { t } = useTranslation();
-  const image = mod.images && mod.images.length > 0 ? mod.images[0] : mod.hero;
+  const image = getModCoverImage(mod) ?? mod.hero;
   const isSoundMod = mod.isAudio;
 
   return (

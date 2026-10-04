@@ -51,4 +51,18 @@ describe("findModInModsListCache", () => {
     queryClient.setQueryData(MODS_LIST_QUERY_KEY, [makeMod("111"), target]);
     expect(findModInModsListCache(queryClient, "222")).toEqual(target);
   });
+
+  it("finds mods in paged catalog queries under the list key", () => {
+    const queryClient = new QueryClient();
+    const target = makeMod("333");
+    queryClient.setQueryData([...MODS_LIST_QUERY_KEY, "gamebanana-direct"], {
+      pages: [{ items: [makeMod("111")] }, { items: [target] }],
+      pageParams: [0, 1],
+    });
+    queryClient.setQueryData([...MODS_LIST_QUERY_KEY, "single-page"], {
+      items: [makeMod("444")],
+    });
+    expect(findModInModsListCache(queryClient, "333")).toEqual(target);
+    expect(findModInModsListCache(queryClient, "444")?.remoteId).toBe("444");
+  });
 });

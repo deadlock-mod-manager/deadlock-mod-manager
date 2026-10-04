@@ -8,6 +8,7 @@ import NSFWBlur, { NSFWBadge } from "@/components/mod-browsing/nsfw-blur";
 import AudioPlayerPreview from "@/components/mod-management/audio-player-preview";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { shouldShowNsfwBadgeAlongsideBlurPreview } from "@/lib/nsfw-blur-display";
+import { getModCoverImage } from "@/lib/mods/mod-images";
 
 interface LatestModItemProps {
   mod: ModDto;
@@ -17,6 +18,7 @@ export const LatestModItem = ({ mod }: LatestModItemProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
+  const coverImage = getModCoverImage(mod);
 
   const handleClick = () => {
     navigate(`/mods/${mod.remoteId}`, {
@@ -45,7 +47,7 @@ export const LatestModItem = ({ mod }: LatestModItemProps) => {
               onPlayClick={(e) => e.stopPropagation()}
               variant='compact'
             />
-          ) : mod.images && mod.images.length > 0 ? (
+          ) : coverImage ? (
             <NSFWBlur
               blurStrength={nsfwSettings.blurStrength}
               className='h-full w-full'
@@ -56,7 +58,7 @@ export const LatestModItem = ({ mod }: LatestModItemProps) => {
                 alt={mod.name}
                 className='h-full w-full object-cover'
                 height='48'
-                src={mod.images[0]}
+                src={coverImage}
                 width='48'
               />
             </NSFWBlur>

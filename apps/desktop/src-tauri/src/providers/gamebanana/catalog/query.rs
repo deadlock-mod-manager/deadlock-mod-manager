@@ -1,4 +1,4 @@
-use super::schema::submission;
+use super::schema::{submission, submission_fts};
 use super::store::{
   Catalog, CatalogRecord, SubmissionRow, decode_images, decode_strings, provider_name,
   submission_type_name,
@@ -58,6 +58,16 @@ pub struct CatalogQuery {
   pub page_size: u32,
 }
 
+/// One distinct category/hero pairing within a browse scope, so filter menus
+/// can list their options without the whole result set being loaded.
+#[derive(Debug, Clone, PartialEq, Eq, Queryable, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogFacet {
+  pub category: String,
+  pub hero: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CatalogPage {
@@ -80,14 +90,17 @@ impl Catalog {
           .get_result::<i64>(connection)?;
         let total = u64::try_from(count)
           .map_err(|_| Error::Catalog("catalog count was negative".to_string()))?;
-        let rows = ordered_query(
-          filtered_query(&query, search.as_deref()),
-          query.sort,
-          search.as_deref(),
-        )
-        .limit(i64::from(page_size))
-        .offset(i64::from(page.saturating_mul(page_size)))
-        .load::<SubmissionRow>(connection)?;
+        let limit = i64::from(page_size);
+        let offset = i64::from(page.saturating_mul(page_size));
+        let rows = match (query.sort, search.as_deref()) {
+          (CatalogSort::Default, Some(search)) => {
+            load_ranked_search(connection, &query, search, limit, offset)?
+          }
+          (sort, search) => ordered_query(filtered_query(&query, search), sort)
+            .limit(limit)
+            .offset(offset)
+            .load::<SubmissionRow>(connection)?,
+        };
         let items = rows
           .into_iter()
           .map(CatalogRecord::try_from)
@@ -98,6 +111,32 @@ impl Catalog {
           page,
           page_size,
         })
+      })
+      .await
+  }
+
+  /// Facets for the query's scope (submission type, audio/map flags, author and
+  /// policy exclusions). Search and the user's other filters are ignored so
+  /// selecting one option never hides the rest.
+  pub async fn facets(&self, query: CatalogQuery) -> Result<Vec<CatalogFacet>, Error> {
+    let scope = CatalogQuery {
+      author_remote_id: query.author_remote_id,
+      is_audio: query.is_audio,
+      is_map: query.is_map,
+      include_wips: query.include_wips,
+      submission_type: query.submission_type,
+      excluded_slugs: query.excluded_slugs,
+      ..CatalogQuery::default()
+    };
+    self
+      .pool
+      .run(move |connection| {
+        filtered_query(&scope, None)
+          .select((submission::category, submission::hero))
+          .distinct()
+          .order_by((submission::category.asc(), submission::hero.asc()))
+          .load::<CatalogFacet>(connection)
+          .map_err(Error::from)
       })
       .await
   }
@@ -141,14 +180,15 @@ fn filtered_query<'a>(
     }
     None => {}
   }
+  // The FTS table is not keyed by rowid, so a subquery correlated on the
+  // submission key reruns the MATCH for every catalog row (seconds per search).
+  // Keeping the MATCH uncorrelated evaluates it once.
   if let Some(search) = search {
     statement = statement.filter(
       sql::<Bool>(
-        "EXISTS (SELECT 1 FROM submission_fts
-         WHERE submission_fts.provider = submission.provider
-           AND submission_fts.submission_type = submission.submission_type
-           AND submission_fts.submission_id = submission.submission_id
-           AND submission_fts MATCH ",
+        "(submission.provider, submission.submission_type, submission.submission_id) IN (
+           SELECT provider, submission_type, submission_id FROM submission_fts
+           WHERE submission_fts MATCH ",
       )
       .bind::<Text, _>(search)
       .sql(")"),
@@ -236,38 +276,53 @@ fn fts_query(search: &str) -> Option<String> {
   (!terms.is_empty()).then(|| terms.join(" AND "))
 }
 
-fn ordered_query<'a>(
-  statement: submission::BoxedQuery<'a, Sqlite>,
+fn ordered_query(
+  statement: submission::BoxedQuery<'_, Sqlite>,
   sort: CatalogSort,
-  search: Option<&'a str>,
-) -> submission::BoxedQuery<'a, Sqlite> {
-  match (sort, search) {
-    (CatalogSort::Default, Some(search)) => statement.order_by((
-      sql::<Double>(
-        "(SELECT bm25(submission_fts) FROM submission_fts
-         WHERE submission_fts.provider = submission.provider
-           AND submission_fts.submission_type = submission.submission_type
-           AND submission_fts.submission_id = submission.submission_id
-           AND submission_fts MATCH ",
-      )
-      .bind::<Text, _>(search)
-      .sql(")")
-      .asc(),
-      submission::slug.asc(),
-    )),
-    (CatalogSort::Default | CatalogSort::DownloadCount, _) => {
+) -> submission::BoxedQuery<'_, Sqlite> {
+  match sort {
+    CatalogSort::Default | CatalogSort::DownloadCount => {
       statement.order_by((submission::download_count.desc(), submission::slug.asc()))
     }
-    (CatalogSort::LastUpdated, _) => {
+    CatalogSort::LastUpdated => {
       statement.order_by((submission::remote_updated_at.desc(), submission::slug.asc()))
     }
-    (CatalogSort::Rating, _) => {
-      statement.order_by((submission::likes.desc(), submission::slug.asc()))
-    }
-    (CatalogSort::ReleaseDate, _) => {
+    CatalogSort::Rating => statement.order_by((submission::likes.desc(), submission::slug.asc())),
+    CatalogSort::ReleaseDate => {
       statement.order_by((submission::remote_added_at.desc(), submission::slug.asc()))
     }
   }
+}
+
+/// Relevance-ordered search. Driving the join from the FTS MATCH computes each
+/// row's bm25 score once; the browse filters apply through an uncorrelated slug
+/// subquery so they stay shared with `filtered_query`.
+fn load_ranked_search(
+  connection: &mut SqliteConnection,
+  query: &CatalogQuery,
+  search: &str,
+  limit: i64,
+  offset: i64,
+) -> QueryResult<Vec<SubmissionRow>> {
+  submission::table
+    .inner_join(
+      submission_fts::table.on(
+        submission_fts::provider
+          .eq(submission::provider)
+          .and(submission_fts::submission_type.eq(submission::submission_type))
+          .and(submission_fts::submission_id.eq(submission::submission_id)),
+      ),
+    )
+    .filter(sql::<Bool>("submission_fts MATCH ").bind::<Text, _>(search))
+    .filter(submission::slug.eq_any(filtered_query(query, None).select(submission::slug)))
+    .order_by((
+      sql::<Double>("bm25(submission_fts)").asc(),
+      submission::slug.asc(),
+    ))
+    .select(SubmissionRow::as_select())
+    .limit(limit)
+    .offset(offset)
+    .load(connection)
 }
 
 fn filter_categories<'a>(
@@ -368,6 +423,7 @@ impl TryFrom<SubmissionRow> for CatalogRecord {
         .map(u8::try_from)
         .transpose()
         .map_err(|_| Error::Catalog("catalog completion percentage out of range".to_string()))?,
+      thumbnail_url: row.thumbnail_url.filter(|url| url.starts_with("https://")),
     })
   }
 }
@@ -375,7 +431,7 @@ impl TryFrom<SubmissionRow> for CatalogRecord {
 #[cfg(test)]
 mod tests {
   use super::{CatalogQuery, CatalogSort};
-  use crate::providers::gamebanana::catalog::{Catalog, CatalogRecord};
+  use crate::providers::gamebanana::catalog::{Catalog, CatalogFacet, CatalogRecord};
   use crate::providers::{SubmissionRef, SubmissionType};
   use tempfile::tempdir;
 
@@ -399,6 +455,7 @@ mod tests {
       download_count: slug.len() as u64,
       likes: 1,
       images: Vec::new(),
+      thumbnail_url: None,
       remote_added_at: 10,
       remote_updated_at: 20,
       files_updated_at: 0,
@@ -438,6 +495,85 @@ mod tests {
 
     assert_eq!(page.total, 1);
     assert_eq!(page.items[0].submission.to_slug().unwrap(), "10");
+  }
+
+  #[tokio::test]
+  async fn default_sort_orders_search_results_by_relevance() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.db"), 1)
+      .await
+      .unwrap();
+    catalog
+      .upsert_records(vec![
+        record(
+          "20",
+          "Amber with many other words in the name",
+          "Skins",
+          None,
+        ),
+        record("21", "Amber Amber Amber", "Skins", None),
+        record("22", "Blue Skin", "Skins", None),
+      ])
+      .await
+      .unwrap();
+
+    let page = catalog
+      .query(CatalogQuery {
+        search: "amb".to_string(),
+        page_size: 10,
+        ..CatalogQuery::default()
+      })
+      .await
+      .unwrap();
+
+    let slugs = page
+      .items
+      .iter()
+      .map(|item| item.submission.to_slug().unwrap())
+      .collect::<Vec<_>>();
+    assert_eq!(page.total, 2);
+    assert_eq!(slugs, ["21", "20"]);
+  }
+
+  #[tokio::test]
+  async fn facets_cover_the_scope_regardless_of_other_filters() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.db"), 1)
+      .await
+      .unwrap();
+    catalog
+      .upsert_records(vec![
+        record("30", "Amber Skin", "Skins", Some("Abrams")),
+        record("31", "Blue Skin", "Skins", Some("Abrams")),
+        record("32", "Menu Theme", "HUD", None),
+        record("snd-30", "Amber Voice", "VOs", None),
+      ])
+      .await
+      .unwrap();
+
+    let facets = catalog
+      .facets(CatalogQuery {
+        search: "Amber".to_string(),
+        categories: vec!["Skins".to_string()],
+        submission_type: Some(SubmissionType::Mod),
+        ..CatalogQuery::default()
+      })
+      .await
+      .unwrap();
+
+    assert_eq!(
+      facets,
+      [
+        CatalogFacet {
+          category: "HUD".to_string(),
+          hero: None,
+        },
+        CatalogFacet {
+          category: "Skins".to_string(),
+          hero: Some("Abrams".to_string()),
+        },
+      ]
+    );
   }
 
   #[tokio::test]
