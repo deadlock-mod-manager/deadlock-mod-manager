@@ -5,6 +5,8 @@ import { useTranslation } from "react-i18next";
 import ModCard from "@/components/mod-browsing/mod-card";
 import { useModDetailNavigation } from "@/hooks/use-mod-detail-navigation";
 import { modAuthorQueryOptions } from "@/lib/mods/mod-author-query";
+import { filterHiddenNSFWItems } from "@/lib/mods/nsfw-visibility";
+import { usePersistedStore } from "@/lib/store";
 import { AuthorNotFound } from "./author-not-found";
 import { AuthorProfileHeader } from "./author-profile-header";
 
@@ -12,12 +14,14 @@ export const AuthorPageContent = ({ authorId }: { authorId: string }) => {
   const { t } = useTranslation();
   const { collection, backLabel, goBack } = useModDetailNavigation();
   const { data: profile } = useSuspenseQuery(modAuthorQueryOptions(authorId));
+  const hideNSFW = usePersistedStore((state) => state.nsfwSettings.hideNSFW);
 
   if (!profile) {
     return <AuthorNotFound backLabel={backLabel} onBack={goBack} />;
   }
 
   const { author, mods: authorMods } = profile;
+  const visibleMods = filterHiddenNSFWItems(authorMods, hideNSFW) ?? [];
   const displayName = author.name;
   const authorNavigation = { id: authorId, name: displayName };
 
@@ -44,12 +48,12 @@ export const AuthorPageContent = ({ authorId }: { authorId: string }) => {
             {t("authorPage.modsBy", { author: displayName })}
           </h2>
           <span className='text-muted-foreground text-sm'>
-            {t("authorPage.resultCount", { count: authorMods.length })}
+            {t("authorPage.resultCount", { count: visibleMods.length })}
           </span>
         </div>
 
         <div className='grid grid-cols-1 gap-4 px-1 pr-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
-          {authorMods.map((mod) => (
+          {visibleMods.map((mod) => (
             <ModCard
               key={mod.id}
               mod={mod}
