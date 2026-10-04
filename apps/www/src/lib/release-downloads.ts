@@ -1,3 +1,4 @@
+import { GITHUB_REPO } from "@/lib/constants";
 import type {
   DetectedArchitecture,
   DetectedOS,
@@ -77,3 +78,72 @@ export const selectRecommendedDownload = (
 
   return eligibleDownloads[0] ?? null;
 };
+
+interface InstallerInfo {
+  label: string;
+  description: string;
+}
+
+const INSTALLER_INFO = {
+  exe: { label: "Installer", description: "Windows 10 and 11 setup (.exe)" },
+  msi: {
+    label: "MSI package",
+    description: "For managed or silent installs (.msi)",
+  },
+  dmg: { label: "Disk image", description: "macOS application (.dmg)" },
+  flatpak: { label: "Flatpak", description: "Works on most distributions" },
+  deb: { label: "Debian package", description: "Ubuntu, Debian, Mint (.deb)" },
+  rpm: { label: "RPM package", description: "Fedora, openSUSE, Nobara (.rpm)" },
+} satisfies Record<
+  Exclude<NonNullable<PlatformDownload["installerType"]>, "sig">,
+  InstallerInfo
+>;
+
+export const getInstallerInfo = (download: PlatformDownload): InstallerInfo =>
+  download.installerType && download.installerType !== "sig"
+    ? INSTALLER_INFO[download.installerType]
+    : { label: download.filename, description: "" };
+
+export const isSignatureFile = (download: PlatformDownload): boolean =>
+  download.installerType === "sig" ||
+  download.filename.toLowerCase().endsWith(".sig");
+
+export const findSignatureFor = (
+  downloads: PlatformDownload[],
+  download: PlatformDownload,
+): PlatformDownload | null =>
+  downloads.find(
+    (candidate) => candidate.filename === `${download.filename}.sig`,
+  ) ?? null;
+
+interface PlatformInstallers {
+  standard: PlatformDownload[];
+  experimental: PlatformDownload[];
+}
+
+// First standard installer is the recommended default; signatures are excluded.
+export const getPlatformInstallers = (
+  downloads: PlatformDownload[],
+  platform: PlatformDownload["platform"],
+): PlatformInstallers => {
+  const installers = downloads
+    .filter(
+      (download) =>
+        download.platform === platform && !isSignatureFile(download),
+    )
+    .sort(
+      (left, right) => getInstallerPriority(left) - getInstallerPriority(right),
+    );
+
+  return {
+    standard: installers.filter(
+      (download) => getDownloadRuntime(download) === "wry",
+    ),
+    experimental: installers.filter(
+      (download) => getDownloadRuntime(download) === "cef",
+    ),
+  };
+};
+
+export const getReleaseUrl = (version: string): string =>
+  `${GITHUB_REPO}/releases/tag/${/^\d/.test(version) ? `v${version}` : version}`;
