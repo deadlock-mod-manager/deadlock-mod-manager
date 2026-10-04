@@ -13,6 +13,65 @@ export const featureFlagDefinitions: FeatureFlagDefinition[] = [
     exposed: true,
   },
   {
+    name: "seasonal-themes",
+    description:
+      "Master switch for seasonal themes (Halloween, Christmas, New Year, Lunar New Year, Easter)",
+    type: "boolean",
+    defaultValue: true,
+    exposed: true,
+  },
+  {
+    name: "seasonal-themes-schedule",
+    description:
+      "Switch seasonal themes on automatically during each festival's window",
+    type: "boolean",
+    defaultValue: true,
+    exposed: true,
+  },
+  {
+    name: "seasonal-theme-force",
+    description:
+      "Force one seasonal theme regardless of the date (halloween, christmas, new-year, lunar-new-year, easter); empty for none",
+    type: "string",
+    defaultValue: "",
+    exposed: true,
+  },
+  {
+    name: "seasonal-theme-halloween",
+    description: "Allow the Halloween seasonal theme",
+    type: "boolean",
+    defaultValue: true,
+    exposed: true,
+  },
+  {
+    name: "seasonal-theme-christmas",
+    description: "Allow the Christmas seasonal theme",
+    type: "boolean",
+    defaultValue: true,
+    exposed: true,
+  },
+  {
+    name: "seasonal-theme-new-year",
+    description: "Allow the New Year's Eve seasonal theme",
+    type: "boolean",
+    defaultValue: true,
+    exposed: true,
+  },
+  {
+    name: "seasonal-theme-lunar-new-year",
+    description: "Allow the Lunar New Year seasonal theme",
+    type: "boolean",
+    defaultValue: true,
+    exposed: true,
+  },
+  {
+    name: "seasonal-theme-easter",
+    description: "Allow the Easter seasonal theme",
+    type: "boolean",
+    defaultValue: true,
+    exposed: true,
+  },
+  {
     name: "mod-download-mirroring",
     description: "Enable mod download mirroring functionality",
     type: "boolean",

@@ -7,8 +7,9 @@ import {
 } from "@phosphor-icons/react";
 import { useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { getAnnouncements } from "@/lib/api-client";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { cn } from "@/lib/utils";
@@ -17,19 +18,6 @@ import { getAnnouncementDate, getCategoryConfig } from "./announcement-utils";
 
 const TICKER_GLYPH = "✦";
 const MIN_TICKER_ITEMS = 8;
-
-const usePrefersReducedMotion = () => {
-  const [reduced, setReduced] = useState(
-    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-  );
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const handler = (e: MediaQueryListEvent) => setReduced(e.matches);
-    media.addEventListener("change", handler);
-    return () => media.removeEventListener("change", handler);
-  }, []);
-  return reduced;
-};
 
 const TickerItem = ({
   announcement,
