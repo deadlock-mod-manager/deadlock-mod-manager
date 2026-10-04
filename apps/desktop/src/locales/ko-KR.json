@@ -822,7 +822,11 @@
       "updating": "모드 업데이트 중...",
       "complete": "업데이트 완료",
       "partialSuccess": "{{succeeded}} 업데이트됨, {{failed}} 실패",
-      "error": "모드를 업데이트하지 못했습니다."
+      "error": "모드를 업데이트하지 못했습니다.",
+      "changelogLoading": "",
+      "changelogEmpty": "",
+      "changelogTitle_one": "",
+      "changelogTitle_other": ""
     },
     "disableAll": "",
     "disableAllConfirmTitle": "",
@@ -833,7 +837,75 @@
     "tabs": {
       "all": "모두",
       "installed": "설치됨",
-      "downloaded": "다운로드됨"
+      "downloaded": "다운로드됨",
+      "conflicts": ""
+    }
+  },
+  "conflicts": {
+    "summary_one": "",
+    "summary_other": "",
+    "summaryModels_one": "",
+    "summaryModels_other": "",
+    "summaryModelsAll_one": "",
+    "summaryModelsAll_other": "",
+    "summaryNone": "",
+    "howItWorks": "",
+    "scanning": "",
+    "scanFailed": "",
+    "noneTitle": "",
+    "noneDescription": "",
+    "noSearchMatches": "",
+    "badge": {
+      "modelHidden": "",
+      "overlap": ""
+    },
+    "badgeTooltip": {
+      "modelHidden": "",
+      "overlap": ""
+    },
+    "title": {
+      "critical_one": "",
+      "critical_other": "",
+      "normal_one": "",
+      "normal_other": "",
+      "low_one": "",
+      "low_other": ""
+    },
+    "moreFiles_one": "",
+    "moreFiles_other": "",
+    "used": "",
+    "skipped": "",
+    "modelHidden": "",
+    "loadedFirst": "",
+    "loadFirst": "",
+    "showFiles_one": "",
+    "showFiles_other": "",
+    "options": "",
+    "ignoreGroup": "",
+    "ignoreMod": "",
+    "ignoreFile": "",
+    "ignoreFailed": "",
+    "ignoredSection": "",
+    "ignoredPair": "",
+    "ignoredModRow": "",
+    "restore": "",
+    "clearIgnores": "",
+    "help": {
+      "assets": {
+        "hat": "",
+        "coat": "",
+        "footsteps": ""
+      },
+      "rows": {
+        "first": "",
+        "second": "",
+        "inGame": ""
+      },
+      "fromMod": "",
+      "skipped": "",
+      "order": "",
+      "models": "",
+      "action": ""
     }
   },
   "modOrdering": {
@@ -1637,6 +1709,10 @@
         "description": ""
       },
       "profile-sharing": {
+        "title": "",
+        "description": ""
+      },
+      "conflict-detection": {
         "title": "",
         "description": ""
       }
@@ -2779,6 +2855,13 @@
       "twitch": "경련",
       "carrd": "카드"
     },
+    "oled": {
+      "description": "",
+      "accentColor": "",
+      "customColor": "",
+      "customColorDescription": "",
+      "resetAccent": ""
+    },
     "nightshift": {
       "description": "명확성과 긴 게임 세션을 위해 디자인된 청록색으로 강조된 사이버펑크 테마입니다.",
       "visit": "나이트시프트 방문:",
@@ -3147,11 +3230,6 @@
     "checkingForUpdate": "확인 중...",
     "noUpdateAvailable": "사용 가능한 업데이트가 없습니다.",
     "checkUpdateError": "업데이트를 확인하지 못했습니다.",
-    "changelog": {
-      "title": "",
-      "latest": "",
-      "loadMore": ""
-    },
     "vpkReplacement": {
       "title": "VPK 파일 교체",
       "description": "개발 중 빠른 반복을 위해 모드 파일 교체",
@@ -3163,6 +3241,33 @@
       "success": "VPK 파일이 성공적으로 교체되었습니다.",
       "error": "VPK 파일을 교체하지 못했습니다.",
       "countMismatch": "{{expected}} 파일이 필요했는데 {{actual}}을(를) 받았습니다."
+    },
+    "changelog": {
+      "title": "",
+      "description": "",
+      "newSinceInstall": "",
+      "showMore": "",
+      "loadError": "",
+      "empty": ""
+    },
+    "tabs": {
+      "overview": "",
+      "changelog": "",
+      "comments": "",
+      "files": "",
+      "updateAvailable": ""
+    },
+    "comments": {
+      "title": "",
+      "description": "",
+      "hidden": "",
+      "empty": "",
+      "loadError": "",
+      "loadMore": "",
+      "replyOnGameBanana": "",
+      "pinned": "",
+      "replies_one": "",
+      "replies_other": ""
     }
   },
   "modDependencies": {

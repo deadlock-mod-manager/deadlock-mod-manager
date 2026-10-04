@@ -822,7 +822,11 @@
       "updating": "",
       "complete": "",
       "partialSuccess": "",
-      "error": ""
+      "error": "",
+      "changelogLoading": "",
+      "changelogEmpty": "",
+      "changelogTitle_one": "",
+      "changelogTitle_other": ""
     },
     "disableAll": "",
     "disableAllConfirmTitle": "",
@@ -833,7 +837,75 @@
     "tabs": {
       "all": "ทั้งหมด",
       "installed": "ติดตั้งแล้ว",
-      "downloaded": "ดาวน์โหลดแล้ว"
+      "downloaded": "ดาวน์โหลดแล้ว",
+      "conflicts": ""
+    }
+  },
+  "conflicts": {
+    "summary_one": "",
+    "summary_other": "",
+    "summaryModels_one": "",
+    "summaryModels_other": "",
+    "summaryModelsAll_one": "",
+    "summaryModelsAll_other": "",
+    "summaryNone": "",
+    "howItWorks": "",
+    "scanning": "",
+    "scanFailed": "",
+    "noneTitle": "",
+    "noneDescription": "",
+    "noSearchMatches": "",
+    "badge": {
+      "modelHidden": "",
+      "overlap": ""
+    },
+    "badgeTooltip": {
+      "modelHidden": "",
+      "overlap": ""
+    },
+    "title": {
+      "critical_one": "",
+      "critical_other": "",
+      "normal_one": "",
+      "normal_other": "",
+      "low_one": "",
+      "low_other": ""
+    },
+    "moreFiles_one": "",
+    "moreFiles_other": "",
+    "used": "",
+    "skipped": "",
+    "modelHidden": "",
+    "loadedFirst": "",
+    "loadFirst": "",
+    "showFiles_one": "",
+    "showFiles_other": "",
+    "options": "",
+    "ignoreGroup": "",
+    "ignoreMod": "",
+    "ignoreFile": "",
+    "ignoreFailed": "",
+    "ignoredSection": "",
+    "ignoredPair": "",
+    "ignoredModRow": "",
+    "restore": "",
+    "clearIgnores": "",
+    "help": {
+      "assets": {
+        "hat": "",
+        "coat": "",
+        "footsteps": ""
+      },
+      "rows": {
+        "first": "",
+        "second": "",
+        "inGame": ""
+      },
+      "fromMod": "",
+      "skipped": "",
+      "order": "",
+      "models": "",
+      "action": ""
     }
   },
   "modOrdering": {
@@ -1637,6 +1709,10 @@
         "description": ""
       },
       "profile-sharing": {
+        "title": "",
+        "description": ""
+      },
+      "conflict-detection": {
         "title": "",
         "description": ""
       }
@@ -2779,6 +2855,13 @@
       "twitch": "",
       "carrd": ""
     },
+    "oled": {
+      "description": "",
+      "accentColor": "",
+      "customColor": "",
+      "customColorDescription": "",
+      "resetAccent": ""
+    },
     "nightshift": {
       "description": "",
       "visit": "",
@@ -3147,11 +3230,6 @@
     "checkingForUpdate": "",
     "noUpdateAvailable": "",
     "checkUpdateError": "",
-    "changelog": {
-      "title": "",
-      "latest": "",
-      "loadMore": ""
-    },
     "vpkReplacement": {
       "title": "",
       "description": "",
@@ -3163,6 +3241,33 @@
       "success": "",
       "error": "",
       "countMismatch": ""
+    },
+    "changelog": {
+      "title": "",
+      "description": "",
+      "newSinceInstall": "",
+      "showMore": "",
+      "loadError": "",
+      "empty": ""
+    },
+    "tabs": {
+      "overview": "",
+      "changelog": "",
+      "comments": "",
+      "files": "",
+      "updateAvailable": ""
+    },
+    "comments": {
+      "title": "",
+      "description": "",
+      "hidden": "",
+      "empty": "",
+      "loadError": "",
+      "loadMore": "",
+      "replyOnGameBanana": "",
+      "pinned": "",
+      "replies_one": "",
+      "replies_other": ""
     }
   },
   "modDependencies": {
