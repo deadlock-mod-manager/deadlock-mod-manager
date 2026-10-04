@@ -849,10 +849,11 @@
   "mods": {
     "invalidDeepLink": "",
     "manageOrder": "",
-    "searchPlaceholder": "Mod ara",
+    "searchPlaceholder": "",
     "noPreviewAvailable": "Önizleme yok",
     "audio": "Ses",
     "by": "Tarafından",
+    "showMoreByAuthor": "",
     "backToMods": "",
     "audioMod": "Ses modu",
     "mapBadge": "",
@@ -920,6 +921,28 @@
       "deleteAllSuccess": "",
       "deleteAllError": ""
     }
+  },
+  "authorPage": {
+    "viewProfile": "",
+    "submittedBy": "",
+    "modStat_one": "",
+    "modStat_other": "",
+    "downloadStat_one": "",
+    "downloadStat_other": "",
+    "likeStat_one": "",
+    "likeStat_other": "",
+    "memberSince": "",
+    "subscriberCount_one": "",
+    "subscriberCount_other": "",
+    "upicAlt": "",
+    "signatureAlt": "",
+    "viewOnGameBanana": "",
+    "openProfileError": "",
+    "modsBy": "",
+    "resultCount_one": "",
+    "resultCount_other": "",
+    "notFoundTitle": "",
+    "notFoundDescription": ""
   },
   "pagination": {
     "previous": "",
@@ -1044,7 +1067,11 @@
     "none": "",
     "enable": "Etkinleştir",
     "disable": "Devre Dışı Bırak",
-    "open": ""
+    "open": "",
+    "retry": "",
+    "dismiss": "",
+    "notFound": "",
+    "failedToOpenFolder": ""
   },
   "settings": {
     "searchPlaceholder": "",
@@ -1062,7 +1089,7 @@
     "animateOccultGeometry": "",
     "animateOccultGeometryDescription": "",
     "flashbang": "",
-    "flashbangDescription": "Seçilen tema ne olursa olsun, 20:00 ile 8:00 arasında açık modu zorlar",
+    "flashbangDescription": "",
     "audioVolume": "Ses Seviyesi",
     "audioVolumeDescription": "Ses ön izleme ve oynatma için ses seviyesini ayarlayın",
     "launchOptions": "Başlatma seşenekleri",
@@ -2776,13 +2803,26 @@
       "website": "",
       "discord": ""
     },
+    "lovelock": {
+      "description": "",
+      "visit": "",
+      "kofi": ""
+    },
+    "remlock": {
+      "description": "",
+      "artworkAlt": "",
+      "letRemNap": "",
+      "summonRemlings": "",
+      "sendRemlingsHome": "",
+      "naptime": "",
+      "tagAlong": ""
+    },
     "flashbang": {
       "title": "Flashbang Modu",
-      "description": "Belirlenen saatlerde Açık Tema zorlanır.",
-      "detailedDescription": "Flashbang modu, yapılandırılan saatlerde tema ayarından bağımsız olarak uygulamayı Açık Tema’ya geçirir.",
-      "usageInstructions": "Eklentiyi etkinleştirip başlangıç ve bitiş saatini (0–23) seçin.",
-      "startHour": "Başlangıç saati (0–23)",
-      "endHour": "Bitiş saati (0–23)"
+      "description": "",
+      "detailedDescription": "",
+      "usageInstructions": "",
+      "chance": ""
     },
     "background": {
       "title": "Arka Plan",
@@ -3053,6 +3093,11 @@
     "cancel": ""
   },
   "modDetail": {
+    "backToAuthorMods": "",
+    "backToLibrary": "",
+    "backToMaps": "",
+    "backToFavorites": "",
+    "backToDashboard": "",
     "mapHowToPlay": {
       "title": "",
       "step1": "",
@@ -3152,6 +3197,24 @@
   },
   "crosshairs": {
     "title": "",
+    "currentCrosshair": "",
+    "toggleHint": "",
+    "currentDescription": "",
+    "pausedDescription": "",
+    "restorePrevious": "",
+    "recentlyUsed": "",
+    "community": "",
+    "communityDescription": "",
+    "selected": "",
+    "savedPreset": "",
+    "previewNamed": "",
+    "unknownAuthor": "",
+    "generalDefault": "",
+    "removeFilter": "",
+    "resetSearch": "",
+    "resultRange": "",
+    "previousPage": "",
+    "nextPage": "",
     "subtitle": "",
     "generate": "",
     "preview": "",
@@ -3171,6 +3234,7 @@
     "disabledError": "",
     "toggleError": "",
     "stopGameBeforeDisable": "",
+    "stopGameBeforeChange": "",
     "form": {
       "metadata": "",
       "name": "",

@@ -849,10 +849,11 @@
   "mods": {
     "invalidDeepLink": "",
     "manageOrder": "Змяніць парадак модаў",
-    "searchPlaceholder": "Пошук модаў",
+    "searchPlaceholder": "",
     "noPreviewAvailable": "Папярэдні прагляд недаступны",
     "audio": "Аўдыё",
     "by": "Ад",
+    "showMoreByAuthor": "",
     "backToMods": "Назад к Модам",
     "audioMod": "Аўдыё мод",
     "mapBadge": "Карта",
@@ -920,6 +921,28 @@
       "deleteAllSuccess": "Выдалена {{count}} нераспазнаных файл(аў) модаў",
       "deleteAllError": "Не атрымалася выдаліць некаторыя файлы модаў"
     }
+  },
+  "authorPage": {
+    "viewProfile": "",
+    "submittedBy": "",
+    "modStat_one": "",
+    "modStat_other": "",
+    "downloadStat_one": "",
+    "downloadStat_other": "",
+    "likeStat_one": "",
+    "likeStat_other": "",
+    "memberSince": "",
+    "subscriberCount_one": "",
+    "subscriberCount_other": "",
+    "upicAlt": "",
+    "signatureAlt": "",
+    "viewOnGameBanana": "",
+    "openProfileError": "",
+    "modsBy": "",
+    "resultCount_one": "",
+    "resultCount_other": "",
+    "notFoundTitle": "",
+    "notFoundDescription": ""
   },
   "pagination": {
     "previous": "Папярэдні",
@@ -1044,7 +1067,11 @@
     "none": "Няма",
     "enable": "Уключыць",
     "disable": "Адключыць",
-    "open": "Адкрыць"
+    "open": "Адкрыць",
+    "retry": "",
+    "dismiss": "",
+    "notFound": "",
+    "failedToOpenFolder": ""
   },
   "settings": {
     "searchPlaceholder": "",
@@ -1062,7 +1089,7 @@
     "animateOccultGeometry": "Анімаваць акультную геаметрыю",
     "animateOccultGeometryDescription": "Павольна круціць і пульсаваць фонавыя сігілы. Анімацыі аўтаматычна прыпыняюцца, калі акно знаходзіцца на фоне.",
     "flashbang": "Флэшбэнг",
-    "flashbangDescription": "Прымусова ўключае светлы рэжым з 20:00 да 08:00, незалежна ад выбранай тэмы",
+    "flashbangDescription": "",
     "audioVolume": "Гучнасць аўдыё",
     "audioVolumeDescription": "Адрэгулюйце гучнасць для аўдыё папярэдняга прагляду і прайгравання",
     "launchOptions": "Параметры запуску",
@@ -2776,13 +2803,26 @@
       "website": "",
       "discord": ""
     },
+    "lovelock": {
+      "description": "",
+      "visit": "",
+      "kofi": ""
+    },
+    "remlock": {
+      "description": "",
+      "artworkAlt": "",
+      "letRemNap": "",
+      "summonRemlings": "",
+      "sendRemlingsHome": "",
+      "naptime": "",
+      "tagAlong": ""
+    },
     "flashbang": {
       "title": "",
       "description": "",
       "detailedDescription": "",
       "usageInstructions": "",
-      "startHour": "",
-      "endHour": ""
+      "chance": ""
     },
     "background": {
       "title": "",
@@ -3053,6 +3093,11 @@
     "cancel": ""
   },
   "modDetail": {
+    "backToAuthorMods": "",
+    "backToLibrary": "",
+    "backToMaps": "",
+    "backToFavorites": "",
+    "backToDashboard": "",
     "mapHowToPlay": {
       "title": "",
       "step1": "",
@@ -3152,6 +3197,24 @@
   },
   "crosshairs": {
     "title": "",
+    "currentCrosshair": "",
+    "toggleHint": "",
+    "currentDescription": "",
+    "pausedDescription": "",
+    "restorePrevious": "",
+    "recentlyUsed": "",
+    "community": "",
+    "communityDescription": "",
+    "selected": "",
+    "savedPreset": "",
+    "previewNamed": "",
+    "unknownAuthor": "",
+    "generalDefault": "",
+    "removeFilter": "",
+    "resetSearch": "",
+    "resultRange": "",
+    "previousPage": "",
+    "nextPage": "",
     "subtitle": "",
     "generate": "",
     "preview": "",
@@ -3171,6 +3234,7 @@
     "disabledError": "",
     "toggleError": "",
     "stopGameBeforeDisable": "",
+    "stopGameBeforeChange": "",
     "form": {
       "metadata": "",
       "name": "",

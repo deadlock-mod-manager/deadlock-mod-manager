@@ -849,10 +849,11 @@
   "mods": {
     "invalidDeepLink": "",
     "manageOrder": "تغيير ترتيب التعديلات",
-    "searchPlaceholder": "ابحث على تعديلات",
+    "searchPlaceholder": "",
     "noPreviewAvailable": "لا يوجد معاينة متاحة",
     "audio": "صوت",
     "by": "من",
+    "showMoreByAuthor": "",
     "backToMods": "",
     "audioMod": "تعديل صوتي",
     "mapBadge": "",
@@ -920,6 +921,28 @@
       "deleteAllSuccess": "",
       "deleteAllError": ""
     }
+  },
+  "authorPage": {
+    "viewProfile": "",
+    "submittedBy": "",
+    "modStat_one": "",
+    "modStat_other": "",
+    "downloadStat_one": "",
+    "downloadStat_other": "",
+    "likeStat_one": "",
+    "likeStat_other": "",
+    "memberSince": "",
+    "subscriberCount_one": "",
+    "subscriberCount_other": "",
+    "upicAlt": "",
+    "signatureAlt": "",
+    "viewOnGameBanana": "",
+    "openProfileError": "",
+    "modsBy": "",
+    "resultCount_one": "",
+    "resultCount_other": "",
+    "notFoundTitle": "",
+    "notFoundDescription": ""
   },
   "pagination": {
     "previous": "",
@@ -1044,7 +1067,11 @@
     "none": "لا شيء",
     "enable": "تمكين",
     "disable": "تعطيل",
-    "open": "فتح"
+    "open": "فتح",
+    "retry": "",
+    "dismiss": "",
+    "notFound": "",
+    "failedToOpenFolder": ""
   },
   "settings": {
     "searchPlaceholder": "",
@@ -1062,7 +1089,7 @@
     "animateOccultGeometry": "",
     "animateOccultGeometryDescription": "",
     "flashbang": "فلاش بانج",
-    "flashbangDescription": "يفرض الوضع الفاتح بين الساعة 8 مساءً و 8 صباحاً، بغض النظر عن المظهر المحدد",
+    "flashbangDescription": "",
     "audioVolume": "مستوى الصوت",
     "audioVolumeDescription": "اضبط مستوى الصوت لمعاينة وتشغيل الصوت",
     "launchOptions": "خيارات التشغيل",
@@ -1563,7 +1590,7 @@
     "openLogFileError": "",
     "noLogsFound": "",
     "customCrosshairs": "المواضع المخصصة",
-    "customCrosshairsDescription": "تمكين أو تعطيل إعدادات الموضع المخصصة في تكوين autoexec. عند التعطيل، سيتم إزالة قسم الموضع من ملف autoexec.",
+    "customCrosshairsDescription": "",
     "backup": "",
     "modifications": "",
     "modManager": "",
@@ -2776,13 +2803,26 @@
       "website": "",
       "discord": ""
     },
+    "lovelock": {
+      "description": "",
+      "visit": "",
+      "kofi": ""
+    },
+    "remlock": {
+      "description": "",
+      "artworkAlt": "",
+      "letRemNap": "",
+      "summonRemlings": "",
+      "sendRemlingsHome": "",
+      "naptime": "",
+      "tagAlong": ""
+    },
     "flashbang": {
       "title": "وضع فلاش بانغ",
-      "description": "يفرض الوضع الفاتح خلال فترة زمنية مجدولة.",
-      "detailedDescription": "يقوم وضع فلاش بانغ بتحويل التطبيق إلى الوضع الفاتح خلال الساعات المحددة بغض النظر عن السمة المختارة.",
-      "usageInstructions": "فعّل الملحق واختر ساعة البدء والانتهاء (0–23).",
-      "startHour": "ساعة البدء (0–23)",
-      "endHour": "ساعة الانتهاء (0–23)"
+      "description": "",
+      "detailedDescription": "",
+      "usageInstructions": "",
+      "chance": ""
     },
     "background": {
       "title": "الخلفية",
@@ -3053,6 +3093,11 @@
     "cancel": ""
   },
   "modDetail": {
+    "backToAuthorMods": "",
+    "backToLibrary": "",
+    "backToMaps": "",
+    "backToFavorites": "",
+    "backToDashboard": "",
     "mapHowToPlay": {
       "title": "",
       "step1": "",
@@ -3152,6 +3197,24 @@
   },
   "crosshairs": {
     "title": "المواضع",
+    "currentCrosshair": "",
+    "toggleHint": "",
+    "currentDescription": "",
+    "pausedDescription": "",
+    "restorePrevious": "",
+    "recentlyUsed": "",
+    "community": "",
+    "communityDescription": "",
+    "selected": "",
+    "savedPreset": "",
+    "previewNamed": "",
+    "unknownAuthor": "",
+    "generalDefault": "",
+    "removeFilter": "",
+    "resetSearch": "",
+    "resultRange": "",
+    "previousPage": "",
+    "nextPage": "",
     "subtitle": "إنشاء وتخصيص المواضع الخاصة بك",
     "generate": "إنشاء موضع",
     "preview": "معاينة",
@@ -3166,11 +3229,12 @@
     "remove": "إزالة",
     "removeFromHistory": "إزالة من السجل",
     "removedFromHistory": "تمت إزالة الموضع من السجل",
-    "appliedRestart": "تم تطبيق الموضع! أعد تشغيل اللعبة لتفعيل التغييرات.",
-    "removedRestart": "تمت إزالة قسم الموضع! أعد تشغيل اللعبة لتفعيل التغييرات.",
+    "appliedRestart": "",
+    "removedRestart": "",
     "disabledError": "المواضع المخصصة معطلة. قم بتمكينها في الإعدادات لتطبيق المواضع.",
     "toggleError": "فشل في تبديل المواضع المخصصة",
     "stopGameBeforeDisable": "",
+    "stopGameBeforeChange": "",
     "form": {
       "metadata": "البيانات الوصفية",
       "name": "الاسم",

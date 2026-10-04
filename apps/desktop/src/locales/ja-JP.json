@@ -849,10 +849,11 @@
   "mods": {
     "invalidDeepLink": "",
     "manageOrder": "Modの順序を変更",
-    "searchPlaceholder": "Modを探す",
+    "searchPlaceholder": "",
     "noPreviewAvailable": "プレビューは利用できません",
     "audio": "オーディオ",
     "by": "作成者：",
+    "showMoreByAuthor": "",
     "backToMods": "",
     "audioMod": "オーディオMod",
     "mapBadge": "",
@@ -920,6 +921,28 @@
       "deleteAllSuccess": "",
       "deleteAllError": ""
     }
+  },
+  "authorPage": {
+    "viewProfile": "",
+    "submittedBy": "",
+    "modStat_one": "",
+    "modStat_other": "",
+    "downloadStat_one": "",
+    "downloadStat_other": "",
+    "likeStat_one": "",
+    "likeStat_other": "",
+    "memberSince": "",
+    "subscriberCount_one": "",
+    "subscriberCount_other": "",
+    "upicAlt": "",
+    "signatureAlt": "",
+    "viewOnGameBanana": "",
+    "openProfileError": "",
+    "modsBy": "",
+    "resultCount_one": "",
+    "resultCount_other": "",
+    "notFoundTitle": "",
+    "notFoundDescription": ""
   },
   "pagination": {
     "previous": "",
@@ -1044,7 +1067,11 @@
     "none": "なし",
     "enable": "有効化",
     "disable": "無効化",
-    "open": "開く"
+    "open": "開く",
+    "retry": "",
+    "dismiss": "",
+    "notFound": "",
+    "failedToOpenFolder": ""
   },
   "settings": {
     "searchPlaceholder": "",
@@ -1062,7 +1089,7 @@
     "animateOccultGeometry": "",
     "animateOccultGeometryDescription": "",
     "flashbang": "フラッシュバン",
-    "flashbangDescription": "テーマ設定に関係なく20時～8時はライトモードを強制適用",
+    "flashbangDescription": "",
     "audioVolume": "音量設定",
     "audioVolumeDescription": "音声プレビューや再生の音量を調整する",
     "launchOptions": "ローンチオプション",
@@ -1563,7 +1590,7 @@
     "openLogFileError": "",
     "noLogsFound": "",
     "customCrosshairs": "カスタムクロスヘア",
-    "customCrosshairsDescription": "Autoexec設定でカスタムクロスヘア設定を有効または無効にする。無効にすると、クロスヘアセクションがAutoexecファイルから削除されます。",
+    "customCrosshairsDescription": "",
     "backup": "",
     "modifications": "",
     "modManager": "",
@@ -2776,13 +2803,26 @@
       "website": "",
       "discord": ""
     },
+    "lovelock": {
+      "description": "",
+      "visit": "",
+      "kofi": ""
+    },
+    "remlock": {
+      "description": "",
+      "artworkAlt": "",
+      "letRemNap": "",
+      "summonRemlings": "",
+      "sendRemlingsHome": "",
+      "naptime": "",
+      "tagAlong": ""
+    },
     "flashbang": {
       "title": "フラッシュバンモード",
-      "description": "スケジュールされた時間ウィンドウ中にライトモードを強制する。",
-      "detailedDescription": "フラッシュバンモードは、設定された時間中、テーマ設定に関係なくアプリをライトモードに切り替えます。",
-      "usageInstructions": "プラグインを有効にして、開始時間と終了時間（0–23）を選択する。",
-      "startHour": "開始時間（0–23）",
-      "endHour": "終了時間（0–23）"
+      "description": "",
+      "detailedDescription": "",
+      "usageInstructions": "",
+      "chance": ""
     },
     "background": {
       "title": "背景",
@@ -3053,6 +3093,11 @@
     "cancel": ""
   },
   "modDetail": {
+    "backToAuthorMods": "",
+    "backToLibrary": "",
+    "backToMaps": "",
+    "backToFavorites": "",
+    "backToDashboard": "",
     "mapHowToPlay": {
       "title": "",
       "step1": "",
@@ -3152,6 +3197,24 @@
   },
   "crosshairs": {
     "title": "クロスヘア",
+    "currentCrosshair": "",
+    "toggleHint": "",
+    "currentDescription": "",
+    "pausedDescription": "",
+    "restorePrevious": "",
+    "recentlyUsed": "",
+    "community": "",
+    "communityDescription": "",
+    "selected": "",
+    "savedPreset": "",
+    "previewNamed": "",
+    "unknownAuthor": "",
+    "generalDefault": "",
+    "removeFilter": "",
+    "resetSearch": "",
+    "resultRange": "",
+    "previousPage": "",
+    "nextPage": "",
     "subtitle": "クロスヘアを作成してカスタマイズする",
     "generate": "クロスヘアを生成",
     "preview": "プレビュー",
@@ -3166,11 +3229,12 @@
     "remove": "削除",
     "removeFromHistory": "履歴から削除",
     "removedFromHistory": "クロスヘアを履歴から削除しました",
-    "appliedRestart": "クロスヘアを適用しました！変更を反映するにはゲームを再起動してください。",
-    "removedRestart": "クロスヘアセクションを削除しました！変更を反映するにはゲームを再起動してください。",
+    "appliedRestart": "",
+    "removedRestart": "",
     "disabledError": "カスタムクロスヘアが無効になっています。設定で有効にしてクロスヘアを適用してください。",
     "toggleError": "カスタムクロスヘアの切り替えに失敗しました",
     "stopGameBeforeDisable": "",
+    "stopGameBeforeChange": "",
     "form": {
       "metadata": "メタデータ",
       "name": "名前",

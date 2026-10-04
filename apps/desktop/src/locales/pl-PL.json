@@ -849,10 +849,11 @@
   "mods": {
     "invalidDeepLink": "",
     "manageOrder": "Zmień kolejność modyfikacji",
-    "searchPlaceholder": "Wyszukaj mody",
+    "searchPlaceholder": "",
     "noPreviewAvailable": "Brak podglądu",
     "audio": "Dźwięk",
     "by": "Autor:",
+    "showMoreByAuthor": "",
     "backToMods": "",
     "audioMod": "Mod Audio",
     "mapBadge": "Mapa",
@@ -920,6 +921,28 @@
       "deleteAllSuccess": "Usunięto {{count}} nierozpoznanych plików modów",
       "deleteAllError": "Nie udało się usunąć niektórych plików modyfikacji"
     }
+  },
+  "authorPage": {
+    "viewProfile": "",
+    "submittedBy": "",
+    "modStat_one": "",
+    "modStat_other": "",
+    "downloadStat_one": "",
+    "downloadStat_other": "",
+    "likeStat_one": "",
+    "likeStat_other": "",
+    "memberSince": "",
+    "subscriberCount_one": "",
+    "subscriberCount_other": "",
+    "upicAlt": "",
+    "signatureAlt": "",
+    "viewOnGameBanana": "",
+    "openProfileError": "",
+    "modsBy": "",
+    "resultCount_one": "",
+    "resultCount_other": "",
+    "notFoundTitle": "",
+    "notFoundDescription": ""
   },
   "pagination": {
     "previous": "Poprzedni",
@@ -1044,7 +1067,11 @@
     "none": "Brak",
     "enable": "Włącz",
     "disable": "Wyłącz",
-    "open": "Otwórz"
+    "open": "Otwórz",
+    "retry": "",
+    "dismiss": "",
+    "notFound": "",
+    "failedToOpenFolder": ""
   },
   "settings": {
     "searchPlaceholder": "",
@@ -1062,7 +1089,7 @@
     "animateOccultGeometry": "Animuj ukrytą geometrię",
     "animateOccultGeometryDescription": "Powoli obracaj i pulsuj podpisy tła. Animacje automatycznie wstrzymują się, gdy okno znajduje się w tle.",
     "flashbang": "Granat błyskowy",
-    "flashbangDescription": "Wymusza tryb jasny między 20:00 a 8:00, niezależnie od wybranego motywu",
+    "flashbangDescription": "",
     "audioVolume": "Głośność audio",
     "audioVolumeDescription": "Dostosuj głośność dla podglądów audio i odtwarzania",
     "launchOptions": "Opcje Startu",
@@ -1563,7 +1590,7 @@
     "openLogFileError": "Nie udało się otworzyć pliku logów",
     "noLogsFound": "Nie znaleziono plików logów",
     "customCrosshairs": "Niestandardowe celowniki",
-    "customCrosshairsDescription": "Włącz lub wyłącz niestandardowe ustawienia celownika w konfiguracji autoexec. Po wyłączeniu, sekcja celownika zostanie usunięta z pliku autoexec.",
+    "customCrosshairsDescription": "",
     "backup": "Kopia zapasowa",
     "modifications": "Modyfikacje",
     "modManager": "Menedżer modów",
@@ -2776,13 +2803,26 @@
       "website": "Strona WWW",
       "discord": "Discord"
     },
+    "lovelock": {
+      "description": "",
+      "visit": "",
+      "kofi": ""
+    },
+    "remlock": {
+      "description": "",
+      "artworkAlt": "",
+      "letRemNap": "",
+      "summonRemlings": "",
+      "sendRemlingsHome": "",
+      "naptime": "",
+      "tagAlong": ""
+    },
     "flashbang": {
       "title": "Tryb Flashbang",
-      "description": "Wymusza jasny motyw w wybranych godzinach.",
-      "detailedDescription": "Tryb Flashbang przełącza aplikację na jasny motyw w skonfigurowanych godzinach, niezależnie od wybranego motywu.",
-      "usageInstructions": "Włącz wtyczkę i ustaw godzinę rozpoczęcia i zakończenia (0–23).",
-      "startHour": "Godzina rozpoczęcia (0–23)",
-      "endHour": "Godzina zakończenia (0–23)"
+      "description": "",
+      "detailedDescription": "",
+      "usageInstructions": "",
+      "chance": ""
     },
     "background": {
       "title": "Tło",
@@ -3053,6 +3093,11 @@
     "cancel": "Anuluj"
   },
   "modDetail": {
+    "backToAuthorMods": "",
+    "backToLibrary": "",
+    "backToMaps": "",
+    "backToFavorites": "",
+    "backToDashboard": "",
     "mapHowToPlay": {
       "title": "Jak grać na tej mapie",
       "step1": "Włącz konsolę developerów w ustawieniach Deadlock.",
@@ -3152,6 +3197,24 @@
   },
   "crosshairs": {
     "title": "Celowniki",
+    "currentCrosshair": "",
+    "toggleHint": "",
+    "currentDescription": "",
+    "pausedDescription": "",
+    "restorePrevious": "",
+    "recentlyUsed": "",
+    "community": "",
+    "communityDescription": "",
+    "selected": "",
+    "savedPreset": "",
+    "previewNamed": "",
+    "unknownAuthor": "",
+    "generalDefault": "",
+    "removeFilter": "",
+    "resetSearch": "",
+    "resultRange": "",
+    "previousPage": "",
+    "nextPage": "",
     "subtitle": "Utwórz i dostosuj swoje celowniki",
     "generate": "Wygeneruj celownik",
     "preview": "Podgląd",
@@ -3166,11 +3229,12 @@
     "remove": "Usuń",
     "removeFromHistory": "Usuń z historii",
     "removedFromHistory": "Celownik usunięty z historii",
-    "appliedRestart": "Celownik zastosowany! Zrestartuj grę, aby zmiany odniosły skutek.",
-    "removedRestart": "Przecinek celownika został usunięty! Zrestartuj grę, aby zmiany odniosły skutek.",
+    "appliedRestart": "",
+    "removedRestart": "",
     "disabledError": "Niestandardowe celowniki są wyłączone. Włącz je w ustawieniach, aby móc ustawiać celowniki",
     "toggleError": "Nie udało się przełączyć niestandardowych celowników",
     "stopGameBeforeDisable": "",
+    "stopGameBeforeChange": "",
     "form": {
       "metadata": "Metadane",
       "name": "Nazwa",

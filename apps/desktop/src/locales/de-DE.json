@@ -849,10 +849,11 @@
   "mods": {
     "invalidDeepLink": "",
     "manageOrder": "Ladereihenfolge ändern",
-    "searchPlaceholder": "Mods durchsuchen",
+    "searchPlaceholder": "",
     "noPreviewAvailable": "Keine Vorschau verfügbar",
     "audio": "Ton",
     "by": "Von",
+    "showMoreByAuthor": "",
     "backToMods": "Zurück zu Mods",
     "audioMod": "Audio Mod",
     "mapBadge": "Karte",
@@ -920,6 +921,28 @@
       "deleteAllSuccess": "",
       "deleteAllError": ""
     }
+  },
+  "authorPage": {
+    "viewProfile": "",
+    "submittedBy": "",
+    "modStat_one": "",
+    "modStat_other": "",
+    "downloadStat_one": "",
+    "downloadStat_other": "",
+    "likeStat_one": "",
+    "likeStat_other": "",
+    "memberSince": "",
+    "subscriberCount_one": "",
+    "subscriberCount_other": "",
+    "upicAlt": "",
+    "signatureAlt": "",
+    "viewOnGameBanana": "",
+    "openProfileError": "",
+    "modsBy": "",
+    "resultCount_one": "",
+    "resultCount_other": "",
+    "notFoundTitle": "",
+    "notFoundDescription": ""
   },
   "pagination": {
     "previous": "",
@@ -1044,7 +1067,11 @@
     "none": "Keine",
     "enable": "Aktivieren",
     "disable": "Deaktivieren",
-    "open": "Öffnen"
+    "open": "Öffnen",
+    "retry": "",
+    "dismiss": "",
+    "notFound": "",
+    "failedToOpenFolder": ""
   },
   "settings": {
     "searchPlaceholder": "",
@@ -1062,7 +1089,7 @@
     "animateOccultGeometry": "",
     "animateOccultGeometryDescription": "",
     "flashbang": "",
-    "flashbangDescription": "Erzwingt Light Mode zwischen 20:00 und 8:00 Uhr, unabhängig vom gewählten Theme",
+    "flashbangDescription": "",
     "audioVolume": "Audiolautstärke",
     "audioVolumeDescription": "Lautstärke für Audio-Vorschau und Wiedergabe anpassen",
     "launchOptions": "Startoptionen",
@@ -1563,7 +1590,7 @@
     "openLogFileError": "",
     "noLogsFound": "",
     "customCrosshairs": "Benutzerdefinierte Fadenkreuze",
-    "customCrosshairsDescription": "Einstellungen für benutzerdefinierte Fadenkreuze in der Autoexec-Konfiguration aktivieren oder deaktivieren. Bei Deaktivierung wird der Fadenkreuz-Abschnitt aus der Autoexec-Datei entfernt.",
+    "customCrosshairsDescription": "",
     "backup": "",
     "modifications": "",
     "modManager": "",
@@ -2776,13 +2803,26 @@
       "website": "Webseite",
       "discord": ""
     },
+    "lovelock": {
+      "description": "",
+      "visit": "",
+      "kofi": ""
+    },
+    "remlock": {
+      "description": "",
+      "artworkAlt": "",
+      "letRemNap": "",
+      "summonRemlings": "",
+      "sendRemlingsHome": "",
+      "naptime": "",
+      "tagAlong": ""
+    },
     "flashbang": {
       "title": "Flashbang-Modus",
-      "description": "Erzwingt Light Mode innerhalb eines Zeitfensters.",
-      "detailedDescription": "Der Flashbang‑Modus schaltet die App im gewählten Zeitraum in den Light Mode – unabhängig von der Theme‑Einstellung.",
-      "usageInstructions": "Plugin aktivieren und Start‑/Endstunde (0–23) festlegen.",
-      "startHour": "Stunde Start (0–23)",
-      "endHour": "Stunde Ende (0–23)"
+      "description": "",
+      "detailedDescription": "",
+      "usageInstructions": "",
+      "chance": ""
     },
     "background": {
       "title": "Hintergrund",
@@ -3053,6 +3093,11 @@
     "cancel": ""
   },
   "modDetail": {
+    "backToAuthorMods": "",
+    "backToLibrary": "",
+    "backToMaps": "",
+    "backToFavorites": "",
+    "backToDashboard": "",
     "mapHowToPlay": {
       "title": "",
       "step1": "",
@@ -3152,6 +3197,24 @@
   },
   "crosshairs": {
     "title": "Fadenkreuze",
+    "currentCrosshair": "",
+    "toggleHint": "",
+    "currentDescription": "",
+    "pausedDescription": "",
+    "restorePrevious": "",
+    "recentlyUsed": "",
+    "community": "",
+    "communityDescription": "",
+    "selected": "",
+    "savedPreset": "",
+    "previewNamed": "",
+    "unknownAuthor": "",
+    "generalDefault": "",
+    "removeFilter": "",
+    "resetSearch": "",
+    "resultRange": "",
+    "previousPage": "",
+    "nextPage": "",
     "subtitle": "Erstellen und passen Sie Ihre Fadenkreuze an",
     "generate": "Fadenkreuz generieren",
     "preview": "Vorschau",
@@ -3166,11 +3229,12 @@
     "remove": "Entfernen",
     "removeFromHistory": "Aus Verlauf entfernen",
     "removedFromHistory": "Fadenkreuz aus Verlauf entfernt",
-    "appliedRestart": "Fadenkreuz angewendet! Starten Sie das Spiel neu, damit die Änderungen wirksam werden.",
-    "removedRestart": "Fadenkreuz-Abschnitt entfernt! Starten Sie das Spiel neu, damit die Änderungen wirksam werden.",
+    "appliedRestart": "",
+    "removedRestart": "",
     "disabledError": "Benutzerdefinierte Fadenkreuze sind deaktiviert. Aktivieren Sie sie in den Einstellungen, um Fadenkreuze anzuwenden.",
     "toggleError": "Benutzerdefinierte Fadenkreuze konnten nicht umgeschaltet werden",
     "stopGameBeforeDisable": "",
+    "stopGameBeforeChange": "",
     "form": {
       "metadata": "Metadaten",
       "name": "",

@@ -849,10 +849,11 @@
   "mods": {
     "invalidDeepLink": "",
     "manageOrder": "모드 순서 변경",
-    "searchPlaceholder": "모드 검색",
+    "searchPlaceholder": "",
     "noPreviewAvailable": "미리보기를 사용할 수 없습니다.",
     "audio": "오디오",
     "by": "에 의해",
+    "showMoreByAuthor": "",
     "backToMods": "",
     "audioMod": "오디오 모드",
     "mapBadge": "지도",
@@ -920,6 +921,28 @@
       "deleteAllSuccess": "",
       "deleteAllError": ""
     }
+  },
+  "authorPage": {
+    "viewProfile": "",
+    "submittedBy": "",
+    "modStat_one": "",
+    "modStat_other": "",
+    "downloadStat_one": "",
+    "downloadStat_other": "",
+    "likeStat_one": "",
+    "likeStat_other": "",
+    "memberSince": "",
+    "subscriberCount_one": "",
+    "subscriberCount_other": "",
+    "upicAlt": "",
+    "signatureAlt": "",
+    "viewOnGameBanana": "",
+    "openProfileError": "",
+    "modsBy": "",
+    "resultCount_one": "",
+    "resultCount_other": "",
+    "notFoundTitle": "",
+    "notFoundDescription": ""
   },
   "pagination": {
     "previous": "이전의",
@@ -1044,7 +1067,11 @@
     "none": "없음",
     "enable": "할 수 있게 하다",
     "disable": "장애를 입히다",
-    "open": "열려 있는"
+    "open": "열려 있는",
+    "retry": "",
+    "dismiss": "",
+    "notFound": "",
+    "failedToOpenFolder": ""
   },
   "settings": {
     "searchPlaceholder": "",
@@ -1062,7 +1089,7 @@
     "animateOccultGeometry": "",
     "animateOccultGeometryDescription": "",
     "flashbang": "플래시뱅",
-    "flashbangDescription": "선택한 테마에 관계없이 오후 8시에서 오전 8시 사이에 조명 모드를 강제 적용합니다.",
+    "flashbangDescription": "",
     "audioVolume": "오디오 볼륨",
     "audioVolumeDescription": "오디오 미리보기 및 재생 볼륨 조정",
     "launchOptions": "실행 옵션",
@@ -1563,7 +1590,7 @@
     "openLogFileError": "로그 파일을 열지 못했습니다.",
     "noLogsFound": "로그 파일을 찾을 수 없습니다.",
     "customCrosshairs": "맞춤형 십자선",
-    "customCrosshairsDescription": "autoexec 구성에서 사용자 정의 십자선 설정을 활성화하거나 비활성화합니다. 비활성화되면 십자선 섹션이 자동 실행 파일에서 제거됩니다.",
+    "customCrosshairsDescription": "",
     "backup": "지원",
     "modifications": "수정",
     "modManager": "모드 관리자",
@@ -2776,13 +2803,26 @@
       "website": "웹사이트",
       "discord": "불화"
     },
+    "lovelock": {
+      "description": "",
+      "visit": "",
+      "kofi": ""
+    },
+    "remlock": {
+      "description": "",
+      "artworkAlt": "",
+      "letRemNap": "",
+      "summonRemlings": "",
+      "sendRemlingsHome": "",
+      "naptime": "",
+      "tagAlong": ""
+    },
     "flashbang": {
       "title": "섬광탄 모드",
-      "description": "예약된 시간 동안 조명 모드를 강제 적용합니다.",
-      "detailedDescription": "Flashbang 모드는 테마 설정에 관계없이 구성된 시간 동안 앱을 라이트 모드로 전환합니다.",
-      "usageInstructions": "플러그인을 활성화하고 시작 및 종료 시간(0~23)을 선택합니다.",
-      "startHour": "시작 시간(0~23)",
-      "endHour": "종료 시간(0~23)"
+      "description": "",
+      "detailedDescription": "",
+      "usageInstructions": "",
+      "chance": ""
     },
     "background": {
       "title": "배경",
@@ -3053,6 +3093,11 @@
     "cancel": "취소"
   },
   "modDetail": {
+    "backToAuthorMods": "",
+    "backToLibrary": "",
+    "backToMaps": "",
+    "backToFavorites": "",
+    "backToDashboard": "",
     "mapHowToPlay": {
       "title": "이 지도를 플레이하는 방법",
       "step1": "교착 상태 설정에서 개발자 콘솔을 활성화합니다.",
@@ -3152,6 +3197,24 @@
   },
   "crosshairs": {
     "title": "십자선",
+    "currentCrosshair": "",
+    "toggleHint": "",
+    "currentDescription": "",
+    "pausedDescription": "",
+    "restorePrevious": "",
+    "recentlyUsed": "",
+    "community": "",
+    "communityDescription": "",
+    "selected": "",
+    "savedPreset": "",
+    "previewNamed": "",
+    "unknownAuthor": "",
+    "generalDefault": "",
+    "removeFilter": "",
+    "resetSearch": "",
+    "resultRange": "",
+    "previousPage": "",
+    "nextPage": "",
     "subtitle": "십자선 생성 및 사용자 정의",
     "generate": "십자선 생성",
     "preview": "시사",
@@ -3166,11 +3229,12 @@
     "remove": "제거하다",
     "removeFromHistory": "기록에서 삭제",
     "removedFromHistory": "십자선이 기록에서 제거되었습니다.",
-    "appliedRestart": "크로스헤어 적용! 변경 사항을 적용하려면 게임을 다시 시작하세요.",
-    "removedRestart": "십자선 섹션이 제거되었습니다! 변경 사항을 적용하려면 게임을 다시 시작하세요.",
+    "appliedRestart": "",
+    "removedRestart": "",
     "disabledError": "사용자 정의 십자선이 비활성화되었습니다. 십자선을 적용하려면 설정에서 활성화하세요.",
     "toggleError": "맞춤 십자선을 전환하지 못했습니다.",
     "stopGameBeforeDisable": "",
+    "stopGameBeforeChange": "",
     "form": {
       "metadata": "메타데이터",
       "name": "이름",
