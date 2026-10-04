@@ -1,15 +1,36 @@
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { CardsThreeIcon } from "@phosphor-icons/react";
+import { useQuery } from "@tanstack/react-query";
 import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import type { DeadlockSkinsAlbum } from "@/lib/deadlockskins/albums";
+import { getAlbumFreshness } from "@/lib/deadlockskins/album-freshness";
+import {
+  albumModsQueryOptions,
+  type DeadlockSkinsAlbum,
+  deadlockSkinsAlbumMembersQueryOptions,
+} from "@/lib/deadlockskins/albums";
+import { AlbumFreshnessIndicator } from "./album-freshness";
+
+// Shares its queries with the album page, so opening an album after the grid
+// has loaded is instant. No badge until both have resolved.
+const useAlbumFreshness = (slug: string) => {
+  const { data: members } = useQuery(
+    deadlockSkinsAlbumMembersQueryOptions(slug),
+  );
+  const { data: mods } = useQuery({
+    ...albumModsQueryOptions(members ?? []),
+    enabled: members !== undefined,
+  });
+  return mods ? getAlbumFreshness(mods) : null;
+};
 
 // Album covers are 640x853 portrait posters; the title and theme sit on a
 // scrim over the art, the way deadlockskins.gg shows them.
 export const AlbumCard = memo(({ album }: { album: DeadlockSkinsAlbum }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const freshness = useAlbumFreshness(album.slug);
 
   return (
     <button
@@ -31,6 +52,12 @@ export const AlbumCard = memo(({ album }: { album: DeadlockSkinsAlbum }) => {
             weight='duotone'
           />
         </div>
+      )}
+      {freshness && (
+        <AlbumFreshnessIndicator
+          className='absolute top-2.5 left-2.5 rounded-md bg-background/70 px-2 py-0.5 backdrop-blur-sm'
+          freshness={freshness}
+        />
       )}
       <span className='absolute top-2.5 right-2.5 rounded-md bg-background/70 px-2 py-0.5 text-xs tabular-nums backdrop-blur-sm'>
         {t("albums.itemCount", { count: album.itemCount })}

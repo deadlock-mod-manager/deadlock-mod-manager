@@ -3712,14 +3712,13 @@
     "album": "Album",
     "itemCount_one": "{{count}} item",
     "itemCount_other": "{{count}} items",
-    "curatedBy": "Curated albums from",
-    "openSiteError": "Could not open deadlockskins.gg",
+    "openSiteError": "Could not open DeadlockSkins.gg",
     "emptyTitle": "No albums available",
     "emptyDescription": "deadlockskins.gg didn't return any albums. Check your connection and try again later.",
     "notFoundTitle": "Album not found",
     "notFoundDescription": "This album may have been renamed or removed from deadlockskins.gg.",
     "backToAlbums": "Back to Albums",
-    "viewOnSite": "View on deadlockskins.gg",
+    "viewOnSite": "View on DeadlockSkins.gg",
     "modsInAlbum": "Mods in this album",
     "modStat_one": "mod",
     "modStat_other": "mods",
@@ -3737,6 +3736,8 @@
       "confirmBody_other": "{{count}} mods will be downloaded into your active profile.",
       "confirmSkipped_one": "{{count}} mod already in your library is skipped.",
       "confirmSkipped_other": "{{count}} mods already in your library are skipped.",
+      "confirmOutdated_one": "{{count}} of them hasn't been updated since the City Never Sleeps update and may not work.",
+      "confirmOutdated_other": "{{count}} of them haven't been updated since the City Never Sleeps update and may not work.",
       "confirmAction_one": "Download {{count}} mod",
       "confirmAction_other": "Download {{count}} mods",
       "queued_one": "Queued {{count}} mod for download",
@@ -3745,6 +3746,15 @@
       "needsFileChoice_other": "{{count}} mods have several files. Pick one on their mod pages: {{mods}}",
       "failed_one": "Could not load the files of {{count}} mod: {{mods}}",
       "failed_other": "Could not load the files of {{count}} mods: {{mods}}"
-    }
+    },
+    "freshness": {
+      "outdatedLabel": "Outdated",
+      "partialLabel_one": "{{count}} outdated",
+      "partialLabel_other": "{{count}} outdated",
+      "outdatedDescription": "None of this album's mods have been updated since the City Never Sleeps update (September 29, 2026). They may not work properly.",
+      "partialDescription_one": "{{count}} of {{total}} mods in this album hasn't been updated since the City Never Sleeps update (September 29, 2026) and may not work properly.",
+      "partialDescription_other": "{{count}} of {{total}} mods in this album haven't been updated since the City Never Sleeps update (September 29, 2026) and may not work properly."
+    },
+    "providedBy": "Provided by"
   }
 }

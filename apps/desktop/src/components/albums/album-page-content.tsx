@@ -18,6 +18,7 @@ import { AuthorStatPill } from "@/components/mod-author/author-stat-pill";
 import ModCard from "@/components/mod-browsing/mod-card";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { useAlbumDownload } from "@/hooks/use-album-download";
+import { getAlbumFreshness } from "@/lib/deadlockskins/album-freshness";
 import {
   albumModsQueryOptions,
   albumPageUrl,
@@ -26,6 +27,9 @@ import {
 } from "@/lib/deadlockskins/albums";
 import { usePersistedStore } from "@/lib/store";
 import { findLocalMod } from "@/lib/store/selectors";
+import { isModOutdated } from "@/lib/utils";
+import { AlbumFreshnessIndicator } from "./album-freshness";
+import { DeadlockSkinsLogo } from "./deadlockskins-logo";
 import { AlbumNotFound } from "./album-not-found";
 
 export const AlbumPageContent = ({ slug }: { slug: string }) => {
@@ -58,6 +62,8 @@ export const AlbumPageContent = ({ slug }: { slug: string }) => {
   }
 
   const missingCount = members.length - mods.length;
+  const freshness = getAlbumFreshness(mods);
+  const pendingOutdated = pending.filter(isModOutdated).length;
   const albumNavigation = { slug: album.slug, name: album.name };
 
   const handleDownloadAll = async () => {
@@ -67,6 +73,9 @@ export const AlbumPageContent = ({ slug }: { slug: string }) => {
         t("albums.download.confirmBody", { count: pending.length }),
         inLibrary.length > 0
           ? t("albums.download.confirmSkipped", { count: inLibrary.length })
+          : null,
+        pendingOutdated > 0
+          ? t("albums.download.confirmOutdated", { count: pendingOutdated })
           : null,
       ]
         .filter(Boolean)
@@ -153,6 +162,12 @@ export const AlbumPageContent = ({ slug }: { slug: string }) => {
                   label={t("albums.inLibraryStat", { count: inLibrary.length })}
                   value={inLibrary.length.toLocaleString()}
                 />
+                {freshness && (
+                  <AlbumFreshnessIndicator
+                    className='rounded-full border border-border/60 bg-background/65 px-2.5 py-1 text-muted-foreground shadow-sm'
+                    freshness={freshness}
+                  />
+                )}
               </div>
             </div>
             <div className='flex shrink-0 flex-col items-stretch gap-2'>
@@ -172,6 +187,7 @@ export const AlbumPageContent = ({ slug }: { slug: string }) => {
                 disabled={openAlbum.isPending}
                 onClick={() => openAlbum.mutate(albumPageUrl(album.slug))}
                 variant='outline'>
+                <DeadlockSkinsLogo className='h-4 w-4' />
                 {t("albums.viewOnSite")}
                 <ExternalLink className='h-4 w-4' />
               </Button>

@@ -5,8 +5,9 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
 import { DEADLOCKSKINS_ORIGIN } from "@/lib/deadlockskins/albums";
 import { cn } from "@/lib/utils";
+import { DeadlockSkinsLogo } from "./deadlockskins-logo";
 
-/** Albums are deadlockskins.gg's curation work, so they are always credited. */
+/** Albums come from deadlockskins.gg, so the source is always credited. */
 export const DeadlockSkinsCredit = ({ className }: { className?: string }) => {
   const { t } = useTranslation();
   const openSite = useMutation({
@@ -16,15 +17,20 @@ export const DeadlockSkinsCredit = ({ className }: { className?: string }) => {
   });
 
   return (
-    <p className={cn("text-muted-foreground text-sm", className)}>
-      {t("albums.curatedBy")}{" "}
+    <p
+      className={cn(
+        "flex items-center gap-1.5 text-muted-foreground text-xs",
+        className,
+      )}>
+      {t("albums.providedBy")}
       <button
-        className='inline-flex items-center gap-1 font-medium text-foreground underline-offset-4 hover:underline'
+        className='group flex items-center gap-1.5 transition-colors hover:text-foreground'
         disabled={openSite.isPending}
         onClick={() => openSite.mutate()}
         type='button'>
-        deadlockskins.gg
-        <ExternalLink className='h-3.5 w-3.5' />
+        <DeadlockSkinsLogo className='h-4 w-4 shrink-0' />
+        <span className='font-medium'>DeadlockSkins.gg</span>
+        <ExternalLink className='h-3 w-3 opacity-0 transition-opacity group-hover:opacity-100' />
       </button>
     </p>
   );
