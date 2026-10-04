@@ -2906,6 +2906,8 @@
       "applyDraftGraceHint": "",
       "applyDraftConfirmKeep": "",
       "accentColor": "",
+      "addCustomColor": "",
+      "resetAccent": "",
       "accentColorDialogTitle": "",
       "accentColorDialogDescription": "",
       "cardColor": "",
@@ -2938,10 +2940,8 @@
     },
     "oled": {
       "description": "",
-      "accentColor": "",
       "customColor": "",
-      "customColorDescription": "",
-      "resetAccent": ""
+      "customColorDescription": ""
     },
     "nightshift": {
       "description": "ثيم سايبربانك بلمسات فيروزية مصمم للوضوح والجلسات الطويلة.",
@@ -2956,10 +2956,8 @@
     "arcane": {
       "description": "ثيم داكن أنيق مع تأثيرات توهج وردية-حمراء مستوحاة من جمالية Arcane.",
       "visit": "ثيم من Skeptic",
-      "accentColor": "لون التمييز",
       "customColor": "لون مخصص",
-      "customColorDescription": "اختر لون تمييز مخصص لثيم Arcane.",
-      "addCustomColor": "إضافة لون"
+      "customColorDescription": "اختر لون تمييز مخصص لثيم Arcane."
     },
     "deadlockApi": {
       "description": "",

@@ -2906,6 +2906,8 @@
       "applyDraftGraceHint": "",
       "applyDraftConfirmKeep": "",
       "accentColor": "",
+      "addCustomColor": "",
+      "resetAccent": "",
       "accentColorDialogTitle": "",
       "accentColorDialogDescription": "",
       "cardColor": "",
@@ -2938,10 +2940,8 @@
     },
     "oled": {
       "description": "",
-      "accentColor": "",
       "customColor": "",
-      "customColorDescription": "",
-      "resetAccent": ""
+      "customColorDescription": ""
     },
     "nightshift": {
       "description": "Ein cyberpunkiges Theme mit türkisfarbenen Akzenten für Klarheit und lange Gaming-Sessions.",
@@ -2956,10 +2956,8 @@
     "arcane": {
       "description": "Ein elegantes dunkles Theme mit pink-roten Leuchteffekten, inspiriert von der Arcane-Ästhetik.",
       "visit": "Theme von Skeptic",
-      "accentColor": "Akzentfarbe",
       "customColor": "Benutzerdefinierte Farbe",
-      "customColorDescription": "Wähle eine benutzerdefinierte Akzentfarbe für das Arcane-Theme.",
-      "addCustomColor": "Farbe hinzufügen"
+      "customColorDescription": "Wähle eine benutzerdefinierte Akzentfarbe für das Arcane-Theme."
     },
     "deadlockApi": {
       "description": "OLED-Schwarz Theme mit elektrischen roten Leuchteffekten, inspiriert vom Deadlock API Design.",

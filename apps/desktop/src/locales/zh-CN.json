@@ -2906,6 +2906,8 @@
       "applyDraftGraceHint": "草稿主题已应用。点击\"保留\"，否则将自动恢复。",
       "applyDraftConfirmKeep": "保留草稿主题",
       "accentColor": "强调色",
+      "addCustomColor": "",
+      "resetAccent": "",
       "accentColorDialogTitle": "强调色",
       "accentColorDialogDescription": "选择用于高亮和强调的主色调。",
       "cardColor": "卡面",
@@ -2938,10 +2940,8 @@
     },
     "oled": {
       "description": "",
-      "accentColor": "",
       "customColor": "",
-      "customColorDescription": "",
-      "resetAccent": ""
+      "customColorDescription": ""
     },
     "nightshift": {
       "description": "一款带有青色点缀的赛博朋克主题，专为清晰度和长时间游戏而设计。",
@@ -2956,10 +2956,8 @@
     "arcane": {
       "description": "一款优雅的暗黑主题，带有粉红色发光效果，灵感来自Arcane美学。",
       "visit": "Skeptic 制作的主题",
-      "accentColor": "强调色",
       "customColor": "自定义颜色",
-      "customColorDescription": "为Arcane主题选择自定义强调色。",
-      "addCustomColor": "添加颜色"
+      "customColorDescription": "为Arcane主题选择自定义强调色。"
     },
     "deadlockApi": {
       "description": "OLED 黑色主题，具有电光红色发光效果，灵感源自 Deadlock API 设计。",

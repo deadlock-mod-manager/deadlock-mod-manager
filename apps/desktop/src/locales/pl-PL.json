@@ -2906,6 +2906,8 @@
       "applyDraftGraceHint": "Zastosowano szablon szkicu. Kliknij \"Zachować\" lub przywróci go automatycznie.",
       "applyDraftConfirmKeep": "Zachowaj szkic motywu",
       "accentColor": "Kolor akcentów",
+      "addCustomColor": "",
+      "resetAccent": "",
       "accentColorDialogTitle": "Kolor akcentów",
       "accentColorDialogDescription": "Wybierz główny akcent używany do podkreślania i podkreślania.",
       "cardColor": "Powierzchnia karty",
@@ -2938,10 +2940,8 @@
     },
     "oled": {
       "description": "",
-      "accentColor": "",
       "customColor": "",
-      "customColorDescription": "",
-      "resetAccent": ""
+      "customColorDescription": ""
     },
     "nightshift": {
       "description": "Cyberpunkowy motyw z turkusowymi akcentami zaprojektowany dla przejrzystości i długich sesji gamingowych.",
@@ -2956,10 +2956,8 @@
     "arcane": {
       "description": "Elegancki ciemny motyw z różowo-czerwonymi efektami poświaty inspirowany estetyką Arcane.",
       "visit": "Motyw autorstwa Skeptic",
-      "accentColor": "Kolor akcentu",
       "customColor": "Niestandardowy kolor",
-      "customColorDescription": "Wybierz niestandardowy kolor akcentu dla motywu Arcane.",
-      "addCustomColor": "Dodaj kolor"
+      "customColorDescription": "Wybierz niestandardowy kolor akcentu dla motywu Arcane."
     },
     "deadlockApi": {
       "description": "OLED czarny motyw z elektrycznymi efektami czerwonego blasku zainspirowanymi wzorem API Deadlock.",

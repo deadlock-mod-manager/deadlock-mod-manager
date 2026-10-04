@@ -2906,6 +2906,8 @@
       "applyDraftGraceHint": "",
       "applyDraftConfirmKeep": "",
       "accentColor": "",
+      "addCustomColor": "",
+      "resetAccent": "",
       "accentColorDialogTitle": "",
       "accentColorDialogDescription": "",
       "cardColor": "",
@@ -2938,10 +2940,8 @@
     },
     "oled": {
       "description": "",
-      "accentColor": "",
       "customColor": "",
-      "customColorDescription": "",
-      "resetAccent": ""
+      "customColorDescription": ""
     },
     "nightshift": {
       "description": "",
@@ -2956,10 +2956,8 @@
     "arcane": {
       "description": "Un elegante tema scuro con effetti di bagliore rosa-rosso ispirati all'estetica di Arcane.",
       "visit": "Tema di Skeptic",
-      "accentColor": "Colore accento",
       "customColor": "Colore personalizzato",
-      "customColorDescription": "Scegli un colore accento personalizzato per il tema Arcane.",
-      "addCustomColor": "Aggiungi colore"
+      "customColorDescription": "Scegli un colore accento personalizzato per il tema Arcane."
     },
     "deadlockApi": {
       "description": "",

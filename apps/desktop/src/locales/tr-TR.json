@@ -2906,6 +2906,8 @@
       "applyDraftGraceHint": "",
       "applyDraftConfirmKeep": "",
       "accentColor": "",
+      "addCustomColor": "",
+      "resetAccent": "",
       "accentColorDialogTitle": "",
       "accentColorDialogDescription": "",
       "cardColor": "",
@@ -2938,10 +2940,8 @@
     },
     "oled": {
       "description": "",
-      "accentColor": "",
       "customColor": "",
-      "customColorDescription": "",
-      "resetAccent": ""
+      "customColorDescription": ""
     },
     "nightshift": {
       "description": "Klarite ve uzun oyun oturumları için tasarlanmış turkuaz vurgulu siberpunk tema.",
@@ -2956,10 +2956,8 @@
     "arcane": {
       "description": "Arcane estetiğinden ilham alan pembe-kırmızı parıltı efektleriyle şık karanlık tema.",
       "visit": "Skeptic tarafından tema",
-      "accentColor": "Vurgu Rengi",
       "customColor": "Özel Renk",
-      "customColorDescription": "Arcane teması için özel bir vurgu rengi seçin.",
-      "addCustomColor": "Renk ekle"
+      "customColorDescription": "Arcane teması için özel bir vurgu rengi seçin."
     },
     "deadlockApi": {
       "description": "",

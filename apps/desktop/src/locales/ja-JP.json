@@ -2906,6 +2906,8 @@
       "applyDraftGraceHint": "",
       "applyDraftConfirmKeep": "",
       "accentColor": "",
+      "addCustomColor": "",
+      "resetAccent": "",
       "accentColorDialogTitle": "",
       "accentColorDialogDescription": "",
       "cardColor": "",
@@ -2938,10 +2940,8 @@
     },
     "oled": {
       "description": "",
-      "accentColor": "",
       "customColor": "",
-      "customColorDescription": "",
-      "resetAccent": ""
+      "customColorDescription": ""
     },
     "nightshift": {
       "description": "明確さと長時間のゲームセッションのために設計されたティールアクセントのサイバーパンクテーマ。",
@@ -2956,10 +2956,8 @@
     "arcane": {
       "description": "",
       "visit": "",
-      "accentColor": "",
       "customColor": "",
-      "customColorDescription": "",
-      "addCustomColor": ""
+      "customColorDescription": ""
     },
     "deadlockApi": {
       "description": "",

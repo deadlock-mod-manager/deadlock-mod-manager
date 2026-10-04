@@ -2906,6 +2906,8 @@
       "applyDraftGraceHint": "",
       "applyDraftConfirmKeep": "",
       "accentColor": "",
+      "addCustomColor": "",
+      "resetAccent": "",
       "accentColorDialogTitle": "",
       "accentColorDialogDescription": "",
       "cardColor": "",
@@ -2938,10 +2940,8 @@
     },
     "oled": {
       "description": "",
-      "accentColor": "",
       "customColor": "",
-      "customColorDescription": "",
-      "resetAccent": ""
+      "customColorDescription": ""
     },
     "nightshift": {
       "description": "",
@@ -2956,10 +2956,8 @@
     "arcane": {
       "description": "ธีมมืดสง่างามพร้อมเอฟเฟกต์เรืองแสงสีชมพู-แดง ได้รับแรงบันดาลใจจากสไตล์ Arcane",
       "visit": "ธีมโดย Skeptic",
-      "accentColor": "สีเน้น",
       "customColor": "สีกำหนดเอง",
-      "customColorDescription": "เลือกสีเน้นกำหนดเองสำหรับธีม Arcane",
-      "addCustomColor": "เพิ่มสี"
+      "customColorDescription": "เลือกสีเน้นกำหนดเองสำหรับธีม Arcane"
     },
     "deadlockApi": {
       "description": "",

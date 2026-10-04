@@ -2906,6 +2906,8 @@
       "applyDraftGraceHint": "",
       "applyDraftConfirmKeep": "",
       "accentColor": "",
+      "addCustomColor": "",
+      "resetAccent": "",
       "accentColorDialogTitle": "",
       "accentColorDialogDescription": "",
       "cardColor": "",
@@ -2938,10 +2940,8 @@
     },
     "oled": {
       "description": "",
-      "accentColor": "",
       "customColor": "",
-      "customColorDescription": "",
-      "resetAccent": ""
+      "customColorDescription": ""
     },
     "nightshift": {
       "description": "",
@@ -2956,10 +2956,8 @@
     "arcane": {
       "description": "Um elegante tema escuro com efeitos de brilho rosa-vermelho inspirado na estética de Arcane.",
       "visit": "Tema por Skeptic",
-      "accentColor": "Cor de destaque",
       "customColor": "Cor personalizada",
-      "customColorDescription": "Escolha uma cor de destaque personalizada para o tema Arcane.",
-      "addCustomColor": "Adicionar cor"
+      "customColorDescription": "Escolha uma cor de destaque personalizada para o tema Arcane."
     },
     "deadlockApi": {
       "description": "",

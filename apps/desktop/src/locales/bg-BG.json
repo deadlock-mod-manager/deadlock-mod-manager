@@ -2906,6 +2906,8 @@
       "applyDraftGraceHint": "",
       "applyDraftConfirmKeep": "",
       "accentColor": "",
+      "addCustomColor": "",
+      "resetAccent": "",
       "accentColorDialogTitle": "",
       "accentColorDialogDescription": "",
       "cardColor": "",
@@ -2938,10 +2940,8 @@
     },
     "oled": {
       "description": "",
-      "accentColor": "",
       "customColor": "",
-      "customColorDescription": "",
-      "resetAccent": ""
+      "customColorDescription": ""
     },
     "nightshift": {
       "description": "",
@@ -2956,10 +2956,8 @@
     "arcane": {
       "description": "Елегантна тъмна тема с розово-червени светещи ефекти, вдъхновена от естетиката на Arcane.",
       "visit": "Тема от Skeptic",
-      "accentColor": "Акцентен цвят",
       "customColor": "Персонализиран цвят",
-      "customColorDescription": "Изберете персонализиран акцентен цвят за темата Arcane.",
-      "addCustomColor": "Добави цвят"
+      "customColorDescription": "Изберете персонализиран акцентен цвят за темата Arcane."
     },
     "deadlockApi": {
       "description": "",

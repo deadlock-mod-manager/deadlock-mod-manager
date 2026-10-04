@@ -2906,6 +2906,8 @@
       "applyDraftGraceHint": "",
       "applyDraftConfirmKeep": "",
       "accentColor": "",
+      "addCustomColor": "",
+      "resetAccent": "",
       "accentColorDialogTitle": "",
       "accentColorDialogDescription": "",
       "cardColor": "",
@@ -2938,10 +2940,8 @@
     },
     "oled": {
       "description": "",
-      "accentColor": "",
       "customColor": "",
-      "customColorDescription": "",
-      "resetAccent": ""
+      "customColorDescription": ""
     },
     "nightshift": {
       "description": "Es cyberpunk‑Theme mit türkisfarbige Akzänte für Uebersicht und lengeri Gaming‑Sessione.",
@@ -2956,10 +2956,8 @@
     "arcane": {
       "description": "Es elegants dunkels Theme mit pink-rote Lüchteffekte, inspiriert vo dr Arcane-Ästhetik.",
       "visit": "Theme vo Skeptic",
-      "accentColor": "Akzäntfarb",
       "customColor": "Eigeni Farb",
-      "customColorDescription": "Wähl e eigeni Akzäntfarb für s'Arcane-Theme.",
-      "addCustomColor": "Farb hinzuefüege"
+      "customColorDescription": "Wähl e eigeni Akzäntfarb für s'Arcane-Theme."
     },
     "deadlockApi": {
       "description": "",
