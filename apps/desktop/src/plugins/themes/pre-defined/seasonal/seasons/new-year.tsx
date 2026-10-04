@@ -1,6 +1,7 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { usePrefersReducedMotion } from "@/hooks/use-prefers-reduced-motion";
 import { PartyHat } from "../art";
 import { createFireworks, FIREWORK_EVENT } from "../effects";
 import type { Season } from "../season";
@@ -10,6 +11,7 @@ const pad = (value: number) => String(value).padStart(2, "0");
 const Sidebar = () => {
   const { t } = useTranslation();
   const [now, setNow] = useState(() => new Date());
+  const reducedMotion = usePrefersReducedMotion();
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000);
@@ -41,13 +43,15 @@ const Sidebar = () => {
           {days > 0 ? `${days}d ${clock}` : clock}
         </span>
       )}
-      <Button
-        size='sm'
-        variant='outline'
-        type='button'
-        onClick={() => window.dispatchEvent(new Event(FIREWORK_EVENT))}>
-        {t("plugins.seasonal.newYear.launch")}
-      </Button>
+      {reducedMotion ? null : (
+        <Button
+          size='sm'
+          variant='outline'
+          type='button'
+          onClick={() => window.dispatchEvent(new Event(FIREWORK_EVENT))}>
+          {t("plugins.seasonal.newYear.launch")}
+        </Button>
+      )}
     </div>
   );
 };
