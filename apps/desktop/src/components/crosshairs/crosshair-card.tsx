@@ -16,6 +16,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { HeroIcon } from "@/components/heroes/hero-icon";
 import logger from "@/lib/logger";
+import { isTauriError } from "@/types/tauri";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { CrosshairCanvas } from "./crosshair/crosshair-canvas";
@@ -61,6 +62,10 @@ export const CrosshairCard = ({
     },
     onError: (error) => {
       logger.errorOnly(error);
+      if (isTauriError(error) && error.kind === "gameRunning") {
+        toast.error(t("crosshairs.stopGameBeforeChange"));
+        return;
+      }
       if (
         error instanceof Error &&
         error.message === "Custom crosshairs are disabled"

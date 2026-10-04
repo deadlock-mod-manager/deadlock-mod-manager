@@ -178,6 +178,20 @@ impl SteamManager {
       .map(|steam_dir| steam_dir.path().to_path_buf())
   }
 
+  pub fn crosshair_userdata_path(&self) -> Result<PathBuf, Error> {
+    let steam = self.get_steam_path().ok_or(Error::SteamNotFound)?;
+    let account = crate::steam_user::list_accounts_in(&steam)
+      .into_iter()
+      .find(|account| account.is_active)
+      .ok_or_else(|| Error::InvalidInput("Sign in to Steam before changing crosshairs".into()))?;
+    Ok(
+      steam
+        .join("userdata")
+        .join(account.account_id.to_string())
+        .join(DEADLOCK_APP_ID.to_string()),
+    )
+  }
+
   /// Set the game path manually
   pub fn set_game_path(&mut self, path: PathBuf) -> Result<(), Error> {
     if !path.exists() {
@@ -339,6 +353,26 @@ impl Default for SteamManager {
 
 #[cfg(test)]
 mod manifest_tests {
+  #[test]
+  fn crosshair_userdata_uses_account_in_configured_steam_installation() {
+    let temp = tempfile::tempdir().unwrap();
+    let root = temp.path().join("custom-steam");
+    std::fs::create_dir_all(root.join("steamapps")).unwrap();
+    let steam = steamlocate::SteamDir::from_dir(&root).unwrap();
+    let root = steam.path().to_path_buf();
+    std::fs::create_dir_all(root.join("config")).unwrap();
+    std::fs::write(root.join("config/loginusers.vdf"),
+      "\"users\" { \"76561197960265851\" { \"AccountName\" \"first\" \"Timestamp\" \"1\" } \"76561197960266184\" { \"AccountName\" \"active\" \"Timestamp\" \"2\" } }").unwrap();
+    let mut manager = super::SteamManager::new();
+    manager.steam_dir = Some(steam);
+    assert_eq!(
+      manager.crosshair_userdata_path().unwrap(),
+      root.join("userdata/456/1422450")
+    );
+    std::fs::write(root.join("config/loginusers.vdf"), "\"users\" {}").unwrap();
+    assert!(manager.crosshair_userdata_path().is_err());
+  }
+
   #[test]
   fn parse_manifest_build_id_reads_the_build_line() {
     let manifest = "\"AppState\"

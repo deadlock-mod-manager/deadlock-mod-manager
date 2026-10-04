@@ -23,6 +23,7 @@ import { useResponsiveColumns } from "@/hooks/use-responsive-columns";
 import { useScrollPosition } from "@/hooks/use-scroll-position";
 import { getCrosshairs } from "@/lib/api-client";
 import logger from "@/lib/logger";
+import { isTauriError } from "@/types/tauri";
 import { usePersistedStore } from "@/lib/store";
 import { CrosshairCard } from "./crosshair-card";
 import { CrosshairPreviewDialog } from "./crosshair-preview-dialog";
@@ -67,6 +68,10 @@ const CrosshairLibraryData = () => {
     },
     onError: (error) => {
       logger.errorOnly(error);
+      if (isTauriError(error) && error.kind === "gameRunning") {
+        toast.error(t("crosshairs.stopGameBeforeChange"));
+        return;
+      }
       if (
         error instanceof Error &&
         error.message === "Custom crosshairs are disabled"

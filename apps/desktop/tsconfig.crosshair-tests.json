@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "types": ["bun"], "incremental": false },
+  "include": ["src/lib/crosshair-import.test.ts"],
+  "exclude": ["node_modules", "dist"]
+}

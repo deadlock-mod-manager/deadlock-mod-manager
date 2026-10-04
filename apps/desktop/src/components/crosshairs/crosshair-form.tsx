@@ -46,6 +46,7 @@ import { HeroIcon } from "@/components/heroes/hero-icon";
 import { useAuth } from "@/hooks/use-auth";
 import { publishCrosshair } from "@/lib/api-client";
 import logger from "@/lib/logger";
+import { isTauriError } from "@/types/tauri";
 import { usePersistedStore } from "@/lib/store";
 import { CrosshairCanvas } from "./crosshair/crosshair-canvas";
 import { CrosshairControls } from "./crosshair/crosshair-controls";
@@ -160,6 +161,10 @@ export const CrosshairForm = () => {
     },
     onError: (error) => {
       logger.errorOnly(error);
+      if (isTauriError(error) && error.kind === "gameRunning") {
+        toast.error(t("crosshairs.stopGameBeforeChange"));
+        return;
+      }
       if (
         error instanceof Error &&
         error.message === "Custom crosshairs are disabled"

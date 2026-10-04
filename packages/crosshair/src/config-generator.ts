@@ -14,12 +14,15 @@ export function generateConfigString(config: CrosshairConfig): string {
     dotOutlineOpacity,
   } = config;
 
-  return `citadel_crosshair_color_r ${color.r}; citadel_crosshair_color_g ${color.g}; citadel_crosshair_color_b ${color.b}; citadel_crosshair_pip_border ${pipBorder}; citadel_crosshair_pip_gap_static ${pipGapStatic}; citadel_crosshair_pip_opacity ${pipOpacity}; citadel_crosshair_pip_width ${width}; citadel_crosshair_pip_height ${height}; citadel_crosshair_pip_gap ${gap}; citadel_crosshair_dot_opacity ${dotOpacity}; citadel_crosshair_dot_outline_opacity ${dotOutlineOpacity}`;
+  return `citadel_crosshair_color_r ${color.r}; citadel_crosshair_color_g ${color.g}; citadel_crosshair_color_b ${color.b}; citadel_crosshair_pip_outline_border ${pipBorder ? 1 : 0}; citadel_crosshair_pip_gap_static ${pipGapStatic}; citadel_crosshair_pip_opacity ${pipOpacity}; citadel_crosshair_pip_width ${width}; citadel_crosshair_pip_height ${height}; citadel_crosshair_pip_gap ${gap}; citadel_crosshair_dot_opacity ${dotOpacity}; citadel_crosshair_dot_outline_opacity ${dotOutlineOpacity}`;
 }
 
 export function parseConfigString(str: string): CrosshairConfig | null {
   try {
-    const config = { ...DEFAULT_CROSSHAIR_CONFIG };
+    const config = {
+      ...DEFAULT_CROSSHAIR_CONFIG,
+      color: { ...DEFAULT_CROSSHAIR_CONFIG.color },
+    };
     const commands = str.split(";").map((s) => s.trim());
 
     for (const command of commands) {
@@ -37,6 +40,9 @@ export function parseConfigString(str: string): CrosshairConfig | null {
           break;
         case "citadel_crosshair_pip_border":
           config.pipBorder = value === "true";
+          break;
+        case "citadel_crosshair_pip_outline_border":
+          config.pipBorder = Number.parseFloat(value) > 0;
           break;
         case "citadel_crosshair_pip_gap_static":
           config.pipGapStatic = value === "true";

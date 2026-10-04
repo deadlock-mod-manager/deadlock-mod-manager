@@ -69,6 +69,10 @@ export function parseCitadelCrosshairFormat(input: string): ParseResult {
           config.pipBorder = value.toLowerCase() === "true";
           break;
         }
+        case "citadel_crosshair_pip_outline_border": {
+          config.pipBorder = Number.parseFloat(value) > 0;
+          break;
+        }
         case "citadel_crosshair_pip_gap_static": {
           config.pipGapStatic = value.toLowerCase() === "true";
           break;
