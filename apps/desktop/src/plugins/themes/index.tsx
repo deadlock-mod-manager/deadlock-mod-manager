@@ -17,6 +17,7 @@ import {
   useRemlockReleaseEnabled,
 } from "@/hooks/use-active-theme";
 import { getPluginAssetUrl } from "@/lib/plugins";
+import { isSeasonalThemeId } from "@/lib/seasonal-themes";
 import { usePersistedStore } from "@/lib/store";
 import { selectThemeSettings } from "@/lib/store/selectors";
 import type { PluginModule } from "@/plugins/types";
@@ -43,6 +44,8 @@ import LovelockTheme from "./pre-defined/lovelock/lovelock.tsx";
 import NightshiftTheme from "./pre-defined/nightshift/nightshift.tsx";
 import OledTheme from "./pre-defined/oled/oled.tsx";
 import RemlockTheme from "./pre-defined/remlock/remlock.tsx";
+import { SeasonalTheme } from "./pre-defined/seasonal/seasonal";
+import { SeasonalSettingsCard } from "./pre-defined/seasonal/seasonal-settings";
 import TeaTheme from "./pre-defined/tea/tea.tsx";
 
 const arcanePreview = getPluginAssetUrl(
@@ -270,6 +273,13 @@ const Settings = () => {
           <p className='text-sm text-muted-foreground'>
             {t("plugins.themes.preDefinedDescription")}
           </p>
+
+          <SeasonalSettingsCard
+            settings={current}
+            onChange={(patch) =>
+              setSettings(manifest.id, { ...current, ...patch })
+            }
+          />
 
           <div className='grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'>
             {[
@@ -646,6 +656,10 @@ const Render = () => {
 
   if (selectedTheme === "custom") {
     return <CustomTheme />;
+  }
+
+  if (isSeasonalThemeId(selectedTheme)) {
+    return <SeasonalTheme themeId={selectedTheme} />;
   }
 
   if (selectedTheme === "oled") {

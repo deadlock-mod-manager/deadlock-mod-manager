@@ -2,6 +2,7 @@
 @import "@fontsource-variable/geist-mono";
 @import "./plugins/themes/pre-defined/remlock/remlock.css";
 @import "./plugins/themes/pre-defined/oled/oled.css";
+@import "./plugins/themes/pre-defined/seasonal/seasonal.css";
 
 @tailwind base;
 @tailwind components;
