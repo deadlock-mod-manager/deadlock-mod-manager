@@ -118,6 +118,15 @@ pub fn get_runtime_kind() -> &'static str {
 }
 
 #[tauri::command]
+pub async fn get_machine_uid() -> Option<String> {
+  if crate::runtime_environment::current().e2e().is_some() {
+    return None;
+  }
+
+  machine_uid::get().ok()
+}
+
+#[tauri::command]
 pub async fn check_filesystem_writable() -> Result<FilesystemWritableStatus, Error> {
   let mod_manager = MANAGER.lock().unwrap();
   let game_path = match mod_manager.get_steam_manager().get_game_path() {

@@ -118,7 +118,7 @@ fn should_enable_gpu_compat_workaround() -> bool {
   }
 }
 
-#[cfg_attr(feature = "cef", tauri::cef_entry_point)]
+#[cfg_attr(feature = "cef", tauri_runtime_cef::cef_entry_point)]
 fn main() {
   let _ = fix_path_env::fix();
 

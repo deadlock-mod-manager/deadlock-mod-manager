@@ -56,9 +56,9 @@ pub fn run() {
   }
 
   let mut builder =
-    tauri::Builder::<app_runtime::AppRuntime>::default().plugin(tauri_plugin_dialog::init());
+    tauri::Builder::<app_runtime::AppRuntime>::new().plugin(tauri_plugin_dialog::init());
 
-  #[cfg(all(debug_assertions, desktop))]
+  #[cfg(all(debug_assertions, desktop, feature = "tauri-wry"))]
   {
     if runtime_environment::current().e2e().is_none() {
       builder = builder.plugin(
@@ -121,10 +121,6 @@ pub fn run() {
         .filter(|metadata| metadata.target() != "tracing")
         .build(),
     );
-
-  if runtime_environment::current().e2e().is_none() {
-    builder = builder.plugin(tauri_plugin_machine_uid::init());
-  }
 
   #[cfg(feature = "e2e-harness")]
   {
@@ -273,6 +269,7 @@ pub fn run() {
       commands::app::get_runtime_bootstrap,
       commands::app::is_auto_update_disabled,
       commands::app::get_runtime_kind,
+      commands::app::get_machine_uid,
       flatpak::is_flatpak,
       flatpak::update_flatpak,
       commands::app::is_linux_gpu_optimization_active,

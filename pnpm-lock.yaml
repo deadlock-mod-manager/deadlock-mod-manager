@@ -526,9 +526,6 @@ importers:
       '@phosphor-icons/react':
         specifier: ^2.1.10
         version: 2.1.10(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
-      '@skipperndt/plugin-machine-uid':
-        specifier: ^0.1.3
-        version: 0.1.3
       '@tanstack/react-query':
         specifier: ^5.95.2
         version: 5.104.0(react@19.2.0)
@@ -6815,9 +6812,6 @@ packages:
   '@sindresorhus/merge-streams@4.0.0':
     resolution: {integrity: sha512-tlqY9xq5ukxTUZBmoOp+m61cqwQD5pHJtFY3Mn8CA8ps6yghLH/Hw8UPdqg4OLmFW3IFlcXnQNmo/dh8HzXYIQ==}
     engines: {node: '>=18'}
-
-  '@skipperndt/plugin-machine-uid@0.1.3':
-    resolution: {integrity: sha512-7TTRo3fy0unrx/9XXf3zQf3B57y5Gq0jph0BUb2P1J4hpMXLRZCQDOJigy1IoztVUwML2UzOyLo/QNNUfANN/w==}
 
   '@so-ric/colorspace@1.1.6':
     resolution: {integrity: sha512-/KiKkpHNOBgkFJwu9sh48LkHSMYGyuTcSFK/qMBdnOAlrRJzRSXAOFB5qwzaVQuDl8wAvHVMkaASQDReTahxuw==}
@@ -19255,10 +19249,6 @@ snapshots:
   '@sindresorhus/is@7.1.1': {}
 
   '@sindresorhus/merge-streams@4.0.0': {}
-
-  '@skipperndt/plugin-machine-uid@0.1.3':
-    dependencies:
-      '@tauri-apps/api': 2.11.1
 
   '@so-ric/colorspace@1.1.6':
     dependencies:
