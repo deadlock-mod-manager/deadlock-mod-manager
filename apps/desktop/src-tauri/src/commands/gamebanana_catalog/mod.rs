@@ -1,3 +1,4 @@
+mod activity;
 mod state;
 mod types;
 
@@ -5,7 +6,7 @@ pub use state::GameBananaCatalogState;
 pub use types::{
   CatalogDonationLinkDto, CatalogDownloadDto, CatalogDownloadsDto, CatalogModDto,
   CatalogModMetadataDto, CatalogPageDto, CatalogSyncStatusDto, CatalogUpdateDto, CatalogUpdatesDto,
-  ChangelogPageDto, GameBananaFileserverDto, InstalledSubmissionDto,
+  GameBananaFileserverDto, InstalledSubmissionDto,
 };
 
 use crate::errors::Error;
@@ -13,7 +14,8 @@ use crate::providers::SubmissionRef;
 use crate::providers::gamebanana::catalog::{
   CatalogFacet, CatalogQuery, CatalogRecord, SyncOutcome,
 };
-use crate::providers::gamebanana::normalize_profile;
+use crate::providers::gamebanana::{ApiResponse, normalize_profile};
+use activity::{CatalogChangelogDto, CatalogCommentsDto};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tauri::State;
 use tokio_util::sync::CancellationToken;
@@ -105,25 +107,38 @@ pub async fn get_gamebanana_submission_detail(
 }
 
 #[tauri::command]
+pub async fn get_gamebanana_submission_comments(
+  state: State<'_, GameBananaCatalogState>,
+  policy: State<'_, super::policy::PolicyState>,
+  remote_id: String,
+  page: u32,
+) -> Result<CatalogCommentsDto, Error> {
+  let backend = state.backend()?;
+  let submission = allowed_submission(&policy, &remote_id)?;
+  let cancel = CancellationToken::new();
+  match backend.client.posts(&submission, page, &cancel).await? {
+    ApiResponse::Ok(posts) => Ok(CatalogCommentsDto::from_page(&posts, page)),
+    ApiResponse::Rejected { code } if code == "COMMENT_MODE_HIDDEN" => {
+      Ok(CatalogCommentsDto::hidden(page))
+    }
+    ApiResponse::Rejected { code } => Err(Error::ProviderInvalidResponse(format!(
+      "comments are unavailable: {code}"
+    ))),
+  }
+}
+
+#[tauri::command]
 pub async fn get_gamebanana_submission_changelog(
   state: State<'_, GameBananaCatalogState>,
   policy: State<'_, super::policy::PolicyState>,
   remote_id: String,
   page: u32,
-) -> Result<ChangelogPageDto, Error> {
-  if policy.unavailable_slugs()?.contains(&remote_id) {
-    return Err(Error::InvalidInput(
-      "This submission is unavailable by policy".to_string(),
-    ));
-  }
+) -> Result<CatalogChangelogDto, Error> {
   let backend = state.backend()?;
-  let submission = parse_submission(&remote_id)?;
-  let page = page.max(1);
-  let updates = backend
-    .client
-    .updates(&submission, page, &CancellationToken::new())
-    .await?;
-  Ok(ChangelogPageDto::from_page(updates, page))
+  let submission = allowed_submission(&policy, &remote_id)?;
+  let cancel = CancellationToken::new();
+  let updates = backend.client.updates(&submission, page, &cancel).await?;
+  Ok(CatalogChangelogDto::from_page(&updates, page))
 }
 
 #[tauri::command]
@@ -382,6 +397,23 @@ fn unix_timestamp() -> u64 {
     .duration_since(UNIX_EPOCH)
     .unwrap_or_default()
     .as_secs()
+}
+
+fn allowed_submission(
+  policy: &super::policy::PolicyState,
+  remote_id: &str,
+) -> Result<SubmissionRef, Error> {
+  let submission = parse_submission(remote_id)?;
+  if policy
+    .unavailable_slugs()?
+    .iter()
+    .any(|slug| slug == remote_id)
+  {
+    return Err(Error::InvalidInput(
+      "This submission is unavailable by policy".to_string(),
+    ));
+  }
+  Ok(submission)
 }
 
 fn parse_submission(remote_id: &str) -> Result<SubmissionRef, Error> {
