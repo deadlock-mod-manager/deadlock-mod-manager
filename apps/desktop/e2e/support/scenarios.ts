@@ -12,6 +12,7 @@ import {
   assertDownloadNetwork,
 } from "./download-fixtures";
 import { prepareProfileWorld } from "./profile-fixtures";
+import { prepareConflictWorld } from "./conflict-fixtures";
 import { prepareFilesystemWorld } from "./filesystem-fixtures";
 import { prepareManifestRepairWorld } from "./manifest-repair-fixtures";
 import { assertCrashEvidence } from "./filesystem-oracle";
@@ -83,6 +84,14 @@ const profiles: Definition = {
   nativeInput: true,
   routes: profileRoutes,
   prepare: async (world) => prepareProfileWorld(world),
+};
+const conflicts: Definition = {
+  ...defaults,
+  family: "conflicts",
+  spec: "conflicts",
+  phases: ["resolve", "restart-conflicts"],
+  routes: profileRoutes,
+  prepare: async (world) => prepareConflictWorld(world),
 };
 const downloads: Definition = {
   ...defaults,
@@ -172,6 +181,7 @@ export const scenarios = {
   "local-mod-lifecycle": local,
   "profiles-pointer": profiles,
   "profiles-keyboard": profiles,
+  "conflicts-resolve": conflicts,
   "downloads-pause": downloads,
   "downloads-range": downloads,
   "downloads-cancel": { ...downloads, coverage: "ipc-recovery" },

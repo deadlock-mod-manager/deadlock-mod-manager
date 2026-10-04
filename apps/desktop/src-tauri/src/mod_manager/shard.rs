@@ -343,6 +343,7 @@ impl StagedName {
 /// internal operation rather than to the user's addons.
 pub fn is_internal_artifact(name: &str) -> bool {
   name == ".dmm.json.tmp"
+    || name == crate::mod_manager::conflicts::IGNORES_TEMP_FILENAME
     || name == CLEAR_STAGING_DIR
     || name == REORDER_STAGING_DIR
     || name.starts_with(UPDATE_STAGING_PREFIX)
