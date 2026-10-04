@@ -973,7 +973,7 @@ const MyMods = () => {
                       showTimePeriodControl={false}
                       hideMapFilter={!isCustomMapsEnabled}
                       inputGroupClassName='min-w-0 w-full'
-                      searchContainerClassName='w-full max-w-80 shrink-0'
+                      searchContainerClassName='w-full min-w-32 max-w-80'
                       searchInputClassName='w-full'
                     />
                   </div>
