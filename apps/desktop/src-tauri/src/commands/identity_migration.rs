@@ -91,7 +91,8 @@ fn migrate_on_disk(
 /// Give one mod a new id everywhere it lives: the mod store and every profile
 /// (parked files, manifests, font markers). Used when the user links an
 /// imported local mod to its GameBanana page. Refuses when the new id is
-/// already in use, so two mods never merge by accident.
+/// already in use, so two mods never merge by accident. A failure partway is
+/// rolled back, so the mod keeps its old id and a retry starts clean.
 pub(crate) fn relabel_mod_on_disk(
   app_data: &Path,
   game_path: &Path,
@@ -101,7 +102,11 @@ pub(crate) fn relabel_mod_on_disk(
   let addons = game_path.join("game").join("citadel").join("addons");
   if addons.exists() {
     for profile in profile_bases(&addons)? {
-      if ProfileVpkManifest::load(&profile)?.mods.contains_key(to) {
+      let in_use = ProfileVpkManifest::load(&profile)?.mods.contains_key(to)
+        || profile
+          .existing_shards()
+          .any(|(_, shard)| has_prefixed_vpk(&shard, to));
+      if in_use {
         return Err(Error::ModInvalid(format!(
           "{to} is already in your library ({})",
           profile.display()
@@ -114,12 +119,59 @@ pub(crate) fn relabel_mod_on_disk(
       "Downloaded files for {to} already exist; remove that mod first"
     )));
   }
-  let migrations = vec![IdentityMigration {
+  let forward = [IdentityMigration {
     from: from.to_string(),
     to: to.to_string(),
   }];
-  migrate_mod_cache(&app_data.join("mods"), &migrations)?;
-  migrate_game_files(game_path, &migrations)
+  let result = migrate_mod_cache(&app_data.join("mods"), &forward)
+    .and_then(|()| migrate_game_files(game_path, &forward));
+  if result.is_err() {
+    // Nothing used `to` before (checked above), so renaming every `to` back
+    // to `from` restores exactly what moved.
+    let backward = [IdentityMigration {
+      from: to.to_string(),
+      to: from.to_string(),
+    }];
+    undo_relabel(app_data, game_path, &backward);
+  }
+  result
+}
+
+/// Best effort: every step runs even if an earlier one fails.
+fn undo_relabel(app_data: &Path, game_path: &Path, backward: &[IdentityMigration]) {
+  let citadel = game_path.join("game").join("citadel");
+  let addons = citadel.join("addons");
+  let mut steps = vec![migrate_mod_cache(&app_data.join("mods"), backward)];
+  if addons.exists() {
+    match profile_bases(&addons) {
+      Ok(profiles) => steps.extend(
+        profiles
+          .iter()
+          .map(|profile| migrate_profile(profile, backward)),
+      ),
+      Err(error) => steps.push(Err(error)),
+    }
+  }
+  steps.push(migrate_fonts_conf(
+    &citadel.join("panorama").join("fonts").join("fonts.conf"),
+    backward,
+  ));
+  for error in steps.into_iter().filter_map(Result::err) {
+    log::warn!("Could not roll back mod relabel: {error}");
+  }
+}
+
+fn has_prefixed_vpk(directory: &Path, id: &str) -> bool {
+  let prefix = format!("{id}_");
+  fs::read_dir(directory)
+    .into_iter()
+    .flatten()
+    .flatten()
+    .any(|entry| {
+      entry.file_name().to_str().is_some_and(|name| {
+        name.starts_with(&prefix) && name.to_ascii_lowercase().ends_with(".vpk")
+      })
+    })
 }
 
 fn validate_migrations(
@@ -322,6 +374,45 @@ mod tests {
       }])
       .is_err()
     );
+  }
+
+  #[test]
+  fn failed_relabel_rolls_back_and_can_be_retried() {
+    let root = tempfile::tempdir().unwrap();
+    let app_data = root.path().join("app-data");
+    let game_path = root.path().join("game-root");
+    let addons = game_path.join("game/citadel/addons");
+    fs::create_dir_all(app_data.join("mods/local-1")).unwrap();
+    fs::create_dir_all(&addons).unwrap();
+    fs::write(addons.join("local-1_skin.vpk"), b"vpk").unwrap();
+    ProfileVpkManifest {
+      version: 3,
+      mods: BTreeMap::from([("local-1".to_string(), ProfileVpkManifestEntry::default())]),
+    }
+    .save(&addons)
+    .unwrap();
+    // An unreadable fonts.conf fails the last step, after the mod store, the
+    // VPK and the manifest were already renamed.
+    let fonts_conf = game_path.join("game/citadel/panorama/fonts/fonts.conf");
+    fs::create_dir_all(&fonts_conf).unwrap();
+
+    assert!(relabel_mod_on_disk(&app_data, &game_path, "local-1", "900").is_err());
+
+    assert!(app_data.join("mods/local-1").is_dir());
+    assert!(!app_data.join("mods/900").exists());
+    assert!(addons.join("local-1_skin.vpk").is_file());
+    assert!(!addons.join("900_skin.vpk").exists());
+    assert!(
+      ProfileVpkManifest::load(&addons)
+        .unwrap()
+        .mods
+        .contains_key("local-1")
+    );
+
+    fs::remove_dir(&fonts_conf).unwrap();
+    relabel_mod_on_disk(&app_data, &game_path, "local-1", "900").unwrap();
+    assert!(app_data.join("mods/900").is_dir());
+    assert!(addons.join("900_skin.vpk").is_file());
   }
 
   #[test]

@@ -3844,6 +3844,7 @@
     "linked": "Linked to {{name}}",
     "linkedBadge": "Linked: {{name}}",
     "invalidReference": "That is not a GameBanana mod or sound link",
+    "alreadyInLibrary": "That GameBanana mod is already in your library. Remove it first or skip this mod",
     "continue": "Continue",
     "skipIdentification": "Skip",
     "summary": "{{imported}} imported, {{skipped}} skipped, {{failed}} failed",

@@ -1,3 +1,4 @@
+import { ValidationError } from "@deadlock-mods/common/client-errors";
 import type { HeroDetectionResult } from "@deadlock-mods/hero-parser";
 import { resolveDetectedHeroLabel } from "@deadlock-mods/hero-parser";
 import type { ModDto } from "@deadlock-mods/shared";
@@ -422,16 +423,18 @@ const replaceIdentity = (
 
 /** Link an imported local mod to its GameBanana submission everywhere: disk
  *  (every profile and the mod store) first, then every library record. */
+export const isRemoteIdInLibrary = (remoteId: string) =>
+  Object.values(usePersistedStore.getState().profiles).some((profile) =>
+    profile.mods.some((mod) => mod.remoteId === remoteId),
+  );
+
 export const useLinkMod = () =>
   useMutation({
     mutationFn: async ({ from, to }: { from: string; to: string }) => {
-      const state = usePersistedStore.getState();
-      const inUse = Object.values(state.profiles).some((profile) =>
-        profile.mods.some((mod) => mod.remoteId === to),
-      );
-      if (inUse) {
-        throw new Error(
-          `GameBanana mod ${to} is already in your library; remove it first or skip this mod`,
+      // The wizard checks this first to show a translated message.
+      if (isRemoteIdInLibrary(to)) {
+        throw new ValidationError(
+          `GameBanana mod ${to} is already in your library`,
         );
       }
       const catalog = await getMod(to).catch(() => null);

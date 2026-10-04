@@ -3821,6 +3821,7 @@
     "linked": "Zugeordnet zu {{name}}",
     "linkedBadge": "Zugeordnet: {{name}}",
     "invalidReference": "Das ist kein Link zu einer GameBanana-Mod oder einem Sound",
+    "alreadyInLibrary": "Diese GameBanana-Mod ist bereits in deiner Bibliothek. Entferne sie zuerst oder überspringe diese Mod",
     "continue": "Weiter",
     "skipIdentification": "Überspringen",
     "summary": "{{imported}} importiert, {{skipped}} übersprungen, {{failed}} fehlgeschlagen",

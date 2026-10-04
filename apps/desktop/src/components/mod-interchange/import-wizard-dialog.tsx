@@ -29,6 +29,7 @@ import {
   type ImportStageProgress,
   type InterchangeSource,
   type UnrecognizedMod,
+  isRemoteIdInLibrary,
   useIdentifyMods,
   useInterchangeLedger,
   useLinkMod,
@@ -229,6 +230,10 @@ export const ImportWizardDialog = ({
   const linkMod = (mod: UnrecognizedMod, target: string | null) => {
     if (!target) {
       toast.error(t("interchange.invalidReference"));
+      return;
+    }
+    if (isRemoteIdInLibrary(target)) {
+      toast.error(t("interchange.alreadyInLibrary"));
       return;
     }
     link.mutate(

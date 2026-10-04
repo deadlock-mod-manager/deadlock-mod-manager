@@ -226,6 +226,22 @@ struct ProfileSource {
   manifest: Option<ProfileVpkManifest>,
 }
 
+/// Removes a half-written bundle folder unless the export finished.
+struct PartialBundle<'a>(Option<&'a Path>);
+
+impl Drop for PartialBundle<'_> {
+  fn drop(&mut self) {
+    if let Some(bundle) = self.0
+      && let Err(error) = fs::remove_dir_all(bundle)
+    {
+      log::warn!(
+        "Failed to remove partial export {}: {error}",
+        bundle.display()
+      );
+    }
+  }
+}
+
 pub fn export(
   manager: &ModManager,
   request: InterchangeExportRequest,
@@ -281,12 +297,14 @@ pub fn export_from(
   }
   let mut planned: Vec<Planned> = Vec::new();
   let mut key_by_mod_id: HashMap<String, String> = HashMap::new();
-  let mut skipped = Vec::new();
+  let mut skipped: Vec<SkippedExport> = Vec::new();
   for (profile_index, profile) in profiles.iter().enumerate() {
     let mut mods: Vec<&ExportModInput> = profile.mods.iter().collect();
     mods.sort_by_key(|m| m.order);
     for input in mods {
-      if key_by_mod_id.contains_key(&input.mod_id) {
+      if key_by_mod_id.contains_key(&input.mod_id)
+        || skipped.iter().any(|s| s.mod_id == input.mod_id)
+      {
         continue;
       }
       let Some((key, origin)) = origin_for(input) else {
@@ -316,6 +334,7 @@ pub fn export_from(
     counter += 1;
   }
   fs::create_dir_all(bundle.join("files"))?;
+  let mut cleanup = PartialBundle(Some(&bundle));
 
   let mut document = InterchangeDocument::new(InterchangeSource {
     manager: MANAGER_ID.to_string(),
@@ -458,6 +477,7 @@ pub fn export_from(
   let json = serde_json::to_vec_pretty(&document)
     .map_err(|e| Error::InvalidInput(format!("could not serialize export: {e}")))?;
   fs::write(bundle.join(MANIFEST_FILENAME), json)?;
+  cleanup.0 = None;
 
   Ok(InterchangeExportReport {
     bundle_path: bundle.to_string_lossy().to_string(),
