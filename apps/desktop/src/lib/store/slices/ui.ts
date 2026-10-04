@@ -12,8 +12,9 @@ export type FilterMode = "include" | "exclude";
 export type MapQuickFilter = "off" | "only" | "exclude";
 export type AudioQuickFilter = "off" | "only" | "exclude";
 // Which GameBanana section the mods store is browsing. Maps are mods with the
-// map flag set; the rest map onto submission types.
-export type ContentType = "mod" | "sound" | "map" | "wip";
+// map flag set; albums are deadlockskins.gg curations; the rest map onto
+// submission types.
+export type ContentType = "mod" | "sound" | "map" | "wip" | "album";
 export type AddedPeriod = "any" | "today" | "week" | "month" | "custom";
 
 export type AddedFilter = {

@@ -19,6 +19,7 @@ import ModCardSkeleton from "@/components/skeletons/mod-card";
 import { useModDetailHoverPrefetch } from "@/hooks/use-mod-detail-hover-prefetch";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import type {
+  AlbumNavigationTarget,
   AuthorNavigationTarget,
   ModsCollection,
 } from "@/lib/mods/mod-detail-navigation";
@@ -42,10 +43,11 @@ interface ModCardProps {
   readOnly?: boolean;
   collection?: ModsCollection;
   author?: AuthorNavigationTarget;
+  album?: AlbumNavigationTarget;
 }
 
 const ModCard = memo((props: ModCardProps) => {
-  const { mod, readOnly = false, collection = "mods", author } = props;
+  const { mod, readOnly = false, collection = "mods", author, album } = props;
   const { t } = useTranslation();
   const localMod = usePersistedStore((state) =>
     findLocalMod(state.localMods, mod?.remoteId),
@@ -67,7 +69,7 @@ const ModCard = memo((props: ModCardProps) => {
   const openModDetail = () => {
     void prefetchModDetail(queryClient, mod.remoteId);
     navigate(`/mods/${mod.remoteId}`, {
-      state: { collection, author },
+      state: { collection, author, album },
     });
   };
 

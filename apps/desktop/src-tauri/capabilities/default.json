@@ -60,6 +60,9 @@
           "url": "https://api.deadworks.net/**"
         },
         {
+          "url": "https://deadlockskins.gg/**"
+        },
+        {
           "url": "http://localhost:9000/**"
         },
         {
