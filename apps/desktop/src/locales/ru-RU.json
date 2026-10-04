@@ -74,8 +74,6 @@
       "failedHint": "",
       "retry": "",
       "hide": "",
-      "disabled": "",
-      "disabledHint": "",
       "enable": ""
     },
     "modActions": "Действия мода",
@@ -94,7 +92,32 @@
     "assignCurrent": "Обнаружен как {{hero}}",
     "assignUnrecognized": "Нет героя",
     "assignRemoved": "Убрано",
-    "assignSuccess": ""
+    "assignSuccess": "",
+    "randomizer": {
+      "title": "",
+      "inactiveSummary": "",
+      "activeSummary_one": "",
+      "activeSummary_other": "",
+      "bulk": "",
+      "selectAllHeroes": "",
+      "includeDefaultAll": "",
+      "excludeDefaultAll": "",
+      "clearAll": "",
+      "heroNeedsMore_one": "",
+      "heroNeedsMore_other": "",
+      "heroReady_one": "",
+      "heroReady_other": "",
+      "heroActive_one": "",
+      "heroActive_other": "",
+      "includeDefault": "",
+      "selectAll": "",
+      "selectNone": "",
+      "inPool": "",
+      "defaultInPool": "",
+      "unavailable": "",
+      "listSubtitle": "",
+      "launchFailed": ""
+    }
   },
   "stats": {
     "title": "Статистика",
