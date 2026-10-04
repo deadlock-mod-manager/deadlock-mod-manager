@@ -17,6 +17,11 @@ import {
 } from "@deadlock-mods/ui/components/tabs";
 import { Label } from "@deadlock-mods/ui/components/label";
 import { Switch } from "@deadlock-mods/ui/components/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deadlock-mods/ui/components/tooltip";
 import { cn } from "@deadlock-mods/ui/lib/utils";
 import {
   CubeIcon,
@@ -57,7 +62,7 @@ const SkinTile = ({
   return (
     <button
       className={cn(
-        "group flex h-full flex-col overflow-hidden rounded-lg border text-left transition-colors hover:border-primary",
+        "group flex h-full flex-col overflow-hidden rounded-lg border bg-card text-left transition-colors hover:border-primary",
         disabled && "pointer-events-none opacity-60",
       )}
       disabled={disabled}
@@ -119,29 +124,29 @@ const DefaultSkinTile = ({
   return (
     <button
       className={cn(
-        "group flex h-full flex-col overflow-hidden rounded-lg border text-left transition-colors hover:border-primary",
+        "group relative aspect-[14/19] overflow-hidden rounded-lg border bg-gradient-to-b from-muted/70 to-card text-left transition-colors hover:border-primary",
         disabled && "pointer-events-none opacity-60",
       )}
       disabled={disabled}
       onClick={onSelect}
       type='button'>
-      <div className='relative flex h-28 w-full items-center justify-center bg-muted/40'>
-        <img
-          alt={skin.hero}
-          className='h-full max-w-full object-contain'
-          decoding='async'
-          src={skin.image}
-        />
-        {loading && (
-          <div className='absolute inset-x-0 bottom-0 bg-background/85 p-2'>
-            <FoundryLoadingBar />
-          </div>
+      <img
+        alt={skin.hero}
+        className='absolute inset-0 h-full w-full object-cover object-top transition-transform duration-300 group-hover:scale-105'
+        decoding='async'
+        loading='lazy'
+        src={skin.image}
+      />
+      <div className='absolute inset-x-0 bottom-0 bg-gradient-to-t from-background via-background/80 to-transparent px-2 pt-6 pb-2'>
+        {loading ? (
+          <FoundryLoadingBar />
+        ) : (
+          <span
+            className='block truncate font-medium text-sm'
+            title={skin.hero}>
+            {skin.hero}
+          </span>
         )}
-      </div>
-      <div className='flex min-w-0 flex-col gap-0.5 p-2'>
-        <span className='truncate font-medium text-sm' title={skin.hero}>
-          {skin.hero}
-        </span>
       </div>
     </button>
   );
@@ -281,7 +286,7 @@ export const FoundryImportDialog = ({
               </div>
             ) : (
               <ScrollArea className='min-h-0 flex-1 pr-3'>
-                <div className='grid grid-cols-2 gap-3 pb-1 sm:grid-cols-3'>
+                <div className='grid grid-cols-3 gap-3 pb-1 sm:grid-cols-5'>
                   {defaultSkins.map((skin) => (
                     <DefaultSkinTile
                       disabled={busy}
@@ -354,37 +359,41 @@ export const FoundryImportDialog = ({
           </TabsContent>
         </Tabs>
 
-        <div className='shrink-0 space-y-2 border-t px-6 py-4'>
-          <div className='flex items-start gap-3'>
-            <CubeIcon
-              className='mt-0.5 h-5 w-5 shrink-0 text-muted-foreground'
-              weight='duotone'
-            />
-            <div className='min-w-0 flex-1'>
+        <div className='flex shrink-0 items-center gap-3 border-t px-6 py-3'>
+          <CubeIcon
+            className='h-5 w-5 shrink-0 text-muted-foreground'
+            weight='duotone'
+          />
+          <div className='min-w-0 flex-1'>
+            <div className='flex items-center gap-1.5'>
               <Label
                 className='cursor-pointer font-medium text-sm'
                 htmlFor='foundry-3d-toggle'>
                 {t("foundry.import.preview3dLabel")}
               </Label>
-              <p className='text-muted-foreground text-xs'>
-                {t("foundry.import.preview3dHint")}
-              </p>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    aria-label={t("foundry.import.preview3dWarning")}
+                    className='text-amber-500/80 transition-colors hover:text-amber-500'
+                    type='button'>
+                    <WarningIcon className='h-3.5 w-3.5' weight='bold' />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className='max-w-xs'>
+                  {t("foundry.import.preview3dWarning")}
+                </TooltipContent>
+              </Tooltip>
             </div>
-            <Switch
-              checked={preview3d}
-              id='foundry-3d-toggle'
-              onCheckedChange={setPreview3d}
-            />
+            <p className='truncate text-muted-foreground text-xs'>
+              {t("foundry.import.preview3dHint")}
+            </p>
           </div>
-
-          {preview3d && (
-            <div className='flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2.5'>
-              <WarningIcon className='mt-0.5 h-4 w-4 shrink-0 text-amber-500' />
-              <p className='text-xs leading-relaxed'>
-                {t("foundry.import.preview3dWarning")}
-              </p>
-            </div>
-          )}
+          <Switch
+            checked={preview3d}
+            id='foundry-3d-toggle'
+            onCheckedChange={setPreview3d}
+          />
         </div>
       </DialogContent>
     </Dialog>

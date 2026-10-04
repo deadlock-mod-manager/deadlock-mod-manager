@@ -10,12 +10,13 @@ import {
   SpeakerSimpleXIcon,
   SpeakerXIcon,
 } from "@phosphor-icons/react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import type { FoundryEntry, FoundrySoundGroup } from "@/types/foundry";
 import { useFoundry } from "./foundry-context";
+import { chunkEntries, chunkSizeStyle } from "./foundry-chunks";
 import { formatBytes } from "./foundry-entry-list";
 
 /** Playback state of the single shared `<audio>` element. */
@@ -25,7 +26,15 @@ type Playback =
   | { kind: "playing"; path: string }
   | { kind: "unplayable"; path: string };
 
-const SoundRow = ({
+const IDLE: Playback = { kind: "idle" };
+
+type RowPlayback = Exclude<Playback["kind"], "idle"> | null;
+
+/** The playback state that concerns one row, so idle rows see a stable `null`. */
+const playbackFor = (playback: Playback, path: string): RowPlayback =>
+  "path" in playback && playback.path === path ? playback.kind : null;
+
+const SoundRow = memo(function SoundRow({
   entry,
   isSelected,
   isEdited,
@@ -36,15 +45,14 @@ const SoundRow = ({
   entry: FoundryEntry;
   isSelected: boolean;
   isEdited: boolean;
-  playback: Playback;
+  playback: RowPlayback;
   onSelect: (entry: FoundryEntry) => void;
   onToggle: (entry: FoundryEntry) => void;
-}) => {
+}) {
   const { t } = useTranslation();
-  const isActive = "path" in playback && playback.path === entry.path;
-  const isPlaying = isActive && playback.kind === "playing";
-  const isLoading = isActive && playback.kind === "loading";
-  const isUnplayable = isActive && playback.kind === "unplayable";
+  const isPlaying = playback === "playing";
+  const isLoading = playback === "loading";
+  const isUnplayable = playback === "unplayable";
 
   return (
     <li>
@@ -93,20 +101,61 @@ const SoundRow = ({
       </div>
     </li>
   );
-};
+});
 
-const SoundGroupSection = ({
-  group,
-  ...rowProps
-}: {
-  group: FoundrySoundGroup;
-  selectedPath: string | null;
+const ROW_HEIGHT_PX = 44;
+
+interface RowHandlers {
   editedPaths: ReadonlySet<string>;
-  playback: Playback;
   onSelect: (entry: FoundryEntry) => void;
   onToggle: (entry: FoundryEntry) => void;
-}) => {
-  const { selectedPath, editedPaths, playback, onSelect, onToggle } = rowProps;
+}
+
+/** A slice of a group's rows; voice lines alone can run to thousands. */
+const SoundChunk = memo(function SoundChunk({
+  entries,
+  selectedPath,
+  playback,
+  editedPaths,
+  onSelect,
+  onToggle,
+}: RowHandlers & {
+  entries: FoundryEntry[];
+  selectedPath: string | null;
+  playback: Playback;
+}) {
+  return (
+    <ul
+      className='space-y-0.5 [content-visibility:auto]'
+      style={chunkSizeStyle(entries.length, ROW_HEIGHT_PX)}>
+      {entries.map((entry) => (
+        <SoundRow
+          entry={entry}
+          isEdited={editedPaths.has(entry.path)}
+          isSelected={entry.path === selectedPath}
+          key={entry.path}
+          onSelect={onSelect}
+          onToggle={onToggle}
+          playback={playbackFor(playback, entry.path)}
+        />
+      ))}
+    </ul>
+  );
+});
+
+const SoundGroupSection = memo(function SoundGroupSection({
+  group,
+  selectedPath,
+  playback,
+  ...handlers
+}: RowHandlers & {
+  group: FoundrySoundGroup;
+  selectedPath: string | null;
+  playback: Playback;
+}) {
+  const chunks = useMemo(() => chunkEntries(group.entries), [group.entries]);
+  const playingPath = "path" in playback ? playback.path : null;
+
   return (
     <section className='space-y-1.5'>
       <div className='flex items-center gap-2'>
@@ -128,22 +177,28 @@ const SoundGroupSection = ({
           {group.entries.length}
         </Badge>
       </div>
-      <ul className='space-y-0.5'>
-        {group.entries.map((entry) => (
-          <SoundRow
-            entry={entry}
-            isEdited={editedPaths.has(entry.path)}
-            isSelected={entry.path === selectedPath}
-            key={entry.path}
-            onSelect={onSelect}
-            onToggle={onToggle}
-            playback={playback}
+      <div className='space-y-0.5'>
+        {chunks.map((chunk) => (
+          <SoundChunk
+            {...handlers}
+            entries={chunk.entries}
+            key={chunk.entries[0].path}
+            playback={
+              playingPath !== null && chunk.paths.has(playingPath)
+                ? playback
+                : IDLE
+            }
+            selectedPath={
+              selectedPath !== null && chunk.paths.has(selectedPath)
+                ? selectedPath
+                : null
+            }
           />
         ))}
-      </ul>
+      </div>
     </section>
   );
-};
+});
 
 /** Playback volume for the previews, kept beside the list it controls. */
 const VolumeControl = ({
@@ -205,12 +260,18 @@ export const FoundrySoundsPanel = () => {
   } = useFoundry();
   const volume = usePersistedStore((state) => state.foundrySoundVolume);
   const setVolume = usePersistedStore((state) => state.setFoundrySoundVolume);
-  const [playback, setPlayback] = useState<Playback>({ kind: "idle" });
+  const [playback, setPlayback] = useState<Playback>(IDLE);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // Read through refs so the toggle handler stays stable and the memoized
+  // rows don't all re-render on every playback change or volume tick.
+  const playbackRef = useRef(playback);
+  playbackRef.current = playback;
+  const volumeRef = useRef(volume);
+  volumeRef.current = volume;
 
   useEffect(() => {
     const audio = new Audio();
-    audio.addEventListener("ended", () => setPlayback({ kind: "idle" }));
+    audio.addEventListener("ended", () => setPlayback(IDLE));
     audioRef.current = audio;
     return () => {
       audio.pause();
@@ -232,16 +293,17 @@ export const FoundrySoundsPanel = () => {
       const audio = audioRef.current;
       if (!audio) return;
 
-      if (playback.kind === "playing" && playback.path === entry.path) {
+      const current = playbackRef.current;
+      if (current.kind === "playing" && current.path === entry.path) {
         audio.pause();
-        setPlayback({ kind: "idle" });
+        setPlayback(IDLE);
         return;
       }
 
       audio.pause();
       setPlayback({ kind: "loading", path: entry.path });
       try {
-        audio.volume = volume;
+        audio.volume = volumeRef.current;
         audio.src = await playSound(entry.path);
         await audio.play();
         setPlayback({ kind: "playing", path: entry.path });
@@ -251,10 +313,31 @@ export const FoundrySoundsPanel = () => {
         setPlayback({ kind: "unplayable", path: entry.path });
       }
     },
-    [playSound, playback, volume],
+    [playSound],
   );
 
-  const groups = manifest?.soundGroups ?? [];
+  const handleSelect = useCallback(
+    (entry: FoundryEntry) => setSelectedEntryPath(entry.path),
+    [setSelectedEntryPath],
+  );
+
+  const groups = useMemo(() => manifest?.soundGroups ?? [], [manifest]);
+  // Which group holds each clip, so selection and playback only reach the
+  // groups they touch; the rest keep their props and skip rendering.
+  const groupIdByPath = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const group of groups) {
+      for (const entry of group.entries) map.set(entry.path, group.id);
+    }
+    return map;
+  }, [groups]);
+  const selectedGroupId =
+    selectedEntryPath === null
+      ? undefined
+      : groupIdByPath.get(selectedEntryPath);
+  const playingGroupId =
+    "path" in playback ? groupIdByPath.get(playback.path) : undefined;
+
   if (groups.length === 0) {
     return (
       <p className='px-2 py-6 text-center text-muted-foreground text-sm'>
@@ -274,10 +357,10 @@ export const FoundrySoundsPanel = () => {
           editedPaths={editedPaths}
           group={group}
           key={group.id}
-          onSelect={(entry) => setSelectedEntryPath(entry.path)}
+          onSelect={handleSelect}
           onToggle={handleToggle}
-          playback={playback}
-          selectedPath={selectedEntryPath}
+          playback={group.id === playingGroupId ? playback : IDLE}
+          selectedPath={group.id === selectedGroupId ? selectedEntryPath : null}
         />
       ))}
     </div>

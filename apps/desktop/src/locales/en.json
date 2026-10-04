@@ -426,8 +426,8 @@
       "noHeroSkins": "No hero skins found in your library yet. Install a hero skin, or import a local VPK.",
       "fileHint": "Import any hero-skin VPK from disk. Map mods will be rejected.",
       "preview3dLabel": "Load the 3D preview",
-      "preview3dHint": "Turn this off to open skins faster; you can still paint, swap cards and change sounds.",
-      "preview3dWarning": "The preview decodes the whole character model and renders it on your GPU. It is the slowest part of opening a skin, and not every skin can be decoded — an unusual or broken model may fail to load or, rarely, upset the graphics driver. Switch it off if a skin refuses to open."
+      "preview3dHint": "Slowest part of opening a skin. Painting, cards and sounds work without it.",
+      "preview3dWarning": "Some models fail to load, and a few can crash your graphics driver. If a skin won't open, turn this off."
     },
     "toolbar": {
       "entryCount": "{{count}} files",

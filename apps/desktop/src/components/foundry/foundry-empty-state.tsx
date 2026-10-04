@@ -44,7 +44,7 @@ const EntryCard = ({
   <button
     className={cn(
       "group relative flex w-full flex-col items-center gap-4 overflow-hidden rounded-2xl border p-8 text-center transition-all duration-300",
-      "border-border/60 bg-card/40 hover:-translate-y-1 hover:border-primary/50 hover:bg-card/70",
+      "border-border/60 bg-card hover:-translate-y-1 hover:border-primary/50",
       "hover:shadow-[0_18px_50px_-24px_hsl(var(--primary))]",
       disabled && "pointer-events-none opacity-60",
     )}

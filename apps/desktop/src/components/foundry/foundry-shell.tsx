@@ -14,13 +14,14 @@ import {
 } from "@deadlock-mods/ui/components/tabs";
 import {
   CubeIcon,
+  ExportIcon,
   ImageIcon,
   MusicNotesIcon,
   PaintBrushIcon,
   RepeatIcon,
   XCircleIcon,
 } from "@phosphor-icons/react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { FoundryEntry, FoundryTab } from "@/types/foundry";
 import { FoundryCardsPanel } from "./foundry-cards-panel";
@@ -97,6 +98,11 @@ export const FoundryShell = () => {
     return [];
   }, [manifest, activeTab]);
 
+  const onSelect = useCallback(
+    (entry: FoundryEntry) => setSelectedEntryPath(entry.path),
+    [setSelectedEntryPath],
+  );
+
   const heroName = manifest?.heroDisplay ?? manifest?.hero ?? null;
 
   if (!manifest) return null;
@@ -107,7 +113,6 @@ export const FoundryShell = () => {
   // Painting works on parts, not files, so the per-entry inspector is dropped
   // and the 3D preview takes the space instead.
   const showInspector = activeTab !== "paint";
-  const onSelect = (entry: FoundryEntry) => setSelectedEntryPath(entry.path);
 
   return (
     <div className='flex h-full flex-col gap-3'>
@@ -128,21 +133,24 @@ export const FoundryShell = () => {
         </div>
         <div className='flex items-center gap-2'>
           <Button
+            className='text-muted-foreground hover:bg-muted hover:text-foreground'
+            icon={<XCircleIcon className='h-4 w-4' />}
+            onClick={reset}
+            size='sm'
+            variant='ghost'>
+            {t("foundry.toolbar.clear")}
+          </Button>
+          <Button
             icon={<RepeatIcon className='h-4 w-4' />}
             onClick={() => setImportOpen(true)}
             size='sm'
             variant='outline'>
             {t("foundry.toolbar.changeSkin")}
           </Button>
-          <Button
-            icon={<XCircleIcon className='h-4 w-4' />}
-            onClick={reset}
-            size='sm'
-            variant='outline'>
-            {t("foundry.toolbar.clear")}
-          </Button>
+          <div aria-hidden className='mx-1 h-5 w-px bg-border' />
           <Button
             disabled={!workspace || busy}
+            icon={<ExportIcon className='h-4 w-4' weight='bold' />}
             onClick={() => setExportOpen(true)}
             size='sm'
             title={workspace ? undefined : t("foundry.editor.workspacePending")}

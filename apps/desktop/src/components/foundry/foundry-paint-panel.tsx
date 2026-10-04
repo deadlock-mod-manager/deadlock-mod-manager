@@ -368,23 +368,25 @@ export const FoundryPaintPanel = () => {
         )}
       </div>
 
-      <Button
-        className='w-full'
-        disabled={disabled}
-        icon={<PaintBrushIcon className='h-4 w-4' />}
-        onClick={handleApply}
-        size='sm'>
-        {t("foundry.paint.apply", {
-          target: t(`foundry.paint.targets.${selected}`),
-        })}
-      </Button>
-
       {!workspace && (
         <p className='rounded-md border border-dashed px-3 py-2 text-muted-foreground text-xs'>
           {t("foundry.editor.workspacePending")}
         </p>
       )}
       <p className='text-muted-foreground text-xs'>{t("foundry.paint.hint")}</p>
+
+      <div className='sticky bottom-0 -mx-2 -mb-2 border-t bg-background p-2'>
+        <Button
+          className='w-full'
+          disabled={disabled}
+          icon={<PaintBrushIcon className='h-4 w-4' />}
+          onClick={handleApply}
+          size='sm'>
+          {t("foundry.paint.apply", {
+            target: t(`foundry.paint.targets.${selected}`),
+          })}
+        </Button>
+      </div>
     </div>
   );
 };
