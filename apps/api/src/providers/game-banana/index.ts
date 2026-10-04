@@ -2,9 +2,11 @@ import { ProviderError } from "@deadlock-mods/common";
 import {
   db,
   type Mod,
+  ModAuthorRepository,
   ModDownloadRepository,
   ModRepository,
   type NewMod,
+  type NewModAuthor,
 } from "@deadlock-mods/database";
 import { GameBanana, type FileserverDto } from "@deadlock-mods/shared";
 import { createWideEvent, wideEventContext } from "../../lib/logger";
@@ -22,6 +24,7 @@ import {
   buildDownloadSignature,
   buildDownloadSignatureFromPayload,
   buildMetadata,
+  buildModAuthor,
   categoryFromGameBananaProfile,
   classifyNSFW,
   gameBananaTimestampToDate,
@@ -35,7 +38,13 @@ import {
 } from "./utils";
 
 const modRepository = new ModRepository(db);
+const modAuthorRepository = new ModAuthorRepository(db);
 const modDownloadRepository = new ModDownloadRepository(db);
+
+type GameBananaModPayload = NewMod & {
+  isTrashed: boolean;
+  modAuthor?: NewModAuthor;
+};
 
 export class GameBananaProvider extends Provider<GameBananaSubmission> {
   async getAllSubmissions(
@@ -329,7 +338,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
   async createModPayload(
     mod: GameBananaSubmission,
     source: GameBananaSubmissionSource,
-  ): Promise<(NewMod & { isTrashed: boolean }) | null> {
+  ): Promise<GameBananaModPayload | null> {
     if (source === "sound") {
       return this.createSoundModPayload(mod);
     }
@@ -338,7 +347,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
 
   private async createSoundModPayload(
     mod: GameBananaSubmission,
-  ): Promise<(NewMod & { isTrashed: boolean }) | null> {
+  ): Promise<GameBananaModPayload | null> {
     const profile = await this.getMod(mod._idRow.toString(), "Sound");
 
     if (!profile) return null;
@@ -378,12 +387,13 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         isMap: false,
         donationMethods: profile._aSubmitter?._aDonationMethods ?? [],
       }),
+      modAuthor: buildModAuthor(profile._aSubmitter),
     };
   }
 
   private async createRegularModPayload(
     mod: GameBananaSubmission,
-  ): Promise<(NewMod & { isTrashed: boolean }) | null> {
+  ): Promise<GameBananaModPayload | null> {
     const profile = await this.getMod(mod._idRow.toString(), "Mod");
 
     if (!profile) return null;
@@ -427,6 +437,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
         isMap,
         donationMethods: profile._aSubmitter?._aDonationMethods ?? [],
       }),
+      modAuthor: buildModAuthor(profile._aSubmitter),
     };
   }
 
@@ -434,7 +445,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     profile:
       | GameBanana.GameBananaModProfile
       | GameBanana.GameBananaSoundProfile,
-  ): NewMod & { isTrashed: boolean } {
+  ): GameBananaModPayload {
     return {
       remoteId: profile._idRow.toString(),
       name: profile._sName,
@@ -514,8 +525,15 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       }
 
       t0 = Date.now();
+      const { modAuthor, ...modPayload } = payload;
+      const author = modAuthor
+        ? await modAuthorRepository.upsert(modAuthor)
+        : null;
       const { mod: dbMod, contentChanged } =
-        await modRepository.upsertByRemoteId(payload);
+        await modRepository.upsertByRemoteId({
+          ...modPayload,
+          modAuthorId: author?.id,
+        });
       wide.set("upsertMs", Date.now() - t0);
 
       t0 = Date.now();

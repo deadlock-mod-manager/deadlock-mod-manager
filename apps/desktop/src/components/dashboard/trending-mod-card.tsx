@@ -22,7 +22,9 @@ export const TrendingModCard = ({ mod }: Props) => {
   const heroImage = mod.images[0];
   const handleClick = () => {
     void prefetchModDetail(queryClient, mod.remoteId);
-    navigate(`/mods/${mod.remoteId}`);
+    navigate(`/mods/${mod.remoteId}`, {
+      state: { collection: "dashboard" },
+    });
   };
 
   return (

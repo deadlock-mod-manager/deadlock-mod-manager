@@ -8,6 +8,8 @@ type BaseUser = {
   _bHasRipe: boolean;
   _sProfileUrl: string;
   _sAvatarUrl: string;
+  _sHdAvatarUrl?: string;
+  _sUpicUrl?: string;
 };
 
 type BaseMedia = {

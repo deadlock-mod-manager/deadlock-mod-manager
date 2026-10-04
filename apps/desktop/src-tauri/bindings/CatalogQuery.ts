@@ -5,6 +5,7 @@ export type CatalogQuery = {
   search: string;
   categories: Array<string>;
   heroes: Array<string>;
+  authorRemoteId: string | null;
   excludeFilters: boolean;
   isAudio: boolean | null;
   isMap: boolean | null;

@@ -18,8 +18,13 @@ const LAST_FULL_SYNC_AT: &str = "last_full_sync_at";
 const LAST_INCOMPLETE_SNAPSHOT_AT: &str = "last_incomplete_snapshot_at";
 const PREVIEW_IMAGES_VERSION: &str = "preview_images_v1";
 const HYDRATION_VERSION: &str = "bulk_hydration_v2";
+const AUTHOR_REMOTE_ID_VERSION: &str = "author_remote_id_v1";
 // Bumping any of these forces one full resync to backfill existing catalogs.
-const BACKFILL_VERSIONS: [&str; 2] = [PREVIEW_IMAGES_VERSION, HYDRATION_VERSION];
+const BACKFILL_VERSIONS: [&str; 3] = [
+  PREVIEW_IMAGES_VERSION,
+  HYDRATION_VERSION,
+  AUTHOR_REMOTE_ID_VERSION,
+];
 const INCOMPLETE_RETRY_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60);
 // Private or trashed submissions legitimately hydrate to nothing; more than this means
 // hydration itself is failing and the snapshot must not be trusted.
@@ -635,6 +640,10 @@ fn from_index(
       .filter(|author| !author.is_empty())
       .unwrap_or("Unknown")
       .to_string(),
+    author_remote_id: record
+      .submitter
+      .as_ref()
+      .and_then(|submitter| (submitter.id > 0).then(|| submitter.id.to_string())),
     description: String::new(),
     profile_url,
     category,
