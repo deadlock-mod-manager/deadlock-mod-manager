@@ -108,14 +108,15 @@ export const getGameBananaFileservers = async (): Promise<FileserverDto[]> => {
 export const checkModUpdates = async (
   mods: Array<{
     remoteId: string;
-    installedAt: Date;
+    // Persisted store dates come back from JSON as ISO strings.
+    installedAt: Date | string;
     selectedFileIds: string[];
   }>,
 ) => {
   return checkDirectGameBananaUpdates(
     mods.map((mod) => ({
       remoteId: mod.remoteId,
-      installedAt: Math.floor(mod.installedAt.getTime() / 1_000),
+      installedAt: Math.floor(new Date(mod.installedAt).getTime() / 1_000),
       selectedFileIds: mod.selectedFileIds,
     })),
   );
