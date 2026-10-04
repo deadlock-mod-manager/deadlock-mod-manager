@@ -2825,6 +2825,8 @@
       "applyDraftGraceHint": "Draft theme applied. Click \"Keep\" or it will revert automatically.",
       "applyDraftConfirmKeep": "Keep draft theme",
       "accentColor": "Accent color",
+      "addCustomColor": "Add custom color",
+      "resetAccent": "Reset to default",
       "accentColorDialogTitle": "Accent color",
       "accentColorDialogDescription": "Pick the primary accent used for highlights and emphasis.",
       "cardColor": "Card surface",
@@ -2857,10 +2859,8 @@
     },
     "oled": {
       "description": "True-black backgrounds, subtle charcoal surfaces, and a customizable accent for OLED displays.",
-      "accentColor": "Accent Color",
       "customColor": "OLED Accent Color",
-      "customColorDescription": "Choose an accent color. Button text contrast adjusts automatically.",
-      "resetAccent": "Reset accent"
+      "customColorDescription": "Choose an accent color. Button text contrast adjusts automatically."
     },
     "nightshift": {
       "description": "A teal-accented cyberpunk theme designed for clarity and long gaming sessions.",
@@ -2875,10 +2875,8 @@
     "arcane": {
       "description": "A sleek dark theme with elegant pink-red glow effects inspired by the Arcane aesthetic.",
       "visit": "Theme by Skeptic",
-      "accentColor": "Accent Color",
       "customColor": "Custom Color",
-      "customColorDescription": "Choose a custom accent color for the Arcane theme.",
-      "addCustomColor": "Add custom color"
+      "customColorDescription": "Choose a custom accent color for the Arcane theme."
     },
     "deadlockApi": {
       "description": "OLED black theme with electric red glow effects inspired by the Deadlock API design.",

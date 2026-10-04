@@ -1,48 +1,19 @@
-import type { CSSProperties } from "react";
-import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 import { getPluginAssetUrl } from "@/lib/plugins";
+import { ThemeBackdrop } from "../../components/theme-backdrop";
 
 const bloodmoonBg = getPluginAssetUrl(
   "themes",
   "public/pre-defined/bloodmoon/background/background.png",
 );
 
-const BloodmoonTheme = () => {
-  const [mounted, setMounted] = useState(false);
-
-  const backgroundStyle = useMemo<CSSProperties>(() => {
-    return {
-      position: "fixed",
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: 0,
-      backgroundImage: `url(${bloodmoonBg})`,
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      pointerEvents: "none",
-      opacity: 0.4,
-      zIndex: 0,
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
-
-    const root = document.documentElement;
-    root.classList.add("bloodmoon-theme-active");
-    return () => {
-      root.classList.remove("bloodmoon-theme-active");
-    };
-  }, [mounted]);
-
-  useEffect(() => setMounted(true), []);
-
-  if (!mounted) return null;
-
-  const backgroundNode = <div aria-hidden style={backgroundStyle} />;
-  return createPortal(backgroundNode, document.body);
+const backdropStyle = {
+  backgroundImage: `linear-gradient(hsl(var(--background) / 0.6), hsl(var(--background) / 0.6)), url(${bloodmoonBg})`,
+  backgroundSize: "cover",
+  backgroundPosition: "center",
 };
+
+const BloodmoonTheme = () => (
+  <ThemeBackdrop rootClass='bloodmoon-theme-active' style={backdropStyle} />
+);
 
 export default BloodmoonTheme;

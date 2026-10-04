@@ -74,7 +74,7 @@ const discordPresenceIndicatorConfig = {
     key: "gamePresence.indicatorDisabled",
   },
   waiting: {
-    className: "text-primary",
+    className: "text-status-ok",
     key: "gamePresence.indicatorWaiting",
   },
   connecting: {
@@ -82,7 +82,7 @@ const discordPresenceIndicatorConfig = {
     key: "gamePresence.indicatorConnecting",
   },
   connected: {
-    className: "text-primary",
+    className: "text-status-ok",
     key: "gamePresence.indicatorConnected",
   },
   error: {
@@ -122,7 +122,7 @@ function HeroParserIndicator() {
           {isScanning ? (
             <ArrowsClockwiseIcon className='h-3.5 w-3.5 animate-spin text-blue-500' />
           ) : (
-            <CheckCircleIcon className='h-3.5 w-3.5 text-primary' />
+            <CheckCircleIcon className='h-3.5 w-3.5 text-status-ok' />
           )}
         </div>
       </TooltipTrigger>
@@ -222,7 +222,7 @@ function BottomBarVolume() {
 const apiStatusConfig = {
   healthy: {
     icon: WifiHighIcon,
-    className: "text-primary",
+    className: "text-status-ok",
     key: "common.apiHealthy",
   },
   degraded: {
@@ -244,7 +244,7 @@ const apiStatusConfig = {
 
 const authStatusConfig = {
   online: {
-    className: "text-primary",
+    className: "text-status-ok",
     key: "common.authOnline",
   },
   offline: {
@@ -260,7 +260,7 @@ const authStatusConfig = {
 const fsStatusConfig = {
   writable: {
     icon: HardDrivesIcon,
-    className: "text-primary",
+    className: "text-status-ok",
     key: "common.fsWritable",
   },
   readonly: {
@@ -307,7 +307,9 @@ export const BottomBar = () => {
   const fsCfg = fsStatusConfig[fsStatus];
 
   return (
-    <div className='z-30 flex h-8 w-full shrink-0 items-center justify-between border-t bg-background pl-4 pr-3 text-xs text-muted-foreground'>
+    <div
+      className='z-30 flex h-8 w-full shrink-0 items-center justify-between border-t bg-background pl-4 pr-3 text-xs text-muted-foreground'
+      data-bottom-bar='true'>
       <div className='flex items-center gap-3'>
         {downloadingCount > 0 && (
           <>

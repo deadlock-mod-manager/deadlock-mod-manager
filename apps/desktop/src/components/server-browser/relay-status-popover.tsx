@@ -44,7 +44,7 @@ const overallColor = (healthy: number, total: number): string => {
 
 const overallIconColor = (healthy: number, total: number): string => {
   if (total === 0) return "text-muted-foreground";
-  if (healthy === total) return "text-primary";
+  if (healthy === total) return "text-status-ok";
   if (healthy === 0) return "text-red-500";
   return "text-yellow-500";
 };
