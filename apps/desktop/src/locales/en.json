@@ -833,7 +833,75 @@
     "tabs": {
       "all": "All",
       "installed": "Installed",
-      "downloaded": "Downloaded"
+      "downloaded": "Downloaded",
+      "conflicts": "Conflicts"
+    }
+  },
+  "conflicts": {
+    "summary_one": "{{count}} overlap between your enabled mods.",
+    "summary_other": "{{count}} overlaps between your enabled mods.",
+    "summaryModels_one": "{{count}} of them hides a model.",
+    "summaryModels_other": "{{count}} of them hide a model.",
+    "summaryModelsAll_one": "It hides a model.",
+    "summaryModelsAll_other": "All of them hide a model.",
+    "summaryNone": "When two enabled mods change the same file, they show up here.",
+    "howItWorks": "How load order decides",
+    "scanning": "Reading your enabled mods...",
+    "scanFailed": "Couldn't read your enabled mods: {{error}}",
+    "noneTitle": "Nothing overlaps",
+    "noneDescription": "Each file in your enabled mods comes from exactly one mod.",
+    "noSearchMatches": "No overlaps involve the mods matching your search and filters.",
+    "badge": {
+      "modelHidden": "Model hidden",
+      "overlap": "Overlap"
+    },
+    "badgeTooltip": {
+      "modelHidden": "Another mod's model is used instead of this one. Click to choose.",
+      "overlap": "Changes some of the same files as another mod. Click to review."
+    },
+    "title": {
+      "critical_one": "Same model in {{count}} mod",
+      "critical_other": "Same model in {{count}} mods",
+      "normal_one": "Same textures or effects in {{count}} mod",
+      "normal_other": "Same textures or effects in {{count}} mods",
+      "low_one": "Same files in {{count}} mod",
+      "low_other": "Same files in {{count}} mods"
+    },
+    "moreFiles_one": "and {{count}} more",
+    "moreFiles_other": "and {{count}} more",
+    "used": "Used in game",
+    "skipped": "Skipped",
+    "modelHidden": "Model hidden",
+    "loadedFirst": "{{mod}} now loads first",
+    "loadFirst": "Load first",
+    "showFiles_one": "{{count}} file",
+    "showFiles_other": "{{count}} files",
+    "options": "Conflict options",
+    "ignoreGroup": "Ignore this overlap",
+    "ignoreMod": "Never flag {{mod}}",
+    "ignoreFile": "Ignore this file for these mods",
+    "ignoreFailed": "Couldn't save the ignore",
+    "ignoredSection": "Ignored ({{count}})",
+    "ignoredPair": "{{first}} and {{second}}",
+    "ignoredModRow": "{{mod}}, every overlap",
+    "restore": "Restore",
+    "clearIgnores": "Restore all",
+    "help": {
+      "assets": {
+        "hat": "Hat model",
+        "coat": "Coat texture",
+        "footsteps": "Footsteps"
+      },
+      "rows": {
+        "first": "First in your list",
+        "second": "Second in your list",
+        "inGame": "In game"
+      },
+      "fromMod": "From #{{position}}",
+      "skipped": "Skipped",
+      "order": "Mods load in the order from Change Mods Order. If two of them include the same file, the game takes it from the mod higher in that list and skips the other copy.",
+      "models": "The rest of both mods still loads, so most overlaps only change a detail. Models matter more: a skin whose model is skipped usually won't appear at all.",
+      "action": "Press Load first on the mod you want to see, or ignore the overlap if the game already looks the way you like."
     }
   },
   "modOrdering": {

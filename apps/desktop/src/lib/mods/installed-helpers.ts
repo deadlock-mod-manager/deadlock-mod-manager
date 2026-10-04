@@ -1,7 +1,9 @@
 import { type LocalMod, ModStatus } from "@/types/mods";
 import { parseSubmissionSlug } from "./submission-ref";
 
-export function isInstalledModWithVpks(mod: LocalMod): boolean {
+export function isInstalledModWithVpks(
+  mod: Pick<LocalMod, "status" | "installedVpks">,
+): boolean {
   return (
     mod.status === ModStatus.Installed &&
     !!mod.installedVpks &&
