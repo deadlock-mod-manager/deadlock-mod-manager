@@ -1,4 +1,4 @@
-import type { ModAuthorDto, ModDto } from "@deadlock-mods/shared";
+import type { ModDto } from "@deadlock-mods/shared";
 import {
   Avatar,
   AvatarFallback,
@@ -6,6 +6,8 @@ import {
 } from "@deadlock-mods/ui/components/avatar";
 import { useId } from "react";
 import { useHeroCatalog } from "@/hooks/use-player-stats";
+import type { DeadlockHero } from "@/lib/deadlock-api";
+import { pickStable } from "@/lib/mods/stable-pick";
 import { getTopHero } from "@/lib/mods/top-hero";
 import { cn } from "@/lib/utils";
 
@@ -13,10 +15,18 @@ import { cn } from "@/lib/utils";
 const isGameBananaDefaultAvatar = (url: string) =>
   url.includes("gamebanana.com/static/img/defaults/");
 
-const getAvatarUrl = (author: ModAuthorDto | undefined) =>
+interface AuthorAvatarSource {
+  hdAvatarUrl?: string | null;
+  avatarUrl?: string | null;
+}
+
+const getAvatarUrl = (author: AuthorAvatarSource | undefined) =>
   [author?.hdAvatarUrl, author?.avatarUrl].find(
     (url) => url && !isGameBananaDefaultAvatar(url),
   ) ?? undefined;
+
+const portraitUrl = (hero: DeadlockHero | undefined) =>
+  hero?.images.icon_image_small_webp ?? hero?.images.icon_image_small;
 
 const getInitials = (name: string) =>
   name
@@ -39,24 +49,28 @@ const SIZES = {
 interface AuthorAvatarProps {
   name: string;
   /** Absent while the profile loads; the hero fallback still renders. */
-  author?: ModAuthorDto;
+  author?: AuthorAvatarSource;
   /** Mods used to pick the hero shown when the author has no avatar. */
-  mods: Pick<ModDto, "hero">[];
+  mods?: Pick<ModDto, "hero">[];
   size?: keyof typeof SIZES;
 }
 
 export const AuthorAvatar = ({
   name,
   author,
-  mods,
+  mods = [],
   size = "lg",
 }: AuthorAvatarProps) => {
-  const { heroByName } = useHeroCatalog();
+  const { heroByName, heroesById, isPending } = useHeroCatalog();
   const topHero = getTopHero(mods);
-  const heroAssets = topHero ? heroByName(topHero) : undefined;
-  const heroPortrait =
-    heroAssets?.images.icon_image_small_webp ??
-    heroAssets?.images.icon_image_small;
+  const namedPortrait = portraitUrl(topHero ? heroByName(topHero) : undefined);
+  const fallbackPortraits = [...heroesById.values()]
+    .sort((left, right) => left.id - right.id)
+    .flatMap((hero) => {
+      const url = portraitUrl(hero);
+      return url ? [url] : [];
+    });
+  const heroPortrait = namedPortrait ?? pickStable(fallbackPortraits, name);
   const sizes = SIZES[size];
   // useId output contains colons, which break the url(#id) reference.
   const duotoneId = `author-duotone-${useId().replace(/:/g, "")}`;
@@ -93,7 +107,7 @@ export const AuthorAvatar = ({
             />
           </>
         ) : (
-          getInitials(name)
+          !isPending && getInitials(name)
         )}
       </AvatarFallback>
     </Avatar>

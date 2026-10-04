@@ -2,6 +2,12 @@ import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Card, CardFooter } from "@deadlock-mods/ui/components/card";
 import { toast } from "@deadlock-mods/ui/components/sonner";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@deadlock-mods/ui/components/tabs";
 import { ArrowLeft, RefreshCw, Settings, Trash } from "@deadlock-mods/ui/icons";
 import { Warning } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
@@ -14,6 +20,7 @@ import { InstalledFilesDisplay } from "@/components/mod-detail/installed-files-d
 import { InstalledVpksSection } from "@/components/mod-detail/installed-vpks-section";
 import { ModAudioPreview } from "@/components/mod-detail/mod-audio-preview";
 import { ModChangelog } from "@/components/mod-detail/mod-changelog";
+import { ModComments } from "@/components/mod-detail/mod-comments";
 import { ModDependencies } from "@/components/mod-detail/mod-dependencies";
 import { ModDescription } from "@/components/mod-detail/mod-description";
 import { ModFiles } from "@/components/mod-detail/mod-files";
@@ -67,10 +74,11 @@ const Mod = () => {
     onBackClick: goBack,
   });
 
+  const isGameBananaMod = !!params.id && !params.id.includes("local");
   const { availableFiles } = useModDownloads({
     remoteId: params.id,
     isDownloadable: mod?.downloadable,
-    enabled: !!params.id && !params.id?.includes("local"),
+    enabled: isGameBananaMod,
   });
 
   const developerMode = usePersistedStore((state) => state.developerMode);
@@ -112,6 +120,17 @@ const Mod = () => {
   const { uninstall } = useUninstall();
 
   const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+
+  const downloadableFileCount = mod?.downloadable ? availableFiles.length : 0;
+  const installedVpks = isInstalled ? localMod?.installedVpks : undefined;
+  const installedFileTree = isInstalled
+    ? localMod?.installedFileTree
+    : undefined;
+  const hasFilesTab =
+    downloadableFileCount > 0 ||
+    !!installedVpks?.length ||
+    !!installedFileTree ||
+    (developerMode && !!localMod);
 
   const modOptions = useModOptions(localMod ?? null);
 
@@ -347,50 +366,115 @@ const Mod = () => {
             </CardFooter>
           </Card>
           <ModDependencies dependencies={resolvedDependencies} />
-          {isInstalled &&
-            localMod?.installedVpks &&
-            localMod.installedVpks.length > 0 && (
-              <InstalledVpksSection vpks={localMod.installedVpks} />
+
+          <Tabs defaultValue='overview' key={mod.remoteId}>
+            <TabsList>
+              <TabsTrigger value='overview'>
+                {t("modDetail.tabs.overview")}
+              </TabsTrigger>
+              {isGameBananaMod && (
+                <>
+                  <TabsTrigger className='gap-1.5' value='changelog'>
+                    {t("modDetail.tabs.changelog")}
+                    {hasUpdate && (
+                      <span
+                        aria-label={t("modDetail.tabs.updateAvailable")}
+                        className='size-1.5 rounded-full bg-primary'
+                        role='img'
+                      />
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value='comments'>
+                    {t("modDetail.tabs.comments")}
+                  </TabsTrigger>
+                </>
+              )}
+              {hasFilesTab && (
+                <TabsTrigger className='gap-1.5' value='files'>
+                  {t("modDetail.tabs.files")}
+                  {downloadableFileCount > 0 && (
+                    <span className='text-muted-foreground text-xs tabular-nums'>
+                      {downloadableFileCount}
+                    </span>
+                  )}
+                </TabsTrigger>
+              )}
+            </TabsList>
+
+            <TabsContent className='mt-4 space-y-4' value='overview'>
+              {mod.isMap && isCustomMapsEnabled && (
+                <MapHowToPlay
+                  mapName={mod.metadata?.mapName}
+                  isInstalled={isInstalled}
+                />
+              )}
+
+              {mod.description && (
+                <ModDescription description={mod.description} />
+              )}
+
+              {mod.audioUrl && (
+                <ModAudioPreview
+                  audioUrl={mod.audioUrl}
+                  isAudio={!!mod.isAudio}
+                />
+              )}
+
+              {!mod.isAudio && hasImages && mod.images && (
+                <ModGallery
+                  images={mod.images}
+                  nsfwSettings={nsfwSettings}
+                  onNSFWToggle={(visible) => handleNSFWToggle(visible)}
+                  shouldBlur={shouldBlur}
+                />
+              )}
+            </TabsContent>
+
+            {isGameBananaMod && (
+              <>
+                <TabsContent className='mt-4' value='changelog'>
+                  <ModChangelog
+                    installedAt={
+                      isInstalled && localMod?.downloadedAt
+                        ? new Date(localMod.downloadedAt)
+                        : undefined
+                    }
+                    remoteId={mod.remoteId}
+                  />
+                </TabsContent>
+                <TabsContent className='mt-4' value='comments'>
+                  <ModComments
+                    remoteId={mod.remoteId}
+                    remoteUrl={mod.remoteUrl}
+                  />
+                </TabsContent>
+              </>
             )}
-          {mod.isMap && isCustomMapsEnabled && (
-            <MapHowToPlay
-              mapName={mod.metadata?.mapName}
-              isInstalled={isInstalled}
-            />
-          )}
 
-          {mod.description && <ModDescription description={mod.description} />}
+            {hasFilesTab && (
+              <TabsContent className='mt-4 space-y-4' value='files'>
+                <ModFiles
+                  files={availableFiles}
+                  isDownloadable={!!mod.downloadable}
+                />
 
-          <ModChangelog remoteId={mod.remoteId} />
+                {!!installedVpks?.length && (
+                  <InstalledVpksSection vpks={installedVpks} />
+                )}
 
-          {developerMode && localMod && (
-            <VpkReplacementSection mod={localMod} />
-          )}
+                {installedFileTree && (
+                  <InstalledFilesDisplay
+                    fileTree={installedFileTree}
+                    modName={mod.name}
+                  />
+                )}
 
-          {isInstalled && localMod?.installedFileTree && (
-            <InstalledFilesDisplay
-              fileTree={localMod.installedFileTree}
-              modName={mod.name}
-            />
-          )}
-
-          <ModFiles
-            files={availableFiles}
-            isDownloadable={!!mod.downloadable}
-          />
-
-          {mod.audioUrl && (
-            <ModAudioPreview audioUrl={mod.audioUrl} isAudio={!!mod.isAudio} />
-          )}
-
-          {!mod.isAudio && hasImages && mod.images && (
-            <ModGallery
-              images={mod.images}
-              nsfwSettings={nsfwSettings}
-              onNSFWToggle={(visible) => handleNSFWToggle(visible)}
-              shouldBlur={shouldBlur}
-            />
-          )}
+                {developerMode && localMod && (
+                  <VpkReplacementSection mod={localMod} />
+                )}
+              </TabsContent>
+            )}
+          </Tabs>
         </div>
 
         <BatchUpdateDialog
