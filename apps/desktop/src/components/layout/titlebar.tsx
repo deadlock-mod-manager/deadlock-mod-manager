@@ -342,14 +342,17 @@ export const Titlebar = () => {
 
   return (
     <>
-      <WindowTitlebar className='z-20 h-auto border-b bg-background'>
+      <WindowTitlebar
+        className='z-20 h-auto border-b bg-background'
+        data-titlebar='true'>
         <Toolbar />
       </WindowTitlebar>
 
       {showMenubar && (
         <div
           className='z-20 flex h-8 w-full shrink-0 items-center border-b bg-background px-2'
-          data-tauri-drag-region>
+          data-tauri-drag-region
+          data-titlebar='true'>
           <Menubar className='h-auto border-none bg-transparent p-0 shadow-none'>
             {menuItems.map((menu) => (
               <MenubarMenu key={menu.label}>

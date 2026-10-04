@@ -6,6 +6,17 @@ import {
 
 export const DEFAULT_OLED_ACCENT = "#D8C497";
 
+export const OLED_ACCENT_PRESETS = [
+  DEFAULT_OLED_ACCENT,
+  "#E5E5E5",
+  "#F2A7B8",
+  "#B9A6F5",
+  "#8EC5FC",
+  "#7EE0B5",
+  "#F5B65C",
+  "#E5484D",
+] as const;
+
 function linearizeChannel(channel: number) {
   const value = channel / 255;
   return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;

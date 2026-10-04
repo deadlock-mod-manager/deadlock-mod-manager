@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useThemeRootClass } from "../../components/theme-backdrop";
 import { DEFAULT_OLED_ACCENT, getOledAccentVariables } from "./accent";
 
 export default function OledTheme({
@@ -6,11 +7,7 @@ export default function OledTheme({
 }: {
   accentColor?: string;
 }) {
-  useEffect(() => {
-    const root = document.documentElement;
-    root.classList.add("oled-theme-active");
-    return () => root.classList.remove("oled-theme-active");
-  }, []);
+  useThemeRootClass("oled-theme-active");
 
   useEffect(() => {
     const root = document.documentElement;

@@ -26,6 +26,7 @@ export type ThemeSettings = {
   arcaneAccentColor?: string;
   oledAccentColor?: string;
   arcaneCustomColors?: string[];
+  oledCustomColors?: string[];
 };
 
 export type CustomExportedTheme = {

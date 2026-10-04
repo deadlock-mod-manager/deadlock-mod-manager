@@ -185,7 +185,6 @@
 ["exports","apps/desktop/src/plugins/themes/custom/theme-color-utils.ts",[["","hslToRgbComponents"]]]
 ["exports","apps/desktop/src/plugins/themes/custom/theme-color-utils.ts",[["","hslTripletStringToHex"]]]
 ["exports","apps/desktop/src/plugins/themes/custom/theme-color-utils.ts",[["","rgbaFromHex"]]]
-["exports","apps/desktop/src/plugins/themes/pre-defined/arcane/accent-picker.tsx",[["","PREDEFINED_COLORS"]]]
 ["exports","apps/docs/src/lib/source.ts",[["","getLLMText"]]]
 ["exports","apps/lockdex/src/lib/env.ts",[["","envSchema"]]]
 ["exports","apps/lockdex/src/lib/logger.ts",[["","loggerContext"]]]

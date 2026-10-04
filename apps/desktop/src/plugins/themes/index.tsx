@@ -35,18 +35,13 @@ import {
   ThemePreviewSkeleton,
   ThemeSettingsPanel,
 } from "./custom";
-import {
-  ArcaneAccentPicker,
-  DEFAULT_ACCENT_COLOR,
-} from "./pre-defined/arcane/accent-picker.tsx";
+import { ThemeAccentPicker } from "./components/theme-accent-picker";
 import ArcaneTheme from "./pre-defined/arcane/arcane.tsx";
 import BloodmoonTheme from "./pre-defined/bloodmoon/bloodmoon.tsx";
 import DeadlockApiTheme from "./pre-defined/deadlock-api/deadlock-api.tsx";
 import LovelockTheme from "./pre-defined/lovelock/lovelock.tsx";
 import NightshiftTheme from "./pre-defined/nightshift/nightshift.tsx";
 import OledTheme from "./pre-defined/oled/oled.tsx";
-import { DEFAULT_OLED_ACCENT } from "./pre-defined/oled/accent";
-import { OledAccentPicker } from "./pre-defined/oled/accent-picker";
 import RemlockTheme from "./pre-defined/remlock/remlock.tsx";
 import TeaTheme from "./pre-defined/tea/tea.tsx";
 
@@ -80,7 +75,7 @@ const remlockPreview = getPluginAssetUrl(
 );
 const oledPreview = getPluginAssetUrl(
   "themes",
-  "public/pre-defined/oled/preview.svg",
+  "public/pre-defined/oled/preview.png",
 );
 
 export const manifest = {
@@ -101,13 +96,6 @@ const DEFAULT_SETTINGS: ThemeSettings = {
 };
 
 const PRE_DEFINED_THEMES = [
-  {
-    id: "oled",
-    name: "OLED",
-    descriptionKey: "plugins.oled.description",
-    component: OledTheme,
-    previewImage: oledPreview,
-  },
   {
     id: "remlock",
     name: "Remlock",
@@ -163,6 +151,13 @@ const PRE_DEFINED_THEMES = [
     descriptionKey: "plugins.lovelock.description",
     component: LovelockTheme,
     previewImage: lovelockPreview,
+  },
+  {
+    id: "oled",
+    name: "OLED",
+    descriptionKey: "plugins.oled.description",
+    component: OledTheme,
+    previewImage: oledPreview,
   },
 ] as const;
 
@@ -418,57 +413,22 @@ const Settings = () => {
                           Skeptic
                         </button>
                       </div>
-                    ) : theme.id === "oled" ? (
-                      <OledAccentPicker
-                        value={current.oledAccentColor ?? DEFAULT_OLED_ACCENT}
-                        onChange={(color) =>
-                          setSettings(manifest.id, {
-                            ...current,
-                            oledAccentColor: color,
-                          })
-                        }
-                      />
                     ) : theme.id === "arcane" ? (
-                      <div className='mb-4'>
-                        <div className='text-sm text-muted-foreground mb-2'>
-                          <span className='mr-1'>
-                            {t("plugins.arcane.visit")
-                              .replace("Skeptic", "")
-                              .trim()}
-                          </span>
-                          <button
-                            className='text-primary hover:underline'
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              void openUrl(
-                                "https://github.com/Skeptic-systems",
-                              );
-                            }}
-                            type='button'>
-                            Skeptic
-                          </button>
-                        </div>
-                        <ArcaneAccentPicker
-                          value={
-                            current.arcaneAccentColor ?? DEFAULT_ACCENT_COLOR
-                          }
-                          customColors={current.arcaneCustomColors ?? []}
-                          onChange={(color) =>
-                            setSettings(manifest.id, {
-                              ...current,
-                              arcaneAccentColor: color,
-                            })
-                          }
-                          onAddCustomColor={(color) => {
-                            const existing = current.arcaneCustomColors ?? [];
-                            if (!existing.includes(color)) {
-                              setSettings(manifest.id, {
-                                ...current,
-                                arcaneCustomColors: [...existing, color],
-                              });
-                            }
+                      <div className='text-sm text-muted-foreground mb-2'>
+                        <span className='mr-1'>
+                          {t("plugins.arcane.visit")
+                            .replace("Skeptic", "")
+                            .trim()}
+                        </span>
+                        <button
+                          className='text-primary hover:underline'
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void openUrl("https://github.com/Skeptic-systems");
                           }}
-                        />
+                          type='button'>
+                          Skeptic
+                        </button>
                       </div>
                     ) : theme.id === "lovelock" ? (
                       <div className='text-sm text-muted-foreground mb-4'>
@@ -519,6 +479,14 @@ const Settings = () => {
                         </button>
                       </div>
                     ) : null}
+
+                    <ThemeAccentPicker
+                      themeId={theme.id}
+                      settings={current}
+                      onChange={(patch) =>
+                        setSettings(manifest.id, { ...current, ...patch })
+                      }
+                    />
 
                     <div className='flex items-center gap-2'>
                       {"userCreated" in theme && theme.userCreated ? (
@@ -684,13 +652,8 @@ const Render = () => {
     return <OledTheme accentColor={current.oledAccentColor} />;
   }
 
-  // Special handling for Arcane theme to pass accent color
   if (selectedTheme === "arcane") {
-    return (
-      <ArcaneTheme
-        accentColor={current.arcaneAccentColor ?? DEFAULT_ACCENT_COLOR}
-      />
-    );
+    return <ArcaneTheme accentColor={current.arcaneAccentColor} />;
   }
 
   const activeTheme = PRE_DEFINED_THEMES.find(
