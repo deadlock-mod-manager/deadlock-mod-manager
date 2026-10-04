@@ -284,6 +284,7 @@ export const placeholderModDto = (
     category: entry.category ?? (isSound ? "Sounds" : "Other"),
     likes: 0,
     author: entry.author ?? "Unknown",
+    modAuthorId: null,
     downloadable: entry.origin.provider === "gamebanana",
     remoteAddedAt: now,
     remoteUpdatedAt: now,
