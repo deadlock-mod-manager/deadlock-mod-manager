@@ -104,7 +104,7 @@ export const getInstallerInfo = (download: PlatformDownload): InstallerInfo =>
     ? INSTALLER_INFO[download.installerType]
     : { label: download.filename, description: "" };
 
-export const isSignatureFile = (download: PlatformDownload): boolean =>
+const isSignatureFile = (download: PlatformDownload): boolean =>
   download.installerType === "sig" ||
   download.filename.toLowerCase().endsWith(".sig");
 
