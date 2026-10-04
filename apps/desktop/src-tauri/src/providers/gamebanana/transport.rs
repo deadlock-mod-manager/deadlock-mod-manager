@@ -31,8 +31,9 @@ impl Default for TransportConfig {
       connect_timeout: Duration::from_secs(10),
       total_timeout: Duration::from_secs(30),
       max_concurrency: 4,
-      max_requests_per_window: 60,
-      request_window: Duration::from_secs(60),
+      // GameBanana documents no limit; other Deadlock mod managers run at 10 req/s without trouble.
+      max_requests_per_window: 10,
+      request_window: Duration::from_secs(1),
       max_retries: 3,
       base_retry_delay: Duration::from_millis(500),
       max_retry_delay: Duration::from_secs(30),
