@@ -2,9 +2,15 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { z } from "zod";
 import Loader from "@/components/loader";
 import { initiateLogin } from "@/lib/auth/auth";
+import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/login")({
   component: RouteComponent,
+  head: () =>
+    seo({
+      title: "Sign In | Deadlock Mod Manager",
+      noindex: true,
+    }),
   validateSearch: z.object({
     desktop: z
       .union([z.boolean(), z.string()])

@@ -2,6 +2,7 @@ import { PhosphorIcons } from "@deadlock-mods/ui/icons";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { GITHUB_REPO } from "@/lib/constants";
 import { orpc } from "@/utils/orpc";
 import { seo } from "@/utils/seo";
 
@@ -9,9 +10,10 @@ export const Route = createFileRoute("/transparency")({
   component: TransparencyComponent,
   head: () =>
     seo({
-      title: "Transparency | Deadlock Mod Manager",
+      title: "Transparency: Costs, Funding & Stats | Deadlock Mod Manager",
       description:
-        "Financial transparency, platform statistics, and project values for Deadlock Mod Manager - an open-source community project.",
+        "Where Deadlock Mod Manager's money comes from and where it goes: infrastructure costs, live platform statistics and the values behind this open-source project.",
+      path: "/transparency",
     }),
 });
 
@@ -436,7 +438,7 @@ function TransparencyComponent() {
                         </strong>{" "}
                         Show your support by starring the{" "}
                         <a
-                          href='https://github.com/deadlock-mod-manager/deadlock-mod-manager'
+                          href={GITHUB_REPO}
                           target='_blank'
                           rel='noopener noreferrer'
                           className='text-primary hover:underline'>
@@ -462,7 +464,7 @@ function TransparencyComponent() {
                         </strong>{" "}
                         Help improve the project by contributing on{" "}
                         <a
-                          href='https://github.com/deadlock-mod-manager/deadlock-mod-manager'
+                          href={GITHUB_REPO}
                           target='_blank'
                           rel='noopener noreferrer'
                           className='text-primary hover:underline'>

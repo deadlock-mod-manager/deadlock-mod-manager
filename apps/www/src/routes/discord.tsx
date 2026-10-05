@@ -10,7 +10,19 @@ export const Route = createFileRoute("/discord")({
       title: "Discord | Deadlock Mod Manager",
       description:
         "Join the Deadlock Mod Manager Discord community for support, discussions, and updates.",
+      noindex: true,
     }),
+  // Redirect on the server so crawlers and no-JS clients get a real 302.
+  // The component below only runs on client-side navigation.
+  server: {
+    handlers: {
+      GET: () =>
+        new Response(null, {
+          status: 302,
+          headers: { Location: DISCORD_URL },
+        }),
+    },
+  },
 });
 
 function DiscordComponent() {

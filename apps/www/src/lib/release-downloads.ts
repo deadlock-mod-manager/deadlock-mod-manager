@@ -147,3 +147,36 @@ export const getPlatformInstallers = (
 
 export const getReleaseUrl = (version: string): string =>
   `${GITHUB_REPO}/releases/tag/${/^\d/.test(version) ? `v${version}` : version}`;
+
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+/**
+ * "October 5, 2026", always in UTC. Formatting in the visitor's timezone would
+ * make the server and the browser disagree on the date and break hydration.
+ */
+export const formatReleaseDate = (iso: string): string => {
+  const date = new Date(iso);
+  return `${MONTHS[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`;
+};
+
+/** "October 5, 2026, 14:03 UTC", for tooltips. */
+export const formatReleaseDateTime = (iso: string): string => {
+  const date = new Date(iso);
+  const time = [date.getUTCHours(), date.getUTCMinutes()]
+    .map((part) => String(part).padStart(2, "0"))
+    .join(":");
+  return `${formatReleaseDate(iso)}, ${time} UTC`;
+};

@@ -1,4 +1,8 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  isServer,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
 
 const STALE_TIME_WWW = 2 * 60 * 1000;
 
@@ -8,6 +12,9 @@ export function getContext() {
       queries: {
         staleTime: STALE_TIME_WWW,
         refetchOnWindowFocus: false,
+        // Retrying during SSR only delays the response; loaders give up after
+        // a timeout and leave the fetch to the browser instead.
+        retry: isServer ? false : 1,
       },
     },
   });

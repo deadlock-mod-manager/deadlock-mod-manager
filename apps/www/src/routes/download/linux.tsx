@@ -2,10 +2,20 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { selectRecommendedDownload } from "@/lib/release-downloads";
+import { prefetchWithin } from "@/lib/prefetch";
 import { orpc } from "@/utils/orpc";
+import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/download/linux")({
   component: DownloadLinuxComponent,
+  loader: ({ context: { queryClient } }) =>
+    prefetchWithin(queryClient, orpc.getReleases.queryOptions()),
+  head: () =>
+    seo({
+      title: "Downloading Deadlock Mod Manager for Linux",
+      description: "Starting the Deadlock Mod Manager download for Linux.",
+      noindex: true,
+    }),
 });
 
 function DownloadLinuxComponent() {

@@ -1,6 +1,7 @@
 import { ArrowUpIcon } from "@deadlock-mods/ui/icons";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { GITHUB_REPO } from "@/lib/constants";
 import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/terms")({
@@ -9,7 +10,8 @@ export const Route = createFileRoute("/terms")({
     seo({
       title: "Terms of Service | Deadlock Mod Manager",
       description:
-        "Terms of Service for Deadlock Mod Manager - Understand your rights and responsibilities when using our software.",
+        "The terms that apply when you use Deadlock Mod Manager and deadlockmods.app, including acceptable use, third-party mods and the open-source license of the app.",
+      path: "/terms",
     }),
 });
 
@@ -284,7 +286,7 @@ function TermsComponent() {
                   For questions about these Terms of Service, please create an
                   issue on our{" "}
                   <a
-                    href='https://github.com/Stormix/deadlock-modmanager'
+                    href={GITHUB_REPO}
                     rel='noopener noreferrer'
                     target='_blank'
                     className='text-primary hover:underline'>

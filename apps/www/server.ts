@@ -82,6 +82,15 @@ async function initializeServer() {
           ? new Response("OK", { status: 200 })
           : new Response("Not Ready", { status: 503 }),
       ...routes,
+      // Every real build asset has its own route above. Anything else under
+      // /assets/ is a chunk from an older deploy: answer 404 instead of letting
+      // the app render an HTML page with a 200, which the CDN would cache as
+      // that .js file and break every visitor's (and crawler's) next load.
+      "/assets/*": () =>
+        new Response("Not Found", {
+          status: 404,
+          headers: { "Cache-Control": "no-store" },
+        }),
       "/*": async (req: Request) => {
         try {
           const response = await handler.fetch(req);

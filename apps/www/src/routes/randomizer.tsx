@@ -33,13 +33,12 @@ export const Route = createFileRoute("/randomizer")({
   }),
   head: () =>
     seo({
-      title: "Randomizer | Deadlock Mod Manager",
+      title: "Deadlock Randomizer: Random Hero & Item Build Generator",
       description:
         "Roll a random Deadlock hero, a legal item build in purchase order, an ability point order and three bravery rules. Share the seed, reroll as often as you like.",
       keywords:
         "deadlock randomizer, deadlock random build, deadlock ultimate bravery, random hero deadlock, deadlock build generator",
-      url: "https://deadlockmods.app/randomizer",
-      canonical: "https://deadlockmods.app/randomizer",
+      path: "/randomizer",
     }),
 });
 

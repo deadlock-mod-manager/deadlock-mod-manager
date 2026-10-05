@@ -17,15 +17,27 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { LayoutDashboard } from "lucide-react";
 import { useOIDCSession } from "@/hooks/use-oidc-session";
 
-export default function UserMenu() {
+export default function UserMenu({
+  signInClassName,
+}: {
+  /** Replaces the default outline button styling for the signed-out state. */
+  signInClassName?: string;
+} = {}) {
   const navigate = useNavigate();
   const { session, isLoading, signOut } = useOIDCSession();
 
   if (isLoading) {
-    return <Skeleton className='h-10 w-10 rounded-full' />;
+    return <Skeleton className='size-9 rounded-full' />;
   }
 
   if (!session) {
+    if (signInClassName) {
+      return (
+        <Link to='/login' className={signInClassName}>
+          Sign in
+        </Link>
+      );
+    }
     return (
       <Button
         onClick={() =>

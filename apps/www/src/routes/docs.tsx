@@ -9,8 +9,20 @@ export const Route = createFileRoute("/docs")({
     seo({
       title: "Documentation | Deadlock Mod Manager",
       description:
-        "Access the full documentation for Deadlock Mod Manager including installation guides, usage instructions, troubleshooting tips, and developer resources.",
+        "Installation guides, usage instructions, troubleshooting tips and developer resources for Deadlock Mod Manager.",
+      noindex: true,
     }),
+  // Redirect on the server so crawlers and no-JS clients get a real 301.
+  // The component below only runs on client-side navigation.
+  server: {
+    handlers: {
+      GET: () =>
+        new Response(null, {
+          status: 301,
+          headers: { Location: DOCS_URL },
+        }),
+    },
+  },
 });
 
 function DocsComponent() {

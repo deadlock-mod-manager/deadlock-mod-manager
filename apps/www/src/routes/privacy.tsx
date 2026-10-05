@@ -1,6 +1,7 @@
 import { ArrowUpIcon } from "@deadlock-mods/ui/icons";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { GITHUB_REPO } from "@/lib/constants";
 import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/privacy")({
@@ -9,7 +10,8 @@ export const Route = createFileRoute("/privacy")({
     seo({
       title: "Privacy Policy | Deadlock Mod Manager",
       description:
-        "Privacy Policy for Deadlock Mod Manager - Learn how we handle your data and protect your privacy.",
+        "What data Deadlock Mod Manager and deadlockmods.app collect, how it is stored, how analytics and crash reports work, and how to contact us about privacy.",
+      path: "/privacy",
     }),
 });
 
@@ -451,7 +453,7 @@ function PrivacyComponent() {
                   For questions about this Privacy Policy, please create an
                   issue on our{" "}
                   <a
-                    href='https://github.com/Stormix/deadlock-modmanager'
+                    href={GITHUB_REPO}
                     rel='noopener noreferrer'
                     target='_blank'
                     className='text-primary hover:underline'>

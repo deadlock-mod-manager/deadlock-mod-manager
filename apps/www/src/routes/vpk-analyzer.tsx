@@ -6,8 +6,10 @@ export const Route = createFileRoute("/vpk-analyzer")({
   component: VpkAnalyzerComponent,
   head: () =>
     seo({
-      title: "VPK Analyzer | Deadlock Mod Manager",
-      description: "Upload a VPK file to analyze which mod it belongs to",
+      title: "Deadlock VPK Analyzer: Find Which Mod a VPK File Is From",
+      description:
+        "Upload a Deadlock .vpk file and the VPK Analyzer matches it against known GameBanana mods, so you can tell which mod a stray pak file belongs to.",
+      path: "/vpk-analyzer",
     }),
 });
 

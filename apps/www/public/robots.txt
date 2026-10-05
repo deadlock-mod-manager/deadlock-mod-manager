@@ -1,14 +1,7 @@
 User-agent: *
 Allow: /
 Disallow: /dashboard
-
-User-agent: Googlebot
-Allow: /
-Disallow: /dashboard
-
-User-agent: Bingbot
-Allow: /
-Disallow: /dashboard
+Disallow: /login
+Disallow: /auth/
 
 Sitemap: https://deadlockmods.app/sitemap.xml
-Sitemap: https://deadlockmods.app/sitemap-mods.xml

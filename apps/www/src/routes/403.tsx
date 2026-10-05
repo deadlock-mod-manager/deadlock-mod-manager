@@ -2,10 +2,35 @@ import { Button } from "@deadlock-mods/ui/components/button";
 import { ArrowLeft, Home, Lock } from "@deadlock-mods/ui/icons";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { GITHUB_ISSUES_URL } from "@/lib/constants";
+import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/403")({
   component: ForbiddenComponent,
+  head: () =>
+    seo({
+      title: "Access Denied | Deadlock Mod Manager",
+      description: "You don't have permission to view this page.",
+      noindex: true,
+    }),
 });
+
+// Seeded rather than Math.random() so the server and the browser render the
+// same particles (and they stay put when the glitch timer re-renders).
+const seeded = (n: number) => {
+  let x = Math.imul(n ^ 0x9e3779b9, 0x85ebca6b);
+  x = Math.imul(x ^ (x >>> 13), 0xc2b2ae35);
+  return ((x ^ (x >>> 16)) >>> 0) / 4294967296;
+};
+const PARTICLES = Array.from({ length: 20 }, (_, i) => ({
+  id: `particle-${i}`,
+  style: {
+    left: `${Math.round(seeded(i * 4 + 1) * 1000) / 10}%`,
+    top: `${Math.round(seeded(i * 4 + 2) * 1000) / 10}%`,
+    animationDelay: `${Math.round(seeded(i * 4 + 3) * 300) / 100}s`,
+    animationDuration: `${2 + Math.round(seeded(i * 4 + 4) * 200) / 100}s`,
+  },
+}));
 
 function ForbiddenComponent() {
   const [glitchText, setGlitchText] = useState("403");
@@ -47,21 +72,13 @@ function ForbiddenComponent() {
     return () => clearInterval(glitchInterval);
   }, []);
 
-  const particles = Array.from({ length: 20 }, (_, i) => {
-    const particleId = `particle-${i}-${Math.random().toString(36).substr(2, 9)}`;
-    return (
-      <div
-        key={particleId}
-        className={`absolute w-1 h-1 bg-primary/30 rounded-full animate-ping`}
-        style={{
-          left: `${Math.random() * 100}%`,
-          top: `${Math.random() * 100}%`,
-          animationDelay: `${Math.random() * 3}s`,
-          animationDuration: `${2 + Math.random() * 2}s`,
-        }}
-      />
-    );
-  });
+  const particles = PARTICLES.map((particle) => (
+    <div
+      key={particle.id}
+      className={`absolute w-1 h-1 bg-primary/30 rounded-full animate-ping`}
+      style={particle.style}
+    />
+  ));
 
   return (
     <div className='min-h-screen bg-background relative overflow-hidden flex items-center justify-center'>
@@ -150,7 +167,7 @@ function ForbiddenComponent() {
             <p className='text-xs text-muted-foreground/80'>
               Contact an administrator or check{" "}
               <a
-                href='https://github.com/stormix/deadlock-modmanager/issues'
+                href={GITHUB_ISSUES_URL}
                 target='_blank'
                 rel='noopener noreferrer'
                 className='text-primary hover:text-primary/80 transition-colors underline underline-offset-4'>

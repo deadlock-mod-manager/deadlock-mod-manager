@@ -16,6 +16,7 @@
     "@deadlock-mods/logging": "workspace:*",
     "@deadlock-mods/shared": "workspace:*",
     "@deadlock-mods/ui": "workspace:*",
+    "@fontsource-variable/geist": "^5.2.8",
     "@hookform/resolvers": "^5.2.2",
     "@orpc/client": "^1.13.13",
     "@orpc/json-schema": "^1.13.13",
@@ -73,7 +74,6 @@
     "tsx": "^4.21.0",
     "typescript": "catalog:",
     "vite": "catalog:",
-    "vite-plugin-sitemap": "^0.8.2",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4",
     "web-vitals": "^5.2.0"

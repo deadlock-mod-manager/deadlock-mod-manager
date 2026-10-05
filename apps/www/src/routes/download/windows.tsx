@@ -1,10 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { prefetchWithin } from "@/lib/prefetch";
 import { orpc } from "@/utils/orpc";
+import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/download/windows")({
   component: DownloadWindowsComponent,
+  loader: ({ context: { queryClient } }) =>
+    prefetchWithin(queryClient, orpc.getReleases.queryOptions()),
+  head: () =>
+    seo({
+      title: "Downloading Deadlock Mod Manager for Windows",
+      description: "Starting the Deadlock Mod Manager download for Windows.",
+      noindex: true,
+    }),
 });
 
 function DownloadWindowsComponent() {

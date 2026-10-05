@@ -17,9 +17,10 @@ export const Route = createFileRoute("/kv-parser")({
   component: KvParserComponent,
   head: () =>
     seo({
-      title: "KeyValues Parser | Deadlock Mod Manager",
+      title: "Valve KeyValues (VDF) Parser for Deadlock gameinfo.gi",
       description:
-        "Parse and visualize Valve KeyValues (VDF) files like gameinfo.gi",
+        "Paste or drop a Valve KeyValues (VDF) file such as Deadlock's gameinfo.gi to parse it and browse it as a tree, right in your browser. Nothing is uploaded.",
+      path: "/kv-parser",
     }),
 });
 

@@ -4,20 +4,65 @@ import type {
   OSInfo,
 } from "@/types/releases";
 
+/** Phones and tablets. None of them can run the desktop app. */
+type MobileOS = "android" | "ios" | "ipados";
+
+export interface DeviceInfo extends OSInfo {
+  /** Set when the visitor is on a phone or tablet. `os` is then "unknown". */
+  mobile: MobileOS | null;
+}
+
+const mobileDisplayNames = {
+  android: "Android",
+  ios: "iOS",
+  ipados: "iPadOS",
+} satisfies Record<MobileOS, string>;
+
+/**
+ * Detects phones and tablets. Must run before the desktop checks: Android
+ * user agents contain "Linux" and iOS ones contain "Mac OS X".
+ */
+const detectMobileOS = (
+  userAgent: string,
+  maxTouchPoints: number,
+): MobileOS | null => {
+  if (userAgent.includes("android")) return "android";
+  if (userAgent.includes("iphone") || userAgent.includes("ipod")) return "ios";
+  if (userAgent.includes("ipad")) return "ipados";
+  // iPadOS 13+ Safari reports a desktop Mac user agent by default; only the
+  // touch screen gives it away.
+  if (userAgent.includes("macintosh") && maxTouchPoints > 1) return "ipados";
+  return null;
+};
+
 /**
  * Detects the user's operating system and architecture from the user agent
  */
-export function detectOS(): OSInfo {
+export function detectOS(): DeviceInfo {
   if (typeof window === "undefined") {
     return {
       os: "unknown",
       architecture: "unknown",
       displayName: "Unknown OS",
+      mobile: null,
     };
   }
 
   const userAgent = window.navigator.userAgent.toLowerCase();
   const platform = window.navigator.platform?.toLowerCase() || "";
+
+  const mobile = detectMobileOS(
+    userAgent,
+    window.navigator.maxTouchPoints ?? 0,
+  );
+  if (mobile) {
+    return {
+      os: "unknown",
+      architecture: "unknown",
+      displayName: mobileDisplayNames[mobile],
+      mobile,
+    };
+  }
 
   let os: DetectedOS = "unknown";
   let architecture: DetectedArchitecture = "unknown";
@@ -65,7 +110,7 @@ export function detectOS(): OSInfo {
     displayName = "macOS (Intel)";
   }
 
-  return { os, architecture, displayName };
+  return { os, architecture, displayName, mobile: null };
 }
 
 /**
