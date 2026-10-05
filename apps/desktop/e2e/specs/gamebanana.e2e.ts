@@ -24,6 +24,57 @@ import {
   readCatalogState,
 } from "../support/gamebanana-oracle";
 
+// TEMPORARY: diagnose WebKitGTK reporting visible elements as hidden in CI.
+const probeVisibility = async (label: string, selector: string) => {
+  const info = await browser.execute((sel: string) => {
+    const node = (
+      sel.startsWith("//")
+        ? document.evaluate(sel, document, null, 9, null).singleNodeValue
+        : document.querySelector(sel)
+    ) as HTMLElement | null;
+    if (!node) return JSON.stringify({ found: false });
+    const chain: string[] = [];
+    for (let n: HTMLElement | null = node; n; n = n.parentElement) {
+      const st = getComputedStyle(n);
+      if (
+        st.opacity !== "1" ||
+        st.contentVisibility !== "visible" ||
+        st.visibility !== "visible" ||
+        st.display === "none"
+      )
+        chain.push(
+          `${n.tagName}.${String(n.className).slice(0, 40)} op=${st.opacity} cv=${st.contentVisibility} vis=${st.visibility} disp=${st.display}`,
+        );
+    }
+    const rect = node.getBoundingClientRect();
+    return JSON.stringify({
+      all: node.checkVisibility({
+        contentVisibilityAuto: true,
+        opacityProperty: true,
+        visibilityProperty: true,
+      }),
+      contentVisibilityAuto: node.checkVisibility({
+        contentVisibilityAuto: true,
+      }),
+      opacity: node.checkVisibility({ opacityProperty: true }),
+      plain: node.checkVisibility(),
+      rect: [rect.x, rect.y, rect.width, rect.height],
+      visibilityState: document.visibilityState,
+      focus: document.hasFocus(),
+      chain,
+    });
+  }, selector);
+  console.log(`VISIBILITY PROBE ${label}: ${info}`);
+};
+const displayed = async (label: string, selector: string) => {
+  try {
+    await $(selector).waitForDisplayed();
+  } catch (error) {
+    await probeVisibility(label, selector);
+    throw error;
+  }
+};
+
 describe("GameBanana catalog installation", () => {
   it("renders exactly the installed files and preserves them in a new process", async () => {
     const scenario = process.env.DMM_E2E_CASE_ID ?? "";
@@ -33,12 +84,9 @@ describe("GameBanana catalog installation", () => {
     const world = runtime.roots.world;
     const checkpoint = path.join(world, "artifacts", "catalog-process.json");
     await navigate("mods");
-    const card = await $(`[title="${CATALOG_MOD_NAME}"]`);
-    await card.waitForDisplayed();
-    await card.click();
-    await expect(
-      $(`//div[normalize-space()="${CATALOG_MOD_NAME}"]`),
-    ).toBeDisplayed();
+    await displayed("card", `[title="${CATALOG_MOD_NAME}"]`);
+    await $(`[title="${CATALOG_MOD_NAME}"]`).click();
+    await displayed("title", `//div[normalize-space()="${CATALOG_MOD_NAME}"]`);
     if (phase === "catalog-install") {
       assert.deepEqual((await readCatalogState(world)).localMods, []);
       await $('button[aria-label="Download Mod"]').click();

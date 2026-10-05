@@ -27,8 +27,9 @@ export const reveal = async (
 export const openOrdering = () =>
   step("open mod ordering", async () => {
     await expect($('[role="dialog"]')).not.toBeDisplayed();
+    // The import menu sits between Add Local Mod and the overflow menu.
     const menu = await $("button=Add Local Mod").$(
-      './following-sibling::button[@aria-haspopup="menu"]',
+      './following-sibling::button[@aria-haspopup="menu"][last()]',
     );
     await menu.waitForClickable();
     await menu.click();
