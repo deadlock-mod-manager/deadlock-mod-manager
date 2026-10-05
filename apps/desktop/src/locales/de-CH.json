@@ -849,7 +849,10 @@
       "changelogLoading": "",
       "changelogEmpty": "",
       "changelogTitle_one": "",
-      "changelogTitle_other": ""
+      "changelogTitle_other": "",
+      "skip": "",
+      "skipDescription": "",
+      "skipped": ""
     },
     "disableAll": "",
     "disableAllConfirmTitle": "",
