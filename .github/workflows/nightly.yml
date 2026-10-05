@@ -164,11 +164,16 @@ jobs:
           PACKAGE_VERSION=$(node -p "require('./apps/desktop/package.json').version")
           DATE=$(date +%Y%m%d)
           COMMIT_SHORT=${{ needs.check-commits.outputs.latest_commit }}
-          # This mirrors what update-nightly-version.ts will produce
-          MAJOR=$(echo "$PACKAGE_VERSION" | cut -d. -f1)
-          MINOR=$(echo "$PACKAGE_VERSION" | cut -d. -f2)
-          BUMPED_MINOR=$((MINOR + 1))
-          NIGHTLY_VERSION="${MAJOR}.${BUMPED_MINOR}.0-nightly.${DATE}.${COMMIT_SHORT}"
+          # This mirrors what update-nightly-version.ts will produce:
+          # bump minor only if the package version is already released
+          if [ -n "$(git ls-remote --tags origin "refs/tags/v${PACKAGE_VERSION}")" ]; then
+            MAJOR=$(echo "$PACKAGE_VERSION" | cut -d. -f1)
+            MINOR=$(echo "$PACKAGE_VERSION" | cut -d. -f2)
+            NIGHTLY_BASE="${MAJOR}.$((MINOR + 1)).0"
+          else
+            NIGHTLY_BASE="$PACKAGE_VERSION"
+          fi
+          NIGHTLY_VERSION="${NIGHTLY_BASE}-nightly.${DATE}.${COMMIT_SHORT}"
           echo "nightly_version=$NIGHTLY_VERSION" >> $GITHUB_OUTPUT
           echo "Nightly version: $NIGHTLY_VERSION"
 
