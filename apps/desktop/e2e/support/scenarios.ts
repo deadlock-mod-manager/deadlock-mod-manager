@@ -21,6 +21,7 @@ import { writeSyntheticVpk } from "./vpk";
 import { contentRoutes, prepareContentWorld } from "./content-fixtures";
 import { preparePresenceCache } from "./settings-fixtures";
 import { grimoireRoutes, prepareGrimoireWorld } from "./interchange-fixtures";
+import { prepareHeroSkinsWorld } from "./hero-skins-fixtures";
 
 type Definition = {
   family: string;
@@ -163,6 +164,14 @@ const settings: Definition = {
   phases: ["configure", "restart-settings"],
   prepare: preparePresenceCache,
 };
+const heroSkins: Definition = {
+  ...defaults,
+  family: "skins",
+  spec: "hero-skins",
+  phases: ["active-skins"],
+  routes: profileRoutes,
+  prepare: async (world) => prepareHeroSkinsWorld(world),
+};
 export const scenarios = {
   "content-blur": {
     ...settings,
@@ -240,6 +249,7 @@ export const scenarios = {
     phases: ["optional-file", "skip-update", "restart-skipped", "newer-update"],
   },
   "grimoire-import": interchange,
+  "hero-skins-active": heroSkins,
 } satisfies Record<string, Definition>;
 export type ScenarioId = keyof typeof scenarios;
 const isScenario = (value: string): value is ScenarioId =>
