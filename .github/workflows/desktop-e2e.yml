@@ -129,12 +129,12 @@ jobs:
         if: matrix.distro == 'debian'
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends build-essential ca-certificates curl git file pkg-config xz-utils \
+          apt-get install -y --no-install-recommends build-essential ca-certificates curl git file pkg-config unzip xz-utils \
             libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev protobuf-compiler
       - name: Install Arch packages
         if: matrix.distro == 'arch'
         run: |
-          pacman -Syu --noconfirm --needed base-devel curl git file pkgconf xz \
+          pacman -Syu --noconfirm --needed base-devel curl git file pkgconf unzip xz \
             webkit2gtk-4.1 libappindicator-gtk3 librsvg openssl protobuf
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - uses: ./.github/actions/setup-desktop-e2e
@@ -189,13 +189,13 @@ jobs:
         if: matrix.distro == 'debian'
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends ca-certificates curl git xz-utils \
+          apt-get install -y --no-install-recommends ca-certificates curl git unzip xz-utils \
             libwebkit2gtk-4.1-0 libayatana-appindicator3-1 librsvg2-2 \
             libgl1-mesa-dri xvfb xauth dbus fonts-dejavu-core
       - name: Install Arch packages
         if: matrix.distro == 'arch'
         run: |
-          pacman -Syu --noconfirm --needed curl git xz \
+          pacman -Syu --noconfirm --needed curl git unzip xz \
             webkit2gtk-4.1 libappindicator-gtk3 librsvg \
             mesa xorg-server-xvfb xorg-xauth dbus ttf-dejavu
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6

@@ -7,17 +7,20 @@ import {
   scenarios,
 } from "./scenarios";
 
+// Native-input cases and filesystem-lock are registered on Windows only.
+const windows = process.platform === "win32";
+
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(42);
+    expect(ids).toHaveLength(windows ? 42 : 38);
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
       expect(scenarioSpec(id)).toContain("./specs/");
       expect(new Set(scenarioPhases(id)).size).toBe(scenarioPhases(id).length);
     }
     expect(selectScenarios("gamebanana")).toHaveLength(12);
-    expect(selectScenarios("filesystem")).toHaveLength(8);
+    expect(selectScenarios("filesystem")).toHaveLength(windows ? 8 : 7);
     expect(selectScenarios("interchange")).toEqual(["grimoire-import"]);
     expect(scenarios["profiles-pointer"].nativeInput).toBe(true);
     expect(scenarios["filesystem-manifest-repair"].nativeInput).toBe(false);
@@ -37,7 +40,7 @@ describe("scenario selection", () => {
   });
 
   it("runs the lifecycle in two fresh processes against one world", () => {
-    expect(scenarioPhases(parseScenarioId("local-mod-lifecycle"))).toEqual([
+    expect(scenarioPhases("local-mod-lifecycle")).toEqual([
       "import-toggle",
       "restart-delete",
     ]);
@@ -45,6 +48,21 @@ describe("scenario selection", () => {
       "./specs/local-mod-lifecycle.e2e.ts",
     );
     expect(scenarioPhases("about-smoke")).toEqual(["smoke"]);
+  });
+
+  it("only registers Windows-only cases on Windows", () => {
+    const windowsOnly = [
+      "local-mod-lifecycle",
+      "profiles-pointer",
+      "profiles-keyboard",
+      "filesystem-lock",
+    ] as const;
+    for (const id of windowsOnly) {
+      expect(scenarios[id].platforms).toEqual(["win32"]);
+      expect(selectScenarios("all").includes(id)).toBe(windows);
+      if (windows) expect(parseScenarioId(id)).toBe(id);
+      else expect(() => parseScenarioId(id)).toThrow("supports win32");
+    }
   });
 
   it("imports Grimoire in one process and verifies it in a fresh one", () => {
