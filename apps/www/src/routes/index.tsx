@@ -5,7 +5,6 @@ import {
   WebToolsSection,
 } from "@/components/home/community-sections";
 import { SkinsSection } from "@/components/home/customization-sections";
-import { DownloadSection } from "@/components/home/download-cta";
 import { FAQSection } from "@/components/home/faq-section";
 import { FeatureTour } from "@/components/home/feature-tour";
 import { HeroSection } from "@/components/home/hero";
@@ -51,7 +50,6 @@ function HomeComponent() {
       <StatsSection />
       <WebToolsSection />
       <FAQSection />
-      <DownloadSection />
     </div>
   );
 }
