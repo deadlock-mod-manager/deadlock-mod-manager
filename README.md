@@ -187,7 +187,7 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 | 🇫🇷 **French** | Français | 🚧 16% | [stormix](https://github.com/stormix) |
 | 🇷🇺 **Russian** | Русский | 🚧 1% | [awkward_akio](https://discordapp.com/users/awkward_akio/), [Thyron](https://github.com/baka-thyron) |
 | 🇸🇦 **Arabic** | العربية | 🚧 23% | [archeroflegend](https://discordapp.com/users/archeroflegend/) |
-| 🇵🇱 **Polish** | Polski | 🚧 51% | [_manio](https://discordapp.com/users/_manio/) |
+| 🇵🇱 **Polish** | Polski | 🚧 50% | [_manio](https://discordapp.com/users/_manio/) |
 | 🇨🇭 **Swiss German** | Schwiizerdütsch | 🚧 11% | [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
 | 🇹🇭 **Thai** | ไทย | 🚧 17% | [altqx](https://discordapp.com/users/altq/) |
 | 🇹🇷 **Turkish** | Türkçe | 🚧 13% | [kenanala](https://discordapp.com/users/kenanala/) |
