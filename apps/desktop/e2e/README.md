@@ -90,7 +90,7 @@ The first smoke flow uses WebDriver clicks to open Settings and the About dialog
 
 ## Settings, content, and launch scenarios
 
-Run `pnpm --filter @deadlock-mods/desktop e2e:test -- --suite settings --keep` to exercise seven scenarios through real settings controls and fresh application processes:
+Run `pnpm --filter @deadlock-mods/desktop e2e:test -- --suite settings --keep` to exercise eight scenarios through real settings controls and fresh application processes:
 
 | Case | Behavior checked |
 | --- | --- |
@@ -99,6 +99,7 @@ Run `pnpm --filter @deadlock-mods/desktop e2e:test -- --suite settings --keep` t
 | `settings-backups-presence` | Automatic backups, retained backup count, and game presence preference persist |
 | `settings-language` | Language selection changes the interface and survives restart |
 | `content-visibility` | Safe and synthetic adult fixtures across dashboard, catalog, library, skins, and direct mod links; global hiding survives restart without deleting installed mods |
+| `content-author-visibility` | Global hiding removes the synthetic adult mod from its author's page and result count, and still does after restart |
 | `content-blur` | Actual preview blur, remembered reveal after restart, ignoring per-item overrides, and disabling/re-enabling blur |
 | `game-launch-modes` | Create and edit a custom launch option; modded/vanilla launch arguments, vanilla without arguments, profile gameinfo paths, and unchanged installed VPKs across restart |
 

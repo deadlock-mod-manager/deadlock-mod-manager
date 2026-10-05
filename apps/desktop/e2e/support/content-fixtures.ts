@@ -12,6 +12,9 @@ export const contentMods = [
   { id: "920001", name: "E2E Safe Skin", nsfw: false },
   { id: "920002", name: "E2E Adult Skin", nsfw: true },
 ];
+/** GameBanana member who submitted both content mods. */
+export const contentAuthor = { remoteId: "930001", name: "E2E Author" };
+export const contentAuthorId = `gamebanana:${contentAuthor.remoteId}`;
 const heroNames = [
   "Abrams",
   "Apollo",
@@ -77,7 +80,10 @@ export const contentRoutes =
       _tsDateModified: 1780000000,
       _bHasFiles: true,
       _sText: "Synthetic content filter fixture",
-      _aSubmitter: { _sName: "E2E" },
+      _aSubmitter: {
+        _idRow: Number(contentAuthor.remoteId),
+        _sName: contentAuthor.name,
+      },
       _aRootCategory: { _sName: "Skins" },
       _aCategory: { _sName: "Infernus" },
       _aContentRatings: mod.nsfw ? { st: "Synthetic rating" } : {},
@@ -136,6 +142,24 @@ export const contentRoutes =
         query: { "fields[]": BULK_HYDRATION_FIELDS },
       },
       json("/apiv11/Util/Fileservers", { _aRecords: [] }),
+      // GameBanana authors list their mods from the local catalog, not the API.
+      json(`/api/v2/mod-authors/${encodeURIComponent(contentAuthorId)}`, {
+        author: {
+          id: contentAuthorId,
+          provider: "gamebanana",
+          remoteId: contentAuthor.remoteId,
+          name: contentAuthor.name,
+          profileUrl: `https://gamebanana.com/members/${contentAuthor.remoteId}`,
+          avatarUrl: "https://gamebanana.com/static/img/defaults/avatar.gif",
+          hdAvatarUrl: null,
+          upicUrl: null,
+          signatureUrl: null,
+          title: null,
+          joinedAt: null,
+          subscriberCount: null,
+        },
+        mods: [],
+      }),
       ...profiles.flatMap(({ _idRow: id, _aFiles: files, ...profile }) => [
         json(`/apiv11/Mod/${id}/ProfilePage`, {
           _idRow: id,

@@ -172,6 +172,13 @@ export const scenarios = {
     routes: contentRoutes,
     prepare: prepareContentWorld,
   },
+  "content-author-visibility": {
+    ...settings,
+    spec: "content-author-visibility",
+    phases: ["author-preferences", "restart-author"],
+    routes: contentRoutes,
+    prepare: prepareContentWorld,
+  },
   "game-launch-modes": {
     ...settings,
     spec: "game-launch",

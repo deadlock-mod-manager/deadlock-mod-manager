@@ -47,12 +47,16 @@ export const AuthorPageContent = ({ authorId }: { authorId: string }) => {
           <h2 className='font-semibold text-xl'>
             {t("authorPage.modsBy", { author: displayName })}
           </h2>
-          <span className='text-muted-foreground text-sm'>
+          <span
+            className='text-muted-foreground text-sm'
+            data-testid='author-result-count'>
             {t("authorPage.resultCount", { count: visibleMods.length })}
           </span>
         </div>
 
-        <div className='grid grid-cols-1 gap-4 px-1 pr-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
+        <div
+          className='grid grid-cols-1 gap-4 px-1 pr-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'
+          data-testid='author-mods'>
           {visibleMods.map((mod) => (
             <ModCard
               key={mod.id}
