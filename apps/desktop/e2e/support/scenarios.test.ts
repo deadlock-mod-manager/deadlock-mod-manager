@@ -10,13 +10,13 @@ import {
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(39);
+    expect(ids).toHaveLength(40);
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
       expect(scenarioSpec(id)).toContain("./specs/");
       expect(new Set(scenarioPhases(id)).size).toBe(scenarioPhases(id).length);
     }
-    expect(selectScenarios("gamebanana")).toHaveLength(10);
+    expect(selectScenarios("gamebanana")).toHaveLength(11);
     expect(selectScenarios("filesystem")).toHaveLength(8);
     expect(selectScenarios("interchange")).toEqual(["grimoire-import"]);
     expect(scenarios["profiles-pointer"].nativeInput).toBe(true);

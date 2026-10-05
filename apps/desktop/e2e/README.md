@@ -137,6 +137,8 @@ These cases start with an empty library and use the real catalog UI, GameBanana 
 
 Every case checks the mod page's Installed Files list and Active Mod files section, closes the application normally, and repeats the rendering and disk checks in a new process. Installed filenames, archive groups, selected downloads, profile state, manifest entries, and exact VPK bytes must agree. Network assertions require the real provider metadata endpoints and exactly the selected payload requests, with no download repeated on restart. Screenshots, DOM snapshots, and `catalog-*.json` disk evidence are retained with `--keep`.
 
+`gamebanana-update-skip` installs one archive and runs four processes against one world. The first update check sees a newer optional file the user never installed, and no update may appear. Then the installed file gets newer. The update shows in My Mods and on the mod page, **Skip this update** hides it, and `skippedUpdateAt` persists. The update stays hidden after a restart. A later change to the installed file brings it back. Update checks are cached for six hours, so the spec expires the catalog's `update_cache` row between processes. The bulk update route serves one snapshot per expired check, and the network assertion requires exactly three bulk update requests.
+
 The variant scenario caught an Installed Files rendering bug: the stored file tree retains unselected options, and the page previously displayed all of them. The display now groups only selected files, including the per-archive file counts.
 
 ## Mod manager interchange scenario
