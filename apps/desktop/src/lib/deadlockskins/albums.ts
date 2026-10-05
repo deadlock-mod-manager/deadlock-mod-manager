@@ -13,7 +13,7 @@ import { type DeadlockSkinsAlbumMember, parseAlbumMembers } from "./parse";
 // signed-in album editing. The album pages are server-rendered, and each one
 // carries its full member list as the JSON its own 1-click buttons use, so
 // the HTML is the interface.
-export const DEADLOCKSKINS_ORIGIN = "https://deadlockskins.gg";
+const DEADLOCKSKINS_ORIGIN = "https://deadlockskins.gg";
 
 // Albums are hand-curated and change rarely.
 const ALBUMS_STALE_TIME = 60 * 60 * 1000;
