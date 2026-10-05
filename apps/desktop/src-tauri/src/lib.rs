@@ -58,6 +58,11 @@ pub fn run() {
   let mut builder =
     tauri::Builder::<app_runtime::AppRuntime>::new().plugin(tauri_plugin_dialog::init());
 
+  #[cfg(feature = "cef")]
+  {
+    builder = builder.runtime(app_runtime::cef_runtime());
+  }
+
   #[cfg(all(debug_assertions, desktop, feature = "tauri-wry"))]
   {
     if runtime_environment::current().e2e().is_none() {

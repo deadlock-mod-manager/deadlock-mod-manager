@@ -431,6 +431,42 @@ On first build, the CEF binary distribution (~300MB) is downloaded automatically
 
 A correctly bundled CEF NSIS installer will be significantly larger than a Wry build (~300MB vs ~21MB) because it includes `libcef.dll` and the full CEF redistribution. If the installer size is similar to the Wry build, CEF files were not bundled correctly.
 
+### Linux Runtime Dependencies
+
+CEF Linux packages ship Chromium itself but link against system libraries that GTK does not pull in. `src-tauri/tauri.cef.conf.json` declares them for the `.deb` and `.rpm`; `cef-patch.ts` passes it to every CEF `tauri build`, so Wry packages are unaffected:
+
+| Library                                    | Debian/Ubuntu package                   | Fedora package     | Arch package       |
+| ------------------------------------------ | --------------------------------------- | ------------------ | ------------------ |
+| NSS (linked by `libcef.so`)                | `libnss3`, `libnspr4`                   | `nss`, `nspr`      | `nss`, `nspr`      |
+| GBM                                        | `libgbm1`                               | `mesa-libgbm`      | `mesa`             |
+| ALSA                                       | `libasound2t64` (24.04+) / `libasound2` | `alsa-lib`         | `alsa-lib`         |
+| xkbcommon X11 (loaded at runtime by winit) | `libxkbcommon-x11-0`                    | `libxkbcommon-x11` | `libxkbcommon-x11` |
+
+`libxkbcommon-x11` is opened with `dlopen`, so `ldd` does not report it; without it the app panics at startup with `Library libxkbcommon-x11.so could not be loaded`.
+
+### Flatpak Sandbox
+
+Chromium cannot create its own sandbox inside the Flatpak container, and `tauri-runtime-cef` only works around that for AppImages. It also ignores Chromium switches given on the real command line, so a `--no-sandbox` in the launcher has no effect. `app_runtime::cef_runtime` therefore sets `SandboxPolicy::Disabled` when running in Flatpak; without it the Flatpak aborts with `No usable sandbox!`.
+
+### Testing Linux CEF Builds in WSL
+
+WSLg can run the Linux builds on Windows. WSL distros usually have no systemd user session, so start the app inside a private D-Bus session:
+
+```bash
+# .deb without installing it (no root needed)
+mkdir cef && cd cef
+dpkg-deb -x ../Deadlock.Mod.Manager_*-cef.deb root   # Arch: bsdtar -xf the .deb, then tar -xzf data.tar.gz
+cd "root/usr/share/Deadlock Mod Manager"
+dbus-run-session -- ./deadlock-mod-manager
+
+# Flatpak, installed per user
+flatpak --user remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+flatpak --user install -y deadlock-mod-manager-cef.flatpak
+XDG_RUNTIME_DIR=/run/user/$(id -u) dbus-run-session -- flatpak run --user dev.stormix.deadlock-mod-manager
+```
+
+Install the libraries from the table above first (on a minimal Arch WSL: `sudo pacman -S nss nspr`). Without `dbus-run-session`, `flatpak run` fails with `bwrap: Can't find source path /run/user/1000/bus`. Errors about UPower, `update-desktop-database`, a missing Steam installation, or `GpuControl.CreateCommandBuffer` are expected under WSL and harmless.
+
 ## Troubleshooting
 
 ### Common Issues

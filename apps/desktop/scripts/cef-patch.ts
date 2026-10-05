@@ -35,6 +35,7 @@ const CEF_PATCHED_PLUGINS = [
   "tauri-plugin-updater",
 ];
 const PATCH_MARKER = "[patch.crates-io]";
+const CEF_TAURI_CONFIG = "src-tauri/tauri.cef.conf.json";
 const DEPENDENCIES_HEADER = "[dependencies]";
 
 // On `feat/cef` the CEF runtime is a standalone crate and `tauri` no longer has
@@ -189,8 +190,10 @@ function cleanupCefSetup(): boolean {
 // CEF builds need `--features cef` passed twice: once to the Tauri CLI (before
 // `--`) so the bundler picks up libcef.dll, and once to cargo (after `--`)
 // alongside `--no-default-features` so the crate compiles against the cef
-// feature instead of the default wry feature. Centralizing this here keeps
-// every call site (package.json scripts, CI steps) free of the contract.
+// feature instead of the default wry feature. `tauri build` also gets the CEF
+// config overlay, which declares the Linux package dependencies Chromium needs.
+// Centralizing this here keeps every call site (package.json scripts, CI
+// steps) free of the contract.
 function injectCefFlags(
   command: string,
   args: string[],
@@ -206,7 +209,10 @@ function injectCefFlags(
     return { command, args };
   }
 
-  const cliFlags = ["--features", "cef"];
+  const cliFlags =
+    subcommand === "build"
+      ? ["--features", "cef", "--config", CEF_TAURI_CONFIG]
+      : ["--features", "cef"];
   const cargoFlags = ["--no-default-features", "--features", "cef"];
   const insertAt = tauriIdx + 2;
   const dashDashIdx = tokens.indexOf("--", insertAt);
