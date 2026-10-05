@@ -14,6 +14,20 @@ pnpm --filter @deadlock-mods/desktop e2e:qualify -- --provider embedded
 pnpm --filter @deadlock-mods/desktop e2e:qualify -- --provider external
 ```
 
+## Linux
+
+The harness also runs on Linux/WebKitGTK through the same embedded provider. The E2E build redirects `TMPDIR` and the XDG data, config, cache and state directories into the world's `webview-data` root, so WebKitGTK, GTK and Mesa stay inside the disposable world. Scenarios declare their supported platforms; the native-input cases (`local-mod-lifecycle`, `profiles-pointer`, `profiles-keyboard`) and `filesystem-lock` (Windows `FileShare.None`) are Windows-only, and suites skip them elsewhere.
+
+Install the Tauri build prerequisites (WebKitGTK 4.1, librsvg, appindicator, protobuf) plus Xvfb, then run headless:
+
+```bash
+pnpm --filter @deadlock-mods/desktop e2e:build
+xvfb-run -a pnpm --filter @deadlock-mods/desktop e2e:doctor
+xvfb-run -a -s "-screen 0 1920x1080x24" dbus-run-session -- pnpm --filter @deadlock-mods/desktop e2e:test -- --suite smoke --keep
+```
+
+On Arch, set `SHARP_IGNORE_GLOBAL_LIBVIPS=1` before `pnpm install` if a system libvips is present.
+
 ## Writing scenarios
 
 `support/scenarios.ts` is the scenario registry. Each definition owns its spec, phases, fixture setup, HTTP routes, network assertions, native-input requirement, and expected exit mode. `--suite` selects `all`, a family such as `gamebanana` or `downloads`, or a coverage category (`ui` / `ipc-recovery`). Cases run serially with a separate world per case; restart phases share that case's world. Failures retain their world and the runner continues to report the remaining cases.
@@ -201,7 +215,7 @@ Native Windows dialogs are outside the webview DOM and cannot be driven by WebDr
 
 M6 runs the existing E2E harness in `.github/workflows/desktop-e2e.yml`. It runs nightly at 03:23 UTC, on manual dispatch, and on PRs carrying the `e2e-full` label. Regular PRs do not build or run the pipeline automatically.
 
-The pipeline builds the debug harness and native helper once, then shares their binaries with seven independent Windows jobs covering all 37 scenarios. Each family runs serially with retries disabled. Native input is explicitly enabled only on disposable GitHub-hosted desktops. The CLI's `--report <path>` writes an incremental JSON summary; CI retains reports and diagnostic artifacts for 14 days without uploading control tokens. Missing prerequisites, unmatched requests, timeouts, and failed scenarios remain failures. No release builds, installer smoke tests, signing, or publication are part of this pipeline.
+The pipeline builds the debug harness and native helper once, then shares their binaries with seven independent Windows jobs covering all 37 scenarios. Each family runs serially with retries disabled. Native input is explicitly enabled only on disposable GitHub-hosted desktops. The CLI's `--report <path>` writes an incremental JSON summary; CI retains reports and diagnostic artifacts for 14 days without uploading control tokens. Linux coverage builds the harness inside `debian:trixie` and `archlinux:latest` containers and runs every Linux-supported family under Xvfb with a private D-Bus session on each distribution. Missing prerequisites, unmatched requests, timeouts, and failed scenarios remain failures. No release builds, installer smoke tests, signing, or publication are part of this pipeline.
 
 Use the seven scenario jobs and their per-case reports to verify clean-runner qualification. Full local runs require explicit native-input authorization and the same strict network and filesystem checks as CI.
 

@@ -112,9 +112,7 @@ describe("Grimoire import", () => {
         await $('[data-testid="interchange-analyze"]').click();
         await browser.waitUntil(
           async () =>
-            !(await $('[data-testid="interchange-analyze"]').getAttribute(
-              "disabled",
-            )),
+            await $('[data-testid="interchange-analyze"]').isEnabled(),
         );
         const overflowRow = await $(
           `[data-testid="interchange-unrecognized-row"][data-mod-id="${derivedModId(fixtures[2])}"]`,
@@ -158,15 +156,13 @@ describe("Grimoire import", () => {
         // Everything that is left is already in the library (the overflow mod
         // through the import ledger, since its id changed when it was linked).
         assert.equal(
-          await $('[data-testid="interchange-section-mods"]').getAttribute(
-            "disabled",
-          ),
-          "true",
+          await $('[data-testid="interchange-section-mods"]').isEnabled(),
+          false,
         );
         await $('[data-testid="interchange-section-crosshairs"]').click();
         assert.equal(
-          await $('[data-testid="interchange-next"]').getAttribute("disabled"),
-          "true",
+          await $('[data-testid="interchange-next"]').isEnabled(),
+          false,
         );
         await browser.keys("Escape");
         await expect(wizard()).not.toExist();

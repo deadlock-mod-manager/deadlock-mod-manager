@@ -49,7 +49,8 @@ const applicationToggles = [
 const systemToggles = [
   { id: "auto-reapply-mods", value: true },
   { id: "launch-vanilla-no-args", value: true },
-  { id: "mods-store-pagination", value: true },
+  // Pagination defaults to enabled on Linux; flip it away from the default.
+  { id: "mods-store-pagination", value: process.platform !== "linux" },
   { id: "hero-conflict-warning", value: false },
 ];
 const privacyToggles = [

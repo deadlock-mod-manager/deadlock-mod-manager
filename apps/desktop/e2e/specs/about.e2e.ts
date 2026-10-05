@@ -4,6 +4,7 @@ import { $, browser, expect } from "@wdio/globals";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
+import { STEAM_LAUNCHER } from "../support/world";
 
 type E2eStatus = {
   runId: string;
@@ -90,7 +91,7 @@ describe("DMM native smoke", () => {
       "utf8",
     );
     expect(launchJournal).toContain("--e2e-launch-probe");
-    expect(launchJournal).toContain("steam.exe");
+    expect(launchJournal).toContain(STEAM_LAUNCHER);
 
     if (process.env.DMM_E2E_INTENTIONAL_TIMEOUT === "1") {
       await browser.waitUntil(() => false, {

@@ -158,8 +158,16 @@ export const assertGrimoireImported = async (
     skin?.selectedDownloads?.map((download) => download.url),
     [`gamebanana-file://${ids[0]}/${GRIMOIRE_SKIN_FILE_ID}`],
   );
+  // Other profiles keep their files in their own addons subfolders.
+  const profileFolders = Object.values(state.profiles).flatMap((profile) =>
+    profile.folderName ? [`${profile.folderName}/`] : [],
+  );
   assert.deepEqual(
-    Object.keys(inventory).sort(),
+    Object.keys(inventory)
+      .filter(
+        (file) => !profileFolders.some((folder) => file.startsWith(folder)),
+      )
+      .sort(),
     [
       ".dmm.json",
       ".disabled/e2e_parked_sound_dir.vpk",

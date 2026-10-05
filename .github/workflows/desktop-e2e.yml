@@ -103,3 +103,123 @@ jobs:
             .e2e/reports/**
             .e2e/worlds/**/artifacts/**
             .e2e/worlds/**/world-manifest.json
+
+  linux-build:
+    name: Build isolated harness (${{ matrix.distro }})
+    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e-full')
+    runs-on: ubuntu-latest
+    container: ${{ matrix.image }}
+    timeout-minutes: 60
+    env:
+      # Arch can ship a system libvips that makes sharp compile from source.
+      SHARP_IGNORE_GLOBAL_LIBVIPS: "1"
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distro: debian
+            image: debian:trixie
+          - distro: arch
+            image: archlinux:latest
+    steps:
+      - name: Install Debian packages
+        if: matrix.distro == 'debian'
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends build-essential ca-certificates curl git file pkg-config xz-utils \
+            libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev protobuf-compiler
+      - name: Install Arch packages
+        if: matrix.distro == 'arch'
+        run: |
+          pacman -Syu --noconfirm --needed base-devel curl git file pkgconf xz \
+            webkit2gtk-4.1 libappindicator-gtk3 librsvg openssl protobuf
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: ./.github/actions/setup-desktop-e2e
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          workspaces: apps/desktop -> target
+          shared-key: desktop-e2e-debug-${{ matrix.distro }}
+      - name: Build application
+        run: pnpm --filter @deadlock-mods/desktop e2e:build
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: desktop-e2e-binaries-${{ matrix.distro }}
+          retention-days: 3
+          if-no-files-found: error
+          path: apps/desktop/target/debug/deadlock-mod-manager
+
+  linux-scenarios:
+    name: Linux scenarios (${{ matrix.distro }}, ${{ matrix.suite }})
+    needs: linux-build
+    runs-on: ubuntu-latest
+    container: ${{ matrix.image }}
+    timeout-minutes: 25
+    env:
+      # Arch can ship a system libvips that makes sharp compile from source.
+      SHARP_IGNORE_GLOBAL_LIBVIPS: "1"
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        distro: [debian, arch]
+        # local and profiles need the Windows native input helper.
+        suite:
+          [
+            smoke,
+            conflicts,
+            downloads,
+            filesystem,
+            gamebanana,
+            settings,
+            interchange,
+          ]
+        include:
+          - distro: debian
+            image: debian:trixie
+          - distro: arch
+            image: archlinux:latest
+    steps:
+      - name: Install Debian packages
+        if: matrix.distro == 'debian'
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates curl git xz-utils \
+            libwebkit2gtk-4.1-0 libayatana-appindicator3-1 librsvg2-2 \
+            libgl1-mesa-dri xvfb xauth dbus fonts-dejavu-core
+      - name: Install Arch packages
+        if: matrix.distro == 'arch'
+        run: |
+          pacman -Syu --noconfirm --needed curl git xz \
+            webkit2gtk-4.1 libappindicator-gtk3 librsvg \
+            mesa xorg-server-xvfb xorg-xauth dbus ttf-dejavu
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: ./.github/actions/setup-desktop-e2e
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: desktop-e2e-binaries-${{ matrix.distro }}
+          path: apps/desktop/target/debug
+      - name: Restore executable permission
+        run: chmod +x apps/desktop/target/debug/deadlock-mod-manager
+      - name: Check runner prerequisites
+        run: xvfb-run -a pnpm --filter @deadlock-mods/desktop e2e:doctor
+      - name: Run serial scenarios on a virtual display
+        env:
+          E2E_SUITE: ${{ matrix.suite }}
+        run: xvfb-run -a -s "-screen 0 1920x1080x24" dbus-run-session -- pnpm --filter @deadlock-mods/desktop e2e:test -- --suite "$E2E_SUITE" --keep --report ../../.e2e/reports/scenarios.json
+      - name: Retain scenario evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: desktop-e2e-${{ matrix.distro }}-${{ matrix.suite }}
+          retention-days: 14
+          include-hidden-files: true
+          path: |
+            .e2e/reports/**
+            .e2e/worlds/**/artifacts/**
+            .e2e/worlds/**/world-manifest.json

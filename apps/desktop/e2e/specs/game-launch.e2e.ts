@@ -11,7 +11,11 @@ import {
   setSwitch,
 } from "../support/settings-actions";
 import { observeUntil } from "../support/observations";
-import { assertOwnedWorld, collectFileInventory } from "../support/world";
+import {
+  assertOwnedWorld,
+  collectFileInventory,
+  STEAM_LAUNCHER,
+} from "../support/world";
 import { ALPHA } from "../support/profile-fixtures";
 import { reveal } from "../support/ui";
 
@@ -126,7 +130,7 @@ describe("modded and vanilla launch", () => {
         (rows) => rows.length === count + 1,
       );
       assert.deepEqual(launches.at(-1), {
-        program: path.join(steam, "steam.exe"),
+        program: path.join(steam, STEAM_LAUNCHER),
         uri: `steam://run/1422450//${args}`,
       });
       const gameinfo = await readFile(

@@ -92,6 +92,11 @@ const hasWebView2Runtime = async (): Promise<boolean> => {
   return false;
 };
 
+const hasLinuxLibrary = (library: string): boolean =>
+  (spawnSync("ldconfig", ["-p"], { encoding: "utf8" }).stdout ?? "").includes(
+    library,
+  );
+
 const canWriteHarnessRoot = async (): Promise<boolean> => {
   let probeDirectory: string | undefined;
   try {
@@ -156,25 +161,44 @@ const doctor = async (): Promise<void> => {
         : "run pnpm e2e:build:picker (.NET 10 SDK required)",
     });
   }
-  checks.push({
-    name: "platform",
-    ok: process.platform === "win32",
-    detail: `${process.platform}; milestone 1 supports Windows/Wry`,
-  });
-  checks.push({
-    name: "interactive session",
-    ok: isInteractiveWindowsSession(),
-    detail:
-      "desktop WebView automation requires an interactive Windows session",
-  });
-  const hasWebView2 = await hasWebView2Runtime();
-  checks.push({
-    name: "WebView2 Runtime",
-    ok: hasWebView2,
-    detail: hasWebView2
-      ? "msedgewebview2.exe found"
-      : "Microsoft Edge WebView2 Runtime is missing",
-  });
+  if (process.platform === "win32") {
+    checks.push({
+      name: "interactive session",
+      ok: isInteractiveWindowsSession(),
+      detail:
+        "desktop WebView automation requires an interactive Windows session",
+    });
+    const hasWebView2 = await hasWebView2Runtime();
+    checks.push({
+      name: "WebView2 Runtime",
+      ok: hasWebView2,
+      detail: hasWebView2
+        ? "msedgewebview2.exe found"
+        : "Microsoft Edge WebView2 Runtime is missing",
+    });
+  } else if (process.platform === "linux") {
+    const display = process.env.WAYLAND_DISPLAY ?? process.env.DISPLAY;
+    checks.push({
+      name: "display",
+      ok: display !== undefined && display.length > 0,
+      detail:
+        display ?? "set DISPLAY or WAYLAND_DISPLAY, e.g. run under xvfb-run",
+    });
+    const hasWebKitGtk = hasLinuxLibrary("libwebkit2gtk-4.1.so.0");
+    checks.push({
+      name: "WebKitGTK",
+      ok: hasWebKitGtk,
+      detail: hasWebKitGtk
+        ? "libwebkit2gtk-4.1.so.0 found"
+        : "WebKitGTK 4.1 runtime is missing",
+    });
+  } else {
+    checks.push({
+      name: "platform",
+      ok: false,
+      detail: `${process.platform}; the harness supports Windows/Wry and Linux/WebKitGTK`,
+    });
+  }
   const harnessRootWritable = await canWriteHarnessRoot();
   checks.push({
     name: "harness root",
@@ -187,11 +211,12 @@ const doctor = async (): Promise<void> => {
     ok: loopbackAvailable,
     detail: "ephemeral TCP listener on 127.0.0.1",
   });
-  checks.push({
-    name: "process-tree cleanup",
-    ok: process.platform === "win32" && commandExists("taskkill.exe", "/?"),
-    detail: "taskkill.exe on PATH",
-  });
+  if (process.platform === "win32")
+    checks.push({
+      name: "process-tree cleanup",
+      ok: commandExists("taskkill.exe", "/?"),
+      detail: "taskkill.exe on PATH",
+    });
   const servicePath = path.join(
     path.dirname(fileURLToPath(import.meta.url)),
     "..",
@@ -217,17 +242,19 @@ const doctor = async (): Promise<void> => {
     ok: commandExists("pnpm", "--version"),
     detail: "pnpm on PATH",
   });
-  checks.push({
-    name: "cargo",
-    ok: commandExists("cargo", "--version"),
-    detail: "cargo on PATH",
-  });
   let binaryExists = true;
   try {
     await access(binaryPath);
   } catch {
     binaryExists = false;
   }
+  // Runners that receive a prebuilt binary do not need a Rust toolchain.
+  if (!binaryExists)
+    checks.push({
+      name: "cargo",
+      ok: commandExists("cargo", "--version"),
+      detail: "cargo on PATH",
+    });
   checks.push({
     name: "E2E binary",
     ok: binaryExists,

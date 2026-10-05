@@ -27,6 +27,9 @@ type Definition = {
   spec: string;
   phases: readonly string[];
   nativeInput: boolean;
+  // Native input drives the FlaUI helper, and some faults rely on Windows file
+  // sharing semantics; those cases are not registered on other platforms.
+  platforms: readonly NodeJS.Platform[];
   coverage: "ui" | "ipc-recovery";
   routes: (id: string) => Promise<(origin: string) => readonly FixtureRoute[]>;
   prepare: (world: CreatedWorld, origin: string) => Promise<void>;
@@ -35,6 +38,7 @@ type Definition = {
 };
 const defaults = {
   nativeInput: false,
+  platforms: ["win32", "linux"],
   coverage: "ui",
   routes: async () => () => [],
   prepare: async () => {},
@@ -53,6 +57,7 @@ const local: Definition = {
   spec: "local-mod-lifecycle",
   phases: ["import-toggle", "restart-delete"],
   nativeInput: true,
+  platforms: ["win32"],
   prepare: async (world) => {
     await writeSyntheticVpk(
       path.join(world.directory, "fixtures", "e2e-local-mod.vpk"),
@@ -83,6 +88,7 @@ const profiles: Definition = {
   spec: "profiles-ordering",
   phases: ["reorder-switch", "restart-profiles"],
   nativeInput: true,
+  platforms: ["win32"],
   routes: profileRoutes,
   prepare: async (world) => prepareProfileWorld(world),
 };
@@ -211,7 +217,7 @@ export const scenarios = {
   "downloads-variants": downloads,
   "filesystem-backup-replace": filesystem,
   "filesystem-backup-merge": filesystem,
-  "filesystem-lock": filesystem,
+  "filesystem-lock": { ...filesystem, platforms: ["win32"] },
   "filesystem-collision": filesystem,
   "filesystem-shards": filesystem,
   "filesystem-crash-placed": crash,
@@ -238,9 +244,17 @@ export const scenarios = {
 export type ScenarioId = keyof typeof scenarios;
 const isScenario = (value: string): value is ScenarioId =>
   Object.hasOwn(scenarios, value);
+const supportsPlatform = (id: ScenarioId): boolean => {
+  const platforms: readonly NodeJS.Platform[] = scenarios[id].platforms;
+  return platforms.includes(process.platform);
+};
 export const parseScenarioId = (value = "about-smoke"): ScenarioId => {
-  if (isScenario(value)) return value;
-  throw new Error(`Unsupported E2E case '${value}'`);
+  if (!isScenario(value)) throw new Error(`Unsupported E2E case '${value}'`);
+  if (!supportsPlatform(value))
+    throw new Error(
+      `E2E case '${value}' supports ${scenarios[value].platforms.join(", ")}, not ${process.platform}`,
+    );
+  return value;
 };
 export const scenarioPhases = (id: ScenarioId) => scenarios[id].phases;
 export const scenarioSpec = (id: ScenarioId) =>
@@ -248,6 +262,7 @@ export const scenarioSpec = (id: ScenarioId) =>
 export const selectScenarios = (suite: string): ScenarioId[] => {
   const ids = Object.keys(scenarios)
     .filter(isScenario)
+    .filter(supportsPlatform)
     .filter(
       (id) =>
         suite === "all" ||

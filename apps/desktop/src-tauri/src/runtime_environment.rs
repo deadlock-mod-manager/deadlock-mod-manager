@@ -359,7 +359,7 @@ pub fn configure_process() {
   };
 
   // Startup calls this before Tauri or any application worker threads exist.
-  // These process-local overrides keep Rust temporary files and WebView2 data
+  // These process-local overrides keep Rust temporary files and webview data
   // inside the disposable world inherited by child processes.
   unsafe {
     std::env::set_var("TMP", &configuration.roots.temporary);
@@ -369,6 +369,22 @@ pub fn configure_process() {
       "WEBVIEW2_USER_DATA_FOLDER",
       &configuration.roots.webview_data,
     );
+    // WebKitGTK, GTK and Mesa resolve their storage and caches through the
+    // XDG base directories rather than an explicit webview data folder.
+    #[cfg(target_os = "linux")]
+    {
+      std::env::set_var("TMPDIR", &configuration.roots.temporary);
+      for (variable, name) in [
+        ("XDG_DATA_HOME", "data"),
+        ("XDG_CONFIG_HOME", "config"),
+        ("XDG_CACHE_HOME", "cache"),
+        ("XDG_STATE_HOME", "state"),
+      ] {
+        let directory = configuration.roots.webview_data.join(name);
+        let _ = std::fs::create_dir_all(&directory);
+        std::env::set_var(variable, directory);
+      }
+    }
   }
 }
 
