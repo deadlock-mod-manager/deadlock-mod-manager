@@ -53,6 +53,9 @@
           "url": "https://*.deadlockmods.app/**"
         },
         {
+          "url": "https://deadlockmods.app/**"
+        },
+        {
           "url": "https://*.deadlockmods.com/**"
         },
         {

@@ -409,6 +409,9 @@
       "forgeTitle": "Deadlock Forge",
       "forgeDescription": "The community's skin workshop and asset browser. Opens in your browser.",
       "forgeAction": "Open deadlockforge.net",
+      "commissionsTitle": "DMM Commissions",
+      "commissionsDescription": "Want something you can't build yourself? Pay a mod author to make a custom skin, sound pack or other mod just for you. Opens in your browser.",
+      "commissionsAction": "Browse commissions",
       "hint": "Map mods aren't supported here — the Foundry is for hero skins."
     },
     "import": {
