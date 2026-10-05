@@ -15,7 +15,13 @@ import {
 } from "../support/gamebanana-oracle";
 import { assertOwnedWorld, collectFileInventory } from "../support/world";
 import { observeUntil } from "../support/observations";
-import { navigate, reveal, installedFiles, activeFiles } from "../support/ui";
+import {
+  navigate,
+  reveal,
+  installedFiles,
+  activeFiles,
+  openFilesTab,
+} from "../support/ui";
 import {
   applyArchives,
   checkCatalog,
@@ -35,14 +41,17 @@ describe("catalog installation lifecycle", () => {
     const runtime = await startApplication();
     const world = runtime.roots.world;
     const checkpoint = path.join(world, "artifacts", "catalog-change.json");
-    let files = scenario.startsWith("gamebanana-switch")
-      ? ["common.vpk", "blue.vpk"]
-      : ["gamebanana-combined", "gamebanana-force-update"].includes(scenario)
+    const selected = catalogRecipe(scenario).filter(
+      (archive) => archive.selected,
+    );
+    let files = ["gamebanana-remembered", "gamebanana-force-update"].includes(
+      scenario,
+    )
+      ? selected.flatMap((archive) => archive.files)
+      : scenario === "gamebanana-unremembered"
         ? ["base.vpk", "effects.vpk"]
         : ["common.vpk", "blue.vpk"];
-    let downloads = catalogRecipe(scenario)
-      .filter((archive) => archive.selected)
-      .map((archive) => archive.name);
+    let downloads = selected.map((archive) => archive.name);
     let dormant: string[] = [];
     const disabled = scenario === "gamebanana-reinstall-disabled";
     await navigate("mods");
@@ -218,6 +227,7 @@ describe("catalog installation lifecycle", () => {
         "aria-checked",
         "false",
       );
+      await openFilesTab();
       await expect(installedFiles()).not.toBeDisplayed();
       await expect(activeFiles()).not.toBeDisplayed();
       const {

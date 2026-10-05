@@ -5,6 +5,7 @@ import {
   deselectInstallFile,
   installedFiles,
   activeFiles,
+  openFilesTab,
 } from "../support/ui";
 import { startApplication } from "../support/application";
 import { $, browser, expect } from "@wdio/globals";
@@ -78,6 +79,7 @@ describe("GameBanana catalog installation", () => {
       assert.notEqual(runtime.processId, previous.processId);
     }
     await expect($('[role="switch"]')).toHaveAttribute("aria-checked", "true");
+    await openFilesTab();
     const installed = await installedFiles();
     await reveal(installed);
     await expect(installed).toBeDisplayed();
