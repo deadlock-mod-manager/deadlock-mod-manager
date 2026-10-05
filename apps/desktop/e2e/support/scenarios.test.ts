@@ -13,7 +13,7 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 42 : 38);
+    expect(ids).toHaveLength(windows ? 43 : 39);
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
       expect(scenarioSpec(id)).toContain("./specs/");
@@ -22,6 +22,7 @@ describe("scenario selection", () => {
     expect(selectScenarios("gamebanana")).toHaveLength(12);
     expect(selectScenarios("filesystem")).toHaveLength(windows ? 8 : 7);
     expect(selectScenarios("interchange")).toEqual(["grimoire-import"]);
+    expect(selectScenarios("skins")).toEqual(["hero-skins-active"]);
     expect(scenarios["profiles-pointer"].nativeInput).toBe(true);
     expect(scenarios["filesystem-manifest-repair"].nativeInput).toBe(false);
     expect(scenarios["conflicts-resolve"].nativeInput).toBe(false);
