@@ -14,5 +14,15 @@ fn main() {
     println!("cargo:rustc-link-arg=delayimp.lib");
   }
 
-  tauri_build::build()
+  // The MCP bridge plugin only builds against Wry, so CEF builds skip the
+  // runtime-specific capabilities under `capabilities/wry/`.
+  if std::env::var_os("CARGO_FEATURE_CEF").is_some() {
+    println!("cargo:rerun-if-changed=capabilities");
+    tauri_build::try_build(
+      tauri_build::Attributes::new().capabilities_path_pattern("./capabilities/*.json"),
+    )
+    .expect("failed to run tauri-build");
+  } else {
+    tauri_build::build()
+  }
 }

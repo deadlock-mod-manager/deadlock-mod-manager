@@ -61,7 +61,8 @@ permissions:
 
 env:
   NODE_VERSION: "24.8.0"
-  TAURI_CEF_BRANCH: "feat/cef"
+  # Keep in sync with TAURI_CEF_TAG in apps/desktop/scripts/cef-patch.ts.
+  TAURI_CEF_TAG: "tauri-cef-v3.0.0-alpha.27"
 
 jobs:
   build-cef:
@@ -148,20 +149,20 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/.cache/tauri-cef
-          key: ${{ runner.os }}-${{ runner.arch }}-cef-${{ hashFiles('apps/desktop/Cargo.lock') }}
+          key: ${{ runner.os }}-${{ runner.arch }}-cef-${{ env.TAURI_CEF_TAG }}-${{ hashFiles('apps/desktop/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-${{ runner.arch }}-cef-
+            ${{ runner.os }}-${{ runner.arch }}-cef-${{ env.TAURI_CEF_TAG }}-
 
       - name: Cache Tauri CEF CLI
         id: cache-tauri-cli
         uses: actions/cache@v6
         with:
           path: ~/.cargo/bin/cargo-tauri
-          key: ${{ runner.os }}-${{ runner.arch }}-tauri-cli-${{ env.TAURI_CEF_BRANCH }}
+          key: ${{ runner.os }}-${{ runner.arch }}-tauri-cli-${{ env.TAURI_CEF_TAG }}
 
       - name: Install Tauri CEF CLI
         if: steps.cache-tauri-cli.outputs.cache-hit != 'true'
-        run: cargo install tauri-cli --git https://github.com/tauri-apps/tauri --branch ${{ env.TAURI_CEF_BRANCH }}
+        run: cargo install tauri-cli --git https://github.com/tauri-apps/tauri --tag ${{ env.TAURI_CEF_TAG }}
 
       - name: sccache stats after CLI install
         if: steps.cache-tauri-cli.outputs.cache-hit != 'true'
@@ -214,7 +215,7 @@ jobs:
       - name: Build CEF (Linux)
         if: matrix.os == 'linux'
         env:
-          TAURI_CEF_BRANCH: ${{ env.TAURI_CEF_BRANCH }}
+          TAURI_CEF_TAG: ${{ env.TAURI_CEF_TAG }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
           VITE_API_URL: https://api.deadlockmods.app
@@ -273,7 +274,7 @@ jobs:
         if: matrix.os == 'windows'
         env:
           CARGO_TARGET_DIR: C:/t
-          TAURI_CEF_BRANCH: ${{ env.TAURI_CEF_BRANCH }}
+          TAURI_CEF_TAG: ${{ env.TAURI_CEF_TAG }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ""
           VITE_API_URL: https://api.deadlockmods.app

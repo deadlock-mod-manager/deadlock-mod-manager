@@ -1,0 +1,7 @@
+{
+  "$schema": "../../gen/schemas/desktop-schema.json",
+  "identifier": "mcp-bridge",
+  "description": "MCP bridge dev tooling, which only builds against the Wry runtime",
+  "windows": ["main"],
+  "permissions": ["mcp-bridge:default"]
+}
