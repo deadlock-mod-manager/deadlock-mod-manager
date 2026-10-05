@@ -68,6 +68,9 @@ export const getRuntimeKind = async (): Promise<"wry" | "cef"> => {
   return await invoke("get_runtime_kind");
 };
 
+export const getUpdateChannel = () =>
+  invoke<"stable" | "nightly">("get_update_channel");
+
 export const getMachineUid = () => invoke<string | null>("get_machine_uid");
 
 export const isFlatpak = async (): Promise<boolean> => {

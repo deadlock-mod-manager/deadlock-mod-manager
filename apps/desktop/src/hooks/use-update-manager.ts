@@ -2,6 +2,7 @@ import { relaunch } from "@tauri-apps/plugin-process";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { useRef, useState } from "react";
 import { createLogger } from "@/lib/logger";
+import { getUpdateChannel } from "@/lib/tauri-commands";
 
 const logger = createLogger("updater");
 
@@ -16,7 +17,10 @@ const useUpdateManager = () => {
 
   const checkForUpdates = async () => {
     try {
-      const update = await check();
+      // Nightly follows whatever the nightly feed publishes, even when its
+      // version sorts lower (e.g. after the nightly base version changes).
+      const channel = await getUpdateChannel();
+      const update = await check({ allowDowngrades: channel === "nightly" });
       setUpdate(update);
       return update;
     } catch (error) {
