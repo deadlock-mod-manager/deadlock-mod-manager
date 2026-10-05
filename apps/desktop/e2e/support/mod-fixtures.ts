@@ -8,6 +8,7 @@ export const fixtureMod = (modId: string, index: number): LocalMod => ({
   category: "Skins",
   likes: 0,
   author: "E2E",
+  modAuthorId: null,
   downloadable: false,
   tags: [],
   images: [],
