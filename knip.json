@@ -18,7 +18,7 @@
       ],
       "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts", "e2e/**/*.ts"],
       "ignore": ["src/types/generated/**", "src/components/ui/**"],
-      "ignoreBinaries": ["where.exe", "taskkill.exe", "rustfmt"],
+      "ignoreBinaries": ["where.exe", "taskkill.exe", "ldconfig", "rustfmt"],
       "ignoreDependencies": [
         "@fontsource-variable/geist",
         "@fontsource-variable/geist-mono",
