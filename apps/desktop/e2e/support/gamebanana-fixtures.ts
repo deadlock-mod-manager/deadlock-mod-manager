@@ -43,7 +43,7 @@ export const catalogRecipe = (scenario: string): CatalogArchive[] => {
         selected: false,
       },
     ];
-  if (scenario === "gamebanana-combined")
+  if (scenario === "gamebanana-remembered")
     return [
       {
         id: 910001,
@@ -64,8 +64,24 @@ export const catalogRecipe = (scenario: string): CatalogArchive[] => {
         selected: false,
       },
     ];
+  // A single download records no archive choice, so enabling it still asks
+  // which of its VPKs to install.
+  if (scenario === "gamebanana-unremembered")
+    return [
+      {
+        id: 910001,
+        name: "bundle.zip",
+        files: [
+          "base.vpk",
+          "base-extra.vpk",
+          "effects.vpk",
+          "effects-extra.vpk",
+        ],
+        selected: true,
+      },
+    ];
   if (scenario === "gamebanana-force-update")
-    return catalogRecipe("gamebanana-combined");
+    return catalogRecipe("gamebanana-remembered");
   if (
     [
       "gamebanana-reselect",

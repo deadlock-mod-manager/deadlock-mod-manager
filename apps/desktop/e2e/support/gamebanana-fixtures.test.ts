@@ -50,10 +50,10 @@ it("serves origin-bound GameBanana files, separates bulk queries, and rejects an
 
 it("builds multiple VPKs in each selected archive and rejects the unselected archive", async () => {
   const server = await startFixtureServer(
-    await createCatalogRoutes("gamebanana-combined"),
+    await createCatalogRoutes("gamebanana-remembered"),
   );
   try {
-    for (const archive of catalogRecipe("gamebanana-combined").filter(
+    for (const archive of catalogRecipe("gamebanana-remembered").filter(
       (item) => item.selected,
     )) {
       const response = await fetch(`${server.origin}/dl/${archive.id}`);

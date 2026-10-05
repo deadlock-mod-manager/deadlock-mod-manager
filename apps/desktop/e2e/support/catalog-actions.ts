@@ -57,17 +57,17 @@ export const installCatalog = (
   step("download and install chosen catalog files", async () => {
     await $('button[aria-label="Download Mod"]').click();
     const recipe = catalogRecipe(scenario);
-    if (recipe.length > 1)
-      await selectDownloads(
-        recipe
-          .filter((archive) => archive.selected)
-          .map((archive) => archive.name),
-      );
+    const selected = recipe.filter((archive) => archive.selected);
+    // Choosing among several downloads is remembered: enabling installs every
+    // VPK in the chosen archives. Only a single download asks per VPK.
+    const remembered = recipe.length > 1;
+    if (remembered)
+      await selectDownloads(selected.map((archive) => archive.name));
     await waitCatalogStatus(world, "downloaded");
     const toggle = await $('[role="switch"]');
     await toggle.waitForClickable();
     await toggle.click();
-    if (scenario === "gamebanana-combined") {
+    if (scenario === "gamebanana-unremembered") {
       const dialog = await selectInstallFiles([]);
       await expect(dialog.$("button=Install Selected")).toBeDisabled();
       await dialog.$("button=Cancel").click();
@@ -81,11 +81,7 @@ export const installCatalog = (
       await readyToggle.waitForClickable();
       await readyToggle.click();
     }
-    if (
-      recipe
-        .filter((archive) => archive.selected)
-        .some((archive) => archive.files.length > 1)
-    ) {
+    if (!remembered && selected.some((archive) => archive.files.length > 1)) {
       const tree = (await readCatalogState(world)).localMods[0]
         .installedFileTree;
       assert(tree);
@@ -102,6 +98,7 @@ export const installCatalog = (
     }
     await waitCatalogStatus(world, "installed");
     await expect($('[role="switch"]')).toHaveAttribute("aria-checked", "true");
+    await expect($('[role="dialog"]')).not.toBeDisplayed();
   });
 
 export const checkCatalog = async (
