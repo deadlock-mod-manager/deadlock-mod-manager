@@ -44,6 +44,10 @@ export const useCommissionsUrl = () => {
     queryKey: ["commissions-url"],
     queryFn: findCommissionsUrl,
     staleTime: STALE_TIME_API,
+    // Keep probing while it's offline so the card shows up once the site goes
+    // live. A found URL stays on the normal cache policy.
+    refetchInterval: (query) =>
+      query.state.data === null ? STALE_TIME_API : false,
     refetchOnWindowFocus: false,
     retry: false,
     meta: { skipGlobalErrorHandler: true },
