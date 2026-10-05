@@ -409,6 +409,9 @@
       "forgeTitle": "",
       "forgeDescription": "",
       "forgeAction": "",
+      "commissionsTitle": "",
+      "commissionsDescription": "",
+      "commissionsAction": "",
       "hint": ""
     },
     "import": {
@@ -843,6 +846,7 @@
       "selectVariant": "Wybierz wariant",
       "backupNote": "Kopia zapasowa zostanie utworzona automatycznie przed aktualizacją",
       "updating": "Aktualizowanie modyfikacji...",
+      "updatingPercent": "",
       "complete": "Aktualizacja zakończona",
       "partialSuccess": "{{succeeded}} zaktualizowany, {{failed}} nie powiodło się",
       "error": "Nie udało się zaktualizować modyfikacji",

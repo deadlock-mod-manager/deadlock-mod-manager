@@ -409,6 +409,9 @@
       "forgeTitle": "",
       "forgeDescription": "",
       "forgeAction": "",
+      "commissionsTitle": "",
+      "commissionsDescription": "",
+      "commissionsAction": "",
       "hint": ""
     },
     "import": {
@@ -843,6 +846,7 @@
       "selectVariant": "",
       "backupNote": "",
       "updating": "",
+      "updatingPercent": "",
       "complete": "",
       "partialSuccess": "",
       "error": "",
