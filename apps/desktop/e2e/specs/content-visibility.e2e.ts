@@ -39,9 +39,7 @@ const checkAllSurfaces = async (hidden: boolean) => {
 };
 
 describe("global content visibility", () => {
-  it("applies global hiding across catalog, dashboard, library, skins and direct links", async function () {
-    // Nine surface checks plus a full reload exceed the default on WebKitGTK.
-    this.timeout(90_000);
+  it("applies global hiding across catalog, dashboard, library, skins and direct links", async () => {
     const runtime = await startApplication();
     const world = runtime.roots.world;
     const editing = process.env.DMM_E2E_PHASE === "content-preferences";

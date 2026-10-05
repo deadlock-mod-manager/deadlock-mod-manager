@@ -70,7 +70,9 @@ export const config: TauriWdioConfig = {
   connectionRetryCount: 0,
   framework: "mocha",
   reporters: [["spec", { addConsoleLogs: true }]],
-  mochaOpts: { ui: "bdd", timeout: 45_000 },
+  // WDIO enforces this per test around the spec function; this.timeout() in a
+  // spec cannot extend it. The longest WebKitGTK scenarios need about 50s.
+  mochaOpts: { ui: "bdd", timeout: 90_000 },
   afterTest: async (
     test: { title: string },
     _context: object,
