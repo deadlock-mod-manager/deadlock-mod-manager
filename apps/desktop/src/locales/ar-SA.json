@@ -409,6 +409,9 @@
       "forgeTitle": "",
       "forgeDescription": "",
       "forgeAction": "",
+      "commissionsTitle": "",
+      "commissionsDescription": "",
+      "commissionsAction": "",
       "hint": ""
     },
     "import": {
@@ -843,6 +846,7 @@
       "selectVariant": "اختيار بديل",
       "backupNote": "سيتم إنشاء نسخة احتياطية تلقائياً قبل التحديث",
       "updating": "",
+      "updatingPercent": "",
       "complete": "اكتمل التحديث",
       "partialSuccess": "",
       "error": "",

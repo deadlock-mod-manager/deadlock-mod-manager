@@ -409,6 +409,9 @@
       "forgeTitle": "",
       "forgeDescription": "",
       "forgeAction": "",
+      "commissionsTitle": "",
+      "commissionsDescription": "",
+      "commissionsAction": "",
       "hint": ""
     },
     "import": {
@@ -843,6 +846,7 @@
       "selectVariant": "选择变体",
       "backupNote": "更新前将自动创建备份",
       "updating": "模组更新中……",
+      "updatingPercent": "",
       "complete": "更新完成",
       "partialSuccess": "{{succeeded}} 更新成功，{{failed}} 失败",
       "error": "更新模组失败",

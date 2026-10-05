@@ -409,6 +409,9 @@
       "forgeTitle": "",
       "forgeDescription": "",
       "forgeAction": "",
+      "commissionsTitle": "",
+      "commissionsDescription": "",
+      "commissionsAction": "",
       "hint": ""
     },
     "import": {
@@ -843,6 +846,7 @@
       "selectVariant": "Абраць варыянт",
       "backupNote": "Рэзервовая копія будзе створана аўтаматычна перад абнаўленнем",
       "updating": "Абнаўленне модаў...",
+      "updatingPercent": "",
       "complete": "Абнаўленне завершана",
       "partialSuccess": "{{succeeded}} абноўлена, {{failed}} не атрымалася",
       "error": "Не атрымалася абнавіць моды",

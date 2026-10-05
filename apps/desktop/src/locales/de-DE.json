@@ -409,6 +409,9 @@
       "forgeTitle": "",
       "forgeDescription": "",
       "forgeAction": "",
+      "commissionsTitle": "",
+      "commissionsDescription": "",
+      "commissionsAction": "",
       "hint": ""
     },
     "import": {
@@ -843,6 +846,7 @@
       "selectVariant": "Variante auswählen",
       "backupNote": "Vor dem Update wird automatisch ein Backup erstellt",
       "updating": "Aktualisiere Mods...",
+      "updatingPercent": "",
       "complete": "Update abgeschlossen",
       "partialSuccess": "{{succeeded}} aktualisiert, {{failed}} fehlgeschlagen",
       "error": "Fehler beim Aktualisieren der Mods",
