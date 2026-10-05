@@ -4,7 +4,13 @@ import type { ModFile } from "../../src/types/mods";
 import { catalogRecipe, CATALOG_MOD_NAME } from "./gamebanana-fixtures";
 import { readCatalogState, assertCatalogDisk } from "./gamebanana-oracle";
 import { observeUntil } from "./observations";
-import { installedFiles, activeFiles, reveal, selectDownloads } from "./ui";
+import {
+  installedFiles,
+  activeFiles,
+  openFilesTab,
+  reveal,
+  selectDownloads,
+} from "./ui";
 import { step } from "./evidence";
 
 export const waitCatalogStatus = (world: string, status: string) =>
@@ -128,6 +134,7 @@ export const checkCatalog = async (
         );
       },
     );
+    await openFilesTab();
     const installed = await installedFiles();
     await reveal(installed);
     await expect(installed).toBeDisplayed();

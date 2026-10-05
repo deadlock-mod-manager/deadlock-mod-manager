@@ -15,7 +15,13 @@ import {
 } from "../support/gamebanana-oracle";
 import { assertOwnedWorld, collectFileInventory } from "../support/world";
 import { observeUntil } from "../support/observations";
-import { navigate, reveal, installedFiles, activeFiles } from "../support/ui";
+import {
+  navigate,
+  reveal,
+  installedFiles,
+  activeFiles,
+  openFilesTab,
+} from "../support/ui";
 import {
   applyArchives,
   checkCatalog,
@@ -221,6 +227,7 @@ describe("catalog installation lifecycle", () => {
         "aria-checked",
         "false",
       );
+      await openFilesTab();
       await expect(installedFiles()).not.toBeDisplayed();
       await expect(activeFiles()).not.toBeDisplayed();
       const {
