@@ -102,6 +102,7 @@ jobs:
           path: |
             .e2e/reports/**
             .e2e/worlds/**/artifacts/**
+            .e2e/worlds/**/app-logs/**
             .e2e/worlds/**/world-manifest.json
 
   linux-build:
@@ -222,4 +223,5 @@ jobs:
           path: |
             .e2e/reports/**
             .e2e/worlds/**/artifacts/**
+            .e2e/worlds/**/app-logs/**
             .e2e/worlds/**/world-manifest.json
