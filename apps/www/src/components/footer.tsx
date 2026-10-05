@@ -91,7 +91,7 @@ export const Footer = () => {
               </a>
               <a
                 className='text-sm opacity-60 hover:opacity-100 transition-opacity'
-                href='https://deadlockskins.gg/?utm_source=deadlock-modmanager&utm_medium=footer&utm_campaign=partners'
+                href='https://deadlockskins.gg/?ref=dmm&utm_source=deadlock-modmanager&utm_medium=footer&utm_campaign=partners'
                 rel='noopener noreferrer'
                 target='_blank'>
                 DeadlockSkins.gg

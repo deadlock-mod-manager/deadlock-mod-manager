@@ -3,14 +3,14 @@ import { ExternalLink } from "@deadlock-mods/ui/icons";
 import { useMutation } from "@tanstack/react-query";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
-import { DEADLOCKSKINS_ORIGIN } from "@/lib/deadlockskins/albums";
+import { deadlockSkinsLink } from "@/lib/deadlockskins/albums";
 import { cn } from "@/lib/utils";
 import { DeadlockSkinsLogo } from "./deadlockskins-logo";
 
 export const DeadlockSkinsCredit = ({ className }: { className?: string }) => {
   const { t } = useTranslation();
   const openSite = useMutation({
-    mutationFn: () => openUrl(`${DEADLOCKSKINS_ORIGIN}/albums`),
+    mutationFn: () => openUrl(deadlockSkinsLink("/albums")),
     meta: { skipGlobalErrorHandler: true },
     onError: () => toast.error(t("albums.openSiteError")),
   });

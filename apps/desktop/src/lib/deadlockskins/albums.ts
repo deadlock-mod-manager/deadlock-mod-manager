@@ -26,8 +26,14 @@ export type DeadlockSkinsAlbum = {
   itemCount: number;
 };
 
+const albumPath = (slug: string) => `/albums/${encodeURIComponent(slug)}`;
+
+/** A deadlockskins.gg link to open in the browser, tagged so the site can attribute the visit. */
+export const deadlockSkinsLink = (path: string) =>
+  `${DEADLOCKSKINS_ORIGIN}${path}?ref=dmm`;
+
 export const albumPageUrl = (slug: string) =>
-  `${DEADLOCKSKINS_ORIGIN}/albums/${encodeURIComponent(slug)}`;
+  deadlockSkinsLink(albumPath(slug));
 
 const fetchDocument = async (url: string): Promise<Document | null> => {
   const response = await fetch(url);
@@ -58,7 +64,7 @@ const getAlbums = async (): Promise<DeadlockSkinsAlbum[]> => {
 const getAlbumMembers = async (
   slug: string,
 ): Promise<DeadlockSkinsAlbumMember[] | null> => {
-  const doc = await fetchDocument(albumPageUrl(slug));
+  const doc = await fetchDocument(`${DEADLOCKSKINS_ORIGIN}${albumPath(slug)}`);
   if (!doc) return null;
   return parseAlbumMembers(
     doc.querySelector("[data-album-install]")?.getAttribute("data-members") ??
