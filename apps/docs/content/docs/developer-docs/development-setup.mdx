@@ -423,7 +423,7 @@ pnpm --filter desktop cef:setup
 
 ### How It Works
 
-The `cef-patch.ts` script injects a `[patch.crates-io]` block into `Cargo.toml` pointing the core Tauri crates and the official plugins at the pinned `feat/cef` revisions. On that branch the runtime is a separate crate, so the script also adds an optional `tauri-runtime-cef` dependency and a `cef` feature that enables it. To move to a newer upstream revision, bump `TAURI_CEF_TAG` and `PLUGINS_CEF_REV` in `cef-patch.ts` together with `TAURI_CEF_TAG` in `_build-cef.yml`. The `--features cef` flag must be passed both to the Tauri CLI (before `--`) for correct bundling, and to cargo (after `--`) for compilation.
+The `cef-patch.ts` script injects a `[patch.crates-io]` block into `Cargo.toml` pointing the core Tauri crates and the official plugins at the pinned `feat/cef` revisions. On that branch the runtime is a separate crate, so the script also adds an optional `tauri-runtime-cef` dependency and a `cef` feature that enables it. To move to a newer upstream revision, bump `TAURI_CEF_TAG` and `PLUGINS_CEF_REV` in `cef-patch.ts` together with `TAURI_CEF_TAG` in `_build-cef.yml`. The next CEF command then re-injects the patch, which first restores `Cargo.lock` from git (as `cef:cleanup` does), so commit or stash lockfile edits beforehand. The `--features cef` flag must be passed both to the Tauri CLI (before `--`) for correct bundling, and to cargo (after `--`) for compilation.
 
 On first build, the CEF binary distribution (~300MB) is downloaded automatically to your local cache directory. Subsequent builds reuse the cached binaries.
 

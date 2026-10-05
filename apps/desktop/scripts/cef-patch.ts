@@ -155,6 +155,8 @@ function isCefSetupCurrent(): boolean {
 
 // Re-injects from a clean state whenever the existing setup doesn't match the
 // current pins, so a tag bump never leaves a stale or duplicated patch behind.
+// Like `cleanup`, this restores Cargo.lock from git first, discarding any
+// uncommitted lockfile edits.
 function ensureCefSetup(): boolean {
   if (isCefSetupCurrent()) {
     return false;
