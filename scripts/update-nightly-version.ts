@@ -34,11 +34,7 @@ const isReleased = (version: string): boolean => {
   }
 };
 
-// Nightlies must sort above the current stable release. If the version in
-// package.json is already released, bump minor; if it is an upcoming version
-// (bumped ahead of release), nightlies are prereleases of it.
-// e.g. released 0.18.0 -> 0.19.0-nightly.20260421.abc1234
-//      unreleased 2.0.0 -> 2.0.0-nightly.20260421.abc1234
+// Bump minor only once released, so nightlies always sort above stable.
 const resolveNightlyBase = (version: string): string => {
   if (!isReleased(version)) {
     return version;
