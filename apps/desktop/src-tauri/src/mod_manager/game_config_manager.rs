@@ -12,7 +12,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 const MODDED_SEARCH_PATHS: &str = r#"
 		SearchPaths
         {  
-            Game_Language       citadel_*LANGUAGE*
+            Game_UILanguage     citadel_*LANGUAGE*
+            Game_LowViolence    citadel_lv
             Game                citadel/addons
             Mod                 citadel
             Write               citadel          
@@ -25,7 +26,8 @@ const MODDED_SEARCH_PATHS: &str = r#"
 const VANILLA_SEARCH_PATHS: &str = r#"
 		SearchPaths
         {  
-            Game_Language       citadel_*LANGUAGE*
+            Game_UILanguage     citadel_*LANGUAGE*
+            Game_LowViolence    citadel_lv
             Game                citadel
             Write               citadel          
             Game                citadel
@@ -116,26 +118,6 @@ impl GameConfigManager {
     } else {
       content
     }
-  }
-
-  fn ensure_game_language_search_path(search_paths: &str) -> String {
-    if search_paths.contains("Game_Language") {
-      return search_paths.to_string();
-    }
-
-    if !search_paths.contains("{") {
-      let excerpt = search_paths.chars().take(120).collect::<String>();
-      log::debug!(
-        "Skipping Game_Language injection: search_paths.replacen(\"{{\", ...) found no insertion point. excerpt={excerpt:?}"
-      );
-      return search_paths.to_string();
-    }
-
-    search_paths.replacen(
-      "{",
-      "{  \n            Game_Language       citadel_*LANGUAGE*",
-      1,
-    )
   }
 
   /// Validate gameinfo.gi syntax and structure
@@ -698,11 +680,10 @@ impl GameConfigManager {
     } else {
       MODDED_SEARCH_PATHS
     };
-    let base_search_paths = Self::ensure_game_language_search_path(base_search_paths);
 
     // Create the replacement content
     let replacement_content = if vanilla {
-      base_search_paths
+      base_search_paths.to_string()
     } else {
       format!("\n{MOD_MANAGER_MARKER_START}\n{base_search_paths}\n{MOD_MANAGER_MARKER_END}")
     };
@@ -855,11 +836,12 @@ impl GameConfigManager {
       .collect::<Vec<_>>()
       .join("\n");
 
-    let search_paths = format!(
+    format!(
       r#"
 		SearchPaths
         {{  
-            Game_Language       citadel_*LANGUAGE*
+            Game_UILanguage     citadel_*LANGUAGE*
+            Game_LowViolence    citadel_lv
 {}
             Mod                 citadel
             Write               citadel          
@@ -869,9 +851,7 @@ impl GameConfigManager {
             Game                core        
         }}"#,
       game_lines
-    );
-
-    Self::ensure_game_language_search_path(&search_paths)
+    )
   }
 
   /// `citadel/addons[/...]` paths inside the marker block, in source order.
@@ -1110,7 +1090,9 @@ mod tests {
         assert!(content.starts_with(prefix));
         assert!(content.ends_with(&suffix));
         assert_eq!(content.contains("citadel/addons"), !vanilla);
-        assert!(content.contains("Game_Language"));
+        assert!(content.contains("Game_UILanguage"));
+        assert!(content.contains("Game_LowViolence"));
+        assert!(!content.contains("Game_Language"));
       }
 
       assert_eq!(
@@ -1141,7 +1123,9 @@ mod tests {
         let content = fs::read_to_string(&gameinfo_path).expect("read gameinfo");
         assert_line_endings(&content, newline);
         assert_eq!(mgr.marker_addons_paths(&game_path).unwrap(), paths);
-        assert!(content.contains("Game_Language"));
+        assert!(content.contains("Game_UILanguage"));
+        assert!(content.contains("Game_LowViolence"));
+        assert!(!content.contains("Game_Language"));
         assert!(!content.ends_with('\n'));
       }
 
@@ -1320,6 +1304,25 @@ mod tests {
       vec!["citadel/addons/profile_default".to_string()],
       "stale server_ entry must be gone after update"
     );
+  }
+
+  #[test]
+  fn update_mod_paths_migrates_legacy_game_language_key() {
+    let (_dir, game_path) = setup_game_dir();
+    write_gameinfo(&game_path, &fixture_gameinfo_with_server_entry());
+
+    let mut mgr = GameConfigManager::new();
+    mgr.game_setup = true;
+
+    mgr
+      .update_mod_paths(&game_path, &["citadel/addons".to_string()])
+      .expect("update should succeed");
+
+    let content =
+      fs::read_to_string(game_path.join("game/citadel/gameinfo.gi")).expect("read gameinfo");
+    assert!(!content.contains("Game_Language"));
+    assert!(content.contains("Game_UILanguage     citadel_*LANGUAGE*"));
+    assert!(content.contains("Game_LowViolence    citadel_lv"));
   }
 
   #[test]
