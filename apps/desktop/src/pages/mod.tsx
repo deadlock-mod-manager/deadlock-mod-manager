@@ -8,7 +8,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@deadlock-mods/ui/components/tabs";
-import { ArrowLeft, RefreshCw, Settings, Trash } from "@deadlock-mods/ui/icons";
+import { ArrowLeft, Settings, Trash } from "@deadlock-mods/ui/icons";
 import { Warning } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -37,6 +37,7 @@ import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-war
 import { ReinstallModButton } from "@/components/mod-management/reinstall-mod-button";
 import { StaleModWarning } from "@/components/mod-management/stale-mod-warning";
 import { BatchUpdateDialog } from "@/components/my-mods/batch-update-dialog";
+import { UpdateButton } from "@/components/my-mods/update-button";
 import { BrokenModButton } from "@/components/reports/report-button";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
@@ -51,6 +52,7 @@ import { useScrollBackButton } from "@/hooks/use-scroll-back-button";
 import useUninstall from "@/hooks/use-uninstall";
 import { getErrorMessage } from "@/lib/errors";
 import { isLocalMod } from "@/lib/mods/installed-helpers";
+import { getUpdatePercent } from "@/lib/mods/batch-update-progress";
 import { usePersistedStore } from "@/lib/store";
 import { findLocalMod } from "@/lib/store/selectors";
 import { useCheckUpdates, useModHasUpdate } from "@/hooks/use-check-updates";
@@ -103,6 +105,11 @@ const Mod = () => {
 
   const { updatableMods } = useCheckUpdates();
   const hasUpdate = useModHasUpdate(localMod);
+  const updatePercent = usePersistedStore((state) =>
+    mod?.remoteId
+      ? getUpdatePercent(state.batchUpdateProgress, mod.remoteId)
+      : undefined,
+  );
 
   const { data: reportCounts } = useReportCounts(
     mod?.isMap ? "" : (mod?.id ?? ""),
@@ -331,22 +338,22 @@ const Mod = () => {
                 )}
                 <FavoriteButton remoteId={mod.remoteId} variant='inline' />
                 {hasUpdate && (
-                  <Button
-                    icon={<RefreshCw className='h-4 w-4' />}
+                  <UpdateButton
                     onClick={() => setUpdateDialogOpen(true)}
                     size='default'
+                    updatePercent={updatePercent}
                     variant='default'>
                     {t("modDetail.updateMod")}
-                  </Button>
+                  </UpdateButton>
                 )}
                 {isInstalled && !hasUpdate && availableFiles?.length > 0 && (
-                  <Button
-                    icon={<RefreshCw className='h-4 w-4' />}
+                  <UpdateButton
                     onClick={forceUpdate}
                     size='default'
+                    updatePercent={updatePercent}
                     variant='outline'>
                     {t("modDetail.forceUpdate")}
-                  </Button>
+                  </UpdateButton>
                 )}
                 {localMod && !isLocalMod(localMod) && (
                   <ReinstallModButton mod={localMod} variant='default' />

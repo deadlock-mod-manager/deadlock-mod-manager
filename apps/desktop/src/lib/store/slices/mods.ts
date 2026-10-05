@@ -10,6 +10,7 @@ import {
   type ModFileTree,
   ModStatus,
   type Progress,
+  type UpdateProgress,
 } from "@/types/mods";
 import type { ProfileId } from "@/types/profiles";
 import type { State } from "..";
@@ -38,6 +39,7 @@ export type IdentityMigration = {
 export type ModsState = {
   localMods: LocalMod[];
   modProgress: Record<string, ModProgress>;
+  batchUpdateProgress: UpdateProgress | null;
   defaultSort: SortType;
   /**
    * Mods the user took off a hero's list on the Hero Skins page. They stay in
@@ -76,6 +78,7 @@ export type ModsState = {
     profileId?: ProfileId,
   ) => void;
   setModProgress: (remoteId: string, progress: Progress) => void;
+  setBatchUpdateProgress: (progress: UpdateProgress | null) => void;
   clearMods: () => void;
   nukeModsState: (keepRemoteIds: string[], profileId?: ProfileId) => void;
   setInstalledVpks: (
@@ -146,6 +149,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
 ) => ({
   localMods: [],
   modProgress: {},
+  batchUpdateProgress: null,
   hiddenHeroMods: {},
   skinRandomizerEnabled: false,
   randomizerSkins: {},
@@ -477,6 +481,8 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         },
       },
     })),
+
+  setBatchUpdateProgress: (progress) => set({ batchUpdateProgress: progress }),
 
   getModProgress: (remoteId) => get().modProgress[remoteId],
 

@@ -17,7 +17,7 @@ interface DownloadStartedEvent {
   modId: string;
 }
 
-interface DownloadProgressEvent {
+export interface DownloadProgressEvent {
   modId: string;
   fileIndex: number;
   totalFiles: number;
