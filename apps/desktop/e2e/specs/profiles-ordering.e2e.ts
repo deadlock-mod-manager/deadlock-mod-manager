@@ -62,12 +62,19 @@ describe("profile ordering", () => {
       }
       await assertOrder(reordered);
       await $('[role="dialog"]').$("button=Save").click();
-      await browser.waitUntil(
-        async () =>
-          (await readProfileState(world)).localMods.find(
-            (mod) => mod.remoteId === ALPHA_MODS[0],
-          )?.installOrder === 2,
-      );
+      // The new order persists before the VPKs are moved into their new slots.
+      await browser.waitUntil(async () => {
+        const state = await readProfileState(world);
+        const moved = state.profiles[ALPHA.id]?.mods.find(
+          (mod) => mod.remoteId === ALPHA_MODS[0],
+        );
+        return (
+          state.localMods.find((mod) => mod.remoteId === ALPHA_MODS[0])
+            ?.installOrder === 2 &&
+          moved?.installOrder === 2 &&
+          moved.installedVpks[0] === "pak03_dir.vpk"
+        );
+      });
       const alpha = await assertProfilesDisk(
         world,
         "reordered",
