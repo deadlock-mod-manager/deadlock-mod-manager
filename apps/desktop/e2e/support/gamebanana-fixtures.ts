@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { createArchive } from "./archive-fixtures";
-import type { FixtureRequest, FixtureRoute } from "./fixture-server";
+import type {
+  FixtureRequest,
+  FixtureResponse,
+  FixtureRoute,
+} from "./fixture-server";
 import { buildSyntheticVpk } from "./vpk";
 
 export const CATALOG_MOD_ID = "900001";
@@ -11,6 +15,14 @@ export const BULK_HYDRATION_FIELDS =
   "name,downloads,Category().name,RootCategory().name,description,text,Files().aFiles()";
 export const BULK_UPDATE_FIELDS = "Url().sProfileUrl(),mdate,Files().aFiles()";
 const timestamp = 1_780_000_000;
+// Far-future file dates postdate any real install time, so they read as changes
+// made after the user installed the mod.
+export const UPDATE_SKIP_DATES = {
+  optionalFile: 4_100_000_000,
+  updatedFile: 4_100_086_400,
+  newerFile: 4_100_172_800,
+} as const;
+export const OPTIONAL_FILE_ID = 910002;
 
 type CatalogArchive = {
   id: number;
@@ -62,6 +74,8 @@ export const catalogRecipe = (scenario: string): CatalogArchive[] => {
     ].includes(scenario)
   )
     return catalogRecipe("gamebanana-variants");
+  if (scenario === "gamebanana-update-skip")
+    return catalogRecipe("gamebanana-single");
   if (scenario === "gamebanana-single")
     return [
       { id: 910001, name: "base.zip", files: ["base.vpk"], selected: true },
@@ -108,6 +122,37 @@ export const installedCatalogFiles = (scenario: string): string[] =>
     .flatMap((archive) => archive.files)
     .filter((name) => name !== "red.vpk")
     .sort();
+
+type CatalogFile = { _idRow: number; _tsDateAdded: number };
+// One bulk update response per expired update check: the author adds an
+// optional file, then updates the installed file, then updates it again.
+const updateSkipSnapshots = (
+  profileUrl: string,
+  files: readonly CatalogFile[],
+): FixtureResponse[] => {
+  const [installed] = files;
+  assert(installed && files.length === 1);
+  const { optionalFile, updatedFile, newerFile } = UPDATE_SKIP_DATES;
+  const optional = {
+    ...installed,
+    _idRow: OPTIONAL_FILE_ID,
+    _sFile: "optional.zip",
+    _tsDateAdded: optionalFile,
+  };
+  const snapshot = (modified: number, installedFileDate: number) => ({
+    status: 200,
+    body: JSON.stringify([
+      profileUrl,
+      modified,
+      [{ ...installed, _tsDateAdded: installedFileDate }, optional],
+    ]),
+  });
+  return [
+    snapshot(optionalFile, installed._tsDateAdded),
+    snapshot(updatedFile, updatedFile),
+    snapshot(newerFile, newerFile),
+  ];
+};
 
 export const createCatalogRoutes = async (scenario: string) => {
   const archives = await Promise.all(
@@ -197,6 +242,9 @@ export const createCatalogRoutes = async (scenario: string) => {
           JSON.stringify([profile._sProfileUrl, timestamp, files]),
         ),
         query: { "fields[]": BULK_UPDATE_FIELDS },
+        ...(scenario === "gamebanana-update-skip"
+          ? { sequence: updateSkipSnapshots(profile._sProfileUrl, files) }
+          : {}),
       },
       json("/apiv11/Util/Fileservers", '{"_aRecords":[]}'),
       json(
@@ -271,6 +319,16 @@ export const assertCatalogNetwork = (
       .sort((a, b) => a.path.localeCompare(b.path)),
     expected.sort((a, b) => a.path.localeCompare(b.path)),
   );
+  if (scenario === "gamebanana-update-skip")
+    assert.equal(
+      requests.filter((request) =>
+        new URL(request.url, "http://fixture").searchParams
+          .getAll("fields[]")
+          .includes(BULK_UPDATE_FIELDS),
+      ).length,
+      Object.keys(UPDATE_SKIP_DATES).length,
+      "Each expired update check must fetch exactly one bulk update",
+    );
   for (const endpoint of [
     "/apiv11/Mod/Index",
     `/apiv11/Mod/${CATALOG_MOD_ID}/ProfilePage`,

@@ -99,6 +99,11 @@ export type ModsState = {
     archiveName: string,
     profileId?: ProfileId,
   ) => void;
+  skipModUpdate: (
+    remoteId: string,
+    updatedAt: number,
+    profileId?: ProfileId,
+  ) => void;
   getModProgress: (remoteId: string) => ModProgress | undefined;
   setAnalysisResult: (result: AnalyzeAddonsResult | null) => void;
   setAnalysisDialogOpen: (open: boolean) => void;
@@ -526,6 +531,18 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
           activeVariantArchive:
             mod.remoteId === remoteId ? archiveName : mod.activeVariantArchive,
         })),
+      );
+    }),
+
+  skipModUpdate: (remoteId, updatedAt, requestedProfileId) =>
+    set((state) => {
+      const profileId = requestedProfileId ?? state.activeProfileId;
+      return applyToModsInProfile(state, profileId, (mods) =>
+        mods.map((mod) =>
+          mod.remoteId === remoteId
+            ? { ...mod, skippedUpdateAt: updatedAt }
+            : mod,
+        ),
       );
     }),
 

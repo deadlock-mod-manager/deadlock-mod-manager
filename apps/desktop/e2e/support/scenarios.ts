@@ -227,6 +227,11 @@ export const scenarios = {
   "gamebanana-reinstall": catalogLifecycle,
   "gamebanana-reinstall-disabled": catalogLifecycle,
   "gamebanana-force-update": catalogLifecycle,
+  "gamebanana-update-skip": {
+    ...catalog,
+    spec: "gamebanana-updates",
+    phases: ["optional-file", "skip-update", "restart-skipped", "newer-update"],
+  },
   "grimoire-import": interchange,
 } satisfies Record<string, Definition>;
 export type ScenarioId = keyof typeof scenarios;

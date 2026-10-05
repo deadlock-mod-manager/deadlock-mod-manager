@@ -8,6 +8,8 @@ import {
   catalogVpk,
   catalogRecipe,
   createCatalogRoutes,
+  OPTIONAL_FILE_ID,
+  UPDATE_SKIP_DATES,
 } from "./gamebanana-fixtures";
 import { startFixtureServer } from "./fixture-server";
 
@@ -117,6 +119,55 @@ it("requires exactly the chosen archive downloads and actual provider metadata r
     expect(() =>
       assertCatalogNetwork("gamebanana-single", server.requests()),
     ).toThrow();
+  } finally {
+    await server.close();
+  }
+});
+
+it("serves one bulk update per expired check: optional file, then two updates of the installed file", async () => {
+  const scenario = "gamebanana-update-skip";
+  const server = await startFixtureServer(await createCatalogRoutes(scenario));
+  const snapshot = z.tuple([
+    z.string(),
+    z.number(),
+    z.array(z.object({ _idRow: z.number(), _tsDateAdded: z.number() })),
+  ]);
+  try {
+    const dates = [];
+    for (let check = 0; check < 3; check++) {
+      const response = await fetch(
+        `${server.origin}/Core/Item/Data?fields[]=${BULK_UPDATE_FIELDS}`,
+      );
+      const [, , files] = snapshot.parse(await response.json());
+      dates.push(files.map((file) => [file._idRow, file._tsDateAdded]));
+    }
+    const { optionalFile, updatedFile, newerFile } = UPDATE_SKIP_DATES;
+    expect(dates).toEqual([
+      [
+        [910001, 1_780_000_000],
+        [OPTIONAL_FILE_ID, optionalFile],
+      ],
+      [
+        [910001, updatedFile],
+        [OPTIONAL_FILE_ID, optionalFile],
+      ],
+      [
+        [910001, newerFile],
+        [OPTIONAL_FILE_ID, optionalFile],
+      ],
+    ]);
+    for (const endpoint of [
+      "/apiv11/Mod/Index",
+      "/apiv11/Mod/900001/ProfilePage",
+      "/apiv11/Mod/900001/DownloadPage",
+      "/dl/910001",
+    ])
+      await (await fetch(`${server.origin}${endpoint}`)).arrayBuffer();
+    assertCatalogNetwork(scenario, server.requests());
+    await fetch(
+      `${server.origin}/Core/Item/Data?fields[]=${BULK_UPDATE_FIELDS}`,
+    ).then((response) => response.arrayBuffer());
+    expect(() => assertCatalogNetwork(scenario, server.requests())).toThrow();
   } finally {
     await server.close();
   }

@@ -16,6 +16,7 @@ import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-war
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
 import ModCardSkeleton from "@/components/skeletons/mod-card";
+import { useModHasUpdate } from "@/hooks/use-check-updates";
 import { useModDetailHoverPrefetch } from "@/hooks/use-mod-detail-hover-prefetch";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import type {
@@ -27,12 +28,7 @@ import { prefetchModDetail } from "@/lib/mods/mod-detail-prefetch";
 import { getModCoverImage } from "@/lib/mods/mod-images";
 import { usePersistedStore } from "@/lib/store";
 import { findLocalMod } from "@/lib/store/selectors";
-import {
-  cn,
-  isModOutdated,
-  isUpdateAvailable,
-  isUpdatedRecently,
-} from "@/lib/utils";
+import { cn, isModOutdated, isUpdatedRecently } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
 import FavoriteButton from "./favorite-button";
 import ModButton from "./mod-button";
@@ -52,6 +48,7 @@ const ModCard = memo((props: ModCardProps) => {
   const localMod = usePersistedStore((state) =>
     findLocalMod(state.localMods, mod?.remoteId),
   );
+  const hasUpdate = useModHasUpdate(localMod);
   const CardWrapper = useThemeOverride("cardWrapper");
 
   const status = localMod?.status;
@@ -136,17 +133,15 @@ const ModCard = memo((props: ModCardProps) => {
           mod.isObsolete ||
           isModOutdated(mod) ||
           isUpdatedRecently(mod) ||
-          isUpdateAvailable(mod, localMod)) && (
+          hasUpdate) && (
           <div className='pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end justify-end gap-1 bg-gradient-to-t from-black/60 to-transparent px-2 pb-2 pt-6'>
             {status === ModStatus.Installed && (
               <Badge>{t("modStatus.installed")}</Badge>
             )}
             {mod.isObsolete && <ObsoleteModWarning variant='indicator' />}
             {isModOutdated(mod) && <OutdatedModWarning variant='indicator' />}
-            {isUpdatedRecently(mod) && !isUpdateAvailable(mod, localMod) && (
-              <UpdatedRecentlyBadge />
-            )}
-            {isUpdateAvailable(mod, localMod) && <UpdateAvailableBadge />}
+            {isUpdatedRecently(mod) && !hasUpdate && <UpdatedRecentlyBadge />}
+            {hasUpdate && <UpdateAvailableBadge />}
           </div>
         )}
       </div>

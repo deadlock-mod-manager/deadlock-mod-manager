@@ -16,7 +16,7 @@ describe("scenario selection", () => {
       expect(scenarioSpec(id)).toContain("./specs/");
       expect(new Set(scenarioPhases(id)).size).toBe(scenarioPhases(id).length);
     }
-    expect(selectScenarios("gamebanana")).toHaveLength(10);
+    expect(selectScenarios("gamebanana")).toHaveLength(11);
     expect(selectScenarios("filesystem")).toHaveLength(8);
     expect(selectScenarios("interchange")).toEqual(["grimoire-import"]);
     expect(scenarios["profiles-pointer"].nativeInput).toBe(true);

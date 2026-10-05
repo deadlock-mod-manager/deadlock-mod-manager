@@ -48,7 +48,9 @@ it("rejects wrong variant bytes and extra installed files even when UI state say
               remoteId: CATALOG_MOD_ID,
               name: CATALOG_MOD_NAME,
               status: "installed",
-              selectedDownloads: [{ name: "base.zip" }],
+              selectedDownloads: [
+                { name: "base.zip", url: "gamebanana-file://900001/910001" },
+              ],
               installedVpks: ["pak01_dir.vpk"],
               installedFileTree: {
                 total_files: 1,

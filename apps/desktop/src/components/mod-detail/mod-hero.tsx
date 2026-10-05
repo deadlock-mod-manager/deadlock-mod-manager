@@ -3,7 +3,8 @@ import type { ReactNode } from "react";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Hash, Music } from "@deadlock-mods/ui/icons";
 import { getModCategoryDisplayName } from "@/lib/constants";
-import { cn, isUpdateAvailable, isUpdatedRecently } from "@/lib/utils";
+import { useModHasUpdate } from "@/hooks/use-check-updates";
+import { cn, isUpdatedRecently } from "@/lib/utils";
 import {
   UpdateAvailableBadge,
   UpdatedRecentlyBadge,
@@ -22,6 +23,7 @@ export const ModHero = ({ mod, shouldBlur = false, actions }: ModHeroProps) => {
   const localMod = usePersistedStore((state) =>
     findLocalMod(state.localMods, mod.remoteId),
   );
+  const hasUpdate = useModHasUpdate(localMod);
 
   // Audio mod hero
   if (mod.isAudio && mod.audioUrl) {
@@ -42,10 +44,8 @@ export const ModHero = ({ mod, shouldBlur = false, actions }: ModHeroProps) => {
         <div className='absolute bottom-0 left-0 p-6'>
           <h1 className='font-bold text-3xl text-primary'>
             {mod.name}{" "}
-            {isUpdatedRecently(mod) && !isUpdateAvailable(mod, localMod) && (
-              <UpdatedRecentlyBadge />
-            )}
-            {isUpdateAvailable(mod, localMod) && <UpdateAvailableBadge />}
+            {isUpdatedRecently(mod) && !hasUpdate && <UpdatedRecentlyBadge />}
+            {hasUpdate && <UpdateAvailableBadge />}
           </h1>
           <p className='mt-2 text-primary/80'>{mod.category}</p>
           <Badge className='mt-2' variant='secondary'>
@@ -84,10 +84,8 @@ export const ModHero = ({ mod, shouldBlur = false, actions }: ModHeroProps) => {
         <div className='absolute bottom-0 left-0 space-y-2 p-6'>
           <h1 className='font-bold text-3xl text-white'>
             {mod.name}{" "}
-            {isUpdatedRecently(mod) && !isUpdateAvailable(mod, localMod) && (
-              <UpdatedRecentlyBadge />
-            )}
-            {isUpdateAvailable(mod, localMod) && <UpdateAvailableBadge />}
+            {isUpdatedRecently(mod) && !hasUpdate && <UpdatedRecentlyBadge />}
+            {hasUpdate && <UpdateAvailableBadge />}
           </h1>
           <p className='text-muted-foreground'>
             {getModCategoryDisplayName(mod.category)}

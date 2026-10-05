@@ -849,7 +849,10 @@
       "changelogLoading": "Loading changelog…",
       "changelogEmpty": "The author didn't post changelog notes since your install.",
       "changelogTitle_one": "What's new since your install ({{count}} update)",
-      "changelogTitle_other": "What's new since your install ({{count}} updates)"
+      "changelogTitle_other": "What's new since your install ({{count}} updates)",
+      "skip": "Skip this update",
+      "skipDescription": "Hide this update until the author publishes a newer one",
+      "skipped": "Skipped the update for {{name}}"
     },
     "disableAll": "Disable all mods",
     "disableAllConfirmTitle": "Disable all mods?",

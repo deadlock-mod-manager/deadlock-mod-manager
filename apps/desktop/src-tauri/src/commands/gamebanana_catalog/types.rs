@@ -146,6 +146,9 @@ pub struct InstalledSubmissionDto {
 #[serde(rename_all = "camelCase")]
 pub struct CatalogUpdateDto {
   pub r#mod: CatalogModDto,
+  /// Unix seconds of the change that triggered this update.
+  #[ts(type = "number")]
+  pub updated_at: i64,
   pub downloads: Vec<CatalogDownloadDto>,
 }
 

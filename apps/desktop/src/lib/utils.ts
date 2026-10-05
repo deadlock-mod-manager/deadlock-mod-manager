@@ -16,7 +16,7 @@ import {
 } from "date-fns";
 import { platform } from "@tauri-apps/plugin-os";
 
-import { type LocalMod, ModStatus } from "@/types/mods";
+import type { LocalMod } from "@/types/mods";
 import type { LocalSetting } from "@/types/settings";
 import type { AddedFilter } from "@/lib/store/slices/ui";
 import { AUTOEXEC_LAUNCH_OPTION_ID } from "@/lib/autoexec/constants";
@@ -208,21 +208,5 @@ export const isUpdatedRecently = (mod: ModDto): boolean => {
   return (
     Date.now() - updatedAt < UPDATED_RECENTLY_MS &&
     updatedAt > UPDATED_RECENTLY_THRESHOLD.getTime()
-  );
-};
-
-export const isUpdateAvailable = (
-  mod: ModDto,
-  localMod: LocalMod | null | undefined,
-): boolean => {
-  if (!localMod || !mod.filesUpdatedAt) return false;
-  if (localMod.status !== ModStatus.Installed) return false;
-  const installedAt =
-    localMod.downloadedAt ??
-    localMod.selectedDownloads?.[0]?.createdAt ??
-    localMod.createdAt;
-  if (!installedAt) return false;
-  return (
-    new Date(installedAt).getTime() < new Date(mod.filesUpdatedAt).getTime()
   );
 };

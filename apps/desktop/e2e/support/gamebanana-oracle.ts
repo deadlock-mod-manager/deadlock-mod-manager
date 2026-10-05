@@ -26,7 +26,8 @@ const modSchema = z.object({
   remoteId: z.string(),
   name: z.string(),
   status: z.string(),
-  selectedDownloads: z.array(z.object({ name: z.string() })),
+  selectedDownloads: z.array(z.object({ name: z.string(), url: z.string() })),
+  skippedUpdateAt: z.number().optional(),
   installedVpks: z.array(z.string()).optional(),
   installedFileTree: z
     .object({

@@ -42,6 +42,8 @@ export interface LocalMod extends ModDto {
   detectedHero?: string | null;
   heroOverride?: string | null;
   usesCriticalPaths?: boolean;
+  // Unix seconds of the update the user chose to skip.
+  skippedUpdateAt?: number;
 }
 
 export interface DownloadableMod extends Omit<LocalMod, "status"> {
@@ -180,7 +182,14 @@ export interface UpdateProgress {
 
 export interface UpdatableMod {
   mod: ModDto;
+  // Unix seconds of the detected update; absent for forced updates.
+  updatedAt?: number;
   downloads: ModDownloadItem[];
   selectedDownloads: ModDownloadItem[];
   selectedFileTree?: ModFileTree;
 }
+
+export type ModUpdateCandidate = Pick<
+  UpdatableMod,
+  "mod" | "updatedAt" | "downloads"
+>;
