@@ -843,6 +843,7 @@
       "selectVariant": "Select variant",
       "backupNote": "A backup will be created automatically before updating",
       "updating": "Updating mods...",
+      "updatingPercent": "Updating {{percent}}%...",
       "complete": "Update complete",
       "partialSuccess": "{{succeeded}} updated, {{failed}} failed",
       "error": "Failed to update mods",

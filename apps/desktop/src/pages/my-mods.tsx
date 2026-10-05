@@ -75,6 +75,7 @@ import { VpkScanAlert } from "@/components/mods/vpk-scan-alert";
 import { AnalysisProgressToast } from "@/components/my-mods/analysis-progress-toast";
 import { AnalysisResultsDialog } from "@/components/my-mods/analysis-results-dialog";
 import { BatchUpdateDialog } from "@/components/my-mods/batch-update-dialog";
+import { UpdateButton } from "@/components/my-mods/update-button";
 import { ExportDialog } from "@/components/mod-interchange/export-dialog";
 import { ImportSourceMenu } from "@/components/mod-interchange/import-source-menu";
 import { ConflictsPanel } from "@/components/my-mods/conflicts/conflicts-panel";
@@ -112,6 +113,7 @@ import type {
 } from "@/lib/store/slices/ui";
 import type { ModConflictStatus } from "@/lib/mods/conflicts";
 import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
+import { getUpdatePercent } from "@/lib/mods/batch-update-progress";
 import { getModCoverImage } from "@/lib/mods/mod-images";
 import { cn, isModOutdated } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
@@ -642,6 +644,9 @@ const MyMods = () => {
   const conflictCount = conflictGroups.length;
   const showConflicts = () => setActiveTab(CONFLICTS_TAB);
   const [showBatchUpdateDialog, setShowBatchUpdateDialog] = useState(false);
+  const updatePercent = usePersistedStore((state) =>
+    getUpdatePercent(state.batchUpdateProgress),
+  );
   const [showModOrdering, setShowModOrdering] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [page, setPage] = useState(0);
@@ -855,12 +860,12 @@ const MyMods = () => {
 
         <div className='flex w-full flex-wrap items-center justify-start gap-2 xl:w-auto xl:justify-end xl:justify-self-end'>
           {updatableCount > 0 && (
-            <Button
+            <UpdateButton
               variant='default'
               onClick={() => setShowBatchUpdateDialog(true)}
-              icon={<RefreshCw className='h-4 w-4' />}>
+              updatePercent={updatePercent}>
               {t("myMods.updateAvailableCount", { count: updatableCount })}
-            </Button>
+            </UpdateButton>
           )}
           <Tooltip>
             <TooltipTrigger asChild>

@@ -1,8 +1,10 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { listen } from "@tauri-apps/api/event";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { DownloadProgressEvent } from "@/lib/download/manager";
 import logger from "@/lib/logger";
+import { applyDownloadProgress } from "@/lib/mods/batch-update-progress";
 import { usePersistedStore } from "@/lib/store";
 import { BatchUpdateResultSchema } from "@/lib/validation/batch-update";
 import type {
@@ -11,16 +13,50 @@ import type {
   ModFileTree,
   ModUpdateCandidate,
   ProfileImportMod,
-  UpdateProgress,
   UpdatableMod,
 } from "@/types/mods";
 import { ModStatus } from "@/types/mods";
 import { invokeGuarded } from "@/lib/game-guard";
 
+const getUpdateProgress = () =>
+  usePersistedStore.getState().batchUpdateProgress;
+
+const listenForUpdateProgress = async () => {
+  const { setBatchUpdateProgress } = usePersistedStore.getState();
+  const unlisteners = await Promise.all([
+    listen<BatchUpdateProgressEvent>("batch-update-progress", (event) => {
+      const previous = getUpdateProgress();
+      if (!previous) return;
+      const progress = event.payload;
+      setBatchUpdateProgress({
+        currentStep: progress.currentStep,
+        modIds: previous.modIds,
+        currentModId: progress.currentModId || undefined,
+        currentMod: progress.currentModName || undefined,
+        completedMods: progress.currentModIndex,
+        totalMods: progress.totalMods,
+        overallProgress: progress.overallProgress,
+        isDownloading: progress.currentStep === "downloading",
+        isInstalling: progress.currentStep === "installing",
+      });
+    }),
+    listen<DownloadProgressEvent>("download-progress", (event) => {
+      const previous = getUpdateProgress();
+      const next = applyDownloadProgress(
+        previous,
+        event.payload.modId,
+        event.payload.percentage,
+      );
+      if (next !== previous) setBatchUpdateProgress(next);
+    }),
+  ]);
+
+  return () => {
+    for (const unlisten of unlisteners) unlisten();
+  };
+};
+
 export const useBatchUpdate = () => {
-  const [updateProgress, setUpdateProgress] = useState<UpdateProgress | null>(
-    null,
-  );
   const [updatableMods, setUpdatableMods] = useState<UpdatableMod[]>([]);
   const { t } = useTranslation();
   const {
@@ -32,28 +68,12 @@ export const useBatchUpdate = () => {
     backupEnabled,
     maxBackupCount,
   } = usePersistedStore();
-
-  useEffect(() => {
-    const unlistenPromise = listen<BatchUpdateProgressEvent>(
-      "batch-update-progress",
-      (event) => {
-        const progress = event.payload;
-        setUpdateProgress({
-          currentStep: progress.currentStep,
-          currentMod: progress.currentModName || undefined,
-          completedMods: progress.currentModIndex,
-          totalMods: progress.totalMods,
-          overallProgress: progress.overallProgress,
-          isDownloading: progress.currentStep === "downloading",
-          isInstalling: progress.currentStep === "installing",
-        });
-      },
-    );
-
-    return () => {
-      unlistenPromise.then((unlisten) => unlisten());
-    };
-  }, []);
+  const updateProgress = usePersistedStore(
+    (state) => state.batchUpdateProgress,
+  );
+  const setUpdateProgress = usePersistedStore(
+    (state) => state.setBatchUpdateProgress,
+  );
 
   const prepareUpdates = useCallback(
     (updates: ModUpdateCandidate[]) => {
@@ -147,32 +167,35 @@ export const useBatchUpdate = () => {
       })
       .info("Starting batch mod update");
 
-    setUpdateProgress({
-      currentStep: t("myMods.batchUpdate.updating"),
-      completedMods: 0,
-      totalMods: updatableMods.length,
-      overallProgress: 0,
-      isDownloading: false,
-      isInstalling: false,
-    });
-
-    const batchUpdateMods: ProfileImportMod[] = updatableMods.map((um) => {
-      const localMod = localMods.find((m) => m.remoteId === um.mod.remoteId);
-      return {
-        modId: um.mod.remoteId,
-        modName: um.mod.name,
-        downloadFiles: um.selectedDownloads.map((d) => ({
-          url: d.url,
-          name: d.name,
-          size: d.size,
-        })),
-        fileTree: um.selectedFileTree,
-        installedVpks: localMod?.installedVpks ?? [],
-        isMap: um.mod.isMap,
-      };
-    });
+    const stopListening = await listenForUpdateProgress();
 
     try {
+      setUpdateProgress({
+        currentStep: t("myMods.batchUpdate.updating"),
+        modIds: updatableMods.map((um) => um.mod.remoteId),
+        completedMods: 0,
+        totalMods: updatableMods.length,
+        overallProgress: 0,
+        isDownloading: false,
+        isInstalling: false,
+      });
+
+      const batchUpdateMods: ProfileImportMod[] = updatableMods.map((um) => {
+        const localMod = localMods.find((m) => m.remoteId === um.mod.remoteId);
+        return {
+          modId: um.mod.remoteId,
+          modName: um.mod.name,
+          downloadFiles: um.selectedDownloads.map((d) => ({
+            url: d.url,
+            name: d.name,
+            size: d.size,
+          })),
+          fileTree: um.selectedFileTree,
+          installedVpks: localMod?.installedVpks ?? [],
+          isMap: um.mod.isMap,
+        };
+      });
+
       const rawResult = await invokeGuarded("batch_update_mods", {
         mods: batchUpdateMods,
         profileFolder,
@@ -217,8 +240,6 @@ export const useBatchUpdate = () => {
         }
       }
 
-      setUpdateProgress(null);
-
       if (result.failed.length > 0) {
         logger
           .withMetadata({
@@ -237,8 +258,10 @@ export const useBatchUpdate = () => {
       }
     } catch (error) {
       logger.withError(error).error("Batch mod update failed");
-      setUpdateProgress(null);
       throw error;
+    } finally {
+      stopListening();
+      setUpdateProgress(null);
     }
   };
 

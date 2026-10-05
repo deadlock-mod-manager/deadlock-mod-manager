@@ -166,13 +166,17 @@ export interface BatchUpdateProgressEvent {
   currentStep: string;
   currentModIndex: number;
   totalMods: number;
+  currentModId: string;
   currentModName: string;
   overallProgress: number;
 }
 
 export interface UpdateProgress {
   currentStep: string;
+  modIds: string[];
+  currentModId?: string;
   currentMod?: string;
+  downloadPercentage?: number;
   completedMods: number;
   totalMods: number;
   overallProgress: number;

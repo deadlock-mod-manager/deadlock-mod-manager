@@ -71,12 +71,6 @@ export const BatchUpdateDialog = ({
     },
   });
 
-  const handleOpenChange = (newOpen: boolean) => {
-    if (!newOpen && !batchUpdateMutation.isPending) {
-      onOpenChange(false);
-    }
-  };
-
   useEffect(() => {
     prepareUpdates(open ? updates : []);
   }, [open, updates, prepareUpdates]);
@@ -90,7 +84,7 @@ export const BatchUpdateDialog = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='max-w-3xl max-h-[80vh] overflow-y-auto'>
         <DialogHeader>
           <DialogTitle>
@@ -108,8 +102,19 @@ export const BatchUpdateDialog = ({
             <div className='flex items-center justify-between'>
               <span className='text-sm font-medium capitalize flex items-center gap-2'>
                 {updateProgress.currentStep}{" "}
-                {updateProgress.currentStep === "downloading" && (
-                  <Loader2 className='size-3.5 animate-spin' />
+                {updateProgress.isDownloading && (
+                  <>
+                    {updateProgress.downloadPercentage !== undefined && (
+                      <span className='tabular-nums text-muted-foreground'>
+                        {t("downloads.percentage", {
+                          percentage: Math.round(
+                            updateProgress.downloadPercentage,
+                          ),
+                        })}
+                      </span>
+                    )}
+                    <Loader2 className='size-3.5 animate-spin' />
+                  </>
                 )}
               </span>
               <span className='text-sm text-muted-foreground'>
