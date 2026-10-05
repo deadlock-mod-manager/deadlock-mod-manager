@@ -1192,9 +1192,6 @@ importers:
       vite:
         specifier: 'catalog:'
         version: 7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)
-      vite-plugin-sitemap:
-        specifier: ^0.8.2
-        version: 0.8.2
       vite-tsconfig-paths:
         specifier: ^5.1.4
         version: 5.1.4(supports-color@10.2.2)(typescript@6.0.3)(vite@7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0))
@@ -13923,9 +13920,6 @@ packages:
     resolution: {integrity: sha512-EbKSKh+bh1E1IFxeO0pg1n4dvoOTt0UDiXMd/qn++r98+jPO1xtJilvXldeuQ8giIB5IkpjCgMleHMNEsGH6pg==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     hasBin: true
-
-  vite-plugin-sitemap@0.8.2:
-    resolution: {integrity: sha512-bqIw6NVOXg6je81lzX8Lm0vjf8/QSAp8di8fYQzZ3ZdVicOm8+6idBGALJiy1R1FiXNIK8rgORO6HBqXyHW+iQ==}
 
   vite-tsconfig-paths@5.1.4:
     resolution: {integrity: sha512-cYj0LRuLV2c2sMqhqhGpaO3LretdtMn/BVX4cPLanIZuwwrkVl+lK84E/miEXkCHWXuq65rhNN4rXsBcOB3S4w==}
@@ -27583,8 +27577,6 @@ snapshots:
       - terser
       - tsx
       - yaml
-
-  vite-plugin-sitemap@0.8.2: {}
 
   vite-tsconfig-paths@5.1.4(supports-color@10.2.2)(typescript@6.0.3)(vite@7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)):
     dependencies:

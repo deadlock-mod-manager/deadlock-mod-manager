@@ -6,7 +6,7 @@ import {
 } from "@tanstack/react-query";
 
 /** How long a route loader waits for API data before rendering without it. */
-export const LOADER_DATA_TIMEOUT_MS = 2000;
+const LOADER_DATA_TIMEOUT_MS = 2000;
 
 /**
  * Prefetches a query from a route loader without letting a slow or failing API

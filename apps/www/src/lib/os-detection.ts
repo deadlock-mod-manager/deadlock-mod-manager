@@ -5,7 +5,7 @@ import type {
 } from "@/types/releases";
 
 /** Phones and tablets. None of them can run the desktop app. */
-export type MobileOS = "android" | "ios" | "ipados";
+type MobileOS = "android" | "ios" | "ipados";
 
 export interface DeviceInfo extends OSInfo {
   /** Set when the visitor is on a phone or tablet. `os` is then "unknown". */
