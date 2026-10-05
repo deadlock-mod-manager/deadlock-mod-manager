@@ -1,7 +1,6 @@
 import { BookOpen, ExternalLink } from "@deadlock-mods/ui/icons";
-import { format } from "date-fns";
 import { DOCS_URL } from "@/lib/constants";
-import { getReleaseUrl } from "@/lib/release-downloads";
+import { formatReleaseDate, getReleaseUrl } from "@/lib/release-downloads";
 import type { DetectedOS, Release } from "@/types/releases";
 import { PlatformDownloads } from "./platform-downloads";
 
@@ -19,7 +18,7 @@ export const LatestRelease = ({ release, userOS }: LatestReleaseProps) => (
         </h2>
         <p className='mt-1 text-muted-foreground text-sm'>
           Version {release.version}, released{" "}
-          {format(new Date(release.publishedAt), "MMMM d, yyyy")}
+          {formatReleaseDate(release.publishedAt)}
         </p>
       </div>
       <div className='flex items-center gap-4 text-sm'>

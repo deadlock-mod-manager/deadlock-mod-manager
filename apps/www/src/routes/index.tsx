@@ -1,32 +1,57 @@
-import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { FAQSection } from "@/components/faq";
-import { FeaturesSection } from "@/components/features";
-import { HeroSection } from "@/components/hero";
-// import { LatestUpdateVideoSection } from "@/components/latest-update-video";
-import { StatsSection } from "@/components/stats";
+import {
+  StatsSection,
+  TrustSection,
+  WebToolsSection,
+} from "@/components/home/community-sections";
+import { SkinsSection } from "@/components/home/customization-sections";
+import { DownloadSection } from "@/components/home/download-cta";
+import { FAQSection } from "@/components/home/faq-section";
+import { FeatureTour } from "@/components/home/feature-tour";
+import { HeroSection } from "@/components/home/hero";
+import { PartnersStrip } from "@/components/home/partners-strip";
+import { ThemesSection } from "@/components/home/themes-stage";
+import { prefetchWithin } from "@/lib/prefetch";
 import { orpc } from "@/utils/orpc";
 import { seo } from "@/utils/seo";
+import { homeStructuredData } from "@/utils/structured-data";
 
 export const Route = createFileRoute("/")({
   component: HomeComponent,
-  head: () =>
-    seo({
-      title: "Deadlock Mod Manager | Download, Install & Manage Deadlock Mods",
-    }),
+  // Server-render the stats instead of placeholders that fill in after load.
+  loader: async ({ context: { queryClient } }) => {
+    await Promise.all([
+      prefetchWithin(queryClient, orpc.getStats.queryOptions()),
+      prefetchWithin(queryClient, orpc.getVersion.queryOptions()),
+    ]);
+  },
+  head: () => {
+    const page = seo({
+      title: "Deadlock Mod Manager | Install & Manage Deadlock Mods",
+      path: "/",
+    });
+    return {
+      ...page,
+      scripts: [
+        { type: "application/ld+json", children: homeStructuredData() },
+      ],
+    };
+  },
 });
 
 function HomeComponent() {
-  const versionQuery = useQuery(orpc.getVersion.queryOptions());
-  const version = versionQuery.data?.version || "0.0.0";
-
   return (
-    <>
-      <HeroSection version={version} />
-      {/* <LatestUpdateVideoSection videoId='I6qBxyum8QY' /> */}
-      <FeaturesSection />
+    <div className='overflow-x-clip'>
+      <HeroSection />
+      <PartnersStrip />
+      <FeatureTour />
+      <TrustSection />
+      <ThemesSection />
+      <SkinsSection />
       <StatsSection />
+      <WebToolsSection />
       <FAQSection />
-    </>
+      <DownloadSection />
+    </div>
   );
 }

@@ -1,153 +1,123 @@
+import { SITE_URL, X_URL } from "@/lib/constants";
+
+export const SITE_NAME = "Deadlock Mod Manager";
+
+export const DEFAULT_DESCRIPTION =
+  "Free, open-source mod manager for Valve's Deadlock. Browse GameBanana mods, install them in one click, and manage skins and sounds on Windows and Linux.";
+
+export const DEFAULT_OG_IMAGE = {
+  url: `${SITE_URL}/og-image.png`,
+  width: 1910,
+  height: 1000,
+  alt: "Deadlock Mod Manager logo with the tagline Download, Install & Manage Deadlock Mods",
+};
+
+/**
+ * Indexable public pages, listed in the sitemap. Redirect routes (/docs,
+ * /discord, /status), the per-platform download shortcuts, auth and
+ * dashboard pages are left out on purpose.
+ */
+export const INDEXABLE_PATHS = [
+  "/",
+  "/download",
+  "/randomizer",
+  "/crosshair-generator",
+  "/vpk-analyzer",
+  "/kv-parser",
+  "/transparency",
+  "/privacy",
+  "/terms",
+] as const;
+
+export const absoluteUrl = (path: string) =>
+  path === "/" ? `${SITE_URL}/` : `${SITE_URL}${path}`;
+
+const xHandle = `@${X_URL.split("/").pop()}`;
+
 export interface SeoOptions {
   title: string;
   description?: string;
+  /** Site-relative path, e.g. "/download". Drives the canonical link and og:url. */
+  path?: string;
   keywords?: string;
-  image?: string;
-  url?: string;
   type?: "website" | "article";
-  author?: string;
-  twitterCreator?: string;
-  twitterSite?: string;
-  canonical?: string;
-  themeColor?: string;
-  lang?: string;
   noindex?: boolean;
 }
 
-export const BASE_SEO: Partial<SeoOptions> = {
-  description:
-    "The ultimate mod manager for Valve's Deadlock game. Browse, download, and manage mods from GameBanana with automatic installation detection. Cross-platform support for Windows, macOS, and Linux.",
-  keywords:
-    "deadlock mod manager, deadlock mods, valve deadlock, game mod manager, gamebanana mods, deadlock modding, tauri app, deadlock tools, valve games, mods installer, deadlock community",
-  image: "/og-image.png",
-  url: "https://deadlockmods.app/",
-  canonical: "https://deadlockmods.app/",
-  type: "website",
-  twitterCreator: "@stormix_dev",
-  twitterSite: "@stormix_dev",
-  themeColor: "#d4af37",
-  lang: "en",
-};
-
+/**
+ * Per-page head tags. TanStack Router keeps the deepest route's meta when
+ * names collide but does not dedupe links, so site-wide tags live in
+ * `siteHead()` on the root route and only page tags (plus the canonical
+ * link) come from here.
+ */
 export const seo = ({
   title,
-  description,
+  description = DEFAULT_DESCRIPTION,
+  path,
   keywords,
-  image,
-  url,
-  type,
-  author,
-  twitterCreator,
-  twitterSite,
-  canonical,
-  themeColor,
-  lang,
+  type = "website",
   noindex,
 }: SeoOptions) => {
-  const merged = {
-    ...BASE_SEO,
-    title,
-    ...(description !== undefined && { description }),
-    ...(keywords !== undefined && { keywords }),
-    ...(image !== undefined && { image }),
-    ...(url !== undefined && { url }),
-    ...(type !== undefined && { type }),
-    ...(author !== undefined && { author }),
-    ...(twitterCreator !== undefined && { twitterCreator }),
-    ...(twitterSite !== undefined && { twitterSite }),
-    ...(canonical !== undefined && { canonical }),
-    ...(themeColor !== undefined && { themeColor }),
-    ...(lang !== undefined && { lang }),
-  };
-  const tags = [
-    { charSet: "utf-8" },
-    {
-      name: "viewport",
-      content: "width=device-width, initial-scale=1",
-    },
-    { title: merged.title },
-    ...(merged.description
-      ? [{ name: "description", content: merged.description }]
-      : []),
-    ...(merged.keywords
-      ? [{ name: "keywords", content: merged.keywords }]
-      : []),
-    ...(merged.author ? [{ name: "author", content: merged.author }] : []),
+  const url = path ? absoluteUrl(path) : undefined;
+
+  const meta = [
+    { title },
+    { name: "description", content: description },
+    ...(keywords ? [{ name: "keywords", content: keywords }] : []),
     {
       name: "robots",
-      content: noindex ? "noindex, nofollow" : "index, follow",
+      content: noindex
+        ? "noindex, follow"
+        : "index, follow, max-image-preview:large",
     },
-    { name: "language", content: merged.lang },
-    ...(merged.themeColor
-      ? [{ name: "theme-color", content: merged.themeColor }]
-      : []),
+    ...(url ? [{ property: "og:url", content: url }] : []),
+    { property: "og:type", content: type },
+    { property: "og:title", content: title },
+    { property: "og:description", content: description },
+    { name: "twitter:title", content: title },
+    { name: "twitter:description", content: description },
+  ];
+
+  const links = url && !noindex ? [{ rel: "canonical", href: url }] : [];
+
+  return { meta, links };
+};
+
+/** Site-wide head tags, used only by the root route. */
+export const siteHead = () => ({
+  meta: [
+    { charSet: "utf-8" },
+    { name: "viewport", content: "width=device-width, initial-scale=1" },
+    { title: SITE_NAME },
+    { name: "description", content: DEFAULT_DESCRIPTION },
+    { name: "theme-color", content: "#d4af37" },
     { name: "color-scheme", content: "dark light" },
-    ...(merged.url ? [{ property: "og:url", content: merged.url }] : []),
-    { property: "og:type", content: merged.type },
-    { property: "og:title", content: merged.title },
-    ...(merged.description
-      ? [{ property: "og:description", content: merged.description }]
-      : []),
-    ...(merged.image
-      ? [
-          { property: "og:image", content: merged.image },
-          { property: "og:image:alt", content: merged.title },
-        ]
-      : []),
-    { name: "og:site_name", content: "Deadlock Mod Manager" },
-    { name: "og:locale", content: "en_US" },
-    {
-      name: "twitter:card",
-      content: merged.image ? "summary_large_image" : "summary",
-    },
-    { name: "twitter:title", content: merged.title },
-    ...(merged.description
-      ? [{ name: "twitter:description", content: merged.description }]
-      : []),
-    ...(merged.image
-      ? [
-          { name: "twitter:image", content: merged.image },
-          { name: "twitter:image:alt", content: merged.title },
-        ]
-      : []),
-    ...(merged.twitterCreator
-      ? [{ name: "twitter:creator", content: merged.twitterCreator }]
-      : []),
-    ...(merged.twitterSite
-      ? [{ name: "twitter:site", content: merged.twitterSite }]
-      : []),
-    ...(merged.url ? [{ name: "twitter:url", content: merged.url }] : []),
-    { name: "application-name", content: "Deadlock Mod Manager" },
-    { name: "apple-mobile-web-app-title", content: "Deadlock Mod Manager" },
+    { property: "og:site_name", content: SITE_NAME },
+    { property: "og:locale", content: "en_US" },
+    { property: "og:image", content: DEFAULT_OG_IMAGE.url },
+    { property: "og:image:type", content: "image/png" },
+    { property: "og:image:width", content: String(DEFAULT_OG_IMAGE.width) },
+    { property: "og:image:height", content: String(DEFAULT_OG_IMAGE.height) },
+    { property: "og:image:alt", content: DEFAULT_OG_IMAGE.alt },
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:site", content: xHandle },
+    { name: "twitter:creator", content: "@stormix_dev" },
+    { name: "twitter:image", content: DEFAULT_OG_IMAGE.url },
+    { name: "twitter:image:alt", content: DEFAULT_OG_IMAGE.alt },
+    { name: "application-name", content: SITE_NAME },
+    { name: "apple-mobile-web-app-title", content: SITE_NAME },
     { name: "apple-mobile-web-app-capable", content: "yes" },
     {
       name: "apple-mobile-web-app-status-bar-style",
       content: "black-translucent",
     },
-    { name: "format-detection", content: "telephone=no" },
     { name: "mobile-web-app-capable", content: "yes" },
-  ];
-
-  const links = [
-    ...(merged.canonical ? [{ rel: "canonical", href: merged.canonical }] : []),
+    { name: "format-detection", content: "telephone=no" },
+  ],
+  links: [
     { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
-    {
-      rel: "apple-touch-icon",
-      sizes: "180x180",
-      href: "/apple-touch-icon.png",
-    },
-    {
-      rel: "mask-icon",
-      href: "/safari-pinned-tab.svg",
-      color: merged.themeColor,
-    },
-    {
-      rel: "preconnect",
-      href: "https://rsms.me",
-    },
+    { rel: "apple-touch-icon", href: "/logo192.png" },
+    { rel: "manifest", href: "/manifest.json" },
     { rel: "dns-prefetch", href: "https://api.deadlockmods.com" },
-    { rel: "stylesheet", href: "https://rsms.me/inter/inter.css" },
-  ];
-
-  return { meta: tags, links };
-};
+  ],
+});

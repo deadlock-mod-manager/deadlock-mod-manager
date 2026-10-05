@@ -10,7 +10,19 @@ export const Route = createFileRoute("/status")({
       title: "Status | Deadlock Mod Manager",
       description:
         "Check the status of Deadlock Mod Manager services and infrastructure.",
+      noindex: true,
     }),
+  // Redirect on the server so crawlers and no-JS clients get a real 301.
+  // The component below only runs on client-side navigation.
+  server: {
+    handlers: {
+      GET: () =>
+        new Response(null, {
+          status: 301,
+          headers: { Location: STATUS_URL },
+        }),
+    },
+  },
 });
 
 function StatusComponent() {

@@ -12,8 +12,13 @@ import {
   TabsTrigger,
 } from "@deadlock-mods/ui/components/tabs";
 import { ExternalLink, TriangleAlert } from "@deadlock-mods/ui/icons";
-import { format, formatDistanceToNow } from "date-fns";
-import { getReleaseUrl } from "@/lib/release-downloads";
+import { useHydrated } from "@tanstack/react-router";
+import { formatDistanceToNow } from "date-fns";
+import {
+  formatReleaseDate,
+  formatReleaseDateTime,
+  getReleaseUrl,
+} from "@/lib/release-downloads";
 import type { Release } from "@/types/releases";
 import { PlatformDownloads } from "./platform-downloads";
 
@@ -25,6 +30,10 @@ interface ReleaseListProps {
 }
 
 const ReleaseList = ({ releases, emptyMessage }: ReleaseListProps) => {
+  // Relative times depend on the clock, so the server (and the hydration pass)
+  // render the absolute date and the browser switches to "3 days ago" after.
+  const hydrated = useHydrated();
+
   if (releases.length === 0) {
     return (
       <p className='rounded-xl border border-dashed p-6 text-center text-muted-foreground text-sm'>
@@ -38,47 +47,47 @@ const ReleaseList = ({ releases, emptyMessage }: ReleaseListProps) => {
       className='divide-y overflow-hidden rounded-xl border bg-card'
       collapsible
       type='single'>
-      {releases.map((release) => {
-        const publishedAt = new Date(release.publishedAt);
-
-        return (
-          <AccordionItem
-            className='border-b-0'
-            key={release.version}
-            value={release.version}>
-            <AccordionTrigger className='items-center px-5 py-4 hover:bg-muted/40 hover:no-underline'>
-              <div className='flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1'>
-                <span className='truncate font-mono font-semibold text-sm'>
-                  {release.version}
-                </span>
-                {release.prerelease && (
-                  <Badge variant='outline'>Pre-release</Badge>
-                )}
-                <time
-                  className='text-muted-foreground text-xs'
-                  dateTime={release.publishedAt}
-                  title={format(publishedAt, "PPpp")}>
-                  {formatDistanceToNow(publishedAt, { addSuffix: true })}
-                </time>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className='px-5 pt-1 pb-5'>
-              <PlatformDownloads
-                downloads={release.downloads}
-                version={release.version}
-              />
-              <a
-                className='mt-4 inline-flex items-center gap-1.5 text-muted-foreground text-sm transition-colors hover:text-foreground'
-                href={getReleaseUrl(release.version)}
-                rel='noopener noreferrer'
-                target='_blank'>
-                <ExternalLink className='h-4 w-4' />
-                View release on GitHub
-              </a>
-            </AccordionContent>
-          </AccordionItem>
-        );
-      })}
+      {releases.map((release) => (
+        <AccordionItem
+          className='border-b-0'
+          key={release.version}
+          value={release.version}>
+          <AccordionTrigger className='items-center px-5 py-4 hover:bg-muted/40 hover:no-underline'>
+            <div className='flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1'>
+              <span className='truncate font-mono font-semibold text-sm'>
+                {release.version}
+              </span>
+              {release.prerelease && (
+                <Badge variant='outline'>Pre-release</Badge>
+              )}
+              <time
+                className='text-muted-foreground text-xs'
+                dateTime={release.publishedAt}
+                title={formatReleaseDateTime(release.publishedAt)}>
+                {hydrated
+                  ? formatDistanceToNow(release.publishedAt, {
+                      addSuffix: true,
+                    })
+                  : formatReleaseDate(release.publishedAt)}
+              </time>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className='px-5 pt-1 pb-5'>
+            <PlatformDownloads
+              downloads={release.downloads}
+              version={release.version}
+            />
+            <a
+              className='mt-4 inline-flex items-center gap-1.5 text-muted-foreground text-sm transition-colors hover:text-foreground'
+              href={getReleaseUrl(release.version)}
+              rel='noopener noreferrer'
+              target='_blank'>
+              <ExternalLink className='h-4 w-4' />
+              View release on GitHub
+            </a>
+          </AccordionContent>
+        </AccordionItem>
+      ))}
     </Accordion>
   );
 };

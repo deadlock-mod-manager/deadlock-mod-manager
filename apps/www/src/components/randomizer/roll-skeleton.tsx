@@ -7,6 +7,8 @@ const Bar = ({ className }: { className?: string }) => (
 
 export const RollSkeleton = () => (
   <div className='container mx-auto px-4 py-10'>
+    {/* The skeleton is what crawlers and the server render see, so it carries the page heading. */}
+    <h1 className='sr-only'>Deadlock Randomizer: random hero and item build</h1>
     <Bar className='h-14 w-full max-w-2xl' />
     <Bar className='mt-3 h-7 w-64' />
     <div className='mt-10 grid gap-6 lg:grid-cols-12'>

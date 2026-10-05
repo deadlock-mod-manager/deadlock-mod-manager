@@ -1023,6 +1023,9 @@ importers:
       '@deadlock-mods/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@fontsource-variable/geist':
+        specifier: ^5.2.8
+        version: 5.2.8
       '@hookform/resolvers':
         specifier: ^5.2.2
         version: 5.2.2(react-hook-form@7.72.0(react@19.2.0))

@@ -187,7 +187,9 @@ export async function initializeStaticRoutes(
             gz,
             etag,
             type: metadata.type,
-            immutable: true,
+            // Only Vite's content-hashed output is safe to cache forever;
+            // public/ files (robots.txt, images) keep their names across deploys.
+            immutable: route.startsWith("/assets/"),
             size: bytes.byteLength,
           };
           routes[route] = createResponseHandler(asset);

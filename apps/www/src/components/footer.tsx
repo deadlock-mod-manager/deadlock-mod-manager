@@ -1,6 +1,12 @@
 import { PhosphorIcons } from "@deadlock-mods/ui/icons";
 import { Link } from "@tanstack/react-router";
-import { APP_NAME, COPYRIGHT, social } from "@/lib/constants";
+import {
+  APP_NAME,
+  BUG_REPORT_URL,
+  COPYRIGHT,
+  GITHUB_REPO,
+  social,
+} from "@/lib/constants";
 import Logo from "./logo";
 
 export const Footer = () => {
@@ -11,7 +17,7 @@ export const Footer = () => {
           <div className='lg:col-span-2'>
             <a
               className='flex items-center gap-2 font-bold font-primary text-xl sm:text-2xl'
-              href='#'>
+              href='/'>
               <Logo className='h-10 w-10 sm:h-12 sm:w-12' /> {APP_NAME}
             </a>
             <p className='mt-4 text-sm opacity-60 max-w-md'>
@@ -27,16 +33,14 @@ export const Footer = () => {
           <div className='grid grid-cols-2 gap-6 sm:grid-cols-3 sm:gap-8 lg:col-span-2'>
             <div className='flex flex-col gap-3'>
               <h3 className='font-bold font-primary'>Links</h3>
-              <a
+              <Link
                 className='text-sm opacity-60 hover:opacity-100 transition-opacity'
-                href='https://github.com/Stormix/deadlock-modmanager/releases/latest'
-                rel='noopener noreferrer'
-                target='_blank'>
+                to='/download'>
                 Download
-              </a>
+              </Link>
               <a
                 className='text-sm opacity-60 hover:opacity-100 transition-opacity'
-                href='https://github.com/Stormix/deadlock-modmanager'
+                href={GITHUB_REPO}
                 rel='noopener noreferrer'
                 target='_blank'>
                 Source Code
@@ -59,7 +63,7 @@ export const Footer = () => {
               </a>
               <a
                 className='text-sm opacity-60 hover:opacity-100 transition-opacity'
-                href='https://github.com/Stormix/deadlock-modmanager/issues/new?labels=bug&template=bug-report---.md'
+                href={BUG_REPORT_URL}
                 rel='noopener noreferrer'
                 target='_blank'>
                 Report Bug
@@ -70,7 +74,7 @@ export const Footer = () => {
               <h3 className='font-bold font-primary'>Partners</h3>
               <a
                 className='text-sm opacity-60 hover:opacity-100 transition-opacity'
-                href='http://gamebanana.com/?utm_source=deadlock-modmanager&utm_medium=footer&utm_campaign=partners'
+                href='https://gamebanana.com/?utm_source=deadlock-modmanager&utm_medium=footer&utm_campaign=partners'
                 rel='noopener noreferrer'
                 target='_blank'>
                 GameBanana

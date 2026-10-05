@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { FaLinux, FaWindows } from "react-icons/fa";
 import { useAnalyticsContext } from "@/components/analytics-provider";
 import { DOWNLOAD_URL } from "@/lib/constants";
-import { detectOS } from "@/lib/os-detection";
+import { type DeviceInfo, detectOS } from "@/lib/os-detection";
 import { selectRecommendedDownload } from "@/lib/release-downloads";
 import type { OSInfo, PlatformDownload } from "@/types/releases";
 import { orpc } from "@/utils/orpc";
@@ -27,7 +27,7 @@ interface PlatformIconProps {
   os: OSInfo["os"];
 }
 
-const PlatformIcon = ({ os }: PlatformIconProps) => {
+export const PlatformIcon = ({ os }: PlatformIconProps) => {
   if (os === "unknown" || os === "macos") {
     return <Download className='h-4 w-4' />;
   }
@@ -46,7 +46,7 @@ interface PlatformButtonTextProps {
   os: OSInfo["os"];
 }
 
-const PlatformButtonText = ({ os }: PlatformButtonTextProps) => {
+export const PlatformButtonText = ({ os }: PlatformButtonTextProps) => {
   if (os === "unknown" || os === "macos") {
     return "Download";
   }
@@ -61,13 +61,15 @@ const PlatformButtonText = ({ os }: PlatformButtonTextProps) => {
   }
 };
 
-export const PlatformDownloadButton = ({
-  size = "lg",
-  className = "",
-  variant = "default",
-  showVersionInfo = false,
-}: PlatformDownloadButtonProps) => {
-  const [userOS, setUserOS] = useState<OSInfo | null>(null);
+/**
+ * Picks the right installer for the visitor's OS and tracks the click. Shared
+ * by PlatformDownloadButton and the landing page's own download CTAs.
+ *
+ * The app only ships for Windows and Linux, so phones, tablets and macOS never
+ * get a direct download link.
+ */
+export const usePlatformDownload = () => {
+  const [userOS, setUserOS] = useState<DeviceInfo | null>(null);
   const { data: releases } = useQuery(orpc.getReleases.queryOptions());
   const { analytics } = useAnalyticsContext();
 
@@ -75,43 +77,30 @@ export const PlatformDownloadButton = ({
     setUserOS(detectOS());
   }, []);
 
-  const getRecommendedDownload = (): PlatformDownload | null => {
-    if (!userOS || userOS.os === "unknown" || !releases?.latest) {
-      return null;
-    }
+  // False only once detection confirms the device can't run the app. Stays
+  // true on the server, before detection and on unrecognized desktops, so
+  // those keep the generic download link and the markup hydrates cleanly.
+  const canInstall = !(userOS?.mobile || userOS?.os === "macos");
 
-    return selectRecommendedDownload(
-      releases.latest.downloads,
-      userOS.os,
-      userOS.architecture,
-    );
-  };
+  const recommendedDownload: PlatformDownload | null =
+    canInstall && userOS && userOS.os !== "unknown" && releases?.latest
+      ? selectRecommendedDownload(
+          releases.latest.downloads,
+          userOS.os,
+          userOS.architecture,
+        )
+      : null;
 
-  const recommendedDownload = getRecommendedDownload();
-
-  const getVersionInfo = (): string => {
-    if (!userOS) {
-      return "";
-    }
-
-    if (!releases?.latest) {
-      return "";
-    }
-
-    if (!recommendedDownload) {
-      return "";
-    }
-
-    const { latest } = releases;
+  const versionInfo = (() => {
+    if (!userOS || !releases?.latest || !recommendedDownload) return "";
     const archText =
       recommendedDownload.architecture === "universal"
         ? ""
         : ` (${recommendedDownload.architecture})`;
+    return `Version ${releases.latest.version} for ${userOS.displayName}${archText}`;
+  })();
 
-    return `Version ${latest.version} for ${userOS.displayName}${archText}`;
-  };
-
-  const handleDownloadClick = () => {
+  const onClick = () => {
     if (analytics.isEnabled && recommendedDownload && releases?.latest) {
       analytics.trackDownloadStarted(
         recommendedDownload.platform,
@@ -124,6 +113,31 @@ export const PlatformDownloadButton = ({
     }
   };
 
+  return {
+    os: userOS?.os ?? "unknown",
+    /** Phone or tablet the visitor is on, once detected. */
+    mobile: userOS?.mobile ?? null,
+    canInstall,
+    versionInfo,
+    linkProps: {
+      download: recommendedDownload ? true : undefined,
+      href: recommendedDownload?.url || DOWNLOAD_URL,
+      rel: "noopener noreferrer",
+      target: recommendedDownload ? undefined : "_blank",
+      onClick,
+    },
+  };
+};
+
+export const PlatformDownloadButton = ({
+  size = "lg",
+  className = "",
+  variant = "default",
+  showVersionInfo = false,
+}: PlatformDownloadButtonProps) => {
+  const { os, canInstall, versionInfo, linkProps } = usePlatformDownload();
+  const note = canInstall ? versionInfo : "Available for Windows and Linux";
+
   return (
     <div className='flex flex-col items-center'>
       <Button
@@ -131,19 +145,14 @@ export const PlatformDownloadButton = ({
         className={`font-semibold ${className}`}
         size={size}
         variant={variant}>
-        <a
-          download={recommendedDownload ? true : undefined}
-          href={recommendedDownload?.url || DOWNLOAD_URL}
-          rel='noopener noreferrer'
-          target={recommendedDownload ? undefined : "_blank"}
-          onClick={handleDownloadClick}>
-          <PlatformIcon os={userOS?.os || "unknown"} />
-          <PlatformButtonText os={userOS?.os || "unknown"} />
+        <a {...linkProps}>
+          <PlatformIcon os={os} />
+          <PlatformButtonText os={os} />
         </a>
       </Button>
 
-      {showVersionInfo && getVersionInfo() && (
-        <p className='mt-2 text-muted-foreground text-sm'>{getVersionInfo()}</p>
+      {showVersionInfo && note && (
+        <p className='mt-2 text-muted-foreground text-sm'>{note}</p>
       )}
     </div>
   );

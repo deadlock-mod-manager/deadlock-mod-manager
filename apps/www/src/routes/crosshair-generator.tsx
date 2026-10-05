@@ -20,9 +20,17 @@ import {
   ExportButton,
   ShareButton,
 } from "@/components/crosshair/export-button";
+import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/crosshair-generator")({
   component: CrosshairGeneratorPage,
+  head: () =>
+    seo({
+      title: "Deadlock Crosshair Generator: Design & Share Crosshairs",
+      description:
+        "Design a custom Deadlock crosshair with a live preview over in-game backgrounds, then copy the config or share a link. Adjust gap, size, pips, dot and outline.",
+      path: "/crosshair-generator",
+    }),
   validateSearch: (search: Record<string, unknown>): { edit?: string } => {
     return {
       edit: typeof search.edit === "string" ? search.edit : undefined,

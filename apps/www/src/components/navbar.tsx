@@ -1,198 +1,151 @@
-import { Button } from "@deadlock-mods/ui/components/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@deadlock-mods/ui/components/dropdown-menu";
 import {
   Sheet,
   SheetContent,
+  SheetTitle,
   SheetTrigger,
 } from "@deadlock-mods/ui/components/sheet";
-import { Github, List, PhosphorIcons, X } from "@deadlock-mods/ui/icons";
+import {
+  DownloadSimpleIcon,
+  GithubLogoIcon,
+  ListIcon,
+} from "@phosphor-icons/react";
+import { cn } from "@deadlock-mods/ui/lib/utils";
 import { Link } from "@tanstack/react-router";
-import React from "react";
-import { LuExternalLink } from "react-icons/lu";
-import { APP_NAME, GITHUB_REPO } from "@/lib/constants";
+import { useState } from "react";
+import { APP_NAME, DOCS_URL, GITHUB_REPO } from "@/lib/constants";
+import { primaryCta } from "./home/cta";
 import Logo from "./logo";
 import UserMenu from "./user-menu";
 
-type RouteProps = {
-  href: string;
-  label: string;
-  external?: boolean;
-};
+const sectionLinks = [
+  { hash: "tour", label: "Features" },
+  { hash: "themes", label: "Themes" },
+  { hash: "tools", label: "Tools" },
+] as const;
 
-const routeList: RouteProps[] = [
-  {
-    href: "/",
-    label: "Home",
-  },
-  {
-    href: "/randomizer",
-    label: "Randomizer",
-  },
-  {
-    href: "/transparency",
-    label: "Transparency",
-  },
-  {
-    href: "/status",
-    label: "Status",
-    external: true,
-  },
-  {
-    href: "https://docs.deadlockmods.app/",
-    label: "Documentation",
-    external: true,
-  },
-];
+const linkClassName =
+  "rounded-md px-3 py-2 font-medium text-[14px] text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary";
+
+const mobileLinkClassName =
+  "-mx-3 block rounded-lg px-3 py-2.5 font-medium text-base text-foreground hover:bg-surface-hover";
 
 export const Navbar = () => {
-  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const closeMenu = () => setMobileMenuOpen(false);
+
   return (
-    <header className='bg-background'>
-      <nav
-        aria-label='Global'
-        className='container mx-auto flex items-center justify-between gap-x-6 px-4 py-6'>
-        <div className='flex lg:flex-1'>
-          <Link className='flex items-center gap-2 -m-1.5 p-1.5' to='/'>
-            <span className='sr-only'>{APP_NAME}</span>
-            <Logo className='h-8 w-auto' />
-            <span className='font-bold font-primary text-lg'>{APP_NAME}</span>
+    <header className='relative z-40 border-border border-b bg-background'>
+      <div className='mx-auto flex h-16 max-w-7xl items-center gap-6 px-6'>
+        <div className='flex min-w-0 flex-1 items-center'>
+          <Link
+            to='/'
+            aria-label='Homepage'
+            className='flex min-w-0 items-center gap-2.5 rounded-md focus-visible:outline-2 focus-visible:outline-primary'>
+            <Logo className='size-7 shrink-0' />
+            <span className='truncate font-bold font-primary text-lg leading-none'>
+              {APP_NAME}
+            </span>
           </Link>
         </div>
-        <div className='hidden lg:flex lg:gap-x-6'>
-          {routeList.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              rel={item.external ? "noopener noreferrer" : undefined}
-              target={item.external ? "_blank" : undefined}
-              className='flex items-center gap-1 text-sm/6 font-semibold text-foreground'>
-              {item.label}
-              {item.external && (
-                <LuExternalLink className='size-3.5' aria-hidden='true' />
-              )}
-            </a>
+
+        <nav aria-label='Primary' className='hidden items-center lg:flex'>
+          {sectionLinks.map((link) => (
+            <Link
+              key={link.hash}
+              to='/'
+              hash={link.hash}
+              className={linkClassName}>
+              {link.label}
+            </Link>
           ))}
-          <DropdownMenu>
-            <DropdownMenuTrigger className='flex items-center gap-1 text-sm/6 font-semibold text-foreground hover:text-foreground/80 transition-colors outline-none data-[state=open]:text-foreground/80'>
-              Tools
-              <PhosphorIcons.CaretDownIcon className='size-4' />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align='start'
-              sideOffset={12}
-              className='min-w-[220px] bg-background/95 backdrop-blur-sm border-border/50 shadow-xl p-2'>
-              <DropdownMenuItem
-                asChild
-                className='cursor-pointer px-3 py-2.5 rounded-md hover:bg-muted/80 focus:bg-muted/80'>
-                <Link to='/vpk-analyzer' className='w-full font-medium'>
-                  VPK Analyzer
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                asChild
-                className='cursor-pointer px-3 py-2.5 rounded-md hover:bg-muted/80 focus:bg-muted/80'>
-                <Link to='/kv-parser' className='w-full font-medium'>
-                  KeyValues Parser
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                asChild
-                className='cursor-pointer px-3 py-2.5 rounded-md hover:bg-muted/80 focus:bg-muted/80'>
-                <Link to='/crosshair-generator' className='w-full font-medium'>
-                  Crosshair Generator
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-        <div className='hidden flex-1 items-center justify-end gap-x-6 sm:flex'>
-          <Button
-            size='sm'
+          <a
+            href={DOCS_URL}
+            target='_blank'
+            rel='noopener noreferrer'
+            className={linkClassName}>
+            Docs
+          </a>
+        </nav>
+
+        <div className='flex flex-1 items-center justify-end gap-2'>
+          <a
             href={GITHUB_REPO}
-            icon={<Github className='size-4' />}>
-            <span className='hidden md:inline'>View Source</span>
-            <span className='md:hidden'>Source</span>
-          </Button>
-          <UserMenu />
-        </div>
-        <div className='flex lg:hidden'>
+            target='_blank'
+            rel='noopener noreferrer'
+            aria-label='GitHub'
+            className='relative hidden size-8 items-center justify-center rounded-md text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-primary sm:inline-flex'>
+            <GithubLogoIcon aria-hidden='true' className='size-5 shrink-0' />
+            <span
+              aria-hidden='true'
+              className='-translate-1/2 absolute top-1/2 left-1/2 size-[max(100%,3rem)] pointer-fine:hidden'
+            />
+          </a>
+          <div className='hidden lg:block'>
+            <UserMenu signInClassName={linkClassName} />
+          </div>
+          <Link to='/download' className={cn(primaryCta("sm"), "max-sm:px-2")}>
+            <DownloadSimpleIcon aria-hidden='true' weight='bold' />
+            <span className='sr-only sm:not-sr-only'>Download</span>
+          </Link>
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
               <button
                 type='button'
-                className='-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-muted-foreground'>
-                <span className='sr-only'>Open main menu</span>
-                <List aria-hidden='true' className='size-6' />
+                aria-label='Open menu'
+                className='-mr-2 inline-flex size-10 items-center justify-center rounded-md text-muted-foreground hover:text-foreground lg:hidden'>
+                <ListIcon aria-hidden='true' className='size-6 shrink-0' />
               </button>
             </SheetTrigger>
-            <SheetContent side='right' className='w-full sm:max-w-sm'>
-              <div className='flex items-center gap-x-6'>
-                <Link className='flex items-center gap-2 -m-1.5 p-1.5' to='/'>
-                  <span className='sr-only'>{APP_NAME}</span>
-                  <Logo className='h-8 w-auto' />
-                </Link>
-                <div className='ml-auto flex items-center gap-2'>
+            <SheetContent
+              side='right'
+              className='flex w-full flex-col gap-0 border-border-strong bg-background sm:max-w-sm'>
+              <SheetTitle className='flex items-center gap-2.5 font-bold font-primary text-lg'>
+                <Logo className='size-7' />
+                {APP_NAME}
+              </SheetTitle>
+              <nav
+                aria-label='Mobile'
+                className='mt-6 flex flex-col divide-y divide-border'>
+                <div className='py-4'>
+                  <Link
+                    to='/download'
+                    onClick={closeMenu}
+                    className={mobileLinkClassName}>
+                    Download
+                  </Link>
+                  {sectionLinks.map((link) => (
+                    <Link
+                      key={link.hash}
+                      to='/'
+                      hash={link.hash}
+                      onClick={closeMenu}
+                      className={mobileLinkClassName}>
+                      {link.label}
+                    </Link>
+                  ))}
+                  <a
+                    href={DOCS_URL}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className={mobileLinkClassName}>
+                    Docs
+                  </a>
+                  <a
+                    href={GITHUB_REPO}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className={mobileLinkClassName}>
+                    GitHub
+                  </a>
+                </div>
+                <div className='py-4'>
                   <UserMenu />
-                  <button
-                    type='button'
-                    onClick={() => setMobileMenuOpen(false)}
-                    className='-m-2.5 rounded-md p-2.5 text-muted-foreground'>
-                    <span className='sr-only'>Close menu</span>
-                    <X aria-hidden='true' className='size-6' />
-                  </button>
                 </div>
-              </div>
-              <div className='mt-6 flow-root'>
-                <div className='-my-6 divide-y divide-border'>
-                  <div className='space-y-2 py-6'>
-                    {routeList.map((item) => (
-                      <a
-                        key={item.label}
-                        href={item.href}
-                        rel={item.external ? "noopener noreferrer" : undefined}
-                        target={item.external ? "_blank" : undefined}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className='-mx-3 flex items-center gap-2 rounded-lg px-3 py-2 text-base/7 font-semibold text-foreground hover:bg-muted'>
-                        {item.label}
-                        {item.external && (
-                          <LuExternalLink
-                            className='size-4'
-                            aria-hidden='true'
-                          />
-                        )}
-                      </a>
-                    ))}
-                    <div className='-mx-3 px-3 py-2'>
-                      <div className='font-semibold text-base/7 text-muted-foreground'>
-                        Tools
-                      </div>
-                      <div className='mt-2 space-y-2'>
-                        <Link
-                          to='/vpk-analyzer'
-                          onClick={() => setMobileMenuOpen(false)}
-                          className='flex items-center gap-2 rounded-lg px-3 py-2 text-base/7 font-medium text-foreground hover:bg-muted'>
-                          VPK Analyzer
-                        </Link>
-                        <Link
-                          to='/kv-parser'
-                          onClick={() => setMobileMenuOpen(false)}
-                          className='flex items-center gap-2 rounded-lg px-3 py-2 text-base/7 font-medium text-foreground hover:bg-muted'>
-                          KeyValues Parser
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              </nav>
             </SheetContent>
           </Sheet>
         </div>
-      </nav>
+      </div>
     </header>
   );
 };
