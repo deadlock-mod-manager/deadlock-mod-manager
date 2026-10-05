@@ -447,7 +447,10 @@ export const steam = (config: SteamAuthPluginOptions) =>
 
             // Check if account is already linked
             const existingAccount =
-              await ctx.context.internalAdapter.findAccount(steamId);
+              await ctx.context.internalAdapter.findAccountByProviderId(
+                steamId,
+                "steam",
+              );
             if (existingAccount) {
               if (existingAccount.userId !== user.id) {
                 throw ctx.redirect(
@@ -502,7 +505,11 @@ export const steam = (config: SteamAuthPluginOptions) =>
             throw ctx.redirect(`${errorURL}?error=invalid_email`);
           }
 
-          let account = await ctx.context.internalAdapter.findAccount(steamId);
+          let account =
+            await ctx.context.internalAdapter.findAccountByProviderId(
+              steamId,
+              "steam",
+            );
           let user: User | null = null;
           let isNewUser = false;
 
