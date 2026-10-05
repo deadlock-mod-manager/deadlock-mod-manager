@@ -130,7 +130,7 @@ jobs:
         run: |
           apt-get update
           apt-get install -y --no-install-recommends build-essential ca-certificates curl git file pkg-config unzip xz-utils \
-            libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev protobuf-compiler
+            libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libssl-dev protobuf-compiler libprotobuf-dev
       - name: Install Arch packages
         if: matrix.distro == 'arch'
         run: |
