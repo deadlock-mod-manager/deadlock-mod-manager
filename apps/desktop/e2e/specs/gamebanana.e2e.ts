@@ -6,6 +6,7 @@ import {
   installedFiles,
   activeFiles,
   openFilesTab,
+  waitForDisplayed,
 } from "../support/ui";
 import { startApplication } from "../support/application";
 import { $, browser, expect } from "@wdio/globals";
@@ -33,12 +34,9 @@ describe("GameBanana catalog installation", () => {
     const world = runtime.roots.world;
     const checkpoint = path.join(world, "artifacts", "catalog-process.json");
     await navigate("mods");
-    const card = await $(`[title="${CATALOG_MOD_NAME}"]`);
-    await card.waitForDisplayed();
-    await card.click();
-    await expect(
-      $(`//div[normalize-space()="${CATALOG_MOD_NAME}"]`),
-    ).toBeDisplayed();
+    await waitForDisplayed(`[title="${CATALOG_MOD_NAME}"]`);
+    await $(`[title="${CATALOG_MOD_NAME}"]`).click();
+    await waitForDisplayed(`//div[normalize-space()="${CATALOG_MOD_NAME}"]`);
     if (phase === "catalog-install") {
       assert.deepEqual((await readCatalogState(world)).localMods, []);
       await $('button[aria-label="Download Mod"]').click();

@@ -23,6 +23,9 @@ import {
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 export const REPOSITORY_ROOT = path.resolve(HERE, "../../../..");
 export const WORLDS_ROOT = path.join(REPOSITORY_ROOT, ".e2e", "worlds");
+// The launcher DMM resolves inside the Steam root on this platform.
+export const STEAM_LAUNCHER =
+  process.platform === "win32" ? "steam.exe" : "steam.sh";
 
 const safeId = (value: string): string => {
   const normalized = value

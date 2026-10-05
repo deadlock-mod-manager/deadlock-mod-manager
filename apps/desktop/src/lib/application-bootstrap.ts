@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { load } from "@tauri-apps/plugin-store";
 import { downloadManager } from "./download/manager";
 import logger from "./logger";
@@ -11,6 +12,7 @@ import { applyGameGuardSetting } from "./game-guard";
 import { syncProxyConfigToBackend } from "./proxy";
 import { usePersistedStore } from "./store";
 import {
+  flushPendingWrites,
   setStateStorePath,
   storageReady,
   type StorageReadyStatus,
@@ -55,6 +57,8 @@ const bootstrapApplication = async (): Promise<ApplicationBootstrap> => {
       .warn("Policy refresh failed; keeping the last cached policy");
   });
   await downloadManager.init();
+  // Tauri saves the store on exit with whatever writes have reached it.
+  void getCurrentWindow().onCloseRequested(() => flushPendingWrites());
 
   logger.debug(
     "Store rehydrated, API URL initialized, and download manager ready",

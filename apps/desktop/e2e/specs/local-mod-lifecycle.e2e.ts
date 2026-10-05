@@ -28,9 +28,16 @@ const waitForStatus = async (
     "Persisted lifecycle state did not reach " + status,
     () => readLifecycleState(world),
     (state) => {
-      return status === "deleted"
-        ? state.localMods.length === 0
-        : state.localMods[0]?.status === status;
+      if (status === "deleted") return state.localMods.length === 0;
+      const mod = state.localMods[0];
+      // The profile's enabled flag persists separately from the mod status.
+      const enabled =
+        mod &&
+        state.profiles[state.activeProfileId]?.enabledMods[mod.remoteId]
+          ?.enabled === true;
+      return (
+        mod?.status === status && (status === "installed" ? enabled : !enabled)
+      );
     },
   );
   return state.localMods[0]?.remoteId ?? "";

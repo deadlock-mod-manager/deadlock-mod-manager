@@ -114,6 +114,65 @@ describe("storage write gate", () => {
     expect(memory.get("local-config")).toBe("latest");
   });
 
+  it("skips a snapshot identical to the last queued one", async () => {
+    storageModule.markStorageReady();
+    const backend = await getStoreImpl();
+    let writes = 0;
+    getStoreImpl = async () => ({
+      ...backend,
+      set: async (k, v) => {
+        writes++;
+        await backend.set(k, v);
+      },
+    });
+    await Promise.all([
+      storage.setItem("local-config", "downloading"),
+      storage.setItem("local-config", "downloading"),
+      storage.setItem("local-config", "downloading"),
+      storage.setItem("local-config", "installed"),
+    ]);
+    expect(writes).toBe(2);
+    expect(memory.get("local-config")).toBe("installed");
+  });
+
+  it("retries an identical snapshot after its write failed", async () => {
+    storageModule.markStorageReady();
+    const backend = await getStoreImpl();
+    let lookups = 0;
+    getStoreImpl = async () => {
+      if (++lookups === 1) throw new Error("write rejected");
+      return backend;
+    };
+    await storage.setItem("local-config", "installed");
+    await storage.setItem("local-config", "installed");
+    expect(memory.get("local-config")).toBe("installed");
+  });
+
+  it("writes a snapshot again after the key was removed", async () => {
+    storageModule.markStorageReady();
+    await storage.setItem("local-config", "installed");
+    await storage.removeItem("local-config");
+    await storage.setItem("local-config", "installed");
+    expect(memory.get("local-config")).toBe("installed");
+  });
+
+  it("flushPendingWrites resolves after queued writes land", async () => {
+    storageModule.markStorageReady();
+    const backend = await getStoreImpl();
+    const lookup = Promise.withResolvers<void>();
+    getStoreImpl = async () => {
+      await lookup.promise;
+      return backend;
+    };
+    void storage.setItem("local-config", "installed");
+    const flushed = storageModule.flushPendingWrites();
+    await setImmediate();
+    expect(memory.has("local-config")).toBe(false);
+    lookup.resolve();
+    await flushed;
+    expect(memory.get("local-config")).toBe("installed");
+  });
+
   it("drops removeItem before any getItem has completed", async () => {
     memory.set("local-config", "preexisting");
     await storage.removeItem("local-config");

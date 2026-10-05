@@ -64,8 +64,8 @@ interface SamplePresenceValues {
 
 const GLOBAL_SCOPE_VALUE = "__global_presence_templates__";
 
-const PREVIEW_LARGE_IMAGE_URL =
-  "https://cdn.discordapp.com/app-assets/1498796149581152358/1498796905994387727.png";
+// Bundled copy of the Discord application's large presence asset.
+const PREVIEW_LARGE_IMAGE_URL = "/brand/discord-presence.png";
 
 const TEMPLATE_ROWS: TemplateRow[] = [
   {

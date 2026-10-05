@@ -22,6 +22,7 @@ import useUpdateManager from "@/hooks/use-update-manager";
 import { GITHUB_REPO } from "@/lib/constants";
 import { createLogger } from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
+import { flushPendingWrites } from "@/lib/store/storage";
 import { AboutDialog } from "./about-dialog";
 import { Toolbar } from "./toolbar";
 import { WindowTitlebar } from "./window-controls/window-titlebar";
@@ -128,6 +129,7 @@ export const Titlebar = () => {
 
   const handleExit = async () => {
     try {
+      await flushPendingWrites();
       await exit(0);
     } catch (error) {
       logger.withError(error).error("Failed to exit");

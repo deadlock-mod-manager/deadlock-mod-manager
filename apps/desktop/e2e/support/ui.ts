@@ -24,11 +24,19 @@ export const reveal = async (
     timeoutMsg: "Target did not become visible in the viewport",
   });
 };
+// Look the element up again on every poll. The embedded WebKitGTK driver keeps
+// evaluating a node React has replaced instead of reporting it stale, so a
+// cached element's waitForDisplayed() can stay false although the page shows it.
+export const waitForDisplayed = (selector: string) =>
+  browser.waitUntil(async () => (await $(selector)).isDisplayed(), {
+    timeoutMsg: `${selector} was not displayed`,
+  });
 export const openOrdering = () =>
   step("open mod ordering", async () => {
     await expect($('[role="dialog"]')).not.toBeDisplayed();
+    // The import menu sits between Add Local Mod and the overflow menu.
     const menu = await $("button=Add Local Mod").$(
-      './following-sibling::button[@aria-haspopup="menu"]',
+      './following-sibling::button[@aria-haspopup="menu"][last()]',
     );
     await menu.waitForClickable();
     await menu.click();

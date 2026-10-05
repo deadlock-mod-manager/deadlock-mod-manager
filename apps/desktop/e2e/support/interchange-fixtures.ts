@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { FixtureRoute } from "./fixture-server";
+import { BULK_UPDATE_FIELDS } from "./gamebanana-fixtures";
 import { buildSyntheticVpk } from "./vpk";
 import { collectFileInventory, type CreatedWorld } from "./world";
 
@@ -302,10 +303,22 @@ export const grimoireRoutes = async () => (origin: string) => {
       status: 404,
       body: '{"_sErrorCode":"ITEM_NOT_FOUND"}',
     },
+    // Update checks batch every linked mod through the legacy multicall,
+    // first for the imported skin and again once the overflow mod is linked.
     {
       method: "GET",
-      path: "/apiv11/Core/Item/Data",
-      query: { "fields[]": "Url().sProfileUrl()" },
+      path: "/Core/Item/Data",
+      query: { "itemid[]": LINKED_OVERFLOW_ID, "fields[]": BULK_UPDATE_FIELDS },
+      status: 200,
+      body: JSON.stringify([
+        [profile._sProfileUrl, timestamp, files],
+        [linked._sProfileUrl, timestamp, []],
+      ]),
+    },
+    {
+      method: "GET",
+      path: "/Core/Item/Data",
+      query: { "fields[]": BULK_UPDATE_FIELDS },
       status: 200,
       body: JSON.stringify([profile._sProfileUrl, timestamp, files]),
     },

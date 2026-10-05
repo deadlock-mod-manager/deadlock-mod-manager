@@ -5,7 +5,7 @@ import path from "node:path";
 type FilesystemEvent = {
   at: string;
   root: string;
-  event: "rename" | "change";
+  event: "rename" | "change" | "error";
   path: string;
 };
 
@@ -21,6 +21,15 @@ export const startFilesystemJournal = (
         root: name,
         event,
         path: fileName?.toString().replaceAll("\\", "/") ?? "",
+      });
+    }).on("error", (error) => {
+      // Linux emulates recursive watching and fails when a directory vanishes
+      // before it is scanned. The journal is evidence; record and continue.
+      events.push({
+        at: new Date().toISOString(),
+        root: name,
+        event: "error",
+        path: error.message,
       });
     }),
   );
