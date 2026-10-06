@@ -1,6 +1,6 @@
 ---
 title: Servers and Stats
-description: Join community servers, view player stats, and configure optional match data sharing
+description: Join community servers, view player stats, and configure match data sharing
 ---
 
 import { Callout } from "fumadocs-ui/components/callout";
@@ -51,21 +51,35 @@ Open a match from **Last matches** on the Overview tab. The dialog shows the her
 
 ![Match statistics, item-build timeline, and purchase transactions](/assets/v2-match-details.png)
 
-## Optional Match Data Sharing
+## Match Data Sharing
 
-![Match Data Sharing consent information and enable switch](/assets/v2-match-sharing.png)
+![Match Data Sharing information and enable switch](/assets/v2-match-sharing.png)
 
-Stats works independently of Match Data Sharing. To enable sharing, accept the consent screen during onboarding or under **Settings → Privacy → Match Data Sharing**.
+Match Data Sharing is **on by default**. It fills in matches that public trackers such as Statlocker, Tracklock and deadlock-api are missing, so your match history and stats there are complete. Stats in the app works whether or not sharing is on.
 
-When enabled, the app reads the Steam auto-login token already stored on your machine to fetch your own Deadlock matches through your account. The app sends match IDs and match salts to deadlock-api. It does not send your Steam token or password to that service.
+- **New installs** see the setting during onboarding and can turn it off there.
+- **Existing users** see a one-time notice after updating. Choosing **Keep it on** or closing the notice leaves sharing on; **Turn it off** disables it. If you had already turned sharing off before the update, it stays off.
+
+You can change it any time under **Settings → Privacy → Match Data Sharing**. Turning it off stops all background work immediately.
+
+### Why it helps
+
+Trackers can only download a match's full data once someone submits its match ID and salts. Matches that nobody submits stay missing, which leaves gaps in match history and stats. With sharing on, the app submits your own matches automatically, which also fills those gaps for everyone else who played in them.
+
+### What it does
+
+The app reads the Steam auto-login token already stored on your machine to fetch your own Deadlock match history through your account. It sends **only match IDs and match salts** to deadlock-api. It never sends your Steam token, password, or personal data, and it never writes the token to disk. Fetching is rate-limited to 40 requests per rolling 24 hours.
 
 <Callout type='warning' title='Uses your Steam account'>
-  Read the consent screen before enabling sharing. It acts through your real
-  Steam account, so the risk is low but not zero. You can turn sharing off in
-  Settings at any time.
+  Sharing acts through your real Steam account, so the risk is low but not zero.
+  Because the app reads Steam's stored login token, some antivirus software may
+  flag it. The code is open source and the token never leaves your machine; see
+  [SECURITY.md](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/SECURITY.md)
+  for details. If you are not comfortable with this, turn sharing off in
+  Settings.
 </Callout>
 
-Use **Fetch all my matches** to fetch missing history. Close Deadlock first. Fetching is rate-limited to 40 requests per rolling 24 hours, and the settings page shows remaining quota and progress. A Steam connection failure or exhausted quota can delay completion.
+Use **Fetch all my matches** to fetch missing history. Close Deadlock first. The settings page shows remaining quota and progress. A Steam connection failure or exhausted quota can delay completion.
 
 ## Cached matchdata ingestion
 
