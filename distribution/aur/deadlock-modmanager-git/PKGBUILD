@@ -26,7 +26,7 @@ prepare() {
     # Use sharp's prebuilt binary; a system libvips makes it fall back to a
     # source build that needs npm and node-gyp.
     export SHARP_IGNORE_GLOBAL_LIBVIPS=1
-    pnpm install
+    pnpm install --frozen-lockfile --filter @deadlock-mods/desktop...
 
     cd src-tauri
     cargo fetch --locked --target "$(rustc -vV | sed -n 's/host: //p')"
