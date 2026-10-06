@@ -1051,6 +1051,7 @@
     "next": "다음"
   },
   "downloads": {
+    "alreadyQueued": "",
     "downloading": "{{count}} 모드 다운로드 중",
     "downloading_plural": "{{count}} 모드 다운로드 중",
     "percentage": "",

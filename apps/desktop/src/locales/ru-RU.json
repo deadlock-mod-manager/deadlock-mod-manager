@@ -1051,6 +1051,7 @@
     "next": ""
   },
   "downloads": {
+    "alreadyQueued": "",
     "downloading": "",
     "downloading_plural": "",
     "percentage": "",

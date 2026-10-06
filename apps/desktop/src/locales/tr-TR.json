@@ -1051,6 +1051,7 @@
     "next": ""
   },
   "downloads": {
+    "alreadyQueued": "",
     "downloading": "{{count}} mod indiriliyor",
     "downloading_plural": "{{count}} mod indiriliyor",
     "percentage": "",

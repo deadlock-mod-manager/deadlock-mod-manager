@@ -1051,6 +1051,7 @@
     "next": ""
   },
   "downloads": {
+    "alreadyQueued": "",
     "downloading": "جاري التنزيل {{count}} تعديل",
     "downloading_plural": "تعديلات {{count}} تنزيل",
     "percentage": "",

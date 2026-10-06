@@ -1051,6 +1051,7 @@
     "next": "Наступны"
   },
   "downloads": {
+    "alreadyQueued": "",
     "downloading": "Спампоўка {{count}} мода",
     "downloading_plural": "Спампоўка {{count}} модаў",
     "percentage": "{{percentage}}%",

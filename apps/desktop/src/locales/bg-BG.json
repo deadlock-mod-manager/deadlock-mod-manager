@@ -1051,6 +1051,7 @@
     "next": ""
   },
   "downloads": {
+    "alreadyQueued": "",
     "downloading": "Изтегля се {{count}} мод",
     "downloading_plural": "Изтеглят се {{count}} модове",
     "percentage": "",

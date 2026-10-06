@@ -1051,6 +1051,7 @@
     "next": "下一步"
   },
   "downloads": {
+    "alreadyQueued": "",
     "downloading": "正在下载 {{count}} 个模组",
     "downloading_plural": "正在下载 {{count}} 个模组",
     "percentage": "{{percentage}}%",
