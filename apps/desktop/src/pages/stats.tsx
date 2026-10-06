@@ -26,7 +26,6 @@ import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router";
 import PageTitle from "@/components/shared/page-title";
 import { AccountPrompt } from "@/components/stats/account-prompt";
-import { DeadlockApiCredit } from "@/components/stats/deadlock-api-credit";
 import { HeroesTab } from "@/components/stats/heroes-tab";
 import { ItemsTab } from "@/components/stats/items-tab";
 import { LiveTab } from "@/components/stats/live-tab";
@@ -34,7 +33,7 @@ import { OverviewTab } from "@/components/stats/overview-tab";
 import { SquadTab } from "@/components/stats/squad-tab";
 import { StatsHeader } from "@/components/stats/stats-header";
 import { StatsHints } from "@/components/stats/stats-hints";
-import { MatchSyncToggle } from "@/components/stats/match-sync-toggle";
+import { StatsStatus } from "@/components/stats/stats-status";
 import { StatTileSkeleton } from "@/components/stats/stat-tile";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import {
@@ -255,39 +254,42 @@ const Stats = () => {
 
   return (
     <div className='flex h-full min-h-0 w-full flex-col'>
-      <div className='shrink-0 px-4 pr-2'>
+      {/* Status (freshness, attribution, match sharing) takes the title row's
+          empty right side, so the row below only has to fit account and tabs. */}
+      <div className='flex shrink-0 flex-wrap items-end justify-between gap-x-6 gap-y-3 px-4 pr-2'>
         <PageTitle subtitle={t("stats.subtitle")} title={t("stats.title")} />
+        <StatsStatus
+          freshness={
+            hasAccount
+              ? {
+                  fetchedAt: stats.fetchedAt,
+                  isStale: stats.isStale,
+                  isRefreshing,
+                  canRefresh,
+                  onRefresh: refresh,
+                }
+              : undefined
+          }
+        />
       </div>
 
-      {/* Account, tabs and refresh share one pinned row - the tabs are the
-          page's primary navigation and shouldn't cost a band of their own.
-          Without a detected account there is no header to hang them off, but the
-          live tab still works, so the switcher stands on its own. */}
+      {/* Account and tabs share one pinned row - the tabs are the page's primary
+          navigation and shouldn't cost a band of their own. Without a detected
+          account the live tab still works, so the switcher stands on its own. */}
       <div className='flex shrink-0 flex-col gap-3 px-4 pr-2 pt-4 pb-4'>
         {hasAccount ? (
           <StatsHeader
             account={account}
             accountId={accountId}
             accounts={accounts}
-            canRefresh={canRefresh}
-            center={statsTabs}
-            fetchedAt={stats.fetchedAt}
-            isRefreshing={isRefreshing}
-            isStale={stats.isStale}
-            onRefresh={refresh}
             onSelectAccount={setAccountId}
             profile={stats.profile}
             rank={stats.rank}
             rankAssets={rankAssets.data?.data ?? []}
+            tabs={statsTabs}
           />
         ) : (
-          // No header to hang the attribution off, but it belongs on every view
-          // of this page, so it rides along with the standalone tab switcher.
-          <div className='flex flex-wrap items-center justify-center gap-3'>
-            {statsTabs}
-            <DeadlockApiCredit />
-            <MatchSyncToggle />
-          </div>
+          statsTabs
         )}
         {hasAccount && (
           <StatsHints

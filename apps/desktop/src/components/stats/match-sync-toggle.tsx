@@ -1,10 +1,10 @@
-import { Toggle } from "@deadlock-mods/ui/components/toggle";
+import { Label } from "@deadlock-mods/ui/components/label";
+import { Switch } from "@deadlock-mods/ui/components/switch";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
-import { CloudDownload } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { useMatchSync } from "@/hooks/use-match-sync";
 import { useMatchSyncToggle } from "@/hooks/use-match-sync-toggle";
@@ -27,26 +27,26 @@ export const MatchSyncToggle = () => {
 
   return (
     <Tooltip>
-      {/* The trigger has to sit on something enabled, or the explanation never
-          shows while the status loads. */}
+      {/* A real switch rather than a pressed button: a button here reads as
+          "sync now". No border either; it sits in the header's quiet status
+          group, and the switch alone says it is a setting. The trigger is the
+          label, not the switch, so the explanation still shows while the
+          status loads and the switch is disabled. */}
       <TooltipTrigger asChild>
-        <span className='inline-flex'>
-          <Toggle
-            aria-label={t("stats.settings.matchSync")}
-            className={cn(
-              "h-8 gap-2 rounded-md border border-border/60 bg-background/40 px-3",
-              "font-medium text-muted-foreground text-xs",
-              "hover:bg-background/80 hover:text-foreground",
-              "data-[state=on]:border-primary/50 data-[state=on]:bg-primary/15",
-              "data-[state=on]:text-primary data-[state=on]:shadow-[inset_0_-1px_0_var(--color-primary)]",
-            )}
+        <Label
+          className={cn(
+            "flex h-8 cursor-pointer items-center gap-2 whitespace-nowrap font-medium text-muted-foreground text-xs transition-colors hover:text-foreground",
+            enabled && "text-foreground",
+          )}
+          htmlFor='stats-match-sync'>
+          {t("stats.settings.matchSync")}
+          <Switch
+            checked={enabled}
             disabled={!status || setEnabled.isPending || setConsent.isPending}
-            onPressedChange={handleEnableChange}
-            pressed={enabled}>
-            <CloudDownload className='h-4 w-4' />
-            <span>{t("stats.settings.matchSync")}</span>
-          </Toggle>
-        </span>
+            id='stats-match-sync'
+            onCheckedChange={handleEnableChange}
+          />
+        </Label>
       </TooltipTrigger>
       <TooltipContent className='max-w-xs space-y-1'>
         <p>{t("matchSync.description")}</p>
