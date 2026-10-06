@@ -1051,6 +1051,7 @@
     "next": ""
   },
   "downloads": {
+    "alreadyQueued": "",
     "downloading": "Lade {{count}} Mod herunter",
     "downloading_plural": "Lade {{count}} Mods herunter",
     "percentage": "",

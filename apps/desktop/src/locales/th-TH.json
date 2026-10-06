@@ -1051,6 +1051,7 @@
     "next": ""
   },
   "downloads": {
+    "alreadyQueued": "",
     "downloading": "กำลังดาวน์โหลด {{count}} ม็อด",
     "downloading_plural": "กำลังดาวน์โหลด {{count}} ม็อด",
     "percentage": "",

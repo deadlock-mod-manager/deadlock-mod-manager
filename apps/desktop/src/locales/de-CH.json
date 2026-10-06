@@ -1051,6 +1051,7 @@
     "next": ""
   },
   "downloads": {
+    "alreadyQueued": "",
     "downloading": "Lad {{count}} Mod abe",
     "downloading_plural": "Lad {{count}} Mods abe",
     "percentage": "",

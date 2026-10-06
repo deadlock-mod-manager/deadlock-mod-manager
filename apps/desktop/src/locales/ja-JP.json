@@ -1051,6 +1051,7 @@
     "next": ""
   },
   "downloads": {
+    "alreadyQueued": "",
     "downloading": "{{count}}個のModをダウンロード中...",
     "downloading_plural": "{{count}}個のModをダウンロード中...",
     "percentage": "",

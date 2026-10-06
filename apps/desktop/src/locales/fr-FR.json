@@ -1051,6 +1051,7 @@
     "next": ""
   },
   "downloads": {
+    "alreadyQueued": "",
     "downloading": "Téléchargement de {{count}} mod",
     "downloading_plural": "Téléchargement de {{count}} mods",
     "percentage": "",
