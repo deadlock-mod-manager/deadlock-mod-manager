@@ -1,3 +1,5 @@
+import { analyticsClient } from "@/lib/analytics";
+import { failureOutcome } from "@/lib/analytics/client";
 import type { CrosshairConfig } from "@deadlock-mods/crosshair/types";
 import type { PublishedCrosshairDto } from "@deadlock-mods/shared";
 import { Badge } from "@deadlock-mods/ui/components/badge";
@@ -38,11 +40,25 @@ export const CrosshairCard = ({
   );
 
   const applyCrosshairMutation = useMutation({
-    mutationFn: (crosshairConfig: CrosshairConfig) => {
-      if (!crosshairsEnabled) {
-        throw new Error("Custom crosshairs are disabled");
+    mutationFn: async (crosshairConfig: CrosshairConfig) => {
+      const attempt = analyticsClient.start("crosshair_apply", {
+        entry_point: "library",
+      });
+      try {
+        if (!crosshairsEnabled) {
+          attempt.finish("blocked");
+          throw new Error("Custom crosshairs are disabled");
+        }
+        await invoke<void>("apply_crosshair_to_autoexec", {
+          config: crosshairConfig,
+        });
+        attempt.finish("completed");
+      } catch (error) {
+        attempt.finish(
+          failureOutcome(isTauriError(error) ? error.kind : undefined),
+        );
+        throw error;
       }
-      return invoke("apply_crosshair_to_autoexec", { config: crosshairConfig });
     },
     meta: {
       skipGlobalErrorHandler: true,

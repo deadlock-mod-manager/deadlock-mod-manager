@@ -69,6 +69,8 @@ export const useSkinRandomizer = () => {
       const result = await install(
         mod,
         {
+          analyticsEntryPoint: "skins",
+          analyticsOperationKind: "randomize",
           onStart: (m) => state.setModStatus(m.remoteId, ModStatus.Installing),
           onComplete: (m, installed) => {
             state.setModStatus(m.remoteId, ModStatus.Installed);

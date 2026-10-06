@@ -1,3 +1,8 @@
+import {
+  analyticsClient,
+  getModEntryPoint,
+  rememberModEntryPoint,
+} from "@/lib/analytics";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
@@ -62,6 +67,10 @@ interface DownloadResumedEvent {
 
 class DownloadManager {
   private pendingDownloads: Map<string, DownloadableMod> = new Map();
+  private downloadAttempts = new Map<
+    string,
+    ReturnType<typeof analyticsClient.start>
+  >();
   private unlistenFns: UnlistenFn[] = [];
   private onFontsFoundHandler?: (
     modId: string,
@@ -113,8 +122,10 @@ class DownloadManager {
               path: event.payload.path,
             })
             .info("Download complete");
-          mod.onComplete(event.payload.path);
+          this.downloadAttempts.get(event.payload.modId)?.finish("completed");
+          this.downloadAttempts.delete(event.payload.modId);
           this.pendingDownloads.delete(event.payload.modId);
+          mod.onComplete(event.payload.path);
         }
       },
     );
@@ -128,8 +139,16 @@ class DownloadManager {
             .withMetadata({ mod: event.payload.modId })
             .withError(new Error(event.payload.error))
             .error("Download error");
-          mod.onError(new Error(event.payload.error));
+          this.downloadAttempts
+            .get(event.payload.modId)
+            ?.finish(
+              event.payload.error === "Download cancelled"
+                ? "cancelled"
+                : "failed",
+            );
+          this.downloadAttempts.delete(event.payload.modId);
           this.pendingDownloads.delete(event.payload.modId);
+          mod.onError(new Error(event.payload.error));
         }
       },
     );
@@ -301,15 +320,33 @@ class DownloadManager {
     }
     this.unlistenFns = [];
     this.pendingDownloads.clear();
+    this.downloadAttempts.clear();
   }
 
   addToQueue(mod: DownloadableMod) {
+    const entryPoint =
+      mod.analyticsEntryPoint ?? getModEntryPoint(mod.remoteId);
+    rememberModEntryPoint(mod.remoteId, entryPoint);
+    const attempt =
+      this.downloadAttempts.get(mod.remoteId) ??
+      analyticsClient.start("mod_download", {
+        mod_id: mod.remoteId,
+        entry_point: entryPoint,
+        operation_kind: mod.analyticsOperationKind ?? "download",
+        file_count: mod.downloads?.length ?? 0,
+        content_type: mod.isMap ? "map" : mod.isAudio ? "sound" : "mod",
+      });
+    this.downloadAttempts.set(mod.remoteId, attempt);
     this.pendingDownloads.set(mod.remoteId, mod);
     this.queueDownload(mod).catch((error) => {
       logger.withError(error).error("Failed to queue download");
       toast.error(`Failed to queue download: ${error.message}`);
+      attempt.finish("failed");
+      if (this.pendingDownloads.get(mod.remoteId) === mod) {
+        this.pendingDownloads.delete(mod.remoteId);
+        this.downloadAttempts.delete(mod.remoteId);
+      }
       mod.onError(error);
-      this.pendingDownloads.delete(mod.remoteId);
     });
   }
 
@@ -348,6 +385,8 @@ class DownloadManager {
     try {
       await invoke("cancel_download", { modId });
       const mod = this.pendingDownloads.get(modId);
+      this.downloadAttempts.get(modId)?.finish("cancelled");
+      this.downloadAttempts.delete(modId);
       this.pendingDownloads.delete(modId);
       // The aborted task still emits download-error, but by then the entry is
       // gone and the callbacks would never run - so settle the waiting caller

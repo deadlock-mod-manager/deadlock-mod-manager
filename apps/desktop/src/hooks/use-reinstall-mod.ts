@@ -197,6 +197,8 @@ const redownload = (
       ...modData,
       downloads: files,
       profileFolder,
+      analyticsEntryPoint: "reinstall",
+      analyticsOperationKind: "reinstall",
       onStart: () => {
         usePersistedStore
           .getState()
@@ -272,6 +274,8 @@ const restore = async (
   await install(
     mod,
     {
+      analyticsEntryPoint: "reinstall",
+      analyticsOperationKind: "reinstall",
       onStart: (m) => {
         usePersistedStore
           .getState()

@@ -1,3 +1,4 @@
+import { analyticsClient } from "@/lib/analytics";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { useRef, useState } from "react";
@@ -34,6 +35,10 @@ const useUpdateManager = () => {
       return;
     }
 
+    const attempt = analyticsClient.start("app_update", {
+      target_version: update.version,
+      entry_point: "update_dialog",
+    });
     setIsDownloading(true);
     setDownloaded(0);
     setSize(0);
@@ -71,7 +76,11 @@ const useUpdateManager = () => {
             break;
         }
       });
+      attempt.finish("completed");
       await relaunch();
+    } catch (error) {
+      attempt.finish("failed");
+      throw error;
     } finally {
       setIsDownloading(false);
     }

@@ -28,7 +28,6 @@ import {
   type HeroConflictResolution,
 } from "@/components/mod-browsing/hero-conflict-dialog";
 import ErrorBoundary from "@/components/shared/error-boundary";
-import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { useDownload } from "@/hooks/use-download";
 import { useInstallAction } from "@/hooks/use-install-action";
 import {
@@ -43,7 +42,7 @@ import { cn } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
 interface ModButtonProps {
-  remoteMod: Pick<ModDto, "remoteId" | "name" | "downloadable"> | undefined;
+  remoteMod: ModDto | undefined;
   variant: "iconOnly" | "default";
 }
 
@@ -105,7 +104,6 @@ export const ModStatusIcon = ({
 
 const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
   const { t } = useTranslation();
-  const { analytics } = useAnalyticsContext();
   const heroConflictWarningEnabled = usePersistedStore(
     (state) => state.settings["hero-conflict-warning"]?.enabled ?? true,
   );
@@ -191,10 +189,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
       switch (localMod?.status) {
         case undefined:
           await download(await fetchAvailableFiles());
-          analytics.trackModDiscovered(
-            remoteMod?.remoteId || "unknown",
-            "browse",
-          );
+
           break;
         case ModStatus.Downloaded:
         case ModStatus.FailedToInstall: {
@@ -221,10 +216,6 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
               }
               if (resolution === "swap") {
                 await uninstall(conflictingMod, false);
-                analytics.trackModUninstalled(
-                  conflictingMod.remoteId,
-                  "user_choice",
-                );
               }
             }
           }
@@ -233,7 +224,6 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
         }
         case ModStatus.Installed:
           await uninstall(localMod, false);
-          analytics.trackModUninstalled(localMod.remoteId, "user_choice");
           break;
         case ModStatus.FailedToDownload:
           await retryDownload(fetchAvailableFiles);
@@ -261,7 +251,6 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
     askHeroConflict,
     performInstall,
     t,
-    analytics,
     remoteMod?.remoteId,
   ]);
 

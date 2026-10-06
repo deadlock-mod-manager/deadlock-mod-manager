@@ -1,3 +1,4 @@
+import { analyticsClient } from "@/lib/analytics";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { relaunch } from "@tauri-apps/plugin-process";
 import {
@@ -77,22 +78,33 @@ export const useCheckForUpdates = () => {
         throw new Error("No update available");
       }
 
-      if (isRunningAsFlatpak) {
-        const flatpakUrl = buildFlatpakReleaseUrl(native.version);
+      const attempt = analyticsClient.start("app_update", {
+        target_version: native.version,
+        entry_point: "update_button",
+      });
+      try {
+        if (isRunningAsFlatpak) {
+          const flatpakUrl = buildFlatpakReleaseUrl(native.version);
+          logger
+            .withMetadata({ version: native.version })
+            .info("Installing Flatpak update");
+          await installFlatpakUpdate(flatpakUrl);
+          attempt.finish("completed");
+          return;
+        }
+
         logger
           .withMetadata({ version: native.version })
-          .info("Installing Flatpak update");
-        await installFlatpakUpdate(flatpakUrl);
-        return;
+          .info("Installing native update");
+        toast.loading(t("about.downloadingUpdate"));
+        await native.downloadAndInstall(() => {});
+        logger.info("Native update installed, relaunching");
+        attempt.finish("completed");
+        await relaunch();
+      } catch (error) {
+        attempt.finish("failed");
+        throw error;
       }
-
-      logger
-        .withMetadata({ version: native.version })
-        .info("Installing native update");
-      toast.loading(t("about.downloadingUpdate"));
-      await native.downloadAndInstall(() => {});
-      logger.info("Native update installed, relaunching");
-      await relaunch();
     },
     onError: (err) => {
       const error = err instanceof Error ? err : new Error(String(err));

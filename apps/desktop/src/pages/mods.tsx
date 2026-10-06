@@ -1,3 +1,4 @@
+import { analyticsClient } from "@/lib/analytics";
 import {
   Pagination,
   PaginationContent,
@@ -323,6 +324,22 @@ const GetModsData = ({
     retry: 3,
   });
   const catalogPage = catalogPages.pages[0];
+  const trackedQuery = useRef<CatalogQuery | null>(null);
+  useEffect(() => {
+    if (isUpdatingResults || trackedQuery.current === deferredCatalogQuery)
+      return;
+    trackedQuery.current = deferredCatalogQuery;
+    analyticsClient.capture("catalog_results_shown", {
+      entry_point: deferredCatalogQuery.search ? "search" : "catalog",
+      content_type: contentType,
+      query_length: deferredCatalogQuery.search.length,
+      result_count: catalogPage.total,
+      has_results: catalogPage.total > 0,
+      category_filter_count: deferredCatalogQuery.categories.length,
+      hero_filter_count: deferredCatalogQuery.heroes.length,
+    });
+  }, [catalogPage.total, contentType, deferredCatalogQuery, isUpdatingResults]);
+
   const data = useMemo(
     () => catalogPages.pages.flatMap((loadedPage) => loadedPage.items),
     [catalogPages.pages],

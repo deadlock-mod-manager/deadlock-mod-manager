@@ -1,3 +1,6 @@
+import { analyticsClient } from "@/lib/analytics";
+import { failureOutcome } from "@/lib/analytics/client";
+import { isTauriError } from "@/types/tauri";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { listen } from "@tauri-apps/api/event";
 import { useCallback, useState } from "react";
@@ -168,6 +171,9 @@ export const useBatchUpdate = () => {
       .info("Starting batch mod update");
 
     const stopListening = await listenForUpdateProgress();
+    const attempt = analyticsClient.start("mod_update", {
+      mod_count: updatableMods.length,
+    });
 
     try {
       setUpdateProgress({
@@ -240,6 +246,17 @@ export const useBatchUpdate = () => {
         }
       }
 
+      attempt.finish(
+        result.failed.length === 0
+          ? "completed"
+          : result.succeeded.length > 0
+            ? "partial"
+            : "failed",
+        {
+          updated_mod_count: result.succeeded.length,
+          failed_mod_count: result.failed.length,
+        },
+      );
       if (result.failed.length > 0) {
         logger
           .withMetadata({
@@ -257,6 +274,9 @@ export const useBatchUpdate = () => {
         toast.success(t("myMods.batchUpdate.complete"));
       }
     } catch (error) {
+      attempt.finish(
+        failureOutcome(isTauriError(error) ? error.kind : undefined),
+      );
       logger.withError(error).error("Batch mod update failed");
       throw error;
     } finally {

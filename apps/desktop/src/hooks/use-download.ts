@@ -4,6 +4,12 @@ import type { z } from "zod";
 import { ModDownloadDtoSchema } from "@deadlock-mods/shared";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useState } from "react";
+import { useLocation } from "react-router";
+import { getModEntryPoint } from "@/lib/analytics";
+import {
+  modEntryPoint,
+  type AnalyticsEntryPoint,
+} from "@/lib/analytics/client";
 import { useTranslation } from "react-i18next";
 import { detectHeroForMod } from "@/hooks/use-hero-detection";
 import { downloadManager } from "@/lib/download/manager";
@@ -20,6 +26,8 @@ type QueueModDownloadOptions = {
   /** Every file the mod offers, kept so the selection can be changed later. */
   allFiles: ModDownloadItem[];
   profileFolder: string | null;
+  analyticsEntryPoint?: AnalyticsEntryPoint;
+  analyticsOperationKind?: "download" | "retry";
   onComplete?: () => void;
   onError?: (error: Error) => void;
 };
@@ -32,7 +40,14 @@ type QueueModDownloadOptions = {
 export const queueModDownload = (
   mod: ModDto,
   selectedFiles: ModDownloadItem[],
-  { allFiles, profileFolder, onComplete, onError }: QueueModDownloadOptions,
+  {
+    allFiles,
+    profileFolder,
+    onComplete,
+    onError,
+    analyticsEntryPoint,
+    analyticsOperationKind,
+  }: QueueModDownloadOptions,
 ) => {
   const { addLocalMod, setModStatus, setModProgress, setDetectedHero } =
     usePersistedStore.getState();
@@ -43,6 +58,8 @@ export const queueModDownload = (
     ...mod,
     downloads: selectedFiles,
     profileFolder,
+    analyticsEntryPoint,
+    analyticsOperationKind,
     onStart: () => {
       logger.withMetadata({ mod: mod.remoteId }).info("Starting download");
       setModStatus(mod.remoteId, ModStatus.Downloading);
@@ -80,10 +97,11 @@ export const queueModDownload = (
 };
 
 export const useDownload = (
-  mod: Pick<ModDto, "remoteId" | "name"> | undefined,
+  mod: ModDto | undefined,
   availableFiles: ModDownloadDto[],
 ) => {
   const { t } = useTranslation();
+  const { pathname } = useLocation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const setModStatus = usePersistedStore((state) => state.setModStatus);
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
@@ -101,6 +119,7 @@ export const useDownload = (
      */
     pinnedProfileFolder?: string | null,
     allFiles: ModDownloadDto[] = availableFiles,
+    operationKind: "download" | "retry" = "download",
   ) => {
     if (!mod || selectedFiles.length === 0) {
       return;
@@ -111,9 +130,17 @@ export const useDownload = (
         ? (getActiveProfile()?.folderName ?? null)
         : pinnedProfileFolder;
 
-    return queueModDownload(mod as unknown as ModDto, selectedFiles, {
+    return queueModDownload(mod, selectedFiles, {
       allFiles,
       profileFolder,
+      analyticsOperationKind: operationKind,
+      analyticsEntryPoint: getModEntryPoint(
+        mod.remoteId,
+        modEntryPoint(
+          pathname,
+          !!usePersistedStore.getState().modsFilters.searchQuery,
+        ),
+      ),
       onComplete: () => {
         setIsDialogOpen(false);
         toast.success(`${mod.name} downloaded!`);
@@ -151,7 +178,7 @@ export const useDownload = (
 
   const pauseDownload = () => {
     if (mod) {
-      downloadManager.pauseDownload(mod.remoteId).catch((err: unknown) => {
+      downloadManager.pauseDownload(mod.remoteId).catch((err) => {
         const message = err instanceof Error ? err.message : String(err);
         toast.error(`Could not pause download: ${message}`);
       });
@@ -160,7 +187,7 @@ export const useDownload = (
 
   const resumeDownload = () => {
     if (mod) {
-      downloadManager.resumeDownload(mod.remoteId).catch((err: unknown) => {
+      downloadManager.resumeDownload(mod.remoteId).catch((err) => {
         const message = err instanceof Error ? err.message : String(err);
         toast.error(`Could not resume download: ${message}`);
       });
@@ -215,7 +242,12 @@ export const useDownload = (
           profileFolder,
         });
       }
-      await downloadSelectedFiles(retryFiles, profileFolder);
+      await downloadSelectedFiles(
+        retryFiles,
+        profileFolder,
+        availableFiles,
+        "retry",
+      );
     } catch (err) {
       const message = getErrorMessage(err);
       logger
