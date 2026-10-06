@@ -15,6 +15,7 @@ import { prepareProfileWorld } from "./profile-fixtures";
 import { prepareConflictWorld } from "./conflict-fixtures";
 import { prepareFilesystemWorld } from "./filesystem-fixtures";
 import { prepareManifestRepairWorld } from "./manifest-repair-fixtures";
+import { prepareMissingVpkWorld } from "./missing-vpk-fixtures";
 import { assertCrashEvidence } from "./filesystem-oracle";
 import { assertNormalExit, assertInterruptedExit } from "./phase-evidence";
 import { writeSyntheticVpk } from "./vpk";
@@ -130,6 +131,14 @@ const manifestRepair: Definition = {
   phases: ["repair", "restart-repair"],
   prepare: async (world) => prepareManifestRepairWorld(world),
 };
+const missingVpks: Definition = {
+  ...defaults,
+  family: "missing-vpks",
+  spec: "missing-vpks",
+  phases: ["detect-offline", "restart-offline"],
+  routes: profileRoutes,
+  prepare: async (world) => prepareMissingVpkWorld(world),
+};
 const catalog: Definition = {
   ...defaults,
   family: "gamebanana",
@@ -232,6 +241,11 @@ export const scenarios = {
   "filesystem-crash-placed": crash,
   "filesystem-crash-committed": crash,
   "filesystem-manifest-repair": manifestRepair,
+  "missing-vpks-offline": missingVpks,
+  "missing-vpks-live": {
+    ...missingVpks,
+    phases: ["detect-live", "restart-live"],
+  },
   "gamebanana-single": catalog,
   "gamebanana-multifile": catalog,
   "gamebanana-variants": catalog,
