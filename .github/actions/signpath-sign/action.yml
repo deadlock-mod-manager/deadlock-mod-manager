@@ -68,7 +68,7 @@ runs:
         if-no-files-found: error
 
     - name: Submit to SignPath
-      uses: signpath/github-action-submit-signing-request@v3
+      uses: signpath/github-action-submit-signing-request@v2
       with:
         api-token: ${{ inputs.signpath-api-token }}
         organization-id: ${{ inputs.signpath-organization-id }}
