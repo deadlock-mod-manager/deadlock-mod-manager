@@ -319,7 +319,7 @@ jobs:
         uses: actions/checkout@v7.0.1
 
       - name: Download Windows signed artifact
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@v8.0.1
         with:
           name: windows-signed
           path: release-artifacts/windows
