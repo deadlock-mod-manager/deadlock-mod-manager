@@ -20,6 +20,7 @@ import { formatDistanceToNow } from "date-fns";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { DeadlockApiCredit } from "@/components/stats/deadlock-api-credit";
+import { StatsSettings } from "@/components/stats/stats-settings";
 import type { SteamAccount } from "@/hooks/use-steam-accounts";
 import {
   type PlayerRank,
@@ -175,6 +176,8 @@ export const StatsHeader = ({
             {canRefresh ? t("stats.refreshHint") : t("stats.refreshCooldown")}
           </TooltipContent>
         </Tooltip>
+
+        <StatsSettings />
       </div>
     </div>
   );

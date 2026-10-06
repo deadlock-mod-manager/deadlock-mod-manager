@@ -277,6 +277,10 @@
       "priorityHint": "Deadlock API patrons get prioritized fetching for their Steam account: faster updates, full match history and accurate ranks.",
       "priorityCta": "Learn more"
     },
+    "settings": {
+      "title": "Stats settings",
+      "moreOptions": "More match sharing options"
+    },
     "matchSyncHint": {
       "description": "Match sharing is off. Turning it on lets this app upload the matches you play, so Deadlock API can show them here instead of waiting on somebody else to submit them.",
       "missing_one": "{{count}} match from this session is missing here — Deadlock API needs up to a day to ingest it. Match sharing can pull it from Steam in the meantime.",
