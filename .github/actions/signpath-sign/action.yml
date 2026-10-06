@@ -82,6 +82,7 @@ runs:
       shell: pwsh
       env:
         SIGNING_POLICY: ${{ inputs.signpath-signing-policy }}
+        TEST_CERTIFICATE_THUMBPRINT: "62136E74626939AAD7B24B7C36EFFF7CA0FDC1D8"
       run: |
         $unsignedFiles = Get-ChildItem -LiteralPath ./signpath-staging -Filter *.exe
         foreach ($file in $unsignedFiles) {
@@ -94,9 +95,28 @@ runs:
             Write-Host "Issuer: $($signature.SignerCertificate.Issuer)"
             Write-Host "Thumbprint: $($signature.SignerCertificate.Thumbprint)"
           }
-          $testCertificate = $env:SIGNING_POLICY -eq 'test-signing' -and $signature.Status -eq 'NotTrusted' -and $null -ne $signature.SignerCertificate
-          if ($signature.Status -ne 'Valid' -and -not $testCertificate) {
-            throw "Missing or invalid Authenticode signature for $($file.Name): $($signature.Status)"
+          if ($env:SIGNING_POLICY -eq 'test-signing' -and $null -ne $signature.SignerCertificate -and $signature.SignerCertificate.Thumbprint -eq $env:TEST_CERTIFICATE_THUMBPRINT) {
+            $certificate = $signature.SignerCertificate
+            $alreadyTrusted = Test-Path "Cert:\CurrentUser\Root\$($certificate.Thumbprint)"
+            $certificateAdded = $false
+            $store = [System.Security.Cryptography.X509Certificates.X509Store]::new('Root', 'CurrentUser')
+            try {
+              $store.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
+              if (-not $alreadyTrusted) {
+                $store.Add($certificate)
+                $certificateAdded = $true
+              }
+              $signature = Get-AuthenticodeSignature -LiteralPath $signedPath
+              Write-Host "Verification with pinned test certificate: $($signature.Status): $($signature.StatusMessage)"
+            } finally {
+              if ($certificateAdded) {
+                $store.Remove($certificate)
+              }
+              $store.Close()
+            }
+          }
+          if ($signature.Status -ne 'Valid') {
+            throw "Missing or invalid Authenticode signature for $($file.Name): $($signature.Status): $($signature.StatusMessage)"
           }
         }
 
