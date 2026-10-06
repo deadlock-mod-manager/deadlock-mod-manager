@@ -280,8 +280,7 @@
     "matchSyncHint": {
       "description": "",
       "missing_one": "",
-      "missing_other": "",
-      "enable": ""
+      "missing_other": ""
     },
     "refresh": "",
     "refreshHint": "",

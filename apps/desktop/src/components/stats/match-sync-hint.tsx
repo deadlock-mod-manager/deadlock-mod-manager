@@ -2,7 +2,6 @@ import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Clock, X } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
 
 interface MatchSyncHintProps {
   /**
@@ -18,42 +17,31 @@ interface MatchSyncHintProps {
  * delay and only sees matches somebody uploaded; the app can close both gaps
  * from Valve's Game Coordinator, but that uses the local Steam session, which
  * lives behind the match-sync consent - so it has to be asked for once instead
- * of happening quietly.
+ * of happening quietly. It only explains; the header switch right above is the
+ * control, so a second "turn on" button would just compete with it.
  */
 export const MatchSyncHint = ({
   missingCount,
   onDismiss,
 }: MatchSyncHintProps) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
   return (
-    <Alert className='flex flex-wrap items-center gap-3'>
+    <Alert className='flex items-center gap-3 py-2.5'>
       <Clock className='h-4 w-4 shrink-0' />
-      <AlertDescription className='min-w-[16rem] flex-1'>
+      <AlertDescription className='min-w-0 flex-1'>
         {missingCount > 0
           ? t("stats.matchSyncHint.missing", { count: missingCount })
           : t("stats.matchSyncHint.description")}
       </AlertDescription>
-      <div className='flex shrink-0 items-center gap-2'>
-        <Button
-          onClick={() =>
-            // Match sync lives in the privacy tab, next to the consent it needs.
-            navigate("/settings", { state: { activeTab: "privacy" } })
-          }
-          size='sm'
-          variant='outline'>
-          {t("stats.matchSyncHint.enable")}
-        </Button>
-        <Button
-          aria-label={t("common.dismiss")}
-          className='h-7 w-7'
-          onClick={onDismiss}
-          size='icon'
-          variant='ghost'>
-          <X className='h-4 w-4' />
-        </Button>
-      </div>
+      <Button
+        aria-label={t("common.dismiss")}
+        className='h-7 w-7 shrink-0'
+        onClick={onDismiss}
+        size='icon'
+        variant='ghost'>
+        <X className='h-4 w-4' />
+      </Button>
     </Alert>
   );
 };
