@@ -3,6 +3,12 @@ import type { LocalizationOverlayAnalysis } from "@/components/my-mods/localizat
 import { compatibilityResolutions } from "./compatibility";
 
 const analysis: LocalizationOverlayAnalysis = {
+  baselines: [],
+  reviewFingerprint: "test",
+  inputWarnings: [],
+  compatibilityModIds: [],
+  excludedModIds: [],
+  protectedResources: [],
   scannedMods: 2,
   scannedVpks: 3,
   localizationFiles: 1,
@@ -49,6 +55,8 @@ const analysis: LocalizationOverlayAnalysis = {
   parseWarnings: [],
   assetRepairs: [],
   assetWarnings: [],
+  dataRepairs: [],
+  dataWarnings: [],
 };
 
 describe("compatibility review choices", () => {

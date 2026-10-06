@@ -1,0 +1,740 @@
+{
+  "checkedAt": "2026-10-05T23:10:28.049076+00:00",
+  "gameVersion": "ClientVersion=6753\nServerVersion=6753\nProductName=citadel\nappID=1422450\nServerAppID=1422460\nToolsAppID=211\nSourceRevision=11087340\nVersionDate=Oct 05 2026\nVersionTime=15:40:16\n",
+  "runtime": "partially-tested",
+  "independentExportsDecoded": true,
+  "sourceVpksUnchanged": true,
+  "cases": [
+    {
+      "analysis": {
+        "assetRepairs": [],
+        "assetWarnings": [
+          {
+            "detail": "Authored shader feature differs: m_intParams.F_ALPHA_TEST; current reference does not enable the same value. This may be intentional; its texture requirements are unverified",
+            "filePath": "models/heroes_staging/synth/materials/pocket_body.vmat_c",
+            "kind": "materialInterface",
+            "modId": "559174",
+            "sourceVpk": "pak22_dir.vpk"
+          },
+          {
+            "detail": "Authored shader feature differs: m_intParams.F_MORPH_SUPPORTED; current reference does not enable the same value. This may be intentional; its texture requirements are unverified",
+            "filePath": "models/heroes_staging/synth/materials/pocket_body_ethereal.vmat_c",
+            "kind": "materialInterface",
+            "modId": "559174",
+            "sourceVpk": "pak22_dir.vpk"
+          },
+          {
+            "detail": "Authored shader feature differs: m_intParams.F_SELF_ILLUM; current reference does not enable the same value. This may be intentional; its texture requirements are unverified",
+            "filePath": "models/heroes_staging/synth/materials/pocket_suitcase.vmat_c",
+            "kind": "materialInterface",
+            "modId": "559174",
+            "sourceVpk": "pak22_dir.vpk"
+          },
+          {
+            "detail": "models/heroes_staging/synth/synth.vanmgrph",
+            "filePath": "models/heroes_staging/synth/synth.vmdl_c",
+            "kind": "missingResource",
+            "modId": "559174",
+            "sourceVpk": "pak22_dir.vpk"
+          },
+          {
+            "detail": "CitadelCameraSettings_t",
+            "filePath": "models/heroes_staging/synth/synth.vmdl_c",
+            "kind": "missingCameraInterface",
+            "modId": "559174",
+            "sourceVpk": "pak22_dir.vpk"
+          },
+          {
+            "detail": "AttachmentCameraData",
+            "filePath": "models/heroes_staging/synth/synth.vmdl_c",
+            "kind": "missingCameraInterface",
+            "modId": "559174",
+            "sourceVpk": "pak22_dir.vpk"
+          },
+          {
+            "detail": "m_vecNmSkeletonRefs",
+            "filePath": "models/heroes_staging/synth/synth.vmdl_c",
+            "kind": "missingAnimationInterface",
+            "modId": "559174",
+            "sourceVpk": "pak22_dir.vpk"
+          },
+          {
+            "detail": "models/heroes_staging/synth/synth.vanmgrph",
+            "filePath": "models/heroes_staging/synth/synth_backup.vmdl_c",
+            "kind": "missingResource",
+            "modId": "559174",
+            "sourceVpk": "pak22_dir.vpk"
+          }
+        ],
+        "baselines": [],
+        "changedRows": 0,
+        "changedTokens": 0,
+        "compatibilityModIds": ["559174"],
+        "compiledDataConflicts": [],
+        "compiledDataFiles": 0,
+        "conflicts": [],
+        "dataRepairs": [],
+        "dataWarnings": [],
+        "excludedModIds": [],
+        "heroIdReassignments": [],
+        "ignoredHistoricalTokens": 0,
+        "ignoredVanillaRows": 0,
+        "ignoredVanillaTokens": 0,
+        "inputWarnings": [],
+        "localizationFiles": 0,
+        "newRows": 0,
+        "newTokens": 0,
+        "parseWarnings": [],
+        "protectedResources": [],
+        "reviewFingerprint": "",
+        "scannedMods": 1,
+        "scannedVpks": 1,
+        "snapshotWarnings": []
+      },
+      "categories": {
+        "txt": 1,
+        "vmat_c": 5,
+        "vmdl_c": 2,
+        "vtex_c": 23
+      },
+      "elapsedMs": 1973,
+      "error": null,
+      "id": 559174,
+      "modelUsage": [
+        {
+          "currentHeroDefinitions": [],
+          "currentReferenceExists": true,
+          "path": "models/heroes_staging/synth/synth.vmdl_c"
+        },
+        {
+          "currentHeroDefinitions": [],
+          "currentReferenceExists": false,
+          "path": "models/heroes_staging/synth/synth_backup.vmdl_c"
+        }
+      ],
+      "name": "GOLD POCKET",
+      "packedFiles": 0,
+      "runtime": "passed-user-reported",
+      "sha256": "b78f99675ad4f357ef4a3571a31cd0824533a44bda533bfdd27e377eff5e8e3c",
+      "url": "https://gamebanana.com/mods/559174",
+      "provenance": {
+        "siteMarkedObsolete": true,
+        "authorLabelledOutdated": false,
+        "fileUploadedAt": "2024-11-29T18:46:38+00:00",
+        "fileId": 1332756,
+        "variant": "pak22_dir.vpk",
+        "checksumsVerified": true
+      },
+      "hudStyleCoverage": {
+        "total": 0,
+        "presentInCurrentGame": [],
+        "missingFromCurrentGame": [],
+        "genericStyleRepairSupported": false,
+        "runtime": "not-tested"
+      },
+      "runtimeEvidence": {
+        "source": "user in-game retest with generated compatibility overlay",
+        "response": "His abilities and movement look fine, camera is fine in ult and priefcase",
+        "scope": "Gold appearance, movement, abilities, ultimate camera, and briefcase camera confirmed by user in-game",
+        "priorResult": "He is not gold",
+        "appearanceResponse": "He is indeed gold now",
+        "confirmedAt": "2026-10-06T00:06:58.756731+00:00",
+        "checks": {
+          "appearance": "passed-user-reported",
+          "movement": "passed-user-reported",
+          "abilities": "passed-user-reported",
+          "ultimateCamera": "passed-user-reported",
+          "briefcaseCamera": "passed-user-reported"
+        }
+      },
+      "appearanceDependencyEvidence": {
+        "heroDefinition": "hero_synth",
+        "currentModel": "models/heroes_wip/pocket/pocket.vmdl_c",
+        "modModel": "models/heroes_staging/synth/synth.vmdl_c",
+        "reachableAppearanceAssets": 46,
+        "overriddenReachableAssets": [],
+        "method": "Read-only traversal of compiled RERL model, mesh, material and texture references from the current heroes.vdata_c model binding",
+        "finding": "Mod writes target retained legacy assets outside the current hero appearance chain",
+        "repairStatus": "generated by shared migration; appearance, movement, abilities, and cameras confirmed by user in-game"
+      },
+      "repairIteration": {
+        "mechanism": "generic historical hero-model binding migration",
+        "packedFiles": 1,
+        "repairs": [
+          {
+            "filePath": "models/heroes_wip/pocket/pocket.vmdl_c",
+            "kind": "animationRigRebase",
+            "modId": "559174",
+            "sourceVpk": "pak22_dir.vpk"
+          },
+          {
+            "filePath": "models/heroes_wip/pocket/pocket.vmdl_c",
+            "kind": "cameraInterface",
+            "modId": "559174",
+            "sourceVpk": "pak22_dir.vpk"
+          },
+          {
+            "filePath": "models/heroes_wip/pocket/pocket.vmdl_c",
+            "kind": "modelRelocation",
+            "modId": "559174",
+            "sourceVpk": "pak22_dir.vpk"
+          }
+        ],
+        "independentCompiledDecode": "passed",
+        "authoredMaterialBindings": "preserved",
+        "originalSource": "unchanged",
+        "runtime": "passed-user-reported",
+        "priorUserResult": "He is not gold"
+      }
+    },
+    {
+      "analysis": {
+        "assetRepairs": [
+          {
+            "filePath": "models/heroes_staging/gigawatt_prisoner/gigawatt_prisoner.vmdl_c",
+            "kind": "animationRigRebase",
+            "modId": "635618",
+            "sourceVpk": "pak77_dir.vpk"
+          },
+          {
+            "filePath": "models/heroes_staging/gigawatt_prisoner/gigawatt_prisoner.vmdl_c",
+            "kind": "cameraInterface",
+            "modId": "635618",
+            "sourceVpk": "pak77_dir.vpk"
+          }
+        ],
+        "assetWarnings": [
+          {
+            "detail": "materials/default/default_tga_5d8dbea7.vtex",
+            "filePath": "models/heroes_staging/gigawatt_prisoner/materials/scarotext.vmat_c",
+            "kind": "missingResource",
+            "modId": "635618",
+            "sourceVpk": "pak77_dir.vpk"
+          },
+          {
+            "detail": "models/heroes_staging/gigawatt_prisoner/gigawatt_prisoner.vanmgrph",
+            "filePath": "models/heroes_staging/gigawatt_prisoner/gigawatt_prisoner_backup.vmdl_c",
+            "kind": "missingResource",
+            "modId": "635618",
+            "sourceVpk": "pak77_dir.vpk"
+          }
+        ],
+        "baselines": [],
+        "changedRows": 0,
+        "changedTokens": 0,
+        "compatibilityModIds": ["635618"],
+        "compiledDataConflicts": [],
+        "compiledDataFiles": 0,
+        "conflicts": [],
+        "dataRepairs": [],
+        "dataWarnings": [],
+        "excludedModIds": [],
+        "heroIdReassignments": [],
+        "ignoredHistoricalTokens": 0,
+        "ignoredVanillaRows": 0,
+        "ignoredVanillaTokens": 0,
+        "inputWarnings": [],
+        "localizationFiles": 0,
+        "newRows": 0,
+        "newTokens": 0,
+        "parseWarnings": [],
+        "protectedResources": [],
+        "reviewFingerprint": "",
+        "scannedMods": 1,
+        "scannedVpks": 1,
+        "snapshotWarnings": []
+      },
+      "categories": {
+        "vmat_c": 2,
+        "vmdl_c": 2,
+        "vpcf_c": 131,
+        "vtex_c": 12
+      },
+      "elapsedMs": 1955,
+      "error": null,
+      "id": 635618,
+      "modelUsage": [
+        {
+          "currentHeroDefinitions": [],
+          "currentReferenceExists": false,
+          "path": "models/heroes_staging/gigawatt_prisoner/gigawatt_prisoner_backup.vmdl_c"
+        },
+        {
+          "currentHeroDefinitions": ["hero_gigawatt"],
+          "currentReferenceExists": true,
+          "path": "models/heroes_staging/gigawatt_prisoner/gigawatt_prisoner.vmdl_c"
+        }
+      ],
+      "name": "Scaramouche the Merciless as Seven",
+      "packedFiles": 1,
+      "runtime": "passed-user-reported",
+      "sha256": "211b13eb3625173944c9f802c58666b01f0f67d7637ee91edc7a9d9e35251b0e",
+      "url": "https://gamebanana.com/mods/635618",
+      "provenance": {
+        "siteMarkedObsolete": true,
+        "authorLabelledOutdated": false,
+        "fileUploadedAt": "2025-11-24T15:47:55+00:00",
+        "fileId": 1567584,
+        "variant": "pak77_dir.vpk",
+        "checksumsVerified": true
+      },
+      "hudStyleCoverage": {
+        "total": 0,
+        "presentInCurrentGame": [],
+        "missingFromCurrentGame": [],
+        "genericStyleRepairSupported": false,
+        "runtime": "not-tested"
+      },
+      "runtimeEvidence": {
+        "source": "user in-game test",
+        "response": "Looks good.",
+        "scope": "Scaramouche Seven with generated animation/camera overlay; individual checks not independently observed"
+      }
+    },
+    {
+      "analysis": {
+        "assetRepairs": [],
+        "assetWarnings": [
+          {
+            "detail": "62 required sampled bones are absent; coordinated deformation-rig repair could not be proven: attachWorld, b_hair_flight_0, b_hair_flight_0_L, b_hair_flight_0_LF, b_hair_flight_0_R, b_hair_flight_0_RF, b_hair_flight_1, b_hair_flight_1_L, b_hair_flight_1_LF, b_hair_flight_1_R, b_hair_flight_1_RF, b_hair_flight_2, b_hair_flight_2_L, b_hair_flight_2_LF, b_hair_flight_2_R, b_hair_flight_2_RF, b_hair_flight_3, b_hair_flight_3_L, b_hair_flight_3_LF, b_hair_flight_3_R, b_hair_flight_3_RF, b_hair_flight_4, b_hair_flight_4_L, b_hair_flight_4_R, b_hair_flight_5, b_hair_flight_5_L, b_hair_flight_5_R, b_hair_flight_6, b_hair_flight_7, b_hair_flight_8, b_hair_flight_9, finger_index_0_L, finger_index_0_R, finger_index_1_L, finger_index_1_R, finger_index_2_L, finger_index_2_R, finger_pinky_0_L, finger_pinky_0_R, finger_pinky_1_L, finger_pinky_1_R, finger_pinky_2_L, finger_pinky_2_R, finger_pinky_meta_L, finger_pinky_meta_R, finger_ring_0_L, finger_ring_0_R, finger_ring_1_L, finger_ring_1_R, finger_ring_2_L, finger_ring_2_R, finger_ring_meta_L, finger_ring_meta_R, finger_thumb_1_L, finger_thumb_1_R, finger_thumb_2_L, finger_thumb_2_R, leg_L_IKTARGET, leg_R_IKTARGET, weaponHand_L, weaponHand_R, weapon_ik_target. Coordinated deformation-rig repair declined during sampled hierarchy and authored bind-frame preservation",
+            "filePath": "models/heroes_staging/hornet_v3/hornet.vmdl_c",
+            "kind": "animationMapping",
+            "modId": "595391",
+            "sourceVpk": "pak01_dir.vpk"
+          },
+          {
+            "detail": "models/heroes_staging/hornet_v3/hornet.vanmgrph",
+            "filePath": "models/heroes_staging/hornet_v3/hornet.vmdl_c",
+            "kind": "missingResource",
+            "modId": "595391",
+            "sourceVpk": "pak01_dir.vpk"
+          },
+          {
+            "detail": "AttachmentCameraData",
+            "filePath": "models/heroes_staging/hornet_v3/hornet.vmdl_c",
+            "kind": "missingCameraInterface",
+            "modId": "595391",
+            "sourceVpk": "pak01_dir.vpk"
+          },
+          {
+            "detail": "m_animGraph2Refs / m_vecNmSkeletonRefs",
+            "filePath": "models/heroes_staging/hornet_v3/hornet.vmdl_c",
+            "kind": "missingAnimationInterface",
+            "modId": "595391",
+            "sourceVpk": "pak01_dir.vpk"
+          },
+          {
+            "detail": "models/heroes_staging/hornet_v3/hornet.vanmgrph",
+            "filePath": "models/heroes_staging/hornet_v3/hornet_backup.vmdl_c",
+            "kind": "missingResource",
+            "modId": "595391",
+            "sourceVpk": "pak01_dir.vpk"
+          }
+        ],
+        "baselines": [],
+        "changedRows": 0,
+        "changedTokens": 0,
+        "compatibilityModIds": ["595391"],
+        "compiledDataConflicts": [],
+        "compiledDataFiles": 0,
+        "conflicts": [],
+        "dataRepairs": [],
+        "dataWarnings": [],
+        "excludedModIds": [],
+        "heroIdReassignments": [],
+        "ignoredHistoricalTokens": 0,
+        "ignoredVanillaRows": 0,
+        "ignoredVanillaTokens": 0,
+        "inputWarnings": [],
+        "localizationFiles": 0,
+        "newRows": 0,
+        "newTokens": 0,
+        "parseWarnings": [],
+        "protectedResources": [],
+        "reviewFingerprint": "",
+        "scannedMods": 1,
+        "scannedVpks": 1,
+        "snapshotWarnings": []
+      },
+      "categories": {
+        "txt": 1,
+        "vmat_c": 11,
+        "vmdl_c": 2,
+        "vtex_c": 73
+      },
+      "elapsedMs": 1313,
+      "error": null,
+      "id": 595391,
+      "modelUsage": [
+        {
+          "currentHeroDefinitions": ["hero_hornet"],
+          "currentReferenceExists": true,
+          "path": "models/heroes_staging/hornet_v3/hornet.vmdl_c"
+        },
+        {
+          "currentHeroDefinitions": [],
+          "currentReferenceExists": false,
+          "path": "models/heroes_staging/hornet_v3/hornet_backup.vmdl_c"
+        }
+      ],
+      "name": "Nightsisters Merrin - Vindicta [v3]",
+      "packedFiles": 0,
+      "runtime": "failed-user-reported",
+      "sha256": "5ecbb90968e295ef04b1350f17b7ca40dbd51e973264dfdf517ca52c71cd4f6f",
+      "url": "https://gamebanana.com/mods/595391",
+      "provenance": {
+        "siteMarkedObsolete": true,
+        "authorLabelledOutdated": false,
+        "fileUploadedAt": "2025-08-23T16:46:18+00:00",
+        "fileId": 1503106,
+        "variant": "merrin_C/+cape_cloth/pak01_dir.vpk",
+        "checksumsVerified": true
+      },
+      "hudStyleCoverage": {
+        "total": 0,
+        "presentInCurrentGame": [],
+        "missingFromCurrentGame": [],
+        "genericStyleRepairSupported": false,
+        "runtime": "not-tested"
+      },
+      "runtimeEvidence": {
+        "source": "user in-game test of isolated original Merrin with compatibility selected, repair declined",
+        "response": "Ok the model loads but the camera is broken and there is no animation...model slides around and the camera is stuck in place.",
+        "scope": "Appearance loads; animations absent, model slides, camera stuck",
+        "reportedAt": "2026-10-06T00:29:34.232452+00:00"
+      },
+      "repairIteration": {
+        "mechanism": "shared unused NM branch proof and sampled camera dependency composition",
+        "packedFiles": 1,
+        "repairs": [
+          {
+            "filePath": "models/heroes_staging/hornet_v3/hornet.vmdl_c",
+            "kind": "animationRigRebase",
+            "modId": "595391",
+            "sourceVpk": "pak01_dir.vpk"
+          },
+          {
+            "filePath": "models/heroes_staging/hornet_v3/hornet.vmdl_c",
+            "kind": "cameraInterface",
+            "modId": "595391",
+            "sourceVpk": "pak01_dir.vpk"
+          }
+        ],
+        "warnings": [
+          {
+            "detail": "models/heroes_staging/hornet_v3/hornet.vanmgrph",
+            "filePath": "models/heroes_staging/hornet_v3/hornet_backup.vmdl_c",
+            "kind": "missingResource",
+            "modId": "595391",
+            "sourceVpk": "pak01_dir.vpk"
+          }
+        ],
+        "independentCompiledDecode": "passed: model DATA and all embedded MDAT blocks",
+        "authoredSkinningAttachmentsAndHitboxes": "preserved",
+        "originalSource": "unchanged",
+        "runtime": "not-tested",
+        "priorUserResult": "Ok the model loads but the camera is broken and there is no animation...model slides around and the camera is stuck in place.",
+        "repairRevision": 25
+      }
+    },
+    {
+      "analysis": {
+        "assetRepairs": [],
+        "assetWarnings": [],
+        "baselines": [],
+        "changedRows": 0,
+        "changedTokens": 0,
+        "compatibilityModIds": ["583600"],
+        "compiledDataConflicts": [],
+        "compiledDataFiles": 0,
+        "conflicts": [],
+        "dataRepairs": [],
+        "dataWarnings": [],
+        "excludedModIds": [],
+        "heroIdReassignments": [],
+        "ignoredHistoricalTokens": 0,
+        "ignoredVanillaRows": 0,
+        "ignoredVanillaTokens": 0,
+        "inputWarnings": [],
+        "localizationFiles": 0,
+        "newRows": 0,
+        "newTokens": 0,
+        "parseWarnings": [],
+        "protectedResources": [],
+        "reviewFingerprint": "",
+        "scannedMods": 1,
+        "scannedVpks": 1,
+        "snapshotWarnings": []
+      },
+      "categories": {
+        "txt": 1,
+        "vcss_c": 10
+      },
+      "elapsedMs": 1474,
+      "error": null,
+      "id": 583600,
+      "modelUsage": [],
+      "name": "Minimalist Health Bar [outdated]",
+      "packedFiles": 0,
+      "runtime": "not-tested",
+      "sha256": "c216ca36030fa88f70565e2f04c62737f1e5f7da218f551476c5ecc053bdf2c6",
+      "url": "https://gamebanana.com/mods/583600",
+      "provenance": {
+        "siteMarkedObsolete": false,
+        "authorLabelledOutdated": true,
+        "fileUploadedAt": "2025-08-04T18:55:48+00:00",
+        "fileId": 1490898,
+        "variant": "minimalist health bar v1.1.vpk",
+        "checksumsVerified": true
+      },
+      "hudStyleCoverage": {
+        "total": 10,
+        "presentInCurrentGame": [
+          "panorama/styles/citadel_hud_player_level.vcss_c",
+          "panorama/styles/citadel_status_effect.vcss_c",
+          "panorama/styles/hud.vcss_c",
+          "panorama/styles/hud_abilities.vcss_c",
+          "panorama/styles/hud_ability_icon.vcss_c",
+          "panorama/styles/hud_ability_resource.vcss_c",
+          "panorama/styles/hud_gold_and_ap_container.vcss_c",
+          "panorama/styles/hud_health.vcss_c",
+          "panorama/styles/hud_health_container.vcss_c",
+          "panorama/styles/unit_status_icons.vcss_c"
+        ],
+        "missingFromCurrentGame": [],
+        "genericStyleRepairSupported": false,
+        "runtime": "not-tested"
+      }
+    },
+    {
+      "analysis": {
+        "assetRepairs": [],
+        "assetWarnings": [],
+        "baselines": [],
+        "changedRows": 0,
+        "changedTokens": 0,
+        "compatibilityModIds": ["583588"],
+        "compiledDataConflicts": [],
+        "compiledDataFiles": 0,
+        "conflicts": [],
+        "dataRepairs": [],
+        "dataWarnings": [],
+        "excludedModIds": [],
+        "heroIdReassignments": [],
+        "ignoredHistoricalTokens": 0,
+        "ignoredVanillaRows": 0,
+        "ignoredVanillaTokens": 0,
+        "inputWarnings": [],
+        "localizationFiles": 0,
+        "newRows": 0,
+        "newTokens": 0,
+        "parseWarnings": [],
+        "protectedResources": [],
+        "reviewFingerprint": "",
+        "scannedMods": 1,
+        "scannedVpks": 1,
+        "snapshotWarnings": []
+      },
+      "categories": {
+        "vcss_c": 2,
+        "vtex_c": 4
+      },
+      "elapsedMs": 1422,
+      "error": null,
+      "id": 583588,
+      "modelUsage": [],
+      "name": "Square Top Bar [outdated]",
+      "packedFiles": 0,
+      "runtime": "not-tested",
+      "sha256": "94c03a3ab84d8f2d8ae5a12787b7c7c26a7eb0e7a7be04ce61c0d98cf59172ec",
+      "url": "https://gamebanana.com/mods/583588",
+      "provenance": {
+        "siteMarkedObsolete": false,
+        "authorLabelledOutdated": true,
+        "fileUploadedAt": "2025-05-13T18:45:15+00:00",
+        "fileId": 1438740,
+        "variant": "square_top_bar_v05.vpk",
+        "checksumsVerified": true
+      },
+      "hudStyleCoverage": {
+        "total": 2,
+        "presentInCurrentGame": [
+          "panorama/styles/citadel_hud_top_bar.vcss_c",
+          "panorama/styles/objectives_map.vcss_c"
+        ],
+        "missingFromCurrentGame": [],
+        "genericStyleRepairSupported": false,
+        "runtime": "not-tested"
+      }
+    }
+  ],
+  "mixed": [
+    {
+      "selection": "none",
+      "reversed": false,
+      "enabledMods": 15,
+      "packedFiles": 0,
+      "elapsedMs": 2231,
+      "runtime": "not-tested",
+      "assetRepairs": 0,
+      "assetWarnings": 0,
+      "protectedResources": 0
+    },
+    {
+      "selection": "none",
+      "reversed": true,
+      "enabledMods": 15,
+      "packedFiles": 0,
+      "elapsedMs": 842,
+      "runtime": "not-tested",
+      "assetRepairs": 0,
+      "assetWarnings": 0,
+      "protectedResources": 0
+    },
+    {
+      "selection": "all",
+      "reversed": false,
+      "enabledMods": 15,
+      "packedFiles": 16,
+      "elapsedMs": 9620,
+      "runtime": "not-tested",
+      "assetRepairs": 27,
+      "assetWarnings": 77,
+      "protectedResources": 0
+    },
+    {
+      "selection": "all",
+      "reversed": true,
+      "enabledMods": 15,
+      "packedFiles": 16,
+      "elapsedMs": 9548,
+      "runtime": "not-tested",
+      "assetRepairs": 27,
+      "assetWarnings": 77,
+      "protectedResources": 0
+    },
+    {
+      "selection": "alternating",
+      "reversed": false,
+      "enabledMods": 15,
+      "packedFiles": 7,
+      "elapsedMs": 5059,
+      "runtime": "not-tested",
+      "assetRepairs": 15,
+      "assetWarnings": 43,
+      "protectedResources": 0
+    },
+    {
+      "selection": "alternating",
+      "reversed": true,
+      "enabledMods": 15,
+      "packedFiles": 7,
+      "elapsedMs": 5042,
+      "runtime": "not-tested",
+      "assetRepairs": 15,
+      "assetWarnings": 43,
+      "protectedResources": 0
+    },
+    {
+      "selection": "toon_only",
+      "reversed": false,
+      "enabledMods": 15,
+      "packedFiles": 1,
+      "elapsedMs": 1151,
+      "runtime": "not-tested",
+      "assetRepairs": 1,
+      "assetWarnings": 0,
+      "protectedResources": 0
+    },
+    {
+      "selection": "toon_only",
+      "reversed": true,
+      "enabledMods": 15,
+      "packedFiles": 1,
+      "elapsedMs": 1161,
+      "runtime": "not-tested",
+      "assetRepairs": 1,
+      "assetWarnings": 0,
+      "protectedResources": 0
+    },
+    {
+      "selection": "except_toon",
+      "reversed": false,
+      "enabledMods": 15,
+      "packedFiles": 15,
+      "elapsedMs": 9432,
+      "runtime": "not-tested",
+      "assetRepairs": 26,
+      "assetWarnings": 77,
+      "protectedResources": 0
+    },
+    {
+      "selection": "except_toon",
+      "reversed": true,
+      "enabledMods": 15,
+      "packedFiles": 15,
+      "elapsedMs": 9424,
+      "runtime": "not-tested",
+      "assetRepairs": 26,
+      "assetWarnings": 77,
+      "protectedResources": 0
+    }
+  ],
+  "checks": {
+    "isolatedAnalysisExport": "passed",
+    "independentCompiledDecode": "passed",
+    "originalSourceHashes": "unchanged",
+    "mixedSelectionsAndBothOrders": "passed with shared unused NM branch and sampled camera proof",
+    "mixedScenarios": 10,
+    "mixedEnabledMods": 15,
+    "inGame": "Scaramouche and Gold Pocket passed-user-reported; Merrin failed-user-reported; 2 untested",
+    "modelMigrationRegression": "passed",
+    "genericMigrationSafety": "passed: arbitrary hero rows, AG1/AG2, ambiguous bindings, missing bones, competing models, opted-out targets, modified registries, and both load orders",
+    "durableBindingHistory": "passed: v2 upgrade and retention beyond 64 changes",
+    "rustModManagerTests": {
+      "passed": 297,
+      "ignored": 16
+    },
+    "liveDesktopVerification": {
+      "generatedTarget": "models/heroes_wip/pocket/pocket.vmdl_c",
+      "repairLabelVisible": true,
+      "receiptRevision": 24,
+      "enabledModIds": ["559174"],
+      "originalSourceUnchanged": true,
+      "persistedHistoryFormat": "DMMVDH03",
+      "runtime": "passed-user-reported"
+    },
+    "merrinRepairRegression": "passed: current animation bindings, camera interface, authored skinning and independent DATA/MDAT decode",
+    "unusedNmBranchSafety": "passed: nonidentity branches, mapped authored/current descendants, unanchored roots, and inconsistent reference poses",
+    "sampledCameraSafety": "passed: unsampled shared ancestors retain pose proof; changed hierarchy rejected",
+    "mixedReport": "mixed-15-merrin-report.json",
+    "merrinLiveVerification": {
+      "receiptRevision": 25,
+      "receiptMatchesOverlay": true,
+      "installedSourceHashMatches": true,
+      "enabledModIds": ["595391"],
+      "packedFiles": 1,
+      "animationAndCameraRepairsApplied": true,
+      "runtime": "not-tested"
+    }
+  },
+  "inGameTestPreparation": {
+    "profile": "Compatibility \u2014 older mods batch 3",
+    "enabledModId": "595391",
+    "variant": "merrin_C/+cape_cloth/pak01_dir.vpk",
+    "compatibilityEnabled": true,
+    "reviewApplied": true,
+    "generatedOverlayApplied": true,
+    "packedFiles": 1,
+    "runtime": "not-tested",
+    "repairRevision": 25,
+    "stagedAt": "2026-10-06T00:11:25.344587+00:00",
+    "installedSourceHashMatches": true,
+    "manifestFilesPresent": true,
+    "animationRepair": "shared unused NM branch proof; authored deformation preserved",
+    "cameraRepair": "sampled camera dependency composition",
+    "preparedAt": "2026-10-06T00:42:31.432557+00:00"
+  },
+  "genericMigrationCheckedAt": "2026-10-05T23:56:03.449292+00:00",
+  "merrinRepairCheckedAt": "2026-10-06T00:40:23.959859+00:00"
+}

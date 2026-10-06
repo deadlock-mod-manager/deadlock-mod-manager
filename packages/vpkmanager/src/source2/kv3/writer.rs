@@ -14,9 +14,9 @@
 //! auxiliary arrays become equivalent version 4 typed arrays because this
 //! writer intentionally emits a single uncompressed buffer.
 
-use super::Format;
 use super::node;
 use super::types::{Encoding, EncodingChildren, Value};
+use super::Format;
 use crate::source2::error::DecodeError;
 use std::collections::HashMap;
 
@@ -263,6 +263,119 @@ fn preserved_datatype(value: &Value, preferred: u8) -> u8 {
     }
 }
 
+pub(super) fn encoding_preserved(value: &Value, expected: &Encoding, actual: &Encoding) -> bool {
+    if actual.datatype != preserved_datatype(value, expected.datatype)
+        || actual.flag != expected.flag
+    {
+        return false;
+    }
+    match (value, &expected.children, &actual.children) {
+        (
+            Value::Array(values),
+            EncodingChildren::Array(expected),
+            EncodingChildren::Array(actual),
+        ) => {
+            values.len() == expected.len()
+                && values.len() == actual.len()
+                && values
+                    .iter()
+                    .zip(expected)
+                    .zip(actual)
+                    .all(|((value, expected), actual)| encoding_preserved(value, expected, actual))
+        }
+        (
+            Value::Object(values),
+            EncodingChildren::Object(expected),
+            EncodingChildren::Object(actual),
+        ) => {
+            values.len() == actual.len()
+                && values
+                    .iter()
+                    .zip(actual)
+                    .all(|((name, value), (actual_name, actual))| {
+                        name == actual_name
+                            && expected.iter().find(|(key, _)| key == name).is_some_and(
+                                |(_, expected)| encoding_preserved(value, expected, actual),
+                            )
+                    })
+        }
+        (Value::Array(_) | Value::Object(_), _, _) => false,
+        (_, EncodingChildren::None, EncodingChildren::None) => true,
+        _ => false,
+    }
+}
+
+pub(super) fn normalize_numeric_array_encoding(
+    value: &Value,
+    encoding: &mut Encoding,
+) -> Result<(), DecodeError> {
+    use node::*;
+    match (value, &mut encoding.children) {
+        (Value::Array(values), EncodingChildren::Array(items)) => {
+            if values.len() != items.len() {
+                return Err(DecodeError::Kv3("array encoding length mismatch"));
+            }
+            for (value, item) in values.iter().zip(items.iter_mut()) {
+                normalize_numeric_array_encoding(value, item)?;
+            }
+            if !matches!(
+                encoding.datatype,
+                ARRAY_TYPED | ARRAY_TYPE_BYTE_LENGTH | ARRAY_TYPE_AUXILIARY_BUFFER
+            ) || values.is_empty()
+            {
+                return Ok(());
+            }
+            let first = preserved_datatype(&values[0], items[0].datatype);
+            if values
+                .iter()
+                .zip(items.iter())
+                .all(|(v, e)| preserved_datatype(v, e.datatype) == first)
+            {
+                return Ok(());
+            }
+            let flag = items[0].flag;
+            if items.iter().any(|e| e.flag != flag) {
+                return Err(DecodeError::Kv3(
+                    "typed numeric array has inconsistent flags",
+                ));
+            }
+            let datatype = if values.iter().all(|v| matches!(v, Value::Double(_))) {
+                // Compact DOUBLE_ZERO/ONE carry double semantics. FLOAT arrays
+                // keep their width unless they actually mixed compiler schemas.
+                if items
+                    .iter()
+                    .all(|e| matches!(e.datatype, FLOAT | DOUBLE_ZERO | DOUBLE_ONE))
+                    && items.iter().any(|e| e.datatype == FLOAT)
+                {
+                    FLOAT
+                } else {
+                    DOUBLE
+                }
+            } else if values.iter().all(|v| matches!(v, Value::Int(_))) {
+                INT64
+            } else if values.iter().all(|v| matches!(v, Value::UInt(_))) {
+                UINT64
+            } else {
+                return Err(DecodeError::Kv3("incompatible typed array is not numeric"));
+            };
+            for item in items {
+                item.datatype = datatype;
+            }
+        }
+        (Value::Object(fields), EncodingChildren::Object(items)) => {
+            for (key, value) in fields {
+                let (_, item) = items
+                    .iter_mut()
+                    .find(|(name, _)| name == key)
+                    .ok_or(DecodeError::Kv3("field encoding missing"))?;
+                normalize_numeric_array_encoding(value, item)?;
+            }
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
 fn write_value_data(
     value: &Value,
     encoding: &Encoding,
@@ -471,6 +584,40 @@ mod tests {
     }
 
     #[test]
+    fn edited_compact_typed_numbers_promote_without_changing_flags_or_other_fields() {
+        let value = Value::Array(vec![Value::Double(0.0), Value::Double(2.5)]);
+        let mut encoding = Encoding {
+            datatype: node::ARRAY_TYPED,
+            flag: 0,
+            children: EncodingChildren::Array(vec![
+                Encoding {
+                    datatype: node::DOUBLE_ZERO,
+                    flag: 4,
+                    children: EncodingChildren::None
+                };
+                2
+            ]),
+        };
+        assert!(encode_preserving(&value, &encoding, &Format([0; 16])).is_err());
+        normalize_numeric_array_encoding(&value, &mut encoding).unwrap();
+        let bytes = encode_preserving(&value, &encoding, &Format([0; 16])).unwrap();
+        let (actual, metadata) = super::super::decode_preserving(&bytes).unwrap();
+        assert_eq!(actual, value);
+        assert!(encoding_preserved(&value, &encoding, &metadata));
+        assert!(metadata
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|e| e.flag == 4 && e.datatype == node::DOUBLE));
+        let mut bad = encoding.clone();
+        if let EncodingChildren::Array(items) = &mut bad.children {
+            items[0].datatype = node::DOUBLE_ZERO;
+            items[1].flag = 0;
+        }
+        assert!(normalize_numeric_array_encoding(&value, &mut bad).is_err());
+    }
+
+    #[test]
     fn preserving_encoder_handles_empty_auxiliary_arrays() {
         for datatype in [
             node::ARRAY_TYPED,
@@ -537,5 +684,13 @@ mod tests {
         assert_eq!(stats.flagged_nodes, 1);
         assert_eq!(stats.typed_arrays, 1);
         assert_eq!(stats.narrow_numbers, 1);
+        let (_, actual) = super::super::decode_preserving(&bytes).unwrap();
+        assert!(encoding_preserved(&value, &encoding, &actual));
+        let (_, widened) =
+            super::super::decode_preserving(&encode(&value, &Format([0; 16]))).unwrap();
+        assert!(!encoding_preserved(&value, &encoding, &widened));
+        let mut changed_flag = actual.clone();
+        changed_flag.get_mut("resource").unwrap().flag = 0;
+        assert!(!encoding_preserved(&value, &encoding, &changed_flag));
     }
 }

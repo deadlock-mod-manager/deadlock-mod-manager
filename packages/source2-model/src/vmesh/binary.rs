@@ -67,15 +67,23 @@ pub(crate) fn read_buffer(data: &[u8], pos: usize, is_vertex: bool) -> Result<(B
     let expected_size = element_count
         .checked_mul(element_size)
         .ok_or_else(|| Source2Error::Resource("mesh buffer size overflow".into()))?;
-    if expected_size > total_size as usize {
-        return Err(Source2Error::UnsupportedFormat(
-            "meshopt-compressed mesh buffers are not supported yet".into(),
-        ));
-    }
-    let buffer_data = data
+    let encoded = data
         .get(raw_start..raw_end)
-        .ok_or_else(|| Source2Error::Resource("mesh buffer data out of bounds".into()))?
-        .to_vec();
+        .ok_or_else(|| Source2Error::Resource("mesh buffer data out of bounds".into()))?;
+    let buffer_data = if expected_size > encoded.len() {
+        if is_vertex {
+            if element_size == 0 || element_size > 256 || !element_size.is_multiple_of(4) {
+                return Err(Source2Error::UnsupportedFormat(
+                    "invalid compressed vertex stride".into(),
+                ));
+            }
+            decode_meshopt_vertex_buffer(encoded, element_count, element_size)?
+        } else {
+            decode_index_buffer(encoded, element_count, element_size, true)?
+        }
+    } else {
+        encoded.to_vec()
+    };
 
     Ok((
         BufferData {

@@ -56,6 +56,16 @@ impl<'a> Resource<'a> {
             .checked_add(block_offset as usize)
             .ok_or(DecodeError::BadResource("block_offset overflow"))?;
 
+        let table_len = (block_count as usize)
+            .checked_mul(12)
+            .ok_or(DecodeError::BadResource("block table length overflow"))?;
+        let table_end = block_table_start
+            .checked_add(table_len)
+            .ok_or(DecodeError::BadResource("block table extent overflow"))?;
+        if block_table_start < 16 || table_end > bytes.len() {
+            return Err(DecodeError::BadResource("block table out of range"));
+        }
+
         let mut cursor = block_table_start;
         let mut blocks = Vec::with_capacity(block_count as usize);
         for _ in 0..block_count {
@@ -67,6 +77,12 @@ impl<'a> Resource<'a> {
                 .map_err(|_| DecodeError::BadResource("offset_field_pos > u32"))?
                 .checked_add(rel_offset)
                 .ok_or(DecodeError::BadResource("block offset overflow"))?;
+            let end = (abs_offset as usize)
+                .checked_add(size as usize)
+                .ok_or(DecodeError::BadResource("block extent overflow"))?;
+            if end > bytes.len() || (size != 0 && (abs_offset as usize) < table_end) {
+                return Err(DecodeError::BadResource("block payload out of range"));
+            }
             blocks.push(Block {
                 kind,
                 offset: abs_offset,

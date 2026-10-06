@@ -21,6 +21,8 @@ use std::{
   sync::Mutex,
 };
 
+mod analyzed;
+pub use analyzed::AnalyzedModRegistration;
 mod gameinfo;
 mod lifecycle;
 mod localization;
@@ -318,11 +320,6 @@ impl ModManager {
     &self.mod_repository
   }
 
-  /// Get a mutable reference to the mod repository
-  pub fn get_mod_repository_mut(&mut self) -> &mut ModRepository {
-    &mut self.mod_repository
-  }
-
   pub fn set_app_handle(&mut self, app_handle: AppHandle) {
     self.app_handle = Some(app_handle);
   }
@@ -590,6 +587,9 @@ mod tests {
       &HashSet::from(["blue.vpk".into()]),
     );
     let mut manager = test_manager(game.path());
+    // Arrange only the throwaway install; this variant test must not depend on
+    // whether the user is running Deadlock elsewhere on the machine.
+    manager.config_manager.setup_game_for_mods(game.path()).unwrap();
     let installed = manager
       .install_mod(
         Mod {

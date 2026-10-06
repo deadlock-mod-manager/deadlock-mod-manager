@@ -6,7 +6,6 @@ use crate::mod_manager::Mod;
 use crate::mod_manager::archive_extractor::ArchiveExtractor;
 use crate::mod_manager::file_tree::ModFileTree;
 use crate::mod_manager::filesystem_helper::FileSystemHelper;
-use crate::mod_manager::shard;
 use crate::mod_manager::vpk_manager::VpkManager;
 use crate::mod_manager::vpk_manager::staging::VpkSnapshot;
 use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
@@ -36,19 +35,6 @@ fn sanitize_archive_name(name: &str) -> Result<String, Error> {
     Some(f) if f == name => Ok(f.to_string()),
     _ => Err(Error::InvalidInput(format!("Invalid archive name: {name}"))),
   }
-}
-
-/// A VPK value is safe to join onto a shard directory and persist in the
-/// manifest only if it is exactly one normal filename component: no separators,
-/// no `.`/`..`, no absolute or parent-directory forms.
-fn is_plain_vpk_filename(name: &str) -> bool {
-  !name.is_empty()
-    && !name.contains('/')
-    && !name.contains('\\')
-    && std::path::Path::new(name)
-      .file_name()
-      .and_then(|f| f.to_str())
-      == Some(name)
 }
 
 fn validate_download_url(url: &str) -> Result<(), Error> {
@@ -484,72 +470,21 @@ pub async fn register_analyzed_mod(
   mod_id: String,
   mod_name: String,
   installed_vpks: Vec<String>,
+  installed_paths: Option<Vec<String>>,
   profile_folder: Option<String>,
-) -> Result<(), Error> {
-  let mut mod_manager = MANAGER.lock().unwrap();
-
-  let addons_path = mod_manager.get_addons_path(profile_folder.as_deref())?;
-  let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
-
-  let install_order = manifest.mods.get(&mod_id).and_then(|e| e.order);
-
-  if mod_manager.get_mod_repository().get_mod(&mod_id).is_none() {
-    log::info!(
-      "Registering analyzed mod in repository: {} ({}) with {} VPKs (profile: {profile_folder:?})",
-      mod_name,
-      mod_id,
-      installed_vpks.len()
-    );
-    let deadlock_mod = Mod {
-      id: mod_id.clone(),
-      name: mod_name,
-      is_map: false,
-      installed_vpks: installed_vpks.clone(),
-      file_tree: None,
-      install_order,
-      original_vpk_names: Vec::new(),
-    };
-    mod_manager.get_mod_repository_mut().add_mod(deadlock_mod);
-  }
-
-  if let Some(bad) = installed_vpks
-    .iter()
-    .find(|vpk| !is_plain_vpk_filename(vpk))
-  {
-    return Err(Error::InvalidInput(format!(
-      "Invalid analyzed VPK filename: {bad}"
-    )));
-  }
-
-  let discovered_shard = shard::all_shards()
-    .find(|shard_index| {
-      let shard_dir = addons_path.shard_dir(*shard_index);
-      installed_vpks
-        .iter()
-        .all(|vpk| shard_dir.join(vpk).exists())
-    })
-    .ok_or_else(|| {
-      Error::ModInvalid(format!(
-        "Analyzed VPK files for mod {mod_id} do not exist together in one addon shard"
-      ))
-    })?;
-  manifest.mark_enabled(
-    &mod_id,
+) -> Result<crate::mod_manager::manager::AnalyzedModRegistration, Error> {
+  let mut manager = MANAGER.lock().map_err(|_| {
+    Error::BackgroundTaskFailed(
+      "Mod manager is unavailable. Restart the manager and try addon analysis again".into(),
+    )
+  })?;
+  manager.register_analyzed_mod(
+    mod_id,
+    mod_name,
     installed_vpks,
-    Vec::new(),
-    install_order,
-    discovered_shard,
-  );
-  // mark_enabled skips overwriting original_vpk_names when passed empty,
-  // so explicitly clear stale originals from a previous install.
-  if let Some(entry) = manifest.mods.get_mut(&mod_id) {
-    entry.original_vpk_names.clear();
-  }
-  manifest.save(&addons_path)?;
-  mod_manager.invalidate_localization_overlay(profile_folder.as_deref());
-  log::info!("Persisted analyzed mod {mod_id} to profile manifest");
-
-  Ok(())
+    installed_paths,
+    profile_folder,
+  )
 }
 
 fn resolve_addons_path(game_path: &std::path::Path, profile_folder: Option<&str>) -> PathBuf {

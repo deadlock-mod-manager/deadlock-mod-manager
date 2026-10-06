@@ -1,9 +1,8 @@
 use super::animation_skeleton::equivalent_pose;
 use super::{
   CompiledDataSource, Kv3Value, Resource, asset_compatibility, decode_compiled_data, kv3,
-  normalize_path,
+  normalize_path, resources::ResourceSnapshot,
 };
-use source2_model::vpk_extract::VpkArchive;
 use std::collections::{BTreeMap, BTreeSet};
 
 /// Additional evidence for sampling changes. The model's deformation rig is never replaced.
@@ -13,13 +12,16 @@ pub(super) struct ModelEvidence {
   unused_current_bones: BTreeSet<String>,
 }
 
-struct ModelRig {
+pub(super) struct ModelRig {
   value: Kv3Value,
   indices: BTreeMap<String, usize>,
 }
 
 impl ModelRig {
-  fn parse(model: &Kv3Value) -> Option<Self> {
+  pub(super) fn names(&self) -> impl Iterator<Item = &str> {
+    self.indices.keys().map(String::as_str)
+  }
+  pub(super) fn parse(model: &Kv3Value) -> Option<Self> {
     let value = model.get("m_modelSkeleton")?.clone();
     if !asset_compatibility::valid_skeleton(
       &value,
@@ -46,7 +48,7 @@ impl ModelRig {
     Some(Self { value, indices })
   }
 
-  fn parent(&self, name: &str) -> Option<&str> {
+  pub(super) fn parent(&self, name: &str) -> Option<&str> {
     let index = *self.indices.get(name)?;
     let parent = self
       .value
@@ -66,7 +68,7 @@ impl ModelRig {
     }
   }
 
-  fn pose(&self, name: &str) -> Option<Kv3Value> {
+  pub(super) fn pose(&self, name: &str) -> Option<Kv3Value> {
     let index = *self.indices.get(name)?;
     let position = self
       .value
@@ -99,18 +101,179 @@ impl ModelRig {
 #[derive(Default)]
 pub(super) struct AnimationInputs {
   mod_ids: BTreeSet<String>,
-  has_current_overrides: bool,
+  overrides: BTreeMap<String, String>,
 }
 
 impl AnimationInputs {
+  pub(super) fn needs_dependency_proof(&self, mod_id: &str) -> bool {
+    !self.overrides.is_empty() || self.mod_ids.contains(mod_id)
+  }
+
+  pub(super) fn permits_camera_controls(
+    &self,
+    resources: &ResourceSnapshot,
+    current: &Kv3Value,
+    mod_id: &str,
+  ) -> bool {
+    // Authored animations in the model's own mod still need a migration proof.
+    if self.mod_ids.contains(mod_id) {
+      return false;
+    }
+    let Some(references) = current
+      .get("m_vecNmSkeletonRefs")
+      .and_then(Kv3Value::as_array)
+    else {
+      return false;
+    };
+    let [reference] = references else {
+      return false;
+    };
+    let Some(skeleton) = reference.as_str().and_then(super::resources::resource_path) else {
+      return false;
+    };
+    if !skeleton.ends_with(".vnmskel_c")
+      || resources
+        .provider(&skeleton)
+        .is_none_or(|provider| provider.mod_id.is_some())
+    {
+      return false;
+    }
+    // Reuse the graph-closure proof instead of treating every animation override
+    // in the library as an override of this model's camera controls.
+    self.unrelated(resources, current, &skeleton)
+  }
+
   pub(super) fn record(&mut self, path: &str, mod_id: &str) {
     if is_animation_path(path) {
       self.mod_ids.insert(mod_id.to_owned());
       // Legacy graphs cannot replace the active NM graphs required by this proof.
       // A legacy graph belonging to the skeleton's own mod still prevents migration.
-      self.has_current_overrides |= !normalize_path(path).ends_with(".vanmgrph_c");
+      let path = normalize_path(path);
+      if !path.ends_with(".vanmgrph_c") {
+        self
+          .overrides
+          .entry(path)
+          .or_insert_with(|| mod_id.to_owned());
+      }
     }
   }
+
+  /// Prove that effective overrides neither enter this model's graph closure nor
+  /// sample this skeleton through another graph. Unknown animation formats fail closed.
+  fn unrelated(&self, resources: &ResourceSnapshot, model: &Kv3Value, skeleton: &str) -> bool {
+    if self.overrides.is_empty() {
+      return true;
+    }
+    let Some(bindings) = graphs(model) else {
+      return false;
+    };
+    let mut visited = BTreeSet::new();
+    let mut visiting = BTreeSet::new();
+    for graph in bindings.values() {
+      if !walk_animation(
+        resources,
+        graph,
+        skeleton,
+        true,
+        &mut visited,
+        &mut visiting,
+      ) {
+        return false;
+      }
+    }
+    visited.clear();
+    for path in self.overrides.keys() {
+      if !walk_animation(
+        resources,
+        path,
+        skeleton,
+        false,
+        &mut visited,
+        &mut visiting,
+      ) {
+        return false;
+      }
+    }
+    true
+  }
+}
+
+fn walk_animation(
+  resources: &ResourceSnapshot,
+  name: &str,
+  skeleton: &str,
+  model_closure: bool,
+  visited: &mut BTreeSet<String>,
+  visiting: &mut BTreeSet<String>,
+) -> bool {
+  let Some(path) = super::resources::resource_path(name) else {
+    return false;
+  };
+  if !path.ends_with(".vnmclip_c") && !path.ends_with(".vnmgraph_c") {
+    return false;
+  }
+  if visited.contains(&path) {
+    return true;
+  }
+  if visiting.len() >= 64 || visited.len() >= 4096 || !visiting.insert(path.clone()) {
+    return false;
+  }
+  let Some((provider, bytes)) = resources.resolve(&path).ok().flatten() else {
+    return false;
+  };
+  if model_closure && provider.mod_id.is_some() {
+    return false;
+  }
+  let Ok((_, root, _)) = decode_compiled_data(&bytes, &path) else {
+    return false;
+  };
+  let binding = root.get("m_skeleton").map(|value| {
+    value
+      .as_str()
+      .and_then(super::resources::resource_path)
+      .is_some_and(|reference| {
+        reference.ends_with(".vnmskel_c")
+          && if model_closure {
+            reference == skeleton
+          } else {
+            reference != skeleton
+          }
+      })
+  });
+  let valid = if path.ends_with(".vnmclip_c") {
+    binding == Some(true)
+  } else if path.ends_with(".vnmgraph_c") {
+    root
+      .get("m_resources")
+      .and_then(Kv3Value::as_array)
+      .is_some_and(|refs| {
+        // Event graphs can be leaves. Their explicit skeleton binding supplies
+        // the evidence that would otherwise come from child graphs or clips.
+        binding != Some(false)
+          && (!refs.is_empty() || binding == Some(true))
+          && refs.iter().all(|reference| {
+            reference.as_str().is_some_and(|name| {
+              // Installed graphs can retain references to optional, absent clips.
+              // A verified game graph binding proves its target, and an absent
+              // provider cannot introduce an override into this closure.
+              let absent_clip = model_closure
+                && binding == Some(true)
+                && super::resources::resource_path(name).is_some_and(|path| {
+                  path.ends_with(".vnmclip_c") && resources.provider(&path).is_none()
+                });
+              absent_clip
+                || walk_animation(resources, name, skeleton, model_closure, visited, visiting)
+            })
+          })
+      })
+  } else {
+    false
+  };
+  visiting.remove(&path);
+  if valid {
+    visited.insert(path);
+  }
+  valid
 }
 
 fn is_animation_path(path: &str) -> bool {
@@ -130,20 +293,19 @@ fn is_animation_path(path: &str) -> bool {
 }
 
 pub(super) fn find(
-  archive: &VpkArchive,
-  game_paths: &BTreeMap<String, String>,
+  resources: &ResourceSnapshot,
   models: &BTreeMap<String, Vec<CompiledDataSource>>,
   animation_inputs: &AnimationInputs,
   source: &CompiledDataSource,
   skeleton_path: &str,
 ) -> Option<ModelEvidence> {
   // Custom current animation data could still use the retired sampling layout.
-  if animation_inputs.has_current_overrides || animation_inputs.mod_ids.contains(&source.mod_id) {
+  if animation_inputs.mod_ids.contains(&source.mod_id) {
     return None;
   }
   let mut candidates = Vec::new();
   for (path, sources) in models {
-    let Some(base_path) = game_paths.get(path) else {
+    let Some(current_bytes) = resources.game_bytes(path).ok()? else {
       continue;
     };
     let matching = sources
@@ -166,22 +328,20 @@ pub(super) fn find(
       return None;
     }
     let (_, model, _) = matching.into_iter().next()?;
-    let current_bytes = archive.extract_entry(base_path).ok()?;
     let (_, current, _) = decode_compiled_data(&current_bytes, path).ok()?;
     if !references_skeleton(&current, skeleton_path) {
+      return None;
+    }
+    if !animation_inputs.unrelated(resources, &current, skeleton_path) {
       return None;
     }
     let resource = Resource::parse(&current_bytes).ok()?;
     let meshes = resource
       .blocks()
       .iter()
-      .filter(|block| block.kind == *b"MDAT")
-      .map(|block| {
-        kv3::decode(
-          &current_bytes[block.offset as usize..(block.offset as usize + block.size as usize)],
-        )
-        .ok()
-      })
+      .enumerate()
+      .filter(|(_, block)| block.kind == *b"MDAT")
+      .map(|(index, _)| kv3::decode(resource.get_block_by_index(index)?).ok())
       .collect::<Option<Vec<_>>>();
     candidates.push(ModelEvidence::from_models(
       &model,
@@ -208,7 +368,7 @@ fn references_skeleton(model: &Kv3Value, path: &str) -> bool {
     })
 }
 
-fn graphs(model: &Kv3Value) -> Option<BTreeMap<String, String>> {
+pub(super) fn graphs(model: &Kv3Value) -> Option<BTreeMap<String, String>> {
   let mut graphs = BTreeMap::new();
   for graph in model.get("m_animGraph2Refs")?.as_array()? {
     let name = graph.get("m_sIdentifier")?.as_str()?.to_ascii_lowercase();
@@ -353,5 +513,406 @@ impl ModelEvidence {
         .current
         .pose(name)
         .is_some_and(|bind| equivalent_pose(current, &bind) == Some(true))
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::super::{LocalizationModInput, resources::tests::pack, tests::compiled_resource};
+  use super::*;
+
+  fn clip(skeleton: &str) -> Vec<u8> {
+    compiled_resource(vec![(
+      "m_skeleton".into(),
+      Kv3Value::String(skeleton.into()),
+    )])
+  }
+
+  fn graph(resources: &[&str]) -> Vec<u8> {
+    compiled_resource(vec![(
+      "m_resources".into(),
+      Kv3Value::Array(
+        resources
+          .iter()
+          .map(|name| Kv3Value::String((*name).into()))
+          .collect(),
+      ),
+    )])
+  }
+
+  #[test]
+  fn camera_control_proof_distinguishes_unrelated_and_affected_overrides() {
+    let game_graph = compiled_resource(vec![
+      (
+        "m_skeleton".into(),
+        Kv3Value::String("models/a.vnmskel".into()),
+      ),
+      ("m_resources".into(), Kv3Value::Array(vec![])),
+    ]);
+    let skeleton = compiled_resource(vec![]);
+    let model = compiled_resource(vec![
+      (
+        "m_vecNmSkeletonRefs".into(),
+        Kv3Value::Array(vec![Kv3Value::String("models/a.vnmskel".into())]),
+      ),
+      (
+        "m_animGraph2Refs".into(),
+        Kv3Value::Array(vec![Kv3Value::Object(vec![
+          ("m_sIdentifier".into(), Kv3Value::String("default".into())),
+          (
+            "m_hGraph".into(),
+            Kv3Value::String("animgraphs/a.vnmgraph".into()),
+          ),
+        ])]),
+      ),
+    ]);
+    let (_, model, _) = decode_compiled_data(&model, "camera test model").unwrap();
+    for (path, bytes, owner, allowed) in [
+      (
+        "animations/b.vnmclip_c",
+        clip("models/b.vnmskel"),
+        "other",
+        true,
+      ),
+      (
+        "animations/b.vnmclip_c",
+        clip("models/a.vnmskel"),
+        "other",
+        false,
+      ),
+      ("models/a.vnmskel_c", skeleton.clone(), "other", false),
+      (
+        "animgraphs/a.vnmgraph_c",
+        game_graph.clone(),
+        "other",
+        false,
+      ),
+      (
+        "animations/b.vanim_c",
+        clip("models/b.vnmskel"),
+        "other",
+        false,
+      ),
+      (
+        "animations/b.vnmclip_c",
+        clip("models/b.vnmskel"),
+        "skin",
+        false,
+      ),
+    ] {
+      let temp = tempfile::tempdir().unwrap();
+      let citadel = temp.path().join("citadel");
+      std::fs::create_dir_all(&citadel).unwrap();
+      pack(
+        &citadel,
+        "pak01",
+        &[
+          ("animgraphs/a.vnmgraph_c", &game_graph),
+          ("models/a.vnmskel_c", &skeleton),
+        ],
+      );
+      let other = pack(temp.path(), "other", &[(path, &bytes)]);
+      let resources = ResourceSnapshot::open(
+        &citadel,
+        &[LocalizationModInput {
+          mod_id: owner.into(),
+          vpks: vec![other],
+        }],
+      )
+      .unwrap();
+      let mut inputs = AnimationInputs::default();
+      inputs.record(path, owner);
+      assert_eq!(
+        inputs.permits_camera_controls(&resources, &model, "skin"),
+        allowed,
+        "{owner}:{path}"
+      );
+    }
+  }
+
+  #[test]
+  fn dependency_proof_accepts_skeleton_bound_graphs_without_child_resources() {
+    let temp = tempfile::tempdir().unwrap();
+    let citadel = temp.path().join("citadel");
+    std::fs::create_dir_all(&citadel).unwrap();
+    let event_graph = compiled_resource(vec![
+      (
+        "m_skeleton".into(),
+        Kv3Value::String("models/a.vnmskel".into()),
+      ),
+      ("m_resources".into(), Kv3Value::Array(vec![])),
+    ]);
+    let root_graph = graph(&["animgraphs/events.vnmgraph"]);
+    pack(
+      &citadel,
+      "pak01",
+      &[
+        ("animgraphs/a.vnmgraph_c", &root_graph),
+        ("animgraphs/events.vnmgraph_c", &event_graph),
+      ],
+    );
+    let other = clip("models/b.vnmskel");
+    let archive = pack(temp.path(), "other", &[("animations/b.vnmclip_c", &other)]);
+    let snapshot = ResourceSnapshot::open(
+      &citadel,
+      &[LocalizationModInput {
+        mod_id: "other".into(),
+        vpks: vec![archive],
+      }],
+    )
+    .unwrap();
+    let model = Kv3Value::Object(vec![(
+      "m_animGraph2Refs".into(),
+      Kv3Value::Array(vec![Kv3Value::Object(vec![
+        ("m_sIdentifier".into(), Kv3Value::String("default".into())),
+        (
+          "m_hGraph".into(),
+          Kv3Value::String("animgraphs/a.vnmgraph".into()),
+        ),
+      ])]),
+    )]);
+    let mut inputs = AnimationInputs::default();
+    inputs.record("animations/b.vnmclip_c", "other");
+    assert!(inputs.unrelated(&snapshot, &model, "models/a.vnmskel_c"));
+  }
+
+  #[test]
+  fn missing_game_clips_require_a_verified_binding_and_no_override() {
+    let model = Kv3Value::Object(vec![(
+      "m_animGraph2Refs".into(),
+      Kv3Value::Array(vec![Kv3Value::Object(vec![
+        ("m_sIdentifier".into(), Kv3Value::String("default".into())),
+        (
+          "m_hGraph".into(),
+          Kv3Value::String("animgraphs/a.vnmgraph".into()),
+        ),
+      ])]),
+    )]);
+    for (binding, child, override_missing, allowed) in [
+      (
+        Some("models/a.vnmskel"),
+        "animations/optional.vnmclip",
+        false,
+        true,
+      ),
+      (None, "animations/optional.vnmclip", false, false),
+      (
+        Some("models/b.vnmskel"),
+        "animations/optional.vnmclip",
+        false,
+        false,
+      ),
+      (
+        Some("models/a.vnmskel"),
+        "animgraphs/missing.vnmgraph",
+        false,
+        false,
+      ),
+      (
+        Some("models/a.vnmskel"),
+        "animations/optional.vnmclip",
+        true,
+        false,
+      ),
+    ] {
+      let temp = tempfile::tempdir().unwrap();
+      let citadel = temp.path().join("citadel");
+      std::fs::create_dir_all(&citadel).unwrap();
+      let mut fields = vec![(
+        "m_resources".into(),
+        Kv3Value::Array(vec![Kv3Value::String(child.into())]),
+      )];
+      if let Some(binding) = binding {
+        fields.push(("m_skeleton".into(), Kv3Value::String(binding.into())));
+      }
+      let base_graph = compiled_resource(fields);
+      pack(
+        &citadel,
+        "pak01",
+        &[("animgraphs/a.vnmgraph_c", &base_graph)],
+      );
+      let other = clip("models/b.vnmskel");
+      let path = if override_missing {
+        "animations/optional.vnmclip_c"
+      } else {
+        "animations/b.vnmclip_c"
+      };
+      let archive = pack(temp.path(), "other", &[(path, &other)]);
+      let snapshot = ResourceSnapshot::open(
+        &citadel,
+        &[LocalizationModInput {
+          mod_id: "other".into(),
+          vpks: vec![archive],
+        }],
+      )
+      .unwrap();
+      let mut inputs = AnimationInputs::default();
+      inputs.record(path, "other");
+      assert_eq!(
+        inputs.unrelated(&snapshot, &model, "models/a.vnmskel_c"),
+        allowed,
+        "binding={binding:?} child={child} override={override_missing}"
+      );
+    }
+  }
+
+  #[test]
+  fn dependency_proof_accepts_unrelated_clips_and_refuses_affected_or_unknown_overrides() {
+    let temp = tempfile::tempdir().unwrap();
+    let citadel = temp.path().join("citadel");
+    std::fs::create_dir_all(&citadel).unwrap();
+    let base_clip = clip("models/a.vnmskel");
+    let base_graph = graph(&["animations/a.vnmclip"]);
+    pack(
+      &citadel,
+      "pak01",
+      &[
+        ("animgraphs/a.vnmgraph_c", &base_graph),
+        ("animations/a.vnmclip_c", &base_clip),
+      ],
+    );
+    let model = Kv3Value::Object(vec![(
+      "m_animGraph2Refs".into(),
+      Kv3Value::Array(vec![Kv3Value::Object(vec![
+        ("m_sIdentifier".into(), Kv3Value::String("default".into())),
+        (
+          "m_hGraph".into(),
+          Kv3Value::String("animgraphs/a.vnmgraph".into()),
+        ),
+      ])]),
+    )]);
+    let skeleton = "models/a.vnmskel_c";
+    let unrelated_clip = clip("models/b.vnmskel");
+    let unrelated_graph = graph(&["animations/b.vnmclip"]);
+    let nested_graph = graph(&["animgraphs/b.vnmgraph"]);
+    let cycle = graph(&["animgraphs/cycle.vnmgraph"]);
+    let missing = graph(&["animations/missing.vnmclip"]);
+    let unbound_leaf = graph(&[]);
+    let bound_leaf = compiled_resource(vec![
+      (
+        "m_skeleton".into(),
+        Kv3Value::String("models/b.vnmskel".into()),
+      ),
+      ("m_resources".into(), Kv3Value::Array(vec![])),
+    ]);
+    let malformed_leaf = compiled_resource(vec![
+      ("m_skeleton".into(), Kv3Value::Int(7)),
+      ("m_resources".into(), Kv3Value::Array(vec![])),
+    ]);
+    let affected_graph = compiled_resource(vec![
+      (
+        "m_skeleton".into(),
+        Kv3Value::String("models/a.vnmskel".into()),
+      ),
+      (
+        "m_resources".into(),
+        Kv3Value::Array(vec![Kv3Value::String("animations/b.vnmclip".into())]),
+      ),
+    ]);
+    let affected_leaf = compiled_resource(vec![
+      (
+        "m_skeleton".into(),
+        Kv3Value::String("models/a.vnmskel".into()),
+      ),
+      ("m_resources".into(), Kv3Value::Array(vec![])),
+    ]);
+    for (name, entries, allowed) in [
+      (
+        "bound_leaf",
+        vec![("animgraphs/leaf.vnmgraph_c", bound_leaf.as_slice())],
+        true,
+      ),
+      (
+        "unbound_leaf",
+        vec![("animgraphs/leaf.vnmgraph_c", unbound_leaf.as_slice())],
+        false,
+      ),
+      (
+        "malformed_leaf",
+        vec![("animgraphs/leaf.vnmgraph_c", malformed_leaf.as_slice())],
+        false,
+      ),
+      (
+        "affected_leaf",
+        vec![("animgraphs/leaf.vnmgraph_c", affected_leaf.as_slice())],
+        false,
+      ),
+      (
+        "affected_graph",
+        vec![
+          ("animgraphs/b.vnmgraph_c", affected_graph.as_slice()),
+          ("animations/b.vnmclip_c", unrelated_clip.as_slice()),
+        ],
+        false,
+      ),
+      (
+        "unrelated",
+        vec![("animations/b.vnmclip_c", unrelated_clip.as_slice())],
+        true,
+      ),
+      (
+        "nested",
+        vec![
+          ("animations/b.vnmclip_c", unrelated_clip.as_slice()),
+          ("animgraphs/b.vnmgraph_c", unrelated_graph.as_slice()),
+          ("animgraphs/nested.vnmgraph_c", nested_graph.as_slice()),
+        ],
+        true,
+      ),
+      (
+        "reverse",
+        vec![("animations/b.vnmclip_c", base_clip.as_slice())],
+        false,
+      ),
+      (
+        "forward",
+        vec![("animations/a.vnmclip_c", unrelated_clip.as_slice())],
+        false,
+      ),
+      (
+        "graph_override",
+        vec![("animgraphs/a.vnmgraph_c", unrelated_graph.as_slice())],
+        false,
+      ),
+      (
+        "cycle",
+        vec![("animgraphs/cycle.vnmgraph_c", cycle.as_slice())],
+        false,
+      ),
+      (
+        "missing",
+        vec![("animgraphs/missing.vnmgraph_c", missing.as_slice())],
+        false,
+      ),
+      (
+        "legacy_clip",
+        vec![("animations/b.vanim_c", unrelated_clip.as_slice())],
+        false,
+      ),
+      (
+        "malformed",
+        vec![("animations/b.vnmclip_c", b"truncated".as_slice())],
+        false,
+      ),
+    ] {
+      let archive = pack(temp.path(), name, &entries);
+      let snapshot = ResourceSnapshot::open(
+        &citadel,
+        &[LocalizationModInput {
+          mod_id: name.into(),
+          vpks: vec![archive],
+        }],
+      )
+      .unwrap();
+      let mut inputs = AnimationInputs::default();
+      for (path, _) in &entries {
+        inputs.record(path, name);
+      }
+      assert_eq!(
+        inputs.unrelated(&snapshot, &model, skeleton),
+        allowed,
+        "{name}"
+      );
+    }
   }
 }

@@ -13,9 +13,11 @@
 
 pub mod audio;
 pub mod error;
+pub mod material_repair;
 pub mod pack;
 pub mod particle_edit;
 pub mod pattern;
+pub mod resource_id;
 pub mod sound_edit;
 pub mod source2;
 pub mod texture_edit;

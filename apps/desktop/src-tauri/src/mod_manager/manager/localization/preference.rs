@@ -1,67 +1,64 @@
 use super::*;
-use tauri_plugin_store::StoreExt;
-
-const ENABLED_KEY: &str = "mod-compatibility-enabled";
+use std::collections::BTreeMap;
 
 impl ModManager {
-  pub fn mod_compatibility_enabled(&self) -> Result<bool, Error> {
-    let Some(app) = &self.app_handle else {
-      return Ok(false);
-    };
-    let store = app
-      .store(crate::runtime_environment::state_store_path())
-      .map_err(|error| {
-        Error::InvalidInput(format!("Failed to read compatibility preference: {error}"))
-      })?;
+  pub fn mod_compatibility_settings(
+    &self,
+    profile_folder: Option<&str>,
+  ) -> Result<BTreeMap<String, bool>, Error> {
+    let base = self.get_addons_path(profile_folder)?;
     Ok(
-      store
-        .get(ENABLED_KEY)
-        .and_then(|value| value.as_bool())
-        .unwrap_or(false),
+      ProfileVpkManifest::load(&base)?
+        .mods
+        .into_iter()
+        .map(|(id, entry)| (id, entry.compatibility_enabled))
+        .collect(),
     )
   }
 
-  pub fn set_mod_compatibility_enabled(
+  pub fn mod_compatibility_enabled(&self, profile_folder: Option<&str>) -> Result<bool, Error> {
+    if self.steam_manager.get_game_path().is_none() {
+      return Ok(false);
+    }
+    let base = self.get_addons_path(profile_folder)?;
+    Ok(
+      ProfileVpkManifest::load(&base)?
+        .mods
+        .values()
+        .any(|entry| entry.enabled && entry.compatibility_enabled),
+    )
+  }
+
+  pub fn set_mod_compatibility_for_mod(
     &mut self,
+    mod_id: String,
     enabled: bool,
     profile_folder: Option<String>,
   ) -> Result<(), Error> {
     if self.is_game_running()? {
       return Err(Error::GameRunning);
     }
-    let app = self
-      .app_handle
-      .as_ref()
-      .ok_or(Error::AppHandleNotInitialized)?;
-    let store = app
-      .store(crate::runtime_environment::state_store_path())
-      .map_err(|error| {
-        Error::InvalidInput(format!(
-          "Failed to access compatibility preference: {error}"
-        ))
-      })?;
-    let previous = store.get(ENABLED_KEY);
-    store.set(ENABLED_KEY, serde_json::json!(enabled));
-    if let Err(error) = store.save() {
-      match previous {
-        Some(value) => store.set(ENABLED_KEY, value),
-        None => {
-          store.delete(ENABLED_KEY);
-        }
-      }
-      return Err(Error::InvalidInput(format!(
-        "Failed to save compatibility preference: {error}"
-      )));
+    let base = self.get_addons_path(profile_folder.as_deref())?;
+    let mut manifest = ProfileVpkManifest::open_for_write(&base)?;
+    let entry = manifest.mods.get_mut(&mod_id).ok_or_else(|| {
+      Error::InvalidInput(format!(
+        "Install mod {mod_id} before changing compatibility"
+      ))
+    })?;
+    if entry.compatibility_enabled == enabled {
+      return Ok(());
     }
-    if !enabled && self.steam_manager.get_game_path().is_some() {
-      self.delete_localization_overlay(profile_folder.as_deref())?;
-      self
-        .localization_overlay_plan_cache
-        .lock()
-        .map_err(|_| Error::BackgroundTaskFailed("Localization plan cache poisoned".into()))?
-        .take();
-      self.apply_profile_gameinfo(profile_folder)?;
-    }
+    // Remove any previously generated replacements before committing the new scope.
+    // If saving fails, the next launch rebuilds the previous selection safely.
+    self.delete_localization_overlay(profile_folder.as_deref())?;
+    entry.compatibility_enabled = enabled;
+    manifest.save(&base)?;
+    self
+      .localization_overlay_plan_cache
+      .lock()
+      .map_err(|_| Error::BackgroundTaskFailed("Localization plan cache poisoned".into()))?
+      .take();
+    self.apply_profile_gameinfo(profile_folder)?;
     Ok(())
   }
 }

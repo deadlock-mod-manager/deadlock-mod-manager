@@ -2,6 +2,10 @@ import type {
   LocalizationChoice,
   LocalizationOverlayAnalysis,
 } from "@/components/my-mods/localization-conflict-review";
+import type {
+  DataRepair,
+  DataWarning,
+} from "@/components/my-mods/data-compatibility-report";
 
 export interface LocalizationResolution {
   conflictKey: string;
@@ -17,6 +21,8 @@ export interface LocalizationOverlayApplyResult {
   packedFiles: number;
   appliedTokens: number;
   appliedCompiledRows: number;
+  dataRepairs: DataRepair[];
+  dataWarnings: DataWarning[];
 }
 
 export function compatibilityResolutions(

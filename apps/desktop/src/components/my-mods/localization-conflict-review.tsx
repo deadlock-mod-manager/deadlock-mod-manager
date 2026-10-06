@@ -18,12 +18,21 @@ import {
   TriangleAlert,
 } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
+import {
+  BaselineCompatibilityReport,
+  type CompiledDataBaseline,
+} from "./baseline-compatibility-report";
 
 import {
   AssetCompatibilityReport,
   type AssetRepair,
   type AssetWarning,
 } from "./asset-compatibility-report";
+import {
+  DataCompatibilityReport,
+  type DataRepair,
+  type DataWarning,
+} from "./data-compatibility-report";
 
 export interface LocalizationCandidate {
   modId: string;
@@ -76,7 +85,13 @@ export interface HeroIdReassignment {
 }
 
 export interface LocalizationOverlayAnalysis {
+  baselines: CompiledDataBaseline[];
+  reviewFingerprint: string;
+  inputWarnings: { modId: string; filePaths: string[] }[];
   scannedMods: number;
+  compatibilityModIds: string[];
+  excludedModIds: string[];
+  protectedResources: { filePath: string; modIds: string[] }[];
   scannedVpks: number;
   localizationFiles: number;
   ignoredVanillaTokens: number;
@@ -94,6 +109,8 @@ export interface LocalizationOverlayAnalysis {
   parseWarnings: LocalizationParseWarning[];
   assetRepairs: AssetRepair[];
   assetWarnings: AssetWarning[];
+  dataRepairs: DataRepair[];
+  dataWarnings: DataWarning[];
 }
 
 export type LocalizationChoice =
@@ -128,9 +145,69 @@ export function LocalizationConflictReview({
       (warning) => `${warning.modId}:${warning.filePath}`,
     ),
   ).size;
+  const hasWarnings =
+    warningFiles > 0 ||
+    analysis.inputWarnings.length > 0 ||
+    analysis.assetWarnings.length > 0 ||
+    analysis.dataWarnings.length > 0;
 
   return (
     <div className='min-h-0 min-w-0 flex-1 space-y-5 overflow-x-hidden overflow-y-auto pr-2'>
+      {analysis.excludedModIds.length > 0 ? (
+        <p className='text-sm text-muted-foreground'>
+          {t("myMods.compatibility.excluded", {
+            names: analysis.excludedModIds
+              .map((id) => modNames.get(id) ?? id)
+              .join(", "),
+          })}
+        </p>
+      ) : null}
+      {analysis.protectedResources.length > 0 ? (
+        <section className='space-y-2 text-sm'>
+          <p className='font-medium'>{t("myMods.compatibility.sharedTitle")}</p>
+          <p className='text-muted-foreground'>
+            {t("myMods.compatibility.sharedDescription")}
+          </p>
+          <ul className='space-y-2'>
+            {analysis.protectedResources.map((resource) => (
+              <li key={resource.filePath}>
+                <p className='break-all font-mono text-xs'>
+                  {resource.filePath}
+                </p>
+                <p className='text-muted-foreground text-xs'>
+                  {resource.modIds
+                    .map((id) => modNames.get(id) ?? id)
+                    .join(", ")}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      {analysis.inputWarnings.length > 0 ? (
+        <section className='space-y-2 rounded-md border border-amber-500/30 p-4 text-sm'>
+          <p className='font-medium'>
+            {t("myMods.compatibility.missingFilesTitle")}
+          </p>
+          <p className='text-muted-foreground'>
+            {t("myMods.compatibility.missingFilesDescription")}
+          </p>
+          <ul className='space-y-2'>
+            {analysis.inputWarnings.map((warning) => (
+              <li key={warning.modId}>
+                <p>{modNames.get(warning.modId) ?? warning.modId}</p>
+                {warning.filePaths.map((path) => (
+                  <p
+                    key={path}
+                    className='break-all font-mono text-xs text-muted-foreground'>
+                    {path}
+                  </p>
+                ))}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       <div className='space-y-3 rounded-md border bg-muted/25 px-4 py-3.5'>
         <div className='flex items-start gap-3'>
           <Languages className='mt-0.5 h-5 w-5 shrink-0 text-primary' />
@@ -163,6 +240,17 @@ export function LocalizationConflictReview({
       <AssetCompatibilityReport
         repairs={analysis.assetRepairs}
         warnings={analysis.assetWarnings}
+        modNames={modNames}
+      />
+
+      <DataCompatibilityReport
+        repairs={analysis.dataRepairs}
+        warnings={analysis.dataWarnings}
+        modNames={modNames}
+      />
+
+      <BaselineCompatibilityReport
+        baselines={analysis.baselines ?? []}
         modNames={modNames}
       />
 
@@ -236,10 +324,17 @@ export function LocalizationConflictReview({
 
         {analysis.conflicts.length === 0 &&
         analysis.compiledDataConflicts.length === 0 ? (
-          <div className='flex items-center gap-2 rounded-md border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm'>
-            <CheckCircle2 className='h-4 w-4 shrink-0 text-emerald-500' />
-            {t("modOrdering.localization.readyMessage")}
-          </div>
+          hasWarnings ? (
+            <div className='flex items-center gap-2 rounded-md border border-amber-500/20 bg-amber-500/5 px-4 py-3 text-sm'>
+              <TriangleAlert className='h-4 w-4 shrink-0 text-amber-400' />
+              {t("modOrdering.localization.unresolvedWarningsMessage")}
+            </div>
+          ) : (
+            <div className='flex items-center gap-2 rounded-md border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm'>
+              <CheckCircle2 className='h-4 w-4 shrink-0 text-emerald-500' />
+              {t("modOrdering.localization.readyMessage")}
+            </div>
+          )
         ) : null}
         {analysis.conflicts.map((conflict) => {
           const selected = choices[conflict.key] ?? "load-order";

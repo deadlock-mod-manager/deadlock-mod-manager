@@ -23,8 +23,8 @@ mod types;
 mod writer;
 
 pub use patch::{
-    Seg, insert_array_element_adding, neutralize_draw_calls, set_blob, set_bools, set_doubles,
-    set_floats, set_scalars, set_sole_blob, set_strings, set_strings_adding,
+    insert_array_element_adding, neutralize_draw_calls, set_blob, set_bools, set_doubles,
+    set_floats, set_scalars, set_sole_blob, set_strings, set_strings_adding, Seg,
 };
 pub use rewrap::rewrap_uncompressed;
 pub use types::{Encoding, EncodingChildren, Value};
@@ -124,4 +124,20 @@ pub fn encode_preserving(
     format: &Format,
 ) -> Result<Vec<u8>, DecodeError> {
     writer::encode_preserving(value, encoding, format)
+}
+
+/// Promote compact numeric tags only when edited typed-array items no longer
+/// share a wire type. Flags and all unrelated field encodings remain unchanged.
+pub fn normalize_numeric_array_encoding(
+    value: &Value,
+    encoding: &mut Encoding,
+) -> Result<(), DecodeError> {
+    writer::normalize_numeric_array_encoding(value, encoding)
+}
+
+/// Verify a preserving rebuild's flags, widths, typed arrays and object order.
+/// Auxiliary v5 arrays use the documented equivalent v4 typed-array representation.
+#[must_use]
+pub fn encoding_preserved(value: &Value, expected: &Encoding, actual: &Encoding) -> bool {
+    writer::encoding_preserved(value, expected, actual)
 }

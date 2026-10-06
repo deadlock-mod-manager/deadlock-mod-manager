@@ -8,21 +8,133 @@ Deadlock files before creating its merged overlay. These checks run in the Rust
 backend in release builds. They require no AI agent, network service, or diagnostic
 tools on the user's computer.
 
-Compatibility is opt-in and off by default. Mods Library exposes an
-**Enable Compatibility** switch and a **Review Compatibility** action. The switch
-is an app-wide preference saved in the existing application store. It controls
-both shared game-data merging and verified model repairs.
+Compatibility is opt-in **per mod and per profile**, and starts off for existing
+and newly installed mods. Each registered mod in Mods Library has a visible
+**Compatibility** checkbox in its footer. Clicking the checkbox or its label
+changes the preference directly. The checkbox is distinct from the adjacent
+**Mod** enable switch, and hovering it explains how fixes work. The same choice
+is also available in the mod's right-click menu. The library shows
+**Review Compatibility** when an enabled mod has fixes selected. The old
+app-wide preference does not enable these controls automatically.
 
-Enabling compatibility opens the review for the active library. Users can also
-review while it is off and select **Enable and Apply**. Review does not reorder
-mods. Saving mod order no longer runs compatibility analysis or applies repairs.
-When compatibility is off, launch bypasses preparation and ignores existing
-repair packages in every profile's search paths. Disabling it removes the active
-library's package and receipt and refreshes the game's search paths. Changing the
-preference or applying repairs requires Deadlock to be closed; review remains
-available while the game runs.
+The profile VPK manifest stores `compatibilityEnabled` on each mod entry.
+Disabling or reordering a mod preserves its preference. Turning a preference on
+or off removes the active profile's old overlay and receipt, invalidates cached
+plans, and refreshes game search paths. Deadlock must be closed to change these
+preferences or apply fixes. Review remains available while it runs.
+
+Analysis indexes every enabled mod for load order and dependency context, but
+only selected mods contribute repair candidates or baseline history. If any
+opted-out enabled mod supplies a resource, that entire path is protected from
+overlay replacement, even when a selected mod also supplies it. Review lists
+these shared resources. This conservative rule preserves original load-order
+behavior rather than pretending shared compiled files can be independently
+patched per provider. A material recipe requiring a protected output declines
+as a whole. Export also checks all output paths before staging files.
+
+Launch prepares verified fixes for selected mods automatically. Unreviewed
+warnings, uncertain baselines, and conflicts pause launch and open the review
+directly, from any page. **Apply fixes and launch** writes the reviewed plan and
+retries launch once; closing the dialog cancels launch. Warnings are preserved
+and do not imply that every mod has been repaired. The backend rechecks the
+receipt and current inputs on the retry. Further changes require another launch
+attempt rather than repeatedly prompting or bypassing review.
+
+If no enabled mod has compatibility
+selected, preparation is bypassed and existing repair packages are ignored.
+Saving mod order alone does not trigger repairs. The selected mod IDs form part
+of the receipt/cache key and review fingerprint, so changing selection rejects
+old review choices.
 
 ## Automatic repairs
+
+### Baseline evidence and local history
+
+Historical matching has two distinct jobs: finding plausible game builds and
+proving that a field was unchanged. Approximate float fingerprints can help find
+a build, but they cannot authorize discarding a numeric difference. New history
+stores exact row and field fingerprints separately from discovery fingerprints.
+The bundled older history remains readable; its floating-point values cannot
+prove an unchanged field or authorize repairs that need that proof.
+
+The review reports matched, approximate, ambiguous, and unavailable baselines.
+Equally good candidate builds are accepted only when they imply the same authored
+changes. Conflicting candidates leave historical rebasing disabled. Missing or
+uncertain history preserves differences from today's game and requires review;
+a close historical match is an inference, not a declaration from the mod author.
+
+When relevant mods are analyzed and `steam.inf` identifies the game build, the
+manager records fingerprints of the installed vanilla VData tables in an atomic
+cache scoped to that installation. It retains the latest 64 distinct snapshots
+per table and compacts older deltas without losing the retained snapshots. This
+learns future patches locally without shipping another embedded history update.
+It cannot recover a build the installation never observed. Corrupt history is
+ignored and rebuilt from the currently installed tables.
+
+### Hero and ability data
+
+VData tables are merged first, then checked together using the selected conflict
+resolutions. Changing a choice refreshes the preview before apply. The dependency
+pass follows bound hero abilities, ability triggers and weapon/slide references,
+plus `_base` and `_multibase` inheritance within a table. Native `_class` names,
+model paths, and CSS classes are not treated as table dependencies.
+
+An unchanged historical definition absent from today's game is usually discarded.
+If a retained mod row still needs it, the manager can keep that definition after
+migrating known enum aliases. Its native class must still occur in the installed
+table, its enum strings must be observed at matching property paths in current
+data, and all enabled copies must agree on both runtime values and encoding.
+Every known dependency in the retained chain must resolve. A failed chain produces
+a finding without adding part of the chain. Inheritance loops prevent repair;
+mutual ability triggers can be valid and are allowed. Current game definitions
+and authored mod definitions take precedence over historical copies.
+
+New and retained definitions can also inherit current settings from a declared
+`_base` or `_multibase` template. The template must be the only eligible parent
+with the same native class, must exist in today's game, and must match an unchanged
+historical source row. Differences between the old template and its child are
+replayed onto the current template with their original encoding. This carries
+new defaults forward and drops removed inherited fields while preserving distinct
+child settings. It does not delete arbitrary unfamiliar fields.
+
+If another selected mod changes the template, the new child's update is skipped
+and its original settings are used. Retired dependency repair is rejected in that
+case. Selecting vanilla for the template can make the repair eligible again.
+Ambiguous parents and inherited native classes not observed in current data are
+reported. A class missing from current VData may still exist in the engine; the
+manager does not guess a replacement class or claim the game code was restored.
+
+New custom heroes missing `m_eHeroDevelopmentState` can inherit only that field
+when current heroes with the same model, class, and legacy visibility flags agree
+on its value and wire encoding. Explicit visibility settings, disabled heroes,
+and development heroes are preserved. Existing hero-clone rebasing continues to
+require an unambiguous unchanged historical donor. Missing fields without enough
+evidence remain findings rather than guessed defaults.
+
+The report distinguishes restored visibility fields, retained required definitions,
+missing definitions, and repairs rejected because of competing data, unsupported
+classes/enums, or inheritance cycles. Unresolved references already present in
+vanilla are excluded from these mod findings. Unreferenced historical definitions
+stay discarded. Original archives are never changed.
+
+Hero level-up modifier maps are checked against the union of keys in the installed
+hero table. Keys absent from that observed domain are omitted from the overlay,
+with matching encoding entries removed. Supported values and cosmetic fields
+remain authored. Every omission appears in the repair report; nonzero omissions
+also require author review because no replacement or unit conversion is inferred.
+This rule applies only to `CitadelHeroData_t.m_mapStandardLevelUpUpgrades`, whose
+native keys are modifier enums. It does not prune open string or ability maps.
+The observed domain is not a complete engine enum registry: a valid key unused by
+all current heroes may be omitted, so this check does not establish full schema
+compatibility. Runtime testing of legacy Sliver exposed this gap when a retired
+modifier key caused 55 hero definitions to fail parsing despite a valid binary.
+
+These checks cover the reference fields listed above; they are not a complete
+game schema or proof of in-game behavior. Adding a field to vanilla does not prove
+that every mod needs it. New reference fields and schema migrations need evidence
+and regression coverage before becoming automatic rules.
+
+### Models and animation skeletons
 
 Animation skeletons can inherit today's vanilla resource when the surviving bone
 names, named parents, reference poses, masks, and existing metadata agree. Compiler
@@ -54,9 +166,19 @@ bounds select a repair; they do not authorize overwriting the mod's poses.
 When those narrow checks reject a sampling change, the manager can use the mod's
 full model rig as additional evidence. It requires one unambiguous model at a
 matching game path, owned by the same source archive, with the same active NM
-animation graph references. Custom animation data in the source mod, or active
-animation overrides from any enabled mod, prevent this broader migration.
-Unrelated legacy animation graphs cannot replace these active NM graphs.
+animation graph references. Custom animation data in the source mod prevents this
+broader migration. Effective overrides from other mods are checked against the
+model's graph closure and their clips' skeleton references. Unrelated NM clips
+and nested graphs are allowed only when those checks prove they do not affect the
+candidate skeleton. Event graphs without child resources require an explicit,
+verified skeleton binding. A game graph with that binding may reference an absent
+optional NM clip only when no enabled mod provides that clip. Missing graphs,
+missing override resources, graph cycles, unsupported animation formats, and
+exhausted traversal limits prevent migration. Unrelated legacy
+animation graphs cannot replace these active NM graphs. Structural layout repairs
+also require this dependency proof when active animation overrides are present.
+After this proof, structurally equivalent rigs still inherit the exact current
+resource bytes rather than undergoing an unnecessary model-backed rewrite.
 
 This model-backed rebase supports three structural patterns:
 
@@ -77,9 +199,103 @@ metadata, and competing model or skeleton sources. An available model is evidenc
 for these checks, not permission to replace a custom deformation rig.
 
 Models missing the complete camera interface can inherit today's camera metadata
-and attachment points when their rigs are equivalent. Existing camera interfaces,
-attachments, mesh buffers, animation references, and authored poses are preserved.
+and attachment points when every current bone retains its parent and reference
+pose. After a verified NM binding migration, the same bounded uniform-size proof
+may be applied to every current model bone before adding camera attachments.
+Additional authored branches and reordered indices are allowed; all source
+bones and mesh mappings remain intact. Models with authored camera
+attachments but missing `CitadelCameraSettings_t` can inherit numeric camera
+offsets without changing their rig or attachments. Schemas containing resource,
+bone, or attachment references require further evidence and are not copied.
+Existing camera fields, attachments, mesh buffers, animation references, and
+authored poses are preserved. Unrepaired missing camera fields are reported.
 Conflicting model sources keep addon precedence and are not automatically repaired.
+
+Hero model relocation follows the current `heroes.vdata_c` model bindings. It
+uses previously observed bindings for the same hero definition to identify an
+old primary model, rather than matching display names, mod titles, or filenames.
+The bundled archive includes all 43 model bindings from a pinned November 2024
+game definition; its source commit, date, URL, and SHA-256 are recorded in
+`src-tauri/assets/hero-model-bindings.json`. Model compatibility analysis also
+records the installed game's hero table, even when no mod edits that table.
+Observed string bindings survive the 64-build history compaction and are stored
+in the v3 history format; older history formats remain readable.
+
+A unique current target is required. Competing models, opted-out target paths,
+and enabled hero definitions that change the target model block relocation.
+Unrelated hero-definition edits with an unchanged model binding do not block it.
+Legacy models pass through the same sampled-rig, animation, camera, mesh mapping,
+and resource checks used for repairs at existing paths. Already valid AG2 models
+can move only after proving that their current graph bindings and sampled rig
+match. The output retains the mod's material bindings and authored mesh data;
+it does not restore the vanilla appearance. Failed preservation checks produce a
+model-mapping warning and no relocated output.
+
+The fifteen-mod mixed tests also generate a migration for the older Ivy fixture
+through this same code; neither fixture requires hero-specific dispatch.
+
+This is a generic migration for historical primary hero-model bindings. Unknown
+historical bindings, material-only migrations, HUD style updates, and arbitrary
+asset schema changes still need separate evidence and adapters. A valid export
+is not an in-game acceptance test.
+
+Partial interfaces missing camera attachments can inherit those attachments when
+the rigs are equivalent. Required attachment names are read from the current
+model's `AttachmentCameraData`, including additional poses and alternate forms.
+If the current attachments need a missing control bone,
+the manager can append an isolated root leaf with zero deformation bounds to a
+single embedded mesh. Its current bind pose, flags, and inverse bind matrix come
+from the game model. All original bone indices and remapping entries remain
+unchanged. Graph and sampling skeleton bindings must match. The sampling skeleton
+must resolve from the game; overrides of that skeleton or the model's graph
+closure prevent extension. Overrides elsewhere in the library can coexist when
+the shared dependency proof verifies that they sample another skeleton. Unknown
+animation formats and animations supplied by the model's own mod still prevent
+extension. Constraints, external meshes, dependent deformation branches, and unsupported
+bone schemas prevent this extension. This rule uses asset structure and matching
+paths for every hero and alternate form, without hero-specific dispatch.
+
+Model checks include `m_animGraph2Refs.m_hGraph` and the legacy
+`anim_graph_resource` in embedded metadata, including mods with no separate
+skeleton file. When both NM binding arrays are absent or empty, the manager can
+inherit the same model's installed-game bindings after verifying the current NM
+sampling skeleton. Every sampled bone and its complete ancestor chain must retain
+its named parent. Reference poses must match, or all sampled local translations
+must fit one uniform size change within 2%, with at most 0.002 units of residual
+per coordinate. Rotations still match within 0.00001 per quaternion component,
+allowing sign reversal; local scales retain the existing 0.001 tolerance. This
+proof does not modify authored poses. Bone names must match
+unambiguously, including case, and all referenced graphs and the single sampling
+skeleton must resolve from the game. Active animation overrides, partial authored
+bindings, ambiguous models, and nonuniform pose changes prevent this repair.
+An absent sample may be appended only as an identity leaf directly under an
+existing root, with zero deformation sphere in the current model. Both rigs must
+use the known seven-array bone schema, and the source cannot use external meshes.
+Existing indices, mesh data, and remapping entries remain unchanged. Other missing
+sampled bones prevent repair. Skipped migrations report the failing bone or check.
+
+Binding restoration preserves the complete source deformation rig, material
+groups, mesh mappings, stream buffers, and embedded legacy animation blocks. The
+new resource references use verified Source 2 IDs, and the rebuilt DATA is checked
+for values and wire encoding. Camera repair consumes that result, so the two edits
+compose on one model. Binding restoration also adds missing current pawn-control
+metadata and removes unavailable legacy graph selectors at the root and in
+`CCitadelHeroModelGameData_t`. Null selectors are treated as absent. Existing AG2
+pawn/UI selectors can move to canonical bindings only when their resource path
+matches the current binding for the same identifier. An available legacy graph or
+a differing available modern graph prevents this migration.
+Authored control settings and particle fields survive. Include-model dependencies
+and embedded legacy clips remain intact and can still produce missing-resource
+warnings; restoring NM bindings does not establish that every legacy animation
+remains usable. File-contract tests cannot prove live animation or facing behavior.
+When adding camera attachment points, valid authored points already present are
+preserved, missing points are appended, and duplicate or invalid camera points
+prevent the repair. This lets partial camera interfaces migrate without replacing
+authored attachment transforms.
+
+Missing graph references remain warnings outside this proven migration. Reviews
+with unresolved warnings do not show a green
+ready status merely because no mods conflict.
 
 The rules operate on resource structure rather than mod IDs or hero names. The
 installed game provides the current reference data. Unknown differences do not
@@ -136,6 +352,223 @@ These checks do not validate every vertex weight, shader, animation clip, or gam
 behavior. New repair rules still need a reproducible game test and regression
 coverage before they can be applied automatically.
 
+The resolver indexes the supplied enabled archives once, preserving their ordered
+first-provider precedence. Installed citadel/core loose files and top-level VPK
+archives provide game baselines. This scope does not emulate arbitrary workshop,
+map, server, or language search-path overrides. Entry extraction includes VPK
+preload prefixes, including entries stored entirely in the directory tree, and
+reads payloads lazily. Repeated reads share bytes within the plan. Successful KV3
+parses use an exact-content LRU cache limited to 16 entries and a conservative
+32 MiB allocation charge; oversized trees are parsed without being retained.
+Loose file presence is stamped, with content hashes for supported compiled
+baseline formats and the language files supplied by enabled mods. Other languages
+do not need a content hash. Directory aliases are followed with cycle guards.
+
+## Material migrations
+
+Material dependency checks cover enabled compiled materials, including those
+without a migration recipe. Missing textures and unreadable material resources
+appear in compatibility review. A successful parse proves neither that a current
+model uses the material nor that its shader renders the intended effect.
+
+For a material with a current counterpart, a shared interface comparison reports
+missing named texture slots, enabled authored shader features that differ from
+the current reference, changed shaders, and ambiguous parameter tables. Texture
+slot comparisons require matching enabled feature values, treating omitted
+features as disabled. Different feature variants can intentionally omit detail
+or outline textures. Texture values may differ without a warning when their slot
+names remain present. These
+findings do not replace any authored values or produce material assets: an extra
+feature can be intentional, and a current material is not the full shader schema.
+For example, Old Mina's old eye material enables `F_USE_STATUS_EFFECTS_PROXY`
+while today's counterpart does not. The renderer requests `g_tAltColor_Reveal`,
+but neither material defines it. The scanner reports the unverified feature
+interface; it does not invent a texture binding or claim to know every runtime
+requirement. Review warnings remain distinct from successful gameplay tests.
+
+The first reviewed migration, `minion-static-glow-v1`, restores the legacy candle
+wax color mod on current minions. It identifies the four authored material roles
+by resource path, resolves current model and role bindings from `npc_units`, and
+checks actual embedded draw calls. It transfers only the reviewed static emission
+scale, albedo factor, and tint to the current shader interface. Current texture
+parameters, shader features, rig indices, and geometry remain intact.
+
+Amber wax, Sapphire shared body/head material, and Sapphire melee head material
+are separate targets. Sapphire head draw calls are isolated across the three
+live health groups and every registered LOD before applying a white emission
+mask. Body and fractured meshes retain their original bindings. Missing mesh
+groups, external or incomplete selected meshes, unknown health groups, authored
+material variants, conflicting providers, or another repair owning the same
+output cause the complete migration to be declined with a finding.
+
+Generated materials live under `dmm/compatibility/materials/<content hash>/`.
+Their RERL IDs use MurmurHash64B with seed `0xEDABCDEF`, verified against installed
+engine code and 276 installed resource references. Generated dependencies must
+resolve through the planned overlay or effective game/mod resources. Bundled
+default textures may differ in compiler provenance only when their DATA header,
+streamed pixel payload, resource version, and YCoCg interpretation match exactly.
+
+This recipe establishes one reviewed correspondence. It does not infer arbitrary
+material renames or all authored edits from filename similarity. Additional
+resource families need evidence-backed mappings and game verification.
+
+## Regression corpus
+
+Prepare pinned older GameBanana fixtures with:
+
+```sh
+bun apps/desktop/scripts/compatibility-corpus.ts /tmp/dmm-compatibility-corpus
+DMM_REAL_CITADEL=/path/to/Deadlock/game/citadel \
+  DMM_COMPAT_CORPUS=/tmp/dmm-compatibility-corpus/cases.json \
+  DMM_COMPAT_REPORT=/tmp/dmm-compatibility-corpus/report.json \
+  cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --lib \
+  run_obsolete_mod_corpus -- --ignored --nocapture --test-threads=1
+```
+
+The preparer requires 7z, verifies each download's pinned SHA-256, and keeps the
+assets outside the repository. It does not install or enable the fixtures. The
+runner analyzes each mod separately, exports any overlay, verifies its compiled
+DATA with an independent reader, checks source archives remain unchanged, and
+records resource categories, current hero model usage, repairs, warnings, and
+timing. Analysis or export failures fail the run after writing its report.
+
+The corpus now pins fifteen source archives: the original five older models, Toon
+Bebop, Ivy Gardener, Bull Abrams, Kelvin Amazon Worker, TF2 Engineer McGinnis,
+Gold Pocket, Scaramouche Seven, Nightsisters Merrin Vindicta, Minimalist Health
+Bar, and Square Top Bar. Merrin uses only the cape-with-cloth variant; alternative
+skins and optional gun audio are excluded from that case.
+The `mixed_corpus_respects_per_mod_selection_and_load_order` opt-in test uses all
+fifteen together, with none, all, alternating, Toon-only, and all-except-Toon selected,
+in forward and reverse order. It checks that exports never replace opted-out
+resources, repair findings belong to selected mods, compiled outputs decode with
+an independent reader, and source VPK hashes remain unchanged. Use the same
+variables as above, a separate `DMM_COMPAT_REPORT` output, and that test name.
+Results and unresolved findings are recorded in
+`apps/desktop/prototypes/per-mod-compatibility-regression.json`. The four added
+fixtures still have camera, retired animation, hierarchy, or missing dependency
+findings; a completed export check does not mean they have complete repairs.
+
+The next five cases and the fifteen-mod mixed checks are recorded in
+`apps/desktop/prototypes/compatibility-batch-3-results.json`. Scaramouche produces
+a verified animation/camera model export. Gold Pocket retains unresolved
+legacy-resource findings. Merrin's initial
+coordinated rig repair was declined because the checker treated unused branches
+in the current NM skeleton as missing deformation bones. The two HUD mods supply
+twelve compiled styles whose paths still exist in the installed game. There is
+no generic compiled-style repair adapter, so their lack of findings is a coverage
+gap rather than evidence of compatibility. Scaramouche passed a user-reported
+in-game test with its generated overlay. Gold Pocket failed its user-reported
+appearance test: the current `hero_synth` definition loads
+`models/heroes_wip/pocket/pocket.vmdl`, while the mod replaces retained legacy
+`models/heroes_staging/synth` assets. A read-only traversal of the current model,
+mesh, material, and texture references found 46 appearance assets and no mod
+overrides on that chain. Asset existence alone therefore does not establish
+that a mod still affects the active hero. The generic relocation regression now produces the current model path,
+independently decodes the compiled output, and preserves its authored material
+bindings. The user confirmed that Pocket is gold in-game with the generated repair,
+with normal movement, abilities, and cameras during the ultimate and briefcase.
+This records a user-reported pass for the shared hero-model migration.
+Merrin's original model loads in-game, but the user reported missing animations,
+sliding movement, and a stuck camera. The shared unused-branch proof and sampled
+camera dependency composition now produce its animation/camera repair. The
+real-file regression verifies current bindings, skinning preservation and
+independent DATA/MDAT decoding. Its generated overlay is applied with repair
+revision 25, and its in-game retest remains pending. All ten fifteen-mod
+selection/load-order scenarios pass with this proof. The same code also enables
+older Kelvin and Abrams exports, whose runtime behavior remains unverified. The two HUD cases still require in-game
+tests. Individual runtime checks were not independently observed.
+
+Synthetic regressions also exercise 64 selected localization mods and a selected
+mod alongside up to 64 opted-out mods. These checks establish file-level scope
+and merge behavior, not in-game acceptance of every combination.
+
+The initial corpus contains Old Mina, Mo and Mo, legacy Sliver & Saint, Summer
+break Dynamo, and 2B Yamato. Build 6745 results are recorded in
+`apps/desktop/prototypes/compatibility-corpus-results.json`. All five main model
+paths still match current hero definitions. Their models lack current animation
+graph or skeleton bindings, which are reported separately from retired resource
+references. Sliver & Saint's cat form passes sampled-rig proof and receives both
+NM bindings and camera metadata while retaining its custom bones and geometry.
+Sliver's main form and Old Mina also pass the bounded sampled-rig proof. Their
+generated overlays have passed user tests for animation, movement, turning, and
+cameras; Old Mina additionally passed shooting, abilities, and umbrella appearance
+checks. Mo and Mo, Dynamo, and 2B Yamato still fail bone/pose proof and retain
+actionable warnings. These three have not passed runtime testing.
+Sliver's copied hero table also contains retired ability slots for unrelated
+heroes. If a required definition cannot be recovered, an existing
+`CitadelHeroData_t` row can restore the installed game's binding at that slot, or
+remove a direct optional slot that the current row no longer declares. Other
+authored fields, including model paths, remain intact. This fallback runs only
+after dependency retention fails because a definition is unavailable. A new hero
+row with unavailable bound abilities is omitted when no other hero definition
+inherits it, and the omitted row is reported. Shared templates, inheritance
+references, competing definitions, unsupported classes, and unknown reference
+schemas keep their unresolved warnings. Each restored binding is reported
+as a repair; the unavailable old ability is not claimed to have been recovered.
+Dynamo's missing mask/normal compiler input CRCs differ from today's inputs, and
+its custom watergun mask has no current counterpart. These textures are not
+silently replaced with similarly named or default textures.
+
+The ignored `legacy_cat_bindings_and_camera_preserve_authored_geometry` test
+checks the composed repairs against that pinned fixture and independently decodes
+the rebuilt model. Setting `DMM_COMPAT_LIVE_OVERLAY` to the prepared overlay VPK
+also compares its cat model byte-for-byte with the fixture pipeline, checks that
+the unsupported copied Tokamak row is absent, and verifies all exported hero
+ability bindings resolve or match a current native fallback. This optional check
+targets the isolated Sliver test setup on the recorded game build.
+Unverified fixtures explicitly record `runtime: not-tested`:
+binary round trips and reported repairs are not in-game acceptance or a coverage
+percentage. Runtime tests need documented launch, hero/ability, and visual checks
+for each fixture before a migration can be considered verified.
+
+### Coordinated deformation-rig migration
+
+When restoring current AG2/NM bindings fails the authored-pose proof, an embedded
+model can use a coordinated rig rebase. This adapter matches bone names without
+case ambiguity, preserves existing bone indices and remapping tables, and adds
+only required current bones and ancestors. It does not import unrelated current
+cloth branches. Existing bones keep their authored model-space bind frames while
+parents are reconciled by name. Added controls inherit their current local frame
+from the retained authored parent. A model's mesh binding is distinct from the NM
+animation skeleton's reference pose: a mod can be compiled in a seated pose while
+the current reference skeleton stands upright.
+
+Vertex/index buffers, mesh inverse binds, morphs, materials, attachments, hitboxes,
+embedded physics and legacy animation blocks remain unchanged. Original inverse
+binds must agree with the authored model rig. External meshes/physics and
+bone-indexed procedural drivers still require a separate adapter and decline.
+
+The serializer normalizes compact numeric array tags only when an edit requires
+it, preserves flags, and verifies the resulting values and encodings after decode.
+The adapter also checks serialized mesh skinning transforms, attachment frames
+and hitbox shapes against the original before publishing any model repair. It
+requires the same skinning transforms under a shared animated world pose, not
+just matching identity transforms at each model's own rest pose.
+Current NM branches omitted by both the current render model and the authored
+model do not count as missing deformation bones. This exception requires a
+known-good unoverridden reference, a mapped ancestor and a self-consistent NM
+reference pose. Every descendant must be absent from both models; branches with
+a mapped descendant and unanchored NM roots are rejected. No hero or bone-name
+allowlist is used.
+
+After a proven deformation-rig rebase, camera dependencies sampled by the current
+game NM skeleton may retain the authored bind frames: the animation supplies
+their canonical world poses by name. Their named ancestor chains must still
+match. Unsampled camera dependencies continue to require matching poses, even
+when they share ancestors with sampled camera bones.
+Camera migration verifies the actual camera influences and their ancestor chains
+rather than requiring unrelated cloth branches to match.
+
+Dynamo's revision 20 repair was accepted in-game; its missing-texture findings
+remain unresolved. Mo's revision 20 repair passed rest-pose checks but failed
+in-game: Krill's seated mesh stretched when driven from the replaced standing
+bind frame. Revision 21 retains authored frames. The opt-in corpus regression
+samples two installed idle clips at three times and compares every skinned
+vertex against the original binding; the standing-frame counterexample must
+produce a large error for the fixture to qualify. Runtime confirmation remains
+required for Mo and 2B Yamato, and for Dynamo after this changed migration rule.
+The adapter has no hero-name or mod-ID repair rules.
+
 ## Overlay lifecycle
 
 Original mod VPKs are read, never patched. Repaired resources are packed into a
@@ -144,10 +577,19 @@ paths. This is preparation before launch, not runtime code injection.
 
 A `compatibility.json` receipt beside the overlay records:
 
-- The ordered enabled-mod inputs and their file stamps
+- The ordered enabled-mod inputs, selected compatibility IDs, and file stamps
 - Game/core VPK indexes and numbered data chunks, plus `steam.inf`
+- Relevant loose resources with content hashes, plus the observed-history digest
 - The repair-rule revision and overlay SHA-256
 - Reviewed conflict resolutions and the compatibility report
+
+The receipt records the VData repairs and findings from the applied resolutions,
+rather than the initial load-order preview. Rebuilt compiled resources are decoded
+again and their full runtime values, format GUID, flags, numeric widths, typed
+arrays, and object order are checked against the intended result. The supported
+v5 auxiliary-array conversion is verified against the equivalent v4 encoding.
+Compatibility rebuilds reject duplicate DATA blocks and unrepresented stream tails
+instead of silently dropping data outside the resource's block table.
 
 When compatibility is enabled, launch reuses an overlay only when its receipt,
 inputs, and output hash match.
@@ -160,3 +602,18 @@ The manager stages overlay and receipt writes before replacing their destination
 files. Mod changes and overlay deletion invalidate both files. Increment
 `REPAIR_REVISION` in `manager/localization/receipt.rs` when changing repair rules or
 output semantics so already-installed overlays are regenerated.
+
+Addon analysis registers a mod only after validating its full VPK paths and saving
+its manifest entry. An exact duplicate file assignment transfers ownership to the
+identified mod; partial overlaps and ambiguous filenames are rejected.
+
+Compatibility review reads a snapshot of the installed files. Records whose VPKs
+were all deleted are skipped and shown in the report. A partially missing mod
+blocks merging and identifies the missing files, so the user can reinstall or
+disable it. Review does not rewrite the manifest or modify the original VPKs.
+Deleting a mod also clears older manifest aliases of its deleted files.
+
+Apply requires the input fingerprint returned by review and checks the inputs
+again after preparing the plan. If mods or game files changed, the user must
+review again. Duplicate, unavailable, or stale conflict choices fail in both
+preview and export, before output files are replaced.
