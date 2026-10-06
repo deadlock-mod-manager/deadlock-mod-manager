@@ -43,10 +43,13 @@
   
 <!-- Distribution & Platforms -->
 [![Windows][windows-status]][windows-url]
+[![winget][winget-status]][winget-url]
 [![Linux][linux-status]][linux-url]
 [![AUR][aur-status]][aur-url]
+[![nixpkgs][nixpkgs-status]][nixpkgs-url]
+[![Gentoo overlay][gentoo-status]][gentoo-url]
 
-  <img src="./docs/assets/deadlock-mod-manager.png" alt="Deadlock Mod Manager" width="600">
+  <img src="./docs/assets/deadlock-mod-manager.png" alt="Deadlock Mod Manager dashboard" width="720">
   
 </div>
 
@@ -54,10 +57,10 @@
 <details>
   <summary>Table of Contents</summary>
   <ol>
-    <li><a href="#screenshots">Screenshots</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#installation">Installation</a></li>
     <li><a href="#usage">Usage</a></li>
     <li><a href="#sponsors">Sponsors</a></li>
-    <li><a href="#whats-inside">What's inside?</a></li>
     <li><a href="#development">Development</a></li>
     <li><a href="#translation--localization">Translation & Localization</a></li>
     <li><a href="#contributing">Contributing</a></li>
@@ -66,6 +69,42 @@
     <li><a href="#acknowledgments">Acknowledgments</a></li>
   </ol>
 </details>
+
+## Features
+
+- **Mods Store** - Browse the GameBanana catalog of mods, sounds, maps, and WIPs with search, hero and category filters, favorites, and sorting.
+- **One-click installs** - Download mods, pick files or variants, and pause, resume, or retry downloads. Local mod files can be imported too.
+- **Mods Library** - Enable, disable, reorder, update, and reinstall mods, with conflict warnings and backups.
+- **Hero Skins** - Pick the active skin per hero, manage variants, and toggle sounds and other hero mods separately.
+- **Profiles** - Keep separate mod setups and share them with friends using a Profile ID.
+- **Mod Foundry** - Edit and build hero skins inside the app.
+- **Customization** - Crosshair editor, autoexec config editor with a command library, and themes.
+- **Server Browser and Stats** - Find community servers (required maps and addons are checked before joining) and view match, hero, and item stats.
+- **Discord game presence** - Show what you're playing in Deadlock on Discord.
+
+See the [features overview](https://docs.deadlockmods.app/using-mod-manager/features) for the full list.
+
+## Installation
+
+Download the latest installer for Windows or Linux (`.exe`, `.deb`, `.rpm`, `.flatpak`) from the [releases page](https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest), or use a package manager:
+
+```bash
+# Windows (winget)
+winget install --id=Stormix.DeadlockModManager
+
+# Arch Linux (AUR)
+yay -S deadlock-modmanager
+
+# nixpkgs
+nix-shell -p deadlock-mod-manager --run deadlock-mod-manager
+
+# Gentoo (third-party ::deftera overlay)
+sudo eselect repository add deftera git https://github.com/Deftera186/deftera-overlay.git
+sudo emaint sync --repo deftera
+sudo emerge -av games-util/deadlock-modmanager-bin
+```
+
+See the [installation guide](https://docs.deadlockmods.app/using-mod-manager/installation) for platform-specific steps, CEF builds, and the development AUR package.
 
 ## Usage
 
@@ -226,7 +265,7 @@ For comprehensive contributing guidelines, development setup, code style standar
 ### Top contributors:
 
 <a href="https://github.com/deadlock-mod-manager/deadlock-mod-manager/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=stormix/deadlock-modmanager" alt="contrib.rocks image" />
+  <img src="https://contrib.rocks/image?repo=deadlock-mod-manager/deadlock-mod-manager" alt="contrib.rocks image" />
 </a>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -308,33 +347,27 @@ This project was only possible thanks to the amazing open source community, espe
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-[downloads-status]: https://img.shields.io/github/downloads/stormix/deadlock-modmanager/latest/total
+[downloads-status]: https://img.shields.io/github/downloads/deadlock-mod-manager/deadlock-mod-manager/latest/total
 [downloads-url]: https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest
-[stars-status]: https://img.shields.io/github/stars/stormix/deadlock-modmanager
-[stars-url]: https://github.com/deadlock-mod-manager/deadlock-mod-manager/stargazers
-[release-status]: https://img.shields.io/github/v/release/stormix/deadlock-modmanager
+[release-status]: https://img.shields.io/github/v/release/deadlock-mod-manager/deadlock-mod-manager
 [release-url]: https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest
-[issues-status]: https://img.shields.io/github/issues/stormix/deadlock-modmanager
+[issues-status]: https://img.shields.io/github/issues/deadlock-mod-manager/deadlock-mod-manager
 [issues-url]: https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues
-[license-status]: https://img.shields.io/github/license/stormix/deadlock-modmanager
+[license-status]: https://img.shields.io/github/license/deadlock-mod-manager/deadlock-mod-manager
 [license-url]: https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/LICENSE.md
 [aur-status]: https://img.shields.io/aur/version/deadlock-modmanager
 [aur-url]: https://aur.archlinux.org/packages/deadlock-modmanager
 [tauri-status]: https://img.shields.io/badge/built_with-Tauri-24C8DB?logo=tauri
 [tauri-url]: https://tauri.app/
-[typescript-status]: https://img.shields.io/badge/typescript-007ACC?logo=typescript&logoColor=white
-[typescript-url]: https://www.typescriptlang.org/
-[rust-status]: https://img.shields.io/badge/rust-000000?logo=rust&logoColor=white
-[rust-url]: https://www.rust-lang.org/
-[commit-activity-status]: https://img.shields.io/github/commit-activity/m/stormix/deadlock-modmanager
-[commit-activity-url]: https://github.com/deadlock-mod-manager/deadlock-mod-manager/graphs/commit-activity
-[last-commit-status]: https://img.shields.io/github/last-commit/stormix/deadlock-modmanager
-[last-commit-url]: https://github.com/deadlock-mod-manager/deadlock-mod-manager/commits/main
-[contributors-status]: https://img.shields.io/github/contributors/stormix/deadlock-modmanager
+[contributors-status]: https://img.shields.io/github/contributors/deadlock-mod-manager/deadlock-mod-manager
 [contributors-url]: https://github.com/deadlock-mod-manager/deadlock-mod-manager/graphs/contributors
-[forks-status]: https://img.shields.io/github/forks/stormix/deadlock-modmanager
-[forks-url]: https://github.com/deadlock-mod-manager/deadlock-mod-manager/network/members
 [windows-status]: https://img.shields.io/badge/Windows-0078D6?logo=windows&logoColor=white
 [windows-url]: https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest
 [linux-status]: https://img.shields.io/badge/Linux-FCC624?logo=linux&logoColor=black
 [linux-url]: https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest
+[winget-status]: https://img.shields.io/winget/v/Stormix.DeadlockModManager?label=winget
+[winget-url]: https://winstall.app/apps/Stormix.DeadlockModManager
+[nixpkgs-status]: https://repology.org/badge/version-for-repo/nix_unstable/deadlock-mod-manager.svg?header=nixpkgs
+[nixpkgs-url]: https://search.nixos.org/packages?channel=unstable&show=deadlock-mod-manager
+[gentoo-status]: https://img.shields.io/badge/Gentoo-overlay-54487A?logo=gentoo&logoColor=white
+[gentoo-url]: https://github.com/Deftera186/deftera-overlay
