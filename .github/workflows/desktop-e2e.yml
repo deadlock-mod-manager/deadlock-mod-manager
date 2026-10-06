@@ -275,28 +275,13 @@ jobs:
           path: ${{ runner.temp }}/nix-closure
 
   nix-scenarios:
-    name: Linux scenarios (nix, ${{ matrix.suite }})
+    name: Linux scenarios (nix)
     needs: nix-build
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 40
     defaults:
       run:
         shell: bash
-    strategy:
-      fail-fast: false
-      matrix:
-        # local and profiles need the Windows native input helper.
-        suite:
-          [
-            smoke,
-            conflicts,
-            downloads,
-            filesystem,
-            gamebanana,
-            settings,
-            skins,
-            interchange,
-          ]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: cachix/install-nix-action@13d8dd58da0234aa297dedd986986ccb8e7f3e24 # v31
@@ -321,18 +306,22 @@ jobs:
       # Doctor is skipped: it probes the host for WebKitGTK, which the Nix
       # closure provides instead.
       - uses: ./.github/actions/setup-desktop-e2e
+      # Debian and Arch cover app behaviour; these suites check that the Nix
+      # package starts and can reach the game and app-data directories.
       - name: Run serial scenarios on a virtual display
-        env:
-          E2E_SUITE: ${{ matrix.suite }}
         run: |
-          nix shell --inputs-from . nixpkgs#xvfb-run nixpkgs#dbus --command \
-            xvfb-run -a -s "-screen 0 1920x1080x24" dbus-run-session -- \
-            pnpm --filter @deadlock-mods/desktop e2e:test -- --suite "$E2E_SUITE" --binary "$DMM_NIX_E2E_BINARY" --keep --report ../../.e2e/reports/scenarios.json
+          status=0
+          for suite in smoke filesystem; do
+            nix shell --inputs-from . nixpkgs#xvfb-run nixpkgs#dbus --command \
+              xvfb-run -a -s "-screen 0 1920x1080x24" dbus-run-session -- \
+              pnpm --filter @deadlock-mods/desktop e2e:test -- --suite "$suite" --binary "$DMM_NIX_E2E_BINARY" --keep --report "../../.e2e/reports/$suite.json" || status=1
+          done
+          exit "$status"
       - name: Retain scenario evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: desktop-e2e-nix-${{ matrix.suite }}
+          name: desktop-e2e-nix
           retention-days: 14
           include-hidden-files: true
           path: |
