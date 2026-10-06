@@ -83,7 +83,6 @@ export const useAnalyticsEvents = () => {
           platform: "desktop",
           app_version: version || "unknown",
           hardware_id: hardwareId,
-          user_id: userId,
           ...properties,
         });
         logger
