@@ -1022,19 +1022,23 @@ const CustomSettings = ({ value }: { value?: string }) => {
           </TabsContent>
 
           <TabsContent className='mt-0 space-y-4' value='about'>
-            <div className='rounded-lg border border-amber-500/30 bg-amber-500/5 p-4'>
-              <div className='flex flex-col gap-2'>
-                <div className='flex items-center gap-2'>
-                  <WarningCircle className='h-4 w-4 text-amber-500' />
-                  <h3 className='font-semibold text-primary'>
-                    {t("about.thirdPartyDisclaimerTitle")}
-                  </h3>
-                </div>
-                <p className='text-muted-foreground text-sm'>
+            <section
+              aria-labelledby='third-party-disclaimer-title'
+              className='flex items-start gap-4 rounded-lg border border-border/50 bg-card/80 p-5'>
+              <div className='flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground'>
+                <InfoIcon aria-hidden='true' className='size-5' />
+              </div>
+              <div className='min-w-0 space-y-1.5'>
+                <h3
+                  className='text-sm font-semibold leading-5 text-foreground'
+                  id='third-party-disclaimer-title'>
+                  {t("about.thirdPartyDisclaimerTitle")}
+                </h3>
+                <p className='max-w-[75ch] text-sm leading-relaxed text-muted-foreground'>
                   {t("about.thirdPartyDisclaimerDescription")}
                 </p>
               </div>
-            </div>
+            </section>
             <Section
               description={t("about.description")}
               title={t("about.title")}>
