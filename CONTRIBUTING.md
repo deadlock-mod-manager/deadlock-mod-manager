@@ -744,4 +744,4 @@ For questions about contributing, feel free to reach out to the maintainers or a
 **Community:**
 
 - [Discord Server](https://discord.gg/WbFNt8CCr8)
-- [GitHub Discussions](https://github.com/stormix/deadlock-modmanager/discussions)
+- [GitHub Discussions](https://github.com/deadlock-mod-manager/deadlock-mod-manager/discussions)
