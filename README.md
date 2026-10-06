@@ -183,6 +183,19 @@ For development setup, project architecture, contributing guidelines, and API in
 - **[Developer Documentation](https://docs.deadlockmods.app/developer-docs)** - Development setup and architecture
 - **[API Reference](https://docs.deadlockmods.app/api)** - Interactive API documentation
 
+### Quick start
+
+You need [Node.js](https://nodejs.org/) 24.8+, [pnpm](https://pnpm.io/), [Bun](https://bun.sh/) 1.4.2+, and [Rust](https://rustup.rs/) (stable), plus the [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your platform (Visual Studio C++ Build Tools and WebView2 on Windows, WebKitGTK and friends on Linux).
+
+```bash
+git clone https://github.com/deadlock-mod-manager/deadlock-mod-manager.git
+cd deadlock-mod-manager
+pnpm install
+pnpm desktop:dev
+```
+
+The desktop app talks to the production API by default, so you don't need a local database to work on it. To run the API, web app, and other services locally, follow the [development setup guide](https://docs.deadlockmods.app/developer-docs/development-setup) (Docker, `.env`, `pnpm db:push`).
+
 ### Development with Nix (Linux only)
 
 [![Built with Nix](https://img.shields.io/badge/Built_With-Nix-5277C3.svg?logo=nixos&labelColor=73C3D5)](https://nixos.org)
@@ -311,8 +324,11 @@ This project was only possible thanks to the amazing open source community, espe
 - [TypeScript](https://www.typescriptlang.org/)
 - [Vite](https://vite.dev/)
 - [Tauri](https://tauri.app/)
-- [Turborepo](https://turbo.build/)
+- [Turborepo](https://turborepo.com/)
 - [pnpm](https://pnpm.io/)
+- [Oxc](https://oxc.rs/) (oxlint and oxfmt)
+- [Lefthook](https://lefthook.dev/)
+- [Changesets](https://github.com/changesets/changesets)
 
 **Backend**
 
@@ -321,6 +337,9 @@ This project was only possible thanks to the amazing open source community, espe
 - [oRPC](https://orpc.unnoq.com/)
 - [Drizzle ORM](https://orm.drizzle.team/)
 - [Zod](https://zod.dev/)
+- [Better Auth](https://www.better-auth.com/)
+- [BullMQ](https://bullmq.io/)
+- [discord.js](https://discord.js.org/)
 
 **UI & Styling**
 
@@ -328,7 +347,11 @@ This project was only possible thanks to the amazing open source community, espe
 - [Radix UI](https://www.radix-ui.com/)
 - [Tailwind CSS](https://tailwindcss.com/)
 - [Phosphor Icons](https://phosphoricons.com/)
+- [Lucide](https://lucide.dev/)
 - [React Icons](https://react-icons.github.io/react-icons/search)
+- [Recharts](https://recharts.org/)
+- [Three.js](https://threejs.org/)
+- [Sonner](https://sonner.emilkowal.ski/)
 
 **TanStack**
 
@@ -342,6 +365,8 @@ This project was only possible thanks to the amazing open source community, espe
 
 - [Sentry](https://sentry.io/)
 - [react-i18next](https://react.i18next.com/)
+- [Zustand](https://zustand.docs.pmnd.rs/)
+- [Fumadocs](https://fumadocs.dev/)
 
 </details>
 
