@@ -65,7 +65,7 @@ overrides:
   vite@>=7.1.0 <=7.1.10: '>=7.1.11'
   rolldown: 1.0.1
 
-pnpmfileChecksum: sha256-K7bvrLUEV+AlU7SrNfpWsiewYD8G3c54zsF8wFVDl8Y=
+pnpmfileChecksum: sha256-BbUkUXzfyvNH8xLJeUfLYAuuFTXvHrHePR0/rj/euPQ=
 
 importers:
 
