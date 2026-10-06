@@ -20,7 +20,7 @@ import { formatDistanceToNow } from "date-fns";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { DeadlockApiCredit } from "@/components/stats/deadlock-api-credit";
-import { StatsSettings } from "@/components/stats/stats-settings";
+import { MatchSyncToggle } from "@/components/stats/match-sync-toggle";
 import type { SteamAccount } from "@/hooks/use-steam-accounts";
 import {
   type PlayerRank,
@@ -177,7 +177,7 @@ export const StatsHeader = ({
           </TooltipContent>
         </Tooltip>
 
-        <StatsSettings />
+        <MatchSyncToggle />
       </div>
     </div>
   );

@@ -34,7 +34,7 @@ import { OverviewTab } from "@/components/stats/overview-tab";
 import { SquadTab } from "@/components/stats/squad-tab";
 import { StatsHeader } from "@/components/stats/stats-header";
 import { StatsHints } from "@/components/stats/stats-hints";
-import { StatsSettings } from "@/components/stats/stats-settings";
+import { MatchSyncToggle } from "@/components/stats/match-sync-toggle";
 import { StatTileSkeleton } from "@/components/stats/stat-tile";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import {
@@ -286,7 +286,7 @@ const Stats = () => {
           <div className='flex flex-wrap items-center justify-center gap-3'>
             {statsTabs}
             <DeadlockApiCredit />
-            <StatsSettings />
+            <MatchSyncToggle />
           </div>
         )}
         {hasAccount && (

@@ -278,8 +278,7 @@
       "priorityCta": "Learn more"
     },
     "settings": {
-      "title": "Stats settings",
-      "moreOptions": "More match sharing options"
+      "matchSync": "Match Sync"
     },
     "matchSyncHint": {
       "description": "Match sharing is off. Turning it on lets this app upload the matches you play, so Deadlock API can show them here instead of waiting on somebody else to submit them.",
