@@ -35,6 +35,41 @@ jobs:
       - name: Lint deadlock-modmanager-git
         run: namcap distribution/aur/deadlock-modmanager-git/PKGBUILD
 
+  build-source:
+    name: Build deadlock-modmanager
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      # libvips makes sharp try a source build during pnpm install; keep it
+      # installed so that regression is caught here.
+      - name: Install base-devel and libvips
+        run: pacman -Syu --noconfirm base-devel libvips
+
+      - name: Create build user
+        run: |
+          useradd -m builder
+          echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+          chown -R builder:builder distribution/aur/deadlock-modmanager
+
+      - name: Build package
+        working-directory: distribution/aur/deadlock-modmanager
+        run: su builder -c "makepkg -sf --noconfirm"
+
+      - name: Verify packaged binary
+        working-directory: distribution/aur/deadlock-modmanager
+        run: |
+          set -euo pipefail
+          pkg=$(find . -maxdepth 1 -name 'deadlock-modmanager-[0-9]*.pkg.tar.zst' | head -1)
+          if [ -z "$pkg" ]; then
+            echo "ERROR: No built package found!"
+            exit 1
+          fi
+          tar -tf "$pkg" | grep -qx 'usr/bin/deadlock-modmanager'
+
   build-bin:
     name: Build deadlock-modmanager-bin
     runs-on: ubuntu-latest
