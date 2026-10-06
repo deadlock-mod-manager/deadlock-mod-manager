@@ -97,15 +97,17 @@ runs:
           }
           if ($env:SIGNING_POLICY -eq 'test-signing' -and $null -ne $signature.SignerCertificate -and $signature.SignerCertificate.Thumbprint -eq $env:TEST_CERTIFICATE_THUMBPRINT) {
             $certificate = $signature.SignerCertificate
-            $alreadyTrusted = Test-Path "Cert:\CurrentUser\Root\$($certificate.Thumbprint)"
+            $alreadyTrusted = Test-Path "Cert:\LocalMachine\Root\$($certificate.Thumbprint)"
             $certificateAdded = $false
-            $store = [System.Security.Cryptography.X509Certificates.X509Store]::new('Root', 'CurrentUser')
+            $store = [System.Security.Cryptography.X509Certificates.X509Store]::new('Root', 'LocalMachine')
             try {
               $store.Open([System.Security.Cryptography.X509Certificates.OpenFlags]::ReadWrite)
               if (-not $alreadyTrusted) {
+                Write-Host "Trusting pinned test certificate in the runner machine store"
                 $store.Add($certificate)
                 $certificateAdded = $true
               }
+              Write-Host "Checking signature with the pinned test certificate trusted"
               $signature = Get-AuthenticodeSignature -LiteralPath $signedPath
               Write-Host "Verification with pinned test certificate: $($signature.Status): $($signature.StatusMessage)"
             } finally {
