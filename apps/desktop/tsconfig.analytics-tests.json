@@ -1,6 +1,0 @@
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": { "types": ["bun"], "incremental": false },
-  "include": ["src/lib/analytics/*.test.ts", "src/lib/analytics/*.type-test.ts", "src/lib/download/*.test.ts", "src/lib/mods/mod-detail-navigation.test.ts"],
-  "exclude": ["node_modules", "dist"]
-}
