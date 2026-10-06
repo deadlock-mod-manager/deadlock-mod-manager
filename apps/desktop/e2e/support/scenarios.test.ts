@@ -70,10 +70,11 @@ describe("scenario selection", () => {
     }
   });
 
-  it("imports Grimoire in one process and verifies it in a fresh one", () => {
+  it("imports Grimoire, restarts, and re-imports changed source state", () => {
     expect(scenarioPhases("grimoire-import")).toEqual([
       "import",
       "restart-import",
+      "reimport",
     ]);
     expect(scenarioSpec("grimoire-import")).toBe(
       "./specs/grimoire-import.e2e.ts",

@@ -7,14 +7,16 @@ import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
 import { step } from "../support/evidence";
 import {
-  CASUAL_PROFILE_IMPORTED,
   grimoireFixtureMods,
+  lateLocalMod,
   LINKED_OVERFLOW_ID,
   LINKED_OVERFLOW_NAME,
   LOADOUT_PROFILE,
+  reshuffleGrimoireWorld,
 } from "../support/interchange-fixtures";
 import {
   assertGrimoireImported,
+  assertGrimoireReimported,
   derivedModId,
   finalModId,
   readInterchangeState,
@@ -56,7 +58,9 @@ const checked = async (testId: string) =>
 describe("Grimoire import", () => {
   it("transfers mods, profiles and crosshairs and lets the user identify local mods", async () => {
     const phase = process.env.DMM_E2E_PHASE;
-    assert(phase === "import" || phase === "restart-import");
+    assert(
+      phase === "import" || phase === "restart-import" || phase === "reimport",
+    );
     const runtime = await startApplication();
     const world = runtime.roots.world;
     const { configuration } = await assertOwnedWorld(world);
@@ -133,8 +137,9 @@ describe("Grimoire import", () => {
 
       await step("summary and disk state", async () => {
         const summary = await $('[data-testid="interchange-summary"]');
-        await expect(summary).toHaveAttribute("data-imported", "7");
-        await expect(summary).toHaveAttribute("data-skipped", "0");
+        // The default profile's only mod is already there from the library.
+        await expect(summary).toHaveAttribute("data-imported", "6");
+        await expect(summary).toHaveAttribute("data-skipped", "1");
         await expect(summary).toHaveAttribute("data-failed", "0");
         await expect(summary).toHaveAttribute("data-profiles", "2");
         await expect(summary).toHaveAttribute("data-crosshairs", "2");
@@ -144,7 +149,7 @@ describe("Grimoire import", () => {
           "Linked and imported state was not persisted",
           () => readInterchangeState(world),
           (state) =>
-            Object.keys(state.profiles).length === 3 &&
+            Object.keys(state.profiles).length === 2 &&
             state.localMods.some((mod) => mod.name === LINKED_OVERFLOW_NAME),
           30_000,
         );
@@ -153,8 +158,8 @@ describe("Grimoire import", () => {
 
       await step("a second import offers nothing new", async () => {
         await openGrimoireImport();
-        // Everything that is left is already in the library (the overflow mod
-        // through the import ledger, since its id changed when it was linked).
+        // Files DMM took over resolve through its store, including the overflow
+        // mod under the GameBanana id the user assigned to it.
         assert.equal(
           await $('[data-testid="interchange-section-mods"]').isEnabled(),
           false,
@@ -173,7 +178,7 @@ describe("Grimoire import", () => {
         checkpointPath,
         JSON.stringify({ processId: runtime.processId }),
       );
-    } else {
+    } else if (phase === "restart-import") {
       const checkpoint = checkpointSchema.parse(
         JSON.parse(await readFile(checkpointPath, "utf8")),
       );
@@ -189,14 +194,86 @@ describe("Grimoire import", () => {
           Object.values(state.profiles)
             .map((profile) => profile.name)
             .sort(),
-          ["Default Profile", CASUAL_PROFILE_IMPORTED, LOADOUT_PROFILE].sort(),
+          ["Default Profile", LOADOUT_PROFILE].sort(),
         );
         await expect($(`[title="${LINKED_OVERFLOW_NAME}"]`)).toExist();
         await assertGrimoireImported(world, "restarted");
       });
+    } else {
+      const late = lateLocalMod(configuration.roots.game);
+
+      await step("Grimoire reshuffles the shared folder", async () => {
+        await reshuffleGrimoireWorld(
+          world,
+          configuration.roots.game,
+          finalModId(fixtures[3], 3),
+        );
+      });
+
+      await step("only the mod added in Grimoire is new", async () => {
+        await openGrimoireImport();
+        await $('[data-testid="interchange-choose-mods"]').click();
+        const rows = await $$('[data-testid="interchange-mod-row"]').map(
+          async (row) => ({
+            key: await row.getAttribute("data-key"),
+            inLibrary: await row.getAttribute("data-in-library"),
+          }),
+        );
+        assert.deepEqual(
+          rows.filter((row) => row.inLibrary !== "true").map((row) => row.key),
+          [late.key],
+          "Swapped slots and moved DMM files must not be offered again",
+        );
+        assert.equal(
+          (await $$('[data-testid="interchange-profile-row"]')).length,
+          2,
+        );
+        await $('[data-testid="interchange-section-profiles"]').click();
+        assert.equal(await checked("interchange-section-profiles"), true);
+        await $('[data-testid="interchange-section-crosshairs"]').click();
+        assert.equal(await checked("interchange-section-crosshairs"), false);
+      });
+
+      await step("the re-import fills the original profiles", async () => {
+        await $('[data-testid="interchange-next"]').click();
+        await waitForStep("unrecognized", 120_000);
+        const unrecognized = await $$(
+          '[data-testid="interchange-unrecognized-row"]',
+        ).map((row) => row.getAttribute("data-mod-id"));
+        assert.deepEqual(unrecognized, [derivedModId(late)]);
+        await $('[data-testid="interchange-finish"]').click();
+        await waitForStep("done");
+
+        const summary = await $('[data-testid="interchange-summary"]');
+        await expect(summary).toHaveAttribute("data-imported", "2");
+        await expect(summary).toHaveAttribute("data-skipped", "3");
+        await expect(summary).toHaveAttribute("data-failed", "0");
+        await expect(summary).toHaveAttribute("data-profiles", "2");
+        await expect(summary).toHaveAttribute("data-crosshairs", "0");
+        await $('[data-testid="interchange-close"]').click();
+        await expect(wizard()).not.toExist();
+        await observeUntil(
+          "The re-import was not persisted",
+          () => readInterchangeState(world),
+          (state) =>
+            Object.values(state.profiles).every((profile) =>
+              profile.name === LOADOUT_PROFILE
+                ? profile.mods.some(
+                    (mod) => mod.remoteId === derivedModId(late),
+                  )
+                : true,
+            ),
+          30_000,
+        );
+        await assertGrimoireReimported(world, "reimported");
+      });
     }
 
     await closeApplication(world, runtime.processId);
-    await assertGrimoireImported(world, `closed-${phase}`);
+    if (phase === "reimport") {
+      await assertGrimoireReimported(world, `closed-${phase}`);
+    } else {
+      await assertGrimoireImported(world, `closed-${phase}`);
+    }
   });
 });

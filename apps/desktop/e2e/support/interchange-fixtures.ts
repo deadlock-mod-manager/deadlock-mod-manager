@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { z } from "zod";
 import type { FixtureRoute } from "./fixture-server";
 import { BULK_UPDATE_FIELDS } from "./gamebanana-fixtures";
 import { buildSyntheticVpk } from "./vpk";
@@ -27,10 +28,15 @@ const GRIMOIRE_DRIFTED_NAME = "Grimoire mod (pak02)";
 /** The GameBanana submission the user links the overflow mod to by hand. */
 export const LINKED_OVERFLOW_ID = "900404";
 export const LINKED_OVERFLOW_NAME = "E2E Overflow (catalog)";
-/** Grimoire profile names; the second collides with DMM's default profile. */
+/** Grimoire profile names. The second has the name of DMM's default
+ *  profile, so it is imported into that one instead of a new copy. */
 export const LOADOUT_PROFILE = "E2E Loadout";
-const CASUAL_PROFILE = "Default Profile";
-export const CASUAL_PROFILE_IMPORTED = "Default Profile (2)";
+export const LOADOUT_PROFILE_KEY = "grimoire:profile:profile_e2e";
+export const CASUAL_PROFILE = "Default Profile";
+export const CASUAL_PROFILE_KEY = "grimoire:profile:profile_casual";
+const LOADOUT_RENAMED = "E2E Loadout (renamed in Grimoire)";
+const LATE_LOCAL_NAME = "E2E Late Local";
+const LATE_LOCAL_FILE = "e2e_late_local_dir.vpk";
 export const PROFILE_CROSSHAIR = {
   pipGap: 7,
   colorR: 12,
@@ -107,6 +113,90 @@ export const grimoireFixtureMods = (gameRoot: string): GrimoireFixtureMod[] => {
       bytes: sound,
     },
   ];
+};
+
+export const lateLocalMod = (gameRoot: string): GrimoireFixtureMod => {
+  const bytes = vpk("late");
+  return {
+    key: `local:sha256:${sha256(bytes)}`,
+    name: LATE_LOCAL_NAME,
+    enabled: false,
+    sourcePath: path.join(
+      gameRoot,
+      "game",
+      "citadel",
+      "addons",
+      ".disabled",
+      LATE_LOCAL_FILE,
+    ),
+    bytes,
+  };
+};
+
+const metadataSchema = z.record(z.string(), z.looseObject({}));
+const profilesSchema = z.array(
+  z.looseObject({
+    id: z.string(),
+    name: z.string(),
+    mods: z.array(z.looseObject({ fileName: z.string() })),
+  }),
+);
+
+/** Reproduce Grimoire mutating the shared folder after DMM's first import. */
+export const reshuffleGrimoireWorld = async (
+  world: string,
+  gameRoot: string,
+  parkedSoundId: string,
+): Promise<void> => {
+  const addons = path.join(gameRoot, "game", "citadel", "addons");
+  const swap = path.join(addons, "pak01_dir.vpk.swap");
+  await rename(path.join(addons, "pak01_dir.vpk"), swap);
+  await rename(
+    path.join(addons, "pak02_dir.vpk"),
+    path.join(addons, "pak01_dir.vpk"),
+  );
+  await rename(swap, path.join(addons, "pak02_dir.vpk"));
+
+  const parked = `${parkedSoundId}_e2e_parked_sound_dir.vpk`;
+  await rename(
+    path.join(addons, parked),
+    path.join(addons, ".disabled", parked),
+  );
+
+  const late = lateLocalMod(gameRoot);
+  await writeFile(late.sourcePath, late.bytes);
+
+  const userData = grimoireUserData(world);
+  const metadataPath = path.join(userData, "mod-metadata.json");
+  const metadata = metadataSchema.parse(
+    JSON.parse(await readFile(metadataPath, "utf8")),
+  );
+  metadata[parked] = { lockerHero: "Abrams", lockerHeroVpkChecked: true };
+  metadata[LATE_LOCAL_FILE] = {
+    modName: LATE_LOCAL_NAME,
+    sha256: sha256(late.bytes),
+  };
+  await writeFile(metadataPath, JSON.stringify(metadata, null, 2));
+
+  const profilesPath = path.join(userData, "profiles.json");
+  const profiles = profilesSchema.parse(
+    JSON.parse(await readFile(profilesPath, "utf8")),
+  );
+  const loadout = profiles.find((profile) => profile.id === "profile_e2e");
+  if (!loadout) throw new Error("Grimoire fixture lost its Loadout profile");
+  loadout.name = LOADOUT_RENAMED;
+  loadout.mods.push({
+    fileName: LATE_LOCAL_FILE,
+    sha256: sha256(late.bytes),
+    enabled: true,
+    priority: 2,
+  });
+  await writeFile(profilesPath, JSON.stringify(profiles));
+
+  await writeFile(
+    path.join(world, "artifacts", "grimoire-before-reimport.json"),
+    JSON.stringify(await collectFileInventory(userData), null, 2),
+  );
 };
 
 export const prepareGrimoireWorld = async (

@@ -20,9 +20,13 @@ import {
   type InterchangeDocument,
   type InterchangeExportReport,
   type InterchangeImportReport,
+  type InterchangeProfile,
   type InterchangeProgress,
   type InterchangeSourceInfo,
   isLocalModId,
+  libraryRecordAsModDto,
+  profileLedgerKey,
+  profileTargetsFor,
   uniqueName,
 } from "@/lib/mod-interchange";
 import { usePersistedStore } from "@/lib/store";
@@ -36,7 +40,8 @@ export type InterchangeSource =
 export type ImportSelection = {
   /** Library mods to import into the active profile. */
   modKeys: string[];
-  /** Source profiles to recreate as DMM profiles. */
+  /** Source profiles to import: into the DMM profile an earlier import or
+   *  the same name points at, else into a new one. */
   profileKeys: string[];
   /** Crosshair entries to add to the crosshair history. */
   crosshairKeys: string[];
@@ -55,6 +60,8 @@ export type ImportStageProgress = {
 type ImportedProfile = {
   name: string;
   profileId: string | null;
+  /** Imported into a profile DMM already had. */
+  existing: boolean;
   report: InterchangeImportReport | null;
   error: string | null;
 };
@@ -208,14 +215,23 @@ const importIntoProfile = async (
       .map((result) => result.modId),
   );
 
-  const { addLocalMod, setModEnabledInProfile } = usePersistedStore.getState();
+  const { addLocalMod, setModEnabledInProfile, profiles } =
+    usePersistedStore.getState();
+  // Another profile may already describe the mod (a local mod has no catalog
+  // entry, and the catalog can be unreachable).
+  const libraryRecord = (modId: string) => {
+    const record = Object.values(profiles)
+      .flatMap((p) => p.mods)
+      .find((mod) => mod.remoteId === modId);
+    return record ? libraryRecordAsModDto(record) : null;
+  };
   for (const result of imported) {
     const entry = entriesByKey.get(result.key);
     if (!entry) continue;
     const { mod, additional } = buildImportedLocalMod(
       entry,
       result,
-      catalogMods.get(result.modId) ?? null,
+      catalogMods.get(result.modId) ?? libraryRecord(result.modId),
     );
     addLocalMod(mod, additional, profileId);
     if (result.enabled) setModEnabledInProfile(profileId, result.modId, true);
@@ -248,6 +264,35 @@ export const useRunInterchangeImport = () =>
       const crosshairs = document.crosshairs.filter((crosshair) =>
         selection.crosshairKeys.includes(crosshair.key),
       );
+      // Targets are fixed before anything is created, so two source profiles
+      // with one name become two DMM profiles instead of merging.
+      const profileLedger =
+        profiles.length > 0
+          ? await invoke<Record<string, string>>(
+              "get_interchange_profile_ledger",
+            ).catch((error) => {
+              logger
+                .withError(error)
+                .warn("Could not read the imported profile ledger");
+              return {};
+            })
+          : {};
+      const existingProfiles = Object.values(
+        usePersistedStore.getState().profiles,
+      );
+      const targets = profileTargetsFor(
+        document,
+        profiles,
+        profileLedger,
+        existingProfiles,
+      );
+      const targetName = (profile: InterchangeProfile) => {
+        const target = targets.get(profile.key);
+        return target?.kind === "existing"
+          ? (existingProfiles.find((p) => p.id === target.profileId)?.name ??
+              profile.name)
+          : profile.name;
+      };
       const stages: Array<{
         stage: ImportStageProgress["stage"];
         label: string;
@@ -257,7 +302,7 @@ export const useRunInterchangeImport = () =>
           : []),
         ...profiles.map((profile) => ({
           stage: "profile" as const,
-          label: profile.name,
+          label: targetName(profile),
         })),
         ...(crosshairs.length > 0
           ? [{ stage: "crosshairs" as const, label: "crosshairs" }]
@@ -307,24 +352,42 @@ export const useRunInterchangeImport = () =>
         for (const profile of profiles) {
           report(0, profile.mods.length, "");
           const state = usePersistedStore.getState();
-          const name = uniqueName(
-            profile.name,
-            Object.values(state.profiles).map((p) => p.name),
-          );
-          const profileId = await state.createProfile(
-            name,
-            profile.description ?? undefined,
-          );
+          const target = targets.get(profile.key);
+          const existing =
+            target?.kind === "existing"
+              ? state.profiles[target.profileId]
+              : undefined;
+          const name =
+            existing?.name ??
+            uniqueName(
+              profile.name,
+              Object.values(state.profiles).map((p) => p.name),
+            );
+          const profileId =
+            existing?.id ??
+            (await state.createProfile(name, profile.description ?? undefined));
           if (!profileId) {
             importedProfiles.push({
               name,
               profileId: null,
+              existing: false,
               report: null,
               error: "could not create the profile folder",
             });
             stageIndex++;
             continue;
           }
+          // Remembered before the mods go in: an import that fails halfway is
+          // retried into this profile instead of creating another one.
+          await invoke("record_interchange_profile", {
+            key: profileLedgerKey(document, profile),
+            profileId,
+          }).catch((error) =>
+            logger
+              .withMetadata({ profileId })
+              .withError(error)
+              .warn("Could not remember the imported profile"),
+          );
           try {
             const scoped = documentForProfile(document, profile);
             const profileReport = await importIntoProfile(
@@ -336,6 +399,7 @@ export const useRunInterchangeImport = () =>
             importedProfiles.push({
               name,
               profileId,
+              existing: !!existing,
               report: profileReport,
               error: null,
             });
@@ -343,6 +407,7 @@ export const useRunInterchangeImport = () =>
             importedProfiles.push({
               name,
               profileId,
+              existing: !!existing,
               report: null,
               error: error instanceof Error ? error.message : String(error),
             });

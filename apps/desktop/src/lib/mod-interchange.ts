@@ -8,7 +8,7 @@ import {
   type ModFileTree,
   ModStatus,
 } from "@/types/mods";
-import type { ModProfile } from "@/types/profiles";
+import type { ModProfile, ProfileId } from "@/types/profiles";
 
 /** Mirrors `commands/mod_interchange/format.rs` (rfcs/001-mod-interchange/proposal.md). */
 type InterchangeFile = {
@@ -161,14 +161,21 @@ export type InterchangeExportReport = {
 const LOCAL_ID = /^local-[0-9a-f-]{36}$/i;
 export const isLocalModId = (id: string) => LOCAL_ID.test(id);
 
-/** The library id DMM gives a GameBanana entry; must match
- *  `import.rs::dmm_mod_id`. Local entries resolve through the import ledger. */
+/** The library id DMM gives an entry; must match `import.rs::dmm_mod_id`.
+ *  Local entries carry their DMM id when DMM already has them, else resolve
+ *  through the import ledger. */
 export const libraryIdForEntry = (
   entry: InterchangeMod,
   ledger: Record<string, string> = {},
 ): string | null => {
   if (ledger[entry.key]) return ledger[entry.key];
-  if (entry.origin.provider !== "gamebanana") return null;
+  if (entry.origin.provider === "local") {
+    const own = entry.origin.localId
+      ?.trim()
+      .toLowerCase()
+      .replace(/^local-/, "");
+    return own && isLocalModId(`local-${own}`) ? `local-${own}` : null;
+  }
   return entry.origin.submissionType === "sound"
     ? `snd-${entry.origin.submissionId}`
     : entry.origin.submissionId;
@@ -298,6 +305,23 @@ export const placeholderModDto = (
   };
 };
 
+/** What DMM already knows about a mod from another profile, without that
+ *  profile's install state, so a new profile gets the same name and images
+ *  instead of a placeholder. */
+export const libraryRecordAsModDto = ({
+  metadataPending: _metadataPending,
+  status: _status,
+  downloadedAt: _downloadedAt,
+  downloads: _downloads,
+  selectedDownloads: _selectedDownloads,
+  activeVariantArchive: _activeVariantArchive,
+  installedVpks: _installedVpks,
+  installedFileTree: _installedFileTree,
+  installOrder: _installOrder,
+  skippedUpdateAt: _skippedUpdateAt,
+  ...mod
+}: LocalMod): ModDto => mod;
+
 /** Records which GameBanana file the VPKs came from, so update checks compare
  *  against the right version instead of treating the mod as unknown. */
 const selectedDownloadsForEntry = (
@@ -369,6 +393,64 @@ export const uniqueName = (name: string, taken: readonly string[]): string => {
     const candidate = `${base} (${n})`;
     if (!used.has(candidate.toLowerCase())) return candidate;
   }
+};
+
+/** Where a source profile is imported: a DMM profile that exists, or a new
+ *  one under the source's name. */
+export type ProfileTarget =
+  | { kind: "existing"; profileId: ProfileId }
+  | { kind: "new"; name: string };
+
+/** Profile keys are only unique within one source. */
+export const profileLedgerKey = (
+  document: InterchangeDocument,
+  profile: InterchangeProfile,
+) => `${document.source.manager}:${profile.key}`;
+
+const sameName = (a: string, b: string) =>
+  a.trim().toLowerCase() === b.trim().toLowerCase();
+
+/** Per source profile: the DMM profile an earlier import of it went into,
+ *  else the DMM profile with the same name, else a new profile. A DMM profile
+ *  is the target of at most one source profile. */
+export const profileTargetsFor = (
+  document: InterchangeDocument,
+  profiles: readonly InterchangeProfile[],
+  profileLedger: Record<string, string>,
+  existing: readonly Pick<ModProfile, "id" | "name">[],
+): Map<string, ProfileTarget> => {
+  const claimed = new Set<string>();
+  const matches = new Map<string, ProfileId>();
+  // Earlier imports claim their profiles before any name does.
+  for (const profile of profiles) {
+    const previous = profileLedger[profileLedgerKey(document, profile)];
+    const match = existing.find((p) => p.id === previous);
+    if (match && !claimed.has(match.id)) {
+      claimed.add(match.id);
+      matches.set(profile.key, match.id);
+    }
+  }
+  for (const profile of profiles) {
+    if (matches.has(profile.key)) continue;
+    const match = existing.find(
+      (p) => !claimed.has(p.id) && sameName(p.name, profile.name),
+    );
+    if (match) {
+      claimed.add(match.id);
+      matches.set(profile.key, match.id);
+    }
+  }
+  return new Map(
+    profiles.map((profile) => {
+      const profileId = matches.get(profile.key);
+      return [
+        profile.key,
+        profileId
+          ? { kind: "existing", profileId }
+          : { kind: "new", name: profile.name },
+      ];
+    }),
+  );
 };
 
 const numberConvar = (value: string | undefined): number | null => {

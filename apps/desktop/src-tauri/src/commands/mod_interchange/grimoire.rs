@@ -12,10 +12,18 @@
 //!   its bytes; the original hash then travels inside it as `addoninfo.txt`.
 //!
 //! Every Grimoire version writes the same shape, but the sidecar drifts: slots
-//! get reused by other tools and entries go stale. So an entry whose `sha256`
-//! no longer matches the file is ignored, and the file is imported as a local
-//! mod instead of under a wrong GameBanana identity. A missing or corrupt
-//! sidecar falls back to Grimoire's own backups, then to no metadata at all.
+//! get reused by other tools and entries go stale. So a file's identity comes
+//! from its bytes, never from its name alone:
+//! 1. A file DMM claims (its manifest, or its `<id>_` parking prefix) is that
+//!    DMM mod when the bytes match a file in DMM's mod store.
+//! 2. Grimoire's entry under the file's name, when its `sha256` matches.
+//! 3. Grimoire's entry with the same `sha256` under another name: files move
+//!    when either manager reorders slots, and Grimoire writes bare rows for
+//!    files it moves without knowing them.
+//! 4. Otherwise a local mod.
+//!
+//! A missing or corrupt sidecar falls back to Grimoire's own backups, then to
+//! no metadata at all.
 
 use super::format::{
   GameBananaOrigin, InterchangeCrosshair, InterchangeDocument, InterchangeFile, InterchangeMod,
@@ -27,11 +35,11 @@ use super::hash_cache::HashCache;
 use crate::errors::Error;
 use crate::mod_manager::shard::ProfileBase;
 use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
-use crate::providers::SubmissionRef;
+use crate::providers::{SubmissionProvider, SubmissionRef, SubmissionType};
 use regex::Regex;
 use serde::Serialize;
 use serde_json::{Map, Value};
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
@@ -264,6 +272,8 @@ struct Candidate {
   /// Global load position: the priority root first, then each addon folder
   /// (folder * 100 + pak number), then everything that is not loaded.
   load_position: u64,
+  /// The DMM mod id DMM's records give this file, if any.
+  dmm_claim: Option<String>,
 }
 
 /// The `*_dir.vpk` files Grimoire lists from one folder (its scan ignores any
@@ -318,37 +328,127 @@ fn has_archive_parts(path: &Path) -> bool {
   })
 }
 
-/// Files the DMM default profile already owns. When both managers share
-/// `citadel/addons`, these must never be imported back into DMM.
-fn dmm_owned_files(addons: &Path) -> HashSet<String> {
-  let mut owned = HashSet::new();
+/// Files DMM's default profile lists, by path, with the mod id that lists
+/// them. Both managers share `citadel/addons`, and either may have moved the
+/// file since, so a listing is only a claim (see [`DmmClaim`]).
+fn dmm_listed_files(addons: &Path) -> HashMap<String, String> {
+  let mut listed = HashMap::new();
   let Ok(base) = ProfileBase::new(addons) else {
-    return owned;
+    return listed;
   };
   let Ok(manifest) = ProfileVpkManifest::load(addons) else {
-    return owned;
+    return listed;
   };
-  for entry in manifest.mods.values() {
+  for (mod_id, entry) in &manifest.mods {
     for path in entry.file_paths(&base) {
-      owned.insert(normalize(&path));
+      listed.insert(normalize(&path), mod_id.clone());
     }
   }
-  owned
+  listed
 }
 
 fn normalize(path: &Path) -> String {
   path.to_string_lossy().replace('\\', "/").to_lowercase()
 }
 
-fn is_dmm_prefixed(file_name: &str) -> bool {
+/// The DMM mod id in a parked file's `<id>_<name>.vpk` prefix.
+fn dmm_prefix(file_name: &str) -> Option<&str> {
   file_name
     .split_once('_')
-    .is_some_and(|(slug, _)| SubmissionRef::parse_slug(slug).is_ok())
+    .map(|(slug, _)| slug)
+    .filter(|slug| SubmissionRef::parse_slug(slug).is_ok())
+}
+
+/// What DMM's own records say about a file, checked against its bytes.
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum DmmClaim {
+  /// The bytes match a file DMM keeps for this mod: the file is that mod.
+  Confirmed(String),
+  /// DMM keeps files for the mod, but not these bytes: the listing is stale
+  /// (Grimoire moved another mod into the slot).
+  Stale,
+  /// DMM keeps no files for the mod, so the bytes cannot be checked.
+  Unverifiable,
+}
+
+/// `(path, size)` of the VPKs DMM keeps for `mod_id`; empty when it keeps none.
+fn dmm_store_files(store: &Path, mod_id: &str) -> Vec<(PathBuf, u64)> {
+  fs::read_dir(store.join(mod_id).join("files"))
+    .map(|entries| {
+      entries
+        .flatten()
+        .map(|entry| entry.path())
+        .filter(|path| {
+          path
+            .extension()
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("vpk"))
+        })
+        .filter_map(|path| Some((path.clone(), fs::metadata(&path).ok()?.len())))
+        .collect()
+    })
+    .unwrap_or_default()
+}
+
+/// Judge every claimed file by its bytes. Only store files of the claimed
+/// size are hashed, through the same cache as the library itself.
+fn check_dmm_claims(
+  claims: &[Option<(String, String, u64)>],
+  store: Option<&Path>,
+  context: &ReadContext,
+) -> Vec<Option<DmmClaim>> {
+  let Some(store) = store else {
+    return claims
+      .iter()
+      .map(|claim| claim.as_ref().map(|_| DmmClaim::Unverifiable))
+      .collect();
+  };
+  let mut kept: HashMap<String, Vec<(PathBuf, u64)>> = HashMap::new();
+  for (mod_id, _, _) in claims.iter().flatten() {
+    kept
+      .entry(mod_id.clone())
+      .or_insert_with(|| dmm_store_files(store, mod_id));
+  }
+  let mut wanted: Vec<PathBuf> = claims
+    .iter()
+    .flatten()
+    .flat_map(|(mod_id, _, size)| {
+      kept[mod_id]
+        .iter()
+        .filter(move |(_, kept_size)| kept_size == size)
+        .map(|(path, _)| path.clone())
+    })
+    .collect();
+  wanted.sort();
+  wanted.dedup();
+  let hashed: HashMap<PathBuf, String> = wanted
+    .iter()
+    .cloned()
+    .zip(context.hashes.hash_all(&wanted, context.progress))
+    .filter_map(|(path, hash)| Some((path, hash.ok()?)))
+    .collect();
+  claims
+    .iter()
+    .map(|claim| {
+      let (mod_id, sha256, _) = claim.as_ref()?;
+      let files = &kept[mod_id];
+      Some(if files.is_empty() {
+        DmmClaim::Unverifiable
+      } else if files.iter().any(|(path, _)| {
+        hashed
+          .get(path)
+          .is_some_and(|hash| hash.eq_ignore_ascii_case(sha256))
+      }) {
+        DmmClaim::Confirmed(mod_id.clone())
+      } else {
+        DmmClaim::Stale
+      })
+    })
+    .collect()
 }
 
 fn collect_candidates(citadel: &Path, warnings: &mut Vec<String>) -> Vec<Candidate> {
   let addons = citadel.join("addons");
-  let owned = dmm_owned_files(&addons);
+  let listed = dmm_listed_files(&addons);
   // (load rank, folder, metadata key prefix). The priority root is searched
   // before every addon folder; overflow folders follow the base folder.
   let mut roots: Vec<(u64, PathBuf, Option<String>)> = vec![
@@ -375,16 +475,18 @@ fn collect_candidates(citadel: &Path, warnings: &mut Vec<String>) -> Vec<Candida
   roots.sort_by_key(|(rank, _, _)| *rank);
 
   let mut candidates = Vec::new();
-  let mut skipped_dmm = 0usize;
+  let mut parked_by_dmm = 0usize;
   let mut multipart = Vec::new();
   let mut unloaded = 0u64;
   for (rank, root, root_name) in &roots {
     let is_priority_root = *rank == 0;
     for (path, file_name) in vpk_files_in(root) {
-      if owned.contains(&normalize(&path)) || is_dmm_prefixed(&file_name) {
-        skipped_dmm += 1;
+      // DMM parks disabled mods next to the slots; they are DMM's alone.
+      if dmm_prefix(&file_name).is_some() {
+        parked_by_dmm += 1;
         continue;
       }
+      let dmm_claim = listed.get(&normalize(&path)).cloned();
       let meta_key = match root_name {
         Some(root_name) => format!("{root_name}/{file_name}"),
         None => file_name.clone(),
@@ -415,6 +517,7 @@ fn collect_candidates(citadel: &Path, warnings: &mut Vec<String>) -> Vec<Candida
         meta_key,
         enabled,
         load_position,
+        dmm_claim,
       });
     }
   }
@@ -425,18 +528,22 @@ fn collect_candidates(citadel: &Path, warnings: &mut Vec<String>) -> Vec<Candida
       multipart.push(file_name);
       continue;
     }
+    // Grimoire moves every unknown `*_dir.vpk` out of the slots, DMM's parked
+    // copies included; the prefix still names the mod they came from.
+    let dmm_claim = dmm_prefix(&file_name).map(str::to_string);
     candidates.push(Candidate {
       meta_key: file_name.clone(),
       file_name,
       path,
       enabled: false,
       load_position: 100_000 + index as u64,
+      dmm_claim,
     });
   }
 
-  if skipped_dmm > 0 {
+  if parked_by_dmm > 0 {
     warnings.push(format!(
-      "{skipped_dmm} file(s) in the shared addons folder belong to Deadlock Mod Manager and were left out"
+      "{parked_by_dmm} disabled Deadlock Mod Manager file(s) in the shared addons folder were left out"
     ));
   }
   if !multipart.is_empty() {
@@ -457,6 +564,19 @@ fn meta_str<'a>(meta: &'a Map<String, Value>, key: &str) -> Option<&'a str> {
     .filter(|value| !value.is_empty())
 }
 
+/// Grimoire also writes a bare row (a hash, a guessed hero) for every VPK it
+/// sees without knowing it, including other managers' files. Only a row that
+/// says which mod the file is counts as an identity.
+fn has_identity(meta: &Map<String, Value>) -> bool {
+  meta_u64(meta, "gameBananaId").is_some() || meta_str(meta, "modName").is_some()
+}
+
+/// The GameBanana submission a row names, as `(id, is_sound)`; `None` for a
+/// local mod, which its bytes identify.
+fn meta_submission(meta: &Map<String, Value>) -> Option<(u64, bool)> {
+  meta_u64(meta, "gameBananaId").map(|id| (id, meta_str(meta, "sourceSection") == Some("Sound")))
+}
+
 fn meta_u64(meta: &Map<String, Value>, key: &str) -> Option<u64> {
   meta
     .get(key)
@@ -468,6 +588,8 @@ fn meta_u64(meta: &Map<String, Value>, key: &str) -> Option<u64> {
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 enum GroupKey {
   GameBanana(SubmissionKindOrd, u64),
+  /// A local mod DMM already has, by its DMM id.
+  DmmLocal(String),
   Local(String),
 }
 
@@ -484,6 +606,43 @@ struct Resolved {
   canonical: String,
   size: u64,
   meta: Option<Map<String, Value>>,
+  /// The DMM mod these bytes are (see [`DmmClaim::Confirmed`]).
+  dmm_id: Option<String>,
+}
+
+/// The group a DMM mod id imports under; `None` for ids the interchange
+/// cannot name (WIP submissions).
+fn dmm_group_key(mod_id: &str) -> Option<GroupKey> {
+  let reference = SubmissionRef::parse_slug(mod_id).ok()?;
+  let number = || reference.submission_id.parse::<u64>().ok();
+  match (reference.provider, reference.submission_type) {
+    (SubmissionProvider::Local, _) => Some(GroupKey::DmmLocal(mod_id.to_string())),
+    (SubmissionProvider::Gamebanana, SubmissionType::Mod) => {
+      Some(GroupKey::GameBanana(SubmissionKindOrd::Mod, number()?))
+    }
+    (SubmissionProvider::Gamebanana, SubmissionType::Sound) => {
+      Some(GroupKey::GameBanana(SubmissionKindOrd::Sound, number()?))
+    }
+    (SubmissionProvider::Gamebanana, SubmissionType::Wip) => None,
+  }
+}
+
+impl Resolved {
+  fn group_key(&self) -> GroupKey {
+    if let Some(key) = self.dmm_id.as_deref().and_then(dmm_group_key) {
+      return key;
+    }
+    let Some(meta) = &self.meta else {
+      return GroupKey::Local(self.sha256.clone());
+    };
+    match meta_u64(meta, "gameBananaId") {
+      Some(id) if meta_str(meta, "sourceSection") == Some("Sound") => {
+        GroupKey::GameBanana(SubmissionKindOrd::Sound, id)
+      }
+      Some(id) => GroupKey::GameBanana(SubmissionKindOrd::Mod, id),
+      None => GroupKey::Local(self.sha256.clone()),
+    }
+  }
 }
 
 /// Read Grimoire's library as an interchange document. File paths are
@@ -493,6 +652,8 @@ pub struct ReadContext<'a> {
   pub hashes: &'a HashCache,
   /// `(files checked, total files, current file name)`.
   pub progress: &'a (dyn Fn(usize, usize, &str) + Sync),
+  /// DMM's mod store (`<app data>/mods`), to check DMM's claims on files.
+  pub dmm_store: Option<&'a Path>,
 }
 
 /// Read without a persistent hash cache or progress reporting.
@@ -508,6 +669,7 @@ pub fn read(
     &ReadContext {
       hashes: &hashes,
       progress: &|_, _, _| {},
+      dmm_store: None,
     },
   )
 }
@@ -541,10 +703,8 @@ pub fn read_with(
     );
   }
 
-  let mut resolved = Vec::new();
-  let mut stale = 0usize;
-  let mut generated = 0usize;
   // Locker output is left out before any file is read.
+  let mut generated = 0usize;
   let mut kept = Vec::new();
   for candidate in collect_candidates(&citadel, &mut document.warnings) {
     let meta = metadata
@@ -552,10 +712,7 @@ pub fn read_with(
       .get(&candidate.meta_key)
       .and_then(Value::as_object)
       .cloned();
-    if meta
-      .as_ref()
-      .is_some_and(|entry| GENERATED_FLAGS.iter().any(|flag| entry.contains_key(*flag)))
-    {
+    if meta.as_ref().is_some_and(is_generated) {
       generated += 1;
       continue;
     }
@@ -565,8 +722,8 @@ pub fn read_with(
   // cache without being read at all.
   let paths: Vec<PathBuf> = kept.iter().map(|(c, _)| c.path.clone()).collect();
   let hashes = context.hashes.hash_all(&paths, context.progress);
-  context.hashes.save();
-  for ((candidate, mut meta), hash) in kept.into_iter().zip(hashes) {
+  let mut hashed = Vec::new();
+  for ((candidate, meta), hash) in kept.into_iter().zip(hashes) {
     let size = match fs::metadata(&candidate.path) {
       Ok(stat) => stat.len(),
       Err(error) => {
@@ -577,37 +734,134 @@ pub fn read_with(
         continue;
       }
     };
-    let sha256 = match hash {
-      Ok(hash) => hash,
-      Err(error) => {
-        document.warnings.push(format!(
-          "{}: could not be hashed ({error})",
-          candidate.path.display()
-        ));
-        continue;
-      }
+    match hash {
+      Ok(sha256) => hashed.push((candidate, meta, sha256, size)),
+      Err(error) => document.warnings.push(format!(
+        "{}: could not be hashed ({error})",
+        candidate.path.display()
+      )),
+    }
+  }
+  let claims: Vec<Option<(String, String, u64)>> = hashed
+    .iter()
+    .map(|(candidate, _, sha256, size)| {
+      let mod_id = candidate.dmm_claim.clone()?;
+      Some((mod_id, sha256.clone(), *size))
+    })
+    .collect();
+  let claims = check_dmm_claims(&claims, context.dmm_store, context);
+  context.hashes.save();
+
+  // Grimoire's entries that name a mod, by the hash they record. Rows that
+  // record one hash as different mods name none of them.
+  let mut by_hash: HashMap<String, Option<&Map<String, Value>>> = HashMap::new();
+  for entry in metadata
+    .entries
+    .values()
+    .filter_map(Value::as_object)
+    .filter(|entry| has_identity(entry) && !is_generated(entry))
+  {
+    let Some(hash) = meta_str(entry, "sha256") else {
+      continue;
     };
+    by_hash
+      .entry(hash.to_ascii_lowercase())
+      .and_modify(|seen| {
+        if seen.is_some_and(|seen| meta_submission(seen) != meta_submission(entry)) {
+          *seen = None;
+        }
+      })
+      .or_insert(Some(entry));
+  }
+
+  let mut resolved = Vec::new();
+  let mut stale = 0usize;
+  let mut dmm_only = 0usize;
+  for ((candidate, meta, sha256, size), claim) in hashed.into_iter().zip(claims) {
     // The identity Grimoire matches on: the original hash an imprint carries,
     // else the live bytes.
     let canonical = embedded_original_sha256(&candidate.path).unwrap_or_else(|| sha256.clone());
-    if let Some(entry) = &meta
-      && let Some(recorded) = meta_str(entry, "sha256")
-      && !recorded.eq_ignore_ascii_case(&canonical)
-    {
-      stale += 1;
-      meta = None;
-    }
-    resolved.push(Resolved {
-      candidate,
-      sha256,
-      canonical,
-      size,
-      meta,
-    });
+    let recorded_elsewhere = meta
+      .as_ref()
+      .and_then(|entry| meta_str(entry, "sha256"))
+      .is_some_and(|recorded| !recorded.eq_ignore_ascii_case(&canonical));
+    // The row under this name is about other bytes or names no mod: the
+    // file's own entry, if Grimoire has one, carries the same hash.
+    let meta = match meta {
+      Some(entry) if !recorded_elsewhere && has_identity(&entry) => Some(entry),
+      _ => by_hash.get(&canonical).copied().flatten().cloned(),
+    };
+
+    let dmm_id = match claim {
+      Some(DmmClaim::Confirmed(mod_id)) if dmm_group_key(&mod_id).is_some() => Some(mod_id),
+      // A DMM mod the interchange cannot name (a WIP submission), or one
+      // only DMM's unverifiable record identifies: it stays DMM's alone
+      // rather than coming back as a second copy.
+      Some(DmmClaim::Confirmed(_)) => {
+        dmm_only += 1;
+        continue;
+      }
+      Some(DmmClaim::Unverifiable) if meta.is_none() => {
+        dmm_only += 1;
+        continue;
+      }
+      _ => None,
+    };
+    resolved.push((
+      Resolved {
+        candidate,
+        sha256,
+        canonical,
+        size,
+        meta,
+        dmm_id,
+      },
+      recorded_elsewhere,
+    ));
   }
+  // Identical bytes are one mod: Grimoire's own copy of a file DMM confirmed
+  // (it keeps one when DMM took over the slot) joins DMM's mod. Bytes DMM
+  // confirmed as two different mods name neither.
+  let mut confirmed: HashMap<String, Option<String>> = HashMap::new();
+  for (item, _) in &resolved {
+    let Some(mod_id) = &item.dmm_id else { continue };
+    confirmed
+      .entry(item.sha256.clone())
+      .and_modify(|seen| {
+        if seen.as_ref() != Some(mod_id) {
+          *seen = None;
+        }
+      })
+      .or_insert_with(|| Some(mod_id.clone()));
+  }
+  let resolved: Vec<Resolved> = resolved
+    .into_iter()
+    .map(|(mut item, recorded_elsewhere)| {
+      if item.dmm_id.is_none() {
+        item.dmm_id = confirmed.get(&item.sha256).cloned().flatten();
+      }
+      if item.dmm_id.is_none() && item.meta.is_none() && recorded_elsewhere {
+        stale += 1;
+      }
+      // Bytes DMM confirmed as one GameBanana mod carry no other submission.
+      if let Some(GroupKey::GameBanana(_, dmm_number)) =
+        item.dmm_id.as_deref().and_then(dmm_group_key)
+      {
+        item.meta = item
+          .meta
+          .filter(|entry| meta_u64(entry, "gameBananaId").is_none_or(|n| n == dmm_number));
+      }
+      item
+    })
+    .collect();
   if stale > 0 {
     document.warnings.push(format!(
       "{stale} file(s) no longer match Grimoire's recorded fingerprint (the slot was reused); they are imported as local mods"
+    ));
+  }
+  if dmm_only > 0 {
+    document.warnings.push(format!(
+      "{dmm_only} file(s) in the shared addons folder belong to Deadlock Mod Manager and were left out"
     ));
   }
   if generated > 0 {
@@ -620,27 +874,7 @@ pub fn read_with(
   // submission as separate files; the interchange keeps them together.
   let mut groups: BTreeMap<GroupKey, Vec<Resolved>> = BTreeMap::new();
   for item in resolved {
-    let key = match item
-      .meta
-      .as_ref()
-      .and_then(|meta| meta_u64(meta, "gameBananaId"))
-    {
-      Some(id) => {
-        let kind = if item
-          .meta
-          .as_ref()
-          .and_then(|meta| meta_str(meta, "sourceSection"))
-          == Some("Sound")
-        {
-          SubmissionKindOrd::Sound
-        } else {
-          SubmissionKindOrd::Mod
-        };
-        GroupKey::GameBanana(kind, id)
-      }
-      None => GroupKey::Local(item.sha256.clone()),
-    };
-    groups.entry(key).or_default().push(item);
+    groups.entry(item.group_key()).or_default().push(item);
   }
 
   let mut mods = Vec::new();
@@ -650,8 +884,13 @@ pub fn read_with(
     let entry_key = group_entry_key(&key);
     for item in &items {
       // Grimoire only matches a profile entry by file name when neither side
-      // carries a GameBanana id (pakNN names are reused after every reorder).
-      if matches!(key, GroupKey::Local(_)) {
+      // carries a GameBanana id (pakNN names are reused after every reorder);
+      // its side is the file's own entry, whatever mod the bytes became here.
+      let grimoire_id = item
+        .meta
+        .as_ref()
+        .and_then(|meta| meta_u64(meta, "gameBananaId"));
+      if grimoire_id.is_none() {
         lookup
           .by_file
           .insert(item.candidate.meta_key.to_lowercase(), entry_key.clone());
@@ -710,8 +949,13 @@ fn group_entry_key(key: &GroupKey) -> String {
   match key {
     GroupKey::GameBanana(SubmissionKindOrd::Mod, id) => format!("gamebanana:mod:{id}"),
     GroupKey::GameBanana(SubmissionKindOrd::Sound, id) => format!("gamebanana:sound:{id}"),
+    GroupKey::DmmLocal(id) => format!("local:dmm:{id}"),
     GroupKey::Local(hash) => format!("local:sha256:{hash}"),
   }
+}
+
+fn is_generated(meta: &Map<String, Value>) -> bool {
+  GENERATED_FLAGS.iter().any(|flag| meta.contains_key(*flag))
 }
 
 /// Grimoire's `CrosshairSettings` field -> the game convar it writes.
@@ -1061,6 +1305,13 @@ fn build_mod(key: &GroupKey, items: &[Resolved]) -> Option<InterchangeMod> {
         Some(format!("https://gamebanana.com/{section}/{id}")),
       )
     }
+    GroupKey::DmmLocal(id) => (
+      format!("local:dmm:{id}"),
+      InterchangeOrigin::Local(LocalOrigin {
+        local_id: Some(id.clone()),
+      }),
+      None,
+    ),
     GroupKey::Local(hash) => (
       format!("local:sha256:{hash}"),
       InterchangeOrigin::Local(LocalOrigin::default()),
@@ -1191,6 +1442,193 @@ mod tests {
         .warnings
         .iter()
         .any(|w| w.contains("Deadlock Mod Manager"))
+    );
+  }
+
+  fn read_with_store(w: &World, store: &Path) -> InterchangeDocument {
+    let hashes = HashCache::open(None);
+    read_with(
+      &w.user_data,
+      None,
+      &ReadContext {
+        hashes: &hashes,
+        progress: &|_, _, _| {},
+        dmm_store: Some(store),
+      },
+    )
+    .unwrap()
+  }
+
+  fn keys(document: &InterchangeDocument) -> Vec<&str> {
+    document.mods.iter().map(|m| m.key.as_str()).collect()
+  }
+
+  #[test]
+  fn dmm_listings_count_only_when_the_bytes_match_dmms_store() {
+    let w = world(serde_json::json!({
+      "pak01_dir.vpk": { "modName": "Skin", "gameBananaId": 5, "sha256": hash(b"skin") },
+      "pak02_dir.vpk": { "modName": "Hud", "gameBananaId": 6, "sha256": hash(b"hud") }
+    }));
+    let addons = w.game.join("game/citadel/addons");
+    let store = w.user_data.parent().unwrap().join("dmm-store");
+    // DMM imported both and laid them out; Grimoire then swapped the slots,
+    // and a third mod DMM installed itself sits in pak03.
+    write(&addons.join("pak01_dir.vpk"), b"hud");
+    write(&addons.join("pak02_dir.vpk"), b"skin");
+    write(&addons.join("pak03_dir.vpk"), b"dmm own");
+    // Grimoire kept its own copy of the HUD when DMM took the slot over.
+    write(&addons.join(".disabled/hud_copy_dir.vpk"), b"hud");
+    write(&store.join("5/files/skin_dir.vpk"), b"skin");
+    write(&store.join("6/files/hud_dir.vpk"), b"hud");
+    write(&store.join("7/files/own_dir.vpk"), b"dmm own");
+    write(
+      &addons.join(".dmm.json"),
+      br#"{"version":3,"mods":{
+        "5":{"enabled":true,"order":0,"shard":1,"currentVpks":["pak01_dir.vpk"]},
+        "6":{"enabled":true,"order":1,"shard":1,"currentVpks":["pak02_dir.vpk"]},
+        "7":{"enabled":true,"order":2,"shard":1,"currentVpks":["pak03_dir.vpk"]}}}"#,
+    );
+
+    let document = read_with_store(&w, &store);
+    // Bytes decide: pak01 is the HUD, pak02 the skin, pak03 DMM's own mod.
+    let by_key = |key: &str| document.mods.iter().find(|m| m.key == key).unwrap();
+    assert!(
+      by_key("gamebanana:mod:6").files[0]
+        .path
+        .ends_with("pak01_dir.vpk")
+    );
+    assert!(
+      by_key("gamebanana:mod:5").files[0]
+        .path
+        .ends_with("pak02_dir.vpk")
+    );
+    assert!(
+      by_key("gamebanana:mod:7").files[0]
+        .path
+        .ends_with("pak03_dir.vpk")
+    );
+    assert_eq!(by_key("gamebanana:mod:6").name, "Hud");
+    assert_eq!(document.mods.len(), 3, "the copy is the same mod");
+    assert_eq!(by_key("gamebanana:mod:6").files.len(), 1);
+    assert!(!document.warnings.iter().any(|w| w.contains("fingerprint")));
+  }
+
+  #[test]
+  fn a_copy_of_bytes_dmm_confirmed_as_two_mods_joins_neither() {
+    let w = world(serde_json::json!({}));
+    let addons = w.game.join("game/citadel/addons");
+    let store = w.user_data.parent().unwrap().join("dmm-store");
+    write(&addons.join("pak01_dir.vpk"), b"same");
+    write(&addons.join("pak02_dir.vpk"), b"same");
+    write(&addons.join(".disabled/copy_dir.vpk"), b"same");
+    write(&store.join("5/files/a_dir.vpk"), b"same");
+    write(&store.join("6/files/b_dir.vpk"), b"same");
+    write(
+      &addons.join(".dmm.json"),
+      br#"{"version":3,"mods":{
+        "5":{"enabled":true,"order":0,"shard":1,"currentVpks":["pak01_dir.vpk"]},
+        "6":{"enabled":true,"order":1,"shard":1,"currentVpks":["pak02_dir.vpk"]}}}"#,
+    );
+
+    let document = read_with_store(&w, &store);
+    for key in ["gamebanana:mod:5", "gamebanana:mod:6"] {
+      let found = document.mods.iter().find(|m| m.key == key).unwrap();
+      assert_eq!(found.files.len(), 1, "{key} keeps only its own file");
+    }
+    assert_eq!(
+      keys(&document)[2],
+      format!("local:sha256:{}", hash(b"same")),
+      "the copy stays a mod of its own"
+    );
+  }
+
+  #[test]
+  fn moved_files_take_an_identity_only_when_grimoire_rows_agree() {
+    let w = world(serde_json::json!({
+      "a_dir.vpk": { "modName": "Skin", "gameBananaId": 5, "sha256": hash(b"agreed") },
+      "b_dir.vpk": { "modName": "Skin (copy)", "gameBananaId": 5, "sha256": hash(b"agreed") },
+      "c_dir.vpk": { "modName": "Hud", "gameBananaId": 6, "sha256": hash(b"disputed") },
+      "d_dir.vpk": { "modName": "Other", "gameBananaId": 7, "sha256": hash(b"disputed") }
+    }));
+    let addons = w.game.join("game/citadel/addons");
+    write(&addons.join("pak01_dir.vpk"), b"agreed");
+    write(&addons.join("pak02_dir.vpk"), b"disputed");
+
+    let document = read(&w.user_data, None).unwrap();
+    assert_eq!(
+      keys(&document),
+      [
+        "gamebanana:mod:5".to_string(),
+        format!("local:sha256:{}", hash(b"disputed"))
+      ]
+    );
+  }
+
+  #[test]
+  fn files_grimoire_moved_without_knowing_them_keep_their_identity() {
+    let w = world(serde_json::json!({
+      "barkeep_dir.vpk": { "modName": "Barkeep", "gameBananaId": 720480, "sha256": hash(b"barkeep") },
+      // Grimoire's bare row for DMM's parked copy it moved into `.disabled`.
+      "720480_barkeep_dir.vpk": { "lockerHero": "Infernus", "lockerHeroVpkChecked": true },
+      // A row left under a slot another mod now occupies.
+      "pak01_dir.vpk": { "modName": "Old", "gameBananaId": 1, "sha256": hash(b"old") },
+      "renamed_dir.vpk": { "modName": "Renamed", "gameBananaId": 9, "sha256": hash(b"renamed") }
+    }));
+    let addons = w.game.join("game/citadel/addons");
+    write(&addons.join(".disabled/barkeep_dir.vpk"), b"barkeep");
+    write(&addons.join(".disabled/720480_barkeep_dir.vpk"), b"barkeep");
+    write(&addons.join("pak01_dir.vpk"), b"renamed");
+
+    let document = read(&w.user_data, None).unwrap();
+    assert_eq!(
+      keys(&document),
+      ["gamebanana:mod:9", "gamebanana:mod:720480"]
+    );
+    assert_eq!(document.mods[0].name, "Renamed");
+    assert_eq!(document.mods[1].files.len(), 1, "identical copies collapse");
+    assert!(!document.warnings.iter().any(|w| w.contains("fingerprint")));
+  }
+
+  #[test]
+  fn dmm_local_mods_keep_their_dmm_id_and_unknown_dmm_files_stay_out() {
+    let local = "local-0f8fad5b-d9cb-469f-a165-70867728950e";
+    let w = world(serde_json::json!({}));
+    let addons = w.game.join("game/citadel/addons");
+    let store = w.user_data.parent().unwrap().join("dmm-store");
+    write(&addons.join("pak01_dir.vpk"), b"local bytes");
+    write(&addons.join("pak02_dir.vpk"), b"no store copy");
+    write(&addons.join("pak03_dir.vpk"), b"wip bytes");
+    write(
+      &store.join(format!("{local}/files/mine_dir.vpk")),
+      b"local bytes",
+    );
+    write(&store.join("wip-44/files/wip_dir.vpk"), b"wip bytes");
+    write(
+      &addons.join(".dmm.json"),
+      format!(
+        r#"{{"version":3,"mods":{{
+          "{local}":{{"enabled":true,"order":0,"shard":1,"currentVpks":["pak01_dir.vpk"]}},
+          "8":{{"enabled":true,"order":1,"shard":1,"currentVpks":["pak02_dir.vpk"]}},
+          "wip-44":{{"enabled":true,"order":2,"shard":1,"currentVpks":["pak03_dir.vpk"]}}}}}}"#
+      )
+      .as_bytes(),
+    );
+
+    let document = read_with_store(&w, &store);
+    assert_eq!(keys(&document), [format!("local:dmm:{local}").as_str()]);
+    match &document.mods[0].origin {
+      InterchangeOrigin::Local(origin) => assert_eq!(origin.local_id.as_deref(), Some(local)),
+      InterchangeOrigin::GameBanana(_) => panic!("expected a local origin"),
+    }
+    assert_eq!(
+      super::super::import::dmm_mod_id(&document.mods[0]).unwrap(),
+      local
+    );
+    assert!(
+      document
+        .warnings
+        .iter()
+        .any(|w| w.starts_with("2 file(s)") && w.contains("Deadlock Mod Manager"))
     );
   }
 
