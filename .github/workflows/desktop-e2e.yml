@@ -51,7 +51,7 @@ jobs:
         run: pnpm --filter @deadlock-mods/desktop e2e:build
       - name: Build native helper
         run: pnpm --filter @deadlock-mods/desktop e2e:build:picker
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: desktop-e2e-binaries
           retention-days: 3
@@ -95,7 +95,7 @@ jobs:
         run: pnpm --filter @deadlock-mods/desktop e2e:test -- --suite $env:E2E_SUITE --keep --allow-native-input --report ../../.e2e/reports/scenarios.json
       - name: Retain scenario evidence
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: desktop-e2e-${{ matrix.suite }}
           retention-days: 14
@@ -147,7 +147,7 @@ jobs:
           shared-key: desktop-e2e-debug-${{ matrix.distro }}
       - name: Build application
         run: pnpm --filter @deadlock-mods/desktop e2e:build
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: desktop-e2e-binaries-${{ matrix.distro }}
           retention-days: 3
@@ -217,7 +217,7 @@ jobs:
         run: xvfb-run -a -s "-screen 0 1920x1080x24" dbus-run-session -- pnpm --filter @deadlock-mods/desktop e2e:test -- --suite "$E2E_SUITE" --keep --report ../../.e2e/reports/scenarios.json
       - name: Retain scenario evidence
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: desktop-e2e-${{ matrix.distro }}-${{ matrix.suite }}
           retention-days: 14
