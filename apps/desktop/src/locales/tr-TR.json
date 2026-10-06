@@ -1875,6 +1875,15 @@
       "done": "",
       "doneQuota": "",
       "rateLimited": ""
+    },
+    "notice": {
+      "title": "",
+      "description": "",
+      "benefit": "",
+      "settings": "",
+      "learnMore": "",
+      "keepOn": "",
+      "turnOff": ""
     }
   },
   "privacy": {
