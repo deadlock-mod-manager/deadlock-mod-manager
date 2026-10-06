@@ -1,4 +1,4 @@
-//! Persisted, off-by-default state for match-sync, in its own store file so writes
+//! Persisted, on-by-default state for match-sync, in its own store file so writes
 //! never race the zustand-managed `state.json`. The quota timestamps live here too,
 //! which is what makes the daily fetch cap survive reboots and app restarts.
 
