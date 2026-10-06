@@ -282,8 +282,6 @@
 ["types","apps/desktop/src/components/server-browser/server-filters.tsx",[["","PasswordFilter"]]]
 ["types","apps/desktop/src/components/server-browser/server-filters.tsx",[["","ServerFiltersProps"]]]
 ["types","apps/desktop/src/components/stats/delta-bar-chart.tsx",[["","DeltaBar"]]]
-["types","apps/desktop/src/hooks/use-analytics.ts",[["","AnalyticsProperties"]]]
-["types","apps/desktop/src/hooks/use-analytics.ts",[["","AnalyticsUserProperties"]]]
 ["types","apps/desktop/src/hooks/use-api-status.ts",[["","ApiHealthData"]]]
 ["types","apps/desktop/src/hooks/use-deadworks-content-progress.ts",[["","DeadworksContentStatus"]]]
 ["types","apps/desktop/src/hooks/use-install-with-collection.ts",[["","InstallWithCollectionFunction"]]]

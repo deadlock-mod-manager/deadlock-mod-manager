@@ -68,6 +68,7 @@ export const useAlbumDownload = () => {
             queueModDownload(mod, [file], {
               allFiles: downloads,
               profileFolder,
+              analyticsEntryPoint: "album",
               onError: (error) =>
                 toast.error(`Failed to download ${mod.name}: ${error.message}`),
             });

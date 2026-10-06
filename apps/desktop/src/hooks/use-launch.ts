@@ -1,3 +1,6 @@
+import { analytics, captureMilestone } from "@/lib/analytics";
+import { failureOutcome } from "@/lib/analytics/client";
+import { isTauriError } from "@/types/tauri";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
@@ -92,6 +95,9 @@ export const useLaunch = () => {
   };
 
   const launch = async (vanilla = false) => {
+    const attempt = analytics.start("game_launch", {
+      launch_mode: vanilla ? "vanilla" : "modded",
+    });
     try {
       await checkMapCommandInAutoexec();
       await disableInstalledMapMods();
@@ -131,12 +137,29 @@ export const useLaunch = () => {
         unlisten();
       }
 
+      const state = usePersistedStore.getState();
+      const enabledModCount = vanilla
+        ? 0
+        : state.localMods.filter(
+            (mod) =>
+              mod.status === ModStatus.Installed &&
+              state.isModEnabledInCurrentProfile(mod.remoteId),
+          ).length;
+      if (
+        attempt.finish("completed", { enabled_mod_count: enabledModCount }) &&
+        enabledModCount > 0
+      ) {
+        captureMilestone("first_modded_launch");
+      }
       setLastLaunchVanilla(vanilla);
       await queryClient.invalidateQueries({
         queryKey: ["is-game-running"],
       });
       await queryClient.invalidateQueries({ queryKey: MOD_PATHS_KEY });
     } catch (error) {
+      attempt.finish(
+        failureOutcome(isTauriError(error) ? error.kind : undefined),
+      );
       console.error(error);
       logger.errorOnly(error);
       toast.error(

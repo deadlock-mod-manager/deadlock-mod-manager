@@ -127,6 +127,7 @@ export const useDeepLink = () => {
                 ...modData,
                 downloads: downloadFiles,
                 profileFolder,
+                analyticsEntryPoint: "deep_link",
                 onStart: () => {
                   setModStatus(modData.remoteId, ModStatus.Downloading);
                   logger
@@ -159,6 +160,7 @@ export const useDeepLink = () => {
                   // Automatically start installation
                   try {
                     await install(localMod, {
+                      analyticsEntryPoint: "deep_link",
                       onStart: (mod) => {
                         setModStatus(mod.remoteId, ModStatus.Installing);
                         logger

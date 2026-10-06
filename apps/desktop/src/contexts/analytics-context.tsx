@@ -1,9 +1,11 @@
+import { ModStatus } from "@/types/mods";
 import {
   createContext,
   type FC,
   type ReactNode,
   useContext,
   useEffect,
+  useMemo,
   useRef,
 } from "react";
 import useAbout from "@/hooks/use-about";
@@ -57,13 +59,7 @@ export const AnalyticsProvider: FC<AnalyticsProviderProps> = ({ children }) => {
         const totalMods = Object.keys(modsState).length;
         const totalProfiles = Object.keys(profilesState).length;
 
-        analytics.identifyUser(hardwareId, userId, {
-          app_version: version,
-          platform: "desktop",
-          total_mods_installed: totalMods,
-          total_profiles_created: totalProfiles,
-          first_identified_at: new Date().toISOString(),
-        });
+        analytics.identifyUser(hardwareId, userId);
 
         isIdentified.current = true;
         lastUserId.current = userId;
@@ -98,8 +94,10 @@ export const AnalyticsProvider: FC<AnalyticsProviderProps> = ({ children }) => {
       profilesState
     ) {
       analytics.trackAppStarted({
-        app_version: version,
-        total_mods_at_startup: Object.keys(modsState).length,
+        total_mods_at_startup: modsState.length,
+        installed_mod_count: modsState.filter(
+          (mod) => mod.status === ModStatus.Installed,
+        ).length,
         total_profiles_at_startup: Object.keys(profilesState).length,
       });
 
@@ -114,9 +112,10 @@ export const AnalyticsProvider: FC<AnalyticsProviderProps> = ({ children }) => {
     profilesState,
   ]);
 
-  const contextValue: AnalyticsContextType = {
-    analytics,
-  };
+  const contextValue = useMemo<AnalyticsContextType>(
+    () => ({ analytics }),
+    [analytics],
+  );
 
   return (
     <AnalyticsContext.Provider value={contextValue}>

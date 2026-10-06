@@ -1,0 +1,63 @@
+import {
+  modContentType,
+  type EventArguments,
+  type ModEntryPoint,
+  type AnalyticsMilestone,
+} from "./schema";
+import type { AnalyticsClient } from "./client";
+import type { LocalMod, InstallableMod } from "@/types/mods";
+import type { ErrorKind } from "@/types/tauri";
+import { failureOutcome } from "./client";
+
+export interface InstallAnalyticsOptions {
+  analyticsEntryPoint?: ModEntryPoint;
+  analyticsOperationKind?: "install" | "enable" | "reinstall" | "randomize";
+  onStart: (mod: LocalMod) => void;
+  onComplete: (mod: LocalMod, result: InstallableMod) => void;
+  onError: (mod: LocalMod, error: ErrorKind) => void;
+  onCancel?: (mod: LocalMod) => void;
+}
+
+interface InstallAnalyticsDependencies {
+  start: AnalyticsClient["start"];
+  captureMilestone: <K extends AnalyticsMilestone>(
+    milestone: K,
+    ...args: EventArguments<K>
+  ) => void;
+}
+
+export const createInstallTracker =
+  ({ start, captureMilestone }: InstallAnalyticsDependencies) =>
+  <T extends InstallAnalyticsOptions>(mod: LocalMod, options: T) => {
+    const operationKind =
+      options.analyticsOperationKind ??
+      (mod.installedVpks?.length ? "enable" : "install");
+    const attempt = start("mod_install", {
+      mod_id: mod.remoteId,
+      entry_point: options.analyticsEntryPoint ?? "library",
+      operation_kind: operationKind,
+      content_type: modContentType(mod),
+    });
+    return {
+      ...options,
+      onComplete: (installedMod: LocalMod, result: InstallableMod) => {
+        if (
+          attempt.finish("completed", {
+            vpk_count: result.installed_vpks.length,
+          }) &&
+          operationKind === "install"
+        ) {
+          captureMilestone("first_install_completed");
+        }
+        options.onComplete(installedMod, result);
+      },
+      onError: (failedMod: LocalMod, error: ErrorKind) => {
+        attempt.finish(failureOutcome(error.kind));
+        options.onError(failedMod, error);
+      },
+      onCancel: (cancelledMod: LocalMod) => {
+        attempt.finish("cancelled");
+        options.onCancel?.(cancelledMod);
+      },
+    };
+  };

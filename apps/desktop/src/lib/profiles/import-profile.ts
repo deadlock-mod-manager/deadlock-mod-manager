@@ -1,3 +1,6 @@
+import { analytics, captureMilestone } from "@/lib/analytics";
+import { failureOutcome } from "@/lib/analytics/client";
+import { isTauriError } from "@/types/tauri";
 import type { ModDto, SharedProfile } from "@deadlock-mods/shared";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import type { TFunction } from "i18next";
@@ -61,6 +64,10 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
       })
       .info("Starting profile import");
 
+    const attempt = analytics.start("profile_import", {
+      destination: "new_profile",
+      mod_count: totalImportedMods,
+    });
     let newProfileId: ProfileId | null = null;
 
     try {
@@ -137,6 +144,20 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
         result.installedMods.length -
         (totalImportedMods - preparedMods.length - unavailableModsCount);
 
+      const importedCount = result.installedMods.length;
+      const recorded = attempt.finish(
+        importedCount === totalImportedMods
+          ? "completed"
+          : importedCount > 0
+            ? "partial"
+            : "failed",
+        {
+          imported_mod_count: importedCount,
+          unavailable_mod_count: unavailableModsCount,
+        },
+      );
+      if (recorded && importedCount > 0)
+        captureMilestone("first_install_completed");
       setImportProgress(null);
 
       if (
@@ -163,6 +184,9 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
 
       void missingCount;
     } catch (error) {
+      attempt.finish(
+        failureOutcome(isTauriError(error) ? error.kind : undefined),
+      );
       logger.withError(error).error("Profile import failed");
       setImportProgress(null);
       toast.error(t("profiles.createError"));
@@ -201,6 +225,10 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
       })
       .info("Overriding current profile with imported mods");
 
+    const attempt = analytics.start("profile_import", {
+      destination: "current_profile",
+      mod_count: totalImportedMods,
+    });
     try {
       setImportProgress({
         currentStep: t("profiles.updatingProfile"),
@@ -239,6 +267,20 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
         );
       }
 
+      const importedCount = result.installedMods.length;
+      const recorded = attempt.finish(
+        importedCount === totalImportedMods
+          ? "completed"
+          : importedCount > 0
+            ? "partial"
+            : "failed",
+        {
+          imported_mod_count: importedCount,
+          unavailable_mod_count: unavailableModsCount,
+        },
+      );
+      if (recorded && importedCount > 0)
+        captureMilestone("first_install_completed");
       setImportProgress(null);
 
       if (
@@ -263,6 +305,9 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
         toast.success(t("profiles.overrideSuccess"));
       }
     } catch (error) {
+      attempt.finish(
+        failureOutcome(isTauriError(error) ? error.kind : undefined),
+      );
       logger.withError(error).error("Profile import failed");
       setImportProgress(null);
       toast.error(t("profiles.updateError"));

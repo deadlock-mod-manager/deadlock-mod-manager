@@ -1,3 +1,5 @@
+import { modContentType } from "@/lib/analytics/schema";
+import { analytics } from "@/lib/analytics";
 import type { ModDto } from "@deadlock-mods/shared";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
@@ -42,9 +44,14 @@ export const FeaturedModCard = ({ mod, isLoading }: Props) => {
 
   const heroImage = mod.images[0];
   const handleClick = () => {
+    analytics.track("catalog_item_opened", {
+      mod_id: mod.remoteId,
+      entry_point: "featured",
+      content_type: modContentType(mod),
+    });
     void prefetchModDetail(queryClient, mod.remoteId);
     navigate(`/mods/${mod.remoteId}`, {
-      state: { collection: "dashboard" },
+      state: { collection: "dashboard", analyticsEntryPoint: "featured" },
     });
   };
 

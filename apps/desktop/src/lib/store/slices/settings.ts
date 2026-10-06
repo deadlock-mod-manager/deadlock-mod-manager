@@ -1,3 +1,4 @@
+import type { AnalyticsMilestone } from "@/lib/analytics/schema";
 import type { CustomSettingDto, NSFWSettings } from "@deadlock-mods/shared";
 import type {
   PresenceTextTemplatePair,
@@ -18,6 +19,7 @@ import {
 export type TelemetrySettings = {
   analyticsEnabled: boolean;
   hasSeenTelemetryPrompt: boolean;
+  analyticsMilestones?: Partial<Record<AnalyticsMilestone, boolean>>;
 };
 
 export type GamePresenceHeroOverrides = Record<string, PresenceTextTemplates>;

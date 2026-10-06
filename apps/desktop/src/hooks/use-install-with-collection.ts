@@ -6,6 +6,10 @@ import {
   applyDownloadTimeSelection,
   requiresFileSelection,
 } from "@/lib/mods/mod-variants";
+import { trackInstallOptions } from "@/lib/analytics";
+import type { InstallAnalyticsOptions } from "@/lib/analytics/install";
+import { getErrorMessage } from "@/lib/errors";
+import { isTauriError } from "@/types/tauri";
 import { usePersistedStore } from "@/lib/store";
 import type {
   InstallableMod,
@@ -14,33 +18,11 @@ import type {
   ModFileTree,
 } from "@/types/mods";
 import { ModStatus } from "@/types/mods";
-import type { ErrorKind } from "@/types/tauri";
 import { invokeGuarded, isGameRunningError } from "@/lib/game-guard";
 
 const logger = createLogger("install-with-collection");
 
-// Every rejection has to reach onError or the mod stays stuck in Installing.
-// An empty message is deliberate: callers substitute their own localized copy.
-const toUnknownError = (error: unknown): ErrorKind => {
-  if (typeof error === "string") {
-    return { kind: "unknown", message: error };
-  }
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    "message" in error &&
-    typeof error.message === "string"
-  ) {
-    return { kind: "unknown", message: error.message };
-  }
-  return { kind: "unknown", message: "" };
-};
-
-export type InstallWithCollectionOptions = {
-  onStart: (mod: LocalMod) => void;
-  onComplete: (mod: LocalMod, result: InstallableMod) => void;
-  onError: (mod: LocalMod, error: ErrorKind) => void;
-  onCancel?: (mod: LocalMod) => void;
+export type InstallWithCollectionOptions = InstallAnalyticsOptions & {
   onFileTreeAnalyzed?: (mod: LocalMod, fileTree: ModFileTree) => void;
 };
 
@@ -107,7 +89,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
             profileFolder,
             isMap: mod.isMap,
           });
-        } catch (error: unknown) {
+        } catch (error) {
           // The user declined the override; installing anyway would only ask
           // again for the very next step.
           if (isGameRunningError(error)) throw error;
@@ -125,7 +107,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         file_tree: fileTree,
       };
 
-      const result = (await invokeGuarded("install_mod", {
+      const result = await invokeGuarded<InstallableMod>("install_mod", {
         deadlockMod: {
           id: modData.remoteId,
           name: modData.name,
@@ -133,39 +115,32 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
           file_tree: modData.file_tree,
         },
         profileFolder,
-      })) as InstallableMod;
+      });
 
       options.onComplete(mod, result);
       return result;
-    } catch (error: unknown) {
+    } catch (error) {
       logger
         .withMetadata({ modId: mod.remoteId })
         .withError(error)
         .error("Installation failed");
 
-      if (error instanceof Error) {
-        options.onError(mod, {
-          kind: "unknown",
-          message: error.message,
-        });
-      } else if (
-        typeof error === "object" &&
-        error !== null &&
-        "kind" in error
-      ) {
-        options.onError(mod, error as ErrorKind);
-      } else {
-        options.onError(mod, toUnknownError(error));
-      }
+      options.onError(
+        mod,
+        isTauriError(error)
+          ? error
+          : { kind: "unknown", message: getErrorMessage(error) },
+      );
       return null;
     }
   };
 
   const install: InstallWithCollectionFunction = async (
     mod,
-    options,
+    originalOptions,
     preselectedFileTree,
   ) => {
+    const options = trackInstallOptions(mod, originalOptions);
     try {
       options.onStart(mod);
 
@@ -293,9 +268,9 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
           .info("Analyzing mod file tree");
 
         // Get file tree from backend
-        fileTree = (await invoke("get_mod_file_tree", {
+        fileTree = await invoke<ModFileTree>("get_mod_file_tree", {
           modPath: modDir,
-        })) as ModFileTree;
+        });
 
         logger
           .withMetadata({
@@ -365,7 +340,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
 
         setIsAnalyzing(false);
         return await performInstallation(mod, options, fileTree);
-      } catch (error: unknown) {
+      } catch (error) {
         setIsAnalyzing(false);
         logger
           .withMetadata({ modId: mod.remoteId })
@@ -378,27 +353,19 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         // This handles cases where mod directory doesn't exist or analysis fails
         return await performInstallation(mod, options);
       }
-    } catch (error: unknown) {
+    } catch (error) {
       setIsAnalyzing(false);
       logger
         .withMetadata({ modId: mod.remoteId })
         .withError(error)
         .error("Installation process failed");
 
-      if (error instanceof Error) {
-        options.onError(mod, {
-          kind: "unknown",
-          message: error.message,
-        });
-      } else if (
-        typeof error === "object" &&
-        error !== null &&
-        "kind" in error
-      ) {
-        options.onError(mod, error as ErrorKind);
-      } else {
-        options.onError(mod, toUnknownError(error));
-      }
+      options.onError(
+        mod,
+        isTauriError(error)
+          ? error
+          : { kind: "unknown", message: getErrorMessage(error) },
+      );
       return null;
     }
   };

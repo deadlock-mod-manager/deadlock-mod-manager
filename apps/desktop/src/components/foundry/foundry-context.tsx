@@ -1,3 +1,4 @@
+import { analytics } from "@/lib/analytics";
 import {
   createContext,
   type ReactNode,
@@ -614,18 +615,26 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
   const exportVpk = useCallback(
     async (request: FoundryExportRequest) => {
       const active = requireWorkspace();
+      const attempt = analytics.start("foundry_export", {
+        edited_asset_count: editedPaths.size,
+      });
       setBusy(true);
       try {
-        return await exportFoundryWorkspace(active.root, {
+        const result = await exportFoundryWorkspace(active.root, {
           ...request,
           name: request.name ?? manifest?.heroDisplay ?? manifest?.hero ?? null,
           sourcePath: request.sourcePath ?? manifest?.sourcePath ?? null,
         });
+        attempt.finish("completed");
+        return result;
+      } catch (error) {
+        attempt.finish("failed");
+        throw error;
       } finally {
         setBusy(false);
       }
     },
-    [manifest, requireWorkspace],
+    [editedPaths.size, manifest, requireWorkspace],
   );
 
   const value = useMemo<FoundryContextValue>(

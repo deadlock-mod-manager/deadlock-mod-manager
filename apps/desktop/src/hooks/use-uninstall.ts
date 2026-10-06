@@ -2,6 +2,8 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
+import { analytics } from "@/lib/analytics";
+import { failureOutcome } from "@/lib/analytics/client";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { type LocalMod, ModStatus } from "@/types/mods";
@@ -23,6 +25,10 @@ const useUninstall = () => {
   const queryClient = useQueryClient();
 
   const uninstall = async (mod: LocalMod, remove: boolean) => {
+    const attempt = analytics.start("library_mod_state", {
+      action: remove ? "delete" : "disable",
+      mod_id: mod.remoteId,
+    });
     try {
       if (remove) {
         const shouldUninstall = !!(await confirm({
@@ -33,6 +39,7 @@ const useUninstall = () => {
           cancelButton: t("mods.deleteConfirmCancel"),
         }));
         if (!shouldUninstall) {
+          attempt.finish("cancelled");
           return;
         }
       }
@@ -79,10 +86,14 @@ const useUninstall = () => {
         queryClient.invalidateQueries({ queryKey: PROFILE_VPKS_QUERY_KEY });
       }
 
+      attempt.finish("completed");
       toast.success(
         remove ? t("mods.deleteSuccess") : t("mods.disableSuccess"),
       );
     } catch (error) {
+      attempt.finish(
+        failureOutcome(isTauriError(error) ? error.kind : undefined),
+      );
       // Tauri rejects with a plain {kind, message} object, which `errorOnly`
       // renders as an empty line.
       logger

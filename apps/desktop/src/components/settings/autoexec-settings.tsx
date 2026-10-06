@@ -1,3 +1,4 @@
+import { analytics } from "@/lib/analytics";
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Card,
@@ -94,6 +95,11 @@ export const AutoexecSettings = () => {
       const wasSilentSave = isSilentSaveRef.current;
 
       if (!wasSilentSave) {
+        analytics.track("autoexec_saved", {
+          has_launchable_content: hasAutoexecLaunchableContent(
+            savedConfig.full_content,
+          ),
+        });
         toast.success(t("settings.autoexecSaved"));
 
         if (hasAutoexecLaunchableContent(savedConfig.full_content)) {

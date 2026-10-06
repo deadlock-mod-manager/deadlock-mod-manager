@@ -106,7 +106,7 @@ const Stats = () => {
   const { refresh, isRefreshing, canRefresh } = useStatsRefresh();
 
   useEffect(() => {
-    analytics.trackPageViewed(`stats-${tab}`, { path: "/stats", tab });
+    analytics.trackPageViewed(`stats-${tab}`, { tab });
   }, [analytics, tab]);
 
   const handleTabChange = (value: string) => {

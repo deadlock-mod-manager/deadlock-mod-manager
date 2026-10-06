@@ -1,3 +1,4 @@
+import { analytics } from "@/lib/analytics";
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Dialog,
@@ -112,12 +113,16 @@ export const OnboardingWizard = () => {
 
   const handleNext = useCallback(() => {
     if (isLastStep) {
+      analytics.track("setup_result", {
+        outcome: "completed",
+        last_step: currentStep,
+      });
       completeOnboarding();
     } else {
       setCurrentStep((prev) => prev + 1);
       setStepKey((prev) => prev + 1);
     }
-  }, [isLastStep, completeOnboarding]);
+  }, [currentStep, isLastStep, completeOnboarding]);
 
   const handleBack = useCallback(() => {
     setCurrentStep((prev) => Math.max(1, prev - 1));
@@ -145,6 +150,10 @@ export const OnboardingWizard = () => {
       if (!isOpen && showOnboardingRef.current && !isHandlingCloseRef.current) {
         isHandlingCloseRef.current = true;
         showOnboardingRef.current = false;
+        analytics.track("setup_result", {
+          outcome: "skipped",
+          last_step: currentStep,
+        });
         skipOnboarding();
         setTimeout(() => {
           isHandlingCloseRef.current = false;
@@ -153,7 +162,7 @@ export const OnboardingWizard = () => {
         showOnboardingRef.current = isOpen;
       }
     },
-    [skipOnboarding],
+    [currentStep, skipOnboarding],
   );
 
   const stepHandlers = useMemo<StepComponentProps>(() => {
@@ -170,8 +179,12 @@ export const OnboardingWizard = () => {
   }, [currentStep, currentStepConfig, handleStepComplete, handleStepError]);
 
   const onSkip = useCallback(() => {
+    analytics.track("setup_result", {
+      outcome: "skipped",
+      last_step: currentStep,
+    });
     skipOnboarding();
-  }, [skipOnboarding]);
+  }, [currentStep, skipOnboarding]);
 
   const CurrentStepComponent = currentStepConfig?.component;
 

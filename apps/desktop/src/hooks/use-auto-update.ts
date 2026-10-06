@@ -1,3 +1,4 @@
+import { analytics } from "@/lib/analytics";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "@deadlock-mods/ui/components/sonner";
@@ -54,6 +55,10 @@ export const useAutoUpdate = (integrationEnabled = true) => {
           logger
             .withMetadata({ version: update.version })
             .info("Update available");
+          analytics.track("update_offered", {
+            target_version: update.version,
+            entry_point: "update_dialog",
+          });
           setShowUpdateDialog(true);
         } else {
           logger.info("No updates available");
@@ -81,6 +86,10 @@ export const useAutoUpdate = (integrationEnabled = true) => {
   };
 
   const handleDismiss = () => {
+    analytics.track("update_dismissed", {
+      target_version: updateManager.update?.version,
+      entry_point: "update_dialog",
+    });
     setShowUpdateDialog(false);
     updateManager.reset();
   };

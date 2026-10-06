@@ -64,7 +64,8 @@ const Mod = () => {
   const params = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { collection, backLabel, goBack } = useModDetailNavigation();
+  const { collection, backLabel, goBack, analyticsEntryPoint } =
+    useModDetailNavigation();
   const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
@@ -358,7 +359,11 @@ const Mod = () => {
                 {localMod && !isLocalMod(localMod) && (
                   <ReinstallModButton mod={localMod} variant='default' />
                 )}
-                <ModButton remoteMod={mod} variant='default' />
+                <ModButton
+                  remoteMod={mod}
+                  variant='default'
+                  analyticsEntryPoint={analyticsEntryPoint}
+                />
                 {!!localMod?.status && (
                   <Button
                     icon={<Trash className='h-4 w-4' />}

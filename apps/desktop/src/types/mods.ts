@@ -1,3 +1,4 @@
+import type { ModEntryPoint } from "@/lib/analytics/schema";
 import type { ModDto } from "@deadlock-mods/shared";
 import type { z } from "zod";
 import { ModDownloadDtoSchema } from "@deadlock-mods/shared";
@@ -52,6 +53,8 @@ export interface DownloadableMod extends Omit<LocalMod, "status"> {
   onComplete: (path: string) => void;
   onError: (error: Error) => void;
   profileFolder?: string | null;
+  analyticsEntryPoint?: ModEntryPoint;
+  analyticsOperationKind?: "download" | "reinstall" | "retry";
 }
 
 export interface FontInfo {
