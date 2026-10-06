@@ -23,9 +23,9 @@ pkgver() {
 
 prepare() {
     cd "${srcdir}/${pkgname}/apps/desktop"
-    # Use sharp's prebuilt binary; a system libvips makes it fall back to a
-    # source build that needs npm and node-gyp.
+    # Skip sharp's npm source build (triggered by a system libvips) and puppeteer's Chrome download.
     export SHARP_IGNORE_GLOBAL_LIBVIPS=1
+    export PUPPETEER_SKIP_DOWNLOAD=1
     pnpm install --frozen-lockfile --filter @deadlock-mods/desktop...
 
     cd src-tauri

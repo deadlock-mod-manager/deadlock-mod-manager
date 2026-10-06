@@ -22,9 +22,9 @@ prepare() {
     # into the deadlock-api monorepo (same rev). Drop once _pkgver moves past 1.1.0.
     sed -i 's#deadlock-api/valveprotos-rs#deadlock-api/deadlock-api#' src-tauri/Cargo.toml Cargo.lock
 
-    # Use sharp's prebuilt binary; a system libvips makes it fall back to a
-    # source build that needs npm and node-gyp.
+    # Skip sharp's npm source build (triggered by a system libvips) and puppeteer's Chrome download.
     export SHARP_IGNORE_GLOBAL_LIBVIPS=1
+    export PUPPETEER_SKIP_DOWNLOAD=1
     pnpm install --frozen-lockfile --filter @deadlock-mods/desktop...
 
     cd src-tauri
