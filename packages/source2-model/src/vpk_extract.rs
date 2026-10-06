@@ -14,7 +14,7 @@ struct EntryInfo {
     archive_index: u16,
     entry_offset: u32,
     entry_length: u32,
-    preload_bytes: u16,
+    preload: Vec<u8>,
 }
 
 /// Suffix of the sidecar that redirects companion-archive lookups: a file named
@@ -37,7 +37,7 @@ pub fn origin_sidecar_path(vpk_path: &Path) -> PathBuf {
 
 /// Directory to resolve `_NNN.vpk` companions in: the one named by the origin
 /// sidecar when it exists and still points at a directory, else the VPK's own.
-fn companion_dir(vpk_path: &Path) -> PathBuf {
+pub fn companion_dir(vpk_path: &Path) -> PathBuf {
     if let Ok(text) = fs::read_to_string(origin_sidecar_path(vpk_path)) {
         let origin = PathBuf::from(text.trim());
         if origin.is_dir() {
@@ -53,8 +53,8 @@ fn companion_dir(vpk_path: &Path) -> PathBuf {
 pub struct VpkArchive {
     path: PathBuf,
     companion_dir: PathBuf,
-    buffer: Vec<u8>,
     data_section_start: usize,
+    inline_data_length: Option<u32>,
     entries: Vec<EntryInfo>,
     entry_index: HashMap<String, usize>,
     /// An unpacked file tree that shadows the archive. When the Foundry has an
@@ -66,10 +66,9 @@ pub struct VpkArchive {
 
 impl VpkArchive {
     pub fn open(vpk_path: &Path) -> Result<Self> {
-        let buffer = fs::read(vpk_path)?;
-        if buffer.len() < 12 {
-            return Err(Source2Error::Vpk("VPK file too small".into()));
-        }
+        let mut file = fs::File::open(vpk_path)?;
+        let mut buffer = [0u8; 12];
+        file.read_exact(&mut buffer)?;
 
         let sig = u32::from_le_bytes(buffer[0..4].try_into().unwrap());
         if sig != VPK_SIGNATURE {
@@ -77,21 +76,33 @@ impl VpkArchive {
         }
 
         let version = u32::from_le_bytes(buffer[4..8].try_into().unwrap());
+        if version != 1 && version != 2 {
+            return Err(Source2Error::Vpk(format!(
+                "unsupported VPK version {version}"
+            )));
+        }
         let tree_length = u32::from_le_bytes(buffer[8..12].try_into().unwrap()) as usize;
         let tree_start: usize = if version >= 2 { 28 } else { 12 };
         let data_section_start = tree_start + tree_length;
+        let inline_data_length = if version == 2 {
+            let mut rest = [0; 16];
+            file.read_exact(&mut rest)?;
+            Some(u32::from_le_bytes(rest[..4].try_into().unwrap()))
+        } else {
+            None
+        };
 
-        let parsed_entries = VpkParser::parse_directory_from_file(vpk_path)
+        let parsed_entries = VpkParser::parse_directory_with_preload_from_file(vpk_path)
             .map_err(|e| Source2Error::Vpk(format!("failed to parse VPK directory: {e}")))?;
 
         let entries: Vec<EntryInfo> = parsed_entries
             .into_iter()
-            .map(|entry| EntryInfo {
+            .map(|(entry, preload)| EntryInfo {
                 full_path: entry.full_path,
                 archive_index: entry.archive_index,
                 entry_offset: entry.entry_offset,
                 entry_length: entry.entry_length,
-                preload_bytes: entry.preload_bytes,
+                preload,
             })
             .collect();
         let mut entry_index = HashMap::new();
@@ -104,8 +115,8 @@ impl VpkArchive {
         Ok(Self {
             path: vpk_path.to_path_buf(),
             companion_dir: companion_dir(vpk_path),
-            buffer,
             data_section_start,
+            inline_data_length,
             entries,
             entry_index,
             overlay_dir: None,
@@ -151,15 +162,13 @@ impl VpkArchive {
                 .contains_key(&entry_path.replace('\\', "/").to_ascii_lowercase())
     }
 
-    /// Whether an entry stores bytes inline in the directory tree before its
-    /// normal archive payload. Callers that cannot preserve those bytes can use
-    /// this to reject the entry instead of extracting incomplete data.
+    /// Whether an entry stores a prefix in the directory tree. Extraction includes this prefix.
     pub fn has_preload_bytes(&self, entry_path: &str) -> bool {
         let key = entry_path.replace('\\', "/").to_ascii_lowercase();
         self.entry_index
             .get(&key)
             .and_then(|index| self.entries.get(*index))
-            .is_some_and(|entry| entry.preload_bytes > 0)
+            .is_some_and(|entry| !entry.preload.is_empty())
     }
 
     pub fn extract_entry(&self, entry_path: &str) -> Result<Vec<u8>> {
@@ -178,18 +187,30 @@ impl VpkArchive {
     /// Read the bytes of one already-resolved entry, pulling from inline data or
     /// the matching `_NNN.vpk` companion archive.
     fn read_entry(&self, entry: &EntryInfo) -> Result<Vec<u8>> {
-        let mut bytes: Vec<u8> = Vec::with_capacity(entry.entry_length as usize);
+        let mut bytes = entry.preload.clone();
         if entry.entry_length == 0 {
             return Ok(bytes);
         }
 
         if entry.archive_index == 0x7fff {
-            let start = self.data_section_start + entry.entry_offset as usize;
-            let end = start + entry.entry_length as usize;
-            if end > self.buffer.len() {
-                return Err(Source2Error::Vpk("inline entry out of bounds".into()));
+            if self.inline_data_length.is_some_and(|length| {
+                u64::from(entry.entry_offset) + u64::from(entry.entry_length) > u64::from(length)
+            }) {
+                return Err(Source2Error::Vpk(
+                    "inline entry exceeds the VPK data section".into(),
+                ));
             }
-            bytes.extend_from_slice(&self.buffer[start..end]);
+            let start = self.data_section_start as u64 + u64::from(entry.entry_offset);
+            let mut file = fs::File::open(&self.path)?;
+            if start + u64::from(entry.entry_length) > file.metadata()?.len() {
+                return Err(Source2Error::Vpk(
+                    "inline entry exceeds the VPK file".into(),
+                ));
+            }
+            file.seek(SeekFrom::Start(start))?;
+            let prefix = bytes.len();
+            bytes.resize(prefix + entry.entry_length as usize, 0);
+            file.read_exact(&mut bytes[prefix..])?;
             return Ok(bytes);
         }
 
@@ -198,9 +219,17 @@ impl VpkArchive {
         let archive_name = format!("{base}_{:03}.vpk", entry.archive_index);
         let archive_path = self.companion_dir.join(&archive_name);
         let mut archive_file = fs::File::open(&archive_path)?;
+        if u64::from(entry.entry_offset) + u64::from(entry.entry_length)
+            > archive_file.metadata()?.len()
+        {
+            return Err(Source2Error::Vpk(
+                "entry exceeds its companion archive".into(),
+            ));
+        }
         archive_file.seek(SeekFrom::Start(u64::from(entry.entry_offset)))?;
-        bytes.resize(entry.entry_length as usize, 0);
-        archive_file.read_exact(&mut bytes)?;
+        let prefix = bytes.len();
+        bytes.resize(prefix + entry.entry_length as usize, 0);
+        archive_file.read_exact(&mut bytes[prefix..])?;
         Ok(bytes)
     }
 
@@ -392,6 +421,95 @@ mod tests {
         fs::write(&preload_path, inline_vpk(b"prefix", b"payload")).expect("write preload VPK");
         let preload = VpkArchive::open(&preload_path).expect("open preload VPK");
         assert!(preload.has_preload_bytes("folder/sample.txt"));
+        assert_eq!(
+            preload.extract_entry("folder/sample.txt").unwrap(),
+            b"prefixpayload"
+        );
         let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn extracts_preload_only_and_companion_entries_without_losing_the_prefix() {
+        let dir = scratch_dir("preload");
+        let vpk = dir.join("pak01_dir.vpk");
+        fs::write(&vpk, inline_vpk(b"prefix", b"")).unwrap();
+        assert_eq!(
+            VpkArchive::open(&vpk)
+                .unwrap()
+                .extract_entry("folder/sample.txt")
+                .unwrap(),
+            b"prefix"
+        );
+        let mut bytes = inline_vpk(b"prefix", b"payload");
+        let index_offset = 12 + b"txt\0folder\0sample\0".len() + 6;
+        bytes[index_offset..index_offset + 2].copy_from_slice(&0u16.to_le_bytes());
+        bytes.truncate(bytes.len() - b"payload".len());
+        fs::write(&vpk, bytes).unwrap();
+        fs::write(dir.join("pak01_000.vpk"), b"payload").unwrap();
+        assert_eq!(
+            VpkArchive::open(&vpk)
+                .unwrap()
+                .extract_entry("folder/sample.txt")
+                .unwrap(),
+            b"prefixpayload"
+        );
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn validates_versions_and_payload_extents() {
+        let dir = scratch_dir("invalid");
+        let vpk = dir.join("pak01_dir.vpk");
+        let mut bytes = inline_vpk(b"", b"payload");
+        bytes[4..8].copy_from_slice(&3u32.to_le_bytes());
+        fs::write(&vpk, &bytes).unwrap();
+        assert!(VpkArchive::open(&vpk).is_err());
+        bytes[4..8].copy_from_slice(&1u32.to_le_bytes());
+        bytes.pop();
+        fs::write(&vpk, &bytes).unwrap();
+        assert!(
+            VpkArchive::open(&vpk)
+                .unwrap()
+                .extract_entry("folder/sample.txt")
+                .is_err()
+        );
+        fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn extracts_v2_preloads_and_refuses_directory_or_data_section_overruns() {
+        let dir = scratch_dir("v2-preload");
+        let path = dir.join("pak01_dir.vpk");
+        let v1 = inline_vpk(b"prefix", b"payload");
+        let mut v2 = v1[..12].to_vec();
+        v2[4..8].copy_from_slice(&2u32.to_le_bytes());
+        v2.extend_from_slice(&7u32.to_le_bytes());
+        v2.extend_from_slice(&[0; 12]);
+        v2.extend_from_slice(&v1[12..]);
+        fs::write(&path, &v2).unwrap();
+        assert_eq!(
+            VpkArchive::open(&path)
+                .unwrap()
+                .extract_entry("folder/sample.txt")
+                .unwrap(),
+            b"prefixpayload"
+        );
+        v2[12..16].copy_from_slice(&0u32.to_le_bytes());
+        fs::write(&path, &v2).unwrap();
+        assert!(
+            VpkArchive::open(&path)
+                .unwrap()
+                .extract_entry("folder/sample.txt")
+                .is_err()
+        );
+        v2[8..12].copy_from_slice(&u32::MAX.to_le_bytes());
+        fs::write(&path, &v2).unwrap();
+        assert!(VpkArchive::open(&path).is_err());
+        let mut truncated_tree = v1;
+        let tree_length = u32::from_le_bytes(truncated_tree[8..12].try_into().unwrap());
+        truncated_tree[8..12].copy_from_slice(&(tree_length - 1).to_le_bytes());
+        fs::write(&path, &truncated_tree).unwrap();
+        assert!(VpkArchive::open(&path).is_err());
+        fs::remove_dir_all(dir).unwrap();
     }
 }

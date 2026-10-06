@@ -5,7 +5,15 @@ export interface AssetRepair {
   modId: string;
   sourceVpk: string;
   filePath: string;
-  kind: "animationSkeleton" | "animationSkeletonRebased" | "cameraInterface";
+  kind:
+    | "animationSkeleton"
+    | "animationSkeletonRebased"
+    | "animationInterface"
+    | "animationRigRebase"
+    | "cameraInterface"
+    | "cameraControls"
+    | "materialBindings"
+    | "modelRelocation";
 }
 
 export interface AssetWarning {
@@ -19,7 +27,13 @@ export interface AssetWarning {
     | "invalidAttachment"
     | "invalidHitbox"
     | "missingResource"
-    | "unreadableResource";
+    | "missingCameraInterface"
+    | "missingAnimationInterface"
+    | "animationMapping"
+    | "unreadableResource"
+    | "materialMapping"
+    | "materialInterface"
+    | "modelMapping";
   detail: string;
 }
 

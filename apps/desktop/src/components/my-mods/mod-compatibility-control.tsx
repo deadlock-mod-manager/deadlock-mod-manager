@@ -1,96 +1,78 @@
 import { Button } from "@deadlock-mods/ui/components/button";
-import { Label } from "@deadlock-mods/ui/components/label";
-import { Switch } from "@deadlock-mods/ui/components/switch";
-import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useModCompatibility } from "@/hooks/use-mod-compatibility";
-import { isGameRunning } from "@/lib/tauri-commands";
+import type { ModCompatibilityController } from "@/hooks/use-mod-compatibility";
 import { usePersistedStore } from "@/lib/store";
+import { ModStatus } from "@/types/mods";
 import { CompatibilityReviewDialog } from "./compatibility-review-dialog";
 
 export function ModCompatibilityControl({
   profileFolder,
   hasMods,
+  compatibility,
 }: {
   profileFolder: string | null;
   hasMods: boolean;
+  compatibility: ModCompatibilityController;
 }) {
   const { t } = useTranslation();
-  const gamePath = usePersistedStore((state) => state.gamePath);
-  const { preference, changePreference } = useModCompatibility(profileFolder);
+  const { preference, game, pendingChanges, gamePath } = compatibility;
+  const mods = usePersistedStore((state) => state.localMods);
   const [reviewOpen, setReviewOpen] = useState(false);
-  const game = useQuery({
-    queryKey: ["is-game-running"],
-    queryFn: isGameRunning,
-    enabled: !!gamePath,
-    refetchInterval: 5000,
-  });
-  const enabled = preference.data ?? false;
-  const gameRunning = game.data ?? false;
-  const busy = preference.isPending || changePreference.isPending;
+  const count = mods.filter(
+    (mod) =>
+      mod.status === ModStatus.Installed && preference.data?.[mod.remoteId],
+  ).length;
   return (
-    <div className='flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b py-3'>
-      <div className='flex items-start gap-3'>
-        <Switch
-          id='enable-mod-compatibility'
-          className='mt-0.5 shrink-0'
-          aria-describedby='mod-compatibility-description'
-          checked={enabled}
-          disabled={
-            busy ||
-            preference.isError ||
-            gameRunning ||
-            (!!gamePath && game.isPending)
-          }
-          onCheckedChange={(value) =>
-            changePreference.mutate(value, {
-              onSuccess: () => {
-                if (value && hasMods && gamePath) setReviewOpen(true);
-              },
-            })
-          }
-        />
-        <div className='space-y-1'>
-          <Label
-            htmlFor='enable-mod-compatibility'
-            className='font-medium text-sm'>
-            {t("myMods.compatibility.enable")}
-          </Label>
-          <p
-            id='mod-compatibility-description'
-            className='max-w-[65ch] text-muted-foreground text-xs'>
-            {gameRunning
-              ? t("myMods.compatibility.closeGame")
-              : preference.isError
-                ? t("myMods.compatibility.loadFailed")
-                : t("myMods.compatibility.description")}
-          </p>
-        </div>
+    <div className='space-y-1 border-b py-3'>
+      <div className='flex flex-wrap items-center gap-x-4 gap-y-2'>
+        <p className='text-sm text-muted-foreground'>
+          {count > 0
+            ? t("myMods.compatibility.selected", { count })
+            : t("myMods.compatibility.selectMods")}
+        </p>
+        {preference.isError || game.isError ? (
+          <Button
+            variant='outline'
+            size='sm'
+            onClick={() => {
+              void preference.refetch();
+              void game.refetch();
+            }}>
+            {t("myMods.compatibility.retry")}
+          </Button>
+        ) : count > 0 ? (
+          <Button
+            variant='outline'
+            size='sm'
+            disabled={
+              !hasMods ||
+              !gamePath ||
+              preference.isPending ||
+              pendingChanges > 0
+            }
+            onClick={() => setReviewOpen(true)}>
+            {t("myMods.compatibility.review")}
+          </Button>
+        ) : null}
       </div>
-      {preference.isError ? (
-        <Button
-          variant='outline'
-          size='sm'
-          onClick={() => preference.refetch()}>
-          {t("myMods.compatibility.retry")}
-        </Button>
-      ) : (
-        <Button
-          variant='outline'
-          size='sm'
-          disabled={!hasMods || !gamePath || busy || preference.isError}
-          onClick={() => setReviewOpen(true)}>
-          {t("myMods.compatibility.review")}
-        </Button>
-      )}
+      {count > 0 ? (
+        <p className='text-xs text-muted-foreground'>
+          {t("myMods.compatibility.launchFlow")}
+        </p>
+      ) : null}
+      {game.data ? (
+        <p className='text-muted-foreground text-xs'>
+          {t("myMods.compatibility.closeGame")}
+        </p>
+      ) : null}
       <CompatibilityReviewDialog
         key={profileFolder ?? "default"}
         open={reviewOpen}
         onOpenChange={setReviewOpen}
         profileFolder={profileFolder}
-        enabled={enabled}
-        gameRunning={gameRunning}
+        enabled={count > 0}
+        gameRunning={!!game.data || game.isError}
       />
     </div>
   );

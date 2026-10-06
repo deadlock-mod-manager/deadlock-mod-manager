@@ -6,8 +6,24 @@ import { defineConfig } from 'vite';
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vitejs.dev/config/
-export default defineConfig(async () => ({
+export default defineConfig(async ({ command }) => ({
   envDir: path.resolve(__dirname, '../..'),
+  // Release builds must not inherit development service URLs from the root .env.
+  // Explicit environment variables still allow staging and E2E builds.
+  define:
+    command === 'build'
+      ? {
+          'import.meta.env.VITE_API_URL': JSON.stringify(
+            process.env.VITE_API_URL ?? 'https://api.deadlockmods.app',
+          ),
+          'import.meta.env.VITE_WEB_URL': JSON.stringify(
+            process.env.VITE_WEB_URL ?? 'https://deadlockmods.app',
+          ),
+          'import.meta.env.VITE_AUTH_URL': JSON.stringify(
+            process.env.VITE_AUTH_URL ?? 'https://auth.deadlockmods.app',
+          ),
+        }
+      : undefined,
   plugins: [
     react(),
     Unfonts({

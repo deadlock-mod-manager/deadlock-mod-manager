@@ -32,6 +32,8 @@ interface CompatibilityReviewDialogProps {
   profileFolder: string | null;
   enabled: boolean;
   gameRunning: boolean;
+  launchAfterApply?: boolean;
+  onApplied?: () => void;
 }
 
 export function CompatibilityReviewDialog({
@@ -40,15 +42,20 @@ export function CompatibilityReviewDialog({
   profileFolder,
   enabled,
   gameRunning,
+  launchAfterApply = false,
+  onApplied,
 }: CompatibilityReviewDialogProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const mods = usePersistedStore((state) => state.localMods);
-  const [choices, setChoices] = useState<Record<string, LocalizationChoice>>(
-    {},
-  );
+  const inputs = mods.map((mod) => ({
+    id: mod.remoteId,
+    status: mod.status,
+    vpks: mod.installedVpks,
+    order: mod.installOrder,
+  }));
   const analysis = useQuery({
-    queryKey: ["mod-compatibility-analysis", profileFolder],
+    queryKey: ["mod-compatibility-analysis", profileFolder, inputs],
     queryFn: () =>
       invoke<LocalizationOverlayAnalysis>("analyze_localization_overlay", {
         profileFolder,
@@ -57,26 +64,53 @@ export function CompatibilityReviewDialog({
     retry: false,
     refetchOnWindowFocus: false,
   });
+  const scope = JSON.stringify([
+    profileFolder,
+    inputs,
+    analysis.data?.reviewFingerprint,
+  ]);
+  const [selection, setSelection] = useState<{
+    scope: string;
+    choices: Record<string, LocalizationChoice>;
+  }>({ scope, choices: {} });
+  const choices = selection.scope === scope ? selection.choices : {};
+  const resolutions = analysis.data
+    ? compatibilityResolutions(analysis.data, choices)
+    : [];
+  const resolvedAnalysis = useQuery({
+    queryKey: [
+      "mod-compatibility-resolved-analysis",
+      profileFolder,
+      inputs,
+      analysis.dataUpdatedAt,
+      resolutions,
+    ],
+    queryFn: () =>
+      invoke<LocalizationOverlayAnalysis>("analyze_localization_overlay", {
+        profileFolder,
+        resolutions,
+      }),
+    enabled: open && !!analysis.data && resolutions.length > 0,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+  const review = resolutions.length > 0 ? resolvedAnalysis : analysis;
   const apply = useMutation({
     mutationFn: async () => {
-      if (!analysis.data) return;
-      if (!enabled) {
-        await invoke<void>("set_mod_compatibility_enabled", {
-          enabled: true,
-          profileFolder,
-        });
-      }
+      if (!review.data) return;
       return invoke<LocalizationOverlayApplyResult>(
         "apply_localization_overlay",
         {
           profileFolder,
-          resolutions: compatibilityResolutions(analysis.data, choices),
+          expectedFingerprint: review.data.reviewFingerprint,
+          resolutions: compatibilityResolutions(review.data, choices),
         },
       );
     },
     onSuccess: () => {
       toast.success(t("myMods.compatibility.applied"));
-      setChoices({});
+      setSelection({ scope, choices: {} });
+      onApplied?.();
       onOpenChange(false);
     },
     onError: (error) => {
@@ -85,12 +119,22 @@ export function CompatibilityReviewDialog({
       });
     },
     onSettled: () =>
-      queryClient.invalidateQueries({ queryKey: MOD_COMPATIBILITY_QUERY_KEY }),
+      Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: MOD_COMPATIBILITY_QUERY_KEY,
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["mod-compatibility-analysis"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["mod-compatibility-resolved-analysis"],
+        }),
+      ]),
   });
   const modNames = new Map(mods.map((mod) => [mod.remoteId, mod.name]));
   const changeOpen = (next: boolean) => {
     if (apply.isPending) return;
-    if (!next) setChoices({});
+    if (!next) setSelection({ scope, choices: {} });
     onOpenChange(next);
   };
 
@@ -100,7 +144,11 @@ export function CompatibilityReviewDialog({
         <DialogHeader className='shrink-0 pr-8'>
           <DialogTitle>{t("myMods.compatibility.review")}</DialogTitle>
           <DialogDescription>
-            {t("myMods.compatibility.reviewDescription")}
+            {t(
+              launchAfterApply
+                ? "myMods.compatibility.launchReviewDescription"
+                : "myMods.compatibility.reviewDescription",
+            )}
           </DialogDescription>
           {gameRunning ? (
             <p className='text-muted-foreground text-sm'>
@@ -108,30 +156,34 @@ export function CompatibilityReviewDialog({
             </p>
           ) : null}
         </DialogHeader>
-        {analysis.isFetching ? (
+        {analysis.isFetching || review.isFetching ? (
           <div
             role='status'
             className='flex items-center gap-2 py-8 text-muted-foreground text-sm'>
             <Loader2 aria-hidden className='size-4 animate-spin' />
             {t("myMods.compatibility.checking")}
           </div>
-        ) : analysis.isError ? (
+        ) : analysis.isError || review.isError ? (
           <div role='alert' className='space-y-3 py-4 text-sm'>
             <p>{t("myMods.compatibility.checkFailed")}</p>
             <p className='text-muted-foreground'>
-              {getErrorMessage(analysis.error)}
+              {getErrorMessage(analysis.error ?? review.error)}
             </p>
-            <Button variant='outline' onClick={() => analysis.refetch()}>
+            <Button
+              variant='outline'
+              onClick={() =>
+                analysis.isError ? analysis.refetch() : review.refetch()
+              }>
               {t("myMods.compatibility.retry")}
             </Button>
           </div>
-        ) : analysis.data ? (
+        ) : review.data ? (
           <LocalizationConflictReview
-            analysis={analysis.data}
+            analysis={review.data}
             choices={choices}
             modNames={modNames}
             onChoiceChange={(key, choice) =>
-              setChoices((current) => ({ ...current, [key]: choice }))
+              setSelection({ scope, choices: { ...choices, [key]: choice } })
             }
           />
         ) : null}
@@ -144,9 +196,12 @@ export function CompatibilityReviewDialog({
           </Button>
           <Button
             disabled={
-              !analysis.data ||
+              !enabled ||
+              !review.data ||
               analysis.isFetching ||
               analysis.isError ||
+              review.isFetching ||
+              review.isError ||
               apply.isPending ||
               gameRunning
             }
@@ -154,9 +209,11 @@ export function CompatibilityReviewDialog({
             {apply.isPending ? (
               <Loader2 aria-hidden className='size-4 animate-spin' />
             ) : null}
-            {enabled
-              ? t("myMods.compatibility.apply")
-              : t("myMods.compatibility.enableAndApply")}
+            {t(
+              launchAfterApply
+                ? "myMods.compatibility.applyAndLaunch"
+                : "myMods.compatibility.apply",
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

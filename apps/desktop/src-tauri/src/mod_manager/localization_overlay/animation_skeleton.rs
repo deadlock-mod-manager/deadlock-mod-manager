@@ -2,12 +2,10 @@ use super::asset_compatibility::{AssetRepair, AssetWarning, RepairKind, WarningK
 use super::{
   CompiledDataSource, Kv3Value, Resource, animation_masks, animation_model_evidence,
   animation_poses, decode_compiled_data, kv3, normalize_path, object_set_case_insensitive,
-  runtime_values_equal,
+  resources::ResourceSnapshot, runtime_values_equal,
 };
 use crate::errors::Error;
-use source2_model::vpk_extract::VpkArchive;
 use std::collections::{BTreeMap, BTreeSet};
-use std::path::Path;
 
 pub(super) fn is_path(path: &str) -> bool {
   let path = normalize_path(path);
@@ -17,7 +15,7 @@ pub(super) fn is_path(path: &str) -> bool {
 }
 
 pub(super) fn prepare(
-  citadel: &Path,
+  resources: &ResourceSnapshot,
   sources: &BTreeMap<String, Vec<CompiledDataSource>>,
   models: &BTreeMap<String, Vec<CompiledDataSource>>,
   animation_inputs: &animation_model_evidence::AnimationInputs,
@@ -28,33 +26,21 @@ pub(super) fn prepare(
   if sources.is_empty() {
     return Ok(output);
   }
-  let archive = VpkArchive::open(&citadel.join("pak01_dir.vpk"))
-    .map_err(|error| Error::ModInvalid(format!("Failed to read animation skeletons: {error}")))?;
-  let paths: BTreeMap<_, _> = archive
-    .list_entries()
-    .into_iter()
-    .filter(|path| is_path(path) || super::model_camera::is_path(path))
-    .map(|path| (normalize_path(&path), path))
-    .collect();
   for (path, sources) in sources {
-    let Some(base_path) = paths.get(path) else {
+    let Some(bytes) = resources.game_bytes(path)? else {
       continue;
     };
-    let bytes = archive
-      .extract_entry(base_path)
-      .map_err(|error| Error::ModInvalid(format!("Failed to read {base_path}: {error}")))?;
     let candidates: Option<Vec<_>> = sources
       .iter()
       .map(|source| {
-        repair_resource(&source.bytes, &bytes).or_else(|| {
-          let evidence = animation_model_evidence::find(
-            &archive,
-            &paths,
-            models,
-            animation_inputs,
-            source,
-            path,
-          )?;
+        let structural = if animation_inputs.needs_dependency_proof(&source.mod_id) {
+          None
+        } else {
+          repair_resource(&source.bytes, &bytes)
+        };
+        structural.or_else(|| {
+          let evidence =
+            animation_model_evidence::find(resources, models, animation_inputs, source, path)?;
           repair_with_evidence(&source.bytes, &bytes, Some(&evidence))
         })
       })
@@ -83,7 +69,7 @@ pub(super) fn prepare(
       for source in sources {
         let changed = decode_compiled_data(&source.bytes, &source.source_vpk)
           .ok()
-          .zip(decode_compiled_data(&bytes, base_path).ok())
+          .zip(decode_compiled_data(&bytes, path).ok())
           .is_some_and(|((_, old, _), (_, current, _))| {
             old.get("m_boneIDs") != current.get("m_boneIDs")
           });
@@ -115,7 +101,7 @@ fn repair_with_evidence(
   let (_, old, old_encoding) = decode_compiled_data(source, "mod animation skeleton").ok()?;
   let (format, mut current, mut current_encoding) =
     decode_compiled_data(base, "current animation skeleton").ok()?;
-  if evidence.is_none() && equivalent_rigs(&old, &current) == Some(true) {
+  if equivalent_rigs(&old, &current) == Some(true) {
     return Some((base.to_vec(), RepairKind::AnimationSkeleton));
   }
   if equivalent_layout_with_evidence(&old, &current, evidence) != Some(true) {
@@ -132,10 +118,14 @@ fn repair_with_evidence(
   let payload = kv3::encode_preserving(&current, &current_encoding, &format).ok()?;
   let bytes = Resource::parse(base)
     .ok()?
-    .rebuild_with_data(&payload)
+    .rebuild_with_data_preserving(&payload)
     .ok()?;
-  let (_, decoded, _) = decode_compiled_data(&bytes, "rebased animation skeleton").ok()?;
-  if !runtime_values_equal(&decoded, &current) {
+  let (decoded_format, decoded, decoded_encoding) =
+    decode_compiled_data(&bytes, "rebased animation skeleton").ok()?;
+  if decoded_format != format
+    || !runtime_values_equal(&decoded, &current)
+    || !kv3::encoding_preserved(&current, &current_encoding, &decoded_encoding)
+  {
     return None;
   }
   Some((bytes, RepairKind::AnimationSkeletonRebased))
@@ -476,6 +466,7 @@ fn canonicalize_object_order(value: &mut Kv3Value) {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use source2_model::vpk_extract::VpkArchive;
 
   fn strings(names: &[&str]) -> Kv3Value {
     Kv3Value::Array(

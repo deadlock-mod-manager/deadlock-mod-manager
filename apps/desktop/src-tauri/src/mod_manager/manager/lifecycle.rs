@@ -382,6 +382,7 @@ impl ModManager {
     }
 
     manifest.remove_mod(mod_id);
+    manifest.forget_files(&addons_path, &ordered_sources);
     if let Err(error) = manifest.save(&addons_path) {
       return Err(staging.rollback(error));
     }

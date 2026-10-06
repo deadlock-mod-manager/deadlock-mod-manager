@@ -83,6 +83,11 @@ import { ConflictsPanel } from "@/components/my-mods/conflicts/conflicts-panel";
 import { ModConflictBadge } from "@/components/my-mods/conflicts/mod-conflict-badge";
 import { MyModsEmptyState } from "@/components/my-mods/empty-state";
 import { ModOrderingDialog } from "@/components/my-mods/mod-ordering-dialog";
+import {
+  useModCompatibility,
+  type ModCompatibilityController,
+} from "@/hooks/use-mod-compatibility";
+import { PerModCompatibilityControl } from "@/components/my-mods/per-mod-compatibility-control";
 import { ModCompatibilityControl } from "@/components/my-mods/mod-compatibility-control";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useAddonAnalysis } from "@/hooks/use-addon-analysis";
@@ -218,12 +223,14 @@ type ModCardProps = {
   mod: LocalMod;
   conflictStatus: ModConflictStatus | undefined;
   onShowConflicts: () => void;
+  compatibility: ModCompatibilityController;
 };
 
 const GridModCard = ({
   mod,
   conflictStatus,
   onShowConflicts,
+  compatibility,
 }: ModCardProps) => {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
@@ -270,7 +277,7 @@ const GridModCard = ({
   ) : null;
 
   const cardContent = (
-    <ModContextMenu mod={mod}>
+    <ModContextMenu mod={mod} compatibility={compatibility}>
       <Card className='shadow h-full'>
         <div className={cn("relative", isDisabled && "grayscale")}>
           <div className='cursor-pointer' onClick={openModDetail}>
@@ -331,45 +338,51 @@ const GridModCard = ({
           )}
         </div>
         <CardHeader className='px-3 py-3 pb-0'>
-          <div className='flex items-start'>
-            <div className='flex flex-col'>
+          <div className='flex min-w-0 items-start gap-2'>
+            <div className='flex min-w-0 flex-1 flex-col'>
               <CardTitle
-                className='w-48 cursor-pointer overflow-clip text-ellipsis text-nowrap'
+                className='cursor-pointer truncate'
                 onClick={openModDetail}
                 title={mod.name}>
                 {mod.name}
               </CardTitle>
-              <CardDescription
-                className='w-48 overflow-clip text-ellipsis text-nowrap'
-                title={mod.author}>
+              <CardDescription className='truncate' title={mod.author}>
                 {t("mods.by")} {mod.author}
               </CardDescription>
             </div>
-          </div>
-        </CardHeader>
-        <CardFooter className='flex justify-between px-3 py-3 pt-2'>
-          <div className='flex items-center gap-2'>
-            <ModButton remoteMod={mod} variant='iconOnly' />
-            {modOptions.showButton && (
+            {modOptions.showButton ? (
               <ModOptionsButton
                 activeCount={modOptions.activeVariantCount}
                 onOpen={modOptions.open}
+                className='shrink-0'
               />
-            )}
+            ) : null}
           </div>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                aria-label={t("mods.removeMod")}
-                icon={<Trash className='h-4 w-4' />}
-                isLoading={deleting}
-                onClick={deleteMod}
-                size='icon'
-                variant='destructive'
-              />
-            </TooltipTrigger>
-            <TooltipContent>{t("mods.removeMod")}</TooltipContent>
-          </Tooltip>
+        </CardHeader>
+        <CardFooter className='flex items-center justify-between gap-1 px-3 py-3 pt-2'>
+          <div className='flex items-center gap-2'>
+            <ModButton remoteMod={mod} variant='iconOnly' showLabel />
+          </div>
+          <div className='flex items-center gap-1'>
+            <PerModCompatibilityControl
+              mod={mod}
+              compatibility={compatibility}
+            />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  aria-label={t("mods.removeMod")}
+                  icon={<Trash className='h-4 w-4' />}
+                  isLoading={deleting}
+                  onClick={deleteMod}
+                  size='icon'
+                  variant='ghost'
+                  className='size-7 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive'
+                />
+              </TooltipTrigger>
+              <TooltipContent>{t("mods.removeMod")}</TooltipContent>
+            </Tooltip>
+          </div>
         </CardFooter>
       </Card>
     </ModContextMenu>
@@ -387,6 +400,7 @@ const ListModCard = ({
   mod,
   conflictStatus,
   onShowConflicts,
+  compatibility,
 }: ModCardProps) => {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
@@ -420,7 +434,7 @@ const ListModCard = ({
 
   return (
     <>
-      <ModContextMenu mod={mod}>
+      <ModContextMenu mod={mod} compatibility={compatibility}>
         <Card className='shadow'>
           <div className='flex items-center pr-4'>
             <div
@@ -505,9 +519,9 @@ const ListModCard = ({
               </div>
             </div>
 
-            <div className='flex flex-col items-center gap-2'>
+            <div className='flex shrink-0 items-center gap-2'>
               <div className='flex items-center gap-2'>
-                <ModButton remoteMod={mod} variant='iconOnly' />
+                <ModButton remoteMod={mod} variant='iconOnly' showLabel />
                 {modOptions.showButton && (
                   <ModOptionsButton
                     activeCount={modOptions.activeVariantCount}
@@ -515,6 +529,10 @@ const ListModCard = ({
                   />
                 )}
               </div>
+              <PerModCompatibilityControl
+                mod={mod}
+                compatibility={compatibility}
+              />
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -524,7 +542,8 @@ const ListModCard = ({
                     isLoading={deleting}
                     onClick={deleteMod}
                     size='icon'
-                    variant='destructive'
+                    variant='ghost'
+                    className='size-7 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive'
                   />
                 </TooltipTrigger>
                 <TooltipContent>{t("mods.removeMod")}</TooltipContent>
@@ -557,7 +576,9 @@ const ModsList = ({
   viewMode,
   conflictStatusByMod,
   onShowConflicts,
+  compatibility,
 }: {
+  compatibility: ModCompatibilityController;
   mods: LocalMod[];
   viewMode: ViewMode;
   conflictStatusByMod: ReadonlyMap<string, ModConflictStatus>;
@@ -565,13 +586,14 @@ const ModsList = ({
 }) => {
   if (viewMode === ViewMode.GRID) {
     return (
-      <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>
+      <div className='grid grid-cols-[repeat(auto-fill,minmax(min(100%,14rem),1fr))] gap-3'>
         {mods.map((mod) => (
           <GridModCard
             conflictStatus={conflictStatusByMod.get(mod.remoteId)}
             key={mod.remoteId ?? mod.id}
             mod={mod}
             onShowConflicts={onShowConflicts}
+            compatibility={compatibility}
           />
         ))}
       </div>
@@ -586,6 +608,7 @@ const ModsList = ({
           key={mod.remoteId ?? mod.id}
           mod={mod}
           onShowConflicts={onShowConflicts}
+          compatibility={compatibility}
         />
       ))}
     </div>
@@ -613,6 +636,7 @@ const MyMods = () => {
     refetch: refetchVpkScan,
     activeProfileFolder,
   } = useVpkScan();
+  const compatibility = useModCompatibility(activeProfileFolder);
   const {
     updatableMods,
     updatableCount,
@@ -938,6 +962,7 @@ const MyMods = () => {
       </div>
 
       <ModCompatibilityControl
+        compatibility={compatibility}
         profileFolder={activeProfileFolder}
         hasMods={enabledModsCount > 0}
       />
@@ -1114,6 +1139,7 @@ const MyMods = () => {
                       conflictStatusByMod={conflictStatusByMod}
                       onShowConflicts={showConflicts}
                       viewMode={viewMode}
+                      compatibility={compatibility}
                     />
                   </TabsContent>
                 )}
@@ -1125,6 +1151,7 @@ const MyMods = () => {
                       conflictStatusByMod={conflictStatusByMod}
                       onShowConflicts={showConflicts}
                       viewMode={viewMode}
+                      compatibility={compatibility}
                     />
                   </TabsContent>
                 )}
@@ -1136,6 +1163,7 @@ const MyMods = () => {
                       conflictStatusByMod={conflictStatusByMod}
                       onShowConflicts={showConflicts}
                       viewMode={viewMode}
+                      compatibility={compatibility}
                     />
                   </TabsContent>
                 )}

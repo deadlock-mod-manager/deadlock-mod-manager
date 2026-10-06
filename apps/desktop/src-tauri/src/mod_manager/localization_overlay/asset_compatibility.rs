@@ -1,16 +1,20 @@
+use super::resources::ResourceSnapshot;
 use super::{CompiledDataSource, Kv3Value, Resource, decode_compiled_data, kv3, normalize_path};
 use crate::errors::Error;
 use serde::{Deserialize, Serialize};
-use source2_model::vpk_extract::VpkArchive;
 use std::collections::{BTreeMap, BTreeSet};
-use std::path::Path;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub enum RepairKind {
   AnimationSkeleton,
   AnimationSkeletonRebased,
+  AnimationInterface,
+  AnimationRigRebase,
   CameraInterface,
+  CameraControls,
+  MaterialBindings,
+  ModelRelocation,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -31,7 +35,13 @@ pub enum WarningKind {
   InvalidAttachment,
   InvalidHitbox,
   MissingResource,
+  MissingCameraInterface,
+  MissingAnimationInterface,
+  AnimationMapping,
   UnreadableResource,
+  MaterialMapping,
+  MaterialInterface,
+  ModelMapping,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -54,41 +64,12 @@ fn safe_path(path: &str) -> bool {
 }
 
 pub(super) fn analyze(
-  citadel: &Path,
+  resources: &ResourceSnapshot,
   sources: &BTreeMap<String, Vec<CompiledDataSource>>,
-  available: &mut BTreeSet<String>,
   repaired: &BTreeMap<&str, &[u8]>,
 ) -> Result<Vec<AssetWarning>, Error> {
   if sources.is_empty() {
     return Ok(Vec::new());
-  }
-  // The game and core archives plus every enabled mod form the resource search set.
-  for directory in [citadel.to_path_buf(), citadel.with_file_name("core")] {
-    if !directory.is_dir() {
-      continue;
-    }
-    for entry in std::fs::read_dir(directory)? {
-      let path = entry?.path();
-      if !path
-        .file_name()
-        .and_then(|name| name.to_str())
-        .is_some_and(|name| name.ends_with("_dir.vpk"))
-      {
-        continue;
-      }
-      let archive = VpkArchive::open(&path).map_err(|error| {
-        Error::ModInvalid(format!(
-          "Failed to index model dependencies in {}: {error}",
-          path.display()
-        ))
-      })?;
-      available.extend(
-        archive
-          .list_entries()
-          .iter()
-          .map(|path| normalize_path(path)),
-      );
-    }
   }
   let mut warnings = Vec::new();
   for (path, inputs) in sources {
@@ -158,19 +139,49 @@ pub(super) fn analyze(
       ] {
         if let Some(refs) = value.get(field).and_then(Kv3Value::as_array) {
           for name in refs.iter().filter_map(Kv3Value::as_str) {
-            if !resource_exists(name, available) {
+            if !resource_exists(name, resources) {
               add(WarningKind::MissingResource, name.into());
             }
+          }
+        }
+      }
+      if path.ends_with(".vmdl_c") {
+        let graphs = value
+          .get("m_animGraph2Refs")
+          .and_then(Kv3Value::as_array)
+          .into_iter()
+          .flatten()
+          .filter_map(|graph| graph.get("m_hGraph").and_then(Kv3Value::as_str));
+        for name in graphs.chain(super::model_camera::legacy_animation_graph(&value)) {
+          if !resource_exists(name, resources) {
+            add(WarningKind::MissingResource, name.into());
+          }
+        }
+        if let Some(base) = resources.game_bytes(path)?
+          && let Ok((_, vanilla, _)) = decode_compiled_data(&base, path)
+        {
+          for field in super::model_camera::missing_camera_fields(&value, &vanilla) {
+            add(WarningKind::MissingCameraInterface, field);
+          }
+          let missing = missing_animation_fields(&value, &vanilla);
+          if !missing.is_empty() {
+            add(WarningKind::MissingAnimationInterface, missing.join(" / "));
           }
         }
       }
       let Ok(resource) = Resource::parse(bytes) else {
         continue;
       };
-      for block in resource.blocks().iter().filter(|block| {
+      for (index, block) in resource.blocks().iter().enumerate().filter(|(_, block)| {
         block.kind == *b"MDAT" || (path.ends_with(".vmesh_c") && block.kind == *b"DATA")
       }) {
-        let data = &bytes[block.offset as usize..(block.offset as usize + block.size as usize)];
+        let Some(data) = resource.get_block_by_index(index) else {
+          add(
+            WarningKind::UnreadableResource,
+            String::from_utf8_lossy(&block.kind).into_owned(),
+          );
+          continue;
+        };
         let Ok(mesh) = kv3::decode(data) else {
           add(WarningKind::UnreadableResource, "MDAT".into());
           continue;
@@ -200,12 +211,27 @@ pub(super) fn analyze(
   Ok(warnings)
 }
 
-fn resource_exists(name: &str, available: &BTreeSet<String>) -> bool {
+fn missing_animation_fields(source: &Kv3Value, current: &Kv3Value) -> Vec<&'static str> {
+  ["m_animGraph2Refs", "m_vecNmSkeletonRefs"]
+    .into_iter()
+    .filter(|field| {
+      current
+        .get(field)
+        .and_then(Kv3Value::as_array)
+        .is_some_and(|values| !values.is_empty())
+        && source
+          .get(field)
+          .and_then(Kv3Value::as_array)
+          .is_none_or(|values| values.is_empty())
+    })
+    .collect()
+}
+
+fn resource_exists(name: &str, resources: &ResourceSnapshot) -> bool {
   if name.is_empty() || name.contains('#') {
     return true;
   }
-  let path = normalize_path(name);
-  safe_path(&path) && (available.contains(&path) || available.contains(&format!("{path}_c")))
+  resources.provider(name).is_some()
 }
 
 pub(super) fn valid_skeleton(
@@ -313,7 +339,10 @@ fn valid_remapping(model: &Kv3Value, rig: &Kv3Value) -> bool {
   true
 }
 
-fn mesh_warnings(mesh: &Kv3Value, model_bones: &BTreeSet<&str>) -> Vec<(WarningKind, String)> {
+pub(super) fn mesh_warnings(
+  mesh: &Kv3Value,
+  model_bones: &BTreeSet<&str>,
+) -> Vec<(WarningKind, String)> {
   let mut warnings = Vec::new();
   let Some(bones) = mesh
     .get("m_skeleton")
@@ -394,6 +423,71 @@ fn mesh_warnings(mesh: &Kv3Value, model_bones: &BTreeSet<&str>) -> Vec<(WarningK
 mod tests {
   use super::*;
 
+  #[test]
+  fn legacy_models_report_missing_current_animation_bindings_without_guessing_a_repair() {
+    let empty = Kv3Value::Object(vec![]);
+    let current = Kv3Value::Object(vec![
+      (
+        "m_animGraph2Refs".into(),
+        Kv3Value::Array(vec![Kv3Value::String("graph.vnmgraph".into())]),
+      ),
+      (
+        "m_vecNmSkeletonRefs".into(),
+        Kv3Value::Array(vec![Kv3Value::String("rig.vnmskel".into())]),
+      ),
+    ]);
+    assert_eq!(
+      missing_animation_fields(&empty, &current),
+      vec!["m_animGraph2Refs", "m_vecNmSkeletonRefs"]
+    );
+    assert!(missing_animation_fields(&current, &current).is_empty());
+    assert!(missing_animation_fields(&empty, &empty).is_empty());
+  }
+
+  #[test]
+  fn model_only_mods_report_missing_embedded_animation_dependencies() {
+    let root = tempfile::tempdir().unwrap();
+    let resources = ResourceSnapshot::open(root.path(), &[]).unwrap();
+    let model = super::super::tests::compiled_resource(vec![
+      (
+        "m_modelInfo".into(),
+        Kv3Value::Object(vec![(
+          "m_keyValueText".into(),
+          Kv3Value::String("{ anim_graph_resource = resource:\"models/old.vanmgrph\" }".into()),
+        )]),
+      ),
+      (
+        "m_animGraph2Refs".into(),
+        Kv3Value::Array(vec![Kv3Value::Object(vec![(
+          "m_hGraph".into(),
+          Kv3Value::String("animgraphs/missing.vnmgraph".into()),
+        )])]),
+      ),
+    ]);
+    let source = CompiledDataSource {
+      mod_id: "talon".into(),
+      source_vpk: "talon_dir.vpk".into(),
+      bytes: model,
+      priority: 0,
+    };
+    let warnings = analyze(
+      &resources,
+      &BTreeMap::from([("models/talon.vmdl_c".into(), vec![source])]),
+      &BTreeMap::new(),
+    )
+    .unwrap();
+    let missing: BTreeSet<_> = warnings
+      .iter()
+      .filter(|warning| warning.kind == WarningKind::MissingResource)
+      .map(|warning| warning.detail.as_str())
+      .collect();
+    assert_eq!(
+      missing,
+      BTreeSet::from(["models/old.vanmgrph", "animgraphs/missing.vnmgraph"])
+    );
+    assert!(warnings.iter().all(|warning| warning.mod_id == "talon"));
+  }
+
   fn rig(parents: &[i64]) -> Kv3Value {
     Kv3Value::Object(vec![
       (
@@ -440,14 +534,16 @@ mod tests {
 
   #[test]
   fn dependencies_resolve_against_enabled_mods_and_compiled_game_paths() {
-    let available = BTreeSet::from([
-      "models/current.vnmskel_c".into(),
-      "models/custom.vmesh_c".into(),
-    ]);
-    assert!(resource_exists("models/current.vnmskel", &available));
-    assert!(resource_exists("MODELS\\custom.vmesh", &available));
-    assert!(!resource_exists("models/missing.vmesh", &available));
-    assert!(!resource_exists("models/../current.vnmskel", &available));
+    let root = tempfile::tempdir().unwrap();
+    std::fs::create_dir(root.path().join("models")).unwrap();
+    for path in ["models/current.vnmskel_c", "models/custom.vmesh_c"] {
+      std::fs::write(root.path().join(path), b"present").unwrap();
+    }
+    let resources = ResourceSnapshot::open(root.path(), &[]).unwrap();
+    assert!(resource_exists("models/current.vnmskel", &resources));
+    assert!(resource_exists("MODELS\\custom.vmesh", &resources));
+    assert!(!resource_exists("models/missing.vmesh", &resources));
+    assert!(!resource_exists("models/../current.vnmskel", &resources));
   }
 
   #[test]

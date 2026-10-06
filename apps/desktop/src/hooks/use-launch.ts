@@ -8,10 +8,12 @@ import { listen } from "@tauri-apps/api/event";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { MOD_PATHS_KEY } from "@/hooks/use-game-config-alert";
+import { useCompatibilityReview } from "@/components/providers/compatibility-review";
 import { stopHeroDetection } from "@/hooks/use-hero-detection";
 import { useSkinRandomizer } from "@/hooks/use-skin-randomizer";
 import { restoreProfileGameinfo } from "@/lib/gameinfo";
 import { getLaunchErrorMessage } from "@/lib/launch-error";
+import { launchWithCompatibilityReview } from "@/lib/launch-with-compatibility-review";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { getAdditionalArgs } from "@/lib/utils";
@@ -34,6 +36,7 @@ export const useLaunch = () => {
   const queryClient = useQueryClient();
   const confirm = useConfirm();
   const { randomizeSkins } = useSkinRandomizer();
+  const reviewCompatibility = useCompatibilityReview();
   const launchVanillaNoArgs =
     settings?.["launch-vanilla-no-args"]?.enabled ?? false;
 
@@ -122,7 +125,7 @@ export const useLaunch = () => {
       });
 
       try {
-        await invoke("start_game", {
+        const args = {
           vanilla,
           additionalArgs:
             vanilla && launchVanillaNoArgs
@@ -132,7 +135,12 @@ export const useLaunch = () => {
                   gamePresenceEnabled,
                 ),
           profileFolder,
-        });
+        };
+        await launchWithCompatibilityReview(
+          () => invoke<void>("start_game", args),
+          () => reviewCompatibility(profileFolder),
+          vanilla,
+        );
       } finally {
         unlisten();
       }
