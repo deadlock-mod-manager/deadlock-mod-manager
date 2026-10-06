@@ -87,6 +87,13 @@ runs:
         foreach ($file in $unsignedFiles) {
           $signedPath = Join-Path ./signpath-signed-output $file.Name
           $signature = Get-AuthenticodeSignature -LiteralPath $signedPath
+          Write-Host "Authenticode verification for $($file.Name): $($signature.Status)"
+          Write-Host "Status message: $($signature.StatusMessage)"
+          if ($null -ne $signature.SignerCertificate) {
+            Write-Host "Signer: $($signature.SignerCertificate.Subject)"
+            Write-Host "Issuer: $($signature.SignerCertificate.Issuer)"
+            Write-Host "Thumbprint: $($signature.SignerCertificate.Thumbprint)"
+          }
           $testCertificate = $env:SIGNING_POLICY -eq 'test-signing' -and $signature.Status -eq 'NotTrusted' -and $null -ne $signature.SignerCertificate
           if ($signature.Status -ne 'Valid' -and -not $testCertificate) {
             throw "Missing or invalid Authenticode signature for $($file.Name): $($signature.Status)"
