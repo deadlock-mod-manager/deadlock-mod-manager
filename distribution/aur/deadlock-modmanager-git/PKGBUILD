@@ -23,6 +23,8 @@ pkgver() {
 
 prepare() {
     cd "${srcdir}/${pkgname}/apps/desktop"
+    # The root impeccable devDependency pulls puppeteer, whose postinstall downloads Chrome.
+    export PUPPETEER_SKIP_DOWNLOAD=1
     pnpm install --frozen-lockfile --filter @deadlock-mods/desktop...
 
     cd src-tauri
