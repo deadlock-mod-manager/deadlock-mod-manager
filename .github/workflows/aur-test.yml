@@ -24,7 +24,7 @@ jobs:
     container: archlinux:latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
 
       - name: Install namcap
         run: pacman -Syu --noconfirm namcap
@@ -60,7 +60,7 @@ jobs:
         run: pacman -Syu --noconfirm base-devel ${{ matrix.extra-packages }}
 
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v7.0.1
         with:
           # pkgver() runs `git describe --tags` against the full history.
           fetch-depth: ${{ matrix.pkg == 'deadlock-modmanager-git' && '0' || '1' }}
