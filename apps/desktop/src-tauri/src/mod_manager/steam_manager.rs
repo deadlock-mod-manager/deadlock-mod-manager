@@ -55,21 +55,39 @@ fn push_unique_steam_dir(
   steam_dirs: &mut Vec<steamlocate::SteamDir>,
   steam_dir: steamlocate::SteamDir,
 ) {
+  // ~/.steam/steam and ~/.steam/root are symlinks to the real install, so
+  // compare resolved paths to avoid scanning the same libraries twice.
+  let resolved = |path: &std::path::Path| std::fs::canonicalize(path).unwrap_or(path.to_path_buf());
+  let steam_dir_path = resolved(steam_dir.path());
   if steam_dirs
     .iter()
-    .all(|candidate| candidate.path() != steam_dir.path())
+    .all(|candidate| resolved(candidate.path()) != steam_dir_path)
   {
     steam_dirs.push(steam_dir);
   }
 }
 
+/// steamlocate only returns the first Steam directory it finds and checks
+/// Flatpak before native, so a leftover Flatpak Steam hides a native (deb)
+/// install. List every known location and let `find_game` try each one.
 #[cfg(target_os = "linux")]
 fn linux_steam_dir_candidates(home_dir: &Path) -> Vec<PathBuf> {
+  let snap_dir = std::env::var_os("SNAP_USER_DATA")
+    .map(PathBuf::from)
+    .unwrap_or_else(|| home_dir.join("snap"));
+
   vec![
+    home_dir.join(".local/share/Steam"),
+    home_dir.join(".steam/steam"),
+    home_dir.join(".steam/root"),
+    // Debian/Ubuntu/Mint `steam-installer` package
+    home_dir.join(".steam/debian-installation"),
     home_dir.join(".var/app/com.valvesoftware.Steam/data/Steam"),
     home_dir.join(".var/app/com.valvesoftware.Steam/.local/share/Steam"),
     home_dir.join(".var/app/com.valvesoftware.Steam/.steam/steam"),
     home_dir.join(".var/app/com.valvesoftware.Steam/.steam/root"),
+    snap_dir.join("steam/common/.local/share/Steam"),
+    snap_dir.join("steam/common/.steam/steam"),
   ]
 }
 
@@ -476,6 +494,55 @@ mod tests {
       )),
       "expected Flatpak Steam .steam/root fallback to be included"
     );
+  }
+
+  #[test]
+  fn linux_candidates_include_native_and_debian_steam_paths() {
+    let candidates = linux_steam_dir_candidates(Path::new("/home/tester"));
+
+    for expected in [
+      "/home/tester/.local/share/Steam",
+      "/home/tester/.steam/steam",
+      "/home/tester/.steam/root",
+      "/home/tester/.steam/debian-installation",
+    ] {
+      assert!(
+        candidates.contains(&PathBuf::from(expected)),
+        "expected native Steam fallback {expected} to be included"
+      );
+    }
+  }
+
+  #[test]
+  fn resolve_game_from_steam_dirs_finds_deb_install_behind_empty_flatpak_steam() {
+    let (_flatpak_temp_dir, flatpak_steam_dir) =
+      temp_steam_dir(".var/app/com.valvesoftware.Steam/.local/share/Steam", false);
+    let (_deb_temp_dir, deb_steam_dir) = temp_steam_dir(".steam/debian-installation", true);
+
+    let resolved = resolve_game_from_steam_dirs(vec![flatpak_steam_dir, deb_steam_dir])
+      .expect("expected Deadlock to be found in the deb Steam install");
+
+    assert!(
+      resolved
+        .1
+        .ends_with(".steam/debian-installation/steamapps/common/Deadlock")
+    );
+  }
+
+  #[test]
+  fn push_unique_steam_dir_skips_symlinks_to_known_installs() {
+    let (temp_dir, steam_dir) = temp_steam_dir(".local/share/Steam", false);
+    let link = temp_dir.path().join(".steam/steam");
+    fs::create_dir_all(link.parent().unwrap()).unwrap();
+    std::os::unix::fs::symlink(steam_dir.path(), &link).unwrap();
+
+    let mut steam_dirs = vec![steam_dir];
+    push_unique_steam_dir(
+      &mut steam_dirs,
+      steamlocate::SteamDir::from_dir(&link).unwrap(),
+    );
+
+    assert_eq!(steam_dirs.len(), 1);
   }
 
   #[test]
