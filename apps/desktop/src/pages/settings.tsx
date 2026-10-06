@@ -310,7 +310,7 @@ const CustomSettingsData = ({
     return {
       id: AUTOEXEC_LAUNCH_OPTION_ID,
       key: "-exec",
-      value: "deadlock-mod-manager",
+      value: "autoexec",
       type: CustomSettingType.LAUNCH_OPTION,
       description: t("settings.autoexecLaunchOption"),
       enabled,
