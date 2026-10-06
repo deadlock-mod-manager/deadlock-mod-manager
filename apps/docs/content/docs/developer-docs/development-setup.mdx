@@ -36,15 +36,33 @@ fnm install 24
 fnm use 24
 ```
 
-#### pnpm (>= 10.18.2)
+#### pnpm (>= 11.18.0)
 
-Install the package manager:
+The repository pins its pnpm version in `package.json`. Enable Corepack so the pinned version is used automatically:
 
 ```bash
+corepack enable
+
+# Or install pnpm globally
 npm install -g pnpm
 
 # Verify installation
 pnpm --version
+```
+
+#### Bun (>= 1.4.2)
+
+Used for tests, repository scripts, and the API service:
+
+```bash
+# Linux
+curl -fsSL https://bun.sh/install | bash
+
+# Windows (PowerShell)
+powershell -c "irm bun.sh/install.ps1 | iex"
+
+# Verify installation
+bun --version
 ```
 
 #### Rust (Latest Stable)
@@ -133,13 +151,13 @@ sudo dnf install -y \
 
 ### 1. Fork and Clone
 
-1. **Fork the repository** on GitHub: [deadlock-modmanager](https://github.com/stormix/deadlock-modmanager)
+1. **Fork the repository** on GitHub: [deadlock-mod-manager](https://github.com/deadlock-mod-manager/deadlock-mod-manager)
 
 2. **Clone your fork**:
 
    ```bash
-   git clone https://github.com/YOUR_USERNAME/deadlock-modmanager.git
-   cd deadlock-modmanager
+   git clone https://github.com/YOUR_USERNAME/deadlock-mod-manager.git
+   cd deadlock-mod-manager
    ```
 
 ### 2. Install Dependencies
@@ -534,7 +552,7 @@ If you encounter issues:
   <Card
     title='GitHub Issues'
     description='Report bugs or ask technical questions'
-    href='https://github.com/stormix/deadlock-modmanager/issues'
+    href='https://github.com/deadlock-mod-manager/deadlock-mod-manager/issues'
   />
 </Cards>
 
