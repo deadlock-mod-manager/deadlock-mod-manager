@@ -1828,17 +1828,17 @@
   },
   "matchSync": {
     "title": "分享比赛数据",
-    "description": "抓取你的比赛数据用于Deadlock api跟踪器。",
+    "description": "",
     "about": {
       "reads": "读取您本地存储的 Steam 登录信息（即本机上已保存的自动登录令牌），以便代表您与 Steam 进行通信。",
-      "sends": "仅向Deadlock api发送比赛 ID及其哈希盐值，而不会发送您的令牌、密码或个人数据。",
+      "sends": "",
       "limit": "严格限制每24小时最多获取 {{limit}} 场比赛数据，该次数限制同样适用于下文所列的所有选项。",
-      "risk": "该操作基于您的Steam账户完成，存在一定的风险，该风险较低但绝不为零。启用该操作视作您接受该风险。",
+      "risk": "",
       "summary": ""
     },
     "enable": {
       "title": "启用比赛数据分享",
-      "description": "开启此功能前，不会读取或发送您设备上的任何数据。"
+      "description": ""
     },
     "consent": {
       "title": "是否启用比赛数据分享？",
@@ -1875,6 +1875,15 @@
       "done": "已获取 {{fetched}} 场比赛。全部同步完成。",
       "doneQuota": "已获取 {{fetched}} 场比赛。您已达到每日 {{limit}} 次的获取上限。请明天再来。",
       "rateLimited": "Steam 当前正在限制您账号的请求频率，请稍后再试。"
+    },
+    "notice": {
+      "title": "",
+      "description": "",
+      "benefit": "",
+      "settings": "",
+      "learnMore": "",
+      "keepOn": "",
+      "turnOff": ""
     }
   },
   "privacy": {
