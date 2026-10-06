@@ -9,6 +9,9 @@ on:
       - "distribution/aur/**"
     tags:
       - "v*.*.*"
+  # -git builds main, which can break without touching distribution/aur.
+  schedule:
+    - cron: "23 4 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -35,37 +38,69 @@ jobs:
       - name: Lint deadlock-modmanager-git
         run: namcap distribution/aur/deadlock-modmanager-git/PKGBUILD
 
-  build-bin:
-    name: Build deadlock-modmanager-bin
+  build:
+    name: Build ${{ matrix.pkg }}
     runs-on: ubuntu-latest
     container: archlinux:latest
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - pkg: deadlock-modmanager-bin
+          # libvips makes sharp attempt a source build during pnpm install;
+          # keep it installed so that regression is caught here.
+          - pkg: deadlock-modmanager
+            extra-packages: libvips
+          - pkg: deadlock-modmanager-git
+            extra-packages: libvips git
     steps:
+      # Before checkout, so -git gets a real clone instead of a tarball.
+      - name: Install build dependencies
+        run: pacman -Syu --noconfirm base-devel ${{ matrix.extra-packages }}
+
       - name: Checkout repository
         uses: actions/checkout@v7
-
-      - name: Install base-devel
-        run: pacman -Syu --noconfirm base-devel
+        with:
+          # pkgver() runs `git describe --tags` against the full history.
+          fetch-depth: ${{ matrix.pkg == 'deadlock-modmanager-git' && '0' || '1' }}
+          fetch-tags: ${{ matrix.pkg == 'deadlock-modmanager-git' }}
 
       - name: Create build user
         run: |
           useradd -m builder
           echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-          chown -R builder:builder distribution/aur/deadlock-modmanager-bin
+          chown -R builder:builder distribution/aur/${{ matrix.pkg }}
+
+      - name: Point -git at this commit
+        if: matrix.pkg == 'deadlock-modmanager-git'
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git branch -f aur-ci HEAD
+          su builder -c "git config --global --add safe.directory '*'"
+          sed -i "s|git+https://github.com/deadlock-mod-manager/deadlock-mod-manager.git|git+file://$GITHUB_WORKSPACE#branch=aur-ci|" \
+            distribution/aur/deadlock-modmanager-git/PKGBUILD
+          grep -n '^source=' distribution/aur/deadlock-modmanager-git/PKGBUILD
 
       - name: Build package
-        working-directory: distribution/aur/deadlock-modmanager-bin
+        working-directory: distribution/aur/${{ matrix.pkg }}
         run: su builder -c "makepkg -sf --noconfirm"
 
       - name: Verify packaged file layout
-        working-directory: distribution/aur/deadlock-modmanager-bin
+        working-directory: distribution/aur/${{ matrix.pkg }}
         run: |
           set -euo pipefail
-          pkg=$(find . -maxdepth 1 -name 'deadlock-modmanager-bin-*.pkg.tar.zst' | head -1)
+          pkg=$(find . -maxdepth 1 -name '${{ matrix.pkg }}-[0-9]*.pkg.tar.zst' | head -1)
           if [ -z "$pkg" ]; then
             echo "ERROR: No built package found!"
             exit 1
           fi
           contents=$(tar -tf "$pkg")
+
+          if ! echo "$contents" | grep -x 'usr/bin/deadlock-modmanager' > /dev/null; then
+            echo "ERROR: usr/bin/deadlock-modmanager not packaged!"
+            exit 1
+          fi
 
           desktops=$(echo "$contents" | grep 'usr/share/applications/.*\.desktop$' || true)
           if [ "$desktops" != "usr/share/applications/deadlock-modmanager.desktop" ]; then
