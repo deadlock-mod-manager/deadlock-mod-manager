@@ -1,4 +1,4 @@
-import { analyticsClient } from "@/lib/analytics";
+import { analytics } from "@/lib/analytics";
 import { failureOutcome } from "@/lib/analytics/client";
 import type { CrosshairConfig } from "@deadlock-mods/crosshair/types";
 import { DEFAULT_CROSSHAIR_CONFIG } from "@deadlock-mods/crosshair/types";
@@ -148,7 +148,7 @@ export const CrosshairForm = () => {
 
   const applyCrosshairMutation = useMutation({
     mutationFn: async (crosshairConfig: CrosshairConfig) => {
-      const attempt = analyticsClient.start("crosshair_apply", {
+      const attempt = analytics.start("crosshair_apply", {
         entry_point: "editor",
       });
       try {

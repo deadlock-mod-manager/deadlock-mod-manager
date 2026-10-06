@@ -1,4 +1,4 @@
-import { analyticsClient } from "@/lib/analytics";
+import { analytics } from "@/lib/analytics";
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Dialog,
@@ -113,7 +113,7 @@ export const OnboardingWizard = () => {
 
   const handleNext = useCallback(() => {
     if (isLastStep) {
-      analyticsClient.capture("setup_result", {
+      analytics.track("setup_result", {
         outcome: "completed",
         last_step: currentStep,
       });
@@ -150,7 +150,7 @@ export const OnboardingWizard = () => {
       if (!isOpen && showOnboardingRef.current && !isHandlingCloseRef.current) {
         isHandlingCloseRef.current = true;
         showOnboardingRef.current = false;
-        analyticsClient.capture("setup_result", {
+        analytics.track("setup_result", {
           outcome: "skipped",
           last_step: currentStep,
         });
@@ -179,7 +179,7 @@ export const OnboardingWizard = () => {
   }, [currentStep, currentStepConfig, handleStepComplete, handleStepError]);
 
   const onSkip = useCallback(() => {
-    analyticsClient.capture("setup_result", {
+    analytics.track("setup_result", {
       outcome: "skipped",
       last_step: currentStep,
     });

@@ -1,8 +1,6 @@
-import {
-  analyticsClient,
-  getModEntryPoint,
-  rememberModEntryPoint,
-} from "@/lib/analytics";
+import { analytics } from "@/lib/analytics";
+import { DownloadQueue } from "./queue";
+import i18n from "@/lib/i18n";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
@@ -66,11 +64,16 @@ interface DownloadResumedEvent {
 }
 
 class DownloadManager {
-  private pendingDownloads: Map<string, DownloadableMod> = new Map();
-  private downloadAttempts = new Map<
-    string,
-    ReturnType<typeof analyticsClient.start>
-  >();
+  private downloads = new DownloadQueue({
+    start: (properties) => analytics.start("mod_download", properties),
+    queue: (mod) => this.queueDownload(mod),
+    cancel: (modId) => invoke<void>("cancel_download", { modId }),
+    duplicateError: () => new Error(i18n.t("downloads.alreadyQueued")),
+    onQueueError: (error) => {
+      logger.withError(error).error("Failed to queue download");
+      toast.error(`Failed to queue download: ${error.message}`);
+    },
+  });
   private unlistenFns: UnlistenFn[] = [];
   private onFontsFoundHandler?: (
     modId: string,
@@ -84,7 +87,7 @@ class DownloadManager {
     const unlistenStarted = await listen<DownloadStartedEvent>(
       "download-started",
       (event) => {
-        const mod = this.pendingDownloads.get(event.payload.modId);
+        const mod = this.downloads.getMod(event.payload.modId);
         if (mod) {
           logger
             .withMetadata({ mod: event.payload.modId })
@@ -97,7 +100,7 @@ class DownloadManager {
     const unlistenProgress = await listen<DownloadProgressEvent>(
       "download-progress",
       (event) => {
-        const mod = this.pendingDownloads.get(event.payload.modId);
+        const mod = this.downloads.getMod(event.payload.modId);
         if (mod) {
           const progress: Progress = {
             progress: event.payload.progress,
@@ -114,7 +117,7 @@ class DownloadManager {
     const unlistenCompleted = await listen<DownloadCompletedEvent>(
       "download-completed",
       (event) => {
-        const mod = this.pendingDownloads.get(event.payload.modId);
+        const mod = this.downloads.getMod(event.payload.modId);
         if (mod) {
           logger
             .withMetadata({
@@ -122,10 +125,7 @@ class DownloadManager {
               path: event.payload.path,
             })
             .info("Download complete");
-          this.downloadAttempts.get(event.payload.modId)?.finish("completed");
-          this.downloadAttempts.delete(event.payload.modId);
-          this.pendingDownloads.delete(event.payload.modId);
-          mod.onComplete(event.payload.path);
+          this.downloads.complete(event.payload.modId, event.payload.path);
         }
       },
     );
@@ -133,22 +133,13 @@ class DownloadManager {
     const unlistenError = await listen<DownloadErrorEvent>(
       "download-error",
       (event) => {
-        const mod = this.pendingDownloads.get(event.payload.modId);
+        const mod = this.downloads.getMod(event.payload.modId);
         if (mod) {
           logger
             .withMetadata({ mod: event.payload.modId })
             .withError(new Error(event.payload.error))
             .error("Download error");
-          this.downloadAttempts
-            .get(event.payload.modId)
-            ?.finish(
-              event.payload.error === "Download cancelled"
-                ? "cancelled"
-                : "failed",
-            );
-          this.downloadAttempts.delete(event.payload.modId);
-          this.pendingDownloads.delete(event.payload.modId);
-          mod.onError(new Error(event.payload.error));
+          this.downloads.fail(event.payload.modId, event.payload.error);
         }
       },
     );
@@ -168,7 +159,7 @@ class DownloadManager {
     const unlistenFileTree = await listen<DownloadFileTreeEvent>(
       "download-file-tree",
       (event) => {
-        const mod = this.pendingDownloads.get(event.payload.modId);
+        const mod = this.downloads.getMod(event.payload.modId);
         if (mod) {
           logger
             .withMetadata({
@@ -209,7 +200,7 @@ class DownloadManager {
       "download-fonts-found",
       (event) => {
         if (this.onFontsFoundHandler) {
-          const mod = this.pendingDownloads.get(event.payload.modId);
+          const mod = this.downloads.getMod(event.payload.modId);
           const modName = mod?.name ?? event.payload.modId;
           logger
             .withMetadata({
@@ -319,35 +310,11 @@ class DownloadManager {
       unlisten();
     }
     this.unlistenFns = [];
-    this.pendingDownloads.clear();
-    this.downloadAttempts.clear();
+    this.downloads.clear();
   }
 
   addToQueue(mod: DownloadableMod) {
-    const entryPoint =
-      mod.analyticsEntryPoint ?? getModEntryPoint(mod.remoteId);
-    rememberModEntryPoint(mod.remoteId, entryPoint);
-    const attempt =
-      this.downloadAttempts.get(mod.remoteId) ??
-      analyticsClient.start("mod_download", {
-        mod_id: mod.remoteId,
-        entry_point: entryPoint,
-        operation_kind: mod.analyticsOperationKind ?? "download",
-        file_count: mod.downloads?.length ?? 0,
-        content_type: mod.isMap ? "map" : mod.isAudio ? "sound" : "mod",
-      });
-    this.downloadAttempts.set(mod.remoteId, attempt);
-    this.pendingDownloads.set(mod.remoteId, mod);
-    this.queueDownload(mod).catch((error) => {
-      logger.withError(error).error("Failed to queue download");
-      toast.error(`Failed to queue download: ${error.message}`);
-      attempt.finish("failed");
-      if (this.pendingDownloads.get(mod.remoteId) === mod) {
-        this.pendingDownloads.delete(mod.remoteId);
-        this.downloadAttempts.delete(mod.remoteId);
-      }
-      mod.onError(error);
-    });
+    this.downloads.add(mod);
   }
 
   private async queueDownload(mod: DownloadableMod) {
@@ -383,15 +350,7 @@ class DownloadManager {
 
   async cancelDownload(modId: string) {
     try {
-      await invoke("cancel_download", { modId });
-      const mod = this.pendingDownloads.get(modId);
-      this.downloadAttempts.get(modId)?.finish("cancelled");
-      this.downloadAttempts.delete(modId);
-      this.pendingDownloads.delete(modId);
-      // The aborted task still emits download-error, but by then the entry is
-      // gone and the callbacks would never run - so settle the waiting caller
-      // here instead of leaving it hanging forever.
-      mod?.onError(new Error("Download cancelled"));
+      await this.downloads.cancel(modId);
       logger.withMetadata({ mod: modId }).info("Download cancelled");
     } catch (error) {
       logger.withError(error).error("Failed to cancel download");

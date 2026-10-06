@@ -5,11 +5,8 @@ import { ModDownloadDtoSchema } from "@deadlock-mods/shared";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useState } from "react";
 import { useLocation } from "react-router";
-import { getModEntryPoint } from "@/lib/analytics";
-import {
-  modEntryPoint,
-  type AnalyticsEntryPoint,
-} from "@/lib/analytics/client";
+import { modEntryPoint } from "@/lib/analytics/client";
+import type { ModEntryPoint } from "@/lib/analytics/schema";
 import { useTranslation } from "react-i18next";
 import { detectHeroForMod } from "@/hooks/use-hero-detection";
 import { downloadManager } from "@/lib/download/manager";
@@ -26,7 +23,7 @@ type QueueModDownloadOptions = {
   /** Every file the mod offers, kept so the selection can be changed later. */
   allFiles: ModDownloadItem[];
   profileFolder: string | null;
-  analyticsEntryPoint?: AnalyticsEntryPoint;
+  analyticsEntryPoint?: ModEntryPoint;
   analyticsOperationKind?: "download" | "retry";
   onComplete?: () => void;
   onError?: (error: Error) => void;
@@ -99,6 +96,7 @@ export const queueModDownload = (
 export const useDownload = (
   mod: ModDto | undefined,
   availableFiles: ModDownloadDto[],
+  entryPoint?: ModEntryPoint,
 ) => {
   const { t } = useTranslation();
   const { pathname } = useLocation();
@@ -134,13 +132,12 @@ export const useDownload = (
       allFiles,
       profileFolder,
       analyticsOperationKind: operationKind,
-      analyticsEntryPoint: getModEntryPoint(
-        mod.remoteId,
+      analyticsEntryPoint:
+        entryPoint ??
         modEntryPoint(
           pathname,
           !!usePersistedStore.getState().modsFilters.searchQuery,
         ),
-      ),
       onComplete: () => {
         setIsDialogOpen(false);
         toast.success(`${mod.name} downloaded!`);

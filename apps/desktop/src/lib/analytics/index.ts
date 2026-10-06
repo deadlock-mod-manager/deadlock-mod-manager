@@ -1,20 +1,19 @@
+import type {
+  AnalyticsEvents,
+  AnalyticsMilestone,
+  EventArguments,
+} from "./schema";
 import { createInstallTracker } from "./install";
 import ReactGA from "react-ga4";
 import { platform } from "@tauri-apps/plugin-os";
 import { usePersistedStore } from "@/lib/store";
-import {
-  createAnalyticsClient,
-  type AnalyticsProperties,
-  type AnalyticsEntryPoint,
-  type AnalyticsMilestone,
-} from "./client";
+import { createAnalyticsClient } from "./client";
 
 const measurementId = import.meta.env.VITE_GA_MEASUREMENT_ID;
 let version: string | undefined;
 let releaseChannel = "unknown";
 let consentEpoch = 0;
 let initialized = false;
-const modSources = new Map<string, AnalyticsEntryPoint>();
 
 const isEnabled = () =>
   !!measurementId &&
@@ -22,12 +21,16 @@ const isEnabled = () =>
   import.meta.env.VITE_DMM_E2E_HARNESS !== "1" &&
   usePersistedStore.getState().telemetrySettings.analyticsEnabled;
 const syncConsent = () => {
-  if (typeof window !== "undefined" && measurementId) {
-    Object.defineProperty(window, `ga-disable-${measurementId}`, {
-      value: !isEnabled() || !version,
-      configurable: true,
-      writable: true,
-    });
+  try {
+    if (typeof window !== "undefined" && measurementId) {
+      Reflect.set(
+        window,
+        `ga-disable-${measurementId}`,
+        !isEnabled() || !version,
+      );
+    }
+  } catch {
+    // Preference updates and app startup must still work when GA is unavailable.
   }
 };
 usePersistedStore.subscribe((state, previous) => {
@@ -36,7 +39,6 @@ usePersistedStore.subscribe((state, previous) => {
     previous.telemetrySettings.analyticsEnabled
   ) {
     consentEpoch += 1;
-    modSources.clear();
     syncConsent();
   }
 });
@@ -61,14 +63,17 @@ const initialize = () => {
   }
 };
 
-export const analyticsClient = createAnalyticsClient({
-  getContext: () => ({
-    enabled: isEnabled(),
-    version,
-    os: platform(),
-    releaseChannel,
-    consentEpoch,
-  }),
+export const analytics = createAnalyticsClient({
+  getContext: () => {
+    const enabled = isEnabled();
+    return {
+      enabled,
+      version,
+      os: enabled && version ? platform() : "unknown",
+      releaseChannel,
+      consentEpoch,
+    };
+  },
   send: (event, properties) => {
     initialize();
     ReactGA.event(event, properties);
@@ -77,16 +82,9 @@ export const analyticsClient = createAnalyticsClient({
   createId: () => crypto.randomUUID(),
 });
 
-export const captureAnalytics = async (
-  event: string,
-  properties?: AnalyticsProperties,
-): Promise<void> => {
-  analyticsClient.capture(event, properties);
-};
-
-export const identifyAnalytics = async (distinctId: string): Promise<void> => {
-  if (!isEnabled() || !version) return;
+export const identifyAnalytics = (distinctId: string): void => {
   try {
+    if (!isEnabled() || !version) return;
     initialize();
     ReactGA.set({ userId: distinctId });
   } catch {
@@ -94,25 +92,14 @@ export const identifyAnalytics = async (distinctId: string): Promise<void> => {
   }
 };
 
-export const rememberModEntryPoint = (
-  modId: string,
-  source: AnalyticsEntryPoint,
-) => {
-  if (isEnabled() && version) modSources.set(modId, source);
-};
-export const getModEntryPoint = (
-  modId: string,
-  fallback: AnalyticsEntryPoint = "other",
-) => modSources.get(modId) ?? fallback;
-
-export const captureMilestone = (
-  milestone: AnalyticsMilestone,
-  properties?: AnalyticsProperties,
+export const captureMilestone = <K extends AnalyticsMilestone>(
+  milestone: K,
+  ...args: EventArguments<K>
 ) => {
   try {
     const state = usePersistedStore.getState();
     if (state.telemetrySettings.analyticsMilestones?.[milestone]) return;
-    if (analyticsClient.capture(milestone, properties)) {
+    if (analytics.track(milestone, ...args)) {
       state.updateTelemetrySettings({
         analyticsMilestones: {
           ...state.telemetrySettings.analyticsMilestones,
@@ -125,10 +112,10 @@ export const captureMilestone = (
   }
 };
 
-export const trackAppReady = async (
-  properties?: AnalyticsProperties,
-): Promise<void> => {
-  if (analyticsClient.capture("app_ready", properties)) {
+export const trackAppReady = (
+  properties: AnalyticsEvents["app_ready"],
+): void => {
+  if (analytics.track("app_ready", properties)) {
     captureMilestone("first_eligible_use", {
       has_existing_mods: usePersistedStore.getState().localMods.length > 0,
     });
@@ -136,7 +123,6 @@ export const trackAppReady = async (
 };
 
 export const trackInstallOptions = createInstallTracker({
-  start: analyticsClient.start,
-  getModEntryPoint,
+  start: analytics.start,
   captureMilestone,
 });

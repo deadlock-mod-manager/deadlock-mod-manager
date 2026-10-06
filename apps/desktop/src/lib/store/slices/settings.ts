@@ -1,4 +1,4 @@
-import type { AnalyticsMilestone } from "@/lib/analytics/client";
+import type { AnalyticsMilestone } from "@/lib/analytics/schema";
 import type { CustomSettingDto, NSFWSettings } from "@deadlock-mods/shared";
 import type {
   PresenceTextTemplatePair,

@@ -1,3 +1,4 @@
+import type { ModEntryPoint } from "@/lib/analytics/schema";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
@@ -7,7 +8,7 @@ import { usePersistedStore } from "@/lib/store";
 import { type LocalMod, type ModFileTree, ModStatus } from "@/types/mods";
 
 export type UseInstallActionReturn = {
-  performInstall: (mod: LocalMod) => Promise<void>;
+  performInstall: (mod: LocalMod, entryPoint?: ModEntryPoint) => Promise<void>;
   isAnalyzing: boolean;
   currentFileTree: ModFileTree | null;
   showFileSelector: boolean;
@@ -35,7 +36,7 @@ export const useInstallAction = (): UseInstallActionReturn => {
   } = useInstallWithCollection();
 
   const performInstall = useCallback(
-    async (mod: LocalMod) => {
+    async (mod: LocalMod, entryPoint: ModEntryPoint = "library") => {
       if (mod.usesCriticalPaths) {
         const confirmed = await confirm({
           title: t("criticalPaths.title"),
@@ -50,6 +51,7 @@ export const useInstallAction = (): UseInstallActionReturn => {
       }
 
       await install(mod, {
+        analyticsEntryPoint: entryPoint,
         onStart: (m) => {
           setModStatus(m.remoteId, ModStatus.Installing);
         },

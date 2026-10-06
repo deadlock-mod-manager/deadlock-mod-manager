@@ -20,6 +20,7 @@ export const useModDetailNavigation = () => {
 
   return {
     collection,
+    analyticsEntryPoint: state?.analyticsEntryPoint ?? "mod_details",
     backLabel: t(back.labelKey, back.labelValues),
     goBack,
   };

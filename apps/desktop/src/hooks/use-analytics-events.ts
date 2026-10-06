@@ -1,26 +1,28 @@
 import { trackAppReady } from "@/lib/analytics";
 import { useMemo } from "react";
 import { useAnalytics } from "./use-analytics";
-import type { AnalyticsProperties } from "@/lib/analytics/client";
+import type { AnalyticsEvents } from "@/lib/analytics/schema";
 
 export const useAnalyticsEvents = () => {
-  const { capture, identify, isEnabled } = useAnalytics();
+  const { track, identify, isEnabled } = useAnalytics();
   return useMemo(
     () => ({
       isEnabled,
       identifyUser: (hardwareId: string, userId?: string) =>
         identify(userId ?? hardwareId),
       trackAppStarted: trackAppReady,
-      trackPageViewed: (page: string, properties?: AnalyticsProperties) =>
-        capture("page_viewed", { page, ...properties }),
+      trackPageViewed: (
+        page: string,
+        properties?: Pick<AnalyticsEvents["page_viewed"], "tab">,
+      ) => track("page_viewed", { page, ...properties }),
       trackProfileCreated: (_profileId: string, modCount: number) =>
-        capture("profile_created", { initial_mod_count: modCount }),
+        track("profile_created", { initial_mod_count: modCount }),
       trackProfileShared: (
         _profileId: string,
         modCount: number,
         shareMethod: "link" | "export",
       ) =>
-        capture("profile_shared", {
+        track("profile_shared", {
           mod_count: modCount,
           share_method: shareMethod,
         }),
@@ -29,18 +31,18 @@ export const useAnalyticsEvents = () => {
         _oldValue: boolean,
         newValue: boolean,
       ) =>
-        capture("setting_changed", {
+        track("setting_changed", {
           setting_key: settingKey,
           enabled: newValue,
         }),
       trackAddonAnalysisStarted: (fileCount: number) =>
-        capture("addon_analysis_started", { file_count: fileCount }),
+        track("addon_analysis_started", { file_count: fileCount }),
       trackAddonAnalysisCompleted: (
         fileCount: number,
         identifiedCount: number,
         durationSeconds: number,
       ) =>
-        capture("addon_analysis_completed", {
+        track("addon_analysis_completed", {
           file_count: fileCount,
           identified_count: identifiedCount,
           duration_seconds: durationSeconds,
@@ -56,7 +58,7 @@ export const useAnalyticsEvents = () => {
           errors?: string[];
         },
       ) =>
-        capture("profile_switched", {
+        track("profile_switched", {
           enabled_mods: properties?.enabled_mods,
           disabled_mods: properties?.disabled_mods,
           duration_seconds: properties?.switch_duration_seconds,
@@ -65,8 +67,8 @@ export const useAnalyticsEvents = () => {
         mod_count?: number;
         reorder_method?: "drag_drop" | "manual";
         duration_seconds?: number;
-      }) => capture("mods_reordered", properties),
+      }) => track("mods_reordered", properties),
     }),
-    [capture, identify, isEnabled],
+    [track, identify, isEnabled],
   );
 };

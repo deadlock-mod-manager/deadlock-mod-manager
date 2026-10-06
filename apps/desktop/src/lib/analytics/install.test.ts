@@ -1,10 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { ModStatus, type LocalMod, type InstallableMod } from "@/types/mods";
-import {
-  createAnalyticsClient,
-  type AnalyticsProperties,
-  type AnalyticsMilestone,
-} from "./client";
+import { createAnalyticsClient } from "./client";
+import type { AnalyticsProperties, AnalyticsMilestone } from "./schema";
 import { createInstallTracker, type InstallAnalyticsOptions } from "./install";
 
 const mod: LocalMod = {
@@ -47,19 +44,22 @@ const result: InstallableMod = {
   installed_vpks: ["pak01_dir.vpk"],
 };
 
-const fixture = () => {
+const fixture = (metadataUnavailable = false) => {
   const events: { name: string; properties: AnalyticsProperties }[] = [];
   const milestones: AnalyticsMilestone[] = [];
   const callbacks: string[] = [];
   let enabled = true;
   const client = createAnalyticsClient({
-    getContext: () => ({
-      enabled,
-      version: "2.1.0",
-      os: "linux",
-      releaseChannel: "stable",
-      consentEpoch: 0,
-    }),
+    getContext: () => {
+      if (metadataUnavailable) throw new Error("OS metadata unavailable");
+      return {
+        enabled,
+        version: "2.1.0",
+        os: "linux",
+        releaseChannel: "stable",
+        consentEpoch: 0,
+      };
+    },
     send: (name, properties) => {
       events.push({ name, properties });
     },
@@ -68,8 +68,7 @@ const fixture = () => {
   });
   const track = createInstallTracker({
     start: client.start,
-    getModEntryPoint: () => "search",
-    captureMilestone: (milestone) => {
+    captureMilestone: (milestone, ..._args) => {
       milestones.push(milestone);
     },
   });
@@ -110,7 +109,7 @@ describe("installation analytics at the shared operation boundary", () => {
     options.onComplete(mod, result);
     expect(test.events[1]?.properties).toMatchObject({
       outcome: "completed",
-      entry_point: "search",
+      entry_point: "library",
       operation_kind: "install",
       vpk_count: 1,
     });
@@ -191,4 +190,27 @@ describe("installation analytics at the shared operation boundary", () => {
     expect(test.events).toEqual([]);
     expect(test.milestones).toEqual([]);
   });
+});
+
+it("does not carry an earlier featured source into a later library installation", () => {
+  const test = fixture();
+  test
+    .track(mod, { ...test.options, analyticsEntryPoint: "featured" })
+    .onComplete(mod, result);
+  test.track(mod, test.options).onComplete(mod, result);
+  expect(
+    test.events
+      .filter((event) => event.name === "mod_install_started")
+      .map((event) => event.properties.entry_point),
+  ).toEqual(["featured", "library"]);
+});
+
+it("preserves installation callbacks when analytics metadata lookup throws", () => {
+  const test = fixture(true);
+  const options = test.track(mod, test.options);
+  options.onStart(mod);
+  options.onComplete(mod, result);
+  expect(test.callbacks).toEqual(["start", "complete"]);
+  expect(test.events).toEqual([]);
+  expect(test.milestones).toEqual([]);
 });

@@ -506,7 +506,6 @@ const CustomSettings = ({ value }: { value?: string }) => {
   // Track settings tab changes
   useEffect(() => {
     analytics.trackPageViewed(`settings-${activeTab}`, {
-      path: "/settings",
       tab: activeTab,
     });
   }, [activeTab, analytics]);

@@ -1,41 +1,13 @@
-export type AnalyticsProperties = Record<
-  string,
-  string | number | boolean | null | undefined
->;
-
-export type AnalyticsOutcome =
-  | "completed"
-  | "cancelled"
-  | "blocked"
-  | "failed"
-  | "partial";
-export type AnalyticsMilestone =
-  | "first_eligible_use"
-  | "first_install_completed"
-  | "first_modded_launch";
-export type AnalyticsOperation =
-  | "mod_download"
-  | "mod_install"
-  | "game_launch"
-  | "library_mod_state"
-  | "profile_import"
-  | "mod_update"
-  | "crosshair_apply"
-  | "foundry_export"
-  | "app_update";
-export type AnalyticsEntryPoint =
-  | "catalog"
-  | "search"
-  | "featured"
-  | "author"
-  | "album"
-  | "mod_details"
-  | "library"
-  | "skins"
-  | "deep_link"
-  | "reinstall"
-  | "retry"
-  | "other";
+import type {
+  AnalyticsProperties,
+  AnalyticsOutcome,
+  AnalyticsOperation,
+  AnalyticsOperations,
+  AnalyticsEvents,
+  AnalyticsAttempt,
+  EventArguments,
+  ModEntryPoint,
+} from "./schema";
 
 export interface AnalyticsContext {
   enabled: boolean;
@@ -44,7 +16,6 @@ export interface AnalyticsContext {
   releaseChannel: string;
   consentEpoch: number;
 }
-
 interface AnalyticsClientDependencies {
   getContext: () => AnalyticsContext;
   send: (event: string, properties: AnalyticsProperties) => void;
@@ -58,23 +29,24 @@ export const createAnalyticsClient = ({
   now,
   createId,
 }: AnalyticsClientDependencies) => {
-  const capture = (
+  // Every dependency belongs inside this boundary: telemetry must never stop an action.
+  const emit = (
     event: string,
     properties: AnalyticsProperties = {},
   ): boolean => {
-    const context = getContext();
-    if (!context.enabled || !context.version) return false;
-    const clean: AnalyticsProperties = {};
-    for (const [key, value] of Object.entries(properties)) {
-      if (
-        value !== undefined &&
-        value !== Infinity &&
-        value !== -Infinity &&
-        !Object.is(value, NaN)
-      )
-        clean[key] = value;
-    }
     try {
+      const context = getContext();
+      if (!context.enabled || !context.version) return false;
+      const clean: AnalyticsProperties = {};
+      for (const [key, value] of Object.entries(properties)) {
+        if (
+          value !== undefined &&
+          value !== Infinity &&
+          value !== -Infinity &&
+          !Object.is(value, NaN)
+        )
+          clean[key] = value;
+      }
       send(event, {
         ...clean,
         app_version: context.version,
@@ -86,36 +58,53 @@ export const createAnalyticsClient = ({
       return false;
     }
   };
-
-  const start = (
-    operation: AnalyticsOperation,
-    properties: AnalyticsProperties = {},
-  ) => {
-    const context = getContext();
-    const startedAt = now();
-    const operationId = createId();
-    const recorded = capture(`${operation}_started`, {
-      ...properties,
-      operation_id: operationId,
-    });
-    let finished = false;
-    return {
-      finish: (outcome: AnalyticsOutcome, result: AnalyticsProperties = {}) => {
-        if (finished) return false;
-        finished = true;
-        if (!recorded || context.consentEpoch !== getContext().consentEpoch)
-          return false;
-        return capture(`${operation}_result`, {
-          ...properties,
-          ...result,
+  const track = <K extends keyof AnalyticsEvents>(
+    event: K,
+    ...args: EventArguments<K>
+  ): boolean => emit(event, args[0]);
+  const start = <K extends AnalyticsOperation>(
+    operation: K,
+    properties: AnalyticsOperations[K]["start"],
+  ): AnalyticsAttempt<K> => {
+    const inactive: AnalyticsAttempt<K> = { finish: () => false };
+    try {
+      const context = getContext();
+      if (!context.enabled || !context.version) return inactive;
+      const startProperties = { ...properties };
+      const consentEpoch = context.consentEpoch;
+      const startedAt = now();
+      const operationId = createId();
+      if (
+        !emit(`${operation}_started`, {
+          ...startProperties,
           operation_id: operationId,
-          outcome,
-          duration_seconds: Math.max(0, now() - startedAt) / 1000,
-        });
-      },
-    };
+        })
+      )
+        return inactive;
+      let finished = false;
+      return {
+        finish: (outcome, result) => {
+          if (finished) return false;
+          finished = true;
+          try {
+            if (consentEpoch !== getContext().consentEpoch) return false;
+            return emit(`${operation}_result`, {
+              ...startProperties,
+              ...result,
+              operation_id: operationId,
+              outcome,
+              duration_seconds: Math.max(0, now() - startedAt) / 1000,
+            });
+          } catch {
+            return false;
+          }
+        },
+      };
+    } catch {
+      return inactive;
+    }
   };
-  return { capture, start };
+  return { track, start };
 };
 
 export const failureOutcome = (kind?: string): AnalyticsOutcome => {
@@ -134,7 +123,7 @@ export const failureOutcome = (kind?: string): AnalyticsOutcome => {
 export const modEntryPoint = (
   pathname: string,
   hasSearch: boolean,
-): AnalyticsEntryPoint => {
+): ModEntryPoint => {
   if (pathname === "/") return "featured";
   if (pathname === "/mods" || pathname === "/maps")
     return hasSearch ? "search" : "catalog";
@@ -169,3 +158,5 @@ export const screenName = (pathname: string): string => {
   ]);
   return screens.get(pathname) ?? "other";
 };
+
+export type AnalyticsClient = ReturnType<typeof createAnalyticsClient>;

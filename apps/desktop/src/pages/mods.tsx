@@ -1,4 +1,4 @@
-import { analyticsClient } from "@/lib/analytics";
+import { analytics } from "@/lib/analytics";
 import {
   Pagination,
   PaginationContent,
@@ -329,7 +329,7 @@ const GetModsData = ({
     if (isUpdatingResults || trackedQuery.current === deferredCatalogQuery)
       return;
     trackedQuery.current = deferredCatalogQuery;
-    analyticsClient.capture("catalog_results_shown", {
+    analytics.track("catalog_results_shown", {
       entry_point: deferredCatalogQuery.search ? "search" : "catalog",
       content_type: contentType,
       query_length: deferredCatalogQuery.search.length,

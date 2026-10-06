@@ -1,4 +1,4 @@
-import { analyticsClient } from "@/lib/analytics";
+import { analytics } from "@/lib/analytics";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { useRef, useState } from "react";
@@ -35,7 +35,7 @@ const useUpdateManager = () => {
       return;
     }
 
-    const attempt = analyticsClient.start("app_update", {
+    const attempt = analytics.start("app_update", {
       target_version: update.version,
       entry_point: "update_dialog",
     });

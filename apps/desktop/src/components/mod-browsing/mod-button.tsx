@@ -1,3 +1,4 @@
+import type { ModEntryPoint } from "@/lib/analytics/schema";
 import type { ModDto } from "@deadlock-mods/shared";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { toast } from "@deadlock-mods/ui/components/sonner";
@@ -43,6 +44,7 @@ import { type LocalMod, ModStatus } from "@/types/mods";
 
 interface ModButtonProps {
   remoteMod: ModDto | undefined;
+  analyticsEntryPoint?: ModEntryPoint;
   variant: "iconOnly" | "default";
 }
 
@@ -102,7 +104,11 @@ export const ModStatusIcon = ({
   );
 };
 
-const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
+const ModButton = ({
+  remoteMod,
+  variant = "default",
+  analyticsEntryPoint,
+}: ModButtonProps) => {
   const { t } = useTranslation();
   const heroConflictWarningEnabled = usePersistedStore(
     (state) => state.settings["hero-conflict-warning"]?.enabled ?? true,
@@ -123,7 +129,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
     closeDialog,
     localMod,
     isDialogOpen,
-  } = useDownload(remoteMod, availableFiles);
+  } = useDownload(remoteMod, availableFiles, analyticsEntryPoint);
   const {
     performInstall,
     isAnalyzing,
@@ -219,7 +225,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
               }
             }
           }
-          await performInstall(localMod);
+          await performInstall(localMod, analyticsEntryPoint);
           break;
         }
         case ModStatus.Installed:
@@ -250,6 +256,7 @@ const ModButton = ({ remoteMod, variant = "default" }: ModButtonProps) => {
     removeMod,
     askHeroConflict,
     performInstall,
+    analyticsEntryPoint,
     t,
     remoteMod?.remoteId,
   ]);

@@ -1,3 +1,4 @@
+import type { ModEntryPoint } from "@/lib/analytics/schema";
 const COLLECTION_NAVIGATION = {
   mods: { path: "/mods", labelKey: "mods.backToMods" },
   maps: { path: "/maps", labelKey: "modDetail.backToMaps" },
@@ -20,6 +21,7 @@ export interface AlbumNavigationTarget {
 
 export interface ModDetailNavigationState {
   collection: ModsCollection;
+  analyticsEntryPoint?: ModEntryPoint;
   author?: AuthorNavigationTarget;
   album?: AlbumNavigationTarget;
 }

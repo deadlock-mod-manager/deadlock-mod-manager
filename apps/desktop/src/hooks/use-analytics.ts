@@ -1,18 +1,15 @@
 import { useLayoutEffect, useMemo } from "react";
 import useAbout from "@/hooks/use-about";
 import {
-  captureAnalytics,
+  analytics,
   configureAnalytics,
   identifyAnalytics,
 } from "@/lib/analytics";
-import type { AnalyticsProperties } from "@/lib/analytics/client";
 import { usePersistedStore } from "@/lib/store";
 
-export type { AnalyticsProperties } from "@/lib/analytics/client";
-
 export interface UseAnalyticsReturn {
-  capture: (event: string, properties?: AnalyticsProperties) => Promise<void>;
-  identify: (distinctId: string) => Promise<void>;
+  track: typeof analytics.track;
+  identify: (distinctId: string) => void;
   isEnabled: boolean;
 }
 
@@ -32,7 +29,7 @@ export const useAnalytics = (): UseAnalyticsReturn => {
     import.meta.env.VITE_DMM_E2E_HARNESS !== "1";
   return useMemo(
     () => ({
-      capture: captureAnalytics,
+      track: analytics.track,
       identify: identifyAnalytics,
       isEnabled,
     }),

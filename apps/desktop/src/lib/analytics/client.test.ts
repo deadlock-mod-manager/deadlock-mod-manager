@@ -1,3 +1,4 @@
+import type { AnalyticsProperties, AnalyticsOperations } from "./schema";
 import { describe, expect, it } from "bun:test";
 import {
   createAnalyticsClient,
@@ -5,8 +6,26 @@ import {
   modEntryPoint,
   screenName,
   type AnalyticsContext,
-  type AnalyticsProperties,
 } from "./client";
+
+const startup = {
+  total_mods_at_startup: 0,
+  installed_mod_count: 0,
+  total_profiles_at_startup: 1,
+};
+const download: AnalyticsOperations["mod_download"]["start"] = {
+  mod_id: "fixture",
+  entry_point: "catalog",
+  content_type: "mod",
+  operation_kind: "download",
+  file_count: 1,
+};
+const install: AnalyticsOperations["mod_install"]["start"] = {
+  mod_id: "fixture",
+  entry_point: "library",
+  content_type: "mod",
+  operation_kind: "install",
+};
 
 const fixture = () => {
   let context: AnalyticsContext = {
@@ -43,33 +62,34 @@ describe("analytics consent and readiness", () => {
   it("drops events while disabled or before version readiness instead of replaying them", () => {
     const test = fixture();
     test.setContext({ enabled: false });
-    expect(test.client.capture("page_viewed")).toBe(false);
+    expect(test.client.track("page_viewed", { page: "dashboard" })).toBe(false);
     test.setContext({ enabled: true, version: undefined });
-    expect(test.client.capture("app_ready")).toBe(false);
-    const attempt = test.client.start("mod_download");
+    expect(test.client.track("app_ready", startup)).toBe(false);
+    const attempt = test.client.start("mod_download", download);
     test.setContext({ version: "2.1.0" });
     expect(attempt.finish("completed")).toBe(false);
     expect(test.events).toEqual([]);
-    expect(test.client.capture("app_ready")).toBe(true);
+    expect(test.client.track("app_ready", startup)).toBe(true);
     expect(test.events.map((event) => event.name)).toEqual(["app_ready"]);
   });
 
   it("uses the running release metadata even if callers pass a missing or stale version", () => {
     const test = fixture();
-    test.client.capture("app_ready", {
+    const untrustedProperties = {
+      ...startup,
       app_version: undefined,
       release_channel: "nightly",
       os: "wrong",
       absent: undefined,
       bad_number: NaN,
       infinite: Infinity,
-      count: 0,
-    });
+    };
+    test.client.track("app_ready", untrustedProperties);
     expect(test.events[0]?.properties).toEqual({
+      ...startup,
       app_version: "2.1.0",
       release_channel: "stable",
       os: "windows",
-      count: 0,
     });
   });
 
@@ -88,8 +108,10 @@ describe("analytics consent and readiness", () => {
       now: () => 0,
       createId: () => "attempt",
     });
-    expect(client.capture("app_ready")).toBe(false);
-    expect(client.start("mod_install").finish("completed")).toBe(false);
+    expect(client.track("app_ready", startup)).toBe(false);
+    expect(client.start("mod_install", install).finish("completed")).toBe(
+      false,
+    );
   });
 });
 
@@ -97,11 +119,13 @@ describe("analytics action outcomes", () => {
   it("pairs concurrent attempts with independent IDs, source context and duration", () => {
     const test = fixture();
     const first = test.client.start("mod_download", {
+      ...download,
       entry_point: "search",
       operation_kind: "download",
     });
     test.setTime(2000);
     const second = test.client.start("mod_install", {
+      ...install,
       entry_point: "deep_link",
     });
     test.setTime(4000);
@@ -126,7 +150,7 @@ describe("analytics action outcomes", () => {
 
   it("records one terminal result even if success is followed by an error callback", () => {
     const test = fixture();
-    const attempt = test.client.start("mod_install");
+    const attempt = test.client.start("mod_install", install);
     expect(attempt.finish("completed")).toBe(true);
     expect(attempt.finish("failed")).toBe(false);
     expect(attempt.finish("cancelled")).toBe(false);
@@ -137,7 +161,7 @@ describe("analytics action outcomes", () => {
 
   it("suppresses results after consent is revoked", () => {
     const test = fixture();
-    const attempt = test.client.start("game_launch");
+    const attempt = test.client.start("game_launch", { launch_mode: "modded" });
     test.setContext({ enabled: false, consentEpoch: 1 });
     expect(attempt.finish("completed")).toBe(false);
     expect(test.events).toHaveLength(1);
@@ -145,18 +169,18 @@ describe("analytics action outcomes", () => {
 
   it("does not resurrect an attempt when consent is disabled then enabled again", () => {
     const test = fixture();
-    const oldAttempt = test.client.start("mod_install");
+    const oldAttempt = test.client.start("mod_install", install);
     test.setContext({ enabled: false, consentEpoch: 1 });
     test.setContext({ enabled: true, consentEpoch: 2 });
     expect(oldAttempt.finish("completed")).toBe(false);
-    const newAttempt = test.client.start("mod_install");
+    const newAttempt = test.client.start("mod_install", install);
     expect(newAttempt.finish("completed")).toBe(true);
     expect(test.events).toHaveLength(3);
   });
 
   it("clamps duration when the system clock goes backwards", () => {
     const test = fixture();
-    const attempt = test.client.start("mod_download");
+    const attempt = test.client.start("mod_download", download);
     test.setTime(0);
     attempt.finish("failed");
     expect(test.events[1]?.properties.duration_seconds).toBe(0);
@@ -191,4 +215,70 @@ describe("bounded navigation metadata", () => {
     expect(modEntryPoint("/skins", true)).toBe("skins");
     expect(modEntryPoint("/my-mods", true)).toBe("library");
   });
+});
+
+const crash = (): never => {
+  throw new Error("Analytics unavailable");
+};
+
+describe("analytics never interrupts an action", () => {
+  const context: AnalyticsContext = {
+    enabled: true,
+    version: "2.1.0",
+    os: "windows",
+    releaseChannel: "stable",
+    consentEpoch: 0,
+  };
+  it.each(["context", "clock", "id", "transport"])(
+    "returns an inert attempt when %s fails",
+    (failure) => {
+      const client = createAnalyticsClient({
+        getContext: () => (failure === "context" ? crash() : context),
+        now: () => (failure === "clock" ? crash() : 0),
+        createId: () => (failure === "id" ? crash() : "id"),
+        send: () => {
+          if (failure === "transport") crash();
+        },
+      });
+      expect(() => client.track("app_ready", startup)).not.toThrow();
+      const attempt = client.start("mod_install", install);
+      expect(attempt.finish("completed")).toBe(false);
+    },
+  );
+  it("does not allocate IDs or read the clock while disabled or unready", () => {
+    for (const disabled of [
+      { ...context, enabled: false },
+      { ...context, version: undefined },
+    ]) {
+      const client = createAnalyticsClient({
+        getContext: () => disabled,
+        now: crash,
+        createId: crash,
+        send: crash,
+      });
+      expect(client.start("mod_install", install).finish("completed")).toBe(
+        false,
+      );
+    }
+  });
+  it.each(["context", "clock", "transport"])(
+    "swallows %s failure during completion without retrying the result",
+    (failure) => {
+      let completing = false;
+      const client = createAnalyticsClient({
+        getContext: () =>
+          completing && failure === "context" ? crash() : context,
+        now: () => (completing && failure === "clock" ? crash() : 0),
+        createId: () => "id",
+        send: () => {
+          if (completing && failure === "transport") crash();
+        },
+      });
+      const attempt = client.start("mod_install", install);
+      completing = true;
+      expect(attempt.finish("completed")).toBe(false);
+      completing = false;
+      expect(attempt.finish("completed")).toBe(false);
+    },
+  );
 });

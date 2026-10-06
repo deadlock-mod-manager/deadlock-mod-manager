@@ -1,4 +1,4 @@
-import { analyticsClient, captureMilestone } from "@/lib/analytics";
+import { analytics, captureMilestone } from "@/lib/analytics";
 import { failureOutcome } from "@/lib/analytics/client";
 import { isTauriError } from "@/types/tauri";
 import type { ModDto, SharedProfile } from "@deadlock-mods/shared";
@@ -64,7 +64,7 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
       })
       .info("Starting profile import");
 
-    const attempt = analyticsClient.start("profile_import", {
+    const attempt = analytics.start("profile_import", {
       destination: "new_profile",
       mod_count: totalImportedMods,
     });
@@ -225,7 +225,7 @@ export const createProfileImportFlow = (deps: ProfileImportFlowDeps) => {
       })
       .info("Overriding current profile with imported mods");
 
-    const attempt = analyticsClient.start("profile_import", {
+    const attempt = analytics.start("profile_import", {
       destination: "current_profile",
       mod_count: totalImportedMods,
     });

@@ -1,4 +1,4 @@
-import { analyticsClient } from "@/lib/analytics";
+import { analytics } from "@/lib/analytics";
 import {
   createContext,
   type ReactNode,
@@ -615,7 +615,7 @@ export const FoundryProvider = ({ children }: { children: ReactNode }) => {
   const exportVpk = useCallback(
     async (request: FoundryExportRequest) => {
       const active = requireWorkspace();
-      const attempt = analyticsClient.start("foundry_export", {
+      const attempt = analytics.start("foundry_export", {
         edited_asset_count: editedPaths.size,
       });
       setBusy(true);

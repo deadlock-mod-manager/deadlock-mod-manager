@@ -1,4 +1,4 @@
-import { analyticsClient, captureMilestone } from "@/lib/analytics";
+import { analytics, captureMilestone } from "@/lib/analytics";
 import { failureOutcome } from "@/lib/analytics/client";
 import { isTauriError } from "@/types/tauri";
 import { toast } from "@deadlock-mods/ui/components/sonner";
@@ -95,7 +95,7 @@ export const useLaunch = () => {
   };
 
   const launch = async (vanilla = false) => {
-    const attempt = analyticsClient.start("game_launch", {
+    const attempt = analytics.start("game_launch", {
       launch_mode: vanilla ? "vanilla" : "modded",
     });
     try {

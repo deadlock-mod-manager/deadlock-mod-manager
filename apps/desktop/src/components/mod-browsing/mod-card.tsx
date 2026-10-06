@@ -1,5 +1,5 @@
-import { analyticsClient, rememberModEntryPoint } from "@/lib/analytics";
-import type { AnalyticsEntryPoint } from "@/lib/analytics/client";
+import { analytics } from "@/lib/analytics";
+import { modContentType, type ModEntryPoint } from "@/lib/analytics/schema";
 import type { ModDto } from "@deadlock-mods/shared";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Card, CardHeader, CardTitle } from "@deadlock-mods/ui/components/card";
@@ -65,27 +65,26 @@ const ModCard = memo((props: ModCardProps) => {
     return <ModCardSkeleton />;
   }
 
+  const entryPoint: ModEntryPoint = album
+    ? "album"
+    : author
+      ? "author"
+      : collection === "dashboard"
+        ? "featured"
+        : collection === "library"
+          ? "library"
+          : usePersistedStore.getState().modsFilters.searchQuery
+            ? "search"
+            : "catalog";
   const openModDetail = () => {
-    const entryPoint: AnalyticsEntryPoint = album
-      ? "album"
-      : author
-        ? "author"
-        : collection === "dashboard"
-          ? "featured"
-          : collection === "library"
-            ? "library"
-            : usePersistedStore.getState().modsFilters.searchQuery
-              ? "search"
-              : "catalog";
-    rememberModEntryPoint(mod.remoteId, entryPoint);
-    analyticsClient.capture("catalog_item_opened", {
+    analytics.track("catalog_item_opened", {
       mod_id: mod.remoteId,
       entry_point: entryPoint,
-      content_type: mod.isMap ? "map" : mod.isAudio ? "sound" : "mod",
+      content_type: modContentType(mod),
     });
     void prefetchModDetail(queryClient, mod.remoteId);
     navigate(`/mods/${mod.remoteId}`, {
-      state: { collection, author, album },
+      state: { collection, author, album, analyticsEntryPoint: entryPoint },
     });
   };
 
@@ -224,7 +223,13 @@ const ModCard = memo((props: ModCardProps) => {
                   </span>
                 </div>
               </div>
-              {!readOnly && <ModButton remoteMod={mod} variant='iconOnly' />}
+              {!readOnly && (
+                <ModButton
+                  remoteMod={mod}
+                  variant='iconOnly'
+                  analyticsEntryPoint={entryPoint}
+                />
+              )}
             </div>
           </div>
         </div>

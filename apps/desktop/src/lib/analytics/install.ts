@@ -1,15 +1,16 @@
+import {
+  modContentType,
+  type EventArguments,
+  type ModEntryPoint,
+  type AnalyticsMilestone,
+} from "./schema";
+import type { AnalyticsClient } from "./client";
 import type { LocalMod, InstallableMod } from "@/types/mods";
 import type { ErrorKind } from "@/types/tauri";
-import {
-  failureOutcome,
-  type AnalyticsEntryPoint,
-  type AnalyticsMilestone,
-  type AnalyticsProperties,
-  type createAnalyticsClient,
-} from "./client";
+import { failureOutcome } from "./client";
 
 export interface InstallAnalyticsOptions {
-  analyticsEntryPoint?: AnalyticsEntryPoint;
+  analyticsEntryPoint?: ModEntryPoint;
   analyticsOperationKind?: "install" | "enable" | "reinstall" | "randomize";
   onStart: (mod: LocalMod) => void;
   onComplete: (mod: LocalMod, result: InstallableMod) => void;
@@ -18,34 +19,24 @@ export interface InstallAnalyticsOptions {
 }
 
 interface InstallAnalyticsDependencies {
-  start: ReturnType<typeof createAnalyticsClient>["start"];
-  getModEntryPoint: (
-    modId: string,
-    fallback: AnalyticsEntryPoint,
-  ) => AnalyticsEntryPoint;
-  captureMilestone: (
-    milestone: AnalyticsMilestone,
-    properties?: AnalyticsProperties,
+  start: AnalyticsClient["start"];
+  captureMilestone: <K extends AnalyticsMilestone>(
+    milestone: K,
+    ...args: EventArguments<K>
   ) => void;
 }
 
 export const createInstallTracker =
-  ({
-    start,
-    getModEntryPoint,
-    captureMilestone,
-  }: InstallAnalyticsDependencies) =>
+  ({ start, captureMilestone }: InstallAnalyticsDependencies) =>
   <T extends InstallAnalyticsOptions>(mod: LocalMod, options: T) => {
     const operationKind =
       options.analyticsOperationKind ??
       (mod.installedVpks?.length ? "enable" : "install");
     const attempt = start("mod_install", {
       mod_id: mod.remoteId,
-      entry_point:
-        options.analyticsEntryPoint ??
-        getModEntryPoint(mod.remoteId, "library"),
+      entry_point: options.analyticsEntryPoint ?? "library",
       operation_kind: operationKind,
-      content_type: mod.isMap ? "map" : mod.isAudio ? "sound" : "mod",
+      content_type: modContentType(mod),
     });
     return {
       ...options,

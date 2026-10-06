@@ -1051,6 +1051,7 @@
     "next": "Next"
   },
   "downloads": {
+    "alreadyQueued": "A download for this mod is already queued. Wait for it to finish or cancel it first.",
     "downloading": "Downloading {{count}} mod",
     "downloading_plural": "Downloading {{count}} mods",
     "percentage": "{{percentage}}%",

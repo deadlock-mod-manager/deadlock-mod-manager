@@ -1,4 +1,4 @@
-import { analyticsClient } from "@/lib/analytics";
+import { analytics } from "@/lib/analytics";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { relaunch } from "@tauri-apps/plugin-process";
 import {
@@ -78,7 +78,7 @@ export const useCheckForUpdates = () => {
         throw new Error("No update available");
       }
 
-      const attempt = analyticsClient.start("app_update", {
+      const attempt = analytics.start("app_update", {
         target_version: native.version,
         entry_point: "update_button",
       });

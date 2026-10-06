@@ -1,4 +1,4 @@
-import { analyticsClient } from "@/lib/analytics";
+import { analytics } from "@/lib/analytics";
 import { failureOutcome } from "@/lib/analytics/client";
 import { isTauriError } from "@/types/tauri";
 import { toast } from "@deadlock-mods/ui/components/sonner";
@@ -171,7 +171,7 @@ export const useBatchUpdate = () => {
       .info("Starting batch mod update");
 
     const stopListening = await listenForUpdateProgress();
-    const attempt = analyticsClient.start("mod_update", {
+    const attempt = analytics.start("mod_update", {
       mod_count: updatableMods.length,
     });
 
