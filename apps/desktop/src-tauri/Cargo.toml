@@ -18,6 +18,12 @@ default = ["tauri-wry"]
 tauri-wry = ["tauri/wry", "dep:tauri-plugin-mcp-bridge"]
 e2e-harness = ["dep:tauri-plugin-wdio", "dep:tauri-plugin-wdio-webdriver"]
 
+# `cef` is injected into [features] by scripts/cef-patch.ts for CEF builds only.
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = [
+  'cfg(feature, values("cef"))',
+] }
+
 [build-dependencies]
 tauri-build = { version = "2.6.2", features = [] }
 

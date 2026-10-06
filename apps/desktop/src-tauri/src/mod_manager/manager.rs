@@ -37,11 +37,6 @@ pub struct ModManager {
   app_handle: Option<AppHandle>,
 }
 
-pub struct RemovedModVpks {
-  pub count: usize,
-  pub install_order: Option<u32>,
-}
-
 pub struct VariantChangeResult {
   pub installed_vpks: Vec<String>,
   pub original_vpk_names: Vec<String>,
@@ -1151,7 +1146,7 @@ mod tests {
       .remove_mod_vpks("target", &["pak01_dir.vpk".into()], None)
       .unwrap();
 
-    assert_eq!(result.count, 1);
+    assert_eq!(result, 1);
     assert!(!base.shard_dir(shard_two).join("pak01_dir.vpk").exists());
     assert_eq!(fs::read(base.join("pak01_dir.vpk")).unwrap(), b"other");
     let after = ProfileVpkManifest::load(&base).unwrap();
@@ -1188,7 +1183,7 @@ mod tests {
     let mut manager = test_manager(game.path());
     let result = manager.remove_mod_vpks("target", &[], None).unwrap();
 
-    assert_eq!(result.count, 1);
+    assert_eq!(result, 1);
     assert!(!base.shard_dir(shard_two).join("pak01_dir.vpk").exists());
     assert_eq!(fs::read(base.join("pak01_dir.vpk")).unwrap(), b"other");
   }
@@ -1222,7 +1217,7 @@ mod tests {
       )
       .unwrap();
 
-    assert_eq!(result.count, 1);
+    assert_eq!(result, 1);
     assert_eq!(fs::read(base.join("pak01_dir.vpk")).unwrap(), b"other");
     assert!(!base.join("pak02_dir.vpk").exists());
     let after = ProfileVpkManifest::load(&base).unwrap();

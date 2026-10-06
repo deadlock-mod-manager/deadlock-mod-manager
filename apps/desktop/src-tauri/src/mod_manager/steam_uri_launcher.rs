@@ -9,11 +9,14 @@ use tokio::task::JoinHandle;
 
 use crate::errors::Error;
 
+#[cfg(target_os = "linux")]
 const PORTAL_TIMEOUT: Duration = Duration::from_secs(15);
 const CAPTURED_STDERR_LINES: usize = 20;
 
 enum CompletionPolicy {
   Observe,
+  // Only constructed by the Linux portal path and tests.
+  #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
   Timeout(Duration),
 }
 
@@ -38,6 +41,7 @@ impl SteamUriLaunchRequest {
     }
   }
 
+  #[cfg(target_os = "linux")]
   pub(crate) fn portal(program: PathBuf, uri: String) -> Self {
     Self {
       program,
@@ -98,12 +102,12 @@ impl SteamUriLaunchRequest {
     })
   }
 
-  #[cfg(test)]
+  #[cfg(all(test, target_os = "linux"))]
   pub(crate) fn program(&self) -> &Path {
     &self.program
   }
 
-  #[cfg(test)]
+  #[cfg(all(test, target_os = "linux"))]
   pub(crate) fn uses_portal_timeout(&self) -> bool {
     matches!(self.completion, CompletionPolicy::Timeout(_))
   }
