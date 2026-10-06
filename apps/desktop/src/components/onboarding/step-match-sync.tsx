@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useMatchSync } from "@/hooks/use-match-sync";
 import { useMatchSyncToggle } from "@/hooks/use-match-sync-toggle";
+import { usePersistedStore } from "@/lib/store";
 
 type MatchSyncStepProps = {
   onComplete: () => void;
@@ -12,6 +13,9 @@ type MatchSyncStepProps = {
 export const OnboardingStepMatchSync = ({ onComplete }: MatchSyncStepProps) => {
   const { t } = useTranslation();
   const { status, setConsent, setEnabled } = useMatchSync();
+  const setHasSeenMatchSyncNotice = usePersistedStore(
+    (state) => state.setHasSeenMatchSyncNotice,
+  );
   const handleEnableChange = useMatchSyncToggle({
     status,
     setConsent,
@@ -20,7 +24,9 @@ export const OnboardingStepMatchSync = ({ onComplete }: MatchSyncStepProps) => {
 
   useEffect(() => {
     onComplete();
-  }, [onComplete]);
+    // New users see the default here, so they don't also get the existing-user notice.
+    setHasSeenMatchSyncNotice(true);
+  }, [onComplete, setHasSeenMatchSyncNotice]);
 
   return (
     <div className='space-y-5'>

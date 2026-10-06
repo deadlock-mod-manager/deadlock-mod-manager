@@ -12,6 +12,7 @@ import { GameGuardRenderer } from "./components/game-guard-renderer";
 import { FoundryProvider } from "./components/foundry/foundry-context";
 import { GamePresenceRenderer } from "./components/game-presence-renderer";
 import { LiveMatchRenderer } from "./components/live-match-renderer";
+import { MatchSyncNoticeDialog } from "./components/match-sync/match-sync-notice-dialog";
 import { MatchSyncRenderer } from "./components/match-sync-renderer";
 import GlobalPluginRenderer from "./components/global-plugin-renderer";
 import { UpdateDialog } from "./components/layout/update-dialog";
@@ -156,6 +157,7 @@ const App = ({ runtime, storage }: AppProps) => {
                       <>
                         <MatchSyncRenderer />
                         <LiveMatchRenderer />
+                        <MatchSyncNoticeDialog />
                       </>
                     )}
                     <ForgeInstallRenderer />
