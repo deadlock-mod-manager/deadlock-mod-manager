@@ -72,19 +72,40 @@ export const snapshotFor = (
   files: [
     { shard: fileShard, filename: "pak01_dir.vpk", locator: "pak01_dir.vpk" },
   ],
+  missing: [],
+});
+
+/** The default snapshot after the user deleted some or all of mod 42's files. */
+export const snapshotMissing = (
+  missingVpks: string[],
+  orphaned: boolean,
+): ProfileVpkSnapshot => ({
+  ...snapshotFor(),
+  files: [],
+  missing: [{ modId: "42", missingVpks, orphaned }],
 });
 
 export const profileTestBackend: {
   readSnapshot: (folder: string | null) => Promise<ProfileVpkSnapshot>;
   readMetadata: (id: string) => Promise<ModDto>;
+  forgetOrphans: (folder: string | null, modIds: string[]) => Promise<string[]>;
 } = {
   readSnapshot: async () => snapshotFor(),
   readMetadata: async (id) => modFor(id),
+  forgetOrphans: async (_folder, modIds) => modIds,
 };
 mock.module("@tauri-apps/api/core", () => ({
-  invoke: async (command: string, args?: { profileFolder?: string | null }) => {
+  invoke: async (
+    command: string,
+    args?: { profileFolder?: string | null; modIds?: string[] },
+  ) => {
     if (command === "get_profile_vpk_snapshot")
       return profileTestBackend.readSnapshot(args?.profileFolder ?? null);
+    if (command === "forget_orphaned_mods")
+      return profileTestBackend.forgetOrphans(
+        args?.profileFolder ?? null,
+        args?.modIds ?? [],
+      );
     return undefined;
   },
 }));

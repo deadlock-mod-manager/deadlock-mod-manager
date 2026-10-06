@@ -13,6 +13,7 @@ pub mod game_config_manager;
 pub mod game_process_manager;
 mod hero_settings;
 pub mod manager;
+pub mod missing_vpks;
 pub mod mod_repository;
 pub mod shard;
 pub mod shard_report;

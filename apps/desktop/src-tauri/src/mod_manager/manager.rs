@@ -7,6 +7,7 @@ use crate::mod_manager::{
   filesystem_helper::FileSystemHelper,
   game_config_manager::GameConfigManager,
   game_process_manager::GameProcessManager,
+  missing_vpks::missing_mod_files,
   mod_repository::{Mod, ModRepository},
   shard::{self, ProfileBase, ShardIndex, ShardLocator},
   steam_manager::SteamManager,
@@ -1308,5 +1309,36 @@ mod tests {
     assert_eq!(replaced.name, "Target");
     assert!(replaced.is_map);
     assert!(replaced.file_tree.is_some());
+  }
+  #[test]
+  fn forget_orphaned_mods_drops_only_mods_without_any_file() {
+    let game = game_dir();
+    let addons = game.path().join("game/citadel/addons");
+    fs::create_dir_all(&addons).unwrap();
+    write_vpk(&addons, "pak02_dir.vpk");
+    let base = ProfileBase::new(addons).unwrap();
+    let mut manifest = ProfileVpkManifest::default();
+    for (mod_id, vpk) in [("gone", "pak01_dir.vpk"), ("present", "pak02_dir.vpk")] {
+      manifest.mark_enabled(
+        mod_id,
+        vec![vpk.into()],
+        vec![format!("{mod_id}.vpk")],
+        Some(0),
+        ShardIndex::FIRST,
+      );
+    }
+    manifest.save(&base).unwrap();
+    let bytes_before = fs::read(base.join("pak02_dir.vpk")).unwrap();
+
+    let mut manager = test_manager(game.path());
+    let forgotten = manager
+      .forget_orphaned_mods(&["gone".into(), "present".into(), "unknown".into()], None)
+      .unwrap();
+
+    assert_eq!(forgotten, vec!["gone".to_string()]);
+    let saved = ProfileVpkManifest::load(&base).unwrap();
+    assert!(!saved.mods.contains_key("gone"));
+    assert!(saved.mods.contains_key("present"));
+    assert_eq!(fs::read(base.join("pak02_dir.vpk")).unwrap(), bytes_before);
   }
 }

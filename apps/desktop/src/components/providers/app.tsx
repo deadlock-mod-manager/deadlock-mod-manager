@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { createContext, useContext, useEffect, useMemo } from "react";
 import logger from "@/lib/logger";
+import { notifyRemovedMods } from "@/lib/mods/missing-vpks";
 import { usePersistedStore } from "@/lib/store";
 
 type AppProviderProps = {
@@ -100,6 +101,8 @@ export const AppProvider = ({ children, ...props }: AppProviderProps) => {
       .then(migrateSubmissionIdentities)
       .then(cleanupStaleServerGameinfo)
       .then(() => usePersistedStore.getState().restoreModsFromManifest())
+      .then(notifyRemovedMods)
+      .then(() => invoke("watch_addons_vpks"))
       .then(() => {
         const state = usePersistedStore.getState();
         return state.syncProfileEnabledMods(state.activeProfileId);

@@ -4,6 +4,7 @@
   windows_subsystem = "windows"
 )]
 
+mod addons_watcher;
 pub mod app_runtime;
 pub mod cli;
 mod commands;
@@ -366,6 +367,8 @@ pub fn run() {
       commands::conflicts::get_profile_conflicts,
       commands::conflicts::update_conflict_ignores,
       commands::profile_snapshot::get_profile_vpk_snapshot,
+      commands::profile_snapshot::forget_orphaned_mods,
+      commands::profile_snapshot::watch_addons_vpks,
       commands::profiles::hydrate_mods_from_manifest,
       commands::shards::get_shard_diagnostics,
       commands::shards::resync_profile_shards,
