@@ -135,9 +135,6 @@ struct ActiveDownload {
 
 #[derive(Clone, Debug)]
 pub struct PreparedDownload {
-  pub operation_id: u64,
-  pub mod_id: String,
-  pub profile_folder: Option<String>,
   pub vpk_paths: Vec<PathBuf>,
 }
 
@@ -452,12 +449,7 @@ impl DownloadManager {
       }
     };
 
-    Ok(PreparedDownload {
-      operation_id,
-      mod_id,
-      profile_folder: task.profile_folder,
-      vpk_paths,
-    })
+    Ok(PreparedDownload { vpk_paths })
   }
 
   async fn prepare_downloaded_vpks(

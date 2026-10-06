@@ -346,13 +346,12 @@ impl ModManager {
     mod_id: &str,
     fallback_vpks: &[String],
     profile_folder: Option<String>,
-  ) -> Result<RemovedModVpks, Error> {
+  ) -> Result<usize, Error> {
     Self::ensure_safe_mod_id(mod_id)?;
 
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
     let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
     let manifest_entry = manifest.mods.get(mod_id).cloned();
-    let install_order = manifest_entry.as_ref().and_then(|entry| entry.order);
     let sources = if let Some(entry) = &manifest_entry {
       entry
         .file_paths(&addons_path)
@@ -365,10 +364,7 @@ impl ModManager {
 
     if sources.is_empty() && manifest_entry.is_none() {
       self.mod_repository.remove_mod(mod_id);
-      return Ok(RemovedModVpks {
-        count: 0,
-        install_order,
-      });
+      return Ok(0);
     }
 
     let staging_name = format!("{}{mod_id}", shard::UPDATE_STAGING_PREFIX);
@@ -391,10 +387,7 @@ impl ModManager {
     self.mod_repository.remove_mod(mod_id);
     VpkManager::prune_empty_shard_dirs(&addons_path);
 
-    Ok(RemovedModVpks {
-      count: removed_count,
-      install_order,
-    })
+    Ok(removed_count)
   }
 
   /// Discover VPKs for a mod that has no manifest entry, without touching
