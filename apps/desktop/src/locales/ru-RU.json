@@ -277,10 +277,14 @@
       "priorityHint": "",
       "priorityCta": ""
     },
+    "settings": {
+      "matchSync": ""
+    },
     "matchSyncHint": {
       "description": "",
       "missing_one": "",
-      "missing_other": ""
+      "missing_other": "",
+      "enabled": ""
     },
     "refresh": "",
     "refreshHint": "",
