@@ -1,4 +1,8 @@
+use std::path::Path;
+
+use crate::app_runtime::AppHandle;
 use crate::errors::Error;
+use crate::mod_manager::missing_vpks::{MissingModFiles, missing_mod_files};
 use crate::mod_manager::shard::{ProfileBase, ShardIndex, ShardLocator};
 use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use serde::Serialize;
@@ -10,6 +14,8 @@ use super::state::MANAGER;
 pub struct ProfileVpkSnapshot {
   manifest: ProfileVpkManifest,
   files: Vec<SnapshotVpkFile>,
+  /// Manifest entries whose VPKs the user deleted outside DMM.
+  missing: Vec<MissingModFiles>,
 }
 
 #[derive(Debug, Serialize)]
@@ -21,7 +27,7 @@ struct SnapshotVpkFile {
 }
 
 impl ProfileVpkSnapshot {
-  fn read(base: &ProfileBase) -> Result<Self, Error> {
+  fn read(base: &ProfileBase, mods_store: Option<&Path>) -> Result<Self, Error> {
     let manifest = ProfileVpkManifest::load(base)?;
     let mut files = Vec::new();
     for (shard, dir) in base.existing_shards() {
@@ -41,7 +47,16 @@ impl ProfileVpkSnapshot {
       }
     }
     files.sort_by(|a, b| (a.shard, &a.filename).cmp(&(b.shard, &b.filename)));
-    Ok(Self { manifest, files })
+    let missing = manifest
+      .mods
+      .iter()
+      .filter_map(|(mod_id, entry)| missing_mod_files(mod_id, entry, base, mods_store))
+      .collect();
+    Ok(Self {
+      manifest,
+      files,
+      missing,
+    })
   }
 }
 
@@ -56,7 +71,40 @@ pub async fn get_profile_vpk_snapshot(
     .map_err(|_| Error::BackgroundTaskFailed("Mod manager lock poisoned".to_string()))?;
   manager.migrate_profile_to_shards(profile_folder.clone())?;
   let base = manager.get_addons_path(profile_folder.as_deref())?;
-  ProfileVpkSnapshot::read(&base)
+  let mods_store = manager.get_mods_store_path().ok();
+  ProfileVpkSnapshot::read(&base, mods_store.as_deref())
+}
+
+/// Forget mods whose every VPK was deleted outside DMM. Only mods that are
+/// still orphaned under the manager lock are dropped; their ids are returned.
+#[tauri::command]
+pub async fn forget_orphaned_mods(
+  profile_folder: Option<String>,
+  mod_ids: Vec<String>,
+) -> Result<Vec<String>, Error> {
+  let mut manager = MANAGER
+    .lock()
+    .map_err(|_| Error::BackgroundTaskFailed("Mod manager lock poisoned".to_string()))?;
+  manager.forget_orphaned_mods(&mod_ids, profile_folder)
+}
+
+/// Start reporting VPK changes under the game's addons roots as
+/// `addons-vpks-changed` events. Safe to call again, e.g. after the game path
+/// changes.
+#[tauri::command]
+pub async fn watch_addons_vpks(app_handle: AppHandle) -> Result<(), Error> {
+  let citadel = {
+    let manager = MANAGER
+      .lock()
+      .map_err(|_| Error::BackgroundTaskFailed("Mod manager lock poisoned".to_string()))?;
+    let addons = manager.get_addons_path(None)?;
+    addons
+      .parent()
+      .map(Path::to_path_buf)
+      .ok_or(Error::GamePathNotSet)?
+  };
+  crate::addons_watcher::watch(app_handle, citadel)
+    .map_err(|error| Error::BackgroundTaskFailed(format!("Failed to watch addons: {error}")))
 }
 
 #[cfg(test)]
@@ -82,7 +130,7 @@ mod tests {
     );
     manifest.save(&base).unwrap();
 
-    let snapshot = ProfileVpkSnapshot::read(&base).unwrap();
+    let snapshot = ProfileVpkSnapshot::read(&base, None).unwrap();
     assert_eq!(snapshot.manifest, manifest);
     assert_eq!(snapshot.files.len(), 2);
     assert_eq!(snapshot.files[0].locator, "pak01_dir.vpk");

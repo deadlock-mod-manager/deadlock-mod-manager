@@ -193,6 +193,26 @@ Artifacts include `filesystem-baseline.json`, per-step `filesystem-*.json`, `fil
 
 These cases cover reorder interruption at placement and manifest commit, rather than every possible write boundary. Interrupting a backup restore during its copy phase and simulating power-loss durability remain additional coverage opportunities.
 
+## Missing VPK scenarios
+
+A user can delete VPKs from the addons folder behind DMM's back. A mod whose every file is gone has nothing left to enable, so it has to leave the library and its manifest entry, or startup would restore it again. A mod that lost only some files, or that DMM can restore, stays in the library flagged as broken: its `missingVpks` lists the original names of the lost files, and My Mods shows a `missing-files-warning` for it. Both cases seed the same mixed Alpha library next to Beta, which is not the active profile:
+
+| Mod | Seeded as | Deleted | Expected |
+| --- | --- | --- | --- |
+| `local-alpha-enabled` | Enabled, one VPK | Its VPK | Removed |
+| `local-alpha-parked` | Disabled, one parked `{id}_` VPK | Its parked VPK | Removed |
+| `local-alpha-intact` | Enabled, one VPK | Nothing | Installed and enabled, unchanged |
+| `local-alpha-pair` | Enabled, two VPKs | The second VPK | Kept, flagged broken with `missingVpks: ["local-alpha-pair-second.vpk"]` |
+| `local-alpha-stored` | Enabled local import, source kept in the mods store | Its VPK | Kept, flagged broken with `missingVpks: ["local-alpha-stored.vpk"]`; reinstalling restores it from the store |
+| `local-beta-enabled` | Enabled in Beta | Its VPK (offline case only) | Removed from Beta |
+
+| Case | Behavior checked |
+| --- | --- |
+| `missing-vpks-offline` | The files are deleted before DMM starts. Startup alone removes the orphaned mods from both profiles, and a restart keeps them gone |
+| `missing-vpks-live` | DMM stays open in the foreground. A reorder through the real Rust command renames every enabled VPK without removing anything, then each deletion is detected without a restart or focus change, and the partial deletions are flagged rather than removed |
+
+The oracle checks both copies of the active library and their broken flags, Beta's library, `enabledMods`, both manifests, and that the remaining payloads are exactly the seeded ones minus the deleted ones. Removing a mod from the library must never delete a file itself, and the mods store must stay byte-identical. My Mods must list exactly the kept mods, with one warning per broken mod. Artifacts are `missing-vpks-*.json`.
+
 ## Qualification status
 
 All seven M5 cases passed repeated retry-free Windows/Wry worlds, with a fresh process for recovery and independent disk/store evidence. The final backup replace and merge cases each passed two consecutive worlds; the 100-mod shard case passed three consecutive worlds after fixing normal shutdown and preindexing the synthetic fixtures. Successful M5 worlds took approximately 20–26 seconds and had no unmatched fixture requests. These cases exposed two production defects that are fixed here: completed rollbacks left their transaction journal behind, and reorder bypassed the journal-aware manifest commit method. The Rust mod-manager suite and the harness suite both pass, including checks that reject wrong payloads, false shard ownership, unexpected files, and foreign/live crash markers.

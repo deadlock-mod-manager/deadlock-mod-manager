@@ -100,9 +100,13 @@ const sameVpkList = (
 export const needsInstallStateRepair = (
   mod: LocalMod,
   installedVpks: readonly string[],
+  missingVpks: readonly string[] = [],
 ): boolean => {
   if (ACTIVE_OPERATION_STATUSES.has(mod.status)) {
     return false;
+  }
+  if (!sameVpkList(mod.missingVpks ?? [], missingVpks)) {
+    return true;
   }
   if (installedVpks.length > 0) {
     return (
@@ -114,3 +118,16 @@ export const needsInstallStateRepair = (
     mod.status === ModStatus.Installed || (mod.installedVpks?.length ?? 0) > 0
   );
 };
+
+/** Statuses of a mod at rest; any other one belongs to a running operation. */
+const SETTLED_STATUSES: ReadonlySet<ModStatus> = new Set([
+  ModStatus.Downloaded,
+  ModStatus.Installed,
+]);
+
+/**
+ * Whether a mod whose files were all deleted may leave the library. A mod in
+ * the middle of a download, install, or removal is still being written.
+ */
+export const canForgetMod = (mod: LocalMod): boolean =>
+  SETTLED_STATUSES.has(mod.status);

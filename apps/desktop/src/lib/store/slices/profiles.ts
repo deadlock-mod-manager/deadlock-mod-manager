@@ -23,6 +23,7 @@ import {
 } from "@/types/profiles";
 import {
   ENABLED_VPK_PATTERN,
+  canForgetMod,
   enabledVpkLocators,
   installedVpksFromManifest,
   needsInstallStateRepair,
@@ -76,7 +77,11 @@ export interface ProfilesState {
   syncProfilesWithFilesystem: () => Promise<void>;
   bumpProfileSyncRevision: (profileId: ProfileId) => number;
   syncProfileEnabledMods: (profileId: ProfileId) => Promise<void>;
-  restoreModsFromManifest: () => Promise<void>;
+  /**
+   * Reconcile every profile with its manifest and the files on disk. Resolves
+   * to the names of mods removed because the user deleted all their VPKs.
+   */
+  restoreModsFromManifest: () => Promise<string[]>;
   saveCurrentModsToProfile: () => void;
   loadModsFromProfile: (profileId: ProfileId) => void;
 }
@@ -202,12 +207,15 @@ type ManifestRepair = {
   remoteId: string;
   status: ModStatus;
   installedVpks: string[];
+  missingVpks: string[];
   installOrder?: number;
 };
 
 type ManifestReconciliation = {
   repaired: ManifestRepair[];
   restored: LocalMod[];
+  /** Mods whose every VPK was deleted; already dropped from the manifest. */
+  forgotten: string[];
 };
 
 /**
@@ -218,6 +226,10 @@ type ManifestReconciliation = {
  * Adding back a mod the store never had needs catalog metadata, so it stays
  * opt-in for the profile the user is actually in. Repairing a tracked mod's
  * install state needs nothing but the manifest and runs for every profile.
+ *
+ * A mod whose every VPK the user deleted is dropped from the manifest here,
+ * so it cannot be restored later; one that lost only some files, or that the
+ * mods store can restore, is kept and flagged with what it lost.
  */
 const planManifestReconciliation = async (
   profileId: ProfileId,
@@ -246,10 +258,26 @@ const planManifestReconciliation = async (
     profile.mods.map((mod) => [mod.remoteId, mod]),
   );
   const locators = enabledVpkLocators(snapshot.files);
+  const missingById = new Map(
+    snapshot.missing.map((missing) => [missing.modId, missing]),
+  );
+  const orphanIds = manifestEntries
+    .map(([modId]) => modId)
+    .filter((modId) => {
+      const tracked = trackedById.get(modId);
+      return (
+        missingById.get(modId)?.orphaned === true &&
+        (!tracked || canForgetMod(tracked))
+      );
+    });
+  const orphans = new Set(orphanIds);
 
   const missingEntries: [string, VpkManifestEntry][] = [];
   const repaired: ManifestRepair[] = [];
   for (const [modId, entry] of manifestEntries) {
+    if (orphans.has(modId)) {
+      continue;
+    }
     const tracked = trackedById.get(modId);
     if (!tracked || tracked.metadataPending) {
       if (restoreMissing) {
@@ -258,7 +286,8 @@ const planManifestReconciliation = async (
       continue;
     }
     const installedVpks = installedVpksFromManifest(entry, locators);
-    if (!needsInstallStateRepair(tracked, installedVpks)) {
+    const missingVpks = missingById.get(modId)?.missingVpks ?? [];
+    if (!needsInstallStateRepair(tracked, installedVpks, missingVpks)) {
       continue;
     }
     repaired.push({
@@ -266,6 +295,7 @@ const planManifestReconciliation = async (
       status:
         installedVpks.length > 0 ? ModStatus.Installed : ModStatus.Downloaded,
       installedVpks,
+      missingVpks,
       // Only an order the manifest itself states. Reordering does not bump the
       // sync revision, so a value read before the snapshot could undo one.
       ...(entry.order === null || entry.order === undefined
@@ -273,7 +303,11 @@ const planManifestReconciliation = async (
         : { installOrder: entry.order }),
     });
   }
-  if (missingEntries.length === 0 && repaired.length === 0) {
+  if (
+    missingEntries.length === 0 &&
+    repaired.length === 0 &&
+    orphanIds.length === 0
+  ) {
     return null;
   }
 
@@ -283,12 +317,29 @@ const planManifestReconciliation = async (
       manifestModCount: manifestEntries.length,
       missingCount: missingEntries.length,
       staleCount: repaired.length,
+      orphanCount: orphanIds.length,
     })
     .info("Reconciling mods from manifest");
+
+  let forgotten: string[] = [];
+  if (orphanIds.length > 0) {
+    try {
+      forgotten = await invoke<string[]>("forget_orphaned_mods", {
+        profileFolder: profile.folderName,
+        modIds: orphanIds,
+      });
+    } catch (error) {
+      logger
+        .withMetadata({ profileId, orphanIds })
+        .withError(error)
+        .warn("Failed to forget mods whose VPKs were deleted");
+    }
+  }
 
   const restored: LocalMod[] = [];
   for (const [modId, entry] of missingEntries) {
     const installedVpks = installedVpksFromManifest(entry, locators);
+    const missingVpks = missingById.get(modId)?.missingVpks ?? [];
     let restoredMod: LocalMod;
     try {
       const modDetails = await getMod(modId);
@@ -299,6 +350,7 @@ const planManifestReconciliation = async (
         status:
           installedVpks.length > 0 ? ModStatus.Installed : ModStatus.Downloaded,
         installedVpks,
+        missingVpks,
         installOrder: entry.order ?? profile.mods.length + restored.length,
         downloadedAt: new Date(),
       };
@@ -307,14 +359,147 @@ const planManifestReconciliation = async (
         .withMetadata({ modId })
         .withError(error)
         .warn("Using placeholder for unavailable catalog metadata");
-      restoredMod = placeholderModFromManifest(modId, entry, installedVpks);
+      restoredMod = {
+        ...placeholderModFromManifest(modId, entry, installedVpks),
+        missingVpks,
+      };
     }
 
     restored.push(restoredMod);
   }
 
-  return { repaired, restored };
+  return { repaired, restored, forgotten };
 };
+
+type SliceSet = Parameters<
+  StateCreator<ProfilesSliceStore, [], [], ProfilesState>
+>[0];
+type SliceGet = Parameters<
+  StateCreator<ProfilesSliceStore, [], [], ProfilesState>
+>[1];
+
+/**
+ * Reconcile every profile with its manifest and the files on disk. Resolves to
+ * the names of mods removed because the user deleted all their VPKs.
+ */
+const reconcileAllProfiles = async (
+  set: SliceSet,
+  get: SliceGet,
+): Promise<string[]> => {
+  const { activeProfileId, profiles } = get();
+  const otherProfileIds = (Object.keys(profiles) as ProfileId[]).filter(
+    (profileId) => profileId !== activeProfileId,
+  );
+
+  const removedNames: string[] = [];
+  for (const profileId of [activeProfileId, ...otherProfileIds]) {
+    const profile = profiles[profileId];
+    if (!profile) {
+      continue;
+    }
+
+    const revision = get().bumpProfileSyncRevision(profileId);
+    const plan = await planManifestReconciliation(
+      profileId,
+      profile,
+      profileId === activeProfileId,
+    );
+    if (!plan) {
+      continue;
+    }
+
+    set((state) => {
+      const current = state.profiles[profileId];
+      if (!current || current.folderName !== profile.folderName) {
+        return state;
+      }
+      // The manifest already forgot these mods, so they leave the library
+      // even when a newer sync superseded the rest of this plan; otherwise
+      // nothing would ever remove them.
+      const forgotten = new Set(
+        plan.forgotten.filter((remoteId) => {
+          const mod = current.mods.find((item) => item.remoteId === remoteId);
+          return !mod || canForgetMod(mod);
+        }),
+      );
+      const fresh = state.profileSyncRevisions[profileId] === revision;
+      if (!fresh && forgotten.size === 0) {
+        return state;
+      }
+      const enabledMods = { ...current.enabledMods };
+      for (const remoteId of forgotten) {
+        delete enabledMods[remoteId];
+      }
+      const next = applyToModsInProfile(state, profileId, (mods) => {
+        const reconciled = mods.filter((mod) => {
+          if (!forgotten.has(mod.remoteId)) return true;
+          removedNames.push(mod.name);
+          return false;
+        });
+        if (!fresh) return reconciled;
+        for (const repaired of plan.repaired) {
+          const index = reconciled.findIndex(
+            (mod) => mod.remoteId === repaired.remoteId,
+          );
+          if (index < 0) continue;
+          reconciled[index] = { ...reconciled[index], ...repaired };
+          if (repaired.status === ModStatus.Installed) {
+            enabledMods[repaired.remoteId] = {
+              remoteId: repaired.remoteId,
+              enabled: true,
+              lastModified: new Date(),
+            };
+          } else delete enabledMods[repaired.remoteId];
+        }
+        for (const restored of plan.restored) {
+          const index = reconciled.findIndex(
+            (mod) => mod.remoteId === restored.remoteId,
+          );
+          if (index >= 0 && !reconciled[index].metadataPending) continue;
+          if (index >= 0)
+            reconciled[index] = { ...reconciled[index], ...restored };
+          else reconciled.push(restored);
+          if (restored.status === ModStatus.Installed) {
+            enabledMods[restored.remoteId] = {
+              remoteId: restored.remoteId,
+              enabled: true,
+              lastModified: new Date(),
+            };
+          } else delete enabledMods[restored.remoteId];
+        }
+        return reconciled;
+      });
+      const nextProfile = next.profiles[profileId];
+      if (!nextProfile) {
+        return next;
+      }
+      return {
+        ...next,
+        profiles: {
+          ...next.profiles,
+          [profileId]: {
+            ...nextProfile,
+            enabledMods,
+          },
+        },
+      };
+    });
+
+    logger
+      .withMetadata({
+        profileId,
+        restoredCount: plan.restored.length,
+        repairedCount: plan.repaired.length,
+        forgottenCount: plan.forgotten.length,
+      })
+      .info("Manifest reconciliation complete");
+  }
+  return removedNames;
+};
+
+// Reconciliations run one at a time: a watcher burst during startup must not
+// read a manifest another run is about to change.
+let reconciliationQueue: Promise<unknown> = Promise.resolve();
 
 export const createProfilesSlice: StateCreator<
   ProfilesSliceStore,
@@ -1152,96 +1337,10 @@ export const createProfilesSlice: StateCreator<
     }
   },
 
-  restoreModsFromManifest: async () => {
-    const { activeProfileId, profiles } = get();
-    const otherProfileIds = (Object.keys(profiles) as ProfileId[]).filter(
-      (profileId) => profileId !== activeProfileId,
-    );
-
-    for (const profileId of [activeProfileId, ...otherProfileIds]) {
-      const profile = profiles[profileId];
-      if (!profile) {
-        continue;
-      }
-
-      const revision = get().bumpProfileSyncRevision(profileId);
-      const plan = await planManifestReconciliation(
-        profileId,
-        profile,
-        profileId === activeProfileId,
-      );
-      if (!plan) {
-        continue;
-      }
-
-      set((state) => {
-        const current = state.profiles[profileId];
-        if (
-          !current ||
-          current.folderName !== profile.folderName ||
-          state.profileSyncRevisions[profileId] !== revision
-        ) {
-          return state;
-        }
-        const enabledMods = { ...current.enabledMods };
-        const next = applyToModsInProfile(state, profileId, (mods) => {
-          const reconciled = [...mods];
-          for (const repaired of plan.repaired) {
-            const index = reconciled.findIndex(
-              (mod) => mod.remoteId === repaired.remoteId,
-            );
-            if (index < 0) continue;
-            reconciled[index] = { ...reconciled[index], ...repaired };
-            if (repaired.status === ModStatus.Installed) {
-              enabledMods[repaired.remoteId] = {
-                remoteId: repaired.remoteId,
-                enabled: true,
-                lastModified: new Date(),
-              };
-            } else delete enabledMods[repaired.remoteId];
-          }
-          for (const restored of plan.restored) {
-            const index = reconciled.findIndex(
-              (mod) => mod.remoteId === restored.remoteId,
-            );
-            if (index >= 0 && !reconciled[index].metadataPending) continue;
-            if (index >= 0)
-              reconciled[index] = { ...reconciled[index], ...restored };
-            else reconciled.push(restored);
-            if (restored.status === ModStatus.Installed) {
-              enabledMods[restored.remoteId] = {
-                remoteId: restored.remoteId,
-                enabled: true,
-                lastModified: new Date(),
-              };
-            } else delete enabledMods[restored.remoteId];
-          }
-          return reconciled;
-        });
-        const nextProfile = next.profiles[profileId];
-        if (!nextProfile) {
-          return next;
-        }
-        return {
-          ...next,
-          profiles: {
-            ...next.profiles,
-            [profileId]: {
-              ...nextProfile,
-              enabledMods,
-            },
-          },
-        };
-      });
-
-      logger
-        .withMetadata({
-          profileId,
-          restoredCount: plan.restored.length,
-          repairedCount: plan.repaired.length,
-        })
-        .info("Manifest reconciliation complete");
-    }
+  restoreModsFromManifest: () => {
+    const run = reconciliationQueue.then(() => reconcileAllProfiles(set, get));
+    reconciliationQueue = run.catch(() => []);
+    return run;
   },
 
   syncProfilesWithFilesystem: async () => {

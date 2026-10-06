@@ -114,7 +114,6 @@
 ["exports","apps/bot/src/repositories/user.repository.ts",[["","findUserIdsByDiscordIds"]]]
 ["exports","apps/bot/src/services/nightly-testers-sync.ts",[["","parseUsername"]]]
 ["exports","apps/desktop/e2e/support/catalog-actions.ts",[["","chooseInstallFiles"]]]
-["exports","apps/desktop/e2e/support/observations.ts",[["","inventorySchema"]]]
 ["exports","apps/desktop/src/components/foundry/foundry-assembling.tsx",[["","createAssemblingFigure"]]]
 ["exports","apps/desktop/src/components/hsv-color-picker/color-model.ts",[["","hexToHsv"]]]
 ["exports","apps/desktop/src/components/hsv-color-picker/color-model.ts",[["","hsvToHex"]]]

@@ -69,6 +69,7 @@ import AudioPlayerPreview from "@/components/mod-management/audio-player-preview
 import { ModContextMenu } from "@/components/mod-management/mod-context-menu";
 import { ModOptionsButton } from "@/components/mod-management/mod-options-button";
 import { ModOptionsDialog } from "@/components/mod-management/mod-options-dialog";
+import { MissingFilesWarning } from "@/components/mod-management/missing-files-warning";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
 import SearchBar from "@/components/mod-browsing/search-bar";
 import { VpkScanAlert } from "@/components/mods/vpk-scan-alert";
@@ -314,6 +315,7 @@ const GridModCard = ({
               </Badge>
             )}
             {isModOutdated(mod) && <OutdatedModWarning variant='indicator' />}
+            <MissingFilesWarning missingVpks={mod.missingVpks} />
             {conflictStatus && (
               <ModConflictBadge
                 onClick={onShowConflicts}
@@ -470,6 +472,10 @@ const ListModCard = ({
                 {isModOutdated(mod) && (
                   <OutdatedModWarning className='text-xs' variant='indicator' />
                 )}
+                <MissingFilesWarning
+                  className='text-xs'
+                  missingVpks={mod.missingVpks}
+                />
                 {conflictStatus && (
                   <ModConflictBadge
                     className='text-xs'

@@ -390,6 +390,45 @@ impl ModManager {
     Ok(removed_count)
   }
 
+  /// Drop the manifest entries of mods whose every VPK the user deleted.
+  ///
+  /// Each mod is checked again here, under the manager lock, rather than
+  /// trusting the caller's earlier snapshot: a mod that regained a file or
+  /// became restorable in between keeps its entry. No file is touched.
+  /// Returns the mods that were forgotten.
+  pub fn forget_orphaned_mods(
+    &mut self,
+    mod_ids: &[String],
+    profile_folder: Option<String>,
+  ) -> Result<Vec<String>, Error> {
+    let addons_path = self.get_addons_path(profile_folder.as_deref())?;
+    let mods_store = self.get_mods_store_path().ok();
+    let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
+    let forgotten: Vec<String> = mod_ids
+      .iter()
+      .filter(|mod_id| {
+        manifest.mods.get(*mod_id).is_some_and(|entry| {
+          missing_mod_files(mod_id, entry, &addons_path, mods_store.as_deref())
+            .is_some_and(|missing| missing.orphaned)
+        })
+      })
+      .cloned()
+      .collect();
+    if forgotten.is_empty() {
+      return Ok(forgotten);
+    }
+
+    for mod_id in &forgotten {
+      manifest.remove_mod(mod_id);
+    }
+    manifest.save(&addons_path)?;
+    for mod_id in &forgotten {
+      self.mod_repository.remove_mod(mod_id);
+    }
+    log::info!("Forgot mods whose VPKs were deleted (profile: {profile_folder:?}): {forgotten:?}");
+    Ok(forgotten)
+  }
+
   /// Discover VPKs for a mod that has no manifest entry, without touching
   /// files another entry already claims. Bare fallback names resolve to shard 1,
   /// so this filter is what stops a stale `pak01_dir.vpk` from deleting a

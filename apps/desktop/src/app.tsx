@@ -31,6 +31,7 @@ import { useGameinfoAutoReset } from "./hooks/use-gameinfo-auto-reset";
 import { useDeepLink } from "./hooks/use-deep-link";
 import { useIngestToolInit } from "./hooks/use-ingest-tool-init";
 import { useLanguageListener } from "./hooks/use-language-listener";
+import { useMissingVpkDetection } from "./hooks/use-missing-vpk-detection";
 import { useDownloadsMigration } from "./hooks/use-downloads-migration";
 import { useHeroDetection } from "./hooks/use-hero-detection";
 import { useGameBananaCatalogSync } from "./hooks/use-gamebanana-catalog-sync";
@@ -61,6 +62,7 @@ const App = ({ runtime, storage }: AppProps) => {
   useDownloadsMigration();
   useCrosshairConfigReconciliation();
   useGameinfoAutoReset();
+  useMissingVpkDetection();
   useHeroDetection();
   useGameBananaCatalogSync();
   useIngestToolInit(integrations?.ingestion !== "disabled");

@@ -45,6 +45,9 @@ export interface LocalMod extends ModDto {
   usesCriticalPaths?: boolean;
   // Unix seconds of the update the user chose to skip.
   skippedUpdateAt?: number;
+  // Original names of VPKs the manifest claims but the user deleted. A mod
+  // with any is broken until it is reinstalled or removed.
+  missingVpks?: string[];
 }
 
 export interface DownloadableMod extends Omit<LocalMod, "status"> {

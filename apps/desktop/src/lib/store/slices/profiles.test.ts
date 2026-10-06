@@ -2,6 +2,7 @@ import {
   profileTestBackend,
   modFor,
   snapshotFor,
+  snapshotMissing,
 } from "./profiles.test-support";
 import { beforeEach, describe, expect, it } from "bun:test";
 import { create } from "zustand";
@@ -42,6 +43,120 @@ const deferred = <T>() => {
 beforeEach(() => {
   profileTestBackend.readSnapshot = async () => snapshotFor();
   profileTestBackend.readMetadata = async (id) => modFor(id);
+  profileTestBackend.forgetOrphans = async (_folder, modIds) => modIds;
+});
+
+const installedMod = (): LocalMod => ({
+  ...modFor("42"),
+  status: ModStatus.Installed,
+  installedVpks: ["pak01_dir.vpk"],
+});
+
+const trackInstalled = (store: ReturnType<typeof createTestStore>) => {
+  const mod = installedMod();
+  store.setState({
+    profiles: {
+      default: {
+        ...profileFor("default", [mod]),
+        enabledMods: {
+          "42": { remoteId: "42", enabled: true, lastModified: new Date(0) },
+        },
+      },
+    },
+    localMods: [mod],
+  });
+};
+
+describe("mods whose VPKs were deleted", () => {
+  it("removes a mod whose every VPK is gone and reports its name", async () => {
+    const store = createTestStore();
+    trackInstalled(store);
+    const forgotten: string[][] = [];
+    profileTestBackend.readSnapshot = async () =>
+      snapshotMissing(["original.vpk"], true);
+    profileTestBackend.forgetOrphans = async (_folder, modIds) => {
+      forgotten.push(modIds);
+      return modIds;
+    };
+    expect(await store.getState().restoreModsFromManifest()).toEqual([
+      "Mod 42",
+    ]);
+    expect(forgotten).toEqual([["42"]]);
+    expect(store.getState().localMods).toEqual([]);
+    expect(store.getState().profiles.default.mods).toEqual([]);
+    expect(store.getState().profiles.default.enabledMods).toEqual({});
+  });
+
+  it("keeps a mod the backend no longer considers orphaned", async () => {
+    const store = createTestStore();
+    trackInstalled(store);
+    profileTestBackend.readSnapshot = async () =>
+      snapshotMissing(["original.vpk"], true);
+    profileTestBackend.forgetOrphans = async () => [];
+    expect(await store.getState().restoreModsFromManifest()).toEqual([]);
+    expect(store.getState().localMods).toHaveLength(1);
+  });
+
+  it("does not restore an orphaned manifest entry the store never had", async () => {
+    const store = createTestStore();
+    profileTestBackend.readSnapshot = async () =>
+      snapshotMissing(["original.vpk"], true);
+    await store.getState().restoreModsFromManifest();
+    expect(store.getState().localMods).toEqual([]);
+  });
+
+  it("leaves an orphaned mod alone while it is being installed", async () => {
+    const store = createTestStore();
+    const installing = { ...modFor("42"), status: ModStatus.Installing };
+    store.setState({
+      profiles: { default: profileFor("default", [installing]) },
+      localMods: [installing],
+    });
+    profileTestBackend.readSnapshot = async () =>
+      snapshotMissing(["original.vpk"], true);
+    profileTestBackend.forgetOrphans = async () => {
+      throw new Error("A mod being installed must not be forgotten");
+    };
+    await store.getState().restoreModsFromManifest();
+    expect(store.getState().localMods).toEqual([installing]);
+  });
+
+  it("flags a mod that lost some files, and clears the flag once they return", async () => {
+    const store = createTestStore();
+    trackInstalled(store);
+    profileTestBackend.readSnapshot = async () =>
+      snapshotMissing(["original.vpk"], false);
+    await store.getState().restoreModsFromManifest();
+    expect(store.getState().localMods[0].missingVpks).toEqual(["original.vpk"]);
+    expect(store.getState().profiles.default.mods[0].missingVpks).toEqual([
+      "original.vpk",
+    ]);
+
+    profileTestBackend.readSnapshot = async () => snapshotFor();
+    await store.getState().restoreModsFromManifest();
+    expect(store.getState().localMods[0].missingVpks).toEqual([]);
+    expect(store.getState().localMods[0].status).toBe(ModStatus.Installed);
+  });
+
+  it("runs overlapping reconciliations one after another", async () => {
+    const store = createTestStore();
+    trackInstalled(store);
+    const first = deferred<ProfileVpkSnapshot>();
+    let reads = 0;
+    profileTestBackend.readSnapshot = () => {
+      reads += 1;
+      return reads === 1
+        ? first.promise
+        : Promise.resolve(snapshotMissing(["original.vpk"], true));
+    };
+    const earlier = store.getState().restoreModsFromManifest();
+    const later = store.getState().restoreModsFromManifest();
+    await Promise.resolve();
+    expect(reads).toBe(1);
+    first.resolve(snapshotFor());
+    await earlier;
+    expect(await later).toEqual(["Mod 42"]);
+  });
 });
 
 describe("profile snapshot reconciliation", () => {
