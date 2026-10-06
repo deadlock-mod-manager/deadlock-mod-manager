@@ -35,72 +35,52 @@ jobs:
       - name: Lint deadlock-modmanager-git
         run: namcap distribution/aur/deadlock-modmanager-git/PKGBUILD
 
-  build-source:
-    name: Build deadlock-modmanager
+  build:
+    name: Build ${{ matrix.pkg }}
     runs-on: ubuntu-latest
     container: archlinux:latest
     timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - pkg: deadlock-modmanager-bin
+          # libvips makes sharp attempt a source build during pnpm install;
+          # keep it installed so that regression is caught here.
+          - pkg: deadlock-modmanager
+            extra-packages: libvips
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      # libvips makes sharp try a source build during pnpm install; keep it
-      # installed so that regression is caught here.
-      - name: Install base-devel and libvips
-        run: pacman -Syu --noconfirm base-devel libvips
+      - name: Install build dependencies
+        run: pacman -Syu --noconfirm base-devel ${{ matrix.extra-packages }}
 
       - name: Create build user
         run: |
           useradd -m builder
           echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-          chown -R builder:builder distribution/aur/deadlock-modmanager
+          chown -R builder:builder distribution/aur/${{ matrix.pkg }}
 
       - name: Build package
-        working-directory: distribution/aur/deadlock-modmanager
-        run: su builder -c "makepkg -sf --noconfirm"
-
-      - name: Verify packaged binary
-        working-directory: distribution/aur/deadlock-modmanager
-        run: |
-          set -euo pipefail
-          pkg=$(find . -maxdepth 1 -name 'deadlock-modmanager-[0-9]*.pkg.tar.zst' | head -1)
-          if [ -z "$pkg" ]; then
-            echo "ERROR: No built package found!"
-            exit 1
-          fi
-          tar -tf "$pkg" | grep -qx 'usr/bin/deadlock-modmanager'
-
-  build-bin:
-    name: Build deadlock-modmanager-bin
-    runs-on: ubuntu-latest
-    container: archlinux:latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Install base-devel
-        run: pacman -Syu --noconfirm base-devel
-
-      - name: Create build user
-        run: |
-          useradd -m builder
-          echo "builder ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
-          chown -R builder:builder distribution/aur/deadlock-modmanager-bin
-
-      - name: Build package
-        working-directory: distribution/aur/deadlock-modmanager-bin
+        working-directory: distribution/aur/${{ matrix.pkg }}
         run: su builder -c "makepkg -sf --noconfirm"
 
       - name: Verify packaged file layout
-        working-directory: distribution/aur/deadlock-modmanager-bin
+        working-directory: distribution/aur/${{ matrix.pkg }}
         run: |
           set -euo pipefail
-          pkg=$(find . -maxdepth 1 -name 'deadlock-modmanager-bin-*.pkg.tar.zst' | head -1)
+          pkg=$(find . -maxdepth 1 -name '${{ matrix.pkg }}-[0-9]*.pkg.tar.zst' | head -1)
           if [ -z "$pkg" ]; then
             echo "ERROR: No built package found!"
             exit 1
           fi
           contents=$(tar -tf "$pkg")
+
+          if ! echo "$contents" | grep -x 'usr/bin/deadlock-modmanager' > /dev/null; then
+            echo "ERROR: usr/bin/deadlock-modmanager not packaged!"
+            exit 1
+          fi
 
           desktops=$(echo "$contents" | grep 'usr/share/applications/.*\.desktop$' || true)
           if [ "$desktops" != "usr/share/applications/deadlock-modmanager.desktop" ]; then
