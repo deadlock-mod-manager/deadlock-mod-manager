@@ -51,7 +51,7 @@
     "releaseNotes": "Informacje o wydaniu"
   },
   "releaseDate": {
-    "dateTime": "{{date}}, {{time}} UTC"
+    "dateTime": ""
   },
   "platforms": {
     "windows": {
@@ -85,16 +85,16 @@
         "description": "Aplikacja na macOS (.dmg)"
       },
       "flatpak": {
-        "label": "Flatpak",
+        "label": "",
         "description": "Działa na większości dystrybucji"
       },
       "deb": {
         "label": "Paczka Debian",
-        "description": "Ubuntu, Debian, Mint (.deb)"
+        "description": ""
       },
       "rpm": {
         "label": "Paczka RPM",
-        "description": "Fedora, openSUSE, Nobara (.rpm)"
+        "description": ""
       }
     }
   },

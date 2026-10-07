@@ -1,17 +1,17 @@
 {
   "meta": {
-    "name": "Access is denied (os error 5)",
+    "name": "",
     "title": "Deadlock Mod Manager \"Access is denied (os error 5)\" : solution",
     "description": "Access is denied (os error 5) dans Deadlock Mod Manager ? Retirez la lecture seule, autorisez l'app dans l'accès contrôlé aux dossiers, nettoyez les mods admin."
   },
   "hero": {
     "eyebrow": "Résoudre une erreur",
-    "title": "Access is denied (os error 5)",
+    "title": "",
     "intro": "Windows a empêché Deadlock Mod Manager de modifier un fichier dans votre dossier Deadlock. C'est presque toujours un fichier en lecture seule, une fonction de sécurité qui protège le dossier, ou un mod installé avec les droits administrateur.",
     "errorSource": "Deadlock Mod Manager sur Windows"
   },
   "errorText": {
-    "message": "Access is denied. (os error 5)"
+    "message": ""
   },
   "fix": {
     "title": "Comment corriger l'erreur",

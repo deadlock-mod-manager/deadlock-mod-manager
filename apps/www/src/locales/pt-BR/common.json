@@ -9,12 +9,12 @@
     "openMenu": "Abrir menu",
     "download": "Baixar",
     "links": {
-      "mods": "Mods",
-      "skins": "Skins",
+      "mods": "",
+      "skins": "",
       "features": "Recursos",
       "themes": "Temas",
       "tools": "Ferramentas",
-      "docs": "Docs"
+      "docs": ""
     }
   },
   "userMenu": {
@@ -33,7 +33,7 @@
     "tagline": "Um app pequeno e open source para instalar e gerenciar mods do Deadlock, o jogo da Valve.",
     "disclaimer": "Sem afiliação com a Valve. \"Deadlock\" e marcas relacionadas são marcas registradas da Valve Corporation.",
     "headings": {
-      "links": "Links",
+      "links": "",
       "guides": "Guias",
       "support": "Suporte",
       "partners": "Parceiros"
@@ -82,7 +82,7 @@
   "modCard": {
     "heroSkin": "Skin de {{hero}}",
     "categories": {
-      "skins": "Skins",
+      "skins": "",
       "qualityOfLife": "Qualidade de vida"
     },
     "byline": "{{kind}} por {{author}}",
@@ -116,19 +116,19 @@
       "description": "Conserte mods que quebraram depois de uma atualização do Deadlock."
     },
     "grimoire": {
-      "label": "Deadlock Mod Manager vs Grimoire",
+      "label": "",
       "description": "Como os dois gerenciadores de mods open source se comparam."
     },
     "os5": {
-      "label": "Access is denied (os error 5)",
+      "label": "",
       "description": "Arquivos somente leitura ou mods instalados como admin bloqueiam alterações."
     },
     "os740": {
-      "label": "Requires elevation (os error 740)",
+      "label": "",
       "description": "A Steam está configurada para rodar como administrador."
     },
     "modOrder": {
-      "label": "Failed to save mod order",
+      "label": "",
       "description": "O jogo ou outro app está mantendo arquivos de mods abertos."
     },
     "download": {

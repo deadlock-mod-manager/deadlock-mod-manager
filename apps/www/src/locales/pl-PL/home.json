@@ -64,7 +64,7 @@
       }
     },
     "openSource": {
-      "title": "Open source",
+      "title": "",
       "body": "Kod jest na GitHubie na licencji GPL-3.0, a społeczność tłumaczy aplikację na Crowdin.",
       "github": "Zobacz na GitHubie",
       "transparency": "Przejrzystość"
@@ -87,7 +87,7 @@
     "label": "Statystyki",
     "downloads": {
       "label": "Pobrania aplikacji",
-      "value": "{{value}}+",
+      "value": "",
       "note": "Ze wszystkich wydań"
     },
     "users": {
@@ -108,7 +108,7 @@
     "title": "Darmowe narzędzia na stronie",
     "items": {
       "randomizer": {
-        "title": "Randomizer",
+        "title": "",
         "description": "Wylosuj bohatera na następny mecz"
       },
       "crosshair": {

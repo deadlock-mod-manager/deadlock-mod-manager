@@ -5,19 +5,19 @@
       "description": "Классический облик Deadlock Mod Manager."
     },
     "bloodmoon": {
-      "name": "Bloodmoon",
+      "name": "",
       "description": "Тёмная тема с чёрно-красными градиентами и багровыми акцентами."
     },
     "nightshift": {
-      "name": "Nightshift",
+      "name": "",
       "description": "Киберпанк-тема с бирюзовыми акцентами и элегантным интерфейсом."
     },
     "lovelock": {
-      "name": "Lovelock",
+      "name": "",
       "description": "Уютная сливовая тема с мягким розовым свечением."
     },
     "tea": {
-      "name": "Tea",
+      "name": "",
       "description": "Уютная тема в честь Snipztea."
     }
   },
@@ -229,7 +229,7 @@
       "ping": "Пинг"
     },
     "requiredModsBadge": "Нужно модов: {{total}}",
-    "ping": "{{ping}} ms",
+    "ping": "",
     "details": {
       "map": "Карта",
       "players": "Игроки",

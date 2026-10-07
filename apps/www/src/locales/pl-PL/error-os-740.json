@@ -1,17 +1,17 @@
 {
   "meta": {
-    "name": "Requires elevation (os error 740)",
+    "name": "",
     "title": "Jak naprawić „os error 740” w Deadlock Mod Manager",
     "description": "Deadlock Mod Manager nie uruchamia gry z błędem os error 740, gdy Steam ma ustawione uruchamianie jako administrator. Wyłącz to dla steam.exe i uruchom grę z modami."
   },
   "hero": {
     "eyebrow": "Naprawa błędu",
-    "title": "The requested operation requires elevation (os error 740)",
+    "title": "",
     "intro": "Deadlock Mod Manager uruchamia Deadlock przez Steam. Gdy Steam ma ustawione stałe uruchamianie jako administrator, Windows nie pozwala zwykłemu programowi go włączyć i uruchamianie kończy się błędem 740.",
     "errorSource": "Deadlock Mod Manager na Windows, przy uruchamianiu gry"
   },
   "errorText": {
-    "message": "The requested operation requires elevation. (os error 740)"
+    "message": ""
   },
   "fix": {
     "title": "Jak to naprawić",

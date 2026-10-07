@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "title": "",
+    "description": ""
+  },
+  "page": {
+    "editingShared": "",
+    "title": "",
+    "description": ""
+  },
+  "preview": {
+    "title": "",
+    "none": "",
+    "backgrounds": {
+      "bg1": "",
+      "bg2": ""
+    },
+    "hint": ""
+  },
+  "controls": {
+    "settings": "",
+    "gap": "",
+    "width": "",
+    "height": "",
+    "pipOpacity": "",
+    "dotOpacity": "",
+    "dotOutlineOpacity": "",
+    "color": "",
+    "colorHex": "",
+    "options": "",
+    "pipBorder": "",
+    "pipGapStatic": "",
+    "hero": "",
+    "defaultHero": ""
+  },
+  "export": {
+    "copy": "",
+    "copied": "",
+    "share": "",
+    "linkCopied": ""
+  }
+}

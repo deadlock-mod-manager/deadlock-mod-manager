@@ -9,8 +9,8 @@
     "openMenu": "Abrir menú",
     "download": "Descargar",
     "links": {
-      "mods": "Mods",
-      "skins": "Skins",
+      "mods": "",
+      "skins": "",
       "features": "Funciones",
       "themes": "Temas",
       "tools": "Herramientas",
@@ -82,7 +82,7 @@
   "modCard": {
     "heroSkin": "Skin de {{hero}}",
     "categories": {
-      "skins": "Skins",
+      "skins": "",
       "qualityOfLife": "Calidad de vida"
     },
     "byline": "{{kind}} de {{author}}",
@@ -116,7 +116,7 @@
       "description": "Arregla los mods que dejaron de funcionar tras una actualización de Deadlock."
     },
     "grimoire": {
-      "label": "Deadlock Mod Manager vs Grimoire",
+      "label": "",
       "description": "Cómo se comparan los dos gestores de mods de código abierto."
     },
     "os5": {
@@ -128,7 +128,7 @@
       "description": "Steam está configurado para ejecutarse como administrador."
     },
     "modOrder": {
-      "label": "Failed to save mod order",
+      "label": "",
       "description": "El juego u otra app mantiene abiertos los archivos de los mods."
     },
     "download": {

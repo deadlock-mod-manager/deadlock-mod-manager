@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "name": "",
+    "title": "",
+    "description": ""
+  },
+  "hero": {
+    "eyebrow": "",
+    "title": "",
+    "intro": "",
+    "errorSource": ""
+  },
+  "errorText": {
+    "message": "",
+    "errors": {
+      "layoutFile": "",
+      "findChild": "",
+      "read16Bytes": "",
+      "gameinfo": "",
+      "kv3": ""
+    }
+  },
+  "fix": {
+    "title": "",
+    "steps": {
+      "confirm": {
+        "title": "",
+        "body": ""
+      },
+      "update": {
+        "title": "",
+        "body": ""
+      },
+      "disableHud": {
+        "title": "",
+        "body": ""
+      },
+      "narrowDown": {
+        "title": "",
+        "body": ""
+      }
+    }
+  },
+  "errors": {
+    "title": "",
+    "intro": "",
+    "whyLabel": "",
+    "fixLabel": "",
+    "kvParserLink": "",
+    "items": {
+      "layoutFile": {
+        "cause": "",
+        "fix": ""
+      },
+      "findChild": {
+        "cause": "",
+        "fix": ""
+      },
+      "read16Bytes": {
+        "cause": "",
+        "fix": ""
+      },
+      "gameinfo": {
+        "cause": "",
+        "fix": ""
+      },
+      "kv3": {
+        "cause": "",
+        "fix": ""
+      }
+    }
+  },
+  "withoutMods": {
+    "title": "",
+    "verify": "",
+    "notWorking": ""
+  },
+  "faqs": {
+    "layoutFile": {
+      "question": "",
+      "answer": ""
+    },
+    "findChild": {
+      "question": "",
+      "answer": ""
+    },
+    "read16Bytes": {
+      "question": "",
+      "answer": ""
+    },
+    "gameinfo": {
+      "question": "",
+      "answer": ""
+    },
+    "findMod": {
+      "question": "",
+      "answer": ""
+    }
+  },
+  "downloadBand": {
+    "title": "",
+    "body": ""
+  }
+}

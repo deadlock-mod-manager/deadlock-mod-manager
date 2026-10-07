@@ -37,19 +37,19 @@
     "heading": "Você vai jogar de {{hero}}",
     "headingWithRole": "Você vai jogar de {{hero}}, {{role}}",
     "youArePlaying": "Você vai jogar de",
-    "role": "{{role}}."
+    "role": ""
   },
   "facts": {
     "complexity": "Complexidade",
     "lane": "Rota",
     "archetype": "Arquétipo",
-    "tags": "Tags",
+    "tags": "",
     "mandate": "Estilo",
     "buildCost": "Custo da build",
     "souls": "almas",
     "abilityPriority": "Prioridade de habilidades",
     "abilityPriorityHint": "4 desbloqueios · 32 pontos",
-    "total": "Total"
+    "total": ""
   },
   "headings": {
     "build": "A build, em ordem.",
@@ -135,7 +135,7 @@
   },
   "abilities": {
     "fallback": "Habilidade {{slot}}",
-    "ultimate": "Ult",
+    "ultimate": "",
     "maxFirst": "Upar primeiro",
     "unlockedAt": "Desbloqueada no passo {{position}}",
     "upgradeAt": "Melhoria {{upgrade}} no passo {{position}}",
@@ -146,17 +146,17 @@
     "srUpgrade": "{{ability}}, melhoria {{step}}"
   },
   "item": {
-    "tier": "Tier {{tier}}",
+    "tier": "",
     "active": "Ativo",
     "activeTitle": "Item ativo",
-    "tooltipHeader": "{{category}} · Tier {{tier}} · <souls>{{cost}}</souls>",
+    "tooltipHeader": "",
     "sectionKinds": {
       "active": "ativo",
       "passive": "passivo"
     },
     "ariaUpgrade": "{{item}}, melhorado para {{upgrade}}",
-    "ariaItem": "{{item}}, {{category}} tier {{tier}}",
-    "categoryChange": "{{category}} →",
+    "ariaItem": "",
+    "categoryChange": "",
     "upgrade": "· Melhoria",
     "upgradePriceTitle": "{{total}} almas, menos as {{paid}} já pagas por {{item}}",
     "goodFit": "Combina bem",

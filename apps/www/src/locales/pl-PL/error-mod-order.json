@@ -1,23 +1,23 @@
 {
   "meta": {
-    "name": "Failed to save mod order",
+    "name": "",
     "title": "Jak naprawić „Failed to save mod order” w Deadlock Mod Manager",
     "description": "Błąd Failed to save mod order w Deadlock Mod Manager? Zamknij Deadlock, zwolnij zablokowane pliki .vpk, popraw uprawnienia folderu i zapisz kolejność ponownie."
   },
   "hero": {
     "eyebrow": "Naprawa błędu",
-    "title": "Failed to save mod order",
+    "title": "",
     "intro": "Zapisanie kolejności ładowania zmienia nazwy plików modów, żeby Deadlock wczytał je w nowej kolejności. Gdy plik jest zablokowany lub chroniony, zmiana nazwy zostaje cofnięta, a aplikacja pokazuje ten błąd. Komunikat pod nim mówi, dlaczego.",
     "errorSource": "Deadlock Mod Manager, po zapisaniu w oknie Zarządzaj kolejnością ładowania modyfikacji"
   },
   "errorText": {
-    "message": "Failed to save mod order",
+    "message": "",
     "causes": {
-      "gameRunning": "Game is running",
-      "fileInUse": "The process cannot access the file because it is being used by another process. (os error 32)",
-      "vpkInUse": "VPK files are in use and cannot be deleted",
-      "accessDenied": "Access is denied. (os error 5)",
-      "shardsFull": "All addon shard folders are full"
+      "gameRunning": "",
+      "fileInUse": "",
+      "vpkInUse": "",
+      "accessDenied": "",
+      "shardsFull": ""
     }
   },
   "causes": {

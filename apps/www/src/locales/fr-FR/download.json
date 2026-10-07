@@ -51,7 +51,7 @@
     "releaseNotes": "Notes de version"
   },
   "releaseDate": {
-    "dateTime": "{{date}}, {{time}} UTC"
+    "dateTime": ""
   },
   "platforms": {
     "windows": {
@@ -67,7 +67,7 @@
   },
   "installer": {
     "recommended": "Recommandé",
-    "signature": "signature",
+    "signature": "",
     "signatureTitle": "Signature de {{filename}}",
     "download": "Télécharger",
     "downloadLabel": "Télécharger {{filename}}",
@@ -85,16 +85,16 @@
         "description": "Application macOS (.dmg)"
       },
       "flatpak": {
-        "label": "Flatpak",
+        "label": "",
         "description": "Fonctionne sur la plupart des distributions"
       },
       "deb": {
         "label": "Paquet Debian",
-        "description": "Ubuntu, Debian, Mint (.deb)"
+        "description": ""
       },
       "rpm": {
         "label": "Paquet RPM",
-        "description": "Fedora, openSUSE, Nobara (.rpm)"
+        "description": ""
       }
     }
   },

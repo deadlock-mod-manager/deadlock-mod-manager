@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "name": "",
+    "title": "",
+    "description": ""
+  },
+  "hero": {
+    "eyebrow": "",
+    "title": "",
+    "intro": "",
+    "errorSource": ""
+  },
+  "errorText": {
+    "message": ""
+  },
+  "fix": {
+    "title": "",
+    "intro": "",
+    "steps": {
+      "closeAndUpdate": {
+        "title": "",
+        "body": ""
+      },
+      "readOnly": {
+        "title": "",
+        "body": ""
+      },
+      "controlledFolderAccess": {
+        "title": "",
+        "body": ""
+      },
+      "adminMods": {
+        "title": "",
+        "body": ""
+      },
+      "protectedLocation": {
+        "title": "",
+        "body": ""
+      },
+      "verifyFiles": {
+        "title": "",
+        "body": ""
+      }
+    }
+  },
+  "why": {
+    "title": "",
+    "cause": "",
+    "otherErrors": "",
+    "stillStuck": ""
+  },
+  "faqs": {
+    "meaning": {
+      "question": "",
+      "answer": ""
+    },
+    "runAsAdmin": {
+      "question": "",
+      "answer": ""
+    },
+    "gameClosed": {
+      "question": "",
+      "answer": ""
+    },
+    "linux": {
+      "question": "",
+      "answer": ""
+    }
+  },
+  "downloadBand": {
+    "title": "",
+    "body": ""
+  }
+}

@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "name": "",
+    "title": "",
+    "description": ""
+  },
+  "hero": {
+    "eyebrow": "",
+    "title": "",
+    "intro": "",
+    "errorSource": ""
+  },
+  "errorText": {
+    "message": ""
+  },
+  "fix": {
+    "title": "",
+    "steps": {
+      "quitSteam": {
+        "title": "",
+        "body": ""
+      },
+      "findSteamExe": {
+        "title": "",
+        "body": ""
+      },
+      "disableAdmin": {
+        "title": "",
+        "body": ""
+      },
+      "checkShortcuts": {
+        "title": "",
+        "body": ""
+      },
+      "startSteam": {
+        "title": "",
+        "body": ""
+      },
+      "launchModded": {
+        "title": "",
+        "body": ""
+      }
+    }
+  },
+  "stillSeeing": {
+    "title": "",
+    "items": {
+      "otherTools": "",
+      "appUpdate": "",
+      "runAppAsAdmin": "",
+      "discord": ""
+    }
+  },
+  "faqs": {
+    "cause": {
+      "question": "",
+      "answer": ""
+    },
+    "runAsAdmin": {
+      "question": "",
+      "answer": ""
+    },
+    "steamAdmin": {
+      "question": "",
+      "answer": ""
+    },
+    "appUpdate": {
+      "question": "",
+      "answer": ""
+    }
+  },
+  "downloadBand": {
+    "title": "",
+    "body": ""
+  }
+}

@@ -27,7 +27,7 @@
     }
   },
   "hero": {
-    "eyebrow": "Guide",
+    "eyebrow": "",
     "title": "Deadlock Mods installieren",
     "intro": "Zwei Wege, Deadlock zu modden: Lass den Deadlock Mod Manager das mit ein paar Klicks erledigen oder richte den addons-Ordner von Hand ein. Beides funktioniert; die App hält deine Mods außerdem aktuell und macht alles leicht rückgängig."
   },

@@ -4,7 +4,7 @@
     "description": "Füg eine Valve-KeyValues-Datei (VDF) wie Deadlocks gameinfo.gi ein, parse sie und durchsuch sie als Baum, direkt im Browser. Nichts wird hochgeladen."
   },
   "page": {
-    "title": "KeyValues Parser",
+    "title": "",
     "description": "Valve-KeyValues-Dateien (VDF) wie gameinfo.gi parsen und visualisieren"
   },
   "input": {
@@ -36,7 +36,7 @@
     "line": "Zeile: {{line}}",
     "column": "Spalte: {{column}}",
     "valid": "✓ Gültig",
-    "original": "Original",
+    "original": "",
     "jsonOutput": "JSON-Ausgabe",
     "treeView": "Baumansicht",
     "switchToTree": "Zur Baumansicht",

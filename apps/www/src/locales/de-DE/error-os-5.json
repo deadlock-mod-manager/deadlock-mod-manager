@@ -1,17 +1,17 @@
 {
   "meta": {
-    "name": "Access is denied (os error 5)",
+    "name": "",
     "title": "Deadlock Mod Manager „Access is denied (os error 5)“ beheben",
     "description": "„Access is denied (os error 5)“ im Deadlock Mod Manager? Schreibschutz aufheben, überwachten Ordnerzugriff erlauben, Admin-Mods entfernen."
   },
   "hero": {
     "eyebrow": "Fehlerbehebung",
-    "title": "Access is denied (os error 5)",
+    "title": "",
     "intro": "Windows hat den Deadlock Mod Manager daran gehindert, eine Datei in deinem Deadlock-Ordner zu ändern. Fast immer steckt eine schreibgeschützte Datei dahinter, eine Sicherheitsfunktion, die den Ordner schützt, oder ein Mod, der mit Adminrechten installiert wurde.",
     "errorSource": "Deadlock Mod Manager unter Windows"
   },
   "errorText": {
-    "message": "Access is denied. (os error 5)"
+    "message": ""
   },
   "fix": {
     "title": "So behebst du den Fehler",

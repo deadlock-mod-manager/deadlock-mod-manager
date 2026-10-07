@@ -37,7 +37,7 @@
     "heading": "Ты играешь за {{hero}}",
     "headingWithRole": "Ты играешь за {{hero}}, {{role}}",
     "youArePlaying": "Ты играешь за",
-    "role": "{{role}}."
+    "role": ""
   },
   "facts": {
     "complexity": "Сложность",
@@ -156,7 +156,7 @@
     },
     "ariaUpgrade": "{{item}}, улучшается в {{upgrade}}",
     "ariaItem": "{{item}}, {{category}}, тир {{tier}}",
-    "categoryChange": "{{category}} →",
+    "categoryChange": "",
     "upgrade": "· Улучшение",
     "upgradePriceTitle": "Душ: {{total}}, за вычетом {{paid}}, уже потраченных на {{item}}",
     "goodFit": "Хорошо подходит",

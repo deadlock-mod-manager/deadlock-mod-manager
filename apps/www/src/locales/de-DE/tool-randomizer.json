@@ -37,13 +37,13 @@
     "heading": "Du spielst {{hero}}",
     "headingWithRole": "Du spielst {{hero}}, {{role}}",
     "youArePlaying": "Du spielst",
-    "role": "{{role}}."
+    "role": ""
   },
   "facts": {
     "complexity": "Komplexität",
-    "lane": "Lane",
+    "lane": "",
     "archetype": "Archetyp",
-    "tags": "Tags",
+    "tags": "",
     "mandate": "Auftrag",
     "buildCost": "Build-Kosten",
     "souls": "Seelen",
@@ -70,7 +70,7 @@
       "blurb": "Die meisten deiner Seelen sind in die Waffe geflossen. Gewinn deine Trades damit, bevor irgendwer Rüstung hat."
     },
     "caster": {
-      "label": "Caster",
+      "label": "",
       "blurb": "Der Wurf baut auf deinen Fähigkeiten auf. Heb dir die Cooldowns für den Kampf auf, der zählt."
     },
     "bulwark": {
@@ -135,29 +135,29 @@
   },
   "abilities": {
     "fallback": "Fähigkeit {{slot}}",
-    "ultimate": "Ult",
+    "ultimate": "",
     "maxFirst": "Zuerst maxen",
     "unlockedAt": "Freigeschaltet bei Schritt {{position}}",
     "upgradeAt": "Upgrade {{upgrade}} bei Schritt {{position}}",
     "unlock": "Freischalten",
-    "cost": "+{{cost}} AP",
-    "spent": "{{spent}} AP",
+    "cost": "",
+    "spent": "",
     "srUnlock": "{{ability}}, freischalten",
     "srUpgrade": "{{ability}}, Upgrade {{step}}"
   },
   "item": {
-    "tier": "Tier {{tier}}",
+    "tier": "",
     "active": "Aktiv",
     "activeTitle": "Aktives Item",
-    "tooltipHeader": "{{category}} · Tier {{tier}} · <souls>{{cost}}</souls>",
+    "tooltipHeader": "",
     "sectionKinds": {
       "active": "aktiv",
       "passive": "passiv"
     },
     "ariaUpgrade": "{{item}}, aufgewertet zu {{upgrade}}",
     "ariaItem": "{{item}}, {{category}} Tier {{tier}}",
-    "categoryChange": "{{category}} →",
-    "upgrade": "· Upgrade",
+    "categoryChange": "",
+    "upgrade": "",
     "upgradePriceTitle": "{{total}} Seelen, abzüglich der {{paid}} bereits für {{item}} bezahlten",
     "goodFit": "Passt gut",
     "goodFitTitle": "In den Draft-Daten für diesen Helden hoch bewertet",

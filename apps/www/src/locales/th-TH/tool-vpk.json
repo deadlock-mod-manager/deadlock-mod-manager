@@ -1,0 +1,72 @@
+{
+  "meta": {
+    "title": "",
+    "description": ""
+  },
+  "page": {
+    "title": "",
+    "description": ""
+  },
+  "toasts": {
+    "matched": "",
+    "noMatch": "",
+    "failed": "",
+    "unknownError": "",
+    "onlyVpk": "",
+    "ignored": ""
+  },
+  "unknownSize": "",
+  "upload": {
+    "title": "",
+    "description": "",
+    "analyzing": "",
+    "processing": "",
+    "preparing": "",
+    "progress": "",
+    "dropActive": "",
+    "drop": "",
+    "browse": ""
+  },
+  "results": {
+    "title": "",
+    "completed": "",
+    "status": {
+      "pending": "",
+      "analyzing": "",
+      "completed": "",
+      "error": ""
+    },
+    "failed": ""
+  },
+  "info": {
+    "title": "",
+    "version": "",
+    "fileCount": "",
+    "fileSize": "",
+    "hasMultiparts": "",
+    "hasInlineData": "",
+    "yes": "",
+    "no": "",
+    "unknown": ""
+  },
+  "match": {
+    "title": "",
+    "heading": "",
+    "file": "",
+    "certainty": "",
+    "view": ""
+  },
+  "noMatch": {
+    "title": "",
+    "description": "",
+    "reasons": {
+      "custom": "",
+      "modified": "",
+      "new": ""
+    }
+  },
+  "contents": {
+    "title": "",
+    "more": ""
+  }
+}

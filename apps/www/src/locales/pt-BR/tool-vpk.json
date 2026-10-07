@@ -51,7 +51,7 @@
   },
   "match": {
     "title": "Mod correspondente",
-    "heading": "GameBanana {{type}} {{id}}",
+    "heading": "",
     "file": "Arquivo {{id}}",
     "certainty": "{{certainty}}% de correspondência ({{type}})",
     "view": "Ver no GameBanana"

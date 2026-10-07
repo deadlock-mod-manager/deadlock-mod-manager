@@ -11,7 +11,7 @@
     "allDownloads": "Alle Downloads",
     "facts": {
       "free": "Kostenlos und Open Source",
-      "platforms": "Windows & Linux",
+      "platforms": "",
       "signed": "Signierter Installer"
     },
     "screenshotAlt": "„Mods entdecken“ im Deadlock Mod Manager, während ein Mod heruntergeladen wird",
@@ -74,7 +74,7 @@
     "title": "Ändere den Look der App",
     "description": "Wähl eines der Community-Themes oder bau dein eigenes im Theme-Builder und teil die Datei mit Freunden.",
     "screenshotAlt": "Deadlock Mod Manager mit dem Theme {{theme}}",
-    "pickerLabel": "Theme",
+    "pickerLabel": "",
     "tryInPreview": "{{theme}} in der Vorschau testen",
     "builderHint": "{{description}} Den Theme-Builder findest du in den Einstellungen."
   },
@@ -87,7 +87,7 @@
     "label": "Statistiken",
     "downloads": {
       "label": "App-Downloads",
-      "value": "{{value}}+",
+      "value": "",
       "note": "Über alle Releases"
     },
     "users": {
@@ -108,7 +108,7 @@
     "title": "Kostenlose Tools auf der Website",
     "items": {
       "randomizer": {
-        "title": "Randomizer",
+        "title": "",
         "description": "Würfle einen Helden für dein nächstes Match"
       },
       "crosshair": {

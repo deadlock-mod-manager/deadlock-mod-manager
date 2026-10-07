@@ -7,13 +7,13 @@
     "primaryNav": "Hauptnavigation",
     "mobileNav": "Mobile Navigation",
     "openMenu": "Menü öffnen",
-    "download": "Download",
+    "download": "",
     "links": {
-      "mods": "Mods",
-      "skins": "Skins",
-      "features": "Features",
-      "themes": "Themes",
-      "tools": "Tools",
+      "mods": "",
+      "skins": "",
+      "features": "",
+      "themes": "",
+      "tools": "",
       "docs": "Doku"
     }
   },
@@ -21,7 +21,7 @@
     "signIn": "Anmelden",
     "signInButton": "Anmelden",
     "signOut": "Abmelden",
-    "dashboard": "Dashboard",
+    "dashboard": "",
     "avatarFallback": "Nutzer"
   },
   "v2Banner": {
@@ -33,16 +33,16 @@
     "tagline": "Eine kleine Open-Source-App zum Installieren und Verwalten von Mods für Valves Spiel Deadlock.",
     "disclaimer": "Nicht mit Valve verbunden. „Deadlock“ und zugehörige Marken sind Marken der Valve Corporation.",
     "headings": {
-      "links": "Links",
-      "guides": "Guides",
-      "support": "Support",
+      "links": "",
+      "guides": "",
+      "support": "",
       "partners": "Partner"
     },
     "links": {
-      "download": "Download",
+      "download": "",
       "sourceCode": "Quellcode",
       "documentation": "Dokumentation",
-      "faq": "FAQ",
+      "faq": "",
       "reportBug": "Bug melden"
     },
     "legal": {
@@ -72,7 +72,7 @@
     }
   },
   "platformDownload": {
-    "download": "Download",
+    "download": "",
     "windows": "Für Windows herunterladen",
     "linux": "Für Linux herunterladen",
     "available": "Für Windows und Linux verfügbar",
@@ -82,8 +82,8 @@
   "modCard": {
     "heroSkin": "{{hero}}-Skin",
     "categories": {
-      "skins": "Skins",
-      "qualityOfLife": "Quality of Life"
+      "skins": "",
+      "qualityOfLife": ""
     },
     "byline": "{{kind}} von {{author}}",
     "bylineWithDownloads": "{{kind}} von {{author}} · {{downloads}} Downloads",

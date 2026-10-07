@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "name": "",
+    "title": "",
+    "description": ""
+  },
+  "faqs": {
+    "afterUpdate": {
+      "question": "",
+      "answer": ""
+    },
+    "crash": {
+      "question": "",
+      "answer": ""
+    },
+    "manager": {
+      "question": "",
+      "answer": ""
+    },
+    "reinstall": {
+      "question": "",
+      "answer": ""
+    }
+  },
+  "hero": {
+    "eyebrow": "",
+    "title": "",
+    "intro": ""
+  },
+  "quickFix": {
+    "title": "",
+    "steps": {
+      "updateApp": "",
+      "updateMods": "",
+      "disableHud": "",
+      "reenable": ""
+    }
+  },
+  "fixes": {
+    "title": "",
+    "why": "",
+    "fix": "",
+    "items": {
+      "ignored": {
+        "title": "",
+        "cause": "",
+        "fix": ""
+      },
+      "crash": {
+        "title": "",
+        "cause": "",
+        "fix": ""
+      },
+      "partial": {
+        "title": "",
+        "cause": "",
+        "fix": ""
+      },
+      "stuck": {
+        "title": "",
+        "cause": "",
+        "fix": ""
+      },
+      "accessDenied": {
+        "title": "",
+        "cause": "",
+        "fix": ""
+      },
+      "steamLaunch": {
+        "title": "",
+        "cause": "",
+        "fix": ""
+      }
+    }
+  },
+  "errors": {
+    "title": "",
+    "intro": ""
+  },
+  "stillStuck": {
+    "title": "",
+    "body": ""
+  },
+  "downloadBand": {
+    "title": "",
+    "body": ""
+  }
+}

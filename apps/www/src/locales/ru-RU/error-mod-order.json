@@ -11,13 +11,13 @@
     "errorSource": "Deadlock Mod Manager, после сохранения в окне порядка загрузки модов"
   },
   "errorText": {
-    "message": "Failed to save mod order",
+    "message": "",
     "causes": {
-      "gameRunning": "Game is running",
-      "fileInUse": "The process cannot access the file because it is being used by another process. (os error 32)",
-      "vpkInUse": "VPK files are in use and cannot be deleted",
-      "accessDenied": "Access is denied. (os error 5)",
-      "shardsFull": "All addon shard folders are full"
+      "gameRunning": "",
+      "fileInUse": "",
+      "vpkInUse": "",
+      "accessDenied": "",
+      "shardsFull": ""
     }
   },
   "causes": {

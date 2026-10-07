@@ -64,7 +64,7 @@
       }
     },
     "openSource": {
-      "title": "Open source",
+      "title": "",
       "body": "O código está no GitHub sob a licença GPL-3.0, e a comunidade traduz o app no Crowdin.",
       "github": "Ver no GitHub",
       "transparency": "Transparência"
@@ -87,7 +87,7 @@
     "label": "Números",
     "downloads": {
       "label": "Downloads do app",
-      "value": "{{value}}+",
+      "value": "",
       "note": "Somando todas as versões"
     },
     "users": {
@@ -108,7 +108,7 @@
     "title": "Ferramentas grátis no site",
     "items": {
       "randomizer": {
-        "title": "Randomizer",
+        "title": "",
         "description": "Sorteie um herói para a próxima partida"
       },
       "crosshair": {

@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "name": "",
+    "title": "",
+    "description": ""
+  },
+  "faqs": {
+    "howToGet": {
+      "question": "",
+      "answer": ""
+    },
+    "visibility": {
+      "question": "",
+      "answer": ""
+    },
+    "free": {
+      "question": "",
+      "answer": ""
+    },
+    "revert": {
+      "question": "",
+      "answer": ""
+    },
+    "multiple": {
+      "question": "",
+      "answer": ""
+    },
+    "official": {
+      "question": "",
+      "answer": ""
+    }
+  },
+  "hero": {
+    "eyebrow": "",
+    "title": "",
+    "intro": ""
+  },
+  "popular": {
+    "title": "",
+    "intro": "",
+    "snapshot": ""
+  },
+  "steps": {
+    "title": "",
+    "items": {
+      "install": {
+        "title": "",
+        "body": ""
+      },
+      "filter": {
+        "title": "",
+        "body": ""
+      },
+      "download": {
+        "title": "",
+        "body": ""
+      },
+      "activate": {
+        "title": "",
+        "body": ""
+      }
+    }
+  },
+  "foundry": {
+    "title": "",
+    "intro": "",
+    "exports": "",
+    "figure": {
+      "alt": "",
+      "caption": ""
+    }
+  },
+  "downloadBand": {
+    "title": "",
+    "body": ""
+  }
+}

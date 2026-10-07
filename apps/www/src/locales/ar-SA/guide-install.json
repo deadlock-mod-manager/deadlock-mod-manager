@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "name": "",
+    "title": "",
+    "description": ""
+  },
+  "faqs": {
+    "howTo": {
+      "question": "",
+      "answer": ""
+    },
+    "addonsFolder": {
+      "question": "",
+      "answer": ""
+    },
+    "gameinfo": {
+      "question": "",
+      "answer": ""
+    },
+    "uninstall": {
+      "question": "",
+      "answer": ""
+    },
+    "linux": {
+      "question": "",
+      "answer": ""
+    }
+  },
+  "hero": {
+    "eyebrow": "",
+    "title": "",
+    "intro": ""
+  },
+  "app": {
+    "title": "",
+    "intro": "",
+    "steps": {
+      "download": {
+        "title": "",
+        "body": ""
+      },
+      "detect": {
+        "title": "",
+        "body": ""
+      },
+      "pick": {
+        "title": "",
+        "body": ""
+      },
+      "launch": {
+        "title": "",
+        "body": ""
+      }
+    },
+    "figure": {
+      "alt": "",
+      "caption": ""
+    }
+  },
+  "manual": {
+    "title": "",
+    "intro": "",
+    "steps": {
+      "extract": "",
+      "addons": "",
+      "copy": "",
+      "gameinfo": "",
+      "launch": ""
+    },
+    "outro": ""
+  },
+  "after": {
+    "title": "",
+    "conflicts": "",
+    "updates": "",
+    "profiles": "",
+    "docs": ""
+  },
+  "downloadBand": {
+    "title": "",
+    "body": ""
+  }
+}

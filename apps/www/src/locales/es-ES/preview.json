@@ -5,24 +5,24 @@
       "description": "El aspecto clásico de Deadlock Mod Manager."
     },
     "bloodmoon": {
-      "name": "Bloodmoon",
+      "name": "",
       "description": "Un tema oscuro con degradados negro-rojo y acentos carmesí."
     },
     "nightshift": {
-      "name": "Nightshift",
+      "name": "",
       "description": "Un tema cyberpunk con acentos turquesa y una interfaz elegante."
     },
     "lovelock": {
-      "name": "Lovelock",
+      "name": "",
       "description": "Un tema acogedor color ciruela con un suave brillo rosa."
     },
     "tea": {
-      "name": "Tea",
+      "name": "",
       "description": "Un tema acogedor en honor a Snipztea."
     }
   },
   "categories": {
-    "skins": "Skins",
+    "skins": "",
     "qualityOfLife": "Calidad de vida"
   },
   "titlebar": {
@@ -37,8 +37,8 @@
     "label": "Vista previa de la app",
     "byline": "<version>{{version}}</version> por Stormix",
     "groups": {
-      "general": "General",
-      "mods": "Mods",
+      "general": "",
+      "mods": "",
       "customServers": "Servidores Personalizados",
       "customization": "Personalización"
     },
@@ -127,10 +127,10 @@
     "title": "Buscar Mods",
     "subtitle": "Actualizado cada hora, con nuevos Mods añadidos constantemente.",
     "tabs": {
-      "mods": "Mods",
+      "mods": "",
       "sounds": "Sonidos",
       "albums": "Álbumes",
-      "wips": "WiPs"
+      "wips": ""
     },
     "searchLabel": "Buscar mods",
     "searchPlaceholder": "Buscar mods o autores",
@@ -152,7 +152,7 @@
   },
   "library": {
     "title": "Mis Mods",
-    "count": "<strong>{{enabled}}</strong>/{{total}} mods",
+    "count": "",
     "subtitle": "Mods instalados o descargados",
     "checkUpdates": "Comprobar actualizaciones",
     "upToDate": {
@@ -195,7 +195,7 @@
       "height": "Alto",
       "dotOpacity": "Opacidad del punto"
     },
-    "color": "Color",
+    "color": "",
     "swatches": {
       "white": "Blanco",
       "gold": "Dorado",
@@ -229,7 +229,7 @@
       "ping": "Latencia"
     },
     "requiredModsBadge": "Mods requeridos: {{total}}",
-    "ping": "{{ping}} ms",
+    "ping": "",
     "details": {
       "map": "Mapa",
       "players": "Jugadores",

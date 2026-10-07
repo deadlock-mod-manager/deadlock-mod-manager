@@ -11,13 +11,13 @@
     "errorSource": "Deadlock, al iniciar"
   },
   "errorText": {
-    "message": "Fatal Error: Unable to load layout file",
+    "message": "",
     "errors": {
-      "layoutFile": "Fatal Error: Unable to load layout file 'panorama/layout/…'",
-      "findChild": "Fatal Error: Unable to find child 'IdolCashInMeter'",
-      "read16Bytes": "Fatal Error: Failed to read 16 bytes",
-      "gameinfo": "Fatal Error: Application unable to load gameinfo.gi",
-      "kv3": "Error parsing KV3 data"
+      "layoutFile": "",
+      "findChild": "",
+      "read16Bytes": "",
+      "gameinfo": "",
+      "kv3": ""
     }
   },
   "fix": {

@@ -63,11 +63,11 @@
       },
       "contributors": {
         "label": "Mitwirkende am Deadlock Mod Manager",
-        "value": "30+"
+        "value": ""
       },
       "shared": {
         "label": "Kern-Mitwirkende des Deadlock Mod Managers, die an Grimoire mitgearbeitet haben",
-        "value": "2"
+        "value": ""
       }
     }
   },

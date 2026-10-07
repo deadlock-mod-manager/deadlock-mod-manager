@@ -87,7 +87,7 @@
     "label": "Статистика",
     "downloads": {
       "label": "Загрузок приложения",
-      "value": "{{value}}+",
+      "value": "",
       "note": "За все релизы"
     },
     "users": {

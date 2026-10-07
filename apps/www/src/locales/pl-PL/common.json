@@ -42,7 +42,7 @@
       "download": "Pobierz",
       "sourceCode": "Kod źródłowy",
       "documentation": "Dokumentacja",
-      "faq": "FAQ",
+      "faq": "",
       "reportBug": "Zgłoś błąd"
     },
     "legal": {
@@ -116,19 +116,19 @@
       "description": "Napraw mody, które przestały działać po aktualizacji Deadlock."
     },
     "grimoire": {
-      "label": "Deadlock Mod Manager vs Grimoire",
+      "label": "",
       "description": "Porównanie dwóch menedżerów modów open source."
     },
     "os5": {
-      "label": "Access is denied (os error 5)",
+      "label": "",
       "description": "Pliki tylko do odczytu lub mody zainstalowane jako administrator blokują zmiany."
     },
     "os740": {
-      "label": "Requires elevation (os error 740)",
+      "label": "",
       "description": "Steam jest ustawiony na uruchamianie jako administrator."
     },
     "modOrder": {
-      "label": "Failed to save mod order",
+      "label": "",
       "description": "Gra lub inna aplikacja trzyma otwarte pliki modów."
     },
     "download": {

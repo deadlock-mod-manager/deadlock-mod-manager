@@ -51,7 +51,7 @@
   },
   "match": {
     "title": "Dopasowany mod",
-    "heading": "GameBanana {{type}} {{id}}",
+    "heading": "",
     "file": "Plik {{id}}",
     "certainty": "Dopasowanie {{certainty}}% ({{type}})",
     "view": "Zobacz na GameBanana"

@@ -64,7 +64,7 @@
       }
     },
     "openSource": {
-      "title": "Open source",
+      "title": "",
       "body": "Le code est sur GitHub sous licence GPL-3.0, et la communauté traduit l'app sur Crowdin.",
       "github": "Voir sur GitHub",
       "transparency": "Transparence"
@@ -87,7 +87,7 @@
     "label": "Statistiques",
     "downloads": {
       "label": "Téléchargements de l'app",
-      "value": "{{value}}+",
+      "value": "",
       "note": "Toutes versions confondues"
     },
     "users": {
@@ -108,7 +108,7 @@
     "title": "Outils gratuits sur le site",
     "items": {
       "randomizer": {
-        "title": "Randomizer",
+        "title": "",
         "description": "Tirez un héros pour votre prochain match"
       },
       "crosshair": {

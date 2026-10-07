@@ -1,6 +1,6 @@
 {
   "meta": {
-    "name": "Failed to download",
+    "name": "",
     "title": "Deadlock Mod Manager: Failed to download o descargas lentas",
     "description": "¿Failed to download o descargas lentas en Deadlock Mod Manager? Usa el diagnóstico de conexión, espera los límites de GameBanana y revisa antivirus, VPN y DNS."
   },
@@ -11,13 +11,13 @@
     "errorSource": "Deadlock Mod Manager, en la tarjeta de un mod o en Descargas"
   },
   "errorText": {
-    "message": "Failed to download",
+    "message": "",
     "messages": {
-      "rateLimit": "GameBanana rate limit reached / Too many requests (HTTP 429)",
-      "unavailable": "GameBanana is unavailable / Server error (HTTP 5xx)",
-      "refused": "GameBanana refused automatic requests / Access denied (HTTP 403)",
-      "network": "Network error / can't be resolved",
-      "writeFailed": "Download failed: … (os error 5) / File write failed"
+      "rateLimit": "",
+      "unavailable": "",
+      "refused": "",
+      "network": "",
+      "writeFailed": ""
     }
   },
   "diagnose": {

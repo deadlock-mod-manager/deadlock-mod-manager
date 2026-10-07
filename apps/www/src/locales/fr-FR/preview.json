@@ -5,24 +5,24 @@
       "description": "Le look classique de Deadlock Mod Manager."
     },
     "bloodmoon": {
-      "name": "Bloodmoon",
+      "name": "",
       "description": "Un thème sombre avec des dégradés noir-rouge et des accents carmin."
     },
     "nightshift": {
-      "name": "Nightshift",
+      "name": "",
       "description": "Un thème cyberpunk aux accents turquoise et à l'interface élégante."
     },
     "lovelock": {
-      "name": "Lovelock",
+      "name": "",
       "description": "Un thème prune douillet avec une douce lueur rose."
     },
     "tea": {
-      "name": "Tea",
+      "name": "",
       "description": "Un thème douillet en hommage à Snipztea."
     }
   },
   "categories": {
-    "skins": "Skins",
+    "skins": "",
     "qualityOfLife": "Qualité de vie"
   },
   "titlebar": {
@@ -38,7 +38,7 @@
     "byline": "<version>{{version}}</version> par Stormix",
     "groups": {
       "general": "Général",
-      "mods": "Mods",
+      "mods": "",
       "customServers": "Serveurs perso",
       "customization": "Personnalisation"
     },
@@ -54,7 +54,7 @@
       "autoexec": "Config autoexec",
       "stats": "Statistiques"
     },
-    "documentation": "Documentation",
+    "documentation": "",
     "needHelp": "Besoin d'aide ?",
     "expand": "Étendre le menu",
     "collapse": "Réduire le menu"
@@ -127,9 +127,9 @@
     "title": "Découvrir des mods",
     "subtitle": "Mis à jour toutes les heures, avec de nouveaux mods ajoutés chaque heure.",
     "tabs": {
-      "mods": "Mods",
+      "mods": "",
       "sounds": "Sons",
-      "albums": "Albums",
+      "albums": "",
       "wips": "WiP"
     },
     "searchLabel": "Rechercher des mods",
@@ -152,7 +152,7 @@
   },
   "library": {
     "title": "Mes mods",
-    "count": "<strong>{{enabled}}</strong>/{{total}} mods",
+    "count": "",
     "subtitle": "Mods que vous avez téléchargés ou installés",
     "checkUpdates": "Vérifier les mises à jour",
     "upToDate": {
@@ -200,7 +200,7 @@
       "white": "Blanc",
       "gold": "Or",
       "green": "Vert",
-      "cyan": "Cyan",
+      "cyan": "",
       "pink": "Rose"
     },
     "preview": "Aperçu",
@@ -226,10 +226,10 @@
       "name": "Nom",
       "players": "Joueurs",
       "map": "Carte",
-      "ping": "Ping"
+      "ping": ""
     },
     "requiredModsBadge": "Mods requis : {{total}}",
-    "ping": "{{ping}} ms",
+    "ping": "",
     "details": {
       "map": "Carte",
       "players": "Joueurs",
@@ -254,13 +254,13 @@
     "navLabel": "Sections des paramètres",
     "groups": {
       "game": "Jeu",
-      "application": "Application",
+      "application": "",
       "advanced": "Avancé"
     },
     "nav": {
       "launchOptions": "Options de lancement",
       "game": "Jeu",
-      "application": "Application",
+      "application": "",
       "themes": "Thèmes",
       "network": "Réseau",
       "tools": "Outils",
@@ -316,7 +316,7 @@
         "description": "Voyez à quoi ressemblera votre statut Discord avec des exemples."
       },
       "example": {
-        "details": "Sleep Walking in the Hideout",
+        "details": "",
         "state": "Partie Standard (6v6) · 3 sur 6"
       },
       "disabled": "Présence de jeu Discord désactivée"
@@ -342,7 +342,7 @@
         "description": "Créer automatiquement une sauvegarde de vos mods avant une mise à jour groupée"
       },
       "columns": {
-        "date": "Date",
+        "date": "",
         "vpkFiles": "Fichiers VPK",
         "size": "Taille"
       },

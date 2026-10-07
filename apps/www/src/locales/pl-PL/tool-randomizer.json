@@ -37,7 +37,7 @@
     "heading": "Grasz: {{hero}}",
     "headingWithRole": "Grasz: {{hero}}, {{role}}",
     "youArePlaying": "Grasz",
-    "role": "{{role}}."
+    "role": ""
   },
   "facts": {
     "complexity": "Złożoność",
@@ -135,13 +135,13 @@
   },
   "abilities": {
     "fallback": "Umiejętność {{slot}}",
-    "ultimate": "Ult",
+    "ultimate": "",
     "maxFirst": "Maksuj najpierw",
     "unlockedAt": "Odblokowana w kroku {{position}}",
     "upgradeAt": "Ulepszenie {{upgrade}} w kroku {{position}}",
     "unlock": "Odblokuj",
-    "cost": "+{{cost}} AP",
-    "spent": "{{spent}} AP",
+    "cost": "",
+    "spent": "",
     "srUnlock": "{{ability}}, odblokowanie",
     "srUpgrade": "{{ability}}, ulepszenie {{step}}"
   },
@@ -156,7 +156,7 @@
     },
     "ariaUpgrade": "{{item}}, ulepszony do {{upgrade}}",
     "ariaItem": "{{item}}, {{category}}, poziom {{tier}}",
-    "categoryChange": "{{category}} →",
+    "categoryChange": "",
     "upgrade": "· Ulepszenie",
     "upgradePriceTitle": "Dusze: {{total}}, minus {{paid}} już zapłacone za {{item}}",
     "goodFit": "Dobry wybór",
