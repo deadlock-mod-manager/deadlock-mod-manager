@@ -118,7 +118,8 @@
         "scripts/**/*.{ts,mjs}",
         "*.config.{ts,mjs}",
         "src/routes/**/*.{ts,tsx}"
-      ]
+      ],
+      "ignoreDependencies": ["@fontsource/geist"]
     }
   },
   "ignore": [

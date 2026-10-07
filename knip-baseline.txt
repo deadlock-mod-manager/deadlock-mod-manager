@@ -149,7 +149,6 @@
 ["exports","apps/desktop/src/lib/auth/token.ts",[["","hasTokens"]]]
 ["exports","apps/desktop/src/lib/auth/token.ts",[["","isTokenExpired"]]]
 ["exports","apps/desktop/src/lib/config.ts",[["","SERVER_URL"]]]
-["exports","apps/desktop/src/lib/config.ts",[["","WEB_URL"]]]
 ["exports","apps/desktop/src/lib/constants.ts",[["","APP_DESCRIPTION"]]]
 ["exports","apps/desktop/src/lib/constants.ts",[["","COPYRIGHT"]]]
 ["exports","apps/desktop/src/lib/constants.ts",[["","NOOP"]]]
