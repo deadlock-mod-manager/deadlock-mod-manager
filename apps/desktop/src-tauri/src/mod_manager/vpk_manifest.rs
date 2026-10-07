@@ -34,6 +34,8 @@ pub struct ProfileVpkManifestEntry {
   #[serde(default)]
   pub enabled: bool,
   #[serde(default)]
+  pub compatibility_enabled: bool,
+  #[serde(default)]
   pub order: Option<u32>,
   /// 1-based shard index the enabled VPKs of this mod currently live in.
   /// All VPKs of a mod always share one shard so multi-file mods stay together.
@@ -51,6 +53,7 @@ impl Default for ProfileVpkManifestEntry {
   fn default() -> Self {
     Self {
       enabled: false,
+      compatibility_enabled: false,
       order: None,
       shard: default_shard(),
       current_vpks: Vec::new(),
@@ -348,6 +351,35 @@ impl ProfileVpkManifest {
     entry.disabled_vpks = disabled_vpks;
     if !original_vpk_names.is_empty() {
       entry.original_vpk_names = original_vpk_names;
+    }
+  }
+
+  /// Remove aliases of files deleted by a mutation, including old duplicate claims.
+  pub fn forget_files(&mut self, base: &ProfileBase, removed: &[std::path::PathBuf]) {
+    for entry in self.mods.values_mut() {
+      let paths = entry.file_paths(base);
+      if !paths.iter().any(|path| removed.contains(path)) {
+        continue;
+      }
+      let names = if entry.enabled {
+        &mut entry.current_vpks
+      } else {
+        &mut entry.disabled_vpks
+      };
+      let originals = std::mem::take(&mut entry.original_vpk_names);
+      let aligned = originals.len() == names.len();
+      let mut index = 0;
+      names.retain(|_| {
+        let keep = !removed.contains(&paths[index]);
+        if keep && aligned {
+          entry.original_vpk_names.push(originals[index].clone());
+        }
+        index += 1;
+        keep
+      });
+      if entry.enabled && names.is_empty() {
+        entry.enabled = false;
+      }
     }
   }
 
@@ -732,6 +764,33 @@ mod tests {
   }
 
   #[test]
+  fn deleting_shared_file_preserves_other_shards_and_remaining_name_mappings() {
+    let temp = tempfile::tempdir().unwrap();
+    let base_path = addons_base(&temp);
+    let base = ProfileBase::from_snapshot(&base_path).unwrap();
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_enabled(
+      "alias",
+      vec!["pak01_dir.vpk".into(), "pak02_dir.vpk".into()],
+      vec!["first.vpk".into(), "second.vpk".into()],
+      None,
+      ShardIndex::FIRST,
+    );
+    manifest.mark_enabled(
+      "other-shard",
+      vec!["pak01_dir.vpk".into()],
+      vec!["unrelated.vpk".into()],
+      None,
+      ShardIndex::new(2).unwrap(),
+    );
+    manifest.forget_files(&base, &[base.join("pak01_dir.vpk")]);
+    assert_eq!(manifest.mods["alias"].current_vpks, ["pak02_dir.vpk"]);
+    assert_eq!(manifest.mods["alias"].original_vpk_names, ["second.vpk"]);
+    assert!(manifest.mods["alias"].enabled);
+    assert_eq!(manifest.mods["other-shard"].current_vpks, ["pak01_dir.vpk"]);
+  }
+
+  #[test]
   fn mark_enabled_preserves_original_names_when_empty() {
     let mut manifest = ProfileVpkManifest::default();
     manifest.mark_enabled(
@@ -755,5 +814,32 @@ mod tests {
     assert_eq!(entry.current_vpks, vec!["pak02_dir.vpk".to_string()]);
     assert_eq!(entry.order, Some(1));
     assert_eq!(entry.shard, ShardIndex::new(2).unwrap());
+  }
+  #[test]
+  fn compatibility_defaults_off_and_survives_mod_enable_disable_and_reorder() {
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_enabled(
+      "mod",
+      vec!["pak01_dir.vpk".into()],
+      vec![],
+      Some(1),
+      ShardIndex::FIRST,
+    );
+    assert!(!manifest.mods["mod"].compatibility_enabled);
+    manifest.mods.get_mut("mod").unwrap().compatibility_enabled = true;
+    manifest.mark_disabled("mod", vec!["mod_source.vpk".into()], vec![]);
+    manifest.mark_enabled(
+      "mod",
+      vec!["pak02_dir.vpk".into()],
+      vec![],
+      Some(2),
+      ShardIndex::FIRST,
+    );
+    assert!(manifest.mods["mod"].compatibility_enabled);
+    let encoded = serde_json::to_vec(&manifest).unwrap();
+    let restored: ProfileVpkManifest = serde_json::from_slice(&encoded).unwrap();
+    assert!(restored.mods["mod"].compatibility_enabled);
+    let old: ProfileVpkManifestEntry = serde_json::from_str(r#"{"enabled":true}"#).unwrap();
+    assert!(!old.compatibility_enabled);
   }
 }

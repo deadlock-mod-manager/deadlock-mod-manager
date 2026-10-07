@@ -32,6 +32,8 @@ pub enum Error {
   GameNotRunning,
   #[error("Failed to launch game: {0}")]
   GameLaunchFailed(String),
+  #[error("Merged mod data must be reviewed before launching")]
+  ModDataReviewRequired,
   #[error("Failed to extract mod: {0}")]
   ModExtractionFailed(String),
   #[error("Invalid input: {0}")]
@@ -91,6 +93,15 @@ pub enum Error {
   },
 }
 
+impl Error {
+  pub fn io_context(action: &str, path: &std::path::Path, error: std::io::Error) -> Self {
+    Self::Io(std::io::Error::new(
+      error.kind(),
+      format!("Could not {action} {}: {error}", path.display()),
+    ))
+  }
+}
+
 impl From<diesel::result::Error> for Error {
   fn from(error: diesel::result::Error) -> Self {
     Self::Catalog(error.to_string())
@@ -122,6 +133,7 @@ impl serde::Serialize for Error {
       Error::GameRunning => "gameRunning",
       Error::GameNotRunning => "gameNotRunning",
       Error::GameLaunchFailed(_) => "gameLaunchFailed",
+      Error::ModDataReviewRequired => "modDataReviewRequired",
       Error::ModExtractionFailed(_) => "modExtractionFailed",
       Error::InvalidInput(_) => "invalidInput",
       Error::UnauthorizedPath(_) => "unauthorizedPath",
@@ -163,6 +175,27 @@ impl serde::Serialize for Error {
 #[cfg(test)]
 mod tests {
   use super::Error;
+
+  #[test]
+  fn contextual_file_errors_keep_io_kind_and_name_the_path() {
+    let error = Error::io_context(
+      "read compatibility input",
+      std::path::Path::new("missing-mod.vpk"),
+      std::io::Error::from(std::io::ErrorKind::NotFound),
+    );
+    let Error::Io(source) = &error else {
+      panic!("expected an IO error")
+    };
+    assert_eq!(source.kind(), std::io::ErrorKind::NotFound);
+    let json = serde_json::to_value(&error).unwrap();
+    assert_eq!(json["kind"], "io");
+    assert!(
+      json["message"]
+        .as_str()
+        .unwrap()
+        .contains("read compatibility input missing-mod.vpk")
+    );
+  }
 
   #[test]
   fn match_sync_error_serializes_its_subcode() {
@@ -220,5 +253,11 @@ mod tests {
       let json = serde_json::to_value(error).unwrap();
       assert_eq!(json["kind"], expected_kind);
     }
+  }
+
+  #[test]
+  fn mod_data_review_error_has_a_stable_kind() {
+    let json = serde_json::to_value(Error::ModDataReviewRequired).unwrap();
+    assert_eq!(json["kind"], "modDataReviewRequired");
   }
 }

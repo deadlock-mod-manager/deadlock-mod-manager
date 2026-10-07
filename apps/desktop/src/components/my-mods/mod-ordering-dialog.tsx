@@ -33,6 +33,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useMutation } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -50,6 +51,11 @@ interface ModOrderingDialogProps {
 interface SortableModItemProps {
   mod: LocalMod;
   index: number;
+}
+
+interface SaveOrderResult {
+  orderedRemoteIds: string[];
+  updatedVpkMappings: Array<[string, string[]]>;
 }
 
 const SortableModItem = ({ mod, index }: SortableModItemProps) => {
@@ -137,10 +143,8 @@ export const ModOrderingDialog = ({
     getActiveProfile,
   } = usePersistedStore();
   const [orderedMods, setOrderedMods] = useState<LocalMod[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const [internalOpen, setInternalOpen] = useState(false);
   const [reorderStartTime, setReorderStartTime] = useState<number | null>(null);
-
   const isControlled = controlledOpen !== undefined;
   const open = isControlled ? controlledOpen : internalOpen;
   const setOpen = isControlled
@@ -154,10 +158,6 @@ export const ModOrderingDialog = ({
       setReorderStartTime(Date.now());
     }
   }, [open]);
-
-  const handleOpenChange = (isOpen: boolean) => {
-    setOpen(isOpen);
-  };
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -178,10 +178,8 @@ export const ModOrderingDialog = ({
     }
   };
 
-  const handleSave = async () => {
-    try {
-      setIsLoading(true);
-
+  const saveOrderMutation = useMutation<SaveOrderResult, Error>({
+    mutationFn: async () => {
       const activeProfile = getActiveProfile();
       const profileFolder = activeProfile?.folderName ?? null;
 
@@ -196,11 +194,11 @@ export const ModOrderingDialog = ({
         "reorder_mods_by_remote_id",
         { modOrderData, profileFolder },
       );
-
-      // Update the frontend store with the new install order
       const orderedRemoteIds = orderedMods.map((mod) => mod.remoteId);
+      return { orderedRemoteIds, updatedVpkMappings };
+    },
+    onSuccess: ({ orderedRemoteIds, updatedVpkMappings }) => {
       reorderMods(orderedRemoteIds);
-
       updateModVpksAfterReorder(updatedVpkMappings);
 
       const durationSeconds = reorderStartTime
@@ -215,14 +213,17 @@ export const ModOrderingDialog = ({
 
       toast.success(t("modOrdering.orderSaved"));
       setOpen(false);
-    } catch (error) {
+    },
+    onError: (error) => {
       toast.error(t("modOrdering.orderSaveFailed"), {
-        description: error instanceof Error ? error.message : String(error),
+        description: error.message,
       });
       console.error("Failed to save mod order:", error);
-    } finally {
-      setIsLoading(false);
-    }
+    },
+  });
+
+  const handleSave = () => {
+    saveOrderMutation.mutate();
   };
 
   const handleCancel = () => {
@@ -230,8 +231,10 @@ export const ModOrderingDialog = ({
     setOpen(false);
   };
 
+  const isLoading = saveOrderMutation.isPending;
+
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={open} onOpenChange={setOpen}>
       {children && (
         <Tooltip>
           <TooltipTrigger asChild>
@@ -240,13 +243,17 @@ export const ModOrderingDialog = ({
           <TooltipContent>{t("modOrdering.manageOrderTooltip")}</TooltipContent>
         </Tooltip>
       )}
-      <DialogContent className='max-w-2xl max-h-[80vh] flex flex-col'>
-        <DialogHeader>
-          <DialogTitle>{t("modOrdering.title")}</DialogTitle>
-          <DialogDescription>{t("modOrdering.description")}</DialogDescription>
+      <DialogContent className='flex max-h-[82vh] max-w-2xl flex-col overflow-hidden'>
+        <DialogHeader className='shrink-0 gap-1 space-y-0 pr-8'>
+          <DialogTitle className='leading-snug'>
+            {t("modOrdering.title")}
+          </DialogTitle>
+          <DialogDescription className='max-w-[68ch] leading-relaxed'>
+            {t("modOrdering.description")}
+          </DialogDescription>
         </DialogHeader>
 
-        <div className='flex-1 overflow-hidden'>
+        <div className='flex min-h-0 flex-1 overflow-hidden'>
           {orderedMods.length === 0 ? (
             <div className='flex items-center justify-center py-8 text-muted-foreground'>
               {t("modOrdering.noMods")}
@@ -273,7 +280,7 @@ export const ModOrderingDialog = ({
           )}
         </div>
 
-        <DialogFooter className='flex justify-between'>
+        <DialogFooter className='flex shrink-0 justify-between border-t pt-4'>
           <Button variant='outline' onClick={handleCancel} disabled={isLoading}>
             <X className='mr-2 h-4 w-4' />
             {t("common.cancel")}

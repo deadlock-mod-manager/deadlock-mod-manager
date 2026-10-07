@@ -8,10 +8,13 @@ import { listen } from "@tauri-apps/api/event";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { MOD_PATHS_KEY } from "@/hooks/use-game-config-alert";
+import { useCompatibilityReview } from "@/components/providers/compatibility-review";
+import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { stopHeroDetection } from "@/hooks/use-hero-detection";
 import { useSkinRandomizer } from "@/hooks/use-skin-randomizer";
 import { restoreProfileGameinfo } from "@/lib/gameinfo";
 import { getLaunchErrorMessage } from "@/lib/launch-error";
+import { launchWithCompatibilityReview } from "@/lib/launch-with-compatibility-review";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { getAdditionalArgs } from "@/lib/utils";
@@ -34,6 +37,8 @@ export const useLaunch = () => {
   const queryClient = useQueryClient();
   const confirm = useConfirm();
   const { randomizeSkins } = useSkinRandomizer();
+  const reviewCompatibility = useCompatibilityReview();
+  const modCompatibility = useExperimentalFeature("mod-compatibility-repairs");
   const launchVanillaNoArgs =
     settings?.["launch-vanilla-no-args"]?.enabled ?? false;
 
@@ -121,8 +126,9 @@ export const useLaunch = () => {
         toast.info(t("common.gameinfoAutoReset"));
       });
 
+      let launched = false;
       try {
-        await invoke("start_game", {
+        const args = {
           vanilla,
           additionalArgs:
             vanilla && launchVanillaNoArgs
@@ -132,9 +138,19 @@ export const useLaunch = () => {
                   gamePresenceEnabled,
                 ),
           profileFolder,
-        });
+          modCompatibility,
+        };
+        launched = await launchWithCompatibilityReview(
+          () => invoke<void>("start_game", args),
+          () => reviewCompatibility(profileFolder),
+          vanilla || !modCompatibility,
+        );
       } finally {
         unlisten();
+      }
+      if (!launched) {
+        attempt.finish("cancelled");
+        return;
       }
 
       const state = usePersistedStore.getState();
@@ -162,6 +178,10 @@ export const useLaunch = () => {
       );
       console.error(error);
       logger.errorOnly(error);
+      if (isTauriError(error) && error.kind === "modDataReviewRequired") {
+        toast.error(t("errors.modDataReviewRequired"));
+        return;
+      }
       toast.error(
         getLaunchErrorMessage(
           error,

@@ -820,6 +820,40 @@
     "at": "at"
   },
   "myMods": {
+    "compatibility": {
+      "enable": "Enable Compatibility",
+      "about": "About Compatibility",
+      "description": "Launch modded checks selected mods and applies verified fixes automatically. If warnings or conflicts need approval, the review opens before launch.",
+      "review": "Review Compatibility",
+      "noEnabledMods": "Enable a mod to review compatibility.",
+      "reviewDescription": "Review game-data changes, model repairs, and material repairs for mods with compatibility fixes selected. Other mods keep their original files.",
+      "launchReviewDescription": "Launch is paused because selected mods have warnings or conflicts that need your review. Applying the planned fixes continues launch; closing this review cancels launch. Unresolved warnings may still affect these mods in-game.",
+      "applyAndLaunch": "Apply fixes and launch",
+      "launchFlow": "Launch modded applies verified fixes automatically and opens the review when warnings or conflicts need approval.",
+      "closeGame": "Close Deadlock to change compatibility. You can still review the planned repairs.",
+      "checking": "Checking mods against your installed game...",
+      "loadFailed": "Could not load your compatibility preference. Try again.",
+      "checkFailed": "Could not check mod compatibility.",
+      "missingFilesTitle": "Some mod files are no longer installed",
+      "missingFilesDescription": "These mod records point to deleted files and were skipped. If you removed these mods, you can continue. Otherwise, reinstall them and review compatibility again.",
+      "retry": "Try Again",
+      "changeFailed": "Could not change compatibility.",
+      "enableAndApply": "Enable and Apply",
+      "apply": "Apply Compatibility",
+      "applied": "Compatibility is ready for the next launch.",
+      "perMod": "Compatibility fixes",
+      "forMod": "Compatibility fixes for {{name}}",
+      "perModDescription": "Select this mod for compatibility repairs. Launch modded applies verified fixes or opens a review for warnings. Turning this off uses the original files. Saved separately for each profile.",
+      "selected_one": "Compatibility fixes enabled for {{count}} mod",
+      "selected_other": "Compatibility fixes enabled for {{count}} mods",
+      "selectMods": "Check Compatibility on a mod to enable fixes.",
+      "excluded": "Original files preserved: {{names}}",
+      "sharedTitle": "Shared resources preserved",
+      "sharedDescription": "These resources also belong to a mod with compatibility turned off. They will not be replaced by the compatibility overlay.",
+      "on": "Compatibility fixes on",
+      "off": "Compatibility fixes off",
+      "label": "Compatibility"
+    },
     "checkForUpdates": "Check for updates",
     "checkForUpdatesTooltip": "Check if your mods have updates",
     "checkForUpdatesError": "Failed to check for mod updates",
@@ -949,7 +983,127 @@
     "orderSaved": "Mod order saved successfully",
     "orderSaveFailed": "Failed to save mod order",
     "manageOrder": "Change Mods Order",
-    "vpkCount": "{{count}} VPK(s)"
+    "vpkCount": "{{count}} VPK(s)",
+    "compatibility": {
+      "title": "Model and material compatibility",
+      "description": "The manager checks supported models and materials against your installed game and prepares verified repairs automatically. Original mod files stay unchanged.",
+      "repairs": {
+        "animationSkeleton": "Animation skeleton updated",
+        "animationSkeletonRebased": "Animation layout updated; custom settings preserved",
+        "animationRigRebase": "Restore current animation rig and preserve authored mesh bind frames",
+        "animationInterface": "Current animation bindings restored; custom model preserved",
+        "cameraInterface": "Missing camera interface restored",
+        "cameraControls": "Camera interface and missing controls restored",
+        "materialBindings": "Material colors restored on current models",
+        "modelRelocation": "Mod model restored at the current hero model path"
+      },
+      "warnings": {
+        "unverifiedSkeleton": "Animation layout differs; automatic update skipped",
+        "invalidSkeleton": "Invalid bone hierarchy or reference poses",
+        "invalidBoneRemapping": "Invalid mesh bone mapping",
+        "invalidAttachment": "Attachment references an invalid bone or influence",
+        "invalidHitbox": "Hitbox references a missing bone",
+        "missingResource": "Referenced resource is unavailable",
+        "missingCameraInterface": "Required camera settings are missing; automatic repair skipped",
+        "materialMapping": "Material repair needs a reviewed mapping",
+        "materialInterface": "Material shader interface differs from the current reference",
+        "modelMapping": "Model migration needs a verified current target",
+        "missingAnimationInterface": "Current animation graph or skeleton bindings are missing",
+        "animationMapping": "Animation bindings need verified bone mapping",
+        "unreadableResource": "This resource could not be checked"
+      },
+      "warningDescription": "These findings have no verified automatic repair. Missing resources or camera settings can cause loading failures or crashes. Disable a failing mod or contact its author with the file and detail shown here."
+    },
+    "dataCompatibility": {
+      "title": "Hero and ability compatibility",
+      "description": "Checks hero visibility and required ability definitions against your installed game and your selected conflict choices. Original mod files stay unchanged.",
+      "repairs": {
+        "heroDevelopmentState": "Hero visibility field restored",
+        "inheritedDefinition": "Inherited settings updated",
+        "retainedDependency": "Required definition retained",
+        "currentReference": "Unavailable ability binding replaced with current game settings",
+        "enumMapEntry": "Stat key absent from the current game omitted"
+      },
+      "warnings": {
+        "missingDefinition": "Required definition is missing",
+        "unverifiedDefinition": "Required definition has no verified repair",
+        "unverifiedInheritance": "Inherited settings update skipped",
+        "missingDevelopmentState": "Hero visibility needs author review",
+        "omittedHeroDefinition": "Hero definition omitted because required abilities are unavailable",
+        "omittedEnumMapEntry": "Omitted stat value needs author review"
+      },
+      "reasons": {
+        "definitionUnavailable": "Not found in the installed game or enabled mods.",
+        "competingDefinitions": "An enabled mod changes the template or provides a different copy.",
+        "unrecognizedClassOrEnum": "The definition uses a class or enum value that could not be verified against the installed game.",
+        "ambiguousTemplates": "More than one template could supply the current settings.",
+        "inheritanceCycle": "The definitions inherit from each other in a loop.",
+        "visibilityMigrationUnverified": "No matching current hero provides an unambiguous visibility value."
+      },
+      "warningDescription": "No automatic repair was verified for these findings. A hero or ability may fail to load or behave incorrectly. Original mod files stay unchanged."
+    },
+    "localization": {
+      "title": "Combine Shared Mod Changes",
+      "description": "Some mods edit the same shared files. DMM can combine their separate changes so one mod does not hide another.",
+      "reviewDescription": "Deadlock normally loads only one copy of a shared file. DMM will build one copy that keeps unique names and text in every language, plus supported game data from each mod.",
+      "automaticSummary_one": "{{count}} unique change will be combined automatically",
+      "automaticSummary_other": "{{count}} unique changes will be combined automatically",
+      "choiceSummary_one": "{{count}} overlap needs your choice",
+      "choiceSummary_other": "{{count}} overlaps need your choice",
+      "noChoicesSummary": "No overlapping changes need a choice",
+      "conflictsTitle": "Choose which mod wins each overlap",
+      "conflictsDescription": "DMM recommends the mod that is higher in your load order. Change a selection only when you want another version.",
+      "readyTitle": "Conflict check complete",
+      "unresolvedWarningsMessage": "No conflicts need a choice, but compatibility warnings remain. Review the findings above before launching.",
+      "noConflicts": "Every detected change belongs to a different name or game-data entry.",
+      "readyMessage": "Nothing overlaps. DMM can keep all detected changes.",
+      "heroIdsAdjustedTitle_one": "A new hero ID will be adjusted",
+      "heroIdsAdjustedTitle_other": "{{count}} new hero IDs will be adjusted",
+      "heroIdsAdjustedDescription": "Two heroes requested the same internal ID. DMM keeps the higher mod's ID and gives each later hero a free one so they can load together.",
+      "heroIdChanged": "ID {{requested}} → {{assigned}}",
+      "oldTextProtectedTitle_one": "DMM kept the current game text for {{count}} outdated mod entry",
+      "oldTextProtectedTitle_other": "DMM kept the current game text for {{count}} outdated mod entries",
+      "oldTextProtectedDescription": "These mod values matched text used by an older Deadlock version. DMM ignored them so they could not replace your installed game's newer text.",
+      "snapshotWarningTitle": "Some mods include many game text entries",
+      "snapshotWarningDescription": "These files may include an older copy of the game's text. DMM ignored unchanged text and kept only the differences it found.",
+      "snapshotWarningItem": "{{modName}} differs in {{changed}} of {{total}} text entries",
+      "parseWarningTitle": "Some text entries could not be read",
+      "parseWarningDescription": "DMM skipped only the damaged lines and kept the readable text.",
+      "parseWarningItem": "{{modName}} has unreadable text on lines {{lines}}",
+      "advancedDetails_one": "Advanced details for {{count}} file",
+      "advancedDetails_other": "Advanced details for {{count}} files",
+      "textConflictLabel": "Text entry: {{token}}",
+      "dataConflictLabel": "Game-data entry: {{row}}",
+      "heroConflictLabel": "Hero: {{row}}",
+      "abilityConflictLabel": "Ability: {{row}}",
+      "botConflictLabel": "Bot difficulty: {{row}}",
+      "dataFieldConflictLabel": "{{entry}} — setting: {{field}}",
+      "gameText": "Game text",
+      "gameData": "Game data",
+      "candidateCount": "{{count}} values",
+      "chooseWinner": "Choose a winner for {{token}}",
+      "useLoadOrder": "Recommended: use {{modName}}",
+      "chooseModValue": "{{modName}}: {{value}}",
+      "compiledRow": "Compiled data row",
+      "chooseCompiledWinner": "Choose a winner for {{row}}",
+      "chooseCompiledMod": "{{modName}} from {{sourceVpk}}",
+      "keepCompiledVanilla": "Keep the original game data",
+      "doNotAddCompiled": "Do not add this game-data entry",
+      "keepVanilla": "Keep the original game text: {{value}}",
+      "doNotAdd": "Do not add this text entry",
+      "unknownMod": "Unknown mod",
+      "apply": "Combine Mod Changes",
+      "applied": "Shared mod changes combined",
+      "appliedDescription": "DMM kept {{count}} text entries and {{rows}} game-data entries from your enabled mods.",
+      "applyFailed": "DMM could not combine the shared mod changes"
+    },
+    "baselines": {
+      "title": "Game-data baseline",
+      "matched": "A historical baseline was inferred. Unchanged values follow the installed game; detected mod edits are preserved.",
+      "legacyApproximate": "Older history uses approximate numeric values. DMM preserves numeric differences and skips repairs that need exact historical evidence.",
+      "ambiguous": "Several historical builds imply different mod edits. DMM preserves differences from the installed game and skips historical rebasing for this file.",
+      "unavailable": "No suitable historical baseline was found. DMM preserves differences from the installed game, but cannot distinguish authored edits from outdated game defaults."
+    }
   },
   "mods": {
     "invalidDeepLink": "This 1-click download link is invalid.",
@@ -1761,6 +1915,10 @@
       "conflict-detection": {
         "title": "Conflict Detection",
         "description": "Flag enabled mods that change the same files and show them in a Conflicts tab in My Mods."
+      },
+      "mod-compatibility-repairs": {
+        "title": "Mod Compatibility Repairs",
+        "description": "Repair outdated mods and merge game text and data that several mods change. Choose which mods to repair in My Mods."
       }
     }
   },
@@ -2142,7 +2300,9 @@
     "disableMod": "Disable Mod?",
     "enableMod": "Enable Mod?",
     "installedTooltip": "Toggle to disable mod (will not delete, just disable it ingame)",
-    "downloadedTooltip": "Toggle to enable mod"
+    "downloadedTooltip": "Toggle to enable mod",
+    "toggleForMod": "Enable mod {{name}}",
+    "mod": "Mod"
   },
   "addons": {
     "analyzeLocal": "Analyze Local Addons",
@@ -2156,6 +2316,7 @@
     "analysisSuccessAllIdentified": "Analysis complete! All {{identified}} addon(s) were automatically identified and added to current profile",
     "analysisWarning": "Analysis complete! Found {{count}} addon(s) with {{errors}} error(s)",
     "analysisError": "Failed to analyze local addons",
+    "registrationError": "Could not register {{modName}}",
     "foundAddons": "Found Addons",
     "noAddonsFound": "No addons found in your game directory",
     "errors": "Errors",
@@ -2357,6 +2518,7 @@
   "errors": {
     "genericMessage": "Something went wrong.",
     "gameLaunchFailed": "Deadlock couldn't be launched. Make sure Steam is running, then try again.",
+      "modDataReviewRequired": "Mods or game files changed after compatibility review. Click Launch modded again to review the updated plan.",
     "errorCode": "Error code:",
     "tryAgain": "Try again",
     "goBack": "Go back",
