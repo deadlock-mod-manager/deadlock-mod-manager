@@ -14,6 +14,11 @@ import { Route as SplatRouteImport } from './routes/$'
 import { Route as R403RouteImport } from './routes/403'
 import { Route as CrosshairGeneratorRouteImport } from './routes/crosshair-generator'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as DeadlockFatalErrorUnableToLoadLayoutFileRouteImport } from './routes/deadlock-fatal-error-unable-to-load-layout-file'
+import { Route as DeadlockModManagerFailedToDownloadRouteImport } from './routes/deadlock-mod-manager-failed-to-download'
+import { Route as DeadlockModManagerFailedToSaveModOrderRouteImport } from './routes/deadlock-mod-manager-failed-to-save-mod-order'
+import { Route as DeadlockModManagerOsError5RouteImport } from './routes/deadlock-mod-manager-os-error-5'
+import { Route as DeadlockModManagerOsError740RouteImport } from './routes/deadlock-mod-manager-os-error-740'
 import { Route as DeadlockModsNotWorkingRouteImport } from './routes/deadlock-mods-not-working'
 import { Route as DiscordRouteImport } from './routes/discord'
 import { Route as DocsRouteImport } from './routes/docs'
@@ -64,6 +69,36 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DeadlockFatalErrorUnableToLoadLayoutFileRoute =
+  DeadlockFatalErrorUnableToLoadLayoutFileRouteImport.update({
+    id: '/deadlock-fatal-error-unable-to-load-layout-file',
+    path: '/deadlock-fatal-error-unable-to-load-layout-file',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DeadlockModManagerFailedToDownloadRoute =
+  DeadlockModManagerFailedToDownloadRouteImport.update({
+    id: '/deadlock-mod-manager-failed-to-download',
+    path: '/deadlock-mod-manager-failed-to-download',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DeadlockModManagerFailedToSaveModOrderRoute =
+  DeadlockModManagerFailedToSaveModOrderRouteImport.update({
+    id: '/deadlock-mod-manager-failed-to-save-mod-order',
+    path: '/deadlock-mod-manager-failed-to-save-mod-order',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DeadlockModManagerOsError5Route =
+  DeadlockModManagerOsError5RouteImport.update({
+    id: '/deadlock-mod-manager-os-error-5',
+    path: '/deadlock-mod-manager-os-error-5',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const DeadlockModManagerOsError740Route =
+  DeadlockModManagerOsError740RouteImport.update({
+    id: '/deadlock-mod-manager-os-error-740',
+    path: '/deadlock-mod-manager-os-error-740',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const DeadlockModsNotWorkingRoute = DeadlockModsNotWorkingRouteImport.update({
   id: '/deadlock-mods-not-working',
   path: '/deadlock-mods-not-working',
@@ -192,6 +227,11 @@ export interface FileRoutesByFullPath {
   '/403': typeof R403Route
   '/crosshair-generator': typeof CrosshairGeneratorRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/deadlock-fatal-error-unable-to-load-layout-file': typeof DeadlockFatalErrorUnableToLoadLayoutFileRoute
+  '/deadlock-mod-manager-failed-to-download': typeof DeadlockModManagerFailedToDownloadRoute
+  '/deadlock-mod-manager-failed-to-save-mod-order': typeof DeadlockModManagerFailedToSaveModOrderRoute
+  '/deadlock-mod-manager-os-error-5': typeof DeadlockModManagerOsError5Route
+  '/deadlock-mod-manager-os-error-740': typeof DeadlockModManagerOsError740Route
   '/deadlock-mods-not-working': typeof DeadlockModsNotWorkingRoute
   '/discord': typeof DiscordRoute
   '/docs': typeof DocsRoute
@@ -222,6 +262,11 @@ export interface FileRoutesByTo {
   '/$': typeof SplatRoute
   '/403': typeof R403Route
   '/crosshair-generator': typeof CrosshairGeneratorRoute
+  '/deadlock-fatal-error-unable-to-load-layout-file': typeof DeadlockFatalErrorUnableToLoadLayoutFileRoute
+  '/deadlock-mod-manager-failed-to-download': typeof DeadlockModManagerFailedToDownloadRoute
+  '/deadlock-mod-manager-failed-to-save-mod-order': typeof DeadlockModManagerFailedToSaveModOrderRoute
+  '/deadlock-mod-manager-os-error-5': typeof DeadlockModManagerOsError5Route
+  '/deadlock-mod-manager-os-error-740': typeof DeadlockModManagerOsError740Route
   '/deadlock-mods-not-working': typeof DeadlockModsNotWorkingRoute
   '/discord': typeof DiscordRoute
   '/docs': typeof DocsRoute
@@ -253,6 +298,11 @@ export interface FileRoutesById {
   '/403': typeof R403Route
   '/crosshair-generator': typeof CrosshairGeneratorRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/deadlock-fatal-error-unable-to-load-layout-file': typeof DeadlockFatalErrorUnableToLoadLayoutFileRoute
+  '/deadlock-mod-manager-failed-to-download': typeof DeadlockModManagerFailedToDownloadRoute
+  '/deadlock-mod-manager-failed-to-save-mod-order': typeof DeadlockModManagerFailedToSaveModOrderRoute
+  '/deadlock-mod-manager-os-error-5': typeof DeadlockModManagerOsError5Route
+  '/deadlock-mod-manager-os-error-740': typeof DeadlockModManagerOsError740Route
   '/deadlock-mods-not-working': typeof DeadlockModsNotWorkingRoute
   '/discord': typeof DiscordRoute
   '/docs': typeof DocsRoute
@@ -286,6 +336,11 @@ export interface FileRouteTypes {
     | '/403'
     | '/crosshair-generator'
     | '/dashboard'
+    | '/deadlock-fatal-error-unable-to-load-layout-file'
+    | '/deadlock-mod-manager-failed-to-download'
+    | '/deadlock-mod-manager-failed-to-save-mod-order'
+    | '/deadlock-mod-manager-os-error-5'
+    | '/deadlock-mod-manager-os-error-740'
     | '/deadlock-mods-not-working'
     | '/discord'
     | '/docs'
@@ -316,6 +371,11 @@ export interface FileRouteTypes {
     | '/$'
     | '/403'
     | '/crosshair-generator'
+    | '/deadlock-fatal-error-unable-to-load-layout-file'
+    | '/deadlock-mod-manager-failed-to-download'
+    | '/deadlock-mod-manager-failed-to-save-mod-order'
+    | '/deadlock-mod-manager-os-error-5'
+    | '/deadlock-mod-manager-os-error-740'
     | '/deadlock-mods-not-working'
     | '/discord'
     | '/docs'
@@ -346,6 +406,11 @@ export interface FileRouteTypes {
     | '/403'
     | '/crosshair-generator'
     | '/dashboard'
+    | '/deadlock-fatal-error-unable-to-load-layout-file'
+    | '/deadlock-mod-manager-failed-to-download'
+    | '/deadlock-mod-manager-failed-to-save-mod-order'
+    | '/deadlock-mod-manager-os-error-5'
+    | '/deadlock-mod-manager-os-error-740'
     | '/deadlock-mods-not-working'
     | '/discord'
     | '/docs'
@@ -378,6 +443,11 @@ export interface RootRouteChildren {
   R403Route: typeof R403Route
   CrosshairGeneratorRoute: typeof CrosshairGeneratorRoute
   DashboardRoute: typeof DashboardRouteWithChildren
+  DeadlockFatalErrorUnableToLoadLayoutFileRoute: typeof DeadlockFatalErrorUnableToLoadLayoutFileRoute
+  DeadlockModManagerFailedToDownloadRoute: typeof DeadlockModManagerFailedToDownloadRoute
+  DeadlockModManagerFailedToSaveModOrderRoute: typeof DeadlockModManagerFailedToSaveModOrderRoute
+  DeadlockModManagerOsError5Route: typeof DeadlockModManagerOsError5Route
+  DeadlockModManagerOsError740Route: typeof DeadlockModManagerOsError740Route
   DeadlockModsNotWorkingRoute: typeof DeadlockModsNotWorkingRoute
   DiscordRoute: typeof DiscordRoute
   DocsRoute: typeof DocsRoute
@@ -434,6 +504,41 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/deadlock-fatal-error-unable-to-load-layout-file': {
+      id: '/deadlock-fatal-error-unable-to-load-layout-file'
+      path: '/deadlock-fatal-error-unable-to-load-layout-file'
+      fullPath: '/deadlock-fatal-error-unable-to-load-layout-file'
+      preLoaderRoute: typeof DeadlockFatalErrorUnableToLoadLayoutFileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/deadlock-mod-manager-failed-to-download': {
+      id: '/deadlock-mod-manager-failed-to-download'
+      path: '/deadlock-mod-manager-failed-to-download'
+      fullPath: '/deadlock-mod-manager-failed-to-download'
+      preLoaderRoute: typeof DeadlockModManagerFailedToDownloadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/deadlock-mod-manager-failed-to-save-mod-order': {
+      id: '/deadlock-mod-manager-failed-to-save-mod-order'
+      path: '/deadlock-mod-manager-failed-to-save-mod-order'
+      fullPath: '/deadlock-mod-manager-failed-to-save-mod-order'
+      preLoaderRoute: typeof DeadlockModManagerFailedToSaveModOrderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/deadlock-mod-manager-os-error-5': {
+      id: '/deadlock-mod-manager-os-error-5'
+      path: '/deadlock-mod-manager-os-error-5'
+      fullPath: '/deadlock-mod-manager-os-error-5'
+      preLoaderRoute: typeof DeadlockModManagerOsError5RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/deadlock-mod-manager-os-error-740': {
+      id: '/deadlock-mod-manager-os-error-740'
+      path: '/deadlock-mod-manager-os-error-740'
+      fullPath: '/deadlock-mod-manager-os-error-740'
+      preLoaderRoute: typeof DeadlockModManagerOsError740RouteImport
       parentRoute: typeof rootRouteImport
     }
     '/deadlock-mods-not-working': {
@@ -643,6 +748,14 @@ const rootRouteChildren: RootRouteChildren = {
   R403Route: R403Route,
   CrosshairGeneratorRoute: CrosshairGeneratorRoute,
   DashboardRoute: DashboardRouteWithChildren,
+  DeadlockFatalErrorUnableToLoadLayoutFileRoute:
+    DeadlockFatalErrorUnableToLoadLayoutFileRoute,
+  DeadlockModManagerFailedToDownloadRoute:
+    DeadlockModManagerFailedToDownloadRoute,
+  DeadlockModManagerFailedToSaveModOrderRoute:
+    DeadlockModManagerFailedToSaveModOrderRoute,
+  DeadlockModManagerOsError5Route: DeadlockModManagerOsError5Route,
+  DeadlockModManagerOsError740Route: DeadlockModManagerOsError740Route,
   DeadlockModsNotWorkingRoute: DeadlockModsNotWorkingRoute,
   DiscordRoute: DiscordRoute,
   DocsRoute: DocsRoute,

@@ -3,7 +3,7 @@ import { cn } from "@deadlock-mods/ui/lib/utils";
 import { Link } from "@tanstack/react-router";
 import { CtaArrow, DownloadCta, secondaryCta } from "@/components/home/cta";
 import { Eyebrow } from "@/components/home/section-heading";
-import { GUIDES, type GuidePath } from "@/lib/guides";
+import { GUIDES, type Guide, type GuidePath } from "@/lib/guides";
 import type { FaqEntry } from "@/utils/structured-data";
 
 /** Body copy for guide pages: paragraphs, lists, links and inline code. */
@@ -131,24 +131,32 @@ export const GuideFaq = ({ faqs }: { faqs: FaqEntry[] }) => (
   </GuideSection>
 );
 
-export const RelatedGuides = ({ current }: { current: GuidePath }) => (
+export const RelatedGuides = ({
+  current,
+  guides = GUIDES,
+}: {
+  current: GuidePath;
+  guides?: readonly Guide[];
+}) => (
   <GuideSection title='Related guides'>
     <ul className='grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>
-      {GUIDES.filter((guide) => guide.path !== current).map((guide) => (
-        <li key={guide.path}>
-          <Link
-            to={guide.path}
-            className='group/cta flex h-full flex-col rounded-xl border border-border bg-surface p-5 hover:border-border-hover focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2'>
-            <span className='flex items-center justify-between gap-3 font-semibold'>
-              {guide.label}
-              <CtaArrow />
-            </span>
-            <span className='mt-2 text-muted-foreground text-sm leading-relaxed'>
-              {guide.description}
-            </span>
-          </Link>
-        </li>
-      ))}
+      {guides
+        .filter((guide) => guide.path !== current)
+        .map((guide) => (
+          <li key={guide.path}>
+            <Link
+              to={guide.path}
+              className='group/cta flex h-full flex-col rounded-xl border border-border bg-surface p-5 hover:border-border-hover focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2'>
+              <span className='flex items-center justify-between gap-3 font-semibold'>
+                {guide.label}
+                <CtaArrow />
+              </span>
+              <span className='mt-2 text-muted-foreground text-sm leading-relaxed'>
+                {guide.description}
+              </span>
+            </Link>
+          </li>
+        ))}
     </ul>
   </GuideSection>
 );
@@ -174,6 +182,27 @@ export const GuideDownloadBand = ({
       </div>
     </div>
   </section>
+);
+
+/**
+ * The error text exactly as users see it, so the page matches searches that
+ * paste the message.
+ */
+export const ErrorMessage = ({
+  source,
+  children,
+}: {
+  source: string;
+  children: React.ReactNode;
+}) => (
+  <figure className='mt-10 max-w-3xl'>
+    <figcaption className='mb-2 text-[13px] text-muted-foreground'>
+      {source}
+    </figcaption>
+    <pre className='overflow-x-auto whitespace-pre-wrap rounded-lg border border-destructive/40 bg-surface p-4 font-mono text-[14px] text-foreground leading-relaxed'>
+      {children}
+    </pre>
+  </figure>
 );
 
 /** An app screenshot with a caption. */

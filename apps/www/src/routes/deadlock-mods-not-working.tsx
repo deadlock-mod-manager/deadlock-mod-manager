@@ -8,6 +8,7 @@ import {
   RelatedGuides,
 } from "@/components/guides/guide-page";
 import { DISCORD_URL, DOCS_URL } from "@/lib/constants";
+import { ERROR_GUIDES } from "@/lib/guides";
 import { guideHead, type GuidePageData } from "@/utils/structured-data";
 
 const page: GuidePageData = {
@@ -123,6 +124,28 @@ function ModsNotWorkingPage() {
                 <span className='font-medium text-foreground'>Fix: </span>
                 {item.fix}
               </p>
+            </li>
+          ))}
+        </ul>
+      </GuideSection>
+
+      <GuideSection
+        id='error-messages'
+        title='Seeing a specific error?'
+        intro='Each of these has its own step-by-step fix.'>
+        <ul className='grid gap-3 sm:grid-cols-2 lg:grid-cols-3'>
+          {ERROR_GUIDES.map((guide) => (
+            <li key={guide.path}>
+              <Link
+                to={guide.path}
+                className='flex h-full flex-col rounded-xl border border-border bg-surface p-5 hover:border-border-hover focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2'>
+                <span className='font-mono font-semibold text-[15px]'>
+                  {guide.label}
+                </span>
+                <span className='mt-2 text-muted-foreground text-sm leading-relaxed'>
+                  {guide.description}
+                </span>
+              </Link>
             </li>
           ))}
         </ul>
