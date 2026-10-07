@@ -10,6 +10,7 @@
     "domain-model",
     "auth-service",
     "mirror-service",
+    "apt-repository",
     "plugins",
     "contributing",
     "api-reference"
