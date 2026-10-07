@@ -29,6 +29,19 @@ The manager does not check local mods for GameBanana updates. Keep a separate co
 
 For mods with bundled fonts, choose **Install Fonts** to install them or **Skip** to leave them out.
 
+## Move mods between mod managers
+
+To bring your setup over from another mod manager, choose **Import from other mod managers** in Mods Library. Installed managers such as Grimoire are detected automatically; if one is not found, choose its data folder by hand. You can also choose **Open export file…** to load a `mod-interchange.json` that another manager exported.
+
+Pick what to bring over: mods with their enabled state and load order, profiles, and crosshairs. Mods you already have are skipped, and the other manager's files are not changed. Mods without a GameBanana link are imported as local mods; at the end you can **Analyze** them or paste their GameBanana link to get updates, then choose **Continue**, or **Skip** to keep them as local mods.
+
+To go the other way, open the **⋮** menu in Mods Library and choose **Export for other mod managers**. Choose whether to include all profiles and your crosshairs, then pick a folder. The export is a `deadlock-mods-export-…` folder that Grimoire and any other manager supporting the [Mod Interchange Format](/developer-docs/mod-interchange) can import.
+
+<Callout type='info' title='Close Deadlock first'>
+  If the game is running during an import, mods are imported disabled. Enable
+  them after you close Deadlock.
+</Callout>
+
 ## Variants and installed files
 
 > **Screenshot pending:** Manage Files dialog showing selected variants.
