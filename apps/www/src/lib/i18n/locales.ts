@@ -81,9 +81,6 @@ export interface DelocalizedPath {
   path: string;
 }
 
-export const isLocale = (value: string): value is Locale =>
-  LOCALES.some((locale) => locale.id === value);
-
 export const getLocaleConfig = (id: Locale): LocaleConfig =>
   LOCALES.find((locale) => locale.id === id) ?? LOCALES[0];
 
@@ -91,7 +88,7 @@ export const getLocaleConfig = (id: Locale): LocaleConfig =>
  * Pages that exist in every language. Legal pages, the dashboard, auth and
  * redirect routes stay English-only at their unprefixed URLs.
  */
-export const LOCALIZED_PATHS = [
+const LOCALIZED_PATHS = [
   "/",
   "/download",
   "/download/windows",

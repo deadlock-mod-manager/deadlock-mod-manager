@@ -6,7 +6,7 @@
 
 export const SECTION_KEYS = ["build", "abilities", "rules"] as const;
 
-export type SectionKey = (typeof SECTION_KEYS)[number];
+type SectionKey = (typeof SECTION_KEYS)[number];
 
 export type Sections = Record<SectionKey, boolean>;
 

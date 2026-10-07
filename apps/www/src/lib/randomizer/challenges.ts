@@ -7,7 +7,7 @@
  * `challenges.<id>`. The order matters: the roll shuffles this list, so
  * reordering it would hand an existing seed different rules.
  */
-export const CHALLENGE_IDS = [
+const CHALLENGE_IDS = [
   "exactOrder",
   "noRecall",
   "parry",
@@ -22,7 +22,7 @@ export const CHALLENGE_IDS = [
   "noHeal",
 ] as const;
 
-export type ChallengeId = (typeof CHALLENGE_IDS)[number];
+type ChallengeId = (typeof CHALLENGE_IDS)[number];
 
 export interface Challenge {
   id: ChallengeId;

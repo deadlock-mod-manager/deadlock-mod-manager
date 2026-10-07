@@ -10,7 +10,7 @@ import {
 
 export const SITE_NAME = "Deadlock Mod Manager";
 
-export const DEFAULT_DESCRIPTION =
+const DEFAULT_DESCRIPTION =
   "Free, open-source mod manager for Valve's Deadlock. Browse GameBanana mods, install them in one click, and manage skins and sounds on Windows and Linux.";
 
 const DEFAULT_OG_IMAGE = {

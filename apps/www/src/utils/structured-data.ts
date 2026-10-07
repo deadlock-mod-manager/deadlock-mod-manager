@@ -22,7 +22,7 @@ export interface FaqEntry {
  * Translated answers mark links and code with <Trans> tags such as
  * <link>GitHub</link>. JSON-LD gets the plain text.
  */
-export const stripTags = (text: string) => text.replace(/<\/?[\w-]+>/g, "");
+const stripTags = (text: string) => text.replace(/<\/?[\w-]+>/g, "");
 
 const faqPage = (faqs: FaqEntry[]) => ({
   "@type": "FAQPage",

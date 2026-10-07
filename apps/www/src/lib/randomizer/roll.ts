@@ -53,7 +53,7 @@ const UPGRADE_CHANCE = 0.5;
 const LANES = ["yellow", "blue", "green"] as const;
 
 /** Lane names are translated at render time, under `lanes.<lane>`. */
-export type Lane = (typeof LANES)[number];
+type Lane = (typeof LANES)[number];
 const CHALLENGE_COUNT = 3;
 
 /**
@@ -73,7 +73,7 @@ export const CHARGE_ITEMS: ReadonlySet<string> = new Set([
 const DEFAULT_UNLOCK_GATES = [1, 2, 3, 5];
 
 /** Label and blurb are translated at render time, under `mandates.<mandate>`. */
-export type Mandate = "gunslinger" | "caster" | "bulwark";
+type Mandate = "gunslinger" | "caster" | "bulwark";
 
 const MANDATES: Record<ItemCategory, Mandate> = {
   weapon: "gunslinger",
