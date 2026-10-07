@@ -19,6 +19,18 @@
     "tea": {
       "name": "Tea",
       "description": "Przytulny motyw na cześć Snipztea."
+    },
+    "arcane": {
+      "name": "Arcane",
+      "description": "Elegancki ciemny motyw z różowo-czerwoną poświatą."
+    },
+    "deadlock-api": {
+      "name": "Deadlock API",
+      "description": "Czerń OLED z elektrycznie czerwoną poświatą."
+    },
+    "oled": {
+      "name": "OLED",
+      "description": "Prawdziwa czerń i grafitowe powierzchnie, stworzone dla ekranów OLED."
     }
   },
   "categories": {

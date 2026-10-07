@@ -18,6 +18,9 @@ const THEME_GLOW = {
   nightshift: "rgb(45 212 191)",
   lovelock: "rgb(255 140 192)",
   tea: "rgb(168 85 247)",
+  arcane: "rgb(232 65 111)",
+  "deadlock-api": "rgb(250 68 84)",
+  oled: "rgb(216 196 151)",
 } satisfies Record<PreviewThemeId, string>;
 
 const AUTO_CYCLE_MS = 4200;

@@ -5,7 +5,10 @@ export type PreviewThemeId =
   | "bloodmoon"
   | "nightshift"
   | "lovelock"
-  | "tea";
+  | "tea"
+  | "arcane"
+  | "deadlock-api"
+  | "oled";
 
 export type PreviewTheme = {
   id: PreviewThemeId;
@@ -164,6 +167,111 @@ export const PREVIEW_THEMES: PreviewTheme[] = [
       backgroundSize: "auto, 960px auto",
     },
     transparentChrome: true,
+  },
+  {
+    id: "arcane",
+    name: "Arcane",
+    preview: "/home/app/theme-arcane.webp",
+    // The desktop derives these from the accent picker; values are for the
+    // default accent (#E8416F).
+    vars: {
+      ...BASE_VARS,
+      "--background": "0 0% 4%",
+      "--foreground": "0 0% 90%",
+      "--card": "343 15% 6% / 0.9",
+      "--card-foreground": "0 0% 90%",
+      "--popover": "343 15% 6% / 0.95",
+      "--secondary": "343 30% 10% / 0.85",
+      "--secondary-foreground": "0 0% 85%",
+      "--muted": "343 30% 12% / 0.85",
+      "--muted-foreground": "0 0% 60%",
+      "--primary": "343 70% 48%",
+      "--primary-foreground": "0 0% 4%",
+      "--accent": "343 50% 38%",
+      "--accent-foreground": "0 0% 4%",
+      "--border": "343 30% 16%",
+      "--input": "343 30% 14% / 0.7",
+      "--ring": "343 65% 45%",
+      "--sidebar-background": "0 0% 4% / 0.98",
+      "--sidebar-foreground": "0 0% 90%",
+      "--sidebar-primary": "343 70% 48%",
+      "--sidebar-accent": "343 50% 38%",
+      "--sidebar-accent-foreground": "0 0% 4%",
+      "--sidebar-border": "343 30% 14%",
+    },
+    backdrop: {
+      background:
+        "radial-gradient(ellipse 85% 65% at 0% 0%, rgba(232,65,111,.26) 0%, transparent 52%), radial-gradient(ellipse 80% 60% at 100% 100%, rgba(232,65,111,.21) 0%, transparent 48%), radial-gradient(ellipse 55% 45% at 100% 0%, rgba(197,55,94,.11) 0%, transparent 42%), radial-gradient(ellipse 65% 50% at 0% 100%, rgba(197,55,94,.09) 0%, transparent 38%), radial-gradient(ellipse 50% 50% at 50% 50%, rgba(232,65,111,.04) 0%, transparent 65%), hsl(var(--background))",
+    },
+    transparentChrome: true,
+  },
+  {
+    id: "deadlock-api",
+    name: "Deadlock API",
+    preview: "/home/app/theme-deadlock-api.webp",
+    icon: "/home/themes/deadlock-api-icon.svg",
+    vars: {
+      ...BASE_VARS,
+      "--background": "220 20% 2%",
+      "--foreground": "210 20% 92%",
+      "--card": "220 20% 5% / 0.9",
+      "--card-foreground": "210 20% 92%",
+      "--popover": "220 20% 5% / 0.95",
+      "--secondary": "220 15% 9% / 0.85",
+      "--secondary-foreground": "210 15% 85%",
+      "--muted": "220 15% 11% / 0.85",
+      "--muted-foreground": "210 10% 55%",
+      "--primary": "354 94% 62%",
+      "--primary-foreground": "0 0% 100%",
+      "--accent": "354 80% 50%",
+      "--accent-foreground": "0 0% 100%",
+      "--border": "220 15% 13%",
+      "--input": "220 15% 11% / 0.7",
+      "--ring": "354 90% 58%",
+      "--sidebar-background": "220 20% 2% / 0.98",
+      "--sidebar-foreground": "210 20% 92%",
+      "--sidebar-primary": "354 94% 62%",
+      "--sidebar-accent": "354 80% 50%",
+      "--sidebar-accent-foreground": "0 0% 100%",
+      "--sidebar-border": "220 15% 11%",
+    },
+    backdrop: {
+      background:
+        "radial-gradient(ellipse 85% 65% at 0% 0%, rgba(250,68,84,.18) 0%, transparent 52%), radial-gradient(ellipse 80% 60% at 100% 100%, rgba(250,68,84,.14) 0%, transparent 48%), radial-gradient(ellipse 55% 45% at 100% 0%, rgba(255,107,122,.08) 0%, transparent 42%), radial-gradient(ellipse 65% 50% at 0% 100%, rgba(255,107,122,.06) 0%, transparent 38%), hsl(var(--background))",
+    },
+    transparentChrome: true,
+  },
+  {
+    id: "oled",
+    name: "OLED",
+    preview: "/home/app/theme-oled.webp",
+    // Desktop default accent (#D8C497).
+    vars: {
+      ...BASE_VARS,
+      "--background": "0 0% 0%",
+      "--foreground": "0 0% 88%",
+      "--card": "0 0% 4%",
+      "--card-foreground": "0 0% 88%",
+      "--popover": "0 0% 6%",
+      "--primary": "42 45% 72%",
+      "--primary-foreground": "0 0% 0%",
+      "--secondary": "0 0% 10%",
+      "--secondary-foreground": "0 0% 88%",
+      "--muted": "0 0% 10%",
+      "--muted-foreground": "0 0% 65%",
+      "--accent": "0 0% 13%",
+      "--accent-foreground": "0 0% 88%",
+      "--border": "0 0% 18%",
+      "--input": "0 0% 24%",
+      "--ring": "42 45% 72%",
+      "--sidebar-background": "0 0% 0%",
+      "--sidebar-foreground": "0 0% 88%",
+      "--sidebar-primary": "42 45% 72%",
+      "--sidebar-accent": "0 0% 13%",
+      "--sidebar-accent-foreground": "42 45% 72%",
+      "--sidebar-border": "0 0% 18%",
+    },
+    hideGeometry: true,
   },
 ];
 
