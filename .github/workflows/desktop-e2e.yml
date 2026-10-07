@@ -316,17 +316,19 @@ jobs:
       # Doctor is skipped: it probes the host for WebKitGTK, which the Nix
       # closure provides instead.
       - uses: ./.github/actions/setup-desktop-e2e
+      # The display and session bus come from the host: Nix's dbus only ships
+      # a stub session.conf that includes NixOS's /etc/dbus-1 configuration.
+      - name: Install display packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb xauth dbus
       # Debian and Arch cover app behaviour; these suites check that the Nix
       # package starts and can reach the game and app-data directories.
       - name: Run serial scenarios on a virtual display
         run: |
-          # Nix's dbus defaults to NixOS's /etc/dbus-1; use its bundled config.
-          dbus_config="$(find "$(nix build --inputs-from . nixpkgs#dbus.out --no-link --print-out-paths)" -name session.conf -print -quit)"
-          test -n "$dbus_config"
           status=0
           for suite in smoke filesystem; do
-            nix shell --inputs-from . nixpkgs#xvfb-run nixpkgs#dbus --command \
-              xvfb-run -a -s "-screen 0 1920x1080x24" dbus-run-session --config-file="$dbus_config" -- \
+            xvfb-run -a -s "-screen 0 1920x1080x24" dbus-run-session -- \
               pnpm --filter @deadlock-mods/desktop e2e:test -- --suite "$suite" --binary "$DMM_NIX_E2E_BINARY" --keep --report "../../.e2e/reports/$suite.json" || status=1
           done
           exit "$status"
