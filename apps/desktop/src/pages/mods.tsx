@@ -80,6 +80,10 @@ const MAPS_STORE_PAGE_KEY = "/maps:page";
 const MODS_STORE_PAGINATION_SETTING_ID = "mods-store-pagination";
 const MOD_ROW_ESTIMATED_HEIGHT = 340;
 
+// Filters each store page last ran with, kept across unmounts so filters set
+// from elsewhere (dashboard "See all", skins) reset the page on the next visit.
+const lastFilterSignatures = new Map<string, string>();
+
 // Albums come from deadlockskins.gg, not the catalog.
 type CatalogContentType = Exclude<ContentType, "album">;
 
@@ -376,7 +380,9 @@ const GetModsData = ({
     [facets],
   );
   const parentRef = useRef<HTMLDivElement>(null);
-  const previousFilterSignatureRef = useRef<string | null>(null);
+  const previousFilterSignatureRef = useRef<string | null>(
+    lastFilterSignatures.get(pageKey) ?? null,
+  );
   // Defer the mod list so background refetches (staleTime expiry) don't
   // block the UI while thousands of cards and filter options recompute.
   const deferredData = useDeferredValue(data ?? []);
@@ -446,6 +452,7 @@ const GetModsData = ({
       JSON.stringify({
         filterMode,
         contentType,
+        currentSort,
         hideNSFW,
         hideOutdated,
         query,
@@ -459,6 +466,7 @@ const GetModsData = ({
       addedFilter,
       filterMode,
       contentType,
+      currentSort,
       hideNSFW,
       hideOutdated,
       query,
@@ -483,6 +491,7 @@ const GetModsData = ({
   }, [pageKey, setPersistedPage, totalPages]);
 
   useEffect(() => {
+    lastFilterSignatures.set(pageKey, filterSignature);
     if (previousFilterSignatureRef.current === null) {
       previousFilterSignatureRef.current = filterSignature;
       return;
