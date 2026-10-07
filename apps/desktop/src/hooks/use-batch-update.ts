@@ -290,6 +290,18 @@ export const useBatchUpdate = () => {
     } finally {
       stopListening();
       setUpdateProgress(null);
+      // A failed update leaves the previous install in place, but the download
+      // events already moved these mods to Downloading/Extracting.
+      const updatedIds = new Set(updatableMods.map((um) => um.mod.remoteId));
+      usePersistedStore.setState((state) => ({
+        localMods: state.localMods.map((mod) =>
+          updatedIds.has(mod.remoteId) &&
+          (mod.status === ModStatus.Downloading ||
+            mod.status === ModStatus.Extracting)
+            ? { ...mod, status: ModStatus.Installed }
+            : mod,
+        ),
+      }));
     }
   };
 

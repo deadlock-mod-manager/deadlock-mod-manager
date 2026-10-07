@@ -136,6 +136,30 @@ struct ActiveDownload {
 #[derive(Clone, Debug)]
 pub struct PreparedDownload {
   pub vpk_paths: Vec<PathBuf>,
+  /// What was actually prepared, so the installed mod stops reporting the
+  /// selection it was updated from.
+  pub file_tree: Option<crate::mod_manager::file_tree::ModFileTree>,
+  scratch_paths: Vec<PathBuf>,
+}
+
+impl PreparedDownload {
+  pub fn remove_scratch_files(&self) {
+    for path in &self.scratch_paths {
+      let result = if path.is_dir() {
+        std::fs::remove_dir_all(path)
+      } else {
+        std::fs::remove_file(path)
+      };
+      if let Err(error) = result
+        && path.exists()
+      {
+        log::warn!(
+          "Failed to remove update scratch path {}: {error}",
+          path.display()
+        );
+      }
+    }
+  }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -439,17 +463,39 @@ impl DownloadManager {
       }
     }
 
-    let vpk_paths = match purpose {
+    match purpose {
       DownloadPurpose::Install => {
         Self::process_downloaded_files(&task, &downloaded_files, &app_handle).await?;
-        Vec::new()
+        Ok(PreparedDownload {
+          vpk_paths: Vec::new(),
+          file_tree: None,
+          scratch_paths: Vec::new(),
+        })
       }
       DownloadPurpose::PrepareUpdate => {
-        Self::prepare_downloaded_vpks(operation_id, &task, &downloaded_files, &app_handle).await?
+        let prepared =
+          Self::prepare_downloaded_vpks(operation_id, &task, &downloaded_files, &app_handle).await;
+        let mut scratch_paths = downloaded_files;
+        scratch_paths.push(task.target_dir.join(format!("prepared-{operation_id}")));
+        let (vpk_paths, file_tree) = match prepared {
+          Ok(prepared) => prepared,
+          Err(error) => {
+            PreparedDownload {
+              vpk_paths: Vec::new(),
+              file_tree: None,
+              scratch_paths,
+            }
+            .remove_scratch_files();
+            return Err(error);
+          }
+        };
+        Ok(PreparedDownload {
+          vpk_paths,
+          file_tree,
+          scratch_paths,
+        })
       }
-    };
-
-    Ok(PreparedDownload { vpk_paths })
+    }
   }
 
   async fn prepare_downloaded_vpks(
@@ -457,7 +503,13 @@ impl DownloadManager {
     task: &DownloadTask,
     downloaded_files: &[PathBuf],
     app_handle: &AppHandle,
-  ) -> Result<Vec<PathBuf>, Error> {
+  ) -> Result<
+    (
+      Vec<PathBuf>,
+      Option<crate::mod_manager::file_tree::ModFileTree>,
+    ),
+    Error,
+  > {
     use crate::mod_manager::archive_extractor::ArchiveExtractor;
     use crate::mod_manager::file_tree::FileTreeAnalyzer;
 
@@ -471,6 +523,7 @@ impl DownloadManager {
       let extractor = ArchiveExtractor::new();
       let analyzer = FileTreeAnalyzer::new();
       let mut prepared_paths = Vec::new();
+      let mut prepared_files = Vec::new();
 
       for (archive_index, downloaded_file) in downloaded_files.iter().enumerate() {
         if !extractor.is_supported_archive(downloaded_file) {
@@ -541,6 +594,11 @@ impl DownloadManager {
           )));
         }
 
+        for mut file in extracted_tree.files {
+          file.is_selected = selected_paths.contains(&extracted_dir.path().join(&file.path));
+          file.path = format!("{archive_name}/{}", file.path);
+          prepared_files.push(file);
+        }
         for selected_path in selected_paths {
           Self::copy_prepared_vpk(&selected_path, &prepared_dir, &mut prepared_paths)?;
         }
@@ -554,7 +612,15 @@ impl DownloadManager {
         ));
       }
 
-      Ok(prepared_paths)
+      let file_tree = (!prepared_files.is_empty()).then(|| {
+        let total_files = prepared_files.len();
+        crate::mod_manager::file_tree::ModFileTree {
+          files: prepared_files,
+          total_files,
+          has_multiple_files: total_files > 1,
+        }
+      });
+      Ok((prepared_paths, file_tree))
     }
     .await;
 

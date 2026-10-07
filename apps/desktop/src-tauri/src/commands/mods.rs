@@ -423,10 +423,14 @@ pub async fn batch_update_mods(
         &mod_data.mod_id,
         &mod_data.mod_name,
         &prepared.vpk_paths,
-        mod_data.file_tree.clone(),
+        prepared
+          .file_tree
+          .clone()
+          .or_else(|| mod_data.file_tree.clone()),
         profile_folder_option,
       )
     };
+    prepared.remove_scratch_files();
 
     match install_result {
       Ok(installed_mod) => {
