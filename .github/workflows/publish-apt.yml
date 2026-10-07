@@ -36,6 +36,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout Tauri bundle configs
+        uses: actions/checkout@v7.0.1
+        with:
+          sparse-checkout: |
+            apps/desktop/src-tauri/tauri.conf.json
+            apps/desktop/src-tauri/tauri.cef.conf.json
+          sparse-checkout-cone-mode: false
+
       - name: Download .deb packages from releases
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -72,6 +80,12 @@ jobs:
           set -euo pipefail
           shopt -s nullglob
 
+          # Dependencies each build must declare, from the current bundle configs.
+          # tauri.cef.conf.json replaces the base depends array when merged.
+          CONF=apps/desktop/src-tauri
+          REQUIRED_main=$(jq -r '.bundle.linux.deb.depends // [] | .[]' "$CONF/tauri.conf.json")
+          REQUIRED_cef=$(jq -r '.bundle.linux.deb.depends // [] | .[]' "$CONF/tauri.cef.conf.json")
+
           for TAG_DIR in downloads/*/; do
             TAG=$(basename "$TAG_DIR")
             for DEB in "$TAG_DIR"*.deb; do
@@ -82,24 +96,52 @@ jobs:
               PKG=$(dpkg-deb -f "$DEB" Package)
               VER=$(dpkg-deb -f "$DEB" Version)
               ARCH=$(dpkg-deb -f "$DEB" Architecture)
+              DEPENDS=$(dpkg-deb -f "$DEB" Depends)
+              NEW_VER="$VER"
+              NEW_DEPENDS="$DEPENDS"
 
               # Older CEF builds in stable releases were stamped with a nightly
               # version (e.g. 1.2.0-nightly.* in the v1.1.0 release), which apt
               # would rank above the next stable release. Publish them under the
               # release version instead.
               if [[ "$COMPONENT" == cef && "$VER" != "${TAG#v}" ]]; then
-                echo "Repacking $DEB: version $VER -> ${TAG#v}"
-                VER="${TAG#v}"
+                NEW_VER="${TAG#v}"
+              fi
+
+              # Packages built before a dependency was added to the bundle config
+              # (e.g. CEF builds without libnss3) install but fail to start.
+              REQUIRED_VAR="REQUIRED_$COMPONENT"
+              while IFS= read -r DEP; do
+                [[ -z "$DEP" ]] && continue
+                if ! grep -qF -- "$DEP" <<< "$NEW_DEPENDS"; then
+                  NEW_DEPENDS="${NEW_DEPENDS:+$NEW_DEPENDS, }$DEP"
+                fi
+              done <<< "${!REQUIRED_VAR}"
+
+              if [[ "$NEW_VER" != "$VER" || "$NEW_DEPENDS" != "$DEPENDS" ]]; then
+                echo "Repacking $DEB"
+                echo "  Version: $VER -> $NEW_VER"
+                echo "  Depends: $DEPENDS -> $NEW_DEPENDS"
+                VER="$NEW_VER"
                 WORK=$(mktemp -d)
                 dpkg-deb -R "$DEB" "$WORK/pkg"
-                sed -i "s/^Version: .*/Version: $VER/" "$WORK/pkg/DEBIAN/control"
-                dpkg-deb --root-owner-group -Zxz -b "$WORK/pkg" "$POOL/${PKG}_${VER}_${ARCH}.deb" >/dev/null
-                rm -rf "$WORK"
+                sed -i -e "s/^Version: .*/Version: $NEW_VER/" \
+                  -e "s/^Depends: .*/Depends: $NEW_DEPENDS/" "$WORK/pkg/DEBIAN/control"
+                # Pin timestamps so every run produces a byte-identical package.
+                EPOCH=$(stat -c %Y "$WORK/pkg/usr")
+                touch -h -d "@$EPOCH" "$WORK/pkg/DEBIAN" "$WORK/pkg/DEBIAN"/*
+                SOURCE_DATE_EPOCH="$EPOCH" dpkg-deb --root-owner-group -Zxz \
+                  -b "$WORK/pkg" "$WORK/out.deb" >/dev/null
+                OUT="$WORK/out.deb"
               else
-                # Release assets have dotted names (Deadlock.Mod.Manager_1.1.0_amd64.deb);
-                # store them under the conventional <package>_<version>_<arch>.deb name.
-                cp "$DEB" "$POOL/${PKG}_${VER}_${ARCH}.deb"
+                OUT="$DEB"
               fi
+
+              # Pool files are cached as immutable, so name them by content: a
+              # repacked package never reuses the URL of an earlier version of it.
+              HASH=$(sha256sum "$OUT" | cut -c1-12)
+              cp "$OUT" "$POOL/${PKG}_${VER}_${ARCH}_${HASH}.deb"
+              if [[ "$OUT" != "$DEB" ]]; then rm -rf "$(dirname "$OUT")"; fi
             done
           done
 
