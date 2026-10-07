@@ -22,6 +22,31 @@ const TRAILING_PUNCTUATION = /[).,\]]+$/;
 // render, so crawlers only ever see the redirect. Send the header instead.
 const NOINDEX_PATHS = new Set(["/login"]);
 
+// Agent discovery: the homepage advertises the public API through Link
+// headers (RFC 8288) and /.well-known/api-catalog describes it (RFC 9727).
+const API_URL = "https://api.deadlockmods.app/api";
+const API_CATALOG_PATH = "/.well-known/api-catalog";
+const HOMEPAGE_LINK_HEADER = [
+  `<${API_CATALOG_PATH}>; rel="api-catalog"`,
+  `<${API_URL}/spec.json>; rel="service-desc"; type="application/vnd.oai.openapi+json"`,
+  `<${API_URL}>; rel="service-doc"; type="text/html"`,
+].join(", ");
+const API_CATALOG = JSON.stringify({
+  linkset: [
+    {
+      anchor: API_URL,
+      "service-desc": [
+        {
+          href: `${API_URL}/spec.json`,
+          type: "application/vnd.oai.openapi+json",
+        },
+      ],
+      "service-doc": [{ href: API_URL, type: "text/html" }],
+      status: [{ href: `${API_URL}/health`, type: "application/json" }],
+    },
+  ],
+});
+
 interface NodeResponseLike {
   status: number;
   statusText?: string;
@@ -89,6 +114,15 @@ async function initializeServer() {
         isReady
           ? new Response("OK", { status: 200 })
           : new Response("Not Ready", { status: 503 }),
+      [API_CATALOG_PATH]: () =>
+        new Response(API_CATALOG, {
+          headers: {
+            "Content-Type":
+              'application/linkset+json; profile="https://www.rfc-editor.org/info/rfc9727"',
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "public, max-age=3600",
+          },
+        }),
       ...routes,
       // Every real build asset has its own route above. Anything else under
       // /assets/ is a chunk from an older deploy: answer 404 instead of letting
@@ -106,17 +140,20 @@ async function initializeServer() {
           return Response.redirect(url.toString(), 301);
         }
 
-        const withRobotsHeader = (response: Response) => {
-          if (!NOINDEX_PATHS.has(url.pathname)) return response;
+        const withPageHeaders = (response: Response) => {
+          const noindex = NOINDEX_PATHS.has(url.pathname);
+          const isHomepage = url.pathname === "/";
+          if (!noindex && !isHomepage) return response;
           // Redirect responses have immutable headers, so copy before setting.
           const copy = new Response(response.body, response);
-          copy.headers.set("X-Robots-Tag", "noindex");
+          if (noindex) copy.headers.set("X-Robots-Tag", "noindex");
+          if (isHomepage) copy.headers.append("Link", HOMEPAGE_LINK_HEADER);
           return copy;
         };
 
         try {
           const response = await handler.fetch(req);
-          return withRobotsHeader(await toWebResponse(response));
+          return withPageHeaders(await toWebResponse(response));
         } catch (error) {
           // Handle TanStack Router redirect throws
           if (
@@ -125,7 +162,7 @@ async function initializeServer() {
             "status" in error &&
             "headers" in error
           ) {
-            return withRobotsHeader(
+            return withPageHeaders(
               await toWebResponse(error as NodeResponseLike),
             );
           }
