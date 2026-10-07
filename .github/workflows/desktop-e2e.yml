@@ -16,6 +16,12 @@ on:
   schedule:
     - cron: "23 3 * * *"
   workflow_dispatch:
+    inputs:
+      platforms:
+        description: Platforms to run
+        type: choice
+        options: [all, nix]
+        default: all
 
 permissions:
   contents: read
@@ -31,7 +37,7 @@ defaults:
 jobs:
   build:
     name: Build isolated harness
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e-full')
+    if: (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e-full')) && inputs.platforms != 'nix'
     runs-on: windows-latest
     timeout-minutes: 60
     steps:
@@ -111,7 +117,7 @@ jobs:
 
   linux-build:
     name: Build isolated harness (${{ matrix.distro }})
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e-full')
+    if: (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e-full')) && inputs.platforms != 'nix'
     runs-on: ubuntu-latest
     container: ${{ matrix.image }}
     timeout-minutes: 60
@@ -314,10 +320,13 @@ jobs:
       # package starts and can reach the game and app-data directories.
       - name: Run serial scenarios on a virtual display
         run: |
+          # Nix's dbus defaults to NixOS's /etc/dbus-1; use its bundled config.
+          dbus_config="$(find "$(nix build --inputs-from . nixpkgs#dbus.out --no-link --print-out-paths)" -name session.conf -print -quit)"
+          test -n "$dbus_config"
           status=0
           for suite in smoke filesystem; do
             nix shell --inputs-from . nixpkgs#xvfb-run nixpkgs#dbus --command \
-              xvfb-run -a -s "-screen 0 1920x1080x24" dbus-run-session -- \
+              xvfb-run -a -s "-screen 0 1920x1080x24" dbus-run-session --config-file="$dbus_config" -- \
               pnpm --filter @deadlock-mods/desktop e2e:test -- --suite "$suite" --binary "$DMM_NIX_E2E_BINARY" --keep --report "../../.e2e/reports/$suite.json" || status=1
           done
           exit "$status"
