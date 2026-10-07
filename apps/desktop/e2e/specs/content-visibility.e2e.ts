@@ -11,6 +11,7 @@ import {
   readSettings,
 } from "../support/settings-actions";
 import { observeUntil } from "../support/observations";
+import { step } from "../support/evidence";
 import { reveal } from "../support/ui";
 
 const go = async (route: string) => {
@@ -57,9 +58,14 @@ describe("global content visibility", () => {
       );
       await checkAllSurfaces(true);
       // Direct navigation must not reveal a hidden mod's gallery or metadata.
-      await browser.url(
-        new URL("/mods/920002", await browser.getUrl()).toString(),
-      );
+      await step("open a hidden mod directly", async () => {
+        // Pin this window so the driver's focus recovery does not race the
+        // document reload and wait for a script in the discarded document.
+        await browser.switchToWindow(await browser.getWindowHandle());
+        await browser.url(
+          new URL("/mods/920002", await browser.getUrl()).toString(),
+        );
+      });
       await expect($("body")).toHaveText(
         expect.stringContaining("Hide NSFW Content"),
       );

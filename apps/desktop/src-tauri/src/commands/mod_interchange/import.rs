@@ -237,7 +237,7 @@ fn same_size(path: &Path, size: u64) -> bool {
   fs::metadata(path).is_ok_and(|stat| stat.len() == size)
 }
 
-fn copy_file(source: &Path, destination: &Path, size: u64) -> Result<(), Error> {
+pub(super) fn copy_file(source: &Path, destination: &Path, size: u64) -> Result<(), Error> {
   if same_size(destination, size)
     && fs::canonicalize(source).ok() == fs::canonicalize(destination).ok()
   {
@@ -483,6 +483,7 @@ pub fn import_into(
     .collect();
   entries.sort_by_key(|entry| entry.order);
 
+  super::reconcile::reconcile_imported_files(&base, &store, &hashes)?;
   let existing = ProfileVpkManifest::load(&base)?;
   let mut known: HashSet<String> = request.known_mod_ids.iter().cloned().collect();
   known.extend(existing.mods.keys().cloned());
