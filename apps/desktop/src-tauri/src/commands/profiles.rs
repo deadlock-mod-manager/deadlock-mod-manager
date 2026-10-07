@@ -170,8 +170,6 @@ pub async fn list_profile_folders() -> Result<Vec<String>, Error> {
 pub async fn get_profile_installed_vpks(
   profile_folder: Option<String>,
 ) -> Result<Vec<ProfileVpkFile>, Error> {
-  log::info!("Getting installed VPKs for profile: {profile_folder:?}");
-
   let mod_manager = MANAGER.lock().unwrap();
   let game_path = mod_manager
     .get_steam_manager()
@@ -216,7 +214,7 @@ pub async fn get_profile_installed_vpks(
     }
   }
 
-  log::info!("Found {} VPK files in profile", vpk_files.len());
+  log::debug!("Found {} VPK files in profile", vpk_files.len());
   Ok(vpk_files)
 }
 

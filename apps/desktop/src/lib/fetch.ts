@@ -103,7 +103,8 @@ export const fetch: typeof tauriFetch = async (input, init) => {
   if (response.ok) {
     logger.withMetadata(meta).debug("HTTP response");
   } else {
-    logger.withMetadata(meta).warn("HTTP response error");
+    // The Tauri log formatter drops metadata, so the message must stand alone.
+    logger.withMetadata(meta).warn(`HTTP ${response.status} ${method} ${url}`);
   }
 
   return response;
