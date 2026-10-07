@@ -1,0 +1,318 @@
+---
+title: Mod Interchange Format
+description: The open format Deadlock Mod Manager uses to export and import mods, profiles, and crosshairs, and how another mod manager can support it
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Mod Interchange Format
+
+The Deadlock Mod Interchange format describes an installed mod library without tying it to any one mod manager. Deadlock Mod Manager (DMM) writes it when you choose **Export for other mod managers** and reads it when you open an export file under **Import from other mod managers**. Grimoire reads and writes the same format.
+
+A manager that supports it can take a user's library from any other manager that supports it, and the user can move back without losing mods, load order, profiles, or crosshairs.
+
+The normative spec is [`rfcs/001-mod-interchange/proposal.md`](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/rfcs/001-mod-interchange/proposal.md). This page explains the format, shows how DMM uses it, and lists what another manager has to implement.
+
+## Bundle layout
+
+An export is a folder:
+
+```text
+deadlock-mods-export-20261007-142501/
+  mod-interchange.json
+  files/
+    0000-qol_lock/qol_313_dir.vpk
+    0001-haze_skin/pak01_dir.vpk
+    0001-haze_skin/haze_alt_dir.vpk
+```
+
+- `mod-interchange.json` is the manifest. A reader accepts either the folder or the manifest path.
+- File paths in the manifest are relative to the folder that holds `mod-interchange.json`, use forward slashes, and must stay inside it. DMM drops absolute paths and paths with `..` and reports them as warnings.
+- The names under `files/` are up to the producer. DMM uses `<index>-<slug>/`, where the index is the mod's position in the export.
+
+## Document
+
+```json
+{
+  "format": "deadlock-mod-interchange",
+  "version": 1,
+  "createdAt": "2026-10-07T12:25:01.000Z",
+  "source": {
+    "manager": "deadlock-mod-manager",
+    "managerVersion": "2.0.0",
+    "profileName": "Default"
+  },
+  "contents": ["mods", "profiles", "crosshairs"],
+  "mods": [
+    {
+      "key": "gamebanana:mod:650634",
+      "name": "QOL Lock",
+      "enabled": true,
+      "order": 0,
+      "origin": {
+        "provider": "gamebanana",
+        "submissionType": "mod",
+        "submissionId": "650634",
+        "fileId": 1720039,
+        "fileName": "qol_313.zip"
+      },
+      "author": "someone",
+      "description": null,
+      "category": "Quality of Life/Fixes",
+      "hero": null,
+      "thumbnailUrl": "https://images.gamebanana.com/img/ss/mods/6995649268824.jpg",
+      "link": "https://gamebanana.com/mods/650634",
+      "nsfw": false,
+      "files": [
+        {
+          "name": "qol_313_dir.vpk",
+          "path": "files/0000-qol_lock/qol_313_dir.vpk",
+          "sha256": "fcfe4bdeb53cf44dcdd5966e1a4538807ad17dccab80df76400f9397c114f6a5",
+          "size": 1667455,
+          "selected": true
+        }
+      ],
+      "extensions": {
+        "deadlock-mod-manager": { "modId": "650634" }
+      }
+    }
+  ],
+  "profiles": [
+    {
+      "key": "profile:default",
+      "name": "Default",
+      "active": true,
+      "description": null,
+      "mods": [
+        { "modKey": "gamebanana:mod:650634", "enabled": true, "order": 0 }
+      ],
+      "crosshairKey": null,
+      "autoexec": null
+    }
+  ],
+  "crosshairs": [
+    {
+      "key": "crosshair:preset-1",
+      "name": "Small dot",
+      "active": false,
+      "convars": {
+        "citadel_crosshair_color_r": "255",
+        "citadel_crosshair_pip_gap": "4"
+      }
+    }
+  ],
+  "warnings": []
+}
+```
+
+The smallest valid document is the envelope with an empty library:
+
+```json
+{ "format": "deadlock-mod-interchange", "version": 1, "mods": [] }
+```
+
+### Envelope
+
+| Field        | Required | Meaning                                                                                                                             |
+| ------------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `format`     | yes      | Always `deadlock-mod-interchange`. Anything else is rejected.                                                                       |
+| `version`    | yes      | Major version, currently `1`. Readers reject a major they do not know. New optional fields do not bump it.                          |
+| `createdAt`  | no       | ISO 8601 timestamp.                                                                                                                 |
+| `source`     | no       | `manager` is a free-form id of the producer (`deadlock-mod-manager`, `grimoire`). `managerVersion` and `profileName` are optional.  |
+| `contents`   | no       | Sections the producer included. Lets an importer tell "no profiles" apart from "profiles not exported". If missing, it is inferred. |
+| `mods`       | yes      | The library. Every mod that any exported profile uses appears here once.                                                            |
+| `profiles`   | no       | Profiles that reference mods by key.                                                                                                |
+| `crosshairs` | no       | Crosshairs as game convars.                                                                                                         |
+| `warnings`   | no       | Human-readable notes from the producer, shown to the user on import.                                                                |
+
+Unknown fields are ignored everywhere, so you can add data without breaking older readers. Put manager-specific data under `extensions` instead of new top-level fields.
+
+### Mods
+
+| Field        | Meaning                                                                                                                                                                                           |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `key`        | Unique within the document and stable across exports: `gamebanana:mod:<id>`, `gamebanana:sound:<id>`, or `local:<id>`. A local id is the manager's own UUID or `sha256:<hex>` of the primary VPK. |
+| `name`       | Display name.                                                                                                                                                                                     |
+| `enabled`    | Enabled state in the source's active profile. For a manager without profiles this is the whole state.                                                                                             |
+| `order`      | Load order, ascending. Lower values get the lower `pakNN` slot and load first. Gaps are allowed.                                                                                                  |
+| `origin`     | `{"provider": "gamebanana", "submissionType": "mod" \| "sound", "submissionId": "<decimal string>", "fileId"?, "fileName"?}` or `{"provider": "local", "localId"?}`.                              |
+| `files`      | Every VPK of the mod, including variants that are not loaded.                                                                                                                                     |
+| `extensions` | Private data keyed by manager id. Never depend on another manager's extension.                                                                                                                    |
+| other fields | `author`, `description`, `category`, `hero`, `thumbnailUrl`, `link`, `nsfw` are optional and may be `null`.                                                                                       |
+
+Each file has `name` (the VPK file name, for example `pak01_dir.vpk`) and `path` (relative to the bundle). `selected: false` marks a variant that is kept but not loaded; a missing `selected` means `true`. `sha256` (lowercase hex) and `size` are optional, but importers use them to skip copying files they already have.
+
+### Profiles and crosshairs
+
+- `profiles[].mods[].modKey` must point at a key in `mods`. Entries that point nowhere are dropped with a warning, never guessed.
+- `profiles[].autoexec` is a list of console commands saved with the profile. DMM does not export it.
+- `profiles[].crosshairKey` points at a crosshair in `crosshairs`.
+- `crosshairs[].convars` are the game's own `citadel_crosshair_*` console variables, all as strings. Importers keep the convars they understand and ignore the rest. DMM reads and writes gap, width, height, pip and dot opacity, dot outline opacity, color, pip border, and static gap.
+
+## How DMM exports
+
+**Mods Library → ⋮ → Export for other mod managers** lets the user include mods (always), all profiles, and saved crosshairs, then pick a destination folder. The backend (`apps/desktop/src-tauri/src/commands/mod_interchange/export.rs`) then:
+
+1. Puts the active profile first. Its enabled state and load order become the library's `enabled` and `order`. Without profiles, only the active profile is exported.
+2. Writes each mod once, even when several profiles use it. Profiles only reference it by key.
+3. Takes the loaded VPKs from the profile's addons folder under their original names, then adds the rest of the download from DMM's mod store as `selected: false` variants. If the profile files are gone, every VPK in the store is exported as selected, so a variant that was inactive comes back selected on import.
+4. Computes `sha256` and `size` for every copied file and records DMM's own mod id under `extensions["deadlock-mod-manager"].modId`.
+5. Skips mods with no VPK on disk and reports them in the result. If the export fails partway, the half-written folder is deleted.
+
+The output folder is `deadlock-mods-export-<YYYYMMDD-HHMMSS>` inside the chosen folder.
+
+## How DMM imports
+
+**Mods Library → Import from other mod managers** offers two sources:
+
+- **A detected mod manager.** DMM reads that manager's own files and builds an interchange document in memory. Grimoire is supported this way, so a Grimoire user does not have to export anything first.
+- **Open export file…**, which reads a bundle written by any manager.
+
+Both paths produce the same document, and the same importer handles it (`import.rs`). The user picks which sections and which mods to bring over. Then, for each mod:
+
+1. The interchange key becomes a DMM id: `gamebanana:mod:123` → `123`, `gamebanana:sound:123` → `snd-123`, a local mod → `local-<uuid>`. A local mod without a usable UUID gets one derived from its key, so importing the same file twice gives the same id.
+2. A mod already in the target profile is skipped as a duplicate. A mod whose files are missing is skipped with the reason. Neither stops the import.
+3. The VPKs are copied into DMM's mod store, so DMM can re-enable or restore them later. Files whose `sha256` matches a stored copy are not copied again.
+4. Enabled mods whose files already sit in the shared `citadel/addons` folder are adopted where they are instead of copied, so the game never loads the same mod twice. Other mods are installed through DMM's normal install path.
+5. Imported mods are placed after the mods already in the profile, keeping their relative order.
+
+DMM remembers which key became which mod and which source profile went into which DMM profile, in `interchange-ledger.json` in its app data folder. Importing again fills the same profiles instead of creating new ones, and a local mod the user has since linked to GameBanana does not come back as a second copy.
+
+Profiles are matched to an earlier import first, then to a DMM profile with the same name, and otherwise created. Crosshairs are added to the crosshair history. Local mods without a GameBanana link are offered for identification at the end: DMM looks up their content hash and the user can accept the match or paste a GameBanana link.
+
+The source files are never changed or deleted.
+
+## Supporting the format in another mod manager
+
+You need an exporter, an importer, or both. Neither has to know anything about DMM.
+
+### Writing an exporter
+
+1. Create a new folder with a `files/` subfolder. Never write into a folder that already holds a bundle.
+2. For each mod, copy its VPKs under `files/<some-folder>/` and keep the VPK file names. Variants often share a name such as `pak01_dir.vpk`, so give each file its own subfolder.
+3. Pick a stable `key`. Use the GameBanana submission when you know it; otherwise `local:<your uuid>` or `local:sha256:<hash of the primary VPK>`. The same mod must get the same key in every export, or importers cannot detect re-imports.
+4. Set `enabled` and `order` from the user's current state. Mark inactive variants `selected: false`.
+5. Write `sha256` and `size` if you can. They are optional but save the importer a full copy.
+6. Write `mod-interchange.json` last, so a crash never leaves a folder that looks complete.
+
+A minimal exporter in TypeScript (Node.js):
+
+```ts
+import { createHash } from "node:crypto";
+import {
+  copyFileSync,
+  mkdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from "node:fs";
+import { basename, join } from "node:path";
+
+type MyMod = {
+  name: string;
+  enabled: boolean;
+  gameBananaId?: string; // undefined for local mods
+  localId: string;
+  vpks: { path: string; active: boolean }[];
+};
+
+export const exportBundle = (mods: MyMod[], destination: string) => {
+  // Throws if the folder exists, so an earlier bundle is never overwritten.
+  mkdirSync(destination);
+  mkdirSync(join(destination, "files"));
+
+  const entries = mods.map((mod, index) => {
+    const folder = `${String(index).padStart(4, "0")}-mod`;
+
+    const files = mod.vpks.map((vpk, fileIndex) => {
+      const name = basename(vpk.path);
+      const relative = `files/${folder}/${fileIndex}/${name}`;
+      mkdirSync(join(destination, "files", folder, String(fileIndex)), {
+        recursive: true,
+      });
+      copyFileSync(vpk.path, join(destination, relative));
+      return {
+        name,
+        path: relative,
+        sha256: createHash("sha256")
+          .update(readFileSync(vpk.path))
+          .digest("hex"),
+        size: statSync(vpk.path).size,
+        selected: vpk.active,
+      };
+    });
+
+    return {
+      key: mod.gameBananaId
+        ? `gamebanana:mod:${mod.gameBananaId}`
+        : `local:${mod.localId}`,
+      name: mod.name,
+      enabled: mod.enabled,
+      order: index,
+      origin: mod.gameBananaId
+        ? {
+            provider: "gamebanana",
+            submissionType: "mod",
+            submissionId: mod.gameBananaId,
+          }
+        : { provider: "local", localId: mod.localId },
+      files,
+      extensions: { "my-manager": { internalId: mod.localId } },
+    };
+  });
+
+  const document = {
+    format: "deadlock-mod-interchange",
+    version: 1,
+    createdAt: new Date().toISOString(),
+    source: { manager: "my-manager", managerVersion: "1.0.0" },
+    contents: ["mods"],
+    mods: entries,
+    warnings: [],
+  };
+  writeFileSync(
+    join(destination, "mod-interchange.json"),
+    JSON.stringify(document, null, 2),
+  );
+};
+```
+
+Hash large VPKs with a stream instead of `readFileSync` in production code.
+
+### Writing an importer
+
+Follow the import rules from the RFC. They exist so a transfer always finishes, even with incomplete or stale data:
+
+1. Check `format` and `version`. Reject a document you cannot read; do not try to guess.
+2. Resolve every `path` against the bundle folder and reject absolute paths, `..`, and anything that resolves outside it. A bundle is untrusted input.
+3. Parse mods one by one. A broken or unknown entry (for example an `origin.provider` you do not support) costs that entry only, reported as a warning.
+4. Skip a mod you already have (same GameBanana submission or same local key), and skip a mod whose files are missing. Report the reason; keep going.
+5. Never delete source files and never touch files outside the folders your manager owns. If the user's current files already sit in the game's addons folder, adopt them in place rather than copying them a second time.
+6. Place imported mods after the user's existing mods, keeping their relative `order`.
+7. Remember which `key` became which mod in your library, so a second import of the same bundle does not duplicate anything.
+8. If you have no profiles, ignore `profiles`. If you have profiles but the document has none, import into the active profile.
+
+If your manager stores mods differently (for example by GameBanana file id instead of submission id), map the key to your own id at import time and keep the mapping in your own data, not in the bundle.
+
+### Adding a reader to DMM
+
+To let DMM import straight from another manager's files, as it does for Grimoire, add a reader under `apps/desktop/src-tauri/src/commands/mod_interchange/` that turns that manager's data into an `InterchangeDocument`, and register it in `SOURCES` in `mod.rs`. Each entry declares an id, a display name, the sections it can produce, a `detect` function that finds the data folder, and a `read` function. The import dialog lists every registered source; the importer needs no changes. `grimoire.rs` is the reference implementation.
+
+<Callout type='info' title='Changing the format'>
+  Optional fields can be added without a version bump. Anything that changes the
+  meaning of an existing field needs a new major `version` and an update to the
+  RFC, since other managers depend on it.
+</Callout>
+
+## Source files
+
+| Path                                                              | Contents                                                   |
+| ----------------------------------------------------------------- | ---------------------------------------------------------- |
+| `rfcs/001-mod-interchange/proposal.md`                            | Format spec and import rules                               |
+| `apps/desktop/src-tauri/src/commands/mod_interchange/format.rs`   | Document types, lenient parser, bundle path checks         |
+| `apps/desktop/src-tauri/src/commands/mod_interchange/export.rs`   | DMM profiles → bundle                                      |
+| `apps/desktop/src-tauri/src/commands/mod_interchange/import.rs`   | Document → DMM profile                                     |
+| `apps/desktop/src-tauri/src/commands/mod_interchange/grimoire.rs` | Reader for Grimoire's native files                         |
+| `apps/desktop/src-tauri/src/commands/mod_interchange/ledger.rs`   | Key → mod id and profile mapping across imports            |
+| `apps/desktop/src/lib/mod-interchange.ts`                         | Frontend types, profile matching, crosshair convar mapping |
+| `apps/desktop/src/components/mod-interchange/`                    | Import wizard and export dialog                            |
