@@ -16,7 +16,6 @@ import {
 } from "date-fns";
 import { platform } from "@tauri-apps/plugin-os";
 
-import type { LocalMod } from "@/types/mods";
 import type { LocalSetting } from "@/types/settings";
 import type { AddedFilter } from "@/lib/store/slices/ui";
 import { AUTOEXEC_LAUNCH_OPTION_ID } from "@/lib/autoexec/constants";
@@ -102,7 +101,7 @@ export const compareDates = (
   return new Date(a).getTime() - new Date(b).getTime();
 };
 
-export const sortMods = (mods: LocalMod[], sortType: SortType) => {
+export const sortMods = <T extends ModDto>(mods: T[], sortType: SortType) => {
   return [...mods].sort((a, b) => {
     switch (sortType) {
       case SortType.LAST_UPDATED:

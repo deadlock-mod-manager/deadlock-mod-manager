@@ -21,9 +21,12 @@ export const AuthorPageSkeleton = () => (
         </div>
       </div>
 
-      <div className='mb-4 flex items-baseline justify-between gap-4'>
+      <div className='mb-4 flex items-center justify-between gap-4'>
         <Skeleton className='h-6 w-48' />
-        <Skeleton className='h-4 w-16' />
+        <div className='flex items-center gap-3'>
+          <Skeleton className='h-4 w-16' />
+          <Skeleton className='h-10 w-36' />
+        </div>
       </div>
 
       <div className='grid grid-cols-1 gap-4 px-1 pr-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6'>

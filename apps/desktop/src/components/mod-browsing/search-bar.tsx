@@ -2,15 +2,7 @@ import type { ModDto } from "@deadlock-mods/shared";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { SearchInput } from "@deadlock-mods/ui/components/search-input";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@deadlock-mods/ui/components/select";
-import { ArrowUpDown, Star, X } from "@deadlock-mods/ui/icons";
+import { Star, X } from "@deadlock-mods/ui/icons";
 import { memo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { HeroIcon } from "@/components/heroes/hero-icon";
@@ -18,7 +10,7 @@ import { usePersistedStore } from "@/lib/store";
 import { cn, formatAddedDate, isAddedFilterActive } from "@/lib/utils";
 import {
   getModCategoryDisplayName,
-  SortType,
+  type SortType,
   TimePeriod,
   timePeriodLabelKey,
 } from "@/lib/constants";
@@ -32,6 +24,7 @@ import {
 import CategoryFilter from "./category-filter";
 import FiltersDropdown from "./filters-dropdown";
 import HeroFilter from "./hero-filter";
+import { SortSelect } from "./sort-select";
 
 type SearchBarProps = {
   trailingActions?: ReactNode;
@@ -253,28 +246,7 @@ const SearchBar = ({
               </Button>
             )}
             {showSortControl && sortType && setSortType && (
-              <Select onValueChange={setSortType} value={sortType}>
-                <SelectTrigger
-                  aria-label={t("filters.sortBy")}
-                  className='w-fit gap-1'>
-                  <ArrowUpDown className='mr-1.5 h-4 w-4 text-muted-foreground' />
-                  <SelectValue placeholder={t("filters.sortBy")} />
-                </SelectTrigger>
-                <SelectContent align='end'>
-                  <SelectGroup>
-                    {Object.values(SortType).map((type) => (
-                      <SelectItem
-                        className='capitalize'
-                        key={type}
-                        value={type}>
-                        {t(
-                          `sorting.${type.replaceAll(/\s+/g, "").toLowerCase()}`,
-                        )}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+              <SortSelect onChange={setSortType} value={sortType} />
             )}
             {trailingActions}
           </div>
