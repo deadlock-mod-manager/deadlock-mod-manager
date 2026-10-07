@@ -45,6 +45,12 @@ The easiest way to install Deadlock Mod Manager is to download the latest releas
 
 Some releases also include builds using Chromium Embedded Framework (CEF) instead of the standard system webview. Look for release assets with a `-cef` suffix, such as `-cef-setup.exe`, `-cef.deb`, or `deadlock-mod-manager-cef.flatpak`, when available. On Ubuntu/Debian, the CEF build is also available from the [APT repository](#ubuntudebian-apt).
 
+<Callout type='info' title='Slow or laggy app? Try the CEF build'>
+  If the regular build feels slow, especially on Linux, switch to the CEF build.
+  It bundles Chromium, which generally performs better than the system webview.
+  The CEF download is larger.
+</Callout>
+
 CEF is an alternate runtime for the same manager features. Use the release notes to decide which build suits your system, especially when troubleshooting webview rendering. Availability varies by release and platform. Avoid running multiple builds against the same game installation at once.
 
 ### Windows standalone executable
@@ -88,7 +94,7 @@ sudo apt install deadlock-mod-manager
 
 New stable releases arrive through `sudo apt update && sudo apt upgrade`. The repository only contains stable x86_64 builds; nightly builds remain available from GitHub Releases.
 
-To use the [CEF build](#optional-cef-builds) instead, replace `main` with `cef` at the end of the repository line, then reinstall:
+If the app feels slow, use the [CEF build](#optional-cef-builds) instead. It bundles Chromium, which generally performs better than the system webview. Replace `main` with `cef` at the end of the repository line, then reinstall:
 
 ```bash
 echo "deb [arch=amd64 signed-by=/usr/share/keyrings/deadlock-mod-manager.gpg] https://apt.deadlockmods.app stable cef" \
