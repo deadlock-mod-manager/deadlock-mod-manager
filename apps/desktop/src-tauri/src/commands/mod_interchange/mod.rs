@@ -4,7 +4,8 @@
 //! - `format`: the document, parsing and bundle reading
 //! - `grimoire`: reader for Grimoire's native files (no Grimoire changes needed)
 //! - `import` / `export`: interchange <-> DMM profile
-//! - `ledger`: which interchange key became which DMM mod
+//! - `ledger`: which interchange key became which DMM mod, and which source
+//!   profile went into which DMM profile
 //!
 //! Supporting another mod manager means adding a reader and one entry in
 //! [`SOURCES`]; the UI lists whatever this registry reports.
@@ -145,6 +146,7 @@ pub async fn read_interchange_source(
   let app_data = lock_manager()?.get_app_local_data_path().ok();
   blocking(move || {
     let hashes = hash_cache::HashCache::open(app_data.as_deref());
+    let dmm_store = app_data.as_ref().map(|dir| dir.join("mods"));
     let progress = |current: usize, total: usize, name: &str| {
       let payload = ReadProgress {
         current,
@@ -158,6 +160,7 @@ pub async fn read_interchange_source(
     let context = grimoire::ReadContext {
       hashes: &hashes,
       progress: &progress,
+      dmm_store: dmm_store.as_deref(),
     };
     let definition = source(&source_id)?;
     let detection = (definition.detect)(location.map(PathBuf::from), game_path.as_deref());
@@ -216,6 +219,31 @@ pub async fn get_interchange_ledger() -> Result<BTreeMap<String, String>, Error>
   blocking(|| {
     let app_data = lock_manager()?.get_app_local_data_path()?;
     Ok(ledger::load(&app_data).entries)
+  })
+  .await
+}
+
+/// `<source manager>:<profile key>` -> the DMM profile it was imported into.
+#[tauri::command]
+pub async fn get_interchange_profile_ledger() -> Result<BTreeMap<String, String>, Error> {
+  blocking(|| {
+    let app_data = lock_manager()?.get_app_local_data_path()?;
+    Ok(ledger::load(&app_data).profiles)
+  })
+  .await
+}
+
+/// Remember that a source profile was imported into `profile_id`, so the next
+/// import fills that profile again instead of creating another one.
+#[tauri::command]
+pub async fn record_interchange_profile(key: String, profile_id: String) -> Result<(), Error> {
+  blocking(move || {
+    // Held for the write, like an import's own ledger update.
+    let manager = lock_manager()?;
+    let app_data = manager.get_app_local_data_path()?;
+    let mut entries = ledger::load(&app_data);
+    entries.profiles.insert(key, profile_id);
+    ledger::save(&app_data, &entries)
   })
   .await
 }

@@ -380,6 +380,8 @@ pub fn run() {
       commands::mod_interchange::list_interchange_sources,
       commands::mod_interchange::read_interchange_source,
       commands::mod_interchange::get_interchange_ledger,
+      commands::mod_interchange::get_interchange_profile_ledger,
+      commands::mod_interchange::record_interchange_profile,
       commands::mod_interchange::identify_interchange_mods,
       commands::mod_interchange::relabel_interchange_mod,
       commands::mod_interchange::read_interchange_bundle,

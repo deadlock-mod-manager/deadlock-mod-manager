@@ -96,6 +96,22 @@ impl HashCache {
     }
   }
 
+  /// Record `sha256` for a file whose bytes are known, such as a fresh copy
+  /// of a hashed file, so it is never read to be hashed.
+  pub fn remember(&self, path: &Path, sha256: &str) {
+    if let Some((size, modified)) = stamp(path) {
+      self.store(path, size, modified, sha256);
+    }
+  }
+
+  /// The hash of `path`, from the cache if it did not change.
+  pub fn hash(&self, path: &Path) -> Result<String, String> {
+    self
+      .hash_all(&[path.to_path_buf()], &|_, _, _| {})
+      .pop()
+      .unwrap_or_else(|| Err("not hashed".to_string()))
+  }
+
   /// Hash every path, cached ones instantly and the rest on all cores.
   /// `progress(done, total, name)` fires after each file. Results keep the
   /// input order; an unreadable file yields its error message.

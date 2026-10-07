@@ -3968,7 +3968,8 @@
     "importTitle": "Import from {{source}}",
     "stepDescription": {
       "loading": "Reading your {{source}} library.",
-      "contents": "Choose what to bring over. Nothing in {{source}} is changed.",
+      "contents": "Choose what to bring over. Enabled {{source}} mods in the shared addons folder are taken over where they are and may be renamed, so {{source}} can lose track of them.",
+      "contentsBundle": "Choose what to bring over. The export file is not changed.",
       "importing": "Copying mods and settings. You can keep using DMM afterwards right away.",
       "unrecognized": "These mods were imported as local mods. Identify them to get updates and details, or skip.",
       "done": "The import is finished."
@@ -3987,8 +3988,8 @@
     "disabled": "Disabled",
     "active": "Active",
     "sectionProfiles": "Profiles",
-    "sectionProfilesDetail_one": "Create {{count}} DMM profile with the same mods and states",
-    "sectionProfilesDetail_other": "Create DMM profiles for the selected {{count}} profiles, with the same mods and states",
+    "sectionProfilesDetail_one": "Import {{count}} profile with the same mods and states. A profile DMM already has gets the missing mods",
+    "sectionProfilesDetail_other": "Import the selected {{count}} profiles with the same mods and states. Profiles DMM already has get the missing mods",
     "profileMods_one": "{{count}} mod",
     "profileMods_other": "{{count}} mods",
     "noProfiles": "{{source}} has no profiles to import",
@@ -4002,7 +4003,7 @@
     "progress": {
       "starting": "Preparing…",
       "library": "Importing mods ({{current}}/{{total}})",
-      "profile": "Creating profile {{name}} ({{current}}/{{total}})",
+      "profile": "Importing profile {{name}} ({{current}}/{{total}})",
       "crosshairs": "Adding crosshairs ({{current}}/{{total}})"
     },
     "unrecognizedHint_one": "{{count}} mod has no GameBanana link.",
@@ -4023,6 +4024,7 @@
     "skipIdentification": "Skip",
     "summary": "{{imported}} imported, {{skipped}} skipped, {{failed}} failed",
     "profileCreated": "Created profile {{name}}",
+    "profileUpdated": "Added the missing mods to profile {{name}}",
     "profileFailed": "Profile {{name}} could not be created: {{error}}",
     "crosshairsAdded_one": "Added {{count}} crosshair",
     "crosshairsAdded_other": "Added {{count}} crosshairs",

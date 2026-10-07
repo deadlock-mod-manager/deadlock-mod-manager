@@ -1,8 +1,10 @@
-//! Which interchange key became which DMM mod.
+//! Which interchange key became which DMM mod, and which source profile was
+//! imported into which DMM profile.
 //!
 //! Local mods get an id derived from their key, but the user can later link
 //! one to its GameBanana page, which changes the id. Without this ledger a
-//! second import would bring the old local copy back next to the linked one.
+//! second import would bring the old local copy back next to the linked one,
+//! and would create every source profile a second time.
 
 use crate::errors::Error;
 use serde::{Deserialize, Serialize};
@@ -19,6 +21,9 @@ pub struct Ledger {
   /// Interchange key -> DMM mod id.
   #[serde(default)]
   pub entries: BTreeMap<String, String>,
+  /// `<source manager>:<profile key>` -> DMM profile id.
+  #[serde(default)]
+  pub profiles: BTreeMap<String, String>,
 }
 
 pub fn ledger_path(app_data: &Path) -> PathBuf {
@@ -26,12 +31,27 @@ pub fn ledger_path(app_data: &Path) -> PathBuf {
 }
 
 /// A missing or unreadable ledger is an empty one: the worst case is a
-/// duplicate prompt, never a failed import.
+/// duplicate prompt, never a failed import. An unreadable one is logged.
 pub fn load(app_data: &Path) -> Ledger {
-  fs::read_to_string(ledger_path(app_data))
-    .ok()
-    .and_then(|text| serde_json::from_str(&text).ok())
-    .unwrap_or_default()
+  let path = ledger_path(app_data);
+  let text = match fs::read_to_string(&path) {
+    Ok(text) => text,
+    Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ledger::default(),
+    Err(error) => {
+      log::warn!(
+        "Could not read the interchange ledger at {}: {error}",
+        path.display()
+      );
+      return Ledger::default();
+    }
+  };
+  serde_json::from_str(&text).unwrap_or_else(|error| {
+    log::warn!(
+      "Could not parse the interchange ledger at {}: {error}",
+      path.display()
+    );
+    Ledger::default()
+  })
 }
 
 pub fn save(app_data: &Path, ledger: &Ledger) -> Result<(), Error> {
@@ -41,6 +61,7 @@ pub fn save(app_data: &Path, ledger: &Ledger) -> Result<(), Error> {
   let bytes = serde_json::to_vec_pretty(&Ledger {
     version: 1,
     entries: ledger.entries.clone(),
+    profiles: ledger.profiles.clone(),
   })
   .map_err(|e| Error::InvalidInput(format!("could not encode interchange ledger: {e}")))?;
   fs::write(&temp, bytes)?;
@@ -73,8 +94,13 @@ mod tests {
       .entries
       .insert("local:sha256:ab".into(), "local-x".into());
     relabel(&mut ledger, "local-x", "123");
+    ledger
+      .profiles
+      .insert("grimoire:profile:p1".into(), "profile_1".into());
     save(dir.path(), &ledger).unwrap();
-    assert_eq!(load(dir.path()).entries["local:sha256:ab"], "123");
+    let loaded = load(dir.path());
+    assert_eq!(loaded.entries["local:sha256:ab"], "123");
+    assert_eq!(loaded.profiles["grimoire:profile:p1"], "profile_1");
     fs::write(ledger_path(dir.path()), b"{broken").unwrap();
     assert!(load(dir.path()).entries.is_empty());
   }

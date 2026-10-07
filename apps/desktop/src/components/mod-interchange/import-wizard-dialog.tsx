@@ -296,7 +296,12 @@ export const ImportWizardDialog = ({
             {t("interchange.importTitle", { source: name })}
           </DialogTitle>
           <DialogDescription>
-            {t(`interchange.stepDescription.${step}`, { source: name })}
+            {t(
+              step === "contents" && source?.kind === "bundle"
+                ? "interchange.stepDescription.contentsBundle"
+                : `interchange.stepDescription.${step}`,
+              { source: name },
+            )}
           </DialogDescription>
         </DialogHeader>
 
@@ -677,7 +682,11 @@ export const ImportWizardDialog = ({
                         name: profile.name,
                         error: profile.error,
                       })
-                    : t("interchange.profileCreated", { name: profile.name })}
+                    : profile.existing
+                      ? t("interchange.profileUpdated", { name: profile.name })
+                      : t("interchange.profileCreated", {
+                          name: profile.name,
+                        })}
                 </li>
               ))}
               {outcome.crosshairs > 0 && (

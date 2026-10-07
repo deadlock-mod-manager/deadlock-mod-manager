@@ -162,7 +162,7 @@ const interchange: Definition = {
   ...defaults,
   family: "interchange",
   spec: "grimoire-import",
-  phases: ["import", "restart-import"],
+  phases: ["import", "restart-import", "reimport"],
   routes: grimoireRoutes,
   prepare: async (world) => prepareGrimoireWorld(world),
 };

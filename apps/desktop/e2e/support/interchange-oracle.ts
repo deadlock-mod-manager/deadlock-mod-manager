@@ -4,14 +4,17 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 import {
-  CASUAL_PROFILE_IMPORTED,
+  CASUAL_PROFILE,
+  CASUAL_PROFILE_KEY,
   GRIMOIRE_SKIN_FILE_ID,
   type GrimoireFixtureMod,
   grimoireFixtureMods,
   grimoireUserData,
+  lateLocalMod,
   LINKED_OVERFLOW_ID,
   LINKED_OVERFLOW_NAME,
   LOADOUT_PROFILE,
+  LOADOUT_PROFILE_KEY,
   PRESET_CROSSHAIR,
   PROFILE_CROSSHAIR,
 } from "./interchange-fixtures";
@@ -92,6 +95,33 @@ const readManifest = async (dir: string): Promise<Manifest> =>
     JSON.parse(await readFile(path.join(dir, ".dmm.json"), "utf8")),
   );
 
+const ledgerSchema = z.object({
+  entries: z.record(z.string(), z.string()),
+  profiles: z.record(z.string(), z.string()),
+});
+
+const readLedger = async (appData: string) =>
+  ledgerSchema.parse(
+    JSON.parse(
+      await readFile(path.join(appData, "interchange-ledger.json"), "utf8"),
+    ),
+  );
+
+const assertGrimoireUntouched = async (world: string, snapshot: string) => {
+  const before = z
+    .record(z.string(), z.string())
+    .parse(
+      JSON.parse(
+        await readFile(path.join(world, "artifacts", snapshot), "utf8"),
+      ),
+    );
+  assert.deepEqual(
+    await collectFileInventory(grimoireUserData(world)),
+    before,
+    "Grimoire's settings, profiles and metadata stay byte-identical",
+  );
+};
+
 export const assertGrimoireImported = async (
   world: string,
   step: string,
@@ -127,8 +157,8 @@ export const assertGrimoireImported = async (
     const mod = active.mods.find((entry) => entry.remoteId === modId);
     assert.ok(mod, `${fixture.name} must be in the library`);
     assert.equal(mod.name, finalName(fixture, order));
-    assert.equal(mod.status, fixture.enabled ? "installed" : "downloaded");
     assert.equal(mod.installOrder, order, `${fixture.name} keeps load order`);
+    assert.equal(mod.status, fixture.enabled ? "installed" : "downloaded");
     const entry = manifest.mods[modId];
     assert.equal(entry.enabled, fixture.enabled);
     assert.equal(entry.order, order);
@@ -191,16 +221,7 @@ export const assertGrimoireImported = async (
     await collectFileInventory(path.join(roots.appData, "mods", oldOverflowId)),
     {},
   );
-  const ledger = z
-    .object({ entries: z.record(z.string(), z.string()) })
-    .parse(
-      JSON.parse(
-        await readFile(
-          path.join(roots.appData, "interchange-ledger.json"),
-          "utf8",
-        ),
-      ),
-    );
+  const ledger = await readLedger(roots.appData);
   assert.equal(ledger.entries[fixtures[2].key], LINKED_OVERFLOW_ID);
 
   // --- Profiles ------------------------------------------------------------
@@ -210,7 +231,7 @@ export const assertGrimoireImported = async (
     assert.ok(found.folderName, `${name} must have its own folder`);
     return found as typeof found & { folderName: string };
   };
-  assert.equal(Object.keys(state.profiles).length, 3);
+  assert.equal(Object.keys(state.profiles).length, 2);
 
   const loadout = byName(LOADOUT_PROFILE);
   const loadoutDir = path.join(addons, loadout.folderName);
@@ -229,17 +250,15 @@ export const assertGrimoireImported = async (
     fingerprint(fixtures[3].bytes),
   );
 
-  const casual = byName(CASUAL_PROFILE_IMPORTED);
-  const casualDir = path.join(addons, casual.folderName);
-  const casualManifest = await readManifest(casualDir);
-  assert.deepEqual(Object.keys(casualManifest.mods), [LINKED_OVERFLOW_ID]);
-  assert.equal(casualManifest.mods[LINKED_OVERFLOW_ID].enabled, false);
-  const casualFiles = await collectFileInventory(casualDir);
-  assert.equal(
-    casualFiles[`${LINKED_OVERFLOW_ID}_e2e_overflow_local_dir.vpk`],
-    fingerprint(fixtures[2].bytes),
-    "Linking renamed the parked file in every profile",
+  // Grimoire's "Default Profile" went into DMM's default profile, which
+  // already held its only mod, and the ledger points a re-import there too.
+  const casual = state.profiles.default;
+  assert.equal(casual?.name, CASUAL_PROFILE);
+  assert.ok(
+    casual.mods.some((mod) => mod.remoteId === LINKED_OVERFLOW_ID),
+    `${CASUAL_PROFILE} must hold the linked overflow mod`,
   );
+  assert.equal(ledger.profiles[CASUAL_PROFILE_KEY], "default");
 
   // --- Crosshairs ----------------------------------------------------------
   const history = state.activeCrosshairHistory ?? [];
@@ -275,21 +294,7 @@ export const assertGrimoireImported = async (
     inventory[".disabled/e2e_parked_sound_dir.vpk"],
     fingerprint(fixtures[3].bytes),
   );
-  const grimoireBefore = z
-    .record(z.string(), z.string())
-    .parse(
-      JSON.parse(
-        await readFile(
-          path.join(world, "artifacts", "grimoire-before.json"),
-          "utf8",
-        ),
-      ),
-    );
-  assert.deepEqual(
-    await collectFileInventory(grimoireUserData(world)),
-    grimoireBefore,
-    "Grimoire's settings, profiles and metadata stay byte-identical",
-  );
+  await assertGrimoireUntouched(world, "grimoire-before.json");
   assert.equal(
     await readFile(path.join(roots.game, "protected.txt"), "utf8"),
     "Grimoire import must not touch this\n",
@@ -298,5 +303,109 @@ export const assertGrimoireImported = async (
   await writeFile(
     path.join(world, "artifacts", `interchange-${step}.json`),
     JSON.stringify({ state, manifest, inventory }, null, 2),
+  );
+};
+
+export const assertGrimoireReimported = async (
+  world: string,
+  step: string,
+): Promise<void> => {
+  const {
+    configuration: { roots },
+  } = await assertOwnedWorld(world);
+  const state = await readInterchangeState(world);
+  const addons = path.join(roots.game, "game", "citadel", "addons");
+  const fixtures = grimoireFixtureMods(roots.game);
+  const ids = fixtures.map(finalModId);
+  const late = lateLocalMod(roots.game);
+  const lateId = derivedModId(late);
+  const ledger = await readLedger(roots.appData);
+
+  assert.deepEqual(
+    Object.values(state.profiles)
+      .map((profile) => profile.name)
+      .sort(),
+    [CASUAL_PROFILE, LOADOUT_PROFILE].sort(),
+    "Re-import must not create duplicate profiles",
+  );
+  const loadoutEntry = Object.entries(state.profiles).find(
+    ([, profile]) => profile.name === LOADOUT_PROFILE,
+  );
+  assert.ok(loadoutEntry, "Loadout profile must still exist");
+  const [loadoutId, loadout] = loadoutEntry;
+  assert.ok(loadout.folderName, "Loadout keeps its folder");
+  assert.equal(
+    ledger.profiles[LOADOUT_PROFILE_KEY],
+    loadoutId,
+    "The renamed Grimoire profile returns to its original DMM profile",
+  );
+  assert.equal(ledger.profiles[CASUAL_PROFILE_KEY], "default");
+
+  const active = state.profiles.default;
+  assert.ok(active, "Default profile must exist");
+  const expected = [...ids, lateId].sort();
+  assert.deepEqual(
+    active.mods.map((mod) => mod.remoteId).sort(),
+    expected,
+    "Moved and swapped files must not return as duplicate mods",
+  );
+  const manifest = await readManifest(addons);
+  assert.deepEqual(Object.keys(manifest.mods).sort(), expected);
+  const inventory = await collectFileInventory(addons);
+  // The fixture swapped two slots: each mod must still own its own bytes.
+  for (const [index, fixture] of fixtures.entries()) {
+    const entry = manifest.mods[ids[index]];
+    const files = entry.enabled ? entry.currentVpks : entry.disabledVpks;
+    assert.equal(files.length, 1, `${fixture.name} owns exactly one VPK`);
+    assert.equal(inventory[files[0]], fingerprint(fixture.bytes));
+    const store = await collectFileInventory(
+      path.join(roots.appData, "mods", ids[index], "files"),
+    );
+    assert.deepEqual(Object.values(store), [fingerprint(fixture.bytes)]);
+  }
+  assert.equal(manifest.mods[lateId].enabled, false);
+  assert.equal(
+    inventory[manifest.mods[lateId].disabledVpks[0]],
+    fingerprint(late.bytes),
+  );
+
+  const loadoutDir = path.join(addons, loadout.folderName);
+  const loadoutManifest = await readManifest(loadoutDir);
+  assert.deepEqual(
+    Object.keys(loadoutManifest.mods).sort(),
+    [ids[0], ids[3], lateId].sort(),
+  );
+  const lateInLoadout = loadoutManifest.mods[lateId];
+  assert.equal(
+    loadout.enabledMods[lateId]?.enabled === true,
+    lateInLoadout.enabled,
+  );
+  const lateLoadoutVpk = lateInLoadout.enabled
+    ? lateInLoadout.currentVpks[0]
+    : lateInLoadout.disabledVpks[0];
+  assert.equal(
+    (await collectFileInventory(loadoutDir))[lateLoadoutVpk],
+    fingerprint(late.bytes),
+  );
+  assert.deepEqual(
+    Object.values(
+      await collectFileInventory(
+        path.join(roots.appData, "mods", lateId, "files"),
+      ),
+    ),
+    [fingerprint(late.bytes)],
+  );
+
+  assert.equal(
+    (await collectFileInventory(path.join(addons, ".disabled")))[
+      `${ids[3]}_e2e_parked_sound_dir.vpk`
+    ],
+    fingerprint(fixtures[3].bytes),
+  );
+  await assertGrimoireUntouched(world, "grimoire-before-reimport.json");
+
+  await writeFile(
+    path.join(world, "artifacts", `interchange-${step}.json`),
+    JSON.stringify({ state, manifest, loadoutManifest }, null, 2),
   );
 };

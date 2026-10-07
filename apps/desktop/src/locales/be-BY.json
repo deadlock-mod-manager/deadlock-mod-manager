@@ -3969,6 +3969,7 @@
     "stepDescription": {
       "loading": "",
       "contents": "",
+      "contentsBundle": "",
       "importing": "",
       "unrecognized": "",
       "done": ""
@@ -4023,6 +4024,7 @@
     "skipIdentification": "",
     "summary": "",
     "profileCreated": "",
+    "profileUpdated": "",
     "profileFailed": "",
     "crosshairsAdded_one": "",
     "crosshairsAdded_other": "",

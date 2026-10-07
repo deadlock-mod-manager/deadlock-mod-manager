@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import type { ModDto } from "@deadlock-mods/shared";
 import { type LocalMod, ModStatus } from "@/types/mods";
+import type { ProfileId } from "@/types/profiles";
 import { DEFAULT_CROSSHAIR_CONFIG } from "@deadlock-mods/crosshair/types";
 import {
   buildImportedLocalMod,
@@ -9,12 +10,14 @@ import {
   documentForProfile,
   type InterchangeDocument,
   parseGameBananaReference,
+  profileTargetsFor,
   uniqueName,
   exportInputFromLocalMod,
   fileIdFromDownloadUrl,
   type ImportedMod,
   type InterchangeMod,
   libraryIdForEntry,
+  libraryRecordAsModDto,
   placeholderModDto,
 } from "./mod-interchange";
 
@@ -71,6 +74,36 @@ describe("libraryIdForEntry", () => {
     expect(libraryIdForEntry(entry({ origin: { provider: "local" } }))).toBe(
       null,
     );
+    // A local mod DMM already has carries its DMM id.
+    expect(
+      libraryIdForEntry(
+        entry({
+          origin: {
+            provider: "local",
+            localId: "local-0F8FAD5B-D9CB-469F-A165-70867728950E",
+          },
+        }),
+      ),
+    ).toBe("local-0f8fad5b-d9cb-469f-a165-70867728950e");
+  });
+});
+
+describe("libraryRecordAsModDto", () => {
+  it("keeps what describes the mod and drops another profile's install state", () => {
+    const record = {
+      ...placeholderModDto(entry(), "650634"),
+      name: "QOL Lock (library)",
+      status: ModStatus.Installed,
+      installedVpks: ["pak01_dir.vpk"],
+      installOrder: 4,
+      heroOverride: "Abrams",
+    } satisfies LocalMod;
+    const mod = libraryRecordAsModDto(record);
+    expect(mod.name).toBe("QOL Lock (library)");
+    expect(mod).not.toHaveProperty("status");
+    expect(mod).not.toHaveProperty("installedVpks");
+    expect(mod).not.toHaveProperty("installOrder");
+    expect(mod).toHaveProperty("heroOverride", "Abrams");
   });
 });
 
@@ -200,6 +233,60 @@ describe("profiles, crosshairs and references", () => {
     expect(uniqueName("Ranked", ["Default Profile"])).toBe("Ranked");
     expect(uniqueName("Ranked", ["ranked", "Ranked (2)"])).toBe("Ranked (3)");
     expect(uniqueName("  ", [])).toBe("Imported profile");
+  });
+
+  it("imports a profile where it went before, else by name, else anew", () => {
+    const document = doc();
+    const profile = document.profiles[0];
+    const key = `${document.source.manager}:${profile.key}`;
+    const existing = [
+      { id: "default" as ProfileId, name: ` ${profile.name.toUpperCase()} ` },
+      { id: "p1" as ProfileId, name: "Renamed by the user" },
+    ];
+    const target = (
+      ledger: Record<string, string>,
+      profiles: typeof existing,
+    ) =>
+      profileTargetsFor(document, [profile], ledger, profiles).get(profile.key);
+    expect(target({ [key]: "p1" }, existing)).toEqual({
+      kind: "existing",
+      profileId: "p1",
+    });
+    // The profile it went into was deleted since: the one with its name.
+    expect(target({ [key]: "gone" }, existing)).toEqual({
+      kind: "existing",
+      profileId: "default",
+    });
+    expect(target({}, existing.slice(1))).toEqual({
+      kind: "new",
+      name: profile.name,
+    });
+  });
+
+  it("never sends two source profiles into one DMM profile", () => {
+    const document = doc();
+    const first = { ...document.profiles[0], key: "a", name: "Ranked" };
+    const second = { ...first, key: "b" };
+    const third = { ...first, key: "c", name: "Casual" };
+    const existing = [
+      { id: "ranked" as ProfileId, name: "Ranked" },
+      { id: "casual" as ProfileId, name: "Casual" },
+    ];
+    const ledger = { [`${document.source.manager}:c`]: "ranked" };
+    const targets = profileTargetsFor(
+      document,
+      [first, second, third],
+      ledger,
+      existing,
+    );
+    // The ledger claims "ranked" for c, so the name match is taken.
+    expect(targets.get("c")).toEqual({ kind: "existing", profileId: "ranked" });
+    expect(targets.get("a")).toEqual({ kind: "new", name: "Ranked" });
+    expect(targets.get("b")).toEqual({ kind: "new", name: "Ranked" });
+
+    const byName = profileTargetsFor(document, [first, second], {}, existing);
+    expect(byName.get("a")).toEqual({ kind: "existing", profileId: "ranked" });
+    expect(byName.get("b")).toEqual({ kind: "new", name: "Ranked" });
   });
 
   it("parses GameBanana links and ids", () => {
