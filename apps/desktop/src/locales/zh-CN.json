@@ -847,7 +847,12 @@
       "installedAt": "已安装",
       "updatedAt": "最后更新",
       "selectVariant": "选择变体",
+      "outdated": "",
+      "outdatedDescription": "",
+      "keepOneFile": "",
+      "oneFileRequired": "",
       "backupNote": "更新前将自动创建备份",
+      "backingUp": "",
       "updating": "模组更新中……",
       "updatingPercent": "",
       "complete": "更新完成",
@@ -881,7 +886,10 @@
     "summaryModels_other": "",
     "summaryModelsAll_one": "",
     "summaryModelsAll_other": "",
+    "summaryNoModels_one": "",
+    "summaryNoModels_other": "",
     "summaryNone": "",
+    "safeNote": "",
     "howItWorks": "",
     "scanning": "",
     "scanFailed": "",
@@ -892,7 +900,7 @@
       "modelHidden": "",
       "overlap": ""
     },
-    "badgeTooltip": {
+    "badgeHint": {
       "modelHidden": "",
       "overlap": ""
     },
@@ -904,21 +912,25 @@
       "low_one": "",
       "low_other": ""
     },
+    "hint": {
+      "normal": "",
+      "low": ""
+    },
     "moreFiles_one": "",
     "moreFiles_other": "",
     "used": "",
-    "skipped": "",
+    "usingFirstCopy": "",
     "modelHidden": "",
     "loadedFirst": "",
     "loadFirst": "",
     "showFiles_one": "",
     "showFiles_other": "",
     "options": "",
-    "ignoreGroup": "",
+    "markFine": "",
     "ignoreMod": "",
     "ignoreFile": "",
     "ignoreFailed": "",
-    "ignoredSection": "",
+    "markedFineSection": "",
     "ignoredPair": "",
     "ignoredModRow": "",
     "restore": "",
@@ -936,9 +948,10 @@
       },
       "fromMod": "",
       "skipped": "",
+      "safe": "",
       "order": "",
-      "models": "",
-      "action": ""
+      "modelException": "",
+      "resolve": ""
     }
   },
   "modOrdering": {
@@ -973,7 +986,8 @@
     "listView": "列表视图",
     "subtitle": "每小时更新，新模组随时添加。",
     "mapsSubtitle": "浏览 Deadlock 的自定义地图",
-    "mapsWarning": "自定义地图属于实验性功能，其表现很大程度上取决于作者打包的方式。并非所有地图都能通过模组管理器直接正常运行。",
+    "mapsWarningTitle": "",
+    "mapsWarning": "",
     "catalogSyncing": "",
     "catalogSyncTitle": "",
     "catalogSyncPercentage": "",

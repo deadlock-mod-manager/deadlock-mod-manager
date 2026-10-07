@@ -847,7 +847,12 @@
       "installedAt": "Installiert",
       "updatedAt": "Zuletzt aktualisiert",
       "selectVariant": "Variante auswählen",
+      "outdated": "",
+      "outdatedDescription": "",
+      "keepOneFile": "",
+      "oneFileRequired": "",
       "backupNote": "Vor dem Update wird automatisch ein Backup erstellt",
+      "backingUp": "",
       "updating": "Aktualisiere Mods...",
       "updatingPercent": "",
       "complete": "Update abgeschlossen",
@@ -881,7 +886,10 @@
     "summaryModels_other": "",
     "summaryModelsAll_one": "",
     "summaryModelsAll_other": "",
+    "summaryNoModels_one": "",
+    "summaryNoModels_other": "",
     "summaryNone": "",
+    "safeNote": "",
     "howItWorks": "",
     "scanning": "",
     "scanFailed": "",
@@ -892,7 +900,7 @@
       "modelHidden": "",
       "overlap": ""
     },
-    "badgeTooltip": {
+    "badgeHint": {
       "modelHidden": "",
       "overlap": ""
     },
@@ -904,21 +912,25 @@
       "low_one": "",
       "low_other": ""
     },
+    "hint": {
+      "normal": "",
+      "low": ""
+    },
     "moreFiles_one": "",
     "moreFiles_other": "",
     "used": "",
-    "skipped": "",
+    "usingFirstCopy": "",
     "modelHidden": "",
     "loadedFirst": "",
     "loadFirst": "",
     "showFiles_one": "",
     "showFiles_other": "",
     "options": "",
-    "ignoreGroup": "",
+    "markFine": "",
     "ignoreMod": "",
     "ignoreFile": "",
     "ignoreFailed": "",
-    "ignoredSection": "",
+    "markedFineSection": "",
     "ignoredPair": "",
     "ignoredModRow": "",
     "restore": "",
@@ -936,9 +948,10 @@
       },
       "fromMod": "",
       "skipped": "",
+      "safe": "",
       "order": "",
-      "models": "",
-      "action": ""
+      "modelException": "",
+      "resolve": ""
     }
   },
   "modOrdering": {
@@ -973,7 +986,8 @@
     "listView": "Listenansicht",
     "subtitle": "Täglich aktualisiert, mit neuen Mods jede Woche.",
     "mapsSubtitle": "Benutzerdefinierte Karten für Deadlock durchsuchen",
-    "mapsWarning": "Benutzerdefinierte Karten sind experimentell und sind davon abhängig wie sie zusammengestellt worden sind. Nicht alle Karten werden über den Mod-Manager unverändert funktionieren.",
+    "mapsWarningTitle": "",
+    "mapsWarning": "",
     "catalogSyncing": "",
     "catalogSyncTitle": "",
     "catalogSyncPercentage": "",
