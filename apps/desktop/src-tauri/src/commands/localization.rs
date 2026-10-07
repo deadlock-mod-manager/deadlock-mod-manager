@@ -7,21 +7,33 @@ use super::state::MANAGER;
 
 #[tauri::command]
 pub async fn set_mod_compatibility_feature(enabled: bool) -> Result<(), Error> {
-  MANAGER
-    .lock()
-    .map_err(|_| Error::BackgroundTaskFailed("Mod manager is unavailable".into()))?
-    .set_mod_compatibility_feature(enabled);
-  Ok(())
+  tauri::async_runtime::spawn_blocking(move || {
+    MANAGER
+      .lock()
+      .map_err(|_| Error::BackgroundTaskFailed("Mod manager is unavailable".into()))?
+      .set_mod_compatibility_feature(enabled);
+    Ok(())
+  })
+  .await
+  .map_err(|error| {
+    Error::BackgroundTaskFailed(format!("Could not change mod compatibility: {error}"))
+  })?
 }
 
 #[tauri::command]
 pub async fn get_mod_compatibility_settings(
   profile_folder: Option<String>,
 ) -> Result<std::collections::BTreeMap<String, bool>, Error> {
-  MANAGER
-    .lock()
-    .map_err(|_| Error::BackgroundTaskFailed("Mod manager is unavailable".into()))?
-    .mod_compatibility_settings(profile_folder.as_deref())
+  tauri::async_runtime::spawn_blocking(move || {
+    MANAGER
+      .lock()
+      .map_err(|_| Error::BackgroundTaskFailed("Mod manager is unavailable".into()))?
+      .mod_compatibility_settings(profile_folder.as_deref())
+  })
+  .await
+  .map_err(|error| {
+    Error::BackgroundTaskFailed(format!("Could not read mod compatibility: {error}"))
+  })?
 }
 
 #[tauri::command]
