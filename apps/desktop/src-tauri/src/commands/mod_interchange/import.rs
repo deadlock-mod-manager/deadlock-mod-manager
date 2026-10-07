@@ -719,8 +719,15 @@ mod tests {
     fs::remove_file(&source).unwrap();
     store_file(&hashes, &file, &stored).unwrap();
 
-    // Different bytes of the same size are replaced.
+    // Different bytes of the same size are replaced. Coarse filesystem
+    // clocks can give the rewrite the same mtime, so move it forward.
     fs::write(&stored, b"old bytes").unwrap();
+    let rewritten = fs::OpenOptions::new().write(true).open(&stored).unwrap();
+    let mtime = rewritten.metadata().unwrap().modified().unwrap();
+    rewritten
+      .set_modified(mtime + std::time::Duration::from_secs(1))
+      .unwrap();
+    drop(rewritten);
     assert!(store_file(&hashes, &file, &stored).is_err());
   }
 
