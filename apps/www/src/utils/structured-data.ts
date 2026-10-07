@@ -1,91 +1,58 @@
 import {
-  BUG_REPORT_URL,
   DISCORD_URL,
-  DOCS_URL,
   GITHUB_REPO,
   REDDIT_URL,
   SITE_URL,
   X_URL,
 } from "@/lib/constants";
 import { getReleaseUrl } from "@/lib/release-downloads";
-import { absoluteUrl, DEFAULT_DESCRIPTION, SITE_NAME, seo } from "@/utils/seo";
-
-/**
- * Plain-text copy of the FAQ in components/home/faq-section.tsx, used for
- * the FAQPage JSON-LD. That component renders JSX answers and does not
- * export its data, so the text is duplicated here. Keep both in sync: the
- * structured data must match what the page shows.
- */
-const HOME_FAQS = [
-  {
-    question: "What is Deadlock Mod Manager?",
-    answer:
-      "A small desktop app that makes Deadlock modding simple. Browse, install, and manage mods without touching your game folders.",
-  },
-  {
-    question: "How do I install mods?",
-    answer:
-      "<ol><li>Download and open Deadlock Mod Manager.</li><li>It detects Deadlock for you, or you can set the folder in Settings.</li><li>Browse the Mods Store and click Download.</li><li>The app installs the mod in the right place. No manual steps.</li></ol>",
-  },
-  {
-    question: "Is it safe to use mods?",
-    answer:
-      "The app just copies .vpk files into your game's addons folder, never patches the Deadlock executable, and backs up first so you can restore in one click or launch vanilla any time. Skins are client-side, and the mods themselves are made by the community, so stick to ones you trust.",
-  },
-  {
-    question: "How do I uninstall mods?",
-    answer:
-      "Open the Mods Library and remove what you don't want, or use Clear All Mods in Settings.",
-  },
-  {
-    question: "Which platforms are supported?",
-    answer:
-      "Windows and Linux. On Linux you can install from our APT repository (Ubuntu/Debian), the AUR (Arch), nixpkgs, or the Flatpak bundle.",
-  },
-  {
-    question: "I found a bug, how do I report it?",
-    answer: `Open an issue on our <a href="${BUG_REPORT_URL}">GitHub repository</a>. Include steps to reproduce, what you expected, and what happened.`,
-  },
-  {
-    question: "Where can I find more detailed documentation?",
-    answer: `The <a href="${DOCS_URL}">documentation site</a> has guides, tutorials, and technical reference.`,
-  },
-  {
-    question: "Will Deadlock have official skins?",
-    answer:
-      "Deadlock is evolving. If official cosmetics arrive, this app will still be here for community-made options.",
-  },
-  {
-    question: "Can other players see my installed skins?",
-    answer:
-      "No. These are client-side. Other players see default models and textures.",
-  },
-];
+import {
+  DEFAULT_LOCALE,
+  getLocaleConfig,
+  type Locale,
+} from "@/lib/i18n/locales";
+import { absoluteUrl, localizedUrl, SITE_NAME, seo } from "@/utils/seo";
 
 export interface FaqEntry {
   question: string;
   answer: string;
 }
 
+/**
+ * Translated answers mark links and code with <Trans> tags such as
+ * <link>GitHub</link>. JSON-LD gets the plain text.
+ */
+export const stripTags = (text: string) => text.replace(/<\/?[\w-]+>/g, "");
+
 const faqPage = (faqs: FaqEntry[]) => ({
   "@type": "FAQPage",
   mainEntity: faqs.map(({ question, answer }) => ({
     "@type": "Question",
-    name: question,
-    acceptedAnswer: { "@type": "Answer", text: answer },
+    name: stripTags(question),
+    acceptedAnswer: { "@type": "Answer", text: stripTags(answer) },
   })),
 });
 
 interface HomeStructuredDataOptions {
   /** Latest stable release, e.g. "1.1.0". Omitted when the API is down. */
   version?: string;
+  locale?: Locale;
+  /** Translated site description. */
+  description: string;
+  /** The home page FAQ, exactly as rendered. */
+  faqs: FaqEntry[];
 }
 
 const ORGANIZATION_ID = `${SITE_URL}/#organization`;
 const WEBSITE_ID = `${SITE_URL}/#website`;
 const SOFTWARE_ID = `${SITE_URL}/#software`;
 
-const homeGraph = ({ version }: HomeStructuredDataOptions) => ({
+const homeGraph = ({
+  version,
+  locale = DEFAULT_LOCALE,
+  description,
+  faqs,
+}: HomeStructuredDataOptions) => ({
   "@context": "https://schema.org",
   "@graph": [
     {
@@ -106,8 +73,8 @@ const homeGraph = ({ version }: HomeStructuredDataOptions) => ({
       "@id": WEBSITE_ID,
       name: SITE_NAME,
       url: absoluteUrl("/"),
-      description: DEFAULT_DESCRIPTION,
-      inLanguage: "en",
+      description,
+      inLanguage: getLocaleConfig(locale).hreflang,
       publisher: { "@id": ORGANIZATION_ID },
     },
     {
@@ -115,11 +82,11 @@ const homeGraph = ({ version }: HomeStructuredDataOptions) => ({
       "@id": SOFTWARE_ID,
       name: SITE_NAME,
       alternateName: ["DMM", "deadlockmods.app"],
-      description: DEFAULT_DESCRIPTION,
-      url: absoluteUrl("/"),
+      description,
+      url: localizedUrl("/", locale),
       applicationCategory: "GameApplication",
       operatingSystem: "Windows, Linux",
-      downloadUrl: absoluteUrl("/download"),
+      downloadUrl: localizedUrl("/download", locale),
       ...(version && {
         softwareVersion: version,
         releaseNotes: getReleaseUrl(version),
@@ -141,7 +108,7 @@ const homeGraph = ({ version }: HomeStructuredDataOptions) => ({
       publisher: { "@id": ORGANIZATION_ID },
       sameAs: [GITHUB_REPO, DISCORD_URL],
     },
-    faqPage(HOME_FAQS),
+    faqPage(faqs),
   ],
 });
 
@@ -158,22 +125,19 @@ export interface GuidePageData {
  * JSON-LD for a landing or guide page: the page itself, its breadcrumb trail
  * and the FAQ it renders. The FAQ text must match the page.
  */
-const guideGraph = ({
-  path,
-  title,
-  description,
-  name,
-  faqs,
-}: GuidePageData) => ({
+const guideGraph = (
+  { path, title, description, name, faqs }: GuidePageData,
+  locale: Locale,
+) => ({
   "@context": "https://schema.org",
   "@graph": [
     {
       "@type": "WebPage",
-      "@id": `${absoluteUrl(path)}#webpage`,
-      url: absoluteUrl(path),
+      "@id": `${localizedUrl(path, locale)}#webpage`,
+      url: localizedUrl(path, locale),
       name: title,
       description,
-      inLanguage: "en",
+      inLanguage: getLocaleConfig(locale).hreflang,
       isPartOf: { "@id": WEBSITE_ID },
       about: { "@id": SOFTWARE_ID },
       publisher: { "@id": ORGANIZATION_ID },
@@ -185,9 +149,14 @@ const guideGraph = ({
           "@type": "ListItem",
           position: 1,
           name: SITE_NAME,
-          item: absoluteUrl("/"),
+          item: localizedUrl("/", locale),
         },
-        { "@type": "ListItem", position: 2, name, item: absoluteUrl(path) },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name,
+          item: localizedUrl(path, locale),
+        },
       ],
     },
     ...(faqs.length > 0 ? [faqPage(faqs)] : []),
@@ -201,17 +170,24 @@ const serialize = (graph: JsonLdGraph) =>
   JSON.stringify(graph).replace(/</g, "\\u003c");
 
 /** Serialized JSON-LD for the home page head. */
-export const homeStructuredData = (options: HomeStructuredDataOptions = {}) =>
+export const homeStructuredData = (options: HomeStructuredDataOptions) =>
   serialize(homeGraph(options));
 
 /** Head tags for a landing or guide page: meta, canonical link and JSON-LD. */
-export const guideHead = (page: GuidePageData) => ({
+export const guideHead = (
+  page: GuidePageData,
+  locale: Locale = DEFAULT_LOCALE,
+) => ({
   ...seo({
     title: page.title,
     description: page.description,
     path: page.path,
+    locale,
   }),
   scripts: [
-    { type: "application/ld+json", children: serialize(guideGraph(page)) },
+    {
+      type: "application/ld+json",
+      children: serialize(guideGraph(page, locale)),
+    },
   ],
 });
