@@ -8,6 +8,7 @@
     "project-structure",
     "architecture",
     "domain-model",
+    "mod-interchange",
     "auth-service",
     "mirror-service",
     "apt-repository",
