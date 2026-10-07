@@ -20,6 +20,7 @@ export const NAMESPACES = [
   "guide-install",
   "guide-not-working",
   "guide-grimoire",
+  "v2",
   "error-os-5",
   "error-os-740",
   "error-mod-order",

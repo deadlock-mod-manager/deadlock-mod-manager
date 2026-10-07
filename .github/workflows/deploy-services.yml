@@ -16,6 +16,7 @@ on:
     paths:
       - "apps/**"
       - "packages/**"
+      - ".changeset/**"
 
 permissions:
   contents: read
@@ -59,6 +60,9 @@ jobs:
               - 'packages/**'
             www:
               - 'apps/www/**'
+              # Release notes shown on /changelog
+              - 'apps/desktop/CHANGELOG.md'
+              - '.changeset/**'
 
   deploy-api:
     environment:

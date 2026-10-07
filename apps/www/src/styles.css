@@ -224,6 +224,32 @@ body {
   }
 }
 
+/* /v2: the fix ticker scrolls a doubled list, so -50% loops seamlessly. */
+@keyframes ticker-up {
+  to {
+    transform: translateY(-50%);
+  }
+}
+
+/* /v2 in October: one bat crosses the seasonal themes, like the Halloween theme's. */
+@keyframes bat-flight {
+  from {
+    transform: translate(-15vw, 60px) rotate(8deg);
+  }
+  45% {
+    transform: translate(45vw, -20px) rotate(-6deg);
+  }
+  to {
+    transform: translate(115vw, 30px) rotate(10deg);
+  }
+}
+
+@keyframes bat-flap {
+  50% {
+    transform: scaleY(0.35);
+  }
+}
+
 @layer utilities {
   /* Angled corners, the way the Deadlock HUD cuts its panels. */
   .dl-notch {
@@ -277,10 +303,26 @@ body {
     animation: marquee 45s linear infinite;
   }
 
+  .animate-ticker-up {
+    animation: ticker-up 60s linear infinite;
+  }
+
+  .animate-bat-flight {
+    animation: bat-flight 5.5s cubic-bezier(0.45, 0.05, 0.55, 0.95) 0.4s both;
+  }
+
+  .animate-bat-flap {
+    animation: bat-flap 0.18s ease-in-out infinite;
+    transform-origin: center;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .animate-dl-rise,
     .animate-dl-sweep,
-    .animate-marquee {
+    .animate-marquee,
+    .animate-ticker-up,
+    .animate-bat-flight,
+    .animate-bat-flap {
       animation: none;
     }
   }

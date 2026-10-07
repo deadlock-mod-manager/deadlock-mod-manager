@@ -27,7 +27,7 @@
   "v2Banner": {
     "short": "Rebuilt from the ground up.",
     "long": "Rebuilt from the ground up: mods that survive game updates, a faster store and clash detection.",
-    "cta": "Try the preview"
+    "whatsNew": "See what's new"
   },
   "footer": {
     "tagline": "A small, open-source app for installing and managing mods for the Valve game Deadlock.",
@@ -41,6 +41,7 @@
     "links": {
       "download": "Download",
       "sourceCode": "Source Code",
+      "changelog": "Changelog",
       "documentation": "Documentation",
       "faq": "FAQ",
       "reportBug": "Report Bug"

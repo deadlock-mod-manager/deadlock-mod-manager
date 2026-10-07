@@ -1,0 +1,171 @@
+{
+  "meta": {
+    "title": "What's New in Deadlock Mod Manager V2",
+    "description": "Deadlock Mod Manager V2, rebuilt from the ground up: mods that survive game updates, a GameBanana catalog that lives on your PC, conflict detection, stats and new themes."
+  },
+  "hero": {
+    "eyebrow": "Deadlock Mod Manager 2.0",
+    "title": "Rebuilt from the ground up",
+    "intro": "V2 puts your mods back after a game update and warns you when two of them change the same files. The Mods Store now searches a copy of GameBanana on your PC.",
+    "tryPreview": "Try the V2 preview",
+    "changelog": "Full changelog"
+  },
+  "nav": {
+    "label": "On this page",
+    "more": "Everything else",
+    "upgrade": "Upgrading from V1",
+    "fixes": "Bug fixes"
+  },
+  "features": {
+    "updates": {
+      "nav": "Game updates",
+      "title": "Your mods survive patch day",
+      "body": "While the app is open, it notices when a Steam update or another tool rewrites gameinfo.gi, tells you how many enabled mods stopped loading, and re-applies them in one click.",
+      "points": {
+        "layout": "A new addon folder layout lifts the old 99-file limit",
+        "patchNotes": "Valve's latest patch notes on your Dashboard",
+        "inGame": "Mod changes are blocked while Deadlock is running, unless you turn that off",
+        "vanilla": "Optional: go back to vanilla when the game closes, so launching from Steam starts it without mods"
+      }
+    },
+    "store": {
+      "nav": "Mods Store",
+      "title": "The whole of GameBanana, on your PC",
+      "body": "V2 keeps a copy of the GameBanana catalog on your PC, so browsing and searching don't wait on the network. It checks for new and updated mods when you start the app.",
+      "points": {
+        "tabs": "Separate tabs for Mods, Sounds, Albums and WiPs",
+        "pages": "Mod pages with Overview, Changelog, Comments and Files tabs",
+        "authors": "Author profiles, and DeadlockSkins.gg collections in Albums",
+        "skip": "Skip an update until the author publishes a newer one"
+      },
+      "alt": "The Mods Store in Deadlock Mod Manager V2, showing a grid of GameBanana mods"
+    },
+    "conflicts": {
+      "nav": "Conflicts",
+      "title": "Know when mods clash",
+      "body": "A Conflicts tab in My Mods shows which enabled mods change the same files, and which one the game uses.",
+      "points": {
+        "loadFirst": "Press Load first on the mod you want to see",
+        "hidden": "A Model hidden badge on skins another mod covers up",
+        "ignore": "Ignore overlaps you're happy with, per profile"
+      }
+    },
+    "themes": {
+      "nav": "Themes",
+      "title": "Make it yours",
+      "body": "V2 adds OLED and Lovelock themes. Around five holidays a year, the app also switches to a seasonal theme with something hidden to find, unless you have picked a theme of your own.",
+      "lovelockAlt": "Deadlock Mod Manager with the Lovelock theme: plum and pink, with hero art behind the dashboard",
+      "inSeason": "In season now:",
+      "seasons": {
+        "halloween": {
+          "name": "Halloween",
+          "window": "October 1 to November 1",
+          "description": "Pumpkin orange on midnight purple, a full moon, drifting fog, rising embers and the odd colony of bats."
+        },
+        "christmas": {
+          "name": "Christmas",
+          "window": "December 1 to December 26",
+          "description": "Firelight, cinnamon and candle gold under softly falling snow, with an advent calendar and treats hidden around the app."
+        },
+        "newYear": {
+          "name": "New Year's Eve",
+          "window": "December 27 to January 1",
+          "description": "Midnight blue and champagne gold with fireworks over the skyline and a live countdown to midnight."
+        },
+        "lunarNewYear": {
+          "name": "Lunar New Year",
+          "window": "Three weeks before Lunar New Year until the Lantern Festival",
+          "description": "Lacquer red and gold with paper lanterns rising into the night and red envelopes to catch, through to the Lantern Festival."
+        },
+        "easter": {
+          "name": "Easter",
+          "window": "30 days before Easter Sunday until Easter Monday",
+          "description": "A spring meadow at dusk: chick yellow, blossom pink and fresh green, petals in the air and eggs hidden around the screen."
+        }
+      }
+    }
+  },
+  "demo": {
+    "update": {
+      "title": "Deadlock updated and switched your mods off.",
+      "body": "Steam replaced gameinfo.gi, so your 14 enabled mods won't load until they're re-applied.",
+      "reapply": "Re-apply mods",
+      "reapplying": "Re-applying",
+      "reapplied": "Mods re-applied. They'll load next time you start Deadlock."
+    },
+    "conflicts": {
+      "title": "Same model in 2 mods",
+      "used": "Used in game",
+      "skipped": "Skipped",
+      "loadFirst": "Load first",
+      "loadedFirst": "{{mod}} now loads first",
+      "hint": "Try it: press Load first."
+    }
+  },
+  "more": {
+    "title": "Everything else in V2",
+    "items": {
+      "foundry": {
+        "title": "Mod Foundry",
+        "body": "Edit a hero skin, paint it, and export it as a mod."
+      },
+      "stats": {
+        "title": "Stats",
+        "body": "Hero, item and teammate breakdowns, match history with item timelines, and live ranks for your current match (with the -condebug launch option)."
+      },
+      "skins": {
+        "title": "Hero Skins",
+        "body": "Every skin for a hero on one page, with a 3D preview."
+      },
+      "import": {
+        "title": "Coming from Grimoire?",
+        "body": "Import its mods, profiles and crosshairs, or any mod-interchange file. Export works too."
+      },
+      "updates": {
+        "title": "Mod updates",
+        "body": "Read a GameBanana mod's changelog before updating, and watch the download progress."
+      },
+      "settings": {
+        "title": "Settings search",
+        "body": "Find any setting from the search box in the settings sidebar."
+      },
+      "heroes": {
+        "title": "New heroes",
+        "body": "Baba, Deadman Danny, Nurse Harrow, Rat King, Solomon and Violet are now recognized."
+      },
+      "forge": {
+        "title": "1-click installs",
+        "body": "Opt in to install mods straight from DeadlockForge. Each install asks first."
+      },
+      "servers": {
+        "title": "Server Browser",
+        "body": "Experimental: browse Deadworks community servers and get their maps and addons before you join. Turn it on in Settings → Experimental."
+      }
+    }
+  },
+  "upgrade": {
+    "title": "Coming from V1?",
+    "steps": {
+      "install": {
+        "title": "Install V2 like any update",
+        "body": "Your mods, profiles and settings carry over."
+      },
+      "migrate": {
+        "title": "Profiles move to the new layout",
+        "body": "The first time you use a profile, its mods move to the new addon folder layout by themselves."
+      },
+      "help": {
+        "title": "Something look off?",
+        "body": "Settings → Tools → Nuke & Reinstall wipes your mods and downloads them again, for when the app and your game folder are out of sync. Still stuck? Ask on <discord>Discord</discord>."
+      }
+    }
+  },
+  "fixes": {
+    "label": "Bugs squashed since V1",
+    "body": "Fix commits to the app since V1. The ones that made the release notes are listed here, and <link>the full changelog</link> has everything else."
+  },
+  "thanks": {
+    "title": "Thank you",
+    "body": "To the 20,000+ members of our <discord>Discord</discord>, for every bug report and suggestion."
+  }
+}

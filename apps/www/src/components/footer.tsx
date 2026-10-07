@@ -42,6 +42,11 @@ export const Footer = () => {
                 to='/download'>
                 {t("footer.links.download")}
               </Link>
+              <Link
+                className='text-sm opacity-60 hover:opacity-100 transition-opacity'
+                to='/changelog'>
+                {t("footer.links.changelog")}
+              </Link>
               <a
                 className='text-sm opacity-60 hover:opacity-100 transition-opacity'
                 href={GITHUB_REPO}

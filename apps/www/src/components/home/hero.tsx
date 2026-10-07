@@ -7,7 +7,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Trans, useTranslation } from "react-i18next";
 import { usePlatformDownload } from "@/components/downloads/platform-download-button";
-import { V2_PREVIEW_URL } from "@/lib/constants";
 import { orpc } from "@/utils/orpc";
 import { CtaArrow, DownloadCta, secondaryCta } from "./cta";
 
@@ -47,10 +46,8 @@ export const HeroSection = () => {
 
       <div className='mx-auto grid w-full max-w-7xl items-center gap-16 px-6 pt-16 pb-24 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1.1fr)] lg:gap-14 lg:py-28 xl:gap-20'>
         <div className='relative z-10'>
-          <a
-            href={V2_PREVIEW_URL}
-            target='_blank'
-            rel='noopener noreferrer'
+          <Link
+            to='/v2'
             className='group inline-flex items-center gap-2.5 rounded-full border border-border-strong bg-surface/80 py-1.5 pr-3.5 pl-2 text-[13px] text-foreground-soft backdrop-blur-sm transition-colors hover:border-border-hover hover:text-foreground'>
             <span className='rounded-full bg-primary px-2 py-0.5 font-semibold text-primary-foreground text-xs'>
               V2
@@ -60,7 +57,7 @@ export const HeroSection = () => {
               aria-hidden='true'
               className='size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5'
             />
-          </a>
+          </Link>
 
           <h1 className='mt-10 font-bold font-primary text-[clamp(46px,4.9vw,76px)] leading-[0.94] tracking-[-0.02em]'>
             <Trans

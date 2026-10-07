@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as SplatRouteImport } from './routes/$'
 import { Route as R403RouteImport } from './routes/403'
+import { Route as ChangelogRouteImport } from './routes/changelog'
 import { Route as CrosshairGeneratorRouteImport } from './routes/crosshair-generator'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DeadlockFatalErrorUnableToLoadLayoutFileRouteImport } from './routes/deadlock-fatal-error-unable-to-load-layout-file'
@@ -34,6 +35,7 @@ import { Route as SkinsRouteImport } from './routes/skins'
 import { Route as StatusRouteImport } from './routes/status'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TransparencyRouteImport } from './routes/transparency'
+import { Route as V2RouteImport } from './routes/v2'
 import { Route as VpkAnalyzerRouteImport } from './routes/vpk-analyzer'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
 import { Route as CompareGrimoireRouteImport } from './routes/compare/grimoire'
@@ -57,6 +59,11 @@ const SplatRoute = SplatRouteImport.update({
 const R403Route = R403RouteImport.update({
   id: '/403',
   path: '/403',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChangelogRoute = ChangelogRouteImport.update({
+  id: '/changelog',
+  path: '/changelog',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CrosshairGeneratorRoute = CrosshairGeneratorRouteImport.update({
@@ -175,6 +182,11 @@ const TransparencyRoute = TransparencyRouteImport.update({
   path: '/transparency',
   getParentRoute: () => rootRouteImport,
 } as any)
+const V2Route = V2RouteImport.update({
+  id: '/v2',
+  path: '/v2',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VpkAnalyzerRoute = VpkAnalyzerRouteImport.update({
   id: '/vpk-analyzer',
   path: '/vpk-analyzer',
@@ -225,6 +237,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/403': typeof R403Route
+  '/changelog': typeof ChangelogRoute
   '/crosshair-generator': typeof CrosshairGeneratorRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/deadlock-fatal-error-unable-to-load-layout-file': typeof DeadlockFatalErrorUnableToLoadLayoutFileRoute
@@ -247,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
   '/transparency': typeof TransparencyRoute
+  '/v2': typeof V2Route
   '/vpk-analyzer': typeof VpkAnalyzerRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/compare/grimoire': typeof CompareGrimoireRoute
@@ -261,6 +275,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/403': typeof R403Route
+  '/changelog': typeof ChangelogRoute
   '/crosshair-generator': typeof CrosshairGeneratorRoute
   '/deadlock-fatal-error-unable-to-load-layout-file': typeof DeadlockFatalErrorUnableToLoadLayoutFileRoute
   '/deadlock-mod-manager-failed-to-download': typeof DeadlockModManagerFailedToDownloadRoute
@@ -281,6 +296,7 @@ export interface FileRoutesByTo {
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
   '/transparency': typeof TransparencyRoute
+  '/v2': typeof V2Route
   '/vpk-analyzer': typeof VpkAnalyzerRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/compare/grimoire': typeof CompareGrimoireRoute
@@ -296,6 +312,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/$': typeof SplatRoute
   '/403': typeof R403Route
+  '/changelog': typeof ChangelogRoute
   '/crosshair-generator': typeof CrosshairGeneratorRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/deadlock-fatal-error-unable-to-load-layout-file': typeof DeadlockFatalErrorUnableToLoadLayoutFileRoute
@@ -318,6 +335,7 @@ export interface FileRoutesById {
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
   '/transparency': typeof TransparencyRoute
+  '/v2': typeof V2Route
   '/vpk-analyzer': typeof VpkAnalyzerRoute
   '/auth/callback': typeof AuthCallbackRoute
   '/compare/grimoire': typeof CompareGrimoireRoute
@@ -334,6 +352,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/403'
+    | '/changelog'
     | '/crosshair-generator'
     | '/dashboard'
     | '/deadlock-fatal-error-unable-to-load-layout-file'
@@ -356,6 +375,7 @@ export interface FileRouteTypes {
     | '/status'
     | '/terms'
     | '/transparency'
+    | '/v2'
     | '/vpk-analyzer'
     | '/auth/callback'
     | '/compare/grimoire'
@@ -370,6 +390,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/403'
+    | '/changelog'
     | '/crosshair-generator'
     | '/deadlock-fatal-error-unable-to-load-layout-file'
     | '/deadlock-mod-manager-failed-to-download'
@@ -390,6 +411,7 @@ export interface FileRouteTypes {
     | '/status'
     | '/terms'
     | '/transparency'
+    | '/v2'
     | '/vpk-analyzer'
     | '/auth/callback'
     | '/compare/grimoire'
@@ -404,6 +426,7 @@ export interface FileRouteTypes {
     | '/'
     | '/$'
     | '/403'
+    | '/changelog'
     | '/crosshair-generator'
     | '/dashboard'
     | '/deadlock-fatal-error-unable-to-load-layout-file'
@@ -426,6 +449,7 @@ export interface FileRouteTypes {
     | '/status'
     | '/terms'
     | '/transparency'
+    | '/v2'
     | '/vpk-analyzer'
     | '/auth/callback'
     | '/compare/grimoire'
@@ -441,6 +465,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   SplatRoute: typeof SplatRoute
   R403Route: typeof R403Route
+  ChangelogRoute: typeof ChangelogRoute
   CrosshairGeneratorRoute: typeof CrosshairGeneratorRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   DeadlockFatalErrorUnableToLoadLayoutFileRoute: typeof DeadlockFatalErrorUnableToLoadLayoutFileRoute
@@ -463,6 +488,7 @@ export interface RootRouteChildren {
   StatusRoute: typeof StatusRoute
   TermsRoute: typeof TermsRoute
   TransparencyRoute: typeof TransparencyRoute
+  V2Route: typeof V2Route
   VpkAnalyzerRoute: typeof VpkAnalyzerRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
   CompareGrimoireRoute: typeof CompareGrimoireRoute
@@ -490,6 +516,13 @@ declare module '@tanstack/react-router' {
       path: '/403'
       fullPath: '/403'
       preLoaderRoute: typeof R403RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/changelog': {
+      id: '/changelog'
+      path: '/changelog'
+      fullPath: '/changelog'
+      preLoaderRoute: typeof ChangelogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/crosshair-generator': {
@@ -646,6 +679,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TransparencyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/v2': {
+      id: '/v2'
+      path: '/v2'
+      fullPath: '/v2'
+      preLoaderRoute: typeof V2RouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/vpk-analyzer': {
       id: '/vpk-analyzer'
       path: '/vpk-analyzer'
@@ -746,6 +786,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   SplatRoute: SplatRoute,
   R403Route: R403Route,
+  ChangelogRoute: ChangelogRoute,
   CrosshairGeneratorRoute: CrosshairGeneratorRoute,
   DashboardRoute: DashboardRouteWithChildren,
   DeadlockFatalErrorUnableToLoadLayoutFileRoute:
@@ -771,6 +812,7 @@ const rootRouteChildren: RootRouteChildren = {
   StatusRoute: StatusRoute,
   TermsRoute: TermsRoute,
   TransparencyRoute: TransparencyRoute,
+  V2Route: V2Route,
   VpkAnalyzerRoute: VpkAnalyzerRoute,
   AuthCallbackRoute: AuthCallbackRoute,
   CompareGrimoireRoute: CompareGrimoireRoute,

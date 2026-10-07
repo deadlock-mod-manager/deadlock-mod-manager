@@ -98,6 +98,7 @@ const LOCALIZED_PATHS = [
   "/how-to-install-deadlock-mods",
   "/deadlock-mods-not-working",
   "/compare/grimoire",
+  "/v2",
   "/deadlock-mod-manager-os-error-5",
   "/deadlock-mod-manager-os-error-740",
   "/deadlock-mod-manager-failed-to-save-mod-order",

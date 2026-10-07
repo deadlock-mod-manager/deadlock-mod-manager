@@ -24,6 +24,9 @@ COPY packages ./packages
 COPY tools ./tools
 COPY scripts ./scripts
 COPY apps/www ./apps/www
+# Release notes for the /changelog page, read at build time
+COPY apps/desktop/CHANGELOG.md ./apps/desktop/CHANGELOG.md
+COPY .changeset ./.changeset
 
 # Build arguments for Vite environment variables
 ARG VITE_SERVER_URL=https://api.deadlockmods.app

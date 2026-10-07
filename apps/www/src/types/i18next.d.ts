@@ -16,6 +16,7 @@ import type toolCrosshair from "@/locales/en/tool-crosshair.json";
 import type toolKv from "@/locales/en/tool-kv.json";
 import type toolRandomizer from "@/locales/en/tool-randomizer.json";
 import type toolVpk from "@/locales/en/tool-vpk.json";
+import type v2 from "@/locales/en/v2.json";
 
 /** English files are the source of truth for translation keys. */
 declare module "i18next" {
@@ -35,6 +36,7 @@ declare module "i18next" {
       "guide-install": typeof guideInstall;
       "guide-not-working": typeof guideNotWorking;
       "guide-grimoire": typeof guideGrimoire;
+      v2: typeof v2;
       "error-os-5": typeof errorOs5;
       "error-os-740": typeof errorOs740;
       "error-mod-order": typeof errorModOrder;

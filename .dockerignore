@@ -92,3 +92,7 @@ pnpm-debug.log*
 # Apps not used by service Docker builds
 apps/desktop
 apps/docs
+
+# ...except the release notes the www /changelog page reads at build time
+!apps/desktop/CHANGELOG.md
+!.changeset

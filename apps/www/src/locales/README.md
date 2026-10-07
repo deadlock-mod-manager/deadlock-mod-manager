@@ -37,6 +37,7 @@ and `src/types/i18next.d.ts`, which makes keys type-checked against English.
 | `download` | download pages |
 | `tool-*` | randomizer, crosshair generator, VPK analyzer, KV parser |
 | `guide-*`, `error-*` | one per guide or error page |
+| `v2` | the "What's new in V2" page |
 
 ## Writing strings
 
