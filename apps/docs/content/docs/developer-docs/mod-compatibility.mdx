@@ -8,6 +8,13 @@ Deadlock files before creating its merged overlay. These checks run in the Rust
 backend in release builds. They require no AI agent, network service, or diagnostic
 tools on the user's computer.
 
+The feature is gated by the **Mod Compatibility Repairs** experimental feature
+(`mod-compatibility-repairs`), which is off by default. While it is off, Mods
+Library hides every compatibility control and launch passes
+`modCompatibility: false` to `start_game`: the backend ignores per-mod
+preferences and removes any existing repair package, but keeps the preferences
+for when the feature is turned back on.
+
 Compatibility is opt-in **per mod and per profile**, and starts off for existing
 and newly installed mods. Each registered mod in Mods Library has a visible
 **Compatibility** checkbox in its footer. Clicking the checkbox or its label
