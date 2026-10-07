@@ -67,16 +67,20 @@ fn push_unique_steam_dir(
   }
 }
 
-/// steamlocate only returns the first Steam directory it finds and checks
-/// Flatpak before native, so a leftover Flatpak Steam hides a native (deb)
-/// install. List every known location and let `find_game` try each one.
+/// Directory holding every snap's per-user data (`~/snap`). Inside a snap,
+/// `SNAP_USER_DATA` is this snap's own `~/snap/<name>/<revision>`, so Steam's
+/// data sits two levels up.
 #[cfg(target_os = "linux")]
-fn linux_snap_dir(home_dir: &Path) -> PathBuf {
-  std::env::var_os("SNAP_USER_DATA")
-    .map(PathBuf::from)
+fn linux_snap_dir(home_dir: &Path, snap_user_data: Option<&Path>) -> PathBuf {
+  snap_user_data
+    .and_then(|path| path.parent()?.parent())
+    .map(Path::to_path_buf)
     .unwrap_or_else(|| home_dir.join("snap"))
 }
 
+/// steamlocate only returns the first Steam directory it finds and checks
+/// Flatpak before native, so a leftover Flatpak Steam hides a native (deb)
+/// install. List every known location and let `find_game` try each one.
 #[cfg(target_os = "linux")]
 fn linux_steam_dir_candidates(home_dir: &Path, snap_dir: &Path) -> Vec<PathBuf> {
   vec![
@@ -366,7 +370,9 @@ impl SteamManager {
 
     #[cfg(target_os = "linux")]
     if let Some(home_dir) = std::env::var_os("HOME").map(PathBuf::from) {
-      for steam_dir in linux_fallback_steam_dirs(&home_dir, &linux_snap_dir(&home_dir)) {
+      let snap_user_data = std::env::var_os("SNAP_USER_DATA").map(PathBuf::from);
+      let snap_dir = linux_snap_dir(&home_dir, snap_user_data.as_deref());
+      for steam_dir in linux_fallback_steam_dirs(&home_dir, &snap_dir) {
         push_unique_steam_dir(&mut steam_dirs, steam_dir);
       }
     }
@@ -563,6 +569,20 @@ mod tests {
     let steam_dirs = linux_fallback_steam_dirs(home.path(), &home.path().join("snap"));
 
     assert_eq!(steam_dirs.len(), 1);
+  }
+
+  #[test]
+  fn snap_dir_is_the_parent_of_every_snaps_data() {
+    let home = Path::new("/home/tester");
+
+    assert_eq!(linux_snap_dir(home, None), home.join("snap"));
+    assert_eq!(
+      linux_snap_dir(
+        home,
+        Some(Path::new("/home/tester/snap/deadlock-mod-manager/x1"))
+      ),
+      home.join("snap")
+    );
   }
 
   #[test]
