@@ -1,6 +1,6 @@
 pre-commit:
   jobs:
-    - run: pnpm format:fix
+    - run: pnpm exec oxfmt --write --no-error-on-unmatched-pattern {staged_files}
       glob:
         - "*.js"
         - "*.jsx"
@@ -10,31 +10,25 @@ pre-commit:
         - "*.jsonc"
         - "*.css"
       stage_fixed: true
-    - run: pnpm lint:fix
+    - run: pnpm exec oxlint --fix {staged_files}
       glob:
         - "*.js"
         - "*.jsx"
         - "*.ts"
         - "*.tsx"
-        - "*.json"
-        - "*.jsonc"
-        - "*.css"
       stage_fixed: true
-    - run: cargo clippy --all-targets --fix --allow-dirty
+    - run: cargo clippy --all-targets
       glob:
         - "**/*.rs"
         - "**/Cargo.toml"
       root: apps/desktop
-      stage_fixed: true
-    - run: cargo clippy --all-targets --all-features --fix --allow-dirty
+    - run: cargo clippy --all-targets --all-features
       glob:
         - "**/*.rs"
         - "**/Cargo.toml"
       root: packages/dmodpkg
-      stage_fixed: true
-    - run: cargo clippy --all-targets --all-features --fix --allow-dirty
+    - run: cargo clippy --all-targets --all-features
       glob:
         - "**/*.rs"
         - "**/Cargo.toml"
       root: packages/vpk-parser
-      stage_fixed: true

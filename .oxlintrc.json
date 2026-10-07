@@ -2,6 +2,7 @@
   "extends": ["./tools/oxc/oxlintrc.base.json"],
   "ignorePatterns": [
     ".agents/**",
+    ".worktrees/**",
     ".cursor/**",
     "**/node_modules/**",
     "**/dist/**",
