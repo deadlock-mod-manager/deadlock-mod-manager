@@ -80,9 +80,5 @@
   "stillStuck": {
     "title": "¿Sigues con problemas?",
     "body": "La <docs>documentación de resolución de problemas</docs> cubre en detalle los problemas de Linux, Flatpak y Steam Deck. También puedes preguntar en <discord>Discord</discord>, donde la comunidad suele saber qué mods se rompieron con el último parche."
-  },
-  "downloadBand": {
-    "title": "Día de parche sin dolores de cabeza",
-    "body": "Deadlock Mod Manager vuelve a aplicar tus mods en cada inicio y te dice cuáles necesitan actualizaciones."
   }
 }

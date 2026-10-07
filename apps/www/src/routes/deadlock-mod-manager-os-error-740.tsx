@@ -3,7 +3,6 @@ import type { TFunction } from "i18next";
 import { Trans, useTranslation } from "react-i18next";
 import {
   ErrorMessage,
-  GuideDownloadBand,
   GuideFaq,
   GuideHero,
   GuideSection,
@@ -95,10 +94,6 @@ function OsError740Page() {
       <RelatedGuides
         current='/deadlock-mod-manager-os-error-740'
         guides={TROUBLESHOOTING_GUIDES}
-      />
-      <GuideDownloadBand
-        title={t("downloadBand.title")}
-        body={t("downloadBand.body")}
       />
     </div>
   );

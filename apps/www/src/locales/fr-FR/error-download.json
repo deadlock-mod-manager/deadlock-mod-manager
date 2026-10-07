@@ -76,9 +76,5 @@
       "question": "Deadlock Mod Manager est-il en panne ?",
       "answer": "Consultez la page de statut sur deadlockmods.app/status. Si nos services sont en ligne, utilisez Diagnostiquer la connexion dans les Paramètres de l'app pour savoir si le problème vient de GameBanana ou de votre réseau."
     }
-  },
-  "downloadBand": {
-    "title": "Tous les mods GameBanana, à un clic",
-    "body": "Parcourez, téléchargez et activez des mods Deadlock sans quitter l'app."
   }
 }

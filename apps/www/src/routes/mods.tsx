@@ -2,7 +2,6 @@ import { createFileRoute } from "@tanstack/react-router";
 import type { TFunction } from "i18next";
 import { Trans, useTranslation } from "react-i18next";
 import {
-  GuideDownloadBand,
   GuideFaq,
   GuideFigure,
   GuideHero,
@@ -120,10 +119,6 @@ function ModsPage() {
 
       <GuideFaq faqs={page.faqs} />
       <RelatedGuides current='/mods' />
-      <GuideDownloadBand
-        title={t("downloadBand.title")}
-        body={t("downloadBand.body")}
-      />
     </div>
   );
 }

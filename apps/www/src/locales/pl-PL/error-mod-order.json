@@ -68,9 +68,5 @@
       "question": "Co tak naprawdę zmienia kolejność modów?",
       "answer": "Gdy dwa mody podmieniają ten sam plik, wczytać się może tylko jedna wersja, a kolejność modów decyduje, która. Mody, które się nie pokrywają, działają tak samo w dowolnej kolejności."
     }
-  },
-  "downloadBand": {
-    "title": "Przeciągnij mody w kolejności, jakiej chcesz",
-    "body": "Deadlock Mod Manager pokazuje, które mody są w konflikcie, i pozwala wybrać zwycięzcę przez zmianę kolejności."
   }
 }

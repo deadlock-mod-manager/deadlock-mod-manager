@@ -68,9 +68,5 @@
       "question": "Me aparece el error 740 al actualizar la app. ¿Qué hago?",
       "answer": "Descarga el último instalador desde deadlockmods.app/download y ejecútalo sobre tu instalación actual. Tus mods y tu configuración se conservan."
     }
-  },
-  "downloadBand": {
-    "title": "De los mods a la partida en un clic",
-    "body": "Deadlock Mod Manager aplica tus mods e inicia Deadlock a través de Steam por ti."
   }
 }

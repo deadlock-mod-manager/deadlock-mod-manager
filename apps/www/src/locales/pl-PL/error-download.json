@@ -76,9 +76,5 @@
       "question": "Czy Deadlock Mod Manager nie działa?",
       "answer": "Sprawdź stronę statusu pod adresem deadlockmods.app/status. Jeśli nasze usługi działają, użyj „Diagnozuj połączenie” w Ustawieniach aplikacji, żeby sprawdzić, czy problem leży po stronie GameBanana, czy twojej sieci."
     }
-  },
-  "downloadBand": {
-    "title": "Każdy mod z GameBanana na jedno kliknięcie",
-    "body": "Przeglądaj, pobieraj i włączaj mody do Deadlock bez wychodzenia z aplikacji."
   }
 }

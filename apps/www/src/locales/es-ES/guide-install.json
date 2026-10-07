@@ -75,9 +75,5 @@
     "updates": "<strong>Actualizaciones:</strong> busca actualizaciones de mods en Mis Mods después de un parche de Deadlock.",
     "profiles": "<strong>Perfiles:</strong> mantén configuraciones separadas (por ejemplo, un perfil solo con skins) y compártelas con tus amigos mediante un ID de Perfil.",
     "docs": "Encontrarás más detalles en la <link>documentación de primeros pasos</link>."
-  },
-  "downloadBand": {
-    "title": "Sáltate los pasos manuales",
-    "body": "Deadlock Mod Manager hace todo esto por ti, y lo deshace con la misma facilidad. Gratis y de código abierto."
   }
 }

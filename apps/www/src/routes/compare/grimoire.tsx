@@ -3,7 +3,6 @@ import { CheckIcon } from "@phosphor-icons/react";
 import type { TFunction } from "i18next";
 import { Trans, useTranslation } from "react-i18next";
 import {
-  GuideDownloadBand,
   GuideFaq,
   GuideHero,
   GuideSection,
@@ -258,10 +257,6 @@ function CompareGrimoirePage() {
 
       <GuideFaq faqs={page.faqs} />
       <RelatedGuides current='/compare/grimoire' />
-      <GuideDownloadBand
-        title={t("downloadBand.title")}
-        body={t("downloadBand.body")}
-      />
     </div>
   );
 }

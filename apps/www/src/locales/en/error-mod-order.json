@@ -68,9 +68,5 @@
       "question": "What does mod order actually change?",
       "answer": "When two mods replace the same file, only one version can load, and the mod order decides which one. Mods that don't overlap work the same in any order."
     }
-  },
-  "downloadBand": {
-    "title": "Drag mods into the order you want",
-    "body": "Deadlock Mod Manager shows which mods conflict and lets you pick the winner by reordering them."
   }
 }

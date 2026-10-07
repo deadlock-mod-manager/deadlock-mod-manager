@@ -69,9 +69,5 @@
       "alt": "L'éditeur de skins Mod Foundry dans Deadlock Mod Manager, avec un modèle de héros et les outils de peinture et de sons",
       "caption": "Mod Foundry : modifiez un skin de héros et exportez-le en mod."
     }
-  },
-  "downloadBand": {
-    "title": "Offrez un nouveau look à votre héros",
-    "body": "Gratuit et open source, pour Windows et Linux. Les skins sont côté client, et le modèle par défaut est toujours à un clic."
   }
 }

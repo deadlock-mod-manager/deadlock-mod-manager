@@ -66,9 +66,5 @@
       "question": "Does os error 5 happen on Linux?",
       "answer": "The Linux equivalent is Permission denied (os error 13). Make sure your user owns the Deadlock folder, and on Flatpak grant the app access to your Steam library as described in the troubleshooting docs."
     }
-  },
-  "downloadBand": {
-    "title": "Mods without the file juggling",
-    "body": "Deadlock Mod Manager installs, orders and re-applies your mods so you rarely have to touch the game folder yourself."
   }
 }

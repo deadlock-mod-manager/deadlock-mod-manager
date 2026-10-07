@@ -75,9 +75,5 @@
     "updates": "<strong>Updates:</strong> Such nach einem Deadlock-Patch unter „Meine Mods“ nach Mod-Updates.",
     "profiles": "<strong>Profile:</strong> Leg getrennte Setups an (etwa ein Profil nur mit Skins) und teil sie per Profil-ID mit Freunden.",
     "docs": "Mehr Details findest du in der <link>Einstiegs-Doku</link>."
-  },
-  "downloadBand": {
-    "title": "Spar dir die Handarbeit",
-    "body": "Der Deadlock Mod Manager erledigt das alles für dich und macht es genauso leicht wieder rückgängig. Kostenlos und Open Source."
   }
 }

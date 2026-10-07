@@ -66,9 +66,5 @@
       "question": "L'erreur os error 5 existe-t-elle sur Linux ?",
       "answer": "L'équivalent sur Linux est Permission denied (os error 13). Vérifiez que votre utilisateur est propriétaire du dossier Deadlock et, avec Flatpak, donnez à l'app l'accès à votre bibliothèque Steam comme indiqué dans la documentation de dépannage."
     }
-  },
-  "downloadBand": {
-    "title": "Des mods sans jongler avec les fichiers",
-    "body": "Deadlock Mod Manager installe, ordonne et réapplique vos mods : vous n'avez presque jamais besoin de toucher au dossier du jeu."
   }
 }

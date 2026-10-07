@@ -68,9 +68,5 @@
       "question": "¿Qué cambia realmente el orden de los mods?",
       "answer": "Cuando dos mods reemplazan el mismo archivo, solo se puede cargar una versión, y el orden de los mods decide cuál. Los mods que no se solapan funcionan igual en cualquier orden."
     }
-  },
-  "downloadBand": {
-    "title": "Arrastra los mods al orden que quieras",
-    "body": "Deadlock Mod Manager muestra qué mods entran en conflicto y te deja elegir el ganador reordenándolos."
   }
 }

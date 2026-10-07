@@ -2,7 +2,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import type { TFunction } from "i18next";
 import { Trans, useTranslation } from "react-i18next";
 import {
-  GuideDownloadBand,
   GuideFaq,
   GuideHero,
   GuideSection,
@@ -142,10 +141,6 @@ function ModsNotWorkingPage() {
 
       <GuideFaq faqs={page.faqs} />
       <RelatedGuides current='/deadlock-mods-not-working' />
-      <GuideDownloadBand
-        title={t("downloadBand.title")}
-        body={t("downloadBand.body")}
-      />
     </div>
   );
 }

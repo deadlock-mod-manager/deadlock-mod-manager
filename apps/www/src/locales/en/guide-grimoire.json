@@ -141,9 +141,5 @@
       }
     },
     "sources": "Based on each project's README, docs and releases in October 2026. Spotted something out of date? <link>Let us know</link>."
-  },
-  "downloadBand": {
-    "title": "Try Deadlock Mod Manager",
-    "body": "Free, open source and signed on Windows. Your Grimoire mods, profiles and crosshairs come with you."
   }
 }

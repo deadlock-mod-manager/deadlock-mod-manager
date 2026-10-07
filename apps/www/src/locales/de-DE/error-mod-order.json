@@ -68,9 +68,5 @@
       "question": "Was bewirkt die Mod-Reihenfolge eigentlich?",
       "answer": "Ersetzen zwei Mods dieselbe Datei, kann nur eine Version geladen werden, und die Mod-Reihenfolge entscheidet, welche. Mods, die sich nicht überschneiden, funktionieren in jeder Reihenfolge gleich."
     }
-  },
-  "downloadBand": {
-    "title": "Zieh deine Mods in die gewünschte Reihenfolge",
-    "body": "Der Deadlock Mod Manager zeigt, welche Mods sich in die Quere kommen, und lässt dich per Umsortieren den Gewinner wählen."
   }
 }

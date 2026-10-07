@@ -3,7 +3,6 @@ import type { TFunction } from "i18next";
 import { Trans, useTranslation } from "react-i18next";
 import {
   ErrorMessage,
-  GuideDownloadBand,
   GuideFaq,
   GuideHero,
   GuideSection,
@@ -123,10 +122,6 @@ function FatalErrorPage() {
       <RelatedGuides
         current='/deadlock-fatal-error-unable-to-load-layout-file'
         guides={TROUBLESHOOTING_GUIDES}
-      />
-      <GuideDownloadBand
-        title={t("downloadBand.title")}
-        body={t("downloadBand.body")}
       />
     </div>
   );

@@ -86,9 +86,5 @@
     "title": "Mods de Deadlock de GameBanana, sin complicaciones",
     "manual": "<link>GameBanana</link> es donde la comunidad de modding de Deadlock publica su trabajo, y es socio de Deadlock Mod Manager. Instalar a mano desde la web implica descargar un archivo comprimido, encontrar el <code>.vpk</code> correcto, renombrarlo para que no choque con tus otros mods y editar <code>gameinfo.gi</code>.",
     "app": "La app hace todo eso y sigue trabajando después de instalar: te avisa cuando dos mods modifican los mismos archivos, busca actualizaciones, mantiene perfiles separados para distintas configuraciones y hace una copia de seguridad de tus addons antes, para que puedas revertir los cambios."
-  },
-  "downloadBand": {
-    "title": "Empieza a usar mods en Deadlock",
-    "body": "Gratis y de código abierto, para Windows y Linux. Tu primer mod está a un par de clics."
   }
 }

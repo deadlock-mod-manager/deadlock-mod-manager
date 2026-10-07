@@ -76,9 +76,5 @@
       "question": "O Deadlock Mod Manager está fora do ar?",
       "answer": "Confira a página de status em deadlockmods.app/status. Se nossos serviços estiverem no ar, use o Diagnosticar conexão nas Configurações do app para ver se o problema é o GameBanana ou a sua rede."
     }
-  },
-  "downloadBand": {
-    "title": "Todos os mods do GameBanana a um clique",
-    "body": "Explore, baixe e ative mods de Deadlock sem sair do app."
   }
 }

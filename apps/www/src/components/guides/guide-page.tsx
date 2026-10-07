@@ -174,29 +174,6 @@ export const RelatedGuides = ({
   );
 };
 
-/** Closing download prompt shared by every guide page. */
-export const GuideDownloadBand = ({
-  title,
-  body,
-}: {
-  title: string;
-  body: string;
-}) => (
-  <section className='mx-auto max-w-7xl px-6 pt-12 pb-24'>
-    <div className='rounded-2xl border border-border-strong bg-surface px-6 py-12 sm:px-12'>
-      <h2 className='max-w-[24ch] text-balance font-bold font-primary text-[clamp(28px,3vw,40px)] leading-[1.1]'>
-        {title}
-      </h2>
-      <p className='mt-4 max-w-[58ch] text-muted-foreground leading-relaxed'>
-        {body}
-      </p>
-      <div className='mt-8 pb-6'>
-        <DownloadCta />
-      </div>
-    </div>
-  </section>
-);
-
 /**
  * The error text exactly as users see it, so the page matches searches that
  * paste the message.

@@ -96,9 +96,5 @@
       "question": "How do I know which mod is crashing Deadlock?",
       "answer": "Use Launch without mods to confirm the game starts clean. Then disable half of your mods, launch modded, and keep halving the group that crashes until one mod is left."
     }
-  },
-  "downloadBand": {
-    "title": "Find the broken mod faster",
-    "body": "Launch with or without mods in one click, see which mods have updates, and toggle them without touching the game folder."
   }
 }

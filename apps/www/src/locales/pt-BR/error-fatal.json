@@ -96,9 +96,5 @@
       "question": "Como saber qual mod está crashando o Deadlock?",
       "answer": "Use Iniciar sem mods para confirmar que o jogo abre limpo. Depois desative metade dos seus mods, inicie com mods e continue dividindo pela metade o grupo que crasha até sobrar um mod só."
     }
-  },
-  "downloadBand": {
-    "title": "Encontre o mod quebrado mais rápido",
-    "body": "Inicie com ou sem mods em um clique, veja quais mods têm atualizações e ative ou desative sem mexer na pasta do jogo."
   }
 }

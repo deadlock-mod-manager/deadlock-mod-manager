@@ -75,9 +75,5 @@
     "updates": "<strong>Mises à jour :</strong> après un patch de Deadlock, vérifiez les mises à jour des mods depuis Mes mods.",
     "profiles": "<strong>Profils :</strong> gardez des configurations séparées (par exemple un profil rien que pour les skins) et partagez-les avec vos amis grâce à un ID du profil.",
     "docs": "Plus de détails dans la <link>documentation de démarrage</link>."
-  },
-  "downloadBand": {
-    "title": "Passez les étapes manuelles",
-    "body": "Deadlock Mod Manager fait tout ça pour vous, et le défait tout aussi facilement. Gratuit et open source."
   }
 }

@@ -75,9 +75,5 @@
     "updates": "<strong>Updates:</strong> check for mod updates from the Mods Library after a Deadlock patch.",
     "profiles": "<strong>Profiles:</strong> keep separate setups (say, a skins-only profile) and share them with friends using a Profile ID.",
     "docs": "More detail lives in the <link>getting started docs</link>."
-  },
-  "downloadBand": {
-    "title": "Skip the manual steps",
-    "body": "Deadlock Mod Manager does all of this for you, and undoes it just as easily. Free and open source."
   }
 }

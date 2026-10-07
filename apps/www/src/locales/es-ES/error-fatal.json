@@ -96,9 +96,5 @@
       "question": "¿Cómo sé qué mod está haciendo que Deadlock se cierre?",
       "answer": "Usa Iniciar sin mods para confirmar que el juego arranca limpio. Luego desactiva la mitad de tus mods, inicia con mods y sigue dividiendo a la mitad el grupo que falla hasta que quede un solo mod."
     }
-  },
-  "downloadBand": {
-    "title": "Encuentra el mod roto más rápido",
-    "body": "Inicia con o sin mods en un clic, ve qué mods tienen actualizaciones y actívalos o desactívalos sin tocar la carpeta del juego."
   }
 }

@@ -96,9 +96,5 @@
       "question": "Wie finde ich heraus, welcher Mod Deadlock zum Absturz bringt?",
       "answer": "Prüf mit „Ohne Mods starten“, ob das Spiel sauber startet. Deaktivier dann die Hälfte deiner Mods, starte mit Mods und halbier die crashende Gruppe weiter, bis nur noch ein Mod übrig ist."
     }
-  },
-  "downloadBand": {
-    "title": "Den kaputten Mod schneller finden",
-    "body": "Mit einem Klick mit oder ohne Mods starten, sehen, welche Mods Updates haben, und sie umschalten, ohne den Spielordner anzufassen."
   }
 }

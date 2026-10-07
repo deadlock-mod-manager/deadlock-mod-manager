@@ -75,9 +75,5 @@
     "updates": "<strong>Aktualizacje:</strong> po patchu Deadlock sprawdź aktualizacje modów w zakładce Moje mody.",
     "profiles": "<strong>Profile:</strong> trzymaj osobne konfiguracje (np. profil tylko ze skinami) i udostępniaj je znajomym za pomocą ID profilu.",
     "docs": "Więcej szczegółów znajdziesz w <link>dokumentacji dla początkujących</link>."
-  },
-  "downloadBand": {
-    "title": "Pomiń ręczne kroki",
-    "body": "Deadlock Mod Manager zrobi to wszystko za ciebie i równie łatwo to cofnie. Darmowy i open source."
   }
 }

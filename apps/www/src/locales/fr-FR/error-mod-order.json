@@ -68,9 +68,5 @@
       "question": "À quoi sert concrètement l'ordre des mods ?",
       "answer": "Quand deux mods remplacent le même fichier, une seule version peut être chargée, et c'est l'ordre des mods qui décide laquelle. Les mods qui ne se chevauchent pas fonctionnent pareil dans n'importe quel ordre."
     }
-  },
-  "downloadBand": {
-    "title": "Glissez vos mods dans l'ordre voulu",
-    "body": "Deadlock Mod Manager montre quels mods sont en conflit et vous laisse choisir le gagnant en les réordonnant."
   }
 }
