@@ -40,12 +40,21 @@ export function CrosshairCanvas({
     const containerWidth = container.offsetWidth;
     const containerHeight =
       height ?? containerWidth / CANVAS_CONSTANTS.ASPECT_RATIO;
-    container.style.height = `${containerHeight}px`;
+    const cssHeight = `${containerHeight}px`;
+    if (container.style.height !== cssHeight) {
+      container.style.height = cssHeight;
+    }
 
-    canvas.width = containerWidth * window.devicePixelRatio;
-    canvas.height = containerHeight * window.devicePixelRatio;
-    canvas.style.width = `${containerWidth}px`;
-    canvas.style.height = `${containerHeight}px`;
+    // Assigning width/height reallocates the backing buffer even when the
+    // value is unchanged, so only touch them on a real size change.
+    const pixelWidth = Math.round(containerWidth * window.devicePixelRatio);
+    const pixelHeight = Math.round(containerHeight * window.devicePixelRatio);
+    if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+      canvas.width = pixelWidth;
+      canvas.height = pixelHeight;
+      canvas.style.width = `${containerWidth}px`;
+      canvas.style.height = cssHeight;
+    }
 
     const ctx = canvas.getContext("2d");
     if (ctx) {

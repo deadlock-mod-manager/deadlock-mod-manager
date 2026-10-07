@@ -34,7 +34,9 @@ export const CrosshairCard = ({
 }: CrosshairCardProps) => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const { setActiveCrosshair } = usePersistedStore();
+  const setActiveCrosshair = usePersistedStore(
+    (state) => state.setActiveCrosshair,
+  );
   const crosshairsEnabled = usePersistedStore(
     (state) => state.crosshairsEnabled,
   );
