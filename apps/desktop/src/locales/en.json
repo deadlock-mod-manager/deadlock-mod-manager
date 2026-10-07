@@ -1920,7 +1920,12 @@
   "help": {
     "needHelp": "Need Help?",
     "documentation": "Documentation",
-    "viewDocs": "View Documentation"
+    "viewDocs": "View Documentation",
+    "socials": {
+      "discord": "Get help and chat on Discord",
+      "x": "Follow updates on X",
+      "reddit": "Join r/DeadlockModManager"
+    }
   },
   "branding": {
     "nightlyBuild": "Nightly",

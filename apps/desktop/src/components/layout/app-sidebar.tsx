@@ -19,7 +19,6 @@ import {
   ChartLineUpIcon,
   CodeIcon,
   CrosshairIcon,
-  DiscordLogoIcon,
   DownloadIcon,
   FlagIcon,
   GearIcon,
@@ -39,11 +38,11 @@ import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
-import { DISCORD_URL } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus } from "@/types/mods";
 import { BrandingHeader } from "./branding";
 import { SidebarCollapse } from "./sidebar-collapse";
+import { SidebarSocials } from "./sidebar-socials";
 
 type SidebarItem = {
   id: string;
@@ -234,16 +233,13 @@ const getSidebarItems = (
       icon: FlagIcon,
       group: "developer",
     },
-    {
-      id: "need-help",
-      title: () => <span>{t("help.needHelp")}</span>,
-      tooltipLabel: t("help.needHelp"),
-      external: DISCORD_URL,
-      icon: DiscordLogoIcon,
-      group: "developer",
-    },
   ];
 };
+
+// Group labels hide when the sidebar collapses to icons, so a short rule keeps sections apart.
+const CollapsedSeparator = () => (
+  <Separator className='mx-auto mb-2 hidden w-4 bg-sidebar-border group-data-[collapsible=icon]:block' />
+);
 
 type SidebarItemProps = {
   item: SidebarItem;
@@ -371,6 +367,7 @@ export const AppSidebar = () => {
                   {SidebarContentExtra ? <SidebarContentExtra /> : null}
                 </>
               ) : null}
+              {group !== GROUP_ORDER[0] ? <CollapsedSeparator /> : null}
               <SidebarGroupLabel>{groupLabels[group]}</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
@@ -393,6 +390,8 @@ export const AppSidebar = () => {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
+              <CollapsedSeparator />
+              <SidebarSocials />
               <Separator />
               <SidebarCollapse />
             </SidebarMenu>
