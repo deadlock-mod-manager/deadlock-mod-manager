@@ -19,6 +19,18 @@
     "tea": {
       "name": "",
       "description": "Уютная тема в честь Snipztea."
+    },
+    "arcane": {
+      "name": "Arcane",
+      "description": "Элегантная тёмная тема с розово-красным свечением."
+    },
+    "deadlock-api": {
+      "name": "Deadlock API",
+      "description": "OLED-чёрный с электрическим красным свечением."
+    },
+    "oled": {
+      "name": "OLED",
+      "description": "Настоящий чёрный и графитовые поверхности для OLED-дисплеев."
     }
   },
   "categories": {

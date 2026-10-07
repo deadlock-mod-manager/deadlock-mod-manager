@@ -19,6 +19,18 @@
     "tea": {
       "name": "",
       "description": "Un thème douillet en hommage à Snipztea."
+    },
+    "arcane": {
+      "name": "Arcane",
+      "description": "Un thème sombre élégant avec une lueur rose-rouge."
+    },
+    "deadlock-api": {
+      "name": "Deadlock API",
+      "description": "Noir OLED avec des effets de lueur rouge électrique."
+    },
+    "oled": {
+      "name": "OLED",
+      "description": "Du vrai noir et des surfaces anthracite, pensé pour les écrans OLED."
     }
   },
   "categories": {

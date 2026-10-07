@@ -19,6 +19,18 @@
     "tea": {
       "name": "Tea",
       "description": "A cozy theme celebrating Snipztea."
+    },
+    "arcane": {
+      "name": "Arcane",
+      "description": "A sleek dark theme with a pink-red glow."
+    },
+    "deadlock-api": {
+      "name": "Deadlock API",
+      "description": "OLED black with electric red glow effects."
+    },
+    "oled": {
+      "name": "OLED",
+      "description": "True black with charcoal surfaces, made for OLED displays."
     }
   },
   "categories": {
