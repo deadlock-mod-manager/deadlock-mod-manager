@@ -1,5 +1,15 @@
 # @deadlock-mods/database
 
+## 2.3.0
+
+### Minor Changes
+
+- 8547a02: Add rich GameBanana author profiles to mod browsing
+
+### Patch Changes
+
+- 23af943: Keep released desktop versions working against the v2 API: report endpoints accept legacy catalog mod IDs again, VPK analysis responses include the `mod` relation older clients require, and existing reports and VPK fingerprints are backfilled with their GameBanana submission identity.
+
 ## 2.2.0
 
 ### Minor Changes

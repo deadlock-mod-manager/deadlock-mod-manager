@@ -8,6 +8,30 @@
 
 ### Minor Changes
 
+- 0f9a0be: Add Albums tab with DeadlockSkins.gg collections and one-click album download
+- 85b515a: Show GameBanana comments and changelogs on mod pages and when updating
+- d0d29cd: Add an OLED theme with true-black backgrounds and a customizable accent
+- bb77ef9: Add the Remlock theme with celestial artwork, pastel accents, and Rem easter eggs.
+- c52fc90: Add seasonal themes with mini-games for Halloween, Christmas, Easter and more
+- 2fa0b19: Warn when your mods stop loading. If a Steam update or another tool rewrites Deadlock's gameinfo.gi, a bar under the title bar says how many enabled mods are affected and re-applies them in one click. Game updates are detected too, and Valve's latest patch notes now show on the Dashboard.
+- 8547a02: Add rich GameBanana author profiles to mod browsing
+- e3b1c3c: Import mods, profiles and crosshairs from other mod managers; export them too
+- 07cdeaf: Add the Lovelock theme, a plum and pink preset inspired by Asteria's Lovelock Companion. Status bar icons now follow the active theme's accent colour.
+- ae910d5: Enable match data sharing by default. New users can turn it off during onboarding, and existing users see a one-time notice with the option to turn it off. Users who had already turned it off keep it off.
+- d43255c: Remove a mod from My Mods when all of its files are deleted from the addons folder, even while the mod manager is open. A mod that lost only some of its files stays and shows a "Files missing" badge, so you can reinstall or delete it.
+- 2a8af42: Show which enabled mods change the same files
+
+  The Mods Library has a new Conflicts tab listing every overlap between enabled mods, with the mod used in game first and a Load first button for the others. Mods whose model is hidden by another mod get a badge in the library, and overlaps you're happy with can be ignored per profile. It is on by default and can be turned off under Settings > Experimental.
+
+- cbd4c9d: Browse the Mods Store by section: Mods, Sounds, Maps, and WiPs now have their own tabs. Hero and category pickers sit next to search, while the rarer filters (updated, added, NSFW, outdated) live in the Filters menu.
+- a9d8a8b: Block mod changes while Deadlock is running, with a setting to turn it off.
+- a9d8a8b: Add a connection diagnostics tool that pinpoints why a page failed to load.
+- e991797: Add a Privacy setting to clear saved NSFW choices and restore preview blurring.
+- 799d231: Add an opt-in setting that restores the vanilla gameinfo.gi when Deadlock closes, so launching from Steam starts the game without mods
+- 374d9c9: Flashbang now randomly forces Light Mode when the app loads (configurable chance, 1 minute cooldown) instead of using a fixed time window
+- 5de7f61: Let users skip a mod update until a newer one is published, and stop flagging updates when an author only adds files you didn't install
+- bb77ef9: Gate Remlock behind a release flag and use it by default for unthemed players.
+- 85b515a: Organize mod pages into Overview, Changelog, Comments and Files tabs
 - edf83d7: Add an items tab, live match charts and Deadlock API key support to Stats
 - 1f98b35: Show catalog sync activity and add a clear-and-resync action in Settings Tools.
 - edf83d7: Add detailed match history and interactive item timelines to player stats
@@ -32,6 +56,45 @@
 
 ### Patch Changes
 
+- bea17db: Preserve installed mods when enabling another mod after upgrading from V1
+
+  Avoid intermittent database lock failures when initializing the local mod catalog.
+
+- eaeb8ae: Fix native Steam game detection on Linux alongside leftover Flatpak installs
+- 0a5a109: Add missing Simplified Chinese translations for catalog sync, filters, and patch notes
+- d58f469: Add a button to wipe the local GameBanana catalog from Debug and Settings
+- 4365ba4: Fix zoom in and zoom out so the app keeps filling the window instead of shrinking into the corner.
+- fa943c9: Fix Discord presence showing Street Brawl as a bot match with a 6-player party.
+- dffeec5: Fix download progress and speed jumping around, and never reaching 100%
+- 5e14be5: Save the latest mod state before the app closes, so a mod enabled or installed just before closing keeps its status after a restart
+- fdb5f3f: Fix hero filters in the Mods Store returning nothing. Mod details such as heroes, download counts, and descriptions now load for the whole catalog, sound previews play from the store, and update badges show when a mod has new files. NSFW blurring now matches what GameBanana hides, and the catalog no longer drops mods that move between pages while it syncs.
+- aeca5f4: Fix localized hero name art (e.g. Korean) showing as plain text when mods are enabled by writing the current `Game_UILanguage` and `Game_LowViolence` search paths to gameinfo.gi
+- 5e14be5: Show the Discord presence preview image from the app instead of loading it from Discord's CDN
+- 2f18d23: Add Baba, Deadman Danny, Nurse Harrow, Rat King, Solomon and Violet to hero detection, the Skins page and the Foundry.
+- 757dfe5: Remember the variant picked at download when enabling a mod
+- 76b871c: Identify local addons by their GameBanana submission instead of the legacy catalog record.
+- b0992fe: Hide NSFW mods on author pages when Hide NSFW Content is enabled
+- 5970027: Fix the Nix package failing to start when launched with `--disable-auto-update`
+- 530ff46: Restore installed mods a migrated library showed as unfinished downloads
+- 02300e2: Preserve gameinfo.gi line endings when toggling mods or updating profile and server search paths.
+- 899eb4b: Update outdated mod warnings and filtering for the City Never Sleeps update.
+- 09ea114: Only read Steam account configuration for match sync after consent is accepted and sync is enabled.
+- c7cc89c: Add an optional match data sharing step to onboarding. Match sync stays off by default and asks for consent before it is enabled.
+- 3fd7fe4: Stop the Mods Store from rescanning your addons folder for every card that scrolls into view.
+- 0cadbbe: Fix mod update checks failing after a restart because saved install dates were read back as text
+- 5c0ae7e: Show download progress while updating mods, in the update dialog and on the Update buttons. The update dialog can now be closed while the update keeps running.
+- 7c868fb: Add a search box to the settings sidebar. Results show where each setting lives, and selecting one opens its tab and highlights the section.
+- 8ce81cd: Polish the Mod Foundry: solid entry cards, a cleaner skin import dialog, a pinned Paint button, a clearer toolbar, and no more lag selecting files or sounds in large skins
+- bb77ef9: Add a celestial Rem background with a softly blurred pattern in the sidebar.
+- d09fb11: Keep active downloads intact when the same mod is requested twice
+- 8f89901: Fix CEF builds after Tauri moved the CEF runtime into its own crate, and read the hardware ID without the machine-uid plugin. The CEF Flatpak starts again, and the CEF `.deb` now declares the NSS, GBM, ALSA and xkbcommon-x11 libraries it needs.
+- 25a668d: Make the mod store, dashboard and search much faster: cards load small thumbnails, the store loads mods as you scroll, searches return in milliseconds, and browsing no longer uses up the GameBanana request limit needed for mod pages and downloads.
+- b7c9278: Improve crosshair browsing with clear selection, previews, and visible actions.
+- d86526d: Improve Mod Foundry tabs with visible labels and clearer selection states.
+  Soften panel backgrounds to improve readability over theme artwork.
+- b91614b: Add a standalone Windows executable download using the default data locations.
+- 2cc198e: Fix custom crosshairs in Steam account settings and restore them when disabled
+- 933f547: Clean up saved match sync data for removed Steam accounts when match sync is enabled
 - cbab84a: Report failed download lookups per mod instead of aborting the whole batch update or profile import
 - c864567: Turn off the Background plugin when a theme is selected
 - 1d8e407: Process every selected archive when installing multi-file mods. Preserve selected variants and their exact file mappings when switching, re-enabling, and updating mods.
@@ -67,6 +130,10 @@
 - 1f98b35: Show GameBanana preview images and likes on the Mods Store and Dashboard
 - fd4234f: Show Deadworks community servers with live ping and their custom maps
 - a83049b: Fix hero mod swaps from the mod store not applying
+- Updated dependencies [8547a02]
+- Updated dependencies [2f18d23]
+- Updated dependencies [25a668d]
+- Updated dependencies [2cc198e]
 - Updated dependencies [1f98b35]
 - Updated dependencies [cbab84a]
 - Updated dependencies [34cbd98]
@@ -74,8 +141,9 @@
 - Updated dependencies [437e943]
 - Updated dependencies [cbab84a]
 - Updated dependencies [fd4234f]
-  - @deadlock-mods/shared@2.2.0
-  - @deadlock-mods/crosshair@0.2.5
+  - @deadlock-mods/shared@2.3.0
+  - @deadlock-mods/hero-parser@1.1.1
+  - @deadlock-mods/crosshair@0.2.6
 
 ## 1.1.0
 

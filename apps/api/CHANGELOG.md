@@ -1,5 +1,28 @@
 # api
 
+## 3.3.0
+
+### Minor Changes
+
+- c52fc90: Add seasonal themes with mini-games for Halloween, Christmas, Easter and more
+- 8547a02: Add rich GameBanana author profiles to mod browsing
+- bb77ef9: Gate Remlock behind a release flag and use it by default for unthemed players.
+
+### Patch Changes
+
+- 15e3954: Stop the GameBanana sync from importing featured news and other non-mod entries as unrelated mods, and match the NSFW rules the desktop app uses.
+- 2e252ca: Fix primary Linux downloads to prefer Wry and label CEF as experimental
+- 23af943: Keep released desktop versions working against the v2 API: report endpoints accept legacy catalog mod IDs again, VPK analysis responses include the `mod` relation older clients require, and existing reports and VPK fingerprints are backfilled with their GameBanana submission identity.
+- Updated dependencies [8547a02]
+- Updated dependencies [2f18d23]
+- Updated dependencies [23af943]
+- Updated dependencies [25a668d]
+  - @deadlock-mods/database@2.3.0
+  - @deadlock-mods/shared@2.3.0
+  - @deadlock-mods/distributed-lock@1.0.12
+  - @deadlock-mods/feature-flags@0.2.10
+  - @deadlock-mods/instrumentation@0.1.12
+
 ## 3.2.0
 
 ### Minor Changes

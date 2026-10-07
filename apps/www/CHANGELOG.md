@@ -1,5 +1,24 @@
 # web
 
+## 0.6.0
+
+### Minor Changes
+
+- bbb30d2: Add a Randomizer that rolls a hero, a buyable build and bravery rules
+- b32e06f: Announce V2 with a site-wide banner and hero badge linking to the preview build, and include the latest release version in the home and download page descriptions and the SoftwareApplication structured data
+- 62cdd3d: Add a "What's new in V2" page and a changelog built from the desktop app's release notes, and point the V2 banner at it
+- cf5b35b: Redesign the landing page around a live, clickable copy of the app, fix the hydration crash and SSR data loading that made the site slow and broke Google's preview, and give every page proper SEO metadata, a sitemap and structured data
+
+### Patch Changes
+
+- 2e252ca: Fix primary Linux downloads to prefer Wry and label CEF as experimental
+- Updated dependencies [8547a02]
+- Updated dependencies [2f18d23]
+- Updated dependencies [25a668d]
+- Updated dependencies [2cc198e]
+  - @deadlock-mods/shared@2.3.0
+  - @deadlock-mods/crosshair@0.2.6
+
 ## 0.5.0
 
 ### Minor Changes

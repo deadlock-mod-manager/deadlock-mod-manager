@@ -1,5 +1,16 @@
 # @deadlock-mods/shared
 
+## 2.3.0
+
+### Minor Changes
+
+- 8547a02: Add rich GameBanana author profiles to mod browsing
+
+### Patch Changes
+
+- 2f18d23: Add Baba, Deadman Danny, Nurse Harrow, Rat King, Solomon and Violet to hero detection, the Skins page and the Foundry.
+- 25a668d: Make the mod store, dashboard and search much faster: cards load small thumbnails, the store loads mods as you scroll, searches return in milliseconds, and browsing no longer uses up the GameBanana request limit needed for mod pages and downloads.
+
 ## 2.2.0
 
 ### Minor Changes

@@ -1,5 +1,11 @@
 # @deadlock-mods/hero-parser
 
+## 1.1.1
+
+### Patch Changes
+
+- 2f18d23: Add Baba, Deadman Danny, Nurse Harrow, Rat King, Solomon and Violet to hero detection, the Skins page and the Foundry.
+
 ## 1.1.0
 
 ### Minor Changes

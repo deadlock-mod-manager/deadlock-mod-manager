@@ -1,5 +1,15 @@
 # @deadlock-mods/crosshair
 
+## 0.2.6
+
+### Patch Changes
+
+- 2cc198e: Fix custom crosshairs in Steam account settings and restore them when disabled
+- Updated dependencies [8547a02]
+- Updated dependencies [2f18d23]
+- Updated dependencies [25a668d]
+  - @deadlock-mods/shared@2.3.0
+
 ## 0.2.5
 
 ### Patch Changes
