@@ -1,5 +1,6 @@
 import { Input } from "@deadlock-mods/ui/components/input";
 import { Label } from "@deadlock-mods/ui/components/label";
+import { useTranslation } from "react-i18next";
 
 interface ColorPickerProps {
   color: { r: number; g: number; b: number };
@@ -7,6 +8,7 @@ interface ColorPickerProps {
 }
 
 export function ColorPicker({ color, onChange }: ColorPickerProps) {
+  const { t } = useTranslation("tool-crosshair");
   const hexValue = rgbToHex(color.r, color.g, color.b);
 
   const handleHexChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -19,7 +21,7 @@ export function ColorPicker({ color, onChange }: ColorPickerProps) {
 
   return (
     <div className='space-y-2'>
-      <Label htmlFor='color-picker'>Color (Hex)</Label>
+      <Label htmlFor='color-picker'>{t("controls.colorHex")}</Label>
       <div className='flex gap-2'>
         <Input
           id='color-picker'

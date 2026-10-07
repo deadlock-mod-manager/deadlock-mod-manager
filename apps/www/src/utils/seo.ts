@@ -1,8 +1,16 @@
 import { SITE_URL, X_URL } from "@/lib/constants";
+import {
+  DEFAULT_LOCALE,
+  getLocaleConfig,
+  isLocalizedPath,
+  LOCALES,
+  type Locale,
+  localizePath,
+} from "@/lib/i18n/locales";
 
 export const SITE_NAME = "Deadlock Mod Manager";
 
-export const DEFAULT_DESCRIPTION =
+const DEFAULT_DESCRIPTION =
   "Free, open-source mod manager for Valve's Deadlock. Browse GameBanana mods, install them in one click, and manage skins and sounds on Windows and Linux.";
 
 const DEFAULT_OG_IMAGE = {
@@ -42,6 +50,25 @@ export const INDEXABLE_PATHS = [
 export const absoluteUrl = (path: string) =>
   path === "/" ? `${SITE_URL}/` : `${SITE_URL}${path}`;
 
+/** Absolute URL of a page in a given language. */
+export const localizedUrl = (path: string, locale: Locale) =>
+  absoluteUrl(localizePath(path, locale));
+
+/**
+ * hreflang alternates for a translated page: one per language plus
+ * x-default, which points at English.
+ */
+export const alternateUrls = (path: string) =>
+  isLocalizedPath(path)
+    ? [
+        ...LOCALES.map((locale) => ({
+          hreflang: locale.hreflang,
+          href: localizedUrl(path, locale.id),
+        })),
+        { hreflang: "x-default", href: localizedUrl(path, DEFAULT_LOCALE) },
+      ]
+    : [];
+
 const xHandle = `@${X_URL.split("/").pop()}`;
 
 export interface SeoOptions {
@@ -52,6 +79,8 @@ export interface SeoOptions {
   keywords?: string;
   type?: "website" | "article";
   noindex?: boolean;
+  /** Language the page renders in; drives the canonical URL and hreflang. */
+  locale?: Locale;
 }
 
 /**
@@ -67,8 +96,9 @@ export const seo = ({
   keywords,
   type = "website",
   noindex,
+  locale = DEFAULT_LOCALE,
 }: SeoOptions) => {
-  const url = path ? absoluteUrl(path) : undefined;
+  const url = path ? localizedUrl(path, locale) : undefined;
 
   const meta = [
     { title },
@@ -82,13 +112,24 @@ export const seo = ({
     },
     ...(url ? [{ property: "og:url", content: url }] : []),
     { property: "og:type", content: type },
+    { property: "og:locale", content: getLocaleConfig(locale).ogLocale },
     { property: "og:title", content: title },
     { property: "og:description", content: description },
     { name: "twitter:title", content: title },
     { name: "twitter:description", content: description },
   ];
 
-  const links = url && !noindex ? [{ rel: "canonical", href: url }] : [];
+  const links =
+    url && path && !noindex
+      ? [
+          { rel: "canonical", href: url },
+          ...alternateUrls(path).map((alternate) => ({
+            rel: "alternate",
+            hrefLang: alternate.hreflang,
+            href: alternate.href,
+          })),
+        ]
+      : [];
 
   return { meta, links };
 };

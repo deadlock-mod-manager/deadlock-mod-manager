@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "name": "Failed to save mod order",
+    "title": "Jak naprawić „Failed to save mod order” w Deadlock Mod Manager",
+    "description": "Błąd Failed to save mod order w Deadlock Mod Manager? Zamknij Deadlock, zwolnij zablokowane pliki .vpk, popraw uprawnienia folderu i zapisz kolejność ponownie."
+  },
+  "hero": {
+    "eyebrow": "Naprawa błędu",
+    "title": "Failed to save mod order",
+    "intro": "Zapisanie kolejności ładowania zmienia nazwy plików modów, żeby Deadlock wczytał je w nowej kolejności. Gdy plik jest zablokowany lub chroniony, zmiana nazwy zostaje cofnięta, a aplikacja pokazuje ten błąd. Komunikat pod nim mówi, dlaczego.",
+    "errorSource": "Deadlock Mod Manager, po zapisaniu w oknie Zarządzaj kolejnością ładowania modyfikacji"
+  },
+  "errorText": {
+    "message": "Failed to save mod order",
+    "causes": {
+      "gameRunning": "Game is running",
+      "fileInUse": "The process cannot access the file because it is being used by another process. (os error 32)",
+      "vpkInUse": "VPK files are in use and cannot be deleted",
+      "accessDenied": "Access is denied. (os error 5)",
+      "shardsFull": "All addon shard folders are full"
+    }
+  },
+  "causes": {
+    "title": "Znajdź swój komunikat i zastosuj poprawkę",
+    "intro": "Przeczytaj linijkę pod „Failed to save mod order” w powiadomieniu i dopasuj ją poniżej.",
+    "os5Link": "Napraw os error 5",
+    "items": {
+      "gameRunning": {
+        "fix": "Całkowicie zamknij Deadlock, także z zasobnika systemowego, i zapisz kolejność ponownie. Jeśli gra już się zamknęła, poczekaj kilka sekund, aż proces się zakończy."
+      },
+      "fileInUse": {
+        "fix": "Inny program ma otwarty plik .vpk. Zamknij okna Eksploratora plików pokazujące folder addons, przeglądarki VPK i programy do archiwów. Skanowanie antywirusem może na chwilę blokować pliki, więc spróbuj ponownie za kilka sekund albo dodaj folder Deadlock do wyjątków antywirusa."
+      },
+      "vpkInUse": {
+        "fix": "Ta sama przyczyna co wyżej: zamknij grę i każdy program, który ma otwarte pliki modów, a potem spróbuj ponownie."
+      },
+      "accessDenied": {
+        "fix": "Windows blokuje zmiany w folderze addons. Skorzystaj z poradnika do os error 5, żeby usunąć atrybuty tylko do odczytu i problemy z uprawnieniami."
+      },
+      "shardsFull": {
+        "fix": "Masz więcej włączonych plików .vpk, niż gra potrafi wczytać. Wyłącz mody, których nie używasz, i zapisz kolejność ponownie."
+      }
+    }
+  },
+  "nothingMatches": {
+    "title": "Jeśli nic nie pasuje",
+    "steps": {
+      "restart": "Zamknij Deadlock i uruchom ponownie Deadlock Mod Manager.",
+      "checkInstalls": "Otwórz zakładkę Moje mody i sprawdź, czy każdy mod się doinstalował. Usuń i zainstaluj ponownie te, które wyglądają na zablokowane.",
+      "saveAgain": "Kliknij ponownie „Zmień kolejność modyfikacji” i zapisz.",
+      "discord": "Nadal nie działa? Udostępnij pełny komunikat i wersję aplikacji na <discord>Discordzie</discord>."
+    }
+  },
+  "faqs": {
+    "why": {
+      "question": "Dlaczego Deadlock Mod Manager nie może zapisać kolejności modów?",
+      "answer": "Zapisanie kolejności zmienia nazwy plików .vpk w folderze addons, żeby gra wczytała je w nowej kolejności. Nie udaje się, gdy Deadlock jest uruchomiony, gdy inny program ma otwarty plik .vpk albo gdy Windows odmawia dostępu do folderu."
+    },
+    "loseMods": {
+      "question": "Czy stracę mody, gdy zapis kolejności się nie powiedzie?",
+      "answer": "Nie. Gdy któryś krok się nie uda, aplikacja cofa zmianę nazw, więc mody zostają zainstalowane w poprzedniej kolejności. Usuń przyczynę i zapisz ponownie."
+    },
+    "whileOpen": {
+      "question": "Czy mogę zmienić kolejność ładowania, gdy Deadlock jest włączony?",
+      "answer": "Nie. Gra trzyma swoje pliki .vpk otwarte, dopóki działa, więc najpierw zamknij Deadlock. Zmiany zadziałają przy następnym uruchomieniu z modami."
+    },
+    "whatChanges": {
+      "question": "Co tak naprawdę zmienia kolejność modów?",
+      "answer": "Gdy dwa mody podmieniają ten sam plik, wczytać się może tylko jedna wersja, a kolejność modów decyduje, która. Mody, które się nie pokrywają, działają tak samo w dowolnej kolejności."
+    }
+  },
+  "downloadBand": {
+    "title": "Przeciągnij mody w kolejności, jakiej chcesz",
+    "body": "Deadlock Mod Manager pokazuje, które mody są w konflikcie, i pozwala wybrać zwycięzcę przez zmianę kolejności."
+  }
+}

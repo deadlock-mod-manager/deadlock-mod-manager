@@ -1,5 +1,6 @@
 import { cn } from "@deadlock-mods/ui/lib/utils";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Logo from "@/components/logo";
 import { showThemeInPreview } from "./app-preview/store";
 import {
@@ -42,6 +43,8 @@ const prefersReducedMotion = () =>
  * theme spreads out as a circle from the swatch that was clicked.
  */
 export const ThemesSection = () => {
+  const { t } = useTranslation("home");
+  const { t: tPreview } = useTranslation("preview");
   const [current, setCurrent] = useState<PreviewThemeId>("bloodmoon");
   const [reveal, setReveal] = useState<Reveal | null>(null);
   const [interacted, setInteracted] = useState(false);
@@ -135,7 +138,7 @@ export const ThemesSection = () => {
     return () => window.clearInterval(interval);
   }, [interacted, inView, selected]);
 
-  const selectedTheme = getPreviewTheme(selected);
+  const selectedName = tPreview(`themes.${selected}.name`);
   const glowStyle: GlowStyle = { "--theme-glow": THEME_GLOW[selected] };
 
   return (
@@ -144,8 +147,8 @@ export const ThemesSection = () => {
       id='themes'
       className='mx-auto max-w-7xl scroll-mt-6 px-6 pt-20 pb-10 lg:pt-25'>
       <SectionHeading
-        title='Change how the app looks'
-        description='Pick one of the community themes, or make your own in the theme builder and share the file with friends.'
+        title={t("themes.title")}
+        description={t("themes.description")}
       />
 
       <div className='theme-stage relative mt-12' style={glowStyle}>
@@ -158,7 +161,7 @@ export const ThemesSection = () => {
           className='relative aspect-[1232/761] overflow-hidden rounded-2xl border border-white/10 bg-background shadow-[0_40px_100px_-30px_rgba(0,0,0,0.8)]'>
           <img
             src={getPreviewTheme(current).preview}
-            alt={`Deadlock Mod Manager in the ${selectedTheme.name} theme`}
+            alt={t("themes.screenshotAlt", { theme: selectedName })}
             width={1232}
             height={761}
             loading='lazy'
@@ -187,7 +190,7 @@ export const ThemesSection = () => {
       <div className='mt-8 flex flex-wrap items-center justify-between gap-x-8 gap-y-5'>
         <div
           role='radiogroup'
-          aria-label='Theme'
+          aria-label={t("themes.pickerLabel")}
           className='-mx-1 flex gap-1.5 overflow-x-auto px-1 py-1 [scrollbar-width:none]'>
           {PREVIEW_THEMES.map((theme) => {
             const isSelected = theme.id === selected;
@@ -231,7 +234,7 @@ export const ThemesSection = () => {
                     <Logo className='size-7' />
                   )}
                 </span>
-                {theme.name}
+                {tPreview(`themes.${theme.id}.name`)}
               </button>
             );
           })}
@@ -240,12 +243,14 @@ export const ThemesSection = () => {
           type='button'
           onClick={() => showThemeInPreview(selected)}
           className={secondaryCta("sm")}>
-          Try {selectedTheme.name} in the preview
+          {t("themes.tryInPreview", { theme: selectedName })}
           <CtaArrow />
         </button>
       </div>
       <p className='mt-3 text-[13px] text-foreground-subtle'>
-        {selectedTheme.description} You'll find the theme builder in Settings.
+        {t("themes.builderHint", {
+          description: tPreview(`themes.${selected}.description`),
+        })}
       </p>
     </section>
   );

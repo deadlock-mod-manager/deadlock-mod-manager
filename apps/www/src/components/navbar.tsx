@@ -12,20 +12,22 @@ import {
 import { cn } from "@deadlock-mods/ui/lib/utils";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { LanguageList, LanguageSwitcher } from "@/components/language-switcher";
 import { APP_NAME, DOCS_URL, GITHUB_REPO } from "@/lib/constants";
 import { primaryCta } from "./home/cta";
 import Logo from "./logo";
 import UserMenu from "./user-menu";
 
 const pageLinks = [
-  { to: "/mods", label: "Mods" },
-  { to: "/skins", label: "Skins" },
+  { to: "/mods", key: "mods" },
+  { to: "/skins", key: "skins" },
 ] as const;
 
 const sectionLinks = [
-  { hash: "tour", label: "Features" },
-  { hash: "themes", label: "Themes" },
-  { hash: "tools", label: "Tools" },
+  { hash: "tour", key: "features" },
+  { hash: "themes", key: "themes" },
+  { hash: "tools", key: "tools" },
 ] as const;
 
 const linkClassName =
@@ -35,6 +37,7 @@ const mobileLinkClassName =
   "-mx-3 block rounded-lg px-3 py-2.5 font-medium text-base text-foreground hover:bg-surface-hover";
 
 export const Navbar = () => {
+  const { t } = useTranslation("common");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const closeMenu = () => setMobileMenuOpen(false);
 
@@ -44,7 +47,7 @@ export const Navbar = () => {
         <div className='flex min-w-0 flex-1 items-center'>
           <Link
             to='/'
-            aria-label='Homepage'
+            aria-label={t("navbar.homepage")}
             className='flex min-w-0 items-center gap-2.5 rounded-md focus-visible:outline-2 focus-visible:outline-primary'>
             <Logo className='size-7 shrink-0' />
             <span className='truncate font-bold font-primary text-lg leading-none'>
@@ -53,10 +56,12 @@ export const Navbar = () => {
           </Link>
         </div>
 
-        <nav aria-label='Primary' className='hidden items-center lg:flex'>
+        <nav
+          aria-label={t("navbar.primaryNav")}
+          className='hidden items-center lg:flex'>
           {pageLinks.map((link) => (
             <Link key={link.to} to={link.to} className={linkClassName}>
-              {link.label}
+              {t(`navbar.links.${link.key}`)}
             </Link>
           ))}
           {sectionLinks.map((link) => (
@@ -65,7 +70,7 @@ export const Navbar = () => {
               to='/'
               hash={link.hash}
               className={linkClassName}>
-              {link.label}
+              {t(`navbar.links.${link.key}`)}
             </Link>
           ))}
           <a
@@ -73,11 +78,12 @@ export const Navbar = () => {
             target='_blank'
             rel='noopener noreferrer'
             className={linkClassName}>
-            Docs
+            {t("navbar.links.docs")}
           </a>
         </nav>
 
         <div className='flex flex-1 items-center justify-end gap-2'>
+          <LanguageSwitcher className='hidden sm:inline-flex' />
           <a
             href={GITHUB_REPO}
             target='_blank'
@@ -95,13 +101,15 @@ export const Navbar = () => {
           </div>
           <Link to='/download' className={cn(primaryCta("sm"), "max-sm:px-2")}>
             <DownloadSimpleIcon aria-hidden='true' weight='bold' />
-            <span className='sr-only sm:not-sr-only'>Download</span>
+            <span className='sr-only sm:not-sr-only'>
+              {t("navbar.download")}
+            </span>
           </Link>
           <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
             <SheetTrigger asChild>
               <button
                 type='button'
-                aria-label='Open menu'
+                aria-label={t("navbar.openMenu")}
                 className='-mr-2 inline-flex size-10 items-center justify-center rounded-md text-muted-foreground hover:text-foreground lg:hidden'>
                 <ListIcon aria-hidden='true' className='size-6 shrink-0' />
               </button>
@@ -114,14 +122,14 @@ export const Navbar = () => {
                 {APP_NAME}
               </SheetTitle>
               <nav
-                aria-label='Mobile'
+                aria-label={t("navbar.mobileNav")}
                 className='mt-6 flex flex-col divide-y divide-border'>
                 <div className='py-4'>
                   <Link
                     to='/download'
                     onClick={closeMenu}
                     className={mobileLinkClassName}>
-                    Download
+                    {t("navbar.download")}
                   </Link>
                   {pageLinks.map((link) => (
                     <Link
@@ -129,7 +137,7 @@ export const Navbar = () => {
                       to={link.to}
                       onClick={closeMenu}
                       className={mobileLinkClassName}>
-                      {link.label}
+                      {t(`navbar.links.${link.key}`)}
                     </Link>
                   ))}
                   {sectionLinks.map((link) => (
@@ -139,7 +147,7 @@ export const Navbar = () => {
                       hash={link.hash}
                       onClick={closeMenu}
                       className={mobileLinkClassName}>
-                      {link.label}
+                      {t(`navbar.links.${link.key}`)}
                     </Link>
                   ))}
                   <a
@@ -147,7 +155,7 @@ export const Navbar = () => {
                     target='_blank'
                     rel='noopener noreferrer'
                     className={mobileLinkClassName}>
-                    Docs
+                    {t("navbar.links.docs")}
                   </a>
                   <a
                     href={GITHUB_REPO}
@@ -156,6 +164,9 @@ export const Navbar = () => {
                     className={mobileLinkClassName}>
                     GitHub
                   </a>
+                </div>
+                <div className='py-4'>
+                  <LanguageList onSelect={closeMenu} />
                 </div>
                 <div className='py-4'>
                   <UserMenu />

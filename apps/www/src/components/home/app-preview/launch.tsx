@@ -1,6 +1,8 @@
 import { cn } from "@deadlock-mods/ui/lib/utils";
 import { CheckCircleIcon, CircleNotchIcon } from "@phosphor-icons/react";
+import type { TFunction } from "i18next";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Logo from "@/components/logo";
 import { usePreviewState } from "./preview-state";
 import { type ScreenId, usePreviewNavigation } from "./store";
@@ -27,6 +29,7 @@ const FINISH_AT = LEAVE_AT + 200;
 
 /** Fake launch: ticks a short checklist, then the game counts as running. */
 export const useLaunchSequence = (screen: ScreenId) => {
+  const { t } = useTranslation("preview");
   const { notify, installs } = usePreviewState();
   const [state, setState] = useState<LaunchState>({ phase: "idle" });
   const timeouts = useRef<number[]>([]);
@@ -73,10 +76,8 @@ export const useLaunchSequence = (screen: ScreenId) => {
       timeouts.current = [];
       setState({ phase: "running", mode });
       notify(
-        "Deadlock is running",
-        modCount > 0
-          ? "Have fun out there. Your mods are live."
-          : "Have fun out there. Playing vanilla this time.",
+        t("launch.running.title"),
+        modCount > 0 ? t("launch.running.modded") : t("launch.running.vanilla"),
       );
     });
   };
@@ -85,24 +86,28 @@ export const useLaunchSequence = (screen: ScreenId) => {
     if (state.phase !== "running") return;
     clearTimeouts();
     setState({ phase: "idle" });
-    notify("Deadlock closed", "Back to the manager.");
+    notify(t("launch.closed.title"), t("launch.closed.description"));
   };
 
   return { state, enabledCount, launch, stop };
 };
 
-const stepLabels = (state: Extract<LaunchState, { phase: "launching" }>) => [
-  "Checking game files",
+const stepLabels = (
+  state: Extract<LaunchState, { phase: "launching" }>,
+  t: TFunction<"preview">,
+) => [
+  t("launch.steps.checkingFiles"),
   state.mode === "vanilla"
-    ? "Skipping mods"
+    ? t("launch.steps.skippingMods")
     : state.modCount > 0
-      ? `Applying ${state.modCount} ${state.modCount === 1 ? "mod" : "mods"}`
-      : "No mods enabled, starting vanilla",
-  "Starting Deadlock",
+      ? t("launch.steps.applyingMods", { count: state.modCount })
+      : t("launch.steps.noMods"),
+  t("launch.steps.starting"),
 ];
 
 /** Covers the sidebar and content while a launch is in progress. */
 export const LaunchOverlay = ({ state }: { state: LaunchState }) => {
+  const { t } = useTranslation("preview");
   const { theme } = usePreviewNavigation();
   if (state.phase !== "launching") return null;
   const { icon } = getPreviewTheme(theme);
@@ -126,10 +131,10 @@ export const LaunchOverlay = ({ state }: { state: LaunchState }) => {
           <Logo className='size-14 animate-dl-launch-spin' />
         )}
         <div className='mt-4 font-primary text-xl tracking-wide'>
-          Launching Deadlock
+          {t("launch.title")}
         </div>
         <ol className='mt-5 flex w-full flex-col gap-2.5'>
-          {stepLabels(state).map((label, index) => {
+          {stepLabels(state, t).map((label, index) => {
             const done = index < state.done;
             const active = index === state.done;
             return (
@@ -156,7 +161,11 @@ export const LaunchOverlay = ({ state }: { state: LaunchState }) => {
                 </span>
                 <span>{label}</span>
                 <span className='sr-only'>
-                  {done ? "done" : active ? "in progress" : "pending"}
+                  {done
+                    ? t("launch.stepState.done")
+                    : active
+                      ? t("launch.stepState.active")
+                      : t("launch.stepState.pending")}
                 </span>
               </li>
             );

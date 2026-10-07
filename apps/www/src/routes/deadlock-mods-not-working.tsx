@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import type { TFunction } from "i18next";
+import { Trans, useTranslation } from "react-i18next";
 import {
   GuideDownloadBand,
   GuideFaq,
@@ -9,119 +11,79 @@ import {
 } from "@/components/guides/guide-page";
 import { DISCORD_URL, DOCS_URL } from "@/lib/constants";
 import { ERROR_GUIDES } from "@/lib/guides";
+import { headI18n } from "@/lib/i18n/route";
 import { guideHead, type GuidePageData } from "@/utils/structured-data";
 
-const page: GuidePageData = {
+const getPage = (t: TFunction<"guide-not-working">): GuidePageData => ({
   path: "/deadlock-mods-not-working",
-  name: "Deadlock mods not working",
-  title:
-    "Deadlock Mods Not Working After an Update? Fixes | Deadlock Mod Manager",
-  description:
-    "Deadlock mods stopped loading or the game crashes after a patch? Fix gameinfo.gi resets, outdated HUD mods, conflicts and mod manager issues step by step.",
-  faqs: [
-    {
-      question: "Why did my Deadlock mods stop working after an update?",
-      answer:
-        "Deadlock updates usually overwrite gameinfo.gi, which removes the line that tells the game to load the addons folder. Launch modded from Deadlock Mod Manager to add it back, or re-add it by hand.",
-    },
-    {
-      question: "Why does Deadlock crash after a patch with mods installed?",
-      answer:
-        "Outdated HUD and UI mods are the most common cause. Disable them, launch, and turn them back on one at a time once their authors have released updates.",
-    },
-    {
-      question: "Why is Deadlock Mod Manager not working?",
-      answer:
-        "Update to the latest version first. If the app can't find the game, set the Deadlock folder in Settings. On Linux Flatpak builds, a grey screen or folder-picker crash has documented workarounds in the troubleshooting docs.",
-    },
-    {
-      question: "Do I have to reinstall my mods after every Deadlock update?",
-      answer:
-        "No. Your .vpk files stay in the addons folder. Usually only gameinfo.gi needs fixing, and the app does that each time you launch modded.",
-    },
-  ],
-};
-
-const FIXES = [
-  {
-    title: "The game ignores every mod",
-    cause:
-      "A Deadlock update or Steam's file verification replaced gameinfo.gi, so the addons folder is no longer loaded.",
-    fix: "Open Deadlock Mod Manager and use Launch modded; it re-applies the search path every time. Installed by hand? Add the two lines from the install guide back into gameinfo.gi.",
-  },
-  {
-    title: "Crash on launch, or the HUD is broken",
-    cause:
-      "UI and HUD mods replace interface files Valve just changed. Old files clash with the new game.",
-    fix: "Disable HUD and quality-of-life mods first, then launch. Check for mod updates in the Mods Library and re-enable them once they're updated.",
-  },
-  {
-    title: "Some mods work, others don't",
-    cause:
-      "Two enabled mods change the same files and only one of them can load.",
-    fix: "Open the conflicts view in Mods Library, pick which mod should win and change the load order.",
-  },
-  {
-    title: "A mod stays stuck downloading or installing",
-    cause: "An interrupted download or a file the game was holding open.",
-    fix: "Close Deadlock, remove the stuck mod with its trash icon and install it again. Still stuck? Use Clear All Mods in Settings, then Analyze Local Addons to re-add what's on disk.",
-  },
-  {
-    title: '"Access is denied" (os error 5) on Windows',
-    cause: "gameinfo.gi or the addons folder is read-only.",
-    fix: "Right-click the file or folder, open Properties and untick Read-only. If an old mod was installed with admin rights, run the manager as administrator once to remove it.",
-  },
-  {
-    title: "Mods vanish when launching from Steam",
-    cause:
-      "The app's auto-reset option removes the mod paths when you quit, so Steam launches vanilla.",
-    fix: "That's intended. Launch from Deadlock Mod Manager to play modded, or turn the option off in Settings.",
-  },
-];
+  name: t("meta.name"),
+  title: t("meta.title"),
+  description: t("meta.description"),
+  faqs: Object.values(t("faqs", { returnObjects: true })),
+});
 
 export const Route = createFileRoute("/deadlock-mods-not-working")({
   component: ModsNotWorkingPage,
-  head: () => guideHead(page),
+  head: ({ match }) => {
+    const { t, locale } = headI18n(match, "guide-not-working");
+    return guideHead(getPage(t), locale);
+  },
 });
 
 function ModsNotWorkingPage() {
+  const { t } = useTranslation("guide-not-working");
+  const { t: tc } = useTranslation("common");
+  const page = getPage(t);
+  const fixes = Object.entries(t("fixes.items", { returnObjects: true }));
+
   return (
     <div className='overflow-x-clip'>
       <GuideHero
-        eyebrow='Troubleshooting'
-        title='Deadlock mods not working after an update?'
-        intro='Most breakages after a Valve patch come down to three things: a reset gameinfo.gi, outdated HUD mods, or two mods fighting over the same files. Here is how to fix each one.'
+        eyebrow={t("hero.eyebrow")}
+        title={t("hero.title")}
+        intro={t("hero.intro")}
       />
 
-      <GuideSection title='Quick fix'>
+      <GuideSection title={t("quickFix.title")}>
         <div className={proseClassName}>
           <ol>
             <li>
-              Update Deadlock Mod Manager to the latest version from the{" "}
-              <Link to='/download'>download page</Link>.
+              <Trans
+                t={t}
+                i18nKey='quickFix.steps.updateApp'
+                components={{ link: <Link to='/download' /> }}
+              />
             </li>
-            <li>Check for mod updates in the Mods Library.</li>
+            <li>{t("quickFix.steps.updateMods")}</li>
             <li>
-              Disable HUD and UI mods, then use <strong>Launch modded</strong>.
+              <Trans
+                t={t}
+                i18nKey='quickFix.steps.disableHud'
+                components={{ strong: <strong /> }}
+              />
             </li>
-            <li>Re-enable mods one at a time to find any that still break.</li>
+            <li>{t("quickFix.steps.reenable")}</li>
           </ol>
         </div>
       </GuideSection>
 
-      <GuideSection title='Symptoms and fixes'>
+      <GuideSection title={t("fixes.title")}>
         <ul className='grid gap-4 md:grid-cols-2'>
-          {FIXES.map((item) => (
+          {fixes.map(([id, item]) => (
             <li
-              key={item.title}
+              key={id}
               className='rounded-xl border border-border bg-surface p-5'>
               <h3 className='font-semibold text-base'>{item.title}</h3>
               <p className='mt-3 text-muted-foreground text-sm leading-relaxed'>
-                <span className='font-medium text-foreground'>Why: </span>
+                <span className='font-medium text-foreground'>
+                  {t("fixes.why")}{" "}
+                </span>
                 {item.cause}
               </p>
               <p className='mt-2 text-muted-foreground text-sm leading-relaxed'>
-                <span className='font-medium text-foreground'>Fix: </span>
+                <span className='font-medium text-foreground'>
+                  {t("fixes.fix")}{" "}
+                </span>
                 {item.fix}
               </p>
             </li>
@@ -131,8 +93,8 @@ function ModsNotWorkingPage() {
 
       <GuideSection
         id='error-messages'
-        title='Seeing a specific error?'
-        intro='Each of these has its own step-by-step fix.'>
+        title={t("errors.title")}
+        intro={t("errors.intro")}>
         <ul className='grid gap-3 sm:grid-cols-2 lg:grid-cols-3'>
           {ERROR_GUIDES.map((guide) => (
             <li key={guide.path}>
@@ -140,10 +102,10 @@ function ModsNotWorkingPage() {
                 to={guide.path}
                 className='flex h-full flex-col rounded-xl border border-border bg-surface p-5 hover:border-border-hover focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2'>
                 <span className='font-mono font-semibold text-[15px]'>
-                  {guide.label}
+                  {tc(`guides.${guide.key}.label`)}
                 </span>
                 <span className='mt-2 text-muted-foreground text-sm leading-relaxed'>
-                  {guide.description}
+                  {tc(`guides.${guide.key}.description`)}
                 </span>
               </Link>
             </li>
@@ -151,23 +113,29 @@ function ModsNotWorkingPage() {
         </ul>
       </GuideSection>
 
-      <GuideSection title='Still stuck?'>
+      <GuideSection title={t("stillStuck.title")}>
         <div className={proseClassName}>
           <p>
-            The{" "}
-            <a
-              href={`${DOCS_URL}/using-mod-manager/troubleshooting`}
-              target='_blank'
-              rel='noopener noreferrer'>
-              troubleshooting docs
-            </a>{" "}
-            cover Linux, Flatpak and Steam Deck issues in detail. You can also
-            ask on{" "}
-            <a href={DISCORD_URL} target='_blank' rel='noopener noreferrer'>
-              Discord
-            </a>
-            , where the community usually knows which mods broke with the latest
-            patch.
+            <Trans
+              t={t}
+              i18nKey='stillStuck.body'
+              components={{
+                docs: (
+                  <a
+                    href={`${DOCS_URL}/using-mod-manager/troubleshooting`}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                  />
+                ),
+                discord: (
+                  <a
+                    href={DISCORD_URL}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                  />
+                ),
+              }}
+            />
           </p>
         </div>
       </GuideSection>
@@ -175,8 +143,8 @@ function ModsNotWorkingPage() {
       <GuideFaq faqs={page.faqs} />
       <RelatedGuides current='/deadlock-mods-not-working' />
       <GuideDownloadBand
-        title='Patch day without the headache'
-        body='Deadlock Mod Manager re-applies your mods on every launch and tells you which ones need updates.'
+        title={t("downloadBand.title")}
+        body={t("downloadBand.body")}
       />
     </div>
   );

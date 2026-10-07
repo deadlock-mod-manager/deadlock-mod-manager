@@ -1,6 +1,7 @@
 import { RefreshCwIcon } from "@deadlock-mods/ui/icons";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { orpc } from "@/utils/orpc";
 
 type StatusWidgetProps = {
@@ -8,6 +9,7 @@ type StatusWidgetProps = {
 };
 
 export const StatusWidget: React.FC<StatusWidgetProps> = ({ className }) => {
+  const { t } = useTranslation("common");
   const statusQuery = useQuery(orpc.getStatus.queryOptions());
 
   const status = statusQuery.data?.status || "operational";
@@ -29,13 +31,13 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({ className }) => {
   const getStatusText = () => {
     switch (status) {
       case "operational":
-        return "All systems are operational";
+        return t("statusWidget.status.operational");
       case "downtime":
-        return "All systems are down";
+        return t("statusWidget.status.downtime");
       case "degraded":
-        return "Some systems are degraded";
+        return t("statusWidget.status.degraded");
       default:
-        return "Unknown status";
+        return t("statusWidget.status.unknown");
     }
   };
 
@@ -48,10 +50,10 @@ export const StatusWidget: React.FC<StatusWidgetProps> = ({ className }) => {
       <div className='flex items-center gap-2 rounded-full border border-secondary bg-card px-3 py-1'>
         <div className={`h-2 w-2 rounded-full ${getStatusColor()}`} />
         <Link className='text-sm' to='/status'>
-          {loading ? "Checking status..." : getStatusText()}
+          {loading ? t("statusWidget.checking") : getStatusText()}
         </Link>
         <button
-          aria-label='Refresh status'
+          aria-label={t("statusWidget.refresh")}
           className='ml-2 text-muted-foreground hover:text-foreground disabled:opacity-50'
           disabled={loading}
           onClick={refetchStatus}>

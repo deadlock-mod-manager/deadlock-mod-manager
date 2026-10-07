@@ -1,0 +1,168 @@
+{
+  "meta": {
+    "title": "Deadlock Randomizer: losowy bohater i build przedmiotów",
+    "description": "Wylosuj bohatera Deadlock, poprawny build przedmiotów w kolejności zakupu, kolejność punktów umiejętności i trzy zasady bravery. Udostępnij seed i losuj do woli.",
+    "keywords": "deadlock randomizer, losowy build deadlock, deadlock ultimate bravery, losowy bohater deadlock, generator buildów deadlock"
+  },
+  "error": {
+    "title": "Losowanie się nie udało",
+    "description": "Dane bohaterów i przedmiotów pochodzą z Deadlock API, które nie odpowiedziało.",
+    "retry": "Spróbuj ponownie"
+  },
+  "skeleton": {
+    "heading": "Deadlock Randomizer: losowy bohater i build przedmiotów"
+  },
+  "toolbar": {
+    "copyLink": {
+      "idle": "Kopiuj link",
+      "copied": "Skopiowano",
+      "failed": "Nie udało się skopiować"
+    },
+    "reroll": "Losuj ponownie"
+  },
+  "sections": {
+    "trigger": "Sekcje",
+    "label": "Wylosuj mi",
+    "options": {
+      "build": "Kolejność buildu",
+      "abilities": "Umiejętności",
+      "rules": "Zasady"
+    }
+  },
+  "heroPicker": {
+    "anyHero": "Dowolny bohater",
+    "label": "Losuj buildy dla"
+  },
+  "hero": {
+    "heading": "Grasz: {{hero}}",
+    "headingWithRole": "Grasz: {{hero}}, {{role}}",
+    "youArePlaying": "Grasz",
+    "role": "{{role}}."
+  },
+  "facts": {
+    "complexity": "Złożoność",
+    "lane": "Linia",
+    "archetype": "Archetyp",
+    "tags": "Tagi",
+    "mandate": "Zadanie",
+    "buildCost": "Koszt buildu",
+    "souls": "dusz",
+    "abilityPriority": "Priorytet umiejętności",
+    "abilityPriorityHint": "4 odblokowania · 32 punkty",
+    "total": "Łącznie"
+  },
+  "headings": {
+    "build": "Build, po kolei.",
+    "skills": "Kolejność umiejętności, 1–16.",
+    "rules": "Zasady."
+  },
+  "footer": {
+    "credit": "Bohaterowie, przedmioty i grafiki dzięki <link>Deadlock API</link>."
+  },
+  "lanes": {
+    "yellow": "Żółta linia",
+    "blue": "Niebieska linia",
+    "green": "Zielona linia"
+  },
+  "mandates": {
+    "gunslinger": {
+      "label": "Rewolwerowiec",
+      "blurb": "Większość dusz poszła w broń. Wygrywaj nią wymiany, zanim ktokolwiek kupi pancerz."
+    },
+    "caster": {
+      "label": "Czarodziej",
+      "blurb": "Losowanie opiera się na twoich umiejętnościach. Trzymaj cooldowny na walkę, która naprawdę się liczy."
+    },
+    "bulwark": {
+      "label": "Bastion",
+      "blurb": "Najpierw kupiłeś przeżywalność. Bądź tym, kto wchodzi na linię i z niej nie schodzi."
+    }
+  },
+  "categories": {
+    "weapon": "Broń",
+    "vitality": "Witalność",
+    "spirit": "Duch"
+  },
+  "challenges": {
+    "exactOrder": {
+      "title": "Kupuj po kolei",
+      "detail": "Kupuj build ściśle od góry do dołu. Bez przeskakiwania, nawet jeśli stać cię na wyższy poziom. Ulepszenia kupujesz, kiedy tylko cię na nie stać."
+    },
+    "noRecall": {
+      "title": "Bez zakupów w bazie po 15:00",
+      "detail": "Gdy zegar przekroczy piętnaście minut, wszystkie zakupy musisz robić poza własną bazą."
+    },
+    "parry": {
+      "title": "Zawsze paruj",
+      "detail": "Na każdy cios wręcz wymierzony w ciebie próbujesz parować. Wymiana obrażeń zamiast tego to porażka."
+    },
+    "noZipline": {
+      "title": "Twardo na ziemi",
+      "detail": "Przez pierwsze dziesięć minut tyrolka jest zakazana. Idziesz pieszo."
+    },
+    "meleeOpening": {
+      "title": "Najpierw pięści",
+      "detail": "Dopóki nie kupisz pierwszego przedmiotu poziomu 2, możesz ranić wrogich graczy tylko atakami wręcz."
+    },
+    "ultOnCooldown": {
+      "title": "Nigdy nie trzymaj ulta",
+      "detail": "Ult leci w chwili, gdy jest gotowy. Zostawianie go na lepszy moment to porażka."
+    },
+    "noRetreat": {
+      "title": "Bez odwrotu",
+      "detail": "Nigdy nie uciekaj z walki na linii, którą zacząłeś. Wygrywasz ją albo wracasz z respawnu."
+    },
+    "soulCap": {
+      "title": "Wydaj wszystko",
+      "detail": "Gdy tylko stać cię na kolejny przedmiot z buildu, idź go kupić. Trzymanie dusz ponad jego cenę to porażka."
+    },
+    "oneLane": {
+      "title": "Wierny linii",
+      "detail": "Zostań na wylosowanej linii, dopóki nie padnie na niej pierwszy strażnik. Bez rotacji, bez dżungli."
+    },
+    "noCancel": {
+      "title": "Bez wahania",
+      "detail": "Każdą umiejętność, którą zaczniesz rzucać, kończysz. Anulowanie to porażka."
+    },
+    "callout": {
+      "title": "Ogłoś losowanie",
+      "detail": "Napisz na czacie ogólnym swojego bohatera, linię i pierwszy przedmiot, zanim opadnie bariera."
+    },
+    "noHeal": {
+      "title": "Bez leczenia",
+      "detail": "Nigdy nie lecz się we własnej bazie. Tylko regeneracja, kradzież życia i przedmioty leczące."
+    }
+  },
+  "abilities": {
+    "fallback": "Umiejętność {{slot}}",
+    "ultimate": "Ult",
+    "maxFirst": "Maksuj najpierw",
+    "unlockedAt": "Odblokowana w kroku {{position}}",
+    "upgradeAt": "Ulepszenie {{upgrade}} w kroku {{position}}",
+    "unlock": "Odblokuj",
+    "cost": "+{{cost}} AP",
+    "spent": "{{spent}} AP",
+    "srUnlock": "{{ability}}, odblokowanie",
+    "srUpgrade": "{{ability}}, ulepszenie {{step}}"
+  },
+  "item": {
+    "tier": "Poziom {{tier}}",
+    "active": "Aktywny",
+    "activeTitle": "Przedmiot aktywny",
+    "tooltipHeader": "{{category}} · Poziom {{tier}} · <souls>{{cost}}</souls>",
+    "sectionKinds": {
+      "active": "aktywne",
+      "passive": "pasywne"
+    },
+    "ariaUpgrade": "{{item}}, ulepszony do {{upgrade}}",
+    "ariaItem": "{{item}}, {{category}}, poziom {{tier}}",
+    "categoryChange": "{{category}} →",
+    "upgrade": "· Ulepszenie",
+    "upgradePriceTitle": "Dusze: {{total}}, minus {{paid}} już zapłacone za {{item}}",
+    "goodFit": "Dobry wybór",
+    "goodFitTitle": "Wysoko oceniany dla tego bohatera w danych z draftów",
+    "imbueOn": "Nasycenie: {{ability}}",
+    "imbueOnUntilUpgraded": "Nasycenie: {{ability}} (do ulepszenia)",
+    "imbueLapsesTitle": "{{item}} nasyca jedną umiejętność, {{upgrade}} działa na wszystkie"
+  }
+}

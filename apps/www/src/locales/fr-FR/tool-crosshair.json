@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "title": "Générateur de réticule Deadlock : créez et partagez votre viseur",
+    "description": "Créez un réticule (crosshair) Deadlock sur mesure avec aperçu en direct sur des décors du jeu, puis copiez la config ou partagez un lien."
+  },
+  "page": {
+    "editingShared": "Vous modifiez un réticule partagé. Toute modification créera une nouvelle configuration.",
+    "title": "Générateur de réticule",
+    "description": "Créez et personnalisez votre réticule Deadlock"
+  },
+  "preview": {
+    "title": "Aperçu",
+    "none": "Aucun",
+    "backgrounds": {
+      "bg1": "Arrière-plan 1",
+      "bg2": "Arrière-plan 2"
+    },
+    "hint": "Passez la souris sur l'aperçu pour voir comment le réticule se comporte en jeu."
+  },
+  "controls": {
+    "settings": "Paramètres du réticule",
+    "gap": "Écart",
+    "width": "Largeur",
+    "height": "Hauteur",
+    "pipOpacity": "Opacité des pips",
+    "dotOpacity": "Opacité du point",
+    "dotOutlineOpacity": "Opacité du contour du point",
+    "color": "Couleur",
+    "colorHex": "Couleur (hex)",
+    "options": "Options",
+    "pipBorder": "Afficher la bordure des pips",
+    "pipGapStatic": "Écart des pips fixe",
+    "hero": "Héros",
+    "defaultHero": "Par défaut"
+  },
+  "export": {
+    "copy": "Copier la config",
+    "copied": "Copié !",
+    "share": "Partager l'URL",
+    "linkCopied": "Lien copié !"
+  }
+}

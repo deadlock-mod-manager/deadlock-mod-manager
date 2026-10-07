@@ -1,6 +1,7 @@
 import { ChevronDown } from "@deadlock-mods/ui/icons";
 import { cn } from "@deadlock-mods/ui/lib/utils";
 import { Link } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { CtaArrow, DownloadCta, secondaryCta } from "@/components/home/cta";
 import { Eyebrow } from "@/components/home/section-heading";
 import { GUIDES, type Guide, type GuidePath } from "@/lib/guides";
@@ -20,31 +21,35 @@ export const GuideHero = ({
   title: string;
   intro: string;
   children?: React.ReactNode;
-}) => (
-  <section className='relative isolate overflow-hidden'>
-    <div aria-hidden='true' className='-z-10 absolute inset-0'>
-      <div className='absolute inset-0 bg-[url(/backgrounds/bg-1.jpg)] bg-cover bg-[center_30%] opacity-25 [mask-image:radial-gradient(110%_90%_at_80%_20%,black_15%,transparent_70%)]' />
-      <div className='absolute inset-0 bg-[linear-gradient(180deg,transparent_55%,var(--color-background)_100%)]' />
-    </div>
-    <div className='mx-auto max-w-7xl px-6 pt-16 pb-20 lg:pt-24'>
-      <Eyebrow>{eyebrow}</Eyebrow>
-      <h1 className='mt-3 max-w-[20ch] text-balance font-bold font-primary text-[clamp(40px,4.6vw,64px)] leading-[1] tracking-[-0.02em]'>
-        {title}
-      </h1>
-      <p className='mt-6 max-w-[58ch] text-pretty text-lg text-muted-foreground leading-relaxed'>
-        {intro}
-      </p>
-      <div className='mt-10 flex flex-wrap items-center gap-x-8 gap-y-3'>
-        <DownloadCta />
-        <Link to='/download' className={secondaryCta("lg")}>
-          All downloads
-          <CtaArrow />
-        </Link>
+}) => {
+  const { t } = useTranslation("common");
+
+  return (
+    <section className='relative isolate overflow-hidden'>
+      <div aria-hidden='true' className='-z-10 absolute inset-0'>
+        <div className='absolute inset-0 bg-[url(/backgrounds/bg-1.jpg)] bg-cover bg-[center_30%] opacity-25 [mask-image:radial-gradient(110%_90%_at_80%_20%,black_15%,transparent_70%)]' />
+        <div className='absolute inset-0 bg-[linear-gradient(180deg,transparent_55%,var(--color-background)_100%)]' />
       </div>
-      {children}
-    </div>
-  </section>
-);
+      <div className='mx-auto max-w-7xl px-6 pt-16 pb-20 lg:pt-24'>
+        <Eyebrow>{eyebrow}</Eyebrow>
+        <h1 className='mt-3 max-w-[20ch] text-balance font-bold font-primary text-[clamp(40px,4.6vw,64px)] leading-[1] tracking-[-0.02em]'>
+          {title}
+        </h1>
+        <p className='mt-6 max-w-[58ch] text-pretty text-lg text-muted-foreground leading-relaxed'>
+          {intro}
+        </p>
+        <div className='mt-10 flex flex-wrap items-center gap-x-8 gap-y-3'>
+          <DownloadCta />
+          <Link to='/download' className={secondaryCta("lg")}>
+            {t("guidePage.allDownloads")}
+            <CtaArrow />
+          </Link>
+        </div>
+        {children}
+      </div>
+    </section>
+  );
+};
 
 export const GuideSection = ({
   id,
@@ -107,29 +112,33 @@ export const StepList = ({
  * Plain-text answers, so the same entries feed the page's FAQPage JSON-LD
  * through guideHead() without drifting from what is rendered.
  */
-export const GuideFaq = ({ faqs }: { faqs: FaqEntry[] }) => (
-  <GuideSection id='faq' title='Questions'>
-    <div className='flex max-w-4xl flex-col gap-2.5'>
-      {faqs.map((faq, index) => (
-        <details
-          key={faq.question}
-          open={index === 0}
-          className='group rounded-[10px] border border-border bg-surface px-5'>
-          <summary className='flex min-h-15 cursor-pointer list-none items-center justify-between gap-4 font-semibold text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary [&::-webkit-details-marker]:hidden'>
-            <h3>{faq.question}</h3>
-            <ChevronDown
-              aria-hidden='true'
-              className='size-[18px] shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180'
-            />
-          </summary>
-          <p className='mb-[18px] max-w-[65ch] text-[15px] text-muted-foreground leading-[1.65]'>
-            {faq.answer}
-          </p>
-        </details>
-      ))}
-    </div>
-  </GuideSection>
-);
+export const GuideFaq = ({ faqs }: { faqs: FaqEntry[] }) => {
+  const { t } = useTranslation("common");
+
+  return (
+    <GuideSection id='faq' title={t("guidePage.questions")}>
+      <div className='flex max-w-4xl flex-col gap-2.5'>
+        {faqs.map((faq, index) => (
+          <details
+            key={faq.question}
+            open={index === 0}
+            className='group rounded-[10px] border border-border bg-surface px-5'>
+            <summary className='flex min-h-15 cursor-pointer list-none items-center justify-between gap-4 font-semibold text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary [&::-webkit-details-marker]:hidden'>
+              <h3>{faq.question}</h3>
+              <ChevronDown
+                aria-hidden='true'
+                className='size-[18px] shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180'
+              />
+            </summary>
+            <p className='mb-[18px] max-w-[65ch] text-[15px] text-muted-foreground leading-[1.65]'>
+              {faq.answer}
+            </p>
+          </details>
+        ))}
+      </div>
+    </GuideSection>
+  );
+};
 
 export const RelatedGuides = ({
   current,
@@ -137,29 +146,33 @@ export const RelatedGuides = ({
 }: {
   current: GuidePath;
   guides?: readonly Guide[];
-}) => (
-  <GuideSection title='Related guides'>
-    <ul className='grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>
-      {guides
-        .filter((guide) => guide.path !== current)
-        .map((guide) => (
-          <li key={guide.path}>
-            <Link
-              to={guide.path}
-              className='group/cta flex h-full flex-col rounded-xl border border-border bg-surface p-5 hover:border-border-hover focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2'>
-              <span className='flex items-center justify-between gap-3 font-semibold'>
-                {guide.label}
-                <CtaArrow />
-              </span>
-              <span className='mt-2 text-muted-foreground text-sm leading-relaxed'>
-                {guide.description}
-              </span>
-            </Link>
-          </li>
-        ))}
-    </ul>
-  </GuideSection>
-);
+}) => {
+  const { t } = useTranslation("common");
+
+  return (
+    <GuideSection title={t("guidePage.relatedGuides")}>
+      <ul className='grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>
+        {guides
+          .filter((guide) => guide.path !== current)
+          .map((guide) => (
+            <li key={guide.path}>
+              <Link
+                to={guide.path}
+                className='group/cta flex h-full flex-col rounded-xl border border-border bg-surface p-5 hover:border-border-hover focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2'>
+                <span className='flex items-center justify-between gap-3 font-semibold'>
+                  {t(`guides.${guide.key}.label`)}
+                  <CtaArrow />
+                </span>
+                <span className='mt-2 text-muted-foreground text-sm leading-relaxed'>
+                  {t(`guides.${guide.key}.description`)}
+                </span>
+              </Link>
+            </li>
+          ))}
+      </ul>
+    </GuideSection>
+  );
+};
 
 /** Closing download prompt shared by every guide page. */
 export const GuideDownloadBand = ({

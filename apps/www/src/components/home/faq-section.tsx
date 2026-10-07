@@ -1,135 +1,128 @@
 import { ChevronDown } from "@deadlock-mods/ui/icons";
+import type { TFunction } from "i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { BUG_REPORT_URL, DISCORD_URL, DOCS_URL } from "@/lib/constants";
+import type home from "@/locales/en/home.json";
+import type { FaqEntry } from "@/utils/structured-data";
 import { Eyebrow } from "./section-heading";
 
 const linkClassName =
   "text-primary underline underline-offset-3 transition-colors hover:text-primary-hover";
 
-const FAQS: { question: string; answer: React.ReactNode }[] = [
-  {
-    question: "What is Deadlock Mod Manager?",
-    answer:
-      "A small desktop app that makes Deadlock modding simple. Browse, install, and manage mods without touching your game folders.",
-  },
-  {
-    question: "How do I install mods?",
-    answer: (
-      <ol className='list-inside list-decimal space-y-1.5'>
-        <li>Download and open Deadlock Mod Manager.</li>
-        <li>
-          It detects Deadlock for you, or you can set the folder in Settings.
-        </li>
-        <li>Browse the Mods Store and click Download.</li>
-        <li>The app installs the mod in the right place. No manual steps.</li>
-      </ol>
-    ),
-  },
-  {
-    question: "Is it safe to use mods?",
-    answer:
-      "The app just copies .vpk files into your game's addons folder, never patches the Deadlock executable, and backs up first so you can restore in one click or launch vanilla any time. Skins are client-side, and the mods themselves are made by the community, so stick to ones you trust.",
-  },
-  {
-    question: "How do I uninstall mods?",
-    answer:
-      "Open the Mods Library and remove what you don't want, or use Clear All Mods in Settings.",
-  },
-  {
-    question: "Which platforms are supported?",
-    answer:
-      "Windows and Linux. On Linux you can install from our APT repository (Ubuntu/Debian), the AUR (Arch), nixpkgs, or the Flatpak bundle.",
-  },
-  {
-    question: "I found a bug, how do I report it?",
-    answer: (
-      <>
-        Open an issue on our{" "}
-        <a
-          href={BUG_REPORT_URL}
-          target='_blank'
-          rel='noopener noreferrer'
-          className={linkClassName}>
-          GitHub repository
-        </a>
-        . Include steps to reproduce, what you expected, and what happened.
-      </>
-    ),
-  },
-  {
-    question: "Where can I find more detailed documentation?",
-    answer: (
-      <>
-        The{" "}
-        <a
-          href={DOCS_URL}
-          target='_blank'
-          rel='noopener noreferrer'
-          className={linkClassName}>
-          documentation site
-        </a>{" "}
-        has guides, tutorials, and technical reference.
-      </>
-    ),
-  },
-  {
-    question: "Will Deadlock have official skins?",
-    answer:
-      "Deadlock is evolving. If official cosmetics arrive, this app will still be here for community-made options.",
-  },
-  {
-    question: "Can other players see my installed skins?",
-    answer:
-      "No. These are client-side. Other players see default models and textures.",
-  },
-];
+type FaqId = keyof typeof home.faq.items;
 
-export const FAQSection = () => (
-  <section
-    id='faq'
-    className='mx-auto flex max-w-7xl scroll-mt-6 flex-wrap gap-12 px-6 pt-20 pb-25'>
-    <div className='min-w-0 flex-[1_1_300px]'>
-      <Eyebrow>Need help?</Eyebrow>
-      <h2 className='mt-2 font-bold font-primary text-[clamp(32px,3.6vw,46px)] leading-[1.08]'>
-        Common questions
-      </h2>
-      <p className='mt-3.5 max-w-[340px] text-[15px] text-muted-foreground leading-relaxed'>
-        Can't find it here? Check the{" "}
-        <a
-          href={`${DOCS_URL}/using-mod-manager/faq`}
-          target='_blank'
-          rel='noopener noreferrer'
-          className={linkClassName}>
-          docs
-        </a>{" "}
-        or ask us on{" "}
-        <a
-          href={DISCORD_URL}
-          target='_blank'
-          rel='noopener noreferrer'
-          className={linkClassName}>
-          Discord
-        </a>
-        .
-      </p>
-    </div>
-    <div className='flex min-w-0 flex-[2_1_560px] flex-col gap-2.5'>
-      {FAQS.map((faq, index) => (
-        <details
-          key={faq.question}
-          open={index === 0}
-          className='group rounded-[10px] border border-border bg-surface px-5'>
-          <summary className='flex min-h-15 cursor-pointer list-none items-center justify-between gap-4 font-semibold text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary [&::-webkit-details-marker]:hidden'>
-            {faq.question}
-            <ChevronDown
-              aria-hidden='true'
-              className='size-[18px] shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180'
-            />
-          </summary>
-          <div className='mb-[18px] max-w-[65ch] text-[15px] text-muted-foreground leading-[1.65]'>
-            {faq.answer}
-          </div>
-        </details>
-      ))}
-    </div>
-  </section>
+// Display order. The copy lives in home.json (faq.items), which also feeds the
+// FAQPage JSON-LD, so the page and the structured data never drift apart.
+const FAQ_IDS = [
+  "what",
+  "install",
+  "safe",
+  "uninstall",
+  "platforms",
+  "bug",
+  "docs",
+  "officialSkins",
+  "skinsVisible",
+] as const satisfies readonly FaqId[];
+
+const installSteps = (t: TFunction<"home">) =>
+  Object.values(t("faq.items.install.steps", { returnObjects: true }));
+
+/**
+ * The home FAQ as plain question/answer pairs for JSON-LD. Answers keep their
+ * <Trans> tags; structured-data strips them. The install steps become one
+ * numbered paragraph.
+ */
+export const getHomeFaqs = (t: TFunction<"home">): FaqEntry[] =>
+  FAQ_IDS.map((id) => ({
+    question: t(`faq.items.${id}.question`),
+    answer:
+      id === "install"
+        ? installSteps(t)
+            .map((step, index) => `${index + 1}. ${step}`)
+            .join(" ")
+        : t(`faq.items.${id}.answer`),
+  }));
+
+// <Trans> fills in the link text.
+const externalLink = (href: string) => (
+  <a
+    href={href}
+    target='_blank'
+    rel='noopener noreferrer'
+    className={linkClassName}
+  />
 );
+
+const FaqAnswer = ({ id }: { id: FaqId }) => {
+  const { t } = useTranslation("home");
+
+  if (id === "install") {
+    return (
+      <ol className='list-inside list-decimal space-y-1.5'>
+        {Object.entries(
+          t("faq.items.install.steps", { returnObjects: true }),
+        ).map(([step, text]) => (
+          <li key={step}>{text}</li>
+        ))}
+      </ol>
+    );
+  }
+
+  return (
+    <Trans
+      t={t}
+      i18nKey={`faq.items.${id}.answer`}
+      components={{
+        link: externalLink(BUG_REPORT_URL),
+        docs: externalLink(DOCS_URL),
+      }}
+    />
+  );
+};
+
+export const FAQSection = () => {
+  const { t } = useTranslation("home");
+
+  return (
+    <section
+      id='faq'
+      className='mx-auto flex max-w-7xl scroll-mt-6 flex-wrap gap-12 px-6 pt-20 pb-25'>
+      <div className='min-w-0 flex-[1_1_300px]'>
+        <Eyebrow>{t("faq.eyebrow")}</Eyebrow>
+        <h2 className='mt-2 font-bold font-primary text-[clamp(32px,3.6vw,46px)] leading-[1.08]'>
+          {t("faq.title")}
+        </h2>
+        <p className='mt-3.5 max-w-[340px] text-[15px] text-muted-foreground leading-relaxed'>
+          <Trans
+            t={t}
+            i18nKey='faq.intro'
+            components={{
+              docs: externalLink(`${DOCS_URL}/using-mod-manager/faq`),
+              discord: externalLink(DISCORD_URL),
+            }}
+          />
+        </p>
+      </div>
+      <div className='flex min-w-0 flex-[2_1_560px] flex-col gap-2.5'>
+        {FAQ_IDS.map((id, index) => (
+          <details
+            key={id}
+            open={index === 0}
+            className='group rounded-[10px] border border-border bg-surface px-5'>
+            <summary className='flex min-h-15 cursor-pointer list-none items-center justify-between gap-4 font-semibold text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary [&::-webkit-details-marker]:hidden'>
+              {t(`faq.items.${id}.question`)}
+              <ChevronDown
+                aria-hidden='true'
+                className='size-[18px] shrink-0 text-muted-foreground transition-transform duration-200 group-open:rotate-180'
+              />
+            </summary>
+            <div className='mb-[18px] max-w-[65ch] text-[15px] text-muted-foreground leading-[1.65]'>
+              <FaqAnswer id={id} />
+            </div>
+          </details>
+        ))}
+      </div>
+    </section>
+  );
+};

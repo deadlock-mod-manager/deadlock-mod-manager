@@ -1,0 +1,72 @@
+{
+  "meta": {
+    "title": "Deadlock VPK Analyzer: Find Which Mod a VPK File Is From",
+    "description": "Upload a Deadlock .vpk file and the VPK Analyzer matches it against known GameBanana mods, so you can tell which mod a stray pak file belongs to."
+  },
+  "page": {
+    "title": "VPK Analyzer",
+    "description": "Upload a VPK file to analyze which mod it belongs to"
+  },
+  "toasts": {
+    "matched": "{{file}}: Matched GameBanana submission {{slug}}",
+    "noMatch": "{{file}}: No matching mod found",
+    "failed": "{{file}}: Analysis failed - {{error}}",
+    "unknownError": "Unknown error",
+    "onlyVpk": "Please upload .vpk files only",
+    "ignored": "{{ignored}} non-VPK files were ignored"
+  },
+  "unknownSize": "Unknown size",
+  "upload": {
+    "title": "Upload VPK Files",
+    "description": "Drop multiple .vpk files here or click to select them",
+    "analyzing": "Analyzing VPK files...",
+    "processing": "Processing {{current}} of {{total}} files",
+    "preparing": "Preparing analysis...",
+    "progress": "{{percent}}% complete",
+    "dropActive": "Drop the files here",
+    "drop": "Drop VPK files here",
+    "browse": "or click to browse files (supports multiple files)"
+  },
+  "results": {
+    "title": "Analysis Results",
+    "completed": "{{completed}} / {{total}} completed",
+    "status": {
+      "pending": "Pending",
+      "analyzing": "Analyzing...",
+      "completed": "Completed",
+      "error": "Error"
+    },
+    "failed": "Analysis failed: {{error}}"
+  },
+  "info": {
+    "title": "VPK Information",
+    "version": "Version:",
+    "fileCount": "File Count:",
+    "fileSize": "File Size:",
+    "hasMultiparts": "Has Multiparts:",
+    "hasInlineData": "Has Inline Data:",
+    "yes": "Yes",
+    "no": "No",
+    "unknown": "Unknown"
+  },
+  "match": {
+    "title": "Matched Mod",
+    "heading": "GameBanana {{type}} {{id}}",
+    "file": "File {{id}}",
+    "certainty": "{{certainty}}% match ({{type}})",
+    "view": "View on GameBanana"
+  },
+  "noMatch": {
+    "title": "No Match Found",
+    "description": "This VPK file doesn't match any mods in our database. It might be:",
+    "reasons": {
+      "custom": "A custom mod not available on GameBanana",
+      "modified": "A modified version of an existing mod",
+      "new": "A new mod that hasn't been indexed yet"
+    }
+  },
+  "contents": {
+    "title": "File Contents",
+    "more": "... and {{more}} more files"
+  }
+}

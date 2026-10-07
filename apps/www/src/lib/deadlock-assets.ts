@@ -14,12 +14,6 @@ export const ITEM_CATEGORIES = ["weapon", "vitality", "spirit"] as const;
 
 export type ItemCategory = (typeof ITEM_CATEGORIES)[number];
 
-export const CATEGORY_LABELS: Record<ItemCategory, string> = {
-  weapon: "Weapon",
-  vitality: "Vitality",
-  spirit: "Spirit",
-};
-
 /** The ultimate always sits in the fourth signature slot. */
 export const ULTIMATE_SLOT = 4;
 

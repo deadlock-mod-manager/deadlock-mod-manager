@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "name": "Mods de Deadlock que no funcionan",
+    "title": "¿Tus mods de Deadlock no funcionan tras una actualización?",
+    "description": "¿Tus mods de Deadlock dejaron de cargar o el juego se cierra tras un parche? Soluciona gameinfo.gi restablecido, mods de HUD desactualizados, conflictos y más."
+  },
+  "faqs": {
+    "afterUpdate": {
+      "question": "¿Por qué mis mods de Deadlock dejaron de funcionar tras una actualización?",
+      "answer": "Las actualizaciones de Deadlock suelen sobrescribir gameinfo.gi, lo que elimina la línea que le indica al juego que cargue la carpeta addons. Usa Iniciar con mods en Deadlock Mod Manager para volver a añadirla, o añádela a mano."
+    },
+    "crash": {
+      "question": "¿Por qué Deadlock se cierra tras un parche con mods instalados?",
+      "answer": "Los mods de HUD e interfaz desactualizados son la causa más común. Desactívalos, inicia el juego y vuelve a activarlos de uno en uno cuando sus autores publiquen actualizaciones."
+    },
+    "manager": {
+      "question": "¿Por qué no funciona Deadlock Mod Manager?",
+      "answer": "Primero, actualiza a la última versión. Si la app no encuentra el juego, indica la carpeta de Deadlock en Configuración. En las versiones Flatpak de Linux, la pantalla gris o el cierre del selector de carpetas tienen soluciones documentadas en la documentación de resolución de problemas."
+    },
+    "reinstall": {
+      "question": "¿Tengo que reinstalar mis mods después de cada actualización de Deadlock?",
+      "answer": "No. Tus archivos .vpk se quedan en la carpeta addons. Normalmente solo hay que arreglar gameinfo.gi, y la app lo hace cada vez que inicias con mods."
+    }
+  },
+  "hero": {
+    "eyebrow": "Solución de problemas",
+    "title": "¿Los mods de Deadlock no funcionan tras una actualización?",
+    "intro": "La mayoría de los fallos tras un parche de Valve se deben a tres cosas: un gameinfo.gi restablecido, mods de HUD desactualizados o dos mods que se pelean por los mismos archivos. Así se soluciona cada uno."
+  },
+  "quickFix": {
+    "title": "Solución rápida",
+    "steps": {
+      "updateApp": "Actualiza Deadlock Mod Manager a la última versión desde la <link>página de descarga</link>.",
+      "updateMods": "Busca actualizaciones de mods en Mis Mods.",
+      "disableHud": "Desactiva los mods de HUD e interfaz y luego usa <strong>Iniciar con mods</strong>.",
+      "reenable": "Vuelve a activar los mods de uno en uno para encontrar los que sigan fallando."
+    }
+  },
+  "fixes": {
+    "title": "Síntomas y soluciones",
+    "why": "Causa:",
+    "fix": "Solución:",
+    "items": {
+      "ignored": {
+        "title": "El juego ignora todos los mods",
+        "cause": "Una actualización de Deadlock o la verificación de archivos de Steam reemplazó gameinfo.gi, así que la carpeta addons ya no se carga.",
+        "fix": "Abre Deadlock Mod Manager y usa Iniciar con mods; vuelve a aplicar la ruta de búsqueda cada vez. ¿Los instalaste a mano? Vuelve a añadir a gameinfo.gi las dos líneas de la guía de instalación."
+      },
+      "crash": {
+        "title": "Se cierra al iniciar o el HUD está roto",
+        "cause": "Los mods de interfaz y HUD reemplazan archivos de interfaz que Valve acaba de cambiar. Los archivos antiguos chocan con el juego nuevo.",
+        "fix": "Primero desactiva los mods de HUD y calidad de vida y luego inicia el juego. Busca actualizaciones de mods en Mis Mods y vuelve a activarlos cuando estén actualizados."
+      },
+      "partial": {
+        "title": "Algunos mods funcionan y otros no",
+        "cause": "Dos mods activos modifican los mismos archivos y solo uno de ellos puede cargarse.",
+        "fix": "Abre la vista de conflictos en Mis Mods, elige qué mod debe ganar y cambia el orden de carga."
+      },
+      "stuck": {
+        "title": "Un mod se queda atascado descargando o instalando",
+        "cause": "Una descarga interrumpida o un archivo que el juego tenía abierto.",
+        "fix": "Cierra Deadlock, quita el mod atascado con su icono de papelera e instálalo de nuevo. ¿Sigue atascado? Usa Limpiar Todos los Mods en Configuración y luego Analizar Mods locales para volver a añadir lo que hay en el disco."
+      },
+      "accessDenied": {
+        "title": "\"Access is denied\" (os error 5) en Windows",
+        "cause": "gameinfo.gi o la carpeta addons son de solo lectura.",
+        "fix": "Haz clic derecho en el archivo o la carpeta, abre Propiedades y desmarca Solo lectura. Si un mod antiguo se instaló con permisos de administrador, ejecuta el gestor como administrador una vez para quitarlo."
+      },
+      "steamLaunch": {
+        "title": "Los mods desaparecen al iniciar desde Steam",
+        "cause": "La opción de restablecimiento automático de la app quita las rutas de los mods al salir, así que Steam inicia el juego sin mods.",
+        "fix": "Es intencionado. Inicia desde Deadlock Mod Manager para jugar con mods o desactiva la opción en Configuración."
+      }
+    }
+  },
+  "errors": {
+    "title": "¿Te aparece un error concreto?",
+    "intro": "Cada uno tiene su propia solución paso a paso."
+  },
+  "stillStuck": {
+    "title": "¿Sigues con problemas?",
+    "body": "La <docs>documentación de resolución de problemas</docs> cubre en detalle los problemas de Linux, Flatpak y Steam Deck. También puedes preguntar en <discord>Discord</discord>, donde la comunidad suele saber qué mods se rompieron con el último parche."
+  },
+  "downloadBand": {
+    "title": "Día de parche sin dolores de cabeza",
+    "body": "Deadlock Mod Manager vuelve a aplicar tus mods en cada inicio y te dice cuáles necesitan actualizaciones."
+  }
+}

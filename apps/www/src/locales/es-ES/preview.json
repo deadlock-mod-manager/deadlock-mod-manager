@@ -1,0 +1,441 @@
+{
+  "themes": {
+    "default": {
+      "name": "Predeterminado",
+      "description": "El aspecto clásico de Deadlock Mod Manager."
+    },
+    "bloodmoon": {
+      "name": "Bloodmoon",
+      "description": "Un tema oscuro con degradados negro-rojo y acentos carmesí."
+    },
+    "nightshift": {
+      "name": "Nightshift",
+      "description": "Un tema cyberpunk con acentos turquesa y una interfaz elegante."
+    },
+    "lovelock": {
+      "name": "Lovelock",
+      "description": "Un tema acogedor color ciruela con un suave brillo rosa."
+    },
+    "tea": {
+      "name": "Tea",
+      "description": "Un tema acogedor en honor a Snipztea."
+    }
+  },
+  "categories": {
+    "skins": "Skins",
+    "qualityOfLife": "Calidad de vida"
+  },
+  "titlebar": {
+    "profile": "Perfil predeterminado",
+    "launchVanilla": "Iniciar sin mods",
+    "launchModded": "Iniciar con mods",
+    "enabledMods": "Mods: {{total}}",
+    "stopGame": "Detener juego",
+    "signIn": "Iniciar Sesión"
+  },
+  "sidebar": {
+    "label": "Vista previa de la app",
+    "byline": "<version>{{version}}</version> por Stormix",
+    "groups": {
+      "general": "General",
+      "mods": "Mods",
+      "customServers": "Servidores Personalizados",
+      "customization": "Personalización"
+    },
+    "items": {
+      "dashboard": "Panel de Control",
+      "downloads": "Descargas",
+      "settings": "Configuración",
+      "library": "Mis Mods",
+      "store": "Buscar Mods",
+      "servers": "Buscador de servidores",
+      "crosshairs": "Miras",
+      "skins": "Skins de héroes",
+      "autoexec": "Configuración de ejecución automática",
+      "stats": "Estadísticas"
+    },
+    "documentation": "Documentación",
+    "needHelp": "¿Necesitas ayuda?",
+    "expand": "Expandir menú",
+    "collapse": "Contraer menú"
+  },
+  "bottomBar": {
+    "status": "Estado:",
+    "statuses": {
+      "online": "En línea",
+      "signedIn": "Sesión iniciada",
+      "mirror": "Espejo",
+      "heroData": "Datos de héroes"
+    },
+    "downloading": "Descargando: {{total}}",
+    "volume": "VOLUMEN:",
+    "checkUpdates": "Comprobar actualizaciones"
+  },
+  "launch": {
+    "title": "Iniciando Deadlock",
+    "steps": {
+      "checkingFiles": "Comprobando archivos del juego",
+      "skippingMods": "Omitiendo mods",
+      "applyingMods": "Aplicando mods ({{count}})",
+      "noMods": "No hay mods activos, iniciando sin mods",
+      "starting": "Iniciando Deadlock"
+    },
+    "stepState": {
+      "done": "listo",
+      "active": "en curso",
+      "pending": "pendiente"
+    },
+    "running": {
+      "title": "Deadlock está en marcha",
+      "modded": "¡A divertirse! Tus mods están activos.",
+      "vanilla": "¡A divertirse! Esta vez juegas sin mods."
+    },
+    "closed": {
+      "title": "Deadlock cerrado",
+      "description": "De vuelta al gestor."
+    }
+  },
+  "mod": {
+    "installed": "Instalado",
+    "updatedRecently": "Actualizado hace poco",
+    "updated": "Actualizado",
+    "byAuthor": "De {{author}}",
+    "enable": "Activar {{name}}",
+    "remove": "Quitar {{name}}",
+    "download": "Descargar {{name}}",
+    "downloading": "Descargando {{name}}",
+    "installedToast": {
+      "title": "Mod instalado",
+      "description": "{{name}} está listo para jugar."
+    }
+  },
+  "dashboard": {
+    "title": "Panel de Control",
+    "subtitle": "Descubre mods destacados, populares y nuevos",
+    "featured": "Mod destacado de la semana",
+    "featuredBy": "De <author>{{author}}</author>",
+    "viewMod": "Ver mod",
+    "stats": {
+      "installed": "Instalados",
+      "updates": "Actualizaciones",
+      "inQueue": "En cola"
+    },
+    "browseStore": "Explorar tienda",
+    "trending": "Tendencias en <accent>{{category}}</accent>"
+  },
+  "store": {
+    "title": "Buscar Mods",
+    "subtitle": "Actualizado cada hora, con nuevos Mods añadidos constantemente.",
+    "tabs": {
+      "mods": "Mods",
+      "sounds": "Sonidos",
+      "albums": "Álbumes",
+      "wips": "WiPs"
+    },
+    "searchLabel": "Buscar mods",
+    "searchPlaceholder": "Buscar mods o autores",
+    "heroLabel": "Héroe",
+    "allHeroes": "Todos los Héroes",
+    "categoryLabel": "Categoría",
+    "allCategories": "Todas las Categorías",
+    "sortLabel": "Ordenar",
+    "sort": {
+      "default": "Predeterminado",
+      "updated": "Última Actualización",
+      "downloads": "Cantidad de Descargas",
+      "rating": "Valoraciones"
+    },
+    "empty": {
+      "title": "No se han encontrado Mods",
+      "description": "Prueba otra búsqueda o borra los filtros."
+    }
+  },
+  "library": {
+    "title": "Mis Mods",
+    "count": "<strong>{{enabled}}</strong>/{{total}} mods",
+    "subtitle": "Mods instalados o descargados",
+    "checkUpdates": "Comprobar actualizaciones",
+    "upToDate": {
+      "title": "Todos los mods están al día",
+      "description": "No hay nada que actualizar ahora mismo."
+    },
+    "filterLabel": "Filtro de la biblioteca",
+    "tabs": {
+      "all": "todos",
+      "installed": "instalados",
+      "downloaded": "descargados"
+    },
+    "empty": {
+      "title": "No hay mods instalados",
+      "description": "Aún no has instalado ningún mod. Empieza explorando los mods disponibles.",
+      "action": "Visitar la página de Mods"
+    }
+  },
+  "downloads": {
+    "title": "Descargas",
+    "subtitle": "Sigue tus descargas de mods",
+    "empty": {
+      "title": "No hay descargas activas",
+      "description": "Las descargas que inicies desde Buscar Mods aparecen aquí.",
+      "action": "Explorar tienda"
+    }
+  },
+  "crosshairs": {
+    "title": "Miras",
+    "subtitle": "Crea y personaliza tus miras",
+    "apply": "Aplicar mira",
+    "applied": {
+      "title": "Mira aplicada",
+      "description": "Se guardó en tu autoexec, lista para tu próxima partida."
+    },
+    "settings": "Ajustes de la mira",
+    "sliders": {
+      "gap": "Separación",
+      "width": "Ancho",
+      "height": "Alto",
+      "dotOpacity": "Opacidad del punto"
+    },
+    "color": "Color",
+    "swatches": {
+      "white": "Blanco",
+      "gold": "Dorado",
+      "green": "Verde",
+      "cyan": "Cian",
+      "pink": "Rosa"
+    },
+    "preview": "Vista previa",
+    "aimHint": "Pasa el cursor sobre la vista previa para apuntar."
+  },
+  "skins": {
+    "title": "Skins de héroes",
+    "subtitle": "Elige la skin activa de cada héroe",
+    "noneDownloaded": "No hay skins descargadas",
+    "default": "Predeterminado",
+    "downloaded": "Skins descargadas: {{count}}",
+    "empty": {
+      "title": "Aún no hay skins para {{hero}}",
+      "description": "Descarga skins desde Buscar Mods y elige aquí la que quieras.",
+      "action": "Ver skins para {{hero}}"
+    },
+    "vanilla": "Aspecto original, sin mod de skin"
+  },
+  "servers": {
+    "title": "Buscador de servidores",
+    "subtitle": "Buscar servidores personalizados de Deadlock",
+    "columns": {
+      "name": "Nombre",
+      "players": "Jugadores",
+      "map": "Mapa",
+      "ping": "Latencia"
+    },
+    "requiredModsBadge": "Mods requeridos: {{total}}",
+    "ping": "{{ping}} ms",
+    "details": {
+      "map": "Mapa",
+      "players": "Jugadores",
+      "region": "Región",
+      "requiredMods": "Mods Requeridos"
+    },
+    "join": "Unirse al servidor",
+    "full": "Servidor lleno",
+    "joining": {
+      "title": "Uniéndose a {{name}}",
+      "withMods": "Primero se instalan los mods requeridos y luego se conecta.",
+      "withoutMods": "Deadlock se abrirá y se conectará."
+    }
+  },
+  "screens": {
+    "foundryAlt": "Pantalla de Mod Foundry con la vista previa de un modelo de héroe",
+    "autoexecAlt": "Pantalla de Autoexec con la biblioteca de comandos",
+    "statsAlt": "Pantalla de estadísticas con winrate, KDA y evolución en el tiempo"
+  },
+  "settings": {
+    "title": "Configuración",
+    "navLabel": "Secciones de configuración",
+    "groups": {
+      "game": "Juego",
+      "application": "Aplicación",
+      "advanced": "Avanzado"
+    },
+    "nav": {
+      "launchOptions": "Opciones de Lanzamiento",
+      "game": "Juego",
+      "application": "Aplicación",
+      "themes": "Temas",
+      "network": "Red",
+      "tools": "Herramientas",
+      "backups": "Copias de seguridad",
+      "logging": "Registros",
+      "privacy": "Privacidad"
+    },
+    "themes": {
+      "title": "Temas",
+      "description": "Elige entre temas cuidadosamente diseñados para mejorar tu experiencia.",
+      "predefined": "Temas predefinidos",
+      "custom": "Temas personalizados",
+      "active": "Activo",
+      "inactive": "Inactivo"
+    },
+    "system": {
+      "title": "Configuración del Sistema",
+      "description": "Configuración del Gestor de Mods. Estas no afectan al juego.",
+      "autoReapply": {
+        "label": "Reaplicar mods automáticamente",
+        "description": "Vuelve a aplicar los mods automáticamente al abrir el gestor de mods."
+      },
+      "heroConflict": {
+        "label": "Aviso de conflicto de héroe",
+        "description": "Muestra un aviso al activar un segundo mod para un héroe que ya tiene uno activo."
+      },
+      "paginated": {
+        "label": "Navegación por páginas",
+        "description": "Muestra Buscar Mods y la biblioteca en páginas en lugar de una lista continua."
+      }
+    },
+    "appearance": {
+      "title": "Apariencia",
+      "description": "Personaliza la apariencia de la aplicación.",
+      "geometry": {
+        "label": "Geometría oculta",
+        "description": "Muestra los sellos y mandalas ocultistas decorativos del fondo."
+      },
+      "animateGeometry": {
+        "label": "Animar geometría oculta",
+        "description": "Hace girar y latir lentamente los sellos del fondo."
+      }
+    },
+    "discord": {
+      "title": "Presencia de juego en Discord",
+      "description": "Muestra tu estado de Deadlock en vivo con Discord Rich Presence: héroe actual, modo de partida, tamaño del grupo y más.",
+      "toggle": {
+        "label": "Presencia de juego en Discord",
+        "description": "Personaliza cómo aparece Deadlock en tu perfil de Discord."
+      },
+      "preview": {
+        "title": "Vista previa",
+        "description": "Mira cómo se verá tu estado de Discord con valores de ejemplo."
+      },
+      "example": {
+        "details": "Sleep Walking en el Hideout",
+        "state": "Jugando Estándar (6v6) · 3 de 6"
+      },
+      "disabled": "Presencia de juego en Discord desactivada"
+    },
+    "network": {
+      "title": "Ruta de descarga",
+      "description": "Elige cómo se conectan las descargas de mods a los servidores de archivos de GameBanana. Predeterminado usa el enlace estándar de la API.",
+      "default": {
+        "title": "Predeterminado",
+        "body": "Enlace de descarga estándar de la API"
+      },
+      "auto": {
+        "title": "Automático",
+        "body": "Mejor latencia o velocidad"
+      }
+    },
+    "backups": {
+      "title": "Respaldo de mods",
+      "description": "Crear y restaurar respaldos de tus mods instalados.",
+      "create": "Crear copia de seguridad",
+      "autoBackup": {
+        "label": "Copia automática antes de actualizar",
+        "description": "Crea automáticamente una copia de seguridad de tus mods antes de actualizarlos en lote"
+      },
+      "columns": {
+        "date": "Fecha",
+        "vpkFiles": "Archivos VPK",
+        "size": "Tamaño"
+      },
+      "restore": "Restaurar",
+      "created": {
+        "title": "Respaldo creado exitosamente",
+        "description": "Archivos VPK guardados: {{total}}."
+      },
+      "restored": {
+        "title": "Respaldo restaurado exitosamente",
+        "description": "Se restauró la copia del {{date}}."
+      }
+    },
+    "game": {
+      "path": {
+        "title": "Ruta del Juego",
+        "description": "La ruta a tu instalación del juego Deadlock. El gestor de mods lo detectará automáticamente, pero puedes configurarlo manualmente si es necesario."
+      },
+      "autoDetect": "Auto-Detectar",
+      "detected": {
+        "title": "Ruta del juego auto-detectada exitosamente",
+        "description": "Deadlock encontrado en tu biblioteca de Steam."
+      },
+      "protection": {
+        "title": "Protección durante la partida",
+        "description": "Qué hace el gestor de mods cuando cambias mods con Deadlock abierto."
+      },
+      "blockChanges": {
+        "label": "Bloquear cambios con Deadlock abierto",
+        "description": "No instala, quita ni reordena mods con el juego abierto, porque Deadlock mantiene esos archivos en uso y un cambio a medias puede romper tu orden de carga."
+      }
+    },
+    "privacy": {
+      "title": "Privacidad y Contenido",
+      "description": "Controla cómo se muestra y filtra el contenido NSFW (para adultos).",
+      "hideNsfw": {
+        "label": "Ocultar contenido adulto",
+        "description": "Oculta por completo los mods marcados como NSFW de las listas y los resultados de búsqueda"
+      },
+      "disableBlur": {
+        "label": "Desactivar desenfoque NSFW",
+        "description": "Muestra el contenido NSFW sin desenfoque (sigue mostrando la etiqueta NSFW)"
+      },
+      "analytics": {
+        "title": "Análisis de uso",
+        "description": "Ayuda a mejorar la aplicación enviando estadísticas de uso y análisis de funciones de forma anónima."
+      }
+    },
+    "launchOptions": {
+      "title": "Opciones de Lanzamiento",
+      "description": "Personaliza las opciones de lanzamiento del juego. Estas se aplican independientemente del modo de juego seleccionado (Vanilla o con Mods).",
+      "vanilla": {
+        "label": "Modo vanilla",
+        "description": "Inicia el juego en modo vanilla sin argumentos adicionales."
+      },
+      "autoexec": {
+        "label": "Configuración de ejecución automática",
+        "description": "Ejecuta tu autoexec.cfg al iniciar el juego."
+      }
+    },
+    "autoexec": {
+      "description": "Gestiona tu archivo autoexec.cfg. Los cambios requieren reiniciar el juego.",
+      "whatIs": "¿Qué es una config Autoexec?",
+      "explanation": "Autoexec es un archivo CFG con convars (piensa en comandos de consola) que se ejecutan automáticamente al iniciar el juego.",
+      "usage": "El gestor de mods usa este archivo para aplicar los ajustes de la mira automáticamente, sin tener que ejecutar comandos en la consola. Puedes editar el archivo a mano si quieres añadir más comandos."
+    },
+    "tools": {
+      "title": "Herramientas",
+      "description": "Funciones de utilidad para gestionar tus mods",
+      "openGameFolder": {
+        "label": "Abrir Carpeta del Juego",
+        "description": "Abre tu instalación de Deadlock en el explorador de archivos."
+      },
+      "open": "Abrir",
+      "clearCache": {
+        "label": "Borrar caché de descargas",
+        "description": "Elimina los archivos de descarga en caché. Tus mods instalados no se ven afectados."
+      },
+      "clear": "Borrar"
+    },
+    "logging": {
+      "title": "Registros",
+      "description": "Accede a los archivos de registro para solucionar problemas.",
+      "logs": {
+        "label": "Registros del gestor de mods",
+        "description": "Registros de la aplicación para depurar problemas."
+      },
+      "openFolder": "Abrir carpeta",
+      "crashDumps": {
+        "label": "Volcados de errores de Deadlock",
+        "description": "Volcados generados cuando Deadlock se cierra inesperadamente, para depuración."
+      },
+      "openLatest": "Abrir el más reciente"
+    }
+  }
+}

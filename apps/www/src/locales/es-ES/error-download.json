@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "name": "Failed to download",
+    "title": "Deadlock Mod Manager: Failed to download o descargas lentas",
+    "description": "¿Failed to download o descargas lentas en Deadlock Mod Manager? Usa el diagnóstico de conexión, espera los límites de GameBanana y revisa antivirus, VPN y DNS."
+  },
+  "hero": {
+    "eyebrow": "Solución de error",
+    "title": "Mods que no se descargan o se descargan lento",
+    "intro": "Deadlock Mod Manager descarga los mods directamente de GameBanana. Cuando una descarga falla, el problema está en GameBanana, en tu red o en algo de tu PC que bloquea el archivo. La app puede decirte cuál.",
+    "errorSource": "Deadlock Mod Manager, en la tarjeta de un mod o en Descargas"
+  },
+  "errorText": {
+    "message": "Failed to download",
+    "messages": {
+      "rateLimit": "GameBanana rate limit reached / Too many requests (HTTP 429)",
+      "unavailable": "GameBanana is unavailable / Server error (HTTP 5xx)",
+      "refused": "GameBanana refused automatic requests / Access denied (HTTP 403)",
+      "network": "Network error / can't be resolved",
+      "writeFailed": "Download failed: … (os error 5) / File write failed"
+    }
+  },
+  "diagnose": {
+    "title": "Empieza con la comprobación integrada",
+    "intro": "Abre Configuración y haz clic en Diagnosticar conexión. Prueba tu internet, el DNS, nuestra API y GameBanana uno por uno, y cada comprobación fallida incluye una sugerencia de \"Cómo solucionarlo\".",
+    "results": {
+      "gameBananaFails": "<strong>Falla GameBanana y todo lo demás funciona:</strong> el problema está en GameBanana o entre tú y GameBanana. Espera o desactiva tu VPN.",
+      "everythingFails": "<strong>Falla todo:</strong> tu conexión, el firewall o el DNS están bloqueando la app. Permite Deadlock Mod Manager en tu firewall y tu antivirus.",
+      "everythingPasses": "<strong>Todo funciona, pero las descargas siguen fallando:</strong> el archivo no se puede guardar. Comprueba el espacio libre en disco y el mensaje de error de abajo."
+    }
+  },
+  "messages": {
+    "title": "Mensajes habituales y soluciones",
+    "os5Link": "Solucionar os error 5",
+    "items": {
+      "rateLimit": {
+        "fix": "Espera el tiempo indicado y vuelve a intentarlo. Descarga los mods de pocos en pocos en lugar de poner docenas en cola a la vez."
+      },
+      "unavailable": {
+        "fix": "GameBanana está caído o saturado. Suele pasar justo después de un parche de Deadlock. Vuelve a intentarlo más tarde; no tienes que arreglar nada por tu parte."
+      },
+      "refused": {
+        "fix": "La protección de GameBanana está bloqueando tu conexión. Desactiva cualquier VPN o proxy y vuelve a intentarlo. Si persiste, abre el mod en GameBanana desde tu navegador para comprobar que carga."
+      },
+      "network": {
+        "fix": "Tu conexión o tu DNS están fallando. Ejecuta Diagnosticar conexión y luego prueba a cambiar el DNS a 1.1.1.1 u 8.8.8.8 y a vaciarlo con ipconfig /flushdns."
+      },
+      "writeFailed": {
+        "fix": "El archivo se descargó pero no se pudo guardar. El antivirus o los permisos de la carpeta están bloqueando la app."
+      }
+    }
+  },
+  "stuck": {
+    "title": "¿La descarga está atascada o va muy lenta?",
+    "steps": {
+      "readd": "Cancela la descarga, quita el mod con su icono de papelera y vuelve a añadirlo.",
+      "vpn": "Desactiva VPN, proxies y herramientas de \"aceleración de descargas\" mientras descargas.",
+      "patchRush": "Vuelve a intentarlo fuera de la avalancha que sigue a un parche de Deadlock, cuando GameBanana está más saturado.",
+      "status": "Consulta <status>nuestra página de estado</status>. Si todo funciona y sigue fallando, comparte los resultados de Diagnosticar conexión en <discord>Discord</discord>. El botón Copiar resultados los copia al portapapeles."
+    }
+  },
+  "faqs": {
+    "why": {
+      "question": "¿Por qué Deadlock Mod Manager dice Failed to download?",
+      "answer": "Los mods se descargan directamente de GameBanana. La descarga falla cuando GameBanana está caído o te limita las peticiones, cuando un antivirus, un firewall o una VPN bloquean la conexión, o cuando el archivo no se puede escribir en el disco."
+    },
+    "slow": {
+      "question": "¿Por qué las descargas de mods son tan lentas?",
+      "answer": "La velocidad depende de los servidores de archivos de GameBanana y de la ruta entre tú y ellos. Los mods grandes y las horas punta tras un parche de Deadlock son más lentos. Desactivar una VPN o un proxy suele ayudar; la app no limita la velocidad."
+    },
+    "rateLimit": {
+      "question": "¿Qué significa GameBanana rate limit reached?",
+      "answer": "Enviaste demasiadas peticiones en poco tiempo, normalmente al descargar muchos mods a la vez. Espera los segundos que indica el mensaje y vuelve a intentarlo."
+    },
+    "down": {
+      "question": "¿Deadlock Mod Manager está caído?",
+      "answer": "Consulta la página de estado en deadlockmods.app/status. Si nuestros servicios funcionan, usa Diagnosticar conexión en la Configuración de la app para ver si el problema es GameBanana o tu red."
+    }
+  },
+  "downloadBand": {
+    "title": "Todos los mods de GameBanana, a un clic",
+    "body": "Explora, descarga y activa mods de Deadlock sin salir de la app."
+  }
+}

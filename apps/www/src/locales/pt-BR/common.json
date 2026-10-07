@@ -1,0 +1,184 @@
+{
+  "language": {
+    "label": "Idioma"
+  },
+  "navbar": {
+    "homepage": "Página inicial",
+    "primaryNav": "Principal",
+    "mobileNav": "Celular",
+    "openMenu": "Abrir menu",
+    "download": "Baixar",
+    "links": {
+      "mods": "Mods",
+      "skins": "Skins",
+      "features": "Recursos",
+      "themes": "Temas",
+      "tools": "Ferramentas",
+      "docs": "Docs"
+    }
+  },
+  "userMenu": {
+    "signIn": "Entrar",
+    "signInButton": "Entrar",
+    "signOut": "Sair",
+    "dashboard": "Painel",
+    "avatarFallback": "Usuário"
+  },
+  "v2Banner": {
+    "short": "Refeito do zero.",
+    "long": "Refeito do zero: mods que sobrevivem às atualizações do jogo, uma loja mais rápida e detecção de conflitos.",
+    "cta": "Testar a prévia"
+  },
+  "footer": {
+    "tagline": "Um app pequeno e open source para instalar e gerenciar mods do Deadlock, o jogo da Valve.",
+    "disclaimer": "Sem afiliação com a Valve. \"Deadlock\" e marcas relacionadas são marcas registradas da Valve Corporation.",
+    "headings": {
+      "links": "Links",
+      "guides": "Guias",
+      "support": "Suporte",
+      "partners": "Parceiros"
+    },
+    "links": {
+      "download": "Baixar",
+      "sourceCode": "Código-fonte",
+      "documentation": "Documentação",
+      "faq": "Perguntas frequentes",
+      "reportBug": "Reportar bug"
+    },
+    "legal": {
+      "privacy": "Política de Privacidade",
+      "terms": "Termos de Serviço",
+      "transparency": "Transparência"
+    },
+    "madeBy": "{{copyright}}. Feito com <heart /> por <link>Stormix</link>."
+  },
+  "statusWidget": {
+    "checking": "Verificando status...",
+    "refresh": "Atualizar status",
+    "status": {
+      "operational": "Todos os sistemas estão funcionando",
+      "downtime": "Todos os sistemas estão fora do ar",
+      "degraded": "Alguns sistemas estão instáveis",
+      "unknown": "Status desconhecido"
+    }
+  },
+  "cta": {
+    "downloadStarted": "Download iniciado. Rode o instalador e clique em Iniciar com mods.",
+    "sendToPc": "Baixar no seu PC",
+    "sendNotes": {
+      "copied": "Link copiado. Abra no seu PC com Windows ou Linux.",
+      "shared": "Link enviado. Abra no seu PC com Windows ou Linux.",
+      "failed": "Abra {{url}} no seu PC com Windows ou Linux."
+    }
+  },
+  "platformDownload": {
+    "download": "Baixar",
+    "windows": "Baixar para Windows",
+    "linux": "Baixar para Linux",
+    "available": "Disponível para Windows e Linux",
+    "version": "Versão {{version}} para {{os}}",
+    "versionWithArch": "Versão {{version}} para {{os}} ({{arch}})"
+  },
+  "modCard": {
+    "heroSkin": "Skin de {{hero}}",
+    "categories": {
+      "skins": "Skins",
+      "qualityOfLife": "Qualidade de vida"
+    },
+    "byline": "{{kind}} por {{author}}",
+    "bylineWithDownloads": "{{kind}} por {{author}} · {{downloads}} downloads",
+    "alt": {
+      "heroSkin": "{{name}}, skin de {{hero}} para Deadlock",
+      "skins": "{{name}}, um mod de skin para Deadlock",
+      "qualityOfLife": "{{name}}, um mod de qualidade de vida para Deadlock"
+    }
+  },
+  "guidePage": {
+    "allDownloads": "Todos os downloads",
+    "questions": "Perguntas",
+    "relatedGuides": "Guias relacionados"
+  },
+  "guides": {
+    "mods": {
+      "label": "Mods do Deadlock",
+      "description": "Explore os mods do GameBanana e instale com um clique."
+    },
+    "skins": {
+      "label": "Skins do Deadlock",
+      "description": "Escolha uma skin de herói, veja a prévia e volte à original quando quiser."
+    },
+    "install": {
+      "label": "Como instalar mods no Deadlock",
+      "description": "Configure seus mods em poucos minutos, com ou sem o app."
+    },
+    "notWorking": {
+      "label": "Mods parando de funcionar após um patch",
+      "description": "Conserte mods que quebraram depois de uma atualização do Deadlock."
+    },
+    "grimoire": {
+      "label": "Deadlock Mod Manager vs Grimoire",
+      "description": "Como os dois gerenciadores de mods open source se comparam."
+    },
+    "os5": {
+      "label": "Access is denied (os error 5)",
+      "description": "Arquivos somente leitura ou mods instalados como admin bloqueiam alterações."
+    },
+    "os740": {
+      "label": "Requires elevation (os error 740)",
+      "description": "A Steam está configurada para rodar como administrador."
+    },
+    "modOrder": {
+      "label": "Failed to save mod order",
+      "description": "O jogo ou outro app está mantendo arquivos de mods abertos."
+    },
+    "download": {
+      "label": "Falha no download / downloads lentos",
+      "description": "Limites do GameBanana, antivírus e problemas de rede."
+    },
+    "fatal": {
+      "label": "Fatal Error do Deadlock ao iniciar",
+      "description": "Unable to load layout file, unable to find child e mais."
+    }
+  },
+  "fallbacks": {
+    "error": {
+      "title": "Esta página não carregou direito",
+      "staleBuild": "O site acabou de ser atualizado. Recarregue para pegar a versão mais recente.",
+      "body": "Algo deu errado do nosso lado ao carregar esta página. Tente de novo ou volte para o início.",
+      "reload": "Recarregar",
+      "retry": "Tentar de novo",
+      "goHome": "Ir para o início",
+      "stillBroken": "Continua quebrado? <link>Avise a gente no GitHub</link>."
+    },
+    "notFound": {
+      "title": "Página não encontrada",
+      "body": "Esta página não existe ou foi movida.",
+      "goHome": "Ir para o início",
+      "download": "Baixar o app"
+    }
+  },
+  "errorPages": {
+    "returnHome": "Voltar ao início",
+    "escape": "Fugir do Vazio",
+    "notFound": {
+      "meta": {
+        "title": "Página não encontrada | Deadlock Mod Manager",
+        "description": "Esta página não existe. Volte ao Deadlock Mod Manager para baixar o app ou usar as ferramentas web."
+      },
+      "title": "Perdido nos Astral Gates",
+      "body": "Esta página sumiu por um Astral Gate durante o Maelstrom. Nem o Shopkeeper consegue achá-la no inventário!",
+      "stillLooking": "Ainda não achou o que procurava?",
+      "hint": "Confira o <oracle>The New York Oracle</oracle> para as últimas novidades ou volte para <home>a Cursed Apple</home> e continue seu ritual de modding."
+    },
+    "forbidden": {
+      "meta": {
+        "title": "Acesso negado | Deadlock Mod Manager",
+        "description": "Você não tem permissão para ver esta página."
+      },
+      "title": "Acesso negado",
+      "body": "Este reino é protegido por proteções poderosas. Nem os Patrons podem liberar sua passagem sem a autorização certa!",
+      "needAccess": "Precisa de acesso a esta área?",
+      "hint": "Fale com um administrador ou confira o <oracle>The New York Oracle</oracle> para obter ajuda. Volte para <home>a Cursed Apple</home> e continue seu ritual de modding."
+    }
+  }
+}

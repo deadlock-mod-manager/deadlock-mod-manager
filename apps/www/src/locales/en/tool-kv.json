@@ -1,0 +1,63 @@
+{
+  "meta": {
+    "title": "Valve KeyValues (VDF) Parser for Deadlock gameinfo.gi",
+    "description": "Paste or drop a Valve KeyValues (VDF) file such as Deadlock's gameinfo.gi to parse it and browse it as a tree, right in your browser. Nothing is uploaded."
+  },
+  "page": {
+    "title": "KeyValues Parser",
+    "description": "Parse and visualize Valve KeyValues (VDF) files like gameinfo.gi"
+  },
+  "input": {
+    "title": "Input",
+    "description": "Choose how to provide your KeyValues content",
+    "paste": "Paste / Edit",
+    "upload": "Upload File",
+    "loadSample": "Load Sample",
+    "clear": "Clear",
+    "placeholder": "Paste your KeyValues content here...",
+    "dropActive": "Drop the file here",
+    "drop": "Drop a KeyValues file here",
+    "browse": "or click to browse (.gi, .vdf, .kv, .txt)"
+  },
+  "toasts": {
+    "invalidFile": "Please upload a valid file",
+    "loaded": "Loaded {{file}}",
+    "readAsTextFailed": "Failed to read file as text",
+    "readFailed": "Failed to read file",
+    "sampleLoaded": "Loaded sample gameinfo.gi",
+    "cleared": "Cleared content",
+    "copied": "Copied to clipboard"
+  },
+  "viewer": {
+    "parsing": "Parsing...",
+    "parseError": "Parse Error",
+    "failed": "Failed",
+    "parseFailed": "Failed to parse KeyValues content",
+    "line": "Line: {{line}}",
+    "column": "Column: {{column}}",
+    "valid": "✓ Valid",
+    "original": "Original",
+    "jsonOutput": "JSON Output",
+    "treeView": "Tree View",
+    "switchToTree": "Switch to Tree View",
+    "switchToJson": "Switch to JSON",
+    "fixErrors": "Fix the errors above to see the parsed output",
+    "empty": "Enter KeyValues content to see the parsed result",
+    "copy": "Copy",
+    "copied": "Copied!"
+  },
+  "stats": {
+    "line": "{{value}} line",
+    "lines": "{{value}} lines",
+    "character": "{{value}} character",
+    "characters": "{{value}} characters",
+    "key": "{{value}} key",
+    "keys": "{{value}} keys"
+  },
+  "tree": {
+    "title": "Parsed Structure",
+    "expandAll": "Expand All",
+    "collapseAll": "Collapse All",
+    "items": "[{{value}} items]"
+  }
+}

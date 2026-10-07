@@ -7,6 +7,9 @@ import {
   useRef,
   useState,
 } from "react";
+import { useTranslation } from "react-i18next";
+import { getLocaleConfig } from "@/lib/i18n/locales";
+import { useLocale, useNumberFormat } from "@/lib/i18n/route";
 import { modById, PREVIEW_MODS, type PreviewMod } from "./mods";
 
 type InstallState =
@@ -45,6 +48,7 @@ export const PreviewStateProvider = ({
 }: {
   children: React.ReactNode;
 }) => {
+  const { t } = useTranslation("preview");
   const [installs, setInstalls] =
     useState<Record<string, InstallState>>(INITIAL_INSTALLS);
   const [activeSkins, setActiveSkins] = useState<Record<string, string | null>>(
@@ -89,13 +93,18 @@ export const PreviewStateProvider = ({
         }
         next[id] = { status: "installed", enabled: true };
         const mod = modById(id);
-        if (mod) notify("Mod installed", `${mod.name} is ready to play.`);
+        if (mod) {
+          notify(
+            t("mod.installedToast.title"),
+            t("mod.installedToast.description", { name: mod.name }),
+          );
+        }
       }
       installsRef.current = next;
       setInstalls(next);
     }, 160);
     return () => window.clearInterval(interval);
-  }, [isDownloading, notify]);
+  }, [isDownloading, notify, t]);
 
   const value = useMemo<PreviewState>(
     () => ({
@@ -166,12 +175,18 @@ export const useInstalledMods = () => {
   return PREVIEW_MODS.filter((mod) => installs[mod.id]?.status === "installed");
 };
 
-export const formatCount = (value: number) => value.toLocaleString("en-US");
-
-export const formatDate = (iso: string) =>
-  new Date(`${iso}T00:00:00Z`).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    timeZone: "UTC",
-  });
+/** Counts and snapshot dates in the page's language. */
+export const usePreviewFormat = () => {
+  const numberFormat = useNumberFormat();
+  const locale = getLocaleConfig(useLocale()).hreflang;
+  return {
+    formatCount: (value: number) => numberFormat.format(value),
+    formatDate: (iso: string) =>
+      new Date(`${iso}T00:00:00Z`).toLocaleDateString(locale, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        timeZone: "UTC",
+      }),
+  };
+};

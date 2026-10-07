@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "name": "Requires elevation (os error 740)",
+    "title": "Deadlock Mod Manager : corriger \"os error 740\" (élévation)",
+    "description": "Deadlock Mod Manager ne lance pas le jeu (os error 740) quand Steam s'exécute en administrateur. Désactivez cette option pour steam.exe et relancez avec mods."
+  },
+  "hero": {
+    "eyebrow": "Résoudre une erreur",
+    "title": "The requested operation requires elevation (os error 740)",
+    "intro": "Deadlock Mod Manager lance Deadlock via Steam. Quand Steam est configuré pour toujours s'exécuter en tant qu'administrateur, Windows empêche un programme normal de le démarrer et le lancement échoue avec l'erreur 740.",
+    "errorSource": "Deadlock Mod Manager sur Windows, au lancement du jeu"
+  },
+  "errorText": {
+    "message": "The requested operation requires elevation. (os error 740)"
+  },
+  "fix": {
+    "title": "Comment corriger l'erreur",
+    "steps": {
+      "quitSteam": {
+        "title": "Quittez complètement Steam",
+        "body": "Faites un clic droit sur l'icône Steam dans la zone de notification et choisissez Quitter. Fermer la fenêtre ne suffit pas."
+      },
+      "findSteamExe": {
+        "title": "Trouvez steam.exe",
+        "body": "Généralement <code>C:\\Program Files (x86)\\Steam\\steam.exe</code>. Faites un clic droit dessus (pas sur un raccourci) et ouvrez <strong>Propriétés</strong>."
+      },
+      "disableAdmin": {
+        "title": "Désactivez l'exécution en tant qu'administrateur",
+        "body": "Dans l'onglet <strong>Compatibilité</strong>, décochez <strong>Exécuter ce programme en tant qu'administrateur</strong>. Cliquez ensuite sur <strong>Modifier les paramètres pour tous les utilisateurs</strong> et décochez-la là aussi."
+      },
+      "checkShortcuts": {
+        "title": "Vérifiez vos raccourcis",
+        "body": "Les raccourcis du Bureau ou du menu Démarrer peuvent avoir le même réglage dans Propriétés > Raccourci > Avancé. Décochez Exécuter en tant qu'administrateur sur ceux que vous utilisez pour Steam."
+      },
+      "startSteam": {
+        "title": "Démarrez Steam normalement",
+        "body": "Ouvrez Steam depuis son raccourci habituel et attendez qu'il se connecte."
+      },
+      "launchModded": {
+        "title": "Relancez avec mods",
+        "body": "De retour dans Deadlock Mod Manager, cliquez sur Lancer avec mods. Le jeu devrait démarrer via Steam sans l'erreur."
+      }
+    }
+  },
+  "stillSeeing": {
+    "title": "L'erreur est toujours là ?",
+    "items": {
+      "otherTools": "Certains outils activent l'option administrateur à votre place. Si l'erreur revient, cherchez une option \"Exécuter en tant qu'administrateur\" dans les launchers, overlays ou outils d'optimisation qui démarrent Steam.",
+      "appUpdate": "Si l'erreur apparaît pendant que l'app se met à jour, téléchargez le dernier installateur sur la <download>page de téléchargement</download> et exécutez-le par-dessus votre installation actuelle.",
+      "runAppAsAdmin": "Lancer Deadlock Mod Manager en tant qu'administrateur évite aussi l'erreur, mais provoque plus tard <os5>Access is denied (os error 5)</os5> : ne l'utilisez que comme solution temporaire.",
+      "discord": "Demandez sur <discord>Discord</discord> avec une capture d'écran de l'erreur et la version de votre app."
+    }
+  },
+  "faqs": {
+    "cause": {
+      "question": "Qu'est-ce qui cause os error 740 dans Deadlock Mod Manager ?",
+      "answer": "L'erreur Windows 740 signifie que l'opération demandée nécessite une élévation. Deadlock Mod Manager démarre Deadlock via steam.exe, et si steam.exe est configuré pour toujours s'exécuter en administrateur, Windows ne laisse pas un programme normal le démarrer."
+    },
+    "runAsAdmin": {
+      "question": "Faut-il plutôt lancer Deadlock Mod Manager en tant qu'administrateur ?",
+      "answer": "Ça contourne l'erreur, mais on ne le recommande pas. Les mods installés pendant que l'app tourne en administrateur appartiennent à l'admin, ce qui provoque ensuite Access is denied (os error 5) quand vous la lancez normalement. Désactiver l'option administrateur de Steam est la solution la plus propre."
+    },
+    "steamAdmin": {
+      "question": "Steam a-t-il besoin des droits administrateur pour lancer Deadlock ?",
+      "answer": "Non. Steam et Deadlock fonctionnent très bien avec un utilisateur normal. Steam demande l'autorisation tout seul quand une installation ou une mise à jour en a vraiment besoin."
+    },
+    "appUpdate": {
+      "question": "J'ai l'erreur 740 en mettant l'app à jour. Que faire ?",
+      "answer": "Téléchargez le dernier installateur sur deadlockmods.app/download et exécutez-le par-dessus votre installation actuelle. Vos mods et vos paramètres sont conservés."
+    }
+  },
+  "downloadBand": {
+    "title": "Des mods au match en un clic",
+    "body": "Deadlock Mod Manager applique vos mods et démarre Deadlock via Steam pour vous."
+  }
+}

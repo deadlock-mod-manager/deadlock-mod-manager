@@ -1,0 +1,88 @@
+{
+  "meta": {
+    "name": "Mody do Deadlock nie działają",
+    "title": "Mody Deadlock nie działają po aktualizacji? Rozwiązania",
+    "description": "Mody do Deadlock przestały się wczytywać albo gra crashuje po patchu? Napraw reset gameinfo.gi, nieaktualne mody HUD-u, konflikty i problemy z menedżerem."
+  },
+  "faqs": {
+    "afterUpdate": {
+      "question": "Dlaczego mody do Deadlock przestały działać po aktualizacji?",
+      "answer": "Aktualizacje Deadlock zwykle nadpisują gameinfo.gi, co usuwa linijkę każącą grze wczytywać folder addons. Uruchom grę przyciskiem „Uruchom z modami” w Deadlock Mod Manager, żeby ją przywrócić, albo dodaj ją ręcznie."
+    },
+    "crash": {
+      "question": "Dlaczego Deadlock crashuje po patchu, gdy mam zainstalowane mody?",
+      "answer": "Najczęstszą przyczyną są nieaktualne mody HUD-u i interfejsu. Wyłącz je, uruchom grę i włączaj je z powrotem po jednym, gdy autorzy wydadzą aktualizacje."
+    },
+    "manager": {
+      "question": "Dlaczego Deadlock Mod Manager nie działa?",
+      "answer": "Najpierw zaktualizuj aplikację do najnowszej wersji. Jeśli nie może znaleźć gry, wskaż folder Deadlock w Ustawieniach. W wersjach Flatpak na Linux szary ekran lub crash przy wyborze folderu mają opisane obejścia w dokumentacji rozwiązywania problemów."
+    },
+    "reinstall": {
+      "question": "Czy po każdej aktualizacji Deadlock muszę instalować mody od nowa?",
+      "answer": "Nie. Twoje pliki .vpk zostają w folderze addons. Zwykle trzeba poprawić tylko gameinfo.gi, a aplikacja robi to przy każdym uruchomieniu z modami."
+    }
+  },
+  "hero": {
+    "eyebrow": "Rozwiązywanie problemów",
+    "title": "Mody do Deadlock nie działają po aktualizacji?",
+    "intro": "Większość problemów po patchu od Valve sprowadza się do trzech rzeczy: zresetowanego gameinfo.gi, nieaktualnych modów HUD-u albo dwóch modów walczących o te same pliki. Oto jak naprawić każdy z nich."
+  },
+  "quickFix": {
+    "title": "Szybka naprawa",
+    "steps": {
+      "updateApp": "Zaktualizuj Deadlock Mod Manager do najnowszej wersji ze <link>strony pobierania</link>.",
+      "updateMods": "Sprawdź aktualizacje modów w zakładce Moje mody.",
+      "disableHud": "Wyłącz mody HUD-u i interfejsu, a potem użyj <strong>Uruchom z modami</strong>.",
+      "reenable": "Włączaj mody ponownie po jednym, żeby znaleźć te, które nadal coś psują."
+    }
+  },
+  "fixes": {
+    "title": "Objawy i rozwiązania",
+    "why": "Przyczyna:",
+    "fix": "Rozwiązanie:",
+    "items": {
+      "ignored": {
+        "title": "Gra ignoruje wszystkie mody",
+        "cause": "Aktualizacja Deadlock lub weryfikacja plików w Steam podmieniła gameinfo.gi, więc folder addons nie jest już wczytywany.",
+        "fix": "Otwórz Deadlock Mod Manager i użyj „Uruchom z modami”; ścieżka wyszukiwania jest dodawana przy każdym uruchomieniu. Instalujesz ręcznie? Dodaj z powrotem do gameinfo.gi dwie linijki z poradnika instalacji."
+      },
+      "crash": {
+        "title": "Crash przy uruchamianiu albo zepsuty HUD",
+        "cause": "Mody interfejsu i HUD-u podmieniają pliki, które Valve właśnie zmieniło. Stare pliki gryzą się z nową wersją gry.",
+        "fix": "Najpierw wyłącz mody HUD-u i ułatwienia, potem uruchom grę. Sprawdź aktualizacje modów w zakładce Moje mody i włącz je ponownie, gdy zostaną zaktualizowane."
+      },
+      "partial": {
+        "title": "Część modów działa, część nie",
+        "cause": "Dwa włączone mody zmieniają te same pliki, a wczytać może się tylko jeden z nich.",
+        "fix": "Otwórz widok konfliktów w zakładce Moje mody, wybierz, który mod ma wygrać, i zmień kolejność ładowania."
+      },
+      "stuck": {
+        "title": "Mod utknął na pobieraniu lub instalacji",
+        "cause": "Przerwane pobieranie albo plik, który gra trzymała otwarty.",
+        "fix": "Zamknij Deadlock, usuń zablokowany mod ikoną kosza i zainstaluj go ponownie. Nadal nie działa? Użyj „Usuń Wszystkie Mody” w Ustawieniach, a potem „Analizuj lokalne dodatki”, żeby z powrotem dodać to, co jest na dysku."
+      },
+      "accessDenied": {
+        "title": "„Access is denied” (os error 5) na Windows",
+        "cause": "Plik gameinfo.gi lub folder addons jest tylko do odczytu.",
+        "fix": "Kliknij plik lub folder prawym przyciskiem, otwórz Właściwości i odznacz „Tylko do odczytu”. Jeśli stary mod został zainstalowany z uprawnieniami administratora, uruchom raz menedżer jako administrator, żeby go usunąć."
+      },
+      "steamLaunch": {
+        "title": "Mody znikają przy uruchamianiu ze Steam",
+        "cause": "Opcja automatycznego resetu w aplikacji usuwa ścieżki modów po wyjściu z gry, więc Steam uruchamia czystą wersję.",
+        "fix": "Tak ma być. Uruchamiaj grę z Deadlock Mod Manager, żeby grać z modami, albo wyłącz tę opcję w Ustawieniach."
+      }
+    }
+  },
+  "errors": {
+    "title": "Widzisz konkretny błąd?",
+    "intro": "Każdy z nich ma własną instrukcję naprawy krok po kroku."
+  },
+  "stillStuck": {
+    "title": "Nadal masz problem?",
+    "body": "<docs>Dokumentacja rozwiązywania problemów</docs> szczegółowo opisuje problemy na Linux, Flatpak i Steam Deck. Możesz też zapytać na <discord>Discordzie</discord>, gdzie społeczność zwykle wie, które mody padły po ostatnim patchu."
+  },
+  "downloadBand": {
+    "title": "Dzień patcha bez bólu głowy",
+    "body": "Deadlock Mod Manager ponownie stosuje twoje mody przy każdym uruchomieniu i mówi ci, które wymagają aktualizacji."
+  }
+}

@@ -18,43 +18,63 @@ import {
   ShieldIcon,
   WrenchIcon,
 } from "@phosphor-icons/react";
+import type { TFunction } from "i18next";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { getLocaleConfig } from "@/lib/i18n/locales";
+import { useLocale } from "@/lib/i18n/route";
 import { usePreviewState } from "./preview-state";
 import { type SettingsSectionId, usePreviewNavigation } from "./store";
 import { PREVIEW_THEMES } from "./themes";
 
-// Copy below comes from the desktop app's English locale (settings.*).
+// Copy comes from the desktop app's English locale (settings.*).
 const NAV: {
-  label: string;
-  items: { id: SettingsSectionId; label: string; icon: Icon }[];
+  id: "game" | "application" | "advanced";
+  items: { id: SettingsSectionId; icon: Icon }[];
 }[] = [
   {
-    label: "Game",
+    id: "game",
     items: [
-      { id: "launch-options", label: "Launch Options", icon: GearIcon },
-      { id: "autoexec", label: "Autoexec.cfg", icon: ArticleIcon },
-      { id: "game", label: "Game", icon: GameControllerIcon },
+      { id: "launch-options", icon: GearIcon },
+      { id: "autoexec", icon: ArticleIcon },
+      { id: "game", icon: GameControllerIcon },
     ],
   },
   {
-    label: "Application",
+    id: "application",
     items: [
-      { id: "application", label: "Application", icon: MonitorIcon },
-      { id: "themes", label: "Themes", icon: PaletteIcon },
-      { id: "network", label: "Network", icon: GlobeIcon },
-      { id: "discord", label: "Discord", icon: DiscordLogoIcon },
+      { id: "application", icon: MonitorIcon },
+      { id: "themes", icon: PaletteIcon },
+      { id: "network", icon: GlobeIcon },
+      { id: "discord", icon: DiscordLogoIcon },
     ],
   },
   {
-    label: "Advanced",
+    id: "advanced",
     items: [
-      { id: "tools", label: "Tools", icon: WrenchIcon },
-      { id: "backups", label: "Backups", icon: ArchiveIcon },
-      { id: "logging", label: "Logging", icon: ScrollIcon },
-      { id: "privacy", label: "Privacy", icon: ShieldIcon },
+      { id: "tools", icon: WrenchIcon },
+      { id: "backups", icon: ArchiveIcon },
+      { id: "logging", icon: ScrollIcon },
+      { id: "privacy", icon: ShieldIcon },
     ],
   },
 ];
+
+// The file name and Discord stay as they are in every language.
+const sectionLabels = (t: TFunction<"preview">) =>
+  ({
+    "launch-options": t("settings.nav.launchOptions"),
+    autoexec: "Autoexec.cfg",
+    game: t("settings.nav.game"),
+    application: t("settings.nav.application"),
+    themes: t("settings.nav.themes"),
+    network: t("settings.nav.network"),
+    discord: "Discord",
+    tools: t("settings.nav.tools"),
+    backups: t("settings.nav.backups"),
+    logging: t("settings.nav.logging"),
+    privacy: t("settings.nav.privacy"),
+  }) satisfies Record<SettingsSectionId, string>;
 
 const Section = ({
   title,
@@ -146,17 +166,20 @@ const ActionRow = ({
 );
 
 const ThemesSection = () => {
+  const { t } = useTranslation("preview");
   const { theme, setTheme } = usePreviewNavigation();
   return (
     <Section
       flat
-      title='Themes'
-      description='Choose from carefully crafted themes designed to enhance your experience.'>
+      title={t("settings.themes.title")}
+      description={t("settings.themes.description")}>
       <div className='inline-flex w-fit rounded-lg bg-muted p-1 text-sm'>
         <span className='rounded-md bg-background px-3 py-1 font-medium shadow'>
-          Pre-defined Themes
+          {t("settings.themes.predefined")}
         </span>
-        <span className='px-3 py-1 text-muted-foreground'>Custom Themes</span>
+        <span className='px-3 py-1 text-muted-foreground'>
+          {t("settings.themes.custom")}
+        </span>
       </div>
       <div className='grid grid-cols-2 gap-4'>
         {PREVIEW_THEMES.map((option) => {
@@ -179,18 +202,22 @@ const ThemesSection = () => {
               />
               <div className='space-y-1 p-3'>
                 <div className='flex items-center justify-between gap-2'>
-                  <span className='font-semibold'>{option.name}</span>
+                  <span className='font-semibold'>
+                    {t(`themes.${option.id}.name`)}
+                  </span>
                   {isActive ? (
                     <Badge>
                       <CheckCircleIcon weight='fill' className='mr-1 size-3' />
-                      Active
+                      {t("settings.themes.active")}
                     </Badge>
                   ) : (
-                    <Badge variant='outline'>Inactive</Badge>
+                    <Badge variant='outline'>
+                      {t("settings.themes.inactive")}
+                    </Badge>
                   )}
                 </div>
                 <p className='line-clamp-2 text-muted-foreground text-xs'>
-                  {option.description}
+                  {t(`themes.${option.id}.description`)}
                 </p>
               </div>
             </button>
@@ -202,40 +229,41 @@ const ThemesSection = () => {
 };
 
 const ApplicationSection = () => {
+  const { t } = useTranslation("preview");
   const { appearance, setAppearance } = usePreviewState();
   return (
     <>
       <Section
-        title='System Settings'
-        description='Mod Manager Settings. These do not affect the game.'>
+        title={t("settings.system.title")}
+        description={t("settings.system.description")}>
         <LocalToggle
-          label='Auto-Reapply Mods'
-          description='Automatically reapply mods when the mod manager is launched.'
+          label={t("settings.system.autoReapply.label")}
+          description={t("settings.system.autoReapply.description")}
           initial
         />
         <LocalToggle
-          label='Hero Conflict Warning'
-          description='Show a warning when enabling a second mod for a hero that already has an active mod.'
+          label={t("settings.system.heroConflict.label")}
+          description={t("settings.system.heroConflict.description")}
           initial
         />
         <LocalToggle
-          label='Paginated Browsing'
-          description='Show the Mods Store and Library as pages instead of one continuous scrolling list.'
+          label={t("settings.system.paginated.label")}
+          description={t("settings.system.paginated.description")}
           initial={false}
         />
       </Section>
       <Section
-        title='Appearance'
-        description='Customize the appearance of the application.'>
+        title={t("settings.appearance.title")}
+        description={t("settings.appearance.description")}>
         <ToggleRow
-          label='Occult geometry'
-          description='Show the decorative occult sigils and mandalas in the background.'
+          label={t("settings.appearance.geometry.label")}
+          description={t("settings.appearance.geometry.description")}
           checked={appearance.geometry}
           onCheckedChange={(geometry) => setAppearance({ geometry })}
         />
         <ToggleRow
-          label='Animate occult geometry'
-          description='Slowly rotate and pulse the background sigils.'
+          label={t("settings.appearance.animateGeometry.label")}
+          description={t("settings.appearance.animateGeometry.description")}
           checked={appearance.animateGeometry}
           onCheckedChange={(animateGeometry) =>
             setAppearance({ animateGeometry })
@@ -247,21 +275,24 @@ const ApplicationSection = () => {
 };
 
 const DiscordSection = () => {
+  const { t } = useTranslation("preview");
   const [enabled, setEnabled] = useState(true);
   return (
     <Section
-      title='Discord Game Presence'
-      description='Show your live Deadlock status via Discord Rich Presence, such as current hero, match mode, party size, and more.'>
+      title={t("settings.discord.title")}
+      description={t("settings.discord.description")}>
       <ToggleRow
-        label='Discord Game Presence'
-        description='Customize how Deadlock appears on your Discord profile.'
+        label={t("settings.discord.toggle.label")}
+        description={t("settings.discord.toggle.description")}
         checked={enabled}
         onCheckedChange={setEnabled}
       />
       <div>
-        <p className='font-bold text-sm'>Preview</p>
+        <p className='font-bold text-sm'>
+          {t("settings.discord.preview.title")}
+        </p>
         <p className='text-muted-foreground text-sm'>
-          See how your Discord status will look with example values.
+          {t("settings.discord.preview.description")}
         </p>
         <div
           className={cn(
@@ -277,13 +308,15 @@ const DiscordSection = () => {
             <p className='font-semibold text-sm'>Deadlock</p>
             {enabled ? (
               <>
-                <p className='truncate'>Sleep Walking in the Hideout</p>
+                <p className='truncate'>
+                  {t("settings.discord.example.details")}
+                </p>
                 <p className='truncate text-white/70'>
-                  Playing Standard (6v6) · 3 of 6
+                  {t("settings.discord.example.state")}
                 </p>
               </>
             ) : (
-              <p className='text-white/70'>Discord Game Presence Disabled</p>
+              <p className='text-white/70'>{t("settings.discord.disabled")}</p>
             )}
           </div>
         </div>
@@ -293,39 +326,29 @@ const DiscordSection = () => {
 };
 
 const NetworkSection = () => {
+  const { t } = useTranslation("preview");
   const [mode, setMode] = useState<"default" | "auto">("default");
   return (
     <Section
-      title='Download routing'
-      description='Choose how mod downloads connect to GameBanana file servers. Default uses the standard download link from the API.'>
+      title={t("settings.network.title")}
+      description={t("settings.network.description")}>
       <div role='radiogroup' className='grid grid-cols-2 gap-3'>
-        {(
-          [
-            {
-              id: "default",
-              title: "Default",
-              body: "Standard download link from the API",
-            },
-            {
-              id: "auto",
-              title: "Automatic",
-              body: "Best latency or throughput",
-            },
-          ] as const
-        ).map((option) => (
+        {(["default", "auto"] as const).map((option) => (
           <button
-            key={option.id}
+            key={option}
             type='button'
             role='radio'
-            aria-checked={mode === option.id}
-            onClick={() => setMode(option.id)}
+            aria-checked={mode === option}
+            onClick={() => setMode(option)}
             className={cn(
               "rounded-lg border p-3 text-left transition-colors hover:border-primary/60",
-              mode === option.id && "border-primary bg-primary/10",
+              mode === option && "border-primary bg-primary/10",
             )}>
-            <span className='block font-medium text-sm'>{option.title}</span>
+            <span className='block font-medium text-sm'>
+              {t(`settings.network.${option}.title`)}
+            </span>
             <span className='block text-muted-foreground text-xs'>
-              {option.body}
+              {t(`settings.network.${option}.body`)}
             </span>
           </button>
         ))}
@@ -334,83 +357,109 @@ const NetworkSection = () => {
   );
 };
 
-type Backup = { id: number; date: string; vpks: number; size: string };
+type Backup = { id: number; createdAt: number; vpks: number; size: string };
 
 const BackupsSection = () => {
+  const { t } = useTranslation("preview");
+  const locale = getLocaleConfig(useLocale()).hreflang;
   const { notify, installs } = usePreviewState();
   const [backups, setBackups] = useState<Backup[]>([
-    { id: 1, date: "Sep 28, 2026, 9:14 PM", vpks: 3, size: "412 MB" },
+    {
+      id: 1,
+      createdAt: new Date(2026, 8, 28, 21, 14).getTime(),
+      vpks: 3,
+      size: "412 MB",
+    },
   ]);
 
-  const createBackup = () => {
-    const vpks = Object.values(installs).filter(
-      (install) => install.status === "installed",
-    ).length;
-    const date = new Date().toLocaleString("en-US", {
+  const formatBackupDate = (timestamp: number) =>
+    new Date(timestamp).toLocaleString(locale, {
       month: "short",
       day: "numeric",
       year: "numeric",
       hour: "numeric",
       minute: "2-digit",
     });
+
+  const createBackup = () => {
+    const vpks = Object.values(installs).filter(
+      (install) => install.status === "installed",
+    ).length;
     setBackups((current) => [
-      { id: Date.now(), date, vpks, size: `${vpks * 131 + 19} MB` },
+      {
+        id: Date.now(),
+        createdAt: Date.now(),
+        vpks,
+        size: `${vpks * 131 + 19} MB`,
+      },
       ...current,
     ]);
-    notify("Backup created successfully", `${vpks} VPK files saved.`);
+    notify(
+      t("settings.backups.created.title"),
+      t("settings.backups.created.description", { total: vpks }),
+    );
   };
 
   return (
     <Section
-      title='Mods Backup'
-      description='Create and restore backups of your installed mods.'
+      title={t("settings.backups.title")}
+      description={t("settings.backups.description")}
       action={
         <button
           type='button'
           onClick={createBackup}
           className={buttonVariants()}>
           <ArchiveIcon />
-          Create Backup
+          {t("settings.backups.create")}
         </button>
       }>
       <LocalToggle
-        label='Auto-backup before updates'
-        description='Automatically create a backup of your mods before batch updating mods'
+        label={t("settings.backups.autoBackup.label")}
+        description={t("settings.backups.autoBackup.description")}
         initial
       />
       <table className='w-full text-sm'>
         <thead className='text-left text-muted-foreground text-xs'>
           <tr>
-            <th className='pb-2 font-medium'>Date</th>
-            <th className='pb-2 font-medium'>VPK Files</th>
-            <th className='pb-2 font-medium'>Size</th>
+            <th className='pb-2 font-medium'>
+              {t("settings.backups.columns.date")}
+            </th>
+            <th className='pb-2 font-medium'>
+              {t("settings.backups.columns.vpkFiles")}
+            </th>
+            <th className='pb-2 font-medium'>
+              {t("settings.backups.columns.size")}
+            </th>
             <th />
           </tr>
         </thead>
         <tbody>
-          {backups.map((backup) => (
-            <tr key={backup.id} className='border-border/40 border-t'>
-              <td className='py-2'>{backup.date}</td>
-              <td className='py-2 tabular-nums'>{backup.vpks}</td>
-              <td className='py-2 tabular-nums'>{backup.size}</td>
-              <td className='py-2 text-right'>
-                <button
-                  type='button'
-                  onClick={() =>
-                    notify(
-                      "Backup restored successfully",
-                      `Restored the backup from ${backup.date}.`,
-                    )
-                  }
-                  className={cn(
-                    buttonVariants({ variant: "outline" }),
-                    "h-8 px-3 text-xs",
-                  )}>
-                  Restore
-                </button>
-              </td>
-            </tr>
-          ))}
+          {backups.map((backup) => {
+            const date = formatBackupDate(backup.createdAt);
+            return (
+              <tr key={backup.id} className='border-border/40 border-t'>
+                <td className='py-2'>{date}</td>
+                <td className='py-2 tabular-nums'>{backup.vpks}</td>
+                <td className='py-2 tabular-nums'>{backup.size}</td>
+                <td className='py-2 text-right'>
+                  <button
+                    type='button'
+                    onClick={() =>
+                      notify(
+                        t("settings.backups.restored.title"),
+                        t("settings.backups.restored.description", { date }),
+                      )
+                    }
+                    className={cn(
+                      buttonVariants({ variant: "outline" }),
+                      "h-8 px-3 text-xs",
+                    )}>
+                    {t("settings.backups.restore")}
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </Section>
@@ -418,12 +467,13 @@ const BackupsSection = () => {
 };
 
 const GameSection = () => {
+  const { t } = useTranslation("preview");
   const { notify } = usePreviewState();
   return (
     <>
       <Section
-        title='Game Path'
-        description='The path to your Deadlock game installation. The mod manager will auto-detect this, but you can manually set it if needed.'>
+        title={t("settings.game.path.title")}
+        description={t("settings.game.path.description")}>
         <div className='flex gap-2'>
           <div className='flex h-9 min-w-0 flex-1 items-center rounded-md border border-input px-3 font-mono text-muted-foreground text-xs'>
             <span className='truncate'>
@@ -434,21 +484,21 @@ const GameSection = () => {
             type='button'
             onClick={() =>
               notify(
-                "Game path auto-detected successfully",
-                "Found Deadlock in your Steam library.",
+                t("settings.game.detected.title"),
+                t("settings.game.detected.description"),
               )
             }
             className={buttonVariants({ variant: "outline" })}>
-            Auto-Detect
+            {t("settings.game.autoDetect")}
           </button>
         </div>
       </Section>
       <Section
-        title='Protection while playing'
-        description='What the mod manager does when you change mods with Deadlock open.'>
+        title={t("settings.game.protection.title")}
+        description={t("settings.game.protection.description")}>
         <LocalToggle
-          label='Block changes while Deadlock runs'
-          description='Refuses to install, remove or reorder mods while the game is open, because Deadlock holds those files and a half-applied change can break your load order.'
+          label={t("settings.game.blockChanges.label")}
+          description={t("settings.game.blockChanges.description")}
           initial
         />
       </Section>
@@ -456,31 +506,34 @@ const GameSection = () => {
   );
 };
 
-const PrivacySection = () => (
-  <>
-    <Section
-      title='Privacy & Content'
-      description='Control how NSFW (Not Safe For Work) content is displayed and filtered.'>
-      <LocalToggle
-        label='Hide NSFW Content'
-        description='Completely hide mods marked as NSFW from lists and search results'
-        initial
-      />
-      <LocalToggle
-        label='Disable NSFW Blur'
-        description='Show NSFW content without any blur effect (content still shows NSFW badge)'
-        initial={false}
-      />
-    </Section>
-    <Section title='Usage Analytics'>
-      <LocalToggle
-        label='Google Analytics'
-        description='Help improve the application by sending anonymous usage statistics and feature analytics'
-        initial={false}
-      />
-    </Section>
-  </>
-);
+const PrivacySection = () => {
+  const { t } = useTranslation("preview");
+  return (
+    <>
+      <Section
+        title={t("settings.privacy.title")}
+        description={t("settings.privacy.description")}>
+        <LocalToggle
+          label={t("settings.privacy.hideNsfw.label")}
+          description={t("settings.privacy.hideNsfw.description")}
+          initial
+        />
+        <LocalToggle
+          label={t("settings.privacy.disableBlur.label")}
+          description={t("settings.privacy.disableBlur.description")}
+          initial={false}
+        />
+      </Section>
+      <Section title={t("settings.privacy.analytics.title")}>
+        <LocalToggle
+          label='Google Analytics'
+          description={t("settings.privacy.analytics.description")}
+          initial={false}
+        />
+      </Section>
+    </>
+  );
+};
 
 const FolderButton = ({ label }: { label: string }) => (
   <span
@@ -494,101 +547,119 @@ const FolderButton = ({ label }: { label: string }) => (
   </span>
 );
 
-const SECTIONS = {
-  "launch-options": () => (
+const LaunchOptionsSection = () => {
+  const { t } = useTranslation("preview");
+  return (
     <Section
-      title='Launch Options'
-      description='Customize the launch options for the game. These are applied regardless of the game mode selected (Vanilla or Modded).'>
+      title={t("settings.launchOptions.title")}
+      description={t("settings.launchOptions.description")}>
       <LocalToggle
-        label='Vanilla Mode'
-        description='Launch the game in vanilla mode without additional arguments.'
+        label={t("settings.launchOptions.vanilla.label")}
+        description={t("settings.launchOptions.vanilla.description")}
         initial={false}
       />
       <LocalToggle
-        label='Autoexec Config'
-        description='Run your autoexec.cfg when the game starts.'
+        label={t("settings.launchOptions.autoexec.label")}
+        description={t("settings.launchOptions.autoexec.description")}
         initial
       />
     </Section>
-  ),
-  autoexec: () => (
+  );
+};
+
+const AutoexecSection = () => {
+  const { t } = useTranslation("preview");
+  return (
     <Section
       title='Autoexec.cfg'
-      description='Manage your autoexec.cfg file. Changes require game restart.'>
+      description={t("settings.autoexec.description")}>
       <div className='rounded-lg border border-border/50 bg-card/50 p-4'>
         <h5 className='font-semibold text-primary'>
-          What&apos;s an Autoexec Config?
+          {t("settings.autoexec.whatIs")}
         </h5>
         <p className='mt-2 text-muted-foreground text-sm'>
-          Autoexec is a CFG file for launching a game with set convars (think
-          console command) that will get automatically executed on launch of the
-          game.
+          {t("settings.autoexec.explanation")}
         </p>
         <p className='mt-2 text-muted-foreground text-sm'>
-          The mod manager uses this file to set the crosshair settings
-          automatically without needing to run commands in the console. You can
-          still edit the file manually if you want to add more commands.
+          {t("settings.autoexec.usage")}
         </p>
       </div>
     </Section>
-  ),
+  );
+};
+
+const ToolsSection = () => {
+  const { t } = useTranslation("preview");
+  return (
+    <Section
+      title={t("settings.tools.title")}
+      description={t("settings.tools.description")}>
+      <ActionRow
+        label={t("settings.tools.openGameFolder.label")}
+        description={t("settings.tools.openGameFolder.description")}>
+        <FolderButton label={t("settings.tools.open")} />
+      </ActionRow>
+      <ActionRow
+        label={t("settings.tools.clearCache.label")}
+        description={t("settings.tools.clearCache.description")}>
+        <FolderButton label={t("settings.tools.clear")} />
+      </ActionRow>
+    </Section>
+  );
+};
+
+const LoggingSection = () => {
+  const { t } = useTranslation("preview");
+  return (
+    <Section
+      title={t("settings.logging.title")}
+      description={t("settings.logging.description")}>
+      <ActionRow
+        label={t("settings.logging.logs.label")}
+        description={t("settings.logging.logs.description")}>
+        <FolderButton label={t("settings.logging.openFolder")} />
+      </ActionRow>
+      <ActionRow
+        label={t("settings.logging.crashDumps.label")}
+        description={t("settings.logging.crashDumps.description")}>
+        <FolderButton label={t("settings.logging.openLatest")} />
+      </ActionRow>
+    </Section>
+  );
+};
+
+const SECTIONS = {
+  "launch-options": () => <LaunchOptionsSection />,
+  autoexec: () => <AutoexecSection />,
   game: () => <GameSection />,
   application: () => <ApplicationSection />,
   themes: () => <ThemesSection />,
   network: () => <NetworkSection />,
   discord: () => <DiscordSection />,
-  tools: () => (
-    <Section
-      title='Tools'
-      description='Utility functions for managing your mods'>
-      <ActionRow
-        label='Open Game Folder'
-        description='Opens your Deadlock install in your file manager.'>
-        <FolderButton label='Open' />
-      </ActionRow>
-      <ActionRow
-        label='Clear Download Cache'
-        description='Removes cached download files. Your installed mods are not affected.'>
-        <FolderButton label='Clear' />
-      </ActionRow>
-    </Section>
-  ),
+  tools: () => <ToolsSection />,
   backups: () => <BackupsSection />,
-  logging: () => (
-    <Section
-      title='Logging'
-      description='Access log files for troubleshooting issues.'>
-      <ActionRow
-        label='Mod Manager Logs'
-        description='Application logs for debugging issues.'>
-        <FolderButton label='Open Folder' />
-      </ActionRow>
-      <ActionRow
-        label='Deadlock Crash Dumps'
-        description='Crash dumps generated when Deadlock crashes for debugging.'>
-        <FolderButton label='Open Latest' />
-      </ActionRow>
-    </Section>
-  ),
+  logging: () => <LoggingSection />,
   privacy: () => <PrivacySection />,
 } satisfies Record<SettingsSectionId, () => React.ReactNode>;
 
 export const SettingsScreen = () => {
+  const { t } = useTranslation("preview");
   const { settingsSection, setSettingsSection } = usePreviewNavigation();
+  const labels = sectionLabels(t);
 
   return (
     <div className='flex flex-col gap-4 pb-6'>
       <div className='px-4 pt-4'>
-        <h3 className='font-bold text-2xl'>Settings</h3>
+        <h3 className='font-bold text-2xl'>{t("settings.title")}</h3>
       </div>
       <div className='flex gap-6'>
         <nav
-          aria-label='Settings sections'
+          aria-label={t("settings.navLabel")}
           className='sticky top-0 w-52 shrink-0 self-start p-2'>
           {NAV.map((group) => (
-            <div key={group.label} className='flex flex-col gap-0.5'>
+            <div key={group.id} className='flex flex-col gap-0.5'>
               <p className='px-3 pt-2 pb-1 font-semibold text-[11px] text-muted-foreground/70 uppercase tracking-wider'>
-                {group.label}
+                {t(`settings.groups.${group.id}`)}
               </p>
               {group.items.map((item) => {
                 const isActive = item.id === settingsSection;
@@ -605,7 +676,7 @@ export const SettingsScreen = () => {
                         : "hover:bg-muted/50 hover:text-foreground",
                     )}>
                     <item.icon className='size-4 shrink-0' />
-                    {item.label}
+                    {labels[item.id]}
                   </button>
                 );
               })}

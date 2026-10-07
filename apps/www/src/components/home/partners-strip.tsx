@@ -1,4 +1,5 @@
 import { cn } from "@deadlock-mods/ui/lib/utils";
+import { useTranslation } from "react-i18next";
 import { PARTNERS } from "@/lib/constants";
 
 const PartnerList = ({ duplicate = false }: { duplicate?: boolean }) => (
@@ -31,22 +32,26 @@ const PartnerList = ({ duplicate = false }: { duplicate?: boolean }) => (
   </ul>
 );
 
-export const PartnersStrip = () => (
-  <section
-    aria-labelledby='partners-heading'
-    className='border-border border-y bg-background-dark'>
-    <div className='mx-auto flex max-w-7xl flex-col gap-5 px-6 py-8 md:flex-row md:items-center md:gap-10'>
-      <h2
-        id='partners-heading'
-        className='shrink-0 font-medium text-foreground-subtle text-sm md:max-w-[150px] md:leading-snug'>
-        Our partners
-      </h2>
-      <div className='group/marquee relative min-w-0 flex-1 overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_8%,black_92%,transparent)] motion-reduce:[mask-image:none]'>
-        <div className='flex w-max animate-marquee group-hover/marquee:[animation-play-state:paused] group-focus-within/marquee:[animation-play-state:paused] motion-reduce:w-auto motion-reduce:flex-wrap'>
-          <PartnerList />
-          <PartnerList duplicate />
+export const PartnersStrip = () => {
+  const { t } = useTranslation("home");
+
+  return (
+    <section
+      aria-labelledby='partners-heading'
+      className='border-border border-y bg-background-dark'>
+      <div className='mx-auto flex max-w-7xl flex-col gap-5 px-6 py-8 md:flex-row md:items-center md:gap-10'>
+        <h2
+          id='partners-heading'
+          className='shrink-0 font-medium text-foreground-subtle text-sm md:max-w-[150px] md:leading-snug'>
+          {t("partners.title")}
+        </h2>
+        <div className='group/marquee relative min-w-0 flex-1 overflow-hidden [mask-image:linear-gradient(90deg,transparent,black_8%,black_92%,transparent)] motion-reduce:[mask-image:none]'>
+          <div className='flex w-max animate-marquee group-hover/marquee:[animation-play-state:paused] group-focus-within/marquee:[animation-play-state:paused] motion-reduce:w-auto motion-reduce:flex-wrap'>
+            <PartnerList />
+            <PartnerList duplicate />
+          </div>
         </div>
       </div>
-    </div>
-  </section>
-);
+    </section>
+  );
+};

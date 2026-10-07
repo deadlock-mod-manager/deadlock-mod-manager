@@ -1,0 +1,63 @@
+{
+  "meta": {
+    "title": "Parser Valve KeyValues (VDF) dla gameinfo.gi z Deadlock",
+    "description": "Wklej lub upuść plik Valve KeyValues (VDF), np. gameinfo.gi z Deadlock, żeby go sparsować i przeglądać jako drzewo w przeglądarce. Nic nie jest wysyłane."
+  },
+  "page": {
+    "title": "Parser KeyValues",
+    "description": "Parsuj i wizualizuj pliki Valve KeyValues (VDF), takie jak gameinfo.gi"
+  },
+  "input": {
+    "title": "Dane wejściowe",
+    "description": "Wybierz, jak chcesz podać zawartość KeyValues",
+    "paste": "Wklej / edytuj",
+    "upload": "Wgraj plik",
+    "loadSample": "Wczytaj przykład",
+    "clear": "Wyczyść",
+    "placeholder": "Wklej tutaj zawartość KeyValues...",
+    "dropActive": "Upuść plik tutaj",
+    "drop": "Upuść tutaj plik KeyValues",
+    "browse": "lub kliknij, żeby wybrać (.gi, .vdf, .kv, .txt)"
+  },
+  "toasts": {
+    "invalidFile": "Wgraj prawidłowy plik",
+    "loaded": "Wczytano {{file}}",
+    "readAsTextFailed": "Nie udało się odczytać pliku jako tekstu",
+    "readFailed": "Nie udało się odczytać pliku",
+    "sampleLoaded": "Wczytano przykładowy gameinfo.gi",
+    "cleared": "Wyczyszczono zawartość",
+    "copied": "Skopiowano do schowka"
+  },
+  "viewer": {
+    "parsing": "Parsowanie...",
+    "parseError": "Błąd parsowania",
+    "failed": "Niepowodzenie",
+    "parseFailed": "Nie udało się sparsować zawartości KeyValues",
+    "line": "Wiersz: {{line}}",
+    "column": "Kolumna: {{column}}",
+    "valid": "✓ Poprawny",
+    "original": "Oryginał",
+    "jsonOutput": "Wynik JSON",
+    "treeView": "Widok drzewa",
+    "switchToTree": "Przełącz na widok drzewa",
+    "switchToJson": "Przełącz na JSON",
+    "fixErrors": "Popraw powyższe błędy, żeby zobaczyć sparsowany wynik",
+    "empty": "Wpisz zawartość KeyValues, żeby zobaczyć sparsowany wynik",
+    "copy": "Kopiuj",
+    "copied": "Skopiowano!"
+  },
+  "stats": {
+    "line": "Wiersze: {{value}}",
+    "lines": "Wiersze: {{value}}",
+    "character": "Znaki: {{value}}",
+    "characters": "Znaki: {{value}}",
+    "key": "Klucze: {{value}}",
+    "keys": "Klucze: {{value}}"
+  },
+  "tree": {
+    "title": "Sparsowana struktura",
+    "expandAll": "Rozwiń wszystko",
+    "collapseAll": "Zwiń wszystko",
+    "items": "[elementy: {{value}}]"
+  }
+}

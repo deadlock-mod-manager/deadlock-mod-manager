@@ -1,0 +1,441 @@
+{
+  "themes": {
+    "default": {
+      "name": "Default",
+      "description": "The classic Deadlock Mod Manager look."
+    },
+    "bloodmoon": {
+      "name": "Bloodmoon",
+      "description": "A dark theme with black-red gradients and crimson accents."
+    },
+    "nightshift": {
+      "name": "Nightshift",
+      "description": "A teal-accented cyberpunk theme with elegant UI elements."
+    },
+    "lovelock": {
+      "name": "Lovelock",
+      "description": "A cozy plum theme with a soft pink glow."
+    },
+    "tea": {
+      "name": "Tea",
+      "description": "A cozy theme celebrating Snipztea."
+    }
+  },
+  "categories": {
+    "skins": "Skins",
+    "qualityOfLife": "Quality of Life"
+  },
+  "titlebar": {
+    "profile": "Default Profile",
+    "launchVanilla": "Launch without mods",
+    "launchModded": "Launch modded",
+    "enabledMods": "{{total}} mods",
+    "stopGame": "Stop Game",
+    "signIn": "Sign In"
+  },
+  "sidebar": {
+    "label": "App preview",
+    "byline": "<version>{{version}}</version> by Stormix",
+    "groups": {
+      "general": "General",
+      "mods": "Mods",
+      "customServers": "Custom Servers",
+      "customization": "Customization"
+    },
+    "items": {
+      "dashboard": "Dashboard",
+      "downloads": "Downloads",
+      "settings": "Settings",
+      "library": "Mods Library",
+      "store": "Mods Store",
+      "servers": "Server Browser",
+      "crosshairs": "Crosshairs",
+      "skins": "Hero Skins",
+      "autoexec": "Autoexec Config",
+      "stats": "Stats"
+    },
+    "documentation": "Documentation",
+    "needHelp": "Need Help?",
+    "expand": "Expand menu",
+    "collapse": "Collapse menu"
+  },
+  "bottomBar": {
+    "status": "Status:",
+    "statuses": {
+      "online": "Online",
+      "signedIn": "Signed in",
+      "mirror": "Mirror",
+      "heroData": "Hero data"
+    },
+    "downloading": "{{total}} downloading",
+    "volume": "VOLUME:",
+    "checkUpdates": "Check for Updates"
+  },
+  "launch": {
+    "title": "Launching Deadlock",
+    "steps": {
+      "checkingFiles": "Checking game files",
+      "skippingMods": "Skipping mods",
+      "applyingMods": "Applying mods ({{count}})",
+      "noMods": "No mods enabled, starting vanilla",
+      "starting": "Starting Deadlock"
+    },
+    "stepState": {
+      "done": "done",
+      "active": "in progress",
+      "pending": "pending"
+    },
+    "running": {
+      "title": "Deadlock is running",
+      "modded": "Have fun out there. Your mods are live.",
+      "vanilla": "Have fun out there. Playing vanilla this time."
+    },
+    "closed": {
+      "title": "Deadlock closed",
+      "description": "Back to the manager."
+    }
+  },
+  "mod": {
+    "installed": "Installed",
+    "updatedRecently": "Updated recently",
+    "updated": "Updated",
+    "byAuthor": "By {{author}}",
+    "enable": "Enable {{name}}",
+    "remove": "Remove {{name}}",
+    "download": "Download {{name}}",
+    "downloading": "Downloading {{name}}",
+    "installedToast": {
+      "title": "Mod installed",
+      "description": "{{name}} is ready to play."
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Discover featured, trending, and new mods",
+    "featured": "Featured mod of the week",
+    "featuredBy": "By <author>{{author}}</author>",
+    "viewMod": "View Mod",
+    "stats": {
+      "installed": "Installed",
+      "updates": "Updates",
+      "inQueue": "In Queue"
+    },
+    "browseStore": "Browse Store",
+    "trending": "Trending in <accent>{{category}}</accent>"
+  },
+  "store": {
+    "title": "Mods Store",
+    "subtitle": "Updated hourly, with new mods added every hour.",
+    "tabs": {
+      "mods": "Mods",
+      "sounds": "Sounds",
+      "albums": "Albums",
+      "wips": "WiPs"
+    },
+    "searchLabel": "Search mods",
+    "searchPlaceholder": "Search mods or authors",
+    "heroLabel": "Hero",
+    "allHeroes": "All Heroes",
+    "categoryLabel": "Category",
+    "allCategories": "All Categories",
+    "sortLabel": "Sort",
+    "sort": {
+      "default": "Default",
+      "updated": "Last Updated",
+      "downloads": "Download Count",
+      "rating": "Rating"
+    },
+    "empty": {
+      "title": "No mods found",
+      "description": "Try a different search or clear your filters."
+    }
+  },
+  "library": {
+    "title": "Mods Library",
+    "count": "<strong>{{enabled}}</strong>/{{total}} mods",
+    "subtitle": "Mods you have downloaded or installed",
+    "checkUpdates": "Check for updates",
+    "upToDate": {
+      "title": "All mods are up to date",
+      "description": "Nothing to update right now."
+    },
+    "filterLabel": "Library filter",
+    "tabs": {
+      "all": "all",
+      "installed": "installed",
+      "downloaded": "downloaded"
+    },
+    "empty": {
+      "title": "No mods installed",
+      "description": "You haven't installed any mods yet. Get started by browsing available mods.",
+      "action": "Visit Mods Page"
+    }
+  },
+  "downloads": {
+    "title": "Downloads",
+    "subtitle": "Track your mod downloads",
+    "empty": {
+      "title": "No active downloads",
+      "description": "Downloads you start from the Mods Store show up here.",
+      "action": "Browse Store"
+    }
+  },
+  "crosshairs": {
+    "title": "Crosshairs",
+    "subtitle": "Create and customize your crosshairs",
+    "apply": "Apply Crosshair",
+    "applied": {
+      "title": "Crosshair applied",
+      "description": "It's written to your autoexec, ready for your next match."
+    },
+    "settings": "Crosshair Settings",
+    "sliders": {
+      "gap": "Gap",
+      "width": "Width",
+      "height": "Height",
+      "dotOpacity": "Dot Opacity"
+    },
+    "color": "Color",
+    "swatches": {
+      "white": "White",
+      "gold": "Gold",
+      "green": "Green",
+      "cyan": "Cyan",
+      "pink": "Pink"
+    },
+    "preview": "Preview",
+    "aimHint": "Move your cursor over the preview to aim."
+  },
+  "skins": {
+    "title": "Hero Skins",
+    "subtitle": "Set the active skin for each hero",
+    "noneDownloaded": "No skins downloaded",
+    "default": "Default",
+    "downloaded": "Skins downloaded: {{count}}",
+    "empty": {
+      "title": "No skins for {{hero}} yet",
+      "description": "Download skins from the Mods Store and pick the one you want here.",
+      "action": "Browse skins for {{hero}}"
+    },
+    "vanilla": "Vanilla appearance, no skin mod"
+  },
+  "servers": {
+    "title": "Server Browser",
+    "subtitle": "Browse custom Deadlock servers",
+    "columns": {
+      "name": "Name",
+      "players": "Players",
+      "map": "Map",
+      "ping": "Ping"
+    },
+    "requiredModsBadge": "{{total}} required mods",
+    "ping": "{{ping}} ms",
+    "details": {
+      "map": "Map",
+      "players": "Players",
+      "region": "Region",
+      "requiredMods": "Required mods"
+    },
+    "join": "Join Server",
+    "full": "Server full",
+    "joining": {
+      "title": "Joining {{name}}",
+      "withMods": "Installing the required mods first, then connecting.",
+      "withoutMods": "Deadlock will open and connect."
+    }
+  },
+  "screens": {
+    "foundryAlt": "Mod Foundry screen with a hero model preview",
+    "autoexecAlt": "Autoexec Config screen with the command library",
+    "statsAlt": "Stats screen with winrate, KDA and form over time"
+  },
+  "settings": {
+    "title": "Settings",
+    "navLabel": "Settings sections",
+    "groups": {
+      "game": "Game",
+      "application": "Application",
+      "advanced": "Advanced"
+    },
+    "nav": {
+      "launchOptions": "Launch Options",
+      "game": "Game",
+      "application": "Application",
+      "themes": "Themes",
+      "network": "Network",
+      "tools": "Tools",
+      "backups": "Backups",
+      "logging": "Logging",
+      "privacy": "Privacy"
+    },
+    "themes": {
+      "title": "Themes",
+      "description": "Choose from carefully crafted themes designed to enhance your experience.",
+      "predefined": "Pre-defined Themes",
+      "custom": "Custom Themes",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "system": {
+      "title": "System Settings",
+      "description": "Mod Manager Settings. These do not affect the game.",
+      "autoReapply": {
+        "label": "Auto-Reapply Mods",
+        "description": "Automatically reapply mods when the mod manager is launched."
+      },
+      "heroConflict": {
+        "label": "Hero Conflict Warning",
+        "description": "Show a warning when enabling a second mod for a hero that already has an active mod."
+      },
+      "paginated": {
+        "label": "Paginated Browsing",
+        "description": "Show the Mods Store and Library as pages instead of one continuous scrolling list."
+      }
+    },
+    "appearance": {
+      "title": "Appearance",
+      "description": "Customize the appearance of the application.",
+      "geometry": {
+        "label": "Occult geometry",
+        "description": "Show the decorative occult sigils and mandalas in the background."
+      },
+      "animateGeometry": {
+        "label": "Animate occult geometry",
+        "description": "Slowly rotate and pulse the background sigils."
+      }
+    },
+    "discord": {
+      "title": "Discord Game Presence",
+      "description": "Show your live Deadlock status via Discord Rich Presence, such as current hero, match mode, party size, and more.",
+      "toggle": {
+        "label": "Discord Game Presence",
+        "description": "Customize how Deadlock appears on your Discord profile."
+      },
+      "preview": {
+        "title": "Preview",
+        "description": "See how your Discord status will look with example values."
+      },
+      "example": {
+        "details": "Sleep Walking in the Hideout",
+        "state": "Playing Standard (6v6) · 3 of 6"
+      },
+      "disabled": "Discord Game Presence Disabled"
+    },
+    "network": {
+      "title": "Download routing",
+      "description": "Choose how mod downloads connect to GameBanana file servers. Default uses the standard download link from the API.",
+      "default": {
+        "title": "Default",
+        "body": "Standard download link from the API"
+      },
+      "auto": {
+        "title": "Automatic",
+        "body": "Best latency or throughput"
+      }
+    },
+    "backups": {
+      "title": "Mods Backup",
+      "description": "Create and restore backups of your installed mods.",
+      "create": "Create Backup",
+      "autoBackup": {
+        "label": "Auto-backup before updates",
+        "description": "Automatically create a backup of your mods before batch updating mods"
+      },
+      "columns": {
+        "date": "Date",
+        "vpkFiles": "VPK Files",
+        "size": "Size"
+      },
+      "restore": "Restore",
+      "created": {
+        "title": "Backup created successfully",
+        "description": "{{total}} VPK files saved."
+      },
+      "restored": {
+        "title": "Backup restored successfully",
+        "description": "Restored the backup from {{date}}."
+      }
+    },
+    "game": {
+      "path": {
+        "title": "Game Path",
+        "description": "The path to your Deadlock game installation. The mod manager will auto-detect this, but you can manually set it if needed."
+      },
+      "autoDetect": "Auto-Detect",
+      "detected": {
+        "title": "Game path auto-detected successfully",
+        "description": "Found Deadlock in your Steam library."
+      },
+      "protection": {
+        "title": "Protection while playing",
+        "description": "What the mod manager does when you change mods with Deadlock open."
+      },
+      "blockChanges": {
+        "label": "Block changes while Deadlock runs",
+        "description": "Refuses to install, remove or reorder mods while the game is open, because Deadlock holds those files and a half-applied change can break your load order."
+      }
+    },
+    "privacy": {
+      "title": "Privacy & Content",
+      "description": "Control how NSFW (Not Safe For Work) content is displayed and filtered.",
+      "hideNsfw": {
+        "label": "Hide NSFW Content",
+        "description": "Completely hide mods marked as NSFW from lists and search results"
+      },
+      "disableBlur": {
+        "label": "Disable NSFW Blur",
+        "description": "Show NSFW content without any blur effect (content still shows NSFW badge)"
+      },
+      "analytics": {
+        "title": "Usage Analytics",
+        "description": "Help improve the application by sending anonymous usage statistics and feature analytics"
+      }
+    },
+    "launchOptions": {
+      "title": "Launch Options",
+      "description": "Customize the launch options for the game. These are applied regardless of the game mode selected (Vanilla or Modded).",
+      "vanilla": {
+        "label": "Vanilla Mode",
+        "description": "Launch the game in vanilla mode without additional arguments."
+      },
+      "autoexec": {
+        "label": "Autoexec Config",
+        "description": "Run your autoexec.cfg when the game starts."
+      }
+    },
+    "autoexec": {
+      "description": "Manage your autoexec.cfg file. Changes require game restart.",
+      "whatIs": "What's an Autoexec Config?",
+      "explanation": "Autoexec is a CFG file for launching a game with set convars (think console command) that will get automatically executed on launch of the game.",
+      "usage": "The mod manager uses this file to set the crosshair settings automatically without needing to run commands in the console. You can still edit the file manually if you want to add more commands."
+    },
+    "tools": {
+      "title": "Tools",
+      "description": "Utility functions for managing your mods",
+      "openGameFolder": {
+        "label": "Open Game Folder",
+        "description": "Opens your Deadlock install in your file manager."
+      },
+      "open": "Open",
+      "clearCache": {
+        "label": "Clear Download Cache",
+        "description": "Removes cached download files. Your installed mods are not affected."
+      },
+      "clear": "Clear"
+    },
+    "logging": {
+      "title": "Logging",
+      "description": "Access log files for troubleshooting issues.",
+      "logs": {
+        "label": "Mod Manager Logs",
+        "description": "Application logs for debugging issues."
+      },
+      "openFolder": "Open Folder",
+      "crashDumps": {
+        "label": "Deadlock Crash Dumps",
+        "description": "Crash dumps generated when Deadlock crashes for debugging."
+      },
+      "openLatest": "Open Latest"
+    }
+  }
+}

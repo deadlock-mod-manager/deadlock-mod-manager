@@ -1,0 +1,168 @@
+{
+  "meta": {
+    "title": "Deadlock Randomizer: Random Hero & Item Build Generator",
+    "description": "Roll a random Deadlock hero, a legal item build in purchase order, an ability point order and three bravery rules. Share the seed, reroll as often as you like.",
+    "keywords": "deadlock randomizer, deadlock random build, deadlock ultimate bravery, random hero deadlock, deadlock build generator"
+  },
+  "error": {
+    "title": "The roll could not be cast",
+    "description": "Hero and item data comes from the Deadlock API, and it did not answer.",
+    "retry": "Try again"
+  },
+  "skeleton": {
+    "heading": "Deadlock Randomizer: random hero and item build"
+  },
+  "toolbar": {
+    "copyLink": {
+      "idle": "Copy link",
+      "copied": "Copied",
+      "failed": "Copy failed"
+    },
+    "reroll": "Reroll"
+  },
+  "sections": {
+    "trigger": "Sections",
+    "label": "Roll me",
+    "options": {
+      "build": "Build order",
+      "abilities": "Abilities",
+      "rules": "Rules"
+    }
+  },
+  "heroPicker": {
+    "anyHero": "Any hero",
+    "label": "Roll builds for"
+  },
+  "hero": {
+    "heading": "You are playing {{hero}}",
+    "headingWithRole": "You are playing {{hero}}, {{role}}",
+    "youArePlaying": "You are playing",
+    "role": "{{role}}."
+  },
+  "facts": {
+    "complexity": "Complexity",
+    "lane": "Lane",
+    "archetype": "Archetype",
+    "tags": "Tags",
+    "mandate": "Mandate",
+    "buildCost": "Build cost",
+    "souls": "souls",
+    "abilityPriority": "Ability priority",
+    "abilityPriorityHint": "4 unlocks · 32 points",
+    "total": "Total"
+  },
+  "headings": {
+    "build": "Build, in order.",
+    "skills": "Skill order, 1–16.",
+    "rules": "The rules."
+  },
+  "footer": {
+    "credit": "Heroes, items and artwork provided by <link>Deadlock API</link>."
+  },
+  "lanes": {
+    "yellow": "Yellow Lane",
+    "blue": "Blue Lane",
+    "green": "Green Lane"
+  },
+  "mandates": {
+    "gunslinger": {
+      "label": "Gunslinger",
+      "blurb": "Most of your souls went into the gun. Win your trades with it before anyone has armour."
+    },
+    "caster": {
+      "label": "Caster",
+      "blurb": "The roll is built around your abilities. Hold the cooldowns for the fight that matters."
+    },
+    "bulwark": {
+      "label": "Bulwark",
+      "blurb": "You bought survivability first. Be the one who walks into the lane and does not leave."
+    }
+  },
+  "categories": {
+    "weapon": "Weapon",
+    "vitality": "Vitality",
+    "spirit": "Spirit"
+  },
+  "challenges": {
+    "exactOrder": {
+      "title": "Buy in order",
+      "detail": "Purchase the build strictly top to bottom. No skipping ahead, even when you can afford the next tier. Upgrades come whenever you can pay for them."
+    },
+    "noRecall": {
+      "title": "No base shopping after 15:00",
+      "detail": "Once the clock passes fifteen minutes, every purchase has to happen outside your own base."
+    },
+    "parry": {
+      "title": "Always parry",
+      "detail": "Every melee swing thrown at you gets a parry attempt. Trading damage instead counts as a fail."
+    },
+    "noZipline": {
+      "title": "Grounded",
+      "detail": "The zipline is off limits for the first ten minutes. Walk."
+    },
+    "meleeOpening": {
+      "title": "Fists first",
+      "detail": "Until your first tier 2 item is bought, melee is your only way to damage an enemy player."
+    },
+    "ultOnCooldown": {
+      "title": "Never bank the ultimate",
+      "detail": "Your ultimate goes out the moment it comes up. Saving it for a better moment is a fail."
+    },
+    "noRetreat": {
+      "title": "No retreat",
+      "detail": "Never leave a lane fight you started. You win it, or you walk back from the spawn."
+    },
+    "soulCap": {
+      "title": "Spend it all",
+      "detail": "The moment you can afford the next item in your build, go buy it. Banking souls past its price is a fail."
+    },
+    "oneLane": {
+      "title": "Lane loyalty",
+      "detail": "Stay in the lane you rolled until the first guardian on it falls. No rotations, no jungle."
+    },
+    "noCancel": {
+      "title": "Commit",
+      "detail": "Every ability you start casting gets finished. Cancelling a cast is a fail."
+    },
+    "callout": {
+      "title": "Call every roll",
+      "detail": "Type your hero, your lane and your first item in all chat before the barrier drops."
+    },
+    "noHeal": {
+      "title": "Denied",
+      "detail": "Never heal up in your own base. Regen, lifesteal and healing items only."
+    }
+  },
+  "abilities": {
+    "fallback": "Ability {{slot}}",
+    "ultimate": "Ult",
+    "maxFirst": "Max first",
+    "unlockedAt": "Unlocked at step {{position}}",
+    "upgradeAt": "Upgrade {{upgrade}} at step {{position}}",
+    "unlock": "Unlock",
+    "cost": "+{{cost}} AP",
+    "spent": "{{spent}} AP",
+    "srUnlock": "{{ability}}, unlock",
+    "srUpgrade": "{{ability}}, upgrade {{step}}"
+  },
+  "item": {
+    "tier": "Tier {{tier}}",
+    "active": "Active",
+    "activeTitle": "Active item",
+    "tooltipHeader": "{{category}} · Tier {{tier}} · <souls>{{cost}}</souls>",
+    "sectionKinds": {
+      "active": "active",
+      "passive": "passive"
+    },
+    "ariaUpgrade": "{{item}}, upgraded into {{upgrade}}",
+    "ariaItem": "{{item}}, {{category}} tier {{tier}}",
+    "categoryChange": "{{category}} →",
+    "upgrade": "· Upgrade",
+    "upgradePriceTitle": "{{total}} souls, less the {{paid}} already paid for {{item}}",
+    "goodFit": "Good fit",
+    "goodFitTitle": "Rated highly for this hero in the draft data",
+    "imbueOn": "Imbue on {{ability}}",
+    "imbueOnUntilUpgraded": "Imbue on {{ability}} until upgraded",
+    "imbueLapsesTitle": "{{item}} imbues an ability, {{upgrade}} works on all of them"
+  }
+}

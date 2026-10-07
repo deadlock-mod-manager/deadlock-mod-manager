@@ -4,8 +4,8 @@ import {
   HoverCardTrigger,
 } from "@deadlock-mods/ui/components/hover-card";
 import { ArrowRight, Sparkles, Star, Zap } from "@deadlock-mods/ui/icons";
+import { Trans, useTranslation } from "react-i18next";
 import {
-  CATEGORY_LABELS,
   type DeadlockAbility,
   type DeadlockUpgrade,
   itemImage,
@@ -17,10 +17,10 @@ import {
   CATEGORY_BORDER,
   CATEGORY_TEXT,
   CATEGORY_TINT,
-  formatSouls,
   MicroLabel,
   stripMarkup,
   TierPips,
+  useFormatSouls,
 } from "./primitives";
 
 interface ItemCardProps {
@@ -42,6 +42,8 @@ const ItemFace = ({
   priceTitle?: string;
   size: "large" | "small";
 }) => {
+  const { t } = useTranslation("tool-randomizer");
+  const formatSouls = useFormatSouls();
   const category = item.item_slot_type;
   const image = itemImage(item);
   const description = stripMarkup(item.description.desc ?? undefined);
@@ -88,9 +90,9 @@ const ItemFace = ({
               {item.is_active_item ? (
                 <span
                   className='flex items-center gap-0.5 text-dl-gold/80'
-                  title='Active item'>
+                  title={t("item.activeTitle")}>
                   <Zap className='size-3' />
-                  Active
+                  {t("item.active")}
                 </span>
               ) : null}
             </div>
@@ -105,8 +107,16 @@ const ItemFace = ({
         collisionPadding={12}>
         <div className='border-border/40 border-b px-4 pt-3 pb-2.5'>
           <MicroLabel className='mb-1'>
-            {CATEGORY_LABELS[category]} · Tier {item.item_tier} ·{" "}
-            <span className='text-dl-souls'>{formatSouls(item.cost ?? 0)}</span>
+            <Trans
+              components={{ souls: <span className='text-dl-souls' /> }}
+              i18nKey='item.tooltipHeader'
+              t={t}
+              values={{
+                category: t(`categories.${category}`),
+                tier: item.item_tier,
+                cost: formatSouls(item.cost ?? 0),
+              }}
+            />
           </MicroLabel>
           <h4
             className={cn(
@@ -123,7 +133,7 @@ const ItemFace = ({
                 key={`${section.kind ?? "section"}:${section.text ?? section.stats[0]?.label}`}>
                 {section.kind === "active" || section.kind === "passive" ? (
                   <MicroLabel className='mb-1 text-dl-gold/80'>
-                    {section.kind}
+                    {t(`item.sectionKinds.${section.kind}`)}
                   </MicroLabel>
                 ) : null}
                 {section.text ? (
@@ -163,6 +173,8 @@ const ItemFace = ({
  * is bought first on the left, what it turns into on the right.
  */
 export const ItemCard = ({ entry, order, imbueTarget }: ItemCardProps) => {
+  const { t } = useTranslation("tool-randomizer");
+  const formatSouls = useFormatSouls();
   const { item, upgrade, imbueSlot } = entry;
   const final = finalItem(entry);
   const category = final.item_slot_type;
@@ -174,8 +186,12 @@ export const ItemCard = ({ entry, order, imbueTarget }: ItemCardProps) => {
     <article
       aria-label={
         upgrade
-          ? `${item.name}, upgraded into ${upgrade.name}`
-          : `${item.name}, ${CATEGORY_LABELS[category]} tier ${item.item_tier}`
+          ? t("item.ariaUpgrade", { item: item.name, upgrade: upgrade.name })
+          : t("item.ariaItem", {
+              item: item.name,
+              category: t(`categories.${category}`),
+              tier: item.item_tier,
+            })
       }
       className={cn(
         "dl-notch-sm animate-dl-rise flex h-full flex-col border bg-background-dark/80 transition-colors",
@@ -191,14 +207,18 @@ export const ItemCard = ({ entry, order, imbueTarget }: ItemCardProps) => {
             Spiritual Overflow, so both ends are named when they differ. */}
         {item.item_slot_type !== category ? (
           <span className={cn("dl-label", CATEGORY_TEXT[item.item_slot_type])}>
-            {CATEGORY_LABELS[item.item_slot_type]} →
+            {t("item.categoryChange", {
+              category: t(`categories.${item.item_slot_type}`),
+            })}
           </span>
         ) : null}
         <span className={cn("dl-label", CATEGORY_TEXT[category])}>
-          {CATEGORY_LABELS[category]}
+          {t(`categories.${category}`)}
         </span>
         {upgrade ? (
-          <span className='dl-label text-muted-foreground/60'>· Upgrade</span>
+          <span className='dl-label text-muted-foreground/60'>
+            {t("item.upgrade")}
+          </span>
         ) : null}
         <span className='ml-auto font-mono text-muted-foreground text-xs tabular-nums'>
           {formatSouls(final.cost ?? 0)}
@@ -221,7 +241,11 @@ export const ItemCard = ({ entry, order, imbueTarget }: ItemCardProps) => {
             <ItemFace
               item={upgrade}
               price={`+${formatSouls((upgrade.cost ?? 0) - (item.cost ?? 0))}`}
-              priceTitle={`${formatSouls(upgrade.cost ?? 0)} souls, less the ${formatSouls(item.cost ?? 0)} already paid for ${item.name}`}
+              priceTitle={t("item.upgradePriceTitle", {
+                total: formatSouls(upgrade.cost ?? 0),
+                paid: formatSouls(item.cost ?? 0),
+                item: item.name,
+              })}
               size='small'
             />
           </div>
@@ -239,9 +263,9 @@ export const ItemCard = ({ entry, order, imbueTarget }: ItemCardProps) => {
           {entry.recommended ? (
             <span
               className='flex items-center gap-1 text-[rgb(var(--hero))]'
-              title='Rated highly for this hero in the draft data'>
+              title={t("item.goodFitTitle")}>
               <Star className='size-3' />
-              Good fit
+              {t("item.goodFit")}
             </span>
           ) : null}
           {imbueSlot ? (
@@ -249,12 +273,18 @@ export const ItemCard = ({ entry, order, imbueTarget }: ItemCardProps) => {
               className='flex min-w-0 items-center gap-1 truncate text-dl-spirit/90'
               title={
                 imbueLapses
-                  ? `${item.name} imbues an ability, ${upgrade?.name} works on all of them`
+                  ? t("item.imbueLapsesTitle", {
+                      item: item.name,
+                      upgrade: upgrade?.name,
+                    })
                   : undefined
               }>
               <Sparkles className='size-3 shrink-0' />
-              Imbue on {imbueTarget?.name ?? `Ability ${imbueSlot}`}
-              {imbueLapses ? " until upgraded" : null}
+              {t(imbueLapses ? "item.imbueOnUntilUpgraded" : "item.imbueOn", {
+                ability:
+                  imbueTarget?.name ??
+                  t("abilities.fallback", { slot: imbueSlot }),
+              })}
             </span>
           ) : null}
         </footer>

@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "title": "Generador de miras para Deadlock: diseña y comparte tu mira",
+    "description": "Diseña una mira personalizada para Deadlock con vista previa en vivo sobre fondos del juego. Copia la config o comparte un enlace. Ajusta separación, tamaño y punto."
+  },
+  "page": {
+    "editingShared": "Estás editando una mira compartida. Cualquier cambio creará una configuración nueva.",
+    "title": "Generador de miras",
+    "description": "Crea y personaliza tu mira de Deadlock"
+  },
+  "preview": {
+    "title": "Vista previa",
+    "none": "Ninguno",
+    "backgrounds": {
+      "bg1": "Fondo 1",
+      "bg2": "Fondo 2"
+    },
+    "hint": "Pasa el cursor sobre la vista previa para ver cómo se comporta la mira en el juego."
+  },
+  "controls": {
+    "settings": "Ajustes de la mira",
+    "gap": "Separación",
+    "width": "Ancho",
+    "height": "Alto",
+    "pipOpacity": "Opacidad de las líneas",
+    "dotOpacity": "Opacidad del punto",
+    "dotOutlineOpacity": "Opacidad del contorno del punto",
+    "color": "Color",
+    "colorHex": "Color (hex)",
+    "options": "Opciones",
+    "pipBorder": "Mostrar borde de las líneas",
+    "pipGapStatic": "Separación de líneas fija",
+    "hero": "Héroe",
+    "defaultHero": "Predeterminado"
+  },
+  "export": {
+    "copy": "Copiar config",
+    "copied": "¡Copiado!",
+    "share": "Compartir URL",
+    "linkCopied": "¡Enlace copiado!"
+  }
+}

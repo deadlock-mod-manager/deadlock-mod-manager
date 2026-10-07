@@ -1,0 +1,72 @@
+{
+  "meta": {
+    "title": "Анализатор VPK для Deadlock: из какого мода этот файл",
+    "description": "Загрузи файл .vpk от Deadlock, и анализатор VPK сравнит его с известными модами GameBanana — так ты узнаешь, к какому моду относится бесхозный pak-файл."
+  },
+  "page": {
+    "title": "Анализатор VPK",
+    "description": "Загрузи файл VPK, чтобы узнать, к какому моду он относится"
+  },
+  "toasts": {
+    "matched": "{{file}}: найдена публикация GameBanana {{slug}}",
+    "noMatch": "{{file}}: подходящий мод не найден",
+    "failed": "{{file}}: ошибка анализа — {{error}}",
+    "unknownError": "Неизвестная ошибка",
+    "onlyVpk": "Загружай только файлы .vpk",
+    "ignored": "Пропущено файлов не-VPK: {{ignored}}"
+  },
+  "unknownSize": "Размер неизвестен",
+  "upload": {
+    "title": "Загрузка файлов VPK",
+    "description": "Перетащи сюда несколько файлов .vpk или нажми, чтобы выбрать их",
+    "analyzing": "Анализ файлов VPK...",
+    "processing": "Обработка: {{current}} из {{total}}",
+    "preparing": "Подготовка к анализу...",
+    "progress": "Готово: {{percent}}%",
+    "dropActive": "Отпусти файлы здесь",
+    "drop": "Перетащи файлы VPK сюда",
+    "browse": "или нажми, чтобы выбрать файлы (можно несколько)"
+  },
+  "results": {
+    "title": "Результаты анализа",
+    "completed": "Готово: {{completed}} / {{total}}",
+    "status": {
+      "pending": "В очереди",
+      "analyzing": "Анализ...",
+      "completed": "Готово",
+      "error": "Ошибка"
+    },
+    "failed": "Ошибка анализа: {{error}}"
+  },
+  "info": {
+    "title": "Информация о VPK",
+    "version": "Версия:",
+    "fileCount": "Число файлов:",
+    "fileSize": "Размер файла:",
+    "hasMultiparts": "Из нескольких частей:",
+    "hasInlineData": "Встроенные данные:",
+    "yes": "Да",
+    "no": "Нет",
+    "unknown": "Неизвестно"
+  },
+  "match": {
+    "title": "Найденный мод",
+    "heading": "GameBanana {{type}} {{id}}",
+    "file": "Файл {{id}}",
+    "certainty": "Совпадение {{certainty}}% ({{type}})",
+    "view": "Открыть на GameBanana"
+  },
+  "noMatch": {
+    "title": "Совпадений нет",
+    "description": "Этот файл VPK не совпадает ни с одним модом в нашей базе. Возможно, это:",
+    "reasons": {
+      "custom": "Собственный мод, которого нет на GameBanana",
+      "modified": "Изменённая версия существующего мода",
+      "new": "Новый мод, который ещё не проиндексирован"
+    }
+  },
+  "contents": {
+    "title": "Содержимое файла",
+    "more": "... и ещё файлов: {{more}}"
+  }
+}

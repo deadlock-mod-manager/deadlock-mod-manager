@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "title": "Deadlock Crosshair Generator: Fadenkreuz erstellen & teilen",
+    "description": "Gestalte dein eigenes Deadlock-Fadenkreuz mit Live-Vorschau auf Ingame-Hintergründen, kopier die Config oder teil einen Link. Abstand, Größe, Pips, Punkt, Rand."
+  },
+  "page": {
+    "editingShared": "Du bearbeitest ein geteiltes Fadenkreuz. Jede Änderung erstellt eine neue Konfiguration.",
+    "title": "Crosshair Generator",
+    "description": "Erstelle und passe dein Deadlock-Fadenkreuz an"
+  },
+  "preview": {
+    "title": "Vorschau",
+    "none": "Keiner",
+    "backgrounds": {
+      "bg1": "Hintergrund 1",
+      "bg2": "Hintergrund 2"
+    },
+    "hint": "Beweg die Maus über die Vorschau, um zu sehen, wie sich das Fadenkreuz im Spiel verhält."
+  },
+  "controls": {
+    "settings": "Fadenkreuz-Einstellungen",
+    "gap": "Abstand",
+    "width": "Breite",
+    "height": "Höhe",
+    "pipOpacity": "Pip-Deckkraft",
+    "dotOpacity": "Punkt-Deckkraft",
+    "dotOutlineOpacity": "Punkt-Rand-Deckkraft",
+    "color": "Farbe",
+    "colorHex": "Farbe (Hex)",
+    "options": "Optionen",
+    "pipBorder": "Pip-Rand anzeigen",
+    "pipGapStatic": "Statischer Pip-Abstand",
+    "hero": "Held",
+    "defaultHero": "Standard"
+  },
+  "export": {
+    "copy": "Config kopieren",
+    "copied": "Kopiert!",
+    "share": "URL teilen",
+    "linkCopied": "Link kopiert!"
+  }
+}

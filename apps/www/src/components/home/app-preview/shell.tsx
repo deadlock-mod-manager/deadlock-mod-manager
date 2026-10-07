@@ -31,6 +31,8 @@ import {
   WifiHighIcon,
   XIcon,
 } from "@phosphor-icons/react";
+import type { TFunction } from "i18next";
+import { Trans, useTranslation } from "react-i18next";
 import Logo from "@/components/logo";
 import { DISCORD_URL, DOCS_URL } from "@/lib/constants";
 import type { LaunchMode, LaunchState } from "./launch";
@@ -38,42 +40,56 @@ import { useInstalledMods, usePreviewState } from "./preview-state";
 import { type ScreenId, usePreviewNavigation } from "./store";
 import { getPreviewTheme } from "./themes";
 
-type NavItem = { screen: ScreenId; label: string; icon: Icon };
+type NavItem = { screen: ScreenId; icon: Icon };
 
 // Mirrors the desktop sidebar (apps/desktop/src/components/layout/app-sidebar.tsx).
-const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
+const NAV_GROUPS = [
   {
-    label: "General",
+    id: "general",
     items: [
-      { screen: "dashboard", label: "Dashboard", icon: HouseIcon },
-      { screen: "downloads", label: "Downloads", icon: DownloadIcon },
-      { screen: "settings", label: "Settings", icon: GearIcon },
+      { screen: "dashboard", icon: HouseIcon },
+      { screen: "downloads", icon: DownloadIcon },
+      { screen: "settings", icon: GearIcon },
     ],
   },
   {
-    label: "Mods",
+    id: "mods",
     items: [
-      { screen: "library", label: "Mods Library", icon: PackageIcon },
-      { screen: "store", label: "Mods Store", icon: MagnifyingGlassIcon },
+      { screen: "library", icon: PackageIcon },
+      { screen: "store", icon: MagnifyingGlassIcon },
     ],
   },
   {
-    label: "Custom Servers",
-    items: [
-      { screen: "servers", label: "Server Browser", icon: HardDrivesIcon },
-    ],
+    id: "customServers",
+    items: [{ screen: "servers", icon: HardDrivesIcon }],
   },
   {
-    label: "Customization",
+    id: "customization",
     items: [
-      { screen: "crosshairs", label: "Crosshairs", icon: CrosshairIcon },
-      { screen: "skins", label: "Hero Skins", icon: TShirtIcon },
-      { screen: "foundry", label: "Mod Foundry", icon: HammerIcon },
-      { screen: "autoexec", label: "Autoexec Config", icon: ArticleIcon },
-      { screen: "stats", label: "Stats", icon: ChartLineUpIcon },
+      { screen: "crosshairs", icon: CrosshairIcon },
+      { screen: "skins", icon: TShirtIcon },
+      { screen: "foundry", icon: HammerIcon },
+      { screen: "autoexec", icon: ArticleIcon },
+      { screen: "stats", icon: ChartLineUpIcon },
     ],
   },
-];
+] as const satisfies readonly { id: string; items: readonly NavItem[] }[];
+
+// Mod Foundry is a product name and stays in English.
+const screenLabels = (t: TFunction<"preview">) =>
+  ({
+    dashboard: t("sidebar.items.dashboard"),
+    downloads: t("sidebar.items.downloads"),
+    settings: t("sidebar.items.settings"),
+    library: t("sidebar.items.library"),
+    store: t("sidebar.items.store"),
+    servers: t("sidebar.items.servers"),
+    crosshairs: t("sidebar.items.crosshairs"),
+    skins: t("sidebar.items.skins"),
+    foundry: "Mod Foundry",
+    autoexec: t("sidebar.items.autoexec"),
+    stats: t("sidebar.items.stats"),
+  }) satisfies Record<ScreenId, string>;
 
 const sidebarButtonClassName =
   "flex h-8 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm outline-none transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring [&>svg]:size-5 [&>svg]:shrink-0";
@@ -98,6 +114,7 @@ export const Titlebar = ({
   onLaunch: (mode: LaunchMode) => void;
   onStop: () => void;
 }) => {
+  const { t } = useTranslation("preview");
   const running = launchState.phase === "running";
   const launching = launchState.phase === "launching" ? launchState.mode : null;
 
@@ -110,7 +127,7 @@ export const Titlebar = ({
             <span className='flex h-full items-center gap-2 rounded-l-md px-2.5'>
               <UsersIcon className='size-3.5 text-muted-foreground' />
               <span className='truncate font-primary text-sm leading-none tracking-wide'>
-                Default Profile
+                {t("titlebar.profile")}
               </span>
               <CaretUpDownIcon
                 weight='bold'
@@ -133,7 +150,7 @@ export const Titlebar = ({
                 )}
               />
               <PlayCircleIcon className='relative size-3.5' />
-              <span className='relative'>Launch without mods</span>
+              <span className='relative'>{t("titlebar.launchVanilla")}</span>
             </button>
             <button
               type='button'
@@ -148,17 +165,17 @@ export const Titlebar = ({
               {running ? (
                 <>
                   <StopIcon className='relative size-3.5' />
-                  <span className='relative'>Stop Game</span>
+                  <span className='relative'>{t("titlebar.stopGame")}</span>
                 </>
               ) : (
                 <>
                   <PlayCircleIcon className='relative size-3.5' />
-                  <span className='relative'>Launch modded</span>
+                  <span className='relative'>{t("titlebar.launchModded")}</span>
                   <span className='relative inline-flex items-center gap-1 tabular-nums'>
                     <span aria-hidden='true' className='opacity-60'>
                       ·
                     </span>
-                    {enabledCount} mods
+                    {t("titlebar.enabledMods", { total: enabledCount })}
                   </span>
                 </>
               )}
@@ -166,7 +183,7 @@ export const Titlebar = ({
             <span className='mx-0.5 h-4 w-px bg-border' />
             <span className='inline-flex h-7 items-center gap-1.5 px-2.5 font-medium text-muted-foreground text-xs'>
               <SignInIcon className='size-4' />
-              Sign In
+              {t("titlebar.signIn")}
             </span>
           </div>
         </div>
@@ -189,13 +206,15 @@ export const Sidebar = ({
   collapsed: boolean;
   onToggleCollapsed: () => void;
 }) => {
+  const { t } = useTranslation("preview");
   const { screen, setScreen, theme } = usePreviewNavigation();
   const installedCount = useInstalledMods().length;
   const { icon } = getPreviewTheme(theme);
+  const labels = screenLabels(t);
 
   return (
     <nav
-      aria-label='App preview'
+      aria-label={t("sidebar.label")}
       className={cn(
         "flex shrink-0 flex-col border-sidebar-border border-r bg-sidebar text-sidebar-foreground transition-[width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] [.theme-chrome-clear_&]:bg-transparent",
         collapsed ? "w-12" : "w-60",
@@ -223,7 +242,12 @@ export const Sidebar = ({
               Deadlock Mod Manager
             </span>
             <span className='text-muted-foreground text-xs'>
-              <span className='tabular-nums'>v2.0.0</span> by Stormix
+              <Trans
+                t={t}
+                i18nKey='sidebar.byline'
+                values={{ version: "v2.0.0" }}
+                components={{ version: <span className='tabular-nums' /> }}
+              />
             </span>
           </div>
         )}
@@ -231,22 +255,23 @@ export const Sidebar = ({
 
       <div className='flex min-h-0 flex-1 flex-col overflow-y-auto'>
         {NAV_GROUPS.map((group) => (
-          <div key={group.label} className='flex flex-col px-2'>
+          <div key={group.id} className='flex flex-col px-2'>
             <div
               className={cn(
                 "flex shrink-0 items-center overflow-hidden rounded-md px-2 font-medium text-sidebar-foreground/70 text-xs transition-opacity duration-200",
                 collapsed ? "h-0 opacity-0" : "h-8",
               )}>
-              {group.label}
+              {t(`sidebar.groups.${group.id}`)}
             </div>
             <ul className='flex flex-col gap-1'>
-              {group.items.map((item) => {
+              {group.items.map((item: NavItem) => {
                 const isActive = item.screen === screen;
+                const label = labels[item.screen];
                 return (
                   <li key={item.screen}>
                     <button
                       type='button'
-                      title={collapsed ? item.label : undefined}
+                      title={collapsed ? label : undefined}
                       aria-current={isActive ? "page" : undefined}
                       onClick={() => setScreen(item.screen)}
                       className={cn(
@@ -261,7 +286,7 @@ export const Sidebar = ({
                           "flex flex-1 items-center justify-between",
                           collapsed && "sr-only",
                         )}>
-                        {item.label}
+                        {label}
                         {item.screen === "library" && (
                           <Badge
                             variant={isActive ? "inverted" : "default"}
@@ -280,8 +305,16 @@ export const Sidebar = ({
 
         <div className='mt-auto flex flex-col gap-1 px-2 pt-4'>
           {[
-            { href: DOCS_URL, label: "Documentation", icon: QuestionIcon },
-            { href: DISCORD_URL, label: "Need Help?", icon: DiscordLogoIcon },
+            {
+              href: DOCS_URL,
+              label: t("sidebar.documentation"),
+              icon: QuestionIcon,
+            },
+            {
+              href: DISCORD_URL,
+              label: t("sidebar.needHelp"),
+              icon: DiscordLogoIcon,
+            },
           ].map((link) => (
             <a
               key={link.label}
@@ -315,7 +348,7 @@ export const Sidebar = ({
             )}
           />
           <span className={cn(collapsed && "sr-only")}>
-            {collapsed ? "Expand menu" : "Collapse menu"}
+            {collapsed ? t("sidebar.expand") : t("sidebar.collapse")}
           </span>
         </button>
       </div>
@@ -324,6 +357,7 @@ export const Sidebar = ({
 };
 
 export const BottomBar = () => {
+  const { t } = useTranslation("preview");
   const { installs } = usePreviewState();
   const downloading = Object.values(installs).filter(
     (install) => install.status === "downloading",
@@ -332,12 +366,12 @@ export const BottomBar = () => {
   return (
     <div className='relative z-30 flex h-8 w-full shrink-0 items-center justify-between border-t bg-background pr-3 pl-4 text-muted-foreground text-xs [.theme-chrome-clear_&]:bg-transparent'>
       <div className='flex items-center gap-1.5'>
-        <span>Status:</span>
+        <span>{t("bottomBar.status")}</span>
         {[
-          { label: "Online", icon: WifiHighIcon },
-          { label: "Signed in", icon: LockSimpleIcon },
-          { label: "Mirror", icon: HardDrivesIcon },
-          { label: "Hero data", icon: CheckCircleIcon },
+          { label: t("bottomBar.statuses.online"), icon: WifiHighIcon },
+          { label: t("bottomBar.statuses.signedIn"), icon: LockSimpleIcon },
+          { label: t("bottomBar.statuses.mirror"), icon: HardDrivesIcon },
+          { label: t("bottomBar.statuses.heroData"), icon: CheckCircleIcon },
         ].map((status) => (
           <span key={status.label} title={status.label} className='p-0.5'>
             <status.icon className='size-3.5 text-primary' />
@@ -349,7 +383,7 @@ export const BottomBar = () => {
         {downloading > 0 && (
           <span className='ml-2 inline-flex items-center gap-1'>
             <DownloadSimpleIcon className='size-3 animate-pulse text-blue-500' />
-            {downloading} downloading
+            {t("bottomBar.downloading", { total: downloading })}
           </span>
         )}
       </div>
@@ -357,12 +391,13 @@ export const BottomBar = () => {
         <span className='mx-1 h-3 w-px bg-border' />
         <span className='flex items-center gap-1 px-1 py-0.5'>
           <SpeakerHighIcon className='size-3' />
-          VOLUME: <span className='w-9 text-right tabular-nums'>50%</span>
+          {t("bottomBar.volume")}{" "}
+          <span className='w-9 text-right tabular-nums'>50%</span>
         </span>
         <span className='mx-1 h-3 w-px bg-border' />
         <span className='flex h-5 items-center gap-1 px-2'>
           <CloudArrowDownIcon className='size-3' />
-          Check for Updates
+          {t("bottomBar.checkUpdates")}
         </span>
       </div>
     </div>

@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "name": "Fatal Error do Deadlock ao iniciar",
+    "title": "Deadlock \"Fatal Error: Unable to Load Layout File\": como corrigir",
+    "description": "Corrija crashes de Fatal Error no Deadlock causados por mods: unable to load layout file, unable to find child (IdolCashInMeter), failed to read 16 bytes."
+  },
+  "hero": {
+    "eyebrow": "Correção de erro",
+    "title": "\"Fatal Error\" no Deadlock ao iniciar com mods",
+    "intro": "Uma janela de Fatal Error logo que o Deadlock abre quase sempre significa que um mod não bate mais com o jogo, geralmente um mod de HUD depois de um patch. A mensagem exata diz qual é o tipo.",
+    "errorSource": "Deadlock, ao iniciar"
+  },
+  "errorText": {
+    "message": "Fatal Error: Unable to load layout file",
+    "errors": {
+      "layoutFile": "Fatal Error: Unable to load layout file 'panorama/layout/…'",
+      "findChild": "Fatal Error: Unable to find child 'IdolCashInMeter'",
+      "read16Bytes": "Fatal Error: Failed to read 16 bytes",
+      "gameinfo": "Fatal Error: Application unable to load gameinfo.gi",
+      "kv3": "Error parsing KV3 data"
+    }
+  },
+  "fix": {
+    "title": "Resolva em quatro passos",
+    "steps": {
+      "confirm": {
+        "title": "Confirme que um mod é a causa",
+        "body": "No Deadlock Mod Manager, use Iniciar sem mods. Se o jogo abrir, sua instalação do Deadlock está ok e o problema é um dos seus mods."
+      },
+      "update": {
+        "title": "Atualize seus mods",
+        "body": "Busque atualizações em Meus Mods. Os autores costumam corrigir seus mods de HUD poucos dias depois de um patch."
+      },
+      "disableHud": {
+        "title": "Desative mods de HUD e interface",
+        "body": "Eles causam a maioria dos erros de layout e de find child. Desative-os e use Iniciar com mods de novo."
+      },
+      "narrowDown": {
+        "title": "Isole o resto",
+        "body": "Continua crashando? Desative metade dos mods restantes e abra o jogo. Continue dividindo pela metade o grupo que crasha até achar o mod culpado."
+      }
+    }
+  },
+  "errors": {
+    "title": "Fatal errors por mensagem",
+    "intro": "Compare com o texto da janela de erro.",
+    "whyLabel": "Causa:",
+    "fixLabel": "Solução:",
+    "kvParserLink": "Abrir o parser de KeyValues",
+    "items": {
+      "layoutFile": {
+        "cause": "Um mod de HUD ou interface desatualizado substitui arquivos de interface que um patch mudou.",
+        "fix": "Desative os mods de HUD e interface, abra o jogo e ative-os de novo quando forem atualizados."
+      },
+      "findChild": {
+        "cause": "Um mod de HUD faz referência a um elemento de interface que o patch renomeou ou removeu. KothCashInMeter e nomes parecidos são o mesmo problema.",
+        "fix": "Desative os mods de HUD até os autores publicarem uma correção."
+      },
+      "read16Bytes": {
+        "cause": "Um arquivo corrompido ou baixado pela metade, geralmente um .vpk.",
+        "fix": "Remova e reinstale os mods adicionados recentemente. Se ainda crashar sem mods, verifique os arquivos do jogo na Steam."
+      },
+      "gameinfo": {
+        "cause": "O gameinfo.gi está faltando ou foi editado e ficou inválido.",
+        "fix": "Verifique os arquivos do jogo na Steam e depois use Iniciar com mods para o app readicionar os caminhos dos mods."
+      },
+      "kv3": {
+        "cause": "Um arquivo de configuração de algum mod, ou um gameinfo.gi editado na mão, tem um erro de sintaxe.",
+        "fix": "Desative os mods adicionados recentemente. Se você editou o gameinfo.gi na mão, cole o conteúdo no parser de KeyValues para achar a linha quebrada."
+      }
+    }
+  },
+  "withoutMods": {
+    "title": "Crasha mesmo sem nenhum mod?",
+    "verify": "Se o Iniciar sem mods também crashar, o problema está nos arquivos do jogo, não em um mod. Na Steam, clique com o botão direito em Deadlock, abra <strong>Propriedades > Arquivos instalados</strong> e escolha <strong>Verificar integridade dos arquivos</strong>. Seus mods continuam instalados, e o app reaplica todos na próxima vez que você iniciar com mods.",
+    "notWorking": "Para mods que pararam de funcionar sem crash, veja <guide>Mods do Deadlock não funcionam depois de uma atualização</guide>. Pergunte no <discord>Discord</discord> para descobrir quais mods quebraram com o último patch."
+  },
+  "faqs": {
+    "layoutFile": {
+      "question": "O que causa o Fatal Error: Unable to load layout file no Deadlock?",
+      "answer": "Um mod de HUD ou interface desatualizado. Esses mods substituem arquivos de layout do Panorama, e quando um patch do Deadlock muda a interface, os arquivos antigos deixam de bater. Desative seus mods de HUD e interface, abra o jogo e reative-os quando forem atualizados."
+    },
+    "findChild": {
+      "question": "Como corrigir o Unable to find child IdolCashInMeter?",
+      "answer": "Do mesmo jeito. Um mod de HUD ainda aponta para um elemento de interface que a Valve renomeou ou removeu, como IdolCashInMeter ou KothCashInMeter. Desative os mods de HUD até os autores lançarem uma atualização."
+    },
+    "read16Bytes": {
+      "question": "O que significa Fatal Error: Failed to read 16 bytes?",
+      "answer": "O jogo encontrou um arquivo corrompido ou incompleto durante a leitura, quase sempre um .vpk que não terminou de baixar. Remova e reinstale seus mods mais recentes e verifique os arquivos do Deadlock na Steam se acontecer com os mods desativados."
+    },
+    "gameinfo": {
+      "question": "Como corrigir o Application unable to load gameinfo.gi?",
+      "answer": "O gameinfo.gi está faltando ou foi editado e ficou inválido. Use Verificar integridade dos arquivos na Steam para restaurá-lo e depois Iniciar com mods no Deadlock Mod Manager para readicionar os caminhos dos mods corretamente."
+    },
+    "findMod": {
+      "question": "Como saber qual mod está crashando o Deadlock?",
+      "answer": "Use Iniciar sem mods para confirmar que o jogo abre limpo. Depois desative metade dos seus mods, inicie com mods e continue dividindo pela metade o grupo que crasha até sobrar um mod só."
+    }
+  },
+  "downloadBand": {
+    "title": "Encontre o mod quebrado mais rápido",
+    "body": "Inicie com ou sem mods em um clique, veja quais mods têm atualizações e ative ou desative sem mexer na pasta do jogo."
+  }
+}

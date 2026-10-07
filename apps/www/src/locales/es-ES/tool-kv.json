@@ -1,0 +1,63 @@
+{
+  "meta": {
+    "title": "Parser de Valve KeyValues (VDF) para gameinfo.gi de Deadlock",
+    "description": "Pega o suelta un archivo Valve KeyValues (VDF), como el gameinfo.gi de Deadlock, para analizarlo y explorarlo como árbol en tu navegador. No se sube nada."
+  },
+  "page": {
+    "title": "Parser de KeyValues",
+    "description": "Analiza y visualiza archivos Valve KeyValues (VDF) como gameinfo.gi"
+  },
+  "input": {
+    "title": "Entrada",
+    "description": "Elige cómo quieres proporcionar el contenido KeyValues",
+    "paste": "Pegar / Editar",
+    "upload": "Subir archivo",
+    "loadSample": "Cargar ejemplo",
+    "clear": "Borrar",
+    "placeholder": "Pega aquí tu contenido KeyValues...",
+    "dropActive": "Suelta el archivo aquí",
+    "drop": "Suelta aquí un archivo KeyValues",
+    "browse": "o haz clic para buscar (.gi, .vdf, .kv, .txt)"
+  },
+  "toasts": {
+    "invalidFile": "Sube un archivo válido",
+    "loaded": "{{file}} cargado",
+    "readAsTextFailed": "No se pudo leer el archivo como texto",
+    "readFailed": "No se pudo leer el archivo",
+    "sampleLoaded": "gameinfo.gi de ejemplo cargado",
+    "cleared": "Contenido borrado",
+    "copied": "Copiado al portapapeles"
+  },
+  "viewer": {
+    "parsing": "Analizando...",
+    "parseError": "Error de análisis",
+    "failed": "Error",
+    "parseFailed": "No se pudo analizar el contenido KeyValues",
+    "line": "Línea: {{line}}",
+    "column": "Columna: {{column}}",
+    "valid": "✓ Válido",
+    "original": "Original",
+    "jsonOutput": "Salida JSON",
+    "treeView": "Vista de árbol",
+    "switchToTree": "Cambiar a vista de árbol",
+    "switchToJson": "Cambiar a JSON",
+    "fixErrors": "Corrige los errores de arriba para ver el resultado analizado",
+    "empty": "Introduce contenido KeyValues para ver el resultado analizado",
+    "copy": "Copiar",
+    "copied": "¡Copiado!"
+  },
+  "stats": {
+    "line": "{{value}} línea",
+    "lines": "{{value}} líneas",
+    "character": "{{value}} carácter",
+    "characters": "{{value}} caracteres",
+    "key": "{{value}} clave",
+    "keys": "{{value}} claves"
+  },
+  "tree": {
+    "title": "Estructura analizada",
+    "expandAll": "Expandir todo",
+    "collapseAll": "Contraer todo",
+    "items": "[{{value}} elementos]"
+  }
+}

@@ -4,6 +4,9 @@ import { encodeConfigToURL } from "@deadlock-mods/crosshair/url-encoder";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Check, Copy, Share2 } from "lucide-react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { localizePath } from "@/lib/i18n/locales";
+import { useLocale } from "@/lib/i18n/route";
 
 interface ExportButtonProps {
   config: CrosshairConfig;
@@ -11,6 +14,7 @@ interface ExportButtonProps {
 }
 
 export function ExportButton({ config, className }: ExportButtonProps) {
+  const { t } = useTranslation("tool-crosshair");
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -25,12 +29,12 @@ export function ExportButton({ config, className }: ExportButtonProps) {
       {copied ? (
         <>
           <Check className='w-4 h-4 mr-2' />
-          Copied!
+          {t("export.copied")}
         </>
       ) : (
         <>
           <Copy className='w-4 h-4 mr-2' />
-          Copy Config
+          {t("export.copy")}
         </>
       )}
     </Button>
@@ -43,11 +47,14 @@ interface ShareButtonProps {
 }
 
 export function ShareButton({ config, className }: ShareButtonProps) {
+  const { t } = useTranslation("tool-crosshair");
+  const locale = useLocale();
   const [copied, setCopied] = useState(false);
 
   const handleShare = async () => {
     const encodedConfig = encodeConfigToURL(config);
-    const url = `${window.location.origin}/crosshair-generator?edit=${encodedConfig}`;
+    const path = localizePath("/crosshair-generator", locale);
+    const url = `${window.location.origin}${path}?edit=${encodedConfig}`;
     await navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 3000);
@@ -58,12 +65,12 @@ export function ShareButton({ config, className }: ShareButtonProps) {
       {copied ? (
         <>
           <Check className='w-4 h-4 mr-2' />
-          Link Copied!
+          {t("export.linkCopied")}
         </>
       ) : (
         <>
           <Share2 className='w-4 h-4 mr-2' />
-          Share URL
+          {t("export.share")}
         </>
       )}
     </Button>

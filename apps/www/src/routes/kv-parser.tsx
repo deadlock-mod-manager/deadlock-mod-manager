@@ -10,18 +10,22 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
+import { useTranslation } from "react-i18next";
 import { KvViewer } from "@/components/kv-parser/kv-viewer";
+import { headI18n } from "@/lib/i18n/route";
 import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/kv-parser")({
   component: KvParserComponent,
-  head: () =>
-    seo({
-      title: "Valve KeyValues (VDF) Parser for Deadlock gameinfo.gi",
-      description:
-        "Paste or drop a Valve KeyValues (VDF) file such as Deadlock's gameinfo.gi to parse it and browse it as a tree, right in your browser. Nothing is uploaded.",
+  head: ({ match }) => {
+    const { t, locale } = headI18n(match, "tool-kv");
+    return seo({
+      title: t("meta.title"),
+      description: t("meta.description"),
       path: "/kv-parser",
-    }),
+      locale,
+    });
+  },
 });
 
 const DEFAULT_CONTENT = `"GameInfo"
@@ -57,34 +61,38 @@ const DEFAULT_CONTENT = `"GameInfo"
 }`;
 
 function KvParserComponent() {
+  const { t } = useTranslation("tool-kv");
   const [content, setContent] = useState(DEFAULT_CONTENT);
   const [mode, setMode] = useState<"paste" | "upload">("paste");
 
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    if (acceptedFiles.length === 0) {
-      toast.error("Please upload a valid file");
-      return;
-    }
-
-    const file = acceptedFiles[0];
-    const reader = new FileReader();
-
-    reader.onload = (e) => {
-      const text = e.target?.result;
-      if (typeof text === "string") {
-        setContent(text);
-        toast.success(`Loaded ${file.name}`);
-      } else {
-        toast.error("Failed to read file as text");
+  const onDrop = useCallback(
+    (acceptedFiles: File[]) => {
+      if (acceptedFiles.length === 0) {
+        toast.error(t("toasts.invalidFile"));
+        return;
       }
-    };
 
-    reader.onerror = () => {
-      toast.error("Failed to read file");
-    };
+      const file = acceptedFiles[0];
+      const reader = new FileReader();
 
-    reader.readAsText(file);
-  }, []);
+      reader.onload = (e) => {
+        const text = e.target?.result;
+        if (typeof text === "string") {
+          setContent(text);
+          toast.success(t("toasts.loaded", { file: file.name }));
+        } else {
+          toast.error(t("toasts.readAsTextFailed"));
+        }
+      };
+
+      reader.onerror = () => {
+        toast.error(t("toasts.readFailed"));
+      };
+
+      reader.readAsText(file);
+    },
+    [t],
+  );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -97,12 +105,12 @@ function KvParserComponent() {
 
   const handleLoadSample = () => {
     setContent(DEFAULT_CONTENT);
-    toast.success("Loaded sample gameinfo.gi");
+    toast.success(t("toasts.sampleLoaded"));
   };
 
   const handleClear = () => {
     setContent("");
-    toast.info("Cleared content");
+    toast.info(t("toasts.cleared"));
   };
 
   return (
@@ -110,20 +118,18 @@ function KvParserComponent() {
       <div className='mx-auto max-w-7xl'>
         <div className='mb-8 text-center'>
           <h1 className='mb-4 font-bold font-primary text-3xl'>
-            KeyValues Parser
+            {t("page.title")}
           </h1>
           <p className='text-lg text-muted-foreground'>
-            Parse and visualize Valve KeyValues (VDF) files like gameinfo.gi
+            {t("page.description")}
           </p>
         </div>
 
         <div className='space-y-6'>
           <Card>
             <CardHeader>
-              <CardTitle>Input</CardTitle>
-              <CardDescription>
-                Choose how to provide your KeyValues content
-              </CardDescription>
+              <CardTitle>{t("input.title")}</CardTitle>
+              <CardDescription>{t("input.description")}</CardDescription>
             </CardHeader>
             <CardContent className='space-y-4'>
               <div className='flex gap-2'>
@@ -131,23 +137,23 @@ function KvParserComponent() {
                   onClick={() => setMode("paste")}
                   size='sm'
                   variant={mode === "paste" ? "default" : "outline"}>
-                  Paste / Edit
+                  {t("input.paste")}
                 </Button>
                 <Button
                   onClick={() => setMode("upload")}
                   size='sm'
                   variant={mode === "upload" ? "default" : "outline"}>
-                  Upload File
+                  {t("input.upload")}
                 </Button>
                 <Button
                   className='ml-auto'
                   onClick={handleLoadSample}
                   size='sm'
                   variant='secondary'>
-                  Load Sample
+                  {t("input.loadSample")}
                 </Button>
                 <Button onClick={handleClear} size='sm' variant='outline'>
-                  Clear
+                  {t("input.clear")}
                 </Button>
               </div>
 
@@ -156,7 +162,7 @@ function KvParserComponent() {
                   <textarea
                     className='w-full min-h-[300px] rounded-lg border border-muted-foreground/20 bg-muted/10 p-4 font-mono text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20'
                     onChange={(e) => setContent(e.target.value)}
-                    placeholder='Paste your KeyValues content here...'
+                    placeholder={t("input.placeholder")}
                     value={content}
                   />
                 </div>
@@ -186,12 +192,10 @@ function KvParserComponent() {
                     </div>
                     <div>
                       <p className='font-medium text-sm'>
-                        {isDragActive
-                          ? "Drop the file here"
-                          : "Drop a KeyValues file here"}
+                        {isDragActive ? t("input.dropActive") : t("input.drop")}
                       </p>
                       <p className='text-muted-foreground text-sm'>
-                        or click to browse (.gi, .vdf, .kv, .txt)
+                        {t("input.browse")}
                       </p>
                     </div>
                   </div>

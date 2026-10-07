@@ -1,0 +1,168 @@
+{
+  "meta": {
+    "title": "Randomizer Deadlock : générateur de héros et de builds aléatoires",
+    "description": "Tirez un héros Deadlock au hasard, un build d'objets valide dans l'ordre d'achat, un ordre de compétences et trois règles bravery. Partagez la seed et relancez.",
+    "keywords": "randomizer deadlock, build aléatoire deadlock, héros aléatoire deadlock, ultimate bravery deadlock, générateur de build deadlock"
+  },
+  "error": {
+    "title": "Le tirage n'a pas pu être lancé",
+    "description": "Les données des héros et des objets viennent de la Deadlock API, et elle n'a pas répondu.",
+    "retry": "Réessayer"
+  },
+  "skeleton": {
+    "heading": "Randomizer Deadlock : héros et build d'objets aléatoires"
+  },
+  "toolbar": {
+    "copyLink": {
+      "idle": "Copier le lien",
+      "copied": "Copié",
+      "failed": "Échec de la copie"
+    },
+    "reroll": "Relancer"
+  },
+  "sections": {
+    "trigger": "Sections",
+    "label": "Tirer au sort",
+    "options": {
+      "build": "Ordre du build",
+      "abilities": "Compétences",
+      "rules": "Règles"
+    }
+  },
+  "heroPicker": {
+    "anyHero": "N'importe quel héros",
+    "label": "Tirer des builds pour"
+  },
+  "hero": {
+    "heading": "Vous jouez {{hero}}",
+    "headingWithRole": "Vous jouez {{hero}}, {{role}}",
+    "youArePlaying": "Vous jouez",
+    "role": "{{role}}."
+  },
+  "facts": {
+    "complexity": "Complexité",
+    "lane": "Lane",
+    "archetype": "Archétype",
+    "tags": "Tags",
+    "mandate": "Mission",
+    "buildCost": "Coût du build",
+    "souls": "âmes",
+    "abilityPriority": "Priorité des compétences",
+    "abilityPriorityHint": "4 déblocages · 32 points",
+    "total": "Total"
+  },
+  "headings": {
+    "build": "Le build, dans l'ordre.",
+    "skills": "Ordre des compétences, 1–16.",
+    "rules": "Les règles."
+  },
+  "footer": {
+    "credit": "Héros, objets et illustrations fournis par <link>Deadlock API</link>."
+  },
+  "lanes": {
+    "yellow": "Lane jaune",
+    "blue": "Lane bleue",
+    "green": "Lane verte"
+  },
+  "mandates": {
+    "gunslinger": {
+      "label": "Flingueur",
+      "blurb": "L'essentiel de vos âmes est passé dans l'arme. Gagnez vos échanges avec avant que quiconque ait de l'armure."
+    },
+    "caster": {
+      "label": "Lanceur de sorts",
+      "blurb": "Le tirage tourne autour de vos compétences. Gardez vos temps de recharge pour le combat qui compte."
+    },
+    "bulwark": {
+      "label": "Rempart",
+      "blurb": "Vous avez d'abord acheté de la survie. Soyez celui qui entre dans la lane et n'en ressort pas."
+    }
+  },
+  "categories": {
+    "weapon": "Arme",
+    "vitality": "Vitalité",
+    "spirit": "Esprit"
+  },
+  "challenges": {
+    "exactOrder": {
+      "title": "Achats dans l'ordre",
+      "detail": "Achetez le build strictement de haut en bas. Pas question de sauter une étape, même si vous pouvez vous payer le tier suivant. Les améliorations se prennent dès que vous pouvez les payer."
+    },
+    "noRecall": {
+      "title": "Pas d'achat en base après 15:00",
+      "detail": "Une fois les quinze minutes passées, tous vos achats doivent se faire hors de votre base."
+    },
+    "parry": {
+      "title": "Toujours parer",
+      "detail": "Chaque coup de mêlée lancé contre vous doit être suivi d'une tentative de parade. Échanger des dégâts à la place compte comme un échec."
+    },
+    "noZipline": {
+      "title": "Les pieds sur terre",
+      "detail": "La tyrolienne est interdite pendant les dix premières minutes. Marchez."
+    },
+    "meleeOpening": {
+      "title": "Les poings d'abord",
+      "detail": "Tant que vous n'avez pas acheté votre premier objet de tier 2, la mêlée est votre seul moyen d'infliger des dégâts à un joueur adverse."
+    },
+    "ultOnCooldown": {
+      "title": "Jamais d'ultime en réserve",
+      "detail": "Votre ultime part dès qu'il est disponible. Le garder pour un meilleur moment compte comme un échec."
+    },
+    "noRetreat": {
+      "title": "Pas de retraite",
+      "detail": "Ne quittez jamais un combat de lane que vous avez commencé. Vous le gagnez, ou vous revenez à pied depuis le spawn."
+    },
+    "soulCap": {
+      "title": "Tout dépenser",
+      "detail": "Dès que vous pouvez vous payer l'objet suivant du build, allez l'acheter. Garder des âmes au-delà de son prix compte comme un échec."
+    },
+    "oneLane": {
+      "title": "Fidèle à sa lane",
+      "detail": "Restez dans la lane tirée jusqu'à la chute de son premier gardien. Pas de rotations, pas de jungle."
+    },
+    "noCancel": {
+      "title": "Assumez",
+      "detail": "Toute compétence que vous commencez à lancer doit aller au bout. Annuler un lancement compte comme un échec."
+    },
+    "callout": {
+      "title": "Annoncez votre tirage",
+      "detail": "Écrivez votre héros, votre lane et votre premier objet dans le chat général avant que la barrière tombe."
+    },
+    "noHeal": {
+      "title": "Refusé",
+      "detail": "Ne vous soignez jamais dans votre base. Régénération, vol de vie et objets de soin uniquement."
+    }
+  },
+  "abilities": {
+    "fallback": "Compétence {{slot}}",
+    "ultimate": "Ult",
+    "maxFirst": "À maxer en premier",
+    "unlockedAt": "Débloquée à l'étape {{position}}",
+    "upgradeAt": "Amélioration {{upgrade}} à l'étape {{position}}",
+    "unlock": "Déblocage",
+    "cost": "+{{cost}} AP",
+    "spent": "{{spent}} AP",
+    "srUnlock": "{{ability}}, déblocage",
+    "srUpgrade": "{{ability}}, amélioration {{step}}"
+  },
+  "item": {
+    "tier": "Tier {{tier}}",
+    "active": "Actif",
+    "activeTitle": "Objet actif",
+    "tooltipHeader": "{{category}} · Tier {{tier}} · <souls>{{cost}}</souls>",
+    "sectionKinds": {
+      "active": "actif",
+      "passive": "passif"
+    },
+    "ariaUpgrade": "{{item}}, amélioré en {{upgrade}}",
+    "ariaItem": "{{item}}, {{category}} tier {{tier}}",
+    "categoryChange": "{{category}} →",
+    "upgrade": "· Amélioration",
+    "upgradePriceTitle": "{{total}} âmes, moins les {{paid}} déjà payées pour {{item}}",
+    "goodFit": "Bon choix",
+    "goodFitTitle": "Très bien noté pour ce héros dans les données de draft",
+    "imbueOn": "Imprégner {{ability}}",
+    "imbueOnUntilUpgraded": "Imprégner {{ability}} jusqu'à l'amélioration",
+    "imbueLapsesTitle": "{{item}} imprègne une compétence, {{upgrade}} agit sur toutes"
+  }
+}

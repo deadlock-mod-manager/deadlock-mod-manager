@@ -1,0 +1,72 @@
+{
+  "meta": {
+    "title": "Analyseur VPK Deadlock : de quel mod vient ce fichier VPK ?",
+    "description": "Envoyez un fichier .vpk de Deadlock : l'analyseur VPK le compare aux mods GameBanana connus pour savoir à quel mod appartient un fichier pak orphelin."
+  },
+  "page": {
+    "title": "Analyseur VPK",
+    "description": "Envoyez un fichier VPK pour savoir à quel mod il appartient"
+  },
+  "toasts": {
+    "matched": "{{file}} : correspond à la publication GameBanana {{slug}}",
+    "noMatch": "{{file}} : aucun mod correspondant trouvé",
+    "failed": "{{file}} : échec de l'analyse - {{error}}",
+    "unknownError": "Erreur inconnue",
+    "onlyVpk": "Veuillez envoyer uniquement des fichiers .vpk",
+    "ignored": "Fichiers non VPK ignorés : {{ignored}}"
+  },
+  "unknownSize": "Taille inconnue",
+  "upload": {
+    "title": "Envoyer des fichiers VPK",
+    "description": "Déposez plusieurs fichiers .vpk ici ou cliquez pour les sélectionner",
+    "analyzing": "Analyse des fichiers VPK...",
+    "processing": "Traitement du fichier {{current}} sur {{total}}",
+    "preparing": "Préparation de l'analyse...",
+    "progress": "{{percent}} % terminé",
+    "dropActive": "Déposez les fichiers ici",
+    "drop": "Déposez des fichiers VPK ici",
+    "browse": "ou cliquez pour parcourir vos fichiers (plusieurs fichiers acceptés)"
+  },
+  "results": {
+    "title": "Résultats de l'analyse",
+    "completed": "{{completed}} / {{total}} terminés",
+    "status": {
+      "pending": "En attente",
+      "analyzing": "Analyse...",
+      "completed": "Terminé",
+      "error": "Erreur"
+    },
+    "failed": "Échec de l'analyse : {{error}}"
+  },
+  "info": {
+    "title": "Informations VPK",
+    "version": "Version :",
+    "fileCount": "Nombre de fichiers :",
+    "fileSize": "Taille du fichier :",
+    "hasMultiparts": "Multi-parties :",
+    "hasInlineData": "Données inline :",
+    "yes": "Oui",
+    "no": "Non",
+    "unknown": "Inconnu"
+  },
+  "match": {
+    "title": "Mod correspondant",
+    "heading": "GameBanana {{type}} {{id}}",
+    "file": "Fichier {{id}}",
+    "certainty": "Correspondance à {{certainty}} % ({{type}})",
+    "view": "Voir sur GameBanana"
+  },
+  "noMatch": {
+    "title": "Aucune correspondance",
+    "description": "Ce fichier VPK ne correspond à aucun mod de notre base de données. Il peut s'agir :",
+    "reasons": {
+      "custom": "D'un mod perso non disponible sur GameBanana",
+      "modified": "D'une version modifiée d'un mod existant",
+      "new": "D'un nouveau mod pas encore indexé"
+    }
+  },
+  "contents": {
+    "title": "Contenu du fichier",
+    "more": "... et {{more}} autres fichiers"
+  }
+}

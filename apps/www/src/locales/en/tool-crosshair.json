@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "title": "Deadlock Crosshair Generator: Design & Share Crosshairs",
+    "description": "Design a custom Deadlock crosshair with a live preview over in-game backgrounds, then copy the config or share a link. Adjust gap, size, pips, dot and outline."
+  },
+  "page": {
+    "editingShared": "You're editing a shared crosshair. Any changes will create a new configuration.",
+    "title": "Crosshair Generator",
+    "description": "Create and customize your Deadlock crosshair"
+  },
+  "preview": {
+    "title": "Preview",
+    "none": "None",
+    "backgrounds": {
+      "bg1": "Background 1",
+      "bg2": "Background 2"
+    },
+    "hint": "Move your mouse over the preview to see how the crosshair behaves in-game."
+  },
+  "controls": {
+    "settings": "Crosshair Settings",
+    "gap": "Gap",
+    "width": "Width",
+    "height": "Height",
+    "pipOpacity": "Pip Opacity",
+    "dotOpacity": "Dot Opacity",
+    "dotOutlineOpacity": "Dot Outline Opacity",
+    "color": "Color",
+    "colorHex": "Color (Hex)",
+    "options": "Options",
+    "pipBorder": "Show pip border",
+    "pipGapStatic": "Static pip gap",
+    "hero": "Hero",
+    "defaultHero": "Default"
+  },
+  "export": {
+    "copy": "Copy Config",
+    "copied": "Copied!",
+    "share": "Share URL",
+    "linkCopied": "Link Copied!"
+  }
+}

@@ -50,7 +50,10 @@ const UPGRADE_CHANCE = 0.5;
  * The map has three lanes and every one of them is a duo lane, so the lane
  * itself is all there is to roll.
  */
-const LANES = ["Yellow Lane", "Blue Lane", "Green Lane"] as const;
+const LANES = ["yellow", "blue", "green"] as const;
+
+/** Lane names are translated at render time, under `lanes.<lane>`. */
+type Lane = (typeof LANES)[number];
 const CHALLENGE_COUNT = 3;
 
 /**
@@ -69,27 +72,13 @@ export const CHARGE_ITEMS: ReadonlySet<string> = new Set([
  */
 const DEFAULT_UNLOCK_GATES = [1, 2, 3, 5];
 
-interface Mandate {
-  label: string;
-  blurb: string;
-}
+/** Label and blurb are translated at render time, under `mandates.<mandate>`. */
+type Mandate = "gunslinger" | "caster" | "bulwark";
 
 const MANDATES: Record<ItemCategory, Mandate> = {
-  weapon: {
-    label: "Gunslinger",
-    blurb:
-      "Most of your souls went into the gun. Win your trades with it before anyone has armour.",
-  },
-  spirit: {
-    label: "Caster",
-    blurb:
-      "The roll is built around your abilities. Hold the cooldowns for the fight that matters.",
-  },
-  vitality: {
-    label: "Bulwark",
-    blurb:
-      "You bought survivability first. Be the one who walks into the lane and does not leave.",
-  },
+  weapon: "gunslinger",
+  spirit: "caster",
+  vitality: "bulwark",
 };
 
 export interface RolledItem {
@@ -126,7 +115,7 @@ export type SkillStep =
 export interface Roll {
   seed: number;
   hero: DeadlockHero;
-  lane: string;
+  lane: Lane;
   mandate: Mandate;
   build: RolledItem[];
   /** Signature slots in the order they get unlocked. The ultimate is last. */

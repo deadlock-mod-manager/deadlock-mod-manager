@@ -2,6 +2,11 @@ name: Crowdin
 
 on:
   workflow_dispatch:
+    inputs:
+      upload_translations:
+        description: Also upload translations from the repo (seeds Crowdin with drafted website translations)
+        type: boolean
+        default: false
   repository_dispatch:
     types:
       - file-fully-translated
@@ -10,6 +15,7 @@ on:
       - main
     paths:
       - apps/desktop/src/locales/en.json
+      - apps/www/src/locales/en/*.json
 
 jobs:
   synchronize-with-crowdin:
@@ -30,7 +36,7 @@ jobs:
         uses: crowdin/github-action@v3
         with:
           upload_sources: true
-          upload_translations: false
+          upload_translations: ${{ inputs.upload_translations || false }}
           download_translations: true
           skip_untranslated_strings: true
           localization_branch_name: l10n_crowdin_translations

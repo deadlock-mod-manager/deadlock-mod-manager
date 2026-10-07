@@ -1,0 +1,63 @@
+{
+  "meta": {
+    "title": "Valve KeyValues (VDF) Parser für Deadlock gameinfo.gi",
+    "description": "Füg eine Valve-KeyValues-Datei (VDF) wie Deadlocks gameinfo.gi ein, parse sie und durchsuch sie als Baum, direkt im Browser. Nichts wird hochgeladen."
+  },
+  "page": {
+    "title": "KeyValues Parser",
+    "description": "Valve-KeyValues-Dateien (VDF) wie gameinfo.gi parsen und visualisieren"
+  },
+  "input": {
+    "title": "Eingabe",
+    "description": "Wähl, wie du deinen KeyValues-Inhalt bereitstellen willst",
+    "paste": "Einfügen / Bearbeiten",
+    "upload": "Datei hochladen",
+    "loadSample": "Beispiel laden",
+    "clear": "Leeren",
+    "placeholder": "Füg deinen KeyValues-Inhalt hier ein …",
+    "dropActive": "Datei hier ablegen",
+    "drop": "KeyValues-Datei hier ablegen",
+    "browse": "oder klick zum Auswählen (.gi, .vdf, .kv, .txt)"
+  },
+  "toasts": {
+    "invalidFile": "Bitte lade eine gültige Datei hoch",
+    "loaded": "{{file}} geladen",
+    "readAsTextFailed": "Datei konnte nicht als Text gelesen werden",
+    "readFailed": "Datei konnte nicht gelesen werden",
+    "sampleLoaded": "Beispiel-gameinfo.gi geladen",
+    "cleared": "Inhalt geleert",
+    "copied": "In die Zwischenablage kopiert"
+  },
+  "viewer": {
+    "parsing": "Wird geparst …",
+    "parseError": "Parse-Fehler",
+    "failed": "Fehlgeschlagen",
+    "parseFailed": "KeyValues-Inhalt konnte nicht geparst werden",
+    "line": "Zeile: {{line}}",
+    "column": "Spalte: {{column}}",
+    "valid": "✓ Gültig",
+    "original": "Original",
+    "jsonOutput": "JSON-Ausgabe",
+    "treeView": "Baumansicht",
+    "switchToTree": "Zur Baumansicht",
+    "switchToJson": "Zu JSON",
+    "fixErrors": "Behebe die Fehler oben, um die geparste Ausgabe zu sehen",
+    "empty": "Gib KeyValues-Inhalt ein, um das Ergebnis zu sehen",
+    "copy": "Kopieren",
+    "copied": "Kopiert!"
+  },
+  "stats": {
+    "line": "{{value}} Zeile",
+    "lines": "{{value}} Zeilen",
+    "character": "{{value}} Zeichen",
+    "characters": "{{value}} Zeichen",
+    "key": "{{value}} Schlüssel",
+    "keys": "{{value}} Schlüssel"
+  },
+  "tree": {
+    "title": "Geparste Struktur",
+    "expandAll": "Alle ausklappen",
+    "collapseAll": "Alle einklappen",
+    "items": "[{{value}} Einträge]"
+  }
+}

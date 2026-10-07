@@ -1,0 +1,149 @@
+{
+  "meta": {
+    "name": "Deadlock Mod Manager vs Grimoire",
+    "title": "Deadlock Mod Manager vs Grimoire: ¿qué gestor de mods elegir?",
+    "description": "Desde la V2, Deadlock Mod Manager y Grimoire ofrecen las mismas funciones; elige la interfaz que prefieras. Prueba la nuestra e importa Grimoire en un minuto."
+  },
+  "faqs": {
+    "better": {
+      "question": "¿Cuál es mejor, Deadlock Mod Manager o Grimoire?",
+      "answer": "Desde Deadlock Mod Manager V2, ambas apps cubren lo mismo: instalaciones desde GameBanana, conflictos y orden de carga, perfiles compartibles, skins de héroes con vista previa 3D, miras, autoexec y estadísticas de partidas. Elige la interfaz que más te guste usar. Puedes probar la de Deadlock Mod Manager en la vista previa interactiva de esta página."
+    },
+    "same": {
+      "question": "¿Grimoire es lo mismo que Deadlock Mod Manager?",
+      "answer": "No, son proyectos de código abierto independientes, pero comparten raíces. Deadlock Mod Manager empezó en diciembre de 2024 y Grimoire un año después. Grimoire se inspiró en Deadlock Mod Manager, y varios colaboradores de Deadlock Mod Manager también han ayudado desde entonces a desarrollar Grimoire."
+    },
+    "switch": {
+      "question": "¿Puedo pasarme de Grimoire a Deadlock Mod Manager?",
+      "answer": "Sí, en más o menos un minuto. Abre Mis Mods, elige Importar desde otros gestores de mods y selecciona Grimoire. Deadlock Mod Manager encuentra tu biblioteca de Grimoire y trae tus mods con su estado de activación y orden de carga, tus perfiles y tus miras. No se modifica nada en Grimoire."
+    },
+    "goBack": {
+      "question": "¿Puedo volver a Grimoire o usar los dos?",
+      "answer": "Sí. Ambas apps leen y escriben el mismo formato mod-interchange, así que puedes exportar desde Deadlock Mod Manager e importar en Grimoire, o ir y venir mientras decides."
+    },
+    "safe": {
+      "question": "¿Los dos gestores de mods son seguros?",
+      "answer": "Ambos son de código abierto, así que cualquiera puede leer el código. El instalador de Windows de Deadlock Mod Manager está firmado digitalmente mediante SignPath. Según el README de Grimoire, sus instaladores de Windows aún no están firmados y en su lugar publica sumas de verificación SHA256."
+    }
+  },
+  "hero": {
+    "eyebrow": "Comparativa",
+    "title": "Deadlock Mod Manager vs Grimoire",
+    "intro": "Las dos apps cumplen bien, así que elige la que prefieras abrir antes de cada partida. Puedes probar la nuestra en esta página y traer tu configuración de Grimoire en más o menos un minuto."
+  },
+  "shared": {
+    "title": "Función por función, es (casi) un empate",
+    "intro": "Ambas apps cubren lo que necesita la mayoría de los jugadores. Creemos que la nuestra tiene algunos extras y un poco más de pulido, pero no somos imparciales. Si buscas una función concreta, probablemente esté en esta lista, y ambas apps la tienen.",
+    "features": {
+      "gamebanana": "Explorar e instalar mods de GameBanana desde la app",
+      "sounds": "Sonidos junto a los mods",
+      "conflicts": "Detección de conflictos y orden de carga",
+      "profiles": "Perfiles de mods compartibles",
+      "import": "Importar desde la otra app",
+      "skins": "Skins de héroes con vista previa 3D",
+      "launch": "Iniciar con o sin mods",
+      "crosshair": "Editor de mira y autoexec",
+      "stats": "Estadísticas de partidas de deadlock-api",
+      "platforms": "Versiones para Windows y Linux",
+      "openSource": "Gratis y de código abierto"
+    }
+  },
+  "roots": {
+    "title": "Por qué se parecen tanto",
+    "first": "Deadlock Mod Manager llegó primero. Desde diciembre de 2024 convirtió el conocimiento de modding manual de la comunidad en una sola app: instalaciones desde GameBanana, <code>gameinfo.gi</code> configurado por ti e inicio con o sin mods. Durante el año siguiente añadió soporte para Linux, mods de sonido, perfiles compartibles y temas, y la comunidad ayudó a pulirlo todo.",
+    "grimoire": "Grimoire empezó en diciembre de 2025 y se inspiró en muchas cosas que funcionaban en Deadlock Mod Manager. Nos lo tomamos como un cumplido y echamos una mano. Colaboradores principales de Deadlock Mod Manager también han ayudado a desarrollar Grimoire, y por eso, en parte, es tan fácil pasar de una app a otra.",
+    "stats": {
+      "dmmStarted": {
+        "label": "Inicio de Deadlock Mod Manager",
+        "value": "dic. 2024"
+      },
+      "grimoireStarted": {
+        "label": "Inicio de Grimoire",
+        "value": "dic. 2025"
+      },
+      "contributors": {
+        "label": "Personas que han contribuido a Deadlock Mod Manager",
+        "value": "30+"
+      },
+      "shared": {
+        "label": "Colaboradores principales de Deadlock Mod Manager que han trabajado en Grimoire",
+        "value": "2"
+      }
+    }
+  },
+  "interface": {
+    "title": "Así que todo se reduce a la interfaz",
+    "intro": "Ambas apps son personalizables, de formas distintas.",
+    "dmm": {
+      "title": "Deadlock Mod Manager: cambia de tema completo",
+      "body": "Cada tema es un aspecto completo con sus propios colores, y la mayoría añade sus propias ilustraciones y logo en la barra lateral, desde el dorado por defecto hasta el carmesí de Bloodmoon. Cambia con un clic o usa el plugin Background para poner tu propia imagen. La biblioteca de mods es una lista compacta, algo que se agradece cuando tienes muchos mods."
+    },
+    "themeAlt": "Deadlock Mod Manager con el tema {{name}}",
+    "grimoire": {
+      "title": "Grimoire: ajusta un único aspecto",
+      "body": "Una interfaz oscura con tarjetas de imagen grandes que ajustas pieza por pieza:",
+      "options": {
+        "accents": "Ocho colores de acento, o cualquier color personalizado",
+        "oled": "Un modo negro OLED",
+        "glow": "Un brillo de fondo de color",
+        "art": "Arte de héroes o tus propias imágenes detrás de los botones de inicio y la pestaña activa"
+      },
+      "screenshots": "Ver capturas de Grimoire"
+    }
+  },
+  "tryIt": {
+    "title": "Prueba la nuestra antes de descargarla",
+    "intro": "Esta es una copia funcional de la app. Instala un mod, pulsa iniciar o elige un tema en Configuración → Temas.",
+    "mobileNote": "En una PC puedes usar aquí mismo la vista previa interactiva."
+  },
+  "switch": {
+    "title": "Trae tu configuración de Grimoire",
+    "intro": "Deadlock Mod Manager importa directamente tu biblioteca de Grimoire, así que no tienes que reinstalar mods ni rehacer perfiles.",
+    "steps": {
+      "install": {
+        "title": "Instala Deadlock Mod Manager",
+        "body": "Consíguelo en la <link>página de descarga</link>. Mantén Grimoire instalado; no se modifica nada en él."
+      },
+      "import": {
+        "title": "Abre la importación",
+        "body": "En Mis Mods, elige Importar desde otros gestores de mods. Grimoire se detecta automáticamente, o puedes indicar su carpeta de datos."
+      },
+      "pick": {
+        "title": "Elige qué traer",
+        "body": "Los mods conservan su estado de activación y orden de carga. Los perfiles se convierten en perfiles de DMM con los mismos mods, y las miras pasan a tu historial de miras."
+      },
+      "play": {
+        "title": "Juega",
+        "body": "Los mods que la app no reconoce se importan como mods locales; identifícalos para recibir actualizaciones o déjalos como están. Luego pulsa Iniciar con mods."
+      }
+    },
+    "lockIn": {
+      "title": "Sin ataduras, en ningún sentido",
+      "format": "Deadlock Mod Manager y Grimoire admiten el formato abierto <strong>mod-interchange</strong>. Exporta tus mods, perfiles y miras desde una app e impórtalos en la otra.",
+      "reimport": "¿Cambiaste algo en Grimoire después de importar? Vuelve a importar: los mods que ya tienes se reconocen y se actualizan en su sitio, sin duplicarse.",
+      "tryBoth": "Prueba ambas y quédate con la que más te guste."
+    }
+  },
+  "smallPrint": {
+    "title": "La letra pequeña",
+    "items": {
+      "installer": {
+        "title": "Instalador de Windows",
+        "body": "El nuestro está firmado digitalmente mediante SignPath. Según el README de Grimoire, sus instaladores aún no están firmados, así que Windows muestra una advertencia de \"Editor desconocido\"."
+      },
+      "linux": {
+        "title": "Paquetes para Linux",
+        "body": "Ofrecemos un repositorio apt, .deb, RPM, Flatpak, AUR, nixpkgs y Gentoo. Grimoire ofrece un AppImage, .deb, un repositorio apt, AUR y un flake de Nix."
+      },
+      "tech": {
+        "title": "Por dentro",
+        "body": "Deadlock Mod Manager está hecho con Tauri y usa el webview de tu sistema. Grimoire es una app de Electron que incluye su propio Chromium."
+      }
+    },
+    "sources": "Basado en el README, la documentación y las versiones de cada proyecto en octubre de 2026. ¿Ves algo desactualizado? <link>Avísanos</link>."
+  },
+  "downloadBand": {
+    "title": "Prueba Deadlock Mod Manager",
+    "body": "Gratis, de código abierto y firmado en Windows. Tus mods, perfiles y miras de Grimoire vienen contigo."
+  }
+}

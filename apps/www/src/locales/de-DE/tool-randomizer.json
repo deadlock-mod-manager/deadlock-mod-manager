@@ -1,0 +1,168 @@
+{
+  "meta": {
+    "title": "Deadlock Randomizer: Zufälliger Held & Item-Build-Generator",
+    "description": "Würfle einen zufälligen Deadlock-Helden, einen gültigen Item-Build in Kaufreihenfolge, eine Skill-Reihenfolge und drei Bravery-Regeln. Seed teilen, neu würfeln.",
+    "keywords": "deadlock randomizer, deadlock zufälliger build, deadlock ultimate bravery, zufälliger held deadlock, deadlock build generator"
+  },
+  "error": {
+    "title": "Der Wurf ging daneben",
+    "description": "Helden- und Item-Daten kommen von der Deadlock API, und die hat nicht geantwortet.",
+    "retry": "Erneut versuchen"
+  },
+  "skeleton": {
+    "heading": "Deadlock Randomizer: zufälliger Held und Item-Build"
+  },
+  "toolbar": {
+    "copyLink": {
+      "idle": "Link kopieren",
+      "copied": "Kopiert",
+      "failed": "Kopieren fehlgeschlagen"
+    },
+    "reroll": "Neu würfeln"
+  },
+  "sections": {
+    "trigger": "Bereiche",
+    "label": "Würfle mir",
+    "options": {
+      "build": "Build-Reihenfolge",
+      "abilities": "Fähigkeiten",
+      "rules": "Regeln"
+    }
+  },
+  "heroPicker": {
+    "anyHero": "Beliebiger Held",
+    "label": "Builds würfeln für"
+  },
+  "hero": {
+    "heading": "Du spielst {{hero}}",
+    "headingWithRole": "Du spielst {{hero}}, {{role}}",
+    "youArePlaying": "Du spielst",
+    "role": "{{role}}."
+  },
+  "facts": {
+    "complexity": "Komplexität",
+    "lane": "Lane",
+    "archetype": "Archetyp",
+    "tags": "Tags",
+    "mandate": "Auftrag",
+    "buildCost": "Build-Kosten",
+    "souls": "Seelen",
+    "abilityPriority": "Fähigkeiten-Priorität",
+    "abilityPriorityHint": "4 Freischaltungen · 32 Punkte",
+    "total": "Gesamt"
+  },
+  "headings": {
+    "build": "Build, der Reihe nach.",
+    "skills": "Skill-Reihenfolge, 1–16.",
+    "rules": "Die Regeln."
+  },
+  "footer": {
+    "credit": "Helden, Items und Artwork bereitgestellt von <link>Deadlock API</link>."
+  },
+  "lanes": {
+    "yellow": "Gelbe Lane",
+    "blue": "Blaue Lane",
+    "green": "Grüne Lane"
+  },
+  "mandates": {
+    "gunslinger": {
+      "label": "Revolverheld",
+      "blurb": "Die meisten deiner Seelen sind in die Waffe geflossen. Gewinn deine Trades damit, bevor irgendwer Rüstung hat."
+    },
+    "caster": {
+      "label": "Caster",
+      "blurb": "Der Wurf baut auf deinen Fähigkeiten auf. Heb dir die Cooldowns für den Kampf auf, der zählt."
+    },
+    "bulwark": {
+      "label": "Bollwerk",
+      "blurb": "Du hast zuerst Überlebensfähigkeit gekauft. Sei derjenige, der in die Lane geht und nicht mehr rausgeht."
+    }
+  },
+  "categories": {
+    "weapon": "Waffe",
+    "vitality": "Vitalität",
+    "spirit": "Geist"
+  },
+  "challenges": {
+    "exactOrder": {
+      "title": "Der Reihe nach kaufen",
+      "detail": "Kauf den Build strikt von oben nach unten. Kein Vorziehen, selbst wenn du dir die nächste Stufe leisten kannst. Upgrades kaufst du, sobald du sie bezahlen kannst."
+    },
+    "noRecall": {
+      "title": "Kein Shoppen in der Basis nach 15:00",
+      "detail": "Sobald die Uhr fünfzehn Minuten überschreitet, muss jeder Kauf außerhalb deiner eigenen Basis passieren."
+    },
+    "parry": {
+      "title": "Immer parieren",
+      "detail": "Auf jeden Nahkampfschlag gegen dich folgt ein Parierversuch. Stattdessen Schaden zu tauschen zählt als verloren."
+    },
+    "noZipline": {
+      "title": "Bodenhaftung",
+      "detail": "Die Zipline ist in den ersten zehn Minuten tabu. Lauf."
+    },
+    "meleeOpening": {
+      "title": "Fäuste zuerst",
+      "detail": "Bis du dein erstes Tier-2-Item gekauft hast, ist Nahkampf deine einzige Möglichkeit, gegnerischen Spielern Schaden zuzufügen."
+    },
+    "ultOnCooldown": {
+      "title": "Ult niemals aufsparen",
+      "detail": "Deine Ult geht raus, sobald sie bereit ist. Sie für einen besseren Moment aufzuheben zählt als verloren."
+    },
+    "noRetreat": {
+      "title": "Kein Rückzug",
+      "detail": "Verlass nie einen Lane-Kampf, den du angefangen hast. Du gewinnst ihn oder läufst vom Spawn zurück."
+    },
+    "soulCap": {
+      "title": "Alles ausgeben",
+      "detail": "Sobald du dir das nächste Item deines Builds leisten kannst, kauf es. Seelen über seinen Preis hinaus zu horten zählt als verloren."
+    },
+    "oneLane": {
+      "title": "Lane-Treue",
+      "detail": "Bleib in der gewürfelten Lane, bis der erste Wächter darauf fällt. Keine Rotationen, kein Jungle."
+    },
+    "noCancel": {
+      "title": "Durchziehen",
+      "detail": "Jede Fähigkeit, die du zu wirken beginnst, wird zu Ende gewirkt. Einen Cast abzubrechen zählt als verloren."
+    },
+    "callout": {
+      "title": "Sag jeden Wurf an",
+      "detail": "Schreib deinen Helden, deine Lane und dein erstes Item in den Allchat, bevor die Barriere fällt."
+    },
+    "noHeal": {
+      "title": "Verweigert",
+      "detail": "Heil dich nie in deiner eigenen Basis. Nur Regeneration, Lebensraub und Heil-Items."
+    }
+  },
+  "abilities": {
+    "fallback": "Fähigkeit {{slot}}",
+    "ultimate": "Ult",
+    "maxFirst": "Zuerst maxen",
+    "unlockedAt": "Freigeschaltet bei Schritt {{position}}",
+    "upgradeAt": "Upgrade {{upgrade}} bei Schritt {{position}}",
+    "unlock": "Freischalten",
+    "cost": "+{{cost}} AP",
+    "spent": "{{spent}} AP",
+    "srUnlock": "{{ability}}, freischalten",
+    "srUpgrade": "{{ability}}, Upgrade {{step}}"
+  },
+  "item": {
+    "tier": "Tier {{tier}}",
+    "active": "Aktiv",
+    "activeTitle": "Aktives Item",
+    "tooltipHeader": "{{category}} · Tier {{tier}} · <souls>{{cost}}</souls>",
+    "sectionKinds": {
+      "active": "aktiv",
+      "passive": "passiv"
+    },
+    "ariaUpgrade": "{{item}}, aufgewertet zu {{upgrade}}",
+    "ariaItem": "{{item}}, {{category}} Tier {{tier}}",
+    "categoryChange": "{{category}} →",
+    "upgrade": "· Upgrade",
+    "upgradePriceTitle": "{{total}} Seelen, abzüglich der {{paid}} bereits für {{item}} bezahlten",
+    "goodFit": "Passt gut",
+    "goodFitTitle": "In den Draft-Daten für diesen Helden hoch bewertet",
+    "imbueOn": "Verstärken auf {{ability}}",
+    "imbueOnUntilUpgraded": "Verstärken auf {{ability}} bis zum Upgrade",
+    "imbueLapsesTitle": "{{item}} verstärkt eine Fähigkeit, {{upgrade}} wirkt auf alle"
+  }
+}

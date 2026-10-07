@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import { selectRecommendedDownload } from "@/lib/release-downloads";
+import { headI18n } from "@/lib/i18n/route";
 import { prefetchWithin } from "@/lib/prefetch";
 import { orpc } from "@/utils/orpc";
 import { seo } from "@/utils/seo";
@@ -10,16 +12,20 @@ export const Route = createFileRoute("/download/linux")({
   component: DownloadLinuxComponent,
   loader: ({ context: { queryClient } }) =>
     prefetchWithin(queryClient, orpc.getReleases.queryOptions()),
-  head: () =>
-    seo({
-      title: "Downloading Deadlock Mod Manager for Linux",
-      description: "Starting the Deadlock Mod Manager download for Linux.",
+  head: ({ match }) => {
+    const { t, locale } = headI18n(match, "download");
+    return seo({
+      title: t("redirect.linux.metaTitle"),
+      description: t("redirect.linux.metaDescription"),
       noindex: true,
-    }),
+      locale,
+    });
+  },
 });
 
 function DownloadLinuxComponent() {
   const navigate = useNavigate();
+  const { t } = useTranslation("download");
   const {
     data: releases,
     isLoading,
@@ -66,8 +72,8 @@ function DownloadLinuxComponent() {
       <div className='container mx-auto px-4 py-20 text-center'>
         <div className='flex flex-col items-center justify-center space-y-4'>
           <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary'></div>
-          <p className='text-lg'>Preparing your Linux download...</p>
-          <p className='text-muted-foreground'>Fetching the latest version</p>
+          <p className='text-lg'>{t("redirect.linux.preparing")}</p>
+          <p className='text-muted-foreground'>{t("redirect.fetching")}</p>
         </div>
       </div>
     );
@@ -78,15 +84,15 @@ function DownloadLinuxComponent() {
       <div className='container mx-auto px-4 py-20 text-center'>
         <div className='flex flex-col items-center justify-center space-y-4'>
           <h1 className='text-2xl font-bold text-destructive'>
-            Download Error
+            {t("redirect.errorTitle")}
           </h1>
           <p className='text-muted-foreground'>
-            We couldn't fetch the latest releases. Please try again later.
+            {t("redirect.errorDescription")}
           </p>
           <button
             onClick={() => navigate({ to: "/download" })}
             className='bg-primary text-primary-foreground hover:bg-primary/90 px-6 py-2 rounded-md transition-colors'>
-            Go to Downloads Page
+            {t("redirect.goToDownloads")}
           </button>
         </div>
       </div>
@@ -97,15 +103,21 @@ function DownloadLinuxComponent() {
     <div className='container mx-auto px-4 py-20 text-center'>
       <div className='flex flex-col items-center justify-center space-y-4'>
         <div className='animate-spin rounded-full h-12 w-12 border-b-2 border-primary'></div>
-        <p className='text-lg'>Redirecting to Linux download...</p>
+        <p className='text-lg'>{t("redirect.linux.redirecting")}</p>
         <p className='text-muted-foreground'>
-          If the download doesn't start automatically,{" "}
-          <button
-            onClick={() => navigate({ to: "/download" })}
-            className='text-primary hover:underline'>
-            click here
-          </button>{" "}
-          to go to the downloads page.
+          <Trans
+            components={{
+              button: (
+                <button
+                  className='text-primary hover:underline'
+                  onClick={() => navigate({ to: "/download" })}
+                  type='button'
+                />
+              ),
+            }}
+            i18nKey='redirect.fallback'
+            t={t}
+          />
         </p>
       </div>
     </div>

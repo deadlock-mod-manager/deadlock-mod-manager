@@ -17,6 +17,7 @@ import {
   UsersThreeIcon,
 } from "@phosphor-icons/react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CrosshairCanvas } from "@/components/crosshair/crosshair-canvas";
 import { heroIcon, modById, modThumbnail } from "./mods";
 import { EmptyState, PageTitle } from "./parts";
@@ -24,27 +25,27 @@ import { useInstalledMods, usePreviewState } from "./preview-state";
 import { type ScreenId, usePreviewNavigation } from "./store";
 
 const SWATCHES = [
-  { name: "White", color: { r: 255, g: 255, b: 255 } },
-  { name: "Gold", color: { r: 239, g: 224, b: 190 } },
-  { name: "Green", color: { r: 74, g: 222, b: 128 } },
-  { name: "Cyan", color: { r: 34, g: 211, b: 238 } },
-  { name: "Pink", color: { r: 255, g: 140, b: 192 } },
-];
+  { id: "white", color: { r: 255, g: 255, b: 255 } },
+  { id: "gold", color: { r: 239, g: 224, b: 190 } },
+  { id: "green", color: { r: 74, g: 222, b: 128 } },
+  { id: "cyan", color: { r: 34, g: 211, b: 238 } },
+  { id: "pink", color: { r: 255, g: 140, b: 192 } },
+] as const;
 
 const SLIDERS: {
   key: "gap" | "width" | "height" | "dotOpacity";
-  label: string;
   min: number;
   max: number;
   step: number;
 }[] = [
-  { key: "gap", label: "Gap", min: -10, max: 20, step: 1 },
-  { key: "width", label: "Width", min: 1, max: 12, step: 1 },
-  { key: "height", label: "Height", min: 2, max: 40, step: 1 },
-  { key: "dotOpacity", label: "Dot Opacity", min: 0, max: 1, step: 0.05 },
+  { key: "gap", min: -10, max: 20, step: 1 },
+  { key: "width", min: 1, max: 12, step: 1 },
+  { key: "height", min: 2, max: 40, step: 1 },
+  { key: "dotOpacity", min: 0, max: 1, step: 0.05 },
 ];
 
 export const CrosshairsScreen = () => {
+  const { t } = useTranslation("preview");
   const { notify } = usePreviewState();
   const [config, setConfig] = useState<CrosshairConfig>({
     ...DEFAULT_CROSSHAIR_CONFIG,
@@ -58,29 +59,29 @@ export const CrosshairsScreen = () => {
     <div className='px-5 pb-6'>
       <div className='mb-6 flex items-end justify-between'>
         <PageTitle
-          title='Crosshairs'
-          subtitle='Create and customize your crosshairs'
+          title={t("crosshairs.title")}
+          subtitle={t("crosshairs.subtitle")}
         />
         <button
           type='button'
           onClick={() =>
             notify(
-              "Crosshair applied",
-              "It's written to your autoexec, ready for your next match.",
+              t("crosshairs.applied.title"),
+              t("crosshairs.applied.description"),
             )
           }
           className={buttonVariants()}>
           <CrosshairIcon />
-          Apply Crosshair
+          {t("crosshairs.apply")}
         </button>
       </div>
       <div className='grid grid-cols-2 gap-6'>
         <div className='space-y-5 rounded-lg border bg-card p-5'>
-          <h4 className='font-semibold'>Crosshair Settings</h4>
+          <h4 className='font-semibold'>{t("crosshairs.settings")}</h4>
           {SLIDERS.map((slider) => (
             <label key={slider.key} className='block space-y-2'>
               <span className='flex justify-between text-sm'>
-                {slider.label}
+                {t(`crosshairs.sliders.${slider.key}`)}
                 <span className='text-muted-foreground tabular-nums'>
                   {config[slider.key]}
                 </span>
@@ -102,7 +103,7 @@ export const CrosshairsScreen = () => {
             </label>
           ))}
           <fieldset className='space-y-2'>
-            <legend className='mb-2 text-sm'>Color</legend>
+            <legend className='mb-2 text-sm'>{t("crosshairs.color")}</legend>
             <div className='flex gap-2'>
               {SWATCHES.map((swatch) => {
                 const selected =
@@ -111,9 +112,9 @@ export const CrosshairsScreen = () => {
                   swatch.color.b === config.color.b;
                 return (
                   <button
-                    key={swatch.name}
+                    key={swatch.id}
                     type='button'
-                    aria-label={swatch.name}
+                    aria-label={t(`crosshairs.swatches.${swatch.id}`)}
                     aria-pressed={selected}
                     onClick={() =>
                       setConfig((current) => ({
@@ -135,12 +136,12 @@ export const CrosshairsScreen = () => {
           </fieldset>
         </div>
         <div>
-          <h4 className='mb-3 font-semibold'>Preview</h4>
+          <h4 className='mb-3 font-semibold'>{t("crosshairs.preview")}</h4>
           <div className='overflow-hidden rounded-lg bg-zinc-800 p-4'>
             <CrosshairCanvas config={config} background='bg1' />
           </div>
           <p className='mt-2 text-muted-foreground text-xs'>
-            Move your cursor over the preview to aim.
+            {t("crosshairs.aimHint")}
           </p>
         </div>
       </div>
@@ -166,6 +167,7 @@ const HEROES = [
 ];
 
 export const SkinsScreen = () => {
+  const { t } = useTranslation("preview");
   const { setScreen } = usePreviewNavigation();
   const { activeSkins, setActiveSkin, setEnabled } = usePreviewState();
   const installedSkins = useInstalledMods().filter(
@@ -186,8 +188,8 @@ export const SkinsScreen = () => {
     <div className='flex h-full flex-col pr-2 pl-4'>
       <PageTitle
         className='mb-6'
-        title='Hero Skins'
-        subtitle='Set the active skin for each hero'
+        title={t("skins.title")}
+        subtitle={t("skins.subtitle")}
       />
       <div className='flex min-h-0 flex-1 gap-4'>
         <ul className='flex w-60 shrink-0 flex-col gap-1 overflow-y-auto pb-4'>
@@ -222,8 +224,8 @@ export const SkinsScreen = () => {
                     </span>
                     <span className='block truncate text-muted-foreground text-xs'>
                       {count === 0
-                        ? "No skins downloaded"
-                        : (activeSkin?.name ?? "Default")}
+                        ? t("skins.noneDownloaded")
+                        : (activeSkin?.name ?? t("skins.default"))}
                     </span>
                   </span>
                   {count > 0 && (
@@ -240,19 +242,19 @@ export const SkinsScreen = () => {
           <div className='mb-4'>
             <h4 className='font-semibold text-xl'>{selected}</h4>
             <p className='text-muted-foreground text-sm'>
-              {skins.length} {skins.length === 1 ? "skin" : "skins"} downloaded
+              {t("skins.downloaded", { count: skins.length })}
             </p>
           </div>
           {skins.length === 0 ? (
             <EmptyState
               icon={MagnifyingGlassIcon}
-              title={`No skins for ${selected} yet`}
-              description='Download skins from the Mods Store and pick the one you want here.'>
+              title={t("skins.empty.title", { hero: selected })}
+              description={t("skins.empty.description")}>
               <button
                 type='button'
                 onClick={() => setScreen("store")}
                 className={buttonVariants()}>
-                Browse skins for {selected}
+                {t("skins.empty.action", { hero: selected })}
               </button>
             </EmptyState>
           ) : (
@@ -283,12 +285,12 @@ export const SkinsScreen = () => {
                     <div className='flex justify-between gap-2 p-3'>
                       <div className='min-w-0'>
                         <div className='truncate font-medium text-sm'>
-                          {skin?.name ?? "Default"}
+                          {skin?.name ?? t("skins.default")}
                         </div>
                         <div className='truncate text-muted-foreground text-xs'>
                           {skin
-                            ? `By ${skin.author}`
-                            : "Vanilla appearance, no skin mod"}
+                            ? t("mod.byAuthor", { author: skin.author })
+                            : t("skins.vanilla")}
                         </div>
                       </div>
                       {isActive && (
@@ -399,30 +401,30 @@ const pingClassName = (ping: number) =>
       : "text-rose-400";
 
 export const ServersScreen = () => {
+  const { t } = useTranslation("preview");
   const { notify } = usePreviewState();
   const [selected, setSelected] = useState(SERVERS[0].name);
   const server = SERVERS.find((candidate) => candidate.name === selected);
 
   return (
     <div className='flex h-full flex-col gap-4 pr-2 pb-4 pl-4'>
-      <PageTitle
-        title='Server Browser'
-        subtitle='Browse custom Deadlock servers'
-      />
+      <PageTitle title={t("servers.title")} subtitle={t("servers.subtitle")} />
       <div className='flex min-h-0 flex-1 gap-4'>
         <div className='min-w-0 flex-1 overflow-hidden rounded-lg border border-border/60 bg-card'>
           <table className='w-full border-separate border-spacing-0 text-sm'>
             <thead>
               <tr className='text-left font-semibold text-[10px] text-muted-foreground uppercase tracking-wider'>
-                <th className='border-border/60 border-b px-3 py-2'>Name</th>
+                <th className='border-border/60 border-b px-3 py-2'>
+                  {t("servers.columns.name")}
+                </th>
                 <th className='w-[110px] border-border/60 border-b px-3 py-2 text-right'>
-                  Players
+                  {t("servers.columns.players")}
                 </th>
                 <th className='w-[130px] border-border/60 border-b px-3 py-2'>
-                  Map
+                  {t("servers.columns.map")}
                 </th>
                 <th className='w-[90px] border-border/60 border-b px-3 py-2 text-center'>
-                  Ping
+                  {t("servers.columns.ping")}
                 </th>
               </tr>
             </thead>
@@ -461,7 +463,7 @@ export const ServersScreen = () => {
                       {row.mods > 0 && (
                         <span className='mt-1 inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[10px] text-muted-foreground'>
                           <PuzzlePieceIcon className='size-3' />
-                          {row.mods} required mods
+                          {t("servers.requiredModsBadge", { total: row.mods })}
                         </span>
                       )}
                     </td>
@@ -506,7 +508,7 @@ export const ServersScreen = () => {
                           weight='bold'
                           className='size-3.5'
                         />
-                        {row.ping} ms
+                        {t("servers.ping", { ping: row.ping })}
                       </span>
                     </td>
                   </tr>
@@ -519,15 +521,23 @@ export const ServersScreen = () => {
           <aside className='flex w-64 shrink-0 flex-col gap-3 rounded-lg border border-border/60 bg-card p-4'>
             <div className='font-semibold'>{server.name}</div>
             <dl className='grid grid-cols-2 gap-y-2 text-xs'>
-              <dt className='text-muted-foreground'>Map</dt>
+              <dt className='text-muted-foreground'>
+                {t("servers.details.map")}
+              </dt>
               <dd className='font-mono'>{server.map}</dd>
-              <dt className='text-muted-foreground'>Players</dt>
+              <dt className='text-muted-foreground'>
+                {t("servers.details.players")}
+              </dt>
               <dd className='tabular-nums'>
                 {server.players}/{server.max}
               </dd>
-              <dt className='text-muted-foreground'>Region</dt>
+              <dt className='text-muted-foreground'>
+                {t("servers.details.region")}
+              </dt>
               <dd>{server.region}</dd>
-              <dt className='text-muted-foreground'>Required mods</dt>
+              <dt className='text-muted-foreground'>
+                {t("servers.details.requiredMods")}
+              </dt>
               <dd>{server.mods}</dd>
             </dl>
             <button
@@ -535,15 +545,17 @@ export const ServersScreen = () => {
               disabled={server.players >= server.max}
               onClick={() =>
                 notify(
-                  `Joining ${server.name}`,
+                  t("servers.joining.title", { name: server.name }),
                   server.mods > 0
-                    ? "Installing the required mods first, then connecting."
-                    : "Deadlock will open and connect.",
+                    ? t("servers.joining.withMods")
+                    : t("servers.joining.withoutMods"),
                 )
               }
               className={cn(buttonVariants(), "mt-auto w-full")}>
               <GameControllerIcon />
-              {server.players >= server.max ? "Server full" : "Join Server"}
+              {server.players >= server.max
+                ? t("servers.full")
+                : t("servers.join")}
             </button>
           </aside>
         )}
@@ -553,19 +565,10 @@ export const ServersScreen = () => {
 };
 
 const IMAGE_SCREENS = {
-  foundry: {
-    src: "/home/screens/mod-foundry.webp",
-    alt: "Mod Foundry screen with a hero model preview",
-  },
-  autoexec: {
-    src: "/home/screens/autoexec.webp",
-    alt: "Autoexec Config screen with the command library",
-  },
-  stats: {
-    src: "/home/screens/stats.webp",
-    alt: "Stats screen with winrate, KDA and form over time",
-  },
-} satisfies Partial<Record<ScreenId, { src: string; alt: string }>>;
+  foundry: "/home/screens/mod-foundry.webp",
+  autoexec: "/home/screens/autoexec.webp",
+  stats: "/home/screens/stats.webp",
+} satisfies Partial<Record<ScreenId, string>>;
 
 /** Screens shown as real captures of the app's content area. */
 export const ImageScreen = ({
@@ -573,11 +576,11 @@ export const ImageScreen = ({
 }: {
   screen: keyof typeof IMAGE_SCREENS;
 }) => {
-  const image = IMAGE_SCREENS[screen];
+  const { t } = useTranslation("preview");
   return (
     <img
-      src={image.src}
-      alt={image.alt}
+      src={IMAGE_SCREENS[screen]}
+      alt={t(`screens.${screen}Alt`)}
       width={1199}
       height={825}
       loading='lazy'
