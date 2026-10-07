@@ -1,4 +1,5 @@
 use crate::errors::Error;
+use diesel::connection::SimpleConnection;
 use diesel::prelude::*;
 use diesel::sql_types::Text;
 use diesel::sqlite::SqliteConnection;
@@ -97,12 +98,55 @@ diesel::allow_tables_to_appear_in_same_query!(
 );
 
 pub fn migrate(connection: &mut SqliteConnection) -> Result<(), Error> {
-  baseline_untracked_catalog(connection)?;
-  rename_legacy_author_remote_id_migration(connection)?;
-  connection
-    .run_pending_migrations(MIGRATIONS)
-    .map(|_| ())
-    .map_err(catalog_error)
+  connection.transaction(|connection| {
+    complete_legacy_catalog_metadata(connection)?;
+    baseline_untracked_catalog(connection)?;
+    rename_legacy_author_remote_id_migration(connection)?;
+    connection
+      .run_pending_migrations(MIGRATIONS)
+      .map(|_| ())
+      .map_err(catalog_error)
+  })
+}
+
+// Older development catalogs already have audio_url without the metadata
+// migration. Finish that upgrade before Diesel tries to add the column again.
+fn complete_legacy_catalog_metadata(connection: &mut SqliteConnection) -> Result<(), Error> {
+  let applied = connection.applied_migrations().map_err(catalog_error)?;
+  if applied
+    .iter()
+    .any(|version| version.to_string() == ADD_CATALOG_METADATA_VERSION)
+    || !schema_check(
+      connection,
+      "EXISTS(SELECT 1 FROM pragma_table_info('submission') WHERE name = 'audio_url')",
+    )?
+  {
+    return Ok(());
+  }
+
+  for (exists, statement) in [
+    (
+      "EXISTS(SELECT 1 FROM pragma_table_info('submission') WHERE name = 'tags')",
+      "ALTER TABLE submission ADD COLUMN tags TEXT NOT NULL DEFAULT '[]'",
+    ),
+    (
+      "EXISTS(SELECT 1 FROM pragma_table_info('submission') WHERE name = 'development_state')",
+      "ALTER TABLE submission ADD COLUMN development_state TEXT",
+    ),
+    (
+      "EXISTS(SELECT 1 FROM pragma_table_info('submission') WHERE name = 'completion_percentage')",
+      "ALTER TABLE submission ADD COLUMN completion_percentage INTEGER",
+    ),
+  ] {
+    if !schema_check(connection, exists)? {
+      connection.batch_execute(statement).map_err(catalog_error)?;
+    }
+  }
+  // An untracked catalog still needs its earlier migrations baselined together.
+  if !applied.is_empty() {
+    record_migration(connection, ADD_CATALOG_METADATA_VERSION)?;
+  }
+  Ok(())
 }
 
 fn baseline_untracked_catalog(connection: &mut SqliteConnection) -> Result<(), Error> {
@@ -333,5 +377,84 @@ mod tests {
     assert_eq!(versions.len(), 8);
     assert!(versions.contains(&"20261004000000".to_string()));
     assert!(!versions.contains(&"20260916000000".to_string()));
+  }
+
+  fn legacy_audio_catalog(tracked: bool) -> SqliteConnection {
+    let mut connection = SqliteConnection::establish(":memory:").unwrap();
+    connection
+      .batch_execute(concat!(
+        include_str!("../../../../migrations/gamebanana_catalog/20260830000000_create_catalog/up.sql"),
+        include_str!("../../../../migrations/gamebanana_catalog/20260830000100_add_update_cache/up.sql"),
+        include_str!("../../../../migrations/gamebanana_catalog/20260910000000_add_preview_images/up.sql"),
+        "ALTER TABLE submission ADD COLUMN audio_url TEXT;
+         ALTER TABLE submission ADD COLUMN author_remote_id TEXT;
+         INSERT INTO submission (
+           provider, submission_type, submission_id, slug, name, profile_url, audio_url, author_remote_id
+         ) VALUES ('gamebanana', 'sound', '1', 'snd-1', 'Kept Sound', 'https://example.com',
+                   'https://example.com/preview.mp3', '42');",
+      ))
+      .unwrap();
+    if tracked {
+      connection.applied_migrations().unwrap();
+      for version in [
+        super::CREATE_CATALOG_VERSION,
+        super::ADD_UPDATE_CACHE_VERSION,
+        super::ADD_PREVIEW_IMAGES_VERSION,
+        super::LEGACY_ADD_AUTHOR_REMOTE_ID_VERSION,
+      ] {
+        super::record_migration(&mut connection, version).unwrap();
+      }
+    }
+    connection
+  }
+
+  #[test]
+  fn migrations_upgrade_legacy_audio_catalogs_without_losing_records() {
+    for tracked in [true, false] {
+      let mut connection = legacy_audio_catalog(tracked);
+      migrate(&mut connection).unwrap();
+      migrate(&mut connection).unwrap();
+
+      assert_eq!(connection.applied_migrations().unwrap().len(), 8);
+      assert!(
+        super::schema_check(
+          &mut connection,
+          "EXISTS(SELECT 1 FROM submission WHERE slug = 'snd-1'
+          AND audio_url = 'https://example.com/preview.mp3' AND author_remote_id = '42'
+          AND tags = '[]' AND development_state IS NULL AND completion_percentage IS NULL
+          AND thumbnail_url IS NULL)",
+        )
+        .unwrap()
+      );
+    }
+  }
+
+  #[test]
+  fn a_failed_legacy_upgrade_keeps_schema_and_history_unchanged() {
+    let mut connection = legacy_audio_catalog(true);
+    connection
+      .batch_execute(
+        "CREATE TRIGGER reject_metadata_migration BEFORE INSERT ON __diesel_schema_migrations
+       WHEN NEW.version = '20261003000000'
+       BEGIN SELECT RAISE(ABORT, 'metadata history write failed'); END;",
+      )
+      .unwrap();
+    let error = migrate(&mut connection).unwrap_err();
+    assert!(error.to_string().contains("metadata history write failed"));
+    assert!(
+      !super::schema_check(
+        &mut connection,
+        "EXISTS(SELECT 1 FROM pragma_table_info('submission') WHERE name = 'tags')",
+      )
+      .unwrap()
+    );
+    let versions: Vec<String> = connection
+      .applied_migrations()
+      .unwrap()
+      .iter()
+      .map(ToString::to_string)
+      .collect();
+    assert_eq!(versions.len(), 4);
+    assert!(versions.contains(&super::LEGACY_ADD_AUTHOR_REMOTE_ID_VERSION.to_string()));
   }
 }
