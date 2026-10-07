@@ -555,7 +555,7 @@ CREATE INDEX idx_mod_ratings_rating ON mod_ratings(rating DESC);
 
 ## Translation Contributions
 
-All translations are managed on [Crowdin](https://translate.deadlockmods.app/). The English source (`apps/desktop/src/locales/en.json`) is the only locale file edited directly in the repo - every other locale is synced back from Crowdin automatically via the [Crowdin GitHub action](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/.github/workflows/crowdin.yml).
+All translations are managed on [Crowdin](https://translate.deadlockmods.app/). The English sources are the only locale files edited directly in the repo: `apps/desktop/src/locales/en.json` for the desktop app and `apps/www/src/locales/en/*.json` for the website (deadlockmods.app). Every other locale is synced back from Crowdin automatically via the [Crowdin GitHub action](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/.github/workflows/crowdin.yml).
 
 <Callout type='info' title='Where to translate'>
   Contribute translations at
@@ -576,7 +576,7 @@ Request a new language on Crowdin, or [file an issue](https://github.com/deadloc
 
 ### Adding or Changing Source Strings
 
-When adding new UI strings in a PR, add them to `apps/desktop/src/locales/en.json`. Once your PR is merged to `main`, the Crowdin action uploads the new source strings for translators.
+When adding new UI strings in a PR, add them to `apps/desktop/src/locales/en.json` (desktop app) or the matching namespace file in `apps/www/src/locales/en/` (website; see `apps/www/src/locales/README.md`). Once your PR is merged to `main`, the Crowdin action uploads the new source strings for translators.
 
 ### Translation Guidelines
 
