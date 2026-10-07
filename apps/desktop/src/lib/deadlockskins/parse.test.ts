@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { parseAlbumMembers, parseDmmUrl } from "./parse";
+import { AlbumResponseSchema, parseAlbumMembers, parseDmmUrl } from "./parse";
 
 describe("deadlockskins album parsing", () => {
   test("maps 1-click links to catalog slugs", () => {
@@ -28,23 +28,29 @@ describe("deadlockskins album parsing", () => {
   });
 
   test("keeps album order and skips unsupported links", () => {
-    const json = JSON.stringify([
-      {
-        name: "Pyro TF2 Infernus",
-        dmmUrl:
-          "deadlock-mod-manager:https://gamebanana.com/mmdl/1671980,Mod,655692",
-      },
-      {
-        name: "A tool",
-        dmmUrl: "deadlock-mod-manager:https://gamebanana.com/mmdl/1,Tool,2",
-      },
-      {
-        dmmUrl:
-          "deadlock-mod-manager:https://gamebanana.com/mmdl/1647796,Mod,616541",
-      },
-    ]);
+    const response = AlbumResponseSchema.parse({
+      version: 1,
+      album: { slug: "mann-co", title: "Mann Co.", itemCount: 4 },
+      items: [
+        {
+          name: "Pyro TF2 Infernus",
+          installUrl:
+            "deadlock-mod-manager:https://gamebanana.com/mmdl/1671980,Mod,655692",
+        },
+        {
+          name: "A tool",
+          installUrl:
+            "deadlock-mod-manager:https://gamebanana.com/mmdl/1,Tool,2",
+        },
+        { name: "No files", installUrl: null },
+        {
+          installUrl:
+            "deadlock-mod-manager:https://gamebanana.com/mmdl/1647796,Mod,616541",
+        },
+      ],
+    });
 
-    expect(parseAlbumMembers(json)).toEqual([
+    expect(parseAlbumMembers(response)).toEqual([
       { remoteId: "655692", fileId: "1671980" },
       { remoteId: "616541", fileId: "1647796" },
     ]);

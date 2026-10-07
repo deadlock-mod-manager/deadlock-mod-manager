@@ -1,5 +1,6 @@
 import type { ModDto } from "@deadlock-mods/shared";
 import { queryOptions } from "@tanstack/react-query";
+import type { z } from "zod";
 import { fetch } from "@/lib/fetch";
 import {
   CATALOG_QUERY_DEFAULTS,
@@ -7,13 +8,15 @@ import {
 } from "@/lib/gamebanana-catalog";
 import { MODS_LIST_QUERY_KEY } from "@/lib/mods/mod-query-cache";
 import { STALE_TIME_API } from "@/lib/query-constants";
-import { type DeadlockSkinsAlbumMember, parseAlbumMembers } from "./parse";
+import {
+  AlbumListResponseSchema,
+  AlbumResponseSchema,
+  type DeadlockSkinsAlbumMember,
+  parseAlbumMembers,
+} from "./parse";
 
-// deadlockskins.gg has no public read API: its `/api/*` routes only serve
-// signed-in album editing. The album pages are server-rendered, and each one
-// carries its full member list as the JSON its own 1-click buttons use, so
-// the HTML is the interface.
 const DEADLOCKSKINS_ORIGIN = "https://deadlockskins.gg";
+const DEADLOCKSKINS_API = `${DEADLOCKSKINS_ORIGIN}/api/public/v1`;
 
 // Albums are hand-curated and change rarely.
 const ALBUMS_STALE_TIME = 60 * 60 * 1000;
@@ -35,28 +38,29 @@ export const deadlockSkinsLink = (path: string) =>
 export const albumPageUrl = (slug: string) =>
   deadlockSkinsLink(albumPath(slug));
 
-const fetchDocument = async (url: string): Promise<Document | null> => {
+const fetchJson = async <T>(
+  url: string,
+  schema: z.ZodType<T>,
+): Promise<T | null> => {
   const response = await fetch(url);
   if (response.status === 404) return null;
   if (!response.ok) {
     throw new Error(`deadlockskins.gg returned HTTP ${response.status}`);
   }
-  return new DOMParser().parseFromString(await response.text(), "text/html");
+  return schema.parse(await response.json());
 };
 
-const text = (root: ParentNode, selector: string) =>
-  root.querySelector(selector)?.textContent?.trim() ?? "";
-
 const getAlbums = async (): Promise<DeadlockSkinsAlbum[]> => {
-  const doc = await fetchDocument(`${DEADLOCKSKINS_ORIGIN}/albums`);
-  return [
-    ...(doc?.querySelectorAll('a.album-poster[href^="/albums/"]') ?? []),
-  ].map((link) => ({
-    slug: link.getAttribute("href")?.slice("/albums/".length) ?? "",
-    name: text(link, ".name"),
-    description: text(link, ".theme"),
-    coverUrl: link.querySelector("img")?.getAttribute("src") ?? null,
-    itemCount: Number.parseInt(text(link, ".chip"), 10) || 0,
+  const response = await fetchJson(
+    `${DEADLOCKSKINS_API}/albums`,
+    AlbumListResponseSchema,
+  );
+  return (response?.albums ?? []).map((album) => ({
+    slug: album.slug,
+    name: album.title,
+    description: album.description ?? "",
+    coverUrl: album.coverUrl ?? null,
+    itemCount: album.itemCount,
   }));
 };
 
@@ -64,12 +68,11 @@ const getAlbums = async (): Promise<DeadlockSkinsAlbum[]> => {
 const getAlbumMembers = async (
   slug: string,
 ): Promise<DeadlockSkinsAlbumMember[] | null> => {
-  const doc = await fetchDocument(`${DEADLOCKSKINS_ORIGIN}${albumPath(slug)}`);
-  if (!doc) return null;
-  return parseAlbumMembers(
-    doc.querySelector("[data-album-install]")?.getAttribute("data-members") ??
-      "[]",
+  const response = await fetchJson(
+    `${DEADLOCKSKINS_API}/albums/${encodeURIComponent(slug)}`,
+    AlbumResponseSchema,
   );
+  return response && parseAlbumMembers(response);
 };
 
 export const deadlockSkinsAlbumsQueryOptions = () =>

@@ -13,7 +13,22 @@ export type DeadlockSkinsAlbumMember = {
 const DMM_URL_PATTERN =
   /^deadlock-mod-manager:https:\/\/(?:[^/]+\.)?gamebanana\.com\/mmdl\/(\d+),(\w+),(\d+)$/i;
 
-const AlbumMembersSchema = z.array(z.object({ dmmUrl: z.string() }));
+const AlbumSummarySchema = z.object({
+  slug: z.string(),
+  title: z.string(),
+  description: z.string().nullish(),
+  itemCount: z.number(),
+  coverUrl: z.string().nullish(),
+});
+
+export const AlbumListResponseSchema = z.object({
+  albums: z.array(AlbumSummarySchema),
+});
+
+export const AlbumResponseSchema = z.object({
+  album: AlbumSummarySchema,
+  items: z.array(z.object({ installUrl: z.string().nullish() })),
+});
 
 const toSubmissionType = (itemType: string): SubmissionType | null => {
   switch (itemType.toLowerCase()) {
@@ -43,8 +58,10 @@ export const parseDmmUrl = (
   return remoteId ? { remoteId, fileId: match[1] } : null;
 };
 
-/** Reads the `data-members` JSON of an album page, skipping unsupported links. */
-export const parseAlbumMembers = (json: string): DeadlockSkinsAlbumMember[] =>
-  AlbumMembersSchema.parse(JSON.parse(json)).flatMap(
-    ({ dmmUrl }) => parseDmmUrl(dmmUrl) ?? [],
+/** The album's 1-click links as catalog members, skipping missing or unsupported links. */
+export const parseAlbumMembers = (
+  response: z.infer<typeof AlbumResponseSchema>,
+): DeadlockSkinsAlbumMember[] =>
+  response.items.flatMap(({ installUrl }) =>
+    installUrl ? (parseDmmUrl(installUrl) ?? []) : [],
   );
