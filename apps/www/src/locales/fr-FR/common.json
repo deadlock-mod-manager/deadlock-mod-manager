@@ -26,7 +26,8 @@
   },
   "v2Banner": {
     "short": "Entièrement repensé.",
-    "long": "Entièrement repensé : des mods qui survivent aux mises à jour du jeu, une boutique plus rapide et la détection des conflits."
+    "long": "Entièrement repensé : des mods qui survivent aux mises à jour du jeu, une boutique plus rapide et la détection des conflits.",
+    "whatsNew": ""
   },
   "footer": {
     "tagline": "Une petite app open source pour installer et gérer des mods pour Deadlock, le jeu de Valve.",
@@ -40,6 +41,7 @@
     "links": {
       "download": "Télécharger",
       "sourceCode": "Code source",
+      "changelog": "",
       "documentation": "",
       "faq": "",
       "reportBug": "Signaler un bug"

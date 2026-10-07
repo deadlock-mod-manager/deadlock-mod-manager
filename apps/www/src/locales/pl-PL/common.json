@@ -26,7 +26,8 @@
   },
   "v2Banner": {
     "short": "Przebudowany od podstaw.",
-    "long": "Przebudowany od podstaw: mody, które przetrwają aktualizacje gry, szybszy sklep i wykrywanie konfliktów."
+    "long": "Przebudowany od podstaw: mody, które przetrwają aktualizacje gry, szybszy sklep i wykrywanie konfliktów.",
+    "whatsNew": ""
   },
   "footer": {
     "tagline": "Mała aplikacja open source do instalowania modów i zarządzania nimi w Deadlock, grze od Valve.",
@@ -40,6 +41,7 @@
     "links": {
       "download": "Pobierz",
       "sourceCode": "Kod źródłowy",
+      "changelog": "",
       "documentation": "Dokumentacja",
       "faq": "",
       "reportBug": "Zgłoś błąd"

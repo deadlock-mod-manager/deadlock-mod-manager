@@ -1,42 +1,42 @@
 {
   "meta": {
-    "title": "",
-    "description": ""
+    "title": "منشئ النشابية: صمّم وشارك إشارات التصويب",
+    "description": "تصميم تقاطع شعر القُفْل المخصص مع معاينة حية على خلفية اللعبة، ثم نسخ التكوين أو مشاركة الرابط. ضبط الفجوة، الحجم، الأنابيب، النقطة والمخطط."
   },
   "page": {
-    "editingShared": "",
-    "title": "",
-    "description": ""
+    "editingShared": "أنت تعدّل مؤشر تصويب مشتركًا. ستؤدي أي تغييرات إلى إنشاء إعدادات جديدة.",
+    "title": "منشئ مؤشر التصويب",
+    "description": "إنشاء وتخصيص المواضع الخاصة بك"
   },
   "preview": {
-    "title": "",
-    "none": "",
+    "title": "معاينة",
+    "none": "لا شيء",
     "backgrounds": {
-      "bg1": "",
-      "bg2": ""
+      "bg1": "الخلفية 1",
+      "bg2": "الخلفية 2"
     },
-    "hint": ""
+    "hint": "حرك الفأرة فوق المعاينة لمعرفة كيفية تصرف الموضع في اللعبة."
   },
   "controls": {
-    "settings": "",
-    "gap": "",
-    "width": "",
-    "height": "",
-    "pipOpacity": "",
-    "dotOpacity": "",
-    "dotOutlineOpacity": "",
-    "color": "",
-    "colorHex": "",
-    "options": "",
-    "pipBorder": "",
-    "pipGapStatic": "",
-    "hero": "",
-    "defaultHero": ""
+    "settings": "استيراد إعدادات الموضع",
+    "gap": "الفجوة",
+    "width": "العرض",
+    "height": "الارتفاع",
+    "pipOpacity": "شفافية النقطة",
+    "dotOpacity": "شفافية النقطة",
+    "dotOutlineOpacity": "شفافية محيط النقطة",
+    "color": "اللون",
+    "colorHex": "اللون (رمز Hex)",
+    "options": "الخيارات",
+    "pipBorder": "إظهار حدود النقطة",
+    "pipGapStatic": "المسافة الثابتة بين النُّقَط",
+    "hero": "البطل",
+    "defaultHero": "الافتراضي"
   },
   "export": {
-    "copy": "",
-    "copied": "",
-    "share": "",
-    "linkCopied": ""
+    "copy": "نسخ الإعدادات",
+    "copied": "تم النسخ!",
+    "share": "مشاركة الرابط",
+    "linkCopied": "تم نسخ الرابط!"
   }
 }

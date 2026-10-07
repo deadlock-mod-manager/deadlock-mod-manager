@@ -26,7 +26,8 @@
   },
   "v2Banner": {
     "short": "Rehecho desde cero.",
-    "long": "Rehecho desde cero: mods que sobreviven a las actualizaciones del juego, una tienda más rápida y detección de conflictos."
+    "long": "Rehecho desde cero: mods que sobreviven a las actualizaciones del juego, una tienda más rápida y detección de conflictos.",
+    "whatsNew": ""
   },
   "footer": {
     "tagline": "Una app pequeña y de código abierto para instalar y gestionar mods de Deadlock, el juego de Valve.",
@@ -40,6 +41,7 @@
     "links": {
       "download": "Descargar",
       "sourceCode": "Código fuente",
+      "changelog": "",
       "documentation": "Documentación",
       "faq": "Preguntas frecuentes",
       "reportBug": "Reportar un error"

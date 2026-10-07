@@ -26,7 +26,8 @@
   },
   "v2Banner": {
     "short": "",
-    "long": ""
+    "long": "",
+    "whatsNew": ""
   },
   "footer": {
     "tagline": "",
@@ -40,6 +41,7 @@
     "links": {
       "download": "",
       "sourceCode": "",
+      "changelog": "",
       "documentation": "",
       "faq": "",
       "reportBug": ""

@@ -1,0 +1,171 @@
+{
+  "meta": {
+    "title": "",
+    "description": ""
+  },
+  "hero": {
+    "eyebrow": "",
+    "title": "",
+    "intro": "",
+    "tryPreview": "",
+    "changelog": ""
+  },
+  "nav": {
+    "label": "",
+    "more": "",
+    "upgrade": "",
+    "fixes": ""
+  },
+  "features": {
+    "updates": {
+      "nav": "",
+      "title": "",
+      "body": "",
+      "points": {
+        "layout": "",
+        "patchNotes": "",
+        "inGame": "",
+        "vanilla": ""
+      }
+    },
+    "store": {
+      "nav": "",
+      "title": "",
+      "body": "",
+      "points": {
+        "tabs": "",
+        "pages": "",
+        "authors": "",
+        "skip": ""
+      },
+      "alt": ""
+    },
+    "conflicts": {
+      "nav": "",
+      "title": "",
+      "body": "",
+      "points": {
+        "loadFirst": "",
+        "hidden": "",
+        "ignore": ""
+      }
+    },
+    "themes": {
+      "nav": "",
+      "title": "",
+      "body": "",
+      "lovelockAlt": "",
+      "inSeason": "",
+      "seasons": {
+        "halloween": {
+          "name": "",
+          "window": "",
+          "description": ""
+        },
+        "christmas": {
+          "name": "",
+          "window": "",
+          "description": ""
+        },
+        "newYear": {
+          "name": "",
+          "window": "",
+          "description": ""
+        },
+        "lunarNewYear": {
+          "name": "",
+          "window": "",
+          "description": ""
+        },
+        "easter": {
+          "name": "",
+          "window": "",
+          "description": ""
+        }
+      }
+    }
+  },
+  "demo": {
+    "update": {
+      "title": "",
+      "body": "",
+      "reapply": "",
+      "reapplying": "",
+      "reapplied": ""
+    },
+    "conflicts": {
+      "title": "",
+      "used": "",
+      "skipped": "",
+      "loadFirst": "",
+      "loadedFirst": "",
+      "hint": ""
+    }
+  },
+  "more": {
+    "title": "",
+    "items": {
+      "foundry": {
+        "title": "",
+        "body": ""
+      },
+      "stats": {
+        "title": "",
+        "body": ""
+      },
+      "skins": {
+        "title": "",
+        "body": ""
+      },
+      "import": {
+        "title": "",
+        "body": ""
+      },
+      "updates": {
+        "title": "",
+        "body": ""
+      },
+      "settings": {
+        "title": "",
+        "body": ""
+      },
+      "heroes": {
+        "title": "",
+        "body": ""
+      },
+      "forge": {
+        "title": "",
+        "body": ""
+      },
+      "servers": {
+        "title": "",
+        "body": ""
+      }
+    }
+  },
+  "upgrade": {
+    "title": "",
+    "steps": {
+      "install": {
+        "title": "",
+        "body": ""
+      },
+      "migrate": {
+        "title": "",
+        "body": ""
+      },
+      "help": {
+        "title": "",
+        "body": ""
+      }
+    }
+  },
+  "fixes": {
+    "label": "",
+    "body": ""
+  },
+  "thanks": {
+    "title": "",
+    "body": ""
+  }
+}
