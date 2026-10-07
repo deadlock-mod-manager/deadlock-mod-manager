@@ -14,19 +14,24 @@ import { Route as SplatRouteImport } from './routes/$'
 import { Route as R403RouteImport } from './routes/403'
 import { Route as CrosshairGeneratorRouteImport } from './routes/crosshair-generator'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as DeadlockModsNotWorkingRouteImport } from './routes/deadlock-mods-not-working'
 import { Route as DiscordRouteImport } from './routes/discord'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DownloadRouteImport } from './routes/download'
+import { Route as HowToInstallDeadlockModsRouteImport } from './routes/how-to-install-deadlock-mods'
 import { Route as KvParserRouteImport } from './routes/kv-parser'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ModsRouteImport } from './routes/mods'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RandomizerRouteImport } from './routes/randomizer'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as SkinsRouteImport } from './routes/skins'
 import { Route as StatusRouteImport } from './routes/status'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as TransparencyRouteImport } from './routes/transparency'
 import { Route as VpkAnalyzerRouteImport } from './routes/vpk-analyzer'
 import { Route as AuthCallbackRouteImport } from './routes/auth/callback'
+import { Route as CompareGrimoireRouteImport } from './routes/compare/grimoire'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as DashboardAnnouncementsRouteImport } from './routes/dashboard/announcements'
 import { Route as DownloadIndexRouteImport } from './routes/download/index'
@@ -59,6 +64,11 @@ const DashboardRoute = DashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DeadlockModsNotWorkingRoute = DeadlockModsNotWorkingRouteImport.update({
+  id: '/deadlock-mods-not-working',
+  path: '/deadlock-mods-not-working',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DiscordRoute = DiscordRouteImport.update({
   id: '/discord',
   path: '/discord',
@@ -74,6 +84,12 @@ const DownloadRoute = DownloadRouteImport.update({
   path: '/download',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HowToInstallDeadlockModsRoute =
+  HowToInstallDeadlockModsRouteImport.update({
+    id: '/how-to-install-deadlock-mods',
+    path: '/how-to-install-deadlock-mods',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const KvParserRoute = KvParserRouteImport.update({
   id: '/kv-parser',
   path: '/kv-parser',
@@ -82,6 +98,11 @@ const KvParserRoute = KvParserRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ModsRoute = ModsRouteImport.update({
+  id: '/mods',
+  path: '/mods',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -97,6 +118,11 @@ const RandomizerRoute = RandomizerRouteImport.update({
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SkinsRoute = SkinsRouteImport.update({
+  id: '/skins',
+  path: '/skins',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StatusRoute = StatusRouteImport.update({
@@ -122,6 +148,11 @@ const VpkAnalyzerRoute = VpkAnalyzerRouteImport.update({
 const AuthCallbackRoute = AuthCallbackRouteImport.update({
   id: '/auth/callback',
   path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CompareGrimoireRoute = CompareGrimoireRouteImport.update({
+  id: '/compare/grimoire',
+  path: '/compare/grimoire',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
@@ -161,19 +192,24 @@ export interface FileRoutesByFullPath {
   '/403': typeof R403Route
   '/crosshair-generator': typeof CrosshairGeneratorRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/deadlock-mods-not-working': typeof DeadlockModsNotWorkingRoute
   '/discord': typeof DiscordRoute
   '/docs': typeof DocsRoute
   '/download': typeof DownloadRouteWithChildren
+  '/how-to-install-deadlock-mods': typeof HowToInstallDeadlockModsRoute
   '/kv-parser': typeof KvParserRoute
   '/login': typeof LoginRoute
+  '/mods': typeof ModsRoute
   '/privacy': typeof PrivacyRoute
   '/randomizer': typeof RandomizerRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/skins': typeof SkinsRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
   '/transparency': typeof TransparencyRoute
   '/vpk-analyzer': typeof VpkAnalyzerRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/compare/grimoire': typeof CompareGrimoireRoute
   '/dashboard/announcements': typeof DashboardAnnouncementsRoute
   '/download/linux': typeof DownloadLinuxRoute
   '/download/windows': typeof DownloadWindowsRoute
@@ -186,18 +222,23 @@ export interface FileRoutesByTo {
   '/$': typeof SplatRoute
   '/403': typeof R403Route
   '/crosshair-generator': typeof CrosshairGeneratorRoute
+  '/deadlock-mods-not-working': typeof DeadlockModsNotWorkingRoute
   '/discord': typeof DiscordRoute
   '/docs': typeof DocsRoute
+  '/how-to-install-deadlock-mods': typeof HowToInstallDeadlockModsRoute
   '/kv-parser': typeof KvParserRoute
   '/login': typeof LoginRoute
+  '/mods': typeof ModsRoute
   '/privacy': typeof PrivacyRoute
   '/randomizer': typeof RandomizerRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/skins': typeof SkinsRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
   '/transparency': typeof TransparencyRoute
   '/vpk-analyzer': typeof VpkAnalyzerRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/compare/grimoire': typeof CompareGrimoireRoute
   '/dashboard/announcements': typeof DashboardAnnouncementsRoute
   '/download/linux': typeof DownloadLinuxRoute
   '/download/windows': typeof DownloadWindowsRoute
@@ -212,19 +253,24 @@ export interface FileRoutesById {
   '/403': typeof R403Route
   '/crosshair-generator': typeof CrosshairGeneratorRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/deadlock-mods-not-working': typeof DeadlockModsNotWorkingRoute
   '/discord': typeof DiscordRoute
   '/docs': typeof DocsRoute
   '/download': typeof DownloadRouteWithChildren
+  '/how-to-install-deadlock-mods': typeof HowToInstallDeadlockModsRoute
   '/kv-parser': typeof KvParserRoute
   '/login': typeof LoginRoute
+  '/mods': typeof ModsRoute
   '/privacy': typeof PrivacyRoute
   '/randomizer': typeof RandomizerRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/skins': typeof SkinsRoute
   '/status': typeof StatusRoute
   '/terms': typeof TermsRoute
   '/transparency': typeof TransparencyRoute
   '/vpk-analyzer': typeof VpkAnalyzerRoute
   '/auth/callback': typeof AuthCallbackRoute
+  '/compare/grimoire': typeof CompareGrimoireRoute
   '/dashboard/announcements': typeof DashboardAnnouncementsRoute
   '/download/linux': typeof DownloadLinuxRoute
   '/download/windows': typeof DownloadWindowsRoute
@@ -240,19 +286,24 @@ export interface FileRouteTypes {
     | '/403'
     | '/crosshair-generator'
     | '/dashboard'
+    | '/deadlock-mods-not-working'
     | '/discord'
     | '/docs'
     | '/download'
+    | '/how-to-install-deadlock-mods'
     | '/kv-parser'
     | '/login'
+    | '/mods'
     | '/privacy'
     | '/randomizer'
     | '/sitemap.xml'
+    | '/skins'
     | '/status'
     | '/terms'
     | '/transparency'
     | '/vpk-analyzer'
     | '/auth/callback'
+    | '/compare/grimoire'
     | '/dashboard/announcements'
     | '/download/linux'
     | '/download/windows'
@@ -265,18 +316,23 @@ export interface FileRouteTypes {
     | '/$'
     | '/403'
     | '/crosshair-generator'
+    | '/deadlock-mods-not-working'
     | '/discord'
     | '/docs'
+    | '/how-to-install-deadlock-mods'
     | '/kv-parser'
     | '/login'
+    | '/mods'
     | '/privacy'
     | '/randomizer'
     | '/sitemap.xml'
+    | '/skins'
     | '/status'
     | '/terms'
     | '/transparency'
     | '/vpk-analyzer'
     | '/auth/callback'
+    | '/compare/grimoire'
     | '/dashboard/announcements'
     | '/download/linux'
     | '/download/windows'
@@ -290,19 +346,24 @@ export interface FileRouteTypes {
     | '/403'
     | '/crosshair-generator'
     | '/dashboard'
+    | '/deadlock-mods-not-working'
     | '/discord'
     | '/docs'
     | '/download'
+    | '/how-to-install-deadlock-mods'
     | '/kv-parser'
     | '/login'
+    | '/mods'
     | '/privacy'
     | '/randomizer'
     | '/sitemap.xml'
+    | '/skins'
     | '/status'
     | '/terms'
     | '/transparency'
     | '/vpk-analyzer'
     | '/auth/callback'
+    | '/compare/grimoire'
     | '/dashboard/announcements'
     | '/download/linux'
     | '/download/windows'
@@ -317,19 +378,24 @@ export interface RootRouteChildren {
   R403Route: typeof R403Route
   CrosshairGeneratorRoute: typeof CrosshairGeneratorRoute
   DashboardRoute: typeof DashboardRouteWithChildren
+  DeadlockModsNotWorkingRoute: typeof DeadlockModsNotWorkingRoute
   DiscordRoute: typeof DiscordRoute
   DocsRoute: typeof DocsRoute
   DownloadRoute: typeof DownloadRouteWithChildren
+  HowToInstallDeadlockModsRoute: typeof HowToInstallDeadlockModsRoute
   KvParserRoute: typeof KvParserRoute
   LoginRoute: typeof LoginRoute
+  ModsRoute: typeof ModsRoute
   PrivacyRoute: typeof PrivacyRoute
   RandomizerRoute: typeof RandomizerRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  SkinsRoute: typeof SkinsRoute
   StatusRoute: typeof StatusRoute
   TermsRoute: typeof TermsRoute
   TransparencyRoute: typeof TransparencyRoute
   VpkAnalyzerRoute: typeof VpkAnalyzerRoute
   AuthCallbackRoute: typeof AuthCallbackRoute
+  CompareGrimoireRoute: typeof CompareGrimoireRoute
   ModIdRoute: typeof ModIdRoute
 }
 
@@ -370,6 +436,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/deadlock-mods-not-working': {
+      id: '/deadlock-mods-not-working'
+      path: '/deadlock-mods-not-working'
+      fullPath: '/deadlock-mods-not-working'
+      preLoaderRoute: typeof DeadlockModsNotWorkingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/discord': {
       id: '/discord'
       path: '/discord'
@@ -391,6 +464,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DownloadRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/how-to-install-deadlock-mods': {
+      id: '/how-to-install-deadlock-mods'
+      path: '/how-to-install-deadlock-mods'
+      fullPath: '/how-to-install-deadlock-mods'
+      preLoaderRoute: typeof HowToInstallDeadlockModsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/kv-parser': {
       id: '/kv-parser'
       path: '/kv-parser'
@@ -403,6 +483,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mods': {
+      id: '/mods'
+      path: '/mods'
+      fullPath: '/mods'
+      preLoaderRoute: typeof ModsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -424,6 +511,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/skins': {
+      id: '/skins'
+      path: '/skins'
+      fullPath: '/skins'
+      preLoaderRoute: typeof SkinsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/status': {
@@ -459,6 +553,13 @@ declare module '@tanstack/react-router' {
       path: '/auth/callback'
       fullPath: '/auth/callback'
       preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compare/grimoire': {
+      id: '/compare/grimoire'
+      path: '/compare/grimoire'
+      fullPath: '/compare/grimoire'
+      preLoaderRoute: typeof CompareGrimoireRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard/': {
@@ -542,19 +643,24 @@ const rootRouteChildren: RootRouteChildren = {
   R403Route: R403Route,
   CrosshairGeneratorRoute: CrosshairGeneratorRoute,
   DashboardRoute: DashboardRouteWithChildren,
+  DeadlockModsNotWorkingRoute: DeadlockModsNotWorkingRoute,
   DiscordRoute: DiscordRoute,
   DocsRoute: DocsRoute,
   DownloadRoute: DownloadRouteWithChildren,
+  HowToInstallDeadlockModsRoute: HowToInstallDeadlockModsRoute,
   KvParserRoute: KvParserRoute,
   LoginRoute: LoginRoute,
+  ModsRoute: ModsRoute,
   PrivacyRoute: PrivacyRoute,
   RandomizerRoute: RandomizerRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  SkinsRoute: SkinsRoute,
   StatusRoute: StatusRoute,
   TermsRoute: TermsRoute,
   TransparencyRoute: TransparencyRoute,
   VpkAnalyzerRoute: VpkAnalyzerRoute,
   AuthCallbackRoute: AuthCallbackRoute,
+  CompareGrimoireRoute: CompareGrimoireRoute,
   ModIdRoute: ModIdRoute,
 }
 export const routeTree = rootRouteImport

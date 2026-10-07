@@ -17,6 +17,11 @@ import { primaryCta } from "./home/cta";
 import Logo from "./logo";
 import UserMenu from "./user-menu";
 
+const pageLinks = [
+  { to: "/mods", label: "Mods" },
+  { to: "/skins", label: "Skins" },
+] as const;
+
 const sectionLinks = [
   { hash: "tour", label: "Features" },
   { hash: "themes", label: "Themes" },
@@ -49,6 +54,11 @@ export const Navbar = () => {
         </div>
 
         <nav aria-label='Primary' className='hidden items-center lg:flex'>
+          {pageLinks.map((link) => (
+            <Link key={link.to} to={link.to} className={linkClassName}>
+              {link.label}
+            </Link>
+          ))}
           {sectionLinks.map((link) => (
             <Link
               key={link.hash}
@@ -113,6 +123,15 @@ export const Navbar = () => {
                     className={mobileLinkClassName}>
                     Download
                   </Link>
+                  {pageLinks.map((link) => (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      onClick={closeMenu}
+                      className={mobileLinkClassName}>
+                      {link.label}
+                    </Link>
+                  ))}
                   {sectionLinks.map((link) => (
                     <Link
                       key={link.hash}

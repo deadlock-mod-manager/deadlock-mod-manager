@@ -7,6 +7,7 @@ import {
   GITHUB_REPO,
   social,
 } from "@/lib/constants";
+import { GUIDES } from "@/lib/guides";
 import Logo from "./logo";
 
 export const Footer = () => {
@@ -30,7 +31,7 @@ export const Footer = () => {
             </p>
           </div>
 
-          <div className='grid grid-cols-2 gap-6 sm:grid-cols-3 sm:gap-8 lg:col-span-2'>
+          <div className='grid grid-cols-2 gap-6 sm:grid-cols-4 sm:gap-8 lg:col-span-2'>
             <div className='flex flex-col gap-3'>
               <h3 className='font-bold font-primary'>Links</h3>
               <Link
@@ -45,6 +46,18 @@ export const Footer = () => {
                 target='_blank'>
                 Source Code
               </a>
+            </div>
+
+            <div className='flex flex-col gap-3'>
+              <h3 className='font-bold font-primary'>Guides</h3>
+              {GUIDES.map((guide) => (
+                <Link
+                  key={guide.path}
+                  className='text-sm opacity-60 hover:opacity-100 transition-opacity'
+                  to={guide.path}>
+                  {guide.label}
+                </Link>
+              ))}
             </div>
 
             <div className='flex flex-col gap-3'>

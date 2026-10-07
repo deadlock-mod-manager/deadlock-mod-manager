@@ -20,6 +20,11 @@ const DEFAULT_OG_IMAGE = {
 export const INDEXABLE_PATHS = [
   "/",
   "/download",
+  "/mods",
+  "/skins",
+  "/how-to-install-deadlock-mods",
+  "/deadlock-mods-not-working",
+  "/compare/grimoire",
   "/randomizer",
   "/crosshair-generator",
   "/vpk-analyzer",

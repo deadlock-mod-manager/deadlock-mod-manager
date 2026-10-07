@@ -7,7 +7,7 @@ import {
   SITE_URL,
   X_URL,
 } from "@/lib/constants";
-import { absoluteUrl, DEFAULT_DESCRIPTION, SITE_NAME } from "@/utils/seo";
+import { absoluteUrl, DEFAULT_DESCRIPTION, SITE_NAME, seo } from "@/utils/seo";
 
 /**
  * Plain-text copy of the FAQ in components/home/faq-section.tsx, used for
@@ -60,6 +60,20 @@ const HOME_FAQS = [
   },
 ];
 
+export interface FaqEntry {
+  question: string;
+  answer: string;
+}
+
+const faqPage = (faqs: FaqEntry[]) => ({
+  "@type": "FAQPage",
+  mainEntity: faqs.map(({ question, answer }) => ({
+    "@type": "Question",
+    name: question,
+    acceptedAnswer: { "@type": "Answer", text: answer },
+  })),
+});
+
 const ORGANIZATION_ID = `${SITE_URL}/#organization`;
 const WEBSITE_ID = `${SITE_URL}/#website`;
 const SOFTWARE_ID = `${SITE_URL}/#software`;
@@ -93,6 +107,7 @@ const homeGraph = () => ({
       "@type": "SoftwareApplication",
       "@id": SOFTWARE_ID,
       name: SITE_NAME,
+      alternateName: ["DMM", "deadlockmods.app"],
       description: DEFAULT_DESCRIPTION,
       url: absoluteUrl("/"),
       applicationCategory: "GameApplication",
@@ -115,20 +130,76 @@ const homeGraph = () => ({
       publisher: { "@id": ORGANIZATION_ID },
       sameAs: [GITHUB_REPO, DISCORD_URL],
     },
-    {
-      "@type": "FAQPage",
-      mainEntity: HOME_FAQS.map(({ question, answer }) => ({
-        "@type": "Question",
-        name: question,
-        acceptedAnswer: { "@type": "Answer", text: answer },
-      })),
-    },
+    faqPage(HOME_FAQS),
   ],
 });
 
+export interface GuidePageData {
+  path: string;
+  title: string;
+  description: string;
+  /** Breadcrumb label for this page. */
+  name: string;
+  faqs: FaqEntry[];
+}
+
 /**
- * Serialized JSON-LD for the home page head. `<` is escaped so answer HTML
- * can never close the script tag early.
+ * JSON-LD for a landing or guide page: the page itself, its breadcrumb trail
+ * and the FAQ it renders. The FAQ text must match the page.
  */
-export const homeStructuredData = () =>
-  JSON.stringify(homeGraph()).replace(/</g, "\\u003c");
+const guideGraph = ({
+  path,
+  title,
+  description,
+  name,
+  faqs,
+}: GuidePageData) => ({
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebPage",
+      "@id": `${absoluteUrl(path)}#webpage`,
+      url: absoluteUrl(path),
+      name: title,
+      description,
+      inLanguage: "en",
+      isPartOf: { "@id": WEBSITE_ID },
+      about: { "@id": SOFTWARE_ID },
+      publisher: { "@id": ORGANIZATION_ID },
+    },
+    {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: SITE_NAME,
+          item: absoluteUrl("/"),
+        },
+        { "@type": "ListItem", position: 2, name, item: absoluteUrl(path) },
+      ],
+    },
+    ...(faqs.length > 0 ? [faqPage(faqs)] : []),
+  ],
+});
+
+type JsonLdGraph = ReturnType<typeof homeGraph> | ReturnType<typeof guideGraph>;
+
+/** `<` is escaped so answer HTML can never close the script tag early. */
+const serialize = (graph: JsonLdGraph) =>
+  JSON.stringify(graph).replace(/</g, "\\u003c");
+
+/** Serialized JSON-LD for the home page head. */
+export const homeStructuredData = () => serialize(homeGraph());
+
+/** Head tags for a landing or guide page: meta, canonical link and JSON-LD. */
+export const guideHead = (page: GuidePageData) => ({
+  ...seo({
+    title: page.title,
+    description: page.description,
+    path: page.path,
+  }),
+  scripts: [
+    { type: "application/ld+json", children: serialize(guideGraph(page)) },
+  ],
+});
