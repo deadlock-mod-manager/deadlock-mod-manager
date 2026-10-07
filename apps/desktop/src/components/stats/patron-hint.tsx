@@ -3,7 +3,8 @@ import { Button } from "@deadlock-mods/ui/components/button";
 import { ExternalLink, X, Zap } from "@deadlock-mods/ui/icons";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
-import { PATRON_URL } from "@/components/stats/deadlock-api-credit";
+
+const PATRON_URL = "https://deadlock-api.com/patron";
 
 /**
  * The one thing that makes the data on this page better and cannot be switched
