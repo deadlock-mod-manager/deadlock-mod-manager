@@ -158,19 +158,19 @@ export const assertGrimoireImported = async (
     assert.ok(mod, `${fixture.name} must be in the library`);
     assert.equal(mod.name, finalName(fixture, order));
     assert.equal(mod.installOrder, order, `${fixture.name} keeps load order`);
+    assert.equal(mod.status, fixture.enabled ? "installed" : "downloaded");
     const entry = manifest.mods[modId];
-    assert.equal(mod.status, entry.enabled ? "installed" : "downloaded");
+    assert.equal(entry.enabled, fixture.enabled);
     assert.equal(entry.order, order);
-    const files = entry.enabled ? entry.currentVpks : entry.disabledVpks;
+    const files = fixture.enabled ? entry.currentVpks : entry.disabledVpks;
     assert.equal(files.length, 1, `${fixture.name} owns exactly one VPK`);
     assert.equal(inventory[files[0]], fingerprint(fixture.bytes));
-    if (entry.enabled) {
+    if (fixture.enabled) {
       assert.match(files[0], /^pak\d{2}_dir\.vpk$/);
       assert.deepEqual(mod.installedVpks, files);
       assert.equal(active.enabledMods[modId]?.enabled, true);
     } else {
-      assert.deepEqual(mod.installedVpks, []);
-      assert.notEqual(active.enabledMods[modId]?.enabled, true);
+      assert.deepEqual(files, [`${modId}_e2e_parked_sound_dir.vpk`]);
     }
     const store = await collectFileInventory(
       path.join(roots.appData, "mods", modId, "files"),
@@ -178,8 +178,10 @@ export const assertGrimoireImported = async (
     assert.deepEqual(Object.values(store), [fingerprint(fixture.bytes)]);
   }
   assert.deepEqual(
-    Object.values(manifest.mods).flatMap((entry) => entry.currentVpks),
-    ["pak01_dir.vpk", "pak02_dir.vpk"],
+    fixtures
+      .filter((f) => f.enabled)
+      .map((f) => manifest.mods[ids[fixtures.indexOf(f)]].currentVpks[0]),
+    ["pak01_dir.vpk", "pak02_dir.vpk", "pak03_dir.vpk"],
   );
   const skin = active.mods.find((mod) => mod.remoteId === ids[0]);
   assert.deepEqual(
@@ -199,9 +201,9 @@ export const assertGrimoireImported = async (
     [
       ".dmm.json",
       ".disabled/e2e_parked_sound_dir.vpk",
-      `${ids[2]}_e2e_overflow_local_dir.vpk`,
       "pak01_dir.vpk",
       "pak02_dir.vpk",
+      "pak03_dir.vpk",
       `${ids[3]}_e2e_parked_sound_dir.vpk`,
     ].sort(),
     "No stray files in the default profile",
@@ -238,14 +240,13 @@ export const assertGrimoireImported = async (
     Object.keys(loadoutManifest.mods).sort(),
     [ids[0], ids[3]].sort(),
   );
-  // Profile imports use the normal installer. This synthetic game cannot
-  // complete that path, so both mods remain safely parked and reusable.
-  assert.equal(loadoutManifest.mods[ids[3]].enabled, false);
-  assert.equal(loadoutManifest.mods[ids[0]].enabled, false);
-  assert.notEqual(loadout.enabledMods[ids[3]]?.enabled, true);
+  // The sound is disabled in the library but enabled in this profile.
+  assert.equal(loadoutManifest.mods[ids[3]].enabled, true);
+  assert.equal(loadoutManifest.mods[ids[0]].enabled, true);
+  assert.equal(loadout.enabledMods[ids[3]]?.enabled, true);
   const loadoutFiles = await collectFileInventory(loadoutDir);
   assert.equal(
-    loadoutFiles[loadoutManifest.mods[ids[3]].disabledVpks[0]],
+    loadoutFiles[loadoutManifest.mods[ids[3]].currentVpks[0]],
     fingerprint(fixtures[3].bytes),
   );
 

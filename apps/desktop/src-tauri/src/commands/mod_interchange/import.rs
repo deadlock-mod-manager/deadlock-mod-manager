@@ -16,6 +16,7 @@ use super::format::{
   InterchangeDocument, InterchangeMod, InterchangeOrigin, SubmissionKind, is_plain_vpk_name,
   sha256_hex,
 };
+use super::hash_cache::HashCache;
 use crate::errors::Error;
 use crate::mod_manager::Mod;
 use crate::mod_manager::ModManager;
@@ -160,6 +161,7 @@ struct UsableFile {
   name: String,
   source: PathBuf,
   size: u64,
+  sha256: Option<String>,
   selected: bool,
 }
 
@@ -202,6 +204,7 @@ fn usable_files(entry: &InterchangeMod) -> (Vec<UsableFile>, Vec<String>) {
       name: unique,
       source,
       size: stat.len(),
+      sha256: file.sha256.clone(),
       selected: file.is_selected(),
     });
   }
@@ -249,6 +252,25 @@ fn copy_file(source: &Path, destination: &Path, size: u64) -> Result<(), Error> 
     fs::remove_file(destination)?;
   }
   fs::rename(&temp, destination)?;
+  Ok(())
+}
+
+/// Keep `file` in the mod store. Importing a profile lists mods the library
+/// import (or an earlier run) already stored; identical bytes are not copied
+/// again.
+fn store_file(hashes: &HashCache, file: &UsableFile, destination: &Path) -> Result<(), Error> {
+  if let Some(sha256) = &file.sha256
+    && same_size(destination, file.size)
+    && hashes
+      .hash(destination)
+      .is_ok_and(|stored| stored.eq_ignore_ascii_case(sha256))
+  {
+    return Ok(());
+  }
+  copy_file(&file.source, destination, file.size)?;
+  if let Some(sha256) = &file.sha256 {
+    hashes.remember(destination, sha256);
+  }
   Ok(())
 }
 
@@ -389,11 +411,14 @@ fn place_mod(
       reason: None,
     }),
     // The mod is safely parked; the user can enable it from the library.
-    Err(error) => Ok(Placed {
-      enabled: false,
-      adopted_in_place: false,
-      reason: Some(format!("imported disabled: could not be enabled ({error})")),
-    }),
+    Err(error) => {
+      log::warn!("Imported mod {mod_id} could not be enabled: {error}");
+      Ok(Placed {
+        enabled: false,
+        adopted_in_place: false,
+        reason: Some(format!("imported disabled: could not be enabled ({error})")),
+      })
+    }
   }
 }
 
@@ -434,6 +459,7 @@ pub fn import_into(
   let base = manager.get_addons_path(request.profile_folder.as_deref())?;
   fs::create_dir_all(base.path())?;
   let store = app_data.join("mods");
+  let hashes = HashCache::open(Some(app_data));
   let mut ledger = super::ledger::load(app_data);
   let source_manager = if request.document.source.manager.is_empty() {
     "unknown".to_string()
@@ -513,7 +539,7 @@ pub fn import_into(
     let files_dir = mod_dir.join("files");
     let stored = files
       .iter()
-      .try_for_each(|file| copy_file(&file.source, &files_dir.join(&file.name), file.size));
+      .try_for_each(|file| store_file(&hashes, file, &files_dir.join(&file.name)));
     if let Err(error) = stored {
       results.push(ImportedMod::failed(
         &entry.key,
@@ -578,6 +604,7 @@ pub fn import_into(
     key: String::new(),
     name: String::new(),
   });
+  hashes.save();
   let mut warnings = Vec::new();
   if let Err(error) = super::ledger::save(app_data, &ledger) {
     warnings.push(format!("Could not remember the imported mods: {error}"));
@@ -669,6 +696,32 @@ mod tests {
     assert!(!placed.enabled);
     assert!(placed.reason.is_some());
     assert!(committed_despite(&base, "local-2", Error::InvalidInput("rename".into())).is_err());
+  }
+
+  #[test]
+  fn the_store_keeps_identical_bytes_without_copying_them_again() {
+    let root = tempfile::tempdir().unwrap();
+    let source = root.path().join("pak01_dir.vpk");
+    fs::write(&source, b"mod bytes").unwrap();
+    let file = UsableFile {
+      name: "pak01_dir.vpk".into(),
+      source: source.clone(),
+      size: 9,
+      sha256: Some(super::super::format::sha256_file(&source).unwrap()),
+      selected: true,
+    };
+    let stored = root.path().join("mods/1/files/pak01_dir.vpk");
+    let hashes = HashCache::open(None);
+    store_file(&hashes, &file, &stored).unwrap();
+    assert_eq!(fs::read(&stored).unwrap(), b"mod bytes");
+
+    // The next profile's import finds the bytes already stored.
+    fs::remove_file(&source).unwrap();
+    store_file(&hashes, &file, &stored).unwrap();
+
+    // Different bytes of the same size are replaced.
+    fs::write(&stored, b"old bytes").unwrap();
+    assert!(store_file(&hashes, &file, &stored).is_err());
   }
 
   fn entry(origin: InterchangeOrigin, key: &str) -> InterchangeMod {

@@ -41,8 +41,10 @@ use serde::Serialize;
 use serde_json::{Map, Value};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::fs;
+use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 use std::sync::LazyLock;
+use vpk_parser::VpkParser;
 
 pub const MANAGER_ID: &str = "grimoire";
 
@@ -58,6 +60,9 @@ static STAGING_TEMP: LazyLock<Regex> =
 static EMBEDDED_ORIGINAL: LazyLock<Regex> = LazyLock::new(|| {
   Regex::new(r#"(?i)"?(?:grimoire)?originalsha256"?\s+"?([0-9a-f]{64})"?"#).expect("valid regex")
 });
+
+/// `archive_index` of a VPK entry stored in the `_dir.vpk` itself.
+const INLINE_ARCHIVE_INDEX: u16 = 0x7fff;
 
 /// Grimoire's priority root and its first slot for user ("Global") mods.
 const PRIORITY_ROOT: &str = "grimoire";
@@ -389,61 +394,26 @@ fn dmm_store_files(store: &Path, mod_id: &str) -> Vec<(PathBuf, u64)> {
     .unwrap_or_default()
 }
 
-/// Judge every claimed file by its bytes. Only store files of the claimed
-/// size are hashed, through the same cache as the library itself.
-fn check_dmm_claims(
-  claims: &[Option<(String, String, u64)>],
-  store: Option<&Path>,
-  context: &ReadContext,
-) -> Vec<Option<DmmClaim>> {
-  let Some(store) = store else {
-    return claims
-      .iter()
-      .map(|claim| claim.as_ref().map(|_| DmmClaim::Unverifiable))
-      .collect();
-  };
-  let mut kept: HashMap<String, Vec<(PathBuf, u64)>> = HashMap::new();
-  for (mod_id, _, _) in claims.iter().flatten() {
-    kept
-      .entry(mod_id.clone())
-      .or_insert_with(|| dmm_store_files(store, mod_id));
+/// What the bytes say about DMM's claim on a file. `kept` is what
+/// [`dmm_store_files`] found for the mod, `store_hashes` the hashes of those
+/// files that could match.
+fn judge_dmm_claim(
+  mod_id: &str,
+  sha256: &str,
+  kept: &[(PathBuf, u64)],
+  store_hashes: &HashMap<PathBuf, String>,
+) -> DmmClaim {
+  if kept.is_empty() {
+    DmmClaim::Unverifiable
+  } else if kept.iter().any(|(path, _)| {
+    store_hashes
+      .get(path)
+      .is_some_and(|hash| hash.eq_ignore_ascii_case(sha256))
+  }) {
+    DmmClaim::Confirmed(mod_id.to_string())
+  } else {
+    DmmClaim::Stale
   }
-  let mut wanted: Vec<PathBuf> = claims
-    .iter()
-    .flatten()
-    .flat_map(|(mod_id, _, size)| {
-      kept[mod_id]
-        .iter()
-        .filter(move |(_, kept_size)| kept_size == size)
-        .map(|(path, _)| path.clone())
-    })
-    .collect();
-  wanted.sort();
-  wanted.dedup();
-  let hashed: HashMap<PathBuf, String> = wanted
-    .iter()
-    .cloned()
-    .zip(context.hashes.hash_all(&wanted, context.progress))
-    .filter_map(|(path, hash)| Some((path, hash.ok()?)))
-    .collect();
-  claims
-    .iter()
-    .map(|claim| {
-      let (mod_id, sha256, _) = claim.as_ref()?;
-      let files = &kept[mod_id];
-      Some(if files.is_empty() {
-        DmmClaim::Unverifiable
-      } else if files.iter().any(|(path, _)| {
-        hashed
-          .get(path)
-          .is_some_and(|hash| hash.eq_ignore_ascii_case(sha256))
-      }) {
-        DmmClaim::Confirmed(mod_id.clone())
-      } else {
-        DmmClaim::Stale
-      })
-    })
-    .collect()
 }
 
 fn collect_candidates(citadel: &Path, warnings: &mut Vec<String>) -> Vec<Candidate> {
@@ -645,8 +615,6 @@ impl Resolved {
   }
 }
 
-/// Read Grimoire's library as an interchange document. File paths are
-/// absolute; nothing on disk is modified.
 /// How a read reports progress and where it caches file hashes.
 pub struct ReadContext<'a> {
   pub hashes: &'a HashCache,
@@ -674,6 +642,8 @@ pub fn read(
   )
 }
 
+/// Read Grimoire's library as an interchange document. File paths are
+/// absolute; nothing on disk is modified.
 pub fn read_with(
   user_data_dir: &Path,
   fallback_game_path: Option<&Path>,
@@ -718,39 +688,52 @@ pub fn read_with(
     }
     kept.push((candidate, meta));
   }
-  // Hashing dominates the read: all cores, and unchanged files come from the
-  // cache without being read at all.
-  let paths: Vec<PathBuf> = kept.iter().map(|(c, _)| c.path.clone()).collect();
-  let hashes = context.hashes.hash_all(&paths, context.progress);
-  let mut hashed = Vec::new();
-  for ((candidate, meta), hash) in kept.into_iter().zip(hashes) {
-    let size = match fs::metadata(&candidate.path) {
-      Ok(stat) => stat.len(),
-      Err(error) => {
-        document.warnings.push(format!(
-          "{}: unreadable ({error})",
-          candidate.path.display()
-        ));
-        continue;
-      }
-    };
-    match hash {
-      Ok(sha256) => hashed.push((candidate, meta, sha256, size)),
+  let mut sized = Vec::new();
+  for (candidate, meta) in kept {
+    match fs::metadata(&candidate.path) {
+      Ok(stat) => sized.push((candidate, meta, stat.len())),
       Err(error) => document.warnings.push(format!(
-        "{}: could not be hashed ({error})",
+        "{}: unreadable ({error})",
         candidate.path.display()
       )),
     }
   }
-  let claims: Vec<Option<(String, String, u64)>> = hashed
+  // DMM's claims are checked against the store files of the claimed size.
+  let mut store_files: HashMap<String, Vec<(PathBuf, u64)>> = HashMap::new();
+  for (candidate, _, _) in &sized {
+    if let Some(mod_id) = &candidate.dmm_claim {
+      store_files.entry(mod_id.clone()).or_insert_with(|| {
+        context
+          .dmm_store
+          .map(|store| dmm_store_files(store, mod_id))
+          .unwrap_or_default()
+      });
+    }
+  }
+  let mut store_paths: Vec<PathBuf> = sized
     .iter()
-    .map(|(candidate, _, sha256, size)| {
-      let mod_id = candidate.dmm_claim.clone()?;
-      Some((mod_id, sha256.clone(), *size))
+    .filter_map(|(candidate, _, size)| Some((candidate.dmm_claim.as_ref()?, *size)))
+    .flat_map(|(mod_id, size)| {
+      store_files[mod_id]
+        .iter()
+        .filter(move |(_, kept_size)| *kept_size == size)
+        .map(|(path, _)| path.clone())
     })
     .collect();
-  let claims = check_dmm_claims(&claims, context.dmm_store, context);
+  store_paths.sort();
+  store_paths.dedup();
+
+  // Hashing dominates the read: library and store files in one pass on all
+  // cores, and unchanged files come from the cache without being read at all.
+  let mut paths: Vec<PathBuf> = sized.iter().map(|(c, _, _)| c.path.clone()).collect();
+  paths.extend(store_paths.iter().cloned());
+  let mut hashes = context.hashes.hash_all(&paths, context.progress);
   context.hashes.save();
+  let store_hashes: HashMap<PathBuf, String> = store_paths
+    .into_iter()
+    .zip(hashes.split_off(sized.len()))
+    .filter_map(|(path, hash)| Some((path, hash.ok()?)))
+    .collect();
 
   // Grimoire's entries that name a mod, by the hash they record. Rows that
   // record one hash as different mods name none of them.
@@ -777,7 +760,17 @@ pub fn read_with(
   let mut resolved = Vec::new();
   let mut stale = 0usize;
   let mut dmm_only = 0usize;
-  for ((candidate, meta, sha256, size), claim) in hashed.into_iter().zip(claims) {
+  for ((candidate, meta, size), hash) in sized.into_iter().zip(hashes) {
+    let sha256 = match hash {
+      Ok(sha256) => sha256,
+      Err(error) => {
+        document.warnings.push(format!(
+          "{}: could not be hashed ({error})",
+          candidate.path.display()
+        ));
+        continue;
+      }
+    };
     // The identity Grimoire matches on: the original hash an imprint carries,
     // else the live bytes.
     let canonical = embedded_original_sha256(&candidate.path).unwrap_or_else(|| sha256.clone());
@@ -792,6 +785,10 @@ pub fn read_with(
       _ => by_hash.get(&canonical).copied().flatten().cloned(),
     };
 
+    let claim = candidate
+      .dmm_claim
+      .as_deref()
+      .map(|mod_id| judge_dmm_claim(mod_id, &sha256, &store_files[mod_id], &store_hashes));
     let dmm_id = match claim {
       Some(DmmClaim::Confirmed(mod_id)) if dmm_group_key(&mod_id).is_some() => Some(mod_id),
       // A DMM mod the interchange cannot name (a WIP submission), or one
@@ -936,9 +933,28 @@ pub fn read_with(
 }
 
 /// The pre-imprint hash Grimoire embeds in `addoninfo.txt` when it tags a
-/// VPK in place. Only read for files that carry one.
+/// VPK in place. Runs for every file, so only the directory tree and that one
+/// entry are read, never the whole VPK.
 fn embedded_original_sha256(path: &Path) -> Option<String> {
-  let bytes = source2_model::vpk_extract::extract_entry(path, "addoninfo.txt").ok()?;
+  let entry = VpkParser::parse_directory_from_file(path)
+    .ok()?
+    .into_iter()
+    .find(|entry| entry.full_path.eq_ignore_ascii_case("addoninfo.txt"))?;
+  // Grimoire stores it inline, in the data section after the tree.
+  if entry.archive_index != INLINE_ARCHIVE_INDEX {
+    return None;
+  }
+  let mut file = fs::File::open(path).ok()?;
+  let mut header = [0u8; 12];
+  file.read_exact(&mut header).ok()?;
+  let version = u32::from_le_bytes(header[4..8].try_into().ok()?);
+  let tree_length = u32::from_le_bytes(header[8..12].try_into().ok()?);
+  let data_start = if version >= 2 { 28 } else { 12 } + u64::from(tree_length);
+  file
+    .seek(SeekFrom::Start(data_start + u64::from(entry.entry_offset)))
+    .ok()?;
+  let mut bytes = vec![0u8; entry.entry_length as usize];
+  file.read_exact(&mut bytes).ok()?;
   let text = String::from_utf8_lossy(&bytes);
   EMBEDDED_ORIGINAL
     .captures(&text)
@@ -1417,6 +1433,27 @@ mod tests {
       InterchangeOrigin::GameBanana(origin) => assert_eq!(origin.file_id, Some(5)),
       InterchangeOrigin::Local(_) => panic!("expected GameBanana origin"),
     }
+  }
+
+  #[test]
+  fn imprinted_files_keep_the_identity_of_their_original_hash() {
+    let original = hash(b"before imprint");
+    let w = world(serde_json::json!({
+      "pak01_dir.vpk": { "modName": "Imprinted", "gameBananaId": 44, "sha256": original }
+    }));
+    let source = w.user_data.parent().unwrap().join("imprint");
+    write(
+      &source.join("addoninfo.txt"),
+      format!(r#""AddonInfo" {{ "grimoireOriginalSha256" "{original}" }}"#).as_bytes(),
+    );
+    write(&source.join("scripts/skin.txt"), b"skin");
+    let vpk = w.game.join("game/citadel/addons/pak01_dir.vpk");
+    vpkmanager::pack_directory(&source, &vpk).unwrap();
+
+    assert_eq!(embedded_original_sha256(&vpk), Some(original));
+    let document = read(&w.user_data, None).unwrap();
+    assert_eq!(keys(&document), ["gamebanana:mod:44"]);
+    assert!(!document.warnings.iter().any(|w| w.contains("fingerprint")));
   }
 
   #[test]

@@ -206,37 +206,37 @@ const importIntoProfile = async (
       result.status === "imported" && result.modId !== null,
   );
   const entriesByKey = new Map(document.mods.map((mod) => [mod.key, mod]));
+  const { addLocalMod, setModEnabledInProfile, profiles } =
+    usePersistedStore.getState();
+  // A mod another profile already has keeps that record (a local mod has no
+  // catalog entry); only mods new to the library are looked up.
+  const known = new Map<string, ModDto>();
+  for (const mod of Object.values(profiles).flatMap((p) => p.mods)) {
+    if (!known.has(mod.remoteId)) {
+      known.set(mod.remoteId, libraryRecordAsModDto(mod));
+    }
+  }
   const catalogMods = await fetchCatalogMods(
     imported
       .filter(
         (result) =>
+          !known.has(result.modId) &&
           entriesByKey.get(result.key)?.origin.provider === "gamebanana",
       )
       .map((result) => result.modId),
   );
 
-  const { addLocalMod, setModEnabledInProfile, profiles } =
-    usePersistedStore.getState();
-  // Another profile may already describe the mod (a local mod has no catalog
-  // entry, and the catalog can be unreachable).
-  const libraryRecord = (modId: string) => {
-    const record = Object.values(profiles)
-      .flatMap((p) => p.mods)
-      .find((mod) => mod.remoteId === modId);
-    return record ? libraryRecordAsModDto(record) : null;
-  };
   for (const result of imported) {
     const entry = entriesByKey.get(result.key);
     if (!entry) continue;
     const { mod, additional } = buildImportedLocalMod(
       entry,
       result,
-      catalogMods.get(result.modId) ?? libraryRecord(result.modId),
+      known.get(result.modId) ?? catalogMods.get(result.modId) ?? null,
     );
     addLocalMod(mod, additional, profileId);
     if (result.enabled) setModEnabledInProfile(profileId, result.modId, true);
   }
-  detectHeroes(imported.map((result) => result.modId));
   return report;
 };
 
@@ -435,6 +435,17 @@ export const useRunInterchangeImport = () =>
       } finally {
         unlisten();
       }
+      detectHeroes([
+        ...new Set(
+          reports.flatMap((r) =>
+            r.results.flatMap((result) =>
+              result.status === "imported" && result.modId
+                ? [result.modId]
+                : [],
+            ),
+          ),
+        ),
+      ]);
 
       const names = new Map(document.mods.map((mod) => [mod.key, mod.name]));
       const unrecognized = new Map<string, UnrecognizedMod>();
