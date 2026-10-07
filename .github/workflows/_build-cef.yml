@@ -209,7 +209,9 @@ jobs:
         run: pnpm install
 
       - name: Update version with commit hash (nightly only)
-        if: inputs.nightly == true || (github.event_name == 'workflow_dispatch')
+        # github.event_name is the caller's event here, so checking for
+        # workflow_dispatch stamped manually-started stable releases as nightly.
+        if: inputs.nightly == true
         run: pnpm version:nightly
 
       - name: Build CEF (Linux)
