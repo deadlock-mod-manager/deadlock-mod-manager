@@ -128,7 +128,9 @@ pub async fn start_game(
   vanilla: bool,
   additional_args: String,
   profile_folder: Option<String>,
+  mod_compatibility: Option<bool>,
 ) -> Result<(), Error> {
+  let mod_compatibility = mod_compatibility.unwrap_or(false);
   log::info!(
     "Starting game with args: {:?} (vanilla: {:?}, profile: {:?})",
     additional_args,
@@ -138,7 +140,12 @@ pub async fn start_game(
 
   let first_result = {
     let mut mod_manager = MANAGER.lock().unwrap();
-    mod_manager.prepare_game_launch(vanilla, additional_args.clone(), profile_folder.clone())
+    mod_manager.prepare_game_launch(
+      vanilla,
+      additional_args.clone(),
+      profile_folder.clone(),
+      mod_compatibility,
+    )
   };
 
   let request = match first_result {
@@ -150,7 +157,12 @@ pub async fn start_game(
 
       let request = {
         let mut mod_manager = MANAGER.lock().unwrap();
-        mod_manager.prepare_game_launch(vanilla, additional_args, profile_folder)?
+        mod_manager.prepare_game_launch(
+          vanilla,
+          additional_args,
+          profile_folder,
+          mod_compatibility,
+        )?
       };
 
       app_handle.emit("gameinfo-auto-reset", ()).ok();

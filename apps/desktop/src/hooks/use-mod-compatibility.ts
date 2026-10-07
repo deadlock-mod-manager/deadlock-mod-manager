@@ -15,7 +15,10 @@ export const MOD_COMPATIBILITY_QUERY_KEY = ["mod-compatibility-settings"];
 
 export type ModCompatibilityController = ReturnType<typeof useModCompatibility>;
 
-export function useModCompatibility(profileFolder: string | null) {
+export function useModCompatibility(
+  profileFolder: string | null,
+  enabled: boolean,
+) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const gamePath = usePersistedStore((state) => state.gamePath);
@@ -31,13 +34,13 @@ export function useModCompatibility(profileFolder: string | null) {
       invoke<Record<string, boolean>>("get_mod_compatibility_settings", {
         profileFolder,
       }),
-    enabled: !!gamePath,
+    enabled: enabled && !!gamePath,
     staleTime: 30_000,
   });
   const game = useQuery({
     queryKey: ["is-game-running"],
     queryFn: isGameRunning,
-    enabled: !!gamePath,
+    enabled: enabled && !!gamePath,
     refetchInterval: 5000,
     staleTime: 5000,
   });

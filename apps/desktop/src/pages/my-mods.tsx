@@ -223,7 +223,7 @@ type ModCardProps = {
   mod: LocalMod;
   conflictStatus: ModConflictStatus | undefined;
   onShowConflicts: () => void;
-  compatibility: ModCompatibilityController;
+  compatibility: ModCompatibilityController | undefined;
 };
 
 const GridModCard = ({
@@ -364,10 +364,12 @@ const GridModCard = ({
             <ModButton remoteMod={mod} variant='iconOnly' showLabel />
           </div>
           <div className='flex items-center gap-1'>
-            <PerModCompatibilityControl
-              mod={mod}
-              compatibility={compatibility}
-            />
+            {compatibility ? (
+              <PerModCompatibilityControl
+                mod={mod}
+                compatibility={compatibility}
+              />
+            ) : null}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
@@ -529,10 +531,12 @@ const ListModCard = ({
                   />
                 )}
               </div>
-              <PerModCompatibilityControl
-                mod={mod}
-                compatibility={compatibility}
-              />
+              {compatibility ? (
+                <PerModCompatibilityControl
+                  mod={mod}
+                  compatibility={compatibility}
+                />
+              ) : null}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -578,7 +582,7 @@ const ModsList = ({
   onShowConflicts,
   compatibility,
 }: {
-  compatibility: ModCompatibilityController;
+  compatibility: ModCompatibilityController | undefined;
   mods: LocalMod[];
   viewMode: ViewMode;
   conflictStatusByMod: ReadonlyMap<string, ModConflictStatus>;
@@ -636,7 +640,14 @@ const MyMods = () => {
     refetch: refetchVpkScan,
     activeProfileFolder,
   } = useVpkScan();
-  const compatibility = useModCompatibility(activeProfileFolder);
+  const compatibilityEnabled = useExperimentalFeature(
+    "mod-compatibility-repairs",
+  );
+  const modCompatibility = useModCompatibility(
+    activeProfileFolder,
+    compatibilityEnabled,
+  );
+  const compatibility = compatibilityEnabled ? modCompatibility : undefined;
   const {
     updatableMods,
     updatableCount,
@@ -961,11 +972,13 @@ const MyMods = () => {
         </div>
       </div>
 
-      <ModCompatibilityControl
-        compatibility={compatibility}
-        profileFolder={activeProfileFolder}
-        hasMods={enabledModsCount > 0}
-      />
+      {compatibility ? (
+        <ModCompatibilityControl
+          compatibility={compatibility}
+          profileFolder={activeProfileFolder}
+          hasMods={enabledModsCount > 0}
+        />
+      ) : null}
 
       <div
         className='min-h-0 flex-1 overflow-y-auto overflow-x-hidden pt-8 pb-4'

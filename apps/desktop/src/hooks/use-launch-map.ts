@@ -32,6 +32,8 @@ export const useLaunchMap = (onSuccess?: () => void) => {
         vanilla: false,
         additionalArgs,
         profileFolder,
+        modCompatibility:
+          storeState.experimentalFeatures["mod-compatibility-repairs"],
       });
 
       await queryClient.invalidateQueries({

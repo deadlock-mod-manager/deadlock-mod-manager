@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { MOD_PATHS_KEY } from "@/hooks/use-game-config-alert";
 import { useCompatibilityReview } from "@/components/providers/compatibility-review";
+import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { stopHeroDetection } from "@/hooks/use-hero-detection";
 import { useSkinRandomizer } from "@/hooks/use-skin-randomizer";
 import { restoreProfileGameinfo } from "@/lib/gameinfo";
@@ -37,6 +38,7 @@ export const useLaunch = () => {
   const confirm = useConfirm();
   const { randomizeSkins } = useSkinRandomizer();
   const reviewCompatibility = useCompatibilityReview();
+  const modCompatibility = useExperimentalFeature("mod-compatibility-repairs");
   const launchVanillaNoArgs =
     settings?.["launch-vanilla-no-args"]?.enabled ?? false;
 
@@ -135,11 +137,12 @@ export const useLaunch = () => {
                   gamePresenceEnabled,
                 ),
           profileFolder,
+          modCompatibility,
         };
         await launchWithCompatibilityReview(
           () => invoke<void>("start_game", args),
           () => reviewCompatibility(profileFolder),
-          vanilla,
+          vanilla || !modCompatibility,
         );
       } finally {
         unlisten();

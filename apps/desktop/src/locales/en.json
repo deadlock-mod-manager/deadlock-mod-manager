@@ -1915,6 +1915,10 @@
       "conflict-detection": {
         "title": "Conflict Detection",
         "description": "Flag enabled mods that change the same files and show them in a Conflicts tab in My Mods."
+      },
+      "mod-compatibility-repairs": {
+        "title": "Mod Compatibility Repairs",
+        "description": "Repair outdated mods and merge game text and data that several mods change. Choose which mods to repair in My Mods."
       }
     }
   },

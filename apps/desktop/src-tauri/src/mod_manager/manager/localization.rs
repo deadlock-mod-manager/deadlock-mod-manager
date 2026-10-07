@@ -283,13 +283,16 @@ impl ModManager {
     receipt::write(&plan, key, resolutions)
   }
 
+  /// `feature_enabled` is the experimental flag: while it is off, per-mod
+  /// opt-ins are ignored and any existing repair package is removed.
   pub(super) fn ensure_localization_overlay_for_launch(
     &self,
     profile_folder: Option<&str>,
+    feature_enabled: bool,
   ) -> Result<(), Error> {
     self.prepare_localization_overlay_for_launch(
       profile_folder,
-      self.mod_compatibility_enabled(profile_folder)?,
+      feature_enabled && self.mod_compatibility_enabled(profile_folder)?,
     )
   }
 
@@ -1068,7 +1071,7 @@ mod tests {
     fs::write(&path, b"stale repair package").unwrap();
     fs::write(receipt::path(&path), b"stale receipt").unwrap();
     manager
-      .ensure_localization_overlay_for_launch(None)
+      .ensure_localization_overlay_for_launch(None, true)
       .unwrap();
     assert!(
       !path.exists(),
@@ -1077,6 +1080,54 @@ mod tests {
     assert!(
       !receipt::path(&path).exists(),
       "opt-out must not create a new receipt"
+    );
+  }
+
+  #[test]
+  fn launch_ignores_opted_in_mods_while_the_experimental_flag_is_off() {
+    let temp = tempfile::tempdir().unwrap();
+    let mut manager = test_manager(temp.path());
+    fs::write(
+      temp.path().join("game/citadel/gameinfo.gi"),
+      b"GameInfo
+{
+FileSystem
+{
+SearchPaths
+{
+Game citadel
+Game core
+}
+}
+}
+",
+    )
+    .unwrap();
+    let base = manager.get_addons_path(None).unwrap();
+    write_test_vpk(&base.join("pak01_dir.vpk"));
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_enabled(
+      "mod",
+      vec!["pak01_dir.vpk".into()],
+      vec![],
+      None,
+      ShardIndex::FIRST,
+    );
+    manifest.save(&base).unwrap();
+    manager
+      .set_mod_compatibility_for_mod("mod".into(), true, None)
+      .unwrap();
+    let path = manager.localization_overlay_vpk_path(None).unwrap();
+    fs::create_dir_all(path.parent().unwrap()).unwrap();
+    fs::write(&path, b"repair package from before the flag was turned off").unwrap();
+    manager
+      .ensure_localization_overlay_for_launch(None, false)
+      .unwrap();
+    assert!(!path.exists());
+    assert!(!receipt::path(&path).exists());
+    assert!(
+      manager.mod_compatibility_enabled(None).unwrap(),
+      "turning the flag off must keep the per-mod choice for later"
     );
   }
 

@@ -195,6 +195,7 @@ impl ModManager {
     vanilla: bool,
     additional_args: String,
     profile_folder: Option<String>,
+    mod_compatibility: bool,
   ) -> Result<super::steam_uri_launcher::SteamUriLaunchRequest, Error> {
     // Ensure game path is found
     self.find_game()?;
@@ -210,7 +211,7 @@ impl ModManager {
       // lines would be missing and the engine would silently drop everything
       // past the 99th pak file.
       self.migrate_profile_to_shards(profile_folder.clone())?;
-      self.ensure_localization_overlay_for_launch(profile_folder.as_deref())?;
+      self.ensure_localization_overlay_for_launch(profile_folder.as_deref(), mod_compatibility)?;
       self.apply_profile_gameinfo(profile_folder)?;
     }
 

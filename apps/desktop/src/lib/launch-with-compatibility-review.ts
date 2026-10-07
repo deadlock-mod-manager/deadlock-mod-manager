@@ -3,13 +3,13 @@ import { isTauriError } from "@/types/tauri";
 export async function launchWithCompatibilityReview(
   startGame: () => Promise<void>,
   review: () => Promise<boolean>,
-  vanilla: boolean,
+  skipReview: boolean,
 ): Promise<void> {
   try {
     await startGame();
   } catch (error) {
     if (
-      vanilla ||
+      skipReview ||
       !isTauriError(error) ||
       error.kind !== "modDataReviewRequired"
     ) {
