@@ -107,7 +107,7 @@
     "items": {
       "foundry": {
         "title": "Mod Foundry",
-        "body": "Edit a hero skin, paint it, and export it as a mod."
+        "body": "Import a hero skin, recolor it, swap its cards and sounds, and export it as a mod."
       },
       "stats": {
         "title": "Stats",
