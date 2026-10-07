@@ -392,6 +392,12 @@ jobs:
               throw error;
             }
 
+  publish-apt:
+    needs: [publish-release]
+    if: always() && needs.publish-release.result == 'success'
+    uses: ./.github/workflows/publish-apt.yml
+    secrets: inherit
+
   cleanup-release:
     permissions:
       contents: write

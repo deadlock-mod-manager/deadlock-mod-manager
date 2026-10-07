@@ -70,6 +70,30 @@ For users who prefer package managers, Deadlock Mod Manager is available through
 winget install --id=Stormix.DeadlockModManager
 ```
 
+#### Ubuntu/Debian (APT)
+
+```bash
+# Add the repository signing key
+curl -fsSL https://apt.deadlockmods.app/key.gpg \
+  | sudo tee /usr/share/keyrings/deadlock-mod-manager.gpg > /dev/null
+
+# Add the repository
+echo "deb [arch=amd64 signed-by=/usr/share/keyrings/deadlock-mod-manager.gpg] https://apt.deadlockmods.app stable main" \
+  | sudo tee /etc/apt/sources.list.d/deadlock-mod-manager.list
+
+# Install
+sudo apt update
+sudo apt install deadlock-mod-manager
+```
+
+New stable releases arrive through `sudo apt update && sudo apt upgrade`. The repository only contains stable x86_64 builds; nightly and CEF builds remain available from GitHub Releases.
+
+<Callout type='info' title='Supported versions'>
+  Packages are built on Ubuntu 24.04. Older releases such as Ubuntu 22.04 or
+  Debian 12 may install the package but fail to start because of older system
+  libraries.
+</Callout>
+
 #### Arch Linux (AUR)
 
 ```bash
@@ -143,10 +167,11 @@ If you're a Linux user and want to help improve support, contributions are very 
 
 #### Ubuntu/Debian (.deb package)
 
+To receive updates through `apt`, use the [APT repository](#ubuntudebian-apt) instead.
+
 ```bash
 # Download the .deb file, then install
-sudo dpkg -i deadlock-modmanager_*.deb
-sudo apt-get install -f  # Fix any dependency issues
+sudo apt install ./Deadlock.Mod.Manager_*_amd64.deb
 ```
 
 #### Flatpak

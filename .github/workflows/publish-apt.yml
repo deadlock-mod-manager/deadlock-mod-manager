@@ -1,0 +1,182 @@
+name: Publish APT Repository
+
+# Rebuilds the APT repository at https://apt.deadlockmods.app from the .deb
+# assets of the latest stable GitHub releases, signs it, and syncs it to R2.
+# The repository is regenerated from scratch on every run, so re-running this
+# workflow is always safe.
+
+on:
+  workflow_call:
+  workflow_dispatch:
+    inputs:
+      keep-releases:
+        description: Number of stable releases to keep in the repository
+        required: false
+        default: "5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-apt
+  cancel-in-progress: false
+
+env:
+  APT_BUCKET: deadlock-apt
+  APT_SUITE: stable
+  APT_COMPONENT: main
+  APT_ARCH: amd64
+
+jobs:
+  publish-apt:
+    if: github.repository_owner == 'deadlock-mod-manager'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download .deb packages from releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          KEEP_RELEASES: ${{ inputs.keep-releases || '5' }}
+        run: |
+          set -euo pipefail
+          mkdir -p downloads
+
+          TAGS=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 50 \
+            --exclude-drafts --exclude-pre-releases --json tagName \
+            --jq '.[].tagName | select(test("nightly") | not)' | head -n "$KEEP_RELEASES")
+
+          if [[ -z "$TAGS" ]]; then
+            echo "::error::No stable releases found"
+            exit 1
+          fi
+
+          for TAG in $TAGS; do
+            echo "Downloading .deb from $TAG"
+            # Matches the regular build only; CEF builds end in _amd64-cef.deb.
+            gh release download "$TAG" --repo "$GITHUB_REPOSITORY" \
+              --pattern '*_amd64.deb' --dir "downloads/$TAG" \
+              || echo "::warning::No .deb asset in $TAG, skipping"
+          done
+
+      - name: Build repository layout
+        run: |
+          set -euo pipefail
+          POOL="pool/$APT_COMPONENT/d/deadlock-mod-manager"
+          BINARY_DIR="dists/$APT_SUITE/$APT_COMPONENT/binary-$APT_ARCH"
+          mkdir -p "repo/$POOL" "repo/$BINARY_DIR"
+
+          shopt -s nullglob globstar
+          DEBS=(downloads/**/*.deb)
+          if [[ ${#DEBS[@]} -eq 0 ]]; then
+            echo "::error::No .deb packages downloaded"
+            exit 1
+          fi
+
+          # Release assets have dotted names (Deadlock.Mod.Manager_1.1.0_amd64.deb);
+          # store them under the conventional <package>_<version>_<arch>.deb name.
+          for DEB in "${DEBS[@]}"; do
+            PKG=$(dpkg-deb -f "$DEB" Package)
+            VER=$(dpkg-deb -f "$DEB" Version)
+            ARCH=$(dpkg-deb -f "$DEB" Architecture)
+            cp "$DEB" "repo/$POOL/${PKG}_${VER}_${ARCH}.deb"
+          done
+          ls -la "repo/$POOL"
+
+          cd repo
+          apt-ftparchive packages pool > "$BINARY_DIR/Packages"
+          gzip -9kn "$BINARY_DIR/Packages"
+
+          apt-ftparchive \
+            -o APT::FTPArchive::Release::Origin="Deadlock Mod Manager" \
+            -o APT::FTPArchive::Release::Label="Deadlock Mod Manager" \
+            -o APT::FTPArchive::Release::Suite="$APT_SUITE" \
+            -o APT::FTPArchive::Release::Codename="$APT_SUITE" \
+            -o APT::FTPArchive::Release::Architectures="$APT_ARCH" \
+            -o APT::FTPArchive::Release::Components="$APT_COMPONENT" \
+            -o APT::FTPArchive::Release::Description="Deadlock Mod Manager APT repository" \
+            release "dists/$APT_SUITE" > Release.tmp
+          # Written outside dists/ so apt-ftparchive doesn't hash a partial Release.
+          mv Release.tmp "dists/$APT_SUITE/Release"
+
+      - name: Sign repository
+        env:
+          APT_GPG_PRIVATE_KEY: ${{ secrets.APT_GPG_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$APT_GPG_PRIVATE_KEY" ]]; then
+            echo "::error::APT_GPG_PRIVATE_KEY secret is not set"
+            exit 1
+          fi
+
+          export GNUPGHOME="$(mktemp -d)"
+          echo "$APT_GPG_PRIVATE_KEY" | gpg --batch --import
+          FPR=$(gpg --list-secret-keys --with-colons | awk -F: '/^fpr/{print $10; exit}')
+
+          RELEASE="repo/dists/$APT_SUITE/Release"
+          gpg --batch --yes --local-user "$FPR" --clearsign -o "repo/dists/$APT_SUITE/InRelease" "$RELEASE"
+          gpg --batch --yes --local-user "$FPR" --armor --detach-sign -o "$RELEASE.gpg" "$RELEASE"
+
+          gpg --export "$FPR" > repo/key.gpg
+          gpg --armor --export "$FPR" > repo/key.asc
+
+          gpg --verify "repo/dists/$APT_SUITE/InRelease"
+
+      - name: Verify repository with apt
+        run: |
+          set -euo pipefail
+          # Point a throwaway apt configuration at the local repository to make
+          # sure the signature and indexes are valid before uploading.
+          ROOT="$(mktemp -d)"
+          mkdir -p "$ROOT/etc/apt/sources.list.d" "$ROOT/etc/apt/preferences.d" \
+            "$ROOT/var/lib/apt/lists/partial" "$ROOT/var/cache/apt/archives/partial" \
+            "$ROOT/var/lib/dpkg"
+          touch "$ROOT/var/lib/dpkg/status"
+          echo "deb [signed-by=$PWD/repo/key.gpg] file://$PWD/repo $APT_SUITE $APT_COMPONENT" \
+            > "$ROOT/etc/apt/sources.list"
+
+          APT_OPTS=(-o Dir="$ROOT" -o Dir::State::status="$ROOT/var/lib/dpkg/status" \
+            -o Debug::NoLocking=1 -o APT::Architecture="$APT_ARCH")
+          apt-get "${APT_OPTS[@]}" update
+          apt-cache "${APT_OPTS[@]}" policy deadlock-mod-manager
+
+      - name: Upload to R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.APT_R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.APT_R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          AWS_REQUEST_CHECKSUM_CALCULATION: WHEN_REQUIRED
+          AWS_RESPONSE_CHECKSUM_VALIDATION: WHEN_REQUIRED
+          R2_ENDPOINT: ${{ secrets.APT_R2_ENDPOINT }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$AWS_ACCESS_KEY_ID" || -z "$AWS_SECRET_ACCESS_KEY" || -z "$R2_ENDPOINT" ]]; then
+            echo "::error::APT_R2_* secrets are not set"
+            exit 1
+          fi
+
+          S3="aws s3 --endpoint-url $R2_ENDPOINT"
+          DEST="s3://$APT_BUCKET"
+
+          # Upload new packages before the indexes that reference them, and only
+          # prune old packages once the new indexes are live, so clients never
+          # see an index pointing at a missing file.
+          $S3 sync repo/pool "$DEST/pool" --no-progress \
+            --content-type application/vnd.debian.binary-package \
+            --cache-control "public, max-age=31536000, immutable"
+
+          $S3 cp repo/key.gpg "$DEST/key.gpg" --cache-control "public, max-age=3600" \
+            --content-type application/pgp-keys
+          $S3 cp repo/key.asc "$DEST/key.asc" --cache-control "public, max-age=3600" \
+            --content-type application/pgp-keys
+
+          # Indexes first, then the signed Release files that reference them.
+          $S3 sync repo/dists "$DEST/dists" --no-progress --delete \
+            --exclude "*/Release" --exclude "*/Release.gpg" --exclude "*/InRelease" \
+            --cache-control "no-cache"
+          for FILE in Release Release.gpg InRelease; do
+            $S3 cp "repo/dists/$APT_SUITE/$FILE" "$DEST/dists/$APT_SUITE/$FILE" \
+              --cache-control "no-cache" --content-type text/plain
+          done
+
+          $S3 sync repo/pool "$DEST/pool" --no-progress --delete \
+            --cache-control "public, max-age=31536000, immutable"
