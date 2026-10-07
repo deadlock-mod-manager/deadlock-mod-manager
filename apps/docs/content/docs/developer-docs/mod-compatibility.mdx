@@ -450,13 +450,11 @@ in forward and reverse order. It checks that exports never replace opted-out
 resources, repair findings belong to selected mods, compiled outputs decode with
 an independent reader, and source VPK hashes remain unchanged. Use the same
 variables as above, a separate `DMM_COMPAT_REPORT` output, and that test name.
-Results and unresolved findings are recorded in
-`apps/desktop/prototypes/per-mod-compatibility-regression.json`. The four added
+The four added
 fixtures still have camera, retired animation, hierarchy, or missing dependency
 findings; a completed export check does not mean they have complete repairs.
 
-The next five cases and the fifteen-mod mixed checks are recorded in
-`apps/desktop/prototypes/compatibility-batch-3-results.json`. Scaramouche produces
+Of the next five cases, Scaramouche produces
 a verified animation/camera model export. Gold Pocket retains unresolved
 legacy-resource findings. Merrin's initial
 coordinated rig repair was declined because the checker treated unused branches
@@ -490,8 +488,7 @@ mod alongside up to 64 opted-out mods. These checks establish file-level scope
 and merge behavior, not in-game acceptance of every combination.
 
 The initial corpus contains Old Mina, Mo and Mo, legacy Sliver & Saint, Summer
-break Dynamo, and 2B Yamato. Build 6745 results are recorded in
-`apps/desktop/prototypes/compatibility-corpus-results.json`. All five main model
+break Dynamo, and 2B Yamato. On build 6745, all five main model
 paths still match current hero definitions. Their models lack current animation
 graph or skeleton bindings, which are reported separately from retired resource
 references. Sliver & Saint's cat form passes sampled-rig proof and receives both
