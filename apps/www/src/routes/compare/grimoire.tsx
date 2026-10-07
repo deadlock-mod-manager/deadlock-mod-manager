@@ -74,7 +74,7 @@ const SMALL_PRINT = [
   },
   {
     title: "Linux packages",
-    body: "We ship .deb, RPM, Flatpak, AUR, nixpkgs and Gentoo. Grimoire ships an AppImage, .deb, an apt repo, AUR and a Nix flake.",
+    body: "We ship an apt repo, .deb, RPM, Flatpak, AUR, nixpkgs and Gentoo. Grimoire ships an AppImage, .deb, an apt repo, AUR and a Nix flake.",
   },
   {
     title: "Under the hood",

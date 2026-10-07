@@ -42,7 +42,7 @@ const page: GuidePageData = {
     {
       question: "Can I install Deadlock mods on Linux or Steam Deck?",
       answer:
-        "Yes. Deadlock Mod Manager runs on Linux, including Steam Deck in Desktop Mode, and is available as a .deb, RPM, Flatpak, on the AUR and in nixpkgs.",
+        "Yes. Deadlock Mod Manager runs on Linux, including Steam Deck in Desktop Mode, and is available from our APT repository, as a .deb, RPM or Flatpak, on the AUR and in nixpkgs.",
     },
   ],
 };
@@ -73,8 +73,9 @@ function InstallGuidePage() {
                 body: (
                   <>
                     Get it from the <Link to='/download'>download page</Link>.
-                    Windows builds come with a signed installer; Linux has .deb,
-                    RPM, Flatpak, AUR and nixpkgs packages.
+                    Windows builds come with a signed installer; Linux has an
+                    APT repository plus .deb, RPM, Flatpak, AUR and nixpkgs
+                    packages.
                   </>
                 ),
               },

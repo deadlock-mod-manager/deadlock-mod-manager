@@ -36,7 +36,8 @@ const FAQS: { question: string; answer: React.ReactNode }[] = [
   },
   {
     question: "Which platforms are supported?",
-    answer: "Windows and Linux. Arch users can also install from the AUR.",
+    answer:
+      "Windows and Linux. On Linux you can install from our APT repository (Ubuntu/Debian), the AUR (Arch), nixpkgs, or the Flatpak bundle.",
   },
   {
     question: "I found a bug, how do I report it?",
