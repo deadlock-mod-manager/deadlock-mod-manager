@@ -532,7 +532,9 @@ impl DownloadManager {
           task.file_tree.as_ref(),
         );
 
-        if extracted_tree.has_multiple_files && task.file_tree.is_none() {
+        if extracted_tree.has_multiple_files
+          && !Self::selection_covers_archive(task.file_tree.as_ref(), archive_name)
+        {
           return Err(Error::InvalidInput(format!(
             "A VPK selection is required to update mod {}",
             task.mod_id
@@ -599,23 +601,40 @@ impl DownloadManager {
       .files
       .iter()
       .filter(|candidate| {
-        selection.is_none_or(|selection| {
-          selection.files.iter().any(|selected| {
-            selected.is_selected
-              && (selected.archive_name.is_empty()
-                || selected.archive_name == candidate.archive_name)
-              && (selected.path.replace('\\', "/") == candidate.path.replace('\\', "/")
-                || selected.path.replace('\\', "/")
-                  == format!(
-                    "{}/{}",
-                    candidate.archive_name,
-                    candidate.path.replace('\\', "/")
-                  ))
+        selection
+          .filter(|selection| {
+            Self::selection_covers_archive(Some(selection), &candidate.archive_name)
           })
-        })
+          .is_none_or(|selection| {
+            selection.files.iter().any(|selected| {
+              selected.is_selected
+                && (selected.archive_name.is_empty()
+                  || selected.archive_name == candidate.archive_name)
+                && (selected.path.replace('\\', "/") == candidate.path.replace('\\', "/")
+                  || selected.path.replace('\\', "/")
+                    == format!(
+                      "{}/{}",
+                      candidate.archive_name,
+                      candidate.path.replace('\\', "/")
+                    ))
+            })
+          })
       })
       .map(|file| extracted_dir.join(&file.path))
       .collect()
+  }
+
+  // A selection saved from another variant says nothing about this archive.
+  fn selection_covers_archive(
+    selection: Option<&crate::mod_manager::file_tree::ModFileTree>,
+    archive_name: &str,
+  ) -> bool {
+    selection.is_some_and(|selection| {
+      selection
+        .files
+        .iter()
+        .any(|file| file.archive_name.is_empty() || file.archive_name == archive_name)
+    })
   }
 
   fn downloaded_vpk_is_selected(
@@ -1183,6 +1202,21 @@ mod tests {
         Some(&selection)
       ),
       vec![std::path::Path::new("extracted").join("variants/main.vpk")]
+    );
+  }
+
+  #[test]
+  fn update_selection_ignores_archives_it_does_not_cover() {
+    let extracted = tree(vec![file("red.rar", "pak01_dir.vpk", true)]);
+    let selection = tree(vec![file("base.zip", "base.zip/pak50_dir.vpk", true)]);
+
+    assert_eq!(
+      DownloadManager::selected_extracted_vpks(
+        std::path::Path::new("extracted"),
+        &extracted,
+        Some(&selection)
+      ),
+      vec![std::path::Path::new("extracted").join("pak01_dir.vpk")]
     );
   }
 
