@@ -11,7 +11,7 @@
     "errorSource": "Deadlock Mod Manager en Windows"
   },
   "errorText": {
-    "message": "Access is denied. (os error 5)"
+    "message": ""
   },
   "fix": {
     "title": "Cómo solucionarlo",

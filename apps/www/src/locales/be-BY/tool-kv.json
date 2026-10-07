@@ -1,0 +1,63 @@
+{
+  "meta": {
+    "title": "",
+    "description": ""
+  },
+  "page": {
+    "title": "",
+    "description": ""
+  },
+  "input": {
+    "title": "",
+    "description": "",
+    "paste": "",
+    "upload": "",
+    "loadSample": "",
+    "clear": "",
+    "placeholder": "",
+    "dropActive": "",
+    "drop": "",
+    "browse": ""
+  },
+  "toasts": {
+    "invalidFile": "",
+    "loaded": "",
+    "readAsTextFailed": "",
+    "readFailed": "",
+    "sampleLoaded": "",
+    "cleared": "",
+    "copied": ""
+  },
+  "viewer": {
+    "parsing": "",
+    "parseError": "",
+    "failed": "",
+    "parseFailed": "",
+    "line": "",
+    "column": "",
+    "valid": "",
+    "original": "",
+    "jsonOutput": "",
+    "treeView": "",
+    "switchToTree": "",
+    "switchToJson": "",
+    "fixErrors": "",
+    "empty": "",
+    "copy": "",
+    "copied": ""
+  },
+  "stats": {
+    "line": "",
+    "lines": "",
+    "character": "",
+    "characters": "",
+    "key": "",
+    "keys": ""
+  },
+  "tree": {
+    "title": "",
+    "expandAll": "",
+    "collapseAll": "",
+    "items": ""
+  }
+}

@@ -1,6 +1,6 @@
 {
   "meta": {
-    "name": "Deadlock Mod Manager vs Grimoire",
+    "name": "",
     "title": "Deadlock Mod Manager vs Grimoire: który menedżer modów wybrać?",
     "description": "Od wersji V2 Deadlock Mod Manager i Grimoire mają te same funkcje, więc o wyborze decyduje interfejs. Wypróbuj nasz na żywo i przenieś ustawienia z Grimoire w minutę."
   },
@@ -28,7 +28,7 @@
   },
   "hero": {
     "eyebrow": "Porównanie",
-    "title": "Deadlock Mod Manager vs Grimoire",
+    "title": "",
     "intro": "Obie aplikacje dobrze robią swoją robotę, więc wybierz tę, którą wolisz odpalać przed każdym meczem. Naszą możesz wypróbować na tej stronie, a ustawienia z Grimoire przeniesiesz w około minutę."
   },
   "shared": {
@@ -63,11 +63,11 @@
       },
       "contributors": {
         "label": "Osoby, które współtworzyły Deadlock Mod Manager",
-        "value": "30+"
+        "value": ""
       },
       "shared": {
         "label": "Kluczowi współtwórcy Deadlock Mod Manager, którzy pracowali nad Grimoire",
-        "value": "2"
+        "value": ""
       }
     }
   },

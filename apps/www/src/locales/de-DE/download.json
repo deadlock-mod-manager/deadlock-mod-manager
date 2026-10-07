@@ -51,7 +51,7 @@
     "releaseNotes": "Release Notes"
   },
   "releaseDate": {
-    "dateTime": "{{date}}, {{time}} UTC"
+    "dateTime": ""
   },
   "platforms": {
     "windows": {
@@ -69,11 +69,11 @@
     "recommended": "Empfohlen",
     "signature": "Signatur",
     "signatureTitle": "Signatur für {{filename}}",
-    "download": "Download",
+    "download": "",
     "downloadLabel": "{{filename}} herunterladen",
     "types": {
       "exe": {
-        "label": "Installer",
+        "label": "",
         "description": "Setup für Windows 10 und 11 (.exe)"
       },
       "msi": {
@@ -85,16 +85,16 @@
         "description": "macOS-Anwendung (.dmg)"
       },
       "flatpak": {
-        "label": "Flatpak",
+        "label": "",
         "description": "Läuft auf den meisten Distributionen"
       },
       "deb": {
         "label": "Debian-Paket",
-        "description": "Ubuntu, Debian, Mint (.deb)"
+        "description": ""
       },
       "rpm": {
         "label": "RPM-Paket",
-        "description": "Fedora, openSUSE, Nobara (.rpm)"
+        "description": ""
       }
     }
   },

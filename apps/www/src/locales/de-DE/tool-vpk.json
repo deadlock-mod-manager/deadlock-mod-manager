@@ -4,7 +4,7 @@
     "description": "Lade eine Deadlock-.vpk-Datei hoch: Der VPK Analyzer gleicht sie mit bekannten GameBanana-Mods ab, damit du weißt, zu welchem Mod eine pak-Datei gehört."
   },
   "page": {
-    "title": "VPK Analyzer",
+    "title": "",
     "description": "Lade eine VPK-Datei hoch, um herauszufinden, zu welchem Mod sie gehört"
   },
   "toasts": {
@@ -40,7 +40,7 @@
   },
   "info": {
     "title": "VPK-Informationen",
-    "version": "Version:",
+    "version": "",
     "fileCount": "Anzahl Dateien:",
     "fileSize": "Dateigröße:",
     "hasMultiparts": "Mehrteilig:",
@@ -51,7 +51,7 @@
   },
   "match": {
     "title": "Gefundener Mod",
-    "heading": "GameBanana {{type}} {{id}}",
+    "heading": "",
     "file": "Datei {{id}}",
     "certainty": "{{certainty}} % Übereinstimmung ({{type}})",
     "view": "Auf GameBanana ansehen"

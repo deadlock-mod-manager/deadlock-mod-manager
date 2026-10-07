@@ -1,0 +1,441 @@
+{
+  "themes": {
+    "default": {
+      "name": "",
+      "description": ""
+    },
+    "bloodmoon": {
+      "name": "",
+      "description": ""
+    },
+    "nightshift": {
+      "name": "",
+      "description": ""
+    },
+    "lovelock": {
+      "name": "",
+      "description": ""
+    },
+    "tea": {
+      "name": "",
+      "description": ""
+    }
+  },
+  "categories": {
+    "skins": "",
+    "qualityOfLife": ""
+  },
+  "titlebar": {
+    "profile": "",
+    "launchVanilla": "",
+    "launchModded": "",
+    "enabledMods": "",
+    "stopGame": "",
+    "signIn": ""
+  },
+  "sidebar": {
+    "label": "",
+    "byline": "",
+    "groups": {
+      "general": "",
+      "mods": "",
+      "customServers": "",
+      "customization": ""
+    },
+    "items": {
+      "dashboard": "",
+      "downloads": "",
+      "settings": "",
+      "library": "",
+      "store": "",
+      "servers": "",
+      "crosshairs": "",
+      "skins": "",
+      "autoexec": "",
+      "stats": ""
+    },
+    "documentation": "",
+    "needHelp": "",
+    "expand": "",
+    "collapse": ""
+  },
+  "bottomBar": {
+    "status": "",
+    "statuses": {
+      "online": "",
+      "signedIn": "",
+      "mirror": "",
+      "heroData": ""
+    },
+    "downloading": "",
+    "volume": "",
+    "checkUpdates": ""
+  },
+  "launch": {
+    "title": "",
+    "steps": {
+      "checkingFiles": "",
+      "skippingMods": "",
+      "applyingMods": "",
+      "noMods": "",
+      "starting": ""
+    },
+    "stepState": {
+      "done": "",
+      "active": "",
+      "pending": ""
+    },
+    "running": {
+      "title": "",
+      "modded": "",
+      "vanilla": ""
+    },
+    "closed": {
+      "title": "",
+      "description": ""
+    }
+  },
+  "mod": {
+    "installed": "",
+    "updatedRecently": "",
+    "updated": "",
+    "byAuthor": "",
+    "enable": "",
+    "remove": "",
+    "download": "",
+    "downloading": "",
+    "installedToast": {
+      "title": "",
+      "description": ""
+    }
+  },
+  "dashboard": {
+    "title": "",
+    "subtitle": "",
+    "featured": "",
+    "featuredBy": "",
+    "viewMod": "",
+    "stats": {
+      "installed": "",
+      "updates": "",
+      "inQueue": ""
+    },
+    "browseStore": "",
+    "trending": ""
+  },
+  "store": {
+    "title": "",
+    "subtitle": "",
+    "tabs": {
+      "mods": "",
+      "sounds": "",
+      "albums": "",
+      "wips": ""
+    },
+    "searchLabel": "",
+    "searchPlaceholder": "",
+    "heroLabel": "",
+    "allHeroes": "",
+    "categoryLabel": "",
+    "allCategories": "",
+    "sortLabel": "",
+    "sort": {
+      "default": "",
+      "updated": "",
+      "downloads": "",
+      "rating": ""
+    },
+    "empty": {
+      "title": "",
+      "description": ""
+    }
+  },
+  "library": {
+    "title": "",
+    "count": "",
+    "subtitle": "",
+    "checkUpdates": "",
+    "upToDate": {
+      "title": "",
+      "description": ""
+    },
+    "filterLabel": "",
+    "tabs": {
+      "all": "",
+      "installed": "",
+      "downloaded": ""
+    },
+    "empty": {
+      "title": "",
+      "description": "",
+      "action": ""
+    }
+  },
+  "downloads": {
+    "title": "",
+    "subtitle": "",
+    "empty": {
+      "title": "",
+      "description": "",
+      "action": ""
+    }
+  },
+  "crosshairs": {
+    "title": "",
+    "subtitle": "",
+    "apply": "",
+    "applied": {
+      "title": "",
+      "description": ""
+    },
+    "settings": "",
+    "sliders": {
+      "gap": "",
+      "width": "",
+      "height": "",
+      "dotOpacity": ""
+    },
+    "color": "",
+    "swatches": {
+      "white": "",
+      "gold": "",
+      "green": "",
+      "cyan": "",
+      "pink": ""
+    },
+    "preview": "",
+    "aimHint": ""
+  },
+  "skins": {
+    "title": "",
+    "subtitle": "",
+    "noneDownloaded": "",
+    "default": "",
+    "downloaded": "",
+    "empty": {
+      "title": "",
+      "description": "",
+      "action": ""
+    },
+    "vanilla": ""
+  },
+  "servers": {
+    "title": "",
+    "subtitle": "",
+    "columns": {
+      "name": "",
+      "players": "",
+      "map": "",
+      "ping": ""
+    },
+    "requiredModsBadge": "",
+    "ping": "",
+    "details": {
+      "map": "",
+      "players": "",
+      "region": "",
+      "requiredMods": ""
+    },
+    "join": "",
+    "full": "",
+    "joining": {
+      "title": "",
+      "withMods": "",
+      "withoutMods": ""
+    }
+  },
+  "screens": {
+    "foundryAlt": "",
+    "autoexecAlt": "",
+    "statsAlt": ""
+  },
+  "settings": {
+    "title": "",
+    "navLabel": "",
+    "groups": {
+      "game": "",
+      "application": "",
+      "advanced": ""
+    },
+    "nav": {
+      "launchOptions": "",
+      "game": "",
+      "application": "",
+      "themes": "",
+      "network": "",
+      "tools": "",
+      "backups": "",
+      "logging": "",
+      "privacy": ""
+    },
+    "themes": {
+      "title": "",
+      "description": "",
+      "predefined": "",
+      "custom": "",
+      "active": "",
+      "inactive": ""
+    },
+    "system": {
+      "title": "",
+      "description": "",
+      "autoReapply": {
+        "label": "",
+        "description": ""
+      },
+      "heroConflict": {
+        "label": "",
+        "description": ""
+      },
+      "paginated": {
+        "label": "",
+        "description": ""
+      }
+    },
+    "appearance": {
+      "title": "",
+      "description": "",
+      "geometry": {
+        "label": "",
+        "description": ""
+      },
+      "animateGeometry": {
+        "label": "",
+        "description": ""
+      }
+    },
+    "discord": {
+      "title": "",
+      "description": "",
+      "toggle": {
+        "label": "",
+        "description": ""
+      },
+      "preview": {
+        "title": "",
+        "description": ""
+      },
+      "example": {
+        "details": "",
+        "state": ""
+      },
+      "disabled": ""
+    },
+    "network": {
+      "title": "",
+      "description": "",
+      "default": {
+        "title": "",
+        "body": ""
+      },
+      "auto": {
+        "title": "",
+        "body": ""
+      }
+    },
+    "backups": {
+      "title": "",
+      "description": "",
+      "create": "",
+      "autoBackup": {
+        "label": "",
+        "description": ""
+      },
+      "columns": {
+        "date": "",
+        "vpkFiles": "",
+        "size": ""
+      },
+      "restore": "",
+      "created": {
+        "title": "",
+        "description": ""
+      },
+      "restored": {
+        "title": "",
+        "description": ""
+      }
+    },
+    "game": {
+      "path": {
+        "title": "",
+        "description": ""
+      },
+      "autoDetect": "",
+      "detected": {
+        "title": "",
+        "description": ""
+      },
+      "protection": {
+        "title": "",
+        "description": ""
+      },
+      "blockChanges": {
+        "label": "",
+        "description": ""
+      }
+    },
+    "privacy": {
+      "title": "",
+      "description": "",
+      "hideNsfw": {
+        "label": "",
+        "description": ""
+      },
+      "disableBlur": {
+        "label": "",
+        "description": ""
+      },
+      "analytics": {
+        "title": "",
+        "description": ""
+      }
+    },
+    "launchOptions": {
+      "title": "",
+      "description": "",
+      "vanilla": {
+        "label": "",
+        "description": ""
+      },
+      "autoexec": {
+        "label": "",
+        "description": ""
+      }
+    },
+    "autoexec": {
+      "description": "",
+      "whatIs": "",
+      "explanation": "",
+      "usage": ""
+    },
+    "tools": {
+      "title": "",
+      "description": "",
+      "openGameFolder": {
+        "label": "",
+        "description": ""
+      },
+      "open": "",
+      "clearCache": {
+        "label": "",
+        "description": ""
+      },
+      "clear": ""
+    },
+    "logging": {
+      "title": "",
+      "description": "",
+      "logs": {
+        "label": "",
+        "description": ""
+      },
+      "openFolder": "",
+      "crashDumps": {
+        "label": "",
+        "description": ""
+      },
+      "openLatest": ""
+    }
+  }
+}

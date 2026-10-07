@@ -5,25 +5,25 @@
       "description": "Der klassische Look des Deadlock Mod Managers."
     },
     "bloodmoon": {
-      "name": "Bloodmoon",
+      "name": "",
       "description": "Ein dunkles Theme mit schwarz-roten Gradienten und karmesinroten Akzenten."
     },
     "nightshift": {
-      "name": "Nightshift",
+      "name": "",
       "description": "Ein Cyberpunk-Theme mit Türkis-Akzenten und eleganten UI-Elementen."
     },
     "lovelock": {
-      "name": "Lovelock",
+      "name": "",
       "description": "Ein gemütliches Pflaumen-Theme mit sanftem rosa Glow."
     },
     "tea": {
-      "name": "Tea",
+      "name": "",
       "description": "Ein gemütliches Theme zu Ehren von Snipztea."
     }
   },
   "categories": {
-    "skins": "Skins",
-    "qualityOfLife": "Quality of Life"
+    "skins": "",
+    "qualityOfLife": ""
   },
   "titlebar": {
     "profile": "Standardprofil",
@@ -38,13 +38,13 @@
     "byline": "<version>{{version}}</version> von Stormix",
     "groups": {
       "general": "Allgemein",
-      "mods": "Mods",
+      "mods": "",
       "customServers": "Private Server",
       "customization": "Personalisieren"
     },
     "items": {
-      "dashboard": "Dashboard",
-      "downloads": "Downloads",
+      "dashboard": "",
+      "downloads": "",
       "settings": "Einstellungen",
       "library": "Meine Mods",
       "store": "Mods entdecken",
@@ -60,11 +60,11 @@
     "collapse": "Menü einklappen"
   },
   "bottomBar": {
-    "status": "Status:",
+    "status": "",
     "statuses": {
-      "online": "Online",
+      "online": "",
       "signedIn": "Angemeldet",
-      "mirror": "Mirror",
+      "mirror": "",
       "heroData": "Heldendaten"
     },
     "downloading": "Downloads: {{total}}",
@@ -110,14 +110,14 @@
     }
   },
   "dashboard": {
-    "title": "Dashboard",
+    "title": "",
     "subtitle": "Empfohlene, angesagte und neue Mods entdecken",
     "featured": "Mod der Woche",
     "featuredBy": "Von <author>{{author}}</author>",
     "viewMod": "Mod ansehen",
     "stats": {
       "installed": "Installiert",
-      "updates": "Updates",
+      "updates": "",
       "inQueue": "In Warteschlange"
     },
     "browseStore": "Store durchsuchen",
@@ -127,10 +127,10 @@
     "title": "Mods entdecken",
     "subtitle": "Stündlich aktualisiert, jede Stunde neue Mods.",
     "tabs": {
-      "mods": "Mods",
-      "sounds": "Sounds",
+      "mods": "",
+      "sounds": "",
       "albums": "Alben",
-      "wips": "WiPs"
+      "wips": ""
     },
     "searchLabel": "Mods durchsuchen",
     "searchPlaceholder": "Mods oder Autoren suchen",
@@ -172,7 +172,7 @@
     }
   },
   "downloads": {
-    "title": "Downloads",
+    "title": "",
     "subtitle": "Behalte deine Mod-Downloads im Blick",
     "empty": {
       "title": "Keine aktiven Downloads",
@@ -198,10 +198,10 @@
     "color": "Farbe",
     "swatches": {
       "white": "Weiß",
-      "gold": "Gold",
+      "gold": "",
       "green": "Grün",
-      "cyan": "Cyan",
-      "pink": "Pink"
+      "cyan": "",
+      "pink": ""
     },
     "preview": "Vorschau",
     "aimHint": "Beweg den Cursor über die Vorschau, um zu zielen."
@@ -223,17 +223,17 @@
     "title": "Serverliste",
     "subtitle": "Private Deadlock-Server durchsuchen",
     "columns": {
-      "name": "Name",
+      "name": "",
       "players": "Spieler",
       "map": "Karte",
-      "ping": "Ping"
+      "ping": ""
     },
     "requiredModsBadge": "Benötigte Mods: {{total}}",
-    "ping": "{{ping}} ms",
+    "ping": "",
     "details": {
       "map": "Karte",
       "players": "Spieler",
-      "region": "Region",
+      "region": "",
       "requiredMods": "Benötigte Mods"
     },
     "join": "Server beitreten",
@@ -261,15 +261,15 @@
       "launchOptions": "Startoptionen",
       "game": "Spiel",
       "application": "Anwendung",
-      "themes": "Themes",
+      "themes": "",
       "network": "Netzwerk",
       "tools": "Werkzeuge",
-      "backups": "Backups",
+      "backups": "",
       "logging": "Logs",
       "privacy": "Datenschutz"
     },
     "themes": {
-      "title": "Themes",
+      "title": "",
       "description": "Wähle aus sorgfältig gestalteten Themes, die dein Erlebnis verbessern.",
       "predefined": "Vordefinierte Themes",
       "custom": "Eigene Themes",
@@ -305,10 +305,10 @@
       }
     },
     "discord": {
-      "title": "Discord Game Presence",
+      "title": "",
       "description": "Zeig deinen Live-Status in Deadlock per Discord Rich Presence, etwa aktuellen Helden, Spielmodus, Partygröße und mehr.",
       "toggle": {
-        "label": "Discord Game Presence",
+        "label": "",
         "description": "Leg fest, wie Deadlock in deinem Discord-Profil erscheint."
       },
       "preview": {

@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "name": "",
+    "title": "",
+    "description": ""
+  },
+  "hero": {
+    "eyebrow": "",
+    "title": "",
+    "intro": "",
+    "errorSource": ""
+  },
+  "errorText": {
+    "message": "",
+    "messages": {
+      "rateLimit": "",
+      "unavailable": "",
+      "refused": "",
+      "network": "",
+      "writeFailed": ""
+    }
+  },
+  "diagnose": {
+    "title": "",
+    "intro": "",
+    "results": {
+      "gameBananaFails": "",
+      "everythingFails": "",
+      "everythingPasses": ""
+    }
+  },
+  "messages": {
+    "title": "",
+    "os5Link": "",
+    "items": {
+      "rateLimit": {
+        "fix": ""
+      },
+      "unavailable": {
+        "fix": ""
+      },
+      "refused": {
+        "fix": ""
+      },
+      "network": {
+        "fix": ""
+      },
+      "writeFailed": {
+        "fix": ""
+      }
+    }
+  },
+  "stuck": {
+    "title": "",
+    "steps": {
+      "readd": "",
+      "vpn": "",
+      "patchRush": "",
+      "status": ""
+    }
+  },
+  "faqs": {
+    "why": {
+      "question": "",
+      "answer": ""
+    },
+    "slow": {
+      "question": "",
+      "answer": ""
+    },
+    "rateLimit": {
+      "question": "",
+      "answer": ""
+    },
+    "down": {
+      "question": "",
+      "answer": ""
+    }
+  },
+  "downloadBand": {
+    "title": "",
+    "body": ""
+  }
+}

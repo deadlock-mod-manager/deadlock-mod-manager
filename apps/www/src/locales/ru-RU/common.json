@@ -42,7 +42,7 @@
       "download": "Скачать",
       "sourceCode": "Исходный код",
       "documentation": "Документация",
-      "faq": "FAQ",
+      "faq": "",
       "reportBug": "Сообщить об ошибке"
     },
     "legal": {
@@ -116,7 +116,7 @@
       "description": "Почини моды, сломавшиеся после обновления Deadlock."
     },
     "grimoire": {
-      "label": "Deadlock Mod Manager vs Grimoire",
+      "label": "",
       "description": "Сравнение двух менеджеров модов с открытым кодом."
     },
     "os5": {

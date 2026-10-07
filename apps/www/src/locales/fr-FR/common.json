@@ -5,16 +5,16 @@
   "navbar": {
     "homepage": "Accueil",
     "primaryNav": "Principale",
-    "mobileNav": "Mobile",
+    "mobileNav": "",
     "openMenu": "Ouvrir le menu",
     "download": "Télécharger",
     "links": {
-      "mods": "Mods",
-      "skins": "Skins",
+      "mods": "",
+      "skins": "",
       "features": "Fonctionnalités",
       "themes": "Thèmes",
       "tools": "Outils",
-      "docs": "Docs"
+      "docs": ""
     }
   },
   "userMenu": {
@@ -34,15 +34,15 @@
     "disclaimer": "Non affilié à Valve. \"Deadlock\" et les marques associées sont des marques déposées de Valve Corporation.",
     "headings": {
       "links": "Liens",
-      "guides": "Guides",
+      "guides": "",
       "support": "Assistance",
       "partners": "Partenaires"
     },
     "links": {
       "download": "Télécharger",
       "sourceCode": "Code source",
-      "documentation": "Documentation",
-      "faq": "FAQ",
+      "documentation": "",
+      "faq": "",
       "reportBug": "Signaler un bug"
     },
     "legal": {
@@ -82,7 +82,7 @@
   "modCard": {
     "heroSkin": "Skin de {{hero}}",
     "categories": {
-      "skins": "Skins",
+      "skins": "",
       "qualityOfLife": "Qualité de vie"
     },
     "byline": "{{kind}} par {{author}}",
@@ -95,7 +95,7 @@
   },
   "guidePage": {
     "allDownloads": "Tous les téléchargements",
-    "questions": "Questions",
+    "questions": "",
     "relatedGuides": "Guides associés"
   },
   "guides": {
@@ -116,19 +116,19 @@
       "description": "Réparez les mods qui ne marchent plus après une mise à jour de Deadlock."
     },
     "grimoire": {
-      "label": "Deadlock Mod Manager vs Grimoire",
+      "label": "",
       "description": "Comparatif des deux gestionnaires de mods open source."
     },
     "os5": {
-      "label": "Access is denied (os error 5)",
+      "label": "",
       "description": "Des fichiers en lecture seule ou des mods installés en admin bloquent les modifications."
     },
     "os740": {
-      "label": "Requires elevation (os error 740)",
+      "label": "",
       "description": "Steam est configuré pour s'exécuter en tant qu'administrateur."
     },
     "modOrder": {
-      "label": "Failed to save mod order",
+      "label": "",
       "description": "Le jeu ou une autre app garde les fichiers des mods ouverts."
     },
     "download": {

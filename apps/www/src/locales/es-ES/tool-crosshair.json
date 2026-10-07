@@ -25,7 +25,7 @@
     "pipOpacity": "Opacidad de las líneas",
     "dotOpacity": "Opacidad del punto",
     "dotOutlineOpacity": "Opacidad del contorno del punto",
-    "color": "Color",
+    "color": "",
     "colorHex": "Color (hex)",
     "options": "Opciones",
     "pipBorder": "Mostrar borde de las líneas",

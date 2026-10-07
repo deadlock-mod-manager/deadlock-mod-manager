@@ -1,0 +1,149 @@
+{
+  "meta": {
+    "name": "",
+    "title": "",
+    "description": ""
+  },
+  "faqs": {
+    "better": {
+      "question": "",
+      "answer": ""
+    },
+    "same": {
+      "question": "",
+      "answer": ""
+    },
+    "switch": {
+      "question": "",
+      "answer": ""
+    },
+    "goBack": {
+      "question": "",
+      "answer": ""
+    },
+    "safe": {
+      "question": "",
+      "answer": ""
+    }
+  },
+  "hero": {
+    "eyebrow": "",
+    "title": "",
+    "intro": ""
+  },
+  "shared": {
+    "title": "",
+    "intro": "",
+    "features": {
+      "gamebanana": "",
+      "sounds": "",
+      "conflicts": "",
+      "profiles": "",
+      "import": "",
+      "skins": "",
+      "launch": "",
+      "crosshair": "",
+      "stats": "",
+      "platforms": "",
+      "openSource": ""
+    }
+  },
+  "roots": {
+    "title": "",
+    "first": "",
+    "grimoire": "",
+    "stats": {
+      "dmmStarted": {
+        "label": "",
+        "value": ""
+      },
+      "grimoireStarted": {
+        "label": "",
+        "value": ""
+      },
+      "contributors": {
+        "label": "",
+        "value": ""
+      },
+      "shared": {
+        "label": "",
+        "value": ""
+      }
+    }
+  },
+  "interface": {
+    "title": "",
+    "intro": "",
+    "dmm": {
+      "title": "",
+      "body": ""
+    },
+    "themeAlt": "",
+    "grimoire": {
+      "title": "",
+      "body": "",
+      "options": {
+        "accents": "",
+        "oled": "",
+        "glow": "",
+        "art": ""
+      },
+      "screenshots": ""
+    }
+  },
+  "tryIt": {
+    "title": "",
+    "intro": "",
+    "mobileNote": ""
+  },
+  "switch": {
+    "title": "",
+    "intro": "",
+    "steps": {
+      "install": {
+        "title": "",
+        "body": ""
+      },
+      "import": {
+        "title": "",
+        "body": ""
+      },
+      "pick": {
+        "title": "",
+        "body": ""
+      },
+      "play": {
+        "title": "",
+        "body": ""
+      }
+    },
+    "lockIn": {
+      "title": "",
+      "format": "",
+      "reimport": "",
+      "tryBoth": ""
+    }
+  },
+  "smallPrint": {
+    "title": "",
+    "items": {
+      "installer": {
+        "title": "",
+        "body": ""
+      },
+      "linux": {
+        "title": "",
+        "body": ""
+      },
+      "tech": {
+        "title": "",
+        "body": ""
+      }
+    },
+    "sources": ""
+  },
+  "downloadBand": {
+    "title": "",
+    "body": ""
+  }
+}

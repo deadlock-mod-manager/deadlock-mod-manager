@@ -51,7 +51,7 @@
     "releaseNotes": "Список изменений"
   },
   "releaseDate": {
-    "dateTime": "{{date}}, {{time}} UTC"
+    "dateTime": ""
   },
   "platforms": {
     "windows": {
@@ -85,16 +85,16 @@
         "description": "Приложение для macOS (.dmg)"
       },
       "flatpak": {
-        "label": "Flatpak",
+        "label": "",
         "description": "Работает в большинстве дистрибутивов"
       },
       "deb": {
         "label": "Пакет Debian",
-        "description": "Ubuntu, Debian, Mint (.deb)"
+        "description": ""
       },
       "rpm": {
         "label": "Пакет RPM",
-        "description": "Fedora, openSUSE, Nobara (.rpm)"
+        "description": ""
       }
     }
   },

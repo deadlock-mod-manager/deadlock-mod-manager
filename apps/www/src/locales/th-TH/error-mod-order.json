@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "name": "",
+    "title": "",
+    "description": ""
+  },
+  "hero": {
+    "eyebrow": "",
+    "title": "",
+    "intro": "",
+    "errorSource": ""
+  },
+  "errorText": {
+    "message": "",
+    "causes": {
+      "gameRunning": "",
+      "fileInUse": "",
+      "vpkInUse": "",
+      "accessDenied": "",
+      "shardsFull": ""
+    }
+  },
+  "causes": {
+    "title": "",
+    "intro": "",
+    "os5Link": "",
+    "items": {
+      "gameRunning": {
+        "fix": ""
+      },
+      "fileInUse": {
+        "fix": ""
+      },
+      "vpkInUse": {
+        "fix": ""
+      },
+      "accessDenied": {
+        "fix": ""
+      },
+      "shardsFull": {
+        "fix": ""
+      }
+    }
+  },
+  "nothingMatches": {
+    "title": "",
+    "steps": {
+      "restart": "",
+      "checkInstalls": "",
+      "saveAgain": "",
+      "discord": ""
+    }
+  },
+  "faqs": {
+    "why": {
+      "question": "",
+      "answer": ""
+    },
+    "loseMods": {
+      "question": "",
+      "answer": ""
+    },
+    "whileOpen": {
+      "question": "",
+      "answer": ""
+    },
+    "whatChanges": {
+      "question": "",
+      "answer": ""
+    }
+  },
+  "downloadBand": {
+    "title": "",
+    "body": ""
+  }
+}

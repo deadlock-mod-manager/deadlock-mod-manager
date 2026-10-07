@@ -21,7 +21,7 @@
     "reroll": "Relancer"
   },
   "sections": {
-    "trigger": "Sections",
+    "trigger": "",
     "label": "Tirer au sort",
     "options": {
       "build": "Ordre du build",
@@ -37,19 +37,19 @@
     "heading": "Vous jouez {{hero}}",
     "headingWithRole": "Vous jouez {{hero}}, {{role}}",
     "youArePlaying": "Vous jouez",
-    "role": "{{role}}."
+    "role": ""
   },
   "facts": {
     "complexity": "Complexité",
-    "lane": "Lane",
+    "lane": "",
     "archetype": "Archétype",
-    "tags": "Tags",
+    "tags": "",
     "mandate": "Mission",
     "buildCost": "Coût du build",
     "souls": "âmes",
     "abilityPriority": "Priorité des compétences",
     "abilityPriorityHint": "4 déblocages · 32 points",
-    "total": "Total"
+    "total": ""
   },
   "headings": {
     "build": "Le build, dans l'ordre.",
@@ -135,28 +135,28 @@
   },
   "abilities": {
     "fallback": "Compétence {{slot}}",
-    "ultimate": "Ult",
+    "ultimate": "",
     "maxFirst": "À maxer en premier",
     "unlockedAt": "Débloquée à l'étape {{position}}",
     "upgradeAt": "Amélioration {{upgrade}} à l'étape {{position}}",
     "unlock": "Déblocage",
-    "cost": "+{{cost}} AP",
-    "spent": "{{spent}} AP",
+    "cost": "",
+    "spent": "",
     "srUnlock": "{{ability}}, déblocage",
     "srUpgrade": "{{ability}}, amélioration {{step}}"
   },
   "item": {
-    "tier": "Tier {{tier}}",
+    "tier": "",
     "active": "Actif",
     "activeTitle": "Objet actif",
-    "tooltipHeader": "{{category}} · Tier {{tier}} · <souls>{{cost}}</souls>",
+    "tooltipHeader": "",
     "sectionKinds": {
       "active": "actif",
       "passive": "passif"
     },
     "ariaUpgrade": "{{item}}, amélioré en {{upgrade}}",
-    "ariaItem": "{{item}}, {{category}} tier {{tier}}",
-    "categoryChange": "{{category}} →",
+    "ariaItem": "",
+    "categoryChange": "",
     "upgrade": "· Amélioration",
     "upgradePriceTitle": "{{total}} âmes, moins les {{paid}} déjà payées pour {{item}}",
     "goodFit": "Bon choix",

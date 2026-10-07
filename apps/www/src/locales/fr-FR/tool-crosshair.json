@@ -27,7 +27,7 @@
     "dotOutlineOpacity": "Opacité du contour du point",
     "color": "Couleur",
     "colorHex": "Couleur (hex)",
-    "options": "Options",
+    "options": "",
     "pipBorder": "Afficher la bordure des pips",
     "pipGapStatic": "Écart des pips fixe",
     "hero": "Héros",

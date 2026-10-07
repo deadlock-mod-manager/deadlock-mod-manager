@@ -37,7 +37,7 @@
     "heading": "Juegas con {{hero}}",
     "headingWithRole": "Juegas con {{hero}}, {{role}}",
     "youArePlaying": "Juegas con",
-    "role": "{{role}}."
+    "role": ""
   },
   "facts": {
     "complexity": "Complejidad",
@@ -49,7 +49,7 @@
     "souls": "almas",
     "abilityPriority": "Prioridad de habilidades",
     "abilityPriorityHint": "4 desbloqueos · 32 puntos",
-    "total": "Total"
+    "total": ""
   },
   "headings": {
     "build": "La build, en orden.",
@@ -140,8 +140,8 @@
     "unlockedAt": "Se desbloquea en el paso {{position}}",
     "upgradeAt": "Mejora {{upgrade}} en el paso {{position}}",
     "unlock": "Desbloquear",
-    "cost": "+{{cost}} AP",
-    "spent": "{{spent}} AP",
+    "cost": "",
+    "spent": "",
     "srUnlock": "{{ability}}, desbloquear",
     "srUpgrade": "{{ability}}, mejora {{step}}"
   },
@@ -156,7 +156,7 @@
     },
     "ariaUpgrade": "{{item}}, mejorado a {{upgrade}}",
     "ariaItem": "{{item}}, {{category}} de nivel {{tier}}",
-    "categoryChange": "{{category}} →",
+    "categoryChange": "",
     "upgrade": "· Mejora",
     "upgradePriceTitle": "{{total}} almas, menos las {{paid}} ya pagadas por {{item}}",
     "goodFit": "Buena opción",

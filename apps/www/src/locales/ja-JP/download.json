@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "title": "",
+    "latest": "",
+    "latestVersion": "",
+    "description": ""
+  },
+  "redirect": {
+    "windows": {
+      "metaTitle": "",
+      "metaDescription": "",
+      "preparing": "",
+      "redirecting": ""
+    },
+    "linux": {
+      "metaTitle": "",
+      "metaDescription": "",
+      "preparing": "",
+      "redirecting": ""
+    },
+    "fetching": "",
+    "errorTitle": "",
+    "errorDescription": "",
+    "goToDownloads": "",
+    "fallback": ""
+  },
+  "hero": {
+    "whatsNew": "",
+    "title": "",
+    "description": "",
+    "otherPlatforms": "",
+    "highlights": {
+      "openSource": "",
+      "autoUpdate": "",
+      "platforms": ""
+    }
+  },
+  "error": {
+    "title": "",
+    "description": "",
+    "github": ""
+  },
+  "loading": {
+    "title": "",
+    "description": ""
+  },
+  "latest": {
+    "title": "",
+    "released": "",
+    "installGuide": "",
+    "releaseNotes": ""
+  },
+  "releaseDate": {
+    "dateTime": ""
+  },
+  "platforms": {
+    "windows": {
+      "requirements": ""
+    },
+    "linux": {
+      "requirements": ""
+    },
+    "detected": "",
+    "noBuilds": "",
+    "experimental": "",
+    "experimentalDescription": ""
+  },
+  "installer": {
+    "recommended": "",
+    "signature": "",
+    "signatureTitle": "",
+    "download": "",
+    "downloadLabel": "",
+    "types": {
+      "exe": {
+        "label": "",
+        "description": ""
+      },
+      "msi": {
+        "label": "",
+        "description": ""
+      },
+      "dmg": {
+        "label": "",
+        "description": ""
+      },
+      "flatpak": {
+        "label": "",
+        "description": ""
+      },
+      "deb": {
+        "label": "",
+        "description": ""
+      },
+      "rpm": {
+        "label": "",
+        "description": ""
+      }
+    }
+  },
+  "history": {
+    "title": "",
+    "description": "",
+    "tabs": {
+      "stable": "",
+      "prerelease": ""
+    },
+    "emptyStable": "",
+    "emptyPrerelease": "",
+    "nightlyWarning": "",
+    "prerelease": "",
+    "viewOnGithub": ""
+  }
+}

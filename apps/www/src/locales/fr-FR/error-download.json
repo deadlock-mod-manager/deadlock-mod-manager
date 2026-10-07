@@ -11,13 +11,13 @@
     "errorSource": "Deadlock Mod Manager, sur une carte de mod ou dans Téléchargements"
   },
   "errorText": {
-    "message": "Failed to download",
+    "message": "",
     "messages": {
-      "rateLimit": "GameBanana rate limit reached / Too many requests (HTTP 429)",
-      "unavailable": "GameBanana is unavailable / Server error (HTTP 5xx)",
-      "refused": "GameBanana refused automatic requests / Access denied (HTTP 403)",
-      "network": "Network error / can't be resolved",
-      "writeFailed": "Download failed: … (os error 5) / File write failed"
+      "rateLimit": "",
+      "unavailable": "",
+      "refused": "",
+      "network": "",
+      "writeFailed": ""
     }
   },
   "diagnose": {

@@ -1,0 +1,176 @@
+{
+  "meta": {
+    "title": "",
+    "description": "",
+    "descriptionWithVersion": ""
+  },
+  "hero": {
+    "v2Teaser": "",
+    "title": "",
+    "subtitle": "",
+    "allDownloads": "",
+    "facts": {
+      "free": "",
+      "platforms": "",
+      "signed": ""
+    },
+    "screenshotAlt": "",
+    "toast": {
+      "installing": "",
+      "installed": "",
+      "ready": ""
+    }
+  },
+  "partners": {
+    "title": ""
+  },
+  "tour": {
+    "eyebrow": "",
+    "title": "",
+    "description": "",
+    "slidesLabel": "",
+    "slides": {
+      "find": {
+        "title": "",
+        "body": ""
+      },
+      "launch": {
+        "title": "",
+        "body": ""
+      },
+      "theme": {
+        "title": "",
+        "body": ""
+      }
+    },
+    "mobileNote": ""
+  },
+  "trust": {
+    "title": "",
+    "does": {
+      "heading": "",
+      "items": {
+        "copies": "",
+        "backups": "",
+        "vanilla": ""
+      }
+    },
+    "never": {
+      "heading": "",
+      "items": {
+        "patches": "",
+        "others": "",
+        "analytics": ""
+      }
+    },
+    "openSource": {
+      "title": "",
+      "body": "",
+      "github": "",
+      "transparency": ""
+    }
+  },
+  "themes": {
+    "title": "",
+    "description": "",
+    "screenshotAlt": "",
+    "pickerLabel": "",
+    "tryInPreview": "",
+    "builderHint": ""
+  },
+  "skins": {
+    "title": "",
+    "body": "",
+    "link": ""
+  },
+  "stats": {
+    "label": "",
+    "downloads": {
+      "label": "",
+      "value": "",
+      "note": ""
+    },
+    "users": {
+      "label": "",
+      "note": ""
+    },
+    "release": {
+      "label": "",
+      "note": ""
+    },
+    "price": {
+      "label": "",
+      "value": "",
+      "note": ""
+    }
+  },
+  "tools": {
+    "title": "",
+    "items": {
+      "randomizer": {
+        "title": "",
+        "description": ""
+      },
+      "crosshair": {
+        "title": "",
+        "description": ""
+      },
+      "vpk": {
+        "title": "",
+        "description": ""
+      },
+      "kv": {
+        "title": "",
+        "description": ""
+      }
+    }
+  },
+  "faq": {
+    "eyebrow": "",
+    "title": "",
+    "intro": "",
+    "items": {
+      "what": {
+        "question": "",
+        "answer": ""
+      },
+      "install": {
+        "question": "",
+        "steps": {
+          "download": "",
+          "detect": "",
+          "browse": "",
+          "install": ""
+        }
+      },
+      "safe": {
+        "question": "",
+        "answer": ""
+      },
+      "uninstall": {
+        "question": "",
+        "answer": ""
+      },
+      "platforms": {
+        "question": "",
+        "answer": ""
+      },
+      "bug": {
+        "question": "",
+        "answer": ""
+      },
+      "docs": {
+        "question": "",
+        "answer": ""
+      },
+      "officialSkins": {
+        "question": "",
+        "answer": ""
+      },
+      "skinsVisible": {
+        "question": "",
+        "answer": ""
+      }
+    }
+  }
+}

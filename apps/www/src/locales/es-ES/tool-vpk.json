@@ -34,7 +34,7 @@
       "pending": "Pendiente",
       "analyzing": "Analizando...",
       "completed": "Completado",
-      "error": "Error"
+      "error": ""
     },
     "failed": "El análisis falló: {{error}}"
   },
@@ -46,12 +46,12 @@
     "hasMultiparts": "Tiene varias partes:",
     "hasInlineData": "Tiene datos en línea:",
     "yes": "Sí",
-    "no": "No",
+    "no": "",
     "unknown": "Desconocido"
   },
   "match": {
     "title": "Mod coincidente",
-    "heading": "GameBanana {{type}} {{id}}",
+    "heading": "",
     "file": "Archivo {{id}}",
     "certainty": "{{certainty}}% de coincidencia ({{type}})",
     "view": "Ver en GameBanana"

@@ -1,0 +1,184 @@
+{
+  "language": {
+    "label": ""
+  },
+  "navbar": {
+    "homepage": "",
+    "primaryNav": "",
+    "mobileNav": "",
+    "openMenu": "",
+    "download": "",
+    "links": {
+      "mods": "",
+      "skins": "",
+      "features": "",
+      "themes": "",
+      "tools": "",
+      "docs": ""
+    }
+  },
+  "userMenu": {
+    "signIn": "",
+    "signInButton": "",
+    "signOut": "",
+    "dashboard": "",
+    "avatarFallback": ""
+  },
+  "v2Banner": {
+    "short": "",
+    "long": "",
+    "cta": ""
+  },
+  "footer": {
+    "tagline": "",
+    "disclaimer": "",
+    "headings": {
+      "links": "",
+      "guides": "",
+      "support": "",
+      "partners": ""
+    },
+    "links": {
+      "download": "",
+      "sourceCode": "",
+      "documentation": "",
+      "faq": "",
+      "reportBug": ""
+    },
+    "legal": {
+      "privacy": "",
+      "terms": "",
+      "transparency": ""
+    },
+    "madeBy": ""
+  },
+  "statusWidget": {
+    "checking": "",
+    "refresh": "",
+    "status": {
+      "operational": "",
+      "downtime": "",
+      "degraded": "",
+      "unknown": ""
+    }
+  },
+  "cta": {
+    "downloadStarted": "",
+    "sendToPc": "",
+    "sendNotes": {
+      "copied": "",
+      "shared": "",
+      "failed": ""
+    }
+  },
+  "platformDownload": {
+    "download": "",
+    "windows": "",
+    "linux": "",
+    "available": "",
+    "version": "",
+    "versionWithArch": ""
+  },
+  "modCard": {
+    "heroSkin": "",
+    "categories": {
+      "skins": "",
+      "qualityOfLife": ""
+    },
+    "byline": "",
+    "bylineWithDownloads": "",
+    "alt": {
+      "heroSkin": "",
+      "skins": "",
+      "qualityOfLife": ""
+    }
+  },
+  "guidePage": {
+    "allDownloads": "",
+    "questions": "",
+    "relatedGuides": ""
+  },
+  "guides": {
+    "mods": {
+      "label": "",
+      "description": ""
+    },
+    "skins": {
+      "label": "",
+      "description": ""
+    },
+    "install": {
+      "label": "",
+      "description": ""
+    },
+    "notWorking": {
+      "label": "",
+      "description": ""
+    },
+    "grimoire": {
+      "label": "",
+      "description": ""
+    },
+    "os5": {
+      "label": "",
+      "description": ""
+    },
+    "os740": {
+      "label": "",
+      "description": ""
+    },
+    "modOrder": {
+      "label": "",
+      "description": ""
+    },
+    "download": {
+      "label": "",
+      "description": ""
+    },
+    "fatal": {
+      "label": "",
+      "description": ""
+    }
+  },
+  "fallbacks": {
+    "error": {
+      "title": "",
+      "staleBuild": "",
+      "body": "",
+      "reload": "",
+      "retry": "",
+      "goHome": "",
+      "stillBroken": ""
+    },
+    "notFound": {
+      "title": "",
+      "body": "",
+      "goHome": "",
+      "download": ""
+    }
+  },
+  "errorPages": {
+    "returnHome": "",
+    "escape": "",
+    "notFound": {
+      "meta": {
+        "title": "",
+        "description": ""
+      },
+      "title": "",
+      "body": "",
+      "stillLooking": "",
+      "hint": ""
+    },
+    "forbidden": {
+      "meta": {
+        "title": "",
+        "description": ""
+      },
+      "title": "",
+      "body": "",
+      "needAccess": "",
+      "hint": ""
+    }
+  }
+}

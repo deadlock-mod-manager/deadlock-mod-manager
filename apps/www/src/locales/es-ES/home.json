@@ -87,7 +87,7 @@
     "label": "Estadísticas",
     "downloads": {
       "label": "Descargas de la app",
-      "value": "{{value}}+",
+      "value": "",
       "note": "Sumando todas las versiones"
     },
     "users": {
@@ -108,7 +108,7 @@
     "title": "Herramientas gratuitas en la web",
     "items": {
       "randomizer": {
-        "title": "Randomizer",
+        "title": "",
         "description": "Sortea un héroe para tu próxima partida"
       },
       "crosshair": {

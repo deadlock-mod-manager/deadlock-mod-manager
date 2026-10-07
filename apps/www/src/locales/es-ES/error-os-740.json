@@ -11,7 +11,7 @@
     "errorSource": "Deadlock Mod Manager en Windows, al iniciar el juego"
   },
   "errorText": {
-    "message": "The requested operation requires elevation. (os error 740)"
+    "message": ""
   },
   "fix": {
     "title": "Cómo solucionarlo",

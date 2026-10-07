@@ -5,19 +5,19 @@
       "description": "Klasyczny wygląd Deadlock Mod Manager."
     },
     "bloodmoon": {
-      "name": "Bloodmoon",
+      "name": "",
       "description": "Ciemny motyw z czarno-czerwonymi gradientami i karmazynowymi akcentami."
     },
     "nightshift": {
-      "name": "Nightshift",
+      "name": "",
       "description": "Cyberpunkowy motyw z turkusowymi akcentami i eleganckim interfejsem."
     },
     "lovelock": {
-      "name": "Lovelock",
+      "name": "",
       "description": "Przytulny śliwkowy motyw z delikatną różową poświatą."
     },
     "tea": {
-      "name": "Tea",
+      "name": "",
       "description": "Przytulny motyw na cześć Snipztea."
     }
   },
@@ -60,11 +60,11 @@
     "collapse": "Zwiń menu"
   },
   "bottomBar": {
-    "status": "Status:",
+    "status": "",
     "statuses": {
-      "online": "Online",
+      "online": "",
       "signedIn": "Zalogowano",
-      "mirror": "Mirror",
+      "mirror": "",
       "heroData": "Dane bohaterów"
     },
     "downloading": "Pobieranie: {{total}}",
@@ -226,14 +226,14 @@
       "name": "Nazwa",
       "players": "Gracze",
       "map": "Mapa",
-      "ping": "Ping"
+      "ping": ""
     },
     "requiredModsBadge": "Wymagane mody: {{total}}",
-    "ping": "{{ping}} ms",
+    "ping": "",
     "details": {
       "map": "Mapa",
       "players": "Gracze",
-      "region": "Region",
+      "region": "",
       "requiredMods": "Wymagane mody"
     },
     "join": "Dołącz do serwera",

@@ -36,7 +36,7 @@
     "line": "Línea: {{line}}",
     "column": "Columna: {{column}}",
     "valid": "✓ Válido",
-    "original": "Original",
+    "original": "",
     "jsonOutput": "Salida JSON",
     "treeView": "Vista de árbol",
     "switchToTree": "Cambiar a vista de árbol",

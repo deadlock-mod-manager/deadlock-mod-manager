@@ -5,24 +5,24 @@
       "description": "O visual clássico do Deadlock Mod Manager."
     },
     "bloodmoon": {
-      "name": "Bloodmoon",
+      "name": "",
       "description": "Um tema escuro com gradientes preto-vermelho e acentos carmesim."
     },
     "nightshift": {
-      "name": "Nightshift",
+      "name": "",
       "description": "Um tema cyberpunk com detalhes em verde-azulado e interface elegante."
     },
     "lovelock": {
-      "name": "Lovelock",
+      "name": "",
       "description": "Um tema aconchegante em tons de ameixa com um brilho rosa suave."
     },
     "tea": {
-      "name": "Tea",
+      "name": "",
       "description": "Um tema aconchegante em homenagem ao Snipztea."
     }
   },
   "categories": {
-    "skins": "Skins",
+    "skins": "",
     "qualityOfLife": "Qualidade de vida"
   },
   "titlebar": {
@@ -38,13 +38,13 @@
     "byline": "<version>{{version}}</version> por Stormix",
     "groups": {
       "general": "Geral",
-      "mods": "Mods",
+      "mods": "",
       "customServers": "Servidores personalizados",
       "customization": "Personalização"
     },
     "items": {
       "dashboard": "Painel de Controle",
-      "downloads": "Downloads",
+      "downloads": "",
       "settings": "Configurações",
       "library": "Meus Mods",
       "store": "Buscar Mods",
@@ -60,15 +60,15 @@
     "collapse": "Fechar menu"
   },
   "bottomBar": {
-    "status": "Status:",
+    "status": "",
     "statuses": {
-      "online": "Online",
+      "online": "",
       "signedIn": "Conectado",
       "mirror": "Espelho",
       "heroData": "Dados de heróis"
     },
     "downloading": "Baixando: {{total}}",
-    "volume": "VOLUME:",
+    "volume": "",
     "checkUpdates": "Buscar Atualizações"
   },
   "launch": {
@@ -127,10 +127,10 @@
     "title": "Buscar Mods",
     "subtitle": "Atualizado a cada hora, com novos mods adicionados a cada hora.",
     "tabs": {
-      "mods": "Mods",
+      "mods": "",
       "sounds": "Sons",
       "albums": "Álbuns",
-      "wips": "WiPs"
+      "wips": ""
     },
     "searchLabel": "Pesquisar mods",
     "searchPlaceholder": "Pesquisar mods ou autores",
@@ -152,7 +152,7 @@
   },
   "library": {
     "title": "Meus Mods",
-    "count": "<strong>{{enabled}}</strong>/{{total}} mods",
+    "count": "",
     "subtitle": "Mods que você baixou ou instalou",
     "checkUpdates": "Buscar Atualizações",
     "upToDate": {
@@ -172,7 +172,7 @@
     }
   },
   "downloads": {
-    "title": "Downloads",
+    "title": "",
     "subtitle": "Acompanhe os downloads dos seus mods",
     "empty": {
       "title": "Nenhum download ativo",
@@ -226,10 +226,10 @@
       "name": "Nome",
       "players": "Jogadores",
       "map": "Mapa",
-      "ping": "Ping"
+      "ping": ""
     },
     "requiredModsBadge": "Mods obrigatórios: {{total}}",
-    "ping": "{{ping}} ms",
+    "ping": "",
     "details": {
       "map": "Mapa",
       "players": "Jogadores",
@@ -264,7 +264,7 @@
       "themes": "Temas",
       "network": "Rede",
       "tools": "Ferramentas",
-      "backups": "Backups",
+      "backups": "",
       "logging": "Logs",
       "privacy": "Privacidade"
     },

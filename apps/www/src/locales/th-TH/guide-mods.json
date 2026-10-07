@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "name": "",
+    "title": "",
+    "description": ""
+  },
+  "faqs": {
+    "where": {
+      "question": "",
+      "answer": ""
+    },
+    "manual": {
+      "question": "",
+      "answer": ""
+    },
+    "free": {
+      "question": "",
+      "answer": ""
+    },
+    "visibility": {
+      "question": "",
+      "answer": ""
+    },
+    "updates": {
+      "question": "",
+      "answer": ""
+    }
+  },
+  "hero": {
+    "eyebrow": "",
+    "title": "",
+    "intro": ""
+  },
+  "popular": {
+    "title": "",
+    "intro": "",
+    "snapshot": ""
+  },
+  "categories": {
+    "title": "",
+    "items": {
+      "skins": {
+        "title": "",
+        "body": ""
+      },
+      "hud": {
+        "title": "",
+        "body": ""
+      },
+      "sounds": {
+        "title": "",
+        "body": ""
+      },
+      "wip": {
+        "title": "",
+        "body": ""
+      }
+    }
+  },
+  "steps": {
+    "title": "",
+    "items": {
+      "install": {
+        "title": "",
+        "body": ""
+      },
+      "find": {
+        "title": "",
+        "body": ""
+      },
+      "download": {
+        "title": "",
+        "body": ""
+      },
+      "launch": {
+        "title": "",
+        "body": ""
+      }
+    },
+    "figure": {
+      "alt": "",
+      "caption": ""
+    }
+  },
+  "gamebanana": {
+    "title": "",
+    "manual": "",
+    "app": ""
+  },
+  "downloadBand": {
+    "title": "",
+    "body": ""
+  }
+}

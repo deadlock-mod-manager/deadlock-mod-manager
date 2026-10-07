@@ -1,17 +1,17 @@
 {
   "meta": {
-    "name": "Access is denied (os error 5)",
+    "name": "",
     "title": "Corrigir \"Access is denied (os error 5)\" no Deadlock Mod Manager",
     "description": "O Deadlock Mod Manager mostra Access is denied (Acesso negado, os error 5) quando o Windows bloqueia o gameinfo.gi ou a pasta addons. Veja como resolver."
   },
   "hero": {
     "eyebrow": "Correção de erro",
-    "title": "Access is denied (os error 5)",
+    "title": "",
     "intro": "O Windows impediu o Deadlock Mod Manager de alterar um arquivo na pasta do Deadlock. Quase sempre é um arquivo somente leitura, um recurso de segurança protegendo a pasta ou um mod que foi instalado com permissões de administrador.",
     "errorSource": "Deadlock Mod Manager no Windows"
   },
   "errorText": {
-    "message": "Access is denied. (os error 5)"
+    "message": ""
   },
   "fix": {
     "title": "Como resolver",

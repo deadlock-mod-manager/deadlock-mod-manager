@@ -1,0 +1,168 @@
+{
+  "meta": {
+    "title": "",
+    "description": "",
+    "keywords": ""
+  },
+  "error": {
+    "title": "",
+    "description": "",
+    "retry": ""
+  },
+  "skeleton": {
+    "heading": ""
+  },
+  "toolbar": {
+    "copyLink": {
+      "idle": "",
+      "copied": "",
+      "failed": ""
+    },
+    "reroll": ""
+  },
+  "sections": {
+    "trigger": "",
+    "label": "",
+    "options": {
+      "build": "",
+      "abilities": "",
+      "rules": ""
+    }
+  },
+  "heroPicker": {
+    "anyHero": "",
+    "label": ""
+  },
+  "hero": {
+    "heading": "",
+    "headingWithRole": "",
+    "youArePlaying": "",
+    "role": ""
+  },
+  "facts": {
+    "complexity": "",
+    "lane": "",
+    "archetype": "",
+    "tags": "",
+    "mandate": "",
+    "buildCost": "",
+    "souls": "",
+    "abilityPriority": "",
+    "abilityPriorityHint": "",
+    "total": ""
+  },
+  "headings": {
+    "build": "",
+    "skills": "",
+    "rules": ""
+  },
+  "footer": {
+    "credit": ""
+  },
+  "lanes": {
+    "yellow": "",
+    "blue": "",
+    "green": ""
+  },
+  "mandates": {
+    "gunslinger": {
+      "label": "",
+      "blurb": ""
+    },
+    "caster": {
+      "label": "",
+      "blurb": ""
+    },
+    "bulwark": {
+      "label": "",
+      "blurb": ""
+    }
+  },
+  "categories": {
+    "weapon": "",
+    "vitality": "",
+    "spirit": ""
+  },
+  "challenges": {
+    "exactOrder": {
+      "title": "",
+      "detail": ""
+    },
+    "noRecall": {
+      "title": "",
+      "detail": ""
+    },
+    "parry": {
+      "title": "",
+      "detail": ""
+    },
+    "noZipline": {
+      "title": "",
+      "detail": ""
+    },
+    "meleeOpening": {
+      "title": "",
+      "detail": ""
+    },
+    "ultOnCooldown": {
+      "title": "",
+      "detail": ""
+    },
+    "noRetreat": {
+      "title": "",
+      "detail": ""
+    },
+    "soulCap": {
+      "title": "",
+      "detail": ""
+    },
+    "oneLane": {
+      "title": "",
+      "detail": ""
+    },
+    "noCancel": {
+      "title": "",
+      "detail": ""
+    },
+    "callout": {
+      "title": "",
+      "detail": ""
+    },
+    "noHeal": {
+      "title": "",
+      "detail": ""
+    }
+  },
+  "abilities": {
+    "fallback": "",
+    "ultimate": "",
+    "maxFirst": "",
+    "unlockedAt": "",
+    "upgradeAt": "",
+    "unlock": "",
+    "cost": "",
+    "spent": "",
+    "srUnlock": "",
+    "srUpgrade": ""
+  },
+  "item": {
+    "tier": "",
+    "active": "",
+    "activeTitle": "",
+    "tooltipHeader": "",
+    "sectionKinds": {
+      "active": "",
+      "passive": ""
+    },
+    "ariaUpgrade": "",
+    "ariaItem": "",
+    "categoryChange": "",
+    "upgrade": "",
+    "upgradePriceTitle": "",
+    "goodFit": "",
+    "goodFitTitle": "",
+    "imbueOn": "",
+    "imbueOnUntilUpgraded": "",
+    "imbueLapsesTitle": ""
+  }
+}
