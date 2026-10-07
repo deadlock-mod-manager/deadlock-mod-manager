@@ -847,7 +847,12 @@
       "installedAt": "Инсталиран",
       "updatedAt": "Последно актуализиран",
       "selectVariant": "Изберете вариант",
+      "outdated": "",
+      "outdatedDescription": "",
+      "keepOneFile": "",
+      "oneFileRequired": "",
       "backupNote": "Преди актуализацията автоматично ще бъде създадено резервно копие",
+      "backingUp": "",
       "updating": "",
       "updatingPercent": "",
       "complete": "",
@@ -881,7 +886,10 @@
     "summaryModels_other": "",
     "summaryModelsAll_one": "",
     "summaryModelsAll_other": "",
+    "summaryNoModels_one": "",
+    "summaryNoModels_other": "",
     "summaryNone": "",
+    "safeNote": "",
     "howItWorks": "",
     "scanning": "",
     "scanFailed": "",
@@ -892,7 +900,7 @@
       "modelHidden": "",
       "overlap": ""
     },
-    "badgeTooltip": {
+    "badgeHint": {
       "modelHidden": "",
       "overlap": ""
     },
@@ -904,21 +912,25 @@
       "low_one": "",
       "low_other": ""
     },
+    "hint": {
+      "normal": "",
+      "low": ""
+    },
     "moreFiles_one": "",
     "moreFiles_other": "",
     "used": "",
-    "skipped": "",
+    "usingFirstCopy": "",
     "modelHidden": "",
     "loadedFirst": "",
     "loadFirst": "",
     "showFiles_one": "",
     "showFiles_other": "",
     "options": "",
-    "ignoreGroup": "",
+    "markFine": "",
     "ignoreMod": "",
     "ignoreFile": "",
     "ignoreFailed": "",
-    "ignoredSection": "",
+    "markedFineSection": "",
     "ignoredPair": "",
     "ignoredModRow": "",
     "restore": "",
@@ -936,9 +948,10 @@
       },
       "fromMod": "",
       "skipped": "",
+      "safe": "",
       "order": "",
-      "models": "",
-      "action": ""
+      "modelException": "",
+      "resolve": ""
     }
   },
   "modOrdering": {
@@ -973,6 +986,7 @@
     "listView": "Списъчен изглед",
     "subtitle": "Обновено ежедневно, с нови модове добавени всяка седмица.",
     "mapsSubtitle": "",
+    "mapsWarningTitle": "",
     "mapsWarning": "",
     "catalogSyncing": "",
     "catalogSyncTitle": "",

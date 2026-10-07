@@ -847,7 +847,12 @@
       "installedAt": "설치됨",
       "updatedAt": "마지막 업데이트",
       "selectVariant": "변형 선택",
+      "outdated": "",
+      "outdatedDescription": "",
+      "keepOneFile": "",
+      "oneFileRequired": "",
       "backupNote": "업데이트하기 전에 백업이 자동으로 생성됩니다.",
+      "backingUp": "",
       "updating": "모드 업데이트 중...",
       "updatingPercent": "",
       "complete": "업데이트 완료",
@@ -881,7 +886,10 @@
     "summaryModels_other": "",
     "summaryModelsAll_one": "",
     "summaryModelsAll_other": "",
+    "summaryNoModels_one": "",
+    "summaryNoModels_other": "",
     "summaryNone": "",
+    "safeNote": "",
     "howItWorks": "",
     "scanning": "",
     "scanFailed": "",
@@ -892,7 +900,7 @@
       "modelHidden": "",
       "overlap": ""
     },
-    "badgeTooltip": {
+    "badgeHint": {
       "modelHidden": "",
       "overlap": ""
     },
@@ -904,21 +912,25 @@
       "low_one": "",
       "low_other": ""
     },
+    "hint": {
+      "normal": "",
+      "low": ""
+    },
     "moreFiles_one": "",
     "moreFiles_other": "",
     "used": "",
-    "skipped": "",
+    "usingFirstCopy": "",
     "modelHidden": "",
     "loadedFirst": "",
     "loadFirst": "",
     "showFiles_one": "",
     "showFiles_other": "",
     "options": "",
-    "ignoreGroup": "",
+    "markFine": "",
     "ignoreMod": "",
     "ignoreFile": "",
     "ignoreFailed": "",
-    "ignoredSection": "",
+    "markedFineSection": "",
     "ignoredPair": "",
     "ignoredModRow": "",
     "restore": "",
@@ -936,9 +948,10 @@
       },
       "fromMod": "",
       "skipped": "",
+      "safe": "",
       "order": "",
-      "models": "",
-      "action": ""
+      "modelException": "",
+      "resolve": ""
     }
   },
   "modOrdering": {
@@ -973,7 +986,8 @@
     "listView": "목록 보기",
     "subtitle": "매시간 업데이트되며, 매시간 새로운 모드가 추가됩니다.",
     "mapsSubtitle": "Deadlock의 맞춤형 지도를 찾아보세요",
-    "mapsWarning": "사용자 정의 지도는 실험적이며 작성자가 지도를 패키지하는 방법에 따라 크게 달라집니다. 모드 관리자를 통해 모든 맵이 기본적으로 작동하는 것은 아닙니다.",
+    "mapsWarningTitle": "",
+    "mapsWarning": "",
     "catalogSyncing": "",
     "catalogSyncTitle": "",
     "catalogSyncPercentage": "",

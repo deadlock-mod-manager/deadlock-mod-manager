@@ -847,7 +847,12 @@
       "installedAt": "Zainstalowany",
       "updatedAt": "Ostatnio zaktualizowane",
       "selectVariant": "Wybierz wariant",
+      "outdated": "",
+      "outdatedDescription": "",
+      "keepOneFile": "",
+      "oneFileRequired": "",
       "backupNote": "Kopia zapasowa zostanie utworzona automatycznie przed aktualizacją",
+      "backingUp": "",
       "updating": "Aktualizowanie modyfikacji...",
       "updatingPercent": "",
       "complete": "Aktualizacja zakończona",
@@ -881,7 +886,10 @@
     "summaryModels_other": "",
     "summaryModelsAll_one": "",
     "summaryModelsAll_other": "",
+    "summaryNoModels_one": "",
+    "summaryNoModels_other": "",
     "summaryNone": "",
+    "safeNote": "",
     "howItWorks": "",
     "scanning": "",
     "scanFailed": "",
@@ -892,7 +900,7 @@
       "modelHidden": "",
       "overlap": ""
     },
-    "badgeTooltip": {
+    "badgeHint": {
       "modelHidden": "",
       "overlap": ""
     },
@@ -904,21 +912,25 @@
       "low_one": "",
       "low_other": ""
     },
+    "hint": {
+      "normal": "",
+      "low": ""
+    },
     "moreFiles_one": "",
     "moreFiles_other": "",
     "used": "",
-    "skipped": "",
+    "usingFirstCopy": "",
     "modelHidden": "",
     "loadedFirst": "",
     "loadFirst": "",
     "showFiles_one": "",
     "showFiles_other": "",
     "options": "",
-    "ignoreGroup": "",
+    "markFine": "",
     "ignoreMod": "",
     "ignoreFile": "",
     "ignoreFailed": "",
-    "ignoredSection": "",
+    "markedFineSection": "",
     "ignoredPair": "",
     "ignoredModRow": "",
     "restore": "",
@@ -936,9 +948,10 @@
       },
       "fromMod": "",
       "skipped": "",
+      "safe": "",
       "order": "",
-      "models": "",
-      "action": ""
+      "modelException": "",
+      "resolve": ""
     }
   },
   "modOrdering": {
@@ -973,7 +986,8 @@
     "listView": "Widok Listy",
     "subtitle": "Aktualizowane codziennie, z nowymi modami dodawanymi co tydzień.",
     "mapsSubtitle": "Przeglądaj niestandardowe mapy dla Deadlock",
-    "mapsWarning": "Niestandardowe mapy są eksperymentalne i w dużej mierze zależą od tego, jak ich autorzy pakietują je. Nie wszystkie mapy będą działały, używając menadżera modów.",
+    "mapsWarningTitle": "",
+    "mapsWarning": "",
     "catalogSyncing": "",
     "catalogSyncTitle": "",
     "catalogSyncPercentage": "",

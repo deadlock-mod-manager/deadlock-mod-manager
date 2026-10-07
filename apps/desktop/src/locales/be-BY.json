@@ -847,7 +847,12 @@
       "installedAt": "Усталявана",
       "updatedAt": "Апошняе абнаўленне",
       "selectVariant": "Абраць варыянт",
+      "outdated": "",
+      "outdatedDescription": "",
+      "keepOneFile": "",
+      "oneFileRequired": "",
       "backupNote": "Рэзервовая копія будзе створана аўтаматычна перад абнаўленнем",
+      "backingUp": "",
       "updating": "Абнаўленне модаў...",
       "updatingPercent": "",
       "complete": "Абнаўленне завершана",
@@ -881,7 +886,10 @@
     "summaryModels_other": "",
     "summaryModelsAll_one": "",
     "summaryModelsAll_other": "",
+    "summaryNoModels_one": "",
+    "summaryNoModels_other": "",
     "summaryNone": "",
+    "safeNote": "",
     "howItWorks": "",
     "scanning": "",
     "scanFailed": "",
@@ -892,7 +900,7 @@
       "modelHidden": "",
       "overlap": ""
     },
-    "badgeTooltip": {
+    "badgeHint": {
       "modelHidden": "",
       "overlap": ""
     },
@@ -904,21 +912,25 @@
       "low_one": "",
       "low_other": ""
     },
+    "hint": {
+      "normal": "",
+      "low": ""
+    },
     "moreFiles_one": "",
     "moreFiles_other": "",
     "used": "",
-    "skipped": "",
+    "usingFirstCopy": "",
     "modelHidden": "",
     "loadedFirst": "",
     "loadFirst": "",
     "showFiles_one": "",
     "showFiles_other": "",
     "options": "",
-    "ignoreGroup": "",
+    "markFine": "",
     "ignoreMod": "",
     "ignoreFile": "",
     "ignoreFailed": "",
-    "ignoredSection": "",
+    "markedFineSection": "",
     "ignoredPair": "",
     "ignoredModRow": "",
     "restore": "",
@@ -936,9 +948,10 @@
       },
       "fromMod": "",
       "skipped": "",
+      "safe": "",
       "order": "",
-      "models": "",
-      "action": ""
+      "modelException": "",
+      "resolve": ""
     }
   },
   "modOrdering": {
@@ -973,7 +986,8 @@
     "listView": "У выглядзе спіса",
     "subtitle": "Абнаўляецца штогадзінна, з дадаткам новых модаў кожную гадзіну.",
     "mapsSubtitle": "Прагляд кастомных карт для Deadlock",
-    "mapsWarning": "Кастомныя карты з'яўляюцца эксперыментальнымі і ў значнай ступені залежаць ад таго, як іх запакавалі аўтары. Не ўсе карты будуць працаваць адразу праз менеджэр модаў.",
+    "mapsWarningTitle": "",
+    "mapsWarning": "",
     "catalogSyncing": "",
     "catalogSyncTitle": "",
     "catalogSyncPercentage": "",
