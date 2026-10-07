@@ -92,7 +92,7 @@ Download the latest installer for Windows or Linux (`.exe`, `.deb`, `.rpm`, `.fl
 # Windows (winget)
 winget install --id=Stormix.DeadlockModManager
 
-# Ubuntu/Debian (APT)
+# Ubuntu/Debian (APT) - for the CEF (Chromium) build, replace "stable main" with "stable cef"
 curl -fsSL https://apt.deadlockmods.app/key.gpg | sudo tee /usr/share/keyrings/deadlock-mod-manager.gpg > /dev/null
 echo "deb [arch=amd64 signed-by=/usr/share/keyrings/deadlock-mod-manager.gpg] https://apt.deadlockmods.app stable main" | sudo tee /etc/apt/sources.list.d/deadlock-mod-manager.list
 sudo apt update && sudo apt install deadlock-mod-manager

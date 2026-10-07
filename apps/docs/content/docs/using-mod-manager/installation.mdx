@@ -5,6 +5,7 @@ description: How to download and install Deadlock Mod Manager on your system
 
 import { Card, Cards } from "fumadocs-ui/components/card";
 import { Callout } from "fumadocs-ui/components/callout";
+import { Tab, Tabs } from "fumadocs-ui/components/tabs";
 
 # Installation Guide
 
@@ -78,6 +79,11 @@ winget install --id=Stormix.DeadlockModManager
 
 #### Ubuntu/Debian (APT)
 
+The repository has two builds: the regular build, which uses the system webview, and the [CEF build](#optional-cef-builds), which bundles Chromium. If the regular build feels slow, use the CEF build; Chromium generally performs better.
+
+<Tabs items={["Regular", "CEF"]}>
+  <Tab value='Regular'>
+
 ```bash
 # Add the repository signing key
 curl -fsSL https://apt.deadlockmods.app/key.gpg \
@@ -92,19 +98,34 @@ sudo apt update
 sudo apt install deadlock-mod-manager
 ```
 
-New stable releases arrive through `sudo apt update && sudo apt upgrade`. The repository only contains stable x86_64 builds; nightly builds remain available from GitHub Releases.
-
-If the app feels slow, use the [CEF build](#optional-cef-builds) instead. It bundles Chromium, which generally performs better than the system webview. Replace `main` with `cef` at the end of the repository line, then reinstall:
+  </Tab>
+  <Tab value='CEF'>
 
 ```bash
+# Add the repository signing key
+curl -fsSL https://apt.deadlockmods.app/key.gpg \
+  | sudo tee /usr/share/keyrings/deadlock-mod-manager.gpg > /dev/null
+
+# Add the repository (cef instead of main)
 echo "deb [arch=amd64 signed-by=/usr/share/keyrings/deadlock-mod-manager.gpg] https://apt.deadlockmods.app stable cef" \
   | sudo tee /etc/apt/sources.list.d/deadlock-mod-manager.list
 
+# Install
+sudo apt update
+sudo apt install deadlock-mod-manager
+```
+
+  </Tab>
+</Tabs>
+
+New stable releases arrive through `sudo apt update && sudo apt upgrade`. The repository only contains stable x86_64 builds; nightly builds remain available from GitHub Releases.
+
+Both builds install the same `deadlock-mod-manager` package, chosen by the last word of the repository line, so enable only one of `main` or `cef`. To switch builds later, run the "Add the repository" command for the other build, then reinstall:
+
+```bash
 sudo apt update
 sudo apt install --reinstall deadlock-mod-manager
 ```
-
-Both builds install the same `deadlock-mod-manager` package, so enable only one of `main` or `cef`. To switch back, put `main` back and reinstall the same way.
 
 <Callout type='info' title='Supported versions'>
   Packages are built on Ubuntu 24.04. Older releases such as Ubuntu 22.04 or
