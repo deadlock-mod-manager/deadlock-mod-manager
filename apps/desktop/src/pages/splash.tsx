@@ -4,10 +4,10 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
 import Logo from "@/components/layout/logo";
 import useAbout from "@/hooks/use-about";
-import { APP_NAME, GITHUB_REPO } from "@/lib/constants";
+import { APP_NAME } from "@/lib/constants";
 import {
   getDisplaySemver,
-  getReleaseNotesPath,
+  getReleaseNotesUrl,
   isNightlyBuildVersion,
 } from "@/lib/app-version-display";
 
@@ -39,9 +39,7 @@ const Splash = () => {
                   {"("}
                   <button
                     className='cursor-pointer text-primary hover:underline'
-                    onClick={() =>
-                      openUrl(`${GITHUB_REPO}${getReleaseNotesPath(version)}`)
-                    }
+                    onClick={() => openUrl(getReleaseNotesUrl(version))}
                     type='button'>
                     {t("about.releaseNotes")}
                   </button>

@@ -3,7 +3,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
 import { useWhatsNew } from "@/hooks/use-whats-new";
 import { SectionHeader } from "./section-header";
-import { GITHUB_REPO } from "@/lib/constants";
+import { getReleaseNotesUrl } from "@/lib/app-version-display";
 import { getRecentWhatsNewVersions } from "@/lib/whats-new-versions";
 import { cn } from "@/lib/utils";
 
@@ -118,7 +118,7 @@ const VersionColumn = ({
           className='mt-auto self-start font-medium text-[10px] text-primary/80 uppercase tracking-[0.2em] transition-colors hover:text-primary'
           onClick={(event) => {
             event.stopPropagation();
-            openUrl(`${GITHUB_REPO}/releases/tag/v${entry.version}`);
+            openUrl(getReleaseNotesUrl(entry.version));
           }}
           type='button'>
           {t("dashboard.moreFeatures", { count: hidden })}
@@ -138,7 +138,7 @@ export const ChangelogRibbon = () => {
       <SectionHeader
         icon={SparkleIcon}
         linkLabel={t("whatsNew.fullReleaseNotes")}
-        linkUrl={`${GITHUB_REPO}/releases`}
+        linkUrl={getReleaseNotesUrl()}
         title={t("dashboard.changelog")}
       />
 

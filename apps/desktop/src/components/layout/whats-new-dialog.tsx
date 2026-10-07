@@ -22,7 +22,8 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { type ReactNode, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useAbout from "@/hooks/use-about";
-import { APP_NAME, GITHUB_REPO } from "@/lib/constants";
+import { getReleaseNotesUrl } from "@/lib/app-version-display";
+import { APP_NAME } from "@/lib/constants";
 import { getWhatsNewVideoId } from "@/lib/whats-new-versions";
 
 type WhatsNewDialogProps = {
@@ -298,7 +299,7 @@ export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
       <DialogFooter className='shrink-0 flex flex-row items-center justify-between px-6 py-4'>
         <Button
           className='gap-2 text-xs'
-          onClick={() => openUrl(`${GITHUB_REPO}/releases/tag/v${version}`)}
+          onClick={() => openUrl(getReleaseNotesUrl(version))}
           size='sm'
           variant='outline'>
           <ArrowSquareOutIcon className='size-3.5' />

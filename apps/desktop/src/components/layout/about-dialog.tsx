@@ -17,7 +17,7 @@ import {
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
 import useAbout from "@/hooks/use-about";
-import { getReleaseNotesPath } from "@/lib/app-version-display";
+import { getReleaseNotesUrl } from "@/lib/app-version-display";
 import {
   APP_NAME,
   DISCORD_URL,
@@ -50,9 +50,7 @@ export const AboutDialog = () => {
               {"("}
               <button
                 className='cursor-pointer text-primary hover:underline'
-                onClick={() =>
-                  openUrl(`${GITHUB_REPO}${getReleaseNotesPath(version)}`)
-                }
+                onClick={() => openUrl(getReleaseNotesUrl(version))}
                 type='button'>
                 {t("about.releaseNotes")}
               </button>

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import {
   getDisplaySemver,
-  getReleaseNotesPath,
+  getReleaseNotesUrl,
   isNightlyBuildVersion,
 } from "./app-version-display";
 
@@ -29,13 +29,16 @@ describe("app-version-display", () => {
     expect(getDisplaySemver("0.18.0")).toBe("0.18.0");
   });
 
-  it("getReleaseNotesPath nightly uses rolling tag", () => {
-    expect(getReleaseNotesPath("0.19.0-nightly.20240513.05381793")).toBe(
-      "/releases/tag/nightly",
+  it("getReleaseNotesUrl sends nightlies to the rolling GitHub tag", () => {
+    expect(getReleaseNotesUrl("0.19.0-nightly.20240513.05381793")).toBe(
+      "https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/tag/nightly",
     );
   });
 
-  it("getReleaseNotesPath stable uses v prefix", () => {
-    expect(getReleaseNotesPath("0.18.0")).toBe("/releases/tag/v0.18.0");
+  it("getReleaseNotesUrl links releases to their website changelog entry", () => {
+    expect(getReleaseNotesUrl("2.0.0")).toBe(
+      "https://deadlockmods.app/changelog#v2.0.0",
+    );
+    expect(getReleaseNotesUrl()).toBe("https://deadlockmods.app/changelog");
   });
 });

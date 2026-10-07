@@ -1,7 +1,7 @@
 import { SparkleIcon } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
-import { GITHUB_REPO } from "@/lib/constants";
+import { getReleaseNotesUrl } from "@/lib/app-version-display";
 import { DashboardCard } from "./dashboard-card";
 
 export const WhatsNewCard = () => {
@@ -58,7 +58,7 @@ export const WhatsNewCard = () => {
       ))}
       <button
         className='text-primary hover:underline text-sm'
-        onClick={() => openUrl(`${GITHUB_REPO}/releases`)}
+        onClick={() => openUrl(getReleaseNotesUrl())}
         type='button'>
         {t("whatsNew.fullReleaseNotes")}
       </button>

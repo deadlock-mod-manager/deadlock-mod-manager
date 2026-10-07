@@ -1,3 +1,6 @@
+import { WEB_URL } from "./config";
+import { GITHUB_REPO } from "./constants";
+
 const NIGHTLY_VERSION = /^(\d+\.\d+\.\d+)-nightly\.(\d{8})\.([0-9a-f]+)$/i;
 
 export const isNightlyBuildVersion = (version: string): boolean =>
@@ -11,9 +14,16 @@ export const getDisplaySemver = (version: string): string => {
   return version;
 };
 
-export const getReleaseNotesPath = (version: string): string => {
-  if (isNightlyBuildVersion(version)) {
-    return "/releases/tag/nightly";
+/**
+ * Where to read what changed: the website changelog, anchored to a release
+ * as #v<version>. Nightlies are only published on GitHub.
+ */
+export const getReleaseNotesUrl = (version?: string): string => {
+  if (!version) {
+    return `${WEB_URL}/changelog`;
   }
-  return `/releases/tag/v${version}`;
+  if (isNightlyBuildVersion(version)) {
+    return `${GITHUB_REPO}/releases/tag/nightly`;
+  }
+  return `${WEB_URL}/changelog#v${version}`;
 };
