@@ -7,6 +7,7 @@ import {
   type Locale,
   localizePath,
 } from "@/lib/i18n/locales";
+import { type OgCard, ogCardFor, ogCardImagePath } from "@/utils/og-cards";
 
 export const SITE_NAME = "Deadlock Mod Manager";
 
@@ -71,6 +72,19 @@ export const alternateUrls = (path: string) =>
       ]
     : [];
 
+const cardImageMeta = (card: OgCard) => {
+  const image = absoluteUrl(ogCardImagePath(card));
+  const alt = `${card.title}. ${card.tagline}`;
+  return [
+    { property: "og:image", content: image },
+    { property: "og:image:width", content: "1200" },
+    { property: "og:image:height", content: "630" },
+    { property: "og:image:alt", content: alt },
+    { name: "twitter:image", content: image },
+    { name: "twitter:image:alt", content: alt },
+  ];
+};
+
 const xHandle = `@${X_URL.split("/").pop()}`;
 
 export interface SeoOptions {
@@ -101,6 +115,7 @@ export const seo = ({
   locale = DEFAULT_LOCALE,
 }: SeoOptions) => {
   const url = path ? localizedUrl(path, locale) : undefined;
+  const card = path ? ogCardFor(path) : undefined;
 
   const meta = [
     { title },
@@ -119,6 +134,7 @@ export const seo = ({
     { property: "og:description", content: description },
     { name: "twitter:title", content: title },
     { name: "twitter:description", content: description },
+    ...(card ? cardImageMeta(card) : []),
   ];
 
   const links =

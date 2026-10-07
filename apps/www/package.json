@@ -8,7 +8,8 @@
     "build": "vite build",
     "start": "bun run server.ts",
     "serve": "vite preview",
-    "test": "vitest run"
+    "test": "vitest run",
+    "og:generate": "tsx tools/generate-og-images.tsx"
   },
   "dependencies": {
     "@deadlock-mods/common": "workspace:*",
@@ -57,7 +58,9 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@fontsource/geist": "5.3.0",
     "@netlify/vite-plugin-tanstack-start": "^1.3.2",
+    "@resvg/resvg-js": "2.6.2",
     "@tailwindcss/postcss": "^4.2.2",
     "@tanstack/nitro-v2-vite-plugin": "^1.154.9",
     "@tanstack/react-query-devtools": "^5.104.0",
@@ -72,6 +75,7 @@
     "dotenv-cli": "^7.4.4",
     "jsdom": "^27.4.0",
     "postcss": "^8.5.11",
+    "satori": "0.33.5",
     "tailwindcss": "^4.2.2",
     "tsx": "^4.21.0",
     "typescript": "catalog:",
