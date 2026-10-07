@@ -1,4 +1,5 @@
 import type { ModDto } from "@deadlock-mods/shared";
+import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Dialog,
@@ -198,7 +199,9 @@ const UpdateModCard = ({
   );
 
   const sortedDownloads = [...update.downloads].sort(
-    (a, b) => (b.size || 0) - (a.size || 0),
+    (a, b) =>
+      Number(!!a.isArchived) - Number(!!b.isArchived) ||
+      (b.size || 0) - (a.size || 0),
   );
   const selectedSet = new Set(update.selectedDownloads.map((d) => d.name));
   const handleFileToggle = (download: ModDownloadItem, checked: boolean) => {
@@ -210,7 +213,7 @@ const UpdateModCard = ({
   const handleSelectAll = () => {
     onSelectDownloads(update.mod.remoteId, update.downloads);
   };
-  const handleSelectNone = () => {
+  const handleKeepOne = () => {
     onSelectDownloads(update.mod.remoteId, [sortedDownloads[0]]);
   };
 
@@ -291,8 +294,8 @@ const UpdateModCard = ({
               <Button size='sm' variant='outline' onClick={handleSelectAll}>
                 {t("downloads.selectAll")}
               </Button>
-              <Button size='sm' variant='outline' onClick={handleSelectNone}>
-                {t("downloads.selectNone")}
+              <Button size='sm' variant='outline' onClick={handleKeepOne}>
+                {t("myMods.batchUpdate.keepOneFile")}
               </Button>
             </div>
             <div className='space-y-2 max-h-40 overflow-y-auto'>
@@ -303,6 +306,11 @@ const UpdateModCard = ({
                   <label
                     key={download.name}
                     htmlFor={`download-${download.name}`}
+                    title={
+                      isOnlySelected
+                        ? t("myMods.batchUpdate.oneFileRequired")
+                        : undefined
+                    }
                     className={`flex items-center space-x-3 rounded-lg border p-3 transition-colors hover:bg-muted/50 ${
                       isOnlySelected
                         ? "cursor-not-allowed opacity-50"
@@ -326,10 +334,23 @@ const UpdateModCard = ({
                         {formatSize(download.size)}
                       </span>
                     </div>
+                    {download.isArchived && (
+                      <Badge
+                        variant='outline'
+                        className='text-muted-foreground'
+                        title={t("myMods.batchUpdate.outdatedDescription")}>
+                        {t("myMods.batchUpdate.outdated")}
+                      </Badge>
+                    )}
                   </label>
                 );
               })}
             </div>
+            {selectedSet.size === 1 && (
+              <p className='text-muted-foreground text-xs'>
+                {t("myMods.batchUpdate.oneFileRequired")}
+              </p>
+            )}
           </div>
         )}
       </div>

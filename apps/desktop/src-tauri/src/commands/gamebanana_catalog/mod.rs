@@ -518,6 +518,7 @@ mod tests {
       download_url: String::new(),
       md5: None,
       description: None,
+      is_archived: false,
     }
   }
 

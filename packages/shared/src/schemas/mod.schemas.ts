@@ -84,6 +84,7 @@ export const ModDownloadDtoSchema = z.object({
   createdAt: coercedDateNullable,
   updatedAt: coercedDateNullable,
   md5Checksum: z.string().nullable(),
+  isArchived: z.boolean().optional(),
 });
 
 // CustomSettingDto schema (matches the raw CustomSetting type from database)

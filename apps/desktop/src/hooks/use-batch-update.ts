@@ -98,10 +98,18 @@ export const useBatchUpdate = () => {
               .map((f) => f.archive_name),
           );
 
-          const matched = update.downloads.filter(
+          // Archived files are older versions of current ones; installing
+          // both ships the same VPK names twice.
+          const current = update.downloads.filter((d) => !d.isArchived);
+          const matched = current.filter(
             (d) => savedNames.has(d.name) || installedArchiveNames.has(d.name),
           );
-          selectedDownloads = matched.length > 0 ? matched : update.downloads;
+          selectedDownloads =
+            matched.length > 0
+              ? matched
+              : current.length > 0
+                ? current
+                : update.downloads;
         }
 
         const selectedFileTree = localMod?.installedFileTree;

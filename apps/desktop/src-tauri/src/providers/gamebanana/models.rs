@@ -251,6 +251,8 @@ pub struct SubmissionFile {
   pub md5: Option<String>,
   #[serde(rename = "_sDescription", default)]
   pub description: Option<String>,
+  #[serde(rename = "_bIsArchived", default)]
+  pub is_archived: bool,
 }
 
 // A malformed file must not hide other usable downloads in the response.
@@ -346,6 +348,13 @@ pub struct DownloadPage {
   pub is_withheld: bool,
   #[serde(rename = "_aFiles", default, deserialize_with = "deserialize_files")]
   pub files: Vec<SubmissionFile>,
+  // Superseded files the author archived; still downloadable and still listed on the profile.
+  #[serde(
+    rename = "_aArchivedFiles",
+    default,
+    deserialize_with = "deserialize_files"
+  )]
+  pub archived_files: Vec<SubmissionFile>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -623,6 +632,31 @@ mod tests {
         vec![1, 3]
       );
     }
+  }
+
+  #[test]
+  fn download_page_keeps_archived_files_separate() {
+    let download: DownloadPage = serde_json::from_value(serde_json::json!({
+      "_aFiles": [{"_idRow": 3, "_sFile": "current.zip"}],
+      "_aArchivedFiles": [{"_idRow": 1, "_sFile": "old.zip"}]
+    }))
+    .unwrap();
+    assert_eq!(
+      download
+        .files
+        .iter()
+        .map(|file| file.id)
+        .collect::<Vec<_>>(),
+      vec![3]
+    );
+    assert_eq!(
+      download
+        .archived_files
+        .iter()
+        .map(|file| file.id)
+        .collect::<Vec<_>>(),
+      vec![1]
+    );
   }
 
   #[test]

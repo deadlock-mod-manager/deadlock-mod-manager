@@ -228,6 +228,7 @@ const catalogDownloadToModDownload = (
   createdAt: secondsToNullableDate(download.createdAt),
   updatedAt: secondsToNullableDate(download.updatedAt),
   md5Checksum: download.md5Checksum,
+  isArchived: download.isArchived,
 });
 
 const secondsToDate = (value: number) => new Date(value * 1_000);

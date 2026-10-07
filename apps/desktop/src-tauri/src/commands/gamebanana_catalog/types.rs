@@ -101,6 +101,8 @@ pub struct CatalogDownloadDto {
   #[ts(type = "number | null")]
   pub updated_at: Option<i64>,
   pub md5_checksum: Option<String>,
+  /// The author superseded this file with a newer one.
+  pub is_archived: bool,
 }
 
 #[derive(Debug, Clone, Serialize, TS)]
@@ -320,6 +322,7 @@ impl From<SubmissionFile> for CatalogDownloadDto {
       created_at: file.date_added,
       updated_at: file.date_added,
       md5_checksum: file.md5,
+      is_archived: file.is_archived,
     }
   }
 }

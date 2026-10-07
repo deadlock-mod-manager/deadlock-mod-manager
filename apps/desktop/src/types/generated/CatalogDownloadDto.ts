@@ -8,4 +8,8 @@ export type CatalogDownloadDto = {
   createdAt: number | null;
   updatedAt: number | null;
   md5Checksum: string | null;
+  /**
+   * The author superseded this file with a newer one.
+   */
+  isArchived: boolean;
 };

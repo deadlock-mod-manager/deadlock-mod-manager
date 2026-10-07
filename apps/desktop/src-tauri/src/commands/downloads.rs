@@ -111,6 +111,7 @@ async fn resolve_gamebanana_file(
   let file = page
     .files
     .into_iter()
+    .chain(page.archived_files)
     .find(|candidate| candidate.id == file_id)
     .ok_or_else(|| Error::ProviderInvalidResponse("GameBanana file was not found".to_string()))?;
   validate_download_file_name(&file.name)?;

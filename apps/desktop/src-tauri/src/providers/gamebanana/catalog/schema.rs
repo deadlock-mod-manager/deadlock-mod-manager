@@ -266,7 +266,7 @@ mod tests {
     .get_result::<bool>(&mut connection)
     .unwrap();
 
-    assert_eq!(applied.len(), 7);
+    assert_eq!(applied.len(), 8);
     assert!(catalog_tables_exist);
   }
 
@@ -306,7 +306,7 @@ mod tests {
     .get_result::<bool>(&mut connection)
     .unwrap();
 
-    assert_eq!(applied.len(), 7);
+    assert_eq!(applied.len(), 8);
     assert!(retained_submission);
     assert!(author_remote_id_exists);
   }
@@ -330,7 +330,7 @@ mod tests {
       .iter()
       .map(ToString::to_string)
       .collect();
-    assert_eq!(versions.len(), 7);
+    assert_eq!(versions.len(), 8);
     assert!(versions.contains(&"20261004000000".to_string()));
     assert!(!versions.contains(&"20260916000000".to_string()));
   }

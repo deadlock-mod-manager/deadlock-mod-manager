@@ -138,6 +138,7 @@ mod tests {
         download_url: "https://gamebanana.com/dl/7".to_string(),
         date_added: Some(250),
         md5: None,
+        is_archived: false,
       }],
     };
     catalog
