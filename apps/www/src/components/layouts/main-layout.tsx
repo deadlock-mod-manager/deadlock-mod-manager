@@ -7,9 +7,9 @@ interface MainLayoutProps {
 
 export function MainLayout({ children }: MainLayoutProps) {
   return (
-    <div className='min-h-screen'>
+    <div className='flex min-h-screen flex-col'>
       <Navbar />
-      {children}
+      <div className='flex-1'>{children}</div>
       <Footer />
     </div>
   );

@@ -14,6 +14,14 @@ const EXCLUDE_PATTERNS = env.ASSET_PRELOAD_EXCLUDE_PATTERNS.map((pattern) =>
 
 let isReady = false;
 
+// Links pasted into prose ("see https://deadlockmods.app/download).") get
+// crawled with the trailing punctuation and indexed as separate URLs.
+const TRAILING_PUNCTUATION = /[).,\]]+$/;
+
+// /login redirects to the auth provider before the page's noindex meta can
+// render, so crawlers only ever see the redirect. Send the header instead.
+const NOINDEX_PATHS = new Set(["/login"]);
+
 interface NodeResponseLike {
   status: number;
   statusText?: string;
@@ -92,9 +100,23 @@ async function initializeServer() {
           headers: { "Cache-Control": "no-store" },
         }),
       "/*": async (req: Request) => {
+        const url = new URL(req.url);
+        if (TRAILING_PUNCTUATION.test(url.pathname)) {
+          url.pathname = url.pathname.replace(TRAILING_PUNCTUATION, "") || "/";
+          return Response.redirect(url.toString(), 301);
+        }
+
+        const withRobotsHeader = (response: Response) => {
+          if (!NOINDEX_PATHS.has(url.pathname)) return response;
+          // Redirect responses have immutable headers, so copy before setting.
+          const copy = new Response(response.body, response);
+          copy.headers.set("X-Robots-Tag", "noindex");
+          return copy;
+        };
+
         try {
           const response = await handler.fetch(req);
-          return await toWebResponse(response);
+          return withRobotsHeader(await toWebResponse(response));
         } catch (error) {
           // Handle TanStack Router redirect throws
           if (
@@ -103,7 +125,9 @@ async function initializeServer() {
             "status" in error &&
             "headers" in error
           ) {
-            return await toWebResponse(error as NodeResponseLike);
+            return withRobotsHeader(
+              await toWebResponse(error as NodeResponseLike),
+            );
           }
           logger.withError(error as Error).error("Server handler error");
           return new Response("Internal Server Error", { status: 500 });
