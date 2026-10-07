@@ -65,10 +65,21 @@ export const LOCALES = [
 export type LocaleConfig = (typeof LOCALES)[number];
 export type Locale = LocaleConfig["id"];
 
-export const DEFAULT_LOCALE: Locale = "en";
+export const DEFAULT_LOCALE = "en" satisfies Locale;
 
 /** Cookie that records an explicit language choice from the switcher. */
 export const LOCALE_COOKIE = "dmm_locale";
+
+/** The active language, owned by the router and read by routes. */
+export interface LocaleState {
+  current: Locale;
+}
+
+export interface DelocalizedPath {
+  /** Null when the URL has no (valid) language prefix. */
+  locale: Locale | null;
+  path: string;
+}
 
 export const isLocale = (value: string): value is Locale =>
   LOCALES.some((locale) => locale.id === value);
@@ -122,9 +133,7 @@ export const localizePath = (path: string, locale: Locale) => {
  * locale when the path has no locale prefix, or when the prefix is followed by
  * a page that isn't translated (that URL is a 404, not an English page).
  */
-export const delocalizePath = (
-  pathname: string,
-): { locale: Locale | null; path: string } => {
+export const delocalizePath = (pathname: string): DelocalizedPath => {
   const [, first = "", ...rest] = pathname.split("/");
   const match = LOCALES.find(
     (locale) => locale.prefix && locale.prefix === first.toLowerCase(),

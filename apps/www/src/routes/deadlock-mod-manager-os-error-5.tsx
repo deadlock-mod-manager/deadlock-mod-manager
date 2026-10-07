@@ -1,4 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import type { TFunction } from "i18next";
+import { Trans, useTranslation } from "react-i18next";
 import {
   ErrorMessage,
   GuideDownloadBand,
@@ -11,130 +13,96 @@ import {
 } from "@/components/guides/guide-page";
 import { DISCORD_URL, DOCS_URL } from "@/lib/constants";
 import { TROUBLESHOOTING_GUIDES } from "@/lib/guides";
+import { headI18n } from "@/lib/i18n/route";
 import { guideHead, type GuidePageData } from "@/utils/structured-data";
 
-const page: GuidePageData = {
+const getPage = (t: TFunction<"error-os-5">): GuidePageData => ({
   path: "/deadlock-mod-manager-os-error-5",
-  name: "Access is denied (os error 5)",
-  title: 'Deadlock Mod Manager "Access is denied (os error 5)" Fix',
-  description:
-    "Deadlock Mod Manager shows Access is denied (os error 5) when Windows blocks changes to gameinfo.gi or the addons folder. Clear read-only, allow it through Controlled folder access, and remove admin-installed mods.",
-  faqs: [
-    {
-      question: "What does os error 5 mean in Deadlock Mod Manager?",
-      answer:
-        "It is the Windows error ERROR_ACCESS_DENIED. Windows refused to let the app write, rename or delete a file in your Deadlock folder, usually gameinfo.gi or a .vpk in the addons folder.",
-    },
-    {
-      question: "Should I always run Deadlock Mod Manager as administrator?",
-      answer:
-        "No. Run it as administrator once to clean up files that were created with admin rights, then go back to starting it normally. Running it elevated all the time makes every new mod file admin-owned and brings the error back the next time you start it normally.",
-    },
-    {
-      question: "Why do I get os error 5 when Deadlock is closed?",
-      answer:
-        "Something other than the game is blocking the file: the read-only attribute, Windows Security's Controlled folder access, another antivirus, or files left behind by a mod installed with admin rights.",
-    },
-    {
-      question: "Does os error 5 happen on Linux?",
-      answer:
-        "The Linux equivalent is Permission denied (os error 13). Make sure your user owns the Deadlock folder, and on Flatpak grant the app access to your Steam library as described in the troubleshooting docs.",
-    },
-  ],
-};
+  name: t("meta.name"),
+  title: t("meta.title"),
+  description: t("meta.description"),
+  faqs: Object.values(t("faqs", { returnObjects: true })),
+});
 
 export const Route = createFileRoute("/deadlock-mod-manager-os-error-5")({
   component: OsError5Page,
-  head: () => guideHead(page),
+  head: ({ match }) => {
+    const { t, locale } = headI18n(match, "error-os-5");
+    return guideHead(getPage(t), locale);
+  },
 });
 
 function OsError5Page() {
+  const { t } = useTranslation("error-os-5");
+  const page = getPage(t);
+  const steps = t("fix.steps", { returnObjects: true });
+
   return (
     <div className='overflow-x-clip'>
       <GuideHero
-        eyebrow='Error fix'
-        title='Access is denied (os error 5)'
-        intro='Windows blocked Deadlock Mod Manager from changing a file in your Deadlock folder. It is almost always a read-only file, a security feature guarding the folder, or a mod that was installed with admin rights.'>
-        <ErrorMessage source='Deadlock Mod Manager on Windows'>
-          Access is denied. (os error 5)
+        eyebrow={t("hero.eyebrow")}
+        title={t("hero.title")}
+        intro={t("hero.intro")}>
+        <ErrorMessage source={t("hero.errorSource")}>
+          {t("errorText.message")}
         </ErrorMessage>
       </GuideHero>
 
-      <GuideSection
-        title='How to fix it'
-        intro='Work through these in order. Most people are done after the first two.'>
+      <GuideSection title={t("fix.title")} intro={t("fix.intro")}>
         <StepList
           columns={2}
-          steps={[
-            {
-              title: "Close Deadlock and update the app",
-              body: "Quit the game completely and make sure you're on the latest Deadlock Mod Manager. Then retry what failed before changing anything else.",
-            },
-            {
-              title: "Clear the read-only flag",
-              body: (
-                <>
-                  Right-click <code>game\citadel\gameinfo.gi</code>, open
-                  Properties and untick <strong>Read-only</strong>. Do the same
-                  for the <code>addons</code> folder and apply it to all
-                  subfolders. From a terminal:{" "}
-                  <code>attrib -r "…\Deadlock\game\citadel\*" /s /d</code>
-                </>
-              ),
-            },
-            {
-              title: "Allow the app through Controlled folder access",
-              body: "Windows Security > Virus & threat protection > Ransomware protection. If Controlled folder access is on, add Deadlock Mod Manager under Allow an app, or remove your Steam library from the protected folders. Other antivirus tools have a similar exclusion list.",
-            },
-            {
-              title: "Remove mods installed as administrator",
-              body: "Files created by an elevated program can't be changed by a normal one. Run Deadlock Mod Manager as administrator once, remove or reinstall the affected mods, then close it and start it normally again.",
-            },
-            {
-              title: "Check the folder isn't in a protected location",
-              body: "Steam libraries outside Program Files avoid most permission problems. If you moved Deadlock to a drive with custom permissions, give your Windows user Full control in the folder's Security tab.",
-            },
-            {
-              title: "Verify game files as a last resort",
-              body: "In Steam, right-click Deadlock > Properties > Installed Files > Verify integrity of game files. This restores gameinfo.gi; the app re-applies your mods the next time you launch modded.",
-            },
-          ]}
+          steps={Object.entries(steps).map(([id, step]) => ({
+            title: step.title,
+            body: (
+              <Trans
+                t={t}
+                i18nKey={`fix.steps.${id as keyof typeof steps}.body`}
+                components={{ code: <code />, strong: <strong /> }}
+              />
+            ),
+          }))}
         />
       </GuideSection>
 
-      <GuideSection title='Why it happens'>
+      <GuideSection title={t("why.title")}>
         <div className={proseClassName}>
           <p>
-            To enable, disable or reorder mods, Deadlock Mod Manager renames{" "}
-            <code>.vpk</code> files in the addons folder and edits{" "}
-            <code>gameinfo.gi</code> so the game knows to load them. Windows
-            returns error 5 when the file is marked read-only, when a security
-            feature such as Controlled folder access guards the folder, or when
-            the file belongs to an administrator account the app isn't running
-            as.
+            <Trans t={t} i18nKey='why.cause' components={{ code: <code /> }} />
           </p>
           <p>
-            If the error says the files are <em>in use</em> instead, that's a
-            different problem: see{" "}
-            <Link to='/deadlock-mod-manager-failed-to-save-mod-order'>
-              Failed to save mod order
-            </Link>
-            . If launching fails with error 740, see{" "}
-            <Link to='/deadlock-mod-manager-os-error-740'>os error 740</Link>.
+            <Trans
+              t={t}
+              i18nKey='why.otherErrors'
+              components={{
+                em: <em />,
+                order: (
+                  <Link to='/deadlock-mod-manager-failed-to-save-mod-order' />
+                ),
+                os740: <Link to='/deadlock-mod-manager-os-error-740' />,
+              }}
+            />
           </p>
           <p>
-            Still stuck? The{" "}
-            <a
-              href={`${DOCS_URL}/using-mod-manager/troubleshooting#permission-issues`}
-              target='_blank'
-              rel='noopener noreferrer'>
-              permission troubleshooting docs
-            </a>{" "}
-            go further, and{" "}
-            <a href={DISCORD_URL} target='_blank' rel='noopener noreferrer'>
-              Discord
-            </a>{" "}
-            can help if you share the app logs.
+            <Trans
+              t={t}
+              i18nKey='why.stillStuck'
+              components={{
+                docs: (
+                  <a
+                    href={`${DOCS_URL}/using-mod-manager/troubleshooting#permission-issues`}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                  />
+                ),
+                discord: (
+                  <a
+                    href={DISCORD_URL}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                  />
+                ),
+              }}
+            />
           </p>
         </div>
       </GuideSection>
@@ -145,8 +113,8 @@ function OsError5Page() {
         guides={TROUBLESHOOTING_GUIDES}
       />
       <GuideDownloadBand
-        title='Mods without the file juggling'
-        body='Deadlock Mod Manager installs, orders and re-applies your mods so you rarely have to touch the game folder yourself.'
+        title={t("downloadBand.title")}
+        body={t("downloadBand.body")}
       />
     </div>
   );

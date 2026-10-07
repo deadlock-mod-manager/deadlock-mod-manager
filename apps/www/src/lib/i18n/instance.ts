@@ -1,9 +1,4 @@
-import {
-  createInstance,
-  type i18n,
-  type Resource,
-  type ResourceKey,
-} from "i18next";
+import { createInstance, type i18n, type ResourceKey } from "i18next";
 import { DEFAULT_LOCALE, LOCALES, type Locale } from "./locales";
 
 /**
@@ -34,29 +29,63 @@ export const NAMESPACES = [
 
 export type Namespace = (typeof NAMESPACES)[number];
 
-const files = import.meta.glob<ResourceKey>("../../locales/*/*.json", {
-  eager: true,
-  import: "default",
-});
+const namespaceOf = (file: string) => file.match(/([^/]+)\.json$/)?.[1] ?? file;
 
-const resources: Resource = {};
-for (const [file, content] of Object.entries(files)) {
-  const [, folder = "", name = ""] =
-    file.match(/locales\/([^/]+)\/([^/]+)\.json$/) ?? [];
-  const locale = LOCALES.find((entry) => entry.file === folder);
-  if (!locale) continue;
-  resources[locale.id] ??= {};
-  resources[locale.id][name] = content;
-}
+const byNamespace = (files: Record<string, ResourceKey>) =>
+  Object.fromEntries(
+    Object.entries(files).map(([file, content]) => [
+      namespaceOf(file),
+      content,
+    ]),
+  );
+
+/**
+ * English is the fallback for every missing key, so it ships with the app.
+ * Other languages load on demand, one chunk per language, so visitors only
+ * download the language they read.
+ */
+const english = byNamespace(
+  import.meta.glob<ResourceKey>("../../locales/en/*.json", {
+    eager: true,
+    import: "default",
+  }),
+);
+
+const loaders = {
+  ru: () => import("./bundles/ru-RU"),
+  "pt-BR": () => import("./bundles/pt-BR"),
+  pl: () => import("./bundles/pl-PL"),
+  de: () => import("./bundles/de-DE"),
+  fr: () => import("./bundles/fr-FR"),
+  es: () => import("./bundles/es-ES"),
+} satisfies Record<
+  Exclude<Locale, "en">,
+  () => Promise<{ default: Record<string, ResourceKey> }>
+>;
+
+/**
+ * Makes a language's strings available before anything renders in it: the
+ * root route awaits this on the server, and the router's hydrate step awaits
+ * it in the browser so the first client render matches the server HTML.
+ */
+export const ensureLocale = async (instance: i18n, locale: Locale) => {
+  if (locale === DEFAULT_LOCALE) return;
+  if (instance.hasResourceBundle(locale, "common")) return;
+  const { default: files } = await loaders[locale]();
+  for (const [ns, content] of Object.entries(byNamespace(files))) {
+    instance.addResourceBundle(locale, ns, content, true, true);
+  }
+};
 
 /**
  * A fresh i18next instance per router, so concurrent server renders never
- * share a language. Resources are bundled, so init is synchronous.
+ * share a language. English is bundled, so init is synchronous; call
+ * `ensureLocale` before rendering any other language.
  */
 export const createI18n = (locale: Locale = DEFAULT_LOCALE): i18n => {
   const instance = createInstance();
   instance.init({
-    resources,
+    resources: { [DEFAULT_LOCALE]: english },
     lng: locale,
     fallbackLng: DEFAULT_LOCALE,
     supportedLngs: LOCALES.map((entry) => entry.id),

@@ -1,5 +1,184 @@
 {
   "language": {
     "label": "Language"
+  },
+  "navbar": {
+    "homepage": "Homepage",
+    "primaryNav": "Primary",
+    "mobileNav": "Mobile",
+    "openMenu": "Open menu",
+    "download": "Download",
+    "links": {
+      "mods": "Mods",
+      "skins": "Skins",
+      "features": "Features",
+      "themes": "Themes",
+      "tools": "Tools",
+      "docs": "Docs"
+    }
+  },
+  "userMenu": {
+    "signIn": "Sign in",
+    "signInButton": "Sign In",
+    "signOut": "Sign Out",
+    "dashboard": "Dashboard",
+    "avatarFallback": "User"
+  },
+  "v2Banner": {
+    "short": "Rebuilt from the ground up.",
+    "long": "Rebuilt from the ground up: mods that survive game updates, a faster store and clash detection.",
+    "cta": "Try the preview"
+  },
+  "footer": {
+    "tagline": "A small, open-source app for installing and managing mods for the Valve game Deadlock.",
+    "disclaimer": "Not affiliated with Valve. \"Deadlock\" and related marks are trademarks of Valve Corporation.",
+    "headings": {
+      "links": "Links",
+      "guides": "Guides",
+      "support": "Support",
+      "partners": "Partners"
+    },
+    "links": {
+      "download": "Download",
+      "sourceCode": "Source Code",
+      "documentation": "Documentation",
+      "faq": "FAQ",
+      "reportBug": "Report Bug"
+    },
+    "legal": {
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service",
+      "transparency": "Transparency"
+    },
+    "madeBy": "{{copyright}}. Made with <heart /> by <link>Stormix</link>."
+  },
+  "statusWidget": {
+    "checking": "Checking status...",
+    "refresh": "Refresh status",
+    "status": {
+      "operational": "All systems are operational",
+      "downtime": "All systems are down",
+      "degraded": "Some systems are degraded",
+      "unknown": "Unknown status"
+    }
+  },
+  "cta": {
+    "downloadStarted": "Download started. Run the installer, then hit Launch Modded.",
+    "sendToPc": "Get it on your PC",
+    "sendNotes": {
+      "copied": "Link copied. Open it on your Windows or Linux PC.",
+      "shared": "Link sent. Open it on your Windows or Linux PC.",
+      "failed": "Open {{url}} on your Windows or Linux PC."
+    }
+  },
+  "platformDownload": {
+    "download": "Download",
+    "windows": "Download for Windows",
+    "linux": "Download for Linux",
+    "available": "Available for Windows and Linux",
+    "version": "Version {{version}} for {{os}}",
+    "versionWithArch": "Version {{version}} for {{os}} ({{arch}})"
+  },
+  "modCard": {
+    "heroSkin": "{{hero}} skin",
+    "categories": {
+      "skins": "Skins",
+      "qualityOfLife": "Quality of Life"
+    },
+    "byline": "{{kind}} by {{author}}",
+    "bylineWithDownloads": "{{kind}} by {{author}} · {{downloads}} downloads",
+    "alt": {
+      "heroSkin": "{{name}}, {{hero}} skin for Deadlock",
+      "skins": "{{name}}, a Deadlock skins mod",
+      "qualityOfLife": "{{name}}, a Deadlock quality of life mod"
+    }
+  },
+  "guidePage": {
+    "allDownloads": "All downloads",
+    "questions": "Questions",
+    "relatedGuides": "Related guides"
+  },
+  "guides": {
+    "mods": {
+      "label": "Deadlock mods",
+      "description": "Browse GameBanana mods and install them in one click."
+    },
+    "skins": {
+      "label": "Deadlock skins",
+      "description": "Pick a hero skin, preview it and swap back any time."
+    },
+    "install": {
+      "label": "How to install Deadlock mods",
+      "description": "Set up mods in a few minutes, with or without the app."
+    },
+    "notWorking": {
+      "label": "Mods not working after a patch",
+      "description": "Fix mods that broke after a Deadlock update."
+    },
+    "grimoire": {
+      "label": "Deadlock Mod Manager vs Grimoire",
+      "description": "How the two open-source mod managers compare."
+    },
+    "os5": {
+      "label": "Access is denied (os error 5)",
+      "description": "Read-only files or mods installed as admin block changes."
+    },
+    "os740": {
+      "label": "Requires elevation (os error 740)",
+      "description": "Steam is set to run as administrator."
+    },
+    "modOrder": {
+      "label": "Failed to save mod order",
+      "description": "The game or another app is holding mod files open."
+    },
+    "download": {
+      "label": "Failed to download / slow downloads",
+      "description": "GameBanana limits, antivirus and network problems."
+    },
+    "fatal": {
+      "label": "Deadlock Fatal Error on launch",
+      "description": "Unable to load layout file, unable to find child and more."
+    }
+  },
+  "fallbacks": {
+    "error": {
+      "title": "This page didn't load properly",
+      "staleBuild": "The site was just updated. Reload to get the latest version.",
+      "body": "Something on our side failed while loading this page. Try again, or head back home.",
+      "reload": "Reload",
+      "retry": "Try again",
+      "goHome": "Go home",
+      "stillBroken": "Still broken? <link>Let us know on GitHub</link>."
+    },
+    "notFound": {
+      "title": "Page not found",
+      "body": "This page doesn't exist or has moved.",
+      "goHome": "Go home",
+      "download": "Download the app"
+    }
+  },
+  "errorPages": {
+    "returnHome": "Return Home",
+    "escape": "Escape the Void",
+    "notFound": {
+      "meta": {
+        "title": "Page Not Found | Deadlock Mod Manager",
+        "description": "This page doesn't exist. Head back to Deadlock Mod Manager to download the app or try the web tools."
+      },
+      "title": "Lost in the Astral Gates",
+      "body": "This page has vanished through an Astral Gate during the Maelstrom. Even the Shopkeeper can't find it in his inventory!",
+      "stillLooking": "Still can't find what you're looking for?",
+      "hint": "Try checking <oracle>The New York Oracle</oracle> for the latest updates, or return to <home>the Cursed Apple</home> to continue your modding ritual."
+    },
+    "forbidden": {
+      "meta": {
+        "title": "Access Denied | Deadlock Mod Manager",
+        "description": "You don't have permission to view this page."
+      },
+      "title": "Access Denied",
+      "body": "This realm is protected by powerful wards. Even the Patrons cannot grant you passage without the proper authorization!",
+      "needAccess": "Need access to this area?",
+      "hint": "Contact an administrator or check <oracle>The New York Oracle</oracle> for assistance. Return to <home>the Cursed Apple</home> to continue your modding ritual."
+    }
   }
 }

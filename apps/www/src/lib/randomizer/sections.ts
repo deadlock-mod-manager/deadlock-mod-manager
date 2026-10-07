@@ -10,12 +10,6 @@ export type SectionKey = (typeof SECTION_KEYS)[number];
 
 export type Sections = Record<SectionKey, boolean>;
 
-export const SECTION_LABELS: Record<SectionKey, string> = {
-  build: "Build order",
-  abilities: "Abilities",
-  rules: "Rules",
-};
-
 export const ALL_SECTIONS: Sections = {
   build: true,
   abilities: true,

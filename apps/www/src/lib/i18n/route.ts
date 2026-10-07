@@ -6,12 +6,13 @@ import {
   isLocalizedPath,
   LOCALE_COOKIE,
   type Locale,
+  type LocaleState,
   localizePath,
 } from "./locales";
 
 interface I18nRouterContext {
   i18n: i18n;
-  locale: { current: Locale };
+  locale: LocaleState;
 }
 
 /**

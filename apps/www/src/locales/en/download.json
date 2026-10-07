@@ -1,1 +1,114 @@
-{}
+{
+  "meta": {
+    "title": "Download Deadlock Mod Manager for Windows & Linux",
+    "latest": "the latest Deadlock Mod Manager release",
+    "latestVersion": "the latest Deadlock Mod Manager release, v{{version}}",
+    "description": "Get {{latest}}: a Windows installer or a Linux package (Flatpak, .deb or .rpm). Free and open source, built from public code on GitHub."
+  },
+  "redirect": {
+    "windows": {
+      "metaTitle": "Downloading Deadlock Mod Manager for Windows",
+      "metaDescription": "Starting the Deadlock Mod Manager download for Windows.",
+      "preparing": "Preparing your Windows download...",
+      "redirecting": "Redirecting to Windows download..."
+    },
+    "linux": {
+      "metaTitle": "Downloading Deadlock Mod Manager for Linux",
+      "metaDescription": "Starting the Deadlock Mod Manager download for Linux.",
+      "preparing": "Preparing your Linux download...",
+      "redirecting": "Redirecting to Linux download..."
+    },
+    "fetching": "Fetching the latest version",
+    "errorTitle": "Download Error",
+    "errorDescription": "We couldn't fetch the latest releases. Please try again later.",
+    "goToDownloads": "Go to Downloads Page",
+    "fallback": "If the download doesn't start automatically, <button>click here</button> to go to the downloads page."
+  },
+  "hero": {
+    "whatsNew": "What's new",
+    "title": "Download Deadlock Mod Manager",
+    "description": "Find, install and update Deadlock mods in a couple of clicks. Grab the build for your system below.",
+    "otherPlatforms": "Other platforms",
+    "highlights": {
+      "openSource": "Free and open source",
+      "autoUpdate": "Updates itself automatically",
+      "platforms": "Windows and Linux"
+    }
+  },
+  "error": {
+    "title": "Downloads are temporarily unavailable",
+    "description": "We couldn’t fetch the latest releases. You can still grab the installer from GitHub.",
+    "github": "Download from GitHub"
+  },
+  "loading": {
+    "title": "Loading downloads",
+    "description": "Fetching the latest release…"
+  },
+  "latest": {
+    "title": "Choose your platform",
+    "released": "Version {{version}}, released {{date}}",
+    "installGuide": "Install guide",
+    "releaseNotes": "Release notes"
+  },
+  "releaseDate": {
+    "dateTime": "{{date}}, {{time}} UTC"
+  },
+  "platforms": {
+    "windows": {
+      "requirements": "Windows 10 or 11, 64-bit"
+    },
+    "linux": {
+      "requirements": "64-bit, most distributions"
+    },
+    "detected": "Detected system",
+    "noBuilds": "No {{platform}} builds for this version.",
+    "experimental": "Experimental Chromium builds ({{total}})",
+    "experimentalDescription": "Bundles the Chromium (CEF) engine instead of the system webview. Larger and less tested; only try these if the standard build has rendering problems."
+  },
+  "installer": {
+    "recommended": "Recommended",
+    "signature": "signature",
+    "signatureTitle": "Signature for {{filename}}",
+    "download": "Download",
+    "downloadLabel": "Download {{filename}}",
+    "types": {
+      "exe": {
+        "label": "Installer",
+        "description": "Windows 10 and 11 setup (.exe)"
+      },
+      "msi": {
+        "label": "MSI package",
+        "description": "For managed or silent installs (.msi)"
+      },
+      "dmg": {
+        "label": "Disk image",
+        "description": "macOS application (.dmg)"
+      },
+      "flatpak": {
+        "label": "Flatpak",
+        "description": "Works on most distributions"
+      },
+      "deb": {
+        "label": "Debian package",
+        "description": "Ubuntu, Debian, Mint (.deb)"
+      },
+      "rpm": {
+        "label": "RPM package",
+        "description": "Fedora, openSUSE, Nobara (.rpm)"
+      }
+    }
+  },
+  "history": {
+    "title": "Other versions",
+    "description": "Roll back to an earlier release or try upcoming changes early.",
+    "tabs": {
+      "stable": "Previous releases",
+      "prerelease": "Nightly builds"
+    },
+    "emptyStable": "No previous releases yet.",
+    "emptyPrerelease": "No nightly builds available right now.",
+    "nightlyWarning": "Nightly builds are made automatically from the latest code. They get new features first but may be unstable, so back up your mod setup before switching.",
+    "prerelease": "Pre-release",
+    "viewOnGithub": "View release on GitHub"
+  }
+}

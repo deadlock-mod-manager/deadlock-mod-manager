@@ -1,32 +1,28 @@
 /**
  * Search-landing pages, linked from the footer and from each other. Every path
- * here is also listed in INDEXABLE_PATHS so it lands in the sitemap.
+ * here is also listed in INDEXABLE_PATHS so it lands in the sitemap. Labels
+ * and descriptions live in the common namespace under `guides.<key>`.
  */
 export const GUIDES = [
   {
+    key: "mods",
     path: "/mods",
-    label: "Deadlock mods",
-    description: "Browse GameBanana mods and install them in one click.",
   },
   {
+    key: "skins",
     path: "/skins",
-    label: "Deadlock skins",
-    description: "Pick a hero skin, preview it and swap back any time.",
   },
   {
+    key: "install",
     path: "/how-to-install-deadlock-mods",
-    label: "How to install Deadlock mods",
-    description: "Set up mods in a few minutes, with or without the app.",
   },
   {
+    key: "notWorking",
     path: "/deadlock-mods-not-working",
-    label: "Mods not working after a patch",
-    description: "Fix mods that broke after a Deadlock update.",
   },
   {
+    key: "grimoire",
     path: "/compare/grimoire",
-    label: "Deadlock Mod Manager vs Grimoire",
-    description: "How the two open-source mod managers compare.",
   },
 ] as const;
 
@@ -36,29 +32,24 @@ export const GUIDES = [
  */
 export const ERROR_GUIDES = [
   {
+    key: "os5",
     path: "/deadlock-mod-manager-os-error-5",
-    label: "Access is denied (os error 5)",
-    description: "Read-only files or mods installed as admin block changes.",
   },
   {
+    key: "os740",
     path: "/deadlock-mod-manager-os-error-740",
-    label: "Requires elevation (os error 740)",
-    description: "Steam is set to run as administrator.",
   },
   {
+    key: "modOrder",
     path: "/deadlock-mod-manager-failed-to-save-mod-order",
-    label: "Failed to save mod order",
-    description: "The game or another app is holding mod files open.",
   },
   {
+    key: "download",
     path: "/deadlock-mod-manager-failed-to-download",
-    label: "Failed to download / slow downloads",
-    description: "GameBanana limits, antivirus and network problems.",
   },
   {
+    key: "fatal",
     path: "/deadlock-fatal-error-unable-to-load-layout-file",
-    label: "Deadlock Fatal Error on launch",
-    description: "Unable to load layout file, unable to find child and more.",
   },
 ] as const;
 

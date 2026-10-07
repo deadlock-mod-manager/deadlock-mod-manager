@@ -1,6 +1,7 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   type BundledLanguage,
   type BundledTheme,
@@ -20,6 +21,7 @@ export function SyntaxHighlighter({
   language = "keyvalues",
   errorLine,
 }: SyntaxHighlighterProps) {
+  const { t } = useTranslation("tool-kv");
   const { theme } = useTheme();
   const [highlighter, setHighlighter] = useState<
     HighlighterGeneric<BundledLanguage, BundledTheme> | undefined
@@ -65,7 +67,7 @@ export function SyntaxHighlighter({
           size='sm'
           variant='secondary'
           className='h-8 px-3'>
-          {copied ? "Copied!" : "Copy"}
+          {copied ? t("viewer.copied") : t("viewer.copy")}
         </Button>
       </div>
       <div

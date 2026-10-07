@@ -1,4 +1,6 @@
+import { useTranslation } from "react-i18next";
 import type { ItemCategory } from "@/lib/deadlock-assets";
+import { useNumberFormat } from "@/lib/i18n/route";
 import { cn } from "@/lib/utils";
 
 export const CATEGORY_TEXT: Record<ItemCategory, string> = {
@@ -25,8 +27,11 @@ export const CATEGORY_BAR: Record<ItemCategory, string> = {
   spirit: "bg-dl-spirit",
 };
 
-export const formatSouls = (souls: number): string =>
-  souls.toLocaleString("en-US");
+/** Soul counts with the active language's digit grouping. */
+export const useFormatSouls = () => {
+  const format = useNumberFormat();
+  return (souls: number): string => format.format(souls);
+};
 
 /** Shop descriptions ship with Panorama markup the page has no use for. */
 export const stripMarkup = (value: string | undefined): string => {
@@ -93,16 +98,20 @@ export const TierPips = ({
   tier: number;
   category: ItemCategory;
   max?: number;
-}) => (
-  <div className='flex gap-0.5' title={`Tier ${tier}`}>
-    {Array.from({ length: max }, (_, index) => (
-      <span
-        key={index}
-        className={cn(
-          "h-0.5 w-2 rounded-full",
-          index < tier ? CATEGORY_BAR[category] : "bg-muted-foreground/25",
-        )}
-      />
-    ))}
-  </div>
-);
+}) => {
+  const { t } = useTranslation("tool-randomizer");
+
+  return (
+    <div className='flex gap-0.5' title={t("item.tier", { tier })}>
+      {Array.from({ length: max }, (_, index) => (
+        <span
+          key={index}
+          className={cn(
+            "h-0.5 w-2 rounded-full",
+            index < tier ? CATEGORY_BAR[category] : "bg-muted-foreground/25",
+          )}
+        />
+      ))}
+    </div>
+  );
+};

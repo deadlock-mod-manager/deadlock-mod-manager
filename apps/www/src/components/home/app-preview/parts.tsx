@@ -9,8 +9,9 @@ import {
   type Icon,
   SparkleIcon,
 } from "@phosphor-icons/react";
+import { useTranslation } from "react-i18next";
 import { modThumbnail, type PreviewMod } from "./mods";
-import { formatCount, formatDate, usePreviewState } from "./preview-state";
+import { usePreviewFormat, usePreviewState } from "./preview-state";
 
 // The snapshot's "today", so "Updated recently" stays stable over time.
 const SNAPSHOT_DATE = Date.parse("2026-10-05T00:00:00Z");
@@ -55,6 +56,8 @@ export const EmptyState = ({
 
 /** The Mods Store card (apps/desktop/src/components/mod-browsing/mod-card.tsx). */
 export const ModCard = ({ mod }: { mod: PreviewMod }) => {
+  const { t } = useTranslation("preview");
+  const { formatCount, formatDate } = usePreviewFormat();
   const { installs, download, toggle } = usePreviewState();
   const install = installs[mod.id];
 
@@ -70,11 +73,13 @@ export const ModCard = ({ mod }: { mod: PreviewMod }) => {
           className='aspect-[4/3] w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]'
         />
         <div className='absolute inset-x-0 bottom-0 flex items-end justify-end gap-1 bg-linear-to-t from-black/60 to-transparent px-2 pt-6 pb-2'>
-          {install?.status === "installed" && <Badge>Installed</Badge>}
+          {install?.status === "installed" && (
+            <Badge>{t("mod.installed")}</Badge>
+          )}
           {isRecentlyUpdated(mod) && (
             <Badge variant='secondary'>
               <SparkleIcon weight='fill' className='mr-1 size-3' />
-              Updated recently
+              {t("mod.updatedRecently")}
             </Badge>
           )}
         </div>
@@ -82,7 +87,7 @@ export const ModCard = ({ mod }: { mod: PreviewMod }) => {
       <div className='flex flex-1 flex-col gap-1 px-3 py-4'>
         <h4 className='truncate font-semibold leading-tight'>{mod.name}</h4>
         <p className='truncate text-muted-foreground text-sm'>
-          By {mod.author}
+          {t("mod.byAuthor", { author: mod.author })}
         </p>
         <div className='mt-auto flex items-end justify-between gap-2 pt-2'>
           <div className='flex flex-col gap-1.5 text-muted-foreground text-xs'>
@@ -101,12 +106,12 @@ export const ModCard = ({ mod }: { mod: PreviewMod }) => {
             <Switch
               checked={install.enabled}
               onCheckedChange={() => toggle(mod.id)}
-              aria-label={`Enable ${mod.name}`}
+              aria-label={t("mod.enable", { name: mod.name })}
             />
           ) : install?.status === "downloading" ? (
             <span
               role='progressbar'
-              aria-label={`Downloading ${mod.name}`}
+              aria-label={t("mod.downloading", { name: mod.name })}
               aria-valuenow={Math.round(install.progress)}
               className='relative flex size-9 items-center justify-center rounded-md border border-input font-medium text-[10px] tabular-nums'
               style={{
@@ -118,7 +123,7 @@ export const ModCard = ({ mod }: { mod: PreviewMod }) => {
             <button
               type='button'
               onClick={() => download(mod)}
-              aria-label={`Download ${mod.name}`}
+              aria-label={t("mod.download", { name: mod.name })}
               className={cn(
                 buttonVariants({ variant: "outline" }),
                 "size-9 px-0",

@@ -15,11 +15,12 @@ import { MainLayout } from "@/components/layouts/main-layout";
 import { ThemeProvider } from "@/components/theme-provider";
 import { sessionQueryOptions } from "@/hooks/use-oidc-session";
 import { detectPreferredLocale } from "@/lib/i18n/detect";
+import { ensureLocale } from "@/lib/i18n/instance";
 import {
   DEFAULT_LOCALE,
   getLocaleConfig,
   isLocalizedPath,
-  type Locale,
+  type LocaleState,
   localizePath,
 } from "@/lib/i18n/locales";
 import { prefetchWithin } from "@/lib/prefetch";
@@ -31,13 +32,16 @@ interface MyRouterContext {
   queryClient: QueryClient;
   i18n: i18n;
   /** Active language, set by the router's URL rewrite. */
-  locale: { current: Locale };
+  locale: LocaleState;
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  // First visit to an English page from a browser that prefers one of our
-  // other languages: send it to that language's URL.
+  // On a first visit to an English page from a browser that prefers one of
+  // our other languages, send it to that language's URL.
   beforeLoad: async ({ location, context }) => {
+    // The page's language must be loaded before it renders (on the server,
+    // and in the browser if a navigation ever switches language).
+    await ensureLocale(context.i18n, context.locale.current);
     if (!isServer) return;
     if (context.locale.current !== DEFAULT_LOCALE) return;
     if (!isLocalizedPath(location.pathname)) return;

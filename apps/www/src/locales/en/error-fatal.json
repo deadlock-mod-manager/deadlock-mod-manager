@@ -1,1 +1,104 @@
-{}
+{
+  "meta": {
+    "name": "Deadlock Fatal Error on launch",
+    "title": "Deadlock \"Fatal Error: Unable to Load Layout File\" Fix (Mods)",
+    "description": "Fix Deadlock Fatal Error crashes caused by mods: unable to load layout file, unable to find child (IdolCashInMeter), failed to read 16 bytes, unable to load gameinfo.gi and KV3 parse errors."
+  },
+  "hero": {
+    "eyebrow": "Error fix",
+    "title": "Deadlock \"Fatal Error\" when launching with mods",
+    "intro": "A Fatal Error dialog right as Deadlock starts almost always means a mod no longer matches the game, usually a HUD mod after a patch. The exact message tells you which kind.",
+    "errorSource": "Deadlock, on launch"
+  },
+  "errorText": {
+    "message": "Fatal Error: Unable to load layout file",
+    "errors": {
+      "layoutFile": "Fatal Error: Unable to load layout file 'panorama/layout/…'",
+      "findChild": "Fatal Error: Unable to find child 'IdolCashInMeter'",
+      "read16Bytes": "Fatal Error: Failed to read 16 bytes",
+      "gameinfo": "Fatal Error: Application unable to load gameinfo.gi",
+      "kv3": "Error parsing KV3 data"
+    }
+  },
+  "fix": {
+    "title": "Fix it in four steps",
+    "steps": {
+      "confirm": {
+        "title": "Confirm a mod is the cause",
+        "body": "In Deadlock Mod Manager, use Launch without mods. If the game starts, your Deadlock install is fine and one of your mods is the problem."
+      },
+      "update": {
+        "title": "Update your mods",
+        "body": "Check the Mods Library for updates. Mod authors usually fix their HUD mods within a few days of a patch."
+      },
+      "disableHud": {
+        "title": "Disable HUD and UI mods",
+        "body": "These cause most layout and find-child errors. Turn them off, then Launch modded again."
+      },
+      "narrowDown": {
+        "title": "Narrow down the rest",
+        "body": "Still crashing? Disable half of your remaining mods and launch. Keep halving the group that crashes until you find the one mod responsible."
+      }
+    }
+  },
+  "errors": {
+    "title": "Fatal errors by message",
+    "intro": "Match the text in the error dialog.",
+    "whyLabel": "Why:",
+    "fixLabel": "Fix:",
+    "kvParserLink": "Open the KeyValues parser",
+    "items": {
+      "layoutFile": {
+        "cause": "An outdated HUD or UI mod replaces interface files that a patch changed.",
+        "fix": "Disable HUD and UI mods, launch, and turn them back on once updated."
+      },
+      "findChild": {
+        "cause": "A HUD mod references an interface element the patch renamed or removed. KothCashInMeter and similar names are the same problem.",
+        "fix": "Disable HUD mods until their authors publish a fix."
+      },
+      "read16Bytes": {
+        "cause": "A damaged or half-downloaded file, usually a .vpk.",
+        "fix": "Remove and reinstall recently added mods. If it still crashes without mods, verify game files in Steam."
+      },
+      "gameinfo": {
+        "cause": "gameinfo.gi is missing or was edited into an invalid state.",
+        "fix": "Verify game files in Steam, then Launch modded so the app re-adds the mod paths."
+      },
+      "kv3": {
+        "cause": "A config file in a mod, or a hand-edited gameinfo.gi, has a syntax error.",
+        "fix": "Disable recently added mods. If you edited gameinfo.gi by hand, paste it into the KeyValues parser to find the broken line."
+      }
+    }
+  },
+  "withoutMods": {
+    "title": "Crashes without any mods?",
+    "verify": "If Launch without mods also crashes, the problem is in the game files rather than a mod. In Steam, right-click Deadlock, open <strong>Properties > Installed Files</strong> and choose <strong>Verify integrity of game files</strong>. Your mods stay installed, and the app re-applies them the next time you launch modded.",
+    "notWorking": "For mods that stopped working without a crash, see <guide>Deadlock mods not working after an update</guide>. Ask on <discord>Discord</discord> to find out which mods broke with the latest patch."
+  },
+  "faqs": {
+    "layoutFile": {
+      "question": "What causes Fatal Error: Unable to load layout file in Deadlock?",
+      "answer": "An outdated HUD or UI mod. These mods replace Panorama layout files, and when a Deadlock patch changes the interface, the old files no longer match. Disable your HUD and UI mods, launch, and re-enable them once they're updated."
+    },
+    "findChild": {
+      "question": "How do I fix Unable to find child IdolCashInMeter?",
+      "answer": "The same way. A HUD mod still points to an interface element that Valve renamed or removed, such as IdolCashInMeter or KothCashInMeter. Disable HUD mods until their authors release an update."
+    },
+    "read16Bytes": {
+      "question": "What does Fatal Error: Failed to read 16 bytes mean?",
+      "answer": "The game hit a damaged or incomplete file while reading, most often a .vpk that didn't finish downloading. Remove and reinstall your most recent mods, and verify Deadlock's files in Steam if it happens with mods disabled."
+    },
+    "gameinfo": {
+      "question": "How do I fix Application unable to load gameinfo.gi?",
+      "answer": "gameinfo.gi is missing or was edited into an invalid state. Verify integrity of game files in Steam to restore it, then use Launch modded in Deadlock Mod Manager to add the mod paths back correctly."
+    },
+    "findMod": {
+      "question": "How do I know which mod is crashing Deadlock?",
+      "answer": "Use Launch without mods to confirm the game starts clean. Then disable half of your mods, launch modded, and keep halving the group that crashes until one mod is left."
+    }
+  },
+  "downloadBand": {
+    "title": "Find the broken mod faster",
+    "body": "Launch with or without mods in one click, see which mods have updates, and toggle them without touching the game folder."
+  }
+}

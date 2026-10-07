@@ -1,5 +1,4 @@
 import {
-  BACKGROUND_LABELS,
   BACKGROUND_PATHS,
   type BackgroundKey,
 } from "@deadlock-mods/crosshair/backgrounds";
@@ -14,23 +13,27 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { CrosshairCanvas } from "@/components/crosshair/crosshair-canvas";
 import { CrosshairControls } from "@/components/crosshair/crosshair-controls";
 import {
   ExportButton,
   ShareButton,
 } from "@/components/crosshair/export-button";
+import { headI18n } from "@/lib/i18n/route";
 import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/crosshair-generator")({
   component: CrosshairGeneratorPage,
-  head: () =>
-    seo({
-      title: "Deadlock Crosshair Generator: Design & Share Crosshairs",
-      description:
-        "Design a custom Deadlock crosshair with a live preview over in-game backgrounds, then copy the config or share a link. Adjust gap, size, pips, dot and outline.",
+  head: ({ match }) => {
+    const { t, locale } = headI18n(match, "tool-crosshair");
+    return seo({
+      title: t("meta.title"),
+      description: t("meta.description"),
       path: "/crosshair-generator",
-    }),
+      locale,
+    });
+  },
   validateSearch: (search: Record<string, unknown>): { edit?: string } => {
     return {
       edit: typeof search.edit === "string" ? search.edit : undefined,
@@ -39,6 +42,7 @@ export const Route = createFileRoute("/crosshair-generator")({
 });
 
 function CrosshairGeneratorPage() {
+  const { t } = useTranslation("tool-crosshair");
   const search = useSearch({ from: "/crosshair-generator" });
   const navigate = useNavigate();
   const [config, setConfig] = useState<CrosshairConfig>(
@@ -73,18 +77,13 @@ function CrosshairGeneratorPage() {
     <div className='container mx-auto px-4 py-8'>
       {isEditMode && (
         <Alert className='mb-6'>
-          <AlertDescription>
-            You're editing a shared crosshair. Any changes will create a new
-            configuration.
-          </AlertDescription>
+          <AlertDescription>{t("page.editingShared")}</AlertDescription>
         </Alert>
       )}
 
       <div className='mb-8'>
-        <h1 className='text-4xl font-bold mb-2'>Crosshair Generator</h1>
-        <p className='text-muted-foreground'>
-          Create and customize your Deadlock crosshair
-        </p>
+        <h1 className='text-4xl font-bold mb-2'>{t("page.title")}</h1>
+        <p className='text-muted-foreground'>{t("page.description")}</p>
       </div>
 
       <div className='grid grid-cols-1 lg:grid-cols-3 gap-8'>
@@ -103,13 +102,13 @@ function CrosshairGeneratorPage() {
           <div className='sticky top-4'>
             <div className='rounded-lg border bg-card p-6'>
               <div className='flex justify-between items-center mb-4'>
-                <h2 className='text-2xl font-semibold'>Preview</h2>
+                <h2 className='text-2xl font-semibold'>{t("preview.title")}</h2>
                 <div className='flex gap-2'>
                   <Button
                     variant={background === null ? "default" : "outline"}
                     size='sm'
                     onClick={() => setBackground(null)}>
-                    None
+                    {t("preview.none")}
                   </Button>
                   {Object.keys(BACKGROUND_PATHS).map((key) => {
                     const bgKey = key as NonNullable<BackgroundKey>;
@@ -119,7 +118,7 @@ function CrosshairGeneratorPage() {
                         variant={background === bgKey ? "default" : "outline"}
                         size='sm'
                         onClick={() => setBackground(bgKey)}>
-                        {BACKGROUND_LABELS[bgKey]}
+                        {t(`preview.backgrounds.${bgKey}`)}
                       </Button>
                     );
                   })}
@@ -133,8 +132,7 @@ function CrosshairGeneratorPage() {
                 />
               </div>
               <p className='text-sm text-muted-foreground mt-4'>
-                Move your mouse over the preview to see how the crosshair
-                behaves in-game.
+                {t("preview.hint")}
               </p>
             </div>
           </div>

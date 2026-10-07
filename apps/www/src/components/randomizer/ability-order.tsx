@@ -1,4 +1,6 @@
 import { LockOpen } from "@deadlock-mods/ui/icons";
+import type { TFunction } from "i18next";
+import { useTranslation } from "react-i18next";
 import {
   abilityImage,
   type DeadlockAbility,
@@ -45,9 +47,10 @@ const AbilityIcon = ({
 };
 
 const abilityName = (
+  t: TFunction<"tool-randomizer">,
   abilities: (DeadlockAbility | undefined)[],
   slot: number,
-): string => abilities[slot - 1]?.name ?? `Ability ${slot}`;
+): string => abilities[slot - 1]?.name ?? t("abilities.fallback", { slot });
 
 /** Where in the skill order each of an ability's four steps comes. */
 const positionsBySlot = (steps: SkillStep[]) => {
@@ -60,14 +63,17 @@ const positionsBySlot = (steps: SkillStep[]) => {
   return positions;
 };
 
-const stepLabel = (step: SkillStep): string =>
-  step.kind === "unlock" ? "Unlock" : `+${step.apCost} AP`;
+const stepLabel = (t: TFunction<"tool-randomizer">, step: SkillStep): string =>
+  step.kind === "unlock"
+    ? t("abilities.unlock")
+    : t("abilities.cost", { cost: step.apCost });
 
 export const AbilityPriority = ({
   steps,
   abilities,
   unlockOrder,
 }: AbilityOrderProps & { unlockOrder: number[] }) => {
+  const { t } = useTranslation("tool-randomizer");
   const positions = positionsBySlot(steps);
   const maxedFirst = [...positions.entries()].sort(
     (a, b) => (a[1].at(-1) ?? 99) - (b[1].at(-1) ?? 99),
@@ -96,14 +102,16 @@ export const AbilityPriority = ({
             <div className='min-w-0 flex-1'>
               <div className='flex items-baseline gap-2'>
                 <span className='truncate font-medium text-dl-offwhite text-sm'>
-                  {abilityName(abilities, slot)}
+                  {abilityName(t, abilities, slot)}
                 </span>
                 {slot === ULTIMATE_SLOT ? (
-                  <span className='dl-label shrink-0 text-dl-gold/60'>Ult</span>
+                  <span className='dl-label shrink-0 text-dl-gold/60'>
+                    {t("abilities.ultimate")}
+                  </span>
                 ) : null}
                 {isPriority ? (
                   <span className='dl-label ml-auto shrink-0 text-[rgb(var(--hero))]'>
-                    Max first
+                    {t("abilities.maxFirst")}
                   </span>
                 ) : null}
               </div>
@@ -119,8 +127,8 @@ export const AbilityPriority = ({
                     )}
                     title={
                       index === 0
-                        ? `Unlocked at step ${position}`
-                        : `Upgrade ${index} at step ${position}`
+                        ? t("abilities.unlockedAt", { position })
+                        : t("abilities.upgradeAt", { upgrade: index, position })
                     }>
                     {position}
                   </span>
@@ -134,52 +142,62 @@ export const AbilityPriority = ({
   );
 };
 
-export const SkillTrack = ({ steps, abilities }: AbilityOrderProps) => (
-  <div className='dl-notch border border-[rgb(var(--hero)/0.18)] bg-background-dark/60 p-4'>
-    <div className='grid grid-cols-4 gap-2 sm:grid-cols-8 lg:grid-cols-16'>
-      {steps.map((step, index) => {
-        const isUnlock = step.kind === "unlock";
-        return (
-          <div
-            key={`${step.slot}-${step.kind === "unlock" ? 0 : step.step}`}
-            className='animate-dl-rise flex flex-col items-center gap-1.5'
-            style={{ animationDelay: `${index * 35}ms` }}>
-            <span className='font-mono text-[10px] text-muted-foreground/50 tabular-nums'>
-              {index + 1}
-            </span>
-            <div className='relative w-full'>
-              <AbilityIcon
-                ability={abilities[step.slot - 1]}
-                className={cn(
-                  "aspect-square w-full",
-                  isUnlock && "border-dl-gold/50 border-dashed bg-dl-gold/5",
-                )}
-                slot={step.slot}
-              />
-              {isUnlock ? (
-                <LockOpen
-                  aria-hidden='true'
-                  className='absolute -top-1 -right-1 size-3.5 text-dl-gold'
+export const SkillTrack = ({ steps, abilities }: AbilityOrderProps) => {
+  const { t } = useTranslation("tool-randomizer");
+
+  return (
+    <div className='dl-notch border border-[rgb(var(--hero)/0.18)] bg-background-dark/60 p-4'>
+      <div className='grid grid-cols-4 gap-2 sm:grid-cols-8 lg:grid-cols-16'>
+        {steps.map((step, index) => {
+          const isUnlock = step.kind === "unlock";
+          return (
+            <div
+              key={`${step.slot}-${step.kind === "unlock" ? 0 : step.step}`}
+              className='animate-dl-rise flex flex-col items-center gap-1.5'
+              style={{ animationDelay: `${index * 35}ms` }}>
+              <span className='font-mono text-[10px] text-muted-foreground/50 tabular-nums'>
+                {index + 1}
+              </span>
+              <div className='relative w-full'>
+                <AbilityIcon
+                  ability={abilities[step.slot - 1]}
+                  className={cn(
+                    "aspect-square w-full",
+                    isUnlock && "border-dl-gold/50 border-dashed bg-dl-gold/5",
+                  )}
+                  slot={step.slot}
                 />
-              ) : null}
+                {isUnlock ? (
+                  <LockOpen
+                    aria-hidden='true'
+                    className='absolute -top-1 -right-1 size-3.5 text-dl-gold'
+                  />
+                ) : null}
+              </div>
+              <span className='sr-only'>
+                {isUnlock
+                  ? t("abilities.srUnlock", {
+                      ability: abilityName(t, abilities, step.slot),
+                    })
+                  : t("abilities.srUpgrade", {
+                      ability: abilityName(t, abilities, step.slot),
+                      step: step.step,
+                    })}
+              </span>
+              <span
+                className={cn(
+                  "font-mono text-[11px] tabular-nums",
+                  isUnlock ? "text-dl-gold/90" : "text-[rgb(var(--hero))]",
+                )}>
+                {stepLabel(t, step)}
+              </span>
+              <span className='font-mono text-[10px] text-muted-foreground/45 tabular-nums'>
+                {isUnlock ? "–" : t("abilities.spent", { spent: step.apSpent })}
+              </span>
             </div>
-            <span className='sr-only'>
-              {abilityName(abilities, step.slot)},{" "}
-              {isUnlock ? "unlock" : `upgrade ${step.step}`}
-            </span>
-            <span
-              className={cn(
-                "font-mono text-[11px] tabular-nums",
-                isUnlock ? "text-dl-gold/90" : "text-[rgb(var(--hero))]",
-              )}>
-              {stepLabel(step)}
-            </span>
-            <span className='font-mono text-[10px] text-muted-foreground/45 tabular-nums'>
-              {isUnlock ? "–" : `${step.apSpent} AP`}
-            </span>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
-  </div>
-);
+  );
+};

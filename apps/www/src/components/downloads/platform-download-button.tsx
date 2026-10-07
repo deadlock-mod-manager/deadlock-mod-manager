@@ -2,6 +2,7 @@ import { Button } from "@deadlock-mods/ui/components/button";
 import { Download } from "@deadlock-mods/ui/icons";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FaLinux, FaWindows } from "react-icons/fa";
 import { useAnalyticsContext } from "@/components/analytics-provider";
 import { DOWNLOAD_URL } from "@/lib/constants";
@@ -47,17 +48,19 @@ interface PlatformButtonTextProps {
 }
 
 export const PlatformButtonText = ({ os }: PlatformButtonTextProps) => {
+  const { t } = useTranslation("common");
+
   if (os === "unknown" || os === "macos") {
-    return "Download";
+    return t("platformDownload.download");
   }
 
   switch (os) {
     case "windows":
-      return "Download for Windows";
+      return t("platformDownload.windows");
     case "linux":
-      return "Download for Linux";
+      return t("platformDownload.linux");
     default:
-      return "Download";
+      return t("platformDownload.download");
   }
 };
 
@@ -69,6 +72,7 @@ export const PlatformButtonText = ({ os }: PlatformButtonTextProps) => {
  * get a direct download link.
  */
 export const usePlatformDownload = () => {
+  const { t } = useTranslation("common");
   const [userOS, setUserOS] = useState<DeviceInfo | null>(null);
   const { data: releases } = useQuery(orpc.getReleases.queryOptions());
   const { analytics } = useAnalyticsContext();
@@ -93,11 +97,16 @@ export const usePlatformDownload = () => {
 
   const versionInfo = (() => {
     if (!userOS || !releases?.latest || !recommendedDownload) return "";
-    const archText =
-      recommendedDownload.architecture === "universal"
-        ? ""
-        : ` (${recommendedDownload.architecture})`;
-    return `Version ${releases.latest.version} for ${userOS.displayName}${archText}`;
+    const values = {
+      version: releases.latest.version,
+      os: userOS.displayName,
+    };
+    return recommendedDownload.architecture === "universal"
+      ? t("platformDownload.version", values)
+      : t("platformDownload.versionWithArch", {
+          ...values,
+          arch: recommendedDownload.architecture,
+        });
   })();
 
   const onClick = () => {
@@ -135,8 +144,9 @@ export const PlatformDownloadButton = ({
   variant = "default",
   showVersionInfo = false,
 }: PlatformDownloadButtonProps) => {
+  const { t } = useTranslation("common");
   const { os, canInstall, versionInfo, linkProps } = usePlatformDownload();
-  const note = canInstall ? versionInfo : "Available for Windows and Linux";
+  const note = canInstall ? versionInfo : t("platformDownload.available");
 
   return (
     <div className='flex flex-col items-center'>

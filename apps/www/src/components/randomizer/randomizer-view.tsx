@@ -20,8 +20,8 @@ import {
   X,
 } from "@deadlock-mods/ui/icons";
 import { useEffect, useRef, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import {
-  CATEGORY_LABELS,
   type DeadlockAbility,
   type DeadlockHero,
   heroAccent,
@@ -30,21 +30,17 @@ import {
   ITEM_CATEGORIES,
 } from "@/lib/deadlock-assets";
 import type { Roll } from "@/lib/randomizer/roll";
-import {
-  SECTION_KEYS,
-  SECTION_LABELS,
-  type Sections,
-} from "@/lib/randomizer/sections";
+import { SECTION_KEYS, type Sections } from "@/lib/randomizer/sections";
 import { cn } from "@/lib/utils";
 import { AbilityPriority, SkillTrack } from "./ability-order";
 import { ItemCard } from "./item-card";
 import {
   CATEGORY_BAR,
   CATEGORY_TEXT,
-  formatSouls,
   MicroLabel,
   Panel,
   SectionHeading,
+  useFormatSouls,
 } from "./primitives";
 
 interface RandomizerViewProps {
@@ -72,6 +68,7 @@ const titleCase = (value: string): string =>
 const COPY_FEEDBACK_MS = 2000;
 
 const CopyLinkButton = () => {
+  const { t } = useTranslation("tool-randomizer");
   // The clipboard is a permission the browser can refuse, so the button says
   // which of the two happened rather than silently claiming success.
   const [result, setResult] = useState<"idle" | "copied" | "failed">("idle");
@@ -97,9 +94,7 @@ const CopyLinkButton = () => {
     copied: <Check className='size-4' />,
     failed: <X className='size-4' />,
   }[result];
-  const label = { idle: "Copy link", copied: "Copied", failed: "Copy failed" }[
-    result
-  ];
+  const label = t(`toolbar.copyLink.${result}`);
 
   return (
     <Button onClick={copy} size='sm' variant='outline'>
@@ -160,32 +155,36 @@ const SectionPicker = ({
 }: {
   sections: Sections;
   onChange: (sections: Sections) => void;
-}) => (
-  <DropdownMenu>
-    <DropdownMenuTrigger asChild>
-      <Button size='sm' variant='outline'>
-        <SlidersHorizontal className='size-4' />
-        Sections
-        <ChevronDown className='size-3.5 opacity-60' />
-      </Button>
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align='end' className='w-52'>
-      <DropdownMenuLabel>Roll me</DropdownMenuLabel>
-      <DropdownMenuSeparator />
-      {SECTION_KEYS.map((key) => (
-        <DropdownMenuCheckboxItem
-          key={key}
-          checked={sections[key]}
-          onCheckedChange={(checked) =>
-            onChange({ ...sections, [key]: checked === true })
-          }
-          onSelect={(event) => event.preventDefault()}>
-          {SECTION_LABELS[key]}
-        </DropdownMenuCheckboxItem>
-      ))}
-    </DropdownMenuContent>
-  </DropdownMenu>
-);
+}) => {
+  const { t } = useTranslation("tool-randomizer");
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button size='sm' variant='outline'>
+          <SlidersHorizontal className='size-4' />
+          {t("sections.trigger")}
+          <ChevronDown className='size-3.5 opacity-60' />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align='end' className='w-52'>
+        <DropdownMenuLabel>{t("sections.label")}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        {SECTION_KEYS.map((key) => (
+          <DropdownMenuCheckboxItem
+            key={key}
+            checked={sections[key]}
+            onCheckedChange={(checked) =>
+              onChange({ ...sections, [key]: checked === true })
+            }
+            onSelect={(event) => event.preventDefault()}>
+            {t(`sections.options.${key}`)}
+          </DropdownMenuCheckboxItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
 
 const HeroPicker = ({
   heroes,
@@ -196,6 +195,7 @@ const HeroPicker = ({
   locked?: DeadlockHero;
   onChange: (slug: string | undefined) => void;
 }) => {
+  const { t } = useTranslation("tool-randomizer");
   const sorted = [...heroes].sort((a, b) => a.name.localeCompare(b.name));
   const lockedIcon = locked ? heroImage(locked, "small") : undefined;
 
@@ -208,14 +208,14 @@ const HeroPicker = ({
           ) : (
             <UserRound className='size-4' />
           )}
-          {locked ? locked.name : "Any hero"}
+          {locked ? locked.name : t("heroPicker.anyHero")}
           <ChevronDown className='size-3.5 opacity-60' />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align='end'
         className='max-h-[min(28rem,70vh)] w-56 overflow-y-auto'>
-        <DropdownMenuLabel>Roll builds for</DropdownMenuLabel>
+        <DropdownMenuLabel>{t("heroPicker.label")}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuRadioGroup
           onValueChange={(value) =>
@@ -223,7 +223,7 @@ const HeroPicker = ({
           }
           value={locked ? heroSlug(locked) : ANY_HERO}>
           <DropdownMenuRadioItem value={ANY_HERO}>
-            Any hero
+            {t("heroPicker.anyHero")}
           </DropdownMenuRadioItem>
           {sorted.map((hero) => {
             const icon = heroImage(hero, "small");
@@ -270,6 +270,8 @@ export const RandomizerView = ({
   onReroll,
   onSectionsChange,
 }: RandomizerViewProps) => {
+  const { t } = useTranslation("tool-randomizer");
+  const formatSouls = useFormatSouls();
   const { hero } = roll;
   const locked = heroes.find((entry) => heroSlug(entry) === lockedHero);
   const card = heroImage(hero, "card");
@@ -300,26 +302,30 @@ export const RandomizerView = ({
           <SectionPicker onChange={onSectionsChange} sections={sections} />
           <Button onClick={onReroll} size='sm'>
             <Dices className='size-4' />
-            Reroll
+            {t("toolbar.reroll")}
           </Button>
         </div>
 
         <h1 className='sr-only'>
-          You are playing {hero.name}
-          {hero.description.role ? `, ${hero.description.role}` : null}
+          {hero.description.role
+            ? t("hero.headingWithRole", {
+                hero: hero.name,
+                role: hero.description.role,
+              })
+            : t("hero.heading", { hero: hero.name })}
         </h1>
 
         <p
           aria-hidden='true'
           className='font-primary text-3xl text-dl-offwhite/80 md:text-4xl'>
-          You are playing
+          {t("hero.youArePlaying")}
         </p>
         <div aria-hidden='true' className='mt-2'>
           <HeroWordmark hero={hero} />
         </div>
         {hero.description.role ? (
           <p className='mt-3 font-primary text-2xl text-muted-foreground md:text-3xl'>
-            {hero.description.role}.
+            {t("hero.role", { role: hero.description.role })}
           </p>
         ) : null}
 
@@ -335,7 +341,9 @@ export const RandomizerView = ({
               ) : null}
               <div className='absolute inset-0 bg-gradient-to-t from-background via-background/10 to-transparent' />
               <div className='absolute inset-x-0 bottom-0 p-4'>
-                <MicroLabel className='mb-1'>Complexity</MicroLabel>
+                <MicroLabel className='mb-1'>
+                  {t("facts.complexity")}
+                </MicroLabel>
                 <div className='flex gap-1'>
                   {[1, 2, 3].map((level) => (
                     <span
@@ -359,13 +367,13 @@ export const RandomizerView = ({
               sections.abilities ? "lg:col-span-4" : "lg:col-span-9",
             )}>
             <div className='grid grid-cols-2 gap-5'>
-              <Fact label='Lane'>
+              <Fact label={t("facts.lane")}>
                 <div className='font-primary text-2xl text-dl-offwhite'>
-                  {roll.lane}
+                  {t(`lanes.${roll.lane}`)}
                 </div>
               </Fact>
               {hero.hero_type ? (
-                <Fact label='Archetype'>
+                <Fact label={t("facts.archetype")}>
                   <div className='font-primary text-2xl text-dl-offwhite'>
                     {titleCase(hero.hero_type)}
                   </div>
@@ -374,7 +382,7 @@ export const RandomizerView = ({
             </div>
 
             {tags.length > 0 || hero.gun_tag ? (
-              <Fact label='Tags'>
+              <Fact label={t("facts.tags")}>
                 <div className='flex flex-wrap gap-2'>
                   {hero.gun_tag ? (
                     <span className='dl-notch-sm border border-dl-weapon/40 bg-dl-weapon/10 px-3 py-1 text-dl-weapon text-xs'>
@@ -395,23 +403,25 @@ export const RandomizerView = ({
             {/* The mandate describes how the build spends its souls, so it
                 only means anything while the build is on screen. */}
             {sections.build ? (
-              <Fact label='Mandate'>
+              <Fact label={t("facts.mandate")}>
                 <div className='font-primary text-2xl text-[rgb(var(--hero))]'>
-                  {roll.mandate.label}
+                  {t(`mandates.${roll.mandate}.label`)}
                 </div>
                 <p className='mt-1 text-muted-foreground text-sm leading-relaxed'>
-                  {roll.mandate.blurb}
+                  {t(`mandates.${roll.mandate}.blurb`)}
                 </p>
               </Fact>
             ) : null}
 
             {sections.build ? (
-              <Fact label='Build cost'>
+              <Fact label={t("facts.buildCost")}>
                 <div className='mb-3 flex items-baseline gap-2'>
                   <span className='font-mono text-3xl text-dl-souls tabular-nums'>
                     {formatSouls(roll.totalSouls)}
                   </span>
-                  <span className='text-muted-foreground text-sm'>souls</span>
+                  <span className='text-muted-foreground text-sm'>
+                    {t("facts.souls")}
+                  </span>
                 </div>
                 <div className='space-y-2'>
                   {ITEM_CATEGORIES.map((category) => {
@@ -423,7 +433,7 @@ export const RandomizerView = ({
                       <div key={category}>
                         <div className='flex items-baseline justify-between text-xs'>
                           <span className={CATEGORY_TEXT[category]}>
-                            {CATEGORY_LABELS[category]}
+                            {t(`categories.${category}`)}
                           </span>
                           <span className='font-mono text-muted-foreground tabular-nums'>
                             {formatSouls(souls)}
@@ -447,9 +457,9 @@ export const RandomizerView = ({
             <div className='lg:col-span-5'>
               <Panel className='p-4'>
                 <div className='mb-3 flex items-center justify-between'>
-                  <MicroLabel>Ability priority</MicroLabel>
+                  <MicroLabel>{t("facts.abilityPriority")}</MicroLabel>
                   <span className='dl-label text-muted-foreground/60'>
-                    4 unlocks · 32 points
+                    {t("facts.abilityPriorityHint")}
                   </span>
                 </div>
                 <AbilityPriority
@@ -467,14 +477,16 @@ export const RandomizerView = ({
             <SectionHeading
               aside={
                 <div className='text-right'>
-                  <MicroLabel>Total</MicroLabel>
+                  <MicroLabel>{t("facts.total")}</MicroLabel>
                   <div className='font-mono text-dl-souls text-xl tabular-nums'>
                     {formatSouls(roll.totalSouls)}{" "}
-                    <span className='text-muted-foreground text-sm'>souls</span>
+                    <span className='text-muted-foreground text-sm'>
+                      {t("facts.souls")}
+                    </span>
                   </div>
                 </div>
               }
-              title='Build, in order.'
+              title={t("headings.build")}
             />
             <div className='grid gap-3 sm:grid-cols-2 xl:grid-cols-3'>
               {roll.build.map((entry, index) => (
@@ -493,14 +505,14 @@ export const RandomizerView = ({
 
         {sections.abilities ? (
           <section className='mt-16'>
-            <SectionHeading title='Skill order, 1–16.' />
+            <SectionHeading title={t("headings.skills")} />
             <SkillTrack abilities={abilities} steps={roll.skillOrder} />
           </section>
         ) : null}
 
         {sections.rules ? (
           <section className='mt-16'>
-            <SectionHeading title='The rules.' />
+            <SectionHeading title={t("headings.rules")} />
             <div className='grid gap-3 md:grid-cols-3'>
               {roll.challenges.map((challenge, index) => (
                 <div
@@ -511,11 +523,11 @@ export const RandomizerView = ({
                     <div className='flex items-center gap-2'>
                       <ScrollText className='size-4 shrink-0 text-[rgb(var(--hero))]' />
                       <h3 className='font-primary font-bold text-dl-offwhite text-lg'>
-                        {challenge.title}
+                        {t(`challenges.${challenge.id}.title`)}
                       </h3>
                     </div>
                     <p className='mt-2 text-muted-foreground text-sm leading-relaxed'>
-                      {challenge.detail}
+                      {t(`challenges.${challenge.id}.detail`)}
                     </p>
                   </Panel>
                 </div>
@@ -526,15 +538,20 @@ export const RandomizerView = ({
 
         <footer className='mt-16 border-[rgb(var(--hero)/0.2)] border-t pt-5'>
           <p className='text-muted-foreground/60 text-xs'>
-            Heroes, items and artwork provided by{" "}
-            <a
-              className='text-[rgb(var(--hero))] hover:underline'
-              href='https://deadlock-api.com'
-              rel='noopener noreferrer'
-              target='_blank'>
-              Deadlock API
-            </a>
-            .
+            <Trans
+              components={{
+                link: (
+                  <a
+                    className='text-[rgb(var(--hero))] hover:underline'
+                    href='https://deadlock-api.com'
+                    rel='noopener noreferrer'
+                    target='_blank'
+                  />
+                ),
+              }}
+              i18nKey='footer.credit'
+              t={t}
+            />
           </p>
         </footer>
       </div>

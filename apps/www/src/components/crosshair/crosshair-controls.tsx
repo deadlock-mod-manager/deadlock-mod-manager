@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@deadlock-mods/ui/components/select";
 import { Slider } from "@deadlock-mods/ui/components/slider";
+import { useTranslation } from "react-i18next";
 import { ColorPicker } from "./color-picker";
 
 interface CrosshairControlsProps {
@@ -25,6 +26,7 @@ export function CrosshairControls({
   config,
   onChange,
 }: CrosshairControlsProps) {
+  const { t } = useTranslation("tool-crosshair");
   const updateConfig = (updates: Partial<CrosshairConfig>) => {
     onChange({ ...config, ...updates });
   };
@@ -32,11 +34,11 @@ export function CrosshairControls({
   return (
     <div className='space-y-6'>
       <div className='space-y-4'>
-        <h3 className='text-lg font-semibold'>Crosshair Settings</h3>
+        <h3 className='text-lg font-semibold'>{t("controls.settings")}</h3>
 
         <div className='space-y-2'>
           <div className='flex justify-between items-center'>
-            <Label htmlFor='gap-slider'>Gap</Label>
+            <Label htmlFor='gap-slider'>{t("controls.gap")}</Label>
             <Input
               type='number'
               value={config.gap}
@@ -61,7 +63,7 @@ export function CrosshairControls({
 
         <div className='space-y-2'>
           <div className='flex justify-between items-center'>
-            <Label htmlFor='width-slider'>Width</Label>
+            <Label htmlFor='width-slider'>{t("controls.width")}</Label>
             <Input
               type='number'
               value={config.width}
@@ -86,7 +88,7 @@ export function CrosshairControls({
 
         <div className='space-y-2'>
           <div className='flex justify-between items-center'>
-            <Label htmlFor='height-slider'>Height</Label>
+            <Label htmlFor='height-slider'>{t("controls.height")}</Label>
             <Input
               type='number'
               value={config.height}
@@ -111,7 +113,9 @@ export function CrosshairControls({
 
         <div className='space-y-2'>
           <div className='flex justify-between items-center'>
-            <Label htmlFor='pip-opacity-slider'>Pip Opacity</Label>
+            <Label htmlFor='pip-opacity-slider'>
+              {t("controls.pipOpacity")}
+            </Label>
             <Input
               type='number'
               value={config.pipOpacity}
@@ -138,7 +142,9 @@ export function CrosshairControls({
 
         <div className='space-y-2'>
           <div className='flex justify-between items-center'>
-            <Label htmlFor='dot-opacity-slider'>Dot Opacity</Label>
+            <Label htmlFor='dot-opacity-slider'>
+              {t("controls.dotOpacity")}
+            </Label>
             <Input
               type='number'
               value={config.dotOpacity}
@@ -166,7 +172,7 @@ export function CrosshairControls({
         <div className='space-y-2'>
           <div className='flex justify-between items-center'>
             <Label htmlFor='dot-outline-opacity-slider'>
-              Dot Outline Opacity
+              {t("controls.dotOutlineOpacity")}
             </Label>
             <Input
               type='number'
@@ -196,7 +202,7 @@ export function CrosshairControls({
       </div>
 
       <div className='space-y-4'>
-        <h3 className='text-lg font-semibold'>Color</h3>
+        <h3 className='text-lg font-semibold'>{t("controls.color")}</h3>
         <ColorPicker
           color={config.color}
           onChange={(color) => updateConfig({ color })}
@@ -204,7 +210,7 @@ export function CrosshairControls({
       </div>
 
       <div className='space-y-4'>
-        <h3 className='text-lg font-semibold'>Options</h3>
+        <h3 className='text-lg font-semibold'>{t("controls.options")}</h3>
 
         <div className='flex items-center space-x-2'>
           <Checkbox
@@ -215,7 +221,7 @@ export function CrosshairControls({
             }
           />
           <Label htmlFor='pip-border' className='cursor-pointer'>
-            Show pip border
+            {t("controls.pipBorder")}
           </Label>
         </div>
 
@@ -228,12 +234,12 @@ export function CrosshairControls({
             }
           />
           <Label htmlFor='pip-gap-static' className='cursor-pointer'>
-            Static pip gap
+            {t("controls.pipGapStatic")}
           </Label>
         </div>
 
         <div className='space-y-2'>
-          <Label htmlFor='hero-select'>Hero</Label>
+          <Label htmlFor='hero-select'>{t("controls.hero")}</Label>
           <Select
             value={config.hero}
             onValueChange={(hero: HerosWithCrosshairOverrides) =>
@@ -243,7 +249,9 @@ export function CrosshairControls({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value='Default'>Default</SelectItem>
+              <SelectItem value='Default'>
+                {t("controls.defaultHero")}
+              </SelectItem>
               <SelectItem value={DeadlockHeroes.Abrams}>
                 {DeadlockHeroes.Abrams}
               </SelectItem>

@@ -79,31 +79,6 @@ export const selectRecommendedDownload = (
   return eligibleDownloads[0] ?? null;
 };
 
-interface InstallerInfo {
-  label: string;
-  description: string;
-}
-
-const INSTALLER_INFO = {
-  exe: { label: "Installer", description: "Windows 10 and 11 setup (.exe)" },
-  msi: {
-    label: "MSI package",
-    description: "For managed or silent installs (.msi)",
-  },
-  dmg: { label: "Disk image", description: "macOS application (.dmg)" },
-  flatpak: { label: "Flatpak", description: "Works on most distributions" },
-  deb: { label: "Debian package", description: "Ubuntu, Debian, Mint (.deb)" },
-  rpm: { label: "RPM package", description: "Fedora, openSUSE, Nobara (.rpm)" },
-} satisfies Record<
-  Exclude<NonNullable<PlatformDownload["installerType"]>, "sig">,
-  InstallerInfo
->;
-
-export const getInstallerInfo = (download: PlatformDownload): InstallerInfo =>
-  download.installerType && download.installerType !== "sig"
-    ? INSTALLER_INFO[download.installerType]
-    : { label: download.filename, description: "" };
-
 const isSignatureFile = (download: PlatformDownload): boolean =>
   download.installerType === "sig" ||
   download.filename.toLowerCase().endsWith(".sig");
@@ -147,36 +122,3 @@ export const getPlatformInstallers = (
 
 export const getReleaseUrl = (version: string): string =>
   `${GITHUB_REPO}/releases/tag/${/^\d/.test(version) ? `v${version}` : version}`;
-
-const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-
-/**
- * "October 5, 2026", always in UTC. Formatting in the visitor's timezone would
- * make the server and the browser disagree on the date and break hydration.
- */
-export const formatReleaseDate = (iso: string): string => {
-  const date = new Date(iso);
-  return `${MONTHS[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`;
-};
-
-/** "October 5, 2026, 14:03 UTC", for tooltips. */
-export const formatReleaseDateTime = (iso: string): string => {
-  const date = new Date(iso);
-  const time = [date.getUTCHours(), date.getUTCMinutes()]
-    .map((part) => String(part).padStart(2, "0"))
-    .join(":");
-  return `${formatReleaseDate(iso)}, ${time} UTC`;
-};

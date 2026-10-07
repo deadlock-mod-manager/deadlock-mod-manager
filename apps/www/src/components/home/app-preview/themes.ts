@@ -9,8 +9,11 @@ export type PreviewThemeId =
 
 export type PreviewTheme = {
   id: PreviewThemeId;
+  /**
+   * English name, for pages that aren't translated yet. Translated names and
+   * descriptions live in the preview namespace (themes.<id>).
+   */
   name: string;
-  description: string;
   preview: string;
   icon?: string;
   /** HSL triplets, same tokens and values as the desktop app's themes. */
@@ -57,14 +60,12 @@ export const PREVIEW_THEMES: PreviewTheme[] = [
   {
     id: "default",
     name: "Default",
-    description: "The classic Deadlock Mod Manager look.",
     preview: "/home/app/theme-default.webp",
     vars: BASE_VARS,
   },
   {
     id: "bloodmoon",
     name: "Bloodmoon",
-    description: "A dark theme with black-red gradients and crimson accents.",
     preview: "/home/app/theme-bloodmoon.webp",
     icon: "/home/themes/bloodmoon-icon.webp",
     vars: {
@@ -79,7 +80,6 @@ export const PREVIEW_THEMES: PreviewTheme[] = [
   {
     id: "nightshift",
     name: "Nightshift",
-    description: "A teal-accented cyberpunk theme with elegant UI elements.",
     preview: "/home/app/theme-nightshift.webp",
     icon: "/home/themes/nightshift-icon.webp",
     vars: {
@@ -94,7 +94,6 @@ export const PREVIEW_THEMES: PreviewTheme[] = [
   {
     id: "lovelock",
     name: "Lovelock",
-    description: "A cozy plum theme with a soft pink glow.",
     preview: "/home/app/theme-lovelock.webp",
     icon: "/home/themes/lovelock-icon.webp",
     vars: {
@@ -132,7 +131,6 @@ export const PREVIEW_THEMES: PreviewTheme[] = [
   {
     id: "tea",
     name: "Tea",
-    description: "A cozy theme celebrating Snipztea.",
     preview: "/home/app/theme-tea.webp",
     icon: "/home/themes/tea-icon.webp",
     vars: {

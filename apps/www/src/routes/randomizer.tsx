@@ -6,9 +6,11 @@ import {
   useSearch,
 } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { RandomizerView } from "@/components/randomizer/randomizer-view";
 import { RollSkeleton } from "@/components/randomizer/roll-skeleton";
 import { useRandomizer } from "@/hooks/use-randomizer";
+import { headI18n } from "@/lib/i18n/route";
 import { decodeSeed, encodeSeed, randomSeed } from "@/lib/randomizer/rng";
 import {
   decodeSections,
@@ -31,18 +33,20 @@ export const Route = createFileRoute("/randomizer")({
     p: typeof search.p === "string" ? search.p : undefined,
     h: typeof search.h === "string" ? search.h : undefined,
   }),
-  head: () =>
-    seo({
-      title: "Deadlock Randomizer: Random Hero & Item Build Generator",
-      description:
-        "Roll a random Deadlock hero, a legal item build in purchase order, an ability point order and three bravery rules. Share the seed, reroll as often as you like.",
-      keywords:
-        "deadlock randomizer, deadlock random build, deadlock ultimate bravery, random hero deadlock, deadlock build generator",
+  head: ({ match }) => {
+    const { t, locale } = headI18n(match, "tool-randomizer");
+    return seo({
+      title: t("meta.title"),
+      description: t("meta.description"),
+      keywords: t("meta.keywords"),
       path: "/randomizer",
-    }),
+      locale,
+    });
+  },
 });
 
 function RandomizerPage() {
+  const { t } = useTranslation("tool-randomizer");
   const search = useSearch({ from: "/randomizer" });
   const navigate = useNavigate();
   const seed = decodeSeed(search.s);
@@ -93,15 +97,11 @@ function RandomizerPage() {
   if (error) {
     return (
       <div className='container mx-auto px-4 py-24 text-center'>
-        <h1 className='font-bold font-primary text-3xl'>
-          The roll could not be cast
-        </h1>
-        <p className='mt-3 text-muted-foreground'>
-          Hero and item data comes from the Deadlock API, and it did not answer.
-        </p>
+        <h1 className='font-bold font-primary text-3xl'>{t("error.title")}</h1>
+        <p className='mt-3 text-muted-foreground'>{t("error.description")}</p>
         <Button className='mt-6' onClick={retry}>
           <RefreshCw className='size-4' />
-          Try again
+          {t("error.retry")}
         </Button>
       </div>
     );

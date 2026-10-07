@@ -4,6 +4,7 @@ import { Button } from "@deadlock-mods/ui/components/button";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { ChevronDown, ChevronRight, Copy } from "@deadlock-mods/ui/icons";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface JsonTreeProps {
   data: KeyValuesValue;
@@ -26,6 +27,7 @@ function JsonTreeNode({
   level = 0,
   expandOverride = null,
 }: JsonTreeProps) {
+  const { t } = useTranslation("tool-kv");
   const [isExpanded, setIsExpanded] = useState(level < 2);
   const valueType = getValueType(data);
   const isExpandable = valueType === "object" || valueType === "array";
@@ -40,7 +42,7 @@ function JsonTreeNode({
     const value =
       typeof data === "object" ? JSON.stringify(data, null, 2) : String(data);
     await navigator.clipboard.writeText(value);
-    toast.success("Copied to clipboard");
+    toast.success(t("toasts.copied"));
   };
 
   const renderValue = () => {
@@ -61,7 +63,7 @@ function JsonTreeNode({
     if (valueType === "array") {
       return (
         <span className='text-muted-foreground text-sm'>
-          [{(data as unknown[]).length} items]
+          {t("tree.items", { value: (data as unknown[]).length })}
         </span>
       );
     }
@@ -70,7 +72,9 @@ function JsonTreeNode({
       return (
         <span className='text-muted-foreground text-sm'>
           {"{"}
-          {keys.length} {keys.length === 1 ? "key" : "keys"}
+          {t(keys.length === 1 ? "stats.key" : "stats.keys", {
+            value: keys.length,
+          })}
           {"}"}
         </span>
       );
@@ -173,6 +177,7 @@ export function JsonTreeView({
   onExpandAll,
   onCollapseAll,
 }: JsonTreeViewProps) {
+  const { t } = useTranslation("tool-kv");
   const [expandAll, setExpandAll] = useState<boolean | null>(null);
 
   const handleToggleExpand = () => {
@@ -188,9 +193,9 @@ export function JsonTreeView({
   return (
     <div className='space-y-2'>
       <div className='flex items-center justify-between'>
-        <h3 className='font-semibold text-sm'>Parsed Structure</h3>
+        <h3 className='font-semibold text-sm'>{t("tree.title")}</h3>
         <Button onClick={handleToggleExpand} size='sm' variant='outline'>
-          {expandAll === true ? "Collapse All" : "Expand All"}
+          {expandAll === true ? t("tree.collapseAll") : t("tree.expandAll")}
         </Button>
       </div>
       <div className='rounded-lg border border-muted-foreground/20 bg-muted/10 p-4 overflow-auto max-h-[600px]'>

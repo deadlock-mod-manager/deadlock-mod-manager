@@ -9,6 +9,7 @@ import {
 } from "@deadlock-mods/ui/components/card";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { parseKvContent } from "@/lib/kv-parser";
 import { JsonTreeView } from "./json-tree";
 import { SyntaxHighlighter } from "./syntax-highlighter";
@@ -28,6 +29,7 @@ interface ParseResult {
 }
 
 export function KvViewer({ content }: KvViewerProps) {
+  const { t } = useTranslation("tool-kv");
   const [showJson, setShowJson] = useState(true);
 
   const {
@@ -54,12 +56,12 @@ export function KvViewer({ content }: KvViewerProps) {
           message:
             queryError instanceof Error
               ? queryError.message
-              : "Failed to parse KeyValues content",
+              : t("viewer.parseFailed"),
         },
       };
     }
     return parseResult ?? { success: false };
-  }, [content, isLoading, parseResult, queryError]);
+  }, [content, isLoading, parseResult, queryError, t]);
 
   const stats = useMemo(() => {
     if (!result.success || !result.data) {
@@ -91,7 +93,9 @@ export function KvViewer({ content }: KvViewerProps) {
       {isLoading && (
         <Card>
           <CardContent className='pt-6'>
-            <p className='text-center text-muted-foreground'>Parsing...</p>
+            <p className='text-center text-muted-foreground'>
+              {t("viewer.parsing")}
+            </p>
           </CardContent>
         </Card>
       )}
@@ -100,17 +104,19 @@ export function KvViewer({ content }: KvViewerProps) {
         <Card className='border-destructive/50'>
           <CardHeader>
             <CardTitle className='text-destructive flex items-center gap-2'>
-              <span>Parse Error</span>
-              <Badge variant='destructive'>Failed</Badge>
+              <span>{t("viewer.parseError")}</span>
+              <Badge variant='destructive'>{t("viewer.failed")}</Badge>
             </CardTitle>
             <CardDescription>{result.error.message}</CardDescription>
           </CardHeader>
           {(result.error.line || result.error.column) && (
             <CardContent>
               <p className='text-muted-foreground text-sm'>
-                {result.error.line && `Line: ${result.error.line}`}
+                {result.error.line &&
+                  t("viewer.line", { line: result.error.line })}
                 {result.error.line && result.error.column && " | "}
-                {result.error.column && `Column: ${result.error.column}`}
+                {result.error.column &&
+                  t("viewer.column", { column: result.error.column })}
               </p>
             </CardContent>
           )}
@@ -120,17 +126,23 @@ export function KvViewer({ content }: KvViewerProps) {
       {stats && (
         <div className='flex gap-4 items-center'>
           <Badge variant='secondary'>
-            {stats.lines} {stats.lines === 1 ? "line" : "lines"}
+            {t(stats.lines === 1 ? "stats.line" : "stats.lines", {
+              value: stats.lines,
+            })}
           </Badge>
           <Badge variant='secondary'>
-            {stats.chars} {stats.chars === 1 ? "character" : "characters"}
+            {t(stats.chars === 1 ? "stats.character" : "stats.characters", {
+              value: stats.chars,
+            })}
           </Badge>
           <Badge variant='secondary'>
-            {stats.keys} {stats.keys === 1 ? "key" : "keys"}
+            {t(stats.keys === 1 ? "stats.key" : "stats.keys", {
+              value: stats.keys,
+            })}
           </Badge>
           {result.success && (
             <Badge className='ml-auto' variant='default'>
-              ✓ Valid
+              {t("viewer.valid")}
             </Badge>
           )}
         </div>
@@ -138,20 +150,20 @@ export function KvViewer({ content }: KvViewerProps) {
 
       <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
         <div>
-          <h3 className='mb-3 font-semibold text-lg'>Original</h3>
+          <h3 className='mb-3 font-semibold text-lg'>{t("viewer.original")}</h3>
           <SyntaxHighlighter code={content} errorLine={result.error?.line} />
         </div>
 
         <div>
           <div className='mb-3 flex items-center justify-between'>
             <h3 className='font-semibold text-lg'>
-              {showJson ? "JSON Output" : "Tree View"}
+              {showJson ? t("viewer.jsonOutput") : t("viewer.treeView")}
             </h3>
             <button
               className='text-primary text-sm underline hover:no-underline'
               onClick={() => setShowJson(!showJson)}
               type='button'>
-              Switch to {showJson ? "Tree View" : "JSON"}
+              {showJson ? t("viewer.switchToTree") : t("viewer.switchToJson")}
             </button>
           </div>
 
@@ -171,9 +183,7 @@ export function KvViewer({ content }: KvViewerProps) {
               <Card>
                 <CardContent className='pt-6'>
                   <p className='text-center text-muted-foreground'>
-                    {result.error
-                      ? "Fix the errors above to see the parsed output"
-                      : "Enter KeyValues content to see the parsed result"}
+                    {result.error ? t("viewer.fixErrors") : t("viewer.empty")}
                   </p>
                 </CardContent>
               </Card>

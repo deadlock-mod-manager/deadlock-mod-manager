@@ -5,11 +5,12 @@ import {
   WebToolsSection,
 } from "@/components/home/community-sections";
 import { SkinsSection } from "@/components/home/customization-sections";
-import { FAQSection } from "@/components/home/faq-section";
+import { FAQSection, getHomeFaqs } from "@/components/home/faq-section";
 import { FeatureTour } from "@/components/home/feature-tour";
 import { HeroSection } from "@/components/home/hero";
 import { PartnersStrip } from "@/components/home/partners-strip";
 import { ThemesSection } from "@/components/home/themes-stage";
+import { headI18n } from "@/lib/i18n/route";
 import { prefetchWithin } from "@/lib/prefetch";
 import { orpc } from "@/utils/orpc";
 import { seo } from "@/utils/seo";
@@ -28,21 +29,28 @@ export const Route = createFileRoute("/")({
     // Handed to head() so the release number lands in the indexed metadata.
     return { version: version && version !== "unknown" ? version : undefined };
   },
-  head: ({ loaderData }) => {
+  head: ({ match, loaderData }) => {
+    const { t, locale } = headI18n(match, "home");
     const version = loaderData?.version;
     const page = seo({
-      title: "Deadlock Mod Manager | Install & Manage Deadlock Mods",
+      title: t("meta.title"),
       description: version
-        ? `Free, open-source mod manager for Valve's Deadlock on Windows and Linux. Install GameBanana mods, skins and sounds in one click. Latest: v${version}, with V2 coming soon.`
-        : undefined,
+        ? t("meta.descriptionWithVersion", { version })
+        : t("meta.description"),
       path: "/",
+      locale,
     });
     return {
       ...page,
       scripts: [
         {
           type: "application/ld+json",
-          children: homeStructuredData({ version }),
+          children: homeStructuredData({
+            version,
+            locale,
+            description: t("meta.description"),
+            faqs: getHomeFaqs(t),
+          }),
         },
       ],
     };

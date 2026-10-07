@@ -5,6 +5,7 @@ import {
   DesktopIcon,
 } from "@phosphor-icons/react";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   PlatformButtonText,
   PlatformIcon,
@@ -51,6 +52,7 @@ const NoteCheck = () => (
  * tablets and Macs can't run the app, so they get SendToPcCta instead.
  */
 export const DownloadCta = () => {
+  const { t } = useTranslation("common");
   const { os, mobile, canInstall, linkProps } = usePlatformDownload();
   const [started, setStarted] = useState(false);
 
@@ -72,7 +74,7 @@ export const DownloadCta = () => {
         {started && (
           <span className='inline-flex animate-dl-rise items-center gap-1.5'>
             <NoteCheck />
-            Download started. Run the installer, then hit Launch Modded.
+            {t("cta.downloadStarted")}
           </span>
         )}
       </span>
@@ -108,14 +110,9 @@ const sendLinkToPc = async (
   }
 };
 
-const sendNotes = {
-  copied: "Link copied. Open it on your Windows or Linux PC.",
-  shared: "Link sent. Open it on your Windows or Linux PC.",
-  failed: `Open ${DOWNLOAD_PAGE_URL.replace("https://", "")} on your Windows or Linux PC.`,
-} satisfies Record<SendResult, string>;
-
 /** Primary action for devices that can't install the app. */
 const SendToPcCta = ({ preferShare }: { preferShare: boolean }) => {
+  const { t } = useTranslation("common");
   const [result, setResult] = useState<SendResult | null>(null);
 
   return (
@@ -128,7 +125,7 @@ const SendToPcCta = ({ preferShare }: { preferShare: boolean }) => {
         }}
         className={primaryCta("lg")}>
         <DesktopIcon aria-hidden='true' weight='bold' />
-        Get it on your PC
+        {t("cta.sendToPc")}
       </button>
       <span role='status' className={noteClassName}>
         {result ? (
@@ -136,10 +133,12 @@ const SendToPcCta = ({ preferShare }: { preferShare: boolean }) => {
             key={result}
             className='inline-flex animate-dl-rise items-center gap-1.5'>
             {result !== "failed" && <NoteCheck />}
-            {sendNotes[result]}
+            {t(`cta.sendNotes.${result}`, {
+              url: DOWNLOAD_PAGE_URL.replace("https://", ""),
+            })}
           </span>
         ) : (
-          "Available for Windows and Linux"
+          t("platformDownload.available")
         )}
       </span>
     </span>

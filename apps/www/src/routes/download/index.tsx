@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DownloadsContainer } from "@/components/downloads/downloads-container";
+import { headI18n } from "@/lib/i18n/route";
 import { prefetchWithin } from "@/lib/prefetch";
 import { orpc } from "@/utils/orpc";
 import { seo } from "@/utils/seo";
@@ -14,14 +15,16 @@ export const Route = createFileRoute("/download/")({
       version: queryClient.getQueryData(releasesQuery.queryKey)?.latest.version,
     };
   },
-  head: ({ loaderData }) => {
+  head: ({ match, loaderData }) => {
+    const { t, locale } = headI18n(match, "download");
     const latest = loaderData?.version
-      ? `the latest Deadlock Mod Manager release, v${loaderData.version}`
-      : "the latest Deadlock Mod Manager release";
+      ? t("meta.latestVersion", { version: loaderData.version })
+      : t("meta.latest");
     return seo({
-      title: "Download Deadlock Mod Manager for Windows & Linux",
-      description: `Get ${latest}: a Windows installer or a Linux package (Flatpak, .deb or .rpm). Free and open source, built from public code on GitHub.`,
+      title: t("meta.title"),
+      description: t("meta.description", { latest }),
       path: "/download",
+      locale,
     });
   },
 });

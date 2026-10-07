@@ -176,6 +176,12 @@ export const PREVIEW_MODS: PreviewMod[] = [
   },
 ];
 
+/** preview.json keys for the store categories (categories.<key>). */
+export const CATEGORY_KEYS = {
+  Skins: "skins",
+  "Quality of Life": "qualityOfLife",
+} as const satisfies Record<PreviewMod["category"], string>;
+
 export const modThumbnail = (mod: PreviewMod) => `/home/mods/${mod.id}.webp`;
 
 export const modUrl = (mod: PreviewMod) =>

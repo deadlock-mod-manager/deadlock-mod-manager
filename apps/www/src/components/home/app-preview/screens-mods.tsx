@@ -19,11 +19,12 @@ import {
   CardsThreeIcon,
 } from "@phosphor-icons/react";
 import { useMemo, useState } from "react";
-import { modThumbnail, modById, PREVIEW_MODS } from "./mods";
+import { Trans, useTranslation } from "react-i18next";
+import { CATEGORY_KEYS, modThumbnail, modById, PREVIEW_MODS } from "./mods";
 import { EmptyState, isRecentlyUpdated, ModCard, PageTitle } from "./parts";
 import {
-  formatCount,
   useInstalledMods,
+  usePreviewFormat,
   usePreviewState,
 } from "./preview-state";
 import { usePreviewNavigation } from "./store";
@@ -34,6 +35,8 @@ const fieldClassName =
   "h-9 rounded-md border border-input bg-transparent px-3 text-sm text-muted-foreground shadow-sm outline-none transition-colors hover:text-foreground focus-visible:ring-1 focus-visible:ring-ring";
 
 export const DashboardScreen = () => {
+  const { t } = useTranslation("preview");
+  const { formatCount } = usePreviewFormat();
   const { setScreen } = usePreviewNavigation();
   const { installs } = usePreviewState();
   const featured = modById(FEATURED_ID);
@@ -47,8 +50,8 @@ export const DashboardScreen = () => {
     <div className='flex flex-col gap-3'>
       <PageTitle
         className='px-6'
-        title='Dashboard'
-        subtitle='Discover featured, trending, and new mods'
+        title={t("dashboard.title")}
+        subtitle={t("dashboard.subtitle")}
       />
       <div className='space-y-8 px-6 pb-8'>
         {featured && (
@@ -68,18 +71,23 @@ export const DashboardScreen = () => {
               <div className='flex items-center gap-2'>
                 <SparkleIcon weight='duotone' className='size-4 text-primary' />
                 <span className='font-bold font-primary text-[11px] text-primary uppercase tracking-[0.4em]'>
-                  Featured mod of the week
+                  {t("dashboard.featured")}
                 </span>
               </div>
               <h4 className='font-bold font-primary text-5xl leading-tight tracking-tight'>
                 {featured.name}
               </h4>
               <p className='text-muted-foreground text-sm'>
-                By{" "}
-                <span className='font-medium text-foreground/80'>
-                  {featured.author}
-                </span>
+                <Trans
+                  t={t}
+                  i18nKey='dashboard.featuredBy'
+                  values={{ author: featured.author }}
+                  components={{
+                    author: <span className='font-medium text-foreground/80' />,
+                  }}
+                />
               </p>
+              {/* The mod's own description from GameBanana, left as written. */}
               <p className='line-clamp-2 max-w-xl text-muted-foreground text-sm'>
                 This redesign reimagines Yamato with a stronger focus on her
                 lore, emphasizing her role as the leader of a powerful criminal
@@ -87,7 +95,7 @@ export const DashboardScreen = () => {
               </p>
               <div className='flex flex-wrap items-center gap-3 pt-1'>
                 <span className='border-primary/50 border-l-2 pl-2 font-bold font-primary text-xs uppercase tracking-[0.2em]'>
-                  Skins
+                  {t(`categories.${CATEGORY_KEYS[featured.category]}`)}
                 </span>
                 <span className='flex items-center gap-1.5 font-medium text-foreground/85 text-xs tabular-nums'>
                   <DownloadIcon className='size-4' />
@@ -101,7 +109,7 @@ export const DashboardScreen = () => {
                   type='button'
                   onClick={() => setScreen("store")}
                   className='ml-auto inline-flex items-center gap-2 font-medium text-primary/80 text-sm transition-colors hover:text-primary'>
-                  View Mod
+                  {t("dashboard.viewMod")}
                   <ArrowRightIcon weight='bold' className='size-4' />
                 </button>
               </div>
@@ -111,9 +119,21 @@ export const DashboardScreen = () => {
 
         <div className='flex flex-wrap items-stretch'>
           {[
-            { label: "Installed", value: installed, icon: PackageIcon },
-            { label: "Updates", value: 0, icon: ArrowsClockwiseIcon },
-            { label: "In Queue", value: queued, icon: DownloadIcon },
+            {
+              label: t("dashboard.stats.installed"),
+              value: installed,
+              icon: PackageIcon,
+            },
+            {
+              label: t("dashboard.stats.updates"),
+              value: 0,
+              icon: ArrowsClockwiseIcon,
+            },
+            {
+              label: t("dashboard.stats.inQueue"),
+              value: queued,
+              icon: DownloadIcon,
+            },
           ].map((stat, index) => (
             <div
               key={stat.label}
@@ -140,7 +160,7 @@ export const DashboardScreen = () => {
               type='button'
               onClick={() => setScreen("store")}
               className={cn(buttonVariants(), "h-8 px-3 text-xs")}>
-              Browse Store
+              {t("dashboard.browseStore")}
               <ArrowRightIcon />
             </button>
           </div>
@@ -149,7 +169,12 @@ export const DashboardScreen = () => {
         <section className='space-y-3'>
           <h4 className='flex items-center gap-2 font-bold font-primary text-2xl tracking-tight'>
             <TrendUpIcon weight='duotone' className='size-5 text-primary' />
-            Trending in <span className='text-primary'>Skins</span>
+            <Trans
+              t={t}
+              i18nKey='dashboard.trending'
+              values={{ category: t("categories.skins") }}
+              components={{ accent: <span className='text-primary' /> }}
+            />
           </h4>
           <div className='-mx-1 flex gap-6 overflow-x-auto px-1 pb-2 [scrollbar-width:none]'>
             {trending.map((mod) => (
@@ -173,7 +198,7 @@ export const DashboardScreen = () => {
                     {mod.name}
                   </div>
                   <div className='text-muted-foreground text-xs'>
-                    By {mod.author}
+                    {t("mod.byAuthor", { author: mod.author })}
                   </div>
                   <div className='flex items-center gap-1 pt-1 text-[0.6875rem] text-muted-foreground tabular-nums'>
                     <DownloadSimpleIcon className='size-3' />
@@ -190,17 +215,18 @@ export const DashboardScreen = () => {
 };
 
 const CONTENT_TABS = [
-  { label: "Mods", icon: CubeIcon },
-  { label: "Sounds", icon: MusicNotesIcon },
-  { label: "Albums", icon: CardsThreeIcon },
-  { label: "WiPs", icon: BarricadeIcon },
-];
+  { id: "mods", icon: CubeIcon },
+  { id: "sounds", icon: MusicNotesIcon },
+  { id: "albums", icon: CardsThreeIcon },
+  { id: "wips", icon: BarricadeIcon },
+] as const;
 
 const heroes = [
   ...new Set(PREVIEW_MODS.flatMap((mod) => (mod.hero ? [mod.hero] : []))),
 ].sort();
 
 export const StoreScreen = () => {
+  const { t } = useTranslation("preview");
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("all");
   const [hero, setHero] = useState("all");
@@ -235,13 +261,13 @@ export const StoreScreen = () => {
       <div className='mb-5 flex flex-wrap items-end justify-between gap-x-6 gap-y-3 border-border/60 border-b'>
         <PageTitle
           className='pb-3'
-          title='Mods Store'
-          subtitle='Updated hourly, with new mods added every hour.'
+          title={t("store.title")}
+          subtitle={t("store.subtitle")}
         />
         <div className='-mb-px flex gap-1'>
           {CONTENT_TABS.map((tab, index) => (
             <span
-              key={tab.label}
+              key={tab.id}
               className={cn(
                 "relative flex h-9 items-center gap-2 rounded-md px-3 text-sm after:absolute after:inset-x-3 after:-bottom-px after:h-0.5 after:rounded-full after:bg-primary",
                 index === 0
@@ -252,7 +278,7 @@ export const StoreScreen = () => {
                 weight='duotone'
                 className={cn("size-4", index === 0 && "text-primary")}
               />
-              {tab.label}
+              {t(`store.tabs.${tab.id}`)}
             </span>
           ))}
         </div>
@@ -260,13 +286,13 @@ export const StoreScreen = () => {
 
       <div className='flex flex-wrap items-center gap-2'>
         <label className='relative min-w-48 max-w-sm flex-1'>
-          <span className='sr-only'>Search mods</span>
+          <span className='sr-only'>{t("store.searchLabel")}</span>
           <MagnifyingGlassIcon className='-translate-y-1/2 absolute top-1/2 left-3 size-4 text-muted-foreground' />
           <input
             type='search'
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder='Search mods or authors'
+            placeholder={t("store.searchPlaceholder")}
             className={cn(
               fieldClassName,
               "w-full pl-9 text-foreground placeholder:text-muted-foreground",
@@ -274,11 +300,11 @@ export const StoreScreen = () => {
           />
         </label>
         <select
-          aria-label='Hero'
+          aria-label={t("store.heroLabel")}
           value={hero}
           onChange={(event) => setHero(event.target.value)}
           className={fieldClassName}>
-          <option value='all'>All Heroes</option>
+          <option value='all'>{t("store.allHeroes")}</option>
           {heroes.map((name) => (
             <option key={name} value={name}>
               {name}
@@ -286,23 +312,26 @@ export const StoreScreen = () => {
           ))}
         </select>
         <select
-          aria-label='Category'
+          aria-label={t("store.categoryLabel")}
           value={category}
           onChange={(event) => setCategory(event.target.value)}
           className={fieldClassName}>
-          <option value='all'>All Categories</option>
-          <option value='Skins'>Skins</option>
-          <option value='Quality of Life'>Quality of Life</option>
+          <option value='all'>{t("store.allCategories")}</option>
+          {Object.entries(CATEGORY_KEYS).map(([value, key]) => (
+            <option key={value} value={value}>
+              {t(`categories.${key}`)}
+            </option>
+          ))}
         </select>
         <select
-          aria-label='Sort'
+          aria-label={t("store.sortLabel")}
           value={sort}
           onChange={(event) => setSort(event.target.value)}
           className={cn(fieldClassName, "ml-auto")}>
-          <option value='default'>Default</option>
-          <option value='updated'>Last Updated</option>
-          <option value='downloads'>Download Count</option>
-          <option value='rating'>Rating</option>
+          <option value='default'>{t("store.sort.default")}</option>
+          <option value='updated'>{t("store.sort.updated")}</option>
+          <option value='downloads'>{t("store.sort.downloads")}</option>
+          <option value='rating'>{t("store.sort.rating")}</option>
         </select>
       </div>
 
@@ -315,8 +344,8 @@ export const StoreScreen = () => {
       ) : (
         <EmptyState
           icon={MagnifyingGlassIcon}
-          title='No mods found'
-          description='Try a different search or clear your filters.'
+          title={t("store.empty.title")}
+          description={t("store.empty.description")}
         />
       )}
     </div>
@@ -326,6 +355,7 @@ export const StoreScreen = () => {
 type LibraryTab = "all" | "installed" | "downloaded";
 
 export const LibraryScreen = () => {
+  const { t } = useTranslation("preview");
   const { setScreen } = usePreviewNavigation();
   const { installs, toggle, remove, notify } = usePreviewState();
   const installedMods = useInstalledMods();
@@ -351,33 +381,41 @@ export const LibraryScreen = () => {
         <div>
           <div className='flex items-center gap-3'>
             <h3 className='font-semibold text-2xl tracking-tight'>
-              Mods Library
+              {t("library.title")}
             </h3>
             <span className='inline-flex items-center gap-2 rounded-lg border border-border/80 bg-muted/40 px-2.5 py-1.5 text-sm shadow-sm'>
               <span>
-                <strong className='tabular-nums'>{enabledCount}</strong>/
-                {installedMods.length} mods
+                <Trans
+                  t={t}
+                  i18nKey='library.count'
+                  values={{
+                    enabled: enabledCount,
+                    total: installedMods.length,
+                  }}
+                  components={{ strong: <strong className='tabular-nums' /> }}
+                />
               </span>
             </span>
           </div>
-          <p className='text-muted-foreground'>
-            Mods you have downloaded or installed
-          </p>
+          <p className='text-muted-foreground'>{t("library.subtitle")}</p>
         </div>
         <button
           type='button'
           onClick={() =>
-            notify("All mods are up to date", "Nothing to update right now.")
+            notify(
+              t("library.upToDate.title"),
+              t("library.upToDate.description"),
+            )
           }
           className={buttonVariants({ variant: "outline" })}>
           <ArrowsClockwiseIcon />
-          Check for updates
+          {t("library.checkUpdates")}
         </button>
       </div>
 
       <div
         role='tablist'
-        aria-label='Library filter'
+        aria-label={t("library.filterLabel")}
         className='mt-4 inline-flex w-fit items-center rounded-lg bg-muted p-1 text-muted-foreground'>
         {(["all", "installed", "downloaded"] as const).map((key) => (
           <button
@@ -390,7 +428,7 @@ export const LibraryScreen = () => {
               "inline-flex items-center rounded-md px-3 py-1 font-medium text-sm capitalize transition-colors",
               tab === key && "bg-background text-foreground shadow",
             )}>
-            {key}
+            {t(`library.tabs.${key}`)}
             <span className='ml-2 text-muted-foreground text-xs tabular-nums'>
               {counts[key]}
             </span>
@@ -401,14 +439,14 @@ export const LibraryScreen = () => {
       {installedMods.length === 0 ? (
         <EmptyState
           icon={PackageIcon}
-          title='No mods installed'
-          description="You haven't installed any mods yet. Get started by browsing available mods.">
+          title={t("library.empty.title")}
+          description={t("library.empty.description")}>
           <button
             type='button'
             onClick={() => setScreen("store")}
             className={buttonVariants()}>
             <MagnifyingGlassIcon />
-            Visit Mods Page
+            {t("library.empty.action")}
           </button>
         </EmptyState>
       ) : (
@@ -435,26 +473,26 @@ export const LibraryScreen = () => {
                     <Badge
                       variant='secondary'
                       className='absolute top-1 right-1 text-[10px]'>
-                      Updated
+                      {t("mod.updated")}
                     </Badge>
                   )}
                 </div>
                 <div className='min-w-0 flex-1 p-3'>
                   <h4 className='truncate font-semibold text-lg'>{mod.name}</h4>
                   <p className='text-muted-foreground text-sm'>
-                    By {mod.author}
+                    {t("mod.byAuthor", { author: mod.author })}
                   </p>
                 </div>
                 <div className='flex items-center gap-3'>
                   <Switch
                     checked={enabled}
                     onCheckedChange={() => toggle(mod.id)}
-                    aria-label={`Enable ${mod.name}`}
+                    aria-label={t("mod.enable", { name: mod.name })}
                   />
                   <button
                     type='button'
                     onClick={() => remove(mod.id)}
-                    aria-label={`Remove ${mod.name}`}
+                    aria-label={t("mod.remove", { name: mod.name })}
                     className='inline-flex size-9 items-center justify-center rounded-md bg-destructive/60 text-white transition-colors hover:bg-destructive'>
                     <TrashIcon className='size-4' />
                   </button>
@@ -469,6 +507,7 @@ export const LibraryScreen = () => {
 };
 
 export const DownloadsScreen = () => {
+  const { t } = useTranslation("preview");
   const { setScreen } = usePreviewNavigation();
   const { installs } = usePreviewState();
   const active = PREVIEW_MODS.flatMap((mod) => {
@@ -480,18 +519,21 @@ export const DownloadsScreen = () => {
 
   return (
     <div className='flex flex-1 flex-col px-4'>
-      <PageTitle title='Downloads' subtitle='Track your mod downloads' />
+      <PageTitle
+        title={t("downloads.title")}
+        subtitle={t("downloads.subtitle")}
+      />
       {active.length === 0 ? (
         <EmptyState
           icon={DownloadSimpleIcon}
-          title='No active downloads'
-          description='Downloads you start from the Mods Store show up here.'>
+          title={t("downloads.empty.title")}
+          description={t("downloads.empty.description")}>
           <button
             type='button'
             onClick={() => setScreen("store")}
             className={buttonVariants()}>
             <MagnifyingGlassIcon />
-            Browse Store
+            {t("downloads.empty.action")}
           </button>
         </EmptyState>
       ) : (

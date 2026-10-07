@@ -15,6 +15,7 @@ import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { LogInIcon, PhosphorIcons } from "@deadlock-mods/ui/icons";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { LayoutDashboard } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useOIDCSession } from "@/hooks/use-oidc-session";
 
 export default function UserMenu({
@@ -23,6 +24,7 @@ export default function UserMenu({
   /** Replaces the default outline button styling for the signed-out state. */
   signInClassName?: string;
 } = {}) {
+  const { t } = useTranslation("common");
   const navigate = useNavigate();
   const { session, isLoading, signOut } = useOIDCSession();
 
@@ -34,7 +36,7 @@ export default function UserMenu({
     if (signInClassName) {
       return (
         <Link to='/login' className={signInClassName}>
-          Sign in
+          {t("userMenu.signIn")}
         </Link>
       );
     }
@@ -48,7 +50,7 @@ export default function UserMenu({
         variant='outline'
         size='sm'
         icon={<LogInIcon className='size-4' />}>
-        Sign In
+        {t("userMenu.signInButton")}
       </Button>
     );
   }
@@ -72,7 +74,7 @@ export default function UserMenu({
           <Avatar className='h-9 w-9 border-2 border-border'>
             <AvatarImage
               src={session.user.picture || undefined}
-              alt={session.user.name || "User"}
+              alt={session.user.name || t("userMenu.avatarFallback")}
             />
             <AvatarFallback className='bg-primary text-primary-foreground text-xs font-semibold'>
               {initials}
@@ -87,7 +89,7 @@ export default function UserMenu({
           <Avatar className='h-12 w-12 border-2 border-border'>
             <AvatarImage
               src={session.user.picture || undefined}
-              alt={session.user.name || "User"}
+              alt={session.user.name || t("userMenu.avatarFallback")}
             />
             <AvatarFallback className='bg-primary text-primary-foreground font-semibold'>
               {initials}
@@ -108,7 +110,7 @@ export default function UserMenu({
             <DropdownMenuItem asChild className='cursor-pointer gap-2 py-2.5'>
               <Link to='/dashboard'>
                 <LayoutDashboard className='size-4' />
-                <span>Dashboard</span>
+                <span>{t("userMenu.dashboard")}</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -121,7 +123,7 @@ export default function UserMenu({
             navigate({ to: "/" });
           }}>
           <PhosphorIcons.SignOut className='size-4' />
-          <span>Sign Out</span>
+          <span>{t("userMenu.signOut")}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

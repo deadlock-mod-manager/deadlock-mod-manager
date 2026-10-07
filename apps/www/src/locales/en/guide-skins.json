@@ -1,1 +1,77 @@
-{}
+{
+  "meta": {
+    "name": "Deadlock skins",
+    "title": "Deadlock Skins: Custom Hero Skin Mods | Deadlock Mod Manager",
+    "description": "Install custom Deadlock hero skins from GameBanana, preview them in 3D and switch back to the default look any time. Free, with the open-source Deadlock Mod Manager."
+  },
+  "faqs": {
+    "howToGet": {
+      "question": "How do I get skins in Deadlock?",
+      "answer": "Deadlock has no skin shop yet, so skins come from the modding community on GameBanana. Install Deadlock Mod Manager, filter the Mods Store by Skins and your hero, download a skin, then pick it in Hero Skins."
+    },
+    "visibility": {
+      "question": "Can other players see my Deadlock skins?",
+      "answer": "No. Skins are client-side. You see the new model, everyone else sees the default one."
+    },
+    "free": {
+      "question": "Are Deadlock skins free?",
+      "answer": "Yes. Community skins on GameBanana are free, and so is Deadlock Mod Manager."
+    },
+    "revert": {
+      "question": "How do I go back to a hero's default skin?",
+      "answer": "Open Hero Skins, pick the hero and choose the default appearance. The skin stays downloaded, so you can switch back later."
+    },
+    "multiple": {
+      "question": "Can I use more than one skin for the same hero?",
+      "answer": "One skin is active per hero at a time, and the app warns you if two would clash. You can also give a hero several skins and get a random pick on every launch."
+    },
+    "official": {
+      "question": "Will Deadlock have official skins?",
+      "answer": "Valve hasn't released official cosmetics yet. If they arrive, community skins will still be available through the app."
+    }
+  },
+  "hero": {
+    "eyebrow": "Deadlock skins",
+    "title": "Custom skins for every Deadlock hero",
+    "intro": "Remodels, recolors and full overhauls made by the community. Deadlock Mod Manager groups them by hero, shows them in 3D and swaps them in a click."
+  },
+  "popular": {
+    "title": "Popular hero skins",
+    "intro": "Community skins from the Mods Store. Each card opens the skin on GameBanana; install it from the app.",
+    "snapshot": "Snapshot from October 2026. Download counts come from GameBanana."
+  },
+  "steps": {
+    "title": "How to install a Deadlock skin",
+    "items": {
+      "install": {
+        "title": "Get Deadlock Mod Manager",
+        "body": "Install it on Windows or Linux. It detects your game folder on its own."
+      },
+      "filter": {
+        "title": "Filter by hero",
+        "body": "In the Mods Store, include the Skins category and the hero you play."
+      },
+      "download": {
+        "title": "Download the skin",
+        "body": "If the skin comes in several styles, pick the variant you want."
+      },
+      "activate": {
+        "title": "Set it in Hero Skins",
+        "body": "Choose the active skin for that hero, check it in the 3D preview, then hit Launch modded."
+      }
+    }
+  },
+  "foundry": {
+    "title": "Make your own skin",
+    "intro": "The <strong>Mod Foundry</strong> loads a hero model from the base game or from a skin you own. Paint it, swap sounds, preview it in 3D and export a ready-to-install mod.",
+    "exports": "Exports can be saved as a file, added to your library as a new mod, or replace the skin you started from (the original is kept as a backup). <link>Read the Mod Foundry guide</link>.",
+    "figure": {
+      "alt": "The Mod Foundry skin editor in Deadlock Mod Manager, showing a hero model with paint and sound tools",
+      "caption": "Mod Foundry: edit a hero skin and export it as a mod."
+    }
+  },
+  "downloadBand": {
+    "title": "Give your hero a new look",
+    "body": "Free and open source, for Windows and Linux. Skins are client-side, and the default model is always one click away."
+  }
+}

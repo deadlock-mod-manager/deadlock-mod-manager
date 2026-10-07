@@ -2,17 +2,22 @@ import { Button } from "@deadlock-mods/ui/components/button";
 import { ArrowLeft, Home, Lock } from "@deadlock-mods/ui/icons";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import { GITHUB_ISSUES_URL } from "@/lib/constants";
+import { headI18n } from "@/lib/i18n/route";
 import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/403")({
   component: ForbiddenComponent,
-  head: () =>
-    seo({
-      title: "Access Denied | Deadlock Mod Manager",
-      description: "You don't have permission to view this page.",
+  head: ({ match }) => {
+    const { t, locale } = headI18n(match, "common");
+    return seo({
+      title: t("errorPages.forbidden.meta.title"),
+      description: t("errorPages.forbidden.meta.description"),
       noindex: true,
-    }),
+      locale,
+    });
+  },
 });
 
 // Seeded rather than Math.random() so the server and the browser render the
@@ -33,6 +38,7 @@ const PARTICLES = Array.from({ length: 20 }, (_, i) => ({
 }));
 
 function ForbiddenComponent() {
+  const { t } = useTranslation("common");
   const [glitchText, setGlitchText] = useState("403");
   const [isGlitching, setIsGlitching] = useState(false);
 
@@ -122,12 +128,11 @@ function ForbiddenComponent() {
           <div className='space-y-4'>
             <h1 className='font-primary font-bold text-2xl md:text-3xl'>
               <span className='bg-gradient-to-r from-[#EFE1BE] to-primary bg-clip-text text-transparent'>
-                Access Denied
+                {t("errorPages.forbidden.title")}
               </span>
             </h1>
             <p className='text-muted-foreground text-lg max-w-md mx-auto'>
-              This realm is protected by powerful wards. Even the Patrons cannot
-              grant you passage without the proper authorization!
+              {t("errorPages.forbidden.body")}
             </p>
           </div>
 
@@ -148,38 +153,43 @@ function ForbiddenComponent() {
             <Button asChild size='lg' className='min-w-40'>
               <Link to='/'>
                 <Home className='mr-2' size={20} />
-                Return Home
+                {t("errorPages.returnHome")}
               </Link>
             </Button>
 
             <Button variant='ghost' size='lg' asChild className='min-w-40'>
               <button onClick={() => window.history.back()}>
                 <ArrowLeft className='mr-2' size={20} />
-                Escape the Void
+                {t("errorPages.escape")}
               </button>
             </Button>
           </div>
 
           <div className='pt-8 border-t border-border/50 space-y-3'>
             <p className='text-sm text-muted-foreground'>
-              Need access to this area?
+              {t("errorPages.forbidden.needAccess")}
             </p>
             <p className='text-xs text-muted-foreground/80'>
-              Contact an administrator or check{" "}
-              <a
-                href={GITHUB_ISSUES_URL}
-                target='_blank'
-                rel='noopener noreferrer'
-                className='text-primary hover:text-primary/80 transition-colors underline underline-offset-4'>
-                The New York Oracle
-              </a>{" "}
-              for assistance. Return to{" "}
-              <Link
-                to='/'
-                className='text-primary hover:text-primary/80 transition-colors underline underline-offset-4'>
-                the Cursed Apple
-              </Link>{" "}
-              to continue your modding ritual.
+              <Trans
+                t={t}
+                i18nKey='errorPages.forbidden.hint'
+                components={{
+                  oracle: (
+                    <a
+                      href={GITHUB_ISSUES_URL}
+                      target='_blank'
+                      rel='noopener noreferrer'
+                      className='text-primary hover:text-primary/80 transition-colors underline underline-offset-4'
+                    />
+                  ),
+                  home: (
+                    <Link
+                      to='/'
+                      className='text-primary hover:text-primary/80 transition-colors underline underline-offset-4'
+                    />
+                  ),
+                }}
+              />
             </p>
           </div>
         </div>
