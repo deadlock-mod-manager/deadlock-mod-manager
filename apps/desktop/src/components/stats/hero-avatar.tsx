@@ -3,6 +3,7 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@deadlock-mods/ui/components/avatar";
+import { useRefreshHeroCatalogOnMiss } from "@/hooks/use-player-stats";
 import type { DeadlockHero } from "@/lib/deadlock-api";
 import { cn } from "@/lib/utils";
 
@@ -13,6 +14,7 @@ interface HeroAvatarProps {
 }
 
 export const HeroAvatar = ({ hero, heroId, className }: HeroAvatarProps) => {
+  useRefreshHeroCatalogOnMiss(!hero);
   const image =
     hero?.images.icon_image_small_webp ?? hero?.images.icon_image_small;
 

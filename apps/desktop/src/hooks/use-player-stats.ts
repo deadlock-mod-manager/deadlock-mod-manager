@@ -123,14 +123,41 @@ const indexHeroCatalog = (heroes: DeadlockHero[]): HeroCatalogIndex => {
   return index;
 };
 
+const HERO_CATALOG_KEY = "assets:heroes";
+const SESSION_START = Date.now();
+
+const useHeroCatalogQuery = () =>
+  useStatsQuery({ key: HERO_CATALOG_KEY, ttl: STATS_TTL.assets }, getHeroes);
+
 export const useHeroCatalog = () => {
-  const query = useStatsQuery(
-    { key: "assets:heroes", ttl: STATS_TTL.assets },
-    getHeroes,
-  );
+  const query = useHeroCatalogQuery();
   const { byId, heroByName } = indexHeroCatalog(query.data?.data ?? NO_HEROES);
 
   return { heroesById: byId, heroByName, isPending: query.isPending };
+};
+
+/**
+ * A hero missing from a catalog cached in an earlier session is usually a new
+ * release, so that catalog is refetched. One fetched this session that still
+ * misses a hero means the hero isn't out yet, and refetching would not help.
+ */
+export const useRefreshHeroCatalogOnMiss = (missing: boolean) => {
+  const queryClient = useQueryClient();
+  const fetchedAt = useHeroCatalogQuery().data?.fetchedAt;
+
+  useEffect(() => {
+    if (!missing || fetchedAt === undefined || fetchedAt >= SESSION_START) {
+      return;
+    }
+    void queryClient.prefetchQuery({
+      queryKey: ["stats", HERO_CATALOG_KEY],
+      queryFn: () =>
+        cachedFetch(HERO_CATALOG_KEY, STATS_TTL.assets, getHeroes, {
+          force: true,
+        }),
+      staleTime: 0,
+    });
+  }, [missing, fetchedAt, queryClient]);
 };
 
 export const useRankAssets = () =>

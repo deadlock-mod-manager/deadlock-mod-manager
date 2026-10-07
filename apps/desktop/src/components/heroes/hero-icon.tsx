@@ -3,7 +3,10 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@deadlock-mods/ui/components/avatar";
-import { useHeroCatalog } from "@/hooks/use-player-stats";
+import {
+  useHeroCatalog,
+  useRefreshHeroCatalogOnMiss,
+} from "@/hooks/use-player-stats";
 import { cn } from "@/lib/utils";
 
 interface HeroIconProps {
@@ -21,6 +24,7 @@ export const HeroIcon = ({
 }: HeroIconProps) => {
   const { heroByName } = useHeroCatalog();
   const assets = hero ? heroByName(hero) : undefined;
+  useRefreshHeroCatalogOnMiss(Boolean(hero) && !assets);
   const small =
     assets?.images.icon_image_small_webp ?? assets?.images.icon_image_small;
   const image =
