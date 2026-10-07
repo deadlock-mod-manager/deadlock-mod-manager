@@ -37,11 +37,14 @@ jobs:
     steps:
       - name: Resolve branch
         id: resolve
+        env:
+          INPUT_BRANCH: ${{ inputs.branch }}
+          HEAD_REF: ${{ github.head_ref }}
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            BRANCH="${{ inputs.branch }}"
+            BRANCH="$INPUT_BRANCH"
           else
-            BRANCH="${{ github.head_ref }}"
+            BRANCH="$HEAD_REF"
           fi
 
           BRANCH_SLUG=$(echo "$BRANCH" | sed 's/[^a-zA-Z0-9._-]/-/g' | cut -c1-50)
