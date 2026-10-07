@@ -26,7 +26,8 @@
   },
   "v2Banner": {
     "short": "Refeito do zero.",
-    "long": "Refeito do zero: mods que sobrevivem às atualizações do jogo, uma loja mais rápida e detecção de conflitos."
+    "long": "Refeito do zero: mods que sobrevivem às atualizações do jogo, uma loja mais rápida e detecção de conflitos.",
+    "whatsNew": ""
   },
   "footer": {
     "tagline": "Um app pequeno e open source para instalar e gerenciar mods do Deadlock, o jogo da Valve.",
@@ -40,6 +41,7 @@
     "links": {
       "download": "Baixar",
       "sourceCode": "Código-fonte",
+      "changelog": "",
       "documentation": "Documentação",
       "faq": "Perguntas frequentes",
       "reportBug": "Reportar bug"

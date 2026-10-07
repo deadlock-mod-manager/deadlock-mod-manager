@@ -26,7 +26,8 @@
   },
   "v2Banner": {
     "short": "Komplett neu gebaut.",
-    "long": "Komplett neu gebaut: Mods, die Game-Updates überstehen, ein schnellerer Store und Konflikterkennung."
+    "long": "Komplett neu gebaut: Mods, die Game-Updates überstehen, ein schnellerer Store und Konflikterkennung.",
+    "whatsNew": ""
   },
   "footer": {
     "tagline": "Eine kleine Open-Source-App zum Installieren und Verwalten von Mods für Valves Spiel Deadlock.",
@@ -40,6 +41,7 @@
     "links": {
       "download": "",
       "sourceCode": "Quellcode",
+      "changelog": "",
       "documentation": "Dokumentation",
       "faq": "",
       "reportBug": "Bug melden"
