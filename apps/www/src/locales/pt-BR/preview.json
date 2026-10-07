@@ -21,16 +21,16 @@
       "description": "Um tema aconchegante em homenagem ao Snipztea."
     },
     "arcane": {
-      "name": "Arcane",
-      "description": "Um tema escuro elegante com brilho rosa-vermelho."
+      "name": "",
+      "description": ""
     },
     "deadlock-api": {
-      "name": "Deadlock API",
-      "description": "Preto OLED com efeitos de brilho vermelho elétrico."
+      "name": "",
+      "description": ""
     },
     "oled": {
-      "name": "OLED",
-      "description": "Preto absoluto com superfícies grafite, feito para telas OLED."
+      "name": "",
+      "description": ""
     }
   },
   "categories": {
