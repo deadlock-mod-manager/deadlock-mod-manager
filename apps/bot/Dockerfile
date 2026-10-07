@@ -15,7 +15,7 @@ RUN curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n && \
     corepack enable && \
     corepack prepare pnpm@11.18.0 --activate
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .pnpmfile.mjs turbo.json ./
 
 COPY packages ./packages
 COPY tools ./tools

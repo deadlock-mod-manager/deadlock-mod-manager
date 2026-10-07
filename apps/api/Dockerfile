@@ -21,7 +21,7 @@ RUN curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n && \
     corepack prepare pnpm@11.18.0 --activate
 
 # Copy package configuration files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .pnpmfile.mjs turbo.json ./
 
 # Copy all source code (monorepo structure requires all packages for dependency resolution)
 COPY packages ./packages
@@ -84,7 +84,7 @@ ENV PNPM_HOME="/home/appuser/.local/share/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
 # Copy package files with correct ownership
-COPY --chown=appuser:appuser package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY --chown=appuser:appuser package.json pnpm-lock.yaml pnpm-workspace.yaml .pnpmfile.mjs turbo.json ./
 
 # Copy built application and dependencies from builder stage with correct ownership
 COPY --chown=appuser:appuser --from=builder /usr/src/app/packages ./packages
