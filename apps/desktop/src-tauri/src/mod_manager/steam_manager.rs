@@ -71,11 +71,14 @@ fn push_unique_steam_dir(
 /// Flatpak before native, so a leftover Flatpak Steam hides a native (deb)
 /// install. List every known location and let `find_game` try each one.
 #[cfg(target_os = "linux")]
-fn linux_steam_dir_candidates(home_dir: &Path) -> Vec<PathBuf> {
-  let snap_dir = std::env::var_os("SNAP_USER_DATA")
+fn linux_snap_dir(home_dir: &Path) -> PathBuf {
+  std::env::var_os("SNAP_USER_DATA")
     .map(PathBuf::from)
-    .unwrap_or_else(|| home_dir.join("snap"));
+    .unwrap_or_else(|| home_dir.join("snap"))
+}
 
+#[cfg(target_os = "linux")]
+fn linux_steam_dir_candidates(home_dir: &Path, snap_dir: &Path) -> Vec<PathBuf> {
   vec![
     home_dir.join(".local/share/Steam"),
     home_dir.join(".steam/steam"),
@@ -89,6 +92,21 @@ fn linux_steam_dir_candidates(home_dir: &Path) -> Vec<PathBuf> {
     snap_dir.join("steam/common/.local/share/Steam"),
     snap_dir.join("steam/common/.steam/steam"),
   ]
+}
+
+#[cfg(target_os = "linux")]
+fn linux_fallback_steam_dirs(home_dir: &Path, snap_dir: &Path) -> Vec<steamlocate::SteamDir> {
+  let mut steam_dirs = Vec::new();
+  for candidate in linux_steam_dir_candidates(home_dir, snap_dir) {
+    if let Ok(steam_dir) = steamlocate::SteamDir::from_dir(&candidate) {
+      log::info!(
+        "Steam fallback candidate path found: {:?}",
+        steam_dir.path()
+      );
+      push_unique_steam_dir(&mut steam_dirs, steam_dir);
+    }
+  }
+  steam_dirs
 }
 
 fn resolve_game_from_steam_dirs(
@@ -348,14 +366,8 @@ impl SteamManager {
 
     #[cfg(target_os = "linux")]
     if let Some(home_dir) = std::env::var_os("HOME").map(PathBuf::from) {
-      for candidate in linux_steam_dir_candidates(&home_dir) {
-        if let Ok(steam_dir) = steamlocate::SteamDir::from_dir(&candidate) {
-          log::info!(
-            "Steam fallback candidate path found: {:?}",
-            steam_dir.path()
-          );
-          push_unique_steam_dir(&mut steam_dirs, steam_dir);
-        }
+      for steam_dir in linux_fallback_steam_dirs(&home_dir, &linux_snap_dir(&home_dir)) {
+        push_unique_steam_dir(&mut steam_dirs, steam_dir);
       }
     }
 
@@ -468,7 +480,8 @@ mod tests {
 
   #[test]
   fn linux_candidates_include_flatpak_data_steam_path() {
-    let candidates = linux_steam_dir_candidates(Path::new("/home/tester"));
+    let candidates =
+      linux_steam_dir_candidates(Path::new("/home/tester"), Path::new("/home/tester/snap"));
 
     assert!(
       candidates.contains(&PathBuf::from(
@@ -498,7 +511,8 @@ mod tests {
 
   #[test]
   fn linux_candidates_include_native_and_debian_steam_paths() {
-    let candidates = linux_steam_dir_candidates(Path::new("/home/tester"));
+    let candidates =
+      linux_steam_dir_candidates(Path::new("/home/tester"), Path::new("/home/tester/snap"));
 
     for expected in [
       "/home/tester/.local/share/Steam",
@@ -511,6 +525,51 @@ mod tests {
         "expected native Steam fallback {expected} to be included"
       );
     }
+  }
+
+  #[test]
+  fn fallback_steam_dirs_find_deadlock_in_every_linux_layout() {
+    // Relative candidates double as the layout list, so a new candidate is
+    // covered without touching this test.
+    for layout in linux_steam_dir_candidates(Path::new(""), Path::new("snap")) {
+      let home = tempfile::tempdir().unwrap();
+      create_steam_dir(&home.path().join(&layout), true);
+
+      let (_, game_path) = resolve_game_from_steam_dirs(linux_fallback_steam_dirs(
+        home.path(),
+        &home.path().join("snap"),
+      ))
+      .unwrap_or_else(|| panic!("expected Deadlock to be found in {}", layout.display()));
+
+      assert!(
+        game_path.ends_with(layout.join("steamapps/common").join(DEADLOCK_INSTALL_DIR)),
+        "expected {} to resolve inside {}",
+        game_path.display(),
+        layout.display()
+      );
+    }
+  }
+
+  #[test]
+  fn fallback_steam_dirs_scan_a_symlinked_native_install_once() {
+    let home = tempfile::tempdir().unwrap();
+    let native = home.path().join(".local/share/Steam");
+    create_steam_dir(&native, true);
+    fs::create_dir_all(home.path().join(".steam")).unwrap();
+    for link in [".steam/steam", ".steam/root"] {
+      std::os::unix::fs::symlink(&native, home.path().join(link)).unwrap();
+    }
+
+    let steam_dirs = linux_fallback_steam_dirs(home.path(), &home.path().join("snap"));
+
+    assert_eq!(steam_dirs.len(), 1);
+  }
+
+  #[test]
+  fn fallback_steam_dirs_are_empty_without_a_steam_install() {
+    let home = tempfile::tempdir().unwrap();
+
+    assert!(linux_fallback_steam_dirs(home.path(), &home.path().join("snap")).is_empty());
   }
 
   #[test]
