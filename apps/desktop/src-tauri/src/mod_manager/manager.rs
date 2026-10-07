@@ -19,7 +19,7 @@ use log;
 use std::{
   collections::{BTreeMap, HashSet},
   path::{Component, Path, PathBuf},
-  sync::Mutex,
+  sync::{Mutex, atomic::AtomicBool},
 };
 
 mod analyzed;
@@ -41,6 +41,7 @@ pub struct ModManager {
   autoexec_manager: AutoexecManager,
   app_handle: Option<AppHandle>,
   localization_overlay_plan_cache: Mutex<Option<localization::CachedLocalizationOverlayPlan>>,
+  mod_compatibility_feature: AtomicBool,
 }
 
 pub struct VariantChangeResult {
@@ -63,6 +64,7 @@ impl ModManager {
       autoexec_manager: AutoexecManager::new(),
       app_handle: None,
       localization_overlay_plan_cache: Mutex::new(None),
+      mod_compatibility_feature: AtomicBool::new(false),
     };
 
     // Harness worlds are configured explicitly during Tauri setup. Never scan
@@ -211,6 +213,7 @@ impl ModManager {
       // lines would be missing and the engine would silently drop everything
       // past the 99th pak file.
       self.migrate_profile_to_shards(profile_folder.clone())?;
+      self.set_mod_compatibility_feature(mod_compatibility);
       self.ensure_localization_overlay_for_launch(profile_folder.as_deref(), mod_compatibility)?;
       self.apply_profile_gameinfo(profile_folder)?;
     }
@@ -501,6 +504,7 @@ mod tests {
       autoexec_manager: AutoexecManager::new(),
       app_handle: None,
       localization_overlay_plan_cache: Mutex::new(None),
+      mod_compatibility_feature: AtomicBool::new(false),
     }
   }
 

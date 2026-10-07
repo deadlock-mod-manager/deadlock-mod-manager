@@ -126,6 +126,7 @@ export const useLaunch = () => {
         toast.info(t("common.gameinfoAutoReset"));
       });
 
+      let launched = false;
       try {
         const args = {
           vanilla,
@@ -139,13 +140,17 @@ export const useLaunch = () => {
           profileFolder,
           modCompatibility,
         };
-        await launchWithCompatibilityReview(
+        launched = await launchWithCompatibilityReview(
           () => invoke<void>("start_game", args),
           () => reviewCompatibility(profileFolder),
           vanilla || !modCompatibility,
         );
       } finally {
         unlisten();
+      }
+      if (!launched) {
+        attempt.finish("cancelled");
+        return;
       }
 
       const state = usePersistedStore.getState();

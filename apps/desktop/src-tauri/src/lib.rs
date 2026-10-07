@@ -262,6 +262,7 @@ pub fn run() {
       commands::mods::reorder_mods_by_remote_id,
       commands::localization::analyze_localization_overlay,
       commands::localization::apply_localization_overlay,
+      commands::localization::set_mod_compatibility_feature,
       commands::localization::get_mod_compatibility_settings,
       commands::localization::set_mod_compatibility_for_mod,
       commands::game::is_game_running,

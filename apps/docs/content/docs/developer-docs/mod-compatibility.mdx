@@ -13,7 +13,10 @@ The feature is gated by the **Mod Compatibility Repairs** experimental feature
 Library hides every compatibility control and launch passes
 `modCompatibility: false` to `start_game`: the backend ignores per-mod
 preferences and removes any existing repair package, but keeps the preferences
-for when the feature is turned back on.
+for when the feature is turned back on. The frontend also mirrors the flag to
+the backend with `set_mod_compatibility_feature`, so gameinfo writes outside a
+launch, such as joining a server, never include the repair package while the
+feature is off.
 
 Compatibility is opt-in **per mod and per profile**, and starts off for existing
 and newly installed mods. Each registered mod in Mods Library has a visible

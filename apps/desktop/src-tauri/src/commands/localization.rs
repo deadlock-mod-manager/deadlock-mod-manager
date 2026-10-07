@@ -6,6 +6,15 @@ use crate::mod_manager::localization_overlay::{
 use super::state::MANAGER;
 
 #[tauri::command]
+pub async fn set_mod_compatibility_feature(enabled: bool) -> Result<(), Error> {
+  MANAGER
+    .lock()
+    .map_err(|_| Error::BackgroundTaskFailed("Mod manager is unavailable".into()))?
+    .set_mod_compatibility_feature(enabled);
+  Ok(())
+}
+
+#[tauri::command]
 pub async fn get_mod_compatibility_settings(
   profile_folder: Option<String>,
 ) -> Result<std::collections::BTreeMap<String, bool>, Error> {

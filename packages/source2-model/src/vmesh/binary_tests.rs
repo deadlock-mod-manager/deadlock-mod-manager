@@ -69,3 +69,16 @@ fn legacy_meshopt_vertex_buffers_decode_and_reject_truncated_streams() {
     block.pop();
     assert!(super::binary::read_buffer(&block, 0, true).is_err());
 }
+
+#[test]
+fn compressed_buffers_with_oversized_headers_are_rejected_before_allocating() {
+    // u32::MAX vertices of 256 bytes would ask the decoder for about 1 TiB.
+    let mut block = vec![0u8; 24];
+    block[0..4].copy_from_slice(&u32::MAX.to_le_bytes());
+    block[4..8].copy_from_slice(&256u32.to_le_bytes());
+    block[16..20].copy_from_slice(&8u32.to_le_bytes());
+    block[20..24].copy_from_slice(&4u32.to_le_bytes());
+    block.extend_from_slice(&[0; 4]);
+    assert!(super::binary::read_buffer(&block, 0, true).is_err());
+    assert!(super::binary::read_buffer(&block, 0, false).is_err());
+}

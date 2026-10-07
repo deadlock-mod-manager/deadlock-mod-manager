@@ -2,6 +2,21 @@ use super::*;
 use std::collections::BTreeMap;
 
 impl ModManager {
+  /// Mirrors the frontend's Mod Compatibility Repairs experimental flag. While
+  /// it is off, no gameinfo write includes the repair package, even one that is
+  /// still on disk from an earlier launch.
+  pub fn set_mod_compatibility_feature(&self, enabled: bool) {
+    self
+      .mod_compatibility_feature
+      .store(enabled, std::sync::atomic::Ordering::Relaxed);
+  }
+
+  pub(super) fn mod_compatibility_feature_enabled(&self) -> bool {
+    self
+      .mod_compatibility_feature
+      .load(std::sync::atomic::Ordering::Relaxed)
+  }
+
   pub fn mod_compatibility_settings(
     &self,
     profile_folder: Option<&str>,

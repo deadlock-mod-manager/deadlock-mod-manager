@@ -4,9 +4,10 @@ export async function launchWithCompatibilityReview(
   startGame: () => Promise<void>,
   review: () => Promise<boolean>,
   skipReview: boolean,
-): Promise<void> {
+): Promise<boolean> {
   try {
     await startGame();
+    return true;
   } catch (error) {
     if (
       skipReview ||
@@ -15,6 +16,8 @@ export async function launchWithCompatibilityReview(
     ) {
       throw error;
     }
-    if (await review()) await startGame();
+    if (!(await review())) return false;
+    await startGame();
+    return true;
   }
 }

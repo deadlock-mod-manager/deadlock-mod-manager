@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { invoke } from "@tauri-apps/api/core";
 import {
   createContext,
   type ReactNode,
@@ -9,6 +10,8 @@ import {
   useState,
 } from "react";
 import { CompatibilityReviewDialog } from "@/components/my-mods/compatibility-review-dialog";
+import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
+import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { isGameRunning } from "@/lib/tauri-commands";
 
@@ -28,6 +31,7 @@ export function CompatibilityReviewProvider({
   children: ReactNode;
 }) {
   const gamePath = usePersistedStore((state) => state.gamePath);
+  const featureEnabled = useExperimentalFeature("mod-compatibility-repairs");
   const [request, setRequest] = useState<ReviewRequest | null>(null);
   const activeRequest = useRef<ReviewRequest | null>(null);
   const nextId = useRef(0);
@@ -53,6 +57,18 @@ export function CompatibilityReviewProvider({
       setRequest(next);
     });
   }, []);
+
+  // The backend keeps the repair package out of every gameinfo write, not just
+  // launches, while the experimental feature is off.
+  useEffect(() => {
+    invoke("set_mod_compatibility_feature", {
+      enabled: featureEnabled,
+    }).catch((error) => {
+      logger
+        .withError(error)
+        .error("Could not sync the mod compatibility feature flag");
+    });
+  }, [featureEnabled]);
 
   useEffect(
     () => () => {

@@ -372,7 +372,8 @@ impl ModManager {
     profile_folder: Option<&str>,
   ) -> Result<bool, Error> {
     Ok(
-      self.mod_compatibility_enabled(profile_folder)?
+      self.mod_compatibility_feature_enabled()
+        && self.mod_compatibility_enabled(profile_folder)?
         && self
           .localization_overlay_vpk_path(profile_folder)?
           .is_file(),
@@ -746,6 +747,7 @@ mod tests {
       autoexec_manager: AutoexecManager::new(),
       app_handle: None,
       localization_overlay_plan_cache: Mutex::new(None),
+      mod_compatibility_feature: std::sync::atomic::AtomicBool::new(false),
     }
   }
 
@@ -1129,6 +1131,50 @@ Game core
       manager.mod_compatibility_enabled(None).unwrap(),
       "turning the flag off must keep the per-mod choice for later"
     );
+  }
+
+  #[test]
+  fn gameinfo_includes_the_repair_package_only_while_the_experimental_flag_is_on() {
+    let temp = tempfile::tempdir().unwrap();
+    let mut manager = test_manager(temp.path());
+    fs::write(
+      temp.path().join("game/citadel/gameinfo.gi"),
+      b"GameInfo
+{
+FileSystem
+{
+SearchPaths
+{
+Game citadel
+Game core
+}
+}
+}
+",
+    )
+    .unwrap();
+    let base = manager.get_addons_path(None).unwrap();
+    write_test_vpk(&base.join("pak01_dir.vpk"));
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_enabled(
+      "mod",
+      vec!["pak01_dir.vpk".into()],
+      vec![],
+      None,
+      ShardIndex::FIRST,
+    );
+    manifest.save(&base).unwrap();
+    manager
+      .set_mod_compatibility_for_mod("mod".into(), true, None)
+      .unwrap();
+    let path = manager.localization_overlay_vpk_path(None).unwrap();
+    fs::create_dir_all(path.parent().unwrap()).unwrap();
+    fs::write(&path, b"repair package").unwrap();
+    let overlay = ModManager::localization_overlay_search_path(None);
+
+    assert!(!manager.profile_gameinfo_paths(None).unwrap().contains(&overlay));
+    manager.set_mod_compatibility_feature(true);
+    assert_eq!(manager.profile_gameinfo_paths(None).unwrap()[0], overlay);
   }
 
   #[test]

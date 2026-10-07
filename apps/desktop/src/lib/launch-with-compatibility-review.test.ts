@@ -18,7 +18,9 @@ describe("launchWithCompatibilityReview", () => {
       return true;
     });
 
-    await launchWithCompatibilityReview(startGame, review, false);
+    expect(await launchWithCompatibilityReview(startGame, review, false)).toBe(
+      true,
+    );
 
     expect(calls).toEqual(["start", "review-applied", "start"]);
   });
@@ -29,7 +31,9 @@ describe("launchWithCompatibilityReview", () => {
     });
     const review = mock(async () => false);
 
-    await launchWithCompatibilityReview(startGame, review, false);
+    expect(await launchWithCompatibilityReview(startGame, review, false)).toBe(
+      false,
+    );
 
     expect(review).toHaveBeenCalledTimes(1);
     expect(startGame).toHaveBeenCalledTimes(1);

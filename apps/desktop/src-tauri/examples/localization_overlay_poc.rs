@@ -1456,9 +1456,30 @@ fn absolute_path(path: &Path) -> PocResult<PathBuf> {
   }
 }
 
+/// Resolve the deepest existing ancestor so the comparison with the
+/// canonical game path sees through `..`, symlinks and Windows `\\?\` prefixes.
+fn resolve_existing_prefix(path: &Path) -> PathBuf {
+  let mut existing = path;
+  let mut rest = Vec::new();
+  while !existing.exists() {
+    match (existing.parent(), existing.file_name()) {
+      (Some(parent), Some(name)) => {
+        rest.push(name.to_owned());
+        existing = parent;
+      }
+      _ => return path.to_path_buf(),
+    }
+  }
+  let mut resolved = fs::canonicalize(existing).unwrap_or_else(|_| existing.to_path_buf());
+  for name in rest.iter().rev() {
+    resolved.push(name);
+  }
+  resolved
+}
+
 fn reject_addons_output(game_citadel: &Path, output: &Path) -> PocResult<()> {
   let addons = game_citadel.join("addons");
-  if output.starts_with(&addons) {
+  if resolve_existing_prefix(output).starts_with(&addons) {
     return Err(
       format!(
         "refusing to write {} inside {}; this POC does not update .dmm.json",
