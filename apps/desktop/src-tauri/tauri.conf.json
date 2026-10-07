@@ -28,6 +28,14 @@
     "active": true,
     "createUpdaterArtifacts": true,
     "targets": ["deb", "rpm"],
+    "linux": {
+      "deb": {
+        "depends": ["desktop-file-utils"]
+      },
+      "rpm": {
+        "depends": ["desktop-file-utils"]
+      }
+    },
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
