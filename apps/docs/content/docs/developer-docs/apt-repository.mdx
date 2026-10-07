@@ -13,8 +13,8 @@ Ubuntu and Debian users can install Deadlock Mod Manager from the APT repository
 
 The [`publish-apt.yml`](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/.github/workflows/publish-apt.yml) workflow rebuilds the whole repository on every run:
 
-1. Downloads the regular `*_amd64.deb` asset from the latest stable GitHub releases (5 by default). Nightly releases and CEF builds are excluded.
-2. Renames each package to `<package>_<version>_<arch>.deb` and generates the `Packages` index and `Release` file with `apt-ftparchive`.
+1. Downloads the regular `*_amd64.deb` and CEF `*_amd64-cef.deb` assets from the latest stable GitHub releases (5 by default). Nightly releases are excluded.
+2. Puts regular builds in the `main` component and CEF builds in the `cef` component, renames each package to `<package>_<version>_<arch>.deb`, and generates the `Packages` indexes and `Release` file with `apt-ftparchive`.
 3. Signs `Release` as `InRelease` and `Release.gpg`, and exports the public key as `key.gpg` and `key.asc`.
 4. Runs `apt-get update` against the local repository to verify the signature and indexes.
 5. Syncs the result to the `deadlock-apt` Cloudflare R2 bucket, which is served at `apt.deadlockmods.app`.
@@ -32,8 +32,16 @@ dists/stable/InRelease
 dists/stable/Release
 dists/stable/Release.gpg
 dists/stable/main/binary-amd64/Packages(.gz)
+dists/stable/cef/binary-amd64/Packages(.gz)
 pool/main/d/deadlock-mod-manager/deadlock-mod-manager_<version>_amd64.deb
+pool/cef/d/deadlock-mod-manager/deadlock-mod-manager_<version>_amd64.deb
 ```
+
+## CEF Component
+
+Both components ship a package named `deadlock-mod-manager`, because the in-app updater installs updates with `dpkg -i` using that package name. A renamed CEF package that conflicts with `deadlock-mod-manager` would make those updates fail. Users enable one component in their source line.
+
+CEF builds in the v1.0.0 and v1.1.0 releases were stamped with nightly versions (for example `1.2.0-nightly.20260801.a633e8e`), which apt would rank above the next stable release. When a CEF package's version doesn't match its release tag, the workflow repacks it with the tag's version; the package contents are unchanged.
 
 ## Secrets
 
@@ -62,5 +70,5 @@ FEB3B67A5727ED8F0A1C71CB8535BB5119FFD1A0
 
 ## Limitations
 
-- Only stable x86_64 builds are published.
+- Only stable x86_64 builds are published, in the `main` (system webview) and `cef` components.
 - Packages are built on Ubuntu 24.04 and do not declare a minimum glibc version, so older distributions such as Ubuntu 22.04 or Debian 12 can install them but may fail to start.

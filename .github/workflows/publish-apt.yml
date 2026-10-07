@@ -24,7 +24,10 @@ concurrency:
 env:
   APT_BUCKET: deadlock-apt
   APT_SUITE: stable
-  APT_COMPONENT: main
+  # main: regular (system webview) build. cef: Chromium Embedded Framework build.
+  # Both ship the deadlock-mod-manager package so the in-app updater keeps
+  # working; users enable one component.
+  APT_COMPONENTS: main cef
   APT_ARCH: amd64
 
 jobs:
@@ -57,40 +60,68 @@ jobs:
           fi
 
           for TAG in $TAGS; do
-            echo "Downloading .deb from $TAG"
-            # Matches the regular build only; CEF builds end in _amd64-cef.deb.
+            echo "Downloading .deb packages from $TAG"
+            # Regular builds end in _amd64.deb, CEF builds in _amd64-cef.deb.
             gh release download "$TAG" --repo "$GITHUB_REPOSITORY" \
-              --pattern '*_amd64.deb' --dir "downloads/$TAG" \
+              --pattern '*_amd64.deb' --pattern '*_amd64-cef.deb' --dir "downloads/$TAG" \
               || echo "::warning::No .deb asset in $TAG, skipping"
           done
 
       - name: Build repository layout
         run: |
           set -euo pipefail
-          POOL="pool/$APT_COMPONENT/d/deadlock-mod-manager"
-          BINARY_DIR="dists/$APT_SUITE/$APT_COMPONENT/binary-$APT_ARCH"
-          mkdir -p "repo/$POOL" "repo/$BINARY_DIR"
+          shopt -s nullglob
 
-          shopt -s nullglob globstar
-          DEBS=(downloads/**/*.deb)
-          if [[ ${#DEBS[@]} -eq 0 ]]; then
-            echo "::error::No .deb packages downloaded"
+          for TAG_DIR in downloads/*/; do
+            TAG=$(basename "$TAG_DIR")
+            for DEB in "$TAG_DIR"*.deb; do
+              if [[ "$DEB" == *-cef.deb ]]; then COMPONENT=cef; else COMPONENT=main; fi
+              POOL="repo/pool/$COMPONENT/d/deadlock-mod-manager"
+              mkdir -p "$POOL"
+
+              PKG=$(dpkg-deb -f "$DEB" Package)
+              VER=$(dpkg-deb -f "$DEB" Version)
+              ARCH=$(dpkg-deb -f "$DEB" Architecture)
+
+              # Older CEF builds in stable releases were stamped with a nightly
+              # version (e.g. 1.2.0-nightly.* in the v1.1.0 release), which apt
+              # would rank above the next stable release. Publish them under the
+              # release version instead.
+              if [[ "$COMPONENT" == cef && "$VER" != "${TAG#v}" ]]; then
+                echo "Repacking $DEB: version $VER -> ${TAG#v}"
+                VER="${TAG#v}"
+                WORK=$(mktemp -d)
+                dpkg-deb -R "$DEB" "$WORK/pkg"
+                sed -i "s/^Version: .*/Version: $VER/" "$WORK/pkg/DEBIAN/control"
+                dpkg-deb --root-owner-group -Zxz -b "$WORK/pkg" "$POOL/${PKG}_${VER}_${ARCH}.deb" >/dev/null
+                rm -rf "$WORK"
+              else
+                # Release assets have dotted names (Deadlock.Mod.Manager_1.1.0_amd64.deb);
+                # store them under the conventional <package>_<version>_<arch>.deb name.
+                cp "$DEB" "$POOL/${PKG}_${VER}_${ARCH}.deb"
+              fi
+            done
+          done
+
+          if [[ ! -d repo/pool/main ]]; then
+            echo "::error::No regular .deb packages downloaded"
             exit 1
           fi
-
-          # Release assets have dotted names (Deadlock.Mod.Manager_1.1.0_amd64.deb);
-          # store them under the conventional <package>_<version>_<arch>.deb name.
-          for DEB in "${DEBS[@]}"; do
-            PKG=$(dpkg-deb -f "$DEB" Package)
-            VER=$(dpkg-deb -f "$DEB" Version)
-            ARCH=$(dpkg-deb -f "$DEB" Architecture)
-            cp "$DEB" "repo/$POOL/${PKG}_${VER}_${ARCH}.deb"
-          done
-          ls -la "repo/$POOL"
+          ls -laR repo/pool
 
           cd repo
-          apt-ftparchive packages pool > "$BINARY_DIR/Packages"
-          gzip -9kn "$BINARY_DIR/Packages"
+          for COMPONENT in $APT_COMPONENTS; do
+            BINARY_DIR="dists/$APT_SUITE/$COMPONENT/binary-$APT_ARCH"
+            mkdir -p "$BINARY_DIR"
+            # An empty index is still valid, so a component without packages yet
+            # doesn't break apt update for users who enabled it.
+            if [[ -d "pool/$COMPONENT" ]]; then
+              apt-ftparchive packages "pool/$COMPONENT" > "$BINARY_DIR/Packages"
+            else
+              : > "$BINARY_DIR/Packages"
+            fi
+            gzip -9kn "$BINARY_DIR/Packages"
+          done
 
           apt-ftparchive \
             -o APT::FTPArchive::Release::Origin="Deadlock Mod Manager" \
@@ -98,7 +129,7 @@ jobs:
             -o APT::FTPArchive::Release::Suite="$APT_SUITE" \
             -o APT::FTPArchive::Release::Codename="$APT_SUITE" \
             -o APT::FTPArchive::Release::Architectures="$APT_ARCH" \
-            -o APT::FTPArchive::Release::Components="$APT_COMPONENT" \
+            -o APT::FTPArchive::Release::Components="$APT_COMPONENTS" \
             -o APT::FTPArchive::Release::Description="Deadlock Mod Manager APT repository" \
             release "dists/$APT_SUITE" > Release.tmp
           # Written outside dists/ so apt-ftparchive doesn't hash a partial Release.
@@ -132,18 +163,23 @@ jobs:
           set -euo pipefail
           # Point a throwaway apt configuration at the local repository to make
           # sure the signature and indexes are valid before uploading.
-          ROOT="$(mktemp -d)"
-          mkdir -p "$ROOT/etc/apt/sources.list.d" "$ROOT/etc/apt/preferences.d" \
-            "$ROOT/var/lib/apt/lists/partial" "$ROOT/var/cache/apt/archives/partial" \
-            "$ROOT/var/lib/dpkg"
-          touch "$ROOT/var/lib/dpkg/status"
-          echo "deb [signed-by=$PWD/repo/key.gpg] file://$PWD/repo $APT_SUITE $APT_COMPONENT" \
-            > "$ROOT/etc/apt/sources.list"
+          # Each component is checked on its own, the way users enable it.
+          for COMPONENT in $APT_COMPONENTS; do
+            echo "::group::Verify $COMPONENT"
+            ROOT="$(mktemp -d)"
+            mkdir -p "$ROOT/etc/apt/sources.list.d" "$ROOT/etc/apt/preferences.d" \
+              "$ROOT/var/lib/apt/lists/partial" "$ROOT/var/cache/apt/archives/partial" \
+              "$ROOT/var/lib/dpkg"
+            touch "$ROOT/var/lib/dpkg/status"
+            echo "deb [signed-by=$PWD/repo/key.gpg] file://$PWD/repo $APT_SUITE $COMPONENT" \
+              > "$ROOT/etc/apt/sources.list"
 
-          APT_OPTS=(-o Dir="$ROOT" -o Dir::State::status="$ROOT/var/lib/dpkg/status" \
-            -o Debug::NoLocking=1 -o APT::Architecture="$APT_ARCH")
-          apt-get "${APT_OPTS[@]}" update
-          apt-cache "${APT_OPTS[@]}" policy deadlock-mod-manager
+            APT_OPTS=(-o Dir="$ROOT" -o Dir::State::status="$ROOT/var/lib/dpkg/status" \
+              -o Debug::NoLocking=1 -o APT::Architecture="$APT_ARCH")
+            apt-get "${APT_OPTS[@]}" update
+            apt-cache "${APT_OPTS[@]}" policy deadlock-mod-manager
+            echo "::endgroup::"
+          done
 
       - name: Upload to R2
         env:
