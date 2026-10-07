@@ -196,6 +196,16 @@ jobs:
             image: debian:trixie
           - distro: arch
             image: archlinux:latest
+        # The app has no per-distro code paths, so one full Linux run is
+        # enough. Arch's rolling WebKitGTK only needs the startup check.
+        exclude:
+          - { distro: arch, suite: conflicts }
+          - { distro: arch, suite: downloads }
+          - { distro: arch, suite: filesystem }
+          - { distro: arch, suite: gamebanana }
+          - { distro: arch, suite: settings }
+          - { distro: arch, suite: skins }
+          - { distro: arch, suite: interchange }
     steps:
       - name: Install Debian packages
         if: matrix.distro == 'debian'
