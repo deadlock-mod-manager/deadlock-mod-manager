@@ -9,7 +9,7 @@ import { Callout } from "fumadocs-ui/components/callout";
 
 The Deadlock Mod Interchange format describes an installed mod library without tying it to any one mod manager. Deadlock Mod Manager (DMM) writes it when you choose **Export for other mod managers** and reads it when you open an export file under **Import from other mod managers**. Grimoire reads and writes the same format.
 
-A manager that supports it can take a user's library from any other manager that supports it, and the user can move back without losing mods, load order, profiles, or crosshairs.
+A manager that supports it can take a user's library from any other manager that supports it, and the user can move back without losing mods or load order. Profiles and crosshairs carry over when they are included in the export; DMM does not export a profile's autoexec commands.
 
 The normative spec is [`rfcs/001-mod-interchange/proposal.md`](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/rfcs/001-mod-interchange/proposal.md). This page explains the format, shows how DMM uses it, and lists what another manager has to implement.
 
