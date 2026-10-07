@@ -786,13 +786,17 @@ export const GetMaps = () => {
         title={t("navigation.maps")}
       />
       <Alert
-        className='mb-6 gap-3.5 rounded-xl border-amber-200/80 bg-amber-50/90 py-4 pl-4 pr-5 shadow-sm ring-1 ring-inset ring-amber-200/60 items-start dark:border-amber-500/35 dark:bg-amber-950/50 dark:ring-amber-500/10'
+        className='mb-5 items-start gap-2.5 border-amber-500/20 bg-amber-500/[0.04] py-2.5 pr-4 pl-3'
+        role='note'
         variant='warning'>
         <Warning
-          className='mt-0.5 h-5 w-5 shrink-0 text-amber-700 dark:text-amber-400'
-          weight='duotone'
+          className='mt-px size-4 shrink-0 text-amber-400'
+          weight='fill'
         />
-        <AlertDescription className='min-w-0 text-sm leading-relaxed text-foreground/90'>
+        <AlertDescription className='min-w-0 text-[13px] leading-snug text-muted-foreground'>
+          <span className='mr-1.5 font-medium text-amber-300'>
+            {t("mods.mapsWarningTitle")}
+          </span>
           {t("mods.mapsWarning")}
         </AlertDescription>
       </Alert>
