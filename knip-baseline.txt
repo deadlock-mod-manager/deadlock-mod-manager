@@ -132,7 +132,6 @@
 ["exports","apps/desktop/src/components/server-browser/region-flag.tsx",[["","regionLabel"]]]
 ["exports","apps/desktop/src/components/settings/theme-switcher.tsx",[["","ThemeSwitcher"]]]
 ["exports","apps/desktop/src/components/stats/account-prompt.tsx",[["","parseAccountId"]]]
-["exports","apps/desktop/src/components/stats/deadlock-api-credit.tsx",[["","DEADLOCK_API_URL"]]]
 ["exports","apps/desktop/src/hooks/use-about.ts",[["","fetchAboutData"]]]
 ["exports","apps/desktop/src/hooks/use-live-match.ts",[["","useLiveMatchDetection"]]]
 ["exports","apps/desktop/src/hooks/use-player-stats.ts",[["","REFRESH_COOLDOWN_MS"]]]

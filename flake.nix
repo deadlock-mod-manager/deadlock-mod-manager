@@ -97,6 +97,22 @@
 
           nightly = self.packages.${system}.default;
 
+          # Desktop E2E harness build: mirrors `pnpm e2e:build` (e2e-harness
+          # feature, harness frontend, e2e Tauri config) but keeps the Nix
+          # packaging and wrapper so scenarios exercise what Nix users run.
+          e2e = self.packages.${system}.default.overrideAttrs (prev: {
+            cargoBuildFeatures = [ "e2e-harness" ];
+            tauriBuildFlags = [
+              "--config"
+              "src-tauri/tauri.e2e.conf.json"
+            ];
+            env = prev.env // {
+              VITE_DMM_E2E_HARNESS = "1";
+            };
+            # The default package already runs the Rust tests.
+            doCheck = false;
+          });
+
           # Native FFI libraries for Bun
           vpk-parser = pkgs.callPackage ./packages/vpk-parser/package.nix {
             inherit rustToolchain;
