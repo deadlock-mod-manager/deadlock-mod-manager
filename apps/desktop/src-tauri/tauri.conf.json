@@ -30,10 +30,10 @@
     "targets": ["deb", "rpm"],
     "linux": {
       "deb": {
-        "depends": ["desktop-file-utils"]
+        "depends": ["desktop-file-utils", "xdg-utils"]
       },
       "rpm": {
-        "depends": ["desktop-file-utils"]
+        "depends": ["desktop-file-utils", "xdg-utils"]
       }
     },
     "icon": [
