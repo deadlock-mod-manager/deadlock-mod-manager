@@ -41,9 +41,15 @@ jobs:
           set -euo pipefail
           mkdir -p downloads
 
+          if ! [[ "$KEEP_RELEASES" =~ ^[1-9][0-9]*$ ]]; then
+            echo "::error::keep-releases must be a positive integer, got '$KEEP_RELEASES'"
+            exit 1
+          fi
+
+          # Slice in jq rather than piping to head, which would SIGPIPE gh under pipefail.
           TAGS=$(gh release list --repo "$GITHUB_REPOSITORY" --limit 50 \
             --exclude-drafts --exclude-pre-releases --json tagName \
-            --jq '.[].tagName | select(test("nightly") | not)' | head -n "$KEEP_RELEASES")
+            --jq "[.[].tagName | select(test(\"nightly\") | not)][:$KEEP_RELEASES][]")
 
           if [[ -z "$TAGS" ]]; then
             echo "::error::No stable releases found"
@@ -110,7 +116,7 @@ jobs:
 
           export GNUPGHOME="$(mktemp -d)"
           echo "$APT_GPG_PRIVATE_KEY" | gpg --batch --import
-          FPR=$(gpg --list-secret-keys --with-colons | awk -F: '/^fpr/{print $10; exit}')
+          FPR=$(gpg --list-secret-keys --with-colons | awk -F: '/^fpr/ && !seen {print $10; seen=1}')
 
           RELEASE="repo/dists/$APT_SUITE/Release"
           gpg --batch --yes --local-user "$FPR" --clearsign -o "repo/dists/$APT_SUITE/InRelease" "$RELEASE"
