@@ -7,6 +7,7 @@ import {
   SITE_URL,
   X_URL,
 } from "@/lib/constants";
+import { getReleaseUrl } from "@/lib/release-downloads";
 import { absoluteUrl, DEFAULT_DESCRIPTION, SITE_NAME, seo } from "@/utils/seo";
 
 /**
@@ -75,11 +76,16 @@ const faqPage = (faqs: FaqEntry[]) => ({
   })),
 });
 
+interface HomeStructuredDataOptions {
+  /** Latest stable release, e.g. "1.1.0". Omitted when the API is down. */
+  version?: string;
+}
+
 const ORGANIZATION_ID = `${SITE_URL}/#organization`;
 const WEBSITE_ID = `${SITE_URL}/#website`;
 const SOFTWARE_ID = `${SITE_URL}/#software`;
 
-const homeGraph = () => ({
+const homeGraph = ({ version }: HomeStructuredDataOptions) => ({
   "@context": "https://schema.org",
   "@graph": [
     {
@@ -114,6 +120,10 @@ const homeGraph = () => ({
       applicationCategory: "GameApplication",
       operatingSystem: "Windows, Linux",
       downloadUrl: absoluteUrl("/download"),
+      ...(version && {
+        softwareVersion: version,
+        releaseNotes: getReleaseUrl(version),
+      }),
       license: "https://www.gnu.org/licenses/gpl-3.0.html",
       isAccessibleForFree: true,
       offers: {
@@ -191,7 +201,8 @@ const serialize = (graph: JsonLdGraph) =>
   JSON.stringify(graph).replace(/</g, "\\u003c");
 
 /** Serialized JSON-LD for the home page head. */
-export const homeStructuredData = () => serialize(homeGraph());
+export const homeStructuredData = (options: HomeStructuredDataOptions = {}) =>
+  serialize(homeGraph(options));
 
 /** Head tags for a landing or guide page: meta, canonical link and JSON-LD. */
 export const guideHead = (page: GuidePageData) => ({

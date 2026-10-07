@@ -10,6 +10,8 @@ export const BUG_REPORT_URL = `${GITHUB_ISSUES_URL}/new?labels=bug&template=bug-
  * page itself falls back to it when the releases API is down.
  */
 export const DOWNLOAD_URL = `${GITHUB_REPO}/releases/latest`;
+/** Rolling nightly build, the public preview of V2 until it ships as stable. */
+export const V2_PREVIEW_URL = `${GITHUB_REPO}/releases/tag/nightly`;
 export const REDDIT_URL = "https://www.reddit.com/r/DeadlockModManager/";
 export const X_URL = "https://x.com/DLModManager";
 export const APP_NAME = "Deadlock Mod Manager";
