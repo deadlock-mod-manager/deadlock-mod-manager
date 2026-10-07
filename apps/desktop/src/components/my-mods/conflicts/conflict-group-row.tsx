@@ -28,6 +28,7 @@ import {
 } from "@deadlock-mods/ui/icons";
 import { cn } from "@deadlock-mods/ui/lib/utils";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router";
 import type { ConflictGroup } from "@/lib/mods/conflicts";
 import type { ConflictIgnoreAction } from "@/types/generated/ConflictIgnoreAction";
 import type { ConflictSeverity } from "@/types/generated/ConflictSeverity";
@@ -80,23 +81,28 @@ const ProviderRow = ({
       <span className='flex h-6 w-6 shrink-0 items-center justify-center rounded bg-primary/10 font-medium text-primary text-xs tabular-nums'>
         {position + 1}
       </span>
-      <div className='h-7 w-7 shrink-0 overflow-hidden rounded bg-secondary'>
-        {mod?.images?.[0] && (
-          <img
-            alt=''
-            className='h-full w-full object-cover'
-            src={mod.images[0]}
-          />
-        )}
-      </div>
-      <span
-        className={cn(
-          "min-w-0 flex-1 truncate text-sm",
-          !isUsed && "text-muted-foreground",
-        )}
-        title={name}>
-        {name}
-      </span>
+      <Link
+        className='group/mod mr-auto flex min-w-0 items-center gap-3 rounded outline-none focus-visible:ring-2 focus-visible:ring-ring/60'
+        state={{ collection: "library" }}
+        title={name}
+        to={`/mods/${modId}`}>
+        <div className='h-7 w-7 shrink-0 overflow-hidden rounded bg-secondary'>
+          {mod?.images?.[0] && (
+            <img
+              alt=''
+              className='h-full w-full object-cover'
+              src={mod.images[0]}
+            />
+          )}
+        </div>
+        <span
+          className={cn(
+            "min-w-0 truncate text-sm group-hover/mod:underline",
+            !isUsed && "text-muted-foreground",
+          )}>
+          {name}
+        </span>
+      </Link>
       {isUsed ? (
         <span className='flex shrink-0 items-center gap-1 text-primary text-xs'>
           <Check aria-hidden className='h-3.5 w-3.5' />
@@ -113,14 +119,14 @@ const ProviderRow = ({
             )}>
             {severity === "critical"
               ? t("conflicts.modelHidden")
-              : t("conflicts.skipped")}
+              : t("conflicts.usingFirstCopy")}
           </span>
           <Button
             disabled={isBusy}
             icon={<ArrowUpToLine className='h-3.5 w-3.5' />}
             onClick={onLoadFirst}
             size='sm'
-            variant='outline'>
+            variant={severity === "critical" ? "outline" : "ghost"}>
             {t("conflicts.loadFirst")}
           </Button>
         </>
@@ -149,6 +155,11 @@ export const ConflictGroupRow = ({
   const [first] = group.providers;
   const preview = group.files.slice(0, 2).map((file) => fileName(file.path));
   const hiddenCount = group.files.length - preview.length;
+  const isCritical = group.severity === "critical";
+  const markFine = () =>
+    onIgnore(
+      group.pairs.map(([modA, modB]) => ({ type: "ignorePair", modA, modB })),
+    );
 
   return (
     <div
@@ -169,6 +180,12 @@ export const ConflictGroupRow = ({
             {t(`conflicts.title.${group.severity}`, {
               count: group.providers.length,
             })}
+            {!isCritical && (
+              <span className='font-normal text-muted-foreground'>
+                {" · "}
+                {t(`conflicts.hint.${group.severity}`)}
+              </span>
+            )}
           </p>
           <p className='truncate font-mono text-muted-foreground text-xs'>
             {preview.join(", ")}
@@ -176,6 +193,16 @@ export const ConflictGroupRow = ({
               ` ${t("conflicts.moreFiles", { count: hiddenCount })}`}
           </p>
         </div>
+        {!isCritical && (
+          <Button
+            disabled={isBusy}
+            icon={<Check className='h-3.5 w-3.5' />}
+            onClick={markFine}
+            size='sm'
+            variant='outline'>
+            {t("conflicts.markFine")}
+          </Button>
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -187,19 +214,14 @@ export const ConflictGroupRow = ({
             />
           </DropdownMenuTrigger>
           <DropdownMenuContent align='end'>
-            <DropdownMenuItem
-              onClick={() =>
-                onIgnore(
-                  group.pairs.map(([modA, modB]) => ({
-                    type: "ignorePair",
-                    modA,
-                    modB,
-                  })),
-                )
-              }>
-              {t("conflicts.ignoreGroup")}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
+            {isCritical && (
+              <>
+                <DropdownMenuItem onClick={markFine}>
+                  {t("conflicts.markFine")}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )}
             {group.providers.map((modId) => (
               <DropdownMenuItem
                 key={modId}

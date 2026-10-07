@@ -4,7 +4,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
-import { TriangleAlert } from "@deadlock-mods/ui/icons";
+import { Layers, TriangleAlert } from "@deadlock-mods/ui/icons";
 import { cn } from "@deadlock-mods/ui/lib/utils";
 import { useTranslation } from "react-i18next";
 import type { ModConflictStatus } from "@/lib/mods/conflicts";
@@ -29,7 +29,7 @@ export const ModConflictBadge = ({
             "cursor-pointer bg-background/80 backdrop-blur-sm",
             status === "modelHidden"
               ? "border-destructive/50 text-red-300 hover:bg-destructive/20"
-              : "border-amber-500/40 text-amber-400 hover:bg-amber-500/15",
+              : "border-border text-muted-foreground hover:bg-muted",
             className,
           )}
           data-testid='mod-conflict-badge'
@@ -40,12 +40,16 @@ export const ModConflictBadge = ({
               onClick();
             }}
             type='button'>
-            <TriangleAlert aria-hidden />
+            {status === "modelHidden" ? (
+              <TriangleAlert aria-hidden />
+            ) : (
+              <Layers aria-hidden />
+            )}
             {t(`conflicts.badge.${status}`)}
           </button>
         </Badge>
       </TooltipTrigger>
-      <TooltipContent>{t(`conflicts.badgeTooltip.${status}`)}</TooltipContent>
+      <TooltipContent>{t(`conflicts.badgeHint.${status}`)}</TooltipContent>
     </Tooltip>
   );
 };

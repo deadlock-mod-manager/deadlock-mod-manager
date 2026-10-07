@@ -89,9 +89,10 @@ export const LoadOrderHelp = () => {
         ))}
       </div>
       <div className='space-y-2 text-muted-foreground text-sm'>
+        <p className='text-foreground'>{t("conflicts.help.safe")}</p>
         <p>{t("conflicts.help.order")}</p>
-        <p>{t("conflicts.help.models")}</p>
-        <p>{t("conflicts.help.action")}</p>
+        <p>{t("conflicts.help.modelException")}</p>
+        <p>{t("conflicts.help.resolve")}</p>
       </div>
     </div>
   );

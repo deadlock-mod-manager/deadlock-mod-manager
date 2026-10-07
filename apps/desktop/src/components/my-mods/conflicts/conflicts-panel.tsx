@@ -86,7 +86,7 @@ const IgnoredSection = ({
             aria-hidden
             className='h-4 w-4 transition-transform group-data-[state=closed]:-rotate-90'
           />
-          {t("conflicts.ignoredSection", { count: total })}
+          {t("conflicts.markedFineSection", { count: total })}
         </CollapsibleTrigger>
         <Button
           disabled={ignore.isPending}
@@ -172,13 +172,15 @@ export const ConflictsPanel = ({
   let summary = t("conflicts.summaryNone");
   if (groups.length > 0) {
     summary = t("conflicts.summary", { count: groups.length });
-  }
-  if (hiddenModels > 0) {
-    const key =
-      hiddenModels === groups.length
-        ? "conflicts.summaryModelsAll"
-        : "conflicts.summaryModels";
-    summary += ` ${t(key, { count: hiddenModels })}`;
+    if (hiddenModels === 0) {
+      summary += ` ${t("conflicts.summaryNoModels", { count: groups.length })}`;
+    } else {
+      const key =
+        hiddenModels === groups.length
+          ? "conflicts.summaryModelsAll"
+          : "conflicts.summaryModels";
+      summary += ` ${t(key, { count: hiddenModels })}`;
+    }
   }
 
   let body: React.ReactNode;
@@ -253,7 +255,12 @@ export const ConflictsPanel = ({
       onOpenChange={setHelpOpen}
       open={helpOpen}>
       <div className='flex flex-wrap items-center justify-between gap-2'>
-        <p className='text-muted-foreground text-sm'>{summary}</p>
+        <div className='text-sm'>
+          <p>{summary}</p>
+          {groups.length > 0 && (
+            <p className='text-muted-foreground'>{t("conflicts.safeNote")}</p>
+          )}
+        </div>
         <CollapsibleTrigger asChild>
           <Button size='sm' variant='ghost'>
             {t("conflicts.howItWorks")}

@@ -62,18 +62,6 @@ const sharedFiles = async (...providers: string[]) => {
   return files;
 };
 
-const chooseMenuItem = async (
-  trigger: ReturnType<typeof $>,
-  item: string,
-): Promise<void> => {
-  await trigger.waitForClickable();
-  await trigger.click();
-  await expect(trigger).toBeFocused();
-  await browser.keys("ArrowDown");
-  await expect(trigger).toHaveAttribute("aria-expanded", "true");
-  await $(`//*[@role="menuitem" and normalize-space()="${item}"]`).click();
-};
-
 const RESOLVED = [HAT_PANTS, HAT_JACKET, PANTS_TEXTURE];
 
 describe("mod conflicts", () => {
@@ -124,13 +112,12 @@ describe("mod conflicts", () => {
       });
       await assertConflictDisk(world, "reordered", RESOLVED, null);
 
-      await step("ignore the material overlap", async () => {
-        await chooseMenuItem(
-          (await group(HAT_PANTS, PANTS_TEXTURE)).$(
-            'button[aria-label="Conflict options"]',
-          ),
-          "Ignore this overlap",
-        );
+      await step("mark the material overlap as fine", async () => {
+        await (
+          await group(HAT_PANTS, PANTS_TEXTURE)
+        )
+          .$("button=Mark as fine")
+          .click();
         await expectGroups([shown("critical", HAT_PANTS, HAT_JACKET)]);
       });
       await assertConflictDisk(world, "ignored", RESOLVED, [
@@ -143,7 +130,7 @@ describe("mod conflicts", () => {
       await openConflictsTab();
       await step("keep the new order and the ignore", async () => {
         await expectGroups([shown("critical", HAT_PANTS, HAT_JACKET)]);
-        await expect($("button*=Ignored (1)")).toBeDisplayed();
+        await expect($("button*=Marked as fine (1)")).toBeDisplayed();
       });
 
       await step("restore ignored conflicts", async () => {

@@ -48,6 +48,7 @@ import {
   EllipsisVertical,
   FileOutput,
   FolderOpen,
+  Layers,
   LayoutGrid,
   LayoutList,
   Loader2,
@@ -648,6 +649,9 @@ const MyMods = () => {
   const { groups: conflictGroups, statusByMod: conflictStatusByMod } =
     useProfileConflicts();
   const conflictCount = conflictGroups.length;
+  const hiddenModelCount = conflictGroups.filter(
+    (group) => group.severity === "critical",
+  ).length;
   const showConflicts = () => setActiveTab(CONFLICTS_TAB);
   const [showBatchUpdateDialog, setShowBatchUpdateDialog] = useState(false);
   const updatePercent = usePersistedStore((state) =>
@@ -1023,12 +1027,11 @@ const MyMods = () => {
                       </TabsTrigger>
                       {isConflictDetectionEnabled && (
                         <TabsTrigger value={CONFLICTS_TAB}>
-                          <TriangleAlert
-                            className={cn(
-                              "mr-2 h-4 w-4",
-                              conflictCount > 0 && "text-amber-400",
-                            )}
-                          />
+                          {hiddenModelCount > 0 ? (
+                            <TriangleAlert className='mr-2 h-4 w-4 text-amber-400' />
+                          ) : (
+                            <Layers className='mr-2 h-4 w-4' />
+                          )}
                           {t("myMods.tabs.conflicts")}
                           <span className='ml-2 text-muted-foreground text-xs'>
                             ({conflictCount})
