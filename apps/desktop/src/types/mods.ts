@@ -183,9 +183,11 @@ export interface UpdateProgress {
   currentModId?: string;
   currentMod?: string;
   downloadPercentage?: number;
+  backupPercentage?: number;
   completedMods: number;
   totalMods: number;
   overallProgress: number;
+  isBackingUp?: boolean;
   isDownloading: boolean;
   isInstalling: boolean;
 }

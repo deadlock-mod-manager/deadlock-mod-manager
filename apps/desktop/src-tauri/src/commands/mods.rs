@@ -294,6 +294,19 @@ pub async fn batch_update_mods(
 
   if !skip_backup && has_updatable_mods {
     log::info!("Creating addons backup before updating mods");
+    app_handle
+      .emit(
+        "batch-update-progress",
+        BatchUpdateProgressEvent {
+          current_step: "backingUp".to_string(),
+          current_mod_index: 0,
+          total_mods,
+          current_mod_id: String::new(),
+          current_mod_name: String::new(),
+          overall_progress: 0.0,
+        },
+      )
+      .ok();
 
     let backup_dir = {
       let mut mod_manager = MANAGER.lock().unwrap();

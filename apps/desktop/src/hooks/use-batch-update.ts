@@ -39,8 +39,17 @@ const listenForUpdateProgress = async () => {
         completedMods: progress.currentModIndex,
         totalMods: progress.totalMods,
         overallProgress: progress.overallProgress,
+        isBackingUp: progress.currentStep === "backingUp",
         isDownloading: progress.currentStep === "downloading",
         isInstalling: progress.currentStep === "installing",
+      });
+    }),
+    listen<{ progress: number }>("backup-progress", (event) => {
+      const previous = getUpdateProgress();
+      if (!previous?.isBackingUp) return;
+      setBatchUpdateProgress({
+        ...previous,
+        backupPercentage: event.payload.progress,
       });
     }),
     listen<DownloadProgressEvent>("download-progress", (event) => {

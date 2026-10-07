@@ -60,6 +60,9 @@ export const BatchUpdateDialog = ({
     updateProgress,
   } = useBatchUpdate();
   const skipModUpdate = usePersistedStore((state) => state.skipModUpdate);
+  const stepPercentage = updateProgress?.isBackingUp
+    ? updateProgress.backupPercentage
+    : updateProgress?.downloadPercentage;
 
   const batchUpdateMutation = useMutation({
     mutationFn: executeBatchUpdate,
@@ -102,15 +105,16 @@ export const BatchUpdateDialog = ({
           <div className='space-y-4 py-4'>
             <div className='flex items-center justify-between'>
               <span className='text-sm font-medium capitalize flex items-center gap-2'>
-                {updateProgress.currentStep}{" "}
-                {updateProgress.isDownloading && (
+                {updateProgress.isBackingUp
+                  ? t("myMods.batchUpdate.backingUp")
+                  : updateProgress.currentStep}{" "}
+                {(updateProgress.isBackingUp ||
+                  updateProgress.isDownloading) && (
                   <>
-                    {updateProgress.downloadPercentage !== undefined && (
+                    {stepPercentage !== undefined && (
                       <span className='tabular-nums text-muted-foreground'>
                         {t("downloads.percentage", {
-                          percentage: Math.round(
-                            updateProgress.downloadPercentage,
-                          ),
+                          percentage: Math.round(stepPercentage),
                         })}
                       </span>
                     )}
