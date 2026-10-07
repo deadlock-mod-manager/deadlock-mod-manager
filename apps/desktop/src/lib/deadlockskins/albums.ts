@@ -1,6 +1,5 @@
 import type { ModDto } from "@deadlock-mods/shared";
 import { queryOptions } from "@tanstack/react-query";
-import type { z } from "zod";
 import { fetch } from "@/lib/fetch";
 import {
   CATALOG_QUERY_DEFAULTS,
@@ -8,40 +7,34 @@ import {
 } from "@/lib/gamebanana-catalog";
 import { MODS_LIST_QUERY_KEY } from "@/lib/mods/mod-query-cache";
 import { STALE_TIME_API } from "@/lib/query-constants";
+import type { z } from "zod";
 import {
+  AlbumDetailResponseSchema,
   AlbumListResponseSchema,
-  AlbumResponseSchema,
   type DeadlockSkinsAlbumMember,
-  parseAlbumMembers,
 } from "./parse";
 
 const DEADLOCKSKINS_ORIGIN = "https://deadlockskins.gg";
-const DEADLOCKSKINS_API = `${DEADLOCKSKINS_ORIGIN}/api/public/v1`;
+const ALBUMS_API = `${DEADLOCKSKINS_ORIGIN}/api/public/v1/albums`;
 
 // Albums are hand-curated and change rarely.
 const ALBUMS_STALE_TIME = 60 * 60 * 1000;
 
-export type DeadlockSkinsAlbum = {
-  slug: string;
-  name: string;
-  description: string;
-  coverUrl: string | null;
-  itemCount: number;
+/** A deadlockskins.gg link to open in the browser, tagged so the site can attribute the visit. */
+export const deadlockSkinsLink = (path: string) => {
+  const url = new URL(path, DEADLOCKSKINS_ORIGIN);
+  url.searchParams.set("ref", "dmm-app");
+  return url.toString();
 };
 
-const albumPath = (slug: string) => `/albums/${encodeURIComponent(slug)}`;
-
-/** A deadlockskins.gg link to open in the browser, tagged so the site can attribute the visit. */
-export const deadlockSkinsLink = (path: string) =>
-  `${DEADLOCKSKINS_ORIGIN}${path}?ref=dmm`;
-
 export const albumPageUrl = (slug: string) =>
-  deadlockSkinsLink(albumPath(slug));
+  deadlockSkinsLink(`/albums/${encodeURIComponent(slug)}`);
 
-const fetchJson = async <T>(
+/** The response body parsed by `schema`, or null on 404. */
+const fetchApi = async <T extends z.ZodType>(
   url: string,
-  schema: z.ZodType<T>,
-): Promise<T | null> => {
+  schema: T,
+): Promise<z.output<T> | null> => {
   const response = await fetch(url);
   if (response.status === 404) return null;
   if (!response.ok) {
@@ -50,30 +43,15 @@ const fetchJson = async <T>(
   return schema.parse(await response.json());
 };
 
-const getAlbums = async (): Promise<DeadlockSkinsAlbum[]> => {
-  const response = await fetchJson(
-    `${DEADLOCKSKINS_API}/albums`,
-    AlbumListResponseSchema,
-  );
-  return (response?.albums ?? []).map((album) => ({
-    slug: album.slug,
-    name: album.title,
-    description: album.description ?? "",
-    coverUrl: album.coverUrl ?? null,
-    itemCount: album.itemCount,
-  }));
-};
+const getAlbums = async () =>
+  (await fetchApi(ALBUMS_API, AlbumListResponseSchema)) ?? [];
 
-/** The album's mods in album order, or null when deadlockskins.gg has no such album. */
-const getAlbumMembers = async (
-  slug: string,
-): Promise<DeadlockSkinsAlbumMember[] | null> => {
-  const response = await fetchJson(
-    `${DEADLOCKSKINS_API}/albums/${encodeURIComponent(slug)}`,
-    AlbumResponseSchema,
+/** The album with its mods in album order, or null when deadlockskins.gg has no such album. */
+const getAlbum = (slug: string) =>
+  fetchApi(
+    `${ALBUMS_API}/${encodeURIComponent(slug)}`,
+    AlbumDetailResponseSchema,
   );
-  return response && parseAlbumMembers(response);
-};
 
 export const deadlockSkinsAlbumsQueryOptions = () =>
   queryOptions({
@@ -83,10 +61,10 @@ export const deadlockSkinsAlbumsQueryOptions = () =>
     retry: 2,
   });
 
-export const deadlockSkinsAlbumMembersQueryOptions = (slug: string) =>
+export const deadlockSkinsAlbumQueryOptions = (slug: string) =>
   queryOptions({
     queryKey: ["deadlockskins", "album", slug],
-    queryFn: () => getAlbumMembers(slug),
+    queryFn: () => getAlbum(slug),
     staleTime: ALBUMS_STALE_TIME,
     retry: 2,
   });
