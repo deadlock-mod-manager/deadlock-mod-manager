@@ -19,6 +19,18 @@
     "tea": {
       "name": "",
       "description": ""
+    },
+    "arcane": {
+      "name": "",
+      "description": ""
+    },
+    "deadlock-api": {
+      "name": "",
+      "description": ""
+    },
+    "oled": {
+      "name": "",
+      "description": ""
     }
   },
   "categories": {
