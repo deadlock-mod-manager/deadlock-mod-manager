@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "name": "Skins de Deadlock",
+    "title": "Skins de Deadlock: mods de skins de héroes | Deadlock Mod Manager",
+    "description": "Instala skins de héroes de Deadlock desde GameBanana, previsualízalas en 3D y vuelve al aspecto original cuando quieras. Gratis con Deadlock Mod Manager."
+  },
+  "faqs": {
+    "howToGet": {
+      "question": "¿Cómo consigo skins en Deadlock?",
+      "answer": "Deadlock aún no tiene tienda de skins, así que las skins vienen de la comunidad de modding en GameBanana. Instala Deadlock Mod Manager, filtra Buscar Mods por Skins y por tu héroe, descarga una skin y elígela en Skins de héroes."
+    },
+    "visibility": {
+      "question": "¿Otros jugadores pueden ver mis skins de Deadlock?",
+      "answer": "No. Las skins son del lado del cliente. Tú ves el nuevo modelo; los demás ven el original."
+    },
+    "free": {
+      "question": "¿Las skins de Deadlock son gratis?",
+      "answer": "Sí. Las skins de la comunidad en GameBanana son gratuitas, igual que Deadlock Mod Manager."
+    },
+    "revert": {
+      "question": "¿Cómo vuelvo a la skin original de un héroe?",
+      "answer": "Abre Skins de héroes, elige el héroe y selecciona el aspecto original. La skin sigue descargada, así que puedes volver a ponerla más tarde."
+    },
+    "multiple": {
+      "question": "¿Puedo usar más de una skin para el mismo héroe?",
+      "answer": "Solo puede haber una skin activa por héroe a la vez, y la app te avisa si dos entrarían en conflicto. También puedes asignar varias skins a un héroe y que se elija una al azar en cada inicio."
+    },
+    "official": {
+      "question": "¿Tendrá Deadlock skins oficiales?",
+      "answer": "Valve aún no ha lanzado cosméticos oficiales. Si llegan, las skins de la comunidad seguirán disponibles a través de la app."
+    }
+  },
+  "hero": {
+    "eyebrow": "Skins de Deadlock",
+    "title": "Skins personalizadas para todos los héroes de Deadlock",
+    "intro": "Nuevos modelos, recoloreados y rediseños completos hechos por la comunidad. Deadlock Mod Manager los agrupa por héroe, los muestra en 3D y los cambia con un clic."
+  },
+  "popular": {
+    "title": "Skins de héroes populares",
+    "intro": "Skins de la comunidad en Buscar Mods. Cada tarjeta abre la skin en GameBanana; instálala desde la app.",
+    "snapshot": "Datos de octubre de 2026. Las cifras de descargas provienen de GameBanana."
+  },
+  "steps": {
+    "title": "Cómo instalar una skin en Deadlock",
+    "items": {
+      "install": {
+        "title": "Consigue Deadlock Mod Manager",
+        "body": "Instálalo en Windows o Linux. Detecta la carpeta del juego por sí solo."
+      },
+      "filter": {
+        "title": "Filtra por héroe",
+        "body": "En Buscar Mods, incluye la categoría Skins y el héroe que juegas."
+      },
+      "download": {
+        "title": "Descarga la skin",
+        "body": "Si la skin tiene varios estilos, elige la variante que quieras."
+      },
+      "activate": {
+        "title": "Actívala en Skins de héroes",
+        "body": "Elige la skin activa para ese héroe, revísala en la vista previa 3D y pulsa Iniciar con mods."
+      }
+    }
+  },
+  "foundry": {
+    "title": "Crea tu propia skin",
+    "intro": "<strong>Mod Foundry</strong> carga un modelo de héroe del juego base o de una skin que tengas. Píntalo, cambia sonidos, previsualízalo en 3D y exporta un mod listo para instalar.",
+    "exports": "Puedes guardar lo exportado como archivo, añadirlo a tu biblioteca como un mod nuevo o reemplazar la skin de la que partiste (la original se conserva como copia de seguridad). <link>Lee la guía de Mod Foundry</link>.",
+    "figure": {
+      "alt": "El editor de skins Mod Foundry de Deadlock Mod Manager, con un modelo de héroe y herramientas de pintura y sonido",
+      "caption": "Mod Foundry: edita una skin de héroe y expórtala como mod."
+    }
+  },
+  "downloadBand": {
+    "title": "Dale un nuevo aspecto a tu héroe",
+    "body": "Gratis y de código abierto, para Windows y Linux. Las skins son del lado del cliente y el modelo original siempre está a un clic."
+  }
+}

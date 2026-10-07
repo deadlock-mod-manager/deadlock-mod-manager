@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "name": "Skins Deadlock",
+    "title": "Skins Deadlock : skins de héros gratuits | Deadlock Mod Manager",
+    "description": "Installez des skins de héros Deadlock depuis GameBanana, prévisualisez-les en 3D et revenez au look par défaut à tout moment. Gratuit avec Deadlock Mod Manager."
+  },
+  "faqs": {
+    "howToGet": {
+      "question": "Comment avoir des skins dans Deadlock ?",
+      "answer": "Deadlock n'a pas encore de boutique de skins : ils viennent de la communauté de modding sur GameBanana. Installez Deadlock Mod Manager, filtrez Découvrir des mods par Skins et par héros, téléchargez un skin, puis sélectionnez-le dans Skins des héros."
+    },
+    "visibility": {
+      "question": "Les autres joueurs voient-ils mes skins Deadlock ?",
+      "answer": "Non. Les skins sont côté client. Vous voyez le nouveau modèle, les autres voient celui par défaut."
+    },
+    "free": {
+      "question": "Les skins Deadlock sont-ils gratuits ?",
+      "answer": "Oui. Les skins de la communauté sur GameBanana sont gratuits, tout comme Deadlock Mod Manager."
+    },
+    "revert": {
+      "question": "Comment revenir au skin par défaut d'un héros ?",
+      "answer": "Ouvrez Skins des héros, choisissez le héros puis l'apparence par défaut. Le skin reste téléchargé, vous pourrez donc le remettre plus tard."
+    },
+    "multiple": {
+      "question": "Peut-on utiliser plusieurs skins pour un même héros ?",
+      "answer": "Un seul skin est actif par héros à la fois, et l'app vous prévient si deux skins entrent en conflit. Vous pouvez aussi attribuer plusieurs skins à un héros et en tirer un au hasard à chaque lancement."
+    },
+    "official": {
+      "question": "Deadlock aura-t-il des skins officiels ?",
+      "answer": "Valve n'a pas encore sorti de cosmétiques officiels. S'ils arrivent, les skins de la communauté resteront disponibles via l'app."
+    }
+  },
+  "hero": {
+    "eyebrow": "Skins Deadlock",
+    "title": "Des skins pour chaque héros de Deadlock",
+    "intro": "Nouveaux modèles, recolorations et refontes complètes créés par la communauté. Deadlock Mod Manager les classe par héros, les affiche en 3D et les change en un clic."
+  },
+  "popular": {
+    "title": "Skins de héros populaires",
+    "intro": "Des skins de la communauté issus de Découvrir des mods. Chaque carte ouvre le skin sur GameBanana ; installez-le depuis l'app.",
+    "snapshot": "Données d'octobre 2026. Nombre de téléchargements issu de GameBanana."
+  },
+  "steps": {
+    "title": "Comment installer un skin Deadlock",
+    "items": {
+      "install": {
+        "title": "Installez Deadlock Mod Manager",
+        "body": "Installez-le sur Windows ou Linux. Il détecte tout seul le dossier du jeu."
+      },
+      "filter": {
+        "title": "Filtrez par héros",
+        "body": "Dans Découvrir des mods, sélectionnez la catégorie Skins et le héros que vous jouez."
+      },
+      "download": {
+        "title": "Téléchargez le skin",
+        "body": "Si le skin existe en plusieurs styles, choisissez la variante qui vous plaît."
+      },
+      "activate": {
+        "title": "Activez-le dans Skins des héros",
+        "body": "Choisissez le skin actif pour ce héros, vérifiez-le dans l'aperçu 3D, puis cliquez sur Lancer avec mods."
+      }
+    }
+  },
+  "foundry": {
+    "title": "Créez votre propre skin",
+    "intro": "La <strong>Mod Foundry</strong> charge un modèle de héros depuis le jeu de base ou depuis un skin que vous possédez. Peignez-le, remplacez des sons, prévisualisez-le en 3D et exportez un mod prêt à installer.",
+    "exports": "Un export peut être enregistré comme fichier, ajouté à votre bibliothèque comme nouveau mod, ou remplacer le skin de départ (l'original est conservé en sauvegarde). <link>Lire le guide de la Mod Foundry</link>.",
+    "figure": {
+      "alt": "L'éditeur de skins Mod Foundry dans Deadlock Mod Manager, avec un modèle de héros et les outils de peinture et de sons",
+      "caption": "Mod Foundry : modifiez un skin de héros et exportez-le en mod."
+    }
+  },
+  "downloadBand": {
+    "title": "Offrez un nouveau look à votre héros",
+    "body": "Gratuit et open source, pour Windows et Linux. Les skins sont côté client, et le modèle par défaut est toujours à un clic."
+  }
+}

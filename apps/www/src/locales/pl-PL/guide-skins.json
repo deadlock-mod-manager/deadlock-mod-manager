@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "name": "Skiny do Deadlock",
+    "title": "Skiny Deadlock: własne skiny bohaterów | Deadlock Mod Manager",
+    "description": "Instaluj skiny bohaterów Deadlock z GameBanana, oglądaj je w 3D i wracaj do domyślnego wyglądu, kiedy chcesz. Za darmo, z Deadlock Mod Manager."
+  },
+  "faqs": {
+    "howToGet": {
+      "question": "Jak zdobyć skiny w Deadlock?",
+      "answer": "Deadlock nie ma jeszcze sklepu ze skinami, więc skiny tworzy społeczność modderów na GameBanana. Zainstaluj Deadlock Mod Manager, w zakładce Zdobądź mody wybierz kategorię Skiny i swojego bohatera, pobierz skin, a potem ustaw go w Skinach bohaterów."
+    },
+    "visibility": {
+      "question": "Czy inni gracze widzą moje skiny w Deadlock?",
+      "answer": "Nie. Skiny działają tylko po twojej stronie. Ty widzisz nowy model, wszyscy inni widzą domyślny."
+    },
+    "free": {
+      "question": "Czy skiny do Deadlock są darmowe?",
+      "answer": "Tak. Skiny społeczności na GameBanana są darmowe, podobnie jak Deadlock Mod Manager."
+    },
+    "revert": {
+      "question": "Jak wrócić do domyślnego skina bohatera?",
+      "answer": "Otwórz Skiny bohaterów, wybierz bohatera i ustaw domyślny wygląd. Skin zostaje pobrany, więc możesz do niego później wrócić."
+    },
+    "multiple": {
+      "question": "Czy mogę używać kilku skinów dla jednego bohatera?",
+      "answer": "Dla każdego bohatera aktywny jest jeden skin naraz, a aplikacja ostrzeże cię, jeśli dwa by się gryzły. Możesz też przypisać bohaterowi kilka skinów i dostawać losowy przy każdym uruchomieniu."
+    },
+    "official": {
+      "question": "Czy w Deadlock pojawią się oficjalne skiny?",
+      "answer": "Valve nie wydało jeszcze oficjalnych kosmetyków. Jeśli się pojawią, skiny społeczności nadal będą dostępne przez aplikację."
+    }
+  },
+  "hero": {
+    "eyebrow": "Skiny do Deadlock",
+    "title": "Własne skiny dla każdego bohatera Deadlock",
+    "intro": "Nowe modele, przemalowania i kompletne przeróbki od społeczności. Deadlock Mod Manager grupuje je według bohaterów, pokazuje w 3D i podmienia jednym kliknięciem."
+  },
+  "popular": {
+    "title": "Popularne skiny bohaterów",
+    "intro": "Skiny społeczności z zakładki Zdobądź mody. Każda karta otwiera skin na GameBanana; zainstalujesz go w aplikacji.",
+    "snapshot": "Stan na październik 2026. Liczba pobrań pochodzi z GameBanana."
+  },
+  "steps": {
+    "title": "Jak zainstalować skin w Deadlock",
+    "items": {
+      "install": {
+        "title": "Pobierz Deadlock Mod Manager",
+        "body": "Zainstaluj go na Windows lub Linux. Sam wykryje folder z grą."
+      },
+      "filter": {
+        "title": "Filtruj według bohatera",
+        "body": "W zakładce Zdobądź mody zaznacz kategorię Skiny i bohatera, którym grasz."
+      },
+      "download": {
+        "title": "Pobierz skin",
+        "body": "Jeśli skin ma kilka stylów, wybierz wariant, który ci odpowiada."
+      },
+      "activate": {
+        "title": "Ustaw go w Skinach bohaterów",
+        "body": "Wybierz aktywny skin dla tego bohatera, sprawdź go w podglądzie 3D i kliknij „Uruchom z modami”."
+      }
+    }
+  },
+  "foundry": {
+    "title": "Stwórz własny skin",
+    "intro": "<strong>Mod Foundry</strong> wczytuje model bohatera z podstawowej gry albo ze skina, który masz. Pomaluj go, podmień dźwięki, obejrzyj w 3D i wyeksportuj gotowy do instalacji mod.",
+    "exports": "Eksport możesz zapisać jako plik, dodać do biblioteki jako nowy mod albo zastąpić nim skin, od którego zaczynałeś (oryginał zostaje jako kopia zapasowa). <link>Przeczytaj poradnik do Mod Foundry</link>.",
+    "figure": {
+      "alt": "Edytor skinów Mod Foundry w Deadlock Mod Manager z modelem bohatera i narzędziami do malowania oraz dźwięków",
+      "caption": "Mod Foundry: edytuj skin bohatera i wyeksportuj go jako mod."
+    }
+  },
+  "downloadBand": {
+    "title": "Daj swojemu bohaterowi nowy wygląd",
+    "body": "Darmowy i open source, na Windows i Linux. Skiny widzisz tylko ty, a domyślny model jest zawsze o jedno kliknięcie."
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "title": "Télécharger Deadlock Mod Manager pour Windows et Linux",
+    "latest": "la dernière version de Deadlock Mod Manager",
+    "latestVersion": "la dernière version de Deadlock Mod Manager, v{{version}}",
+    "description": "Téléchargez {{latest}} : un installateur Windows ou un paquet Linux (Flatpak, .deb ou .rpm). Gratuit et open source, compilé depuis le code public sur GitHub."
+  },
+  "redirect": {
+    "windows": {
+      "metaTitle": "Téléchargement de Deadlock Mod Manager pour Windows",
+      "metaDescription": "Démarrage du téléchargement de Deadlock Mod Manager pour Windows.",
+      "preparing": "Préparation de votre téléchargement Windows...",
+      "redirecting": "Redirection vers le téléchargement Windows..."
+    },
+    "linux": {
+      "metaTitle": "Téléchargement de Deadlock Mod Manager pour Linux",
+      "metaDescription": "Démarrage du téléchargement de Deadlock Mod Manager pour Linux.",
+      "preparing": "Préparation de votre téléchargement Linux...",
+      "redirecting": "Redirection vers le téléchargement Linux..."
+    },
+    "fetching": "Récupération de la dernière version",
+    "errorTitle": "Erreur de téléchargement",
+    "errorDescription": "Impossible de récupérer les dernières versions. Veuillez réessayer plus tard.",
+    "goToDownloads": "Aller à la page de téléchargement",
+    "fallback": "Si le téléchargement ne démarre pas automatiquement, <button>cliquez ici</button> pour aller à la page de téléchargement."
+  },
+  "hero": {
+    "whatsNew": "Quoi de neuf",
+    "title": "Télécharger Deadlock Mod Manager",
+    "description": "Trouvez, installez et mettez à jour vos mods Deadlock en quelques clics. Choisissez la version pour votre système ci-dessous.",
+    "otherPlatforms": "Autres plateformes",
+    "highlights": {
+      "openSource": "Gratuit et open source",
+      "autoUpdate": "Se met à jour tout seul",
+      "platforms": "Windows et Linux"
+    }
+  },
+  "error": {
+    "title": "Les téléchargements sont temporairement indisponibles",
+    "description": "Impossible de récupérer les dernières versions. Vous pouvez toujours télécharger l'installateur sur GitHub.",
+    "github": "Télécharger sur GitHub"
+  },
+  "loading": {
+    "title": "Chargement des téléchargements",
+    "description": "Récupération de la dernière version…"
+  },
+  "latest": {
+    "title": "Choisissez votre plateforme",
+    "released": "Version {{version}}, publiée le {{date}}",
+    "installGuide": "Guide d'installation",
+    "releaseNotes": "Notes de version"
+  },
+  "releaseDate": {
+    "dateTime": "{{date}}, {{time}} UTC"
+  },
+  "platforms": {
+    "windows": {
+      "requirements": "Windows 10 ou 11, 64 bits"
+    },
+    "linux": {
+      "requirements": "64 bits, la plupart des distributions"
+    },
+    "detected": "Système détecté",
+    "noBuilds": "Aucune version {{platform}} pour cette release.",
+    "experimental": "Versions Chromium expérimentales ({{total}})",
+    "experimentalDescription": "Embarquent le moteur Chromium (CEF) au lieu de la webview du système. Plus lourdes et moins testées : ne les essayez que si la version standard a des problèmes d'affichage."
+  },
+  "installer": {
+    "recommended": "Recommandé",
+    "signature": "signature",
+    "signatureTitle": "Signature de {{filename}}",
+    "download": "Télécharger",
+    "downloadLabel": "Télécharger {{filename}}",
+    "types": {
+      "exe": {
+        "label": "Installateur",
+        "description": "Installation pour Windows 10 et 11 (.exe)"
+      },
+      "msi": {
+        "label": "Paquet MSI",
+        "description": "Pour les installations gérées ou silencieuses (.msi)"
+      },
+      "dmg": {
+        "label": "Image disque",
+        "description": "Application macOS (.dmg)"
+      },
+      "flatpak": {
+        "label": "Flatpak",
+        "description": "Fonctionne sur la plupart des distributions"
+      },
+      "deb": {
+        "label": "Paquet Debian",
+        "description": "Ubuntu, Debian, Mint (.deb)"
+      },
+      "rpm": {
+        "label": "Paquet RPM",
+        "description": "Fedora, openSUSE, Nobara (.rpm)"
+      }
+    }
+  },
+  "history": {
+    "title": "Autres versions",
+    "description": "Revenez à une version précédente ou essayez les prochains changements en avance.",
+    "tabs": {
+      "stable": "Versions précédentes",
+      "prerelease": "Versions nightly"
+    },
+    "emptyStable": "Aucune version précédente pour le moment.",
+    "emptyPrerelease": "Aucune version nightly disponible pour le moment.",
+    "nightlyWarning": "Les versions nightly sont générées automatiquement à partir du code le plus récent. Elles reçoivent les nouveautés en premier mais peuvent être instables : sauvegardez votre configuration de mods avant de changer.",
+    "prerelease": "Préversion",
+    "viewOnGithub": "Voir la version sur GitHub"
+  }
+}

@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "title": "Baixar Deadlock Mod Manager para Windows e Linux",
+    "latest": "a versão mais recente do Deadlock Mod Manager",
+    "latestVersion": "a versão mais recente do Deadlock Mod Manager, v{{version}}",
+    "description": "Baixe {{latest}}: instalador para Windows ou pacote para Linux (Flatpak, .deb ou .rpm). Gratuito e open source, feito a partir de código público no GitHub."
+  },
+  "redirect": {
+    "windows": {
+      "metaTitle": "Baixando o Deadlock Mod Manager para Windows",
+      "metaDescription": "Iniciando o download do Deadlock Mod Manager para Windows.",
+      "preparing": "Preparando seu download para Windows...",
+      "redirecting": "Redirecionando para o download para Windows..."
+    },
+    "linux": {
+      "metaTitle": "Baixando o Deadlock Mod Manager para Linux",
+      "metaDescription": "Iniciando o download do Deadlock Mod Manager para Linux.",
+      "preparing": "Preparando seu download para Linux...",
+      "redirecting": "Redirecionando para o download para Linux..."
+    },
+    "fetching": "Buscando a versão mais recente",
+    "errorTitle": "Erro no download",
+    "errorDescription": "Não conseguimos buscar as versões mais recentes. Tente de novo mais tarde.",
+    "goToDownloads": "Ir para a página de downloads",
+    "fallback": "Se o download não começar automaticamente, <button>clique aqui</button> para ir à página de downloads."
+  },
+  "hero": {
+    "whatsNew": "Novidades",
+    "title": "Baixe o Deadlock Mod Manager",
+    "description": "Encontre, instale e atualize mods do Deadlock em poucos cliques. Pegue abaixo a versão para o seu sistema.",
+    "otherPlatforms": "Outras plataformas",
+    "highlights": {
+      "openSource": "Gratuito e open source",
+      "autoUpdate": "Atualiza sozinho",
+      "platforms": "Windows e Linux"
+    }
+  },
+  "error": {
+    "title": "Downloads temporariamente indisponíveis",
+    "description": "Não conseguimos buscar as versões mais recentes. Você ainda pode baixar o instalador pelo GitHub.",
+    "github": "Baixar pelo GitHub"
+  },
+  "loading": {
+    "title": "Carregando downloads",
+    "description": "Buscando a versão mais recente…"
+  },
+  "latest": {
+    "title": "Escolha sua plataforma",
+    "released": "Versão {{version}}, lançada em {{date}}",
+    "installGuide": "Guia de instalação",
+    "releaseNotes": "Notas de atualização"
+  },
+  "releaseDate": {
+    "dateTime": "{{date}}, {{time}} UTC"
+  },
+  "platforms": {
+    "windows": {
+      "requirements": "Windows 10 ou 11, 64 bits"
+    },
+    "linux": {
+      "requirements": "64 bits, a maioria das distribuições"
+    },
+    "detected": "Sistema detectado",
+    "noBuilds": "Nenhuma versão para {{platform}} nesta release.",
+    "experimental": "Versões experimentais com Chromium ({{total}})",
+    "experimentalDescription": "Inclui o motor Chromium (CEF) em vez do webview do sistema. Maiores e menos testadas; só use se a versão padrão tiver problemas de renderização."
+  },
+  "installer": {
+    "recommended": "Recomendado",
+    "signature": "assinatura",
+    "signatureTitle": "Assinatura de {{filename}}",
+    "download": "Baixar",
+    "downloadLabel": "Baixar {{filename}}",
+    "types": {
+      "exe": {
+        "label": "Instalador",
+        "description": "Instalação para Windows 10 e 11 (.exe)"
+      },
+      "msi": {
+        "label": "Pacote MSI",
+        "description": "Para instalações gerenciadas ou silenciosas (.msi)"
+      },
+      "dmg": {
+        "label": "Imagem de disco",
+        "description": "Aplicativo para macOS (.dmg)"
+      },
+      "flatpak": {
+        "label": "Flatpak",
+        "description": "Funciona na maioria das distribuições"
+      },
+      "deb": {
+        "label": "Pacote Debian",
+        "description": "Ubuntu, Debian, Mint (.deb)"
+      },
+      "rpm": {
+        "label": "Pacote RPM",
+        "description": "Fedora, openSUSE, Nobara (.rpm)"
+      }
+    }
+  },
+  "history": {
+    "title": "Outras versões",
+    "description": "Volte para uma versão anterior ou teste as próximas mudanças antes de todo mundo.",
+    "tabs": {
+      "stable": "Versões anteriores",
+      "prerelease": "Versões nightly"
+    },
+    "emptyStable": "Ainda não há versões anteriores.",
+    "emptyPrerelease": "Nenhuma versão nightly disponível no momento.",
+    "nightlyWarning": "As versões nightly são geradas automaticamente a partir do código mais recente. Recebem recursos novos primeiro, mas podem ser instáveis, então faça backup da sua configuração de mods antes de trocar.",
+    "prerelease": "Pré-lançamento",
+    "viewOnGithub": "Ver release no GitHub"
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "meta": {
+    "title": "Парсер Valve KeyValues (VDF) для gameinfo.gi из Deadlock",
+    "description": "Вставь или перетащи файл Valve KeyValues (VDF), например gameinfo.gi из Deadlock, и смотри его в виде дерева прямо в браузере. Ничего не загружается."
+  },
+  "page": {
+    "title": "Парсер KeyValues",
+    "description": "Разбор и просмотр файлов Valve KeyValues (VDF), таких как gameinfo.gi"
+  },
+  "input": {
+    "title": "Ввод",
+    "description": "Выбери, как передать содержимое KeyValues",
+    "paste": "Вставить / Редактировать",
+    "upload": "Загрузить файл",
+    "loadSample": "Загрузить пример",
+    "clear": "Очистить",
+    "placeholder": "Вставь сюда содержимое KeyValues...",
+    "dropActive": "Отпусти файл здесь",
+    "drop": "Перетащи сюда файл KeyValues",
+    "browse": "или нажми, чтобы выбрать (.gi, .vdf, .kv, .txt)"
+  },
+  "toasts": {
+    "invalidFile": "Загрузи корректный файл",
+    "loaded": "Загружен {{file}}",
+    "readAsTextFailed": "Не удалось прочитать файл как текст",
+    "readFailed": "Не удалось прочитать файл",
+    "sampleLoaded": "Загружен пример gameinfo.gi",
+    "cleared": "Содержимое очищено",
+    "copied": "Скопировано в буфер обмена"
+  },
+  "viewer": {
+    "parsing": "Разбор...",
+    "parseError": "Ошибка разбора",
+    "failed": "Ошибка",
+    "parseFailed": "Не удалось разобрать содержимое KeyValues",
+    "line": "Строка: {{line}}",
+    "column": "Столбец: {{column}}",
+    "valid": "✓ Корректно",
+    "original": "Исходник",
+    "jsonOutput": "Вывод JSON",
+    "treeView": "Дерево",
+    "switchToTree": "Показать дерево",
+    "switchToJson": "Показать JSON",
+    "fixErrors": "Исправь ошибки выше, чтобы увидеть результат разбора",
+    "empty": "Введи содержимое KeyValues, чтобы увидеть результат разбора",
+    "copy": "Копировать",
+    "copied": "Скопировано!"
+  },
+  "stats": {
+    "line": "строк: {{value}}",
+    "lines": "строк: {{value}}",
+    "character": "символов: {{value}}",
+    "characters": "символов: {{value}}",
+    "key": "ключей: {{value}}",
+    "keys": "ключей: {{value}}"
+  },
+  "tree": {
+    "title": "Структура",
+    "expandAll": "Развернуть всё",
+    "collapseAll": "Свернуть всё",
+    "items": "[элементов: {{value}}]"
+  }
+}

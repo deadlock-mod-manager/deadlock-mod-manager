@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "name": "Deadlock Fatal Error beim Start",
+    "title": "Deadlock „Fatal Error: Unable to Load Layout File“ beheben (Mods)",
+    "description": "Deadlock Fatal Error durch Mods beheben: unable to load layout file, unable to find child (IdolCashInMeter), failed to read 16 bytes, gameinfo.gi, KV3."
+  },
+  "hero": {
+    "eyebrow": "Fehlerbehebung",
+    "title": "Deadlock „Fatal Error“ beim Start mit Mods",
+    "intro": "Ein Fatal-Error-Fenster direkt beim Start von Deadlock bedeutet fast immer, dass ein Mod nicht mehr zum Spiel passt, meist ein HUD-Mod nach einem Patch. Die genaue Meldung verrät dir, welche Art.",
+    "errorSource": "Deadlock, beim Start"
+  },
+  "errorText": {
+    "message": "Fatal Error: Unable to load layout file",
+    "errors": {
+      "layoutFile": "Fatal Error: Unable to load layout file 'panorama/layout/…'",
+      "findChild": "Fatal Error: Unable to find child 'IdolCashInMeter'",
+      "read16Bytes": "Fatal Error: Failed to read 16 bytes",
+      "gameinfo": "Fatal Error: Application unable to load gameinfo.gi",
+      "kv3": "Error parsing KV3 data"
+    }
+  },
+  "fix": {
+    "title": "In vier Schritten behoben",
+    "steps": {
+      "confirm": {
+        "title": "Prüfen, ob ein Mod schuld ist",
+        "body": "Nutz im Deadlock Mod Manager „Ohne Mods starten“. Startet das Spiel, ist deine Deadlock-Installation in Ordnung und einer deiner Mods ist das Problem."
+      },
+      "update": {
+        "title": "Mods aktualisieren",
+        "body": "Such unter „Meine Mods“ nach Updates. Mod-Autoren reparieren ihre HUD-Mods meist innerhalb weniger Tage nach einem Patch."
+      },
+      "disableHud": {
+        "title": "HUD- und UI-Mods deaktivieren",
+        "body": "Die verursachen die meisten Layout- und Find-Child-Fehler. Schalte sie aus und klick dann erneut auf „Mit Mods starten“."
+      },
+      "narrowDown": {
+        "title": "Den Rest eingrenzen",
+        "body": "Crasht es immer noch? Deaktivier die Hälfte deiner übrigen Mods und starte. Halbier die crashende Gruppe weiter, bis du den einen verantwortlichen Mod gefunden hast."
+      }
+    }
+  },
+  "errors": {
+    "title": "Fatal Errors nach Meldung",
+    "intro": "Vergleich den Text im Fehlerfenster.",
+    "whyLabel": "Ursache:",
+    "fixLabel": "Lösung:",
+    "kvParserLink": "KeyValues-Parser öffnen",
+    "items": {
+      "layoutFile": {
+        "cause": "Ein veralteter HUD- oder UI-Mod ersetzt Interface-Dateien, die ein Patch geändert hat.",
+        "fix": "Deaktivier HUD- und UI-Mods, starte das Spiel und schalte sie wieder ein, sobald sie aktualisiert sind."
+      },
+      "findChild": {
+        "cause": "Ein HUD-Mod verweist auf ein Interface-Element, das der Patch umbenannt oder entfernt hat. KothCashInMeter und ähnliche Namen sind dasselbe Problem.",
+        "fix": "Deaktivier HUD-Mods, bis ihre Autoren einen Fix veröffentlichen."
+      },
+      "read16Bytes": {
+        "cause": "Eine beschädigte oder nur halb heruntergeladene Datei, meist eine .vpk.",
+        "fix": "Entferne kürzlich hinzugefügte Mods und installier sie neu. Crasht es auch ohne Mods, überprüf die Spieldateien in Steam."
+      },
+      "gameinfo": {
+        "cause": "gameinfo.gi fehlt oder wurde fehlerhaft bearbeitet.",
+        "fix": "Überprüf die Spieldateien in Steam und nutz dann „Mit Mods starten“, damit die App die Mod-Pfade wieder einträgt."
+      },
+      "kv3": {
+        "cause": "Eine Config-Datei in einem Mod oder eine von Hand bearbeitete gameinfo.gi enthält einen Syntaxfehler.",
+        "fix": "Deaktivier kürzlich hinzugefügte Mods. Hast du gameinfo.gi von Hand bearbeitet, füg sie in den KeyValues-Parser ein, um die fehlerhafte Zeile zu finden."
+      }
+    }
+  },
+  "withoutMods": {
+    "title": "Crasht es auch ohne Mods?",
+    "verify": "Crasht auch „Ohne Mods starten“, liegt das Problem in den Spieldateien und nicht an einem Mod. Rechtsklick in Steam auf Deadlock, <strong>Eigenschaften > Installierte Dateien</strong> öffnen und <strong>Spieldateien auf Fehler überprüfen</strong> wählen. Deine Mods bleiben installiert, und die App wendet sie beim nächsten Start mit Mods neu an.",
+    "notWorking": "Für Mods, die ohne Crash nicht mehr funktionieren, siehe <guide>Deadlock Mods funktionieren nach einem Update nicht</guide>. Frag auf <discord>Discord</discord>, welche Mods mit dem letzten Patch kaputtgegangen sind."
+  },
+  "faqs": {
+    "layoutFile": {
+      "question": "Was verursacht „Fatal Error: Unable to load layout file“ in Deadlock?",
+      "answer": "Ein veralteter HUD- oder UI-Mod. Solche Mods ersetzen Panorama-Layout-Dateien, und wenn ein Deadlock-Patch das Interface ändert, passen die alten Dateien nicht mehr. Deaktivier deine HUD- und UI-Mods, starte das Spiel und aktivier sie wieder, sobald sie aktualisiert sind."
+    },
+    "findChild": {
+      "question": "Wie behebe ich „Unable to find child IdolCashInMeter“?",
+      "answer": "Genauso. Ein HUD-Mod verweist noch auf ein Interface-Element, das Valve umbenannt oder entfernt hat, etwa IdolCashInMeter oder KothCashInMeter. Deaktivier HUD-Mods, bis ihre Autoren ein Update veröffentlichen."
+    },
+    "read16Bytes": {
+      "question": "Was bedeutet „Fatal Error: Failed to read 16 bytes“?",
+      "answer": "Das Spiel ist beim Lesen auf eine beschädigte oder unvollständige Datei gestoßen, meist eine .vpk, deren Download nicht fertig wurde. Entferne deine neuesten Mods und installier sie neu, und überprüf die Dateien von Deadlock in Steam, falls es auch mit deaktivierten Mods passiert."
+    },
+    "gameinfo": {
+      "question": "Wie behebe ich „Application unable to load gameinfo.gi“?",
+      "answer": "gameinfo.gi fehlt oder wurde fehlerhaft bearbeitet. Stell sie in Steam mit „Spieldateien auf Fehler überprüfen“ wieder her und nutz dann „Mit Mods starten“ im Deadlock Mod Manager, um die Mod-Pfade korrekt wieder einzutragen."
+    },
+    "findMod": {
+      "question": "Wie finde ich heraus, welcher Mod Deadlock zum Absturz bringt?",
+      "answer": "Prüf mit „Ohne Mods starten“, ob das Spiel sauber startet. Deaktivier dann die Hälfte deiner Mods, starte mit Mods und halbier die crashende Gruppe weiter, bis nur noch ein Mod übrig ist."
+    }
+  },
+  "downloadBand": {
+    "title": "Den kaputten Mod schneller finden",
+    "body": "Mit einem Klick mit oder ohne Mods starten, sehen, welche Mods Updates haben, und sie umschalten, ohne den Spielordner anzufassen."
+  }
+}

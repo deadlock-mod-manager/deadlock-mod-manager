@@ -1,0 +1,74 @@
+{
+  "meta": {
+    "name": "Access is denied (os error 5)",
+    "title": "Deadlock Mod Manager \"Access is denied (os error 5)\" : solution",
+    "description": "Access is denied (os error 5) dans Deadlock Mod Manager ? Retirez la lecture seule, autorisez l'app dans l'accès contrôlé aux dossiers, nettoyez les mods admin."
+  },
+  "hero": {
+    "eyebrow": "Résoudre une erreur",
+    "title": "Access is denied (os error 5)",
+    "intro": "Windows a empêché Deadlock Mod Manager de modifier un fichier dans votre dossier Deadlock. C'est presque toujours un fichier en lecture seule, une fonction de sécurité qui protège le dossier, ou un mod installé avec les droits administrateur.",
+    "errorSource": "Deadlock Mod Manager sur Windows"
+  },
+  "errorText": {
+    "message": "Access is denied. (os error 5)"
+  },
+  "fix": {
+    "title": "Comment corriger l'erreur",
+    "intro": "Suivez ces étapes dans l'ordre. La plupart des gens s'en sortent après les deux premières.",
+    "steps": {
+      "closeAndUpdate": {
+        "title": "Fermez Deadlock et mettez l'app à jour",
+        "body": "Quittez complètement le jeu et vérifiez que vous avez la dernière version de Deadlock Mod Manager. Réessayez ensuite ce qui a échoué avant de changer quoi que ce soit d'autre."
+      },
+      "readOnly": {
+        "title": "Retirez l'attribut lecture seule",
+        "body": "Faites un clic droit sur <code>game\\citadel\\gameinfo.gi</code>, ouvrez Propriétés et décochez <strong>Lecture seule</strong>. Faites de même pour le dossier <code>addons</code> en l'appliquant à tous les sous-dossiers. Depuis un terminal : <code>attrib -r \"…\\Deadlock\\game\\citadel\\*\" /s /d</code>"
+      },
+      "controlledFolderAccess": {
+        "title": "Autorisez l'app dans l'accès contrôlé aux dossiers",
+        "body": "Sécurité Windows > Protection contre les virus et menaces > Protection contre les ransomwares. Si l'accès contrôlé aux dossiers est activé, ajoutez Deadlock Mod Manager via Autoriser une application, ou retirez votre bibliothèque Steam des dossiers protégés. Les autres antivirus ont une liste d'exclusions similaire."
+      },
+      "adminMods": {
+        "title": "Supprimez les mods installés en tant qu'administrateur",
+        "body": "Les fichiers créés par un programme lancé en administrateur ne peuvent pas être modifiés par un programme normal. Lancez une fois Deadlock Mod Manager en tant qu'administrateur, supprimez ou réinstallez les mods concernés, puis fermez-le et relancez-le normalement."
+      },
+      "protectedLocation": {
+        "title": "Vérifiez que le dossier n'est pas dans un emplacement protégé",
+        "body": "Les bibliothèques Steam situées hors de Program Files évitent la plupart des problèmes de permissions. Si vous avez déplacé Deadlock sur un disque aux permissions personnalisées, donnez le Contrôle total à votre utilisateur Windows dans l'onglet Sécurité du dossier."
+      },
+      "verifyFiles": {
+        "title": "En dernier recours, vérifiez les fichiers du jeu",
+        "body": "Dans Steam, faites un clic droit sur Deadlock > Propriétés > Fichiers installés > Vérifier l'intégrité des fichiers du jeu. Cela restaure gameinfo.gi ; l'app réapplique vos mods au prochain lancement avec mods."
+      }
+    }
+  },
+  "why": {
+    "title": "Pourquoi ça arrive",
+    "cause": "Pour activer, désactiver ou réordonner les mods, Deadlock Mod Manager renomme les fichiers <code>.vpk</code> du dossier addons et modifie <code>gameinfo.gi</code> pour que le jeu sache les charger. Windows renvoie l'erreur 5 quand le fichier est en lecture seule, quand une fonction de sécurité comme l'accès contrôlé aux dossiers protège le dossier, ou quand le fichier appartient à un compte administrateur que l'app n'utilise pas.",
+    "otherErrors": "Si l'erreur indique plutôt que les fichiers sont <em>en cours d'utilisation</em>, c'est un autre problème : voir <order>Failed to save mod order</order>. Si le lancement échoue avec l'erreur 740, voir <os740>os error 740</os740>.",
+    "stillStuck": "Toujours bloqué ? La <docs>documentation sur les problèmes de permissions</docs> va plus loin, et <discord>Discord</discord> peut vous aider si vous partagez les logs de l'app."
+  },
+  "faqs": {
+    "meaning": {
+      "question": "Que signifie os error 5 dans Deadlock Mod Manager ?",
+      "answer": "C'est l'erreur Windows ERROR_ACCESS_DENIED. Windows a refusé que l'app écrive, renomme ou supprime un fichier dans votre dossier Deadlock, en général gameinfo.gi ou un .vpk du dossier addons."
+    },
+    "runAsAdmin": {
+      "question": "Faut-il toujours lancer Deadlock Mod Manager en tant qu'administrateur ?",
+      "answer": "Non. Lancez-le une fois en administrateur pour nettoyer les fichiers créés avec les droits admin, puis revenez à un lancement normal. Le lancer tout le temps en administrateur rend chaque nouveau fichier de mod propriété de l'admin, et l'erreur revient dès que vous le relancez normalement."
+    },
+    "gameClosed": {
+      "question": "Pourquoi ai-je os error 5 alors que Deadlock est fermé ?",
+      "answer": "Quelque chose d'autre que le jeu bloque le fichier : l'attribut lecture seule, l'accès contrôlé aux dossiers de Sécurité Windows, un autre antivirus, ou des fichiers laissés par un mod installé avec les droits admin."
+    },
+    "linux": {
+      "question": "L'erreur os error 5 existe-t-elle sur Linux ?",
+      "answer": "L'équivalent sur Linux est Permission denied (os error 13). Vérifiez que votre utilisateur est propriétaire du dossier Deadlock et, avec Flatpak, donnez à l'app l'accès à votre bibliothèque Steam comme indiqué dans la documentation de dépannage."
+    }
+  },
+  "downloadBand": {
+    "title": "Des mods sans jongler avec les fichiers",
+    "body": "Deadlock Mod Manager installe, ordonne et réapplique vos mods : vous n'avez presque jamais besoin de toucher au dossier du jeu."
+  }
+}

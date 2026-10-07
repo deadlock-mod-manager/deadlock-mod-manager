@@ -1,0 +1,104 @@
+{
+  "meta": {
+    "name": "Deadlock Fatal Error przy uruchamianiu",
+    "title": "Deadlock „Fatal Error: Unable to load layout file” – naprawa",
+    "description": "Napraw crashe Deadlock Fatal Error wywołane przez mody: unable to load layout file, unable to find child (IdolCashInMeter), failed to read 16 bytes i błędy KV3."
+  },
+  "hero": {
+    "eyebrow": "Naprawa błędu",
+    "title": "Deadlock „Fatal Error” przy uruchamianiu z modami",
+    "intro": "Okno Fatal Error zaraz po starcie Deadlock prawie zawsze oznacza, że jakiś mod nie pasuje już do gry, zwykle mod HUD-u po patchu. Dokładny komunikat mówi, o jaki przypadek chodzi.",
+    "errorSource": "Deadlock, przy uruchamianiu"
+  },
+  "errorText": {
+    "message": "Fatal Error: Unable to load layout file",
+    "errors": {
+      "layoutFile": "Fatal Error: Unable to load layout file 'panorama/layout/…'",
+      "findChild": "Fatal Error: Unable to find child 'IdolCashInMeter'",
+      "read16Bytes": "Fatal Error: Failed to read 16 bytes",
+      "gameinfo": "Fatal Error: Application unable to load gameinfo.gi",
+      "kv3": "Error parsing KV3 data"
+    }
+  },
+  "fix": {
+    "title": "Napraw to w czterech krokach",
+    "steps": {
+      "confirm": {
+        "title": "Upewnij się, że winny jest mod",
+        "body": "W Deadlock Mod Manager użyj „Uruchom bez modów”. Jeśli gra się włączy, twoja instalacja Deadlock jest w porządku, a problemem jest któryś z modów."
+      },
+      "update": {
+        "title": "Zaktualizuj mody",
+        "body": "Sprawdź aktualizacje w zakładce Moje mody. Autorzy zwykle naprawiają swoje mody HUD-u w ciągu kilku dni od patcha."
+      },
+      "disableHud": {
+        "title": "Wyłącz mody HUD-u i interfejsu",
+        "body": "To one powodują większość błędów layout i find child. Wyłącz je i ponownie kliknij „Uruchom z modami”."
+      },
+      "narrowDown": {
+        "title": "Zawęź resztę",
+        "body": "Nadal crashuje? Wyłącz połowę pozostałych modów i uruchom grę. Dziel na pół grupę, która powoduje crash, aż znajdziesz jeden winny mod."
+      }
+    }
+  },
+  "errors": {
+    "title": "Błędy Fatal Error według komunikatu",
+    "intro": "Dopasuj tekst z okna błędu.",
+    "whyLabel": "Przyczyna:",
+    "fixLabel": "Rozwiązanie:",
+    "kvParserLink": "Otwórz parser KeyValues",
+    "items": {
+      "layoutFile": {
+        "cause": "Nieaktualny mod HUD-u lub interfejsu podmienia pliki interfejsu, które zmienił patch.",
+        "fix": "Wyłącz mody HUD-u i interfejsu, uruchom grę i włącz je z powrotem po aktualizacji."
+      },
+      "findChild": {
+        "cause": "Mod HUD-u odwołuje się do elementu interfejsu, który patch przemianował lub usunął. KothCashInMeter i podobne nazwy to ten sam problem.",
+        "fix": "Wyłącz mody HUD-u, dopóki autorzy nie opublikują poprawki."
+      },
+      "read16Bytes": {
+        "cause": "Uszkodzony lub niedopobrany plik, zwykle .vpk.",
+        "fix": "Usuń i zainstaluj ponownie ostatnio dodane mody. Jeśli gra crashuje także bez modów, zweryfikuj pliki gry w Steam."
+      },
+      "gameinfo": {
+        "cause": "Brakuje gameinfo.gi albo został zedytowany do nieprawidłowej postaci.",
+        "fix": "Zweryfikuj pliki gry w Steam, a potem użyj „Uruchom z modami”, żeby aplikacja ponownie dodała ścieżki modów."
+      },
+      "kv3": {
+        "cause": "Plik konfiguracyjny w modzie albo ręcznie edytowany gameinfo.gi ma błąd składni.",
+        "fix": "Wyłącz ostatnio dodane mody. Jeśli edytowałeś gameinfo.gi ręcznie, wklej go do parsera KeyValues, żeby znaleźć błędną linijkę."
+      }
+    }
+  },
+  "withoutMods": {
+    "title": "Crashuje bez żadnych modów?",
+    "verify": "Jeśli „Uruchom bez modów” też kończy się crashem, problem leży w plikach gry, a nie w modzie. W Steam kliknij prawym przyciskiem Deadlock, otwórz <strong>Właściwości > Zainstalowane pliki</strong> i wybierz <strong>Sprawdź spójność plików gry</strong>. Twoje mody zostaną zainstalowane, a aplikacja ponownie je zastosuje przy następnym uruchomieniu z modami.",
+    "notWorking": "Jeśli mody przestały działać bez crasha, zobacz <guide>Mody do Deadlock nie działają po aktualizacji</guide>. Zapytaj na <discord>Discordzie</discord>, które mody padły po ostatnim patchu."
+  },
+  "faqs": {
+    "layoutFile": {
+      "question": "Co powoduje Fatal Error: Unable to load layout file w Deadlock?",
+      "answer": "Nieaktualny mod HUD-u lub interfejsu. Takie mody podmieniają pliki layoutu Panorama, a gdy patch Deadlock zmienia interfejs, stare pliki przestają pasować. Wyłącz mody HUD-u i interfejsu, uruchom grę i włącz je ponownie po aktualizacji."
+    },
+    "findChild": {
+      "question": "Jak naprawić Unable to find child IdolCashInMeter?",
+      "answer": "Tak samo. Mod HUD-u nadal wskazuje na element interfejsu, który Valve przemianowało lub usunęło, na przykład IdolCashInMeter albo KothCashInMeter. Wyłącz mody HUD-u, dopóki autorzy nie wydadzą aktualizacji."
+    },
+    "read16Bytes": {
+      "question": "Co oznacza Fatal Error: Failed to read 16 bytes?",
+      "answer": "Gra trafiła podczas odczytu na uszkodzony lub niekompletny plik, najczęściej .vpk, który nie pobrał się do końca. Usuń i zainstaluj ponownie najnowsze mody, a jeśli błąd występuje przy wyłączonych modach, zweryfikuj pliki Deadlock w Steam."
+    },
+    "gameinfo": {
+      "question": "Jak naprawić Application unable to load gameinfo.gi?",
+      "answer": "Brakuje gameinfo.gi albo został zedytowany do nieprawidłowej postaci. Sprawdź spójność plików gry w Steam, żeby go przywrócić, a potem użyj „Uruchom z modami” w Deadlock Mod Manager, żeby poprawnie dodać ścieżki modów."
+    },
+    "findMod": {
+      "question": "Jak sprawdzić, który mod crashuje Deadlock?",
+      "answer": "Użyj „Uruchom bez modów”, żeby potwierdzić, że czysta gra startuje. Potem wyłącz połowę modów, uruchom grę z modami i dziel na pół grupę, która crashuje, aż zostanie jeden mod."
+    }
+  },
+  "downloadBand": {
+    "title": "Szybciej znajdź zepsuty mod",
+    "body": "Uruchamiaj grę z modami lub bez jednym kliknięciem, sprawdzaj, które mody mają aktualizacje, i przełączaj je bez grzebania w folderze gry."
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "meta": {
+    "name": "Deadlock Skins",
+    "title": "Deadlock Skins: Custom Helden-Skins | Deadlock Mod Manager",
+    "description": "Custom Deadlock Skins für deine Helden von GameBanana installieren, in 3D ansehen und jederzeit zurückwechseln. Kostenlos mit dem Deadlock Mod Manager."
+  },
+  "faqs": {
+    "howToGet": {
+      "question": "Wie bekomme ich Skins in Deadlock?",
+      "answer": "Deadlock hat noch keinen Skin-Shop, also kommen Skins von der Modding-Community auf GameBanana. Installier den Deadlock Mod Manager, filtere „Mods entdecken“ nach Skins und deinem Helden, lade einen Skin herunter und wähl ihn dann unter „Helden-Skins“ aus."
+    },
+    "visibility": {
+      "question": "Können andere Spieler meine Deadlock Skins sehen?",
+      "answer": "Nein. Skins sind clientseitig. Du siehst das neue Modell, alle anderen das Standardmodell."
+    },
+    "free": {
+      "question": "Sind Deadlock Skins kostenlos?",
+      "answer": "Ja. Community-Skins auf GameBanana sind kostenlos, genau wie der Deadlock Mod Manager."
+    },
+    "revert": {
+      "question": "Wie wechsle ich zurück zum Standard-Skin eines Helden?",
+      "answer": "Öffne „Helden-Skins“, wähl den Helden und dann das Standard-Aussehen. Der Skin bleibt heruntergeladen, du kannst also später wieder wechseln."
+    },
+    "multiple": {
+      "question": "Kann ich mehrere Skins für denselben Helden nutzen?",
+      "answer": "Pro Held ist immer ein Skin aktiv, und die App warnt dich, wenn sich zwei in die Quere kommen würden. Du kannst einem Helden aber auch mehrere Skins geben und bei jedem Start einen zufälligen bekommen."
+    },
+    "official": {
+      "question": "Wird Deadlock offizielle Skins bekommen?",
+      "answer": "Valve hat bisher keine offiziellen Cosmetics veröffentlicht. Falls sie kommen, gibt es Community-Skins weiterhin über die App."
+    }
+  },
+  "hero": {
+    "eyebrow": "Deadlock Skins",
+    "title": "Custom Skins für jeden Deadlock-Helden",
+    "intro": "Neue Modelle, Recolors und komplette Überarbeitungen von der Community. Der Deadlock Mod Manager sortiert sie nach Held, zeigt sie in 3D und wechselt sie mit einem Klick."
+  },
+  "popular": {
+    "title": "Beliebte Helden-Skins",
+    "intro": "Community-Skins aus „Mods entdecken“. Jede Karte öffnet den Skin auf GameBanana; installiert wird er über die App.",
+    "snapshot": "Stand: Oktober 2026. Download-Zahlen von GameBanana."
+  },
+  "steps": {
+    "title": "So installierst du einen Deadlock Skin",
+    "items": {
+      "install": {
+        "title": "Deadlock Mod Manager holen",
+        "body": "Installier ihn unter Windows oder Linux. Er findet deinen Spielordner von selbst."
+      },
+      "filter": {
+        "title": "Nach Held filtern",
+        "body": "Wähl unter „Mods entdecken“ die Kategorie Skins und den Helden, den du spielst."
+      },
+      "download": {
+        "title": "Skin herunterladen",
+        "body": "Gibt es den Skin in mehreren Stilen, wähl die Variante, die du willst."
+      },
+      "activate": {
+        "title": "Unter „Helden-Skins“ festlegen",
+        "body": "Wähl den aktiven Skin für den Helden, prüf ihn in der 3D-Vorschau und klick dann auf „Mit Mods starten“."
+      }
+    }
+  },
+  "foundry": {
+    "title": "Bau deinen eigenen Skin",
+    "intro": "Die <strong>Mod Foundry</strong> lädt ein Heldenmodell aus dem Basisspiel oder aus einem Skin, den du hast. Bemal es, tausch Sounds aus, sieh es dir in 3D an und exportier einen fertig installierbaren Mod.",
+    "exports": "Exporte kannst du als Datei speichern, als neuen Mod zu deiner Bibliothek hinzufügen oder damit den Ausgangs-Skin ersetzen (das Original bleibt als Backup erhalten). <link>Zum Mod-Foundry-Guide</link>.",
+    "figure": {
+      "alt": "Der Skin-Editor Mod Foundry im Deadlock Mod Manager mit einem Heldenmodell sowie Mal- und Sound-Werkzeugen",
+      "caption": "Mod Foundry: Helden-Skin bearbeiten und als Mod exportieren."
+    }
+  },
+  "downloadBand": {
+    "title": "Gib deinem Helden einen neuen Look",
+    "body": "Kostenlos und Open Source, für Windows und Linux. Skins sind clientseitig, und das Standardmodell ist immer nur einen Klick entfernt."
+  }
+}

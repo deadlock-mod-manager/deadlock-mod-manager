@@ -1,0 +1,83 @@
+{
+  "meta": {
+    "name": "Cómo instalar mods en Deadlock",
+    "title": "Cómo instalar mods en Deadlock (guía 2026) | Deadlock Mod Manager",
+    "description": "Cómo instalar mods en Deadlock paso a paso: mods de GameBanana con un clic usando Deadlock Mod Manager, o a mano con la carpeta addons y gameinfo.gi."
+  },
+  "faqs": {
+    "howTo": {
+      "question": "¿Cómo instalo mods en Deadlock?",
+      "answer": "Instala Deadlock Mod Manager, deja que encuentre tu juego, descarga mods desde Buscar Mods y pulsa Iniciar con mods. La app se encarga de la carpeta addons y de gameinfo.gi por ti."
+    },
+    "addonsFolder": {
+      "question": "¿Dónde está la carpeta addons de Deadlock?",
+      "answer": "Dentro de tu instalación de Deadlock, en game/citadel/addons. En Windows suele ser C:\\Program Files (x86)\\Steam\\steamapps\\common\\Deadlock\\game\\citadel\\addons. Crea la carpeta addons si no existe."
+    },
+    "gameinfo": {
+      "question": "¿Por qué tengo que editar gameinfo.gi?",
+      "answer": "Deadlock solo carga archivos de la carpeta addons cuando gameinfo.gi la incluye como ruta de búsqueda. Sin esa línea, el juego ignora tus mods. Deadlock Mod Manager la añade cuando inicias con mods."
+    },
+    "uninstall": {
+      "question": "¿Cómo desinstalo los mods de Deadlock?",
+      "answer": "En la app, quita los mods desde Mis Mods o usa Limpiar Todos los Mods en Configuración. Para jugar sin mods temporalmente, elige Iniciar sin mods. A mano, borra los archivos .vpk de la carpeta addons."
+    },
+    "linux": {
+      "question": "¿Puedo instalar mods de Deadlock en Linux o Steam Deck?",
+      "answer": "Sí. Deadlock Mod Manager funciona en Linux, incluida Steam Deck en Modo Escritorio, y está disponible en nuestro repositorio APT, como .deb, RPM o Flatpak, en AUR y en nixpkgs."
+    }
+  },
+  "hero": {
+    "eyebrow": "Guía",
+    "title": "Cómo instalar mods en Deadlock",
+    "intro": "Dos formas de usar mods en Deadlock: deja que Deadlock Mod Manager se encargue en un par de clics o configura la carpeta addons a mano. Ambas funcionan; la app además mantiene tus mods actualizados y es fácil deshacer los cambios."
+  },
+  "app": {
+    "title": "Instala mods con Deadlock Mod Manager",
+    "intro": "La forma más rápida y la que recomendamos. La primera vez tarda unos dos minutos.",
+    "steps": {
+      "download": {
+        "title": "Descarga la app",
+        "body": "Consíguela en la <link>página de descarga</link>. Las versiones de Windows incluyen un instalador firmado; Linux tiene un repositorio APT además de paquetes .deb, RPM, Flatpak, AUR y nixpkgs."
+      },
+      "detect": {
+        "title": "Deja que encuentre Deadlock",
+        "body": "La app detecta tu instalación de Steam. Si tienes Deadlock en otra biblioteca, indica la carpeta en Configuración."
+      },
+      "pick": {
+        "title": "Elige mods",
+        "body": "Abre Buscar Mods, busca o filtra por héroe y categoría, y haz clic en Descargar."
+      },
+      "launch": {
+        "title": "Inicia con mods",
+        "body": "Pulsa Iniciar con mods. La app activa tus mods y configura gameinfo.gi antes de que arranque el juego."
+      }
+    },
+    "figure": {
+      "alt": "El botón Iniciar con mods de Deadlock Mod Manager con la lista de mods instalados",
+      "caption": "Un solo botón aplica tus mods e inicia Deadlock."
+    }
+  },
+  "manual": {
+    "title": "Instala mods manualmente",
+    "intro": "Si prefieres no usar un gestor de mods, esto es lo que hace por ti.",
+    "steps": {
+      "extract": "Descarga un mod de GameBanana y extrae el archivo comprimido. Necesitas el archivo <code>.vpk</code> que contiene, normalmente con un nombre como <code>pak01_dir.vpk</code>.",
+      "addons": "Abre la carpeta de Deadlock y ve a <code>game/citadel</code>. Crea ahí una carpeta <code>addons</code> si no existe.",
+      "copy": "Copia el <code>.vpk</code> en <code>game/citadel/addons</code>. Cada mod necesita su propio número, así que renombra los archivos que coincidan: <code>pak01_dir.vpk</code>, <code>pak02_dir.vpk</code>, etc. Cuando dos mods modifican el mismo archivo, el número decide cuál se carga.",
+      "gameinfo": "Abre <code>game/citadel/gameinfo.gi</code> en un editor de texto. En el bloque <code>SearchPaths</code>, añade estas dos líneas justo encima de <code>Write citadel</code>:",
+      "launch": "Guarda el archivo e inicia Deadlock. La opción \"Verificar integridad de los archivos del juego\" de Steam y algunas actualizaciones restablecen <code>gameinfo.gi</code>, así que tendrás que volver a añadir las líneas después."
+    },
+    "outro": "Ese último paso es el motivo habitual por el que los mods \"dejan de funcionar\" tras un parche. La app lo vuelve a aplicar cada vez que inicias con mods, y puede quitarlo al salir para que el juego se inicie sin mods desde Steam."
+  },
+  "after": {
+    "title": "Después de instalar",
+    "conflicts": "<strong>Conflictos:</strong> si dos mods modifican los mismos archivos, no pueden ganar los dos. La app te avisa y te deja cambiar el orden de carga.",
+    "updates": "<strong>Actualizaciones:</strong> busca actualizaciones de mods en Mis Mods después de un parche de Deadlock.",
+    "profiles": "<strong>Perfiles:</strong> mantén configuraciones separadas (por ejemplo, un perfil solo con skins) y compártelas con tus amigos mediante un ID de Perfil.",
+    "docs": "Encontrarás más detalles en la <link>documentación de primeros pasos</link>."
+  },
+  "downloadBand": {
+    "title": "Sáltate los pasos manuales",
+    "body": "Deadlock Mod Manager hace todo esto por ti, y lo deshace con la misma facilidad. Gratis y de código abierto."
+  }
+}

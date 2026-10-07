@@ -1,0 +1,168 @@
+{
+  "meta": {
+    "title": "Randomizer de Deadlock: herói e build de itens aleatórios",
+    "description": "Sorteie um herói do Deadlock, uma build de itens válida na ordem de compra, a ordem das habilidades e três regras de bravura. Compartilhe a seed e sorteie de novo.",
+    "keywords": "deadlock randomizer, deadlock build aleatória, deadlock ultimate bravery, herói aleatório deadlock, gerador de build deadlock, deadlock random build"
+  },
+  "error": {
+    "title": "Não deu para sortear",
+    "description": "Os dados de heróis e itens vêm da Deadlock API, e ela não respondeu.",
+    "retry": "Tentar de novo"
+  },
+  "skeleton": {
+    "heading": "Randomizer de Deadlock: herói e build de itens aleatórios"
+  },
+  "toolbar": {
+    "copyLink": {
+      "idle": "Copiar link",
+      "copied": "Copiado",
+      "failed": "Falha ao copiar"
+    },
+    "reroll": "Sortear de novo"
+  },
+  "sections": {
+    "trigger": "Seções",
+    "label": "Sortear",
+    "options": {
+      "build": "Ordem da build",
+      "abilities": "Habilidades",
+      "rules": "Regras"
+    }
+  },
+  "heroPicker": {
+    "anyHero": "Qualquer herói",
+    "label": "Sortear builds para"
+  },
+  "hero": {
+    "heading": "Você vai jogar de {{hero}}",
+    "headingWithRole": "Você vai jogar de {{hero}}, {{role}}",
+    "youArePlaying": "Você vai jogar de",
+    "role": "{{role}}."
+  },
+  "facts": {
+    "complexity": "Complexidade",
+    "lane": "Rota",
+    "archetype": "Arquétipo",
+    "tags": "Tags",
+    "mandate": "Estilo",
+    "buildCost": "Custo da build",
+    "souls": "almas",
+    "abilityPriority": "Prioridade de habilidades",
+    "abilityPriorityHint": "4 desbloqueios · 32 pontos",
+    "total": "Total"
+  },
+  "headings": {
+    "build": "A build, em ordem.",
+    "skills": "Ordem das habilidades, 1–16.",
+    "rules": "As regras."
+  },
+  "footer": {
+    "credit": "Heróis, itens e artes fornecidos pela <link>Deadlock API</link>."
+  },
+  "lanes": {
+    "yellow": "Rota Amarela",
+    "blue": "Rota Azul",
+    "green": "Rota Verde"
+  },
+  "mandates": {
+    "gunslinger": {
+      "label": "Pistoleiro",
+      "blurb": "A maior parte das suas almas foi para a arma. Vença as trocas com ela antes de alguém ter armadura."
+    },
+    "caster": {
+      "label": "Conjurador",
+      "blurb": "O sorteio gira em torno das suas habilidades. Guarde as recargas para a luta que importa."
+    },
+    "bulwark": {
+      "label": "Muralha",
+      "blurb": "Você comprou sobrevivência primeiro. Seja quem entra na rota e não sai dela."
+    }
+  },
+  "categories": {
+    "weapon": "Arma",
+    "vitality": "Vitalidade",
+    "spirit": "Espírito"
+  },
+  "challenges": {
+    "exactOrder": {
+      "title": "Compre na ordem",
+      "detail": "Compre a build estritamente de cima para baixo. Nada de pular etapas, mesmo que dê para pagar o próximo tier. As melhorias entram sempre que você puder pagar."
+    },
+    "noRecall": {
+      "title": "Sem compras na base depois dos 15:00",
+      "detail": "Depois que o relógio passar dos quinze minutos, toda compra tem que ser feita fora da sua base."
+    },
+    "parry": {
+      "title": "Sempre aparar",
+      "detail": "Todo golpe corpo a corpo contra você precisa de uma tentativa de aparar. Trocar dano no lugar conta como falha."
+    },
+    "noZipline": {
+      "title": "Com os pés no chão",
+      "detail": "A tirolesa está proibida nos primeiros dez minutos. Vá andando."
+    },
+    "meleeOpening": {
+      "title": "Punhos primeiro",
+      "detail": "Até você comprar seu primeiro item de tier 2, o corpo a corpo é seu único jeito de causar dano a um jogador inimigo."
+    },
+    "ultOnCooldown": {
+      "title": "Nunca segure a ultimate",
+      "detail": "Sua ultimate sai assim que ficar disponível. Guardar para um momento melhor é falha."
+    },
+    "noRetreat": {
+      "title": "Sem recuar",
+      "detail": "Nunca saia de uma luta na rota que você começou. Ou você vence, ou volta andando do spawn."
+    },
+    "soulCap": {
+      "title": "Gaste tudo",
+      "detail": "Assim que der para pagar o próximo item da build, vá comprar. Juntar almas além do preço dele é falha."
+    },
+    "oneLane": {
+      "title": "Fiel à rota",
+      "detail": "Fique na rota sorteada até o primeiro guardião dela cair. Sem rotações, sem jungle."
+    },
+    "noCancel": {
+      "title": "Sem volta",
+      "detail": "Toda habilidade que você começar a conjurar tem que ir até o fim. Cancelar uma conjuração é falha."
+    },
+    "callout": {
+      "title": "Anuncie o sorteio",
+      "detail": "Digite seu herói, sua rota e seu primeiro item no chat geral antes da barreira cair."
+    },
+    "noHeal": {
+      "title": "Negado",
+      "detail": "Nunca se cure na sua própria base. Só regeneração, roubo de vida e itens de cura."
+    }
+  },
+  "abilities": {
+    "fallback": "Habilidade {{slot}}",
+    "ultimate": "Ult",
+    "maxFirst": "Upar primeiro",
+    "unlockedAt": "Desbloqueada no passo {{position}}",
+    "upgradeAt": "Melhoria {{upgrade}} no passo {{position}}",
+    "unlock": "Desbloquear",
+    "cost": "+{{cost}} PH",
+    "spent": "{{spent}} PH",
+    "srUnlock": "{{ability}}, desbloquear",
+    "srUpgrade": "{{ability}}, melhoria {{step}}"
+  },
+  "item": {
+    "tier": "Tier {{tier}}",
+    "active": "Ativo",
+    "activeTitle": "Item ativo",
+    "tooltipHeader": "{{category}} · Tier {{tier}} · <souls>{{cost}}</souls>",
+    "sectionKinds": {
+      "active": "ativo",
+      "passive": "passivo"
+    },
+    "ariaUpgrade": "{{item}}, melhorado para {{upgrade}}",
+    "ariaItem": "{{item}}, {{category}} tier {{tier}}",
+    "categoryChange": "{{category}} →",
+    "upgrade": "· Melhoria",
+    "upgradePriceTitle": "{{total}} almas, menos as {{paid}} já pagas por {{item}}",
+    "goodFit": "Combina bem",
+    "goodFitTitle": "Bem avaliado para este herói nos dados de draft",
+    "imbueOn": "Imbuir em {{ability}}",
+    "imbueOnUntilUpgraded": "Imbuir em {{ability}} até melhorar",
+    "imbueLapsesTitle": "{{item}} imbui uma habilidade, {{upgrade}} funciona em todas"
+  }
+}

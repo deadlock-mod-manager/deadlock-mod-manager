@@ -1,0 +1,176 @@
+{
+  "meta": {
+    "title": "Deadlock Mod Manager | Installer et gérer vos mods Deadlock",
+    "description": "Gestionnaire de mods gratuit et open source pour Deadlock. Parcourez les mods GameBanana, installez-les en un clic et gérez skins et sons sur Windows et Linux.",
+    "descriptionWithVersion": "Gestionnaire de mods Deadlock gratuit et open source, pour Windows et Linux. Mods, skins et sons GameBanana en un clic. Version v{{version}}, la V2 arrive bientôt."
+  },
+  "hero": {
+    "v2Teaser": "Bientôt : découvrez les nouveautés",
+    "title": "Les mods Deadlock,<br/><accent>sans prise de tête.</accent>",
+    "subtitle": "Trouvez, installez et mettez à jour vos mods en quelques clics. La même app gère les skins de héros, les réticules et les thèmes.",
+    "allDownloads": "Tous les téléchargements",
+    "facts": {
+      "free": "Gratuit et open source",
+      "platforms": "Windows et Linux",
+      "signed": "Installateur signé"
+    },
+    "screenshotAlt": "L'écran Découvrir des mods de Deadlock Mod Manager, avec un mod en cours de téléchargement",
+    "toast": {
+      "installing": "Installation du mod",
+      "installed": "Mod installé",
+      "ready": "{{name}} est prêt à jouer."
+    }
+  },
+  "partners": {
+    "title": "Nos partenaires"
+  },
+  "tour": {
+    "eyebrow": "Aperçu interactif",
+    "title": "Essayez avant de télécharger",
+    "description": "Voici une copie fonctionnelle de l'app, directement sur la page. Installez un mod, changez de thème ou configurez un réticule.",
+    "slidesLabel": "Comment marche l'app",
+    "slides": {
+      "find": {
+        "title": "Trouvez un mod",
+        "body": "Cherchez dans la boutique, filtrez par héros et installez en un clic."
+      },
+      "launch": {
+        "title": "Lancez avec mods",
+        "body": "Cliquez sur Lancer avec mods et l'app applique vos mods avant le démarrage du jeu."
+      },
+      "theme": {
+        "title": "Personnalisez-la",
+        "body": "Choisissez un skin pour chaque héros et un thème pour l'app."
+      }
+    },
+    "mobileNote": "Sur PC, vous pouvez cliquer directement dans l'aperçu interactif ici."
+  },
+  "trust": {
+    "title": "Ce qu'elle fait de votre jeu",
+    "does": {
+      "heading": "Ce qu'elle fait",
+      "items": {
+        "copies": "Copie les fichiers de mods .vpk dans votre dossier addons",
+        "backups": "Sauvegarde avant toute modification, restauration en un clic",
+        "vanilla": "Vous laisse lancer le jeu vanilla à tout moment"
+      }
+    },
+    "never": {
+      "heading": "Ce qu'elle ne fait jamais",
+      "items": {
+        "patches": "Modifier l'exécutable de Deadlock",
+        "others": "Changer ce que voient les autres joueurs",
+        "analytics": "Envoyer des statistiques sans votre accord"
+      }
+    },
+    "openSource": {
+      "title": "Open source",
+      "body": "Le code est sur GitHub sous licence GPL-3.0, et la communauté traduit l'app sur Crowdin.",
+      "github": "Voir sur GitHub",
+      "transparency": "Transparence"
+    }
+  },
+  "themes": {
+    "title": "Changez le look de l'app",
+    "description": "Choisissez un des thèmes de la communauté, ou créez le vôtre avec l'éditeur de thèmes et partagez le fichier avec vos amis.",
+    "screenshotAlt": "Deadlock Mod Manager avec le thème {{theme}}",
+    "pickerLabel": "Thème",
+    "tryInPreview": "Essayer {{theme}} dans l'aperçu",
+    "builderHint": "{{description}} L'éditeur de thèmes se trouve dans les Paramètres."
+  },
+  "skins": {
+    "title": "Des skins de héros créés par la communauté",
+    "body": "Choisissez un héros, vérifiez le skin dans l'aperçu 3D et appliquez-le. Envie de créer le vôtre ? Importez un modèle dans la Mod Foundry. Les skins sont uniquement côté client : les autres joueurs voient toujours les modèles par défaut.",
+    "link": "Comment marchent les skins de héros"
+  },
+  "stats": {
+    "label": "Statistiques",
+    "downloads": {
+      "label": "Téléchargements de l'app",
+      "value": "{{value}}+",
+      "note": "Toutes versions confondues"
+    },
+    "users": {
+      "label": "Utilisateurs inscrits",
+      "note": "Inscrits à ce jour"
+    },
+    "release": {
+      "label": "Dernière version",
+      "note": "Lire les notes de version"
+    },
+    "price": {
+      "label": "Prix",
+      "value": "Gratuit",
+      "note": "Open source depuis le premier jour"
+    }
+  },
+  "tools": {
+    "title": "Outils gratuits sur le site",
+    "items": {
+      "randomizer": {
+        "title": "Randomizer",
+        "description": "Tirez un héros pour votre prochain match"
+      },
+      "crosshair": {
+        "title": "Générateur de réticule",
+        "description": "Créez-en un et copiez la config"
+      },
+      "vpk": {
+        "title": "Analyseur VPK",
+        "description": "Voyez ce que contient un .vpk"
+      },
+      "kv": {
+        "title": "Parseur KV",
+        "description": "Lisez les fichiers KeyValues de Valve"
+      }
+    }
+  },
+  "faq": {
+    "eyebrow": "Besoin d'aide ?",
+    "title": "Questions fréquentes",
+    "intro": "Vous ne trouvez pas votre réponse ? Consultez la <docs>documentation</docs> ou demandez-nous sur <discord>Discord</discord>.",
+    "items": {
+      "what": {
+        "question": "Qu'est-ce que Deadlock Mod Manager ?",
+        "answer": "Une petite app de bureau qui simplifie le modding de Deadlock. Parcourez, installez et gérez vos mods sans toucher aux dossiers du jeu."
+      },
+      "install": {
+        "question": "Comment installer des mods Deadlock ?",
+        "steps": {
+          "download": "Téléchargez et ouvrez Deadlock Mod Manager.",
+          "detect": "Il détecte Deadlock pour vous, ou vous pouvez indiquer le dossier dans les Paramètres.",
+          "browse": "Parcourez Découvrir des mods et cliquez sur Télécharger.",
+          "install": "L'app installe le mod au bon endroit. Aucune étape manuelle."
+        }
+      },
+      "safe": {
+        "question": "Est-ce sûr d'utiliser des mods ?",
+        "answer": "L'app se contente de copier des fichiers .vpk dans le dossier addons du jeu, ne modifie jamais l'exécutable de Deadlock et fait une sauvegarde avant, pour que vous puissiez restaurer en un clic ou lancer le jeu vanilla à tout moment. Les skins sont côté client, et les mods eux-mêmes sont créés par la communauté : tenez-vous-en à ceux en qui vous avez confiance."
+      },
+      "uninstall": {
+        "question": "Comment désinstaller des mods ?",
+        "answer": "Ouvrez Mes mods et supprimez ce que vous ne voulez plus, ou utilisez Effacer tous les mods dans les Paramètres."
+      },
+      "platforms": {
+        "question": "Quelles plateformes sont prises en charge ?",
+        "answer": "Windows et Linux. Sur Linux, vous pouvez l'installer depuis notre dépôt APT (Ubuntu/Debian), l'AUR (Arch), nixpkgs ou le paquet Flatpak."
+      },
+      "bug": {
+        "question": "J'ai trouvé un bug, comment le signaler ?",
+        "answer": "Ouvrez une issue sur notre <link>dépôt GitHub</link>. Indiquez les étapes pour reproduire le bug, ce que vous attendiez et ce qui s'est passé."
+      },
+      "docs": {
+        "question": "Où trouver une documentation plus détaillée ?",
+        "answer": "Le <docs>site de documentation</docs> propose des guides, des tutoriels et une référence technique."
+      },
+      "officialSkins": {
+        "question": "Deadlock aura-t-il des skins officiels ?",
+        "answer": "Deadlock évolue. Si des cosmétiques officiels arrivent, l'app sera toujours là pour les créations de la communauté."
+      },
+      "skinsVisible": {
+        "question": "Les autres joueurs voient-ils mes skins Deadlock ?",
+        "answer": "Non. Ils sont côté client. Les autres joueurs voient les modèles et textures par défaut."
+      }
+    }
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "meta": {
+    "name": "Mody do Deadlock",
+    "title": "Mody Deadlock: pobierz mody z GameBanana | Deadlock Mod Manager",
+    "description": "Wszystkie mody do Deadlock z GameBanana, od skinów bohaterów po HUD i ułatwienia. Instaluj je jednym kliknięciem w darmowym Deadlock Mod Manager."
+  },
+  "faqs": {
+    "where": {
+      "question": "Gdzie pobrać mody do Deadlock?",
+      "answer": "Prawie wszystkie mody do Deadlock są na GameBanana. Deadlock Mod Manager pokazuje katalog GameBanana w aplikacji, więc możesz wyszukać mod, obejrzeć podgląd i go zainstalować bez wchodzenia na stronę i grzebania w plikach zip."
+    },
+    "manual": {
+      "question": "Czy muszę instalować mody do Deadlock ręcznie?",
+      "answer": "Nie. Aplikacja pobiera mod, rozpakowuje go, kopiuje pliki .vpk do folderu addons gry i konfiguruje za ciebie gameinfo.gi. Jeśli wolisz, nadal możesz instalować mody ręcznie; poradnik instalacji opisuje oba sposoby."
+    },
+    "free": {
+      "question": "Czy mody do Deadlock są darmowe?",
+      "answer": "Tak. Mody na GameBanana tworzy i udostępnia za darmo społeczność, a Deadlock Mod Manager jest darmowy i open source."
+    },
+    "visibility": {
+      "question": "Czy inni gracze widzą moje mody?",
+      "answer": "Nie. Skiny, zmiany HUD-u i dźwięki działają tylko po twojej stronie. Inni gracze widzą standardową grę."
+    },
+    "updates": {
+      "question": "Czy mody działają po aktualizacji Deadlock?",
+      "answer": "Większość tak. Patche od Valve czasem psują mody HUD-u i interfejsu, dopóki autorzy ich nie zaktualizują. Sprawdź aktualizacje modów w zakładce Moje mody albo graj bez modów, aż pojawi się poprawka."
+    }
+  },
+  "hero": {
+    "eyebrow": "Mody do Deadlock",
+    "title": "Każdy mod do Deadlock na jedno kliknięcie",
+    "intro": "Deadlock Mod Manager przegląda za ciebie cały katalog GameBanana: skiny, mody HUD-u i ułatwienia, dźwięki i nie tylko. Wybierz mod, kliknij pobierz, a aplikacja wrzuci go tam, gdzie trzeba."
+  },
+  "popular": {
+    "title": "Najpopularniejsze mody do Deadlock",
+    "intro": "Najczęściej pobierane mody z zakładki Zdobądź mody. Każdy otwiera swoją stronę na GameBanana, a wszystkie zainstalujesz z poziomu aplikacji.",
+    "snapshot": "Stan na październik 2026. Liczba pobrań pochodzi z GameBanana."
+  },
+  "categories": {
+    "title": "Co możesz zainstalować",
+    "items": {
+      "skins": {
+        "title": "Skiny bohaterów",
+        "body": "Nowe modele i przemalowania dla każdego bohatera, pogrupowane według postaci, więc aktywny skin zmienisz jednym kliknięciem."
+      },
+      "hud": {
+        "title": "HUD i ułatwienia",
+        "body": "Czytelniejsze górne paski, zawsze widoczne ikony przedmiotów i inne poprawki interfejsu, jak QOL Lock."
+      },
+      "sounds": {
+        "title": "Dźwięki",
+        "body": "Zamienniki dźwięków umiejętności, komentatora i muzyki. Włączasz je niezależnie od skinów."
+      },
+      "wip": {
+        "title": "Wersje robocze",
+        "body": "Wczesne wydania od modderów, w osobnej sekcji, żeby nic cię nie zaskoczyło."
+      }
+    }
+  },
+  "steps": {
+    "title": "Z GameBanana do gry w czterech krokach",
+    "items": {
+      "install": {
+        "title": "Zainstaluj aplikację",
+        "body": "Pobierz Deadlock Mod Manager na Windows lub Linux. Sam znajdzie twoją instalację Deadlock."
+      },
+      "find": {
+        "title": "Znajdź mod",
+        "body": "Przeszukaj zakładkę Zdobądź mody, filtruj według bohatera lub kategorii i sortuj po pobraniach, ocenach albo dacie aktualizacji."
+      },
+      "download": {
+        "title": "Pobierz go",
+        "body": "Wybierz wariant, jeśli mod ma ich kilka. Aplikacja sama go rozpakuje i zainstaluje."
+      },
+      "launch": {
+        "title": "Uruchom z modami",
+        "body": "Kliknij „Uruchom z modami”. Chcesz czystą grę? Wybierz „Uruchom bez modów”; nic nie zostanie odinstalowane."
+      }
+    },
+    "figure": {
+      "alt": "Zakładka Zdobądź mody w Deadlock Mod Manager z listą modów z GameBanana i filtrami bohaterów oraz kategorii",
+      "caption": "Zakładka Zdobądź mody: każdy mod do Deadlock z GameBanana, z filtrami."
+    }
+  },
+  "gamebanana": {
+    "title": "Mody do Deadlock z GameBanana bez zbędnej roboty",
+    "manual": "<link>GameBanana</link> to miejsce, gdzie społeczność modderów Deadlock publikuje swoje prace, i partner Deadlock Mod Manager. Ręczna instalacja ze strony oznacza pobranie archiwum, znalezienie właściwego pliku <code>.vpk</code>, zmianę jego nazwy, żeby nie kolidował z innymi modami, i edycję <code>gameinfo.gi</code>.",
+    "app": "Aplikacja robi to wszystko i nie kończy na instalacji: ostrzega, gdy dwa mody zmieniają te same pliki, sprawdza aktualizacje, trzyma osobne profile dla różnych konfiguracji i najpierw robi kopię zapasową twoich dodatków, więc zawsze możesz wszystko cofnąć."
+  },
+  "downloadBand": {
+    "title": "Zacznij modować Deadlock",
+    "body": "Darmowy i open source, na Windows i Linux. Od pierwszego moda dzieli cię kilka kliknięć."
+  }
+}

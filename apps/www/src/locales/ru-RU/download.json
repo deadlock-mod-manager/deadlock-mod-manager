@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "title": "Скачать Deadlock Mod Manager для Windows и Linux",
+    "latest": "последнюю версию Deadlock Mod Manager",
+    "latestVersion": "последнюю версию Deadlock Mod Manager, v{{version}}",
+    "description": "Скачай {{latest}}: установщик для Windows или пакет для Linux (Flatpak, .deb или .rpm). Бесплатно, с открытым кодом, сборка из публичного кода на GitHub."
+  },
+  "redirect": {
+    "windows": {
+      "metaTitle": "Загрузка Deadlock Mod Manager для Windows",
+      "metaDescription": "Начинаем загрузку Deadlock Mod Manager для Windows.",
+      "preparing": "Готовим загрузку для Windows...",
+      "redirecting": "Переходим к загрузке для Windows..."
+    },
+    "linux": {
+      "metaTitle": "Загрузка Deadlock Mod Manager для Linux",
+      "metaDescription": "Начинаем загрузку Deadlock Mod Manager для Linux.",
+      "preparing": "Готовим загрузку для Linux...",
+      "redirecting": "Переходим к загрузке для Linux..."
+    },
+    "fetching": "Получаем последнюю версию",
+    "errorTitle": "Ошибка загрузки",
+    "errorDescription": "Не удалось получить последние релизы. Попробуй позже.",
+    "goToDownloads": "На страницу загрузки",
+    "fallback": "Если загрузка не началась автоматически, <button>нажми здесь</button>, чтобы перейти на страницу загрузки."
+  },
+  "hero": {
+    "whatsNew": "Что нового",
+    "title": "Скачать Deadlock Mod Manager",
+    "description": "Находи, устанавливай и обновляй моды на Deadlock в пару кликов. Выбери сборку для своей системы ниже.",
+    "otherPlatforms": "Другие платформы",
+    "highlights": {
+      "openSource": "Бесплатно и с открытым кодом",
+      "autoUpdate": "Обновляется автоматически",
+      "platforms": "Windows и Linux"
+    }
+  },
+  "error": {
+    "title": "Загрузки временно недоступны",
+    "description": "Не удалось получить последние релизы. Установщик всё ещё можно скачать с GitHub.",
+    "github": "Скачать с GitHub"
+  },
+  "loading": {
+    "title": "Загружаем список версий",
+    "description": "Получаем последний релиз…"
+  },
+  "latest": {
+    "title": "Выбери платформу",
+    "released": "Версия {{version}}, выпущена {{date}}",
+    "installGuide": "Гайд по установке",
+    "releaseNotes": "Список изменений"
+  },
+  "releaseDate": {
+    "dateTime": "{{date}}, {{time}} UTC"
+  },
+  "platforms": {
+    "windows": {
+      "requirements": "Windows 10 или 11, 64-бит"
+    },
+    "linux": {
+      "requirements": "64-бит, большинство дистрибутивов"
+    },
+    "detected": "Твоя система",
+    "noBuilds": "Для этой версии нет сборок под {{platform}}.",
+    "experimental": "Экспериментальные сборки с Chromium ({{total}})",
+    "experimentalDescription": "Включают движок Chromium (CEF) вместо системного webview. Весят больше и протестированы хуже; пробуй их, только если у обычной сборки проблемы с отрисовкой."
+  },
+  "installer": {
+    "recommended": "Рекомендуем",
+    "signature": "подпись",
+    "signatureTitle": "Подпись для {{filename}}",
+    "download": "Скачать",
+    "downloadLabel": "Скачать {{filename}}",
+    "types": {
+      "exe": {
+        "label": "Установщик",
+        "description": "Установка для Windows 10 и 11 (.exe)"
+      },
+      "msi": {
+        "label": "Пакет MSI",
+        "description": "Для управляемой или тихой установки (.msi)"
+      },
+      "dmg": {
+        "label": "Образ диска",
+        "description": "Приложение для macOS (.dmg)"
+      },
+      "flatpak": {
+        "label": "Flatpak",
+        "description": "Работает в большинстве дистрибутивов"
+      },
+      "deb": {
+        "label": "Пакет Debian",
+        "description": "Ubuntu, Debian, Mint (.deb)"
+      },
+      "rpm": {
+        "label": "Пакет RPM",
+        "description": "Fedora, openSUSE, Nobara (.rpm)"
+      }
+    }
+  },
+  "history": {
+    "title": "Другие версии",
+    "description": "Откатись на более ранний релиз или попробуй грядущие изменения заранее.",
+    "tabs": {
+      "stable": "Прошлые релизы",
+      "prerelease": "Ночные сборки"
+    },
+    "emptyStable": "Прошлых релизов пока нет.",
+    "emptyPrerelease": "Сейчас ночных сборок нет.",
+    "nightlyWarning": "Ночные сборки собираются автоматически из свежего кода. Новые функции появляются в них первыми, но они могут быть нестабильны, так что перед переходом сделай резервную копию своей сборки модов.",
+    "prerelease": "Пре-релиз",
+    "viewOnGithub": "Открыть релиз на GitHub"
+  }
+}

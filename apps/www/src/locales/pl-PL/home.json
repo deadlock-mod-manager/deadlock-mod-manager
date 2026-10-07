@@ -1,0 +1,176 @@
+{
+  "meta": {
+    "title": "Deadlock Mod Manager | Instaluj mody Deadlock i zarządzaj nimi",
+    "description": "Darmowy menedżer modów open source do Deadlock od Valve. Przeglądaj mody z GameBanana, instaluj je jednym kliknięciem i zarządzaj skinami oraz dźwiękami.",
+    "descriptionWithVersion": "Darmowy menedżer modów open source do Deadlock na Windows i Linux. Mody, skiny i dźwięki z GameBanana jednym kliknięciem. Najnowsza: v{{version}}, V2 już wkrótce."
+  },
+  "hero": {
+    "v2Teaser": "Już wkrótce: zobacz, co nowego",
+    "title": "Mody do Deadlock,<br/><accent>bez kombinowania.</accent>",
+    "subtitle": "Znajduj, instaluj i aktualizuj mody w kilka kliknięć. Ta sama aplikacja ogarnia skiny bohaterów, celowniki i motywy.",
+    "allDownloads": "Wszystkie pobrania",
+    "facts": {
+      "free": "Darmowy i open source",
+      "platforms": "Windows i Linux",
+      "signed": "Podpisany instalator"
+    },
+    "screenshotAlt": "Zakładka Zdobądź mody w Deadlock Mod Manager z pobieranym modem",
+    "toast": {
+      "installing": "Instalowanie moda",
+      "installed": "Mod zainstalowany",
+      "ready": "{{name}} jest gotowy do gry."
+    }
+  },
+  "partners": {
+    "title": "Nasi partnerzy"
+  },
+  "tour": {
+    "eyebrow": "Podgląd na żywo",
+    "title": "Wypróbuj, zanim pobierzesz",
+    "description": "To działająca kopia aplikacji, tutaj na stronie. Zainstaluj mod, zmień motyw albo ustaw celownik.",
+    "slidesLabel": "Jak działa aplikacja",
+    "slides": {
+      "find": {
+        "title": "Znajdź mod",
+        "body": "Przeszukaj sklep, filtruj po bohaterze i instaluj jednym kliknięciem."
+      },
+      "launch": {
+        "title": "Uruchom z modami",
+        "body": "Kliknij „Uruchom z modami”, a aplikacja zastosuje twoje mody, zanim gra wystartuje."
+      },
+      "theme": {
+        "title": "Dopasuj do siebie",
+        "body": "Ustaw skin dla każdego bohatera i wybierz motyw aplikacji."
+      }
+    },
+    "mobileNote": "Na PC możesz przeklikać podgląd na żywo właśnie tutaj."
+  },
+  "trust": {
+    "title": "Jak obchodzi się z twoją grą",
+    "does": {
+      "heading": "Co robi",
+      "items": {
+        "copies": "Kopiuje pliki modów .vpk do folderu addons",
+        "backups": "Robi kopię zapasową przed zmianami, przywraca jednym kliknięciem",
+        "vanilla": "Pozwala w każdej chwili zagrać bez modów"
+      }
+    },
+    "never": {
+      "heading": "Czego nigdy nie robi",
+      "items": {
+        "patches": "Nie modyfikuje pliku wykonywalnego Deadlock",
+        "others": "Nie zmienia tego, co widzą inni gracze",
+        "analytics": "Nie wysyła analityki bez twojej zgody"
+      }
+    },
+    "openSource": {
+      "title": "Open source",
+      "body": "Kod jest na GitHubie na licencji GPL-3.0, a społeczność tłumaczy aplikację na Crowdin.",
+      "github": "Zobacz na GitHubie",
+      "transparency": "Przejrzystość"
+    }
+  },
+  "themes": {
+    "title": "Zmień wygląd aplikacji",
+    "description": "Wybierz jeden z motywów społeczności albo stwórz własny w kreatorze motywów i podziel się plikiem ze znajomymi.",
+    "screenshotAlt": "Deadlock Mod Manager z motywem {{theme}}",
+    "pickerLabel": "Motyw",
+    "tryInPreview": "Wypróbuj motyw {{theme}} w podglądzie",
+    "builderHint": "{{description}} Kreator motywów znajdziesz w Ustawieniach."
+  },
+  "skins": {
+    "title": "Skiny bohaterów od społeczności",
+    "body": "Wybierz bohatera, obejrzyj skin w podglądzie 3D i go zastosuj. Chcesz zrobić własny? Zaimportuj model do Mod Foundry. Skiny działają tylko po twojej stronie, więc inni gracze nadal widzą domyślne modele.",
+    "link": "Jak działają skiny bohaterów"
+  },
+  "stats": {
+    "label": "Statystyki",
+    "downloads": {
+      "label": "Pobrania aplikacji",
+      "value": "{{value}}+",
+      "note": "Ze wszystkich wydań"
+    },
+    "users": {
+      "label": "Zarejestrowani użytkownicy",
+      "note": "Do tej pory"
+    },
+    "release": {
+      "label": "Najnowsze wydanie",
+      "note": "Przeczytaj informacje o wydaniu"
+    },
+    "price": {
+      "label": "Cena",
+      "value": "Za darmo",
+      "note": "Open source od pierwszego dnia"
+    }
+  },
+  "tools": {
+    "title": "Darmowe narzędzia na stronie",
+    "items": {
+      "randomizer": {
+        "title": "Randomizer",
+        "description": "Wylosuj bohatera na następny mecz"
+      },
+      "crosshair": {
+        "title": "Generator celownika",
+        "description": "Stwórz celownik i skopiuj config"
+      },
+      "vpk": {
+        "title": "Analizator VPK",
+        "description": "Zobacz, co jest w pliku .vpk"
+      },
+      "kv": {
+        "title": "Parser KV",
+        "description": "Odczytuj pliki Valve KeyValues"
+      }
+    }
+  },
+  "faq": {
+    "eyebrow": "Potrzebujesz pomocy?",
+    "title": "Częste pytania",
+    "intro": "Nie ma tu odpowiedzi? Zajrzyj do <docs>dokumentacji</docs> albo zapytaj nas na <discord>Discordzie</discord>.",
+    "items": {
+      "what": {
+        "question": "Czym jest Deadlock Mod Manager?",
+        "answer": "To mała aplikacja na komputer, która upraszcza modowanie Deadlock. Przeglądaj, instaluj mody i zarządzaj nimi bez grzebania w folderach gry."
+      },
+      "install": {
+        "question": "Jak zainstalować mody do Deadlock?",
+        "steps": {
+          "download": "Pobierz i otwórz Deadlock Mod Manager.",
+          "detect": "Aplikacja sama wykryje Deadlock albo wskażesz folder w Ustawieniach.",
+          "browse": "Przejrzyj zakładkę Zdobądź mody i kliknij Pobierz.",
+          "install": "Aplikacja zainstaluje mod we właściwym miejscu. Bez ręcznej roboty."
+        }
+      },
+      "safe": {
+        "question": "Czy korzystanie z modów jest bezpieczne?",
+        "answer": "Aplikacja tylko kopiuje pliki .vpk do folderu addons gry, nigdy nie modyfikuje pliku wykonywalnego Deadlock i najpierw robi kopię zapasową, więc możesz wszystko przywrócić jednym kliknięciem albo w każdej chwili zagrać bez modów. Skiny działają tylko po twojej stronie, a same mody tworzy społeczność, więc trzymaj się tych, którym ufasz."
+      },
+      "uninstall": {
+        "question": "Jak odinstalować mody?",
+        "answer": "Otwórz zakładkę Moje mody i usuń to, czego nie chcesz, albo użyj opcji „Usuń Wszystkie Mody” w Ustawieniach."
+      },
+      "platforms": {
+        "question": "Jakie platformy są obsługiwane?",
+        "answer": "Windows i Linux. Na Linux możesz zainstalować aplikację z naszego repozytorium APT (Ubuntu/Debian), z AUR (Arch), z nixpkgs albo jako paczkę Flatpak."
+      },
+      "bug": {
+        "question": "Znalazłem błąd. Jak go zgłosić?",
+        "answer": "Otwórz zgłoszenie w naszym <link>repozytorium na GitHubie</link>. Podaj kroki do odtworzenia błędu, czego się spodziewałeś i co się stało."
+      },
+      "docs": {
+        "question": "Gdzie znajdę bardziej szczegółową dokumentację?",
+        "answer": "Na <docs>stronie dokumentacji</docs> znajdziesz poradniki, samouczki i dokumentację techniczną."
+      },
+      "officialSkins": {
+        "question": "Czy w Deadlock pojawią się oficjalne skiny?",
+        "answer": "Deadlock wciąż się rozwija. Jeśli pojawią się oficjalne kosmetyki, ta aplikacja nadal będzie tu dla skinów tworzonych przez społeczność."
+      },
+      "skinsVisible": {
+        "question": "Czy inni gracze widzą moje skiny?",
+        "answer": "Nie. Działają tylko po twojej stronie. Inni gracze widzą domyślne modele i tekstury."
+      }
+    }
+  }
+}

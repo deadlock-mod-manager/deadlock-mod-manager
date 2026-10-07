@@ -1,0 +1,42 @@
+{
+  "meta": {
+    "title": "Generator celownika Deadlock: stwórz i udostępnij celownik",
+    "description": "Zaprojektuj własny celownik do Deadlock z podglądem na żywo na tle z gry, a potem skopiuj konfigurację lub udostępnij link. Ustaw odstęp, rozmiar, kreski, kropkę i obrys."
+  },
+  "page": {
+    "editingShared": "Edytujesz udostępniony celownik. Każda zmiana utworzy nową konfigurację.",
+    "title": "Generator celownika",
+    "description": "Stwórz i dostosuj swój celownik w Deadlock"
+  },
+  "preview": {
+    "title": "Podgląd",
+    "none": "Brak",
+    "backgrounds": {
+      "bg1": "Tło 1",
+      "bg2": "Tło 2"
+    },
+    "hint": "Najedź myszką na podgląd, żeby zobaczyć, jak celownik zachowuje się w grze."
+  },
+  "controls": {
+    "settings": "Ustawienia celownika",
+    "gap": "Odstęp",
+    "width": "Szerokość",
+    "height": "Wysokość",
+    "pipOpacity": "Krycie kresek",
+    "dotOpacity": "Krycie kropki",
+    "dotOutlineOpacity": "Krycie obrysu kropki",
+    "color": "Kolor",
+    "colorHex": "Kolor (Hex)",
+    "options": "Opcje",
+    "pipBorder": "Pokaż obramowanie kresek",
+    "pipGapStatic": "Stały odstęp kresek",
+    "hero": "Bohater",
+    "defaultHero": "Domyślny"
+  },
+  "export": {
+    "copy": "Kopiuj konfigurację",
+    "copied": "Skopiowano!",
+    "share": "Udostępnij link",
+    "linkCopied": "Link skopiowany!"
+  }
+}

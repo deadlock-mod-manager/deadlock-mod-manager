@@ -1,0 +1,76 @@
+{
+  "meta": {
+    "name": "Failed to save mod order",
+    "title": "Deadlock Mod Manager: solución a \"Failed to Save Mod Order\"",
+    "description": "¿Failed to save mod order en Deadlock Mod Manager? Cierra Deadlock, libera los .vpk bloqueados, corrige los permisos y vuelve a guardar el orden de carga."
+  },
+  "hero": {
+    "eyebrow": "Solución de error",
+    "title": "Failed to save mod order",
+    "intro": "Al guardar el orden de carga, la app renombra tus archivos de mods para que Deadlock los cargue en el nuevo orden. Si un archivo está bloqueado o protegido, el renombrado se revierte y la app muestra este error. El mensaje que aparece debajo te dice por qué.",
+    "errorSource": "Deadlock Mod Manager, al guardar en Gestionar Orden de Carga de Mods"
+  },
+  "errorText": {
+    "message": "Failed to save mod order",
+    "causes": {
+      "gameRunning": "Game is running",
+      "fileInUse": "The process cannot access the file because it is being used by another process. (os error 32)",
+      "vpkInUse": "VPK files are in use and cannot be deleted",
+      "accessDenied": "Access is denied. (os error 5)",
+      "shardsFull": "All addon shard folders are full"
+    }
+  },
+  "causes": {
+    "title": "Busca tu mensaje y aplica la solución",
+    "intro": "Lee la línea que aparece debajo de \"Failed to save mod order\" en la notificación y búscala aquí abajo.",
+    "os5Link": "Solucionar os error 5",
+    "items": {
+      "gameRunning": {
+        "fix": "Cierra Deadlock por completo, también desde la bandeja del sistema, y vuelve a guardar el orden. Si el juego ya se cerró, espera unos segundos a que termine el proceso."
+      },
+      "fileInUse": {
+        "fix": "Otro programa tiene un .vpk abierto. Cierra las ventanas del Explorador de archivos que muestren la carpeta addons, los visores de VPK y los programas de archivos comprimidos. Los análisis del antivirus pueden retener archivos un momento, así que vuelve a intentarlo a los pocos segundos o añade la carpeta de Deadlock a sus exclusiones."
+      },
+      "vpkInUse": {
+        "fix": "La misma causa que arriba: cierra el juego y cualquier programa que tenga abiertos los archivos de los mods, y vuelve a intentarlo."
+      },
+      "accessDenied": {
+        "fix": "Windows está bloqueando los cambios en la carpeta addons. Sigue la guía del os error 5 para quitar el atributo de solo lectura y resolver los problemas de permisos."
+      },
+      "shardsFull": {
+        "fix": "Tienes más archivos .vpk activos de los que el juego puede cargar. Desactiva los mods que no uses y vuelve a guardar el orden."
+      }
+    }
+  },
+  "nothingMatches": {
+    "title": "Si ninguno coincide",
+    "steps": {
+      "restart": "Cierra Deadlock y reinicia Deadlock Mod Manager.",
+      "checkInstalls": "Abre Mis Mods y comprueba que todos los mods terminaron de instalarse. Quita y reinstala los que parezcan atascados.",
+      "saveAgain": "Haz clic de nuevo en Cambiar Orden de Mods y guarda.",
+      "discord": "¿Sigue fallando? Comparte el mensaje completo y tu versión de la app en <discord>Discord</discord>."
+    }
+  },
+  "faqs": {
+    "why": {
+      "question": "¿Por qué Deadlock Mod Manager no puede guardar el orden de mis mods?",
+      "answer": "Al guardar el orden se renombran los archivos .vpk de tu carpeta addons para que el juego los cargue en el nuevo orden. Falla cuando Deadlock está abierto, cuando otro programa tiene un .vpk abierto o cuando Windows deniega el acceso a la carpeta."
+    },
+    "loseMods": {
+      "question": "¿Pierdo mis mods si falla el guardado del orden?",
+      "answer": "No. La app revierte el renombrado cuando falla un paso, así que tus mods siguen instalados en el orden anterior. Soluciona la causa y vuelve a guardar."
+    },
+    "whileOpen": {
+      "question": "¿Puedo cambiar el orden de carga con Deadlock abierto?",
+      "answer": "No. El juego mantiene abiertos sus archivos .vpk mientras se ejecuta, así que cierra Deadlock primero. Los cambios se aplican la próxima vez que inicies con mods."
+    },
+    "whatChanges": {
+      "question": "¿Qué cambia realmente el orden de los mods?",
+      "answer": "Cuando dos mods reemplazan el mismo archivo, solo se puede cargar una versión, y el orden de los mods decide cuál. Los mods que no se solapan funcionan igual en cualquier orden."
+    }
+  },
+  "downloadBand": {
+    "title": "Arrastra los mods al orden que quieras",
+    "body": "Deadlock Mod Manager muestra qué mods entran en conflicto y te deja elegir el ganador reordenándolos."
+  }
+}

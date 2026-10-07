@@ -1,0 +1,168 @@
+{
+  "meta": {
+    "title": "Randomizer de Deadlock: héroe y build de objetos aleatorios",
+    "description": "Saca un héroe aleatorio de Deadlock, una build válida en orden de compra, orden de habilidades y tres reglas de desafío. Comparte la semilla y repite la tirada.",
+    "keywords": "deadlock randomizer, deadlock build aleatoria, deadlock héroe aleatorio, deadlock ultimate bravery, generador de builds deadlock, deadlock random build"
+  },
+  "error": {
+    "title": "No se pudo hacer la tirada",
+    "description": "Los datos de héroes y objetos vienen de la Deadlock API, y no respondió.",
+    "retry": "Reintentar"
+  },
+  "skeleton": {
+    "heading": "Randomizer de Deadlock: héroe y build de objetos aleatorios"
+  },
+  "toolbar": {
+    "copyLink": {
+      "idle": "Copiar enlace",
+      "copied": "Copiado",
+      "failed": "Error al copiar"
+    },
+    "reroll": "Volver a tirar"
+  },
+  "sections": {
+    "trigger": "Secciones",
+    "label": "Sortear",
+    "options": {
+      "build": "Orden de la build",
+      "abilities": "Habilidades",
+      "rules": "Reglas"
+    }
+  },
+  "heroPicker": {
+    "anyHero": "Cualquier héroe",
+    "label": "Sortear builds para"
+  },
+  "hero": {
+    "heading": "Juegas con {{hero}}",
+    "headingWithRole": "Juegas con {{hero}}, {{role}}",
+    "youArePlaying": "Juegas con",
+    "role": "{{role}}."
+  },
+  "facts": {
+    "complexity": "Complejidad",
+    "lane": "Línea",
+    "archetype": "Arquetipo",
+    "tags": "Etiquetas",
+    "mandate": "Mandato",
+    "buildCost": "Coste de la build",
+    "souls": "almas",
+    "abilityPriority": "Prioridad de habilidades",
+    "abilityPriorityHint": "4 desbloqueos · 32 puntos",
+    "total": "Total"
+  },
+  "headings": {
+    "build": "La build, en orden.",
+    "skills": "Orden de habilidades, 1–16.",
+    "rules": "Las reglas."
+  },
+  "footer": {
+    "credit": "Héroes, objetos e ilustraciones proporcionados por <link>Deadlock API</link>."
+  },
+  "lanes": {
+    "yellow": "Línea amarilla",
+    "blue": "Línea azul",
+    "green": "Línea verde"
+  },
+  "mandates": {
+    "gunslinger": {
+      "label": "Pistolero",
+      "blurb": "La mayoría de tus almas se fueron al arma. Gana tus intercambios con ella antes de que nadie tenga armadura."
+    },
+    "caster": {
+      "label": "Hechicero",
+      "blurb": "La tirada gira en torno a tus habilidades. Guarda los enfriamientos para la pelea que importa."
+    },
+    "bulwark": {
+      "label": "Baluarte",
+      "blurb": "Compraste supervivencia primero. Sé quien entra en la línea y no sale de ella."
+    }
+  },
+  "categories": {
+    "weapon": "Arma",
+    "vitality": "Vitalidad",
+    "spirit": "Espíritu"
+  },
+  "challenges": {
+    "exactOrder": {
+      "title": "Compra en orden",
+      "detail": "Compra la build estrictamente de arriba abajo. Nada de saltarse pasos, aunque te alcance para el siguiente nivel. Las mejoras van cuando puedas pagarlas."
+    },
+    "noRecall": {
+      "title": "Sin compras en base después del 15:00",
+      "detail": "Cuando el reloj pase de los quince minutos, todas las compras tienen que hacerse fuera de tu base."
+    },
+    "parry": {
+      "title": "Siempre parry",
+      "detail": "Cada golpe cuerpo a cuerpo que te lancen recibe un intento de parry. Intercambiar daño en su lugar cuenta como fallo."
+    },
+    "noZipline": {
+      "title": "Con los pies en el suelo",
+      "detail": "La zipline está prohibida durante los primeros diez minutos. Camina."
+    },
+    "meleeOpening": {
+      "title": "Puños primero",
+      "detail": "Hasta que compres tu primer objeto de nivel 2, el cuerpo a cuerpo es tu única forma de dañar a un jugador enemigo."
+    },
+    "ultOnCooldown": {
+      "title": "Nunca guardes la definitiva",
+      "detail": "Tu definitiva sale en cuanto está lista. Guardarla para un mejor momento cuenta como fallo."
+    },
+    "noRetreat": {
+      "title": "Sin retirada",
+      "detail": "Nunca abandones una pelea en línea que hayas empezado. O la ganas, o vuelves caminando desde el spawn."
+    },
+    "soulCap": {
+      "title": "Gástalo todo",
+      "detail": "En cuanto te alcance para el siguiente objeto de tu build, ve a comprarlo. Acumular almas por encima de su precio cuenta como fallo."
+    },
+    "oneLane": {
+      "title": "Fiel a tu línea",
+      "detail": "Quédate en la línea que te tocó hasta que caiga su primer guardián. Sin rotaciones ni jungla."
+    },
+    "noCancel": {
+      "title": "Compromiso",
+      "detail": "Toda habilidad que empieces a lanzar se termina. Cancelar un lanzamiento cuenta como fallo."
+    },
+    "callout": {
+      "title": "Anuncia tu tirada",
+      "detail": "Escribe tu héroe, tu línea y tu primer objeto en el chat general antes de que caiga la barrera."
+    },
+    "noHeal": {
+      "title": "Denegado",
+      "detail": "Nunca te cures en tu propia base. Solo regeneración, robo de vida y objetos de curación."
+    }
+  },
+  "abilities": {
+    "fallback": "Habilidad {{slot}}",
+    "ultimate": "Def.",
+    "maxFirst": "Maximizar primero",
+    "unlockedAt": "Se desbloquea en el paso {{position}}",
+    "upgradeAt": "Mejora {{upgrade}} en el paso {{position}}",
+    "unlock": "Desbloquear",
+    "cost": "+{{cost}} AP",
+    "spent": "{{spent}} AP",
+    "srUnlock": "{{ability}}, desbloquear",
+    "srUpgrade": "{{ability}}, mejora {{step}}"
+  },
+  "item": {
+    "tier": "Nivel {{tier}}",
+    "active": "Activo",
+    "activeTitle": "Objeto activo",
+    "tooltipHeader": "{{category}} · Nivel {{tier}} · <souls>{{cost}}</souls>",
+    "sectionKinds": {
+      "active": "activo",
+      "passive": "pasivo"
+    },
+    "ariaUpgrade": "{{item}}, mejorado a {{upgrade}}",
+    "ariaItem": "{{item}}, {{category}} de nivel {{tier}}",
+    "categoryChange": "{{category}} →",
+    "upgrade": "· Mejora",
+    "upgradePriceTitle": "{{total}} almas, menos las {{paid}} ya pagadas por {{item}}",
+    "goodFit": "Buena opción",
+    "goodFitTitle": "Muy valorado para este héroe según los datos del draft",
+    "imbueOn": "Imbuir en {{ability}}",
+    "imbueOnUntilUpgraded": "Imbuir en {{ability}} hasta mejorarlo",
+    "imbueLapsesTitle": "{{item}} imbuye una habilidad; {{upgrade}} funciona con todas"
+  }
+}
