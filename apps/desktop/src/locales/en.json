@@ -1816,6 +1816,7 @@
     "catalogSyncRetryHint": "Saved entries are still available. Retry to continue syncing.",
     "catalogStale": "Showing the last saved GameBanana catalog while fresh provider data is unavailable.",
     "noModsFound": "No mods found",
+    "authorResults": "Authors",
     "noModsMatchFilters": "No mods match your current search and filters",
     "noModsAvailable": "No mods available",
     "emptyClearFilters": "Try clearing some filters to see more results",

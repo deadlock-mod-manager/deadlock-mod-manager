@@ -12,7 +12,7 @@ pub use types::{
 use crate::errors::Error;
 use crate::providers::SubmissionRef;
 use crate::providers::gamebanana::catalog::{
-  CatalogFacet, CatalogQuery, CatalogRecord, SyncOutcome,
+  CatalogAuthor, CatalogFacet, CatalogQuery, CatalogRecord, SyncOutcome,
 };
 use crate::providers::gamebanana::{ApiResponse, UpdateSnapshot, normalize_profile};
 use activity::{CatalogChangelogDto, CatalogCommentsDto};
@@ -58,6 +58,17 @@ pub async fn get_gamebanana_catalog_facets(
   let backend = state.backend()?;
   query.excluded_slugs = policy.unavailable_slugs()?;
   backend.catalog.facets(query).await
+}
+
+#[tauri::command]
+pub async fn search_gamebanana_catalog_authors(
+  state: State<'_, GameBananaCatalogState>,
+  policy: State<'_, super::policy::PolicyState>,
+  mut query: CatalogQuery,
+) -> Result<Vec<CatalogAuthor>, Error> {
+  let backend = state.backend()?;
+  query.excluded_slugs = policy.unavailable_slugs()?;
+  backend.catalog.authors(query).await
 }
 
 #[tauri::command]
