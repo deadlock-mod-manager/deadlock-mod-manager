@@ -38,6 +38,269 @@ const VANILLA_SEARCH_PATHS: &str = r#"
 const MOD_MANAGER_MARKER_START: &str = "// Deadlock Mod Manager - Start";
 const MOD_MANAGER_MARKER_END: &str = "// Deadlock Mod Manager - End";
 
+fn newline_of(content: &str) -> &str {
+  if content.contains("\r\n") {
+    "\r\n"
+  } else {
+    "\n"
+  }
+}
+
+fn matching_brace_end(content: &str, open: usize) -> Option<usize> {
+  if content.as_bytes().get(open) != Some(&b'{') {
+    return None;
+  }
+  let bytes = content.as_bytes();
+  let mut i = open + 1;
+  let mut depth = 1;
+  let mut in_string = false;
+  let mut in_comment = false;
+  while i < content.len() {
+    let ch = content[i..].chars().next()?;
+    let len = ch.len_utf8();
+    if in_comment {
+      if ch == '\n' {
+        in_comment = false;
+      }
+      i += len;
+      continue;
+    }
+    if in_string {
+      if ch == '"' {
+        in_string = false;
+      }
+      i += len;
+      continue;
+    }
+    if ch == '/' && bytes.get(i + 1) == Some(&b'/') {
+      in_comment = true;
+      i += 2;
+      continue;
+    }
+    match ch {
+      '"' => in_string = true,
+      '{' => depth += 1,
+      '}' => {
+        depth -= 1;
+        if depth == 0 {
+          return Some(i + 1);
+        }
+      }
+      _ => {}
+    }
+    i += len;
+  }
+  None
+}
+
+fn brace_block_end(content: &str, from: usize) -> Option<usize> {
+  let mut i = from;
+  let bytes = content.as_bytes();
+  let mut in_string = false;
+  let mut in_comment = false;
+  while i < content.len() {
+    let ch = content[i..].chars().next()?;
+    let len = ch.len_utf8();
+    if in_comment {
+      if ch == '\n' {
+        in_comment = false;
+      }
+      i += len;
+      continue;
+    }
+    if in_string {
+      if ch == '"' {
+        in_string = false;
+      }
+      i += len;
+      continue;
+    }
+    if ch == '/' && bytes.get(i + 1) == Some(&b'/') {
+      in_comment = true;
+      i += 2;
+      continue;
+    }
+    if ch == '"' {
+      in_string = true;
+      i += len;
+      continue;
+    }
+    if ch == '{' {
+      return matching_brace_end(content, i);
+    }
+    i += len;
+  }
+  None
+}
+
+fn skip_ws_comments(content: &str, from: usize) -> usize {
+  let bytes = content.as_bytes();
+  let mut i = from;
+  while i < content.len() {
+    let ch = content[i..].chars().next().unwrap();
+    if ch.is_whitespace() {
+      i += ch.len_utf8();
+      continue;
+    }
+    if ch == '/' && bytes.get(i + 1) == Some(&b'/') {
+      while i < content.len() && bytes[i] != b'\n' {
+        i += 1;
+      }
+      continue;
+    }
+    break;
+  }
+  i
+}
+
+/// `ConVars { ... }` from the key through its closing brace.
+fn convars_span(content: &str) -> Option<std::ops::Range<usize>> {
+  let bytes = content.as_bytes();
+  let mut i = 0;
+  let mut in_string = false;
+  let mut in_comment = false;
+  while i < content.len() {
+    let ch = content[i..].chars().next()?;
+    let len = ch.len_utf8();
+    if in_comment {
+      if ch == '\n' {
+        in_comment = false;
+      }
+      i += len;
+      continue;
+    }
+    if in_string {
+      if ch == '"' {
+        in_string = false;
+      }
+      i += len;
+      continue;
+    }
+    if ch == '/' && bytes.get(i + 1) == Some(&b'/') {
+      in_comment = true;
+      i += 2;
+      continue;
+    }
+    if ch == '"' {
+      in_string = true;
+      i += len;
+      continue;
+    }
+    if content[i..].starts_with("ConVars") {
+      let after = i + "ConVars".len();
+      let boundary = i == 0 || bytes[i - 1].is_ascii_whitespace();
+      let tail_ok =
+        after >= bytes.len() || !(bytes[after].is_ascii_alphanumeric() || bytes[after] == b'_');
+      if boundary && tail_ok {
+        let open = skip_ws_comments(content, after);
+        if bytes.get(open) == Some(&b'{')
+          && let Some(end) = matching_brace_end(content, open)
+        {
+          return Some(i..end);
+        }
+      }
+    }
+    i += len;
+  }
+  None
+}
+
+fn convars_inner(content: &str) -> String {
+  let Some(span) = convars_span(content) else {
+    return String::new();
+  };
+  let block = &content[span];
+  let open = block.find('{').expect("span starts at a braced block");
+  block[open + 1..block.len() - 1]
+    .trim_matches(['\r', '\n'])
+    .to_string()
+}
+
+fn balanced_inner(inner: &str) -> bool {
+  let wrapped = format!("{{{inner}}}");
+  matching_brace_end(&wrapped, 0) == Some(wrapped.len())
+}
+
+fn set_convars_inner(content: &str, inner: &str) -> Result<String, Error> {
+  let inner = inner.replace("\r\n", "\n").replace('\r', "\n");
+  let inner = inner.trim_matches('\n');
+  if inner.trim_start().starts_with("ConVars") {
+    return Err(Error::InvalidInput(
+      "Paste only the inside of the ConVars block, not the ConVars { } wrapper".into(),
+    ));
+  }
+  if !balanced_inner(inner) {
+    return Err(Error::InvalidInput(
+      "ConVars block has unbalanced braces".into(),
+    ));
+  }
+
+  let nl = newline_of(content);
+  let inner = inner.replace('\n', nl);
+  if let Some(span) = convars_span(content) {
+    let open = content[span.clone()]
+      .find('{')
+      .expect("span starts at a braced block");
+    let abs_open = span.start + open;
+    let abs_close = span.end - 1;
+    let mut out = String::new();
+    out.push_str(&content[..abs_open + 1]);
+    out.push_str(nl);
+    if !inner.is_empty() {
+      out.push_str(&inner);
+      out.push_str(nl);
+    }
+    out.push_str(&content[abs_close..]);
+    return Ok(out);
+  }
+
+  if inner.is_empty() {
+    return Ok(content.to_string());
+  }
+  let close = content
+    .rfind('}')
+    .ok_or_else(|| Error::GameConfigParse("gameinfo.gi has no closing brace".to_string()))?;
+  let mut out = String::new();
+  out.push_str(&content[..close]);
+  out.push_str(nl);
+  out.push_str("\tConVars");
+  out.push_str(nl);
+  out.push('\t');
+  out.push('{');
+  out.push_str(nl);
+  out.push_str(&inner);
+  out.push_str(nl);
+  out.push('\t');
+  out.push('}');
+  out.push_str(nl);
+  out.push_str(&content[close..]);
+  Ok(out)
+}
+
+/// Keep a hand-edited ConVars block across a SearchPaths or vanilla rewrite.
+fn splice_convars(original: &str, rewritten: &str) -> String {
+  let Some(src) = convars_span(original) else {
+    return rewritten.to_string();
+  };
+  let block = GameConfigManager::match_line_endings(&original[src], rewritten);
+  if let Some(dst) = convars_span(rewritten) {
+    let mut out = rewritten.to_string();
+    out.replace_range(dst, &block);
+    return out;
+  }
+  let Some(close) = rewritten.rfind('}') else {
+    return rewritten.to_string();
+  };
+  let nl = newline_of(rewritten);
+  let mut out = String::new();
+  out.push_str(&rewritten[..close]);
+  out.push_str(nl);
+  out.push_str(block.trim_end_matches(['\r', '\n']));
+  out.push_str(nl);
+  out.push_str(&rewritten[close..]);
+  out
+}
+
 /// Backup metadata for gameinfo.gi files
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameInfoBackup {
@@ -392,7 +655,28 @@ impl GameConfigManager {
       }
     }
 
-    // Write the vanilla content
+    let vanilla_content = if gameinfo_path.exists() {
+      match fs::read_to_string(&gameinfo_path) {
+        Ok(current) => splice_convars(&current, &vanilla_content),
+        Err(error) => {
+          log::warn!("Could not read gameinfo.gi before vanilla reset: {error}");
+          vanilla_content
+        }
+      }
+    } else {
+      vanilla_content
+    };
+    fs::write(&temp_path, &vanilla_content)?;
+    let validation = self.validate_gameinfo_syntax(&temp_path)?;
+    fs::remove_file(&temp_path)?;
+    if !validation.is_valid {
+      return Err(Error::GameConfigParse(format!(
+        "Reset would produce invalid gameinfo.gi: {}",
+        validation.errors.join(", ")
+      )));
+    }
+
+    // Write the vanilla content, keeping a balanced ConVars block.
     fs::write(&gameinfo_path, vanilla_content)?;
     self.game_setup = false;
     log::info!("Successfully replaced gameinfo.gi with vanilla version");
@@ -650,13 +934,10 @@ impl GameConfigManager {
           .find("SearchPaths")
           .ok_or_else(|| Error::GameConfigParse("SearchPaths section not found".into()))?;
 
-        let relative_end = gameinfo_content[search_paths_start..]
-          .find('}')
-          .ok_or_else(|| {
+        let search_paths_end =
+          brace_block_end(&gameinfo_content, search_paths_start).ok_or_else(|| {
             Error::GameConfigParse("Could not find end of SearchPaths section".into())
           })?;
-
-        let search_paths_end = search_paths_start + relative_end + 1;
 
         // Include the tab/whitespace before SearchPaths
         let section_start = if search_paths_start > 0
@@ -693,6 +974,7 @@ impl GameConfigManager {
     // Replace the identified section with the new content
     let mut new_gameinfo_content = gameinfo_content.clone();
     new_gameinfo_content.replace_range(section_start..section_end, &replacement_content);
+    let new_gameinfo_content = splice_convars(&gameinfo_content, &new_gameinfo_content);
 
     // Validate the new content before writing
     let temp_path = gameinfo_path.with_extension("gi.tmp");
@@ -947,10 +1229,8 @@ impl GameConfigManager {
           log::warn!(
             "Found start marker but not end marker, replacing from marker to end of SearchPaths"
           );
-          let search_paths_end = gameinfo_content[start_pos..]
-            .find("}")
-            .map(|pos| start_pos + pos + 1)
-            .unwrap_or(gameinfo_content.len());
+          let search_paths_end =
+            brace_block_end(&gameinfo_content, start_pos).unwrap_or(gameinfo_content.len());
           (
             start_pos,
             search_paths_end,
@@ -973,6 +1253,7 @@ impl GameConfigManager {
     // Replace the section
     let mut new_gameinfo_content = gameinfo_content.clone();
     new_gameinfo_content.replace_range(section_start..section_end, &replacement_content);
+    let new_gameinfo_content = splice_convars(&gameinfo_content, &new_gameinfo_content);
 
     // Validate the new content before writing
     let temp_path = gameinfo_path.with_extension("gi.tmp");
@@ -1011,6 +1292,37 @@ impl GameConfigManager {
 
     log::info!("Successfully updated mod search paths: {paths:?}");
     Ok(())
+  }
+
+  pub fn read_convars(&self, game_path: &Path) -> Result<String, Error> {
+    let path = game_path.join("game").join("citadel").join("gameinfo.gi");
+    let content = fs::read_to_string(&path)?;
+    Ok(convars_inner(&content))
+  }
+
+  pub fn write_convars(&self, game_path: &Path, inner: &str) -> Result<String, Error> {
+    let path = game_path.join("game").join("citadel").join("gameinfo.gi");
+    if !path.exists() {
+      return Err(Error::GameConfigParse(
+        "gameinfo.gi file not found".to_string(),
+      ));
+    }
+
+    let content = fs::read_to_string(&path)?;
+    let updated = set_convars_inner(&content, inner)?;
+    let temp_path = path.with_extension("gi.tmp");
+    fs::write(&temp_path, &updated)?;
+    let validation = self.validate_gameinfo_syntax(&temp_path)?;
+    fs::remove_file(&temp_path)?;
+    if !validation.is_valid {
+      return Err(Error::GameConfigParse(format!(
+        "gameinfo.gi validation failed: {}",
+        validation.errors.join(", ")
+      )));
+    }
+
+    fs::write(&path, &updated)?;
+    Ok(convars_inner(&updated))
   }
 
   /// Get the paths for game configuration files
@@ -1372,5 +1684,54 @@ mod tests {
       vec!["citadel/addons".to_string()],
       "None profile must produce a single root addons line"
     );
+  }
+
+  fn with_convars(base: &str) -> String {
+    let close = base.rfind('}').expect("fixture close");
+    let mut body = base.to_string();
+    body.replace_range(
+      close..,
+      "\n\tConVars\n\t{\n\t\t\"fps_max\"\t\t\"144\"\n\t\t\"rate\"\n\t\t{\n\t\t\t\"min\"\t\"1\"\n\t\t}\n\t}\n}",
+    );
+    body
+  }
+
+  #[test]
+  fn launch_rewrite_keeps_convars_and_editor_roundtrips() {
+    let (_dir, game_path) = setup_game_dir();
+    write_gameinfo(&game_path, &with_convars(&vanilla_fixture("\n")));
+
+    let mut mgr = GameConfigManager::new();
+    mgr.toggle_mods(&game_path, false).expect("toggle mods");
+    let path = game_path.join("game/citadel/gameinfo.gi");
+    let after = fs::read_to_string(&path).unwrap();
+    assert!(after.contains("citadel/addons"));
+    assert!(after.contains("\"fps_max\"\t\t\"144\""));
+    assert!(after.contains("\"min\"\t\"1\""));
+
+    let saved = mgr
+      .write_convars(&game_path, "\"fps_max\"\t\"0\"")
+      .expect("write convars");
+    assert!(saved.contains("fps_max"));
+    let read = mgr.read_convars(&game_path).unwrap();
+    assert!(read.contains("\"fps_max\""));
+    assert!(read.contains("\"0\""));
+    let file = fs::read_to_string(&path).unwrap();
+    assert!(
+      file.contains("citadel/addons"),
+      "editor must not touch SearchPaths"
+    );
+
+    mgr
+      .apply_vanilla_gameinfo(&game_path, vanilla_fixture("\n"))
+      .expect("vanilla reset");
+    let reset = fs::read_to_string(&path).unwrap();
+    assert!(!reset.contains("citadel/addons"));
+    assert!(reset.contains("fps_max"), "vanilla reset keeps ConVars");
+
+    let err = mgr
+      .write_convars(&game_path, "\"rate\"\n{")
+      .expect_err("unbalanced braces");
+    assert!(matches!(err, Error::InvalidInput(_)));
   }
 }

@@ -120,6 +120,34 @@ pub async fn get_gameinfo_status()
 }
 
 #[tauri::command]
+pub async fn get_gameinfo_convars() -> Result<String, Error> {
+  let mod_manager = MANAGER.lock().unwrap();
+  let game_path = mod_manager
+    .get_steam_manager()
+    .get_game_path()
+    .ok_or(Error::GamePathNotSet)?
+    .clone();
+  mod_manager.get_config_manager().read_convars(&game_path)
+}
+
+#[tauri::command]
+pub async fn update_gameinfo_convars(
+  content: String,
+  guard_permit: Option<String>,
+) -> Result<String, Error> {
+  crate::game_guard::ensure_game_idle_locked("update_gameinfo_convars", guard_permit.as_deref())?;
+  let mod_manager = MANAGER.lock().unwrap();
+  let game_path = mod_manager
+    .get_steam_manager()
+    .get_game_path()
+    .ok_or(Error::GamePathNotSet)?
+    .clone();
+  mod_manager
+    .get_config_manager()
+    .write_convars(&game_path, &content)
+}
+
+#[tauri::command]
 pub async fn open_gameinfo_editor() -> Result<(), Error> {
   let mod_manager = MANAGER.lock().unwrap();
   let game_path = match mod_manager.get_steam_manager().get_game_path() {

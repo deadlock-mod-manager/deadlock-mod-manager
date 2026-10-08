@@ -80,6 +80,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
         descriptionKey: "settings.autoResetGameinfoDescription",
       },
       { titleKey: "game.validateConfiguration" },
+      {
+        titleKey: "settings.gameinfoConvars",
+        descriptionKey: "settings.gameinfoConvarsDescription",
+      },
     ],
   },
   {

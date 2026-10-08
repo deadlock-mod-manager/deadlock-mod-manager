@@ -269,6 +269,8 @@ pub fn run() {
       commands::gameinfo::validate_gameinfo_patch,
       commands::gameinfo::get_gameinfo_status,
       commands::gameinfo::gameinfo_has_mod_paths,
+      commands::gameinfo::get_gameinfo_convars,
+      commands::gameinfo::update_gameinfo_convars,
       commands::gameinfo::open_gameinfo_editor,
       commands::app::set_language,
       commands::app::set_api_url,

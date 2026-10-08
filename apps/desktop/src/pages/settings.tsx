@@ -58,6 +58,7 @@ import { GameGuardToggle } from "@/components/settings/game-guard-toggle";
 import { GamePathSettings } from "@/components/settings/game-path-settings";
 import { SteamPathSettings } from "@/components/settings/steam-path-settings";
 import { GamePresenceSettings } from "@/components/settings/game-presence-settings";
+import { GameInfoConvars } from "@/components/settings/gameinfo-convars";
 import GameInfoManagement from "@/components/settings/gameinfo-management";
 import { AutoResetGameinfoToggle } from "@/components/settings/auto-reset-gameinfo-toggle";
 import { HeroParserSettings } from "@/components/settings/hero-parser-settings";
@@ -739,6 +740,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
               <div className='grid grid-cols-1 gap-4'>
                 <GameInfoManagement />
                 <AutoResetGameinfoToggle />
+                <GameInfoConvars />
               </div>
             </Section>
 
