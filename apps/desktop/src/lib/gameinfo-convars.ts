@@ -204,13 +204,21 @@ const commentLines = (raw: string) =>
     .map((line) => line.trim())
     .filter((line) => line.startsWith("//"));
 
-const formatGroup = (parent: string, rows: ConvarRow[], raw?: string) => {
+const formatGroup = (
+  parent: string,
+  rows: ConvarRow[],
+  raw?: string,
+  trailing: Record<string, string> = {},
+) => {
   const lines = [quote(parent), "{"];
   if (raw) {
     for (const comment of commentLines(raw)) lines.push(`\t${comment}`);
   }
   for (const row of rows) {
-    lines.push(`\t${quote(row.name)}\t${quote(row.value)}`);
+    const comment = trailing[row.id];
+    lines.push(
+      `\t${quote(row.name)}\t${quote(row.value)}${comment ? ` ${comment}` : ""}`,
+    );
   }
   lines.push("}");
   return lines.join("\n");
@@ -228,6 +236,14 @@ const commentOutsideQuotes = (raw: string) => {
     }
   }
   return undefined;
+};
+
+/** `// ...` that follows a value on the same line, with nothing in between. */
+const trailingComment = (raw: string, [, end]: Span) => {
+  const rest = raw.slice(end).split("\n")[0];
+  const at = rest.indexOf("//");
+  if (at === -1 || rest.slice(0, at).trim()) return undefined;
+  return rest.slice(at).trimEnd();
 };
 
 const replaceSpan = (raw: string, [start, end]: Span, value: string) =>
@@ -285,7 +301,13 @@ export const serializeConvarDocument = (
       parts.push(raw);
       continue;
     }
-    parts.push(formatGroup(segment.parent, children, segment.raw));
+    const trailing: Record<string, string> = {};
+    for (const child of children) {
+      const span = segment.valueAt[child.id];
+      const comment = span && trailingComment(segment.raw, span);
+      if (comment) trailing[child.id] = comment;
+    }
+    parts.push(formatGroup(segment.parent, children, segment.raw, trailing));
   }
 
   const extra: string[] = [];

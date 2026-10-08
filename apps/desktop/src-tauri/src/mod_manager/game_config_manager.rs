@@ -153,10 +153,12 @@ fn skip_ws_comments(content: &str, from: usize) -> usize {
   i
 }
 
-/// `ConVars { ... }` from the key through its closing brace.
+/// `ConVars { ... }` directly inside the root GameInfo block, from the key
+/// through its closing brace. Nested `ConVars` blocks are ignored.
 fn convars_span(content: &str) -> Option<std::ops::Range<usize>> {
   let bytes = content.as_bytes();
   let mut i = 0;
+  let mut depth = 0usize;
   let mut in_string = false;
   let mut in_comment = false;
   while i < content.len() {
@@ -186,7 +188,11 @@ fn convars_span(content: &str) -> Option<std::ops::Range<usize>> {
       i += len;
       continue;
     }
-    if content[i..].starts_with("ConVars") {
+    if ch == '{' {
+      depth += 1;
+    } else if ch == '}' {
+      depth = depth.saturating_sub(1);
+    } else if depth == 1 && content[i..].starts_with("ConVars") {
       let after = i + "ConVars".len();
       let boundary = i == 0 || bytes[i - 1].is_ascii_whitespace();
       let tail_ok =
@@ -1729,6 +1735,11 @@ mod tests {
     let reset = fs::read_to_string(&path).unwrap();
     assert!(!reset.contains("citadel/addons"));
     assert!(reset.contains("fps_max"), "vanilla reset keeps ConVars");
+
+    let nested = "\"GameInfo\"\n{\n\tTools\n\t{\n\t\tConVars\n\t\t{\n\t\t\t\"nested\" \"1\"\n\t\t}\n\t}\n\tConVars\n\t{\n\t\t\"root\" \"1\"\n\t}\n}";
+    let inner = convars_inner(nested);
+    assert!(inner.contains("\"root\""));
+    assert!(!inner.contains("\"nested\""), "only the root ConVars block");
 
     mgr
       .write_convars(&game_path, "\"fps_max\"\t\"0\" // capped")

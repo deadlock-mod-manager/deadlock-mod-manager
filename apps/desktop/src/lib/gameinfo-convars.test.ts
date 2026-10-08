@@ -69,6 +69,17 @@ describe("gameinfo convars", () => {
     expect(saved).toContain('"max" "2"');
   });
 
+  it("keeps surviving inline comments when a group changes shape", () => {
+    const document = parseConvarDocument(
+      '"rate"\n{\n  "min" "1" // floor\n  "max" "2" // ceiling\n}',
+    );
+    const rows = document.rows.filter((row) => row.name !== "max");
+    const saved = serializeConvarDocument(document, rows);
+    expect(saved).toContain('"min"\t"1" // floor');
+    expect(saved).not.toContain("ceiling");
+    expect(saved).not.toContain('"max"');
+  });
+
   it("treats rate.max and RATE.max as the same name", () => {
     expect(hasDuplicateConvarName(["rate.min", "rate.max"])).toBe(false);
     expect(hasDuplicateConvarName(["rate.max", "RATE.max"])).toBe(true);
