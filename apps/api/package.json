@@ -26,6 +26,7 @@
     "@deadlock-mods/instrumentation": "workspace:*",
     "@deadlock-mods/kv-parser": "workspace:*",
     "@deadlock-mods/logging": "workspace:*",
+    "@deadlock-mods/perf-catalog": "workspace:*",
     "@deadlock-mods/queue": "workspace:*",
     "@deadlock-mods/relay-client": "workspace:*",
     "@deadlock-mods/shared": "workspace:*",

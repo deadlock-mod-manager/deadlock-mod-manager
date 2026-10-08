@@ -7,6 +7,7 @@ import { fileserversRouter } from "./fileservers";
 import { kvRouter } from "./kv";
 import { modAuthorsRouter } from "./mod-authors";
 import { modsRouter } from "./mods";
+import { perfCatalogRouter } from "./perf-catalog";
 import { policyRouter } from "./policy";
 import { profilesRouter } from "./profiles";
 import { reportsRouter } from "./reports";
@@ -22,6 +23,7 @@ export const v2Router = {
   ...kvRouter,
   ...modAuthorsRouter,
   ...modsRouter,
+  ...perfCatalogRouter,
   ...policyRouter,
   ...vpkRouter,
   ...profilesRouter,
