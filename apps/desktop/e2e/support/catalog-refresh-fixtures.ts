@@ -4,7 +4,7 @@ import type { FixtureRequest, FixtureRoute } from "./fixture-server";
 import { BULK_HYDRATION_FIELDS } from "./gamebanana-fixtures";
 
 export const REFRESH_SOUND_NAME = "E2E Newly Uploaded Sound";
-export const REFRESH_SOUND_ID = "93854";
+const REFRESH_SOUND_ID = "93854";
 
 export const catalogRefreshRoutes = async () => {
   const base = await contentRoutes();
