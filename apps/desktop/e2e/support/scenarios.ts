@@ -26,6 +26,10 @@ import { prepareHeroSkinsWorld } from "./hero-skins-fixtures";
 import { prepareLegacyCatalog } from "./catalog-upgrade-fixtures";
 import { prepareOnboardingWorld } from "./onboarding-fixtures";
 import {
+  legacyLibraryAuthorRoutes,
+  prepareLegacyLibraryAuthorWorld,
+} from "./library-author-fixtures";
+import {
   detectedModRoutes,
   prepareDetectedModWorld,
 } from "./detected-mod-fixtures";
@@ -188,6 +192,36 @@ const heroSkins: Definition = {
   prepare: async (world) => prepareHeroSkinsWorld(world),
 };
 export const scenarios = {
+  "library-author-legacy": {
+    ...defaults,
+    family: "navigation",
+    spec: "library-author-navigation",
+    phases: ["legacy-author-navigation"],
+    routes: legacyLibraryAuthorRoutes,
+    prepare: prepareLegacyLibraryAuthorWorld,
+    verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) => {
+      const profiles = requests.filter((request) =>
+        request.url.includes("/apiv11/Mod/920001/ProfilePage"),
+      );
+      const detail = requests.findIndex((request) =>
+        request.url.includes("/apiv11/Mod/920001/ProfilePage"),
+      );
+      const author = requests.findIndex((request) =>
+        request.url.includes("/api/v2/mod-authors/"),
+      );
+      if (profiles.length !== 1 || detail < 0 || author <= detail)
+        throw new Error(
+          "Legacy author navigation must resolve the mod once before opening its author",
+        );
+    },
+  },
+  "library-author-navigation": {
+    ...defaults,
+    family: "navigation",
+    spec: "library-author-navigation",
+    phases: ["author-navigation"],
+    routes: contentRoutes,
+  },
   "gamebanana-detected-files": {
     ...defaults,
     family: "gamebanana",

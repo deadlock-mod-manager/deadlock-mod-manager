@@ -34,6 +34,10 @@ On Arch, set `SHARP_IGNORE_GLOBAL_LIBVIPS=1` before `pnpm install` if a system l
 
 `gamebanana-detected-files` starts with a manually installed VPK and an empty DMM library. It identifies the mod through the analysis API, checks that Manage Files marks its matched archive enabled, adds an optional archive, and removes that optional archive after restart. The original VPK bytes and manifest ownership must survive, and only the optional archive may be downloaded.
 
+`library-author-navigation` downloads a catalog mod into the library, opens its author from grid and list layouts, and verifies Back returns to Mods Library. It also checks the nested author → mod → author path, the author link in library mod details, and that Store author navigation still returns to Mods Store.
+
+`library-author-legacy` runs the library navigation paths starting with an installed remote mod whose persisted author ID is null and whose metadata is absent from the Store cache. Clicking its author resolves the mod once before opening the profile; later visits reuse cached data. A custom local mod without a known author remains plain text.
+
 `support/scenarios.ts` is the scenario registry. Each definition owns its spec, phases, fixture setup, HTTP routes, network assertions, native-input requirement, and expected exit mode. `--suite` selects `all`, a family such as `gamebanana` or `downloads`, or a coverage category (`ui` / `ipc-recovery`). Cases run serially with a separate world per case; restart phases share that case's world. Failures retain their world and the runner continues to report the remaining cases.
 
 Native input requires explicit `--allow-native-input`. This applies to the local-picker and profile-ordering scenarios, including `--suite all`. Those cases control the Windows desktop and require exclusive mouse/keyboard use; never enable the option while someone is working on that desktop. Other cases still launch application windows but do not use the physical input helper. The native executable also checks the supervisor's opt-in environment variable.
