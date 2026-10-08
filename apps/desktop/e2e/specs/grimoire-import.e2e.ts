@@ -1,6 +1,6 @@
 import { $, $$, browser, expect } from "@wdio/globals";
 import assert from "node:assert/strict";
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
 import { startApplication } from "../support/application";
@@ -198,6 +198,63 @@ describe("Grimoire import", () => {
         );
         await expect($(`[title="${LINKED_OVERFLOW_NAME}"]`)).toExist();
         await assertGrimoireImported(world, "restarted");
+      });
+
+      await step("restore an imported sound from its cached VPK", async () => {
+        const sound = fixtures[3];
+        const soundId = finalModId(sound, 3);
+        const addons = path.join(
+          configuration.roots.game,
+          "game/citadel/addons",
+        );
+        await rm(path.join(addons, `${soundId}_e2e_parked_sound_dir.vpk`));
+        await observeUntil(
+          "The imported sound stays in the library with a missing-file warning",
+          () => readInterchangeState(world),
+          (state) =>
+            state.localMods.some(
+              (mod) =>
+                mod.remoteId === soundId && mod.missingVpks?.length === 1,
+            ),
+        );
+        const soundSwitch = () =>
+          $(
+            `//*[@title="${sound.name}"]/ancestor::*[.//*[@role="switch"]][1]//*[@role="switch"]`,
+          );
+        await soundSwitch().waitForClickable();
+        await soundSwitch().click();
+        await expect(soundSwitch()).toHaveAttribute("aria-checked", "true");
+        const enabled = await observeUntil(
+          "The imported sound is enabled from its cached VPK",
+          () => readInterchangeState(world),
+          (state) =>
+            state.localMods.some(
+              (mod) =>
+                mod.remoteId === soundId &&
+                mod.status === "installed" &&
+                mod.installedVpks?.length === 1,
+            ),
+        );
+        const installed = enabled.localMods.find(
+          (mod) => mod.remoteId === soundId,
+        );
+        assert.equal(installed?.installedVpks?.length, 1);
+        assert.deepEqual(
+          await readFile(path.join(addons, installed.installedVpks[0])),
+          sound.bytes,
+        );
+        await soundSwitch().waitForClickable();
+        await soundSwitch().click();
+        await expect(soundSwitch()).toHaveAttribute("aria-checked", "false");
+        await observeUntil(
+          "The restored sound is disabled again",
+          () => readInterchangeState(world),
+          (state) =>
+            state.localMods.some(
+              (mod) => mod.remoteId === soundId && mod.status === "downloaded",
+            ),
+        );
+        await assertGrimoireImported(world, "restored-sound");
       });
     } else {
       const late = lateLocalMod(configuration.roots.game);

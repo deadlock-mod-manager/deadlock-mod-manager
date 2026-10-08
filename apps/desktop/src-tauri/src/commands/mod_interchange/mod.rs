@@ -14,6 +14,7 @@ pub mod export;
 pub mod format;
 pub mod grimoire;
 pub mod hash_cache;
+mod reconcile;
 pub mod import;
 pub mod ledger;
 

@@ -435,6 +435,9 @@ export const useRunInterchangeImport = () =>
       } finally {
         unlisten();
       }
+      if (reports.length > 0) {
+        await usePersistedStore.getState().restoreModsFromManifest();
+      }
       detectHeroes([
         ...new Set(
           reports.flatMap((r) =>

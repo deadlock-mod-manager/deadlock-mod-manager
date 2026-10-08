@@ -27,6 +27,7 @@ const localModSchema = z.object({
   status: z.string(),
   installOrder: z.number().optional(),
   installedVpks: z.array(z.string()).optional(),
+  missingVpks: z.array(z.string()).optional(),
   selectedDownloads: z.array(z.object({ url: z.string() })).optional(),
 });
 const crosshairSchema = z.object({
@@ -358,6 +359,12 @@ export const assertGrimoireReimported = async (
     const files = entry.enabled ? entry.currentVpks : entry.disabledVpks;
     assert.equal(files.length, 1, `${fixture.name} owns exactly one VPK`);
     assert.equal(inventory[files[0]], fingerprint(fixture.bytes));
+    assert.deepEqual(
+      active.mods.find((mod) => mod.remoteId === ids[index])?.installedVpks ??
+        [],
+      entry.enabled ? files : [],
+      `${fixture.name} keeps its library paths aligned with the manifest`,
+    );
     const store = await collectFileInventory(
       path.join(roots.appData, "mods", ids[index], "files"),
     );

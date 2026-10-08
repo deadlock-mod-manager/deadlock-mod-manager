@@ -72,10 +72,10 @@ fn original_name(
     .unwrap_or(file_name)
 }
 
-/// A local import keeps its VPKs in the mods store, and enabling it copies
-/// them back into the profile (see `ModManager::install_mod`).
+/// Local and interchange imports keep VPKs in the mods store, and enabling
+/// them copies the files back into the profile (see `ModManager::install_mod`).
 fn restorable(mods_store: &Path, mod_id: &str) -> bool {
-  if !mod_id.starts_with("local-") || ModManager::ensure_safe_mod_id(mod_id).is_err() {
+  if ModManager::ensure_safe_mod_id(mod_id).is_err() {
     return false;
   }
   std::fs::read_dir(mods_store.join(mod_id).join("files")).is_ok_and(|entries| {
@@ -204,5 +204,32 @@ mod tests {
 
     std::fs::remove_file(files.join("skin.vpk")).unwrap();
     assert!(check(&fixture, &manifest, "local-skin").unwrap().orphaned);
+  }
+
+  #[test]
+  fn a_provider_import_in_the_mods_store_is_only_broken() {
+    for mod_id in ["900101", "snd-900202"] {
+      let fixture = fixture();
+      let files = fixture.store.join(mod_id).join("files");
+      std::fs::create_dir_all(&files).unwrap();
+      std::fs::write(files.join("skin.vpk"), b"vpk").unwrap();
+      let mut manifest = ProfileVpkManifest::default();
+      manifest.mark_disabled(
+        mod_id,
+        vec![format!("{mod_id}_skin.vpk")],
+        vec!["skin.vpk".into()],
+      );
+      assert_eq!(
+        check(&fixture, &manifest, mod_id),
+        Some(MissingModFiles {
+          mod_id: mod_id.into(),
+          missing_vpks: vec!["skin.vpk".into()],
+          orphaned: false,
+        })
+      );
+
+      std::fs::remove_file(files.join("skin.vpk")).unwrap();
+      assert!(check(&fixture, &manifest, mod_id).unwrap().orphaned);
+    }
   }
 }

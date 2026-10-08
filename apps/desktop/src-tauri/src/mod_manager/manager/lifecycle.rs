@@ -23,8 +23,10 @@ impl ModManager {
       .vpk_manager
       .find_prefixed_vpks(&addons_path, &deadlock_mod.id)?;
 
-    // Recover older local imports that were added before prefixed VPKs were copied.
-    if prefixed_vpks.is_empty() && deadlock_mod.id.starts_with("local-") {
+    // Local and interchange imports retain their VPKs even if another manager
+    // moves or removes the profile's copies.
+    if prefixed_vpks.is_empty() {
+      Self::ensure_safe_mod_id(&deadlock_mod.id)?;
       let local_files_dir = self
         .get_mods_store_path()?
         .join(&deadlock_mod.id)
@@ -32,7 +34,7 @@ impl ModManager {
 
       if local_files_dir.exists() {
         log::info!(
-          "No prefixed VPKs found for local mod {}, restoring from {:?}",
+          "No prefixed VPKs found for mod {}, restoring from {:?}",
           deadlock_mod.id,
           local_files_dir
         );
