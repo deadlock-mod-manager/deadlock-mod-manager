@@ -21,6 +21,7 @@ import {
   CrosshairIcon,
   DownloadIcon,
   FlagIcon,
+  GaugeIcon,
   GearIcon,
   HammerIcon,
   HardDrivesIcon,
@@ -33,7 +34,7 @@ import {
   TShirtIcon,
 } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
@@ -62,6 +63,8 @@ type SidebarItem = {
   icon?: Icon;
   iconUrl?: string;
   group: string;
+  /** Shows a "New" badge until the user opens the page. */
+  isNew?: boolean;
 };
 
 const GROUP_ORDER = [
@@ -176,6 +179,7 @@ const getSidebarItems = (
       url: "/foundry",
       icon: HammerIcon,
       group: "customization",
+      isNew: true,
     },
     {
       id: "autoexec",
@@ -186,12 +190,22 @@ const getSidebarItems = (
       group: "customization",
     },
     {
+      id: "performance",
+      title: () => <span>{t("navigation.performance")}</span>,
+      tooltipLabel: t("navigation.performance"),
+      url: "/performance",
+      icon: GaugeIcon,
+      group: "customization",
+      isNew: true,
+    },
+    {
       id: "stats",
       title: () => <span>{t("navigation.stats")}</span>,
       tooltipLabel: t("navigation.stats"),
       url: "/stats",
       icon: ChartLineUpIcon,
       group: "customization",
+      isNew: true,
     },
     ...(developerMode
       ? [
@@ -245,6 +259,16 @@ type SidebarItemProps = {
   item: SidebarItem;
   location: ReturnType<typeof useLocation>;
   mods: Array<{ status: ModStatus; remoteId: string }>;
+  showNewBadge: boolean;
+};
+
+const NewBadge = () => {
+  const { t } = useTranslation();
+  return (
+    <Badge className='ml-auto px-1 py-0.1 text-[10px] uppercase tracking-wide group-data-[collapsible=icon]:hidden'>
+      {t("navigation.new")}
+    </Badge>
+  );
 };
 
 const renderIcon = (item: SidebarItem) => {
@@ -257,7 +281,12 @@ const renderIcon = (item: SidebarItem) => {
   return null;
 };
 
-const SidebarItemComponent = ({ item, location, mods }: SidebarItemProps) => {
+const SidebarItemComponent = ({
+  item,
+  location,
+  mods,
+  showNewBadge,
+}: SidebarItemProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const titleProps = {
@@ -310,6 +339,7 @@ const SidebarItemComponent = ({ item, location, mods }: SidebarItemProps) => {
       <Link draggable='false' to={item.url ?? "/"}>
         {renderIcon(item)}
         {item.title(titleProps)}
+        {showNewBadge && <NewBadge />}
       </Link>
     </SidebarMenuButton>
   );
@@ -319,6 +349,8 @@ export const AppSidebar = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const mods = usePersistedStore((state) => state.localMods);
+  const seenNavItems = usePersistedStore((state) => state.seenNavItems);
+  const markNavItemSeen = usePersistedStore((state) => state.markNavItemSeen);
   const developerMode = usePersistedStore((state) => state.developerMode);
   const SidebarContentExtra = useThemeOverride("sidebarContentExtra");
   const SidebarFooterExtra = useThemeOverride("sidebarFooterExtra");
@@ -326,14 +358,23 @@ export const AppSidebar = () => {
   const isServerBrowserEnabled = useExperimentalFeature("server-browser");
   const isPlayerStatsEnabled = useExperimentalFeature("player-stats");
   const isModFoundryEnabled = useExperimentalFeature("mod-foundry");
+  const isPerformanceEnabled = useExperimentalFeature("performance-configs");
 
   const allItems = getSidebarItems(t, developerMode).filter(
     (item) =>
       (item.id !== "maps" || isCustomMapsEnabled) &&
       (item.id !== "servers" || isServerBrowserEnabled) &&
       (item.id !== "stats" || isPlayerStatsEnabled) &&
-      (item.id !== "foundry" || isModFoundryEnabled),
+      (item.id !== "foundry" || isModFoundryEnabled) &&
+      (item.id !== "performance" || isPerformanceEnabled),
   );
+
+  useEffect(() => {
+    const visited = allItems.find(
+      (item) => item.isNew && item.url === location.pathname,
+    );
+    if (visited && !seenNavItems[visited.id]) markNavItemSeen(visited.id);
+  }, [allItems, location.pathname, markNavItemSeen, seenNavItems]);
 
   const groupLabels: Record<GroupId, string> = {
     general: t("navigation.general", "General"),
@@ -377,6 +418,7 @@ export const AppSidebar = () => {
                         item={item}
                         location={location}
                         mods={mods}
+                        showNewBadge={!!item.isNew && !seenNavItems[item.id]}
                       />
                     </SidebarMenuItem>
                   ))}

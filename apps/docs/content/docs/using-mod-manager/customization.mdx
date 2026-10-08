@@ -1,6 +1,6 @@
 ---
 title: Customization
-description: Manage hero skins, edit skins in Foundry, and configure crosshairs and autoexec
+description: Manage hero skins, edit skins in Foundry, and configure crosshairs, autoexec and performance configs
 ---
 
 import { Callout } from "fumadocs-ui/components/callout";
@@ -85,6 +85,34 @@ Open **Autoexec Config** from the sidebar or Settings to edit startup console co
   Keep the config nonempty when the autoexec launch option is enabled. The
   command library comes from the community; commands can change or stop working
   after game updates.
+</Callout>
+
+## Performance configs
+
+Performance configs are community `gameinfo.gi` tunings that trade visual detail for frame rate. Enable **Performance Configs** under **Settings → Experimental**, then open **Performance** from the sidebar.
+
+1. Pick a config on the **Configs** tab. Curated presets, configs published on GameBanana and your own imports share one list, and the **Looks best ⟷ Runs fastest** scale above it filters them by how much they cut.
+2. Choose **Details** to see what a config changes, the in-game video settings its author recommends, and anything that won't be applied.
+3. Choose **Apply**, then restart Deadlock if it is running. The game reads these settings at startup.
+
+The manager edits `gameinfo.gi` in place next to your mods instead of replacing the file, and marks every line it changes so **Turn off** can put the original values back. A game update or **Reset to Vanilla** replaces the file; the manager writes your config again when it starts, when you switch back to its window, and before every launch from it, including vanilla launches. It waits while Deadlock is running, so starting Deadlock from Steam while the manager is closed leaves the config out until the manager next runs.
+
+What gets written:
+
+- Settings that Valve's convar list marks as not read from `gameinfo.gi`, or that aren't in that list at all, are left out and listed in the config's details. The list comes from the newest game build the catalog knows.
+- Edits outside the ConVars block (SceneSystem, RenderSystem and other engine sections) are left out unless you choose **Include** for that config. Deadlock's matchmaking error lists Engine2, MaterialSystem2, NetworkSystem, Particles, RenderSystem, SceneSystem and WorldRenderer as `gameinfo.gi` sections where it doesn't support changes.
+- Camera and visibility settings, such as field of view or outlines, follow the config's author. You can turn each one off.
+- SearchPaths and `video.txt` are never changed.
+
+Use **Settings editor** to change any value the config sets, turn individual settings off, or add another setting. Each setting shows the config's value next to the game's default.
+
+**Import config** accepts a pasted `gameinfo.gi`, a ConVars block, autoexec lines, a share code, a file or archive, a GameBanana mod link, or your current `gameinfo.gi`. The review shows what will apply and what won't before anything is written. When a mod you download includes a performance config, the manager asks whether to import it; it never copies a mod's `gameinfo.gi` over yours. **Share** gives a share code and a ConVars snippet for the config you have applied.
+
+<Callout type='info' title='If Deadlock crashes after a change'>
+  When Deadlock closes abnormally within a few minutes of starting, the manager
+  lists what changed since your last normal session, such as a new performance
+  config or new mods, with a way to undo each one. Turn this off under
+  **Settings → Game → Check for crashes after launch**.
 </Callout>
 
 ## Discord game presence

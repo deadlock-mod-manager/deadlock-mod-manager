@@ -13,6 +13,7 @@ import type {
 import { createLogger } from "../logger";
 import { usePersistedStore } from "../store";
 import { ModStatus } from "@/types/mods";
+import type { ConfigFoundEvent } from "@/types/generated/ConfigFoundEvent";
 
 const logger = createLogger("download-manager");
 
@@ -80,6 +81,7 @@ class DownloadManager {
     modName: string,
     fonts: FontInfo[],
   ) => void;
+  private onConfigFoundHandler?: (event: ConfigFoundEvent) => void;
 
   async init() {
     logger.info("Download manager initializing");
@@ -217,6 +219,24 @@ class DownloadManager {
       },
     );
 
+    const unlistenConfigFound = await listen<ConfigFoundEvent>(
+      "download-config-found",
+      (event) => {
+        if (!this.onConfigFoundHandler) return;
+        const mod = this.downloads.getMod(event.payload.modId);
+        logger
+          .withMetadata({
+            mod: event.payload.modId,
+            variantCount: event.payload.variants.length,
+          })
+          .info("Performance config found in mod download");
+        this.onConfigFoundHandler({
+          ...event.payload,
+          modName: mod?.name ?? event.payload.modName,
+        });
+      },
+    );
+
     const unlistenPaused = await listen<DownloadPausedEvent>(
       "download-paused",
       (event) => {
@@ -248,6 +268,7 @@ class DownloadManager {
       unlistenExtracting,
       unlistenFileTree,
       unlistenFontsFound,
+      unlistenConfigFound,
       unlistenPaused,
       unlistenResumed,
       unlistenError,
@@ -303,6 +324,10 @@ class DownloadManager {
     handler: (modId: string, modName: string, fonts: FontInfo[]) => void,
   ) {
     this.onFontsFoundHandler = handler;
+  }
+
+  setConfigFoundHandler(handler?: (event: ConfigFoundEvent) => void) {
+    this.onConfigFoundHandler = handler;
   }
 
   async cleanup() {

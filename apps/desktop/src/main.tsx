@@ -17,6 +17,7 @@ import Downloads from "./pages/downloads";
 import Foundry from "./pages/foundry";
 
 import Mod from "./pages/mod";
+import Performance from "./pages/performance";
 import GetMods, { GetMaps } from "./pages/mods";
 import MyMods from "./pages/my-mods";
 import PluginEntry from "./pages/plugin";
@@ -60,6 +61,14 @@ const ServersRouteGate = () => {
   return <Servers />;
 };
 
+const PerformanceRouteGate = () => {
+  const isEnabled = useExperimentalFeature("performance-configs");
+  if (!isEnabled) {
+    return <Navigate replace to='/' />;
+  }
+  return <Performance />;
+};
+
 const FoundryRouteGate = () => {
   const isEnabled = useExperimentalFeature("mod-foundry");
   if (!isEnabled) {
@@ -100,6 +109,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<Skins />} path='/skins' />
               <Route element={<StatsRouteGate />} path='/stats' />
               <Route element={<FoundryRouteGate />} path='/foundry' />
+              <Route element={<PerformanceRouteGate />} path='/performance' />
               <Route
                 element={<CustomSettings value='autoexec' />}
                 path='/settings/autoexec'
