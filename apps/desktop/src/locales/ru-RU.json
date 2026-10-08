@@ -1802,6 +1802,8 @@
     "gridView": "",
     "listView": "",
     "subtitle": "",
+    "catalogRefresh": "",
+    "catalogRefreshing": "",
     "mapsSubtitle": "",
     "mapsWarningTitle": "",
     "mapsWarning": "",
