@@ -22,6 +22,7 @@ jobs:
 
     permissions:
       contents: write
+      pull-requests: write
 
     steps:
       - name: Checkout repository
@@ -65,14 +66,15 @@ jobs:
             echo "Changes detected in README files"
           fi
 
-      - name: Commit and push changes (if on main/master)
+      - name: Open or update pull request
         if: steps.check-changes.outputs.changes == 'true' && (github.ref == 'refs/heads/main')
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add README*.md
-          git commit -m "chore: update language table with Crowdin progress"
-          git push
+        uses: ./.github/actions/open-bot-pr
+        with:
+          branch: chore/language-table
+          title: "chore: update language table with Crowdin progress"
+          paths: README*.md
+          body: Refreshes the README language tables from Crowdin progress.
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Output summary
         run: |

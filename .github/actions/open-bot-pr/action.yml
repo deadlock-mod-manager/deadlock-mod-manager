@@ -1,0 +1,44 @@
+name: "Open Bot PR"
+description: "Commit changed files to a bot branch and open or update a PR against main (main only accepts changes through the merge queue)"
+inputs:
+  branch:
+    description: "Branch to force-push the commit to"
+    required: true
+  title:
+    description: "Commit message and PR title"
+    required: true
+  paths:
+    description: "Space-separated paths or globs to stage"
+    required: true
+  body:
+    description: "PR body"
+    required: true
+  token:
+    description: "Token with contents and pull-requests write access"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Commit and open or update PR
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.token }}
+        BRANCH: ${{ inputs.branch }}
+        TITLE: ${{ inputs.title }}
+        PATHS: ${{ inputs.paths }}
+        BODY: ${{ inputs.body }}
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git switch -C "$BRANCH"
+        # shellcheck disable=SC2086 # PATHS holds globs
+        git add $PATHS
+        git commit -m "$TITLE"
+        git push --force origin "$BRANCH"
+        pr=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')
+        if [ -n "$pr" ]; then
+          gh pr edit "$pr" --body "$BODY"
+        else
+          gh pr create --base main --head "$BRANCH" --title "$TITLE" --body "$BODY"
+        fi

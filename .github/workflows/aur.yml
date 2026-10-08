@@ -21,6 +21,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
     strategy:
       max-parallel: 1
       matrix:
@@ -70,15 +71,15 @@ jobs:
           # Copy for AUR deploy
           cp -r ${{ matrix.pkgbuild_dir }} ./${{ matrix.pkgname }}
 
-      - name: Commit updated PKGBUILD
-        if: steps.check_version.outputs.is_newer == 'true' || github.event.inputs.allow_backfill == 'true'
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "github-actions@github.com"
-          git add ${{ matrix.pkgbuild_dir }}/PKGBUILD
-          git diff --staged --quiet || git commit -m "chore(aur): update ${{ matrix.pkgname }} to v${{ steps.version.outputs.version }} [skip ci]"
-          git pull --rebase origin main
-          git push origin main
+      - name: Open PR for updated PKGBUILD
+        if: steps.check_version.outputs.is_newer == 'true'
+        uses: ./.github/actions/open-bot-pr
+        with:
+          branch: chore/aur-${{ matrix.pkgname }}
+          title: "chore(aur): update ${{ matrix.pkgname }} to v${{ steps.version.outputs.version }}"
+          paths: ${{ matrix.pkgbuild_dir }}/PKGBUILD
+          body: Syncs the in-repo `${{ matrix.pkgname }}` PKGBUILD with the version published to the AUR.
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to AUR
         if: steps.check_version.outputs.is_newer == 'true' || github.event.inputs.allow_backfill == 'true'

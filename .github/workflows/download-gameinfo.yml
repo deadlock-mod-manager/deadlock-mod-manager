@@ -10,6 +10,7 @@ jobs:
     runs-on: depot-ubuntu-24.04
     permissions:
       contents: write
+      pull-requests: write
     env:
       APPID: "1422450"
       DEPOTID: "1422456"
@@ -59,11 +60,12 @@ jobs:
         run: |
           git diff --quiet apps/api/src/static/artifacts/deadlock/gameinfo.gi || echo "changed=true" >> $GITHUB_OUTPUT
 
-      - name: Commit and push if changed
+      - name: Open or update pull request
         if: steps.git-check.outputs.changed == 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add apps/api/src/static/artifacts/deadlock/gameinfo.gi
-          git commit -m "chore: update gameinfo.gi from depot"
-          git push
+        uses: ./.github/actions/open-bot-pr
+        with:
+          branch: chore/gameinfo
+          title: "chore: update gameinfo.gi from depot"
+          paths: apps/api/src/static/artifacts/deadlock/gameinfo.gi
+          body: Pulls the latest `gameinfo.gi` from the Deadlock Steam depot.
+          token: ${{ secrets.GITHUB_TOKEN }}
