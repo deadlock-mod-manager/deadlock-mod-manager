@@ -29,6 +29,7 @@ import { OnboardingStepTelemetry } from "./step-telemetry";
 
 type StepComponentProps = {
   onComplete: () => void;
+  onSkip: () => void;
   onError?: () => void;
 };
 
@@ -167,16 +168,26 @@ export const OnboardingWizard = () => {
 
   const stepHandlers = useMemo<StepComponentProps>(() => {
     if (!currentStepConfig) {
-      return { onComplete: () => {} };
+      return { onComplete: () => {}, onSkip: handleNext };
     }
     const handlers: StepComponentProps = {
       onComplete: () => handleStepComplete(currentStep),
+      onSkip: () => {
+        handleStepComplete(currentStep);
+        handleNext();
+      },
     };
     if (currentStepConfig.requiresErrorHandler) {
       handlers.onError = () => handleStepError(currentStep);
     }
     return handlers;
-  }, [currentStep, currentStepConfig, handleStepComplete, handleStepError]);
+  }, [
+    currentStep,
+    currentStepConfig,
+    handleStepComplete,
+    handleStepError,
+    handleNext,
+  ]);
 
   const onSkip = useCallback(() => {
     analytics.track("setup_result", {

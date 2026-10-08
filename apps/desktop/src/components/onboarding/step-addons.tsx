@@ -16,12 +16,12 @@ import { usePersistedStore } from "@/lib/store";
 import type { AnalyzeAddonsResult } from "@/types/mods";
 
 type AddonsStepProps = {
-  onComplete: () => void;
+  onSkip: () => void;
 };
 
 type CheckState = "idle" | "checking" | "none" | "found" | "analyzing";
 
-export const OnboardingStepAddons = ({ onComplete }: AddonsStepProps) => {
+export const OnboardingStepAddons = ({ onSkip }: AddonsStepProps) => {
   const { t } = useTranslation();
   const activeProfile = usePersistedStore((state) => {
     const { activeProfileId, profiles } = state;
@@ -139,7 +139,7 @@ export const OnboardingStepAddons = ({ onComplete }: AddonsStepProps) => {
               <Button
                 variant='outline'
                 size='sm'
-                onClick={onComplete}
+                onClick={onSkip}
                 disabled={analyzeMutation.isPending}
                 className='w-full'>
                 {t("onboarding.addons.skipAnalysis")}
