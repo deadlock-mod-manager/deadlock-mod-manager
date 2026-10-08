@@ -35,7 +35,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
   cargoRoot = "apps/desktop";
   buildAndTestSubdir = finalAttrs.cargoRoot;
 
-  cargoHash = "sha256-06CMs74gXnsKAC0E1JCzIkR3jI3PeRSrlZYdvuZupeU=";
+  cargoHash = "sha256-ZUuWJdIt6/CJgYF2HmDFJ9/F0wWRMDkRhf6f+An0eME=";
 
   nativeBuildInputs = [
     rustPlatform.cargoSetupHook cargo-tauri.hook nodejs
@@ -77,7 +77,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     pnpm = pnpm_11;
     fetcherVersion = 4;
     sourceRoot = "source";
-    hash = "sha256-y2Sz1gBR70KkcIou6ZnFrP9QYac/yn3DjGD0lW/Qps8=";
+    hash = "sha256-JZM/xSF4NNhEuaEF7o0Um2QTay4NnkWmNrikKDOhIcE=";
   };
 
   postPatch = ''
