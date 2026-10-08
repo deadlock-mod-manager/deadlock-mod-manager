@@ -5,11 +5,12 @@ import { listen } from "@tauri-apps/api/event";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
-import { getMod } from "@/lib/api-client";
+import { getMod, getModDownloads } from "@/lib/api-client";
+import { buildAnalyzedFileTree } from "@/lib/mods/analyzed-files";
 import { analyzeLocalAddons } from "@/lib/tauri-commands";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
-import type { AddonAnalysisProgress } from "@/types/mods";
+import type { AddonAnalysisProgress, ModDownloadItem } from "@/types/mods";
 
 export const useAddonAnalysis = () => {
   const { t } = useTranslation();
@@ -106,8 +107,34 @@ export const useAddonAnalysis = () => {
           const vpkFileNames = groupAddons.map((a) => a.fileName);
 
           if (hasMatchInfo) {
+            let downloads: ModDownloadItem[] = [];
+            if (groupAddons.some((addon) => addon.matchInfo?.fileId)) {
+              try {
+                downloads = (await getModDownloads(remoteId)).downloads;
+              } catch (error) {
+                logger
+                  .withMetadata({ remoteId })
+                  .withError(error)
+                  .warn("Unable to resolve detected addon archives");
+              }
+            }
+            const previous = usePersistedStore
+              .getState()
+              .localMods.find((mod) => mod.remoteId === remoteId);
+            const fileTree = buildAnalyzedFileTree(
+              remoteId,
+              groupAddons.map((addon) => ({
+                fileName: addon.fileName,
+                matchInfo: addon.matchInfo,
+                size: addon.vpkParsed.fingerprint.fileSize,
+              })),
+              downloads,
+              previous?.installedFileTree,
+            );
             addIdentifiedLocalMod(modDetails, groupAddons[0].filePath);
-            setInstalledVpks(remoteId, vpkFileNames);
+            setInstalledVpks(remoteId, vpkFileNames, fileTree);
+            if (downloads.length > 0)
+              usePersistedStore.getState().setModDownloads(remoteId, downloads);
             processedIdentifiedCount++;
 
             const activeProfile = getActiveProfile();
@@ -115,6 +142,9 @@ export const useAddonAnalysis = () => {
               modId: remoteId,
               modName: modDetails.name,
               installedVpks: vpkFileNames,
+              originalVpkNames: fileTree.files
+                .filter((file) => file.is_selected)
+                .map((file) => file.name),
               profileFolder: activeProfile?.folderName ?? null,
             });
           } else {

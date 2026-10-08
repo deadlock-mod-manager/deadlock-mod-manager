@@ -177,8 +177,15 @@ export const useModOptions = (mod: LocalMod | null) => {
 
   const downloads = mod?.downloads ?? [];
   const onDiskArchiveNames = useMemo(
-    () => new Set((mod?.selectedDownloads ?? []).map((d) => d.name)),
-    [mod?.selectedDownloads],
+    () =>
+      new Set([
+        ...(mod?.selectedDownloads ?? []).map((d) => d.name),
+        ...(mod?.installedFileTree?.files ?? []).flatMap((file) =>
+          file.archive_name ? [file.archive_name] : [],
+        ),
+        ...deriveActiveArchiveNames(mod),
+      ]),
+    [mod?.selectedDownloads, mod?.installedFileTree, mod?.activeVariantArchive],
   );
 
   const activeArchiveNames = useMemo(

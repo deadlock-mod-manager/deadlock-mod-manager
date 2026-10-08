@@ -97,6 +97,8 @@ export interface LocalAddonInfo {
   vpkParsed: VpkParsed;
   remoteId?: string; // Will be populated by API call
   matchInfo?: {
+    fileId?: string;
+    sourcePath?: string;
     certainty: number;
     matchType: "sha256" | "contentSignature" | "fastHashAndSize" | "merkleRoot";
     modName?: string;
