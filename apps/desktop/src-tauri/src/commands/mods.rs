@@ -526,6 +526,7 @@ pub async fn register_analyzed_mod(
   mod_id: String,
   mod_name: String,
   installed_vpks: Vec<String>,
+  original_vpk_names: Vec<String>,
   profile_folder: Option<String>,
 ) -> Result<(), Error> {
   let mut mod_manager = MANAGER.lock().unwrap();
@@ -534,6 +535,21 @@ pub async fn register_analyzed_mod(
   let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
 
   let install_order = manifest.mods.get(&mod_id).and_then(|e| e.order);
+
+  if original_vpk_names.len() != installed_vpks.len() {
+    return Err(Error::InvalidInput(
+      "Analyzed VPK filenames must have a corresponding original filename".into(),
+    ));
+  }
+  if let Some(bad) = installed_vpks
+    .iter()
+    .chain(&original_vpk_names)
+    .find(|vpk| !is_plain_vpk_filename(vpk))
+  {
+    return Err(Error::InvalidInput(format!(
+      "Invalid analyzed VPK filename: {bad}"
+    )));
+  }
 
   if mod_manager.get_mod_repository().get_mod(&mod_id).is_none() {
     log::info!(
@@ -549,18 +565,9 @@ pub async fn register_analyzed_mod(
       installed_vpks: installed_vpks.clone(),
       file_tree: None,
       install_order,
-      original_vpk_names: Vec::new(),
+      original_vpk_names: original_vpk_names.clone(),
     };
     mod_manager.get_mod_repository_mut().add_mod(deadlock_mod);
-  }
-
-  if let Some(bad) = installed_vpks
-    .iter()
-    .find(|vpk| !is_plain_vpk_filename(vpk))
-  {
-    return Err(Error::InvalidInput(format!(
-      "Invalid analyzed VPK filename: {bad}"
-    )));
   }
 
   let discovered_shard = shard::all_shards()
@@ -578,15 +585,10 @@ pub async fn register_analyzed_mod(
   manifest.mark_enabled(
     &mod_id,
     installed_vpks,
-    Vec::new(),
+    original_vpk_names,
     install_order,
     discovered_shard,
   );
-  // mark_enabled skips overwriting original_vpk_names when passed empty,
-  // so explicitly clear stale originals from a previous install.
-  if let Some(entry) = manifest.mods.get_mut(&mod_id) {
-    entry.original_vpk_names.clear();
-  }
   manifest.save(&addons_path)?;
   log::info!("Persisted analyzed mod {mod_id} to profile manifest");
 

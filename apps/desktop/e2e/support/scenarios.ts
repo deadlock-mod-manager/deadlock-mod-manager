@@ -25,6 +25,10 @@ import { grimoireRoutes, prepareGrimoireWorld } from "./interchange-fixtures";
 import { prepareHeroSkinsWorld } from "./hero-skins-fixtures";
 import { prepareLegacyCatalog } from "./catalog-upgrade-fixtures";
 import { prepareOnboardingWorld } from "./onboarding-fixtures";
+import {
+  detectedModRoutes,
+  prepareDetectedModWorld,
+} from "./detected-mod-fixtures";
 
 type Definition = {
   family: string;
@@ -184,6 +188,35 @@ const heroSkins: Definition = {
   prepare: async (world) => prepareHeroSkinsWorld(world),
 };
 export const scenarios = {
+  "gamebanana-detected-files": {
+    ...defaults,
+    family: "gamebanana",
+    spec: "detected-mod",
+    phases: ["detect-files", "restart-detected"],
+    routes: detectedModRoutes,
+    prepare: prepareDetectedModWorld,
+    verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) => {
+      if (
+        !requests.some(
+          (request) =>
+            request.method === "POST" &&
+            request.url.includes("/api/v2/vpk-analyse-hashes") &&
+            request.responseStatus === 200,
+        )
+      )
+        throw new Error("Existing mod was never identified through analysis");
+      const archiveRequests = requests.filter((request) =>
+        request.url.includes("/dl/"),
+      );
+      if (
+        archiveRequests.length !== 1 ||
+        !archiveRequests[0].url.includes("/dl/910002")
+      )
+        throw new Error(
+          "File management must download only the newly added optional archive once",
+        );
+    },
+  },
   "onboarding-skip-analysis": {
     ...defaults,
     family: "onboarding",

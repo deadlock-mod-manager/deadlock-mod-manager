@@ -24,6 +24,10 @@ pub struct MatchInfo {
   pub mod_name: Option<String>,
   pub mod_author: Option<String>,
   pub alternative_matches: Option<Vec<AlternativeMatch>>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub file_id: Option<String>,
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub source_path: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -54,6 +58,8 @@ struct ApiMatchedVpk {
   id: String,
   submission_type: Option<String>,
   submission_id: Option<String>,
+  file_id: Option<String>,
+  source_path: Option<String>,
   /// Catalog relation the API only attaches for older clients; it goes away
   /// with the catalog retirement, so it is used for display names only.
   #[serde(rename = "mod")]
@@ -224,6 +230,8 @@ impl AddonAnalyzer {
                     mod_name: Some(mod_name),
                     mod_author: mod_info.map(|info| info.author.clone()),
                     alternative_matches,
+                    file_id: result.matched_vpk.file_id.clone(),
+                    source_path: result.matched_vpk.source_path.clone(),
                   },
                 )));
               }
@@ -707,11 +715,16 @@ mod tests {
   #[test]
   fn reads_the_submission_identity_without_catalog_mod() {
     let result = parse(
-      r#"[{"matchedVpk":{"id":"vpk_1","submissionType":"sound","submissionId":"42"},
+      r#"[{"matchedVpk":{"id":"vpk_1","submissionType":"sound","submissionId":"42","fileId":"100","sourcePath":"files/base.vpk"},
           "match":{"certainty":100,"matchType":"sha256"}}]"#,
     );
     assert_eq!(result.matched_vpk.remote_id().as_deref(), Some("snd-42"));
     assert!(result.matched_vpk.mod_info.is_none());
+    assert_eq!(result.matched_vpk.file_id.as_deref(), Some("100"));
+    assert_eq!(
+      result.matched_vpk.source_path.as_deref(),
+      Some("files/base.vpk")
+    );
   }
 
   #[test]
@@ -722,5 +735,6 @@ mod tests {
           "match":{"certainty":90,"matchType":"contentSignature"}}]"#,
     );
     assert_eq!(result.matched_vpk.remote_id().as_deref(), Some("123"));
+    assert!(result.matched_vpk.file_id.is_none());
   }
 }
