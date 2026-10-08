@@ -9,7 +9,12 @@ import {
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Input } from "@deadlock-mods/ui/components/input";
 import { cn } from "@deadlock-mods/ui/lib/utils";
-import { Trash } from "@phosphor-icons/react";
+import {
+  type Icon,
+  InfoIcon,
+  QuestionIcon,
+  WarningIcon,
+} from "@phosphor-icons/react";
 import * as React from "react";
 
 export const AlertDialogContext = React.createContext<
@@ -38,6 +43,7 @@ export type AlertAction =
       type: "alert";
       title: string;
       body?: string;
+      icon?: Icon;
       cancelButton?: string;
       cancelButtonVariant?: ButtonVariant;
     }
@@ -45,6 +51,8 @@ export type AlertAction =
       type: "confirm";
       title: string;
       body?: string;
+      /** Shown in the header tile; defaults by tone. */
+      icon?: Icon;
       tone?: DialogTone;
       cancelButton?: string;
       actionButton?: string;
@@ -55,6 +63,7 @@ export type AlertAction =
       type: "prompt";
       title: string;
       body?: string;
+      icon?: Icon;
       cancelButton?: string;
       actionButton?: string;
       defaultValue?: string;
@@ -73,6 +82,7 @@ type AlertDialogState = {
   body: string;
   type: "alert" | "confirm" | "prompt";
   tone: DialogTone;
+  icon?: Icon;
   cancelButton: string;
   actionButton: string;
   cancelButtonVariant: ButtonVariant;
@@ -99,6 +109,7 @@ export function alertDialogReducer(
       return {
         ...state,
         body: "",
+        icon: undefined,
         open: true,
         ...action,
         tone: ("tone" in action && action.tone) || "default",
@@ -119,6 +130,11 @@ export function alertDialogReducer(
       return state;
   }
 }
+
+const defaultIcon = (state: AlertDialogState): Icon => {
+  if (state.tone === "destructive") return WarningIcon;
+  return state.type === "alert" ? InfoIcon : QuestionIcon;
+};
 
 export const AlertDialogProvider = ({
   children,
@@ -173,47 +189,42 @@ export const AlertDialogProvider = ({
           }
         }}
         open={state.open}>
-        <AlertDialogContent asChild>
+        <AlertDialogContent
+          asChild
+          className={cn(
+            "gap-0 overflow-hidden p-0 sm:max-w-md",
+            state.tone === "destructive" && "border-destructive/30",
+          )}>
           <form
-            className={cn(
-              state.tone === "destructive" && "gap-6 border-destructive/25",
-            )}
             onSubmit={(event) => {
               event.preventDefault();
               confirm(event.currentTarget.prompt?.value);
             }}>
-            {state.tone === "destructive" ? (
-              <AlertDialogHeader className='flex-row items-start gap-4'>
-                <div className='flex size-10 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive'>
-                  <Trash className='size-5' weight='bold' />
-                </div>
-                <div className='flex flex-col gap-1.5'>
-                  <AlertDialogTitle>{state.title}</AlertDialogTitle>
-                  {state.body ? (
-                    <AlertDialogDescription className='whitespace-pre-line'>
-                      {state.body}
-                    </AlertDialogDescription>
-                  ) : null}
-                </div>
-              </AlertDialogHeader>
-            ) : (
-              <AlertDialogHeader>
-                <AlertDialogTitle>{state.title}</AlertDialogTitle>
+            <div className='flex items-start gap-4 p-6'>
+              <DialogIcon
+                icon={state.icon ?? defaultIcon(state)}
+                tone={state.tone}
+              />
+              <AlertDialogHeader className='min-w-0 flex-1 space-y-1.5 pt-0.5 text-left'>
+                <AlertDialogTitle className='text-base leading-6'>
+                  {state.title}
+                </AlertDialogTitle>
                 {state.body ? (
-                  <AlertDialogDescription className='whitespace-pre-line'>
+                  <AlertDialogDescription className='whitespace-pre-line leading-relaxed'>
                     {state.body}
                   </AlertDialogDescription>
                 ) : null}
+                {state.type === "prompt" && (
+                  <Input
+                    className='mt-3'
+                    defaultValue={state.defaultValue}
+                    name='prompt'
+                    {...state.inputProps}
+                  />
+                )}
               </AlertDialogHeader>
-            )}
-            {state.type === "prompt" && (
-              <Input
-                defaultValue={state.defaultValue}
-                name='prompt'
-                {...state.inputProps}
-              />
-            )}
-            <AlertDialogFooter>
+            </div>
+            <AlertDialogFooter className='gap-2 border-t bg-muted/30 px-6 py-3 sm:space-x-0'>
               <Button
                 onClick={close}
                 type='button'
@@ -232,6 +243,24 @@ export const AlertDialogProvider = ({
     </AlertDialogContext.Provider>
   );
 };
+
+const DialogIcon = ({
+  icon: IconComponent,
+  tone,
+}: {
+  icon: Icon;
+  tone: DialogTone;
+}) => (
+  <div
+    className={cn(
+      "flex size-11 shrink-0 items-center justify-center rounded-xl border",
+      tone === "destructive"
+        ? "border-destructive/30 bg-destructive/10 text-destructive"
+        : "border-primary/25 bg-primary/10 text-primary",
+    )}>
+    <IconComponent aria-hidden className='size-5' weight='duotone' />
+  </div>
+);
 
 type Params<T extends "alert" | "confirm" | "prompt"> =
   | Omit<Extract<AlertAction, { type: T }>, "type">

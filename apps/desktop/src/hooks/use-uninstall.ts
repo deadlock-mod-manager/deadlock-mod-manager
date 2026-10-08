@@ -1,3 +1,4 @@
+import { TrashIcon } from "@phosphor-icons/react";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -35,6 +36,7 @@ const useUninstall = () => {
           title: t("mods.deleteConfirmTitle"),
           body: t("mods.deleteConfirmBody"),
           tone: "destructive",
+          icon: TrashIcon,
           actionButton: t("mods.deleteConfirmAction"),
           cancelButton: t("mods.deleteConfirmCancel"),
         }));
