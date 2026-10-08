@@ -6,6 +6,7 @@ use diesel::OptionalExtension;
 use diesel::prelude::*;
 use diesel::sqlite::Sqlite;
 use serde::{Deserialize, Serialize};
+use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
 pub(super) const INCOMPLETE_SNAPSHOT: &str = "snapshot_with_invalid_records";
@@ -329,6 +330,45 @@ impl Catalog {
       .await
   }
 
+  pub async fn hydration_candidates(
+    &self,
+    submission_type: SubmissionType,
+    revisions: Vec<(String, i64)>,
+  ) -> Result<HashSet<String>, Error> {
+    self
+      .pool
+      .run(move |connection| {
+        let ids = revisions.iter().map(|(id, _)| id).collect::<Vec<_>>();
+        let cached = submission::table
+          .filter(submission::provider.eq(provider_name(SubmissionProvider::Gamebanana)))
+          .filter(submission::submission_type.eq(submission_type_name(submission_type)))
+          .filter(submission::submission_id.eq_any(ids))
+          .select((
+            submission::submission_id,
+            submission::remote_updated_at,
+            submission::is_hydrated,
+            submission::is_tombstoned,
+          ))
+          .load::<(String, i64, bool, bool)>(connection)?
+          .into_iter()
+          .map(|(id, modified, hydrated, tombstoned)| (id, (modified, hydrated, tombstoned)))
+          .collect::<HashMap<_, _>>();
+        Ok(
+          revisions
+            .into_iter()
+            .filter_map(|(id, modified)| {
+              let needed = modified <= 0
+                || cached.get(&id).is_none_or(|(saved, hydrated, tombstoned)| {
+                  !hydrated || *tombstoned || modified > *saved
+                });
+              needed.then_some(id)
+            })
+            .collect(),
+        )
+      })
+      .await
+  }
+
   pub async fn upsert_records(&self, records: Vec<CatalogRecord>) -> Result<(), Error> {
     self
       .pool
@@ -545,7 +585,8 @@ impl SubmissionRow {
       is_nsfw: incoming.is_nsfw,
       is_obsolete: incoming.is_obsolete,
       is_tombstoned: false,
-      is_hydrated: self.is_hydrated || hydrated,
+      is_hydrated: hydrated
+        || (self.is_hydrated && incoming.remote_updated_at <= self.remote_updated_at),
       has_files: incoming.has_files,
       download_count: if hydrated {
         incoming.download_count
@@ -707,6 +748,43 @@ mod tests {
       development_state: None,
       completion_percentage: None,
     }
+  }
+
+  #[tokio::test]
+  async fn changed_index_requires_hydration_again_until_details_are_saved() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.sqlite3"), 1)
+      .await
+      .unwrap();
+    catalog
+      .upsert_records(vec![record("1", "Cached entry", "snapshot-a")])
+      .await
+      .unwrap();
+    let mut changed = record("1", "Updated entry", "snapshot-a");
+    changed.remote_updated_at = 300;
+    changed.is_hydrated = false;
+    catalog.upsert_records(vec![changed.clone()]).await.unwrap();
+    let pending = catalog
+      .hydration_candidates(
+        crate::providers::SubmissionType::Mod,
+        vec![("1".to_string(), 300)],
+      )
+      .await
+      .unwrap();
+    assert!(
+      pending.contains("1"),
+      "Index changes alone must not count as saved details"
+    );
+    changed.is_hydrated = true;
+    catalog.upsert_records(vec![changed]).await.unwrap();
+    let pending = catalog
+      .hydration_candidates(
+        crate::providers::SubmissionType::Mod,
+        vec![("1".to_string(), 300)],
+      )
+      .await
+      .unwrap();
+    assert!(pending.is_empty());
   }
 
   #[tokio::test]

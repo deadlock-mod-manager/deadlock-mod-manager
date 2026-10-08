@@ -20,7 +20,7 @@ const LIST_REFRESH_INTERVAL_MS = 10_000;
 export const CatalogSyncProgress = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
-  const retry = useCatalogSyncMutation();
+  const retry = useCatalogSyncMutation(true);
   const states = useMutationState({
     filters: { mutationKey: CATALOG_SYNC_KEY },
     select: (mutation) => mutation.state.status,
