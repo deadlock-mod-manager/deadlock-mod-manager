@@ -28,7 +28,7 @@ export const MatchDetailDialog = ({
     <Dialog onOpenChange={onOpenChange} open>
       <DialogContent className='max-h-[85vh] w-[calc(100vw-2rem)] max-w-4xl overflow-y-auto p-0'>
         <DialogTitle className='sr-only'>
-          {heroName} · #{match.match_id}
+          {heroName} #{match.match_id}
         </DialogTitle>
         <MatchDetailView
           accountId={accountId}

@@ -66,7 +66,7 @@ const MatchupRow = ({
             wins: matchup.wins,
             losses: matchup.matches_played - matchup.wins,
           })}
-          {" · "}
+          {", "}
           {t("stats.hero.soulLead", {
             souls: `${soulLead >= 0 ? "+" : "-"}${formatCompact(Math.abs(soulLead / matchup.matches_played))}`,
           })}
@@ -246,7 +246,7 @@ export const HeroDeepDive = ({
                                 </div>
                                 <div className='truncate text-[11px] text-muted-foreground tabular-nums'>
                                   {formatPercent(item.wins / item.matches, 0)}
-                                  {" · "}
+                                  {", "}
                                   {formatClock(item.avg_buy_time_s)}
                                 </div>
                               </div>

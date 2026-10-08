@@ -181,8 +181,7 @@ export const ConflictGroupRow = ({
               count: group.providers.length,
             })}
             {!isCritical && (
-              <span className='font-normal text-muted-foreground'>
-                {" · "}
+              <span className='ml-2 font-normal text-muted-foreground'>
                 {t(`conflicts.hint.${group.severity}`)}
               </span>
             )}

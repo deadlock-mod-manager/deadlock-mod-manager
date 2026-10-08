@@ -87,8 +87,11 @@ export const MatchDetailView = ({
             </Badge>
           </div>
           <p className='truncate text-muted-foreground text-xs'>
-            {formatDateTime(match.start_time, i18n.language)} ·{" "}
-            {formatDuration(match.match_duration_s)} · #{match.match_id}
+            {formatDateTime(match.start_time, i18n.language)}
+            <span className='ml-3'>
+              {formatDuration(match.match_duration_s)}
+            </span>
+            <span className='ml-3'>#{match.match_id}</span>
           </p>
         </div>
         <div className='text-right'>

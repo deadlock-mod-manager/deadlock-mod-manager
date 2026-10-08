@@ -263,7 +263,9 @@ export const LiveTab = ({
           </div>
           <div className='text-muted-foreground text-xs tabular-nums'>
             {formatCompact(player.netWorth)}
-            {rank && rank.badge > 0 && ` · ${rank.badge}`}
+            {rank && rank.badge > 0 && (
+              <span className='ml-2'>{rank.badge}</span>
+            )}
           </div>
         </div>
       </button>

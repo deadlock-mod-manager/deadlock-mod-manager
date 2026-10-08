@@ -190,9 +190,9 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
               isDownloading ? "text-primary" : "text-muted-foreground",
             )}>
             {isDownloading
-              ? `${formatSpeed(speed)} · ${percentage.toFixed(1)}%`
+              ? `${formatSpeed(speed)}, ${percentage.toFixed(1)}%`
               : isPaused
-                ? `${t("downloads.paused")} · ${percentage.toFixed(1)}%`
+                ? `${t("downloads.paused")}, ${percentage.toFixed(1)}%`
                 : isExtracting
                   ? t("modStatus.extracting")
                   : `${percentage.toFixed(0)}%`}

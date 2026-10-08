@@ -200,13 +200,12 @@ export function MultiFileDownloadDialog({
                             {file.description}
                           </p>
                         )}
-                        <div className='mt-1 flex items-center gap-2 text-muted-foreground text-xs'>
+                        <div className='mt-1 flex items-center gap-3 text-muted-foreground text-xs'>
                           <span className='font-medium tabular-nums'>
                             {formatSize(file.size)}
                           </span>
                           {timestamp && timestampLabel && (
                             <>
-                              <span aria-hidden='true'>&middot;</span>
                               {timestampTooltip ? (
                                 <span onClick={(e) => e.stopPropagation()}>
                                   <Tooltip>

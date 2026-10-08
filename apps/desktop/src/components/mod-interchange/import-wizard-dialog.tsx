@@ -75,6 +75,15 @@ const sourceName = (
 ) =>
   source?.kind === "manager" ? source.name : (document?.source.manager ?? "");
 
+const sourceLogo = (
+  source: InterchangeSource | null,
+  document: InterchangeDocument | null,
+) => {
+  const manager =
+    source?.kind === "manager" ? source.id : document?.source.manager;
+  return manager === "grimoire" ? "/brand/grimoire.svg" : undefined;
+};
+
 export const ImportWizardDialog = ({
   source,
   onOpenChange,
@@ -180,6 +189,7 @@ export const ImportWizardDialog = ({
     link.isPending ||
     identify.isPending;
   const name = sourceName(source, document);
+  const logo = sourceLogo(source, document);
 
   const start = () => {
     if (!document) return;
@@ -292,7 +302,8 @@ export const ImportWizardDialog = ({
         data-step={step}
         data-testid='interchange-wizard'>
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle className='flex items-center gap-2'>
+            {logo && <img alt='' className='h-6 w-auto shrink-0' src={logo} />}
             {t("interchange.importTitle", { source: name })}
           </DialogTitle>
           <DialogDescription>
@@ -415,9 +426,9 @@ export const ImportWizardDialog = ({
                           <p className='text-muted-foreground text-xs'>
                             {t("interchange.fileCount", {
                               count: mod.files.length,
-                            })}{" "}
-                            · {formatSize(entrySize(mod))}
-                            {mod.category ? ` · ${mod.category}` : ""}
+                            })}
+                            , {formatSize(entrySize(mod))}
+                            {mod.category ? `, ${mod.category}` : ""}
                           </p>
                         </div>
                         <div className='flex shrink-0 gap-1'>
@@ -553,7 +564,7 @@ export const ImportWizardDialog = ({
                     total: progress.total,
                   })
                 : t("interchange.progress.starting")}
-              {progress?.itemName ? ` · ${progress.itemName}` : ""}
+              {progress?.itemName ? `: ${progress.itemName}` : ""}
             </p>
           </div>
         )}
@@ -718,8 +729,7 @@ export const ImportWizardDialog = ({
                           ?.name ?? result.key}
                       </span>
                       <span className='text-muted-foreground'>
-                        {" "}
-                        · {result.reason}
+                        : {result.reason}
                       </span>
                     </li>
                   ))}

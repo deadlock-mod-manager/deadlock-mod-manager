@@ -332,7 +332,7 @@ const DiscordPreviewCard = ({
           <p className='truncate text-sm text-white/90'>{previewState}</p>
         )}
         <p className='mt-1 text-emerald-300 text-sm tabular-nums'>
-          3 / 6 · 01:24
+          3 of 6, 01:24
         </p>
       </div>
     </div>
