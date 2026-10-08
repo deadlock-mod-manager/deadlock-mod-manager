@@ -8,10 +8,19 @@ export type ConvarRow = {
   parsedParent: string | null;
 };
 
+/** Value token offsets, relative to the segment's raw text. */
+type Span = [start: number, end: number];
+
 type Segment =
   | { kind: "raw"; text: string }
-  | { kind: "pair"; id: string; raw: string }
-  | { kind: "group"; parent: string; ids: string[]; raw: string };
+  | { kind: "pair"; id: string; raw: string; valueAt: Span }
+  | {
+      kind: "group";
+      parent: string;
+      ids: string[];
+      raw: string;
+      valueAt: Record<string, Span>;
+    };
 
 export type ConvarDocument = {
   rows: ConvarRow[];
@@ -74,6 +83,7 @@ const parseEntryAt = (text: string, index: number) => {
   const afterKey = skipIgnorable(text, key.end);
   if (text[afterKey] === "{") {
     const rows: ConvarRow[] = [];
+    const valueAt: Record<string, Span> = {};
     let cursor = afterKey + 1;
     while (cursor < text.length) {
       cursor = skipIgnorable(text, cursor);
@@ -86,14 +96,17 @@ const parseEntryAt = (text: string, index: number) => {
             parent: key.value,
             ids: rows.map((row) => row.id),
             raw: text.slice(index, cursor + 1),
+            valueAt,
           },
         };
       }
       const child = readWord(text, cursor);
       if (!child) return null;
-      const value = readWord(text, skipIgnorable(text, child.end));
+      const valueStart = skipIgnorable(text, child.end);
+      const value = readWord(text, valueStart);
       if (!value) return null;
       const id = rowId();
+      valueAt[id] = [valueStart - index, value.end - index];
       rows.push({
         id,
         parent: key.value,
@@ -127,6 +140,7 @@ const parseEntryAt = (text: string, index: number) => {
       kind: "pair" as const,
       id,
       raw: text.slice(index, value.end),
+      valueAt: [afterKey - index, value.end - index] as Span,
     },
   };
 };
@@ -216,23 +230,8 @@ const commentOutsideQuotes = (raw: string) => {
   return undefined;
 };
 
-const replaceValueAfterKey = (
-  raw: string,
-  key: string,
-  oldValue: string,
-  newValue: string,
-) => {
-  const keyToken = quote(key);
-  const valueToken = quote(oldValue);
-  const nextValue = quote(newValue);
-  const keyAt = raw.indexOf(keyToken);
-  if (keyAt === -1) return raw;
-  const valueAt = raw.indexOf(valueToken, keyAt + keyToken.length);
-  if (valueAt === -1) return raw;
-  return (
-    raw.slice(0, valueAt) + nextValue + raw.slice(valueAt + valueToken.length)
-  );
-};
+const replaceSpan = (raw: string, [start, end]: Span, value: string) =>
+  raw.slice(0, start) + quote(value) + raw.slice(end);
 
 export const serializeConvarDocument = (
   document: ConvarDocument,
@@ -254,12 +253,7 @@ export const serializeConvarDocument = (
         unchanged(row)
           ? segment.raw
           : row.name === row.parsedName && !row.parent
-            ? replaceValueAfterKey(
-                segment.raw,
-                row.parsedName,
-                row.parsedValue,
-                row.value,
-              )
+            ? replaceSpan(segment.raw, segment.valueAt, row.value)
             : formatPair(row, commentOutsideQuotes(segment.raw)),
       );
       continue;
@@ -281,15 +275,12 @@ export const serializeConvarDocument = (
       });
     if (sameShape) {
       let raw = segment.raw;
-      for (const id of segment.ids) {
+      // Splice from the end so earlier offsets stay valid.
+      for (let index = segment.ids.length - 1; index >= 0; index--) {
+        const id = segment.ids[index];
         const row = rows.find((candidate) => candidate.id === id);
         if (!row || row.value === row.parsedValue) continue;
-        raw = replaceValueAfterKey(
-          raw,
-          row.parsedName,
-          row.parsedValue,
-          row.value,
-        );
+        raw = replaceSpan(raw, segment.valueAt[id], row.value);
       }
       parts.push(raw);
       continue;

@@ -52,6 +52,23 @@ describe("gameinfo convars", () => {
     );
   });
 
+  it("edits the exact value span for unquoted and repeated values", () => {
+    const document = parseConvarDocument(
+      'fps_max 400\n"rate"\n{\n  "min" "1"\n  "max" "1"\n}',
+    );
+    const rows = document.rows.map((row) =>
+      row.name === "fps_max"
+        ? { ...row, value: "0" }
+        : row.name === "max"
+          ? { ...row, value: "2" }
+          : row,
+    );
+    const saved = serializeConvarDocument(document, rows);
+    expect(saved).toContain('fps_max "0"');
+    expect(saved).toContain('"min" "1"');
+    expect(saved).toContain('"max" "2"');
+  });
+
   it("treats rate.max and RATE.max as the same name", () => {
     expect(hasDuplicateConvarName(["rate.min", "rate.max"])).toBe(false);
     expect(hasDuplicateConvarName(["rate.max", "RATE.max"])).toBe(true);

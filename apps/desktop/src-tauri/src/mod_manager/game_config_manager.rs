@@ -217,7 +217,8 @@ fn convars_inner(content: &str) -> String {
 }
 
 fn balanced_inner(inner: &str) -> bool {
-  let wrapped = format!("{{{inner}}}");
+  // The newline keeps a trailing `//` comment from swallowing the closing brace.
+  let wrapped = format!("{{{inner}\n}}");
   matching_brace_end(&wrapped, 0) == Some(wrapped.len())
 }
 
@@ -1728,6 +1729,10 @@ mod tests {
     let reset = fs::read_to_string(&path).unwrap();
     assert!(!reset.contains("citadel/addons"));
     assert!(reset.contains("fps_max"), "vanilla reset keeps ConVars");
+
+    mgr
+      .write_convars(&game_path, "\"fps_max\"\t\"0\" // capped")
+      .expect("trailing comment is balanced");
 
     let err = mgr
       .write_convars(&game_path, "\"rate\"\n{")

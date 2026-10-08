@@ -50,7 +50,7 @@ export const GameInfoConvars = () => {
   const [addValue, setAddValue] = useState("");
   const [addError, setAddError] = useState("");
 
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["gameinfo-convars"],
     queryFn: () => invoke<string>("get_gameinfo_convars"),
     staleTime: STALE_TIME_LOCAL,
@@ -94,6 +94,8 @@ export const GameInfoConvars = () => {
       });
     },
   });
+
+  const busy = save.isPending;
 
   const closeAdd = () => {
     setAddOpen(false);
@@ -176,6 +178,7 @@ export const GameInfoConvars = () => {
           </p>
         </div>
         <Button
+          disabled={busy}
           onClick={() => setAddOpen(true)}
           type='button'
           variant='outline'>
@@ -198,6 +201,7 @@ export const GameInfoConvars = () => {
             <div className='flex items-center gap-2' key={row.id}>
               <Input
                 className='font-mono text-sm'
+                disabled={busy}
                 onBlur={() => {
                   const draft = nameDrafts[row.id];
                   if (draft == null) return;
@@ -250,6 +254,7 @@ export const GameInfoConvars = () => {
               />
               <Input
                 className='font-mono text-sm'
+                disabled={busy}
                 onChange={(event) => {
                   setDirty(true);
                   setRows((current) =>
@@ -266,6 +271,7 @@ export const GameInfoConvars = () => {
               />
               <Button
                 aria-label={t("common.remove")}
+                disabled={busy}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => removeRow(row.id, displayName(row) || row.name)}
                 size='icon'
@@ -286,9 +292,10 @@ export const GameInfoConvars = () => {
         <div className='flex gap-2'>
           <Button
             disabled={!dirty || save.isPending}
-            onClick={() => {
-              if (data == null) return;
-              const parsed = parseConvarDocument(data);
+            onClick={async () => {
+              const { data: latest } = await refetch();
+              if (latest == null) return;
+              const parsed = parseConvarDocument(latest);
               setDocument(parsed);
               setRows(parsed.rows);
               setNameDrafts({});
