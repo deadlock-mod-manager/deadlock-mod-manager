@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import logger from "@/lib/logger";
 import { syncPerfConfig } from "@/lib/performance/api";
 import { perfQueryKeys } from "@/lib/performance/query-keys";
@@ -18,9 +19,10 @@ const MIN_SYNC_INTERVAL_MS = 10_000;
 export const usePerfBackgroundSync = () => {
   const queryClient = useQueryClient();
   const gamePath = usePersistedStore((state) => state.gamePath);
+  const enabled = useExperimentalFeature("performance-configs");
 
   useEffect(() => {
-    if (!gamePath) return;
+    if (!enabled || !gamePath) return;
     let lastSync = 0;
     const sync = async () => {
       if (Date.now() - lastSync < MIN_SYNC_INTERVAL_MS) return;
@@ -40,5 +42,5 @@ export const usePerfBackgroundSync = () => {
     refreshPerfCatalogOnce(queryClient).then(sync);
     window.addEventListener("focus", sync);
     return () => window.removeEventListener("focus", sync);
-  }, [gamePath, queryClient]);
+  }, [enabled, gamePath, queryClient]);
 };
