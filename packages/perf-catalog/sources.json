@@ -1,0 +1,695 @@
+{
+  "$comment": [
+    "Pins for scripts/generate.ts. Written by `pnpm perf:catalog --refresh`; review changes like code.",
+    "Every file is fetched at its pinned commit and checked against its sha256 (md5 for GameBanana)."
+  ],
+  "schemaExplorer": {
+    "repo": "ValveResourceFormat/SchemaExplorer",
+    "path": "schemas/deadlock.json",
+    "commit": "3ade6c8741bc559ce41ebc64ad201d330a90054a",
+    "sha256": "f419f362d3162b41e6025be42c7f6def231bb4505d2492a3974b650d2007e38a",
+    "revision": 11100849,
+    "versionDate": "Oct 07 2026"
+  },
+  "gameTracking": {
+    "repo": "SteamTracking/GameTracking-Deadlock",
+    "gameinfo": {
+      "path": "game/citadel/gameinfo.gi",
+      "steamInf": "game/citadel/steam.inf",
+      "versions": [
+        {
+          "commit": "58b3529cc17088df1eed5c39c6eeac72d7133b16",
+          "date": "2026-09-29",
+          "build": 6711,
+          "sha256": "9ba13efbe6961d0d94eb317273bfb3fb67323138498a2e9ec9f954a12b999062"
+        },
+        {
+          "commit": "08f3ae66663e1714e6f312e15b15c21cd99a5007",
+          "date": "2026-07-30",
+          "build": 6652,
+          "sha256": "4e8e6e56aa42bf937ccb775f90d7f3dac4de242246d82db5efcf6757c0fff95c"
+        },
+        {
+          "commit": "e2584739a33c8296a0b4ba322b0cabf7605cd4e4",
+          "date": "2026-04-28",
+          "build": 6462,
+          "sha256": "c43a355904f6680fdeb2133ad92c3e0168db12f026003b7ee0a8647351a322af"
+        },
+        {
+          "commit": "8febc71fe16494df94b29949ddaddbd03f5897ee",
+          "date": "2026-03-27",
+          "build": 6417,
+          "sha256": "e457de15b240b690e0a4a8c22179ea18ffa9cced7e13720f243480182e242bcb"
+        },
+        {
+          "commit": "2b81bc71473d7023b3e807ac59f89fb6d3f802ec",
+          "date": "2026-03-26",
+          "build": 6416,
+          "sha256": "0bda94455e51d888e32fb26f3822a37a7f95569ac89f72d1785964db5cd72db2"
+        },
+        {
+          "commit": "d64b01aeba02c1efa5b6dc64dceb5769943884cd",
+          "date": "2026-03-14",
+          "build": 6395,
+          "sha256": "32a8d72a9db0b5c102737aa07f2cf927679da2893d830df60e0f288e9bcbeb28"
+        },
+        {
+          "commit": "d207eaedbfcc3f88401e51a9b5db52469a06b500",
+          "date": "2026-03-06",
+          "build": 6359,
+          "sha256": "25a4ce33f9be8d081a20e27e5687bb66879ca982f2cab40d61713fe2a6e84100"
+        },
+        {
+          "commit": "324771ed22517d7e92e7c061399454237dfb63ae",
+          "date": "2026-02-13",
+          "build": 6295,
+          "sha256": "32a8d72a9db0b5c102737aa07f2cf927679da2893d830df60e0f288e9bcbeb28"
+        },
+        {
+          "commit": "c66c276b6c7d6bb7640a0106f64355b19f5d787c",
+          "date": "2026-02-11",
+          "build": 6281,
+          "sha256": "e8945ccb489e7b87553cbc257d077f4256871313fbc3d9c384ceb8fceec72d61"
+        },
+        {
+          "commit": "8193724e7a6eef4fe4ab77a76ebe4ba3d2568276",
+          "date": "2026-02-10",
+          "build": 6280,
+          "sha256": "98134bd9e9ff267b3c350df025004c95209ba8477501a7b0683c8b136b05fdb5"
+        },
+        {
+          "commit": "b7aaba30c19d2de817fbcbe8c138296a125731e5",
+          "date": "2026-01-29",
+          "build": 6198,
+          "sha256": "47f158d65e1d857158a3fa345c90a7a21ad5e89df655f39276e7f778cf7d6c33"
+        },
+        {
+          "commit": "f3ac323d5184ddb4b4ceae2abb3ed68d3a17f7f6",
+          "date": "2026-01-22",
+          "build": 6127,
+          "sha256": "0553a37d3d50dba4bb84f21b8dab47f1b4d601f4824fe625d68856efd09af173"
+        },
+        {
+          "commit": "7b56e242ff58817053a0471ce9f6e05d1d28e4e5",
+          "date": "2026-01-06",
+          "build": 6079,
+          "sha256": "0d2c3b0fede35d02a17a1bd84b8c7aa8e44895deee9db9ef92d9a2f5eff610e3"
+        },
+        {
+          "commit": "731ef0f7f139e7e53fa7634c8ad641c30dbc9c1e",
+          "date": "2025-10-24",
+          "build": 5953,
+          "sha256": "8a6c8770ba7987d0ea698b312bb4956bccde318ea341d7e5dcba9d4d939834c1"
+        },
+        {
+          "commit": "4f875da65e0aee49dfdface56bab9ace3138c50b",
+          "date": "2025-10-23",
+          "build": 5952,
+          "sha256": "daab6e7428dac6056b177e633fb847ceb9d38151c9859f032aa03578140e5e17"
+        },
+        {
+          "commit": "cd785d890ab67e9974f2c946923bda0103a2dd70",
+          "date": "2025-08-29",
+          "build": 5869,
+          "sha256": "7f4a657f405c1fa5b76d4f500476f3a12980e96a80a0ecadffd44722b5e13298"
+        },
+        {
+          "commit": "faeedb32c78c5de74523bfa9057420e32adc7354",
+          "date": "2025-08-28",
+          "build": 5865,
+          "sha256": "56bcd9e9240c779c9124cc67bbdf93d37605b85cb620c3de3a55246dea189604"
+        },
+        {
+          "commit": "0236fd73e98e34ea9b7d6ab0250a93e96093a852",
+          "date": "2025-08-28",
+          "build": 5864,
+          "sha256": "7f4a657f405c1fa5b76d4f500476f3a12980e96a80a0ecadffd44722b5e13298"
+        },
+        {
+          "commit": "e58749f7b4d5d3070da1777d636281727aaf1803",
+          "date": "2025-08-25",
+          "build": 5835,
+          "sha256": "ca05be77b5880f18ef8735ef54733110230f89b2b9a0ad0121d7d9376c331035"
+        },
+        {
+          "commit": "04fc45ebd4ec67f38eacd0ec04d988fb4882c4b6",
+          "date": "2025-08-18",
+          "build": 5747,
+          "sha256": "d7b6bb909ae4daa750aea000806ba3af2ec7afc890b5e56e931b46d04af1ef57"
+        },
+        {
+          "commit": "759736c29e7dd56f2136e66f1c9c3f54a8b02045",
+          "date": "2025-05-09",
+          "build": 5576,
+          "sha256": "f007e33d69ba1d162e381efd66ed395e8e1dd5c224b2d192850f8a609d327b00"
+        },
+        {
+          "commit": "3c7ce7e1cef2dcfb610d8c66c9a6dff0d3a901c4",
+          "date": "2025-05-08",
+          "build": 5554,
+          "sha256": "b11cdcd50a05d11f662c2d38847591e69a879d6769f1daed139bdd83128b5563"
+        },
+        {
+          "commit": "f0037639d0bbea20e8f4bc434cc689551465107e",
+          "date": "2025-04-04",
+          "build": 5524,
+          "sha256": "60b7462d9f8f44132ee0ee6ba0d440ba95288993e0a84d560a482c9db01b340a"
+        },
+        {
+          "commit": "edb2a143350a7418257e11ea88983bf854107767",
+          "date": "2025-02-27",
+          "build": 5506,
+          "sha256": "06ae3da655293a65cbb9f54b03970aec97dbfe36a051c7b744fdbe6406142885"
+        },
+        {
+          "commit": "4e1ddc369c6014d66e47ffc453c165aba7cc0a55",
+          "date": "2025-02-25",
+          "build": 5496,
+          "sha256": "30b692e8e55a110f038ec5e7ae16f26707d9b97b4a5ba95460ff1a290e0ad16c"
+        },
+        {
+          "commit": "ddd7dfe6b9525db9d90344b1aa48e4e75e512a98",
+          "date": "2024-12-17",
+          "build": 5437,
+          "sha256": "be6fc3a8dbc15ca054c33840df9d27209a30a93567ec4911c78142f2e40e4a43"
+        },
+        {
+          "commit": "ca7b262d521b2977b5d1a665bbaca2bdc7a635a6",
+          "date": "2024-12-14",
+          "build": 5433,
+          "sha256": "d8f2d4b19e32675b023ae5c4e186816cddcf3dc4c9a283de70df444a4f971f12"
+        },
+        {
+          "commit": "945b74341517c66a01bd851d9285bfd1c0f565f3",
+          "date": "2024-12-06",
+          "build": 5413,
+          "sha256": "2826345f9a37c62fdf49b74de4c2dd872878d0403f0d06d88f554632bf41bc0c"
+        },
+        {
+          "commit": "5e39cac35b1deb247809965ebc92bab4159128db",
+          "date": "2024-11-23",
+          "build": 5395,
+          "sha256": "e398bb197de625ffa04f75fe16cf9809c7dc78f7f62a66e677e6974a6f0c6329"
+        },
+        {
+          "commit": "c04099743c3b0cd9fad8c33fdfb579ea449c0ed4",
+          "date": "2024-11-22",
+          "build": 5375,
+          "sha256": "38913c8a74abc17b88abb39afa91ba195e8f636d4bb83f83667569fdf7b76e55"
+        },
+        {
+          "commit": "aad54b4e7f3dbcd027f97ee5bc280aed8a675636",
+          "date": "2024-11-07",
+          "build": 5339,
+          "sha256": "7fc6202d5f671f511567715c4d3de63ffc3cac3fb35d11a41a98b7538a0e43c1"
+        },
+        {
+          "commit": "b6f068af1a6dd7522406a64054d3a5281d36ae60",
+          "date": "2024-10-24",
+          "build": 5297,
+          "sha256": "f773c6a436c2203cd91e3bdb42fd7bda85ade1389b5cb51c4d865cc3faf34075"
+        },
+        {
+          "commit": "5b54eece5c41b378d015bc4406790e43553bf63a",
+          "date": "2024-10-10",
+          "build": 5247,
+          "sha256": "4ecffcc649f61cc2a5cf873de2c04aa3f48f73121973ce91069e40aa82e06b1b"
+        },
+        {
+          "commit": "c03637c5ea316a2d90a03c8111adf139984e6600",
+          "date": "2024-10-04",
+          "build": 5237,
+          "sha256": "44a3c98650da87d2a37dd7c5d73c2fe8c2f000f302beafc8bf22fb0905a274fc"
+        },
+        {
+          "commit": "6d76cf626243c1beac8918fdfd84a234bfbd1cca",
+          "date": "2024-09-26",
+          "build": 5201,
+          "sha256": "c9cfb39f7afc8867ddd931fcf618d55486793943485cca67e01dde822c712933"
+        },
+        {
+          "commit": "b20b5e74067ee171216be5a5b2a064c40b7e4c3c",
+          "date": "2024-09-16",
+          "build": 5165,
+          "sha256": "315353daf9f37ab3b8e07dc0812c912ed830eda5e8e16de42db0117204dae057"
+        },
+        {
+          "commit": "907ad15084df5e59a07c12f3a08bc7a96f499809",
+          "date": "2024-09-14",
+          "build": 5151,
+          "sha256": "77998ae53bd1846b8881b2c70ccca5bed1c37e913cc676b4faff1c1038a25e2b"
+        },
+        {
+          "commit": "3d4e51faa9e5e7afb45eaf4aa2d01466c0f0f709",
+          "date": "2024-09-13",
+          "build": 5136,
+          "sha256": "9e9771261513f7e6beb81bb6871e9da23667e8398ed1ef32fda1cf76bd3555ac"
+        },
+        {
+          "commit": "80f80dc9766063710df944263c781ebdd6972766",
+          "date": "2024-08-15",
+          "build": 5059,
+          "sha256": "0ad34ac9200c2c93ebdc1d6adc3885069911b2923c70f97386f9bf91a9c5f1ac"
+        },
+        {
+          "commit": "95d5a13670a375c6e545515ae1905fe3839776cc",
+          "date": "2024-08-10",
+          "build": 5044,
+          "sha256": "cf51350e6f16913ea3fea34f3809050caa717e6f10d10739755d37ee8191709c"
+        }
+      ]
+    },
+    "convarHistory": {
+      "path": "DumpSource2/convars.txt",
+      "since": "2026-03-01",
+      "versions": [
+        {
+          "commit": "7148202fea070a8cceb1523ee3ca7fc35095f710",
+          "date": "2026-10-06",
+          "build": 6757,
+          "sha256": "1374f786ba016c7710ad7f25bef22ab18910ad3966e69b8e33b5a7e009523948"
+        },
+        {
+          "commit": "8c7cf4e192c06837f7c5cb2ab52825ac8900d351",
+          "date": "2026-10-05",
+          "build": 6753,
+          "sha256": "1b60ef2f9f5b618c96a3333b44d7bef7a7549eb3d80006f4bbd03f6d0b93106a"
+        },
+        {
+          "commit": "2a292817d9cc7bbf474b51f7cec924cbbdcce2fb",
+          "date": "2026-10-02",
+          "build": 6736,
+          "sha256": "d592bfd9a42752435c62090d23ff452710d335c1fae76d92fe935d83b4130582"
+        },
+        {
+          "commit": "dc2dd537a5f63ba53b6ce3778c65fa85b078b6b5",
+          "date": "2026-10-01",
+          "build": 6731,
+          "sha256": "e15b1e67ab9a73f3fc8ea14c2157ed257bd91bff65e8229730236105163c2d64"
+        },
+        {
+          "commit": "3e78562e81ce1cdfab5dae01b1b42f64c2fcea8c",
+          "date": "2026-10-01",
+          "build": 6730,
+          "sha256": "7877d693a7c1922539d166b23c6f885c14819010d0d28b01fa589d4fc3ef8852"
+        },
+        {
+          "commit": "573a4129fe62dd63f75a0f8090a971a5d25c8588",
+          "date": "2026-10-01",
+          "build": 6728,
+          "sha256": "f7923b97fdec07346b331531c961df05341b77a089a017f80fc4a5db55006b51"
+        },
+        {
+          "commit": "cc57a5a4117382375d0c1189873474ce4b901260",
+          "date": "2026-09-30",
+          "build": 6726,
+          "sha256": "b3ba54b0d2cd24cb6ff5f0ba4d0ac1f92a428ea510e66537e35f74f7241c0450"
+        },
+        {
+          "commit": "245f2952f9940a403423ec90dd73800b28d8843b",
+          "date": "2026-09-29",
+          "build": 6722,
+          "sha256": "db5cff280f72c63a372e8755377b7c0a2040bbf78ccfbbe5faecd33fb981199e"
+        },
+        {
+          "commit": "58b3529cc17088df1eed5c39c6eeac72d7133b16",
+          "date": "2026-09-29",
+          "build": 6711,
+          "sha256": "93519bcbdfc64a7de9058784d8d1b87965bf41b8e51adb61fe420d373a34452e"
+        },
+        {
+          "commit": "33e0801209b9f54be4ea284f3e521b030276d8db",
+          "date": "2026-09-25",
+          "build": 6701,
+          "sha256": "80edd67848db08180c9b15f30825e45e6dde3d4d865fd211952272ed426c1861"
+        },
+        {
+          "commit": "711b91ed7f9d77ab882c0cb6537bca1b77adf8b5",
+          "date": "2026-09-24",
+          "build": 6698,
+          "sha256": "75e499a83c692ad9b41e8ba4abd16153c95f4bbb84e11fcd5767a14ba2aeb3e8"
+        },
+        {
+          "commit": "a1139b2e45331351667f633afb728e91c3e6c425",
+          "date": "2026-09-18",
+          "build": 6698,
+          "sha256": "8966b3b504b377924344392ce572a3f8ee9fee8442537872be8f9d8ea2bce47a"
+        },
+        {
+          "commit": "19022f397ce9ba65856752d0cbaa82e80a2da73f",
+          "date": "2026-09-16",
+          "build": 6694,
+          "sha256": "3b00bd994b3a2ee1c901774f0d44c5f893f182443b030666c1c378fd11474e5d"
+        },
+        {
+          "commit": "24d8830e422feb8ab5757a50cd9596696fd808d7",
+          "date": "2026-09-11",
+          "build": 6688,
+          "sha256": "e9ef0eb4fbed07b37be19ede79e3805a3f0ad7f88973ed802066e6391b1b157f"
+        },
+        {
+          "commit": "eaf7e0cb14b81e8bbc017a82b9562a15c242d82d",
+          "date": "2026-09-09",
+          "build": 6687,
+          "sha256": "4df177ea6ee3a2e64d7a7a72d30f4695377ee4780818373cf0b92305849cb400"
+        },
+        {
+          "commit": "70a264134418d4546776e3a993245fdb12138200",
+          "date": "2026-09-07",
+          "build": 6686,
+          "sha256": "f2220f25b9d1cba8d9e85b85c3abf9487a623fa4f83a9aa3c2f4905abe6325e4"
+        },
+        {
+          "commit": "cdff9c36400d8ac1dc10b8925fbae6a4de4ddf37",
+          "date": "2026-08-10",
+          "build": 6675,
+          "sha256": "9d1b2b1bc43a32f3bdeba4c54349a630b629e0d50b350de2af6d17f4a78c23e5"
+        },
+        {
+          "commit": "9ed5f6c22907e9d851eef7694b5b11ba031c10aa",
+          "date": "2026-08-04",
+          "build": 6668,
+          "sha256": "51ea482f808ef3b8f6603fa52afd442ea78f9ebd915107c3c6f526c219fbb516"
+        },
+        {
+          "commit": "c505fc098a280ce6fb38368132818a803ac9833a",
+          "date": "2026-08-01",
+          "build": 6663,
+          "sha256": "b0cd82e7a785359e5bac4f75228f8405428f8e9aa7af5d3404d3b6ee87081855"
+        },
+        {
+          "commit": "5bad95d408edbf41c82553c07636000d9e3751e6",
+          "date": "2026-07-31",
+          "build": 6660,
+          "sha256": "8be81f8a268871542c795e2f8383f70c208179a91a3717deaf234fa0501f6047"
+        },
+        {
+          "commit": "feedceb5be9bddd11faeb9c4b7ae3f20bed809ea",
+          "date": "2026-07-30",
+          "build": 6654,
+          "sha256": "8d8e57bd9c1fe5b9b7e2b00735e3f0914a3b3d1dc6ec400cba4339da23d7b583"
+        },
+        {
+          "commit": "08f3ae66663e1714e6f312e15b15c21cd99a5007",
+          "date": "2026-07-30",
+          "build": 6652,
+          "sha256": "3e31e7405bfbe9dcba35d751104b9cffe71128790f123740af022e79bb9abd49"
+        },
+        {
+          "commit": "a9410a458db958307970b6fc469e1da254b17b64",
+          "date": "2026-07-09",
+          "build": 6627,
+          "sha256": "bf5b7316d94d820bdc4e45ca14e470075e29ba92bbbb671a771019b82cead96a"
+        },
+        {
+          "commit": "dad12d7f88161faaee3f89b853d5834f74625f62",
+          "date": "2026-06-30",
+          "build": 6601,
+          "sha256": "d8d5244afcfa8c9739c35e6aed0e607a0f6b35115f06027b5a1530b7f6145b5c"
+        },
+        {
+          "commit": "9acfa2f78ed73aa4c8270ddf3ca74d3c7c16c9f5",
+          "date": "2026-06-19",
+          "build": 6592,
+          "sha256": "4fc2906dc6a23de66c5dae0e10d917b635d5e40f7c64635cd227529a4b0adf42"
+        },
+        {
+          "commit": "124c796a8d7f6148695046937e0fc33053dd6079",
+          "date": "2026-06-16",
+          "build": 6589,
+          "sha256": "da5ec33ff881d7ff3c2821ea40c2f716789d44e6b46d392adb2a801abf435455"
+        },
+        {
+          "commit": "a4f9d37f567cd145ffe6d963f49414e6451d6723",
+          "date": "2026-06-12",
+          "build": 6572,
+          "sha256": "a716874d63d5a0ad2a20b24417276e199d968b526688bccff2e34324b19c54e3"
+        },
+        {
+          "commit": "26418884bddbe1f053179fd6f5ae26bb93cef921",
+          "date": "2026-06-06",
+          "build": 6555,
+          "sha256": "f5e39c3e225cda75bf949a9b8090f3bd7c2fb166808de9db59faad9d703cfe0b"
+        },
+        {
+          "commit": "c89cb4dab62ee238c27945987a94c8560618ebd0",
+          "date": "2026-06-04",
+          "build": 6547,
+          "sha256": "fa5e0a1ae0d8ed909c8862999ac787fe8b1b9d03bdb32bd7991f51d35c99d763"
+        },
+        {
+          "commit": "4cac0536588724addc77d7a43cfa57596b58f01d",
+          "date": "2026-06-03",
+          "build": 6541,
+          "sha256": "7d4c2142b5531251e2018407ce41a0b801be0580327eb3338db54bbb82f445ed"
+        },
+        {
+          "commit": "0479e118ac4740557a8df3b6eb8a6aa9fb81a572",
+          "date": "2026-05-28",
+          "build": 6534,
+          "sha256": "eaa39543a2a522d6949f9e20a957e047c19f4777edcb50c0304282d59614eba7"
+        },
+        {
+          "commit": "7382370a1a86dca7b74bc4a46ca704c67fb8ca70",
+          "date": "2026-05-27",
+          "build": 6528,
+          "sha256": "38b6d7dc80d90e6afbe03f1d6f5d9fc1b6f7e8886c80fa881f6b3aaf8a3db57e"
+        },
+        {
+          "commit": "fb84a5687ff22d250a9f0caf058320a19520b2ae",
+          "date": "2026-05-26",
+          "build": 6522,
+          "sha256": "1836c8dc6dfec7aebfa9a88cbbd1500ba75d385ed5d325d8324a6aad9200bb3e"
+        },
+        {
+          "commit": "030ad35bd3146e3ee5313b3bbdad721624ff3fb2",
+          "date": "2026-05-22",
+          "build": 6514,
+          "sha256": "e09ebccc63963911a799cfa8cd788b74a123d664c9d2f230125863534056f5d5"
+        },
+        {
+          "commit": "a4e341b2281214c31c5f8a27f3f3a10bdff7a9c6",
+          "date": "2026-05-19",
+          "build": 6503,
+          "sha256": "b158e7b067e963196206bfe7ac0c82e087b128ee119aca1c56cd1ff750cbd17f"
+        },
+        {
+          "commit": "eafddd10852ff0daa8d68595a87f4c1d812922cb",
+          "date": "2026-04-30",
+          "build": 6468,
+          "sha256": "d09f5c65d474c2562701c3ac22e706e2e00b77d1db7979cfb9aafaca588cb409"
+        },
+        {
+          "commit": "62397d414e8239791e5b1551031d8d7924ca270c",
+          "date": "2026-04-03",
+          "build": 6430,
+          "sha256": "dbd124d1064de686f8c6d182e3753cfb5ebff653c21d7b3e96c1accf3988d25a"
+        },
+        {
+          "commit": "0b60ee4ccb11d898d461ec93a4d1c552bcb5e70e",
+          "date": "2026-03-26",
+          "build": 6413,
+          "sha256": "4aec4673c86f292720854b8a32567b8bc8be29dfbcdf8df3035a9c9a1029dab8"
+        },
+        {
+          "commit": "000b9ad3afecaea39d4c853b77f3a342f2e1356f",
+          "date": "2026-03-24",
+          "build": 6411,
+          "sha256": "9203d79a2a308d906a0bb85b9843ae7a820a67d854a6609bed3c7c4394bd05b6"
+        },
+        {
+          "commit": "f24c7f8a68675d3b29a3d96aecc0bd6dac979b48",
+          "date": "2026-03-24",
+          "build": 6410,
+          "sha256": "9203d79a2a308d906a0bb85b9843ae7a820a67d854a6609bed3c7c4394bd05b6"
+        },
+        {
+          "commit": "6d4f305f65d8a220590ef789b063b9ee806a08e5",
+          "date": "2026-03-24",
+          "build": 6407,
+          "sha256": "e16c1f505498ac7970a5a54cc0a1df30500a57ead5e35bb15654e2214ddf6f55"
+        },
+        {
+          "commit": "1a998ad9a8e03515d979304bb3453f9babb18bfd",
+          "date": "2026-03-21",
+          "build": 6404,
+          "sha256": "e16c1f505498ac7970a5a54cc0a1df30500a57ead5e35bb15654e2214ddf6f55"
+        },
+        {
+          "commit": "9f20f1b4c2a76da9d78db741056c1d886a89117c",
+          "date": "2026-03-21",
+          "build": 6404,
+          "sha256": "e0571b36674d4671ac3be1bdad3d78df6b2f6ceb6b6808cee2aa9cca89fe051a"
+        },
+        {
+          "commit": "996656110902a0ff1cb42de3eb979621f54799fb",
+          "date": "2026-03-21",
+          "build": 6403,
+          "sha256": "ea4789e715b9d6fc6dc443a5767fdf4c01189a1c9de45e2f2e716b62c424ed32"
+        },
+        {
+          "commit": "9f424b24727095ddd95a64022c60229bed600ad5",
+          "date": "2026-03-19",
+          "build": 6398,
+          "sha256": "6181dff0e186a6be857341dd6557375d72d241fb8d882ed9fab0283c5acd38ff"
+        },
+        {
+          "commit": "d64b01aeba02c1efa5b6dc64dceb5769943884cd",
+          "date": "2026-03-14",
+          "build": 6395,
+          "sha256": "4733fc0cd8b04a44671b2409b299d28e2512c41a327f22dca479780a25fb4c14"
+        },
+        {
+          "commit": "544fc3509aa63a03074a7994b152227601aa3bbd",
+          "date": "2026-03-14",
+          "build": 6387,
+          "sha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b"
+        }
+      ]
+    }
+  },
+  "upstream": {
+    "sqooky-default": {
+      "repo": "Sqooky/OptimizationLock",
+      "path": "Sqooky's .gi/gameinfo.gi",
+      "commit": "bb69d9d0f49e7b609b2248b05175c515e86c588d",
+      "date": "2026-10-05",
+      "sha256": "c1e451134cd1d4d57d0f665673f9bbe732d6335c2b48ee6617079c23254222c7"
+    },
+    "sqooky-eskay": {
+      "repo": "Sqooky/OptimizationLock",
+      "path": "Eskay's config/gameinfo.gi",
+      "commit": "bb69d9d0f49e7b609b2248b05175c515e86c588d",
+      "date": "2026-10-05",
+      "sha256": "c7a496cd9c4b62de03ae03f4bbfda9cd8228bf97cdd1a0824aafe441809dd3ba"
+    },
+    "sqooky-maxfps": {
+      "repo": "Sqooky/OptimizationLock",
+      "path": "maximumfps or minimum spec config and resources here/gameinfo.gi",
+      "commit": "bb69d9d0f49e7b609b2248b05175c515e86c588d",
+      "date": "2026-10-05",
+      "sha256": "b6419de8e6aa5fede1e0e70f0ff6fa18c43c7f6ab884f0ec26bf30c418f368c4",
+      "video": {
+        "path": "maximumfps or minimum spec config and resources here/video.txt",
+        "sha256": "3eac767a751db000ba2400c07eeb2bd1dd509a60a35f33ceb4f29ff0954f26f3"
+      }
+    },
+    "kaizu-minspec": {
+      "repo": "Sqooky/OptimizationLock",
+      "path": "kaizuchanerus minimum spec/gameinfo.gi",
+      "commit": "e2e9925cdd9d564a1a0bb19f28185211fb0dea75",
+      "date": "2026-10-05",
+      "sha256": "46abb89c15bebdabef6234959cbe597df289176d3e2a19cf826381107e103bc6"
+    },
+    "kaizu-extremelow": {
+      "repo": "Sqooky/OptimizationLock",
+      "path": "kaizuchanerus minimum spec/gameinfoextremelow.gi",
+      "commit": "1da9517e8f0d0b636979d295b4bebcb7858ac6c9",
+      "date": "2026-10-03",
+      "sha256": "0e5211de0c329ffe160141cdc6fec831df7f0b82f6ac1d6b8be7d8a048d5229d"
+    },
+    "boot-maxfps": {
+      "repo": "Sqooky/OptimizationLock",
+      "path": "boot's maxium fps config/gameinfo.gi",
+      "commit": "4f900690efc233ab10e88d4747881f87e2c5d9f0",
+      "date": "2026-09-04",
+      "sha256": "f09e6cea24a0f01b549d3b0b87277de51a7f0f1802305cfb9e6da63bce2d2a09"
+    },
+    "piggy": {
+      "repo": "Sqooky/OptimizationLock",
+      "path": "Piggy's config/gameinfo.gi",
+      "commit": "bb69d9d0f49e7b609b2248b05175c515e86c588d",
+      "date": "2026-10-05",
+      "sha256": "ef040eada5611f01b2f4885965c0534dbe96e408215c90f6a9fb58f9f513b7e5"
+    },
+    "optilock-fps": {
+      "repo": "dacooderr/OptiLock",
+      "path": "OptiLock FPS Config (Recommended)/gameinfo.gi",
+      "commit": "7f7a54a1b8237d9b66348067d09f93174c47d303",
+      "date": "2026-10-02",
+      "sha256": "f98c6f6e08cecfd3c44b5f65eb31991d3dabc7be366a0223c9c559c2f9765889",
+      "tag": "v5.1",
+      "video": {
+        "path": "OptiLock FPS Config (Recommended)/video.txt",
+        "sha256": "d8530b937e4075900162dccb1fca216f2bc535f569cb9e40295a400bdc3d0593"
+      }
+    },
+    "optilock-potato": {
+      "repo": "dacooderr/OptiLock",
+      "path": "OptiLock Potato Config/gameinfo.gi",
+      "commit": "7f7a54a1b8237d9b66348067d09f93174c47d303",
+      "date": "2026-10-02",
+      "sha256": "a810f532ee993d9d1dd8aaf2c38bdabc5bf77bbd24b14a17da5abeb50d65d064",
+      "tag": "v5.1",
+      "video": {
+        "path": "OptiLock Potato Config/video.txt",
+        "sha256": "265fa78ff809ff75bae9f26e2b9b577750b155c338b395d580fae6c8ebf80a75"
+      }
+    }
+  },
+  "community": {
+    "609804": {
+      "fileId": 1617717,
+      "fileName": "example_of_mine_v13.7z",
+      "md5": "eb997005b72f1193e7f5776a119090d9",
+      "name": "Fps config For Competitive",
+      "author": "Hanturaya",
+      "downloads": 23713,
+      "updatedAt": "2026-02-05"
+    },
+    "616141": {
+      "fileId": 1771890,
+      "fileName": "dyson_build_e4a77.zip",
+      "md5": "2af319ae55db59f964f7a7f5a86055f9",
+      "name": "configuration optimization from dyson",
+      "author": "dyson behind",
+      "downloads": 118525,
+      "updatedAt": "2026-08-02"
+    },
+    "650519": {
+      "fileId": 1670703,
+      "fileName": "optilock_-_standard.rar",
+      "md5": "de4b404c97ef4c6b368e5961c0c8969e",
+      "name": "Optimisationlock - Competitive FPS Optimisations",
+      "author": "Maidehnless",
+      "downloads": 36864,
+      "updatedAt": "2026-04-08"
+    },
+    "658776": {
+      "fileId": 1644456,
+      "fileName": "deadlock_competitive_config_v10_compatible_with_patch_2026-03-07_93625.rar",
+      "md5": "04e1c4ded0c863a8e482b7869c189e66",
+      "name": "Deadlock Competitive Config",
+      "author": "SHR1KN",
+      "downloads": 9763,
+      "updatedAt": "2026-05-31"
+    },
+    "671812": {
+      "fileId": 1728314,
+      "fileName": "b3b3zxc_-_config_d6b1b.rar",
+      "md5": "4518112873beeff6c6c371da52238bd5",
+      "name": "config \"OptimizationDL\" - competitive by back3p",
+      "author": "back3p",
+      "downloads": 59175,
+      "updatedAt": "2026-06-14"
+    },
+    "673077": {
+      "fileId": 1709954,
+      "fileName": "maxfps_slightchanges_f8f97.zip",
+      "md5": "fa507f4ea07871200121859600875312",
+      "name": "Max Fps but with Small Changes",
+      "author": "Tysen98",
+      "downloads": 6062,
+      "updatedAt": "2026-05-24"
+    },
+    "722944": {
+      "fileId": 1833750,
+      "fileName": "cfg.zip",
+      "md5": "bc5da539fd3e16000ebc07837cee91ff",
+      "name": "SideLock[mb best fps cfg]",
+      "author": "hitmeupwhenyourelonely",
+      "downloads": 764,
+      "updatedAt": "2026-10-01"
+    }
+  }
+}

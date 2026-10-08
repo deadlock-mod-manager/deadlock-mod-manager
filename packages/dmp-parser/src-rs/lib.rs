@@ -1,3 +1,4 @@
+mod comment;
 mod error;
 mod parser;
 mod types;

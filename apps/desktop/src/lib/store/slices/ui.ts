@@ -54,6 +54,7 @@ const DEFAULT_EXPERIMENTAL_FEATURES: Record<ExperimentalFeature, boolean> = {
   "profile-management": true,
   "profile-sharing": true,
   "conflict-detection": true,
+  "performance-configs": false,
 };
 
 export type CrosshairFilters = {
@@ -74,6 +75,8 @@ export type UIState = {
   // Set once the user has seen that match sync is now on by default, either in
   // onboarding or via the one-time notice shown to existing users.
   hasSeenMatchSyncNotice: boolean;
+  // Sidebar entries marked "New" that the user has opened at least once.
+  seenNavItems: Record<string, true>;
   showOccultGeometry: boolean;
   animateOccultGeometry: boolean;
   experimentalFeatures: Record<ExperimentalFeature, boolean>;
@@ -92,6 +95,7 @@ export type UIState = {
   resetCrosshairFilters: () => void;
   setHasCompletedOnboarding: (completed: boolean) => void;
   setHasSeenMatchSyncNotice: (seen: boolean) => void;
+  markNavItemSeen: (id: string) => void;
   setShowOccultGeometry: (value: boolean) => void;
   setAnimateOccultGeometry: (value: boolean) => void;
   setExperimentalFeature: (
@@ -138,6 +142,7 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   crosshairFilters: DEFAULT_CROSSHAIR_FILTERS,
   hasCompletedOnboarding: false,
   hasSeenMatchSyncNotice: false,
+  seenNavItems: {},
   showOccultGeometry: true,
   animateOccultGeometry: true,
   experimentalFeatures: DEFAULT_EXPERIMENTAL_FEATURES,
@@ -194,6 +199,13 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
     set(() => ({
       hasSeenMatchSyncNotice: seen,
     })),
+
+  markNavItemSeen: (id: string) =>
+    set((state) =>
+      state.seenNavItems[id]
+        ? state
+        : { seenNavItems: { ...state.seenNavItems, [id]: true } },
+    ),
 
   setShowOccultGeometry: (value: boolean) =>
     set(() => ({

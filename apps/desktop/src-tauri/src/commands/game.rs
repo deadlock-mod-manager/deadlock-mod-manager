@@ -34,6 +34,7 @@ async fn await_launched_game(monitor: SteamUriLaunchMonitor) -> Result<(), Error
   match outcome {
     GameStartOutcome::Running => {
       log::info!("Confirmed Deadlock process started");
+      crate::game_session::on_launch_confirmed();
       Ok(())
     }
     GameStartOutcome::TimedOut => Err(Error::GameLaunchFailed(format!(
@@ -135,6 +136,7 @@ pub async fn start_game(
     vanilla,
     profile_folder
   );
+  crate::game_session::note_launch_requested(&additional_args);
 
   let first_result = {
     let mut mod_manager = MANAGER.lock().unwrap();
@@ -163,18 +165,21 @@ pub async fn start_game(
   await_launched_game(request.spawn()?).await
 }
 
-/// Launch the game without touching `gameinfo.gi`.
+/// Launch the game without touching the search paths in `gameinfo.gi`.
 ///
 /// The server-browser join flow writes its own (possibly layered) addon path
 /// set via `apply_server_gameinfo` before launching; going through
 /// `start_game` here would overwrite that with the active profile alone and
-/// the server's required mods would never load.
+/// the server's required mods would never load. The performance config, which
+/// never touches search paths, is still re-applied.
 #[tauri::command]
 pub async fn launch_game_direct(additional_args: String) -> Result<(), Error> {
-  log::info!("Launching game without gameinfo changes, args: {additional_args:?}");
+  log::info!("Launching game without search path changes, args: {additional_args:?}");
+  crate::game_session::note_launch_requested(&additional_args);
 
   let request = {
     let mod_manager = MANAGER.lock().unwrap();
+    mod_manager.reapply_performance_config();
     mod_manager
       .get_steam_manager()
       .game_launch_request(&additional_args)?
@@ -188,6 +193,8 @@ pub async fn stop_game() -> Result<(), Error> {
   if crate::runtime_environment::records_game_launches() {
     return Ok(());
   }
+  // Before the kill, so the session's forced exit reads as ours.
+  crate::game_session::note_dmm_stop();
   let mut mod_manager = MANAGER.lock().unwrap();
   mod_manager.stop_game()
 }
@@ -197,8 +204,9 @@ pub async fn is_game_running() -> Result<bool, Error> {
   if crate::runtime_environment::records_game_launches() {
     return Ok(false);
   }
-  let mut mod_manager = MANAGER.lock().unwrap();
-  mod_manager.is_game_running()
+  let processes = MANAGER.lock().unwrap().game_processes()?;
+  crate::game_session::observe(&processes);
+  Ok(!processes.is_empty())
 }
 
 #[tauri::command]

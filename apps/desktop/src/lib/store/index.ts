@@ -19,6 +19,11 @@ import {
   type GameState,
 } from "./slices/game";
 import {
+  createLaunchHealthSlice,
+  type LaunchHealthState,
+  launchHealthDeepMergeKeys,
+} from "./slices/launch-health";
+import {
   createModsSlice,
   modsDeepMergeKeys,
   type ModsState,
@@ -28,6 +33,11 @@ import {
   networkDeepMergeKeys,
   type NetworkState,
 } from "./slices/network";
+import {
+  createPerformanceSlice,
+  performanceDeepMergeKeys,
+  type PerformanceState,
+} from "./slices/performance";
 import {
   createProfilesSlice,
   profilesDeepMergeKeys,
@@ -66,7 +76,9 @@ export type State = ModsState &
   ScrollState &
   CrosshairState &
   FavoritesState &
-  StatsState;
+  StatsState &
+  PerformanceState &
+  LaunchHealthState;
 
 const allDeepMergeKeys = new Set<string>([
   ...modsDeepMergeKeys,
@@ -80,6 +92,8 @@ const allDeepMergeKeys = new Set<string>([
   ...crosshairDeepMergeKeys,
   ...favoritesDeepMergeKeys,
   ...statsDeepMergeKeys,
+  ...performanceDeepMergeKeys,
+  ...launchHealthDeepMergeKeys,
 ]);
 
 export const usePersistedStore = create<State>()(
@@ -96,6 +110,8 @@ export const usePersistedStore = create<State>()(
       ...createCrosshairSlice(...a),
       ...createFavoritesSlice(...a),
       ...createStatsSlice(...a),
+      ...createPerformanceSlice(...a),
+      ...createLaunchHealthSlice(...a),
     }),
     {
       name: "local-config",

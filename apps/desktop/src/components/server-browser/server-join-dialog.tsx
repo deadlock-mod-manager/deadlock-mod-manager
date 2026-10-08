@@ -47,7 +47,7 @@ const contentBytesLabel = (progress: DeadworksContentProgress): string => {
   if (progress.status !== "downloading" || progress.totalBytes <= 0) {
     return "";
   }
-  return ` · ${formatSize(progress.bytesDownloaded)} / ${formatSize(progress.totalBytes)}`;
+  return ` (${formatSize(progress.bytesDownloaded)} / ${formatSize(progress.totalBytes)})`;
 };
 
 const contentStatusLabel = (

@@ -54,6 +54,7 @@ import { AutoexecSettings } from "@/components/settings/autoexec-settings";
 import { DeveloperModeToggle } from "@/components/settings/developer-mode-toggle";
 import { FeatureFlagsSettings } from "@/components/settings/feature-flags-settings";
 import { FileserverSettings } from "@/components/settings/fileserver-settings";
+import { CrashCheckToggle } from "@/components/settings/crash-check-toggle";
 import { GameGuardToggle } from "@/components/settings/game-guard-toggle";
 import { GamePathSettings } from "@/components/settings/game-path-settings";
 import { SteamPathSettings } from "@/components/settings/steam-path-settings";
@@ -746,7 +747,10 @@ const CustomSettings = ({ value }: { value?: string }) => {
               description={t("settings.gameGuardSectionDescription")}
               searchId='game-guard'
               title={t("settings.gameGuardSectionTitle")}>
-              <GameGuardToggle />
+              <div className='grid grid-cols-1 gap-4'>
+                <GameGuardToggle />
+                <CrashCheckToggle />
+              </div>
             </Section>
 
             <Section

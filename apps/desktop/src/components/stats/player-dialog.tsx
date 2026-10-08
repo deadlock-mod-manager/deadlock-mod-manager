@@ -179,8 +179,7 @@ export const PlayerDialog = ({
                       })}
                     </span>
                   )}
-                  <span aria-hidden>·</span>
-                  <span className='tabular-nums'>{accountId}</span>
+                  <span className='ml-2 tabular-nums'>{accountId}</span>
                   <ChevronRight className='h-3 w-3 transition-transform group-hover:translate-x-0.5' />
                 </button>
               </div>

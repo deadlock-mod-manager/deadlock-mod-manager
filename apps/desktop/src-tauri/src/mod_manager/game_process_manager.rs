@@ -4,9 +4,26 @@ use std::time::Duration;
 
 use crate::errors::Error;
 use log;
-use sysinfo::{ProcessRefreshKind, ProcessesToUpdate, System};
+use sysinfo::{Process, ProcessRefreshKind, ProcessesToUpdate, System, UpdateKind};
 
 const DEADLOCK_PROCESS_NAME: &str = "deadlock.exe";
+
+/// Name, start time and command line are all we read. On Linux, sysinfo
+/// lists every thread as a process of its own unless tasks are left out, and
+/// the game's threads share its command line.
+fn refresh_processes(system: &mut System) {
+  system.refresh_processes_specifics(
+    ProcessesToUpdate::All,
+    true,
+    ProcessRefreshKind::nothing()
+      .with_cmd(UpdateKind::OnlyIfNotSet)
+      .without_tasks(),
+  );
+}
+
+fn is_game_process(process: &Process) -> bool {
+  process.thread_kind().is_none() && is_deadlock_process(process.name(), process.cmd())
+}
 
 fn executable_name(value: &OsStr) -> Option<&str> {
   value
@@ -24,6 +41,15 @@ fn is_deadlock_process(name: &OsStr, command: &[std::ffi::OsString]) -> bool {
       .is_some_and(|name| name.eq_ignore_ascii_case(DEADLOCK_PROCESS_NAME))
 }
 
+/// A running Deadlock process as the OS reports it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GameProcess {
+  pub pid: u32,
+  /// Seconds since the Unix epoch.
+  pub start_time: u64,
+  pub command: Vec<String>,
+}
+
 /// Manages game process lifecycle
 pub struct GameProcessManager {
   system: System,
@@ -32,27 +58,36 @@ pub struct GameProcessManager {
 impl GameProcessManager {
   pub fn new() -> Self {
     Self {
-      system: System::new_all(),
+      system: System::new(),
     }
   }
 
   /// Check if the Deadlock game is currently running
   pub fn is_game_running(&mut self) -> Result<bool, Error> {
-    self.system.refresh_processes_specifics(
-      ProcessesToUpdate::All,
-      true,
-      ProcessRefreshKind::everything(),
-    );
+    Ok(!self.game_processes()?.is_empty())
+  }
 
-    let process_count = self
+  pub fn game_processes(&mut self) -> Result<Vec<GameProcess>, Error> {
+    refresh_processes(&mut self.system);
+
+    let processes: Vec<GameProcess> = self
       .system
       .processes()
       .values()
-      .filter(|process| is_deadlock_process(process.name(), process.cmd()))
-      .count();
+      .filter(|process| is_game_process(process))
+      .map(|process| GameProcess {
+        pid: process.pid().as_u32(),
+        start_time: process.start_time(),
+        command: process
+          .cmd()
+          .iter()
+          .map(|argument| argument.to_string_lossy().into_owned())
+          .collect(),
+      })
+      .collect();
 
-    log::debug!("Found {process_count} game processes");
-    Ok(process_count > 0)
+    log::debug!("Found {} game processes", processes.len());
+    Ok(processes)
   }
 
   /// Check if game is running and return error if it is (for operations that require game to be closed)
@@ -78,7 +113,7 @@ impl GameProcessManager {
       .system
       .processes()
       .values()
-      .filter(|process| is_deadlock_process(process.name(), process.cmd()))
+      .filter(|process| is_game_process(process))
       .collect();
 
     if processes.is_empty() {
@@ -97,11 +132,7 @@ impl GameProcessManager {
       // Wait for the OS to fully reap the killed processes before returning,
       // so the next is_game_running() call won't see stale entries.
       thread::sleep(Duration::from_millis(500));
-      self.system.refresh_processes_specifics(
-        ProcessesToUpdate::All,
-        true,
-        ProcessRefreshKind::everything(),
-      );
+      refresh_processes(&mut self.system);
       Ok(())
     } else {
       Err(Error::GameNotRunning)
@@ -119,7 +150,30 @@ impl Default for GameProcessManager {
 mod tests {
   use std::ffi::{OsStr, OsString};
 
-  use super::is_deadlock_process;
+  use sysinfo::{Pid, System, ThreadKind};
+
+  use super::{is_deadlock_process, refresh_processes};
+
+  #[test]
+  fn lists_processes_without_their_threads() {
+    let (stop, stopped) = std::sync::mpsc::channel::<()>();
+    let worker = std::thread::spawn(move || {
+      let _ = stopped.recv();
+    });
+    let mut system = System::new();
+
+    refresh_processes(&mut system);
+
+    assert!(system.process(Pid::from_u32(std::process::id())).is_some());
+    assert!(
+      system
+        .processes()
+        .values()
+        .all(|process| process.thread_kind() != Some(ThreadKind::Userland))
+    );
+    drop(stop);
+    worker.join().unwrap();
+  }
 
   #[test]
   fn detects_native_process_name() {

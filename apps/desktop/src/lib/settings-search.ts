@@ -92,6 +92,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
         titleKey: "settings.gameGuard",
         descriptionKey: "settings.gameGuardDescription",
       },
+      {
+        titleKey: "launchHealth.settings.title",
+        descriptionKey: "launchHealth.settings.description",
+      },
     ],
   },
   {

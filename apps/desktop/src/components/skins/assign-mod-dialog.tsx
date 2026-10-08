@@ -48,7 +48,7 @@ const CandidateRow = ({
         <div className='truncate text-muted-foreground text-xs'>
           {getModCategoryDisplayName(mod.category)}
           {currentHero &&
-            ` · ${t("skins.assignCurrent", { hero: currentHero })}`}
+            `, ${t("skins.assignCurrent", { hero: currentHero }).toLowerCase()}`}
         </div>
       </div>
       {hidden ? (

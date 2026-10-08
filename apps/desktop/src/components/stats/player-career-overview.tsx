@@ -196,9 +196,9 @@ export const PlayerCareerOverview = ({
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  {heroesById.get(match.hero_id)?.name ?? match.hero_id} ·{" "}
+                  {heroesById.get(match.hero_id)?.name ?? match.hero_id},{" "}
                   {match.player_kills}/{match.player_deaths}/
-                  {match.player_assists} · {formatCompact(match.net_worth)}
+                  {match.player_assists}, {formatCompact(match.net_worth)}
                 </TooltipContent>
               </Tooltip>
             ))}

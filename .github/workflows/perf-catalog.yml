@@ -1,0 +1,88 @@
+name: Refresh performance catalog
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+
+env:
+  NODE_VERSION: "24.8.0"
+  BRANCH: chore/perf-catalog-refresh
+
+jobs:
+  refresh:
+    if: github.repository_owner == 'deadlock-mod-manager'
+    runs-on: depot-ubuntu-24.04
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache-dependency-path: pnpm-lock.yaml
+
+      - uses: pnpm/action-setup@v6
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.2"
+
+      # GameBanana configs ship as zip, rar and 7z archives.
+      - name: Install bsdtar
+        run: sudo apt-get update && sudo apt-get install -y libarchive-tools
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter @deadlock-mods/perf-catalog
+
+      - name: Cache pinned downloads
+        uses: actions/cache@v6
+        with:
+          path: packages/perf-catalog/.cache
+          key: perf-catalog-${{ hashFiles('packages/perf-catalog/sources.json') }}
+          restore-keys: perf-catalog-
+
+      - name: Refresh pins and regenerate
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm perf:catalog --refresh --summary "$RUNNER_TEMP/perf-catalog-summary.md"
+
+      - name: Test catalog
+        run: pnpm --filter @deadlock-mods/perf-catalog test
+
+      - name: Check for changes
+        id: git-check
+        run: |
+          git diff --quiet packages/perf-catalog/data/catalog.json || echo "changed=true" >> "$GITHUB_OUTPUT"
+
+      - name: Open or update pull request
+        if: steps.git-check.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git switch -C "$BRANCH"
+          git add packages/perf-catalog/data/catalog.json packages/perf-catalog/sources.json
+          git commit -m "chore(perf-catalog): refresh performance catalog"
+          git push --force origin "$BRANCH"
+          {
+            echo "Weekly refresh of \`packages/perf-catalog\` (\`pnpm perf:catalog --refresh\`)."
+            echo "Review the moved pins and the upstream diffs before merging."
+            echo
+            cat "$RUNNER_TEMP/perf-catalog-summary.md"
+          } > "$RUNNER_TEMP/perf-catalog-pr.md"
+          pr=$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number')
+          if [ -n "$pr" ]; then
+            gh pr edit "$pr" --body-file "$RUNNER_TEMP/perf-catalog-pr.md"
+          else
+            gh pr create --base main --head "$BRANCH" \
+              --title "chore(perf-catalog): refresh performance catalog" \
+              --body-file "$RUNNER_TEMP/perf-catalog-pr.md"
+          fi

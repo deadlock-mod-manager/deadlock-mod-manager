@@ -155,10 +155,7 @@ export const Toolbar = () => {
                   {isRunning ? t("common.stopGame") : t("common.launchModded")}
                 </span>
                 {!isRunning && enabledModsCount > 0 && (
-                  <span className='relative z-10 inline-flex items-center gap-1 tabular-nums'>
-                    <span aria-hidden='true' className='opacity-60'>
-                      ·
-                    </span>
+                  <span className='relative z-10 inline-flex items-center gap-1 tabular-nums opacity-70'>
                     {t("common.launchModdedCount", {
                       count: enabledModsCount,
                       defaultValue: "{{count}} mods",

@@ -3,6 +3,8 @@ mod progress;
 
 use crate::app_runtime::AppHandle;
 use crate::errors::Error;
+use crate::mod_manager::perf_config::staging as perf_staging;
+use crate::mod_manager::perf_config::types::{ConfigFoundEvent, ImportVariant};
 use downloader::{DownloadProgress as FileProgress, PauseHandle, download_file_resumable};
 use progress::{AcceptedProgress, ProgressAggregator};
 use serde::{Deserialize, Serialize};
@@ -991,6 +993,18 @@ impl DownloadManager {
       }
     }
 
+    // The backend doesn't know the mod's display name; the frontend swaps in
+    // the name it has and keeps the archive name as a fallback.
+    let config_label = Self::archive_label(downloaded_files).unwrap_or_else(|| task.mod_id.clone());
+    // Profile imports install someone else's mod list in bulk; asking about a
+    // config for each of those mods would bury the import in prompts.
+    let staged_config = if task.is_profile_import {
+      None
+    } else {
+      Self::stage_bundled_config(app_handle, &extraction_root, &config_label, &task.mod_id)
+    };
+    let vpk_count = collected_files.len();
+
     if !task.is_profile_import && !collected_files.is_empty() {
       let total_files = collected_files.len();
       let aggregated_tree = crate::mod_manager::file_tree::ModFileTree {
@@ -1021,6 +1035,21 @@ impl DownloadManager {
         .ok();
     }
 
+    if let Some(event) = staged_config.map(|(staging_id, variants)| ConfigFoundEvent {
+      mod_id: task.mod_id.clone(),
+      mod_name: config_label,
+      staging_id,
+      variants,
+      installed_vpks: u32::try_from(vpk_count).unwrap_or(u32::MAX),
+    }) {
+      log::info!(
+        "Found {} performance config variant(s) in mod {}, emitting config-found event",
+        event.variants.len(),
+        task.mod_id
+      );
+      app_handle.emit("download-config-found", event).ok();
+    }
+
     emit_fonts_found(&found_font_infos);
 
     log::info!(
@@ -1028,6 +1057,46 @@ impl DownloadManager {
       task.mod_id
     );
     Ok(())
+  }
+
+  /// Copies performance configs (gameinfo.gi, autoexec, video.txt) out of the
+  /// extracted archives before they are cleaned up, so the user can review and
+  /// import them. The VPK pipeline never installs them, and a failure here
+  /// never fails the download.
+  fn stage_bundled_config(
+    app_handle: &AppHandle,
+    extraction_root: &std::path::Path,
+    label: &str,
+    mod_id: &str,
+  ) -> Option<(String, Vec<ImportVariant>)> {
+    if !extraction_root.exists() {
+      return None;
+    }
+    let app_data_dir = match crate::runtime_environment::app_local_data_dir(app_handle) {
+      Ok(directory) => directory,
+      Err(error) => {
+        log::warn!("Skipping performance config scan for mod {mod_id}: {error}");
+        return None;
+      }
+    };
+    match perf_staging::stage_from_dir(&app_data_dir, extraction_root, label) {
+      Ok(found) => found,
+      Err(error) => {
+        log::warn!("Failed to stage performance config for mod {mod_id}: {error}");
+        None
+      }
+    }
+  }
+
+  /// The first archive's name without its extension.
+  fn archive_label(downloaded_files: &[PathBuf]) -> Option<String> {
+    let extractor = crate::mod_manager::archive_extractor::ArchiveExtractor::new();
+    downloaded_files
+      .iter()
+      .find(|path| extractor.is_supported_archive(path))
+      .and_then(|path| path.file_stem())
+      .and_then(|stem| stem.to_str())
+      .map(str::to_string)
   }
 
   fn cleanup_extracted(extracted_dir: &PathBuf, archive_path: &PathBuf) {
@@ -1152,6 +1221,23 @@ impl DownloadManager {
 mod tests {
   use super::*;
   use crate::mod_manager::file_tree::{ModFile, ModFileTree};
+
+  #[test]
+  fn config_label_names_the_first_archive() {
+    let files = vec![
+      PathBuf::from("downloads/pak01_dir.vpk"),
+      PathBuf::from("downloads/OptiLock v5.1.zip"),
+      PathBuf::from("downloads/extras.7z"),
+    ];
+    assert_eq!(
+      DownloadManager::archive_label(&files).as_deref(),
+      Some("OptiLock v5.1")
+    );
+    assert_eq!(
+      DownloadManager::archive_label(&[PathBuf::from("mod.vpk")]),
+      None
+    );
+  }
 
   #[test]
   fn direct_vpk_downloads_accept_mixed_case_extensions() {

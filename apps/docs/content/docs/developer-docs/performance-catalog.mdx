@@ -1,0 +1,120 @@
+---
+title: Performance Catalog
+description: Where the performance-config presets, convar metadata and stock gameinfo.gi history come from, how they are refreshed, and the rules the generator enforces
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Performance Catalog
+
+Performance configs are `gameinfo.gi` tweaks that the desktop app applies as an overlay on the player's own file. Everything the app knows about them comes from one generated file, `packages/perf-catalog/data/catalog.json`:
+
+- **presets**: curated configs from upstream repositories, stored as the author's changes, plus DMM's own consensus preset (DMM Clean);
+- **community**: GameBanana configs we list but don't ship, with stats for the Looks ⟷ Frames scale;
+- **convars**: type, default, range, flags and help for every convar in the current build, our labels and descriptions, a category, a gameplay class and a status (active, blocked, removed, not a convar);
+- **stock**: every scalar of Valve's stock `gameinfo.gi` for each build, used to find the build an imported config was made from;
+- **rules**: sections and keys the app never writes.
+
+The desktop app bundles the file (`include_str!` in `perf_config/catalog.rs`) and the API serves the copy it was built with at `GET /api/v2/perf-catalog`, with `ETag` set to the catalog version and `Cache-Control: public, max-age=3600`. The app adopts a downloaded catalog only when it parses, has a schema version it understands, and has a newer `version` (`YYYY.MM.DD-N`), so a new pin reaches players with an API deploy instead of an app release.
+
+The shape lives in two places: `packages/perf-catalog/src/schema.ts` (zod) and `apps/desktop/src-tauri/src/mod_manager/perf_config/catalog.rs` (serde). Change them together and bump `SCHEMA_VERSION` in both.
+
+## Sources
+
+| Data                                                                          | Source                                                                                                                             | Licence                                  |
+| ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| Convar type, default, min/max, flags, help, enums, console commands           | [ValveResourceFormat/SchemaExplorer](https://github.com/ValveResourceFormat/SchemaExplorer) `schemas/deadlock.json`                | Repository MIT; the dump is Valve's data |
+| Stock `gameinfo.gi` per build, build numbers (`ClientVersion` in `steam.inf`) | [SteamTracking/GameTracking-Deadlock](https://github.com/SteamTracking/GameTracking-Deadlock)                                      | Valve's files, tracked                   |
+| When a convar became blocked or disappeared                                   | GameTracking `DumpSource2/convars.txt` history                                                                                     | Valve's data, tracked                    |
+| Presets                                                                       | [Sqooky/OptimizationLock](https://github.com/Sqooky/OptimizationLock), [dacooderr/OptiLock](https://github.com/dacooderr/OptiLock) | GPL-3.0, credited per preset             |
+| Community configs                                                             | GameBanana mod pages                                                                                                               | Referenced by id only                    |
+| Curated descriptions                                                          | Upstream inline comments, the OptimizationLock FAQ, [simulieren/deadtune](https://github.com/simulieren/deadtune) curated notes    | GPL-3.0                                  |
+| Gameplay-classification rule                                                  | [Slush97/grimoire](https://github.com/Slush97/grimoire)                                                                            | MIT                                      |
+
+Every input is pinned in `packages/perf-catalog/sources.json`: commits for GitHub files with a sha256 per file, and file ids with GameBanana's md5 for GameBanana. The generator fails on any mismatch. GameBanana files are downloaded only to compute stats; no part of them is stored.
+
+## Regenerating and refreshing
+
+```bash
+pnpm perf:catalog            # regenerate from the current pins
+pnpm perf:catalog --check    # fail if data/catalog.json is stale
+GH_TOKEN=$(gh auth token) pnpm perf:catalog --refresh   # move every pin, then regenerate
+```
+
+`--refresh` pins the latest release tag for tag-tracked sources (OptiLock) and the last commit that touched the file for the others, adds new stock and `convars.txt` versions from GameTracking, moves SchemaExplorer to its latest revision, and picks the newest GameBanana file that contains the configured variant. It prints what moved.
+
+The `Refresh performance catalog` workflow (`.github/workflows/perf-catalog.yml`) runs this every Monday and opens or updates a pull request from `chore/perf-catalog-refresh` when the catalog changed. The pull request body lists the moved pins and the generator report.
+
+<Callout type='warn' title='Review refresh pull requests like code'>
+  A moved pin brings in whatever the upstream author changed. Read the upstream
+  diff, check the preset entry counts in the report, and look for new keys the
+  generator didn't classify. Nothing unreviewed reaches players: the app only
+  sees a new catalog after the pull request is merged and the API is deployed.
+</Callout>
+
+Generation is deterministic. If only `version` and `generatedAt` would change, the file isn't rewritten.
+
+## How a preset becomes entries
+
+Upstream configs are whole `gameinfo.gi` files. The catalog stores what the author changed, so the app can apply it on top of whatever stock file the player has:
+
+1. **Find the base build.** If the file has a `PGIVersion`, use the stock build with that hash (the closest one when several builds share it). Otherwise use the stock build with the most matching section values.
+2. **Diff against it.** Keep ConVars that are new or differ, section scalars that are new or differ, and section keys the author commented out (value `null`). Values compare normalized: `true`/`1`, `false`/`0`, canonical numbers. A key that is only missing is never a deletion.
+3. **Drop what the app never writes.** FileSystem (including SearchPaths), list sections (`MaterialSystem2/RenderModes`), root keys (`PGIVersion`, `DisallowGameInfoConditionals`) and editor-only sections. If a preset edits any other list section, or a section stock doesn't have, the run fails.
+
+Blocked and removed convars stay in a preset's entries so the app can show them as not applying.
+
+Some upstream authors ship a `video.txt`. The catalog keeps only the keys the in-game video menu exposes, with the menu's wording (`curated/video.ts`), and the app shows them as a checklist. It never writes `video.txt`.
+
+## Rules
+
+`curated/rules.ts` becomes `rules` in the catalog:
+
+- **Excluded sections**, never written: FileSystem, MaterialSystem2/RenderModes, Hammer, pulse, ResourceCompiler, ContentBuilder, SoundTool, ToolsEnvironment, MaterialEditor, ModelDoc, NavSystem, Localize, SupportedLanguages, hidden_maps, Source1Import.
+- **Guarded sections**, the ones Valve's matchmaking message names (build 6417): Engine2, MaterialSystem2, NetworkSystem, Particles, RenderSystem, SceneSystem, WorldRenderer. The app writes engine-section edits only when the user includes them.
+- **Denied keys**, each with the reason the app shows: `sv_cheats`, `timescale`/`host_timescale`, `Engine2/RenderingPipeline/DistanceField` (crashes after the hideout loads), `r_render_portals` (breaks Doorman's door), `Engine2/LocalServerClientAccess`.
+
+Convars Valve flags `gameinfo_cannot_override` get the status `blocked`; keys configs use that aren't in the dump get `removed`; console commands get `notConvar`. `statusSinceBuild` comes from the `convars.txt` history when it covers the change.
+
+## Gameplay classification
+
+Some convars change what a player can see or how the camera frames the world rather than how fast the game renders. The catalog classifies them:
+
+- **camera**: field of view, aspect ratio, camera height and pitch, screen shake;
+- **visibility**: outlines, glows, health-bar readability, see-through-walls;
+- **devtools**: debug overlays and hideout tools.
+
+Camera and visibility settings apply as the author set them and the user can turn them off one by one. Developer tools stay off unless enabled.
+
+The rule is enforced. Every ConVar a preset sets whose name matches a pattern in `curated/gameplay.ts` (`outline`, `glow`, `see_thru`, `_fov$`, `aspectratio`, `camera`, `camera_pitch`, `citadel_unit_status_`, `debug_draw`, `debug_show`, `hideout`, `timescale`) must be classified, listed in `ALLOW_IN_BODY` with a written reason, or denied. Otherwise generation fails, so an upstream update that adds a new outline or FOV convar can't reach players unclassified.
+
+## DMM Clean
+
+DMM's own preset is derived, not written by hand (`curated/consensus.ts`):
+
+1. Group the pinned GPL-3.0 configs into lineages, so configs that derive from each other vote once: sqooky (Sqooky, Eskay, Max FPS), kaizu (minimum spec, extreme low), boot, piggy, optilock (FPS, Potato).
+2. Each lineage votes with the value its configs set relative to their own base build (majority within the lineage).
+3. Keep a value when at least three lineages vote for it and they are at least 75% of the lineages that change the key.
+4. Drop convars that are blocked or removed, have a gameplay class or sit in Camera & visibility, are controlled by the in-game video menu, hide things (draw distance, culling and LOD, draw toggles, sun and fog, PVS, grass and clutter, decals, splashes and blood, ropes, effect caps, Doorman's indicator, dark portraits), fall outside the convar's range, or equal the latest stock value.
+
+## Community configs
+
+`curated/community.ts` lists GameBanana configs that aren't copies of a curated preset. The generator downloads the pinned file, analyzes the configured variant the same way as a preset, and stores only:
+
+- `settingsCount` and `categoryCounts`: ConVars the app would write by default (active, not denied, not developer tools);
+- `engineEditCount`: edits outside ConVars;
+- `baseBuild`, plus the mod's name, author, download count and last update from GameBanana.
+
+The desktop app downloads the file from GameBanana itself and runs it through the import review.
+
+## Writing curated descriptions
+
+`curated/convars.ts` holds labels, descriptions and side effects for the convars presets use most. Describe what the setting does and what changes on screen. Don't quote frame-rate numbers and don't call anything safe. Put reports from upstream authors in `sideEffects` and say where they come from ("Upstream FAQ: ...").
+
+## Tests
+
+```bash
+pnpm --filter @deadlock-mods/perf-catalog test     # catalog invariants
+pnpm --filter @deadlock-mods/perf-catalog check-types
+cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml catalog::tests   # the Rust reader parses the bundled file
+```

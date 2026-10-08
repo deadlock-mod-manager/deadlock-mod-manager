@@ -137,7 +137,7 @@ export const HeroModGrid = ({
           <p className='text-muted-foreground text-sm'>
             {t("skins.skinsDownloaded", { count: skins.length })}
             {extras.length > 0 &&
-              ` · ${t("skins.extrasCount", { count: extras.length })}`}
+              `, ${t("skins.extrasCount", { count: extras.length })}`}
           </p>
         </div>
         <div className='flex shrink-0 gap-2'>

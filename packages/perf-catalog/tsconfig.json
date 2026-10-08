@@ -1,0 +1,24 @@
+{
+  "extends": "@deadlock-mods/typescript-config/base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "lib": [
+      "ES2022"
+    ],
+    "types": [
+      "node",
+      "bun"
+    ],
+    "resolveJsonModule": true
+  },
+  "include": [
+    "src/**/*.ts",
+    "scripts/**/*.ts",
+    "curated/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

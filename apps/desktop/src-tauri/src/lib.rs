@@ -18,6 +18,7 @@ mod flatpak;
 mod forge_bridge;
 mod game_guard;
 mod game_presence;
+mod game_session;
 mod hero_detector;
 mod ingest_tool;
 mod live_match;
@@ -192,6 +193,9 @@ pub fn run() {
         commands::gamebanana_catalog::GameBananaCatalogState::open(catalog_path),
       );
       app.manage(catalog_state);
+      let app_data_dir = runtime_environment::app_local_data_dir(app.handle())?;
+      mod_manager::perf_config::catalog::load_cached(&app_data_dir);
+      mod_manager::perf_config::staging::cleanup_stale(&app_data_dir);
       app.manage(commands::policy::PolicyState::open(
         runtime_environment::app_local_data_dir(app.handle())?.join("policy-manifest-v1.json"),
       ));
@@ -206,6 +210,7 @@ pub fn run() {
         }
         mod_manager.set_app_handle(app.handle().clone());
       }
+      game_session::init(app.handle().clone(), app_data_dir);
 
       log::info!("[App] Setup completed, starting application...");
       Ok(())
@@ -261,6 +266,10 @@ pub fn run() {
       commands::game::is_game_running,
       commands::game::set_game_file_guard,
       commands::game::allow_next_game_file_operation,
+      commands::game_session::session_pending_reports,
+      commands::game_session::session_acknowledge,
+      commands::game_session::session_record_client_fingerprint,
+      commands::game_session::session_set_enabled,
       commands::deep_link::parse_deep_link,
       commands::deep_link::get_deep_link_debug_info,
       commands::gameinfo::backup_gameinfo,
@@ -388,6 +397,19 @@ pub fn run() {
       commands::mod_interchange::import_interchange_mods,
       commands::mod_interchange::export_interchange_bundle,
       commands::mods::batch_update_mods,
+      commands::performance::perf_get_catalog,
+      commands::performance::perf_refresh_catalog,
+      commands::performance::perf_get_status,
+      commands::performance::perf_resolve,
+      commands::performance::perf_apply,
+      commands::performance::perf_remove,
+      commands::performance::perf_reapply,
+      commands::performance::perf_sync,
+      commands::performance::perf_analyze_import,
+      commands::performance::perf_export,
+      commands::performance::perf_search_convars,
+      commands::performance::perf_get_convars,
+      commands::performance::perf_discard_staging,
       commands::autoexec::get_autoexec_config,
       commands::autoexec::update_autoexec_config,
       commands::autoexec::open_autoexec_folder,

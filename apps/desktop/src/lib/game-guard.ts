@@ -34,7 +34,10 @@ export type GuardedCommand =
   | "replace_mod_vpks"
   | "install_mod_fonts"
   | "resync_profile_shards"
-  | "download_deadworks_content";
+  | "download_deadworks_content"
+  | "perf_apply"
+  | "perf_remove"
+  | "perf_reapply";
 
 export const isGameRunningError = (error: unknown): boolean =>
   isTauriError(error) && error.kind === "gameRunning";

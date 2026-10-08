@@ -1,14 +1,66 @@
+use crate::comment::parse_comment;
 use crate::error::{DmpError, Result};
 use crate::types::{
-    DmpExceptionInfo, DmpModuleInfo, DmpParseOptions, DmpParsed, DmpSystemInfo, DmpThreadInfo,
+    DmpExceptionInfo, DmpModuleInfo, DmpParseOptions, DmpParsed, DmpSummary, DmpSystemInfo,
+    DmpThreadInfo,
 };
 use chrono::{DateTime, Utc};
-use minidump::{Minidump, MinidumpModuleList, MinidumpSystemInfo, MinidumpThreadList, Module};
+use minidump::format::MINIDUMP_STREAM_TYPE;
+use minidump::{
+    Minidump, MinidumpException, MinidumpMiscInfo, MinidumpModuleList, MinidumpSystemInfo,
+    MinidumpThreadList, Module,
+};
 use std::path::Path;
 
 pub struct DmpParser;
 
 impl DmpParser {
+    /// Reads the process id, timestamps, exception code and comment stream.
+    pub fn summarize_file<P: AsRef<Path>>(path: P) -> Result<DmpSummary> {
+        let path = path.as_ref();
+        if !path.exists() {
+            return Err(DmpError::FileNotFound(path.display().to_string()));
+        }
+        let dump = Minidump::read_path(path)
+            .map_err(|e| DmpError::ParseError(format!("Failed to read minidump: {e}")))?;
+        Ok(Self::summarize(&dump))
+    }
+
+    pub fn summarize_bytes(bytes: &[u8]) -> Result<DmpSummary> {
+        let dump = Minidump::read(bytes)
+            .map_err(|e| DmpError::ParseError(format!("Failed to read minidump: {e}")))?;
+        Ok(Self::summarize(&dump))
+    }
+
+    fn summarize<'a, T: std::ops::Deref<Target = [u8]> + 'a>(
+        dump: &'a Minidump<'a, T>,
+    ) -> DmpSummary {
+        let misc_info: Option<MinidumpMiscInfo> = dump.get_stream().ok();
+        let exception: Option<MinidumpException> = dump.get_stream().ok();
+        let comment = dump
+            .get_raw_stream(MINIDUMP_STREAM_TYPE::CommentStreamA as u32)
+            .ok()
+            .map(|bytes| {
+                let text: String = bytes
+                    .iter()
+                    .take_while(|byte| **byte != 0)
+                    .map(|byte| char::from(*byte))
+                    .collect();
+                parse_comment(&text)
+            });
+
+        DmpSummary {
+            dump_time: Self::extract_crash_time(dump),
+            process_id: misc_info
+                .as_ref()
+                .and_then(|info| info.raw.process_id().copied()),
+            process_create_time: misc_info.as_ref().and_then(Self::process_create_time),
+            exception_code: exception
+                .map(|exception| exception.raw.exception_record.exception_code),
+            comment,
+        }
+    }
+
     pub fn parse_file<P: AsRef<Path>>(path: P, options: DmpParseOptions) -> Result<DmpParsed> {
         let path = path.as_ref();
 
@@ -38,6 +90,11 @@ impl DmpParser {
         let system_info = Self::extract_system_info(dump, &mut raw_text);
         let exception_info = Self::extract_exception_info(dump, &mut raw_text);
         let crash_time = Self::extract_crash_time(dump);
+        let process_create_time = dump
+            .get_stream::<MinidumpMiscInfo>()
+            .ok()
+            .as_ref()
+            .and_then(Self::process_create_time);
 
         let threads = if options.include_threads {
             Self::extract_threads(dump, &exception_info, &mut raw_text)
@@ -60,6 +117,7 @@ impl DmpParser {
             file_path,
             file_size,
             crash_time,
+            process_create_time,
             crash_reason,
             system_info,
             exception_info,
@@ -128,11 +186,15 @@ impl DmpParser {
         })
     }
 
+    /// The header timestamp is when the dump was written. MiscInfo's process
+    /// create time is when the game started, which is a different moment.
     fn extract_crash_time<'a, T: std::ops::Deref<Target = [u8]> + 'a>(
         dump: &Minidump<'a, T>,
     ) -> Option<DateTime<Utc>> {
-        let misc_info: minidump::MinidumpMiscInfo = dump.get_stream().ok()?;
+        DateTime::from_timestamp(i64::from(dump.header.time_date_stamp), 0)
+    }
 
+    fn process_create_time(misc_info: &MinidumpMiscInfo) -> Option<DateTime<Utc>> {
         misc_info
             .raw
             .process_create_time()
@@ -257,5 +319,72 @@ impl DmpParser {
             0x80000004 => "Single Step (EXCEPTION_SINGLE_STEP)".to_string(),
             _ => format!("Unknown Exception (0x{code:08X})"),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const DUMP_TIME: u32 = 1_776_714_968;
+    const PID: u32 = 50_460;
+
+    /// A minidump with only a MiscInfo stream (PID and create time) and a
+    /// comment stream, laid out the way Windows writes them.
+    fn synthetic_dump(comment: &str) -> Vec<u8> {
+        let directory_rva = 32u32;
+        let misc_rva = directory_rva + 2 * 12;
+        let misc_size = 24u32;
+        let comment_rva = misc_rva + misc_size;
+        let mut comment_bytes = comment.as_bytes().to_vec();
+        comment_bytes.push(0);
+
+        let mut bytes = Vec::new();
+        for value in [0x504D_444D, 0xA793, 2, directory_rva, 0, DUMP_TIME] {
+            bytes.extend_from_slice(&u32::to_le_bytes(value));
+        }
+        bytes.extend_from_slice(&0u64.to_le_bytes());
+        for value in [
+            MINIDUMP_STREAM_TYPE::MiscInfoStream as u32,
+            misc_size,
+            misc_rva,
+            MINIDUMP_STREAM_TYPE::CommentStreamA as u32,
+            comment_bytes.len() as u32,
+            comment_rva,
+        ] {
+            bytes.extend_from_slice(&value.to_le_bytes());
+        }
+        for value in [misc_size, 0x1 | 0x2, PID, DUMP_TIME - 116, 0, 0] {
+            bytes.extend_from_slice(&value.to_le_bytes());
+        }
+        bytes.extend_from_slice(&comment_bytes);
+        bytes
+    }
+
+    #[test]
+    fn summarizes_pid_times_and_comment() {
+        let bytes = synthetic_dump("Crash\nUptime( 112.592268 )\nAddons: \n");
+
+        let summary = DmpParser::summarize_bytes(&bytes).unwrap();
+
+        assert_eq!(summary.process_id, Some(PID));
+        assert_eq!(
+            summary.dump_time,
+            DateTime::from_timestamp(i64::from(DUMP_TIME), 0)
+        );
+        assert_eq!(
+            summary.process_create_time,
+            DateTime::from_timestamp(i64::from(DUMP_TIME - 116), 0)
+        );
+        assert_eq!(summary.exception_code, None);
+        let comment = summary.comment.unwrap();
+        assert_eq!(comment.kind.as_deref(), Some("Crash"));
+        assert_eq!(comment.uptime_secs, Some(112.592268));
+        assert_eq!(comment.addons, Some(Vec::new()));
+    }
+
+    #[test]
+    fn rejects_files_that_are_not_minidumps() {
+        assert!(DmpParser::summarize_bytes(b"not a dump").is_err());
     }
 }

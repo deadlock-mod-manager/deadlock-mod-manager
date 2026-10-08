@@ -53,7 +53,7 @@ const describeResult = (t: TFunction, result: NetworkCheckResult): string => {
   );
   return result.latencyMs === undefined
     ? message
-    : `${message} · ${t("networkDiagnostics.latency", { ms: result.latencyMs })}`;
+    : `${message} (${t("networkDiagnostics.latency", { ms: result.latencyMs })})`;
 };
 
 const buildReport = (t: TFunction, results: NetworkCheckResult[]): string =>

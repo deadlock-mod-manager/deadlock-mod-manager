@@ -113,8 +113,7 @@ export const StatsHeader = ({
             ) : (
               <span>{t("stats.unranked")}</span>
             )}
-            <span aria-hidden>·</span>
-            <span className='tabular-nums'>{accountId}</span>
+            <span className='ml-2 tabular-nums'>{accountId}</span>
           </div>
         </div>
       </div>

@@ -15,6 +15,7 @@ mod hero_settings;
 pub mod manager;
 pub mod missing_vpks;
 pub mod mod_repository;
+pub mod perf_config;
 pub mod shard;
 pub mod shard_report;
 pub mod steam_manager;

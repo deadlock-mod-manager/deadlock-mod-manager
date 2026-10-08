@@ -73,6 +73,33 @@ export type AnalyticsOperations = {
     start: { entry_point: "library" | "editor" };
     result: NoProperties;
   };
+  performance_config_apply: {
+    start: {
+      source: "preset" | "imported" | "community" | "custom";
+      preset_id?: string;
+      entry_point:
+        | "card"
+        | "details"
+        | "import"
+        | "editor"
+        | "history"
+        | "undo"
+        | "reapply";
+      include_engine_sections: boolean;
+    };
+    result: { applied_count?: number };
+  };
+  performance_config_import: {
+    start: {
+      source_kind:
+        | "paste"
+        | "file"
+        | "gamebanana"
+        | "current_gameinfo"
+        | "mod_download";
+    };
+    result: { format?: string; setting_count?: number; ignored_count?: number };
+  };
   foundry_export: {
     start: { edited_asset_count: number };
     result: NoProperties;
@@ -127,6 +154,21 @@ export type AnalyticsEvents = {
   update_dismissed: { target_version?: string; entry_point: UpdateSurface };
   setup_result: { outcome: "completed" | "skipped"; last_step: number };
   autoexec_saved: { has_launchable_content: boolean };
+  performance_config_removed: { entry_point: "page" | "crash_check" | "undo" };
+  crash_check_shown: {
+    classification: "crash" | "ambiguous";
+    change_count: number;
+    uptime_seconds?: number;
+  };
+  crash_check_action: {
+    action:
+      | "turn_off_config"
+      | "disable_mods"
+      | "relaunch"
+      | "dismiss"
+      | "closed_by_user"
+      | "opt_out";
+  };
 };
 export type AnalyticsMilestone =
   | "first_eligible_use"

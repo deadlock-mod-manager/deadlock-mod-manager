@@ -1475,6 +1475,7 @@ dependencies = [
  "dmp-parser",
  "dotenvy",
  "fix-path-env",
+ "flate2",
  "futures",
  "hero-parser",
  "hex",
@@ -1485,6 +1486,7 @@ dependencies = [
  "junction",
  "keyvalues-parser",
  "keyvalues-serde",
+ "kv-parser",
  "libsqlite3-sys",
  "log",
  "machine-uid",
@@ -3473,6 +3475,16 @@ checksum = "07293a4e297ac234359b510362495713f75ea345d5307140414f20c69ffeb087"
 dependencies = [
  "bitflags 2.11.1",
  "libc",
+]
+
+[[package]]
+name = "kv-parser"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "ts-rs",
 ]
 
 [[package]]

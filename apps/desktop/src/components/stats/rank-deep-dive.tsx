@@ -172,7 +172,7 @@ export const RankDeepDive = ({
                 id: progress.matchId,
               })}
               {progress.blockedLoss !== null &&
-                ` · ${t("stats.rank.protectionAbsorbed", {
+                `, ${t("stats.rank.protectionAbsorbed", {
                   points: Math.abs(progress.blockedLoss),
                 })}`}
             </p>

@@ -9,6 +9,7 @@ import { FontInstallDialog } from "./components/downloads/font-install-dialog";
 import { ProgressProvider } from "./components/downloads/progress-indicator";
 import { ForgeInstallRenderer } from "./components/forge-install-renderer";
 import { GameGuardRenderer } from "./components/game-guard-renderer";
+import { LaunchHealthRenderer } from "./components/launch-health/launch-health-renderer";
 import { FoundryProvider } from "./components/foundry/foundry-context";
 import { GamePresenceRenderer } from "./components/game-presence-renderer";
 import { LiveMatchRenderer } from "./components/live-match-renderer";
@@ -18,6 +19,7 @@ import GlobalPluginRenderer from "./components/global-plugin-renderer";
 import { UpdateDialog } from "./components/layout/update-dialog";
 import { TauriAppWindowProvider } from "./components/layout/window-controls/window-context";
 import { OnboardingWizard } from "./components/onboarding/onboarding-wizard";
+import { PerformanceRenderer } from "./components/performance/performance-renderer";
 import { TelemetryConsentDialog } from "./components/telemetry/telemetry-consent-dialog";
 import { AlertDialogProvider } from "./components/providers/alert-dialog";
 import { invokeGuarded, isGameRunningError } from "@/lib/game-guard";
@@ -43,6 +45,7 @@ import logger from "./lib/logger";
 import type { RuntimeBootstrap } from "./lib/runtime-bootstrap";
 import type { StorageReadyStatus } from "./lib/store/storage";
 import type { FontInfo } from "./types/mods";
+import { usePerfBackgroundSync } from "@/hooks/performance/use-perf-background-sync";
 
 interface PendingFontInstall {
   modId: string;
@@ -65,6 +68,7 @@ const App = ({ runtime, storage }: AppProps) => {
   useMissingVpkDetection();
   useHeroDetection();
   useGameBananaCatalogSync();
+  usePerfBackgroundSync();
   useIngestToolInit(integrations?.ingestion !== "disabled");
   const { t } = useTranslation();
   const hasReportedStorageFailure = useRef(false);
@@ -164,6 +168,8 @@ const App = ({ runtime, storage }: AppProps) => {
                     )}
                     <ForgeInstallRenderer />
                     <GameGuardRenderer />
+                    <PerformanceRenderer />
+                    <LaunchHealthRenderer />
                     <UpdateDialog
                       downloadProgress={downloadProgress}
                       isDownloading={isDownloading}
