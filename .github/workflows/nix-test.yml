@@ -16,6 +16,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   check-flake:
@@ -54,6 +55,8 @@ jobs:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     outputs:
       hashes_updated: ${{ steps.update.outputs.updated }}
+      # Builds use the hash PR branch, since main only gets it once the PR merges.
+      ref: ${{ steps.update.outputs.updated == 'true' && 'chore/nix-hashes' || github.sha }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7.0.1
@@ -100,17 +103,15 @@ jobs:
 
           echo "updated=$UPDATED" >> "$GITHUB_OUTPUT"
 
-      - name: Commit and push updated hashes
+      - name: Open or update pull request
         if: steps.update.outputs.updated == 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git add package.nix packages/*/package.nix apps/*/package.nix
-          git diff --staged --quiet && exit 0
-
-          git commit -m "chore(nix): update dependency hashes [skip ci]"
-          git push
+        uses: ./.github/actions/open-bot-pr
+        with:
+          branch: chore/nix-hashes
+          title: "chore(nix): update dependency hashes"
+          paths: package.nix packages/*/package.nix apps/*/package.nix
+          body: Refreshes the Nix dependency hashes with `nix-update`.
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   build-nightly:
     name: Build Nightly Package
@@ -131,14 +132,11 @@ jobs:
           echo "Disk usage after cleanup:"
           df -h /
 
-      - name: Checkout repository (latest after hash updates)
+      - name: Checkout repository (with updated hashes)
         uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 1
-          ref: ${{ github.ref }}
-
-      - name: Pull latest changes
-        run: git pull --ff-only origin "${GITHUB_REF#refs/heads/}" || true
+          ref: ${{ needs.update-hashes.outputs.ref }}
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31
@@ -170,13 +168,10 @@ jobs:
     needs: update-hashes
     if: always() && needs.update-hashes.result == 'success'
     steps:
-      - name: Checkout repository (latest after hash updates)
+      - name: Checkout repository (with updated hashes)
         uses: actions/checkout@v7.0.1
         with:
-          ref: ${{ github.ref }}
-
-      - name: Pull latest changes
-        run: git pull --ff-only origin "${GITHUB_REF#refs/heads/}" || true
+          ref: ${{ needs.update-hashes.outputs.ref }}
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31
