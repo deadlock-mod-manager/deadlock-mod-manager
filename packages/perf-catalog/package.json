@@ -1,0 +1,27 @@
+{
+  "name": "@deadlock-mods/perf-catalog",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
+    "./catalog.json": "./data/catalog.json"
+  },
+  "scripts": {
+    "check-types": "tsgo --noEmit --skipLibCheck",
+    "test": "bun test",
+    "generate": "bun scripts/generate.ts",
+    "generate:check": "bun scripts/generate.ts --check"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@deadlock-mods/typescript-config": "workspace:*",
+    "@types/bun": "^1.3.11",
+    "@types/node": "^22.19.15",
+    "@typescript/native-preview": "catalog:",
+    "typescript": "catalog:"
+  }
+}

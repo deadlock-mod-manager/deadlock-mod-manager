@@ -60,3 +60,30 @@ Related adaptations (not a copy of the `morphic` subtree):
 - **Scope:** [packages/deadlock-discord-presence](packages/deadlock-discord-presence)
   — log-event mapping for Discord rich presence is derived from this project
 - **License text:** not vendored as source; credited here and in Settings → About
+
+## Performance catalog data
+
+- **Scope:** [packages/perf-catalog/data/catalog.json](packages/perf-catalog/data/catalog.json)
+  and [packages/perf-catalog/curated/](packages/perf-catalog/curated/)
+- **Presets:** values derived from
+  [Sqooky/OptimizationLock](https://github.com/Sqooky/OptimizationLock)
+  (Sqooky, Eskay, Kaizuchaneru, boot, Piggy and contributors) and
+  [dacooderr/OptiLock](https://github.com/dacooderr/OptiLock) (dacooderr and
+  contributors), both GPL-3.0, at the commits pinned in
+  [packages/perf-catalog/sources.json](packages/perf-catalog/sources.json).
+  The DMM Clean preset is computed from the same files.
+- **Convar descriptions:** some adapted from the curated notes of
+  [simulieren/deadtune](https://github.com/simulieren/deadtune) (GPL-3.0) and
+  from the upstream configs' comments.
+- **Convar metadata:** generated from
+  [ValveResourceFormat/SchemaExplorer](https://github.com/ValveResourceFormat/SchemaExplorer)
+  (MIT) dumps of the game.
+- **Classification rule:** the gameplay opt-in pattern rule follows
+  [Slush97/grimoire](https://github.com/Slush97/grimoire) (MIT, © 2025 esoc).
+
+## Grimoire logo
+
+- **Upstream:** [Slush97/grimoire](https://github.com/Slush97/grimoire), `public/grimoire-title-icon.svg`
+- **License:** MIT, © 2025 esoc
+- **Scope:** [apps/desktop/public/brand/grimoire.svg](apps/desktop/public/brand/grimoire.svg)
+  — shown in the import dialog when importing from Grimoire

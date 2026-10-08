@@ -9,6 +9,7 @@
     "architecture",
     "domain-model",
     "mod-interchange",
+    "performance-catalog",
     "auth-service",
     "mirror-service",
     "apt-repository",
