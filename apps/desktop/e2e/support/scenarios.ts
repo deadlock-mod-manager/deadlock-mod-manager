@@ -23,6 +23,7 @@ import { contentRoutes, prepareContentWorld } from "./content-fixtures";
 import { preparePresenceCache } from "./settings-fixtures";
 import { grimoireRoutes, prepareGrimoireWorld } from "./interchange-fixtures";
 import { prepareHeroSkinsWorld } from "./hero-skins-fixtures";
+import { prepareLegacyCatalog } from "./catalog-upgrade-fixtures";
 
 type Definition = {
   family: string;
@@ -247,6 +248,24 @@ export const scenarios = {
     phases: ["detect-live", "restart-live"],
   },
   "gamebanana-single": catalog,
+  "gamebanana-legacy-catalog": {
+    ...defaults,
+    family: "gamebanana",
+    spec: "catalog-upgrade",
+    phases: ["upgrade-catalog", "restart-upgrade"],
+    routes: contentRoutes,
+    prepare: prepareLegacyCatalog,
+    verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) => {
+      if (
+        !requests.some(
+          (request) =>
+            request.url.includes("/apiv11/Mod/Index") &&
+            request.responseStatus === 200,
+        )
+      )
+        throw new Error("The upgraded catalog never synced from GameBanana");
+    },
+  },
   "gamebanana-multifile": catalog,
   "gamebanana-variants": catalog,
   "gamebanana-remembered": catalogLifecycle,
