@@ -112,6 +112,15 @@ fn upsert_managed_section(content: &mut String, section: ManagedSection, section
   append_section(content, section_content);
 }
 
+/// The user's own part of autoexec.cfg, without the sections the app writes.
+pub fn without_managed_sections(content: &str) -> String {
+  let mut content = content.to_string();
+  for section in MANAGED_SECTIONS {
+    remove_managed_section(&mut content, *section);
+  }
+  content
+}
+
 fn remove_managed_section(content: &mut String, section: ManagedSection) {
   if let Some((start_pos, end_pos)) = section_range(content, section) {
     let before_section = content[..start_pos].trim_end();

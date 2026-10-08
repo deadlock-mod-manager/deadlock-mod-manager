@@ -1,0 +1,14 @@
+"r_enable_volume_fog" "0"
+        "r_enable_gradient_fog" "0"
+
+        "r_enable_cubemap_fog" "0"
+
+        "volume_fog_intermediate_textures_hdr" "0"
+
+        "r_enable_volume_fog" "0" 
+
+        "r_enable_gradient_fog" "0" 
+
+        "r_enable_cubemap_fog" "0" 
+
+        "r_citadel_fog_quality" "0"

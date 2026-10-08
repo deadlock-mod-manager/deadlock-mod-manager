@@ -23,6 +23,12 @@ pub struct CrashDumpFile {
   pub modified: Option<String>,
 }
 
+/// Deadlock only ships a Windows build, and Proton writes its dumps next to
+/// the same executable, so this is `game/bin/win64` on every platform.
+pub fn crash_dumps_dir_for(game_path: &Path) -> PathBuf {
+  game_path.join("game").join("bin").join("win64")
+}
+
 pub fn get_crash_dumps_dir() -> Result<PathBuf, Error> {
   let mod_manager = MANAGER.lock().unwrap();
   let game_path = mod_manager
@@ -30,16 +36,7 @@ pub fn get_crash_dumps_dir() -> Result<PathBuf, Error> {
     .get_game_path()
     .ok_or(Error::GamePathNotSet)?;
 
-  #[cfg(target_os = "windows")]
-  let bin_dir = game_path.join("game").join("bin").join("win64");
-
-  #[cfg(target_os = "linux")]
-  let bin_dir = game_path.join("game").join("bin").join("linuxsteamrt64");
-
-  #[cfg(target_os = "macos")]
-  let bin_dir = game_path.join("game").join("bin").join("osx64");
-
-  Ok(bin_dir)
+  Ok(crash_dumps_dir_for(game_path))
 }
 
 pub fn find_deadlock_crash_dumps(dir: &Path) -> Vec<CrashDumpFile> {

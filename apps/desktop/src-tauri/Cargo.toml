@@ -69,6 +69,7 @@ hero-parser = { path = "../../../packages/hero-parser" }
 source2-model = { path = "../../../packages/source2-model" }
 vpkmanager = { path = "../../../packages/vpkmanager" }
 dmp-parser = { path = "../../../packages/dmp-parser" }
+kv-parser = { path = "../../../packages/kv-parser" }
 deadlock-discord-presence = { path = "../../../packages/deadlock-discord-presence" }
 tokio = { version = "1.50.0", features = ["full"] }
 tokio-util = "0.7"
@@ -101,6 +102,7 @@ cbc = { version = "0.1", features = ["alloc"] }
 crc32fast = "1.4"
 hex = "0.4"
 base64 = "0.22"
+flate2 = "1"
 image = { version = "0.25", default-features = false, features = ["png"] }
 keyvalues-parser = "0.2"
 prost = "0.14"
@@ -122,6 +124,7 @@ junction = "1"
 windows = { version = "0.58", features = [
   "Win32_Security_Cryptography",
   "Win32_Foundation",
+  "Win32_System_Threading",
 ] }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]

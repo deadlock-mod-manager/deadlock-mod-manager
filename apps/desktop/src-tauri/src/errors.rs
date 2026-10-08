@@ -54,6 +54,8 @@ pub enum Error {
   ProviderCancelled,
   #[error("Catalog error: {0}")]
   Catalog(String),
+  #[error("Performance config error: {0}")]
+  PerformanceConfig(String),
   #[error("Tauri error: {0}")]
   Tauri(#[from] tauri::Error),
   #[error("Failed to create backup: {0}")]
@@ -133,6 +135,7 @@ impl serde::Serialize for Error {
       Error::ProviderResponseTooLarge { .. } => "providerResponseTooLarge",
       Error::ProviderCancelled => "providerCancelled",
       Error::Catalog(_) => "catalogError",
+      Error::PerformanceConfig(_) => "performanceConfig",
       Error::Tauri(_) => "tauri",
       Error::BackupCreationFailed(_) => "backupCreationFailed",
       Error::BackupRestoreFailed(_) => "backupRestoreFailed",

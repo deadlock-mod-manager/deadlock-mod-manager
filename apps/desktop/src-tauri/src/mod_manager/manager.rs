@@ -110,6 +110,10 @@ impl ModManager {
     self.process_manager.is_game_running()
   }
 
+  pub fn game_processes(&mut self) -> Result<Vec<super::game_process_manager::GameProcess>, Error> {
+    self.process_manager.game_processes()
+  }
+
   pub(crate) fn get_addons_path(&self, profile_folder: Option<&str>) -> Result<ProfileBase, Error> {
     let game_path = self
       .steam_manager
@@ -207,7 +211,44 @@ impl ModManager {
       self.apply_profile_gameinfo(profile_folder)?;
     }
 
+    self.reapply_performance_config();
+
     self.steam_manager.game_launch_request(&additional_args)
+  }
+
+  /// Puts the chosen performance config back into gameinfo.gi, which a game
+  /// update or a reset may have replaced. A problem here never stops the
+  /// launch: it is logged and reported to the frontend instead.
+  pub(crate) fn reapply_performance_config(&self) {
+    use crate::mod_manager::perf_config::{catalog, client_version, ops};
+    use tauri::Emitter;
+
+    let (Some(game_path), Ok(app_data_dir)) = (
+      self.steam_manager.get_game_path(),
+      self.get_app_local_data_path(),
+    ) else {
+      return;
+    };
+    let catalog = catalog::current();
+    let ctx = ops::PerfContext {
+      game_path: Some(game_path),
+      app_data_dir: &app_data_dir,
+      catalog: &catalog,
+      build_id: client_version(game_path).map(|version| version.to_string()),
+    };
+    match ops::reapply_desired(&ctx, ops::HandEdits::Keep) {
+      ops::ReapplyOutcome::Applied => log::info!("Re-applied performance config before launch"),
+      ops::ReapplyOutcome::RemovedOrphan => {
+        log::info!("Removed a performance config that is no longer chosen before launch")
+      }
+      ops::ReapplyOutcome::Failed(message) => {
+        log::warn!("Could not re-apply performance config before launch: {message}");
+        if let Some(app_handle) = &self.app_handle {
+          let _ = app_handle.emit("performance-config-reapply-failed", message);
+        }
+      }
+      ops::ReapplyOutcome::NothingDesired | ops::ReapplyOutcome::AlreadyInSync => {}
+    }
   }
 
   pub fn get_mod_file_tree(&self, mod_path: &PathBuf) -> Result<ModFileTree, Error> {
