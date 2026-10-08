@@ -83,6 +83,7 @@ import { ImportSourceMenu } from "@/components/mod-interchange/import-source-men
 import { ConflictsPanel } from "@/components/my-mods/conflicts/conflicts-panel";
 import { ModConflictBadge } from "@/components/my-mods/conflicts/mod-conflict-badge";
 import { MyModsEmptyState } from "@/components/my-mods/empty-state";
+import { LibraryModAuthor } from "@/components/my-mods/library-mod-author";
 import { ModOrderingDialog } from "@/components/my-mods/mod-ordering-dialog";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useAddonAnalysis } from "@/hooks/use-addon-analysis";
@@ -342,7 +343,7 @@ const GridModCard = ({
               <CardDescription
                 className='w-48 overflow-clip text-ellipsis text-nowrap'
                 title={mod.author}>
-                {t("mods.by")} {mod.author}
+                <LibraryModAuthor mod={mod} />
               </CardDescription>
             </div>
           </div>
@@ -499,7 +500,7 @@ const ListModCard = ({
                   {mod.name}
                 </h3>
                 <p className='text-muted-foreground text-sm'>
-                  {t("mods.by")} {mod.author}{" "}
+                  <LibraryModAuthor mod={mod} />{" "}
                   {mod.isAudio && `• ${t("mods.audioMod")}`}
                 </p>
               </div>
@@ -1042,6 +1043,7 @@ const MyMods = () => {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
+                          aria-label={t("mods.gridView")}
                           onClick={() => setViewMode(ViewMode.GRID)}
                           size='icon'
                           variant={
@@ -1055,6 +1057,7 @@ const MyMods = () => {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button
+                          aria-label={t("mods.listView")}
                           onClick={() => setViewMode(ViewMode.LIST)}
                           size='icon'
                           variant={
