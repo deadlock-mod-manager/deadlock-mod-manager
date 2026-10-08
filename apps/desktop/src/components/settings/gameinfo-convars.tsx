@@ -191,7 +191,7 @@ export const GameInfoConvars = () => {
         placeholder={t("settings.gameinfoConvarsSearch")}
         value={query}
       />
-      <div className='max-h-80 space-y-2 overflow-y-auto pr-1' ref={listRef}>
+      <div className='max-h-80 space-y-2 overflow-y-auto pr-4' ref={listRef}>
         {visibleRows.length === 0 ? (
           <p className='text-muted-foreground text-sm'>
             {t("settings.gameinfoConvarsEmpty")}
