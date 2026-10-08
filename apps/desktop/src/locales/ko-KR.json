@@ -29,11 +29,828 @@
     "foundry": "",
     "customization": "맞춤화",
     "autoexec": "자동 실행 구성",
+    "performance": "",
+    "new": "",
     "maps": "지도",
     "servers": "",
     "multiplayer": "",
     "general": "",
     "mods": ""
+  },
+  "performance": {
+    "title": "",
+    "subtitle": "",
+    "tabs": {
+      "configs": "",
+      "editor": "",
+      "history": "",
+      "howItWorks": ""
+    },
+    "howItWorks": {
+      "writes": {
+        "title": "",
+        "inPlace": "",
+        "turnOff": "",
+        "reapply": "",
+        "untouched": ""
+      },
+      "sources": {
+        "title": "",
+        "convars": {
+          "term": "",
+          "body": ""
+        },
+        "history": {
+          "term": "",
+          "body": ""
+        },
+        "stock": {
+          "term": "",
+          "body": ""
+        },
+        "presets": {
+          "term": "",
+          "body": ""
+        },
+        "gamebanana": {
+          "term": "",
+          "body": ""
+        },
+        "updates": ""
+      },
+      "statuses": {
+        "title": "",
+        "description": "",
+        "applies": "",
+        "unchanged": "",
+        "blocked": "",
+        "removed": "",
+        "notConvar": "",
+        "engineSection": "",
+        "omitted": "",
+        "excluded": "",
+        "denied": "",
+        "unsupported": "",
+        "camera": ""
+      },
+      "counts": {
+        "title": "",
+        "settings": "",
+        "unused": "",
+        "gamebanana": ""
+      },
+      "scale": {
+        "title": "",
+        "categories": "",
+        "position": "",
+        "tiers": ""
+      }
+    },
+    "tiers": {
+      "pretty": {
+        "label": "",
+        "quip": ""
+      },
+      "balanced": {
+        "label": "",
+        "quip": ""
+      },
+      "lean": {
+        "label": "",
+        "quip": ""
+      },
+      "sweaty": {
+        "label": "",
+        "quip": ""
+      },
+      "potato": {
+        "label": "",
+        "quip": ""
+      }
+    },
+    "scale": {
+      "looks": "",
+      "frames": "",
+      "you": ""
+    },
+    "categories": {
+      "shadows": "",
+      "lighting": "",
+      "postprocessing": "",
+      "textures": "",
+      "particles": "",
+      "world": "",
+      "cpu": "",
+      "network": "",
+      "interface": "",
+      "audio": "",
+      "camera": "",
+      "physics": "",
+      "other": ""
+    },
+    "status": {
+      "applies": "",
+      "unchanged": "",
+      "blocked": "",
+      "removed": "",
+      "notConvar": "",
+      "engineSection": "",
+      "excluded": "",
+      "denied": "",
+      "omitted": "",
+      "unsupported": ""
+    },
+    "toasts": {
+      "applied": "",
+      "nextLaunch_one": "",
+      "nextLaunch_other": "",
+      "restartToUse_one": "",
+      "restartToUse_other": "",
+      "undo": "",
+      "undoFailed": "",
+      "applyFailed": "",
+      "removed": "",
+      "removeFailed": ""
+    },
+    "editor": {
+      "header": {
+        "editing": "",
+        "pickConfig": "",
+        "presets": "",
+        "yourConfigs": "",
+        "appliedOption": "",
+        "applied": "",
+        "notApplied": "",
+        "tierTooltip": "",
+        "summary": "",
+        "updating": ""
+      },
+      "empty": {
+        "title": "",
+        "description": "",
+        "noConfigs": "",
+        "statusError": "",
+        "browse": ""
+      },
+      "loadError": {
+        "title": "",
+        "retry": ""
+      },
+      "noEntries": {
+        "title": "",
+        "description": ""
+      },
+      "noMatches": {
+        "title": "",
+        "clear": "",
+        "searchAll": ""
+      },
+      "toolbar": {
+        "search_one": "",
+        "search_other": "",
+        "filterAll": "",
+        "filterChanged": "",
+        "filterAttention": "",
+        "convarNames": "",
+        "addSetting": ""
+      },
+      "rail": {
+        "label": "",
+        "attention_one": "",
+        "attention_other": "",
+        "cameraNote": "",
+        "devtoolsNote": ""
+      },
+      "group": {
+        "settings_one": "",
+        "settings_other": "",
+        "changed": "",
+        "attention_one": "",
+        "attention_other": "",
+        "value": "",
+        "reference": "",
+        "showMore": "",
+        "showFewer": ""
+      },
+      "row": {
+        "on": "",
+        "off": "",
+        "none": "",
+        "config": "",
+        "default": "",
+        "commentedOut": "",
+        "commentedOutByConfig": "",
+        "keepGameLine": "",
+        "valueLabel": "",
+        "invalidNumber": "",
+        "invalidInteger": "",
+        "notListed": "",
+        "sideEffect": "",
+        "gameplay": {
+          "camera": "",
+          "visibility": "",
+          "devtools": ""
+        },
+        "fromAuthor": "",
+        "turnOffInline": "",
+        "devtoolsOff": "",
+        "devtoolsOn": "",
+        "enable": "",
+        "turnedOff": "",
+        "restore": "",
+        "turnOff": "",
+        "undoChange": "",
+        "menu": ""
+      },
+      "notes": {
+        "clamped": "",
+        "clamped_yours": "",
+        "clampedBelow": "",
+        "clampedBelow_yours": "",
+        "clampedAbove": "",
+        "clampedAbove_yours": "",
+        "typeMismatch": "",
+        "typeMismatch_yours": "",
+        "expected": {
+          "bool": "",
+          "int": "",
+          "float": "",
+          "string": "",
+          "enum": "",
+          "color": "",
+          "vector": ""
+        },
+        "blockedSince": "",
+        "blocked": "",
+        "removedSince": "",
+        "removed": "",
+        "sectionKey": "",
+        "notConvar": "",
+        "denied": "",
+        "deniedNoReason": "",
+        "excludedSection": "",
+        "excluded": "",
+        "missingSection": "",
+        "unsupported": "",
+        "engineSection": "",
+        "engineSectionUnguarded": ""
+      },
+      "engine": {
+        "excluded_one": "",
+        "excluded_other": "",
+        "included_one": "",
+        "included_other": "",
+        "sectionsMore": "",
+        "valveMessage": "",
+        "toggle": ""
+      },
+      "add": {
+        "placeholder": "",
+        "hint": "",
+        "loading": "",
+        "empty": "",
+        "error": "",
+        "inConfig": "",
+        "default": "",
+        "noDefault": "",
+        "blockedSince": "",
+        "blocked": "",
+        "removed": "",
+        "notConvar": "",
+        "kinds": {
+          "bool": "",
+          "int": "",
+          "float": "",
+          "string": "",
+          "enum": "",
+          "color": "",
+          "vector": ""
+        }
+      },
+      "applyBar": {
+        "unsaved_one": "",
+        "unsaved_other": "",
+        "notApplied": "",
+        "noGameinfo": "",
+        "discard": "",
+        "apply": "",
+        "applyConfig": ""
+      }
+    },
+    "import": {
+      "title": "",
+      "description": "",
+      "tabs": {
+        "paste": "",
+        "file": "",
+        "gamebanana": "",
+        "current": ""
+      },
+      "paste": {
+        "label": "",
+        "placeholder": "",
+        "review": "",
+        "shareCodeDetected": "",
+        "legend": {
+          "applies": "",
+          "ignored": "",
+          "stripped": "",
+          "optIn": ""
+        }
+      },
+      "file": {
+        "description": "",
+        "choose": "",
+        "chooseAnother": "",
+        "dialogTitle": "",
+        "filterName": ""
+      },
+      "gamebanana": {
+        "label": "",
+        "placeholder": "",
+        "find": "",
+        "invalid": "",
+        "loading": "",
+        "loadFailed": "",
+        "noFiles": "",
+        "archived": "",
+        "note": "",
+        "review": ""
+      },
+      "current": {
+        "title": "",
+        "description": "",
+        "kept": "",
+        "keptDescription": "",
+        "leftOut": "",
+        "leftOutApplied": "",
+        "leftOutNone": "",
+        "readAgain": "",
+        "found_one": "",
+        "found_other": "",
+        "noEdits": {
+          "title": "",
+          "stock": "",
+          "stockBuild": "",
+          "withApplied": "",
+          "withoutApplied": ""
+        }
+      },
+      "handedOver": {
+        "gameBanana": "",
+        "byAuthor": "",
+        "viewOnGameBanana": "",
+        "modDownload": "",
+        "archive": "",
+        "changeSource": ""
+      },
+      "variants": {
+        "title": "",
+        "extras": {
+          "copies_one": "",
+          "copies_other": "",
+          "copiesAndVideo_one": "",
+          "copiesAndVideo_other": "",
+          "video": ""
+        }
+      },
+      "formats": {
+        "fullGameinfo": "",
+        "convarsSnippet": "",
+        "cfg": "",
+        "overridesGi": "",
+        "videoTxt": "",
+        "shareCode": "",
+        "archive": ""
+      },
+      "base": {
+        "exact": "",
+        "closest": ""
+      },
+      "preset": {
+        "description_one": "",
+        "description_other": "",
+        "descriptionNoTweaks": "",
+        "replacesTweaks_one": "",
+        "replacesTweaks_other": ""
+      },
+      "review": {
+        "empty": "",
+        "analyzing": "",
+        "nothingToImport": "",
+        "tiles": {
+          "applies": "",
+          "blocked": "",
+          "notInBuild": "",
+          "engineLeftOut": "",
+          "engineIncluded": ""
+        },
+        "willApply": {
+          "title": "",
+          "alreadySet_one": "",
+          "alreadySet_other": "",
+          "editorHint": ""
+        },
+        "camera": {
+          "title": "",
+          "description": "",
+          "included": ""
+        },
+        "wontApply": {
+          "title": "",
+          "blockedSince_one": "",
+          "blockedSince_other": "",
+          "blocked_one": "",
+          "blocked_other": "",
+          "removed_one": "",
+          "removed_other": "",
+          "refused_one": "",
+          "refused_other": ""
+        },
+        "engine": {
+          "title": "",
+          "titleIncluded": "",
+          "include": "",
+          "description_one": "",
+          "description_other": "",
+          "valveMessage": "",
+          "sectionsWithRest_one": "",
+          "sectionsWithRest_other": ""
+        },
+        "devtools": {
+          "title": "",
+          "description_one": "",
+          "description_other": ""
+        },
+        "ignored": {
+          "title": "",
+          "description": "",
+          "atLine": "",
+          "neverWritten": "",
+          "kinds": {
+            "searchPaths": "",
+            "modManagerMarkers": "",
+            "listSection": "",
+            "rootKey": "",
+            "editorSection": "",
+            "machineSpecific": "",
+            "bind": "",
+            "alias": "",
+            "exec": "",
+            "consoleCommand": "",
+            "duplicateKey": "",
+            "parseError": ""
+          }
+        },
+        "video": {
+          "title": "",
+          "description": ""
+        },
+        "notes": {
+          "clamped": "",
+          "typeMismatch": "",
+          "missingSection": "",
+          "sinceBuild": "",
+          "sectionKey": ""
+        },
+        "showMore": "",
+        "defaultValue": "",
+        "liveValue": "",
+        "commentedOut": ""
+      },
+      "errors": {
+        "text": {
+          "title": "",
+          "description": ""
+        },
+        "file": {
+          "title": "",
+          "description": ""
+        },
+        "gameBanana": {
+          "title": "",
+          "description": ""
+        },
+        "currentGameinfo": {
+          "title": "",
+          "description": ""
+        },
+        "staged": {
+          "title": "",
+          "description": ""
+        }
+      },
+      "defaultNames": {
+        "text": "",
+        "file": "",
+        "gameBanana": "",
+        "currentGameinfo": "",
+        "staged": ""
+      },
+      "footer": {
+        "saveAs": "",
+        "save": "",
+        "saveAndApply": "",
+        "saveTweaks": "",
+        "usePreset_one": "",
+        "usePreset_other": "",
+        "usePresetNoTweaks": ""
+      },
+      "toasts": {
+        "saved": "",
+        "presetTweaksSaved": ""
+      }
+    },
+    "export": {
+      "button": "",
+      "needsConfig": "",
+      "title": "",
+      "description": "",
+      "shareCode": {
+        "label": "",
+        "help": ""
+      },
+      "snippet": {
+        "label": "",
+        "help": "",
+        "saveFile": "",
+        "saveTitle": "",
+        "saved": "",
+        "saveFailed": ""
+      },
+      "copy": "",
+      "copied": "",
+      "copyFailed": "",
+      "loading": "",
+      "failed": ""
+    },
+    "modConfigFound": {
+      "title": "",
+      "withVpks": "",
+      "withoutVpks": "",
+      "pickVersion": "",
+      "dontAskAgain": "",
+      "notNow": "",
+      "review": ""
+    },
+    "header": {
+      "import": "",
+      "turnOff": "",
+      "turnOffConfirm": {
+        "title": "",
+        "body": ""
+      }
+    },
+    "activeStatus": {
+      "label": "",
+      "active": "",
+      "notWritten": "",
+      "tweaks_one": "",
+      "tweaks_other": "",
+      "inFile_one": "",
+      "inFile_other": "",
+      "settings_one": "",
+      "settings_other": "",
+      "leftOut_one": "",
+      "leftOut_other": "",
+      "engineLeftOut_one": "",
+      "engineLeftOut_other": "",
+      "takesEffect": "",
+      "editSettings": "",
+      "undo": "",
+      "openInEditor": "",
+      "openInEditorFailed": "",
+      "none": "",
+      "noGamePath": "",
+      "noGameinfo": "",
+      "openSettings": "",
+      "error": "",
+      "notInFile": "",
+      "outOfDate": "",
+      "catalogBehind": "",
+      "handEdited_one": "",
+      "handEdited_other": "",
+      "reapply": "",
+      "reapplied": "",
+      "reapplyFailed": "",
+      "foreignAlso": "",
+      "foreignAlsoLabelled": "",
+      "foreignOnly": "",
+      "replaceForeign": "",
+      "foreignReplaced_one": "",
+      "foreignReplaced_other": "",
+      "orphaned": "",
+      "removeOrphaned": ""
+    },
+    "foreignTools": {
+      "grimoire": "",
+      "deadtune": "",
+      "sqookyUpdater": "",
+      "gameinfoEditor": ""
+    },
+    "configs": {
+      "meter": "",
+      "apply": "",
+      "applyChanges": "",
+      "applied": "",
+      "details": "",
+      "by": "",
+      "recommended": "",
+      "imported": "",
+      "yours": "",
+      "settingsCount_one": "",
+      "settingsCount_other": "",
+      "unusedCount_one": "",
+      "unusedCount_other": "",
+      "unusedHint": "",
+      "suggestsVideoSettings": "",
+      "downloads_one": "",
+      "downloads_other": "",
+      "updatedIn": "",
+      "madeForOlderBuild": "",
+      "outdatedHint": "",
+      "downloadAndReview": "",
+      "created": "",
+      "sources": {
+        "github": "",
+        "bundled": "",
+        "gamebanana": ""
+      },
+      "sourceWithTime": "",
+      "catalogError": "",
+      "retry": "",
+      "scale": {
+        "label": "",
+        "hint": "",
+        "pin": "",
+        "you": ""
+      },
+      "sourceFilter": "",
+      "sourceFilters": {
+        "all": "",
+        "curated": "",
+        "gamebanana": "",
+        "yours": ""
+      },
+      "sortLabel": "",
+      "sortPrefix": "",
+      "sorts": {
+        "downloads": "",
+        "name": "",
+        "looksToFrames": ""
+      },
+      "rename": {
+        "label": "",
+        "title": "",
+        "action": ""
+      },
+      "delete": {
+        "label": "",
+        "title": "",
+        "body": "",
+        "bodyActive": "",
+        "action": ""
+      },
+      "empty": {
+        "title": "",
+        "description": "",
+        "filteredTitle": "",
+        "filteredDescription": "",
+        "clearFilters": ""
+      }
+    },
+    "origins": {
+      "paste": "",
+      "file": "",
+      "fileNamed": "",
+      "gamebanana": "",
+      "currentGameinfo": "",
+      "modDownload": "",
+      "shareCode": "",
+      "fork": "",
+      "forkOf": ""
+    },
+    "details": {
+      "title": "",
+      "notFound": "",
+      "addedOn": "",
+      "baseBuild": "",
+      "resolveError": "",
+      "changes": {
+        "title": "",
+        "description_one": "",
+        "description_other": "",
+        "descriptionCurrent_one": "",
+        "descriptionCurrent_other": "",
+        "descriptionCompared_one": "",
+        "descriptionCompared_other": "",
+        "nothing": "",
+        "legendThis": "",
+        "legendCurrent": "",
+        "currentValue_one": "",
+        "currentValue_other": ""
+      },
+      "video": {
+        "title": "",
+        "notesTitle": "",
+        "description": ""
+      },
+      "view": {
+        "title": "",
+        "description": "",
+        "commentedOut": "",
+        "gameUses": "",
+        "withDefault": "",
+        "isDefault": "",
+        "noMatches": ""
+      },
+      "devtools": {
+        "title": "",
+        "description": ""
+      },
+      "notApplied": {
+        "title": "",
+        "view": ""
+      },
+      "engine": {
+        "include": "",
+        "title_one": "",
+        "title_other": "",
+        "titleIncluded_one": "",
+        "titleIncluded_other": "",
+        "sections": "",
+        "sectionsMore_one": "",
+        "sectionsMore_other": "",
+        "valveMessage": "",
+        "outsideConvars": "",
+        "change": "",
+        "notSet": ""
+      },
+      "unread": {
+        "title_one": "",
+        "title_other": "",
+        "blocked_one": "",
+        "blocked_other": "",
+        "removed_one": "",
+        "removed_other": "",
+        "notConvar_one": "",
+        "notConvar_other": ""
+      },
+      "leftOut": {
+        "title_one": "",
+        "title_other": "",
+        "summary": ""
+      },
+      "reasons": {
+        "blocked": "",
+        "blockedSince": "",
+        "removed": "",
+        "removedSince": "",
+        "sectionKey": "",
+        "notConvar": "",
+        "excluded": "",
+        "missingSection": ""
+      },
+      "credits": {
+        "title": "",
+        "github": "",
+        "bundled": ""
+      },
+      "community": {
+        "statsTitle": "",
+        "statsDescription": "",
+        "settings": "",
+        "engineEdits": "",
+        "downloads": "",
+        "baseBuild": "",
+        "unknownBuild": "",
+        "reviewNote": "",
+        "imported": "",
+        "openCopy": ""
+      },
+      "footer": {
+        "takesEffect": "",
+        "active": "",
+        "pendingChanges": "",
+        "replaces": "",
+        "replacesWithTweaks_one": "",
+        "replacesWithTweaks_other": ""
+      }
+    },
+    "history": {
+      "description": "",
+      "applied": "",
+      "removed": "",
+      "current": "",
+      "applyAgain": "",
+      "configDeleted": "",
+      "emptyTitle": "",
+      "emptyDescription": ""
+    },
+    "reapplyFailed": {
+      "title": "",
+      "open": ""
+    }
   },
   "skins": {
     "title": "",
@@ -1773,6 +2590,10 @@
         "description": ""
       },
       "conflict-detection": {
+        "title": "",
+        "description": ""
+      },
+      "performance-configs": {
         "title": "",
         "description": ""
       }
@@ -4105,5 +4926,79 @@
     "exportFailed": "",
     "gameRunning": "",
     "checkingFiles": ""
+  },
+  "launchHealth": {
+    "duration": {
+      "seconds_one": "",
+      "seconds_other": "",
+      "minutes_one": "",
+      "minutes_other": ""
+    },
+    "dialog": {
+      "title": "",
+      "closedWithReport": "",
+      "closedWithoutShutdown": "",
+      "maybeChangesUnlessYou": "",
+      "maybeChanges": "",
+      "buildChanged": "",
+      "changesHeading": "",
+      "modsNotLoaded": "",
+      "tip": "",
+      "optOut": "",
+      "closedIt": "",
+      "turnOffAndRelaunch": "",
+      "launchAgain": ""
+    },
+    "changes": {
+      "perfConfig": {
+        "turnedOn": "",
+        "switched": "",
+        "edited": ""
+      },
+      "settingCount_one": "",
+      "settingCount_other": "",
+      "modsAdded_one": "",
+      "modsAdded_other": "",
+      "modsUpdated_one": "",
+      "modsUpdated_other": "",
+      "andMore_one": "",
+      "andMore_other": "",
+      "autoexec": "",
+      "launchOptions": "",
+      "argumentsAdded": "",
+      "argumentsRemoved": "",
+      "addonFiles": ""
+    },
+    "actions": {
+      "turnOff": "",
+      "turnedOff": "",
+      "disable_one": "",
+      "disable_other": "",
+      "disableBoth": "",
+      "disabled": "",
+      "open": ""
+    },
+    "toast": {
+      "title": "",
+      "review": "",
+      "perfConfig": "",
+      "modsAdded_one": "",
+      "modsAdded_other": "",
+      "modsUpdated_one": "",
+      "modsUpdated_other": "",
+      "autoexec": "",
+      "launchOptions": "",
+      "addonFiles": ""
+    },
+    "toasts": {
+      "modsDisabled_zero": "",
+      "modsDisabled_one": "",
+      "modsDisabled_other": "",
+      "disableFailed": ""
+    },
+    "settings": {
+      "title": "",
+      "description": ""
+    }
   }
 }
