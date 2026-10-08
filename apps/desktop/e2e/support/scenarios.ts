@@ -24,6 +24,7 @@ import { preparePresenceCache } from "./settings-fixtures";
 import { grimoireRoutes, prepareGrimoireWorld } from "./interchange-fixtures";
 import { prepareHeroSkinsWorld } from "./hero-skins-fixtures";
 import { prepareLegacyCatalog } from "./catalog-upgrade-fixtures";
+import { prepareOnboardingWorld } from "./onboarding-fixtures";
 
 type Definition = {
   family: string;
@@ -183,6 +184,38 @@ const heroSkins: Definition = {
   prepare: async (world) => prepareHeroSkinsWorld(world),
 };
 export const scenarios = {
+  "onboarding-skip-analysis": {
+    ...defaults,
+    family: "onboarding",
+    spec: "onboarding",
+    phases: ["skip-analysis"],
+    prepare: prepareOnboardingWorld,
+    routes: async () => () => [
+      {
+        method: "POST",
+        path: "/api/v2/vpk-analyse-hashes",
+        status: 200,
+        body: "[]",
+      },
+      {
+        method: "GET",
+        path: "/apiv11/Util/Fileservers",
+        status: 200,
+        body: '{"_aRecords":[]}',
+      },
+    ],
+    verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) => {
+      if (
+        !requests.some(
+          (request) =>
+            request.method === "POST" &&
+            request.url.includes("/api/v2/vpk-analyse-hashes") &&
+            request.responseStatus === 200,
+        )
+      )
+        throw new Error("Onboarding never analyzed the existing VPK");
+    },
+  },
   "content-blur": {
     ...settings,
     spec: "content-blur",
