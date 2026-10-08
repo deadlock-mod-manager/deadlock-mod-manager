@@ -31,6 +31,7 @@ import {
 import { platform } from "@tauri-apps/plugin-os";
 import { useTranslation } from "react-i18next";
 import { AlbumGrid, AlbumGridSkeleton } from "@/components/albums/album-grid";
+import { CatalogRefreshButton } from "@/components/mod-browsing/catalog-refresh-button";
 import ContentTypeTabs from "@/components/mod-browsing/content-type-tabs";
 import ModCard from "@/components/mod-browsing/mod-card";
 import SearchBar from "@/components/mod-browsing/search-bar";
@@ -575,6 +576,7 @@ const GetModsData = ({
   return (
     <div className='flex min-h-0 flex-1 flex-col gap-4'>
       <SearchBar
+        trailingActions={<CatalogRefreshButton />}
         filterMode={filterMode}
         mods={filterOptions}
         timePeriod={timePeriod}

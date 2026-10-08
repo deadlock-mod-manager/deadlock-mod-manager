@@ -517,17 +517,32 @@ impl CatalogSync {
           .max()
           .unwrap_or(newest)
           .max(newest);
-        self
+        let records = index_records
+          .iter()
+          .map(|record| from_index(record, submission_type, None))
+          .collect::<Vec<_>>();
+        let pending = self
           .catalog
-          .upsert_records(
-            index_records
+          .hydration_candidates(
+            submission_type,
+            records
               .iter()
-              .map(|record| from_index(record, submission_type, None))
+              .map(|record| {
+                (
+                  record.submission.submission_id.clone(),
+                  record.remote_updated_at,
+                )
+              })
               .collect(),
           )
           .await?;
+        self.catalog.upsert_records(records).await?;
+        let changed = index_records
+          .into_iter()
+          .filter(|record| pending.contains(&record.id.to_string()))
+          .collect::<Vec<_>>();
         self
-          .hydrate_records(&index_records, submission_type, None, cancel)
+          .hydrate_records(&changed, submission_type, None, cancel)
           .await?;
 
         if page.metadata.is_complete || crossed_high_water {
@@ -1395,6 +1410,114 @@ mod tests {
         .unwrap(),
       super::SyncOutcome::Throttled
     );
+  }
+
+  struct TrackingSource {
+    source: FakeSource,
+    hydrated: std::sync::Arc<Mutex<Vec<String>>>,
+  }
+
+  impl CatalogSource for TrackingSource {
+    fn record_counts<'a>(&'a self, cancel: &'a CancellationToken) -> SourceFuture<'a, [u64; 3]> {
+      self.source.record_counts(cancel)
+    }
+
+    fn index<'a>(
+      &'a self,
+      submission_type: SubmissionType,
+      page: u32,
+      latest_modified: bool,
+      cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, IndexPage> {
+      self
+        .source
+        .index(submission_type, page, latest_modified, cancel)
+    }
+
+    fn bulk_hydrate<'a>(
+      &'a self,
+      submissions: &'a [SubmissionRef],
+      cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, Vec<Option<BulkHydration>>> {
+      self
+        .hydrated
+        .lock()
+        .unwrap()
+        .extend(submissions.iter().map(|entry| entry.to_slug().unwrap()));
+      self.source.bulk_hydrate(submissions, cancel)
+    }
+  }
+
+  #[tokio::test]
+  async fn incremental_refresh_hydrates_only_new_changed_or_incomplete_entries() {
+    let directory = tempdir().unwrap();
+    let catalog = super::Catalog::open(directory.path().join("catalog.sqlite3"), 2)
+      .await
+      .unwrap();
+    let cached = page_with_modified(&[(11, 110), (10, 100), (8, 109), (9, 90)], true);
+    let records = cached
+      .valid_records()
+      .iter()
+      .map(|index| {
+        let mut record = super::from_index(index, SubmissionType::Mod, None);
+        record.is_hydrated = index.id != 8;
+        record.description = "saved description".to_string();
+        record
+      })
+      .collect();
+    catalog.upsert_records(records).await.unwrap();
+    catalog
+      .set_high_water_mark(SubmissionType::Mod, 110)
+      .await
+      .unwrap();
+    let hydrated = std::sync::Arc::new(Mutex::new(Vec::new()));
+    let changed = || {
+      page_with_modified(
+        &[
+          (13, 120),
+          (10, 115),
+          (12, 110),
+          (11, 110),
+          (8, 109),
+          (9, 90),
+        ],
+        false,
+      )
+    };
+    let source = TrackingSource {
+      source: FakeSource {
+        served: Mutex::default(),
+        pages: Mutex::new(VecDeque::from([
+          Ok(changed()),
+          Ok(empty_page()),
+          Ok(changed()),
+          Ok(empty_page()),
+        ])),
+      },
+      hydrated: hydrated.clone(),
+    };
+    let sync = CatalogSync::with_source(catalog.clone(), source);
+    sync
+      .incremental_sync(true, &CancellationToken::new())
+      .await
+      .unwrap();
+    assert_eq!(*hydrated.lock().unwrap(), ["13", "10", "12", "8"]);
+    hydrated.lock().unwrap().clear();
+    sync
+      .incremental_sync(true, &CancellationToken::new())
+      .await
+      .unwrap();
+    assert!(
+      hydrated.lock().unwrap().is_empty(),
+      "Repeated refresh must not fetch unchanged details"
+    );
+    let saved = catalog
+      .get(SubmissionRef::parse_slug("11").unwrap())
+      .await
+      .unwrap()
+      .unwrap();
+    assert_eq!(saved.description, "saved description");
+    assert_eq!(catalog.count_visible().await.unwrap(), 6);
   }
 
   fn page_with_preview(id: u64) -> IndexPage {

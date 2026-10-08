@@ -143,9 +143,9 @@ export const inspectGameBananaCatalog = () =>
 export const clearGameBananaCatalog = () =>
   invoke<void>("clear_gamebanana_catalog");
 
-export const synchronizeGameBananaCatalog = () =>
+export const synchronizeGameBananaCatalog = (forceRefresh = false) =>
   invoke<CatalogSyncStatusDto>("synchronize_gamebanana_catalog", {
-    forceRefresh: false,
+    forceRefresh,
     forceReconcile: false,
   });
 

@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@deadlock-mods/ui/components/select";
 import { ArrowUpDown, Star, X } from "@deadlock-mods/ui/icons";
-import { memo } from "react";
+import { memo, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { HeroIcon } from "@/components/heroes/hero-icon";
 import { usePersistedStore } from "@/lib/store";
@@ -34,6 +34,7 @@ import FiltersDropdown from "./filters-dropdown";
 import HeroFilter from "./hero-filter";
 
 type SearchBarProps = {
+  trailingActions?: ReactNode;
   className?: string;
   inputGroupClassName?: string;
   searchContainerClassName?: string;
@@ -77,6 +78,7 @@ type SearchBarProps = {
 };
 
 const SearchBar = ({
+  trailingActions,
   className,
   inputGroupClassName,
   searchContainerClassName,
@@ -170,7 +172,9 @@ const SearchBar = ({
     (showTimePeriodControl && effectiveTimePeriod !== TimePeriod.ALL_TIME);
 
   const showTrailing =
-    showFavoritesFilter || Boolean(showSortControl && sortType && setSortType);
+    showFavoritesFilter ||
+    Boolean(showSortControl && sortType && setSortType) ||
+    Boolean(trailingActions);
 
   return (
     <div className={cn("flex flex-col gap-3", className)}>
@@ -272,6 +276,7 @@ const SearchBar = ({
                 </SelectContent>
               </Select>
             )}
+            {trailingActions}
           </div>
         )}
       </div>

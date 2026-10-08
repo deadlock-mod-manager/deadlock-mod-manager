@@ -23,7 +23,7 @@ const dropCachedCatalog = async (queryClient: QueryClient) => {
   await queryClient.resetQueries({ queryKey: ["mods"] });
 };
 
-export const useCatalogSyncMutation = () => {
+export const useCatalogSyncMutation = (forceRefresh = false) => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationKey: CATALOG_SYNC_KEY,
@@ -32,10 +32,13 @@ export const useCatalogSyncMutation = () => {
         await clearGameBananaCatalog();
         await dropCachedCatalog(queryClient);
       }
-      return synchronizeGameBananaCatalog();
+      return synchronizeGameBananaCatalog(forceRefresh);
     },
     meta: { skipGlobalErrorHandler: true },
     onSettled: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["gamebanana-catalog-status"],
+      });
       void queryClient.invalidateQueries({ queryKey: ["mods"] });
       void queryClient.invalidateQueries({ queryKey: ["mod"] });
     },

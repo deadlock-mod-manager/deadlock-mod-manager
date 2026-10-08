@@ -23,6 +23,10 @@ import { contentRoutes, prepareContentWorld } from "./content-fixtures";
 import { preparePresenceCache } from "./settings-fixtures";
 import { grimoireRoutes, prepareGrimoireWorld } from "./interchange-fixtures";
 import { prepareHeroSkinsWorld } from "./hero-skins-fixtures";
+import {
+  catalogRefreshRoutes,
+  assertCatalogRefreshNetwork,
+} from "./catalog-refresh-fixtures";
 import { prepareLegacyCatalog } from "./catalog-upgrade-fixtures";
 import { prepareOnboardingWorld } from "./onboarding-fixtures";
 import {
@@ -192,6 +196,14 @@ const heroSkins: Definition = {
   prepare: async (world) => prepareHeroSkinsWorld(world),
 };
 export const scenarios = {
+  "catalog-refresh": {
+    ...defaults,
+    family: "catalog",
+    spec: "catalog-refresh",
+    phases: ["refresh"],
+    routes: catalogRefreshRoutes,
+    verifyNetwork: assertCatalogRefreshNetwork,
+  },
   "library-author-legacy": {
     ...defaults,
     family: "navigation",
