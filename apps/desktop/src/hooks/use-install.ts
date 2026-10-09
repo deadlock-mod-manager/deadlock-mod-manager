@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { trackInstallOptions } from "@/lib/analytics";
 import type { InstallAnalyticsOptions } from "@/lib/analytics/install";
 import { getErrorMessage } from "@/lib/errors";
+import { syncInstalledVpksFromManifest } from "@/lib/mods/sync-installed-vpks";
 import { isTauriError } from "@/types/tauri";
 import { usePersistedStore } from "@/lib/store";
 import { type InstallableMod, type LocalMod, ModStatus } from "@/types/mods";
@@ -38,6 +39,7 @@ const useInstall = () => {
           },
           profileFolder,
         });
+        await syncInstalledVpksFromManifest(profileFolder);
 
         options.onComplete(mod, result);
 

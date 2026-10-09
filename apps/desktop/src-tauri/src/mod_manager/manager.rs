@@ -650,6 +650,96 @@ mod tests {
   }
 
   #[test]
+  fn reenable_returns_mod_to_its_place_in_a_sharded_profile() {
+    let game = game_dir();
+    let citadel = game.path().join("game/citadel");
+    fs::write(
+      citadel.join("gameinfo.gi"),
+      "\"GameInfo\"\n{\n\"FileSystem\"\n{\nSearchPaths\n{\nGame citadel\n}\n}\n}\n",
+    )
+    .unwrap();
+    let addons = citadel.join("addons");
+    fs::create_dir_all(&addons).unwrap();
+    let base = ProfileBase::new(addons.clone()).unwrap();
+    let shard_two = ShardIndex::new(2).unwrap();
+    fs::create_dir_all(base.shard_dir(shard_two)).unwrap();
+
+    // 100 ordered mods: mod03 is disabled, leaving a hole in the full base
+    // shard, and mod99 sits alone in shard 2.
+    let id = |i: u32| format!("mod{i:02}");
+    let mut manifest = ProfileVpkManifest::default();
+    for i in 0..100u32 {
+      if i == 3 {
+        fs::write(addons.join("mod03_mod03.vpk"), id(i)).unwrap();
+        manifest.mark_disabled(
+          &id(i),
+          vec!["mod03_mod03.vpk".into()],
+          vec!["mod03.vpk".into()],
+        );
+        manifest.mods.get_mut(&id(i)).unwrap().order = Some(i);
+        continue;
+      }
+      let (shard, vpk) = if i == 99 {
+        (shard_two, "pak01_dir.vpk".to_string())
+      } else {
+        (ShardIndex::FIRST, format!("pak{:02}_dir.vpk", i + 1))
+      };
+      fs::write(base.shard_dir(shard).join(&vpk), id(i)).unwrap();
+      manifest.mark_enabled(
+        &id(i),
+        vec![vpk],
+        vec![format!("{}.vpk", id(i))],
+        Some(i),
+        shard,
+      );
+    }
+    manifest.save(&base).unwrap();
+
+    let installed = test_manager(game.path())
+      .install_mod(
+        Mod {
+          id: id(3),
+          name: "Re-enabled".into(),
+          is_map: false,
+          installed_vpks: Vec::new(),
+          file_tree: None,
+          install_order: None,
+          original_vpk_names: Vec::new(),
+        },
+        None,
+      )
+      .unwrap();
+
+    let manifest = ProfileVpkManifest::load(&base).unwrap();
+    let mut load_order: Vec<_> = manifest
+      .mods
+      .iter()
+      .map(|(mod_id, entry)| {
+        assert!(entry.enabled, "{mod_id} is enabled");
+        let pak = VpkManager::enabled_vpk_number(&entry.current_vpks[0]).unwrap();
+        ((entry.shard, pak), mod_id.clone())
+      })
+      .collect();
+    load_order.sort();
+    assert_eq!(
+      load_order
+        .into_iter()
+        .map(|(_, mod_id)| mod_id)
+        .collect::<Vec<_>>(),
+      (0..100u32).map(id).collect::<Vec<_>>()
+    );
+    let entry = &manifest.mods[&id(3)];
+    assert_eq!(entry.shard, ShardIndex::FIRST);
+    assert_eq!(installed.installed_vpks, entry.current_vpks);
+    assert_eq!(
+      fs::read(addons.join(&entry.current_vpks[0])).unwrap(),
+      id(3).as_bytes()
+    );
+    assert_eq!(manifest.mods[&id(99)].shard, shard_two);
+    assert_eq!(count_enabled(&addons), 99);
+  }
+
+  #[test]
   fn profile_folder_validation_rejects_path_escape_components() {
     assert!(ModManager::is_safe_profile_folder("profile_123"));
     assert!(ModManager::is_safe_profile_folder("server_abc"));

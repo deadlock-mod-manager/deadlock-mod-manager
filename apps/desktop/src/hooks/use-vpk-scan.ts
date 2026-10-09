@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
-import { getProfileInstalledVpks } from "@/lib/tauri-commands";
+import { getProfileVpkSnapshot } from "@/lib/tauri-commands";
 import { findUnmatchedVpks } from "@/lib/vpk-scan";
 import { usePersistedStore } from "@/lib/store";
 
@@ -14,22 +14,25 @@ export const useVpkScan = () => {
   const localMods = usePersistedStore((state) => state.localMods);
 
   const {
-    data: vpkFiles,
+    data: snapshot,
     isLoading,
     isRefetching,
     error,
     refetch,
   } = useQuery({
     queryKey: [...PROFILE_VPKS_QUERY_KEY, activeProfile?.folderName],
-    queryFn: () => getProfileInstalledVpks(activeProfile?.folderName ?? null),
+    queryFn: () => getProfileVpkSnapshot(activeProfile?.folderName ?? null),
     enabled: !!activeProfile,
     refetchOnWindowFocus: false,
     refetchOnMount: true,
   });
 
   const unmatchedVpks = useMemo(
-    () => findUnmatchedVpks(vpkFiles ?? [], localMods),
-    [vpkFiles, localMods],
+    () =>
+      snapshot
+        ? findUnmatchedVpks(snapshot.files, snapshot.manifest, localMods)
+        : [],
+    [snapshot, localMods],
   );
 
   return {
