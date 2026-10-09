@@ -1,5 +1,6 @@
 import { spawnSync } from "node:child_process";
 import {
+  chmodSync,
   mkdirSync,
   mkdtempSync,
   readdirSync,
@@ -159,6 +160,15 @@ const listFiles = (dir: string): string[] =>
     return statSync(path).isDirectory() ? listFiles(path) : [path];
   });
 
+/** Archives can carry read-only folders, which would make the cleanup fail. */
+const makeWritable = (dir: string) => {
+  chmodSync(dir, 0o755);
+  for (const name of readdirSync(dir)) {
+    const path = join(dir, name);
+    if (statSync(path).isDirectory()) makeWritable(path);
+  }
+};
+
 /**
  * Downloads the pinned file (md5-verified, cached), extracts it to a temporary
  * folder and returns the text of the variant. Nothing extracted is kept.
@@ -197,6 +207,7 @@ export const readCommunityVariant = async (
       path: match,
     };
   } finally {
+    makeWritable(workDir);
     rmSync(workDir, { recursive: true, force: true });
   }
 };
