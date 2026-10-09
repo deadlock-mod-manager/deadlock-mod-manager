@@ -4,7 +4,7 @@
  * pending .changeset/*.md files that haven't been versioned yet.
  */
 
-export type ChangeKind = "new" | "improved" | "fixed";
+export type ChangeKind = "new" | "experimental" | "improved" | "fixed";
 
 export interface Change {
   kind: ChangeKind;
@@ -39,11 +39,15 @@ export const changeKind = (bump: Bump, summary: string): ChangeKind => {
 /** "- @deadlock-mods/shared@2.1.0": Changesets lists dependency bumps as sub-items. */
 const DEPENDENCY_BUMP = /^- @[\w-]+\/[\w-]+@\d/;
 
-const toChange = (bump: Bump, lines: string[]): Change | null => {
+const toChange = (
+  bump: Bump,
+  lines: string[],
+  experimental = false,
+): Change | null => {
   const [summary = "", ...rest] = lines;
   if (!summary || summary.startsWith("Updated dependencies")) return null;
   return {
-    kind: changeKind(bump, summary),
+    kind: experimental ? "experimental" : changeKind(bump, summary),
     summary,
     details: rest
       .map((line) => line.trim())
@@ -53,7 +57,10 @@ const toChange = (bump: Bump, lines: string[]): Change | null => {
 
 const normalize = (markdown: string) => markdown.replace(/\r\n/g, "\n");
 
-/** Releases in a Changesets-generated CHANGELOG.md, newest first. */
+/**
+ * Releases in a Changesets-generated CHANGELOG.md, newest first. A hand-added
+ * "### Experimental Changes" section files its entries as experimental.
+ */
 export const parseChangelog = (markdown: string): Release[] =>
   normalize(markdown)
     .split(/^## /m)
@@ -62,10 +69,11 @@ export const parseChangelog = (markdown: string): Release[] =>
       const [version = "", ...lines] = section.split("\n");
       const changes: Change[] = [];
       let bump: Bump = "patch";
+      let experimental = false;
       let entry: string[] | null = null;
 
       const flush = () => {
-        const change = entry && toChange(bump, entry);
+        const change = entry && toChange(bump, entry, experimental);
         if (change) changes.push(change);
         entry = null;
       };
@@ -74,6 +82,7 @@ export const parseChangelog = (markdown: string): Release[] =>
         const heading = line.match(/^### (\w+) Changes/);
         if (heading) {
           flush();
+          experimental = heading[1] === "Experimental";
           bump = parseBump(heading[1]) ?? bump;
         } else if (line.startsWith("- ")) {
           flush();

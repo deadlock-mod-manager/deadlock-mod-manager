@@ -13,6 +13,10 @@ const CHANGELOG = `# desktop
 
   It never sends your token.
 
+### Experimental Changes
+
+- 6d8293c: Add performance configs
+
 ### Patch Changes
 
 - 727bc7c: Fix the Linux Flatpak crashing on launch
@@ -42,10 +46,11 @@ describe("parseChangelog", () => {
     expect(latest?.changes.map((change) => change.summary)).toEqual([
       "Add retry actions for failed downloads.",
       "Add opt-in match data sharing.",
+      "Add performance configs",
       "Fix the Linux Flatpak crashing on launch",
       "Show download progress on mod action buttons",
     ]);
-    expect(latest?.changes[3]?.details).toEqual([]);
+    expect(latest?.changes[4]?.details).toEqual([]);
   });
 
   it("keeps extra paragraphs and nested lists as details", () => {
@@ -56,10 +61,11 @@ describe("parseChangelog", () => {
     ]);
   });
 
-  it("sorts entries into new, improved and fixed", () => {
+  it("sorts entries into new, experimental, improved and fixed", () => {
     expect(latest?.changes.map((change) => change.kind)).toEqual([
       "new",
       "new",
+      "experimental",
       "fixed",
       "improved",
     ]);

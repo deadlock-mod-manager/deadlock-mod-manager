@@ -2,6 +2,7 @@ import { cn } from "@deadlock-mods/ui/lib/utils";
 import {
   ArrowUpIcon,
   BugIcon,
+  FlaskIcon,
   type Icon,
   SparkleIcon,
 } from "@phosphor-icons/react";
@@ -21,6 +22,13 @@ export const KINDS: {
     icon: SparkleIcon,
     tone: "text-primary",
     bar: "bg-primary",
+  },
+  {
+    kind: "experimental",
+    label: "Experimental",
+    icon: FlaskIcon,
+    tone: "text-violet-300",
+    bar: "bg-violet-400",
   },
   {
     kind: "improved",
@@ -158,7 +166,7 @@ export const ChangeGroup = ({
   );
 };
 
-/** The release's mix of new, improved and fixed entries as one thin bar. */
+/** The release's mix of entry kinds as one thin bar. */
 export const CompositionBar = ({ changes }: { changes: Change[] }) => {
   const counts = KINDS.map(({ kind, label, bar }) => ({
     kind,
