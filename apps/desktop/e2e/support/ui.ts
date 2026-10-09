@@ -3,7 +3,13 @@ import type { ChainablePromiseElement } from "webdriverio";
 import { step } from "./evidence";
 
 export const navigate = (
-  destination: "mods" | "my-mods" | "downloads" | "settings" | "skins",
+  destination:
+    | "mods"
+    | "my-mods"
+    | "downloads"
+    | "settings"
+    | "skins"
+    | "developer",
 ) =>
   step(`open ${destination}`, async () => {
     const link = await $(`a[href="/${destination}"]`);

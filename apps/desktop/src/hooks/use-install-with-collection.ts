@@ -9,6 +9,7 @@ import {
 import { trackInstallOptions } from "@/lib/analytics";
 import type { InstallAnalyticsOptions } from "@/lib/analytics/install";
 import { getErrorMessage } from "@/lib/errors";
+import { syncInstalledVpksFromManifest } from "@/lib/mods/sync-installed-vpks";
 import { isTauriError } from "@/types/tauri";
 import { usePersistedStore } from "@/lib/store";
 import type {
@@ -116,6 +117,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         },
         profileFolder,
       });
+      await syncInstalledVpksFromManifest(profileFolder);
 
       options.onComplete(mod, result);
       return result;

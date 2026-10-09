@@ -78,6 +78,15 @@ impl ModManager {
     log::info!("Found {} prefixed VPKs, enabling them", prefixed_vpks.len());
 
     let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
+    // A re-enabled mod returns to its recorded place in the load order. Without
+    // it, the mod would stay in the last shard until an unrelated reorder moved
+    // it back and shifted every mod after it.
+    if deadlock_mod.install_order.is_none() {
+      deadlock_mod.install_order = manifest
+        .mods
+        .get(&deadlock_mod.id)
+        .and_then(|entry| entry.order);
+    }
     let target_shard = Self::choose_shard_for(&addons_path, None, prefixed_vpks.len() as u32)?;
     let enabled_dir = addons_path.shard_dir(target_shard);
 

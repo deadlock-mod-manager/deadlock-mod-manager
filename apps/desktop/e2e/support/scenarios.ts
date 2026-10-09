@@ -16,6 +16,7 @@ import { prepareConflictWorld } from "./conflict-fixtures";
 import { prepareFilesystemWorld } from "./filesystem-fixtures";
 import { prepareManifestRepairWorld } from "./manifest-repair-fixtures";
 import { prepareMissingVpkWorld } from "./missing-vpk-fixtures";
+import { prepareShardWorld } from "./shard-fixtures";
 import { assertCrashEvidence } from "./filesystem-oracle";
 import { assertNormalExit, assertInterruptedExit } from "./phase-evidence";
 import { writeSyntheticVpk } from "./vpk";
@@ -144,6 +145,14 @@ const manifestRepair: Definition = {
   spec: "manifest-repair",
   phases: ["repair", "restart-repair"],
   prepare: async (world) => prepareManifestRepairWorld(world),
+};
+const shards: Definition = {
+  ...defaults,
+  family: "shards",
+  spec: "shards-library",
+  phases: ["overflow", "restart-overflow"],
+  routes: profileRoutes,
+  prepare: prepareShardWorld,
 };
 const missingVpks: Definition = {
   ...defaults,
@@ -352,6 +361,12 @@ export const scenarios = {
   "filesystem-collision": filesystem,
   "filesystem-shards": filesystem,
   "filesystem-crash-placed": crash,
+  "shards-library": shards,
+  "shards-conflicts": {
+    ...shards,
+    spec: "shards-conflicts",
+    phases: ["cross-shard", "restart-cross-shard"],
+  },
   "filesystem-crash-committed": crash,
   "filesystem-manifest-repair": manifestRepair,
   "missing-vpks-offline": missingVpks,

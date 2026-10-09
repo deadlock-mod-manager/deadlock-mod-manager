@@ -1,6 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import type { AnalyzeAddonsResult } from "@/types/mods";
-import type { ProfileVpkFile } from "@/types/profiles";
+import type { ProfileVpkSnapshot } from "@/types/profiles";
 import { BASE_URL } from "./api-client";
 import logger from "./logger";
 import { invokeGuarded } from "@/lib/game-guard";
@@ -93,14 +93,8 @@ export const analyzeLocalAddons = async (
   return await invoke("analyze_local_addons", { profileFolder });
 };
 
-export const getProfileInstalledVpks = async (
-  profileFolder: string | null = null,
-): Promise<string[]> => {
-  const files = await invoke<ProfileVpkFile[]>("get_profile_installed_vpks", {
-    profileFolder,
-  });
-  return files.map((file) => file.locator);
-};
+export const getProfileVpkSnapshot = (profileFolder: string | null) =>
+  invoke<ProfileVpkSnapshot>("get_profile_vpk_snapshot", { profileFolder });
 
 export const deleteProfileVpk = async (
   vpkName: string,
