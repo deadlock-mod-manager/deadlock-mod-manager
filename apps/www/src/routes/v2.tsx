@@ -51,12 +51,28 @@ const StoreScreenshot = () => {
   );
 };
 
-type FeatureId = "updates" | "store" | "conflicts";
+const PerformanceScreenshot = () => {
+  const { t } = useTranslation("v2");
+
+  return (
+    <img
+      src='/home/app/performance.webp'
+      alt={t("features.performance.alt")}
+      width={1232}
+      height={761}
+      loading='lazy'
+      className='w-full rounded-xl border border-border-strong bg-surface shadow-[0_30px_80px_rgba(0,0,0,0.35)]'
+    />
+  );
+};
+
+type FeatureId = "updates" | "store" | "conflicts" | "performance";
 
 const FEATURES: { id: FeatureId; visual: React.ReactNode }[] = [
   { id: "updates", visual: <UpdateDemo /> },
   { id: "store", visual: <StoreScreenshot /> },
   { id: "conflicts", visual: <ConflictsDemo /> },
+  { id: "performance", visual: <PerformanceScreenshot /> },
 ];
 
 const FeatureRow = ({
@@ -110,7 +126,7 @@ const FeatureRow = ({
  *   git log v1.1.0..origin/main --no-merges --format=%s -- apps/desktop packages \
  *     | grep -cE '^fix(\(|:|!)'
  */
-const FIX_COMMITS_SINCE_V1 = 51;
+const FIX_COMMITS_SINCE_V1 = 62;
 
 /** Hero lines rise in one after another on first paint. */
 const riseDelay = (index: number) => ({ animationDelay: `${index * 90}ms` });

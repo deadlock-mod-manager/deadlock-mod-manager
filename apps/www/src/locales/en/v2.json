@@ -50,6 +50,18 @@
         "ignore": "Ignore overlaps you're happy with, per profile"
       }
     },
+    "performance": {
+      "nav": "Performance",
+      "title": "More frames, your way",
+      "body": "Experimental: apply a community gameinfo.gi config that trades visual detail for frame rate, from barely touched to potato. The manager writes it next to your mods, puts it back after game updates, and turns it off cleanly when you're done. Turn it on in Settings → Experimental.",
+      "points": {
+        "presets": "Curated presets from Sqooky, dacooderr and others, plus configs from GameBanana",
+        "editor": "Change any setting a config touches, with the game's default shown beside it",
+        "safe": "Settings Deadlock no longer reads are left out, and you see why before anything is written",
+        "share": "Import a pasted config, file or GameBanana link, and share yours as a code"
+      },
+      "alt": "The Performance page in Deadlock Mod Manager V2, with an applied config, the Looks best to Runs fastest scale and curated configs"
+    },
     "themes": {
       "nav": "Themes",
       "title": "Make it yours",
