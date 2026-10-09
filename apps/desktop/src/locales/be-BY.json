@@ -179,8 +179,6 @@
         "presets": "",
         "yourConfigs": "",
         "appliedOption": "",
-        "applied": "",
-        "notApplied": "",
         "tierTooltip": "",
         "summary": "",
         "updating": ""
@@ -208,6 +206,7 @@
       "toolbar": {
         "search_one": "",
         "search_other": "",
+        "filterDiffers": "",
         "filterAll": "",
         "filterChanged": "",
         "filterAttention": "",
@@ -215,11 +214,7 @@
         "addSetting": ""
       },
       "rail": {
-        "label": "",
-        "attention_one": "",
-        "attention_other": "",
-        "cameraNote": "",
-        "devtoolsNote": ""
+        "label": ""
       },
       "group": {
         "settings_one": "",
@@ -228,17 +223,14 @@
         "attention_one": "",
         "attention_other": "",
         "value": "",
-        "reference": "",
         "showMore": "",
         "showFewer": ""
       },
       "row": {
         "on": "",
         "off": "",
-        "none": "",
-        "config": "",
-        "default": "",
-        "commentedOut": "",
+        "gameValue": "",
+        "configValue": "",
         "commentedOutByConfig": "",
         "keepGameLine": "",
         "valueLabel": "",
@@ -292,8 +284,7 @@
         "excluded": "",
         "missingSection": "",
         "unsupported": "",
-        "engineSection": "",
-        "engineSectionUnguarded": ""
+        "engineSection": ""
       },
       "engine": {
         "excluded_one": "",
@@ -301,6 +292,7 @@
         "included_one": "",
         "included_other": "",
         "sectionsMore": "",
+        "why": "",
         "valveMessage": "",
         "toggle": ""
       },
@@ -611,10 +603,6 @@
       "inFile_other": "",
       "settings_one": "",
       "settings_other": "",
-      "leftOut_one": "",
-      "leftOut_other": "",
-      "engineLeftOut_one": "",
-      "engineLeftOut_other": "",
       "takesEffect": "",
       "editSettings": "",
       "undo": "",
