@@ -292,8 +292,7 @@
         "excluded": "",
         "missingSection": "",
         "unsupported": "",
-        "engineSection": "",
-        "engineSectionUnguarded": ""
+        "engineSection": ""
       },
       "engine": {
         "excluded_one": "",
@@ -611,10 +610,6 @@
       "inFile_other": "",
       "settings_one": "",
       "settings_other": "",
-      "leftOut_one": "",
-      "leftOut_other": "",
-      "engineLeftOut_one": "",
-      "engineLeftOut_other": "",
       "takesEffect": "",
       "editSettings": "",
       "undo": "",
