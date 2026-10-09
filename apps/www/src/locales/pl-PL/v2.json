@@ -50,6 +50,18 @@
         "ignore": ""
       }
     },
+    "performance": {
+      "nav": "",
+      "title": "",
+      "body": "",
+      "points": {
+        "presets": "",
+        "editor": "",
+        "safe": "",
+        "share": ""
+      },
+      "alt": ""
+    },
     "themes": {
       "nav": "",
       "title": "",
