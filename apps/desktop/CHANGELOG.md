@@ -48,9 +48,25 @@
 - 1e1cadf: Show download progress and remaining content count in the server join dialog
 - 8b9bcee: Allow more than 99 enabled addons by spreading them across addon folders
 - edf83d7: Keep the live match board across restarts, show the matchmaking queue beside it, and cut the cost of following a running match
+- 208f11d: Add catalog refresh and skip fetching details for unchanged mods
+
+### Experimental Changes
+
+- 6d8293c: Add performance configs: apply curated community gameinfo.gi configs, configs from GameBanana or your own imports on a new Performance page, edit every setting they change with typed controls, and share them. The manager edits gameinfo.gi in place next to your mods, leaves out settings Deadlock no longer reads and engine-section edits unless you include them, and writes the config again after game updates. A crash check after launch lists what changed since your last normal session.
 
 ### Patch Changes
 
+- 2aa45ef: Fix updating a mod to a variant you had not installed before failing with "No VPKs matched the update selection"
+- b0c5da5: Fix Skip for Now not advancing setup past existing mods
+- 93763a8: Fix catalog sync after upgrading older development databases
+- 6d8293c: Give confirmation dialogs an icon, more room for the message and a separate button row
+- 8102f13: Fix lost imports and stale VPK ownership after Grimoire moves files
+- 6d8293c: Mark Mod Foundry, Stats and Performance with a "New" badge in the sidebar until you open them
+- dec4de2: Fix updates failing for mods whose author archived older files: the update dialog now marks archived files as outdated, selects only current files by default, and explains why one file must stay selected
+- 173b044: Restore author profiles from Mods Library and preserve the return destination
+- 3134bd5: Fix detected mods showing their installed archives as needing download
+- 1e48334: Open release notes on the website changelog instead of GitHub from What's New, the Dashboard, About and the splash screen
+- 7294b28: Mod updates now remember the files they actually installed, delete their downloaded archives afterwards, and no longer leave a failed update stuck on "Extracting..."
 - bea17db: Preserve installed mods when enabling another mod after upgrading from V1
 
   Avoid intermittent database lock failures when initializing the local mod catalog.

@@ -1,5 +1,11 @@
 # api
 
+## 3.4.0
+
+### Minor Changes
+
+- 6d8293c: Serve the performance config catalog at `GET /api/v2/perf-catalog`, so the desktop app can pick up new presets and convar metadata without an app release
+
 ## 3.3.0
 
 ### Minor Changes
