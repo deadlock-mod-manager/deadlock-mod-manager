@@ -80,6 +80,16 @@ describe("highlightConfig", () => {
     ).toEqual(["plain", "ignored", "plain", "applies"]);
   });
 
+  test("marks the author's camera and visibility settings as opt-in", () => {
+    const camera = [
+      entry(["ConVars", "citadel_camera_hero_fov"], "applies", "camera"),
+      entry(["ConVars", "cl_glow_brightness"], "omitted", "visibility"),
+    ];
+    expect(
+      tones("citadel_camera_hero_fov 100\ncl_glow_brightness 0", camera),
+    ).toEqual(["optIn", "optIn"]);
+  });
+
   test("leaves every line plain before a review", () => {
     expect(new Set(tones(GAMEINFO, null))).toEqual(new Set(["plain"]));
   });

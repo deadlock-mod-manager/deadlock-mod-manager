@@ -22,6 +22,13 @@ const TOKEN_PATTERN = /\/\/.*|"(?:[^"\\]|\\.)*"?|[{}]|[^\s"{}]+|\s+/g;
 const ROOT_KEY = "gameinfo";
 
 const toneFor = (entry: ResolvedEntry): LineTone => {
+  // Matches the review's camera & visibility group, which has its own toggle.
+  if (
+    (entry.gameplay === "camera" || entry.gameplay === "visibility") &&
+    ["applies", "unchanged", "omitted"].includes(entry.status)
+  ) {
+    return "optIn";
+  }
   switch (entry.status) {
     case "applies":
     case "unchanged":
