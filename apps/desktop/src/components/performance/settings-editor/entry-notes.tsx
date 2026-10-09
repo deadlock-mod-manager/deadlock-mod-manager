@@ -95,7 +95,7 @@ const valueLines = (entry: ResolvedEntry, t: TFunction): NoteLine[] => {
         { ...params, limit: range.limit },
       );
     }
-    lines.push({ tone: "warning", text });
+    lines.push({ tone: "info", text });
   }
   const mismatch = findNote(entry.notes, "typeMismatch");
   if (mismatch) {

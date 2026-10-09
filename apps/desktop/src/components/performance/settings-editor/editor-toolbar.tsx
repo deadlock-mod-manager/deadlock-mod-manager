@@ -32,7 +32,11 @@ export const EditorToolbar = ({
 }: EditorToolbarProps) => {
   const { t } = useTranslation();
   const tabs = [
-    { value: "all", label: t("performance.editor.toolbar.filterAll") },
+    {
+      value: "differs",
+      label: t("performance.editor.toolbar.filterDiffers"),
+      count: counts.differs,
+    },
     {
       value: "changed",
       label: t("performance.editor.toolbar.filterChanged"),
@@ -43,10 +47,15 @@ export const EditorToolbar = ({
       label: t("performance.editor.toolbar.filterAttention"),
       count: counts.attention,
     },
+    {
+      value: "all",
+      label: t("performance.editor.toolbar.filterAll"),
+      count: counts.all,
+    },
   ] satisfies { value: EditorFilter; label: string; count?: number }[];
 
   return (
-    <div className='sticky top-0 z-20 -mx-1 flex flex-wrap items-center gap-3 bg-background/95 px-1 py-2.5 backdrop-blur-sm'>
+    <div className='sticky top-0 z-20 -mx-1 flex flex-wrap items-center gap-3 bg-background px-1 py-2.5'>
       <div className='w-72 min-w-48'>
         <SearchInput
           className='h-8'

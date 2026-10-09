@@ -179,10 +179,8 @@
         "presets": "Presets",
         "yourConfigs": "Your configs",
         "appliedOption": "{{name}} (applied)",
-        "applied": "Applied",
-        "notApplied": "Not applied",
         "tierTooltip": "Where this config sits between Looks best and Runs fastest. It moves as you edit.",
-        "summary": "{{written}} written to gameinfo.gi, {{leftOut}} left out",
+        "summary": "{{written}} written to gameinfo.gi, {{leftOut}} left out, {{matching}} already match the game",
         "updating": "Updating…"
       },
       "empty": {
@@ -208,37 +206,31 @@
       "toolbar": {
         "search_one": "Search {{count}} setting",
         "search_other": "Search {{count}} settings",
+        "filterDiffers": "Differs from game",
         "filterAll": "All",
         "filterChanged": "Changed by you",
-        "filterAttention": "Needs attention",
+        "filterAttention": "Won't apply",
         "convarNames": "Convar names",
         "addSetting": "Add setting"
       },
       "rail": {
-        "label": "Categories",
-        "attention_one": "{{count}} setting needs attention",
-        "attention_other": "{{count}} settings need attention",
-        "cameraNote": "Camera & visibility settings come from the config's author and change what you see in matches. They're on unless you turn them off.",
-        "devtoolsNote": "Developer and hideout tools stay off unless you enable them."
+        "label": "Categories"
       },
       "group": {
         "settings_one": "{{count}} setting",
         "settings_other": "{{count}} settings",
         "changed": "{{count}} changed by you",
-        "attention_one": "{{count}} needs attention",
-        "attention_other": "{{count}} need attention",
+        "attention_one": "{{count}} won't apply",
+        "attention_other": "{{count}} won't apply",
         "value": "Value",
-        "reference": "Config vs. game default",
         "showMore": "Show {{count}} more in {{category}}",
         "showFewer": "Show fewer"
       },
       "row": {
         "on": "On",
         "off": "Off",
-        "none": "—",
-        "config": "Config",
-        "default": "Default",
-        "commentedOut": "commented out",
+        "gameValue": "Game:",
+        "configValue": "Config:",
         "commentedOutByConfig": "Commented out by the config",
         "keepGameLine": "Keep the game's line",
         "valueLabel": "Value for {{name}}",
@@ -300,6 +292,7 @@
         "included_one": "{{count}} engine-section edit ({{sections}}) is included.",
         "included_other": "{{count}} engine-section edits ({{sections}}) are included.",
         "sectionsMore": "{{sections}} and {{count}} more",
+        "why": "Why these are left out",
         "valveMessage": "Deadlock's matchmaking error lists {{sections}} among the gameinfo.gi sections where it doesn't support changes.",
         "toggle": "Include engine-section edits"
       },
@@ -622,7 +615,7 @@
       "error": "Couldn't read the performance config status: {{message}}",
       "notInFile": "Not in gameinfo.gi right now (a game update or reset replaced the file). It goes back in when you return to the mod manager with Deadlock closed, or when you launch from it.",
       "outOfDate": "gameinfo.gi holds a different version of this config than the one you chose. It's updated when you launch from the mod manager.",
-      "catalogBehind": "Your game is build {{installed}}, newer than the convar list the mod manager has (build {{catalog}}). Settings added since then show as not in the list and are left out until the list updates.",
+      "catalogBehind": "Your game is build {{installed}}, newer than the mod manager's convar list (build {{catalog}}). Settings added since then are left out until the list updates.",
       "handEdited_one": "{{count}} line was edited by hand since the mod manager wrote it ({{keys}}). Re-applying puts the config's value back.",
       "handEdited_other": "{{count}} lines were edited by hand since the mod manager wrote them ({{keys}}). Re-applying puts the config's values back.",
       "reapply": "Re-apply now",

@@ -9,6 +9,7 @@ import {
   FileTextIcon,
   FolderOpenIcon,
   GaugeIcon,
+  InfoIcon,
   SlidersHorizontalIcon,
   WarningIcon,
 } from "@phosphor-icons/react";
@@ -409,19 +410,20 @@ const OrphanedOverlayNotice = ({ name }: { name: string }) => {
   );
 };
 
-/** What the file holds versus what the user chose, with the fixes for any gap. */
 /** The game updated past the catalog's convar list; it catches up with the next catalog update. */
 export const CatalogBehindNotice = () => {
   const { t } = useTranslation();
   const behind = useCatalogBehind();
   if (!behind) return null;
   return (
-    <div className='mt-3'>
-      <Notice>{t("performance.activeStatus.catalogBehind", behind)}</Notice>
-    </div>
+    <p className='mt-2 flex items-start gap-1.5 px-1 text-muted-foreground text-xs'>
+      <InfoIcon aria-hidden className='mt-0.5 size-3.5 shrink-0' />
+      {t("performance.activeStatus.catalogBehind", behind)}
+    </p>
   );
 };
 
+/** What the file holds versus what the user chose, with the fixes for any gap. */
 export const ActiveConfigStatus = () => {
   const { t } = useTranslation();
   const { statusQuery, desired, items, activeItem, activeCutScore } =

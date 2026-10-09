@@ -1,5 +1,10 @@
 import { Switch } from "@deadlock-mods/ui/components/switch";
-import { ShieldWarningIcon } from "@phosphor-icons/react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deadlock-mods/ui/components/tooltip";
+import { InfoIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import { useGuardedSections } from "@/hooks/performance/use-guarded-sections";
 
@@ -31,30 +36,41 @@ export const EngineSectionsNotice = ({
       : listed;
 
   return (
-    <div className='flex items-start gap-3 rounded-lg border border-border/50 bg-card/50 px-4 py-3'>
-      <ShieldWarningIcon className='mt-0.5 size-4 shrink-0 text-amber-400' />
-      <div className='min-w-0 flex-1 space-y-0.5 text-sm'>
-        <p>
-          {included
-            ? t("performance.editor.engine.included", {
-                count,
-                sections: sectionList,
-              })
-            : t("performance.editor.engine.excluded", {
-                count,
-                sections: sectionList,
-              })}
-        </p>
-        {guarded.length > 0 && (
-          <p className='text-muted-foreground text-xs'>
-            {t("performance.editor.engine.valveMessage", {
-              sections: guarded.join(", "),
+    <div className='flex flex-wrap items-center gap-x-3 gap-y-1 px-1 text-muted-foreground text-xs'>
+      <p className='min-w-0 flex-1'>
+        {included
+          ? t("performance.editor.engine.included", {
+              count,
+              sections: sectionList,
+            })
+          : t("performance.editor.engine.excluded", {
+              count,
+              sections: sectionList,
             })}
-          </p>
+        {guarded.length > 0 && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                aria-label={t("performance.editor.engine.why")}
+                className='ml-1.5 inline-flex translate-y-0.5 rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+                type='button'>
+                <InfoIcon className='size-3.5' />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className='max-w-72'>
+              {t("performance.editor.engine.valveMessage", {
+                sections: guarded.join(", "),
+              })}
+            </TooltipContent>
+          </Tooltip>
         )}
-      </div>
-      <label className='flex shrink-0 items-center gap-2 text-muted-foreground text-sm'>
-        <Switch checked={included} onCheckedChange={onIncludedChange} />
+      </p>
+      <label className='flex shrink-0 items-center gap-2'>
+        <Switch
+          checked={included}
+          className='scale-90'
+          onCheckedChange={onIncludedChange}
+        />
         {t("performance.editor.engine.toggle")}
       </label>
     </div>

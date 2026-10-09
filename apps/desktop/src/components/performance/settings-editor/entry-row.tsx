@@ -26,18 +26,21 @@ import {
   type DraftAction,
 } from "@/lib/performance/editor/draft";
 import { isEngineSectionEntry, isInert } from "@/lib/performance/editor/filter";
-import { describeValue, entryKeyLabel } from "@/lib/performance/editor/values";
+import {
+  describeValue,
+  entryKeyLabel,
+  sameValue,
+} from "@/lib/performance/editor/values";
 import { isDevtoolEnabled } from "@/lib/performance/overrides";
 import { cn } from "@/lib/utils";
 import type { ConvarMeta } from "@/types/generated/ConvarMeta";
 import type { EntryOverride } from "@/types/generated/EntryOverride";
-import type { EntryStatus } from "@/types/generated/EntryStatus";
 import type { ResolvedEntry } from "@/types/generated/ResolvedEntry";
 import { EntryControl } from "./entry-control";
 import { EntryNotes } from "./entry-notes";
 
 export const ENTRY_ROW_GRID =
-  "grid grid-cols-[minmax(0,1fr)_15rem_9.5rem_4.5rem] gap-x-5";
+  "grid grid-cols-[minmax(0,1fr)_15rem_4.5rem] gap-x-5";
 
 export const entryDomId = (key: string) => `perf-entry-${key}`;
 
@@ -52,25 +55,14 @@ type EntryRowProps = {
   onAction: (action: DraftAction) => void;
 };
 
-const WARNING_STATUSES: ReadonlySet<EntryStatus> = new Set([
-  "blocked",
-  "removed",
-  "notConvar",
-  "denied",
-  "unsupported",
-]);
-
 const ReferenceValue = ({
   value,
   meta,
-  fallback,
 }: {
-  value: string | null;
+  value: string;
   meta: ConvarMeta | null;
-  fallback: string;
 }) => {
   const { t } = useTranslation();
-  if (value === null) return <span className='italic'>{fallback}</span>;
   const display = describeValue(value, meta);
   const text =
     display.kind === "bool"
@@ -83,7 +75,7 @@ const ReferenceValue = ({
         ? display.label
         : display.text;
   return (
-    <span className='truncate' title={value}>
+    <span className='truncate text-foreground/80' title={value}>
       {text === "" ? '""' : text}
     </span>
   );
@@ -122,6 +114,19 @@ const EntryRowComponent = ({
     override?.action.kind === "set"
       ? override.action.value
       : (entry.configValue ?? entry.value);
+  const kind = meta?.kind ?? null;
+  const gameValue = entry.liveValue ?? meta?.default ?? null;
+  const gameReference =
+    gameValue !== null && (value === null || !sameValue(value, gameValue, kind))
+      ? gameValue
+      : null;
+  const configReference =
+    override?.action.kind === "set" &&
+    entry.configValue !== null &&
+    !sameValue(entry.configValue, override.action.value, kind)
+      ? entry.configValue
+      : null;
+
   const controlDisabled =
     inert ||
     engineLocked ||
@@ -137,7 +142,7 @@ const EntryRowComponent = ({
         {
           path,
           configValue: entry.configValue,
-          kind: meta?.kind ?? null,
+          kind,
           offByDefault: isDevtools,
         },
         next,
@@ -150,7 +155,7 @@ const EntryRowComponent = ({
     <div
       className={cn(
         ENTRY_ROW_GRID,
-        "relative scroll-mt-24 items-start border-border/40 border-b px-4 py-3 transition-colors last:border-b-0",
+        "group/row relative scroll-mt-24 items-start border-border/40 border-b px-4 py-3 transition-colors last:border-b-0",
         highlighted && "bg-primary/10",
       )}
       id={entryDomId(entryKey)}>
@@ -165,6 +170,7 @@ const EntryRowComponent = ({
             <span
               className={cn(
                 "font-medium text-sm",
+                !meta?.label && "break-all font-mono",
                 entry.status === "blocked" && "line-through",
               )}>
               {name}
@@ -176,12 +182,7 @@ const EntryRowComponent = ({
             )}
             {entry.status !== "applies" && (
               <Badge
-                className={cn(
-                  "px-1.5 py-0 font-normal text-[11px]",
-                  WARNING_STATUSES.has(entry.status)
-                    ? "border-amber-500/40 text-amber-400"
-                    : "text-muted-foreground",
-                )}
+                className='px-1.5 py-0 font-normal text-[11px] text-muted-foreground'
                 variant='outline'>
                 {t(`performance.status.${entry.status}`)}
               </Badge>
@@ -195,7 +196,7 @@ const EntryRowComponent = ({
             )}
           </div>
           {help && (
-            <p className='text-muted-foreground text-xs leading-relaxed'>
+            <p className='line-clamp-1 text-muted-foreground text-xs leading-relaxed group-focus-within/row:line-clamp-none group-hover/row:line-clamp-none'>
               {help}
             </p>
           )}
@@ -259,7 +260,7 @@ const EntryRowComponent = ({
         )}
       </div>
 
-      <div className='pt-0.5'>
+      <div className='space-y-1 pt-0.5'>
         {value === null ? (
           <div className='flex flex-col items-start gap-0.5 text-sm'>
             <span className='text-muted-foreground italic'>
@@ -289,30 +290,23 @@ const EntryRowComponent = ({
             />
           </div>
         )}
+        {(gameReference !== null || configReference !== null) && (
+          <p className='flex flex-wrap gap-x-3 text-muted-foreground text-xs'>
+            {gameReference !== null && (
+              <span className='flex min-w-0 gap-1'>
+                {t("performance.editor.row.gameValue")}
+                <ReferenceValue meta={meta} value={gameReference} />
+              </span>
+            )}
+            {configReference !== null && (
+              <span className='flex min-w-0 gap-1'>
+                {t("performance.editor.row.configValue")}
+                <ReferenceValue meta={meta} value={configReference} />
+              </span>
+            )}
+          </p>
+        )}
       </div>
-
-      <dl className='grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-0.5 pt-0.5 font-mono text-muted-foreground text-xs'>
-        <dt>{t("performance.editor.row.config")}</dt>
-        <dd className='min-w-0 text-foreground/80'>
-          <ReferenceValue
-            fallback={
-              entry.inConfig
-                ? t("performance.editor.row.commentedOut")
-                : t("performance.editor.row.none")
-            }
-            meta={meta}
-            value={entry.configValue}
-          />
-        </dd>
-        <dt>{t("performance.editor.row.default")}</dt>
-        <dd className='min-w-0'>
-          <ReferenceValue
-            fallback={t("performance.editor.row.none")}
-            meta={meta}
-            value={entry.liveValue ?? meta?.default ?? null}
-          />
-        </dd>
-      </dl>
 
       <div className='flex items-start justify-end gap-0.5'>
         {override && (

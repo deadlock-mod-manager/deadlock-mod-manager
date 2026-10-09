@@ -1,11 +1,10 @@
 import { pathKey } from "@/lib/performance/request";
 import type { CategoryInfo } from "@/types/generated/CategoryInfo";
-import type { EntryNote } from "@/types/generated/EntryNote";
 import type { EntryStatus } from "@/types/generated/EntryStatus";
 import type { ResolvedEntry } from "@/types/generated/ResolvedEntry";
 import { entryKeyLabel, isConvarPath } from "./values";
 
-export type EditorFilter = "all" | "changed" | "attention";
+export type EditorFilter = "differs" | "changed" | "attention" | "all";
 
 export type EntryQuery = {
   search: string;
@@ -21,25 +20,18 @@ export type CategoryGroup = {
   entries: ResolvedEntry[];
   /** Counts over every entry in the category, ignoring the query. */
   total: number;
+  differs: number;
   changed: number;
   attention: number;
 };
 
-type StatusAndNotes = Pick<ResolvedEntry, "status" | "notes">;
-
-/** The config asks for something the game won't do as written. */
+/** The config asks for something the game won't do at all. */
 const ATTENTION_STATUSES: ReadonlySet<EntryStatus> = new Set([
   "blocked",
   "removed",
   "notConvar",
   "denied",
   "unsupported",
-]);
-
-const ATTENTION_NOTES: ReadonlySet<EntryNote["kind"]> = new Set([
-  "clamped",
-  "typeMismatch",
-  "missingSection",
 ]);
 
 /** Never written whatever the user does, so the row is read-only. */
@@ -52,9 +44,18 @@ const INERT_STATUSES: ReadonlySet<EntryStatus> = new Set([
   "unsupported",
 ]);
 
-export const needsAttention = (entry: StatusAndNotes) =>
-  ATTENTION_STATUSES.has(entry.status) ||
-  entry.notes.some((note) => ATTENTION_NOTES.has(note.kind));
+export const needsAttention = (entry: Pick<ResolvedEntry, "status">) =>
+  ATTENTION_STATUSES.has(entry.status);
+
+/**
+ * The entry does something beyond the game's own value. Leaves out lines that
+ * match the game and developer tools nobody enabled.
+ */
+export const differsFromGame = (
+  entry: Pick<ResolvedEntry, "status" | "overridden">,
+) =>
+  entry.status !== "unchanged" &&
+  !(entry.status === "omitted" && !entry.overridden);
 
 export const isInert = (entry: Pick<ResolvedEntry, "status">) =>
   INERT_STATUSES.has(entry.status);
@@ -87,6 +88,7 @@ const matchesQuery = (
   key: string,
   { search, filter, changedKeys }: EntryQuery,
 ) => {
+  if (filter === "differs" && !differsFromGame(entry)) return false;
   if (filter === "changed" && !changedKeys.has(key)) return false;
   if (filter === "attention" && !needsAttention(entry)) return false;
   return matchesSearch(entry, search);
@@ -97,6 +99,7 @@ const emptyGroup = (id: string, label: string): CategoryGroup => ({
   label,
   entries: [],
   total: 0,
+  differs: 0,
   changed: 0,
   attention: 0,
 });
@@ -124,6 +127,7 @@ export const groupEntries = (
     }
     const key = pathKey(entry.path);
     group.total += 1;
+    if (differsFromGame(entry)) group.differs += 1;
     if (query.changedKeys.has(key)) group.changed += 1;
     if (needsAttention(entry)) group.attention += 1;
     if (matchesQuery(entry, key, query)) group.entries.push(entry);
@@ -134,14 +138,15 @@ export const groupEntries = (
   return [...groups.values()];
 };
 
-export type FilterCounts = { all: number; changed: number; attention: number };
+export type FilterCounts = Record<EditorFilter, number>;
 
 export const filterCounts = (groups: CategoryGroup[]): FilterCounts =>
   groups.reduce(
     (counts, group) => ({
       all: counts.all + group.total,
+      differs: counts.differs + group.differs,
       changed: counts.changed + group.changed,
       attention: counts.attention + group.attention,
     }),
-    { all: 0, changed: 0, attention: 0 },
+    { all: 0, differs: 0, changed: 0, attention: 0 },
   );

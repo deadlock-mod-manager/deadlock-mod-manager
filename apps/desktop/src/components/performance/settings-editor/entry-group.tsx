@@ -10,7 +10,7 @@ import { categoryLabel } from "./category-rail";
 import { ENTRY_ROW_GRID, EntryRow } from "./entry-row";
 
 /** Rows shown per category before "Show N more"; keeps 500-entry configs cheap to render. */
-const COLLAPSED_ROW_LIMIT = 12;
+const COLLAPSED_ROW_LIMIT = 6;
 
 type EntryGroupProps = {
   group: CategoryGroup;
@@ -44,17 +44,17 @@ export const EntryGroup = ({
 
   return (
     <section
-      className='scroll-mt-16 overflow-hidden rounded-lg border border-border/50 bg-card/50 [contain-intrinsic-size:auto_640px] [content-visibility:auto]'
+      className='scroll-mt-16 overflow-hidden rounded-lg border border-border/50 bg-card [contain-intrinsic-size:auto_640px] [content-visibility:auto]'
       data-category={group.id}
       ref={(element) => registerElement(group.id, element)}>
       <header
         className={cn(
           ENTRY_ROW_GRID,
-          "items-baseline border-border/50 border-b bg-muted/20 px-4 py-2.5",
+          "items-baseline border-border/50 border-b bg-muted/40 px-4 py-2.5",
         )}>
         <div className='flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-0.5'>
           <h3 className='font-semibold text-sm'>{label}</h3>
-          <span className='font-mono text-muted-foreground text-xs'>
+          <span className='text-muted-foreground text-xs'>
             {[
               t("performance.editor.group.settings", { count: group.total }),
               group.changed > 0 &&
@@ -68,11 +68,8 @@ export const EntryGroup = ({
               .join(", ")}
           </span>
         </div>
-        <span className='font-medium text-muted-foreground text-xs'>
-          {t("performance.editor.group.value")}
-        </span>
         <span className='col-span-2 font-medium text-muted-foreground text-xs'>
-          {t("performance.editor.group.reference")}
+          {t("performance.editor.group.value")}
         </span>
       </header>
       <div>

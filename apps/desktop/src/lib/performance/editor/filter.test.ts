@@ -7,6 +7,7 @@ import {
   filterCounts,
   groupEntries,
   isEngineSectionEntry,
+  differsFromGame,
   isInert,
   matchesSearch,
   needsAttention,
@@ -64,28 +65,40 @@ const query = (overrides: Partial<EntryQuery> = {}): EntryQuery => ({
 });
 
 describe("needsAttention", () => {
-  test("flags entries the game won't take as written", () => {
+  test("flags entries the game won't take at all", () => {
     expect(needsAttention(entry("a", { status: "blocked" }))).toBe(true);
     expect(needsAttention(entry("a", { status: "removed" }))).toBe(true);
     expect(needsAttention(entry("a", { status: "denied" }))).toBe(true);
+  });
+
+  test("leaves choices, notes and normal entries alone", () => {
+    expect(needsAttention(entry("a"))).toBe(false);
     expect(
       needsAttention(
         entry("a", { notes: [{ kind: "clamped", effective: "128" }] }),
       ),
-    ).toBe(true);
+    ).toBe(false);
     expect(
       needsAttention(
         entry("a", { notes: [{ kind: "typeMismatch", expected: "int" }] }),
       ),
-    ).toBe(true);
-  });
-
-  test("leaves choices and normal entries alone", () => {
-    expect(needsAttention(entry("a"))).toBe(false);
+    ).toBe(false);
     expect(needsAttention(entry("a", { status: "unchanged" }))).toBe(false);
     expect(needsAttention(entry("a", { status: "omitted" }))).toBe(false);
     expect(needsAttention(entry("a", { status: "engineSection" }))).toBe(false);
     expect(needsAttention(entry("a", { status: "excluded" }))).toBe(false);
+  });
+});
+
+describe("differsFromGame", () => {
+  test("skips lines matching the game and untouched developer tools", () => {
+    expect(differsFromGame(entry("a"))).toBe(true);
+    expect(differsFromGame(entry("a", { status: "blocked" }))).toBe(true);
+    expect(differsFromGame(entry("a", { status: "unchanged" }))).toBe(false);
+    expect(differsFromGame(entry("a", { status: "omitted" }))).toBe(false);
+    expect(
+      differsFromGame(entry("a", { status: "omitted", overridden: true })),
+    ).toBe(true);
   });
 });
 
@@ -148,7 +161,7 @@ describe("groupEntries", () => {
   const entries = [
     entry("r_shadows", { status: "blocked" }),
     entry("r_ssao"),
-    entry("r_rendersun"),
+    entry("r_rendersun", { status: "unchanged" }),
     entry("lb_enable_stationary_lights", {
       notes: [{ kind: "clamped", effective: "1" }],
     }),
@@ -178,7 +191,7 @@ describe("groupEntries", () => {
     ]);
   });
 
-  test("filters by changed paths and attention, counting the whole category", () => {
+  test("filters by changed paths, attention and difference, counting the whole category", () => {
     const changedKeys = new Set(["convars/r_ssao"]);
     const changed = groupEntries(
       entries,
@@ -188,22 +201,32 @@ describe("groupEntries", () => {
     expect(changed[0].entries.map((e) => e.path[1])).toEqual(["r_ssao"]);
     expect(changed[0].total).toBe(4);
     expect(changed[0].changed).toBe(1);
-    expect(changed[0].attention).toBe(2);
+    expect(changed[0].attention).toBe(1);
+    expect(changed[0].differs).toBe(3);
 
     const attention = groupEntries(
       entries,
       CATEGORIES,
       query({ filter: "attention" }),
     );
-    expect(attention[0].entries.map((e) => e.path[1])).toEqual([
+    expect(attention[0].entries.map((e) => e.path[1])).toEqual(["r_shadows"]);
+    expect(filterCounts(attention)).toEqual({
+      all: 6,
+      differs: 5,
+      changed: 0,
+      attention: 1,
+    });
+
+    const differs = groupEntries(
+      entries,
+      CATEGORIES,
+      query({ filter: "differs" }),
+    );
+    expect(differs[0].entries.map((e) => e.path[1])).toEqual([
+      "r_ssao",
       "lb_enable_stationary_lights",
       "r_shadows",
     ]);
-    expect(filterCounts(attention)).toEqual({
-      all: 6,
-      changed: 0,
-      attention: 2,
-    });
   });
 
   test("combines search with the filter", () => {

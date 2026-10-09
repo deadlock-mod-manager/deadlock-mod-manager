@@ -130,7 +130,7 @@ export const ConfigEditor = ({
 
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
-  const [filter, setFilter] = useState<EditorFilter>("all");
+  const [filter, setFilter] = useState<EditorFilter>("differs");
   const [showKeys, setShowKeys] = useState(true);
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
   const [addOpen, setAddOpen] = useState(false);

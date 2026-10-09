@@ -95,7 +95,6 @@ export const EditorHeader = ({
   ...pickerProps
 }: EditorHeaderProps) => {
   const { t } = useTranslation();
-  const isApplied = pickerProps.value === pickerProps.appliedConfigId;
   const tier = resolved ? tierForScore(resolved.cutScore) : null;
 
   return (
@@ -104,13 +103,6 @@ export const EditorHeader = ({
         {t("performance.editor.header.editing")}
       </span>
       <ConfigPicker {...pickerProps} />
-      <Badge
-        className='font-normal'
-        variant={isApplied ? "secondary" : "outline"}>
-        {isApplied
-          ? t("performance.editor.header.applied")
-          : t("performance.editor.header.notApplied")}
-      </Badge>
       {tier && (
         <Tooltip>
           <TooltipTrigger asChild>
@@ -125,10 +117,11 @@ export const EditorHeader = ({
         </Tooltip>
       )}
       {resolved && (
-        <span className='font-mono text-muted-foreground text-xs'>
+        <span className='text-muted-foreground text-xs'>
           {t("performance.editor.header.summary", {
             written: resolved.counts.applies,
             leftOut: leftOutCount(resolved),
+            matching: resolved.counts.unchanged + resolved.counts.omitted,
           })}
         </span>
       )}
