@@ -66,15 +66,11 @@ const statusLine = (entry: ResolvedEntry, t: TFunction): NoteLine | null => {
           : t("performance.editor.notes.excluded"),
       };
     }
-    case "engineSection": {
-      const section = findNote(entry.notes, "guardedSection")?.section;
+    case "engineSection":
       return {
         tone: "info",
-        text: section
-          ? t("performance.editor.notes.engineSection", { section })
-          : t("performance.editor.notes.engineSectionUnguarded"),
+        text: t("performance.editor.notes.engineSection"),
       };
-    }
     default:
       return null;
   }

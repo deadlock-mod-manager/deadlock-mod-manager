@@ -28,7 +28,7 @@ import { getErrorMessage } from "@/lib/errors";
 import { isGameRunningError } from "@/lib/game-guard";
 import logger from "@/lib/logger";
 import { reapplyPerfConfig } from "@/lib/performance/api";
-import { applySourceFor, unusedCount } from "@/lib/performance/config-list";
+import { applySourceFor } from "@/lib/performance/config-list";
 import { undoTarget } from "@/lib/performance/history";
 import { perfQueryKeys } from "@/lib/performance/query-keys";
 import { presetIdFromConfigId } from "@/lib/performance/request";
@@ -279,24 +279,9 @@ const ActiveStrip = ({
   const tweakCount = usePersistedStore(
     (state) => state.perfOverrides[desired.request.configId]?.length ?? 0,
   );
-  const unused = unusedCount(desired.counts);
-  const summary = [
-    status.inSync
-      ? t("performance.activeStatus.inFile", { count: desired.counts.applies })
-      : t("performance.activeStatus.settings", {
-          count: desired.counts.applies,
-        }),
-  ];
-  if (unused > 0) {
-    summary.push(t("performance.activeStatus.leftOut", { count: unused }));
-  }
-  if (desired.counts.engineSection > 0) {
-    summary.push(
-      t("performance.activeStatus.engineLeftOut", {
-        count: desired.counts.engineSection,
-      }),
-    );
-  }
+  const summary = status.inSync
+    ? t("performance.activeStatus.inFile", { count: desired.counts.applies })
+    : t("performance.activeStatus.settings", { count: desired.counts.applies });
 
   return (
     <section
@@ -334,7 +319,7 @@ const ActiveStrip = ({
           )}
         </div>
         <p className='mt-0.5 text-muted-foreground text-xs'>
-          {summary.join(", ")}. {t("performance.activeStatus.takesEffect")}
+          {summary}. {t("performance.activeStatus.takesEffect")}
         </p>
       </div>
       <div className='flex items-center gap-1.5'>

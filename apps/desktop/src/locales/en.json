@@ -51,7 +51,7 @@
         "title": "What the mod manager changes",
         "inPlace": "A config is a list of console variables (convars), and sometimes engine settings, written into your gameinfo.gi. The mod manager edits the file in place, next to your mods, instead of replacing it.",
         "turnOff": "It marks every line it adds or changes, so Turn off removes them and puts back the values they replaced. Your configs and tweaks stay saved.",
-        "reapply": "A game update or Reset to Vanilla replaces gameinfo.gi. The mod manager writes your config again when it starts, when you switch back to its window, and before every launch from it, including vanilla launches. It waits while Deadlock is running. If you start Deadlock from Steam while the mod manager is closed, the config is missing until the mod manager next runs.",
+        "reapply": "A game update or Reset to Vanilla replaces gameinfo.gi. The mod manager writes your config back when it starts, when you switch back to its window, and before every launch from it (vanilla launches included), waiting while Deadlock is running. If you start Deadlock from Steam with the mod manager closed, the config is missing until you open it again.",
         "untouched": "SearchPaths, which keeps your mods loading, and video.txt are never changed."
       },
       "sources": {
@@ -76,16 +76,16 @@
           "term": "GameBanana configs",
           "body": "Listed by their <gamebanana>GameBanana</gamebanana> id. The files are downloaded from GameBanana when you import one."
         },
-        "updates": "The app ships with a copy of this data. Once per session it asks the mod manager's server for a newer copy, and only uses it if it's valid and newer."
+        "updates": "The app ships with a copy of this data and checks the mod manager's server for a newer one once per session."
       },
       "statuses": {
         "title": "What happens to each setting",
-        "description": "Every line of a config gets one of these labels, in its details, the import review and the settings editor.",
+        "description": "Config details, the import review and the settings editor label every line of a config with one of these. Only lines marked Applies are written.",
         "applies": "Written to your gameinfo.gi.",
         "unchanged": "Your gameinfo.gi already has this value, or doesn't set it and the value is the convar's built-in default. Nothing is written.",
-        "blocked": "Valve flags this convar as one gameinfo.gi can't set (gameinfo_cannot_override). Left out.",
-        "removed": "Not in Deadlock's convar list. When the convar history shows it disappearing, the build is named. Left out.",
-        "notConvar": "Valve lists it as a console command, not a convar. Left out.",
+        "blocked": "Valve flags this convar as one gameinfo.gi can't set (gameinfo_cannot_override).",
+        "removed": "Not in Deadlock's convar list. When the convar history shows it disappearing, the build is named.",
+        "notConvar": "Valve lists it as a console command, not a convar.",
         "engineSection": "Outside the ConVars block, such as SceneSystem or RenderSystem. Left out unless you choose Include for that config. Deadlock's matchmaking error lists Engine2, MaterialSystem2, NetworkSystem, Particles, RenderSystem, SceneSystem and WorldRenderer as sections where it doesn't support changes.",
         "omitted": "You turned it off, or it's a developer or hideout tool. Those stay off unless you turn them on.",
         "excluded": "FileSystem (which holds SearchPaths) and editor-only sections. The mod manager never writes them.",
@@ -101,7 +101,7 @@
       },
       "scale": {
         "title": "Categories, the scale and tiers",
-        "categories": "Valve doesn't group convars, so each one gets a category from rules we wrote that match its name: names with \"shadow\" go to Shadows, for example. A setting can occasionally land in the wrong group.",
+        "categories": "Valve doesn't group convars, so the mod manager sorts each one into a category by its name: names with \"shadow\" go to Shadows, for example. A setting can occasionally land in the wrong group.",
         "position": "A config's place on the Looks best to Runs fastest scale comes from how many settings it changes in each category. Shadows count the most; Network and Camera & visibility don't count. It ranks configs against each other and isn't a frame-rate estimate.",
         "tiers": "Tiers, from Pretty to Potato, are picked by hand for curated and GameBanana configs. Your own configs take the tier of the config they came from."
       }
@@ -181,7 +181,7 @@
         "appliedOption": "{{name}} (applied)",
         "applied": "Applied",
         "notApplied": "Not applied",
-        "tierTooltip": "Where this config sits on the Looks ⟷ Frames scale. It moves as you edit.",
+        "tierTooltip": "Where this config sits between Looks best and Runs fastest. It moves as you edit.",
         "summary": "{{written}} written to gameinfo.gi, {{leftOut}} left out",
         "updating": "Updating…"
       },
@@ -203,7 +203,7 @@
       "noMatches": {
         "title": "No settings match",
         "clear": "Clear filters",
-        "searchAll": "Search all convars for “{{query}}”"
+        "searchAll": "Search all convars for \"{{query}}\""
       },
       "toolbar": {
         "search_one": "Search {{count}} setting",
@@ -280,20 +280,19 @@
           "color": "a color",
           "vector": "a vector"
         },
-        "blockedSince": "Deadlock stopped reading this from gameinfo.gi in build {{build}}, so it's left out of the file.",
-        "blocked": "Deadlock doesn't read this from gameinfo.gi, so it's left out of the file.",
-        "removedSince": "Deadlock removed this convar in build {{build}}, so it's left out of the file.",
-        "removed": "Deadlock's convar list has nothing by this name, so it's left out of the file.",
-        "sectionKey": "Not a convar. Valve's gameinfo.gi sets this key under {{section}}, not ConVars, so it's left out of the file.",
-        "notConvar": "This is a console command, not a setting, so it's left out of the file.",
-        "denied": "{{reason}} It's left out of the file.",
-        "deniedNoReason": "The mod manager doesn't write this key, so it's left out of the file.",
-        "excludedSection": "The mod manager never writes {{section}}, so this is left out of the file.",
-        "excluded": "The mod manager never writes this key, so it's left out of the file.",
+        "blockedSince": "Deadlock stopped reading this from gameinfo.gi in build {{build}}.",
+        "blocked": "Deadlock doesn't read this from gameinfo.gi.",
+        "removedSince": "Deadlock removed this convar in build {{build}}.",
+        "removed": "Deadlock's convar list has nothing by this name.",
+        "sectionKey": "Valve's gameinfo.gi sets this key under {{section}}, outside the ConVars block.",
+        "notConvar": "This is a console command, not a convar.",
+        "denied": "{{reason}}",
+        "deniedNoReason": "The mod manager doesn't write this key.",
+        "excludedSection": "The mod manager never writes {{section}}.",
+        "excluded": "The mod manager never writes this key.",
         "missingSection": "Your gameinfo.gi has no {{section}} section, so this can't be written.",
         "unsupported": "This can't be written as an edit to your gameinfo.gi.",
-        "engineSection": "Left out unless you include engine-section edits. Deadlock's matchmaking message names {{section}} among unsupported changes.",
-        "engineSectionUnguarded": "Left out unless you include engine-section edits."
+        "engineSection": "Left out unless you include engine-section edits."
       },
       "engine": {
         "excluded_one": "{{count}} engine-section edit ({{sections}}) is left out unless you include it.",
@@ -316,7 +315,7 @@
         "blockedSince": "Not read from gameinfo.gi since build {{build}}",
         "blocked": "Not read from gameinfo.gi",
         "removed": "Not in Deadlock's convar list",
-        "notConvar": "Console command, not a setting",
+        "notConvar": "Console command, not a convar",
         "kinds": {
           "bool": "Bool",
           "int": "Integer",
@@ -328,9 +327,9 @@
         }
       },
       "applyBar": {
-        "unsaved_one": "{{count}} unsaved change. Deadlock reads these at startup, so restart the game after applying.",
-        "unsaved_other": "{{count}} unsaved changes. Deadlock reads these at startup, so restart the game after applying.",
-        "notApplied": "{{name}} isn't applied. Deadlock reads these at startup, so restart the game after applying.",
+        "unsaved_one": "{{count}} unsaved change.",
+        "unsaved_other": "{{count}} unsaved changes.",
+        "notApplied": "{{name}} isn't applied.",
         "noGameinfo": "Deadlock's gameinfo.gi wasn't found, so nothing can be applied yet.",
         "discard": "Discard",
         "apply": "Apply changes",
@@ -424,7 +423,7 @@
         "archive": "Archive"
       },
       "base": {
-        "exact": "{{format}}, built on Deadlock's file from build {{build}} ({{date}}), identified by its PGIVersion",
+        "exact": "{{format}}, built on Deadlock's file from build {{build}} ({{date}})",
         "closest": "{{format}}, closest to Deadlock's file from build {{build}} ({{date}})"
       },
       "preset": {
@@ -435,9 +434,9 @@
         "replacesTweaks_other": "Replaces your {{count}} saved tweaks to {{preset}}."
       },
       "review": {
-        "empty": "Paste a config or pick a source to see what it changes. Nothing is written until you apply.",
+        "empty": "Paste a config or pick a source to see what it changes.",
         "analyzing": "Reading the config…",
-        "nothingToImport": "No settings found that the mod manager can apply. The parts below show what was skipped.",
+        "nothingToImport": "No settings found that the mod manager can apply.",
         "tiles": {
           "applies": "will apply",
           "blocked": "not read from gameinfo.gi",
@@ -458,21 +457,21 @@
         },
         "wontApply": {
           "title": "Won't apply",
-          "blockedSince_one": "{{count}} is a setting Deadlock stopped reading from gameinfo.gi in build {{build}} ({{example}}).",
-          "blockedSince_other": "{{count}} are settings Deadlock stopped reading from gameinfo.gi in build {{build}} (e.g. {{example}}).",
-          "blocked_one": "{{count}} is a setting Deadlock doesn't read from gameinfo.gi ({{example}}).",
-          "blocked_other": "{{count}} are settings Deadlock doesn't read from gameinfo.gi (e.g. {{example}}).",
+          "blockedSince_one": "Deadlock stopped reading {{count}} setting from gameinfo.gi in build {{build}} ({{example}}).",
+          "blockedSince_other": "Deadlock stopped reading {{count}} settings from gameinfo.gi in build {{build}} (e.g. {{example}}).",
+          "blocked_one": "Deadlock doesn't read {{count}} setting from gameinfo.gi ({{example}}).",
+          "blocked_other": "Deadlock doesn't read {{count}} settings from gameinfo.gi (e.g. {{example}}).",
           "removed_one": "{{count}} isn't in Deadlock's convar list ({{example}}).",
           "removed_other": "{{count}} aren't in Deadlock's convar list (e.g. {{example}}).",
-          "refused_one": "{{count}} is refused, turned off, or can't be written to your file; the list gives the reason.",
-          "refused_other": "{{count}} are refused, turned off, or can't be written to your file; the list gives each reason."
+          "refused_one": "The mod manager won't write {{count}}: it's refused, turned off, or doesn't fit your file.",
+          "refused_other": "The mod manager won't write {{count}}: they're refused, turned off, or don't fit your file."
         },
         "engine": {
           "title": "Left out: engine sections",
           "titleIncluded": "Included: engine sections",
           "include": "Include",
-          "description_one": "{{count}} edit to {{sections}}, left out unless you include it. SearchPaths is always skipped: the mod manager owns it so your mods keep loading.",
-          "description_other": "{{count}} edits to {{sections}}, left out unless you include them. SearchPaths is always skipped: the mod manager owns it so your mods keep loading.",
+          "description_one": "{{count}} edit to {{sections}}, left out unless you include it.",
+          "description_other": "{{count}} edits to {{sections}}, left out unless you include them.",
           "valveMessage": "Deadlock's matchmaking error lists {{sections}} among the gameinfo.gi sections where it doesn't support changes.",
           "sectionsWithRest_one": "{{sections}} and {{count}} other section",
           "sectionsWithRest_other": "{{sections}} and {{count}} other sections"
@@ -586,8 +585,8 @@
     },
     "modConfigFound": {
       "title": "This mod includes a performance config",
-      "withVpks": "{{modName}}'s VPK files are handled as usual. The download also has config files with performance settings. We never copy a mod's gameinfo.gi over yours, but you can import its settings.",
-      "withoutVpks": "{{modName}} has no VPK files, so nothing was installed as a mod. It has config files with performance settings instead. We never copy a mod's gameinfo.gi over yours, but you can import its settings.",
+      "withVpks": "{{modName}}'s VPK files are handled as usual. The download also has config files with performance settings. The mod manager never copies a mod's gameinfo.gi over yours, but you can import its settings.",
+      "withoutVpks": "{{modName}} has no VPK files, so nothing was installed as a mod. It has config files with performance settings instead. The mod manager never copies a mod's gameinfo.gi over yours, but you can import its settings.",
       "pickVersion": "Pick a version",
       "dontAskAgain": "Don't ask for this mod again",
       "notNow": "Not now",
@@ -605,16 +604,12 @@
       "label": "Active performance config",
       "active": "Active",
       "notWritten": "Not in gameinfo.gi",
-      "tweaks_one": "{{count}} tweak by you",
-      "tweaks_other": "{{count}} tweaks by you",
+      "tweaks_one": "{{count}} tweak",
+      "tweaks_other": "{{count}} tweaks",
       "inFile_one": "{{count}} setting in gameinfo.gi",
       "inFile_other": "{{count}} settings in gameinfo.gi",
       "settings_one": "{{count}} setting",
       "settings_other": "{{count}} settings",
-      "leftOut_one": "{{count}} left out: blocked in gameinfo.gi or not a convar",
-      "leftOut_other": "{{count}} left out: blocked in gameinfo.gi or not convars",
-      "engineLeftOut_one": "{{count}} engine-section edit left out",
-      "engineLeftOut_other": "{{count}} engine-section edits left out",
       "takesEffect": "Takes effect next time you start the game.",
       "editSettings": "Edit settings",
       "undo": "Undo last change",
@@ -697,7 +692,7 @@
       "sorts": {
         "downloads": "Most downloaded",
         "name": "Name",
-        "looksToFrames": "Looks → Frames"
+        "looksToFrames": "Looks best first"
       },
       "rename": {
         "label": "Rename",
@@ -738,12 +733,12 @@
       "resolveError": "Couldn't work out what this config changes: {{message}}",
       "changes": {
         "title": "What it changes",
-        "description_one": "{{count}} setting it writes to gameinfo.gi.",
-        "description_other": "{{count}} settings it writes to gameinfo.gi.",
-      "descriptionCurrent_one": "Your current config. {{count}} setting it writes to gameinfo.gi.",
-      "descriptionCurrent_other": "Your current config. {{count}} settings it writes to gameinfo.gi.",
-        "descriptionCompared_one": "{{count}} setting it writes to gameinfo.gi, compared with your current config.",
-        "descriptionCompared_other": "{{count}} settings it writes to gameinfo.gi, compared with your current config.",
+        "description_one": "Writes {{count}} setting to gameinfo.gi.",
+        "description_other": "Writes {{count}} settings to gameinfo.gi.",
+      "descriptionCurrent_one": "Your current config. It writes {{count}} setting to gameinfo.gi.",
+      "descriptionCurrent_other": "Your current config. It writes {{count}} settings to gameinfo.gi.",
+        "descriptionCompared_one": "Writes {{count}} setting to gameinfo.gi, shown next to your current config.",
+        "descriptionCompared_other": "Writes {{count}} settings to gameinfo.gi, shown next to your current config.",
         "nothing": "Nothing in this config changes your current gameinfo.gi.",
         "legendThis": "This config",
         "legendCurrent": "Your current config",
@@ -753,7 +748,7 @@
       "video": {
         "title": "Recommended in-game settings",
         "notesTitle": "Notes from the author",
-        "description": "The author also tunes Deadlock's Video menu. We don't change these for you; set them in-game."
+        "description": "The author also tunes Deadlock's Video menu. The mod manager doesn't change these; set them in-game."
       },
       "view": {
         "title": "Camera & visibility (from the author)",
@@ -762,7 +757,7 @@
         "gameUses": "{{value}} (game uses {{effective}})",
         "withDefault": "{{value}} (default {{default}})",
         "isDefault": "{{value}} (game default)",
-        "noMatches": "No settings match “{{query}}”."
+        "noMatches": "No settings match \"{{query}}\"."
       },
       "devtools": {
         "title": "Developer & hideout tools",
@@ -789,8 +784,8 @@
       "unread": {
         "title_one": "{{count}} setting blocked or not a convar",
         "title_other": "{{count}} settings blocked or not convars",
-        "blocked_one": "{{count}} Deadlock ignores in gameinfo.gi",
-        "blocked_other": "{{count}} Deadlock ignores in gameinfo.gi",
+        "blocked_one": "{{count}} is ignored in gameinfo.gi",
+        "blocked_other": "{{count}} are ignored in gameinfo.gi",
         "removed_one": "{{count}} isn't in Deadlock's convar list",
         "removed_other": "{{count}} aren't in Deadlock's convar list",
         "notConvar_one": "{{count}} is a console command",
@@ -824,7 +819,7 @@
         "downloads": "Downloads",
         "baseBuild": "Built on game build",
         "unknownBuild": "Unknown",
-        "reviewNote": "The mod manager doesn't bundle GameBanana files. You download this one from GameBanana and review what it changes before it's saved.",
+        "reviewNote": "You download this config from GameBanana and review what it changes before it's saved.",
         "imported": "You already imported this config as \"{{name}}\".",
         "openCopy": "Open your copy"
       },
