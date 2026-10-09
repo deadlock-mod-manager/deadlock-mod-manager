@@ -30,7 +30,7 @@ const storedModSchema = z.object({
   installedVpks: z.array(z.string()).nullish(),
 });
 
-export const shardRoot = (shard: number) =>
+const shardRoot = (shard: number) =>
   shard === 1 ? "addons" : `addons${shard}`;
 const pakNumber = (filename: string) =>
   Number(/^pak(\d+)_dir\.vpk$/.exec(filename)?.[1] ?? Number.NaN);

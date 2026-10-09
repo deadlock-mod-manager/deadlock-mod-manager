@@ -47,7 +47,7 @@ export const shardPayload =
         : []),
     ]);
 
-export const shardMods = (caseId: string) =>
+const shardMods = (caseId: string) =>
   isConflictCase(caseId) ? CONFLICT_MODS : LIBRARY_MODS;
 
 export const prepareShardWorld = async (world: CreatedWorld): Promise<void> => {
