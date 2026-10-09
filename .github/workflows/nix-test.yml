@@ -58,11 +58,18 @@ jobs:
       # Builds use the hash PR branch, since main only gets it once the PR merges.
       ref: ${{ steps.update.outputs.updated == 'true' && 'chore/nix-hashes' || github.sha }}
     steps:
+      - name: Get bot token
+        id: bot-token
+        uses: actions/create-github-app-token@v3.2.0
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+
       - name: Checkout repository
         uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.bot-token.outputs.token }}
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31
@@ -111,7 +118,7 @@ jobs:
           title: "chore(nix): update dependency hashes"
           paths: package.nix packages/*/package.nix apps/*/package.nix
           body: Refreshes the Nix dependency hashes with `nix-update`.
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.bot-token.outputs.token }}
 
   build-nightly:
     name: Build Nightly Package

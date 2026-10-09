@@ -25,10 +25,17 @@ jobs:
       pull-requests: write
 
     steps:
+      - name: Get bot token
+        id: bot-token
+        uses: actions/create-github-app-token@v3.2.0
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+
       - name: Checkout repository
         uses: actions/checkout@v7.0.1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.bot-token.outputs.token }}
           fetch-depth: 0
 
       - name: Setup Node.js environment
@@ -74,7 +81,7 @@ jobs:
           title: "chore: update language table with Crowdin progress"
           paths: README*.md
           body: Refreshes the README language tables from Crowdin progress.
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.bot-token.outputs.token }}
 
       - name: Output summary
         run: |

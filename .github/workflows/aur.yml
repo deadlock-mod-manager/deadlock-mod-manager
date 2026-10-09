@@ -31,11 +31,18 @@ jobs:
           - pkgname: deadlock-modmanager-bin
             pkgbuild_dir: distribution/aur/deadlock-modmanager-bin
     steps:
+      - name: Get bot token
+        id: bot-token
+        uses: actions/create-github-app-token@v3.2.0
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+
       - name: Checkout repository
         uses: actions/checkout@v7.0.1
         with:
           ref: main
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.bot-token.outputs.token }}
 
       - name: Resolve version
         id: version
@@ -79,7 +86,7 @@ jobs:
           title: "chore(aur): update ${{ matrix.pkgname }} to v${{ steps.version.outputs.version }}"
           paths: ${{ matrix.pkgbuild_dir }}/PKGBUILD
           body: Syncs the in-repo `${{ matrix.pkgname }}` PKGBUILD with the version published to the AUR.
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.bot-token.outputs.token }}
 
       - name: Publish to AUR
         if: steps.check_version.outputs.is_newer == 'true' || github.event.inputs.allow_backfill == 'true'

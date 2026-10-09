@@ -17,9 +17,16 @@ jobs:
       MANIFESTID: "" # set a manifest ID to pin; empty = latest
       OUTDIR: "_depot"
     steps:
+      - name: Get bot token
+        id: bot-token
+        uses: actions/create-github-app-token@v3.2.0
+        with:
+          app-id: ${{ secrets.BOT_APP_ID }}
+          private-key: ${{ secrets.BOT_APP_PRIVATE_KEY }}
+
       - uses: actions/checkout@v7.0.1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.bot-token.outputs.token }}
 
       - name: Download DepotDownloader
         run: |
@@ -68,4 +75,4 @@ jobs:
           title: "chore: update gameinfo.gi from depot"
           paths: apps/api/src/static/artifacts/deadlock/gameinfo.gi
           body: Pulls the latest `gameinfo.gi` from the Deadlock Steam depot.
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.bot-token.outputs.token }}
