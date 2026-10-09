@@ -22,8 +22,7 @@ import { getAlbumFreshness } from "@/lib/deadlockskins/album-freshness";
 import {
   albumModsQueryOptions,
   albumPageUrl,
-  deadlockSkinsAlbumMembersQueryOptions,
-  deadlockSkinsAlbumsQueryOptions,
+  deadlockSkinsAlbumQueryOptions,
 } from "@/lib/deadlockskins/albums";
 import { usePersistedStore } from "@/lib/store";
 import { findLocalMod } from "@/lib/store/selectors";
@@ -37,14 +36,12 @@ export const AlbumPageContent = ({ slug }: { slug: string }) => {
   const navigate = useNavigate();
   const confirm = useConfirm();
   const goBack = () => navigate("/mods");
-  // The album page has no poster of its own, so the header reads from the
-  // cached album list and the page itself only supplies the members.
-  const { data: albums } = useSuspenseQuery(deadlockSkinsAlbumsQueryOptions());
-  const album = albums.find((entry) => entry.slug === slug);
-  const { data: members } = useSuspenseQuery(
-    deadlockSkinsAlbumMembersQueryOptions(slug),
+  const { data: detail } = useSuspenseQuery(
+    deadlockSkinsAlbumQueryOptions(slug),
   );
-  const { data: mods } = useSuspenseQuery(albumModsQueryOptions(members ?? []));
+  const { data: mods } = useSuspenseQuery(
+    albumModsQueryOptions(detail?.members ?? []),
+  );
   const localMods = usePersistedStore((state) => state.localMods);
   const inLibrary = mods.filter((mod) => findLocalMod(localMods, mod.remoteId));
   const pending = mods.filter(
@@ -57,9 +54,11 @@ export const AlbumPageContent = ({ slug }: { slug: string }) => {
     onError: () => toast.error(t("albums.openSiteError")),
   });
 
-  if (!album || !members) {
+  if (!detail) {
     return <AlbumNotFound onBack={goBack} />;
   }
+
+  const { album, members } = detail;
 
   const missingCount = members.length - mods.length;
   const freshness = getAlbumFreshness(mods);

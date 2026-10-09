@@ -1,5 +1,6 @@
 import type { ModDto } from "@deadlock-mods/shared";
 import { invoke } from "@tauri-apps/api/core";
+import type { CatalogAuthor } from "@/types/generated/CatalogAuthor";
 import type { CatalogChangelogDto } from "@/types/generated/CatalogChangelogDto";
 import type { CatalogCommentsDto } from "@/types/generated/CatalogCommentsDto";
 import type { CatalogDownloadsDto } from "@/types/generated/CatalogDownloadsDto";
@@ -75,6 +76,10 @@ export const getGameBananaCatalogMods = async (
 /** Category/hero pairs for filter menus; only the query's scope applies. */
 export const getGameBananaCatalogFacets = (query: CatalogQuery) =>
   invoke<CatalogFacet[]>("get_gamebanana_catalog_facets", { query });
+
+/** Authors whose name matches the query's search, within its browse scope. */
+export const searchGameBananaCatalogAuthors = (query: CatalogQuery) =>
+  invoke<CatalogAuthor[]>("search_gamebanana_catalog_authors", { query });
 
 export const getGameBananaCatalogMod = async (
   remoteId: string,

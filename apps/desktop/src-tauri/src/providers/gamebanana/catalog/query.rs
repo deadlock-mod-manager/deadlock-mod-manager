@@ -11,9 +11,11 @@ use diesel::prelude::*;
 use diesel::sql_types::{Bool, Double, Text};
 use diesel::sqlite::Sqlite;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use ts_rs::TS;
 
 const MAX_PAGE_SIZE: u32 = 5_000;
+const MAX_AUTHOR_RESULTS: usize = 5;
 
 #[derive(Debug, Clone, Copy, Default, Deserialize, TS)]
 #[ts(export, rename_all = "camelCase")]
@@ -66,6 +68,19 @@ pub struct CatalogQuery {
 pub struct CatalogFacet {
   pub category: String,
   pub hero: Option<String>,
+}
+
+/// A submitter whose name matches a search, totalled over their submissions in
+/// the browse scope.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogAuthor {
+  pub author_remote_id: String,
+  pub name: String,
+  pub submission_count: u32,
+  #[ts(type = "number")]
+  pub download_count: u64,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -137,6 +152,42 @@ impl Catalog {
           .order_by((submission::category.asc(), submission::hero.asc()))
           .load::<CatalogFacet>(connection)
           .map_err(Error::from)
+      })
+      .await
+  }
+
+  /// Authors whose name matches the search, most downloaded first. Like facets,
+  /// only the query's scope applies, plus the NSFW toggle so a hidden mod
+  /// cannot surface its author.
+  pub async fn authors(&self, query: CatalogQuery) -> Result<Vec<CatalogAuthor>, Error> {
+    let Some(search) = fts_query(&query.search).map(|terms| format!("author : ({terms})")) else {
+      return Ok(Vec::new());
+    };
+    let scope = CatalogQuery {
+      is_audio: query.is_audio,
+      is_map: query.is_map,
+      hide_nsfw: query.hide_nsfw,
+      include_wips: query.include_wips,
+      submission_type: query.submission_type,
+      excluded_slugs: query.excluded_slugs,
+      ..CatalogQuery::default()
+    };
+    self
+      .pool
+      .run(move |connection| {
+        // Match on any name, then total every submission of those authors, so
+        // a rename does not drop the submissions stored under the old name.
+        let matching = filtered_query(&scope, Some(&search)).select(submission::author_remote_id);
+        let rows = filtered_query(&scope, None)
+          .filter(submission::author_remote_id.eq_any(matching))
+          .select((
+            submission::author_remote_id.assume_not_null(),
+            submission::author,
+            submission::download_count,
+            submission::remote_updated_at,
+          ))
+          .load::<(String, String, i64, i64)>(connection)?;
+        Ok(rank_authors(rows))
       })
       .await
   }
@@ -264,6 +315,45 @@ fn filter_heroes<'a>(
     (_, _, true) => statement,
   };
   statement
+}
+
+/// Groups `(author id, name, downloads, updated at)` rows by author. The name
+/// comes from the latest update, since members can rename themselves.
+fn rank_authors(rows: Vec<(String, String, i64, i64)>) -> Vec<CatalogAuthor> {
+  let mut authors: HashMap<String, (CatalogAuthor, i64)> = HashMap::new();
+  for (author_remote_id, name, downloads, updated_at) in rows {
+    let (author, latest_update) = authors
+      .entry(author_remote_id.clone())
+      .or_insert_with(|| {
+        (
+          CatalogAuthor {
+            author_remote_id,
+            name: name.clone(),
+            submission_count: 0,
+            download_count: 0,
+          },
+          updated_at,
+        )
+      });
+    author.submission_count += 1;
+    author.download_count += u64::try_from(downloads).unwrap_or(0);
+    if updated_at > *latest_update {
+      author.name = name;
+      *latest_update = updated_at;
+    }
+  }
+  let mut ranked = authors
+    .into_values()
+    .map(|(author, _)| author)
+    .collect::<Vec<_>>();
+  ranked.sort_by(|left, right| {
+    right
+      .download_count
+      .cmp(&left.download_count)
+      .then_with(|| left.name.cmp(&right.name))
+  });
+  ranked.truncate(MAX_AUTHOR_RESULTS);
+  ranked
 }
 
 fn fts_query(search: &str) -> Option<String> {
@@ -430,7 +520,7 @@ impl TryFrom<SubmissionRow> for CatalogRecord {
 
 #[cfg(test)]
 mod tests {
-  use super::{CatalogQuery, CatalogSort};
+  use super::{CatalogAuthor, CatalogQuery, CatalogSort};
   use crate::providers::gamebanana::catalog::{Catalog, CatalogFacet, CatalogRecord};
   use crate::providers::{SubmissionRef, SubmissionType};
   use tempfile::tempdir;
@@ -756,5 +846,98 @@ mod tests {
     assert_eq!(page.total, 1);
     assert_eq!(page.items.len(), 1);
     assert_eq!(page.items[0].submission.to_slug().unwrap(), "10");
+  }
+
+  fn authored(slug: &str, name: &str, author: &str, author_remote_id: &str) -> CatalogRecord {
+    CatalogRecord {
+      author: author.to_string(),
+      author_remote_id: Some(author_remote_id.to_string()),
+      ..record(slug, name, "Skins", None)
+    }
+  }
+
+  #[tokio::test]
+  async fn authors_match_on_the_author_name_and_total_their_submissions() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.db"), 1)
+      .await
+      .unwrap();
+    let mut renamed = authored("12", "Third", "former_name", "7");
+    renamed.remote_updated_at = 5;
+    catalog
+      .upsert_records(vec![
+        authored("10", "QOL Lock", "civo", "7"),
+        authored("snd-10", "Phoon Urn Run", "civo", "7"),
+        renamed,
+        authored("11", "Civo Tribute", "someone", "8"),
+        authored("1000", "Big Mod", "civilian", "9"),
+      ])
+      .await
+      .unwrap();
+
+    let authors = catalog
+      .authors(CatalogQuery {
+        search: "civ".to_string(),
+        ..CatalogQuery::default()
+      })
+      .await
+      .unwrap();
+
+    assert_eq!(
+      authors,
+      vec![
+        CatalogAuthor {
+          author_remote_id: "7".to_string(),
+          name: "civo".to_string(),
+          submission_count: 3,
+          download_count: 2 + 6 + 2,
+        },
+        CatalogAuthor {
+          author_remote_id: "9".to_string(),
+          name: "civilian".to_string(),
+          submission_count: 1,
+          download_count: 4,
+        },
+      ]
+    );
+  }
+
+  #[tokio::test]
+  async fn authors_respect_the_browse_scope() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.db"), 1)
+      .await
+      .unwrap();
+    let mut nsfw = authored("11", "Hidden", "civo", "8");
+    nsfw.is_nsfw = true;
+    catalog
+      .upsert_records(vec![
+        authored("snd-10", "Sound", "civo", "7"),
+        nsfw,
+        authored("12", "Excluded", "civo", "9"),
+      ])
+      .await
+      .unwrap();
+
+    let authors = catalog
+      .authors(CatalogQuery {
+        search: "civo".to_string(),
+        hide_nsfw: true,
+        submission_type: Some(SubmissionType::Mod),
+        excluded_slugs: vec!["12".to_string()],
+        ..CatalogQuery::default()
+      })
+      .await
+      .unwrap();
+    assert!(authors.is_empty());
+
+    let blank = catalog
+      .authors(CatalogQuery {
+        search: "  ".to_string(),
+        ..CatalogQuery::default()
+      })
+      .await
+      .unwrap();
+    assert!(blank.is_empty());
   }
 }

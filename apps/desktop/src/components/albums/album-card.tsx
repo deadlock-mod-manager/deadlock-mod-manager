@@ -7,17 +7,18 @@ import { useNavigate } from "react-router";
 import { getAlbumFreshness } from "@/lib/deadlockskins/album-freshness";
 import {
   albumModsQueryOptions,
-  type DeadlockSkinsAlbum,
-  deadlockSkinsAlbumMembersQueryOptions,
+  deadlockSkinsAlbumQueryOptions,
 } from "@/lib/deadlockskins/albums";
+import type { DeadlockSkinsAlbum } from "@/lib/deadlockskins/parse";
 import { AlbumFreshnessIndicator } from "./album-freshness";
 
 // Shares its queries with the album page, so opening an album after the grid
 // has loaded is instant. No badge until both have resolved.
 const useAlbumFreshness = (slug: string) => {
-  const { data: members } = useQuery(
-    deadlockSkinsAlbumMembersQueryOptions(slug),
-  );
+  const { data: members } = useQuery({
+    ...deadlockSkinsAlbumQueryOptions(slug),
+    select: (detail) => detail?.members ?? [],
+  });
   const { data: mods } = useQuery({
     ...albumModsQueryOptions(members ?? []),
     enabled: members !== undefined,
