@@ -86,7 +86,7 @@ jobs:
           git push --force origin "$BRANCH"
           {
             echo "Automated refresh of \`packages/perf-catalog\` (\`pnpm perf:catalog --refresh\`)."
-            echo "The catalog tests passed in the refresh run, so this PR goes straight to the merge queue."
+            echo "Merges on its own once CI passes."
             echo
             cat "$RUNNER_TEMP/perf-catalog-summary.md"
           } > "$RUNNER_TEMP/perf-catalog-pr.md"
@@ -98,5 +98,4 @@ jobs:
               --title "chore(perf-catalog): refresh performance catalog" \
               --body-file "$RUNNER_TEMP/perf-catalog-pr.md"
           fi
-          # Main has no required checks beyond the merge queue, so this queues it right away.
-          gh pr merge "$BRANCH"
+          gh pr merge "$BRANCH" --auto

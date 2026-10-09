@@ -119,6 +119,7 @@ jobs:
           paths: package.nix packages/*/package.nix apps/*/package.nix
           body: Refreshes the Nix dependency hashes with `nix-update`.
           token: ${{ steps.bot-token.outputs.token }}
+          auto-merge: true
 
   build-nightly:
     name: Build Nightly Package

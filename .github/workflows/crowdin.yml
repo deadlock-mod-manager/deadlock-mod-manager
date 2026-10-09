@@ -62,3 +62,11 @@ jobs:
           GITHUB_TOKEN: ${{ steps.bot-token.outputs.token }}
           CROWDIN_PROJECT_ID: ${{ secrets.CROWDIN_PROJECT_ID }}
           CROWDIN_PERSONAL_TOKEN: ${{ secrets.CROWDIN_PERSONAL_TOKEN }}
+
+      - name: Merge the translations PR once CI passes
+        env:
+          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
+        run: |
+          if [ -n "$(gh pr list --head l10n_crowdin_translations --state open --json number --jq '.[0].number')" ]; then
+            gh pr merge l10n_crowdin_translations --auto
+          fi

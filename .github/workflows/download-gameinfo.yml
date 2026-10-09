@@ -76,3 +76,4 @@ jobs:
           paths: apps/api/src/static/artifacts/deadlock/gameinfo.gi
           body: Pulls the latest `gameinfo.gi` from the Deadlock Steam depot.
           token: ${{ steps.bot-token.outputs.token }}
+          auto-merge: true

@@ -87,6 +87,7 @@ jobs:
           paths: ${{ matrix.pkgbuild_dir }}/PKGBUILD
           body: Syncs the in-repo `${{ matrix.pkgname }}` PKGBUILD with the version published to the AUR.
           token: ${{ steps.bot-token.outputs.token }}
+          auto-merge: true
 
       - name: Publish to AUR
         if: steps.check_version.outputs.is_newer == 'true' || github.event.inputs.allow_backfill == 'true'

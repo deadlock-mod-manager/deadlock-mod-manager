@@ -82,6 +82,7 @@ jobs:
           paths: README*.md
           body: Refreshes the README language tables from Crowdin progress.
           token: ${{ steps.bot-token.outputs.token }}
+          auto-merge: true
 
       - name: Output summary
         run: |

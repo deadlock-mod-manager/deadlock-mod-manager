@@ -16,6 +16,10 @@ inputs:
   token:
     description: "Token with contents and pull-requests write access"
     required: true
+  auto-merge:
+    description: "Queue the PR to merge once the required checks pass"
+    required: false
+    default: "false"
 
 runs:
   using: "composite"
@@ -28,6 +32,7 @@ runs:
         TITLE: ${{ inputs.title }}
         PATHS: ${{ inputs.paths }}
         BODY: ${{ inputs.body }}
+        AUTO_MERGE: ${{ inputs.auto-merge }}
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -41,4 +46,7 @@ runs:
           gh pr edit "$pr" --body "$BODY"
         else
           gh pr create --base main --head "$BRANCH" --title "$TITLE" --body "$BODY"
+        fi
+        if [ "$AUTO_MERGE" = "true" ]; then
+          gh pr merge "$BRANCH" --auto
         fi
