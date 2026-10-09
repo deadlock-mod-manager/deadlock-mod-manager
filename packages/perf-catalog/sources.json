@@ -6,10 +6,10 @@
   "schemaExplorer": {
     "repo": "ValveResourceFormat/SchemaExplorer",
     "path": "schemas/deadlock.json",
-    "commit": "c4ad3194efd8cb9ce8393232f64e310074f522ad",
-    "sha256": "520df756a7f1c544498f56e9fd3deb48c565a12132552e010245a9db89fbc1d6",
-    "revision": 11106493,
-    "versionDate": "Oct 08 2026"
+    "commit": "3e8fc0192cb0e8b162db87a713affce96fd3dacc",
+    "sha256": "06db60a268a9dfa46b01c96d02a2f8254c33c431cabd873414408c6bb0ae884c",
+    "revision": 11111459,
+    "versionDate": "Oct 09 2026"
   },
   "gameTracking": {
     "repo": "SteamTracking/GameTracking-Deadlock",
@@ -263,6 +263,12 @@
       "path": "DumpSource2/convars.txt",
       "since": "2026-03-01",
       "versions": [
+        {
+          "commit": "8f572f6e834a7b7d5a8678147818099074a59cf8",
+          "date": "2026-10-09",
+          "build": 6769,
+          "sha256": "1eacd0df9f990a22c37b26f570828df7702476d09faba7550cc2c785e7c2e5a2"
+        },
         {
           "commit": "7148202fea070a8cceb1523ee3ca7fc35095f710",
           "date": "2026-10-06",
@@ -688,7 +694,7 @@
       "md5": "bc5da539fd3e16000ebc07837cee91ff",
       "name": "SideLock[mb best fps cfg]",
       "author": "hitmeupwhenyourelonely",
-      "downloads": 764,
+      "downloads": 855,
       "updatedAt": "2026-10-01"
     }
   }
