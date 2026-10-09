@@ -1,0 +1,45 @@
+name: Watch convar dumps
+
+# Starts the catalog refresh as soon as SteamTracking publishes a convar dump
+# newer than the one pinned in sources.json, instead of waiting for Monday.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 * * * *"
+
+jobs:
+  check:
+    if: github.repository_owner == 'deadlock-mod-manager'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          sparse-checkout: packages/perf-catalog/sources.json
+          sparse-checkout-cone-mode: false
+
+      - name: Compare the newest dump with the pinned one
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sources=packages/perf-catalog/sources.json
+          upstream=$(jq -r .gameTracking.repo "$sources")
+          dump=$(jq -r .gameTracking.convarHistory.path "$sources")
+          pinned=$(jq -r '.gameTracking.convarHistory.versions | max_by(.build) | .commit' "$sources")
+          latest=$(gh api "repos/$upstream/commits?path=$dump&per_page=1" --jq '.[0].sha')
+          echo "Pinned: $pinned"
+          echo "Latest: $latest"
+          if [ "$latest" = "$pinned" ]; then
+            echo "Catalog is up to date."
+            exit 0
+          fi
+          if [ -n "$(gh pr list --head chore/perf-catalog-refresh --state open --json number --jq '.[0].number')" ]; then
+            echo "A refresh PR is already open; leaving it to merge."
+            exit 0
+          fi
+          gh workflow run perf-catalog.yml
+          echo "Started a catalog refresh for $latest."
