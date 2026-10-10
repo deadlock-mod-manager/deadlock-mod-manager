@@ -141,6 +141,7 @@
     "tabs": {
       "mods": "",
       "sounds": "Sons",
+      "collections": "",
       "wips": "WiP"
     },
     "searchLabel": "Rechercher des mods",
