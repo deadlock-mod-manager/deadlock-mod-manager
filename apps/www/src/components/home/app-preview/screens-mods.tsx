@@ -217,7 +217,7 @@ export const DashboardScreen = () => {
 const CONTENT_TABS = [
   { id: "mods", icon: CubeIcon },
   { id: "sounds", icon: MusicNotesIcon },
-  { id: "albums", icon: CardsThreeIcon },
+  { id: "collections", icon: CardsThreeIcon },
   { id: "wips", icon: BarricadeIcon },
 ] as const;
 

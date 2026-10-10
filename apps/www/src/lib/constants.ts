@@ -65,11 +65,6 @@ export const PARTNERS = [
     logo: "/home/partners/deadlock-api.webp",
   },
   {
-    name: "DeadlockSkins.gg",
-    href: `https://deadlockskins.gg/?ref=dmm&${partnerUtm}`,
-    logo: "/home/partners/deadlockskins.svg",
-  },
-  {
     name: "Deadworks",
     href: `https://deadworks.net/?${partnerUtm}`,
     logo: "/home/partners/deadworks.webp",

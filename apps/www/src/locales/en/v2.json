@@ -33,9 +33,9 @@
       "title": "The whole of GameBanana, on your PC",
       "body": "V2 keeps a copy of the GameBanana catalog on your PC, so browsing and searching don't wait on the network. It checks for new and updated mods when you start the app.",
       "points": {
-        "tabs": "Separate tabs for Mods, Sounds, Albums and WiPs",
+        "tabs": "Separate tabs for Mods, Sounds, Collections and WiPs",
         "pages": "Mod pages with Overview, Changelog, Comments and Files tabs",
-        "authors": "Author profiles, and DeadlockSkins.gg collections in Albums",
+        "authors": "Author profiles with the mods each author has published",
         "skip": "Skip an update until the author publishes a newer one"
       },
       "alt": "The Mods Store in Deadlock Mod Manager V2, showing a grid of GameBanana mods"
