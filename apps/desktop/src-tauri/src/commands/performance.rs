@@ -1,8 +1,7 @@
 use std::path::{Path, PathBuf};
 
-use tauri::AppHandle;
-
 use super::state::{MANAGER, get_api_url};
+use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 use crate::mod_manager::perf_config::analyze::{self, AnalyzeContext};
 use crate::mod_manager::perf_config::ops::{self, PerfContext};
