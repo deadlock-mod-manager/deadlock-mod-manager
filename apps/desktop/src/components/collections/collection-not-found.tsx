@@ -10,7 +10,7 @@ import { ArrowLeft } from "@deadlock-mods/ui/icons";
 import { CardsThreeIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 
-export const AlbumNotFound = ({ onBack }: { onBack: () => void }) => {
+export const CollectionNotFound = ({ onBack }: { onBack: () => void }) => {
   const { t } = useTranslation();
 
   return (
@@ -19,11 +19,13 @@ export const AlbumNotFound = ({ onBack }: { onBack: () => void }) => {
         <EmptyMedia variant='default'>
           <CardsThreeIcon className='h-16 w-16' />
         </EmptyMedia>
-        <EmptyTitle>{t("albums.notFoundTitle")}</EmptyTitle>
-        <EmptyDescription>{t("albums.notFoundDescription")}</EmptyDescription>
+        <EmptyTitle>{t("collections.notFoundTitle")}</EmptyTitle>
+        <EmptyDescription>
+          {t("collections.notFoundDescription")}
+        </EmptyDescription>
         <Button className='mt-4' onClick={onBack} variant='outline'>
           <ArrowLeft className='h-4 w-4' />
-          {t("albums.backToAlbums")}
+          {t("collections.backToCollections")}
         </Button>
       </EmptyHeader>
     </Empty>

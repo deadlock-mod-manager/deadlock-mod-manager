@@ -201,7 +201,7 @@ describe("bounded navigation metadata", () => {
     expect(screenName("/")).toBe("dashboard");
     expect(screenName("/my-mods")).toBe("my-mods");
     expect(screenName("/mods/private-id")).toBe("mod-details");
-    expect(screenName("/albums/private-name")).toBe("album");
+    expect(screenName("/collections/164637")).toBe("collection");
     expect(screenName("/authors/private-id")).toBe("author");
     expect(screenName("/plugins/private-name")).toBe("plugin");
     expect(screenName("/unrecognized/private-data")).toBe("other");
@@ -210,7 +210,7 @@ describe("bounded navigation metadata", () => {
   it("only uses search attribution on a catalog screen", () => {
     expect(modEntryPoint("/mods", true)).toBe("search");
     expect(modEntryPoint("/maps", false)).toBe("catalog");
-    expect(modEntryPoint("/albums/a", true)).toBe("album");
+    expect(modEntryPoint("/collections/1", true)).toBe("collection");
     expect(modEntryPoint("/authors/a", true)).toBe("author");
     expect(modEntryPoint("/skins", true)).toBe("skins");
     expect(modEntryPoint("/my-mods", true)).toBe("library");

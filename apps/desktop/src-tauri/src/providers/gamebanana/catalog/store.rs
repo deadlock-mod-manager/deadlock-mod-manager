@@ -459,6 +459,7 @@ impl Catalog {
       .run(|connection| {
         connection.transaction::<_, Error, _>(|connection| {
           diesel::delete(submission::table).execute(connection)?;
+          diesel::delete(super::schema::collection::table).execute(connection)?;
           diesel::delete(super::schema::update_cache::table).execute(connection)?;
           diesel::delete(sync_state::table).execute(connection)?;
           diesel::delete(sync_cursor::table).execute(connection)?;

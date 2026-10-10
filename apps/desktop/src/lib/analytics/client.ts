@@ -128,7 +128,7 @@ export const modEntryPoint = (
   if (pathname === "/mods" || pathname === "/maps")
     return hasSearch ? "search" : "catalog";
   if (pathname.startsWith("/authors/")) return "author";
-  if (pathname.startsWith("/albums/")) return "album";
+  if (pathname.startsWith("/collections/")) return "collection";
   if (pathname.startsWith("/mods/")) return "mod_details";
   if (pathname === "/my-mods" || pathname === "/downloads") return "library";
   if (pathname === "/skins") return "skins";
@@ -140,7 +140,7 @@ export const screenName = (pathname: string): string => {
   if (pathname === "/mods") return "browse-mods";
   if (pathname.startsWith("/mods/")) return "mod-details";
   if (pathname.startsWith("/authors/")) return "author";
-  if (pathname.startsWith("/albums/")) return "album";
+  if (pathname.startsWith("/collections/")) return "collection";
   if (pathname.startsWith("/plugins/")) return "plugin";
   if (pathname.startsWith("/settings")) return "settings";
   const screens = new Map([

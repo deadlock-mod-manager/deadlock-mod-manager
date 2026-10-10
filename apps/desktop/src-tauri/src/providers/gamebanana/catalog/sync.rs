@@ -1,9 +1,10 @@
+use super::collections::CollectionRecord;
 use super::store::{Catalog, CatalogRecord, INCOMPLETE_SNAPSHOT};
 use crate::errors::Error;
-use crate::providers::gamebanana::client::MAX_HYDRATION_ITEMS;
+use crate::providers::gamebanana::client::{MAX_COLLECTION_DESCRIPTIONS, MAX_HYDRATION_ITEMS};
 use crate::providers::gamebanana::hero_registry;
 use crate::providers::gamebanana::{
-  BulkHydration, GameBananaClient, IndexPage, is_nsfw_visibility, parse_tags,
+  BulkHydration, CollectionDescription, GameBananaClient, IndexPage, is_nsfw_visibility, parse_tags,
 };
 use crate::providers::{SubmissionProvider, SubmissionRef, SubmissionType};
 use std::future::Future;
@@ -39,6 +40,11 @@ const MAX_TOMBSTONE_CONFIRMATIONS: usize = 400;
 // the next launch. Wait it out a few times instead.
 const MAX_RATE_LIMIT_WAITS: u32 = 5;
 const MAX_RATE_LIMIT_WAIT: Duration = Duration::from_secs(5 * 60);
+const LAST_COLLECTION_SYNC_AT: &str = "last_collection_sync_at";
+// Adding an item doesn't change a collection's modified date, so items are also
+// re-crawled once they are this old.
+const COLLECTION_ITEMS_MAX_AGE: Duration = Duration::from_secs(7 * 24 * 60 * 60);
+const COLLECTION_SYNC_PHASE: &str = "collections";
 
 type SourceFuture<'a, T> = Pin<Box<dyn Future<Output = Result<T, Error>> + Send + 'a>>;
 
@@ -58,6 +64,31 @@ trait CatalogSource: Send + Sync {
     submissions: &'a [SubmissionRef],
     cancel: &'a CancellationToken,
   ) -> SourceFuture<'a, Vec<Option<BulkHydration>>>;
+
+  fn collection_index<'a>(
+    &'a self,
+    _page: u32,
+    _cancel: &'a CancellationToken,
+  ) -> SourceFuture<'a, IndexPage> {
+    Box::pin(async { Ok(IndexPage::empty()) })
+  }
+
+  fn collection_items<'a>(
+    &'a self,
+    _collection_id: u64,
+    _page: u32,
+    _cancel: &'a CancellationToken,
+  ) -> SourceFuture<'a, IndexPage> {
+    Box::pin(async { Ok(IndexPage::empty()) })
+  }
+
+  fn collection_descriptions<'a>(
+    &'a self,
+    collection_ids: &'a [u64],
+    _cancel: &'a CancellationToken,
+  ) -> SourceFuture<'a, Vec<Option<CollectionDescription>>> {
+    Box::pin(async move { Ok(vec![None; collection_ids.len()]) })
+  }
 }
 
 impl CatalogSource for GameBananaClient {
@@ -97,6 +128,40 @@ impl CatalogSource for GameBananaClient {
     cancel: &'a CancellationToken,
   ) -> SourceFuture<'a, Vec<Option<BulkHydration>>> {
     Box::pin(GameBananaClient::bulk_hydrate(self, submissions, cancel))
+  }
+
+  fn collection_index<'a>(
+    &'a self,
+    page: u32,
+    cancel: &'a CancellationToken,
+  ) -> SourceFuture<'a, IndexPage> {
+    Box::pin(GameBananaClient::collection_index(self, page, cancel))
+  }
+
+  fn collection_items<'a>(
+    &'a self,
+    collection_id: u64,
+    page: u32,
+    cancel: &'a CancellationToken,
+  ) -> SourceFuture<'a, IndexPage> {
+    Box::pin(GameBananaClient::collection_items(
+      self,
+      collection_id,
+      page,
+      cancel,
+    ))
+  }
+
+  fn collection_descriptions<'a>(
+    &'a self,
+    collection_ids: &'a [u64],
+    cancel: &'a CancellationToken,
+  ) -> SourceFuture<'a, Vec<Option<CollectionDescription>>> {
+    Box::pin(GameBananaClient::collection_descriptions(
+      self,
+      collection_ids,
+      cancel,
+    ))
   }
 }
 
@@ -171,13 +236,145 @@ impl CatalogSync {
       || self.catalog.count_visible().await? == 0
       || self.full_reconciliation_due().await?
       || self.backfill_due().await?;
-    if full_sync_due && (force_reconcile || !incomplete || self.incomplete_retry_due().await?) {
-      self.full_sync(cancel).await?;
-      return Ok(SyncOutcome::Full);
+    let outcome =
+      if full_sync_due && (force_reconcile || !incomplete || self.incomplete_retry_due().await?) {
+        self.full_sync(cancel).await?;
+        SyncOutcome::Full
+      } else {
+        // While an incomplete crawl waits to be retried, new uploads still arrive incrementally.
+        self.incremental_sync(force_refresh, cancel).await?
+      };
+
+    // Collections are extra; a failure here must not fail the mod sync that already landed.
+    match self.sync_collections(force_refresh, cancel).await {
+      Err(Error::ProviderCancelled) => return Err(Error::ProviderCancelled),
+      Err(error) => log::warn!("GameBanana collection sync failed: {error}"),
+      Ok(()) => {}
+    }
+    Ok(outcome)
+  }
+
+  async fn sync_collections(&self, force: bool, cancel: &CancellationToken) -> Result<(), Error> {
+    let now = unix_timestamp();
+    let last_sync = self
+      .catalog
+      .state(LAST_COLLECTION_SYNC_AT)
+      .await?
+      .and_then(|value| value.parse::<u64>().ok())
+      .unwrap_or_default();
+    if !force
+      && now.saturating_sub(last_sync) < INCREMENTAL_INTERVAL.as_secs()
+      && self.catalog.count_collections().await? > 0
+    {
+      return Ok(());
+    }
+    let seen_at = i64::try_from(now).unwrap_or(i64::MAX);
+    *self.progress.lock().await = (Some(COLLECTION_SYNC_PHASE.to_string()), None);
+
+    let mut page_number = 1;
+    loop {
+      let page = self
+        .patiently(cancel, || self.source.collection_index(page_number, cancel))
+        .await?;
+      let records = page
+        .valid_collections()
+        .iter()
+        .map(CollectionRecord::from_index)
+        .collect();
+      self.catalog.upsert_collections(records, seen_at).await?;
+      if page.metadata.is_complete || page.records.is_empty() {
+        break;
+      }
+      page_number = page_number.saturating_add(1);
+    }
+    // Only a crawl that reached the last page knows which collections are gone.
+    self.catalog.prune_collections(seen_at).await?;
+
+    let undescribed = self.catalog.collections_needing_descriptions().await?;
+    for batch in undescribed.chunks(MAX_COLLECTION_DESCRIPTIONS) {
+      match self
+        .patiently(cancel, || {
+          self.source.collection_descriptions(batch, cancel)
+        })
+        .await
+      {
+        Ok(descriptions) => {
+          let found = batch
+            .iter()
+            .zip(descriptions)
+            .filter_map(|(id, description)| description.map(|description| (*id, description)))
+            .collect();
+          self.catalog.save_collection_descriptions(found).await?;
+        }
+        Err(
+          error @ (Error::ProviderCancelled
+          | Error::ProviderRateLimited { .. }
+          | Error::ProviderRefused),
+        ) => return Err(error),
+        Err(error) => log::warn!("GameBanana collection descriptions failed: {error}"),
+      }
     }
 
-    // While an incomplete crawl waits to be retried, new uploads still arrive incrementally.
-    self.incremental_sync(force_refresh, cancel).await
+    let refresh_before =
+      seen_at.saturating_sub(i64::try_from(COLLECTION_ITEMS_MAX_AGE.as_secs()).unwrap_or(0));
+    let stale = self
+      .catalog
+      .collections_needing_items(refresh_before)
+      .await?;
+    let total = stale.len() as u64;
+    for (index, collection) in stale.into_iter().enumerate() {
+      *self.progress.lock().await = (
+        Some(COLLECTION_SYNC_PHASE.to_string()),
+        catalog_percentage(index as u64, total),
+      );
+      let Ok(collection_id) = collection.collection_id.parse::<u64>() else {
+        continue;
+      };
+      match self.collection_items(collection_id, cancel).await {
+        Ok(items) => {
+          self
+            .catalog
+            .replace_collection_items(collection, items, seen_at)
+            .await?;
+        }
+        Err(
+          error @ (Error::ProviderCancelled
+          | Error::ProviderRateLimited { .. }
+          | Error::ProviderRefused),
+        ) => return Err(error),
+        Err(error) => {
+          log::warn!("GameBanana collection {collection_id} items failed: {error}");
+        }
+      }
+    }
+
+    self
+      .catalog
+      .set_state(LAST_COLLECTION_SYNC_AT, now.to_string())
+      .await
+  }
+
+  async fn collection_items(
+    &self,
+    collection_id: u64,
+    cancel: &CancellationToken,
+  ) -> Result<Vec<SubmissionRef>, Error> {
+    let mut items = Vec::new();
+    let mut page_number = 1;
+    loop {
+      let page = self
+        .patiently(cancel, || {
+          self
+            .source
+            .collection_items(collection_id, page_number, cancel)
+        })
+        .await?;
+      items.extend(page.collection_items());
+      if page.metadata.is_complete || page.records.is_empty() {
+        return Ok(items);
+      }
+      page_number = page_number.saturating_add(1);
+    }
   }
 
   pub async fn clear(&self) -> Result<(), Error> {
@@ -785,7 +982,7 @@ mod tests {
 
   use super::{CatalogSource, CatalogSync, SourceFuture};
   use crate::errors::Error;
-  use crate::providers::gamebanana::{BulkHydration, IndexPage};
+  use crate::providers::gamebanana::{BulkHydration, CollectionDescription, IndexPage};
   use crate::providers::{SubmissionRef, SubmissionType};
   use std::collections::{HashSet, VecDeque};
   use std::sync::Mutex;
@@ -885,6 +1082,150 @@ mod tests {
         )))
       })
     }
+  }
+
+  /// Two index pages of collections; collection 1 has two pages of items.
+  struct CollectionSource {
+    item_requests: std::sync::Arc<Mutex<Vec<(u64, u32)>>>,
+  }
+
+  impl CatalogSource for CollectionSource {
+    fn record_counts<'a>(&'a self, _cancel: &'a CancellationToken) -> SourceFuture<'a, [u64; 3]> {
+      Box::pin(async { Ok([0, 0, 0]) })
+    }
+
+    fn index<'a>(
+      &'a self,
+      _submission_type: SubmissionType,
+      _page: u32,
+      _latest_modified: bool,
+      _cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, IndexPage> {
+      Box::pin(async { Ok(empty_page()) })
+    }
+
+    fn bulk_hydrate<'a>(
+      &'a self,
+      submissions: &'a [SubmissionRef],
+      _cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, Vec<Option<BulkHydration>>> {
+      Box::pin(async move { Ok(vec![None; submissions.len()]) })
+    }
+
+    fn collection_index<'a>(
+      &'a self,
+      page: u32,
+      _cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, IndexPage> {
+      Box::pin(async move {
+        let (id, item_count, complete) = if page == 1 {
+          (1, 20, false)
+        } else {
+          (2, 3, true)
+        };
+        Ok(
+          serde_json::from_value(serde_json::json!({
+            "_aMetadata": {"_nRecordCount": 2, "_nPerpage": 1, "_bIsComplete": complete},
+            "_aRecords": [{
+              "_idRow": id, "_sModelName": "Collection", "_sName": format!("Collection {id}"),
+              "_nItemCount": item_count, "_tsDateModified": 100
+            }]
+          }))
+          .unwrap(),
+        )
+      })
+    }
+
+    fn collection_items<'a>(
+      &'a self,
+      collection_id: u64,
+      page: u32,
+      _cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, IndexPage> {
+      self
+        .item_requests
+        .lock()
+        .unwrap()
+        .push((collection_id, page));
+      Box::pin(async move {
+        let item = if page == 1 {
+          (10, "Mod")
+        } else {
+          (20, "Sound")
+        };
+        Ok(
+          serde_json::from_value(serde_json::json!({
+            "_aMetadata": {"_nRecordCount": 2, "_nPerpage": 1, "_bIsComplete": page == 2},
+            "_aRecords": [{"_idRow": item.0, "_sModelName": item.1, "_sName": "Item"}]
+          }))
+          .unwrap(),
+        )
+      })
+    }
+
+    fn collection_descriptions<'a>(
+      &'a self,
+      collection_ids: &'a [u64],
+      _cancel: &'a CancellationToken,
+    ) -> SourceFuture<'a, Vec<Option<CollectionDescription>>> {
+      Box::pin(async move {
+        Ok(
+          collection_ids
+            .iter()
+            .map(|id| {
+              Some(CollectionDescription {
+                description: format!("About {id}"),
+                text: String::new(),
+              })
+            })
+            .collect(),
+        )
+      })
+    }
+  }
+
+  #[tokio::test]
+  async fn collection_sync_stores_listed_collections_with_their_items() {
+    let directory = tempdir().unwrap();
+    let catalog = super::Catalog::open(directory.path().join("catalog.sqlite3"), 2)
+      .await
+      .unwrap();
+    let item_requests = std::sync::Arc::new(Mutex::new(Vec::new()));
+    let sync = CatalogSync::with_source(
+      catalog.clone(),
+      CollectionSource {
+        item_requests: item_requests.clone(),
+      },
+    );
+    sync
+      .sync_collections(false, &CancellationToken::new())
+      .await
+      .unwrap();
+
+    let listed = catalog.collections().await.unwrap();
+    assert_eq!(
+      listed.len(),
+      1,
+      "collections under the size limit stay unlisted"
+    );
+    assert_eq!(listed[0].description, "About 1");
+    let (_, items) = catalog.collection("1".to_string()).await.unwrap().unwrap();
+    let slugs = items
+      .iter()
+      .map(|item| item.to_slug().unwrap())
+      .collect::<Vec<_>>();
+    assert_eq!(slugs, ["10", "snd-20"]);
+
+    // A second run within the interval does nothing; a forced one skips unchanged items.
+    sync
+      .sync_collections(false, &CancellationToken::new())
+      .await
+      .unwrap();
+    sync
+      .sync_collections(true, &CancellationToken::new())
+      .await
+      .unwrap();
+    assert_eq!(*item_requests.lock().unwrap(), [(1, 1), (1, 2)]);
   }
 
   fn empty_page() -> IndexPage {

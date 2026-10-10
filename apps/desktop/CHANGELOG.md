@@ -8,7 +8,7 @@
 
 ### Minor Changes
 
-- 0f9a0be: Add Albums tab with DeadlockSkins.gg collections and one-click album download
+- 0f9a0be: Add a Collections tab with GameBanana collections and one-click collection download
 - 85b515a: Show GameBanana comments and changelogs on mod pages and when updating
 - d0d29cd: Add an OLED theme with true-black backgrounds and a customizable accent
 - c52fc90: Add seasonal themes with mini-games for Halloween, Christmas, Easter and more

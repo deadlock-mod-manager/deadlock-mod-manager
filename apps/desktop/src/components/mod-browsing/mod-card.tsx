@@ -22,8 +22,8 @@ import { useModHasUpdate } from "@/hooks/use-check-updates";
 import { useModDetailHoverPrefetch } from "@/hooks/use-mod-detail-hover-prefetch";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import type {
-  AlbumNavigationTarget,
   AuthorNavigationTarget,
+  CuratedCollectionNavigationTarget,
   ModsCollection,
 } from "@/lib/mods/mod-detail-navigation";
 import { prefetchModDetail } from "@/lib/mods/mod-detail-prefetch";
@@ -41,11 +41,17 @@ interface ModCardProps {
   readOnly?: boolean;
   collection?: ModsCollection;
   author?: AuthorNavigationTarget;
-  album?: AlbumNavigationTarget;
+  curatedCollection?: CuratedCollectionNavigationTarget;
 }
 
 const ModCard = memo((props: ModCardProps) => {
-  const { mod, readOnly = false, collection = "mods", author, album } = props;
+  const {
+    mod,
+    readOnly = false,
+    collection = "mods",
+    author,
+    curatedCollection,
+  } = props;
   const { t } = useTranslation();
   const localMod = usePersistedStore((state) =>
     findLocalMod(state.localMods, mod?.remoteId),
@@ -65,8 +71,8 @@ const ModCard = memo((props: ModCardProps) => {
     return <ModCardSkeleton />;
   }
 
-  const entryPoint: ModEntryPoint = album
-    ? "album"
+  const entryPoint: ModEntryPoint = curatedCollection
+    ? "collection"
     : author
       ? "author"
       : collection === "dashboard"
@@ -84,7 +90,12 @@ const ModCard = memo((props: ModCardProps) => {
     });
     void prefetchModDetail(queryClient, mod.remoteId);
     navigate(`/mods/${mod.remoteId}`, {
-      state: { collection, author, album, analyticsEntryPoint: entryPoint },
+      state: {
+        collection,
+        author,
+        curatedCollection,
+        analyticsEntryPoint: entryPoint,
+      },
     });
   };
 

@@ -2866,7 +2866,7 @@
       "sound": "Sounds",
       "map": "Maps",
       "wip": "WiPs",
-      "album": "Albums"
+      "collection": "Collections"
     },
     "updated": "Updated",
     "match": "Match",
@@ -3326,7 +3326,7 @@
           "✨ Stats page with hero, item and teammate breakdowns, match history and a live board for your current match",
           "✨ Mod Foundry: import a skin, recolor it, swap its cards and sounds, and export it as a mod",
           "✨ Manage every skin for a hero on the Hero Skins page, with a 3D preview",
-          "✨ Albums tab with DeadlockSkins.gg collections you can download in one click",
+          "✨ Collections tab with GameBanana collections you can download in one click",
           "✨ Mod pages now have Overview, Changelog, Comments and Files tabs",
           "✨ GameBanana author profiles",
           "✨ Import mods, profiles and crosshairs from Grimoire, and export them too",
@@ -4418,7 +4418,7 @@
       "replies_one": "{{count}} reply on GameBanana",
       "replies_other": "{{count}} replies on GameBanana"
     },
-    "backToAlbum": "Back to {{album}}"
+    "backToCollection": "Back to {{collection}}"
   },
   "modDependencies": {
     "title": "Requirements",
@@ -4777,21 +4777,39 @@
     "killstreakMusic": "Killstreak Music",
     "other": "Other"
   },
-  "albums": {
-    "album": "Album",
+  "collections": {
+    "emptyTitle": "No collections yet",
+    "emptyDescription": "Collections arrive with the next catalog sync. Check your connection if they don't show up.",
+    "searchPlaceholder": "Search collections",
+    "size": {
+      "label": "Collection size",
+      "any": "Any size",
+      "small": "10 to 24 mods",
+      "medium": "25 to 49 mods",
+      "large": "50 to 99 mods",
+      "huge": "100+ mods"
+    },
+    "noResultsTitle": "No collections found",
+    "noResultsDescription": "No collection matches your search and size filter.",
+    "featured": "Featured this week",
+    "all": "All collections",
     "itemCount_one": "{{count}} item",
     "itemCount_other": "{{count}} items",
-    "openSiteError": "Could not open DeadlockSkins.gg",
-    "emptyTitle": "No albums available",
-    "emptyDescription": "deadlockskins.gg didn't return any albums. Check your connection and try again later.",
-    "searchPlaceholder": "Search albums",
-    "noResultsTitle": "No albums found",
-    "noResultsDescription": "No album matches your search.",
-    "notFoundTitle": "Album not found",
-    "notFoundDescription": "This album may have been renamed or removed from deadlockskins.gg.",
-    "backToAlbums": "Back to Albums",
-    "viewOnSite": "View on DeadlockSkins.gg",
-    "modsInAlbum": "Mods in this album",
+    "byAuthor": "By {{author}}",
+    "openSiteError": "Could not open GameBanana",
+    "notFoundTitle": "Collection not found",
+    "notFoundDescription": "This collection may have been removed from GameBanana or made private.",
+    "backToCollections": "Back to Collections",
+    "viewOnGameBanana": "View on GameBanana",
+    "modsInCollection": "Mods in this collection",
+    "itemsSyncing": "Still syncing this collection's mods",
+    "searchMods": "Search this collection",
+    "noModsTitle": "No mods found",
+    "noModsDescription": "No mod in this collection matches your search.",
+    "selectAll": "Select all",
+    "clearSelection": "Clear",
+    "selectedCount_one": "{{count}} selected",
+    "selectedCount_other": "{{count}} selected",
     "modStat_one": "mod",
     "modStat_other": "mods",
     "inLibraryStat_one": "in library",
@@ -4801,9 +4819,11 @@
     "download": {
       "action_one": "Download {{count}} mod",
       "action_other": "Download {{count}} mods",
+      "selectedAction_one": "Download {{count}} selected mod",
+      "selectedAction_other": "Download {{count}} selected mods",
       "allInLibrary": "All in library",
       "preparing": "Preparing {{done}}/{{total}}…",
-      "confirmTitle": "Download {{album}}?",
+      "confirmTitle": "Download {{collection}}?",
       "confirmBody_one": "{{count}} mod will be downloaded into your active profile.",
       "confirmBody_other": "{{count}} mods will be downloaded into your active profile.",
       "confirmSkipped_one": "{{count}} mod already in your library is skipped.",
@@ -4823,11 +4843,10 @@
       "outdatedLabel": "Outdated",
       "partialLabel_one": "{{count}} outdated",
       "partialLabel_other": "{{count}} outdated",
-      "outdatedDescription": "None of this album's mods have been updated since the City Never Sleeps update (September 29, 2026). They may not work properly.",
-      "partialDescription_one": "{{count}} of {{total}} mods in this album hasn't been updated since the City Never Sleeps update (September 29, 2026) and may not work properly.",
-      "partialDescription_other": "{{count}} of {{total}} mods in this album haven't been updated since the City Never Sleeps update (September 29, 2026) and may not work properly."
-    },
-    "providedBy": "Provided by"
+      "outdatedDescription": "None of this collection's mods have been updated since the City Never Sleeps update (September 29, 2026). They may not work properly.",
+      "partialDescription_one": "{{count}} of {{total}} mods in this collection hasn't been updated since the City Never Sleeps update (September 29, 2026) and may not work properly.",
+      "partialDescription_other": "{{count}} of {{total}} mods in this collection haven't been updated since the City Never Sleeps update (September 29, 2026) and may not work properly."
+    }
   },
   "interchange": {
     "importButton": "Import from other mod managers",

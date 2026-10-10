@@ -230,7 +230,7 @@ describe("safeMigrate", () => {
   it("LATEST_VERSION matches the highest step target", () => {
     const max = Math.max(...MIGRATION_STEPS.map((s) => s.to));
     expect(LATEST_VERSION).toBe(max);
-    expect(LATEST_VERSION).toBe(28);
+    expect(LATEST_VERSION).toBe(29);
   });
 
   it("v25 (themes switch): drops the leftover enabledPlugins.themes entry", () => {
@@ -329,6 +329,14 @@ describe("safeMigrate", () => {
         26,
       ) as Record<string, unknown>;
       expect(alreadySet.modsFilters).toEqual({ contentType: "wip" });
+    });
+
+    it("v29 (albums to collections): moves the Albums tab to Collections", () => {
+      const result = safeMigrate(
+        { modsFilters: { contentType: "album" } },
+        28,
+      ) as Record<string, unknown>;
+      expect(result.modsFilters).toEqual({ contentType: "collection" });
     });
 
     it("v23 (telemetry settings): adds default telemetrySettings when missing", () => {

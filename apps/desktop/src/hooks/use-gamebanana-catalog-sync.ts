@@ -11,6 +11,7 @@ import {
   clearGameBananaCatalog,
   synchronizeGameBananaCatalog,
 } from "@/lib/gamebanana-catalog";
+import { COLLECTIONS_QUERY_KEY } from "@/lib/collections/queries";
 import logger from "@/lib/logger";
 
 export const CATALOG_SYNC_KEY = ["gamebanana-catalog-sync"];
@@ -41,6 +42,7 @@ export const useCatalogSyncMutation = (forceRefresh = false) => {
       });
       void queryClient.invalidateQueries({ queryKey: ["mods"] });
       void queryClient.invalidateQueries({ queryKey: ["mod"] });
+      void queryClient.invalidateQueries({ queryKey: COLLECTIONS_QUERY_KEY });
     },
     onError: (error) => {
       logger.withError(error).warn("GameBanana catalog refresh failed");

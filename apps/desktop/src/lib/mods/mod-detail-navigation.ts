@@ -14,8 +14,8 @@ export interface AuthorNavigationTarget {
   name: string;
 }
 
-export interface AlbumNavigationTarget {
-  slug: string;
+export interface CuratedCollectionNavigationTarget {
+  id: string;
   name: string;
 }
 
@@ -23,13 +23,13 @@ export interface ModDetailNavigationState {
   collection: ModsCollection;
   analyticsEntryPoint?: ModEntryPoint;
   author?: AuthorNavigationTarget;
-  album?: AlbumNavigationTarget;
+  curatedCollection?: CuratedCollectionNavigationTarget;
 }
 
 const getBackTarget = (
   collection: ModsCollection,
   author?: AuthorNavigationTarget,
-  album?: AlbumNavigationTarget,
+  curatedCollection?: CuratedCollectionNavigationTarget,
 ) => {
   if (author) {
     return {
@@ -38,11 +38,11 @@ const getBackTarget = (
       labelValues: { author: author.name },
     };
   }
-  if (album) {
+  if (curatedCollection) {
     return {
-      path: `/albums/${album.slug}`,
-      labelKey: "modDetail.backToAlbum",
-      labelValues: { album: album.name },
+      path: `/collections/${curatedCollection.id}`,
+      labelKey: "modDetail.backToCollection",
+      labelValues: { collection: curatedCollection.name },
     };
   }
   return {
@@ -52,10 +52,10 @@ const getBackTarget = (
 };
 
 export const getBackNavigation = (
-  { collection, author, album }: ModDetailNavigationState = {
+  { collection, author, curatedCollection }: ModDetailNavigationState = {
     collection: "mods",
   },
 ) => ({
-  ...getBackTarget(collection, author, album),
+  ...getBackTarget(collection, author, curatedCollection),
   state: { collection },
 });

@@ -4,15 +4,16 @@ mod types;
 
 pub use state::GameBananaCatalogState;
 pub use types::{
-  CatalogDonationLinkDto, CatalogDownloadDto, CatalogDownloadsDto, CatalogModDto,
-  CatalogModMetadataDto, CatalogPageDto, CatalogSyncStatusDto, CatalogUpdateDto, CatalogUpdatesDto,
-  GameBananaFileserverDto, InstalledSubmissionDto,
+  CatalogCollectionDetailDto, CatalogCollectionDto, CatalogDonationLinkDto, CatalogDownloadDto,
+  CatalogDownloadsDto, CatalogModDto, CatalogModMetadataDto, CatalogPageDto, CatalogSyncStatusDto,
+  CatalogUpdateDto, CatalogUpdatesDto, GameBananaFileserverDto, InstalledSubmissionDto,
 };
 
 use crate::errors::Error;
 use crate::providers::SubmissionRef;
 use crate::providers::gamebanana::catalog::{
-  CatalogAuthor, CatalogFacet, CatalogQuery, CatalogRecord, SyncOutcome,
+  CatalogAuthor, CatalogCollection, CatalogFacet, CatalogQuery, CatalogRecord, SyncOutcome,
+  current_week, weekly_featured,
 };
 use crate::providers::gamebanana::{ApiResponse, UpdateSnapshot, normalize_profile};
 use activity::{CatalogChangelogDto, CatalogCommentsDto};
@@ -69,6 +70,83 @@ pub async fn search_gamebanana_catalog_authors(
   let backend = state.backend()?;
   query.excluded_slugs = policy.unavailable_slugs()?;
   backend.catalog.authors(query).await
+}
+
+#[tauri::command]
+pub async fn list_gamebanana_collections(
+  state: State<'_, GameBananaCatalogState>,
+) -> Result<Vec<CatalogCollectionDto>, Error> {
+  let catalog = &state.backend()?.catalog;
+  let mut collections = catalog.collections().await?;
+  let featured = weekly_featured(&collections, current_week());
+  collections.sort_by_key(|collection| !featured.contains(&collection.collection_id));
+  let mut previews = catalog
+    .collection_previews(uncovered_ids(collections.iter()))
+    .await?;
+  let mut heroes = catalog
+    .collection_heroes(
+      collections
+        .iter()
+        .map(|collection| collection.collection_id.clone())
+        .collect(),
+    )
+    .await?;
+  Ok(
+    collections
+      .iter()
+      .map(|collection| {
+        let id = &collection.collection_id;
+        CatalogCollectionDto::new(
+          collection,
+          featured.contains(id),
+          previews.remove(id).unwrap_or_default(),
+          heroes.remove(id).unwrap_or_default(),
+        )
+      })
+      .collect(),
+  )
+}
+
+#[tauri::command]
+pub async fn get_gamebanana_collection(
+  state: State<'_, GameBananaCatalogState>,
+  collection_id: String,
+) -> Result<Option<CatalogCollectionDetailDto>, Error> {
+  let catalog = &state.backend()?.catalog;
+  let Some((collection, items)) = catalog.collection(collection_id).await? else {
+    return Ok(None);
+  };
+  let preview_images = catalog
+    .collection_previews(uncovered_ids(std::iter::once(&collection)))
+    .await?
+    .remove(&collection.collection_id)
+    .unwrap_or_default();
+  let heroes = catalog
+    .collection_heroes(vec![collection.collection_id.clone()])
+    .await?
+    .remove(&collection.collection_id)
+    .unwrap_or_default();
+  Ok(Some(CatalogCollectionDetailDto {
+    collection: CatalogCollectionDto::new(
+      &collection,
+      weekly_featured(&catalog.collections().await?, current_week())
+        .contains(&collection.collection_id),
+      preview_images,
+      heroes,
+    ),
+    text: collection.text,
+    items: items
+      .iter()
+      .filter_map(|item| item.to_slug().ok())
+      .collect(),
+  }))
+}
+
+fn uncovered_ids<'a>(collections: impl Iterator<Item = &'a CatalogCollection>) -> Vec<String> {
+  collections
+    .filter(|collection| collection.cover_url.is_none())
+    .map(|collection| collection.collection_id.clone())
+    .collect()
 }
 
 #[tauri::command]

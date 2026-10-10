@@ -41,18 +41,18 @@ describe("mod detail navigation", () => {
     },
   );
 
-  test("returns to the album a mod was opened from", () => {
-    const backToAlbum = getBackNavigation({
+  test("returns to the GameBanana collection a mod was opened from", () => {
+    const backToCollection = getBackNavigation({
       collection: "mods",
-      album: { slug: "mann-co", name: "Mann Co." },
+      curatedCollection: { id: "164637", name: "Vanilla-ish Skins" },
     });
 
-    expect(backToAlbum).toEqual({
-      path: "/albums/mann-co",
-      labelKey: "modDetail.backToAlbum",
-      labelValues: { album: "Mann Co." },
+    expect(backToCollection).toEqual({
+      path: "/collections/164637",
+      labelKey: "modDetail.backToCollection",
+      labelValues: { collection: "Vanilla-ish Skins" },
       state: { collection: "mods" },
     });
-    expect(getBackNavigation(backToAlbum.state).path).toBe("/mods");
+    expect(getBackNavigation(backToCollection.state).path).toBe("/mods");
   });
 });

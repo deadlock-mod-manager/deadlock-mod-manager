@@ -1,3 +1,4 @@
+use crate::providers::{SubmissionProvider, SubmissionRef, SubmissionType};
 use serde::Deserialize;
 use serde::Serialize;
 use std::collections::BTreeMap;
@@ -83,6 +84,120 @@ impl IndexSubmission {
   }
 }
 
+impl IndexPage {
+  pub fn empty() -> Self {
+    Self {
+      metadata: PageMetadata {
+        record_count: 0,
+        per_page: 0,
+        is_complete: true,
+      },
+      records: Vec::new(),
+    }
+  }
+
+  pub fn valid_collections(&self) -> Vec<IndexCollection> {
+    self
+      .records
+      .iter()
+      .filter_map(|record| serde_json::from_value(record.clone()).ok())
+      .filter(IndexCollection::is_valid)
+      .collect()
+  }
+
+  /// Collection items in collection order, skipping anything that isn't a mod, sound, or WIP.
+  pub fn collection_items(&self) -> Vec<SubmissionRef> {
+    self
+      .valid_records()
+      .into_iter()
+      .filter_map(|record| {
+        let submission_type = match record.model_name.as_str() {
+          "Mod" => SubmissionType::Mod,
+          "Sound" => SubmissionType::Sound,
+          "Wip" => SubmissionType::Wip,
+          _ => return None,
+        };
+        Some(SubmissionRef {
+          provider: SubmissionProvider::Gamebanana,
+          submission_type,
+          submission_id: record.id.to_string(),
+        })
+      })
+      .collect()
+  }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct IndexCollection {
+  #[serde(rename = "_idRow")]
+  pub id: u64,
+  #[serde(rename = "_sModelName")]
+  pub model_name: String,
+  #[serde(rename = "_sName")]
+  pub name: String,
+  #[serde(rename = "_sProfileUrl", default)]
+  pub profile_url: String,
+  #[serde(rename = "_tsDateAdded", default)]
+  pub date_added: Option<i64>,
+  #[serde(rename = "_tsDateModified", default)]
+  pub date_modified: Option<i64>,
+  #[serde(rename = "_aSubmitter", default, deserialize_with = "lenient")]
+  pub submitter: Option<Submitter>,
+  #[serde(rename = "_aPreviewMedia", default)]
+  pub preview_media: PreviewMedia,
+  #[serde(rename = "_nItemCount", default)]
+  pub item_count: u64,
+  // GameBanana omits the like count when it is zero.
+  #[serde(rename = "_nLikeCount", default)]
+  pub likes: u64,
+  #[serde(rename = "_bHasContentRatings", default)]
+  pub has_content_ratings: bool,
+  #[serde(rename = "_bIsPrivate", default)]
+  pub is_private: bool,
+}
+
+impl IndexCollection {
+  fn is_valid(&self) -> bool {
+    self.id > 0
+      && self.model_name == "Collection"
+      && !self.is_private
+      && !self.name.trim().is_empty()
+      && (self.profile_url.is_empty() || self.profile_url.starts_with("https://gamebanana.com/"))
+  }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CollectionDescription {
+  pub description: String,
+  pub text: String,
+}
+
+impl CollectionDescription {
+  /// Parses a `Core/Item/Data` response for `description,text`. A single item comes back
+  /// as a flat field array, several as an array of them; missing items are error objects.
+  pub fn parse_many(value: serde_json::Value, requested: usize) -> Vec<Option<Self>> {
+    let entries = match value {
+      serde_json::Value::Array(values)
+        if requested == 1 && values.first().is_some_and(serde_json::Value::is_string) =>
+      {
+        vec![serde_json::Value::Array(values)]
+      }
+      serde_json::Value::Array(values) => values,
+      value => vec![value],
+    };
+    entries
+      .into_iter()
+      .map(|entry| {
+        let fields = entry.as_array()?;
+        Some(Self {
+          description: fields.first()?.as_str()?.to_string(),
+          text: fields.get(1)?.as_str().unwrap_or_default().to_string(),
+        })
+      })
+      .collect()
+  }
+}
+
 // Display-only Index fields must not discard the whole record when their shape is unexpected.
 fn lenient<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
 where
@@ -142,6 +257,8 @@ pub struct Submitter {
   pub id: u64,
   #[serde(rename = "_sName", default)]
   pub name: String,
+  #[serde(rename = "_sAvatarUrl", default, deserialize_with = "lenient")]
+  pub avatar_url: Option<String>,
   #[serde(rename = "_aDonationMethods", default)]
   pub donation_methods: Vec<DonationMethod>,
 }
@@ -527,9 +644,81 @@ fn string_field(fields: &serde_json::Map<String, serde_json::Value>, key: &str) 
 #[cfg(test)]
 mod tests {
   use super::{
-    BulkHydration, DownloadPage, FileserverPage, IndexPage, Profile, UpdateSnapshot, core_error,
+    BulkHydration, CollectionDescription, DownloadPage, FileserverPage, IndexPage, Profile,
+    UpdateSnapshot, core_error,
   };
   use crate::providers::SubmissionRef;
+
+  #[test]
+  fn collection_index_keeps_public_collections() {
+    let page: IndexPage = serde_json::from_str(
+      r#"{
+        "_aMetadata":{"_nRecordCount":3,"_nPerpage":50,"_bIsComplete":true},
+        "_aRecords":[
+          {"_idRow":164637,"_sModelName":"Collection","_sName":"Vanilla-ish Skins",
+           "_sProfileUrl":"https://gamebanana.com/collections/164637","_nItemCount":222,
+           "_bHasContentRatings":true,
+           "_aSubmitter":{"_idRow":4099386,"_sName":"tamie128","_sAvatarUrl":"https://images.gamebanana.com/img/av/a.jpg"}},
+          {"_idRow":2,"_sModelName":"Collection","_sName":"Hidden","_bIsPrivate":true},
+          {"_idRow":3,"_sModelName":"Mod","_sName":"Not a collection"}
+        ]
+      }"#,
+    )
+    .unwrap();
+    let collections = page.valid_collections();
+    assert_eq!(collections.len(), 1);
+    let collection = &collections[0];
+    assert_eq!(collection.item_count, 222);
+    assert_eq!(collection.likes, 0);
+    assert!(collection.has_content_ratings);
+    let submitter = collection.submitter.as_ref().unwrap();
+    assert_eq!(submitter.name, "tamie128");
+    assert_eq!(
+      submitter.avatar_url.as_deref(),
+      Some("https://images.gamebanana.com/img/av/a.jpg")
+    );
+  }
+
+  #[test]
+  fn collection_items_keep_order_and_skip_other_models() {
+    let page: IndexPage = serde_json::from_str(
+      r#"{
+        "_aMetadata":{"_nRecordCount":4,"_nPerpage":15,"_bIsComplete":true},
+        "_aRecords":[
+          {"_idRow":30,"_sModelName":"Wip","_sName":"Work"},
+          {"_idRow":10,"_sModelName":"Mod","_sName":"Skin"},
+          {"_idRow":99,"_sModelName":"Tool","_sName":"Tool"},
+          {"_idRow":20,"_sModelName":"Sound","_sName":"Voice"}
+        ]
+      }"#,
+    )
+    .unwrap();
+    let slugs = page
+      .collection_items()
+      .iter()
+      .map(|item| item.to_slug().unwrap())
+      .collect::<Vec<_>>();
+    assert_eq!(slugs, ["wip-30", "10", "snd-20"]);
+  }
+
+  #[test]
+  fn collection_descriptions_parse_single_and_batched_responses() {
+    let single = CollectionDescription::parse_many(serde_json::json!(["Short", "<b>Long</b>"]), 1);
+    assert_eq!(
+      single,
+      vec![Some(CollectionDescription {
+        description: "Short".to_string(),
+        text: "<b>Long</b>".to_string(),
+      })]
+    );
+    let batched = CollectionDescription::parse_many(
+      serde_json::json!([["A", ""], {"error": "missing", "error_code": "INVALID_PARAMS"}]),
+      2,
+    );
+    assert_eq!(batched.len(), 2);
+    assert_eq!(batched[0].as_ref().unwrap().description, "A");
+    assert!(batched[1].is_none());
+  }
 
   #[test]
   fn malformed_index_records_do_not_discard_the_page() {

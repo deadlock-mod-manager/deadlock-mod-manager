@@ -1,5 +1,5 @@
 use crate::errors::Error;
-use crate::providers::gamebanana::catalog::{CatalogPage, CatalogRecord};
+use crate::providers::gamebanana::catalog::{CatalogCollection, CatalogPage, CatalogRecord};
 use crate::providers::gamebanana::{
   NormalizedSubmission, Profile, SubmissionFile, donation_links, extract_map_name,
   parse_requirements, parse_tags,
@@ -47,6 +47,73 @@ pub struct CatalogModDto {
   pub created_at: Option<i64>,
   #[ts(type = "number | null")]
   pub updated_at: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogCollectionDto {
+  pub id: String,
+  pub name: String,
+  pub description: String,
+  pub profile_url: String,
+  pub cover_url: Option<String>,
+  pub author: String,
+  pub author_remote_id: Option<String>,
+  pub author_avatar_url: Option<String>,
+  #[ts(type = "number")]
+  pub item_count: i64,
+  #[ts(type = "number")]
+  pub likes: i64,
+  pub is_nsfw: bool,
+  pub is_featured: bool,
+  #[ts(type = "number")]
+  pub remote_updated_at: i64,
+  /// False until the sync has crawled this collection's items.
+  pub items_synced: bool,
+  /// Thumbnails of the first few mods, to build a cover when `cover_url` is missing.
+  pub preview_images: Vec<String>,
+  /// Heroes the collection's mods are for, most common first.
+  pub heroes: Vec<String>,
+}
+
+impl CatalogCollectionDto {
+  pub fn new(
+    collection: &CatalogCollection,
+    is_featured: bool,
+    preview_images: Vec<String>,
+    heroes: Vec<String>,
+  ) -> Self {
+    Self {
+      id: collection.collection_id.clone(),
+      name: collection.name.clone(),
+      description: collection.description.clone(),
+      profile_url: collection.profile_url.clone(),
+      cover_url: collection.cover_url.clone(),
+      author: collection.author.clone(),
+      author_remote_id: collection.author_remote_id.clone(),
+      author_avatar_url: collection.author_avatar_url.clone(),
+      item_count: collection.item_count,
+      likes: collection.likes,
+      is_nsfw: collection.is_nsfw,
+      is_featured,
+      remote_updated_at: collection.remote_updated_at,
+      items_synced: collection.items_synced_at.is_some(),
+      preview_images,
+      heroes,
+    }
+  }
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogCollectionDetailDto {
+  pub collection: CatalogCollectionDto,
+  /// GameBanana markup describing the collection.
+  pub text: String,
+  /// Remote ids of the collection's mods, sounds, and WIPs in collection order.
+  pub items: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize, TS)]

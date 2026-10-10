@@ -223,6 +223,8 @@ pub fn run() {
       commands::gamebanana_catalog::query_gamebanana_catalog,
       commands::gamebanana_catalog::get_gamebanana_catalog_facets,
       commands::gamebanana_catalog::search_gamebanana_catalog_authors,
+      commands::gamebanana_catalog::list_gamebanana_collections,
+      commands::gamebanana_catalog::get_gamebanana_collection,
       commands::gamebanana_catalog::get_gamebanana_submission_detail,
       commands::gamebanana_catalog::get_gamebanana_submission_changelog,
       commands::gamebanana_catalog::get_gamebanana_submission_files,

@@ -10,8 +10,8 @@ mod transport;
 pub use activity::{ActivityPage, SubmissionUpdate, gamebanana_url};
 pub use client::GameBananaClient;
 pub use models::{
-  BulkHydration, DownloadPage, FileserverPage, FileserverRecord, IndexPage, Profile,
-  SubmissionFile, UpdateSnapshot,
+  BulkHydration, CollectionDescription, DownloadPage, FileserverPage, FileserverRecord,
+  IndexCollection, IndexPage, Profile, SubmissionFile, UpdateSnapshot,
 };
 pub use normalization::{
   DonationLink, NormalizedRequirement, NormalizedSubmission, classify_nsfw, donation_links,

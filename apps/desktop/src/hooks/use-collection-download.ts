@@ -5,51 +5,26 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { queueModDownload } from "@/hooks/use-download";
 import { modDownloadsQueryOptions } from "@/hooks/use-mod-downloads";
-import type { DeadlockSkinsAlbumMember } from "@/lib/deadlockskins/parse";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
-import type { ModDownloadItem } from "@/types/mods";
 
-type AlbumDownloadResult = {
+type CollectionDownloadResult = {
   queued: number;
-  /** Mods with several files and no usable album pick; the user has to choose. */
+  /** Mods with several files; the user has to choose one on the mod page. */
   needsFileChoice: string[];
   failed: string[];
 };
 
-const fileIdOf = (download: ModDownloadItem) =>
-  download.url.slice(download.url.lastIndexOf("/") + 1);
-
-/**
- * The album's own file wins while GameBanana still lists it; otherwise only a
- * single-file mod is unambiguous. Picking a variant for the user could
- * install the wrong one, so those are left for the mod page.
- */
-const pickAlbumFile = (files: ModDownloadItem[], albumFileId?: string) =>
-  files.find((file) => fileIdOf(file) === albumFileId) ??
-  (files.length === 1 ? files[0] : undefined);
-
-type AlbumDownloadInput = {
-  mods: ModDto[];
-  members: DeadlockSkinsAlbumMember[];
-};
-
-export const useAlbumDownload = () => {
+export const useCollectionDownload = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [prepared, setPrepared] = useState(0);
 
   const mutation = useMutation({
-    mutationFn: async ({
-      mods,
-      members,
-    }: AlbumDownloadInput): Promise<AlbumDownloadResult> => {
-      const albumFileIds = new Map(
-        members.map((member) => [member.remoteId, member.fileId]),
-      );
+    mutationFn: async (mods: ModDto[]): Promise<CollectionDownloadResult> => {
       const profileFolder =
         usePersistedStore.getState().getActiveProfile()?.folderName ?? null;
-      const result: AlbumDownloadResult = {
+      const result: CollectionDownloadResult = {
         queued: 0,
         needsFileChoice: [],
         failed: [],
@@ -63,12 +38,13 @@ export const useAlbumDownload = () => {
           const { downloads } = await queryClient.fetchQuery(
             modDownloadsQueryOptions(mod.remoteId),
           );
-          const file = pickAlbumFile(downloads, albumFileIds.get(mod.remoteId));
+          // Picking a variant for the user could install the wrong one.
+          const file = downloads.length === 1 ? downloads[0] : undefined;
           if (file) {
             queueModDownload(mod, [file], {
               allFiles: downloads,
               profileFolder,
-              analyticsEntryPoint: "album",
+              analyticsEntryPoint: "collection",
               onError: (error) =>
                 toast.error(`Failed to download ${mod.name}: ${error.message}`),
             });
@@ -80,7 +56,7 @@ export const useAlbumDownload = () => {
           logger
             .withMetadata({ mod: mod.remoteId })
             .withError(error)
-            .warn("Failed to load album mod files");
+            .warn("Failed to load collection mod files");
           result.failed.push(mod.name);
         }
         setPrepared((count) => count + 1);
@@ -90,11 +66,11 @@ export const useAlbumDownload = () => {
     meta: { skipGlobalErrorHandler: true },
     onSuccess: ({ queued, needsFileChoice, failed }) => {
       if (queued > 0) {
-        toast.success(t("albums.download.queued", { count: queued }));
+        toast.success(t("collections.download.queued", { count: queued }));
       }
       if (needsFileChoice.length > 0) {
         toast.warning(
-          t("albums.download.needsFileChoice", {
+          t("collections.download.needsFileChoice", {
             count: needsFileChoice.length,
             mods: needsFileChoice.join(", "),
           }),
@@ -102,7 +78,7 @@ export const useAlbumDownload = () => {
       }
       if (failed.length > 0) {
         toast.error(
-          t("albums.download.failed", {
+          t("collections.download.failed", {
             count: failed.length,
             mods: failed.join(", "),
           }),

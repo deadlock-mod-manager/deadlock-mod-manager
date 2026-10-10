@@ -501,6 +501,17 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       }
     },
   },
+  {
+    to: 29,
+    label: "albums-to-collections",
+    apply: (state) => {
+      // The Albums tab became Collections.
+      const modsFilters = state.modsFilters;
+      if (isPlainObject(modsFilters) && modsFilters.contentType === "album") {
+        modsFilters.contentType = "collection";
+      }
+    },
+  },
 ];
 
 const LEGACY_GAMEBANANA_ID = /^[1-9]\d*$/;

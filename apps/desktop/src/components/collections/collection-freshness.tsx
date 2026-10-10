@@ -5,14 +5,14 @@ import {
 } from "@deadlock-mods/ui/components/tooltip";
 import { AlertTriangle } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
-import type { AlbumFreshness } from "@/lib/deadlockskins/album-freshness";
+import type { CollectionFreshness } from "@/lib/collections/freshness";
 import { cn } from "@/lib/utils";
 
-export const AlbumFreshnessIndicator = ({
+export const CollectionFreshnessIndicator = ({
   freshness: { status, outdated, total },
   className,
 }: {
-  freshness: AlbumFreshness;
+  freshness: CollectionFreshness;
   className?: string;
 }) => {
   const { t } = useTranslation();
@@ -34,15 +34,15 @@ export const AlbumFreshnessIndicator = ({
             )}
           />
           {status === "outdated"
-            ? t("albums.freshness.outdatedLabel")
-            : t("albums.freshness.partialLabel", { count: outdated })}
+            ? t("collections.freshness.outdatedLabel")
+            : t("collections.freshness.partialLabel", { count: outdated })}
         </span>
       </TooltipTrigger>
       <TooltipContent>
         <p className='max-w-xs'>
           {status === "outdated"
-            ? t("albums.freshness.outdatedDescription")
-            : t("albums.freshness.partialDescription", {
+            ? t("collections.freshness.outdatedDescription")
+            : t("collections.freshness.partialDescription", {
                 count: outdated,
                 total,
               })}

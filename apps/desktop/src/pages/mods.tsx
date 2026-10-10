@@ -30,13 +30,16 @@ import {
 } from "react";
 import { platform } from "@tauri-apps/plugin-os";
 import { useTranslation } from "react-i18next";
-import { AlbumGrid, AlbumGridSkeleton } from "@/components/albums/album-grid";
 import { CatalogRefreshButton } from "@/components/mod-browsing/catalog-refresh-button";
 import ContentTypeTabs from "@/components/mod-browsing/content-type-tabs";
 import ModCard from "@/components/mod-browsing/mod-card";
 import { AuthorSearchResults } from "@/components/mod-browsing/author-search-results";
 import SearchBar from "@/components/mod-browsing/search-bar";
 import SearchBarSkeleton from "@/components/mod-browsing/search-bar-skeleton";
+import {
+  CollectionGrid,
+  CollectionGridSkeleton,
+} from "@/components/collections/collection-grid";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
@@ -86,8 +89,8 @@ const MOD_ROW_ESTIMATED_HEIGHT = 340;
 // from elsewhere (dashboard "See all", skins) reset the page on the next visit.
 const lastFilterSignatures = new Map<string, string>();
 
-// Albums come from deadlockskins.gg, not the catalog.
-type CatalogContentType = Exclude<ContentType, "album">;
+// Collections come from their own catalog table, not the submissions.
+type CatalogContentType = Exclude<ContentType, "collection">;
 
 const CONTENT_SUBMISSION_TYPE = {
   mod: "mod",
@@ -774,10 +777,10 @@ const GetMods = () => {
           value={contentType}
         />
       </div>
-      {contentType === "album" ? (
-        <Suspense fallback={<AlbumGridSkeleton />}>
+      {contentType === "collection" ? (
+        <Suspense fallback={<CollectionGridSkeleton />}>
           <ErrorBoundary>
-            <AlbumGrid />
+            <CollectionGrid />
           </ErrorBoundary>
         </Suspense>
       ) : (

@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 const CONTENT_TYPES: { value: ContentType; Icon: Icon }[] = [
   { value: "mod", Icon: CubeIcon },
   { value: "sound", Icon: MusicNotesIcon },
-  { value: "album", Icon: CardsThreeIcon },
+  { value: "collection", Icon: CardsThreeIcon },
   { value: "map", Icon: MapTrifoldIcon },
   { value: "wip", Icon: BarricadeIcon },
 ];

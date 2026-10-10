@@ -79,6 +79,41 @@ diesel::table! {
   }
 }
 
+diesel::table! {
+  collection (collection_id) {
+    collection_id -> Text,
+    name -> Text,
+    description -> Text,
+    text -> Text,
+    profile_url -> Text,
+    cover_url -> Nullable<Text>,
+    author -> Text,
+    author_remote_id -> Nullable<Text>,
+    author_avatar_url -> Nullable<Text>,
+    item_count -> BigInt,
+    likes -> BigInt,
+    is_nsfw -> Bool,
+    remote_added_at -> BigInt,
+    remote_updated_at -> BigInt,
+    described_at -> Nullable<BigInt>,
+    items_synced_at -> Nullable<BigInt>,
+    items_item_count -> Nullable<BigInt>,
+    items_updated_at -> Nullable<BigInt>,
+    last_seen_at -> BigInt,
+  }
+}
+
+diesel::table! {
+  collection_item (collection_id, position) {
+    collection_id -> Text,
+    position -> BigInt,
+    submission_type -> Text,
+    submission_id -> Text,
+  }
+}
+
+diesel::joinable!(collection_item -> collection (collection_id));
+
 // FTS5 virtual table; only the key columns are declared so it can be joined.
 diesel::table! {
   submission_fts (rowid) {
@@ -90,6 +125,8 @@ diesel::table! {
 }
 
 diesel::allow_tables_to_appear_in_same_query!(
+  collection,
+  collection_item,
   submission,
   submission_fts,
   sync_cursor,
@@ -310,7 +347,7 @@ mod tests {
     .get_result::<bool>(&mut connection)
     .unwrap();
 
-    assert_eq!(applied.len(), 8);
+    assert_eq!(applied.len(), 9);
     assert!(catalog_tables_exist);
   }
 
@@ -350,7 +387,7 @@ mod tests {
     .get_result::<bool>(&mut connection)
     .unwrap();
 
-    assert_eq!(applied.len(), 8);
+    assert_eq!(applied.len(), 9);
     assert!(retained_submission);
     assert!(author_remote_id_exists);
   }
@@ -374,7 +411,7 @@ mod tests {
       .iter()
       .map(ToString::to_string)
       .collect();
-    assert_eq!(versions.len(), 8);
+    assert_eq!(versions.len(), 9);
     assert!(versions.contains(&"20261004000000".to_string()));
     assert!(!versions.contains(&"20260916000000".to_string()));
   }
@@ -415,7 +452,7 @@ mod tests {
       migrate(&mut connection).unwrap();
       migrate(&mut connection).unwrap();
 
-      assert_eq!(connection.applied_migrations().unwrap().len(), 8);
+      assert_eq!(connection.applied_migrations().unwrap().len(), 9);
       assert!(
         super::schema_check(
           &mut connection,

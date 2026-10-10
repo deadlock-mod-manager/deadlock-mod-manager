@@ -15,7 +15,7 @@ export type ModEntryPoint =
   | "search"
   | "featured"
   | "author"
-  | "album"
+  | "collection"
   | "mod_details"
   | "library"
   | "skins"
