@@ -81,3 +81,7 @@ routeTree.gen.ts
 .suggestions/
 
 .codex-run/
+
+# Local git worktrees and design critique output
+.worktrees/
+.impeccable/
