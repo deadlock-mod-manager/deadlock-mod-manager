@@ -409,15 +409,7 @@ fn resolve_bundle_path(base: &Path, relative: &str) -> Option<PathBuf> {
   }
 }
 
-/// A value is safe to use as a file name only if it is exactly one plain
-/// component ending in `.vpk`.
-pub fn is_plain_vpk_name(name: &str) -> bool {
-  !name.is_empty()
-    && !name.contains('/')
-    && !name.contains('\\')
-    && Path::new(name).file_name().and_then(|n| n.to_str()) == Some(name)
-    && name.to_ascii_lowercase().ends_with(".vpk")
-}
+pub use crate::mod_manager::file_tree::is_plain_vpk_name;
 
 /// Lowercase, filesystem-safe slug used for folder and file names.
 pub fn slugify(value: &str, max_len: usize) -> String {
@@ -514,12 +506,5 @@ mod tests {
     let base = dir.path().canonicalize().unwrap();
     assert!(resolve_bundle_path(&base, "../outside.vpk").is_none());
     assert!(resolve_bundle_path(&base, "files/a.vpk").is_some());
-  }
-
-  #[test]
-  fn plain_vpk_names() {
-    assert!(is_plain_vpk_name("pak01_dir.vpk"));
-    assert!(!is_plain_vpk_name("../pak01_dir.vpk"));
-    assert!(!is_plain_vpk_name("readme.txt"));
   }
 }
