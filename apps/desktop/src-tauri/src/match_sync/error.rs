@@ -26,6 +26,10 @@ pub enum MatchSyncError {
   #[error("Steam GC rate-limited the request")]
   GcRateLimited,
 
+  // The GC refused a friend's match history (their profile is private).
+  #[error("match history is private")]
+  HistoryPrivate,
+
   #[error("Deadlock is currently running; close it to fetch matches")]
   GameRunning,
 
@@ -48,6 +52,7 @@ impl MatchSyncError {
       MatchSyncError::AuthUnavailable(_) => "authUnavailable",
       MatchSyncError::GcUnavailable(_) => "gcUnavailable",
       MatchSyncError::GcRateLimited => "gcRateLimited",
+      MatchSyncError::HistoryPrivate => "historyPrivate",
       MatchSyncError::GameRunning => "gameRunning",
       MatchSyncError::Api(_) => "apiError",
       MatchSyncError::Store(_) => "storeError",
