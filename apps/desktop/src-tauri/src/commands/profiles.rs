@@ -346,6 +346,17 @@ pub async fn import_profile_batch(
       "No mods provided for import".to_string(),
     ));
   }
+  // Trees shared before names were unique can repeat a name, and both the
+  // download and the install go by these names.
+  let mods: Vec<_> = mods
+    .into_iter()
+    .map(|mut mod_data| {
+      mod_data.file_tree = mod_data
+        .file_tree
+        .map(|tree| crate::mod_manager::file_tree::ModFileTree::from_extracted(tree.files));
+      mod_data
+    })
+    .collect();
 
   let mut resolved_downloads = Vec::with_capacity(total_mods);
   for mod_data in &mods {
@@ -447,7 +458,8 @@ pub async fn import_profile_batch(
 
       match manager.get_download_status(&mod_data.mod_id).await {
         Ok(Some(status)) => {
-          if status.status == "downloading" {
+          // Files are placed only once every archive is extracted and named.
+          if status.status == "downloading" || status.status == "processing" {
             continue;
           }
           download_complete = true;

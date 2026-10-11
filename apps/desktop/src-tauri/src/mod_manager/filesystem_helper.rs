@@ -47,6 +47,50 @@ impl FileSystemHelper {
     Ok(())
   }
 
+  /// Replaces `dest`. Falls back to copying when the rename fails: across
+  /// volumes, or while a scanner holds the file past the retries.
+  pub fn move_file(&self, src: &Path, dest: &Path) -> Result<(), Error> {
+    if let Some(parent) = dest.parent() {
+      self.create_directories(parent)?;
+    }
+    let renamed = crate::mod_manager::fs_retry::retry_file_operation(
+      "move",
+      &src.display().to_string(),
+      || fs::rename(src, dest),
+    );
+    if renamed.is_ok() {
+      return Ok(());
+    }
+    fs::copy(src, dest)?;
+    if let Err(error) = fs::remove_file(src) {
+      log::warn!("Moved {src:?} by copying but could not remove it: {error}");
+    }
+    Ok(())
+  }
+
+  /// Files of different lengths are never read.
+  pub fn files_have_same_contents(&self, a: &Path, b: &Path) -> Result<bool, Error> {
+    use std::io::BufRead;
+
+    if fs::metadata(a)?.len() != fs::metadata(b)?.len() {
+      return Ok(false);
+    }
+    let mut a = std::io::BufReader::with_capacity(1 << 20, fs::File::open(a)?);
+    let mut b = std::io::BufReader::with_capacity(1 << 20, fs::File::open(b)?);
+    loop {
+      let (left, right) = (a.fill_buf()?, b.fill_buf()?);
+      if left.is_empty() || right.is_empty() {
+        return Ok(left.is_empty() && right.is_empty());
+      }
+      let len = left.len().min(right.len());
+      if left[..len] != right[..len] {
+        return Ok(false);
+      }
+      a.consume(len);
+      b.consume(len);
+    }
+  }
+
   /// Get all files in a directory with a specific extension
   pub fn get_files_with_extension(
     &self,
@@ -252,5 +296,38 @@ impl FileSystemHelper {
 impl Default for FileSystemHelper {
   fn default() -> Self {
     Self::new()
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn compares_contents_not_just_sizes() {
+    let temp = tempfile::tempdir().unwrap();
+    let write = |name: &str, contents: &[u8]| {
+      let path = temp.path().join(name);
+      fs::write(&path, contents).unwrap();
+      path
+    };
+    let helper = FileSystemHelper::new();
+    let original = write("a.vpk", b"blue");
+
+    assert!(
+      helper
+        .files_have_same_contents(&original, &write("b.vpk", b"blue"))
+        .unwrap()
+    );
+    assert!(
+      !helper
+        .files_have_same_contents(&original, &write("c.vpk", b"red!"))
+        .unwrap()
+    );
+    assert!(
+      !helper
+        .files_have_same_contents(&original, &write("d.vpk", b"blue!"))
+        .unwrap()
+    );
   }
 }
