@@ -38,7 +38,7 @@ pub struct AccountActivity {
   pub has_deadlock: bool,
 }
 
-fn account_id_of(steam_id64: u64) -> u32 {
+pub fn account_id_of(steam_id64: u64) -> u32 {
   (steam_id64 & 0xFFFF_FFFF) as u32
 }
 
