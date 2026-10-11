@@ -1,15 +1,21 @@
 //! The Steam Game Coordinator boundary: recover per-match salts and history
-//! client-side through the user's own account (`steam-vent` + `CMsgClientToGc*`).
-//! The subsystem never uses deadlock-api's own server-side endpoints.
+//! client-side through the user's own account (`steam-vent` + `CMsgClientToGc*`),
+//! plus the account's friends and their Steam persona state. The subsystem never uses
+//! deadlock-api's own server-side endpoints.
 
+use std::collections::{HashMap, HashSet};
 use std::future::Future;
 use std::sync::{Arc, PoisonError};
 use std::time::{Duration, Instant};
 
+use futures::StreamExt as _;
 use prost::Message as _;
-use steam_vent::proto::MsgKind;
-use steam_vent::proto::enums_clientserver::EMsg;
+use steam_vent::proto::enums_clientserver::{EClientPersonaStateFlag, EMsg};
 use steam_vent::proto::steammessages_clientserver::CMsgClientGamesPlayed;
+use steam_vent::proto::steammessages_clientserver_friends::{
+  CMsgClientFriendsList, CMsgClientPersonaState, CMsgClientRequestFriendData,
+};
+use steam_vent::proto::{MsgKind, RpcMessageWithKind as _};
 use steam_vent::{
   Connection, ConnectionTrait, GameCoordinator, RawNetMessage, ServerList, UntypedMessage,
 };
@@ -21,7 +27,10 @@ use valveprotos::deadlock::{
 };
 
 use super::error::MatchSyncError;
+use super::friends::Persona;
 use super::model::{AuthContext, DEADLOCK_APP_ID, LocalMatch, MatchHistoryPage, MatchSalts};
+use super::settings::now_secs;
+use crate::steam_user::account_id_of;
 
 // A stalled discover/login/job call must not block cancel/disable indefinitely.
 const GC_CALL_TIMEOUT: Duration = Duration::from_secs(30);
@@ -52,6 +61,11 @@ fn launch_hold_active() -> bool {
     .is_some_and(|at| at.elapsed() < LAUNCH_HOLD)
 }
 
+// Steam pushes the friends list right after logon, normally during the GC handshake;
+// this only bounds the wait when it never comes. Persona states arrive as a burst.
+const FRIENDS_WAIT: Duration = Duration::from_secs(5);
+const FRIEND_RELATIONSHIP_FRIEND: u32 = 3;
+
 async fn with_timeout<T, E: std::fmt::Display>(
   timeout: Duration,
   label: &str,
@@ -79,9 +93,11 @@ async fn until_launch<T>(
 // `impl Future + Send` keeps impls spawnable. No internal retries: a failed salt
 // fetch must cost at most one quota unit (caller rate-limits + quota-gates).
 pub trait GcMatchClient: Send + Sync {
+  // `account_id` is whose history to read: the session's own, or one of its friends'.
   fn fetch_match_history(
     &self,
     ctx: &AuthContext,
+    account_id: u32,
     cursor: Option<u64>,
   ) -> impl Future<Output = Result<MatchHistoryPage, MatchSyncError>> + Send;
 
@@ -90,12 +106,28 @@ pub trait GcMatchClient: Send + Sync {
     ctx: &AuthContext,
     match_id: u64,
   ) -> impl Future<Output = Result<MatchSalts, MatchSyncError>> + Send;
+
+  // Account ids of the account's Steam friends, as Steam sent them at logon.
+  fn friend_ids(
+    &self,
+    ctx: &AuthContext,
+  ) -> impl Future<Output = Result<Vec<u32>, MatchSyncError>> + Send;
+
+  // The persona state of each of `account_ids` (who must be friends) that Steam answers
+  // for in time.
+  fn personas(
+    &self,
+    ctx: &AuthContext,
+    account_ids: &[u32],
+  ) -> impl Future<Output = HashMap<u32, Persona>> + Send;
 }
 
 struct GcSession {
   steam_id64: u64,
   gc: GameCoordinator,
   conn: Connection,
+  // SteamID64s of confirmed individual friends; empty if Steam never sent the list.
+  friends: Vec<u64>,
 }
 
 impl GcSession {
@@ -158,26 +190,53 @@ impl SteamGcClient {
     conn: Connection,
     cancel: &mut watch::Receiver<()>,
   ) -> Result<GcSession, MatchSyncError> {
-    let gc = match until_launch(
-      cancel,
-      with_timeout(
+    // Listen before draining the unprocessed buffer, so the list can't slip between them.
+    let pushed = conn.one::<CMsgClientFriendsList>();
+    let buffered = conn
+      .take_unprocessed()
+      .into_iter()
+      .find(|m| m.kind == MsgKind::from(CMsgClientFriendsList::KIND));
+    let handshake = until_launch(cancel, async {
+      let gc = with_timeout(
         GC_CALL_TIMEOUT,
         "GC handshake",
         GameCoordinator::new(&conn, DEADLOCK_APP_ID),
-      ),
-    )
-    .await
-    {
-      Ok(gc) => gc,
+      )
+      .await?;
+      let list = match buffered {
+        Some(raw) => raw.into_message::<CMsgClientFriendsList>().ok(),
+        None => tokio::time::timeout(FRIENDS_WAIT, pushed)
+          .await
+          .ok()
+          .and_then(Result::ok),
+      };
+      Ok((gc, list))
+    })
+    .await;
+    let (gc, list) = match handshake {
+      Ok(handshake) => handshake,
       Err(error) => {
         GcSession::clear_playing(&conn).await;
         return Err(error);
       }
     };
+    let friends = list
+      .map(|list| {
+        list
+          .friends
+          .iter()
+          .filter(|f| f.efriendrelationship == Some(FRIEND_RELATIONSHIP_FRIEND))
+          .filter_map(|f| f.ulfriendid)
+          // SteamID64 bits 52..56 hold the account type; 1 = individual.
+          .filter(|id| (id >> 52) & 0xF == 1)
+          .collect()
+      })
+      .unwrap_or_default();
     Ok(GcSession {
       steam_id64: ctx.steam_id64,
       gc,
       conn,
+      friends,
     })
   }
 
@@ -249,6 +308,7 @@ impl GcMatchClient for SteamGcClient {
   async fn fetch_match_history(
     &self,
     ctx: &AuthContext,
+    account_id: u32,
     cursor: Option<u64>,
   ) -> Result<MatchHistoryPage, MatchSyncError> {
     let mut guard = self.session.lock().await;
@@ -256,7 +316,7 @@ impl GcMatchClient for SteamGcClient {
     self.ensure_connected(&mut guard, ctx, &mut cancel).await?;
 
     let req = CMsgClientToGcGetMatchHistory {
-      account_id: Some(ctx.account_id()),
+      account_id: Some(account_id),
       continue_cursor: cursor,
       ..Default::default()
     };
@@ -273,12 +333,18 @@ impl GcMatchClient for SteamGcClient {
     let resp = CMsgClientToGcGetMatchHistoryResponse::decode(raw.data.as_ref())
       .map_err(|e| MatchSyncError::GcUnavailable(format!("bad history response: {e}")))?;
 
-    let success = c_msg_client_to_gc_get_match_history_response::EResult::KEResultSuccess as i32;
-    if resp.result.is_some_and(|r| r != success) {
-      return Err(MatchSyncError::GcUnavailable(format!(
-        "history result {:?}",
-        resp.result
-      )));
+    use c_msg_client_to_gc_get_match_history_response::EResult;
+    match resp.result {
+      Some(r) if r == EResult::KEResultRateLimited as i32 => {
+        return Err(MatchSyncError::GcRateLimited);
+      }
+      Some(r) if r == EResult::KEResultInvalidPermission as i32 => {
+        return Err(MatchSyncError::HistoryPrivate);
+      }
+      Some(r) if r != EResult::KEResultSuccess as i32 => {
+        return Err(MatchSyncError::GcUnavailable(format!("history result {r}")));
+      }
+      _ => {}
     }
 
     Ok(MatchHistoryPage {
@@ -352,6 +418,93 @@ impl GcMatchClient for SteamGcClient {
       replay_salt: resp.replay_salt,
     })
   }
+
+  async fn friend_ids(&self, ctx: &AuthContext) -> Result<Vec<u32>, MatchSyncError> {
+    let mut guard = self.session.lock().await;
+    let mut cancel = self.launch_cancel.subscribe();
+    self.ensure_connected(&mut guard, ctx, &mut cancel).await?;
+    let session = guard.as_ref().expect("connected above");
+    Ok(session.friends.iter().copied().map(account_id_of).collect())
+  }
+
+  async fn personas(&self, ctx: &AuthContext, account_ids: &[u32]) -> HashMap<u32, Persona> {
+    let mut personas = HashMap::new();
+    let mut pending: HashSet<u32> = account_ids.iter().copied().collect();
+    if pending.is_empty() {
+      return personas;
+    }
+    let mut guard = self.session.lock().await;
+    let mut cancel = self.launch_cancel.subscribe();
+    if let Err(e) = self.ensure_connected(&mut guard, ctx, &mut cancel).await {
+      log::warn!("match-sync: persona request skipped: {e}");
+      return personas;
+    }
+    let session = guard.as_ref().expect("connected above");
+
+    let mut updates = Box::pin(session.conn.on::<CMsgClientPersonaState>());
+    let mut req = CMsgClientRequestFriendData::new();
+    req.persona_state_requested = Some(
+      [
+        EClientPersonaStateFlag::k_EClientPersonaStateFlagStatus,
+        EClientPersonaStateFlag::k_EClientPersonaStateFlagPresence,
+        EClientPersonaStateFlag::k_EClientPersonaStateFlagLastSeen,
+      ]
+      .into_iter()
+      .map(|flag| flag as u32)
+      .sum(),
+    );
+    req.friends = session
+      .friends
+      .iter()
+      .copied()
+      .filter(|&id| pending.contains(&account_id_of(id)))
+      .collect();
+    // Personas only sharpen the ranking; without them friends still rank by cadence.
+    if let Err(e) = with_timeout(GC_CALL_TIMEOUT, "persona request", session.conn.send(req)).await {
+      log::warn!("match-sync: {e}");
+      return personas;
+    }
+
+    let now = now_secs();
+    let deadline = tokio::time::Instant::now() + FRIENDS_WAIT;
+    while !pending.is_empty() {
+      // A launch must not wait out the deadline for the session lock.
+      let next = tokio::select! {
+        biased;
+        _ = cancel.changed() => break,
+        next = tokio::time::timeout_at(deadline, updates.next()) => next,
+      };
+      let Ok(Some(msg)) = next else {
+        break;
+      };
+      let Ok(msg) = msg else { continue };
+      for f in msg.friends {
+        let Some(id) = f.friendid.map(account_id_of) else {
+          continue;
+        };
+        // Steam also pushes updates nobody asked for (e.g. about ourselves).
+        if !account_ids.contains(&id) {
+          continue;
+        }
+        pending.remove(&id);
+        let last_seen = if f.persona_state.is_some_and(|s| s != 0) {
+          Some(now)
+        } else {
+          [f.last_seen_online, f.last_logoff]
+            .into_iter()
+            .flatten()
+            .filter(|&t| t != 0)
+            .max()
+            .map(i64::from)
+        };
+        // A later, partial update must not erase what an earlier one told us.
+        let persona: &mut Persona = personas.entry(id).or_default();
+        persona.in_deadlock |= f.game_played_app_id == Some(DEADLOCK_APP_ID);
+        persona.last_seen = last_seen.or(persona.last_seen);
+      }
+    }
+    personas
+  }
 }
 
 // Lets the per-account resource registry in `mod.rs` hand out a shared
@@ -360,9 +513,10 @@ impl GcMatchClient for Arc<SteamGcClient> {
   fn fetch_match_history(
     &self,
     ctx: &AuthContext,
+    account_id: u32,
     cursor: Option<u64>,
   ) -> impl Future<Output = Result<MatchHistoryPage, MatchSyncError>> + Send {
-    (**self).fetch_match_history(ctx, cursor)
+    (**self).fetch_match_history(ctx, account_id, cursor)
   }
 
   fn fetch_match_salts(
@@ -371,6 +525,21 @@ impl GcMatchClient for Arc<SteamGcClient> {
     match_id: u64,
   ) -> impl Future<Output = Result<MatchSalts, MatchSyncError>> + Send {
     (**self).fetch_match_salts(ctx, match_id)
+  }
+
+  fn friend_ids(
+    &self,
+    ctx: &AuthContext,
+  ) -> impl Future<Output = Result<Vec<u32>, MatchSyncError>> + Send {
+    (**self).friend_ids(ctx)
+  }
+
+  fn personas(
+    &self,
+    ctx: &AuthContext,
+    account_ids: &[u32],
+  ) -> impl Future<Output = HashMap<u32, Persona>> + Send {
+    (**self).personas(ctx, account_ids)
   }
 }
 

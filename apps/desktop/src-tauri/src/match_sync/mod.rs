@@ -1,6 +1,7 @@
 mod api_client;
 pub mod auth;
 mod error;
+mod friends;
 mod game_check;
 mod gc_client;
 mod model;
@@ -122,6 +123,20 @@ impl SyncPersistence for AppPersistence {
   fn save_quota(&self, quota: &quota::QuotaWindow) -> Result<(), MatchSyncError> {
     settings::save_quota(&self.app, self.steam_id64, quota)
   }
+  fn load_history_quota(&self) -> Result<quota::QuotaWindow, MatchSyncError> {
+    settings::load_history_quota(&self.app, self.steam_id64)
+  }
+  fn save_history_quota(&self, quota: &quota::QuotaWindow) -> Result<(), MatchSyncError> {
+    settings::save_history_quota(&self.app, self.steam_id64, quota)
+  }
+  fn friend_cooldowns(&self) -> HashMap<u32, i64> {
+    settings::load_friend_cooldowns(&self.app).unwrap_or_default()
+  }
+  fn set_friend_cooldown(&self, account_id: u32, until: i64) {
+    if let Err(e) = settings::set_friend_cooldown(&self.app, account_id, until, self.now()) {
+      log::error!("match-sync: failed to persist friend cooldown: {e}");
+    }
+  }
   fn load_fetched(&self) -> Vec<u64> {
     settings::load_fetched_ids(&self.app, self.steam_id64).unwrap_or_default()
   }
@@ -147,9 +162,13 @@ impl SyncPersistence for AppPersistence {
     );
   }
   fn record_gc_error(&self, err: &MatchSyncError) {
-    // Only a broken GC connection warrants a backoff; the hook is only ever called from
-    // GC swallow points, but match defensively so a future caller can't misfire it.
-    if matches!(err, MatchSyncError::GcUnavailable(_)) {
+    // Only a broken GC connection, or Steam rate-limiting the account's own history,
+    // warrants a backoff; the hook is only ever called from GC swallow points, but match
+    // defensively so a future caller can't misfire it.
+    if matches!(
+      err,
+      MatchSyncError::GcUnavailable(_) | MatchSyncError::GcRateLimited
+    ) {
       self.gc_error_seen.store(true, Ordering::Relaxed);
     }
   }
@@ -362,7 +381,10 @@ pub async fn recent_local_matches(app: &AppHandle, account_id: u32) -> Vec<Local
   if !resources.throttle.try_acquire().await {
     return Vec::new();
   }
-  let result = resources.gc_client.fetch_match_history(&ctx, None).await;
+  let result = resources
+    .gc_client
+    .fetch_match_history(&ctx, account_id, None)
+    .await;
   resources.gc_client.disconnect().await;
   match result {
     Ok(page) => page.matches,
