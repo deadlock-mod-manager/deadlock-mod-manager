@@ -3,6 +3,7 @@ import {
   applyDownloadTimeSelection,
   deriveActiveArchiveNames,
   deriveActiveVariantCount,
+  getQueuedDownloads,
   requiresFileSelection,
 } from "@/lib/mods/mod-variants";
 import type { LocalMod, ModDownloadItem, ModFile } from "@/types/mods";
@@ -192,6 +193,27 @@ const downloads = (...names: string[]): ModDownloadItem[] =>
     updatedAt: null,
     md5Checksum: null,
   }));
+
+describe("getQueuedDownloads", () => {
+  it("returns the picked variants rather than every file offered", () => {
+    const queued = getQueuedDownloads(
+      mod({
+        downloads: downloads("red.zip", "blue.zip", "green.zip"),
+        selectedDownloads: downloads("red.zip"),
+      }),
+    );
+
+    expect(queued.map((d) => d.name)).toEqual(["red.zip"]);
+  });
+
+  it("falls back to every file the mod offers when no selection was saved", () => {
+    const queued = getQueuedDownloads(
+      mod({ downloads: downloads("red.zip", "blue.zip") }),
+    );
+
+    expect(queued.map((d) => d.name)).toEqual(["red.zip", "blue.zip"]);
+  });
+});
 
 describe("applyDownloadTimeSelection", () => {
   it("keeps only the files of the archive picked during download", () => {
