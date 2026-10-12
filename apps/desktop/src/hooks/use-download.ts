@@ -11,6 +11,7 @@ import { useTranslation } from "react-i18next";
 import { detectHeroForMod } from "@/hooks/use-hero-detection";
 import { downloadManager } from "@/lib/download/manager";
 import { getErrorMessage } from "@/lib/errors";
+import { getQueuedDownloads } from "@/lib/mods/mod-variants";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { findLocalMod } from "@/lib/store/selectors";
@@ -214,15 +215,9 @@ export const useDownload = (
       return;
     }
 
-    const selectedDownloads = localMod?.selectedDownloads ?? [];
-    const persistedDownloads = localMod?.downloads ?? [];
-
+    const queuedDownloads = localMod ? getQueuedDownloads(localMod) : [];
     const retryFiles =
-      selectedDownloads.length > 0
-        ? selectedDownloads
-        : persistedDownloads.length > 0
-          ? persistedDownloads
-          : await loadFallbackFiles();
+      queuedDownloads.length > 0 ? queuedDownloads : await loadFallbackFiles();
 
     if (retryFiles.length === 0) {
       toast.error(t("downloads.retryNoFiles"));

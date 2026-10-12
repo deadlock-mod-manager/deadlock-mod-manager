@@ -2,12 +2,13 @@ import { Button } from "@deadlock-mods/ui/components/button";
 import { Card } from "@deadlock-mods/ui/components/card";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { ArrowClockwiseIcon, Pause, Play } from "@phosphor-icons/react";
-import { type MouseEvent, useMemo } from "react";
+import type { MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { downloadManager } from "@/lib/download/manager";
 import { useDownload } from "@/hooks/use-download";
 import { getErrorMessage } from "@/lib/errors";
+import { getQueuedDownloads } from "@/lib/mods/mod-variants";
 import { usePersistedStore } from "@/lib/store";
 import { cn, formatSize, formatSpeed } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
@@ -106,12 +107,10 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
   const isFailed = download.status === ModStatus.FailedToDownload;
   const percentage = isInProgress ? (modProgress?.percentage ?? 0) : 100;
   const speed = isDownloading ? (modProgress?.speed ?? 0) : 0;
-  const totalSize = useMemo(() => {
-    if (!download.downloads || download.downloads.length === 0) {
-      return 0;
-    }
-    return download.downloads.reduce((acc, curr) => acc + (curr.size || 0), 0);
-  }, [download.downloads]);
+  const totalSize = getQueuedDownloads(download).reduce(
+    (acc, curr) => acc + (curr.size || 0),
+    0,
+  );
   const { retryDownload } = useDownload(download, download.downloads ?? []);
 
   const handleOpen = () => navigate(`/mods/${download.remoteId}`);
