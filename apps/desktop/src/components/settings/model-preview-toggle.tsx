@@ -1,7 +1,6 @@
-import { Label } from "@deadlock-mods/ui/components/label";
-import { Switch } from "@deadlock-mods/ui/components/switch";
 import { WarningIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
+import { SettingToggleRow } from "@/components/settings/setting-row";
 import { usePersistedStore } from "@/lib/store";
 
 /** One switch for both 3D previews: the Hero Skins panel and the Mod Foundry. */
@@ -14,26 +13,13 @@ export const ModelPreviewToggle = () => {
 
   return (
     <div className='flex flex-col gap-3'>
-      <div className='flex items-center justify-between'>
-        <div className='space-y-1'>
-          <Label className='font-bold text-sm'>
-            {t("settings.modelPreview")}
-          </Label>
-          <p className='text-muted-foreground text-sm'>
-            {t("settings.modelPreviewDescription")}
-          </p>
-        </div>
-        <div className='flex items-center gap-2'>
-          <Switch
-            checked={enabled}
-            id='toggle-setting-model-preview'
-            onCheckedChange={setEnabled}
-          />
-          <Label htmlFor='toggle-setting-model-preview'>
-            {enabled ? t("status.enabled") : t("status.disabled")}
-          </Label>
-        </div>
-      </div>
+      <SettingToggleRow
+        checked={enabled}
+        description={t("settings.modelPreviewDescription")}
+        id='toggle-setting-model-preview'
+        onCheckedChange={setEnabled}
+        title={t("settings.modelPreview")}
+      />
 
       {enabled && (
         <div className='flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2.5'>

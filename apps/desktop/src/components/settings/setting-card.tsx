@@ -3,6 +3,7 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { PencilIcon, TrashIcon } from "@deadlock-mods/ui/icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { SwitchStatus } from "@/components/settings/setting-row";
 import { usePersistedStore } from "@/lib/store";
 import type { LocalSetting } from "@/types/settings";
 
@@ -69,7 +70,7 @@ const Command = ({ setting }: Pick<SettingsCardProps, "setting">) => {
             toast.success(t("settings.copiedToClipboard"));
           }}
           type='button'>
-          {t("settings.commandLabel")}:
+          {t("settings.commandLabel")}:{" "}
           <span className='font-mono text-sm underline decoration-dotted underline-offset-4'>
             {`${setting.key} ${setting.value}`.trim()}
           </span>
@@ -93,11 +94,9 @@ export const SettingCardSkeleton = () => {
           <Skeleton className='h-4 w-96' />
         </div>
       </div>
-      <div className='flex items-center space-x-2'>
-        <Switch disabled id='toggle-setting' />
-        <Label htmlFor='toggle-setting'>
-          <Skeleton className='h-4 w-16' />
-        </Label>
+      <div aria-hidden='true' className='flex items-center space-x-2'>
+        <Switch disabled />
+        <Skeleton className='h-4 w-16' />
       </div>
     </div>
   );
@@ -122,6 +121,12 @@ const SettingCard = ({
   }
   const custom = setting.id.startsWith("local_setting_");
   const isAutoexecOption = setting.id === "autoexec-launch-option";
+  const switchId = `toggle-setting-${setting.id}`;
+  const subtitleId = subtitle ? `${switchId}-subtitle` : undefined;
+  const commandId =
+    setting.key || setting.value ? `${switchId}-command` : undefined;
+  const describedBy =
+    [subtitleId, commandId].filter(Boolean).join(" ") || undefined;
 
   const openEdit = () => {
     setEditName(setting.description ?? "");
@@ -173,9 +178,11 @@ const SettingCard = ({
             {setting.description} {custom && <Badge>Custom</Badge>}
           </h3>
           {subtitle && (
-            <p className='text-muted-foreground text-sm'>{subtitle}</p>
+            <p className='text-muted-foreground text-sm' id={subtitleId}>
+              {subtitle}
+            </p>
           )}
-          <p className='text-muted-foreground text-sm'>
+          <p className='text-muted-foreground text-sm' id={commandId}>
             <Command setting={setting} />
           </p>
         </div>
@@ -215,14 +222,16 @@ const SettingCard = ({
           )}
 
           <Switch
+            aria-describedby={describedBy}
+            aria-label={
+              setting.description || `${setting.key} ${setting.value}`.trim()
+            }
             checked={setting.enabled}
             disabled={disabled}
-            id={`toggle-setting-${setting.id}`}
+            id={switchId}
             onCheckedChange={onChange}
           />
-          <Label htmlFor={`toggle-setting-${setting.id}`}>
-            {setting.enabled ? t("status.enabled") : t("status.disabled")}
-          </Label>
+          <SwitchStatus checked={setting.enabled} htmlFor={switchId} />
         </div>
       </div>
 

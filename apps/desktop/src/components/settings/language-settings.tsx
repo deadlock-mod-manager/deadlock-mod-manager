@@ -1,4 +1,3 @@
-import { Label } from "@deadlock-mods/ui/components/label";
 import {
   Select,
   SelectContent,
@@ -8,6 +7,9 @@ import {
 } from "@deadlock-mods/ui/components/select";
 import { Globe } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
+import { SettingRow } from "@/components/settings/setting-row";
+
+const DESCRIPTION_ID = "settings-language-description";
 
 const languages = [
   { code: "en", name: "English", flag: "🇺🇸" },
@@ -42,42 +44,38 @@ export const LanguageSettings = () => {
 
   return (
     <div className='space-y-4'>
-      <div className='flex items-center justify-between'>
-        <div className='space-y-0.5'>
-          <Label className='font-bold text-sm'>{t("settings.language")}</Label>
-          <div className='text-muted-foreground text-sm'>
-            {t("settings.languageDescription")}
-          </div>
-        </div>
-        <div className='flex items-center gap-2'>
-          <Globe className='h-4 w-4 text-muted-foreground' />
-          <Select
-            onValueChange={handleLanguageChange}
-            value={currentLanguage.code}>
-            <SelectTrigger
-              id='settings-language'
-              aria-label={t("settings.language")}
-              className='w-48'>
-              <SelectValue>
+      <SettingRow
+        description={t("settings.languageDescription")}
+        descriptionId={DESCRIPTION_ID}
+        title={t("settings.language")}>
+        <Globe className='h-4 w-4 text-muted-foreground' />
+        <Select
+          onValueChange={handleLanguageChange}
+          value={currentLanguage.code}>
+          <SelectTrigger
+            id='settings-language'
+            aria-describedby={DESCRIPTION_ID}
+            aria-label={t("settings.language")}
+            className='w-48'>
+            <SelectValue>
+              <div className='flex items-center gap-2'>
+                <span>{currentLanguage.flag}</span>
+                <span>{currentLanguage.name}</span>
+              </div>
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {languages.map((language) => (
+              <SelectItem key={language.code} value={language.code}>
                 <div className='flex items-center gap-2'>
-                  <span>{currentLanguage.flag}</span>
-                  <span>{currentLanguage.name}</span>
+                  <span>{language.flag}</span>
+                  <span>{language.name}</span>
                 </div>
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {languages.map((language) => (
-                <SelectItem key={language.code} value={language.code}>
-                  <div className='flex items-center gap-2'>
-                    <span>{language.flag}</span>
-                    <span>{language.name}</span>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </SettingRow>
     </div>
   );
 };

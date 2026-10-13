@@ -1,12 +1,18 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Label } from "@deadlock-mods/ui/components/label";
 import { Slider } from "@deadlock-mods/ui/components/slider";
-import { Switch } from "@deadlock-mods/ui/components/switch";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
+import {
+  SettingRow,
+  SettingToggleRow,
+} from "@/components/settings/setting-row";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { usePersistedStore } from "@/lib/store";
+
+const BLUR_STRENGTH_DESCRIPTION_ID = "privacy-blur-strength-description";
+const SAVED_CHOICES_DESCRIPTION_ID = "privacy-saved-choices-description";
 
 const PrivacySettings = () => {
   const { t } = useTranslation();
@@ -37,64 +43,49 @@ const PrivacySettings = () => {
 
   return (
     <div className='space-y-4'>
-      <div className='flex items-center justify-between'>
-        <div className='space-y-0.5'>
-          <Label className='text-base'>{t("privacy.hideNSFWContent")}</Label>
-          <div className='text-muted-foreground text-sm'>
-            {t("privacy.hideNSFWDescription")}
-          </div>
-        </div>
-        <Switch
-          aria-label={t("privacy.hideNSFWContent")}
-          checked={nsfwSettings.hideNSFW}
-          onCheckedChange={(checked) =>
-            updateNSFWSettings({ hideNSFW: checked })
-          }
-        />
-      </div>
+      <SettingToggleRow
+        checked={nsfwSettings.hideNSFW}
+        description={t("privacy.hideNSFWDescription")}
+        id='toggle-privacy-hide-nsfw'
+        onCheckedChange={(checked) => updateNSFWSettings({ hideNSFW: checked })}
+        title={t("privacy.hideNSFWContent")}
+      />
 
-      <div className='flex items-center justify-between'>
-        <div className='space-y-0.5'>
-          <Label className='text-base'>{t("privacy.showLikelyNSFW")}</Label>
-          <div className='text-muted-foreground text-sm'>
-            {t("privacy.showLikelyNSFWDescription")}
-          </div>
-        </div>
-        <Switch
-          aria-label={t("privacy.showLikelyNSFW")}
-          checked={nsfwSettings.showLikelyNSFW}
-          onCheckedChange={(checked) =>
-            updateNSFWSettings({ showLikelyNSFW: checked })
-          }
-        />
-      </div>
+      <SettingToggleRow
+        checked={nsfwSettings.showLikelyNSFW}
+        description={t("privacy.showLikelyNSFWDescription")}
+        id='toggle-privacy-show-likely-nsfw'
+        onCheckedChange={(checked) =>
+          updateNSFWSettings({ showLikelyNSFW: checked })
+        }
+        title={t("privacy.showLikelyNSFW")}
+      />
 
-      <div className='flex items-center justify-between'>
-        <div className='space-y-0.5'>
-          <Label className='text-base'>{t("privacy.disableNSFWBlur")}</Label>
-          <div className='text-muted-foreground text-sm'>
-            {t("privacy.disableNSFWBlurDescription")}
-          </div>
-        </div>
-        <Switch
-          aria-label={t("privacy.disableNSFWBlur")}
-          checked={nsfwSettings.disableBlur}
-          onCheckedChange={(checked) =>
-            updateNSFWSettings({ disableBlur: checked })
-          }
-        />
-      </div>
+      <SettingToggleRow
+        checked={nsfwSettings.disableBlur}
+        description={t("privacy.disableNSFWBlurDescription")}
+        id='toggle-privacy-disable-blur'
+        onCheckedChange={(checked) =>
+          updateNSFWSettings({ disableBlur: checked })
+        }
+        title={t("privacy.disableNSFWBlur")}
+      />
 
       {!nsfwSettings.disableBlur && (
         <div className='space-y-3'>
-          <div className='space-y-0.5'>
-            <Label className='text-base'>{t("privacy.blurStrength")}</Label>
-            <div className='text-muted-foreground text-sm'>
+          <div className='space-y-1'>
+            <Label className='font-bold text-sm'>
+              {t("privacy.blurStrength")}
+            </Label>
+            <p
+              className='text-muted-foreground text-sm'
+              id={BLUR_STRENGTH_DESCRIPTION_ID}>
               {t("privacy.blurStrengthDescription")}
-            </div>
+            </p>
           </div>
           <div className='px-3'>
             <Slider
+              aria-describedby={BLUR_STRENGTH_DESCRIPTION_ID}
               aria-label={t("privacy.blurStrength")}
               className='w-full'
               max={32}
@@ -114,42 +105,30 @@ const PrivacySettings = () => {
         </div>
       )}
 
-      <div className='flex items-center justify-between'>
-        <div className='space-y-0.5'>
-          <Label className='text-base'>
-            {t("privacy.rememberPerItemChoices")}
-          </Label>
-          <div className='text-muted-foreground text-sm'>
-            {t("privacy.rememberPerItemChoicesDescription")}
-          </div>
-        </div>
-        <Switch
-          aria-label={t("privacy.rememberPerItemChoices")}
-          checked={nsfwSettings.rememberPerItemOverrides}
-          onCheckedChange={(checked) =>
-            updateNSFWSettings({ rememberPerItemOverrides: checked })
-          }
-        />
-      </div>
+      <SettingToggleRow
+        checked={nsfwSettings.rememberPerItemOverrides}
+        description={t("privacy.rememberPerItemChoicesDescription")}
+        id='toggle-privacy-remember-per-item'
+        onCheckedChange={(checked) =>
+          updateNSFWSettings({ rememberPerItemOverrides: checked })
+        }
+        title={t("privacy.rememberPerItemChoices")}
+      />
 
-      <div className='flex items-center justify-between gap-4'>
-        <div className='space-y-0.5'>
-          <Label className='text-base'>
-            {t("privacy.savedPerItemChoices")}
-          </Label>
-          <div className='text-muted-foreground text-sm'>
-            {t("privacy.savedPerItemChoicesDescription", {
-              count: overrideCount,
-            })}
-          </div>
-        </div>
+      <SettingRow
+        description={t("privacy.savedPerItemChoicesDescription", {
+          count: overrideCount,
+        })}
+        descriptionId={SAVED_CHOICES_DESCRIPTION_ID}
+        title={t("privacy.savedPerItemChoices")}>
         <Button
+          aria-describedby={SAVED_CHOICES_DESCRIPTION_ID}
           disabled={overrideCount === 0 || clearOverrides.isPending}
           onClick={() => clearOverrides.mutate()}
           variant='outline'>
           {t("privacy.clearPerItemChoices")}
         </Button>
-      </div>
+      </SettingRow>
 
       {/* Telemetry Settings */}
       <div className='border-t pt-4'>
@@ -157,31 +136,21 @@ const PrivacySettings = () => {
           {t("privacy.telemetryTitle")}
         </h3>
 
-        <div className='space-y-4'>
-          <div className='flex items-center justify-between'>
-            <div className='space-y-0.5'>
-              <Label className='text-base'>
-                {t("privacy.analyticsEnabled")}
-              </Label>
-              <div className='text-muted-foreground text-sm'>
-                {t("privacy.analyticsEnabledDescription")}
-              </div>
-            </div>
-            <Switch
-              aria-label={t("privacy.analyticsEnabled")}
-              checked={telemetrySettings.analyticsEnabled}
-              onCheckedChange={(checked) => {
-                const oldValue = telemetrySettings.analyticsEnabled;
-                updateTelemetrySettings({ analyticsEnabled: checked });
-                analytics.trackSettingChanged(
-                  "analytics_enabled",
-                  oldValue,
-                  checked,
-                );
-              }}
-            />
-          </div>
-        </div>
+        <SettingToggleRow
+          checked={telemetrySettings.analyticsEnabled}
+          description={t("privacy.analyticsEnabledDescription")}
+          id='toggle-privacy-analytics'
+          onCheckedChange={(checked) => {
+            const oldValue = telemetrySettings.analyticsEnabled;
+            updateTelemetrySettings({ analyticsEnabled: checked });
+            analytics.trackSettingChanged(
+              "analytics_enabled",
+              oldValue,
+              checked,
+            );
+          }}
+          title={t("privacy.analyticsEnabled")}
+        />
       </div>
     </div>
   );

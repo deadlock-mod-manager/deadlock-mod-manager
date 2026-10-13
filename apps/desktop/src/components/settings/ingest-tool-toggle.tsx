@@ -1,9 +1,8 @@
-import { Label } from "@deadlock-mods/ui/components/label";
-import { Switch } from "@deadlock-mods/ui/components/switch";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
+import { SettingToggleRow } from "@/components/settings/setting-row";
 import { usePersistedStore } from "@/lib/store";
 
 export const IngestToolToggle = () => {
@@ -33,28 +32,13 @@ export const IngestToolToggle = () => {
   }, [ingestToolEnabled]);
 
   return (
-    <div className='flex items-center justify-between'>
-      <div className='flex items-center gap-3'>
-        <div className='space-y-1'>
-          <Label className='font-bold text-sm'>
-            {t("settings.ingestTool.title")}
-          </Label>
-          <p className='text-sm text-muted-foreground'>
-            {t("settings.ingestTool.description")}
-          </p>
-        </div>
-        {SettingsIngestExtra ? <SettingsIngestExtra /> : null}
-      </div>
-      <div className='flex items-center gap-2'>
-        <Switch
-          checked={ingestToolEnabled}
-          onCheckedChange={setIngestToolEnabled}
-          id={`toggle-setting-ingest-tool`}
-        />
-        <Label htmlFor={`toggle-setting-ingest-tool`}>
-          {ingestToolEnabled ? t("status.enabled") : t("status.disabled")}
-        </Label>
-      </div>
-    </div>
+    <SettingToggleRow
+      checked={ingestToolEnabled}
+      description={t("settings.ingestTool.description")}
+      extra={SettingsIngestExtra ? <SettingsIngestExtra /> : null}
+      id='toggle-setting-ingest-tool'
+      onCheckedChange={setIngestToolEnabled}
+      title={t("settings.ingestTool.title")}
+    />
   );
 };

@@ -1,13 +1,13 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Input } from "@deadlock-mods/ui/components/input";
 import { Label } from "@deadlock-mods/ui/components/label";
-import { Switch } from "@deadlock-mods/ui/components/switch";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { FolderOpen } from "@deadlock-mods/ui/icons";
 import { useMutation } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useTranslation } from "react-i18next";
+import { SettingToggleRow } from "@/components/settings/setting-row";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 
@@ -84,17 +84,13 @@ export const SteamPathSettings = () => {
 
   return (
     <div className='flex flex-col gap-4'>
-      <div className='flex items-center justify-between gap-4'>
-        <Label className='font-bold text-sm' htmlFor='toggle-custom-steam-path'>
-          {t("settings.useCustomSteamPath")}
-        </Label>
-        <Switch
-          checked={useCustomSteamPath}
-          disabled={toggleMutation.isPending}
-          id='toggle-custom-steam-path'
-          onCheckedChange={(enabled) => toggleMutation.mutate(enabled)}
-        />
-      </div>
+      <SettingToggleRow
+        checked={useCustomSteamPath}
+        disabled={toggleMutation.isPending}
+        id='toggle-custom-steam-path'
+        onCheckedChange={(enabled) => toggleMutation.mutate(enabled)}
+        title={t("settings.useCustomSteamPath")}
+      />
 
       {!useCustomSteamPath ? (
         <p className='text-muted-foreground text-sm'>

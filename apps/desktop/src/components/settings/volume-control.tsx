@@ -1,8 +1,10 @@
-import { Label } from "@deadlock-mods/ui/components/label";
 import { Slider } from "@deadlock-mods/ui/components/slider";
 import { Volume1, Volume2, VolumeX } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
+import { SettingRow } from "@/components/settings/setting-row";
 import { usePersistedStore } from "@/lib/store";
+
+const DESCRIPTION_ID = "settings-audio-volume-description";
 
 const VolumeControl = () => {
   const { t } = useTranslation();
@@ -24,17 +26,15 @@ const VolumeControl = () => {
   };
 
   return (
-    <div className='flex items-center justify-between'>
-      <div className='space-y-1'>
-        <Label className='font-bold text-sm'>{t("settings.audioVolume")}</Label>
-        <p className='text-muted-foreground text-sm'>
-          {t("settings.audioVolumeDescription")}
-        </p>
-      </div>
+    <SettingRow
+      description={t("settings.audioVolumeDescription")}
+      descriptionId={DESCRIPTION_ID}
+      title={t("settings.audioVolume")}>
       <div className='flex min-w-48 items-center space-x-4'>
         {getVolumeIcon()}
         <div className='flex-1'>
           <Slider
+            aria-describedby={DESCRIPTION_ID}
             aria-label={t("settings.audioVolume")}
             className='w-full'
             max={100}
@@ -48,7 +48,7 @@ const VolumeControl = () => {
           {audioVolume}%
         </span>
       </div>
-    </div>
+    </SettingRow>
   );
 };
 
