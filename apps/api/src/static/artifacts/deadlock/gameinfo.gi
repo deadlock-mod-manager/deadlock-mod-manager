@@ -242,6 +242,8 @@
 
 	ResourceCompiler
 	{
+		ForceVulkanForMapBuild 1
+			
 		// Overrides of the default builders as specified in code, this controls which map builder steps
 		// will be run when resource compiler is run for a map without specifiying any specific map builder
 		// steps. Additionally this controls which builders are displayed in the hammer build dialog.
