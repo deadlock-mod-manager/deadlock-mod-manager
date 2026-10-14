@@ -68,6 +68,7 @@ const Mod = () => {
     useModDetailNavigation();
   const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const backButtonRef = useRef<HTMLButtonElement>(null);
 
   const { data: mod, error, isLoading } = useMod(params.id);
 
@@ -75,6 +76,7 @@ const Mod = () => {
     threshold: 100,
     enabled: true,
     scrollContainerRef,
+    sentinelRef: backButtonRef,
     onBackClick: goBack,
   });
 
@@ -254,6 +256,7 @@ const Mod = () => {
         <div className='container mx-auto max-w-6xl space-y-6 py-6'>
           <div className='mb-4 flex items-center justify-between'>
             <Button
+              ref={backButtonRef}
               className='flex items-center gap-1'
               onClick={goBack}
               size='sm'
