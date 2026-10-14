@@ -15,6 +15,8 @@ export const preparePresenceCache = async (world: CreatedWorld) => {
         name: "Infernus",
         hideout_text: "In the Hideout",
         asset_key: "hero_inferno",
+        image_url:
+          "https://assets-bucket.deadlock-api.com/assets-api-res/images/heroes/inferno_sm.png",
       },
     }),
   );

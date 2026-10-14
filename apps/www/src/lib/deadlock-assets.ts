@@ -258,8 +258,10 @@ const request = async (endpoint: string): Promise<unknown> => {
 export const getHeroes = async (): Promise<DeadlockHero[]> => {
   const endpoint = "/heroes?only_active=true";
   const heroes = parseList(heroSchema, await request(endpoint), endpoint);
+  // `in_development` lingers on heroes Valve has already released (Baba), so
+  // only `player_selectable` and `disabled` decide whether a hero is playable.
   const selectable = heroes.filter(
-    (hero) => hero.player_selectable && !hero.disabled && !hero.in_development,
+    (hero) => hero.player_selectable && !hero.disabled,
   );
   return requireSome(heroes, selectable, endpoint);
 };

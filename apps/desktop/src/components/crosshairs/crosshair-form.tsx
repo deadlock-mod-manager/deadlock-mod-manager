@@ -46,6 +46,7 @@ import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { HeroIcon } from "@/components/heroes/hero-icon";
 import { useAuth } from "@/hooks/use-auth";
+import { useIsHeroAvailable } from "@/hooks/use-player-stats";
 import { publishCrosshair } from "@/lib/api-client";
 import logger from "@/lib/logger";
 import { isTauriError } from "@/types/tauri";
@@ -98,6 +99,7 @@ type CrosshairFormValues = z.infer<typeof crosshairFormSchema>;
 
 export const CrosshairForm = () => {
   const { t } = useTranslation();
+  const isHeroAvailable = useIsHeroAvailable();
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuth();
   const { setActiveCrosshair } = usePersistedStore();
@@ -411,7 +413,12 @@ export const CrosshairForm = () => {
                                 {t("crosshairs.form.noHeroesFound")}
                               </CommandEmpty>
                               <CommandGroup>
-                                {ALL_HEROES.map((hero) => {
+                                {ALL_HEROES.filter(
+                                  (hero) =>
+                                    hero === "Default" ||
+                                    isHeroAvailable(hero) ||
+                                    field.value.includes(hero),
+                                ).map((hero) => {
                                   const isSelected = field.value.includes(hero);
                                   const isDefault = hero === "Default";
                                   const canSelect =

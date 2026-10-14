@@ -133,7 +133,7 @@ describe("runNetworkDiagnostics", () => {
       "https://dmm.test/health/ready",
       "https://gb.test/apiv11/Mod/Index?_nPerpage=1&_nPage=1&_aFilters%5BGeneric_Game%5D=20948",
       "https://dlapi.test/v1/assets/ranked-seasons",
-      "https://assets.test/v2/heroes?only_active=true",
+      "https://assets.test/v1/assets/heroes?only_active=true",
     ]);
   });
 
