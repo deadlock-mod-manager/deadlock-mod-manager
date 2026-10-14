@@ -10,6 +10,7 @@ import { HeroList, type HeroListEntry } from "@/components/skins/hero-list";
 import { HeroModGrid } from "@/components/skins/hero-mod-grid";
 import { SkinPreviewPanel } from "@/components/skins/skin-preview-panel";
 import { useHeroSelection } from "@/hooks/use-hero-selection";
+import { useIsHeroAvailable } from "@/hooks/use-player-stats";
 import useUninstall from "@/hooks/use-uninstall";
 import { groupModsByHero, type HeroModGroup } from "@/lib/mods/hero-mods";
 import { isRandomizedPool, randomizerPool } from "@/lib/mods/skin-randomizer";
@@ -60,6 +61,7 @@ const Skins = () => {
   const restoreHeroMod = usePersistedStore((state) => state.restoreHeroMod);
   const { select, remove, busyHero, installAction } = useHeroSelection();
   const { uninstall } = useUninstall();
+  const isHeroAvailable = useIsHeroAvailable();
   const [selectedHero, setSelectedHero] = useState<string | null>(null);
   const [assigning, setAssigning] = useState(false);
   // The skin the 3D panel shows, per hero, so coming back to a hero returns to
@@ -105,7 +107,11 @@ const Skins = () => {
     const extraHeroes = [...groups.keys()]
       .filter((hero) => !knownHeroes.has(hero))
       .sort();
-    const all = [...knownHeroes, ...extraHeroes].map((hero) => {
+    // An unreleased hero still shows once the user has mods for it.
+    const listedHeroes = [...knownHeroes].filter(
+      (hero) => isHeroAvailable(hero) || groups.has(hero),
+    );
+    const all = [...listedHeroes, ...extraHeroes].map((hero) => {
       const group = groups.get(hero) ?? EMPTY_GROUP;
       // The rolled skin is a surprise for the game, not for this list.
       const randomized = randomizerEnabled && randomizedHeroes.has(hero);
@@ -128,7 +134,13 @@ const Skins = () => {
       ...all.filter((entry) => entry.modCount > 0),
       ...all.filter((entry) => entry.modCount === 0),
     ];
-  }, [groups, multipleSkinsEnabled, randomizerEnabled, randomizedHeroes]);
+  }, [
+    groups,
+    isHeroAvailable,
+    multipleSkinsEnabled,
+    randomizerEnabled,
+    randomizedHeroes,
+  ]);
 
   const effectiveHero =
     selectedHero ??

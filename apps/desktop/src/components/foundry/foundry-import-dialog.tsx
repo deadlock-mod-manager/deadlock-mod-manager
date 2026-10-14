@@ -36,6 +36,7 @@ import {
   DEFAULT_FOUNDRY_SKINS,
   type DefaultFoundrySkin,
 } from "@/lib/foundry-default-skins";
+import { useIsHeroAvailable } from "@/hooks/use-player-stats";
 import { usePersistedStore } from "@/lib/store";
 import { type LocalMod, ModStatus } from "@/types/mods";
 import { useFoundry } from "./foundry-context";
@@ -181,13 +182,16 @@ export const FoundryImportDialog = ({
     null,
   );
   const busy = status === "analyzing";
+  const isHeroAvailable = useIsHeroAvailable();
 
   const defaultSkins = useMemo(() => {
     const q = query.trim().toLowerCase();
     return DEFAULT_FOUNDRY_SKINS.filter(
-      (skin) => !q || skin.hero.toLowerCase().includes(q),
+      (skin) =>
+        isHeroAvailable(skin.hero) &&
+        (!q || skin.hero.toLowerCase().includes(q)),
     );
-  }, [query]);
+  }, [isHeroAvailable, query]);
 
   const heroSkins = useMemo(() => {
     const q = query.trim().toLowerCase();
