@@ -122,7 +122,7 @@ export const Titlebar = () => {
             label: t("about.installUpdate"),
             onClick: () => {
               void updateAndRelaunch(update).catch((error) => {
-                showAppUpdateError(error instanceof Error ? error : null, t);
+                showAppUpdateError(error instanceof Error ? error : null);
               });
             },
           },
@@ -131,7 +131,7 @@ export const Titlebar = () => {
         toast.info(t("about.latestVersion"));
       }
     } catch (error) {
-      showAppUpdateError(error instanceof Error ? error : null, t);
+      showAppUpdateError(error instanceof Error ? error : null);
     }
   };
 

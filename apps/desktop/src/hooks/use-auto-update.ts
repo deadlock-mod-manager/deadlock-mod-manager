@@ -1,6 +1,5 @@
 import { analytics } from "@/lib/analytics";
 import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { isAutoUpdateDisabled, isFlatpak } from "@/lib/tauri-commands";
 import { createLogger } from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
@@ -10,7 +9,6 @@ import { showAppUpdateError } from "@/lib/app-update-notifications";
 const logger = createLogger("auto-update");
 
 export const useAutoUpdate = (integrationEnabled = true) => {
-  const { t } = useTranslation();
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const updateManager = useUpdateManager();
   const autoUpdateEnabled = usePersistedStore(
@@ -77,7 +75,7 @@ export const useAutoUpdate = (integrationEnabled = true) => {
     try {
       await updateManager.updateAndRelaunch();
     } catch (error) {
-      showAppUpdateError(error instanceof Error ? error : null, t);
+      showAppUpdateError(error instanceof Error ? error : null);
       setShowUpdateDialog(false);
       updateManager.reset();
     }
