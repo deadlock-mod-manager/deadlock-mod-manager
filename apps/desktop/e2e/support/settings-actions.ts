@@ -14,7 +14,12 @@ export const openSettings = (tab: string) =>
     await navigate("settings");
     const control = await $(`[data-settings-tab="${tab}"]`);
     await reveal(control);
+    await control.waitForClickable();
     await control.click();
+    if ((await control.getAttribute("aria-selected")) !== "true") {
+      await expect(control).toBeFocused();
+      await browser.keys("Enter");
+    }
     await expect(control).toHaveAttribute("aria-selected", "true");
   });
 

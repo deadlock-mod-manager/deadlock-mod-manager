@@ -102,7 +102,12 @@ export const openFilesTab = () =>
   step("open the Files tab", async () => {
     const tab = await $('[role="tab"][id$="-trigger-files"]');
     await reveal(tab);
+    await tab.waitForClickable();
     await tab.click();
+    if ((await tab.getAttribute("aria-selected")) !== "true") {
+      await expect(tab).toBeFocused();
+      await browser.keys("Enter");
+    }
     await expect(tab).toHaveAttribute("aria-selected", "true");
   });
 export const installedFiles = () => $('[data-testid="installed-files"]');
