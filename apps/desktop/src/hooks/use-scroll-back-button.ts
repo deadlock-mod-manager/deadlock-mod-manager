@@ -2,22 +2,21 @@ import { type RefObject, useEffect } from "react";
 import { useScrollBackButtonContext } from "@/contexts/scroll-back-button-context";
 
 interface UseScrollBackButtonOptions {
-  /** Scroll threshold in pixels before showing the back button */
-  threshold?: number;
+  /** The page's back button, replaced by the toolbar button when clipped. */
+  backButtonRef: RefObject<HTMLElement | null>;
   /** Whether the hook should be active (e.g., only on specific pages) */
   enabled?: boolean;
-  /** Ref to the scroll container element. If not provided, uses window scroll */
-  scrollContainerRef?: RefObject<HTMLElement | null>;
+  scrollContainerRef: RefObject<HTMLElement | null>;
   /** Callback function to execute when back button is clicked */
   onBackClick?: () => void;
 }
 
 export const useScrollBackButton = ({
-  threshold = 100,
+  backButtonRef,
   enabled = true,
   scrollContainerRef,
   onBackClick,
-}: UseScrollBackButtonOptions = {}) => {
+}: UseScrollBackButtonOptions) => {
   const { setShowBackButton, setOnBackClick } = useScrollBackButtonContext();
 
   useEffect(() => {
@@ -32,31 +31,20 @@ export const useScrollBackButton = ({
       return;
     }
 
-    const handleScroll = () => {
-      let scrollY: number;
+    const backButton = backButtonRef.current;
+    const scrollContainer = scrollContainerRef.current;
+    if (!backButton || !scrollContainer) return;
 
-      if (scrollContainerRef?.current) {
-        scrollY = scrollContainerRef.current.scrollTop;
-      } else {
-        scrollY = window.scrollY;
-      }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShowBackButton(entry.intersectionRatio < 1);
+      },
+      { root: scrollContainer, threshold: 1 },
+    );
+    observer.observe(backButton);
 
-      setShowBackButton(scrollY > threshold);
-    };
-
-    const scrollElement = scrollContainerRef?.current || window;
-
-    if (scrollElement) {
-      scrollElement.addEventListener("scroll", handleScroll, { passive: true });
-      handleScroll();
-    }
-
-    return () => {
-      if (scrollElement) {
-        scrollElement.removeEventListener("scroll", handleScroll);
-      }
-    };
-  }, [enabled, threshold, scrollContainerRef, setShowBackButton]);
+    return () => observer.disconnect();
+  }, [enabled, backButtonRef, scrollContainerRef, setShowBackButton]);
 
   useEffect(() => {
     return () => {

@@ -68,15 +68,9 @@ const Mod = () => {
     useModDetailNavigation();
   const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const backButtonRef = useRef<HTMLButtonElement>(null);
 
   const { data: mod, error, isLoading } = useMod(params.id);
-
-  useScrollBackButton({
-    threshold: 100,
-    enabled: true,
-    scrollContainerRef,
-    onBackClick: goBack,
-  });
 
   const isGameBananaMod = !!params.id && !params.id.includes("local");
   const { availableFiles } = useModDownloads({
@@ -119,6 +113,14 @@ const Mod = () => {
     mod && !mod.isMap && reportCounts ? isModStale(mod, reportCounts) : null;
 
   const { shouldBlur, handleNSFWToggle, nsfwSettings } = useNSFWBlur(mod);
+
+  useScrollBackButton({
+    enabled:
+      !isLoading && !!mod && !error && !(nsfwSettings.hideNSFW && mod.isNSFW),
+    scrollContainerRef,
+    backButtonRef,
+    onBackClick: goBack,
+  });
 
   const isInstalled = localMod?.status === ModStatus.Installed;
   const hasImages = mod?.images && mod.images.length > 0;
@@ -254,6 +256,7 @@ const Mod = () => {
         <div className='container mx-auto max-w-6xl space-y-6 py-6'>
           <div className='mb-4 flex items-center justify-between'>
             <Button
+              ref={backButtonRef}
               className='flex items-center gap-1'
               onClick={goBack}
               size='sm'
