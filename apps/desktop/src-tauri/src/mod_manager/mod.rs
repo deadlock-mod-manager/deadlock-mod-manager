@@ -5,6 +5,7 @@ pub mod autoexec_manager;
 pub mod conflicts;
 pub mod console_log_watcher;
 pub mod crosshair_settings;
+pub mod file_permissions;
 pub mod file_tree;
 pub mod filesystem_helper;
 pub mod font_manager;

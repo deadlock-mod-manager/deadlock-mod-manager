@@ -2003,8 +2003,8 @@
     "authOnline": "Auth Server Online",
     "authOffline": "Auth Server Offline",
     "authUnknown": "Auth Unknown",
-    "fsWritable": "Addons folder and gameinfo.gi are not read-only",
-    "fsReadonly": "Addons folder or gameinfo.gi is read-only (check file permissions)",
+    "fsWritable": "DMM can write addon files and gameinfo.gi",
+    "fsReadonly": "DMM cannot write addon files or gameinfo.gi. Retry the action to see the affected file and fix its permissions.",
     "fsUnknown": "Could not verify addons folder or gameinfo.gi",
     "optional": "optional",
     "required": "Required",
@@ -2603,6 +2603,11 @@
       }
     }
   },
+  "filePermissions": {
+    "title": "File is read-only",
+    "description": "DMM needs to write this file. Make it writable and retry the action? Only this file's permissions will change.",
+    "makeWritable": "Make writable"
+  },
   "game": {
     "createBackup": "Create Backup",
     "createBackupTip": "Creating a backup is recommended before making modifications.",
@@ -2613,7 +2618,9 @@
     "openInEditor": "Open in Editor",
     "backupCreatedSuccess": "gameinfo.gi backup created successfully",
     "restoreSuccess": "gameinfo.gi restored from backup successfully",
-    "resetSuccess": "gameinfo.gi reset to vanilla state successfully",
+    "resetSuccess": "gameinfo.gi reset to vanilla using the downloaded file",
+    "resetSuccessBackup": "gameinfo.gi reset to vanilla using the local backup",
+    "resetFailed": "Failed to reset gameinfo.gi to vanilla",
     "validationPassed": "gameinfo.gi validation passed",
     "openedInEditor": "Opened gameinfo.gi with system editor",
     "confirmRestore": "Are you sure you want to restore gameinfo.gi from backup? This will overwrite the current file.",

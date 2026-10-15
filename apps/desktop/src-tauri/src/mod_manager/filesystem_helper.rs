@@ -42,6 +42,7 @@ impl FileSystemHelper {
     }
 
     log::debug!("Copying file from {:?} to {:?}", src, dest);
+    crate::mod_manager::file_permissions::ensure_file_writable(dest)?;
     fs::copy(src, dest)?;
     Ok(())
   }

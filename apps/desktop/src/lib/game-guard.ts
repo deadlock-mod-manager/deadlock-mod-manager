@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { isTauriError } from "@/types/tauri";
 import logger from "./logger";
+import { withWritableRecovery } from "./file-permissions";
 
 /**
  * Operations that rename, move or delete files inside the game install. The
@@ -92,19 +93,21 @@ export const invokeGuarded = <T>(
   command: GuardedCommand,
   args?: Record<string, unknown>,
 ): Promise<T> =>
-  runGuarded<T>(
-    {
-      invoke,
-      confirmOverride: async () => {
-        if (!overridePrompt) {
-          logger.warn("No game guard prompt registered; keeping the block");
-          return false;
-        }
-        return await overridePrompt(command);
+  withWritableRecovery(() =>
+    runGuarded<T>(
+      {
+        invoke,
+        confirmOverride: async () => {
+          if (!overridePrompt) {
+            logger.warn("No game guard prompt registered; keeping the block");
+            return false;
+          }
+          return await overridePrompt(command);
+        },
       },
-    },
-    command,
-    args,
+      command,
+      args,
+    ),
   );
 
 /**

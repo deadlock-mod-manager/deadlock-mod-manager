@@ -22,6 +22,7 @@ import { OnboardingWizard } from "./components/onboarding/onboarding-wizard";
 import { PerformanceRenderer } from "./components/performance/performance-renderer";
 import { TelemetryConsentDialog } from "./components/telemetry/telemetry-consent-dialog";
 import { LaunchRepairProvider } from "./components/providers/launch-repair";
+import { FilePermissionsRenderer } from "./components/file-permissions-renderer";
 import { AlertDialogProvider } from "./components/providers/alert-dialog";
 import { invokeGuarded, isGameRunningError } from "@/lib/game-guard";
 import { AppProvider } from "./components/providers/app";
@@ -170,6 +171,7 @@ const App = ({ runtime, storage }: AppProps) => {
                       )}
                       <ForgeInstallRenderer />
                       <GameGuardRenderer />
+                      <FilePermissionsRenderer />
                       <PerformanceRenderer />
                       <LaunchHealthRenderer />
                       <UpdateDialog
