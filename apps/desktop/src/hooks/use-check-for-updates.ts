@@ -101,7 +101,7 @@ export const useCheckForUpdates = () => {
       }
     },
     meta: { skipGlobalErrorHandler: true },
-    onError: (error) => showAppUpdateError(error, t),
+    onError: (error) => showAppUpdateError(error),
   });
 
   const { mutate: checkForUpdates, isPending: isCheckForUpdatesPending } =
@@ -120,7 +120,7 @@ export const useCheckForUpdates = () => {
         }
       },
       meta: { skipGlobalErrorHandler: true },
-      onError: (error) => showAppUpdateError(error, t),
+      onError: (error) => showAppUpdateError(error),
     });
 
   return {
