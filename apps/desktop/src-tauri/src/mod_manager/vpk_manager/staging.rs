@@ -36,10 +36,40 @@ pub enum RecoveryMode {
   /// Give a staged file the next free `pak##_dir.vpk` slot when its own is
   /// taken. A reorder interrupted mid-placement leaves exactly that state.
   AvoidEnabledCollisions,
+  /// The manifest already committed the removal; validate before cleanup.
+  Discard,
 }
 
 /// Put the files of an interrupted operation back where they came from.
 pub fn recover_staging_directory(
+  base: &ProfileBase,
+  staging_dir: &Path,
+  mode: RecoveryMode,
+  manifest: &ProfileVpkManifest,
+) -> Result<(), Error> {
+  match recover_staging_directory_inner(base, staging_dir, mode, manifest) {
+    Err(error @ (Error::ModInvalid(_) | Error::InvalidInput(_))) => {
+      quarantine_staging_directory(staging_dir, &error.to_string())
+    }
+    result => result,
+  }
+}
+
+pub(crate) fn quarantine_staging_directory(staging_dir: &Path, reason: &str) -> Result<(), Error> {
+  let destination = staging_dir.with_file_name(format!(
+    ".dmm-recovered-{}",
+    chrono::Utc::now().format("%Y%m%dT%H%M%S%.9fZ")
+  ));
+  fs::rename(staging_dir, &destination)?;
+  log::warn!(
+    "Moved unrecoverable VPK staging {} to {}: {reason}",
+    staging_dir.display(),
+    destination.display()
+  );
+  Ok(())
+}
+
+fn recover_staging_directory_inner(
   base: &ProfileBase,
   staging_dir: &Path,
   mode: RecoveryMode,
@@ -51,9 +81,17 @@ pub fn recover_staging_directory(
 
   let journal_path = staging_dir.join(JOURNAL_FILENAME);
   if journal_path.is_file() {
-    return recover_journaled_staging(base, staging_dir, &journal_path, manifest);
+    return recover_journaled_staging(
+      base,
+      staging_dir,
+      &journal_path,
+      manifest,
+      matches!(mode, RecoveryMode::Discard),
+    );
   }
 
+  let mut moves = Vec::new();
+  let mut reserved = BTreeSet::new();
   for entry in fs::read_dir(staging_dir)? {
     let staged_path = entry?.path();
     let staged_name = staged_path
@@ -61,10 +99,12 @@ pub fn recover_staging_directory(
       .and_then(|name| name.to_str())
       .ok_or_else(|| Error::ModInvalid("Invalid VPK staging filename".to_string()))?;
     let staged = StagedName::parse(staged_name)?;
+    if matches!(mode, RecoveryMode::Discard) {
+      continue;
+    }
     let destination_dir = base.shard_dir(staged.shard);
-    fs::create_dir_all(&destination_dir)?;
     let mut destination = destination_dir.join(staged.filename);
-    if destination.exists() {
+    if destination.exists() || reserved.contains(&destination) {
       match mode {
         RecoveryMode::Strict => {
           return Err(Error::ModInvalid(format!(
@@ -73,11 +113,30 @@ pub fn recover_staging_directory(
           )));
         }
         RecoveryMode::AvoidEnabledCollisions => {
-          destination = destination_dir.join(naming::next_free_enabled_vpk_name(&destination_dir)?);
+          let count = reserved
+            .iter()
+            .filter(|path: &&PathBuf| path.parent() == Some(destination_dir.as_path()))
+            .count()
+            + 1;
+          destination = naming::allocate_enabled_vpk_names(&destination_dir, count)?
+            .into_iter()
+            .map(|name| destination_dir.join(name))
+            .find(|path| !reserved.contains(path))
+            .unwrap();
         }
+        RecoveryMode::Discard => unreachable!(),
       }
     }
-    fs::rename(staged_path, destination)?;
+    reserved.insert(destination.clone());
+    moves.push((staged_path, destination));
+  }
+  if matches!(mode, RecoveryMode::Discard) {
+    fs::remove_dir_all(staging_dir)?;
+    return Ok(());
+  }
+  for (source, destination) in moves {
+    fs::create_dir_all(destination.parent().unwrap())?;
+    fs::rename(source, destination)?;
   }
   fs::remove_dir(staging_dir)?;
   Ok(())
@@ -88,8 +147,18 @@ fn recover_journaled_staging(
   staging_dir: &Path,
   journal_path: &Path,
   manifest: &ProfileVpkManifest,
+  discard: bool,
 ) -> Result<(), Error> {
-  let contents = fs::read_to_string(journal_path)?;
+  let contents = fs::read_to_string(journal_path).map_err(|error| {
+    if error.kind() == std::io::ErrorKind::InvalidData {
+      Error::ModInvalid(format!(
+        "Invalid VPK transaction journal at {}: {error}",
+        journal_path.display()
+      ))
+    } else {
+      Error::Io(error)
+    }
+  })?;
   let lines: Vec<&str> = contents.lines().collect();
   let mut originals = Vec::new();
   let mut placements = std::collections::BTreeMap::new();
@@ -135,7 +204,30 @@ fn recover_journaled_staging(
     }
   }
 
-  if expected_manifest.as_ref() == Some(manifest) {
+  for entry in fs::read_dir(staging_dir)? {
+    let entry = entry?;
+    if entry.file_name() == JOURNAL_FILENAME {
+      continue;
+    }
+    let name = entry.file_name();
+    let staged = StagedName::parse(&name.to_string_lossy())?;
+    let locator = ShardLocator::new(staged.shard, staged.filename).to_wire();
+    if !originals.contains(&locator) {
+      return Err(Error::ModInvalid(format!(
+        "Unjournaled VPK staging payload: {locator}"
+      )));
+    }
+  }
+
+  for path in originals.iter().chain(placements.values()) {
+    ShardLocator::parse(path)?;
+  }
+  let created: BTreeSet<_> = created
+    .iter()
+    .map(|path| ShardLocator::parse(path).map(|locator| base.locator_path(&locator)))
+    .collect::<Result<_, _>>()?;
+
+  if discard || expected_manifest.as_ref() == Some(manifest) {
     fs::remove_dir_all(staging_dir)?;
     return Ok(());
   }
@@ -153,7 +245,20 @@ fn recover_journaled_staging(
     files.push((base.locator_path(&locator), parked, current));
   }
 
-  for (_, parked, current) in &files {
+  for (original, parked, current) in &files {
+    if (parked.exists() || (current != parked && current.exists()))
+      && original.exists()
+      && original != current
+      && !files
+        .iter()
+        .any(|(_, other_parked, other)| other == original && other != other_parked)
+      && !created.contains(original)
+    {
+      return Err(Error::ModInvalid(format!(
+        "Cannot recover VPK transaction because {} already exists",
+        original.display()
+      )));
+    }
     if current == parked || !current.exists() {
       continue;
     }
@@ -164,12 +269,14 @@ fn recover_journaled_staging(
         parked.display()
       )));
     }
-    fs::rename(current, parked)?;
+  }
+  for (_, parked, current) in &files {
+    if current != parked && current.exists() {
+      fs::rename(current, parked)?;
+    }
   }
 
   for path in created {
-    let locator = ShardLocator::parse(&path)?;
-    let path = base.locator_path(&locator);
     if path.is_file() {
       fs::remove_file(path)?;
     }
@@ -711,6 +818,154 @@ mod tests {
     let path = temp.path().join("citadel").join("addons");
     fs::create_dir_all(&path).unwrap();
     ProfileBase::new(path).unwrap()
+  }
+
+  #[test]
+  fn occupied_recovery_target_preserves_both_files_without_partial_replay() {
+    let temp = tempfile::tempdir().unwrap();
+    let base = base(&temp);
+    let dir = base.join(".dmm-update-test");
+    fs::create_dir(&dir).unwrap();
+    fs::write(dir.join("s1__pak01_dir.vpk.pending"), b"first").unwrap();
+    fs::write(dir.join("s1__pak02_dir.vpk.pending"), b"second").unwrap();
+    fs::write(base.join("pak02_dir.vpk"), b"occupied").unwrap();
+    recover_staging_directory(
+      &base,
+      &dir,
+      RecoveryMode::Strict,
+      &ProfileVpkManifest::default(),
+    )
+    .unwrap();
+    assert!(!base.join("pak01_dir.vpk").exists());
+    assert_eq!(fs::read(base.join("pak02_dir.vpk")).unwrap(), b"occupied");
+    let quarantine = fs::read_dir(&base)
+      .unwrap()
+      .map(|entry| entry.unwrap().path())
+      .find(|path| {
+        path
+          .file_name()
+          .unwrap()
+          .to_string_lossy()
+          .starts_with(".dmm-recovered-")
+      })
+      .unwrap();
+    assert_eq!(
+      fs::read(quarantine.join("s1__pak01_dir.vpk.pending")).unwrap(),
+      b"first"
+    );
+    assert_eq!(
+      fs::read(quarantine.join("s1__pak02_dir.vpk.pending")).unwrap(),
+      b"second"
+    );
+  }
+
+  #[test]
+  fn journal_collision_is_quarantined_before_moving_any_placements() {
+    let temp = tempfile::tempdir().unwrap();
+    let base = base(&temp);
+    let dir = base.join(".dmm-reorder");
+    fs::create_dir(&dir).unwrap();
+    fs::write(
+      dir.join(JOURNAL_FILENAME),
+      "{\"event\":\"stage\",\"original\":\"pak01_dir.vpk\"}\n",
+    )
+    .unwrap();
+    fs::write(dir.join("s1__pak01_dir.vpk.pending"), b"staged").unwrap();
+    fs::write(base.join("pak01_dir.vpk"), b"occupied").unwrap();
+    recover_staging_directory(
+      &base,
+      &dir,
+      RecoveryMode::Strict,
+      &ProfileVpkManifest::default(),
+    )
+    .unwrap();
+    assert!(!dir.exists());
+    assert_eq!(fs::read(base.join("pak01_dir.vpk")).unwrap(), b"occupied");
+  }
+
+  #[test]
+  fn occupied_original_does_not_get_overwritten_by_a_placed_payload() {
+    let temp = tempfile::tempdir().unwrap();
+    let base = base(&temp);
+    let original = base.join("pak01_dir.vpk");
+    let placed = base.join("pak02_dir.vpk");
+    fs::write(&original, b"staged").unwrap();
+    let mut staging = VpkStaging::claim(&base, ".dmm-reorder").unwrap();
+    let parked = staging.stage(&base, &original).unwrap();
+    staging.place(&parked, &placed).unwrap();
+    std::mem::forget(staging);
+    fs::write(&original, b"occupied").unwrap();
+    recover_staging_directory(
+      &base,
+      &base.join(".dmm-reorder"),
+      RecoveryMode::Strict,
+      &ProfileVpkManifest::default(),
+    )
+    .unwrap();
+    assert_eq!(fs::read(original).unwrap(), b"occupied");
+    assert_eq!(fs::read(placed).unwrap(), b"staged");
+    assert!(!base.join(".dmm-reorder").exists());
+  }
+
+  #[test]
+  fn incomplete_final_journal_record_keeps_unjournaled_payloads() {
+    let temp = tempfile::tempdir().unwrap();
+    let base = base(&temp);
+    let dir = base.join(".dmm-reorder");
+    fs::create_dir(&dir).unwrap();
+    fs::write(dir.join(JOURNAL_FILENAME), "{truncated").unwrap();
+    fs::write(dir.join("s1__pak01_dir.vpk.pending"), b"retained").unwrap();
+    recover_staging_directory(
+      &base,
+      &dir,
+      RecoveryMode::Strict,
+      &ProfileVpkManifest::default(),
+    )
+    .unwrap();
+    assert!(!dir.exists());
+    assert!(!base.join("pak01_dir.vpk").exists());
+    assert!(fs::read_dir(&base).unwrap().any(|entry| {
+      entry
+        .unwrap()
+        .path()
+        .join("s1__pak01_dir.vpk.pending")
+        .is_file()
+    }));
+  }
+
+  #[test]
+  fn committed_cleanup_discards_valid_payloads_but_quarantines_invalid_journals() {
+    let temp = tempfile::tempdir().unwrap();
+    let base = base(&temp);
+    let dir = base.join(".dmm-clear");
+    fs::create_dir(&dir).unwrap();
+    fs::write(dir.join("s1__pak01_dir.vpk.pending"), b"committed deletion").unwrap();
+    recover_staging_directory(
+      &base,
+      &dir,
+      RecoveryMode::Discard,
+      &ProfileVpkManifest::default(),
+    )
+    .unwrap();
+    assert!(!dir.exists());
+    assert!(!base.join("pak01_dir.vpk").exists());
+    fs::create_dir(&dir).unwrap();
+    fs::write(dir.join(JOURNAL_FILENAME), "invalid\n").unwrap();
+    fs::write(dir.join("s1__pak01_dir.vpk.pending"), b"retained").unwrap();
+    recover_staging_directory(
+      &base,
+      &dir,
+      RecoveryMode::Discard,
+      &ProfileVpkManifest::default(),
+    )
+    .unwrap();
+    assert!(fs::read_dir(&base).unwrap().any(|entry| {
+      entry
+        .unwrap()
+        .path()
+        .join("s1__pak01_dir.vpk.pending")
+        .is_file()
+    }));
   }
 
   #[test]
