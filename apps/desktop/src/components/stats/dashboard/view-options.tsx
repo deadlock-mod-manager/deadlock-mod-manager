@@ -131,6 +131,7 @@ export const ViewOptions = ({ dataset, view, onChange }: ViewOptionsProps) => {
                   !supported && "cursor-not-allowed opacity-40",
                 )}
                 disabled={!supported}
+                data-chart-type={chart}
                 key={chart}
                 onClick={() => onChange(adaptView(view, dataset, chart))}
                 title={

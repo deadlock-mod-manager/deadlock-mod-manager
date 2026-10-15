@@ -326,6 +326,7 @@ const GridItem = ({
     <div
       className={cn("relative min-w-0", isDragging && "opacity-40")}
       data-widget-id={widget.id}
+      data-widget-width={widget.w}
       data-widget-source={
         widget.source.kind === "preset"
           ? widget.source.preset

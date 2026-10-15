@@ -286,6 +286,7 @@ export const WidgetEditor = ({
                           : "flex flex-col items-center gap-1 rounded-md px-1 py-1.5 text-muted-foreground text-xs hover:text-foreground"
                       }
                       key={entry}
+                      data-source-mode={entry}
                       onClick={() => switchMode(entry)}
                       type='button'>
                       <Icon className='h-4 w-4' />
@@ -394,6 +395,7 @@ export const WidgetEditor = ({
                 title={t("stats.dashboard.editor.stepLayout")}>
                 <OptionRow label={t("stats.dashboard.editor.title")}>
                   <Input
+                    aria-label={t("stats.dashboard.editor.title")}
                     className='h-9'
                     maxLength={80}
                     onChange={(event) =>
@@ -405,6 +407,7 @@ export const WidgetEditor = ({
                 </OptionRow>
                 <OptionRow label={t("stats.dashboard.editor.width")}>
                   <ToggleGroup
+                    aria-label={t("stats.dashboard.editor.width")}
                     className='justify-start'
                     onValueChange={(value) =>
                       value && update({ ...draft, w: Number(value) })

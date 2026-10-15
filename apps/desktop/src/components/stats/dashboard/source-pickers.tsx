@@ -10,7 +10,7 @@ import {
 import { Switch } from "@deadlock-mods/ui/components/switch";
 import { ExternalLink, Search } from "@deadlock-mods/ui/icons";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   API_EXAMPLES,
@@ -35,6 +35,8 @@ import { PANEL_IDS, panelDef } from "./panels";
 import { OptionRow } from "./view-options";
 
 const API_DOCS_URL = "https://api.deadlock-api.com/docs";
+/** Long enough that a half-typed path is never sent to the API. */
+const TYPING_SETTLE_MS = 600;
 const ALL = "__all";
 
 const useHeroOptions = () => {
@@ -306,7 +308,9 @@ export const MatchQueryEditor = ({
               })
             }
             value={query.groupBy}>
-            <SelectTrigger className='h-9'>
+            <SelectTrigger
+              aria-label={t("stats.dashboard.matchQuery.groupBy")}
+              className='h-9'>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -427,6 +431,23 @@ export const ApiQueryEditor = ({
   onChange: (next: { path: string; listPath: string }) => void;
 }) => {
   const { t } = useTranslation();
+  // Every committed path is a request, so typing edits a local copy and only
+  // a pause, Enter or a picked example hands it to the widget.
+  const [draft, setDraft] = useState({ path, listPath });
+  const timer = useRef<number | undefined>(undefined);
+  const latestOnChange = useRef(onChange);
+  latestOnChange.current = onChange;
+
+  useEffect(() => () => window.clearTimeout(timer.current), []);
+
+  const commit = (next: { path: string; listPath: string }, delay: number) => {
+    setDraft(next);
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(
+      () => latestOnChange.current(next),
+      delay,
+    );
+  };
 
   return (
     <div className='flex flex-col gap-4'>
@@ -435,7 +456,7 @@ export const ApiQueryEditor = ({
           onValueChange={(id) => {
             const example = API_EXAMPLES.find((entry) => entry.id === id);
             if (example) {
-              onChange({ path: example.path, listPath: example.listPath });
+              commit({ path: example.path, listPath: example.listPath }, 0);
             }
           }}>
           <SelectTrigger className='h-9'>
@@ -454,11 +475,15 @@ export const ApiQueryEditor = ({
       </OptionRow>
       <OptionRow label={t("stats.dashboard.api.path")}>
         <Input
+          aria-label={t("stats.dashboard.api.path")}
           className='h-9 font-mono text-xs'
-          onChange={(event) => onChange({ path: event.target.value, listPath })}
+          onChange={(event) =>
+            commit({ ...draft, path: event.target.value }, TYPING_SETTLE_MS)
+          }
+          onKeyDown={(event) => event.key === "Enter" && commit(draft, 0)}
           placeholder='/v1/analytics/hero-stats'
           spellCheck={false}
-          value={path}
+          value={draft.path}
         />
         <div className='flex flex-wrap gap-1'>
           {API_PLACEHOLDERS.map((placeholder) => (
@@ -466,7 +491,7 @@ export const ApiQueryEditor = ({
               className='rounded border bg-muted/50 px-1.5 py-0.5 font-mono text-[11px] hover:bg-accent'
               key={placeholder}
               onClick={() =>
-                onChange({ path: `${path}{${placeholder}}`, listPath })
+                commit({ ...draft, path: `${draft.path}{${placeholder}}` }, 0)
               }
               title={t(`stats.dashboard.api.placeholders.${placeholder}`)}
               type='button'>
@@ -478,10 +503,13 @@ export const ApiQueryEditor = ({
       <OptionRow label={t("stats.dashboard.api.listPath")}>
         <Input
           className='h-9 font-mono text-xs'
-          onChange={(event) => onChange({ path, listPath: event.target.value })}
+          onChange={(event) =>
+            commit({ ...draft, listPath: event.target.value }, TYPING_SETTLE_MS)
+          }
+          onKeyDown={(event) => event.key === "Enter" && commit(draft, 0)}
           placeholder={t("stats.dashboard.api.listPathPlaceholder")}
           spellCheck={false}
-          value={listPath}
+          value={draft.listPath}
         />
       </OptionRow>
       <p className='text-muted-foreground text-xs leading-relaxed'>
