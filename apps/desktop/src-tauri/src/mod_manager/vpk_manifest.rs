@@ -209,6 +209,7 @@ impl ProfileVpkManifest {
   /// which never writes -- notably [`Self::validate_tree`], which walks backup
   /// snapshots that must come out byte-identical.
   pub fn open_for_write(addons_path: &Path) -> Result<Self, Error> {
+    crate::mod_manager::file_permissions::prepare_profile_for_write(addons_path)?;
     Self::reconcile_manifest_temp_file(addons_path)?;
     let manifest = Self::load(addons_path)?;
     Self::recover_pending_staging(addons_path, &manifest)?;
@@ -307,6 +308,8 @@ impl ProfileVpkManifest {
       ))
     })?;
 
+    crate::mod_manager::file_permissions::ensure_file_writable(&manifest_path)?;
+    crate::mod_manager::file_permissions::ensure_file_writable(&temp_path)?;
     fs::write(&temp_path, manifest_json)?;
     if let Err(err) = fs::rename(&temp_path, &manifest_path) {
       if err.kind() == ErrorKind::AlreadyExists {

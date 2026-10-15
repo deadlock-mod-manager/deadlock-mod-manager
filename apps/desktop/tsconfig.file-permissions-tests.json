@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "types": ["bun"], "incremental": false },
+  "include": ["src/lib/file-permissions.test.ts", "src/lib/gameinfo-reset.test.ts"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -23,12 +23,7 @@ impl VpkManager {
     ordered_mods: &[ShardAssignment],
     base: &Path,
   ) -> Result<PendingVpkOperation<ShardReorderOutcome>, Error> {
-    if !base.exists() {
-      return Err(Error::Io(std::io::Error::new(
-        std::io::ErrorKind::NotFound,
-        format!("Addons path not found: {base:?}"),
-      )));
-    }
+    crate::mod_manager::file_permissions::prepare_profile_for_write(base)?;
 
     log::info!(
       "Starting sharded VPK reordering for {} mods",

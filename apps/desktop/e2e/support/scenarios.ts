@@ -16,6 +16,10 @@ import { prepareConflictWorld } from "./conflict-fixtures";
 import { prepareFilesystemWorld } from "./filesystem-fixtures";
 import { prepareManifestRepairWorld } from "./manifest-repair-fixtures";
 import { prepareModFolderRepairWorld } from "./mod-folder-repair-fixtures";
+import {
+  prepareGameinfoRecoveryWorld,
+  VANILLA_GAMEINFO,
+} from "./gameinfo-recovery-fixtures";
 import { prepareMissingVpkWorld } from "./missing-vpk-fixtures";
 import { prepareBrokenStateWorld } from "./broken-state-fixtures";
 import { prepareShardWorld } from "./shard-fixtures";
@@ -211,6 +215,39 @@ const heroSkins: Definition = {
   prepare: async (world) => prepareHeroSkinsWorld(world),
 };
 export const scenarios = {
+  "gameinfo-readonly-launch": {
+    ...defaults,
+    family: "filesystem",
+    spec: "gameinfo-recovery",
+    phases: ["recover"],
+    platforms: ["win32"],
+    routes: profileRoutes,
+    prepare: prepareGameinfoRecoveryWorld,
+  },
+  "addons-missing-enable": {
+    ...defaults,
+    family: "filesystem",
+    spec: "gameinfo-recovery",
+    phases: ["recover"],
+    routes: profileRoutes,
+    prepare: prepareGameinfoRecoveryWorld,
+  },
+  "gameinfo-reset-live": {
+    ...defaults,
+    family: "settings",
+    spec: "gameinfo-recovery",
+    phases: ["recover"],
+    routes: async () => () => [
+      { method: "GET", path: "/api/v2/feature-flags", status: 200, body: "[]" },
+      {
+        method: "GET",
+        path: "/artifacts/deadlock/gameinfo.gi",
+        status: 200,
+        body: VANILLA_GAMEINFO,
+      },
+    ],
+    prepare: prepareGameinfoRecoveryWorld,
+  },
   "filesystem-mod-folder-repair": {
     ...filesystem,
     spec: "mod-folder-repair",

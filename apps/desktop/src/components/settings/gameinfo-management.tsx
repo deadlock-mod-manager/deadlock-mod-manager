@@ -17,7 +17,7 @@ import {
   RotateCcw,
   Shield,
 } from "@deadlock-mods/ui/icons";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -25,6 +25,9 @@ import { useConfirm } from "@/components/providers/alert-dialog";
 import { getErrorMessage } from "@/lib/errors";
 import { STALE_TIME_POLL } from "@/lib/query-constants";
 import { invokeGuarded } from "@/lib/game-guard";
+import { refreshGameinfoState } from "@/lib/gameinfo-reset";
+import { usePersistedStore } from "@/lib/store";
+import { resetToVanilla } from "@/lib/tauri-commands";
 
 type GameInfoStatus = {
   current_hash: string;
@@ -98,6 +101,27 @@ const GameInfoManagement = () => {
   const { t } = useTranslation();
   const confirm = useConfirm();
   const [isOperating, setIsOperating] = useState(false);
+  const queryClient = useQueryClient();
+  const reset = useMutation({
+    mutationFn: resetToVanilla,
+    meta: { skipGlobalErrorHandler: true },
+    onSuccess: async (source) => {
+      await refreshGameinfoState(
+        queryClient,
+        usePersistedStore.getState().setLastLaunchVanilla,
+      );
+      toast.success(
+        t(
+          source === "backup" ? "game.resetSuccessBackup" : "game.resetSuccess",
+        ),
+      );
+    },
+    onError: (error) =>
+      toast.error(t("game.resetFailed"), {
+        description: getErrorMessage(error),
+      }),
+  });
+  const operating = isOperating || reset.isPending;
 
   const { data: status, refetch } = useQuery<GameInfoStatus>({
     queryKey: ["gameinfo-status"],
@@ -160,16 +184,7 @@ const GameInfoManagement = () => {
       return;
     }
 
-    try {
-      setIsOperating(true);
-      await invokeGuarded("reset_to_vanilla");
-      await refetch();
-      toast.success(t("game.resetSuccess"));
-    } catch (error) {
-      toast.error(`Failed to reset to vanilla: ${getErrorMessage(error)}`);
-    } finally {
-      setIsOperating(false);
-    }
+    reset.mutate();
   };
 
   const handleValidatePatch = async () => {
@@ -285,7 +300,7 @@ const GameInfoManagement = () => {
 
       <div className='flex flex-wrap gap-3'>
         <Button
-          disabled={isOperating || status.backup_exists}
+          disabled={operating || status.backup_exists}
           onClick={handleBackupGameInfo}
           size='default'
           variant='outline'>
@@ -294,7 +309,7 @@ const GameInfoManagement = () => {
         </Button>
 
         <Button
-          disabled={isOperating || !status.backup_exists}
+          disabled={operating || !status.backup_exists}
           onClick={handleRestoreBackup}
           size='default'
           variant='outline'>
@@ -303,7 +318,7 @@ const GameInfoManagement = () => {
         </Button>
 
         <Button
-          disabled={isOperating}
+          disabled={operating}
           onClick={handleResetToVanilla}
           size='default'
           variant='outline'>
@@ -312,7 +327,7 @@ const GameInfoManagement = () => {
         </Button>
 
         <Button
-          disabled={isOperating}
+          disabled={operating}
           onClick={handleValidatePatch}
           size='default'
           variant='outline'>
@@ -321,7 +336,7 @@ const GameInfoManagement = () => {
         </Button>
 
         <Button
-          disabled={isOperating}
+          disabled={operating}
           onClick={handleOpenEditor}
           size='default'
           variant='outline'>

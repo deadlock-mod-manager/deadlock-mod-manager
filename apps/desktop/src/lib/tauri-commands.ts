@@ -36,7 +36,7 @@ export const restoreGameInfoBackup = async () => {
 };
 
 export const resetToVanilla = async () => {
-  return await invokeGuarded("reset_to_vanilla");
+  return await invokeGuarded<"api" | "backup">("reset_to_vanilla");
 };
 
 export const validateGameInfoPatch = async (expectedVanilla: boolean) => {
@@ -54,7 +54,7 @@ export const getInstalledBuildId = () =>
   invoke<number | null>("get_installed_build_id");
 
 export const resyncProfileShards = (profileFolder: string | null) =>
-  invoke<void>("resync_profile_shards", { profileFolder });
+  invokeGuarded<void>("resync_profile_shards", { profileFolder });
 
 export const openGameInfoEditor = async () => {
   return await invoke("open_gameinfo_editor");
