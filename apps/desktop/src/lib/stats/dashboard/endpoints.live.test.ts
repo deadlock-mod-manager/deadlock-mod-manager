@@ -1,6 +1,7 @@
 import { describe, expect, it, mock } from "bun:test";
 import path from "node:path";
 import { z } from "zod";
+import { parseJson } from "./api-query";
 
 /**
  * Loads every dashboard preset and API example against the real deadlock-api
@@ -17,14 +18,14 @@ const BASE_URL =
   process.env.DASHBOARD_API_URL ?? "https://api.deadlock-api.com";
 const TIMEOUT_MS = 240_000;
 
-const getJson = async (requestPath: string): Promise<unknown> => {
+const getJson = async (requestPath: string) => {
   const response = await fetch(`${BASE_URL}${requestPath}`, {
     headers: { Accept: "application/json" },
   });
   if (!response.ok) {
     throw new Error(`HTTP ${response.status} for ${requestPath}`);
   }
-  return response.json();
+  return parseJson(await response.json());
 };
 
 const openApiSchema = z.object({

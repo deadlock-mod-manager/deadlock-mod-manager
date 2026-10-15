@@ -100,7 +100,13 @@ const TabSettings = ({
           <Pencil className='h-3.5 w-3.5' />
         </Button>
       </PopoverTrigger>
-      <PopoverContent align='start' className='flex w-72 flex-col gap-3'>
+      {/* Portalled, but React still bubbles its key events through the tab
+          list, whose roving focus would take Home, End and the arrows from the
+          name field and move focus onto a tab, closing this popover. */}
+      <PopoverContent
+        align='start'
+        className='flex w-72 flex-col gap-3'
+        onKeyDown={(event) => event.stopPropagation()}>
         <form
           className='flex gap-2'
           onSubmit={(event) => {
@@ -246,6 +252,7 @@ export const DashboardTabs = ({
           <DropdownMenuTrigger asChild>
             <Button
               className='h-9 shrink-0 gap-1.5 rounded-full'
+              data-testid='stats-add-tab'
               size='sm'
               variant='outline'>
               <Plus className='h-4 w-4' />
