@@ -1,4 +1,16 @@
 import type { LocalMod, ModFileTree } from "@/types/mods";
+import type { VpkManifest } from "@/types/profiles";
+
+export const previousInstallSelection = (
+  mod: Pick<LocalMod, "remoteId" | "installedVpks" | "installedFileTree">,
+  manifest?: VpkManifest,
+): ModFileTree | undefined => {
+  const entry = manifest?.mods[mod.remoteId];
+  const wasInstalled =
+    (mod.installedVpks?.length ?? 0) > 0 ||
+    (entry?.disabledVpks.length ?? 0) > 0;
+  return wasInstalled ? mod.installedFileTree : undefined;
+};
 
 /** Selected downloads with one VPK each need no further file choice. */
 export const requiresFileSelection = (tree: ModFileTree): boolean => {
