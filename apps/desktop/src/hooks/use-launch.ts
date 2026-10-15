@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useTranslation } from "react-i18next";
+import { useStartGame } from "@/components/providers/launch-repair";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { MOD_PATHS_KEY } from "@/hooks/use-game-config-alert";
 import { stopHeroDetection } from "@/hooks/use-hero-detection";
@@ -33,6 +34,7 @@ export const useLaunch = () => {
   const setLastLaunchVanilla = usePersistedStore((s) => s.setLastLaunchVanilla);
   const queryClient = useQueryClient();
   const confirm = useConfirm();
+  const startGame = useStartGame();
   const { randomizeSkins } = useSkinRandomizer();
   const launchVanillaNoArgs =
     settings?.["launch-vanilla-no-args"]?.enabled ?? false;
@@ -122,7 +124,7 @@ export const useLaunch = () => {
       });
 
       try {
-        await invoke("start_game", {
+        const launched = await startGame({
           vanilla,
           additionalArgs:
             vanilla && launchVanillaNoArgs
@@ -133,6 +135,10 @@ export const useLaunch = () => {
                 ),
           profileFolder,
         });
+        if (!launched) {
+          attempt.finish("cancelled");
+          return;
+        }
       } finally {
         unlisten();
       }

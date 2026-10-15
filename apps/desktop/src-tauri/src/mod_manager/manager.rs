@@ -203,6 +203,7 @@ impl ModManager {
       self.toggle_mods(vanilla)?;
     } else {
       log::info!("Enabling mods for profile: {:?}...", profile_folder);
+      self.validate_modded_launch_files(profile_folder.as_deref())?;
       // A profile that still holds a pre-sharding layout must be spread across
       // shards before its search paths are written, or the extra `citadel/addonsN`
       // lines would be missing and the engine would silently drop everything
@@ -214,6 +215,37 @@ impl ModManager {
     self.reapply_performance_config();
 
     self.steam_manager.game_launch_request(&additional_args)
+  }
+
+  fn validate_modded_launch_files(&self, profile_folder: Option<&str>) -> Result<(), Error> {
+    let base = self.get_addons_path(profile_folder)?;
+    // Recover staged files before checking, and check before migration can
+    // reconcile missing manifest claims away.
+    let manifest = if base.exists() {
+      ProfileVpkManifest::open_for_write(&base)?
+    } else {
+      ProfileVpkManifest::load(&base)?
+    };
+    let affected_mods: Vec<_> = manifest
+      .mods
+      .iter()
+      .filter(|(mod_id, entry)| {
+        entry.enabled && missing_mod_files(mod_id, entry, &base, None).is_some()
+      })
+      .map(|(mod_id, _)| crate::errors::MissingLaunchMod {
+        id: mod_id.clone(),
+        name: self
+          .mod_repository
+          .get_mod(mod_id)
+          .map(|mod_info| mod_info.name.clone())
+          .unwrap_or_else(|| mod_id.clone()),
+      })
+      .collect();
+    if affected_mods.is_empty() {
+      Ok(())
+    } else {
+      Err(Error::MissingEnabledModFiles(affected_mods))
+    }
   }
 
   /// Puts the chosen performance config back into gameinfo.gi, which a game
@@ -563,6 +595,130 @@ mod tests {
     let path = temp.path().join("citadel").join("addons");
     fs::create_dir_all(&path).unwrap();
     crate::mod_manager::shard::ProfileBase::new(path).unwrap()
+  }
+
+  fn launch_world() -> (tempfile::TempDir, ModManager, ProfileBase) {
+    let game = game_dir();
+    fs::write(
+      game.path().join("game/citadel/gameinfo.gi"),
+      "\"GameInfo\"\n{\n\"FileSystem\"\n{\nSearchPaths\n{\nGame citadel\n}\n}\n}\n",
+    )
+    .unwrap();
+    let steam = game.path().join("steam");
+    fs::create_dir_all(steam.join("steamapps")).unwrap();
+    for executable in ["steam.exe", "steam.sh", "steam"] {
+      fs::write(steam.join(executable), b"fixture").unwrap();
+    }
+    let mut manager = test_manager(game.path());
+    manager.set_steam_path(steam).unwrap();
+    let base = manager.get_addons_path(Some("active")).unwrap();
+    fs::create_dir_all(base.path()).unwrap();
+    (game, manager, base)
+  }
+
+  fn launch_manifest(base: &ProfileBase) -> ProfileVpkManifest {
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_enabled(
+      "42",
+      vec!["pak01_dir.vpk".into(), "pak02_dir.vpk".into()],
+      vec!["skin.vpk".into(), "sound.vpk".into()],
+      Some(0),
+      ShardIndex::new(2).unwrap(),
+    );
+    manifest.save(base).unwrap();
+    manifest
+  }
+
+  #[test]
+  fn modded_launch_with_all_files_present_reapplies_gameinfo() {
+    let (game, mut manager, base) = launch_world();
+    launch_manifest(&base);
+    let shard = base.shard_dir(ShardIndex::new(2).unwrap());
+    fs::create_dir_all(&shard).unwrap();
+    write_vpk(&shard, "pak01_dir.vpk");
+    write_vpk(&shard, "pak02_dir.vpk");
+
+    assert!(
+      manager
+        .prepare_game_launch(false, String::new(), Some("active".into()))
+        .is_ok()
+    );
+    let gameinfo = fs::read_to_string(game.path().join("game/citadel/gameinfo.gi")).unwrap();
+    assert!(gameinfo.contains("citadel/addons/active"));
+    assert!(gameinfo.contains("citadel/addons2/active"));
+  }
+
+  #[test]
+  fn modded_launch_with_missing_enabled_files_names_mod_and_preserves_gameinfo() {
+    let (game, mut manager, base) = launch_world();
+    let manifest = launch_manifest(&base);
+    let shard = base.shard_dir(ShardIndex::new(2).unwrap());
+    fs::create_dir_all(&shard).unwrap();
+    write_vpk(&shard, "pak01_dir.vpk");
+    manager.mod_repository.add_mod(Mod {
+      id: "42".into(),
+      name: "Fixture skin and sound".into(),
+      is_map: false,
+      installed_vpks: Vec::new(),
+      file_tree: None,
+      install_order: None,
+      original_vpk_names: Vec::new(),
+    });
+    let gameinfo = game.path().join("game/citadel/gameinfo.gi");
+    let before = fs::read(&gameinfo).unwrap();
+
+    let result = manager.prepare_game_launch(false, String::new(), Some("active".into()));
+    assert!(matches!(&result, Err(Error::MissingEnabledModFiles(mods))
+      if mods.len() == 1 && mods[0].id == "42" && mods[0].name == "Fixture skin and sound"));
+    assert_eq!(fs::read(gameinfo).unwrap(), before);
+    assert_eq!(ProfileVpkManifest::load(&base).unwrap(), manifest);
+  }
+
+  #[test]
+  fn modded_launch_with_missing_disabled_files_is_allowed() {
+    let (_game, mut manager, base) = launch_world();
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_disabled("42", vec!["42_skin.vpk".into()], vec!["skin.vpk".into()]);
+    manifest.save(&base).unwrap();
+
+    assert!(
+      manager
+        .prepare_game_launch(false, String::new(), Some("active".into()))
+        .is_ok()
+    );
+  }
+
+  #[test]
+  fn vanilla_launch_does_not_check_missing_enabled_files() {
+    let (_game, mut manager, base) = launch_world();
+    launch_manifest(&base);
+
+    assert!(
+      manager
+        .prepare_game_launch(true, String::new(), Some("active".into()))
+        .is_ok()
+    );
+  }
+
+  #[test]
+  fn modded_launch_reports_all_missing_mods_after_repository_hydration() {
+    let (_game, mut manager, base) = launch_world();
+    let mut manifest = launch_manifest(&base);
+    manifest.mark_enabled(
+      "43",
+      vec!["pak03_dir.vpk".into()],
+      vec!["other.vpk".into()],
+      Some(1),
+      ShardIndex::FIRST,
+    );
+    manifest.save(&base).unwrap();
+    manager
+      .hydrate_mods_from_manifest(Some("active".into()))
+      .unwrap();
+
+    let result = manager.prepare_game_launch(false, String::new(), Some("active".into()));
+    assert!(matches!(result, Err(Error::MissingEnabledModFiles(mods))
+      if mods.iter().map(|mod_info| mod_info.id.as_str()).collect::<Vec<_>>() == vec!["42", "43"]));
   }
 
   #[test]
