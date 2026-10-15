@@ -1,5 +1,6 @@
 use crate::app_runtime::AppHandle;
 use crate::errors::Error;
+use crate::mod_manager::repair_backup::{REPAIR_BACKUP_PREFIX, restore_repair_backup};
 use crate::mod_manager::shard;
 use crate::mod_manager::vpk_manifest::ProfileVpkManifest;
 use chrono::{DateTime, Local};
@@ -55,6 +56,7 @@ impl RestoreStrategy {
 pub struct AddonsBackupManager {
   game_path: Option<PathBuf>,
   app_handle: Option<AppHandle>,
+  repair_directory: Option<PathBuf>,
 }
 
 impl AddonsBackupManager {
@@ -62,6 +64,7 @@ impl AddonsBackupManager {
     Self {
       game_path: None,
       app_handle: None,
+      repair_directory: None,
     }
   }
 
@@ -71,6 +74,10 @@ impl AddonsBackupManager {
 
   pub fn set_game_path(&mut self, path: PathBuf) {
     self.game_path = Some(path);
+  }
+
+  pub fn set_repair_directory(&mut self, path: PathBuf) {
+    self.repair_directory = Some(path);
   }
 
   /// Create a backup without requiring a mutable reference to self
@@ -422,44 +429,41 @@ impl AddonsBackupManager {
   pub fn list_backups(&self) -> Result<Vec<AddonsBackup>, Error> {
     let backup_dir = self.get_backup_directory()?;
 
-    if !backup_dir.exists() {
-      log::info!("Backup directory does not exist, returning empty list");
-      return Ok(Vec::new());
-    }
-
     let mut backups = Vec::new();
+    let mut directories = vec![backup_dir];
+    directories.extend(self.repair_directory.clone());
+    for directory in directories.into_iter().filter(|path| path.is_dir()) {
+      for entry in fs::read_dir(&directory)? {
+        let entry = entry?;
+        let path = entry.path();
 
-    for entry in fs::read_dir(&backup_dir)? {
-      let entry = entry?;
-      let path = entry.path();
+        if path.is_dir()
+          && let Some(filename) = path.file_name().and_then(|n| n.to_str())
+          && filename.starts_with("addons-backup-")
+        {
+          let stats = Self::tree_stats(&path).unwrap_or_default();
 
-      // Look for directories (backups are now directories, not files)
-      if path.is_dir()
-        && let Some(filename) = path.file_name().and_then(|n| n.to_str())
-        && filename.starts_with("addons-backup-")
-      {
-        let stats = Self::tree_stats(&path).unwrap_or_default();
+          let created_at = if let Some(timestamp) = self.parse_backup_filename(filename) {
+            timestamp
+          } else {
+            let metadata = fs::metadata(&path)?;
+            metadata
+              .created()
+              .or_else(|_| metadata.modified())
+              .unwrap_or(SystemTime::now())
+              .duration_since(UNIX_EPOCH)
+              .unwrap_or_default()
+              .as_secs()
+          };
 
-        let created_at = if let Some(timestamp) = self.parse_backup_filename(filename) {
-          timestamp
-        } else {
-          let metadata = fs::metadata(&path)?;
-          metadata
-            .created()
-            .or_else(|_| metadata.modified())
-            .unwrap_or(SystemTime::now())
-            .duration_since(UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs()
-        };
-
-        backups.push(AddonsBackup {
-          file_name: filename.to_string(),
-          file_path: path.to_string_lossy().to_string(),
-          created_at,
-          file_size: stats.bytes,
-          addons_count: stats.vpks,
-        });
+          backups.push(AddonsBackup {
+            file_name: filename.to_string(),
+            file_path: path.to_string_lossy().to_string(),
+            created_at,
+            file_size: stats.bytes,
+            addons_count: stats.vpks,
+          });
+        }
       }
     }
 
@@ -482,6 +486,10 @@ impl AddonsBackupManager {
 
     if !backup_path.exists() {
       return Err(Error::BackupNotFound);
+    }
+
+    if file_name.starts_with(REPAIR_BACKUP_PREFIX) {
+      return restore_repair_backup(&backup_path, &self.get_addons_path()?);
     }
 
     let addons_path = self.get_addons_path()?;
@@ -608,7 +616,11 @@ impl AddonsBackupManager {
   }
 
   pub fn prune_old_backups(&self, max_count: u32) -> Result<u32, Error> {
-    let backups = self.list_backups()?;
+    let backups: Vec<_> = self
+      .list_backups()?
+      .into_iter()
+      .filter(|backup| !backup.file_name.starts_with(REPAIR_BACKUP_PREFIX))
+      .collect();
     let total = backups.len() as u32;
 
     if max_count == 0 || total <= max_count {
@@ -675,7 +687,16 @@ impl AddonsBackupManager {
         "Invalid addons backup name".to_string(),
       ));
     }
-    Ok(self.get_backup_directory()?.join(file_name))
+    let directory = if file_name.starts_with(REPAIR_BACKUP_PREFIX) {
+      self
+        .repair_directory
+        .as_ref()
+        .ok_or(Error::AppHandleNotInitialized)?
+        .clone()
+    } else {
+      self.get_backup_directory()?
+    };
+    Ok(directory.join(file_name))
   }
 }
 

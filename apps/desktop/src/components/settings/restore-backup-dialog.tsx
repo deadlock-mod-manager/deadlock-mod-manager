@@ -32,9 +32,10 @@ export const RestoreBackupDialog = ({
 }: RestoreBackupDialogProps) => {
   const { t } = useTranslation();
   const [strategy, setStrategy] = useState<RestoreStrategy>("replace");
+  const isRepair = backupFileName.startsWith("addons-backup-repair-");
 
   const handleConfirm = () => {
-    onConfirm(strategy);
+    onConfirm(isRepair ? "merge" : strategy);
     onOpenChange(false);
   };
 
@@ -44,56 +45,65 @@ export const RestoreBackupDialog = ({
         <DialogHeader>
           <DialogTitle>{t("settings.restoreBackup")}</DialogTitle>
           <DialogDescription>
-            {t("settings.restoreStrategyWarning")}
+            {t(
+              isRepair
+                ? "repairModFolder.restoreWarning"
+                : "settings.restoreStrategyWarning",
+            )}
           </DialogDescription>
         </DialogHeader>
 
         <div className='space-y-4 py-4'>
-          <div className='space-y-2'>
-            <Label className='text-sm font-medium'>
-              {t("settings.restoreStrategy")}
-            </Label>
+          {!isRepair && (
+            <div className='space-y-2'>
+              <Label className='text-sm font-medium'>
+                {t("settings.restoreStrategy")}
+              </Label>
 
-            <RadioGroup
-              value={strategy}
-              onValueChange={(value) => setStrategy(value as RestoreStrategy)}>
-              <div className='space-y-3'>
-                <div className='flex items-start space-x-3 rounded-lg border p-4 hover:bg-accent'>
-                  <RadioGroupItem
-                    value='replace'
-                    id='replace'
-                    className='mt-1'
-                  />
-                  <div className='flex-1 space-y-1'>
-                    <Label
-                      htmlFor='replace'
-                      className='flex items-center gap-2 font-medium cursor-pointer'>
-                      <TrashIcon className='h-4 w-4 text-destructive' />
-                      {t("settings.restoreStrategyReplace")}
-                    </Label>
-                    <p className='text-muted-foreground text-sm'>
-                      {t("settings.restoreStrategyReplaceDescription")}
-                    </p>
+              <RadioGroup
+                value={strategy}
+                onValueChange={(value) => {
+                  if (value === "replace" || value === "merge")
+                    setStrategy(value);
+                }}>
+                <div className='space-y-3'>
+                  <div className='flex items-start space-x-3 rounded-lg border p-4 hover:bg-accent'>
+                    <RadioGroupItem
+                      value='replace'
+                      id='replace'
+                      className='mt-1'
+                    />
+                    <div className='flex-1 space-y-1'>
+                      <Label
+                        htmlFor='replace'
+                        className='flex items-center gap-2 font-medium cursor-pointer'>
+                        <TrashIcon className='h-4 w-4 text-destructive' />
+                        {t("settings.restoreStrategyReplace")}
+                      </Label>
+                      <p className='text-muted-foreground text-sm'>
+                        {t("settings.restoreStrategyReplaceDescription")}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className='flex items-start space-x-3 rounded-lg border p-4 hover:bg-accent'>
+                    <RadioGroupItem value='merge' id='merge' className='mt-1' />
+                    <div className='flex-1 space-y-1'>
+                      <Label
+                        htmlFor='merge'
+                        className='flex items-center gap-2 font-medium cursor-pointer'>
+                        <ArrowsClockwiseIcon className='h-4 w-4 text-primary' />
+                        {t("settings.restoreStrategyMerge")}
+                      </Label>
+                      <p className='text-muted-foreground text-sm'>
+                        {t("settings.restoreStrategyMergeDescription")}
+                      </p>
+                    </div>
                   </div>
                 </div>
-
-                <div className='flex items-start space-x-3 rounded-lg border p-4 hover:bg-accent'>
-                  <RadioGroupItem value='merge' id='merge' className='mt-1' />
-                  <div className='flex-1 space-y-1'>
-                    <Label
-                      htmlFor='merge'
-                      className='flex items-center gap-2 font-medium cursor-pointer'>
-                      <ArrowsClockwiseIcon className='h-4 w-4 text-primary' />
-                      {t("settings.restoreStrategyMerge")}
-                    </Label>
-                    <p className='text-muted-foreground text-sm'>
-                      {t("settings.restoreStrategyMergeDescription")}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </RadioGroup>
-          </div>
+              </RadioGroup>
+            </div>
+          )}
 
           <div className='rounded-lg border border-yellow-500/50 bg-yellow-500/10 p-3'>
             <p className='text-sm'>

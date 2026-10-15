@@ -13,14 +13,14 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 57 : 53);
+    expect(ids).toHaveLength(windows ? 58 : 54);
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
       expect(scenarioSpec(id)).toContain("./specs/");
       expect(new Set(scenarioPhases(id)).size).toBe(scenarioPhases(id).length);
     }
     expect(selectScenarios("gamebanana")).toHaveLength(15);
-    expect(selectScenarios("filesystem")).toHaveLength(windows ? 9 : 8);
+    expect(selectScenarios("filesystem")).toHaveLength(windows ? 10 : 9);
     expect(selectScenarios("interchange")).toEqual(["grimoire-import"]);
     expect(selectScenarios("skins")).toEqual(["hero-skins-active"]);
     expect(selectScenarios("shards")).toEqual([
@@ -34,6 +34,12 @@ describe("scenario selection", () => {
     ]);
     expect(scenarios["profiles-pointer"].nativeInput).toBe(true);
     expect(scenarios["filesystem-manifest-repair"].nativeInput).toBe(false);
+    expect(scenarioPhases("filesystem-mod-folder-repair")).toEqual([
+      "repair-folder",
+      "restart-folder",
+      "restart-restored-folder",
+    ]);
+    expect(scenarios["filesystem-mod-folder-repair"].nativeInput).toBe(false);
     expect(scenarios["conflicts-resolve"].nativeInput).toBe(false);
     expect(scenarios["filesystem-crash-placed"].exit("mutate")).toBe("crash");
     expect(scenarios["filesystem-manifest-repair"].exit("repair")).toBe(

@@ -73,6 +73,7 @@ import { PluginList } from "@/components/settings/plugin-list";
 import { MatchSyncSettings } from "@/components/settings/match-sync-settings";
 import { ModelPreviewToggle } from "@/components/settings/model-preview-toggle";
 import { NukeReinstall } from "@/components/settings/nuke-reinstall";
+import { RepairModFolder } from "@/components/settings/repair-mod-folder";
 import PrivacySettings from "@/components/settings/privacy-settings";
 import { ProxySettings } from "@/components/settings/proxy-settings";
 import Section, { SectionSkeleton } from "@/components/settings/section";
@@ -923,6 +924,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
                     {t("settings.troubleshootingDescription")}
                   </p>
                   <NetworkDiagnosticsButton className='w-fit' />
+                  <RepairModFolder />
                 </div>
 
                 <div className='relative overflow-hidden rounded-lg border border-destructive/30 bg-gradient-to-b from-destructive/8 to-destructive/3'>

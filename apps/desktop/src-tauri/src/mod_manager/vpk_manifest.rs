@@ -169,7 +169,7 @@ impl ProfileVpkManifest {
       None
     };
 
-    let mut manifest = match source_path {
+    let manifest: Self = match source_path {
       Some(path) => {
         let manifest_json = fs::read_to_string(&path)?;
         serde_json::from_str(&manifest_json).map_err(|e| {
@@ -182,19 +182,23 @@ impl ProfileVpkManifest {
       None => Self::default(),
     };
 
-    if manifest.version > CURRENT_MANIFEST_VERSION {
+    manifest.validate_version(addons_path)
+  }
+
+  pub(crate) fn validate_version(mut self, addons_path: &Path) -> Result<Self, Error> {
+    if self.version > CURRENT_MANIFEST_VERSION {
       return Err(Error::InvalidInput(format!(
         "VPK manifest at {} uses unsupported version {}",
-        manifest_path.display(),
-        manifest.version
+        addons_path.join(MANIFEST_FILENAME).display(),
+        self.version
       )));
     }
 
-    if manifest.version < CURRENT_MANIFEST_VERSION {
-      manifest.version = CURRENT_MANIFEST_VERSION;
+    if self.version < CURRENT_MANIFEST_VERSION {
+      self.version = CURRENT_MANIFEST_VERSION;
     }
 
-    Ok(manifest)
+    Ok(self)
   }
 
   /// Read a profile's manifest and repair whatever a crashed operation left
@@ -249,11 +253,12 @@ impl ProfileVpkManifest {
     let base = ProfileBase::from_snapshot(addons_path)?;
     let clear_staging = addons_path.join(CLEAR_STAGING_DIR);
     if clear_staging.is_dir() {
-      if manifest.mods.is_empty() {
-        fs::remove_dir_all(&clear_staging)?;
+      let mode = if manifest.mods.is_empty() {
+        RecoveryMode::Discard
       } else {
-        recover_staging_directory(&base, &clear_staging, RecoveryMode::Strict, manifest)?;
-      }
+        RecoveryMode::Strict
+      };
+      recover_staging_directory(&base, &clear_staging, mode, manifest)?;
     }
 
     let reorder_staging = addons_path.join(REORDER_STAGING_DIR);
@@ -280,11 +285,12 @@ impl ProfileVpkManifest {
       else {
         continue;
       };
-      if manifest.mods.contains_key(mod_id) {
-        recover_staging_directory(&base, &path, RecoveryMode::Strict, manifest)?;
+      let mode = if manifest.mods.contains_key(mod_id) {
+        RecoveryMode::Strict
       } else {
-        fs::remove_dir_all(path)?;
-      }
+        RecoveryMode::Discard
+      };
+      recover_staging_directory(&base, &path, mode, manifest)?;
     }
     Ok(())
   }
