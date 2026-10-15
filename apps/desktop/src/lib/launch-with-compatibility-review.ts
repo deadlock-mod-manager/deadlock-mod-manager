@@ -1,13 +1,12 @@
 import { isTauriError } from "@/types/tauri";
 
 export async function launchWithCompatibilityReview(
-  startGame: () => Promise<void>,
+  startGame: () => Promise<boolean | void>,
   review: () => Promise<boolean>,
   skipReview: boolean,
 ): Promise<boolean> {
   try {
-    await startGame();
-    return true;
+    return (await startGame()) !== false;
   } catch (error) {
     if (
       skipReview ||
@@ -17,7 +16,6 @@ export async function launchWithCompatibilityReview(
       throw error;
     }
     if (!(await review())) return false;
-    await startGame();
-    return true;
+    return (await startGame()) !== false;
   }
 }

@@ -92,6 +92,16 @@ describe("launchWithCompatibilityReview", () => {
     expect(review).not.toHaveBeenCalled();
   });
 
+  it("reports a launch the player cancelled as not launched", async () => {
+    const startGame = mock(async () => false);
+    const review = mock(async () => true);
+
+    expect(await launchWithCompatibilityReview(startGame, review, false)).toBe(
+      false,
+    );
+    expect(review).not.toHaveBeenCalled();
+  });
+
   it("does not retry unrelated launch failures", async () => {
     const failure = { kind: "gameLaunchFailed", message: "Steam unavailable" };
     const startGame = mock(async () => {

@@ -1,7 +1,7 @@
 import { isTauriError } from "@/types/tauri";
 
-export function getLaunchErrorMessage(
-  error: unknown,
+export function getLaunchErrorMessage<T>(
+  error: T,
   gameLaunchFailedMessage: string,
   fallbackMessage: string,
 ): string {
