@@ -2985,6 +2985,11 @@
     "resetOnboardingSuccess": "Onboarding will be shown on next launch"
   },
   "update": {
+    "installFailed": "Could not install the update",
+    "missingTarget": "No update package is available for this installation",
+    "failureContext": "Channel: {{channel}} · Runtime: {{runtime}} · Package: {{installer}}",
+    "downloadManually": "Download manually",
+    "openDownloadsFailed": "Could not open the downloads page",
     "available": "Update Available",
     "newVersionAvailable": "A new version ({{version}}) is available. You are currently on version {{currentVersion}}.",
     "releaseNotes": "Release Notes",
