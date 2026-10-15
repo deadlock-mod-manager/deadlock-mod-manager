@@ -28,6 +28,13 @@
     "active": true,
     "createUpdaterArtifacts": true,
     "targets": ["deb", "rpm"],
+    "windows": {
+      "nsis": {
+        "installerIcon": "icons/icon.ico",
+        "headerImage": "installer/header.bmp",
+        "sidebarImage": "installer/sidebar.bmp"
+      }
+    },
     "linux": {
       "deb": {
         "depends": ["desktop-file-utils", "xdg-utils"]
