@@ -5,10 +5,15 @@ import { filesystemPaths } from "./filesystem-oracle";
 
 export const holdVpkLock = async (
   world: string,
+  filePath?: string,
 ): Promise<() => Promise<void>> => {
   if (process.platform !== "win32")
     throw new Error("The lock scenario requires Windows");
-  const { alpha, artifacts } = await filesystemPaths(world);
+  const { alpha, artifacts, citadel } = await filesystemPaths(world);
+  const target = path.resolve(filePath ?? path.join(alpha, "pak03_dir.vpk"));
+  const relative = path.relative(citadel, target);
+  if (relative.startsWith("..") || path.isAbsolute(relative))
+    throw new Error("The lock target must stay inside the owned game folder");
   const script = path.join(artifacts, "hold-vpk-lock.ps1");
   await writeFile(
     script,
@@ -23,7 +28,7 @@ export const holdVpkLock = async (
       "Bypass",
       "-File",
       script,
-      path.join(alpha, "pak03_dir.vpk"),
+      target,
     ],
     { windowsHide: true, stdio: ["ignore", "pipe", "pipe"] },
   );

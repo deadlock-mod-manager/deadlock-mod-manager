@@ -127,7 +127,10 @@ const spawnWdio = (environment: NodeJS.ProcessEnv, outputPath: string) =>
     cwd: desktopRoot,
     environment,
     outputPath,
-    timeoutMs: WDIO_PROCESS_TIMEOUT_MS,
+    timeoutMs:
+      environment.DMM_E2E_CASE_ID === "monkey"
+        ? 330_000
+        : WDIO_PROCESS_TIMEOUT_MS,
   });
 
 export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {

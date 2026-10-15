@@ -252,6 +252,60 @@ A user can delete VPKs from the addons folder behind DMM's back. A mod whose eve
 
 The oracle checks both copies of the active library and their broken flags, Beta's library, `enabledMods`, both manifests, and that the remaining payloads are exactly the seeded ones minus the deleted ones. Removing a mod from the library must never delete a file itself, and the mods store must stay byte-identical. My Mods must list exactly the kept mods, with one warning per broken mod. Artifacts are `missing-vpks-*.json`.
 
+## Monkey scenario
+
+`monkey` composes weighted random operations over the Alpha/Beta profile fixtures
+and the real `gamebanana-multipak-update` downloads. Run it after `e2e:build`:
+
+```powershell
+pnpm --filter @deadlock-mods/desktop e2e:test -- --case monkey --keep
+$env:DMM_E2E_SEED = "0"
+$env:DMM_E2E_STEPS = "25"
+pnpm --filter @deadlock-mods/desktop e2e:test -- --case monkey --keep
+```
+
+An unset seed defaults to `0`; the seed is always printed. Pass other seeds to
+explore new sequences. `DMM_E2E_SEED` accepts an unsigned
+32-bit integer (including zero); `DMM_E2E_STEPS` defaults to 25 (1–200). The seed,
+planned choices, concrete executed steps, deterministic skips and outcomes are
+written to `artifacts/monkey-steps.json` before and after each step. Replay a
+failure with the printed seed and original step count. In a POSIX shell:
+
+```bash
+DMM_E2E_SEED=887 pnpm --filter @deadlock-mods/desktop e2e:test -- --case monkey --keep
+```
+
+Updates/toggles have weight 6 each, profile switches 4, reorder/install/modded
+launch/Repair 2 each, and uninstall/vanilla launch/external add/external delete/
+Windows lock 1 each. Invalid operations are recorded as deterministic skips.
+Updates apply v1 → v2 to enabled multipak mods; repeat updates skip once current.
+Store reinstalls target removed Alpha remote mods. External deletion targets
+updated remote mods (fresh fixture metadata serves v2), checks the
+missing-files launch dialog, cancels without recording a launch, then reinstalls
+from the library. Seeded HTTP 401 failures verify rollback before retry. Lock
+faults release their handle in `finally` and skip outside Windows.
+
+Every step checks both profiles' membership, exact payload hashes, unique manifest
+ownership, disk/store enablement and locators, staging cleanup and unexpected
+HTTP requests. Deliberately added external VPKs remain exempt from ownership
+until Repair moves them to backup. Launch steps additionally check gameinfo
+paths. Reorder uses the real Rust command followed by switching away and back
+for normal frontend reconciliation. A final phase verifies the same state in a
+fresh process and after normal close. Crash checkpoints remain in their dedicated
+PID-armed filesystem scenarios; the monkey does not arm them.
+
+Seeds `2` (step 17), `3` (step 12), and `887` (step 10), at 25 steps on Windows, exposed a
+reinstall failure after updating a multipak mod and deleting one of its VPKs.
+Launch correctly blocks, but the subsequent library reinstall leaves the mod
+downloaded with no manifest ownership; logs include `wasInstalled: false` and
+invalid download status transitions. This is tracked in #891; the invariant and
+replay remain strict, so these seeds fail until it is fixed.
+
+The `monkey` family is included by `--suite all`, needs no native input, and is
+not in the CI matrix. To enable it later, add `monkey` to the workflow's family
+matrix and set `DMM_E2E_SEED` (and optionally `DMM_E2E_STEPS`) on that job. Retain
+the usual worlds/artifacts so a failing seed can be replayed.
+
 ## Qualification status
 
 All seven M5 cases passed repeated retry-free Windows/Wry worlds, with a fresh process for recovery and independent disk/store evidence. The final backup replace and merge cases each passed two consecutive worlds; the 100-mod shard case passed three consecutive worlds after fixing normal shutdown and preindexing the synthetic fixtures. Successful M5 worlds took approximately 20–26 seconds and had no unmatched fixture requests. These cases exposed two production defects that are fixed here: completed rollbacks left their transaction journal behind, and reorder bypassed the journal-aware manifest commit method. The Rust mod-manager suite and the harness suite both pass, including checks that reject wrong payloads, false shard ownership, unexpected files, and foreign/live crash markers.
