@@ -22,6 +22,7 @@ import { useTranslation } from "react-i18next";
 import { LaunchRepairDetails } from "@/components/launch-repair-details";
 import { useReinstallMod } from "@/hooks/use-reinstall-mod";
 import { getErrorMessage } from "@/lib/errors";
+import { withWritableRecovery } from "@/lib/file-permissions";
 import { invokeGuarded } from "@/lib/game-guard";
 import {
   type LaunchRepairFailure,
@@ -117,7 +118,9 @@ export function LaunchRepairProvider({ children }: { children: ReactNode }) {
           launch: async () => {
             checkProfile();
             try {
-              await invoke("start_game", request.args);
+              await withWritableRecovery(() =>
+                invoke("start_game", request.args),
+              );
             } catch (error) {
               if (
                 !isTauriError(error) ||
@@ -152,7 +155,7 @@ export function LaunchRepairProvider({ children }: { children: ReactNode }) {
       activeRequest.current = true;
       const snapshot = usePersistedStore.getState();
       try {
-        await invoke("start_game", args);
+        await withWritableRecovery(() => invoke("start_game", args));
         activeRequest.current = false;
         return true;
       } catch (error) {

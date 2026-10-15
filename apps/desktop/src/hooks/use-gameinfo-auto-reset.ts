@@ -2,13 +2,13 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { MOD_PATHS_KEY } from "@/hooks/use-game-config-alert";
 import {
   didGameExit,
   gameinfoAutoResetPauseCount,
   isGameinfoAutoResetPaused,
 } from "@/lib/gameinfo-auto-reset";
 import logger from "@/lib/logger";
+import { refreshGameinfoState } from "@/lib/gameinfo-reset";
 import { STALE_TIME_POLL } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import {
@@ -47,14 +47,18 @@ export const useGameinfoAutoReset = () => {
     meta: { skipGlobalErrorHandler: true },
     mutationFn: async () => {
       if (!(await gameinfoHasModPaths())) return;
-      await resetToVanilla();
+      const source = await resetToVanilla();
       // Same as a vanilla launch: the missing mod paths are on purpose, so the
       // "mods detached" banner stays quiet until the next modded launch.
-      setLastLaunchVanilla(true);
+      await refreshGameinfoState(queryClient, setLastLaunchVanilla);
       logger.info("Reset gameinfo.gi to vanilla after the game closed");
-      toast.info(t("settings.autoResetGameinfoSuccess"));
-      queryClient.invalidateQueries({ queryKey: MOD_PATHS_KEY });
-      queryClient.invalidateQueries({ queryKey: ["gameinfo-status"] });
+      toast.info(
+        t(
+          source === "backup"
+            ? "game.resetSuccessBackup"
+            : "settings.autoResetGameinfoSuccess",
+        ),
+      );
     },
     onError: (error) => {
       logger

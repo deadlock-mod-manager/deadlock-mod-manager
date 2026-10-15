@@ -8,6 +8,13 @@ pub struct MissingLaunchMod {
 pub enum Error {
   #[error(transparent)]
   Io(#[from] std::io::Error),
+  #[error("File is read-only: {}", .0.display())]
+  ReadOnlyFile(std::path::PathBuf),
+  #[error("Failed to make {} writable: {source}", path.display())]
+  MakeWritableFailed {
+    path: std::path::PathBuf,
+    source: std::io::Error,
+  },
   #[error("failed to parse as string: {0}")]
   Utf8(#[from] std::str::Utf8Error),
   #[error("Steam installation not found")]
@@ -19,7 +26,7 @@ pub enum Error {
   #[error("App handle not initialized")]
   AppHandleNotInitialized,
   #[error(
-    "Failed to parse game configuration. Try resetting the gameinfo.gi to Vanilla in Settings → Game and restart the mod manager."
+    "Failed to parse game configuration. Reset gameinfo.gi to Vanilla in Settings → Game, then try again."
   )]
   GameConfigParse(String),
   #[error("Mod file not found at path")]
@@ -127,7 +134,10 @@ impl serde::Serialize for Error {
     S: serde::Serializer,
   {
     use serde::ser::SerializeStruct;
-    let field_count = if matches!(self, Error::MissingEnabledModFiles(_)) {
+    let field_count = if matches!(
+      self,
+      Error::MissingEnabledModFiles(_) | Error::ReadOnlyFile(_) | Error::MakeWritableFailed { .. }
+    ) {
       4
     } else {
       3
@@ -137,6 +147,8 @@ impl serde::Serialize for Error {
     // Map the error variant to the corresponding kind string
     let kind = match self {
       Error::Io(_) => "io",
+      Error::ReadOnlyFile(_) => "readOnlyFile",
+      Error::MakeWritableFailed { .. } => "makeWritableFailed",
       Error::Utf8(_) => "utf8",
       Error::SteamNotFound => "steamNotFound",
       Error::GameNotFound => "gameNotFound",
@@ -190,6 +202,9 @@ impl serde::Serialize for Error {
     state.serialize_field("matchSyncKind", &match_sync_kind)?;
     if let Error::MissingEnabledModFiles(mods) = self {
       state.serialize_field("affectedMods", mods)?;
+    }
+    if let Error::ReadOnlyFile(path) | Error::MakeWritableFailed { path, .. } = self {
+      state.serialize_field("path", path)?;
     }
     state.end()
   }

@@ -378,6 +378,7 @@ impl VpkStaging {
   }
 
   pub fn stage(&mut self, base: &ProfileBase, source: &Path) -> Result<PathBuf, Error> {
+    crate::mod_manager::file_permissions::ensure_file_writable(source)?;
     let shard = source
       .parent()
       .and_then(|parent| base.shard_of_dir(parent))
@@ -407,6 +408,7 @@ impl VpkStaging {
   }
 
   pub fn place(&mut self, staged: &Path, destination: &Path) -> Result<(), Error> {
+    crate::mod_manager::file_permissions::ensure_file_writable(destination)?;
     if destination.exists() {
       return Err(Error::ModInvalid(format!(
         "Cannot place staged VPK because {} already exists",

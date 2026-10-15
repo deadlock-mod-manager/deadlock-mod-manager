@@ -213,6 +213,13 @@ impl ModManager {
     } else {
       log::info!("Enabling mods for profile: {:?}...", profile_folder);
       self.validate_modded_launch_files(profile_folder.as_deref())?;
+      let game_path = self
+        .steam_manager
+        .get_game_path()
+        .ok_or(Error::GamePathNotSet)?;
+      crate::mod_manager::file_permissions::ensure_file_writable(
+        &game_path.join("game").join("citadel").join("gameinfo.gi"),
+      )?;
       // A profile that still holds a pre-sharding layout must be spread across
       // shards before its search paths are written, or the extra `citadel/addonsN`
       // lines would be missing and the engine would silently drop everything
@@ -232,11 +239,7 @@ impl ModManager {
     let base = self.get_addons_path(profile_folder)?;
     // Recover staged files before checking, and check before migration can
     // reconcile missing manifest claims away.
-    let manifest = if base.exists() {
-      ProfileVpkManifest::open_for_write(&base)?
-    } else {
-      ProfileVpkManifest::load(&base)?
-    };
+    let manifest = ProfileVpkManifest::open_for_write(&base)?;
     let affected_mods: Vec<_> = manifest
       .mods
       .iter()
@@ -490,7 +493,8 @@ impl ModManager {
 
   pub fn get_addons_backup_manager(&mut self) -> &mut AddonsBackupManager {
     if let Ok(directory) = self.get_app_local_data_path() {
-      self.addons_backup_manager
+      self
+        .addons_backup_manager
         .set_repair_directory(directory.join("mod-folder-repair"));
     }
     if let Some(game_path) = self.steam_manager.get_game_path() {

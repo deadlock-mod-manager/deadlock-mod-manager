@@ -1,8 +1,10 @@
 use crate::errors::Error;
+use crate::mod_manager::game_config_manager::GameInfoResetSource;
+use std::path::PathBuf;
 
 use super::state::{MANAGER, get_api_url};
 
-pub async fn reset_to_vanilla_internal() -> Result<(), Error> {
+pub async fn reset_to_vanilla_internal() -> Result<GameInfoResetSource, Error> {
   let api_url = get_api_url();
 
   let game_path = {
@@ -14,7 +16,7 @@ pub async fn reset_to_vanilla_internal() -> Result<(), Error> {
       .clone()
   };
 
-  let vanilla_content = {
+  let vanilla_content = async {
     let url = format!("{api_url}/artifacts/deadlock/gameinfo.gi");
     log::info!("Downloading vanilla gameinfo.gi from: {url}");
 
@@ -35,16 +37,17 @@ pub async fn reset_to_vanilla_internal() -> Result<(), Error> {
     response
       .text()
       .await
-      .map_err(|e| Error::Network(format!("Failed to read response: {e}")))?
-  };
+      .map_err(|e| Error::Network(format!("Failed to read response: {e}")))
+  }
+  .await;
 
   let mut mod_manager = MANAGER.lock().unwrap();
-  mod_manager
+  let source = mod_manager
     .get_config_manager_mut()
-    .apply_vanilla_gameinfo(&game_path, vanilla_content)?;
+    .reset_gameinfo(&game_path, vanilla_content)?;
 
-  log::info!("Successfully reset to vanilla state using API");
-  Ok(())
+  log::info!("Successfully reset to vanilla state using {source:?}");
+  Ok(source)
 }
 
 #[tauri::command]
@@ -73,9 +76,19 @@ pub async fn restore_gameinfo_backup(guard_permit: Option<String>) -> Result<(),
 }
 
 #[tauri::command]
-pub async fn reset_to_vanilla(guard_permit: Option<String>) -> Result<(), Error> {
+pub async fn reset_to_vanilla(guard_permit: Option<String>) -> Result<GameInfoResetSource, Error> {
   crate::game_guard::ensure_game_idle_locked("reset_to_vanilla", guard_permit.as_deref())?;
   reset_to_vanilla_internal().await
+}
+
+#[tauri::command]
+pub async fn make_file_writable(path: PathBuf) -> Result<(), Error> {
+  let manager = MANAGER.lock().unwrap();
+  let game_path = manager
+    .get_steam_manager()
+    .get_game_path()
+    .ok_or(Error::GamePathNotSet)?;
+  crate::mod_manager::file_permissions::make_file_writable(game_path, &path)
 }
 
 #[tauri::command]
