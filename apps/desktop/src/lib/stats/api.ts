@@ -74,6 +74,9 @@ const request = async (path: string): Promise<unknown> => {
   return await response.json();
 };
 
+/** The raw response, for dashboard widgets that validate their own shape. */
+export const requestJson = (path: string): Promise<unknown> => request(path);
+
 /**
  * A list endpoint. Entries that no longer match their schema are dropped rather
  * than failing the request: one unexpected row should not empty a scoreboard.
