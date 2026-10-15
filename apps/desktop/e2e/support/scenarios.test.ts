@@ -13,14 +13,14 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 53 : 49);
+    expect(ids).toHaveLength(windows ? 57 : 53);
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
       expect(scenarioSpec(id)).toContain("./specs/");
       expect(new Set(scenarioPhases(id)).size).toBe(scenarioPhases(id).length);
     }
-    expect(selectScenarios("gamebanana")).toHaveLength(14);
-    expect(selectScenarios("filesystem")).toHaveLength(windows ? 8 : 7);
+    expect(selectScenarios("gamebanana")).toHaveLength(15);
+    expect(selectScenarios("filesystem")).toHaveLength(windows ? 9 : 8);
     expect(selectScenarios("interchange")).toEqual(["grimoire-import"]);
     expect(selectScenarios("skins")).toEqual(["hero-skins-active"]);
     expect(selectScenarios("shards")).toEqual([
@@ -28,6 +28,7 @@ describe("scenario selection", () => {
       "shards-conflicts",
     ]);
     expect(selectScenarios("missing-vpks")).toEqual([
+      "missing-vpks-launch",
       "missing-vpks-offline",
       "missing-vpks-live",
     ]);
