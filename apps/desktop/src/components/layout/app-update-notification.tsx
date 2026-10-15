@@ -1,7 +1,14 @@
 import { Button } from "@deadlock-mods/ui/components/button";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@deadlock-mods/ui/components/collapsible";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
   ArrowSquareOutIcon,
+  CaretDownIcon,
+  CaretRightIcon,
   CloudSlashIcon,
   PackageIcon,
   WarningCircleIcon,
@@ -10,6 +17,7 @@ import {
 import { useMutation } from "@tanstack/react-query";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
+import { AppUpdateTechnicalDetails } from "@/components/layout/app-update-technical-details";
 import type { AppUpdateError } from "@/lib/app-updates";
 import { GITHUB_REPO } from "@/lib/constants";
 import { createLogger } from "@/lib/logger";
@@ -49,24 +57,6 @@ export const AppUpdateNotification = ({
   const { title, guidance, icon: Icon } = messages[phase];
   const missingPackage = phase === "missing-target";
   const context = failure?.context;
-  const contextLabels = context
-    ? {
-        channel: t(
-          context.channel === "nightly"
-            ? "settings.updateChannelNightly"
-            : "settings.updateChannelStable",
-        ),
-        runtime: context.runtime === "wry" ? "Wry" : "CEF",
-        installer:
-          context.installer === "unpackaged"
-            ? t(
-                import.meta.env.DEV
-                  ? "update.developmentBuild"
-                  : "update.unpackagedBuild",
-              )
-            : context.installer.toUpperCase(),
-      }
-    : null;
   const releaseUrl = context
     ? context.channel === "nightly"
       ? `${GITHUB_REPO}/releases/tag/nightly`
@@ -123,24 +113,44 @@ export const AppUpdateNotification = ({
           {t(guidance)}
         </p>
       </div>
-      <div className='flex flex-wrap items-center justify-between gap-3 border-border/60 border-t bg-background/20 px-4 py-3'>
-        {contextLabels ? (
-          <p
-            className='text-muted-foreground text-xs'
-            title={t("update.failureContextDescription", contextLabels)}>
-            {t("update.failureContext", contextLabels)}
-          </p>
+      <Collapsible
+        className='border-border/60 border-t bg-background/20'
+        key={`${phase}:${context?.channel}:${context?.runtime}:${context?.target}:${failure?.reason}`}>
+        <div className='flex flex-wrap items-center justify-between gap-2 px-4 py-3'>
+          {failure ? (
+            <CollapsibleTrigger asChild>
+              <Button
+                className='group -ml-2 gap-1 text-muted-foreground hover:text-foreground focus-visible:ring-foreground/60 dark:focus-visible:ring-primary'
+                size='sm'
+                variant='ghost'>
+                <CaretRightIcon
+                  aria-hidden
+                  className='size-3 group-data-[state=open]:hidden'
+                />
+                <CaretDownIcon
+                  aria-hidden
+                  className='hidden size-3 group-data-[state=open]:block'
+                />
+                {t("update.technicalDetails")}
+              </Button>
+            </CollapsibleTrigger>
+          ) : null}
+          <Button
+            className='ml-auto border-primary/30 bg-primary/10 text-foreground shadow-none hover:border-primary/50 hover:bg-primary/15 focus-visible:ring-foreground/60 dark:text-primary dark:focus-visible:ring-primary'
+            isLoading={isPending}
+            onClick={() => openDownloads()}
+            size='sm'
+            variant='outline'>
+            {t("update.viewDownloads")}
+            <ArrowSquareOutIcon aria-hidden className='size-3.5' />
+          </Button>
+        </div>
+        {failure ? (
+          <CollapsibleContent>
+            <AppUpdateTechnicalDetails failure={failure} />
+          </CollapsibleContent>
         ) : null}
-        <Button
-          className='ml-auto border-primary/30 bg-primary/10 text-foreground shadow-none hover:border-primary/50 hover:bg-primary/15 focus-visible:ring-foreground/60 dark:text-primary dark:focus-visible:ring-primary'
-          isLoading={isPending}
-          onClick={() => openDownloads()}
-          size='sm'
-          variant='outline'>
-          {t("update.viewDownloads")}
-          <ArrowSquareOutIcon aria-hidden className='size-3.5' />
-        </Button>
-      </div>
+      </Collapsible>
     </div>
   );
 };
