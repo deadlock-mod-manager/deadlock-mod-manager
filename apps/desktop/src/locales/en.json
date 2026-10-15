@@ -5026,5 +5026,32 @@
       "title": "Check for crashes after launch",
       "description": "If Deadlock closes abnormally within a few minutes of starting, show what changed since your last normal session, with a way to undo each change."
     }
+  },
+  "repairModFolder": {
+    "action": "Repair mod folder",
+    "working": "Checking mod folder…",
+    "apply": "Apply repair",
+    "previewDescription": "Review repairs for the active profile. Owned files, including disabled local imports, will be kept.",
+    "resultTitle": "Mod folder repaired",
+    "resultDescription": "The library has been refreshed. Your backed-up files can be restored at any time.",
+    "untracked_one": "{{count}} untracked VPK will be backed up rather than deleted.",
+    "untracked_other": "{{count}} untracked VPKs will be backed up rather than deleted.",
+    "backedUp_one": "{{count}} untracked VPK was moved to a backup.",
+    "backedUp_other": "{{count}} untracked VPKs were moved to a backup.",
+    "restoreInstructions": "To undo this, open Settings → Backups, select the Repair mod folder backup, and choose Restore. Repair backups are kept until you delete them.",
+    "restoreWarning": "This restores only the VPKs removed by repair to their original profile and shards. Existing files are never overwritten. Restored untracked VPKs may load in the game again.",
+    "manifest": {
+      "healthy": "The manifest is valid.",
+      "missing_preview": "The missing manifest will be rebuilt from your library and files on disk.",
+      "missing_applied": "The missing manifest was rebuilt from your library and files on disk.",
+      "corrupt_preview": "The corrupt manifest will be preserved with a timestamped name, then rebuilt from your library and files on disk.",
+      "corrupt_applied": "The corrupt manifest was preserved with a timestamped name and rebuilt."
+    },
+    "staging_one": "{{count}} staging folder will be recovered or moved aside if recovery is unsafe.",
+    "staging_other": "{{count}} staging folders will be recovered or moved aside if recovery is unsafe.",
+    "staging_applied_one": "{{count}} staging folder was processed.",
+    "staging_applied_other": "{{count}} staging folders were processed.",
+    "quarantinedStaging": "Unrecoverable staging is preserved in these folders inside the profile’s addons folder:",
+    "failed": "Mod folder repair failed: {{reason}}"
   }
 }

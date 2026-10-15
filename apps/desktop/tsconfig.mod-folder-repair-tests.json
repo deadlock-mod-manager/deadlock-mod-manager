@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "types": ["bun"], "incremental": false },
+  "include": ["src/lib/mod-folder-repair.test.ts", "src/lib/game-guard.test.ts", "src/components/settings/repair-mod-folder.test.ts"],
+  "exclude": ["node_modules", "dist"]
+}

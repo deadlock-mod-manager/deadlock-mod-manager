@@ -271,6 +271,7 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
     titleKey: "settings.tools",
     descriptionKey: "settings.toolsDescription",
     settings: [
+      { titleKey: "repairModFolder.action" },
       { titleKey: "settings.openGameFolder" },
       { titleKey: "settings.openModsFolder" },
       { titleKey: "settings.openModsDataFolder" },

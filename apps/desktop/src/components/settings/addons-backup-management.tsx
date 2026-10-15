@@ -297,9 +297,16 @@ export const AddonsBackupManagement = () => {
           </TableHeader>
           <TableBody>
             {backups.map((backup) => (
-              <TableRow key={backup.file_name}>
+              <TableRow
+                key={backup.file_name}
+                data-backup-name={backup.file_name}>
                 <TableCell className='font-medium'>
                   {formatDate(backup.created_at)}
+                  {backup.file_name.startsWith("addons-backup-repair-") && (
+                    <span className='block text-xs text-muted-foreground'>
+                      {t("repairModFolder.action")}
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell>{formatFileSize(backup.file_size)}</TableCell>
                 <TableCell>{backup.addons_count}</TableCell>

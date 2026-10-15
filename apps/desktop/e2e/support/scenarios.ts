@@ -15,6 +15,7 @@ import { prepareProfileWorld } from "./profile-fixtures";
 import { prepareConflictWorld } from "./conflict-fixtures";
 import { prepareFilesystemWorld } from "./filesystem-fixtures";
 import { prepareManifestRepairWorld } from "./manifest-repair-fixtures";
+import { prepareModFolderRepairWorld } from "./mod-folder-repair-fixtures";
 import { prepareMissingVpkWorld } from "./missing-vpk-fixtures";
 import { prepareBrokenStateWorld } from "./broken-state-fixtures";
 import { prepareShardWorld } from "./shard-fixtures";
@@ -210,6 +211,12 @@ const heroSkins: Definition = {
   prepare: async (world) => prepareHeroSkinsWorld(world),
 };
 export const scenarios = {
+  "filesystem-mod-folder-repair": {
+    ...filesystem,
+    spec: "mod-folder-repair",
+    phases: ["repair-folder", "restart-folder", "restart-restored-folder"],
+    prepare: prepareModFolderRepairWorld,
+  },
   "addons-folder-wiped": {
     ...defaults,
     family: "filesystem",
