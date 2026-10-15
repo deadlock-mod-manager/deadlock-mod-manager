@@ -11,6 +11,10 @@ export const showAppUpdateError = (error: Error | null) => {
         onDismiss={() => toast.dismiss(id)}
       />
     ),
-    { duration: 12_000 },
+    {
+      id: "app-update-error",
+      duration: Infinity,
+      style: { height: "auto" },
+    },
   );
 };
