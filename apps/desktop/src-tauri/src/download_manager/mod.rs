@@ -529,10 +529,23 @@ impl DownloadManager {
 
       for (archive_index, downloaded_file) in downloaded_files.iter().enumerate() {
         if !extractor.is_supported_archive(downloaded_file) {
-          if Self::is_vpk_path(downloaded_file)
-            && Self::downloaded_vpk_is_selected(downloaded_file, task.file_tree.as_ref())
-          {
-            Self::copy_prepared_vpk(downloaded_file, &prepared_dir, &mut prepared_paths)?;
+          if Self::is_vpk_path(downloaded_file) {
+            let is_selected =
+              Self::downloaded_vpk_is_selected(downloaded_file, task.file_tree.as_ref());
+            let file_name = downloaded_file
+              .file_name()
+              .and_then(|name| name.to_str())
+              .ok_or_else(|| Error::InvalidInput("VPK filename is invalid".into()))?;
+            prepared_files.push(crate::mod_manager::file_tree::ModFile {
+              name: file_name.to_string(),
+              path: file_name.to_string(),
+              size: downloaded_file.metadata()?.len(),
+              is_selected,
+              archive_name: file_name.to_string(),
+            });
+            if is_selected {
+              Self::copy_prepared_vpk(downloaded_file, &prepared_dir, &mut prepared_paths)?;
+            }
           }
           continue;
         }
@@ -669,27 +682,34 @@ impl DownloadManager {
       .files
       .iter()
       .filter(|candidate| {
-        selection
-          .filter(|selection| {
-            Self::selection_covers_archive(Some(selection), &candidate.archive_name)
-          })
-          .is_none_or(|selection| {
-            selection.files.iter().any(|selected| {
-              selected.is_selected
-                && (selected.archive_name.is_empty()
-                  || selected.archive_name == candidate.archive_name)
-                && (selected.path.replace('\\', "/") == candidate.path.replace('\\', "/")
-                  || selected.path.replace('\\', "/")
-                    == format!(
-                      "{}/{}",
-                      candidate.archive_name,
-                      candidate.path.replace('\\', "/")
-                    ))
-            })
-          })
+        Self::file_is_selected(&candidate.archive_name, &candidate.path, selection)
       })
       .map(|file| extracted_dir.join(&file.path))
       .collect()
+  }
+
+  fn file_is_selected(
+    archive_name: &str,
+    path: &str,
+    selection: Option<&crate::mod_manager::file_tree::ModFileTree>,
+  ) -> bool {
+    let path = path.replace('\\', "/");
+    let prefixed_path = format!("{archive_name}/{path}");
+    selection
+      .filter(|selection| Self::selection_covers_archive(Some(selection), archive_name))
+      .is_none_or(|selection| {
+        selection
+          .files
+          .iter()
+          .filter(|file| {
+            let selected_path = file.path.replace('\\', "/");
+            (file.archive_name.is_empty() || file.archive_name == archive_name)
+              && (selected_path == path || selected_path == prefixed_path)
+          })
+          .map(|file| file.is_selected)
+          .reduce(|selected, next| selected || next)
+          .unwrap_or(true)
+      })
   }
 
   // A selection saved from another variant says nothing about this archive.
@@ -709,17 +729,11 @@ impl DownloadManager {
     path: &std::path::Path,
     selection: Option<&crate::mod_manager::file_tree::ModFileTree>,
   ) -> bool {
-    let Some(selection) = selection else {
-      return true;
-    };
     let Some(file_name) = path.file_name().and_then(|name| name.to_str()) else {
-      return false;
+      return selection.is_none();
     };
 
-    selection
-      .files
-      .iter()
-      .any(|file| file.is_selected && file.name == file_name)
+    Self::file_is_selected(file_name, file_name, selection)
   }
 
   fn copy_prepared_vpk(
@@ -1311,6 +1325,63 @@ mod tests {
   }
 
   #[test]
+  fn update_selection_preserves_selected_and_deselected_files() {
+    let extracted = tree(vec![
+      file("mod.zip", "main.vpk", true),
+      file("mod.zip", "optional.vpk", true),
+    ]);
+    let selection = tree(vec![
+      file("mod.zip", "mod.zip/main.vpk", true),
+      file("mod.zip", "mod.zip/optional.vpk", false),
+    ]);
+
+    assert_eq!(
+      DownloadManager::selected_extracted_vpks(
+        std::path::Path::new("extracted"),
+        &extracted,
+        Some(&selection),
+      ),
+      vec![std::path::Path::new("extracted").join("main.vpk")]
+    );
+  }
+
+  #[test]
+  fn update_selection_includes_new_files() {
+    let extracted = tree(vec![
+      file("mod.zip", "main.vpk", true),
+      file("mod.zip", "new.vpk", true),
+    ]);
+    let selection = tree(vec![file("mod.zip", "mod.zip/main.vpk", true)]);
+
+    assert_eq!(
+      DownloadManager::selected_extracted_vpks(
+        std::path::Path::new("extracted"),
+        &extracted,
+        Some(&selection),
+      ),
+      vec![
+        std::path::Path::new("extracted").join("main.vpk"),
+        std::path::Path::new("extracted").join("new.vpk"),
+      ]
+    );
+  }
+
+  #[test]
+  fn update_selection_includes_renamed_files() {
+    let extracted = tree(vec![file("mod.zip", "renamed.vpk", true)]);
+    let selection = tree(vec![file("mod.zip", "mod.zip/old.vpk", false)]);
+
+    assert_eq!(
+      DownloadManager::selected_extracted_vpks(
+        std::path::Path::new("extracted"),
+        &extracted,
+        Some(&selection),
+      ),
+      vec![std::path::Path::new("extracted").join("renamed.vpk")]
+    );
+  }
+
+  #[test]
   fn update_selection_distinguishes_identical_paths_from_multiple_archives() {
     let extracted = tree(vec![file("second.zip", "variants/main.vpk", true)]);
     let selection = tree(vec![
@@ -1330,17 +1401,30 @@ mod tests {
 
   #[test]
   fn update_selection_accepts_normalized_windows_paths() {
-    let extracted = tree(vec![file("mod.zip", "variants/main.vpk", true)]);
-    let selection = tree(vec![file("mod.zip", "variants\\main.vpk", true)]);
+    for (candidate_path, selected_path) in [
+      ("variants/main.vpk", "variants\\main.vpk"),
+      ("variants\\main.vpk", "variants/main.vpk"),
+      ("variants/main.vpk", "mod.zip\\variants\\main.vpk"),
+    ] {
+      for is_selected in [true, false] {
+        let extracted = tree(vec![file("mod.zip", candidate_path, true)]);
+        let selection = tree(vec![file("mod.zip", selected_path, is_selected)]);
+        let expected = if is_selected {
+          vec![std::path::Path::new("extracted").join(candidate_path)]
+        } else {
+          vec![]
+        };
 
-    assert_eq!(
-      DownloadManager::selected_extracted_vpks(
-        std::path::Path::new("extracted"),
-        &extracted,
-        Some(&selection),
-      ),
-      vec![std::path::Path::new("extracted").join("variants/main.vpk")]
-    );
+        assert_eq!(
+          DownloadManager::selected_extracted_vpks(
+            std::path::Path::new("extracted"),
+            &extracted,
+            Some(&selection),
+          ),
+          expected
+        );
+      }
+    }
   }
 
   #[test]
@@ -1360,7 +1444,7 @@ mod tests {
   #[test]
   fn update_selection_ignores_archives_it_does_not_cover() {
     let extracted = tree(vec![file("red.rar", "pak01_dir.vpk", true)]);
-    let selection = tree(vec![file("base.zip", "base.zip/pak50_dir.vpk", true)]);
+    let selection = tree(vec![file("base.zip", "pak01_dir.vpk", false)]);
 
     assert_eq!(
       DownloadManager::selected_extracted_vpks(
@@ -1370,6 +1454,75 @@ mod tests {
       ),
       vec![std::path::Path::new("extracted").join("pak01_dir.vpk")]
     );
+    assert!(!DownloadManager::selection_covers_archive(
+      Some(&selection),
+      "red.rar"
+    ));
+  }
+
+  #[test]
+  fn update_selection_preserves_legacy_unscoped_choices() {
+    let extracted = tree(vec![file("mod.zip", "main.vpk", true)]);
+    let selection = tree(vec![file("", "main.vpk", false)]);
+
+    assert!(
+      DownloadManager::selected_extracted_vpks(
+        std::path::Path::new("extracted"),
+        &extracted,
+        Some(&selection),
+      )
+      .is_empty()
+    );
+  }
+
+  #[test]
+  fn direct_vpk_selection_preserves_choices_and_includes_new_or_renamed_files() {
+    let selection = tree(vec![
+      file("", "main.vpk", true),
+      file("", "optional.vpk", false),
+      file("", "old.vpk", false),
+    ]);
+
+    for (name, expected) in [
+      ("main.vpk", true),
+      ("optional.vpk", false),
+      ("new.vpk", true),
+      ("renamed.vpk", true),
+    ] {
+      assert_eq!(
+        DownloadManager::downloaded_vpk_is_selected(
+          &std::path::Path::new("downloads").join(name),
+          Some(&selection),
+        ),
+        expected,
+        "{name}"
+      );
+    }
+  }
+
+  #[test]
+  fn direct_vpk_selection_ignores_other_archives() {
+    let selection = tree(vec![file("other.zip", "main.vpk", false)]);
+
+    assert!(DownloadManager::downloaded_vpk_is_selected(
+      std::path::Path::new("downloads/main.vpk"),
+      Some(&selection),
+    ));
+  }
+
+  #[test]
+  fn direct_vpk_selection_accepts_scoped_windows_paths() {
+    for is_selected in [true, false] {
+      let selection = tree(vec![file("main.vpk", "main.vpk\\main.vpk", is_selected)]);
+
+      assert_eq!(
+        DownloadManager::downloaded_vpk_is_selected(
+          std::path::Path::new("downloads/main.vpk"),
+          Some(&selection),
+        ),
+        is_selected
+      );
+    }
   }
 
   #[test]
