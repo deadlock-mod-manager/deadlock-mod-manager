@@ -294,12 +294,12 @@ for normal frontend reconciliation. A final phase verifies the same state in a
 fresh process and after normal close. Crash checkpoints remain in their dedicated
 PID-armed filesystem scenarios; the monkey does not arm them.
 
-Seeds `2` (step 17), `3` (step 12), and `887` (step 10), at 25 steps on Windows, exposed a
-reinstall failure after updating a multipak mod and deleting one of its VPKs.
-Launch correctly blocks, but the subsequent library reinstall leaves the mod
-downloaded with no manifest ownership; logs include `wasInstalled: false` and
-invalid download status transitions. This is tracked in #891; the invariant and
-replay remain strict, so these seeds fail until it is fixed.
+Seeds `2` (step 17), `3` (step 12), and `887` (step 10), at 25 steps on Windows,
+found #891: after an update, deleting one of a multipak mod's VPKs and reinstalling
+it from the library left it downloaded with no manifest ownership. Reconciliation
+had demoted it to downloaded, so the reinstall treated it as never installed. Seed
+`4` found that retrying an update within the same second as a failed one hit a
+backup name collision. Keep these seeds as regressions.
 
 The `monkey` family is included by `--suite all`, needs no native input, and is
 not in the CI matrix. To enable it later, add `monkey` to the workflow's family
