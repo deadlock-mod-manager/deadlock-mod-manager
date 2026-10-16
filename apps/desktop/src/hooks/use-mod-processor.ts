@@ -7,7 +7,6 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { invoke } from "@tauri-apps/api/core";
 import { appLocalDataDir, join } from "@tauri-apps/api/path";
 import { BaseDirectory, readDir } from "@tauri-apps/plugin-fs";
-import JSZip from "jszip";
 import { useTranslation } from "react-i18next";
 import { useProgress } from "@/components/downloads/progress-indicator";
 import { ModCategory } from "@/lib/constants";
@@ -20,6 +19,7 @@ import {
   type ModSource,
   ensureDirectory,
   getFileBaseName,
+  getSourceFilePath,
   fileToBytes,
   fileToDataUrl,
   writeFileBytes,
@@ -31,10 +31,6 @@ import { usePersistedStore } from "@/lib/store";
 import { ModStatus, type ModFileTree } from "@/types/mods";
 import { invokeGuarded } from "@/lib/game-guard";
 
-interface PathBackedFile extends File {
-  path?: string;
-}
-
 export interface ModMetadata {
   name: string;
   author?: string;
@@ -43,19 +39,21 @@ export interface ModMetadata {
   imageFile?: File | null;
 }
 
-const getSourceFilePath = (file: File): string | null => {
-  const filePath = (file as PathBackedFile).path;
-  return typeof filePath === "string" && filePath.length > 0 ? filePath : null;
-};
-
-const readSourceFileBytes = async (file: File): Promise<Uint8Array> => {
+// Every source is on disk by now: picked, dropped as a path, or staged when it
+// was dropped. Rust copies it, so its bytes never pass through the renderer.
+const storeSourceFile = async (
+  file: File,
+  directory: string,
+): Promise<string> => {
   const filePath = getSourceFilePath(file);
   if (!filePath) {
-    return fileToBytes(file);
+    throw new Error(`Mod source ${file.name} was not staged on disk`);
   }
 
-  const bytes = await invoke<number[]>("read_dropped_mod_file", { filePath });
-  return new Uint8Array(bytes);
+  return invoke<string>("copy_dropped_mod_file", {
+    filePath,
+    targetDir: directory,
+  });
 };
 
 export const useModProcessor = () => {
@@ -73,44 +71,17 @@ export const useModProcessor = () => {
     filesDir: string,
     modDir: string,
   ): Promise<void> => {
-    const fileBaseName = getFileBaseName(file);
-    const fileName = fileBaseName.toLowerCase();
-    const fileBytes = await readSourceFileBytes(file);
+    const format = getFileBaseName(file).split(".").pop()?.toUpperCase();
 
-    if (fileName.endsWith(".zip")) {
-      const zip = await JSZip.loadAsync(fileBytes);
-      const vpkEntry = Object.values(zip.files).find(
-        (f) => !f.dir && VPK_PATTERN.test(f.name),
-      );
+    setProcessing(true, t("addMods.storingArchive", { format }));
+    const archivePath = await storeSourceFile(file, modDir);
 
-      if (vpkEntry) {
-        const buffer = await vpkEntry.async("uint8array");
-        const baseName = vpkEntry.name.split("/").pop() || "mod.vpk";
-        await writeFileBytes(await join(filesDir, baseName), buffer);
-      } else {
-        await writeFileBytes(await join(modDir, fileBaseName), fileBytes);
-        toast.error(t("addMods.noVpkFound"));
-      }
-    } else if (fileName.endsWith(".rar") || fileName.endsWith(".7z")) {
-      const format = fileName.split(".").pop()?.toUpperCase();
-
-      setProcessing(true, t("addMods.storingArchive", { format }));
-      await writeFileBytes(await join(modDir, fileBaseName), fileBytes);
-
-      // Extract archive using backend
-      try {
-        setProcessing(true, t("addMods.extractingArchive", { format }));
-        const archivePath = await join(modDir, fileBaseName);
-        await invoke("extract_archive", {
-          archivePath: await archivePath,
-          targetPath: await filesDir,
-        });
-        toast.success(t("addMods.archiveExtractedSuccess", { format }));
-      } catch {
-        toast.error(t("addMods.failedToExtractArchive"));
-      }
-    } else {
-      await writeFileBytes(await join(modDir, fileBaseName), fileBytes);
+    try {
+      setProcessing(true, t("addMods.extractingArchive", { format }));
+      await invoke("extract_archive", { archivePath, targetPath: filesDir });
+      toast.success(t("addMods.archiveExtractedSuccess", { format }));
+    } catch {
+      toast.error(t("addMods.failedToExtractArchive"));
     }
   };
 
@@ -156,13 +127,7 @@ export const useModProcessor = () => {
     }
 
     if (detectedSource.kind === "archive") {
-      const fileName = getFileBaseName(detectedSource.file).toLowerCase();
-      if (fileName.endsWith(".rar") || fileName.endsWith(".7z")) {
-        toast.info(t("addMods.archiveWillBeProcessed"));
-        return true;
-      }
-
-      toast.warning(t("addMods.noVpkFoundStored"));
+      toast.info(t("addMods.archiveWillBeProcessed"));
       return true;
     }
 
@@ -204,21 +169,13 @@ export const useModProcessor = () => {
     } else {
       try {
         if (detectedSource.kind === "vpk") {
-          const fileName = getFileBaseName(detectedSource.file);
-          await writeFileBytes(
-            await join(filesDir, fileName),
-            await readSourceFileBytes(detectedSource.file),
-          );
+          await storeSourceFile(detectedSource.file, filesDir);
         } else {
           await processArchive(detectedSource.file, filesDir, modDir);
         }
       } catch {
-        const fileName = getFileBaseName(detectedSource.file);
         toast.error(t("addMods.failedToProcessArchive"));
-        await writeFileBytes(
-          await join(modDir, fileName),
-          await readSourceFileBytes(detectedSource.file),
-        );
+        await storeSourceFile(detectedSource.file, modDir);
       }
     }
 
