@@ -118,13 +118,8 @@ impl AddonsBackupManager {
       Error::BackupCreationFailed(format!("Failed to create backup directory: {e}"))
     })?;
 
+    let filename = Self::unused_backup_name(&backup_dir, &filename);
     let backup_path = backup_dir.join(&filename);
-    if backup_path.exists() {
-      return Err(Error::BackupCreationFailed(format!(
-        "Backup already exists: {}",
-        backup_path.display()
-      )));
-    }
     // Build into a hidden staging directory and only rename it to the final
     // (listable) name after validation succeeds, so an interrupted or invalid
     // backup can never be listed, restored, deleted, or pruned. The name does
@@ -277,6 +272,18 @@ impl AddonsBackupManager {
     format!("addons-backup-{}", now.format("%Y-%m-%d_%H-%M-%S"))
   }
 
+  /// Names only have second resolution, so an update retried right after a
+  /// failed one would collide with its backup. Later ones get a `-N` suffix.
+  fn unused_backup_name(backup_dir: &Path, filename: &str) -> String {
+    let mut name = filename.to_string();
+    let mut suffix = 1;
+    while backup_dir.join(&name).exists() {
+      suffix += 1;
+      name = format!("{filename}-{suffix}");
+    }
+    name
+  }
+
   fn copy_tree(source: &Path, destination: &Path) -> std::io::Result<BackupStats> {
     fs::create_dir_all(destination)?;
     let mut stats = BackupStats::default();
@@ -395,8 +402,10 @@ impl AddonsBackupManager {
   fn parse_backup_filename(&self, filename: &str) -> Option<u64> {
     let without_ext = filename.strip_suffix(".7z").unwrap_or(filename);
     let without_prefix = without_ext.strip_prefix("addons-backup-")?;
+    // Ignores the suffix `unused_backup_name` adds after the timestamp.
+    let timestamp = without_prefix.get(.."YYYY-MM-DD_HH-MM-SS".len())?;
 
-    let datetime_str = without_prefix.replace('_', " ").replace('-', ":");
+    let datetime_str = timestamp.replace('_', " ").replace('-', ":");
     let parts: Vec<&str> = datetime_str.split(' ').collect();
     if parts.len() != 2 {
       return None;
@@ -857,5 +866,29 @@ mod tests {
     assert!(restored.join(".dmm.json").is_file());
     assert!(!restored.join(".dmm.json.tmp").exists());
     AddonsBackupManager::validate_snapshot(&snapshot).unwrap();
+  }
+
+  /// Retrying an update within the same second used to fail with "Backup
+  /// already exists".
+  #[test]
+  fn backups_in_the_same_second_get_distinct_names() {
+    let temp = tempfile::tempdir().unwrap();
+    let name = "addons-backup-2026-10-16_15-16-06";
+    assert_eq!(
+      AddonsBackupManager::unused_backup_name(temp.path(), name),
+      name
+    );
+
+    fs::create_dir(temp.path().join(name)).unwrap();
+    fs::create_dir(temp.path().join(format!("{name}-2"))).unwrap();
+    let next = AddonsBackupManager::unused_backup_name(temp.path(), name);
+    assert_eq!(next, format!("{name}-3"));
+
+    let manager = AddonsBackupManager::new();
+    assert_eq!(
+      manager.parse_backup_filename(&next),
+      manager.parse_backup_filename(name)
+    );
+    assert!(manager.parse_backup_filename(name).is_some());
   }
 }
