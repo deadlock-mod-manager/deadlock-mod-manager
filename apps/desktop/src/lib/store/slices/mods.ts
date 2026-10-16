@@ -811,7 +811,7 @@ const toggleRecordKeys = (
   record: Record<string, true>,
   keys: string[],
   included: boolean,
-): Record<string, true> => {
+) => {
   const next = { ...record };
   for (const key of keys) {
     if (included) {
