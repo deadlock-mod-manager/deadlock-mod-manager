@@ -500,6 +500,9 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
           installedVpks: mod.remoteId === remoteId ? vpks : mod.installedVpks,
           installedFileTree:
             mod.remoteId === remoteId ? fileTree : mod.installedFileTree,
+          // Freshly installed VPKs replace whatever had gone missing.
+          missingVpks:
+            mod.remoteId === remoteId && vpks.length > 0 ? [] : mod.missingVpks,
         })),
       );
     });

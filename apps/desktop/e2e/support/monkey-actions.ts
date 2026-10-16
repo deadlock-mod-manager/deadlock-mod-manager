@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { $, expect } from "@wdio/globals";
+import { isDeepStrictEqual } from "node:util";
+import { $, $$, browser, expect } from "@wdio/globals";
 import { z } from "zod";
 import { chooseInstallFiles } from "./catalog-actions";
 import { readBrokenLaunches } from "./broken-state-oracle";
@@ -30,13 +31,15 @@ export const waitMonkeyStatus = (world: string, id: string, status: string) =>
     `${id}: ${status}`,
     () => readMonkeyStore(world),
     (state) => {
+      const active = state.profiles[state.activeProfileId];
       const local = state.localMods.find((mod) => mod.remoteId === id);
-      const profile = state.profiles[state.activeProfileId].mods.find(
-        (mod) => mod.remoteId === id,
-      );
+      const profile = active.mods.find((mod) => mod.remoteId === id);
       return (
         local?.status === status &&
         profile?.status === status &&
+        // The enabled flag is written just after the status.
+        (active.enabledMods[id]?.enabled ?? false) ===
+          (status === "installed") &&
         (status !== "downloaded" ||
           ((local.installedVpks?.length ?? 0) === 0 &&
             (profile.installedVpks?.length ?? 0) === 0))
@@ -67,9 +70,11 @@ export const switchMonkeyProfile = async (world: string) => {
   await navigate("my-mods");
   await activateProfile(profile.name);
   await observeUntil(
-    "Active profile persisted",
+    "Active profile and its library persisted",
     () => readMonkeyStore(world),
-    (current) => current.activeProfileId === profile.id,
+    (current) =>
+      current.activeProfileId === profile.id &&
+      isDeepStrictEqual(current.localMods, current.profiles[profile.id].mods),
   );
   return profile.id;
 };
@@ -223,10 +228,25 @@ export const deleteMonkeyFile = async (
   await reveal(reinstall);
   await reinstall.click();
   await $('[role="alertdialog"]').$("button=Reinstall").click();
-  await expect($('[data-sonner-toast][data-type="success"]')).toHaveText(
-    expect.stringContaining("reinstalled"),
+  // Earlier steps' success toasts can still be on screen.
+  await browser.waitUntil(
+    async () => {
+      for (const toast of await $$('[data-sonner-toast][data-type="success"]'))
+        if ((await toast.getText()).includes("reinstalled")) return true;
+      return false;
+    },
+    { timeoutMsg: "No reinstalled success toast" },
   );
   await waitMonkeyStatus(world, id, "installed");
+  await observeUntil(
+    `${id}: no missing files`,
+    () => readMonkeyStore(world),
+    (state) =>
+      [state.localMods, state.profiles[state.activeProfileId].mods].every(
+        (mods) =>
+          mods.find((item) => item.remoteId === id)?.missingVpks.length === 0,
+      ),
+  );
   return filename;
 };
 

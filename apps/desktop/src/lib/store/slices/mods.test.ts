@@ -201,3 +201,35 @@ describe("clearMods", () => {
     expect(store.getState().profiles).toEqual({});
   });
 });
+
+describe("setInstalledVpks", () => {
+  const missing = (remoteId: string) =>
+    store.getState().localMods.find((mod) => mod.remoteId === remoteId)
+      ?.missingVpks;
+
+  beforeEach(() => {
+    const broken = (mods: LocalMod[]) =>
+      mods.map((mod) => ({ ...mod, missingVpks: ["gone.vpk"] }));
+    store.setState((state) => ({
+      localMods: broken(state.localMods),
+      profiles: {
+        ...state.profiles,
+        default: {
+          ...state.profiles.default,
+          mods: broken(state.profiles.default.mods),
+        },
+      },
+    }));
+  });
+
+  it("clears missing files once the mod is installed again", () => {
+    store.getState().setInstalledVpks("1", ["pak01_dir.vpk"]);
+    expect(missing("1")).toEqual([]);
+    expect(missing("2")).toEqual(["gone.vpk"]);
+  });
+
+  it("keeps missing files while nothing is installed", () => {
+    store.getState().setInstalledVpks("1", []);
+    expect(missing("1")).toEqual(["gone.vpk"]);
+  });
+});
