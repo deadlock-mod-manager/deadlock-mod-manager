@@ -2,9 +2,13 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { create } from "zustand";
 
 const noop = () => {};
-const loggerMock: Record<string, unknown> = {
-  withMetadata: () => loggerMock,
-  withError: () => loggerMock,
+const loggerMock = {
+  withMetadata() {
+    return this;
+  },
+  withError() {
+    return this;
+  },
   warn: noop,
   error: noop,
   info: noop,
@@ -202,14 +206,15 @@ describe("clearMods", () => {
   });
 });
 
+const broken = (mods: LocalMod[]) =>
+  mods.map((mod) => ({ ...mod, missingVpks: ["gone.vpk"] }));
+
 describe("setInstalledVpks", () => {
   const missing = (remoteId: string) =>
     store.getState().localMods.find((mod) => mod.remoteId === remoteId)
       ?.missingVpks;
 
   beforeEach(() => {
-    const broken = (mods: LocalMod[]) =>
-      mods.map((mod) => ({ ...mod, missingVpks: ["gone.vpk"] }));
     store.setState((state) => ({
       localMods: broken(state.localMods),
       profiles: {
