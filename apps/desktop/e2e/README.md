@@ -93,6 +93,10 @@ pnpm --filter @deadlock-mods/desktop e2e:test -- --case local-mod-lifecycle --ke
 
 The first process imports a synthetic VPK, verifies the real Rust parser, then enables, disables, and re-enables the mod. A second process opens the same world, verifies persisted enabled state, and deletes the mod through the UI. Each step checks the store, `.dmm.json`, exact addon file inventory, and SHA-256 payload hashes. Steam files and a protected game sentinel must remain unchanged. The helper only selects the fixed fixture for the PID returned by the E2E backend; it never substitutes a dialog response or core IPC command. `--case` also works with `e2e:qualify`.
 
+The `local-large` family imports a 1 GiB VPK and a ZIP containing it through each Add Local Mod source. `local-mod-large-picker-{vpk,zip}` choose the fixture in the real file picker and need `--allow-native-input`. `local-mod-large-drop-{vpk,zip}` dispatch a DOM drop carrying a `File` that the page reads from app data; the app stages it in `dropped-mods` and must remove it after the import. `local-mod-large-drop-path-{vpk,zip}` drop only a `file://` path, which takes the same route as a picked file without native input. Each case requires the mod to reach the library with its VPK stored at full size, and appends timings and heap usage to `artifacts/local-mod-large.log`. A picked file used to come back to the renderer as a JSON number array, which crashed the webview from about 100 MB. The family runs as its own Windows CI job; each world holds about 2 GiB of fixtures until it is deleted.
+
+Run one E2E invocation per machine at a time, even from separate checkouts. A concurrent run can attach to the other run's application and fail its run ID check.
+
 Retained worlds contain `wdio-<phase>.log`, `native-picker.log`, per-step `lifecycle-*.json` evidence, and screenshots plus DOM HTML on failure. Without `--keep`, successful worlds and their artifacts are deleted.
 
 Profile ordering has separate pointer and keyboard scenarios, each with two preinstalled profile recipes and a fresh-process restart:

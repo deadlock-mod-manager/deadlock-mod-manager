@@ -81,6 +81,7 @@ jobs:
           [
             smoke,
             local,
+            local-large,
             profiles,
             downloads,
             filesystem,
