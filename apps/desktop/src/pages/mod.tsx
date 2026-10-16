@@ -72,9 +72,11 @@ const Mod = () => {
 
   const { data: mod, error, isLoading } = useMod(params.id);
 
+  const isModPageReady = !isLoading && !!mod;
+
   useScrollBackButton({
     threshold: 100,
-    enabled: true,
+    enabled: isModPageReady,
     scrollContainerRef,
     sentinelRef: backButtonRef,
     onBackClick: goBack,
