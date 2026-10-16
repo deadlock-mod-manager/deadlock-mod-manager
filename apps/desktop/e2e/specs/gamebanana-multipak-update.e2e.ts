@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { isDeepStrictEqual } from "node:util";
 import { $, expect } from "@wdio/globals";
 import { z } from "zod";
 import { startApplication } from "../support/application";
@@ -71,8 +72,27 @@ describe("multipak updates", () => {
           await expect(dialog).toHaveText(expect.stringContaining(mod.name));
         await dialog.$("button=Update All").click();
         await expect(dialog).not.toBeDisplayed({ wait: 30_000 });
-        await waitStatus(world, a.id, "installed");
-        await waitStatus(world, b.id, "installed");
+        // Both were already installed at v1, so wait for the v2 files too.
+        await observeUntil(
+          "v2 files recorded",
+          () => readCatalogState(world),
+          (state) =>
+            MULTIPAK_MODS.every((mod) => {
+              const local = state.localMods.find(
+                (item) => item.remoteId === mod.id,
+              );
+              return (
+                local?.status === "installed" &&
+                isDeepStrictEqual(
+                  local.installedFileTree?.files
+                    .filter((file) => file.is_selected)
+                    .map((file) => file.name)
+                    .sort(),
+                  mod.versions.v2.toSorted(),
+                )
+              );
+            }),
+        );
       });
       const updated = await step("v2 ownership", () =>
         assertMultipakDisk(world, "updated-v2", {
