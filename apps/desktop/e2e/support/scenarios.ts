@@ -1,5 +1,5 @@
 import path from "node:path";
-import { writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import type { CreatedWorld } from "./world";
 import type { FixtureRoute, FixtureRequest } from "./fixture-server";
 import {
@@ -25,7 +25,9 @@ import { prepareBrokenStateWorld } from "./broken-state-fixtures";
 import { prepareShardWorld } from "./shard-fixtures";
 import { assertCrashEvidence } from "./filesystem-oracle";
 import { assertNormalExit, assertInterruptedExit } from "./phase-evidence";
-import { writeSyntheticVpk } from "./vpk";
+import { buildSyntheticVpk, writeSyntheticVpk } from "./vpk";
+import { createArchive } from "./archive-fixtures";
+import { randomBytes } from "node:crypto";
 import { contentRoutes, prepareContentWorld } from "./content-fixtures";
 import { preparePresenceCache } from "./settings-fixtures";
 import { grimoireRoutes, prepareGrimoireWorld } from "./interchange-fixtures";
@@ -102,6 +104,40 @@ const local: Definition = {
     );
   },
 };
+// Mods close to a gigabyte exist; importing one used to crash from 100 MB.
+const LARGE_MOD_BYTES = 1024 * 1024 * 1024;
+// Picked and path-only dropped files come from the world's fixtures. A dropped
+// File is read by the page, which may only read app data.
+const localLarge = (
+  fixtureDirectory: (world: CreatedWorld) => string,
+): Definition => ({
+  ...defaults,
+  family: "local-large",
+  spec: "local-mod-large",
+  phases: ["import"],
+  platforms: ["win32"],
+  prepare: async (world) => {
+    const directory = fixtureDirectory(world);
+    await mkdir(directory, { recursive: true });
+    const vpk = buildSyntheticVpk([
+      {
+        path: "materials/e2e-large.vtex_c",
+        contents: randomBytes(LARGE_MOD_BYTES),
+      },
+    ]);
+    await writeFile(path.join(directory, "large-mod.vpk"), vpk);
+    await writeFile(
+      path.join(directory, "large-mod.zip"),
+      await createArchive({ "large-mod.vpk": vpk }),
+    );
+  },
+});
+const localLargeOnDisk = localLarge((world) =>
+  path.join(world.directory, "fixtures"),
+);
+const localLargeInPage = localLarge((world) =>
+  path.join(world.configuration.roots.appData, "e2e-drop"),
+);
 const profileRoutes = async () => () => [
   {
     method: "GET",
@@ -421,6 +457,12 @@ export const scenarios = {
   "settings-language": settings,
   "about-smoke": smoke,
   "local-mod-lifecycle": local,
+  "local-mod-large-picker-vpk": { ...localLargeOnDisk, nativeInput: true },
+  "local-mod-large-picker-zip": { ...localLargeOnDisk, nativeInput: true },
+  "local-mod-large-drop-vpk": localLargeInPage,
+  "local-mod-large-drop-zip": localLargeInPage,
+  "local-mod-large-drop-path-vpk": localLargeOnDisk,
+  "local-mod-large-drop-path-zip": localLargeOnDisk,
   "profiles-pointer": profiles,
   "profiles-keyboard": profiles,
   "conflicts-resolve": conflicts,

@@ -72,13 +72,16 @@ export const config: TauriWdioConfig = {
   framework: "mocha",
   reporters: [["spec", { addConsoleLogs: true }]],
   // WDIO enforces this per test around the spec function; this.timeout() in a
-  // spec cannot extend it. The longest WebKitGTK scenarios need about 50s.
+  // spec cannot extend it. The longest WebKitGTK scenarios need about 50s; the
+  // large local mod cases move a gigabyte.
   mochaOpts: {
     ui: "bdd",
     timeout:
       process.env.DMM_E2E_CASE_ID === "monkey"
         ? monkeyTimeoutMs(monkeyStepCount())
-        : 90_000,
+        : process.env.DMM_E2E_CASE_ID?.startsWith("local-mod-large-")
+          ? 300_000
+          : 90_000,
   },
   afterTest: async (
     test: { title: string },
