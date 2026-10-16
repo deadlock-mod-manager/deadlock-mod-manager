@@ -23,7 +23,7 @@ export const filesystemManifestSchema = z.object({
     z.string(),
     z.object({
       enabled: z.boolean(),
-      order: z.number(),
+      order: z.number().nullish(),
       shard: z.number(),
       currentVpks: z.array(z.string()),
       disabledVpks: z.array(z.string()),

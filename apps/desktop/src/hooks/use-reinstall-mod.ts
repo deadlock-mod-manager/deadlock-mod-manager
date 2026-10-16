@@ -60,7 +60,11 @@ export const useReinstallMod = () => {
     ): Promise<ReinstallResult> => {
       const profileFolder =
         usePersistedStore.getState().getActiveProfile()?.folderName ?? null;
-      const wasInstalled = target.status === ModStatus.Installed;
+      // Reconciliation demotes a mod with deleted VPKs to downloaded, but its
+      // manifest entry still claims them, so it was installed before the drift.
+      const wasInstalled =
+        target.status === ModStatus.Installed ||
+        (target.missingVpks?.length ?? 0) > 0;
       let missingOnDisk = false;
 
       logger

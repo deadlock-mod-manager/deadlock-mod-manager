@@ -95,7 +95,8 @@ describe("Repair mod folder", () => {
             () => readRepairState(world),
             (state) =>
               state.localMods.find((mod) => mod.remoteId === REPAIR_MODS[1])
-                ?.status === "downloaded",
+                ?.status === "downloaded" &&
+              (state.enabledMods[REPAIR_MODS[1]]?.enabled ?? false) === false,
           );
           await expect(toggle).toHaveAttribute("aria-checked", "false");
           await toggle.waitForClickable();
@@ -105,7 +106,8 @@ describe("Repair mod folder", () => {
             () => readRepairState(world),
             (state) =>
               state.localMods.find((mod) => mod.remoteId === REPAIR_MODS[1])
-                ?.status === "installed",
+                ?.status === "installed" &&
+              (state.enabledMods[REPAIR_MODS[1]]?.enabled ?? false) === true,
           );
           await assertModFolderRepair(world, "toggled");
         },

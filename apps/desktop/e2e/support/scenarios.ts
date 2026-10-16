@@ -48,6 +48,7 @@ import {
   multipakUpdateRoutes,
   assertMultipakUpdateNetwork,
 } from "./multipak-update-fixtures";
+import { monkeyRoutes, prepareMonkeyWorld } from "./monkey-fixtures";
 
 type Definition = {
   family: string;
@@ -215,6 +216,14 @@ const heroSkins: Definition = {
   prepare: async (world) => prepareHeroSkinsWorld(world),
 };
 export const scenarios = {
+  monkey: {
+    ...defaults,
+    family: "monkey",
+    spec: "monkey",
+    phases: ["sequence", "restart-monkey"],
+    routes: monkeyRoutes,
+    prepare: prepareMonkeyWorld,
+  },
   "gameinfo-readonly-launch": {
     ...defaults,
     family: "filesystem",
