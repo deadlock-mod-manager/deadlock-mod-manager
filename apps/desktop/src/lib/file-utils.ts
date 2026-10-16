@@ -1,5 +1,13 @@
-import { BaseDirectory, exists, mkdir, writeFile } from "@tauri-apps/plugin-fs";
+import { appLocalDataDir, join } from "@tauri-apps/api/path";
+import {
+  BaseDirectory,
+  exists,
+  mkdir,
+  remove,
+  writeFile,
+} from "@tauri-apps/plugin-fs";
 import { ARCHIVE_PATTERN, VPK_PATTERN } from "./file-patterns";
+import { getRuntimeBootstrap } from "./runtime-bootstrap";
 
 export interface FileSystemEntry {
   name: string;
@@ -46,6 +54,21 @@ export const getFileBaseName = (file: File): string => {
 export const fileToBytes = async (file: File): Promise<Uint8Array> =>
   new Uint8Array(await file.arrayBuffer());
 
+// A file on disk known only by its path, from the picker or a staged drop.
+type PathBackedFile = File & { path?: string };
+
+export const createPathBackedFile = (filePath: string): File => {
+  const fileName = filePath.split(/[\\/]/).filter(Boolean).at(-1) ?? "mod";
+  const file = new File([], fileName) as PathBackedFile;
+  file.path = filePath;
+  return file;
+};
+
+export const getSourceFilePath = (file: File): string | null => {
+  const filePath = (file as PathBackedFile).path;
+  return typeof filePath === "string" && filePath.length > 0 ? filePath : null;
+};
+
 export const ensureDirectory = async (absolutePath: string): Promise<void> => {
   if (!(await exists(absolutePath, { baseDir: BaseDirectory.AppLocalData }))) {
     await mkdir(absolutePath, {
@@ -60,6 +83,57 @@ export const writeFileBytes = async (
   data: Uint8Array,
 ): Promise<void> =>
   writeFile(absolutePath, data, { baseDir: BaseDirectory.AppLocalData });
+
+const WRITE_CHUNK_BYTES = 8 * 1024 * 1024;
+
+// Written in slices: a mod can be close to a gigabyte, and holding it whole in
+// the renderer, then sending it in one IPC body, can crash the webview.
+export const writeFileInChunks = async (
+  absolutePath: string,
+  file: Blob,
+): Promise<void> => {
+  let offset = 0;
+  do {
+    const chunk = await file
+      .slice(offset, offset + WRITE_CHUNK_BYTES)
+      .arrayBuffer();
+    await writeFile(absolutePath, new Uint8Array(chunk), {
+      append: offset > 0,
+      baseDir: BaseDirectory.AppLocalData,
+    });
+    offset += WRITE_CHUNK_BYTES;
+  } while (offset < file.size);
+};
+
+const stagedDropsDirectory = async (): Promise<string> =>
+  join(
+    (await getRuntimeBootstrap()).appDataPath ?? (await appLocalDataDir()),
+    "dropped-mods",
+  );
+
+export const discardStagedDrops = async (): Promise<void> => {
+  const directory = await stagedDropsDirectory();
+  if (await exists(directory, { baseDir: BaseDirectory.AppLocalData })) {
+    await remove(directory, {
+      recursive: true,
+      baseDir: BaseDirectory.AppLocalData,
+    });
+  }
+};
+
+/**
+ * Flushes a dropped file to disk as soon as it is dropped, so the rest of the
+ * import handles it by path, like a file chosen in the picker. Only the latest
+ * drop is kept.
+ */
+export const stageDroppedFile = async (file: File): Promise<File> => {
+  await discardStagedDrops();
+  const directory = await stagedDropsDirectory();
+  await ensureDirectory(directory);
+  const stagedPath = await join(directory, getFileBaseName(file));
+  await writeFileInChunks(stagedPath, file);
+  return createPathBackedFile(stagedPath);
+};
 
 export const writeFileText = async (
   absolutePath: string,

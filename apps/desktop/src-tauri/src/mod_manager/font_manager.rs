@@ -2,8 +2,9 @@ use crate::errors::Error;
 use serde::{Deserialize, Serialize};
 use std::ffi::OsStr;
 use std::fs;
+use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
-use vpk_parser::{VpkParseOptions, VpkParser};
+use vpk_parser::VpkParser;
 
 const VPK_SIGNATURE: u32 = 0x55aa1234;
 
@@ -26,6 +27,14 @@ fn escape_xml(value: &str) -> String {
     .replace('>', "&gt;")
     .replace('"', "&quot;")
     .replace('\'', "&apos;")
+}
+
+fn read_range(path: &Path, offset: u64, length: usize) -> std::io::Result<Vec<u8>> {
+  let mut file = fs::File::open(path)?;
+  file.seek(SeekFrom::Start(offset))?;
+  let mut bytes = vec![0u8; length];
+  file.read_exact(&mut bytes)?;
+  Ok(bytes)
 }
 
 impl FontManager {
@@ -336,42 +345,30 @@ impl FontManager {
 
   /// Parse a single VPK dir file and extract any TTF fonts packed under `panorama/fonts/`.
   /// Returns `(filename, bytes)` pairs for each font found.
+  ///
+  /// Reads only the directory tree and each font's bytes: a mod VPK can be close to a
+  /// gigabyte, and this runs on every import.
   pub fn extract_fonts_from_vpk(&self, vpk_path: &Path) -> Vec<(String, Vec<u8>)> {
-    let buffer = match fs::read(vpk_path) {
-      Ok(b) => b,
-      Err(e) => {
-        log::warn!("Font scan: failed to read VPK {:?}: {e}", vpk_path);
-        return vec![];
-      }
-    };
-
-    if buffer.len() < 12 {
+    let mut header = [0u8; 12];
+    if let Err(e) = fs::File::open(vpk_path).and_then(|mut file| file.read_exact(&mut header)) {
+      log::warn!("Font scan: failed to read VPK {:?}: {e}", vpk_path);
       return vec![];
     }
 
-    let sig = u32::from_le_bytes(buffer[0..4].try_into().unwrap_or_default());
+    let sig = u32::from_le_bytes(header[0..4].try_into().unwrap_or_default());
     if sig != VPK_SIGNATURE {
       return vec![];
     }
 
-    let version = u32::from_le_bytes(buffer[4..8].try_into().unwrap_or_default());
-    let tree_length = u32::from_le_bytes(buffer[8..12].try_into().unwrap_or_default()) as usize;
-    let tree_start: usize = if version >= 2 { 28 } else { 12 };
+    let version = u32::from_le_bytes(header[4..8].try_into().unwrap_or_default());
+    let tree_length = u64::from(u32::from_le_bytes(
+      header[8..12].try_into().unwrap_or_default(),
+    ));
+    let tree_start: u64 = if version >= 2 { 28 } else { 12 };
     let data_section_start = tree_start + tree_length;
 
-    let options = VpkParseOptions {
-      include_entries: true,
-      include_full_file_hash: false,
-      file_path: vpk_path.to_string_lossy().to_string(),
-      last_modified: None,
-      include_merkle: false,
-    };
-
-    // Move the buffer into the parser to avoid keeping two full copies in memory.
-    // For inline (`archive_index == 0x7fff`) entries we lazily re-read the file
-    // only when the first inline font is encountered.
-    let parsed = match VpkParser::parse(buffer, options) {
-      Ok(p) => p,
+    let entries = match VpkParser::parse_directory_from_file(vpk_path) {
+      Ok(entries) => entries,
       Err(e) => {
         log::warn!("Font scan: failed to parse VPK {:?}: {e}", vpk_path);
         return vec![];
@@ -379,9 +376,8 @@ impl FontManager {
     };
 
     let mut result = Vec::new();
-    let mut inline_buffer: Option<Vec<u8>> = None;
 
-    for entry in &parsed.entries {
+    for entry in &entries {
       // Only care about TTF files inside panorama/fonts/
       if !entry.ext.eq_ignore_ascii_case("ttf") {
         continue;
@@ -399,79 +395,42 @@ impl FontManager {
         continue;
       }
 
-      let file_name = format!("{}.{}", entry.filename, entry.ext);
-      let mut font_bytes: Vec<u8> = Vec::new();
-
-      if entry.entry_length > 0 {
-        if entry.archive_index == 0x7fff {
-          let dir_buffer = match inline_buffer.as_ref() {
-            Some(buf) => buf,
-            None => match fs::read(vpk_path) {
-              Ok(buf) => {
-                inline_buffer = Some(buf);
-                inline_buffer.as_ref().unwrap()
-              }
-              Err(e) => {
-                log::warn!(
-                  "Font scan: failed to re-read VPK for inline entry {:?}: {e}",
-                  vpk_path
-                );
-                continue;
-              }
-            },
-          };
-
-          let start = data_section_start + entry.entry_offset as usize;
-          let end = start + entry.entry_length as usize;
-          if end <= dir_buffer.len() {
-            font_bytes.extend_from_slice(&dir_buffer[start..end]);
-          } else {
-            log::warn!(
-              "Font scan: VPK entry out of bounds for \"{}\" in {:?}",
-              entry.full_path,
-              vpk_path
-            );
-            continue;
-          }
-        } else {
-          // In a companion archive file
-          let stem = vpk_path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
-          let base = stem.strip_suffix("_dir").unwrap_or(stem);
-          let archive_name = format!("{base}_{:03}.vpk", entry.archive_index);
-          let archive_path = vpk_path
-            .parent()
-            .unwrap_or(Path::new("."))
-            .join(&archive_name);
-
-          match fs::read(&archive_path) {
-            Ok(archive_buf) => {
-              let start = entry.entry_offset as usize;
-              let end = start + entry.entry_length as usize;
-              if end <= archive_buf.len() {
-                font_bytes.extend_from_slice(&archive_buf[start..end]);
-              } else {
-                log::warn!(
-                  "Font scan: archive entry out of bounds for \"{}\" in {:?}",
-                  entry.full_path,
-                  archive_path
-                );
-                continue;
-              }
-            }
-            Err(e) => {
-              log::warn!(
-                "Font scan: cannot read companion archive {:?}: {e}",
-                archive_path
-              );
-              continue;
-            }
-          }
-        }
+      if entry.entry_length == 0 {
+        continue;
       }
 
-      if !font_bytes.is_empty() {
-        log::info!("Font scan: found VPK-packed font: {file_name}");
-        result.push((file_name, font_bytes));
+      let file_name = format!("{}.{}", entry.filename, entry.ext);
+      let (source_path, offset) = if entry.archive_index == 0x7fff {
+        (
+          vpk_path.to_path_buf(),
+          data_section_start + u64::from(entry.entry_offset),
+        )
+      } else {
+        // In a companion archive file
+        let stem = vpk_path.file_stem().and_then(|s| s.to_str()).unwrap_or("");
+        let base = stem.strip_suffix("_dir").unwrap_or(stem);
+        let archive_name = format!("{base}_{:03}.vpk", entry.archive_index);
+        (
+          vpk_path
+            .parent()
+            .unwrap_or(Path::new("."))
+            .join(&archive_name),
+          u64::from(entry.entry_offset),
+        )
+      };
+
+      match read_range(&source_path, offset, entry.entry_length as usize) {
+        Ok(font_bytes) => {
+          log::info!("Font scan: found VPK-packed font: {file_name}");
+          result.push((file_name, font_bytes));
+        }
+        Err(e) => {
+          log::warn!(
+            "Font scan: cannot read \"{}\" from {:?}: {e}",
+            entry.full_path,
+            source_path
+          );
+        }
       }
     }
 
@@ -584,5 +543,64 @@ mod tests {
 
     assert!(!game_fonts_dir.join("remove.ttf").exists());
     assert!(game_fonts_dir.join("keep.ttf").exists());
+  }
+
+  /// A VPK v2 whose entries are stored inline, after the directory tree.
+  fn inline_vpk(entries: &[(&str, &str, &str, &[u8])]) -> Vec<u8> {
+    let mut tree = Vec::new();
+    let mut data = Vec::new();
+    for (ext, path, name, contents) in entries {
+      for part in [ext, path, name] {
+        tree.extend_from_slice(part.as_bytes());
+        tree.push(0);
+      }
+      tree.extend_from_slice(&0u32.to_le_bytes());
+      tree.extend_from_slice(&0u16.to_le_bytes());
+      tree.extend_from_slice(&0x7fffu16.to_le_bytes());
+      tree.extend_from_slice(&(data.len() as u32).to_le_bytes());
+      tree.extend_from_slice(&(contents.len() as u32).to_le_bytes());
+      tree.extend_from_slice(&0xffffu16.to_le_bytes());
+      tree.extend_from_slice(&[0, 0]);
+      data.extend_from_slice(contents);
+    }
+    tree.push(0);
+
+    let mut vpk = Vec::new();
+    for value in [
+      super::VPK_SIGNATURE,
+      2,
+      tree.len() as u32,
+      data.len() as u32,
+      0,
+      0,
+      0,
+    ] {
+      vpk.extend_from_slice(&value.to_le_bytes());
+    }
+    vpk.extend_from_slice(&tree);
+    vpk.extend_from_slice(&data);
+    vpk
+  }
+
+  #[test]
+  fn extracts_only_inline_fonts_under_panorama_fonts() {
+    let temp_dir = tempfile::tempdir().unwrap();
+    let vpk_path = temp_dir.path().join("pak01_dir.vpk");
+    fs::write(
+      &vpk_path,
+      inline_vpk(&[
+        ("vtex_c", "materials/large", "texture", &[7; 4096]),
+        ("ttf", "panorama/fonts", "bundled", b"font bytes"),
+        ("ttf", "panorama_fonts_backup", "ignored", b"not a font"),
+      ]),
+    )
+    .unwrap();
+
+    let fonts = FontManager::new().extract_fonts_from_vpk(&vpk_path);
+
+    assert_eq!(
+      fonts,
+      vec![("bundled.ttf".to_string(), b"font bytes".to_vec())]
+    );
   }
 }
