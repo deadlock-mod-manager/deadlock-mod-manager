@@ -301,10 +301,11 @@ had demoted it to downloaded, so the reinstall treated it as never installed. Se
 `4` found that retrying an update within the same second as a failed one hit a
 backup name collision. Keep these seeds as regressions.
 
-The `monkey` family is included by `--suite all`, needs no native input, and is
-not in the CI matrix. To enable it later, add `monkey` to the workflow's family
-matrix and set `DMM_E2E_SEED` (and optionally `DMM_E2E_STEPS`) on that job. Retain
-the usual worlds/artifacts so a failing seed can be replayed.
+The `monkey` family is included by `--suite all` and needs no native input. CI
+runs it with fixed seeds, each as its own job: `0`, `887` and `4` on Windows, and
+`0` and `887` on Debian. To cover another seed, add a `{ suite: monkey, seed: "N" }`
+entry to the matrix `include` in `.github/workflows/desktop-e2e.yml`. Failed
+worlds and artifacts are uploaded, so a failing seed can be replayed locally.
 
 ## Qualification status
 
