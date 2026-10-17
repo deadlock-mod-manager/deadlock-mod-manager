@@ -60,7 +60,7 @@ jobs:
         run: pnpm --filter @deadlock-mods/desktop e2e:build
       - name: Build native helper
         run: pnpm --filter @deadlock-mods/desktop e2e:build:picker
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: desktop-e2e-binaries
           retention-days: 3
@@ -111,7 +111,7 @@ jobs:
         run: pnpm --filter @deadlock-mods/desktop e2e:test -- --suite $env:E2E_SUITE --keep --allow-native-input --report ../../.e2e/reports/scenarios.json
       - name: Retain scenario evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: desktop-e2e-${{ matrix.suite }}${{ matrix.seed && format('-{0}', matrix.seed) || '' }}
           retention-days: 14
@@ -163,7 +163,7 @@ jobs:
           shared-key: desktop-e2e-debug-${{ matrix.distro }}
       - name: Build application
         run: pnpm --filter @deadlock-mods/desktop e2e:build
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: desktop-e2e-binaries-${{ matrix.distro }}
           retention-days: 3
@@ -246,7 +246,7 @@ jobs:
         run: xvfb-run -a -s "-screen 0 1920x1080x24" dbus-run-session -- pnpm --filter @deadlock-mods/desktop e2e:test -- --suite "$E2E_SUITE" --keep --report ../../.e2e/reports/scenarios.json
       - name: Retain scenario evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: desktop-e2e-${{ matrix.distro }}-${{ matrix.suite }}${{ matrix.seed && format('-{0}', matrix.seed) || '' }}
           retention-days: 14
@@ -294,7 +294,7 @@ jobs:
         run: |
           nix copy --to "file://$RUNNER_TEMP/nix-closure?compression=zstd" ./result
           readlink -f result > "$RUNNER_TEMP/nix-closure/e2e-out-path"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: desktop-e2e-binaries-nix
           retention-days: 3
@@ -354,7 +354,7 @@ jobs:
           exit "$status"
       - name: Retain scenario evidence
         if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: desktop-e2e-nix
           retention-days: 14
