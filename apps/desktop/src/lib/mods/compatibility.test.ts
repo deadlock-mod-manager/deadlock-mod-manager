@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { LocalizationOverlayAnalysis } from "@/components/my-mods/localization-conflict-review";
-import { compatibilityResolutions } from "./compatibility";
+import { compatibilityResolutions, groupAssetRepairs } from "./compatibility";
 
 const analysis: LocalizationOverlayAnalysis = {
   baselines: [],
@@ -108,5 +108,30 @@ describe("compatibility review choices", () => {
         useVanilla: true,
       },
     ]);
+  });
+});
+
+describe("compatibility repair summaries", () => {
+  test("groups large animation repairs without mixing mods, kinds, or losing archive paths", () => {
+    const base = {
+      modId: "baba",
+      kind: "animationClipTracks" as const,
+      sourceVpk: "first.vpk",
+      filePath: "models/clips/0.vnmclip_c",
+    };
+    const repairs = Array.from({ length: 291 }, (_, i) => ({
+      ...base,
+      sourceVpk: i % 2 ? "second.vpk" : "first.vpk",
+      filePath: `models/clips/${i}.vnmclip_c`,
+    }));
+    const groups = groupAssetRepairs([
+      ...repairs,
+      { ...base, modId: "other" },
+      { ...base, kind: "cameraAttachmentFrame" },
+    ]);
+    expect(groups).toHaveLength(3);
+    expect(groups[0]?.files).toEqual(repairs);
+    expect(groups[1]?.modId).toBe("other");
+    expect(groups[2]?.kind).toBe("cameraAttachmentFrame");
   });
 });

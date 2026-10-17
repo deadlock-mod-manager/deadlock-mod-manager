@@ -8,6 +8,8 @@ use std::collections::{BTreeMap, BTreeSet};
 const PIVOTS: [&str; 2] = ["standing_pivot", "crouching_pivot"];
 const OLD_FRAME: [f64; 4] = [-0.5, -0.5, -0.5, 0.5];
 const IDENTITY: [f64; 4] = [0.0, 0.0, 0.0, 1.0];
+// Exported root binds can differ slightly without changing the attachment basis.
+const ROOT_ANGLE_TOLERANCE: f64 = 0.001;
 
 pub(super) fn prepare(
   resources: &ResourceSnapshot,
@@ -133,13 +135,26 @@ fn compatible_root_axes(source: &Kv3Value, current: &Kv3Value) -> Option<bool> {
   if !source.parent("root_motion")?.is_empty() || !current.parent("root_motion")?.is_empty() {
     return Some(false);
   }
-  let mut authored = vector::<8>(&source.pose("root_motion")?)?;
+  let authored = vector::<8>(&source.pose("root_motion")?)?;
   let canonical = vector::<8>(&current.pose("root_motion")?)?;
   // The conversion acts in root-local coordinates. Translation does not change
   // those axes, and DATA/mesh bind frames retain the authored root position.
-  authored[..3].copy_from_slice(&canonical[..3]);
-  let pose = |values: [f64; 8]| Kv3Value::Array(values.into_iter().map(Kv3Value::Double).collect());
-  super::animation_skeleton::equivalent_pose(&pose(authored), &pose(canonical))
+  if authored[3] <= 0.0 || canonical[3] <= 0.0 || (authored[3] - canonical[3]).abs() > 0.001 {
+    return Some(false);
+  }
+  let normalized = |pose: [f64; 8]| {
+    let q = [pose[4], pose[5], pose[6], pose[7]];
+    let norm = q.iter().map(|value| value * value).sum::<f64>().sqrt();
+    ((norm - 1.0).abs() <= 0.001).then(|| q.map(|value| value / norm))
+  };
+  let authored = normalized(authored)?;
+  let canonical = normalized(canonical)?;
+  let dot = authored
+    .iter()
+    .zip(canonical)
+    .map(|(a, b)| a * b)
+    .sum::<f64>();
+  Some(2.0 * dot.abs().min(1.0).acos() <= ROOT_ANGLE_TOLERANCE)
 }
 
 // Quaternion multiplication can produce a value between two f32 numbers. Keep

@@ -14,6 +14,7 @@ use vpkmanager::pack_directory;
 use vpkmanager::source2::kv3::{self, Encoding as Kv3Encoding, Seg as Kv3Seg, Value as Kv3Value};
 use vpkmanager::source2::resource::Resource;
 
+mod animation_clips;
 mod animation_masks;
 mod animation_model_evidence;
 mod animation_poses;
@@ -358,6 +359,7 @@ pub struct LocalizationOverlayPlan {
   groups: BTreeMap<String, CandidateGroup>,
   compiled_data: Vec<CompiledDataTable>,
   animation_skeletons: BTreeMap<String, Vec<u8>>,
+  animation_clips: BTreeMap<String, Vec<u8>>,
   camera_models: BTreeMap<String, Vec<u8>>,
   material_assets: BTreeMap<String, Vec<u8>>,
 }
@@ -711,6 +713,13 @@ impl LocalizationOverlayPlan {
       &mut asset_repairs,
       &mut asset_warnings,
     )?;
+    let animation_clips = animation_clips::prepare(
+      resources,
+      &camera_sources,
+      &repair_scope,
+      &mut asset_repairs,
+      &mut asset_warnings,
+    )?;
     let animation_models = model_animation::prepare(
       resources,
       &camera_sources,
@@ -853,6 +862,7 @@ impl LocalizationOverlayPlan {
       groups,
       compiled_data,
       animation_skeletons,
+      animation_clips,
       camera_models,
       material_assets,
     })
@@ -933,6 +943,7 @@ impl LocalizationOverlayPlan {
           .map(|table| table.file_path.as_str()),
       )
       .chain(self.animation_skeletons.keys().map(String::as_str))
+      .chain(self.animation_clips.keys().map(String::as_str))
       .chain(self.camera_models.keys().map(String::as_str))
       .chain(self.material_assets.keys().map(String::as_str))
       .find(|path| self.repair_scope.protects(path))
@@ -996,6 +1007,7 @@ impl LocalizationOverlayPlan {
     for (file_path, bytes) in self
       .animation_skeletons
       .iter()
+      .chain(&self.animation_clips)
       .chain(&self.camera_models)
       .chain(&self.material_assets)
     {
@@ -1009,6 +1021,7 @@ impl LocalizationOverlayPlan {
     if output_files.is_empty()
       && self.compiled_data.is_empty()
       && self.animation_skeletons.is_empty()
+      && self.animation_clips.is_empty()
       && self.camera_models.is_empty()
       && self.material_assets.is_empty()
     {

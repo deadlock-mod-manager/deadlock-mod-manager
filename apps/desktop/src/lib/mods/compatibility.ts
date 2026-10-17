@@ -1,3 +1,4 @@
+import type { AssetRepair } from "@/components/my-mods/asset-compatibility-report";
 import type {
   LocalizationChoice,
   LocalizationOverlayAnalysis,
@@ -58,4 +59,23 @@ export function compatibilityResolutions(
     });
   }
   return resolutions;
+}
+
+export function groupAssetRepairs(repairs: readonly AssetRepair[]) {
+  const groups = new Map<
+    string,
+    { modId: string; kind: AssetRepair["kind"]; files: AssetRepair[] }
+  >();
+  for (const repair of repairs) {
+    const key = JSON.stringify([repair.modId, repair.kind]);
+    const group = groups.get(key);
+    if (group) group.files.push(repair);
+    else
+      groups.set(key, {
+        modId: repair.modId,
+        kind: repair.kind,
+        files: [repair],
+      });
+  }
+  return [...groups.values()];
 }

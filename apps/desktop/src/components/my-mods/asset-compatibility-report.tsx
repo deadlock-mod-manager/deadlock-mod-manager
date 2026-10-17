@@ -1,5 +1,15 @@
-import { CheckCircle2, TriangleAlert } from "@deadlock-mods/ui/icons";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@deadlock-mods/ui/components/collapsible";
+import {
+  CheckCircle2,
+  ChevronDown,
+  TriangleAlert,
+} from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
+import { groupAssetRepairs } from "@/lib/mods/compatibility";
 
 export interface AssetRepair {
   modId: string;
@@ -9,6 +19,7 @@ export interface AssetRepair {
     | "animationSkeleton"
     | "animationSkeletonRebased"
     | "animationInterface"
+    | "animationClipTracks"
     | "animationRigRebase"
     | "cameraInterface"
     | "cameraControls"
@@ -66,20 +77,49 @@ export function AssetCompatibilityReport({
         </p>
       </div>
       <ul className='space-y-3 text-xs'>
-        {repairs.map((repair) => (
+        {groupAssetRepairs(repairs).map((group) => (
           <li
             className='flex items-start gap-2'
-            key={`${repair.modId}:${repair.sourceVpk}:${repair.filePath}:${repair.kind}`}>
+            key={JSON.stringify([group.modId, group.kind])}>
             <CheckCircle2 className='mt-0.5 h-4 w-4 shrink-0 text-emerald-500' />
-            <div className='min-w-0'>
+            <div className='min-w-0 flex-1'>
               <p className='font-medium'>
-                {modNames.get(repair.modId) ?? repair.modId}
+                {modNames.get(group.modId) ?? group.modId}
                 {" · "}
-                {t(`modOrdering.compatibility.repairs.${repair.kind}`)}
+                {t(`modOrdering.compatibility.repairs.${group.kind}`)}
               </p>
-              <code className='mt-0.5 block break-all text-muted-foreground'>
-                {repair.filePath}
-              </code>
+              {group.files.length === 1 ? (
+                <code className='mt-0.5 block break-all text-muted-foreground'>
+                  {group.files[0]?.filePath}
+                </code>
+              ) : (
+                <Collapsible>
+                  <CollapsibleTrigger
+                    className='group mt-1 flex items-center gap-1 rounded text-muted-foreground outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring'
+                    data-testid='compatibility-repair-files-toggle'>
+                    <ChevronDown
+                      aria-hidden
+                      className='h-3 w-3 transition-transform group-data-[state=closed]:-rotate-90'
+                    />
+                    {t("modOrdering.compatibility.affectedFiles", {
+                      count: group.files.length,
+                    })}
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <ul className='mt-2 max-h-48 space-y-1 overflow-y-auto text-muted-foreground'>
+                      {group.files.map((file) => (
+                        <li
+                          key={JSON.stringify([file.sourceVpk, file.filePath])}>
+                          <code className='block break-all'>
+                            {file.filePath}
+                          </code>
+                          <span className='text-[10px]'>{file.sourceVpk}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
             </div>
           </li>
         ))}

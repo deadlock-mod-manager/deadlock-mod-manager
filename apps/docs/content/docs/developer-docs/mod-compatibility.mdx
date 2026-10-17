@@ -68,6 +68,34 @@ old review choices.
 
 ## Automatic repairs
 
+### Authored animation clips after skeleton changes
+
+Authored NM clips are checked against their effective skeleton, including mods
+that already have animation bindings. A track-count mismatch is reported instead
+of silently passing the model. A mod-provided skeleton retains its own contract.
+
+For a vanilla skeleton with inserted bones, the manager reconstructs the old
+sampling layout from an effective model in the same archive. The remaining named
+bones must account for every authored track, and their parent chains must agree
+after collapsing inserted identity helpers. A non-additive clip must identify
+at least eight bones and at least half its tracks through unique static bind
+poses, including translation, rotation, and scale. Those named anchors constrain
+hierarchy traversal within the two sampling LODs. Unconstrained sibling branches
+retain the authored model's order. This supports reordered limbs and clothing,
+rather than assuming that removing new names recovers the old track order.
+The contract is scoped to that archive, skeleton path, and old track count;
+sibling additive clips use the same contract. This reconstruction depends on
+unchanged LOD membership and the authored hierarchy; it is not a general recovery
+of any historical skeleton.
+
+The repair reorders tracks and their compressed frame segments together, updates
+read offsets, and inserts static reference-pose tracks (zero deltas for additive
+clips). It retains original motion values, frame offsets, root motion, events,
+graphs, skeletons, and model bind frames. Nonidentity inserted ancestors,
+insufficient pose evidence, truncated streams, secondary animations, and
+bone-indexed sampling channels prevent repair. Per-mod repair summaries group
+files by repair type, with expandable paths for detailed inspection.
+
 ### Baseline evidence and local history
 
 Historical matching has two distinct jobs: finding plausible game builds and
@@ -234,14 +262,17 @@ Conflicting model sources keep addon precedence and are not automatically repair
 Models with the known pre-update `root_motion` attachment frame can also migrate
 existing camera and aim points. Both `standing_pivot` and `crouching_pivot` must
 match the old rotation, and the installed game must supply both pivots in the new
-frame. The root bone's named parent chain and bind poses must agree. The inverse
+frame. Both models must have an unparented root with matching scale and rotation
+within 0.001 radians (about 0.057 degrees), allowing small exporter differences.
+Root translation may differ; the authored bind pose remains unchanged. This
+tolerance applies only to camera migration, not skeleton or animation rebasing. The inverse
 basis rotation is applied to the mod's own offsets and rotations, preserving
 custom positioning instead of replacing it with vanilla values. Every embedded
 mesh block is checked; inactive influence slots, other bone attachments, model
 metadata, geometry, and animation bindings remain unchanged. Reordered and added
 custom bones do not prevent repair when the root dependency still matches.
 
-Mixed pivot frames, blended influences, changed root binds, unsupported encodings,
+Mixed pivot frames, blended influences, incompatible root axes, unsupported encodings,
 and failed preservation checks produce review warnings. Already current or
 unrecognized authored rotations are preserved. This rule does not migrate onto a
 pre-update game installation. Existing compatibility receipts are invalidated

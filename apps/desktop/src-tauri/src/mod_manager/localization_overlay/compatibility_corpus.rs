@@ -57,6 +57,301 @@ fn translated_root_skin_migrates_camera_without_replacing_its_rig() {
 }
 
 #[test]
+#[ignore = "requires DMM_REAL_CITADEL and DMM_COMPAT_CORPUS with Bottom Heavy Mina"]
+fn exporter_root_drift_skin_repairs_every_camera_mesh_without_rebinding() {
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let cases: Vec<CorpusCase> =
+    serde_json::from_slice(&fs::read(std::env::var("DMM_COMPAT_CORPUS").unwrap()).unwrap())
+      .unwrap();
+  let case = cases.iter().find(|case| case.id == 653713).unwrap();
+  assert_eq!(
+    hex::encode(Sha256::digest(fs::read(&case.archive).unwrap())),
+    case.sha256
+  );
+  let input = LocalizationModInput {
+    mod_id: case.id.to_string(),
+    vpks: case.vpks.clone(),
+  };
+  let path = "models/heroes_wip/vampirebat/vampirebat.vmdl_c";
+  let resources =
+    resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
+  let original = resources.resolve(path).unwrap().unwrap().1;
+  let current = resources.game_bytes(path).unwrap().unwrap();
+  let plan = LocalizationOverlayPlan::build(&citadel, &[input]).unwrap();
+  let repaired = plan
+    .camera_models
+    .get(path)
+    .expect("exporter root drift blocked camera repair");
+  let before = Resource::parse(&original).unwrap();
+  let after = Resource::parse(repaired).unwrap();
+  assert_eq!(before.blocks().len(), after.blocks().len());
+  let mut meshes = 0;
+  for (index, block) in before.blocks().iter().enumerate() {
+    if block.kind != *b"MDAT" {
+      assert_eq!(
+        before.get_block_by_index(index),
+        after.get_block_by_index(index)
+      );
+      continue;
+    }
+    meshes += 1;
+    let mut expected = kv3::decode(before.get_block_by_index(index).unwrap()).unwrap();
+    let actual = kv3::decode(after.get_block_by_index(index).unwrap()).unwrap();
+    *expected.get_mut("m_attachments").unwrap() = actual.get("m_attachments").unwrap().clone();
+    assert!(runtime_values_equal(&expected, &actual));
+    for name in ["standing_pivot", "crouching_pivot"] {
+      let points = actual.get("m_attachments").unwrap().as_array().unwrap();
+      let point = points
+        .iter()
+        .find(|point| point.get("key").and_then(Kv3Value::as_str) == Some(name))
+        .unwrap()
+        .get("value")
+        .unwrap();
+      let rotation = point
+        .get("m_vInfluenceRotations")
+        .unwrap()
+        .as_array()
+        .unwrap()[0]
+        .as_array()
+        .unwrap();
+      let rotation: Vec<_> = rotation.iter().map(|v| v.as_f64().unwrap()).collect();
+      assert!(
+        rotation
+          .iter()
+          .zip([0.0, 0.0, 0.0, 1.0])
+          .all(|(actual, expected)| (actual - expected).abs() < 0.000001)
+      );
+    }
+  }
+  assert_eq!(meshes, 21);
+  assert_eq!(plan.analysis.asset_repairs.len(), 1);
+  assert!(matches!(
+    plan.analysis.asset_repairs[0].kind,
+    asset_compatibility::RepairKind::CameraAttachmentFrame
+  ));
+  assert!(plan.analysis.asset_warnings.is_empty());
+  assert_eq!(validate_exported_blocks(repaired, path).unwrap(), 28);
+  assert!(
+    camera_attachment_frame::repair(repaired, &current)
+      .unwrap()
+      .is_none()
+  );
+  assert_eq!(resources.resolve(path).unwrap().unwrap().1, original);
+}
+
+#[test]
+#[ignore = "requires DMM_REAL_CITADEL and DMM_BABA_VPK"]
+fn authored_clips_gain_inserted_tracks_without_changing_custom_motion() {
+  use source2_model::nm_anim::{NmAnimation, parse_nm_clip, parse_nm_skeleton};
+  use source2_model::resource::Resource as IndependentResource;
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let input = LocalizationModInput {
+    mod_id: "725073".into(),
+    vpks: vec![PathBuf::from(std::env::var("DMM_BABA_VPK").unwrap())],
+  };
+  let original_hash = Sha256::digest(fs::read(&input.vpks[0]).unwrap());
+  let resources =
+    resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
+  let skeleton = "models/heroes_wip/baba/baba.vnmskel_c";
+  let skeleton_bytes = resources.game_bytes(skeleton).unwrap().unwrap();
+  let (format, current, _) = decode_compiled_data(&skeleton_bytes, skeleton).unwrap();
+  let current_rig =
+    parse_nm_skeleton(&IndependentResource::parse(skeleton_bytes.to_vec()).unwrap()).unwrap();
+  // Reconstructed from the authored hierarchy and named static poses, including
+  // right-before-left limbs and the original finger/clothing traversal.
+  let authored_names: Vec<String> = serde_json::from_str(include_str!(
+    "animation_clips/fixtures/baba-track-order.json"
+  ))
+  .unwrap();
+  let retained: Vec<_> = authored_names
+    .iter()
+    .map(|name| {
+      current_rig
+        .bone_names
+        .iter()
+        .position(|bone| bone == name)
+        .unwrap()
+    })
+    .collect();
+  assert_eq!(current_rig.bone_names.len(), 248);
+  assert_eq!(retained.len(), 243);
+  let mut old_skeleton = current.clone();
+  for field in ["m_boneIDs", "m_parentSpaceReferencePose"] {
+    let values = current.get(field).unwrap().as_array().unwrap();
+    *old_skeleton.get_mut(field).unwrap() = Kv3Value::Array(
+      retained
+        .iter()
+        .map(|index| values[*index].clone())
+        .collect(),
+    );
+  }
+  *old_skeleton.get_mut("m_parentIndices").unwrap() = Kv3Value::Array(
+    retained
+      .iter()
+      .map(|index| {
+        let mut parent = current_rig.parent_indices[*index];
+        while parent >= 0 && !retained.contains(&(parent as usize)) {
+          parent = current_rig.parent_indices[parent as usize];
+        }
+        Kv3Value::Int(if parent < 0 {
+          -1
+        } else {
+          retained
+            .iter()
+            .position(|index| *index == parent as usize)
+            .unwrap() as i64
+        })
+      })
+      .collect(),
+  );
+  let old_bytes = Resource::parse(&skeleton_bytes)
+    .unwrap()
+    .rebuild_with_data_preserving(&kv3::encode(&old_skeleton, &format))
+    .unwrap();
+  let old_rig = parse_nm_skeleton(&IndependentResource::parse(old_bytes).unwrap()).unwrap();
+  let plan = LocalizationOverlayPlan::build(&citadel, std::slice::from_ref(&input)).unwrap();
+  let output = TempDir::new().unwrap();
+  let output_path = output.path().join("fixed_dir.vpk");
+  plan.write(&output_path, &[]).unwrap();
+  let archive = VpkArchive::open(&output_path).unwrap();
+  let mut clips = 0;
+  let mut additive = 0;
+  let mut wrong_track_error: f32 = 0.;
+  for path in resources
+    .mod_paths()
+    .filter(|path| path.ends_with(".vnmclip_c"))
+  {
+    let original = resources.resolve(path).unwrap().unwrap().1;
+    let repaired = archive
+      .extract_entry(path)
+      .unwrap_or_else(|_| original.to_vec());
+    let (_, old, _) = decode_compiled_data(&original, path).unwrap();
+    let (_, clip, _) = decode_compiled_data(&repaired, path).unwrap();
+    assert_eq!(
+      old
+        .get("m_trackCompressionSettings")
+        .unwrap()
+        .as_array()
+        .unwrap()
+        .len(),
+      243,
+      "{path}"
+    );
+    assert_eq!(
+      clip
+        .get("m_trackCompressionSettings")
+        .unwrap()
+        .as_array()
+        .unwrap()
+        .len(),
+      248,
+      "old clip tracks still target the wrong body bones: {path}"
+    );
+    for field in [
+      "m_compressedPoseOffsets",
+      "m_rootMotion",
+      "m_events",
+      "m_syncTrack",
+    ] {
+      assert_eq!(old.get(field), clip.get(field), "{path}/{field}");
+    }
+    for (name, old_index) in [
+      ("baba_leg_upper_R", 28),
+      ("baba_hand_R", 43),
+      ("attachHand_R", 146),
+      ("pidge_torso_0", 54),
+    ] {
+      let new_index = current_rig
+        .bone_names
+        .iter()
+        .position(|bone| bone == name)
+        .unwrap();
+      let mut actual = clip
+        .get("m_trackCompressionSettings")
+        .unwrap()
+        .as_array()
+        .unwrap()[new_index]
+        .clone();
+      let expected = &old
+        .get("m_trackCompressionSettings")
+        .unwrap()
+        .as_array()
+        .unwrap()[old_index];
+      *actual.get_mut("m_nTrackReadOffset").unwrap() =
+        expected.get("m_nTrackReadOffset").unwrap().clone();
+      assert_eq!(
+        &actual, expected,
+        "authored track assigned to the wrong named bone: {path}/{name}"
+      );
+    }
+    let old_animation = NmAnimation {
+      clip_path: path.to_string(),
+      skeleton: old_rig.clone(),
+      clip: parse_nm_clip(&IndependentResource::parse(original.to_vec()).unwrap()).unwrap(),
+    };
+    let new_animation = NmAnimation {
+      clip_path: path.to_string(),
+      skeleton: current_rig.clone(),
+      clip: parse_nm_clip(&IndependentResource::parse(repaired.clone()).unwrap()).unwrap(),
+    };
+    for time in [
+      0.,
+      old_animation.clip.duration_seconds * 0.37,
+      old_animation.clip.duration_seconds * 0.9,
+    ] {
+      let a = old_animation.sample_pose(time, false).unwrap();
+      let b = new_animation.sample_pose(time, false).unwrap();
+      assert_eq!(a.len(), 243);
+      assert_eq!(b.len(), 248);
+      for (old_index, new_index) in retained.iter().enumerate() {
+        let old = a[old_index];
+        let new = b[*new_index];
+        for (a, b) in old
+          .translation
+          .iter()
+          .zip(new.translation)
+          .chain(old.rotation.iter().zip(new.rotation))
+          .chain(old.scale.iter().zip(new.scale))
+        {
+          assert!(
+            (*a - b).abs() < 0.00001,
+            "custom animation changed: {path}/{old_index}"
+          );
+        }
+        for (axis, value) in old.translation.iter().enumerate() {
+          wrong_track_error = wrong_track_error.max((value - b[old_index].translation[axis]).abs());
+        }
+      }
+    }
+    let before = Resource::parse(&original).unwrap();
+    let after = Resource::parse(&repaired).unwrap();
+    for (index, block) in before.blocks().iter().enumerate() {
+      if block.kind != *b"DATA" {
+        assert_eq!(
+          before.get_block_by_index(index),
+          after.get_block_by_index(index)
+        );
+      }
+    }
+    validate_exported_blocks(&repaired, path).unwrap();
+    clips += 1;
+    additive += usize::from(new_animation.clip.additive);
+  }
+  assert!(clips > 200 && additive > 20);
+  assert!(
+    wrong_track_error > 20.,
+    "fixture must expose the original track-index deformation"
+  );
+  assert_eq!(
+    Sha256::digest(fs::read(&input.vpks[0]).unwrap()),
+    original_hash
+  );
+  println!(
+    "{clips} clips ({additive} additive): named motion preserved; wrong track mapping error {wrong_track_error:.2}"
+  );
+}
+
+#[test]
 #[ignore = "requires DMM_REAL_CITADEL and DMM_COMPAT_CORPUS"]
 fn overlapping_real_skins_preserve_load_order_and_camera_repairs() {
   let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
@@ -359,7 +654,8 @@ fn legacy_merrin_model_restores_animation_and_camera_without_changing_skinning()
     vpks: vec![source.clone()],
   };
   let path = "models/heroes_staging/hornet_v3/hornet.vmdl_c";
-  let resources = resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
+  let resources =
+    resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
   let authored = resources.resolve(path).unwrap().unwrap().1;
   let current = resources.game_bytes(path).unwrap().unwrap();
   let plan = LocalizationOverlayPlan::build(&citadel, &[input]).unwrap();
@@ -423,7 +719,8 @@ fn relocated_gold_model_reaches_current_hero_and_preserves_authored_materials() 
     mod_id: "559174".into(),
     vpks: vec![source.clone()],
   };
-  let resources = resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
+  let resources =
+    resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
   let (_, heroes, _) = decode_compiled_data(
     &resources.game_bytes(HEROES_VDATA_PATH).unwrap().unwrap(),
     HEROES_VDATA_PATH,
@@ -1443,13 +1740,14 @@ fn inspect_legacy_material_contracts() {
         )
         .unwrap();
         if let Some(red2) = resource.find_block(*b"RED2")
-          && let Ok(red2) = kv3::decode(red2) {
-            fs::write(
-              root.join(format!("{filename}-{label}-RED2.json")),
-              serde_json::to_vec_pretty(&diagnostic_json(&red2)).unwrap(),
-            )
-            .unwrap();
-          }
+          && let Ok(red2) = kv3::decode(red2)
+        {
+          fs::write(
+            root.join(format!("{filename}-{label}-RED2.json")),
+            serde_json::to_vec_pretty(&diagnostic_json(&red2)).unwrap(),
+          )
+          .unwrap();
+        }
       }
     }
   }
@@ -1472,7 +1770,8 @@ fn legacy_models_missing_samples_are_reconciled_against_current_render_contract(
       mod_id: id.to_string(),
       vpks: case.vpks.clone(),
     };
-    let resources = resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
+    let resources =
+      resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
     let original = resources.resolve(path).unwrap().unwrap().1;
     let (_, authored, _) = decode_compiled_data(&original, path).unwrap();
     let current = resources.game_bytes(path).unwrap().unwrap();
@@ -1546,7 +1845,8 @@ fn legacy_deformation_rig_rebase_preserves_authored_render_buffers() {
       mod_id: id.to_string(),
       vpks: case.vpks.clone(),
     };
-    let resources = resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
+    let resources =
+      resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
     let source = resources.resolve(path).unwrap().unwrap().1;
     let plan = LocalizationOverlayPlan::build(&citadel, &[input]).unwrap();
     let Some(repaired) = plan.camera_models.get(path) else {
@@ -1750,7 +2050,8 @@ fn owl_camera_repair_is_stable_with_unrelated_animation_overrides() {
     repair.file_path == owl
       && matches!(repair.kind, asset_compatibility::RepairKind::CameraControls)
   }));
-  let resources = resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
+  let resources =
+    resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
   let current = resources.game_bytes(owl).unwrap().unwrap();
   let (_, model, _) = decode_compiled_data(&current, owl).unwrap();
   let skeleton = model

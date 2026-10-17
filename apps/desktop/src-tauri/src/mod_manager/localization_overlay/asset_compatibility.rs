@@ -10,6 +10,7 @@ pub enum RepairKind {
   AnimationSkeleton,
   AnimationSkeletonRebased,
   AnimationInterface,
+  AnimationClipTracks,
   AnimationRigRebase,
   CameraInterface,
   CameraControls,

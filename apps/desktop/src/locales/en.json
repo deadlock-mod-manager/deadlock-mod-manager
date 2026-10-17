@@ -1806,11 +1806,14 @@
     "vpkCount": "{{count}} VPK(s)",
     "compatibility": {
       "title": "Model and material compatibility",
+      "affectedFiles_one": "{{count}} file",
+      "affectedFiles_other": "{{count}} files",
       "description": "The manager checks supported models and materials against your installed game and prepares verified repairs automatically. Original mod files stay unchanged.",
       "repairs": {
         "animationSkeleton": "Animation skeleton updated",
         "animationSkeletonRebased": "Animation layout updated; custom settings preserved",
         "animationRigRebase": "Restore current animation rig and preserve authored mesh bind frames",
+        "animationClipTracks": "Custom animation tracks mapped to the current skeleton",
         "animationInterface": "Current animation bindings restored; custom model preserved",
         "cameraAttachmentFrame": "Camera and aim attachments updated; custom offsets preserved",
         "cameraInterface": "Missing camera interface restored",

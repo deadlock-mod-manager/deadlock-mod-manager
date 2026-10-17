@@ -151,6 +151,76 @@ fn translated_root_keeps_authored_bind_and_receives_the_local_frame_migration() 
 }
 
 #[test]
+fn tolerates_exporter_root_rotation_drift_without_changing_the_authored_bind() {
+  let mut canonical = model();
+  let mut authored = model();
+  let set_root = |model: &mut Kv3Value, rotation: [f64; 4]| {
+    let Kv3Value::Array(values) = model
+      .get_mut("m_modelSkeleton")
+      .unwrap()
+      .get_mut("m_boneRotParent")
+      .unwrap()
+    else {
+      panic!()
+    };
+    values[0] = array(&rotation);
+  };
+  set_root(
+    &mut canonical,
+    [0.4999999404, 0.4999998808, 0.5, 0.5000001788],
+  );
+  let exported = [0.5001600981, 0.4999464452, 0.4999467432, 0.4999467432];
+  let base = container(&canonical, &[mesh(IDENTITY)]);
+  for rotation in [exported, exported.map(|value| -value)] {
+    set_root(&mut authored, rotation);
+    let original = container(&authored, &[mesh(OLD_FRAME), mesh(OLD_FRAME)]);
+    let repaired = repair(&original, &base)
+      .unwrap()
+      .expect("export rounding blocked camera repair");
+    let before = Resource::parse(&original).unwrap();
+    let after = Resource::parse(&repaired).unwrap();
+    for (index, block) in before.blocks().iter().enumerate() {
+      if block.kind != *b"MDAT" {
+        assert_eq!(
+          before.get_block_by_index(index),
+          after.get_block_by_index(index)
+        );
+      } else {
+        let mut expected = mesh(OLD_FRAME);
+        migrate_mesh(&mut expected).unwrap();
+        assert_eq!(
+          kv3::decode(after.get_block_by_index(index).unwrap()).unwrap(),
+          expected
+        );
+      }
+    }
+    assert!(repair(&repaired, &base).unwrap().is_none());
+  }
+}
+
+#[test]
+fn rejects_root_rotation_outside_camera_tolerance_and_invalid_quaternions() {
+  let base = container(&model(), &[mesh(IDENTITY)]);
+  for rotation in [
+    [0.001_f64.sin(), 0.0, 0.0, 0.001_f64.cos()],
+    [0.0, 0.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0, 2.0],
+  ] {
+    let mut authored = model();
+    let Kv3Value::Array(values) = authored
+      .get_mut("m_modelSkeleton")
+      .unwrap()
+      .get_mut("m_boneRotParent")
+      .unwrap()
+    else {
+      panic!()
+    };
+    values[0] = array(&rotation);
+    assert!(repair(&container(&authored, &[mesh(OLD_FRAME)]), &base).is_err());
+  }
+}
+
+#[test]
 fn declines_changed_root_axes_scale_hierarchy_and_mixed_pivots() {
   let base = container(&model(), &[mesh(IDENTITY)]);
   for (field, replacement) in [
