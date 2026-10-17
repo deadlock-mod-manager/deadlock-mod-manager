@@ -24,9 +24,9 @@ spec:
       labels:
         app: {{ .Chart.Name }}-web
       annotations:
-        linkerd.io/inject: enabled
-        config.linkerd.io/proxy-memory-limit: "1Gi"
-        config.linkerd.io/proxy-memory-request: "128Mi"
+        # The sidecar kept getting OOMKilled under load, taking the app's DB/Redis connections down with it.
+        # Ingress (cloudflared), Postgres and Redis are all outside the mesh, so it added no mTLS here.
+        linkerd.io/inject: disabled
         kubectl.kubernetes.io/default-container: web
     spec:
       {{- if .Values.deployments.web.restartPolicy }}
