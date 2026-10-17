@@ -48,6 +48,10 @@ import {
   multipakUpdateRoutes,
   assertMultipakUpdateNetwork,
 } from "./multipak-update-fixtures";
+import {
+  variantNamesRoutes,
+  assertVariantNamesNetwork,
+} from "./variant-names-fixtures";
 import { monkeyRoutes, prepareMonkeyWorld } from "./monkey-fixtures";
 
 type Definition = {
@@ -490,6 +494,13 @@ export const scenarios = {
     phases: ["update-toggle", "restart-uninstall"],
     routes: multipakUpdateRoutes,
     verifyNetwork: assertMultipakUpdateNetwork,
+  },
+  "gamebanana-variant-names": {
+    ...catalog,
+    spec: "gamebanana-variant-names",
+    phases: ["variants", "restart"],
+    routes: variantNamesRoutes,
+    verifyNetwork: assertVariantNamesNetwork,
   },
   "gamebanana-update-skip": {
     ...catalog,
