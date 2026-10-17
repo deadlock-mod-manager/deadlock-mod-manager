@@ -1,6 +1,0 @@
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": { "types": ["bun"], "incremental": false },
-  "include": ["src/hooks/use-scroll-back-button.test.ts"],
-  "exclude": ["node_modules", "dist"]
-}

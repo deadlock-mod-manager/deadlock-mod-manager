@@ -8,11 +8,6 @@ export const shouldShowBackButton = (
   containerTop: number,
 ): boolean => buttonBottom <= containerTop;
 
-export const shouldShowBackButtonByScroll = (
-  scrollY: number,
-  threshold: number,
-): boolean => scrollY > threshold;
-
 interface UseScrollBackButtonOptions {
   /** Fallback scroll threshold when no sentinel ref is provided */
   threshold?: number;
@@ -68,7 +63,7 @@ export const useScrollBackButton = ({
         ? scrollContainerRef.current.scrollTop
         : window.scrollY;
 
-      setShowBackButton(shouldShowBackButtonByScroll(scrollY, threshold));
+      setShowBackButton(scrollY > threshold);
     };
 
     const scrollElement = scrollContainerRef?.current || window;
