@@ -682,6 +682,9 @@ importers:
         specifier: ^5.0.12
         version: 5.0.12(@types/react@19.2.14)(react@19.2.0)(use-sync-external-store@1.7.0(react@19.2.0))
     devDependencies:
+      '@resvg/resvg-js':
+        specifier: 2.6.2
+        version: 2.6.2
       '@tauri-apps/cli':
         specifier: ^2.11.1
         version: 2.11.2
