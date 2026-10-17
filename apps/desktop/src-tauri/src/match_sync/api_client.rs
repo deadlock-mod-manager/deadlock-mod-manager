@@ -18,6 +18,8 @@ const POST_RETRY_DELAY: Duration = Duration::from_secs(3);
 // The global to-fetch list claims its ids for 15 min so other workers skip them; this
 // cookie identifies that list so it can be released once we're done with it.
 const CLAIM_COOKIE: &str = "to_fetch_claim";
+// The release runs inline at the end of a pass; an unresponsive API mustn't hold it up.
+const RELEASE_TIMEOUT: Duration = Duration::from_secs(15);
 
 pub trait BackfillSource: Send + Sync {
   fn to_fetch(
@@ -71,6 +73,7 @@ impl ApiClient {
       .client()?
       .post(format!("{}/v1/matches/to-fetch/release", self.base_url))
       .header(COOKIE, format!("{CLAIM_COOKIE}={claim}"))
+      .timeout(RELEASE_TIMEOUT)
       .send()
       .await
       .and_then(|r| r.error_for_status())
