@@ -271,14 +271,32 @@ pub async fn replace_mod_vpks(
   Ok(())
 }
 
+/// Copied natively rather than read into the renderer: bytes cross the IPC
+/// boundary as a JSON number array, which crashes the webview for a mod of a
+/// hundred megabytes or more.
 #[tauri::command]
-pub async fn read_dropped_mod_file(file_path: String) -> Result<Vec<u8>, Error> {
-  let validated_path = crate::dropped_mod_file::validate_dropped_mod_file_path(&file_path)?;
+pub async fn copy_dropped_mod_file(file_path: String, target_dir: String) -> Result<String, Error> {
+  let source = crate::dropped_mod_file::validate_dropped_mod_file_path(&file_path)?;
+
+  let target_dir = {
+    let mod_manager = MANAGER.lock().unwrap();
+    mod_manager.validate_extract_target_path(&PathBuf::from(&target_dir))?
+  };
+
+  let file_name = source.file_name().ok_or_else(|| {
+    Error::InvalidInput(format!(
+      "Dropped file '{}' has no file name",
+      source.display()
+    ))
+  })?;
+  let destination = target_dir.join(file_name);
 
   log::info!(
-    "Reading dropped mod file from path: {}",
-    validated_path.display()
+    "Copying dropped mod file {} to {}",
+    source.display(),
+    destination.display()
   );
 
-  tokio::fs::read(&validated_path).await.map_err(Error::from)
+  tokio::fs::copy(&source, &destination).await?;
+  Ok(destination.to_string_lossy().into_owned())
 }

@@ -56,12 +56,18 @@ import {
 import { ALL_SUPPORTED_PATTERN } from "@/lib/file-patterns";
 import {
   type DetectedSource,
+  discardStagedDrops,
   getFileBaseName,
   getFileName,
 } from "@/lib/file-utils";
 import logger from "@/lib/logger";
 import { cn } from "@/lib/utils";
 import { type AddModFormValues, addModSchema } from "@/types/add-mods";
+
+const discardStaged = () =>
+  discardStagedDrops().catch((error) =>
+    logger.withError(error).warn("Failed to discard staged drop"),
+  );
 
 const AddMods = () => {
   const { t } = useTranslation();
@@ -93,6 +99,13 @@ const AddMods = () => {
     });
     setInitialMeta({ name: baseName || "" });
     setOpen(true);
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (!nextOpen) {
+      void discardStaged();
+    }
   };
 
   const handleError = (message: string) => {
@@ -133,6 +146,7 @@ const AddMods = () => {
     try {
       await processMod(metadata, category, detected);
       setOpen(false);
+      void discardStaged();
     } catch (error) {
       logger.withError(error).error("Failed to process mod");
       toast.error(t("addMods.processingError"));
@@ -202,7 +216,7 @@ const AddMods = () => {
         </Card>
       </div>
 
-      <Dialog onOpenChange={setOpen} open={open}>
+      <Dialog onOpenChange={handleOpenChange} open={open}>
         <DialogContent className='max-w-4xl'>
           <DialogHeader>
             <DialogTitle>{t("addMods.finalizeTitle")}</DialogTitle>

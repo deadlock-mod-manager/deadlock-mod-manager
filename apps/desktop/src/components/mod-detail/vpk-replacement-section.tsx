@@ -13,7 +13,7 @@ import { join } from "@tauri-apps/api/path";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { fileToBytes, writeFileBytes } from "@/lib/file-utils";
+import { writeFileInChunks } from "@/lib/file-utils";
 import { usePersistedStore } from "@/lib/store";
 import type { LocalMod } from "@/types/mods";
 import { invokeGuarded } from "@/lib/game-guard";
@@ -87,7 +87,7 @@ export const VpkReplacementSection = ({
           "temp",
           `vpk-replace-${Date.now()}-${file.name}`,
         );
-        await writeFileBytes(tempPath, await fileToBytes(file));
+        await writeFileInChunks(tempPath, file);
         tempPaths.push(tempPath);
       }
 
