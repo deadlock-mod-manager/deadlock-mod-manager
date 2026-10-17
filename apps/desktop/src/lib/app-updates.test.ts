@@ -32,31 +32,27 @@ describe("app update outcomes", () => {
       const queryClient = new QueryClient({
         defaultOptions: { queries: { retry: false } },
       });
-      try {
-        await queryClient.fetchQuery({
-          queryKey: ["app-updates", "native"],
-          queryFn: () =>
-            checkForAppUpdates(async () => ({
-              context,
-              status: "check-failed",
-              message,
-            })),
-        });
-        expect.unreachable("A failed check must reject");
-      } catch (error) {
-        expect(error).toBeInstanceOf(AppUpdateError);
-        if (!(error instanceof AppUpdateError)) throw error;
-        expect(error.phase).toBe("check-failed");
-        expect(error.reason).toBe(message);
-        expect(error.context).toEqual(context);
-      }
+      const fetch = queryClient.fetchQuery({
+        queryKey: ["app-updates", "native"],
+        queryFn: () =>
+          checkForAppUpdates(async () => ({
+            context,
+            status: "check-failed",
+            message,
+          })),
+      });
+      await expect(fetch).rejects.toBeInstanceOf(AppUpdateError);
+      await expect(fetch).rejects.toMatchObject({
+        phase: "check-failed",
+        reason: message,
+        context,
+      });
       expect(queryClient.getQueryState(["app-updates", "native"])?.status).toBe(
         "error",
       );
       expect(
         queryClient.getQueryData(["app-updates", "native"]),
       ).toBeUndefined();
-      queryClient.clear();
     });
   }
 
