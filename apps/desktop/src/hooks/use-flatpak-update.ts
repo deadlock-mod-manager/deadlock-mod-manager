@@ -10,6 +10,7 @@ export const useFlatpakUpdate = () => {
     mutateAsync: installFlatpakUpdate,
     isPending: isInstallingFlatpakUpdate,
   } = useMutation({
+    meta: { skipGlobalErrorHandler: true },
     mutationFn: (url: string) => updateFlatpak(url),
     onSuccess: async () => {
       logger.info("Flatpak update complete — relaunching");

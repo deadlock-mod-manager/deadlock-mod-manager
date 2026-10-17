@@ -1,16 +1,14 @@
 import { analytics } from "@/lib/analytics";
 import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
-import { toast } from "@deadlock-mods/ui/components/sonner";
 import { isAutoUpdateDisabled, isFlatpak } from "@/lib/tauri-commands";
 import { createLogger } from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import useUpdateManager from "./use-update-manager";
+import { showAppUpdateError } from "@/lib/app-update-notifications";
 
 const logger = createLogger("auto-update");
 
 export const useAutoUpdate = (integrationEnabled = true) => {
-  const { t } = useTranslation();
   const [showUpdateDialog, setShowUpdateDialog] = useState(false);
   const updateManager = useUpdateManager();
   const autoUpdateEnabled = usePersistedStore(
@@ -77,9 +75,7 @@ export const useAutoUpdate = (integrationEnabled = true) => {
     try {
       await updateManager.updateAndRelaunch();
     } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      logger.withError(err).error("Failed to update and relaunch");
-      toast.error(t("update.failedWithMessage", { message: err.message }));
+      showAppUpdateError(error instanceof Error ? error : null);
       setShowUpdateDialog(false);
       updateManager.reset();
     }

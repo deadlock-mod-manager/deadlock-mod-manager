@@ -9,7 +9,7 @@ const NIGHTLY_ENDPOINT: &str = "https://github.com/deadlock-mod-manager/deadlock
 const CEF_STABLE_ENDPOINT: &str = "https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest/download/latest-cef.json";
 const CEF_NIGHTLY_ENDPOINT: &str = "https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/download/nightly/latest-cef.json";
 
-fn endpoint_for(channel: &UpdateChannel) -> &'static str {
+pub(crate) fn endpoint_for(channel: &UpdateChannel) -> &'static str {
   match channel {
     UpdateChannel::Stable => {
       if cfg!(feature = "cef") {
