@@ -24,3 +24,11 @@ export async function getLLMText(page: InferPageType<typeof source>) {
 
 ${processed}`;
 }
+
+export function getPageMarkdownSegments(page: InferPageType<typeof source>) {
+  return [...page.slugs, "content.md"];
+}
+
+export function getPageMarkdownUrl(page: InferPageType<typeof source>) {
+  return `/llms.mdx/${getPageMarkdownSegments(page).join("/")}`;
+}
