@@ -2985,6 +2985,24 @@
     "resetOnboardingSuccess": "La configurazione verrà mostrata al prossimo avvio"
   },
   "update": {
+    "checkFailed": "",
+    "checkFailedGuidance": "",
+    "installFailed": "",
+    "installFailedGuidance": "",
+    "missingTarget": "",
+    "missingTargetGuidance": "",
+    "technicalDetails": "",
+    "detailChannel": "",
+    "detailRuntime": "",
+    "detailPackage": "",
+    "detailTarget": "",
+    "copyDetails": "",
+    "detailsCopied": "",
+    "copyDetailsFailed": "",
+    "developmentBuild": "",
+    "unpackagedBuild": "",
+    "viewDownloads": "",
+    "openDownloadsFailed": "",
     "available": "Aggiornamento Disponibile",
     "newVersionAvailable": "Una nuova versione ({{version}}) è disponibile. Hai attualmente la versione {{currentVersion}}.",
     "releaseNotes": "Note di Rilascio",
@@ -4775,6 +4793,16 @@
     "installedFilesCount": "",
     "openTooltipWithCount_one": "",
     "openTooltipWithCount_other": ""
+  },
+  "installedFiles": {
+    "title": "",
+    "description": "",
+    "toggleDescription": "",
+    "fileCount_one": "",
+    "fileCount_other": "",
+    "enabledCount": "",
+    "reset": "",
+    "selectAtLeastOne": ""
   },
   "fileSelector": {
     "selectFilesToInstall": "",

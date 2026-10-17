@@ -2985,6 +2985,24 @@
     "resetOnboardingSuccess": "การแนะนำจะแสดงในการเปิดครั้งถัดไป"
   },
   "update": {
+    "checkFailed": "",
+    "checkFailedGuidance": "",
+    "installFailed": "",
+    "installFailedGuidance": "",
+    "missingTarget": "",
+    "missingTargetGuidance": "",
+    "technicalDetails": "",
+    "detailChannel": "",
+    "detailRuntime": "",
+    "detailPackage": "",
+    "detailTarget": "",
+    "copyDetails": "",
+    "detailsCopied": "",
+    "copyDetailsFailed": "",
+    "developmentBuild": "",
+    "unpackagedBuild": "",
+    "viewDownloads": "",
+    "openDownloadsFailed": "",
     "available": "มีการอัปเดต",
     "newVersionAvailable": "มีเวอร์ชันใหม่ ({{version}}) พร้อมใช้งาน ขณะนี้คุณใช้เวอร์ชัน {{currentVersion}}",
     "releaseNotes": "บันทึกประจำรุ่น",
@@ -4775,6 +4793,16 @@
     "installedFilesCount": "",
     "openTooltipWithCount_one": "",
     "openTooltipWithCount_other": ""
+  },
+  "installedFiles": {
+    "title": "",
+    "description": "",
+    "toggleDescription": "",
+    "fileCount_one": "",
+    "fileCount_other": "",
+    "enabledCount": "",
+    "reset": "",
+    "selectAtLeastOne": ""
   },
   "fileSelector": {
     "selectFilesToInstall": "",
