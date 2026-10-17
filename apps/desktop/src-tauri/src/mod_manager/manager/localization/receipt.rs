@@ -14,7 +14,7 @@ use std::{
 };
 
 // Increment when repair rules or output semantics change, so installed overlays are rebuilt.
-const REPAIR_REVISION: u32 = 28;
+const REPAIR_REVISION: u32 = 29;
 const RECEIPT_NAME: &str = "compatibility.json";
 
 #[derive(Serialize, Deserialize)]

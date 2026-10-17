@@ -1319,6 +1319,91 @@ mod tests {
   }
 
   #[test]
+  fn retired_ui_graphs_require_a_proven_vanilla_nm_closure() {
+    use super::super::{LocalizationModInput, LocalizationOverlayPlan, pack_directory};
+    use std::fs;
+
+    for scenario in [
+      "retired",
+      "live_legacy",
+      "authored_clip",
+      "missing_graph",
+      "custom_graph",
+    ] {
+      let temp = tempfile::tempdir().unwrap();
+      let citadel = temp.path().join("citadel");
+      fs::create_dir_all(&citadel).unwrap();
+      let skeleton_path = "models/custom/character.vnmskel_c";
+      let skeleton_name = "models/custom/character.vnmskel";
+      let model_path = "models/custom/character.vmdl_c";
+      let graph_path = "animgraphs/shared.vnmgraph_c";
+      let legacy_path = "models/custom/ui_character.vanmgrph_c";
+      let old = fixture(false);
+      let current = fixture(true);
+      let graph = compiled_fixture(Kv3Value::Object(vec![
+        ("m_skeleton".into(), Kv3Value::String(skeleton_name.into())),
+        ("m_resources".into(), Kv3Value::Array(Vec::new())),
+      ]));
+      for (directory, skeleton) in [("vanilla", &current), ("mod", &old)] {
+        let root = temp.path().join(directory);
+        for (path, bytes) in [
+          (skeleton_path, compiled_fixture(skeleton.clone())),
+          (
+            model_path,
+            compiled_fixture(model_fixture(skeleton, skeleton_name)),
+          ),
+        ] {
+          let path = root.join(path);
+          fs::create_dir_all(path.parent().unwrap()).unwrap();
+          fs::write(path, bytes).unwrap();
+        }
+        if directory == "mod" || scenario == "live_legacy" {
+          let path = root.join(legacy_path);
+          fs::create_dir_all(path.parent().unwrap()).unwrap();
+          fs::write(path, []).unwrap();
+        }
+        if (directory == "vanilla" && scenario != "missing_graph")
+          || (directory == "mod" && scenario == "custom_graph")
+        {
+          let path = root.join(graph_path);
+          fs::create_dir_all(path.parent().unwrap()).unwrap();
+          fs::write(path, &graph).unwrap();
+        }
+        if directory == "mod" && scenario == "authored_clip" {
+          let path = root.join("models/custom/clips/idle.vnmclip_c");
+          fs::create_dir_all(path.parent().unwrap()).unwrap();
+          fs::write(path, &graph).unwrap();
+        }
+        let archive = if directory == "vanilla" {
+          citadel.join("pak01_dir.vpk")
+        } else {
+          temp.path().join("mod_dir.vpk")
+        };
+        pack_directory(&root, &archive).unwrap();
+      }
+      let plan = LocalizationOverlayPlan::build(
+        &citadel,
+        &[LocalizationModInput {
+          mod_id: "arbitrary-skin".into(),
+          vpks: vec![temp.path().join("mod_dir.vpk")],
+        }],
+      )
+      .unwrap();
+      assert_eq!(
+        plan.animation_skeletons.contains_key(skeleton_path),
+        scenario == "retired",
+        "{scenario}: {:?}",
+        plan.analysis.asset_warnings
+      );
+      if scenario == "retired" {
+        let (_, repaired, _) =
+          decode_compiled_data(&plan.animation_skeletons[skeleton_path], skeleton_path).unwrap();
+        assert_eq!(repaired.get("m_boneIDs"), current.get("m_boneIDs"));
+      }
+    }
+  }
+
+  #[test]
   fn overlay_repairs_depend_on_structure_not_mod_or_hero_identity() {
     use super::super::{LocalizationModInput, LocalizationOverlayPlan, pack_directory};
     use std::fs;

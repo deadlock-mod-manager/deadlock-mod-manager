@@ -3,6 +3,102 @@
 use super::*;
 
 #[test]
+#[ignore = "requires DMM_REAL_CITADEL and DMM_RICK_VPK"]
+fn installed_retired_graph_skin_uses_current_nm_track_order() {
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let input = LocalizationModInput {
+    mod_id: "637681".into(),
+    vpks: vec![PathBuf::from(std::env::var("DMM_RICK_VPK").unwrap())],
+  };
+  let model = "models/heroes_wip/doorman_v2/doorman.vmdl_c";
+  let skeleton = "models/heroes_wip/doorman_v2/doorman.vnmskel_c";
+  let resources =
+    resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
+  let old = resources.resolve(skeleton).unwrap().unwrap().1;
+  let current = resources.game_bytes(skeleton).unwrap().unwrap();
+  let source_rig = source2_model::nm_anim::parse_nm_skeleton(
+    &source2_model::resource::Resource::parse(old.to_vec()).unwrap(),
+  )
+  .unwrap();
+  let current_rig = source2_model::nm_anim::parse_nm_skeleton(
+    &source2_model::resource::Resource::parse(current.to_vec()).unwrap(),
+  )
+  .unwrap();
+  assert_ne!(source_rig.bone_names, current_rig.bone_names);
+  let archive = VpkArchive::open(&citadel.join("pak01_dir.vpk")).unwrap();
+  let clips: Vec<_> = archive
+    .list_entries()
+    .into_iter()
+    .filter(|path| {
+      path.starts_with("models/heroes_wip/doorman_v2/clips/") && path.ends_with(".vnmclip_c")
+    })
+    .filter_map(|path| source2_model::nm_anim::load_nm_animation_from_archive(&archive, &path).ok())
+    .filter(|animation| !animation.clip.additive)
+    .take(3)
+    .collect();
+  assert!(!clips.is_empty(), "no current animation samples found");
+  let mut wrong_track_error: f32 = 0.;
+  for animation in &clips {
+    let expected = animation
+      .sample_pose(animation.clip.duration_seconds * 0.5, true)
+      .unwrap();
+    let mut stale = animation.clone();
+    stale.skeleton = source_rig.clone();
+    let actual = stale
+      .sample_pose(animation.clip.duration_seconds * 0.5, true)
+      .unwrap();
+    for name in ["pelvis", "head", "hand_L", "hand_R", "ankle_L", "ankle_R"] {
+      let i = current_rig
+        .bone_names
+        .iter()
+        .position(|n| n == name)
+        .unwrap();
+      let j = source_rig
+        .bone_names
+        .iter()
+        .position(|n| n == name)
+        .unwrap();
+      for axis in 0..3 {
+        wrong_track_error = wrong_track_error
+          .max((expected[i].translation[axis] - actual[j].translation[axis]).abs());
+      }
+    }
+  }
+  assert!(
+    wrong_track_error > 10.,
+    "fixture must expose body animation corruption"
+  );
+  println!("stale skeleton maps body animation tracks incorrectly: {wrong_track_error:.2}");
+  let plan = LocalizationOverlayPlan::build(&citadel, &[input]).unwrap();
+  let repaired = plan
+    .animation_skeletons
+    .get(skeleton)
+    .expect("retired legacy graphs must not block a proven current NM sampling layout");
+  let repaired_rig = source2_model::nm_anim::parse_nm_skeleton(
+    &source2_model::resource::Resource::parse(repaired.clone()).unwrap(),
+  )
+  .unwrap();
+  assert_eq!(repaired_rig.bone_names, current_rig.bone_names);
+  for animation in clips {
+    let mut repaired_animation = animation.clone();
+    repaired_animation.skeleton = repaired_rig.clone();
+    for time in [0., animation.clip.duration_seconds * 0.5] {
+      let expected = animation.sample_pose(time, true).unwrap();
+      let actual = repaired_animation.sample_pose(time, true).unwrap();
+      for (a, b) in expected.iter().zip(actual) {
+        for axis in 0..3 {
+          assert!((a.translation[axis] - b.translation[axis]).abs() < 0.001);
+        }
+      }
+    }
+  }
+  let original_model = resources.resolve(model).unwrap().unwrap().1;
+  let (_, before, _) = decode_compiled_data(&original_model, model).unwrap();
+  let (_, after, _) = decode_compiled_data(&plan.camera_models[model], model).unwrap();
+  assert_eq!(before.get("m_modelSkeleton"), after.get("m_modelSkeleton"));
+}
+
+#[test]
 #[ignore = "requires DMM_REAL_CITADEL, DMM_SHIV_VPK and DMM_GT_VPK"]
 fn installed_shiv_and_skeleton_talon_restore_cameras_without_changing_geometry() {
   let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
@@ -517,7 +613,12 @@ fn inspect_legacy_model_contracts() {
           .and_then(Kv3Value::as_array)
         {
           for name in refs.iter().filter_map(Kv3Value::as_str) {
-            if let Some(bytes) = resources.game_bytes(name).unwrap() {
+            let bytes = if label == "source" {
+              resources.resolve(name).unwrap().map(|(_, bytes)| bytes)
+            } else {
+              resources.game_bytes(name).unwrap()
+            };
+            if let Some(bytes) = bytes {
               let (_, skeleton, _) = decode_compiled_data(&bytes, name).unwrap();
               details.insert("animationRig".into(), diagnostic_json(&skeleton));
             }

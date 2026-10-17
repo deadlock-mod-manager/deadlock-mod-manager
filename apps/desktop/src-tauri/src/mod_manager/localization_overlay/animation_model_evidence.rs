@@ -198,6 +198,44 @@ impl AnimationInputs {
   }
 }
 
+fn permits_retired_graphs(
+  resources: &ResourceSnapshot,
+  model: &Kv3Value,
+  skeleton: &str,
+  mod_id: &str,
+) -> bool {
+  let mut retired = false;
+  for path in resources.mod_paths().filter(|path| {
+    is_animation_path(path)
+      && resources
+        .provider(path)
+        .is_some_and(|provider| provider.mod_id.as_deref() == Some(mod_id))
+  }) {
+    if !path.ends_with(".vanmgrph_c") || !matches!(resources.game_bytes(path), Ok(None)) {
+      return false;
+    }
+    retired = true;
+  }
+  if !retired {
+    return false;
+  }
+  let Some(bindings) = graphs(model) else {
+    return false;
+  };
+  let mut visited = BTreeSet::new();
+  let mut visiting = BTreeSet::new();
+  bindings.values().all(|graph| {
+    walk_animation(
+      resources,
+      graph,
+      skeleton,
+      true,
+      &mut visited,
+      &mut visiting,
+    )
+  })
+}
+
 fn walk_animation(
   resources: &ResourceSnapshot,
   name: &str,
@@ -299,10 +337,6 @@ pub(super) fn find(
   source: &CompiledDataSource,
   skeleton_path: &str,
 ) -> Option<ModelEvidence> {
-  // Custom current animation data could still use the retired sampling layout.
-  if animation_inputs.mod_ids.contains(&source.mod_id) {
-    return None;
-  }
   let mut candidates = Vec::new();
   for (path, sources) in models {
     let Some(current_bytes) = resources.game_bytes(path).ok()? else {
@@ -330,6 +364,13 @@ pub(super) fn find(
     let (_, model, _) = matching.into_iter().next()?;
     let (_, current, _) = decode_compiled_data(&current_bytes, path).ok()?;
     if !references_skeleton(&current, skeleton_path) {
+      return None;
+    }
+    // Retired UI graphs do not sample the active NM rig. Require a vanilla NM
+    // closure before exempting them; authored clips still keep their own layout.
+    if animation_inputs.mod_ids.contains(&source.mod_id)
+      && !permits_retired_graphs(resources, &current, skeleton_path, &source.mod_id)
+    {
       return None;
     }
     if !animation_inputs.unrelated(resources, &current, skeleton_path) {
