@@ -17,7 +17,7 @@ spec:
       labels:
         app: {{ .Chart.Name }}-lockdex
       annotations:
-        linkerd.io/inject: enabled
+        linkerd.io/inject: disabled
         kubectl.kubernetes.io/default-container: lockdex
     spec:
       {{- if .Values.deployments.lockdex.restartPolicy }}

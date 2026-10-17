@@ -25,7 +25,7 @@ spec:
       labels:
         app: {{ .Chart.Name }}-mirror-service
       annotations:
-        linkerd.io/inject: enabled
+        linkerd.io/inject: disabled
         kubectl.kubernetes.io/default-container: mirror-service
     spec:
       {{- if $deployment.restartPolicy }}

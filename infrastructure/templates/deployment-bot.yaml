@@ -15,7 +15,7 @@ spec:
       labels:
         app: {{ .Chart.Name }}-bot
       annotations:
-        linkerd.io/inject: enabled
+        linkerd.io/inject: disabled
         kubectl.kubernetes.io/default-container: bot
     spec:
       {{- if .Values.deployments.bot.restartPolicy }}

@@ -24,9 +24,7 @@ spec:
       labels:
         app: {{ .Chart.Name }}-worker
       annotations:
-        linkerd.io/inject: enabled
-        config.linkerd.io/proxy-memory-limit: "1Gi"
-        config.linkerd.io/proxy-memory-request: "128Mi"
+        linkerd.io/inject: disabled
         kubectl.kubernetes.io/default-container: worker
     spec:
       {{- if .Values.deployments.worker.restartPolicy }}
