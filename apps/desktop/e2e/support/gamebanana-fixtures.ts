@@ -85,6 +85,7 @@ export const catalogRecipe = (scenario: string): CatalogArchive[] => {
   if (
     [
       "gamebanana-reselect",
+      "gamebanana-file-toggle",
       "gamebanana-reinstall",
       "gamebanana-reinstall-disabled",
     ].includes(scenario)
@@ -311,6 +312,9 @@ export const assertCatalogNetwork = (
   if (
     [
       "gamebanana-reselect",
+      // Enabling a VPK that was never installed extracts it from a fresh
+      // download; switching back to a parked VPK downloads nothing.
+      "gamebanana-file-toggle",
       "gamebanana-reinstall",
       "gamebanana-reinstall-disabled",
       "gamebanana-force-update",

@@ -225,6 +225,35 @@ export const applyArchives = (names: string[]) =>
     await expect(dialog).not.toBeDisplayed();
   });
 
+export const chooseInstalledFiles = async (names: string[]) => {
+  const installed = await installedFiles();
+  await reveal(installed);
+  for (const row of await installed.$$("[data-selected]")) {
+    const name = await row.$("[data-file-name]").getText();
+    if (
+      ((await row.getAttribute("data-selected")) === "true") !==
+      names.includes(name)
+    )
+      await row.click();
+    await expect(row.$('[role="checkbox"]')).toHaveAttribute(
+      "aria-checked",
+      String(names.includes(name)),
+    );
+  }
+  return installed;
+};
+
+export const applyInstalledFiles = (names: string[]) =>
+  step(`apply installed files ${names.join(", ")}`, async () => {
+    await openFilesTab();
+    const installed = await chooseInstalledFiles(names);
+    await installed.$("button=Apply").click();
+    await expect(
+      $('//*[@data-sonner-toast and contains(., "Mod files updated")]'),
+    ).toBeDisplayed();
+    await expect(installed.$("button=Apply")).toBeDisabled();
+  });
+
 export const toggleCatalog = async (world: string, enabled: boolean) => {
   const toggle = await $('[role="switch"]');
   await reveal(toggle);

@@ -480,6 +480,7 @@ export const scenarios = {
   "gamebanana-switch": catalogLifecycle,
   "gamebanana-switch-failure": catalogLifecycle,
   "gamebanana-reselect": catalogLifecycle,
+  "gamebanana-file-toggle": catalogLifecycle,
   "gamebanana-reinstall": catalogLifecycle,
   "gamebanana-reinstall-disabled": catalogLifecycle,
   "gamebanana-force-update": catalogLifecycle,

@@ -24,8 +24,10 @@ import {
 } from "../support/ui";
 import {
   applyArchives,
+  applyInstalledFiles,
   checkCatalog,
   chooseArchives,
+  chooseInstalledFiles,
   installCatalog,
   openCatalogOptions,
   reinstallCatalog,
@@ -140,9 +142,30 @@ describe("catalog installation lifecycle", () => {
             dormant,
           );
         }
+      } else if (scenario === "gamebanana-file-toggle") {
+        await openFilesTab();
+        let installed = await chooseInstalledFiles([]);
+        await expect(installed.$("button=Apply")).toBeDisabled();
+        await chooseInstalledFiles(["common.vpk", "red.vpk"]);
+        await installed.$("button=Reset").click();
+        await expect(installed.$("button=Apply")).toBeDisabled();
+        installed = await chooseInstalledFiles(files);
+        await expect(installed.$("button=Apply")).toBeDisabled();
+        await applyInstalledFiles(["common.vpk", "red.vpk"]);
+        files = ["common.vpk", "red.vpk"];
+        dormant = ["blue.vpk"];
+        await checkCatalog(
+          world,
+          scenario,
+          "enabled-uninstalled-file",
+          files,
+          downloads,
+          dormant,
+        );
+        await applyInstalledFiles(["common.vpk", "blue.vpk"]);
+        files = ["common.vpk", "blue.vpk"];
+        dormant = ["red.vpk"];
       } else if (scenario === "gamebanana-reselect") {
-        // A single archive has no installed-file editor; delete and install
-        // again is the current UI path for changing its VPK selection.
         await expect($("button=Manage files")).not.toBeDisplayed();
         const remove = await $("button=Delete Mod");
         await reveal(remove);
