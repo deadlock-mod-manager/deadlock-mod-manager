@@ -1,4 +1,17 @@
 {
+  "launchRepair": {
+    "title_one": "",
+    "title_other": "",
+    "description": "",
+    "localImport": "",
+    "localNotice": "",
+    "reinstallAndLaunch": "",
+    "disableAndLaunch": "",
+    "progress": "",
+    "notRestored": "",
+    "failed": "",
+    "profileChanged": ""
+  },
   "favorites": {
     "title": "Абраныя",
     "subtitle": "Моды, якія вы захавалі, каб вярнуцца да іх пазней.",

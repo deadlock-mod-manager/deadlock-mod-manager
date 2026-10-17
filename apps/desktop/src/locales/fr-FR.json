@@ -1,4 +1,17 @@
 {
+  "launchRepair": {
+    "title_one": "",
+    "title_other": "",
+    "description": "",
+    "localImport": "",
+    "localNotice": "",
+    "reinstallAndLaunch": "",
+    "disableAndLaunch": "",
+    "progress": "",
+    "notRestored": "",
+    "failed": "",
+    "profileChanged": ""
+  },
   "favorites": {
     "title": "Favoris",
     "subtitle": "Mods enregistrés pour mieux les trouver.",
