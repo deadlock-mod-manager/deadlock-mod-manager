@@ -1,0 +1,2160 @@
+//! Opt-in regression runner for locally downloaded, checksum-pinned mods.
+//! Runtime acceptance is deliberately not inferred from a successful rebuild.
+use super::*;
+
+#[test]
+#[ignore = "requires DMM_REAL_CITADEL and DMM_COMPAT_CORPUS with Cowboy Drifter"]
+fn translated_root_skin_migrates_camera_without_replacing_its_rig() {
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let cases: Vec<CorpusCase> =
+    serde_json::from_slice(&fs::read(std::env::var("DMM_COMPAT_CORPUS").unwrap()).unwrap())
+      .unwrap();
+  let case = cases.iter().find(|case| case.id == 720359).unwrap();
+  let input = LocalizationModInput {
+    mod_id: case.id.to_string(),
+    vpks: case.vpks.clone(),
+  };
+  let path = "models/heroes_wip/drifter/drifter.vmdl_c";
+  let resources =
+    resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
+  let original = resources.resolve(path).unwrap().unwrap().1;
+  let current = resources.game_bytes(path).unwrap().unwrap();
+  let plan = LocalizationOverlayPlan::build(&citadel, &[input]).unwrap();
+  let repaired = plan
+    .camera_models
+    .get(path)
+    .expect("translated root camera was skipped");
+  assert!(plan.analysis.asset_repairs.iter().any(|repair| {
+    repair.file_path == path
+      && matches!(
+        repair.kind,
+        asset_compatibility::RepairKind::CameraAttachmentFrame
+      )
+  }));
+  let before = Resource::parse(&original).unwrap();
+  let after = Resource::parse(repaired).unwrap();
+  assert_eq!(before.blocks().len(), after.blocks().len());
+  for (index, block) in before.blocks().iter().enumerate() {
+    if block.kind != *b"MDAT" {
+      assert_eq!(
+        before.get_block_by_index(index),
+        after.get_block_by_index(index)
+      );
+    } else {
+      let mut expected = kv3::decode(before.get_block_by_index(index).unwrap()).unwrap();
+      let actual = kv3::decode(after.get_block_by_index(index).unwrap()).unwrap();
+      *expected.get_mut("m_attachments").unwrap() = actual.get("m_attachments").unwrap().clone();
+      assert!(runtime_values_equal(&expected, &actual));
+    }
+  }
+  validate_exported_blocks(repaired, path).unwrap();
+  assert!(
+    camera_attachment_frame::repair(repaired, &current)
+      .unwrap()
+      .is_none()
+  );
+  assert_eq!(resources.resolve(path).unwrap().unwrap().1, original);
+}
+
+#[test]
+#[ignore = "requires DMM_REAL_CITADEL and DMM_COMPAT_CORPUS with Bottom Heavy Mina"]
+fn exporter_root_drift_skin_repairs_every_camera_mesh_without_rebinding() {
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let cases: Vec<CorpusCase> =
+    serde_json::from_slice(&fs::read(std::env::var("DMM_COMPAT_CORPUS").unwrap()).unwrap())
+      .unwrap();
+  let case = cases.iter().find(|case| case.id == 653713).unwrap();
+  assert_eq!(
+    hex::encode(Sha256::digest(fs::read(&case.archive).unwrap())),
+    case.sha256
+  );
+  let input = LocalizationModInput {
+    mod_id: case.id.to_string(),
+    vpks: case.vpks.clone(),
+  };
+  let path = "models/heroes_wip/vampirebat/vampirebat.vmdl_c";
+  let resources =
+    resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
+  let original = resources.resolve(path).unwrap().unwrap().1;
+  let current = resources.game_bytes(path).unwrap().unwrap();
+  let plan = LocalizationOverlayPlan::build(&citadel, &[input]).unwrap();
+  let repaired = plan
+    .camera_models
+    .get(path)
+    .expect("exporter root drift blocked camera repair");
+  let before = Resource::parse(&original).unwrap();
+  let after = Resource::parse(repaired).unwrap();
+  assert_eq!(before.blocks().len(), after.blocks().len());
+  let mut meshes = 0;
+  for (index, block) in before.blocks().iter().enumerate() {
+    if block.kind != *b"MDAT" {
+      assert_eq!(
+        before.get_block_by_index(index),
+        after.get_block_by_index(index)
+      );
+      continue;
+    }
+    meshes += 1;
+    let mut expected = kv3::decode(before.get_block_by_index(index).unwrap()).unwrap();
+    let actual = kv3::decode(after.get_block_by_index(index).unwrap()).unwrap();
+    *expected.get_mut("m_attachments").unwrap() = actual.get("m_attachments").unwrap().clone();
+    assert!(runtime_values_equal(&expected, &actual));
+    for name in ["standing_pivot", "crouching_pivot"] {
+      let points = actual.get("m_attachments").unwrap().as_array().unwrap();
+      let point = points
+        .iter()
+        .find(|point| point.get("key").and_then(Kv3Value::as_str) == Some(name))
+        .unwrap()
+        .get("value")
+        .unwrap();
+      let rotation = point
+        .get("m_vInfluenceRotations")
+        .unwrap()
+        .as_array()
+        .unwrap()[0]
+        .as_array()
+        .unwrap();
+      let rotation: Vec<_> = rotation.iter().map(|v| v.as_f64().unwrap()).collect();
+      assert!(
+        rotation
+          .iter()
+          .zip([0.0, 0.0, 0.0, 1.0])
+          .all(|(actual, expected)| (actual - expected).abs() < 0.000001)
+      );
+    }
+  }
+  assert_eq!(meshes, 21);
+  assert_eq!(plan.analysis.asset_repairs.len(), 1);
+  assert!(matches!(
+    plan.analysis.asset_repairs[0].kind,
+    asset_compatibility::RepairKind::CameraAttachmentFrame
+  ));
+  assert!(plan.analysis.asset_warnings.is_empty());
+  assert_eq!(validate_exported_blocks(repaired, path).unwrap(), 28);
+  assert!(
+    camera_attachment_frame::repair(repaired, &current)
+      .unwrap()
+      .is_none()
+  );
+  assert_eq!(resources.resolve(path).unwrap().unwrap().1, original);
+}
+
+#[test]
+#[ignore = "requires DMM_REAL_CITADEL and DMM_BABA_VPK"]
+fn authored_clips_gain_inserted_tracks_without_changing_custom_motion() {
+  use source2_model::nm_anim::{NmAnimation, parse_nm_clip, parse_nm_skeleton};
+  use source2_model::resource::Resource as IndependentResource;
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let input = LocalizationModInput {
+    mod_id: "725073".into(),
+    vpks: vec![PathBuf::from(std::env::var("DMM_BABA_VPK").unwrap())],
+  };
+  let original_hash = Sha256::digest(fs::read(&input.vpks[0]).unwrap());
+  let resources =
+    resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
+  let skeleton = "models/heroes_wip/baba/baba.vnmskel_c";
+  let skeleton_bytes = resources.game_bytes(skeleton).unwrap().unwrap();
+  let (format, current, _) = decode_compiled_data(&skeleton_bytes, skeleton).unwrap();
+  let current_rig =
+    parse_nm_skeleton(&IndependentResource::parse(skeleton_bytes.to_vec()).unwrap()).unwrap();
+  // Reconstructed from the authored hierarchy and named static poses, including
+  // right-before-left limbs and the original finger/clothing traversal.
+  let authored_names: Vec<String> = serde_json::from_str(include_str!(
+    "animation_clips/fixtures/baba-track-order.json"
+  ))
+  .unwrap();
+  let retained: Vec<_> = authored_names
+    .iter()
+    .map(|name| {
+      current_rig
+        .bone_names
+        .iter()
+        .position(|bone| bone == name)
+        .unwrap()
+    })
+    .collect();
+  assert_eq!(current_rig.bone_names.len(), 248);
+  assert_eq!(retained.len(), 243);
+  let mut old_skeleton = current.clone();
+  for field in ["m_boneIDs", "m_parentSpaceReferencePose"] {
+    let values = current.get(field).unwrap().as_array().unwrap();
+    *old_skeleton.get_mut(field).unwrap() = Kv3Value::Array(
+      retained
+        .iter()
+        .map(|index| values[*index].clone())
+        .collect(),
+    );
+  }
+  *old_skeleton.get_mut("m_parentIndices").unwrap() = Kv3Value::Array(
+    retained
+      .iter()
+      .map(|index| {
+        let mut parent = current_rig.parent_indices[*index];
+        while parent >= 0 && !retained.contains(&(parent as usize)) {
+          parent = current_rig.parent_indices[parent as usize];
+        }
+        Kv3Value::Int(if parent < 0 {
+          -1
+        } else {
+          retained
+            .iter()
+            .position(|index| *index == parent as usize)
+            .unwrap() as i64
+        })
+      })
+      .collect(),
+  );
+  let old_bytes = Resource::parse(&skeleton_bytes)
+    .unwrap()
+    .rebuild_with_data_preserving(&kv3::encode(&old_skeleton, &format))
+    .unwrap();
+  let old_rig = parse_nm_skeleton(&IndependentResource::parse(old_bytes).unwrap()).unwrap();
+  let plan = LocalizationOverlayPlan::build(&citadel, std::slice::from_ref(&input)).unwrap();
+  let output = TempDir::new().unwrap();
+  let output_path = output.path().join("fixed_dir.vpk");
+  plan.write(&output_path, &[]).unwrap();
+  let archive = VpkArchive::open(&output_path).unwrap();
+  let mut clips = 0;
+  let mut additive = 0;
+  let mut wrong_track_error: f32 = 0.;
+  for path in resources
+    .mod_paths()
+    .filter(|path| path.ends_with(".vnmclip_c"))
+  {
+    let original = resources.resolve(path).unwrap().unwrap().1;
+    let repaired = archive
+      .extract_entry(path)
+      .unwrap_or_else(|_| original.to_vec());
+    let (_, old, _) = decode_compiled_data(&original, path).unwrap();
+    let (_, clip, _) = decode_compiled_data(&repaired, path).unwrap();
+    assert_eq!(
+      old
+        .get("m_trackCompressionSettings")
+        .unwrap()
+        .as_array()
+        .unwrap()
+        .len(),
+      243,
+      "{path}"
+    );
+    assert_eq!(
+      clip
+        .get("m_trackCompressionSettings")
+        .unwrap()
+        .as_array()
+        .unwrap()
+        .len(),
+      248,
+      "old clip tracks still target the wrong body bones: {path}"
+    );
+    for field in [
+      "m_compressedPoseOffsets",
+      "m_rootMotion",
+      "m_events",
+      "m_syncTrack",
+    ] {
+      assert_eq!(old.get(field), clip.get(field), "{path}/{field}");
+    }
+    for (name, old_index) in [
+      ("baba_leg_upper_R", 28),
+      ("baba_hand_R", 43),
+      ("attachHand_R", 146),
+      ("pidge_torso_0", 54),
+    ] {
+      let new_index = current_rig
+        .bone_names
+        .iter()
+        .position(|bone| bone == name)
+        .unwrap();
+      let mut actual = clip
+        .get("m_trackCompressionSettings")
+        .unwrap()
+        .as_array()
+        .unwrap()[new_index]
+        .clone();
+      let expected = &old
+        .get("m_trackCompressionSettings")
+        .unwrap()
+        .as_array()
+        .unwrap()[old_index];
+      *actual.get_mut("m_nTrackReadOffset").unwrap() =
+        expected.get("m_nTrackReadOffset").unwrap().clone();
+      assert_eq!(
+        &actual, expected,
+        "authored track assigned to the wrong named bone: {path}/{name}"
+      );
+    }
+    let old_animation = NmAnimation {
+      clip_path: path.to_string(),
+      skeleton: old_rig.clone(),
+      clip: parse_nm_clip(&IndependentResource::parse(original.to_vec()).unwrap()).unwrap(),
+    };
+    let new_animation = NmAnimation {
+      clip_path: path.to_string(),
+      skeleton: current_rig.clone(),
+      clip: parse_nm_clip(&IndependentResource::parse(repaired.clone()).unwrap()).unwrap(),
+    };
+    for time in [
+      0.,
+      old_animation.clip.duration_seconds * 0.37,
+      old_animation.clip.duration_seconds * 0.9,
+    ] {
+      let a = old_animation.sample_pose(time, false).unwrap();
+      let b = new_animation.sample_pose(time, false).unwrap();
+      assert_eq!(a.len(), 243);
+      assert_eq!(b.len(), 248);
+      for (old_index, new_index) in retained.iter().enumerate() {
+        let old = a[old_index];
+        let new = b[*new_index];
+        for (a, b) in old
+          .translation
+          .iter()
+          .zip(new.translation)
+          .chain(old.rotation.iter().zip(new.rotation))
+          .chain(old.scale.iter().zip(new.scale))
+        {
+          assert!(
+            (*a - b).abs() < 0.00001,
+            "custom animation changed: {path}/{old_index}"
+          );
+        }
+        for (axis, value) in old.translation.iter().enumerate() {
+          wrong_track_error = wrong_track_error.max((value - b[old_index].translation[axis]).abs());
+        }
+      }
+    }
+    let before = Resource::parse(&original).unwrap();
+    let after = Resource::parse(&repaired).unwrap();
+    for (index, block) in before.blocks().iter().enumerate() {
+      if block.kind != *b"DATA" {
+        assert_eq!(
+          before.get_block_by_index(index),
+          after.get_block_by_index(index)
+        );
+      }
+    }
+    validate_exported_blocks(&repaired, path).unwrap();
+    clips += 1;
+    additive += usize::from(new_animation.clip.additive);
+  }
+  assert!(clips > 200 && additive > 20);
+  assert!(
+    wrong_track_error > 20.,
+    "fixture must expose the original track-index deformation"
+  );
+  assert_eq!(
+    Sha256::digest(fs::read(&input.vpks[0]).unwrap()),
+    original_hash
+  );
+  println!(
+    "{clips} clips ({additive} additive): named motion preserved; wrong track mapping error {wrong_track_error:.2}"
+  );
+}
+
+#[test]
+#[ignore = "requires DMM_REAL_CITADEL and DMM_COMPAT_CORPUS"]
+fn overlapping_real_skins_preserve_load_order_and_camera_repairs() {
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let cases: Vec<CorpusCase> =
+    serde_json::from_slice(&fs::read(std::env::var("DMM_COMPAT_CORPUS").unwrap()).unwrap())
+      .unwrap();
+  let output = TempDir::new().unwrap();
+  let mut reports = Vec::new();
+  for (ids, path) in [
+    ([679331, 710352], "models/heroes_staging/shiv/shiv.vmdl_c"),
+    ([625513, 670722], "models/heroes_staging/bebop/bebop.vmdl_c"),
+  ] {
+    let inputs: Vec<_> = ids
+      .into_iter()
+      .map(|id| {
+        let case = cases.iter().find(|case| case.id == id).unwrap();
+        LocalizationModInput {
+          mod_id: id.to_string(),
+          vpks: case.vpks.clone(),
+        }
+      })
+      .collect();
+    for reversed in [false, true] {
+      let mut ordered = inputs.clone();
+      if reversed {
+        ordered.reverse();
+      }
+      let resources = resources::ResourceSnapshot::open(&citadel, &ordered).unwrap();
+      let (owner, source) = resources.resolve(path).unwrap().unwrap();
+      assert_eq!(owner.mod_id.as_deref(), Some(ordered[0].mod_id.as_str()));
+      let current = resources.game_bytes(path).unwrap().unwrap();
+      assert!(
+        camera_attachment_frame::repair(&source, &current)
+          .unwrap()
+          .is_some()
+      );
+      for selected in [
+        BTreeSet::new(),
+        BTreeSet::from([ordered[0].mod_id.clone()]),
+        BTreeSet::from([ordered[1].mod_id.clone()]),
+        ordered.iter().map(|input| input.mod_id.clone()).collect(),
+      ] {
+        let plan = LocalizationOverlayPlan::build_selected(&citadel, &ordered, &selected).unwrap();
+        let should_repair = selected.contains(&ordered[0].mod_id);
+        assert_eq!(
+          plan.camera_models.contains_key(path),
+          should_repair,
+          "{ids:?}, reverse={reversed}, selected={selected:?}"
+        );
+        if should_repair {
+          assert!(
+            plan
+              .analysis
+              .asset_repairs
+              .iter()
+              .any(|repair| repair.file_path == path
+                && repair.mod_id == ordered[0].mod_id
+                && matches!(
+                  repair.kind,
+                  asset_compatibility::RepairKind::CameraAttachmentFrame
+                ))
+          );
+          assert!(
+            camera_attachment_frame::repair(&plan.camera_models[path], &current)
+              .unwrap()
+              .is_none()
+          );
+          let source_resource = Resource::parse(&source).unwrap();
+          let repaired = Resource::parse(&plan.camera_models[path]).unwrap();
+          for (index, block) in source_resource.blocks().iter().enumerate() {
+            if !matches!(&block.kind, b"DATA" | b"MDAT") {
+              assert_eq!(
+                source_resource.get_block_by_index(index),
+                repaired.get_block_by_index(index),
+                "winning skin geometry changed"
+              );
+            }
+          }
+        }
+        let archive = output.path().join("overlap_dir.vpk");
+        let result = plan.write(&archive, &[]).unwrap();
+        if result.has_overlay {
+          let packed = VpkArchive::open(&archive).unwrap();
+          for entry in packed.list_entries() {
+            if entry.ends_with("_c") {
+              validate_exported_blocks(&packed.extract_entry(&entry).unwrap(), &entry).unwrap();
+            }
+          }
+          if should_repair {
+            assert_eq!(
+              packed.extract_entry(path).unwrap(),
+              plan.camera_models[path]
+            );
+          } else {
+            assert!(!packed.list_entries().contains(&path.to_owned()));
+          }
+        }
+        reports.push(serde_json::json!({"pair":ids,"reversed":reversed,"selected":selected,"winner":ordered[0].mod_id,"packedFiles":result.packed_files,"analysis":plan.analysis}));
+      }
+    }
+  }
+  if let Some(path) = std::env::var_os("DMM_OVERLAP_REPORT") {
+    fs::write(path, serde_json::to_vec_pretty(&reports).unwrap()).unwrap();
+  }
+  println!("{} overlapping-skin scenarios passed", reports.len());
+}
+
+#[test]
+#[ignore = "requires DMM_REAL_CITADEL and DMM_RICK_VPK"]
+fn installed_retired_graph_skin_uses_current_nm_track_order() {
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let input = LocalizationModInput {
+    mod_id: "637681".into(),
+    vpks: vec![PathBuf::from(std::env::var("DMM_RICK_VPK").unwrap())],
+  };
+  let model = "models/heroes_wip/doorman_v2/doorman.vmdl_c";
+  let skeleton = "models/heroes_wip/doorman_v2/doorman.vnmskel_c";
+  let resources =
+    resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
+  let old = resources.resolve(skeleton).unwrap().unwrap().1;
+  let current = resources.game_bytes(skeleton).unwrap().unwrap();
+  let source_rig = source2_model::nm_anim::parse_nm_skeleton(
+    &source2_model::resource::Resource::parse(old.to_vec()).unwrap(),
+  )
+  .unwrap();
+  let current_rig = source2_model::nm_anim::parse_nm_skeleton(
+    &source2_model::resource::Resource::parse(current.to_vec()).unwrap(),
+  )
+  .unwrap();
+  assert_ne!(source_rig.bone_names, current_rig.bone_names);
+  let archive = VpkArchive::open(&citadel.join("pak01_dir.vpk")).unwrap();
+  let clips: Vec<_> = archive
+    .list_entries()
+    .into_iter()
+    .filter(|path| {
+      path.starts_with("models/heroes_wip/doorman_v2/clips/") && path.ends_with(".vnmclip_c")
+    })
+    .filter_map(|path| source2_model::nm_anim::load_nm_animation_from_archive(&archive, &path).ok())
+    .filter(|animation| !animation.clip.additive)
+    .take(3)
+    .collect();
+  assert!(!clips.is_empty(), "no current animation samples found");
+  let mut wrong_track_error: f32 = 0.;
+  for animation in &clips {
+    let expected = animation
+      .sample_pose(animation.clip.duration_seconds * 0.5, true)
+      .unwrap();
+    let mut stale = animation.clone();
+    stale.skeleton = source_rig.clone();
+    let actual = stale
+      .sample_pose(animation.clip.duration_seconds * 0.5, true)
+      .unwrap();
+    for name in ["pelvis", "head", "hand_L", "hand_R", "ankle_L", "ankle_R"] {
+      let i = current_rig
+        .bone_names
+        .iter()
+        .position(|n| n == name)
+        .unwrap();
+      let j = source_rig
+        .bone_names
+        .iter()
+        .position(|n| n == name)
+        .unwrap();
+      for axis in 0..3 {
+        wrong_track_error = wrong_track_error
+          .max((expected[i].translation[axis] - actual[j].translation[axis]).abs());
+      }
+    }
+  }
+  assert!(
+    wrong_track_error > 10.,
+    "fixture must expose body animation corruption"
+  );
+  println!("stale skeleton maps body animation tracks incorrectly: {wrong_track_error:.2}");
+  let plan = LocalizationOverlayPlan::build(&citadel, &[input]).unwrap();
+  let repaired = plan
+    .animation_skeletons
+    .get(skeleton)
+    .expect("retired legacy graphs must not block a proven current NM sampling layout");
+  let repaired_rig = source2_model::nm_anim::parse_nm_skeleton(
+    &source2_model::resource::Resource::parse(repaired.clone()).unwrap(),
+  )
+  .unwrap();
+  assert_eq!(repaired_rig.bone_names, current_rig.bone_names);
+  for animation in clips {
+    let mut repaired_animation = animation.clone();
+    repaired_animation.skeleton = repaired_rig.clone();
+    for time in [0., animation.clip.duration_seconds * 0.5] {
+      let expected = animation.sample_pose(time, true).unwrap();
+      let actual = repaired_animation.sample_pose(time, true).unwrap();
+      for (a, b) in expected.iter().zip(actual) {
+        for axis in 0..3 {
+          assert!((a.translation[axis] - b.translation[axis]).abs() < 0.001);
+        }
+      }
+    }
+  }
+  let original_model = resources.resolve(model).unwrap().unwrap().1;
+  let (_, before, _) = decode_compiled_data(&original_model, model).unwrap();
+  let (_, after, _) = decode_compiled_data(&plan.camera_models[model], model).unwrap();
+  assert_eq!(before.get("m_modelSkeleton"), after.get("m_modelSkeleton"));
+}
+
+#[test]
+#[ignore = "requires DMM_REAL_CITADEL, DMM_SHIV_VPK and DMM_GT_VPK"]
+fn installed_shiv_and_skeleton_talon_restore_cameras_without_changing_geometry() {
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let inputs: Vec<_> = [("679331", "DMM_SHIV_VPK"), ("563116", "DMM_GT_VPK")]
+    .into_iter()
+    .map(|(mod_id, variable)| LocalizationModInput {
+      mod_id: mod_id.into(),
+      vpks: vec![PathBuf::from(std::env::var(variable).unwrap())],
+    })
+    .collect();
+  let originals: Vec<_> = inputs
+    .iter()
+    .map(|input| fs::read(&input.vpks[0]).unwrap())
+    .collect();
+  let resources = resources::ResourceSnapshot::open(&citadel, &inputs).unwrap();
+  let plan = LocalizationOverlayPlan::build(&citadel, &inputs).unwrap();
+  for path in [
+    "models/heroes_staging/shiv/shiv.vmdl_c",
+    "models/heroes_staging/archer/archer.vmdl_c",
+    "models/heroes_staging/grey_talon/grey_talon_owl.vmdl_c",
+  ] {
+    assert!(plan.analysis.asset_repairs.iter().any(|repair| {
+      repair.file_path == path
+        && if path.ends_with("grey_talon_owl.vmdl_c") {
+          matches!(repair.kind, asset_compatibility::RepairKind::CameraControls)
+        } else {
+          matches!(
+            repair.kind,
+            asset_compatibility::RepairKind::CameraAttachmentFrame
+          )
+        }
+    }));
+    let source = resources.resolve(path).unwrap().unwrap().1;
+    let current = resources.game_bytes(path).unwrap().unwrap();
+    let repaired = &plan.camera_models[path];
+    let (_, model, _) = decode_compiled_data(repaired, path).unwrap();
+    let (_, reference, _) = decode_compiled_data(&current, path).unwrap();
+    assert!(model_camera::missing_camera_fields(&model, &reference).is_empty());
+    assert!(
+      camera_attachment_frame::repair(repaired, &current)
+        .unwrap()
+        .is_none()
+    );
+    let before = Resource::parse(&source).unwrap();
+    let after = Resource::parse(repaired).unwrap();
+    assert_eq!(before.blocks().len(), after.blocks().len());
+    for (index, block) in before.blocks().iter().enumerate() {
+      let old = before.get_block_by_index(index).unwrap();
+      let new = after.get_block_by_index(index).unwrap();
+      assert_eq!(block.kind, after.blocks()[index].kind);
+      if !matches!(&block.kind, b"DATA" | b"MDAT") {
+        assert_eq!(old, new, "geometry/resource block changed: {path}/{index}");
+      } else if block.kind == *b"MDAT" {
+        let old = kv3::decode(old).unwrap();
+        let new = kv3::decode(new).unwrap();
+        for (field, value) in old.as_object().unwrap() {
+          if !matches!(field.as_str(), "m_skeleton" | "m_attachments") {
+            assert!(
+              super::runtime_values_equal(value, new.get(field).unwrap()),
+              "mesh field changed: {path}/{field}"
+            );
+          }
+        }
+      }
+    }
+    if let Ok(directory) = std::env::var("DMM_CAMERA_REGRESSION_DIR") {
+      let output = PathBuf::from(directory).join(path);
+      fs::create_dir_all(output.parent().unwrap()).unwrap();
+      fs::write(output, repaired).unwrap();
+    }
+  }
+  let temp = TempDir::new().unwrap();
+  let archive = temp.path().join("cameras_dir.vpk");
+  assert!(plan.write(&archive, &[]).unwrap().has_overlay);
+  let packed = VpkArchive::open(&archive).unwrap();
+  for (path, bytes) in &plan.camera_models {
+    assert_eq!(&packed.extract_entry(path).unwrap(), bytes);
+  }
+  for (input, original) in inputs.iter().zip(originals) {
+    assert_eq!(
+      fs::read(&input.vpks[0]).unwrap(),
+      original,
+      "original mod changed"
+    );
+  }
+}
+
+#[test]
+#[ignore = "requires DMM_REAL_CITADEL and DMM_MERRIN_VPK"]
+fn legacy_merrin_model_restores_animation_and_camera_without_changing_skinning() {
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let source = PathBuf::from(std::env::var("DMM_MERRIN_VPK").unwrap());
+  let original = fs::read(&source).unwrap();
+  let input = LocalizationModInput {
+    mod_id: "595391".into(),
+    vpks: vec![source.clone()],
+  };
+  let path = "models/heroes_staging/hornet_v3/hornet.vmdl_c";
+  let resources =
+    resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
+  let authored = resources.resolve(path).unwrap().unwrap().1;
+  let current = resources.game_bytes(path).unwrap().unwrap();
+  let plan = LocalizationOverlayPlan::build(&citadel, &[input]).unwrap();
+  let repaired = plan.camera_models.get(path).unwrap_or_else(|| {
+    panic!(
+      "Merrin has no animation/camera repair: {:?}",
+      plan.analysis.asset_warnings
+    )
+  });
+  let (_, model, _) = decode_compiled_data(repaired, path).unwrap();
+  let (_, reference, _) = decode_compiled_data(&current, path).unwrap();
+  for field in ["m_animGraph2Refs", "m_vecNmSkeletonRefs"] {
+    assert_eq!(model.get(field), reference.get(field), "{field}");
+  }
+  assert!(model_animation::deformation_preserved(&authored, repaired));
+  assert!(
+    !plan.analysis.asset_warnings.iter().any(|warning| {
+      warning.file_path == path
+        && matches!(
+          warning.kind,
+          asset_compatibility::WarningKind::MissingCameraInterface
+            | asset_compatibility::WarningKind::MissingAnimationInterface
+        )
+    }),
+    "Repaired model still lacks required interfaces"
+  );
+  let output = tempfile::tempdir().unwrap();
+  let archive_path = output.path().join("overlay.vpk");
+  assert!(plan.write(&archive_path, &[]).unwrap().has_overlay);
+  let exported = VpkArchive::open(&archive_path)
+    .unwrap()
+    .extract_entry(path)
+    .unwrap();
+  assert_eq!(&exported, repaired);
+  let independent = source2_model::resource::Resource::parse(exported).unwrap();
+  let rebuilt = Resource::parse(repaired).unwrap();
+  for (index, _block) in rebuilt
+    .blocks()
+    .iter()
+    .enumerate()
+    .filter(|(_, block)| [*b"DATA", *b"MDAT"].contains(&block.kind))
+  {
+    let reference = &independent.blocks[index];
+    let decoded = source2_model::kv3::parse(
+      &independent.data[reference.offset..reference.offset + reference.size],
+    )
+    .unwrap();
+    let value = kv3::decode(rebuilt.get_block_by_index(index).unwrap()).unwrap();
+    assert!(super::tests::independent_values_equal(&value, &decoded));
+  }
+  assert_eq!(fs::read(source).unwrap(), original);
+}
+
+#[test]
+#[ignore = "requires DMM_REAL_CITADEL and DMM_GOLD_VPK"]
+fn relocated_gold_model_reaches_current_hero_and_preserves_authored_materials() {
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let source = PathBuf::from(std::env::var("DMM_GOLD_VPK").unwrap());
+  let original = fs::read(&source).unwrap();
+  let input = LocalizationModInput {
+    mod_id: "559174".into(),
+    vpks: vec![source.clone()],
+  };
+  let resources =
+    resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
+  let (_, heroes, _) = decode_compiled_data(
+    &resources.game_bytes(HEROES_VDATA_PATH).unwrap().unwrap(),
+    HEROES_VDATA_PATH,
+  )
+  .unwrap();
+  let target = format!(
+    "{}_c",
+    heroes
+      .get("hero_synth")
+      .unwrap()
+      .get("m_strModelName")
+      .unwrap()
+      .as_str()
+      .unwrap()
+  );
+  let plan = LocalizationOverlayPlan::build(&citadel, &[input]).unwrap();
+  assert!(
+    plan
+      .analysis
+      .asset_repairs
+      .iter()
+      .any(|repair| repair.file_path == target),
+    "No repair reaches Pocket's current model: {target}; warnings={:?}",
+    plan.analysis.asset_warnings
+  );
+  let output = tempfile::tempdir().unwrap();
+  let path = output.path().join("overlay.vpk");
+  assert!(plan.write(&path, &[]).unwrap().has_overlay);
+  let archive = VpkArchive::open(&path).unwrap();
+  let bytes = archive.extract_entry(&target).unwrap();
+  let independent = source2_model::resource::Resource::parse(bytes.clone()).unwrap();
+  source2_model::kv3::parse(independent.block_bytes("DATA").unwrap()).unwrap();
+  let before = VpkArchive::open(&source)
+    .unwrap()
+    .extract_entry("models/heroes_staging/synth/synth.vmdl_c")
+    .unwrap();
+  let materials = |bytes: &[u8]| {
+    vpkmanager::material_repair::references(bytes)
+      .unwrap()
+      .into_iter()
+      .filter(|(_, name)| name.ends_with(".vmat"))
+      .collect::<BTreeSet<_>>()
+  };
+  assert_eq!(
+    materials(&bytes),
+    materials(&before),
+    "Authored material bindings changed"
+  );
+  assert_eq!(fs::read(source).unwrap(), original);
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct CorpusCase {
+  id: u64,
+  name: String,
+  url: String,
+  archive: PathBuf,
+  sha256: String,
+  vpks: Vec<PathBuf>,
+}
+
+fn diagnostic_json(value: &Kv3Value) -> serde_json::Value {
+  match value {
+    Kv3Value::Null => serde_json::Value::Null,
+    Kv3Value::Bool(value) => (*value).into(),
+    Kv3Value::Int(value) => (*value).into(),
+    Kv3Value::UInt(value) => (*value).into(),
+    Kv3Value::Double(value) => serde_json::json!(value),
+    Kv3Value::String(value) => value.clone().into(),
+    Kv3Value::Binary(value) => serde_json::json!({"binaryBytes":value.len()}),
+    Kv3Value::Array(values) => values.iter().map(diagnostic_json).collect(),
+    Kv3Value::Object(fields) => fields
+      .iter()
+      .map(|(key, value)| (key.clone(), diagnostic_json(value)))
+      .collect::<serde_json::Map<_, _>>()
+      .into(),
+  }
+}
+
+#[test]
+#[ignore = "requires DMM_REAL_CITADEL, DMM_COMPAT_CORPUS and DMM_COMPAT_REPORT"]
+fn mixed_corpus_respects_per_mod_selection_and_load_order() {
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let cases: Vec<CorpusCase> =
+    serde_json::from_slice(&fs::read(std::env::var("DMM_COMPAT_CORPUS").unwrap()).unwrap())
+      .unwrap();
+  assert!(
+    cases.len() >= 10,
+    "mixed regression requires ten pinned fixtures"
+  );
+  let inputs: Vec<_> = cases
+    .iter()
+    .map(|case| {
+      assert_eq!(
+        hex::encode(Sha256::digest(fs::read(&case.archive).unwrap())),
+        case.sha256
+      );
+      LocalizationModInput {
+        mod_id: case.id.to_string(),
+        vpks: case.vpks.clone(),
+      }
+    })
+    .collect();
+  let originals: Vec<_> = inputs
+    .iter()
+    .flat_map(|input| &input.vpks)
+    .map(|path| (path, Sha256::digest(fs::read(path).unwrap())))
+    .collect();
+  let output = TempDir::new().unwrap();
+  let mut reports = Vec::new();
+  for (label, selected) in [
+    ("none", BTreeSet::new()),
+    (
+      "all",
+      inputs.iter().map(|input| input.mod_id.clone()).collect(),
+    ),
+    (
+      "alternating",
+      inputs
+        .iter()
+        .step_by(2)
+        .map(|input| input.mod_id.clone())
+        .collect(),
+    ),
+    ("toon_only", BTreeSet::from(["670722".into()])),
+    (
+      "except_toon",
+      inputs
+        .iter()
+        .filter(|input| input.mod_id != "670722")
+        .map(|input| input.mod_id.clone())
+        .collect(),
+    ),
+  ] {
+    for reversed in [false, true] {
+      let mut ordered = inputs.clone();
+      if reversed {
+        ordered.reverse();
+      }
+      let protected: BTreeSet<_> = ordered
+        .iter()
+        .filter(|input| !selected.contains(&input.mod_id))
+        .flat_map(|input| &input.vpks)
+        .flat_map(|path| VpkArchive::open(path).unwrap().list_entries())
+        .map(|path| normalize_path(&path))
+        .collect();
+      let started = std::time::Instant::now();
+      let plan = LocalizationOverlayPlan::build_selected(&citadel, &ordered, &selected).unwrap();
+      assert!(
+        plan
+          .analysis
+          .asset_repairs
+          .iter()
+          .all(|r| selected.contains(&r.mod_id))
+      );
+      assert!(
+        plan
+          .analysis
+          .asset_warnings
+          .iter()
+          .all(|r| selected.contains(&r.mod_id))
+      );
+      let archive_path = output.path().join(format!("{label}-{reversed}.vpk"));
+      let applied = plan.write(&archive_path, &[]).unwrap();
+      if applied.has_overlay {
+        let archive = VpkArchive::open(&archive_path).unwrap();
+        assert_eq!(archive.list_entries().len(), applied.packed_files);
+        for path in archive.list_entries() {
+          if protected.contains(&normalize_path(&path)) {
+            let resources = resources::ResourceSnapshot::open(&citadel, &ordered).unwrap();
+            let owner = resources.provider(&path).unwrap();
+            assert!(
+              !is_localization_path(&path)
+                && !is_mergeable_compiled_data_path(&path)
+                && owner.mod_id.is_some_and(|id| selected.contains(&id)),
+              "opted-out effective resource replaced: {label}/{reversed}/{path}"
+            );
+          }
+          let bytes = archive.extract_entry(&path).unwrap();
+          if path.ends_with("_c") {
+            let (_, value, _) = decode_compiled_data(&bytes, &path).unwrap();
+            let resource = source2_model::resource::Resource::parse(bytes).unwrap();
+            let decoded = source2_model::kv3::parse(resource.block_bytes("DATA").unwrap()).unwrap();
+            assert!(tests::independent_values_equal(&value, &decoded));
+          }
+        }
+      }
+      if selected.is_empty() {
+        assert!(!applied.has_overlay);
+      }
+      println!(
+        "mixed {label}/{reversed}: {} packed files",
+        applied.packed_files
+      );
+      reports.push(serde_json::json!({
+        "selection": label, "reversed": reversed, "enabledMods": ordered.len(),
+        "packedFiles": applied.packed_files, "analysis": plan.analysis,
+        "elapsedMs": started.elapsed().as_millis(), "runtime": "not-tested"
+      }));
+    }
+  }
+  for (path, hash) in originals {
+    assert_eq!(
+      Sha256::digest(fs::read(path).unwrap()),
+      hash,
+      "source VPK modified"
+    );
+  }
+  fs::write(
+    std::env::var("DMM_COMPAT_REPORT").unwrap(),
+    serde_json::to_vec_pretty(&reports).unwrap(),
+  )
+  .unwrap();
+}
+
+#[test]
+#[ignore = "local selector diagnostic; requires DMM_REAL_CITADEL and DMM_COMPAT_CORPUS"]
+fn inspect_legacy_hero_selector() {
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let cases: Vec<CorpusCase> =
+    serde_json::from_slice(&fs::read(std::env::var("DMM_COMPAT_CORPUS").unwrap()).unwrap())
+      .unwrap();
+  let case = cases.iter().find(|case| case.id == 639883).unwrap();
+  let resources = resources::ResourceSnapshot::open(
+    &citadel,
+    &[LocalizationModInput {
+      mod_id: case.id.to_string(),
+      vpks: case.vpks.clone(),
+    }],
+  )
+  .unwrap();
+  let current = resources.game_bytes(HEROES_VDATA_PATH).unwrap().unwrap();
+  let source = resources.resolve(HEROES_VDATA_PATH).unwrap().unwrap().1;
+  let archive = VpkArchive::open(Path::new(
+    &std::env::var("DMM_COMPAT_LIVE_OVERLAY").unwrap(),
+  ))
+  .unwrap();
+  let live = archive.extract_entry(HEROES_VDATA_PATH).unwrap();
+  for (label, bytes) in [
+    ("current", current),
+    ("source", source),
+    ("live", live.into()),
+  ] {
+    let (_, root, encoding) = decode_compiled_data(&bytes, HEROES_VDATA_PATH).unwrap();
+    for name in ["hero_nano", "hero_astro", "hero_vampirebat"] {
+      println!(
+        "{label} {name} state {:?} encoding {:?}",
+        root
+          .get(name)
+          .and_then(|r| r.get("m_eHeroDevelopmentState")),
+        encoding
+          .get(name)
+          .and_then(|r| r.get("m_eHeroDevelopmentState"))
+      );
+    }
+    fs::write(
+      std::env::temp_dir().join(format!("dmm-selector-{label}.json")),
+      serde_json::to_vec_pretty(&diagnostic_json(&root)).unwrap(),
+    )
+    .unwrap();
+  }
+}
+
+#[test]
+#[ignore = "local corpus diagnostic; requires DMM_REAL_CITADEL and DMM_COMPAT_CORPUS"]
+fn inspect_legacy_model_contracts() {
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let cases: Vec<CorpusCase> =
+    serde_json::from_slice(&fs::read(std::env::var("DMM_COMPAT_CORPUS").unwrap()).unwrap())
+      .unwrap();
+  let root = std::env::temp_dir().join("dmm-legacy-contracts");
+  fs::create_dir_all(&root).unwrap();
+  for case in cases {
+    let resources = resources::ResourceSnapshot::open(
+      &citadel,
+      &[LocalizationModInput {
+        mod_id: case.id.to_string(),
+        vpks: case.vpks.clone(),
+      }],
+    )
+    .unwrap();
+    for path in resources
+      .mod_paths()
+      .filter(|path| path.ends_with(".vmdl_c"))
+    {
+      let Some(base) = resources.game_bytes(path).unwrap() else {
+        continue;
+      };
+      let source = resources.resolve(path).unwrap().unwrap().1;
+      let mut contract = serde_json::Map::new();
+      for (label, bytes) in [("source", source), ("current", base)] {
+        let (_, value, _) = decode_compiled_data(&bytes, path).unwrap();
+        let resource = Resource::parse(&bytes).unwrap();
+        for kind in [*b"PHYS", *b"CTRL"] {
+          if let Some(block) = resource.find_block(kind) {
+            let value = kv3::decode(block).unwrap();
+            fs::write(
+              root.join(format!(
+                "{}-{}-{label}-{}.json",
+                case.id,
+                path.rsplit('/').next().unwrap(),
+                String::from_utf8_lossy(&kind)
+              )),
+              serde_json::to_vec_pretty(&diagnostic_json(&value)).unwrap(),
+            )
+            .unwrap();
+          }
+        }
+        fs::write(
+          root.join(format!(
+            "{}-{}-{label}.bin",
+            case.id,
+            path.rsplit('/').next().unwrap()
+          )),
+          &*bytes,
+        )
+        .unwrap();
+        let mut details = serde_json::Map::new();
+        details.insert(
+          "meshBlocks".into(),
+          resource
+            .blocks()
+            .iter()
+            .filter(|block| block.kind == *b"MDAT")
+            .count()
+            .into(),
+        );
+        for key in [
+          "m_animGraph2Refs",
+          "m_vecNmSkeletonRefs",
+          "m_refAnimGroups",
+          "m_refAnimIncludeModels",
+          "m_refMeshes",
+          "m_modelInfo",
+          "m_remappingTableStarts",
+          "m_nNmSkeletonBoneCount",
+        ] {
+          details.insert(key.into(), format!("{:?}", value.get(key)).into());
+        }
+        let rig = value.get("m_modelSkeleton").unwrap();
+        details.insert("rig".into(), diagnostic_json(rig));
+        details.insert(
+          "blocks".into(),
+          serde_json::json!(
+            resource
+              .blocks()
+              .iter()
+              .map(|block| String::from_utf8_lossy(&block.kind).into_owned())
+              .collect::<Vec<_>>()
+          ),
+        );
+        if let Some(refs) = value
+          .get("m_vecNmSkeletonRefs")
+          .and_then(Kv3Value::as_array)
+        {
+          for name in refs.iter().filter_map(Kv3Value::as_str) {
+            let bytes = if label == "source" {
+              resources.resolve(name).unwrap().map(|(_, bytes)| bytes)
+            } else {
+              resources.game_bytes(name).unwrap()
+            };
+            if let Some(bytes) = bytes {
+              let (_, skeleton, _) = decode_compiled_data(&bytes, name).unwrap();
+              details.insert("animationRig".into(), diagnostic_json(&skeleton));
+            }
+          }
+        }
+        details.insert(
+          "rigKeys".into(),
+          serde_json::to_value(
+            rig
+              .as_object()
+              .unwrap()
+              .iter()
+              .map(|(key, _)| key)
+              .collect::<Vec<_>>(),
+          )
+          .unwrap(),
+        );
+        details.insert(
+          "bones".into(),
+          format!("{:?}", rig.get("m_boneName")).into(),
+        );
+        details.insert(
+          "parents".into(),
+          format!("{:?}", rig.get("m_nParent")).into(),
+        );
+        contract.insert(label.into(), details.into());
+        let filename = path.rsplit('/').next().unwrap();
+        fs::write(
+          root.join(format!("{}-{filename}-{label}.txt", case.id)),
+          format!("{value:#?}"),
+        )
+        .unwrap();
+      }
+      let filename = path.rsplit('/').next().unwrap();
+      fs::write(
+        root.join(format!("{}-{filename}.json", case.id)),
+        serde_json::to_vec_pretty(&contract).unwrap(),
+      )
+      .unwrap();
+      println!("{} {path}", case.id);
+    }
+  }
+}
+
+fn validate_exported_blocks(bytes: &[u8], path: &str) -> Result<usize, String> {
+  let resource = Resource::parse(bytes).map_err(|error| format!("{path}: {error}"))?;
+  let independent = source2_model::resource::Resource::parse(bytes.to_vec())
+    .map_err(|error| format!("{path}: {error}"))?;
+  let mut validated = 0;
+  for (index, block) in resource.blocks().iter().enumerate() {
+    let raw = resource.get_block_by_index(index).unwrap();
+    let Some(magic) = raw.get(..4) else {
+      continue;
+    };
+    if u32::from_le_bytes(magic.try_into().unwrap()) & 0xFFFF_FF00 != 0x4B56_3300 {
+      continue;
+    }
+    let label = format!("{path}/{}[{index}]", String::from_utf8_lossy(&block.kind));
+    let stats = kv3::encoding_stats(raw).map_err(|error| format!("{label}: {error}"))?;
+    if stats.version == 4 && stats.unsupported_v4_types != 0 {
+      return Err(format!("{label}: unsupported v4 wire types"));
+    }
+    let value = kv3::decode(raw).map_err(|error| format!("{label}: {error}"))?;
+    let other = &independent.blocks[index];
+    let decoded =
+      source2_model::kv3::parse(&independent.data[other.offset..other.offset + other.size])
+        .map_err(|error| format!("{label}: independent decode: {error}"))?;
+    if !super::tests::independent_values_equal(&value, &decoded) {
+      return Err(format!("{label}: independent values differ"));
+    }
+    validated += 1;
+  }
+  Ok(validated)
+}
+
+#[test]
+fn exported_mesh_validation_catches_tags_even_when_both_decoders_accept_them() {
+  let mut bytes = tests::compiled_resource(vec![("value".into(), Kv3Value::Bool(true))]);
+  bytes[16..20].copy_from_slice(b"MDAT");
+  assert_eq!(validate_exported_blocks(&bytes, "test.vmdl_c").unwrap(), 1);
+  let block = Resource::parse(&bytes).unwrap().blocks()[0];
+  let datatype = block.offset as usize + block.size as usize - 5;
+  assert_eq!(bytes[datatype], 13);
+  bytes[datatype] = 27;
+  assert!(
+    validate_exported_blocks(&bytes, "test.vmdl_c")
+      .unwrap_err()
+      .contains("MDAT[0]: unsupported v4")
+  );
+}
+
+#[test]
+#[ignore = "requires DMM_REAL_CITADEL, DMM_COMPAT_CORPUS and DMM_COMPAT_REPORT"]
+fn run_obsolete_mod_corpus() {
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let cases: Vec<CorpusCase> =
+    serde_json::from_slice(&fs::read(std::env::var("DMM_COMPAT_CORPUS").unwrap()).unwrap())
+      .unwrap();
+  assert!(!cases.is_empty());
+  let output = TempDir::new().unwrap();
+  let exports = std::env::var_os("DMM_COMPAT_EXPORT_ROOT").map(PathBuf::from);
+  if let Some(root) = &exports {
+    fs::create_dir_all(root).unwrap();
+  }
+  let mut reports = Vec::new();
+  let resources = resources::ResourceSnapshot::open(
+    &citadel,
+    &[LocalizationModInput {
+      mod_id: "index".into(),
+      vpks: cases[0].vpks.clone(),
+    }],
+  )
+  .unwrap();
+  let heroes = resources
+    .game_bytes(HEROES_VDATA_PATH)
+    .unwrap()
+    .map(|bytes| decode_compiled_data(&bytes, "current heroes").unwrap().1);
+  for case in cases {
+    assert_eq!(
+      hex::encode(Sha256::digest(fs::read(&case.archive).unwrap())),
+      case.sha256,
+      "download checksum: {}",
+      case.name
+    );
+    assert!(!case.vpks.is_empty(), "{} has no extracted VPKs", case.name);
+    let original: Vec<_> = case
+      .vpks
+      .iter()
+      .map(|path| (path, Sha256::digest(fs::read(path).unwrap())))
+      .collect();
+    let input = LocalizationModInput {
+      mod_id: case.id.to_string(),
+      vpks: case.vpks.clone(),
+    };
+    let mut categories = BTreeMap::<String, usize>::new();
+    for path in &case.vpks {
+      let archive = VpkArchive::open(path).unwrap();
+      for entry in archive.list_entries() {
+        *categories
+          .entry(
+            entry
+              .rsplit('.')
+              .next()
+              .unwrap_or("no-extension")
+              .to_owned(),
+          )
+          .or_default() += 1;
+      }
+    }
+    let started = std::time::Instant::now();
+    let result = LocalizationOverlayPlan::build(&citadel, &[input]);
+    let mut report = match result {
+      Ok(plan) => {
+        let archive_path = output.path().join(format!("{}.vpk", case.id));
+        let written = plan.write(&archive_path, &[]);
+        let (packed, error, validated_blocks) = match written {
+          Ok(applied) => {
+            let mut validated_blocks = 0;
+            let mut error = None;
+            if applied.has_overlay {
+              if let Some(root) = &exports {
+                fs::copy(&archive_path, root.join(format!("{}_dir.vpk", case.id))).unwrap();
+              }
+              let archive = VpkArchive::open(&archive_path).unwrap();
+              assert_eq!(archive.list_entries().len(), applied.packed_files);
+              for path in archive.list_entries() {
+                let bytes = archive.extract_entry(&path).unwrap();
+                if path.ends_with("_c") {
+                  match validate_exported_blocks(&bytes, &path) {
+                    Ok(count) => validated_blocks += count,
+                    Err(failure) => {
+                      error = Some(failure);
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+            (applied.packed_files, error, validated_blocks)
+          }
+          Err(error) => (0, Some(error.to_string()), 0),
+        };
+        serde_json::json!({"id":case.id,"name":case.name,"url":case.url,"sha256":case.sha256,"categories":categories,"analysis":plan.analysis,"packedFiles":packed,"validatedKv3Blocks":validated_blocks,"error":error,"elapsedMs":started.elapsed().as_millis(),"runtime":"not-tested"})
+      }
+      Err(error) => {
+        serde_json::json!({"id":case.id,"name":case.name,"url":case.url,"sha256":case.sha256,"categories":categories,"error":error.to_string(),"elapsedMs":started.elapsed().as_millis(),"runtime":"not-tested"})
+      }
+    };
+    let models: Vec<_> = case.vpks.iter().flat_map(|path| VpkArchive::open(path).unwrap().list_entries()).filter(|path| path.ends_with(".vmdl_c")).map(|path| {
+      let owners: Vec<_> = heroes.as_ref().and_then(Kv3Value::as_object).into_iter().flatten().filter_map(|(row, value)| {
+        (value.get("m_strModelName").and_then(Kv3Value::as_str).map(|name| format!("{name}_c")) == Some(path.clone())).then_some(row)
+      }).collect();
+      serde_json::json!({"path":path,"currentReferenceExists":resources.game_bytes(&path).unwrap().is_some(),"currentHeroDefinitions":owners})
+    }).collect();
+    report["modelUsage"] = serde_json::to_value(models).unwrap();
+    for (path, hash) in original {
+      assert_eq!(
+        Sha256::digest(fs::read(path).unwrap()),
+        hash,
+        "source VPK modified"
+      );
+    }
+    println!("{}: {}", case.id, report.get("error").unwrap());
+    reports.push(report);
+    fs::write(
+      std::env::var("DMM_COMPAT_REPORT").unwrap(),
+      serde_json::to_vec_pretty(&reports).unwrap(),
+    )
+    .unwrap();
+  }
+  assert!(
+    reports.iter().all(|report| report["error"].is_null()),
+    "corpus contains analysis/export failures; inspect the report"
+  );
+}
+
+#[test]
+#[ignore = "requires DMM_REAL_CITADEL and DMM_COMPAT_CORPUS"]
+fn legacy_cat_bindings_and_camera_preserve_authored_geometry() {
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let cases: Vec<CorpusCase> =
+    serde_json::from_slice(&fs::read(std::env::var("DMM_COMPAT_CORPUS").unwrap()).unwrap())
+      .unwrap();
+  let case = cases.iter().find(|case| case.id == 639883).unwrap();
+  let resources = resources::ResourceSnapshot::open(
+    &citadel,
+    &[LocalizationModInput {
+      mod_id: case.id.to_string(),
+      vpks: case.vpks.clone(),
+    }],
+  )
+  .unwrap();
+  let path = "models/abilities/nano_catform_model.vmdl_c";
+  let (provider, source) = resources.resolve(path).unwrap().unwrap();
+  let sources = BTreeMap::from([(
+    path.to_owned(),
+    vec![CompiledDataSource {
+      mod_id: case.id.to_string(),
+      source_vpk: provider
+        .archive
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned(),
+      priority: 0,
+      bytes: source.to_vec(),
+    }],
+  )]);
+  let mut inputs = animation_model_evidence::AnimationInputs::default();
+  for name in resources.mod_paths() {
+    inputs.record(name, &case.id.to_string());
+  }
+  let mut repairs = Vec::new();
+  let mut warnings = Vec::new();
+  let animations =
+    model_animation::prepare(&resources, &sources, &inputs, &mut repairs, &mut warnings).unwrap();
+  assert!(animations.contains_key(path), "{warnings:?}");
+  let repaired =
+    model_camera::prepare(&resources, &sources, &inputs, &animations, &mut repairs).unwrap();
+  assert!(
+    repairs.iter().any(|repair| matches!(
+      repair.kind,
+      asset_compatibility::RepairKind::CameraInterface
+    )),
+    "{repairs:?}"
+  );
+  let output = &repaired[path];
+  let (_, before, _) = decode_compiled_data(&source, path).unwrap();
+  let (_, after, _) = decode_compiled_data(output, path).unwrap();
+  assert!(runtime_values_equal(
+    before.get("m_modelSkeleton").unwrap(),
+    after.get("m_modelSkeleton").unwrap()
+  ));
+  for key in [
+    "m_remappingTable",
+    "m_remappingTableStarts",
+    "m_materialGroups",
+    "m_refAnimIncludeModels",
+  ] {
+    assert_eq!(before.get(key), after.get(key));
+  }
+  let old = Resource::parse(&source).unwrap();
+  let new = Resource::parse(output).unwrap();
+  for (index, block) in old.blocks().iter().enumerate() {
+    if ![*b"DATA", *b"MDAT", *b"RERL"].contains(&block.kind) {
+      assert_eq!(old.get_block_by_index(index), new.get_block_by_index(index));
+    }
+  }
+  let current = resources.game_bytes(path).unwrap().unwrap();
+  let (_, current, _) = decode_compiled_data(&current, path).unwrap();
+  assert!(model_camera::missing_camera_fields(&after, &current).is_empty());
+  let independent = source2_model::resource::Resource::parse(output.clone()).unwrap();
+  let decoded = source2_model::kv3::parse(independent.block_bytes("DATA").unwrap()).unwrap();
+  assert!(super::tests::independent_values_equal(&after, &decoded));
+  if let Ok(live) = std::env::var("DMM_COMPAT_LIVE_OVERLAY") {
+    let archive = VpkArchive::open(Path::new(&live)).unwrap();
+    assert_eq!(
+      archive.extract_entry(path).unwrap(),
+      *output,
+      "live cat repair differs from the fixture pipeline"
+    );
+    let heroes = archive.extract_entry(HEROES_VDATA_PATH).unwrap();
+    let (_, heroes, _) = decode_compiled_data(&heroes, HEROES_VDATA_PATH).unwrap();
+    let current = resources.game_bytes(HEROES_VDATA_PATH).unwrap().unwrap();
+    let (_, current, _) = decode_compiled_data(&current, HEROES_VDATA_PATH).unwrap();
+    let known_stat_keys: BTreeSet<_> = current
+      .as_object()
+      .unwrap()
+      .iter()
+      .filter(|(_, hero)| {
+        hero.get("_class").and_then(Kv3Value::as_str) == Some("CitadelHeroData_t")
+      })
+      .flat_map(|(_, hero)| {
+        hero
+          .get("m_mapStandardLevelUpUpgrades")
+          .and_then(Kv3Value::as_object)
+      })
+      .flatten()
+      .map(|(key, _)| key.as_str())
+      .collect();
+    let abilities = resources
+      .game_bytes(vdata_compatibility::ABILITIES_PATH)
+      .unwrap()
+      .unwrap();
+    let (_, abilities, _) =
+      decode_compiled_data(&abilities, vdata_compatibility::ABILITIES_PATH).unwrap();
+    assert!(
+      heroes.get("hero_tokamak").is_none(),
+      "unavailable copied hero must not reach the live overlay"
+    );
+    for (name, hero) in heroes.as_object().unwrap() {
+      for (key, _) in hero
+        .get("m_mapStandardLevelUpUpgrades")
+        .and_then(Kv3Value::as_object)
+        .into_iter()
+        .flatten()
+      {
+        assert!(
+          known_stat_keys.contains(key.as_str()),
+          "live unsupported stat key: {name}:{key}"
+        );
+      }
+      if let Some(base) = current.get(name) {
+        assert_eq!(
+          hero.get("m_eHeroDevelopmentState"),
+          base.get("m_eHeroDevelopmentState"),
+          "live visibility state: {name}"
+        );
+        assert_eq!(
+          hero.get("m_HeroID"),
+          base.get("m_HeroID"),
+          "live native identity: {name}"
+        );
+      }
+      for (slot, target) in hero
+        .get("m_mapBoundAbilities")
+        .and_then(Kv3Value::as_object)
+        .into_iter()
+        .flatten()
+      {
+        let Some(target_name) = target.as_str().filter(|name| !name.is_empty()) else {
+          continue;
+        };
+        let native_fallback = current
+          .get(name)
+          .and_then(|hero| hero.get("m_mapBoundAbilities"))
+          .and_then(|map| map.get(slot))
+          == Some(target);
+        assert!(
+          native_fallback
+            || object_get_case_insensitive(abilities.as_object().unwrap(), target_name).is_some(),
+          "live unresolved binding: {name}:{slot} -> {target_name}"
+        );
+      }
+    }
+  }
+}
+
+#[test]
+#[ignore = "requires DMM_REAL_CITADEL and DMM_COMPAT_CORPUS"]
+fn legacy_sliver_animation_activation_contract() {
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let cases: Vec<CorpusCase> =
+    serde_json::from_slice(&fs::read(std::env::var("DMM_COMPAT_CORPUS").unwrap()).unwrap())
+      .unwrap();
+  let case = cases.iter().find(|case| case.id == 639883).unwrap();
+  let resources = resources::ResourceSnapshot::open(
+    &citadel,
+    &[LocalizationModInput {
+      mod_id: case.id.to_string(),
+      vpks: case.vpks.clone(),
+    }],
+  )
+  .unwrap();
+  let mut inputs = animation_model_evidence::AnimationInputs::default();
+  for path in resources.mod_paths() {
+    inputs.record(path, &case.id.to_string());
+  }
+  let paths = [
+    "models/abilities/nano_catform_model.vmdl_c",
+    "models/heroes_staging/nano/nano_v2/nano.vmdl_c",
+  ];
+  let mut sources = BTreeMap::new();
+  for path in paths {
+    let (provider, bytes) = resources.resolve(path).unwrap().unwrap();
+    sources.insert(
+      path.into(),
+      vec![CompiledDataSource {
+        mod_id: case.id.to_string(),
+        source_vpk: provider
+          .archive
+          .file_name()
+          .unwrap()
+          .to_string_lossy()
+          .into_owned(),
+        priority: 0,
+        bytes: bytes.to_vec(),
+      }],
+    );
+  }
+  let mut repairs = Vec::new();
+  let mut warnings = Vec::new();
+  let output =
+    model_animation::prepare(&resources, &sources, &inputs, &mut repairs, &mut warnings).unwrap();
+  let final_models =
+    model_camera::prepare(&resources, &sources, &inputs, &output, &mut repairs).unwrap();
+  let live = std::env::var("DMM_COMPAT_LIVE_OVERLAY")
+    .ok()
+    .map(|path| VpkArchive::open(Path::new(&path)).unwrap());
+  for path in paths {
+    let repaired = output
+      .get(path)
+      .unwrap_or_else(|| panic!("Missing animation activation for {path}: {warnings:?}"));
+    let (_, model, _) = decode_compiled_data(repaired, path).unwrap();
+    let text = model
+      .get("m_modelInfo")
+      .unwrap()
+      .get("m_keyValueText")
+      .unwrap()
+      .as_str()
+      .unwrap();
+    assert!(
+      text.contains("CCitadelHeroModelGameData_t"),
+      "Missing pawn animation controls for {path}"
+    );
+    assert!(
+      !text.contains(".vanmgrph"),
+      "Retired graph selection remains active for {path}"
+    );
+    assert!(
+      text.contains("m_bTurnToFaceVelocity"),
+      "Missing facing control for {path}"
+    );
+    let (_, original, _) = decode_compiled_data(&sources[path][0].bytes, path).unwrap();
+    let before = original.get("m_modelSkeleton").unwrap();
+    let after = model.get("m_modelSkeleton").unwrap();
+    for (field, original) in before.as_object().unwrap() {
+      let original = original.as_array().unwrap();
+      assert_eq!(
+        &after.get(field).unwrap().as_array().unwrap()[..original.len()],
+        original,
+        "authored rig changed: {path}:{field}"
+      );
+    }
+    for field in [
+      "m_remappingTable",
+      "m_remappingTableStarts",
+      "m_materialGroups",
+      "m_refAnimIncludeModels",
+    ] {
+      assert_eq!(
+        model.get(field),
+        original.get(field),
+        "authored mappings changed: {path}:{field}"
+      );
+    }
+    let old_resource = Resource::parse(&sources[path][0].bytes).unwrap();
+    let rebuilt = Resource::parse(repaired).unwrap();
+    for (index, block) in old_resource.blocks().iter().enumerate() {
+      if ![*b"DATA", *b"RERL"].contains(&block.kind) {
+        assert_eq!(
+          old_resource.get_block_by_index(index),
+          rebuilt.get_block_by_index(index),
+          "geometry or authored animation changed: {path}"
+        );
+      }
+    }
+    let independent = source2_model::resource::Resource::parse(repaired.clone()).unwrap();
+    let decoded = source2_model::kv3::parse(independent.block_bytes("DATA").unwrap()).unwrap();
+    assert!(super::tests::independent_values_equal(&model, &decoded));
+    if let Some(live) = &live {
+      assert_eq!(
+        live.extract_entry(path).unwrap(),
+        final_models[path],
+        "live animation activation differs: {path}"
+      );
+    }
+  }
+}
+
+#[test]
+#[ignore = "requires DMM_REAL_CITADEL and DMM_COMPAT_CORPUS"]
+fn legacy_mina_animation_and_camera_contract() {
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let cases: Vec<CorpusCase> =
+    serde_json::from_slice(&fs::read(std::env::var("DMM_COMPAT_CORPUS").unwrap()).unwrap())
+      .unwrap();
+  let case = cases.iter().find(|case| case.id == 634460).unwrap();
+  let resources = resources::ResourceSnapshot::open(
+    &citadel,
+    &[LocalizationModInput {
+      mod_id: case.id.to_string(),
+      vpks: case.vpks.clone(),
+    }],
+  )
+  .unwrap();
+  let mut inputs = animation_model_evidence::AnimationInputs::default();
+  for path in resources.mod_paths() {
+    inputs.record(path, &case.id.to_string());
+  }
+  let path = "models/heroes_wip/vampirebat/vampirebat.vmdl_c";
+  let (provider, source) = resources.resolve(path).unwrap().unwrap();
+  let sources = BTreeMap::from([(
+    path.into(),
+    vec![CompiledDataSource {
+      mod_id: case.id.to_string(),
+      source_vpk: provider
+        .archive
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned(),
+      priority: 0,
+      bytes: source.to_vec(),
+    }],
+  )]);
+  let mut repairs = Vec::new();
+  let mut warnings = Vec::new();
+  let animations =
+    model_animation::prepare(&resources, &sources, &inputs, &mut repairs, &mut warnings).unwrap();
+  assert!(animations.contains_key(path), "{warnings:?}");
+  let output =
+    model_camera::prepare(&resources, &sources, &inputs, &animations, &mut repairs).unwrap();
+  let (_, model, _) = decode_compiled_data(&output[path], path).unwrap();
+  let current = resources.game_bytes(path).unwrap().unwrap();
+  let (_, current_model, _) = decode_compiled_data(&current, path).unwrap();
+  assert!(
+    model_camera::missing_camera_fields(&model, &current_model).is_empty(),
+    "missing camera contract: {repairs:?}"
+  );
+  let (_, original, _) = decode_compiled_data(&source, path).unwrap();
+  for field in [
+    "m_modelSkeleton",
+    "m_remappingTable",
+    "m_remappingTableStarts",
+    "m_materialGroups",
+  ] {
+    assert_eq!(model.get(field), original.get(field));
+  }
+  let resource = Resource::parse(&output[path]).unwrap();
+  let original = Resource::parse(&source).unwrap();
+  let first_mesh = original
+    .blocks()
+    .iter()
+    .position(|block| block.kind == *b"MDAT")
+    .unwrap();
+  for (index, block) in original.blocks().iter().enumerate() {
+    if index != first_mesh && ![*b"DATA", *b"RERL"].contains(&block.kind) {
+      assert_eq!(
+        original.get_block_by_index(index),
+        resource.get_block_by_index(index)
+      );
+    }
+  }
+  let before = kv3::decode(original.find_block(*b"MDAT").unwrap()).unwrap();
+  let after = kv3::decode(resource.find_block(*b"MDAT").unwrap()).unwrap();
+  for (field, value) in before.as_object().unwrap() {
+    if field == "m_attachments" {
+      let points = value.as_array().unwrap();
+      assert_eq!(
+        &after.get(field).unwrap().as_array().unwrap()[..points.len()],
+        points,
+        "authored attachments changed"
+      );
+    } else {
+      assert_eq!(after.get(field), Some(value), "mesh field changed: {field}");
+    }
+  }
+  let bones: BTreeSet<_> = model
+    .get("m_modelSkeleton")
+    .unwrap()
+    .get("m_boneName")
+    .unwrap()
+    .as_array()
+    .unwrap()
+    .iter()
+    .filter_map(Kv3Value::as_str)
+    .collect();
+  assert!(asset_compatibility::mesh_warnings(&after, &bones).is_empty());
+  let independent = source2_model::resource::Resource::parse(output[path].clone()).unwrap();
+  let decoded = source2_model::kv3::parse(independent.block_bytes("DATA").unwrap()).unwrap();
+  assert!(super::tests::independent_values_equal(&model, &decoded));
+  if let Ok(path_to_live) = std::env::var("DMM_COMPAT_LIVE_OVERLAY") {
+    let live = VpkArchive::open(Path::new(&path_to_live)).unwrap();
+    assert_eq!(live.extract_entry(path).unwrap(), output[path]);
+  }
+}
+
+#[test]
+#[ignore = "local material diagnostic; requires DMM_REAL_CITADEL and DMM_COMPAT_CORPUS"]
+fn inspect_legacy_material_contracts() {
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let cases: Vec<CorpusCase> =
+    serde_json::from_slice(&fs::read(std::env::var("DMM_COMPAT_CORPUS").unwrap()).unwrap())
+      .unwrap();
+  let root = std::env::temp_dir().join("dmm-legacy-materials");
+  fs::create_dir_all(&root).unwrap();
+  for case in cases {
+    let resources = resources::ResourceSnapshot::open(
+      &citadel,
+      &[LocalizationModInput {
+        mod_id: case.id.to_string(),
+        vpks: case.vpks.clone(),
+      }],
+    )
+    .unwrap();
+    for path in resources
+      .mod_paths()
+      .filter(|path| path.ends_with(".vmat_c"))
+    {
+      let source = resources.resolve(path).unwrap().unwrap().1;
+      let refs = vpkmanager::material_repair::references(&source).unwrap_or_default();
+      let missing: Vec<_> = refs
+        .iter()
+        .filter(|(_, name)| resources.provider(name).is_none())
+        .collect();
+      if missing.is_empty() {
+        continue;
+      }
+      let filename = format!("{}-{}", case.id, path.replace('/', "_"));
+      println!("{} {path} {missing:?}", case.id);
+      for (label, bytes) in [
+        ("source", Some(source)),
+        ("current", resources.game_bytes(path).unwrap()),
+      ] {
+        let Some(bytes) = bytes else {
+          continue;
+        };
+        let resource = Resource::parse(&bytes).unwrap();
+        let (_, value, _) = decode_compiled_data(&bytes, path).unwrap();
+        fs::write(
+          root.join(format!("{filename}-{label}.json")),
+          serde_json::to_vec_pretty(&diagnostic_json(&value)).unwrap(),
+        )
+        .unwrap();
+        if let Some(red2) = resource.find_block(*b"RED2")
+          && let Ok(red2) = kv3::decode(red2)
+        {
+          fs::write(
+            root.join(format!("{filename}-{label}-RED2.json")),
+            serde_json::to_vec_pretty(&diagnostic_json(&red2)).unwrap(),
+          )
+          .unwrap();
+        }
+      }
+    }
+  }
+}
+
+#[test]
+#[ignore = "requires DMM_REAL_CITADEL and DMM_COMPAT_CORPUS original fixtures"]
+fn legacy_models_missing_samples_are_reconciled_against_current_render_contract() {
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let cases: Vec<CorpusCase> =
+    serde_json::from_slice(&fs::read(std::env::var("DMM_COMPAT_CORPUS").unwrap()).unwrap())
+      .unwrap();
+  for (id, path, missing_count) in [
+    (551071, "models/heroes_staging/digger/digger.vmdl_c", 36),
+    (614168, "models/heroes_wip/dynamo/dynamo.vmdl_c", 0),
+    (555188, "models/heroes_staging/yamato_v2/yamato.vmdl_c", 1),
+  ] {
+    let case = cases.iter().find(|case| case.id == id).unwrap();
+    let input = LocalizationModInput {
+      mod_id: id.to_string(),
+      vpks: case.vpks.clone(),
+    };
+    let resources =
+      resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
+    let original = resources.resolve(path).unwrap().unwrap().1;
+    let (_, authored, _) = decode_compiled_data(&original, path).unwrap();
+    let current = resources.game_bytes(path).unwrap().unwrap();
+    let (_, current, _) = decode_compiled_data(&current, path).unwrap();
+    let skeleton_path = current
+      .get("m_vecNmSkeletonRefs")
+      .unwrap()
+      .as_array()
+      .unwrap()[0]
+      .as_str()
+      .unwrap();
+    let skeleton = resources.game_bytes(skeleton_path).unwrap().unwrap();
+    let (_, skeleton, _) = decode_compiled_data(&skeleton, skeleton_path).unwrap();
+    let names: BTreeSet<_> = authored
+      .get("m_modelSkeleton")
+      .unwrap()
+      .get("m_boneName")
+      .unwrap()
+      .as_array()
+      .unwrap()
+      .iter()
+      .map(|name| name.as_str().unwrap().to_ascii_lowercase())
+      .collect();
+    let missing: Vec<_> = skeleton
+      .get("m_boneIDs")
+      .unwrap()
+      .as_array()
+      .unwrap()
+      .iter()
+      .filter_map(Kv3Value::as_str)
+      .filter(|name| !names.contains(&name.to_ascii_lowercase()))
+      .collect();
+    assert_eq!(missing.len(), missing_count, "fixture {id} changed");
+    let plan = LocalizationOverlayPlan::build(&citadel, &[input]).unwrap();
+    assert!(
+      plan
+        .analysis
+        .asset_repairs
+        .iter()
+        .any(|r| r.file_path == path
+          && matches!(r.kind, asset_compatibility::RepairKind::AnimationRigRebase))
+    );
+    assert!(plan.camera_models.contains_key(path));
+    assert!(
+      !plan.analysis.asset_warnings.iter().any(
+        |w| w.file_path == path && w.kind == asset_compatibility::WarningKind::AnimationMapping
+      )
+    );
+    assert_eq!(resources.resolve(path).unwrap().unwrap().1, original);
+    println!("{id}: original missing samples: {missing_count}; coordinated AG2 repair accepted");
+  }
+}
+
+#[test]
+#[ignore = "requires DMM_REAL_CITADEL and DMM_COMPAT_CORPUS original fixtures"]
+fn legacy_deformation_rig_rebase_preserves_authored_render_buffers() {
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let cases: Vec<CorpusCase> =
+    serde_json::from_slice(&fs::read(std::env::var("DMM_COMPAT_CORPUS").unwrap()).unwrap())
+      .unwrap();
+  let root = std::env::temp_dir().join("dmm-rig-rebase");
+  fs::create_dir_all(&root).unwrap();
+  let mut failed = Vec::new();
+  for (id, path) in [
+    (614168, "models/heroes_wip/dynamo/dynamo.vmdl_c"),
+    (551071, "models/heroes_staging/digger/digger.vmdl_c"),
+    (555188, "models/heroes_staging/yamato_v2/yamato.vmdl_c"),
+  ] {
+    let case = cases.iter().find(|case| case.id == id).unwrap();
+    let input = LocalizationModInput {
+      mod_id: id.to_string(),
+      vpks: case.vpks.clone(),
+    };
+    let resources =
+      resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
+    let source = resources.resolve(path).unwrap().unwrap().1;
+    let plan = LocalizationOverlayPlan::build(&citadel, &[input]).unwrap();
+    let Some(repaired) = plan.camera_models.get(path) else {
+      println!(
+        "{id}: {:?}",
+        plan
+          .analysis
+          .asset_warnings
+          .iter()
+          .filter(|w| w.file_path == path)
+          .map(|w| &w.detail)
+          .collect::<Vec<_>>()
+      );
+      failed.push(id);
+      continue;
+    };
+    if id == 551071 {
+      let current = resources.game_bytes(path).unwrap().unwrap();
+      for clip in ["weapon_stand_idle", "out_of_combat_stand_idle"] {
+        let clip = format!("models/heroes_staging/digger/clips/{clip}.vnmclip_c");
+        let provider = resources.provider(&clip).unwrap();
+        let archive = VpkArchive::open(&provider.archive).unwrap();
+        let animation =
+          source2_model::nm_anim::load_nm_animation_from_archive(&archive, &clip).unwrap();
+        model_animation::verify_animated_fixture(&source, &current, repaired, &animation);
+      }
+    }
+    assert!(
+      model_animation::deformation_preserved(&source, repaired),
+      "{id}: authored skinning/attachments/hitboxes changed"
+    );
+    assert!(
+      plan
+        .analysis
+        .asset_repairs
+        .iter()
+        .any(|r| r.file_path == path
+          && matches!(r.kind, asset_compatibility::RepairKind::AnimationRigRebase))
+    );
+    let (_, value, _) = decode_compiled_data(repaired, path).unwrap();
+    fs::write(
+      root.join(format!("{id}-repaired-model.json")),
+      serde_json::to_vec_pretty(&diagnostic_json(&value)).unwrap(),
+    )
+    .unwrap();
+    let before = Resource::parse(&source).unwrap();
+    let after = Resource::parse(repaired).unwrap();
+    let independent = source2_model::resource::Resource::parse(repaired.clone()).unwrap();
+    for (index, block) in after
+      .blocks()
+      .iter()
+      .enumerate()
+      .filter(|(_, b)| [*b"DATA", *b"MDAT"].contains(&b.kind))
+    {
+      let reference = &independent.blocks[index];
+      let decoded = source2_model::kv3::parse(
+        &independent.data[reference.offset..reference.offset + reference.size],
+      )
+      .unwrap();
+      let value = kv3::decode(after.get_block_by_index(index).unwrap()).unwrap();
+      assert!(
+        super::tests::independent_values_equal(&value, &decoded),
+        "{id}: independent block decode {}",
+        String::from_utf8_lossy(&block.kind)
+      );
+    }
+    assert_eq!(before.blocks().len(), after.blocks().len());
+    for (index, block) in before.blocks().iter().enumerate() {
+      assert_eq!(block.kind, after.blocks()[index].kind);
+      if ![*b"DATA", *b"MDAT", *b"RERL"].contains(&block.kind) {
+        assert_eq!(
+          before.get_block_by_index(index),
+          after.get_block_by_index(index),
+          "{id}: block {index} changed"
+        );
+      }
+    }
+  }
+  assert!(
+    failed.is_empty(),
+    "missing deformation-rig repairs: {failed:?}"
+  );
+}
+
+#[test]
+#[ignore = "requires DMM_REAL_CITADEL and DMM_COMPAT_CORPUS with Toon Bebop"]
+fn toon_bebop_repair_is_stable_with_unrelated_animation_overrides() {
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let cases: Vec<CorpusCase> =
+    serde_json::from_slice(&fs::read(std::env::var("DMM_COMPAT_CORPUS").unwrap()).unwrap())
+      .unwrap();
+  let case = cases.iter().find(|case| case.id == 670722).unwrap();
+  assert_eq!(
+    hex::encode(Sha256::digest(fs::read(&case.archive).unwrap())),
+    case.sha256
+  );
+  let source_hashes: Vec<_> = case
+    .vpks
+    .iter()
+    .map(|path| Sha256::digest(fs::read(path).unwrap()))
+    .collect();
+  let input = LocalizationModInput {
+    mod_id: case.id.to_string(),
+    vpks: case.vpks.clone(),
+  };
+  let baseline = LocalizationOverlayPlan::build(&citadel, std::slice::from_ref(&input)).unwrap();
+  let skeleton = "models/heroes_staging/bebop/bebop.vnmskel_c";
+  let expected = &baseline.animation_skeletons[skeleton];
+  let snapshot = resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
+  assert_eq!(
+    expected,
+    snapshot.game_bytes(skeleton).unwrap().unwrap().as_ref()
+  );
+  assert!(
+    baseline.camera_models.is_empty(),
+    "Toon model must remain authored"
+  );
+  let output = TempDir::new().unwrap();
+  for (name, extension, binding, allowed) in [
+    (
+      "unrelated_nm",
+      "vnmclip_c",
+      "models/unrelated/rig.vnmskel",
+      true,
+    ),
+    (
+      "related_nm",
+      "vnmclip_c",
+      "models/heroes_staging/bebop/bebop.vnmskel",
+      false,
+    ),
+    (
+      "unknown_legacy",
+      "vanim_c",
+      "models/unrelated/rig.vnmskel",
+      false,
+    ),
+  ] {
+    let clip = tests::compiled_resource(vec![(
+      "m_skeleton".into(),
+      Kv3Value::String(binding.into()),
+    )]);
+    let path = format!("models/unrelated/idle.{extension}");
+    let archive = resources::tests::pack(output.path(), name, &[(&path, &clip)]);
+    let other = LocalizationModInput {
+      mod_id: name.into(),
+      vpks: vec![archive],
+    };
+    for (order, inputs) in [
+      ("first", vec![input.clone(), other.clone()]),
+      ("last", vec![other.clone(), input.clone()]),
+    ] {
+      let plan = LocalizationOverlayPlan::build(&citadel, &inputs).unwrap();
+      assert!(
+        plan.camera_models.is_empty(),
+        "{name}/{order}: Toon model was rewritten"
+      );
+      if allowed {
+        assert!(
+          plan.animation_skeletons == baseline.animation_skeletons,
+          "{name}/{order}: unrelated override changed the Toon repair"
+        );
+        let overlay = output.path().join(format!("{name}-{order}.vpk"));
+        plan.write(&overlay, &[]).unwrap();
+        let packed = VpkArchive::open(&overlay).unwrap();
+        assert!(
+          packed.extract_entry(skeleton).unwrap() == *expected,
+          "{name}/{order}: packed repair changed"
+        );
+      } else {
+        assert!(
+          !plan.animation_skeletons.contains_key(skeleton),
+          "{name}/{order}: affected or unsupported animation was accepted"
+        );
+      }
+    }
+  }
+  for (path, hash) in case.vpks.iter().zip(source_hashes) {
+    assert_eq!(
+      Sha256::digest(fs::read(path).unwrap()),
+      hash,
+      "original mod changed"
+    );
+  }
+}
+
+#[test]
+#[ignore = "requires DMM_REAL_CITADEL and DMM_GT_VPK"]
+fn owl_camera_repair_is_stable_with_unrelated_animation_overrides() {
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let vpk = PathBuf::from(std::env::var("DMM_GT_VPK").unwrap());
+  let original = Sha256::digest(fs::read(&vpk).unwrap());
+  let input = LocalizationModInput {
+    mod_id: "563116".into(),
+    vpks: vec![vpk.clone()],
+  };
+  let owl = "models/heroes_staging/grey_talon/grey_talon_owl.vmdl_c";
+  let baseline = LocalizationOverlayPlan::build(&citadel, std::slice::from_ref(&input)).unwrap();
+  let expected = &baseline.camera_models[owl];
+  assert!(baseline.analysis.asset_repairs.iter().any(|repair| {
+    repair.file_path == owl
+      && matches!(repair.kind, asset_compatibility::RepairKind::CameraControls)
+  }));
+  let resources =
+    resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
+  let current = resources.game_bytes(owl).unwrap().unwrap();
+  let (_, model, _) = decode_compiled_data(&current, owl).unwrap();
+  let skeleton = model
+    .get("m_vecNmSkeletonRefs")
+    .unwrap()
+    .as_array()
+    .unwrap()[0]
+    .as_str()
+    .unwrap();
+  let skeleton_path = resources::resource_path(skeleton).unwrap();
+  let graph = animation_model_evidence::graphs(&model)
+    .unwrap()
+    .into_values()
+    .next()
+    .unwrap();
+  let graph_path = resources::resource_path(&graph).unwrap();
+  let output = TempDir::new().unwrap();
+  for (name, path, bytes, allowed) in [
+    (
+      "unrelated_nm",
+      "models/unrelated/idle.vnmclip_c".to_owned(),
+      tests::compiled_resource(vec![(
+        "m_skeleton".into(),
+        Kv3Value::String("models/unrelated/rig.vnmskel".into()),
+      )]),
+      true,
+    ),
+    (
+      "related_nm",
+      "models/unrelated/idle.vnmclip_c".to_owned(),
+      tests::compiled_resource(vec![(
+        "m_skeleton".into(),
+        Kv3Value::String(skeleton.to_owned()),
+      )]),
+      false,
+    ),
+    (
+      "overridden_skeleton",
+      skeleton_path.clone(),
+      resources
+        .game_bytes(&skeleton_path)
+        .unwrap()
+        .unwrap()
+        .to_vec(),
+      false,
+    ),
+    (
+      "unknown_animation",
+      "models/unrelated/idle.vanim_c".to_owned(),
+      tests::compiled_resource(vec![]),
+      false,
+    ),
+    (
+      "overridden_graph",
+      graph_path.clone(),
+      resources.game_bytes(&graph_path).unwrap().unwrap().to_vec(),
+      false,
+    ),
+    (
+      "own_unrelated_nm",
+      "models/unrelated/idle.vnmclip_c".to_owned(),
+      tests::compiled_resource(vec![(
+        "m_skeleton".into(),
+        Kv3Value::String("models/unrelated/rig.vnmskel".into()),
+      )]),
+      false,
+    ),
+  ] {
+    let archive = resources::tests::pack(output.path(), name, &[(&path, &bytes)]);
+    let other = LocalizationModInput {
+      mod_id: if name == "own_unrelated_nm" {
+        input.mod_id.clone()
+      } else {
+        name.into()
+      },
+      vpks: vec![archive],
+    };
+    for (order, inputs) in [
+      ("first", vec![input.clone(), other.clone()]),
+      ("last", vec![other.clone(), input.clone()]),
+    ] {
+      let plan = LocalizationOverlayPlan::build(&citadel, &inputs).unwrap();
+      if allowed {
+        assert!(
+          plan.camera_models.get(owl) == Some(expected),
+          "{name}/{order}: unrelated animation suppressed the owl camera repair"
+        );
+        let overlay = output.path().join(format!("{name}-{order}.vpk"));
+        plan.write(&overlay, &[]).unwrap();
+        assert!(
+          &VpkArchive::open(&overlay)
+            .unwrap()
+            .extract_entry(owl)
+            .unwrap()
+            == expected
+        );
+      } else {
+        assert!(
+          !plan.camera_models.contains_key(owl),
+          "{name}/{order}: affected or unsupported animation permitted a camera repair"
+        );
+      }
+    }
+  }
+  assert_eq!(Sha256::digest(fs::read(vpk).unwrap()), original);
+}

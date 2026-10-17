@@ -30,6 +30,14 @@ impl VpkParser {
     /// Reads only the VPK header + directory tree from a file on disk,
     /// returning just the entry list without generating any hashes or fingerprints.
     pub fn parse_directory_from_file(path: &Path) -> Result<Vec<VpkEntry>> {
+        Ok(Self::parse_directory_with_preload_from_file(path)?
+            .into_iter()
+            .map(|(entry, _)| entry)
+            .collect())
+    }
+
+    /// Reads directory metadata and the inline prefix of each entry without loading archive payloads.
+    pub fn parse_directory_with_preload_from_file(path: &Path) -> Result<Vec<(VpkEntry, Vec<u8>)>> {
         let mut file = std::fs::File::open(path)?;
 
         let mut header_buf = [0u8; 28];
@@ -46,6 +54,11 @@ impl VpkParser {
 
         let version =
             u32::from_le_bytes([header_buf[4], header_buf[5], header_buf[6], header_buf[7]]);
+        if version != 1 && version != 2 {
+            return Err(VpkError::Validation {
+                message: format!("Unsupported VPK version {version}"),
+            });
+        }
         let tree_length =
             u32::from_le_bytes([header_buf[8], header_buf[9], header_buf[10], header_buf[11]]);
 
@@ -58,13 +71,23 @@ impl VpkParser {
         };
 
         let bytes_to_read = tree_length as usize;
-        let mut tree_buf = vec![0u8; header_size + bytes_to_read];
+        let total = header_size
+            .checked_add(bytes_to_read)
+            .ok_or_else(|| VpkError::Validation {
+                message: "VPK directory extent overflow".into(),
+            })?;
+        if total as u64 > file.metadata()?.len() {
+            return Err(VpkError::Validation {
+                message: "VPK directory exceeds the file length".into(),
+            });
+        }
+        let mut tree_buf = vec![0u8; total];
         file.seek(SeekFrom::Start(0))?;
         file.read_exact(&mut tree_buf)?;
 
         let mut parser = Self::new(tree_buf);
         parser.cursor = header_size;
-        parser.parse_directory_tree(header_size, tree_length as usize)
+        parser.parse_directory_tree_with_preload(header_size, tree_length as usize)
     }
 
     fn parse_internal(&mut self, options: VpkParseOptions) -> Result<VpkParsed> {
@@ -124,6 +147,11 @@ impl VpkParser {
         }
 
         let version = self.read_u32()?;
+        if version != 1 && version != 2 {
+            return Err(VpkError::Validation {
+                message: format!("Unsupported VPK version {version}"),
+            });
+        }
         let tree_length = self.read_u32()?;
 
         let mut file_data_section_size = None;
@@ -161,45 +189,84 @@ impl VpkParser {
         tree_start: usize,
         tree_length: usize,
     ) -> Result<Vec<VpkEntry>> {
+        Ok(self
+            .parse_directory_tree_with_preload(tree_start, tree_length)?
+            .into_iter()
+            .map(|(entry, _)| entry)
+            .collect())
+    }
+
+    fn parse_directory_tree_with_preload(
+        &mut self,
+        tree_start: usize,
+        tree_length: usize,
+    ) -> Result<Vec<(VpkEntry, Vec<u8>)>> {
         let mut entries = Vec::new();
-        let tree_end = tree_start + tree_length;
+        let tree_end = tree_start
+            .checked_add(tree_length)
+            .filter(|end| *end <= self.buffer.len())
+            .ok_or_else(|| VpkError::Validation {
+                message: "VPK directory exceeds its buffer".into(),
+            })?;
+        let mut closed = false;
 
         while self.cursor < tree_end {
-            let ext = self.read_null_terminated_string()?;
+            let ext = self.read_tree_string(tree_end)?;
             if ext.is_empty() {
+                closed = true;
                 break;
             }
 
             while self.cursor < tree_end {
-                let path = self.read_null_terminated_string()?;
+                let path = self.read_tree_string(tree_end)?;
                 if path.is_empty() {
                     break;
                 }
 
                 while self.cursor < tree_end {
-                    let filename = self.read_null_terminated_string()?;
+                    let filename = self.read_tree_string(tree_end)?;
                     if filename.is_empty() {
                         break;
                     }
 
-                    let entry = self.parse_entry(&ext, &path, &filename)?;
-                    entries.push(entry.clone());
-
-                    if entry.preload_bytes > 0 {
-                        self.cursor += entry.preload_bytes as usize;
-                        if self.cursor > self.buffer.len() {
-                            return Err(VpkError::CursorOverrun {
-                                cursor: self.cursor,
-                                requested: entry.preload_bytes as usize,
-                                buffer_size: self.buffer.len(),
-                            });
-                        }
+                    if tree_end.saturating_sub(self.cursor) < 18 {
+                        return Err(VpkError::CursorOverrun {
+                            cursor: self.cursor,
+                            requested: 18,
+                            buffer_size: tree_end,
+                        });
                     }
+                    let entry = self.parse_entry(&ext, &path, &filename)?;
+                    let end = self.cursor + usize::from(entry.preload_bytes);
+                    let preload = self
+                        .buffer
+                        .get(self.cursor..end)
+                        .filter(|_| end <= tree_end)
+                        .ok_or(VpkError::CursorOverrun {
+                            cursor: self.cursor,
+                            requested: usize::from(entry.preload_bytes),
+                            buffer_size: tree_end,
+                        })?
+                        .to_vec();
+                    self.cursor = end;
+                    entries.push((entry, preload));
                 }
             }
         }
 
+        if !closed {
+            return Err(VpkError::Validation {
+                message: "VPK directory is missing its final terminator".into(),
+            });
+        }
         Ok(entries)
+    }
+
+    fn read_tree_string(&mut self, tree_end: usize) -> Result<String> {
+        if !self.buffer[self.cursor..tree_end].contains(&0) {
+            return Err(VpkError::InvalidString);
+        }
+        self.read_null_terminated_string()
     }
 
     fn parse_entry(&mut self, ext: &str, path: &str, filename: &str) -> Result<VpkEntry> {

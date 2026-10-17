@@ -11,6 +11,8 @@ import { ArrowClockwiseIcon } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { FaShare } from "react-icons/fa";
+import { PerModCompatibilityControl } from "@/components/my-mods/per-mod-compatibility-control";
+import type { ModCompatibilityController } from "@/hooks/use-mod-compatibility";
 import { useReinstallAction } from "@/hooks/use-reinstall-action";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -19,9 +21,14 @@ import type { LocalMod } from "@/types/mods";
 interface ModContextMenuProps {
   mod: LocalMod;
   children: React.ReactNode;
+  compatibility?: ModCompatibilityController;
 }
 
-export const ModContextMenu = ({ mod, children }: ModContextMenuProps) => {
+export const ModContextMenu = ({
+  mod,
+  children,
+  compatibility,
+}: ModContextMenuProps) => {
   const { t } = useTranslation();
   const { getActiveProfile } = usePersistedStore();
   const {
@@ -91,6 +98,13 @@ export const ModContextMenu = ({ mod, children }: ModContextMenuProps) => {
             {t("reinstall.action")}
           </ContextMenuItem>
         )}
+        {compatibility ? (
+          <PerModCompatibilityControl
+            mod={mod}
+            compatibility={compatibility}
+            variant='context-menu'
+          />
+        ) : null}
       </ContextMenuContent>
     </ContextMenu>
   );

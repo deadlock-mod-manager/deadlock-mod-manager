@@ -18,6 +18,7 @@ export type ErrorKind = {
     | "gameRunning"
     | "gameNotRunning"
     | "gameLaunchFailed"
+    | "modDataReviewRequired"
     | "failedToOpenFolder"
     | "modExtractionFailed"
     | "invalidInput"

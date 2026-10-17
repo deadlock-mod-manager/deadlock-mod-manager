@@ -129,7 +129,9 @@ pub async fn start_game(
   vanilla: bool,
   additional_args: String,
   profile_folder: Option<String>,
+  mod_compatibility: Option<bool>,
 ) -> Result<(), Error> {
+  let mod_compatibility = mod_compatibility.unwrap_or(false);
   log::info!(
     "Starting game with args: {:?} (vanilla: {:?}, profile: {:?})",
     additional_args,
@@ -138,10 +140,13 @@ pub async fn start_game(
   );
   crate::game_session::note_launch_requested(&additional_args);
 
-  let first_result = {
-    let mut mod_manager = MANAGER.lock().unwrap();
-    mod_manager.prepare_game_launch(vanilla, additional_args.clone(), profile_folder.clone())
-  };
+  let first_result = prepare_game_launch(
+    vanilla,
+    additional_args.clone(),
+    profile_folder.clone(),
+    mod_compatibility,
+  )
+  .await;
 
   let request = match first_result {
     Ok(request) => request,
@@ -150,10 +155,8 @@ pub async fn start_game(
 
       reset_to_vanilla_internal().await?;
 
-      let request = {
-        let mut mod_manager = MANAGER.lock().unwrap();
-        mod_manager.prepare_game_launch(vanilla, additional_args, profile_folder)?
-      };
+      let request =
+        prepare_game_launch(vanilla, additional_args, profile_folder, mod_compatibility).await?;
 
       app_handle.emit("gameinfo-auto-reset", ()).ok();
       log::info!("Auto-recovery succeeded after gameinfo reset");
@@ -163,6 +166,26 @@ pub async fn start_game(
   };
 
   await_launched_game(request.spawn()?).await
+}
+
+/// Launch preparation can build the compatibility repair package, which parses
+/// every opted-in VPK, so it runs off the async worker threads.
+async fn prepare_game_launch(
+  vanilla: bool,
+  additional_args: String,
+  profile_folder: Option<String>,
+  mod_compatibility: bool,
+) -> Result<crate::mod_manager::steam_uri_launcher::SteamUriLaunchRequest, Error> {
+  tauri::async_runtime::spawn_blocking(move || {
+    MANAGER.lock().unwrap().prepare_game_launch(
+      vanilla,
+      additional_args,
+      profile_folder,
+      mod_compatibility,
+    )
+  })
+  .await
+  .map_err(|error| Error::BackgroundTaskFailed(format!("Could not prepare launch: {error}")))?
 }
 
 /// Launch the game without touching the search paths in `gameinfo.gi`.

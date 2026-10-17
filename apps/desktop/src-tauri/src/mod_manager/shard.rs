@@ -429,6 +429,14 @@ pub fn is_valid_search_path(path: &str) -> bool {
   let Some(root) = segments.next() else {
     return false;
   };
+  if let Some(suffix) = root.strip_prefix("dmm_localization_") {
+    let valid_suffix = suffix == "default"
+      || (suffix.len() == 16
+        && suffix
+          .chars()
+          .all(|character| character.is_ascii_hexdigit()));
+    return valid_suffix && segments.next().is_none();
+  }
   if ShardIndex::from_root_name(root).is_none() {
     return false;
   }
@@ -593,6 +601,10 @@ mod tests {
     assert!(is_valid_search_path("citadel/addons/profile_123_my-mod"));
     assert!(is_valid_search_path("citadel/addons2/server_abc"));
     assert!(is_valid_search_path("citadel/addons10/profile_x"));
+    assert!(is_valid_search_path("citadel/dmm_localization_default"));
+    assert!(is_valid_search_path(
+      "citadel/dmm_localization_0123456789abcdef"
+    ));
   }
 
   #[test]
@@ -607,5 +619,11 @@ mod tests {
     assert!(!is_valid_search_path("citadel/addons11/profile")); // shard > MAX
     assert!(!is_valid_search_path("citadel/addons1/profile")); // shard 1 must be "addons"
     assert!(!is_valid_search_path("other/addons/profile")); // wrong root
+    assert!(!is_valid_search_path(
+      "citadel/dmm_localization_unsafe-name"
+    ));
+    assert!(!is_valid_search_path(
+      "citadel/dmm_localization_0123456789abcdef/nested"
+    ));
   }
 }

@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 
 target
+
+# Local investigation notes and corpus results
+prototypes/

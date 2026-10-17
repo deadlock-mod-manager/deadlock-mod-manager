@@ -1,0 +1,59 @@
+{
+  "sources": [
+    {
+      "commit": "5df28be343ce83699d7888b02d1559b5bc6b754c",
+      "url": "https://raw.githubusercontent.com/SteamTracking/GameTracking-Deadlock/5df28be343ce83699d7888b02d1559b5bc6b754c/game/citadel/pak01_dir/scripts/heroes.vdata",
+      "date": "2024-11-26T22:53:20Z",
+      "sha256": "f1ee6215d216bd9cb39fea9361c47c622bc5d9bef2d897335a24a304155e89a5"
+    }
+  ],
+  "bindings": {
+    "hero_base": ["models/heroes_staging/gen_man/gen_man.vmdl"],
+    "hero_inferno": ["models/heroes_staging/inferno_v4/inferno.vmdl"],
+    "hero_gigawatt": [
+      "models/heroes_staging/gigawatt_prisoner/gigawatt_prisoner.vmdl"
+    ],
+    "hero_hornet": ["models/heroes_staging/hornet_v3/hornet.vmdl"],
+    "hero_ghost": ["models/heroes_staging/ghost/ghost.vmdl"],
+    "hero_atlas": [
+      "models/heroes_staging/atlas_detective_v2/atlas_detective.vmdl"
+    ],
+    "hero_wraith": ["models/heroes_staging/wraith_gen_man/wraith_gen_man.vmdl"],
+    "hero_forge": ["models/heroes_staging/engineer/engineer.vmdl"],
+    "hero_chrono": ["models/heroes_staging/chrono/chrono.vmdl"],
+    "hero_dynamo": ["models/heroes_staging/prof_dynamo/prof_dynamo.vmdl"],
+    "hero_kelvin": ["models/heroes_staging/kelvin_v2/kelvin.vmdl"],
+    "hero_haze": ["models/heroes_staging/haze/haze.vmdl"],
+    "hero_astro": ["models/heroes_staging/astro/astro.vmdl"],
+    "hero_bebop": ["models/heroes_staging/bebop/bebop.vmdl"],
+    "hero_nano": ["models/heroes_staging/nano/nano_v2/nano.vmdl"],
+    "hero_orion": ["models/heroes_staging/archer/archer.vmdl"],
+    "hero_krill": ["models/heroes_staging/digger/digger.vmdl"],
+    "hero_shiv": ["models/heroes_staging/shiv/shiv.vmdl"],
+    "hero_tengu": ["models/heroes_staging/tengu/tengu_v2/tengu.vmdl"],
+    "hero_kali": ["models/heroes_staging/kali/kali.vmdl"],
+    "hero_warden": ["models/heroes_staging/warden/warden.vmdl"],
+    "hero_yamato": ["models/heroes_staging/yamato_v2/yamato.vmdl"],
+    "hero_lash": ["models/heroes_staging/lash_v2/lash.vmdl"],
+    "hero_viscous": ["models/heroes_staging/viscous/viscous.vmdl"],
+    "hero_gunslinger": ["models/heroes_staging/gunslinger/gunslinger.vmdl"],
+    "hero_yakuza": ["models/heroes_staging/yakuza/yakuza.vmdl"],
+    "hero_genericperson": ["models/heroes_staging/gen_man/gen_man.vmdl"],
+    "hero_tokamak": ["models/heroes_staging/tokamak/tokamak.vmdl"],
+    "hero_wrecker": ["models/heroes_staging/wrecker/wrecker.vmdl"],
+    "hero_rutger": ["models/heroes_staging/rutger/rutger.vmdl"],
+    "hero_synth": ["models/heroes_staging/synth/synth.vmdl"],
+    "hero_thumper": ["models/heroes_staging/thumper/thumper.vmdl"],
+    "hero_mirage": ["models/heroes_staging/mirage/mirage_gen_man.vmdl"],
+    "hero_slork": ["models/heroes_staging/slork/slork.vmdl"],
+    "hero_cadence": ["models/heroes_staging/cadence/cadence.vmdl"],
+    "hero_targetdummy": ["models/heroes_staging/gen_man/gen_man.vmdl"],
+    "hero_bomber": ["models/heroes_staging/gen_man/gen_man.vmdl"],
+    "hero_shieldguy": ["models/heroes_staging/gen_man/gen_man.vmdl"],
+    "hero_viper": ["models/heroes_staging/viper/viper.vmdl"],
+    "hero_vandal": ["models/heroes_staging/vandal/vandal.vmdl"],
+    "hero_magician": ["models/heroes_staging/magician/magician.vmdl"],
+    "hero_trapper": ["models/heroes_staging/trapper/trapper.vmdl"],
+    "hero_operative": ["models/heroes_staging/inferno_v4/inferno.vmdl"]
+  }
+}

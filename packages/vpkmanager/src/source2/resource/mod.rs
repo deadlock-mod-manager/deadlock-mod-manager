@@ -20,6 +20,37 @@ pub const BLOCK_TYPE_DATA: [u8; 4] = *b"DATA";
 const HEADER_LEN: usize = 16;
 
 impl<'a> Resource<'a> {
+    /// Rebuild a self-contained DATA resource. Unlike texture/sound editors,
+    /// compatibility patches have no schema for payloads outside the block table.
+    /// Refuse such containers rather than silently dropping their stream data.
+    pub fn rebuild_with_data_preserving(&self, new_data: &[u8]) -> Result<Vec<u8>, DecodeError> {
+        if self
+            .blocks()
+            .iter()
+            .filter(|block| block.kind == BLOCK_TYPE_DATA)
+            .count()
+            != 1
+        {
+            return Err(DecodeError::BadResource("expected exactly one DATA block"));
+        }
+        let end = self
+            .blocks()
+            .iter()
+            .map(|block| block.offset as usize + block.size as usize)
+            .max()
+            .ok_or(DecodeError::MissingDataBlock)?;
+        let tail = self
+            .raw()
+            .get(end..)
+            .ok_or(DecodeError::BadResource("block out of range"))?;
+        if tail.len() > 15 || tail.iter().any(|byte| *byte != 0) {
+            return Err(DecodeError::BadResource(
+                "unsupported payload outside resource blocks",
+            ));
+        }
+        self.rebuild_with_data(new_data)
+    }
+
     pub fn data_block(&self) -> Result<&'a [u8], DecodeError> {
         self.find_block(BLOCK_TYPE_DATA)
             .ok_or(DecodeError::MissingDataBlock)
@@ -66,6 +97,7 @@ impl<'a> Resource<'a> {
         if block_index >= block_count {
             return Err(DecodeError::BadResource("block index out of range"));
         }
+        crate::source2::kv3::validate_rebuilt_payload(new_payload)?;
         let resource_version = u16::from_le_bytes([raw[6], raw[7]]);
 
         // Resolve each block's payload bytes (the target swapped, others copied).
@@ -205,6 +237,106 @@ mod tests {
     #![allow(clippy::cast_possible_truncation)]
 
     use super::*;
+
+    #[test]
+    fn every_rebuilt_kv3_block_rejects_unsupported_v4_types() {
+        use crate::source2::kv3::{self, Format, Value};
+        let valid = kv3::encode(&Value::Bool(true), &Format([0; 16]));
+        let mut invalid = valid.clone();
+        let datatype = invalid.len() - 5;
+        assert_eq!(invalid[datatype], kv3::node::BOOLEAN_TRUE);
+        invalid[datatype] = kv3::node::UINT32_ONE;
+        assert_eq!(kv3::decode(&invalid).unwrap(), Value::UInt(1));
+        for kind in [*b"DATA", *b"MDAT", *b"CTRL"] {
+            let source = build_resource(&[(kind, &valid)]);
+            let resource = Resource::parse(&source).unwrap();
+            assert!(resource.rebuild_with_block(0, &invalid).is_err());
+            assert!(resource.rebuild_with_block(0, &valid).is_ok());
+        }
+    }
+
+    #[test]
+    fn empty_typed_arrays_still_validate_their_wire_subtype() {
+        use crate::source2::kv3::{self, Format, Value};
+        let mut payload = kv3::encode(&Value::Array(vec![]), &Format([0; 16]));
+        let datatype = payload.len() - 5;
+        assert_eq!(payload[datatype], kv3::node::ARRAY);
+        payload[datatype] = kv3::node::ARRAY_TYPED;
+        payload.insert(datatype + 1, kv3::node::UINT32_ONE);
+        for offset in [40, 48, 52] {
+            let count = u32::from_le_bytes(payload[offset..offset + 4].try_into().unwrap());
+            payload[offset..offset + 4].copy_from_slice(&(count + 1).to_le_bytes());
+        }
+        assert_eq!(kv3::decode(&payload).unwrap(), Value::Array(vec![]));
+        assert_eq!(
+            kv3::encoding_stats(&payload).unwrap().unsupported_v4_types,
+            1
+        );
+        let bytes = build_resource(&[(*b"MDAT", b"original")]);
+        assert!(
+            Resource::parse(&bytes)
+                .unwrap()
+                .rebuild_with_block(0, &payload)
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn rebuild_keeps_opaque_legacy_blocks_without_reinterpreting_them() {
+        use crate::source2::kv3::{self, Format, Value};
+        let valid = kv3::encode(&Value::Bool(true), &Format([0; 16]));
+        let legacy = 0x0356_4B56_u32.to_le_bytes();
+        assert!(kv3::decode(&legacy).is_err());
+        let bytes = build_resource(&[(*b"DATA", &valid), (*b"ANIM", &legacy)]);
+        let rebuilt = Resource::parse(&bytes)
+            .unwrap()
+            .rebuild_with_block(0, &valid)
+            .unwrap();
+        assert_eq!(
+            Resource::parse(&rebuilt).unwrap().find_block(*b"ANIM"),
+            Some(legacy.as_slice())
+        );
+    }
+
+    #[test]
+    fn preserving_rebuild_refuses_stream_tails_and_malformed_extents() {
+        let bytes = build_resource(&[(*b"DATA", b"payload"), (*b"RERL", b"references")]);
+        let resource = Resource::parse(&bytes).unwrap();
+        let rebuilt = resource.rebuild_with_data_preserving(b"edited").unwrap();
+        assert_eq!(
+            Resource::parse(&rebuilt).unwrap().find_block(*b"RERL"),
+            Some(b"references".as_slice())
+        );
+        let mut tail = bytes.clone();
+        tail.extend_from_slice(b"unrepresented stream");
+        assert!(
+            Resource::parse(&tail)
+                .unwrap()
+                .rebuild_with_data_preserving(b"edited")
+                .is_err()
+        );
+        let duplicates = build_resource(&[(*b"DATA", b"one"), (*b"DATA", b"two")]);
+        assert!(
+            Resource::parse(&duplicates)
+                .unwrap()
+                .rebuild_with_data_preserving(b"edited")
+                .is_err()
+        );
+        for size in 0..bytes.len() {
+            if let Ok(resource) = Resource::parse(&bytes[..size]) {
+                assert!(
+                    resource
+                        .blocks()
+                        .iter()
+                        .enumerate()
+                        .all(|(index, _)| resource.get_block_by_index(index).is_some())
+                );
+            }
+        }
+        let mut malformed = bytes;
+        malformed[12..16].copy_from_slice(&u32::MAX.to_le_bytes());
+        assert!(Resource::parse(&malformed).is_err());
+    }
 
     /// Builds a minimal but valid resource container (header + block table +
     /// 16-byte-aligned payloads) that [`Resource::parse`] accepts.

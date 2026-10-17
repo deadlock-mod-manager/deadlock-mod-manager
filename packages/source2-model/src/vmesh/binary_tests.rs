@@ -47,3 +47,38 @@ fn mesh_group_masks_past_32_bits_still_hide_optional_meshes() {
     assert!(!mesh_is_enabled(&mesh(1), 1, Some(&masks)), "sewer lid");
     assert!(!mesh_is_enabled(&mesh(2), 2, Some(&masks)), "ult banner");
 }
+
+#[test]
+fn legacy_meshopt_vertex_buffers_decode_and_reject_truncated_streams() {
+    let vertices = vec![[1.0f32, 2.0, 3.0]; 256];
+    let encoded = meshopt::encode_vertex_buffer(&vertices).unwrap();
+    assert!(encoded.len() < vertices.len() * 12);
+    let mut block = vec![0u8; 24];
+    block[0..4].copy_from_slice(&(vertices.len() as u32).to_le_bytes());
+    block[4..8].copy_from_slice(&12u32.to_le_bytes());
+    block[16..20].copy_from_slice(&8u32.to_le_bytes());
+    block[20..24].copy_from_slice(&(encoded.len() as u32).to_le_bytes());
+    block.extend_from_slice(&encoded);
+    let (decoded, _) = super::binary::read_buffer(&block, 0, true).unwrap();
+    let expected: Vec<_> = vertices
+        .iter()
+        .flatten()
+        .flat_map(|v| v.to_le_bytes())
+        .collect();
+    assert_eq!(decoded.data, expected);
+    block.pop();
+    assert!(super::binary::read_buffer(&block, 0, true).is_err());
+}
+
+#[test]
+fn compressed_buffers_with_oversized_headers_are_rejected_before_allocating() {
+    // u32::MAX vertices of 256 bytes would ask the decoder for about 1 TiB.
+    let mut block = vec![0u8; 24];
+    block[0..4].copy_from_slice(&u32::MAX.to_le_bytes());
+    block[4..8].copy_from_slice(&256u32.to_le_bytes());
+    block[16..20].copy_from_slice(&8u32.to_le_bytes());
+    block[20..24].copy_from_slice(&4u32.to_le_bytes());
+    block.extend_from_slice(&[0; 4]);
+    assert!(super::binary::read_buffer(&block, 0, true).is_err());
+    assert!(super::binary::read_buffer(&block, 0, false).is_err());
+}

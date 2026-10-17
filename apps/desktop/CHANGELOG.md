@@ -8,7 +8,7 @@
 
 ### Minor Changes
 
-- 0f9a0be: Add a Collections tab with GameBanana collections and one-click collection download
+- Add a Collections tab with GameBanana collections, local search and filters, and downloads for an entire collection or selected mods
 - 85b515a: Show GameBanana comments and changelogs on mod pages and when updating
 - d0d29cd: Add an OLED theme with true-black backgrounds and a customizable accent
 - c52fc90: Add seasonal themes with mini-games for Halloween, Christmas, Easter and more
@@ -52,9 +52,16 @@
 
 ### Experimental Changes
 
+- Add Mod Compatibility Repairs for outdated skins, animation rigs, camera interfaces, materials, and shared game data. Enable it under Settings > Experimental, then select Compatibility for the affected mods in My Mods. Repairs use a separate package and leave original mod files unchanged.
+- Fix the camera and aim points in skins built before Deadlock changed its root attachment frame, while preserving custom attachment offsets.
+
 - 6d8293c: Add performance configs: apply curated community gameinfo.gi configs, configs from GameBanana or your own imports on a new Performance page, edit every setting they change with typed controls, and share them. The manager edits gameinfo.gi in place next to your mods, leaves out settings Deadlock no longer reads and engine-section edits unless you include them, and writes the config again after game updates. A crash check after launch lists what changed since your last normal session.
 
 ### Patch Changes
+
+- Preserve original addon filenames when identifying mods, including compatibility ownership checks.
+- Keep load order when re-enabling mods in profiles with more than 99 mods.
+- Open the Performance editor on changed settings and clarify settings the game ignores.
 
 - 2aa45ef: Fix updating a mod to a variant you had not installed before failing with "No VPKs matched the update selection"
 - b0c5da5: Fix Skip for Now not advancing setup past existing mods

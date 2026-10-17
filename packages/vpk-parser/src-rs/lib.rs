@@ -19,8 +19,12 @@ fn to_c_string(s: String) -> *mut c_char {
 }
 
 // Helper function to free C string
+/// Frees a string returned by this library.
+///
+/// # Safety
+/// `ptr` must be null or an unfreed pointer returned by this library.
 #[unsafe(no_mangle)]
-pub extern "C" fn vpk_free_string(ptr: *mut c_char) {
+pub unsafe extern "C" fn vpk_free_string(ptr: *mut c_char) {
     if !ptr.is_null() {
         unsafe {
             let _ = CString::from_raw(ptr);
@@ -29,8 +33,13 @@ pub extern "C" fn vpk_free_string(ptr: *mut c_char) {
 }
 
 // Parse VPK from buffer with options as JSON string
+/// Parses a VPK buffer with optional JSON options.
+///
+/// # Safety
+/// A non-null `buffer` must be readable for `buffer_len` bytes for this call.
+/// Non-null `options_json` must point to a readable, null-terminated C string.
 #[unsafe(no_mangle)]
-pub extern "C" fn vpk_parse(
+pub unsafe extern "C" fn vpk_parse(
     buffer: *const u8,
     buffer_len: usize,
     options_json: *const c_char,
@@ -70,8 +79,13 @@ pub extern "C" fn vpk_parse(
 }
 
 // Get VPK hashes only (faster)
+/// Returns the fingerprint of a VPK buffer.
+///
+/// # Safety
+/// A non-null `buffer` must be readable for `buffer_len` bytes for this call.
+/// Non-null `file_path` must point to a readable, null-terminated C string.
 #[unsafe(no_mangle)]
-pub extern "C" fn vpk_get_hashes(
+pub unsafe extern "C" fn vpk_get_hashes(
     buffer: *const u8,
     buffer_len: usize,
     file_path: *const c_char,
@@ -112,8 +126,12 @@ pub extern "C" fn vpk_get_hashes(
 }
 
 // Get basic VPK info (fastest)
+/// Returns basic information about a VPK buffer.
+///
+/// # Safety
+/// A non-null `buffer` must be readable for `buffer_len` bytes for this call.
 #[unsafe(no_mangle)]
-pub extern "C" fn vpk_get_info(buffer: *const u8, buffer_len: usize) -> *mut c_char {
+pub unsafe extern "C" fn vpk_get_info(buffer: *const u8, buffer_len: usize) -> *mut c_char {
     if buffer.is_null() || buffer_len == 0 {
         return to_c_string(r#"{"error": "Invalid buffer"}"#.to_string());
     }
