@@ -68,9 +68,10 @@ deployments:
         port: 9000
         initialDelaySeconds: 5
         periodSeconds: 5
-        timeoutSeconds: 15
+        # Generous so busy pods stay in rotation; a tight threshold pulled every pod out under load.
+        timeoutSeconds: 30
         successThreshold: 1
-        failureThreshold: 3
+        failureThreshold: 12
 
       liveness:
         enabled: true
