@@ -19,6 +19,7 @@ import { CaretDownIcon, UserCircleIcon } from "@phosphor-icons/react";
 import { memo, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { HeroIcon } from "@/components/heroes/hero-icon";
+import { useIsHeroAvailable } from "@/hooks/use-player-stats";
 import { resolveLocalModHero } from "@/lib/mods/hero-resolution";
 import { cn } from "@/lib/utils";
 import { toolbarTriggerClass } from "./filters-trigger-button";
@@ -40,11 +41,14 @@ const HeroFilter = ({
   onHeroesChange,
 }: HeroFilterProps) => {
   const { t } = useTranslation();
+  const isHeroAvailable = useIsHeroAvailable();
 
   // Always offer the full roster (plus anything selected) so the list doesn't
   // shrink to the current selection when `mods` is already hero-filtered.
   const modHeroes = useMemo(() => {
-    const heroes = new Set<string>(Object.values(DeadlockHeroes));
+    const heroes = new Set<string>(
+      Object.values(DeadlockHeroes).filter(isHeroAvailable),
+    );
     let hasGeneral = false;
     for (const mod of mods) {
       const hero = resolveLocalModHero(mod).hero;
@@ -55,7 +59,7 @@ const HeroFilter = ({
       }
     }
     return { heroes, hasGeneral };
-  }, [mods]);
+  }, [mods, isHeroAvailable]);
 
   const availableHeroes = useMemo(() => {
     const heroes = new Set(modHeroes.heroes);

@@ -1,5 +1,5 @@
 import { RuntimeError } from "@deadlock-mods/common/client-errors";
-import { normalizeHero } from "@deadlock-mods/shared";
+import { DeadlockHeroes, normalizeHero } from "@deadlock-mods/shared";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -158,6 +158,35 @@ export const useRefreshHeroCatalogOnMiss = (missing: boolean) => {
       staleTime: 0,
     });
   }, [missing, fetchedAt, queryClient]);
+};
+
+const hasPortrait = (hero: DeadlockHero): boolean =>
+  Boolean(hero.images.icon_image_small_webp || hero.images.icon_image_small);
+
+/**
+ * Whether a hero picker should offer `name`. The enum already knows heroes
+ * Valve hasn't released (Violet, Nurse Harrow); the active catalog only lists
+ * them once they are playable and have a portrait, so they appear on their
+ * own. With no catalog yet - loading or offline - every hero is offered.
+ */
+export const useIsHeroAvailable = (): ((name: string) => boolean) => {
+  const { heroesById, heroByName } = useHeroCatalog();
+  const hasCatalog = heroesById.size > 0;
+  const isAvailable = useCallback(
+    (name: string) => {
+      if (!hasCatalog) {
+        return true;
+      }
+      const hero = heroByName(name);
+      return hero !== undefined && hasPortrait(hero);
+    },
+    [hasCatalog, heroByName],
+  );
+  // A week-old catalog would keep a hero hidden long after its release.
+  useRefreshHeroCatalogOnMiss(
+    Object.values(DeadlockHeroes).some((hero) => !isAvailable(hero)),
+  );
+  return isAvailable;
 };
 
 export const useRankAssets = () =>

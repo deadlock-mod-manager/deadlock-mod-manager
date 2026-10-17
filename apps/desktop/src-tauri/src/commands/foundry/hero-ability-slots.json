@@ -36,6 +36,24 @@
         "display": "Spirit Lasso"
       }
     },
+    "baba": {
+      "1": {
+        "token": "bubbling_brew",
+        "display": "Threadsap"
+      },
+      "2": {
+        "token": "bench_run",
+        "display": "Granny Long Legs"
+      },
+      "3": {
+        "token": "hexing_brew",
+        "display": "Baba's Brew"
+      },
+      "4": {
+        "token": "ultimate_2",
+        "display": "Feed The Birds"
+      }
+    },
     "bebop": {
       "1": {
         "token": "uppercut",
@@ -90,6 +108,24 @@
         "display": "cadence_ability_crescendo"
       }
     },
+    "chessmaster": {
+      "1": {
+        "token": "throwbishop",
+        "display": "Setup Bishop"
+      },
+      "2": {
+        "token": "knightbuff",
+        "display": "Kingside Knight"
+      },
+      "3": {
+        "token": "forkpiece",
+        "display": "Rook Battery"
+      },
+      "4": {
+        "token": "queen",
+        "display": "Develop Queen"
+      }
+    },
     "chrono": {
       "1": {
         "token": "pulse_grenade",
@@ -106,6 +142,24 @@
       "4": {
         "token": "swap",
         "display": "Paradoxical Swap"
+      }
+    },
+    "deadpack": {
+      "1": {
+        "token": "chargeblast",
+        "display": "Strix Salvo"
+      },
+      "2": {
+        "token": "rocketeer",
+        "display": "Chimera Mk1"
+      },
+      "3": {
+        "token": "flamethrower",
+        "display": "Jettison Fuel"
+      },
+      "4": {
+        "token": "ultimate",
+        "display": "Close The Deal"
       }
     },
     "doorman": {
@@ -556,6 +610,24 @@
       "4": {
         "token": "tether",
         "display": "Chain Gang"
+      }
+    },
+    "ratking": {
+      "1": {
+        "token": "scrap_grenade",
+        "display": "Scrap Grenade"
+      },
+      "2": {
+        "token": "ratnibble",
+        "display": "Rat Swarm"
+      },
+      "3": {
+        "token": "ratarmor",
+        "display": "Royal Pestments"
+      },
+      "4": {
+        "token": "standard_bearer",
+        "display": "Rule, Ratannia!"
       }
     },
     "shiv": {

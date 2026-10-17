@@ -23,6 +23,7 @@ import { Check, RotateCcw, Settings } from "@deadlock-mods/ui/icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HeroIcon } from "@/components/heroes/hero-icon";
+import { useIsHeroAvailable } from "@/hooks/use-player-stats";
 import type { ResolvedModHero } from "@/lib/mods/hero-resolution";
 import { usePersistedStore } from "@/lib/store";
 
@@ -42,6 +43,7 @@ export const HeroOverridePicker = ({
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const setHeroOverride = usePersistedStore((state) => state.setHeroOverride);
+  const isHeroAvailable = useIsHeroAvailable();
   const selectedValue =
     resolvedHero.hasOverride && resolvedHero.hero === null
       ? null
@@ -100,7 +102,10 @@ export const HeroOverridePicker = ({
             </CommandGroup>
             <CommandSeparator />
             <CommandGroup>
-              {HERO_OVERRIDE_OPTIONS.map((heroName) => (
+              {HERO_OVERRIDE_OPTIONS.filter(
+                (heroName) =>
+                  isHeroAvailable(heroName) || heroName === selectedValue,
+              ).map((heroName) => (
                 <CommandItem
                   key={heroName}
                   onSelect={() => handleOverride(heroName)}>

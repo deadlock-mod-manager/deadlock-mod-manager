@@ -51,6 +51,16 @@ describe("getHeroes", () => {
     expect(heroes.map((h) => h.name)).toEqual(["Infernus", "Seven"]);
   });
 
+  it("keeps released heroes still flagged in_development", async () => {
+    respond([
+      { ...hero, id: 88, name: "Baba", in_development: true },
+      { ...hero, id: 86, name: "Violet", player_selectable: false },
+      { ...hero, id: 83, name: "Test", disabled: true },
+    ]);
+    const heroes = await getHeroes();
+    expect(heroes.map((h) => h.name)).toEqual(["Baba"]);
+  });
+
   it("accepts a genuinely empty roster", async () => {
     respond([]);
     await expect(getHeroes()).resolves.toEqual([]);

@@ -185,7 +185,7 @@ const REMOTE_SERVICES: Record<RemoteServiceId, RemoteService> = {
   },
   deadlockAssets: {
     id: "deadlockAssets",
-    url: (origins) => `${origins.assets}/v2/heroes?only_active=true`,
+    url: (origins) => `${origins.assets}/v1/assets/heroes?only_active=true`,
     unreachableFixes: ["checkDeadlockApi", "allowFirewall"],
     serverFixes: ["checkDeadlockApi", "waitAndRetry"],
   },
