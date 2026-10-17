@@ -7,20 +7,30 @@ import { Resvg } from "@resvg/resvg-js";
 // Renders the NSIS installer bitmaps from the app icon:
 //   sidebar.bmp (164x314) - welcome and finish pages
 //   header.bmp  (150x57)  - all other installer and uninstaller pages
-// Re-run after changing the app icon. Text uses Segoe UI, so run on Windows.
+// Re-run after changing the app icon. Text uses the app's Forevs Demo font.
 
 const SRC_TAURI = resolve(import.meta.dirname, "../src-tauri");
-// Matches the default NSIS page background so the art blends into the dialog.
-const BACKGROUND = "#ffffff";
-const TEXT = "#1d1d1d";
+const FONT = "Forevs Demo";
+const FONT_FILES = ["forevsdemo-bold.otf"].map((file) =>
+  resolve(import.meta.dirname, "../src/assets/fonts/primary", file),
+);
+
+// Theme colors from src/index.css
+const DARK = "#110f0e"; // --background
+const CREAM = "#fdf8f0"; // --foreground
+const ACCENT = "#efe2c0"; // --primary
+const INK = "#2c2624"; // .light --foreground
 
 type Pixels = { width: number; height: number; rgba: Buffer };
-type Label = { text: string; x: number; y: number; size: number };
 
 const renderSvg = (svg: string, background?: string): Pixels => {
   const image = new Resvg(svg, {
     background,
-    font: { loadSystemFonts: true, defaultFontFamily: "Segoe UI" },
+    font: {
+      loadSystemFonts: false,
+      fontFiles: FONT_FILES,
+      defaultFontFamily: FONT,
+    },
   }).render();
   return { width: image.width, height: image.height, rgba: image.pixels };
 };
@@ -127,48 +137,49 @@ const encodeBmp = ({ width, height, rgba }: Pixels) => {
 
 const icon = loadIcon();
 
+const svg = (width: number, height: number, body: string) =>
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" font-family="${FONT}" font-weight="700">${body}</svg>`;
+
 const renderBitmap = (
   name: string,
-  width: number,
-  height: number,
+  art: string,
+  background: string,
   iconBox: { x: number; y: number; size: number },
-  labels: Label[],
-  anchor: "start" | "middle",
 ) => {
-  const text = labels
-    .map(
-      ({ text, x, y, size }) =>
-        `<text x="${x}" y="${y}" font-size="${size}" text-anchor="${anchor}">${text}</text>`,
-    )
-    .join("");
-  const bitmap = renderSvg(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}"><g font-family="Segoe UI" font-weight="600" fill="${TEXT}">${text}</g></svg>`,
-    BACKGROUND,
-  );
+  const bitmap = renderSvg(art, background);
   drawOver(bitmap, downscale(icon, iconBox.size), iconBox.x, iconBox.y);
   writeFileSync(resolve(SRC_TAURI, "installer", name), encodeBmp(bitmap));
 };
 
+// Welcome and finish pages: the app's dark sidebar, with the icon's crosshair
+// lines echoed faintly behind it.
+const sidebarIcon = { x: 42, y: 86, size: 80 };
+const cx = sidebarIcon.x + sidebarIcon.size / 2;
+const cy = sidebarIcon.y + sidebarIcon.size / 2;
 renderBitmap(
   "sidebar.bmp",
-  164,
-  314,
-  { x: 32, y: 70, size: 100 },
-  [
-    { text: "Deadlock", x: 82, y: 201, size: 16 },
-    { text: "Mod Manager", x: 82, y: 223, size: 16 },
-  ],
-  "middle",
+  svg(
+    164,
+    314,
+    `<path d="M${cx} 0V${cy - 48}M${cx} 268V314M0 ${cy}H${cx - 48}M${cx + 48} ${cy}H164" stroke="${ACCENT}" stroke-opacity="0.09"/>
+    <text x="${cx}" y="212" font-size="25" fill="${CREAM}" text-anchor="middle">Deadlock</text>
+    <text x="${cx}" y="236" font-size="19" fill="${ACCENT}" text-anchor="middle" letter-spacing="0.6">Mod Manager</text>
+    <rect x="${cx - 14}" y="252" width="28" height="2" fill="${ACCENT}" fill-opacity="0.5"/>
+    <rect x="163" width="1" height="314" fill="${ACCENT}" fill-opacity="0.35"/>`,
+  ),
+  DARK,
+  sidebarIcon,
 );
 
+// The header sits on the white title strip, so it stays light.
 renderBitmap(
   "header.bmp",
-  150,
-  57,
-  { x: 8, y: 8, size: 41 },
-  [
-    { text: "Deadlock", x: 56, y: 25, size: 11.33 },
-    { text: "Mod Manager", x: 56, y: 40, size: 11.33 },
-  ],
-  "start",
+  svg(
+    150,
+    57,
+    `<text x="56" y="27" font-size="17" fill="${INK}">Deadlock</text>
+    <text x="56" y="43" font-size="13" fill="${INK}" fill-opacity="0.7" letter-spacing="0.3">Mod Manager</text>`,
+  ),
+  "#ffffff",
+  { x: 9, y: 8, size: 41 },
 );
