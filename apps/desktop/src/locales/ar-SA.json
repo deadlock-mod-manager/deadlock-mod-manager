@@ -2985,6 +2985,24 @@
     "resetOnboardingSuccess": "سيتم عرض الإعداد الأولي عند التشغيل التالي"
   },
   "update": {
+    "checkFailed": "",
+    "checkFailedGuidance": "",
+    "installFailed": "",
+    "installFailedGuidance": "",
+    "missingTarget": "",
+    "missingTargetGuidance": "",
+    "technicalDetails": "",
+    "detailChannel": "",
+    "detailRuntime": "",
+    "detailPackage": "",
+    "detailTarget": "",
+    "copyDetails": "",
+    "detailsCopied": "",
+    "copyDetailsFailed": "",
+    "developmentBuild": "",
+    "unpackagedBuild": "",
+    "viewDownloads": "",
+    "openDownloadsFailed": "",
     "available": "تحديث متاح",
     "newVersionAvailable": "إصدار جديد ({{version}}) متاح. أنت تستخدم حاليًا الإصدار {{currentVersion}}.",
     "releaseNotes": "ملاحظات الإصدار",
@@ -4775,6 +4793,16 @@
     "installedFilesCount": "",
     "openTooltipWithCount_one": "",
     "openTooltipWithCount_other": ""
+  },
+  "installedFiles": {
+    "title": "",
+    "description": "",
+    "toggleDescription": "",
+    "fileCount_one": "",
+    "fileCount_other": "",
+    "enabledCount": "",
+    "reset": "",
+    "selectAtLeastOne": ""
   },
   "fileSelector": {
     "selectFilesToInstall": "",

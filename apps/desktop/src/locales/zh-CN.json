@@ -2985,6 +2985,24 @@
     "resetOnboardingSuccess": "下次启动时将显示引导"
   },
   "update": {
+    "checkFailed": "",
+    "checkFailedGuidance": "",
+    "installFailed": "",
+    "installFailedGuidance": "",
+    "missingTarget": "",
+    "missingTargetGuidance": "",
+    "technicalDetails": "",
+    "detailChannel": "",
+    "detailRuntime": "",
+    "detailPackage": "",
+    "detailTarget": "",
+    "copyDetails": "",
+    "detailsCopied": "",
+    "copyDetailsFailed": "",
+    "developmentBuild": "",
+    "unpackagedBuild": "",
+    "viewDownloads": "",
+    "openDownloadsFailed": "",
     "available": "更新可用",
     "newVersionAvailable": "新版本（{{version}}） 可用。你当前使用的版本是 {{currentVersion}}。",
     "releaseNotes": "发行说明",
@@ -4775,6 +4793,16 @@
     "installedFilesCount": "已启用 {{count}}/{{total}} 个文件",
     "openTooltipWithCount_one": "管理文件 · {{count}} 个启用变体",
     "openTooltipWithCount_other": "管理文件 · {{count}} 个启用变体"
+  },
+  "installedFiles": {
+    "title": "",
+    "description": "",
+    "toggleDescription": "",
+    "fileCount_one": "",
+    "fileCount_other": "",
+    "enabledCount": "",
+    "reset": "",
+    "selectAtLeastOne": ""
   },
   "fileSelector": {
     "selectFilesToInstall": "选择要安装的文件：{{modName}}",
