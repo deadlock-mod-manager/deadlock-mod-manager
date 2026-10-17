@@ -14,7 +14,7 @@ use std::{
 };
 
 // Increment when repair rules or output semantics change, so installed overlays are rebuilt.
-const REPAIR_REVISION: u32 = 31;
+const REPAIR_REVISION: u32 = 32;
 const RECEIPT_NAME: &str = "compatibility.json";
 
 #[derive(Serialize, Deserialize)]
@@ -171,6 +171,7 @@ mod tests {
     LocalizationOverlayPlanKey {
       output_path: root.join(OVERLAY_VPK_NAME),
       input_warnings: Vec::new(),
+      unmanaged_vpks: Vec::new(),
       history_digest: None,
       compatibility_mod_ids: Default::default(),
       base_game: Vec::new(),

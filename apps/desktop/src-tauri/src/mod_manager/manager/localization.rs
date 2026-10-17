@@ -2,12 +2,13 @@ use super::*;
 use crate::mod_manager::localization_overlay::{
   LocalizationInputWarning, LocalizationModInput, LocalizationOverlayAnalysis,
   LocalizationOverlayApplyResult, LocalizationOverlayPlan, LocalizationResolution,
-  OVERLAY_VPK_NAME,
+  OVERLAY_VPK_NAME, UnmanagedVpk,
 };
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 mod history;
+mod inventory;
 mod preference;
 mod receipt;
 use std::fs;
@@ -29,6 +30,8 @@ struct LocalizationOverlayPlanKey {
   output_path: PathBuf,
   #[serde(default)]
   input_warnings: Vec<LocalizationInputWarning>,
+  #[serde(default)]
+  unmanaged_vpks: Vec<UnmanagedVpk>,
   #[serde(default)]
   history_digest: Option<String>,
   #[serde(default)]
@@ -146,6 +149,7 @@ impl ModManager {
         });
       }
     }
+    let (inputs, unmanaged_vpks) = inventory::mounted_inputs(&profile_base, inputs)?;
     let output_path = game_path
       .join("game")
       .join(Self::localization_overlay_search_path(profile_folder))
@@ -186,6 +190,7 @@ impl ModManager {
       LocalizationOverlayPlanKey {
         output_path,
         input_warnings,
+        unmanaged_vpks,
         history_digest,
         compatibility_mod_ids,
         base_game,
@@ -410,12 +415,14 @@ fn build_overlay_plan(
   }
   plan.analysis.review_fingerprint = input_fingerprint(key)?;
   plan.analysis.input_warnings = key.input_warnings.clone();
+  plan.analysis.unmanaged_vpks = key.unmanaged_vpks.clone();
   Ok(plan)
 }
 
 fn requires_review(analysis: &LocalizationOverlayAnalysis) -> bool {
   use crate::mod_manager::vdata_history::BaselineStatus;
   !analysis.input_warnings.is_empty()
+    || !analysis.unmanaged_vpks.is_empty()
     || !analysis.protected_resources.is_empty()
     || analysis
       .baselines
@@ -757,6 +764,117 @@ mod tests {
     fs::write(source.path().join("unrelated.txt"), b"test").unwrap();
     fs::create_dir_all(path.parent().unwrap()).unwrap();
     vpkmanager::pack_directory(source.path(), path).unwrap();
+  }
+
+  #[test]
+  fn untracked_enabled_archives_invalidate_compatibility_review() {
+    let temp = tempfile::tempdir().unwrap();
+    let mut manager = test_manager(temp.path());
+    let base = manager.get_addons_path(None).unwrap();
+    let before = manager.analyze_localization_overlay(None, &[]).unwrap();
+    write_test_vpk(&base.join("pak01_dir.vpk"));
+    let after = manager.analyze_localization_overlay(None, &[]).unwrap();
+    assert_ne!(
+      before.review_fingerprint, after.review_fingerprint,
+      "A newly mounted archive must invalidate a reviewed overlay even without a manifest entry"
+    );
+    assert_eq!(after.scanned_vpks, 1);
+    assert!(requires_review(&after));
+    assert_eq!(after.unmanaged_vpks[0].file_path, "pak01_dir.vpk");
+    let output = manager.localization_overlay_vpk_path(None).unwrap();
+    fs::create_dir_all(output.parent().unwrap()).unwrap();
+    fs::write(&output, b"previous overlay").unwrap();
+    assert!(
+      manager
+        .write_reviewed_localization_overlay(None, &[], &before.review_fingerprint)
+        .unwrap_err()
+        .to_string()
+        .contains("changed since compatibility review")
+    );
+    assert_eq!(fs::read(output).unwrap(), b"previous overlay");
+    assert!(ProfileVpkManifest::load(&base).unwrap().mods.is_empty());
+  }
+
+  #[test]
+  fn untracked_archive_between_skin_variants_protects_its_winning_model() {
+    let temp = tempfile::tempdir().unwrap();
+    let mut manager = test_manager(temp.path());
+    let base = manager.get_addons_path(None).unwrap();
+    let model = "models/heroes/test/test.vmdl_c";
+    for (filename, entry, contents) in [
+      ("pak01_dir.vpk", "unrelated.txt", "first variant"),
+      ("pak02_dir.vpk", model, "untracked model"),
+      ("pak03_dir.vpk", model, "selected model"),
+    ] {
+      let source = tempfile::tempdir().unwrap();
+      let file = source.path().join(entry);
+      fs::create_dir_all(file.parent().unwrap()).unwrap();
+      fs::write(file, contents).unwrap();
+      fs::create_dir_all(&base).unwrap();
+      vpkmanager::pack_directory(source.path(), &base.join(filename)).unwrap();
+    }
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_enabled(
+      "skin",
+      vec!["pak03_dir.vpk".into(), "pak01_dir.vpk".into()],
+      vec![],
+      Some(0),
+      ShardIndex::FIRST,
+    );
+    manifest.mods.get_mut("skin").unwrap().compatibility_enabled = true;
+    manifest.save(&base).unwrap();
+    let original = fs::read(base.join("pak02_dir.vpk")).unwrap();
+    let analysis = manager.analyze_localization_overlay(None, &[]).unwrap();
+    assert_eq!(analysis.scanned_mods, 2);
+    assert_eq!(analysis.scanned_vpks, 3);
+    assert_eq!(analysis.compatibility_mod_ids, ["skin"]);
+    assert_eq!(analysis.unmanaged_vpks.len(), 1);
+    assert_eq!(analysis.protected_resources.len(), 1);
+    assert_eq!(analysis.protected_resources[0].file_path, model);
+    assert_eq!(
+      analysis.protected_resources[0].mod_ids,
+      [analysis.unmanaged_vpks[0].mod_id.clone()]
+    );
+    assert!(analysis.asset_repairs.is_empty());
+    assert!(
+      analysis.asset_warnings.is_empty(),
+      "An opted-out model must not be decoded or rewritten"
+    );
+    assert_eq!(fs::read(base.join("pak02_dir.vpk")).unwrap(), original);
+    assert_eq!(ProfileVpkManifest::load(&base).unwrap(), manifest);
+    if let Some(path) = std::env::var_os("DMM_PROFILE_INVENTORY_REPORT") {
+      fs::write(path, serde_json::to_vec_pretty(&analysis).unwrap()).unwrap();
+    }
+  }
+
+  #[test]
+  fn compatibility_inputs_follow_mounted_order_instead_of_stale_manifest_order() {
+    let temp = tempfile::tempdir().unwrap();
+    let manager = test_manager(temp.path());
+    let base = manager.get_addons_path(None).unwrap();
+    let mut manifest = ProfileVpkManifest::default();
+    for (id, name, order) in [
+      ("first", "pak01_dir.vpk", 9),
+      ("second", "pak02_dir.vpk", 0),
+    ] {
+      write_test_vpk(&base.join(name));
+      manifest.mark_enabled(
+        id,
+        vec![name.into()],
+        vec![],
+        Some(order),
+        ShardIndex::FIRST,
+      );
+    }
+    manifest.save(&base).unwrap();
+    let (_, inputs, _) = manager.localization_overlay_inputs(None).unwrap();
+    assert_eq!(
+      inputs
+        .iter()
+        .map(|input| input.mod_id.as_str())
+        .collect::<Vec<_>>(),
+      ["first", "second"]
+    );
   }
 
   #[test]

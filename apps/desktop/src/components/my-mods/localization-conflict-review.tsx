@@ -88,6 +88,7 @@ export interface LocalizationOverlayAnalysis {
   baselines: CompiledDataBaseline[];
   reviewFingerprint: string;
   inputWarnings: { modId: string; filePaths: string[] }[];
+  unmanagedVpks: { modId: string; filePath: string }[];
   scannedMods: number;
   compatibilityModIds: string[];
   excludedModIds: string[];
@@ -128,10 +129,14 @@ interface LocalizationConflictReviewProps {
 export function LocalizationConflictReview({
   analysis,
   choices,
-  modNames,
+  modNames: managedModNames,
   onChoiceChange,
 }: LocalizationConflictReviewProps) {
   const { t } = useTranslation();
+  const modNames = new Map(managedModNames);
+  for (const archive of analysis.unmanagedVpks) {
+    modNames.set(archive.modId, archive.filePath);
+  }
   const conflictCount =
     analysis.conflicts.length + analysis.compiledDataConflicts.length;
   const detectedChanges =
@@ -148,12 +153,30 @@ export function LocalizationConflictReview({
   const hasWarnings =
     warningFiles > 0 ||
     analysis.protectedResources.length > 0 ||
+    analysis.unmanagedVpks.length > 0 ||
     analysis.inputWarnings.length > 0 ||
     analysis.assetWarnings.length > 0 ||
     analysis.dataWarnings.length > 0;
 
   return (
     <div className='min-h-0 min-w-0 flex-1 space-y-5 overflow-x-hidden overflow-y-auto pr-2'>
+      {analysis.unmanagedVpks.length > 0 ? (
+        <section className='space-y-2 rounded-md border border-amber-500/30 p-4 text-sm'>
+          <p className='font-medium'>
+            {t("myMods.compatibility.unmanagedFilesTitle")}
+          </p>
+          <p className='text-muted-foreground'>
+            {t("myMods.compatibility.unmanagedFilesDescription")}
+          </p>
+          <ul className='space-y-1'>
+            {analysis.unmanagedVpks.map((archive) => (
+              <li key={archive.modId} className='break-all font-mono text-xs'>
+                {archive.filePath}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
       {analysis.excludedModIds.length > 0 ? (
         <p className='text-sm text-muted-foreground'>
           {t("myMods.compatibility.excluded", {

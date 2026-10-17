@@ -6,6 +6,7 @@ const analysis: LocalizationOverlayAnalysis = {
   baselines: [],
   reviewFingerprint: "test",
   inputWarnings: [],
+  unmanagedVpks: [],
   compatibilityModIds: [],
   excludedModIds: [],
   protectedResources: [],

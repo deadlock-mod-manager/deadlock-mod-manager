@@ -154,6 +154,13 @@ pub struct LocalizationInputWarning {
   pub file_paths: Vec<String>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UnmanagedVpk {
+  pub mod_id: String,
+  pub file_path: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CompiledDataBaseline {
@@ -169,6 +176,7 @@ pub struct CompiledDataBaseline {
 pub struct LocalizationOverlayAnalysis {
   pub review_fingerprint: String,
   pub input_warnings: Vec<LocalizationInputWarning>,
+  pub unmanaged_vpks: Vec<UnmanagedVpk>,
   pub scanned_mods: usize,
   pub compatibility_mod_ids: Vec<String>,
   pub excluded_mod_ids: Vec<String>,
@@ -796,20 +804,27 @@ impl LocalizationOverlayPlan {
       .iter()
       .flat_map(|table| table.baselines.clone())
       .collect();
+    let mut seen = BTreeSet::new();
+    let mod_ids: Vec<_> = mods
+      .iter()
+      .map(|input| &input.mod_id)
+      .filter(|id| seen.insert(*id))
+      .collect();
     Ok(Self {
       analysis: LocalizationOverlayAnalysis {
         review_fingerprint: String::new(),
         input_warnings: Vec::new(),
-        scanned_mods: mods.len(),
-        compatibility_mod_ids: mods
+        unmanaged_vpks: Vec::new(),
+        scanned_mods: mod_ids.len(),
+        compatibility_mod_ids: mod_ids
           .iter()
-          .filter(|input| repair_scope.includes_mod(&input.mod_id))
-          .map(|input| input.mod_id.clone())
+          .filter(|id| repair_scope.includes_mod(id))
+          .map(|id| (*id).clone())
           .collect(),
-        excluded_mod_ids: mods
+        excluded_mod_ids: mod_ids
           .iter()
-          .filter(|input| !repair_scope.includes_mod(&input.mod_id))
-          .map(|input| input.mod_id.clone())
+          .filter(|id| !repair_scope.includes_mod(id))
+          .map(|id| (*id).clone())
           .collect(),
         protected_resources: repair_scope.shared_resources(mods, resources),
         scanned_vpks,

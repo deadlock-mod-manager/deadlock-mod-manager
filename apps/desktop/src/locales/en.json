@@ -1639,6 +1639,8 @@
       "checking": "Checking mods against your installed game...",
       "loadFailed": "Could not load your compatibility preference. Try again.",
       "checkFailed": "Could not check mod compatibility.",
+      "unmanagedFilesTitle": "Untracked enabled VPK files can affect this profile",
+      "unmanagedFilesDescription": "Deadlock can load these files, but this profile has no enabled mod assigned to them. They are included when checking dependencies and load order, and their contents are preserved. Inspect the listed files before testing; an old skin or animation file can conflict with your selected mods.",
       "missingFilesTitle": "Some mod files are no longer installed",
       "missingFilesDescription": "These mod records point to deleted files and were skipped. If you removed these mods, you can continue. Otherwise, reinstall them and review compatibility again.",
       "retry": "Try Again",
@@ -1654,7 +1656,7 @@
       "selectMods": "Check Compatibility on a mod to enable fixes.",
       "excluded": "Original files preserved: {{names}}",
       "sharedTitle": "Shared resources preserved",
-      "sharedDescription": "These files remain unchanged because the active mod has Compatibility turned off, or because shared game text and data also belong to an unchecked mod. Enable Compatibility on the active skin, or disable competing variations and skins in My Mods.",
+      "sharedDescription": "These files stay unchanged because an active VPK is untracked, an active mod has Compatibility turned off, or an unchecked mod shares game text and data. Inspect untracked files, enable Compatibility on the active skin, or disable competing skins and variations.",
       "on": "Compatibility fixes on",
       "off": "Compatibility fixes off",
       "label": "Compatibility"
