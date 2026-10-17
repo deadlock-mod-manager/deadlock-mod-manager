@@ -115,6 +115,7 @@ const StatChip = ({
         {label}
       </p>
       <p
+        data-stat-highlight={isFirst || undefined}
         className={cn(
           "truncate text-xl font-bold tabular-nums text-foreground",
           accent && "text-primary",

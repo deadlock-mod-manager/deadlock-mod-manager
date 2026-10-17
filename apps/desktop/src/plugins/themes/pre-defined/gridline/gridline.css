@@ -1,0 +1,149 @@
+/* Monochrome dark palette: true black, neutral grays, blue focus, red errors. */
+:root.gridline-theme-active {
+  color-scheme: dark;
+  --background: 0 0% 0%;
+  --foreground: 0 0% 93%;
+  --card: 0 0% 4%;
+  --card-foreground: 0 0% 93%;
+  --popover: 0 0% 4%;
+  --popover-foreground: 0 0% 93%;
+  --primary: 0 0% 93%;
+  --primary-foreground: 0 0% 4%;
+  --secondary: 0 0% 10%;
+  --secondary-foreground: 0 0% 93%;
+  --muted: 0 0% 10%;
+  --muted-foreground: 0 0% 63%;
+  --accent: 0 0% 12%;
+  --accent-foreground: 0 0% 93%;
+  --destructive: 358 75% 59%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 0 0% 15%;
+  --input: 0 0% 18%;
+  --ring: 212 100% 48%;
+  --chart-1: 212 100% 48%;
+  --chart-2: 135 70% 40%;
+  --chart-3: 39 100% 57%;
+  --chart-4: 272 51% 54%;
+  --chart-5: 336 80% 58%;
+  --radius: 0.375rem;
+  --toast-background: 0 0% 4%;
+  --sidebar-background: 0 0% 0%;
+  --sidebar-foreground: 0 0% 93%;
+  --sidebar-primary: 0 0% 93%;
+  --sidebar-primary-foreground: 0 0% 4%;
+  --sidebar-accent: 0 0% 10%;
+  --sidebar-accent-foreground: 0 0% 93%;
+  --sidebar-border: 0 0% 15%;
+  --sidebar-ring: 212 100% 48%;
+  /* Accent sweep: blue -> violet -> pink-red. */
+  --gridline-gradient: linear-gradient(
+    120deg,
+    #0096ff 0%,
+    #8e4ec6 50%,
+    #ff1e56 100%
+  );
+}
+
+/* Gradient hairline border painted over the card's own 1px border. */
+.gridline-gradient-frame {
+  position: relative;
+  isolation: isolate;
+  border-radius: 0.75rem;
+}
+
+.gridline-gradient-frame::before,
+.gridline-gradient-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--gridline-gradient);
+  pointer-events: none;
+  transition: opacity 200ms var(--ease-dmm-smooth);
+}
+
+.gridline-gradient-frame::before {
+  z-index: 1;
+  padding: 1px;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.55;
+}
+
+/* Soft glow behind the card, only visible on hover. */
+.gridline-gradient-frame::after {
+  z-index: -1;
+  filter: blur(18px);
+  opacity: 0;
+}
+
+.gridline-gradient-frame:hover::before {
+  opacity: 1;
+}
+
+.gridline-gradient-frame[data-reveal="hover"]::before {
+  opacity: 0;
+}
+
+.gridline-gradient-frame[data-reveal="hover"]:hover::before {
+  opacity: 1;
+}
+
+.gridline-gradient-frame[data-reveal="hover"]:hover::after {
+  opacity: 0.18;
+}
+
+/* The headline dashboard number gets the accent sweep. */
+.gridline-theme-active [data-stat-highlight] {
+  background: var(--gridline-gradient);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.gridline-theme-active [role="progressbar"] > [data-max] {
+  background-image: var(--gridline-gradient);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gridline-gradient-frame::before,
+  .gridline-gradient-frame::after {
+    transition: none;
+  }
+}
+
+/* Let the grid backdrop show through the sidebar, like Lovelock and Bloodmoon. */
+.gridline-theme-active
+  :is(
+    [data-sidebar="sidebar"],
+    [data-sidebar="content"],
+    [data-sidebar="footer"],
+    [data-sidebar="group"],
+    [data-sidebar="group-content"],
+    [data-sidebar="menu"],
+    [data-sidebar="menu-item"]
+  ) {
+  background-color: transparent;
+}
+
+.gridline-theme-active .occult-geometry-container {
+  display: none;
+}
+
+/* Geist everywhere, with tight display tracking on headings. */
+.gridline-theme-active .font-primary {
+  font-family: "Geist Variable", sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+
+.gridline-theme-active :where(h1, h2, h3) {
+  letter-spacing: -0.02em;
+}
+
+.gridline-theme-active ::selection {
+  background: hsl(212 100% 48% / 0.35);
+}
