@@ -9,12 +9,12 @@
     "openMenu": "Abrir menu",
     "download": "Baixar",
     "links": {
-      "mods": "",
-      "skins": "",
+      "mods": "Modificações",
+      "skins": "Aparências",
       "features": "Recursos",
       "themes": "Temas",
       "tools": "Ferramentas",
-      "docs": ""
+      "docs": "Documentos"
     }
   },
   "userMenu": {
@@ -27,13 +27,13 @@
   "v2Banner": {
     "short": "Refeito do zero.",
     "long": "Refeito do zero: mods que sobrevivem às atualizações do jogo, uma loja mais rápida e detecção de conflitos.",
-    "whatsNew": ""
+    "whatsNew": "Veja as novidades"
   },
   "footer": {
     "tagline": "Um app pequeno e open source para instalar e gerenciar mods do Deadlock, o jogo da Valve.",
     "disclaimer": "Sem afiliação com a Valve. \"Deadlock\" e marcas relacionadas são marcas registradas da Valve Corporation.",
     "headings": {
-      "links": "",
+      "links": "Links",
       "guides": "Guias",
       "support": "Suporte",
       "partners": "Parceiros"
@@ -41,7 +41,7 @@
     "links": {
       "download": "Baixar",
       "sourceCode": "Código-fonte",
-      "changelog": "",
+      "changelog": "Registro de alterações",
       "documentation": "Documentação",
       "faq": "Perguntas frequentes",
       "reportBug": "Reportar bug"
@@ -83,7 +83,7 @@
   "modCard": {
     "heroSkin": "Skin de {{hero}}",
     "categories": {
-      "skins": "",
+      "skins": "Aparências",
       "qualityOfLife": "Qualidade de vida"
     },
     "byline": "{{kind}} por {{author}}",
@@ -121,15 +121,15 @@
       "description": "Como os dois gerenciadores de mods open source se comparam."
     },
     "os5": {
-      "label": "",
+      "label": "Acesso negado (erro de Os 5)",
       "description": "Arquivos somente leitura ou mods instalados como admin bloqueiam alterações."
     },
     "os740": {
-      "label": "",
+      "label": "Requer elevação (erro de Os 740)",
       "description": "A Steam está configurada para rodar como administrador."
     },
     "modOrder": {
-      "label": "",
+      "label": "Falha ao salvar ordem dos mods",
       "description": "O jogo ou outro app está mantendo arquivos de mods abertos."
     },
     "download": {
