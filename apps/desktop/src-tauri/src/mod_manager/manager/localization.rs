@@ -416,6 +416,7 @@ fn build_overlay_plan(
 fn requires_review(analysis: &LocalizationOverlayAnalysis) -> bool {
   use crate::mod_manager::vdata_history::BaselineStatus;
   !analysis.input_warnings.is_empty()
+    || !analysis.protected_resources.is_empty()
     || analysis
       .baselines
       .iter()
@@ -1236,6 +1237,48 @@ Game core
       manager.profile_gameinfo_paths(None).unwrap(),
       vec!["citadel/addons"]
     );
+  }
+
+  #[test]
+  fn protected_winning_assets_require_review_before_launch() {
+    let temp = tempfile::tempdir().unwrap();
+    let mut manager = test_manager(temp.path());
+    let base = manager.get_addons_path(None).unwrap();
+    fs::create_dir_all(&base).unwrap();
+    let source = tempfile::tempdir().unwrap();
+    let path = source.path().join("models/shared_skin.vmdl_c");
+    fs::create_dir_all(path.parent().unwrap()).unwrap();
+    fs::write(path, b"original model must not be parsed or repaired").unwrap();
+    let mut manifest = ProfileVpkManifest::default();
+    for (order, id) in ["original-winner", "selected-loser"]
+      .into_iter()
+      .enumerate()
+    {
+      let name = format!("pak0{}_dir.vpk", order + 1);
+      vpkmanager::pack_directory(source.path(), &base.join(&name)).unwrap();
+      manifest.mark_enabled(
+        id,
+        vec![name],
+        vec![],
+        Some(order as u32),
+        ShardIndex::FIRST,
+      );
+    }
+    manifest
+      .mods
+      .get_mut("selected-loser")
+      .unwrap()
+      .compatibility_enabled = true;
+    manifest.save(&base).unwrap();
+    let analysis = manager.analyze_localization_overlay(None, &[]).unwrap();
+    assert_eq!(analysis.protected_resources.len(), 1);
+    assert!(analysis.asset_warnings.is_empty());
+    assert!(analysis.parse_warnings.is_empty());
+    assert!(requires_review(&analysis));
+    assert!(matches!(
+      manager.prepare_localization_overlay_for_launch(None, true),
+      Err(Error::ModDataReviewRequired)
+    ));
   }
 
   #[test]

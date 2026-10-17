@@ -34,13 +34,23 @@ plans, and refreshes game search paths. Deadlock must be closed to change these
 preferences or apply fixes. Review remains available while it runs.
 
 Analysis indexes every enabled mod for load order and dependency context, but
-only selected mods contribute repair candidates or baseline history. If any
-opted-out enabled mod supplies a resource, that entire path is protected from
-overlay replacement, even when a selected mod also supplies it. Review lists
-these shared resources. This conservative rule preserves original load-order
-behavior rather than pretending shared compiled files can be independently
-patched per provider. A material recipe requiring a protected output declines
-as a whole. Export also checks all output paths before staging files.
+only selected mods contribute repair candidates or baseline history. Models,
+meshes, skeletons, and other binary assets follow the effective game load-order
+provider. A selected winning skin can be repaired even when a shadowed skin has
+Compatibility off. Shadowed models never contribute repair candidates or replace
+the winning skin. This also applies to multiple variant VPKs within one mod:
+the first effective archive supplies the model; duplicate paths are not merged.
+Overlapping models produce a review warning naming the active archive and the
+other providers, because their non-overlapping animation or accessory files can
+still mix. Disable unused variations or competing skins when those files cannot
+work together.
+If the winning provider has Compatibility off, its resource
+stays protected and launch opens a review before using the original files.
+
+Localization and mergeable game-data tables combine providers, so those entire
+paths remain protected when any contributing mod has Compatibility off. Review
+lists protected shared resources. A material recipe requiring a protected output
+declines as a whole. Export checks all output paths before staging files.
 
 Launch prepares verified fixes for selected mods automatically. Unreviewed
 warnings, uncertain baselines, and conflicts pause launch and open the review
@@ -483,8 +493,9 @@ Bar, and Square Top Bar. Merrin uses only the cape-with-cloth variant; alternati
 skins and optional gun audio are excluded from that case.
 The `mixed_corpus_respects_per_mod_selection_and_load_order` opt-in test uses all
 fifteen together, with none, all, alternating, Toon-only, and all-except-Toon selected,
-in forward and reverse order. It checks that exports never replace opted-out
-resources, repair findings belong to selected mods, compiled outputs decode with
+in forward and reverse order. It checks that exports preserve resources owned
+by opted-out effective providers and protected merged tables, repair findings
+belong to selected mods, compiled outputs decode with
 an independent reader, and source VPK hashes remain unchanged. Use the same
 variables as above, a separate `DMM_COMPAT_REPORT` output, and that test name.
 The four added

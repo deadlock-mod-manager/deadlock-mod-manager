@@ -502,10 +502,11 @@ impl LocalizationOverlayPlan {
         let mut model_paths = Vec::new();
         let mut mesh_paths = Vec::new();
         for entry_path in archive.list_entries() {
-          if resources
-            .provider(&entry_path)
-            .is_some_and(|provider| provider.archive == *vpk_path)
-          {
+          let effective = resources.provider(&entry_path).is_some_and(|provider| {
+            provider.archive == *vpk_path
+              && provider.mod_id.as_deref() == Some(mod_input.mod_id.as_str())
+          });
+          if effective {
             animation_inputs.record(&entry_path, &mod_input.mod_id);
           }
           if !repair_scope.includes_mod(&mod_input.mod_id) || repair_scope.protects(&entry_path) {
@@ -515,11 +516,11 @@ impl LocalizationOverlayPlan {
             localization_paths.push(entry_path);
           } else if is_mergeable_compiled_data_path(&entry_path) {
             compiled_paths.push(entry_path);
-          } else if animation_skeleton::is_path(&entry_path) {
+          } else if effective && animation_skeleton::is_path(&entry_path) {
             skeleton_paths.push(entry_path);
-          } else if model_camera::is_path(&entry_path) {
+          } else if effective && model_camera::is_path(&entry_path) {
             model_paths.push(entry_path);
-          } else if asset_compatibility::is_mesh_path(&entry_path) {
+          } else if effective && asset_compatibility::is_mesh_path(&entry_path) {
             mesh_paths.push(entry_path);
           }
         }
@@ -693,7 +694,7 @@ impl LocalizationOverlayPlan {
       ..
     } = vdata_compatibility::prepare(&compiled_data, &[])?;
     let mut asset_repairs = Vec::new();
-    let mut asset_warnings = Vec::new();
+    let mut asset_warnings = asset_compatibility::model_overlaps(resources, mods, &repair_scope);
     let animation_skeletons = animation_skeleton::prepare(
       resources,
       &skeleton_sources,

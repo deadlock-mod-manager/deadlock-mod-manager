@@ -42,7 +42,7 @@ fn partial_roles_are_visible_and_never_publish_half_a_repair() {
 }
 
 #[test]
-fn opted_out_material_role_prevents_a_partial_migration_in_either_order() {
+fn only_the_winning_opted_out_material_role_blocks_migration() {
   let temp = tempfile::tempdir().unwrap();
   let selected = source(
     temp.path(),
@@ -62,11 +62,31 @@ fn opted_out_material_role_prevents_a_partial_migration_in_either_order() {
     .unwrap();
     assert!(plan.material_assets.is_empty());
     assert!(plan.analysis.asset_repairs.is_empty());
-    assert_eq!(plan.analysis.protected_resources.len(), 1);
-    assert_eq!(plan.analysis.asset_warnings.len(), 3);
-    assert!(plan.analysis.asset_warnings.iter().all(
-      |warning| warning.mod_id == "selected" && warning.detail.contains("four material roles")
-    ));
+    let original_wins = inputs[0].mod_id == "original";
+    assert_eq!(
+      plan.analysis.protected_resources.len(),
+      usize::from(original_wins)
+    );
+    assert_eq!(
+      plan.analysis.asset_warnings.len(),
+      if original_wins { 3 } else { 4 }
+    );
+    assert!(
+      plan
+        .analysis
+        .asset_warnings
+        .iter()
+        .all(|warning| warning.mod_id == "selected")
+    );
+    if original_wins {
+      assert!(
+        plan
+          .analysis
+          .asset_warnings
+          .iter()
+          .all(|warning| warning.detail.contains("four material roles"))
+      );
+    }
     assert!(
       !plan
         .write(&temp.path().join("overlay.vpk"), &[])

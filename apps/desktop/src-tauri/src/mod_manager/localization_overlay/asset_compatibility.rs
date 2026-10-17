@@ -44,6 +44,7 @@ pub enum WarningKind {
   MaterialMapping,
   MaterialInterface,
   ModelMapping,
+  OverlappingModel,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -54,6 +55,67 @@ pub struct AssetWarning {
   pub file_path: String,
   pub kind: WarningKind,
   pub detail: String,
+}
+
+pub(super) fn model_overlaps(
+  resources: &ResourceSnapshot,
+  mods: &[super::LocalizationModInput],
+  scope: &super::repair_scope::RepairScope,
+) -> Vec<AssetWarning> {
+  let mut providers: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+  for input in mods {
+    for archive in &input.vpks {
+      let label = format!(
+        "{}:{}",
+        input.mod_id,
+        archive.file_name().unwrap_or_default().to_string_lossy()
+      );
+      for path in resources
+        .archive(archive)
+        .list_entries()
+        .into_iter()
+        .filter(|path| super::model_camera::is_path(path))
+      {
+        providers
+          .entry(normalize_path(&path))
+          .or_default()
+          .insert(label.clone());
+      }
+    }
+  }
+  let mut warnings = Vec::new();
+  for (path, providers) in providers {
+    if providers.len() < 2 || scope.protects(&path) {
+      continue;
+    }
+    let Some(owner) = resources.provider(&path) else {
+      continue;
+    };
+    let Some(mod_id) = owner.mod_id else {
+      continue;
+    };
+    if !scope.includes_mod(&mod_id) {
+      continue;
+    }
+    let source_vpk = owner
+      .archive
+      .file_name()
+      .unwrap_or_default()
+      .to_string_lossy()
+      .into_owned();
+    let detail = format!(
+      "Load order uses {source_vpk}. Enabled archives providing this model: {}. Disable unused variations or skins to avoid mixing their animation and accessory files.",
+      providers.into_iter().collect::<Vec<_>>().join(", ")
+    );
+    warnings.push(AssetWarning {
+      mod_id,
+      source_vpk,
+      file_path: path,
+      kind: WarningKind::OverlappingModel,
+      detail,
+    });
+  }
+  warnings
 }
 
 pub(super) fn is_mesh_path(path: &str) -> bool {

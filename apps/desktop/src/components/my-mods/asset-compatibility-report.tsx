@@ -35,7 +35,8 @@ export interface AssetWarning {
     | "unreadableResource"
     | "materialMapping"
     | "materialInterface"
-    | "modelMapping";
+    | "modelMapping"
+    | "overlappingModel";
   detail: string;
 }
 

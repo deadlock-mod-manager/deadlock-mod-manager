@@ -205,6 +205,111 @@ fn selected_overlay_repairs_camera_without_modifying_the_source_archive() {
 }
 
 #[test]
+fn overlapping_skins_repair_only_the_effective_selected_model() {
+  use super::super::{LocalizationModInput, LocalizationOverlayPlan, resources};
+  let temp = tempfile::tempdir().unwrap();
+  let citadel = temp.path().join("citadel");
+  let path = "models/heroes/test/test.vmdl_c";
+  let current = container(&model(), &[mesh(IDENTITY)]);
+  resources::tests::pack(&citadel, "pak01", &[(path, &current)]);
+  let mut inputs = Vec::new();
+  let mut originals = Vec::new();
+  for (index, id) in ["skin-a", "skin-b", "skin-c"].into_iter().enumerate() {
+    let mut authored = mesh(OLD_FRAME);
+    *authored.get_mut("mesh_data").unwrap() = Kv3Value::Binary(vec![index as u8; 8]);
+    let bytes = container(&model(), &[authored]);
+    let archive = resources::tests::pack(temp.path(), id, &[(path, &bytes)]);
+    originals.push((archive.clone(), std::fs::read(&archive).unwrap(), bytes));
+    inputs.push(LocalizationModInput {
+      mod_id: id.into(),
+      vpks: vec![archive],
+    });
+  }
+  let mut failures = Vec::new();
+  for count in [2, 3] {
+    for shared_mod_id in [false, true] {
+      for reversed in [false, true] {
+        let mut ordered = if shared_mod_id {
+          vec![LocalizationModInput {
+            mod_id: "multiple-variations".into(),
+            vpks: inputs[..count]
+              .iter()
+              .flat_map(|input| input.vpks.clone())
+              .collect(),
+          }]
+        } else {
+          inputs[..count].to_vec()
+        };
+        if reversed {
+          ordered.reverse();
+          if shared_mod_id {
+            ordered[0].vpks.reverse();
+          }
+        }
+        let winner = &ordered[0];
+        for selected in [
+          BTreeSet::new(),
+          BTreeSet::from([winner.mod_id.clone()]),
+          ordered
+            .get(1)
+            .map(|input| BTreeSet::from([input.mod_id.clone()]))
+            .unwrap_or_default(),
+          ordered.iter().map(|input| input.mod_id.clone()).collect(),
+        ] {
+          let plan =
+            LocalizationOverlayPlan::build_selected(&citadel, &ordered, &selected).unwrap();
+          let should_repair = selected.contains(&winner.mod_id);
+          if plan.camera_models.contains_key(path) != should_repair {
+            failures.push(format!(
+              "count={count}, reversed={reversed}, selected={selected:?}"
+            ));
+            continue;
+          }
+          if should_repair {
+            assert!(
+              plan
+                .analysis
+                .asset_warnings
+                .iter()
+                .any(|warning| warning.file_path == path
+                  && warning.mod_id == winner.mod_id
+                  && matches!(warning.kind, WarningKind::OverlappingModel))
+            );
+            let original = &originals
+              .iter()
+              .find(|(archive, _, _)| archive == &winner.vpks[0])
+              .unwrap()
+              .2;
+            let expected = repair(original, &current).unwrap().unwrap();
+            assert_eq!(
+              plan.camera_models[path], expected,
+              "losing skin replaced the winning model"
+            );
+            assert!(
+              plan
+                .analysis
+                .asset_repairs
+                .iter()
+                .all(|repair| repair.mod_id == winner.mod_id)
+            );
+            let output = temp.path().join("overlap_dir.vpk");
+            assert!(plan.write(&output, &[]).unwrap().has_overlay);
+            let packed = source2_model::vpk_extract::VpkArchive::open(&output).unwrap();
+            assert_eq!(packed.extract_entry(path).unwrap(), expected);
+          } else {
+            assert!(plan.analysis.asset_repairs.is_empty());
+          }
+        }
+      }
+    }
+  }
+  assert!(failures.is_empty(), "camera repair skipped: {failures:?}");
+  for (archive, bytes, _) in originals {
+    assert_eq!(std::fs::read(archive).unwrap(), bytes);
+  }
+}
+
+#[test]
 #[ignore = "requires DMM_REAL_CITADEL; uses a reframed reference when local game is pre-update"]
 fn real_model_preserves_geometry_and_inactive_influences() {
   use source2_model::vpk_extract::VpkArchive;

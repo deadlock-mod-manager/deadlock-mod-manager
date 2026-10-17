@@ -147,6 +147,7 @@ export function LocalizationConflictReview({
   ).size;
   const hasWarnings =
     warningFiles > 0 ||
+    analysis.protectedResources.length > 0 ||
     analysis.inputWarnings.length > 0 ||
     analysis.assetWarnings.length > 0 ||
     analysis.dataWarnings.length > 0;

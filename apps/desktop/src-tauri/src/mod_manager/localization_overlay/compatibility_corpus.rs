@@ -3,6 +3,114 @@
 use super::*;
 
 #[test]
+#[ignore = "requires DMM_REAL_CITADEL and DMM_COMPAT_CORPUS"]
+fn overlapping_real_skins_preserve_load_order_and_camera_repairs() {
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let cases: Vec<CorpusCase> =
+    serde_json::from_slice(&fs::read(std::env::var("DMM_COMPAT_CORPUS").unwrap()).unwrap())
+      .unwrap();
+  let output = TempDir::new().unwrap();
+  let mut reports = Vec::new();
+  for (ids, path) in [
+    ([679331, 710352], "models/heroes_staging/shiv/shiv.vmdl_c"),
+    ([625513, 670722], "models/heroes_staging/bebop/bebop.vmdl_c"),
+  ] {
+    let inputs: Vec<_> = ids
+      .into_iter()
+      .map(|id| {
+        let case = cases.iter().find(|case| case.id == id).unwrap();
+        LocalizationModInput {
+          mod_id: id.to_string(),
+          vpks: case.vpks.clone(),
+        }
+      })
+      .collect();
+    for reversed in [false, true] {
+      let mut ordered = inputs.clone();
+      if reversed {
+        ordered.reverse();
+      }
+      let resources = resources::ResourceSnapshot::open(&citadel, &ordered).unwrap();
+      let (owner, source) = resources.resolve(path).unwrap().unwrap();
+      assert_eq!(owner.mod_id.as_deref(), Some(ordered[0].mod_id.as_str()));
+      let current = resources.game_bytes(path).unwrap().unwrap();
+      assert!(
+        camera_attachment_frame::repair(&source, &current)
+          .unwrap()
+          .is_some()
+      );
+      for selected in [
+        BTreeSet::new(),
+        BTreeSet::from([ordered[0].mod_id.clone()]),
+        BTreeSet::from([ordered[1].mod_id.clone()]),
+        ordered.iter().map(|input| input.mod_id.clone()).collect(),
+      ] {
+        let plan = LocalizationOverlayPlan::build_selected(&citadel, &ordered, &selected).unwrap();
+        let should_repair = selected.contains(&ordered[0].mod_id);
+        assert_eq!(
+          plan.camera_models.contains_key(path),
+          should_repair,
+          "{ids:?}, reverse={reversed}, selected={selected:?}"
+        );
+        if should_repair {
+          assert!(
+            plan
+              .analysis
+              .asset_repairs
+              .iter()
+              .any(|repair| repair.file_path == path
+                && repair.mod_id == ordered[0].mod_id
+                && matches!(
+                  repair.kind,
+                  asset_compatibility::RepairKind::CameraAttachmentFrame
+                ))
+          );
+          assert!(
+            camera_attachment_frame::repair(&plan.camera_models[path], &current)
+              .unwrap()
+              .is_none()
+          );
+          let source_resource = Resource::parse(&source).unwrap();
+          let repaired = Resource::parse(&plan.camera_models[path]).unwrap();
+          for (index, block) in source_resource.blocks().iter().enumerate() {
+            if !matches!(&block.kind, b"DATA" | b"MDAT") {
+              assert_eq!(
+                source_resource.get_block_by_index(index),
+                repaired.get_block_by_index(index),
+                "winning skin geometry changed"
+              );
+            }
+          }
+        }
+        let archive = output.path().join("overlap_dir.vpk");
+        let result = plan.write(&archive, &[]).unwrap();
+        if result.has_overlay {
+          let packed = VpkArchive::open(&archive).unwrap();
+          for entry in packed.list_entries() {
+            if entry.ends_with("_c") {
+              validate_exported_blocks(&packed.extract_entry(&entry).unwrap(), &entry).unwrap();
+            }
+          }
+          if should_repair {
+            assert_eq!(
+              packed.extract_entry(path).unwrap(),
+              plan.camera_models[path]
+            );
+          } else {
+            assert!(!packed.list_entries().contains(&path.to_owned()));
+          }
+        }
+        reports.push(serde_json::json!({"pair":ids,"reversed":reversed,"selected":selected,"winner":ordered[0].mod_id,"packedFiles":result.packed_files,"analysis":plan.analysis}));
+      }
+    }
+  }
+  if let Some(path) = std::env::var_os("DMM_OVERLAP_REPORT") {
+    fs::write(path, serde_json::to_vec_pretty(&reports).unwrap()).unwrap();
+  }
+  println!("{} overlapping-skin scenarios passed", reports.len());
+}
+
+#[test]
 #[ignore = "requires DMM_REAL_CITADEL and DMM_RICK_VPK"]
 fn installed_retired_graph_skin_uses_current_nm_track_order() {
   let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
@@ -431,10 +539,16 @@ fn mixed_corpus_respects_per_mod_selection_and_load_order() {
         let archive = VpkArchive::open(&archive_path).unwrap();
         assert_eq!(archive.list_entries().len(), applied.packed_files);
         for path in archive.list_entries() {
-          assert!(
-            !protected.contains(&normalize_path(&path)),
-            "opted-out resource replaced: {label}/{reversed}/{path}"
-          );
+          if protected.contains(&normalize_path(&path)) {
+            let resources = resources::ResourceSnapshot::open(&citadel, &ordered).unwrap();
+            let owner = resources.provider(&path).unwrap();
+            assert!(
+              !is_localization_path(&path)
+                && !is_mergeable_compiled_data_path(&path)
+                && owner.mod_id.is_some_and(|id| selected.contains(&id)),
+              "opted-out effective resource replaced: {label}/{reversed}/{path}"
+            );
+          }
           let bytes = archive.extract_entry(&path).unwrap();
           if path.ends_with("_c") {
             let (_, value, _) = decode_compiled_data(&bytes, &path).unwrap();

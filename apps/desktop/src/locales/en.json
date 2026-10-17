@@ -1654,7 +1654,7 @@
       "selectMods": "Check Compatibility on a mod to enable fixes.",
       "excluded": "Original files preserved: {{names}}",
       "sharedTitle": "Shared resources preserved",
-      "sharedDescription": "These resources also belong to a mod with compatibility turned off. They will not be replaced by the compatibility overlay.",
+      "sharedDescription": "These files remain unchanged because the active mod has Compatibility turned off, or because shared game text and data also belong to an unchecked mod. Enable Compatibility on the active skin, or disable competing variations and skins in My Mods.",
       "on": "Compatibility fixes on",
       "off": "Compatibility fixes off",
       "label": "Compatibility"
@@ -1828,6 +1828,7 @@
         "materialMapping": "Material repair needs a reviewed mapping",
         "materialInterface": "Material shader interface differs from the current reference",
         "modelMapping": "Model migration needs a verified current target",
+        "overlappingModel": "Multiple enabled skins or variations replace this model",
         "missingAnimationInterface": "Current animation graph or skeleton bindings are missing",
         "animationMapping": "Animation bindings need verified bone mapping",
         "unreadableResource": "This resource could not be checked"

@@ -1285,8 +1285,17 @@ mod tests {
       fs::create_dir_all(competing_model.parent().unwrap()).unwrap();
       fs::write(&competing_model, &full_model).unwrap();
       pack_directory(&other_directory, &other_vpk).unwrap();
-      assert!(
+      assert_eq!(
         LocalizationOverlayPlan::build(&citadel, &inputs)
+          .unwrap()
+          .analysis
+          .asset_repairs
+          .len(),
+        1
+      );
+      let reversed = vec![inputs[1].clone(), inputs[0].clone()];
+      assert!(
+        LocalizationOverlayPlan::build(&citadel, &reversed)
           .unwrap()
           .analysis
           .asset_repairs

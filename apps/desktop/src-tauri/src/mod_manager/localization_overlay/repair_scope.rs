@@ -27,8 +27,19 @@ impl RepairScope {
     {
       for archive in &input.vpks {
         for path in resources.archive(archive).list_entries() {
+          let path = normalize_path(&path);
+          // Merged tables combine providers; binary assets follow the engine's
+          // winning provider, so an inactive skin must not veto its repairs.
+          if !super::is_localization_path(&path)
+            && !super::is_mergeable_compiled_data_path(&path)
+            && resources
+              .provider(&path)
+              .is_some_and(|provider| provider.mod_id.as_deref() != Some(input.mod_id.as_str()))
+          {
+            continue;
+          }
           protected
-            .entry(normalize_path(&path))
+            .entry(path)
             .or_default()
             .insert(input.mod_id.clone());
         }
