@@ -59,6 +59,15 @@ describe("isGameRunningError", () => {
 });
 
 describe("runGuarded", () => {
+  it("blocks mod folder repair when the game is running and the user cancels", async () => {
+    const dependencies = deps({ blocked: true });
+    await expect(
+      runGuarded(dependencies, "repair_mod_folder", { dryRun: false }),
+    ).rejects.toEqual(gameRunning);
+    expect(dependencies.calls).toEqual([
+      { command: "repair_mod_folder", args: { dryRun: false } },
+    ]);
+  });
   it("passes the command straight through when nothing blocks it", async () => {
     const dependencies = deps();
     let asked = false;

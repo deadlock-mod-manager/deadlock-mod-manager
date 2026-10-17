@@ -489,6 +489,10 @@ impl ModManager {
   }
 
   pub fn get_addons_backup_manager(&mut self) -> &mut AddonsBackupManager {
+    if let Ok(directory) = self.get_app_local_data_path() {
+      self.addons_backup_manager
+        .set_repair_directory(directory.join("mod-folder-repair"));
+    }
     if let Some(game_path) = self.steam_manager.get_game_path() {
       self.addons_backup_manager.set_game_path(game_path.clone());
     }

@@ -125,6 +125,16 @@ mod tests {
   }
 
   #[test]
+  fn mod_folder_repair_requires_the_game_guard() {
+    let _serial = SERIAL.lock().unwrap();
+    reset();
+    assert!(needs_check("repair_mod_folder", None));
+    let permit = allow_next("repair_mod_folder".into());
+    assert!(!needs_check("repair_mod_folder", Some(&permit)));
+    assert!(needs_check("repair_mod_folder", Some(&permit)));
+  }
+
+  #[test]
   fn skips_the_check_when_the_user_turned_the_guard_off() {
     let _serial = SERIAL.lock().unwrap();
     reset();

@@ -330,6 +330,7 @@ pub fn run() {
       commands::backups::create_addons_backup,
       commands::backups::list_addons_backups,
       commands::backups::restore_addons_backup,
+      commands::mod_folder_repair::repair_mod_folder,
       commands::backups::delete_addons_backup,
       commands::backups::get_addons_backup_info,
       commands::backups::prune_addons_backups,

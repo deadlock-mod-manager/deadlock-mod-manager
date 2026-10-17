@@ -17,6 +17,7 @@ pub mod manager;
 pub mod missing_vpks;
 pub mod mod_repository;
 pub mod perf_config;
+pub mod repair_backup;
 pub mod shard;
 pub mod shard_report;
 pub mod steam_manager;

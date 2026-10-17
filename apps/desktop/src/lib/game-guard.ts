@@ -29,6 +29,7 @@ export type GuardedCommand =
   | "delete_server_addons_folder"
   | "apply_server_gameinfo"
   | "restore_addons_backup"
+  | "repair_mod_folder"
   | "copy_selected_vpks_from_archive"
   | "copy_local_mod_vpks"
   | "replace_mod_vpks"

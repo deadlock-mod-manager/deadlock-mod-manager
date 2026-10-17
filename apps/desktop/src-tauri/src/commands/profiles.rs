@@ -642,7 +642,7 @@ pub async fn hydrate_mods_from_manifest(profile_folder: Option<String>) -> Resul
   mod_manager.hydrate_mods_from_manifest(profile_folder)
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SeedManifestEntry {
   pub mod_id: String,
@@ -657,6 +657,31 @@ pub struct SeedManifestEntry {
   pub original_vpk_names: Vec<String>,
   #[serde(default)]
   pub order: Option<u32>,
+}
+
+pub(crate) fn seed_manifest_entries(
+  manifest: &mut ProfileVpkManifest,
+  entries: Vec<SeedManifestEntry>,
+) -> bool {
+  let mut changed = false;
+  for entry in entries {
+    if manifest.mods.contains_key(&entry.mod_id) {
+      continue;
+    }
+    if entry.enabled {
+      manifest.mark_enabled(
+        &entry.mod_id,
+        entry.current_vpks,
+        entry.original_vpk_names,
+        entry.order,
+        entry.shard,
+      );
+    } else {
+      manifest.mark_disabled(&entry.mod_id, entry.disabled_vpks, entry.original_vpk_names);
+    }
+    changed = true;
+  }
+  changed
 }
 
 fn default_seed_shard() -> ShardIndex {
@@ -676,27 +701,7 @@ pub async fn seed_profile_vpk_manifest_entries(
   let mod_manager = MANAGER.lock().unwrap();
   let addons_path = mod_manager.get_addons_path(profile_folder.as_deref())?;
   let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
-  let mut changed = false;
-
-  for entry in entries {
-    if manifest.mods.contains_key(&entry.mod_id) {
-      continue;
-    }
-    if entry.enabled {
-      manifest.mark_enabled(
-        &entry.mod_id,
-        entry.current_vpks,
-        entry.original_vpk_names,
-        entry.order,
-        entry.shard,
-      );
-    } else {
-      manifest.mark_disabled(&entry.mod_id, entry.disabled_vpks, entry.original_vpk_names);
-    }
-    changed = true;
-  }
-
-  if changed {
+  if seed_manifest_entries(&mut manifest, entries) {
     manifest.save(&addons_path)?;
     mod_manager.invalidate_localization_overlay(profile_folder.as_deref());
   }

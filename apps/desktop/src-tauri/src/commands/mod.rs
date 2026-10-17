@@ -26,6 +26,7 @@ pub mod live_match;
 pub mod localization;
 pub mod logs;
 pub mod match_sync;
+pub mod mod_folder_repair;
 pub mod mod_interchange;
 pub mod mods;
 pub mod performance;
