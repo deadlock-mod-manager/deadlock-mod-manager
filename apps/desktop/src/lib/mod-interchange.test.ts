@@ -129,6 +129,7 @@ describe("buildImportedLocalMod", () => {
     expect(built.additional.selectedDownloads?.[0]?.url).toBe(
       "gamebanana-file://650634/1720039",
     );
+    expect(built.additional.selectedDownloads?.[0]?.size).toBe(0);
   });
 
   it("prefers catalog metadata but never the catalog's identity", () => {

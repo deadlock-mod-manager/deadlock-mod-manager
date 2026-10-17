@@ -1,5 +1,12 @@
-import type { LocalMod, ModFileTree } from "@/types/mods";
+import type { LocalMod, ModDownloadItem, ModFileTree } from "@/types/mods";
 import type { VpkManifest } from "@/types/profiles";
+
+/**
+ * `downloads` lists every file the mod offers, so it only stands in when no
+ * selection was ever recorded.
+ */
+export const getQueuedDownloads = (mod: LocalMod): ModDownloadItem[] =>
+  mod.selectedDownloads?.length ? mod.selectedDownloads : (mod.downloads ?? []);
 
 export const previousInstallSelection = (
   mod: Pick<LocalMod, "remoteId" | "installedVpks" | "installedFileTree">,
