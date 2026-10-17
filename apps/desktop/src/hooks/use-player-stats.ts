@@ -161,7 +161,7 @@ export const useRefreshHeroCatalogOnMiss = (missing: boolean) => {
 };
 
 const hasPortrait = (hero: DeadlockHero): boolean =>
-  Boolean(hero.images.icon_image_small_webp ?? hero.images.icon_image_small);
+  Boolean(hero.images.icon_image_small_webp || hero.images.icon_image_small);
 
 /**
  * Whether a hero picker should offer `name`. The enum already knows heroes
