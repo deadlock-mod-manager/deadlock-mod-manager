@@ -118,28 +118,41 @@ apps/bot/
 - **Library**: Discord.js
 - **Database**: Shared database package
 
-### Documentation Site (`apps/`)
+### Documentation Site (`apps/docs/`)
 
 This documentation site built with Fumadocs and Next.js.
 
 ```
-apps/
-├── content/           # Documentation content
-│   ├── user-guide/         # User documentation
-│   ├── tech-guide/         # Technical documentation
+apps/docs/
+├── content/docs/           # Documentation content
+│   ├── using-mod-manager/  # Player guide
+│   ├── modding/            # Modding guides
+│   ├── plugins/            # Plugin docs
+│   ├── developer-docs/     # Developer documentation
+│   ├── api/                # Generated API reference
 │   └── index.mdx           # Documentation homepage
 ├── src/
 │   ├── app/                # Next.js app router pages
 │   └── lib/                # Utility libraries
-└── public/                 # Static assets
+├── public/                 # Static assets
+└── wrangler.jsonc          # Cloudflare Workers config
 ```
 
 **Key Technologies:**
 
-- **Framework**: Next.js 14 with App Router
+- **Framework**: Next.js 16 with App Router, built as a static export (`output: "export"`)
 - **Documentation**: Fumadocs for MDX processing
 - **Styling**: Tailwind CSS
 - **Content**: MDX for documentation pages
+- **Hosting**: Cloudflare Workers static assets, built and deployed by Workers Builds on every push to `main`
+
+<Callout type='warn' title='Keep the docs statically exportable'>
+  The site is served as plain files, so it can't use middleware, rewrites, or
+  route handlers that run per request. Every dynamic route needs
+  `generateStaticParams`, and other route handlers need `export const dynamic =
+  "force-static"`. Run `pnpm --filter @deadlock-mods/docs build` to check: the
+  export fails on anything that can't be prerendered.
+</Callout>
 
 ### Other Applications
 

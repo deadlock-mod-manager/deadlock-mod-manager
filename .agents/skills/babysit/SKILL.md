@@ -20,7 +20,7 @@ Otherwise merge-ready means all of:
 Gating checks: if `gh pr checks <PR> --required` lists any, those. This repo has no branch protection, so it usually prints "no required checks reported". In that case every check is gating except:
 
 - `CodeRabbit`: its review is covered by the threads and reviews rules above.
-- `Vercel – *` and `Vercel Preview Comments`: gating only when the PR touches `apps/www` or `apps/docs`.
+- `Vercel – *` and `Vercel Preview Comments`: gating only when the PR touches `apps/www`. The docs deploy from Cloudflare Workers Builds on `main` and have no PR check.
 - Jobs skipped by design, such as E2E without the `e2e-full` label. Mention them in the report; don't wait for them.
 
 ## Bootstrap
