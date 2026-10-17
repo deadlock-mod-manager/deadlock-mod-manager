@@ -20,7 +20,11 @@ import type { DashboardWidget } from "@/lib/stats/dashboard/layout";
 import { cn } from "@/lib/utils";
 import { useDashboardData } from "./dashboard-context";
 import { panelDef } from "./panels";
-import { type WidgetDataState, useWidgetData } from "./use-widget-data";
+import {
+  useHistoryGate,
+  useWidgetData,
+  type WidgetDataState,
+} from "./use-widget-data";
 import { useWidgetTitle } from "./use-widget-title";
 import { WidgetChart } from "./widget-chart";
 
@@ -192,26 +196,17 @@ const PanelWidget = ({ widget, onHealth, actions }: WidgetContentProps) => {
   const panelId = widget.source.kind === "panel" ? widget.source.panel : "";
   const panel = panelDef(panelId);
 
+  const historyGate = useHistoryGate();
   const state = ((): WidgetDataState | null => {
     if (!panel) {
       return { status: "broken", reason: "unknownSource", endpoint: null };
     }
-    if (panel.needsAccount && data.accountId === null) {
-      return { status: "needsAccount" };
-    }
     if (panel.needsHistory) {
-      if (data.stats.isPending) {
-        return { status: "loading" };
-      }
-      if (data.stats.isError) {
-        return {
-          status: "broken",
-          reason: "endpoint",
-          endpoint: "/v1/players/{account_id}/match-history",
-        };
-      }
+      return historyGate;
     }
-    return null;
+    return panel.needsAccount && data.accountId === null
+      ? { status: "needsAccount" }
+      : null;
   })();
   useHealthReport(widget.id, state?.status === "broken", onHealth);
 

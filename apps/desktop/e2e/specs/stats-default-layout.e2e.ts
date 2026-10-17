@@ -8,6 +8,7 @@ import {
   DEFAULT_OVERVIEW,
   DEFAULT_TAB_IDS,
   DEFAULT_TAB_TITLES,
+  expectWidgetSources,
   openStats,
   readSavedLayout,
   selectTab,
@@ -16,7 +17,6 @@ import {
   tabTitles,
   useWidgetMenu,
   widget,
-  widgetSources,
 } from "../support/stats-dashboard-actions";
 
 describe("stats dashboard default layout", () => {
@@ -30,7 +30,7 @@ describe("stats dashboard default layout", () => {
     await step("the five built-in tabs open in their usual order", async () => {
       expect(await tabIds()).toEqual(DEFAULT_TAB_IDS);
       expect(await tabTitles()).toEqual(DEFAULT_TAB_TITLES);
-      expect(await widgetSources()).toEqual(DEFAULT_OVERVIEW);
+      await expectWidgetSources(DEFAULT_OVERVIEW);
     });
 
     await step(
@@ -54,7 +54,7 @@ describe("stats dashboard default layout", () => {
         ["Live", "live"],
       ] as const) {
         await selectTab(title);
-        expect(await widgetSources()).toEqual([panel]);
+        await expectWidgetSources([panel]);
       }
       expect(await browser.getUrl()).toContain("tab=live");
       await selectTab("Overview");
@@ -70,12 +70,12 @@ describe("stats dashboard default layout", () => {
     await step("cancelling a removal brings the widget back", async () => {
       await startEditing();
       await useWidgetMenu(widget("insights"), ["Remove"]);
-      expect(await widgetSources()).toEqual(
+      await expectWidgetSources(
         DEFAULT_OVERVIEW.filter((source) => source !== "insights"),
       );
       await $('[data-testid="stats-cancel"]').click();
       await confirmAlert("Discard");
-      expect(await widgetSources()).toEqual(DEFAULT_OVERVIEW);
+      await expectWidgetSources(DEFAULT_OVERVIEW);
     });
 
     await closeApplication(world, runtime.processId);

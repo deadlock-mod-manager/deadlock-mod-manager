@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { $, $$, browser, expect } from "@wdio/globals";
+import { $, $$, expect } from "@wdio/globals";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
 import { step } from "../support/evidence";
@@ -44,9 +44,6 @@ const setApiPath = (value: string) =>
       () => editorDialog().$('input[aria-label="Request path"]'),
       value,
     );
-    // Enter loads right away instead of after the typing pause, like a user
-    // who wants to see the result.
-    await browser.keys("Enter");
   });
 
 const customWidgets = async () =>

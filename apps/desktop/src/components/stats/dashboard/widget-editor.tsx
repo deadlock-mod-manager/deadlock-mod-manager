@@ -231,10 +231,18 @@ export const WidgetEditor = ({
     if (drafts[next]) {
       return;
     }
+    // Editing keeps the widget's id whichever source it ends up with, so
+    // saving replaces it instead of adding a second widget.
     if (next === "matches") {
-      setDrafts((current) => ({ ...current, matches: newMatchesWidget() }));
+      setDrafts((current) => ({
+        ...current,
+        matches: { ...newMatchesWidget(), id: keepId(createId("widget")) },
+      }));
     } else if (next === "api") {
-      setDrafts((current) => ({ ...current, api: newApiWidget() }));
+      setDrafts((current) => ({
+        ...current,
+        api: { ...newApiWidget(), id: keepId(createId("widget")) },
+      }));
     }
   };
 
@@ -243,8 +251,13 @@ export const WidgetEditor = ({
     ? presetById(presetSource.preset)
     : undefined;
 
+  // A path that can never be requested would only ever render as broken; the
+  // view left over from the previous path must not make it look savable.
+  const invalidPath =
+    state.status === "broken" && state.reason === "invalidPath";
   const canSave =
     draft !== undefined &&
+    !invalidPath &&
     (draft.source.kind === "panel" ||
       (draft.view !== undefined && draft.view.y.length > 0));
 

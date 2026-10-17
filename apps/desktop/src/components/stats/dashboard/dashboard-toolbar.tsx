@@ -17,6 +17,8 @@ import {
   X,
 } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
+import type { PendingConfirm } from "./use-dashboard-editor";
+import { useTabTitle } from "./use-tab-title";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -27,7 +29,7 @@ interface ConfirmDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export const ConfirmDialog = ({
+const ConfirmDialog = ({
   open,
   title,
   description,
@@ -53,6 +55,38 @@ export const ConfirmDialog = ({
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
+  );
+};
+
+/** The confirmation an editing step is waiting for, worded for that step. */
+export const PendingConfirmDialog = ({
+  pending,
+  onConfirm,
+  onDismiss,
+}: {
+  pending: PendingConfirm | null;
+  onConfirm: () => void;
+  onDismiss: () => void;
+}) => {
+  const { t } = useTranslation();
+  const tabTitle = useTabTitle();
+  const copy = `stats.dashboard.confirm.${pending?.kind ?? "discard"}`;
+  return (
+    <ConfirmDialog
+      confirmLabel={t(`${copy}Action`)}
+      description={
+        pending?.kind === "deleteTab"
+          ? t(`${copy}Description`, {
+              tab: tabTitle(pending.tab),
+              count: pending.tab.widgets.length,
+            })
+          : t(`${copy}Description`)
+      }
+      onConfirm={onConfirm}
+      onOpenChange={(open) => !open && onDismiss()}
+      open={pending !== null}
+      title={t(`${copy}Title`)}
+    />
   );
 };
 

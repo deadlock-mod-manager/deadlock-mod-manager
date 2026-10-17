@@ -15,23 +15,18 @@ import {
   TriangleAlert,
   Users,
 } from "@deadlock-mods/ui/icons";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router";
 import PageTitle from "@/components/shared/page-title";
 import { AccountPrompt } from "@/components/stats/account-prompt";
 import { DashboardDataProvider } from "@/components/stats/dashboard/dashboard-context";
-import {
-  DashboardGrid,
-  type GridActions,
-} from "@/components/stats/dashboard/dashboard-grid";
+import { DashboardGrid } from "@/components/stats/dashboard/dashboard-grid";
 import { DashboardTabs } from "@/components/stats/dashboard/dashboard-tabs";
 import {
-  ConfirmDialog,
   EditToolbar,
+  PendingConfirmDialog,
 } from "@/components/stats/dashboard/dashboard-toolbar";
-import type { WidgetHealth } from "@/components/stats/dashboard/dashboard-widget";
-import { useTabTitle } from "@/components/stats/dashboard/use-tab-title";
+import { useDashboardEditor } from "@/components/stats/dashboard/use-dashboard-editor";
 import { WidgetEditor } from "@/components/stats/dashboard/widget-editor";
 import {
   widgetNeedsAccount,
@@ -49,26 +44,6 @@ import {
   useStatsRefresh,
 } from "@/hooks/use-player-stats";
 import { useSelectedSteamAccount } from "@/hooks/use-steam-accounts";
-import {
-  addTab,
-  cloneLayout,
-  type DashboardLayout,
-  type DashboardTab,
-  type DashboardWidget,
-  DEFAULT_LAYOUT,
-  duplicateWidget,
-  moveTab,
-  moveWidgetToTab,
-  parseLayout,
-  removeTab,
-  removeWidget,
-  reorderWidget,
-  resizeWidget,
-  updateTab,
-  upsertWidget,
-} from "@/lib/stats/dashboard/layout";
-import { emptyTab, tabFromTemplate } from "@/lib/stats/dashboard/templates";
-import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 const StatsSkeleton = () => (
@@ -86,38 +61,11 @@ const StatsSkeleton = () => (
   </div>
 );
 
-type EditorTarget = { tabId: string; widget: DashboardWidget | null };
-type PendingConfirm =
-  | { kind: "reset" }
-  | { kind: "discard" }
-  | { kind: "deleteTab"; tab: DashboardTab };
-
 const Stats = () => {
   const { t } = useTranslation();
-  const tabTitle = useTabTitle();
   const { analytics } = useAnalyticsContext();
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const storedLayout = usePersistedStore((state) => state.statsDashboard);
-  const setStoredLayout = usePersistedStore((state) => state.setStatsDashboard);
-  const { layout: savedLayout, recovered } = useMemo(
-    () => parseLayout(storedLayout),
-    [storedLayout],
-  );
-  // While editing, changes land in a draft; the saved layout only moves on save.
-  const [draft, setDraft] = useState<DashboardLayout | null>(null);
-  const editing = draft !== null;
-  const layout = draft ?? savedLayout;
-
-  const [editorTarget, setEditorTarget] = useState<EditorTarget | null>(null);
-  const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(
-    null,
-  );
-  const [health, setHealth] = useState<Record<string, WidgetHealth>>({});
-
-  const tabParam = searchParams.get("tab");
-  const activeTab =
-    layout.tabs.find((tab) => tab.id === tabParam) ?? layout.tabs[0];
+  const dashboard = useDashboardEditor();
+  const { activeTab, editing } = dashboard;
 
   const {
     accounts,
@@ -136,127 +84,6 @@ const Stats = () => {
     analytics.trackPageViewed(`stats-${activeTab.id}`, { tab: activeTab.id });
   }, [analytics, activeTab.id]);
 
-  const selectTab = useCallback(
-    (tabId: string) => setSearchParams({ tab: tabId }, { replace: true }),
-    [setSearchParams],
-  );
-
-  const handleHealth = useCallback(
-    (widgetId: string, next: WidgetHealth) =>
-      setHealth((current) =>
-        current[widgetId] === next ? current : { ...current, [widgetId]: next },
-      ),
-    [],
-  );
-
-  const brokenTabIds = useMemo(
-    () =>
-      new Set(
-        layout.tabs
-          .filter((tab) =>
-            tab.widgets.some((widget) => health[widget.id] === "broken"),
-          )
-          .map((tab) => tab.id),
-      ),
-    [layout.tabs, health],
-  );
-
-  const editDraft = useCallback(
-    (change: (current: DashboardLayout) => DashboardLayout) =>
-      setDraft((current) => (current ? change(current) : current)),
-    [],
-  );
-
-  const gridActions = useMemo(
-    (): GridActions => ({
-      onEdit: (widget) => setEditorTarget({ tabId: activeTab.id, widget }),
-      onRemove: (widgetId) =>
-        editDraft((current) => removeWidget(current, activeTab.id, widgetId)),
-      onDuplicate: (widgetId) =>
-        editDraft((current) =>
-          duplicateWidget(current, activeTab.id, widgetId),
-        ),
-      onResize: (widgetId, size) =>
-        editDraft((current) =>
-          resizeWidget(current, activeTab.id, widgetId, size),
-        ),
-      onReorder: (widgetId, targetId) =>
-        editDraft((current) =>
-          reorderWidget(current, activeTab.id, widgetId, targetId),
-        ),
-      onMoveToTab: (widgetId, tabId) =>
-        editDraft((current) =>
-          moveWidgetToTab(current, activeTab.id, widgetId, tabId),
-        ),
-    }),
-    [activeTab.id, editDraft],
-  );
-
-  const startEditing = () => setDraft(cloneLayout(savedLayout));
-  const isDirty =
-    draft !== null && JSON.stringify(draft) !== JSON.stringify(savedLayout);
-
-  const save = () => {
-    if (!draft) {
-      return;
-    }
-    // Saving the untouched default stores nothing, so later releases can still
-    // improve the default for everyone who never customised it.
-    setStoredLayout(
-      JSON.stringify(draft) === JSON.stringify(DEFAULT_LAYOUT) ? null : draft,
-    );
-    setDraft(null);
-  };
-
-  const cancel = () => {
-    if (isDirty) {
-      setPendingConfirm({ kind: "discard" });
-      return;
-    }
-    setDraft(null);
-  };
-
-  const addTabFrom = (templateId: string | null) => {
-    if (!draft) {
-      return;
-    }
-    const title = templateId
-      ? t(`stats.dashboard.templates.${templateId}`)
-      : t("stats.dashboard.tabs.untitled");
-    const tab = templateId
-      ? tabFromTemplate(templateId, draft, title)
-      : emptyTab(title);
-    if (tab) {
-      setDraft(addTab(draft, tab));
-      selectTab(tab.id);
-    }
-  };
-
-  const confirmPending = () => {
-    if (!pendingConfirm) {
-      return;
-    }
-    switch (pendingConfirm.kind) {
-      case "reset":
-        setDraft(cloneLayout(DEFAULT_LAYOUT));
-        break;
-      case "discard":
-        setDraft(null);
-        break;
-      case "deleteTab": {
-        const remaining = draft
-          ? removeTab(draft, pendingConfirm.tab.id)
-          : null;
-        setDraft(remaining);
-        if (remaining?.tabs[0]) {
-          selectTab(remaining.tabs[0].id);
-        }
-        break;
-      }
-    }
-    setPendingConfirm(null);
-  };
-
   const needsAccount = activeTab.widgets.some(widgetNeedsAccount);
   const needsHistory = activeTab.widgets.some(widgetNeedsHistory);
 
@@ -264,33 +91,17 @@ const Stats = () => {
     <div className='flex min-w-0 items-center gap-2'>
       <DashboardTabs
         activeTabId={activeTab.id}
-        brokenTabIds={brokenTabIds}
+        brokenTabIds={dashboard.brokenTabIds}
         editing={editing}
-        onAddTab={addTabFrom}
-        onDeleteTab={(tab) =>
-          tab.widgets.length === 0
-            ? editDraft((current) => removeTab(current, tab.id))
-            : setPendingConfirm({ kind: "deleteTab", tab })
-        }
-        onMoveTab={(tabId, offset) =>
-          editDraft((current) => moveTab(current, tabId, offset))
-        }
-        onRenameTab={(tabId, title) =>
-          editDraft((current) =>
-            updateTab(current, tabId, { title: title.trim() || null }),
-          )
-        }
-        onSelect={selectTab}
-        onTabIcon={(tabId, icon) =>
-          editDraft((current) => updateTab(current, tabId, { icon }))
-        }
-        tabs={layout.tabs}
+        onSelect={dashboard.selectTab}
+        tabs={dashboard.layout.tabs}
+        {...dashboard.tabActions}
       />
       {!editing && (
         <Button
           className='h-9 shrink-0 gap-1.5 rounded-full'
           data-testid='stats-customize'
-          onClick={startEditing}
+          onClick={dashboard.startEditing}
           size='sm'
           title={t("stats.dashboard.customizeHint")}
           variant='outline'>
@@ -353,7 +164,7 @@ const Stats = () => {
               </EmptyDescription>
             </EmptyHeader>
             <EmptyContent>
-              <Button className='gap-1.5' onClick={startEditing}>
+              <Button className='gap-1.5' onClick={dashboard.startEditing}>
                 <Pencil className='h-4 w-4' />
                 {t("stats.dashboard.customize")}
               </Button>
@@ -365,14 +176,12 @@ const Stats = () => {
 
     return (
       <DashboardGrid
-        actions={gridActions}
+        actions={dashboard.gridActions}
         editing={editing}
-        onAddWidget={() =>
-          setEditorTarget({ tabId: activeTab.id, widget: null })
-        }
-        onHealth={handleHealth}
+        onAddWidget={dashboard.addWidget}
+        onHealth={dashboard.reportHealth}
         tab={activeTab}
-        tabs={layout.tabs}
+        tabs={dashboard.layout.tabs}
       />
     );
   };
@@ -429,16 +238,14 @@ const Stats = () => {
           )}
           {editing && (
             <EditToolbar
-              isDirty={isDirty}
-              onAddWidget={() =>
-                setEditorTarget({ tabId: activeTab.id, widget: null })
-              }
-              onCancel={cancel}
-              onReset={() => setPendingConfirm({ kind: "reset" })}
-              onSave={save}
+              isDirty={dashboard.isDirty}
+              onAddWidget={dashboard.addWidget}
+              onCancel={dashboard.cancel}
+              onReset={dashboard.requestReset}
+              onSave={dashboard.save}
             />
           )}
-          {recovered && !editing && (
+          {dashboard.recovered && !editing && (
             <Alert variant='warning'>
               <TriangleAlert className='h-4 w-4' />
               <AlertDescription>
@@ -469,50 +276,19 @@ const Stats = () => {
         </div>
       </div>
 
-      {editorTarget && (
+      {dashboard.editorTarget && (
         <WidgetEditor
-          initial={editorTarget.widget}
-          onOpenChange={(open) => !open && setEditorTarget(null)}
-          onSave={(widget) => {
-            editDraft((current) =>
-              upsertWidget(current, editorTarget.tabId, widget),
-            );
-            setEditorTarget(null);
-          }}
+          initial={dashboard.editorTarget.widget}
+          onOpenChange={(open) => !open && dashboard.closeEditor()}
+          onSave={dashboard.saveWidget}
           open
         />
       )}
 
-      <ConfirmDialog
-        confirmLabel={t(
-          pendingConfirm?.kind === "deleteTab"
-            ? "stats.dashboard.confirm.deleteTabAction"
-            : pendingConfirm?.kind === "reset"
-              ? "stats.dashboard.confirm.resetAction"
-              : "stats.dashboard.confirm.discardAction",
-        )}
-        description={
-          pendingConfirm?.kind === "deleteTab"
-            ? t("stats.dashboard.confirm.deleteTabDescription", {
-                tab: tabTitle(pendingConfirm.tab),
-                count: pendingConfirm.tab.widgets.length,
-              })
-            : t(
-                pendingConfirm?.kind === "reset"
-                  ? "stats.dashboard.confirm.resetDescription"
-                  : "stats.dashboard.confirm.discardDescription",
-              )
-        }
-        onConfirm={confirmPending}
-        onOpenChange={(open) => !open && setPendingConfirm(null)}
-        open={pendingConfirm !== null}
-        title={t(
-          pendingConfirm?.kind === "deleteTab"
-            ? "stats.dashboard.confirm.deleteTabTitle"
-            : pendingConfirm?.kind === "reset"
-              ? "stats.dashboard.confirm.resetTitle"
-              : "stats.dashboard.confirm.discardTitle",
-        )}
+      <PendingConfirmDialog
+        onConfirm={dashboard.confirm}
+        onDismiss={dashboard.dismissConfirm}
+        pending={dashboard.pendingConfirm}
       />
     </DashboardDataProvider>
   );

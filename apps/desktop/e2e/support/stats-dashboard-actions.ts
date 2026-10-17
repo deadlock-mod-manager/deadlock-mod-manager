@@ -94,19 +94,36 @@ export const selectTab = (title: string) =>
     const tab = await tabByTitle(title);
     await tab.waitForClickable();
     await tab.click();
-    await expect(tab).toHaveAttribute("data-state", "active");
+    // Radix tabs switch on mousedown, which the WebView driver does not always
+    // deliver with its click; send the event it dropped.
+    const switched = await browser
+      .waitUntil(async () => (await activeTabTitle()) === title, {
+        timeout: 2_000,
+      })
+      .catch(() => false);
+    if (!switched) {
+      await browser.execute(
+        (node: HTMLElement) =>
+          node.dispatchEvent(
+            new MouseEvent("mousedown", { bubbles: true, button: 0 }),
+          ),
+        await tabByTitle(title),
+      );
+    }
+    await expectActiveTab(title);
   });
 
 /**
  * The active tab's title, looked up fresh on every poll: the embedded driver
  * keeps evaluating a node React has replaced instead of reporting it stale.
  */
+const activeTabTitle = async () =>
+  $('[data-tab-id][data-state="active"]').getText();
+
 export const expectActiveTab = (title: string) =>
-  browser.waitUntil(
-    async () =>
-      (await $('[data-tab-id][data-state="active"]').getText()) === title,
-    { timeoutMsg: `the "${title}" tab never became active` },
-  );
+  browser.waitUntil(async () => (await activeTabTitle()) === title, {
+    timeoutMsg: `the "${title}" tab never became active`,
+  });
 
 /** Sources of the widgets on the visible tab, in grid order. */
 export const widgetSources = async () =>
@@ -115,6 +132,27 @@ export const widgetSources = async () =>
       widget.getAttribute("data-widget-source"),
     ),
   );
+
+/**
+ * Waits for the visible tab to show exactly these widgets. Read right after a
+ * tab switch, the list can still hold the old tab's nodes on their way out.
+ */
+export const expectWidgetSources = async (expected: readonly string[]) => {
+  let last: Array<string | null> = [];
+  await browser
+    .waitUntil(
+      async () => {
+        last = await widgetSources();
+        return JSON.stringify(last) === JSON.stringify(expected);
+      },
+      { timeout: 10_000 },
+    )
+    .catch(() => {
+      throw new Error(
+        `widgets ${JSON.stringify(last)}, expected ${JSON.stringify(expected)}`,
+      );
+    });
+};
 
 export const widget = (source: string) => $(`[data-widget-source="${source}"]`);
 export const widgetById = (id: string) => $(`[data-widget-id="${id}"]`);
@@ -239,19 +277,29 @@ export const useWidgetMenu = (
   });
 
 /**
- * Replaces a field's text the way a person does: focus, erase, type. WebDriver's
- * clear blurs the field, which closes a Radix popover around it, and element
- * send-keys appends. `field` is a lookup, so every check sees the live node.
+ * Replaces a field's text through the native value setter plus an input event,
+ * which is what React reads from a keystroke. WebDriver's clear blurs the field
+ * (closing a Radix popover around it), element send-keys appends, and the
+ * embedded driver types named keys such as End as private-use characters.
+ * `field` is a lookup, so every check sees the live node.
  */
 export const typeOver = async (
   field: () => ChainablePromiseElement,
   value: string,
 ) => {
   await field().click();
-  const current = await field().getValue();
-  await browser.keys("End");
-  await browser.keys(Array.from({ length: current.length }, () => "Backspace"));
-  await browser.keys(value);
+  await browser.execute(
+    (node: HTMLElement, text: string) => {
+      if (!(node instanceof HTMLInputElement)) return;
+      Object.getOwnPropertyDescriptor(
+        HTMLInputElement.prototype,
+        "value",
+      )?.set?.call(node, text);
+      node.dispatchEvent(new Event("input", { bubbles: true }));
+    },
+    await field(),
+    value,
+  );
   await browser.waitUntil(async () => (await field().getValue()) === value, {
     timeoutMsg: `field never read "${value}"`,
   });
