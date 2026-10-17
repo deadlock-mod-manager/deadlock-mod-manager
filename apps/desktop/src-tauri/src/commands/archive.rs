@@ -120,7 +120,7 @@ pub async fn copy_selected_vpks_from_archive(
   drop(mod_manager);
 
   let vpk_manager = crate::mod_manager::vpk_manager::VpkManager::new();
-  let prefixed_vpks = vpk_manager.copy_selected_vpks_with_prefix(
+  let prefixed_vpks = vpk_manager.place_selected_vpks_with_prefix(
     &extracted_dir,
     &destination_path,
     &mod_id,

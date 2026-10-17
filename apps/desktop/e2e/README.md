@@ -36,6 +36,8 @@ On Arch, set `SHARP_IGNORE_GLOBAL_LIBVIPS=1` before `pnpm install` if a system l
 
 `gamebanana-file-toggle` installs two of the three VPKs in a single download, then changes the selection from the Installed Files list. Apply must stay disabled with nothing checked or after Reset. Enabling the never-installed VPK extracts it from one new download and parks the one it replaces; switching back reuses the parked file without downloading. Every step checks the manifest, exact addon bytes and parked files, before and after a restart.
 
+`gamebanana-variant-names` downloads three variant archives that each ship `pak01_dir.vpk`, and enabling installs all three under their own names (`pak01-red-skin_dir.vpk`, `pak01-blue_dir.vpk`, `pak01-green_dir.vpk`) with distinct bytes. Unticking blue in the Installed Files list parks it; Update All then replaces red and green with v2, leaves blue unselected and drops its stale parked copy, so ticking blue again fetches its v2 archive. A fresh process must see the same names, bytes and parked files.
+
 `catalog-refresh` checks that manual refresh finds a new sound during the automatic sync cooldown, disables duplicate clicks while syncing, preserves saved entries, and fetches no unchanged details on a repeated refresh. Its network assertions require only the latest index pages and one new sound hydration.
 
 `library-author-navigation` downloads a catalog mod into the library, opens its author from grid and list layouts, and verifies Back returns to Mods Library. It also checks the nested author → mod → author path, the author link in library mod details, and that Store author navigation still returns to Mods Store.

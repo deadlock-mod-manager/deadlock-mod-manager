@@ -3,6 +3,7 @@ mod progress;
 
 use crate::app_runtime::AppHandle;
 use crate::errors::Error;
+use crate::mod_manager::filesystem_helper::FileSystemHelper;
 use crate::mod_manager::perf_config::staging as perf_staging;
 use crate::mod_manager::perf_config::types::{ConfigFoundEvent, ImportVariant};
 use downloader::{DownloadProgress as FileProgress, PauseHandle, download_file_resumable};
@@ -513,7 +514,7 @@ impl DownloadManager {
     Error,
   > {
     use crate::mod_manager::archive_extractor::ArchiveExtractor;
-    use crate::mod_manager::file_tree::FileTreeAnalyzer;
+    use crate::mod_manager::file_tree::{FileTreeAnalyzer, ModFileTree};
 
     let prepared_dir = task.target_dir.join(format!("prepared-{operation_id}"));
     if prepared_dir.exists() {
@@ -524,8 +525,15 @@ impl DownloadManager {
     let prepare_result = async {
       let extractor = ArchiveExtractor::new();
       let analyzer = FileTreeAnalyzer::new();
-      let mut prepared_paths = Vec::new();
       let mut prepared_files = Vec::new();
+      let held_path = |index: usize| prepared_dir.join(format!("{index}.pending"));
+      // The update pairs prepared VPKs with installed ones by position, so they
+      // are prepared in download order once the archives' names are known.
+      enum Slot {
+        Loose(PathBuf, usize),
+        Held(usize),
+      }
+      let mut slots = Vec::new();
 
       for (archive_index, downloaded_file) in downloaded_files.iter().enumerate() {
         if !extractor.is_supported_archive(downloaded_file) {
@@ -536,6 +544,9 @@ impl DownloadManager {
               .file_name()
               .and_then(|name| name.to_str())
               .ok_or_else(|| Error::InvalidInput("VPK filename is invalid".into()))?;
+            if is_selected {
+              slots.push(Slot::Loose(downloaded_file.clone(), prepared_files.len()));
+            }
             prepared_files.push(crate::mod_manager::file_tree::ModFile {
               name: file_name.to_string(),
               path: file_name.to_string(),
@@ -543,9 +554,6 @@ impl DownloadManager {
               is_selected,
               archive_name: file_name.to_string(),
             });
-            if is_selected {
-              Self::copy_prepared_vpk(downloaded_file, &prepared_dir, &mut prepared_paths)?;
-            }
           }
           continue;
         }
@@ -609,16 +617,38 @@ impl DownloadManager {
           )));
         }
 
+        // Each archive's temp dir is gone before the names are known, so
+        // selected files wait under their index in the tree.
         for mut file in extracted_tree.files {
-          file.is_selected = selected_paths.contains(&extracted_dir.path().join(&file.path));
+          let source = extracted_dir.path().join(&file.path);
+          file.is_selected = selected_paths.contains(&source);
           file.path = format!("{archive_name}/{}", file.path);
+          if file.is_selected {
+            FileSystemHelper::new().move_file(&source, &held_path(prepared_files.len()))?;
+            slots.push(Slot::Held(prepared_files.len()));
+          }
           prepared_files.push(file);
-        }
-        for selected_path in selected_paths {
-          Self::copy_prepared_vpk(&selected_path, &prepared_dir, &mut prepared_paths)?;
         }
 
         extracted_dir.close()?;
+      }
+
+      let tree = ModFileTree::from_extracted(prepared_files);
+      let mut prepared_paths = Vec::new();
+      for slot in slots {
+        match slot {
+          Slot::Loose(source, index) => {
+            let destination = Self::prepared_destination(&prepared_dir, &tree.files[index].name)?;
+            std::fs::copy(&source, &destination)?;
+            prepared_paths.push(destination);
+          }
+          Slot::Held(index) => Self::place_prepared_vpk(
+            &held_path(index),
+            &tree.files[index].name,
+            &prepared_dir,
+            &mut prepared_paths,
+          )?,
+        }
       }
 
       if prepared_paths.is_empty() {
@@ -627,15 +657,7 @@ impl DownloadManager {
         ));
       }
 
-      let file_tree = (!prepared_files.is_empty()).then(|| {
-        let total_files = prepared_files.len();
-        crate::mod_manager::file_tree::ModFileTree {
-          files: prepared_files,
-          total_files,
-          has_multiple_files: total_files > 1,
-        }
-      });
-      Ok((prepared_paths, file_tree))
+      Ok((prepared_paths, (!tree.files.is_empty()).then_some(tree)))
     }
     .await;
 
@@ -681,35 +703,108 @@ impl DownloadManager {
     extracted_tree
       .files
       .iter()
-      .filter(|candidate| {
-        Self::file_is_selected(&candidate.archive_name, &candidate.path, selection)
-      })
+      .filter(|candidate| Self::file_is_selected(candidate, selection))
       .map(|file| extracted_dir.join(&file.path))
       .collect()
   }
 
   fn file_is_selected(
-    archive_name: &str,
-    path: &str,
+    candidate: &crate::mod_manager::file_tree::ModFile,
     selection: Option<&crate::mod_manager::file_tree::ModFileTree>,
   ) -> bool {
-    let path = path.replace('\\', "/");
-    let prefixed_path = format!("{archive_name}/{path}");
     selection
-      .filter(|selection| Self::selection_covers_archive(Some(selection), archive_name))
+      .filter(|selection| Self::selection_covers_archive(Some(selection), &candidate.archive_name))
       .is_none_or(|selection| {
-        selection
-          .files
-          .iter()
-          .filter(|file| {
-            let selected_path = file.path.replace('\\', "/");
-            (file.archive_name.is_empty() || file.archive_name == archive_name)
-              && (selected_path == path || selected_path == prefixed_path)
-          })
-          .map(|file| file.is_selected)
-          .reduce(|selected, next| selected || next)
+        let listed = |lists: fn(&_, &_) -> bool| {
+          selection
+            .files
+            .iter()
+            .filter(|&listed| lists(listed, candidate))
+            .map(|listed| listed.is_selected)
+            .reduce(|selected, next| selected || next)
+        };
+        // An entry with this file's own name beats a bare path that fits every
+        // variant. A file the selection doesn't list at all is new, so it stays.
+        listed(Self::lists_by_name)
+          .or_else(|| listed(Self::lists_by_path))
           .unwrap_or(true)
       })
+  }
+
+  /// Whether a saved tree entry is `file`, by its path in the archive. Saved
+  /// paths may or may not start with the archive's folder.
+  fn lists_by_path(
+    listed: &crate::mod_manager::file_tree::ModFile,
+    file: &crate::mod_manager::file_tree::ModFile,
+  ) -> bool {
+    let listed_path = listed.path.replace('\\', "/");
+    let relative_path = crate::mod_manager::file_tree::relative_path(file);
+    Self::lists_archive_of(listed, file)
+      && (listed_path == relative_path
+        || listed_path == format!("{}/{relative_path}", file.archive_name))
+  }
+
+  /// Trees rebuilt from installed names alone carry the name as the path, but
+  /// a qualified name still says which archive and folder it came from.
+  fn lists_by_name(
+    listed: &crate::mod_manager::file_tree::ModFile,
+    file: &crate::mod_manager::file_tree::ModFile,
+  ) -> bool {
+    Self::lists_archive_of(listed, file)
+      && listed.path == listed.name
+      && listed
+        .name
+        .eq_ignore_ascii_case(&crate::mod_manager::file_tree::variant_vpk_name(file))
+  }
+
+  fn lists_archive_of(
+    listed: &crate::mod_manager::file_tree::ModFile,
+    file: &crate::mod_manager::file_tree::ModFile,
+  ) -> bool {
+    listed.archive_name.is_empty() || listed.archive_name == file.archive_name
+  }
+
+  fn adopt_names_by_path(
+    tree: &mut crate::mod_manager::file_tree::ModFileTree,
+    names: &crate::mod_manager::file_tree::ModFileTree,
+  ) {
+    // An archive-less entry fits that path in every archive, so each entry
+    // names one file at most. The last archive wins: before names were unique,
+    // its copy is the one the sharer ended up with.
+    let mut claimed = vec![false; names.files.len()];
+    let mut adopted = vec![false; tree.files.len()];
+    let mut taken = HashSet::new();
+    for (file, was_adopted) in tree.files.iter_mut().zip(&mut adopted).rev() {
+      let unclaimed = |lists: fn(&_, &_) -> bool| {
+        names
+          .files
+          .iter()
+          .zip(&claimed)
+          .position(|(named, claimed)| !claimed && lists(named, &*file))
+      };
+      // A name made for this file beats a bare one any archive's file fits.
+      if let Some(index) = unclaimed(Self::lists_by_name).or_else(|| unclaimed(Self::lists_by_path))
+      {
+        claimed[index] = true;
+        *was_adopted = true;
+        file.name = names.files[index].name.clone();
+        taken.insert(file.name.to_lowercase());
+      } else if names
+        .files
+        .iter()
+        .any(|named| Self::lists_by_name(named, file) || Self::lists_by_path(named, file))
+      {
+        // Its entry went to another archive's copy, the one the sharer has.
+        file.is_selected = false;
+      }
+    }
+
+    // The install matches the adopted names, so the other files make way.
+    for (file, was_adopted) in tree.files.iter_mut().zip(&adopted) {
+      if !was_adopted {
+        file.name = crate::mod_manager::file_tree::claim_unique_vpk_name(&mut taken, &file.name);
+      }
+    }
   }
 
   // A selection saved from another variant says nothing about this archive.
@@ -733,27 +828,36 @@ impl DownloadManager {
       return selection.is_none();
     };
 
-    Self::file_is_selected(file_name, file_name, selection)
+    let file = crate::mod_manager::file_tree::ModFile {
+      name: file_name.to_string(),
+      path: file_name.to_string(),
+      size: 0,
+      is_selected: true,
+      archive_name: file_name.to_string(),
+    };
+    Self::file_is_selected(&file, selection)
   }
 
-  fn copy_prepared_vpk(
-    source: &std::path::Path,
+  fn place_prepared_vpk(
+    held: &std::path::Path,
+    name: &str,
     prepared_dir: &std::path::Path,
     prepared_paths: &mut Vec<PathBuf>,
   ) -> Result<(), Error> {
-    let file_name = source.file_name().ok_or_else(|| {
-      Error::InvalidInput(format!("VPK source has no filename: {}", source.display()))
-    })?;
-    let destination = prepared_dir.join(file_name);
-    if destination.exists() {
-      return Err(Error::InvalidInput(format!(
-        "Update contains duplicate VPK filename: {}",
-        file_name.to_string_lossy()
-      )));
-    }
-    std::fs::copy(source, &destination)?;
+    let destination = Self::prepared_destination(prepared_dir, name)?;
+    FileSystemHelper::new().move_file(held, &destination)?;
     prepared_paths.push(destination);
     Ok(())
+  }
+
+  fn prepared_destination(prepared_dir: &std::path::Path, name: &str) -> Result<PathBuf, Error> {
+    let destination = prepared_dir.join(name);
+    if destination.exists() {
+      return Err(Error::InvalidInput(format!(
+        "Update contains duplicate VPK filename: {name}"
+      )));
+    }
+    Ok(destination)
   }
 
   fn publish_progress(
@@ -812,7 +916,7 @@ impl DownloadManager {
       std::fs::create_dir_all(&destination_path)?;
     }
 
-    use crate::mod_manager::file_tree::FileTreeAnalyzer;
+    use crate::mod_manager::file_tree::{FileTreeAnalyzer, ModFileTree};
 
     let vpk_manager = VpkManager::new();
     let file_tree_analyzer = FileTreeAnalyzer::new();
@@ -822,6 +926,7 @@ impl DownloadManager {
     let mut seen_font_files = HashSet::new();
     let mut collected_files = Vec::new();
     let mut needs_selection = false;
+    let mut imported_archives = Vec::new();
     let extraction_root = task.target_dir.join("extracted");
     if extraction_root.exists() {
       std::fs::remove_dir_all(&extraction_root)?;
@@ -957,37 +1062,40 @@ impl DownloadManager {
             file_tree.has_multiple_files
           );
 
-          if !task.is_profile_import {
+          // Named after the loop: whether a name needs qualifying depends on
+          // the other archives.
+          if task.is_profile_import {
+            // No shared selection to choose from: stop as before, installing
+            // only the earlier archives.
+            if file_tree.has_multiple_files && task.file_tree.is_none() {
+              break;
+            }
+            let selected_paths =
+              Self::selected_extracted_vpks(&extracted_dir, &file_tree, task.file_tree.as_ref());
+            for mut file in file_tree.files {
+              let source = extracted_dir.join(&file.path);
+              file.is_selected = selected_paths.contains(&source);
+              // Extractions wait until every archive is named, so files that
+              // won't be placed, and the archive, go now.
+              if !file.is_selected
+                && let Err(error) = std::fs::remove_file(&source)
+              {
+                log::warn!("Failed to remove unselected VPK {source:?}: {error}");
+              }
+              file.path = format!("{archive_name}/{}", file.path);
+              collected_files.push(file);
+            }
+            if let Err(error) = std::fs::remove_file(file_path) {
+              log::warn!("Failed to remove extracted archive {file_path:?}: {error}");
+            }
+            imported_archives.push((extracted_dir, file_path));
+          } else {
             needs_selection |= file_tree.has_multiple_files;
             for mut file in file_tree.files {
               file.path = format!("{archive_name}/{}", file.path);
               collected_files.push(file);
             }
-            continue;
           }
-
-          if file_tree.has_multiple_files && task.file_tree.is_none() {
-            emit_fonts_found(&found_font_infos);
-            return Ok(());
-          }
-          let selected_paths =
-            Self::selected_extracted_vpks(&extracted_dir, &file_tree, task.file_tree.as_ref());
-          let mut selection = file_tree;
-          for file in &mut selection.files {
-            file.is_selected = selected_paths.contains(&extracted_dir.join(&file.path));
-          }
-          vpk_manager.copy_selected_vpks_with_prefix(
-            &extracted_dir,
-            &destination_path,
-            &task.mod_id,
-            &selection,
-          )?;
-          persist_prefixed_import(
-            &destination_path,
-            &task.mod_id,
-            vpk_manager.find_prefixed_vpks(&destination_path, &task.mod_id)?,
-          )?;
-          Self::cleanup_extracted(&extracted_dir, file_path);
         }
         Err(e) => {
           log::warn!(
@@ -1019,34 +1127,52 @@ impl DownloadManager {
     };
     let vpk_count = collected_files.len();
 
-    if !task.is_profile_import && !collected_files.is_empty() {
-      let total_files = collected_files.len();
-      let aggregated_tree = crate::mod_manager::file_tree::ModFileTree {
-        files: collected_files,
-        total_files,
-        has_multiple_files: total_files > 1,
-      };
-      if !needs_selection {
-        let copied = vpk_manager.copy_selected_vpks_with_prefix(
+    if !collected_files.is_empty() {
+      let mut aggregated_tree = ModFileTree::from_extracted(collected_files);
+      if task.is_profile_import {
+        // The import installs by the shared tree's names, so the copies take them.
+        if let Some(shared) = &task.file_tree {
+          Self::adopt_names_by_path(&mut aggregated_tree, shared);
+        }
+        vpk_manager.place_selected_vpks_with_prefix(
           &extraction_root,
           &destination_path,
           &task.mod_id,
           &aggregated_tree,
         )?;
-        persist_prefixed_import(&destination_path, &task.mod_id, copied)?;
-        for file_path in downloaded_files {
-          Self::cleanup_extracted(&extraction_root, file_path);
+        // Rescanned: the entry is replaced whole, and archives whose analysis
+        // failed were copied separately.
+        persist_prefixed_import(
+          &destination_path,
+          &task.mod_id,
+          vpk_manager.find_prefixed_vpks(&destination_path, &task.mod_id)?,
+        )?;
+      } else {
+        if !needs_selection {
+          let placed = vpk_manager.place_selected_vpks_with_prefix(
+            &extraction_root,
+            &destination_path,
+            &task.mod_id,
+            &aggregated_tree,
+          )?;
+          persist_prefixed_import(&destination_path, &task.mod_id, placed)?;
+          for file_path in downloaded_files {
+            Self::cleanup_extracted(&extraction_root, file_path);
+          }
         }
+        app_handle
+          .emit(
+            "download-file-tree",
+            DownloadFileTreeEvent {
+              mod_id: task.mod_id.clone(),
+              file_tree: aggregated_tree,
+            },
+          )
+          .ok();
       }
-      app_handle
-        .emit(
-          "download-file-tree",
-          DownloadFileTreeEvent {
-            mod_id: task.mod_id.clone(),
-            file_tree: aggregated_tree,
-          },
-        )
-        .ok();
+    }
+    for (extracted_dir, file_path) in &imported_archives {
+      Self::cleanup_extracted(extracted_dir, file_path);
     }
 
     if let Some(event) = staged_config.map(|(staging_id, variants)| ConfigFoundEvent {
@@ -1322,6 +1448,116 @@ mod tests {
       is_selected,
       archive_name: archive_name.to_string(),
     }
+  }
+
+  #[test]
+  fn profile_import_copies_take_the_shared_tree_names() {
+    // A tree shared before names were made unique.
+    let shared = ModFileTree::from_extracted(vec![
+      file("red.zip", "red.zip/pak01_dir.vpk", true),
+      file("blue.zip", "pak01_dir.vpk", true),
+    ]);
+    // Only one variant downloaded, so on its own it would keep the bare name.
+    let mut downloaded =
+      ModFileTree::from_extracted(vec![file("red.zip", "red.zip/pak01_dir.vpk", true)]);
+
+    DownloadManager::adopt_names_by_path(&mut downloaded, &shared);
+
+    assert_eq!(downloaded.files[0].name, "pak01-red_dir.vpk");
+  }
+
+  #[test]
+  fn profile_import_gives_an_archiveless_shared_name_to_one_variant() {
+    // Trees rebuilt by install or a variant swap carry no archive names.
+    let shared = ModFileTree::from_extracted(vec![file("", "pak01_dir.vpk", true)]);
+    let mut downloaded = ModFileTree::from_extracted(vec![
+      file("red.zip", "red.zip/pak01_dir.vpk", true),
+      file("blue.zip", "blue.zip/pak01_dir.vpk", true),
+    ]);
+
+    DownloadManager::adopt_names_by_path(&mut downloaded, &shared);
+
+    let names: Vec<&str> = downloaded.files.iter().map(|f| f.name.as_str()).collect();
+    assert_eq!(names, ["pak01-red_dir.vpk", "pak01_dir.vpk"]);
+    // The sharer had only blue's copy, so red isn't installed alongside it.
+    assert!(!downloaded.files[0].is_selected);
+    assert!(downloaded.files[1].is_selected);
+  }
+
+  #[test]
+  fn profile_import_moves_unshared_names_aside_for_adopted_ones() {
+    let shared = ModFileTree::from_extracted(vec![
+      file("", "blue/pak01_dir.vpk", true),
+      file("", "red/pak01_dir.vpk", true),
+    ]);
+    let mut downloaded = ModFileTree::from_extracted(vec![
+      file("blue.zip", "blue.zip/pak01_dir.vpk", true),
+      file("skins.zip", "skins.zip/blue/pak01_dir.vpk", true),
+    ]);
+    assert_eq!(downloaded.files[0].name, "pak01-blue_dir.vpk");
+
+    DownloadManager::adopt_names_by_path(&mut downloaded, &shared);
+
+    let names: Vec<&str> = downloaded.files.iter().map(|f| f.name.as_str()).collect();
+    assert_eq!(names, ["pak01-blue-2_dir.vpk", "pak01-blue_dir.vpk"]);
+  }
+
+  #[test]
+  fn profile_import_matches_qualified_names_before_bare_ones() {
+    // Rebuilt from installed names: red was staged while the bare name was free.
+    let shared = tree(vec![
+      file("", "pak01_dir.vpk", true),
+      file("", "pak01-blue_dir.vpk", true),
+    ]);
+    let mut downloaded = ModFileTree::from_extracted(vec![
+      file("red.zip", "red.zip/pak01_dir.vpk", true),
+      file("blue.zip", "blue.zip/pak01_dir.vpk", true),
+    ]);
+
+    DownloadManager::adopt_names_by_path(&mut downloaded, &shared);
+
+    let names: Vec<&str> = downloaded.files.iter().map(|f| f.name.as_str()).collect();
+    assert_eq!(names, ["pak01_dir.vpk", "pak01-blue_dir.vpk"]);
+  }
+
+  #[test]
+  fn update_selection_lets_a_variants_own_name_overrule_a_bare_path() {
+    // Rebuilt from installed names: red holds the bare name, blue is unticked.
+    let selection = tree(vec![
+      file("", "pak01_dir.vpk", true),
+      file("", "pak01-blue_dir.vpk", false),
+    ]);
+    let selected_in = |archive: &str| {
+      DownloadManager::selected_extracted_vpks(
+        std::path::Path::new("extracted"),
+        &tree(vec![file(archive, "pak01_dir.vpk", true)]),
+        Some(&selection),
+      )
+    };
+
+    assert!(selected_in("blue.zip").is_empty());
+    assert_eq!(
+      selected_in("red.zip"),
+      vec![std::path::Path::new("extracted").join("pak01_dir.vpk")]
+    );
+  }
+
+  #[test]
+  fn update_selection_finds_variants_in_trees_rebuilt_from_names() {
+    let extracted = tree(vec![file("red.zip", "pak01_dir.vpk", true)]);
+    let selection = tree(vec![
+      file("", "pak01-red_dir.vpk", true),
+      file("", "pak01-blue_dir.vpk", false),
+    ]);
+
+    assert_eq!(
+      DownloadManager::selected_extracted_vpks(
+        std::path::Path::new("extracted"),
+        &extracted,
+        Some(&selection),
+      ),
+      vec![std::path::Path::new("extracted").join("pak01_dir.vpk")]
+    );
   }
 
   #[test]

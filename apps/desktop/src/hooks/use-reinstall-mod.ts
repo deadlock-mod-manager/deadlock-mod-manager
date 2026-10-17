@@ -11,6 +11,7 @@ import { usePersistedStore } from "@/lib/store";
 import {
   type LocalMod,
   type ModDownloadItem,
+  type ModFile,
   type ModFileTree,
   ModStatus,
 } from "@/types/mods";
@@ -318,24 +319,41 @@ const restoreSelection = (
   fileTree: ModFileTree,
   snapshot: LocalMod,
 ): ModFileTree | null => {
+  const saved = snapshot.installedFileTree?.files ?? [];
   const previous = new Set(
-    (snapshot.installedFileTree?.files ?? [])
-      .filter((file) => file.is_selected)
-      .map((file) => file.name),
+    saved.filter((file) => file.is_selected).map((file) => file.name),
   );
 
   if (previous.size === 0) {
     return null;
   }
 
-  const files = fileTree.files.map((file) => ({
-    ...file,
-    is_selected: previous.has(file.name),
-  }));
+  // Trees saved before variant names were made unique use plain names, so a
+  // file is found by its archive and path first.
+  const files = fileTree.files.map((file) => {
+    const listed = saved.find(
+      (entry) =>
+        entry.archive_name &&
+        entry.archive_name === file.archive_name &&
+        relativePath(entry) === relativePath(file),
+    );
+    return {
+      ...file,
+      is_selected: listed ? listed.is_selected : previous.has(file.name),
+    };
+  });
 
   if (!files.some((file) => file.is_selected)) {
     return null;
   }
 
   return { ...fileTree, files };
+};
+
+const relativePath = (file: ModFile): string => {
+  const path = file.path.replaceAll("\\", "/");
+  const archivePrefix = `${file.archive_name}/`;
+  return path.startsWith(archivePrefix)
+    ? path.slice(archivePrefix.length)
+    : path;
 };

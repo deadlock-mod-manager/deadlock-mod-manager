@@ -31,7 +31,7 @@ interface SwapModOptionsResult {
 }
 
 interface StageDownloadArchiveResult {
-  staged_originals: string[];
+  staged: { original: string; path: string }[];
 }
 
 interface MissingVariantArchive {
@@ -159,6 +159,28 @@ const deriveOriginalsForArchive = (
     .map((f) => f.name);
 };
 
+// Trees saved before variant names were made unique can give several archives
+// the same name, which says nothing about which archive's file is on disk.
+const deriveOwnedOriginalsForArchive = (
+  mod: LocalMod,
+  archiveName: string,
+): string[] => {
+  const otherArchiveNames = new Set(
+    (mod.installedFileTree?.files ?? [])
+      .filter((f) => f.archive_name !== archiveName)
+      .map((f) => f.name),
+  );
+  return deriveOriginalsForArchive(mod, archiveName).filter(
+    (name) => !otherArchiveNames.has(name),
+  );
+};
+
+// Entries without an archive claim nothing: their file may be this archive's.
+const deriveClaimedOriginals = (mod: LocalMod, archiveName: string): string[] =>
+  (mod.installedFileTree?.files ?? [])
+    .filter((f) => f.archive_name && f.archive_name !== archiveName)
+    .map((f) => f.name);
+
 export const useModOptions = (mod: LocalMod | null) => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
@@ -206,7 +228,9 @@ export const useModOptions = (mod: LocalMod | null) => {
   const showButton =
     mod?.status === ModStatus.Installed && downloads.length > 1;
 
-  const stagedOriginalsMapRef = useRef(new Map<string, string>());
+  const stagedOriginalsMapRef = useRef(
+    new Map<string, { archiveName: string; path: string }>(),
+  );
 
   const applyMutation = useMutation<
     SwapModOptionsResult,
@@ -229,6 +253,8 @@ export const useModOptions = (mod: LocalMod | null) => {
           })
           .info("Staging new download archives");
 
+        // Archives staged earlier in this apply aren't in the tree yet.
+        const stagedThisApply: string[] = [];
         for (const archive of selectedArchives) {
           const result = await invoke<StageDownloadArchiveResult>(
             "stage_download_archive",
@@ -237,12 +263,21 @@ export const useModOptions = (mod: LocalMod | null) => {
               profileFolder,
               archiveUrl: archive.url,
               archiveName: archive.name,
+              knownOriginals: deriveOwnedOriginalsForArchive(mod, archive.name),
+              claimedOriginals: [
+                ...deriveClaimedOriginals(mod, archive.name),
+                ...stagedThisApply,
+              ],
             },
           );
-          for (const original of result.staged_originals) {
-            stagedOriginalsMapRef.current.set(original, archive.name);
+          for (const { original, path } of result.staged) {
+            stagedOriginalsMapRef.current.set(original, {
+              archiveName: archive.name,
+              path,
+            });
+            combinedSelection.push(original);
+            stagedThisApply.push(original);
           }
-          combinedSelection.push(...result.staged_originals);
         }
       }
 
@@ -323,8 +358,11 @@ export const useModOptions = (mod: LocalMod | null) => {
       );
 
       for (const f of mergedTree.files) {
-        const archiveName = stagedOriginalsMapRef.current.get(f.name);
-        if (archiveName) f.archive_name = archiveName;
+        const staged = stagedOriginalsMapRef.current.get(f.name);
+        if (staged) {
+          f.archive_name = staged.archiveName;
+          f.path = staged.path;
+        }
       }
 
       setInstalledVpks(mod.remoteId, result.installed_vpks, mergedTree);

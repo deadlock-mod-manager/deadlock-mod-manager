@@ -1534,6 +1534,45 @@ mod tests {
   }
 
   #[test]
+  fn update_mod_from_prepared_clears_only_that_mods_parked_files() {
+    let game = game_dir();
+    let addons_path = game.path().join("game").join("citadel").join("addons");
+    fs::create_dir_all(&addons_path).unwrap();
+    let base = crate::mod_manager::shard::ProfileBase::new(&addons_path).unwrap();
+    let mut manifest = ProfileVpkManifest::default();
+    write_owned_mod(
+      &base,
+      &mut manifest,
+      "target",
+      ShardIndex::FIRST,
+      "pak01_dir.vpk",
+      b"old-red",
+    );
+    manifest.save(&base).unwrap();
+    fs::write(base.join("target_pak01-blue_dir.vpk"), b"old-blue").unwrap();
+    fs::write(base.join("other_pak01-blue_dir.vpk"), b"other-blue").unwrap();
+    let prepared = game.path().join("pak01-red_dir.vpk");
+    fs::write(&prepared, b"new-red").unwrap();
+
+    test_manager(game.path())
+      .update_mod_from_prepared(
+        "target",
+        "Target",
+        std::slice::from_ref(&prepared),
+        None,
+        None,
+      )
+      .unwrap();
+
+    assert_eq!(fs::read(base.join("pak01_dir.vpk")).unwrap(), b"new-red");
+    assert!(!base.join("target_pak01-blue_dir.vpk").exists());
+    assert_eq!(
+      fs::read(base.join("other_pak01-blue_dir.vpk")).unwrap(),
+      b"other-blue"
+    );
+  }
+
+  #[test]
   fn update_mod_from_prepared_replaces_files_without_touching_other_mods() {
     let game = game_dir();
     let addons_path = game.path().join("game").join("citadel").join("addons");

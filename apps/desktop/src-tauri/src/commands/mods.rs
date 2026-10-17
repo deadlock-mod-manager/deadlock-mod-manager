@@ -4,7 +4,9 @@ use crate::app_runtime::AppHandle;
 use crate::errors::Error;
 use crate::mod_manager::Mod;
 use crate::mod_manager::archive_extractor::ArchiveExtractor;
-use crate::mod_manager::file_tree::ModFileTree;
+use crate::mod_manager::file_tree::{
+  FileTreeAnalyzer, ModFileTree, variant_vpk_name, vpk_name_candidates,
+};
 use crate::mod_manager::filesystem_helper::FileSystemHelper;
 use crate::mod_manager::vpk_manager::VpkManager;
 use crate::mod_manager::vpk_manager::staging::VpkSnapshot;
@@ -776,14 +778,17 @@ pub async fn fetch_missing_mod_variants(
     extractor.extract_archive(&archive_path, &extract_dir)?;
 
     let filesystem = FileSystemHelper::new();
-    let vpk_files = filesystem.find_files_recursive(&extract_dir, "vpk")?;
+    let archive_tree =
+      FileTreeAnalyzer::new().get_file_tree_from_extracted(&extract_dir, &safe_archive_name)?;
 
+    // Whether a wanted name is qualified depends on the mod's other archives,
+    // so both forms resolve.
     let mut by_name: std::collections::HashMap<String, std::path::PathBuf> =
       std::collections::HashMap::new();
-    for (path, _) in vpk_files {
-      if let Some(name) = path.file_name().and_then(|s| s.to_str()) {
-        by_name.insert(name.to_string(), path);
-      }
+    for file in &archive_tree.files {
+      let source = extract_dir.join(&file.path);
+      by_name.insert(variant_vpk_name(file), source.clone());
+      by_name.insert(file.name.clone(), source);
     }
 
     for original in to_fetch {
@@ -814,7 +819,14 @@ pub async fn fetch_missing_mod_variants(
 
 #[derive(Debug, Clone, Serialize)]
 pub struct StageDownloadArchiveResult {
-  pub staged_originals: Vec<String>,
+  pub staged: Vec<StagedVpk>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct StagedVpk {
+  pub original: String,
+  /// Updates and imports find a variant by this path, not its name.
+  pub path: String,
 }
 
 #[tauri::command]
@@ -825,6 +837,11 @@ pub async fn stage_download_archive(
   profile_folder: Option<String>,
   archive_url: String,
   archive_name: String,
+  // Names the mod's file tree already gives this archive's files, so
+  // re-staging keeps them.
+  known_originals: Vec<String>,
+  // Names the tree gives other archives' files.
+  claimed_originals: Vec<String>,
 ) -> Result<StageDownloadArchiveResult, Error> {
   log::info!("Staging download archive for {mod_id} (profile: {profile_folder:?}): {archive_name}");
 
@@ -884,29 +901,57 @@ pub async fn stage_download_archive(
   extractor.extract_archive(&archive_path, &extract_dir)?;
 
   let filesystem = FileSystemHelper::new();
-  let vpk_files = filesystem.find_files_recursive(&extract_dir, "vpk")?;
+  let archive_tree =
+    FileTreeAnalyzer::new().get_file_tree_from_extracted(&extract_dir, &safe_archive_name)?;
 
-  if vpk_files.is_empty() {
+  if archive_tree.files.is_empty() {
     return Err(Error::InvalidInput(format!(
       "No VPK files found in archive {safe_archive_name}"
     )));
   }
 
   let prefix = format!("{mod_id}_");
-  let mut staged: Vec<String> = Vec::new();
+  let lowercase = |names: &[String]| -> std::collections::HashSet<String> {
+    names.iter().map(|name| name.to_lowercase()).collect()
+  };
+  let known = lowercase(&known_originals);
+  let claimed = lowercase(&claimed_originals);
+  // Names other variants of the mod already hold, enabled or not.
+  let mut taken: std::collections::HashSet<String> = VpkManager::new()
+    .find_prefixed_vpks(&addons_path, &mod_id)?
+    .iter()
+    .filter_map(|name| name.strip_prefix(&prefix))
+    .map(str::to_lowercase)
+    .collect();
+  if let Some(entry) = ProfileVpkManifest::load(&addons_path)?.mods.get(&mod_id) {
+    taken.extend(lowercase(&entry.original_vpk_names));
+  }
 
-  for (path, _) in &vpk_files {
-    if let Some(original) = path.file_name().and_then(|s| s.to_str()) {
-      let dest = addons_path.join(format!("{prefix}{original}"));
-      if dest.exists() {
-        log::info!("Skipping already-staged VPK: {original}");
-        staged.push(original.to_string());
-        continue;
-      }
-      filesystem.copy_file(path, &dest)?;
+  let mut staged: Vec<StagedVpk> = Vec::new();
+
+  for file in &archive_tree.files {
+    let source = extract_dir.join(&file.path);
+    let original = staging_name(
+      file,
+      &source,
+      &addons_path,
+      &prefix,
+      &known,
+      &claimed,
+      &taken,
+    );
+
+    let dest = addons_path.join(format!("{prefix}{original}"));
+    if dest.exists() {
+      log::info!("Skipping already-staged VPK: {original}");
+    } else {
+      filesystem.copy_file(&source, &dest)?;
       log::info!("Staged VPK {original} -> {}", dest.display());
-      staged.push(original.to_string());
     }
+    staged.push(StagedVpk {
+      original,
+      path: file.path.clone(),
+    });
   }
 
   log::info!(
@@ -915,9 +960,45 @@ pub async fn stage_download_archive(
     staged
   );
 
-  Ok(StageDownloadArchiveResult {
-    staged_originals: staged,
-  })
+  Ok(StageDownloadArchiveResult { staged })
+}
+
+/// A file already staged with identical contents is this one - a retry after
+/// a failed apply, or a tree too old to say which archive owns the name - so
+/// its name counts as free. A name another archive claims never is, even for
+/// a shared file: deselecting either archive would remove it for both.
+fn staging_name(
+  file: &crate::mod_manager::file_tree::ModFile,
+  source: &std::path::Path,
+  addons_path: &std::path::Path,
+  prefix: &str,
+  known: &std::collections::HashSet<String>,
+  claimed: &std::collections::HashSet<String>,
+  taken: &std::collections::HashSet<String>,
+) -> String {
+  let qualified = variant_vpk_name(file);
+  if known.contains(&file.name.to_lowercase()) {
+    return file.name.clone();
+  }
+  if known.contains(&qualified.to_lowercase()) {
+    return qualified;
+  }
+  let filesystem = FileSystemHelper::new();
+  std::iter::once(file.name.clone())
+    .chain(vpk_name_candidates(&qualified))
+    .find(|name| {
+      let staged = addons_path.join(format!("{prefix}{name}"));
+      if claimed.contains(&name.to_lowercase()) {
+        false
+      } else if staged.exists() {
+        filesystem
+          .files_have_same_contents(source, &staged)
+          .unwrap_or(false)
+      } else {
+        !taken.contains(&name.to_lowercase())
+      }
+    })
+    .expect("numbered names never run out")
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -1087,4 +1168,84 @@ pub async fn switch_mod_download_variant(
     original_vpk_names: variant_result.original_vpk_names,
     file_tree: variant_result.file_tree,
   })
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use crate::mod_manager::file_tree::ModFile;
+  use std::collections::HashSet;
+
+  fn blue_vpk() -> ModFile {
+    ModFile {
+      name: "pak01_dir.vpk".to_string(),
+      path: "pak01_dir.vpk".to_string(),
+      size: 4,
+      is_selected: true,
+      archive_name: "blue.zip".to_string(),
+    }
+  }
+
+  fn stage(staged: &[(&str, &[u8])]) -> String {
+    stage_claimed(staged, &[])
+  }
+
+  /// Stages the `blue` VPK next to files already staged under these names,
+  /// with other archives claiming the `claimed` names.
+  fn stage_claimed(staged: &[(&str, &[u8])], claimed: &[&str]) -> String {
+    let temp = tempfile::tempdir().unwrap();
+    let source = temp.path().join("pak01_dir.vpk");
+    std::fs::write(&source, b"blue").unwrap();
+    let addons_path = temp.path().join("addons");
+    std::fs::create_dir_all(&addons_path).unwrap();
+    for (name, contents) in staged {
+      std::fs::write(addons_path.join(format!("123_{name}")), contents).unwrap();
+    }
+    let taken = staged.iter().map(|(name, _)| name.to_string()).collect();
+
+    staging_name(
+      &blue_vpk(),
+      &source,
+      &addons_path,
+      "123_",
+      &HashSet::new(),
+      &claimed.iter().map(|name| name.to_string()).collect(),
+      &taken,
+    )
+  }
+
+  #[test]
+  fn a_shared_file_another_archive_claims_gets_its_own_copy() {
+    assert_eq!(
+      stage_claimed(&[("pak01_dir.vpk", b"blue")], &["pak01_dir.vpk"]),
+      "pak01-blue_dir.vpk"
+    );
+  }
+
+  #[test]
+  fn restaging_the_file_already_under_its_plain_name_reuses_it() {
+    assert_eq!(stage(&[("pak01_dir.vpk", b"blue")]), "pak01_dir.vpk");
+  }
+
+  #[test]
+  fn another_variant_under_the_plain_name_gets_a_qualified_name() {
+    assert_eq!(stage(&[("pak01_dir.vpk", b"red!")]), "pak01-blue_dir.vpk");
+  }
+
+  #[test]
+  fn another_archive_under_the_same_qualified_name_gets_a_numbered_one() {
+    // `Blue.rar` qualifies to the same name as `blue.zip`.
+    let staged: &[(&str, &[u8])] = &[("pak01_dir.vpk", b"red!"), ("pak01-blue_dir.vpk", b"BLUE")];
+    assert_eq!(stage(staged), "pak01-blue-2_dir.vpk");
+  }
+
+  #[test]
+  fn restaging_reuses_a_numbered_copy_from_a_failed_attempt() {
+    let staged: &[(&str, &[u8])] = &[
+      ("pak01_dir.vpk", b"red!"),
+      ("pak01-blue_dir.vpk", b"BLUE"),
+      ("pak01-blue-2_dir.vpk", b"blue"),
+    ];
+    assert_eq!(stage(staged), "pak01-blue-2_dir.vpk");
+  }
 }
