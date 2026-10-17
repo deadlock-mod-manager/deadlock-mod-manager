@@ -657,6 +657,8 @@ pub struct FetchMissingModVariantsResult {
 
 #[tauri::command]
 pub async fn fetch_missing_mod_variants(
+  catalog_state: State<'_, super::gamebanana_catalog::GameBananaCatalogState>,
+  policy: State<'_, super::policy::PolicyState>,
   mod_id: String,
   profile_folder: Option<String>,
   archives: Vec<MissingVariantArchive>,
@@ -721,32 +723,47 @@ pub async fn fetch_missing_mod_variants(
       continue;
     }
 
-    validate_download_url(&archive.url)?;
     let safe_archive_name = sanitize_archive_name(&archive.archive_name)?;
+    let file = resolve_download_files(
+      &catalog_state,
+      &policy,
+      &mod_id,
+      &[DownloadFileDto {
+        url: archive.url.clone(),
+        name: safe_archive_name.clone(),
+        size: 0,
+        md5_checksum: None,
+      }],
+      None,
+    )
+    .await?
+    .into_iter()
+    .next()
+    .ok_or(Error::ModFileNotFound)?;
 
     log::info!(
       "Downloading archive {} from {} for {} missing originals",
       safe_archive_name,
-      archive.url,
+      file.url,
       to_fetch.len()
     );
 
     let response = client
-      .get(&archive.url)
+      .get(&file.url)
       .send()
       .await
-      .map_err(|e| Error::Network(format!("Failed to fetch {}: {e}", archive.url)))?;
+      .map_err(|e| Error::Network(format!("Failed to fetch {}: {e}", file.url)))?;
 
     if !response.status().is_success() {
       return Err(Error::DownloadFailed(format!(
         "{} returned status {}",
-        archive.url,
+        file.url,
         response.status()
       )));
     }
 
     let bytes = response.bytes().await.map_err(|e| {
-      Error::DownloadFailed(format!("Failed reading body for {}: {e}", archive.url))
+      Error::DownloadFailed(format!("Failed reading body for {}: {e}", file.url))
     })?;
 
     let temp_dir = tempfile::tempdir()?;
