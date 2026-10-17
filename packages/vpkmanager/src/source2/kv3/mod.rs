@@ -40,6 +40,8 @@ pub struct EncodingStats {
     pub typed_arrays: usize,
     pub auxiliary_arrays: usize,
     pub narrow_numbers: usize,
+    /// Wire types requiring conversion before a v4 rebuild, including empty-array subtypes.
+    pub unsupported_v4_types: usize,
 }
 
 /// Numeric tags for KV3 binary node types (VRF `KV3BinaryNodeType`). Shared by
@@ -110,6 +112,19 @@ pub fn decode_preserving(data: &[u8]) -> Result<(Value, Encoding), DecodeError> 
 /// Inspect wire-level KV3 structure while decoding the value tree.
 pub fn encoding_stats(data: &[u8]) -> Result<EncodingStats, DecodeError> {
     reader::encoding_stats(data)
+}
+
+/// Check replacement v4 blocks against the writer's target contract. Reading
+/// newer tags successfully does not make them valid in the engine's v4 loader.
+pub(crate) fn validate_rebuilt_payload(data: &[u8]) -> Result<(), DecodeError> {
+    if data.starts_with(&0x4B56_3304_u32.to_le_bytes())
+        && encoding_stats(data)?.unsupported_v4_types != 0
+    {
+        return Err(DecodeError::Kv3(
+            "rebuilt v4 payload contains unsupported node types",
+        ));
+    }
+    Ok(())
 }
 
 /// Encode a [`Value`] tree into an uncompressed binary KV3 v4 DATA payload,

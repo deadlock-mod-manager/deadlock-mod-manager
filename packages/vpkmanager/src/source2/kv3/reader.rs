@@ -591,6 +591,7 @@ fn read_type(ctx: &mut Ctx) -> Result<(u8, u8), DecodeError> {
         flag = ctx.types.u8()?;
     }
     ctx.stats.nodes += 1;
+    ctx.stats.unsupported_v4_types += usize::from(databyte > node::ARRAY_TYPE_BYTE_LENGTH);
     ctx.stats.flagged_nodes += usize::from(flag != 0);
     ctx.stats.typed_arrays += usize::from(matches!(
         databyte,

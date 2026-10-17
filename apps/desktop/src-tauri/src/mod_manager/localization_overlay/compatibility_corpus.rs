@@ -562,6 +562,53 @@ fn inspect_legacy_model_contracts() {
   }
 }
 
+fn validate_exported_blocks(bytes: &[u8], path: &str) -> Result<usize, String> {
+  let resource = Resource::parse(bytes).map_err(|error| format!("{path}: {error}"))?;
+  let independent = source2_model::resource::Resource::parse(bytes.to_vec())
+    .map_err(|error| format!("{path}: {error}"))?;
+  let mut validated = 0;
+  for (index, block) in resource.blocks().iter().enumerate() {
+    let raw = resource.get_block_by_index(index).unwrap();
+    let Some(magic) = raw.get(..4) else {
+      continue;
+    };
+    if u32::from_le_bytes(magic.try_into().unwrap()) & 0xFFFF_FF00 != 0x4B56_3300 {
+      continue;
+    }
+    let label = format!("{path}/{}[{index}]", String::from_utf8_lossy(&block.kind));
+    let stats = kv3::encoding_stats(raw).map_err(|error| format!("{label}: {error}"))?;
+    if stats.version == 4 && stats.unsupported_v4_types != 0 {
+      return Err(format!("{label}: unsupported v4 wire types"));
+    }
+    let value = kv3::decode(raw).map_err(|error| format!("{label}: {error}"))?;
+    let other = &independent.blocks[index];
+    let decoded =
+      source2_model::kv3::parse(&independent.data[other.offset..other.offset + other.size])
+        .map_err(|error| format!("{label}: independent decode: {error}"))?;
+    if !super::tests::independent_values_equal(&value, &decoded) {
+      return Err(format!("{label}: independent values differ"));
+    }
+    validated += 1;
+  }
+  Ok(validated)
+}
+
+#[test]
+fn exported_mesh_validation_catches_tags_even_when_both_decoders_accept_them() {
+  let mut bytes = tests::compiled_resource(vec![("value".into(), Kv3Value::Bool(true))]);
+  bytes[16..20].copy_from_slice(b"MDAT");
+  assert_eq!(validate_exported_blocks(&bytes, "test.vmdl_c").unwrap(), 1);
+  let block = Resource::parse(&bytes).unwrap().blocks()[0];
+  let datatype = block.offset as usize + block.size as usize - 5;
+  assert_eq!(bytes[datatype], 13);
+  bytes[datatype] = 27;
+  assert!(
+    validate_exported_blocks(&bytes, "test.vmdl_c")
+      .unwrap_err()
+      .contains("MDAT[0]: unsupported v4")
+  );
+}
+
 #[test]
 #[ignore = "requires DMM_REAL_CITADEL, DMM_COMPAT_CORPUS and DMM_COMPAT_REPORT"]
 fn run_obsolete_mod_corpus() {
@@ -571,6 +618,10 @@ fn run_obsolete_mod_corpus() {
       .unwrap();
   assert!(!cases.is_empty());
   let output = TempDir::new().unwrap();
+  let exports = std::env::var_os("DMM_COMPAT_EXPORT_ROOT").map(PathBuf::from);
+  if let Some(root) = &exports {
+    fs::create_dir_all(root).unwrap();
+  }
   let mut reports = Vec::new();
   let resources = resources::ResourceSnapshot::open(
     &citadel,
@@ -622,31 +673,34 @@ fn run_obsolete_mod_corpus() {
       Ok(plan) => {
         let archive_path = output.path().join(format!("{}.vpk", case.id));
         let written = plan.write(&archive_path, &[]);
-        let (packed, error) = match written {
+        let (packed, error, validated_blocks) = match written {
           Ok(applied) => {
+            let mut validated_blocks = 0;
+            let mut error = None;
             if applied.has_overlay {
+              if let Some(root) = &exports {
+                fs::copy(&archive_path, root.join(format!("{}_dir.vpk", case.id))).unwrap();
+              }
               let archive = VpkArchive::open(&archive_path).unwrap();
               assert_eq!(archive.list_entries().len(), applied.packed_files);
               for path in archive.list_entries() {
                 let bytes = archive.extract_entry(&path).unwrap();
                 if path.ends_with("_c") {
-                  let (_, value, _) = decode_compiled_data(&bytes, &path).unwrap();
-                  let independent = source2_model::resource::Resource::parse(bytes).unwrap();
-                  let decoded =
-                    source2_model::kv3::parse(independent.block_bytes("DATA").unwrap()).unwrap();
-                  assert!(
-                    super::tests::independent_values_equal(&value, &decoded),
-                    "independent decode: {} / {path}",
-                    case.name
-                  );
+                  match validate_exported_blocks(&bytes, &path) {
+                    Ok(count) => validated_blocks += count,
+                    Err(failure) => {
+                      error = Some(failure);
+                      break;
+                    }
+                  }
                 }
               }
             }
-            (applied.packed_files, None)
+            (applied.packed_files, error, validated_blocks)
           }
-          Err(error) => (0, Some(error.to_string())),
+          Err(error) => (0, Some(error.to_string()), 0),
         };
-        serde_json::json!({"id":case.id,"name":case.name,"url":case.url,"sha256":case.sha256,"categories":categories,"analysis":plan.analysis,"packedFiles":packed,"error":error,"elapsedMs":started.elapsed().as_millis(),"runtime":"not-tested"})
+        serde_json::json!({"id":case.id,"name":case.name,"url":case.url,"sha256":case.sha256,"categories":categories,"analysis":plan.analysis,"packedFiles":packed,"validatedKv3Blocks":validated_blocks,"error":error,"elapsedMs":started.elapsed().as_millis(),"runtime":"not-tested"})
       }
       Err(error) => {
         serde_json::json!({"id":case.id,"name":case.name,"url":case.url,"sha256":case.sha256,"categories":categories,"error":error.to_string(),"elapsedMs":started.elapsed().as_millis(),"runtime":"not-tested"})
@@ -668,12 +722,12 @@ fn run_obsolete_mod_corpus() {
     }
     println!("{}: {}", case.id, report.get("error").unwrap());
     reports.push(report);
+    fs::write(
+      std::env::var("DMM_COMPAT_REPORT").unwrap(),
+      serde_json::to_vec_pretty(&reports).unwrap(),
+    )
+    .unwrap();
   }
-  fs::write(
-    std::env::var("DMM_COMPAT_REPORT").unwrap(),
-    serde_json::to_vec_pretty(&reports).unwrap(),
-  )
-  .unwrap();
   assert!(
     reports.iter().all(|report| report["error"].is_null()),
     "corpus contains analysis/export failures; inspect the report"

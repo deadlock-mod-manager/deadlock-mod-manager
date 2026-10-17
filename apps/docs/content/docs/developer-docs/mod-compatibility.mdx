@@ -245,6 +245,15 @@ its camera. Repair revision 28 rebuilds affected overlays. The installed Shiv
 Josuke and Skeleton Talon regression verifies their combined repair export and
 unchanged geometry; in-game acceptance remains a separate check.
 
+The shared resource rebuild function validates replacement v4 KV3 payloads for
+every block kind, including mesh `MDAT` and control `CTRL` blocks. Its target
+format check rejects newer-only wire types even when the decoder understands
+them, including subtypes on empty typed arrays. Untouched legacy blocks remain
+opaque and are copied exactly. The opt-in corpus runner independently decodes
+every versioned KV3 block in exported resources, records block counts and
+failures per mod, and can retain overlays with `DMM_COMPAT_EXPORT_ROOT` for
+external inspection. Successful rebuilding does not establish in-game acceptance.
+
 Hero model relocation follows the current `heroes.vdata_c` model bindings. It
 uses previously observed bindings for the same hero definition to identify an
 old primary model, rather than matching display names, mod titles, or filenames.
