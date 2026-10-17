@@ -1,9 +1,8 @@
-import { Label } from "@deadlock-mods/ui/components/label";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { Switch } from "@deadlock-mods/ui/components/switch";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
+import { SettingToggleRow } from "@/components/settings/setting-row";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { isTauriError } from "@/types/tauri";
@@ -58,32 +57,17 @@ export const CrosshairsToggle = ({
   };
 
   return (
-    <div className='flex flex-wrap items-center justify-between gap-4'>
-      <div className='min-w-0 flex-1 space-y-1'>
-        <Label
-          htmlFor='toggle-setting-crosshairs'
-          className='font-bold text-sm'>
-          {t("settings.customCrosshairs")}
-        </Label>
-        <p className='text-muted-foreground text-sm'>
-          {t(
-            compact
-              ? "crosshairs.toggleHint"
-              : "settings.customCrosshairsDescription",
-          )}
-        </p>
-      </div>
-      <div className='flex items-center gap-2'>
-        <Switch
-          checked={crosshairsEnabled}
-          disabled={toggleMutation.isPending}
-          onCheckedChange={handleToggle}
-          id='toggle-setting-crosshairs'
-        />
-        <Label htmlFor='toggle-setting-crosshairs'>
-          {crosshairsEnabled ? t("status.enabled") : t("status.disabled")}
-        </Label>
-      </div>
-    </div>
+    <SettingToggleRow
+      checked={crosshairsEnabled}
+      description={t(
+        compact
+          ? "crosshairs.toggleHint"
+          : "settings.customCrosshairsDescription",
+      )}
+      disabled={toggleMutation.isPending}
+      id='toggle-setting-crosshairs'
+      onCheckedChange={handleToggle}
+      title={t("settings.customCrosshairs")}
+    />
   );
 };

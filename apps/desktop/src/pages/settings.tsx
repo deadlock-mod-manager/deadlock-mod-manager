@@ -4,7 +4,6 @@ import {
   customSettingTypeHuman,
 } from "@deadlock-mods/shared";
 import { Button } from "@deadlock-mods/ui/components/button";
-import { Label } from "@deadlock-mods/ui/components/label";
 import {
   Select,
   SelectContent,
@@ -80,6 +79,7 @@ import Section, { SectionSkeleton } from "@/components/settings/section";
 import SettingCard, {
   SettingCardSkeleton,
 } from "@/components/settings/setting-card";
+import { SettingRow } from "@/components/settings/setting-row";
 import { SettingsSearch } from "@/components/settings/settings-search";
 import SystemSettings from "@/components/settings/system-settings";
 import ThemeSwitcher from "@/components/settings/theme-switcher";
@@ -155,6 +155,7 @@ const getAutoexecConfig = async () => {
 
 const CONDEBUG_LAUNCH_OPTION_ID = "condebug-launch-option";
 const SEARCH_HIGHLIGHT_MS = 1600;
+const THEME_DESCRIPTION_ID = "settings-theme-description";
 
 type SettingsNavItemProps = {
   value: string;
@@ -791,17 +792,12 @@ const CustomSettings = ({ value }: { value?: string }) => {
               searchId='appearance'
               title={t("settings.appearance")}>
               <div className='flex flex-col gap-4'>
-                <div className='flex items-center justify-between'>
-                  <div className='space-y-1'>
-                    <Label className='font-bold text-sm'>
-                      {t("settings.theme")}
-                    </Label>
-                    <p className='text-muted-foreground text-sm'>
-                      {t("settings.themeDescription")}
-                    </p>
-                  </div>
-                  <ThemeSwitcher />
-                </div>
+                <SettingRow
+                  description={t("settings.themeDescription")}
+                  descriptionId={THEME_DESCRIPTION_ID}
+                  title={t("settings.theme")}>
+                  <ThemeSwitcher descriptionId={THEME_DESCRIPTION_ID} />
+                </SettingRow>
 
                 <VolumeControl />
 
@@ -822,15 +818,12 @@ const CustomSettings = ({ value }: { value?: string }) => {
               description={t("settings.defaultSortDescription")}
               searchId='default-sort'
               title={t("settings.defaultSortValue")}>
-              <div className='flex flex-col gap-2'>
-                <Label className='font-bold text-sm' id='default-sort-label'>
-                  {t("settings.defaultSort")}
-                </Label>
+              <SettingRow title={t("settings.defaultSort")}>
                 <Select
                   onValueChange={(v) => setDefaultSort(v as SortType)}
                   value={defaultSort}>
                   <SelectTrigger
-                    aria-labelledby='default-sort-label'
+                    aria-label={t("settings.defaultSort")}
                     className='w-36'>
                     <SelectValue
                       placeholder={t("settings.selectDefaultSort")}
@@ -851,7 +844,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
                     </SelectGroup>
                   </SelectContent>
                 </Select>
-              </div>
+              </SettingRow>
             </Section>
 
             <Section

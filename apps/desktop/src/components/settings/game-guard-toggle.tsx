@@ -1,8 +1,7 @@
-import { Label } from "@deadlock-mods/ui/components/label";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { Switch } from "@deadlock-mods/ui/components/switch";
 import { useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
+import { SettingToggleRow } from "@/components/settings/setting-row";
 import { applyGameGuardSetting } from "@/lib/game-guard";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
@@ -30,30 +29,13 @@ export const GameGuardToggle = () => {
   });
 
   return (
-    <div className='flex items-center justify-between'>
-      <div className='space-y-1'>
-        <Label
-          className='font-bold text-sm'
-          htmlFor='toggle-setting-game-guard'>
-          {t("settings.gameGuard")}
-        </Label>
-        <p className='text-muted-foreground text-sm'>
-          {t("settings.gameGuardDescription")}
-        </p>
-      </div>
-      <div className='flex items-center gap-2'>
-        <Switch
-          checked={blockActionsWhileGameRunning}
-          disabled={toggleMutation.isPending}
-          id='toggle-setting-game-guard'
-          onCheckedChange={(enabled) => toggleMutation.mutate(enabled)}
-        />
-        <Label htmlFor='toggle-setting-game-guard'>
-          {blockActionsWhileGameRunning
-            ? t("status.enabled")
-            : t("status.disabled")}
-        </Label>
-      </div>
-    </div>
+    <SettingToggleRow
+      checked={blockActionsWhileGameRunning}
+      description={t("settings.gameGuardDescription")}
+      disabled={toggleMutation.isPending}
+      id='toggle-setting-game-guard'
+      onCheckedChange={(enabled) => toggleMutation.mutate(enabled)}
+      title={t("settings.gameGuard")}
+    />
   );
 };

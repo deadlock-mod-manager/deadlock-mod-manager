@@ -1,5 +1,4 @@
 import { Button } from "@deadlock-mods/ui/components/button";
-import { Label } from "@deadlock-mods/ui/components/label";
 import { Progress } from "@deadlock-mods/ui/components/progress";
 import {
   Select,
@@ -9,7 +8,6 @@ import {
   SelectValue,
 } from "@deadlock-mods/ui/components/select";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { Switch } from "@deadlock-mods/ui/components/switch";
 import {
   Table,
   TableBody,
@@ -32,6 +30,10 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { RestoreBackupDialog } from "@/components/settings/restore-backup-dialog";
+import {
+  SettingRow,
+  SettingToggleRow,
+} from "@/components/settings/setting-row";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import type { AddonsBackup, RestoreStrategy } from "@/types/backup";
@@ -65,6 +67,8 @@ const MAX_BACKUP_OPTIONS = [
   { value: "10", label: "10" },
   { value: "0", label: "unlimited" },
 ];
+
+const MAX_BACKUP_DESCRIPTION_ID = "settings-max-backup-count-description";
 
 export const AddonsBackupManagement = () => {
   const { t } = useTranslation();
@@ -337,40 +341,23 @@ export const AddonsBackupManagement = () => {
   return (
     <div className='space-y-4'>
       <div className='space-y-4 rounded-lg border p-4'>
-        <div className='flex items-center justify-between'>
-          <div className='space-y-1'>
-            <Label className='font-bold text-sm'>
-              {t("settings.autoBackupEnabled")}
-            </Label>
-            <p className='text-muted-foreground text-sm'>
-              {t("settings.autoBackupEnabledDescription")}
-            </p>
-          </div>
-          <div className='flex items-center gap-2'>
-            <Switch
-              checked={backupEnabled}
-              onCheckedChange={setBackupEnabled}
-              id='toggle-auto-backup'
-            />
-            <Label htmlFor='toggle-auto-backup'>
-              {backupEnabled ? t("status.enabled") : t("status.disabled")}
-            </Label>
-          </div>
-        </div>
+        <SettingToggleRow
+          checked={backupEnabled}
+          description={t("settings.autoBackupEnabledDescription")}
+          id='toggle-auto-backup'
+          onCheckedChange={setBackupEnabled}
+          title={t("settings.autoBackupEnabled")}
+        />
 
-        <div className='flex items-center justify-between'>
-          <div className='space-y-1'>
-            <Label className='font-bold text-sm'>
-              {t("settings.maxBackupCount")}
-            </Label>
-            <p className='text-muted-foreground text-sm'>
-              {t("settings.maxBackupCountDescription")}
-            </p>
-          </div>
+        <SettingRow
+          description={t("settings.maxBackupCountDescription")}
+          descriptionId={MAX_BACKUP_DESCRIPTION_ID}
+          title={t("settings.maxBackupCount")}>
           <Select
             value={String(maxBackupCount)}
             onValueChange={handleMaxBackupCountChange}>
             <SelectTrigger
+              aria-describedby={MAX_BACKUP_DESCRIPTION_ID}
               aria-label={t("settings.maxBackupCount")}
               className='w-32'>
               <SelectValue />
@@ -385,7 +372,7 @@ export const AddonsBackupManagement = () => {
               ))}
             </SelectContent>
           </Select>
-        </div>
+        </SettingRow>
       </div>
 
       <div className='flex items-center justify-between'>
