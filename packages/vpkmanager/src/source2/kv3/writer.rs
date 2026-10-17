@@ -12,7 +12,8 @@
 //! `DOUBLE`, `Array` -> generic `ARRAY`). The preserving encoder carries flags,
 //! numeric widths, and typed-array structure through an edit. Version 5
 //! auxiliary arrays become equivalent version 4 typed arrays because this
-//! writer intentionally emits a single uncompressed buffer.
+//! writer intentionally emits a single uncompressed buffer. Compact unsigned
+//! constants use UINT32 lanes: the engine's v4 mesh reader rejects their tags.
 
 use super::Format;
 use super::node;
@@ -251,6 +252,7 @@ fn write_value_preserving(
 fn preserved_datatype(value: &Value, preferred: u8) -> u8 {
     use node::*;
     match (value, preferred) {
+        (Value::UInt(0), UINT32_ZERO) | (Value::UInt(1), UINT32_ONE) => UINT32,
         (Value::Array(items), ARRAY_TYPE_AUXILIARY_BUFFER) if !items.is_empty() => ARRAY_TYPED,
         (Value::Array(items), ARRAY_TYPE_BYTE_LENGTH) if items.len() > usize::from(u8::MAX) => {
             ARRAY_TYPED
@@ -593,7 +595,7 @@ mod tests {
     }
 
     #[test]
-    fn current_game_compact_integers_preserve_flags_and_neighbor_edits() {
+    fn current_game_compact_integers_use_v4_tags_and_preserve_flags_and_neighbor_edits() {
         let value = Value::Object(vec![
             ("zero".into(), Value::UInt(0)),
             ("one".into(), Value::UInt(1)),
@@ -613,13 +615,45 @@ mod tests {
         let encoded = encode_preserving(&value, &encoding, &Format([0; 16])).unwrap();
         let (decoded, actual) = super::super::decode_preserving(&encoded).unwrap();
         assert_eq!(decoded, value);
+        assert_eq!(actual.get("zero").unwrap().datatype, node::UINT32);
+        assert_eq!(actual.get("one").unwrap().datatype, node::UINT32);
         assert!(encoding_preserved(&value, &encoding, &actual));
-        let edited = super::super::set_doubles(&encoded, &[(vec![super::super::Seg::Key("edited".into())], 8.0)]).unwrap();
+        let edited = super::super::set_doubles(
+            &encoded,
+            &[(vec![super::super::Seg::Key("edited".into())], 8.0)],
+        )
+        .unwrap();
         let decoded = super::super::decode(&edited).unwrap();
         assert_eq!(decoded.get("zero"), value.get("zero"));
         assert_eq!(decoded.get("one"), value.get("one"));
         assert_eq!(decoded.get("signed"), value.get("signed"));
         assert_eq!(decoded.get("edited"), Some(&Value::Double(8.0)));
+    }
+
+    #[test]
+    fn compact_unsigned_typed_arrays_use_uint32_lanes() {
+        for datatype in [node::ARRAY_TYPED, node::ARRAY_TYPE_AUXILIARY_BUFFER] {
+            let value = Value::Array(vec![Value::UInt(0), Value::UInt(1)]);
+            let encoding = Encoding {
+                datatype,
+                flag: 0,
+                children: EncodingChildren::Array(vec![
+                    leaf(node::UINT32_ZERO, 4),
+                    leaf(node::UINT32_ONE, 4),
+                ]),
+            };
+            let bytes = encode_preserving(&value, &encoding, &Format([0; 16])).unwrap();
+            let (decoded, actual) = super::super::decode_preserving(&bytes).unwrap();
+            assert_eq!(decoded, value);
+            assert!(encoding_preserved(&value, &encoding, &actual));
+            assert!(
+                actual
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .all(|item| { item.datatype == node::UINT32 && item.flag == 4 })
+            );
+        }
     }
 
     #[test]

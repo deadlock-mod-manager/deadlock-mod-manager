@@ -3,6 +3,94 @@
 use super::*;
 
 #[test]
+#[ignore = "requires DMM_REAL_CITADEL, DMM_SHIV_VPK and DMM_GT_VPK"]
+fn installed_shiv_and_skeleton_talon_restore_cameras_without_changing_geometry() {
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let inputs: Vec<_> = [("679331", "DMM_SHIV_VPK"), ("563116", "DMM_GT_VPK")]
+    .into_iter()
+    .map(|(mod_id, variable)| LocalizationModInput {
+      mod_id: mod_id.into(),
+      vpks: vec![PathBuf::from(std::env::var(variable).unwrap())],
+    })
+    .collect();
+  let originals: Vec<_> = inputs
+    .iter()
+    .map(|input| fs::read(&input.vpks[0]).unwrap())
+    .collect();
+  let resources = resources::ResourceSnapshot::open(&citadel, &inputs).unwrap();
+  let plan = LocalizationOverlayPlan::build(&citadel, &inputs).unwrap();
+  for path in [
+    "models/heroes_staging/shiv/shiv.vmdl_c",
+    "models/heroes_staging/archer/archer.vmdl_c",
+    "models/heroes_staging/grey_talon/grey_talon_owl.vmdl_c",
+  ] {
+    assert!(plan.analysis.asset_repairs.iter().any(|repair| {
+      repair.file_path == path
+        && if path.ends_with("grey_talon_owl.vmdl_c") {
+          matches!(repair.kind, asset_compatibility::RepairKind::CameraControls)
+        } else {
+          matches!(
+            repair.kind,
+            asset_compatibility::RepairKind::CameraAttachmentFrame
+          )
+        }
+    }));
+    let source = resources.resolve(path).unwrap().unwrap().1;
+    let current = resources.game_bytes(path).unwrap().unwrap();
+    let repaired = &plan.camera_models[path];
+    let (_, model, _) = decode_compiled_data(repaired, path).unwrap();
+    let (_, reference, _) = decode_compiled_data(&current, path).unwrap();
+    assert!(model_camera::missing_camera_fields(&model, &reference).is_empty());
+    assert!(
+      camera_attachment_frame::repair(repaired, &current)
+        .unwrap()
+        .is_none()
+    );
+    let before = Resource::parse(&source).unwrap();
+    let after = Resource::parse(repaired).unwrap();
+    assert_eq!(before.blocks().len(), after.blocks().len());
+    for (index, block) in before.blocks().iter().enumerate() {
+      let old = before.get_block_by_index(index).unwrap();
+      let new = after.get_block_by_index(index).unwrap();
+      assert_eq!(block.kind, after.blocks()[index].kind);
+      if !matches!(&block.kind, b"DATA" | b"MDAT") {
+        assert_eq!(old, new, "geometry/resource block changed: {path}/{index}");
+      } else if block.kind == *b"MDAT" {
+        let old = kv3::decode(old).unwrap();
+        let new = kv3::decode(new).unwrap();
+        for (field, value) in old.as_object().unwrap() {
+          if !matches!(field.as_str(), "m_skeleton" | "m_attachments") {
+            assert!(
+              super::runtime_values_equal(value, new.get(field).unwrap()),
+              "mesh field changed: {path}/{field}"
+            );
+          }
+        }
+      }
+    }
+    if let Ok(directory) = std::env::var("DMM_CAMERA_REGRESSION_DIR") {
+      let output = PathBuf::from(directory).join(path);
+      fs::create_dir_all(output.parent().unwrap()).unwrap();
+      fs::write(output, repaired).unwrap();
+    }
+  }
+  let temp = TempDir::new().unwrap();
+  let archive = temp.path().join("cameras_dir.vpk");
+  assert!(plan.write(&archive, &[]).unwrap().has_overlay);
+  let packed = VpkArchive::open(&archive).unwrap();
+  for (path, bytes) in &plan.camera_models {
+    assert_eq!(&packed.extract_entry(path).unwrap(), bytes);
+  }
+  for (input, original) in inputs.iter().zip(originals) {
+    assert_eq!(
+      fs::read(&input.vpks[0]).unwrap(),
+      original,
+      "original mod changed"
+    );
+  }
+}
+
+#[test]
 #[ignore = "requires DMM_REAL_CITADEL and DMM_MERRIN_VPK"]
 fn legacy_merrin_model_restores_animation_and_camera_without_changing_skinning() {
   let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());

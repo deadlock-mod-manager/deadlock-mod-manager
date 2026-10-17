@@ -237,6 +237,14 @@ unrecognized authored rotations are preserved. This rule does not migrate onto a
 pre-update game installation. Existing compatibility receipts are invalidated
 when these repair rules change.
 
+Rebuilt v4 meshes expand compact unsigned zero/one encodings into `UINT32`
+lanes while keeping their values and flags. Copying those compact tags from
+current game attachments made the engine reject Skeleton Talon's owl mesh with
+`Unsupported primitive value type 27`, displaying an ERROR model and breaking
+its camera. Repair revision 28 rebuilds affected overlays. The installed Shiv
+Josuke and Skeleton Talon regression verifies their combined repair export and
+unchanged geometry; in-game acceptance remains a separate check.
+
 Hero model relocation follows the current `heroes.vdata_c` model bindings. It
 uses previously observed bindings for the same hero definition to identify an
 old primary model, rather than matching display names, mod titles, or filenames.
