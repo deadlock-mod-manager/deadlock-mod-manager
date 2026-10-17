@@ -10,7 +10,6 @@ import { ALPHA } from "../support/profile-fixtures";
 import { filesystemModIds } from "../support/filesystem-fixtures";
 import {
   assertFilesystemLayout,
-  filesystemManifestSchema,
   filesystemPaths,
   fingerprint,
   shardSlot,
@@ -22,47 +21,7 @@ import {
   closeApplication,
   retireClosedApplication,
 } from "../support/application-exit";
-
-const reorder = async (
-  world: string,
-  order: string[],
-  crash = false,
-): Promise<string | null> => {
-  const { alpha } = await filesystemPaths(world);
-  const manifest = filesystemManifestSchema.parse(
-    JSON.parse(await readFile(path.join(alpha, ".dmm.json"), "utf8")),
-  );
-  const data: Array<[string, string[], number]> = order.map((id, index) => [
-    id,
-    manifest.mods[id].currentVpks,
-    index,
-  ]);
-  return browser.execute(
-    async (folder, modOrderData, abrupt) => {
-      if (abrupt) {
-        window.setTimeout(() => {
-          void window.__TAURI_INTERNALS__.invoke("reorder_mods_by_remote_id", {
-            profileFolder: folder,
-            modOrderData,
-          });
-        }, 100);
-        return null;
-      }
-      try {
-        await window.__TAURI_INTERNALS__.invoke("reorder_mods_by_remote_id", {
-          profileFolder: folder,
-          modOrderData,
-        });
-        return null;
-      } catch (error) {
-        return JSON.stringify(error);
-      }
-    },
-    ALPHA.folder,
-    data,
-    crash,
-  );
-};
+import { reorder } from "../support/mod-ordering";
 
 const openBackups = async (): Promise<void> => {
   await navigate("settings");

@@ -1,5 +1,6 @@
 import path from "node:path";
 import { writeFile } from "node:fs/promises";
+import { monkeyStepCount, monkeyTimeoutMs } from "./support/monkey-plan";
 import { parseScenarioId, scenarioSpec } from "./support/scenarios";
 import { captureEvidence } from "./support/evidence";
 
@@ -72,7 +73,13 @@ export const config: TauriWdioConfig = {
   reporters: [["spec", { addConsoleLogs: true }]],
   // WDIO enforces this per test around the spec function; this.timeout() in a
   // spec cannot extend it. The longest WebKitGTK scenarios need about 50s.
-  mochaOpts: { ui: "bdd", timeout: 90_000 },
+  mochaOpts: {
+    ui: "bdd",
+    timeout:
+      process.env.DMM_E2E_CASE_ID === "monkey"
+        ? monkeyTimeoutMs(monkeyStepCount())
+        : 90_000,
+  },
   afterTest: async (
     test: { title: string },
     _context: object,

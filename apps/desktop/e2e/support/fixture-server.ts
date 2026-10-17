@@ -182,6 +182,10 @@ export const startFixtureServer = async (
       respond(response, 200, JSON.stringify({ ok: true }));
       return;
     }
+    if (request.url === "/__control/requests") {
+      respond(response, 200, JSON.stringify({ requests: journal, unmatched }));
+      return;
+    }
     if (request.url?.startsWith("/__control")) {
       respond(response, 200, JSON.stringify({ ok: true }));
       return;

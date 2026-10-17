@@ -7,6 +7,7 @@ import {
   verifyPhase,
   type ScenarioId,
 } from "./scenarios";
+import { monkeyStepCount, monkeyTimeoutMs } from "./monkey-plan";
 import { runProcess } from "./process-control";
 import { captureEvidence } from "./evidence";
 import { startFilesystemJournal } from "./filesystem-journal";
@@ -127,7 +128,10 @@ const spawnWdio = (environment: NodeJS.ProcessEnv, outputPath: string) =>
     cwd: desktopRoot,
     environment,
     outputPath,
-    timeoutMs: WDIO_PROCESS_TIMEOUT_MS,
+    timeoutMs:
+      environment.DMM_E2E_CASE_ID === "monkey"
+        ? monkeyTimeoutMs(monkeyStepCount(environment.DMM_E2E_STEPS)) + 30_000
+        : WDIO_PROCESS_TIMEOUT_MS,
   });
 
 export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {

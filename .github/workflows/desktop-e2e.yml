@@ -70,7 +70,7 @@ jobs:
             apps/desktop/e2e/native/Picker/bin/Release/net10.0-windows/**
 
   scenarios:
-    name: Windows scenarios (${{ matrix.suite }})
+    name: Windows scenarios (${{ matrix.suite }}${{ matrix.seed && format(' seed {0}', matrix.seed) || '' }})
     needs: build
     runs-on: windows-latest
     timeout-minutes: 25
@@ -89,6 +89,12 @@ jobs:
             skins,
             interchange,
           ]
+        # Fixed seeds keep failures reproducible: 0 is the default, 887
+        # replays #891 and 4 retries an update straight after a failure.
+        include:
+          - { suite: monkey, seed: "0" }
+          - { suite: monkey, seed: "887" }
+          - { suite: monkey, seed: "4" }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-desktop-e2e
@@ -101,12 +107,13 @@ jobs:
       - name: Run serial scenarios on the disposable runner desktop
         env:
           E2E_SUITE: ${{ matrix.suite }}
+          DMM_E2E_SEED: ${{ matrix.seed }}
         run: pnpm --filter @deadlock-mods/desktop e2e:test -- --suite $env:E2E_SUITE --keep --allow-native-input --report ../../.e2e/reports/scenarios.json
       - name: Retain scenario evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: desktop-e2e-${{ matrix.suite }}
+          name: desktop-e2e-${{ matrix.suite }}${{ matrix.seed && format('-{0}', matrix.seed) || '' }}
           retention-days: 14
           include-hidden-files: true
           path: |
@@ -164,7 +171,7 @@ jobs:
           path: apps/desktop/target/debug/deadlock-mod-manager
 
   linux-scenarios:
-    name: Linux scenarios (${{ matrix.distro }}, ${{ matrix.suite }})
+    name: Linux scenarios (${{ matrix.distro }}, ${{ matrix.suite }}${{ matrix.seed && format(' seed {0}', matrix.seed) || '' }})
     needs: linux-build
     runs-on: ubuntu-latest
     container: ${{ matrix.image }}
@@ -196,6 +203,8 @@ jobs:
             image: debian:trixie
           - distro: arch
             image: archlinux:latest
+          - { distro: debian, image: "debian:trixie", suite: monkey, seed: "0" }
+          - { distro: debian, image: "debian:trixie", suite: monkey, seed: "887" }
         # The app has no per-distro code paths, so one full Linux run is
         # enough. Arch's rolling WebKitGTK only needs the startup check.
         exclude:
@@ -233,12 +242,13 @@ jobs:
       - name: Run serial scenarios on a virtual display
         env:
           E2E_SUITE: ${{ matrix.suite }}
+          DMM_E2E_SEED: ${{ matrix.seed }}
         run: xvfb-run -a -s "-screen 0 1920x1080x24" dbus-run-session -- pnpm --filter @deadlock-mods/desktop e2e:test -- --suite "$E2E_SUITE" --keep --report ../../.e2e/reports/scenarios.json
       - name: Retain scenario evidence
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: desktop-e2e-${{ matrix.distro }}-${{ matrix.suite }}
+          name: desktop-e2e-${{ matrix.distro }}-${{ matrix.suite }}${{ matrix.seed && format('-{0}', matrix.seed) || '' }}
           retention-days: 14
           include-hidden-files: true
           path: |
