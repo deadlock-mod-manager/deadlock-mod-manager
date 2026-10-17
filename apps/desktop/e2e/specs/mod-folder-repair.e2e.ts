@@ -60,12 +60,12 @@ describe("Repair mod folder", () => {
         await $("button=Repair mod folder").click();
         const dialog = await $('[role="dialog"]');
         await dialog.waitForDisplayed();
-        await dialog.$("button=Apply repair").click();
+        await dialog.$("button=Repair").click();
         await expect(dialog).toHaveText(
           expect.stringContaining("Mod folder repaired"),
         );
         await expect(dialog).toHaveText(
-          expect.stringContaining("3 untracked VPKs were moved to a backup"),
+          expect.stringContaining("3 files were moved to a backup"),
         );
         await browser.saveScreenshot(
           path.join(world, "artifacts", "repair-result.png"),
