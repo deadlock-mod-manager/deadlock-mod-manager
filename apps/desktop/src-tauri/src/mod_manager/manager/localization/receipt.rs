@@ -116,10 +116,11 @@ fn write_inner(
     .ok_or_else(|| Error::InvalidInput("Overlay has no parent directory".into()))?
     .to_path_buf();
   fs::create_dir_all(&parent)?;
-  let staged = tempfile::NamedTempFile::new_in(&parent)?;
-  let mut result = plan.write(staged.path(), resolutions)?;
+  // The packer replaces this file, so no handle may stay open: on volumes without
+  // POSIX delete semantics the replace fails with "Access is denied".
+  let staged = tempfile::NamedTempFile::new_in(&parent)?.into_temp_path();
+  let mut result = plan.write(&staged, resolutions)?;
   if result.has_overlay {
-    staged.as_file().sync_all()?;
     staged
       .persist(output)
       .map_err(|error| Error::Io(error.error))?;
