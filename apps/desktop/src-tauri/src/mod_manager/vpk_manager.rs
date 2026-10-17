@@ -111,6 +111,186 @@ mod tests {
     }
   }
 
+  /// Extracts one `pak01_dir.vpk` per variant archive, returning the extraction
+  /// root, an empty addons folder and the mod's tree.
+  fn extract_variants(
+    temp: &tempfile::TempDir,
+    variants: &[&str],
+  ) -> (PathBuf, PathBuf, crate::mod_manager::file_tree::ModFileTree) {
+    use crate::mod_manager::file_tree::{FileTreeAnalyzer, ModFileTree};
+
+    let extraction_root = temp.path().join("extracted");
+    let addons_path = temp.path().join("addons");
+    fs::create_dir_all(&addons_path).unwrap();
+    let mut files = Vec::new();
+    for variant in variants {
+      let archive_name = format!("{variant}.zip");
+      let extracted = extraction_root.join(&archive_name);
+      fs::create_dir_all(&extracted).unwrap();
+      fs::write(extracted.join("pak01_dir.vpk"), variant).unwrap();
+      for mut file in FileTreeAnalyzer::new()
+        .get_file_tree_from_extracted(&extracted, &archive_name)
+        .unwrap()
+        .files
+      {
+        file.path = format!("{archive_name}/{}", file.path);
+        files.push(file);
+      }
+    }
+    (
+      extraction_root,
+      addons_path,
+      ModFileTree::from_extracted(files),
+    )
+  }
+
+  #[test]
+  fn variants_sharing_a_filename_are_all_placed() {
+    let temp = tempfile::tempdir().unwrap();
+    let (extraction_root, addons_path, tree) =
+      extract_variants(&temp, &["Red", "Blue", "Green", "Gold"]);
+
+    let mut placed = VpkManager::new()
+      .place_selected_vpks_with_prefix(&extraction_root, &addons_path, "123", &tree)
+      .unwrap();
+    placed.sort();
+
+    assert_eq!(
+      placed,
+      [
+        "123_pak01-blue_dir.vpk",
+        "123_pak01-gold_dir.vpk",
+        "123_pak01-green_dir.vpk",
+        "123_pak01-red_dir.vpk"
+      ]
+    );
+    assert_eq!(
+      fs::read_to_string(addons_path.join("123_pak01-gold_dir.vpk")).unwrap(),
+      "Gold"
+    );
+    assert!(!extraction_root.join("Gold.zip/pak01_dir.vpk").exists());
+  }
+
+  #[test]
+  fn placing_again_keeps_files_an_earlier_attempt_moved() {
+    let temp = tempfile::tempdir().unwrap();
+    let (extraction_root, addons_path, tree) = extract_variants(&temp, &["Red", "Blue"]);
+    // The earlier attempt moved Red, then failed before recording anything.
+    fs::rename(
+      extraction_root.join("Red.zip/pak01_dir.vpk"),
+      addons_path.join("123_pak01-red_dir.vpk"),
+    )
+    .unwrap();
+
+    let mut placed = VpkManager::new()
+      .place_selected_vpks_with_prefix(&extraction_root, &addons_path, "123", &tree)
+      .unwrap();
+    placed.sort();
+
+    assert_eq!(placed, ["123_pak01-blue_dir.vpk", "123_pak01-red_dir.vpk"]);
+  }
+
+  #[test]
+  fn placing_skips_a_leftover_the_extraction_never_had() {
+    let temp = tempfile::tempdir().unwrap();
+    let (extraction_root, addons_path, tree) = extract_variants(&temp, &["Red", "Blue"]);
+    fs::remove_dir_all(extraction_root.join("Red.zip")).unwrap();
+    fs::write(addons_path.join("123_pak01-red_dir.vpk"), b"old").unwrap();
+
+    let placed = VpkManager::new()
+      .place_selected_vpks_with_prefix(&extraction_root, &addons_path, "123", &tree)
+      .unwrap();
+
+    assert_eq!(placed, ["123_pak01-blue_dir.vpk"]);
+  }
+
+  #[test]
+  fn placing_skips_a_leftover_of_another_size() {
+    let temp = tempfile::tempdir().unwrap();
+    let (extraction_root, addons_path, tree) = extract_variants(&temp, &["Red", "Blue"]);
+    // The archive's folder is still extracted, but this isn't the file it held.
+    fs::remove_file(extraction_root.join("Red.zip/pak01_dir.vpk")).unwrap();
+    fs::write(addons_path.join("123_pak01-red_dir.vpk"), b"older red").unwrap();
+
+    let placed = VpkManager::new()
+      .place_selected_vpks_with_prefix(&extraction_root, &addons_path, "123", &tree)
+      .unwrap();
+
+    assert_eq!(placed, ["123_pak01-blue_dir.vpk"]);
+  }
+
+  #[test]
+  fn placing_skips_a_leftover_listed_at_the_extraction_root() {
+    let temp = tempfile::tempdir().unwrap();
+    let source = temp.path().join("extracted");
+    let addons_path = temp.path().join("addons");
+    fs::create_dir_all(&source).unwrap();
+    fs::create_dir_all(&addons_path).unwrap();
+    fs::write(addons_path.join("123_pak01_dir.vpk"), b"old").unwrap();
+    let name = "pak01_dir.vpk".to_string();
+    let tree = crate::mod_manager::file_tree::ModFileTree::from_options(
+      std::slice::from_ref(&name),
+      &std::collections::HashSet::from([name.clone()]),
+    );
+
+    let placed = VpkManager::new()
+      .place_selected_vpks_with_prefix(&source, &addons_path, "123", &tree)
+      .unwrap();
+
+    assert!(placed.is_empty());
+  }
+
+  /// Places a tree of selected `(name, path)` entries over these extracted files.
+  fn place_listed(extracted: &[&str], listed: &[(&str, &str)]) -> Vec<String> {
+    use crate::mod_manager::file_tree::{ModFile, ModFileTree};
+
+    let temp = tempfile::tempdir().unwrap();
+    let source = temp.path().join("extracted");
+    let addons_path = temp.path().join("addons");
+    fs::create_dir_all(&source).unwrap();
+    fs::create_dir_all(&addons_path).unwrap();
+    for name in extracted {
+      fs::write(source.join(name), name).unwrap();
+    }
+    let files: Vec<ModFile> = listed
+      .iter()
+      .map(|(name, path)| ModFile {
+        name: name.to_string(),
+        path: path.to_string(),
+        size: 0,
+        is_selected: true,
+        archive_name: String::new(),
+      })
+      .collect();
+    let tree = ModFileTree {
+      total_files: files.len(),
+      has_multiple_files: files.len() > 1,
+      files,
+    };
+
+    VpkManager::new()
+      .place_selected_vpks_with_prefix(&source, &addons_path, "123", &tree)
+      .unwrap()
+  }
+
+  #[test]
+  fn placing_ignores_tree_names_that_are_paths() {
+    assert_eq!(
+      place_listed(&["pak01_dir.vpk"], &[("../escape.vpk", "pak01_dir.vpk")]),
+      ["123_pak01_dir.vpk"]
+    );
+  }
+
+  #[test]
+  fn placing_tolerates_a_tree_that_lists_a_file_twice() {
+    let pak01 = ("pak01_dir.vpk", "pak01_dir.vpk");
+    let pak02 = ("pak02_dir.vpk", "pak02_dir.vpk");
+    assert_eq!(
+      place_listed(&[pak01.0, pak02.0], &[pak01, pak01, pak02]),
+      ["123_pak01_dir.vpk", "123_pak02_dir.vpk"]
+    );
+  }
+
   #[test]
   fn detects_disabled_local_mod_prefixes() {
     assert_eq!(

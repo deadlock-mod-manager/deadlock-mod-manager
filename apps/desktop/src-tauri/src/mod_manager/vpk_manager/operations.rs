@@ -1,4 +1,5 @@
 use super::*;
+use crate::mod_manager::file_tree::is_plain_vpk_name;
 
 impl VpkManager {
   pub(crate) fn stage_clear_all_vpks(
@@ -25,8 +26,9 @@ impl VpkManager {
     Ok(PendingVpkOperation::with_staging((), staging))
   }
 
-  /// Copy selected VPK files from extracted directory based on file tree selection
-  pub fn copy_selected_vpks_with_prefix(
+  /// Moves rather than copies: callers discard the extraction, and a large
+  /// variant mod would otherwise sit on disk twice.
+  pub fn place_selected_vpks_with_prefix(
     &self,
     source_dir: &Path,
     destination_dir: &Path,
@@ -66,7 +68,7 @@ impl VpkManager {
       file_tree.files.iter().filter(|f| f.is_selected).count()
     );
 
-    // Copy only selected files
+    // Place only selected files
     for file in &file_tree.files {
       log::debug!(
         "Processing file: {} (selected: {}, path: {})",
@@ -81,24 +83,50 @@ impl VpkManager {
 
       // Match file path (normalize separators)
       let normalized_path = file.path.replace('\\', "/");
-      if let Some(vpk_path) = vpk_map.get(&normalized_path) {
-        if let Some(file_name) = vpk_path.file_name().and_then(|n| n.to_str()) {
-          let prefixed_name = format!("{mod_id}_{file_name}");
-          let dest_path = destination_dir.join(&prefixed_name);
+      // Taken so a repeated entry can't try to move a file that's already gone.
+      let source = vpk_map.remove(&normalized_path);
+      // The tree's name tells apart variants that share a filename on disk.
+      // It can come over IPC, so anything but a bare `.vpk` name is ignored.
+      let tree_name = Some(file.name.as_str()).filter(|name| is_plain_vpk_name(name));
+      let prefixed_name = tree_name
+        .or_else(|| source.as_ref().and_then(|path| path.file_name()?.to_str()))
+        .map(|file_name| format!("{mod_id}_{file_name}"));
 
-          self.filesystem.copy_file(vpk_path, &dest_path)?;
-          prefixed_vpks.push(prefixed_name.clone());
-
+      let prefixed_name = match (&source, prefixed_name) {
+        (Some(vpk_path), Some(prefixed_name)) => {
+          self
+            .filesystem
+            .move_file(vpk_path, &destination_dir.join(&prefixed_name))?;
           log::info!(
-            "Copied selected VPK with prefix: {} -> {prefixed_name}",
+            "Placed selected VPK with prefix: {} -> {prefixed_name}",
             vpk_path.display()
           );
+          prefixed_name
         }
-      } else {
-        log::warn!(
-          "Selected VPK file not found in extracted directory: {}",
-          file.path
-        );
+        // An earlier attempt already moved it. Its size and its folder still
+        // in the extraction rule out a leftover from another install; a file
+        // at the root has no folder to prove that.
+        (None, Some(prefixed_name))
+          if std::fs::metadata(destination_dir.join(&prefixed_name))
+            .is_ok_and(|placed| placed.len() == file.size)
+            && Path::new(&normalized_path)
+              .parent()
+              .filter(|folder| !folder.as_os_str().is_empty())
+              .is_some_and(|folder| source_dir.join(folder).exists()) =>
+        {
+          log::info!("Selected VPK already placed: {prefixed_name}");
+          prefixed_name
+        }
+        _ => {
+          log::warn!(
+            "Selected VPK file not found in extracted directory: {}",
+            file.path
+          );
+          continue;
+        }
+      };
+      if !prefixed_vpks.contains(&prefixed_name) {
+        prefixed_vpks.push(prefixed_name);
       }
     }
 
