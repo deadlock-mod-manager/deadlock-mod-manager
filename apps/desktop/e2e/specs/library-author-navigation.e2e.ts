@@ -63,6 +63,34 @@ describe("library author navigation", () => {
         await expect(browser).toHaveUrl(
           expect.stringContaining(`/mods/${mod.id}`),
         );
+        await step(
+          "toolbar back appears when the page back button clips",
+          async () => {
+            const backLabel = `Back to ${contentAuthor.name}'s mods`;
+            await expect($(`button=${backLabel}`)).toBeDisplayed();
+            await expect($("button=Back")).not.toBeDisplayed();
+            const scrolled = await browser.execute((label) => {
+              const back = [...document.querySelectorAll("button")].find(
+                (button) => button.textContent?.trim() === label,
+              );
+              const container = back?.closest("div.overflow-y-auto");
+              if (!back || !(container instanceof HTMLElement)) return false;
+              container.scrollTop +=
+                Math.ceil(
+                  back.getBoundingClientRect().top -
+                    container.getBoundingClientRect().top,
+                ) + 1;
+              return true;
+            }, backLabel);
+            expect(scrolled).toBe(true);
+            await expect($("button=Back")).toBeDisplayed();
+            await $("button=Back").click();
+            await expectAuthor();
+            await $('[data-testid="author-mods"]')
+              .$(`[title="${mod.name}"]`)
+              .click();
+          },
+        );
         await $(`button=Back to ${contentAuthor.name}'s mods`).click();
         await expectAuthor();
         await returnToLibrary();
