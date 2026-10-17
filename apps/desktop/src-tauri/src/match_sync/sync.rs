@@ -413,7 +413,7 @@ where
         .remaining(self.persistence.now())
         .saturating_sub(BACKFILL_QUOTA_RESERVE);
       if budget > 0 {
-        match self.backfill.to_fetch(FetchScope::Global).await {
+        let result = match self.backfill.to_fetch(FetchScope::Global).await {
           Ok(global) => {
             let picks: Vec<u64> = newest_first_fresh(global, &st.processed)
               .into_iter()
@@ -421,10 +421,20 @@ where
               .collect();
             self
               .process_ids(&ctx, picks, true, Some(cancel), st)
-              .await?;
+              .await
+              .map(|_| ())
           }
-          Err(e) => log::warn!("match-sync: global to-fetch unavailable: {e}"),
-        }
+          Err(e) => {
+            log::warn!("match-sync: global to-fetch unavailable: {e}");
+            Ok(())
+          }
+        };
+        // The global list claims every id it hands out, but the budget, a quota or
+        // GC stop, cancellation or an error usually leaves most of it unfetched.
+        // However the backfill ended, hand the rest back to other workers now rather
+        // than when the claims expire.
+        self.backfill.release_claim().await;
+        result?;
       }
     }
 
@@ -521,20 +531,38 @@ mod tests {
     }
   }
 
+  #[derive(Debug, PartialEq)]
+  enum BackfillCall {
+    Account,
+    Global,
+    Release,
+  }
+
   // Sticky, like the real endpoint: it keeps listing the same ids until they are
   // ingested, so run termination must come from the run-local `processed` set.
+  #[derive(Default)]
   struct SpyBackfill {
     account: Vec<u64>,
     global: Vec<u64>,
     calls: AtomicU64,
+    log: Mutex<Vec<BackfillCall>>,
   }
   impl BackfillSource for SpyBackfill {
     async fn to_fetch(&self, scope: FetchScope) -> Result<Vec<u64>, MatchSyncError> {
       self.calls.fetch_add(1, Ordering::Relaxed);
       match scope {
-        FetchScope::Account(_) => Ok(self.account.clone()),
-        FetchScope::Global => Ok(self.global.clone()),
+        FetchScope::Account(_) => {
+          self.log.lock().unwrap().push(BackfillCall::Account);
+          Ok(self.account.clone())
+        }
+        FetchScope::Global => {
+          self.log.lock().unwrap().push(BackfillCall::Global);
+          Ok(self.global.clone())
+        }
       }
+    }
+    async fn release_claim(&self) {
+      self.log.lock().unwrap().push(BackfillCall::Release);
     }
   }
 
@@ -665,7 +693,7 @@ mod tests {
       SpyBackfill {
         account: vec![1, 2, 3],
         global: vec![9, 8, 7],
-        calls: AtomicU64::new(0),
+        ..Default::default()
       },
     );
     let config = MatchSyncConfig {
@@ -697,7 +725,7 @@ mod tests {
     let backfill = SpyBackfill {
       account: vec![10, 11, 12],
       global: vec![],
-      calls: AtomicU64::new(0),
+      ..Default::default()
     };
     let eng = engine(SpyGc::default(), backfill);
     let cancel = AtomicBool::new(false);
@@ -727,7 +755,7 @@ mod tests {
     let backfill = SpyBackfill {
       account: ids,
       global: vec![],
-      calls: AtomicU64::new(0),
+      ..Default::default()
     };
     let eng = engine(SpyGc::default(), backfill);
 
@@ -747,7 +775,7 @@ mod tests {
     let backfill = SpyBackfill {
       account: vec![100, 101],
       global: vec![200, 201, 202, 203, 204, 205, 206],
-      calls: AtomicU64::new(0),
+      ..Default::default()
     };
     // GC history contributes 102 and a duplicate of 100.
     let eng = engine(
@@ -783,7 +811,7 @@ mod tests {
     let backfill = SpyBackfill {
       account: vec![],
       global: (1..=200).collect(),
-      calls: AtomicU64::new(0),
+      ..Default::default()
     };
     let eng = engine(SpyGc::default(), backfill);
 
@@ -795,6 +823,92 @@ mod tests {
     assert_eq!(p.fetched, 0);
     assert_eq!(p.backfilled as usize, LIMIT - BACKFILL_QUOTA_RESERVE);
     assert_eq!(p.quota_remaining as usize, BACKFILL_QUOTA_RESERVE);
+    // The ids past the budget stay claimed unless released.
+    assert_eq!(
+      *eng.backfill.log.lock().unwrap(),
+      [
+        BackfillCall::Account,
+        BackfillCall::Global,
+        BackfillCall::Release
+      ]
+    );
+  }
+
+  #[tokio::test]
+  async fn background_pass_releases_the_global_claim_once_backfill_is_done() {
+    let backfill = SpyBackfill {
+      account: vec![100],
+      global: vec![200, 201],
+      ..Default::default()
+    };
+    let eng = engine(SpyGc::default(), backfill);
+
+    let p = eng
+      .run_background_pass(&active_config(), &AtomicBool::new(false))
+      .await
+      .unwrap()
+      .unwrap();
+    assert_eq!(p.backfilled, 2);
+    // Released exactly once, after the global list, as the last deadlock-api call.
+    assert_eq!(
+      *eng.backfill.log.lock().unwrap(),
+      [
+        BackfillCall::Account,
+        BackfillCall::Global,
+        BackfillCall::Release
+      ]
+    );
+  }
+
+  #[tokio::test]
+  async fn background_pass_releases_the_global_claim_when_backfill_aborts() {
+    let backfill = SpyBackfill {
+      global: vec![200, 201, 202],
+      ..Default::default()
+    };
+    // Not running for the pass-start check or the history page, but flips true on
+    // the first backfill salt fetch, aborting the pass with an error.
+    let eng = engine_with_game_check(
+      SpyGc::default(),
+      backfill,
+      SpyGameCheck {
+        trip_after_calls: 3,
+        ..Default::default()
+      },
+    );
+
+    let p = eng
+      .run_background_pass(&active_config(), &AtomicBool::new(false))
+      .await;
+    assert!(matches!(p, Err(MatchSyncError::GameRunning)));
+    assert!(eng.sink.posted.lock().unwrap().is_empty());
+    assert_eq!(
+      eng.backfill.log.lock().unwrap().last(),
+      Some(&BackfillCall::Release)
+    );
+  }
+
+  #[tokio::test]
+  async fn background_pass_without_backfill_claims_nothing_to_release() {
+    // Rate-limited on the own matches: the global list is never requested.
+    let backfill = SpyBackfill {
+      account: vec![1],
+      global: vec![9],
+      ..Default::default()
+    };
+    let eng = engine(
+      SpyGc {
+        rate_limited: true,
+        ..Default::default()
+      },
+      backfill,
+    );
+
+    eng
+      .run_background_pass(&active_config(), &AtomicBool::new(false))
+      .await
+      .unwrap();
+    assert_eq!(*eng.backfill.log.lock().unwrap(), [BackfillCall::Account]);
   }
 
   #[tokio::test]
@@ -802,7 +916,7 @@ mod tests {
     let backfill = SpyBackfill {
       account: vec![1, 2, 3],
       global: vec![],
-      calls: AtomicU64::new(0),
+      ..Default::default()
     };
     let eng = engine(
       SpyGc {
@@ -829,7 +943,7 @@ mod tests {
     let backfill = SpyBackfill {
       account: vec![1],
       global: vec![],
-      calls: AtomicU64::new(0),
+      ..Default::default()
     };
     let eng = engine(
       SpyGc {
@@ -852,7 +966,7 @@ mod tests {
     let backfill = SpyBackfill {
       account: vec![1, 2, 3],
       global: vec![9],
-      calls: AtomicU64::new(0),
+      ..Default::default()
     };
     let eng = engine(
       SpyGc {
@@ -884,7 +998,7 @@ mod tests {
     let backfill = SpyBackfill {
       account: ids,
       global: vec![],
-      calls: AtomicU64::new(0),
+      ..Default::default()
     };
     let eng = engine(SpyGc::default(), backfill);
     let cancel = Arc::new(AtomicBool::new(true));
@@ -902,7 +1016,7 @@ mod tests {
     let backfill = SpyBackfill {
       account: (1..=50).collect(),
       global: vec![],
-      calls: AtomicU64::new(0),
+      ..Default::default()
     };
     let eng = engine(SpyGc::default(), backfill);
     let cancel = AtomicBool::new(true);
@@ -921,7 +1035,7 @@ mod tests {
     let backfill = SpyBackfill {
       account: vec![1, 2, 3],
       global: vec![9],
-      calls: AtomicU64::new(0),
+      ..Default::default()
     };
     let eng = engine_with_game_check(
       SpyGc::default(),
@@ -958,7 +1072,7 @@ mod tests {
     let backfill = SpyBackfill {
       account: vec![1, 2, 3],
       global: vec![],
-      calls: AtomicU64::new(0),
+      ..Default::default()
     };
     let eng = engine_with_persistence(
       SpyGc::default(),
@@ -986,7 +1100,7 @@ mod tests {
     let backfill = SpyBackfill {
       account: vec![1, 2, 3],
       global: vec![],
-      calls: AtomicU64::new(0),
+      ..Default::default()
     };
     let eng = engine_with_persistence(
       SpyGc::default(),
@@ -1014,7 +1128,7 @@ mod tests {
     let backfill = SpyBackfill {
       account: vec![1, 2, 3],
       global: vec![],
-      calls: AtomicU64::new(0),
+      ..Default::default()
     };
     let eng = engine_with_persistence(
       SpyGc::default(),
@@ -1046,7 +1160,7 @@ mod tests {
     let backfill = SpyBackfill {
       account: vec![1, 2, 3, 4, 5],
       global: vec![],
-      calls: AtomicU64::new(0),
+      ..Default::default()
     };
     // Not running for the pass-start check or the history page, but flips true on
     // the first salt fetch (the actual GC choke point, not just pass-start).
@@ -1074,7 +1188,7 @@ mod tests {
     let backfill = SpyBackfill {
       account: vec![1, 2, 3],
       global: vec![],
-      calls: AtomicU64::new(0),
+      ..Default::default()
     };
     let eng = engine(
       SpyGc {
@@ -1099,7 +1213,7 @@ mod tests {
     let backfill = SpyBackfill {
       account: vec![],
       global: vec![],
-      calls: AtomicU64::new(0),
+      ..Default::default()
     };
     let eng = engine(
       SpyGc {
