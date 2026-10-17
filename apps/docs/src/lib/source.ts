@@ -13,7 +13,7 @@ export function getPageImage(page: InferPageType<typeof source>) {
 
   return {
     segments,
-    url: `/og/${segments.join("/")}`,
+    url: `/og/docs/${segments.join("/")}`,
   };
 }
 
