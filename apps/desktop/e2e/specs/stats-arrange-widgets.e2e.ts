@@ -11,6 +11,7 @@ import {
   describeWidgets,
   editorDialog,
   expectTable,
+  expectWidgetSources,
   openStats,
   openWidgetEditor,
   readSavedLayout,
@@ -23,7 +24,6 @@ import {
   useWidgetMenu,
   waitForWidgetState,
   widget,
-  widgetSources,
 } from "../support/stats-dashboard-actions";
 import { HERO_BAN_ROWS } from "../support/stats-dashboard-fixtures";
 
@@ -33,7 +33,7 @@ const ARRANGED = [...DEFAULT_OVERVIEW, META, BANS];
 
 const expectArranged = (title: string) =>
   step("the arranged widgets show their data", async () => {
-    expect(await widgetSources()).toEqual(ARRANGED);
+    await expectWidgetSources(ARRANGED);
     await expect(widget(META)).toHaveAttribute("data-widget-width", "12");
     await expect(widget(BANS)).toHaveAttribute("data-widget-width", "6");
     await expect(widget(BANS).$("h3")).toHaveText(title);
@@ -70,16 +70,12 @@ describe("stats dashboard widgets", () => {
         await choosePreset(META, "Hero meta");
         await submitEditor();
         await waitForWidgetState(widget(META), "ready");
-        expect(await widgetSources()).toEqual([
-          ...DEFAULT_OVERVIEW,
-          BANS,
-          META,
-        ]);
+        await expectWidgetSources([...DEFAULT_OVERVIEW, BANS, META]);
       });
 
       await step("move the meta in front and widen it", async () => {
         await useWidgetMenu(widget(META), ["Move earlier"]);
-        expect(await widgetSources()).toEqual(ARRANGED);
+        await expectWidgetSources(ARRANGED);
         await useWidgetMenu(widget(META), ["Width", "Full width"]);
         await expect(widget(META)).toHaveAttribute("data-widget-width", "12");
       });
@@ -89,7 +85,7 @@ describe("stats dashboard widgets", () => {
         expect(await $$(`[data-widget-source="${BANS}"]`).length).toBe(2);
         const copies = await $$(`[data-widget-source="${BANS}"]`);
         await useWidgetMenu(copies[1], ["Remove"]);
-        expect(await widgetSources()).toEqual(ARRANGED);
+        await expectWidgetSources(ARRANGED);
       });
 
       await step("editing keeps the configuration and renames it", async () => {
@@ -116,7 +112,7 @@ describe("stats dashboard widgets", () => {
     } else {
       await expectArranged("Bans by hero");
       await resetToDefault();
-      expect(await widgetSources()).toEqual(DEFAULT_OVERVIEW);
+      await expectWidgetSources(DEFAULT_OVERVIEW);
     }
 
     await closeApplication(world, runtime.processId);

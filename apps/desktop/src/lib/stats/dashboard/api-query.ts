@@ -90,6 +90,8 @@ export class ApiQueryError extends ValidationError {
 
 const PATH_PATTERN = /^\/v[12]\/[\w\-./{}]*(\?[\w\-.,=&{}%]*)?$/;
 
+const dayAligned = (unix: number) => Math.floor(unix / DAY_S) * DAY_S;
+
 /** Fills the placeholders and rejects anything that is not a plain API path. */
 export const resolveApiPath = (
   template: string,
@@ -107,14 +109,15 @@ export const resolveApiPath = (
           throw new ApiQueryError("needsAccount");
         }
         return String(accountId);
+      // Aligned, so every mount asks for - and caches - the same URL.
       case "now":
-        return String(nowUnix);
+        return String(Math.floor(nowUnix / 60) * 60);
       case "since_7d":
-        return String(nowUnix - 7 * DAY_S);
+        return String(dayAligned(nowUnix - 7 * DAY_S));
       case "since_30d":
-        return String(nowUnix - 30 * DAY_S);
+        return String(dayAligned(nowUnix - 30 * DAY_S));
       case "since_90d":
-        return String(nowUnix - 90 * DAY_S);
+        return String(dayAligned(nowUnix - 90 * DAY_S));
       default:
         throw new ApiQueryError("invalidPath");
     }

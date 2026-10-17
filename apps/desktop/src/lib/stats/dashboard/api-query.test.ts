@@ -17,7 +17,9 @@ describe("resolveApiPath", () => {
         42,
         NOW,
       ),
-    ).toBe(`/v1/players/42/rank?since=${NOW - 7 * 86_400}&until=${NOW}`);
+    ).toBe(
+      `/v1/players/42/rank?since=${Math.floor((NOW - 7 * 86_400) / 86_400) * 86_400}&until=${Math.floor(NOW / 60) * 60}`,
+    );
   });
 
   it.each([
@@ -38,13 +40,15 @@ describe("resolveApiPath", () => {
   });
 
   it("asks for an account when the path needs one", () => {
-    try {
-      resolveApiPath("/v1/players/{account_id}/rank", null, NOW);
-      throw new Error("expected a throw");
-    } catch (error) {
-      expect(error).toBeInstanceOf(ApiQueryError);
-      expect((error as ApiQueryError).reason).toBe("needsAccount");
-    }
+    const reason = (() => {
+      try {
+        resolveApiPath("/v1/players/{account_id}/rank", null, NOW);
+      } catch (error) {
+        return error instanceof ApiQueryError ? error.reason : null;
+      }
+      return null;
+    })();
+    expect(reason).toBe("needsAccount");
   });
 });
 

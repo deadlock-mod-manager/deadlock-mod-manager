@@ -481,6 +481,7 @@ export const ApiQueryEditor = ({
             commit({ ...draft, path: event.target.value }, TYPING_SETTLE_MS)
           }
           onKeyDown={(event) => event.key === "Enter" && commit(draft, 0)}
+          onBlur={() => commit(draft, 0)}
           placeholder='/v1/analytics/hero-stats'
           spellCheck={false}
           value={draft.path}
@@ -507,6 +508,7 @@ export const ApiQueryEditor = ({
             commit({ ...draft, listPath: event.target.value }, TYPING_SETTLE_MS)
           }
           onKeyDown={(event) => event.key === "Enter" && commit(draft, 0)}
+          onBlur={() => commit(draft, 0)}
           placeholder={t("stats.dashboard.api.listPathPlaceholder")}
           spellCheck={false}
           value={draft.listPath}

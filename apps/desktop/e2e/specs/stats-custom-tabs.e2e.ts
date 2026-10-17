@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { $, browser, expect } from "@wdio/globals";
+import { $, expect } from "@wdio/globals";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
 import { step } from "../support/evidence";
@@ -10,6 +10,7 @@ import {
   DEFAULT_OVERVIEW,
   DEFAULT_TAB_TITLES,
   expectActiveTab,
+  expectWidgetSources,
   describeWidgets,
   openMenu,
   typeOver,
@@ -25,7 +26,6 @@ import {
   useWidgetMenu,
   waitForWidgetState,
   widget,
-  widgetSources,
 } from "../support/stats-dashboard-actions";
 
 const META_TEMPLATE = [
@@ -50,10 +50,18 @@ const addTab = (entry: string) =>
     await item.click();
   });
 
+const nameField = () => $('input[aria-label="Tab name"]');
+
 const openTabSettings = () =>
   step("open the active tab's settings", async () => {
     await $('button[aria-label="Tab settings"]').click();
-    await $('input[aria-label="Tab name"]').waitForDisplayed();
+    await nameField().waitForDisplayed();
+  });
+
+const closeTabSettings = () =>
+  step("close the tab settings", async () => {
+    await $('[role="dialog"]').$("button=Done").click();
+    await nameField().waitForExist({ reverse: true });
   });
 
 describe("stats dashboard tabs", () => {
@@ -72,7 +80,7 @@ describe("stats dashboard tabs", () => {
         async () => {
           await addTab("Meta");
           await expectActiveTab("Meta");
-          expect(await widgetSources()).toEqual(META_TEMPLATE);
+          await expectWidgetSources(META_TEMPLATE);
           for (const source of META_TEMPLATE)
             await waitForWidgetState(widget(source), "ready");
         },
@@ -80,14 +88,17 @@ describe("stats dashboard tabs", () => {
 
       await step("an empty tab is renamed and gets an icon", async () => {
         await addTab("Empty tab");
-        expect(await widgetSources()).toEqual([]);
+        await expectWidgetSources([]);
         await openTabSettings();
-        await typeOver(() => $('input[aria-label="Tab name"]'), "My stats");
-        await browser.keys("Enter");
+        await typeOver(nameField, "My stats");
+        // Closing the settings keeps the typed name.
+        await closeTabSettings();
+        await expectActiveTab("My stats");
+        await openTabSettings();
         const trophy = await $('button[aria-label="trophy"]');
         await trophy.click();
         await expect(trophy).toHaveAttribute("aria-pressed", "true");
-        await browser.keys("Escape");
+        await closeTabSettings();
         await expectActiveTab("My stats");
       });
 
@@ -103,9 +114,9 @@ describe("stats dashboard tabs", () => {
         async () => {
           await selectTab("Overview");
           await useWidgetMenu(widget("insights"), ["Move to tab", "My stats"]);
-          expect(await widgetSources()).toEqual(WITHOUT_INSIGHTS);
+          await expectWidgetSources(WITHOUT_INSIGHTS);
           await selectTab("My stats");
-          expect(await widgetSources()).toEqual(MY_STATS);
+          await expectWidgetSources(MY_STATS);
         },
       );
 
@@ -126,9 +137,9 @@ describe("stats dashboard tabs", () => {
     } else {
       await step("the custom tab and the moved section are back", async () => {
         expect(await tabTitles()).toEqual([...DEFAULT_TAB_TITLES, "My stats"]);
-        expect(await widgetSources()).toEqual(WITHOUT_INSIGHTS);
+        await expectWidgetSources(WITHOUT_INSIGHTS);
         await selectTab("My stats");
-        expect(await widgetSources()).toEqual(MY_STATS);
+        await expectWidgetSources(MY_STATS);
         await waitForWidgetState(widget("global.bans"), "ready");
       });
       await resetToDefault();

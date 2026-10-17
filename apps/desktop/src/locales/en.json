@@ -1258,7 +1258,8 @@
         "broken": "Contains a widget that is not working",
         "add": "Tab",
         "empty": "Empty tab",
-        "fromTemplate": "From a template"
+        "fromTemplate": "From a template",
+        "done": "Done"
       },
       "templates": {
         "overview": "Overview",
@@ -1273,7 +1274,7 @@
       },
       "toolbar": {
         "title": "Editing the dashboard",
-        "hint": "Drag widgets by their handle, resize them from the bottom-right corner, and use the pencil next to the active tab to rename, move or delete it.",
+        "hint": "Drag widgets by their handle, resize them from the bottom-right corner, and use the pencil next to the tabs to rename, move or delete the active one.",
         "reset": "Reset to default",
         "cancel": "Cancel",
         "save": "Save"

@@ -17,6 +17,7 @@ import {
 import { type Dataset, missingFields } from "@/lib/stats/dashboard/dataset";
 import type { WidgetSource, WidgetView } from "@/lib/stats/dashboard/layout";
 import { runMatchQuery } from "@/lib/stats/dashboard/match-query";
+import { HISTORY_ENDPOINT } from "@/lib/stats/dashboard/presets/kit";
 import { useDashboardData } from "./dashboard-context";
 
 export type BrokenReason =
@@ -58,7 +59,6 @@ type Plan =
   | Extract<PresetQuery, { kind: "remote" }>;
 
 const CUSTOM_API_TTL = 10 * 60 * 1000;
-const HISTORY_ENDPOINT = "/v1/players/{account_id}/match-history";
 
 const brokenFrom = (
   error: Error | null,
@@ -89,17 +89,12 @@ const brokenFrom = (
 };
 
 /**
- * Resolves a widget's source into a dataset, or into the reason it cannot show
- * one. Panels never come through here: they render their own components.
+ * What stands between a widget and the shared match history: no account, the
+ * history still loading, or its request having failed. `null` once it is there.
  */
-export const useWidgetData = (
-  source: WidgetSource,
-  view: WidgetView | undefined,
-): WidgetDataState => {
+export const useHistoryGate = (): WidgetDataState | null => {
   const { accountId, stats } = useDashboardData();
-  const matches = stats.matches;
-
-  const historyState = useMemo((): WidgetDataState | null => {
+  return useMemo((): WidgetDataState | null => {
     if (accountId === null) {
       return { status: "needsAccount" };
     }
@@ -115,6 +110,20 @@ export const useWidgetData = (
     }
     return null;
   }, [accountId, stats.isPending, stats.isError]);
+};
+
+/**
+ * Resolves a widget's source into a dataset, or into the reason it cannot show
+ * one. Panels never come through here: they render their own components.
+ */
+export const useWidgetData = (
+  source: WidgetSource,
+  view: WidgetView | undefined,
+): WidgetDataState => {
+  const { accountId, stats } = useDashboardData();
+  const matches = stats.matches;
+
+  const historyState = useHistoryGate();
 
   const plan = useMemo((): Plan => {
     switch (source.kind) {

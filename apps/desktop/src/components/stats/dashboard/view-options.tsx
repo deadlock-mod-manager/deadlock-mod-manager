@@ -44,7 +44,7 @@ import {
 } from "@/lib/stats/dashboard/suggest";
 import { cn } from "@/lib/utils";
 import { useFieldFormat } from "./use-field-format";
-import { SERIES_COLORS } from "./widget-chart";
+import { SERIES_COLORS } from "./chart-colors";
 
 const CHART_ICONS = {
   kpi: Hash,
