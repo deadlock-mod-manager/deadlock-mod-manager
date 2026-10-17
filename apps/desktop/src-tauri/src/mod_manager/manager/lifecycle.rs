@@ -663,6 +663,17 @@ impl ModManager {
         }
       }
     }
+    // Files Mod Options parked hold the old version's bytes, so enabling one
+    // later has to fetch it from the update instead.
+    let parked = match self.vpk_manager.find_prefixed_vpks(&addons_path, mod_id) {
+      Ok(names) => names,
+      Err(error) => return Err(staging.rollback(error)),
+    };
+    for name in parked {
+      if let Err(error) = staging.stage(&addons_path, &addons_path.join(name)) {
+        return Err(staging.rollback(error));
+      }
+    }
 
     let dest_names = if reuse_names {
       existing
