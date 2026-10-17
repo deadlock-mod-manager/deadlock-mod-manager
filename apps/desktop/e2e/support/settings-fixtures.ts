@@ -8,7 +8,7 @@ export const preparePresenceCache = async (world: CreatedWorld) => {
       world.configuration.roots.game,
       "game",
       "citadel",
-      "hero_presence_cache.json",
+      "hero_presence_cache_v2.json",
     ),
     JSON.stringify({
       inferno: {

@@ -5,7 +5,9 @@ use std::time::{Duration, SystemTime};
 const API_URL: &str = "https://api.deadlock-api.com/v1/assets/heroes?language=english";
 const CACHE_TTL: Duration = Duration::from_secs(24 * 60 * 60);
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(8);
-const CACHE_FILENAME: &str = "hero_presence_cache.json";
+/// Versioned so caches written before `image_url` existed are never read: they
+/// would pin every hero to a Discord upload that may not exist.
+const CACHE_FILENAME: &str = "hero_presence_cache_v2.json";
 const IMAGE_BASE_URL: &str = "https://assets-bucket.deadlock-api.com/assets-api-res/images/heroes";
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -147,11 +149,7 @@ impl HeroDataStore {
 
         match std::fs::read_to_string(&self.cache_path) {
             Ok(content) => match serde_json::from_str::<HashMap<String, HeroInfo>>(&content) {
-                // Caches written before `image_url` existed would pin every hero
-                // to a Discord upload that may not exist, so they refetch.
-                Ok(cached)
-                    if !cached.is_empty() && cached.values().any(|h| h.image_url.is_some()) =>
-                {
+                Ok(cached) if !cached.is_empty() => {
                     for (key, info) in &cached {
                         self.data.insert(key.clone(), info.clone());
                     }
