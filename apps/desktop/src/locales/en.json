@@ -2910,6 +2910,7 @@
     "processingPreview": "Processing preview image...",
     "processingFiles": "Processing mod files...",
     "storingArchive": "Storing {{format}} archive...",
+    "copyingDroppedFile": "Copying dropped file...",
     "extractingArchive": "Extracting {{format}} archive...",
     "validatingFiles": "Validating mod files...",
     "savingMetadata": "Saving mod metadata...",

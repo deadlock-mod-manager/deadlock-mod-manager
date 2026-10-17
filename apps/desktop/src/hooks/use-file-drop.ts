@@ -2,18 +2,18 @@ import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { resolveDroppedModSource } from "@/lib/dropped-file-source";
+import { useProgress } from "@/components/downloads/progress-indicator";
 import { createLogger } from "@/lib/logger";
 import {
   type DetectedSource,
+  createPathBackedFile,
   detectSource,
+  getSourceFilePath,
   readFromDataTransferItems,
+  stageDroppedFile,
 } from "@/lib/file-utils";
 
 const logger = createLogger("use-file-drop");
-
-interface PathBackedFile extends File {
-  path?: string;
-}
 
 const readStringItem = (item: DataTransferItem): Promise<string> =>
   new Promise((resolve) => {
@@ -30,15 +30,6 @@ const readStringPayloads = async (items: DataTransferItem[]) => {
   );
 
   return payloads.filter((payload) => payload.value.trim().length > 0);
-};
-
-const getPathFileName = (filePath: string): string =>
-  filePath.split(/[\\/]/).filter(Boolean).at(-1) ?? "mod";
-
-const createPathBackedFile = (filePath: string): File => {
-  const file = new File([], getPathFileName(filePath)) as PathBackedFile;
-  file.path = filePath;
-  return file;
 };
 
 const parseFileUri = (value: string): string | null => {
@@ -141,6 +132,25 @@ export const useFileDrop = (
 ) => {
   const [isDragging, setIsDragging] = useState(false);
   const { t } = useTranslation();
+  const { setProcessing } = useProgress();
+
+  // A file read by the renderer is flushed to disk right away, so the import
+  // only ever handles paths and never holds a large mod in memory.
+  const stageSource = useCallback(
+    async (source: DetectedSource): Promise<DetectedSource> => {
+      if (getSourceFilePath(source.file)) {
+        return source;
+      }
+
+      setProcessing(true, t("addMods.copyingDroppedFile"));
+      try {
+        return { ...source, file: await stageDroppedFile(source.file) };
+      } finally {
+        setProcessing(false);
+      }
+    },
+    [setProcessing, t],
+  );
 
   const preventDefaults = useCallback((event: Event) => {
     event.preventDefault();
@@ -229,6 +239,9 @@ export const useFileDrop = (
                 }
               : undefined,
         });
+        if (detectedSource) {
+          detectedSource = await stageSource(detectedSource);
+        }
       } catch (error) {
         logger.withError(error).error("Failed to resolve dropped mod source");
         onError(t("addMods.failedToReadDroppedFiles"));
@@ -244,7 +257,7 @@ export const useFileDrop = (
 
       onFilesDetected(detectedSource);
     },
-    [onFilesDetected, onError, t],
+    [onFilesDetected, onError, stageSource, t],
   );
 
   const handleFileSelect = useCallback(
@@ -259,9 +272,14 @@ export const useFileDrop = (
         return;
       }
 
-      onFilesDetected(detectedSource);
+      try {
+        onFilesDetected(await stageSource(detectedSource));
+      } catch (error) {
+        logger.withError(error).error("Failed to stage selected mod file");
+        onError(t("addMods.failedToReadDroppedFiles"));
+      }
     },
-    [onFilesDetected, onError, t],
+    [onFilesDetected, onError, stageSource, t],
   );
 
   const openTauriFilePicker = useCallback(async () => {
