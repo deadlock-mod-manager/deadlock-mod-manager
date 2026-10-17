@@ -417,40 +417,42 @@ const ModButton = ({
         </Tooltip>
       )}
 
-      <FileSelectorDialog
-        fileTree={currentFileTree}
-        isOpen={showFileSelector}
-        modName={currentMod?.name}
-        onCancel={cancelInstallation}
-        onConfirm={confirmInstallation}
-        onOpenChange={(open) => {
-          if (!open) {
-            cancelInstallation();
+      <div className='contents' onClick={(e) => e.stopPropagation()}>
+        <FileSelectorDialog
+          fileTree={currentFileTree}
+          isOpen={showFileSelector}
+          modName={currentMod?.name}
+          onCancel={cancelInstallation}
+          onConfirm={confirmInstallation}
+          onOpenChange={(open) => {
+            if (!open) {
+              cancelInstallation();
+            }
+          }}
+        />
+
+        <MultiFileDownloadDialog
+          downloadPercentage={modProgress?.percentage ?? 0}
+          files={availableFiles}
+          isDownloading={
+            localMod?.status === ModStatus.Downloading ||
+            localMod?.status === ModStatus.Paused
           }
-        }}
-      />
+          isExtracting={localMod?.status === ModStatus.Extracting}
+          isOpen={isDialogOpen}
+          modName={localMod?.name || t("modForm.unknownMod")}
+          onClose={closeDialog}
+          onDownload={downloadSelectedFiles}
+        />
 
-      <MultiFileDownloadDialog
-        downloadPercentage={modProgress?.percentage ?? 0}
-        files={availableFiles}
-        isDownloading={
-          localMod?.status === ModStatus.Downloading ||
-          localMod?.status === ModStatus.Paused
-        }
-        isExtracting={localMod?.status === ModStatus.Extracting}
-        isOpen={isDialogOpen}
-        modName={localMod?.name || t("modForm.unknownMod")}
-        onClose={closeDialog}
-        onDownload={downloadSelectedFiles}
-      />
-
-      <HeroConflictDialog
-        currentMod={heroConflict?.currentMod ?? null}
-        heroName={heroConflict?.heroName ?? ""}
-        newMod={heroConflict?.newMod ?? null}
-        onResolve={handleHeroConflictResolve}
-        open={heroConflict !== null}
-      />
+        <HeroConflictDialog
+          currentMod={heroConflict?.currentMod ?? null}
+          heroName={heroConflict?.heroName ?? ""}
+          newMod={heroConflict?.newMod ?? null}
+          onResolve={handleHeroConflictResolve}
+          open={heroConflict !== null}
+        />
+      </div>
     </ErrorBoundary>
   );
 };
