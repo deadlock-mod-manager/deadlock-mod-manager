@@ -49,6 +49,9 @@ const makeMatch = (
   abandoned_time_s: 0,
   objectives_mask_team0: 0,
   objectives_mask_team1: 0,
+  ranked_display_badge: null,
+  ranked_delta: null,
+  ranked_calibration_match: null,
   ...overrides,
 });
 

@@ -1,3 +1,9 @@
+#[derive(Debug, serde::Serialize)]
+pub struct MissingLaunchMod {
+  pub id: String,
+  pub name: String,
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
   #[error(transparent)]
@@ -34,6 +40,11 @@ pub enum Error {
   GameLaunchFailed(String),
   #[error("Merged mod data must be reviewed before launching")]
   ModDataReviewRequired,
+  #[error(
+    "Cannot launch modded: files are missing for {}. Reinstall or disable these mods, then try again.",
+    .0.iter().map(|mod_info| mod_info.name.as_str()).collect::<Vec<_>>().join(", ")
+  )]
+  MissingEnabledModFiles(Vec<MissingLaunchMod>),
   #[error("Failed to extract mod: {0}")]
   ModExtractionFailed(String),
   #[error("Invalid input: {0}")]
@@ -116,7 +127,12 @@ impl serde::Serialize for Error {
     S: serde::Serializer,
   {
     use serde::ser::SerializeStruct;
-    let mut state = serializer.serialize_struct("Error", 3)?;
+    let field_count = if matches!(self, Error::MissingEnabledModFiles(_)) {
+      4
+    } else {
+      3
+    };
+    let mut state = serializer.serialize_struct("Error", field_count)?;
 
     // Map the error variant to the corresponding kind string
     let kind = match self {
@@ -136,6 +152,7 @@ impl serde::Serialize for Error {
       Error::GameNotRunning => "gameNotRunning",
       Error::GameLaunchFailed(_) => "gameLaunchFailed",
       Error::ModDataReviewRequired => "modDataReviewRequired",
+      Error::MissingEnabledModFiles(_) => "missingEnabledModFiles",
       Error::ModExtractionFailed(_) => "modExtractionFailed",
       Error::InvalidInput(_) => "invalidInput",
       Error::UnauthorizedPath(_) => "unauthorizedPath",
@@ -171,13 +188,35 @@ impl serde::Serialize for Error {
     state.serialize_field("kind", kind)?;
     state.serialize_field("message", &self.to_string())?;
     state.serialize_field("matchSyncKind", &match_sync_kind)?;
+    if let Error::MissingEnabledModFiles(mods) = self {
+      state.serialize_field("affectedMods", mods)?;
+    }
     state.end()
   }
 }
 
 #[cfg(test)]
 mod tests {
-  use super::Error;
+  use super::{Error, MissingLaunchMod};
+
+  #[test]
+  fn missing_enabled_mod_files_serializes_affected_mods() {
+    let error = Error::MissingEnabledModFiles(vec![MissingLaunchMod {
+      id: "42".into(),
+      name: "Fixture skin".into(),
+    }]);
+    let json = serde_json::to_value(&error).unwrap();
+    assert_eq!(json["kind"], "missingEnabledModFiles");
+    assert_eq!(
+      json["affectedMods"],
+      serde_json::json!([{ "id": "42", "name": "Fixture skin" }])
+    );
+    assert_eq!(
+      json["message"],
+      "Cannot launch modded: files are missing for Fixture skin. Reinstall or disable these mods, then try again."
+    );
+    assert!(json["matchSyncKind"].is_null());
+  }
 
   #[test]
   fn contextual_file_errors_keep_io_kind_and_name_the_path() {

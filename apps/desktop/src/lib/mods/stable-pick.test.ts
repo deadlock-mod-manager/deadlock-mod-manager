@@ -9,7 +9,7 @@ describe("pickStable", () => {
   });
 
   test("picks from the list", () => {
-    expect(heroes).toContain(pickStable(heroes, "Braaiaa"));
+    expect(pickStable(heroes, "Braaiaa")).toBeOneOf(heroes);
   });
 
   test("returns undefined for an empty list", () => {

@@ -6,6 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useTranslation } from "react-i18next";
+import { useStartGame } from "@/components/providers/launch-repair";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { MOD_PATHS_KEY } from "@/hooks/use-game-config-alert";
 import { useCompatibilityReview } from "@/components/providers/compatibility-review";
@@ -36,6 +37,7 @@ export const useLaunch = () => {
   const setLastLaunchVanilla = usePersistedStore((s) => s.setLastLaunchVanilla);
   const queryClient = useQueryClient();
   const confirm = useConfirm();
+  const startGame = useStartGame();
   const { randomizeSkins } = useSkinRandomizer();
   const reviewCompatibility = useCompatibilityReview();
   const modCompatibility = useExperimentalFeature("mod-compatibility-repairs");
@@ -141,7 +143,7 @@ export const useLaunch = () => {
           modCompatibility,
         };
         launched = await launchWithCompatibilityReview(
-          () => invoke<void>("start_game", args),
+          () => startGame(args),
           () => reviewCompatibility(profileFolder),
           vanilla || !modCompatibility,
         );

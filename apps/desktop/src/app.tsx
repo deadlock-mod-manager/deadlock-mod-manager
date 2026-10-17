@@ -21,6 +21,7 @@ import { TauriAppWindowProvider } from "./components/layout/window-controls/wind
 import { OnboardingWizard } from "./components/onboarding/onboarding-wizard";
 import { PerformanceRenderer } from "./components/performance/performance-renderer";
 import { TelemetryConsentDialog } from "./components/telemetry/telemetry-consent-dialog";
+import { LaunchRepairProvider } from "./components/providers/launch-repair";
 import { AlertDialogProvider } from "./components/providers/alert-dialog";
 import { invokeGuarded, isGameRunningError } from "@/lib/game-guard";
 import { AppProvider } from "./components/providers/app";
@@ -149,6 +150,7 @@ const App = ({ runtime, storage }: AppProps) => {
               <TooltipProvider>
                 <AlertDialogProvider>
                   <CompatibilityReviewProvider>
+                  <LaunchRepairProvider>
                     <TauriAppWindowProvider>
                       <ThemeOverridesProvider>
                         <FoundryProvider>
@@ -201,6 +203,7 @@ const App = ({ runtime, storage }: AppProps) => {
                         }
                       />
                     </TauriAppWindowProvider>
+                  </LaunchRepairProvider>
                   </CompatibilityReviewProvider>
                 </AlertDialogProvider>
               </TooltipProvider>

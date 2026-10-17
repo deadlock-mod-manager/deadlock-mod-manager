@@ -6,7 +6,7 @@
   "scripts": {
     "test": "bun test",
     "ui:dev": "vite",
-    "check-types": "tsgo --noEmit --skipLibCheck",
+    "check-types": "tsgo --noEmit --skipLibCheck && tsgo --noEmit --skipLibCheck -p tsconfig.tests.json",
     "ui:build": "vite build",
     "preview": "vite preview",
     "tauri": "tauri",

@@ -215,6 +215,25 @@ These cases cover reorder interruption at placement and manifest commit, rather 
 
 ## Missing VPK scenarios
 
+`addons-folder-wiped` starts with three enabled Alpha mods, closes normally,
+and removes Alpha's entire addons folder including `.dmm.json`. The next
+process records whether startup drops or flags the lost installs, clears them
+through Settings → Tools, downloads and reinstalls a catalog mod, and checks
+disk bytes, manifest ownership, both library copies and an empty download queue.
+A third process checks that the recovered install survives restart. Beta and
+Steam remain unchanged. Startup must not present missing files as healthy enabled
+installs, even if Clear All Mods subsequently repairs the state.
+
+`missing-vpks-launch` removes only three enabled mods' VPKs between processes,
+keeping their manifest and restorable sources. It checks the library warnings,
+then requires Launch modded to visibly refuse or request confirmation, or restore
+every enabled payload before recording a Steam launch. A library badge alone
+does not satisfy this pre-launch check. `gameinfo-reverted-launch` instead reverts
+gameinfo to vanilla while preserving those enabled VPKs; a recorded modded launch
+must have Alpha's addons search path restored. Both launch cases check a fresh
+process again. These cases need no native input and retain `broken-state-*.json`
+observations with disk, manifest, store, gameinfo, launches and UI text.
+
 A user can delete VPKs from the addons folder behind DMM's back. A mod whose every file is gone has nothing left to enable, so it has to leave the library and its manifest entry, or startup would restore it again. A mod that lost only some files, or that DMM can restore, stays in the library flagged as broken: its `missingVpks` lists the original names of the lost files, and My Mods shows a `missing-files-warning` for it. Both cases seed the same mixed Alpha library next to Beta, which is not the active profile:
 
 | Mod | Seeded as | Deleted | Expected |
