@@ -190,3 +190,11 @@ jobs:
         run: |
           cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --locked \
             -- --skip download_manager::downloader::tests::test_download_file
+
+      - name: Run Source 2 codec tests
+        env:
+          # intel_tex_2's prebuilt compressor objects require the C++ runtime.
+          RUSTFLAGS: -C link-arg=-lstdc++
+        run: |
+          cargo test --manifest-path packages/vpkmanager/Cargo.toml --locked
+          cargo test --manifest-path packages/source2-model/Cargo.toml --locked
