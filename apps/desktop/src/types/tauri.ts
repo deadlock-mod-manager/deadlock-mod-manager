@@ -1,6 +1,8 @@
 export type ErrorKind = {
   kind:
     | "io"
+    | "readOnlyFile"
+    | "makeWritableFailed"
     | "utf8"
     | "steamNotFound"
     | "gameNotFound"
@@ -40,6 +42,7 @@ export type ErrorKind = {
     | "vpkInUse";
   message: string;
   affectedMods?: { id: string; name: string }[];
+  path?: string;
 };
 
 export function isTauriError(

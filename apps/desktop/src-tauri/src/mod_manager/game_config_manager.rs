@@ -1,4 +1,5 @@
 use crate::errors::Error;
+use crate::mod_manager::file_permissions::ensure_file_writable;
 use crate::mod_manager::filesystem_helper::FileSystemHelper;
 use crate::mod_manager::shard;
 use crate::utils;
@@ -58,6 +59,13 @@ pub struct GameInfoStatus {
   pub backup_valid: bool,
   pub syntax_valid: bool,
   pub has_mod_paths: bool,
+}
+
+#[derive(Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum GameInfoResetSource {
+  Api,
+  Backup,
 }
 
 /// Validation result for gameinfo.gi
@@ -339,7 +347,8 @@ impl GameConfigManager {
     }
 
     log::info!("Restoring gameinfo.gi from backup: {backup_path:?}");
-    fs::copy(&backup_path, &gameinfo_path)?;
+    ensure_file_writable(&gameinfo_path)?;
+    fs::write(&gameinfo_path, fs::read(&backup_path)?)?;
 
     // Verify restoration
     let restored_hash = self.calculate_file_hash(&gameinfo_path)?;
@@ -368,7 +377,9 @@ impl GameConfigManager {
     let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
 
     // Validate the downloaded content
+    ensure_file_writable(&gameinfo_path)?;
     let temp_path = gameinfo_path.with_extension("gi.tmp");
+    ensure_file_writable(&temp_path)?;
     fs::write(&temp_path, &vanilla_content)?;
 
     let validation = self.validate_gameinfo_syntax(&temp_path)?;
@@ -379,8 +390,7 @@ impl GameConfigManager {
         "Downloaded vanilla gameinfo.gi has syntax issues: {:?}",
         validation.errors
       );
-      // Fall back to backup restore
-      return self.reset_to_vanilla_fallback(game_path);
+      return Err(Error::GameConfigParse(validation.errors.join(", ")));
     }
 
     // Create backup of current file before replacing
@@ -395,6 +405,7 @@ impl GameConfigManager {
     // Write the vanilla content
     fs::write(&gameinfo_path, vanilla_content)?;
     self.game_setup = false;
+    self.backups.remove(&gameinfo_path);
     log::info!("Successfully replaced gameinfo.gi with vanilla version");
 
     // Validate the result
@@ -413,31 +424,27 @@ impl GameConfigManager {
     Ok(())
   }
 
-  /// Fallback method to reset to vanilla using backup restore
-  pub fn reset_to_vanilla_fallback(&mut self, game_path: &Path) -> Result<(), Error> {
-    log::info!("Using fallback method to reset to vanilla state");
-
-    // First try to restore from backup
-    if let Err(e) = self.restore_gameinfo_backup(game_path) {
-      log::warn!("Failed to restore from backup: {e}");
-      // If backup restore fails, try to clean current file
-      self.toggle_mods(game_path, true)?;
+  pub fn reset_gameinfo(
+    &mut self,
+    game_path: &Path,
+    downloaded: Result<String, Error>,
+  ) -> Result<GameInfoResetSource, Error> {
+    match downloaded.and_then(|content| self.apply_vanilla_gameinfo(game_path, content)) {
+      Ok(()) => Ok(GameInfoResetSource::Api),
+      Err(error) => {
+        let backup = game_path.join("game/citadel/gameinfo.gi.bak");
+        if !matches!(error, Error::Network(_) | Error::GameConfigParse(_)) || !backup.is_file() {
+          return Err(error);
+        }
+        log::warn!("Vanilla gameinfo download failed; restoring local backup: {error}");
+        self.restore_gameinfo_backup(game_path)?;
+        self.toggle_mods(game_path, true)?;
+        self
+          .backups
+          .remove(&game_path.join("game/citadel/gameinfo.gi"));
+        Ok(GameInfoResetSource::Backup)
+      }
     }
-
-    // Validate the result
-    let status = self.get_gameinfo_status(game_path)?;
-    if status.has_mod_paths {
-      log::warn!("Warning: File may still contain mod paths after reset");
-    }
-
-    if !status.syntax_valid {
-      return Err(Error::GameConfigParse(
-        "Reset resulted in invalid gameinfo.gi".to_string(),
-      ));
-    }
-
-    log::info!("Successfully reset to vanilla state using fallback method");
-    Ok(())
   }
 
   /// Validate that the current patch was applied correctly
@@ -600,6 +607,7 @@ impl GameConfigManager {
     }
 
     // Read and validate current file
+    ensure_file_writable(gameinfo_path)?;
     let gameinfo_content = fs::read_to_string(gameinfo_path)?;
     let validation = self.validate_gameinfo_syntax(gameinfo_path)?;
 
@@ -696,6 +704,7 @@ impl GameConfigManager {
 
     // Validate the new content before writing
     let temp_path = gameinfo_path.with_extension("gi.tmp");
+    ensure_file_writable(&temp_path)?;
     fs::write(&temp_path, &new_gameinfo_content)?;
 
     let temp_validation = self.validate_gameinfo_syntax(&temp_path)?;
@@ -910,6 +919,7 @@ impl GameConfigManager {
     let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
 
     // Validate file exists and syntax before modification
+    ensure_file_writable(&gameinfo_path)?;
     let validation = self.validate_gameinfo_syntax(&gameinfo_path)?;
     if !validation.is_valid {
       log::error!("Cannot modify invalid gameinfo.gi: {:?}", validation.errors);
@@ -976,6 +986,7 @@ impl GameConfigManager {
 
     // Validate the new content before writing
     let temp_path = gameinfo_path.with_extension("gi.tmp");
+    ensure_file_writable(&temp_path)?;
     fs::write(&temp_path, &new_gameinfo_content)?;
 
     let temp_validation = self.validate_gameinfo_syntax(&temp_path)?;
@@ -1070,6 +1081,101 @@ mod tests {
 
   fn vanilla_fixture(newline: &str) -> String {
     "\"GameInfo\"\n{\n  // Deadlock \u{2014} configuration\n  FileSystem\n  {\n\t\tSearchPaths\n    {\n      Game citadel\n    }\n  }\n}".replace("\n", newline)
+  }
+
+  #[test]
+  fn reset_refreshes_setup_after_a_parse_failure_without_restarting() {
+    let (_dir, game_path) = setup_game_dir();
+    let original = vanilla_fixture("\n");
+    write_gameinfo(&game_path, &original);
+    let mut manager = GameConfigManager::new();
+    let paths = vec!["citadel/addons/profile_test".to_string()];
+    manager.update_mod_paths(&game_path, &paths).unwrap();
+    assert!(manager.is_game_setup());
+    write_gameinfo(&game_path, "broken");
+    assert!(matches!(
+      manager.update_mod_paths(&game_path, &paths),
+      Err(Error::GameConfigParse(_))
+    ));
+    assert!(
+      !manager
+        .get_gameinfo_status(&game_path)
+        .unwrap()
+        .syntax_valid
+    );
+    assert_eq!(
+      manager.reset_gameinfo(&game_path, Ok(original)).unwrap(),
+      GameInfoResetSource::Api
+    );
+    assert!(!manager.is_game_setup());
+    let status = manager.get_gameinfo_status(&game_path).unwrap();
+    assert!(status.syntax_valid);
+    assert!(!status.has_mod_paths);
+    assert!(!status.is_modified_externally);
+    manager.update_mod_paths(&game_path, &paths).unwrap();
+    assert_eq!(manager.marker_addons_paths(&game_path).unwrap(), paths);
+  }
+
+  #[test]
+  fn readonly_gameinfo_is_rejected_before_writing_and_can_be_repaired() {
+    let (_dir, game_path) = setup_game_dir();
+    let original = vanilla_fixture("\n");
+    write_gameinfo(&game_path, &original);
+    let file = game_path.join("game/citadel/gameinfo.gi");
+    let mut permissions = fs::metadata(&file).unwrap().permissions();
+    permissions.set_readonly(true);
+    fs::set_permissions(&file, permissions).unwrap();
+    let mut manager = GameConfigManager::new();
+    let result = manager.update_mod_paths(&game_path, &[]);
+    assert!(matches!(result, Err(Error::ReadOnlyFile(path)) if path == file));
+    assert_eq!(fs::read_to_string(&file).unwrap(), original);
+    crate::mod_manager::file_permissions::make_file_writable(&game_path, &file).unwrap();
+    manager.update_mod_paths(&game_path, &[]).unwrap();
+  }
+
+  #[test]
+  fn offline_reset_uses_valid_backup_and_refreshes_setup() {
+    let (_dir, game_path) = setup_game_dir();
+    write_gameinfo(&game_path, &vanilla_fixture("\n"));
+    let mut manager = GameConfigManager::new();
+    manager.update_mod_paths(&game_path, &[]).unwrap();
+    write_gameinfo(&game_path, "corrupted");
+    let source = manager
+      .reset_gameinfo(&game_path, Err(Error::Network("offline".into())))
+      .unwrap();
+    assert_eq!(source, GameInfoResetSource::Backup);
+    assert!(!manager.is_game_setup());
+    let status = manager.get_gameinfo_status(&game_path).unwrap();
+    assert!(status.syntax_valid);
+    assert!(!status.has_mod_paths);
+    assert!(!status.is_modified_externally);
+    manager
+      .update_mod_paths(&game_path, &["citadel/addons/test".into()])
+      .unwrap();
+  }
+
+  #[test]
+  fn offline_reset_without_backup_or_with_invalid_backup_preserves_the_file() {
+    let (_dir, game_path) = setup_game_dir();
+    write_gameinfo(&game_path, "corrupted");
+    let mut manager = GameConfigManager::new();
+    assert!(matches!(
+      manager.reset_gameinfo(&game_path, Err(Error::Network("offline".into()))),
+      Err(Error::Network(_))
+    ));
+    fs::write(
+      game_path.join("game/citadel/gameinfo.gi.bak"),
+      "invalid backup",
+    )
+    .unwrap();
+    assert!(matches!(
+      manager.reset_gameinfo(&game_path, Err(Error::Network("offline".into()))),
+      Err(Error::GameConfigParse(_))
+    ));
+    assert_eq!(
+      fs::read_to_string(game_path.join("game/citadel/gameinfo.gi")).unwrap(),
+      "corrupted"
+    );
   }
 
   #[test]

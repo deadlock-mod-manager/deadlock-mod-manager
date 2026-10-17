@@ -17,6 +17,7 @@ impl ModManager {
     }
 
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
+    crate::mod_manager::file_permissions::prepare_profile_for_write(&addons_path)?;
 
     // Find prefixed VPKs in addons (mod is downloaded but not enabled)
     let mut prefixed_vpks = self
