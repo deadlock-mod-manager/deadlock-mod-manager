@@ -331,11 +331,11 @@ const selectedDownloadsForEntry = (
   if (entry.origin.provider !== "gamebanana" || !entry.origin.fileId) {
     return undefined;
   }
-  const size = entry.files.reduce((sum, file) => sum + (file.size ?? 0), 0);
   return [
     {
       url: `gamebanana-file://${encodeURIComponent(modId)}/${entry.origin.fileId}`,
-      size,
+      // The archive's size is unknown; the extracted VPK total would pass for it.
+      size: 0,
       name: entry.origin.fileName ?? entry.name,
       description: null,
       createdAt: null,
