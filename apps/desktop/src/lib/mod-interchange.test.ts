@@ -44,7 +44,7 @@ const entry = (overrides: Partial<InterchangeMod> = {}): InterchangeMod => ({
   ...overrides,
 });
 
-const result = (overrides: Partial<ImportedMod> = {}) => ({
+const result = (overrides: Partial<ImportedMod & { modId: string }> = {}) => ({
   key: "gamebanana:mod:650634",
   modId: "650634",
   status: "imported" as const,
@@ -250,12 +250,12 @@ describe("profiles, crosshairs and references", () => {
       profileTargetsFor(document, [profile], ledger, profiles).get(profile.key);
     expect(target({ [key]: "p1" }, existing)).toEqual({
       kind: "existing",
-      profileId: "p1",
+      profileId: "p1" as ProfileId,
     });
     // The profile it went into was deleted since: the one with its name.
     expect(target({ [key]: "gone" }, existing)).toEqual({
       kind: "existing",
-      profileId: "default",
+      profileId: "default" as ProfileId,
     });
     expect(target({}, existing.slice(1))).toEqual({
       kind: "new",
@@ -280,12 +280,18 @@ describe("profiles, crosshairs and references", () => {
       existing,
     );
     // The ledger claims "ranked" for c, so the name match is taken.
-    expect(targets.get("c")).toEqual({ kind: "existing", profileId: "ranked" });
+    expect(targets.get("c")).toEqual({
+      kind: "existing",
+      profileId: "ranked" as ProfileId,
+    });
     expect(targets.get("a")).toEqual({ kind: "new", name: "Ranked" });
     expect(targets.get("b")).toEqual({ kind: "new", name: "Ranked" });
 
     const byName = profileTargetsFor(document, [first, second], {}, existing);
-    expect(byName.get("a")).toEqual({ kind: "existing", profileId: "ranked" });
+    expect(byName.get("a")).toEqual({
+      kind: "existing",
+      profileId: "ranked" as ProfileId,
+    });
     expect(byName.get("b")).toEqual({ kind: "new", name: "Ranked" });
   });
 

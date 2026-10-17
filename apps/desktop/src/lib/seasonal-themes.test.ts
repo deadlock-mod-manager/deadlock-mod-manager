@@ -62,7 +62,10 @@ describe("seasonal calendar", () => {
   });
 
   it("skips disabled themes and finds the next one", () => {
-    const controls = { ...on, disabled: ["seasonal-halloween" as const] };
+    const controls: SeasonalControls = {
+      ...on,
+      disabled: ["seasonal-halloween"],
+    };
     expect(themeOn("2026-10-15", controls)).toBeUndefined();
     expect(
       nextSeasonalWindow(

@@ -30,7 +30,7 @@ function makeMod(remoteId: string): ModDto {
     metadata: null,
     createdAt: null,
     updatedAt: null,
-  });
+  }) as ModDto;
 }
 
 describe("findModInModsListCache", () => {
