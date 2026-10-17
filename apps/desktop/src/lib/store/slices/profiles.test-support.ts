@@ -4,7 +4,7 @@ import type { ModDto } from "@deadlock-mods/shared";
 import { ModStatus, type LocalMod } from "@/types/mods";
 import { type ProfileVpkSnapshot } from "@/types/profiles";
 
-const loggerMock = {
+export const profileTestLogger = {
   withMetadata() {
     return this;
   },
@@ -12,10 +12,10 @@ const loggerMock = {
     return this;
   },
   info() {},
-  warn() {},
-  error() {},
+  warn: mock(() => {}),
+  error: mock(() => {}),
 };
-mock.module("@/lib/logger", () => ({ default: loggerMock }));
+mock.module("@/lib/logger", () => ({ default: profileTestLogger }));
 
 export const modFor = (remoteId: string): LocalMod => ({
   id: remoteId,

@@ -1,4 +1,17 @@
 {
+  "launchRepair": {
+    "title_one": "{{count}} mod is missing files",
+    "title_other": "{{count}} mods are missing files",
+    "description": "Reinstall the affected mods or disable them before launching.",
+    "localImport": "Local import",
+    "localNotice": "Local imports cannot be downloaded again. Reinstall and launch will disable them instead.",
+    "reinstallAndLaunch": "Reinstall and launch",
+    "disableAndLaunch": "Disable and launch",
+    "progress": "Reinstalling {{index}} of {{total}}: {{name}}",
+    "notRestored": "Files could not be restored automatically.",
+    "failed": "Some mods could not be repaired. Disable them to launch, or cancel.",
+    "profileChanged": "The active profile changed. Cancel and launch again from that profile."
+  },
   "favorites": {
     "title": "Favorites",
     "subtitle": "Mods you've saved to revisit later.",

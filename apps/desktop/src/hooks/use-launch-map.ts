@@ -1,3 +1,4 @@
+import { useStartGame } from "@/components/providers/launch-repair";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
@@ -10,6 +11,7 @@ import { getAdditionalArgs } from "@/lib/utils";
 
 export const useLaunchMap = (onSuccess?: () => void) => {
   const { t } = useTranslation();
+  const startGame = useStartGame();
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
   const queryClient = useQueryClient();
 
@@ -28,20 +30,25 @@ export const useLaunchMap = (onSuccess?: () => void) => {
         storeState.gamePresenceEnabled,
       );
 
-      await invoke("start_game", {
+      const launched = await startGame({
         vanilla: false,
         additionalArgs,
         profileFolder,
       });
 
+      if (!launched) return false;
+
       await queryClient.invalidateQueries({
         queryKey: ["is-game-running"],
       });
+      return true;
     },
     meta: {
       skipGlobalErrorHandler: true,
     },
-    onSuccess,
+    onSuccess: (launched) => {
+      if (launched) onSuccess?.();
+    },
     onError: (error) => {
       logger.errorOnly(error);
       toast.error(

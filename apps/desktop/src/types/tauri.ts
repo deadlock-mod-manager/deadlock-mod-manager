@@ -18,6 +18,7 @@ export type ErrorKind = {
     | "gameRunning"
     | "gameNotRunning"
     | "gameLaunchFailed"
+    | "missingEnabledModFiles"
     | "failedToOpenFolder"
     | "modExtractionFailed"
     | "invalidInput"
@@ -37,6 +38,7 @@ export type ErrorKind = {
     | "backgroundTaskFailed"
     | "vpkInUse";
   message: string;
+  affectedMods?: { id: string; name: string }[];
 };
 
 export function isTauriError(

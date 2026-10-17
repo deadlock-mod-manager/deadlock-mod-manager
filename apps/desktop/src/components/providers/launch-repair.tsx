@@ -1,0 +1,227 @@
+import { ValidationError } from "@deadlock-mods/common/client-errors";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@deadlock-mods/ui/components/alert-dialog";
+import { Button } from "@deadlock-mods/ui/components/button";
+import { useMutation } from "@tanstack/react-query";
+import { invoke } from "@tauri-apps/api/core";
+import {
+  createContext,
+  type ReactNode,
+  useCallback,
+  useContext,
+  useRef,
+  useState,
+} from "react";
+import { useTranslation } from "react-i18next";
+import { LaunchRepairDetails } from "@/components/launch-repair-details";
+import { useReinstallMod } from "@/hooks/use-reinstall-mod";
+import { getErrorMessage } from "@/lib/errors";
+import { invokeGuarded } from "@/lib/game-guard";
+import {
+  type LaunchRepairFailure,
+  type LaunchRepairMod,
+  type LaunchRepairProgress,
+  repairLaunchFiles,
+  resolveLaunchRepairMods,
+} from "@/lib/launch-repair";
+import { usePersistedStore } from "@/lib/store";
+import { getProfileVpkSnapshot } from "@/lib/tauri-commands";
+import { ModStatus } from "@/types/mods";
+import { isTauriError } from "@/types/tauri";
+
+type LaunchArgs = {
+  vanilla: boolean;
+  additionalArgs: string;
+  profileFolder: string | null;
+};
+type RepairRequest = {
+  args: LaunchArgs;
+  profileId: string;
+  mods: LaunchRepairMod[];
+  resolve: (launched: boolean) => void;
+};
+
+const LaunchRepairContext = createContext<
+  (args: LaunchArgs) => Promise<boolean>
+>(async () => false);
+
+export function LaunchRepairProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
+  const { reinstallMod } = useReinstallMod();
+  const [request, setRequest] = useState<RepairRequest | null>(null);
+  const [failures, setFailures] = useState<LaunchRepairFailure[]>([]);
+  const [progress, setProgress] = useState<LaunchRepairProgress | null>(null);
+  const activeRequest = useRef(false);
+  const working = useRef(false);
+
+  const finish = (launched: boolean) => {
+    request?.resolve(launched);
+    setRequest(null);
+    activeRequest.current = false;
+  };
+
+  const repair = useMutation({
+    mutationFn: async (action: "reinstall" | "disable") => {
+      if (!request || working.current) return;
+      working.current = true;
+      setProgress(null);
+      const checkProfile = () => {
+        if (
+          usePersistedStore.getState().activeProfileId !== request.profileId
+        ) {
+          throw new ValidationError(t("launchRepair.profileChanged"));
+        }
+      };
+      try {
+        checkProfile();
+        const failed = await repairLaunchFiles(request.mods, action, {
+          reinstall: async (mod) => {
+            checkProfile();
+            return reinstallMod(mod);
+          },
+          disable: async (target) => {
+            checkProfile();
+            const store = usePersistedStore.getState();
+            const mod = store.localMods.find(
+              (item) => item.remoteId === target.id,
+            );
+            const { manifest } = await getProfileVpkSnapshot(
+              request.args.profileFolder,
+            );
+            if (manifest.mods[target.id]?.enabled) {
+              await invokeGuarded("uninstall_mod", {
+                modId: target.id,
+                vpks: mod?.installedVpks ?? [],
+                profileFolder: request.args.profileFolder,
+              });
+            }
+            if (mod?.status === ModStatus.Installed) {
+              store.setModStatus(target.id, ModStatus.Downloaded);
+            }
+            store.setModEnabledInCurrentProfile(target.id, false);
+          },
+          launch: async () => {
+            checkProfile();
+            await invoke("start_game", request.args);
+          },
+          onProgress: setProgress,
+        });
+        setFailures(failed);
+        if (failed.length === 0) finish(true);
+      } finally {
+        working.current = false;
+        setProgress(null);
+      }
+    },
+    meta: { skipGlobalErrorHandler: true },
+  });
+
+  const { reset: resetRepair } = repair;
+  const startGame = useCallback(
+    async (args: LaunchArgs) => {
+      if (activeRequest.current) return false;
+      activeRequest.current = true;
+      const snapshot = usePersistedStore.getState();
+      try {
+        await invoke("start_game", args);
+        activeRequest.current = false;
+        return true;
+      } catch (error) {
+        if (
+          !args.vanilla &&
+          isTauriError(error) &&
+          error.kind === "missingEnabledModFiles" &&
+          error.affectedMods?.length
+        ) {
+          const mods = resolveLaunchRepairMods(
+            error.affectedMods,
+            snapshot.localMods,
+          );
+          resetRepair();
+          setFailures([]);
+          setProgress(null);
+          return new Promise<boolean>((resolve) => {
+            setRequest({
+              args,
+              profileId: snapshot.activeProfileId,
+              mods,
+              resolve,
+            });
+          });
+        }
+        activeRequest.current = false;
+        throw error;
+      }
+    },
+    [resetRepair],
+  );
+
+  return (
+    <LaunchRepairContext.Provider value={startGame}>
+      {children}
+      <AlertDialog
+        open={request !== null}
+        onOpenChange={(open) => {
+          if (!open && !repair.isPending && !working.current) finish(false);
+        }}>
+        <AlertDialogContent
+          className='gap-0 overflow-hidden p-0 sm:max-w-xl'
+          data-testid='launch-repair-dialog'
+          onEscapeKeyDown={(event) => {
+            if (repair.isPending || working.current) event.preventDefault();
+          }}>
+          <AlertDialogHeader className='space-y-1.5 p-6 text-left'>
+            <AlertDialogTitle className='text-base leading-6'>
+              {t("launchRepair.title", { count: request?.mods.length ?? 0 })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("launchRepair.description")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <LaunchRepairDetails
+            mods={request?.mods ?? []}
+            failures={failures}
+            progress={progress}
+          />
+          {repair.isError && (
+            <p className='px-6 pb-4 text-sm text-destructive' role='alert'>
+              {getErrorMessage(repair.error)}
+            </p>
+          )}
+          <AlertDialogFooter className='gap-2 border-t bg-muted/30 px-6 py-3 sm:space-x-0'>
+            <Button
+              data-testid='launch-repair-cancel'
+              disabled={repair.isPending}
+              onClick={() => finish(false)}
+              variant='ghost'>
+              {t("common.cancel")}
+            </Button>
+            <Button
+              data-testid='launch-repair-disable'
+              disabled={repair.isPending}
+              onClick={() => repair.mutate("disable")}
+              variant='outline'>
+              {t("launchRepair.disableAndLaunch")}
+            </Button>
+            <Button
+              data-testid='launch-repair-reinstall'
+              disabled={
+                repair.isPending || failures.length > 0 || repair.isError
+              }
+              onClick={() => repair.mutate("reinstall")}>
+              {t("launchRepair.reinstallAndLaunch")}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </LaunchRepairContext.Provider>
+  );
+}
+
+export const useStartGame = () => useContext(LaunchRepairContext);

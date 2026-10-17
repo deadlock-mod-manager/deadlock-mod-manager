@@ -211,11 +211,20 @@ type ManifestRepair = {
   installOrder?: number;
 };
 
+const matchesInstalledVpk = (installedVpk: string, vpk: ProfileVpkFile) => {
+  const normalized = installedVpk.replaceAll("\\", "/");
+  return normalized.includes("/")
+    ? normalized === vpk.locator
+    : normalized === vpk.filename;
+};
+
 type ManifestReconciliation = {
   repaired: ManifestRepair[];
   restored: LocalMod[];
   /** Mods whose every VPK was deleted; already dropped from the manifest. */
   forgotten: string[];
+  /** Store-only removals without a manifest; require a fresh revision. */
+  forgottenFromSnapshot?: string[];
 };
 
 /**
@@ -251,7 +260,30 @@ const planManifestReconciliation = async (
 
   const manifestEntries = Object.entries(snapshot.manifest.mods);
   if (manifestEntries.length === 0) {
-    return null;
+    // Legacy profiles can have VPKs without a manifest. Keep a mod while any
+    // of its files remain, or while files exist but its locators are unknown.
+    const forgottenFromSnapshot = profile.mods
+      .filter((mod) => {
+        const installedVpks = mod.installedVpks;
+        const claimsInstallation =
+          mod.status === ModStatus.Installed ||
+          (installedVpks?.length ?? 0) > 0 ||
+          profile.enabledMods[mod.remoteId]?.enabled === true;
+        if (!canForgetMod(mod) || !claimsInstallation) return false;
+        if (snapshot.files.length === 0) return true;
+        if (!installedVpks?.length) return false;
+        return !snapshot.files.some(
+          (vpk) =>
+            (vpk.shard === 1 && vpk.filename.startsWith(`${mod.remoteId}_`)) ||
+            installedVpks.some((installedVpk) =>
+              matchesInstalledVpk(installedVpk, vpk),
+            ),
+        );
+      })
+      .map((mod) => mod.remoteId);
+    return forgottenFromSnapshot.length > 0
+      ? { repaired: [], restored: [], forgotten: [], forgottenFromSnapshot }
+      : null;
   }
 
   const trackedById = new Map<string, LocalMod>(
@@ -416,13 +448,16 @@ const reconcileAllProfiles = async (
       // The manifest already forgot these mods, so they leave the library
       // even when a newer sync superseded the rest of this plan; otherwise
       // nothing would ever remove them.
+      const fresh = state.profileSyncRevisions[profileId] === revision;
       const forgotten = new Set(
-        plan.forgotten.filter((remoteId) => {
+        [
+          ...plan.forgotten,
+          ...(fresh ? (plan.forgottenFromSnapshot ?? []) : []),
+        ].filter((remoteId) => {
           const mod = current.mods.find((item) => item.remoteId === remoteId);
           return !mod || canForgetMod(mod);
         }),
       );
-      const fresh = state.profileSyncRevisions[profileId] === revision;
       if (!fresh && forgotten.size === 0) {
         return state;
       }
@@ -1187,12 +1222,9 @@ export const createProfilesSlice: StateCreator<
         const enabledVpkFilesForMod = allVpks.filter(
           (vpk) =>
             ENABLED_VPK_PATTERN.test(vpk.filename) &&
-            (mod.installedVpks?.some((installedVpk) => {
-              const normalized = installedVpk.replaceAll("\\", "/");
-              return normalized.includes("/")
-                ? normalized === vpk.locator
-                : normalized === vpk.filename;
-            }) ??
+            (mod.installedVpks?.some((installedVpk) =>
+              matchesInstalledVpk(installedVpk, vpk),
+            ) ??
               false),
         );
         const enabledShards = new Set(

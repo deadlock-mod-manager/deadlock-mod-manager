@@ -4,12 +4,14 @@ import { useState } from "react";
 import { createLogger } from "@/lib/logger";
 import {
   applyDownloadTimeSelection,
+  previousInstallSelection,
   requiresFileSelection,
 } from "@/lib/mods/mod-variants";
 import { trackInstallOptions } from "@/lib/analytics";
 import type { InstallAnalyticsOptions } from "@/lib/analytics/install";
 import { getErrorMessage } from "@/lib/errors";
 import { syncInstalledVpksFromManifest } from "@/lib/mods/sync-installed-vpks";
+import { getProfileVpkSnapshot } from "@/lib/tauri-commands";
 import { isTauriError } from "@/types/tauri";
 import { usePersistedStore } from "@/lib/store";
 import type {
@@ -180,23 +182,28 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
 
         // If mod has multiple files, check if we already have a previous selection
         if (requiresFileSelection(mod.installedFileTree)) {
-          // If mod already has installedVpks, it means user previously selected files
-          // Use that selection instead of prompting again
-          if (mod.installedVpks && mod.installedVpks.length > 0) {
+          // Reconciliation clears installedVpks for disabled mods. Their
+          // manifest entry still proves the stored selection was installed.
+          let previousSelection = previousInstallSelection(mod);
+          if (!previousSelection) {
+            const { manifest } = await getProfileVpkSnapshot(
+              getActiveProfile()?.folderName ?? null,
+            );
+            previousSelection = previousInstallSelection(mod, manifest);
+          }
+          if (previousSelection) {
             logger
               .withMetadata({
                 modId: mod.remoteId,
-                previouslyInstalledVpks: mod.installedVpks.length,
+                selectedFiles: previousSelection.files.filter(
+                  (f) => f.is_selected,
+                ).length,
               })
               .info("Mod has previous VPK selection, using it for re-enable");
 
             // Installed VPKs have pakXX names. The stored tree retains the
             // original names and selection; renumbered paths cannot recover it.
-            return await performInstallation(
-              mod,
-              options,
-              mod.installedFileTree,
-            );
+            return await performInstallation(mod, options, previousSelection);
           }
 
           // The variant picked in the download dialog already answers this

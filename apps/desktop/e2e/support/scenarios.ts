@@ -16,6 +16,7 @@ import { prepareConflictWorld } from "./conflict-fixtures";
 import { prepareFilesystemWorld } from "./filesystem-fixtures";
 import { prepareManifestRepairWorld } from "./manifest-repair-fixtures";
 import { prepareMissingVpkWorld } from "./missing-vpk-fixtures";
+import { prepareBrokenStateWorld } from "./broken-state-fixtures";
 import { prepareShardWorld } from "./shard-fixtures";
 import { assertCrashEvidence } from "./filesystem-oracle";
 import { assertNormalExit, assertInterruptedExit } from "./phase-evidence";
@@ -38,6 +39,10 @@ import {
   detectedModRoutes,
   prepareDetectedModWorld,
 } from "./detected-mod-fixtures";
+import {
+  multipakUpdateRoutes,
+  assertMultipakUpdateNetwork,
+} from "./multipak-update-fixtures";
 
 type Definition = {
   family: string;
@@ -205,6 +210,28 @@ const heroSkins: Definition = {
   prepare: async (world) => prepareHeroSkinsWorld(world),
 };
 export const scenarios = {
+  "addons-folder-wiped": {
+    ...defaults,
+    family: "filesystem",
+    spec: "addons-wipe",
+    phases: ["seed-wipe", "recover-wipe", "restart-wipe"],
+    prepare: prepareBrokenStateWorld,
+    routes: () => createCatalogRoutes("gamebanana-single"),
+  },
+  "missing-vpks-launch": {
+    ...defaults,
+    family: "missing-vpks",
+    spec: "launch-broken-state",
+    phases: ["seed-launch", "launch-damaged", "restart-launch-damaged"],
+    prepare: prepareBrokenStateWorld,
+  },
+  "gameinfo-reverted-launch": {
+    ...defaults,
+    family: "settings",
+    spec: "launch-broken-state",
+    phases: ["seed-launch", "launch-damaged", "restart-launch-damaged"],
+    prepare: prepareBrokenStateWorld,
+  },
   "catalog-refresh": {
     ...defaults,
     family: "catalog",
@@ -403,6 +430,13 @@ export const scenarios = {
   "gamebanana-reinstall": catalogLifecycle,
   "gamebanana-reinstall-disabled": catalogLifecycle,
   "gamebanana-force-update": catalogLifecycle,
+  "gamebanana-multipak-update": {
+    ...catalog,
+    spec: "gamebanana-multipak-update",
+    phases: ["update-toggle", "restart-uninstall"],
+    routes: multipakUpdateRoutes,
+    verifyNetwork: assertMultipakUpdateNetwork,
+  },
   "gamebanana-update-skip": {
     ...catalog,
     spec: "gamebanana-updates",
