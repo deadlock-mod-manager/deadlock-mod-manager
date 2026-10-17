@@ -1,11 +1,13 @@
 import { Button } from "@deadlock-mods/ui/components/button";
-import { Label } from "@deadlock-mods/ui/components/label";
 import { Progress } from "@deadlock-mods/ui/components/progress";
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { Switch } from "@deadlock-mods/ui/components/switch";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  SettingRow,
+  SettingToggleRow,
+} from "@/components/settings/setting-row";
 import { useMatchSync } from "@/hooks/use-match-sync";
 import {
   matchSyncErrorMessage,
@@ -15,6 +17,7 @@ import {
 
 // Mirrors the backend's FETCH_QUOTA_LIMIT; used only until `status.accounts` loads.
 const DEFAULT_QUOTA_LIMIT = 40;
+const FULL_SYNC_DESCRIPTION_ID = "match-sync-full-sync-description";
 
 export const MatchSyncSettings = () => {
   const { t } = useTranslation();
@@ -124,26 +127,13 @@ export const MatchSyncSettings = () => {
         <p className='text-amber-500/90'>{t("matchSync.about.risk")}</p>
       </div>
 
-      <div className='flex items-center justify-between'>
-        <div className='space-y-1'>
-          <Label className='font-bold text-sm'>
-            {t("matchSync.enable.title")}
-          </Label>
-          <p className='text-muted-foreground text-sm'>
-            {t("matchSync.enable.description")}
-          </p>
-        </div>
-        <div className='flex items-center gap-2'>
-          <Switch
-            checked={status.enabled}
-            id='toggle-match-sync'
-            onCheckedChange={handleEnableChange}
-          />
-          <Label htmlFor='toggle-match-sync'>
-            {status.enabled ? t("status.enabled") : t("status.disabled")}
-          </Label>
-        </div>
-      </div>
+      <SettingToggleRow
+        checked={status.enabled}
+        description={t("matchSync.enable.description")}
+        id='toggle-match-sync'
+        onCheckedChange={handleEnableChange}
+        title={t("matchSync.enable.title")}
+      />
 
       {status.enabled && (
         <>
@@ -171,17 +161,13 @@ export const MatchSyncSettings = () => {
           </div>
 
           <div className='flex flex-col gap-2 border-border/30 border-t pt-4'>
-            <div className='flex items-center justify-between gap-4'>
-              <div className='space-y-1'>
-                <Label className='font-bold text-sm'>
-                  {t("matchSync.fullSync.title")}
-                </Label>
-                <p className='text-muted-foreground text-sm'>
-                  {t("matchSync.fullSync.description")}
-                </p>
-              </div>
+            <SettingRow
+              description={t("matchSync.fullSync.description")}
+              descriptionId={FULL_SYNC_DESCRIPTION_ID}
+              title={t("matchSync.fullSync.title")}>
               {running ? (
                 <Button
+                  aria-describedby={FULL_SYNC_DESCRIPTION_ID}
                   onClick={() => cancelFullSync.mutate()}
                   size='sm'
                   variant='outline'>
@@ -189,13 +175,14 @@ export const MatchSyncSettings = () => {
                 </Button>
               ) : (
                 <Button
+                  aria-describedby={FULL_SYNC_DESCRIPTION_ID}
                   disabled={allQuotaExhausted}
                   onClick={handleStartFullSync}
                   size='sm'>
                   {t("matchSync.fullSync.button")}
                 </Button>
               )}
-            </div>
+            </SettingRow>
             {running && (
               <div className='space-y-1'>
                 <Progress value={quotaUsedPct} />

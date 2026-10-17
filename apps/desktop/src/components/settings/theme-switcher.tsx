@@ -9,7 +9,7 @@ import { Monitor, Moon, Sun } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "@/components/providers/theme";
 
-export function ThemeSwitcher() {
+export function ThemeSwitcher({ descriptionId }: { descriptionId?: string }) {
   const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
 
@@ -43,6 +43,7 @@ export function ThemeSwitcher() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
+          aria-describedby={descriptionId}
           aria-label={t("settings.theme")}
           className='w-32 justify-start gap-2'
           size='sm'

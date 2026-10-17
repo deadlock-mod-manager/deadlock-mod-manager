@@ -1,4 +1,3 @@
-import { Label } from "@deadlock-mods/ui/components/label";
 import {
   Select,
   SelectContent,
@@ -10,8 +9,10 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
+import { SettingRow } from "@/components/settings/setting-row";
 
 const UPDATE_CHANNEL_QUERY_KEY = ["update-channel"] as const;
+const DESCRIPTION_ID = "settings-update-channel-description";
 
 export const UpdateChannelSelect = () => {
   const { t } = useTranslation();
@@ -36,17 +37,13 @@ export const UpdateChannelSelect = () => {
   });
 
   return (
-    <div className='flex items-center justify-between'>
-      <div className='space-y-1'>
-        <Label className='font-bold text-sm'>
-          {t("settings.updateChannel")}
-        </Label>
-        <p className='text-muted-foreground text-sm'>
-          {t("settings.updateChannelDescription")}
-        </p>
-      </div>
+    <SettingRow
+      description={t("settings.updateChannelDescription")}
+      descriptionId={DESCRIPTION_ID}
+      title={t("settings.updateChannel")}>
       <Select onValueChange={setChannel} value={channel}>
         <SelectTrigger
+          aria-describedby={DESCRIPTION_ID}
           aria-label={t("settings.updateChannel")}
           className='w-36'>
           <SelectValue />
@@ -60,6 +57,6 @@ export const UpdateChannelSelect = () => {
           </SelectItem>
         </SelectContent>
       </Select>
-    </div>
+    </SettingRow>
   );
 };

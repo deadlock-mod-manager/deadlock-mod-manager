@@ -33,6 +33,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HeroIcon } from "@/components/heroes/hero-icon";
+import { SwitchStatus } from "@/components/settings/setting-row";
 import { usePersistedStore } from "@/lib/store";
 import { createDefaultGamePresenceTextTemplates } from "@/lib/store/slices/settings";
 import { Trash } from "@phosphor-icons/react";
@@ -66,6 +67,7 @@ const GLOBAL_SCOPE_VALUE = "__global_presence_templates__";
 
 // Bundled copy of the Discord application's large presence asset.
 const PREVIEW_LARGE_IMAGE_URL = "/brand/discord-presence.png";
+const ENABLE_DESCRIPTION_ID = "toggle-game-presence-description";
 
 const TEMPLATE_ROWS: TemplateRow[] = [
   {
@@ -575,24 +577,29 @@ export const GamePresenceSettings = () => {
     <div className='flex flex-col gap-4'>
       <div className='rounded-lg border border-border/50 bg-background/60 p-4'>
         <div className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
-          <div className='space-y-1'>
+          <div className='min-w-0 space-y-1'>
             <Label className='font-semibold text-base'>
               {t("gamePresence.title")}
             </Label>
-            <p className='max-w-[72ch] text-muted-foreground text-sm text-pretty'>
+            <p
+              className='max-w-[72ch] text-muted-foreground text-sm text-pretty'
+              id={ENABLE_DESCRIPTION_ID}>
               {t("gamePresence.description")}
             </p>
           </div>
 
-          <div className='flex items-center gap-2'>
+          <div className='flex shrink-0 items-center gap-2'>
             <Switch
+              aria-describedby={ENABLE_DESCRIPTION_ID}
+              aria-label={t("gamePresence.title")}
               checked={gamePresenceEnabled}
               id='toggle-game-presence'
               onCheckedChange={setGamePresenceEnabled}
             />
-            <Label className='text-sm' htmlFor='toggle-game-presence'>
-              {gamePresenceEnabled ? t("status.enabled") : t("status.disabled")}
-            </Label>
+            <SwitchStatus
+              checked={gamePresenceEnabled}
+              htmlFor='toggle-game-presence'
+            />
           </div>
         </div>
       </div>

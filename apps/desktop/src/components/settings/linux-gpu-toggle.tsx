@@ -1,4 +1,3 @@
-import { Label } from "@deadlock-mods/ui/components/label";
 import {
   Select,
   SelectContent,
@@ -10,9 +9,13 @@ import { invoke } from "@tauri-apps/api/core";
 import { platform } from "@tauri-apps/plugin-os";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { SettingRow } from "@/components/settings/setting-row";
 import { usePersistedStore } from "@/lib/store";
 
 type GpuCompatMode = "auto" | "on" | "off";
+
+const DESCRIPTION_ID = "settings-linux-gpu-description";
+const ACTIVE_NOTE_ID = "settings-linux-gpu-active";
 
 export const LinuxGpuToggle = () => {
   const { t } = useTranslation();
@@ -55,32 +58,38 @@ export const LinuxGpuToggle = () => {
       : isActive;
   const needsRestart = currentEffective !== isActive;
 
+  const describedBy = isActive
+    ? `${DESCRIPTION_ID} ${ACTIVE_NOTE_ID}`
+    : DESCRIPTION_ID;
+
   return (
-    <div className='flex items-center justify-between'>
-      <div className='space-y-1'>
-        <Label className='font-bold text-sm'>
-          {t("settings.linuxGpuCompat")}
-        </Label>
-        <p className='text-muted-foreground text-sm max-w-xl'>
-          {t("settings.linuxGpuCompatDescription")}
-        </p>
-        {isActive && (
-          <p className='text-muted-foreground text-xs'>
-            {t("settings.linuxGpuCompatCurrentlyActive")}
-          </p>
-        )}
-        {needsRestart && (
-          <p className='text-amber-500 text-sm'>
-            {t("settings.linuxGpuOptimizationRestartRequired")}
-          </p>
-        )}
-      </div>
+    <SettingRow
+      description={t("settings.linuxGpuCompatDescription")}
+      descriptionId={DESCRIPTION_ID}
+      notes={
+        <>
+          {isActive && (
+            <p className='text-muted-foreground text-xs' id={ACTIVE_NOTE_ID}>
+              {t("settings.linuxGpuCompatCurrentlyActive")}
+            </p>
+          )}
+          {needsRestart && (
+            <p className='text-amber-500 text-sm'>
+              {t("settings.linuxGpuOptimizationRestartRequired")}
+            </p>
+          )}
+        </>
+      }
+      title={t("settings.linuxGpuCompat")}>
       <Select
         value={linuxGpuOptimization}
         onValueChange={(value: GpuCompatMode) =>
           setLinuxGpuOptimization(value)
         }>
-        <SelectTrigger className='w-32'>
+        <SelectTrigger
+          aria-describedby={describedBy}
+          aria-label={t("settings.linuxGpuCompat")}
+          className='w-32'>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -91,6 +100,6 @@ export const LinuxGpuToggle = () => {
           <SelectItem value='off'>{t("settings.linuxGpuCompatOff")}</SelectItem>
         </SelectContent>
       </Select>
-    </div>
+    </SettingRow>
   );
 };
