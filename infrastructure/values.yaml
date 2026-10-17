@@ -291,7 +291,7 @@ deployments:
 
   auth:
     image: stormix/deadlock-mods-auth:latest
-    replicas: 1
+    replicas: 2
     memory:
       request: 512Mi
       limit: 1Gi

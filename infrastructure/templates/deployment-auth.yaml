@@ -24,9 +24,7 @@ spec:
       labels:
         app: {{ .Chart.Name }}-auth
       annotations:
-        linkerd.io/inject: enabled
-        config.linkerd.io/proxy-memory-limit: "512Mi"
-        config.linkerd.io/proxy-memory-request: "64Mi"
+        linkerd.io/inject: disabled
         kubectl.kubernetes.io/default-container: auth
     spec:
       {{- if .Values.deployments.auth.restartPolicy }}
