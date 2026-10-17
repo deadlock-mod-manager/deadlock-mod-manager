@@ -237,7 +237,6 @@
 ["files","apps/desktop/src/plugins/themes/pre-defined/deadlock-api/index.ts",[["","apps/desktop/src/plugins/themes/pre-defined/deadlock-api/index.ts"]]]
 ["files","apps/desktop/src/plugins/themes/pre-defined/nightshift/ui-elements.tsx",[["","apps/desktop/src/plugins/themes/pre-defined/nightshift/ui-elements.tsx"]]]
 ["files","apps/desktop/src/plugins/themes/pre-defined/tea/ui-elements.tsx",[["","apps/desktop/src/plugins/themes/pre-defined/tea/ui-elements.tsx"]]]
-["files","apps/docs/src/app/middleware.ts",[["","apps/docs/src/app/middleware.ts"]]]
 ["files","apps/lockdex/src/types/processors.ts",[["","apps/lockdex/src/types/processors.ts"]]]
 ["files","apps/www/src/components/getting-started.tsx",[["","apps/www/src/components/getting-started.tsx"]]]
 ["files","apps/www/src/components/header.tsx",[["","apps/www/src/components/header.tsx"]]]
