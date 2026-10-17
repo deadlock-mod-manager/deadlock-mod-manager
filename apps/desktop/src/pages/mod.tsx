@@ -478,6 +478,8 @@ const Mod = () => {
                   <InstalledFilesDisplay
                     fileTree={installedFileTree}
                     modName={mod.name}
+                    onApplySelection={modOptions.applyFileSelection}
+                    isSaving={modOptions.isSavingFiles}
                   />
                 )}
 

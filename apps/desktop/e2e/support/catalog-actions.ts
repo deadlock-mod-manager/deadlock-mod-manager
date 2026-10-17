@@ -140,25 +140,36 @@ export const checkCatalog = async (
     await expect(installed).toBeDisplayed();
     assert.deepEqual(
       (
-        await installed.$$("[data-file-name]").map((row) => row.getText())
+        await installed
+          .$$('[data-selected="true"] [data-file-name]')
+          .map((row) => row.getText())
       ).sort(),
       files.toSorted(),
     );
     const groups = catalogRecipe(scenario).filter((archive) =>
       archive.files.some((file) => files.includes(file)),
     );
-    assert.equal((await installed.$$("[data-archive]")).length, groups.length);
+    const activeGroups = await installed
+      .$$("[data-archive]")
+      .filter(
+        async (group) =>
+          (await group.getAttribute("data-selected-count")) !== "0",
+      );
+    assert.equal(activeGroups.length, groups.length);
     for (const archive of groups) {
       const group = await installed.$(`[data-archive="${archive.name}"]`);
       const names = archive.files.filter((file) => files.includes(file)).sort();
       assert.deepEqual(
-        (await group.$$("[data-file-name]").map((row) => row.getText())).sort(),
+        (
+          await group
+            .$$('[data-selected="true"] [data-file-name]')
+            .map((row) => row.getText())
+        ).sort(),
         names,
       );
-      await expect(group).toHaveText(
-        expect.stringContaining(
-          `${names.length} file${names.length === 1 ? "" : "s"}`,
-        ),
+      await expect(group).toHaveAttribute(
+        "data-selected-count",
+        String(names.length),
       );
     }
     const active = await activeFiles();
