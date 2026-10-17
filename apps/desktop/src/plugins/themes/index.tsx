@@ -47,6 +47,7 @@ import RemlockTheme from "./pre-defined/remlock/remlock.tsx";
 import { SeasonalTheme } from "./pre-defined/seasonal/seasonal";
 import { SeasonalSettingsCard } from "./pre-defined/seasonal/seasonal-settings";
 import TeaTheme from "./pre-defined/tea/tea.tsx";
+import GridlineTheme from "./pre-defined/gridline/gridline.tsx";
 
 const arcanePreview = getPluginAssetUrl(
   "themes",
@@ -79,6 +80,10 @@ const remlockPreview = getPluginAssetUrl(
 const oledPreview = getPluginAssetUrl(
   "themes",
   "public/pre-defined/oled/preview.png",
+);
+const gridlinePreview = getPluginAssetUrl(
+  "themes",
+  "public/pre-defined/gridline/preview.png",
 );
 
 export const manifest = {
@@ -161,6 +166,13 @@ const PRE_DEFINED_THEMES = [
     descriptionKey: "plugins.oled.description",
     component: OledTheme,
     previewImage: oledPreview,
+  },
+  {
+    id: "gridline",
+    name: "Gridline",
+    descriptionKey: "plugins.gridline.description",
+    component: GridlineTheme,
+    previewImage: gridlinePreview,
   },
 ] as const;
 
