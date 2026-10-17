@@ -6,13 +6,14 @@ import { Resvg } from "@resvg/resvg-js";
 
 // Renders the NSIS installer bitmaps from the app icon:
 //   sidebar.bmp (164x314) - welcome and finish pages
+//   sidebar-nightly.bmp   - the same, tagged for nightly builds
 //   header.bmp  (150x57)  - all other installer and uninstaller pages
 // Re-run after changing the app icon. Text uses the app's Forevs Demo font.
 
 const SRC_TAURI = resolve(import.meta.dirname, "../src-tauri");
 const FONT = "Forevs Demo";
-const FONT_FILES = ["forevsdemo-bold.otf"].map((file) =>
-  resolve(import.meta.dirname, "../src/assets/fonts/primary", file),
+const FONT_FILES = ["forevsdemo-bold.otf", "forevsdemo-medium.otf"].map(
+  (file) => resolve(import.meta.dirname, "../src/assets/fonts/primary", file),
 );
 
 // Theme colors from src/index.css
@@ -152,34 +153,49 @@ const renderBitmap = (
 };
 
 // Welcome and finish pages: the app's dark sidebar, with the icon's crosshair
-// lines echoed faintly behind it.
-const sidebarIcon = { x: 42, y: 86, size: 80 };
+// lines echoed faintly behind it. Nightly builds swap in a variant with a
+// tag under the name (see scripts/update-nightly-version.ts).
+const sidebarIcon = { x: 50, y: 88, size: 64 };
 const cx = sidebarIcon.x + sidebarIcon.size / 2;
 const cy = sidebarIcon.y + sidebarIcon.size / 2;
-renderBitmap(
+
+const renderSidebar = (name: string, tag: string) =>
+  renderBitmap(
+    name,
+    svg(
+      164,
+      314,
+      `<path d="M${cx} 0V${cy - 40}M0 ${cy}H${cx - 40}M${cx + 40} ${cy}H164" stroke="${ACCENT}" stroke-opacity="0.09"/>
+      <text x="${cx}" y="196" font-size="23" fill="${CREAM}" text-anchor="middle">Deadlock</text>
+      <text x="${cx}" y="218" font-size="17" fill="${ACCENT}" text-anchor="middle" letter-spacing="0.5">Mod Manager</text>
+      ${tag}
+      <text x="${cx}" y="296" font-size="11" font-weight="500" fill="${CREAM}" fill-opacity="0.45" text-anchor="middle" letter-spacing="0.3">by Stormix</text>
+      <rect x="163" width="1" height="314" fill="${ACCENT}" fill-opacity="0.35"/>`,
+    ),
+    DARK,
+    sidebarIcon,
+  );
+
+renderSidebar(
   "sidebar.bmp",
-  svg(
-    164,
-    314,
-    `<path d="M${cx} 0V${cy - 48}M${cx} 268V314M0 ${cy}H${cx - 48}M${cx + 48} ${cy}H164" stroke="${ACCENT}" stroke-opacity="0.09"/>
-    <text x="${cx}" y="212" font-size="25" fill="${CREAM}" text-anchor="middle">Deadlock</text>
-    <text x="${cx}" y="236" font-size="19" fill="${ACCENT}" text-anchor="middle" letter-spacing="0.6">Mod Manager</text>
-    <rect x="${cx - 14}" y="252" width="28" height="2" fill="${ACCENT}" fill-opacity="0.5"/>
-    <rect x="163" width="1" height="314" fill="${ACCENT}" fill-opacity="0.35"/>`,
-  ),
-  DARK,
-  sidebarIcon,
+  `<rect x="${cx - 14}" y="234" width="28" height="2" fill="${ACCENT}" fill-opacity="0.5"/>`,
+);
+renderSidebar(
+  "sidebar-nightly.bmp",
+  `<rect x="${cx - 25.5}" y="229.5" width="51" height="15" rx="4" fill="none" stroke="${ACCENT}" stroke-opacity="0.6"/>
+  <text x="${cx}" y="240.5" font-size="10" fill="${ACCENT}" text-anchor="middle" letter-spacing="0.4">Nightly</text>`,
 );
 
-// The header sits on the white title strip, so it stays light.
+// The header sits on the white title strip, so it stays light and leaves a
+// gap before the page title NSIS draws to its right.
 renderBitmap(
   "header.bmp",
   svg(
     150,
     57,
-    `<text x="56" y="27" font-size="17" fill="${INK}">Deadlock</text>
-    <text x="56" y="43" font-size="13" fill="${INK}" fill-opacity="0.7" letter-spacing="0.3">Mod Manager</text>`,
+    `<text x="52" y="27" font-size="14" fill="${INK}">Deadlock</text>
+    <text x="52" y="40" font-size="11" fill="${INK}" fill-opacity="0.7" letter-spacing="0.2">Mod Manager</text>`,
   ),
   "#ffffff",
-  { x: 9, y: 8, size: 41 },
+  { x: 9, y: 11, size: 36 },
 );

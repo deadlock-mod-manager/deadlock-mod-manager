@@ -104,6 +104,23 @@ const updateCargoToml = (nightlyVersion: string): void => {
   );
 };
 
+const useNightlyInstallerImage = (): void => {
+  const tauriConfPath = join(
+    process.cwd(),
+    "apps",
+    "desktop",
+    "src-tauri",
+    "tauri.conf.json",
+  );
+  const tauriConf = JSON.parse(readFileSync(tauriConfPath, "utf-8"));
+
+  tauriConf.bundle.windows.nsis.sidebarImage = "installer/sidebar-nightly.bmp";
+
+  writeFileSync(tauriConfPath, `${JSON.stringify(tauriConf, null, 2)}\n`);
+
+  console.log("Updated NSIS sidebar image to the nightly variant");
+};
+
 const main = () => {
   const commitHash = process.argv[2] || getCommitHash();
 
@@ -111,6 +128,7 @@ const main = () => {
 
   const version = updatePackageJson(commitHash);
   updateCargoToml(version);
+  useNightlyInstallerImage();
 
   console.log(`Successfully updated all versions`);
   console.log(`  Final version: ${version}`);
