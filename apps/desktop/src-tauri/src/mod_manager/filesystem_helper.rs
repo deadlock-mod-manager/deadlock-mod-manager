@@ -53,6 +53,7 @@ impl FileSystemHelper {
     if let Some(parent) = dest.parent() {
       self.create_directories(parent)?;
     }
+    crate::mod_manager::file_permissions::ensure_file_writable(dest)?;
     let renamed = crate::mod_manager::fs_retry::retry_file_operation(
       "move",
       &src.display().to_string(),
@@ -329,5 +330,36 @@ mod tests {
         .files_have_same_contents(&original, &write("d.vpk", b"blue!"))
         .unwrap()
     );
+  }
+
+  #[test]
+  fn move_reports_a_read_only_destination() {
+    let temp = tempfile::tempdir().unwrap();
+    let source = temp.path().join("source.vpk");
+    let destination = temp.path().join("pak01_dir.vpk");
+    fs::write(&source, b"new").unwrap();
+    fs::write(&destination, b"old").unwrap();
+    let mut permissions = fs::metadata(&destination).unwrap().permissions();
+    #[cfg(unix)]
+    {
+      use std::os::unix::fs::PermissionsExt;
+      permissions.set_mode(permissions.mode() & !0o222);
+    }
+    #[cfg(windows)]
+    permissions.set_readonly(true);
+    fs::set_permissions(&destination, permissions).unwrap();
+
+    let error = FileSystemHelper::new()
+      .move_file(&source, &destination)
+      .unwrap_err();
+
+    assert!(matches!(&error, Error::ReadOnlyFile(file) if file == &destination));
+    assert!(source.exists());
+    #[cfg(windows)]
+    {
+      let mut permissions = fs::metadata(&destination).unwrap().permissions();
+      permissions.set_readonly(false);
+      fs::set_permissions(&destination, permissions).unwrap();
+    }
   }
 }
