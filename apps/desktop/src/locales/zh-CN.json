@@ -4074,6 +4074,9 @@
       "customColor": "OLED 强调色",
       "customColorDescription": "选择强调色，按钮文字对比度会自动调整。"
     },
+    "gridline": {
+      "description": ""
+    },
     "nightshift": {
       "description": "一款带有青色点缀的赛博朋克主题，专为清晰度和长时间游戏而设计。",
       "visit": "访问 Nightshift：",
