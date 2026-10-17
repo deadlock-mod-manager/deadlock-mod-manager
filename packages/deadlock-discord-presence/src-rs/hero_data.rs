@@ -5,13 +5,20 @@ use std::time::{Duration, SystemTime};
 const API_URL: &str = "https://api.deadlock-api.com/v1/assets/heroes?language=english";
 const CACHE_TTL: Duration = Duration::from_secs(24 * 60 * 60);
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(8);
-const CACHE_FILENAME: &str = "hero_presence_cache.json";
+/// Versioned so caches written before `image_url` existed are never read: they
+/// would pin every hero to a Discord upload that may not exist.
+const CACHE_FILENAME: &str = "hero_presence_cache_v2.json";
+const IMAGE_BASE_URL: &str = "https://assets-bucket.deadlock-api.com/assets-api-res/images/heroes";
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct HeroInfo {
     pub name: String,
     pub hideout_text: String,
     pub asset_key: String,
+    /// Square portrait from the assets API. Discord accepts an https URL as an
+    /// image key, so heroes show up without an upload to the Discord app.
+    #[serde(default)]
+    pub image_url: Option<String>,
 }
 
 pub struct HeroDataStore {
@@ -77,7 +84,10 @@ impl HeroDataStore {
 
     pub fn asset_key(&self, codename: &str) -> String {
         if let Some(info) = self.get(codename) {
-            return info.asset_key.clone();
+            return info
+                .image_url
+                .clone()
+                .unwrap_or_else(|| info.asset_key.clone());
         }
         let key = codename.to_lowercase();
         format!("hero_{key}")
@@ -188,6 +198,12 @@ impl HeroDataStore {
                 .and_then(|v| v.as_str())
                 .unwrap_or("In the Hideout");
 
+            let image_url = hero
+                .get("images")
+                .and_then(|images| images.get("icon_image_small"))
+                .and_then(|v| v.as_str())
+                .map(str::to_string);
+
             if class_name.is_empty() || name.is_empty() {
                 continue;
             }
@@ -199,6 +215,7 @@ impl HeroDataStore {
                     name: name.to_string(),
                     hideout_text: hideout_text.to_string(),
                     asset_key: class_name.to_string(),
+                    image_url,
                 },
             );
         }
@@ -229,67 +246,163 @@ impl HeroDataStore {
     }
 }
 
-fn hero(name: &str, hideout_text: &str, asset_key: &str) -> HeroInfo {
+fn hero(name: &str, hideout_text: &str, asset_key: &str, image: Option<&str>) -> HeroInfo {
     HeroInfo {
         name: name.to_string(),
         hideout_text: hideout_text.to_string(),
         asset_key: asset_key.to_string(),
+        image_url: image.map(|stem| format!("{IMAGE_BASE_URL}/{stem}_sm.png")),
     }
 }
 
+/// Used only until the first API response or cache load. Violet and Nurse Harrow
+/// have no portrait yet; the API fills theirs in once Valve releases them.
 fn fallback_heroes() -> Vec<(&'static str, HeroInfo)> {
     vec![
         (
             "inferno",
-            hero("Infernus", "In the Hideout", "hero_inferno"),
+            hero(
+                "Infernus",
+                "In the Hideout",
+                "hero_inferno",
+                Some("inferno"),
+            ),
         ),
-        ("gigawatt", hero("Seven", "In the Hideout", "hero_gigawatt")),
-        ("hornet", hero("Vindicta", "In the Hideout", "hero_hornet")),
+        (
+            "gigawatt",
+            hero("Seven", "In the Hideout", "hero_gigawatt", Some("gigawatt")),
+        ),
+        (
+            "hornet",
+            hero("Vindicta", "In the Hideout", "hero_hornet", Some("hornet")),
+        ),
         (
             "geist",
-            hero("Lady Geist", "Being Fabulous in the Hideout", "hero_geist"),
+            hero(
+                "Lady Geist",
+                "Being Fabulous in the Hideout",
+                "hero_geist",
+                Some("spectre"),
+            ),
         ),
         (
             "abrams",
-            hero("Abrams", "Investigating the Hideout", "hero_atlas"),
+            hero(
+                "Abrams",
+                "Investigating the Hideout",
+                "hero_atlas",
+                Some("bull"),
+            ),
         ),
-        ("wraith", hero("Wraith", "In the Hideout", "hero_wraith")),
+        (
+            "wraith",
+            hero("Wraith", "In the Hideout", "hero_wraith", Some("wraith")),
+        ),
         (
             "mcginnis",
-            hero("McGinnis", "Tinkering in the Hideout", "hero_forge"),
+            hero(
+                "McGinnis",
+                "Tinkering in the Hideout",
+                "hero_forge",
+                Some("engineer"),
+            ),
         ),
-        ("dynamo", hero("Dynamo", "In the Hideout", "hero_dynamo")),
-        ("haze", hero("Haze", "In the Hideout", "hero_haze")),
-        ("kelvin", hero("Kelvin", "In the Hideout", "hero_kelvin")),
-        ("lash", hero("Lash", "In the Hideout", "hero_lash")),
-        ("bebop", hero("Bebop", "In the Hideout", "hero_bebop")),
-        ("shiv", hero("Shiv", "In the Hideout", "hero_shiv")),
-        ("viscous", hero("Viscous", "In the Hideout", "hero_viscous")),
-        ("warden", hero("Warden", "In the Hideout", "hero_warden")),
-        ("yamato", hero("Yamato", "In the Hideout", "hero_yamato")),
-        ("orion", hero("Grey Talon", "In the Hideout", "hero_orion")),
+        (
+            "dynamo",
+            hero("Dynamo", "In the Hideout", "hero_dynamo", Some("sumo")),
+        ),
+        (
+            "haze",
+            hero("Haze", "In the Hideout", "hero_haze", Some("haze")),
+        ),
+        (
+            "kelvin",
+            hero("Kelvin", "In the Hideout", "hero_kelvin", Some("kelvin")),
+        ),
+        (
+            "lash",
+            hero("Lash", "In the Hideout", "hero_lash", Some("lash")),
+        ),
+        (
+            "bebop",
+            hero("Bebop", "In the Hideout", "hero_bebop", Some("bebop")),
+        ),
+        (
+            "shiv",
+            hero("Shiv", "In the Hideout", "hero_shiv", Some("shiv")),
+        ),
+        (
+            "viscous",
+            hero("Viscous", "In the Hideout", "hero_viscous", Some("viscous")),
+        ),
+        (
+            "warden",
+            hero("Warden", "In the Hideout", "hero_warden", Some("warden")),
+        ),
+        (
+            "yamato",
+            hero("Yamato", "In the Hideout", "hero_yamato", Some("yamato")),
+        ),
+        (
+            "orion",
+            hero("Grey Talon", "In the Hideout", "hero_orion", Some("archer")),
+        ),
         (
             "digger",
-            hero("Mo & Krill", "Relaxing in the Hideout", "hero_krill"),
+            hero(
+                "Mo & Krill",
+                "Relaxing in the Hideout",
+                "hero_krill",
+                Some("digger"),
+            ),
         ),
         (
             "pocket",
-            hero("Pocket", "Sulking in the Hideout", "hero_synth"),
+            hero(
+                "Pocket",
+                "Sulking in the Hideout",
+                "hero_synth",
+                Some("synth"),
+            ),
         ),
-        ("chrono", hero("Paradox", "In the Hideout", "hero_chrono")),
-        ("astro", hero("Holliday", "In the Hideout", "hero_astro")),
-        ("cadence", hero("Calico", "In the Hideout", "hero_cadence")),
+        (
+            "chrono",
+            hero("Paradox", "In the Hideout", "hero_chrono", Some("chrono")),
+        ),
+        (
+            "astro",
+            hero("Holliday", "In the Hideout", "hero_astro", Some("astro")),
+        ),
+        (
+            "cadence",
+            hero("Calico", "In the Hideout", "hero_cadence", Some("nano")),
+        ),
         (
             "werewolf",
-            hero("Silver", "In the Hideout", "hero_werewolf"),
+            hero(
+                "Silver",
+                "In the Hideout",
+                "hero_werewolf",
+                Some("werewolf"),
+            ),
         ),
         (
             "magician",
-            hero("Sinclair", "In the Hideout", "hero_magician"),
+            hero(
+                "Sinclair",
+                "In the Hideout",
+                "hero_magician",
+                Some("magician"),
+            ),
         ),
         (
             "archer",
-            hero("Grey Talon", "Mourning in the Hideout", "hero_orion"),
+            hero(
+                "Grey Talon",
+                "Mourning in the Hideout",
+                "hero_orion",
+                Some("archer"),
+            ),
         ),
         (
             "ivy",
@@ -297,10 +410,160 @@ fn fallback_heroes() -> Vec<(&'static str, HeroInfo)> {
                 "Ivy",
                 "Wishing the Arroyos were in the Hideout",
                 "hero_tengu",
+                Some("tengu"),
             ),
         ),
-        ("mirage", hero("Mirage", "In the Hideout", "hero_mirage")),
-        ("vyper", hero("Vyper", "In the Hideout", "hero_vyper")),
+        (
+            "mirage",
+            hero("Mirage", "In the Hideout", "hero_mirage", Some("mirage")),
+        ),
+        (
+            "vyper",
+            hero("Vyper", "In the Hideout", "hero_vyper", Some("kali")),
+        ),
+        (
+            "vampirebat",
+            hero(
+                "Mina",
+                "Grabbing A Bite In The Hideout",
+                "hero_vampirebat",
+                Some("vampirebat"),
+            ),
+        ),
+        (
+            "drifter",
+            hero(
+                "Drifter",
+                "Prowling In The Hideout",
+                "hero_drifter",
+                Some("drifter"),
+            ),
+        ),
+        (
+            "priest",
+            hero(
+                "Venator",
+                "Blessing Ammunition In The Hideout",
+                "hero_priest",
+                Some("priest"),
+            ),
+        ),
+        (
+            "frank",
+            hero(
+                "Victor",
+                "Brooding In The Hideout",
+                "hero_frank",
+                Some("frank"),
+            ),
+        ),
+        (
+            "bookworm",
+            hero(
+                "Paige",
+                "Reading In The Hideout",
+                "hero_bookworm",
+                Some("bookworm"),
+            ),
+        ),
+        (
+            "doorman",
+            hero(
+                "The Doorman",
+                "At Your Service In The Hideout",
+                "hero_doorman",
+                Some("doorman"),
+            ),
+        ),
+        (
+            "punkgoat",
+            hero(
+                "Billy",
+                "Ranting In The Hideout",
+                "hero_punkgoat",
+                Some("punkgoat"),
+            ),
+        ),
+        (
+            "necro",
+            hero(
+                "Graves",
+                "Playing With The Dead In The Hideout",
+                "hero_necro",
+                Some("necro"),
+            ),
+        ),
+        (
+            "fencer",
+            hero(
+                "Apollo",
+                "Striving Towards Perfection In The Hideout",
+                "hero_fencer",
+                Some("fencer"),
+            ),
+        ),
+        (
+            "familiar",
+            hero(
+                "Rem",
+                "Having Sweet Dreams In The Hideout",
+                "hero_familiar",
+                Some("familiar"),
+            ),
+        ),
+        (
+            "unicorn",
+            hero(
+                "Celeste",
+                "Cleaning Up Glitter In The Hideout",
+                "hero_unicorn",
+                Some("unicorn"),
+            ),
+        ),
+        (
+            "deadpack",
+            hero(
+                "Deadman Danny",
+                "Testing Fine Fairfax Products In The Hideout",
+                "hero_deadpack",
+                Some("deadpack"),
+            ),
+        ),
+        (
+            "ratking",
+            hero(
+                "Rat King",
+                "Wishing The Hideout Was On Long Island",
+                "hero_ratking",
+                Some("ratking"),
+            ),
+        ),
+        (
+            "chessmaster",
+            hero(
+                "Solomon",
+                "Planning Moves In The Hideout",
+                "hero_chessmaster",
+                Some("chessmaster"),
+            ),
+        ),
+        (
+            "baba",
+            hero(
+                "Baba",
+                "Hating Mildred In The Hideout",
+                "hero_baba",
+                Some("baba"),
+            ),
+        ),
+        (
+            "artist",
+            hero("Violet", "In the Hideout", "hero_artist", None),
+        ),
+        (
+            "nurse",
+            hero("Nurse Harrow", "In the Hideout", "hero_nurse", None),
+        ),
     ]
 }
 
@@ -325,6 +588,20 @@ mod tests {
         let store = HeroDataStore::new(Path::new("."));
 
         assert_eq!(store.display_name("archer"), "Grey Talon");
-        assert_eq!(store.asset_key("archer"), "hero_orion");
+        assert_eq!(
+            store.asset_key("archer"),
+            "https://assets-bucket.deadlock-api.com/assets-api-res/images/heroes/archer_sm.png"
+        );
+    }
+
+    #[test]
+    fn knows_the_city_never_sleeps_heroes_without_the_api() {
+        let store = HeroDataStore::new(Path::new("."));
+
+        assert_eq!(store.display_name("ratking"), "Rat King");
+        assert_eq!(store.display_name("deadpack"), "Deadman Danny");
+        assert_eq!(store.normalize_codename("hero_chessmaster"), "chessmaster");
+        // No portrait yet, so the presence falls back to the Discord asset key.
+        assert_eq!(store.asset_key("artist"), "hero_artist");
     }
 }
