@@ -47,11 +47,14 @@ impl ModManager {
     // A missing manifest loads as an empty default; a malformed or unsupported
     // one must fail loudly rather than silently emit truncated search paths.
     let manifest = ProfileVpkManifest::load(&base)?;
-    Ok(search_paths_for(
-      &base,
-      &manifest,
-      profile_folder.as_deref(),
-    ))
+    let mut paths = search_paths_for(&base, &manifest, profile_folder.as_deref());
+    if self.has_localization_overlay(profile_folder.as_deref())? {
+      paths.insert(
+        0,
+        Self::localization_overlay_search_path(profile_folder.as_deref()),
+      );
+    }
+    Ok(paths)
   }
 
   /// Whether [`Self::migrate_profile_to_shards`] would do any work.

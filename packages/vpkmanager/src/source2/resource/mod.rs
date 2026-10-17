@@ -20,6 +20,37 @@ pub const BLOCK_TYPE_DATA: [u8; 4] = *b"DATA";
 const HEADER_LEN: usize = 16;
 
 impl<'a> Resource<'a> {
+    /// Rebuild a self-contained DATA resource. Unlike texture/sound editors,
+    /// compatibility patches have no schema for payloads outside the block table.
+    /// Refuse such containers rather than silently dropping their stream data.
+    pub fn rebuild_with_data_preserving(&self, new_data: &[u8]) -> Result<Vec<u8>, DecodeError> {
+        if self
+            .blocks()
+            .iter()
+            .filter(|block| block.kind == BLOCK_TYPE_DATA)
+            .count()
+            != 1
+        {
+            return Err(DecodeError::BadResource("expected exactly one DATA block"));
+        }
+        let end = self
+            .blocks()
+            .iter()
+            .map(|block| block.offset as usize + block.size as usize)
+            .max()
+            .ok_or(DecodeError::MissingDataBlock)?;
+        let tail = self
+            .raw()
+            .get(end..)
+            .ok_or(DecodeError::BadResource("block out of range"))?;
+        if tail.len() > 15 || tail.iter().any(|byte| *byte != 0) {
+            return Err(DecodeError::BadResource(
+                "unsupported payload outside resource blocks",
+            ));
+        }
+        self.rebuild_with_data(new_data)
+    }
+
     pub fn data_block(&self) -> Result<&'a [u8], DecodeError> {
         self.find_block(BLOCK_TYPE_DATA)
             .ok_or(DecodeError::MissingDataBlock)
@@ -205,6 +236,46 @@ mod tests {
     #![allow(clippy::cast_possible_truncation)]
 
     use super::*;
+
+    #[test]
+    fn preserving_rebuild_refuses_stream_tails_and_malformed_extents() {
+        let bytes = build_resource(&[(*b"DATA", b"payload"), (*b"RERL", b"references")]);
+        let resource = Resource::parse(&bytes).unwrap();
+        let rebuilt = resource.rebuild_with_data_preserving(b"edited").unwrap();
+        assert_eq!(
+            Resource::parse(&rebuilt).unwrap().find_block(*b"RERL"),
+            Some(b"references".as_slice())
+        );
+        let mut tail = bytes.clone();
+        tail.extend_from_slice(b"unrepresented stream");
+        assert!(
+            Resource::parse(&tail)
+                .unwrap()
+                .rebuild_with_data_preserving(b"edited")
+                .is_err()
+        );
+        let duplicates = build_resource(&[(*b"DATA", b"one"), (*b"DATA", b"two")]);
+        assert!(
+            Resource::parse(&duplicates)
+                .unwrap()
+                .rebuild_with_data_preserving(b"edited")
+                .is_err()
+        );
+        for size in 0..bytes.len() {
+            if let Ok(resource) = Resource::parse(&bytes[..size]) {
+                assert!(
+                    resource
+                        .blocks()
+                        .iter()
+                        .enumerate()
+                        .all(|(index, _)| resource.get_block_by_index(index).is_some())
+                );
+            }
+        }
+        let mut malformed = bytes;
+        malformed[12..16].copy_from_slice(&u32::MAX.to_le_bytes());
+        assert!(Resource::parse(&malformed).is_err());
+    }
 
     /// Builds a minimal but valid resource container (header + block table +
     /// 16-byte-aligned payloads) that [`Resource::parse`] accepts.

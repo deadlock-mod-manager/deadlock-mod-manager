@@ -1,6 +1,7 @@
 import type { ModEntryPoint } from "@/lib/analytics/schema";
 import type { ModDto } from "@deadlock-mods/shared";
 import { Button } from "@deadlock-mods/ui/components/button";
+import { Label } from "@deadlock-mods/ui/components/label";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { Switch } from "@deadlock-mods/ui/components/switch";
 import {
@@ -18,7 +19,7 @@ import {
 import { ArrowClockwiseIcon } from "@phosphor-icons/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useHover } from "@uidotdev/usehooks";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useId, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { GrInstallOption } from "react-icons/gr";
 import { RiErrorWarningLine } from "react-icons/ri";
@@ -46,6 +47,7 @@ interface ModButtonProps {
   remoteMod: ModDto | undefined;
   analyticsEntryPoint?: ModEntryPoint;
   variant: "iconOnly" | "default";
+  showLabel?: boolean;
 }
 
 export const ModStatusIcon = ({
@@ -108,8 +110,10 @@ const ModButton = ({
   remoteMod,
   variant = "default",
   analyticsEntryPoint,
+  showLabel = false,
 }: ModButtonProps) => {
   const { t } = useTranslation();
+  const switchId = useId();
   const heroConflictWarningEnabled = usePersistedStore(
     (state) => state.settings["hero-conflict-warning"]?.enabled ?? true,
   );
@@ -348,21 +352,35 @@ const ModButton = ({
           <TooltipTrigger asChild>
             {variant === "iconOnly" ? (
               <div
-                className='flex items-center justify-center'
+                className='flex items-center justify-center gap-1.5'
                 onClick={(e) => e.stopPropagation()}>
                 <Switch
+                  id={switchId}
+                  aria-label={t("modButton.toggleForMod", {
+                    name: remoteMod?.name,
+                  })}
                   checked={localMod?.status === ModStatus.Installed}
                   disabled={isActionInProgress || isAnalyzing}
                   onCheckedChange={async () => {
                     await action();
                   }}
                 />
+                {showLabel ? (
+                  <Label
+                    htmlFor={switchId}
+                    className='text-xs font-normal text-muted-foreground'>
+                    {t("modButton.mod")}
+                  </Label>
+                ) : null}
               </div>
             ) : (
               <div
                 className='flex items-center gap-3 rounded-lg border border-input bg-background px-4 py-2.5 shadow-sm'
                 onClick={(e) => e.stopPropagation()}>
                 <Switch
+                  aria-label={t("modButton.toggleForMod", {
+                    name: remoteMod?.name,
+                  })}
                   checked={localMod?.status === ModStatus.Installed}
                   disabled={isActionInProgress || isAnalyzing}
                   onCheckedChange={async () => {

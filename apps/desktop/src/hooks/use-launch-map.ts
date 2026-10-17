@@ -2,7 +2,9 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
+import { useCompatibilityReview } from "@/components/providers/compatibility-review";
 import { enableAutoexecLaunchOptionIfDisabled } from "@/lib/autoexec/launch-option";
+import { launchWithCompatibilityReview } from "@/lib/launch-with-compatibility-review";
 import { getLaunchErrorMessage } from "@/lib/launch-error";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
@@ -12,6 +14,7 @@ export const useLaunchMap = (onSuccess?: () => void) => {
   const { t } = useTranslation();
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
   const queryClient = useQueryClient();
+  const reviewCompatibility = useCompatibilityReview();
 
   const launchMapMutation = useMutation({
     mutationFn: async (mapName: string) => {
@@ -28,20 +31,32 @@ export const useLaunchMap = (onSuccess?: () => void) => {
         storeState.gamePresenceEnabled,
       );
 
-      await invoke("start_game", {
-        vanilla: false,
-        additionalArgs,
-        profileFolder,
-      });
+      const modCompatibility =
+        storeState.experimentalFeatures["mod-compatibility-repairs"];
+      const launched = await launchWithCompatibilityReview(
+        () =>
+          invoke<void>("start_game", {
+            vanilla: false,
+            additionalArgs,
+            profileFolder,
+            modCompatibility,
+          }),
+        () => reviewCompatibility(profileFolder),
+        !modCompatibility,
+      );
+      if (!launched) return false;
 
       await queryClient.invalidateQueries({
         queryKey: ["is-game-running"],
       });
+      return true;
     },
     meta: {
       skipGlobalErrorHandler: true,
     },
-    onSuccess,
+    onSuccess: (launched) => {
+      if (launched) onSuccess?.();
+    },
     onError: (error) => {
       logger.errorOnly(error);
       toast.error(

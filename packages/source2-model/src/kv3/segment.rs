@@ -123,7 +123,10 @@ pub(crate) enum NodeType {
     Float = 19,
     Int16 = 20,
     UInt16 = 21,
+    Int8 = 22,
     Int32AsByte = 23,
     ArrayTypeByteLength = 24,
     ArrayTypeAuxiliaryBuffer = 25,
+    UInt32Zero = 26,
+    UInt32One = 27,
 }

@@ -1186,9 +1186,9 @@ impl<'a> InsertWalk<'a> {
             INT32 | UINT32 | FLOAT | STRING => self.main[B4].pos += 4,
             INT64 | UINT64 | DOUBLE => self.main[B8].pos += 8,
             INT16 | UINT16 => self.main[B2].pos += 2,
-            INT32_AS_BYTE | BOOLEAN => self.main[B1].pos += 1,
+            INT8 | INT32_AS_BYTE | BOOLEAN => self.main[B1].pos += 1,
             NULL | BOOLEAN_TRUE | BOOLEAN_FALSE | INT64_ZERO | INT64_ONE | DOUBLE_ZERO
-            | DOUBLE_ONE | BINARY_BLOB => {}
+            | DOUBLE_ONE | UINT32_ZERO | UINT32_ONE | BINARY_BLOB => {}
             ARRAY => {
                 let count_offset = self.main[B4].at();
                 let n = self.lane_u32(B4)? as usize;
@@ -1876,6 +1876,10 @@ fn fit_scalar(value: i64, datatype: u8) -> Result<Vec<u8>, DecodeError> {
     use node::*;
     let too_big = || DecodeError::Kv3("scalar value does not fit the field's on-disk width");
     Ok(match datatype {
+        INT8 => i8::try_from(value)
+            .map_err(|_| too_big())?
+            .to_ne_bytes()
+            .to_vec(),
         INT32_AS_BYTE => vec![u8::try_from(value).map_err(|_| too_big())?],
         INT16 => i16::try_from(value)
             .map_err(|_| too_big())?
@@ -2158,7 +2162,7 @@ impl<'a> PathWalk<'a> {
                 self.record(B2, datatype);
                 self.main[B2].pos += 2;
             }
-            INT32_AS_BYTE => {
+            INT8 | INT32_AS_BYTE => {
                 self.record(B1, datatype);
                 self.main[B1].pos += 1;
             }
@@ -2170,7 +2174,7 @@ impl<'a> PathWalk<'a> {
             // the separate blob region the reader pulls from), so it advances no
             // cursor here, like the tagless constants.
             NULL | BOOLEAN_TRUE | BOOLEAN_FALSE | INT64_ZERO | INT64_ONE | DOUBLE_ZERO
-            | DOUBLE_ONE | BINARY_BLOB => {}
+            | DOUBLE_ONE | UINT32_ZERO | UINT32_ONE | BINARY_BLOB => {}
             ARRAY => {
                 let n = self.lane_u32(B4)?;
                 for i in 0..n {
@@ -2550,7 +2554,7 @@ impl<'a> Walk<'a> {
                 }
                 self.main[B2].pos += 2;
             }
-            INT32_AS_BYTE | BOOLEAN => {
+            INT8 | INT32_AS_BYTE | BOOLEAN => {
                 if record && datatype == INT32_AS_BYTE {
                     self.patches.push((self.main[B1].at(), 1));
                 }
@@ -2560,7 +2564,7 @@ impl<'a> Walk<'a> {
                 self.main[B4].pos += 4;
             }
             NULL | BOOLEAN_TRUE | BOOLEAN_FALSE | INT64_ZERO | INT64_ONE | DOUBLE_ZERO
-            | DOUBLE_ONE => {}
+            | DOUBLE_ONE | UINT32_ZERO | UINT32_ONE => {}
             ARRAY => {
                 let n = self.lane_u32(B4)?;
                 for i in 0..n {

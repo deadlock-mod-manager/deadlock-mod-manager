@@ -10,6 +10,7 @@
     "domain-model",
     "mod-interchange",
     "performance-catalog",
+    "mod-compatibility",
     "auth-service",
     "mirror-service",
     "apt-repository",
