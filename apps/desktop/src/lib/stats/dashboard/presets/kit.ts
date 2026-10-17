@@ -27,12 +27,12 @@ export const PRESET_CATEGORIES = [
   "ranked",
   "global",
 ] as const;
-export type PresetCategory = (typeof PRESET_CATEGORIES)[number];
+type PresetCategory = (typeof PRESET_CATEGORIES)[number];
 
-export type ParamValue = string | number;
+type ParamValue = string | number;
 export type PresetParams = Record<string, ParamValue>;
 
-export interface PresetParamOption {
+interface PresetParamOption {
   value: ParamValue;
   /** i18n key under `stats.dashboard.options`, interpolated with `count`. */
   label: string;
@@ -46,7 +46,7 @@ export interface PresetParam {
   options?: PresetParamOption[];
 }
 
-export interface PresetContext {
+interface PresetContext {
   accountId: number | null;
   matches: MatchHistoryEntry[];
 }
@@ -80,7 +80,7 @@ export interface PresetDef {
 const DAY_S = 24 * 60 * 60;
 export const HISTORY_ENDPOINT = "/v1/players/{account_id}/match-history";
 
-export const nowUnix = () => Math.floor(Date.now() / 1000);
+const nowUnix = () => Math.floor(Date.now() / 1000);
 export const daysAgo = (days: number) => nowUnix() - days * DAY_S;
 /** Day-aligned, so the URL - and with it the API's own cache - is stable all day. */
 export const sinceDays = (days: number) =>

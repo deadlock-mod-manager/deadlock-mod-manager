@@ -212,12 +212,9 @@ const atPath = (value: JsonValue, path: string): JsonValue | undefined =>
 /**
  * Turns a response into rows: a list is used as is, an object of objects (the
  * metrics endpoint) becomes one row per key, a flat object a single row. Without
- * an explicit path the first list found on the top level is used.
+ * an explicit path the first top-level list holding objects is used.
  */
-export const responseRows = (
-  payload: JsonValue,
-  listPath: string,
-): DatasetRow[] => {
+const responseRows = (payload: JsonValue, listPath: string): DatasetRow[] => {
   const target = listPath ? atPath(payload, listPath) : payload;
   if (target === undefined) {
     throw new ApiQueryError("notAList");
@@ -231,8 +228,10 @@ export const responseRows = (
 
   if (isObject(target)) {
     const values = Object.values(target);
-    const firstList = values.find(Array.isArray);
-    if (!listPath && firstList && firstList.some(isObject)) {
+    const firstList = values.find(
+      (value) => Array.isArray(value) && value.some(isObject),
+    );
+    if (!listPath && Array.isArray(firstList)) {
       return firstList.flatMap((entry) =>
         isObject(entry) ? [flattenRow(entry)] : [],
       );
@@ -297,7 +296,7 @@ export const guessFormat = (key: string, values: CellValue[]): FieldFormat => {
 
 const SAMPLE_ROWS = 200;
 
-export const describeFields = (rows: DatasetRow[]): DatasetField[] => {
+const describeFields = (rows: DatasetRow[]): DatasetField[] => {
   const sample = rows.slice(0, SAMPLE_ROWS);
   const keys = new Set(sample.flatMap((row) => Object.keys(row)));
   return [...keys].map((key) => ({

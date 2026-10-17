@@ -18,7 +18,7 @@ import {
 import { useDashboardData } from "./dashboard-context";
 
 /** "avg_net_worth" and "netWorth" both read as "Avg net worth" / "Net worth". */
-export const humanize = (key: string): string => {
+const humanize = (key: string): string => {
   const spaced = key
     .replace(/[_.]+/g, " ")
     .replace(/([a-z])([A-Z])/g, "$1 $2")

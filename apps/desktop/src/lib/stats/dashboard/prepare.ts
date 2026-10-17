@@ -17,14 +17,15 @@ export const hasTimeAxis = (dataset: Dataset, view: WidgetView): boolean => {
 export const compareCells = (
   a: DatasetRow[string] | undefined,
   b: DatasetRow[string] | undefined,
+  direction: 1 | -1 = 1,
 ) => {
   const left = numericValue(a);
   const right = numericValue(b);
   if (left !== null && right !== null) {
-    return left - right;
+    return direction * (left - right);
   }
   if (left === null && right === null) {
-    return String(a ?? "").localeCompare(String(b ?? ""));
+    return direction * String(a ?? "").localeCompare(String(b ?? ""));
   }
   // Missing values sink to the end whichever way the sort runs.
   return left === null ? 1 : -1;
@@ -38,8 +39,8 @@ export const prepareRows = (
   let rows = dataset.rows;
   if (view.sortBy && fieldByKey(dataset, view.sortBy)) {
     const direction = view.sortDirection === "asc" ? 1 : -1;
-    rows = [...rows].sort(
-      (a, b) => direction * compareCells(a[view.sortBy], b[view.sortBy]),
+    rows = [...rows].sort((a, b) =>
+      compareCells(a[view.sortBy], b[view.sortBy], direction),
     );
   }
   if (view.limit !== null && rows.length > view.limit) {

@@ -90,6 +90,11 @@ describe("datasetFromResponse", () => {
     });
     expect(datasetFromResponse(payload, "").rows).toHaveLength(1);
     expect(datasetFromResponse(payload, "entries").rows).toHaveLength(1);
+    const tagged = parseJson({
+      tags: ["a", "b"],
+      entries: [{ rank: 1 }, { rank: 2 }],
+    });
+    expect(datasetFromResponse(tagged, "").rows).toHaveLength(2);
     expect(() => datasetFromResponse(payload, "missing")).toThrow(
       ApiQueryError,
     );

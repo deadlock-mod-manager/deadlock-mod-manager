@@ -116,7 +116,7 @@ export type MatchQuery = z.infer<typeof matchQuerySchema>;
 
 const presetParamValue = z.union([z.string(), z.number()]);
 
-export const widgetSourceSchema = z.discriminatedUnion("kind", [
+const widgetSourceSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("panel"), panel: z.string() }),
   z.object({
     kind: z.literal("preset"),
@@ -133,7 +133,7 @@ export const widgetSourceSchema = z.discriminatedUnion("kind", [
 ]);
 export type WidgetSource = z.infer<typeof widgetSourceSchema>;
 
-export const widgetViewSchema = z.object({
+const widgetViewSchema = z.object({
   chart: z.enum(CHART_TYPES),
   /** Category / x-axis field. Scatter uses it as the point label. */
   x: z.string().default(""),
@@ -152,7 +152,7 @@ export const widgetViewSchema = z.object({
 });
 export type WidgetView = z.infer<typeof widgetViewSchema>;
 
-export const widgetSchema = z.object({
+const widgetSchema = z.object({
   id: z.string(),
   /** Empty means "use the source's own name". */
   title: z.string().default(""),
@@ -164,7 +164,7 @@ export const widgetSchema = z.object({
 });
 export type DashboardWidget = z.infer<typeof widgetSchema>;
 
-export const tabSchema = z.object({
+const tabSchema = z.object({
   id: z.string(),
   /** `null` shows the translated default name for the built-in tab ids. */
   title: z.string().nullable(),
@@ -173,7 +173,7 @@ export const tabSchema = z.object({
 });
 export type DashboardTab = z.infer<typeof tabSchema>;
 
-export const layoutSchema = z.object({
+const layoutSchema = z.object({
   version: z.literal(1),
   tabs: z.array(tabSchema).min(1),
 });

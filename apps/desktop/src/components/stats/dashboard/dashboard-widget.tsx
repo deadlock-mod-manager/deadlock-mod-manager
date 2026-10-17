@@ -17,6 +17,7 @@ import {
 import { type ReactNode, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import type { DashboardWidget } from "@/lib/stats/dashboard/layout";
+import { suggestView } from "@/lib/stats/dashboard/suggest";
 import { cn } from "@/lib/utils";
 import { useDashboardData } from "./dashboard-context";
 import { panelDef } from "./panels";
@@ -132,9 +133,13 @@ const DataStateView = ({
     case "broken":
       return <BrokenNotice state={state} />;
     case "ready":
-      return widget.view ? (
-        <WidgetChart dataset={state.dataset} view={widget.view} />
-      ) : null;
+      // A stored widget may come without a view; draw what the data suggests.
+      return (
+        <WidgetChart
+          dataset={state.dataset}
+          view={widget.view ?? suggestView(state.dataset)}
+        />
+      );
   }
 };
 

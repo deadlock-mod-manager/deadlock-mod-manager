@@ -82,7 +82,9 @@ describe("stats dashboard widgets", () => {
 
       await step("a duplicate can be added and removed again", async () => {
         await useWidgetMenu(widget(BANS), ["Duplicate"]);
-        expect(await $$(`[data-widget-source="${BANS}"]`).length).toBe(2);
+        await expect(
+          $$(`[data-widget-source="${BANS}"]`),
+        ).toBeElementsArrayOfSize(2);
         const copies = await $$(`[data-widget-source="${BANS}"]`);
         await useWidgetMenu(copies[1], ["Remove"]);
         await expectWidgetSources(ARRANGED);

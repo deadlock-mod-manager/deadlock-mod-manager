@@ -174,7 +174,7 @@ const PANELS = {
   },
 } satisfies Record<PanelId, PanelDef>;
 
-export const isPanelId = (id: string): id is PanelId =>
+const isPanelId = (id: string): id is PanelId =>
   PANEL_IDS.some((panel) => panel === id);
 
 export const panelDef = (id: string): PanelDef | undefined =>

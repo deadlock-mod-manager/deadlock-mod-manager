@@ -44,6 +44,11 @@ describe("prepareRows", () => {
       defaultView("bar", { sortBy: "winrate", sortDirection: "asc" }),
     );
     expect(asc.map((row) => row.heroId)).toEqual([1, 2, 3]);
+    const desc = prepareRows(
+      heroes,
+      defaultView("bar", { sortBy: "winrate", sortDirection: "desc" }),
+    );
+    expect(desc.map((row) => row.heroId)).toEqual([2, 1, 3]);
   });
 
   it("keeps the newest rows of an unsorted time series", () => {

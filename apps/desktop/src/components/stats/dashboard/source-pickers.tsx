@@ -436,7 +436,9 @@ export const ApiQueryEditor = ({
   const [draft, setDraft] = useState({ path, listPath });
   const timer = useRef<number | undefined>(undefined);
   const latestOnChange = useRef(onChange);
-  latestOnChange.current = onChange;
+  useEffect(() => {
+    latestOnChange.current = onChange;
+  }, [onChange]);
 
   useEffect(() => () => window.clearTimeout(timer.current), []);
 

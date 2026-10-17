@@ -17,7 +17,7 @@ import type { CreatedWorld } from "./world";
  *   Seven     7 matches, 4 wins (57%), KDA (46 + 56) / 28 = 3.64
  */
 
-export const STATS_ACCOUNT_ID = 1001;
+const STATS_ACCOUNT_ID = 1001;
 const HOUR_S = 60 * 60;
 const INFERNUS = 1;
 const SEVEN = 2;

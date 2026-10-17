@@ -17,9 +17,7 @@ import { PLAYER_PRESETS } from "./presets/player";
 export {
   DashboardSchemaError,
   PRESET_CATEGORIES,
-  type PresetCategory,
   type PresetDef,
-  type PresetParam,
   type PresetParams,
   type PresetQuery,
 } from "./presets/kit";

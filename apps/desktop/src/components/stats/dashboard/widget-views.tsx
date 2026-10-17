@@ -175,8 +175,8 @@ export const TableView = ({
       return rows;
     }
     const direction = sort.asc ? 1 : -1;
-    return [...rows].sort(
-      (a, b) => direction * compareCells(a[sort.key], b[sort.key]),
+    return [...rows].sort((a, b) =>
+      compareCells(a[sort.key], b[sort.key], direction),
     );
   }, [rows, sort]);
 
@@ -221,8 +221,9 @@ export const TableView = ({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {sorted.map((row) => (
-            <TableRow key={JSON.stringify(row)}>
+          {sorted.map((row, rowIndex) => (
+            // oxlint-disable-next-line react/no-array-index-key -- rows carry no stable id
+            <TableRow key={rowIndex}>
               {columns.map((column, index) => {
                 const value = row[column.key];
                 const heroId =

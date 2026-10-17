@@ -267,12 +267,18 @@ const GridItem = ({
       width: item.offsetWidth,
       height: item.offsetHeight,
     };
+    // A narrow window renders a responsive span instead of the stored width,
+    // so a resize there only touches the height.
+    const widthLocked = responsiveSpan(widget.w, gridWidth) !== widget.w;
     setResizing(true);
 
     const onMove = (move: PointerEvent) => {
-      const w = Math.round(
-        (start.width + move.clientX - start.x + GAP_PX) / (columnPx + GAP_PX),
-      );
+      const w = widthLocked
+        ? widget.w
+        : Math.round(
+            (start.width + move.clientX - start.x + GAP_PX) /
+              (columnPx + GAP_PX),
+          );
       const h = Math.round(
         (start.height + move.clientY - start.y) / ROW_HEIGHT_PX,
       );
@@ -378,7 +384,7 @@ const GridItem = ({
           )}
           {resizing && (
             <span className='pointer-events-none absolute top-2 left-1/2 z-10 -translate-x-1/2 rounded-md bg-primary px-2 py-0.5 font-medium text-primary-foreground text-xs tabular-nums'>
-              {widget.w} × {widget.h ?? "auto"}
+              {widget.w} × {widget.h ?? t("stats.dashboard.editor.heightAuto")}
             </span>
           )}
         </div>

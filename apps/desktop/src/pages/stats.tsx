@@ -84,8 +84,13 @@ const Stats = () => {
     analytics.trackPageViewed(`stats-${activeTab.id}`, { tab: activeTab.id });
   }, [analytics, activeTab.id]);
 
-  const needsAccount = activeTab.widgets.some(widgetNeedsAccount);
-  const needsHistory = activeTab.widgets.some(widgetNeedsHistory);
+  // Gate the whole page only when no widget could render without it; mixed
+  // tabs fall through to the grid and each widget shows its own notice.
+  const hasWidgets = activeTab.widgets.length > 0;
+  const needsAccount =
+    hasWidgets && activeTab.widgets.every(widgetNeedsAccount);
+  const needsHistory =
+    hasWidgets && activeTab.widgets.every(widgetNeedsHistory);
 
   const tabBar = (
     <div className='flex min-w-0 items-center gap-2'>

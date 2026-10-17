@@ -20,7 +20,7 @@ import { runMatchQuery } from "@/lib/stats/dashboard/match-query";
 import { HISTORY_ENDPOINT } from "@/lib/stats/dashboard/presets/kit";
 import { useDashboardData } from "./dashboard-context";
 
-export type BrokenReason =
+type BrokenReason =
   /** The preset or panel id is gone from this version of the app. */
   | "unknownSource"
   /** The request failed with an HTTP status. */

@@ -78,7 +78,7 @@ export const describeWidgets = (
     ) ?? [];
 
 export const tabTrigger = (id: string) => $(`[data-tab-id="${id}"]`);
-export const tabByTitle = (title: string) =>
+const tabByTitle = (title: string) =>
   $(`//button[@role="tab" and normalize-space()="${title}"]`);
 
 export const tabIds = async () =>
@@ -368,7 +368,7 @@ export const submitEditor = () =>
   });
 
 /** A table widget's header and rows as rendered text. */
-export const readTable = async (container: ChainablePromiseElement) => {
+const readTable = async (container: ChainablePromiseElement) => {
   await container.$("table").waitForDisplayed();
   const header = await Promise.all(
     await container.$$("thead th").map((cell) => cell.getText()),

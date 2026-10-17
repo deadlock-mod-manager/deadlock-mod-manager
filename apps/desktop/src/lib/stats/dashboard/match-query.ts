@@ -229,7 +229,7 @@ const groupKey = (
 const groupOrder = (group: MatchGroup, key: number) =>
   group === "weekday" ? (key + 6) % 7 : key;
 
-export const filterMatches = (
+const filterMatches = (
   matches: MatchHistoryEntry[],
   query: MatchQuery,
   nowUnix: number,
