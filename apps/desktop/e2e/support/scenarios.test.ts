@@ -13,7 +13,7 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 53 : 49);
+    expect(ids).toHaveLength(windows ? 58 : 54);
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
       expect(scenarioSpec(id)).toContain("./specs/");
@@ -23,6 +23,13 @@ describe("scenario selection", () => {
     expect(selectScenarios("filesystem")).toHaveLength(windows ? 8 : 7);
     expect(selectScenarios("interchange")).toEqual(["grimoire-import"]);
     expect(selectScenarios("skins")).toEqual(["hero-skins-active"]);
+    expect(selectScenarios("stats")).toEqual([
+      "stats-default-layout",
+      "stats-arrange-widgets",
+      "stats-custom-tabs",
+      "stats-custom-queries",
+      "stats-broken-endpoints",
+    ]);
     expect(selectScenarios("shards")).toEqual([
       "shards-library",
       "shards-conflicts",
