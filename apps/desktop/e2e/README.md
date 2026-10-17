@@ -34,6 +34,8 @@ On Arch, set `SHARP_IGNORE_GLOBAL_LIBVIPS=1` before `pnpm install` if a system l
 
 `gamebanana-detected-files` starts with a manually installed VPK and an empty DMM library. It identifies the mod through the analysis API, checks that Manage Files marks its matched archive enabled, adds an optional archive, and removes that optional archive after restart. The original VPK bytes and manifest ownership must survive, and only the optional archive may be downloaded.
 
+`gamebanana-file-toggle` installs two of the three VPKs in a single download, then changes the selection from the Installed Files list. Apply must stay disabled with nothing checked or after Reset. Enabling the never-installed VPK extracts it from one new download and parks the one it replaces; switching back reuses the parked file without downloading. Every step checks the manifest, exact addon bytes and parked files, before and after a restart.
+
 `catalog-refresh` checks that manual refresh finds a new sound during the automatic sync cooldown, disables duplicate clicks while syncing, preserves saved entries, and fetches no unchanged details on a repeated refresh. Its network assertions require only the latest index pages and one new sound hydration.
 
 `library-author-navigation` downloads a catalog mod into the library, opens its author from grid and list layouts, and verifies Back returns to Mods Library. It also checks the nested author → mod → author path, the author link in library mod details, and that Store author navigation still returns to Mods Store.

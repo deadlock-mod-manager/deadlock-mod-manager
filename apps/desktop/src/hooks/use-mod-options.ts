@@ -359,6 +359,72 @@ export const useModOptions = (mod: LocalMod | null) => {
     },
   });
 
+  const fileSelectionMutation = useMutation<
+    SwapModOptionsResult,
+    Error,
+    string[]
+  >({
+    mutationFn: async (selectedNames) => {
+      if (!mod) {
+        throw new ValidationError("No mod selected");
+      }
+
+      // Files left unchecked at install time were never copied to the addons
+      // folder, so they have to come out of their archive again.
+      const currentNames = new Set(currentOriginalNames);
+      const newlyEnabled = selectedNames.filter((n) => !currentNames.has(n));
+      const archives = groupMissingByArchive(newlyEnabled, mod);
+      if (archives.length > 0) {
+        const fetchResult = await invoke<FetchMissingModVariantsResult>(
+          "fetch_missing_mod_variants",
+          { modId: mod.remoteId, profileFolder, archives },
+        );
+        if (fetchResult.missing_originals.length > 0) {
+          throw new RuntimeError(
+            t("modOptions.fetchMissingNotFound", {
+              names: fetchResult.missing_originals.join(", "),
+            }),
+          );
+        }
+      }
+
+      logger
+        .withMetadata({
+          modId: mod.remoteId,
+          previousCount: installedVpks.length,
+          newCount: selectedNames.length,
+        })
+        .info("Applying per-file selection");
+
+      return await invokeGuarded<SwapModOptionsResult>("swap_mod_options", {
+        modId: mod.remoteId,
+        profileFolder,
+        currentInstalledVpks: installedVpks,
+        currentOriginalNames,
+        selectedOriginalNames: selectedNames,
+      });
+    },
+    onSuccess: (result) => {
+      if (!mod) return;
+      const mergedTree = mergeFileTreeAfterSwap(
+        mod.installedFileTree,
+        result.file_tree,
+      );
+      setInstalledVpks(mod.remoteId, result.installed_vpks, mergedTree);
+      const activeArchives = new Set(
+        mergedTree.files
+          .filter((f) => f.is_selected && f.archive_name)
+          .map((f) => f.archive_name),
+      );
+      setActiveVariantArchive(mod.remoteId, [...activeArchives].join(","));
+      toast.success(t("modOptions.applySuccess"));
+    },
+    onError: (error) => {
+      logger.withError(error).error("Failed to apply per-file selection");
+      toast.error(error.message || t("modOptions.applyError"));
+    },
+  });
+
   const open = () => setIsOpen(true);
   const close = () => setIsOpen(false);
 
@@ -380,6 +446,8 @@ export const useModOptions = (mod: LocalMod | null) => {
     close,
     apply,
     isSaving: applyMutation.isPending,
+    applyFileSelection: fileSelectionMutation.mutate,
+    isSavingFiles: fileSelectionMutation.isPending,
     showButton,
     downloads,
     onDiskArchiveNames,

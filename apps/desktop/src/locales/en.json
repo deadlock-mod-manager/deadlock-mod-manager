@@ -4776,6 +4776,16 @@
     "openTooltipWithCount_one": "Manage files ({{count}} active variant)",
     "openTooltipWithCount_other": "Manage files ({{count}} active variants)"
   },
+  "installedFiles": {
+    "title": "Installed Files",
+    "description": "Files from {{modName}} that were installed to the game.",
+    "toggleDescription": "Choose which files from {{modName}} are installed to the game.",
+    "fileCount_one": "{{count}} file",
+    "fileCount_other": "{{count}} files",
+    "enabledCount": "{{selected}} of {{total}} enabled",
+    "reset": "Reset",
+    "selectAtLeastOne": "Select at least one file. To remove the mod, disable it instead."
+  },
   "fileSelector": {
     "selectFilesToInstall": "Select Files to Install: {{modName}}",
     "chooseVpkFiles": "Choose which VPK files you want to install from this mod.",

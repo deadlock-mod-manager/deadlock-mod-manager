@@ -82,7 +82,7 @@ describe("GameBanana catalog installation", () => {
     await reveal(installed);
     await expect(installed).toBeDisplayed();
     const names = await installed
-      .$$("[data-file-name]")
+      .$$('[data-selected="true"] [data-file-name]')
       .map((element) => element.getText());
     assert.deepEqual(names.sort(), installedCatalogFiles(scenario));
     for (const archive of catalogRecipe(scenario).filter(
@@ -94,14 +94,15 @@ describe("GameBanana catalog installation", () => {
       );
       assert.deepEqual(
         (
-          await group.$$("[data-file-name]").map((element) => element.getText())
+          await group
+            .$$('[data-selected="true"] [data-file-name]')
+            .map((element) => element.getText())
         ).sort(),
         expectedFiles.sort(),
       );
-      await expect(group).toHaveText(
-        expect.stringContaining(
-          `${expectedFiles.length} file${expectedFiles.length === 1 ? "" : "s"}`,
-        ),
+      await expect(group).toHaveAttribute(
+        "data-selected-count",
+        String(expectedFiles.length),
       );
     }
     const active = await activeFiles();

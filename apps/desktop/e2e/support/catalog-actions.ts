@@ -140,25 +140,36 @@ export const checkCatalog = async (
     await expect(installed).toBeDisplayed();
     assert.deepEqual(
       (
-        await installed.$$("[data-file-name]").map((row) => row.getText())
+        await installed
+          .$$('[data-selected="true"] [data-file-name]')
+          .map((row) => row.getText())
       ).sort(),
       files.toSorted(),
     );
     const groups = catalogRecipe(scenario).filter((archive) =>
       archive.files.some((file) => files.includes(file)),
     );
-    assert.equal((await installed.$$("[data-archive]")).length, groups.length);
+    const activeGroups = await installed
+      .$$("[data-archive]")
+      .filter(
+        async (group) =>
+          (await group.getAttribute("data-selected-count")) !== "0",
+      );
+    assert.equal(activeGroups.length, groups.length);
     for (const archive of groups) {
       const group = await installed.$(`[data-archive="${archive.name}"]`);
       const names = archive.files.filter((file) => files.includes(file)).sort();
       assert.deepEqual(
-        (await group.$$("[data-file-name]").map((row) => row.getText())).sort(),
+        (
+          await group
+            .$$('[data-selected="true"] [data-file-name]')
+            .map((row) => row.getText())
+        ).sort(),
         names,
       );
-      await expect(group).toHaveText(
-        expect.stringContaining(
-          `${names.length} file${names.length === 1 ? "" : "s"}`,
-        ),
+      await expect(group).toHaveAttribute(
+        "data-selected-count",
+        String(names.length),
       );
     }
     const active = await activeFiles();
@@ -212,6 +223,35 @@ export const applyArchives = (names: string[]) =>
     const dialog = await $('[role="dialog"]');
     await dialog.$("button=Apply").click();
     await expect(dialog).not.toBeDisplayed();
+  });
+
+export const chooseInstalledFiles = async (names: string[]) => {
+  const installed = await installedFiles();
+  await reveal(installed);
+  for (const row of await installed.$$("[data-selected]")) {
+    const name = await row.$("[data-file-name]").getText();
+    if (
+      ((await row.getAttribute("data-selected")) === "true") !==
+      names.includes(name)
+    )
+      await row.click();
+    await expect(row.$('[role="checkbox"]')).toHaveAttribute(
+      "aria-checked",
+      String(names.includes(name)),
+    );
+  }
+  return installed;
+};
+
+export const applyInstalledFiles = (names: string[]) =>
+  step(`apply installed files ${names.join(", ")}`, async () => {
+    await openFilesTab();
+    const installed = await chooseInstalledFiles(names);
+    await installed.$("button=Apply").click();
+    await expect(
+      $('//*[@data-sonner-toast and contains(., "Mod files updated")]'),
+    ).toBeDisplayed();
+    await expect(installed.$("button=Apply")).toBeDisabled();
   });
 
 export const toggleCatalog = async (world: string, enabled: boolean) => {

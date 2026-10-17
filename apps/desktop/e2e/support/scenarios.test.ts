@@ -13,13 +13,13 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 62 : 57);
+    expect(ids).toHaveLength(windows ? 63 : 58);
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
       expect(scenarioSpec(id)).toContain("./specs/");
       expect(new Set(scenarioPhases(id)).size).toBe(scenarioPhases(id).length);
     }
-    expect(selectScenarios("gamebanana")).toHaveLength(15);
+    expect(selectScenarios("gamebanana")).toHaveLength(16);
     expect(selectScenarios("monkey")).toEqual(["monkey"]);
     expect(scenarios.monkey.nativeInput).toBe(false);
     expect(selectScenarios("filesystem")).toHaveLength(windows ? 12 : 10);
