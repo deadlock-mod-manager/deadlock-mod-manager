@@ -19,6 +19,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { useGlobalShortcuts } from "@/hooks/use-global-shortcuts";
 import useUpdateManager from "@/hooks/use-update-manager";
+import { showAppUpdateError } from "@/lib/app-update-notifications";
 import { GITHUB_REPO } from "@/lib/constants";
 import { createLogger } from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
@@ -116,14 +117,21 @@ export const Titlebar = () => {
     try {
       const update = await checkForUpdates();
       if (update) {
-        toast.loading(t("about.downloadingUpdate"));
-        await updateAndRelaunch();
+        toast.info(t("update.available"), {
+          action: {
+            label: t("about.installUpdate"),
+            onClick: () => {
+              void updateAndRelaunch(update).catch((error) => {
+                showAppUpdateError(error instanceof Error ? error : null);
+              });
+            },
+          },
+        });
       } else {
         toast.info(t("about.latestVersion"));
       }
     } catch (error) {
-      logger.withError(error).error("Failed to check for updates");
-      toast.error(t("about.updateFailed"));
+      showAppUpdateError(error instanceof Error ? error : null);
     }
   };
 

@@ -1,20 +1,19 @@
 import { analytics } from "@/lib/analytics";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { relaunch } from "@tauri-apps/plugin-process";
+import { ValidationError } from "@deadlock-mods/common/client-errors";
 import {
-  check as checkNative,
-  type Update as NativeUpdate,
-} from "@tauri-apps/plugin-updater";
+  type AppUpdate,
+  checkForAppUpdates,
+  installAppUpdate,
+} from "@/lib/app-updates";
+import { showAppUpdateError } from "@/lib/app-update-notifications";
 import { useTranslation } from "react-i18next";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { isFlatpak } from "@/lib/tauri-commands";
 import { GITHUB_REPO } from "@/lib/constants";
 import { createLogger } from "@/lib/logger";
-import {
-  GC_TIME_UPDATER,
-  STALE_TIME_MANUAL_CHECK,
-  STALE_TIME_UPDATER,
-} from "@/lib/query-constants";
+import { GC_TIME_UPDATER, STALE_TIME_UPDATER } from "@/lib/query-constants";
 import { useFlatpakUpdate } from "./use-flatpak-update";
 
 const logger = createLogger("check-for-updates");
@@ -24,14 +23,6 @@ const buildFlatpakReleaseUrl = (version: string) =>
 
 const NATIVE_UPDATES_QUERY_KEY = ["app-updates", "native"] as const;
 const IS_FLATPAK_QUERY_KEY = ["app-env", "is-flatpak"] as const;
-
-async function fetchNativeUpdate(): Promise<NativeUpdate | null> {
-  return checkNative().catch((err) => {
-    const error = err instanceof Error ? err : new Error(String(err));
-    logger.withError(error).warn("Native update check failed");
-    return null;
-  });
-}
 
 export const useCheckForUpdates = () => {
   const { t } = useTranslation();
@@ -55,7 +46,8 @@ export const useCheckForUpdates = () => {
     refetch,
   } = useQuery({
     queryKey: NATIVE_UPDATES_QUERY_KEY,
-    queryFn: fetchNativeUpdate,
+    queryFn: () => checkForAppUpdates(),
+    meta: { skipGlobalErrorHandler: true },
     enabled: !isRunningAsFlatpak && !import.meta.env.DEV,
     staleTime: STALE_TIME_UPDATER,
     gcTime: GC_TIME_UPDATER,
@@ -67,15 +59,15 @@ export const useCheckForUpdates = () => {
     retryDelay: 5000,
   });
 
-  const updateAvailable = !!nativeUpdate;
+  const updateAvailable = !!nativeUpdate && !isError;
 
   const { mutate: installUpdate, isPending: isInstallingUpdate } = useMutation({
     mutationFn: async () => {
-      const native = queryClient.getQueryData<NativeUpdate | null>(
+      const native = queryClient.getQueryData<AppUpdate | null>(
         NATIVE_UPDATES_QUERY_KEY,
       );
       if (!native) {
-        throw new Error("No update available");
+        throw new ValidationError("No update available");
       }
 
       const attempt = analytics.start("app_update", {
@@ -88,7 +80,9 @@ export const useCheckForUpdates = () => {
           logger
             .withMetadata({ version: native.version })
             .info("Installing Flatpak update");
-          await installFlatpakUpdate(flatpakUrl);
+          await installAppUpdate(native, undefined, () =>
+            installFlatpakUpdate(flatpakUrl),
+          );
           attempt.finish("completed");
           return;
         }
@@ -97,7 +91,7 @@ export const useCheckForUpdates = () => {
           .withMetadata({ version: native.version })
           .info("Installing native update");
         toast.loading(t("about.downloadingUpdate"));
-        await native.downloadAndInstall(() => {});
+        await installAppUpdate(native);
         logger.info("Native update installed, relaunching");
         attempt.finish("completed");
         await relaunch();
@@ -106,20 +100,18 @@ export const useCheckForUpdates = () => {
         throw error;
       }
     },
-    onError: (err) => {
-      const error = err instanceof Error ? err : new Error(String(err));
-      logger.withError(error).error("Update install failed");
-      toast.error(`${t("about.updateFailed")}: ${error.message}`);
-    },
+    meta: { skipGlobalErrorHandler: true },
+    onError: (error) => showAppUpdateError(error),
   });
 
   const { mutate: checkForUpdates, isPending: isCheckForUpdatesPending } =
     useMutation({
-      mutationFn: async (): Promise<NativeUpdate | null> => {
+      mutationFn: async (): Promise<AppUpdate | null> => {
         return queryClient.fetchQuery({
           queryKey: NATIVE_UPDATES_QUERY_KEY,
-          queryFn: fetchNativeUpdate,
-          staleTime: STALE_TIME_MANUAL_CHECK,
+          queryFn: () => checkForAppUpdates(),
+          staleTime: 0,
+          meta: { skipGlobalErrorHandler: true },
         });
       },
       onSuccess: (result) => {
@@ -127,12 +119,8 @@ export const useCheckForUpdates = () => {
           toast.info(t("about.latestVersion"));
         }
       },
-      onError: (err) => {
-        logger
-          .withError(err instanceof Error ? err : new Error(String(err)))
-          .error("Update check failed");
-        toast.error(t("about.updateFailed"));
-      },
+      meta: { skipGlobalErrorHandler: true },
+      onError: (error) => showAppUpdateError(error),
     });
 
   return {

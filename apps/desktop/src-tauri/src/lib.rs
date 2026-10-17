@@ -6,6 +6,7 @@
 
 mod addons_watcher;
 pub mod app_runtime;
+mod app_updates;
 pub mod cli;
 mod commands;
 mod deep_link;
@@ -446,6 +447,7 @@ pub fn run() {
       proxy::get_proxy_config,
       proxy::test_proxy_connection,
       updater_channel::get_update_channel,
+      app_updates::check_app_update,
       updater_channel::set_update_channel,
       #[cfg(feature = "e2e-harness")]
       commands::e2e::e2e_status
