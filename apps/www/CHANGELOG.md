@@ -1,5 +1,12 @@
 # web
 
+## 0.6.1
+
+### Patch Changes
+
+- 5019a5e: Add Baba, Chessmaster, Deadpack and Rat King to hero pickers, Foundry imports and Discord presence portraits
+- 77817ed: Update the partners list and footer, and show the Collections tab in the app preview and V2 page.
+
 ## 0.6.0
 
 ### Minor Changes

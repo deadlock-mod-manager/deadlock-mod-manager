@@ -49,6 +49,7 @@
 - 8b9bcee: Allow more than 99 enabled addons by spreading them across addon folders
 - edf83d7: Keep the live match board across restarts, show the matchmaking queue beside it, and cut the cost of following a running match
 - 208f11d: Add catalog refresh and skip fetching details for unchanged mods
+- 300ab77: Choose which VPK files of an installed mod are enabled from the Installed Files list
 
 ### Experimental Changes
 
@@ -56,9 +57,37 @@
 - Fix the camera and aim points in skins built before Deadlock changed its root attachment frame, while preserving custom attachment offsets.
 
 - 6d8293c: Add performance configs: apply curated community gameinfo.gi configs, configs from GameBanana or your own imports on a new Performance page, edit every setting they change with typed controls, and share them. The manager edits gameinfo.gi in place next to your mods, leaves out settings Deadlock no longer reads and engine-section edits unless you include them, and writes the config again after game updates. A crash check after launch lists what changed since your last normal session.
+- f3bfa9e: Fix compatibility repairs for overlapping skins and mod variations
+- f3bfa9e: Fix skipped skin camera repairs caused by small exported root rotation differences
+- f3bfa9e: Fix repaired Grey Talon ultimate models failing to load
+- f3bfa9e: Repair custom animations after skeleton changes and group repeated repair details
+- f3bfa9e: Fix skin animation repairs blocked by retired UI animation graphs
+- f3bfa9e: Validate rebuilt mesh and control blocks before applying compatibility repairs
+- f3bfa9e: Fix outdated skin cameras when the authored root has a position offset
+- f3bfa9e: Detect untracked enabled VPKs and use actual load order in compatibility reviews
 
 ### Patch Changes
 
+- 861b13c: Align Settings switches across rows and window sizes; titles no longer toggle
+- d45d8ad: Reinstalling a mod whose files were deleted outside the app now installs it again instead of leaving it only downloaded
+- 64eb750: Close the variant picker on backdrop click instead of opening the mod page.
+- 220b9f7: Fix variants that share a VPK filename overwriting each other when installed
+- 220b9f7: Fix re-enabling a file after a mod update restoring its pre-update copy
+- d9d0cb1: Add mod folder repair with restorable backups and safe staging recovery.
+- 9c42228: Fix gap where no Back button is visible while scrolling a mod page
+- bc90972: Stop crashing when adding large local mods (up to about 1 GB), whether dropped or chosen in the file picker.
+- 300ab77: Fix enabling a GameBanana mod file that was not installed yet, which failed with "Download URL scheme must be http or https"
+- 220b9f7: Fix profile imports failing with "no VPKs found" while mods still extract
+- 40531b3: Fix gameinfo resets and offer to make read-only mod files writable
+- c284339: Fix failed update checks incorrectly reporting the latest version
+- 9dc0d04: Fix mod updates dropping newly added or renamed VPK files
+- 220b9f7: Show the read-only file prompt again when installing over a read-only VPK
+- 5019a5e: Add Baba, Chessmaster, Deadpack and Rat King to hero pickers, Foundry imports and Discord presence portraits
+- d45d8ad: Retrying a mod update right after it failed no longer fails with "Backup already exists"
+- 9dc0d04: Keep the saved VPK selection when re-enabling a disabled mod
+- 9dc0d04: Remove stale installed mods when their addons folder was wiped outside DMM
+- b96bc35: Download cards now show the size of only the variants you downloaded.
+- 9dc0d04: Check for missing mod files before a modded launch and offer to reinstall or disable the affected mods
 - Preserve original addon filenames when identifying mods, including compatibility ownership checks.
 - Keep load order when re-enabling mods in profiles with more than 99 mods.
 - Open the Performance editor on changed settings and clarify settings the game ignores.
