@@ -1,5 +1,5 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useEffect, useState } from "react";
@@ -11,9 +11,12 @@ import { analyzeLocalAddons } from "@/lib/tauri-commands";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import type { AddonAnalysisProgress, ModDownloadItem } from "@/types/mods";
+import { getErrorMessage } from "@/lib/errors";
+import type { ProfileId } from "@/types/profiles";
 
 export const useAddonAnalysis = () => {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const { analytics } = useAnalyticsContext();
   const { getActiveProfile } = usePersistedStore();
   const [progress, setProgress] = useState<AddonAnalysisProgress | null>(null);
@@ -70,8 +73,13 @@ export const useAddonAnalysis = () => {
   }, []);
 
   const { mutate: analyzeAddons, isPending } = useMutation({
-    mutationFn: analyzeLocalAddons,
-    onSuccess: async (data) => {
+    mutationFn: ({
+      profileFolder,
+    }: {
+      profileFolder: string | null;
+      profileId: ProfileId | undefined;
+    }) => analyzeLocalAddons(profileFolder),
+    onSuccess: async (data, { profileFolder, profileId }) => {
       setAnalysisResult(data);
 
       // Check if there are any addons that need user attention
@@ -90,6 +98,7 @@ export const useAddonAnalysis = () => {
 
       // Group addons by remoteId so multi-VPK mods are processed together
       let processedIdentifiedCount = 0;
+      let registrationErrors = 0;
 
       const modGroups = new Map<string, typeof data.addons>();
       for (const addon of data.addons) {
@@ -131,32 +140,62 @@ export const useAddonAnalysis = () => {
               downloads,
               previous?.installedFileTree,
             );
-            addIdentifiedLocalMod(modDetails, groupAddons[0].filePath);
-            setInstalledVpks(remoteId, vpkFileNames, fileTree);
-            if (downloads.length > 0)
-              usePersistedStore.getState().setModDownloads(remoteId, downloads);
-            processedIdentifiedCount++;
-
-            const activeProfile = getActiveProfile();
-            await invoke("register_analyzed_mod", {
+            const registration = await invoke<{
+              replacedModIds: string[];
+              installOrder: number | null;
+            }>("register_analyzed_mod", {
               modId: remoteId,
               modName: modDetails.name,
               installedVpks: vpkFileNames,
               originalVpkNames: fileTree.files
                 .filter((file) => file.is_selected)
                 .map((file) => file.name),
-              profileFolder: activeProfile?.folderName ?? null,
+              installedPaths: groupAddons.map((addon) => addon.filePath),
+              profileFolder,
             });
-          } else {
+            const store = usePersistedStore.getState();
+            for (const alias of registration.replacedModIds) {
+              store.removeMod(alias, profileId);
+            }
+            if ((getActiveProfile()?.folderName ?? null) === profileFolder) {
+              addIdentifiedLocalMod(modDetails, groupAddons[0].filePath);
+              setInstalledVpks(remoteId, vpkFileNames, fileTree);
+              if (downloads.length > 0)
+                store.setModDownloads(remoteId, downloads);
+              store.setModEnabledInCurrentProfile(remoteId, true);
+              if (registration.installOrder !== null) {
+                store.setModOrder(remoteId, registration.installOrder);
+              }
+            }
+            processedIdentifiedCount++;
+          } else if (
+            (getActiveProfile()?.folderName ?? null) === profileFolder
+          ) {
             addIdentifiedLocalMod(modDetails, "", false);
           }
         } catch (error) {
+          registrationErrors++;
+          toast.error(
+            t("addons.registrationError", {
+              modName: groupAddons[0].matchInfo?.modName ?? remoteId,
+            }),
+            { description: getErrorMessage(error) },
+          );
           logger
             .withMetadata({ remoteId })
             .withError(error)
-            .error("Failed to fetch mod details");
+            .error("Failed to register analyzed addon");
         }
       }
+
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: ["mod-compatibility-analysis"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["mod-compatibility-resolved-analysis"],
+        }),
+      ]);
 
       const durationSeconds = analysisStartTime
         ? (Date.now() - analysisStartTime) / 1000
@@ -172,11 +211,11 @@ export const useAddonAnalysis = () => {
         durationSeconds,
       );
 
-      if (data.errors.length > 0) {
+      if (data.errors.length > 0 || registrationErrors > 0) {
         toast.warning(
           t("addons.analysisWarning", {
             count: data.totalCount,
-            errors: data.errors.length,
+            errors: data.errors.length + registrationErrors,
           }),
         );
       } else {
@@ -207,7 +246,9 @@ export const useAddonAnalysis = () => {
     },
     onError: (error) => {
       logger.withError(error).error("Failed to analyze addons");
-      toast.error(t("addons.analysisError"));
+      toast.error(t("addons.analysisError"), {
+        description: getErrorMessage(error),
+      });
       setShowProgressToast(false);
       setProgress(null);
     },
@@ -225,7 +266,7 @@ export const useAddonAnalysis = () => {
     const activeProfile = getActiveProfile();
     const profileFolder = activeProfile?.folderName ?? null;
 
-    analyzeAddons(profileFolder);
+    analyzeAddons({ profileFolder, profileId: activeProfile?.id });
   };
 
   const dismissProgressToast = () => {

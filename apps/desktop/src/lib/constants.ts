@@ -141,4 +141,5 @@ export const EXPERIMENTAL_FEATURES = [
   "profile-sharing",
   "conflict-detection",
   "performance-configs",
+  "mod-compatibility-repairs",
 ] as const;

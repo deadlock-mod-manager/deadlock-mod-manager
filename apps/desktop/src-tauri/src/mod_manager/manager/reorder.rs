@@ -52,7 +52,7 @@ impl ModManager {
     vpks.iter().map(|vpk| Self::vpk_filename(vpk)).collect()
   }
 
-  fn vpk_filename(vpk: &str) -> String {
+  pub(super) fn vpk_filename(vpk: &str) -> String {
     std::path::Path::new(vpk)
       .file_name()
       .map(|filename| filename.to_string_lossy().to_string())
@@ -463,10 +463,12 @@ impl ModManager {
       } else {
         log::info!("No enabled VPKs need reordering");
       }
+      self.invalidate_localization_overlay(profile_folder.as_deref());
       return Ok(());
     }
 
     self.commit_reorder(&addons_path, &mut manifest, assignments)?;
+    self.invalidate_localization_overlay(profile_folder.as_deref());
 
     log::info!("All mods reordered successfully");
     Ok(())
@@ -516,11 +518,13 @@ impl ModManager {
       if manifest_changed {
         manifest.save(&addons_path)?;
       }
+      self.invalidate_localization_overlay(profile_folder.as_deref());
       log::warn!("No enabled VPK mappings available to reorder");
       return Ok(Vec::new());
     }
 
     let placements = self.commit_reorder(&addons_path, &mut manifest, mod_vpk_mapping)?;
+    self.invalidate_localization_overlay(profile_folder.as_deref());
 
     log::info!("Mod reordering by remote ID completed successfully");
     Ok(
@@ -579,6 +583,7 @@ impl ModManager {
       if manifest_changed {
         manifest.save(&addons_path)?;
       }
+      self.invalidate_localization_overlay(profile_folder.as_deref());
       log::warn!("No enabled manifest VPKs available to reorder");
       return Ok(Vec::new());
     }
@@ -586,6 +591,7 @@ impl ModManager {
     // `commit_reorder` has already written the new VPK names into the
     // repository, so the reordered mods can just be read back out.
     let placements = self.commit_reorder(&addons_path, &mut manifest, mod_vpk_mapping)?;
+    self.invalidate_localization_overlay(profile_folder.as_deref());
     let result_mods: Vec<Mod> = placements
       .iter()
       .filter_map(|placement| self.mod_repository.get_mod(&placement.mod_id).cloned())

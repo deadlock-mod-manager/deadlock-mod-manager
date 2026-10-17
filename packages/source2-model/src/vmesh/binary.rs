@@ -33,6 +33,9 @@ pub(crate) fn read_semantic(data: &[u8], pos: usize) -> Result<String> {
     Ok(String::from_utf8_lossy(&bytes[..end]).to_ascii_uppercase())
 }
 
+/// Far above any Deadlock mesh buffer; anything larger is a corrupt header.
+const MAX_DECODED_BUFFER_SIZE: usize = 256 * 1024 * 1024;
+
 pub(crate) fn read_buffer(data: &[u8], pos: usize, is_vertex: bool) -> Result<(BufferData, usize)> {
     let element_count = read_u32(data, pos)? as usize;
     let packed_size = read_i32(data, pos + 4)?;
@@ -67,15 +70,30 @@ pub(crate) fn read_buffer(data: &[u8], pos: usize, is_vertex: bool) -> Result<(B
     let expected_size = element_count
         .checked_mul(element_size)
         .ok_or_else(|| Source2Error::Resource("mesh buffer size overflow".into()))?;
-    if expected_size > total_size as usize {
-        return Err(Source2Error::UnsupportedFormat(
-            "meshopt-compressed mesh buffers are not supported yet".into(),
-        ));
-    }
-    let buffer_data = data
+    let encoded = data
         .get(raw_start..raw_end)
-        .ok_or_else(|| Source2Error::Resource("mesh buffer data out of bounds".into()))?
-        .to_vec();
+        .ok_or_else(|| Source2Error::Resource("mesh buffer data out of bounds".into()))?;
+    let buffer_data = if expected_size > encoded.len() {
+        // The decoders allocate the full decoded size before meshopt validates
+        // the stream, so a corrupt header must not be able to request more.
+        if expected_size > MAX_DECODED_BUFFER_SIZE {
+            return Err(Source2Error::Resource(format!(
+                "compressed mesh buffer would decode to {expected_size} bytes"
+            )));
+        }
+        if is_vertex {
+            if element_size == 0 || element_size > 256 || !element_size.is_multiple_of(4) {
+                return Err(Source2Error::UnsupportedFormat(
+                    "invalid compressed vertex stride".into(),
+                ));
+            }
+            decode_meshopt_vertex_buffer(encoded, element_count, element_size)?
+        } else {
+            decode_index_buffer(encoded, element_count, element_size, true)?
+        }
+    } else {
+        encoded.to_vec()
+    };
 
     Ok((
         BufferData {

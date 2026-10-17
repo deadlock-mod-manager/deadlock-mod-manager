@@ -237,7 +237,10 @@ pub(crate) fn read_type(context: &mut KvContext) -> Result<NodeType> {
         19 => Ok(NodeType::Float),
         20 => Ok(NodeType::Int16),
         21 => Ok(NodeType::UInt16),
+        22 => Ok(NodeType::Int8),
         23 => Ok(NodeType::Int32AsByte),
+        26 => Ok(NodeType::UInt32Zero),
+        27 => Ok(NodeType::UInt32One),
         24 => Ok(NodeType::ArrayTypeByteLength),
         25 => Ok(NodeType::ArrayTypeAuxiliaryBuffer),
         other => Err(Source2Error::UnsupportedFormat(format!(
@@ -281,6 +284,11 @@ pub(crate) fn read_value(context: &mut KvContext, node_type: NodeType) -> Result
         NodeType::Int64One => Ok(KvValue::Int(1)),
         NodeType::DoubleZero => Ok(KvValue::Float(0.0)),
         NodeType::DoubleOne => Ok(KvValue::Float(1.0)),
+        NodeType::UInt32Zero => Ok(KvValue::UInt(0)),
+        NodeType::UInt32One => Ok(KvValue::UInt(1)),
+        NodeType::Int8 => Ok(KvValue::Int(i64::from(i8::from_ne_bytes([context
+            .buffer
+            .read_u8()?])))),
         NodeType::Boolean => Ok(KvValue::Bool(context.buffer.read_u8()? == 1)),
         NodeType::Int32AsByte => Ok(KvValue::Int(i64::from(context.buffer.read_u8()?))),
         NodeType::Int16 => Ok(KvValue::Int(i64::from(context.buffer.read_i16()?))),

@@ -162,7 +162,7 @@ jobs:
 
       - name: Install Tauri CEF CLI
         if: steps.cache-tauri-cli.outputs.cache-hit != 'true'
-        run: cargo install tauri-cli --git https://github.com/tauri-apps/tauri --tag ${{ env.TAURI_CEF_TAG }}
+        run: cargo install tauri-cli --locked --git https://github.com/tauri-apps/tauri --tag ${{ env.TAURI_CEF_TAG }}
 
       - name: sccache stats after CLI install
         if: steps.cache-tauri-cli.outputs.cache-hit != 'true'

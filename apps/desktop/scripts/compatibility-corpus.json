@@ -1,0 +1,137 @@
+[
+  {
+    "id": 670722,
+    "name": "Toon Bebop",
+    "url": "https://gamebanana.com/mods/670722",
+    "fileId": 1680456,
+    "filename": "toon_bebop.zip",
+    "sha256": "d17fec81b8e4bea13fff5d2707f4c610c9fa5a19dcfc3d72e8453b9d6c1722aa",
+    "vpks": ["pak01_dir.vpk"]
+  },
+  {
+    "id": 634460,
+    "name": "Old Mina Model (UPDATED 11/19/25)",
+    "url": "https://gamebanana.com/mods/634460",
+    "fileId": 1564312,
+    "filename": "oldmina_953bf.zip",
+    "sha256": "18318be277df496528b4cc826a4a481fe88b4e7d0e3375ec5dced5f278f4668f",
+    "vpks": ["pak10_dir.vpk"]
+  },
+  {
+    "id": 551071,
+    "name": "Mo and mo skin (OUTDATED)",
+    "url": "https://gamebanana.com/mods/551071",
+    "fileId": 1424186,
+    "filename": "mo_and_mo_unzip_.7z",
+    "sha256": "57e2eb6cd2d1118e49989951e53dbca08f90458091fc05596249293a43092775",
+    "vpks": ["pak91_dir.vpk"]
+  },
+  {
+    "id": 639883,
+    "name": "Sliver & Saint",
+    "url": "https://gamebanana.com/mods/639883",
+    "fileId": 1594594,
+    "filename": "sliverofstraw_legacy.rar",
+    "sha256": "c007c901abe74e494cb7a478175d6826822c2ce3be37b5e7ffc8e898697f1034",
+    "vpks": ["pak30_dir.vpk"]
+  },
+  {
+    "id": 614168,
+    "name": "OUTDATED! Summer break Dynamo - Skin",
+    "url": "https://gamebanana.com/mods/614168",
+    "fileId": 1547798,
+    "filename": "summer_dynamo_nosound_v1_2_2.zip",
+    "sha256": "82e8fa82d52164cc4d2ddb0b6bd44a38c92155f16067fde95ab97a1b52066022",
+    "vpks": ["summer_dynamo_nosound_V1.2.2/pak20_dir.vpk"]
+  },
+  {
+    "id": 555188,
+    "name": "2B Yamato",
+    "url": "https://gamebanana.com/mods/555188",
+    "fileId": 1327344,
+    "filename": "yorhamato_beta3_1_vanilla.zip",
+    "sha256": "a0641fded4c60bf9251a1492a827e790da5c5e395f7a8466deb020a159a39ddd",
+    "vpks": ["yorhamato_beta3_1_vanilla/pak71_dir.vpk"]
+  },
+  {
+    "id": 551097,
+    "name": "Ivy Gardener skin (OUTDATED)",
+    "url": "https://gamebanana.com/mods/551097",
+    "fileId": 1307431,
+    "filename": "ivygardener.7z",
+    "sha256": "761d0b198dd9cc0ee12708de77a528ca92312039f9ae7ce78b87a11c6d2f9681",
+    "vpks": ["pak03_dir.vpk"]
+  },
+  {
+    "id": 553501,
+    "name": "Bull Abrams Skin (OUTDATED)",
+    "url": "https://gamebanana.com/mods/553501",
+    "fileId": 1317974,
+    "filename": "bullabrams_58f36.7z",
+    "sha256": "d81f5ea2e852bef0d428a5f058c7f93e1f9920e5098cd61358988a85399fa84c",
+    "vpks": ["pak07_dir.vpk"]
+  },
+  {
+    "id": 551153,
+    "name": "Kelvin Amazon Worker Skin (OUTDATED)",
+    "url": "https://gamebanana.com/mods/551153",
+    "fileId": 1327348,
+    "filename": "kelvinamazonworker_7cc8d.7z",
+    "sha256": "5a3065aef6d8af218fa31b72db2a00089fbb22b44ca2036b758fef69789fae6a",
+    "vpks": ["pak04_dir.vpk"]
+  },
+  {
+    "id": 552906,
+    "name": "(OUTDATED) TF2 Engineer Mcginnis skin",
+    "url": "https://gamebanana.com/mods/552906",
+    "fileId": 1313084,
+    "filename": "tf2mcginnisskin_dd97a.7z",
+    "sha256": "347b19ccf8a3fabd72c6e9eb3abaec042a717554ceb32862b6711aaafe955e70",
+    "vpks": ["pak06_dir.vpk"]
+  },
+  {
+    "id": 559174,
+    "name": "GOLD POCKET",
+    "url": "https://gamebanana.com/mods/559174",
+    "fileId": 1332756,
+    "filename": "goldensplocket.zip",
+    "sha256": "b78f99675ad4f357ef4a3571a31cd0824533a44bda533bfdd27e377eff5e8e3c",
+    "vpks": ["pak22_dir.vpk"]
+  },
+  {
+    "id": 635618,
+    "name": "Scaramouche the Merciless as Seven",
+    "url": "https://gamebanana.com/mods/635618",
+    "fileId": 1567584,
+    "filename": "pak77_dir_88d95.rar",
+    "sha256": "211b13eb3625173944c9f802c58666b01f0f67d7637ee91edc7a9d9e35251b0e",
+    "vpks": ["pak77_dir.vpk"]
+  },
+  {
+    "id": 595391,
+    "name": "Nightsisters Merrin - Vindicta [v3]",
+    "url": "https://gamebanana.com/mods/595391",
+    "fileId": 1503106,
+    "filename": "merrin_c_f1db9.zip",
+    "sha256": "5ecbb90968e295ef04b1350f17b7ca40dbd51e973264dfdf517ca52c71cd4f6f",
+    "vpks": ["merrin_C/+cape_cloth/pak01_dir.vpk"]
+  },
+  {
+    "id": 583600,
+    "name": "Minimalist Health Bar [outdated]",
+    "url": "https://gamebanana.com/mods/583600",
+    "fileId": 1490898,
+    "filename": "minimalist_health_bar_v11.rar",
+    "sha256": "c216ca36030fa88f70565e2f04c62737f1e5f7da218f551476c5ecc053bdf2c6",
+    "vpks": ["minimalist health bar v1.1.vpk"]
+  },
+  {
+    "id": 583588,
+    "name": "Square Top Bar [outdated]",
+    "url": "https://gamebanana.com/mods/583588",
+    "fileId": 1438740,
+    "filename": "square_top_bar_v05.rar",
+    "sha256": "94c03a3ab84d8f2d8ae5a12787b7c7c26a7eb0e7a7be04ce61c0d98cf59172ec",
+    "vpks": ["square_top_bar_v05.vpk"]
+  }
+]
