@@ -117,7 +117,7 @@ fn migrates_every_mesh_and_preserves_authored_offsets_and_other_blocks() {
 }
 
 #[test]
-fn declines_changed_root_bind_and_mixed_pivots() {
+fn translated_root_keeps_authored_bind_and_receives_the_local_frame_migration() {
   let mut authored = model();
   let Kv3Value::Array(poses) = authored
     .get_mut("m_modelSkeleton")
@@ -127,9 +127,52 @@ fn declines_changed_root_bind_and_mixed_pivots() {
   else {
     panic!()
   };
-  poses[0] = array(&[1.0, 0.0, 0.0]);
+  poses[0] = array(&[1.27852571, 0.266090095, 0.0]);
   let base = container(&model(), &[mesh(IDENTITY)]);
-  assert!(repair(&container(&authored, &[mesh(OLD_FRAME)]), &base).is_err());
+  let original = container(&authored, &[mesh(OLD_FRAME)]);
+  let repaired = repair(&original, &base).unwrap().unwrap();
+  let before = Resource::parse(&original).unwrap();
+  let after = Resource::parse(&repaired).unwrap();
+  for (index, block) in before.blocks().iter().enumerate() {
+    if block.kind != *b"MDAT" {
+      assert_eq!(
+        before.get_block_by_index(index),
+        after.get_block_by_index(index)
+      );
+    }
+  }
+  let mut expected = mesh(OLD_FRAME);
+  migrate_mesh(&mut expected).unwrap();
+  assert_eq!(
+    kv3::decode(after.find_block(*b"MDAT").unwrap()).unwrap(),
+    expected
+  );
+  assert!(repair(&repaired, &base).unwrap().is_none());
+}
+
+#[test]
+fn declines_changed_root_axes_scale_hierarchy_and_mixed_pivots() {
+  let base = container(&model(), &[mesh(IDENTITY)]);
+  for (field, replacement) in [
+    ("m_boneRotParent", array(&[0.0, 0.0, 1.0, 0.0])),
+    ("m_boneScaleParent", Kv3Value::Double(2.0)),
+    ("m_nParent", Kv3Value::Int(1)),
+  ] {
+    let mut authored = model();
+    let Kv3Value::Array(values) = authored
+      .get_mut("m_modelSkeleton")
+      .unwrap()
+      .get_mut(field)
+      .unwrap()
+    else {
+      panic!()
+    };
+    values[0] = replacement;
+    assert!(
+      repair(&container(&authored, &[mesh(OLD_FRAME)]), &base).is_err(),
+      "{field}"
+    );
+  }
   let mut mixed = mesh(OLD_FRAME);
   let Kv3Value::Array(points) = mixed.get_mut("m_attachments").unwrap() else {
     panic!()

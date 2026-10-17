@@ -95,14 +95,8 @@ pub(super) fn repair(source: &[u8], base: &[u8]) -> Result<Option<Vec<u8>>, &'st
     .map_err(|_| "Old camera model could not be decoded")?;
   let (_, current_model, _) = decode_compiled_data(base, "current camera frame")
     .map_err(|_| "Current camera model could not be decoded")?;
-  if super::model_camera::compatible_named_camera_bones(
-    &model,
-    &current_model,
-    &BTreeSet::from(["root_motion".into()]),
-    None,
-  ) != Some(true)
-  {
-    return Err("root_motion hierarchy or bind pose differs; camera migration skipped");
+  if compatible_root_axes(&model, &current_model) != Some(true) {
+    return Err("root_motion hierarchy, rotation or scale differs; camera migration skipped");
   }
   let mut output = source.to_vec();
   for index in legacy {
@@ -131,6 +125,21 @@ pub(super) fn repair(source: &[u8], base: &[u8]) -> Result<Option<Vec<u8>>, &'st
       .map_err(|_| "Camera model could not be rebuilt")?;
   }
   Ok(Some(output))
+}
+
+fn compatible_root_axes(source: &Kv3Value, current: &Kv3Value) -> Option<bool> {
+  let source = super::animation_model_evidence::ModelRig::parse(source)?;
+  let current = super::animation_model_evidence::ModelRig::parse(current)?;
+  if !source.parent("root_motion")?.is_empty() || !current.parent("root_motion")?.is_empty() {
+    return Some(false);
+  }
+  let mut authored = vector::<8>(&source.pose("root_motion")?)?;
+  let canonical = vector::<8>(&current.pose("root_motion")?)?;
+  // The conversion acts in root-local coordinates. Translation does not change
+  // those axes, and DATA/mesh bind frames retain the authored root position.
+  authored[..3].copy_from_slice(&canonical[..3]);
+  let pose = |values: [f64; 8]| Kv3Value::Array(values.into_iter().map(Kv3Value::Double).collect());
+  super::animation_skeleton::equivalent_pose(&pose(authored), &pose(canonical))
 }
 
 // Quaternion multiplication can produce a value between two f32 numbers. Keep

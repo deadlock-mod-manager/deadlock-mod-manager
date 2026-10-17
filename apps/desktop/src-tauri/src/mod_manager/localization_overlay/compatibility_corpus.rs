@@ -3,6 +3,60 @@
 use super::*;
 
 #[test]
+#[ignore = "requires DMM_REAL_CITADEL and DMM_COMPAT_CORPUS with Cowboy Drifter"]
+fn translated_root_skin_migrates_camera_without_replacing_its_rig() {
+  let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+  let cases: Vec<CorpusCase> =
+    serde_json::from_slice(&fs::read(std::env::var("DMM_COMPAT_CORPUS").unwrap()).unwrap())
+      .unwrap();
+  let case = cases.iter().find(|case| case.id == 720359).unwrap();
+  let input = LocalizationModInput {
+    mod_id: case.id.to_string(),
+    vpks: case.vpks.clone(),
+  };
+  let path = "models/heroes_wip/drifter/drifter.vmdl_c";
+  let resources =
+    resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
+  let original = resources.resolve(path).unwrap().unwrap().1;
+  let current = resources.game_bytes(path).unwrap().unwrap();
+  let plan = LocalizationOverlayPlan::build(&citadel, &[input]).unwrap();
+  let repaired = plan
+    .camera_models
+    .get(path)
+    .expect("translated root camera was skipped");
+  assert!(plan.analysis.asset_repairs.iter().any(|repair| {
+    repair.file_path == path
+      && matches!(
+        repair.kind,
+        asset_compatibility::RepairKind::CameraAttachmentFrame
+      )
+  }));
+  let before = Resource::parse(&original).unwrap();
+  let after = Resource::parse(repaired).unwrap();
+  assert_eq!(before.blocks().len(), after.blocks().len());
+  for (index, block) in before.blocks().iter().enumerate() {
+    if block.kind != *b"MDAT" {
+      assert_eq!(
+        before.get_block_by_index(index),
+        after.get_block_by_index(index)
+      );
+    } else {
+      let mut expected = kv3::decode(before.get_block_by_index(index).unwrap()).unwrap();
+      let actual = kv3::decode(after.get_block_by_index(index).unwrap()).unwrap();
+      *expected.get_mut("m_attachments").unwrap() = actual.get("m_attachments").unwrap().clone();
+      assert!(runtime_values_equal(&expected, &actual));
+    }
+  }
+  validate_exported_blocks(repaired, path).unwrap();
+  assert!(
+    camera_attachment_frame::repair(repaired, &current)
+      .unwrap()
+      .is_none()
+  );
+  assert_eq!(resources.resolve(path).unwrap().unwrap().1, original);
+}
+
+#[test]
 #[ignore = "requires DMM_REAL_CITADEL and DMM_COMPAT_CORPUS"]
 fn overlapping_real_skins_preserve_load_order_and_camera_repairs() {
   let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
