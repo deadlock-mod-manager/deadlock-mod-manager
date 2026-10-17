@@ -2165,8 +2165,8 @@
     "authOnline": "Auth 在线",
     "authOffline": "Auth 离线",
     "authUnknown": "Auth 状态未知",
-    "fsWritable": "Addons 文件夹和 gameinfo.gi 不是只读的",
-    "fsReadonly": "插件文件夹或 gameinfo.gi 为只读（请检查文件权限）",
+    "fsWritable": "",
+    "fsReadonly": "",
     "fsUnknown": "无法验证 addons 文件夹或 gameinfo.gi",
     "optional": "可选",
     "required": "必填",
@@ -2769,6 +2769,11 @@
       }
     }
   },
+  "filePermissions": {
+    "title": "",
+    "description": "",
+    "makeWritable": ""
+  },
   "game": {
     "createBackup": "创建备份",
     "createBackupTip": "建议在进行修改之前创建备份。",
@@ -2779,7 +2784,9 @@
     "openInEditor": "在编辑器中打开",
     "backupCreatedSuccess": "gameinfo.gi 备份已成功创建",
     "restoreSuccess": "gameinfo.gi 已从备份成功恢复",
-    "resetSuccess": "gameinfo.gi 已成功重置为原始状态",
+    "resetSuccess": "",
+    "resetSuccessBackup": "",
+    "resetFailed": "",
     "validationPassed": "gameinfo.gi 验证通过",
     "openedInEditor": "使用系统编辑器打开了 gameinfo.gi",
     "confirmRestore": "你确定要从备份中恢复 gameinfo.gi 吗？这会覆盖当前文件。",
@@ -5198,5 +5205,36 @@
       "title": "",
       "description": ""
     }
+  },
+  "repairModFolder": {
+    "action": "",
+    "working": "",
+    "apply": "",
+    "previewDescription": "",
+    "resultTitle": "",
+    "resultDescription": "",
+    "untracked_zero": "",
+    "untracked_one": "",
+    "untracked_other": "",
+    "backedUp_zero": "",
+    "backedUp_one": "",
+    "backedUp_other": "",
+    "restoreInstructions": "",
+    "restoreWarning": "",
+    "manifest": {
+      "healthy": "",
+      "missing_preview": "",
+      "missing_applied": "",
+      "corrupt_preview": "",
+      "corrupt_applied": ""
+    },
+    "staging_zero": "",
+    "staging_one": "",
+    "staging_other": "",
+    "staging_applied_zero": "",
+    "staging_applied_one": "",
+    "staging_applied_other": "",
+    "quarantinedStaging": "",
+    "failed": ""
   }
 }

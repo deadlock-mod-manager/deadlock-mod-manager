@@ -2769,6 +2769,11 @@
       }
     }
   },
+  "filePermissions": {
+    "title": "",
+    "description": "",
+    "makeWritable": ""
+  },
   "game": {
     "createBackup": "백업 생성",
     "createBackupTip": "",
@@ -2779,7 +2784,9 @@
     "openInEditor": "편집기에서 열기",
     "backupCreatedSuccess": "gameinfo.gi 백업이 성공적으로 생성되었습니다",
     "restoreSuccess": "gameinfo.gi가 백업에서 성공적으로 복원되었습니다.",
-    "resetSuccess": "gameinfo.gi가 바닐라 상태로 성공적으로 재설정되었습니다.",
+    "resetSuccess": "",
+    "resetSuccessBackup": "",
+    "resetFailed": "",
     "validationPassed": "gameinfo.gi 유효성 검사가 통과되었습니다.",
     "openedInEditor": "시스템 편집기로 gameinfo.gi를 열었습니다.",
     "confirmRestore": "백업에서 gameinfo.gi를 복원하시겠습니까? 현재 파일을 덮어쓰게 됩니다.",
@@ -5198,5 +5205,36 @@
       "title": "",
       "description": ""
     }
+  },
+  "repairModFolder": {
+    "action": "",
+    "working": "",
+    "apply": "",
+    "previewDescription": "",
+    "resultTitle": "",
+    "resultDescription": "",
+    "untracked_zero": "",
+    "untracked_one": "",
+    "untracked_other": "",
+    "backedUp_zero": "",
+    "backedUp_one": "",
+    "backedUp_other": "",
+    "restoreInstructions": "",
+    "restoreWarning": "",
+    "manifest": {
+      "healthy": "",
+      "missing_preview": "",
+      "missing_applied": "",
+      "corrupt_preview": "",
+      "corrupt_applied": ""
+    },
+    "staging_zero": "",
+    "staging_one": "",
+    "staging_other": "",
+    "staging_applied_zero": "",
+    "staging_applied_one": "",
+    "staging_applied_other": "",
+    "quarantinedStaging": "",
+    "failed": ""
   }
 }

@@ -2769,6 +2769,11 @@
       }
     }
   },
+  "filePermissions": {
+    "title": "",
+    "description": "",
+    "makeWritable": ""
+  },
   "game": {
     "createBackup": "Backup erstellen",
     "createBackupTip": "",
@@ -2779,7 +2784,9 @@
     "openInEditor": "Im Editor öffnen",
     "backupCreatedSuccess": "gameinfo.gi-Sicherung erfolgreich erstellt",
     "restoreSuccess": "gameinfo.gi erfolgreich aus Sicherung wiederhergestellt",
-    "resetSuccess": "gameinfo.gi erfolgreich auf Vanilla-Zustand zurückgesetzt",
+    "resetSuccess": "",
+    "resetSuccessBackup": "",
+    "resetFailed": "",
     "validationPassed": "gameinfo.gi-Validierung bestanden",
     "openedInEditor": "gameinfo.gi mit System-Editor geöffnet",
     "confirmRestore": "Möchten Sie gameinfo.gi wirklich aus der Sicherung wiederherstellen? Die aktuelle Datei wird überschrieben.",
@@ -5198,5 +5205,36 @@
       "title": "",
       "description": ""
     }
+  },
+  "repairModFolder": {
+    "action": "",
+    "working": "",
+    "apply": "",
+    "previewDescription": "",
+    "resultTitle": "",
+    "resultDescription": "",
+    "untracked_zero": "",
+    "untracked_one": "",
+    "untracked_other": "",
+    "backedUp_zero": "",
+    "backedUp_one": "",
+    "backedUp_other": "",
+    "restoreInstructions": "",
+    "restoreWarning": "",
+    "manifest": {
+      "healthy": "",
+      "missing_preview": "",
+      "missing_applied": "",
+      "corrupt_preview": "",
+      "corrupt_applied": ""
+    },
+    "staging_zero": "",
+    "staging_one": "",
+    "staging_other": "",
+    "staging_applied_zero": "",
+    "staging_applied_one": "",
+    "staging_applied_other": "",
+    "quarantinedStaging": "",
+    "failed": ""
   }
 }

@@ -2769,6 +2769,11 @@
       }
     }
   },
+  "filePermissions": {
+    "title": "",
+    "description": "",
+    "makeWritable": ""
+  },
   "game": {
     "createBackup": "إنشاء نسخة احتياطية",
     "createBackupTip": "",
@@ -2779,7 +2784,9 @@
     "openInEditor": "افتح في المحرر",
     "backupCreatedSuccess": "تم إنشاء نسخة احتياطية من gameinfo.gi بنجاح",
     "restoreSuccess": "تم استعادة gameinfo.gi من النسخة الاحتياطية بنجاح",
-    "resetSuccess": "تم إعادة تعيين gameinfo.gi إلى الحالة الأصلية بنجاح",
+    "resetSuccess": "",
+    "resetSuccessBackup": "",
+    "resetFailed": "",
     "validationPassed": "تم التحقق من صحة gameinfo.gi",
     "openedInEditor": "تم فتح gameinfo.gi باستخدام محرر النظام",
     "confirmRestore": "هل أنت متأكد من أنك تريد استعادة gameinfo.gi من النسخة الاحتياطية؟ سيؤدي هذا إلى الكتابة فوق الملف الحالي.",
@@ -5198,5 +5205,36 @@
       "title": "",
       "description": ""
     }
+  },
+  "repairModFolder": {
+    "action": "",
+    "working": "",
+    "apply": "",
+    "previewDescription": "",
+    "resultTitle": "",
+    "resultDescription": "",
+    "untracked_zero": "",
+    "untracked_one": "",
+    "untracked_other": "",
+    "backedUp_zero": "",
+    "backedUp_one": "",
+    "backedUp_other": "",
+    "restoreInstructions": "",
+    "restoreWarning": "",
+    "manifest": {
+      "healthy": "",
+      "missing_preview": "",
+      "missing_applied": "",
+      "corrupt_preview": "",
+      "corrupt_applied": ""
+    },
+    "staging_zero": "",
+    "staging_one": "",
+    "staging_other": "",
+    "staging_applied_zero": "",
+    "staging_applied_one": "",
+    "staging_applied_other": "",
+    "quarantinedStaging": "",
+    "failed": ""
   }
 }
