@@ -2769,6 +2769,11 @@
       }
     }
   },
+  "filePermissions": {
+    "title": "",
+    "description": "",
+    "makeWritable": ""
+  },
   "game": {
     "createBackup": "สร้างข้อมูลสำรอง",
     "createBackupTip": "",
@@ -2780,6 +2785,8 @@
     "backupCreatedSuccess": "",
     "restoreSuccess": "",
     "resetSuccess": "",
+    "resetSuccessBackup": "",
+    "resetFailed": "",
     "validationPassed": "",
     "openedInEditor": "",
     "confirmRestore": "",
@@ -5198,5 +5205,36 @@
       "title": "",
       "description": ""
     }
+  },
+  "repairModFolder": {
+    "action": "",
+    "working": "",
+    "apply": "",
+    "previewDescription": "",
+    "resultTitle": "",
+    "resultDescription": "",
+    "untracked_zero": "",
+    "untracked_one": "",
+    "untracked_other": "",
+    "backedUp_zero": "",
+    "backedUp_one": "",
+    "backedUp_other": "",
+    "restoreInstructions": "",
+    "restoreWarning": "",
+    "manifest": {
+      "healthy": "",
+      "missing_preview": "",
+      "missing_applied": "",
+      "corrupt_preview": "",
+      "corrupt_applied": ""
+    },
+    "staging_zero": "",
+    "staging_one": "",
+    "staging_other": "",
+    "staging_applied_zero": "",
+    "staging_applied_one": "",
+    "staging_applied_other": "",
+    "quarantinedStaging": "",
+    "failed": ""
   }
 }
