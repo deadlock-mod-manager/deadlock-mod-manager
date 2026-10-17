@@ -8,7 +8,7 @@ import {
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { LLMCopyButton, ViewOptions } from "@/components/page-actions";
-import { getPageImage, getPageMarkdownUrl, source } from "@/lib/source";
+import { getPageImage, getPageMarkdown, source } from "@/lib/source";
 import { getMDXComponents } from "@/mdx-components";
 
 export default async function Page(props: PageProps<"/[[...slug]]">) {
@@ -51,9 +51,9 @@ export default async function Page(props: PageProps<"/[[...slug]]">) {
         <DocsTitle>{page.data.title}</DocsTitle>
         <DocsDescription>{page.data.description}</DocsDescription>
         <div className='flex flex-row gap-2 items-center border-b pt-2 pb-6'>
-          <LLMCopyButton markdownUrl={getPageMarkdownUrl(page)} />
+          <LLMCopyButton markdownUrl={getPageMarkdown(page).url} />
           <ViewOptions
-            markdownUrl={getPageMarkdownUrl(page)}
+            markdownUrl={getPageMarkdown(page).url}
             githubUrl={`https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/apps/docs/content/docs/${page.path}`}
           />
         </div>

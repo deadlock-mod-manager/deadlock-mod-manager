@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { getLLMText } from "@/lib/get-llm-text";
-import { getPageMarkdownSegments, source } from "@/lib/source";
+import { getPageMarkdown, source } from "@/lib/source";
 
 export const revalidate = false;
 
@@ -22,5 +22,5 @@ export async function GET(
 export function generateStaticParams() {
   return source
     .getPages()
-    .map((page) => ({ slug: getPageMarkdownSegments(page) }));
+    .map((page) => ({ slug: getPageMarkdown(page).segments }));
 }
