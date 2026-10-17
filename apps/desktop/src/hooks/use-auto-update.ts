@@ -75,7 +75,7 @@ export const useAutoUpdate = (integrationEnabled = true) => {
     try {
       await updateManager.updateAndRelaunch();
     } catch (error) {
-      showAppUpdateError(error);
+      showAppUpdateError(error instanceof Error ? error : null);
       setShowUpdateDialog(false);
       updateManager.reset();
     }
