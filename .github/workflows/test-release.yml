@@ -240,6 +240,10 @@ jobs:
             gir1.2-webkit2-4.1=2.44.0-2 \
             libappindicator3-dev \
             librsvg2-dev \
+            patchelf \
+            libfuse2t64 \
+            gstreamer1.0-plugins-base \
+            gstreamer1.0-plugins-good \
             flatpak \
             flatpak-builder \
             weston \
@@ -267,6 +271,7 @@ jobs:
         if: matrix.platform == 'ubuntu-24.04'
         uses: tauri-apps/tauri-action@v1
         env:
+          APPIMAGE_EXTRACT_AND_RUN: "1"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           VITE_API_URL: https://api.deadlockmods.app
