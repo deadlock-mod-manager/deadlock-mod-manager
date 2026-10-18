@@ -98,8 +98,8 @@ async fn resolve_gamebanana_file(
   fileserver_preference: Option<&str>,
 ) -> Result<DownloadFileDto, Error> {
   let (submission, file_id) = parse_gamebanana_file_token(mod_id, token)?;
-  let page = state
-    .backend()?
+  let backend = state.backend()?;
+  let page = backend
     .client
     .download_page(&submission, &tokio_util::sync::CancellationToken::new())
     .await?;
@@ -108,16 +108,23 @@ async fn resolve_gamebanana_file(
       "GameBanana files are not publicly available".to_string(),
     ));
   }
-  let file = page
+  let Some(file) = page
     .files
     .into_iter()
     .chain(page.archived_files)
     .find(|candidate| candidate.id == file_id)
-    .ok_or_else(|| Error::ProviderInvalidResponse("GameBanana file was not found".to_string()))?;
+  else {
+    // The update check may have offered a file id from a cached snapshot that
+    // the author has since deleted; drop it so the next check sees live files.
+    backend.catalog.delete_cached_update(submission).await?;
+    return Err(Error::ProviderInvalidResponse(
+      "GameBanana file was not found".to_string(),
+    ));
+  };
   validate_download_file_name(&file.name)?;
   let mut download_url = file.download_url;
   if let Some(preference) = fileserver_preference.filter(|value| *value != "default") {
-    match state.backend()?.fileservers(false).await {
+    match backend.fileservers(false).await {
       Ok(servers) => {
         let selected = if preference == "auto" {
           servers

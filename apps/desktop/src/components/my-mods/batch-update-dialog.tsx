@@ -21,9 +21,10 @@ import {
   X,
 } from "@deadlock-mods/ui/icons";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { modDownloadsQueryOptions } from "@/hooks/use-mod-downloads";
 import { DateDisplay } from "@/components/date-display";
 import { UpdateChangelog } from "@/components/my-mods/update-changelog";
 import { formatSize } from "@/lib/utils";
@@ -60,6 +61,8 @@ export const BatchUpdateDialog = ({
     updateProgress,
   } = useBatchUpdate();
   const skipModUpdate = usePersistedStore((state) => state.skipModUpdate);
+  const queryClient = useQueryClient();
+  const [refreshingFiles, setRefreshingFiles] = useState(false);
   const stepPercentage = updateProgress?.isBackingUp
     ? updateProgress.backupPercentage
     : updateProgress?.downloadPercentage;
@@ -76,8 +79,40 @@ export const BatchUpdateDialog = ({
   });
 
   useEffect(() => {
-    prepareUpdates(open ? updates : []);
-  }, [open, updates, prepareUpdates]);
+    if (!open) {
+      prepareUpdates([]);
+      return;
+    }
+    prepareUpdates(updates);
+    // Update checks reuse a cached file list; authors who replace files would
+    // leave it pointing at ids GameBanana no longer serves.
+    let cancelled = false;
+    setRefreshingFiles(true);
+    void Promise.all(
+      updates.map(async (update) => {
+        try {
+          const { downloads } = await queryClient.fetchQuery({
+            ...modDownloadsQueryOptions(update.mod.remoteId),
+            staleTime: 0,
+          });
+          return downloads.length > 0 ? { ...update, downloads } : update;
+        } catch (error) {
+          logger
+            .withError(error as Error)
+            .warn("Failed to refresh update files");
+          return update;
+        }
+      }),
+    ).then((fresh) => {
+      if (cancelled) return;
+      prepareUpdates(fresh);
+      setRefreshingFiles(false);
+    });
+    return () => {
+      cancelled = true;
+      setRefreshingFiles(false);
+    };
+  }, [open, updates, prepareUpdates, queryClient]);
 
   const handleSkip = (mod: ModDto, updatedAt: number) => {
     skipModUpdate(mod.remoteId, updatedAt);
@@ -174,7 +209,7 @@ export const BatchUpdateDialog = ({
               </Button>
               <Button
                 onClick={() => batchUpdateMutation.mutate()}
-                disabled={batchUpdateMutation.isPending}
+                disabled={batchUpdateMutation.isPending || refreshingFiles}
                 icon={<RefreshCw className='h-4 w-4' />}>
                 {isSingleMod ? t("modDetail.updateMod") : t("myMods.updateAll")}
               </Button>

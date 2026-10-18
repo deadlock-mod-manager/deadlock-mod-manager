@@ -96,6 +96,21 @@ impl Catalog {
       })
       .await
   }
+
+  pub async fn delete_cached_update(&self, submission: SubmissionRef) -> Result<(), Error> {
+    self
+      .pool
+      .run(move |connection| {
+        diesel::delete(update_cache::table.find((
+          provider_name(submission.provider),
+          submission_type_name(submission.submission_type),
+          submission.submission_id,
+        )))
+        .execute(connection)?;
+        Ok(())
+      })
+      .await
+  }
 }
 
 #[cfg(test)]
@@ -146,9 +161,19 @@ mod tests {
       .await
       .unwrap();
 
-    let cached = catalog.cached_update(submission).await.unwrap().unwrap();
+    let cached = catalog
+      .cached_update(submission.clone())
+      .await
+      .unwrap()
+      .unwrap();
     assert_eq!(cached.snapshot.remote_updated_at, 300);
     assert_eq!(cached.snapshot.files[0].id, 7);
     assert_eq!(cached.checked_at, 400);
+
+    catalog
+      .delete_cached_update(submission.clone())
+      .await
+      .unwrap();
+    assert!(catalog.cached_update(submission).await.unwrap().is_none());
   }
 }
