@@ -1,3 +1,4 @@
+import type { Platform } from "@tauri-apps/plugin-os";
 import { EXPERIMENTAL_FEATURES } from "@/lib/constants";
 
 export const SETTINGS_TAB_LABEL_KEYS = {
@@ -22,6 +23,8 @@ type SettingsTab = keyof typeof SETTINGS_TAB_LABEL_KEYS;
 type SearchableText = {
   titleKey: string;
   descriptionKey?: string;
+  /** Platforms that render this setting. Omitted when every platform does. */
+  platforms?: Platform[];
 };
 
 export type SettingsSearchSection = SearchableText & {
@@ -129,10 +132,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
       {
         titleKey: "settings.minimizeToTray",
         descriptionKey: "settings.minimizeToTrayDescription",
+        platforms: ["windows", "macos"],
       },
       {
         titleKey: "settings.closeToTray",
         descriptionKey: "settings.closeToTrayDescription",
+        platforms: ["windows", "macos"],
       },
       {
         titleKey: "settings.autoUpdate",
@@ -154,6 +159,7 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
       {
         titleKey: "settings.linuxGpuCompat",
         descriptionKey: "settings.linuxGpuCompatDescription",
+        platforms: ["linux"],
       },
     ],
   },
@@ -437,11 +443,16 @@ const normalize = (text: string) =>
 
 type Candidate = { result: SettingsSearchResult; haystack: string };
 
+const rendersOn = (item: SearchableText, platform?: Platform) =>
+  !platform || !item.platforms || item.platforms.includes(platform);
+
 const toCandidates = (
   sections: SettingsSearchSection[],
   translate: (key: string) => string,
+  platform?: Platform,
 ): Candidate[] =>
   sections.flatMap((section) => {
+    if (!rendersOn(section, platform)) return [];
     const tabLabel = translate(SETTINGS_TAB_LABEL_KEYS[section.tab]);
     const sectionTitle = translate(section.titleKey);
     const sectionBreadcrumb =
@@ -469,9 +480,15 @@ const toCandidates = (
     };
 
     return [toCandidate(section, tabLabel, tabLabel)].concat(
-      (section.settings ?? []).map((setting) =>
-        toCandidate(setting, sectionBreadcrumb, `${tabLabel} ${sectionTitle}`),
-      ),
+      (section.settings ?? [])
+        .filter((setting) => rendersOn(setting, platform))
+        .map((setting) =>
+          toCandidate(
+            setting,
+            sectionBreadcrumb,
+            `${tabLabel} ${sectionTitle}`,
+          ),
+        ),
     );
   });
 
@@ -485,17 +502,19 @@ const rank = (title: string, query: string) => {
 /**
  * Matches every query word against a setting's title, description, and the
  * tab/section it lives in. Title matches rank above description-only matches.
+ * With `platform`, settings the settings page hides there are skipped.
  */
 export const searchSettings = (
   query: string,
   translate: (key: string) => string,
   sections: SettingsSearchSection[] = SETTINGS_SEARCH_INDEX,
+  platform?: Platform,
 ): SettingsSearchResult[] => {
   const normalizedQuery = normalize(query.trim());
   if (!normalizedQuery) return [];
   const terms = normalizedQuery.split(WHITESPACE_REGEX);
 
-  return toCandidates(sections, translate)
+  return toCandidates(sections, translate, platform)
     .filter((candidate) =>
       terms.every((term) => candidate.haystack.includes(term)),
     )

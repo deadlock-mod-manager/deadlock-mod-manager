@@ -1,7 +1,9 @@
 import { SearchInput } from "@deadlock-mods/ui/components/search-input";
+import { platform } from "@tauri-apps/plugin-os";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
+  SETTINGS_SEARCH_INDEX,
   type SettingsSearchResult,
   searchSettings,
 } from "@/lib/settings-search";
@@ -18,7 +20,8 @@ export const SettingsSearch = ({ children, onSelect }: SettingsSearchProps) => {
   const [query, setQuery] = useState("");
 
   const results = useMemo(
-    () => searchSettings(query, (key) => t(key)),
+    () =>
+      searchSettings(query, (key) => t(key), SETTINGS_SEARCH_INDEX, platform()),
     [query, t],
   );
 
