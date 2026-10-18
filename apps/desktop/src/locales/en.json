@@ -2400,7 +2400,7 @@
       "appearance": "Colors and textures",
       "model": "Model",
       "gameData": "Abilities, stats and text",
-      "crashRisk": "Can crash the game"
+      "crashRisk": "Model data issues"
     },
     "lastUpdatedBefore": "Last updated before the Paint the Town update.",
     "stillNeedsUpdate": "Some parts still need an update for this patch: {{remainingSymptoms}}.",
@@ -2438,8 +2438,8 @@
       "fix_one": "Fix {{count}} mod",
       "fix_other": "Fix {{count}} mods",
       "seeDetails": "See details",
-      "crashRisk_one": "{{count}} of these can crash the game. Fix it from See details, where its warning is listed.",
-      "crashRisk_other": "{{count}} of these can crash the game. Fix them one at a time from See details, where their warnings are listed.",
+      "crashRisk_one": "{{count}} of these has model data issues. Fix it from See details, where the issues are listed.",
+      "crashRisk_other": "{{count}} of these have model data issues. Fix them one at a time from See details, where the issues are listed.",
       "checkingTitle": "Checking your mods against the current game version",
       "checkingDescription": "Mods made for an older version will show their fixes here, so you can apply them before you play.",
       "checkingCount": "{{checked}} of {{total}} checked"
@@ -2463,13 +2463,21 @@
       "fixAndLaunch": "Fix and launch",
       "launchAnyway": "Launch anyway"
     },
+    "symptomHints": {
+      "cameraAim": "Where the camera sits and where shots aim from. Skins made before the update can put the camera in the wrong spot.",
+      "animations": "How the hero moves and plays abilities. Outdated animation data can make the hero slide, freeze or skip animations.",
+      "appearance": "Materials and colors on the model. A mismatch can show wrong colors or missing textures.",
+      "model": "Which model the game shows for the hero. If it can't be matched, the default model may show instead.",
+      "gameData": "The ability, stat and text changes this mod makes. Outdated entries can show old values or missing text.",
+      "crashRisk": "Parts of the model point to bones, attachments or files that don't match the current game. This is often harmless. If the game crashes or the hero looks wrong, disable this mod."
+    },
     "symptomsInline": {
       "cameraAim": "camera and aim",
       "animations": "animations and movement",
       "appearance": "colors and textures",
       "model": "model",
       "gameData": "abilities, stats and text",
-      "crashRisk": "crash risk"
+      "crashRisk": "model data issues"
     }
   },
   "conflicts": {
@@ -2588,7 +2596,7 @@
         "animationMapping": "Animation bindings need verified bone mapping",
         "unreadableResource": "This resource could not be checked"
       },
-      "warningDescription": "No verified repair exists for these. Some only change how the mod looks; missing resources or camera settings can crash the game. If the mod misbehaves, disable it or check for an update.",
+      "warningDescription": "No verified repair exists for these. Most are harmless or only change how the mod looks. If the game crashes or the mod looks wrong, disable it or check for an update.",
       "warningsTitle": "Warnings",
       "warningSummary_one": "{{count}} warning",
       "warningSummary_other": "{{count}} warnings",

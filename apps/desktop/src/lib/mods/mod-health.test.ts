@@ -98,7 +98,7 @@ describe("isFixableStatus", () => {
 });
 
 describe("canFixInBulk", () => {
-  it("leaves mods that can crash the game to a fix of their own", () => {
+  it("leaves mods with model data issues to a fix of their own", () => {
     expect(canFixInBulk(health("1", "fixable"))).toBe(true);
     expect(canFixInBulk(health("1", "partlyFixable", ["animations"]))).toBe(
       true,

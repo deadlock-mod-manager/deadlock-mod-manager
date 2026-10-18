@@ -1,5 +1,4 @@
 import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
-import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Undo2, Wrench } from "@deadlock-mods/ui/icons";
 import { cn } from "@deadlock-mods/ui/lib/utils";
@@ -18,7 +17,7 @@ import {
 import type { ModHealth } from "@/types/generated/ModHealth";
 import type { ModHealthSymptom } from "@/types/generated/ModHealthSymptom";
 import type { LocalMod } from "@/types/mods";
-import { BADGE_ICONS } from "./mod-health-badge";
+import { BADGE_ICONS, SymptomBadge } from "./mod-health-badge";
 
 const ICON_TONES = {
   fixable: "text-primary",
@@ -35,27 +34,22 @@ const SymptomGroup = ({
 }: {
   symptoms: readonly ModHealthSymptom[];
   needsUpdate: boolean;
-}) => {
-  const { t } = useTranslation();
-  return (
-    <ul className='flex flex-wrap gap-1.5'>
-      {symptoms.map((symptom) => (
-        <li key={symptom}>
-          <Badge
-            variant='outline'
-            className={cn(
-              "font-normal text-xs",
-              needsUpdate
-                ? "border-amber-400/25 text-amber-200/80"
-                : "text-muted-foreground",
-            )}>
-            {t(`modHealth.symptoms.${symptom}`)}
-          </Badge>
-        </li>
-      ))}
-    </ul>
-  );
-};
+}) => (
+  <ul className='flex flex-wrap gap-1.5'>
+    {symptoms.map((symptom) => (
+      <li key={symptom}>
+        <SymptomBadge
+          symptom={symptom}
+          className={
+            needsUpdate
+              ? "border-amber-400/25 text-amber-200/80"
+              : "text-muted-foreground"
+          }
+        />
+      </li>
+    ))}
+  </ul>
+);
 
 export const ModHealthAlert = ({
   mod,

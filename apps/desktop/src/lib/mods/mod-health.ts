@@ -57,8 +57,8 @@ export const isFixableStatus = (status: ModHealthStatus): boolean =>
   status === "fixable" || status === "partlyFixable";
 
 /**
- * Fixing accepts the mod's remaining warnings, so a mod that can crash the
- * game is only fixed one at a time, next to its warning.
+ * Fixing accepts the mod's remaining warnings, so a mod with model data issues
+ * is only fixed one at a time, next to its issues.
  */
 export const canFixInBulk = (health: ModHealth): boolean =>
   isFixableStatus(health.status) &&

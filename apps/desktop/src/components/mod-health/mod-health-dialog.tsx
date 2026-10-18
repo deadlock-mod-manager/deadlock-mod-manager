@@ -1,4 +1,3 @@
-import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Dialog,
@@ -37,6 +36,7 @@ import { isModOutdated } from "@/lib/utils";
 import type { ModHealth } from "@/types/generated/ModHealth";
 import type { ModHealthSymptom } from "@/types/generated/ModHealthSymptom";
 import { type LocalMod, ModStatus } from "@/types/mods";
+import { SymptomBadge } from "./mod-health-badge";
 
 const ROW_ORDER = {
   fixable: 0,
@@ -60,7 +60,6 @@ const SymptomChips = ({
   label?: string;
   symptoms: readonly ModHealthSymptom[];
 }) => {
-  const { t } = useTranslation();
   if (symptoms.length === 0) return null;
   return (
     <div className='flex flex-wrap items-center gap-1'>
@@ -68,12 +67,11 @@ const SymptomChips = ({
         <span className='text-muted-foreground text-xs'>{label}</span>
       ) : null}
       {symptoms.map((symptom) => (
-        <Badge
+        <SymptomBadge
           key={symptom}
-          variant='outline'
-          className='font-normal text-muted-foreground text-xs'>
-          {t(`modHealth.symptoms.${symptom}`)}
-        </Badge>
+          symptom={symptom}
+          className='text-muted-foreground'
+        />
       ))}
     </div>
   );

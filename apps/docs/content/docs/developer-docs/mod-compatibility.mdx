@@ -47,8 +47,9 @@ the status.
 
 Each repair and remaining finding maps to one player-visible symptom: camera and
 aim; animations and movement; colors and textures; model; abilities, stats and
-text; and can crash the game. Structural model faults the engine can reject, and
-missing references without a known fallback, map to crash risk. A status carries
+text; and model data issues. Structural model faults the engine could reject,
+and missing references without a known fallback, map to model data issues
+(`crashRisk`). They are not confirmed to crash the game. A status carries
 the symptoms its repairs fix and the symptoms they leave.
 
 Results are cached per profile in `mod-health.json` in the app's local data

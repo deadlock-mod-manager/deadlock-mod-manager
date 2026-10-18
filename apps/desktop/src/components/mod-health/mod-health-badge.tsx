@@ -129,3 +129,28 @@ export const ModHealthBadge = ({
     </Tooltip>
   );
 };
+
+/** A symptom chip whose tooltip explains what that part of a mod covers. */
+export const SymptomBadge = ({
+  symptom,
+  className,
+}: {
+  symptom: ModHealthSymptom;
+  className?: string;
+}) => {
+  const { t } = useTranslation();
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Badge
+          variant='outline'
+          className={cn("cursor-help font-normal text-xs", className)}>
+          {t(`modHealth.symptoms.${symptom}`)}
+        </Badge>
+      </TooltipTrigger>
+      <TooltipContent className='max-w-64'>
+        {t(`modHealth.symptomHints.${symptom}`)}
+      </TooltipContent>
+    </Tooltip>
+  );
+};
