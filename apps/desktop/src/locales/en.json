@@ -2273,40 +2273,24 @@
   },
   "myMods": {
     "compatibility": {
-      "enable": "Enable Compatibility",
-      "about": "About Compatibility",
-      "description": "Launch modded checks selected mods and applies verified fixes automatically. If warnings or conflicts need approval, the review opens before launch.",
-      "review": "Review Compatibility",
-      "noEnabledMods": "Enable a mod to review compatibility.",
-      "reviewDescription": "Fixes apply only to mods with Compatibility on. Original mod files stay unchanged.",
+      "review": "Review fixes",
+      "reviewDescription": "Some fixes need your approval before they apply. Your mod files are never changed.",
       "launchReviewDescription": "Launch is paused until you review these. Applying continues launch; closing cancels it.",
       "applyAndLaunch": "Apply fixes and launch",
-      "launchFlow": "Launch modded applies verified fixes automatically and opens the review when warnings or conflicts need approval.",
-      "closeGame": "Close Deadlock to change compatibility. You can still review the planned repairs.",
+      "closeGame": "Close Deadlock to apply fixes. You can still review the planned repairs.",
       "checking": "Checking mods against your installed game...",
-      "loadFailed": "Could not load your compatibility preference. Try again.",
       "checkFailed": "Could not check mod compatibility.",
       "unmanagedFilesTitle": "Untracked enabled VPK files can affect this profile",
       "unmanagedFilesDescription": "Deadlock can load these files, but this profile has no enabled mod assigned to them. They are included when checking dependencies and load order, and their contents are preserved. Inspect the listed files before testing; an old skin or animation file can conflict with your selected mods.",
       "missingFilesTitle": "Some mod files are no longer installed",
       "missingFilesDescription": "These mod records point to deleted files and were skipped. If you removed these mods, you can continue. Otherwise, reinstall them and review compatibility again.",
       "retry": "Try Again",
-      "changeFailed": "Could not change compatibility.",
-      "enableAndApply": "Enable and Apply",
-      "apply": "Apply Compatibility",
-      "applied": "Compatibility is ready for the next launch.",
-      "perMod": "Compatibility fixes",
-      "forMod": "Compatibility fixes for {{name}}",
-      "perModDescription": "Select this mod for compatibility repairs. Launch modded applies verified fixes or opens a review for warnings. Turning this off uses the original files. Saved separately for each profile.",
-      "selected_one": "Compatibility fixes enabled for {{count}} mod",
-      "selected_other": "Compatibility fixes enabled for {{count}} mods",
-      "selectMods": "Check Compatibility on a mod to enable fixes.",
+      "apply": "Apply fixes",
+      "applied": "Fixes applied.",
+      "appliedLaunching": "Fixes applied. Launching Deadlock.",
       "excluded": "Original files preserved: {{names}}",
       "sharedTitle": "Shared resources preserved",
-      "sharedDescription": "These files stay unchanged because an active VPK is untracked, an active mod has Compatibility turned off, or an unchecked mod shares game text and data. Inspect untracked files, enable Compatibility on the active skin, or disable competing skins and variations.",
-      "on": "Compatibility fixes on",
-      "off": "Compatibility fixes off",
-      "label": "Compatibility"
+      "sharedDescription": "These files stay unchanged because an active VPK is untracked, an active mod uses its original files, or an unfixed mod shares game text and data. Inspect untracked files, fix the active skin, or disable competing skins and variations."
     },
     "checkForUpdates": "Check for updates",
     "checkForUpdatesTooltip": "Check if your mods have updates",
@@ -2391,6 +2375,85 @@
       "installed": "Installed",
       "downloaded": "Downloaded",
       "conflicts": "Conflicts"
+    }
+  },
+  "modHealth": {
+    "badge": {
+      "fixable": "Can be fixed",
+      "partlyFixable": "Can be partly fixed",
+      "fixed": "Fixed for this patch",
+      "partlyFixed": "Partly fixed for this patch",
+      "originalFiles": "Original files",
+      "needsUpdate": "Needs an update for this patch"
+    },
+    "summary": {
+      "fixable": "Made for an older Deadlock version. These parts can be fixed automatically.",
+      "partlyFixable": "Made for an older Deadlock version. These can be fixed automatically: {{fixSymptoms}}. Some parts still need an update for this patch: {{remainingSymptoms}}.",
+      "fixed": "Made for an older Deadlock version. These parts were fixed for this patch.",
+      "partlyFixed": "Made for an older Deadlock version. Fixed for this patch: {{fixSymptoms}}. Some parts still need an update for this patch: {{remainingSymptoms}}.",
+      "originalFiles": "You switched this mod to its original files. These parts can be fixed for this patch.",
+      "needsUpdate": "Parts of this mod don't match the current game version and can't be fixed automatically."
+    },
+    "symptoms": {
+      "cameraAim": "Camera and aim",
+      "animations": "Animations and movement",
+      "appearance": "Colors and textures",
+      "model": "Model",
+      "gameData": "Abilities, stats and text",
+      "crashRisk": "Can crash the game"
+    },
+    "lastUpdatedBefore": "Last updated before the Paint the Town update.",
+    "stillNeedsUpdate": "Some parts still need an update for this patch: {{remainingSymptoms}}.",
+    "fixForPatch": "Fix for this patch",
+    "useOriginalFiles": "Use original files",
+    "closeGame": "Close Deadlock to fix mods.",
+    "fixedToast_one": "Fixed {{count}} mod",
+    "fixedToast_other": "Fixed {{count}} mods",
+    "fixFailed": "Could not fix mods",
+    "originalFilesToast": "{{name}} now uses its original files",
+    "originalFilesFailed": "Could not switch to the original files",
+    "banner": {
+      "gameUpdated_one": "Deadlock updated. {{count}} of your mods was made for an older version and can be fixed automatically.",
+      "gameUpdated_other": "Deadlock updated. {{count}} of your mods were made for an older version and can be fixed automatically.",
+      "olderVersion_one": "{{count}} mod was made for an older Deadlock version and can be fixed automatically.",
+      "olderVersion_other": "{{count}} mods were made for an older Deadlock version and can be fixed automatically.",
+      "gameUpdatedPartly_one": "Deadlock updated. {{count}} of your mods was made for an older version and can be fixed automatically, at least in part.",
+      "gameUpdatedPartly_other": "Deadlock updated. {{count}} of your mods were made for an older version and can be fixed automatically, at least in part.",
+      "olderVersionPartly_one": "{{count}} mod was made for an older Deadlock version and can be fixed automatically, at least in part.",
+      "olderVersionPartly_other": "{{count}} mods were made for an older Deadlock version and can be fixed automatically, at least in part.",
+      "fix_one": "Fix {{count}} mod",
+      "fix_other": "Fix {{count}} mods",
+      "seeDetails": "See details",
+      "crashRisk_one": "{{count}} of these can crash the game. Fix it from See details, where its warning is listed.",
+      "crashRisk_other": "{{count}} of these can crash the game. Fix them one at a time from See details, where their warnings are listed.",
+      "checking": "Checking mods… {{checked}}/{{total}}"
+    },
+    "dialog": {
+      "title": "Mods made for an older game version",
+      "disclaimer": "Game updates can change files that mods replace, which can break the camera, animations, colors or abilities. Deadlock Mod Manager repairs what it can verify against your installed game. Your mod files are never changed, and you can switch any mod back to its original files. Some problems, like custom rigs or animations, still need an update from the mod author. This check can't catch every way a mod can break.",
+      "empty": "All your mods match the current game version.",
+      "fix": "Fix",
+      "fixes": "Fixes:",
+      "stillNeedsUpdate": "Still needs an update:",
+      "fixAll": "Fix all",
+      "disable": "Disable",
+      "noUpdate": "No update for {{name}} yet."
+    },
+    "launchPrompt": {
+      "title_one": "{{count}} enabled mod was made for an older version",
+      "title_other": "{{count}} enabled mods were made for an older version",
+      "description": "Deadlock Mod Manager can apply verified fixes before launching. Your mod files are never changed.",
+      "alwaysFix": "Always fix automatically",
+      "fixAndLaunch": "Fix and launch",
+      "launchAnyway": "Launch anyway"
+    },
+    "symptomsInline": {
+      "cameraAim": "camera and aim",
+      "animations": "animations and movement",
+      "appearance": "colors and textures",
+      "model": "model",
+      "gameData": "abilities, stats and text",
+      "crashRisk": "crash risk"
     }
   },
   "conflicts": {
@@ -2751,7 +2814,7 @@
     "failedToOpenForumPost": "Failed to open forum post"
   },
   "warnings": {
-    "outdatedDescription": "This mod hasn't been updated since the City Never Sleeps update (September 29, 2026) and may not work properly.",
+    "outdatedDescription": "This mod hasn't been updated since the Paint the Town update (October 16, 2026) and may not work properly.",
     "obsoleteLabel": "Obsolete",
     "obsoleteDescription": "This mod is no longer available on the mods store and may not work with the current game version.",
     "staleModDescription": "This mod has {{count}} unresolved reports and hasn't been updated since {{date}}. It may be broken with the current game version.",
@@ -3399,6 +3462,8 @@
     "traySyncFailed": "Could not change the tray setting. Try again.",
     "autoResetGameinfo": "Restore vanilla game config when Deadlock closes",
     "autoResetGameinfoDescription": "Removes the mod paths from gameinfo.gi after you quit, so launching from Steam starts the game without mods. Launching modded from here adds them back. Only works while the mod manager is open.",
+    "autoFixMods": "Fix mods automatically after game updates",
+    "autoFixModsDescription": "Before launching, apply verified fixes to enabled mods made for an older game version. Your mod files are never changed.",
     "autoResetGameinfoSuccess": "Deadlock closed. Game config restored to vanilla.",
     "autoResetGameinfoFailed": "Couldn't restore the vanilla game config after Deadlock closed. Use Reset to Vanilla in Settings.",
     "showModUpdateBadges": "Mod update badges",
@@ -3448,10 +3513,6 @@
       "performance-configs": {
         "title": "Performance Configs",
         "description": "Apply community gameinfo.gi configs that trade visual detail for frame rate, from the Performance page."
-      },
-      "mod-compatibility-repairs": {
-        "title": "Mod Compatibility Repairs",
-        "description": "Repair outdated mods and merge game text and data that several mods change. Choose which mods to repair in My Mods."
       }
     }
   },
@@ -3864,8 +3925,7 @@
     "enableMod": "Enable Mod?",
     "installedTooltip": "Toggle to disable mod (will not delete, just disable it ingame)",
     "downloadedTooltip": "Toggle to enable mod",
-    "toggleForMod": "Enable mod {{name}}",
-    "mod": "Mod"
+    "toggleForMod": "Enable mod {{name}}"
   },
   "addons": {
     "analyzeLocal": "Analyze Local Addons",
@@ -5746,8 +5806,8 @@
       "confirmBody_other": "{{count}} mods will be downloaded into your active profile.",
       "confirmSkipped_one": "{{count}} mod already in your library is skipped.",
       "confirmSkipped_other": "{{count}} mods already in your library are skipped.",
-      "confirmOutdated_one": "{{count}} of them hasn't been updated since the City Never Sleeps update and may not work.",
-      "confirmOutdated_other": "{{count}} of them haven't been updated since the City Never Sleeps update and may not work.",
+      "confirmOutdated_one": "{{count}} of them hasn't been updated since the Paint the Town update and may not work.",
+      "confirmOutdated_other": "{{count}} of them haven't been updated since the Paint the Town update and may not work.",
       "confirmAction_one": "Download {{count}} mod",
       "confirmAction_other": "Download {{count}} mods",
       "queued_one": "Queued {{count}} mod for download",
@@ -5761,9 +5821,9 @@
       "outdatedLabel": "Outdated",
       "partialLabel_one": "{{count}} outdated",
       "partialLabel_other": "{{count}} outdated",
-      "outdatedDescription": "None of this collection's mods have been updated since the City Never Sleeps update (September 29, 2026). They may not work properly.",
-      "partialDescription_one": "{{count}} of {{total}} mods in this collection hasn't been updated since the City Never Sleeps update (September 29, 2026) and may not work properly.",
-      "partialDescription_other": "{{count}} of {{total}} mods in this collection haven't been updated since the City Never Sleeps update (September 29, 2026) and may not work properly."
+      "outdatedDescription": "None of this collection's mods have been updated since the Paint the Town update (October 16, 2026). They may not work properly.",
+      "partialDescription_one": "{{count}} of {{total}} mods in this collection hasn't been updated since the Paint the Town update (October 16, 2026) and may not work properly.",
+      "partialDescription_other": "{{count}} of {{total}} mods in this collection haven't been updated since the Paint the Town update (October 16, 2026) and may not work properly."
     }
   },
   "interchange": {

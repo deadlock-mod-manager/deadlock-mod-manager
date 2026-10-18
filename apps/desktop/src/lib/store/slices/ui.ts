@@ -55,7 +55,6 @@ const DEFAULT_EXPERIMENTAL_FEATURES: Record<ExperimentalFeature, boolean> = {
   "profile-sharing": true,
   "conflict-detection": true,
   "performance-configs": false,
-  "mod-compatibility-repairs": false,
 };
 
 export type CrosshairFilters = {
@@ -81,6 +80,7 @@ export type UIState = {
   showOccultGeometry: boolean;
   animateOccultGeometry: boolean;
   experimentalFeatures: Record<ExperimentalFeature, boolean>;
+  autoFixMods: boolean;
 
   // Plugins
   enabledPlugins: Record<string, boolean>;
@@ -103,6 +103,7 @@ export type UIState = {
     feature: ExperimentalFeature,
     enabled: boolean,
   ) => void;
+  setAutoFixMods: (enabled: boolean) => void;
   setEnabledPlugin: (id: string, enabled: boolean) => void;
   setPluginSettings: (id: string, value: unknown) => void;
 };
@@ -147,6 +148,7 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   showOccultGeometry: true,
   animateOccultGeometry: true,
   experimentalFeatures: DEFAULT_EXPERIMENTAL_FEATURES,
+  autoFixMods: true,
   enabledPlugins: {},
   pluginSettings: {},
 
@@ -224,6 +226,11 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
         ...state.experimentalFeatures,
         [feature]: enabled,
       },
+    })),
+
+  setAutoFixMods: (enabled: boolean) =>
+    set(() => ({
+      autoFixMods: enabled,
     })),
 
   setEnabledPlugin: (id: string, enabled: boolean) =>

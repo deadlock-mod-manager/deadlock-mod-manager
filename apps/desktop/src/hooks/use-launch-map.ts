@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { useCompatibilityReview } from "@/components/providers/compatibility-review";
+import { useLaunchFixes } from "@/hooks/use-launch-fixes";
 import { enableAutoexecLaunchOptionIfDisabled } from "@/lib/autoexec/launch-option";
 import { launchWithCompatibilityReview } from "@/lib/launch-with-compatibility-review";
 import { getLaunchErrorMessage } from "@/lib/launch-error";
@@ -17,6 +18,7 @@ export const useLaunchMap = (onSuccess?: () => void) => {
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
   const queryClient = useQueryClient();
   const reviewCompatibility = useCompatibilityReview();
+  const prepareModFixes = useLaunchFixes();
 
   const launchMapMutation = useMutation({
     mutationFn: async (mapName: string) => {
@@ -33,18 +35,16 @@ export const useLaunchMap = (onSuccess?: () => void) => {
         storeState.gamePresenceEnabled,
       );
 
-      const modCompatibility =
-        storeState.experimentalFeatures["mod-compatibility-repairs"];
+      if (!(await prepareModFixes(profileFolder, () => {}))) return false;
       const launched = await launchWithCompatibilityReview(
         () =>
           startGame({
             vanilla: false,
             additionalArgs,
             profileFolder,
-            modCompatibility,
           }),
         () => reviewCompatibility(profileFolder),
-        !modCompatibility,
+        false,
       );
 
       if (!launched) return false;

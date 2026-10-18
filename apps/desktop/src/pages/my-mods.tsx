@@ -86,12 +86,9 @@ import { ModConflictBadge } from "@/components/my-mods/conflicts/mod-conflict-ba
 import { MyModsEmptyState } from "@/components/my-mods/empty-state";
 import { LibraryModAuthor } from "@/components/my-mods/library-mod-author";
 import { ModOrderingDialog } from "@/components/my-mods/mod-ordering-dialog";
-import {
-  useModCompatibility,
-  type ModCompatibilityController,
-} from "@/hooks/use-mod-compatibility";
-import { PerModCompatibilityControl } from "@/components/my-mods/per-mod-compatibility-control";
-import { ModCompatibilityControl } from "@/components/my-mods/mod-compatibility-control";
+import { ModHealthBadge } from "@/components/mod-health/mod-health-badge";
+import { ModHealthBanner } from "@/components/mod-health/mod-health-banner";
+import { useModHealthReport } from "@/hooks/use-mod-health";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useAddonAnalysis } from "@/hooks/use-addon-analysis";
 import { useDisableAllMods } from "@/hooks/use-disable-all-mods";
@@ -129,7 +126,9 @@ import type { ModConflictStatus } from "@/lib/mods/conflicts";
 import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
 import { getUpdatePercent } from "@/lib/mods/batch-update-progress";
 import { getModCoverImage } from "@/lib/mods/mod-images";
+import { healthByModId, showsDateOutdatedWarning } from "@/lib/mods/mod-health";
 import { cn, isModOutdated } from "@/lib/utils";
+import type { ModHealth } from "@/types/generated/ModHealth";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
 const PAGE_SIZE = 20;
@@ -230,14 +229,14 @@ type ModCardProps = {
   mod: LocalMod;
   conflictStatus: ModConflictStatus | undefined;
   onShowConflicts: () => void;
-  compatibility: ModCompatibilityController | undefined;
+  health: ModHealth | undefined;
 };
 
 const GridModCard = ({
   mod,
   conflictStatus,
   onShowConflicts,
-  compatibility,
+  health,
 }: ModCardProps) => {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
@@ -338,7 +337,10 @@ const GridModCard = ({
                 {t("mods.customBadge")}
               </Badge>
             )}
-            {isModOutdated(mod) && <OutdatedModWarning variant='indicator' />}
+            {showsDateOutdatedWarning(isModOutdated(mod), health) && (
+              <OutdatedModWarning variant='indicator' />
+            )}
+            <ModHealthBadge health={health} isOutdated={isModOutdated(mod)} />
             <MissingFilesWarning missingVpks={mod.missingVpks} />
             {conflictStatus && (
               <ModConflictBadge
@@ -366,13 +368,6 @@ const GridModCard = ({
         </CardHeader>
         <CardFooter className='mt-auto justify-between gap-3 px-3 py-3 pt-2'>
           <div className='flex min-w-0 items-center gap-1'>
-            {compatibility ? (
-              <PerModCompatibilityControl
-                mod={mod}
-                compatibility={compatibility}
-                variant='icon'
-              />
-            ) : null}
             {modOptions.showButton ? (
               <ModOptionsButton
                 activeCount={modOptions.activeVariantCount}
@@ -412,7 +407,7 @@ const ListModCard = ({
   mod,
   conflictStatus,
   onShowConflicts,
-  compatibility,
+  health,
 }: ModCardProps) => {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
@@ -497,9 +492,14 @@ const ListModCard = ({
                     {t("mods.customBadge")}
                   </Badge>
                 )}
-                {isModOutdated(mod) && (
+                {showsDateOutdatedWarning(isModOutdated(mod), health) && (
                   <OutdatedModWarning className='text-xs' variant='indicator' />
                 )}
+                <ModHealthBadge
+                  className='text-xs'
+                  health={health}
+                  isOutdated={isModOutdated(mod)}
+                />
                 <MissingFilesWarning
                   className='text-xs'
                   missingVpks={mod.missingVpks}
@@ -539,11 +539,7 @@ const ListModCard = ({
 
             <div className='flex shrink-0 items-center gap-2'>
               <div className='flex items-center gap-2'>
-                <ModButton
-                  remoteMod={mod}
-                  variant='iconOnly'
-                  showLabel={!!compatibility}
-                />
+                <ModButton remoteMod={mod} variant='iconOnly' />
                 {modOptions.showButton && (
                   <ModOptionsButton
                     activeCount={modOptions.activeVariantCount}
@@ -551,12 +547,6 @@ const ListModCard = ({
                   />
                 )}
               </div>
-              {compatibility ? (
-                <PerModCompatibilityControl
-                  mod={mod}
-                  compatibility={compatibility}
-                />
-              ) : null}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
@@ -602,9 +592,9 @@ const ModsList = ({
   viewMode,
   conflictStatusByMod,
   onShowConflicts,
-  compatibility,
+  healthById,
 }: {
-  compatibility: ModCompatibilityController | undefined;
+  healthById: ReadonlyMap<string, ModHealth>;
   mods: LocalMod[];
   viewMode: ViewMode;
   conflictStatusByMod: ReadonlyMap<string, ModConflictStatus>;
@@ -619,7 +609,7 @@ const ModsList = ({
             key={mod.remoteId ?? mod.id}
             mod={mod}
             onShowConflicts={onShowConflicts}
-            compatibility={compatibility}
+            health={healthById.get(mod.remoteId)}
           />
         ))}
       </div>
@@ -634,7 +624,7 @@ const ModsList = ({
           key={mod.remoteId ?? mod.id}
           mod={mod}
           onShowConflicts={onShowConflicts}
-          compatibility={compatibility}
+          health={healthById.get(mod.remoteId)}
         />
       ))}
     </div>
@@ -662,14 +652,11 @@ const MyMods = () => {
     refetch: refetchVpkScan,
     activeProfileFolder,
   } = useVpkScan();
-  const compatibilityEnabled = useExperimentalFeature(
-    "mod-compatibility-repairs",
+  const healthReport = useModHealthReport(activeProfileFolder);
+  const healthById = useMemo(
+    () => healthByModId(healthReport.data),
+    [healthReport.data],
   );
-  const modCompatibility = useModCompatibility(
-    activeProfileFolder,
-    compatibilityEnabled,
-  );
-  const compatibility = compatibilityEnabled ? modCompatibility : undefined;
   const {
     updatableMods,
     updatableCount,
@@ -934,13 +921,6 @@ const MyMods = () => {
         </div>
 
         <div className='flex min-w-0 flex-1 flex-wrap items-center justify-start gap-2 xl:justify-end'>
-          {compatibility ? (
-            <ModCompatibilityControl
-              compatibility={compatibility}
-              profileFolder={activeProfileFolder}
-              hasMods={enabledModsCount > 0}
-            />
-          ) : null}
           {updatableCount > 0 && (
             <UpdateButton
               variant='default'
@@ -1052,6 +1032,7 @@ const MyMods = () => {
             )}
             {mods.length > 0 && (
               <div className='flex w-full flex-col gap-4'>
+                <ModHealthBanner profileFolder={activeProfileFolder} />
                 <div className='flex w-full flex-col gap-3 px-px'>
                   <div className='min-w-0 overflow-visible [&_input]:border-border/70 [&_input]:bg-background/70 [&_input]:shadow-sm [&_input]:placeholder:text-muted-foreground/90 [&_input]:hover:border-border [&_input]:focus-visible:bg-background'>
                     <SearchBar
@@ -1212,7 +1193,7 @@ const MyMods = () => {
                       conflictStatusByMod={conflictStatusByMod}
                       onShowConflicts={showConflicts}
                       viewMode={viewMode}
-                      compatibility={compatibility}
+                      healthById={healthById}
                     />
                   </TabsContent>
                 )}
@@ -1224,7 +1205,7 @@ const MyMods = () => {
                       conflictStatusByMod={conflictStatusByMod}
                       onShowConflicts={showConflicts}
                       viewMode={viewMode}
-                      compatibility={compatibility}
+                      healthById={healthById}
                     />
                   </TabsContent>
                 )}
@@ -1236,7 +1217,7 @@ const MyMods = () => {
                       conflictStatusByMod={conflictStatusByMod}
                       onShowConflicts={showConflicts}
                       viewMode={viewMode}
-                      compatibility={compatibility}
+                      healthById={healthById}
                     />
                   </TabsContent>
                 )}
