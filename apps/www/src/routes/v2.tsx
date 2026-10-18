@@ -5,7 +5,9 @@ import { StepList } from "@/components/guides/guide-page";
 import { CtaArrow, primaryCta, secondaryCta } from "@/components/home/cta";
 import { Eyebrow } from "@/components/home/section-heading";
 import { ConflictsDemo } from "@/components/v2/conflicts-demo";
+import { CrashCheckDemo } from "@/components/v2/crash-check-demo";
 import { FixTicker } from "@/components/v2/fix-ticker";
+import { ModHealthSection } from "@/components/v2/mod-health-section";
 import { Seasons } from "@/components/v2/seasons";
 import { UpdateDemo } from "@/components/v2/update-demo";
 import { DISCORD_URL, V2_PREVIEW_URL } from "@/lib/constants";
@@ -66,12 +68,13 @@ const PerformanceScreenshot = () => {
   );
 };
 
-type FeatureId = "updates" | "store" | "conflicts" | "performance";
+type FeatureId = "updates" | "store" | "conflicts" | "crashes" | "performance";
 
 const FEATURES: { id: FeatureId; visual: React.ReactNode }[] = [
   { id: "updates", visual: <UpdateDemo /> },
   { id: "store", visual: <StoreScreenshot /> },
   { id: "conflicts", visual: <ConflictsDemo /> },
+  { id: "crashes", visual: <CrashCheckDemo /> },
   { id: "performance", visual: <PerformanceScreenshot /> },
 ];
 
@@ -138,6 +141,7 @@ function V2Page() {
   const moreItems = Object.entries(t("more.items", { returnObjects: true }));
   const steps = t("upgrade.steps", { returnObjects: true });
   const navItems = [
+    { id: "health", label: t("features.health.nav") },
     ...FEATURES.map(({ id }) => ({ id, label: t(`features.${id}.nav`) })),
     { id: "themes", label: t("features.themes.nav") },
     { id: "more", label: t("nav.more") },
@@ -203,6 +207,8 @@ function V2Page() {
           </nav>
         </div>
       </section>
+
+      <ModHealthSection />
 
       {FEATURES.map((feature, index) => (
         <FeatureRow key={feature.id} {...feature} flip={index % 2 === 1} />

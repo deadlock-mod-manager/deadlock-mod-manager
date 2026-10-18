@@ -1,12 +1,12 @@
 {
   "meta": {
     "title": "What's New in Deadlock Mod Manager V2",
-    "description": "Deadlock Mod Manager V2, rebuilt from the ground up: mods that survive game updates, a GameBanana catalog that lives on your PC, conflict detection, stats and new themes."
+    "description": "Deadlock Mod Manager V2, rebuilt from the ground up: mod health checks that repair outdated mods, mods that survive game updates, a GameBanana catalog that lives on your PC, conflict detection, a crash check, stats and new themes."
   },
   "hero": {
     "eyebrow": "Deadlock Mod Manager 2.0",
     "title": "Rebuilt from the ground up",
-    "intro": "V2 puts your mods back after a game update and warns you when two of them change the same files. The Mods Store now searches a copy of GameBanana on your PC.",
+    "intro": "V2 repairs mods that a game update broke and warns you when two of them change the same files. If the game crashes on launch, it shows you what changed. The Mods Store now searches a copy of GameBanana on your PC.",
     "tryPreview": "Try the V2 preview",
     "changelog": "Full changelog"
   },
@@ -28,10 +28,51 @@
         "vanilla": "Optional: go back to vanilla when the game closes, so launching from Steam starts it without mods"
       }
     },
+    "health": {
+      "nav": "Mod health",
+      "title": "Bring old mods back to life",
+      "body": "Every Deadlock patch breaks some mods. V2 checks each mod you have installed against the game on your PC and repairs what it can verify for the current patch, including mods that stopped working long ago. It never touches your mod files.",
+      "points": {
+        "when": "Runs after you install or change a mod and after every game update, for enabled and disabled mods",
+        "fix": "Fix every mod from the banner in Mods Library, one from its page or right-click menu, or let launch fix them for you",
+        "undo": "Fixes live in a separate layer, so Use original files puts any mod back the way its author released it",
+        "local": "Everything runs on your PC, and your choices are saved per profile"
+      },
+      "repairsTitle": "What it repairs",
+      "repairs": {
+        "camera": {
+          "title": "Camera and aim",
+          "body": "Moves the camera and aim points on older hero skins to where the current game expects them."
+        },
+        "animations": {
+          "title": "Animations and movement",
+          "body": "Repairs animation bindings, so heroes don't slide, freeze or skip animations."
+        },
+        "appearance": {
+          "title": "Colors and textures",
+          "body": "Fixes materials that no longer match the game and show up as wrong colors."
+        },
+        "model": {
+          "title": "Model",
+          "body": "Points models to where the game looks for them now, so your skin shows instead of the default."
+        },
+        "gameData": {
+          "title": "Abilities, stats and text",
+          "body": "Merges ability, stat and text changes when several mods edit the same game data."
+        }
+      },
+      "caveat": "It can't catch every problem. Mods with custom rigs or custom animations may still need an update from their author.",
+      "invite": {
+        "title": "Got a mod you gave up on?",
+        "body": "Install it and see what the check finds. If it still doesn't work after fixing, send it to us so we can teach the check to fix it.",
+        "send": "Send us a mod on Discord",
+        "docs": "How fixes work"
+      }
+    },
     "store": {
       "nav": "Mods Store",
       "title": "The whole of GameBanana, on your PC",
-      "body": "V2 keeps a copy of the GameBanana catalog on your PC, so browsing and searching don't wait on the network. It checks for new and updated mods when you start the app.",
+      "body": "V2 keeps a copy of the GameBanana catalog on your PC, so browsing and searching don't wait on the network. It checks for new and updated mods when you start the app, then about every 30 minutes while it's open.",
       "points": {
         "tabs": "Separate tabs for Mods, Sounds, Collections and WiPs",
         "pages": "Mod pages with Overview, Changelog, Comments and Files tabs",
@@ -50,6 +91,17 @@
         "ignore": "Ignore overlaps you're happy with, per profile"
       }
     },
+    "crashes": {
+      "nav": "Crash check",
+      "title": "Find out what broke the game",
+      "body": "If Deadlock closes abnormally within five minutes of starting, the app asks whether it just crashed and lists everything that changed since your last normal session, with a way to undo each change.",
+      "points": {
+        "changes": "Covers new and updated mods, autoexec.cfg, launch options and files in your addons folder",
+        "undo": "Disable the new mods, or open your autoexec and launch options, from the same dialog",
+        "build": "Says so when Deadlock itself updated, since a patch can cause crashes on its own",
+        "steam": "Works when you start the game from Steam too, as long as the app is open"
+      }
+    },
     "performance": {
       "nav": "Performance",
       "title": "More frames, your way",
@@ -65,7 +117,7 @@
     "themes": {
       "nav": "Themes",
       "title": "Make it yours",
-      "body": "V2 adds OLED and Lovelock themes. Around five holidays a year, the app also switches to a seasonal theme with something hidden to find, unless you have picked a theme of your own.",
+      "body": "V2 adds OLED, Lovelock and Gridline themes. Around five holidays a year, the app also switches to a seasonal theme with something hidden to find, unless you have picked a theme of your own.",
       "lovelockAlt": "Deadlock Mod Manager with the Lovelock theme: plum and pink, with hero art behind the dashboard",
       "inSeason": "In season now:",
       "seasons": {
@@ -98,6 +150,23 @@
     }
   },
   "demo": {
+    "health": {
+      "window": "Mods Library",
+      "banner_one": "Deadlock updated. {{count}} of your mods was made for an older version and can be fixed automatically.",
+      "banner_other": "Deadlock updated. {{count}} of your mods were made for an older version and can be fixed automatically.",
+      "fix_one": "Fix {{count}} mod",
+      "fix_other": "Fix {{count}} mods",
+      "seeDetails": "See details",
+      "fixable": "Can be fixed",
+      "fixed": "Fixed for this patch",
+      "fixableSummary": "Made for an older Deadlock version. These parts can be fixed automatically.",
+      "fixedSummary": "Made for an older Deadlock version. These parts were fixed for this patch.",
+      "symptomCamera": "Camera and aim",
+      "symptomAnimations": "Animations and movement",
+      "fixedToast_one": "Fixed {{count}} mod",
+      "fixedToast_other": "Fixed {{count}} mods",
+      "replay": "Play again"
+    },
     "update": {
       "title": "Deadlock updated and switched your mods off.",
       "body": "Steam replaced gameinfo.gi, so your 14 enabled mods won't load until they're re-applied.",
@@ -112,6 +181,24 @@
       "loadFirst": "Load first",
       "loadedFirst": "{{mod}} now loads first",
       "hint": "Try it: press Load first."
+    },
+    "crash": {
+      "title": "Did Deadlock just crash?",
+      "body": "It closed 1 minute after starting and left a crash report. One of these recent changes may be the cause.",
+      "changesHeading": "Changed since your last normal session",
+      "modsAdded": "2 mods added: Formal Wraith and Vyper Propeller Hat",
+      "modsAddedWhen": "12 minutes ago",
+      "modUpdated": "Shiv Refresh (CITY NEVER SLEEPS) updated",
+      "modUpdatedWhen": "Yesterday",
+      "launchOptions": "Launch options changed",
+      "launchOptionsAdded": "Added -novid",
+      "disableBoth": "Disable both",
+      "disabled": "Disabled",
+      "modsDisabled": "Disabled 2 mods",
+      "tip": "Change one thing at a time and launch again. That's the quickest way to find what's causing it.",
+      "closedIt": "I closed it",
+      "launchAgain": "Launch again",
+      "hint": "Try it: press Disable both."
     }
   },
   "more": {
@@ -123,11 +210,23 @@
       },
       "stats": {
         "title": "Stats",
-        "body": "Hero, item and teammate breakdowns, match history with item timelines, and live ranks for your current match (with the -condebug launch option)."
+        "body": "Hero, item and teammate breakdowns, match history with item timelines, and live ranks for your current match (with the -condebug launch option). Rearrange, resize, add or remove widgets and tabs, and filter by ranked, unranked or a start date."
       },
       "skins": {
         "title": "Hero Skins",
-        "body": "Every skin for a hero on one page, with a 3D preview."
+        "body": "Every skin for a hero on one page, with a 3D preview. With the skin randomizer on, each launch picks a random skin from the ones you chose."
+      },
+      "library": {
+        "title": "Library sorting",
+        "body": "Sort My Mods by install order, hero, name or when you added them."
+      },
+      "launch": {
+        "title": "Launch progress",
+        "body": "See each step while Deadlock starts, from verifying your mods to opening Steam, and cancel the launch if you change your mind."
+      },
+      "badges": {
+        "title": "Update badges",
+        "body": "Update available and recently updated badges on mod cards and details, now on disabled mods too."
       },
       "import": {
         "title": "Coming from Grimoire?",
@@ -168,7 +267,7 @@
       },
       "help": {
         "title": "Something look off?",
-        "body": "Settings → Tools → Nuke & Reinstall wipes your mods and downloads them again, for when the app and your game folder are out of sync. Still stuck? Ask on <discord>Discord</discord>."
+        "body": "In Settings → Tools, Repair mod folder sets aside files the app didn't install and rebuilds its list of your mods without deleting anything. Diagnose connection checks every service the app relies on. If the app and your game folder are still out of sync, Nuke & Reinstall wipes your mods and downloads them again. Still stuck? Ask on <discord>Discord</discord>."
       }
     }
   },
