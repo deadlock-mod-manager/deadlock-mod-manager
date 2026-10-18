@@ -8,6 +8,7 @@ import { DEFAULT_NSFW_SETTINGS } from "@deadlock-mods/shared";
 import { v4 as uuidv4 } from "uuid";
 import type { StateCreator } from "zustand";
 import type { CreateSettingSchema } from "@/lib/validation/create-setting";
+import type { TrayBehavior } from "@/lib/tray";
 import type { LocalSetting, SystemSetting } from "@/types/settings";
 import type { State } from "..";
 import {
@@ -74,6 +75,10 @@ export type SettingsState = {
    *  its VPKs open, so renaming or deleting them mid-session corrupts the load
    *  order. Users who know what they are doing can turn this off. */
   blockActionsWhileGameRunning: boolean;
+  /** Whether minimizing hides the window to the system tray. */
+  minimizeToTray: boolean;
+  /** Whether closing the window hides it to the system tray instead of quitting. */
+  closeToTray: boolean;
   gamePresenceTextTemplates: PresenceTextTemplates;
   gamePresenceHeroOverrides: GamePresenceHeroOverrides;
   backupEnabled: boolean;
@@ -123,6 +128,7 @@ export type SettingsState = {
   setForgeInstallEnabled: (enabled: boolean) => void;
   setAutoResetGameinfoOnExit: (enabled: boolean) => void;
   setBlockActionsWhileGameRunning: (enabled: boolean) => void;
+  setTrayBehavior: (behavior: TrayBehavior) => void;
   setGamePresenceTextTemplates: (templates: PresenceTextTemplates) => void;
   setGamePresenceHeroOverrides: (
     heroOverrides: GamePresenceHeroOverrides,
@@ -176,6 +182,8 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   forgeInstallEnabled: false,
   autoResetGameinfoOnExit: false,
   blockActionsWhileGameRunning: true,
+  minimizeToTray: false,
+  closeToTray: false,
   gamePresenceTextTemplates: createDefaultGamePresenceTextTemplates(),
   gamePresenceHeroOverrides: {},
   backupEnabled: true,
@@ -343,6 +351,8 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
     set(() => ({
       blockActionsWhileGameRunning: enabled,
     })),
+
+  setTrayBehavior: (behavior: TrayBehavior) => set(() => behavior),
 
   setGamePresenceTextTemplates: (templates: PresenceTextTemplates) =>
     set(() => ({

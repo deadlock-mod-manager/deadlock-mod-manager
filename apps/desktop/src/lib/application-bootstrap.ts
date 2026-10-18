@@ -9,6 +9,7 @@ import {
   getRuntimeServiceOrigin,
 } from "./runtime-bootstrap";
 import { applyGameGuardSetting } from "./game-guard";
+import { applyTrayBehavior, hideToTrayOnClose } from "./tray";
 import { syncProxyConfigToBackend } from "./proxy";
 import { usePersistedStore } from "./store";
 import {
@@ -51,6 +52,10 @@ const bootstrapApplication = async (): Promise<ApplicationBootstrap> => {
   ).catch((error) => {
     logger.withError(error).warn("Failed to sync the game guard setting");
   });
+  const { minimizeToTray, closeToTray } = usePersistedStore.getState();
+  await applyTrayBehavior({ minimizeToTray, closeToTray }).catch((error) => {
+    logger.withError(error).warn("Failed to sync the tray settings");
+  });
   void invoke("refresh_policy_manifest").catch((error) => {
     logger
       .withError(error)
@@ -58,7 +63,12 @@ const bootstrapApplication = async (): Promise<ApplicationBootstrap> => {
   });
   await downloadManager.init();
   // Tauri saves the store on exit with whatever writes have reached it.
-  void getCurrentWindow().onCloseRequested(() => flushPendingWrites());
+  void getCurrentWindow().onCloseRequested(async (event) => {
+    await flushPendingWrites();
+    if (await hideToTrayOnClose().catch(() => false)) {
+      event.preventDefault();
+    }
+  });
 
   logger.debug(
     "Store rehydrated, API URL initialized, and download manager ready",

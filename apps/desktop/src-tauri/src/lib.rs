@@ -33,6 +33,7 @@ pub mod proxy;
 mod reports;
 pub mod runtime_environment;
 mod steam_user;
+mod tray;
 mod updater_channel;
 mod utils;
 
@@ -145,6 +146,7 @@ pub fn run() {
 
   builder
     .manage(game_presence::DiscordState::new())
+    .on_window_event(tray::handle_window_event)
     .setup(|app| {
       #[cfg(feature = "e2e-harness")]
       {
@@ -459,6 +461,8 @@ pub fn run() {
       updater_channel::get_update_channel,
       app_updates::check_app_update,
       updater_channel::set_update_channel,
+      tray::set_tray_behavior,
+      tray::hide_to_tray_on_close,
       #[cfg(feature = "e2e-harness")]
       commands::e2e::e2e_status
     ])

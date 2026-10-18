@@ -127,6 +127,14 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
         descriptionKey: "settings.modsStorePaginationDescription",
       },
       {
+        titleKey: "settings.minimizeToTray",
+        descriptionKey: "settings.minimizeToTrayDescription",
+      },
+      {
+        titleKey: "settings.closeToTray",
+        descriptionKey: "settings.closeToTrayDescription",
+      },
+      {
         titleKey: "settings.autoUpdate",
         descriptionKey: "settings.autoUpdateDescription",
       },

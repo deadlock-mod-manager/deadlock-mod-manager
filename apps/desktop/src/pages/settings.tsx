@@ -83,6 +83,7 @@ import { SettingRow } from "@/components/settings/setting-row";
 import { SettingsSearch } from "@/components/settings/settings-search";
 import SystemSettings from "@/components/settings/system-settings";
 import ThemeSwitcher from "@/components/settings/theme-switcher";
+import { TrayToggles } from "@/components/settings/tray-toggles";
 import { UpdateChannelSelect } from "@/components/settings/update-channel-select";
 import VolumeControl from "@/components/settings/volume-control";
 import ErrorBoundary from "@/components/shared/error-boundary";
@@ -778,6 +779,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
               title={t("settings.systemSettings")}>
               <div className='grid grid-cols-1 gap-4'>
                 <SystemSettings />
+                <TrayToggles />
                 <AutoUpdateToggle />
                 <UpdateChannelSelect />
                 <DeveloperModeToggle />
