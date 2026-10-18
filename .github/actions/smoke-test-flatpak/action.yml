@@ -171,8 +171,18 @@ runs:
           exit 1
         fi
 
+        DEEP_LINK_STATUS=0
         timeout 15s flatpak run "${APP_ID}" \
-          "deadlock-mod-manager://forge/launch" > "${LOG_DIR}/deep-link.log" 2>&1
+          "deadlock-mod-manager://forge/launch" > "${LOG_DIR}/deep-link.log" 2>&1 \
+          || DEEP_LINK_STATUS=$?
+        # CEF forwards the URL through Chromium's process singleton, after which
+        # cef::initialize fails in the launcher and tauri-runtime-cef reports it
+        # as WebviewRuntimeNotInstalled. Any other failure is a real error.
+        if [ "${DEEP_LINK_STATUS}" -ne 0 ] && { [ "${RUNTIME_KIND}" != "cef" ] \
+          || ! grep -Fq 'WebviewRuntimeNotInstalled' "${LOG_DIR}/deep-link.log"; }; then
+          echo "ERROR: ${RUNTIME_KIND} deep-link launch exited with status ${DEEP_LINK_STATUS}"
+          exit 1
+        fi
         for _ in $(seq 1 20); do
           grep -Fq '[DeepLink] Processing deep link URL' \
             "${LOG_DIR}/app.log" && break
