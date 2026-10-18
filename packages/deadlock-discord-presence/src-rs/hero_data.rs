@@ -5,10 +5,29 @@ use std::time::{Duration, SystemTime};
 const API_URL: &str = "https://api.deadlock-api.com/v1/assets/heroes?language=english";
 const CACHE_TTL: Duration = Duration::from_secs(24 * 60 * 60);
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(8);
-/// Versioned so caches written before `image_url` existed are never read: they
-/// would pin every hero to a Discord upload that may not exist.
-const CACHE_FILENAME: &str = "hero_presence_cache_v2.json";
+/// Versioned so older caches are never read: v1 lacks `image_url` and would pin
+/// every hero to a Discord upload that may not exist, v2 lists disabled heroes.
+const CACHE_FILENAME: &str = "hero_presence_cache_v3.json";
 const IMAGE_BASE_URL: &str = "https://assets-bucket.deadlock-api.com/assets-api-res/images/heroes";
+
+/// Model folders (`models/heroes/<folder>/`) whose name differs from the hero's
+/// class name. Hero data is keyed by class name only, so each hero is listed once
+/// and an override applies whichever log line named the hero.
+const MODEL_FOLDER_ALIASES: &[(&str, &str)] = &[
+    ("abrams", "atlas"),
+    ("archer", "orion"),
+    ("atlas_detective", "atlas"),
+    ("digger", "krill"),
+    ("engineer", "forge"),
+    ("geist", "ghost"),
+    ("grey_talon", "orion"),
+    ("ivy", "tengu"),
+    ("mcginnis", "forge"),
+    ("pocket", "synth"),
+    ("prof_dynamo", "dynamo"),
+    ("vindicta", "hornet"),
+    ("vyper", "viper"),
+];
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct HeroInfo {
@@ -46,7 +65,19 @@ impl HeroDataStore {
     }
 
     pub fn get(&self, codename: &str) -> Option<&HeroInfo> {
-        self.data.get(&codename.to_lowercase())
+        self.data.get(&self.canonical_key(codename)?)
+    }
+
+    fn canonical_key(&self, codename: &str) -> Option<String> {
+        let key = codename.to_lowercase();
+        if self.data.contains_key(&key) {
+            return Some(key);
+        }
+        MODEL_FOLDER_ALIASES
+            .iter()
+            .find(|(alias, _)| *alias == key)
+            .map(|(_, class_name)| class_name.to_string())
+            .filter(|class_name| self.data.contains_key(class_name))
     }
 
     pub fn heroes(&self) -> Vec<(String, String)> {
@@ -105,15 +136,15 @@ impl HeroDataStore {
 
     pub fn normalize_codename(&self, codename: &str) -> String {
         let normalized = codename.to_lowercase().replace("hero_", "");
-        if self.get(&normalized).is_some() {
-            return normalized;
+        if let Some(key) = self.canonical_key(&normalized) {
+            return key;
         }
 
         let parts = normalized.split('_').collect::<Vec<_>>();
         for i in (1..parts.len()).rev() {
             let candidate = parts[..i].join("_");
-            if self.get(&candidate).is_some() {
-                return candidate;
+            if let Some(key) = self.canonical_key(&candidate) {
+                return key;
             }
         }
 
@@ -204,7 +235,12 @@ impl HeroDataStore {
                 .and_then(|v| v.as_str())
                 .map(str::to_string);
 
-            if class_name.is_empty() || name.is_empty() {
+            let disabled = hero
+                .get("disabled")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false);
+
+            if class_name.is_empty() || name.is_empty() || disabled {
                 continue;
             }
 
@@ -277,7 +313,7 @@ fn fallback_heroes() -> Vec<(&'static str, HeroInfo)> {
             hero("Vindicta", "In the Hideout", "hero_hornet", Some("hornet")),
         ),
         (
-            "geist",
+            "ghost",
             hero(
                 "Lady Geist",
                 "Being Fabulous in the Hideout",
@@ -286,7 +322,7 @@ fn fallback_heroes() -> Vec<(&'static str, HeroInfo)> {
             ),
         ),
         (
-            "abrams",
+            "atlas",
             hero(
                 "Abrams",
                 "Investigating the Hideout",
@@ -299,7 +335,7 @@ fn fallback_heroes() -> Vec<(&'static str, HeroInfo)> {
             hero("Wraith", "In the Hideout", "hero_wraith", Some("wraith")),
         ),
         (
-            "mcginnis",
+            "forge",
             hero(
                 "McGinnis",
                 "Tinkering in the Hideout",
@@ -345,10 +381,15 @@ fn fallback_heroes() -> Vec<(&'static str, HeroInfo)> {
         ),
         (
             "orion",
-            hero("Grey Talon", "In the Hideout", "hero_orion", Some("archer")),
+            hero(
+                "Grey Talon",
+                "Mourning in the Hideout",
+                "hero_orion",
+                Some("archer"),
+            ),
         ),
         (
-            "digger",
+            "krill",
             hero(
                 "Mo & Krill",
                 "Relaxing in the Hideout",
@@ -357,7 +398,7 @@ fn fallback_heroes() -> Vec<(&'static str, HeroInfo)> {
             ),
         ),
         (
-            "pocket",
+            "synth",
             hero(
                 "Pocket",
                 "Sulking in the Hideout",
@@ -374,8 +415,8 @@ fn fallback_heroes() -> Vec<(&'static str, HeroInfo)> {
             hero("Holliday", "In the Hideout", "hero_astro", Some("astro")),
         ),
         (
-            "cadence",
-            hero("Calico", "In the Hideout", "hero_cadence", Some("nano")),
+            "nano",
+            hero("Calico", "In the Hideout", "hero_nano", Some("nano")),
         ),
         (
             "werewolf",
@@ -396,16 +437,7 @@ fn fallback_heroes() -> Vec<(&'static str, HeroInfo)> {
             ),
         ),
         (
-            "archer",
-            hero(
-                "Grey Talon",
-                "Mourning in the Hideout",
-                "hero_orion",
-                Some("archer"),
-            ),
-        ),
-        (
-            "ivy",
+            "tengu",
             hero(
                 "Ivy",
                 "Wishing the Arroyos were in the Hideout",
@@ -418,8 +450,8 @@ fn fallback_heroes() -> Vec<(&'static str, HeroInfo)> {
             hero("Mirage", "In the Hideout", "hero_mirage", Some("mirage")),
         ),
         (
-            "vyper",
-            hero("Vyper", "In the Hideout", "hero_vyper", Some("kali")),
+            "viper",
+            hero("Vyper", "In the Hideout", "hero_viper", Some("kali")),
         ),
         (
             "vampirebat",
@@ -588,10 +620,26 @@ mod tests {
         let store = HeroDataStore::new(Path::new("."));
 
         assert_eq!(store.display_name("archer"), "Grey Talon");
+        assert_eq!(store.normalize_codename("archer_v2"), "orion");
         assert_eq!(
             store.asset_key("archer"),
             "https://assets-bucket.deadlock-api.com/assets-api-res/images/heroes/archer_sm.png"
         );
+    }
+
+    #[test]
+    fn lists_each_fallback_hero_once() {
+        let store = HeroDataStore::new(Path::new("."));
+        let mut names = store
+            .heroes()
+            .into_iter()
+            .map(|(_, name)| name)
+            .collect::<Vec<_>>();
+        let total = names.len();
+        names.dedup();
+
+        assert_eq!(names.len(), total);
+        assert!(names.iter().any(|name| name == "Celeste"));
     }
 
     #[test]

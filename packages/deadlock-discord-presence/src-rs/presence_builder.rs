@@ -130,7 +130,12 @@ pub fn build_presence(
             return None;
         }
     };
-    let template_pair = resolve_template_pair(state, &config.hero_overrides, global_template_pair);
+    let template_pair = resolve_template_pair(
+        state,
+        &config.hero_overrides,
+        global_template_pair,
+        hero_store,
+    );
 
     let hero_presence_text = hero_presence();
     let render_context = TemplateRenderContext {
@@ -165,12 +170,19 @@ fn resolve_template_pair(
     state: &GameState,
     hero_overrides: &std::collections::HashMap<String, PresenceTextTemplates>,
     global_template_pair: &PresenceTextTemplatePair,
+    hero_store: &HeroDataStore,
 ) -> PresenceTextTemplatePair {
     let Some(hero_key) = state.hero_key.as_deref() else {
         return global_template_pair.clone();
     };
 
-    let Some(hero_templates) = hero_overrides.get(hero_key) else {
+    // Overrides saved before hero keys were class names use model folder names.
+    let Some(hero_templates) = hero_overrides.get(hero_key).or_else(|| {
+        hero_overrides
+            .iter()
+            .find(|(key, _)| hero_store.normalize_codename(key) == hero_key)
+            .map(|(_, templates)| templates)
+    }) else {
         return global_template_pair.clone();
     };
 
