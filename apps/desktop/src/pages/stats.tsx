@@ -44,6 +44,7 @@ import {
   useStatsRefresh,
 } from "@/hooks/use-player-stats";
 import { useSelectedSteamAccount } from "@/hooks/use-steam-accounts";
+import { DEFAULT_TAB_IDS } from "@/lib/stats/dashboard/layout";
 import { cn } from "@/lib/utils";
 
 const StatsSkeleton = () => (
@@ -81,7 +82,9 @@ const Stats = () => {
   const { refresh, isRefreshing, canRefresh } = useStatsRefresh();
 
   useEffect(() => {
-    analytics.trackPageViewed(`stats-${activeTab.id}`, { tab: activeTab.id });
+    // Custom tab ids are random; one bucket keeps the page-view report readable.
+    const tab = DEFAULT_TAB_IDS.has(activeTab.id) ? activeTab.id : "custom";
+    analytics.trackPageViewed(`stats-${tab}`, { tab });
   }, [analytics, activeTab.id]);
 
   // Gate the whole page only when no widget could render without it; mixed
