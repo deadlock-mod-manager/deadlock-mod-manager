@@ -100,10 +100,13 @@ export const ModHealthDialog = ({
   open,
   onOpenChange,
   profileFolder,
+  modIds,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   profileFolder: string | null;
+  /** Narrows the list to these mods; every mod with a badge otherwise. */
+  modIds?: readonly string[];
 }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -118,6 +121,7 @@ export const ModHealthDialog = ({
 
   const healthById = healthByModId(report.data);
   const rows: HealthRow[] = localMods
+    .filter((mod) => !modIds || modIds.includes(mod.remoteId))
     .flatMap((mod) => {
       const health = healthById.get(mod.remoteId);
       const kind = healthBadgeKind(health, isModOutdated(mod));

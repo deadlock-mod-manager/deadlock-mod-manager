@@ -14,6 +14,7 @@ import {
   fixableModIds,
   gameUpdatedSinceLastCheck,
   isFixableStatus,
+  isHeldBack,
 } from "@/lib/mods/mod-health";
 import { usePersistedStore } from "@/lib/store";
 import { ModStatus } from "@/types/mods";
@@ -31,7 +32,10 @@ export const ModHealthBanner = ({
   const progress = useModHealthProgress((state) => state.progress);
   const gameRunning = useGameRunning();
   const fix = useFixMods();
-  const [detailsOpen, setDetailsOpen] = useState(false);
+  // Null when closed; a list of ids narrows the details to those mods.
+  const [details, setDetails] = useState<readonly string[] | "all" | null>(
+    null,
+  );
 
   const installedIds = new Set(
     localMods
@@ -47,7 +51,7 @@ export const ModHealthBanner = ({
         isFixableStatus(health.status) && installedIds.has(health.modId),
     ) ?? [];
   const count = fixable.length;
-  const crashRiskCount = count - fixableIds.length;
+  const heldBackIds = fixable.filter(isHeldBack).map((health) => health.modId);
   // Partly fixable mods still need an author update after fixing, so the
   // message says the fix may only be partial.
   const somePartly = fixable.some(
@@ -61,9 +65,12 @@ export const ModHealthBanner = ({
   if (count === 0 && !checking) {
     return (
       <ModHealthDialog
-        open={detailsOpen}
-        onOpenChange={setDetailsOpen}
+        open={details !== null}
+        onOpenChange={(open) => {
+          if (!open) setDetails(null);
+        }}
         profileFolder={profileFolder}
+        modIds={details === "all" ? undefined : (details ?? undefined)}
       />
     );
   }
@@ -109,9 +116,11 @@ export const ModHealthBanner = ({
                   {t("modHealth.closeGame")}
                 </p>
               ) : null}
-              {crashRiskCount > 0 ? (
+              {heldBackIds.length > 0 ? (
                 <p className='text-muted-foreground text-xs leading-5'>
-                  {t("modHealth.banner.crashRisk", { count: crashRiskCount })}
+                  {t("modHealth.banner.crashRisk", {
+                    count: heldBackIds.length,
+                  })}
                 </p>
               ) : null}
             </div>
@@ -135,10 +144,18 @@ export const ModHealthBanner = ({
                   {t("modHealth.banner.fix", { count: fixableIds.length })}
                 </Button>
               ) : null}
+              {heldBackIds.length > 0 ? (
+                <Button
+                  size='sm'
+                  variant={fixableIds.length > 0 ? "outline" : "default"}
+                  onClick={() => setDetails(heldBackIds)}>
+                  {t("modHealth.banner.review", { count: heldBackIds.length })}
+                </Button>
+              ) : null}
               <Button
                 size='sm'
                 variant='outline'
-                onClick={() => setDetailsOpen(true)}>
+                onClick={() => setDetails("all")}>
                 {t("modHealth.banner.seeDetails")}
               </Button>
             </div>
@@ -157,9 +174,12 @@ export const ModHealthBanner = ({
         ) : null}
       </div>
       <ModHealthDialog
-        open={detailsOpen}
-        onOpenChange={setDetailsOpen}
+        open={details !== null}
+        onOpenChange={(open) => {
+          if (!open) setDetails(null);
+        }}
         profileFolder={profileFolder}
+        modIds={details === "all" ? undefined : (details ?? undefined)}
       />
     </>
   );

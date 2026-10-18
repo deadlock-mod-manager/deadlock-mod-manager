@@ -9,6 +9,8 @@ import {
   useState,
 } from "react";
 import {
+  HeldBackFixDialog,
+  type HeldBackMod,
   LaunchFixDialog,
   type LaunchFixChoice,
 } from "@/components/mod-health/launch-fix-dialog";
@@ -25,9 +27,13 @@ interface ReviewRequest {
   resolve: (applied: boolean) => void;
 }
 
+export type LaunchFixPrompt =
+  | { kind: "autoFixOff"; count: number }
+  | { kind: "heldBack"; mods: readonly HeldBackMod[] };
+
 interface LaunchFixRequest {
   id: number;
-  count: number;
+  prompt: LaunchFixPrompt;
   resolve: (choice: LaunchFixChoice) => void;
 }
 
@@ -35,7 +41,7 @@ type Review = (
   profileFolder: string | null,
   options?: ReviewOptions,
 ) => Promise<boolean>;
-type AskLaunchFix = (count: number) => Promise<LaunchFixChoice>;
+type AskLaunchFix = (prompt: LaunchFixPrompt) => Promise<LaunchFixChoice>;
 
 const CompatibilityReviewContext = createContext<Review | null>(null);
 const LaunchFixContext = createContext<AskLaunchFix | null>(null);
@@ -87,10 +93,10 @@ export function CompatibilityReviewProvider({
     setFixRequest(null);
   }, []);
 
-  const askLaunchFix = useCallback<AskLaunchFix>((count) => {
+  const askLaunchFix = useCallback<AskLaunchFix>((prompt) => {
     activeFixRequest.current?.resolve("cancel");
     return new Promise<LaunchFixChoice>((resolve) => {
-      const next = { id: ++nextId.current, count, resolve };
+      const next = { id: ++nextId.current, prompt, resolve };
       activeFixRequest.current = next;
       setFixRequest(next);
     });
@@ -124,10 +130,17 @@ export function CompatibilityReviewProvider({
             gameRunning={!!game.data || game.isError}
           />
         ) : null}
-        {fixRequest ? (
+        {fixRequest?.prompt.kind === "autoFixOff" ? (
           <LaunchFixDialog
             key={fixRequest.id}
-            count={fixRequest.count}
+            count={fixRequest.prompt.count}
+            onChoose={finishFix}
+          />
+        ) : null}
+        {fixRequest?.prompt.kind === "heldBack" ? (
+          <HeldBackFixDialog
+            key={fixRequest.id}
+            mods={fixRequest.prompt.mods}
             onChoose={finishFix}
           />
         ) : null}

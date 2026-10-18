@@ -94,6 +94,38 @@ export const gameUpdatedSinceLastCheck = (
   report.previousGameBuild !== null &&
   report.gameBuild !== report.previousGameBuild;
 
+/** A fixable mod that automatic and banner fixes leave for the player to decide on. */
+export const isHeldBack = (health: ModHealth): boolean =>
+  isFixableStatus(health.status) && !canFixInBulk(health);
+
+/**
+ * Identifies one launch question about a held-back mod. It changes with the
+ * game build or the mod's findings, so the player is asked again only then.
+ */
+export const heldBackPromptKey = (health: ModHealth): string =>
+  [
+    health.modId,
+    health.gameBuild,
+    health.fixSymptoms.join(","),
+    health.remainingSymptoms.join(","),
+  ].join("|");
+
+export const heldBackToAsk = ({
+  report,
+  isEnabled,
+  asked,
+}: {
+  report: ModHealthReport | undefined;
+  isEnabled: (modId: string) => boolean;
+  asked: ReadonlySet<string>;
+}): ModHealth[] =>
+  report?.mods.filter(
+    (health) =>
+      isHeldBack(health) &&
+      isEnabled(health.modId) &&
+      !asked.has(heldBackPromptKey(health)),
+  ) ?? [];
+
 type LaunchFixDecision =
   | { action: "launch" }
   | { action: "fix" | "ask"; modIds: string[] };

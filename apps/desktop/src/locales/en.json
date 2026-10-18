@@ -2438,8 +2438,10 @@
       "fix_one": "Fix {{count}} mod",
       "fix_other": "Fix {{count}} mods",
       "seeDetails": "See details",
-      "crashRisk_one": "{{count}} of these has model data issues. Review it in See details, where Fix all includes it.",
-      "crashRisk_other": "{{count}} of these have model data issues. Review them in See details, where Fix all includes them.",
+      "crashRisk_one": "{{count}} of these has model data issues, so it isn't fixed automatically.",
+      "crashRisk_other": "{{count}} of these have model data issues, so they aren't fixed automatically.",
+      "review_one": "Review {{count}} mod",
+      "review_other": "Review {{count}} mods",
       "checkingTitle": "Checking your mods against the current game version",
       "checkingDescription": "Mods made for an older version will show their fixes here, so you can apply them before you play.",
       "checkingCount": "{{checked}} of {{total}} checked"
@@ -2454,6 +2456,12 @@
       "fixAll": "Fix all",
       "disable": "Disable",
       "noUpdate": "No update for {{name}} yet."
+    },
+    "heldBackPrompt": {
+      "title_one": "{{count}} enabled mod has a fix we didn't apply automatically",
+      "title_other": "{{count}} enabled mods have fixes we didn't apply automatically",
+      "description": "They also have model data issues, which are often harmless. Fixing repairs the parts listed here; the issues stay either way. We won't ask again until the game or these mods change.",
+      "launchWithoutFixing": "Launch without fixing"
     },
     "launchPrompt": {
       "title_one": "{{count}} enabled mod was made for an older version",

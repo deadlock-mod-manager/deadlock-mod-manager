@@ -9,6 +9,8 @@ import {
   gameUpdatedSinceLastCheck,
   healthAction,
   healthBadgeKind,
+  heldBackPromptKey,
+  heldBackToAsk,
   isFixableStatus,
   launchFixDecision,
   mergeHealthChecks,
@@ -210,6 +212,31 @@ describe("launchFixDecision", () => {
     expect(
       launchFixDecision({ report: mods, isEnabled, autoFixMods: false }),
     ).toEqual({ action: "ask", modIds: ["enabled-fixable", "enabled-partly"] });
+  });
+});
+
+describe("heldBackToAsk", () => {
+  const heldBack = health("enabled-held", "partlyFixable", ["crashRisk"]);
+  const mods = report([
+    heldBack,
+    health("enabled-fixable", "partlyFixable", ["animations"]),
+    health("disabled-held", "partlyFixable", ["crashRisk"]),
+    health("enabled-fixed", "fixed", ["crashRisk"]),
+  ]);
+
+  it("asks about enabled mods that automatic fixes skip", () => {
+    expect(
+      heldBackToAsk({ report: mods, isEnabled, asked: new Set() }),
+    ).toEqual([heldBack]);
+  });
+
+  it("asks once until the game or the mod's findings change", () => {
+    const asked = new Set([heldBackPromptKey(heldBack)]);
+    expect(heldBackToAsk({ report: mods, isEnabled, asked })).toEqual([]);
+    const updated = { ...heldBack, gameBuild: 6201 };
+    expect(
+      heldBackToAsk({ report: report([updated]), isEnabled, asked }),
+    ).toEqual([updated]);
   });
 });
 
