@@ -10,7 +10,11 @@ import {
   catalogVpk,
 } from "../support/gamebanana-fixtures";
 import { observeUntil, readPersistedDocument } from "../support/observations";
-import { openCatalogOptions, applyArchives } from "../support/catalog-actions";
+import {
+  applyArchives,
+  closeCatalogOptions,
+  openCatalogOptions,
+} from "../support/catalog-actions";
 import { step } from "../support/evidence";
 import { navigate, waitForDisplayed } from "../support/ui";
 
@@ -70,7 +74,7 @@ describe("existing detected mod files", () => {
         );
       }
     });
-    await dialog.$("button=Cancel").click();
+    await closeCatalogOptions();
     if (process.env.DMM_E2E_PHASE === "detect-files") {
       await applyArchives(["common.zip", "blue.zip"]);
     } else {

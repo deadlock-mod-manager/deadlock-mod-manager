@@ -193,13 +193,13 @@ export const checkCatalog = async (
     });
   });
 
-export const openCatalogOptions = async () => {
+export const openCatalogOptions = async (modName = CATALOG_MOD_NAME) => {
   const button = await $("button=Manage files");
   await reveal(button);
   await button.click();
   const dialog = await $('[role="dialog"]');
   await expect(dialog).toHaveText(
-    expect.stringContaining(`Manage Files: ${CATALOG_MOD_NAME}`),
+    expect.stringContaining(`Manage Files: ${modName}`),
   );
   return dialog;
 };
@@ -256,9 +256,12 @@ export const chooseInstalledFiles = async (names: string[]) => {
   return installed;
 };
 
-export const applyInstalledFiles = (names: string[]) =>
+export const applyInstalledFiles = (
+  names: string[],
+  modName = CATALOG_MOD_NAME,
+) =>
   step(`apply installed files ${names.join(", ")}`, async () => {
-    const dialog = await openCatalogOptions();
+    const dialog = await openCatalogOptions(modName);
     const installed = await chooseInstalledFiles(names);
     await installed.$("button=Apply").click();
     await expect(

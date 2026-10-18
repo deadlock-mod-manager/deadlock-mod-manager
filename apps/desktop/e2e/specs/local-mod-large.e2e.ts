@@ -31,7 +31,8 @@ const DROP_AREA =
 
 // A drop carries either a renderer File, read here from app data, or only a
 // file:// path, as drops from some applications do. A path takes the same
-// route as a picked file.
+// route as a picked file. The File is assembled from 8 MiB Blobs because one
+// 1 GiB IPC read takes the webview down before the app sees the drop.
 const dispatchDrop = async (
   fileName: string,
   payload: { readFrom: string } | { uri: string },
@@ -42,11 +43,26 @@ const dispatchDrop = async (
       if ("uri" in dropped) {
         transfer.setData("text/uri-list", dropped.uri);
       } else {
-        const bytes = await window.__TAURI_INTERNALS__.invoke<ArrayBuffer>(
-          "plugin:fs|read_file",
-          { path: dropped.readFrom, options: {} },
-        );
-        transfer.items.add(new File([bytes], name));
+        const { invoke } = window.__TAURI_INTERNALS__;
+        const rid = await invoke<number>("plugin:fs|open", {
+          path: dropped.readFrom,
+          options: { read: true },
+        });
+        const parts: Blob[] = [];
+        for (;;) {
+          // The last 8 bytes hold the big-endian count of bytes read.
+          const data = await invoke<ArrayBuffer>("plugin:fs|read", {
+            rid,
+            len: 8 * 1024 * 1024,
+          });
+          const read = Number(
+            new DataView(data).getBigUint64(data.byteLength - 8),
+          );
+          if (read === 0) break;
+          parts.push(new Blob([new Uint8Array(data, 0, read)]));
+        }
+        await invoke("plugin:resources|close", { rid });
+        transfer.items.add(new File(parts, name));
       }
       document.querySelector(selector)?.dispatchEvent(
         new DragEvent("drop", {
@@ -119,7 +135,10 @@ describe("large local mod import", () => {
       await dispatchDrop(flow.fileName, { readFrom: fixture });
     }
 
-    const add = await $('[role="dialog"]').$("button=Add");
+    // A dropped File is staged to disk before the dialog opens.
+    const dialog = await $('[role="dialog"]');
+    await dialog.waitForDisplayed({ timeout: 240_000 });
+    const add = await dialog.$("button=Add");
     await add.waitForClickable();
     await add.click();
 
