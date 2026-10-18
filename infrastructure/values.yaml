@@ -204,6 +204,8 @@ deployments:
     cpu: 500m
     restartPolicy: Always
     terminationGracePeriodSeconds: 30
+    env:
+      - { name: LOCKDEX_PROCESSING_CONCURRENCY, value: "2" }
 
     storage:
       enabled: true
