@@ -74,6 +74,9 @@
           "url": "https://api.steampowered.com/ISteamNews/**"
         },
         {
+          "url": "https://api.github.com/repos/deadlock-mod-manager/deadlock-mod-manager/contributors*"
+        },
+        {
           "url": "https://1.1.1.1/cdn-cgi/trace"
         },
         {

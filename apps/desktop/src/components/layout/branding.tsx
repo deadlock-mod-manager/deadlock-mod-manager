@@ -1,3 +1,8 @@
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@deadlock-mods/ui/components/avatar";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { useSidebar } from "@deadlock-mods/ui/components/sidebar";
 import {
@@ -5,15 +10,17 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
-import { openUrl } from "@tauri-apps/plugin-opener";
 import { Trans, useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
 import useAbout from "@/hooks/use-about";
 import { useActiveTheme } from "@/hooks/use-active-theme";
+import { useContributors } from "@/hooks/use-contributors";
 import {
   getDisplaySemver,
   isNightlyBuildVersion,
 } from "@/lib/app-version-display";
+import { CORE_TEAM, githubAvatarUrl } from "@/lib/contributors";
 import { getPluginAssetUrl } from "@/lib/plugins";
 import { cn } from "@/lib/utils";
 import Logo from "./logo";
@@ -32,8 +39,6 @@ const predefinedThemeIcons = {
   remlock: getPluginAssetUrl("themes", "public/pre-defined/remlock/icon.png"),
 } as const;
 
-const AUTHOR_GITHUB_URL = "https://github.com/Stormix";
-
 type PredefinedThemeId = keyof typeof predefinedThemeIcons;
 
 const isPredefinedTheme = (
@@ -51,12 +56,21 @@ export const BrandingHeader = ({
   className,
   collapsed: collapsedProp,
 }: BrandingHeaderProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { version } = useAbout();
   const { state } = useSidebar();
   const collapsed = collapsedProp ?? state === "collapsed";
   const activeTheme = useActiveTheme();
   const TopbarLogo = useThemeOverride("topbarLogo");
+  const navigate = useNavigate();
+  const { data: contributors } = useContributors();
+  const coreNames = new Intl.ListFormat(i18n.language, {
+    type: "conjunction",
+  }).format(
+    CORE_TEAM.filter((member) => member.role === "core").map(
+      (member) => member.name,
+    ),
+  );
 
   let themedIconSrc: string | undefined;
   if (isPredefinedTheme(activeTheme)) {
@@ -131,21 +145,55 @@ export const BrandingHeader = ({
                 v{version}
               </span>
             ))}
-          <span className='text-muted-foreground text-xs leading-none'>
-            <Trans
-              components={{
-                author: (
-                  <button
-                    className='cursor-pointer transition-colors hover:text-foreground hover:underline'
-                    onClick={() => openUrl(AUTHOR_GITHUB_URL)}
-                    type='button'
-                  />
-                ),
-              }}
-              i18nKey='branding.byAuthor'
-              values={{ author: "Stormix" }}
-            />
-          </span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className='text-muted-foreground text-xs leading-none'>
+                <Trans
+                  components={{
+                    author: (
+                      <button
+                        className='cursor-pointer transition-colors hover:text-foreground hover:underline'
+                        onClick={() => navigate("/contributors")}
+                        type='button'
+                      />
+                    ),
+                  }}
+                  i18nKey='branding.byAuthor'
+                  values={{ author: "Stormix" }}
+                />
+              </span>
+            </TooltipTrigger>
+            <TooltipContent className='max-w-64 p-3' side='bottom'>
+              <div className='flex flex-col gap-2'>
+                <div className='flex -space-x-2'>
+                  {CORE_TEAM.map((member) => (
+                    <Avatar
+                      className='size-7 ring-2 ring-primary'
+                      key={member.login}>
+                      <AvatarImage
+                        alt={member.name}
+                        src={githubAvatarUrl(member.login, 56)}
+                      />
+                      <AvatarFallback className='text-[10px]'>
+                        {member.name.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                  ))}
+                </div>
+                <span className='font-semibold text-xs'>
+                  {t("branding.teamTitle")}
+                </span>
+                <span className='text-xs opacity-80'>
+                  {contributors
+                    ? t("branding.teamDescriptionWithCount", {
+                        core: coreNames,
+                        count: contributors.length,
+                      })
+                    : t("branding.teamDescription", { core: coreNames })}
+                </span>
+              </div>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
     </div>

@@ -3724,7 +3724,29 @@
   "branding": {
     "nightlyBuild": "Nightly",
     "fullBuildVersion": "Full build: {{version}}",
-    "byAuthor": "by <author>{{author}}</author>"
+    "byAuthor": "by <author>{{author}} & team</author>",
+    "teamTitle": "Stormix and the DMM team",
+    "teamDescription": "Built together with {{core}}, plus everyone who has contributed along the way.",
+    "teamDescriptionWithCount": "Built together with {{core}}, plus {{count}} more contributors on GitHub."
+  },
+  "contributors": {
+    "title": "Contributors",
+    "back": "Back",
+    "subtitle": "Deadlock Mod Manager is built by a team and a community. Thank you to everyone who has helped.",
+    "coreTeam": "Core team",
+    "coreTeamDescription": "The people who build, review and maintain the mod manager day to day.",
+    "roles": {
+      "creator": "Creator",
+      "core": "Core team"
+    },
+    "community": "Community contributors",
+    "communityDescription": "Everyone who has landed code on GitHub, ordered by commits.",
+    "commitCount_one": "{{count}} commit",
+    "commitCount_other": "{{count}} commits",
+    "loadFailed": "Could not load the contributor list from GitHub.",
+    "viewOnGithub": "View on GitHub",
+    "thanksTitle": "And everyone else",
+    "thanksDescription": "Translators, mod creators, bug reporters and the people who help others on Discord make this project what it is. Thank you."
   },
   "about": {
     "title": "About",
@@ -3751,6 +3773,7 @@
     "viewThirdPartyNotices": "View third-party notices",
     "openSourceCommunity": "Open Source Community",
     "openSourceDescription": "Built with amazing open source technologies including React, TypeScript, and many other libraries that make modern applications possible. Thank you to all contributors and maintainers.",
+    "meetContributors": "Meet the contributors",
     "releaseNotes": "release notes",
     "poweredBy": "Powered by",
     "forModContent": "for mod content and community",

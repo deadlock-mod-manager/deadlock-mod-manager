@@ -12,6 +12,7 @@ import Collection from "./pages/collection";
 import Crosshairs from "./pages/crosshairs";
 import Dashboard from "./pages/dashboard";
 import Debug from "./pages/debug";
+import Contributors from "./pages/contributors";
 import Developer from "./pages/developer";
 import Downloads from "./pages/downloads";
 import Foundry from "./pages/foundry";
@@ -102,6 +103,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<Downloads />} path='/downloads' />
               <Route element={<ServersRouteGate />} path='/servers' />
               <Route element={<CustomSettings />} path='/settings' />
+              <Route element={<Contributors />} path='/contributors' />
               <Route element={<Developer />} path='/developer' />
               <Route element={<PluginEntry />} path='/plugins/:id' />
               <Route element={<Debug />} path='/debug' />

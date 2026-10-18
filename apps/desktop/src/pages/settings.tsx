@@ -44,7 +44,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { WarningCircle } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
-import { useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import AddSettingDialog from "@/components/settings/add-setting";
 import { AddonsBackupManagement } from "@/components/settings/addons-backup-management";
@@ -465,6 +465,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
   const confirm = useConfirm();
   const { analytics } = useAnalyticsContext();
   const location = useLocation();
+  const navigate = useNavigate();
   const initialTab =
     value ??
     (location.state as { activeTab?: string } | null)?.activeTab ??
@@ -1120,6 +1121,13 @@ const CustomSettings = ({ value }: { value?: string }) => {
                     <p className='text-muted-foreground text-sm'>
                       {t("about.openSourceDescription")}
                     </p>
+                    <Button
+                      className='mt-2 w-fit'
+                      onClick={() => navigate("/contributors")}
+                      size='sm'
+                      variant='outline'>
+                      {t("about.meetContributors")}
+                    </Button>
                   </div>
                 </div>
 
