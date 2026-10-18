@@ -65,11 +65,19 @@ fn game_folder(gameinfo: &str) -> tempfile::TempDir {
   game
 }
 
+/// The newest stock build in the bundled catalog, which moves on every refresh.
+fn current_build() -> u32 {
+  Catalog::bundled().latest_stock().expect("stock").build
+}
+
 #[test]
 fn bundled_catalog_has_the_stock_history() {
   let catalog = Catalog::bundled();
   assert!(catalog.stock_builds().len() >= 40);
-  assert_eq!(catalog.latest_stock().map(|stock| stock.build), Some(6711));
+  assert_eq!(
+    catalog.latest_stock().map(|stock| stock.build),
+    catalog.file.latest_build
+  );
 }
 
 #[test]
@@ -152,7 +160,10 @@ fn optilock_is_diffed_against_the_build_its_pgiversion_names() {
 fn sqooky_matches_the_current_build_exactly() {
   let draft = draft(&fixture(SQOOKY), "gameinfo.gi");
   let base = draft.base.expect("base");
-  assert_eq!((base.build, base.exact, base.distance), (6711, true, 0));
+  assert_eq!(
+    (base.build, base.exact, base.distance),
+    (current_build(), true, 0)
+  );
   assert!(
     !draft
       .warnings
@@ -177,7 +188,7 @@ fn files_without_pgiversion_match_the_closest_build() {
   let kaizu = draft(&fixture(KAIZU), "gameinfo.gi");
   let base = kaizu.base.expect("base");
   assert!(!base.exact, "Kaizu comments PGIVersion out");
-  assert_eq!(base.build, 6711);
+  assert_eq!(base.build, current_build());
   assert!(base.distance < 30, "distance {}", base.distance);
   assert!(!ignored_details(&kaizu.ignored, IgnoredKind::RootKey).contains(&"PGIVersion"));
 
@@ -194,7 +205,7 @@ fn files_without_pgiversion_match_the_closest_build() {
   let crlf = draft(&fixture(STOCK_6711).replace('\n', "\r\n"), "gameinfo.gi");
   assert_eq!(
     crlf.base.map(|base| (base.build, base.exact)),
-    Some((6711, true))
+    Some((current_build(), true))
   );
   assert!(crlf.entries.is_empty());
   assert!(crlf.ignored.iter().all(|part| matches!(
@@ -608,7 +619,7 @@ async fn current_gameinfo_imports_the_live_file() {
   assert_eq!(report.format, ImportFormat::FullGameinfo);
   assert_eq!(
     report.base.map(|base| (base.build, base.exact)),
-    Some((6711, true))
+    Some((current_build(), true))
   );
   assert!(has_entry(&report.entries, "ConVars/r_ssao"));
   assert_eq!(
