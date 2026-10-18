@@ -1,6 +1,6 @@
 import { RuntimeError } from "@deadlock-mods/common";
 import type { Logger } from "@deadlock-mods/logging";
-import { type Job, Worker } from "bullmq";
+import { type Job, UnrecoverableError, Worker } from "bullmq";
 import type { Redis } from "ioredis";
 import type { BaseJobData } from "../types/jobs";
 import {
@@ -74,7 +74,10 @@ export class BaseWorker<T extends BaseJobData> {
       const result = await processor.process(job.data);
 
       if (!result.success) {
-        throw new RuntimeError(result.error || "Processing failed");
+        const message = result.error || "Processing failed";
+        throw result.retryable === false
+          ? new UnrecoverableError(message)
+          : new RuntimeError(message);
       }
 
       return result.data;

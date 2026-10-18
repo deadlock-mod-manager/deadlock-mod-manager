@@ -1,4 +1,5 @@
 import {
+  type BulkJobOptions,
   type JobsOptions,
   type QueueOptions,
   type DefaultJobOptions,
@@ -37,9 +38,15 @@ export class BaseQueue<T extends BaseJobData = BaseJobData> {
     return this.queue.add(jobName, data, options);
   }
 
-  async addBulk(jobs: { name: string; data: T; options?: JobsOptions }[]) {
+  async addBulk(jobs: { name: string; data: T; options?: BulkJobOptions }[]) {
+    // BullMQ reads per-job settings from `opts`
+    const bulk = jobs.map(({ name, data, options }) => ({
+      name,
+      data,
+      opts: options,
+    }));
     // @ts-expect-error - BullMQ type compatibility issue with generic constraints
-    return this.queue.addBulk(jobs);
+    return this.queue.addBulk(bulk);
   }
 
   async getJob(jobId: string) {

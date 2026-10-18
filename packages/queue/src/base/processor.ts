@@ -12,10 +12,14 @@ export abstract class BaseProcessor<T> {
 
   abstract process(jobData: T): Promise<ProcessorResult>;
 
-  protected handleError(error: Error): ProcessorResult {
+  protected handleError(
+    error: Error,
+    options: { retryable?: boolean } = {},
+  ): ProcessorResult {
     return {
       success: false,
       error: error.message,
+      retryable: options.retryable,
     };
   }
 
