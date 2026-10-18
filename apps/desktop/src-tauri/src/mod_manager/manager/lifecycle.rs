@@ -583,6 +583,7 @@ impl ModManager {
           .as_ref()
           .and_then(|mod_info| mod_info.file_tree.clone()),
         profile_folder,
+        true,
       )?;
       log::info!("Successfully replaced VPK files for mod: {mod_id}");
       return Ok(());
@@ -621,6 +622,7 @@ impl ModManager {
     prepared_vpks: &[PathBuf],
     file_tree: Option<ModFileTree>,
     profile_folder: Option<String>,
+    enabled: bool,
   ) -> Result<Mod, Error> {
     Self::ensure_safe_mod_id(mod_id)?;
     if prepared_vpks.is_empty() {
@@ -638,13 +640,21 @@ impl ModManager {
       .filter(|entry| entry.enabled)
       .map(|entry| entry.current_vpks.len() as u32)
       .unwrap_or(0);
-    let target_shard = Self::choose_shard_for(
-      &addons_path,
-      existing.as_ref().map(|entry| (entry.shard, old_count)),
-      prepared_vpks.len() as u32,
-    )?;
-    let enabled_dir = addons_path.shard_dir(target_shard);
-    std::fs::create_dir_all(&enabled_dir)?;
+    let target_shard = if enabled {
+      Self::choose_shard_for(
+        &addons_path,
+        existing.as_ref().map(|entry| (entry.shard, old_count)),
+        prepared_vpks.len() as u32,
+      )?
+    } else {
+      shard::ShardIndex::FIRST
+    };
+    let destination_dir = if enabled {
+      addons_path.shard_dir(target_shard)
+    } else {
+      addons_path.to_path_buf()
+    };
+    std::fs::create_dir_all(&destination_dir)?;
 
     let reuse_names = existing.as_ref().is_some_and(|entry| {
       entry.enabled
@@ -675,14 +685,24 @@ impl ModManager {
       }
     }
 
-    let dest_names = if reuse_names {
+    let dest_names = if !enabled {
+      prepared_vpks
+        .iter()
+        .map(|path| {
+          format!(
+            "{mod_id}_{}",
+            path.file_name().unwrap_or_default().to_string_lossy()
+          )
+        })
+        .collect()
+    } else if reuse_names {
       existing
         .as_ref()
         .map(|entry| entry.current_vpks.clone())
         .unwrap_or_default()
     } else {
       match crate::mod_manager::vpk_manager::allocate_enabled_vpk_names(
-        &enabled_dir,
+        &destination_dir,
         prepared_vpks.len(),
       ) {
         Ok(names) => names,
@@ -691,7 +711,7 @@ impl ModManager {
     };
 
     for (source, dest_name) in prepared_vpks.iter().zip(dest_names.iter()) {
-      let dest = enabled_dir.join(dest_name);
+      let dest = destination_dir.join(dest_name);
       if let Err(error) = staging.track_created(&dest) {
         return Err(staging.rollback(error));
       }
@@ -709,13 +729,17 @@ impl ModManager {
       })
       .collect();
 
-    manifest.mark_enabled(
-      mod_id,
-      dest_names.clone(),
-      original_vpk_names.clone(),
-      install_order,
-      target_shard,
-    );
+    if enabled {
+      manifest.mark_enabled(
+        mod_id,
+        dest_names.clone(),
+        original_vpk_names.clone(),
+        install_order,
+        target_shard,
+      );
+    } else {
+      manifest.mark_disabled(mod_id, dest_names.clone(), original_vpk_names.clone());
+    }
 
     let pending = PendingVpkOperation::with_staging((), staging);
     pending.commit_manifest(&manifest, &addons_path)?;
@@ -725,7 +749,7 @@ impl ModManager {
       id: mod_id.to_string(),
       name: mod_name.to_string(),
       is_map: previous_mod.is_some_and(|mod_info| mod_info.is_map),
-      installed_vpks: dest_names,
+      installed_vpks: if enabled { dest_names } else { Vec::new() },
       file_tree: file_tree.or_else(|| previous_mod.and_then(|mod_info| mod_info.file_tree.clone())),
       install_order,
       original_vpk_names,

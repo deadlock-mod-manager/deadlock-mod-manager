@@ -9,10 +9,14 @@ import {
 } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
 import type { State } from "@/lib/store";
-import { type LocalMod, ModStatus } from "@/types/mods";
+import {
+  canCheckModUpdates,
+  isModUpdateSkipped,
+  availableModUpdates,
+} from "@/lib/mods/mod-updates";
+import { type LocalMod } from "@/types/mods";
 
 type CheckUpdatesData = Awaited<ReturnType<typeof checkModUpdates>>;
-type ModUpdate = CheckUpdatesData["updates"][number];
 type ModToCheck = Parameters<typeof checkModUpdates>[0][number];
 
 // Reuse entries per mod object so the shallow selector stays stable until a mod changes.
@@ -46,29 +50,11 @@ const selectModsToCheck = (state: State) => {
   if (state.localMods !== lastLocalMods) {
     lastLocalMods = state.localMods;
     lastModsToCheck = state.localMods
-      .filter(
-        (mod) =>
-          mod.status === ModStatus.Installed &&
-          mod.remoteId &&
-          !mod.remoteId.startsWith("local-"),
-      )
+      .filter(canCheckModUpdates)
       .map(toModToCheck);
   }
   return lastModsToCheck;
 };
-
-const isSkipped = (update: ModUpdate, localMod: LocalMod | undefined) =>
-  localMod?.skippedUpdateAt !== undefined &&
-  update.updatedAt <= localMod.skippedUpdateAt;
-
-const withoutSkipped = (updates: ModUpdate[], localMods: LocalMod[]) =>
-  updates.filter(
-    (update) =>
-      !isSkipped(
-        update,
-        localMods.find((mod) => mod.remoteId === update.mod.remoteId),
-      ),
-  );
 
 const useModUpdatesQuery = () => {
   const modsToCheck = usePersistedStore(useShallow(selectModsToCheck));
@@ -86,12 +72,12 @@ const useModUpdatesQuery = () => {
 
 export const useModHasUpdate = (localMod: LocalMod | undefined) => {
   const { data } = useModUpdatesQuery();
-  if (!localMod || localMod.status !== ModStatus.Installed) return false;
+  if (!localMod || !canCheckModUpdates(localMod)) return false;
   return (
     data?.updates.some(
       (update) =>
         update.mod.remoteId === localMod.remoteId &&
-        !isSkipped(update, localMod),
+        !isModUpdateSkipped(update, localMod),
     ) ?? false
   );
 };
@@ -104,7 +90,7 @@ export const useCheckUpdates = (options?: {
   const query = useModUpdatesQuery();
 
   const updatableMods = useMemo(
-    () => withoutSkipped(query.data?.updates ?? [], localMods),
+    () => availableModUpdates(query.data?.updates ?? [], localMods),
     [query.data, localMods],
   );
 
@@ -115,7 +101,7 @@ export const useCheckUpdates = (options?: {
     } else if (!result.isError && result.data && options?.onSuccess) {
       options.onSuccess({
         ...result.data,
-        updates: withoutSkipped(
+        updates: availableModUpdates(
           result.data.updates,
           usePersistedStore.getState().localMods,
         ),

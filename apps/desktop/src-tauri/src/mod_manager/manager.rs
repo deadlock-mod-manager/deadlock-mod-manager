@@ -1549,6 +1549,73 @@ mod tests {
   }
 
   #[test]
+  fn update_mod_from_prepared_keeps_disabled_files_out_of_game() {
+    for previously_managed in [false, true] {
+      let game = game_dir();
+      let addons_path = game.path().join("game").join("citadel").join("addons");
+      fs::create_dir_all(&addons_path).unwrap();
+      let base = ProfileBase::new(&addons_path).unwrap();
+      let mut manifest = ProfileVpkManifest::default();
+      if previously_managed {
+        fs::write(base.join("target_old.vpk"), b"old").unwrap();
+        manifest.mark_disabled(
+          "target",
+          vec!["target_old.vpk".into()],
+          vec!["old.vpk".into()],
+        );
+        manifest.save(&base).unwrap();
+      }
+      fs::write(base.join("other_saved.vpk"), b"other").unwrap();
+      let prepared = game.path().join("new.vpk");
+      fs::write(&prepared, b"new").unwrap();
+      let updated = test_manager(game.path())
+        .update_mod_from_prepared("target", "Target", &[prepared], None, None, false)
+        .unwrap();
+      assert!(updated.installed_vpks.is_empty());
+      assert_eq!(fs::read(base.join("target_new.vpk")).unwrap(), b"new");
+      assert!(!base.join("target_old.vpk").exists());
+      assert!(!base.join("pak01_dir.vpk").exists());
+      assert_eq!(fs::read(base.join("other_saved.vpk")).unwrap(), b"other");
+      let manifest = ProfileVpkManifest::load(&base).unwrap();
+      let entry = &manifest.mods["target"];
+      assert!(!entry.enabled);
+      assert!(entry.current_vpks.is_empty());
+      assert_eq!(entry.disabled_vpks, vec!["target_new.vpk"]);
+      assert_eq!(entry.original_vpk_names, vec!["new.vpk"]);
+    }
+  }
+
+  #[test]
+  fn update_mod_from_prepared_restores_disabled_files_on_failure() {
+    let game = game_dir();
+    let addons_path = game.path().join("game").join("citadel").join("addons");
+    fs::create_dir_all(&addons_path).unwrap();
+    let base = ProfileBase::new(&addons_path).unwrap();
+    let mut manifest = ProfileVpkManifest::default();
+    fs::write(base.join("target_old.vpk"), b"old").unwrap();
+    manifest.mark_disabled(
+      "target",
+      vec!["target_old.vpk".into()],
+      vec!["old.vpk".into()],
+    );
+    manifest.save(&base).unwrap();
+    let prepared = game.path().join("missing.vpk");
+    assert!(
+      test_manager(game.path())
+        .update_mod_from_prepared("target", "Target", &[prepared], None, None, false)
+        .is_err()
+    );
+    assert_eq!(fs::read(base.join("target_old.vpk")).unwrap(), b"old");
+    assert!(!base.join("target_missing.vpk").exists());
+    let restored = ProfileVpkManifest::load(&base).unwrap();
+    assert!(!restored.mods["target"].enabled);
+    assert_eq!(
+      restored.mods["target"].disabled_vpks,
+      manifest.mods["target"].disabled_vpks
+    );
+  }
+
+  #[test]
   fn update_mod_from_prepared_clears_only_that_mods_parked_files() {
     let game = game_dir();
     let addons_path = game.path().join("game").join("citadel").join("addons");
@@ -1576,6 +1643,7 @@ mod tests {
         std::slice::from_ref(&prepared),
         None,
         None,
+        true,
       )
       .unwrap();
 
@@ -1646,6 +1714,7 @@ mod tests {
         std::slice::from_ref(&prepared),
         None,
         None,
+        true,
       )
       .unwrap();
 

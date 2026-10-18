@@ -10,10 +10,7 @@ import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import AudioPlayerPreview from "@/components/mod-management/audio-player-preview";
-import {
-  UpdateAvailableBadge,
-  UpdatedRecentlyBadge,
-} from "@/components/mod-management/mod-update-badges";
+import { ModUpdateBadge } from "@/components/mod-management/mod-update-badges";
 import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-warning";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
@@ -57,6 +54,9 @@ const ModCard = memo((props: ModCardProps) => {
     findLocalMod(state.localMods, mod?.remoteId),
   );
   const hasUpdate = useModHasUpdate(localMod);
+  const showModUpdateBadges = usePersistedStore(
+    (state) => state.showModUpdateBadges,
+  );
   const CardWrapper = useThemeOverride("cardWrapper");
 
   const status = localMod?.status;
@@ -161,16 +161,14 @@ const ModCard = memo((props: ModCardProps) => {
         {(status === ModStatus.Installed ||
           mod.isObsolete ||
           isModOutdated(mod) ||
-          isUpdatedRecently(mod) ||
-          hasUpdate) && (
+          (showModUpdateBadges && (isUpdatedRecently(mod) || hasUpdate))) && (
           <div className='pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end justify-end gap-1 bg-gradient-to-t from-black/60 to-transparent px-2 pb-2 pt-6'>
             {status === ModStatus.Installed && (
               <Badge>{t("modStatus.installed")}</Badge>
             )}
             {mod.isObsolete && <ObsoleteModWarning variant='indicator' />}
             {isModOutdated(mod) && <OutdatedModWarning variant='indicator' />}
-            {isUpdatedRecently(mod) && !hasUpdate && <UpdatedRecentlyBadge />}
-            {hasUpdate && <UpdateAvailableBadge />}
+            <ModUpdateBadge mod={mod} hasUpdate={hasUpdate} />
           </div>
         )}
       </div>

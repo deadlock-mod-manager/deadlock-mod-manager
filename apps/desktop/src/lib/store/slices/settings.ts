@@ -55,6 +55,7 @@ export type SettingsState = {
   developerMode: boolean;
   ingestToolEnabled: boolean;
   autoUpdateEnabled: boolean;
+  showModUpdateBadges: boolean;
   /** Whether the Mod Foundry decodes and renders a skin's 3D model. Off skips
    *  the decode entirely, which is the slow part of opening a skin. */
   foundry3dPreviewEnabled: boolean;
@@ -111,6 +112,7 @@ export type SettingsState = {
 
   // Auto-update management
   setAutoUpdateEnabled: (enabled: boolean) => void;
+  setShowModUpdateBadges: (enabled: boolean) => void;
   setFoundry3dPreviewEnabled: (enabled: boolean) => void;
   setFoundrySoundVolume: (volume: number) => void;
 
@@ -171,6 +173,7 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
   developerMode: false,
   ingestToolEnabled: true,
   autoUpdateEnabled: true,
+  showModUpdateBadges: true,
   foundry3dPreviewEnabled: true,
   foundrySoundVolume: 0.8,
   crosshairsEnabled: true,
@@ -296,6 +299,9 @@ export const createSettingsSlice: StateCreator<State, [], [], SettingsState> = (
     set(() => ({
       autoUpdateEnabled: enabled,
     })),
+
+  setShowModUpdateBadges: (enabled: boolean) =>
+    set({ showModUpdateBadges: enabled }),
 
   // Mod Foundry 3D preview
   setFoundry3dPreviewEnabled: (enabled: boolean) =>
