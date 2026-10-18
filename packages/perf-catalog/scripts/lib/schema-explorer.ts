@@ -24,7 +24,13 @@ export const schemaDumpSchema = schemaHeaderSchema.extend({
   enums: z.array(
     z.object({
       name: z.string(),
-      members: z.array(z.object({ name: z.string(), value: z.number() })),
+      // Values past 2^53 (high bitmask flags) arrive as strings
+      members: z.array(
+        z.object({
+          name: z.string(),
+          value: z.union([z.number(), z.string()]),
+        }),
+      ),
     }),
   ),
 });

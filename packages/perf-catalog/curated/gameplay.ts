@@ -93,6 +93,10 @@ export const GAMEPLAY = new Map(
       class: "visibility",
       why: "Name shown above hero bars.",
     },
+    citadel_unit_status_healthbar_highlight_speed: {
+      class: "visibility",
+      why: "How fast a health bar animates to its new value.",
+    },
     r_particle_timescale: {
       class: "visibility",
       why: "Speeds up particle effects so they visibly end before the ability does.",
