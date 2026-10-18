@@ -1,3 +1,4 @@
+import { ExperimentalTour } from "@/components/experimental-tour/experimental-tour";
 import { useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
@@ -53,6 +54,7 @@ const Dashboard = () => {
   if (DashboardPage) {
     return (
       <DashboardPage>
+        <ExperimentalTour />
         <LatestModsCard />
         <AnnouncementsCard />
         <WhatsNewCard />
@@ -70,6 +72,7 @@ const Dashboard = () => {
         />
       </div>
       <div className='flex-1 space-y-8 overflow-y-auto overflow-x-hidden px-6 pb-8 pr-2'>
+        <ExperimentalTour />
         <FeaturedModCard isLoading={isPending} mod={featured} />
 
         <QuickStatsStrip />

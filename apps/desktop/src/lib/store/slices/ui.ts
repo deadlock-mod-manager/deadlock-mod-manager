@@ -66,6 +66,8 @@ export type CrosshairFilters = {
 };
 
 export type UIState = {
+  experimentalTourDismissed: boolean;
+  dismissExperimentalTour: () => void;
   showWhatsNew: boolean;
   lastSeenVersion: string | null;
   audioVolume: number; // Volume as percentage (0-100)
@@ -137,6 +139,8 @@ export const uiDeepMergeKeys = [
 ] as const satisfies readonly (keyof UIState)[];
 
 export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
+  experimentalTourDismissed: false,
+  dismissExperimentalTour: () => set({ experimentalTourDismissed: true }),
   showWhatsNew: false,
   lastSeenVersion: null,
   audioVolume: 50, // Default to 50%

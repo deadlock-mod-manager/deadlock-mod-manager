@@ -6057,5 +6057,54 @@
     "staging_applied_other": "{{count}} unfinished mod changes were cleaned up.",
     "quarantinedStaging": "Some unfinished changes couldn't be completed, so they were set aside here:",
     "failed": "Couldn't repair the mod folder: {{reason}}"
+  },
+  "experimentalTour": {
+    "invitation": "Experimental features",
+    "title": "Want to try something new?",
+    "description": "Take a quick look at community servers, custom maps, and performance settings.",
+    "duration": "The tour takes about a minute. You decide which features to enable.",
+    "start": "Take the tour",
+    "dismiss": "Not now",
+    "skip": "Skip tour",
+    "next": "Next",
+    "back": "Back",
+    "finish": "Finish tour",
+    "done": "Done",
+    "progress": "{{current}} of {{total}}",
+    "experimental": "Experimental",
+    "preview": "Feature preview",
+    "enable": "Enable {{feature}} when I finish",
+    "alreadyEnabled": "Already enabled",
+    "pending": "Nothing changes until you finish the tour.",
+    "warning": "These features are still in development and may have bugs. You can turn them off in Settings → Experimental.",
+    "complete": "Ready to try",
+    "completeEmpty": "No changes made",
+    "completeDescription": "Open a feature below, or find it later in the sidebar.",
+    "emptyDescription": "You can take the tour again from the dashboard or Settings → Experimental.",
+    "open": "Open {{feature}}",
+    "enabled": "Enabled",
+    "features": {
+      "server-browser": {
+        "title": "Find a server to play on",
+        "description": "Browse community servers without leaving the mod manager.",
+        "hint": "Adds Server Browser to your sidebar.",
+        "previewTitle": "Play with the community",
+        "previewDetail": "Find a server with other players and join a game."
+      },
+      "custom-maps": {
+        "title": "Try a community map",
+        "description": "Browse maps made by other players.",
+        "hint": "Adds Maps to your sidebar.",
+        "previewTitle": "Somewhere new to play",
+        "previewDetail": "See what the community has been building."
+      },
+      "performance-configs": {
+        "title": "Adjust your game settings",
+        "description": "Browse performance configs for Deadlock.",
+        "hint": "Adds Performance to your sidebar. Your game settings stay the same until you apply a config.",
+        "previewTitle": "See what a config changes",
+        "previewDetail": "Review the settings before you apply them."
+      }
+    }
   }
 }

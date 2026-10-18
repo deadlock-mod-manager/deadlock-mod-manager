@@ -512,6 +512,13 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       }
     },
   },
+  {
+    to: 30,
+    label: "experimental-feature-tour",
+    apply: (state) => {
+      state.experimentalTourDismissed ??= false;
+    },
+  },
 ];
 
 const LEGACY_GAMEBANANA_ID = /^[1-9]\d*$/;

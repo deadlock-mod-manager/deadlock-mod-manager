@@ -230,7 +230,7 @@ describe("safeMigrate", () => {
   it("LATEST_VERSION matches the highest step target", () => {
     const max = Math.max(...MIGRATION_STEPS.map((s) => s.to));
     expect(LATEST_VERSION).toBe(max);
-    expect(LATEST_VERSION).toBe(29);
+    expect(LATEST_VERSION).toBe(30);
   });
 
   it("v25 (themes switch): drops the leftover enabledPlugins.themes entry", () => {
@@ -238,11 +238,14 @@ describe("safeMigrate", () => {
 
     expect(safeMigrate(state, 24)).toStrictEqual({
       enabledPlugins: { background: true },
+      experimentalTourDismissed: false,
     });
   });
 
   it("v25 (themes switch): tolerates a missing enabledPlugins map", () => {
-    expect(safeMigrate({}, 24)).toStrictEqual({});
+    expect(safeMigrate({}, 24)).toStrictEqual({
+      experimentalTourDismissed: false,
+    });
   });
 
   describe("specific step idempotency", () => {
@@ -361,5 +364,14 @@ describe("safeMigrate", () => {
         hasSeenTelemetryPrompt: true,
       });
     });
+  });
+});
+
+it("initializes tour dismissal without resetting an existing choice", () => {
+  expect(safeMigrate({}, 29)).toMatchObject({
+    experimentalTourDismissed: false,
+  });
+  expect(safeMigrate({ experimentalTourDismissed: true }, 29)).toMatchObject({
+    experimentalTourDismissed: true,
   });
 });

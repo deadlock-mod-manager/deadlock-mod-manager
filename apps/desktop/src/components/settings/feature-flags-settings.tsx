@@ -1,3 +1,4 @@
+import { ExperimentalTour } from "@/components/experimental-tour/experimental-tour";
 import { useTranslation } from "react-i18next";
 import { SettingToggleRow } from "@/components/settings/setting-row";
 import { usePersistedStore } from "@/lib/store";
@@ -14,6 +15,7 @@ export const FeatureFlagsSettings = () => {
 
   return (
     <div className='space-y-4'>
+      <ExperimentalTour replay />
       {EXPERIMENTAL_FEATURES.map((feature) => (
         <div
           className='rounded-lg border border-border bg-card p-4'
