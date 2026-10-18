@@ -412,6 +412,26 @@ mod tests {
     }
 
     #[test]
+    fn applies_overrides_saved_under_a_legacy_hero_key() {
+        let hero_store = HeroDataStore::new(Path::new("."));
+        let mut config = PresenceBuildConfig::default();
+        let mut hero_templates = crate::config::PresenceTextTemplates::default();
+        hero_templates.solo_hideout.details = "Calico override".to_string();
+        config
+            .hero_overrides
+            .insert("cadence".to_string(), hero_templates);
+
+        let mut state = GameState::new();
+        state.phase = GamePhase::Hideout;
+        state.set_hero(&hero_store.normalize_codename("hero_nano"));
+
+        let presence =
+            build_presence(&state, &hero_store, &config).expect("presence should be built");
+
+        assert_eq!(presence.details.as_deref(), Some("Calico override"));
+    }
+
+    #[test]
     fn renders_match_templates_by_party_variant() {
         let hero_store = HeroDataStore::new(Path::new("."));
         let mut config = PresenceBuildConfig::default();

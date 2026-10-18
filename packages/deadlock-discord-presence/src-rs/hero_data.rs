@@ -17,6 +17,8 @@ const MODEL_FOLDER_ALIASES: &[(&str, &str)] = &[
     ("abrams", "atlas"),
     ("archer", "orion"),
     ("atlas_detective", "atlas"),
+    // Calico's presence key before keys became class names.
+    ("cadence", "nano"),
     ("digger", "krill"),
     ("engineer", "forge"),
     ("geist", "ghost"),
