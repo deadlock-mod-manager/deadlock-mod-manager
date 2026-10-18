@@ -10,7 +10,7 @@ export const featureFlagDefinitions: FeatureFlagDefinition[] = [
       "Show Remlock and use it by default for players without a theme",
     type: "boolean",
     defaultValue: false,
-    exposed: true,
+    exposed: false,
   },
   {
     name: "seasonal-themes",
