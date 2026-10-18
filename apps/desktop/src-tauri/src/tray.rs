@@ -2,8 +2,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent};
-use tauri::{AppHandle, Manager, WebviewWindow, Window, WindowEvent};
+use tauri::{Manager, WebviewWindow, Window, WindowEvent};
 
+use crate::app_runtime::{AppHandle, AppRuntime};
 use crate::errors::Error;
 
 const TRAY_ID: &str = "main";
@@ -102,14 +103,14 @@ pub fn set_tray_behavior(
 /// Asked by the frontend's close handler. Hides the window and returns true
 /// when closing should send the app to the tray instead of exiting.
 #[tauri::command]
-pub fn hide_to_tray_on_close(window: WebviewWindow) -> bool {
+pub fn hide_to_tray_on_close(window: WebviewWindow<AppRuntime>) -> bool {
   if QUITTING.load(Ordering::Relaxed) || !CLOSE_TO_TRAY.load(Ordering::Relaxed) {
     return false;
   }
   window.hide().is_ok()
 }
 
-pub fn handle_window_event(window: &Window, event: &WindowEvent) {
+pub fn handle_window_event(window: &Window<AppRuntime>, event: &WindowEvent) {
   if window.label() != MAIN_WINDOW || !MINIMIZE_TO_TRAY.load(Ordering::Relaxed) {
     return;
   }
