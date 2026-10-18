@@ -285,7 +285,7 @@ const GridModCard = ({
   ) : null;
 
   const cardContent = (
-    <ModContextMenu mod={mod} compatibility={compatibility}>
+    <ModContextMenu mod={mod}>
       <Card className='shadow h-full'>
         <div className={cn("relative", isDisabled && "grayscale")}>
           <div className='cursor-pointer' onClick={openModDetail}>
@@ -369,7 +369,7 @@ const GridModCard = ({
             ) : null}
           </div>
         </CardHeader>
-        <CardFooter className='flex items-center justify-between gap-1 px-3 py-3 pt-2'>
+        <CardFooter className='flex items-center flex-row-reverse justify-between gap-1 px-3 py-3 pt-2'>
           <div className='flex items-center gap-2'>
             <ModButton
               remoteMod={mod}
@@ -392,7 +392,7 @@ const GridModCard = ({
                   isLoading={deleting}
                   onClick={deleteMod}
                   size='icon'
-                  variant='destructive'
+                  variant='destructiveGhost'
                 />
               </TooltipTrigger>
               <TooltipContent>{t("mods.removeMod")}</TooltipContent>
@@ -449,7 +449,7 @@ const ListModCard = ({
 
   return (
     <>
-      <ModContextMenu mod={mod} compatibility={compatibility}>
+      <ModContextMenu mod={mod}>
         <Card className='shadow'>
           <div className='flex items-center pr-4'>
             <div
