@@ -903,8 +903,6 @@ impl GameConfigManager {
   /// Update gameinfo.gi with complete `citadel/addonsN[/...]` search paths.
   /// The first path has the highest precedence.
   pub fn update_mod_paths(&mut self, game_path: &Path, paths: &[String]) -> Result<(), Error> {
-    log::info!("Updating mod search paths: {paths:?}");
-
     if paths.iter().any(|path| !shard::is_valid_search_path(path)) {
       return Err(Error::InvalidInput(
         "Invalid gameinfo.gi addon search path".to_string(),
@@ -983,6 +981,10 @@ impl GameConfigManager {
     // Replace the section
     let mut new_gameinfo_content = gameinfo_content.clone();
     new_gameinfo_content.replace_range(section_start..section_end, &replacement_content);
+    if new_gameinfo_content == gameinfo_content {
+      log::debug!("gameinfo.gi already has mod search paths: {paths:?}");
+      return Ok(());
+    }
 
     // Validate the new content before writing
     let temp_path = gameinfo_path.with_extension("gi.tmp");
@@ -1000,7 +1002,6 @@ impl GameConfigManager {
       )));
     }
 
-    log::info!("Writing updated gameinfo.gi with profile path");
     fs::write(&gameinfo_path, &new_gameinfo_content)?;
 
     // Final validation
