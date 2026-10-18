@@ -275,6 +275,20 @@ mod process_tests {
     path.to_path_buf()
   }
 
+  // A test thread forking while fake_launcher still holds the script open for writing leaks that
+  // fd into the child until it execs, so exec'ing the script can briefly fail with ETXTBSY.
+  fn spawn_fake(request: impl Fn() -> SteamUriLaunchRequest) -> SteamUriLaunchMonitor {
+    for _ in 0..50 {
+      match request().spawn() {
+        Err(Error::GameLaunchFailed(message)) if message.contains("os error 26") => {
+          std::thread::sleep(Duration::from_millis(10));
+        }
+        result => return result.unwrap(),
+      }
+    }
+    panic!("fake launcher stayed busy");
+  }
+
   #[tokio::test]
   async fn reports_a_missing_program() {
     let temp_dir = tempfile::tempdir().unwrap();
@@ -298,9 +312,11 @@ mod process_tests {
       &temp_dir.path().join("fake-steam.sh"),
       "echo 'no handler for Steam URI' >&2\nexit 3",
     );
-    let request = SteamUriLaunchRequest::direct(launcher, "steam://run/1422450//".to_string());
-
-    let result = request.spawn().unwrap().wait().await;
+    let result = spawn_fake(|| {
+      SteamUriLaunchRequest::direct(launcher.clone(), "steam://run/1422450//".to_string())
+    })
+    .wait()
+    .await;
 
     assert!(
       matches!(result, Err(Error::GameLaunchFailed(ref message)) if message.contains("no handler for Steam URI") && message.contains("exit status: 3")),
@@ -316,10 +332,15 @@ mod process_tests {
       &temp_dir.path().join("fake-steam.sh"),
       &format!("printf '%s' \"$@\" > \"{}\"", recording_path.display()),
     );
-    let request =
-      SteamUriLaunchRequest::direct(launcher, "steam://run/1422450//-condebug".to_string());
-
-    request.spawn().unwrap().wait().await.unwrap();
+    spawn_fake(|| {
+      SteamUriLaunchRequest::direct(
+        launcher.clone(),
+        "steam://run/1422450//-condebug".to_string(),
+      )
+    })
+    .wait()
+    .await
+    .unwrap();
 
     assert_eq!(
       fs::read_to_string(recording_path).unwrap(),
@@ -331,13 +352,13 @@ mod process_tests {
   async fn reports_a_portal_timeout() {
     let temp_dir = tempfile::tempdir().unwrap();
     let launcher = fake_launcher(&temp_dir.path().join("fake-xdg-open"), "exec sleep 5");
-    let request = SteamUriLaunchRequest {
-      program: launcher,
+    let result = spawn_fake(|| SteamUriLaunchRequest {
+      program: launcher.clone(),
       uri: "steam://run/1422450//".to_string(),
       completion: CompletionPolicy::Timeout(Duration::from_millis(20)),
-    };
-
-    let result = request.spawn().unwrap().wait().await;
+    })
+    .wait()
+    .await;
 
     assert!(
       matches!(result, Err(Error::GameLaunchFailed(ref message)) if message.contains("did not finish")),
