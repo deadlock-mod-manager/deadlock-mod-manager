@@ -20,7 +20,15 @@ finish-args:
   - --talk-name=org.freedesktop.Notifications
   - --talk-name=org.kde.StatusNotifierWatcher
 
+build-options:
+  # Older flatpak-builder (Ubuntu 24.04's 1.4.2) leaves CMake on lib64, which
+  # neither pkg-config nor the runtime linker searches inside the sandbox
+  libdir: /app/lib
+
 modules:
+  # Tray icon library loaded at runtime by the tray-icon feature
+  - shared-modules/libayatana-appindicator/libayatana-appindicator-gtk3.json
+
   - name: deadlock-mod-manager
     buildsystem: simple
     sources:
