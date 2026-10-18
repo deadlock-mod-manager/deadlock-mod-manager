@@ -238,23 +238,23 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 | Language | Native Name | Status | Contributors |
 |----------|-------------|--------|-------------|
 | 🇺🇸 **English** (Default) | English | ✅ Complete | - |
-| 🇧🇬 **Bulgarian** | Български | 🚧 5% | [macchiako](https://discordapp.com/users/macchiako./) |
+| 🇧🇬 **Bulgarian** | Български | 🚧 4% | [macchiako](https://discordapp.com/users/macchiako./) |
 | 🇧🇾 **Belarusian** | Беларуская | 🚧 In Progress | [drodn](https://discordapp.com/users/drodn/) |
-| 🇩🇪 **German** | Deutsch | 🚧 39% | [skeptic](https://github.com/Skeptic-systems) |
-| 🇫🇷 **French** | Français | 🚧 35% | [stormix](https://github.com/stormix) |
-| 🇷🇺 **Russian** | Русский | 🚧 28% | [awkward_akio](https://discordapp.com/users/awkward_akio/), [Thyron](https://github.com/baka-thyron) |
-| 🇸🇦 **Arabic** | العربية | 🚧 12% | [archeroflegend](https://discordapp.com/users/archeroflegend/) |
-| 🇵🇱 **Polish** | Polski | 🚧 52% | [_manio](https://discordapp.com/users/_manio/) |
+| 🇩🇪 **German** | Deutsch | 🚧 37% | [skeptic](https://github.com/Skeptic-systems) |
+| 🇫🇷 **French** | Français | 🚧 34% | [stormix](https://github.com/stormix) |
+| 🇷🇺 **Russian** | Русский | 🚧 27% | [awkward_akio](https://discordapp.com/users/awkward_akio/), [Thyron](https://github.com/baka-thyron) |
+| 🇸🇦 **Arabic** | العربية | 🚧 11% | [archeroflegend](https://discordapp.com/users/archeroflegend/) |
+| 🇵🇱 **Polish** | Polski | 🚧 50% | [_manio](https://discordapp.com/users/_manio/) |
 | 🇨🇭 **Swiss German** | Schwiizerdütsch | 🚧 5% | [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
 | 🇹🇭 **Thai** | ไทย | 🚧 8% | [altqx](https://discordapp.com/users/altq/) |
 | 🇹🇷 **Turkish** | Türkçe | 🚧 6% | [kenanala](https://discordapp.com/users/kenanala/) |
-| 🇨🇳 **Chinese (Simplified)** | 简体中文 | 🚧 48% | [待到春深方挽柳](mailto:sfk_04@qq.com) |
+| 🇨🇳 **Chinese (Simplified)** | 简体中文 | 🚧 46% | [待到春深方挽柳](mailto:sfk_04@qq.com) |
 | 🇹🇼 **Chinese (Traditional)** | 繁體中文 | ✅ Complete | [白雲](https://github.com/phillychi3) |
 | 🇪🇸 **Spanish** | Español | ✅ Complete | [chikencio](https://discordapp.com/users/chikencio/) |
-| 🇧🇷 **Portuguese (Brazil)** | Português (Brasil) | 🚧 35% | [meneee](https://discordapp.com/users/meneee/) |
+| 🇧🇷 **Portuguese (Brazil)** | Português (Brasil) | 🚧 33% | [meneee](https://discordapp.com/users/meneee/) |
 | 🇮🇹 **Italian** | Italiano | 🚧 7% | [Constrat](https://github.com/Constrat) |
-| 🇯🇵 **Japanese** | 日本語 | 🚧 11% | [hiropiki](https://discordapp.com/users/hiropiki/) |
-| 🇰🇷 **Korean** | 한국어 | 🚧 16% | [Quinnly_IRL](https://discordapp.com/users/Quinnly_IRL/) |
+| 🇯🇵 **Japanese** | 日本語 | 🚧 10% | [hiropiki](https://discordapp.com/users/hiropiki/) |
+| 🇰🇷 **Korean** | 한국어 | 🚧 15% | [Quinnly_IRL](https://discordapp.com/users/Quinnly_IRL/) |
 
 <!-- LANGUAGE_TABLE_END -->
 </details>
