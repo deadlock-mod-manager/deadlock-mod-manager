@@ -678,7 +678,7 @@ importers:
         specifier: 2.6.2
         version: 2.6.2
       '@tauri-apps/cli':
-        specifier: 2.12.0
+        specifier: ^2.12.0
         version: 2.12.0
       '@types/mocha':
         specifier: 10.0.10
