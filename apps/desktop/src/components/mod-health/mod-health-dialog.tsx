@@ -118,6 +118,7 @@ export const ModHealthDialog = ({
   const { uninstall } = useUninstall();
   const { refetch: refetchUpdates } = useCheckUpdates();
   const [updates, setUpdates] = useState<UpdateCandidates>([]);
+  const [fixingAll, setFixingAll] = useState(false);
 
   const healthById = healthByModId(report.data);
   const rows: HealthRow[] = localMods
@@ -319,14 +320,15 @@ export const ModHealthDialog = ({
             {fixableIds.length > 0 ? (
               <Button
                 disabled={changesBlocked}
-                isLoading={
-                  fix.isPending &&
-                  fix.variables?.modIds.length === fixableIds.length
-                }
+                isLoading={fixingAll}
                 icon={<Wrench className='h-4 w-4' />}
-                onClick={() =>
-                  fix.mutate({ profileFolder, modIds: fixableIds })
-                }>
+                onClick={() => {
+                  setFixingAll(true);
+                  fix.mutate(
+                    { profileFolder, modIds: fixableIds },
+                    { onSettled: () => setFixingAll(false) },
+                  );
+                }}>
                 {t("modHealth.dialog.fixAll")}
               </Button>
             ) : null}

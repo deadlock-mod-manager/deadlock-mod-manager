@@ -78,11 +78,11 @@ It returns `applied`, or `reviewRequired` when something still needs review; the
 choices stay saved either way. **Fix N mods** in the banner and the launch
 preflight skip mods whose remaining symptoms include model data issues, so the
 player sees those issues before fixing such a mod; **Fix all** in the details
-list, where the issues are shown, includes them. **Fix N mods** and **Fix all** in Mods Library, **Fix** in the
-details list, **Fix for this patch** in the right-click menu and on the mod
-page, and the launch preflight all call it. **Use original files**
-calls `set_mod_compatibility_for_mod` with `enabled: false`, which records the
-original-files choice.
+list, where the issues are shown, includes them. **Fix N mods** in the banner,
+**Fix** and **Fix all** in the details list, **Fix for this patch** in the
+right-click menu and on the mod page, and the launch preflight all call it.
+**Use original files** calls `set_mod_compatibility_for_mod` with
+`enabled: false`, which records the original-files choice.
 
 Disabling or reordering a mod keeps its choice. When the set of fixed mods
 changes, the manager deletes the active profile's overlay and receipt, clears

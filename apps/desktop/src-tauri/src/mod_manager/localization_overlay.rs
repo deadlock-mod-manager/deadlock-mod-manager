@@ -226,8 +226,8 @@ pub struct LocalizationOverlayAnalysis {
   pub parse_warnings: Vec<LocalizationParseWarning>,
   pub asset_repairs: Vec<asset_compatibility::AssetRepair>,
   pub asset_warnings: Vec<asset_compatibility::AssetWarning>,
-  /// Mod-only models that nothing loaded references. Their asset warnings stay
-  /// listed but neither pause launch nor affect mod health.
+  /// Mod-only models that nothing loaded references. Their asset warnings are
+  /// left out of review and mod health.
   pub unloaded_models: Vec<String>,
   /// Warned models that are not a hero's model, such as a particle's model.
   /// Hero camera, animation and model-mapping warnings on them stay listed

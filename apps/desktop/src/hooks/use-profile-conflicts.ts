@@ -4,6 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
+import { useActiveProfileFolder } from "@/hooks/use-mod-health";
 import { getErrorMessage } from "@/lib/errors";
 import {
   conflictStatusByMod,
@@ -16,11 +17,6 @@ import type { ConflictIgnoreAction } from "@/types/generated/ConflictIgnoreActio
 import type { ProfileConflicts } from "@/types/generated/ProfileConflicts";
 
 const PROFILE_CONFLICTS_QUERY_KEY = ["profile-conflicts"] as const;
-
-const useActiveProfileFolder = () =>
-  usePersistedStore(
-    (state) => state.profiles[state.activeProfileId]?.folderName ?? null,
-  );
 
 export const useProfileConflicts = () => {
   const enabled = useExperimentalFeature("conflict-detection");

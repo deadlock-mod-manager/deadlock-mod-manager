@@ -1516,7 +1516,7 @@ Game core
     assert!(receipt::load(&overlay).unwrap().is_none());
   }
 
-  fn write_vpk(path: &Path, entries: &[(&str, &[u8])]) {
+  pub(super) fn write_vpk(path: &Path, entries: &[(&str, &[u8])]) {
     let source = tempfile::tempdir().unwrap();
     for (entry, bytes) in entries {
       let file = source.path().join(entry);

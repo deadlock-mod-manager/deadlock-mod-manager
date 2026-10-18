@@ -207,8 +207,8 @@ fn is_informational(warning: &AssetWarning) -> bool {
   }
 }
 
-/// Whether a loaded asset warning marks the mod as needing an update. A prop model, such as a particle's model, never acts as a hero,
-/// so hero interface warnings do not apply.
+/// A prop model, such as a particle's model, never acts as a hero, so hero
+/// interface warnings do not apply.
 fn affects_mod(analysis: &LocalizationOverlayAnalysis, warning: &AssetWarning) -> bool {
   !is_informational(warning)
     && !(analysis.prop_models.contains(&warning.file_path)

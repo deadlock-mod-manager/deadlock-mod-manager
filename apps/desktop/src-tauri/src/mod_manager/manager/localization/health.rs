@@ -236,20 +236,10 @@ fn check_mod(
 
 #[cfg(test)]
 mod tests {
+  use super::super::tests::write_vpk;
   use super::*;
   use crate::mod_manager::mod_health::ModHealthStatus;
   use crate::mod_manager::vpk_manifest::ProfileVpkManifestEntry;
-
-  fn pack(path: &Path, entries: &[(&str, &[u8])]) {
-    let source = tempfile::tempdir().unwrap();
-    for (entry, bytes) in entries {
-      let file = source.path().join(entry);
-      fs::create_dir_all(file.parent().unwrap()).unwrap();
-      fs::write(file, bytes).unwrap();
-    }
-    fs::create_dir_all(path.parent().unwrap()).unwrap();
-    vpkmanager::pack_directory(source.path(), path).unwrap();
-  }
 
   fn status(report: &ModHealthReport, mod_id: &str) -> Option<ModHealthStatus> {
     report
@@ -266,11 +256,11 @@ mod tests {
     fs::create_dir_all(&citadel).unwrap();
     fs::write(citadel.join("steam.inf"), b"ClientVersion=100\n").unwrap();
     let base = ProfileBase::new(citadel.join("addons")).unwrap();
-    pack(
+    write_vpk(
       &base.join("pak01_dir.vpk"),
       &[("sounds/a.vsnd_c", b"sound")],
     );
-    pack(
+    write_vpk(
       &base.join("text_pak02_dir.vpk"),
       &[(
         "resource/localization/custom/custom_english.txt",
@@ -333,7 +323,7 @@ mod tests {
       }]
     );
 
-    pack(
+    write_vpk(
       &base.join("pak01_dir.vpk"),
       &[("sounds/b.vsnd_c", b"changed sound")],
     );

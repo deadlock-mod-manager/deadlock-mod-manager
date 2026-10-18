@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
+import { useActiveProfileFolder } from "@/hooks/use-mod-health";
 import {
   analyzeDefaultFoundryHero,
   analyzeFoundryVpk,
@@ -8,7 +9,6 @@ import {
   releaseFoundryArchives,
   resolveModVpk,
 } from "@/lib/foundry";
-import { usePersistedStore } from "@/lib/store";
 import type { LocalMod } from "@/types/mods";
 
 /** `unsupported` is not a failure: the VPK simply holds no hero model. */
@@ -53,9 +53,7 @@ const decodeSkinModel = async (
  * the setting.
  */
 export const useSkinModelPreview = (hero: string, mod: LocalMod | null) => {
-  const profileFolder = usePersistedStore(
-    (state) => state.profiles[state.activeProfileId]?.folderName ?? null,
-  );
+  const profileFolder = useActiveProfileFolder();
 
   // Parsed VPK indexes stay cached in the backend so switching skins is quick;
   // a parsed pak01 is a large thing to hold onto once the page is gone.

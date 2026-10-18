@@ -62,18 +62,18 @@ export const ModHealthBanner = ({
     : "olderVersion";
   const checking =
     isChecking && progress && progress.total > 0 ? progress : null;
-  if (count === 0 && !checking) {
-    return (
-      <ModHealthDialog
-        open={details !== null}
-        onOpenChange={(open) => {
-          if (!open) setDetails(null);
-        }}
-        profileFolder={profileFolder}
-        modIds={details === "all" ? undefined : (details ?? undefined)}
-      />
-    );
-  }
+  // Fixing from the open dialog can empty the banner; the dialog stays open.
+  const dialog = (
+    <ModHealthDialog
+      open={details !== null}
+      onOpenChange={(open) => {
+        if (!open) setDetails(null);
+      }}
+      profileFolder={profileFolder}
+      modIds={details === "all" ? undefined : (details ?? undefined)}
+    />
+  );
+  if (count === 0 && !checking) return dialog;
   const checkedLabel = checking
     ? t("modHealth.banner.checkingCount", {
         checked: checking.checked,
@@ -173,14 +173,7 @@ export const ModHealthBanner = ({
           />
         ) : null}
       </div>
-      <ModHealthDialog
-        open={details !== null}
-        onOpenChange={(open) => {
-          if (!open) setDetails(null);
-        }}
-        profileFolder={profileFolder}
-        modIds={details === "all" ? undefined : (details ?? undefined)}
-      />
+      {dialog}
     </>
   );
 };
