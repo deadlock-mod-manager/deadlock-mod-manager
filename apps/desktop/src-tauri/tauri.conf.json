@@ -27,7 +27,7 @@
   "bundle": {
     "active": true,
     "createUpdaterArtifacts": true,
-    "targets": ["deb", "rpm"],
+    "targets": ["deb", "rpm", "appimage"],
     "windows": {
       "nsis": {
         "installerIcon": "icons/icon.ico",
@@ -36,6 +36,9 @@
       }
     },
     "linux": {
+      "appimage": {
+        "bundleMediaFramework": true
+      },
       "deb": {
         "depends": ["desktop-file-utils", "xdg-utils"]
       },
