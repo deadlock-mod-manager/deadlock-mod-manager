@@ -52,6 +52,7 @@ export const useLaunch = () => {
   const { randomizeSkins } = useSkinRandomizer();
   const reviewCompatibility = useCompatibilityReview();
   const {
+    begin: beginLaunch,
     start: startProgress,
     advance,
     clear: clearProgress,
@@ -121,6 +122,7 @@ export const useLaunch = () => {
     const attempt = analytics.start("game_launch", {
       launch_mode: vanilla ? "vanilla" : "modded",
     });
+    beginLaunch();
     try {
       await checkMapCommandInAutoexec();
       await disableInstalledMapMods();
@@ -180,7 +182,8 @@ export const useLaunch = () => {
           modCompatibility,
         };
         launched = await launchWithCompatibilityReview(
-          () => {
+          async () => {
+            if (useLaunchProgress.getState().cancelled) return false;
             // Shows the checklist again when a launch resumes after review.
             if (!useLaunchProgress.getState().progress) {
               startProgress(backendSteps, modCount);
@@ -233,6 +236,10 @@ export const useLaunch = () => {
       attempt.finish(
         failureOutcome(isTauriError(error) ? error.kind : undefined),
       );
+      if (isTauriError(error) && error.kind === "launchCancelled") {
+        logger.info("Launch cancelled while waiting for the game");
+        return;
+      }
       console.error(error);
       logger.errorOnly(error);
       if (isTauriError(error) && error.kind === "modDataReviewRequired") {

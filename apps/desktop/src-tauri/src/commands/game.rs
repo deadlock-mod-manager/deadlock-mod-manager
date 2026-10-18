@@ -1,5 +1,7 @@
+use std::future::Future;
 use std::future::pending;
 use std::path::PathBuf;
+use std::sync::Mutex;
 use std::time::Duration;
 
 use crate::app_runtime::AppHandle;
@@ -7,6 +9,7 @@ use crate::errors::Error;
 use crate::mod_manager::steam_manager::installed_build_id;
 use crate::mod_manager::steam_uri_launcher::SteamUriLaunchMonitor;
 use tauri::Emitter;
+use tokio_util::sync::CancellationToken;
 
 use super::game_process::{GAME_START_TIMEOUT, GameStartOutcome, wait_for_game_start};
 use super::gameinfo::reset_to_vanilla_internal;
@@ -14,13 +17,20 @@ use super::state::MANAGER;
 
 const GAME_LAUNCH_POLL_INTERVAL: Duration = Duration::from_secs(2);
 
-async fn await_launched_game(monitor: SteamUriLaunchMonitor) -> Result<(), Error> {
+/// Cancels the `start_game` call in flight. A finished launch leaves its token
+/// behind, and cancelling that is a no-op.
+static LAUNCH_CANCEL: Mutex<Option<CancellationToken>> = Mutex::new(None);
+
+async fn await_launched_game(
+  monitor: SteamUriLaunchMonitor,
+  cancel: impl Future<Output = ()>,
+) -> Result<(), Error> {
   if monitor.was_recorded() {
     return monitor.wait().await;
   }
 
   let launcher = monitor.wait();
-  let game = wait_for_game_start(GAME_START_TIMEOUT, GAME_LAUNCH_POLL_INTERVAL, pending());
+  let game = wait_for_game_start(GAME_START_TIMEOUT, GAME_LAUNCH_POLL_INTERVAL, cancel);
   tokio::pin!(launcher, game);
 
   let outcome = tokio::select! {
@@ -41,7 +51,10 @@ async fn await_launched_game(monitor: SteamUriLaunchMonitor) -> Result<(), Error
       "Steam accepted the launch request, but Deadlock did not start within {} seconds",
       GAME_START_TIMEOUT.as_secs()
     ))),
-    GameStartOutcome::Cancelled => unreachable!("normal game launches are not cancellable"),
+    GameStartOutcome::Cancelled => {
+      log::info!("Stopped waiting for Deadlock after the launch was cancelled");
+      Err(Error::LaunchCancelled)
+    }
   }
 }
 
@@ -139,6 +152,8 @@ pub async fn start_game(
     profile_folder
   );
   crate::game_session::note_launch_requested(&additional_args);
+  let cancel = CancellationToken::new();
+  *LAUNCH_CANCEL.lock().unwrap() = Some(cancel.clone());
 
   let first_result = prepare_game_launch(
     vanilla,
@@ -165,10 +180,24 @@ pub async fn start_game(
     Err(error) => return Err(error),
   };
 
+  // Preparation can't be interrupted, but Steam must not be asked to start
+  // the game once the player has cancelled.
+  if cancel.is_cancelled() {
+    return Err(Error::LaunchCancelled);
+  }
   app_handle.emit("launch-progress", "openingSteam").ok();
   let monitor = request.spawn()?;
   app_handle.emit("launch-progress", "waitingForGame").ok();
-  await_launched_game(monitor).await
+  await_launched_game(monitor, cancel.cancelled()).await
+}
+
+/// Stops the in-flight `start_game`. Once Steam has the launch request the game
+/// may still start; this only stops waiting for it.
+#[tauri::command]
+pub fn cancel_launch() {
+  if let Some(cancel) = LAUNCH_CANCEL.lock().unwrap().as_ref() {
+    cancel.cancel();
+  }
 }
 
 /// Launch preparation can build the compatibility repair package, which parses
@@ -211,7 +240,7 @@ pub async fn launch_game_direct(additional_args: String) -> Result<(), Error> {
       .game_launch_request(&additional_args)?
   };
 
-  await_launched_game(request.spawn()?).await
+  await_launched_game(request.spawn()?, pending()).await
 }
 
 #[tauri::command]

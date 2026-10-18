@@ -12,6 +12,7 @@ export const LaunchOverlay = () => {
   const { t } = useTranslation();
   const progress = useLaunchProgress((state) => state.progress);
   const hide = useLaunchProgress((state) => state.hide);
+  const cancel = useLaunchProgress((state) => state.cancel);
   const visible = !!progress && !progress.hidden;
 
   useEffect(() => {
@@ -93,6 +94,11 @@ export const LaunchOverlay = () => {
             style={{ transform: `scaleX(${currentIndex / steps.length})` }}
           />
         </div>
+        {current !== null && (
+          <Button className='mt-4' onClick={cancel} size='sm' variant='outline'>
+            {t("launch.cancel")}
+          </Button>
+        )}
       </div>
     </div>
   );

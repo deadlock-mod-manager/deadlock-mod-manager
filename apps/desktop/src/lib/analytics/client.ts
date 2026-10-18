@@ -108,7 +108,8 @@ export const createAnalyticsClient = ({
 };
 
 export const failureOutcome = (kind?: string): AnalyticsOutcome => {
-  if (kind === "downloadCancelled") return "cancelled";
+  if (kind === "downloadCancelled" || kind === "launchCancelled")
+    return "cancelled";
   if (
     kind === "gameRunning" ||
     kind === "vpkInUse" ||

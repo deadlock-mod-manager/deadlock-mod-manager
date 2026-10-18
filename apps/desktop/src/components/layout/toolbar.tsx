@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import { useScrollBackButtonContext } from "@/contexts/scroll-back-button-context";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useLaunch } from "@/hooks/use-launch";
+import { useLaunchProgress } from "@/lib/launch-progress";
 import { isGameRunning } from "@/lib/tauri-commands";
 import { STALE_TIME_POLL } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
@@ -30,6 +31,7 @@ export const Toolbar = () => {
   const isSidebarCollapsed = state === "collapsed";
   const { gamePath, getEnabledModsCount } = usePersistedStore();
   const { launch } = useLaunch();
+  const cancelLaunch = useLaunchProgress((state) => state.cancel);
   const [vanillaAnimating, setVanillaAnimating] = useState(false);
   const [moddedAnimating, setModdedAnimating] = useState(false);
   const [launching, setLaunching] = useState(false);
@@ -127,9 +129,11 @@ export const Toolbar = () => {
             <TooltipTrigger asChild>
               <Button
                 className='relative h-7 gap-1.5 overflow-hidden border border-transparent px-2.5 text-xs'
-                disabled={!gamePath || launching}
+                disabled={!gamePath}
                 onClick={() => {
-                  if (isRunning) {
+                  if (launching) {
+                    cancelLaunch();
+                  } else if (isRunning) {
                     invoke("stop_game").finally(() => refetch());
                   } else {
                     setModdedAnimating(true);
@@ -157,7 +161,7 @@ export const Toolbar = () => {
                 </span>
                 <span className='relative z-10'>
                   {launching
-                    ? t("common.preparingLaunch")
+                    ? t("launch.cancel")
                     : isRunning
                       ? t("common.stopGame")
                       : t("common.launchModded")}

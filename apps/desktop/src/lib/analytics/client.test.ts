@@ -191,6 +191,7 @@ describe("analytics action outcomes", () => {
     expect(failureOutcome("vpkInUse")).toBe("blocked");
     expect(failureOutcome("gamePathNotSet")).toBe("blocked");
     expect(failureOutcome("downloadCancelled")).toBe("cancelled");
+    expect(failureOutcome("launchCancelled")).toBe("cancelled");
     expect(failureOutcome("networkError")).toBe("failed");
     expect(failureOutcome()).toBe("failed");
   });

@@ -88,6 +88,8 @@ pub enum Error {
   DownloadFailed(String),
   #[error("Download cancelled")]
   DownloadCancelled,
+  #[error("Game launch cancelled")]
+  LaunchCancelled,
   #[error("File write failed: {0}")]
   FileWriteFailed(String),
   #[error("Failed to read autoexec config: {0}")]
@@ -183,6 +185,7 @@ impl serde::Serialize for Error {
       Error::BackupNotFound => "backupNotFound",
       Error::DownloadFailed(_) => "downloadFailed",
       Error::DownloadCancelled => "downloadCancelled",
+      Error::LaunchCancelled => "launchCancelled",
       Error::FileWriteFailed(_) => "fileWriteFailed",
       Error::AutoexecReadFailed(_) => "autoexecReadFailed",
       Error::AutoexecWriteFailed(_) => "autoexecWriteFailed",

@@ -2147,6 +2147,7 @@
   "launch": {
     "title": "Launching Deadlock",
     "hide": "Hide (the launch keeps going)",
+    "cancel": "Cancel launch",
     "steps": {
       "randomizingSkins": "Randomizing hero skins",
       "disablingMods": "Disabling mods",
@@ -2185,7 +2186,6 @@
     "gameDetected": "Game Detected",
     "gameInstalledAt": "Game installed at {{path}}",
     "launchVanilla": "Launch without mods",
-    "preparingLaunch": "Preparing mods...",
     "launchModded": "Launch modded",
     "launchModdedCount_one": "{{count}} mod",
     "launchModdedCount_other": "{{count}} mods",
