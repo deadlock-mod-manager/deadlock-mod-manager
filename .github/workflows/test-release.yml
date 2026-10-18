@@ -242,7 +242,8 @@ jobs:
             librsvg2-dev \
             flatpak \
             flatpak-builder \
-            weston
+            weston \
+            xvfb
 
       - name: Install Flatpak SDK (ubuntu only)
         if: matrix.platform == 'ubuntu-24.04'

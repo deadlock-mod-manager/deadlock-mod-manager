@@ -194,7 +194,8 @@ jobs:
             file \
             flatpak \
             flatpak-builder \
-            weston
+            weston \
+            xvfb
 
       - name: Install Flatpak SDK (Linux only)
         if: matrix.os == 'linux'

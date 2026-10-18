@@ -56,9 +56,9 @@ runs:
           local status=$?
           trap - EXIT
           flatpak kill "${APP_ID}" 2>/dev/null || true
-          if [ -n "${WESTON_PID:-}" ]; then
-            kill "${WESTON_PID}" 2>/dev/null || true
-          fi
+          for pid in "${WESTON_PID:-}" "${XVFB_PID:-}" "${DBUS_PID:-}"; do
+            [ -n "${pid}" ] && kill "${pid}" 2>/dev/null || true
+          done
           if [ "${status}" -ne 0 ]; then
             print_diagnostics
           fi
@@ -133,7 +133,28 @@ runs:
           exit 1
         fi
 
-        dbus-run-session -- flatpak run "${APP_ID}" > "${LOG_DIR}/app.log" 2>&1 &
+        # Like a desktop Wayland session, also provide X11: the CEF runtime only
+        # supports X11 and wry falls back to it when Wayland window creation fails.
+        Xvfb -displayfd 3 -screen 0 1280x800x24 -nolisten tcp \
+          3> "${LOG_DIR}/xvfb-display" > "${LOG_DIR}/xvfb.log" 2>&1 &
+        XVFB_PID=$!
+        for _ in $(seq 1 20); do
+          [ -s "${LOG_DIR}/xvfb-display" ] && break
+          sleep 0.5
+        done
+        if [ ! -s "${LOG_DIR}/xvfb-display" ]; then
+          echo "ERROR: Timed out waiting for Xvfb to pick a display"
+          exit 1
+        fi
+        export DISPLAY=":$(head -n1 "${LOG_DIR}/xvfb-display")"
+
+        # Both launches must share a session bus so the deep-link launch can
+        # reach the running instance through the single-instance D-Bus name.
+        DBUS_PID="$(dbus-daemon --session --fork --print-pid=1 \
+          --address="unix:path=${RUNTIME_DIR}/bus")"
+        export DBUS_SESSION_BUS_ADDRESS="unix:path=${RUNTIME_DIR}/bus"
+
+        flatpak run "${APP_ID}" > "${LOG_DIR}/app.log" 2>&1 &
         APP_PID=$!
 
         for _ in $(seq 1 "${STARTUP_SECONDS}"); do
