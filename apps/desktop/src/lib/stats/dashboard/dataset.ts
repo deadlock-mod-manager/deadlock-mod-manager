@@ -75,6 +75,7 @@ export const isNumericField = (field: DatasetField): boolean =>
   field.format !== "text" && field.format !== "heroList";
 
 export const numericValue = (value: CellValue | undefined): number | null =>
+  // oxlint-disable-next-line anti-slop/no-runtime-typeof -- Numeric chart values must exclude text cells without coercing numeric strings.
   typeof value === "number" && Number.isFinite(value) ? value : null;
 
 export const fieldByKey = (

@@ -1,7 +1,7 @@
 import { describe, expect, it, mock } from "bun:test";
 import path from "node:path";
 import { z } from "zod";
-import { parseJson } from "./api-query";
+import { jsonValueSchema } from "@/lib/validation/json";
 
 /**
  * Loads every dashboard preset and API example against the real deadlock-api
@@ -25,7 +25,7 @@ const getJson = async (requestPath: string) => {
   if (!response.ok) {
     throw new Error(`HTTP ${response.status} for ${requestPath}`);
   }
-  return parseJson(await response.json());
+  return jsonValueSchema.parse(await response.json());
 };
 
 const openApiSchema = z.object({
@@ -182,7 +182,7 @@ describe.skipIf(!LIVE)("dashboard endpoints (live)", () => {
   it(
     "every API example resolves, loads and suggests a chart",
     async () => {
-      const { API_EXAMPLES, datasetFromResponse, parseJson, resolveApiPath } =
+      const { API_EXAMPLES, datasetFromResponse, resolveApiPath } =
         await import("./api-query");
       const { suggestView } = await import("./suggest");
 
@@ -199,7 +199,7 @@ describe.skipIf(!LIVE)("dashboard endpoints (live)", () => {
             ),
           );
           const dataset = datasetFromResponse(
-            parseJson(await getJson(requestPath)),
+            await getJson(requestPath),
             example.listPath,
           );
           if (dataset.rows.length === 0) {

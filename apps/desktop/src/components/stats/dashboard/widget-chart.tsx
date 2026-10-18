@@ -90,7 +90,9 @@ const SeriesTooltip = ({
       {payload.map((entry) => {
         const index = Number(String(entry.dataKey ?? "s0").slice(1));
         const field = series[index];
-        const raw = typeof entry.value === "number" ? entry.value : null;
+        const raw = Array.isArray(entry.value)
+          ? null
+          : numericValue(entry.value);
         return (
           <div
             className='flex items-center justify-between gap-3'

@@ -429,9 +429,12 @@ export const benchmarkDeltas = (
     },
   ];
 
-  return rows.map((row) => ({
-    ...row,
-    deltaPct: row.global > 0 ? (row.mine - row.global) / row.global : 0,
+  return rows.map(({ metric, higherIsBetter, mine, global }) => ({
+    metric,
+    higherIsBetter,
+    mine,
+    global,
+    deltaPct: global > 0 ? (mine - global) / global : 0,
   }));
 };
 

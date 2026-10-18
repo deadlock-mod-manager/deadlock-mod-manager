@@ -3,9 +3,10 @@ import {
   ApiQueryError,
   datasetFromResponse,
   guessFormat,
-  parseJson,
   resolveApiPath,
 } from "./api-query";
+
+import { jsonValueSchema } from "@/lib/validation/json";
 
 const NOW = 1_700_000_000;
 
@@ -55,7 +56,7 @@ describe("resolveApiPath", () => {
 describe("datasetFromResponse", () => {
   it("uses a top-level list as rows and flattens one level", () => {
     const dataset = datasetFromResponse(
-      parseJson([
+      jsonValueSchema.parse([
         { hero_id: 1, wins: 5, nested: { value: 2 }, ids: [1, 2] },
         { hero_id: 2, wins: 7, nested: { value: 3 }, ids: [3] },
       ]),
@@ -74,7 +75,10 @@ describe("datasetFromResponse", () => {
 
   it("turns an object of objects into one row per key", () => {
     const dataset = datasetFromResponse(
-      parseJson({ kills: { avg: 5, std: 1 }, deaths: { avg: 3, std: 2 } }),
+      jsonValueSchema.parse({
+        kills: { avg: 5, std: 1 },
+        deaths: { avg: 3, std: 2 },
+      }),
       "",
     );
     expect(dataset.rows).toEqual([
@@ -84,13 +88,13 @@ describe("datasetFromResponse", () => {
   });
 
   it("finds a wrapped list on its own or by path", () => {
-    const payload = parseJson({
+    const payload = jsonValueSchema.parse({
       entries: [{ rank: 1, account_name: "a" }],
       region: "Europe",
     });
     expect(datasetFromResponse(payload, "").rows).toHaveLength(1);
     expect(datasetFromResponse(payload, "entries").rows).toHaveLength(1);
-    const tagged = parseJson({
+    const tagged = jsonValueSchema.parse({
       tags: ["a", "b"],
       entries: [{ rank: 1 }, { rank: 2 }],
     });
@@ -101,12 +105,15 @@ describe("datasetFromResponse", () => {
   });
 
   it("keeps a flat object as a single row", () => {
-    const dataset = datasetFromResponse(parseJson({ badge: 91, rank: 9 }), "");
+    const dataset = datasetFromResponse(
+      jsonValueSchema.parse({ badge: 91, rank: 9 }),
+      "",
+    );
     expect(dataset.rows).toEqual([{ badge: 91, rank: 9 }]);
   });
 
   it("reads an empty list as no rows rather than an error", () => {
-    expect(datasetFromResponse(parseJson([]), "").rows).toEqual([]);
+    expect(datasetFromResponse(jsonValueSchema.parse([]), "").rows).toEqual([]);
   });
 });
 

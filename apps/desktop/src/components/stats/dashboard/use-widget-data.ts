@@ -5,7 +5,6 @@ import { cachedFetch, STATS_TTL } from "@/lib/stats/cache";
 import {
   ApiQueryError,
   datasetFromResponse,
-  parseJson,
   resolveApiPath,
 } from "@/lib/stats/dashboard/api-query";
 import {
@@ -190,10 +189,7 @@ export const useWidgetData = (
           ttl: CUSTOM_API_TTL,
           endpoint: path.split("?")[0],
           load: async () =>
-            datasetFromResponse(
-              parseJson(await requestJson(path)),
-              source.listPath,
-            ),
+            datasetFromResponse(await requestJson(path), source.listPath),
         };
       }
     }

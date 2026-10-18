@@ -1,5 +1,5 @@
 import { ValidationError } from "@deadlock-mods/common/client-errors";
-import { z } from "zod";
+import type { JsonValue } from "@/lib/validation/json";
 import type {
   CellValue,
   Dataset,
@@ -127,30 +127,9 @@ export const resolveApiPath = (
 export const usesAccount = (template: string): boolean =>
   template.includes("{account_id}");
 
-type JsonValue =
-  | string
-  | number
-  | boolean
-  | null
-  | JsonValue[]
-  | { [key: string]: JsonValue };
-
-const jsonSchema: z.ZodType<JsonValue> = z.lazy(() =>
-  z.union([
-    z.string(),
-    z.number(),
-    z.boolean(),
-    z.null(),
-    z.array(jsonSchema),
-    z.record(z.string(), jsonSchema),
-  ]),
-);
-
-export const parseJson = (payload: unknown): JsonValue =>
-  jsonSchema.parse(payload);
-
 type JsonObject = { [key: string]: JsonValue };
 
+/* oxlint-disable anti-slop/no-runtime-typeof -- JSON has already been validated; flattening arbitrary endpoint shapes requires narrowing its value union. */
 const isObject = (value: JsonValue | undefined): value is JsonObject =>
   value !== null && typeof value === "object" && !Array.isArray(value);
 
@@ -175,6 +154,8 @@ const toCell = (value: JsonValue): CellValue | undefined => {
   }
   return undefined;
 };
+
+/* oxlint-enable anti-slop/no-runtime-typeof */
 
 /** One level of nesting is flattened to `parent.child`; deeper trees are skipped. */
 const flattenRow = (entry: JsonObject): DatasetRow => {
@@ -250,6 +231,7 @@ const TIME_KEYS = /(start_time|unix_timestamp|last_played|last_updated)$/;
 // are badges or hero ids and stay numbers.
 const MIN_TIMESTAMP = 1_000_000_000;
 
+/* oxlint-disable anti-slop/no-runtime-typeof -- Format inference distinguishes the string and number members of validated dataset cells. */
 /** Best-effort format for a field nobody declared, from its name and values. */
 export const guessFormat = (key: string, values: CellValue[]): FieldFormat => {
   const present = values.filter((value) => value !== null);
@@ -290,6 +272,8 @@ export const guessFormat = (key: string, values: CellValue[]): FieldFormat => {
   }
   return "decimal";
 };
+
+/* oxlint-enable anti-slop/no-runtime-typeof */
 
 const SAMPLE_ROWS = 200;
 

@@ -67,6 +67,7 @@ export const useFieldFormat = (dataset: Dataset) => {
       if (value === null || value === undefined || value === "") {
         return "-";
       }
+      // oxlint-disable-next-line anti-slop/no-runtime-typeof -- Validated cells carry text or numbers; numeric formatting applies only to numbers.
       if (typeof value === "string") {
         if (field?.format === "heroList") {
           return value
