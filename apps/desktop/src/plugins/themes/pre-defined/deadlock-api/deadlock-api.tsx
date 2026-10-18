@@ -22,6 +22,7 @@ const cssVars = `
       --card: 220 20% 5% / 0.9;
       --card-foreground: 210 20% 92%;
       --popover: 220 20% 5% / 0.95;
+      --toast-background: 220 20% 5%;
       --popover-foreground: 210 20% 92%;
       --secondary: 220 15% 9% / 0.85;
       --secondary-foreground: 210 15% 85%;

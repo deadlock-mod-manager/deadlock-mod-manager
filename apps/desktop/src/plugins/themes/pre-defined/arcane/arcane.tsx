@@ -50,6 +50,7 @@ const ArcaneTheme = ({ accentColor }: ArcaneThemeProps) => {
         --ring: ${h} ${Math.min(s - 5, 65)}% ${ringL}%;
         --card: ${h} ${subtleS}% 6% / 0.9;
         --popover: ${h} ${subtleS}% 6% / 0.95;
+        --toast-background: ${h} ${subtleS}% 6%;
         --secondary: ${h} ${borderS}% 10% / 0.85;
         --muted: ${h} ${borderS}% 12% / 0.85;
         --border: ${h} ${borderS}% 16%;
