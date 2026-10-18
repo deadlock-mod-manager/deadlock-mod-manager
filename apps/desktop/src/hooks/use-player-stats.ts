@@ -42,10 +42,14 @@ import {
 } from "@/lib/stats/derive";
 import { heroStatsByAccount } from "@/lib/stats/live-players";
 import { playerFromMatch } from "@/lib/stats/match-detail";
+import {
+  ALL_STATS_SCOPE,
+  filterStatsMatches,
+  statsScopeQuery,
+  type StatsScope,
+} from "@/lib/stats/scope";
 
 const PLAYER_CACHE_PREFIX = "player:";
-/** Only the last ~3 months of global data, so the benchmark matches the meta. */
-const BENCHMARK_WINDOW_S = 90 * 24 * 60 * 60;
 
 type StatsQueryOptions = {
   key: string;
@@ -214,23 +218,28 @@ export const useItemCatalog = (active = true) => {
 };
 
 /** The player's item performance against everyone else's. */
-export const useItemStats = (accountId: number | null, active = true) => {
+export const useItemStats = (
+  accountId: number | null,
+  active = true,
+  scope: StatsScope = ALL_STATS_SCOPE,
+) => {
+  const scopeKey = statsScopeQuery(scope);
   const enabled = accountId !== null && active;
   const catalog = useItemCatalog(active);
 
   const mine = usePlayerScopedQuery(
     accountId,
-    { key: "items", ttl: STATS_TTL.heroStats, enabled: active },
-    (id) => getItemStats({ accountId: id }),
+    { key: `items:${scopeKey}`, ttl: STATS_TTL.heroStats, enabled: active },
+    (id) => getItemStats({ accountId: id, scope }),
   );
 
   const global = useStatsQuery(
     {
-      key: "benchmark:items",
+      key: `benchmark:items:${scopeKey}`,
       ttl: STATS_TTL.benchmark,
       enabled: active,
     },
-    () => getItemStats({ minMatches: 1000 }),
+    () => getItemStats({ minMatches: 1000, scope }),
   );
 
   const items = useMemo(
@@ -373,7 +382,11 @@ export const useMatchDetails = (
  * Everything the Overview and Heroes tabs need. One match-history request feeds
  * most of it; the rest is derived locally.
  */
-export const usePlayerStats = (accountId: number | null) => {
+export const usePlayerStats = (
+  accountId: number | null,
+  scope: StatsScope = ALL_STATS_SCOPE,
+) => {
+  const scopeKey = statsScopeQuery(scope);
   const enabled = accountId !== null;
 
   const matchHistory = usePlayerScopedQuery(
@@ -384,8 +397,8 @@ export const usePlayerStats = (accountId: number | null) => {
 
   const heroStats = usePlayerScopedQuery(
     accountId,
-    { key: "hero-stats", ttl: STATS_TTL.heroStats },
-    (id) => getPlayerHeroStats(id),
+    { key: `hero-stats:${scopeKey}`, ttl: STATS_TTL.heroStats },
+    (id) => getPlayerHeroStats(id, scope),
   );
 
   const rank = usePlayerScopedQuery(
@@ -401,9 +414,8 @@ export const usePlayerStats = (accountId: number | null) => {
   );
 
   const benchmark = useStatsQuery(
-    { key: "benchmark:heroes", ttl: STATS_TTL.benchmark },
-    () =>
-      getAnalyticsHeroStats(Math.floor(Date.now() / 1000) - BENCHMARK_WINDOW_S),
+    { key: `benchmark:heroes:${scopeKey}`, ttl: STATS_TTL.benchmark },
+    () => getAnalyticsHeroStats(scope.since, scope.mode),
   );
 
   // Today's matches come from the Game Coordinator; the API has not ingested
@@ -427,13 +439,21 @@ export const usePlayerStats = (accountId: number | null) => {
   // Computed once and reused: the same gap fills the history and the per-hero
   // aggregates, which lag by the same day.
   const localOnly = useMemo(
-    () => localOnlyMatches(matchHistory.data?.data ?? [], local.data ?? []),
-    [matchHistory.data, local.data],
+    () =>
+      filterStatsMatches(
+        localOnlyMatches(matchHistory.data?.data ?? [], local.data ?? []),
+        scope,
+      ),
+    [matchHistory.data, local.data, scope],
   );
 
-  const matches = useMemo(
+  const allMatches = useMemo(
     () => mergeLocalMatches(matchHistory.data?.data ?? [], local.data ?? []),
     [matchHistory.data, local.data],
+  );
+  const matches = useMemo(
+    () => filterStatsMatches(allMatches, scope),
+    [allMatches, scope],
   );
   // The per-hero aggregates the API returns, topped up with today's local-only
   // matches. Shared by the Heroes table and the per-hero benchmark.
@@ -470,6 +490,7 @@ export const usePlayerStats = (accountId: number | null) => {
   const sources = [matchHistory, heroStats, rank, profile];
 
   return {
+    allMatches,
     matches,
     heroes,
     insights,

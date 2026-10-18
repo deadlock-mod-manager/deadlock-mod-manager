@@ -42,7 +42,7 @@ export const OverviewTiles = ({ matches }: OverviewTilesProps) => {
           isGood: winrateDelta >= 0,
           caption: t("stats.tiles.vsCareer"),
         }}
-        label={t("stats.tiles.winrate", { count: RECENT_WINDOW })}
+        label={t("stats.tiles.winrate", { count: stats.recent.matches })}
         value={formatPercent(stats.recent.winrate)}
       />
       <StatTile
@@ -55,7 +55,7 @@ export const OverviewTiles = ({ matches }: OverviewTilesProps) => {
         value={formatDecimal(stats.recent.kda)}
       />
       <StatTile
-        hint={t("stats.tiles.soulsHint")}
+        hint={t("stats.tiles.soulsHint", { count: stats.recent.matches })}
         label={t("stats.tiles.souls")}
         value={formatCompact(stats.recent.soulsPerMin)}
       />

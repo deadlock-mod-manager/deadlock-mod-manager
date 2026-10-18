@@ -3,6 +3,7 @@ import { createContext, type ReactNode, useContext } from "react";
 import type { usePlayerStats } from "@/hooks/use-player-stats";
 import type { DeadlockHero } from "@/lib/deadlock-api";
 import type { RankAsset } from "@/lib/stats/api";
+import type { StatsScope } from "@/lib/stats/scope";
 
 /**
  * What every widget on the Stats page reads: the selected account and the one
@@ -11,6 +12,7 @@ import type { RankAsset } from "@/lib/stats/api";
  */
 export interface DashboardData {
   accountId: number | null;
+  scope: StatsScope;
   stats: ReturnType<typeof usePlayerStats>;
   heroesById: Map<number, DeadlockHero>;
   rankAssets: RankAsset[];

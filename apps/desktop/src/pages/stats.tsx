@@ -15,7 +15,7 @@ import {
   TriangleAlert,
   Users,
 } from "@deadlock-mods/ui/icons";
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import PageTitle from "@/components/shared/page-title";
 import { AccountPrompt } from "@/components/stats/account-prompt";
@@ -32,6 +32,7 @@ import {
   widgetNeedsAccount,
   widgetNeedsHistory,
 } from "@/components/stats/dashboard/widget-requirements";
+import { StatsFilters } from "@/components/stats/stats-filters";
 import { StatsHeader } from "@/components/stats/stats-header";
 import { StatsHints } from "@/components/stats/stats-hints";
 import { StatsStatus } from "@/components/stats/stats-status";
@@ -45,6 +46,11 @@ import {
 } from "@/hooks/use-player-stats";
 import { useSelectedSteamAccount } from "@/hooks/use-steam-accounts";
 import { DEFAULT_TAB_IDS } from "@/lib/stats/dashboard/layout";
+import {
+  statsSinceTimestamp,
+  type StatsMatchMode,
+  type StatsScope,
+} from "@/lib/stats/scope";
 import { cn } from "@/lib/utils";
 
 const StatsSkeleton = () => (
@@ -76,7 +82,13 @@ const Stats = () => {
     setAccountId,
   } = useSelectedSteamAccount();
   const hasAccount = accountId !== null;
-  const stats = usePlayerStats(accountId);
+  const [mode, setMode] = useState<StatsMatchMode>("all");
+  const [sinceDate, setSinceDate] = useState("");
+  const scope = useMemo<StatsScope>(
+    () => ({ mode, since: statsSinceTimestamp(sinceDate) }),
+    [mode, sinceDate],
+  );
+  const stats = usePlayerStats(accountId, scope);
   const { heroesById } = useHeroCatalog();
   const rankAssets = useRankAssets();
   const { refresh, isRefreshing, canRefresh } = useStatsRefresh();
@@ -107,7 +119,7 @@ const Stats = () => {
       />
       {!editing && (
         <Button
-          className='h-9 shrink-0 gap-1.5 rounded-full'
+          className='h-9 shrink-0 gap-1.5'
           data-testid='stats-customize'
           onClick={dashboard.startEditing}
           size='sm'
@@ -156,7 +168,7 @@ const Stats = () => {
         </Empty>
       );
     }
-    if (needsHistory && stats.matches.length === 0) {
+    if (needsHistory && stats.allMatches.length === 0) {
       return (
         <Empty className='py-16'>
           <EmptyHeader>
@@ -202,6 +214,7 @@ const Stats = () => {
     <DashboardDataProvider
       value={{
         accountId,
+        scope,
         stats,
         heroesById,
         rankAssets: rankAssets.data?.data ?? [],
@@ -245,6 +258,14 @@ const Stats = () => {
           ) : (
             tabBar
           )}
+          {!editing && (
+            <StatsFilters
+              mode={mode}
+              onModeChange={setMode}
+              onSinceDateChange={setSinceDate}
+              sinceDate={sinceDate}
+            />
+          )}
           {editing && (
             <EditToolbar
               isDirty={dashboard.isDirty}
@@ -262,11 +283,6 @@ const Stats = () => {
               </AlertDescription>
             </Alert>
           )}
-          {hasAccount && !editing && (
-            <StatsHints
-              apiMatchIds={stats.matches.map((match) => match.match_id)}
-            />
-          )}
           {hasAccount && stats.isStale && (
             <Alert variant='warning'>
               <TriangleAlert className='h-4 w-4' />
@@ -283,6 +299,13 @@ const Stats = () => {
           )}>
           {renderBody()}
         </div>
+        {hasAccount && !editing && (
+          <div className='shrink-0 px-4 py-3 pr-2 empty:hidden'>
+            <StatsHints
+              apiMatchIds={stats.allMatches.map((match) => match.match_id)}
+            />
+          </div>
+        )}
       </div>
 
       {dashboard.editorTarget && (
