@@ -257,8 +257,10 @@ export const useModOptions = (mod: LocalMod | null) => {
     ],
   );
 
+  const fileTree = mod?.installedFileTree;
   const showButton =
-    mod?.status === ModStatus.Installed && downloads.length > 1;
+    mod?.status === ModStatus.Installed &&
+    (downloads.length > 1 || (fileTree?.files.length ?? 0) > 1);
 
   const stagedOriginalsMapRef = useRef(
     new Map<string, { archiveName: string; path: string }>(),
@@ -504,6 +506,7 @@ export const useModOptions = (mod: LocalMod | null) => {
       );
       setActiveVariantArchive(mod.remoteId, [...activeArchives].join(","));
       toast.success(t("modOptions.applySuccess"));
+      setIsOpen(false);
     },
     onError: (error) => {
       logger.withError(error).error("Failed to apply per-file selection");
@@ -536,6 +539,7 @@ export const useModOptions = (mod: LocalMod | null) => {
     applyFileSelection: fileSelectionMutation.mutate,
     isSavingFiles: fileSelectionMutation.isPending,
     showButton,
+    fileTree,
     downloads,
     onDiskArchiveNames,
     activeArchiveNames,

@@ -97,7 +97,7 @@ export const deselectInstallFile = (archiveName: string, filePath: string) =>
       "false",
     );
   });
-// The mod page keeps installed and active files under its Files tab.
+// The mod page keeps active files under its Files tab.
 export const openFilesTab = () =>
   step("open the Files tab", async () => {
     const tab = await $('[role="tab"][id$="-trigger-files"]');

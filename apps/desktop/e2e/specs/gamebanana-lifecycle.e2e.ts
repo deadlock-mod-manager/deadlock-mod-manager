@@ -30,6 +30,7 @@ import {
   chooseInstalledFiles,
   installCatalog,
   openCatalogOptions,
+  closeCatalogOptions,
   reinstallCatalog,
   toggleCatalog,
   waitCatalogStatus,
@@ -68,7 +69,7 @@ describe("catalog installation lifecycle", () => {
         await chooseArchives([]);
         await expect(dialog.$("button=Apply")).toBeDisabled();
         await chooseArchives(["common.zip", "red.zip"]);
-        await dialog.$("button=Cancel").click();
+        await closeCatalogOptions();
         await checkCatalog(
           world,
           scenario,
@@ -86,7 +87,7 @@ describe("catalog installation lifecycle", () => {
             ),
           ).toBeDisplayed();
           await expect(dialog).toBeDisplayed();
-          await dialog.$("button=Cancel").click();
+          await closeCatalogOptions();
           await checkCatalog(
             world,
             scenario,
@@ -143,7 +144,7 @@ describe("catalog installation lifecycle", () => {
           );
         }
       } else if (scenario === "gamebanana-file-toggle") {
-        await openFilesTab();
+        await openCatalogOptions();
         let installed = await chooseInstalledFiles([]);
         await expect(installed.$("button=Apply")).toBeDisabled();
         await chooseInstalledFiles(["common.vpk", "red.vpk"]);
@@ -151,6 +152,7 @@ describe("catalog installation lifecycle", () => {
         await expect(installed.$("button=Apply")).toBeDisabled();
         installed = await chooseInstalledFiles(files);
         await expect(installed.$("button=Apply")).toBeDisabled();
+        await closeCatalogOptions();
         await applyInstalledFiles(["common.vpk", "red.vpk"]);
         files = ["common.vpk", "red.vpk"];
         dormant = ["blue.vpk"];
@@ -166,7 +168,10 @@ describe("catalog installation lifecycle", () => {
         files = ["common.vpk", "blue.vpk"];
         dormant = ["red.vpk"];
       } else if (scenario === "gamebanana-reselect") {
-        await expect($("button=Manage files")).not.toBeDisplayed();
+        const dialog = await openCatalogOptions();
+        await expect(dialog.$("[data-download-archive]")).not.toBeExisting();
+        await expect(installedFiles()).toBeDisplayed();
+        await closeCatalogOptions();
         const remove = await $("button=Delete Mod");
         await reveal(remove);
         await remove.click();
@@ -250,8 +255,8 @@ describe("catalog installation lifecycle", () => {
         "aria-checked",
         "false",
       );
+      await expect($("button=Manage files")).not.toBeDisplayed();
       await openFilesTab();
-      await expect(installedFiles()).not.toBeDisplayed();
       await expect(activeFiles()).not.toBeDisplayed();
       const {
         configuration: { roots },

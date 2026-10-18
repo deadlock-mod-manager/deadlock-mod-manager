@@ -62,7 +62,9 @@ export const SkinVariantControls = ({ mod }: SkinVariantControlsProps) => {
         progress={modOptions.progress}
         modName={mod.name}
         onApply={modOptions.apply}
-        onCancel={modOptions.close}
+        fileTree={modOptions.fileTree}
+        onApplyFiles={modOptions.applyFileSelection}
+        isSavingFiles={modOptions.isSavingFiles}
         onDiskArchiveNames={modOptions.onDiskArchiveNames}
         onOpenChange={(open) => (open ? modOptions.open() : modOptions.close())}
       />

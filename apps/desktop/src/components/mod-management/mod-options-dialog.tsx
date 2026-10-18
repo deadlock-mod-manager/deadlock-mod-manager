@@ -1,27 +1,24 @@
 import { Badge } from "@deadlock-mods/ui/components/badge";
-import { Button } from "@deadlock-mods/ui/components/button";
-import { Checkbox } from "@deadlock-mods/ui/components/checkbox";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
 import { Progress } from "@deadlock-mods/ui/components/progress";
-import {
-  Check,
-  CloudDownload,
-  Package,
-  Settings,
-  X,
-} from "@deadlock-mods/ui/icons";
+import { Separator } from "@deadlock-mods/ui/components/separator";
+import { Check, CloudDownload, Settings } from "@deadlock-mods/ui/icons";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { InstalledFilesDisplay } from "@/components/mod-detail/installed-files-display";
+import {
+  OptionRow,
+  OptionSection,
+} from "@/components/mod-management/option-list";
 import type { ModOptionsProgress } from "@/hooks/use-mod-options";
 import { cn } from "@/lib/utils";
-import type { ModDownloadItem } from "@/types/mods";
+import type { ModDownloadItem, ModFileTree } from "@/types/mods";
 
 const formatFileSize = (bytes: number): string => {
   if (bytes === 0) return "0 B";
@@ -41,11 +38,13 @@ interface ModOptionsDialogProps {
     deselectedArchives: ModDownloadItem[],
     allCheckedArchiveNames: string[],
   ) => void;
-  onCancel: () => void;
   modName?: string;
   downloads?: ModDownloadItem[];
   onDiskArchiveNames?: Set<string>;
   activeArchiveNames?: Set<string>;
+  fileTree?: ModFileTree;
+  onApplyFiles: (selectedNames: string[]) => void;
+  isSavingFiles?: boolean;
 }
 
 export const ModOptionsDialog = ({
@@ -54,14 +53,19 @@ export const ModOptionsDialog = ({
   isSaving = false,
   progress = null,
   onApply,
-  onCancel,
   modName = "Mod",
   downloads = [],
   onDiskArchiveNames = new Set<string>(),
   activeArchiveNames = new Set<string>(),
+  fileTree,
+  onApplyFiles,
+  isSavingFiles = false,
 }: ModOptionsDialogProps) => {
   const { t } = useTranslation();
   const [checkedNames, setCheckedNames] = useState<Set<string>>(new Set());
+  const hasVariants = downloads.length > 1;
+  const hasFiles = (fileTree?.files.length ?? 0) > 1;
+  const isBusy = isSaving || isSavingFiles;
 
   useEffect(() => {
     if (isOpen) {
@@ -94,7 +98,7 @@ export const ModOptionsDialog = ({
   );
 
   const hasChanges = initialKey !== currentKey;
-  const canApply = !isSaving && hasChanges && checkedNames.size > 0;
+  const canApply = !isBusy && hasChanges && checkedNames.size > 0;
 
   const handleApply = () => {
     const newlySelected = downloads.filter(
@@ -106,12 +110,10 @@ export const ModOptionsDialog = ({
     onApply(newlySelected, newlyDeselected, [...checkedNames]);
   };
 
-  const checkedCount = checkedNames.size;
-
   return (
     <Dialog
       onOpenChange={(open) => {
-        if (!isSaving) onOpenChange(open);
+        if (!isBusy) onOpenChange(open);
       }}
       open={isOpen}>
       <DialogContent
@@ -125,109 +127,85 @@ export const ModOptionsDialog = ({
           <DialogDescription>{t("modOptions.description")}</DialogDescription>
         </DialogHeader>
 
-        {downloads.length === 0 ? (
+        {!hasVariants && !hasFiles ? (
           <div className='py-8 text-center text-muted-foreground text-sm'>
             {t("modOptions.noOptions")}
           </div>
         ) : (
-          <div className='max-h-[55vh] overflow-y-auto pr-4'>
-            <div className='space-y-1'>
-              {downloads.map((download) => {
-                const isChecked = checkedNames.has(download.name);
-                const isOnDisk = onDiskArchiveNames.has(download.name);
-                const isEnabled = activeArchiveNames.has(download.name);
-
-                return (
-                  <div
-                    data-download-archive={download.name}
-                    className={cn(
-                      "flex w-full cursor-pointer items-center justify-between rounded-md px-3 py-2.5 text-left hover:bg-muted/50",
-                      isSaving && "pointer-events-none opacity-50",
-                    )}
-                    key={`archive-${download.name}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (!isSaving) toggleArchive(download.name);
-                    }}>
-                    <div className='flex items-center gap-3'>
-                      <Checkbox
+          // Bleed into the dialog padding so the scrollbar hugs the edge and
+          // row text lines up with the title.
+          <div className='-mx-6 max-h-[60vh] space-y-4 overflow-y-auto px-3'>
+            {hasVariants && (
+              <OptionSection
+                title={t("modOptions.variants")}
+                summary={t("modOptions.selectedCount", {
+                  selected: checkedNames.size,
+                  total: downloads.length,
+                })}
+                canReset={hasChanges && !isBusy}
+                canApply={canApply}
+                isSaving={isSaving}
+                onReset={() => setCheckedNames(new Set(activeArchiveNames))}
+                onApply={handleApply}>
+                <div>
+                  {downloads.map((download) => {
+                    const isChecked = checkedNames.has(download.name);
+                    return (
+                      <OptionRow
+                        aside={formatFileSize(download.size)}
                         checked={isChecked}
-                        disabled={isSaving}
-                        onCheckedChange={() => toggleArchive(download.name)}
-                        onClick={(e) => e.stopPropagation()}
-                      />
-                      <div className='flex flex-col gap-0.5'>
-                        <div className='flex items-center gap-2'>
-                          <Package className='h-4 w-4 text-muted-foreground' />
-                          <span className='font-mono text-sm'>
-                            {download.name}
-                          </span>
-                          {isEnabled && (
-                            <Badge
-                              variant='default'
-                              className='gap-1 text-xs py-0'>
-                              <Check className='h-3 w-3' />
-                              {t("modOptions.enabled")}
-                            </Badge>
-                          )}
-                          {!isOnDisk && (
-                            <Badge
-                              variant='outline'
-                              className='gap-1 text-xs font-normal'>
-                              <CloudDownload className='h-3 w-3' />
-                              {t("modOptions.needsDownload")}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className='flex items-center gap-3 pl-6 text-xs text-muted-foreground'>
-                          <span>{formatFileSize(download.size)}</span>
-                          {download.description && (
-                            <span className='truncate max-w-[300px]'>
-                              {download.description}
+                        data-download-archive={download.name}
+                        disabled={isBusy}
+                        key={`archive-${download.name}`}
+                        meta={download.description}
+                        onToggle={() => toggleArchive(download.name)}
+                        title={
+                          <>
+                            <span className='truncate font-mono'>
+                              {download.name}
                             </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
+                            {activeArchiveNames.has(download.name) && (
+                              <Badge
+                                className='shrink-0 gap-1 font-normal'
+                                variant='secondary'>
+                                <Check className='h-3 w-3' />
+                                {t("modOptions.enabled")}
+                              </Badge>
+                            )}
+                            {!onDiskArchiveNames.has(download.name) && (
+                              <Badge
+                                className='shrink-0 gap-1 font-normal text-muted-foreground'
+                                variant='outline'>
+                                <CloudDownload className='h-3 w-3' />
+                                {t("modOptions.needsDownload")}
+                              </Badge>
+                            )}
+                          </>
+                        }
+                      />
+                    );
+                  })}
+                </div>
+                {progress && (
+                  <div className='px-3'>
+                    <ApplyProgress progress={progress} />
                   </div>
-                );
-              })}
-            </div>
+                )}
+              </OptionSection>
+            )}
+
+            {hasVariants && hasFiles && <Separator />}
+
+            {fileTree && hasFiles && (
+              <InstalledFilesDisplay
+                disabled={isSaving}
+                fileTree={fileTree}
+                isSaving={isSavingFiles}
+                onApplySelection={onApplyFiles}
+              />
+            )}
           </div>
         )}
-
-        {progress && <ApplyProgress progress={progress} />}
-
-        <DialogFooter className='flex items-center justify-between'>
-          <div className='text-muted-foreground text-sm'>
-            {t("modOptions.selectedCount", {
-              selected: checkedCount,
-              total: downloads.length,
-            })}
-          </div>
-          <div className='space-x-2'>
-            <Button
-              icon={<X className='h-4 w-4' />}
-              onClick={(e) => {
-                e.stopPropagation();
-                onCancel();
-              }}
-              variant='outline'
-              disabled={isSaving}>
-              {t("common.cancel")}
-            </Button>
-            <Button
-              disabled={!canApply}
-              icon={<Check className='h-4 w-4' />}
-              isLoading={isSaving}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleApply();
-              }}>
-              {t("modOptions.apply")}
-            </Button>
-          </div>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

@@ -134,44 +134,52 @@ export const checkCatalog = async (
         );
       },
     );
-    await openFilesTab();
-    const installed = await installedFiles();
-    await reveal(installed);
-    await expect(installed).toBeDisplayed();
-    assert.deepEqual(
-      (
-        await installed
-          .$$('[data-selected="true"] [data-file-name]')
-          .map((row) => row.getText())
-      ).sort(),
-      files.toSorted(),
-    );
-    const groups = catalogRecipe(scenario).filter((archive) =>
-      archive.files.some((file) => files.includes(file)),
-    );
-    const activeGroups = await installed
-      .$$("[data-archive]")
-      .filter(
-        async (group) =>
-          (await group.getAttribute("data-selected-count")) !== "0",
-      );
-    assert.equal(activeGroups.length, groups.length);
-    for (const archive of groups) {
-      const group = await installed.$(`[data-archive="${archive.name}"]`);
-      const names = archive.files.filter((file) => files.includes(file)).sort();
+    // The dialog only lists installed files when there is more than one.
+    const tree = (await readCatalogState(world)).localMods[0].installedFileTree;
+    if ((tree?.files.length ?? 0) > 1) {
+      await openCatalogOptions();
+      const installed = await installedFiles();
+      await reveal(installed);
+      await expect(installed).toBeDisplayed();
       assert.deepEqual(
         (
-          await group
+          await installed
             .$$('[data-selected="true"] [data-file-name]')
             .map((row) => row.getText())
         ).sort(),
-        names,
+        files.toSorted(),
       );
-      await expect(group).toHaveAttribute(
-        "data-selected-count",
-        String(names.length),
+      const groups = catalogRecipe(scenario).filter((archive) =>
+        archive.files.some((file) => files.includes(file)),
       );
+      const activeGroups = await installed
+        .$$("[data-archive]")
+        .filter(
+          async (group) =>
+            (await group.getAttribute("data-selected-count")) !== "0",
+        );
+      assert.equal(activeGroups.length, groups.length);
+      for (const archive of groups) {
+        const group = await installed.$(`[data-archive="${archive.name}"]`);
+        const names = archive.files
+          .filter((file) => files.includes(file))
+          .sort();
+        assert.deepEqual(
+          (
+            await group
+              .$$('[data-selected="true"] [data-file-name]')
+              .map((row) => row.getText())
+          ).sort(),
+          names,
+        );
+        await expect(group).toHaveAttribute(
+          "data-selected-count",
+          String(names.length),
+        );
+      }
+      await closeCatalogOptions();
     }
+    await openFilesTab();
     const active = await activeFiles();
     await reveal(active);
     assert.deepEqual(
@@ -194,6 +202,11 @@ export const openCatalogOptions = async () => {
     expect.stringContaining(`Manage Files: ${CATALOG_MOD_NAME}`),
   );
   return dialog;
+};
+
+export const closeCatalogOptions = async () => {
+  await browser.keys("Escape");
+  await expect($('[role="dialog"]')).not.toBeDisplayed();
 };
 
 export const chooseArchives = async (names: string[]) => {
@@ -245,13 +258,13 @@ export const chooseInstalledFiles = async (names: string[]) => {
 
 export const applyInstalledFiles = (names: string[]) =>
   step(`apply installed files ${names.join(", ")}`, async () => {
-    await openFilesTab();
+    const dialog = await openCatalogOptions();
     const installed = await chooseInstalledFiles(names);
     await installed.$("button=Apply").click();
     await expect(
       $('//*[@data-sonner-toast and contains(., "Mod files updated")]'),
     ).toBeDisplayed();
-    await expect(installed.$("button=Apply")).toBeDisabled();
+    await expect(dialog).not.toBeDisplayed();
   });
 
 export const toggleCatalog = async (world: string, enabled: boolean) => {

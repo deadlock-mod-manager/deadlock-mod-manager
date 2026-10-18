@@ -4826,11 +4826,12 @@
   },
   "modOptions": {
     "title": "Manage Files: {{modName}}",
-    "description": "Select which files to use for this mod. Changes take effect immediately.",
+    "description": "Choose which variants and files this mod installs.",
     "openTooltip": "Manage files",
     "apply": "Apply",
     "applySuccess": "Mod files updated",
     "noOptions": "This mod has no other files.",
+    "variants": "Variants",
     "selectedCount": "{{selected}} of {{total}} selected",
     "enabled": "Enabled",
     "needsDownload": "needs download",
@@ -4852,10 +4853,6 @@
   },
   "installedFiles": {
     "title": "Installed Files",
-    "description": "Files from {{modName}} that were installed to the game.",
-    "toggleDescription": "Choose which files from {{modName}} are installed to the game.",
-    "fileCount_one": "{{count}} file",
-    "fileCount_other": "{{count}} files",
     "enabledCount": "{{selected}} of {{total}} enabled",
     "reset": "Reset",
     "selectAtLeastOne": "Select at least one file. To remove the mod, disable it instead."

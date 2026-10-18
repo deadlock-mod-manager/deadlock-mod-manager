@@ -16,7 +16,6 @@ import { useTranslation } from "react-i18next";
 import { useNavigate, useParams } from "react-router";
 import FavoriteButton from "@/components/mod-browsing/favorite-button";
 import ModButton from "@/components/mod-browsing/mod-button";
-import { InstalledFilesDisplay } from "@/components/mod-detail/installed-files-display";
 import { InstalledVpksSection } from "@/components/mod-detail/installed-vpks-section";
 import { ModAudioPreview } from "@/components/mod-detail/mod-audio-preview";
 import { ModChangelog } from "@/components/mod-detail/mod-changelog";
@@ -134,13 +133,9 @@ const Mod = () => {
 
   const downloadableFileCount = mod?.downloadable ? availableFiles.length : 0;
   const installedVpks = isInstalled ? localMod?.installedVpks : undefined;
-  const installedFileTree = isInstalled
-    ? localMod?.installedFileTree
-    : undefined;
   const hasFilesTab =
     downloadableFileCount > 0 ||
     !!installedVpks?.length ||
-    !!installedFileTree ||
     (developerMode && !!localMod);
 
   const modOptions = useModOptions(localMod ?? null);
@@ -479,15 +474,6 @@ const Mod = () => {
                   <InstalledVpksSection vpks={installedVpks} />
                 )}
 
-                {installedFileTree && (
-                  <InstalledFilesDisplay
-                    fileTree={installedFileTree}
-                    modName={mod.name}
-                    onApplySelection={modOptions.applyFileSelection}
-                    isSaving={modOptions.isSavingFiles}
-                  />
-                )}
-
                 {developerMode && localMod && (
                   <VpkReplacementSection mod={localMod} />
                 )}
@@ -511,7 +497,9 @@ const Mod = () => {
             isSaving={modOptions.isSaving}
             progress={modOptions.progress}
             onApply={modOptions.apply}
-            onCancel={modOptions.close}
+            fileTree={modOptions.fileTree}
+            onApplyFiles={modOptions.applyFileSelection}
+            isSavingFiles={modOptions.isSavingFiles}
             modName={mod.name}
             downloads={modOptions.downloads}
             onDiskArchiveNames={modOptions.onDiskArchiveNames}

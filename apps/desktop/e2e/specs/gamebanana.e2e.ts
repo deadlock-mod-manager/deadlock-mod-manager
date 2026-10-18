@@ -16,6 +16,10 @@ import path from "node:path";
 import { z } from "zod";
 import { closeApplication } from "../support/application-exit";
 import {
+  closeCatalogOptions,
+  openCatalogOptions,
+} from "../support/catalog-actions";
+import {
   catalogRecipe,
   CATALOG_MOD_NAME,
   installedCatalogFiles,
@@ -77,34 +81,39 @@ describe("GameBanana catalog installation", () => {
       assert.notEqual(runtime.processId, previous.processId);
     }
     await expect($('[role="switch"]')).toHaveAttribute("aria-checked", "true");
-    await openFilesTab();
-    const installed = await installedFiles();
-    await reveal(installed);
-    await expect(installed).toBeDisplayed();
-    const names = await installed
-      .$$('[data-selected="true"] [data-file-name]')
-      .map((element) => element.getText());
-    assert.deepEqual(names.sort(), installedCatalogFiles(scenario));
-    for (const archive of catalogRecipe(scenario).filter(
-      (item) => item.selected,
-    )) {
-      const group = await installed.$(`[data-archive="${archive.name}"]`);
-      const expectedFiles = archive.files.filter((name) =>
-        installedCatalogFiles(scenario).includes(name),
-      );
-      assert.deepEqual(
-        (
-          await group
-            .$$('[data-selected="true"] [data-file-name]')
-            .map((element) => element.getText())
-        ).sort(),
-        expectedFiles.sort(),
-      );
-      await expect(group).toHaveAttribute(
-        "data-selected-count",
-        String(expectedFiles.length),
-      );
+    const tree = (await readCatalogState(world)).localMods[0].installedFileTree;
+    if ((tree?.files.length ?? 0) > 1) {
+      await openCatalogOptions();
+      const installed = await installedFiles();
+      await reveal(installed);
+      await expect(installed).toBeDisplayed();
+      const names = await installed
+        .$$('[data-selected="true"] [data-file-name]')
+        .map((element) => element.getText());
+      assert.deepEqual(names.sort(), installedCatalogFiles(scenario));
+      for (const archive of catalogRecipe(scenario).filter(
+        (item) => item.selected,
+      )) {
+        const group = await installed.$(`[data-archive="${archive.name}"]`);
+        const expectedFiles = archive.files.filter((name) =>
+          installedCatalogFiles(scenario).includes(name),
+        );
+        assert.deepEqual(
+          (
+            await group
+              .$$('[data-selected="true"] [data-file-name]')
+              .map((element) => element.getText())
+          ).sort(),
+          expectedFiles.sort(),
+        );
+        await expect(group).toHaveAttribute(
+          "data-selected-count",
+          String(expectedFiles.length),
+        );
+      }
+      await closeCatalogOptions();
     }
+    await openFilesTab();
     const active = await activeFiles();
     await reveal(active);
     await expect(active).toBeDisplayed();
@@ -112,10 +121,7 @@ describe("GameBanana catalog installation", () => {
       .$$("[data-file-name]")
       .map((element) => element.getText());
     assert.equal(activeNames.length, installedCatalogFiles(scenario).length);
-    await reveal(installed);
-    await browser.waitUntil(() =>
-      installed.isDisplayed({ withinViewport: true }),
-    );
+    await browser.waitUntil(() => active.isDisplayed({ withinViewport: true }));
     await browser.saveScreenshot(
       path.join(world, "artifacts", `catalog-${phase}.png`),
     );
