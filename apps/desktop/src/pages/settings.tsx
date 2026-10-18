@@ -60,6 +60,7 @@ import { SteamPathSettings } from "@/components/settings/steam-path-settings";
 import { GamePresenceSettings } from "@/components/settings/game-presence-settings";
 import GameInfoManagement from "@/components/settings/gameinfo-management";
 import { AutoResetGameinfoToggle } from "@/components/settings/auto-reset-gameinfo-toggle";
+import { AutoFixModsToggle } from "@/components/settings/auto-fix-mods-toggle";
 import { HeroParserSettings } from "@/components/settings/hero-parser-settings";
 import { HeroSkinsSettings } from "@/components/settings/hero-skins-settings";
 import { ForgeInstallToggle } from "@/components/settings/forge-install-toggle";
@@ -744,6 +745,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
               <div className='grid grid-cols-1 gap-4'>
                 <GameInfoManagement />
                 <AutoResetGameinfoToggle />
+                <AutoFixModsToggle />
               </div>
             </Section>
 

@@ -10,8 +10,8 @@ import { useStartGame } from "@/components/providers/launch-repair";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { MOD_PATHS_KEY } from "@/hooks/use-game-config-alert";
 import { useCompatibilityReview } from "@/components/providers/compatibility-review";
-import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { stopHeroDetection } from "@/hooks/use-hero-detection";
+import { useLaunchFixes } from "@/hooks/use-launch-fixes";
 import { useSkinRandomizer } from "@/hooks/use-skin-randomizer";
 import { restoreProfileGameinfo } from "@/lib/gameinfo";
 import { getLaunchErrorMessage } from "@/lib/launch-error";
@@ -51,13 +51,13 @@ export const useLaunch = () => {
   const startGame = useStartGame();
   const { randomizeSkins } = useSkinRandomizer();
   const reviewCompatibility = useCompatibilityReview();
+  const prepareModFixes = useLaunchFixes();
   const {
     begin: beginLaunch,
     start: startProgress,
     advance,
     clear: clearProgress,
   } = useLaunchProgress();
-  const modCompatibility = useExperimentalFeature("mod-compatibility-repairs");
   const launchVanillaNoArgs =
     settings?.["launch-vanilla-no-args"]?.enabled ?? false;
 
@@ -133,7 +133,7 @@ export const useLaunch = () => {
         ? ["disablingMods", ...BACKEND_TAIL]
         : [
             "verifyingMods",
-            ...(modCompatibility ? (["mergingModData"] as const) : []),
+            "mergingModData",
             "writingSearchPaths",
             ...BACKEND_TAIL,
           ];
@@ -152,6 +152,14 @@ export const useLaunch = () => {
       const profileFolder = vanilla
         ? null
         : (activeProfile?.folderName ?? null);
+
+      // Dialogs replace the checklist; starting the game brings it back.
+      if (!vanilla && !(await prepareModFixes(profileFolder, clearProgress))) {
+        clearProgress();
+        logger.info("Launch cancelled at the mod fix prompt");
+        attempt.finish("cancelled");
+        return;
+      }
 
       if (await restoreProfileGameinfo(profileFolder)) {
         clearLastJoin();
@@ -179,7 +187,6 @@ export const useLaunch = () => {
                   gamePresenceEnabled,
                 ),
           profileFolder,
-          modCompatibility,
         };
         launched = await launchWithCompatibilityReview(
           async () => {
@@ -195,7 +202,7 @@ export const useLaunch = () => {
             clearProgress();
             return reviewCompatibility(profileFolder);
           },
-          vanilla || !modCompatibility,
+          vanilla,
         );
       } finally {
         unlistenReset();

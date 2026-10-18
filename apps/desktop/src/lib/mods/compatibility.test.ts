@@ -56,6 +56,7 @@ const analysis: LocalizationOverlayAnalysis = {
   parseWarnings: [],
   assetRepairs: [],
   assetWarnings: [],
+  unloadedModels: [],
   dataRepairs: [],
   dataWarnings: [],
 };

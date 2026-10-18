@@ -109,6 +109,20 @@ impl AnimationInputs {
     !self.overrides.is_empty() || self.mod_ids.contains(mod_id)
   }
 
+  /// Whether restoring this model's current animation bindings could change
+  /// what an enabled animation override plays. An override for another hero
+  /// stays outside the model's graph closure and skeleton, so it does not
+  /// block the restore.
+  pub(super) fn blocks_model_bindings(
+    &self,
+    resources: &ResourceSnapshot,
+    current: &Kv3Value,
+    mod_id: &str,
+  ) -> bool {
+    self.mod_ids.contains(mod_id)
+      || (!self.overrides.is_empty() && !self.permits_camera_controls(resources, current, mod_id))
+  }
+
   pub(super) fn permits_camera_controls(
     &self,
     resources: &ResourceSnapshot,
@@ -667,6 +681,14 @@ mod tests {
         inputs.permits_camera_controls(&resources, &model, "skin"),
         allowed,
         "{owner}:{path}"
+      );
+      // A replaced skeleton is not an animation override; the binding restore
+      // declines it when it resolves the skeleton.
+      let skeleton_replaced = path == "models/a.vnmskel_c";
+      assert_eq!(
+        inputs.blocks_model_bindings(&resources, &model, "skin"),
+        !allowed && !skeleton_replaced,
+        "binding restore for {owner}:{path}"
       );
     }
   }

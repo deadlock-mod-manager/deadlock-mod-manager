@@ -35,6 +35,11 @@ pub struct ProfileVpkManifestEntry {
   pub enabled: bool,
   #[serde(default)]
   pub compatibility_enabled: bool,
+  /// The player chose this mod's original files over available fixes. Unlike
+  /// `compatibility_enabled = false`, which is also the default, this records a
+  /// decision that bulk fixes must respect.
+  #[serde(default)]
+  pub compatibility_opted_out: bool,
   #[serde(default)]
   pub order: Option<u32>,
   /// 1-based shard index the enabled VPKs of this mod currently live in.
@@ -54,6 +59,7 @@ impl Default for ProfileVpkManifestEntry {
     Self {
       enabled: false,
       compatibility_enabled: false,
+      compatibility_opted_out: false,
       order: None,
       shard: default_shard(),
       current_vpks: Vec::new(),
@@ -836,6 +842,11 @@ mod tests {
     );
     assert!(!manifest.mods["mod"].compatibility_enabled);
     manifest.mods.get_mut("mod").unwrap().compatibility_enabled = true;
+    manifest
+      .mods
+      .get_mut("mod")
+      .unwrap()
+      .compatibility_opted_out = true;
     manifest.mark_disabled("mod", vec!["mod_source.vpk".into()], vec![]);
     manifest.mark_enabled(
       "mod",
@@ -848,7 +859,9 @@ mod tests {
     let encoded = serde_json::to_vec(&manifest).unwrap();
     let restored: ProfileVpkManifest = serde_json::from_slice(&encoded).unwrap();
     assert!(restored.mods["mod"].compatibility_enabled);
+    assert!(restored.mods["mod"].compatibility_opted_out);
     let old: ProfileVpkManifestEntry = serde_json::from_str(r#"{"enabled":true}"#).unwrap();
     assert!(!old.compatibility_enabled);
+    assert!(!old.compatibility_opted_out);
   }
 }

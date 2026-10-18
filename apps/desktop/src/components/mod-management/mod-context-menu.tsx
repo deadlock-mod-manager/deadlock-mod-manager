@@ -11,6 +11,7 @@ import { ArrowClockwiseIcon } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { FaShare } from "react-icons/fa";
+import { ModHealthMenuItems } from "@/components/mod-health/mod-health-menu-items";
 import { useReinstallAction } from "@/hooks/use-reinstall-action";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -91,6 +92,7 @@ export const ModContextMenu = ({ mod, children }: ModContextMenuProps) => {
             {t("reinstall.action")}
           </ContextMenuItem>
         )}
+        <ModHealthMenuItems mod={mod} />
       </ContextMenuContent>
     </ContextMenu>
   );

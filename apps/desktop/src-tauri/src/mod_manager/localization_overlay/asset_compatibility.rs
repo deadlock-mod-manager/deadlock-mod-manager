@@ -1,6 +1,7 @@
-use super::resources::ResourceSnapshot;
+use super::resources::{ResourceSnapshot, resource_path};
 use super::{CompiledDataSource, Kv3Value, Resource, decode_compiled_data, kv3, normalize_path};
 use crate::errors::Error;
+use crate::mod_manager::vdata_history::VdataHistoryIndex;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -117,6 +118,120 @@ pub(super) fn model_overlaps(
     });
   }
   warnings
+}
+
+/// Mod-only models with warnings that nothing loads. The game cannot reference
+/// a path it does not ship, so such a model loads only when a mod file that
+/// replaces a game path, or an old hero model that relocation moves, reaches it
+/// through resource references.
+pub(super) fn unloaded_models(
+  resources: &ResourceSnapshot,
+  history: &VdataHistoryIndex,
+  warnings: &[AssetWarning],
+) -> Result<Vec<String>, Error> {
+  let mod_models: BTreeSet<&str> = resources
+    .mod_paths()
+    .map(String::as_str)
+    .filter(|path| super::model_camera::is_path(path) && !resources.has_game_resource(path))
+    .collect();
+  let mut candidates: BTreeSet<&str> = warnings
+    .iter()
+    .map(|warning| warning.file_path.as_str())
+    .filter(|path| mod_models.contains(path))
+    .collect();
+  if candidates.is_empty() {
+    return Ok(Vec::new());
+  }
+  let relocated = super::model_relocation::historical_hero_models(
+    resources,
+    history,
+    mod_models.iter().copied(),
+  )?;
+  let mut pending: Vec<String> = resources
+    .mod_paths()
+    .filter(|path| resources.has_game_resource(path) || relocated.contains(*path))
+    .cloned()
+    .collect();
+  for path in &relocated {
+    candidates.remove(path.as_str());
+  }
+  let mut visited = BTreeSet::new();
+  while let Some(path) = pending.pop() {
+    if candidates.is_empty() {
+      break;
+    }
+    if !visited.insert(path.clone()) || !may_reference_models(&path) {
+      continue;
+    }
+    let bytes = match resources.resolve(&path) {
+      Ok(Some((_, bytes))) => bytes,
+      Ok(None) => continue,
+      // An unread file may reference any candidate, so none is proven unloaded.
+      Err(error) => {
+        log::warn!("Could not read {path} while tracing model references: {error}");
+        return Ok(Vec::new());
+      }
+    };
+    for name in referenced_names(&path, &bytes)
+      .iter()
+      .filter_map(|name| resource_path(name))
+    {
+      if resources
+        .provider(&name)
+        .is_some_and(|provider| provider.mod_id.is_some())
+      {
+        candidates.remove(name.as_str());
+        pending.push(name);
+      }
+    }
+  }
+  Ok(candidates.into_iter().map(str::to_owned).collect())
+}
+
+fn may_reference_models(path: &str) -> bool {
+  path.ends_with("_c")
+    && ![
+      ".vtex_c",
+      ".vsnd_c",
+      ".vmat_c",
+      ".vmesh_c",
+      ".vphys_c",
+      ".vnmclip_c",
+      ".vnmskel_c",
+    ]
+    .iter()
+    .any(|suffix| path.ends_with(suffix))
+}
+
+/// Compiled resources list their dependencies in RERL. VData also names
+/// resources in plain string fields, such as a hero's model path.
+fn referenced_names(path: &str, bytes: &[u8]) -> Vec<String> {
+  let mut names: Vec<_> = vpkmanager::material_repair::references(bytes)
+    .map(|references| references.into_iter().map(|(_, name)| name).collect())
+    .unwrap_or_default();
+  if path.ends_with(".vdata_c")
+    && let Ok((_, root, _)) = decode_compiled_data(bytes, path)
+  {
+    collect_strings(&root, &mut names);
+  }
+  names
+}
+
+fn collect_strings(value: &Kv3Value, names: &mut Vec<String>) {
+  match value {
+    Kv3Value::String(text) => names.push(text.clone()),
+    Kv3Value::Array(values) => {
+      for value in values {
+        collect_strings(value, names);
+      }
+    }
+    Kv3Value::Object(rows) => {
+      for (_, value) in rows {
+        collect_strings(value, names);
+      }
+    }
+    _ => {}
+  }
 }
 
 pub(super) fn is_mesh_path(path: &str) -> bool {
@@ -487,6 +602,65 @@ pub(super) fn mesh_warnings(
 #[cfg(test)]
 mod tests {
   use super::*;
+
+  #[test]
+  fn models_are_unloaded_until_a_loaded_file_references_them() {
+    use super::super::resources::tests::pack;
+    use super::super::tests::compiled_resource;
+    let root = tempfile::tempdir().unwrap();
+    let citadel = root.path().join("citadel");
+    std::fs::create_dir_all(&citadel).unwrap();
+    let table = "scripts/custom.vdata_c";
+    let replaced = "models/heroes/hero.vmdl_c";
+    pack(
+      &citadel,
+      "pak01",
+      &[
+        (table, &compiled_resource(vec![])),
+        (replaced, b"game model"),
+      ],
+    );
+    let backup = "models/heroes/hero_backup.vmdl_c";
+    let referencing = |model: &str| {
+      compiled_resource(vec![(
+        "row".into(),
+        Kv3Value::Object(vec![(
+          "m_strModelName".into(),
+          Kv3Value::String(model.into()),
+        )]),
+      )])
+    };
+    let warnings = [backup, replaced].map(|file_path| AssetWarning {
+      mod_id: "skin".into(),
+      source_vpk: "skin_dir.vpk".into(),
+      file_path: file_path.into(),
+      kind: WarningKind::MissingResource,
+      detail: "models/heroes/hero.vanmgrph".into(),
+    });
+    let unloaded = |name: &str, entries: &[(&str, &[u8])]| {
+      let mods = [super::super::LocalizationModInput {
+        mod_id: "skin".into(),
+        vpks: vec![pack(root.path(), name, entries)],
+      }];
+      let resources = ResourceSnapshot::open(&citadel, &mods).unwrap();
+      unloaded_models(&resources, VdataHistoryIndex::embedded(), &warnings).unwrap()
+    };
+    let model: &[u8] = b"mod model";
+    assert_eq!(
+      unloaded("alone", &[(backup, model), (replaced, model)]),
+      [backup]
+    );
+    let custom_table = referencing("models/heroes/hero_backup.vmdl");
+    assert_eq!(
+      unloaded(
+        "unloaded_referrer",
+        &[(backup, model), ("scripts/mod_only.vdata_c", &custom_table)]
+      ),
+      [backup],
+      "a mod-only file that references the model is not loaded itself"
+    );
+    assert!(unloaded("referenced", &[(backup, model), (table, &custom_table)]).is_empty());
+  }
 
   #[test]
   fn legacy_models_report_missing_current_animation_bindings_without_guessing_a_repair() {

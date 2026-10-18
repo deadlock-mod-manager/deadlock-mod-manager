@@ -16,6 +16,7 @@ mod hero_settings;
 pub mod localization_overlay;
 pub mod manager;
 pub mod missing_vpks;
+pub mod mod_health;
 pub mod mod_repository;
 pub mod perf_config;
 pub mod repair_backup;

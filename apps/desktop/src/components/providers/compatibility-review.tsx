@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { invoke } from "@tauri-apps/api/core";
 import {
   createContext,
   type ReactNode,
@@ -9,21 +8,43 @@ import {
   useRef,
   useState,
 } from "react";
+import {
+  HeldBackFixDialog,
+  type HeldBackMod,
+  LaunchFixDialog,
+  type LaunchFixChoice,
+} from "@/components/mod-health/launch-fix-dialog";
 import { CompatibilityReviewDialog } from "@/components/my-mods/compatibility-review-dialog";
-import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
-import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { isGameRunning } from "@/lib/tauri-commands";
+
+type ReviewOptions = { launchAfterApply?: boolean };
 
 interface ReviewRequest {
   id: number;
   profileFolder: string | null;
+  launchAfterApply: boolean;
   resolve: (applied: boolean) => void;
 }
 
-const CompatibilityReviewContext = createContext<
-  ((profileFolder: string | null) => Promise<boolean>) | null
->(null);
+type LaunchFixPrompt =
+  | { kind: "autoFixOff"; count: number }
+  | { kind: "heldBack"; mods: readonly HeldBackMod[] };
+
+interface LaunchFixRequest {
+  id: number;
+  prompt: LaunchFixPrompt;
+  resolve: (choice: LaunchFixChoice) => void;
+}
+
+type Review = (
+  profileFolder: string | null,
+  options?: ReviewOptions,
+) => Promise<boolean>;
+type AskLaunchFix = (prompt: LaunchFixPrompt) => Promise<LaunchFixChoice>;
+
+const CompatibilityReviewContext = createContext<Review | null>(null);
+const LaunchFixContext = createContext<AskLaunchFix | null>(null);
 
 export function CompatibilityReviewProvider({
   children,
@@ -31,9 +52,10 @@ export function CompatibilityReviewProvider({
   children: ReactNode;
 }) {
   const gamePath = usePersistedStore((state) => state.gamePath);
-  const featureEnabled = useExperimentalFeature("mod-compatibility-repairs");
   const [request, setRequest] = useState<ReviewRequest | null>(null);
+  const [fixRequest, setFixRequest] = useState<LaunchFixRequest | null>(null);
   const activeRequest = useRef<ReviewRequest | null>(null);
+  const activeFixRequest = useRef<LaunchFixRequest | null>(null);
   const nextId = useRef(0);
   const game = useQuery({
     queryKey: ["is-game-running"],
@@ -49,54 +71,80 @@ export function CompatibilityReviewProvider({
     setRequest(null);
   }, []);
 
-  const review = useCallback((profileFolder: string | null) => {
+  const review = useCallback<Review>((profileFolder, options) => {
     // A newer launch replaces an unanswered review instead of being dropped,
     // so a request that never closed cannot block every later launch.
     activeRequest.current?.resolve(false);
     return new Promise<boolean>((resolve) => {
-      const next = { id: ++nextId.current, profileFolder, resolve };
+      const next = {
+        id: ++nextId.current,
+        profileFolder,
+        launchAfterApply: options?.launchAfterApply ?? true,
+        resolve,
+      };
       activeRequest.current = next;
       setRequest(next);
     });
   }, []);
 
-  // The backend keeps the repair package out of every gameinfo write, not just
-  // launches, while the experimental feature is off.
-  useEffect(() => {
-    invoke("set_mod_compatibility_feature", {
-      enabled: featureEnabled,
-    }).catch((error) => {
-      logger
-        .withError(error)
-        .error("Could not sync the mod compatibility feature flag");
+  const finishFix = useCallback((choice: LaunchFixChoice) => {
+    activeFixRequest.current?.resolve(choice);
+    activeFixRequest.current = null;
+    setFixRequest(null);
+  }, []);
+
+  const askLaunchFix = useCallback<AskLaunchFix>((prompt) => {
+    activeFixRequest.current?.resolve("cancel");
+    return new Promise<LaunchFixChoice>((resolve) => {
+      const next = { id: ++nextId.current, prompt, resolve };
+      activeFixRequest.current = next;
+      setFixRequest(next);
     });
-  }, [featureEnabled]);
+  }, []);
 
   useEffect(
     () => () => {
       activeRequest.current?.resolve(false);
       activeRequest.current = null;
+      activeFixRequest.current?.resolve("cancel");
+      activeFixRequest.current = null;
     },
     [],
   );
 
   return (
     <CompatibilityReviewContext.Provider value={review}>
-      {children}
-      {request ? (
-        <CompatibilityReviewDialog
-          key={request.id}
-          open
-          onOpenChange={(open) => {
-            if (!open) finish(false);
-          }}
-          onApplied={() => finish(true)}
-          launchAfterApply
-          profileFolder={request.profileFolder}
-          enabled
-          gameRunning={!!game.data || game.isError}
-        />
-      ) : null}
+      <LaunchFixContext.Provider value={askLaunchFix}>
+        {children}
+        {request ? (
+          <CompatibilityReviewDialog
+            key={request.id}
+            open
+            onOpenChange={(open) => {
+              if (!open) finish(false);
+            }}
+            onApplied={() => finish(true)}
+            launchAfterApply={request.launchAfterApply}
+            profileFolder={request.profileFolder}
+            enabled
+            gameRunning={!!game.data || game.isError}
+          />
+        ) : null}
+        {fixRequest?.prompt.kind === "autoFixOff" ? (
+          <LaunchFixDialog
+            key={fixRequest.id}
+            count={fixRequest.prompt.count}
+            onChoose={finishFix}
+          />
+        ) : null}
+        {fixRequest?.prompt.kind === "heldBack" ? (
+          <HeldBackFixDialog
+            key={fixRequest.id}
+            mods={fixRequest.prompt.mods}
+            onChoose={finishFix}
+          />
+        ) : null}
+      </LaunchFixContext.Provider>
     </CompatibilityReviewContext.Provider>
   );
 }
@@ -109,4 +157,12 @@ export function useCompatibilityReview() {
     );
   }
   return review;
+}
+
+export function useLaunchFixPrompt() {
+  const ask = useContext(LaunchFixContext);
+  if (!ask) {
+    throw new Error("useLaunchFixPrompt requires CompatibilityReviewProvider");
+  }
+  return ask;
 }

@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { getMod, getModDownloads } from "@/lib/api-client";
 import { buildAnalyzedFileTree } from "@/lib/mods/analyzed-files";
+import { invalidateModHealth } from "@/lib/mods/mod-health-queries";
 import { analyzeLocalAddons } from "@/lib/tauri-commands";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
@@ -188,14 +189,7 @@ export const useAddonAnalysis = () => {
         }
       }
 
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ["mod-compatibility-analysis"],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["mod-compatibility-resolved-analysis"],
-        }),
-      ]);
+      await invalidateModHealth(queryClient);
 
       const durationSeconds = analysisStartTime
         ? (Date.now() - analysisStartTime) / 1000

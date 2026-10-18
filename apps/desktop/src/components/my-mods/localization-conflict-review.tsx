@@ -103,6 +103,7 @@ export interface LocalizationOverlayAnalysis {
   parseWarnings: LocalizationParseWarning[];
   assetRepairs: AssetRepair[];
   assetWarnings: AssetWarning[];
+  unloadedModels: string[];
   dataRepairs: DataRepair[];
   dataWarnings: DataWarning[];
 }
@@ -143,8 +144,12 @@ export function LocalizationConflictReview({
       (warning) => `${warning.modId}:${warning.filePath}`,
     ),
   ).size;
+  const unloadedModels = new Set(analysis.unloadedModels);
+  const assetWarnings = analysis.assetWarnings.filter(
+    (warning) => !unloadedModels.has(warning.filePath),
+  );
   const warningCount =
-    analysis.assetWarnings.length +
+    assetWarnings.length +
     analysis.dataWarnings.length +
     analysis.unmanagedVpks.length +
     analysis.inputWarnings.length +
@@ -416,7 +421,7 @@ export function LocalizationConflictReview({
             </ReviewNotice>
           ) : null}
           <CompatibilityWarnings
-            assetWarnings={analysis.assetWarnings}
+            assetWarnings={assetWarnings}
             dataWarnings={analysis.dataWarnings}
             modNames={modNames}
           />

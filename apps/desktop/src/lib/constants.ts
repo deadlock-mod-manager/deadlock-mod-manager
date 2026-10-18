@@ -123,11 +123,11 @@ export const FEATURED_POOL_SIZE = 50;
 export const TRENDING_WINDOW_DAYS = 30;
 export const TRENDING_LIMIT = 8;
 
-// City Never Sleeps update: https://store.steampowered.com/news/app/1422450/view/694273194214819790
+// Paint the Town update: https://store.steampowered.com/news/app/1422450/view/669505296465396531
 // The patch went live with this post, so mod updates from earlier that day
 // still target the old game.
 export const MOD_OUTDATED_CUTOFF_SECONDS = Math.floor(
-  new Date("2026-09-29T20:25:11Z").getTime() / 1_000,
+  new Date("2026-10-16T21:00:07Z").getTime() / 1_000,
 );
 
 // Client-side toggles for features that are still settling. Stored locally so
@@ -141,5 +141,4 @@ export const EXPERIMENTAL_FEATURES = [
   "profile-sharing",
   "conflict-detection",
   "performance-configs",
-  "mod-compatibility-repairs",
 ] as const;

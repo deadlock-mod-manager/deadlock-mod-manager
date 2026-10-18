@@ -20,12 +20,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { MOD_COMPATIBILITY_QUERY_KEY } from "@/hooks/use-mod-compatibility";
 import { getErrorMessage } from "@/lib/errors";
 import {
   compatibilityResolutions,
   type LocalizationOverlayApplyResult,
 } from "@/lib/mods/compatibility";
+import { invalidateModHealth } from "@/lib/mods/mod-health-queries";
 import { usePersistedStore } from "@/lib/store";
 import {
   type LocalizationChoice,
@@ -115,7 +115,13 @@ export function CompatibilityReviewDialog({
       );
     },
     onSuccess: () => {
-      toast.success(t("myMods.compatibility.applied"));
+      toast.success(
+        t(
+          launchAfterApply
+            ? "myMods.compatibility.appliedLaunching"
+            : "myMods.compatibility.applied",
+        ),
+      );
       setSelection({ scope, choices: {} });
       onApplied?.();
       onOpenChange(false);
@@ -125,18 +131,7 @@ export function CompatibilityReviewDialog({
         description: getErrorMessage(error),
       });
     },
-    onSettled: () =>
-      Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: MOD_COMPATIBILITY_QUERY_KEY,
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["mod-compatibility-analysis"],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["mod-compatibility-resolved-analysis"],
-        }),
-      ]),
+    onSettled: () => invalidateModHealth(queryClient),
   });
   const modNames = new Map(mods.map((mod) => [mod.remoteId, mod.name]));
   const changeOpen = (next: boolean) => {

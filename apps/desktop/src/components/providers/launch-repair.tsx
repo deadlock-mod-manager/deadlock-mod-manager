@@ -40,7 +40,6 @@ type LaunchArgs = {
   vanilla: boolean;
   additionalArgs: string;
   profileFolder: string | null;
-  modCompatibility?: boolean;
 };
 type RepairRequest = {
   args: LaunchArgs;

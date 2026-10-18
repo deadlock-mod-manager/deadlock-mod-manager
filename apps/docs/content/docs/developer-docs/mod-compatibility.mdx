@@ -3,68 +3,144 @@ title: Mod compatibility repairs
 description: Deterministic checks and reversible repairs for compiled mod resources
 ---
 
-The desktop manager compares enabled mod resources with the locally installed
-Deadlock files before creating its merged overlay. These checks run in the Rust
-backend in release builds. They require no AI agent, network service, or diagnostic
-tools on the user's computer.
+The desktop manager compares mod resources with the locally installed Deadlock
+files and packs verified repairs into a separate overlay. These checks run in the
+Rust backend in release builds. They require no AI agent, network service, or
+diagnostic tools on the user's computer. The player-facing behavior is described
+in [Fixing Mods After Game Updates](/using-mod-manager/fixing-mods-after-updates).
 
-The feature is gated by the **Mod Compatibility Repairs** experimental feature
-(`mod-compatibility-repairs`), which is off by default. While it is off, Mods
-Library hides every compatibility control and launch passes
-`modCompatibility: false` to `start_game`: the backend ignores per-mod
-preferences and removes any existing repair package, but keeps the preferences
-for when the feature is turned back on. The frontend also mirrors the flag to
-the backend with `set_mod_compatibility_feature`, so gameinfo writes outside a
-launch, such as joining a server, never include the repair package while the
-feature is off.
+## Per-mod health check
 
-Compatibility is opt-in **per mod and per profile**, and starts off for existing
-and newly installed mods. Each registered mod in Mods Library has a visible
-**Compatibility** checkbox in its footer. Clicking the checkbox or its label
-changes the preference directly. The checkbox is distinct from the adjacent
-**Mod** enable switch, and hovering it explains how fixes work. The same choice
-is also available in the mod's right-click menu. The library shows
-**Review Compatibility** when an enabled mod has fixes selected. The old
-app-wide preference does not enable these controls automatically.
+`mod_manager/mod_health.rs` defines the per-mod status, and
+`manager/localization/health.rs` runs the check. Every mod in the profile VPK
+manifest whose files exist is checked, enabled or disabled, including local
+imports. Each mod is analyzed on its own against the installed game with
+`LocalizationOverlayPlan::build_standalone`. A mod without resources the rules
+can check is `notCovered`. A mod that cannot be analyzed is logged and left
+without a status.
 
-The profile VPK manifest stores `compatibilityEnabled` on each mod entry.
-Disabling or reordering a mod preserves its preference. Turning a preference on
-or off removes the active profile's old overlay and receipt, invalidates cached
-plans, and refreshes game search paths. Deadlock must be closed to change these
-preferences or apply fixes. Review remains available while it runs.
+The frontend `ModHealthRenderer` requests checks once per profile after start,
+for mods whose installed files change, and as a forced recheck of every mod when
+the game build differs from the build of the previous check. Progress is sent as
+`mod-health-progress` events.
+
+| Status          | Condition                                                   | Badge                                                                             |
+| --------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `works`         | No repairs and no findings that need an update              | None                                                                              |
+| `fixable`       | Repairs available, nothing left after them, no choice made  | **Can be fixed**                                                                  |
+| `partlyFixable` | Repairs available, findings left after them, no choice made | **Can be partly fixed**                                                           |
+| `fixed`         | Repairs available and the player fixed the mod              | **Fixed for this patch**, or **Partly fixed for this patch** when findings remain |
+| `originalFiles` | Repairs available and the player chose original files       | **Original files**                                                                |
+| `needsUpdate`   | Findings that need an update and no repairs                 | **Needs an update for this patch**                                                |
+| `notCovered`    | No checkable resources                                      | None; the date-based outdated badge still applies                                 |
+
+On installed mods, the date-based outdated badge appears only when the status is
+`notCovered` or no result exists yet. Browse pages keep the date badge.
+
+A mod needs an update when it has asset warnings other than missing textures, or
+any game-data or localization parse warning of its own. Warnings on models that
+nothing loaded references are left out. Missing textures are counted as warnings
+and shown in review, but do not make a mod need an update. Uncertain baselines
+and stale localization snapshots still pause launch for review (see below); they
+describe how a mod's edits are merged rather than a defect, so they do not change
+the status.
+
+Each repair and remaining finding maps to one player-visible symptom: camera and
+aim; animations and movement; colors and textures; model; abilities, stats and
+text; and model data issues. Structural model faults the engine could reject,
+and missing references without a known fallback, map to model data issues
+(`crashRisk`). They are not confirmed to crash the game. A status carries
+the symptoms its repairs fix and the symptoms they leave.
+
+Results are cached per profile in `mod-health.json` in the app's local data
+directory. An entry is keyed by the size and modification time of each of the
+mod's VPKs, the game build, `REPAIR_REVISION`, and `HEALTH_RULES_REVISION` in
+`mod_health.rs`. File locations are not part of the key, because enabling,
+disabling, and reordering rename a mod's VPKs. A change to any part of the key
+makes the entry stale, so the mod is checked again. Increment
+`HEALTH_RULES_REVISION` when status or symptom rules change. Results from the
+launch analysis of all fixed mods together take precedence over standalone
+results for the same files. Results are never uploaded or shown to other users.
+
+## Fix choices
+
+Each mod has one of three choices, stored per profile in its profile VPK
+manifest entry:
+
+- No choice, the default for existing and new mods. Repairs are not applied.
+- Fixed: `compatibilityEnabled` is set.
+- Original files: `compatibilityOptedOut` records that the player chose the
+  mod's original files. Bulk and automatic fixes skip these mods.
+
+`fix_mods` sets the fixed choice for exactly the listed mods, clearing any
+earlier choice of original files, and prepares the overlay the way launch does.
+It returns `applied`, or `reviewRequired` when something still needs review; the
+choices stay saved either way. **Fix N mods** in the banner and the launch
+preflight skip mods whose remaining symptoms include model data issues, so the
+player sees those issues before fixing such a mod; **Fix all** in the details
+list, where the issues are shown, includes them. **Fix N mods** in the banner,
+**Fix** and **Fix all** in the details list, **Fix for this patch** in the
+right-click menu and on the mod page, and the launch preflight all call it.
+**Use original files** calls `set_mod_compatibility_for_mod` with
+`enabled: false`, which records the original-files choice.
+
+Disabling or reordering a mod keeps its choice. When the set of fixed mods
+changes, the manager deletes the active profile's overlay and receipt, clears
+the cached plan, and refreshes game search paths. Deadlock must be closed to
+change these choices or apply fixes. Review remains available while it runs.
+
+Before a modded launch, the frontend collects enabled mods whose status is
+`fixable` or `partlyFixable`. While **Fix mods automatically after game
+updates** (`autoFixMods`, on by default) is on, they are fixed without a prompt.
+With it off, a prompt offers **Fix and launch** or **Launch anyway**; **Launch
+anyway** starts the game without applying the pending fixes. A failed fix is
+reported and launch continues with the original files.
 
 Analysis indexes every enabled mod for load order and dependency context, but
-only selected mods contribute repair candidates or baseline history. Models,
+only fixed mods contribute repair candidates or baseline history. Models,
 meshes, skeletons, and other binary assets follow the effective game load-order
-provider. A selected winning skin can be repaired even when a shadowed skin has
-Compatibility off. Shadowed models never contribute repair candidates or replace
-the winning skin. This also applies to multiple variant VPKs within one mod:
-the first effective archive supplies the model; duplicate paths are not merged.
+provider. A fixed winning skin can be repaired even when a shadowed skin is not
+fixed. Shadowed models never contribute repair candidates or replace the winning
+skin. This also applies to multiple variant VPKs within one mod: the first
+effective archive supplies the model; duplicate paths are not merged.
 Overlapping models produce a review warning naming the active archive and the
 other providers, because their non-overlapping animation or accessory files can
 still mix. Disable unused variations or competing skins when those files cannot
-work together.
-If the winning provider has Compatibility off, its resource
-stays protected and launch opens a review before using the original files.
+work together. If the winning provider is not fixed, its resource stays
+protected and launch uses the original files.
 
 Localization and mergeable game-data tables combine providers, so those entire
-paths remain protected when any contributing mod has Compatibility off. Review
-lists protected shared resources. A material recipe requiring a protected output
-declines as a whole. Export checks all output paths before staging files.
+paths remain protected when any contributing mod is not fixed. A material recipe
+requiring a protected output declines as a whole. Export checks all output paths
+before staging files.
 
-Launch prepares verified fixes for selected mods automatically. Unreviewed
-warnings, uncertain baselines, and conflicts pause launch and open the review
-directly, from any page. **Apply fixes and launch** writes the reviewed plan and
-retries launch once; closing the dialog cancels launch. Warnings are preserved
-and do not imply that every mod has been repaired. The backend rechecks the
-receipt and current inputs on the retry. Further changes require another launch
-attempt rather than repeatedly prompting or bypassing review.
+## Review before launch
 
-If no enabled mod has compatibility
-selected, preparation is bypassed and existing repair packages are ignored.
-Saving mod order alone does not trigger repairs. The selected mod IDs form part
-of the receipt/cache key and review fingerprint, so changing selection rejects
-old review choices.
+A mod's own asset and data findings describe that mod whether or not it is
+repaired, so mod health reports them and they never pause launch.
+`requires_review` pauses launch only for:
+
+- Conflicts between enabled mods: localization and compiled game-data
+  conflicts, competing definitions, and overlapping models, including variants
+  of the same mod
+- Baselines that are not an exact historical match
+- Mods whose files are all missing, localization files that could not be parsed,
+  and stale localization snapshots
+
+Unmanaged VPKs, protected and shared resources, and every other finding are
+listed in review when it opens, without pausing launch on their own. When review
+is needed, launch caches the plan it built so the dialog does not rebuild it.
+
+Approving the review writes the reviewed plan and retries launch once; closing
+the dialog cancels launch. Warnings are preserved and do not imply that every
+mod has been repaired. The backend rechecks the receipt and current inputs on
+the retry. Further changes require another launch attempt rather than repeatedly
+prompting or bypassing review.
+
+If no enabled mod is fixed, preparation is bypassed and existing repair packages
+are ignored. Saving mod order alone does not trigger repairs. The IDs of fixed
+mods form part of the receipt/cache key and review fingerprint, so changing
+those choices rejects old review choices.
 
 ## Automatic repairs
 
@@ -351,8 +427,11 @@ per coordinate. Rotations still match within 0.00001 per quaternion component,
 allowing sign reversal; local scales retain the existing 0.001 tolerance. This
 proof does not modify authored poses. Bone names must match
 unambiguously, including case, and all referenced graphs and the single sampling
-skeleton must resolve from the game. Active animation overrides, partial authored
-bindings, ambiguous models, and nonuniform pose changes prevent this repair.
+skeleton must resolve from the game. Animation overrides that enter this model's
+graph closure or sample its skeleton, animations supplied by the model's own mod,
+partial authored bindings, ambiguous models, and nonuniform pose changes prevent
+this repair. Overrides for other heroes coexist once the shared dependency proof
+shows they stay outside this model's graphs and skeleton (repair revision 36).
 An absent sample may be appended only as an identity leaf directly under an
 existing root, with zero deformation sphere in the current model. Both rigs must
 use the known seven-array bone schema, and the source cannot use external meshes.
@@ -674,12 +753,12 @@ v5 auxiliary-array conversion is verified against the equivalent v4 encoding.
 Compatibility rebuilds reject duplicate DATA blocks and unrepresented stream tails
 instead of silently dropping data outside the resource's block table.
 
-When compatibility is enabled, launch reuses an overlay only when its receipt,
-inputs, and output hash match.
-Changed inputs or missing/outdated receipts trigger analysis again. Verified
-repairs are automatic. Conflicts and unresolved findings use the existing review
-flow. Previously reviewed choices can restore a damaged overlay only when its
-inputs still match; choices are not carried across changed inputs.
+When any enabled mod is fixed, launch reuses an overlay only when its
+receipt, inputs, and output hash match. Changed inputs or missing/outdated
+receipts trigger analysis again. Verified repairs are automatic. Conflicts
+between enabled mods and repairs that need approval use the review flow.
+Previously reviewed choices can restore a damaged overlay only when its inputs
+still match; choices are not carried across changed inputs.
 
 The manager stages overlay and receipt writes before replacing their destination
 files. Mod changes and overlay deletion invalidate both files. Increment

@@ -31,6 +31,7 @@ import { SupportAuthor } from "@/components/mod-detail/support-author";
 import { VpkReplacementSection } from "@/components/mod-detail/vpk-replacement-section";
 import { ModPageSkeleton } from "@/components/mod-detail/mod-page-skeleton";
 import { ModOptionsDialog } from "@/components/mod-management/mod-options-dialog";
+import { ModHealthAlert } from "@/components/mod-health/mod-health-alert";
 import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-warning";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
 import { ReinstallModButton } from "@/components/mod-management/reinstall-mod-button";
@@ -43,6 +44,10 @@ import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useMod } from "@/hooks/use-mod";
 import { useModDetailNavigation } from "@/hooks/use-mod-detail-navigation";
 import { useResolvedDependencies } from "@/hooks/use-mod-dependencies";
+import {
+  useActiveProfileFolder,
+  useModHealthReport,
+} from "@/hooks/use-mod-health";
 import { useModOptions } from "@/hooks/use-mod-options";
 import { useModDownloads } from "@/hooks/use-mod-downloads";
 import { useReportCounts } from "@/hooks/use-report-counts";
@@ -52,6 +57,7 @@ import useUninstall from "@/hooks/use-uninstall";
 import { getErrorMessage } from "@/lib/errors";
 import { isLocalMod } from "@/lib/mods/installed-helpers";
 import { getUpdatePercent } from "@/lib/mods/batch-update-progress";
+import { healthByModId, showsDateOutdatedWarning } from "@/lib/mods/mod-health";
 import { usePersistedStore } from "@/lib/store";
 import { findLocalMod } from "@/lib/store/selectors";
 import { useCheckUpdates, useModHasUpdate } from "@/hooks/use-check-updates";
@@ -107,6 +113,11 @@ const Mod = () => {
     }
   }, [localMod, availableFiles, setModDownloads]);
 
+  const profileFolder = useActiveProfileFolder();
+  const healthReport = useModHealthReport(profileFolder);
+  const health = localMod
+    ? healthByModId(healthReport.data).get(localMod.remoteId)
+    : undefined;
   const { updatableMods } = useCheckUpdates();
   const hasUpdate = useModHasUpdate(localMod);
   const updatePercent = usePersistedStore((state) =>
@@ -269,10 +280,19 @@ const Mod = () => {
               <ObsoleteModWarning variant='alert' />
             </div>
           )}
-          {isModOutdated(mod) && !staleResult && (
-            <div className='mb-4'>
-              <OutdatedModWarning variant='alert' />
-            </div>
+          {showsDateOutdatedWarning(isModOutdated(mod), health) &&
+            !staleResult && (
+              <div className='mb-4'>
+                <OutdatedModWarning variant='alert' />
+              </div>
+            )}
+          {localMod && (
+            <ModHealthAlert
+              className='mb-4'
+              mod={localMod}
+              health={health}
+              isOutdated={isModOutdated(mod)}
+            />
           )}
           {staleResult && (
             <div className='mb-4'>

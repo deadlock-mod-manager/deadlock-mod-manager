@@ -10,6 +10,7 @@ import { ProgressProvider } from "./components/downloads/progress-indicator";
 import { ForgeInstallRenderer } from "./components/forge-install-renderer";
 import { GameGuardRenderer } from "./components/game-guard-renderer";
 import { LaunchHealthRenderer } from "./components/launch-health/launch-health-renderer";
+import { ModHealthRenderer } from "./components/mod-health/mod-health-renderer";
 import { FoundryProvider } from "./components/foundry/foundry-context";
 import { GamePresenceRenderer } from "./components/game-presence-renderer";
 import { LiveMatchRenderer } from "./components/live-match-renderer";
@@ -176,6 +177,7 @@ const App = ({ runtime, storage }: AppProps) => {
                         <FilePermissionsRenderer />
                         <PerformanceRenderer />
                         <LaunchHealthRenderer />
+                        <ModHealthRenderer />
                         <UpdateDialog
                           downloadProgress={downloadProgress}
                           isDownloading={isDownloading}

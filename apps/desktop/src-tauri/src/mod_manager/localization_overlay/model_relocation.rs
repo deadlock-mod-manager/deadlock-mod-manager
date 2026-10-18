@@ -33,6 +33,94 @@ fn observed_binding(history: &VdataHistoryIndex, row: &str, model: &str) -> bool
       })
 }
 
+/// Mod model paths that once held the primary model of a current hero, which
+/// relocation can move to that hero's current model. A mod that already ships
+/// the current model is loaded from there, so its old copy is never moved.
+pub(super) fn historical_hero_models<'a>(
+  resources: &ResourceSnapshot,
+  history: &VdataHistoryIndex,
+  paths: impl IntoIterator<Item = &'a str>,
+) -> Result<BTreeSet<String>, Error> {
+  let Some(bytes) = resources.game_bytes(HEROES_VDATA_PATH)? else {
+    return Ok(BTreeSet::new());
+  };
+  let Ok((_, heroes, _)) = decode_compiled_data(&bytes, HEROES_VDATA_PATH) else {
+    return Ok(BTreeSet::new());
+  };
+  let Some(rows) = heroes.as_object() else {
+    return Ok(BTreeSet::new());
+  };
+  Ok(
+    paths
+      .into_iter()
+      .filter(|path| {
+        let Some(old_name) = path.strip_suffix("_c") else {
+          return false;
+        };
+        let targets: Vec<_> = rows
+          .iter()
+          .filter(|(row_name, _)| observed_binding(history, row_name, old_name))
+          .filter_map(|(_, row)| resource_path(row.get("m_strModelName")?.as_str()?))
+          .filter(|target| model_camera::is_path(target))
+          .collect::<BTreeSet<_>>()
+          .into_iter()
+          .collect();
+        let [target] = targets.as_slice() else {
+          return false;
+        };
+        !resources
+          .provider(target)
+          .is_some_and(|provider| provider.mod_id.is_some())
+      })
+      .map(str::to_owned)
+      .collect(),
+  )
+}
+
+/// Warned models that are neither a hero's current model nor an old one that
+/// relocation would move there, such as the model a particle shows. Hero
+/// camera and animation interfaces do not apply to them.
+pub(super) fn prop_models(
+  resources: &ResourceSnapshot,
+  history: &VdataHistoryIndex,
+  warnings: &[AssetWarning],
+) -> Result<Vec<String>, Error> {
+  let mut heroes = BTreeSet::new();
+  for registry in [
+    resources.game_bytes(HEROES_VDATA_PATH)?,
+    resources
+      .resolve(HEROES_VDATA_PATH)?
+      .map(|(_, bytes)| bytes),
+  ]
+  .into_iter()
+  .flatten()
+  {
+    let Ok((_, root, _)) = decode_compiled_data(&registry, HEROES_VDATA_PATH) else {
+      continue;
+    };
+    heroes.extend(
+      root
+        .as_object()
+        .into_iter()
+        .flatten()
+        .filter_map(|(_, row)| resource_path(row.get("m_strModelName")?.as_str()?)),
+    );
+  }
+  let models: BTreeSet<&str> = warnings
+    .iter()
+    .map(|warning| warning.file_path.as_str())
+    .filter(|path| model_camera::is_path(path) && !heroes.contains(*path))
+    .collect();
+  let relocated = historical_hero_models(resources, history, models.iter().copied())?;
+  Ok(
+    models
+      .into_iter()
+      .filter(|path| !relocated.contains(*path))
+      .map(str::to_owned)
+      .collect(),
+  )
+}
+
 pub(super) fn prepare(
   resources: &ResourceSnapshot,
   sources: &BTreeMap<String, Vec<CompiledDataSource>>,
