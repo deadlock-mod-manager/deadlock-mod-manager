@@ -379,6 +379,8 @@ jobs:
             libappindicator3-dev \
             librsvg2-dev \
             patchelf \
+            xdg-utils \
+            desktop-file-utils \
             libfuse2t64 \
             gstreamer1.0-plugins-base \
             gstreamer1.0-plugins-good \

@@ -40,7 +40,7 @@ The easiest way to install Deadlock Mod Manager is to download the latest releas
   />
   <Card
     title='Download for Linux'
-    description='Ubuntu/Debian (.deb), RPM, or Flatpak'
+    description='Ubuntu/Debian (.deb), RPM, Flatpak, or AppImage'
     href='https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest'
   />
 </Cards>
@@ -243,6 +243,23 @@ To receive updates through `apt`, use the [APT repository](#ubuntudebian-apt) in
 # Download the .deb file, then install
 sudo apt install ./Deadlock.Mod.Manager_*_amd64.deb
 ```
+
+#### AppImage
+
+Download the standard x86_64 `.AppImage` asset from [GitHub Releases](https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/latest). Make it executable and launch it from a terminal:
+
+```bash
+chmod +x "Deadlock Mod Manager_<version>_amd64.AppImage"
+./"Deadlock Mod Manager_<version>_amd64.AppImage"
+```
+
+Replace `<version>` with the downloaded version. If the runtime reports that FUSE is unavailable, extract and run it instead:
+
+```bash
+./"Deadlock Mod Manager_<version>_amd64.AppImage" --appimage-extract-and-run
+```
+
+The AppImage uses the standard WebKitGTK runtime; CEF downloads remain separate. It is built on Ubuntu 24.04, so older system libraries may prevent it from launching. It uses the host's Wayland libraries to stay compatible with the host graphics drivers. One AppImage is used for X11 and Wayland sessions; the current launcher uses X11/XWayland.
 
 #### Flatpak
 
