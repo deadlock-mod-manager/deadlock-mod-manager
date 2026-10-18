@@ -12,6 +12,7 @@ import {
   Users,
 } from "@deadlock-mods/ui/icons";
 import type { ComponentType, ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { FormChart } from "@/components/stats/form-chart";
 import { HeroesTab } from "@/components/stats/heroes-tab";
 import { InsightList } from "@/components/stats/insight-list";
@@ -57,7 +58,8 @@ type PanelDef = {
 );
 
 const ItemsPanel = ({ accountId }: { accountId: number }) => {
-  const itemStats = useItemStats(accountId);
+  const { scope } = useDashboardData();
+  const itemStats = useItemStats(accountId, true, scope);
   return (
     <ItemsTab
       isPending={itemStats.isPending}
@@ -69,21 +71,25 @@ const ItemsPanel = ({ accountId }: { accountId: number }) => {
 
 const SquadPanel = () => {
   const { accountId, stats, heroesById, rankAssets } = useDashboardData();
-  const squad = useSquadStats(accountId, stats.matches);
+  const { t } = useTranslation();
+  const squad = useSquadStats(accountId, stats.allMatches);
   if (squad.isPending) {
     return <Skeleton className='h-[320px] w-full rounded-xl' />;
   }
   return (
-    <SquadTab
-      careerWinrate={summarize(stats.matches).winrate}
-      enemies={squad.enemies}
-      heroStatsById={squad.heroStatsById}
-      heroesById={heroesById}
-      mates={squad.mates}
-      partyIds={squad.partyIds}
-      profilesById={squad.profilesById}
-      rankAssets={rankAssets}
-    />
+    <div className='flex flex-col gap-2'>
+      <p className='text-muted-foreground text-xs'>{t("stats.scope.squad")}</p>
+      <SquadTab
+        careerWinrate={summarize(stats.allMatches).winrate}
+        enemies={squad.enemies}
+        heroStatsById={squad.heroStatsById}
+        heroesById={heroesById}
+        mates={squad.mates}
+        partyIds={squad.partyIds}
+        profilesById={squad.profilesById}
+        rankAssets={rankAssets}
+      />
+    </div>
   );
 };
 

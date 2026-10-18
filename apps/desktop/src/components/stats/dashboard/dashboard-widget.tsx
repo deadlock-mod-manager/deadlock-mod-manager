@@ -207,7 +207,10 @@ const PanelWidget = ({ widget, onHealth, actions }: WidgetContentProps) => {
       return { status: "broken", reason: "unknownSource", endpoint: null };
     }
     if (panel.needsHistory) {
-      return historyGate;
+      if (historyGate) return historyGate;
+      const matches =
+        panelId === "squad" ? data.stats.allMatches : data.stats.matches;
+      return matches.length === 0 ? { status: "empty" } : null;
     }
     return panel.needsAccount && data.accountId === null
       ? { status: "needsAccount" }

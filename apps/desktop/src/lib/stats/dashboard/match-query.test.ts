@@ -159,6 +159,18 @@ describe("runMatchQuery", () => {
     expect(result.rows.every((row) => row.winrate === 0.5)).toBe(true);
   });
 
+  it("filters ranked by match mode and keeps placements without a badge", () => {
+    const result = runMatchQuery(
+      [
+        win({ match_mode: 4, ranked_display_badge: null }),
+        win({ match_mode: 1, ranked_display_badge: 42 }),
+      ],
+      query({ metrics: ["matches"], rankedOnly: true }),
+      NOW,
+    );
+    expect(result.rows[0]?.matches).toBe(1);
+  });
+
   it("skips matches without a rank for rank metrics", () => {
     const result = runMatchQuery(
       [win({ ranked_display_badge: 42 }), win()],

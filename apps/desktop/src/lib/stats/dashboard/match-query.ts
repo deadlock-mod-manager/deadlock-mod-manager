@@ -236,9 +236,7 @@ const filterMatches = (
     filtered = filtered.filter((match) => match.hero_id === query.heroId);
   }
   if (query.rankedOnly) {
-    filtered = filtered.filter(
-      (match) => (match.ranked_display_badge ?? 0) > 0,
-    );
+    filtered = filtered.filter((match) => match.match_mode === 4);
   }
   if (query.sinceDays !== null) {
     const cutoff = nowUnix - query.sinceDays * DAY_S;

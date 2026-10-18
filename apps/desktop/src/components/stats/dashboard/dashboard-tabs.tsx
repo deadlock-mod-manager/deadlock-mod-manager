@@ -63,8 +63,7 @@ const ICONS = {
   coins: Coins,
 } satisfies Record<TabIcon, ComponentType<{ className?: string }>>;
 
-const TAB_TRIGGER_CLASS =
-  "h-9 gap-1.5 rounded-full px-4 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm 2xl:px-6";
+const TAB_TRIGGER_CLASS = "h-8 gap-1.5 px-3";
 
 interface TabSettingsProps {
   tab: DashboardTab;
@@ -109,7 +108,7 @@ const TabSettings = ({
       <DialogTrigger asChild>
         <Button
           aria-label={t("stats.dashboard.tabs.settings")}
-          className='h-9 w-9 shrink-0 rounded-full'
+          className='h-9 w-9 shrink-0'
           size='icon'
           title={t("stats.dashboard.tabs.settings")}
           variant='outline'>
@@ -227,11 +226,11 @@ export const DashboardTabs = ({
   const activeTab = tabs[activeIndex];
 
   return (
-    // Many pills outgrow a narrow window before anything else in the header
+    // Many tabs outgrow a narrow window before anything else in the header
     // does; scrolling them keeps every tab reachable instead of clipped.
     <div className='flex max-w-full items-center gap-2 overflow-x-auto'>
       <Tabs onValueChange={onSelect} value={activeTabId}>
-        <TabsList className='h-11 w-max rounded-full bg-muted/60 p-1'>
+        <TabsList className='h-10 w-max gap-1 bg-muted/60 p-1'>
           {tabs.map((tab) => {
             const Icon = ICONS[tab.icon];
             return (
@@ -274,7 +273,7 @@ export const DashboardTabs = ({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
-              className='h-9 shrink-0 gap-1.5 rounded-full'
+              className='h-9 shrink-0 gap-1.5'
               data-testid='stats-add-tab'
               size='sm'
               variant='outline'>

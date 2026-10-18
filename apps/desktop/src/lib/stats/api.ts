@@ -22,6 +22,11 @@ import {
 } from "@/lib/validation/stats-api";
 import type { z } from "zod";
 import { runtimeServiceOrigin } from "@/lib/runtime-bootstrap";
+import {
+  statsScopeQuery,
+  type StatsScope,
+  type StatsMatchMode,
+} from "@/lib/stats/scope";
 import { jsonValueSchema } from "@/lib/validation/json";
 
 export { DeadlockApiError };
@@ -115,9 +120,12 @@ export const getMatchMetadata = (matchId: number) =>
   );
 
 /** Takes a whole lobby at once, so the live scoreboard costs a single request. */
-export const getPlayerHeroStats = (accountIds: number | number[]) =>
+export const getPlayerHeroStats = (
+  accountIds: number | number[],
+  scope?: StatsScope,
+) =>
   getList(
-    `/v1/players/hero-stats?account_ids=${[accountIds].flat().join(",")}`,
+    `/v1/players/hero-stats?account_ids=${[accountIds].flat().join(",")}${scope ? `&${statsScopeQuery(scope)}` : ""}`,
     playerHeroStatsSchema,
   );
 
@@ -153,9 +161,12 @@ export const getSteamProfiles = (accountIds: number[]) => {
 };
 
 /** Global per-hero totals, used to benchmark the player against everyone else. */
-export const getAnalyticsHeroStats = (sinceUnix: number) =>
+export const getAnalyticsHeroStats = (
+  sinceUnix: number,
+  mode: StatsMatchMode = "all",
+) =>
   getList(
-    `/v1/analytics/hero-stats?min_unix_timestamp=${sinceUnix}`,
+    `/v1/analytics/hero-stats?${statsScopeQuery({ mode, since: sinceUnix })}`,
     analyticsHeroStatsSchema,
   );
 
@@ -189,10 +200,12 @@ export const getItemStats = ({
   accountId,
   heroId,
   minMatches = 3,
+  scope,
 }: {
   accountId?: number;
   heroId?: number;
   minMatches?: number;
+  scope?: StatsScope;
 } = {}) =>
   getList(
     `/v1/analytics/item-stats?min_matches=${minMatches}${
@@ -201,7 +214,7 @@ export const getItemStats = ({
       // `hero_ids` (plural) is the filter that applies; the singular `hero_id`
       // parameter the schema also lists comes back empty for every account.
       heroId ? `&hero_ids=${heroId}` : ""
-    }`,
+    }${scope ? `&${statsScopeQuery(scope)}` : ""}`,
     itemStatsSchema,
   );
 

@@ -16,8 +16,7 @@ interface StatsHintsProps {
 
 /**
  * Which nudge the Stats page shows, if any. One at a time and the free,
- * actionable one first - two banners stacked above the numbers is worse than no
- * banner at all. Owning the decision here keeps the page itself from knowing
+ * actionable one first. Owning the decision here keeps the page itself from knowing
  * anything about match sync or Patreon.
  */
 export const StatsHints = ({ apiMatchIds }: StatsHintsProps) => {

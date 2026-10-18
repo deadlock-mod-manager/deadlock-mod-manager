@@ -121,6 +121,7 @@ export const useWidgetData = (
 ): WidgetDataState => {
   const { accountId, stats } = useDashboardData();
   const matches = stats.matches;
+  const allMatches = stats.allMatches;
 
   const historyState = useHistoryGate();
 
@@ -154,7 +155,11 @@ export const useWidgetData = (
           return { kind: "state", state: historyState };
         }
         const query = preset.query(
-          { accountId, matches },
+          {
+            accountId,
+            matches:
+              preset.endpoint === HISTORY_ENDPOINT ? matches : allMatches,
+          },
           { ...defaultParams(preset), ...source.params },
         );
         return query.kind === "local"
@@ -193,7 +198,7 @@ export const useWidgetData = (
         };
       }
     }
-  }, [source, accountId, matches, historyState]);
+  }, [source, accountId, matches, allMatches, historyState]);
 
   const remotePlan = plan.kind === "remote" ? plan : null;
   const query = useQuery({
