@@ -17,6 +17,7 @@ import {
   ArrowsClockwiseIcon,
   CheckCircleIcon,
   CloudArrowDownIcon,
+  DatabaseIcon,
   DiscordLogoIcon,
   DownloadSimpleIcon,
   HardDrivesIcon,
@@ -31,6 +32,7 @@ import {
   WifiXIcon,
 } from "@phosphor-icons/react";
 import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
+import { formatDistanceToNow } from "date-fns";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import RelayStatusPopover from "@/components/server-browser/relay-status-popover";
@@ -38,6 +40,7 @@ import { useApiStatus } from "@/hooks/use-api-status";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { useCheckForUpdates } from "@/hooks/use-check-for-updates";
 import { useFilesystemStatus } from "@/hooks/use-filesystem-status";
+import { useCatalogSyncState } from "@/hooks/use-gamebanana-catalog-sync";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useDiscordGamePresenceIndicator } from "@/hooks/use-game-presence-status";
 import { useRelaysHealth } from "@/hooks/use-relays-health";
@@ -149,6 +152,63 @@ function HeroParserIndicator() {
           </>
         ) : (
           <p className='text-xs'>{t("heroParser.idle")}</p>
+        )}
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
+function CatalogSyncIndicator() {
+  const { t } = useTranslation();
+  const { status, syncing, catalog } = useCatalogSyncState();
+  const data = catalog.data;
+  const lastSyncedAt = Math.max(
+    data?.lastIncrementalAt ?? 0,
+    data?.lastFullSyncAt ?? 0,
+  );
+  const lastSynced =
+    lastSyncedAt > 0
+      ? formatDistanceToNow(new Date(lastSyncedAt * 1000), { addSuffix: true })
+      : null;
+
+  let className = "text-status-ok";
+  let summary = t("mods.catalogIndicatorSynced", { time: lastSynced });
+  if (status === "error") {
+    className = "text-red-500";
+    summary = t("mods.catalogSyncFailed");
+  } else if (!lastSynced) {
+    className = "text-muted-foreground";
+    summary = t("mods.catalogIndicatorNeverSynced");
+  } else if (data?.stale) {
+    className = "text-yellow-500";
+    summary = t("mods.catalogIndicatorStale", { time: lastSynced });
+  }
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div className='flex cursor-default items-center justify-center p-0.5'>
+          {syncing ? (
+            <ArrowsClockwiseIcon className='h-3.5 w-3.5 animate-spin text-blue-500' />
+          ) : (
+            <DatabaseIcon className={cn("h-3.5 w-3.5", className)} />
+          )}
+        </div>
+      </TooltipTrigger>
+      <TooltipContent
+        className='w-56 space-y-1.5 p-2'
+        side='top'
+        sideOffset={8}>
+        <p className='text-xs font-medium'>
+          {syncing ? t("mods.catalogSyncTitle") : summary}
+        </p>
+        {data && (
+          <p className='text-xs text-muted-foreground'>
+            {t("mods.catalogSyncCount", { count: data.count })}
+          </p>
+        )}
+        {syncing && data?.syncPercentage != null && (
+          <Progress className='h-1' value={data.syncPercentage} />
         )}
       </TooltipContent>
     </Tooltip>
@@ -363,6 +423,7 @@ export const BottomBar = () => {
             />
           )}
           <HeroParserIndicator />
+          <CatalogSyncIndicator />
           <DiscordPresenceIndicator />
         </div>
 

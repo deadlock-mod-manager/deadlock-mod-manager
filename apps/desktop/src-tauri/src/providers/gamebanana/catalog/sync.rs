@@ -12,7 +12,10 @@ use std::pin::Pin;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use tokio_util::sync::CancellationToken;
 
-const INCREMENTAL_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60);
+// An incremental run stops at the high-water mark, so with nothing new it costs one
+// index request per submission type. Kept under the app's jittered 25-35 minute timer
+// so every tick runs, while relaunches in between are throttled.
+const INCREMENTAL_INTERVAL: Duration = Duration::from_secs(20 * 60);
 const FULL_RECONCILIATION_INTERVAL: Duration = Duration::from_secs(7 * 24 * 60 * 60);
 const LAST_INCREMENTAL_AT: &str = "last_incremental_at";
 const LAST_FULL_SYNC_AT: &str = "last_full_sync_at";
@@ -41,6 +44,8 @@ const MAX_TOMBSTONE_CONFIRMATIONS: usize = 400;
 const MAX_RATE_LIMIT_WAITS: u32 = 5;
 const MAX_RATE_LIMIT_WAIT: Duration = Duration::from_secs(5 * 60);
 const LAST_COLLECTION_SYNC_AT: &str = "last_collection_sync_at";
+// Collections are re-crawled in full every time, so they keep the slower cadence.
+const COLLECTION_SYNC_INTERVAL: Duration = Duration::from_secs(6 * 60 * 60);
 // Adding an item doesn't change a collection's modified date, so items are also
 // re-crawled once they are this old.
 const COLLECTION_ITEMS_MAX_AGE: Duration = Duration::from_secs(7 * 24 * 60 * 60);
@@ -263,7 +268,7 @@ impl CatalogSync {
       .and_then(|value| value.parse::<u64>().ok())
       .unwrap_or_default();
     if !force
-      && now.saturating_sub(last_sync) < INCREMENTAL_INTERVAL.as_secs()
+      && now.saturating_sub(last_sync) < COLLECTION_SYNC_INTERVAL.as_secs()
       && self.catalog.count_collections().await? > 0
     {
       return Ok(());

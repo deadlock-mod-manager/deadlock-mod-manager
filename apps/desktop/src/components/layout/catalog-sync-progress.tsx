@@ -1,17 +1,12 @@
 import { Button } from "@deadlock-mods/ui/components/button";
-import {
-  useMutationState,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { NetworkDiagnosticsButton } from "@/components/shared/network-diagnostics-dialog";
 import {
-  CATALOG_SYNC_KEY,
   useCatalogSyncMutation,
+  useCatalogSyncState,
 } from "@/hooks/use-gamebanana-catalog-sync";
-import { inspectGameBananaCatalog } from "@/lib/gamebanana-catalog";
 
 // Each refresh refetches every loaded store page and the dashboard queries;
 // the sync's own completion triggers a final refresh (see the sync mutation).
@@ -21,18 +16,7 @@ export const CatalogSyncProgress = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const retry = useCatalogSyncMutation(true);
-  const states = useMutationState({
-    filters: { mutationKey: CATALOG_SYNC_KEY },
-    select: (mutation) => mutation.state.status,
-  });
-  const status = states.at(-1);
-  const syncing = status === "pending";
-  const catalog = useQuery({
-    queryKey: ["gamebanana-catalog-status"],
-    queryFn: inspectGameBananaCatalog,
-    enabled: syncing,
-    refetchInterval: syncing ? 2000 : false,
-  });
+  const { status, syncing, catalog } = useCatalogSyncState();
   const percentage = catalog.data?.syncPercentage;
   const lastListRefreshRef = useRef(0);
 
@@ -48,7 +32,10 @@ export const CatalogSyncProgress = () => {
     void queryClient.invalidateQueries({ queryKey: ["mods"] });
   }, [syncing, catalog.dataUpdatedAt, queryClient]);
 
-  if (!syncing && status !== "error") return null;
+  // Routine background syncs only show in the bottom bar; the banner is for the
+  // first crawl, when the catalog is still filling in.
+  const firstSync = syncing && catalog.data?.lastFullSyncAt === null;
+  if (!firstSync && status !== "error") return null;
 
   return (
     <div className='shrink-0 space-y-2 border-b bg-muted/50 px-4 py-3'>

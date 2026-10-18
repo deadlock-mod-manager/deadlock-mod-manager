@@ -23,7 +23,7 @@ use tokio_util::sync::CancellationToken;
 
 const LAST_INCREMENTAL_AT: &str = "last_incremental_at";
 const LAST_FULL_SYNC_AT: &str = "last_full_sync_at";
-const STALE_AFTER: Duration = Duration::from_secs(12 * 60 * 60);
+const STALE_AFTER: Duration = Duration::from_secs(60 * 60);
 
 #[tauri::command]
 pub async fn synchronize_gamebanana_catalog(
