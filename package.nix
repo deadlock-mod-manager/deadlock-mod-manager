@@ -14,8 +14,8 @@
   glib,
   glib-networking,
   gtk3,
-  libayatana-appindicator,
   libsoup_3,
+  libayatana-appindicator,
   pango,
   openssl,
   bzip2,
@@ -55,8 +55,8 @@ rustPlatform.buildRustPackage (finalAttrs: {
     glib
     glib-networking
     gtk3
-    libayatana-appindicator
     libsoup_3
+    libayatana-appindicator
     pango
 
     openssl
@@ -102,7 +102,6 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
       --set DISABLE_UPDATE_DESKTOP_DATABASE 1
       --prefix PATH : ${lib.makeBinPath [ desktop-file-utils ]}
-      # The tray icon dlopens libayatana-appindicator3 at runtime
       --prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath [ libayatana-appindicator ]}
       --add-flags "--disable-auto-update"
     )

@@ -116,10 +116,10 @@ fn write_inner(
     .ok_or_else(|| Error::InvalidInput("Overlay has no parent directory".into()))?
     .to_path_buf();
   fs::create_dir_all(&parent)?;
-  let staged = tempfile::NamedTempFile::new_in(&parent)?;
-  let mut result = plan.write(staged.path(), resolutions)?;
+  // The packer replaces this path; an open handle can block replacement on Windows.
+  let staged = tempfile::NamedTempFile::new_in(&parent)?.into_temp_path();
+  let mut result = plan.write(&staged, resolutions)?;
   if result.has_overlay {
-    staged.as_file().sync_all()?;
     staged
       .persist(output)
       .map_err(|error| Error::Io(error.error))?;
@@ -211,6 +211,61 @@ mod tests {
     assert!(load(&key.output_path).unwrap().is_none());
     fs::write(path(&key.output_path), b"partial json").unwrap();
     assert!(load(&key.output_path).unwrap().is_none());
+  }
+
+  #[test]
+  fn nonempty_plan_publishes_and_replaces_overlay_with_current_receipt() {
+    use source2_model::vpk_extract::VpkArchive;
+
+    const ENTRY: &str = "resource/localization/citadel_heroes/citadel_heroes_english.txt";
+    let temp = tempfile::tempdir().unwrap();
+    let source = temp.path().join("source");
+    let entry = source.join(ENTRY);
+    fs::create_dir_all(entry.parent().unwrap()).unwrap();
+    let mod_vpk = temp.path().join("mod_dir.vpk");
+    let game = temp.path().join("citadel");
+    fs::create_dir_all(&game).unwrap();
+    let key = key(&game.join("dmm_localization_default"));
+
+    for value in ["First name", "Updated name"] {
+      fs::write(
+        &entry,
+        format!(r#""lang" {{ "Language" "English" "Tokens" {{ "hero_name" "{value}" }} }}"#),
+      )
+      .unwrap();
+      vpkmanager::pack_directory(&source, &mod_vpk).unwrap();
+      let plan = LocalizationOverlayPlan::build(
+        &game,
+        &[LocalizationModInput {
+          mod_id: "test-mod".into(),
+          vpks: vec![mod_vpk.clone()],
+        }],
+      )
+      .unwrap();
+      let result = write(&plan, key.clone(), &[]).unwrap();
+      assert!(result.has_overlay);
+      assert_eq!(
+        result.output_path,
+        Some(key.output_path.display().to_string())
+      );
+      assert_eq!(result.packed_files, 1);
+      let archive = VpkArchive::open(&key.output_path).unwrap();
+      let bytes = archive.extract_entry(ENTRY).unwrap();
+      assert!(String::from_utf8(bytes).unwrap().contains(value));
+      assert!(
+        load(&key.output_path)
+          .unwrap()
+          .unwrap()
+          .is_current(&key)
+          .unwrap()
+      );
+      assert_eq!(
+        fs::read_dir(key.output_path.parent().unwrap())
+          .unwrap()
+          .count(),
+        2
+      );
+    }
   }
 
   #[test]

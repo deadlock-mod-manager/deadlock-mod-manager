@@ -16,6 +16,11 @@ on:
         required: false
         type: boolean
         default: false
+      commit_short:
+        description: "Short commit hash for the nightly version, so it matches latest-cef.json"
+        required: false
+        type: string
+        default: ""
       signpath_policy:
         description: "SignPath signing policy"
         required: false
@@ -214,7 +219,7 @@ jobs:
         # github.event_name is the caller's event here, so checking for
         # workflow_dispatch stamped manually-started stable releases as nightly.
         if: inputs.nightly == true
-        run: pnpm version:nightly
+        run: pnpm version:nightly ${{ inputs.commit_short }}
 
       - name: Resolve desktop package version
         id: desktop-version

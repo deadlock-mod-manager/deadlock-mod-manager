@@ -8,29 +8,48 @@ alwaysApply: true
 
 ## Project Structure
 
-The project follows a monorepo structure using pnpm workspaces:
+The project follows a monorepo structure using pnpm workspaces and Turborepo:
 
 ### Core Directories
 
 - `apps/` - Main applications
-  - `api/` - Backend API service (Bun + Hono)
+  - `api/` - Backend API service and workers (Bun + Hono)
+  - `auth/` - Authentication service (Better Auth + OIDC)
   - `bot/` - Discord bot application
   - `desktop/` - Tauri desktop application
+  - `dmodpkg/` - CLI for `.dmodpkg` mod packages
+  - `docs/` - Documentation site (Fumadocs)
   - `lockdex/` - Lockdex service application
+  - `mirror-service/` - S3-backed download mirror for mod files
   - `www/` - Web application (Vite + React)
 - `packages/` - Shared packages and utilities
   - `common/` - Common error handling and utilities
+  - `crosshair/` - Crosshair generation
   - `database/` - Database schema and client (Drizzle ORM)
+  - `deadlock-discord-presence/` - Discord Rich Presence (Rust + TypeScript)
   - `distributed-lock/` - Distributed locking utilities
+  - `dmodpkg/` - `.dmodpkg` mod package library (Rust + Bun FFI)
+  - `dmp-parser/` - Source 2 crash minidump parser (Rust)
+  - `feature-flags/` - Feature flag management
+  - `hero-parser/` - Hero detection from VPK entry paths (Rust + TypeScript)
+  - `instrumentation/` - Observability and process handlers
+  - `kv-parser/` - KeyValues (VDF) parser (Rust + Bun FFI)
   - `logging/` - Structured logging package
-  - `queue/` - Queue management utilities
-  - `shared/` - Shared utilities and type definitions
-  - `vpk-parser/` - VPK file parsing utilities (Rust + TypeScript)
+  - `perf-catalog/` - Performance config catalog served to the desktop app
+  - `queue/` - Queue management utilities (BullMQ)
+  - `relay-client/` - Deadworks relay client
+  - `shared/` - Shared utilities, DTOs, and type definitions
+  - `source2-model/` - Source 2 compiled asset decoder/writer (Rust)
+  - `ui/` - Shared React UI components
+  - `vpk-parser/` - VPK file parsing utilities (Rust + Bun FFI)
+  - `vpkmanager/` - VPK and compiled asset writer (Rust)
 - `tools/` - Development tools and configurations
+  - `oxc/` - Shared oxlint/oxfmt configuration
+  - `oxlint-plugins/` - Custom oxlint rules
   - `typescript/` - Shared TypeScript configurations
 - `.cursor/` - Project rules and documentation
+- `.agents/skills/` - Canonical agent skills
 - `.vscode/` - VS Code configuration
-- `.turbo/` - Turborepo cache and configuration
 
 ### Configuration Files
 
@@ -38,9 +57,9 @@ The project follows a monorepo structure using pnpm workspaces:
 - `pnpm-workspace.yaml` - Workspace configuration
 - `turbo.json` - Turborepo configuration
 - `compose.yml` - Docker Compose for local development
-- `.oxlintrc.json` - oxlint/oxfmt configuration for linting and formatting
+- `.oxlintrc.json` / `.oxfmtrc.json` - oxlint and oxfmt configuration
 - `lefthook.yml` - Git hooks configuration
-- `netlify.toml` - Netlify deployment configuration
+- `env.example` - Template for the root `.env`
 - `.gitignore` - Git ignore configuration
 
 ## Available Commands
@@ -49,16 +68,18 @@ The project follows a monorepo structure using pnpm workspaces:
 
 ```bash
 # Start development servers
-pnpm dev                    # Start desktop development (default)
-pnpm --filter api dev       # Start API development server
+pnpm dev                    # Start every app's dev task through Turborepo
+pnpm desktop:dev            # Start desktop development
+pnpm api:dev                # Start API development server
+pnpm www:dev                # Start web development server
+pnpm docs:dev               # Start documentation site
 pnpm --filter bot dev       # Start Discord bot development
-pnpm --filter desktop dev   # Start desktop development
 pnpm --filter lockdex dev   # Start Lockdex service development
-pnpm --filter www dev       # Start web development server
 
 # Code Quality
-pnpm lint                  # Run linting with oxlint/oxfmt
-pnpm format               # Format code with oxlint/oxfmt
+pnpm lint                  # Lint with oxlint (pnpm lint:fix to apply fixes)
+pnpm format                # Format with oxfmt (pnpm format:check to verify only)
+pnpm check-types           # Type-check all packages
 ```
 
 ### Database Commands
@@ -66,18 +87,19 @@ pnpm format               # Format code with oxlint/oxfmt
 ```bash
 pnpm db:push              # Push schema to database
 pnpm db:seed              # Seed database with initial data
-pnpm generate             # Generate database migrations
+pnpm db:generate          # Generate database migrations
+pnpm db:migrate           # Apply database migrations
+pnpm db:studio            # Open Drizzle Studio
 ```
 
 ### Build Commands
 
 ```bash
-pnpm build                 # Build all packages and applications
-pnpm --filter api build    # Build only API
-pnpm --filter bot build    # Build only Discord bot
-pnpm --filter desktop build # Build only desktop application
-pnpm --filter lockdex build # Build only Lockdex service
-pnpm --filter www build    # Build only web application
+pnpm build                  # Build all packages and applications
+pnpm --filter api build     # Build only API
+pnpm desktop:build          # Build and bundle the desktop application
+pnpm desktop:build:dev      # Build the desktop application without bundling
+pnpm --filter www build     # Build only web application
 ```
 
 ### Package Management
@@ -90,30 +112,29 @@ pnpm add -D <package> --filter <package-name>   # Add dev dependency
 
 ## Development Setup
 
-1. Install dependencies:
+1. Install dependencies (the pnpm version is pinned by `packageManager` in `package.json`):
 
    ```bash
-   npm i -g pnpm
+   corepack enable
    pnpm install
    ```
 
 2. Configure environment:
 
-   - Create appropriate environment files for each app
+   - Copy `env.example` to `.env` at the repository root; API and database scripts read it
    - Fill required environment variables
 
 3. Start development:
 
    ```bash
-   # Start desktop app (default)
-   pnpm dev
+   # Start the desktop app
+   pnpm desktop:dev
 
    # Or start individual apps
-   pnpm --filter api dev
+   pnpm api:dev
+   pnpm www:dev
    pnpm --filter bot dev
-   pnpm --filter desktop dev
    pnpm --filter lockdex dev
-   pnpm --filter www dev
    ```
 
 4. Build for production:

@@ -940,6 +940,19 @@
   "stats": {
     "title": "Stats",
     "subtitle": "How you are playing right now, and where to improve",
+    "scope": {
+      "mode": "Match mode",
+      "all": "All matches",
+      "ranked": "Ranked",
+      "unranked": "Unranked",
+      "since": "Matches since",
+      "sinceDate": "Since {{date}}",
+      "allTime": "All time",
+      "about": "About stats filters",
+      "reset": "Reset",
+      "hint": "Standard ranked and unranked matches only. History widgets, hero and item performance, and their global comparisons use these filters. Squad, Live, and widgets with their own API queries keep their own scope.",
+      "squad": "Squad uses its own available match history. Match mode and date filters do not apply here."
+    },
     "tabs": {
       "overview": "Overview",
       "heroes": "Heroes",
@@ -1120,13 +1133,13 @@
     "accountSubmit": "Show stats",
     "tiles": {
       "winrate": "Winrate (last {{count}})",
-      "vsCareer": "vs career",
+      "vsCareer": "vs selected matches",
       "kda": "KDA",
       "kdaHint": "{{kills}} / {{deaths}} / {{assists}} per match",
       "souls": "Souls per minute",
-      "soulsHint": "Across your last 30 matches",
+      "soulsHint": "Across your last {{count}} selected matches",
       "matches": "Matches (30 days)",
-      "matchesHint": "{{total}} in total",
+      "matchesHint": "{{total}} in the selection",
       "streak": "Current streak",
       "streakWins_one": "{{count}} win",
       "streakWins_other": "{{count}} wins",
@@ -1181,7 +1194,7 @@
         "topHero": "{{hero}} is your main",
         "longGames": "Closing games out"
       },
-      "form": "Last 30 matches: {{recent}} winrate against {{career}} across your whole history.",
+      "form": "Last 30 selected matches: {{recent}} winrate against {{career}} across the selection.",
       "winStreak_one": "{{count}} win in a row. Keep the picks that got you here.",
       "winStreak_other": "{{count}} wins in a row. Keep the picks that got you here.",
       "lossStreak_one": "{{count}} loss in a row — a break tends to reset this faster than one more queue.",
@@ -1217,6 +1230,627 @@
       "encounters_one": "{{count}} encounter",
       "encounters_other": "{{count}} encounters",
       "empty": "No recurring teammates found yet — this needs a few matches with the same people."
+    },
+    "dashboard": {
+      "customize": "Customize",
+      "customizeHint": "Rearrange, resize, add or remove widgets and tabs",
+      "addWidget": "Add widget",
+      "needsAccount": "Needs an account",
+      "needsAccountDescription": "Pick or enter a Steam account above to see this value.",
+      "empty": "No data for this selection yet.",
+      "stale": "Offline",
+      "staleHint": "deadlock-api could not be reached, so this shows the last saved data.",
+      "apiWarning": "Data from deadlock-api.com can change or become unavailable. Affected widgets are flagged on the dashboard and their tab.",
+      "recovered": "Your saved dashboard could not be read anymore, so the default layout is shown. Use Customize to set it up again.",
+      "emptyTabTitle": "This tab is empty",
+      "emptyTabDescription": "Open the editor to add values, charts or one of the built-in sections.",
+      "broken": {
+        "title": "This value is not working right now",
+        "retry": "Try again",
+        "unknownSource": "This value is not available in this version of the app anymore. Edit the widget to pick another one, or remove it.",
+        "endpoint": "The API answered with HTTP {{status}}. The endpoint may have moved or been removed.",
+        "network": "The API could not be reached. Check your connection and try again.",
+        "schema": "The API response no longer has the shape this widget expects. The endpoint has probably changed.",
+        "fields": "The data no longer contains: {{fields}}. Edit the widget and pick other fields.",
+        "invalidPath": "The request path is not valid. It has to start with /v1/ or /v2/ and may only use the listed placeholders.",
+        "notAList": "The response has no list at the given list path. Check the list path."
+      },
+      "widget": {
+        "menu": "Widget options",
+        "edit": "Edit",
+        "duplicate": "Duplicate",
+        "width": "Width",
+        "moveToTab": "Move to tab",
+        "moveEarlier": "Move earlier",
+        "moveLater": "Move later",
+        "remove": "Remove",
+        "drag": "Drag to move",
+        "resize": "Drag to resize"
+      },
+      "widths": {
+        "3": "Quarter",
+        "4": "Third",
+        "6": "Half",
+        "8": "Two thirds",
+        "12": "Full width"
+      },
+      "tabs": {
+        "untitled": "New tab",
+        "settings": "Tab settings",
+        "name": "Tab name",
+        "moveLeft": "Move left",
+        "moveRight": "Move right",
+        "delete": "Delete tab",
+        "broken": "Contains a widget that is not working",
+        "add": "Tab",
+        "empty": "Empty tab",
+        "fromTemplate": "From a template",
+        "done": "Done"
+      },
+      "templates": {
+        "overview": "Overview",
+        "heroes": "Heroes",
+        "items": "Items",
+        "squad": "Squad",
+        "live": "Live",
+        "performance": "Performance",
+        "habits": "Habits",
+        "ranked": "Ranked",
+        "meta": "Meta"
+      },
+      "toolbar": {
+        "title": "Editing the dashboard",
+        "hint": "Drag widgets by their handle, resize them from the bottom-right corner, and use the pencil next to the tabs to rename, move or delete the active one.",
+        "reset": "Reset to default",
+        "cancel": "Cancel",
+        "save": "Save"
+      },
+      "confirm": {
+        "resetTitle": "Reset the dashboard?",
+        "resetDescription": "All tabs and widgets go back to the built-in layout. Your own tabs and widgets are gone once you save.",
+        "resetAction": "Reset",
+        "discardTitle": "Discard your changes?",
+        "discardDescription": "Everything you changed since you started editing is lost.",
+        "discardAction": "Discard",
+        "deleteTabTitle": "Delete this tab?",
+        "deleteTabDescription_one": "\"{{tab}}\" and its widget are removed once you save.",
+        "deleteTabDescription_other": "\"{{tab}}\" and its {{count}} widgets are removed once you save.",
+        "deleteTabAction": "Delete"
+      },
+      "editor": {
+        "addTitle": "Add widget",
+        "editTitle": "Edit widget",
+        "description": "Pick what to show, how to show it and how big it should be.",
+        "stepData": "Choose data",
+        "stepView": "Choose a chart",
+        "stepLayout": "Title and size",
+        "modes": {
+          "presets": "Values",
+          "matches": "Own query",
+          "api": "API query",
+          "panels": "Sections"
+        },
+        "modeHints": {
+          "presets": "Ready-made values from your matches and from deadlock-api.",
+          "matches": "Build your own stat from your match history: pick values, group them and filter them.",
+          "api": "Advanced: read any deadlock-api endpoint and chart the fields it returns.",
+          "panels": "The original sections of the Stats tabs, with their own layout and interactions."
+        },
+        "chartType": "Chart type",
+        "chartUnsupported": "This data cannot be drawn as this chart",
+        "category": "Labels / x-axis",
+        "pointLabel": "Point label",
+        "none": "None",
+        "value": "Value",
+        "values_one": "Value",
+        "values_other": "Values (up to {{count}})",
+        "scatterValues": "X axis, Y axis and bubble size",
+        "reduce": "Show",
+        "sortBy": "Sort by",
+        "sortNone": "Original order",
+        "ascending": "Ascending",
+        "descending": "Descending",
+        "limit": "Show",
+        "limitAll": "All",
+        "limitTop_one": "Top {{count}}",
+        "limitTop_other": "Top {{count}}",
+        "color": "Colour",
+        "colorOption": "Colour {{index}}",
+        "showLabels": "Value labels",
+        "showGrid": "Grid lines",
+        "showLegend": "Legend",
+        "smooth": "Smooth lines",
+        "title": "Title",
+        "width": "Width",
+        "height": "Height: {{value}}",
+        "heightAuto": "Auto",
+        "preview": "Preview",
+        "datasetInfo": "{{rows}} rows · {{fields}} fields",
+        "pickSource": "Pick something on the left to see a preview.",
+        "searchPresets": "Search values…",
+        "noPresets": "No value matches your search.",
+        "saveChanges": "Apply",
+        "add": "Add"
+      },
+      "charts": {
+        "kpi": "Number",
+        "line": "Line",
+        "area": "Area",
+        "bar": "Columns",
+        "barHorizontal": "Bars",
+        "stackedBar": "Stacked",
+        "pie": "Pie",
+        "donut": "Donut",
+        "radar": "Radar",
+        "scatter": "Scatter",
+        "radial": "Gauge",
+        "table": "Table"
+      },
+      "reducers": {
+        "auto": "Automatic",
+        "first": "First value",
+        "last": "Latest value",
+        "avg": "Average",
+        "sum": "Sum",
+        "min": "Minimum",
+        "max": "Maximum"
+      },
+      "categories": {
+        "you": "You",
+        "heroes": "Your heroes",
+        "items": "Items",
+        "squad": "Squad",
+        "ranked": "Ranked",
+        "global": "Everyone"
+      },
+      "params": {
+        "window": "Matches",
+        "days": "Period",
+        "hero": "Hero",
+        "sortBy": "Statistic"
+      },
+      "options": {
+        "allMatches": "All matches",
+        "lastMatches_one": "Last match",
+        "lastMatches_other": "Last {{count}} matches",
+        "lastDays_one": "Last day",
+        "lastDays_other": "Last {{count}} days",
+        "rollingWindow_one": "Rolling {{count}} match",
+        "rollingWindow_other": "Rolling {{count}} matches",
+        "allHeroes": "All heroes",
+        "allTime": "All time",
+        "scoreboard": {
+          "winrate": "Winrate",
+          "matches": "Matches",
+          "avg_kills_per_match": "Kills per match",
+          "avg_deaths_per_match": "Deaths per match",
+          "avg_assists_per_match": "Assists per match",
+          "avg_net_worth_per_match": "Souls per match",
+          "avg_player_damage_per_match": "Damage per match",
+          "avg_last_hits_per_match": "Last hits per match",
+          "avg_denies_per_match": "Denies per match",
+          "avg_boss_damage_per_match": "Boss damage per match"
+        }
+      },
+      "units": {
+        "minutes": "{{value}} min",
+        "minuteRange": "{{from}}–{{to}} min"
+      },
+      "matchQuery": {
+        "titleGrouped": "{{metrics}} by {{group}}",
+        "metrics_one": "Value",
+        "metrics_other": "Values (up to {{count}})",
+        "groupBy": "Group by",
+        "aggregate": "Per group",
+        "period": "Period",
+        "window": "Matches",
+        "result": "Result",
+        "smoothing": "Smoothing",
+        "noSmoothing": "None",
+        "rankedOnly": "Ranked matches only",
+        "hint": "Runs on your loaded match history: no extra requests, and it keeps working when the API changes.",
+        "groups": {
+          "none": "Nothing (one number)",
+          "match": "Each match",
+          "day": "Day",
+          "week": "Week",
+          "month": "Month",
+          "hero": "Hero",
+          "weekday": "Weekday",
+          "hour": "Hour of day",
+          "result": "Win or loss",
+          "session": "Match in session",
+          "duration": "Match length"
+        },
+        "aggregates": {
+          "avg": "Average",
+          "sum": "Sum",
+          "min": "Minimum",
+          "max": "Maximum",
+          "median": "Median"
+        },
+        "results": {
+          "all": "All",
+          "wins": "Wins only",
+          "losses": "Losses only"
+        }
+      },
+      "api": {
+        "title": "API query",
+        "example": "Start from an example",
+        "examplePlaceholder": "Pick an example…",
+        "examples": {
+          "globalHeroes": "Hero stats, all players, last 30 days",
+          "myHeroes": "Your hero stats",
+          "dailyGames": "Games per day, last 30 days",
+          "myGameStats": "Your match averages",
+          "myItems": "Your item stats",
+          "mySynergies": "Your hero synergies",
+          "myMetrics": "Spread of your stats",
+          "myCurve": "Your progress through a match",
+          "badgeDistribution": "Badge distribution",
+          "leaderboardEurope": "Leaderboard Europe"
+        },
+        "path": "Request path",
+        "listPath": "List path (optional)",
+        "listPathPlaceholder": "e.g. entries",
+        "hint": "Only api.deadlock-api.com is queried. Placeholders are filled in when the widget loads, and every field of the response can be picked in step 2.",
+        "docs": "API reference",
+        "placeholders": {
+          "account_id": "The selected account",
+          "now": "Now, as a Unix timestamp",
+          "since_7d": "7 days ago",
+          "since_30d": "30 days ago",
+          "since_90d": "90 days ago"
+        }
+      },
+      "panels": {
+        "tiles": {
+          "title": "Key figures",
+          "description": "Winrate, KDA, souls, matches and streak at a glance."
+        },
+        "insights": {
+          "title": "Insights",
+          "description": "Short notes on what stands out in your history."
+        },
+        "form": {
+          "title": "Form",
+          "description": "Your rolling winrate over time."
+        },
+        "session": {
+          "title": "Winrate per session",
+          "description": "How you do on the 1st, 2nd, 3rd match of a session."
+        },
+        "rank": {
+          "title": "Rank over time",
+          "description": "The badge Valve gave you after each ranked match."
+        },
+        "recentMatches": {
+          "title": "Last matches",
+          "description": "Your latest games, with details on click."
+        },
+        "heroes": {
+          "title": "Hero explorer",
+          "description": "Comfort picks chart, benchmark against everyone and the sortable hero table."
+        },
+        "items": {
+          "title": "Item explorer",
+          "description": "Your item winrates against the global average, with buy timings."
+        },
+        "squad": {
+          "title": "Squad",
+          "description": "Winrate with your mates, and the players who beat you most."
+        },
+        "live": {
+          "title": "Live match",
+          "description": "The scoreboard of the match you are playing right now. Works without an account."
+        }
+      },
+      "presets": {
+        "you": {
+          "summary": {
+            "title": "Key figure",
+            "description": "Winrate, KDA, souls, streaks and more over your last matches. Pick the number you want."
+          },
+          "form": {
+            "title": "Form curve",
+            "description": "Your winrate across a rolling window of matches."
+          },
+          "matchLog": {
+            "title": "Match log",
+            "description": "Every match with kills, deaths, souls, duration and rank."
+          },
+          "byHour": {
+            "title": "By hour of day",
+            "description": "Winrate, matches and KDA for each hour you play."
+          },
+          "byWeekday": {
+            "title": "By weekday",
+            "description": "Winrate, matches and KDA for each day of the week."
+          },
+          "session": {
+            "title": "Within a session",
+            "description": "How you do on the 1st, 2nd, 3rd match of a session."
+          },
+          "byDuration": {
+            "title": "By match length",
+            "description": "Winrate and matches in five-minute match-length buckets."
+          },
+          "daily": {
+            "title": "Matches per day",
+            "description": "Wins and losses for each day of a period."
+          },
+          "results": {
+            "title": "Wins and losses",
+            "description": "Your win/loss split."
+          },
+          "rankHistory": {
+            "title": "Rank history",
+            "description": "The badge you had after each ranked match."
+          },
+          "heroes": {
+            "title": "Hero stats",
+            "description": "Matches, winrate, KDA, damage, souls and accuracy per hero."
+          },
+          "matchups": {
+            "title": "Matchups",
+            "description": "Your record against each enemy hero, optionally for one of your heroes."
+          },
+          "performanceCurve": {
+            "title": "Progress through a match",
+            "description": "Your average souls, kills, damage and more from the start to the end of a match."
+          },
+          "soulSources": {
+            "title": "Soul sources",
+            "description": "Where your souls come from: lane, jungle, players, bosses and more."
+          },
+          "averages": {
+            "title": "Match averages",
+            "description": "Your per-match averages: damage, healing, accuracy, last hits and more."
+          },
+          "percentiles": {
+            "title": "Spread of your stats",
+            "description": "Average, median and percentiles of your per-match stats."
+          },
+          "buffs": {
+            "title": "Power-up pickups",
+            "description": "Which power-ups and permanent buffs you pick up, and when."
+          },
+          "items": {
+            "title": "Item performance",
+            "description": "Your winrate with each item compared to everyone else."
+          },
+          "mates": {
+            "title": "Teammates",
+            "description": "Winrate and KDA with the players you queue with."
+          },
+          "enemies": {
+            "title": "Frequent opponents",
+            "description": "Players you meet most often, and your record against them."
+          },
+          "rank": {
+            "title": "Current rank",
+            "description": "Your badge from your latest ranked match."
+          }
+        },
+        "global": {
+          "heroes": {
+            "title": "Hero meta",
+            "description": "Winrate, pick rate, KDA and more for every hero across all players."
+          },
+          "heroTrend": {
+            "title": "Hero trend",
+            "description": "The daily winrate and popularity of one hero across all players."
+          },
+          "bans": {
+            "title": "Hero bans",
+            "description": "How often each hero gets banned."
+          },
+          "duos": {
+            "title": "Best hero duos",
+            "description": "Winrate of two heroes on the same team."
+          },
+          "daily": {
+            "title": "Games per day",
+            "description": "Matches, players and averages across everyone, day by day."
+          },
+          "scoreboard": {
+            "title": "Hero scoreboard",
+            "description": "Ranks the heroes by a statistic you choose."
+          },
+          "items": {
+            "title": "Item meta",
+            "description": "Winrate and buy time of every item across all players."
+          },
+          "rankDistribution": {
+            "title": "Rank distribution",
+            "description": "How the ranked player base is spread across the badges."
+          }
+        }
+      },
+      "fields": {
+        "matches": "Matches",
+        "wins": "Wins",
+        "losses": "Losses",
+        "winrate": "Winrate",
+        "kills": "Kills",
+        "deaths": "Deaths",
+        "assists": "Assists",
+        "kda": "KDA",
+        "netWorth": "Souls",
+        "soulsPerMin": "Souls per minute",
+        "lastHits": "Last hits",
+        "lastHitsPerMin": "Last hits per minute",
+        "denies": "Denies",
+        "durationMin": "Match length (min)",
+        "heroLevel": "Hero level",
+        "rankBadge": "Rank",
+        "rankDelta": "Rank change",
+        "currentStreak": "Current streak",
+        "longestWinStreak": "Longest win streak",
+        "longestLossStreak": "Longest loss streak",
+        "matchesLast30Days": "Matches in the last 30 days",
+        "startTime": "Date",
+        "heroId": "Hero",
+        "result": "Result",
+        "hour": "Hour",
+        "weekday": "Weekday",
+        "session": "Match in session",
+        "day": "Day",
+        "killsPerMatch": "Kills per match",
+        "deathsPerMatch": "Deaths per match",
+        "assistsPerMatch": "Assists per match",
+        "damagePerMin": "Damage per minute",
+        "damageTakenPerMin": "Damage taken per minute",
+        "objDamagePerMin": "Objective damage per minute",
+        "deniesPerMatch": "Denies per match",
+        "accuracy": "Accuracy",
+        "critRate": "Crit rate",
+        "hoursPlayed": "Hours played",
+        "endingLevel": "Ending level",
+        "enemyHeroId": "Enemy hero",
+        "soulLead": "Soul lead",
+        "gameTime": "Match progress",
+        "playerDamage": "Player damage",
+        "bossDamage": "Boss damage",
+        "creepKills": "Creep kills",
+        "neutralKills": "Neutral kills",
+        "playerHealing": "Healing",
+        "permanentBuffs": "Permanent buffs",
+        "source": "Source",
+        "souls": "Souls",
+        "avgKills": "Kills",
+        "avgDeaths": "Deaths",
+        "avgAssists": "Assists",
+        "avgNetWorth": "Souls",
+        "avgLastHits": "Last hits",
+        "avgDenies": "Denies",
+        "avgPlayerDamage": "Player damage",
+        "avgDamageTaken": "Damage taken",
+        "avgDamageMitigated": "Damage mitigated",
+        "avgBossDamage": "Boss damage",
+        "avgHealing": "Healing",
+        "avgCreepKills": "Creep kills",
+        "avgNeutralKills": "Neutral kills",
+        "avgDuration": "Match length",
+        "metric": "Statistic",
+        "p10": "10th percentile",
+        "p25": "25th percentile",
+        "median": "Median",
+        "avg": "Average",
+        "p75": "75th percentile",
+        "p90": "90th percentile",
+        "buff": "Power-up",
+        "pickups": "Pickups",
+        "pickupsPerMatch": "Pickups per match",
+        "pickupRate": "Matches with a pickup",
+        "avgPickupTime": "Average pickup time",
+        "avgFirstPickupTime": "First pickup time",
+        "itemId": "Item",
+        "globalWinrate": "Global winrate",
+        "winrateDelta": "Winrate vs. global",
+        "avgBuyTime": "Average buy time",
+        "name": "Player",
+        "badge": "Rank",
+        "rank": "Rank tier",
+        "subrank": "Subrank",
+        "pickRate": "Pick rate",
+        "netWorthPerMatch": "Souls per match",
+        "damagePerMatch": "Damage per match",
+        "bans": "Bans",
+        "banShare": "Share of bans",
+        "heroes": "Heroes",
+        "players": "Players",
+        "midBossKillRate": "Mid-boss kill rate",
+        "abandonRate": "Abandon rate",
+        "value": "Value",
+        "playerShare": "Share of players"
+      },
+      "metrics": {
+        "self_healing_per_min": "Self-healing per minute",
+        "kda": "KDA",
+        "kd": "K/D",
+        "kills_plus_assists": "Kills + assists",
+        "player_damage_per_health": "Damage per health",
+        "healing_per_min": "Healing per minute",
+        "player_healing": "Player healing",
+        "heal_prevented": "Healing prevented",
+        "player_damage_per_min": "Damage per minute",
+        "deaths": "Deaths",
+        "net_worth_per_min": "Souls per minute",
+        "net_worth": "Souls",
+        "assists": "Assists",
+        "kills": "Kills",
+        "last_hits": "Last hits",
+        "neutral_damage": "Neutral damage",
+        "neutral_damage_per_min": "Neutral damage per minute",
+        "crit_shot_rate": "Crit rate",
+        "denies": "Denies",
+        "player_damage": "Player damage",
+        "healing": "Healing",
+        "player_damage_taken_per_min": "Damage taken per minute",
+        "player_healing_per_min": "Player healing per minute",
+        "boss_damage_per_min": "Boss damage per minute",
+        "boss_damage": "Boss damage",
+        "teammate_healing": "Teammate healing",
+        "self_healing": "Self-healing",
+        "teammate_barriering": "Teammate barriers",
+        "accuracy": "Accuracy"
+      },
+      "soulSources": {
+        "player": "Hero kills",
+        "player_orbs": "Hero kill orbs",
+        "lane_creep": "Lane troopers",
+        "lane_creep_orbs": "Lane trooper orbs",
+        "neutral_creep": "Jungle",
+        "neutral_creep_orbs": "Jungle orbs",
+        "boss": "Bosses and objectives",
+        "boss_orb": "Boss orbs",
+        "treasure": "Treasure and urn",
+        "assists": "Assists",
+        "team_bonus": "Team bonus",
+        "breakable": "Breakables",
+        "ability_assassinate": "Assassinate ability",
+        "item_trophy_collector": "Trophy Collector",
+        "item_cultist_sacrifice": "Cultist Sacrifice",
+        "item_goose_egg": "Golden Goose Egg"
+      },
+      "buffs": {
+        "ammo_permanent_pickup": "Ammo (permanent)",
+        "ammo_permanent_pickup_lv2": "Ammo (permanent, level 2)",
+        "ammo_permanent_pickup_lv3": "Ammo (permanent, level 3)",
+        "bulletresist_permanent_pickup": "Bullet resist (permanent)",
+        "bulletresist_permanent_pickup_lv2": "Bullet resist (permanent, level 2)",
+        "bulletresist_permanent_pickup_lv3": "Bullet resist (permanent, level 3)",
+        "cd_permanent_pickup": "Cooldown (permanent)",
+        "cd_permanent_pickup_lv2": "Cooldown (permanent, level 2)",
+        "cd_permanent_pickup_lv3": "Cooldown (permanent, level 3)",
+        "firerate_permanent_pickup": "Fire rate (permanent)",
+        "firerate_permanent_pickup_lv2": "Fire rate (permanent, level 2)",
+        "firerate_permanent_pickup_lv3": "Fire rate (permanent, level 3)",
+        "hp_permanent_pickup": "Health (permanent)",
+        "hp_permanent_pickup_lv2": "Health (permanent, level 2)",
+        "hp_permanent_pickup_lv3": "Health (permanent, level 3)",
+        "movespeed_permanent_pickup": "Move speed (permanent)",
+        "movespeed_permanent_pickup_lv2": "Move speed (permanent, level 2)",
+        "movespeed_permanent_pickup_lv3": "Move speed (permanent, level 3)",
+        "range_permanent_pickup": "Range (permanent)",
+        "range_permanent_pickup_lv2": "Range (permanent, level 2)",
+        "range_permanent_pickup_lv3": "Range (permanent, level 3)",
+        "spirit_permanent_pickup": "Spirit power (permanent)",
+        "spirit_permanent_pickup_lv2": "Spirit power (permanent, level 2)",
+        "spirit_permanent_pickup_lv3": "Spirit power (permanent, level 3)",
+        "spiritresist_permanent_pickup": "Spirit resist (permanent)",
+        "spiritresist_permanent_pickup_lv2": "Spirit resist (permanent, level 2)",
+        "spiritresist_permanent_pickup_lv3": "Spirit resist (permanent, level 3)",
+        "wp_permanent_pickup": "Weapon power (permanent)",
+        "wp_permanent_pickup_lv2": "Weapon power (permanent, level 2)",
+        "wp_permanent_pickup_lv3": "Weapon power (permanent, level 3)",
+        "casting_powerup_pickup": "Casting power-up",
+        "gun_powerup_pickup": "Gun power-up",
+        "movement_powerup_pickup": "Movement power-up",
+        "survival_powerup_pickup": "Survival power-up"
+      }
     }
   },
   "foundry": {

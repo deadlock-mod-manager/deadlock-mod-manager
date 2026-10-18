@@ -739,14 +739,6 @@ export const CURATED_CONVARS = new Map(
       label: "Splashes",
       description: "Water and impact splash effects.",
     },
-    cl_show_bloodspray: {
-      label: "Blood spray",
-      description: "Blood spray effects on hits.",
-    },
-    cl_ejectbrass: {
-      label: "Shell casings",
-      description: "Ejected shell casing effects.",
-    },
     cl_impacteffects: {
       label: "Impact effects",
       description: "Bullet impact effects.",

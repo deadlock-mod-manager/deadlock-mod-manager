@@ -21,7 +21,7 @@ import {
   X,
 } from "@deadlock-mods/ui/icons";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { modDownloadsQueryOptions } from "@/hooks/use-mod-downloads";
@@ -63,6 +63,11 @@ export const BatchUpdateDialog = ({
   const skipModUpdate = usePersistedStore((state) => state.skipModUpdate);
   const queryClient = useQueryClient();
   const [refreshingFiles, setRefreshingFiles] = useState(false);
+  // The refresh below writes the downloads query, which hands the mod page a
+  // new `updates` array; keying on mod ids keeps that from refetching forever.
+  const updatesRef = useRef(updates);
+  updatesRef.current = updates;
+  const updateIds = updates.map((update) => update.mod.remoteId).join("|");
   const stepPercentage = updateProgress?.isBackingUp
     ? updateProgress.backupPercentage
     : updateProgress?.downloadPercentage;
@@ -83,13 +88,14 @@ export const BatchUpdateDialog = ({
       prepareUpdates([]);
       return;
     }
-    prepareUpdates(updates);
+    const pending = updatesRef.current;
+    prepareUpdates(pending);
     // Update checks reuse a cached file list; authors who replace files would
     // leave it pointing at ids GameBanana no longer serves.
     let cancelled = false;
     setRefreshingFiles(true);
     void Promise.all(
-      updates.map(async (update) => {
+      pending.map(async (update) => {
         try {
           const { downloads } = await queryClient.fetchQuery({
             ...modDownloadsQueryOptions(update.mod.remoteId),
@@ -112,7 +118,7 @@ export const BatchUpdateDialog = ({
       cancelled = true;
       setRefreshingFiles(false);
     };
-  }, [open, updates, prepareUpdates, queryClient]);
+  }, [open, updateIds, prepareUpdates, queryClient]);
 
   const handleSkip = (mod: ModDto, updatedAt: number) => {
     skipModUpdate(mod.remoteId, updatedAt);

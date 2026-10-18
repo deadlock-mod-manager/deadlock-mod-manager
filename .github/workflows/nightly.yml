@@ -320,6 +320,7 @@ jobs:
       release_id: ${{ needs.create-nightly-release.outputs.release_id }}
       version: nightly
       nightly: true
+      commit_short: ${{ needs.check-commits.outputs.latest_commit }}
       signpath_policy: test-signing
       sign_windows: false
       runner_linux: depot-ubuntu-24.04-8

@@ -302,24 +302,30 @@ const SESSION_GAP_MS = 3 * 60 * 60 * 1000;
 const MAX_SESSION_POSITION = 6;
 
 /**
- * Winrate by position within a session (matches less than 3h apart), capped at
- * `MAX_SESSION_POSITION`. A steep drop-off is the clearest "stop playing" signal
- * the history can give.
+ * Each match with its position within a session (matches less than 3h apart),
+ * oldest first and capped at `MAX_SESSION_POSITION`.
  */
-export const sessionCurve = (matches: MatchHistoryEntry[]): BucketStats[] => {
-  const ordered = chronological(matches);
+export const sessionPositions = (
+  matches: MatchHistoryEntry[],
+): Array<{ match: MatchHistoryEntry; position: number }> => {
   let position = 0;
   let previousEnd = Number.NEGATIVE_INFINITY;
 
-  const positioned = ordered.map((match) => {
+  return chronological(matches).map((match) => {
     const start = match.start_time * 1000;
     position = start - previousEnd > SESSION_GAP_MS ? 1 : position + 1;
     previousEnd = start + match.match_duration_s * 1000;
     return { match, position: Math.min(position, MAX_SESSION_POSITION) };
   });
+};
 
+/**
+ * Winrate by position within a session. A steep drop-off is the clearest "stop
+ * playing" signal the history can give.
+ */
+export const sessionCurve = (matches: MatchHistoryEntry[]): BucketStats[] => {
   const byPosition = new Map<number, MatchHistoryEntry[]>();
-  for (const { match, position: slot } of positioned) {
+  for (const { match, position: slot } of sessionPositions(matches)) {
     const bucket = byPosition.get(slot);
     if (bucket) {
       bucket.push(match);
@@ -423,9 +429,12 @@ export const benchmarkDeltas = (
     },
   ];
 
-  return rows.map((row) => ({
-    ...row,
-    deltaPct: row.global > 0 ? (row.mine - row.global) / row.global : 0,
+  return rows.map(({ metric, higherIsBetter, mine, global }) => ({
+    metric,
+    higherIsBetter,
+    mine,
+    global,
+    deltaPct: global > 0 ? (mine - global) / global : 0,
   }));
 };
 

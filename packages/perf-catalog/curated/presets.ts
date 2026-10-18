@@ -59,7 +59,7 @@ export const UPSTREAM_FILES: UpstreamFile[] = [
   {
     id: "kaizu-extremelow",
     repo: "Sqooky/OptimizationLock",
-    path: "kaizuchanerus minimum spec/gameinfoextremelow.gi",
+    path: "kaizuchanerus minimum spec/gameinfo-EXTREME-LOW.gi",
     track: "branch",
     license: "GPL-3.0",
     lineage: "kaizu",

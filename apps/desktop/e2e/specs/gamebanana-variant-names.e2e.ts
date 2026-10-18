@@ -63,7 +63,7 @@ describe("variants sharing a VPK filename", () => {
         assertVariantDisk(world, "installed-v1", allEnabled("v1")),
       );
 
-      await applyInstalledFiles([red, green]);
+      await applyInstalledFiles([red, green], VARIANT_MOD.name);
       await step("blue parked", () =>
         assertVariantDisk(world, "blue-parked-v1", {
           [red]: { state: "enabled", version: "v1" },
@@ -99,7 +99,7 @@ describe("variants sharing a VPK filename", () => {
       });
 
       await openMod();
-      await applyInstalledFiles([red, blue, green]);
+      await applyInstalledFiles([red, blue, green], VARIANT_MOD.name);
       await step("blue re-enabled from the update", () =>
         assertVariantDisk(world, "blue-enabled-v2", final),
       );

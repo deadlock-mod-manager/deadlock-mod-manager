@@ -128,7 +128,9 @@ describe("Repair mod folder", () => {
           const dialog = await $('[role="dialog"]');
           await dialog.waitForDisplayed();
           await expect(dialog).toHaveText(
-            expect.stringContaining("Existing files are never overwritten"),
+            expect.stringContaining(
+              "Nothing already in your mod folder is replaced",
+            ),
           );
           await dialog.$("button=Restore").click();
           await expect(

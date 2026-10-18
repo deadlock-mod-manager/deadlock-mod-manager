@@ -1,6 +1,8 @@
 import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
+import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Empty,
+  EmptyContent,
   EmptyDescription,
   EmptyHeader,
   EmptyMedia,
@@ -8,29 +10,29 @@ import {
 } from "@deadlock-mods/ui/components/empty";
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@deadlock-mods/ui/components/tabs";
-import {
-  ChartLine,
-  Package,
-  Radio,
-  Sword,
+  LayoutGrid,
+  Pencil,
   TriangleAlert,
   Users,
 } from "@deadlock-mods/ui/icons";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router";
 import PageTitle from "@/components/shared/page-title";
 import { AccountPrompt } from "@/components/stats/account-prompt";
-import { HeroesTab } from "@/components/stats/heroes-tab";
-import { ItemsTab } from "@/components/stats/items-tab";
-import { LiveTab } from "@/components/stats/live-tab";
-import { OverviewTab } from "@/components/stats/overview-tab";
-import { SquadTab } from "@/components/stats/squad-tab";
+import { DashboardDataProvider } from "@/components/stats/dashboard/dashboard-context";
+import { DashboardGrid } from "@/components/stats/dashboard/dashboard-grid";
+import { DashboardTabs } from "@/components/stats/dashboard/dashboard-tabs";
+import {
+  EditToolbar,
+  PendingConfirmDialog,
+} from "@/components/stats/dashboard/dashboard-toolbar";
+import { useDashboardEditor } from "@/components/stats/dashboard/use-dashboard-editor";
+import { WidgetEditor } from "@/components/stats/dashboard/widget-editor";
+import {
+  widgetNeedsAccount,
+  widgetNeedsHistory,
+} from "@/components/stats/dashboard/widget-requirements";
+import { StatsFilters } from "@/components/stats/stats-filters";
 import { StatsHeader } from "@/components/stats/stats-header";
 import { StatsHints } from "@/components/stats/stats-hints";
 import { StatsStatus } from "@/components/stats/stats-status";
@@ -38,32 +40,18 @@ import { StatTileSkeleton } from "@/components/stats/stat-tile";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import {
   useHeroCatalog,
-  useItemStats,
   usePlayerStats,
   useRankAssets,
-  useSquadStats,
   useStatsRefresh,
 } from "@/hooks/use-player-stats";
 import { useSelectedSteamAccount } from "@/hooks/use-steam-accounts";
-import { summarize } from "@/lib/stats/derive";
+import { DEFAULT_TAB_IDS } from "@/lib/stats/dashboard/layout";
+import {
+  statsSinceTimestamp,
+  type StatsMatchMode,
+  type StatsScope,
+} from "@/lib/stats/scope";
 import { cn } from "@/lib/utils";
-
-type StatsTab = "overview" | "heroes" | "items" | "squad" | "live";
-
-const TABS: readonly StatsTab[] = [
-  "overview",
-  "heroes",
-  "items",
-  "squad",
-  "live",
-];
-
-/** Narrows the `?tab=` value and the tab component's `string` callback alike. */
-const isStatsTab = (value: string | null): value is StatsTab =>
-  TABS.some((tab) => tab === value);
-
-const TAB_TRIGGER_CLASS =
-  "h-9 gap-1.5 rounded-full px-4 font-medium text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm 2xl:px-6";
 
 const StatsSkeleton = () => (
   <div className='flex flex-col gap-4'>
@@ -83,12 +71,8 @@ const StatsSkeleton = () => (
 const Stats = () => {
   const { t } = useTranslation();
   const { analytics } = useAnalyticsContext();
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const tabParam = searchParams.get("tab");
-  const [tab, setTab] = useState<StatsTab>(
-    isStatsTab(tabParam) ? tabParam : "overview",
-  );
+  const dashboard = useDashboardEditor();
+  const { activeTab, editing } = dashboard;
 
   const {
     accounts,
@@ -98,85 +82,80 @@ const Stats = () => {
     setAccountId,
   } = useSelectedSteamAccount();
   const hasAccount = accountId !== null;
-  const stats = usePlayerStats(accountId);
-  const squad = useSquadStats(accountId, stats.matches, tab === "squad");
-  const itemStats = useItemStats(accountId, tab === "items");
+  const [mode, setMode] = useState<StatsMatchMode>("all");
+  const [sinceDate, setSinceDate] = useState("");
+  const scope = useMemo<StatsScope>(
+    () => ({ mode, since: statsSinceTimestamp(sinceDate) }),
+    [mode, sinceDate],
+  );
+  const stats = usePlayerStats(accountId, scope);
   const { heroesById } = useHeroCatalog();
   const rankAssets = useRankAssets();
   const { refresh, isRefreshing, canRefresh } = useStatsRefresh();
 
   useEffect(() => {
+    // Custom tab ids are random; one bucket keeps the page-view report readable.
+    const tab = DEFAULT_TAB_IDS.has(activeTab.id) ? activeTab.id : "custom";
     analytics.trackPageViewed(`stats-${tab}`, { tab });
-  }, [analytics, tab]);
+  }, [analytics, activeTab.id]);
 
-  const handleTabChange = (value: string) => {
-    if (!isStatsTab(value)) {
-      return;
-    }
-    setTab(value);
-    setSearchParams({ tab: value }, { replace: true });
-  };
+  // Gate the whole page only when no widget could render without it; mixed
+  // tabs fall through to the grid and each widget shows its own notice.
+  const hasWidgets = activeTab.widgets.length > 0;
+  const needsAccount =
+    hasWidgets && activeTab.widgets.every(widgetNeedsAccount);
+  const needsHistory =
+    hasWidgets && activeTab.widgets.every(widgetNeedsHistory);
 
-  const careerWinrate = summarize(stats.matches).winrate;
-
-  const statsTabs = (
-    // Five pills outgrow a narrow window before anything else in the header
-    // does; scrolling them keeps every tab reachable instead of clipped.
-    <Tabs
-      className='max-w-full overflow-x-auto'
-      onValueChange={handleTabChange}
-      value={tab}>
-      <TabsList className='h-11 w-max rounded-full bg-muted/60 p-1'>
-        <TabsTrigger className={TAB_TRIGGER_CLASS} value='overview'>
-          <ChartLine className='h-4 w-4' />
-          {t("stats.tabs.overview")}
-        </TabsTrigger>
-        <TabsTrigger className={TAB_TRIGGER_CLASS} value='heroes'>
-          <Sword className='h-4 w-4' />
-          {t("stats.tabs.heroes")}
-        </TabsTrigger>
-        <TabsTrigger className={TAB_TRIGGER_CLASS} value='items'>
-          <Package className='h-4 w-4' />
-          {t("stats.tabs.items")}
-        </TabsTrigger>
-        <TabsTrigger className={TAB_TRIGGER_CLASS} value='squad'>
-          <Users className='h-4 w-4' />
-          {t("stats.tabs.squad")}
-        </TabsTrigger>
-        <TabsTrigger className={TAB_TRIGGER_CLASS} value='live'>
-          <Radio className='h-4 w-4' />
-          {t("stats.tabs.live")}
-        </TabsTrigger>
-      </TabsList>
-    </Tabs>
+  const tabBar = (
+    <div className='flex min-w-0 items-center gap-2'>
+      <DashboardTabs
+        activeTabId={activeTab.id}
+        brokenTabIds={dashboard.brokenTabIds}
+        editing={editing}
+        onSelect={dashboard.selectTab}
+        tabs={dashboard.layout.tabs}
+        {...dashboard.tabActions}
+      />
+      {!editing && (
+        <Button
+          className='h-9 shrink-0 gap-1.5'
+          data-testid='stats-customize'
+          onClick={dashboard.startEditing}
+          size='sm'
+          title={t("stats.dashboard.customizeHint")}
+          variant='outline'>
+          <Pencil className='h-3.5 w-3.5' />
+          {t("stats.dashboard.customize")}
+        </Button>
+      )}
+    </div>
   );
 
   const renderBody = () => {
-    // The live scoreboard reads the running match from the game, so it works
-    // before any history has loaded - and even without a detected account.
-    if (tab === "live") {
-      return (
-        <LiveTab
-          heroesById={heroesById}
-          ownAccountId={accountId}
-          rankAssets={rankAssets.data?.data ?? []}
-        />
-      );
+    const grid = (
+      <DashboardGrid
+        actions={dashboard.gridActions}
+        editing={editing}
+        onAddWidget={dashboard.addWidget}
+        onHealth={dashboard.reportHealth}
+        tab={activeTab}
+        tabs={dashboard.layout.tabs}
+      />
+    );
+    if (editing) {
+      return grid;
     }
-
-    if (accountsPending) {
+    if (needsAccount && accountsPending) {
       return <StatsSkeleton />;
     }
-
-    if (!hasAccount) {
+    if (needsAccount && !hasAccount) {
       return <AccountPrompt onSubmit={setAccountId} />;
     }
-
-    if (stats.isPending) {
+    if (needsHistory && stats.isPending) {
       return <StatsSkeleton />;
     }
-
-    if (stats.isError) {
+    if (needsHistory && stats.isError) {
       return (
         <Empty className='py-16'>
           <EmptyHeader>
@@ -189,8 +168,7 @@ const Stats = () => {
         </Empty>
       );
     }
-
-    if (stats.matches.length === 0) {
+    if (needsHistory && stats.allMatches.length === 0) {
       return (
         <Empty className='py-16'>
           <EmptyHeader>
@@ -205,114 +183,146 @@ const Stats = () => {
         </Empty>
       );
     }
-
-    return (
-      <Tabs onValueChange={handleTabChange} value={tab}>
-        <TabsContent className='mt-0' value='overview'>
-          <OverviewTab
-            accountId={accountId}
-            heroesById={heroesById}
-            insights={stats.insights}
-            matches={stats.matches}
-            rankAssets={rankAssets.data?.data ?? []}
-          />
-        </TabsContent>
-        <TabsContent className='mt-0' value='heroes'>
-          <HeroesTab
-            benchmarkFor={stats.benchmarkFor}
-            careerWinrate={careerWinrate}
-            heroes={stats.heroes}
-            heroesById={heroesById}
-          />
-        </TabsContent>
-        <TabsContent className='mt-0' value='items'>
-          <ItemsTab
-            isPending={itemStats.isPending}
-            items={itemStats.items}
-            itemsById={itemStats.itemsById}
-          />
-        </TabsContent>
-        <TabsContent className='mt-0' value='squad'>
-          {squad.isPending ? (
-            <StatsSkeleton />
-          ) : (
-            <SquadTab
-              careerWinrate={careerWinrate}
-              enemies={squad.enemies}
-              heroStatsById={squad.heroStatsById}
-              heroesById={heroesById}
-              mates={squad.mates}
-              partyIds={squad.partyIds}
-              profilesById={squad.profilesById}
-              rankAssets={rankAssets.data?.data ?? []}
-            />
-          )}
-        </TabsContent>
-      </Tabs>
-    );
+    if (!hasWidgets) {
+      return (
+        <Empty className='py-16'>
+          <EmptyHeader>
+            <EmptyMedia variant='default'>
+              <LayoutGrid className='h-16 w-16' />
+            </EmptyMedia>
+            <EmptyTitle>{t("stats.dashboard.emptyTabTitle")}</EmptyTitle>
+            <EmptyDescription>
+              {t("stats.dashboard.emptyTabDescription")}
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button className='gap-1.5' onClick={dashboard.startEditing}>
+              <Pencil className='h-4 w-4' />
+              {t("stats.dashboard.customize")}
+            </Button>
+          </EmptyContent>
+        </Empty>
+      );
+    }
+    return grid;
   };
 
+  const showAccountPrompt =
+    !editing && needsAccount && !accountsPending && !hasAccount;
+
   return (
-    <div className='flex h-full min-h-0 w-full flex-col'>
-      {/* Status (freshness, attribution, match sharing) takes the title row's
-          empty right side, so the row below only has to fit account and tabs. */}
-      <div className='flex shrink-0 flex-wrap items-end justify-between gap-x-6 gap-y-3 px-4 pr-2'>
-        <PageTitle subtitle={t("stats.subtitle")} title={t("stats.title")} />
-        <StatsStatus
-          freshness={
-            hasAccount
-              ? {
-                  fetchedAt: stats.fetchedAt,
-                  isStale: stats.isStale,
-                  isRefreshing,
-                  canRefresh,
-                  onRefresh: refresh,
-                }
-              : undefined
-          }
+    <DashboardDataProvider
+      value={{
+        accountId,
+        scope,
+        stats,
+        heroesById,
+        rankAssets: rankAssets.data?.data ?? [],
+      }}>
+      <div className='flex h-full min-h-0 w-full flex-col'>
+        {/* Status (freshness, attribution, match sharing) takes the title row's
+            empty right side, so the row below only has to fit account and tabs. */}
+        <div className='flex shrink-0 flex-wrap items-end justify-between gap-x-6 gap-y-3 px-4 pr-2'>
+          <PageTitle subtitle={t("stats.subtitle")} title={t("stats.title")} />
+          <StatsStatus
+            freshness={
+              hasAccount
+                ? {
+                    fetchedAt: stats.fetchedAt,
+                    isStale: stats.isStale,
+                    isRefreshing,
+                    canRefresh,
+                    onRefresh: refresh,
+                  }
+                : undefined
+            }
+          />
+        </div>
+
+        {/* Account and tabs share one pinned row - the tabs are the page's
+            primary navigation and shouldn't cost a band of their own. Without a
+            detected account the live tab still works, so the switcher stands on
+            its own. */}
+        <div className='flex shrink-0 flex-col gap-3 px-4 pr-2 pt-4 pb-4'>
+          {hasAccount ? (
+            <StatsHeader
+              account={account}
+              accountId={accountId}
+              accounts={accounts}
+              onSelectAccount={setAccountId}
+              profile={stats.profile}
+              rank={stats.rank}
+              rankAssets={rankAssets.data?.data ?? []}
+              tabs={tabBar}
+            />
+          ) : (
+            tabBar
+          )}
+          {!editing && (
+            <StatsFilters
+              mode={mode}
+              onModeChange={setMode}
+              onSinceDateChange={setSinceDate}
+              sinceDate={sinceDate}
+            />
+          )}
+          {editing && (
+            <EditToolbar
+              isDirty={dashboard.isDirty}
+              onAddWidget={dashboard.addWidget}
+              onCancel={dashboard.cancel}
+              onReset={dashboard.requestReset}
+              onSave={dashboard.save}
+            />
+          )}
+          {dashboard.recovered && !editing && (
+            <Alert variant='warning'>
+              <TriangleAlert className='h-4 w-4' />
+              <AlertDescription>
+                {t("stats.dashboard.recovered")}
+              </AlertDescription>
+            </Alert>
+          )}
+          {hasAccount && stats.isStale && (
+            <Alert variant='warning'>
+              <TriangleAlert className='h-4 w-4' />
+              <AlertDescription>{t("stats.staleWarning")}</AlertDescription>
+            </Alert>
+          )}
+        </div>
+
+        <div
+          className={cn(
+            "min-h-0 flex-1 overflow-y-auto px-4 pr-2",
+            // The account prompt is a centred card; every tab body is a full page.
+            showAccountPrompt && "flex items-center justify-center",
+          )}>
+          {renderBody()}
+        </div>
+        {hasAccount && !editing && (
+          <div className='shrink-0 px-4 py-3 pr-2 empty:hidden'>
+            <StatsHints
+              apiMatchIds={stats.allMatches.map((match) => match.match_id)}
+            />
+          </div>
+        )}
+      </div>
+
+      {dashboard.editorTarget && (
+        <WidgetEditor
+          initial={dashboard.editorTarget.widget}
+          onOpenChange={(open) => !open && dashboard.closeEditor()}
+          onSave={dashboard.saveWidget}
+          open
         />
-      </div>
+      )}
 
-      {/* Account and tabs share one pinned row - the tabs are the page's primary
-          navigation and shouldn't cost a band of their own. Without a detected
-          account the live tab still works, so the switcher stands on its own. */}
-      <div className='flex shrink-0 flex-col gap-3 px-4 pr-2 pt-4 pb-4'>
-        {hasAccount ? (
-          <StatsHeader
-            account={account}
-            accountId={accountId}
-            accounts={accounts}
-            onSelectAccount={setAccountId}
-            profile={stats.profile}
-            rank={stats.rank}
-            rankAssets={rankAssets.data?.data ?? []}
-            tabs={statsTabs}
-          />
-        ) : (
-          statsTabs
-        )}
-        {hasAccount && (
-          <StatsHints
-            apiMatchIds={stats.matches.map((match) => match.match_id)}
-          />
-        )}
-        {hasAccount && stats.isStale && (
-          <Alert variant='warning'>
-            <TriangleAlert className='h-4 w-4' />
-            <AlertDescription>{t("stats.staleWarning")}</AlertDescription>
-          </Alert>
-        )}
-      </div>
-
-      <div
-        className={cn(
-          "min-h-0 flex-1 overflow-y-auto px-4 pr-2",
-          // The account prompt is a centred card; every tab body is a full page.
-          !hasAccount && tab !== "live" && "flex items-center justify-center",
-        )}>
-        {renderBody()}
-      </div>
-    </div>
+      <PendingConfirmDialog
+        onConfirm={dashboard.confirm}
+        onDismiss={dashboard.dismissConfirm}
+        pending={dashboard.pendingConfirm}
+      />
+    </DashboardDataProvider>
   );
 };
 

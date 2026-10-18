@@ -1,4 +1,5 @@
 import type { StateCreator } from "zustand";
+import type { DashboardLayout } from "@/lib/stats/dashboard/layout";
 import type { State } from "..";
 
 export type StatsState = {
@@ -15,6 +16,9 @@ export type StatsState = {
    */
   patronHintDismissed: boolean;
   dismissPatronHint: () => void;
+  /** The user's Stats dashboard; `null` is the built-in default. */
+  statsDashboard: DashboardLayout | null;
+  setStatsDashboard: (layout: DashboardLayout | null) => void;
 };
 
 export const statsDeepMergeKeys =
@@ -25,8 +29,11 @@ export const createStatsSlice: StateCreator<State, [], [], StatsState> = (
 ) => ({
   statsAccountId: null,
   patronHintDismissed: false,
+  statsDashboard: null,
 
   setStatsAccountId: (accountId) => set({ statsAccountId: accountId }),
 
   dismissPatronHint: () => set({ patronHintDismissed: true }),
+
+  setStatsDashboard: (layout) => set({ statsDashboard: layout }),
 });
