@@ -11,7 +11,7 @@ export type LaunchStep =
   | "openingSteam"
   | "waitingForGame";
 
-export type LaunchProgress = {
+type LaunchProgress = {
   steps: LaunchStep[];
   /** Null once every step has finished. */
   current: LaunchStep | null;
