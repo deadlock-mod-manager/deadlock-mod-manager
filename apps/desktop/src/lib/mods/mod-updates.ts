@@ -6,7 +6,8 @@ type ModUpdate = Awaited<ReturnType<typeof checkModUpdates>>["updates"][number];
 export const canCheckModUpdates = (mod: LocalMod) =>
   (mod.status === ModStatus.Installed || mod.status === ModStatus.Downloaded) &&
   !!mod.remoteId &&
-  !mod.remoteId.startsWith("local-");
+  !mod.remoteId.startsWith("local-") &&
+  !mod.remoteUrl.startsWith("local://");
 
 export const isModUpdateSkipped = (
   update: ModUpdate,

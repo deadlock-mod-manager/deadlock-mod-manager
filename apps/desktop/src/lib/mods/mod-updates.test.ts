@@ -3,7 +3,11 @@ import { type LocalMod, ModStatus } from "@/types/mods";
 import { availableModUpdates, canCheckModUpdates } from "./mod-updates";
 
 const modFor = (remoteId: string, status = ModStatus.Installed): LocalMod =>
-  ({ remoteId, status }) as LocalMod;
+  ({
+    remoteId,
+    remoteUrl: `https://gamebanana.com/mods/${remoteId}`,
+    status,
+  }) as LocalMod;
 const updateFor = (mod: LocalMod, updatedAt = 200) => ({
   mod,
   updatedAt,
@@ -28,6 +32,18 @@ describe("mod update availability", () => {
       "enabled",
       "disabled",
     ]);
+  });
+
+  it("excludes local imports with remembered catalog IDs", () => {
+    for (const status of [ModStatus.Installed, ModStatus.Downloaded]) {
+      const local = {
+        ...modFor("650634", status),
+        remoteUrl: "local://manual",
+      };
+      expect(canCheckModUpdates(local)).toBe(false);
+      expect(availableModUpdates([updateFor(local)], [local])).toEqual([]);
+    }
+    expect(canCheckModUpdates(modFor("650634"))).toBe(true);
   });
 
   it("includes disabled mods while honoring skipped update versions", () => {

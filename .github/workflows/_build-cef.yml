@@ -219,7 +219,10 @@ jobs:
         # github.event_name is the caller's event here, so checking for
         # workflow_dispatch stamped manually-started stable releases as nightly.
         if: inputs.nightly == true
-        run: pnpm version:nightly ${{ inputs.commit_short }}
+        shell: bash
+        env:
+          COMMIT_SHORT: ${{ inputs.commit_short }}
+        run: pnpm version:nightly "$COMMIT_SHORT"
 
       - name: Resolve desktop package version
         id: desktop-version
