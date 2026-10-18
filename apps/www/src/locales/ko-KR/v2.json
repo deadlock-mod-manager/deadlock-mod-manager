@@ -28,6 +28,47 @@
         "vanilla": ""
       }
     },
+    "health": {
+      "nav": "",
+      "title": "",
+      "body": "",
+      "points": {
+        "when": "",
+        "fix": "",
+        "undo": "",
+        "local": ""
+      },
+      "repairsTitle": "",
+      "repairs": {
+        "camera": {
+          "title": "",
+          "body": ""
+        },
+        "animations": {
+          "title": "",
+          "body": ""
+        },
+        "appearance": {
+          "title": "",
+          "body": ""
+        },
+        "model": {
+          "title": "",
+          "body": ""
+        },
+        "gameData": {
+          "title": "",
+          "body": ""
+        }
+      },
+      "caveat": "",
+      "invite": {
+        "title": "",
+        "body": "",
+        "send": "",
+        "docs": ""
+      }
+    },
     "store": {
       "nav": "",
       "title": "",
@@ -48,6 +89,17 @@
         "loadFirst": "",
         "hidden": "",
         "ignore": ""
+      }
+    },
+    "crashes": {
+      "nav": "",
+      "title": "",
+      "body": "",
+      "points": {
+        "changes": "",
+        "undo": "",
+        "build": "",
+        "steam": ""
       }
     },
     "performance": {
@@ -98,6 +150,23 @@
     }
   },
   "demo": {
+    "health": {
+      "window": "",
+      "banner_one": "",
+      "banner_other": "",
+      "fix_one": "",
+      "fix_other": "",
+      "seeDetails": "",
+      "fixable": "",
+      "fixed": "",
+      "fixableSummary": "",
+      "fixedSummary": "",
+      "symptomCamera": "",
+      "symptomAnimations": "",
+      "fixedToast_one": "",
+      "fixedToast_other": "",
+      "replay": ""
+    },
     "update": {
       "title": "",
       "body": "",
@@ -111,6 +180,24 @@
       "skipped": "",
       "loadFirst": "",
       "loadedFirst": "",
+      "hint": ""
+    },
+    "crash": {
+      "title": "",
+      "body": "",
+      "changesHeading": "",
+      "modsAdded": "",
+      "modsAddedWhen": "",
+      "modUpdated": "",
+      "modUpdatedWhen": "",
+      "launchOptions": "",
+      "launchOptionsAdded": "",
+      "disableBoth": "",
+      "disabled": "",
+      "modsDisabled": "",
+      "tip": "",
+      "closedIt": "",
+      "launchAgain": "",
       "hint": ""
     }
   },
@@ -126,6 +213,18 @@
         "body": ""
       },
       "skins": {
+        "title": "",
+        "body": ""
+      },
+      "library": {
+        "title": "",
+        "body": ""
+      },
+      "launch": {
+        "title": "",
+        "body": ""
+      },
+      "badges": {
         "title": "",
         "body": ""
       },
