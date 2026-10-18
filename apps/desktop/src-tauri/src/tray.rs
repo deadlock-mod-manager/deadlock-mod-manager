@@ -83,9 +83,6 @@ pub fn set_tray_behavior(
   minimize_to_tray: bool,
   close_to_tray: bool,
 ) -> Result<(), Error> {
-  MINIMIZE_TO_TRAY.store(minimize_to_tray, Ordering::Relaxed);
-  CLOSE_TO_TRAY.store(close_to_tray, Ordering::Relaxed);
-
   let wanted = minimize_to_tray || close_to_tray;
   match (wanted, app.tray_by_id(TRAY_ID).is_some()) {
     (true, false) => build_tray(&app)?,
@@ -94,6 +91,11 @@ pub fn set_tray_behavior(
     }
     _ => {}
   }
+
+  // Stored only once the tray exists, so a failed build can't hide the window
+  // with nothing to bring it back
+  MINIMIZE_TO_TRAY.store(minimize_to_tray, Ordering::Relaxed);
+  CLOSE_TO_TRAY.store(close_to_tray, Ordering::Relaxed);
   Ok(())
 }
 
