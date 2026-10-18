@@ -4,6 +4,7 @@
 
 use tauri::{Window, WindowEvent};
 
+use crate::app_runtime::AppRuntime;
 use crate::errors::Error;
 
 #[tauri::command]
@@ -16,4 +17,4 @@ pub fn hide_to_tray_on_close() -> bool {
   false
 }
 
-pub fn handle_window_event(_window: &Window, _event: &WindowEvent) {}
+pub fn handle_window_event(_window: &Window<AppRuntime>, _event: &WindowEvent) {}
