@@ -75,9 +75,10 @@ manifest entry:
 `fix_mods` sets the fixed choice for exactly the listed mods, clearing any
 earlier choice of original files, and prepares the overlay the way launch does.
 It returns `applied`, or `reviewRequired` when something still needs review; the
-choices stay saved either way. The bulk paths (**Fix N mods**, **Fix all** and
-the launch preflight) skip mods whose remaining symptoms include model data
-issues, so the player sees those issues before fixing such a mod. **Fix N mods** and **Fix all** in Mods Library, **Fix** in the
+choices stay saved either way. **Fix N mods** in the banner and the launch
+preflight skip mods whose remaining symptoms include model data issues, so the
+player sees those issues before fixing such a mod; **Fix all** in the details
+list, where the issues are shown, includes them. **Fix N mods** and **Fix all** in Mods Library, **Fix** in the
 details list, **Fix for this patch** in the right-click menu and on the mod
 page, and the launch preflight all call it. **Use original files**
 calls `set_mod_compatibility_for_mod` with `enabled: false`, which records the

@@ -24,10 +24,10 @@ import {
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import useUninstall from "@/hooks/use-uninstall";
 import {
-  canFixInBulk,
   healthAction,
   healthBadgeKind,
   healthByModId,
+  isFixableStatus,
   type ModHealthBadgeKind,
 } from "@/lib/mods/mod-health";
 import { getModCoverImage } from "@/lib/mods/mod-images";
@@ -125,7 +125,7 @@ export const ModHealthDialog = ({
     })
     .sort((a, b) => ROW_ORDER[a.kind] - ROW_ORDER[b.kind]);
   const fixableIds = rows
-    .filter((row) => canFixInBulk(row.health))
+    .filter((row) => isFixableStatus(row.health.status))
     .map((row) => row.mod.remoteId);
 
   const disable = useMutation({

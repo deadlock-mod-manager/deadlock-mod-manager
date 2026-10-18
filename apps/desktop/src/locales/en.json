@@ -2438,8 +2438,8 @@
       "fix_one": "Fix {{count}} mod",
       "fix_other": "Fix {{count}} mods",
       "seeDetails": "See details",
-      "crashRisk_one": "{{count}} of these has model data issues. Fix it from See details, where the issues are listed.",
-      "crashRisk_other": "{{count}} of these have model data issues. Fix them one at a time from See details, where the issues are listed.",
+      "crashRisk_one": "{{count}} of these has model data issues. Review it in See details, where Fix all includes it.",
+      "crashRisk_other": "{{count}} of these have model data issues. Review them in See details, where Fix all includes them.",
       "checkingTitle": "Checking your mods against the current game version",
       "checkingDescription": "Mods made for an older version will show their fixes here, so you can apply them before you play.",
       "checkingCount": "{{checked}} of {{total}} checked"
