@@ -2762,7 +2762,7 @@
     "removedMissingMods_one": "",
     "removedMissingMods_other": "",
     "updatedRecentlyLabel": "Нядаўна абноўлены",
-    "updatedRecentlyDescription": "Файлы гэтага мода былі абноўлены за апошнія 7 дзён.",
+    "updatedRecentlyDescription": "",
     "updateAvailableLabel": "Даступна абнаўленне",
     "updateAvailableDescription": "Даступна больш новая версія гэтага мода. Спампуйце яшчэ раз, каб атрымаць апошнія файлы.",
     "mapCommandInAutoexec": {
@@ -3401,6 +3401,8 @@
     "autoResetGameinfoDescription": "",
     "autoResetGameinfoSuccess": "",
     "autoResetGameinfoFailed": "",
+    "showModUpdateBadges": "",
+    "showModUpdateBadgesDescription": "",
     "modelPreview": "",
     "modelPreviewDescription": "",
     "modelPreviewWarning": "",
