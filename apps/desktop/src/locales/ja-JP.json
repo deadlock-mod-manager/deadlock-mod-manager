@@ -3769,7 +3769,11 @@
     "lastupdated": "最新のアップデート",
     "downloadcount": "ダウンロード数",
     "rating": "評価",
-    "releasedate": "公開日"
+    "releasedate": "公開日",
+    "installorder": "",
+    "hero": "",
+    "name": "",
+    "recentlyadded": ""
   },
   "timePeriod": {
     "alltime": "",

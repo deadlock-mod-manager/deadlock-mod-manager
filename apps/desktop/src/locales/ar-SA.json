@@ -3769,7 +3769,11 @@
     "lastupdated": "آخر تحديث",
     "downloadcount": "عدد التنزيلات",
     "rating": "التقييم",
-    "releasedate": "تاريخ الإصدار"
+    "releasedate": "تاريخ الإصدار",
+    "installorder": "",
+    "hero": "",
+    "name": "",
+    "recentlyadded": ""
   },
   "timePeriod": {
     "alltime": "",

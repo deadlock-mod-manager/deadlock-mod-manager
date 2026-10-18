@@ -3769,7 +3769,11 @@
     "lastupdated": "Son güncellenen",
     "downloadcount": "İndirme sayısı",
     "rating": "Puan",
-    "releasedate": "Yayın tarihi"
+    "releasedate": "Yayın tarihi",
+    "installorder": "",
+    "hero": "",
+    "name": "",
+    "recentlyadded": ""
   },
   "timePeriod": {
     "alltime": "",

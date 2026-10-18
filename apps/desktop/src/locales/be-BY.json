@@ -3769,7 +3769,11 @@
     "lastupdated": "",
     "downloadcount": "",
     "rating": "",
-    "releasedate": ""
+    "releasedate": "",
+    "installorder": "",
+    "hero": "",
+    "name": "",
+    "recentlyadded": ""
   },
   "timePeriod": {
     "alltime": "",
