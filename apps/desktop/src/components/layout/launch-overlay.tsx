@@ -43,7 +43,7 @@ export const LaunchOverlay = () => {
           variant='ghost'>
           <X className='size-4' />
         </Button>
-        <Logo className='size-14 animate-launch-spin' />
+        <Logo className='size-14' cogClassName='animate-launch-spin' />
         <div className='mt-4 font-primary text-xl tracking-wide'>
           {t("launch.title")}
         </div>
