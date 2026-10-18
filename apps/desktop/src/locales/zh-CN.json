@@ -2273,40 +2273,24 @@
   },
   "myMods": {
     "compatibility": {
-      "enable": "",
-      "about": "",
-      "description": "",
       "review": "",
-      "noEnabledMods": "",
       "reviewDescription": "",
       "launchReviewDescription": "",
       "applyAndLaunch": "",
-      "launchFlow": "",
       "closeGame": "",
       "checking": "",
-      "loadFailed": "",
       "checkFailed": "",
       "unmanagedFilesTitle": "",
       "unmanagedFilesDescription": "",
       "missingFilesTitle": "",
       "missingFilesDescription": "",
       "retry": "",
-      "changeFailed": "",
-      "enableAndApply": "",
       "apply": "",
       "applied": "",
-      "perMod": "",
-      "forMod": "",
-      "perModDescription": "",
-      "selected_one": "",
-      "selected_other": "",
-      "selectMods": "",
+      "appliedLaunching": "",
       "excluded": "",
       "sharedTitle": "",
-      "sharedDescription": "",
-      "on": "",
-      "off": "",
-      "label": ""
+      "sharedDescription": ""
     },
     "checkForUpdates": "检查更新",
     "checkForUpdatesTooltip": "检查模组是否有更新",
@@ -2391,6 +2375,117 @@
       "installed": "已安装",
       "downloaded": "已下载",
       "conflicts": "冲突"
+    }
+  },
+  "modHealth": {
+    "badge": {
+      "fixable": "",
+      "partlyFixable": "",
+      "fixed": "",
+      "partlyFixed": "",
+      "originalFiles": "",
+      "needsUpdate": ""
+    },
+    "summary": {
+      "fixable": "",
+      "partlyFixable": "",
+      "fixed": "",
+      "partlyFixed": "",
+      "originalFiles": "",
+      "needsUpdate": ""
+    },
+    "symptoms": {
+      "cameraAim": "",
+      "animations": "",
+      "appearance": "",
+      "model": "",
+      "gameData": "",
+      "crashRisk": ""
+    },
+    "lastUpdatedBefore": "",
+    "stillNeedsUpdate": "",
+    "fixForPatch": "",
+    "useOriginalFiles": "",
+    "closeGame": "",
+    "alert": {
+      "description": {
+        "fixable": "",
+        "partlyFixable": "",
+        "fixed": "",
+        "partlyFixed": "",
+        "originalFiles": "",
+        "needsUpdate": ""
+      },
+      "canFix": "",
+      "fixed": "",
+      "needsUpdate": "",
+      "closeGameToSwitch": ""
+    },
+    "fixedToast_one": "",
+    "fixedToast_other": "",
+    "fixFailed": "",
+    "originalFilesToast": "",
+    "originalFilesFailed": "",
+    "banner": {
+      "gameUpdated_one": "",
+      "gameUpdated_other": "",
+      "olderVersion_one": "",
+      "olderVersion_other": "",
+      "gameUpdatedPartly_one": "",
+      "gameUpdatedPartly_other": "",
+      "olderVersionPartly_one": "",
+      "olderVersionPartly_other": "",
+      "fix_one": "",
+      "fix_other": "",
+      "seeDetails": "",
+      "crashRisk_one": "",
+      "crashRisk_other": "",
+      "review_one": "",
+      "review_other": "",
+      "checkingTitle": "",
+      "checkingDescription": "",
+      "checkingCount": ""
+    },
+    "dialog": {
+      "title": "",
+      "disclaimer": "",
+      "empty": "",
+      "fix": "",
+      "fixes": "",
+      "stillNeedsUpdate": "",
+      "fixAll": "",
+      "disable": "",
+      "noUpdate": ""
+    },
+    "heldBackPrompt": {
+      "title_one": "",
+      "title_other": "",
+      "description": "",
+      "launchWithoutFixing": ""
+    },
+    "launchPrompt": {
+      "title_one": "",
+      "title_other": "",
+      "description": "",
+      "alwaysFix": "",
+      "fixAndLaunch": "",
+      "launchAnyway": ""
+    },
+    "symptomHints": {
+      "cameraAim": "",
+      "animations": "",
+      "appearance": "",
+      "model": "",
+      "gameData": "",
+      "crashRisk": ""
+    },
+    "symptomsInline": {
+      "cameraAim": "",
+      "animations": "",
+      "appearance": "",
+      "model": "",
+      "gameData": "",
+      "crashRisk": ""
     }
   },
   "conflicts": {
@@ -2751,7 +2846,7 @@
     "failedToOpenForumPost": "打开论坛帖子失败"
   },
   "warnings": {
-    "outdatedDescription": "此模组自「City Never Sleeps」更新（2026 年 9 月 29 日）以来未再更新，可能无法正常运行。",
+    "outdatedDescription": "",
     "obsoleteLabel": "已淘汰",
     "obsoleteDescription": "此模组已无法在模组商店获取，可能无法在当前游戏版本中正常运行。",
     "staleModDescription": "此模组有 {{count}} 条未解决的报告，且自 {{date}} 以来未更新。可能不兼容当前游戏版本。",
@@ -3399,6 +3494,8 @@
     "traySyncFailed": "",
     "autoResetGameinfo": "Deadlock 关闭后恢复原版游戏配置",
     "autoResetGameinfoDescription": "退出后从 gameinfo.gi 中移除模组路径，这样从 Steam 启动就会以无模组方式运行游戏。从这里以模组模式启动会重新加回。仅在模组管理器打开时有效。",
+    "autoFixMods": "",
+    "autoFixModsDescription": "",
     "autoResetGameinfoSuccess": "Deadlock 已关闭，游戏配置已恢复为原版。",
     "autoResetGameinfoFailed": "Deadlock 关闭后无法恢复原版游戏配置。请使用设置中的「重置为纯净版」。",
     "showModUpdateBadges": "",
@@ -3446,10 +3543,6 @@
         "description": "标记修改了相同文件的已启用模组，并在「我的模组」的冲突标签页中显示。"
       },
       "performance-configs": {
-        "title": "",
-        "description": ""
-      },
-      "mod-compatibility-repairs": {
         "title": "",
         "description": ""
       }
@@ -3864,8 +3957,7 @@
     "enableMod": "启用模组？",
     "installedTooltip": "模组已启用，是否要禁用它？这不会删除模组，只是在游戏中禁用它。",
     "downloadedTooltip": "模组已下载，是否要启用它？",
-    "toggleForMod": "",
-    "mod": ""
+    "toggleForMod": ""
   },
   "addons": {
     "analyzeLocal": "分析本地插件",
