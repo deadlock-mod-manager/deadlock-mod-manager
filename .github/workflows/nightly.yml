@@ -543,7 +543,13 @@ jobs:
       contents: write
     runs-on: depot-ubuntu-24.04
     needs:
-      [check-commits, prepare-matrix, create-nightly-release, build-nightly]
+      [
+        check-commits,
+        prepare-matrix,
+        create-nightly-release,
+        build-nightly,
+        build-appimage,
+      ]
     if: (failure() || cancelled()) && needs.check-commits.outputs.should_build == 'true'
 
     steps:
