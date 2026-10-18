@@ -82,7 +82,7 @@ describe("catalog installation lifecycle", () => {
           await dialog.$("button=Apply").click();
           await expect(
             $(
-              '//*[@data-sonner-toast and contains(., "Failed to update mod files")]',
+              '//*[@data-sonner-toast and contains(., "Server returned error status: 503")]',
             ),
           ).toBeDisplayed();
           await expect(dialog).toBeDisplayed();

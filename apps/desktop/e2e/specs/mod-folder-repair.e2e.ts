@@ -40,10 +40,10 @@ describe("Repair mod folder", () => {
           for (const name of REPAIR_UNTRACKED)
             await expect(dialog).toHaveText(expect.stringContaining(name));
           await expect(dialog).toHaveText(
-            expect.stringContaining("backed up rather than deleted"),
+            expect.stringContaining("will be moved to a backup"),
           );
           await expect(dialog).toHaveText(
-            expect.stringContaining("corrupt manifest"),
+            expect.stringContaining("list of your mods is damaged"),
           );
           await expect(dialog).toHaveText(
             expect.stringContaining(".dmm-reorder"),
