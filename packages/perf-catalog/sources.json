@@ -6,10 +6,10 @@
   "schemaExplorer": {
     "repo": "ValveResourceFormat/SchemaExplorer",
     "path": "schemas/deadlock.json",
-    "commit": "3e8fc0192cb0e8b162db87a713affce96fd3dacc",
-    "sha256": "06db60a268a9dfa46b01c96d02a2f8254c33c431cabd873414408c6bb0ae884c",
-    "revision": 11111459,
-    "versionDate": "Oct 09 2026"
+    "commit": "1eb1d422d104091fca69d23f286543006242d7b8",
+    "sha256": "85977deb3bc648de791bbbd521632b985e9cb3f0e800a0966746bedcea3ad6ca",
+    "revision": 11139717,
+    "versionDate": "Oct 16 2026"
   },
   "gameTracking": {
     "repo": "SteamTracking/GameTracking-Deadlock",
@@ -17,6 +17,12 @@
       "path": "game/citadel/gameinfo.gi",
       "steamInf": "game/citadel/steam.inf",
       "versions": [
+        {
+          "commit": "0c38f9d31c4905e0fe1a292afe91aa3d01044baf",
+          "date": "2026-10-13",
+          "build": 6779,
+          "sha256": "75f4d8257a76643a35240a71bcd3d93c10a2430b69afbcc27b1cba71250dd1bc"
+        },
         {
           "commit": "58b3529cc17088df1eed5c39c6eeac72d7133b16",
           "date": "2026-09-29",
@@ -263,6 +269,18 @@
       "path": "DumpSource2/convars.txt",
       "since": "2026-03-01",
       "versions": [
+        {
+          "commit": "9b616d3093a7f3e25e852ec93c9b818c5d2c94ed",
+          "date": "2026-10-16",
+          "build": 6790,
+          "sha256": "95811d33abf57336ac082469b9acb603d720e918cbc7188517aa0d6bd1ade30f"
+        },
+        {
+          "commit": "0c38f9d31c4905e0fe1a292afe91aa3d01044baf",
+          "date": "2026-10-13",
+          "build": 6779,
+          "sha256": "4a83c549e6b5a0041a49baa7f1bd90d179a7ff9201251789931455bb152069e0"
+        },
         {
           "commit": "8f572f6e834a7b7d5a8678147818099074a59cf8",
           "date": "2026-10-09",
@@ -558,9 +576,9 @@
     "sqooky-default": {
       "repo": "Sqooky/OptimizationLock",
       "path": "Sqooky's .gi/gameinfo.gi",
-      "commit": "bb69d9d0f49e7b609b2248b05175c515e86c588d",
-      "date": "2026-10-05",
-      "sha256": "c1e451134cd1d4d57d0f665673f9bbe732d6335c2b48ee6617079c23254222c7"
+      "commit": "aba20cda9813b5bc2e1bc03c8b054a7cae16b48c",
+      "date": "2026-10-17",
+      "sha256": "83fb7f59e2b0e241530175b618d79ee6d1c8bc6296eb028fb4386ac9c792b5a1"
     },
     "sqooky-eskay": {
       "repo": "Sqooky/OptimizationLock",
@@ -572,9 +590,9 @@
     "sqooky-maxfps": {
       "repo": "Sqooky/OptimizationLock",
       "path": "maximumfps or minimum spec config and resources here/gameinfo.gi",
-      "commit": "bb69d9d0f49e7b609b2248b05175c515e86c588d",
-      "date": "2026-10-05",
-      "sha256": "b6419de8e6aa5fede1e0e70f0ff6fa18c43c7f6ab884f0ec26bf30c418f368c4",
+      "commit": "aba20cda9813b5bc2e1bc03c8b054a7cae16b48c",
+      "date": "2026-10-17",
+      "sha256": "c00fd4ffee820ded185212c603d9155d3368efd65fa5cc229fe620ba9d30b44a",
       "video": {
         "path": "maximumfps or minimum spec config and resources here/video.txt",
         "sha256": "3eac767a751db000ba2400c07eeb2bd1dd509a60a35f33ceb4f29ff0954f26f3"
@@ -583,16 +601,16 @@
     "kaizu-minspec": {
       "repo": "Sqooky/OptimizationLock",
       "path": "kaizuchanerus minimum spec/gameinfo.gi",
-      "commit": "e2e9925cdd9d564a1a0bb19f28185211fb0dea75",
-      "date": "2026-10-05",
-      "sha256": "46abb89c15bebdabef6234959cbe597df289176d3e2a19cf826381107e103bc6"
+      "commit": "0298945c40d3e01d00a96673bf39229c4f303908",
+      "date": "2026-10-14",
+      "sha256": "e7a2b712efa0e53e07d0b58ff19cd531d8d5089a02474e5d581ea94acc49d359"
     },
     "kaizu-extremelow": {
       "repo": "Sqooky/OptimizationLock",
-      "path": "kaizuchanerus minimum spec/gameinfoextremelow.gi",
-      "commit": "1da9517e8f0d0b636979d295b4bebcb7858ac6c9",
-      "date": "2026-10-03",
-      "sha256": "0e5211de0c329ffe160141cdc6fec831df7f0b82f6ac1d6b8be7d8a048d5229d"
+      "path": "kaizuchanerus minimum spec/gameinfo-EXTREME-LOW.gi",
+      "commit": "0298945c40d3e01d00a96673bf39229c4f303908",
+      "date": "2026-10-14",
+      "sha256": "965c0b567f51fa70f00f168d215a0778b1450d1a788272e1cee8bdbe65da313f"
     },
     "boot-maxfps": {
       "repo": "Sqooky/OptimizationLock",
@@ -611,25 +629,25 @@
     "optilock-fps": {
       "repo": "dacooderr/OptiLock",
       "path": "OptiLock FPS Config (Recommended)/gameinfo.gi",
-      "commit": "7f7a54a1b8237d9b66348067d09f93174c47d303",
-      "date": "2026-10-02",
-      "sha256": "f98c6f6e08cecfd3c44b5f65eb31991d3dabc7be366a0223c9c559c2f9765889",
-      "tag": "v5.1",
+      "commit": "fca258fa8e53dfe05f1e6b5521d58917f721eff6",
+      "date": "2026-10-16",
+      "sha256": "e3bef311c45c44fcbce50abb14ab55e0d727b6f7b474180345688707df890bcd",
+      "tag": "v5.7",
       "video": {
         "path": "OptiLock FPS Config (Recommended)/video.txt",
-        "sha256": "d8530b937e4075900162dccb1fca216f2bc535f569cb9e40295a400bdc3d0593"
+        "sha256": "92885c22d69cb82a97a84d8960ba4b59944c25ebc52159de41e49287efa433fb"
       }
     },
     "optilock-potato": {
       "repo": "dacooderr/OptiLock",
       "path": "OptiLock Potato Config/gameinfo.gi",
-      "commit": "7f7a54a1b8237d9b66348067d09f93174c47d303",
-      "date": "2026-10-02",
-      "sha256": "a810f532ee993d9d1dd8aaf2c38bdabc5bf77bbd24b14a17da5abeb50d65d064",
-      "tag": "v5.1",
+      "commit": "fca258fa8e53dfe05f1e6b5521d58917f721eff6",
+      "date": "2026-10-16",
+      "sha256": "3501aecc7ac335686fb6e921a72128cc8aca8c5b76892adbca61d70f70ac1a10",
+      "tag": "v5.7",
       "video": {
         "path": "OptiLock Potato Config/video.txt",
-        "sha256": "265fa78ff809ff75bae9f26e2b9b577750b155c338b395d580fae6c8ebf80a75"
+        "sha256": "abe191d5fa17f383090197ed2047d092f8688a74ef46ef93a0f4bb2004358f0a"
       }
     }
   },
@@ -644,13 +662,13 @@
       "updatedAt": "2026-02-05"
     },
     "616141": {
-      "fileId": 1771890,
-      "fileName": "dyson_build_e4a77.zip",
-      "md5": "2af319ae55db59f964f7a7f5a86055f9",
+      "fileId": 1849988,
+      "fileName": "dyson_build_45ccf.zip",
+      "md5": "5f5e8209ac0cbc3199f2a573cd1a959f",
       "name": "configuration optimization from dyson",
       "author": "dyson behind",
-      "downloads": 118525,
-      "updatedAt": "2026-08-02"
+      "downloads": 121124,
+      "updatedAt": "2026-10-16"
     },
     "650519": {
       "fileId": 1670703,
@@ -676,7 +694,7 @@
       "md5": "4518112873beeff6c6c371da52238bd5",
       "name": "config \"OptimizationDL\" - competitive by back3p",
       "author": "back3p",
-      "downloads": 59175,
+      "downloads": 67197,
       "updatedAt": "2026-06-14"
     },
     "673077": {
@@ -685,7 +703,7 @@
       "md5": "fa507f4ea07871200121859600875312",
       "name": "Max Fps but with Small Changes",
       "author": "Tysen98",
-      "downloads": 6062,
+      "downloads": 6727,
       "updatedAt": "2026-05-24"
     },
     "722944": {
@@ -694,7 +712,7 @@
       "md5": "bc5da539fd3e16000ebc07837cee91ff",
       "name": "SideLock[mb best fps cfg]",
       "author": "hitmeupwhenyourelonely",
-      "downloads": 855,
+      "downloads": 1409,
       "updatedAt": "2026-10-01"
     }
   }
