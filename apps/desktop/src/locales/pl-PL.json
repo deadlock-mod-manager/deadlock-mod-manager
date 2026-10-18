@@ -1844,10 +1844,8 @@
     "manageOrder": "Zmień kolejność modyfikacji",
     "vpkCount": "{{count}} VPK(ów)",
     "compatibility": {
-      "title": "",
       "affectedFiles_one": "",
       "affectedFiles_other": "",
-      "description": "",
       "repairs": {
         "animationSkeleton": "",
         "animationSkeletonRebased": "",
@@ -1877,11 +1875,15 @@
         "animationMapping": "",
         "unreadableResource": ""
       },
-      "warningDescription": ""
+      "warningDescription": "",
+      "warningsTitle": "",
+      "warningSummary_one": "",
+      "warningSummary_other": "",
+      "repairSummary_one": "",
+      "repairSummary_other": "",
+      "automaticTitle": ""
     },
     "dataCompatibility": {
-      "title": "",
-      "description": "",
       "repairs": {
         "heroDevelopmentState": "",
         "inheritedDefinition": "",
@@ -1904,8 +1906,7 @@
         "ambiguousTemplates": "",
         "inheritanceCycle": "",
         "visibilityMigrationUnverified": ""
-      },
-      "warningDescription": ""
+      }
     },
     "localization": {
       "title": "",
@@ -1918,9 +1919,6 @@
       "noChoicesSummary": "",
       "conflictsTitle": "",
       "conflictsDescription": "",
-      "readyTitle": "",
-      "unresolvedWarningsMessage": "",
-      "noConflicts": "",
       "readyMessage": "",
       "heroIdsAdjustedTitle_one": "",
       "heroIdsAdjustedTitle_other": "",
@@ -2144,6 +2142,27 @@
       "body": "Masz zainstalowane modyfikacje mapy: {{modNames}}. Mogą one spowodować problemy, gdy będziesz próbował uruchomić normalną mapę lub dołączyć do kolejki.",
       "disableAndLaunch": "Wyłącz modyfikacje mapy i uruchom",
       "launchAnyway": "Uruchom mimo to"
+    }
+  },
+  "launch": {
+    "title": "",
+    "hide": "",
+    "cancel": "",
+    "steps": {
+      "randomizingSkins": "",
+      "disablingMods": "",
+      "verifyingMods_one": "",
+      "verifyingMods_other": "",
+      "mergingModData": "",
+      "writingSearchPaths": "",
+      "applyingPerformance": "",
+      "openingSteam": "",
+      "waitingForGame": ""
+    },
+    "stepState": {
+      "done": "",
+      "active": "",
+      "pending": ""
     }
   },
   "common": {
@@ -4807,11 +4826,12 @@
   },
   "modOptions": {
     "title": "Zarządzaj plikami: {{modName}}",
-    "description": "Wybierz pliki, które mają być użyte dla tego moda. Zmiany zachowują się natychmiast.",
+    "description": "",
     "openTooltip": "Zarządzaj plikami",
     "apply": "Zastosuj",
     "applySuccess": "Zaktualizowano pliki modyfikacji",
     "noOptions": "Ten mod nie ma innych plików.",
+    "variants": "",
     "selectedCount": "Wybrano {{selected}} z {{total}}",
     "enabled": "Włączony",
     "needsDownload": "wymaga pobrania",
@@ -4833,20 +4853,6 @@
   },
   "installedFiles": {
     "title": "",
-    "description": "",
-    "toggleDescription": "",
-    "fileCount_one": "",
-    "fileCount_other": "",
-    "enabledCount": "",
-    "reset": "",
-    "selectAtLeastOne": ""
-  },
-  "installedFiles": {
-    "title": "",
-    "description": "",
-    "toggleDescription": "",
-    "fileCount_one": "",
-    "fileCount_other": "",
     "enabledCount": "",
     "reset": "",
     "selectAtLeastOne": ""

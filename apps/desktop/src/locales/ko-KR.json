@@ -1844,10 +1844,8 @@
     "manageOrder": "모드 순서 변경",
     "vpkCount": "{{count}} VPK",
     "compatibility": {
-      "title": "",
       "affectedFiles_one": "",
       "affectedFiles_other": "",
-      "description": "",
       "repairs": {
         "animationSkeleton": "",
         "animationSkeletonRebased": "",
@@ -1877,11 +1875,15 @@
         "animationMapping": "",
         "unreadableResource": ""
       },
-      "warningDescription": ""
+      "warningDescription": "",
+      "warningsTitle": "",
+      "warningSummary_one": "",
+      "warningSummary_other": "",
+      "repairSummary_one": "",
+      "repairSummary_other": "",
+      "automaticTitle": ""
     },
     "dataCompatibility": {
-      "title": "",
-      "description": "",
       "repairs": {
         "heroDevelopmentState": "",
         "inheritedDefinition": "",
@@ -1904,8 +1906,7 @@
         "ambiguousTemplates": "",
         "inheritanceCycle": "",
         "visibilityMigrationUnverified": ""
-      },
-      "warningDescription": ""
+      }
     },
     "localization": {
       "title": "",
@@ -1918,9 +1919,6 @@
       "noChoicesSummary": "",
       "conflictsTitle": "",
       "conflictsDescription": "",
-      "readyTitle": "",
-      "unresolvedWarningsMessage": "",
-      "noConflicts": "",
       "readyMessage": "",
       "heroIdsAdjustedTitle_one": "",
       "heroIdsAdjustedTitle_other": "",
@@ -2144,6 +2142,27 @@
       "body": "지도 모드가 설치되어 있습니다: {{modNames}}. 일반 게임 맵을 로드하거나 매치메이킹에 참여하려고 하면 문제가 발생할 수 있습니다.",
       "disableAndLaunch": "지도 모드 비활성화 및 실행",
       "launchAnyway": "어쨌든 실행"
+    }
+  },
+  "launch": {
+    "title": "",
+    "hide": "",
+    "cancel": "",
+    "steps": {
+      "randomizingSkins": "",
+      "disablingMods": "",
+      "verifyingMods_one": "",
+      "verifyingMods_other": "",
+      "mergingModData": "",
+      "writingSearchPaths": "",
+      "applyingPerformance": "",
+      "openingSteam": "",
+      "waitingForGame": ""
+    },
+    "stepState": {
+      "done": "",
+      "active": "",
+      "pending": ""
     }
   },
   "common": {
@@ -4812,6 +4831,7 @@
     "apply": "",
     "applySuccess": "",
     "noOptions": "",
+    "variants": "",
     "selectedCount": "",
     "enabled": "",
     "needsDownload": "",
@@ -4833,20 +4853,6 @@
   },
   "installedFiles": {
     "title": "",
-    "description": "",
-    "toggleDescription": "",
-    "fileCount_one": "",
-    "fileCount_other": "",
-    "enabledCount": "",
-    "reset": "",
-    "selectAtLeastOne": ""
-  },
-  "installedFiles": {
-    "title": "",
-    "description": "",
-    "toggleDescription": "",
-    "fileCount_one": "",
-    "fileCount_other": "",
     "enabledCount": "",
     "reset": "",
     "selectAtLeastOne": ""
