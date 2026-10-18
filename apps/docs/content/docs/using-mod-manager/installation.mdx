@@ -228,7 +228,7 @@ Replace `<version>` with the downloaded version. If the runtime reports that FUS
 ./"Deadlock Mod Manager_<version>_amd64.AppImage" --appimage-extract-and-run
 ```
 
-The AppImage uses the standard WebKitGTK runtime; CEF downloads remain separate. It is built on Ubuntu 24.04, so older system libraries may prevent it from launching. It uses the host's Wayland libraries to stay compatible with the host graphics drivers. One AppImage is used for X11 and Wayland sessions; the current launcher uses X11/XWayland.
+The AppImage uses the standard WebKitGTK runtime; CEF downloads remain separate. It is built on Ubuntu 24.04, so older system libraries may prevent it from launching. AppImage rendering depends on the host graphics stack; a successful build does not guarantee compatibility with every distribution or driver. Download a newer AppImage from GitHub Releases to update; AppImage builds do not modify the existing in-app updater metadata.
 
 #### Flatpak
 

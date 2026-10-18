@@ -240,12 +240,6 @@ jobs:
             gir1.2-webkit2-4.1=2.44.0-2 \
             libappindicator3-dev \
             librsvg2-dev \
-            patchelf \
-            xdg-utils \
-            desktop-file-utils \
-            libfuse2t64 \
-            gstreamer1.0-plugins-base \
-            gstreamer1.0-plugins-good \
             flatpak \
             flatpak-builder \
             weston \
@@ -273,7 +267,6 @@ jobs:
         if: matrix.platform == 'ubuntu-24.04'
         uses: tauri-apps/tauri-action@v1
         env:
-          APPIMAGE_EXTRACT_AND_RUN: "1"
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           VITE_API_URL: https://api.deadlockmods.app
@@ -282,7 +275,6 @@ jobs:
           VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
         with:
           projectPath: ./apps/desktop
-          tauriScript: bash scripts/tauri-appimage.sh
           releaseId: ${{ needs.create-test-release.outputs.release_id }}
 
       - name: Build Flatpak bundle (Linux)
@@ -433,3 +425,16 @@ jobs:
                 console.error(`Cleanup failed: ${error.message}`);
               }
             }
+
+  build-appimage:
+    needs: [check-label, prepare-matrix, create-test-release]
+    if: contains(fromJSON(needs.prepare-matrix.outputs.matrix).platform, 'ubuntu-24.04')
+    permissions:
+      contents: write
+    uses: ./.github/workflows/_build-appimage.yml
+    with:
+      release_id: ${{ needs.create-test-release.outputs.release_id }}
+      ref: ${{ needs.check-label.outputs.branch }}
+    secrets:
+      TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+      VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}

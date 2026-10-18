@@ -1,0 +1,92 @@
+name: Build AppImage
+
+on:
+  workflow_call:
+    inputs:
+      release_id:
+        description: "GitHub release ID to upload the AppImage to"
+        required: true
+        type: string
+      ref:
+        description: "Source ref to build"
+        required: false
+        type: string
+        default: ""
+      nightly:
+        description: "Apply the nightly desktop version"
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      TAURI_PRIVATE_KEY:
+        required: true
+      VITE_GA_MEASUREMENT_ID:
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-appimage:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop -> apps/desktop/target
+          key: appimage
+
+      - uses: pnpm/action-setup@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24.8.0"
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install AppImage build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential pkg-config libssl-dev libdbus-1-dev \
+            libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev \
+            patchelf libfuse2t64 file xdg-utils desktop-file-utils \
+            protobuf-compiler libprotobuf-dev \
+            gstreamer1.0-plugins-base gstreamer1.0-plugins-good
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply nightly version
+        if: inputs.nightly
+        run: pnpm version:nightly "$(git rev-parse --short HEAD)"
+
+      - name: Build and upload AppImage
+        uses: tauri-apps/tauri-action@v1
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          VITE_API_URL: https://api.deadlockmods.app
+          VITE_WEB_URL: https://deadlockmods.app
+          VITE_AUTH_URL: https://auth.deadlockmods.app
+          VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
+        with:
+          projectPath: ./apps/desktop
+          args: --config src-tauri/tauri.appimage.conf.json
+          releaseId: ${{ inputs.release_id }}
+          uploadUpdaterJson: false
