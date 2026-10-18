@@ -163,8 +163,14 @@ pub(super) fn unloaded_models(
     if !visited.insert(path.clone()) || !may_reference_models(&path) {
       continue;
     }
-    let Some((_, bytes)) = resources.resolve(&path)? else {
-      continue;
+    let bytes = match resources.resolve(&path) {
+      Ok(Some((_, bytes))) => bytes,
+      Ok(None) => continue,
+      // An unread file may reference any candidate, so none is proven unloaded.
+      Err(error) => {
+        log::warn!("Could not read {path} while tracing model references: {error}");
+        return Ok(Vec::new());
+      }
     };
     for name in referenced_names(&path, &bytes)
       .iter()

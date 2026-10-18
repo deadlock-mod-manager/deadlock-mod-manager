@@ -16,3 +16,11 @@ export const invalidateModHealth = (queryClient: QueryClient) =>
       queryKey: ["mod-compatibility-resolved-analysis"],
     }),
   ]);
+
+/**
+ * Remembers, per profile, the game build whose forced recheck succeeded.
+ * previousGameBuild still names the old build after that recheck, so this
+ * stops it from repeating on every start.
+ */
+export const forcedBuildStorageKey = (profileFolder: string | null) =>
+  `mod-health.forced-game-build:${profileFolder ?? ""}`;

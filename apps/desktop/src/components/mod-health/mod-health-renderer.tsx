@@ -7,11 +7,11 @@ import {
   useModHealthReport,
 } from "@/hooks/use-mod-health";
 import { gameUpdatedSinceLastCheck } from "@/lib/mods/mod-health";
+import { forcedBuildStorageKey } from "@/lib/mods/mod-health-queries";
 import { usePersistedStore } from "@/lib/store";
 import type { ModHealthProgress } from "@/types/generated/ModHealthProgress";
 import { ModStatus } from "@/types/mods";
 
-const FORCED_BUILD_STORAGE_KEY = "mod-health.forced-game-build";
 // Enable all and collection installs land one mod at a time.
 const INSTALL_CHECK_DELAY_MS = 1500;
 
@@ -42,13 +42,10 @@ export const ModHealthRenderer = () => {
   useEffect(() => {
     if (!report.data || checkedProfiles.current.has(profileFolder)) return;
     checkedProfiles.current.add(profileFolder);
-    // previousGameBuild still names the old build after the recheck, so the
-    // forced run is remembered per build instead of repeating on every start.
-    const build = String(report.data.gameBuild);
     const force =
       gameUpdatedSinceLastCheck(report.data) &&
-      window.localStorage.getItem(FORCED_BUILD_STORAGE_KEY) !== build;
-    if (force) window.localStorage.setItem(FORCED_BUILD_STORAGE_KEY, build);
+      window.localStorage.getItem(forcedBuildStorageKey(profileFolder)) !==
+        String(report.data.gameBuild);
     check({ profileFolder, force });
   }, [report.data, profileFolder, check]);
 

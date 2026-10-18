@@ -17,6 +17,7 @@ import {
   type ModHealthCheckRequest,
 } from "@/lib/mods/mod-health";
 import {
+  forcedBuildStorageKey,
   invalidateModHealth,
   modHealthQueryKey,
 } from "@/lib/mods/mod-health-queries";
@@ -81,8 +82,14 @@ export const useCheckModHealth = () => {
         force,
       }),
     meta: { skipGlobalErrorHandler: true },
-    onSuccess: (report, { profileFolder }) => {
+    onSuccess: (report, { profileFolder, force }) => {
       queryClient.setQueryData(modHealthQueryKey(profileFolder), report);
+      if (force && report.gameBuild !== null) {
+        window.localStorage.setItem(
+          forcedBuildStorageKey(profileFolder),
+          String(report.gameBuild),
+        );
+      }
     },
     onError: (error) => {
       logger.withError(error).error("Mod health check failed");
