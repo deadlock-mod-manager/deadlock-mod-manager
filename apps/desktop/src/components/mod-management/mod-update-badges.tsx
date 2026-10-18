@@ -14,7 +14,7 @@ type UpdatedRecentlyBadgeProps = {
   className?: string;
 };
 
-export function UpdatedRecentlyBadge({
+function UpdatedRecentlyBadge({
   className,
 }: Readonly<UpdatedRecentlyBadgeProps>) {
   const { t } = useTranslation();
@@ -37,7 +37,7 @@ type UpdateAvailableBadgeProps = {
   className?: string;
 };
 
-export function UpdateAvailableBadge({
+function UpdateAvailableBadge({
   className,
 }: Readonly<UpdateAvailableBadgeProps>) {
   const { t } = useTranslation();
