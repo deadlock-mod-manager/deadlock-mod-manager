@@ -3724,7 +3724,29 @@
   "branding": {
     "nightlyBuild": "",
     "fullBuildVersion": "",
-    "byAuthor": ""
+    "byAuthor": "",
+    "teamTitle": "",
+    "teamDescription": "",
+    "teamDescriptionWithCount": ""
+  },
+  "contributors": {
+    "title": "",
+    "back": "",
+    "subtitle": "",
+    "coreTeam": "",
+    "coreTeamDescription": "",
+    "roles": {
+      "creator": "",
+      "core": ""
+    },
+    "community": "",
+    "communityDescription": "",
+    "commitCount_one": "",
+    "commitCount_other": "",
+    "loadFailed": "",
+    "viewOnGithub": "",
+    "thanksTitle": "",
+    "thanksDescription": ""
   },
   "about": {
     "title": "เกี่ยวกับ",
@@ -3751,6 +3773,7 @@
     "viewThirdPartyNotices": "",
     "openSourceCommunity": "ชุมชนโอเพนซอร์ส",
     "openSourceDescription": "สร้างขึ้นด้วยเทคโนโลยีโอเพนซอร์สที่น่าทึ่ง รวมถึง React, TypeScript และไลบรารีอื่น ๆ อีกมากมายที่ทำให้แอปพลิเคชันสมัยใหม่เป็นไปได้ ขอบคุณผู้มีส่วนร่วมและผู้ดูแลทุกคน",
+    "meetContributors": "",
     "releaseNotes": "บันทึกประจำรุ่น",
     "poweredBy": "ขับเคลื่อนโดย",
     "forModContent": "สำหรับเนื้อหาม็อดและชุมชน",
@@ -6057,5 +6080,55 @@
     "staging_applied_other": "",
     "quarantinedStaging": "",
     "failed": ""
+  },
+  "experimentalTour": {
+    "tryMe": "",
+    "invitation": "",
+    "title": "",
+    "description": "",
+    "duration": "",
+    "start": "",
+    "dismiss": "",
+    "skip": "",
+    "next": "",
+    "back": "",
+    "finish": "",
+    "done": "",
+    "progress": "",
+    "experimental": "",
+    "preview": "",
+    "enable": "",
+    "alreadyEnabled": "",
+    "pending": "",
+    "warning": "",
+    "complete": "",
+    "completeEmpty": "",
+    "completeDescription": "",
+    "emptyDescription": "",
+    "open": "",
+    "enabled": "",
+    "features": {
+      "server-browser": {
+        "title": "",
+        "description": "",
+        "hint": "",
+        "previewTitle": "",
+        "previewDetail": ""
+      },
+      "custom-maps": {
+        "title": "",
+        "description": "",
+        "hint": "",
+        "previewTitle": "",
+        "previewDetail": ""
+      },
+      "performance-configs": {
+        "title": "",
+        "description": "",
+        "hint": "",
+        "previewTitle": "",
+        "previewDetail": ""
+      }
+    }
   }
 }

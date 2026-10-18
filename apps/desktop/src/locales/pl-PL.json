@@ -3724,7 +3724,29 @@
   "branding": {
     "nightlyBuild": "Nightly",
     "fullBuildVersion": "Pełna budowa: {{version}}",
-    "byAuthor": ""
+    "byAuthor": "",
+    "teamTitle": "",
+    "teamDescription": "",
+    "teamDescriptionWithCount": ""
+  },
+  "contributors": {
+    "title": "",
+    "back": "",
+    "subtitle": "",
+    "coreTeam": "",
+    "coreTeamDescription": "",
+    "roles": {
+      "creator": "",
+      "core": ""
+    },
+    "community": "",
+    "communityDescription": "",
+    "commitCount_one": "",
+    "commitCount_other": "",
+    "loadFailed": "",
+    "viewOnGithub": "",
+    "thanksTitle": "",
+    "thanksDescription": ""
   },
   "about": {
     "title": "Specjalne podziękowania",
@@ -3751,6 +3773,7 @@
     "viewThirdPartyNotices": "",
     "openSourceCommunity": "Społeczność Open Source",
     "openSourceDescription": "Stworzona z wykorzystaniem niesamowitych technologii open source, w tym React, TypeScript i wielu innych bibliotek, które umożliwiają powstawanie nowoczesnych aplikacji. Dziękujemy wszystkim współtwórcom i opiekunom.",
+    "meetContributors": "",
     "releaseNotes": "Informacje o wydaniu",
     "poweredBy": "Zasilane przez",
     "forModContent": "dla treści modów i społeczności",
@@ -6057,5 +6080,55 @@
     "staging_applied_other": "",
     "quarantinedStaging": "",
     "failed": ""
+  },
+  "experimentalTour": {
+    "tryMe": "",
+    "invitation": "",
+    "title": "",
+    "description": "",
+    "duration": "",
+    "start": "",
+    "dismiss": "",
+    "skip": "",
+    "next": "",
+    "back": "",
+    "finish": "",
+    "done": "",
+    "progress": "",
+    "experimental": "",
+    "preview": "",
+    "enable": "",
+    "alreadyEnabled": "",
+    "pending": "",
+    "warning": "",
+    "complete": "",
+    "completeEmpty": "",
+    "completeDescription": "",
+    "emptyDescription": "",
+    "open": "",
+    "enabled": "",
+    "features": {
+      "server-browser": {
+        "title": "",
+        "description": "",
+        "hint": "",
+        "previewTitle": "",
+        "previewDetail": ""
+      },
+      "custom-maps": {
+        "title": "",
+        "description": "",
+        "hint": "",
+        "previewTitle": "",
+        "previewDetail": ""
+      },
+      "performance-configs": {
+        "title": "",
+        "description": "",
+        "hint": "",
+        "previewTitle": "",
+        "previewDetail": ""
+      }
+    }
   }
 }

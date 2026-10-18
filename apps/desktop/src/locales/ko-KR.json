@@ -3724,7 +3724,29 @@
   "branding": {
     "nightlyBuild": "",
     "fullBuildVersion": "",
-    "byAuthor": ""
+    "byAuthor": "",
+    "teamTitle": "",
+    "teamDescription": "",
+    "teamDescriptionWithCount": ""
+  },
+  "contributors": {
+    "title": "",
+    "back": "",
+    "subtitle": "",
+    "coreTeam": "",
+    "coreTeamDescription": "",
+    "roles": {
+      "creator": "",
+      "core": ""
+    },
+    "community": "",
+    "communityDescription": "",
+    "commitCount_one": "",
+    "commitCount_other": "",
+    "loadFailed": "",
+    "viewOnGithub": "",
+    "thanksTitle": "",
+    "thanksDescription": ""
   },
   "about": {
     "title": "에 대한",
@@ -3751,6 +3773,7 @@
     "viewThirdPartyNotices": "",
     "openSourceCommunity": "오픈 소스 커뮤니티",
     "openSourceDescription": "React, TypeScript 및 최신 애플리케이션을 가능하게 하는 기타 여러 라이브러리를 포함한 놀라운 오픈 소스 기술로 구축되었습니다. 모든 기여자와 유지관리자에게 감사드립니다.",
+    "meetContributors": "",
     "releaseNotes": "릴리스 노트",
     "poweredBy": "제공:",
     "forModContent": "모드 콘텐츠 및 커뮤니티용",
@@ -6057,5 +6080,55 @@
     "staging_applied_other": "",
     "quarantinedStaging": "",
     "failed": ""
+  },
+  "experimentalTour": {
+    "tryMe": "",
+    "invitation": "",
+    "title": "",
+    "description": "",
+    "duration": "",
+    "start": "",
+    "dismiss": "",
+    "skip": "",
+    "next": "",
+    "back": "",
+    "finish": "",
+    "done": "",
+    "progress": "",
+    "experimental": "",
+    "preview": "",
+    "enable": "",
+    "alreadyEnabled": "",
+    "pending": "",
+    "warning": "",
+    "complete": "",
+    "completeEmpty": "",
+    "completeDescription": "",
+    "emptyDescription": "",
+    "open": "",
+    "enabled": "",
+    "features": {
+      "server-browser": {
+        "title": "",
+        "description": "",
+        "hint": "",
+        "previewTitle": "",
+        "previewDetail": ""
+      },
+      "custom-maps": {
+        "title": "",
+        "description": "",
+        "hint": "",
+        "previewTitle": "",
+        "previewDetail": ""
+      },
+      "performance-configs": {
+        "title": "",
+        "description": "",
+        "hint": "",
+        "previewTitle": "",
+        "previewDetail": ""
+      }
+    }
   }
 }

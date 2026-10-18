@@ -3724,7 +3724,29 @@
   "branding": {
     "nightlyBuild": "夜间构建版",
     "fullBuildVersion": "完整构建：{{version}}",
-    "byAuthor": "作者：<author>{{author}}</author>"
+    "byAuthor": "",
+    "teamTitle": "",
+    "teamDescription": "",
+    "teamDescriptionWithCount": ""
+  },
+  "contributors": {
+    "title": "",
+    "back": "",
+    "subtitle": "",
+    "coreTeam": "",
+    "coreTeamDescription": "",
+    "roles": {
+      "creator": "",
+      "core": ""
+    },
+    "community": "",
+    "communityDescription": "",
+    "commitCount_one": "",
+    "commitCount_other": "",
+    "loadFailed": "",
+    "viewOnGithub": "",
+    "thanksTitle": "",
+    "thanksDescription": ""
   },
   "about": {
     "title": "关于",
@@ -3751,6 +3773,7 @@
     "viewThirdPartyNotices": "查看第三方声明",
     "openSourceCommunity": "开源社区",
     "openSourceDescription": "使用出色的开源技术构建，包括 React、TypeScript 和许多其他使现代应用程序成为可能的库。感谢所有贡献者和维护者。",
+    "meetContributors": "",
     "releaseNotes": "发行说明",
     "poweredBy": "技术支持",
     "forModContent": "用于模组内容和社区",
@@ -6057,5 +6080,55 @@
     "staging_applied_other": "",
     "quarantinedStaging": "",
     "failed": ""
+  },
+  "experimentalTour": {
+    "tryMe": "",
+    "invitation": "",
+    "title": "",
+    "description": "",
+    "duration": "",
+    "start": "",
+    "dismiss": "",
+    "skip": "",
+    "next": "",
+    "back": "",
+    "finish": "",
+    "done": "",
+    "progress": "",
+    "experimental": "",
+    "preview": "",
+    "enable": "",
+    "alreadyEnabled": "",
+    "pending": "",
+    "warning": "",
+    "complete": "",
+    "completeEmpty": "",
+    "completeDescription": "",
+    "emptyDescription": "",
+    "open": "",
+    "enabled": "",
+    "features": {
+      "server-browser": {
+        "title": "",
+        "description": "",
+        "hint": "",
+        "previewTitle": "",
+        "previewDetail": ""
+      },
+      "custom-maps": {
+        "title": "",
+        "description": "",
+        "hint": "",
+        "previewTitle": "",
+        "previewDetail": ""
+      },
+      "performance-configs": {
+        "title": "",
+        "description": "",
+        "hint": "",
+        "previewTitle": "",
+        "previewDetail": ""
+      }
+    }
   }
 }
