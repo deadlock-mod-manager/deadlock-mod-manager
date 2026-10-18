@@ -113,3 +113,26 @@ export interface VpkIdentity {
   submissionType: "mod" | "sound";
   submissionId: string;
 }
+
+export interface VpkUpsertResult {
+  vpk: CachedVPK;
+  outcome: "created" | "updated" | "duplicate";
+}
+
+export interface UningestedDownloadQuery {
+  limit: number;
+  maxSizeBytes: number;
+  /** Archive extensions without the dot, e.g. "zip" */
+  extensions: string[];
+}
+
+export type UningestedDownload = {
+  submissionType: VpkIdentity["submissionType"];
+  submissionId: string;
+  fileId: string;
+  url: string;
+  file: string;
+  size: number;
+  /** ISO timestamp of the files marker the ingestion is recorded against */
+  upstreamUpdatedAt: string;
+};
