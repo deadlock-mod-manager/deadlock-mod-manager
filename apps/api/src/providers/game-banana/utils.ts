@@ -176,6 +176,19 @@ export const resolveRemoteTimestamps = (
   };
 };
 
+/**
+ * Whether an index listing moved since the sync last saw it. Submissions with
+ * no recorded index time, new ones included, always sync, and so do listings
+ * without a usable timestamp.
+ */
+export const indexListingChanged = (
+  listedModifiedAt: Date | null,
+  storedModifiedAt: Date | null | undefined,
+): boolean =>
+  !listedModifiedAt ||
+  !storedModifiedAt ||
+  listedModifiedAt.getTime() !== storedModifiedAt.getTime();
+
 export const buildDownloadSignature = (downloads: ModDownload[]): string => {
   return downloads
     .map(

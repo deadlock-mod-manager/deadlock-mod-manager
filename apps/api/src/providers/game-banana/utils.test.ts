@@ -10,6 +10,7 @@ import {
   extractMapName,
   gameBananaTimestampToDate,
   heroFromGameBananaProfile,
+  indexListingChanged,
   isUnavailableProfile,
   parseRequirements,
   resolveRemoteTimestamps,
@@ -912,5 +913,27 @@ describe("resolveRemoteTimestamps", () => {
       remoteAddedAt: new Date(0),
       remoteUpdatedAt: new Date(0),
     });
+  });
+});
+
+describe("indexListingChanged", () => {
+  const seen = new Date(1_792_358_388_000);
+
+  it("skips a listing whose modified time matches the stored one", () => {
+    expect(indexListingChanged(new Date(seen), seen)).toBe(false);
+  });
+
+  it("syncs a listing whose modified time moved", () => {
+    expect(indexListingChanged(new Date(1_792_358_400_000), seen)).toBe(true);
+    expect(indexListingChanged(new Date(1_792_358_000_000), seen)).toBe(true);
+  });
+
+  it("syncs a submission the sync has not recorded yet", () => {
+    expect(indexListingChanged(seen, undefined)).toBe(true);
+    expect(indexListingChanged(seen, null)).toBe(true);
+  });
+
+  it("syncs a listing without a usable timestamp", () => {
+    expect(indexListingChanged(null, seen)).toBe(true);
   });
 });

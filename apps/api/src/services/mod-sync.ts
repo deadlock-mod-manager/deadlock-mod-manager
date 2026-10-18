@@ -1,4 +1,4 @@
-import { db } from "@deadlock-mods/database";
+import { db, ModRepository } from "@deadlock-mods/database";
 import {
   type AcquiredLock,
   DistributedLockService,
@@ -12,6 +12,8 @@ import type { GameBananaSubmission } from "../providers/game-banana/types";
 const logger = mainLogger.child().withContext({
   service: "mod-sync",
 });
+
+const modRepository = new ModRepository(db);
 
 export class ModSyncService {
   private static instance: ModSyncService;
@@ -65,7 +67,17 @@ export class ModSyncService {
         providerRegistry.getProvider<GameBananaSubmission>("gamebanana");
 
       const submission = { _idRow: Number(remoteId) } as GameBananaSubmission;
-      const result = await provider.createMod(submission, "all");
+      const existing =
+        await modRepository.findByRemoteIdIncludingBlacklisted(remoteId);
+      let result = await provider.createMod(
+        submission,
+        existing?.isAudio ? "sound" : "all",
+      );
+      // A new id may be a sound, which only resolves under /Sound/. Only a 404
+      // falls through: a private Mod with this id must not import a Sound.
+      if (!existing && result.skipped === "not_found") {
+        result = await provider.createMod(submission, "sound");
+      }
 
       wide?.merge({
         modCreated: !!result.mod,

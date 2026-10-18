@@ -98,6 +98,13 @@ export const mods = pgTable(
     blacklistedAt: timestamp("blacklisted_at", { mode: "date" }),
     blacklistedBy: text("blacklisted_by"),
     filesUpdatedAt: timestamp("files_updated_at", { mode: "date" }),
+    // The GameBanana index listing's modified time, which can run ahead of the
+    // profile's (remoteUpdatedAt). The sync compares against it to skip
+    // unchanged submissions.
+    remoteIndexModifiedAt: timestamp("remote_index_modified_at", {
+      mode: "date",
+    }),
+    lastSyncedAt: timestamp("last_synced_at", { mode: "date" }),
     metadata: jsonb("metadata").$type<{
       mapName?: string;
       donationLinks?: Array<{ url: string; platform: string }>;
@@ -110,6 +117,7 @@ export const mods = pgTable(
     index("idx_mod_created_at").on(table.createdAt),
     index("idx_mod_updated_at").on(table.updatedAt),
     index("idx_mod_author_id").on(table.modAuthorId),
+    index("idx_mod_last_synced_at").on(table.lastSyncedAt),
     index("idx_mod_blacklisted_remote_updated").on(
       table.isBlacklisted,
       table.remoteUpdatedAt,

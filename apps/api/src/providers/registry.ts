@@ -12,10 +12,6 @@ export abstract class Provider<T> {
     });
   }
 
-  abstract getMods(): AsyncGenerator<{
-    submission: T;
-    source: string;
-  }>;
   abstract synchronize(): Promise<void>;
   abstract createMod(
     mod: T,
@@ -25,6 +21,11 @@ export abstract class Provider<T> {
     filesChanged: boolean;
     contentChanged: boolean;
     handledAsTrashed?: boolean;
+    /**
+     * Why the profile produced no payload: "not_found" for a 404, or
+     * "unavailable" when private, withheld, or for another game.
+     */
+    skipped?: string;
   }>;
   abstract getModDownload<D>(remoteId: string): Promise<D>;
 }

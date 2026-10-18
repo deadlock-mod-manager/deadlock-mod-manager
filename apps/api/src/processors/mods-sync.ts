@@ -17,7 +17,7 @@ const logger = mainLogger.child().withContext({
 export class ModsSyncProcessor extends BaseProcessor<CronJobData> {
   private static instance: ModsSyncProcessor | null = null;
   static readonly monitorSlug = MonitorSlug.MODS_SYNCHRONIZATION;
-  static readonly cronPattern = CronPatterns.EVERY_2_HOURS;
+  static readonly cronPattern = CronPatterns.EVERY_15_MINUTES;
 
   private constructor() {
     super(logger);
@@ -42,9 +42,9 @@ export class ModsSyncProcessor extends BaseProcessor<CronJobData> {
           value: toStandardCronPattern(ModsSyncProcessor.cronPattern),
         },
         checkinMargin: 5,
-        // A full GameBanana sweep is ~7.8k mods at ~90/min, so the run needs
-        // most of the two hour window before it counts as hung
-        maxRuntime: 110,
+        // A run walks ~190 index pages and syncs only changed mods plus a
+        // refresh batch, a few minutes at GameBanana's rate limits
+        maxRuntime: 12,
         timezone: SERVER_TIMEZONE,
       },
     );

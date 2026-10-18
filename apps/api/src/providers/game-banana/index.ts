@@ -14,11 +14,18 @@ import { resolveFileserverGeo } from "../../services/geo";
 import { modCache } from "../../services/mod-cache";
 import { ModSyncHooksService } from "../../services/mod-sync-hooks";
 import { Provider, providerRegistry } from "../registry";
-import type { GameBananaSubmission, GameBananaSubmissionSource } from "./types";
+import type {
+  GameBananaListedSubmission,
+  GameBananaProfileSkip,
+  GameBananaSubmission,
+  GameBananaSubmissionSource,
+} from "./types";
 import {
   DEADLOCK_GAME_ID,
   GAME_BANANA_BASE_URL,
+  INDEX_PAGE_SIZE,
   MAPS_CATEGORY_NAME,
+  SYNC_REFRESH_BATCH_SIZE,
 } from "./constants";
 import {
   buildDownloadSignature,
@@ -29,6 +36,7 @@ import {
   classifyNSFW,
   gameBananaTimestampToDate,
   heroFromGameBananaProfile,
+  indexListingChanged,
   isUnavailableProfile,
   mapGameBananaFileserverState,
   parseRequirements,
@@ -55,7 +63,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     this.logger.withMetadata({ page }).debug("Fetching all submissions");
     try {
       const response = await fetch(
-        `${GAME_BANANA_BASE_URL}/Mod/Index?_nPerpage=15&_aFilters%5BGeneric_Game%5D=${DEADLOCK_GAME_ID}&_nPage=${page}`,
+        `${GAME_BANANA_BASE_URL}/Mod/Index?_nPerpage=${INDEX_PAGE_SIZE}&_aFilters%5BGeneric_Game%5D=${DEADLOCK_GAME_ID}&_nPage=${page}`,
       );
       if (!response.ok) {
         throw new ProviderError(`HTTP error! status: ${response.status}`);
@@ -68,7 +76,11 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
           .debug("No more submissions available");
         return {
           _aRecords: [],
-          _aMetadata: { _nRecordCount: 0, _nPerpage: 15, _bIsComplete: true },
+          _aMetadata: {
+            _nRecordCount: 0,
+            _nPerpage: INDEX_PAGE_SIZE,
+            _bIsComplete: true,
+          },
         } as GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaIndexSubmission>;
       }
       this.logger
@@ -92,7 +104,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     this.logger.withMetadata({ page }).debug("Fetching all submissions");
     try {
       const response = await fetch(
-        `${GAME_BANANA_BASE_URL}/Sound/Index?_nPerpage=15&_aFilters%5BGeneric_Game%5D=${DEADLOCK_GAME_ID}&_nPage=${page}`,
+        `${GAME_BANANA_BASE_URL}/Sound/Index?_nPerpage=${INDEX_PAGE_SIZE}&_aFilters%5BGeneric_Game%5D=${DEADLOCK_GAME_ID}&_nPage=${page}`,
       );
       if (!response.ok) {
         throw new ProviderError(`HTTP error! status: ${response.status}`);
@@ -105,7 +117,11 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
           .debug("No more sound submissions available");
         return {
           _aRecords: [],
-          _aMetadata: { _nRecordCount: 0, _nPerpage: 15, _bIsComplete: true },
+          _aMetadata: {
+            _nRecordCount: 0,
+            _nPerpage: INDEX_PAGE_SIZE,
+            _bIsComplete: true,
+          },
         } as GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaSoundSubmission>;
       }
       this.logger
@@ -122,129 +138,34 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     }
   }
 
-  async getTopSubmissions(): Promise<GameBanana.GameBananaTopSubmission[]> {
-    try {
-      const response = await fetch(
-        `${GAME_BANANA_BASE_URL}/Game/${DEADLOCK_GAME_ID}/TopSubs`,
-      );
-      if (!response.ok) {
-        throw new ProviderError(`HTTP error! status: ${response.status}`);
-      }
-      const data = (await response.json()) as
-        | GameBanana.GameBananaTopSubmission[]
-        | null;
-      return data ?? [];
-    } catch (error) {
-      this.logger.withError(error).error("Failed to fetch top submissions");
-      throw error;
-    }
+  async *getIndexPages(): AsyncGenerator<{
+    submissions: GameBananaListedSubmission[];
+    source: GameBananaSubmissionSource;
+  }> {
+    yield* this.paginate((page) => this.getAllSubmissions(page), "all");
+    yield* this.paginate((page) => this.getAllSoundSubmissions(page), "sound");
   }
 
-  async getSubmissions(
-    page: number,
-  ): Promise<
-    GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaSubmission>
-  > {
-    try {
-      const response = await fetch(
-        `${GAME_BANANA_BASE_URL}/Util/List/Featured?_nPage=${page}&_idGameRow=${DEADLOCK_GAME_ID}`,
-      );
-      if (!response.ok) {
-        throw new ProviderError(`HTTP error! status: ${response.status}`);
-      }
-      const data =
-        (await response.json()) as GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaSubmission> | null;
-      if (!data || !data._aRecords) {
-        return {
-          _aRecords: [],
-          _aMetadata: { _nRecordCount: 0, _nPerpage: 15, _bIsComplete: true },
-        } as GameBanana.GameBananaPaginatedResponse<GameBanana.GameBananaSubmission>;
-      }
-      return data;
-    } catch (error) {
-      this.logger
-        .withError(error)
-        .withMetadata({ page })
-        .error("Failed to fetch submissions");
-      throw error;
-    }
-  }
-
-  async *getFeaturedMods(): AsyncGenerator<{
-    submission: GameBananaSubmission;
+  private async *paginate(
+    fetchPage: (
+      page: number,
+    ) => Promise<
+      GameBanana.GameBananaPaginatedResponse<GameBananaListedSubmission>
+    >,
+    source: GameBananaSubmissionSource,
+  ): AsyncGenerator<{
+    submissions: GameBananaListedSubmission[];
     source: GameBananaSubmissionSource;
   }> {
     let isComplete = false;
     let page = 1;
 
     while (!isComplete) {
-      const submissions = await this.getSubmissions(page);
-      // The featured list also carries News, WiPs, and Tutorials, whose ids would
-      // resolve to unrelated Mods.
-      for (const submission of submissions._aRecords) {
-        if (submission._sModelName === "Mod") {
-          yield { submission, source: "featured" };
-        }
-      }
-      isComplete = submissions._aMetadata._bIsComplete;
+      const response = await fetchPage(page);
+      yield { submissions: response._aRecords, source };
+      isComplete = response._aMetadata._bIsComplete;
       page++;
     }
-  }
-
-  async *getTopMods(): AsyncGenerator<{
-    submission: GameBananaSubmission;
-    source: GameBananaSubmissionSource;
-  }> {
-    const submissions = await this.getTopSubmissions();
-    for (const submission of submissions) {
-      if (submission._sModelName === "Mod") {
-        yield { submission, source: "top" };
-      }
-    }
-  }
-
-  async *getAllMods(): AsyncGenerator<{
-    submission: GameBananaSubmission;
-    source: GameBananaSubmissionSource;
-  }> {
-    let isComplete = false;
-    let page = 1;
-
-    while (!isComplete) {
-      const submissions = await this.getAllSubmissions(page);
-      for (const submission of submissions._aRecords) {
-        yield { submission, source: "all" };
-      }
-      isComplete = submissions._aMetadata._bIsComplete;
-      page++;
-    }
-  }
-
-  async *getSoundSubmissions(): AsyncGenerator<{
-    submission: GameBanana.GameBananaSoundSubmission;
-    source: GameBananaSubmissionSource;
-  }> {
-    let isComplete = false;
-    let page = 1;
-
-    while (!isComplete) {
-      const submissions = await this.getAllSoundSubmissions(page);
-      for (const submission of submissions._aRecords) {
-        yield { submission, source: "sound" };
-      }
-      isComplete = submissions._aMetadata._bIsComplete;
-      page++;
-    }
-  }
-
-  async *getMods(): AsyncGenerator<{
-    submission: GameBananaSubmission;
-    source: GameBananaSubmissionSource;
-  }> {
-    yield* this.getAllMods();
-    yield* this.getFeaturedMods(); // These two are most likely redundant, but I haven't checked
-    yield* this.getTopMods(); // These two are most likely redundant, but I haven't checked
-    yield* this.getSoundSubmissions();
   }
 
   async getModDownload<D = GameBanana.GameBananaModDownload>(
@@ -295,42 +216,88 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     const wide = wideEventContext.get();
     wide?.merge({ provider: "GameBanana" });
 
-    const mods = this.getMods();
-    let count = 0;
+    let listedCount = 0;
+    let changedCount = 0;
+    let refreshedCount = 0;
     let anyFilesUpdated = false;
     let anyContentChanged = false;
     const startTime = Date.now();
 
-    try {
-      for await (const { submission, source } of mods) {
-        count++;
-        const { filesChanged, contentChanged } = await this.createMod(
-          submission,
-          source,
-          { deferListingInvalidation: true },
+    // A swallowed error leaves the mod unmarked, so the next run retries it
+    const syncSubmission = async (
+      submission: GameBananaSubmission,
+      source: GameBananaSubmissionSource,
+      indexModifiedAt?: Date,
+    ) => {
+      const result = await this.createMod(submission, source, {
+        deferListingInvalidation: true,
+      });
+      anyFilesUpdated ||= result.filesChanged;
+      anyContentChanged ||= result.contentChanged;
+      if (result.mod || result.handledAsTrashed || result.skipped) {
+        await modRepository.markSynced(
+          submission._idRow.toString(),
+          indexModifiedAt,
         );
-        if (filesChanged) {
-          anyFilesUpdated = true;
+      }
+    };
+
+    try {
+      for await (const { submissions, source } of this.getIndexPages()) {
+        listedCount += submissions.length;
+        const stored = await modRepository.findIndexModifiedAtByRemoteIds(
+          submissions.map((submission) => submission._idRow.toString()),
+        );
+        for (const submission of submissions) {
+          const listedModifiedAt = gameBananaTimestampToDate(
+            submission._tsDateModified,
+          );
+          if (
+            !indexListingChanged(
+              listedModifiedAt,
+              stored.get(submission._idRow.toString()),
+            )
+          ) {
+            continue;
+          }
+          changedCount++;
+          await syncSubmission(
+            submission,
+            source,
+            listedModifiedAt ?? undefined,
+          );
         }
-        if (contentChanged) {
-          anyContentChanged = true;
-        }
+      }
+
+      const stale = await modRepository.findLeastRecentlySynced(
+        SYNC_REFRESH_BATCH_SIZE,
+      );
+      for (const { remoteId, isAudio } of stale) {
+        refreshedCount++;
+        await syncSubmission(
+          { _idRow: Number(remoteId) } as GameBananaSubmission,
+          isAudio ? "sound" : "all",
+        );
       }
 
       if (anyFilesUpdated || anyContentChanged) {
         await modCache.invalidateListing();
       }
 
-      const duration = Date.now() - startTime;
       wide?.merge({
-        syncModCount: count,
-        syncDurationMs: duration,
-        syncModsPerSecond: count / (duration / 1000),
+        syncListedCount: listedCount,
+        syncChangedCount: changedCount,
+        syncRefreshedCount: refreshedCount,
+        syncDurationMs: Date.now() - startTime,
         syncFilesUpdated: anyFilesUpdated,
         syncContentChanged: anyContentChanged,
       });
     } catch (error) {
-      wide?.merge({ syncProcessedCount: count });
+      wide?.merge({
+        syncListedCount: listedCount,
+        syncChangedCount: changedCount,
+        syncRefreshedCount: refreshedCount,
+      });
       throw error;
     }
   }
@@ -338,7 +305,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
   async createModPayload(
     mod: GameBananaSubmission,
     source: GameBananaSubmissionSource,
-  ): Promise<GameBananaModPayload | null> {
+  ): Promise<GameBananaModPayload | GameBananaProfileSkip> {
     if (source === "sound") {
       return this.createSoundModPayload(mod);
     }
@@ -347,16 +314,16 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
 
   private async createSoundModPayload(
     mod: GameBananaSubmission,
-  ): Promise<GameBananaModPayload | null> {
+  ): Promise<GameBananaModPayload | GameBananaProfileSkip> {
     const profile = await this.getMod(mod._idRow.toString(), "Sound");
 
-    if (!profile) return null;
+    if (!profile) return "not_found";
 
     if (profile._bIsTrashed === true) {
       return this.createTrashedPayload(profile);
     }
 
-    if (isUnavailableProfile(profile)) return null;
+    if (isUnavailableProfile(profile)) return "unavailable";
 
     const description = profile._sText || profile._sDescription || "";
     const dependencies = parseRequirements(profile._aRequirements);
@@ -393,16 +360,16 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
 
   private async createRegularModPayload(
     mod: GameBananaSubmission,
-  ): Promise<GameBananaModPayload | null> {
+  ): Promise<GameBananaModPayload | GameBananaProfileSkip> {
     const profile = await this.getMod(mod._idRow.toString(), "Mod");
 
-    if (!profile) return null;
+    if (!profile) return "not_found";
 
     if (profile._bIsTrashed === true) {
       return this.createTrashedPayload(profile);
     }
 
-    if (isUnavailableProfile(profile)) return null;
+    if (isUnavailableProfile(profile)) return "unavailable";
 
     const description = profile._sText || profile._sDescription || "";
     const category = categoryFromGameBananaProfile(profile);
@@ -476,6 +443,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     filesChanged: boolean;
     contentChanged: boolean;
     handledAsTrashed?: boolean;
+    skipped?: GameBananaProfileSkip;
   }> {
     const modId = mod._idRow.toString();
     const wide = createWideEvent(this.logger, "mod_sync", {
@@ -488,10 +456,18 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       const payload = await this.createModPayload(mod, source);
       wide.set("payloadMs", Date.now() - t0);
 
-      if (!payload) {
-        wide.set("outcome_reason", "profile_not_found");
+      if (typeof payload === "string") {
+        wide.set(
+          "outcome_reason",
+          payload === "not_found" ? "profile_not_found" : "profile_unavailable",
+        );
         wide.emit("success");
-        return { mod: undefined, filesChanged: false, contentChanged: false };
+        return {
+          mod: undefined,
+          filesChanged: false,
+          contentChanged: false,
+          skipped: payload,
+        };
       }
 
       if (payload.isTrashed) {

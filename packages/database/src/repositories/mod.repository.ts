@@ -189,6 +189,52 @@ export class ModRepository {
     return result.length > 0;
   }
 
+  /** Includes blacklisted and trashed mods, which the sync still tracks. */
+  async findIndexModifiedAtByRemoteIds(
+    remoteIds: string[],
+  ): Promise<Map<string, Date | null>> {
+    if (remoteIds.length === 0) {
+      return new Map();
+    }
+    const rows = await this.db
+      .select({
+        remoteId: mods.remoteId,
+        remoteIndexModifiedAt: mods.remoteIndexModifiedAt,
+      })
+      .from(mods)
+      .where(inArray(mods.remoteId, remoteIds));
+    return new Map(
+      rows.map((row) => [row.remoteId, row.remoteIndexModifiedAt]),
+    );
+  }
+
+  async findLeastRecentlySynced(
+    limit: number,
+  ): Promise<Array<{ remoteId: string; isAudio: boolean }>> {
+    return await this.db
+      .select({ remoteId: mods.remoteId, isAudio: mods.isAudio })
+      .from(mods)
+      .where(eq(mods.isTrashed, false))
+      .orderBy(sql`${mods.lastSyncedAt} ASC NULLS FIRST`)
+      .limit(limit);
+  }
+
+  async markSynced(
+    remoteId: string,
+    remoteIndexModifiedAt?: Date,
+  ): Promise<void> {
+    await this.db
+      .update(mods)
+      .set({
+        lastSyncedAt: new Date(),
+        // Overrides the $onUpdate bump: syncing changed nothing about the mod
+        updatedAt: sql`${mods.updatedAt}`,
+        // Drizzle leaves undefined columns out of the SET clause
+        remoteIndexModifiedAt,
+      })
+      .where(eq(mods.remoteId, remoteId));
+  }
+
   async blacklistMod(
     remoteId: string,
     reason: string,
