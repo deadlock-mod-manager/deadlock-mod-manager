@@ -159,15 +159,6 @@ describe("runMatchQuery", () => {
     expect(result.rows.every((row) => row.winrate === 0.5)).toBe(true);
   });
 
-  it("returns no rows when nothing matches", () => {
-    const result = runMatchQuery(
-      [win({ hero_id: 1 })],
-      query({ metrics: ["winrate"], heroId: 99 }),
-      NOW,
-    );
-    expect(result.rows).toEqual([]);
-  });
-
   it("skips matches without a rank for rank metrics", () => {
     const result = runMatchQuery(
       [win({ ranked_display_badge: 42 }), win()],

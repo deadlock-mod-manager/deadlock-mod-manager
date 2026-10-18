@@ -75,7 +75,7 @@ const request = async (path: string): Promise<unknown> => {
 };
 
 /** The raw response, for dashboard widgets that validate their own shape. */
-export const requestJson = (path: string): Promise<unknown> => request(path);
+export const requestJson = request;
 
 /**
  * A list endpoint. Entries that no longer match their schema are dropped rather

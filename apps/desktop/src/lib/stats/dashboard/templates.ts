@@ -114,7 +114,7 @@ export const tabFromTemplate = (
   const taken = layout.tabs.some((tab) => tab.id === templateId);
   if (builtIn) {
     return {
-      ...structuredClone(builtIn),
+      ...builtIn,
       id: taken ? createId("tab") : builtIn.id,
       title: taken ? title : null,
       widgets: builtIn.widgets.map((widget) =>

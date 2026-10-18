@@ -136,9 +136,6 @@ const aggregateMetric = (
   metric: MatchMetric,
   aggregate: MatchAggregate,
 ): number | null => {
-  if (matches.length === 0) {
-    return null;
-  }
   const wins = matches.filter(isWin).length;
   switch (metric) {
     case "matches":

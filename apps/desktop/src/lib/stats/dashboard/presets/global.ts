@@ -6,6 +6,7 @@ import {
   globalPreset,
   numberParam,
   type PresetDef,
+  type PresetParams,
   pick,
   ratio,
   sinceDays,
@@ -62,7 +63,7 @@ const SCOREBOARD_SORTS = [
   "avg_boss_damage_per_match",
 ] as const;
 
-const sinceParam = (params: Record<string, string | number>) =>
+const sinceParam = (params: PresetParams) =>
   sinceDays(numberParam(params, "days", 30));
 
 const share = <T>(items: T[], count: (item: T) => number) => {

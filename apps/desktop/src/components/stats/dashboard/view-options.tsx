@@ -44,7 +44,7 @@ import {
 } from "@/lib/stats/dashboard/suggest";
 import { cn } from "@/lib/utils";
 import { useFieldFormat } from "./use-field-format";
-import { SERIES_COLORS } from "./chart-colors";
+import { SERIES_COLORS, seriesColor } from "./chart-colors";
 
 const CHART_ICONS = {
   kpi: Hash,
@@ -218,10 +218,7 @@ export const ViewOptions = ({ dataset, view, onChange }: ViewOptionsProps) => {
                   <span
                     className='h-2 w-2 rounded-full'
                     style={{
-                      backgroundColor:
-                        SERIES_COLORS[
-                          (view.color + index) % SERIES_COLORS.length
-                        ],
+                      backgroundColor: seriesColor(view, index),
                     }}
                   />
                 )}

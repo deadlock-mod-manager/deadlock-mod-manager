@@ -33,16 +33,16 @@ const SUNDAY = new Date(2024, 0, 7);
  * Turns dataset cells into text. Ids resolve through the catalogs the page
  * already loads; the item catalog is only fetched once a dataset carries items.
  */
-export const useFieldFormat = (dataset?: Dataset) => {
+export const useFieldFormat = (dataset: Dataset) => {
   const { t, i18n } = useTranslation();
   const { heroesById, rankAssets } = useDashboardData();
-  const needsItems =
-    dataset?.fields.some((field) => field.format === "item") ?? false;
+  const needsItems = dataset.fields.some((field) => field.format === "item");
   const { itemsById } = useItemCatalog(needsItems);
   const locale = i18n.language;
 
   const fieldLabel = useCallback(
-    (field: DatasetField | undefined, key = field?.key ?? "") => {
+    (field: DatasetField | undefined) => {
+      const key = field?.key ?? "";
       if (field?.labelKey) {
         return t(field.labelKey, { defaultValue: humanize(key) });
       }

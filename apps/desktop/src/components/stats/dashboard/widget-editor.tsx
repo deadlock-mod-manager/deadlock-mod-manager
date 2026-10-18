@@ -188,7 +188,6 @@ const useViewAutofit = (
     }
     // Only a change in the available fields should re-fit; reacting to every
     // view edit would undo the user's own choices.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fieldKeys]);
 
   return { state, dataset };
@@ -452,7 +451,7 @@ export const WidgetEditor = ({
                       max={MAX_ROWS}
                       min={MIN_ROWS}
                       onValueChange={([value]) =>
-                        update({ ...draft, h: value ?? MIN_ROWS })
+                        update({ ...draft, h: value })
                       }
                       step={1}
                       value={[draft.h ?? 8]}
@@ -504,8 +503,7 @@ export const WidgetEditor = ({
               )}
             </div>
             {draft &&
-              (draft.source.kind === "api" ||
-                (selectedPreset && selectedPreset.endpoint)) && (
+              (draft.source.kind === "api" || selectedPreset?.endpoint) && (
                 <p className='flex items-start gap-2 text-muted-foreground text-xs leading-relaxed'>
                   <TriangleAlert className='mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-500' />
                   {t("stats.dashboard.apiWarning")}

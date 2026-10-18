@@ -68,7 +68,7 @@ const brokenFrom = (
     return {
       status: "broken",
       reason: "endpoint",
-      endpoint: error.endpoint.split("?")[0] ?? endpoint,
+      endpoint: error.endpoint.split("?")[0],
       httpStatus: error.status,
     };
   }
@@ -188,7 +188,7 @@ export const useWidgetData = (
           cacheKey: `${playerScoped ? "player:" : ""}dashboard:api:${path}#${source.listPath}`,
           playerScoped,
           ttl: CUSTOM_API_TTL,
-          endpoint: path.split("?")[0] ?? path,
+          endpoint: path.split("?")[0],
           load: async () =>
             datasetFromResponse(
               parseJson(await requestJson(path)),

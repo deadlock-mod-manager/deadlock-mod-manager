@@ -152,10 +152,7 @@ export const parseJson = (payload: unknown): JsonValue =>
 type JsonObject = { [key: string]: JsonValue };
 
 const isObject = (value: JsonValue | undefined): value is JsonObject =>
-  value !== null &&
-  value !== undefined &&
-  typeof value === "object" &&
-  !Array.isArray(value);
+  value !== null && typeof value === "object" && !Array.isArray(value);
 
 const toCell = (value: JsonValue): CellValue | undefined => {
   if (
@@ -279,7 +276,7 @@ export const guessFormat = (key: string, values: CellValue[]): FieldFormat => {
   ) {
     return "date";
   }
-  if (key.endsWith("_s") || key.endsWith("_time_s")) {
+  if (key.endsWith("_s")) {
     return "clock";
   }
   if (

@@ -14,11 +14,7 @@ import {
   tabulate,
 } from "./kit";
 
-/**
- * Presets about the selected account. Every field a preset reads is required
- * in its schema: a renamed field stops the rows from parsing and the widget
- * reports the endpoint as changed instead of drawing zeros.
- */
+/** Presets about the selected account. */
 
 const playerHeroSchema = z.object({
   hero_id: z.number(),

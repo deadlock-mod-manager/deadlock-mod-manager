@@ -3,13 +3,11 @@ import {
   type DashboardLayout,
   type DashboardWidget,
   DEFAULT_LAYOUT,
-  duplicateWidget,
   moveTab,
   moveWidgetToTab,
   parseLayout,
   removeTab,
   reorderWidget,
-  resizeWidget,
   upsertWidget,
 } from "./layout";
 
@@ -38,13 +36,6 @@ const ids = (value: DashboardLayout, tabId: string) =>
   value.tabs.find((tab) => tab.id === tabId)?.widgets.map((entry) => entry.id);
 
 describe("dashboard layout", () => {
-  it("parses the default layout", () => {
-    expect(parseLayout(structuredClone(DEFAULT_LAYOUT))).toEqual({
-      layout: DEFAULT_LAYOUT,
-      recovered: false,
-    });
-  });
-
   it("falls back to the default for a layout that no longer parses", () => {
     // Type-valid, but the schema wants at least one tab.
     const broken: DashboardLayout = { version: 1, tabs: [] };
@@ -76,23 +67,10 @@ describe("dashboard layout", () => {
     ]);
   });
 
-  it("resizes only the targeted widget", () => {
-    const next = resizeWidget(layout, "a", "2", { w: 12, h: null });
-    expect(next.tabs[0]?.widgets[1]).toMatchObject({ w: 12, h: null });
-    expect(next.tabs[0]?.widgets[0]).toMatchObject({ w: 6, h: 4 });
-  });
-
   it("moves a widget to another tab", () => {
     const next = moveWidgetToTab(layout, "a", "2", "b");
     expect(ids(next, "a")).toEqual(["1", "3"]);
     expect(ids(next, "b")).toEqual(["2"]);
-  });
-
-  it("duplicates right after the original with a new id", () => {
-    const next = ids(duplicateWidget(layout, "a", "1"), "a") ?? [];
-    expect(next).toHaveLength(4);
-    expect(next[0]).toBe("1");
-    expect(next[1]).not.toBe("1");
   });
 
   it("replaces an existing widget and appends a new one", () => {

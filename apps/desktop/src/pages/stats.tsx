@@ -121,68 +121,7 @@ const Stats = () => {
   );
 
   const renderBody = () => {
-    if (!editing) {
-      if (needsAccount && accountsPending) {
-        return <StatsSkeleton />;
-      }
-      if (needsAccount && !hasAccount) {
-        return <AccountPrompt onSubmit={setAccountId} />;
-      }
-      if (needsHistory && stats.isPending) {
-        return <StatsSkeleton />;
-      }
-      if (needsHistory && stats.isError) {
-        return (
-          <Empty className='py-16'>
-            <EmptyHeader>
-              <EmptyMedia variant='default'>
-                <TriangleAlert className='h-16 w-16' />
-              </EmptyMedia>
-              <EmptyTitle>{t("stats.errorTitle")}</EmptyTitle>
-              <EmptyDescription>{t("stats.errorDescription")}</EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        );
-      }
-      if (needsHistory && stats.matches.length === 0) {
-        return (
-          <Empty className='py-16'>
-            <EmptyHeader>
-              <EmptyMedia variant='default'>
-                <Users className='h-16 w-16' />
-              </EmptyMedia>
-              <EmptyTitle>{t("stats.noMatchesTitle")}</EmptyTitle>
-              <EmptyDescription>
-                {t("stats.noMatchesDescription")}
-              </EmptyDescription>
-            </EmptyHeader>
-          </Empty>
-        );
-      }
-      if (activeTab.widgets.length === 0) {
-        return (
-          <Empty className='py-16'>
-            <EmptyHeader>
-              <EmptyMedia variant='default'>
-                <LayoutGrid className='h-16 w-16' />
-              </EmptyMedia>
-              <EmptyTitle>{t("stats.dashboard.emptyTabTitle")}</EmptyTitle>
-              <EmptyDescription>
-                {t("stats.dashboard.emptyTabDescription")}
-              </EmptyDescription>
-            </EmptyHeader>
-            <EmptyContent>
-              <Button className='gap-1.5' onClick={dashboard.startEditing}>
-                <Pencil className='h-4 w-4' />
-                {t("stats.dashboard.customize")}
-              </Button>
-            </EmptyContent>
-          </Empty>
-        );
-      }
-    }
-
-    return (
+    const grid = (
       <DashboardGrid
         actions={dashboard.gridActions}
         editing={editing}
@@ -192,6 +131,68 @@ const Stats = () => {
         tabs={dashboard.layout.tabs}
       />
     );
+    if (editing) {
+      return grid;
+    }
+    if (needsAccount && accountsPending) {
+      return <StatsSkeleton />;
+    }
+    if (needsAccount && !hasAccount) {
+      return <AccountPrompt onSubmit={setAccountId} />;
+    }
+    if (needsHistory && stats.isPending) {
+      return <StatsSkeleton />;
+    }
+    if (needsHistory && stats.isError) {
+      return (
+        <Empty className='py-16'>
+          <EmptyHeader>
+            <EmptyMedia variant='default'>
+              <TriangleAlert className='h-16 w-16' />
+            </EmptyMedia>
+            <EmptyTitle>{t("stats.errorTitle")}</EmptyTitle>
+            <EmptyDescription>{t("stats.errorDescription")}</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      );
+    }
+    if (needsHistory && stats.matches.length === 0) {
+      return (
+        <Empty className='py-16'>
+          <EmptyHeader>
+            <EmptyMedia variant='default'>
+              <Users className='h-16 w-16' />
+            </EmptyMedia>
+            <EmptyTitle>{t("stats.noMatchesTitle")}</EmptyTitle>
+            <EmptyDescription>
+              {t("stats.noMatchesDescription")}
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      );
+    }
+    if (!hasWidgets) {
+      return (
+        <Empty className='py-16'>
+          <EmptyHeader>
+            <EmptyMedia variant='default'>
+              <LayoutGrid className='h-16 w-16' />
+            </EmptyMedia>
+            <EmptyTitle>{t("stats.dashboard.emptyTabTitle")}</EmptyTitle>
+            <EmptyDescription>
+              {t("stats.dashboard.emptyTabDescription")}
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button className='gap-1.5' onClick={dashboard.startEditing}>
+              <Pencil className='h-4 w-4' />
+              {t("stats.dashboard.customize")}
+            </Button>
+          </EmptyContent>
+        </Empty>
+      );
+    }
+    return grid;
   };
 
   const showAccountPrompt =

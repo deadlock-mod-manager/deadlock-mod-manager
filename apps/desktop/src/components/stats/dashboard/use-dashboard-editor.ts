@@ -61,16 +61,11 @@ export const useDashboardEditor = () => {
   const isDirty =
     draft !== null && JSON.stringify(draft) !== JSON.stringify(savedLayout);
 
-  const selectTab = useCallback(
-    (tabId: string) => setSearchParams({ tab: tabId }, { replace: true }),
-    [setSearchParams],
-  );
+  const selectTab = (tabId: string) =>
+    setSearchParams({ tab: tabId }, { replace: true });
 
-  const edit = useCallback(
-    (change: (current: DashboardLayout) => DashboardLayout) =>
-      setDraft((current) => (current ? change(current) : current)),
-    [],
-  );
+  const edit = (change: (current: DashboardLayout) => DashboardLayout) =>
+    setDraft((current) => (current ? change(current) : current));
 
   const reportHealth = useCallback(
     (widgetId: string, next: WidgetHealth) =>
@@ -80,35 +75,28 @@ export const useDashboardEditor = () => {
     [],
   );
 
-  const brokenTabIds = useMemo(
-    () =>
-      new Set(
-        layout.tabs
-          .filter((tab) =>
-            tab.widgets.some((widget) => health[widget.id] === "broken"),
-          )
-          .map((tab) => tab.id),
-      ),
-    [layout.tabs, health],
+  const brokenTabIds = new Set(
+    layout.tabs
+      .filter((tab) =>
+        tab.widgets.some((widget) => health[widget.id] === "broken"),
+      )
+      .map((tab) => tab.id),
   );
 
   const tabId = activeTab.id;
-  const gridActions = useMemo(
-    (): GridActions => ({
-      onEdit: (widget) => setEditorTarget({ tabId, widget }),
-      onRemove: (widgetId) =>
-        edit((current) => removeWidget(current, tabId, widgetId)),
-      onDuplicate: (widgetId) =>
-        edit((current) => duplicateWidget(current, tabId, widgetId)),
-      onResize: (widgetId, size) =>
-        edit((current) => resizeWidget(current, tabId, widgetId, size)),
-      onReorder: (widgetId, targetId) =>
-        edit((current) => reorderWidget(current, tabId, widgetId, targetId)),
-      onMoveToTab: (widgetId, target) =>
-        edit((current) => moveWidgetToTab(current, tabId, widgetId, target)),
-    }),
-    [tabId, edit],
-  );
+  const gridActions: GridActions = {
+    onEdit: (widget) => setEditorTarget({ tabId, widget }),
+    onRemove: (widgetId) =>
+      edit((current) => removeWidget(current, tabId, widgetId)),
+    onDuplicate: (widgetId) =>
+      edit((current) => duplicateWidget(current, tabId, widgetId)),
+    onResize: (widgetId, size) =>
+      edit((current) => resizeWidget(current, tabId, widgetId, size)),
+    onReorder: (widgetId, targetId) =>
+      edit((current) => reorderWidget(current, tabId, widgetId, targetId)),
+    onMoveToTab: (widgetId, target) =>
+      edit((current) => moveWidgetToTab(current, tabId, widgetId, target)),
+  };
 
   const tabActions = {
     onAddTab: (templateId: string | null) => {

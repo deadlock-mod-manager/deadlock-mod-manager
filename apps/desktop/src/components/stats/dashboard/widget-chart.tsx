@@ -83,7 +83,7 @@ const SeriesTooltip = ({
   if (!active || !payload?.length) {
     return null;
   }
-  const label = payload[0]?.payload?.label;
+  const label = payload[0].payload?.label;
   return (
     <div className='grid min-w-[8rem] gap-1.5 rounded-lg border border-border/50 bg-background px-2.5 py-1.5 text-xs shadow-md'>
       {showLabel && label && <div className='font-medium'>{label}</div>}
@@ -303,7 +303,7 @@ export const WidgetChart = ({ dataset, view }: WidgetChartProps) => {
     case "barHorizontal": {
       // A signed single series reads best coloured by direction.
       const signed =
-        series.length === 1 && series[0]?.format === "signedPercent";
+        series.length === 1 && series[0].format === "signedPercent";
       return (
         <ChartContainer className='aspect-auto h-full w-full' config={config}>
           <BarChart

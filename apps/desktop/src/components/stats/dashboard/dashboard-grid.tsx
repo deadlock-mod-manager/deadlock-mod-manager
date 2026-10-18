@@ -39,7 +39,6 @@ import {
 } from "@deadlock-mods/ui/icons";
 import {
   type PointerEvent as ReactPointerEvent,
-  useCallback,
   useEffect,
   useRef,
   useState,
@@ -209,8 +208,7 @@ const WidgetMenu = ({
   );
 };
 
-interface GridItemProps extends Omit<WidgetMenuProps, "index"> {
-  index: number;
+interface GridItemProps extends WidgetMenuProps {
   editing: boolean;
   gridWidth: number;
   isDropTarget: boolean;
@@ -423,20 +421,17 @@ export const DashboardGrid = ({
     }),
   );
 
-  const handleDragStart = useCallback((event: DragStartEvent) => {
+  const handleDragStart = (event: DragStartEvent) => {
     setActiveId(String(event.active.id));
-  }, []);
+  };
 
-  const handleDragEnd = useCallback(
-    (event: DragEndEvent) => {
-      setActiveId(null);
-      setOverId(null);
-      if (event.over && event.active.id !== event.over.id) {
-        actions.onReorder(String(event.active.id), String(event.over.id));
-      }
-    },
-    [actions],
-  );
+  const handleDragEnd = (event: DragEndEvent) => {
+    setActiveId(null);
+    setOverId(null);
+    if (event.over && event.active.id !== event.over.id) {
+      actions.onReorder(String(event.active.id), String(event.over.id));
+    }
+  };
 
   const activeWidget = tab.widgets.find((widget) => widget.id === activeId);
 

@@ -148,8 +148,7 @@ export const EditToolbar = ({
           data-testid='stats-save'
           disabled={!isDirty}
           onClick={onSave}
-          size='sm'
-          variant='default'>
+          size='sm'>
           <Check className='h-4 w-4' />
           {t("stats.dashboard.toolbar.save")}
         </Button>

@@ -35,8 +35,6 @@ import { seriesColor } from "./chart-colors";
 import { useDashboardData } from "./dashboard-context";
 import { useFieldFormat } from "./use-field-format";
 
-/** The views that show values rather than plot them: a number, a gauge, a table. */
-
 interface SingleValueProps {
   dataset: Dataset;
   rows: DatasetRow[];
