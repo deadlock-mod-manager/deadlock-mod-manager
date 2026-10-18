@@ -163,9 +163,7 @@ export const AnnouncementsTicker = () => {
             className='size-4 -scale-x-100 text-primary'
             weight='duotone'
           />
-          <span
-            className='font-bold text-[10px] text-primary uppercase tracking-[0.4em]'
-            style={{ fontFamily: '"Forevs Demo", serif' }}>
+          <span className='font-semibold text-[11px] text-primary uppercase tracking-[0.2em]'>
             {t("dashboard.broadcast")}
           </span>
         </div>

@@ -1,5 +1,6 @@
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
+import { Checkbox } from "@deadlock-mods/ui/components/checkbox";
 import {
   ArrowRightIcon,
   CheckCircleIcon,
@@ -187,17 +188,16 @@ export const ExperimentalTour = ({
                 {t(`experimentalTour.features.${feature.id}.description`)}
               </p>
               <div className='mt-6 flex items-start gap-3 rounded-lg border border-border p-4'>
-                <input
+                <Checkbox
                   id={checkboxId}
-                  type='checkbox'
-                  className='mt-1 size-4 accent-primary'
+                  className='mt-0.5'
                   checked={
                     features[feature.id] || selected.includes(feature.id)
                   }
                   disabled={features[feature.id]}
-                  onChange={(event) =>
+                  onCheckedChange={(checked) =>
                     setSelected(
-                      event.target.checked
+                      checked === true
                         ? [...selected, feature.id]
                         : selected.filter((id) => id !== feature.id),
                     )
