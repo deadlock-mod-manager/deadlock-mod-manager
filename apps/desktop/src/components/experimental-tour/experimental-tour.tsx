@@ -1,5 +1,5 @@
+import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
-import { Checkbox } from "@deadlock-mods/ui/components/checkbox";
 import {
   ArrowRightIcon,
   CheckCircleIcon,
@@ -16,7 +16,13 @@ import {
 } from "@/lib/experimental-tour";
 import { TourPreview } from "./tour-preview";
 
-export const ExperimentalTour = ({ replay = false }: { replay?: boolean }) => {
+export const ExperimentalTour = ({
+  replay = false,
+  startOpen = false,
+}: {
+  replay?: boolean;
+  startOpen?: boolean;
+}) => {
   const { t } = useTranslation();
   const headingId = useId();
   const focusHeading = useCallback((node: HTMLHeadingElement | null) => {
@@ -28,7 +34,7 @@ export const ExperimentalTour = ({ replay = false }: { replay?: boolean }) => {
   );
   const dismiss = usePersistedStore((state) => state.dismissExperimentalTour);
   const features = usePersistedStore((state) => state.experimentalFeatures);
-  const [step, setStep] = useState<number | null>(null);
+  const [step, setStep] = useState<number | null>(startOpen ? 0 : null);
   const [selected, setSelected] = useState<TourFeature[]>([]);
   const feature = step === null ? undefined : TOUR_FEATURES[step];
   const complete = step === TOUR_FEATURES.length;
@@ -50,24 +56,7 @@ export const ExperimentalTour = ({ replay = false }: { replay?: boolean }) => {
     setStep(TOUR_FEATURES.length);
   };
 
-  if (!replay && dismissed && step === null) {
-    return (
-      <div className='flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-card px-5 py-3'>
-        <span className='flex items-center gap-2 text-sm text-muted-foreground'>
-          <CompassIcon
-            aria-hidden
-            className='size-4 text-primary'
-            weight='duotone'
-          />
-          {t("experimentalTour.invitation")}
-        </span>
-        <Button variant='outline' size='sm' onClick={() => setStep(0)}>
-          {t("experimentalTour.start")}
-          <ArrowRightIcon aria-hidden className='ml-2 size-4' />
-        </Button>
-      </div>
-    );
-  }
+  if (!replay && dismissed && step === null) return null;
 
   return (
     <section
@@ -177,10 +166,16 @@ export const ExperimentalTour = ({ replay = false }: { replay?: boolean }) => {
               key={feature.id}
               className='mt-6 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-200'
               aria-live='polite'>
-              <p className='text-xs font-medium uppercase tracking-widest text-primary'>
-                {t(`featureFlags.features.${feature.id}.title`)} ·{" "}
-                {t("experimentalTour.experimental")}
-              </p>
+              <div className='flex flex-wrap items-center gap-3'>
+                <p className='text-sm font-medium text-primary'>
+                  {t(`featureFlags.features.${feature.id}.title`)}
+                </p>
+                <Badge
+                  variant='outline'
+                  className='font-normal text-muted-foreground'>
+                  {t("experimentalTour.experimental")}
+                </Badge>
+              </div>
               <h2
                 id={headingId}
                 ref={focusHeading}
@@ -192,16 +187,17 @@ export const ExperimentalTour = ({ replay = false }: { replay?: boolean }) => {
                 {t(`experimentalTour.features.${feature.id}.description`)}
               </p>
               <div className='mt-6 flex items-start gap-3 rounded-lg border border-border p-4'>
-                <Checkbox
+                <input
                   id={checkboxId}
-                  className='mt-0.5'
+                  type='checkbox'
+                  className='mt-1 size-4 accent-primary'
                   checked={
                     features[feature.id] || selected.includes(feature.id)
                   }
                   disabled={features[feature.id]}
-                  onCheckedChange={(checked) =>
+                  onChange={(event) =>
                     setSelected(
-                      checked === true
+                      event.target.checked
                         ? [...selected, feature.id]
                         : selected.filter((id) => id !== feature.id),
                     )

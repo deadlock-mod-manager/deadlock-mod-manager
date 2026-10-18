@@ -1488,3 +1488,36 @@
     }
   }
 }
+
+.experimental-tour-nudge {
+  font-family: "Segoe Print", "Bradley Hand", "Chalkboard SE", cursive;
+  font-size: 0.875rem;
+  font-weight: 400;
+  transform: rotate(-6deg);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .experimental-tour-nudge {
+    animation: tour-note-appear 350ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .experimental-tour-nudge-arrow {
+    transition: transform 180ms ease-out;
+  }
+
+  a:hover .experimental-tour-nudge-arrow,
+  a:focus-visible .experimental-tour-nudge-arrow {
+    transform: translateX(-3px) rotate(-5deg);
+  }
+
+  @keyframes tour-note-appear {
+    from {
+      opacity: 0;
+      transform: translateY(3px) rotate(-2deg);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) rotate(-6deg);
+    }
+  }
+}

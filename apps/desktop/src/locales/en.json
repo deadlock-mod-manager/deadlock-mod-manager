@@ -6059,6 +6059,7 @@
     "failed": "Couldn't repair the mod folder: {{reason}}"
   },
   "experimentalTour": {
+    "tryMe": "Try me",
     "invitation": "Experimental features",
     "title": "Want to try something new?",
     "description": "Take a quick look at community servers, custom maps, and performance settings.",
@@ -6080,7 +6081,7 @@
     "complete": "Ready to try",
     "completeEmpty": "No changes made",
     "completeDescription": "Open a feature below, or find it later in the sidebar.",
-    "emptyDescription": "You can take the tour again from the dashboard or Settings → Experimental.",
+    "emptyDescription": "You can take the tour again from Settings → Experimental.",
     "open": "Open {{feature}}",
     "enabled": "Enabled",
     "features": {

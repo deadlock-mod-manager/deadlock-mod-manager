@@ -241,7 +241,27 @@ const getSidebarItems = (
     },
     {
       id: "experimental",
-      title: () => <span>{t("settings.experimental")}</span>,
+      title: () => (
+        <span className='flex min-w-0 flex-1 items-center gap-3'>
+          <span>{t("settings.experimental")}</span>
+          <span className='experimental-tour-nudge ml-auto flex shrink-0 items-center gap-1 text-primary group-data-[collapsible=icon]:hidden'>
+            <svg
+              aria-hidden
+              viewBox='0 0 30 18'
+              className='experimental-tour-nudge-arrow h-4 w-6'
+              fill='none'>
+              <path
+                d='M27 5C20 13 12 13 3 9M3 9l6-5M3 9l7 5'
+                stroke='currentColor'
+                strokeWidth='1.5'
+                strokeLinecap='round'
+                strokeLinejoin='round'
+              />
+            </svg>
+            {t("experimentalTour.tryMe")}
+          </span>
+        </span>
+      ),
       tooltipLabel: t("settings.experimental"),
       url: "/settings/experimental",
       icon: FlagIcon,
@@ -336,7 +356,13 @@ const SidebarItemComponent = ({
       asChild
       isActive={titleProps.isActive}
       tooltip={item.tooltipLabel}>
-      <Link draggable='false' to={item.url ?? "/"}>
+      <Link
+        draggable='false'
+        to={
+          item.id === "experimental"
+            ? "/settings/experimental?tour=1"
+            : (item.url ?? "/")
+        }>
         {renderIcon(item)}
         {item.title(titleProps)}
         {showNewBadge && <NewBadge />}

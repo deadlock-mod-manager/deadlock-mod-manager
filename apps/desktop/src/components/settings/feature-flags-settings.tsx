@@ -1,3 +1,4 @@
+import { useLocation } from "react-router";
 import { ExperimentalTour } from "@/components/experimental-tour/experimental-tour";
 import { useTranslation } from "react-i18next";
 import { SettingToggleRow } from "@/components/settings/setting-row";
@@ -6,6 +7,8 @@ import { EXPERIMENTAL_FEATURES } from "@/lib/constants";
 
 export const FeatureFlagsSettings = () => {
   const { t } = useTranslation();
+  const location = useLocation();
+  const openTour = new URLSearchParams(location.search).get("tour") === "1";
   const experimentalFeatures = usePersistedStore(
     (state) => state.experimentalFeatures,
   );
@@ -15,7 +18,7 @@ export const FeatureFlagsSettings = () => {
 
   return (
     <div className='space-y-4'>
-      <ExperimentalTour replay />
+      <ExperimentalTour key={location.key} replay startOpen={openTour} />
       {EXPERIMENTAL_FEATURES.map((feature) => (
         <div
           className='rounded-lg border border-border bg-card p-4'
