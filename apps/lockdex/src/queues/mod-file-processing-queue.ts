@@ -1,5 +1,6 @@
 import { BaseQueue } from "@deadlock-mods/queue";
 import { queueConfigs } from "@/config/queues";
+import { modFileJobId } from "@/lib/mod-file-job";
 import redis from "@/lib/redis";
 import type { ModFileProcessingJobData } from "@/types/jobs";
 
@@ -10,22 +11,29 @@ export class ModFileProcessingQueue extends BaseQueue<ModFileProcessingJobData> 
     });
   }
 
-  async processModFile(data: ModFileProcessingJobData, priority = 0) {
-    return this.add("process-mod-file", data, {
-      priority,
-      delay: (data.metadata?.delay as number) ?? 0,
-    });
-  }
-
-  async processModFiles(mods: ModFileProcessingJobData[]) {
+  /**
+   * BullMQ runs jobs without a priority before prioritized ones, so live
+   * update events go ahead of anything queued with a priority.
+   */
+  async processModFiles(
+    mods: ModFileProcessingJobData[],
+    options: { priority?: number } = {},
+  ) {
     const jobs = mods.map((mod) => ({
       name: "process-mod-file",
       data: mod,
-      options: {
-        priority: (mod.metadata?.priority as number) ?? 0,
-        delay: (mod.metadata?.delay as number) ?? 0,
-      },
+      options: { jobId: modFileJobId(mod), priority: options.priority },
     }));
     return this.addBulk(jobs);
+  }
+
+  async countUnfinished(): Promise<number> {
+    const counts = await this.getQueue().getJobCounts(
+      "wait",
+      "prioritized",
+      "delayed",
+      "active",
+    );
+    return Object.values(counts).reduce((sum, count) => sum + count, 0);
   }
 }

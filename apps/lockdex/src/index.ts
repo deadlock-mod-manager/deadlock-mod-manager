@@ -1,12 +1,15 @@
 import { BaseWorker } from "@deadlock-mods/queue";
 import { CronPatterns } from "@deadlock-mods/queue/cron";
 import { queueConfigs } from "./config/queues";
+import { env } from "./lib/env";
 import { logger } from "./lib/logger";
 import redis from "./lib/redis";
+import { ingestionBackfillProcessor } from "./processors/ingestion-backfill-processor";
 import { modFileProcessor } from "./processors/mod-file-processor";
 import { tempCleanupProcessor } from "./processors/temp-cleanup-processor";
 import { cronService } from "./services/cron";
 import { diskHealthMonitor } from "./services/disk-health-monitor";
+import { metricsServer } from "./services/metrics-server";
 import { modFilesSubscriber } from "./services/mod-files-subscriber";
 import { modFileProcessingQueue } from "./services/queue";
 import { tempCleanupService } from "./services/temp-cleanup";
@@ -16,12 +19,13 @@ const main = async () => {
   await tempCleanupService.initialize();
   diskHealthMonitor.start();
 
+  // Each job is mostly download time; the processor gates the memory-heavy part
   const modFileWorker = new BaseWorker(
     queueConfigs.modFileProcessing.name,
     redis,
     logger,
     modFileProcessor,
-    1,
+    env.LOCKDEX_DOWNLOAD_CONCURRENCY,
   );
 
   await cronService.defineJob({
@@ -30,9 +34,16 @@ const main = async () => {
     processor: tempCleanupProcessor,
     enabled: true,
   });
+  await cronService.defineJob({
+    name: "ingestion-backfill",
+    pattern: CronPatterns.EVERY_5_MINUTES,
+    processor: ingestionBackfillProcessor,
+    enabled: true,
+  });
 
   cronService.start();
   await modFilesSubscriber.start();
+  metricsServer.start();
 
   process.on("SIGTERM", async () => {
     logger.info("SIGTERM received, initiating graceful shutdown");
@@ -45,6 +56,7 @@ const main = async () => {
       modFilesSubscriber.stop(),
       cronService.shutdown(),
       diskHealthMonitor.stop(),
+      metricsServer.stop(),
     ]);
 
     logger.info("Graceful shutdown completed");

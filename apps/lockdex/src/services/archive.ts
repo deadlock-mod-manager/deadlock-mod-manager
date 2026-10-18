@@ -2,18 +2,13 @@ import { createWriteStream } from "node:fs";
 import { mkdir, mkdtemp, rm } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import type { Logger } from "@deadlock-mods/logging";
+import { fileExtension } from "@/lib/archive-paths";
 import { getTempDir } from "@/lib/temp-dir";
 import type {
-  ArchiveEntry,
   ExtractionOptions,
   ExtractionResult,
-  StreamExtractionResult,
   TempDirResult,
 } from "@/types/archive";
-
-const PATH_NORMALIZATION_REGEX = /\\/g;
-const UNSAFE_PATH_REGEX = /\.\.+/g;
-const LEADING_SLASH_REGEX = /^\/+/;
 
 export abstract class ArchiveExtractor {
   protected logger: Logger;
@@ -33,17 +28,12 @@ export abstract class ArchiveExtractor {
    * Check if this extractor can handle the given file
    */
   canHandle(filePath: string): boolean {
-    const extension = this.getFileExtension(filePath);
-    return this.getSupportedExtensions().includes(extension);
+    return this.getSupportedExtensions().includes(fileExtension(filePath));
   }
 
   /**
-   * List all entries in the archive without extracting
-   */
-  abstract listEntries(archivePath: string): Promise<ArchiveEntry[]>;
-
-  /**
-   * Extract all files from archive to a directory
+   * Extract the entries matching `options.fileExtensions` into `options.targetDir`,
+   * keeping their paths inside the archive
    */
   abstract extractAll(
     archivePath: string,
@@ -51,117 +41,12 @@ export abstract class ArchiveExtractor {
   ): Promise<ExtractionResult>;
 
   /**
-   * Extract a specific file from the archive as a stream
-   */
-  abstract extractFileStream(
-    archivePath: string,
-    filePath: string,
-  ): Promise<StreamExtractionResult>;
-
-  /**
-   * Extract multiple specific files from the archive
-   */
-  abstract extractFiles(
-    archivePath: string,
-    filePaths: string[],
-    targetDir: string,
-  ): Promise<ExtractionResult>;
-
-  /**
-   * Get archive metadata (total files, compressed size, etc.)
-   */
-  async getArchiveInfo(archivePath: string): Promise<{
-    totalFiles: number;
-    totalDirectories: number;
-    compressedSize: number;
-    uncompressedSize: number;
-    entries: ArchiveEntry[];
-  }> {
-    const entries = await this.listEntries(archivePath);
-
-    return {
-      totalFiles: entries.filter((e) => !e.isDirectory).length,
-      totalDirectories: entries.filter((e) => e.isDirectory).length,
-      compressedSize: 0, // To be implemented by concrete classes
-      uncompressedSize: entries.reduce((sum, e) => sum + e.size, 0),
-      entries,
-    };
-  }
-
-  /**
-   * Validate archive integrity
-   */
-  abstract validateArchive(archivePath: string): Promise<boolean>;
-
-  /**
-   * Helper method to get file extension
-   */
-  protected getFileExtension(filePath: string): string {
-    const lastDot = filePath.lastIndexOf(".");
-    return lastDot === -1 ? "" : filePath.slice(lastDot).toLowerCase();
-  }
-
-  /**
-   * Helper method to filter entries based on options
-   */
-  protected filterEntries(
-    entries: ArchiveEntry[],
-    options: ExtractionOptions,
-  ): ArchiveEntry[] {
-    return entries.filter((entry) => {
-      // Skip directories if not preserving paths
-      if (entry.isDirectory && !options.preservePaths) {
-        return false;
-      }
-
-      // Filter by file extension
-      if (options.fileExtensions?.length) {
-        const ext = this.getFileExtension(entry.path);
-        if (!options.fileExtensions.includes(ext)) {
-          return false;
-        }
-      }
-
-      // Filter by file size
-      if (options.maxFileSize && entry.size > options.maxFileSize) {
-        return false;
-      }
-
-      return true;
-    });
-  }
-
-  /**
-   * Helper method to ensure directory exists
-   */
-  protected async ensureDirectory(dirPath: string): Promise<void> {
-    try {
-      await mkdir(dirPath, { recursive: true });
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
-        throw error;
-      }
-    }
-  }
-
-  /**
-   * Helper method to get safe file path (prevents directory traversal)
-   */
-  protected getSafeFilePath(basePath: string, filePath: string): string {
-    const normalizedPath = filePath.replace(PATH_NORMALIZATION_REGEX, "/");
-    const safePath = normalizedPath
-      .replace(LEADING_SLASH_REGEX, "")
-      .replace(UNSAFE_PATH_REGEX, "");
-    return join(basePath, safePath);
-  }
-
-  /**
    * Helper method to create write stream with directory creation
    */
   protected async createSafeWriteStream(
     filePath: string,
   ): Promise<NodeJS.WritableStream> {
-    await this.ensureDirectory(dirname(filePath));
+    await mkdir(dirname(filePath), { recursive: true });
     return createWriteStream(filePath);
   }
 
@@ -193,19 +78,15 @@ export abstract class ArchiveExtractor {
 
   async extractToTempDir(
     archivePath: string,
-    options?: Partial<ExtractionOptions>,
+    options: Omit<ExtractionOptions, "targetDir"> = {},
   ): Promise<ExtractionResult & TempDirResult> {
     const tempDir = await this.createTempDir();
 
-    const extractionOptions: ExtractionOptions = {
-      targetDir: tempDir.path,
-      preservePaths: true,
-      overwrite: true,
-      ...options,
-    };
-
     try {
-      const result = await this.extractAll(archivePath, extractionOptions);
+      const result = await this.extractAll(archivePath, {
+        ...options,
+        targetDir: tempDir.path,
+      });
 
       return {
         ...result,

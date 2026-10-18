@@ -31,3 +31,7 @@ export interface CronJobData extends BaseJobData {
 export interface TempCleanupJobData extends BaseJobData {
   timestamp?: string;
 }
+
+export interface IngestionBackfillJobData extends BaseJobData {
+  timestamp?: string;
+}

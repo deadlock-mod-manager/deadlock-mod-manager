@@ -3,14 +3,15 @@ import { mkdir, mkdtemp, rm, stat } from "node:fs/promises";
 import { basename, join } from "node:path";
 import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
-import {
-  ProviderError,
-  RuntimeError,
-  ValidationError,
-} from "@deadlock-mods/common";
+import { ProviderError, RuntimeError } from "@deadlock-mods/common";
 import type { Logger } from "@deadlock-mods/logging";
+import { PermanentIngestionError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import { getTempDir } from "@/lib/temp-dir";
+
+/** Client errors other than timeouts and rate limits will not change on retry */
+const isPermanentHttpStatus = (status: number) =>
+  status >= 400 && status < 500 && status !== 408 && status !== 429;
 
 export interface DownloadOptions {
   /**
@@ -147,6 +148,10 @@ export class DownloadService {
           // Ignore cleanup errors
         }
 
+        if (error instanceof PermanentIngestionError) {
+          await this.cleanup(tempDir);
+          throw error;
+        }
         if (attempt === retryAttempts) {
           break;
         }
@@ -183,16 +188,17 @@ export class DownloadService {
       });
 
       if (!response.ok) {
-        throw new ProviderError(
-          `HTTP ${response.status}: ${response.statusText}`,
-        );
+        const message = `HTTP ${response.status}: ${response.statusText}`;
+        throw isPermanentHttpStatus(response.status)
+          ? new PermanentIngestionError(message)
+          : new ProviderError(message);
       }
 
       const contentLength = response.headers.get("content-length");
       const totalBytes = contentLength ? Number.parseInt(contentLength, 10) : 0;
 
       if (totalBytes > maxFileSize) {
-        throw new ValidationError(
+        throw new PermanentIngestionError(
           `File size (${totalBytes} bytes) exceeds maximum allowed size (${maxFileSize} bytes)`,
         );
       }
@@ -217,7 +223,7 @@ export class DownloadService {
           downloadedBytes += chunk.length;
 
           if (downloadedBytes > maxFileSize) {
-            const error = new ValidationError(
+            const error = new PermanentIngestionError(
               `Downloaded size exceeds maximum allowed size (${maxFileSize} bytes)`,
             );
             callback(error);
@@ -279,14 +285,14 @@ export class DownloadService {
       const percentage = (downloadedBytes / totalBytes) * 100;
       const remaining = (totalBytes - downloadedBytes) / speed;
 
-      this.logger.info(
+      this.logger.debug(
         `Progress: ${percentage.toFixed(1)}% ` +
           `(${(downloadedBytes / 1024 / 1024).toFixed(2)}/${(totalBytes / 1024 / 1024).toFixed(2)} MB) ` +
           `Speed: ${speedMBps} MB/s ` +
           `ETA: ${remaining > 0 ? Math.ceil(remaining) : 0}s`,
       );
     } else {
-      this.logger.info(
+      this.logger.debug(
         `Downloaded: ${(downloadedBytes / 1024 / 1024).toFixed(2)} MB ` +
           `Speed: ${speedMBps} MB/s`,
       );

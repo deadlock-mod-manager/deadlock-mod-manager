@@ -11,6 +11,11 @@ export const envSchema = z.object({
     ),
   POD_NAME: z.string().optional(),
   REDIS_URL: z.string(),
+  // Downloads stream to disk, so several can overlap cheaply
+  LOCKDEX_DOWNLOAD_CONCURRENCY: z.coerce.number().int().positive().default(8),
+  // Extraction and VPK hashing hold archive data in memory; keep this low
+  LOCKDEX_PROCESSING_CONCURRENCY: z.coerce.number().int().positive().default(1),
+  LOCKDEX_METRICS_PORT: z.coerce.number().int().positive().default(9100),
 });
 
 export const env = envSchema.parse(process.env);

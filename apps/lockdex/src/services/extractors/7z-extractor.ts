@@ -1,30 +1,10 @@
-import { createReadStream } from "node:fs";
-import { stat } from "node:fs/promises";
-import { basename } from "node:path";
-import { pipeline } from "node:stream/promises";
+import { readdir, stat } from "node:fs/promises";
+import { join } from "node:path";
 import { ExtractionError } from "@deadlock-mods/common";
 import * as _7z from "7zip-min";
 import { logger } from "@/lib/logger";
-import type {
-  ArchiveEntry,
-  ExtractionOptions,
-  ExtractionResult,
-  StreamExtractionResult,
-} from "@/types/archive";
+import type { ExtractionOptions, ExtractionResult } from "@/types/archive";
 import { ArchiveExtractor } from "../archive";
-
-interface SevenZipListItem {
-  name: string;
-  date: string;
-  time: string;
-  attr: string;
-  size: string;
-  compressed: string;
-  crc: string;
-  method: string;
-  encrypted?: string;
-  block?: string;
-}
 
 export class SevenZipExtractor extends ArchiveExtractor {
   private static instance: SevenZipExtractor | null = null;
@@ -44,259 +24,42 @@ export class SevenZipExtractor extends ArchiveExtractor {
     return [".7z", ".zip", ".tar", ".gz", ".bz2", ".xz"];
   }
 
-  async listEntries(archivePath: string): Promise<ArchiveEntry[]> {
-    try {
-      const files = (await _7z.list(archivePath)) as SevenZipListItem[];
-
-      const entries: ArchiveEntry[] = files.map((file) => ({
-        path: file.name,
-        size: Number.parseInt(file.size, 10) || 0,
-        isDirectory: file.attr?.includes("D") || file.name.endsWith("/"),
-        modifiedAt:
-          file.date && file.time
-            ? new Date(`${file.date} ${file.time}`)
-            : undefined,
-        compressionRatio:
-          file.compressed && file.size
-            ? 1 -
-              Number.parseInt(file.compressed, 10) /
-                Number.parseInt(file.size, 10)
-            : 0,
-      }));
-
-      this.logger.info(
-        `Listed ${entries.length} entries from ${basename(archivePath)}`,
-      );
-      return entries;
-    } catch (error) {
-      this.logger.withError(error).error("Failed to list 7z entries");
-      throw error;
-    }
-  }
-
   async extractAll(
     archivePath: string,
     options: ExtractionOptions,
   ): Promise<ExtractionResult> {
+    const filters = options.fileExtensions?.map((ext) => `*${ext}`) ?? [];
+    // -ssc- matches the filters case-insensitively, -r applies them in subfolders
+    const args = [
+      "x",
+      "-y",
+      "-ssc-",
+      `-o${options.targetDir}`,
+      ...(filters.length > 0 ? ["-r"] : []),
+      archivePath,
+      ...filters,
+    ];
+
+    try {
+      await _7z.cmd(args);
+    } catch (error) {
+      throw new ExtractionError("7z extraction failed", error);
+    }
+
     const result: ExtractionResult = {
       extractedFiles: [],
-      skippedFiles: [],
       errors: [],
       totalBytes: 0,
     };
-
-    try {
-      const entries = await this.listEntries(archivePath);
-      const filteredEntries = this.filterEntries(entries, options);
-
-      if (filteredEntries.length === 0) {
-        return result;
+    const entries = await readdir(options.targetDir, { recursive: true });
+    for (const entry of entries) {
+      const stats = await stat(join(options.targetDir, entry));
+      if (stats.isFile()) {
+        result.extractedFiles.push(entry);
+        result.totalBytes += stats.size;
       }
-
-      await this.ensureDirectory(options.targetDir);
-
-      try {
-        await _7z.unpack(archivePath, options.targetDir);
-
-        for (const entry of filteredEntries) {
-          if (entry.isDirectory) {
-            continue;
-          }
-
-          const targetPath = this.getSafeFilePath(
-            options.targetDir,
-            options.preservePaths ? entry.path : basename(entry.path),
-          );
-
-          try {
-            await stat(targetPath);
-            result.extractedFiles.push(entry.path);
-            result.totalBytes += entry.size;
-            this.logger.debug(`Extracted ${entry.path} to ${targetPath}`);
-          } catch {
-            result.skippedFiles.push(entry.path);
-          }
-        }
-      } catch (error) {
-        for (const entry of filteredEntries) {
-          result.errors.push({
-            file: entry.path,
-            error: (error as Error)?.message || "Unknown error",
-          });
-        }
-      }
-
-      this.logger.info(
-        `Extraction complete: ${result.extractedFiles.length} files extracted, ${result.skippedFiles.length} skipped, ${result.errors.length} errors`,
-      );
-
-      return result;
-    } catch (error) {
-      this.logger.withError(error).error("Failed to extract 7z archive");
-      throw error;
     }
-  }
-
-  async extractFileStream(
-    archivePath: string,
-    filePath: string,
-  ): Promise<StreamExtractionResult> {
-    try {
-      const entries = await this.listEntries(archivePath);
-      const entry = entries.find((e) => e.path === filePath);
-
-      if (!entry) {
-        throw new ExtractionError(`File ${filePath} not found in archive`);
-      }
-
-      const tempDir = await this.createTempDir("7z-stream-");
-
-      try {
-        await _7z.unpack(archivePath, tempDir.path);
-
-        const extractedPath = this.getSafeFilePath(tempDir.path, filePath);
-
-        const fileStream = createReadStream(extractedPath);
-
-        let cleaned = false;
-        const cleanup = async () => {
-          if (!cleaned) {
-            cleaned = true;
-            await tempDir.cleanup().catch(() => {
-              // Ignore cleanup errors
-            });
-          }
-        };
-
-        const originalDestroy = fileStream.destroy.bind(fileStream);
-        fileStream.destroy = (error) => {
-          cleanup().catch(() => {
-            // Ignore cleanup errors
-          });
-          return originalDestroy(error);
-        };
-
-        fileStream.on("end", () => {
-          cleanup().catch(() => {
-            // Ignore cleanup errors
-          });
-        });
-
-        fileStream.on("error", () => {
-          cleanup().catch(() => {
-            // Ignore cleanup errors
-          });
-        });
-
-        return {
-          stream: fileStream,
-          entry,
-        };
-      } catch (error) {
-        await tempDir.cleanup();
-        throw error;
-      }
-    } catch (error) {
-      this.logger
-        .withError(error)
-        .error(`Failed to extract file stream for ${filePath}`);
-      throw error;
-    }
-  }
-
-  async extractFiles(
-    archivePath: string,
-    filePaths: string[],
-    targetDir: string,
-  ): Promise<ExtractionResult> {
-    const result: ExtractionResult = {
-      extractedFiles: [],
-      skippedFiles: [],
-      errors: [],
-      totalBytes: 0,
-    };
-
-    try {
-      const entries = await this.listEntries(archivePath);
-      await this.ensureDirectory(targetDir);
-
-      const tempDir = await this.createTempDir("7z-partial-");
-
-      try {
-        await _7z.unpack(archivePath, tempDir.path);
-
-        for (const filePath of filePaths) {
-          try {
-            const entry = entries.find((e) => e.path === filePath);
-            if (!entry) {
-              result.errors.push({
-                file: filePath,
-                error: "File not found in archive",
-              });
-              continue;
-            }
-
-            const sourcePath = this.getSafeFilePath(tempDir.path, filePath);
-            const targetPath = this.getSafeFilePath(
-              targetDir,
-              basename(filePath),
-            );
-
-            try {
-              await stat(sourcePath);
-
-              const readStream = createReadStream(sourcePath);
-              const writeStream = await this.createSafeWriteStream(targetPath);
-
-              await pipeline(readStream, writeStream);
-
-              result.extractedFiles.push(filePath);
-              result.totalBytes += entry.size;
-
-              this.logger.debug(`Extracted ${filePath} to ${targetPath}`);
-            } catch (error) {
-              result.errors.push({
-                file: filePath,
-                error: (error as Error)?.message || "Unknown error",
-              });
-              this.logger
-                .withError(error)
-                .warn(`Failed to extract ${filePath}`);
-            }
-          } catch (error) {
-            result.errors.push({
-              file: filePath,
-              error: (error as Error)?.message || "Unknown error",
-            });
-            this.logger.withError(error).warn(`Failed to extract ${filePath}`);
-          }
-        }
-
-        await tempDir.cleanup();
-      } catch (error) {
-        await tempDir.cleanup();
-        throw error;
-      }
-
-      return result;
-    } catch (error) {
-      this.logger
-        .withError(error)
-        .error("Failed to extract specific files from 7z");
-      throw error;
-    }
-  }
-
-  async validateArchive(archivePath: string): Promise<boolean> {
-    try {
-      await this.listEntries(archivePath);
-      return true;
-    } catch (error) {
-      this.logger
-        .withError(error)
-        .warn(`7z validation failed for ${archivePath}`);
-      return false;
-    }
+    return result;
   }
 }
 

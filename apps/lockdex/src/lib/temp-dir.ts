@@ -1,5 +1,6 @@
 import { mkdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
+import { resolve } from "node:path";
 
 /**
  * Get the temporary directory path for lockdex
@@ -11,7 +12,8 @@ export async function getTempDir(): Promise<string> {
   try {
     // Check if /app/temp exists and is accessible
     await mkdir(customTempDir, { recursive: true });
-    return customTempDir;
+    // Bun's recursive readdir rejects drive-relative paths on Windows dev machines
+    return resolve(customTempDir);
   } catch {
     // Fall back to system tmpdir if /app/temp is not available
     return tmpdir();

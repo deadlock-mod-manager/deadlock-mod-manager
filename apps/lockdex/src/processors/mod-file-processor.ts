@@ -1,10 +1,14 @@
-import { readdir, stat } from "node:fs/promises";
-import { join, relative } from "node:path";
+import { readdir } from "node:fs/promises";
+import { join } from "node:path";
 import { RuntimeError } from "@deadlock-mods/common";
-import { db, VpkRepository } from "@deadlock-mods/database";
+import { db, type VpkIdentity, VpkRepository } from "@deadlock-mods/database";
 import { BaseProcessor } from "@deadlock-mods/queue";
 import { VpkParser } from "@deadlock-mods/vpk-parser";
+import { env } from "@/lib/env";
+import { isDiskSpaceError, PermanentIngestionError } from "@/lib/errors";
 import { logger } from "@/lib/logger";
+import { ingestionStats } from "@/lib/metrics";
+import { Semaphore } from "@/lib/semaphore";
 import { archiveExtractorFactory } from "@/services/archive";
 import { diskSpaceMonitor } from "@/services/disk-space-monitor";
 import { downloadService } from "@/services/download";
@@ -14,11 +18,23 @@ import { zipExtractor } from "@/services/extractors/zip-extractor";
 import { tempCleanupService } from "@/services/temp-cleanup";
 import type { ModFileProcessingJobData } from "@/types/jobs";
 
-const MAX_FILE_SIZE = 256 * 1024 * 1024; // 256 MiB
+export const MAX_FILE_SIZE = 256 * 1024 * 1024; // 256 MiB
+const VPK_EXTENSION = ".vpk";
+
+interface IndexSummary {
+  vpks: number;
+  duplicates: number;
+  unreadable: number;
+  extractionErrors: number;
+}
 
 export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
   private static instance: ModFileProcessor | null = null;
   protected vpkRepository: VpkRepository;
+  // Downloads overlap freely; extraction and hashing are what use memory
+  private readonly processingSlots = new Semaphore(
+    env.LOCKDEX_PROCESSING_CONCURRENCY,
+  );
 
   private constructor() {
     super(logger);
@@ -38,15 +54,22 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
   }
 
   async process(jobData: ModFileProcessingJobData) {
+    const identity: VpkIdentity = {
+      provider: jobData.provider,
+      submissionType: jobData.submissionType,
+      submissionId: jobData.submissionId,
+    };
+    const upstreamUpdatedAt = new Date(jobData.upstreamUpdatedAt);
+    const log = this.logger.child().withContext({
+      submissionId: jobData.submissionId,
+      fileId: jobData.fileId,
+      file: jobData.file,
+      size: jobData.size,
+    });
+
     try {
-      const identity = {
-        provider: jobData.provider,
-        submissionType: jobData.submissionType,
-        submissionId: jobData.submissionId,
-      };
-      const upstreamUpdatedAt = new Date(jobData.upstreamUpdatedAt);
       if (Number.isNaN(upstreamUpdatedAt.getTime())) {
-        throw new RuntimeError("Invalid upstream update marker");
+        throw new PermanentIngestionError("Invalid upstream update marker");
       }
       if (
         await this.vpkRepository.isIngestionComplete(
@@ -55,265 +78,205 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
           upstreamUpdatedAt,
         )
       ) {
-        this.logger.info(
-          `Skipping completed GameBanana file ${jobData.fileId} at ${jobData.upstreamUpdatedAt}`,
-        );
+        log.info("Skipping already indexed GameBanana file");
+        ingestionStats.record("skipped");
         return this.handleSuccess(jobData);
       }
 
-      this.logger.info(
-        `Processing GameBanana file ${jobData.fileId}: ${jobData.file} (${jobData.size} bytes)`,
-      );
+      await this.ensureDiskSpace(jobData.size);
 
-      // Check disk space before processing
-      const hasSpace = await diskSpaceMonitor.hasSpaceForFile(jobData.size);
-      if (!hasSpace) {
-        this.logger.error("Insufficient disk space for processing mod file");
-
-        // Try emergency cleanup
-        try {
-          await tempCleanupService.emergencyCleanup();
-
-          // Check again after cleanup
-          const hasSpaceAfterCleanup = await diskSpaceMonitor.hasSpaceForFile(
-            jobData.size,
-          );
-          if (!hasSpaceAfterCleanup) {
-            return this.handleError(
-              new RuntimeError("Insufficient disk space even after cleanup"),
-            );
-          }
-        } catch (cleanupError) {
-          this.logger.withError(cleanupError).error("Emergency cleanup failed");
-          return this.handleError(
-            new RuntimeError("Insufficient disk space and cleanup failed"),
-          );
-        }
-      }
-
-      const downloadResult = await downloadService.downloadFile(jobData.url, {
-        filename: jobData.file,
-        timeout: 10 * 60 * 1000,
-        maxFileSize: MAX_FILE_SIZE,
-        progressInterval: 5 * 1024 * 1024,
-        retryAttempts: 3,
-        retryDelay: 2000,
-      });
-
-      this.logger.info(`Downloaded file to: ${downloadResult.filePath}`);
+      const startedAt = Date.now();
+      ingestionStats.inFlight.downloading++;
+      const download = await downloadService
+        .downloadFile(jobData.url, {
+          filename: jobData.file,
+          timeout: 10 * 60 * 1000,
+          maxFileSize: MAX_FILE_SIZE,
+          progressInterval: 5 * 1024 * 1024,
+          retryAttempts: 3,
+          retryDelay: 2000,
+        })
+        .finally(() => {
+          ingestionStats.inFlight.downloading--;
+        });
+      const downloadMs = Date.now() - startedAt;
 
       try {
-        const extractionResult = await this.extractArchive(
-          downloadResult.filePath,
-          jobData.file,
+        const queuedAt = Date.now();
+        ingestionStats.inFlight.waitingForSlot++;
+        const summary = await this.processingSlots.run(async () => {
+          ingestionStats.inFlight.waitingForSlot--;
+          ingestionStats.inFlight.processing++;
+          const slotWaitMs = Date.now() - queuedAt;
+          try {
+            const result = await this.indexArchive(
+              download.filePath,
+              jobData,
+              identity,
+              upstreamUpdatedAt,
+            );
+            return {
+              ...result,
+              slotWaitMs,
+              indexMs: Date.now() - queuedAt - slotWaitMs,
+            };
+          } finally {
+            ingestionStats.inFlight.processing--;
+          }
+        });
+        await this.vpkRepository.markIngestionComplete(
+          identity,
+          jobData.fileId,
+          upstreamUpdatedAt,
         );
-        this.logger.info(`Extracted archive to: ${extractionResult.path}`);
 
-        try {
-          await this.listExtractedFiles(extractionResult.path);
-          await this.parseVpkFiles(
-            extractionResult.path,
-            identity,
-            jobData.fileId,
-            upstreamUpdatedAt,
-          );
-          await this.vpkRepository.markIngestionComplete(
-            identity,
-            jobData.fileId,
-            upstreamUpdatedAt,
-          );
-
-          return this.handleSuccess(jobData);
-        } finally {
-          // Clean up extracted files first
-          await extractionResult.cleanup();
-        }
+        ingestionStats.recordIndexed({
+          timings: {
+            downloadMs,
+            slotWaitMs: summary.slotWaitMs,
+            indexMs: summary.indexMs,
+          },
+          bytes: download.size,
+          vpks: summary.vpks,
+          duplicates: summary.duplicates,
+          unreadable: summary.unreadable,
+        });
+        log
+          .withMetadata({ ...summary, downloadMs })
+          .info("Indexed GameBanana file");
+        return this.handleSuccess(summary);
       } finally {
-        // Clean up download directory AFTER extraction and processing is complete
-        // This ensures 7z child processes have released file handles
-        await downloadResult.cleanup();
+        await download.cleanup();
       }
     } catch (error) {
-      this.logger.withError(error).error("Error processing mod file");
-
-      // If it's a disk space error, try emergency cleanup
-      if (
-        error instanceof Error &&
-        error.message.includes("No space left on device")
-      ) {
-        this.logger.warn(
-          "Disk space error detected, attempting emergency cleanup",
-        );
+      if (error instanceof Error && isDiskSpaceError(error)) {
+        log.warn("Disk space error detected, attempting emergency cleanup");
         try {
           await tempCleanupService.emergencyCleanup();
         } catch (cleanupError) {
-          this.logger
+          log
             .withError(cleanupError)
             .error("Emergency cleanup failed after processing error");
         }
       }
 
+      if (error instanceof PermanentIngestionError) {
+        // Recording the marker keeps the backfill from queueing this file again
+        // until GameBanana reports new files for the submission
+        if (!Number.isNaN(upstreamUpdatedAt.getTime())) {
+          await this.vpkRepository.markIngestionComplete(
+            identity,
+            jobData.fileId,
+            upstreamUpdatedAt,
+          );
+        }
+        ingestionStats.record("permanent");
+        log.withError(error).error("GameBanana file cannot be indexed");
+        return this.handleError(error, { retryable: false });
+      }
+
+      ingestionStats.record("failed");
+      log.withError(error).error("Error processing mod file");
       return this.handleError(error as Error);
     }
   }
 
-  /**
-   * Extract an archive file to a temporary directory
-   */
-  private async extractArchive(archivePath: string, filename: string) {
-    const extractor = archiveExtractorFactory.getExtractor(filename);
+  private async ensureDiskSpace(fileSize: number): Promise<void> {
+    if (await diskSpaceMonitor.hasSpaceForFile(fileSize)) return;
 
-    if (!extractor) {
-      throw new RuntimeError(`No extractor available for file: ${filename}`);
+    this.logger.warn("Low disk space, running emergency cleanup");
+    await tempCleanupService.emergencyCleanup();
+    if (!(await diskSpaceMonitor.hasSpaceForFile(fileSize))) {
+      throw new RuntimeError("Insufficient disk space even after cleanup");
     }
-
-    this.logger.info(`Using ${extractor.constructor.name} for extraction`);
-
-    const result = await extractor.extractToTempDir(archivePath);
-
-    this.logger.info(
-      `Extracted ${result.extractedFiles.length} files, ${result.errors.length} errors`,
-    );
-
-    if (result.errors.length > 0) {
-      this.logger.warn(`Extraction errors: ${JSON.stringify(result.errors)}`);
-    }
-
-    return result;
   }
 
-  /**
-   * Recursively list all files in a directory and log them
-   */
-  private async listExtractedFiles(dirPath: string): Promise<void> {
-    const listFiles = async (
-      currentPath: string,
-      prefix = "",
-    ): Promise<void> => {
-      try {
-        const entries = await readdir(currentPath);
-
-        for (const entry of entries) {
-          const fullPath = join(currentPath, entry);
-          const stats = await stat(fullPath);
-
-          if (stats.isDirectory()) {
-            this.logger.info(`${prefix}📁 ${entry}/`);
-            await listFiles(fullPath, `${prefix}  `);
-          } else {
-            const sizeKB = (stats.size / 1024).toFixed(2);
-            this.logger.info(`${prefix}📄 ${entry} (${sizeKB} KB)`);
-          }
-        }
-      } catch (error) {
-        this.logger
-          .withError(error)
-          .error(`Failed to list files in: ${currentPath}`);
-      }
-    };
-
-    this.logger.info("📋 Extracted files:");
-    await listFiles(dirPath);
-  }
-
-  /**
-   * Find and parse all VPK files in the extracted directory
-   */
-  private async parseVpkFiles(
-    dirPath: string,
-    identity: {
-      provider: "gamebanana";
-      submissionType: "mod" | "sound";
-      submissionId: string;
-    },
-    fileId: string,
+  private async indexArchive(
+    archivePath: string,
+    jobData: ModFileProcessingJobData,
+    identity: VpkIdentity,
     upstreamUpdatedAt: Date,
-  ): Promise<void> {
-    const vpkFiles = await this.findVpkFiles(dirPath);
-
-    if (vpkFiles.length === 0) {
-      this.logger.info("No VPK files found in extracted archive");
-      return;
-    }
-
-    this.logger.info(`Found ${vpkFiles.length} VPK file(s) to parse`);
-
-    for (const vpkPath of vpkFiles) {
-      await this.parseVpkFile(
-        vpkPath,
-        identity,
-        fileId,
-        upstreamUpdatedAt,
-        dirPath,
+  ): Promise<IndexSummary> {
+    const extractor = archiveExtractorFactory.getExtractor(jobData.file);
+    if (!extractor) {
+      throw new PermanentIngestionError(
+        `No extractor available for file: ${jobData.file}`,
       );
     }
-  }
 
-  /**
-   * Recursively find all VPK files in a directory
-   */
-  private async findVpkFiles(dirPath: string): Promise<string[]> {
-    const vpkFiles: string[] = [];
+    const extraction = await extractor
+      .extractToTempDir(archivePath, { fileExtensions: [VPK_EXTENSION] })
+      .catch((error: Error) => {
+        throw isDiskSpaceError(error)
+          ? error
+          : new PermanentIngestionError(
+              "Archive could not be extracted",
+              error,
+            );
+      });
 
-    const searchDirectory = async (currentPath: string): Promise<void> => {
-      try {
-        const entries = await readdir(currentPath);
-
-        for (const entry of entries) {
-          const fullPath = join(currentPath, entry);
-          const stats = await stat(fullPath);
-
-          if (stats.isDirectory()) {
-            await searchDirectory(fullPath);
-          } else if (entry.toLowerCase().endsWith(".vpk")) {
-            vpkFiles.push(fullPath);
-          }
-        }
-      } catch (error) {
+    try {
+      if (extraction.errors.length > 0) {
         this.logger
-          .withError(error)
-          .error(`Failed to search directory for VPK files: ${currentPath}`);
-        throw error;
+          .withMetadata({ fileId: jobData.fileId, errors: extraction.errors })
+          .warn("Some archive entries failed to extract");
       }
-    };
 
-    await searchDirectory(dirPath);
-    return vpkFiles;
+      const summary: IndexSummary = {
+        vpks: 0,
+        duplicates: 0,
+        unreadable: 0,
+        extractionErrors: extraction.errors.length,
+      };
+      const entries = await readdir(extraction.path, { recursive: true });
+      for (const sourcePath of entries) {
+        if (!sourcePath.toLowerCase().endsWith(VPK_EXTENSION)) continue;
+        summary.vpks++;
+
+        const outcome = await this.indexVpk(
+          join(extraction.path, sourcePath),
+          sourcePath,
+          identity,
+          jobData.fileId,
+          upstreamUpdatedAt,
+        );
+        if (outcome === "duplicate") summary.duplicates++;
+        if (outcome === "unreadable") summary.unreadable++;
+      }
+      return summary;
+    } finally {
+      await extraction.cleanup();
+    }
   }
 
-  /**
-   * Parse a single VPK file and store it in the database
-   */
-  private async parseVpkFile(
+  private async indexVpk(
     vpkPath: string,
-    identity: {
-      provider: "gamebanana";
-      submissionType: "mod" | "sound";
-      submissionId: string;
-    },
+    sourcePath: string,
+    identity: VpkIdentity,
     fileId: string,
     upstreamUpdatedAt: Date,
-    extractionDir: string,
-  ): Promise<void> {
+  ) {
+    let parsed: ReturnType<typeof VpkParser.parseFile>;
     try {
-      const vpkStats = await stat(vpkPath);
-
-      this.logger.info(`Parsing VPK file: ${vpkPath} (${vpkStats.size} bytes)`);
-
-      const parsed = VpkParser.parseFile(vpkPath, {
-        includeFullFileHash: true,
+      parsed = VpkParser.parseFile(vpkPath, {
         includeMerkle: true,
         includeEntries: false,
       });
+    } catch (error) {
+      // One broken VPK should not cost the rest of the archive
+      this.logger
+        .withError(error)
+        .withMetadata({ fileId, sourcePath })
+        .warn("Skipping unreadable VPK");
+      return "unreadable" as const;
+    }
 
-      this.logger.debug(
-        `VPK Info - Version: ${parsed.version}, FileCount: ${parsed.fingerprint.fileCount}, ` +
-          `TreeLength: ${parsed.treeLength}, ManifestSHA256: ${parsed.manifestSha256}`,
-      );
-
-      const sourcePath = relative(extractionDir, vpkPath);
-      const fp = parsed.fingerprint;
-      const vpkData = {
+    const fp = parsed.fingerprint;
+    const { outcome } = await this.vpkRepository.upsertBySource(
+      identity,
+      fileId,
+      sourcePath,
+      {
         ...identity,
         fileId,
         upstreamUpdatedAt,
@@ -327,24 +290,11 @@ export class ModFileProcessor extends BaseProcessor<ModFileProcessingJobData> {
         hasMultiparts: fp.hasMultiparts,
         hasInlineData: fp.hasInlineData,
         merkleRoot: fp.merkleRoot,
-        state: "ok" as const,
+        state: "ok",
         fileMtime: fp.lastModified ? new Date(fp.lastModified) : null,
-      };
-
-      const storedVpk = await this.vpkRepository.upsertBySource(
-        identity,
-        fileId,
-        sourcePath,
-        vpkData,
-      );
-
-      this.logger.info(`Stored VPK in database with ID: ${storedVpk.id}`);
-    } catch (error) {
-      this.logger
-        .withError(error)
-        .error(`Failed to parse VPK file: ${vpkPath}`);
-      throw error;
-    }
+      },
+    );
+    return outcome;
   }
 }
 
