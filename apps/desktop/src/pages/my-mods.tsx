@@ -41,10 +41,8 @@ import {
 } from "@deadlock-mods/ui/components/tooltip";
 import {
   ArrowUpDown,
-  Check,
   ChevronLeft,
   ChevronRight,
-  Download,
   EllipsisVertical,
   FileOutput,
   FolderOpen,
@@ -74,6 +72,7 @@ import { ModOptionsDialog } from "@/components/mod-management/mod-options-dialog
 import { MissingFilesWarning } from "@/components/mod-management/missing-files-warning";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
 import SearchBar from "@/components/mod-browsing/search-bar";
+import { SortSelect } from "@/components/mod-browsing/sort-select";
 import { VpkScanAlert } from "@/components/mods/vpk-scan-alert";
 import { AnalysisProgressToast } from "@/components/my-mods/analysis-progress-toast";
 import { AnalysisResultsDialog } from "@/components/my-mods/analysis-results-dialog";
@@ -112,7 +111,9 @@ import { ModCategory } from "@/lib/constants";
 import { getErrorMessage } from "@/lib/errors";
 import {
   filterLibraryModsByStatus,
+  LibrarySortType,
   ModFilter,
+  sortLibraryMods,
 } from "@/lib/mods/library-display";
 import {
   matchesHeroFilter,
@@ -736,6 +737,9 @@ const MyMods = () => {
   );
   const [hideOutdated, setHideOutdated] = useState(false);
   const [filterMode, setFilterMode] = useState<FilterMode>("include");
+  const [sortType, setSortType] = useState<LibrarySortType>(
+    LibrarySortType.InstallOrder,
+  );
   const [librarySearchQuery, setLibrarySearchQuery] = useState("");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const scrollPositionRef = useRef<number>(0);
@@ -796,21 +800,16 @@ const MyMods = () => {
       isConflictsTab ? ModFilter.All : activeTab,
     );
 
-    if (query.trim()) {
+    // Search results keep relevance order unless the user picked a sort.
+    if (query.trim() && sortType === LibrarySortType.InstallOrder) {
       return statusFilteredMods;
     }
 
-    return [...statusFilteredMods].sort((a, b) => {
-      const orderA = a.installOrder ?? Number.MAX_SAFE_INTEGER;
-      const orderB = b.installOrder ?? Number.MAX_SAFE_INTEGER;
-      if (orderA !== orderB) return orderA - orderB;
-      const dateA = a.downloadedAt ? new Date(a.downloadedAt).getTime() : 0;
-      const dateB = b.downloadedAt ? new Date(b.downloadedAt).getTime() : 0;
-      return dateA - dateB;
-    });
+    return sortLibraryMods(statusFilteredMods, sortType);
   }, [
     activeTab,
     filterMode,
+    sortType,
     audioQuickFilter,
     effectiveMapQuickFilter,
     globallyHideNSFW,
@@ -847,6 +846,7 @@ const MyMods = () => {
   }, [
     activeTab,
     filterMode,
+    sortType,
     audioQuickFilter,
     effectiveMapQuickFilter,
     hideNSFW,
@@ -1052,7 +1052,7 @@ const MyMods = () => {
             )}
             {mods.length > 0 && (
               <div className='flex w-full flex-col gap-4'>
-                <div className='grid w-full grid-cols-1 gap-3 px-px xl:grid-cols-[minmax(20rem,1fr)_auto] xl:items-start'>
+                <div className='flex w-full flex-col gap-3 px-px'>
                   <div className='min-w-0 overflow-visible [&_input]:border-border/70 [&_input]:bg-background/70 [&_input]:shadow-sm [&_input]:placeholder:text-muted-foreground/90 [&_input]:hover:border-border [&_input]:focus-visible:bg-background'>
                     <SearchBar
                       className='w-full'
@@ -1075,13 +1075,64 @@ const MyMods = () => {
                       setQuery={setQuery}
                       showSortControl={false}
                       showTimePeriodControl={false}
+                      trailingActions={
+                        <div className='flex h-9 items-center gap-0.5 rounded-lg border border-border/50 bg-secondary/40 p-0.5'>
+                          <SortSelect
+                            onChange={setSortType}
+                            options={Object.values(LibrarySortType)}
+                            triggerClassName='h-8 border-0 bg-transparent px-2.5 text-muted-foreground shadow-none hover:text-foreground data-[state=open]:text-foreground'
+                            value={sortType}
+                          />
+                          <span aria-hidden className='h-4 w-px bg-border' />
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                aria-label={t("mods.gridView")}
+                                aria-pressed={viewMode === ViewMode.GRID}
+                                className='size-8'
+                                onClick={() => setViewMode(ViewMode.GRID)}
+                                size='icon'
+                                variant={
+                                  viewMode === ViewMode.GRID
+                                    ? "secondary"
+                                    : "ghost"
+                                }
+                                icon={<LayoutGrid className='h-4 w-4' />}
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {t("mods.gridView")}
+                            </TooltipContent>
+                          </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                aria-label={t("mods.listView")}
+                                aria-pressed={viewMode === ViewMode.LIST}
+                                className='size-8'
+                                onClick={() => setViewMode(ViewMode.LIST)}
+                                size='icon'
+                                variant={
+                                  viewMode === ViewMode.LIST
+                                    ? "secondary"
+                                    : "ghost"
+                                }
+                                icon={<LayoutList className='h-4 w-4' />}
+                              />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {t("mods.listView")}
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                      }
                       hideMapFilter={!isCustomMapsEnabled}
                       inputGroupClassName='min-w-0 w-full'
                       searchContainerClassName='w-full min-w-32 max-w-80'
                       searchInputClassName='w-full'
                     />
                   </div>
-                  <div className='flex min-w-0 flex-wrap items-center justify-start gap-2 xl:justify-end'>
+                  <div className='flex min-w-0 flex-wrap items-center gap-2'>
                     <TabsList className='h-auto min-h-9 max-w-full flex-wrap justify-start'>
                       <TabsTrigger value={ModFilter.All}>
                         {t("myMods.tabs.all")}
@@ -1090,14 +1141,12 @@ const MyMods = () => {
                         </span>
                       </TabsTrigger>
                       <TabsTrigger value={ModFilter.Enabled}>
-                        <Check className='mr-2 h-4 w-4' />
                         {t("myMods.tabs.installed")}
                         <span className='ml-2 text-muted-foreground text-xs'>
                           ({enabledModsCount})
                         </span>
                       </TabsTrigger>
                       <TabsTrigger value={ModFilter.Disabled}>
-                        <Download className='mr-2 h-4 w-4' />
                         {t("myMods.tabs.downloaded")}
                         <span className='ml-2 text-muted-foreground text-xs'>
                           ({disabledModsCount})
@@ -1117,34 +1166,6 @@ const MyMods = () => {
                         </TabsTrigger>
                       )}
                     </TabsList>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          aria-label={t("mods.gridView")}
-                          onClick={() => setViewMode(ViewMode.GRID)}
-                          size='icon'
-                          variant={
-                            viewMode === ViewMode.GRID ? "default" : "outline"
-                          }
-                          icon={<LayoutGrid className='h-4 w-4' />}
-                        />
-                      </TooltipTrigger>
-                      <TooltipContent>{t("mods.gridView")}</TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          aria-label={t("mods.listView")}
-                          onClick={() => setViewMode(ViewMode.LIST)}
-                          size='icon'
-                          variant={
-                            viewMode === ViewMode.LIST ? "default" : "outline"
-                          }
-                          icon={<LayoutList className='h-4 w-4' />}
-                        />
-                      </TooltipTrigger>
-                      <TooltipContent>{t("mods.listView")}</TooltipContent>
-                    </Tooltip>
                   </div>
                 </div>
 

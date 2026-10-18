@@ -3769,7 +3769,11 @@
     "lastupdated": "Last Updated",
     "downloadcount": "Download Count",
     "rating": "Rating",
-    "releasedate": "Release Date"
+    "releasedate": "Release Date",
+    "installorder": "Install Order",
+    "hero": "Hero",
+    "name": "Name",
+    "recentlyadded": "Recently Added"
   },
   "timePeriod": {
     "alltime": "All Time",

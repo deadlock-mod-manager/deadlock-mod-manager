@@ -6,6 +6,7 @@ import ModCard from "@/components/mod-browsing/mod-card";
 import { SortSelect } from "@/components/mod-browsing/sort-select";
 import { useModDetailNavigation } from "@/hooks/use-mod-detail-navigation";
 import { useSearchQueryState } from "@/hooks/use-search";
+import { SortType } from "@/lib/constants";
 import { modAuthorQueryOptions } from "@/lib/mods/mod-author-query";
 import { filterHiddenNSFWItems } from "@/lib/mods/nsfw-visibility";
 import { usePersistedStore } from "@/lib/store";
@@ -62,7 +63,11 @@ export const AuthorPageContent = ({ authorId }: { authorId: string }) => {
               data-testid='author-result-count'>
               {t("authorPage.resultCount", { count: visibleMods.length })}
             </span>
-            <SortSelect onChange={setSortType} value={sortType} />
+            <SortSelect
+              onChange={setSortType}
+              options={Object.values(SortType)}
+              value={sortType}
+            />
           </div>
         </div>
 

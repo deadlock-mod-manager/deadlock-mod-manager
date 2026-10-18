@@ -10,7 +10,7 @@ import { usePersistedStore } from "@/lib/store";
 import { cn, formatAddedDate, isAddedFilterActive } from "@/lib/utils";
 import {
   getModCategoryDisplayName,
-  type SortType,
+  SortType,
   TimePeriod,
   timePeriodLabelKey,
 } from "@/lib/constants";
@@ -246,7 +246,11 @@ const SearchBar = ({
               </Button>
             )}
             {showSortControl && sortType && setSortType && (
-              <SortSelect onChange={setSortType} value={sortType} />
+              <SortSelect
+                onChange={setSortType}
+                options={Object.values(SortType)}
+                value={sortType}
+              />
             )}
             {trailingActions}
           </div>
