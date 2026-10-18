@@ -45,7 +45,7 @@ const useSymptomPhrase = () => {
     );
 };
 
-export const ModHealthSummary = ({
+const ModHealthSummary = ({
   health,
   kind,
   isOutdated,

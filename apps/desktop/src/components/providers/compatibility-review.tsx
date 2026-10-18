@@ -27,7 +27,7 @@ interface ReviewRequest {
   resolve: (applied: boolean) => void;
 }
 
-export type LaunchFixPrompt =
+type LaunchFixPrompt =
   | { kind: "autoFixOff"; count: number }
   | { kind: "heldBack"; mods: readonly HeldBackMod[] };
 
