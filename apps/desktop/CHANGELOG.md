@@ -9,6 +9,11 @@
 ### Minor Changes
 
 - Add a Collections tab with GameBanana collections, local search and filters, and downloads for an entire collection or selected mods
+- f440325: Refresh the GameBanana catalog about every 30 minutes instead of every 6 hours, and show catalog sync status in the bottom bar.
+- 72ea72c: Customize the Stats page: add, arrange and resize widgets on your own tabs.
+- 712f690: Add ranked, unranked, and start-date filters to Overview, Heroes, and Items stats.
+- e31d615: Sort the mod library by install order, hero, name, or recently added, and tidy the library toolbar.
+- b4b34a2: Show update badges in My Mods, including disabled mods, and add a setting to hide them. Keep disabled mods disabled when updating them.
 - 85b515a: Show GameBanana comments and changelogs on mod pages and when updating
 - d0d29cd: Add an OLED theme with true-black backgrounds and a customizable accent
 - c52fc90: Add seasonal themes with mini-games for Halloween, Christmas, Easter and more
@@ -68,6 +73,8 @@
 
 ### Patch Changes
 
+- a1f2286: Check installed mods against the current game after installs and game updates, badge mods made for an older version, and fix them from the library or before launch without the experimental flag. Mod files are never changed, and any mod can go back to its original files
+- 9b06f22: Fix access-denied errors when combining shared mod changes on Windows.
 - 5382703: Add Enable all mods to the library menu, with a recap of what was enabled, skipped or failed and a button to finish each one
 - 2628eea: Smoke test Wry and CEF Flatpak bundles before publishing releases
 - 344c40e: Cancel a launch from the launch overlay or the toolbar instead of waiting up to three minutes for Deadlock to start
