@@ -8,24 +8,24 @@
     "editor.codeActionsOnSave": {
       "source.fixAll.oxc": "always",
     },
-    "typescript.tsdk": "node_modules/typescript/lib",
-    "typescript.experimental.useTsgo": true,
-    "typescript.enablePromptUseWorkspaceTsdk": true,
-    "typescript.preferences.importModuleSpecifier": "shortest",
-    "typescript.preferences.importModuleSpecifierEnding": "auto",
+    "js/ts.tsdk.path": "node_modules/typescript/lib",
+    "js/ts.experimental.useTsgo": true,
+    "js/ts.tsdk.promptToUseWorkspaceVersion": true,
+    "js/ts.preferences.importModuleSpecifier": "shortest",
+    "js/ts.preferences.importModuleSpecifierEnding": "auto",
     "editor.defaultFormatter": "oxc.oxc-vscode",
     "oxc.path.oxfmt": "./node_modules/.bin/oxfmt",
     "oxc.path.oxlint": "./node_modules/.bin/oxlint",
     "editor.formatOnSave": true,
     "editor.formatOnPaste": true,
     // TypeScript performance optimizations
-    "typescript.disableAutomaticTypeAcquisition": true,
-    "typescript.preferences.includePackageJsonAutoImports": "off",
-    "typescript.suggest.autoImports": true,
-    "typescript.updateImportsOnFileMove.enabled": "always",
-    "typescript.suggest.completeFunctionCalls": false,
-    "typescript.suggest.jsdoc.generateReturns": false,
-    "typescript.workspaceSymbols.scope": "currentProject",
+    "js/ts.tsserver.automaticTypeAcquisition.enabled": false,
+    "js/ts.preferences.includePackageJsonAutoImports": "off",
+    "js/ts.suggest.autoImports": true,
+    "js/ts.updateImportsOnFileMove.enabled": "always",
+    "js/ts.suggest.completeFunctionCalls": false,
+    "js/ts.suggest.jsdoc.generateReturns": false,
+    "js/ts.workspaceSymbols.scope": "currentProject",
     // File exclusions for better performance
     "files.exclude": {
       "**/node_modules": true,
@@ -71,6 +71,9 @@
     "[xml]": {
       "editor.defaultFormatter": "redhat.vscode-xml",
     },
-    "cSpell.words": ["dlmm", "modmanager"],
+    "cSpell.words": [
+      "dlmm",
+      "modmanager"
+    ],
   },
 }
