@@ -269,6 +269,90 @@ fn missing_required_bones_and_ambiguous_historical_bindings_decline_relocation()
 }
 
 #[test]
+fn old_models_are_not_relocatable_when_the_mod_ships_the_current_model() {
+  let root = tempfile::tempdir().unwrap();
+  let citadel = root.path().join("citadel");
+  fs::create_dir_all(&citadel).unwrap();
+  pack(
+    &citadel,
+    "pak01",
+    &[(
+      HEROES_VDATA_PATH,
+      &resource(&registry("hero_copper", CURRENT)),
+    )],
+  );
+  let history = VdataHistoryIndex::from_bytes(
+    &encode_history_index(&[(
+      HEROES_VDATA_PATH.into(),
+      vec![(1, registry("hero_copper", OLD))],
+    )])
+    .unwrap(),
+  )
+  .unwrap();
+  let relocatable = |name: &str, entries: &[(&str, &[u8])]| {
+    let mods = [LocalizationModInput {
+      mod_id: "skin".into(),
+      vpks: vec![pack(root.path(), name, entries)],
+    }];
+    let resources = ResourceSnapshot::open(&citadel, &mods).unwrap();
+    historical_hero_models(&resources, &history, [OLD]).unwrap()
+  };
+  assert_eq!(
+    relocatable("old_only", &[(OLD, b"old model")]),
+    [OLD.to_owned()].into()
+  );
+  assert!(relocatable("both", &[(OLD, b"old model"), (CURRENT, b"current model")]).is_empty());
+}
+
+#[test]
+fn only_hero_models_and_their_relocatable_old_copies_are_not_props() {
+  const PROP: &str = "models/props/cloak.vmdl_c";
+  let root = tempfile::tempdir().unwrap();
+  let citadel = root.path().join("citadel");
+  fs::create_dir_all(&citadel).unwrap();
+  pack(
+    &citadel,
+    "pak01",
+    &[
+      (
+        HEROES_VDATA_PATH,
+        &resource(&registry("hero_copper", CURRENT)),
+      ),
+      (OLD, b"game copy of the old model"),
+    ],
+  );
+  let history = VdataHistoryIndex::from_bytes(
+    &encode_history_index(&[(
+      HEROES_VDATA_PATH.into(),
+      vec![(1, registry("hero_copper", OLD))],
+    )])
+    .unwrap(),
+  )
+  .unwrap();
+  let warnings = [OLD, CURRENT, PROP].map(|file_path| AssetWarning {
+    mod_id: "skin".into(),
+    source_vpk: "skin_dir.vpk".into(),
+    file_path: file_path.into(),
+    kind: WarningKind::MissingCameraInterface,
+    detail: "CitadelCameraSettings_t".into(),
+  });
+  let props = |name: &str, entries: &[(&str, &[u8])]| {
+    let mods = [LocalizationModInput {
+      mod_id: "skin".into(),
+      vpks: vec![pack(root.path(), name, entries)],
+    }];
+    let resources = ResourceSnapshot::open(&citadel, &mods).unwrap();
+    prop_models(&resources, &history, &warnings).unwrap()
+  };
+  assert_eq!(props("old_only", &[(OLD, b"old model")]), [PROP]);
+  assert_eq!(
+    props("both", &[(OLD, b"old model"), (CURRENT, b"current model")]),
+    [PROP, OLD],
+    "the old copy is only a prop once the mod ships the current model"
+  );
+}
+
+#[test]
 fn existing_current_models_block_relocation_for_selected_and_opted_out_mods_in_both_orders() {
   for selected in [true, false] {
     for reverse in [true, false] {

@@ -17,7 +17,7 @@ use ts_rs::TS;
 
 const CACHE_FILE: &str = "mod-health.json";
 // Increment when status or symptom rules change, so cached verdicts are rechecked.
-const HEALTH_RULES_REVISION: u32 = 2;
+const HEALTH_RULES_REVISION: u32 = 6;
 
 static CACHE_LOCK: Mutex<()> = Mutex::new(());
 
@@ -189,6 +189,39 @@ fn is_missing_texture(warning: &AssetWarning) -> bool {
     && (target.ends_with(".vtex") || target.ends_with(".vtex_c"))
 }
 
+/// Warnings that stay listed in review but neither pause launch nor mark a mod
+/// as needing an update. Missing textures and shader differences only change
+/// looks. Retired `.vanmgrph` graphs are what animation includes still name
+/// after an update; a primary model that really lost its animations reports
+/// `MissingAnimationInterface` as well. Portrait attachments only frame the HUD
+/// portrait. A skin updated for Paint the Town that plays correctly in game
+/// still reports every one of these.
+fn is_informational(warning: &AssetWarning) -> bool {
+  match warning.kind {
+    AssetWarningKind::MaterialInterface => true,
+    AssetWarningKind::MissingResource => {
+      is_missing_texture(warning) || warning.detail.to_ascii_lowercase().ends_with(".vanmgrph")
+    }
+    AssetWarningKind::InvalidAttachment => warning.detail.starts_with("portrait_"),
+    _ => false,
+  }
+}
+
+/// Whether a loaded asset warning pauses launch and marks the mod as needing
+/// an update. A prop model, such as a particle's model, never acts as a hero,
+/// so hero interface warnings do not apply.
+pub(crate) fn affects_mod(analysis: &LocalizationOverlayAnalysis, warning: &AssetWarning) -> bool {
+  !is_informational(warning)
+    && !(analysis.prop_models.contains(&warning.file_path)
+      && matches!(
+        warning.kind,
+        AssetWarningKind::MissingCameraInterface
+          | AssetWarningKind::MissingAnimationInterface
+          | AssetWarningKind::OutdatedCameraAttachments
+          | AssetWarningKind::ModelMapping
+      ))
+}
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ModFindings {
@@ -218,8 +251,8 @@ impl ModFindings {
   /// Uncertain baselines and stale localization snapshots still pause launch
   /// for review, but they describe how a mod's edits are merged rather than a
   /// defect, so they do not mark the mod as needing an update. Warnings on
-  /// models the game never loads are left out, and missing textures count as
-  /// warnings without requiring an update.
+  /// models the game never loads are left out, and informational warnings
+  /// count as warnings without requiring an update.
   pub(crate) fn from_analysis(
     analysis: &LocalizationOverlayAnalysis,
     mod_id: &str,
@@ -264,7 +297,7 @@ impl ModFindings {
     let remaining_symptoms: BTreeSet<_> = warnings
       .into_iter()
       .filter(
-        |finding| !matches!(finding, Finding::AssetWarning(warning) if is_missing_texture(warning)),
+        |finding| !matches!(finding, Finding::AssetWarning(warning) if !affects_mod(analysis, warning)),
       )
       .map(symptom)
       .collect();
@@ -706,6 +739,78 @@ mod tests {
     assert_eq!(
       ModFindings::from_analysis(&analysis, "plain", true).status(CompatibilityChoice::Unset),
       ModHealthStatus::Works
+    );
+  }
+
+  #[test]
+  fn informational_warnings_leave_a_working_skin_without_remaining_symptoms() {
+    let model = "models/heroes_wip/pocket/pocket.vmdl_c";
+    let analysis = LocalizationOverlayAnalysis {
+      asset_warnings: vec![
+        warning(
+          "skin",
+          "models/heroes_wip/pocket/materials/pocket_body.vmat_c",
+          AssetWarningKind::MaterialInterface,
+          "Authored shader feature differs: m_intParams.F_SELF_ILLUM",
+        ),
+        warning(
+          "skin",
+          "models/heroes_wip/pocket/pocket_backup.vmdl_c",
+          AssetWarningKind::MissingResource,
+          "models/heroes_wip/pocket/pocket.vanmgrph",
+        ),
+        warning(
+          "skin",
+          model,
+          AssetWarningKind::InvalidAttachment,
+          "portrait_camera_attach",
+        ),
+      ],
+      ..Default::default()
+    };
+    let skin = ModFindings::from_analysis(&analysis, "skin", true);
+    assert_eq!(skin.warnings, 3);
+    assert!(skin.remaining_symptoms.is_empty());
+    assert_eq!(
+      skin.status(CompatibilityChoice::Unset),
+      ModHealthStatus::Works
+    );
+
+    let gameplay = LocalizationOverlayAnalysis {
+      asset_warnings: vec![warning(
+        "skin",
+        model,
+        AssetWarningKind::InvalidAttachment,
+        "camera_pivot",
+      )],
+      ..Default::default()
+    };
+    assert_eq!(
+      ModFindings::from_analysis(&gameplay, "skin", true).status(CompatibilityChoice::Unset),
+      ModHealthStatus::NeedsUpdate
+    );
+
+    let projectile = "models/heroes_staging/synth/synth.vmdl_c";
+    let prop = |prop_models: Vec<String>| LocalizationOverlayAnalysis {
+      asset_warnings: vec![warning(
+        "skin",
+        projectile,
+        AssetWarningKind::MissingCameraInterface,
+        "CitadelCameraSettings_t",
+      )],
+      prop_models,
+      ..Default::default()
+    };
+    assert_eq!(
+      ModFindings::from_analysis(&prop(vec![projectile.into()]), "skin", true)
+        .status(CompatibilityChoice::Unset),
+      ModHealthStatus::Works,
+      "a particle's model needs no hero camera"
+    );
+    assert_eq!(
+      ModFindings::from_analysis(&prop(Vec::new()), "skin", true)
+        .status(CompatibilityChoice::Unset),
+      ModHealthStatus::NeedsUpdate
     );
   }
 

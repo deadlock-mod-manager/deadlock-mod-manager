@@ -23,7 +23,7 @@ const BADGE_STYLES = {
   needsUpdate: "border-amber-400/50 text-amber-300",
 } satisfies Record<ModHealthBadgeKind, string>;
 
-const BADGE_ICONS = {
+export const BADGE_ICONS = {
   fixable: Wrench,
   partlyFixable: Wrench,
   fixed: Check,
@@ -103,7 +103,7 @@ export const ModHealthBadge = ({
   className?: string;
 }) => {
   const { t } = useTranslation();
-  const kind = healthBadgeKind(health);
+  const kind = healthBadgeKind(health, isOutdated);
   if (!health || !kind) return null;
   const Icon = BADGE_ICONS[kind];
 

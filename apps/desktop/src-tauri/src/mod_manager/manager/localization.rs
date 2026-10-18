@@ -437,8 +437,9 @@ fn build_overlay_plan(
   Ok(plan)
 }
 
-/// Unmanaged archives, protected resources, and warnings on models nothing
-/// loads are reported in review without pausing launch. So are a fixed mod's
+/// Unmanaged archives, protected resources, informational warnings and
+/// warnings on models nothing loads are reported in review without pausing
+/// launch. So are a fixed mod's
 /// own asset and data findings, except model overlaps and competing
 /// definitions, which involve other mods.
 fn requires_review(
@@ -459,6 +460,7 @@ fn requires_review(
     || !analysis.parse_warnings.is_empty()
     || analysis.asset_warnings.iter().any(|warning| {
       !analysis.unloaded_models.contains(&warning.file_path)
+        && crate::mod_manager::mod_health::affects_mod(analysis, warning)
         && (warning.kind == WarningKind::OverlappingModel || !accepted.contains(&warning.mod_id))
     })
     || analysis.data_warnings.iter().any(|warning| {

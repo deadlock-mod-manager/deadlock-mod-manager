@@ -2407,6 +2407,20 @@
     "fixForPatch": "Fix for this patch",
     "useOriginalFiles": "Use original files",
     "closeGame": "Close Deadlock to fix mods.",
+    "alert": {
+      "description": {
+        "fixable": "Made for an older Deadlock version. Fixing it leaves your mod files unchanged.",
+        "partlyFixable": "Made for an older Deadlock version. Fixing it leaves your mod files unchanged.",
+        "fixed": "Made for an older Deadlock version. Your mod files are unchanged, so you can switch back at any time.",
+        "partlyFixed": "Made for an older Deadlock version. Your mod files are unchanged, so you can switch back at any time.",
+        "originalFiles": "You switched this mod back to its original files, made for an older Deadlock version.",
+        "needsUpdate": "Parts of this mod don't match the current game version and can't be fixed automatically."
+      },
+      "canFix": "Can be fixed",
+      "fixed": "Fixed",
+      "needsUpdate": "Needs an update",
+      "closeGameToSwitch": "Close Deadlock to switch files."
+    },
     "fixedToast_one": "Fixed {{count}} mod",
     "fixedToast_other": "Fixed {{count}} mods",
     "fixFailed": "Could not fix mods",
@@ -2426,7 +2440,9 @@
       "seeDetails": "See details",
       "crashRisk_one": "{{count}} of these can crash the game. Fix it from See details, where its warning is listed.",
       "crashRisk_other": "{{count}} of these can crash the game. Fix them one at a time from See details, where their warnings are listed.",
-      "checking": "Checking mods… {{checked}}/{{total}}"
+      "checkingTitle": "Checking your mods against the current game version",
+      "checkingDescription": "Mods made for an older version will show their fixes here, so you can apply them before you play.",
+      "checkingCount": "{{checked}} of {{total}} checked"
     },
     "dialog": {
       "title": "Mods made for an older game version",
@@ -2572,7 +2588,7 @@
         "animationMapping": "Animation bindings need verified bone mapping",
         "unreadableResource": "This resource could not be checked"
       },
-      "warningDescription": "No verified repair exists for these. Missing resources or camera settings can crash the game: disable the mod, or send its author the file and detail listed here.",
+      "warningDescription": "No verified repair exists for these. Some only change how the mod looks; missing resources or camera settings can crash the game. If the mod misbehaves, disable it or check for an update.",
       "warningsTitle": "Warnings",
       "warningSummary_one": "{{count}} warning",
       "warningSummary_other": "{{count}} warnings",

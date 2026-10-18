@@ -122,7 +122,7 @@ export const ModHealthDialog = ({
   const rows: HealthRow[] = localMods
     .flatMap((mod) => {
       const health = healthById.get(mod.remoteId);
-      const kind = healthBadgeKind(health);
+      const kind = healthBadgeKind(health, isModOutdated(mod));
       return health && kind ? [{ mod, health, kind }] : [];
     })
     .sort((a, b) => ROW_ORDER[a.kind] - ROW_ORDER[b.kind]);

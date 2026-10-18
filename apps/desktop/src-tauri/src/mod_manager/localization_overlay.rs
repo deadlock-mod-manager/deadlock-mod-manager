@@ -229,6 +229,10 @@ pub struct LocalizationOverlayAnalysis {
   /// Mod-only models that nothing loaded references. Their asset warnings stay
   /// listed but neither pause launch nor affect mod health.
   pub unloaded_models: Vec<String>,
+  /// Warned models that are not a hero's model, such as a particle's model.
+  /// Hero camera, animation and model-mapping warnings on them stay listed
+  /// but neither pause launch nor affect mod health.
+  pub prop_models: Vec<String>,
   /// Fixed mods whose own asset and data findings the player accepted. Those
   /// findings stay listed but no longer pause launch.
   pub accepted_mod_ids: Vec<String>,
@@ -845,6 +849,7 @@ impl LocalizationOverlayPlan {
     )?);
     let unloaded_models =
       asset_compatibility::unloaded_models(resources, history, &asset_warnings)?;
+    let prop_models = model_relocation::prop_models(resources, history, &asset_warnings)?;
     let mut changed_tokens = 0usize;
     let mut new_tokens = 0usize;
     let mut conflicts = Vec::new();
@@ -933,6 +938,7 @@ impl LocalizationOverlayPlan {
         asset_repairs,
         asset_warnings,
         unloaded_models,
+        prop_models,
         accepted_mod_ids: Vec::new(),
         data_repairs,
         data_warnings,

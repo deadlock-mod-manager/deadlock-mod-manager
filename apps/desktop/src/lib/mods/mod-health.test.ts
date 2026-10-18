@@ -57,17 +57,22 @@ describe("healthBadgeKind", () => {
       "originalFiles",
       "needsUpdate",
     ] as const) {
-      expect(healthBadgeKind(health("1", status))).toBe(status);
+      expect(healthBadgeKind(health("1", status), true)).toBe(status);
     }
-    expect(healthBadgeKind(health("1", "works"))).toBeNull();
-    expect(healthBadgeKind(health("1", "notCovered"))).toBeNull();
-    expect(healthBadgeKind(undefined)).toBeNull();
+    expect(healthBadgeKind(health("1", "works"), true)).toBeNull();
+    expect(healthBadgeKind(health("1", "notCovered"), true)).toBeNull();
+    expect(healthBadgeKind(undefined, true)).toBeNull();
   });
 
   it("marks a fixed mod with parts left over as partly fixed", () => {
-    expect(healthBadgeKind(health("1", "fixed", ["animations"]))).toBe(
+    expect(healthBadgeKind(health("1", "fixed", ["animations"]), true)).toBe(
       "partlyFixed",
     );
+  });
+
+  it("trusts an author update over findings no repair covers", () => {
+    expect(healthBadgeKind(health("1", "needsUpdate"), false)).toBeNull();
+    expect(healthBadgeKind(health("1", "fixable"), false)).toBe("fixable");
   });
 });
 

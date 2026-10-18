@@ -14,17 +14,23 @@ export type ModHealthBadgeKind =
   | "originalFiles"
   | "needsUpdate";
 
-/** Mods that work, or that the check can't judge, carry no health badge. */
+/**
+ * Mods that work, or that the check can't judge, carry no health badge. A mod
+ * its author updated after the latest game update is trusted over findings
+ * no repair covers.
+ */
 export const healthBadgeKind = (
   health: ModHealth | undefined,
+  isOutdated: boolean,
 ): ModHealthBadgeKind | null => {
   switch (health?.status) {
     case "fixed":
       return health.remainingSymptoms.length > 0 ? "partlyFixed" : "fixed";
+    case "needsUpdate":
+      return isOutdated ? "needsUpdate" : null;
     case "fixable":
     case "partlyFixable":
     case "originalFiles":
-    case "needsUpdate":
       return health.status;
     default:
       return null;

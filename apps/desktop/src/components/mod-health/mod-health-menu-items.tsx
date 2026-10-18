@@ -12,6 +12,7 @@ import {
   useRestoreOriginalFiles,
 } from "@/hooks/use-mod-health";
 import { healthAction, healthBadgeKind } from "@/lib/mods/mod-health";
+import { isModOutdated } from "@/lib/utils";
 import type { LocalMod } from "@/types/mods";
 
 /** Lives inside the menu content, so it only subscribes while the menu is open. */
@@ -24,6 +25,7 @@ export const ModHealthMenuItems = ({ mod }: { mod: LocalMod }) => {
   const restoreOriginal = useRestoreOriginalFiles();
   const kind = healthBadgeKind(
     report.data?.mods.find((health) => health.modId === mod.remoteId),
+    isModOutdated(mod),
   );
   const action = kind ? healthAction(kind) : null;
   if (!action) return null;
