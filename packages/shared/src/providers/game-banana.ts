@@ -112,16 +112,6 @@ export type GameBananaPaginatedResponse<T> = {
   };
 };
 
-export type GameBananaTopSubmission = BaseSubmission & {
-  _sImageUrl: string;
-  _sThumbnailUrl: string;
-  _sPeriod: string;
-  _aSubmitter: BaseUser & {
-    _sMoreByUrl: string;
-  };
-  _sDescription: string;
-};
-
 export type GameBananaModDownload = {
   _bIsTrashed: boolean;
   _bIsWithheld: boolean;

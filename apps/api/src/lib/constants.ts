@@ -11,7 +11,6 @@ export const SENTRY_OPTIONS = {
 
 export enum MonitorSlug {
   MODS_SYNCHRONIZATION = "mods-synchronization",
-  GAMEBANANA_RSS = "gamebanana-rss",
   RELAY_DISCOVERY = "relay-discovery",
 }
 
@@ -63,6 +62,3 @@ export const VPK_CONSTANTS = {
 } as const;
 
 export const SERVER_TIMEZONE = env.TZ;
-
-export const GAMEBANANA_RSS_FEED_URL =
-  "https://api.gamebanana.com/Rss/New?gameid=20948";

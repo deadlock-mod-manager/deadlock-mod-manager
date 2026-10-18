@@ -1,7 +1,6 @@
 export const DEADLOCK_GAME_ID = 20_948; // {{base_url}}/Util/Game/NameMatch?_sName=Deadlock
 export const MAPS_CATEGORY_NAME = "Maps";
 export const GAME_BANANA_BASE_URL = "https://gamebanana.com/apiv11";
-export const ACCEPTED_MODELS = ["Mod", "Sound"];
 // GameBanana rate limits are aggressive, so pages are as large as the index
 // allows: about 190 requests walk every mod and sound
 export const INDEX_PAGE_SIZE = 50;

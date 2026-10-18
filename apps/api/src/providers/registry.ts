@@ -34,7 +34,7 @@ type ProviderConstructor<T> = {
   new (...args: never[]): Provider<T>;
 };
 
-export class ProviderRegistry {
+class ProviderRegistry {
   private readonly providers: Map<string, ProviderConstructor<unknown>> =
     new Map();
 
