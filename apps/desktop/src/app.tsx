@@ -151,61 +151,61 @@ const App = ({ runtime, storage }: AppProps) => {
               <TooltipProvider>
                 <AlertDialogProvider>
                   <CompatibilityReviewProvider>
-                  <LaunchRepairProvider>
-                    <TauriAppWindowProvider>
-                      <ThemeOverridesProvider>
-                        <FoundryProvider>
-                          <Layout>
-                            <Outlet />
-                          </Layout>
-                        </FoundryProvider>
-                      </ThemeOverridesProvider>
-                      <GlobalPluginRenderer />
-                      {integrations?.presence !== "disabled" && (
-                        <GamePresenceRenderer />
-                      )}
-                      {integrations?.matchSync !== "disabled" && (
-                        <>
-                          <MatchSyncRenderer />
-                          <LiveMatchRenderer />
-                          <MatchSyncNoticeDialog />
-                        </>
-                      )}
-                      <ForgeInstallRenderer />
-                      <GameGuardRenderer />
-                      <FilePermissionsRenderer />
-                      <PerformanceRenderer />
-                      <LaunchHealthRenderer />
-                      <UpdateDialog
-                        downloadProgress={downloadProgress}
-                        isDownloading={isDownloading}
-                        onOpenChange={handleDismiss}
-                        onUpdate={handleUpdate}
-                        open={showUpdateDialog}
-                        update={update}
-                      />
-                      <OnboardingWizard />
-                      <TelemetryConsentDialog />
-                      <FontInstallDialog
-                        fonts={activePendingFontInstall?.fonts ?? []}
-                        isOpen={activePendingFontInstall !== null}
-                        onInstall={() =>
-                          handleFontDialogAction(
-                            "install_mod_fonts",
-                            "fontInstall.installFailed",
-                            "Failed to install mod fonts",
-                          )
-                        }
-                        onSkip={() =>
-                          handleFontDialogAction(
-                            "discard_mod_fonts",
-                            "fontInstall.discardFailed",
-                            "Failed to discard mod fonts",
-                          )
-                        }
-                      />
-                    </TauriAppWindowProvider>
-                  </LaunchRepairProvider>
+                    <LaunchRepairProvider>
+                      <TauriAppWindowProvider>
+                        <ThemeOverridesProvider>
+                          <FoundryProvider>
+                            <Layout>
+                              <Outlet />
+                            </Layout>
+                          </FoundryProvider>
+                        </ThemeOverridesProvider>
+                        <GlobalPluginRenderer />
+                        {integrations?.presence !== "disabled" && (
+                          <GamePresenceRenderer />
+                        )}
+                        {integrations?.matchSync !== "disabled" && (
+                          <>
+                            <MatchSyncRenderer />
+                            <LiveMatchRenderer />
+                            <MatchSyncNoticeDialog />
+                          </>
+                        )}
+                        <ForgeInstallRenderer />
+                        <GameGuardRenderer />
+                        <FilePermissionsRenderer />
+                        <PerformanceRenderer />
+                        <LaunchHealthRenderer />
+                        <UpdateDialog
+                          downloadProgress={downloadProgress}
+                          isDownloading={isDownloading}
+                          onOpenChange={handleDismiss}
+                          onUpdate={handleUpdate}
+                          open={showUpdateDialog}
+                          update={update}
+                        />
+                        <OnboardingWizard />
+                        <TelemetryConsentDialog />
+                        <FontInstallDialog
+                          fonts={activePendingFontInstall?.fonts ?? []}
+                          isOpen={activePendingFontInstall !== null}
+                          onInstall={() =>
+                            handleFontDialogAction(
+                              "install_mod_fonts",
+                              "fontInstall.installFailed",
+                              "Failed to install mod fonts",
+                            )
+                          }
+                          onSkip={() =>
+                            handleFontDialogAction(
+                              "discard_mod_fonts",
+                              "fontInstall.discardFailed",
+                              "Failed to discard mod fonts",
+                            )
+                          }
+                        />
+                      </TauriAppWindowProvider>
+                    </LaunchRepairProvider>
                   </CompatibilityReviewProvider>
                 </AlertDialogProvider>
               </TooltipProvider>

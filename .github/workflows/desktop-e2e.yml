@@ -205,7 +205,12 @@ jobs:
           - distro: arch
             image: archlinux:latest
           - { distro: debian, image: "debian:trixie", suite: monkey, seed: "0" }
-          - { distro: debian, image: "debian:trixie", suite: monkey, seed: "887" }
+          - {
+              distro: debian,
+              image: "debian:trixie",
+              suite: monkey,
+              seed: "887",
+            }
         # The app has no per-distro code paths, so one full Linux run is
         # enough. Arch's rolling WebKitGTK only needs the startup check.
         exclude:
