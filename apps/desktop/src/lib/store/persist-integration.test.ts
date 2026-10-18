@@ -184,6 +184,19 @@ describe("persisted store integration with real production fixture", () => {
     memory.clear();
   });
 
+  it("defaults update badges on for existing users and persists their choice", async () => {
+    seedFromVersion(15, seededState);
+    const { usePersistedStore } = await importStoreFreshly();
+    await usePersistedStore.persist.rehydrate();
+    expect(usePersistedStore.getState().showModUpdateBadges).toBe(true);
+    usePersistedStore.getState().setShowModUpdateBadges(false);
+    const { flushPendingWrites } = await import("./storage");
+    await flushPendingWrites();
+    await usePersistedStore.persist.rehydrate();
+    expect(usePersistedStore.getState().showModUpdateBadges).toBe(false);
+    usePersistedStore.getState().setShowModUpdateBadges(true);
+  });
+
   it("upgrading from v15 with populated state preserves all user-set settings", async () => {
     seedFromVersion(15, seededState);
     const { usePersistedStore } = await importStoreFreshly();

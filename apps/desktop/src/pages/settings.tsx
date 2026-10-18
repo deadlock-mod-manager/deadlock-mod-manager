@@ -70,6 +70,7 @@ import { LoggingSettings } from "@/components/settings/logging-settings";
 import OccultGeometrySettings from "@/components/settings/occult-geometry-settings";
 import { PluginList } from "@/components/settings/plugin-list";
 import { MatchSyncSettings } from "@/components/settings/match-sync-settings";
+import { ModUpdateBadgesToggle } from "@/components/settings/mod-update-badges-toggle";
 import { ModelPreviewToggle } from "@/components/settings/model-preview-toggle";
 import { NukeReinstall } from "@/components/settings/nuke-reinstall";
 import { RepairModFolder } from "@/components/settings/repair-mod-folder";
@@ -802,6 +803,8 @@ const CustomSettings = ({ value }: { value?: string }) => {
                 </SettingRow>
 
                 <VolumeControl />
+
+                <ModUpdateBadgesToggle />
 
                 <ModelPreviewToggle />
 

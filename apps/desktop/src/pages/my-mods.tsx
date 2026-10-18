@@ -97,7 +97,8 @@ import ErrorBoundary from "@/components/shared/error-boundary";
 import { useAddonAnalysis } from "@/hooks/use-addon-analysis";
 import { useDisableAllMods } from "@/hooks/use-disable-all-mods";
 import { useEnableAllMods } from "@/hooks/use-enable-all-mods";
-import { useCheckUpdates } from "@/hooks/use-check-updates";
+import { ModUpdateBadge } from "@/components/mod-management/mod-update-badges";
+import { useModHasUpdate, useCheckUpdates } from "@/hooks/use-check-updates";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
 import { useProfileConflicts } from "@/hooks/use-profile-conflicts";
@@ -239,6 +240,7 @@ const GridModCard = ({
 }: ModCardProps) => {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
+  const hasUpdate = useModHasUpdate(mod);
   const navigate = useNavigate();
   const { uninstall } = useUninstall();
   const [deleting, setDeleting] = useState(false);
@@ -286,9 +288,11 @@ const GridModCard = ({
 
   const cardContent = (
     <ModContextMenu mod={mod}>
-      <Card className='shadow h-full'>
-        <div className={cn("relative", isDisabled && "grayscale")}>
-          <div className='cursor-pointer' onClick={openModDetail}>
+      <Card className='flex h-full flex-col shadow'>
+        <div className='relative'>
+          <div
+            className={cn("cursor-pointer", isDisabled && "grayscale")}
+            onClick={openModDetail}>
             {mod.isAudio ? (
               <AudioPlayerPreview
                 audioUrl={mod.audioUrl || ""}
@@ -319,6 +323,9 @@ const GridModCard = ({
               </div>
             )}
           </div>
+          <div className='absolute bottom-2 left-2'>
+            <ModUpdateBadge mod={mod} hasUpdate={hasUpdate} />
+          </div>
           <div className='absolute top-2 right-2 flex flex-col gap-1'>
             {mod.isAudio && (
               <Badge variant='secondary'>{t("mods.audio")}</Badge>
@@ -345,43 +352,31 @@ const GridModCard = ({
             </div>
           )}
         </div>
-        <CardHeader className='px-3 py-3 pb-0'>
-          <div className='flex min-w-0 items-start gap-2'>
-            <div className='flex min-w-0 flex-1 flex-col'>
-              <CardTitle
-                className='cursor-pointer truncate'
-                onClick={openModDetail}
-                title={mod.name}>
-                {mod.name}
-              </CardTitle>
-              <CardDescription
-                className='w-48 overflow-clip text-ellipsis text-nowrap'
-                title={mod.author}>
-                <LibraryModAuthor mod={mod} />
-              </CardDescription>
-            </div>
+        <CardHeader className='space-y-1 px-3 py-3 pb-0'>
+          <CardTitle
+            className='line-clamp-2 cursor-pointer leading-tight'
+            onClick={openModDetail}
+            title={mod.name}>
+            {mod.name}
+          </CardTitle>
+          <CardDescription className='truncate' title={mod.author}>
+            <LibraryModAuthor mod={mod} />
+          </CardDescription>
+        </CardHeader>
+        <CardFooter className='mt-auto justify-between gap-3 px-3 py-3 pt-2'>
+          <div className='flex min-w-0 items-center gap-1'>
+            {compatibility ? (
+              <PerModCompatibilityControl
+                mod={mod}
+                compatibility={compatibility}
+                variant='icon'
+              />
+            ) : null}
             {modOptions.showButton ? (
               <ModOptionsButton
                 activeCount={modOptions.activeVariantCount}
                 onOpen={modOptions.open}
                 className='shrink-0'
-              />
-            ) : null}
-          </div>
-        </CardHeader>
-        <CardFooter className='flex items-center flex-row-reverse justify-between gap-1 px-3 py-3 pt-2'>
-          <div className='flex items-center gap-2'>
-            <ModButton
-              remoteMod={mod}
-              variant='iconOnly'
-              showLabel={!!compatibility}
-            />
-          </div>
-          <div className='flex items-center gap-1'>
-            {compatibility ? (
-              <PerModCompatibilityControl
-                mod={mod}
-                compatibility={compatibility}
               />
             ) : null}
             <Tooltip>
@@ -398,6 +393,7 @@ const GridModCard = ({
               <TooltipContent>{t("mods.removeMod")}</TooltipContent>
             </Tooltip>
           </div>
+          <ModButton remoteMod={mod} variant='iconOnly' />
         </CardFooter>
       </Card>
     </ModContextMenu>
@@ -419,6 +415,7 @@ const ListModCard = ({
 }: ModCardProps) => {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
+  const hasUpdate = useModHasUpdate(mod);
   const isInstalling = mod.status === ModStatus.Installing;
   const navigate = useNavigate();
   const { uninstall } = useUninstall();
@@ -522,6 +519,11 @@ const ListModCard = ({
             </div>
             <div className='flex w-full flex-col justify-between p-3'>
               <div>
+                <ModUpdateBadge
+                  mod={mod}
+                  hasUpdate={hasUpdate}
+                  className='mb-1 text-xs'
+                />
                 <h3
                   className='cursor-pointer font-semibold text-lg'
                   onClick={openModDetail}>

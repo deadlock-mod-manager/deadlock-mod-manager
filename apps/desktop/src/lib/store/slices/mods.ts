@@ -79,11 +79,17 @@ export type ModsState = {
   ) => void;
   setModProgress: (remoteId: string, progress: Progress) => void;
   /** Records a finished update, so update checks compare against now. */
-  markModUpdated: (remoteId: string, profileId?: ProfileId) => void;
-  /** Puts mods an aborted update left mid-download back to Installed. */
+  markModUpdated: (
+    remoteId: string,
+    profileId?: ProfileId,
+    status?: ModStatus.Installed | ModStatus.Downloaded,
+    filesUpdatedAt?: ModDto["filesUpdatedAt"],
+  ) => void;
+  /** Restores the previous enablement when an update is interrupted. */
   restoreInterruptedUpdates: (
     remoteIds: ReadonlySet<string>,
     profileId?: ProfileId,
+    previousStatuses?: ReadonlyMap<string, ModStatus>,
   ) => void;
   setBatchUpdateProgress: (progress: UpdateProgress | null) => void;
   clearMods: () => void;
@@ -351,21 +357,35 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
     );
   },
 
-  markModUpdated: (remoteId, requestedProfileId) => {
+  markModUpdated: (
+    remoteId,
+    requestedProfileId,
+    status = ModStatus.Installed,
+    filesUpdatedAt,
+  ) => {
     const profileId = requestedProfileId ?? get().activeProfileId;
     get().bumpProfileSyncRevision(profileId);
     set((state) =>
       applyToModsInProfile(state, profileId, (mods) =>
         mods.map((mod) =>
           mod.remoteId === remoteId
-            ? { ...mod, downloadedAt: new Date(), status: ModStatus.Installed }
+            ? {
+                ...mod,
+                downloadedAt: new Date(),
+                status,
+                filesUpdatedAt: filesUpdatedAt ?? mod.filesUpdatedAt,
+              }
             : mod,
         ),
       ),
     );
   },
 
-  restoreInterruptedUpdates: (remoteIds, requestedProfileId) => {
+  restoreInterruptedUpdates: (
+    remoteIds,
+    requestedProfileId,
+    previousStatuses,
+  ) => {
     const profileId = requestedProfileId ?? get().activeProfileId;
     set((state) =>
       applyToModsInProfile(state, profileId, (mods) =>
@@ -373,7 +393,11 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
           remoteIds.has(mod.remoteId) &&
           (mod.status === ModStatus.Downloading ||
             mod.status === ModStatus.Extracting)
-            ? { ...mod, status: ModStatus.Installed }
+            ? {
+                ...mod,
+                status:
+                  previousStatuses?.get(mod.remoteId) ?? ModStatus.Installed,
+              }
             : mod,
         ),
       ),

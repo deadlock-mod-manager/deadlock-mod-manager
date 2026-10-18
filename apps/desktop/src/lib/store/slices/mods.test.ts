@@ -12,6 +12,7 @@ const loggerMock = {
   warn: noop,
   error: noop,
   info: noop,
+  debug: noop,
 };
 
 mock.module("@/lib/logger", () => ({
@@ -289,5 +290,46 @@ describe("restoreInterruptedUpdates", () => {
       ModStatus.Installed,
     );
     expect(store.getState().localMods[0].status).toBe(ModStatus.Installed);
+  });
+});
+
+describe("disabled mod updates", () => {
+  it("keeps completed updates disabled and refreshes the file timestamp", () => {
+    const filesUpdatedAt = new Date();
+    store
+      .getState()
+      .markModUpdated("1", undefined, ModStatus.Downloaded, filesUpdatedAt);
+    for (const mods of [
+      store.getState().localMods,
+      store.getState().profiles.default.mods,
+    ]) {
+      expect(mods[0].status).toBe(ModStatus.Downloaded);
+      expect(mods[0].downloadedAt).toBeInstanceOf(Date);
+      expect(mods[0].filesUpdatedAt).toEqual(filesUpdatedAt);
+    }
+    expect(
+      store.getState().profiles.secondary.mods[0].filesUpdatedAt,
+    ).toBeUndefined();
+  });
+
+  it("restores each interrupted update to its previous enabled or disabled state", () => {
+    store.getState().setModStatus("1", ModStatus.Downloaded);
+    store.getState().setModStatus("1", ModStatus.Downloading);
+    store.getState().setModStatus("2", ModStatus.Downloading);
+    store.getState().restoreInterruptedUpdates(
+      new Set(["1", "2"]),
+      undefined,
+      new Map([
+        ["1", ModStatus.Downloaded],
+        ["2", ModStatus.Installed],
+      ]),
+    );
+    expect(store.getState().localMods.map((mod) => mod.status)).toEqual([
+      ModStatus.Downloaded,
+      ModStatus.Installed,
+    ]);
+    expect(store.getState().profiles.default.mods).toEqual(
+      store.getState().localMods,
+    );
   });
 });

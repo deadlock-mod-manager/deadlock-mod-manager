@@ -1,3 +1,6 @@
+import type { ModDto } from "@deadlock-mods/shared";
+import { usePersistedStore } from "@/lib/store";
+import { isUpdatedRecently } from "@/lib/utils";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import {
   Tooltip,
@@ -11,7 +14,7 @@ type UpdatedRecentlyBadgeProps = {
   className?: string;
 };
 
-export function UpdatedRecentlyBadge({
+function UpdatedRecentlyBadge({
   className,
 }: Readonly<UpdatedRecentlyBadgeProps>) {
   const { t } = useTranslation();
@@ -34,7 +37,7 @@ type UpdateAvailableBadgeProps = {
   className?: string;
 };
 
-export function UpdateAvailableBadge({
+function UpdateAvailableBadge({
   className,
 }: Readonly<UpdateAvailableBadgeProps>) {
   const { t } = useTranslation();
@@ -51,4 +54,25 @@ export function UpdateAvailableBadge({
       </TooltipContent>
     </Tooltip>
   );
+}
+
+type ModUpdateBadgeProps = {
+  mod: ModDto;
+  hasUpdate: boolean;
+  className?: string;
+};
+
+export function ModUpdateBadge({
+  mod,
+  hasUpdate,
+  className,
+}: Readonly<ModUpdateBadgeProps>) {
+  const showModUpdateBadges = usePersistedStore(
+    (state) => state.showModUpdateBadges,
+  );
+  if (!showModUpdateBadges) return null;
+  if (hasUpdate) return <UpdateAvailableBadge className={className} />;
+  return isUpdatedRecently(mod) ? (
+    <UpdatedRecentlyBadge className={className} />
+  ) : null;
 }

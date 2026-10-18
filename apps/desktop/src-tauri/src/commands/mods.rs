@@ -179,6 +179,7 @@ pub async fn get_mod_file_tree(mod_path: String) -> Result<ModFileTree, Error> {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct BatchUpdateMod {
+  pub enabled: Option<bool>,
   pub mod_id: String,
   pub mod_name: String,
   pub download_files: Vec<DownloadFileDto>,
@@ -429,6 +430,7 @@ pub async fn batch_update_mods(
           .clone()
           .or_else(|| mod_data.file_tree.clone()),
         profile_folder_option,
+        mod_data.enabled.unwrap_or(true),
       )
     };
     prepared.remove_scratch_files();

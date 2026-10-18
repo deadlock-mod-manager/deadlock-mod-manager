@@ -128,6 +128,7 @@ export interface AddonAnalysisProgress {
 }
 
 export interface ProfileImportMod {
+  enabled?: boolean;
   modId: string;
   modName: string;
   downloadFiles: Array<{

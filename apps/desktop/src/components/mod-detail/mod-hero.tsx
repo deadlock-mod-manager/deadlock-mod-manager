@@ -4,11 +4,8 @@ import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Hash, Music } from "@deadlock-mods/ui/icons";
 import { getModCategoryDisplayName } from "@/lib/constants";
 import { useModHasUpdate } from "@/hooks/use-check-updates";
-import { cn, isUpdatedRecently } from "@/lib/utils";
-import {
-  UpdateAvailableBadge,
-  UpdatedRecentlyBadge,
-} from "../mod-management/mod-update-badges";
+import { cn } from "@/lib/utils";
+import { ModUpdateBadge } from "../mod-management/mod-update-badges";
 import { usePersistedStore } from "@/lib/store";
 import { findLocalMod } from "@/lib/store/selectors";
 
@@ -43,9 +40,7 @@ export const ModHero = ({ mod, shouldBlur = false, actions }: ModHeroProps) => {
         </div>
         <div className='absolute bottom-0 left-0 p-6'>
           <h1 className='font-bold text-3xl text-primary'>
-            {mod.name}{" "}
-            {isUpdatedRecently(mod) && !hasUpdate && <UpdatedRecentlyBadge />}
-            {hasUpdate && <UpdateAvailableBadge />}
+            {mod.name} <ModUpdateBadge mod={mod} hasUpdate={hasUpdate} />
           </h1>
           <p className='mt-2 text-primary/80'>{mod.category}</p>
           <Badge className='mt-2' variant='secondary'>
@@ -83,9 +78,7 @@ export const ModHero = ({ mod, shouldBlur = false, actions }: ModHeroProps) => {
         )}
         <div className='absolute bottom-0 left-0 space-y-2 p-6'>
           <h1 className='font-bold text-3xl text-white'>
-            {mod.name}{" "}
-            {isUpdatedRecently(mod) && !hasUpdate && <UpdatedRecentlyBadge />}
-            {hasUpdate && <UpdateAvailableBadge />}
+            {mod.name} <ModUpdateBadge mod={mod} hasUpdate={hasUpdate} />
           </h1>
           <p className='text-muted-foreground'>
             {getModCategoryDisplayName(mod.category)}

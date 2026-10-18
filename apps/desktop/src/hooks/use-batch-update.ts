@@ -18,6 +18,7 @@ import type {
   ProfileImportMod,
   UpdatableMod,
 } from "@/types/mods";
+import { ModStatus } from "@/types/mods";
 import { invokeGuarded } from "@/lib/game-guard";
 
 const getUpdateProgress = () =>
@@ -176,6 +177,10 @@ export const useBatchUpdate = () => {
   };
 
   const executeBatchUpdate = async (): Promise<void> => {
+    const originalMods = usePersistedStore.getState().localMods;
+    const previousStatuses = new Map(
+      originalMods.map((mod) => [mod.remoteId, mod.status]),
+    );
     const activeProfile = getActiveProfile();
     const profileFolder = activeProfile?.folderName ?? "";
 
@@ -203,8 +208,11 @@ export const useBatchUpdate = () => {
       });
 
       const batchUpdateMods: ProfileImportMod[] = updatableMods.map((um) => {
-        const localMod = localMods.find((m) => m.remoteId === um.mod.remoteId);
+        const localMod = originalMods.find(
+          (m) => m.remoteId === um.mod.remoteId,
+        );
         return {
+          enabled: localMod?.status === ModStatus.Installed,
           modId: um.mod.remoteId,
           modName: um.mod.name,
           downloadFiles: um.selectedDownloads.map((d) => ({
@@ -250,7 +258,16 @@ export const useBatchUpdate = () => {
 
           usePersistedStore
             .getState()
-            .markModUpdated(installedModInfo.modId, activeProfileId);
+            .markModUpdated(
+              installedModInfo.modId,
+              activeProfileId,
+              batchUpdateMods.find(
+                (mod) => mod.modId === installedModInfo.modId,
+              )?.enabled === false
+                ? ModStatus.Downloaded
+                : ModStatus.Installed,
+              updatableMod.mod.filesUpdatedAt,
+            );
         }
       }
 
@@ -297,6 +314,7 @@ export const useBatchUpdate = () => {
         .restoreInterruptedUpdates(
           new Set(updatableMods.map((um) => um.mod.remoteId)),
           activeProfile?.id,
+          previousStatuses,
         );
     }
   };

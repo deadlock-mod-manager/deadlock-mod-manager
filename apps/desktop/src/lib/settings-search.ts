@@ -178,6 +178,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
         descriptionKey: "settings.audioVolumeDescription",
       },
       {
+        titleKey: "settings.showModUpdateBadges",
+        descriptionKey: "settings.showModUpdateBadgesDescription",
+      },
+      {
         titleKey: "settings.modelPreview",
         descriptionKey: "settings.modelPreviewDescription",
       },
