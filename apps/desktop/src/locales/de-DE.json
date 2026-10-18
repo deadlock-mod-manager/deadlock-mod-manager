@@ -3401,6 +3401,8 @@
     "autoResetGameinfoDescription": "",
     "autoResetGameinfoSuccess": "",
     "autoResetGameinfoFailed": "",
+    "showModUpdateBadges": "",
+    "showModUpdateBadgesDescription": "",
     "modelPreview": "",
     "modelPreviewDescription": "",
     "modelPreviewWarning": "",

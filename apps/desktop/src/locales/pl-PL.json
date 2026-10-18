@@ -2762,7 +2762,7 @@
     "removedMissingMods_one": "",
     "removedMissingMods_other": "",
     "updatedRecentlyLabel": "Ostatnio zaktualizowane",
-    "updatedRecentlyDescription": "Pliki tego moda zostały zaktualizowane w ostatnich 7 dniach.",
+    "updatedRecentlyDescription": "",
     "updateAvailableLabel": "Dostępna aktualizacja",
     "updateAvailableDescription": "Dostępna jest nowa wersja tego moda. Pobierz ponownie, aby używać najnowszej wersji.",
     "mapCommandInAutoexec": {
@@ -3401,6 +3401,8 @@
     "autoResetGameinfoDescription": "",
     "autoResetGameinfoSuccess": "",
     "autoResetGameinfoFailed": "",
+    "showModUpdateBadges": "",
+    "showModUpdateBadgesDescription": "",
     "modelPreview": "",
     "modelPreviewDescription": "",
     "modelPreviewWarning": "",

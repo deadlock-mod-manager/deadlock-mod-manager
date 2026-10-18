@@ -2762,7 +2762,7 @@
     "removedMissingMods_one": "",
     "removedMissingMods_other": "",
     "updatedRecentlyLabel": "تم التحديث مؤخرًا",
-    "updatedRecentlyDescription": "تم تحديث ملفات هذا التعديل في آخر 7 أيام.",
+    "updatedRecentlyDescription": "",
     "updateAvailableLabel": "تحديث متاح",
     "updateAvailableDescription": "يتوفر إصدار أحدث من هذا التعديل. قم بالتنزيل مرة أخرى للحصول على أحدث الملفات.",
     "mapCommandInAutoexec": {
@@ -3401,6 +3401,8 @@
     "autoResetGameinfoDescription": "",
     "autoResetGameinfoSuccess": "",
     "autoResetGameinfoFailed": "",
+    "showModUpdateBadges": "",
+    "showModUpdateBadgesDescription": "",
     "modelPreview": "",
     "modelPreviewDescription": "",
     "modelPreviewWarning": "",

@@ -2762,7 +2762,7 @@
     "removedMissingMods_one": "",
     "removedMissingMods_other": "",
     "updatedRecentlyLabel": "최근 업데이트됨",
-    "updatedRecentlyDescription": "이 모드의 파일은 지난 7일 동안 업데이트되었습니다.",
+    "updatedRecentlyDescription": "",
     "updateAvailableLabel": "업데이트 가능",
     "updateAvailableDescription": "이 모드의 최신 버전을 사용할 수 있습니다. 최신 파일을 얻으려면 다시 다운로드하세요.",
     "mapCommandInAutoexec": {
@@ -3401,6 +3401,8 @@
     "autoResetGameinfoDescription": "",
     "autoResetGameinfoSuccess": "",
     "autoResetGameinfoFailed": "",
+    "showModUpdateBadges": "",
+    "showModUpdateBadgesDescription": "",
     "modelPreview": "",
     "modelPreviewDescription": "",
     "modelPreviewWarning": "",
