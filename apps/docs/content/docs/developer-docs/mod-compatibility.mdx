@@ -427,8 +427,11 @@ per coordinate. Rotations still match within 0.00001 per quaternion component,
 allowing sign reversal; local scales retain the existing 0.001 tolerance. This
 proof does not modify authored poses. Bone names must match
 unambiguously, including case, and all referenced graphs and the single sampling
-skeleton must resolve from the game. Active animation overrides, partial authored
-bindings, ambiguous models, and nonuniform pose changes prevent this repair.
+skeleton must resolve from the game. Animation overrides that enter this model's
+graph closure or sample its skeleton, animations supplied by the model's own mod,
+partial authored bindings, ambiguous models, and nonuniform pose changes prevent
+this repair. Overrides for other heroes coexist once the shared dependency proof
+shows they stay outside this model's graphs and skeleton (repair revision 36).
 An absent sample may be appended only as an identity leaf directly under an
 existing root, with zero deformation sphere in the current model. Both rigs must
 use the known seven-array bone schema, and the source cannot use external meshes.

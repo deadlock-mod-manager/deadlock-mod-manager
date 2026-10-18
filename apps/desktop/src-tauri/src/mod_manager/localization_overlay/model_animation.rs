@@ -48,7 +48,7 @@ pub(super) fn prepare(
       continue;
     }
     let result = (|| {
-      if inputs.needs_dependency_proof(&source.mod_id) {
+      if inputs.blocks_model_bindings(resources, &current, &source.mod_id) {
         return Err(
           "Enabled animation overrides require dependency proof before restoring bindings"
             .to_owned(),
@@ -161,7 +161,7 @@ pub(super) fn prove_current_bindings(
   inputs: &AnimationInputs,
   mod_id: &str,
 ) -> Result<(), String> {
-  if inputs.needs_dependency_proof(mod_id)
+  if inputs.blocks_model_bindings(resources, current, mod_id)
     || animation_model_evidence::graphs(source)
       .zip(animation_model_evidence::graphs(current))
       .is_none_or(|(old, new)| old != new)
