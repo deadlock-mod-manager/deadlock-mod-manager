@@ -1,4 +1,3 @@
-import type { AssetRepair } from "@/components/my-mods/asset-compatibility-report";
 import type {
   LocalizationChoice,
   LocalizationOverlayAnalysis,
@@ -61,21 +60,18 @@ export function compatibilityResolutions(
   return resolutions;
 }
 
-export function groupAssetRepairs(repairs: readonly AssetRepair[]) {
-  const groups = new Map<
-    string,
-    { modId: string; kind: AssetRepair["kind"]; files: AssetRepair[] }
-  >();
-  for (const repair of repairs) {
-    const key = JSON.stringify([repair.modId, repair.kind]);
-    const group = groups.get(key);
-    if (group) group.files.push(repair);
-    else
-      groups.set(key, {
-        modId: repair.modId,
-        kind: repair.kind,
-        files: [repair],
-      });
+export function groupFindingsByMod<T>(
+  items: readonly { modId: string; label: string; entry: T }[],
+) {
+  const mods = new Map<string, Map<string, T[]>>();
+  for (const { modId, label, entry } of items) {
+    const groups = mods.get(modId) ?? new Map<string, T[]>();
+    mods.set(modId, groups);
+    groups.set(label, [...(groups.get(label) ?? []), entry]);
   }
-  return [...groups.values()];
+  return [...mods].map(([modId, groups]) => ({
+    modId,
+    count: [...groups.values()].reduce((sum, list) => sum + list.length, 0),
+    groups: [...groups].map(([label, entries]) => ({ label, entries })),
+  }));
 }

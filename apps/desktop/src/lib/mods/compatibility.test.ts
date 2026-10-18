@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { LocalizationOverlayAnalysis } from "@/components/my-mods/localization-conflict-review";
-import { compatibilityResolutions, groupAssetRepairs } from "./compatibility";
+import { compatibilityResolutions, groupFindingsByMod } from "./compatibility";
 
 const analysis: LocalizationOverlayAnalysis = {
   baselines: [],
@@ -111,27 +111,21 @@ describe("compatibility review choices", () => {
   });
 });
 
-describe("compatibility repair summaries", () => {
-  test("groups large animation repairs without mixing mods, kinds, or losing archive paths", () => {
-    const base = {
-      modId: "baba",
-      kind: "animationClipTracks" as const,
-      sourceVpk: "first.vpk",
-      filePath: "models/clips/0.vnmclip_c",
-    };
-    const repairs = Array.from({ length: 291 }, (_, i) => ({
-      ...base,
-      sourceVpk: i % 2 ? "second.vpk" : "first.vpk",
-      filePath: `models/clips/${i}.vnmclip_c`,
-    }));
-    const groups = groupAssetRepairs([
-      ...repairs,
-      { ...base, modId: "other" },
-      { ...base, kind: "cameraAttachmentFrame" },
+describe("compatibility finding groups", () => {
+  test("groups findings by mod, then label, without losing order or entries", () => {
+    const entries = Array.from({ length: 291 }, (_, i) => `clip-${i}`);
+    const mods = groupFindingsByMod([
+      ...entries.map((entry) => ({ modId: "baba", label: "Tracks", entry })),
+      { modId: "other", label: "Tracks", entry: "other-clip" },
+      { modId: "baba", label: "Camera", entry: "camera" },
     ]);
-    expect(groups).toHaveLength(3);
-    expect(groups[0]?.files).toEqual(repairs);
-    expect(groups[1]?.modId).toBe("other");
-    expect(groups[2]?.kind).toBe("cameraAttachmentFrame");
+    expect(mods).toHaveLength(2);
+    expect(mods[0]?.count).toBe(292);
+    expect(mods[0]?.groups.map((group) => group.label)).toEqual([
+      "Tracks",
+      "Camera",
+    ]);
+    expect(mods[0]?.groups[0]?.entries).toEqual(entries);
+    expect(mods[1]?.modId).toBe("other");
   });
 });

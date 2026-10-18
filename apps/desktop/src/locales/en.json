@@ -1644,8 +1644,8 @@
       "description": "Launch modded checks selected mods and applies verified fixes automatically. If warnings or conflicts need approval, the review opens before launch.",
       "review": "Review Compatibility",
       "noEnabledMods": "Enable a mod to review compatibility.",
-      "reviewDescription": "Review game-data changes, model repairs, and material repairs for mods with compatibility fixes selected. Other mods keep their original files.",
-      "launchReviewDescription": "Launch is paused because selected mods have warnings or conflicts that need your review. Applying the planned fixes continues launch; closing this review cancels launch. Unresolved warnings may still affect these mods in-game.",
+      "reviewDescription": "Fixes apply only to mods with Compatibility on. Original mod files stay unchanged.",
+      "launchReviewDescription": "Launch is paused until you review these. Applying continues launch; closing cancels it.",
       "applyAndLaunch": "Apply fixes and launch",
       "launchFlow": "Launch modded applies verified fixes automatically and opens the review when warnings or conflicts need approval.",
       "closeGame": "Close Deadlock to change compatibility. You can still review the planned repairs.",
@@ -1844,10 +1844,8 @@
     "manageOrder": "Change Mods Order",
     "vpkCount": "{{count}} VPK(s)",
     "compatibility": {
-      "title": "Model and material compatibility",
       "affectedFiles_one": "{{count}} file",
       "affectedFiles_other": "{{count}} files",
-      "description": "The manager checks supported models and materials against your installed game and prepares verified repairs automatically. Original mod files stay unchanged.",
       "repairs": {
         "animationSkeleton": "Animation skeleton updated",
         "animationSkeletonRebased": "Animation layout updated; custom settings preserved",
@@ -1877,11 +1875,15 @@
         "animationMapping": "Animation bindings need verified bone mapping",
         "unreadableResource": "This resource could not be checked"
       },
-      "warningDescription": "These findings have no verified automatic repair. Missing resources or camera settings can cause loading failures or crashes. Disable a failing mod or contact its author with the file and detail shown here."
+      "warningDescription": "No verified repair exists for these. Missing resources or camera settings can crash the game: disable the mod, or send its author the file and detail listed here.",
+      "warningsTitle": "Warnings",
+      "warningSummary_one": "{{count}} warning",
+      "warningSummary_other": "{{count}} warnings",
+      "repairSummary_one": "{{count}} repair ready",
+      "repairSummary_other": "{{count}} repairs ready",
+      "automaticTitle": "Automatic fixes"
     },
     "dataCompatibility": {
-      "title": "Hero and ability compatibility",
-      "description": "Checks hero visibility and required ability definitions against your installed game and your selected conflict choices. Original mod files stay unchanged.",
       "repairs": {
         "heroDevelopmentState": "Hero visibility field restored",
         "inheritedDefinition": "Inherited settings updated",
@@ -1904,23 +1906,19 @@
         "ambiguousTemplates": "More than one template could supply the current settings.",
         "inheritanceCycle": "The definitions inherit from each other in a loop.",
         "visibilityMigrationUnverified": "No matching current hero provides an unambiguous visibility value."
-      },
-      "warningDescription": "No automatic repair was verified for these findings. A hero or ability may fail to load or behave incorrectly. Original mod files stay unchanged."
+      }
     },
     "localization": {
       "title": "Combine Shared Mod Changes",
       "description": "Some mods edit the same shared files. DMM can combine their separate changes so one mod does not hide another.",
       "reviewDescription": "Deadlock normally loads only one copy of a shared file. DMM will build one copy that keeps unique names and text in every language, plus supported game data from each mod.",
-      "automaticSummary_one": "{{count}} unique change will be combined automatically",
-      "automaticSummary_other": "{{count}} unique changes will be combined automatically",
+      "automaticSummary_one": "{{count}} shared change combined",
+      "automaticSummary_other": "{{count}} shared changes combined",
       "choiceSummary_one": "{{count}} overlap needs your choice",
       "choiceSummary_other": "{{count}} overlaps need your choice",
       "noChoicesSummary": "No overlapping changes need a choice",
       "conflictsTitle": "Choose which mod wins each overlap",
       "conflictsDescription": "DMM recommends the mod that is higher in your load order. Change a selection only when you want another version.",
-      "readyTitle": "Conflict check complete",
-      "unresolvedWarningsMessage": "No conflicts need a choice, but compatibility warnings remain. Review the findings above before launching.",
-      "noConflicts": "Every detected change belongs to a different name or game-data entry.",
       "readyMessage": "Nothing overlaps. DMM can keep all detected changes.",
       "heroIdsAdjustedTitle_one": "A new hero ID will be adjusted",
       "heroIdsAdjustedTitle_other": "{{count}} new hero IDs will be adjusted",

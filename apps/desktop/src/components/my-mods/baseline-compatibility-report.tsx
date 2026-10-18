@@ -23,7 +23,7 @@ export function BaselineCompatibilityReport({
   const { t } = useTranslation();
   if (baselines.length === 0) return null;
   return (
-    <section className='space-y-3 rounded-md border bg-muted/20 px-4 py-3'>
+    <section className='space-y-2'>
       <p className='font-medium text-sm'>{t("modOrdering.baselines.title")}</p>
       <ul className='space-y-3 text-xs'>
         {baselines.map((baseline) => {
@@ -37,7 +37,7 @@ export function BaselineCompatibilityReport({
                 <p className='font-medium'>
                   {modNames.get(baseline.modId) ?? baseline.modId}
                 </p>
-                <code className='mt-0.5 block break-all text-muted-foreground'>
+                <code className='mt-0.5 block break-all text-[11px] text-muted-foreground'>
                   {baseline.filePath}
                 </code>
                 <p className='mt-1 text-muted-foreground'>

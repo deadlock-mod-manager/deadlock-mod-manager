@@ -878,8 +878,8 @@ const MyMods = () => {
 
   return (
     <div className='flex min-h-0 w-full flex-1 flex-col px-4'>
-      <div className='grid shrink-0 grid-cols-1 gap-3 pt-4 xl:grid-cols-[minmax(0,1fr)_auto] xl:items-start xl:gap-4'>
-        <div className='flex min-w-0 flex-col'>
+      <div className='flex shrink-0 flex-col gap-3 pt-4 xl:flex-row xl:items-start xl:gap-4'>
+        <div className='flex min-w-0 flex-col xl:shrink-0'>
           <div className='flex flex-wrap items-center gap-2'>
             <h1 className='text-2xl font-semibold tracking-tight text-balance'>
               {t("navigation.myMods")}
@@ -927,7 +927,14 @@ const MyMods = () => {
           <p className='text-muted-foreground'>{t("myMods.subtitle")}</p>
         </div>
 
-        <div className='flex w-full flex-wrap items-center justify-start gap-2 xl:w-auto xl:justify-end xl:justify-self-end'>
+        <div className='flex min-w-0 flex-1 flex-wrap items-center justify-start gap-2 xl:justify-end'>
+          {compatibility ? (
+            <ModCompatibilityControl
+              compatibility={compatibility}
+              profileFolder={activeProfileFolder}
+              hasMods={enabledModsCount > 0}
+            />
+          ) : null}
           {updatableCount > 0 && (
             <UpdateButton
               variant='default'
@@ -1004,14 +1011,6 @@ const MyMods = () => {
           </DropdownMenu>
         </div>
       </div>
-
-      {compatibility ? (
-        <ModCompatibilityControl
-          compatibility={compatibility}
-          profileFolder={activeProfileFolder}
-          hasMods={enabledModsCount > 0}
-        />
-      ) : null}
 
       <div
         className='min-h-0 flex-1 overflow-y-auto overflow-x-hidden pt-8 pb-4'

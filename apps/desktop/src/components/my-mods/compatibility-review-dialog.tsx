@@ -8,7 +8,14 @@ import {
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { Loader2 } from "@deadlock-mods/ui/icons";
+import {
+  Loader2,
+  Play,
+  RefreshCw,
+  ShieldCheck,
+  Wrench,
+  X,
+} from "@deadlock-mods/ui/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
@@ -142,7 +149,10 @@ export function CompatibilityReviewDialog({
     <Dialog open={open} onOpenChange={changeOpen}>
       <DialogContent className='flex max-h-[82vh] max-w-2xl flex-col overflow-hidden'>
         <DialogHeader className='shrink-0 pr-8'>
-          <DialogTitle>{t("myMods.compatibility.review")}</DialogTitle>
+          <DialogTitle className='flex items-center gap-2'>
+            <ShieldCheck aria-hidden className='size-5 text-primary' />
+            {t("myMods.compatibility.review")}
+          </DialogTitle>
           <DialogDescription>
             {t(
               launchAfterApply
@@ -171,6 +181,7 @@ export function CompatibilityReviewDialog({
             </p>
             <Button
               variant='outline'
+              icon={<RefreshCw className='h-4 w-4' />}
               onClick={() =>
                 analysis.isError ? analysis.refetch() : review.refetch()
               }>
@@ -191,6 +202,7 @@ export function CompatibilityReviewDialog({
           <Button
             variant='outline'
             disabled={apply.isPending}
+            icon={<X className='h-4 w-4' />}
             onClick={() => changeOpen(false)}>
             {t("common.close")}
           </Button>
@@ -202,13 +214,17 @@ export function CompatibilityReviewDialog({
               analysis.isError ||
               review.isFetching ||
               review.isError ||
-              apply.isPending ||
               gameRunning
             }
+            isLoading={apply.isPending}
+            icon={
+              launchAfterApply ? (
+                <Play className='h-4 w-4' />
+              ) : (
+                <Wrench className='h-4 w-4' />
+              )
+            }
             onClick={() => apply.mutate()}>
-            {apply.isPending ? (
-              <Loader2 aria-hidden className='size-4 animate-spin' />
-            ) : null}
             {t(
               launchAfterApply
                 ? "myMods.compatibility.applyAndLaunch"

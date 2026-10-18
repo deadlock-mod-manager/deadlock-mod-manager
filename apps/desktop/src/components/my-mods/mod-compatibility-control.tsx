@@ -1,4 +1,10 @@
 import { Button } from "@deadlock-mods/ui/components/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deadlock-mods/ui/components/tooltip";
+import { RefreshCw, ShieldCheck } from "@deadlock-mods/ui/icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ModCompatibilityController } from "@/hooks/use-mod-compatibility";
@@ -23,49 +29,49 @@ export function ModCompatibilityControl({
     (mod) =>
       mod.status === ModStatus.Installed && preference.data?.[mod.remoteId],
   ).length;
+
+  if (preference.isError || game.isError) {
+    return (
+      <Button
+        variant='outline'
+        icon={<RefreshCw className='h-4 w-4' />}
+        onClick={() => {
+          void preference.refetch();
+          void game.refetch();
+        }}>
+        {t("myMods.compatibility.retry")}
+      </Button>
+    );
+  }
+  if (count === 0) return null;
+
   return (
-    <div className='space-y-1 border-b py-3'>
-      <div className='flex flex-wrap items-center gap-x-4 gap-y-2'>
-        <p className='text-sm text-muted-foreground'>
-          {count > 0
-            ? t("myMods.compatibility.selected", { count })
-            : t("myMods.compatibility.selectMods")}
-        </p>
-        {preference.isError || game.isError ? (
+    <>
+      <Tooltip>
+        <TooltipTrigger asChild>
           <Button
             variant='outline'
-            size='sm'
-            onClick={() => {
-              void preference.refetch();
-              void game.refetch();
-            }}>
-            {t("myMods.compatibility.retry")}
-          </Button>
-        ) : count > 0 ? (
-          <Button
-            variant='outline'
-            size='sm'
+            className='border-primary/40 bg-primary/10 hover:bg-primary/20'
             disabled={
               !hasMods ||
               !gamePath ||
               preference.isPending ||
               pendingChanges > 0
             }
+            icon={<ShieldCheck className='h-4 w-4 text-primary' />}
             onClick={() => setReviewOpen(true)}>
-            {t("myMods.compatibility.review")}
+            {t("myMods.compatibility.label")}
+            <span className='text-muted-foreground tabular-nums'>{count}</span>
           </Button>
-        ) : null}
-      </div>
-      {count > 0 ? (
-        <p className='text-xs text-muted-foreground'>
-          {t("myMods.compatibility.launchFlow")}
-        </p>
-      ) : null}
-      {game.data ? (
-        <p className='text-muted-foreground text-xs'>
-          {t("myMods.compatibility.closeGame")}
-        </p>
-      ) : null}
+        </TooltipTrigger>
+        <TooltipContent className='max-w-xs space-y-1'>
+          <p className='font-medium'>
+            {t("myMods.compatibility.selected", { count })}
+          </p>
+          <p>{t("myMods.compatibility.launchFlow")}</p>
+          {game.data ? <p>{t("myMods.compatibility.closeGame")}</p> : null}
+        </TooltipContent>
+      </Tooltip>
       <CompatibilityReviewDialog
         key={profileFolder ?? "default"}
         open={reviewOpen}
@@ -74,6 +80,6 @@ export function ModCompatibilityControl({
         enabled={count > 0}
         gameRunning={!!game.data || game.isError}
       />
-    </div>
+    </>
   );
 }
