@@ -130,7 +130,12 @@ pub fn build_presence(
             return None;
         }
     };
-    let template_pair = resolve_template_pair(state, &config.hero_overrides, global_template_pair);
+    let template_pair = resolve_template_pair(
+        state,
+        &config.hero_overrides,
+        global_template_pair,
+        hero_store,
+    );
 
     let hero_presence_text = hero_presence();
     let render_context = TemplateRenderContext {
@@ -165,12 +170,19 @@ fn resolve_template_pair(
     state: &GameState,
     hero_overrides: &std::collections::HashMap<String, PresenceTextTemplates>,
     global_template_pair: &PresenceTextTemplatePair,
+    hero_store: &HeroDataStore,
 ) -> PresenceTextTemplatePair {
     let Some(hero_key) = state.hero_key.as_deref() else {
         return global_template_pair.clone();
     };
 
-    let Some(hero_templates) = hero_overrides.get(hero_key) else {
+    // Overrides saved before hero keys were class names use model folder names.
+    let Some(hero_templates) = hero_overrides.get(hero_key).or_else(|| {
+        hero_overrides
+            .iter()
+            .find(|(key, _)| hero_store.normalize_codename(key) == hero_key)
+            .map(|(_, templates)| templates)
+    }) else {
         return global_template_pair.clone();
     };
 
@@ -397,6 +409,26 @@ mod tests {
             Some("Hero Being Fabulous in the Hideout")
         );
         assert_eq!(presence.state.as_deref(), Some("Global 6"));
+    }
+
+    #[test]
+    fn applies_overrides_saved_under_a_legacy_hero_key() {
+        let hero_store = HeroDataStore::new(Path::new("."));
+        let mut config = PresenceBuildConfig::default();
+        let mut hero_templates = crate::config::PresenceTextTemplates::default();
+        hero_templates.solo_hideout.details = "Calico override".to_string();
+        config
+            .hero_overrides
+            .insert("cadence".to_string(), hero_templates);
+
+        let mut state = GameState::new();
+        state.phase = GamePhase::Hideout;
+        state.set_hero(&hero_store.normalize_codename("hero_nano"));
+
+        let presence =
+            build_presence(&state, &hero_store, &config).expect("presence should be built");
+
+        assert_eq!(presence.details.as_deref(), Some("Calico override"));
     }
 
     #[test]
