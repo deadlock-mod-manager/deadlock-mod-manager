@@ -16,12 +16,16 @@ Deadlock Mod Manager is a Tauri + React + TypeScript desktop app for managing mo
 Key directories:
 
 - `apps/desktop` — Tauri desktop app (React frontend + Rust backend)
-- `apps/api` — Backend API service (Bun + Hono)
+- `apps/api` — Backend API service and workers (Bun + Hono)
+- `apps/auth` — Authentication service (Better Auth + OIDC)
+- `apps/mirror-service` — S3-backed download mirror for mod files
 - `apps/bot` — Discord bot application
 - `apps/lockdex` — Lockdex service application
+- `apps/dmodpkg` — CLI for `.dmodpkg` mod packages
 - `apps/www` — Web application (Vite + React)
 - `apps/docs` — Documentation site (Fumadocs)
-- `packages/` — Shared packages (common, database, distributed-lock, logging, queue, shared, vpk-parser, ui)
+- `packages/` — Shared packages. TypeScript: common, crosshair, database, distributed-lock, feature-flags, instrumentation, logging, perf-catalog, queue, relay-client, shared, ui. Rust, some exposed through Bun FFI: deadlock-discord-presence, dmodpkg, dmp-parser (crash minidumps), hero-parser, kv-parser, source2-model, vpk-parser, vpkmanager
+- `tools/` — Shared TypeScript, oxc, and custom oxlint plugin configs
 
 ## Rules for AI Agents
 
@@ -31,7 +35,7 @@ Key directories:
 - Suggest improvements that follow existing patterns in the codebase
 - Write tests for new and existing functionality
 - Use oxfmt for formatting and oxlint for linting (not ESLint/Prettier/Biome)
-- Follow the existing commit convention: `type(scope): description` (see [.agents/skills/git-conventions/SKILL.md](.cursor/skills/git-conventions/SKILL.md)); commit on the current branch unless the user asks to use a feature branch
+- Follow the existing commit convention: `type(scope): description` (see [.agents/skills/git-conventions/SKILL.md](.agents/skills/git-conventions/SKILL.md)); commit on the current branch unless the user asks to use a feature branch
 - When creating a requested branch, use a descriptive prefix such as `feature/`, `bugfix/`, or `chore/`; never use `codex/`.
 - Respect TypeScript strict mode — never use `any` or `unknown`, use proper types (see 031-never-use-any.mdc)
 - Use `react-i18next` for any user-facing strings (check `apps/desktop/src/locales/`)
