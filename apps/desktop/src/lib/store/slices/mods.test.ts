@@ -238,3 +238,56 @@ describe("setInstalledVpks", () => {
     expect(missing("1")).toEqual(["gone.vpk"]);
   });
 });
+
+describe("markModUpdated", () => {
+  it("keeps every mod's new date when a batch updates several", () => {
+    const before = new Date(0);
+    store.setState((state) => ({
+      profiles: {
+        ...state.profiles,
+        default: {
+          ...state.profiles.default,
+          mods: state.profiles.default.mods.map((mod) => ({
+            ...mod,
+            downloadedAt: before,
+          })),
+        },
+      },
+    }));
+
+    store.getState().markModUpdated("1");
+    // Any later store action rebuilds localMods from the profile.
+    store.getState().setInstalledVpks("2", ["pak02_dir.vpk"]);
+    store.getState().markModUpdated("2");
+
+    for (const mod of [
+      ...store.getState().localMods,
+      ...store.getState().profiles.default.mods,
+    ]) {
+      expect(new Date(mod.downloadedAt ?? 0).getTime()).toBeGreaterThan(0);
+    }
+  });
+});
+
+describe("restoreInterruptedUpdates", () => {
+  it("only touches mods left mid-download", () => {
+    store.setState((state) => ({
+      profiles: {
+        ...state.profiles,
+        default: {
+          ...state.profiles.default,
+          mods: state.profiles.default.mods.map((mod) =>
+            mod.remoteId === "1"
+              ? { ...mod, status: ModStatus.Downloading }
+              : mod,
+          ),
+        },
+      },
+    }));
+    store.getState().restoreInterruptedUpdates(new Set(["1", "2"]));
+    expect(store.getState().profiles.default.mods[0].status).toBe(
+      ModStatus.Installed,
+    );
+    expect(store.getState().localMods[0].status).toBe(ModStatus.Installed);
+  });
+});

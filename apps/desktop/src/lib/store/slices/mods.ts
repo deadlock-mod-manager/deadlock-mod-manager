@@ -78,6 +78,13 @@ export type ModsState = {
     profileId?: ProfileId,
   ) => void;
   setModProgress: (remoteId: string, progress: Progress) => void;
+  /** Records a finished update, so update checks compare against now. */
+  markModUpdated: (remoteId: string, profileId?: ProfileId) => void;
+  /** Puts mods an aborted update left mid-download back to Installed. */
+  restoreInterruptedUpdates: (
+    remoteIds: ReadonlySet<string>,
+    profileId?: ProfileId,
+  ) => void;
   setBatchUpdateProgress: (progress: UpdateProgress | null) => void;
   clearMods: () => void;
   nukeModsState: (keepRemoteIds: string[], profileId?: ProfileId) => void;
@@ -340,6 +347,35 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
                 : mod.downloadedAt,
           };
         }),
+      ),
+    );
+  },
+
+  markModUpdated: (remoteId, requestedProfileId) => {
+    const profileId = requestedProfileId ?? get().activeProfileId;
+    get().bumpProfileSyncRevision(profileId);
+    set((state) =>
+      applyToModsInProfile(state, profileId, (mods) =>
+        mods.map((mod) =>
+          mod.remoteId === remoteId
+            ? { ...mod, downloadedAt: new Date(), status: ModStatus.Installed }
+            : mod,
+        ),
+      ),
+    );
+  },
+
+  restoreInterruptedUpdates: (remoteIds, requestedProfileId) => {
+    const profileId = requestedProfileId ?? get().activeProfileId;
+    set((state) =>
+      applyToModsInProfile(state, profileId, (mods) =>
+        mods.map((mod) =>
+          remoteIds.has(mod.remoteId) &&
+          (mod.status === ModStatus.Downloading ||
+            mod.status === ModStatus.Extracting)
+            ? { ...mod, status: ModStatus.Installed }
+            : mod,
+        ),
       ),
     );
   },

@@ -18,7 +18,6 @@ import type {
   ProfileImportMod,
   UpdatableMod,
 } from "@/types/mods";
-import { ModStatus } from "@/types/mods";
 import { invokeGuarded } from "@/lib/game-guard";
 
 const getUpdateProgress = () =>
@@ -249,17 +248,9 @@ export const useBatchUpdate = () => {
             updatableMod.selectedDownloads,
           );
 
-          usePersistedStore.setState((state) => ({
-            localMods: state.localMods.map((mod) =>
-              mod.remoteId === installedModInfo.modId
-                ? {
-                    ...mod,
-                    downloadedAt: new Date(),
-                    status: ModStatus.Installed,
-                  }
-                : mod,
-            ),
-          }));
+          usePersistedStore
+            .getState()
+            .markModUpdated(installedModInfo.modId, activeProfileId);
         }
       }
 
@@ -301,16 +292,12 @@ export const useBatchUpdate = () => {
       setUpdateProgress(null);
       // A failed update leaves the previous install in place, but the download
       // events already moved these mods to Downloading/Extracting.
-      const updatedIds = new Set(updatableMods.map((um) => um.mod.remoteId));
-      usePersistedStore.setState((state) => ({
-        localMods: state.localMods.map((mod) =>
-          updatedIds.has(mod.remoteId) &&
-          (mod.status === ModStatus.Downloading ||
-            mod.status === ModStatus.Extracting)
-            ? { ...mod, status: ModStatus.Installed }
-            : mod,
-        ),
-      }));
+      usePersistedStore
+        .getState()
+        .restoreInterruptedUpdates(
+          new Set(updatableMods.map((um) => um.mod.remoteId)),
+          activeProfile?.id,
+        );
     }
   };
 
