@@ -59,6 +59,7 @@ export const SkinVariantControls = ({ mod }: SkinVariantControlsProps) => {
         downloads={modOptions.downloads}
         isOpen={modOptions.isOpen}
         isSaving={modOptions.isSaving}
+        progress={modOptions.progress}
         modName={mod.name}
         onApply={modOptions.apply}
         onCancel={modOptions.close}

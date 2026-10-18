@@ -3,11 +3,14 @@ import {
   ValidationError,
 } from "@deadlock-mods/common/client-errors";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { useMutation } from "@tanstack/react-query";
-import { invoke } from "@tauri-apps/api/core";
-import { useMemo, useRef, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Channel, invoke } from "@tauri-apps/api/core";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { modDownloadsQueryOptions } from "@/hooks/use-mod-downloads";
+import { getErrorMessage } from "@/lib/errors";
 import { createLogger } from "@/lib/logger";
+import { isLocalMod } from "@/lib/mods/installed-helpers";
 import {
   deriveActiveArchiveNames,
   deriveActiveVariantCount,
@@ -23,6 +26,19 @@ import {
 import { invokeGuarded } from "@/lib/game-guard";
 
 const logger = createLogger("use-mod-options");
+
+type StageArchiveProgress =
+  | { phase: "downloading"; downloaded: number; total: number | null }
+  | { phase: "extracting" }
+  | { phase: "copying" };
+
+export type ModOptionsProgress =
+  | (StageArchiveProgress & {
+      archiveName: string;
+      index: number;
+      count: number;
+    })
+  | { phase: "applying" };
 
 interface SwapModOptionsResult {
   installed_vpks: string[];
@@ -192,12 +208,28 @@ export const useModOptions = (mod: LocalMod | null) => {
   const setActiveVariantArchive = usePersistedStore(
     (state) => state.setActiveVariantArchive,
   );
+  const setModDownloads = usePersistedStore((state) => state.setModDownloads);
 
   const profileFolder = getActiveProfile()?.folderName ?? null;
   const installedVpks = mod?.installedVpks ?? [];
   const currentOriginalNames = mod ? deriveCurrentOriginalNames(mod) : [];
 
-  const downloads = mod?.downloads ?? [];
+  // Stored file IDs go stale when the author replaces files, and staging a
+  // file GameBanana no longer has fails, so the dialog reads the live list.
+  const { data: liveDownloads } = useQuery({
+    ...modDownloadsQueryOptions(mod?.remoteId ?? ""),
+    enabled: isOpen && !!mod && !isLocalMod(mod),
+  });
+  const downloads = liveDownloads?.downloads ?? mod?.downloads ?? [];
+
+  useEffect(() => {
+    if (!mod || !liveDownloads) return;
+    const stored = (mod.downloads ?? []).map((d) => d.url).join(",");
+    const live = liveDownloads.downloads.map((d) => d.url).join(",");
+    if (stored !== live) {
+      setModDownloads(mod.remoteId, liveDownloads.downloads);
+    }
+  }, [mod, liveDownloads, setModDownloads]);
   const onDiskArchiveNames = useMemo(
     () =>
       new Set([
@@ -231,12 +263,15 @@ export const useModOptions = (mod: LocalMod | null) => {
   const stagedOriginalsMapRef = useRef(
     new Map<string, { archiveName: string; path: string }>(),
   );
+  const [progress, setProgress] = useState<ModOptionsProgress | null>(null);
 
   const applyMutation = useMutation<
     SwapModOptionsResult,
     Error,
     ApplyUnifiedPayload
   >({
+    meta: { skipGlobalErrorHandler: true },
+    onSettled: () => setProgress(null),
     mutationFn: async ({ selectedArchives, deselectedArchives }) => {
       if (!mod) {
         throw new ValidationError("No mod selected");
@@ -255,7 +290,21 @@ export const useModOptions = (mod: LocalMod | null) => {
 
         // Archives staged earlier in this apply aren't in the tree yet.
         const stagedThisApply: string[] = [];
-        for (const archive of selectedArchives) {
+        for (const [index, archive] of selectedArchives.entries()) {
+          const position = {
+            archiveName: archive.name,
+            index,
+            count: selectedArchives.length,
+          };
+          setProgress({
+            ...position,
+            phase: "downloading",
+            downloaded: 0,
+            total: archive.size || null,
+          });
+          const onProgress = new Channel<StageArchiveProgress>((message) =>
+            setProgress({ ...position, ...message }),
+          );
           const result = await invoke<StageDownloadArchiveResult>(
             "stage_download_archive",
             {
@@ -268,6 +317,7 @@ export const useModOptions = (mod: LocalMod | null) => {
                 ...deriveClaimedOriginals(mod, archive.name),
                 ...stagedThisApply,
               ],
+              onProgress,
             },
           );
           for (const { original, path } of result.staged) {
@@ -340,6 +390,7 @@ export const useModOptions = (mod: LocalMod | null) => {
           stagedArchives: selectedArchives.length,
         })
         .info("Applying unified file selection");
+      setProgress({ phase: "applying" });
 
       return await invokeGuarded<SwapModOptionsResult>("swap_mod_options", {
         modId: mod.remoteId,
@@ -388,12 +439,8 @@ export const useModOptions = (mod: LocalMod | null) => {
       setIsOpen(false);
     },
     onError: (error) => {
-      logger
-        .withError(error instanceof Error ? error : new Error(String(error)))
-        .error("Failed to apply file selection change");
-      const message =
-        error instanceof Error ? error.message : t("modOptions.applyError");
-      toast.error(message);
+      logger.withError(error).error("Failed to apply file selection change");
+      toast.error(getErrorMessage(error));
     },
   });
 
@@ -402,6 +449,7 @@ export const useModOptions = (mod: LocalMod | null) => {
     Error,
     string[]
   >({
+    meta: { skipGlobalErrorHandler: true },
     mutationFn: async (selectedNames) => {
       if (!mod) {
         throw new ValidationError("No mod selected");
@@ -459,7 +507,7 @@ export const useModOptions = (mod: LocalMod | null) => {
     },
     onError: (error) => {
       logger.withError(error).error("Failed to apply per-file selection");
-      toast.error(error.message || t("modOptions.applyError"));
+      toast.error(getErrorMessage(error));
     },
   });
 
@@ -484,6 +532,7 @@ export const useModOptions = (mod: LocalMod | null) => {
     close,
     apply,
     isSaving: applyMutation.isPending,
+    progress,
     applyFileSelection: fileSelectionMutation.mutate,
     isSavingFiles: fileSelectionMutation.isPending,
     showButton,

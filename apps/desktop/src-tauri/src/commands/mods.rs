@@ -829,6 +829,18 @@ pub struct StagedVpk {
   pub path: String,
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(tag = "phase", rename_all = "snake_case")]
+pub enum StageArchiveProgress {
+  Downloading { downloaded: u64, total: Option<u64> },
+  Extracting,
+  Copying,
+}
+
+/// Bytes between download progress messages, so a fast connection does not
+/// flood the webview.
+const STAGE_PROGRESS_STEP: u64 = 512 * 1024;
+
 #[tauri::command]
 pub async fn stage_download_archive(
   catalog_state: State<'_, super::gamebanana_catalog::GameBananaCatalogState>,
@@ -842,6 +854,7 @@ pub async fn stage_download_archive(
   known_originals: Vec<String>,
   // Names the tree gives other archives' files.
   claimed_originals: Vec<String>,
+  on_progress: tauri::ipc::Channel<StageArchiveProgress>,
 ) -> Result<StageDownloadArchiveResult, Error> {
   log::info!("Staging download archive for {mod_id} (profile: {profile_folder:?}): {archive_name}");
 
@@ -878,11 +891,24 @@ pub async fn stage_download_archive(
   .ok_or(Error::ModFileNotFound)?;
   let temp_dir = tempfile::tempdir()?;
   let archive_path = temp_dir.path().join(&safe_archive_name);
+  let download_channel = on_progress.clone();
+  let last_reported = std::sync::atomic::AtomicU64::new(0);
   crate::download_manager::downloader::download_file_resumable(
     &file.url,
     &archive_path,
     file.size,
-    |_| {},
+    move |progress| {
+      use std::sync::atomic::Ordering;
+      let last = last_reported.load(Ordering::Relaxed);
+      let finished = progress.total == Some(progress.downloaded);
+      if progress.downloaded >= last + STAGE_PROGRESS_STEP || finished {
+        last_reported.store(progress.downloaded, Ordering::Relaxed);
+        let _ = download_channel.send(StageArchiveProgress::Downloading {
+          downloaded: progress.downloaded,
+          total: progress.total,
+        });
+      }
+    },
     tokio_util::sync::CancellationToken::new(),
     crate::download_manager::downloader::PauseHandle::new(),
     Some(if file.size == 0 {
@@ -897,6 +923,7 @@ pub async fn stage_download_archive(
 
   let extract_dir = temp_dir.path().join("extracted");
 
+  let _ = on_progress.send(StageArchiveProgress::Extracting);
   let extractor = ArchiveExtractor::new();
   extractor.extract_archive(&archive_path, &extract_dir)?;
 
@@ -910,6 +937,7 @@ pub async fn stage_download_archive(
     )));
   }
 
+  let _ = on_progress.send(StageArchiveProgress::Copying);
   let prefix = format!("{mod_id}_");
   let lowercase = |names: &[String]| -> std::collections::HashSet<String> {
     names.iter().map(|name| name.to_lowercase()).collect()

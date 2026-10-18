@@ -4785,7 +4785,6 @@
     "openTooltip": "Manage files",
     "apply": "Apply",
     "applySuccess": "Mod files updated",
-    "applyError": "Failed to update mod files",
     "noOptions": "This mod has no other files.",
     "selectedCount": "{{selected}} of {{total}} selected",
     "enabled": "Enabled",
@@ -4796,7 +4795,15 @@
     "installedFiles": "Installed files:",
     "installedFilesCount": "{{count}} of {{total}} files enabled",
     "openTooltipWithCount_one": "Manage files ({{count}} active variant)",
-    "openTooltipWithCount_other": "Manage files ({{count}} active variants)"
+    "openTooltipWithCount_other": "Manage files ({{count}} active variants)",
+    "progress": {
+      "downloading": "Downloading {{name}}",
+      "extracting": "Extracting {{name}}",
+      "copying": "Adding files from {{name}} to the game",
+      "applying": "Applying your file selection",
+      "position": "{{index}} of {{count}}",
+      "bytes": "{{downloaded}} of {{total}}"
+    }
   },
   "installedFiles": {
     "title": "Installed Files",

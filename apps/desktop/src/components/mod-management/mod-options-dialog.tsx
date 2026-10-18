@@ -9,6 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
+import { Progress } from "@deadlock-mods/ui/components/progress";
 import {
   Check,
   CloudDownload,
@@ -18,6 +19,7 @@ import {
 } from "@deadlock-mods/ui/icons";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import type { ModOptionsProgress } from "@/hooks/use-mod-options";
 import { cn } from "@/lib/utils";
 import type { ModDownloadItem } from "@/types/mods";
 
@@ -33,6 +35,7 @@ interface ModOptionsDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   isSaving?: boolean;
+  progress?: ModOptionsProgress | null;
   onApply: (
     selectedArchives: ModDownloadItem[],
     deselectedArchives: ModDownloadItem[],
@@ -49,6 +52,7 @@ export const ModOptionsDialog = ({
   isOpen,
   onOpenChange,
   isSaving = false,
+  progress = null,
   onApply,
   onCancel,
   modName = "Mod",
@@ -105,7 +109,11 @@ export const ModOptionsDialog = ({
   const checkedCount = checkedNames.size;
 
   return (
-    <Dialog onOpenChange={onOpenChange} open={isOpen}>
+    <Dialog
+      onOpenChange={(open) => {
+        if (!isSaving) onOpenChange(open);
+      }}
+      open={isOpen}>
       <DialogContent
         className='max-h-[80vh] max-w-2xl'
         onClick={(e) => e.stopPropagation()}>
@@ -188,6 +196,8 @@ export const ModOptionsDialog = ({
           </div>
         )}
 
+        {progress && <ApplyProgress progress={progress} />}
+
         <DialogFooter className='flex items-center justify-between'>
           <div className='text-muted-foreground text-sm'>
             {t("modOptions.selectedCount", {
@@ -220,5 +230,62 @@ export const ModOptionsDialog = ({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+};
+
+const ApplyProgress = ({ progress }: { progress: ModOptionsProgress }) => {
+  const { t } = useTranslation();
+
+  if (progress.phase === "applying") {
+    return (
+      <div className='space-y-2 rounded-md border p-3'>
+        <p className='text-sm'>{t("modOptions.progress.applying")}</p>
+        <Progress className='h-1.5 animate-pulse' value={100} />
+      </div>
+    );
+  }
+
+  const percent =
+    progress.phase === "downloading"
+      ? progress.total
+        ? Math.min(100, (progress.downloaded / progress.total) * 100)
+        : 0
+      : 100;
+
+  return (
+    <div className='space-y-2 rounded-md border p-3'>
+      <div className='flex items-baseline justify-between gap-3 text-sm'>
+        <span className='min-w-0 truncate'>
+          {t(`modOptions.progress.${progress.phase}`, {
+            name: progress.archiveName,
+          })}
+        </span>
+        {progress.count > 1 && (
+          <span className='shrink-0 text-xs text-muted-foreground tabular-nums'>
+            {t("modOptions.progress.position", {
+              index: progress.index + 1,
+              count: progress.count,
+            })}
+          </span>
+        )}
+      </div>
+      <Progress
+        className={cn(
+          "h-1.5",
+          progress.phase !== "downloading" && "animate-pulse",
+        )}
+        value={percent}
+      />
+      {progress.phase === "downloading" && (
+        <p className='text-xs text-muted-foreground tabular-nums'>
+          {progress.total
+            ? t("modOptions.progress.bytes", {
+                downloaded: formatFileSize(progress.downloaded),
+                total: formatFileSize(progress.total),
+              })
+            : formatFileSize(progress.downloaded)}
+        </p>
+      )}
+    </div>
   );
 };

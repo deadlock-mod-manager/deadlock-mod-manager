@@ -269,6 +269,7 @@ const GridModCard = ({
       isOpen={modOptions.isOpen}
       onOpenChange={(open) => (open ? modOptions.open() : modOptions.close())}
       isSaving={modOptions.isSaving}
+      progress={modOptions.progress}
       onApply={modOptions.apply}
       onCancel={modOptions.close}
       modName={mod.name}
@@ -573,6 +574,7 @@ const ListModCard = ({
             open ? modOptions.open() : modOptions.close()
           }
           isSaving={modOptions.isSaving}
+          progress={modOptions.progress}
           onApply={modOptions.apply}
           onCancel={modOptions.close}
           modName={mod.name}
