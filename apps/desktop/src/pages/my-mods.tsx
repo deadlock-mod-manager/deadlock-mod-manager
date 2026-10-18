@@ -365,7 +365,11 @@ const GridModCard = ({
         </CardHeader>
         <CardFooter className='flex items-center justify-between gap-1 px-3 py-3 pt-2'>
           <div className='flex items-center gap-2'>
-            <ModButton remoteMod={mod} variant='iconOnly' showLabel />
+            <ModButton
+              remoteMod={mod}
+              variant='iconOnly'
+              showLabel={!!compatibility}
+            />
           </div>
           <div className='flex items-center gap-1'>
             {compatibility ? (
@@ -382,8 +386,7 @@ const GridModCard = ({
                   isLoading={deleting}
                   onClick={deleteMod}
                   size='icon'
-                  variant='ghost'
-                  className='size-7 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive'
+                  variant='destructive'
                 />
               </TooltipTrigger>
               <TooltipContent>{t("mods.removeMod")}</TooltipContent>
@@ -527,7 +530,11 @@ const ListModCard = ({
 
             <div className='flex shrink-0 items-center gap-2'>
               <div className='flex items-center gap-2'>
-                <ModButton remoteMod={mod} variant='iconOnly' showLabel />
+                <ModButton
+                  remoteMod={mod}
+                  variant='iconOnly'
+                  showLabel={!!compatibility}
+                />
                 {modOptions.showButton && (
                   <ModOptionsButton
                     activeCount={modOptions.activeVariantCount}
@@ -550,8 +557,7 @@ const ListModCard = ({
                     isLoading={deleting}
                     onClick={deleteMod}
                     size='icon'
-                    variant='ghost'
-                    className='size-7 shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive'
+                    variant='destructive'
                   />
                 </TooltipTrigger>
                 <TooltipContent>{t("mods.removeMod")}</TooltipContent>
