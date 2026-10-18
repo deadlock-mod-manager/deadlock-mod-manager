@@ -70,7 +70,6 @@
 ["devDependencies","apps/www/package.json",[["","@testing-library/react"]]]
 ["devDependencies","apps/www/package.json",[["","postcss"]]]
 ["devDependencies","apps/www/package.json",[["","web-vitals"]]]
-["devDependencies","package.json",[["","@typescript/native-preview"]]]
 ["devDependencies","packages/distributed-lock/package.json",[["","@types/uuid"]]]
 ["devDependencies","packages/dmodpkg/package.json",[["","vitest"]]]
 ["devDependencies","packages/hero-parser/package.json",[["","@deadlock-mods/typescript-config"]]]

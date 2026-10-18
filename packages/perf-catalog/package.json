@@ -9,7 +9,7 @@
     "./catalog.json": "./data/catalog.json"
   },
   "scripts": {
-    "check-types": "tsgo --noEmit --skipLibCheck",
+    "check-types": "tsc --noEmit --skipLibCheck",
     "test": "bun test",
     "generate": "bun scripts/generate.ts",
     "generate:check": "bun scripts/generate.ts --check"
@@ -21,7 +21,6 @@
     "@deadlock-mods/typescript-config": "workspace:*",
     "@types/bun": "^1.3.11",
     "@types/node": "^22.19.15",
-    "@typescript/native-preview": "catalog:",
     "typescript": "catalog:"
   }
 }

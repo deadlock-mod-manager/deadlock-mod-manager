@@ -6,7 +6,7 @@
     "./client-errors": "./src/errors/client-entry.ts"
   },
   "scripts": {
-    "check-types": "tsgo --noEmit"
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@isaacs/ttlcache": "catalog:",
@@ -19,6 +19,6 @@
   "devDependencies": {
     "@deadlock-mods/typescript-config": "workspace:*",
     "@types/pg": "^8.20.0",
-    "@typescript/native-preview": "catalog:"
+    "typescript": "catalog:"
   }
 }

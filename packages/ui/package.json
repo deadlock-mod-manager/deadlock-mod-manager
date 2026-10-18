@@ -12,7 +12,7 @@
     "./icons": "./src/icons/index.ts"
   },
   "scripts": {
-    "check-types": "tsgo --noEmit --skipLibCheck"
+    "check-types": "tsc --noEmit --skipLibCheck"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
@@ -65,7 +65,6 @@
   "devDependencies": {
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@typescript/native-preview": "catalog:",
     "typescript": "catalog:"
   },
   "peerDependencies": {

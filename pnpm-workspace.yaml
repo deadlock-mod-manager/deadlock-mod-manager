@@ -5,6 +5,8 @@ packages:
 
 overrides:
   typescript: "catalog:"
+  # Next.js runs type-checking through the TypeScript JS API, which TypeScript 7 does not ship
+  "@deadlock-mods/docs>typescript": ^6.0.3
   "@types/node": 22.19.15
   "@isaacs/brace-expansion": ">=5.0.1"
   fast-xml-parser: ">=5.5.9"
@@ -76,7 +78,6 @@ catalog:
   cache-manager: ^7.2.8
   cacheable: ^2.3.4
   keyv: ^5.6.0
-  typescript: ^6.0.0
-  "@typescript/native-preview": "npm:@typescript/native-preview@beta"
+  typescript: ^7.0.2
   zod: ^4.2.0
   better-auth: ^1.5.6

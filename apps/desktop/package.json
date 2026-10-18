@@ -6,7 +6,7 @@
   "scripts": {
     "test": "bun test",
     "ui:dev": "vite",
-    "check-types": "tsgo --noEmit --skipLibCheck && tsgo --noEmit --skipLibCheck -p tsconfig.tests.json",
+    "check-types": "tsc --noEmit --skipLibCheck && tsc --noEmit --skipLibCheck -p tsconfig.tests.json",
     "ui:build": "vite build",
     "preview": "vite preview",
     "tauri": "tauri",
@@ -31,7 +31,7 @@
     "e2e:test": "tsx e2e/cli.ts run",
     "e2e:qualify": "tsx e2e/cli.ts qualify",
     "e2e:test:world": "bun test ./e2e",
-    "e2e:check-types": "tsgo --noEmit --skipLibCheck -p tsconfig.e2e.json"
+    "e2e:check-types": "tsc --noEmit --skipLibCheck -p tsconfig.e2e.json"
   },
   "dependencies": {
     "@deadlock-mods/common": "workspace:*",
@@ -106,7 +106,6 @@
     "@types/node": "^20.19.37",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@typescript/native-preview": "catalog:",
     "@vitejs/plugin-react": "^5.2.0",
     "@wdio/cli": "9.31.5",
     "@wdio/globals": "9.31.3",

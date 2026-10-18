@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "tsr generate && vite build",
-    "check-types": "tsgo --noEmit --skipLibCheck",
+    "check-types": "tsc --noEmit --skipLibCheck",
     "test": "bun test",
     "start": "bun run --preload ./src/instrument.ts ./src/index.ts",
     "start:local": "dotenv -e ../../.env -- bun run --preload ./src/instrument.ts ./src/index.ts",
@@ -48,9 +48,9 @@
     "@types/bun": "^1.3.11",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@typescript/native-preview": "catalog:",
     "@vitejs/plugin-react": "^5.2.0",
     "concurrently": "^9.2.1",
+    "typescript": "catalog:",
     "vite": "catalog:"
   }
 }
