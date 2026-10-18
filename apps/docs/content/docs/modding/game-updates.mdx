@@ -1,0 +1,45 @@
+---
+title: Game Updates and Your Mods
+description: What Deadlock Mod Manager does with your mods after a Deadlock update
+---
+
+# Game Updates and Your Mods
+
+After a Deadlock update, Deadlock Mod Manager checks each mod a player has installed against the game on that player's computer. When it finds a known kind of breakage that it can repair, it fixes the mod locally for that player. This page explains what that means for the mods you publish.
+
+The check was added after the Paint the Town update on October 16, 2026, which moved the camera and aim attachment points (`root_motion`) on every hero. Hero skins built before that update put the camera in the wrong spot.
+
+## What the manager does
+
+- It checks a mod after the player installs or updates it, after every Deadlock update, and when the manager's repair rules change. The player's installed game files are the reference.
+- When a verified fix exists, it writes the fixed resources to a separate layer on the player's computer. The game loads that layer alongside your mod.
+- It shows the player a badge on your mod in their own library, such as **Can be fixed**, **Can be partly fixed**, **Fixed for this patch**, or **Needs an update for this patch**.
+- Fixes apply when the player chooses **Fix** or **Fix for this patch**, or at launch while automatic fixing is on, which is the default.
+
+## What it doesn't do
+
+- It never edits your files. The VPKs a player downloaded stay as you released them.
+- It doesn't redistribute your files or a fixed copy of them. Each player's fixes are built on their own computer from the files they downloaded.
+- It doesn't publish results. Badges are not shown on your GameBanana page, in the manager's mod store, or to other players.
+- It doesn't send reports. No results are uploaded, and nothing is sent to you or to GameBanana automatically.
+
+Players can turn the fixes off for your mod at any time with **Use original files**, which loads your mod exactly as released. Bulk and automatic fixing then skip your mod for that player.
+
+## When you release an update
+
+When a player installs a new version of your mod, the manager checks it again. If the new version already matches the current game, the fix is no longer needed and stops applying, and the player gets your files as released. You don't need to do anything to opt out.
+
+## Check your own mod
+
+Install your mod through the manager, either from GameBanana or with **Add Local Mod**, then find it in Mods Library and look at its badge. Hover the badge to see the problems it found, grouped by symptom such as camera and aim, animations and movement, or model.
+
+- **Can be fixed** or **Fixed for this patch**: your released files have a problem the manager knows how to repair for players. Rebuilding the mod against the current game removes the need for the fix.
+- **Can be partly fixed** or **Partly fixed for this patch**: some problems can be repaired and others can't. The tooltip and the **See details** list show both groups, under **Fixes:** and **Still needs an update:**.
+- **Needs an update for this patch**: the check found problems it can't repair. Players need a new version.
+- No badge: the check found nothing, or it doesn't cover this kind of mod. Test the mod in game as you normally would.
+
+## Limits
+
+The check can't catch every problem. Mods with custom rigs or custom animations may still need your update, and footstep and movement sounds broken by the October 16 update are not repaired. Missing textures are reported to the player but don't mark a mod as needing an update, and warnings about models the game never loads don't count against it. A badge describes how your mod compares with the game installed on one player's computer.
+
+Technical details of the checks and repairs are in [Mod compatibility repairs](/developer-docs/mod-compatibility). The player-facing guide is [Fixing Mods After Game Updates](/using-mod-manager/fixing-mods-after-updates).

@@ -1,0 +1,116 @@
+---
+title: Fixing Mods After Game Updates
+description: What the mod health badges mean, how fixes work, and how to turn them off
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Fixing Mods After Game Updates
+
+A Deadlock update can break mods that worked the day before. The manager checks each installed mod against the game on your computer and, when it knows how, fixes the mod for the current patch. Your mod files are never changed.
+
+The check runs when you install or change a mod and after every Deadlock update, which the manager detects from the game build. It also runs again when the manager's own repair rules change. It covers enabled and disabled mods, including mods you added with **Add Local Mod**. Everything runs locally: the results never leave your computer and are not shown to other users.
+
+## The Paint the Town update
+
+The Paint the Town update on October 16, 2026 moved the camera and aim attachment points on every hero (the `root_motion` attachments). Hero skins built before that update put the camera in the wrong spot. The check recognizes this change and can move those points in older skins to where the current game expects them.
+
+## Health badges
+
+Mods in Mods Library can show one of these badges. The mod's page shows the same status with its action button.
+
+| Badge                              | Meaning                                                                                    |
+| ---------------------------------- | ------------------------------------------------------------------------------------------ |
+| **Can be fixed**                   | The mod was made for an older Deadlock version, and the manager has verified fixes for it. |
+| **Can be partly fixed**            | Some parts can be fixed. Other parts still need an update from the author.                 |
+| **Fixed for this patch**           | Fixes are active for your current game build.                                              |
+| **Partly fixed for this patch**    | Fixes are active, but some parts still need an update from the author.                     |
+| **Original files**                 | You switched the mod to its original files. Fixes are available but turned off.            |
+| **Needs an update for this patch** | Parts of the mod don't match the current game and can't be fixed automatically.            |
+
+Mods that work show no health badge, and so do mods the check doesn't cover. Installed mods with a check result don't show the date-based **Outdated** badge. It appears only when the check doesn't cover the mod or hasn't checked it yet, and only for mods last updated before the Paint the Town update. The mod store and other browse pages still use the date badge.
+
+Hover a badge to see what the check found. Problems are grouped by what you would notice in game:
+
+- Camera and aim
+- Animations and movement
+- Colors and textures
+- Model
+- Abilities, stats and text
+- Can crash the game
+
+For a partly fixable or partly fixed mod, the tooltip names the parts that the fixes cover and the parts that still need an update.
+
+## Fix mods
+
+When some mods can be fixed or partly fixed, Mods Library shows a banner. **Fix N mods**, where N is the number of those mods, applies the verified fixes without launching the game.
+
+**See details** lists every mod with a health badge. For partly fixable and partly fixed mods, each row shows what the fixes cover under **Fixes:** and what is left under **Still needs an update:**. Each row has an action for that mod:
+
+- **Fix** turns fixes on for a mod that can be fixed, or for one you switched to original files.
+- **Use original files** turns fixes off for a fixed mod.
+- **Check for updates** and **Disable** appear for mods that need an update.
+
+**Fix all** at the bottom of the list fixes every mod that can be fixed or partly fixed. The banner, **Fix all**, and fixing at launch never include mods you switched to original files.
+
+A partly fixable mod that can still crash the game is never fixed in bulk or at launch. Fixing a mod accepts the problems the fixes don't cover, so you fix these one at a time with **Fix** in the details list or **Fix for this patch**, where the crash warning is shown. The fixes don't make the crash risk worse: the mod loads with or without them.
+
+You can also right-click a mod, or open its page, and choose **Fix for this patch**.
+
+### Fixes at launch
+
+When you launch, enabled mods that can be fixed or partly fixed are fixed first, except mods that can crash the game. The setting **Fix mods automatically after game updates**, under **Settings → Game**, controls this and is on by default.
+
+If you turn it off, launching with fixable mods asks you to choose **Fix and launch** or **Launch anyway**. **Launch anyway** starts the game without applying the pending fixes. Tick **Always fix automatically** in that prompt to turn the setting back on.
+
+### The review dialog
+
+Fixing a mod counts as accepting the warnings that belong to that mod alone. The review dialog doesn't come back for them until the mod's files change, Deadlock updates, or the manager's repair rules change.
+
+The review dialog still opens before launch when:
+
+- Enabled mods conflict with each other, for example two mods change the same text or game data, or skins overlap. This includes two variants of the same mod.
+- The manager can't tell which older game version a mod's game-data changes were made for.
+- Some mod files are missing or couldn't be read.
+
+Unrecognized VPK files and shared resources left unchanged appear as notices. They don't stop the launch.
+
+## How fixes are stored
+
+Fixes are written to a separate local layer that the game loads alongside your mods. The manager reads your mod files and never modifies them. Your choices are saved per profile, so a mod can be fixed in one profile and use its original files in another.
+
+When a mod updates, the manager checks it again. Fixes the new version no longer needs are dropped, so a mod that its author has updated for the current patch loads as released.
+
+## Undo a fix
+
+Right-click a mod and choose **Use original files** to turn its fixes off. The mod then loads exactly as its author released it and shows the **Original files** badge. The same button is on the mod's page and in the **See details** list.
+
+To turn fixes back on, choose **Fix for this patch** from the right-click menu or the mod's page, or **Fix** in the details list.
+
+Use original files if a fixed mod looks or behaves worse than before, or to test the mod as released before reporting a problem to its author.
+
+## What the check doesn't cover
+
+- The check can't catch every problem. A mod without a badge can still break in game.
+- Mods with custom rigs or custom animations may need an update from their author.
+- Footstep and movement sounds that the October 16 update broke are not repaired.
+- Missing textures are listed in the review dialog but don't mark a mod as needing an update.
+- Warnings about models that nothing in the game loads don't count against a mod and don't stop the launch.
+
+## Troubleshooting
+
+<Callout type='warn' title='Close Deadlock to change fixes'>
+  Fixing a mod and switching it to original files both need the game closed.
+  While Deadlock runs, the banner and details list show **Close Deadlock to fix
+  mods.** Close the game, make the change, then launch again.
+</Callout>
+
+If a mod still misbehaves after it is fixed:
+
+1. Check Mods Library for an update to the mod and install it.
+2. Choose **Use original files** for the mod and test again. If the original files work better, keep that choice.
+3. Disable the mod if neither version works, and report the problem to its author. See [Mod information and reports](/using-mod-manager/library#mod-information-and-reports).
+
+If badges don't change after a game update, make sure Steam has finished updating Deadlock. The check runs when the manager sees the new game build, and the banner shows its progress while it runs.
+
+If you make mods, see [Game Updates and Your Mods](/modding/game-updates) for how the check treats your work.

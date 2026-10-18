@@ -1,5 +1,5 @@
 {
   "title": "Modding",
   "description": "Learn how to create mods for Deadlock using community guides and tools",
-  "pages": ["index"]
+  "pages": ["index", "game-updates"]
 }
