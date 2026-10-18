@@ -27,6 +27,8 @@ const logger = createLogger("install-with-collection");
 
 export type InstallWithCollectionOptions = InstallAnalyticsOptions & {
   onFileTreeAnalyzed?: (mod: LocalMod, fileTree: ModFileTree) => void;
+  /** Cancel instead of opening the file selector, for batch installs. */
+  skipFileSelection?: boolean;
 };
 
 export type InstallWithCollectionFunction = (
@@ -230,6 +232,11 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
             );
           }
 
+          if (options.skipFileSelection) {
+            options.onCancel?.(mod);
+            return null;
+          }
+
           // No previous selection - show file selector dialog
           logger
             .withMetadata({
@@ -317,6 +324,12 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
               options,
               downloadTimeSelection,
             );
+          }
+
+          if (options.skipFileSelection) {
+            setIsAnalyzing(false);
+            options.onCancel?.(mod);
+            return null;
           }
 
           logger

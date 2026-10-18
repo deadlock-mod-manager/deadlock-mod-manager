@@ -52,6 +52,7 @@ import {
   LayoutGrid,
   LayoutList,
   Loader2,
+  Power,
   PowerOff,
   RefreshCw,
   ScanSearch,
@@ -77,6 +78,7 @@ import { VpkScanAlert } from "@/components/mods/vpk-scan-alert";
 import { AnalysisProgressToast } from "@/components/my-mods/analysis-progress-toast";
 import { AnalysisResultsDialog } from "@/components/my-mods/analysis-results-dialog";
 import { BatchUpdateDialog } from "@/components/my-mods/batch-update-dialog";
+import { EnableAllRecapDialog } from "@/components/my-mods/enable-all-recap-dialog";
 import { UpdateButton } from "@/components/my-mods/update-button";
 import { ExportDialog } from "@/components/mod-interchange/export-dialog";
 import { ImportSourceMenu } from "@/components/mod-interchange/import-source-menu";
@@ -94,6 +96,7 @@ import { ModCompatibilityControl } from "@/components/my-mods/mod-compatibility-
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useAddonAnalysis } from "@/hooks/use-addon-analysis";
 import { useDisableAllMods } from "@/hooks/use-disable-all-mods";
+import { useEnableAllMods } from "@/hooks/use-enable-all-mods";
 import { useCheckUpdates } from "@/hooks/use-check-updates";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
@@ -689,6 +692,12 @@ const MyMods = () => {
     dismissProgressToast,
   } = useAddonAnalysis();
   const { disableAll, isPending: isDisablingAll } = useDisableAllMods();
+  const {
+    enableAll,
+    isPending: isEnablingAll,
+    recap: enableAllRecap,
+    closeRecap: closeEnableAllRecap,
+  } = useEnableAllMods();
 
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.GRID);
   const [activeTab, setActiveTab] = useState<LibraryTab>(ModFilter.All);
@@ -851,6 +860,9 @@ const MyMods = () => {
   const installedMods = getOrderedMods();
 
   const enabledModsCount = mods.filter(isInstalledModWithVpks).length;
+  const downloadedModsCount = mods.filter(
+    (mod) => mod.status === ModStatus.Downloaded,
+  ).length;
   const disabledModsCount = mods.filter(
     (mod) => !isInstalledModWithVpks(mod),
   ).length;
@@ -969,6 +981,12 @@ const MyMods = () => {
                 disabled={installedMods.length === 0}>
                 <ArrowUpDown className='h-4 w-4' />
                 {t("mods.manageOrder")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => enableAll()}
+                disabled={downloadedModsCount === 0 || isEnablingAll}>
+                <Power className='h-4 w-4' />
+                {t("myMods.enableAll")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => disableAll()}
@@ -1240,6 +1258,10 @@ const MyMods = () => {
             open={analysisDialogOpen}
             onOpenChange={setAnalysisDialogOpen}
             result={analysisResult}
+          />
+          <EnableAllRecapDialog
+            recap={enableAllRecap}
+            onClose={closeEnableAllRecap}
           />
         </ErrorBoundary>
       </div>
