@@ -19,7 +19,7 @@ use log;
 use std::{
   collections::{BTreeMap, HashSet},
   path::{Component, Path, PathBuf},
-  sync::{Mutex, atomic::AtomicBool},
+  sync::Mutex,
 };
 
 mod analyzed;
@@ -41,7 +41,6 @@ pub struct ModManager {
   autoexec_manager: AutoexecManager,
   app_handle: Option<AppHandle>,
   localization_overlay_plan_cache: Mutex<Option<localization::CachedLocalizationOverlayPlan>>,
-  mod_compatibility_feature: AtomicBool,
 }
 
 pub struct VariantChangeResult {
@@ -64,7 +63,6 @@ impl ModManager {
       autoexec_manager: AutoexecManager::new(),
       app_handle: None,
       localization_overlay_plan_cache: Mutex::new(None),
-      mod_compatibility_feature: AtomicBool::new(false),
     };
 
     // Harness worlds are configured explicitly during Tauri setup. Never scan
@@ -201,7 +199,6 @@ impl ModManager {
     vanilla: bool,
     additional_args: String,
     profile_folder: Option<String>,
-    mod_compatibility: bool,
   ) -> Result<super::steam_uri_launcher::SteamUriLaunchRequest, Error> {
     // Ensure game path is found
     self.find_game()?;
@@ -227,11 +224,10 @@ impl ModManager {
       // lines would be missing and the engine would silently drop everything
       // past the 99th pak file.
       self.migrate_profile_to_shards(profile_folder.clone())?;
-      self.set_mod_compatibility_feature(mod_compatibility);
-      if mod_compatibility {
+      if self.mod_compatibility_enabled(profile_folder.as_deref())? {
         self.report_launch_step("mergingModData");
       }
-      self.ensure_localization_overlay_for_launch(profile_folder.as_deref(), mod_compatibility)?;
+      self.ensure_localization_overlay_for_launch(profile_folder.as_deref())?;
       self.report_launch_step("writingSearchPaths");
       self.apply_profile_gameinfo(profile_folder)?;
     }
@@ -600,7 +596,6 @@ mod tests {
       autoexec_manager: AutoexecManager::new(),
       app_handle: None,
       localization_overlay_plan_cache: Mutex::new(None),
-      mod_compatibility_feature: AtomicBool::new(false),
     }
   }
 
@@ -672,7 +667,7 @@ mod tests {
 
     assert!(
       manager
-        .prepare_game_launch(false, String::new(), Some("active".into()), false)
+        .prepare_game_launch(false, String::new(), Some("active".into()))
         .is_ok()
     );
     let gameinfo = fs::read_to_string(game.path().join("game/citadel/gameinfo.gi")).unwrap();
@@ -699,7 +694,7 @@ mod tests {
     let gameinfo = game.path().join("game/citadel/gameinfo.gi");
     let before = fs::read(&gameinfo).unwrap();
 
-    let result = manager.prepare_game_launch(false, String::new(), Some("active".into()), false);
+    let result = manager.prepare_game_launch(false, String::new(), Some("active".into()));
     assert!(matches!(&result, Err(Error::MissingEnabledModFiles(mods))
       if mods.len() == 1 && mods[0].id == "42" && mods[0].name == "Fixture skin and sound"));
     assert_eq!(fs::read(gameinfo).unwrap(), before);
@@ -715,7 +710,7 @@ mod tests {
 
     assert!(
       manager
-        .prepare_game_launch(false, String::new(), Some("active".into()), false)
+        .prepare_game_launch(false, String::new(), Some("active".into()))
         .is_ok()
     );
   }
@@ -727,7 +722,7 @@ mod tests {
 
     assert!(
       manager
-        .prepare_game_launch(true, String::new(), Some("active".into()), false)
+        .prepare_game_launch(true, String::new(), Some("active".into()))
         .is_ok()
     );
   }
@@ -748,7 +743,7 @@ mod tests {
       .hydrate_mods_from_manifest(Some("active".into()))
       .unwrap();
 
-    let result = manager.prepare_game_launch(false, String::new(), Some("active".into()), false);
+    let result = manager.prepare_game_launch(false, String::new(), Some("active".into()));
     assert!(matches!(result, Err(Error::MissingEnabledModFiles(mods))
       if mods.iter().map(|mod_info| mod_info.id.as_str()).collect::<Vec<_>>() == vec!["42", "43"]));
   }

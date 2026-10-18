@@ -18,49 +18,35 @@ pub(super) struct Provider {
 }
 
 type ResolvedResource = (Provider, Arc<Vec<u8>>);
+type ModArchives = (BTreeMap<PathBuf, VpkArchive>, BTreeMap<String, Provider>);
 
-/// One ordered view of enabled addons and the installed citadel/core resources.
-/// It deliberately excludes inactive profiles and unrelated workshop/map packages.
-pub(super) struct ResourceSnapshot {
+/// Installed citadel/core archives, indexed once and shared by every snapshot
+/// that analyses mods against the same game files.
+pub(crate) struct GameIndex {
   directories: Vec<PathBuf>,
   archives: BTreeMap<PathBuf, VpkArchive>,
-  game: BTreeMap<String, Provider>,
-  mods: BTreeMap<String, Provider>,
-  bytes: RefCell<BTreeMap<PathBuf, Arc<Vec<u8>>>>,
+  resources: BTreeMap<String, Provider>,
 }
 
-impl ResourceSnapshot {
-  pub(super) fn open(citadel: &Path, mods: &[LocalizationModInput]) -> Result<Self, Error> {
-    let mut snapshot = Self {
+impl GameIndex {
+  fn new(citadel: &Path) -> Self {
+    Self {
       directories: vec![citadel.to_path_buf(), citadel.with_file_name("core")],
       archives: BTreeMap::new(),
-      game: BTreeMap::new(),
-      mods: BTreeMap::new(),
-      bytes: RefCell::new(BTreeMap::new()),
-    };
-    if mods.is_empty() {
-      return Ok(snapshot);
+      resources: BTreeMap::new(),
     }
-    for (priority, input) in mods.iter().enumerate() {
-      for path in &input.vpks {
-        let archive = VpkArchive::open(path).map_err(|error| Error::ModInvalid(format!(
-          "Could not read VPK {} for mod {}: {error}. Reinstall this mod or disable it before retrying compatibility review", path.display(), input.mod_id
-        )))?;
-        for entry in archive.list_entries() {
-          snapshot
-            .mods
-            .entry(normalize_path(&entry))
-            .or_insert_with(|| Provider {
-              archive: path.clone(),
-              entry,
-              mod_id: Some(input.mod_id.clone()),
-              priority,
-            });
-        }
-        snapshot.archives.insert(path.clone(), archive);
-      }
-    }
-    for directory in &snapshot.directories {
+  }
+
+  pub(crate) fn open(citadel: &Path) -> Result<Self, Error> {
+    Self::open_excluding(citadel, &BTreeMap::new())
+  }
+
+  fn open_excluding(
+    citadel: &Path,
+    mod_archives: &BTreeMap<PathBuf, VpkArchive>,
+  ) -> Result<Self, Error> {
+    let mut index = Self::new(citadel);
+    for directory in &index.directories {
       if !directory.is_dir() {
         continue;
       }
@@ -75,7 +61,7 @@ impl ResourceSnapshot {
       });
       paths.sort();
       for path in paths {
-        if snapshot.archives.contains_key(&path) {
+        if mod_archives.contains_key(&path) {
           continue;
         }
         let archive = VpkArchive::open(&path).map_err(|error| {
@@ -85,8 +71,8 @@ impl ResourceSnapshot {
           ))
         })?;
         for entry in archive.list_entries() {
-          snapshot
-            .game
+          index
+            .resources
             .entry(normalize_path(&entry))
             .or_insert_with(|| Provider {
               archive: path.clone(),
@@ -95,10 +81,49 @@ impl ResourceSnapshot {
               priority: usize::MAX,
             });
         }
-        snapshot.archives.insert(path, archive);
+        index.archives.insert(path, archive);
       }
     }
-    Ok(snapshot)
+    Ok(index)
+  }
+}
+
+/// One ordered view of enabled addons and the installed citadel/core resources.
+/// It deliberately excludes inactive profiles and unrelated workshop/map packages.
+pub(super) struct ResourceSnapshot {
+  game: Arc<GameIndex>,
+  archives: BTreeMap<PathBuf, VpkArchive>,
+  mods: BTreeMap<String, Provider>,
+  bytes: RefCell<BTreeMap<PathBuf, Arc<Vec<u8>>>>,
+}
+
+impl ResourceSnapshot {
+  pub(super) fn open(citadel: &Path, mods: &[LocalizationModInput]) -> Result<Self, Error> {
+    let (archives, providers) = open_mod_archives(mods)?;
+    let game = if mods.is_empty() {
+      GameIndex::new(citadel)
+    } else {
+      GameIndex::open_excluding(citadel, &archives)?
+    };
+    Ok(Self {
+      game: Arc::new(game),
+      archives,
+      mods: providers,
+      bytes: RefCell::new(BTreeMap::new()),
+    })
+  }
+
+  pub(super) fn with_game(
+    game: Arc<GameIndex>,
+    mods: &[LocalizationModInput],
+  ) -> Result<Self, Error> {
+    let (archives, providers) = open_mod_archives(mods)?;
+    Ok(Self {
+      game,
+      archives,
+      mods: providers,
+      bytes: RefCell::new(BTreeMap::new()),
+    })
   }
 
   pub(super) fn archive(&self, path: &Path) -> &VpkArchive {
@@ -122,7 +147,7 @@ impl ResourceSnapshot {
   }
 
   fn game_provider(&self, path: &str) -> Option<Provider> {
-    for directory in &self.directories {
+    for directory in &self.game.directories {
       let loose = directory.join(path);
       if loose.is_file() {
         return Some(Provider {
@@ -134,6 +159,7 @@ impl ResourceSnapshot {
       }
       if let Some(provider) = self
         .game
+        .resources
         .get(path)
         .filter(|provider| provider.archive.parent() == Some(directory.as_path()))
       {
@@ -141,6 +167,10 @@ impl ResourceSnapshot {
       }
     }
     None
+  }
+
+  pub(super) fn has_game_resource(&self, name: &str) -> bool {
+    resource_path(name).is_some_and(|path| self.game_provider(&path).is_some())
   }
 
   pub(super) fn game_bytes(&self, name: &str) -> Result<Option<Arc<Vec<u8>>>, Error> {
@@ -168,7 +198,10 @@ impl ResourceSnapshot {
     let bytes = if provider.entry.is_empty() {
       fs::read(&provider.archive)?
     } else {
-      self.archives[&provider.archive]
+      self
+        .archives
+        .get(&provider.archive)
+        .unwrap_or_else(|| &self.game.archives[&provider.archive])
         .extract_entry(&provider.entry)
         .map_err(|error| {
           Error::ModInvalid(format!(
@@ -182,6 +215,30 @@ impl ResourceSnapshot {
     self.bytes.borrow_mut().insert(key, Arc::clone(&bytes));
     Ok(bytes)
   }
+}
+
+fn open_mod_archives(mods: &[LocalizationModInput]) -> Result<ModArchives, Error> {
+  let mut archives = BTreeMap::new();
+  let mut providers = BTreeMap::new();
+  for (priority, input) in mods.iter().enumerate() {
+    for path in &input.vpks {
+      let archive = VpkArchive::open(path).map_err(|error| Error::ModInvalid(format!(
+        "Could not read VPK {} for mod {}: {error}. Reinstall this mod or disable it before retrying compatibility review", path.display(), input.mod_id
+      )))?;
+      for entry in archive.list_entries() {
+        providers
+          .entry(normalize_path(&entry))
+          .or_insert_with(|| Provider {
+            archive: path.clone(),
+            entry,
+            mod_id: Some(input.mod_id.clone()),
+            priority,
+          });
+      }
+      archives.insert(path.clone(), archive);
+    }
+  }
+  Ok((archives, providers))
 }
 
 pub(super) fn resource_path(name: &str) -> Option<String> {

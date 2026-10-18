@@ -33,6 +33,37 @@ fn observed_binding(history: &VdataHistoryIndex, row: &str, model: &str) -> bool
       })
 }
 
+/// Mod model paths that once held the primary model of a current hero, which
+/// relocation can move to that hero's current model.
+pub(super) fn historical_hero_models<'a>(
+  resources: &ResourceSnapshot,
+  history: &VdataHistoryIndex,
+  paths: impl IntoIterator<Item = &'a str>,
+) -> Result<BTreeSet<String>, Error> {
+  let Some(bytes) = resources.game_bytes(HEROES_VDATA_PATH)? else {
+    return Ok(BTreeSet::new());
+  };
+  let Ok((_, heroes, _)) = decode_compiled_data(&bytes, HEROES_VDATA_PATH) else {
+    return Ok(BTreeSet::new());
+  };
+  let Some(rows) = heroes.as_object() else {
+    return Ok(BTreeSet::new());
+  };
+  Ok(
+    paths
+      .into_iter()
+      .filter(|path| {
+        path.strip_suffix("_c").is_some_and(|old_name| {
+          rows
+            .iter()
+            .any(|(row_name, _)| observed_binding(history, row_name, old_name))
+        })
+      })
+      .map(str::to_owned)
+      .collect(),
+  )
+}
+
 pub(super) fn prepare(
   resources: &ResourceSnapshot,
   sources: &BTreeMap<String, Vec<CompiledDataSource>>,

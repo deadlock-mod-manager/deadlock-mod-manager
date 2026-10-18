@@ -1201,6 +1201,7 @@ fn run_obsolete_mod_corpus() {
     .game_bytes(HEROES_VDATA_PATH)
     .unwrap()
     .map(|bytes| decode_compiled_data(&bytes, "current heroes").unwrap().1);
+  let game = Arc::new(GameIndex::open(&citadel).unwrap());
   for case in cases {
     assert_eq!(
       hex::encode(Sha256::digest(fs::read(&case.archive).unwrap())),
@@ -1234,9 +1235,22 @@ fn run_obsolete_mod_corpus() {
       }
     }
     let started = std::time::Instant::now();
-    let result = LocalizationOverlayPlan::build(&citadel, &[input]);
+    let covered = has_checkable_resources(&input).unwrap();
+    let result = LocalizationOverlayPlan::build_standalone(
+      &game,
+      input,
+      &mut VdataHistoryIndex::default(),
+      None,
+      &mut BTreeSet::new(),
+    );
     let mut report = match result {
-      Ok(plan) => {
+      Ok((plan, _)) => {
+        let findings = crate::mod_manager::mod_health::ModFindings::from_analysis(
+          &plan.analysis,
+          &case.id.to_string(),
+          covered,
+        );
+        let status = findings.status(crate::mod_manager::mod_health::CompatibilityChoice::Unset);
         let archive_path = output.path().join(format!("{}.vpk", case.id));
         let written = plan.write(&archive_path, &[]);
         let (packed, error, validated_blocks) = match written {
@@ -1266,7 +1280,7 @@ fn run_obsolete_mod_corpus() {
           }
           Err(error) => (0, Some(error.to_string()), 0),
         };
-        serde_json::json!({"id":case.id,"name":case.name,"url":case.url,"sha256":case.sha256,"categories":categories,"analysis":plan.analysis,"packedFiles":packed,"validatedKv3Blocks":validated_blocks,"error":error,"elapsedMs":started.elapsed().as_millis(),"runtime":"not-tested"})
+        serde_json::json!({"id":case.id,"name":case.name,"url":case.url,"sha256":case.sha256,"categories":categories,"analysis":plan.analysis,"health":findings,"healthStatus":status,"packedFiles":packed,"validatedKv3Blocks":validated_blocks,"error":error,"elapsedMs":started.elapsed().as_millis(),"runtime":"not-tested"})
       }
       Err(error) => {
         serde_json::json!({"id":case.id,"name":case.name,"url":case.url,"sha256":case.sha256,"categories":categories,"error":error.to_string(),"elapsedMs":started.elapsed().as_millis(),"runtime":"not-tested"})

@@ -8,7 +8,7 @@ use source2_model::vpk_extract::VpkArchive;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 use tempfile::TempDir;
 use vpkmanager::pack_directory;
 use vpkmanager::source2::kv3::{self, Encoding as Kv3Encoding, Seg as Kv3Seg, Value as Kv3Value};
@@ -35,6 +35,8 @@ mod model_relocation;
 mod repair_scope;
 mod resources;
 pub mod vdata_compatibility;
+
+pub(crate) use resources::GameIndex;
 
 pub const OVERLAY_VPK_NAME: &str = "pak01_dir.vpk";
 const STALE_SNAPSHOT_CHANGE_THRESHOLD: usize = 50;
@@ -68,6 +70,31 @@ pub(crate) fn localization_paths(mods: &[LocalizationModInput]) -> Result<BTreeS
     }
   }
   Ok(paths)
+}
+
+/// Whether a mod contains any resource the compatibility analysis inspects.
+pub(crate) fn has_checkable_resources(input: &LocalizationModInput) -> Result<bool, Error> {
+  for path in &input.vpks {
+    let entries = vpk_parser::VpkParser::parse_directory_from_file(path).map_err(|error| {
+      Error::ModInvalid(format!(
+        "Could not read VPK {} for mod {}: {error}",
+        path.display(),
+        input.mod_id
+      ))
+    })?;
+    if entries.iter().any(|entry| {
+      let path = &entry.full_path;
+      is_localization_path(path)
+        || is_mergeable_compiled_data_path(path)
+        || model_camera::is_path(path)
+        || animation_skeleton::is_path(path)
+        || asset_compatibility::is_mesh_path(path)
+        || normalize_path(path).ends_with(".vmat_c")
+    }) {
+      return Ok(true);
+    }
+  }
+  Ok(false)
 }
 
 pub(crate) fn reads_compiled_baseline(path: &str) -> bool {
@@ -172,7 +199,7 @@ pub struct CompiledDataBaseline {
   pub evidence: BaselineEvidence,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct LocalizationOverlayAnalysis {
   pub review_fingerprint: String,
@@ -199,6 +226,12 @@ pub struct LocalizationOverlayAnalysis {
   pub parse_warnings: Vec<LocalizationParseWarning>,
   pub asset_repairs: Vec<asset_compatibility::AssetRepair>,
   pub asset_warnings: Vec<asset_compatibility::AssetWarning>,
+  /// Mod-only models that nothing loaded references. Their asset warnings stay
+  /// listed but neither pause launch nor affect mod health.
+  pub unloaded_models: Vec<String>,
+  /// Fixed mods whose own asset and data findings the player accepted. Those
+  /// findings stay listed but no longer pause launch.
+  pub accepted_mod_ids: Vec<String>,
   pub data_repairs: Vec<vdata_compatibility::DataRepair>,
   pub data_warnings: Vec<vdata_compatibility::DataWarning>,
   pub baselines: Vec<CompiledDataBaseline>,
@@ -411,7 +444,48 @@ impl LocalizationOverlayPlan {
     enabled_mod_ids: &BTreeSet<String>,
   ) -> Result<(Self, VdataHistoryIndex, bool), Error> {
     let resources = resources::ResourceSnapshot::open(citadel_dir, mods)?;
-    let scope = repair_scope::RepairScope::new(mods, enabled_mod_ids, &resources);
+    let (plan, changed) = Self::build_observing(
+      &resources,
+      mods,
+      &mut observed,
+      version,
+      enabled_mod_ids,
+      &mut BTreeSet::new(),
+    )?;
+    Ok((plan, observed, changed))
+  }
+
+  /// Analyses one mod on its own against a shared game index. `recorded`
+  /// lists game tables already learned into `observed` during this pass.
+  pub(crate) fn build_standalone(
+    game: &Arc<GameIndex>,
+    input: LocalizationModInput,
+    observed: &mut VdataHistoryIndex,
+    version: Option<u32>,
+    recorded: &mut BTreeSet<String>,
+  ) -> Result<(Self, bool), Error> {
+    let enabled_mod_ids = BTreeSet::from([input.mod_id.clone()]);
+    let mods = [input];
+    let resources = resources::ResourceSnapshot::with_game(Arc::clone(game), &mods)?;
+    Self::build_observing(
+      &resources,
+      &mods,
+      observed,
+      version,
+      &enabled_mod_ids,
+      recorded,
+    )
+  }
+
+  fn build_observing(
+    resources: &resources::ResourceSnapshot,
+    mods: &[LocalizationModInput],
+    observed: &mut VdataHistoryIndex,
+    version: Option<u32>,
+    enabled_mod_ids: &BTreeSet<String>,
+    recorded: &mut BTreeSet<String>,
+  ) -> Result<(Self, bool), Error> {
+    let scope = repair_scope::RepairScope::new(mods, enabled_mod_ids, resources);
     let mut changed = false;
     if let Some(version) = version {
       let mut paths: BTreeSet<_> = resources
@@ -439,6 +513,9 @@ impl LocalizationOverlayPlan {
         paths.insert(vdata_compatibility::ABILITIES_PATH.into());
       }
       for path in paths {
+        if !recorded.insert(path.clone()) {
+          continue;
+        }
         if let Some(bytes) = resources.game_bytes(&path)? {
           let (_, root, _) = decode_compiled_data(&bytes, &path)?;
           changed |= observed
@@ -447,15 +524,15 @@ impl LocalizationOverlayPlan {
         }
       }
     }
-    let history = VdataHistoryIndex::embedded().with_observed(&observed);
+    let history = VdataHistoryIndex::embedded().with_observed(observed);
     let plan = Self::build_snapshot(
       mods,
       HistoricalLocalizationIndex::embedded(),
       &history,
-      &resources,
+      resources,
       enabled_mod_ids,
     )?;
-    Ok((plan, observed, changed))
+    Ok((plan, changed))
   }
 
   #[cfg(test)]
@@ -766,6 +843,8 @@ impl LocalizationOverlayPlan {
       &asset_sources,
       &repaired_assets,
     )?);
+    let unloaded_models =
+      asset_compatibility::unloaded_models(resources, history, &asset_warnings)?;
     let mut changed_tokens = 0usize;
     let mut new_tokens = 0usize;
     let mut conflicts = Vec::new();
@@ -853,6 +932,8 @@ impl LocalizationOverlayPlan {
         parse_warnings,
         asset_repairs,
         asset_warnings,
+        unloaded_models,
+        accepted_mod_ids: Vec::new(),
         data_repairs,
         data_warnings,
         baselines,
