@@ -11,7 +11,6 @@ import { ArrowClockwiseIcon } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { FaShare } from "react-icons/fa";
-import type { ModCompatibilityController } from "@/hooks/use-mod-compatibility";
 import { useReinstallAction } from "@/hooks/use-reinstall-action";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
@@ -20,7 +19,6 @@ import type { LocalMod } from "@/types/mods";
 interface ModContextMenuProps {
   mod: LocalMod;
   children: React.ReactNode;
-  compatibility?: ModCompatibilityController;
 }
 
 export const ModContextMenu = ({ mod, children }: ModContextMenuProps) => {
