@@ -3,7 +3,6 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useRemovePerfConfig } from "@/hooks/performance/use-perf-mutations";
 import { analytics } from "@/lib/analytics";
 import { invokeGuarded, isGameRunningError } from "@/lib/game-guard";
@@ -62,15 +61,11 @@ const attachClientFingerprint = (sessionId: string | null) => {
  */
 export const useCrashCheck = () => {
   const { t } = useTranslation();
-  const featureEnabled = useExperimentalFeature("performance-configs");
-  const crashCheckEnabled = usePersistedStore(
-    (state) => state.crashCheckEnabled,
-  );
+  const active = usePersistedStore((state) => state.crashCheckEnabled);
   const setCrashCheckEnabled = usePersistedStore(
     (state) => state.setCrashCheckEnabled,
   );
   const gamePath = usePersistedStore((state) => state.gamePath);
-  const active = featureEnabled && crashCheckEnabled;
   const {
     mutate: removePerfConfig,
     mutateAsync: removePerfConfigAsync,
