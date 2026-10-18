@@ -50,7 +50,9 @@ export function CompatibilityReviewProvider({
   }, []);
 
   const review = useCallback((profileFolder: string | null) => {
-    if (activeRequest.current) return Promise.resolve(false);
+    // A newer launch replaces an unanswered review instead of being dropped,
+    // so a request that never closed cannot block every later launch.
+    activeRequest.current?.resolve(false);
     return new Promise<boolean>((resolve) => {
       const next = { id: ++nextId.current, profileFolder, resolve };
       activeRequest.current = next;

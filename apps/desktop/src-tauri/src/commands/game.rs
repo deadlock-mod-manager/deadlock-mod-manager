@@ -165,7 +165,10 @@ pub async fn start_game(
     Err(error) => return Err(error),
   };
 
-  await_launched_game(request.spawn()?).await
+  app_handle.emit("launch-progress", "openingSteam").ok();
+  let monitor = request.spawn()?;
+  app_handle.emit("launch-progress", "waitingForGame").ok();
+  await_launched_game(monitor).await
 }
 
 /// Launch preparation can build the compatibility repair package, which parses

@@ -8,6 +8,7 @@ import { AppSidebar } from "./components/layout/app-sidebar";
 import { BottomBar } from "./components/layout/bottom-bar";
 import { CatalogSyncProgress } from "./components/layout/catalog-sync-progress";
 import { GameConfigBanner } from "./components/layout/game-config-banner";
+import { LaunchOverlay } from "./components/layout/launch-overlay";
 import { OccultGeometry } from "./components/layout/occult-geometry";
 import { Titlebar } from "./components/layout/titlebar";
 import { WhatsNewDialog } from "./components/layout/whats-new-dialog";
@@ -36,6 +37,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
                   {children}
                 </div>
               </SidebarInset>
+              <LaunchOverlay />
             </div>
             <BottomBar />
           </SidebarProvider>

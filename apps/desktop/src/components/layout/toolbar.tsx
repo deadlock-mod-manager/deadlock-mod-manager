@@ -6,7 +6,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
-import { ArrowLeft } from "@deadlock-mods/ui/icons";
+import { ArrowLeft, Loader2 } from "@deadlock-mods/ui/icons";
 import { StopIcon } from "@phosphor-icons/react";
 import { PlayCircleIcon } from "@phosphor-icons/react/dist/ssr";
 import { useQuery } from "@tanstack/react-query";
@@ -32,6 +32,7 @@ export const Toolbar = () => {
   const { launch } = useLaunch();
   const [vanillaAnimating, setVanillaAnimating] = useState(false);
   const [moddedAnimating, setModdedAnimating] = useState(false);
+  const [launching, setLaunching] = useState(false);
   const { showBackButton, onBackClick } = useScrollBackButtonContext();
   const isProfileSharingEnabled = useExperimentalFeature("profile-sharing");
 
@@ -126,13 +127,14 @@ export const Toolbar = () => {
             <TooltipTrigger asChild>
               <Button
                 className='relative h-7 gap-1.5 overflow-hidden border border-transparent px-2.5 text-xs'
-                disabled={!gamePath}
+                disabled={!gamePath || launching}
                 onClick={() => {
                   if (isRunning) {
                     invoke("stop_game").finally(() => refetch());
                   } else {
                     setModdedAnimating(true);
-                    launch();
+                    setLaunching(true);
+                    launch().finally(() => setLaunching(false));
                     setTimeout(() => setModdedAnimating(false), 500);
                   }
                 }}>
@@ -145,16 +147,22 @@ export const Toolbar = () => {
                   )}
                 />
                 <span className='relative z-10 inline-flex items-center'>
-                  {isRunning ? (
+                  {launching ? (
+                    <Loader2 className='size-3.5 animate-spin' />
+                  ) : isRunning ? (
                     <StopIcon className='size-3.5' />
                   ) : (
                     <PlayCircleIcon className='size-3.5' />
                   )}
                 </span>
                 <span className='relative z-10'>
-                  {isRunning ? t("common.stopGame") : t("common.launchModded")}
+                  {launching
+                    ? t("common.preparingLaunch")
+                    : isRunning
+                      ? t("common.stopGame")
+                      : t("common.launchModded")}
                 </span>
-                {!isRunning && enabledModsCount > 0 && (
+                {!isRunning && !launching && enabledModsCount > 0 && (
                   <span className='relative z-10 inline-flex items-center gap-1 tabular-nums opacity-70'>
                     {t("common.launchModdedCount", {
                       count: enabledModsCount,

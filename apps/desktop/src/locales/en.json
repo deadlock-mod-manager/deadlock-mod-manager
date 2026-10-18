@@ -2144,6 +2144,26 @@
       "launchAnyway": "Launch Anyway"
     }
   },
+  "launch": {
+    "title": "Launching Deadlock",
+    "hide": "Hide (the launch keeps going)",
+    "steps": {
+      "randomizingSkins": "Randomizing hero skins",
+      "disablingMods": "Disabling mods",
+      "verifyingMods_one": "Verifying {{count}} mod",
+      "verifyingMods_other": "Verifying {{count}} mods",
+      "mergingModData": "Merging mod data",
+      "writingSearchPaths": "Writing game search paths",
+      "applyingPerformance": "Applying performance config",
+      "openingSteam": "Opening Steam",
+      "waitingForGame": "Waiting for Deadlock to start"
+    },
+    "stepState": {
+      "done": "done",
+      "active": "in progress",
+      "pending": "pending"
+    }
+  },
   "common": {
     "loading": "Loading...",
     "error": "Error",
@@ -2165,6 +2185,7 @@
     "gameDetected": "Game Detected",
     "gameInstalledAt": "Game installed at {{path}}",
     "launchVanilla": "Launch without mods",
+    "preparingLaunch": "Preparing mods...",
     "launchModded": "Launch modded",
     "launchModdedCount_one": "{{count}} mod",
     "launchModdedCount_other": "{{count}} mods",

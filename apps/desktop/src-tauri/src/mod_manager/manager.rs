@@ -209,9 +209,11 @@ impl ModManager {
     // Toggle mods based on vanilla flag
     if vanilla {
       log::info!("Disabling mods...");
+      self.report_launch_step("disablingMods");
       self.toggle_mods(vanilla)?;
     } else {
       log::info!("Enabling mods for profile: {:?}...", profile_folder);
+      self.report_launch_step("verifyingMods");
       self.validate_modded_launch_files(profile_folder.as_deref())?;
       let game_path = self
         .steam_manager
@@ -226,13 +228,26 @@ impl ModManager {
       // past the 99th pak file.
       self.migrate_profile_to_shards(profile_folder.clone())?;
       self.set_mod_compatibility_feature(mod_compatibility);
+      if mod_compatibility {
+        self.report_launch_step("mergingModData");
+      }
       self.ensure_localization_overlay_for_launch(profile_folder.as_deref(), mod_compatibility)?;
+      self.report_launch_step("writingSearchPaths");
       self.apply_profile_gameinfo(profile_folder)?;
     }
 
+    self.report_launch_step("applyingPerformance");
     self.reapply_performance_config();
 
     self.steam_manager.game_launch_request(&additional_args)
+  }
+
+  /// Tells the launch overlay which phase of `prepare_game_launch` is running.
+  fn report_launch_step(&self, step: &str) {
+    use tauri::Emitter;
+    if let Some(app_handle) = &self.app_handle {
+      let _ = app_handle.emit("launch-progress", step);
+    }
   }
 
   fn validate_modded_launch_files(&self, profile_folder: Option<&str>) -> Result<(), Error> {

@@ -15,12 +15,23 @@ import { stopHeroDetection } from "@/hooks/use-hero-detection";
 import { useSkinRandomizer } from "@/hooks/use-skin-randomizer";
 import { restoreProfileGameinfo } from "@/lib/gameinfo";
 import { getLaunchErrorMessage } from "@/lib/launch-error";
+import { type LaunchStep, useLaunchProgress } from "@/lib/launch-progress";
 import { launchWithCompatibilityReview } from "@/lib/launch-with-compatibility-review";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { getAdditionalArgs } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
 import { invokeGuarded } from "@/lib/game-guard";
+
+// The game is already running when the last step finishes, so the finished
+// checklist only stays up long enough to read.
+const FINISHED_STEPS_MS = 1200;
+
+const BACKEND_TAIL: LaunchStep[] = [
+  "applyingPerformance",
+  "openingSteam",
+  "waitingForGame",
+];
 
 export const useLaunch = () => {
   const { t } = useTranslation();
@@ -40,6 +51,11 @@ export const useLaunch = () => {
   const startGame = useStartGame();
   const { randomizeSkins } = useSkinRandomizer();
   const reviewCompatibility = useCompatibilityReview();
+  const {
+    start: startProgress,
+    advance,
+    clear: clearProgress,
+  } = useLaunchProgress();
   const modCompatibility = useExperimentalFeature("mod-compatibility-repairs");
   const launchVanillaNoArgs =
     settings?.["launch-vanilla-no-args"]?.enabled ?? false;
@@ -108,6 +124,23 @@ export const useLaunch = () => {
     try {
       await checkMapCommandInAutoexec();
       await disableInstalledMapMods();
+      const modCount = vanilla
+        ? 0
+        : usePersistedStore.getState().getEnabledModsCount();
+      const backendSteps: LaunchStep[] = vanilla
+        ? ["disablingMods", ...BACKEND_TAIL]
+        : [
+            "verifyingMods",
+            ...(modCompatibility ? (["mergingModData"] as const) : []),
+            "writingSearchPaths",
+            ...BACKEND_TAIL,
+          ];
+      const randomizesSkins =
+        !vanilla && usePersistedStore.getState().skinRandomizerEnabled;
+      startProgress(
+        randomizesSkins ? ["randomizingSkins", ...backendSteps] : backendSteps,
+        modCount,
+      );
       // A vanilla launch loads no mods, so there is nothing to dress up.
       if (!vanilla) {
         await randomizeSkins();
@@ -124,9 +157,13 @@ export const useLaunch = () => {
 
       stopHeroDetection();
 
-      const unlisten = await listen("gameinfo-auto-reset", () => {
+      const unlistenReset = await listen("gameinfo-auto-reset", () => {
         toast.info(t("common.gameinfoAutoReset"));
       });
+      const unlistenProgress = await listen<LaunchStep>(
+        "launch-progress",
+        (event) => advance(event.payload),
+      );
 
       let launched = false;
       try {
@@ -143,14 +180,29 @@ export const useLaunch = () => {
           modCompatibility,
         };
         launched = await launchWithCompatibilityReview(
-          () => startGame(args),
-          () => reviewCompatibility(profileFolder),
+          () => {
+            // Shows the checklist again when a launch resumes after review.
+            if (!useLaunchProgress.getState().progress) {
+              startProgress(backendSteps, modCount);
+            }
+            return startGame(args);
+          },
+          () => {
+            // The review dialog takes over until it launches or is closed.
+            clearProgress();
+            return reviewCompatibility(profileFolder);
+          },
           vanilla || !modCompatibility,
         );
       } finally {
-        unlisten();
+        unlistenReset();
+        unlistenProgress();
       }
       if (!launched) {
+        clearProgress();
+        logger
+          .withMetadata({ vanilla })
+          .info("Launch cancelled before the game started");
         attempt.finish("cancelled");
         return;
       }
@@ -170,11 +222,14 @@ export const useLaunch = () => {
         captureMilestone("first_modded_launch");
       }
       setLastLaunchVanilla(vanilla);
+      advance(null);
+      setTimeout(clearProgress, FINISHED_STEPS_MS);
       await queryClient.invalidateQueries({
         queryKey: ["is-game-running"],
       });
       await queryClient.invalidateQueries({ queryKey: MOD_PATHS_KEY });
     } catch (error) {
+      clearProgress();
       attempt.finish(
         failureOutcome(isTauriError(error) ? error.kind : undefined),
       );
