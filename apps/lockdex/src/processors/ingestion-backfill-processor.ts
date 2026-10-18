@@ -16,7 +16,7 @@ const BACKFILL_PRIORITY = 10;
  * Update events only cover files that change while Lockdex is listening, so
  * this tops the queue up with every file that has no ingestion yet.
  */
-export class IngestionBackfillProcessor extends BaseProcessor<IngestionBackfillJobData> {
+class IngestionBackfillProcessor extends BaseProcessor<IngestionBackfillJobData> {
   private static instance: IngestionBackfillProcessor | null = null;
   private readonly vpkRepository = new VpkRepository(db);
 

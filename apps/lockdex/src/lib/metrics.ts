@@ -1,15 +1,15 @@
 const RATE_WINDOW_MS = 60 * 60 * 1000;
 const TIMING_SAMPLES = 50;
 
-export type JobOutcome = "indexed" | "skipped" | "permanent" | "failed";
+type JobOutcome = "indexed" | "skipped" | "permanent" | "failed";
 
-export interface JobTimings {
+interface JobTimings {
   downloadMs: number;
   slotWaitMs: number;
   indexMs: number;
 }
 
-export interface IndexedJob {
+interface IndexedJob {
   timings: JobTimings;
   bytes: number;
   vpks: number;
