@@ -312,10 +312,43 @@ jobs:
           RELEASE_ID: ${{ inputs.release_id }}
         with:
           script: |
+            // Swap the draft onto the rolling tag only now, so the previous
+            // nightly stays downloadable for the whole build.
+            try {
+              const { data: previous } = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag: 'nightly'
+              });
+              console.log(`Deleting previous nightly release: ${previous.id}`);
+              await github.rest.repos.deleteRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: previous.id
+              });
+            } catch (error) {
+              if (error.status !== 404) throw error;
+              console.log('No previous nightly release found');
+            }
+
+            try {
+              await github.rest.git.deleteRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: 'tags/nightly'
+              });
+              console.log('Deleted previous nightly tag');
+            } catch (error) {
+              if (error.status !== 422) throw error;
+              console.log('No previous nightly tag found');
+            }
+
+            // target_commitish from the draft is kept, so the new tag lands on the built commit
             const { data: updatedRelease } = await github.rest.repos.updateRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
               release_id: process.env.RELEASE_ID,
+              tag_name: 'nightly',
               draft: false,
               prerelease: true
             });

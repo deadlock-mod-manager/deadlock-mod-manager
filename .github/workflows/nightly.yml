@@ -193,39 +193,12 @@ jobs:
           echo "$COMMIT_LIST" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      - name: Delete previous nightly release and tag
+      # The previous nightly stays published until publish-nightly in
+      # sign-nightly-windows.yml swaps the new draft onto the nightly tag.
+      - name: Delete stale draft nightly releases
         uses: actions/github-script@v9
         with:
           script: |
-            try {
-              const { data: release } = await github.rest.repos.getReleaseByTag({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                tag: 'nightly'
-              });
-              console.log(`Deleting previous nightly release: ${release.id}`);
-              await github.rest.repos.deleteRelease({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                release_id: release.id
-              });
-            } catch (error) {
-              if (error.status !== 404) throw error;
-              console.log('No previous nightly release found');
-            }
-
-            try {
-              await github.rest.git.deleteRef({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                ref: 'tags/nightly'
-              });
-              console.log('Deleted previous nightly tag');
-            } catch (error) {
-              if (error.status !== 422) throw error;
-              console.log('No previous nightly tag found');
-            }
-
             // Sweep any stale draft Nightly releases left behind by previously cancelled/killed runs
             let page = 1;
             while (true) {
@@ -285,7 +258,8 @@ jobs:
             const { data } = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              tag_name: 'nightly',
+              // Renamed to 'nightly' on publish. Drafts don't create their tag.
+              tag_name: `nightly-${nightlyVersion}`,
               target_commitish: context.sha,
               name: `Nightly ${nightlyVersion}`,
               body: releaseBody,
