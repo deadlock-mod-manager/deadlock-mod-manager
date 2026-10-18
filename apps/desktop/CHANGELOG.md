@@ -68,6 +68,15 @@
 
 ### Patch Changes
 
+- 5382703: Add Enable all mods to the library menu, with a recap of what was enabled, skipped or failed and a button to finish each one
+- 2628eea: Smoke test Wry and CEF Flatpak bundles before publishing releases
+- 344c40e: Cancel a launch from the launch overlay or the toolbar instead of waiting up to three minutes for Deadlock to start
+- 2628eea: Use packaged protocol associations for Flatpak deep links
+- c9cfea6: Read the live GameBanana file list in Manage files, show download progress while applying, and show the real error when a file cannot be fetched
+- 2025231: Open Manage files for mods that ship several VPKs, so their files can be turned on and off from the library as well as the mod page, alongside variants
+- 5f0b3b6: Add optional minimize to tray and close to tray, with a tray icon to restore or quit the app
+- fa994af: Fix mod updates failing with "GameBanana file was not found" after an author replaces their files
+- 2a4b721: Keep the new install date for every mod after a batch update, so updated mods stop showing as outdated
 - 861b13c: Align Settings switches across rows and window sizes; titles no longer toggle
 - d45d8ad: Reinstalling a mod whose files were deleted outside the app now installs it again instead of leaving it only downloaded
 - 64eb750: Close the variant picker on backdrop click instead of opening the mod page.
