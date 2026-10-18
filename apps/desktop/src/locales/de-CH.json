@@ -3769,7 +3769,11 @@
     "lastupdated": "Zletsccht aktualisiert",
     "downloadcount": "Download-Azahl",
     "rating": "Bewertig",
-    "releasedate": "Veröffentlichs Datum"
+    "releasedate": "Veröffentlichs Datum",
+    "installorder": "",
+    "hero": "",
+    "name": "",
+    "recentlyadded": ""
   },
   "timePeriod": {
     "alltime": "",

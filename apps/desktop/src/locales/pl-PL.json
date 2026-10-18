@@ -3769,7 +3769,11 @@
     "lastupdated": "Ostatnio zaktualizowane",
     "downloadcount": "Liczba Pobrań",
     "rating": "Ocena",
-    "releasedate": "Data Wydania"
+    "releasedate": "Data Wydania",
+    "installorder": "",
+    "hero": "",
+    "name": "",
+    "recentlyadded": ""
   },
   "timePeriod": {
     "alltime": "Wszystkie",

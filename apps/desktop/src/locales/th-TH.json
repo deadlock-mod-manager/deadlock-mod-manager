@@ -3769,7 +3769,11 @@
     "lastupdated": "อัปเดตล่าสุด",
     "downloadcount": "จำนวนดาวน์โหลด",
     "rating": "คะแนน",
-    "releasedate": "วันที่เผยแพร่"
+    "releasedate": "วันที่เผยแพร่",
+    "installorder": "",
+    "hero": "",
+    "name": "",
+    "recentlyadded": ""
   },
   "timePeriod": {
     "alltime": "",

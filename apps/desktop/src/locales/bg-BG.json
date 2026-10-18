@@ -3769,7 +3769,11 @@
     "lastupdated": "Последно актуализирано",
     "downloadcount": "Брой изтегляния",
     "rating": "Оценка",
-    "releasedate": "Дата на издаване"
+    "releasedate": "Дата на издаване",
+    "installorder": "",
+    "hero": "",
+    "name": "",
+    "recentlyadded": ""
   },
   "timePeriod": {
     "alltime": "",

@@ -3769,7 +3769,11 @@
     "lastupdated": "마지막 업데이트",
     "downloadcount": "다운로드 횟수",
     "rating": "평가",
-    "releasedate": "출시일"
+    "releasedate": "출시일",
+    "installorder": "",
+    "hero": "",
+    "name": "",
+    "recentlyadded": ""
   },
   "timePeriod": {
     "alltime": "모든 시간",
