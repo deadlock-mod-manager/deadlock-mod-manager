@@ -27,6 +27,65 @@ fn is_nvidia_gpu_present() -> bool {
   false
 }
 
+/// Kernel drivers of the GPUs that have a connected display, e.g. `["amdgpu"]`.
+#[cfg(target_os = "linux")]
+fn display_drivers(drm_dir: &std::path::Path) -> Vec<String> {
+  let mut drivers = Vec::new();
+  let Ok(entries) = std::fs::read_dir(drm_dir) else {
+    return drivers;
+  };
+
+  for entry in entries.flatten() {
+    let name = entry.file_name().to_string_lossy().into_owned();
+    // Connectors are named like `card1-eDP-1`; the card itself is `card1`.
+    let Some((card, _)) = name.split_once('-') else {
+      continue;
+    };
+    if !card.starts_with("card") {
+      continue;
+    }
+    let connected = std::fs::read_to_string(entry.path().join("status"))
+      .is_ok_and(|status| status.trim() == "connected");
+    if !connected {
+      continue;
+    }
+    if let Ok(driver) = std::fs::read_link(drm_dir.join(card).join("device").join("driver"))
+      && let Some(driver) = driver.file_name()
+    {
+      let driver = driver.to_string_lossy().into_owned();
+      if !drivers.contains(&driver) {
+        drivers.push(driver);
+      }
+    }
+  }
+
+  drivers
+}
+
+/// Whether the webview will be drawn by an NVIDIA GPU. On hybrid laptops the
+/// NVIDIA card is present but idle, so only the GPU driving the screens counts.
+#[cfg(target_os = "linux")]
+fn nvidia_renders_webview() -> bool {
+  let prime_offload = std::env::var_os("__NV_PRIME_RENDER_OFFLOAD").is_some()
+    || std::env::var("__GLX_VENDOR_LIBRARY_NAME").is_ok_and(|vendor| vendor == "nvidia");
+  if prime_offload {
+    eprintln!("[GPU Compat] NVIDIA PRIME render offload requested");
+    return true;
+  }
+
+  let drivers = display_drivers(std::path::Path::new("/sys/class/drm"));
+  if drivers.is_empty() {
+    // nvidia-drm without modeset exposes no connectors, so fall back to presence.
+    eprintln!("[GPU Compat] Could not tell which GPU drives the displays");
+    return is_nvidia_gpu_present();
+  }
+
+  eprintln!("[GPU Compat] Displays are driven by {drivers:?}");
+  drivers
+    .iter()
+    .any(|driver| driver == "nvidia" || driver == "nouveau")
+}
+
 #[cfg(target_os = "linux")]
 fn read_gpu_compat_setting() -> String {
   let data_dir = match std::env::var_os("XDG_DATA_HOME")
@@ -98,6 +157,13 @@ fn should_enable_gpu_compat_workaround() -> bool {
     return false;
   }
 
+  if let Ok(value) = std::env::var("WEBKIT_DISABLE_DMABUF_RENDERER") {
+    eprintln!(
+      "[GPU Compat] WEBKIT_DISABLE_DMABUF_RENDERER={value} set in the environment, leaving it"
+    );
+    return false;
+  }
+
   let setting = read_gpu_compat_setting();
   eprintln!("[GPU Compat] Setting value: '{setting}'");
 
@@ -113,7 +179,7 @@ fn should_enable_gpu_compat_workaround() -> bool {
     _ => {
       let session_type = std::env::var("XDG_SESSION_TYPE").unwrap_or_default();
       eprintln!("[GPU Compat] Auto-detecting NVIDIA on {session_type}...");
-      is_nvidia_gpu_present()
+      nvidia_renders_webview()
     }
   }
 }
