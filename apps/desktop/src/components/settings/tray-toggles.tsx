@@ -1,11 +1,11 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useMutation } from "@tanstack/react-query";
+import { platform } from "@tauri-apps/plugin-os";
 import { useTranslation } from "react-i18next";
 import { SettingToggleRow } from "@/components/settings/setting-row";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { applyTrayBehavior, type TrayBehavior } from "@/lib/tray";
-import { isTauriError } from "@/types/tauri";
 
 export const TrayToggles = () => {
   const { t } = useTranslation();
@@ -21,16 +21,15 @@ export const TrayToggles = () => {
     },
     onError: (error) => {
       logger.withError(error).error("Failed to sync the tray settings");
-      toast.error(
-        isTauriError(error) && error.kind === "trayUnavailable"
-          ? t("settings.trayUnavailable")
-          : t("settings.traySyncFailed"),
-      );
+      toast.error(t("settings.traySyncFailed"));
     },
   });
 
   const update = (change: Partial<TrayBehavior>) =>
     toggleMutation.mutate({ minimizeToTray, closeToTray, ...change });
+
+  // The Linux build has no tray, see tray_linux.rs
+  if (platform() === "linux") return null;
 
   return (
     <>

@@ -39,7 +39,6 @@
     "packages/perf-catalog/data/catalog.json",
     "packages/kv-parser/src-rs/generated/**",
     "apps/docs/.source/**",
-    "apps/desktop/flatpak/shared-modules/**",
     "infrastructure/templates/**"
   ]
 }

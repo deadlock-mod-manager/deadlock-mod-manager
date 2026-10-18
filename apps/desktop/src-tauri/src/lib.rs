@@ -33,6 +33,7 @@ pub mod proxy;
 mod reports;
 pub mod runtime_environment;
 mod steam_user;
+#[cfg_attr(target_os = "linux", path = "tray_linux.rs")]
 mod tray;
 mod updater_channel;
 mod utils;

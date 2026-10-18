@@ -3397,7 +3397,6 @@
     "closeToTray": "Close to system tray",
     "closeToTrayDescription": "Closing the window keeps the mod manager running in the tray. Use Quit from the tray icon's menu to exit.",
     "traySyncFailed": "Could not change the tray setting. Try again.",
-    "trayUnavailable": "The system tray needs libayatana-appindicator. Install it, then try again.",
     "autoResetGameinfo": "Restore vanilla game config when Deadlock closes",
     "autoResetGameinfoDescription": "Removes the mod paths from gameinfo.gi after you quit, so launching from Steam starts the game without mods. Launching modded from here adds them back. Only works while the mod manager is open.",
     "autoResetGameinfoSuccess": "Deadlock closed. Game config restored to vanilla.",

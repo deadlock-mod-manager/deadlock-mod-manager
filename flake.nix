@@ -58,7 +58,7 @@
           openssl
           librsvg
           libsoup_3
-          # Tray icon, loaded at runtime
+          # tauri-cli looks it up at build time
           libayatana-appindicator
           # GStreamer for media playback
           gst_all_1.gstreamer

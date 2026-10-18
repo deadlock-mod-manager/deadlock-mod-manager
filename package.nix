@@ -36,7 +36,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
   cargoRoot = "apps/desktop";
   buildAndTestSubdir = finalAttrs.cargoRoot;
 
-  cargoHash = "sha256-400mLF5wcqYXci43g29I2JpleZi0nj3yl3aqwWhYXSk=";
+  cargoHash = "sha256-ZUuWJdIt6/CJgYF2HmDFJ9/F0wWRMDkRhf6f+An0eME=";
 
   nativeBuildInputs = [
     rustPlatform.cargoSetupHook cargo-tauri.hook nodejs
@@ -56,6 +56,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     glib-networking
     gtk3
     libsoup_3
+    # Only for tauri-cli's build-time lookup; the Linux build has no tray
     libayatana-appindicator
     pango
 
@@ -102,7 +103,6 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
       --set DISABLE_UPDATE_DESKTOP_DATABASE 1
       --prefix PATH : ${lib.makeBinPath [ desktop-file-utils ]}
-      --prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath [ libayatana-appindicator ]}
       --add-flags "--disable-auto-update"
     )
   '';

@@ -38,22 +38,7 @@ fn quit(app: &AppHandle) {
   }
 }
 
-/// libappindicator panics when it can't load either library, and release builds
-/// abort on panic, so check first and report a normal error instead.
-#[cfg(target_os = "linux")]
-fn appindicator_available() -> bool {
-  ["libayatana-appindicator3.so.1", "libappindicator3.so.1"]
-    .iter()
-    // SAFETY: these are the same system libraries libappindicator-sys loads.
-    .any(|name| unsafe { libloading::Library::new(name) }.is_ok())
-}
-
-fn build_tray(app: &AppHandle) -> Result<(), Error> {
-  #[cfg(target_os = "linux")]
-  if !appindicator_available() {
-    return Err(Error::TrayUnavailable);
-  }
-
+fn build_tray(app: &AppHandle) -> tauri::Result<()> {
   let show = MenuItem::with_id(
     app,
     MENU_SHOW,
