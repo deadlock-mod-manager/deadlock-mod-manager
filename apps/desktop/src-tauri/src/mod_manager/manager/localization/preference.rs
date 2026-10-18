@@ -1,7 +1,5 @@
-use super::receipt::REPAIR_REVISION;
 use super::*;
-use crate::mod_manager::mod_health::HealthKey;
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 
 impl ModManager {
   pub fn mod_compatibility_settings(
@@ -40,25 +38,22 @@ impl ModManager {
     if self.is_game_running()? {
       return Err(Error::GameRunning);
     }
-    if self.write_mod_compatibility(&[mod_id], enabled, false, profile_folder.as_deref())? {
+    if self.write_mod_compatibility(&[mod_id], enabled, profile_folder.as_deref())? {
       self.apply_profile_gameinfo(profile_folder)?;
     }
     Ok(())
   }
 
   /// Saves the choice for every listed mod in one manifest write. Turning
-  /// compatibility off records that the player chose the original files and
-  /// drops any accepted findings; `accept_findings` records acceptance of the
-  /// mods' current files. Returns whether the set of repaired mods changed.
+  /// compatibility off records that the player chose the original files.
+  /// Returns whether the set of repaired mods changed.
   pub(super) fn write_mod_compatibility(
     &self,
     mod_ids: &[String],
     enabled: bool,
-    accept_findings: bool,
     profile_folder: Option<&str>,
   ) -> Result<bool, Error> {
     let base = self.get_addons_path(profile_folder)?;
-    let game_build = history::version(&self.citadel_path()?);
     let mut manifest = ProfileVpkManifest::open_for_write(&base)?;
     let mut scope_changed = false;
     let mut changed = false;
@@ -68,19 +63,10 @@ impl ModManager {
           "Install mod {mod_id} before changing compatibility"
         ))
       })?;
-      let accepted = if accept_findings {
-        HealthKey::stamp(&entry.file_paths(&base), game_build, REPAIR_REVISION).ok()
-      } else if enabled {
-        entry.compatibility_accepted.clone()
-      } else {
-        None
-      };
       scope_changed |= entry.compatibility_enabled != enabled;
-      changed |=
-        entry.compatibility_opted_out == enabled || entry.compatibility_accepted != accepted;
+      changed |= entry.compatibility_opted_out == enabled;
       entry.compatibility_enabled = enabled;
       entry.compatibility_opted_out = !enabled;
-      entry.compatibility_accepted = accepted;
     }
     if !scope_changed {
       if changed {
@@ -98,31 +84,5 @@ impl ModManager {
       .map_err(|_| Error::BackgroundTaskFailed("Localization plan cache poisoned".into()))?
       .take();
     Ok(true)
-  }
-
-  /// Mods whose recorded acceptance still matches their files, the game build,
-  /// and the repair rules.
-  pub(super) fn accepted_mod_ids(
-    &self,
-    profile_folder: Option<&str>,
-  ) -> Result<BTreeSet<String>, Error> {
-    let base = self.get_addons_path(profile_folder)?;
-    let game_build = history::version(&self.citadel_path()?);
-    Ok(
-      ProfileVpkManifest::load(&base)?
-        .mods
-        .into_iter()
-        .filter(|(_, entry)| {
-          entry
-            .compatibility_accepted
-            .as_ref()
-            .is_some_and(|accepted| {
-              HealthKey::stamp(&entry.file_paths(&base), game_build, REPAIR_REVISION)
-                .is_ok_and(|current| current == *accepted)
-            })
-        })
-        .map(|(id, _)| id)
-        .collect(),
-    )
   }
 }

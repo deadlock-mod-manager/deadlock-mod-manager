@@ -40,11 +40,6 @@ pub struct ProfileVpkManifestEntry {
   /// decision that bulk fixes must respect.
   #[serde(default)]
   pub compatibility_opted_out: bool,
-  /// Set when the player fixed this mod, accepting the asset and data findings
-  /// its repairs leave. Valid only while the key still matches the mod's files,
-  /// the game build, and the repair rules.
-  #[serde(default)]
-  pub compatibility_accepted: Option<crate::mod_manager::mod_health::HealthKey>,
   #[serde(default)]
   pub order: Option<u32>,
   /// 1-based shard index the enabled VPKs of this mod currently live in.
@@ -65,7 +60,6 @@ impl Default for ProfileVpkManifestEntry {
       enabled: false,
       compatibility_enabled: false,
       compatibility_opted_out: false,
-      compatibility_accepted: None,
       order: None,
       shard: default_shard(),
       current_vpks: Vec::new(),

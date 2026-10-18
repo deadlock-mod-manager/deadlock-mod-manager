@@ -68,22 +68,20 @@ Each mod has one of three choices, stored per profile in its profile VPK
 manifest entry:
 
 - No choice, the default for existing and new mods. Repairs are not applied.
-- Fixed: `compatibilityEnabled` is set, and `compatibilityAccepted` records the
-  mod's file stamps, game build, and repair revision at the time of fixing.
+- Fixed: `compatibilityEnabled` is set.
 - Original files: `compatibilityOptedOut` records that the player chose the
   mod's original files. Bulk and automatic fixes skip these mods.
 
 `fix_mods` sets the fixed choice for exactly the listed mods, clearing any
 earlier choice of original files, and prepares the overlay the way launch does.
 It returns `applied`, or `reviewRequired` when something still needs review; the
-choices stay saved either way. Because fixing accepts the mod's remaining
-warnings, the bulk paths (**Fix N mods**, **Fix all** and the launch preflight)
-skip mods whose remaining symptoms include crash risk; those are only fixed one
-at a time. **Fix N mods** and **Fix all** in Mods Library, **Fix** in the
+choices stay saved either way. The bulk paths (**Fix N mods**, **Fix all** and
+the launch preflight) skip mods whose remaining symptoms include model data
+issues, so the player sees those issues before fixing such a mod. **Fix N mods** and **Fix all** in Mods Library, **Fix** in the
 details list, **Fix for this patch** in the right-click menu and on the mod
 page, and the launch preflight all call it. **Use original files**
 calls `set_mod_compatibility_for_mod` with `enabled: false`, which records the
-original-files choice and drops the acceptance.
+original-files choice.
 
 Disabling or reordering a mod keeps its choice. When the set of fixed mods
 changes, the manager deletes the active profile's overlay and receipt, clears
@@ -117,12 +115,9 @@ before staging files.
 
 ## Review before launch
 
-Fixing a mod accepts that mod's own asset and data findings for its current
-files. Acceptance holds only while the stamp in `compatibilityAccepted` matches
-the mod's files, the game build, and `REPAIR_REVISION`, so review can return
-after any of those change.
-
-`requires_review` pauses launch for:
+A mod's own asset and data findings describe that mod whether or not it is
+repaired, so mod health reports them and they never pause launch.
+`requires_review` pauses launch only for:
 
 - Conflicts between enabled mods: localization and compiled game-data
   conflicts, competing definitions, and overlapping models, including variants
@@ -130,10 +125,10 @@ after any of those change.
 - Baselines that are not an exact historical match
 - Mods whose files are all missing, localization files that could not be parsed,
   and stale localization snapshots
-- Asset or data findings of a fixed mod whose current files are not accepted
 
-Unmanaged VPKs, protected and shared resources, and warnings on models that
-nothing loaded references are reported in review without pausing launch.
+Unmanaged VPKs, protected and shared resources, and every other finding are
+listed in review when it opens, without pausing launch on their own. When review
+is needed, launch caches the plan it built so the dialog does not rebuild it.
 
 Approving the review writes the reviewed plan and retries launch once; closing
 the dialog cancels launch. Warnings are preserved and do not imply that every

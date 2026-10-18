@@ -233,9 +233,6 @@ pub struct LocalizationOverlayAnalysis {
   /// Hero camera, animation and model-mapping warnings on them stay listed
   /// but neither pause launch nor affect mod health.
   pub prop_models: Vec<String>,
-  /// Fixed mods whose own asset and data findings the player accepted. Those
-  /// findings stay listed but no longer pause launch.
-  pub accepted_mod_ids: Vec<String>,
   pub data_repairs: Vec<vdata_compatibility::DataRepair>,
   pub data_warnings: Vec<vdata_compatibility::DataWarning>,
   pub baselines: Vec<CompiledDataBaseline>,
@@ -939,7 +936,6 @@ impl LocalizationOverlayPlan {
         asset_warnings,
         unloaded_models,
         prop_models,
-        accepted_mod_ids: Vec::new(),
         data_repairs,
         data_warnings,
         baselines,

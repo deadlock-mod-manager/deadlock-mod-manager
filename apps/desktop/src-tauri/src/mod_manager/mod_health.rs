@@ -189,8 +189,8 @@ fn is_missing_texture(warning: &AssetWarning) -> bool {
     && (target.ends_with(".vtex") || target.ends_with(".vtex_c"))
 }
 
-/// Warnings that stay listed in review but neither pause launch nor mark a mod
-/// as needing an update. Missing textures and shader differences only change
+/// Warnings that stay listed in review but don't mark a mod as needing an
+/// update. Missing textures and shader differences only change
 /// looks. Retired `.vanmgrph` graphs are what animation includes still name
 /// after an update; a primary model that really lost its animations reports
 /// `MissingAnimationInterface` as well. Portrait attachments only frame the HUD
@@ -207,10 +207,9 @@ fn is_informational(warning: &AssetWarning) -> bool {
   }
 }
 
-/// Whether a loaded asset warning pauses launch and marks the mod as needing
-/// an update. A prop model, such as a particle's model, never acts as a hero,
+/// Whether a loaded asset warning marks the mod as needing an update. A prop model, such as a particle's model, never acts as a hero,
 /// so hero interface warnings do not apply.
-pub(crate) fn affects_mod(analysis: &LocalizationOverlayAnalysis, warning: &AssetWarning) -> bool {
+fn affects_mod(analysis: &LocalizationOverlayAnalysis, warning: &AssetWarning) -> bool {
   !is_informational(warning)
     && !(analysis.prop_models.contains(&warning.file_path)
       && matches!(

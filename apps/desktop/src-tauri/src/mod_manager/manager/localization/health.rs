@@ -67,7 +67,7 @@ impl ModManager {
     if self.is_game_running()? {
       return Err(Error::GameRunning);
     }
-    self.write_mod_compatibility(&mod_ids, true, true, profile_folder.as_deref())?;
+    self.write_mod_compatibility(&mod_ids, true, profile_folder.as_deref())?;
     let status = match self.ensure_localization_overlay_for_launch(profile_folder.as_deref()) {
       Ok(()) => FixModsStatus::Applied,
       Err(Error::ModDataReviewRequired) => FixModsStatus::ReviewRequired,

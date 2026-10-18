@@ -229,13 +229,7 @@ impl ModManager {
       Some(plan) => plan,
       None => build_overlay_plan(&citadel_dir, &inputs, &mut key)?,
     };
-    let analysis = plan.analyze(resolutions).and_then(|mut analysis| {
-      analysis.accepted_mod_ids = self
-        .accepted_mod_ids(profile_folder.as_deref())?
-        .into_iter()
-        .collect();
-      Ok(analysis)
-    });
+    let analysis = plan.analyze(resolutions);
     self
       .localization_overlay_plan_cache
       .lock()
@@ -343,8 +337,13 @@ impl ModManager {
     if let Err(error) = self.record_launch_health(profile_folder, &plan.analysis) {
       log::warn!("Could not record mod health from the launch analysis: {error}");
     }
-    let accepted = self.accepted_mod_ids(profile_folder)?;
-    if requires_review(&plan.analysis, &accepted) && reviewed.is_none() {
+    if requires_review(&plan.analysis) && reviewed.is_none() {
+      // The review dialog analyzes the same inputs next; hand it this plan.
+      self
+        .localization_overlay_plan_cache
+        .lock()
+        .map_err(|_| Error::BackgroundTaskFailed("Localization plan cache poisoned".into()))?
+        .replace(CachedLocalizationOverlayPlan { key, plan });
       return Err(Error::ModDataReviewRequired);
     }
     let resolutions = reviewed
@@ -437,15 +436,11 @@ fn build_overlay_plan(
   Ok(plan)
 }
 
-/// Unmanaged archives, protected resources, informational warnings and
-/// warnings on models nothing loads are reported in review without pausing
-/// launch. So are a fixed mod's
-/// own asset and data findings, except model overlaps and competing
-/// definitions, which involve other mods.
-fn requires_review(
-  analysis: &LocalizationOverlayAnalysis,
-  accepted: &std::collections::BTreeSet<String>,
-) -> bool {
+/// Launch pauses only for choices between mods and for inputs that could not
+/// be read or matched. A mod's own asset and data findings describe that mod
+/// whether or not it is repaired, so mod health reports them instead; model
+/// overlaps and competing definitions involve other mods and still pause.
+fn requires_review(analysis: &LocalizationOverlayAnalysis) -> bool {
   use crate::mod_manager::localization_overlay::asset_compatibility::WarningKind;
   use crate::mod_manager::localization_overlay::vdata_compatibility::WarningReason;
   use crate::mod_manager::vdata_history::BaselineStatus;
@@ -459,14 +454,13 @@ fn requires_review(
     || !analysis.snapshot_warnings.is_empty()
     || !analysis.parse_warnings.is_empty()
     || analysis.asset_warnings.iter().any(|warning| {
-      !analysis.unloaded_models.contains(&warning.file_path)
-        && crate::mod_manager::mod_health::affects_mod(analysis, warning)
-        && (warning.kind == WarningKind::OverlappingModel || !accepted.contains(&warning.mod_id))
+      warning.kind == WarningKind::OverlappingModel
+        && !analysis.unloaded_models.contains(&warning.file_path)
     })
-    || analysis.data_warnings.iter().any(|warning| {
-      matches!(warning.reason, WarningReason::CompetingDefinitions)
-        || !accepted.contains(&warning.mod_id)
-    })
+    || analysis
+      .data_warnings
+      .iter()
+      .any(|warning| matches!(warning.reason, WarningReason::CompetingDefinitions))
 }
 
 fn game_archive_stamps(directory: &Path) -> Result<Vec<LocalizationInputStamp>, Error> {
@@ -814,7 +808,7 @@ mod tests {
       "A newly mounted archive must invalidate a reviewed overlay even without a manifest entry"
     );
     assert_eq!(after.scanned_vpks, 1);
-    assert!(!requires_review(&after, &Default::default()));
+    assert!(!requires_review(&after));
     assert_eq!(after.unmanaged_vpks[0].file_path, "pak01_dir.vpk");
     let output = manager.localization_overlay_vpk_path(None).unwrap();
     fs::create_dir_all(output.parent().unwrap()).unwrap();
@@ -1130,7 +1124,7 @@ mod tests {
     manifest.save(&base).unwrap();
     let before = manager.analyze_localization_overlay(None, &[]).unwrap();
     assert_eq!(before.input_warnings.len(), 1);
-    assert!(requires_review(&before, &Default::default()));
+    assert!(requires_review(&before));
     write_test_vpk(&base.join("pak01_dir.vpk"));
     let after = manager.analyze_localization_overlay(None, &[]).unwrap();
     assert!(after.input_warnings.is_empty());
@@ -1382,7 +1376,7 @@ Game core
     assert_eq!(analysis.protected_resources.len(), 1);
     assert!(analysis.asset_warnings.is_empty());
     assert!(analysis.parse_warnings.is_empty());
-    assert!(!requires_review(&analysis, &Default::default()));
+    assert!(!requires_review(&analysis));
     manager
       .prepare_localization_overlay_for_launch(None, true)
       .unwrap();
@@ -1544,7 +1538,7 @@ Game core
   }
 
   #[test]
-  fn fixing_accepts_the_mods_findings_until_its_files_or_the_game_change() {
+  fn a_mods_own_findings_do_not_pause_launch() {
     let temp = tempfile::tempdir().unwrap();
     let mut manager = manager_with_gameinfo(temp.path());
     let citadel = temp.path().join("game/citadel");
@@ -1569,74 +1563,15 @@ Game core
       .unwrap();
     let analysis = manager.analyze_localization_overlay(None, &[]).unwrap();
     assert!(!analysis.asset_warnings.is_empty());
-    assert!(analysis.accepted_mod_ids.is_empty());
-    assert!(matches!(
-      manager.ensure_localization_overlay_for_launch(None),
-      Err(Error::ModDataReviewRequired)
-    ));
-
-    let result = manager.fix_mods(None, vec!["skin".into()]).unwrap();
-    assert_eq!(result.status, FixModsStatus::Applied);
-    assert_eq!(
-      manager
-        .analyze_localization_overlay(None, &[])
-        .unwrap()
-        .accepted_mod_ids,
-      ["skin"]
-    );
-
-    write_test_vpk(&base.join("pak02_dir.vpk"));
-    let mut manifest = ProfileVpkManifest::load(&base).unwrap();
-    manifest.mark_enabled(
-      "other",
-      vec!["pak02_dir.vpk".into()],
-      vec![],
-      None,
-      ShardIndex::FIRST,
-    );
-    manifest.save(&base).unwrap();
     manager
       .ensure_localization_overlay_for_launch(None)
-      .expect("another mod changing must not reopen accepted findings");
-
-    write_vpk(
-      &base.join("pak01_dir.vpk"),
-      &[(model, b"updated outdated model")],
-    );
-    assert!(matches!(
-      manager.ensure_localization_overlay_for_launch(None),
-      Err(Error::ModDataReviewRequired)
-    ));
+      .expect("a mod's own findings are reported by mod health, not review");
     let result = manager.fix_mods(None, vec!["skin".into()]).unwrap();
     assert_eq!(result.status, FixModsStatus::Applied);
-
-    fs::write(citadel.join("steam.inf"), b"ClientVersion=2\n").unwrap();
-    assert!(matches!(
-      manager.ensure_localization_overlay_for_launch(None),
-      Err(Error::ModDataReviewRequired)
-    ));
-    let result = manager.fix_mods(None, vec!["skin".into()]).unwrap();
-    assert_eq!(result.status, FixModsStatus::Applied);
-
-    manager
-      .set_mod_compatibility_for_mod("skin".into(), false, None)
-      .unwrap();
-    assert!(
-      ProfileVpkManifest::load(&base).unwrap().mods["skin"]
-        .compatibility_accepted
-        .is_none()
-    );
-    manager
-      .set_mod_compatibility_for_mod("skin".into(), true, None)
-      .unwrap();
-    assert!(matches!(
-      manager.ensure_localization_overlay_for_launch(None),
-      Err(Error::ModDataReviewRequired)
-    ));
   }
 
   #[test]
-  fn fixing_does_not_accept_conflicts_between_mods() {
+  fn conflicts_between_mods_pause_launch_and_hand_the_plan_to_review() {
     let temp = tempfile::tempdir().unwrap();
     let mut manager = manager_with_gameinfo(temp.path());
     let base = manager.get_addons_path(None).unwrap();
@@ -1664,7 +1599,20 @@ Game core
     assert_eq!(result.status, FixModsStatus::ReviewRequired);
     let analysis = manager.analyze_localization_overlay(None, &[]).unwrap();
     assert_eq!(analysis.conflicts.len(), 1);
-    assert_eq!(analysis.accepted_mod_ids, ["first", "second"]);
+
+    manager.invalidate_localization_overlay(None);
+    assert!(matches!(
+      manager.ensure_localization_overlay_for_launch(None),
+      Err(Error::ModDataReviewRequired)
+    ));
+    assert!(
+      manager
+        .localization_overlay_plan_cache
+        .lock()
+        .unwrap()
+        .is_some(),
+      "the review dialog reuses the plan launch built"
+    );
   }
 
   #[test]
