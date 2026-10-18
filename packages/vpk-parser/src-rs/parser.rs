@@ -5,12 +5,14 @@ use crate::{
 use chrono::{DateTime, Utc};
 use sha2::{Digest, Sha256};
 use std::collections::HashSet;
+use std::fs::File;
 use std::hash::Hasher;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::Path;
 use twox_hash::XxHash64;
 
 const VPK_SIGNATURE: u32 = 0x55aa1234;
+const HASH_CHUNK_SIZE: usize = 1024 * 1024;
 
 pub struct VpkParser {
     buffer: Vec<u8>,
@@ -38,8 +40,29 @@ impl VpkParser {
 
     /// Reads directory metadata and the inline prefix of each entry without loading archive payloads.
     pub fn parse_directory_with_preload_from_file(path: &Path) -> Result<Vec<(VpkEntry, Vec<u8>)>> {
-        let mut file = std::fs::File::open(path)?;
+        let mut file = File::open(path)?;
+        let mut parser = Self::new(Self::read_directory_bytes(&mut file)?);
+        let header = parser.parse_header()?;
+        let tree_start = parser.cursor;
+        parser.parse_directory_tree_with_preload(tree_start, header.tree_length as usize)
+    }
 
+    /// Parses a VPK on disk, hashing its contents in chunks so memory use
+    /// stays at the size of the directory tree instead of the whole file.
+    pub fn parse_file(path: &Path, options: VpkParseOptions) -> Result<VpkParsed> {
+        let mut file = File::open(path)?;
+        let mut parser = Self::new(Self::read_directory_bytes(&mut file)?);
+        let header = parser.parse_header()?;
+        let tree_start = parser.cursor;
+        let entries = parser.parse_directory_tree(tree_start, header.tree_length as usize)?;
+
+        file.seek(SeekFrom::Start(0))?;
+        let hashes = ContentHashes::of_reader(&mut file)?;
+        parser.build_parsed(header, entries, hashes, options)
+    }
+
+    /// Reads the header and directory tree, the only part of a VPK the parser walks.
+    fn read_directory_bytes(file: &mut File) -> Result<Vec<u8>> {
         let mut header_buf = [0u8; 28];
         file.read_exact(&mut header_buf[..12])?;
 
@@ -84,30 +107,37 @@ impl VpkParser {
         let mut tree_buf = vec![0u8; total];
         file.seek(SeekFrom::Start(0))?;
         file.read_exact(&mut tree_buf)?;
-
-        let mut parser = Self::new(tree_buf);
-        parser.cursor = header_size;
-        parser.parse_directory_tree_with_preload(header_size, tree_length as usize)
+        Ok(tree_buf)
     }
 
     fn parse_internal(&mut self, options: VpkParseOptions) -> Result<VpkParsed> {
         let header = self.parse_header()?;
         let tree_start = self.cursor;
         let entries = self.parse_directory_tree(tree_start, header.tree_length as usize)?;
+        let hashes = ContentHashes::of_bytes(&self.buffer);
+        self.build_parsed(header, entries, hashes, options)
+    }
+
+    fn build_parsed(
+        &self,
+        header: VpkHeader,
+        entries: Vec<VpkEntry>,
+        hashes: ContentHashes,
+        options: VpkParseOptions,
+    ) -> Result<VpkParsed> {
         let manifest_sha256 = self.generate_manifest_hash(&entries);
+        let dir_sha256 = options
+            .include_full_file_hash
+            .then(|| hashes.sha256.clone());
 
         let fingerprint = self.generate_fingerprint(
             &entries,
+            &header,
+            hashes,
             &options.file_path,
             options.last_modified,
             options.include_merkle,
-        )?;
-
-        let dir_sha256 = if options.include_full_file_hash {
-            Some(self.generate_sha256_hash()?)
-        } else {
-            None
-        };
+        );
 
         // Only include entries if requested
         let final_entries = if options.include_entries {
@@ -330,15 +360,14 @@ impl VpkParser {
     fn generate_fingerprint(
         &self,
         entries: &[VpkEntry],
+        header: &VpkHeader,
+        hashes: ContentHashes,
         file_path: &str,
         last_modified: Option<DateTime<Utc>>,
         include_merkle: bool,
-    ) -> Result<VpkFingerprint> {
+    ) -> VpkFingerprint {
         let has_multiparts = self.detect_multiparts(entries);
         let has_inline_data = self.detect_inline_data(entries);
-
-        let fast_hash = self.generate_fast_hash()?;
-        let sha256 = self.generate_sha256_hash()?;
         let content_signature = self.generate_content_signature(entries);
 
         let (merkle_root, merkle_leaves) = if include_merkle {
@@ -348,33 +377,20 @@ impl VpkParser {
             (None, None)
         };
 
-        Ok(VpkFingerprint {
+        VpkFingerprint {
             file_path: file_path.to_string(),
-            file_size: self.buffer.len(),
+            file_size: hashes.size,
             last_modified: last_modified.map(|dt| dt.to_rfc3339()),
-            fast_hash,
-            sha256,
+            fast_hash: hashes.fast_hash,
+            sha256: hashes.sha256,
             content_signature,
-            vpk_version: self.get_vpk_version(),
+            vpk_version: header.version,
             file_count: entries.len(),
             has_multiparts,
             has_inline_data,
             merkle_root,
             merkle_leaves,
-        })
-    }
-
-    fn generate_fast_hash(&self) -> Result<String> {
-        let mut hasher = XxHash64::with_seed(0);
-        hasher.write(&self.buffer);
-        let hash = hasher.finish();
-        Ok(format!("{:016x}", hash))
-    }
-
-    fn generate_sha256_hash(&self) -> Result<String> {
-        let mut hasher = Sha256::new();
-        hasher.update(&self.buffer);
-        Ok(format!("{:x}", hasher.finalize()))
+        }
     }
 
     fn generate_content_signature(&self, entries: &[VpkEntry]) -> String {
@@ -439,18 +455,6 @@ impl VpkParser {
         MerkleData { root, leaves }
     }
 
-    fn get_vpk_version(&self) -> u32 {
-        if self.buffer.len() < 8 {
-            return 1;
-        }
-        u32::from_le_bytes([
-            self.buffer[4],
-            self.buffer[5],
-            self.buffer[6],
-            self.buffer[7],
-        ])
-    }
-
     fn detect_multiparts(&self, entries: &[VpkEntry]) -> bool {
         entries
             .iter()
@@ -512,5 +516,106 @@ impl VpkParser {
             Ok(s) => Ok(s),
             Err(_) => Ok(string_bytes.iter().map(|&b| b as char).collect()),
         }
+    }
+}
+
+/// Whole-file hashes, computed in one pass over either a buffer or a reader.
+struct ContentHashes {
+    size: usize,
+    fast_hash: String,
+    sha256: String,
+}
+
+impl ContentHashes {
+    fn of_bytes(bytes: &[u8]) -> Self {
+        let mut hasher = ContentHasher::new();
+        hasher.update(bytes);
+        hasher.finish()
+    }
+
+    fn of_reader(reader: &mut impl Read) -> Result<Self> {
+        let mut hasher = ContentHasher::new();
+        let mut chunk = vec![0u8; HASH_CHUNK_SIZE];
+        loop {
+            let read = reader.read(&mut chunk)?;
+            if read == 0 {
+                return Ok(hasher.finish());
+            }
+            hasher.update(&chunk[..read]);
+        }
+    }
+}
+
+struct ContentHasher {
+    size: usize,
+    xxhash: XxHash64,
+    sha256: Sha256,
+}
+
+impl ContentHasher {
+    fn new() -> Self {
+        Self {
+            size: 0,
+            xxhash: XxHash64::with_seed(0),
+            sha256: Sha256::new(),
+        }
+    }
+
+    fn update(&mut self, bytes: &[u8]) {
+        self.size += bytes.len();
+        self.xxhash.write(bytes);
+        self.sha256.update(bytes);
+    }
+
+    fn finish(self) -> ContentHashes {
+        ContentHashes {
+            size: self.size,
+            fast_hash: format!("{:016x}", self.xxhash.finish()),
+            sha256: format!("{:x}", self.sha256.finalize()),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const FIXTURE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/data/pak95_dir.vpk");
+
+    fn options() -> VpkParseOptions {
+        VpkParseOptions {
+            include_full_file_hash: true,
+            include_merkle: true,
+            include_entries: true,
+            ..VpkParseOptions::default()
+        }
+    }
+
+    #[test]
+    fn parse_file_matches_buffer_parse() {
+        let from_buffer = VpkParser::parse(std::fs::read(FIXTURE).unwrap(), options()).unwrap();
+        let from_file = VpkParser::parse_file(Path::new(FIXTURE), options()).unwrap();
+
+        assert_eq!(
+            serde_json::to_value(&from_file).unwrap(),
+            serde_json::to_value(&from_buffer).unwrap()
+        );
+        assert_eq!(
+            from_file.dir_sha256.as_deref(),
+            Some(from_file.fingerprint.sha256.as_str())
+        );
+    }
+
+    #[test]
+    fn chunked_hashes_match_single_pass() {
+        let bytes: Vec<u8> = (0..HASH_CHUNK_SIZE * 2 + 17)
+            .map(|i| (i % 251) as u8)
+            .collect();
+        let streamed = ContentHashes::of_reader(&mut bytes.as_slice()).unwrap();
+        let whole = ContentHashes::of_bytes(&bytes);
+
+        assert_eq!(streamed.size, bytes.len());
+        assert_eq!(streamed.fast_hash, whole.fast_hash);
+        assert_eq!(streamed.sha256, whole.sha256);
     }
 }

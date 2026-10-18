@@ -33,6 +33,10 @@ const lib = dlopen(libPath, {
     args: [FFIType.ptr, FFIType.uint64_t, FFIType.ptr],
     returns: FFIType.cstring,
   },
+  vpk_parse_file: {
+    args: [FFIType.ptr, FFIType.ptr],
+    returns: FFIType.cstring,
+  },
   vpk_get_hashes: {
     args: [FFIType.ptr, FFIType.uint64_t, FFIType.ptr],
     returns: FFIType.cstring,
@@ -67,7 +71,10 @@ function callNativeFunction<T>(
   fn: FFIFunction,
   ...args: (number | bigint | CString | Pointer | NodeJS.TypedArray | null)[]
 ): T {
-  const result = fn(...args);
+  return decodeNativeResult<T>(fn(...args));
+}
+
+function decodeNativeResult<T>(result: CString): T {
   let jsonString: string;
 
   if (typeof result === "string") {
@@ -100,6 +107,17 @@ function callNativeFunction<T>(
   return parsed as T;
 }
 
+function encodeParseOptions(options: VpkParseOptionsInput): Buffer {
+  const optionsJson = JSON.stringify({
+    includeFullFileHash: options.includeFullFileHash || false,
+    includeMerkle: options.includeMerkle || false,
+    filePath: options.filePath || "",
+    lastModified: options.lastModified?.toISOString() || null,
+    includeEntries: options.includeEntries !== false, // Default to true for backward compatibility
+  });
+  return Buffer.from(`${optionsJson}\0`, "utf8");
+}
+
 /**
  * Parse a VPK buffer with optional parsing configuration.
  * @param buffer - The VPK file data as a Buffer
@@ -110,15 +128,7 @@ export function parseVpk(
   buffer: Buffer,
   options: VpkParseOptionsInput = {},
 ): VpkParsed {
-  const optionsJson = JSON.stringify({
-    includeFullFileHash: options.includeFullFileHash || false,
-    includeMerkle: options.includeMerkle || false,
-    filePath: options.filePath || "",
-    lastModified: options.lastModified?.toISOString() || null,
-    includeEntries: options.includeEntries !== false, // Default to true for backward compatibility
-  });
-
-  const optionsBuffer = Buffer.from(`${optionsJson}\0`, "utf8");
+  const optionsBuffer = encodeParseOptions(options);
 
   return callNativeFunction<VpkParsed>(
     lib.symbols.vpk_parse,
@@ -138,14 +148,17 @@ export function parseVpkFile(
   filePath: string,
   options: VpkParseOptionsInput = {},
 ): VpkParsed {
-  const buffer = readFileSync(filePath);
   const stats = statSync(filePath);
-
-  return parseVpk(buffer, {
+  const pathBuffer = Buffer.from(`${filePath}\0`, "utf8");
+  const optionsBuffer = encodeParseOptions({
     ...options,
-    filePath: filePath,
+    filePath,
     lastModified: stats.mtime,
   });
+
+  return decodeNativeResult<VpkParsed>(
+    lib.symbols.vpk_parse_file(ptr(pathBuffer), ptr(optionsBuffer)),
+  );
 }
 
 /**

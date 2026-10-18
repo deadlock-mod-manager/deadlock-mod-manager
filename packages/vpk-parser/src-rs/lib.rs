@@ -4,6 +4,7 @@ mod types;
 
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
+use std::path::Path;
 use std::slice;
 
 pub use error::{Result, VpkError};
@@ -51,25 +52,63 @@ pub unsafe extern "C" fn vpk_parse(
     let buffer_slice = unsafe { slice::from_raw_parts(buffer, buffer_len) };
     let buffer_vec = buffer_slice.to_vec();
 
-    // Parse options from JSON
-    let options = if options_json.is_null() {
-        VpkParseOptions::default()
-    } else {
-        let options_str = unsafe {
-            match CStr::from_ptr(options_json).to_str() {
-                Ok(s) => s,
-                Err(_) => return to_c_string(r#"{"error": "Invalid options string"}"#.to_string()),
-            }
-        };
-
-        match serde_json::from_str::<VpkParseOptions>(options_str) {
-            Ok(opts) => opts,
-            Err(e) => return to_c_string(format!(r#"{{"error": "Invalid options JSON: {e}"}}"#)),
-        }
+    let options = match unsafe { read_parse_options(options_json) } {
+        Ok(options) => options,
+        Err(error) => return error,
     };
 
-    // Parse the VPK
-    match VpkParser::parse(buffer_vec, options) {
+    parsed_to_c_string(VpkParser::parse(buffer_vec, options))
+}
+
+// Parse VPK from a file path, hashing it in chunks instead of loading it
+/// Parses a VPK file on disk with optional JSON options.
+///
+/// # Safety
+/// `file_path` must point to a readable, null-terminated UTF-8 C string.
+/// Non-null `options_json` must point to a readable, null-terminated C string.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn vpk_parse_file(
+    file_path: *const c_char,
+    options_json: *const c_char,
+) -> *mut c_char {
+    if file_path.is_null() {
+        return to_c_string(r#"{"error": "Invalid file path"}"#.to_string());
+    }
+    let path = match unsafe { CStr::from_ptr(file_path) }.to_str() {
+        Ok(path) => path,
+        Err(_) => return to_c_string(r#"{"error": "Invalid file path string"}"#.to_string()),
+    };
+
+    let options = match unsafe { read_parse_options(options_json) } {
+        Ok(options) => options,
+        Err(error) => return error,
+    };
+
+    parsed_to_c_string(VpkParser::parse_file(Path::new(path), options))
+}
+
+/// # Safety
+/// Non-null `options_json` must point to a readable, null-terminated C string.
+unsafe fn read_parse_options(
+    options_json: *const c_char,
+) -> std::result::Result<VpkParseOptions, *mut c_char> {
+    if options_json.is_null() {
+        return Ok(VpkParseOptions::default());
+    }
+    let options_str = match unsafe { CStr::from_ptr(options_json) }.to_str() {
+        Ok(s) => s,
+        Err(_) => {
+            return Err(to_c_string(
+                r#"{"error": "Invalid options string"}"#.to_string(),
+            ));
+        }
+    };
+    serde_json::from_str::<VpkParseOptions>(options_str)
+        .map_err(|e| to_c_string(format!(r#"{{"error": "Invalid options JSON: {e}"}}"#)))
+}
+
+fn parsed_to_c_string(parsed: Result<VpkParsed>) -> *mut c_char {
+    match parsed {
         Ok(parsed) => match serde_json::to_string(&parsed) {
             Ok(json) => to_c_string(json),
             Err(e) => to_c_string(format!(r#"{{"error": "Serialization failed: {e}"}}"#)),
