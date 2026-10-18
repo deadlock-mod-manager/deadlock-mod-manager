@@ -56,6 +56,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     glib-networking
     gtk3
     libsoup_3
+    # Only for tauri-cli's build-time lookup; the Linux build has no tray
     libayatana-appindicator
     pango
 
@@ -102,7 +103,6 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
       --set DISABLE_UPDATE_DESKTOP_DATABASE 1
       --prefix PATH : ${lib.makeBinPath [ desktop-file-utils ]}
-      --prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath [ libayatana-appindicator ]}
       --add-flags "--disable-auto-update"
     )
   '';

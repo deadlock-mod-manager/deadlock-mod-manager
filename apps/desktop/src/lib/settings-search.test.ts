@@ -94,6 +94,37 @@ describe("searchSettings", () => {
   });
 });
 
+describe("searchSettings by platform", () => {
+  const titlesFor = (query: string, platform: "linux" | "windows") =>
+    searchSettings(query, translate, SETTINGS_SEARCH_INDEX, platform).map(
+      (result) => result.titleKey,
+    );
+
+  it("hides the tray toggles on Linux", () => {
+    expect(titlesFor("tray", "linux")).not.toContain("settings.closeToTray");
+    expect(titlesFor("tray", "windows")).toContain("settings.closeToTray");
+  });
+
+  it("hides the Linux GPU toggle elsewhere", () => {
+    expect(titlesFor("gpu", "windows")).not.toContain(
+      "settings.linuxGpuCompat",
+    );
+    expect(titlesFor("gpu", "linux")).toContain("settings.linuxGpuCompat");
+  });
+
+  it("skips a whole section limited to other platforms", () => {
+    const sections: SettingsSearchSection[] = [
+      { ...SECTIONS[0], platforms: ["windows"] },
+    ];
+    expect(
+      searchSettings("developer", stripSettingsPrefix, sections, "linux"),
+    ).toEqual([]);
+    expect(
+      searchSettings("developer", stripSettingsPrefix, sections, "windows"),
+    ).toHaveLength(1);
+  });
+});
+
 const SETTINGS_SOURCES = [
   ...new Glob("../components/settings/**/*.tsx").scanSync(import.meta.dir),
   "../pages/settings.tsx",

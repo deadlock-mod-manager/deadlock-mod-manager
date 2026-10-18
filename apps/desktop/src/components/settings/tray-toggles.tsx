@@ -1,5 +1,6 @@
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useMutation } from "@tanstack/react-query";
+import { platform } from "@tauri-apps/plugin-os";
 import { useTranslation } from "react-i18next";
 import { SettingToggleRow } from "@/components/settings/setting-row";
 import logger from "@/lib/logger";
@@ -14,6 +15,7 @@ export const TrayToggles = () => {
 
   const toggleMutation = useMutation({
     mutationFn: applyTrayBehavior,
+    meta: { skipGlobalErrorHandler: true },
     onSuccess: (_, behavior) => {
       setTrayBehavior(behavior);
     },
@@ -25,6 +27,9 @@ export const TrayToggles = () => {
 
   const update = (change: Partial<TrayBehavior>) =>
     toggleMutation.mutate({ minimizeToTray, closeToTray, ...change });
+
+  // The Linux build has no tray, see tray_linux.rs
+  if (platform() === "linux") return null;
 
   return (
     <>

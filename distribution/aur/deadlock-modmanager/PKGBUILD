@@ -7,7 +7,8 @@ pkgrel=5
 arch=('x86_64')
 url='https://github.com/deadlock-mod-manager/deadlock-mod-manager'
 license=('GPL-3.0-only')
-makedepends=('cargo' 'cargo-tauri' 'nodejs' 'pnpm' 'protobuf')
+makedepends=('cargo' 'cargo-tauri' 'nodejs' 'pnpm' 'protobuf'
+             'libayatana-appindicator')
 depends=('webkit2gtk-4.1' 'cairo' 'desktop-file-utils' 'xdg-utils' 'gdk-pixbuf2'
          'glib2' 'gtk3' 'libsoup3' 'pango' 'openssl' 'bzip2' 'hicolor-icon-theme'
          'gst-plugins-good' 'glibc' 'libgcc' 'libstdc++' 'dbus')

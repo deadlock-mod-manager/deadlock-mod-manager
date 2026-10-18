@@ -58,6 +58,8 @@
           openssl
           librsvg
           libsoup_3
+          # tauri-cli looks it up at build time
+          libayatana-appindicator
           # GStreamer for media playback
           gst_all_1.gstreamer
           gst_all_1.gst-plugins-base
