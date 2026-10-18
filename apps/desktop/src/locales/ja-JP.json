@@ -940,6 +940,19 @@
   "stats": {
     "title": "",
     "subtitle": "",
+    "scope": {
+      "mode": "",
+      "all": "",
+      "ranked": "",
+      "unranked": "",
+      "since": "",
+      "sinceDate": "",
+      "allTime": "",
+      "about": "",
+      "reset": "",
+      "hint": "",
+      "squad": ""
+    },
     "tabs": {
       "overview": "",
       "heroes": "",
@@ -1217,6 +1230,627 @@
       "encounters_one": "",
       "encounters_other": "",
       "empty": ""
+    },
+    "dashboard": {
+      "customize": "",
+      "customizeHint": "",
+      "addWidget": "",
+      "needsAccount": "",
+      "needsAccountDescription": "",
+      "empty": "",
+      "stale": "",
+      "staleHint": "",
+      "apiWarning": "",
+      "recovered": "",
+      "emptyTabTitle": "",
+      "emptyTabDescription": "",
+      "broken": {
+        "title": "",
+        "retry": "",
+        "unknownSource": "",
+        "endpoint": "",
+        "network": "",
+        "schema": "",
+        "fields": "",
+        "invalidPath": "",
+        "notAList": ""
+      },
+      "widget": {
+        "menu": "",
+        "edit": "",
+        "duplicate": "",
+        "width": "",
+        "moveToTab": "",
+        "moveEarlier": "",
+        "moveLater": "",
+        "remove": "",
+        "drag": "",
+        "resize": ""
+      },
+      "widths": {
+        "3": "",
+        "4": "",
+        "6": "",
+        "8": "",
+        "12": ""
+      },
+      "tabs": {
+        "untitled": "",
+        "settings": "",
+        "name": "",
+        "moveLeft": "",
+        "moveRight": "",
+        "delete": "",
+        "broken": "",
+        "add": "",
+        "empty": "",
+        "fromTemplate": "",
+        "done": ""
+      },
+      "templates": {
+        "overview": "",
+        "heroes": "",
+        "items": "",
+        "squad": "",
+        "live": "",
+        "performance": "",
+        "habits": "",
+        "ranked": "",
+        "meta": ""
+      },
+      "toolbar": {
+        "title": "",
+        "hint": "",
+        "reset": "",
+        "cancel": "",
+        "save": ""
+      },
+      "confirm": {
+        "resetTitle": "",
+        "resetDescription": "",
+        "resetAction": "",
+        "discardTitle": "",
+        "discardDescription": "",
+        "discardAction": "",
+        "deleteTabTitle": "",
+        "deleteTabDescription_one": "",
+        "deleteTabDescription_other": "",
+        "deleteTabAction": ""
+      },
+      "editor": {
+        "addTitle": "",
+        "editTitle": "",
+        "description": "",
+        "stepData": "",
+        "stepView": "",
+        "stepLayout": "",
+        "modes": {
+          "presets": "",
+          "matches": "",
+          "api": "",
+          "panels": ""
+        },
+        "modeHints": {
+          "presets": "",
+          "matches": "",
+          "api": "",
+          "panels": ""
+        },
+        "chartType": "",
+        "chartUnsupported": "",
+        "category": "",
+        "pointLabel": "",
+        "none": "",
+        "value": "",
+        "values_one": "",
+        "values_other": "",
+        "scatterValues": "",
+        "reduce": "",
+        "sortBy": "",
+        "sortNone": "",
+        "ascending": "",
+        "descending": "",
+        "limit": "",
+        "limitAll": "",
+        "limitTop_one": "",
+        "limitTop_other": "",
+        "color": "",
+        "colorOption": "",
+        "showLabels": "",
+        "showGrid": "",
+        "showLegend": "",
+        "smooth": "",
+        "title": "",
+        "width": "",
+        "height": "",
+        "heightAuto": "",
+        "preview": "",
+        "datasetInfo": "",
+        "pickSource": "",
+        "searchPresets": "",
+        "noPresets": "",
+        "saveChanges": "",
+        "add": ""
+      },
+      "charts": {
+        "kpi": "",
+        "line": "",
+        "area": "",
+        "bar": "",
+        "barHorizontal": "",
+        "stackedBar": "",
+        "pie": "",
+        "donut": "",
+        "radar": "",
+        "scatter": "",
+        "radial": "",
+        "table": ""
+      },
+      "reducers": {
+        "auto": "",
+        "first": "",
+        "last": "",
+        "avg": "",
+        "sum": "",
+        "min": "",
+        "max": ""
+      },
+      "categories": {
+        "you": "",
+        "heroes": "",
+        "items": "",
+        "squad": "",
+        "ranked": "",
+        "global": ""
+      },
+      "params": {
+        "window": "",
+        "days": "",
+        "hero": "",
+        "sortBy": ""
+      },
+      "options": {
+        "allMatches": "",
+        "lastMatches_one": "",
+        "lastMatches_other": "",
+        "lastDays_one": "",
+        "lastDays_other": "",
+        "rollingWindow_one": "",
+        "rollingWindow_other": "",
+        "allHeroes": "",
+        "allTime": "",
+        "scoreboard": {
+          "winrate": "",
+          "matches": "",
+          "avg_kills_per_match": "",
+          "avg_deaths_per_match": "",
+          "avg_assists_per_match": "",
+          "avg_net_worth_per_match": "",
+          "avg_player_damage_per_match": "",
+          "avg_last_hits_per_match": "",
+          "avg_denies_per_match": "",
+          "avg_boss_damage_per_match": ""
+        }
+      },
+      "units": {
+        "minutes": "",
+        "minuteRange": ""
+      },
+      "matchQuery": {
+        "titleGrouped": "",
+        "metrics_one": "",
+        "metrics_other": "",
+        "groupBy": "",
+        "aggregate": "",
+        "period": "",
+        "window": "",
+        "result": "",
+        "smoothing": "",
+        "noSmoothing": "",
+        "rankedOnly": "",
+        "hint": "",
+        "groups": {
+          "none": "",
+          "match": "",
+          "day": "",
+          "week": "",
+          "month": "",
+          "hero": "",
+          "weekday": "",
+          "hour": "",
+          "result": "",
+          "session": "",
+          "duration": ""
+        },
+        "aggregates": {
+          "avg": "",
+          "sum": "",
+          "min": "",
+          "max": "",
+          "median": ""
+        },
+        "results": {
+          "all": "",
+          "wins": "",
+          "losses": ""
+        }
+      },
+      "api": {
+        "title": "",
+        "example": "",
+        "examplePlaceholder": "",
+        "examples": {
+          "globalHeroes": "",
+          "myHeroes": "",
+          "dailyGames": "",
+          "myGameStats": "",
+          "myItems": "",
+          "mySynergies": "",
+          "myMetrics": "",
+          "myCurve": "",
+          "badgeDistribution": "",
+          "leaderboardEurope": ""
+        },
+        "path": "",
+        "listPath": "",
+        "listPathPlaceholder": "",
+        "hint": "",
+        "docs": "",
+        "placeholders": {
+          "account_id": "",
+          "now": "",
+          "since_7d": "",
+          "since_30d": "",
+          "since_90d": ""
+        }
+      },
+      "panels": {
+        "tiles": {
+          "title": "",
+          "description": ""
+        },
+        "insights": {
+          "title": "",
+          "description": ""
+        },
+        "form": {
+          "title": "",
+          "description": ""
+        },
+        "session": {
+          "title": "",
+          "description": ""
+        },
+        "rank": {
+          "title": "",
+          "description": ""
+        },
+        "recentMatches": {
+          "title": "",
+          "description": ""
+        },
+        "heroes": {
+          "title": "",
+          "description": ""
+        },
+        "items": {
+          "title": "",
+          "description": ""
+        },
+        "squad": {
+          "title": "",
+          "description": ""
+        },
+        "live": {
+          "title": "",
+          "description": ""
+        }
+      },
+      "presets": {
+        "you": {
+          "summary": {
+            "title": "",
+            "description": ""
+          },
+          "form": {
+            "title": "",
+            "description": ""
+          },
+          "matchLog": {
+            "title": "",
+            "description": ""
+          },
+          "byHour": {
+            "title": "",
+            "description": ""
+          },
+          "byWeekday": {
+            "title": "",
+            "description": ""
+          },
+          "session": {
+            "title": "",
+            "description": ""
+          },
+          "byDuration": {
+            "title": "",
+            "description": ""
+          },
+          "daily": {
+            "title": "",
+            "description": ""
+          },
+          "results": {
+            "title": "",
+            "description": ""
+          },
+          "rankHistory": {
+            "title": "",
+            "description": ""
+          },
+          "heroes": {
+            "title": "",
+            "description": ""
+          },
+          "matchups": {
+            "title": "",
+            "description": ""
+          },
+          "performanceCurve": {
+            "title": "",
+            "description": ""
+          },
+          "soulSources": {
+            "title": "",
+            "description": ""
+          },
+          "averages": {
+            "title": "",
+            "description": ""
+          },
+          "percentiles": {
+            "title": "",
+            "description": ""
+          },
+          "buffs": {
+            "title": "",
+            "description": ""
+          },
+          "items": {
+            "title": "",
+            "description": ""
+          },
+          "mates": {
+            "title": "",
+            "description": ""
+          },
+          "enemies": {
+            "title": "",
+            "description": ""
+          },
+          "rank": {
+            "title": "",
+            "description": ""
+          }
+        },
+        "global": {
+          "heroes": {
+            "title": "",
+            "description": ""
+          },
+          "heroTrend": {
+            "title": "",
+            "description": ""
+          },
+          "bans": {
+            "title": "",
+            "description": ""
+          },
+          "duos": {
+            "title": "",
+            "description": ""
+          },
+          "daily": {
+            "title": "",
+            "description": ""
+          },
+          "scoreboard": {
+            "title": "",
+            "description": ""
+          },
+          "items": {
+            "title": "",
+            "description": ""
+          },
+          "rankDistribution": {
+            "title": "",
+            "description": ""
+          }
+        }
+      },
+      "fields": {
+        "matches": "",
+        "wins": "",
+        "losses": "",
+        "winrate": "",
+        "kills": "",
+        "deaths": "",
+        "assists": "",
+        "kda": "",
+        "netWorth": "",
+        "soulsPerMin": "",
+        "lastHits": "",
+        "lastHitsPerMin": "",
+        "denies": "",
+        "durationMin": "",
+        "heroLevel": "",
+        "rankBadge": "",
+        "rankDelta": "",
+        "currentStreak": "",
+        "longestWinStreak": "",
+        "longestLossStreak": "",
+        "matchesLast30Days": "",
+        "startTime": "",
+        "heroId": "",
+        "result": "",
+        "hour": "",
+        "weekday": "",
+        "session": "",
+        "day": "",
+        "killsPerMatch": "",
+        "deathsPerMatch": "",
+        "assistsPerMatch": "",
+        "damagePerMin": "",
+        "damageTakenPerMin": "",
+        "objDamagePerMin": "",
+        "deniesPerMatch": "",
+        "accuracy": "",
+        "critRate": "",
+        "hoursPlayed": "",
+        "endingLevel": "",
+        "enemyHeroId": "",
+        "soulLead": "",
+        "gameTime": "",
+        "playerDamage": "",
+        "bossDamage": "",
+        "creepKills": "",
+        "neutralKills": "",
+        "playerHealing": "",
+        "permanentBuffs": "",
+        "source": "",
+        "souls": "",
+        "avgKills": "",
+        "avgDeaths": "",
+        "avgAssists": "",
+        "avgNetWorth": "",
+        "avgLastHits": "",
+        "avgDenies": "",
+        "avgPlayerDamage": "",
+        "avgDamageTaken": "",
+        "avgDamageMitigated": "",
+        "avgBossDamage": "",
+        "avgHealing": "",
+        "avgCreepKills": "",
+        "avgNeutralKills": "",
+        "avgDuration": "",
+        "metric": "",
+        "p10": "",
+        "p25": "",
+        "median": "",
+        "avg": "",
+        "p75": "",
+        "p90": "",
+        "buff": "",
+        "pickups": "",
+        "pickupsPerMatch": "",
+        "pickupRate": "",
+        "avgPickupTime": "",
+        "avgFirstPickupTime": "",
+        "itemId": "",
+        "globalWinrate": "",
+        "winrateDelta": "",
+        "avgBuyTime": "",
+        "name": "",
+        "badge": "",
+        "rank": "",
+        "subrank": "",
+        "pickRate": "",
+        "netWorthPerMatch": "",
+        "damagePerMatch": "",
+        "bans": "",
+        "banShare": "",
+        "heroes": "",
+        "players": "",
+        "midBossKillRate": "",
+        "abandonRate": "",
+        "value": "",
+        "playerShare": ""
+      },
+      "metrics": {
+        "self_healing_per_min": "",
+        "kda": "",
+        "kd": "",
+        "kills_plus_assists": "",
+        "player_damage_per_health": "",
+        "healing_per_min": "",
+        "player_healing": "",
+        "heal_prevented": "",
+        "player_damage_per_min": "",
+        "deaths": "",
+        "net_worth_per_min": "",
+        "net_worth": "",
+        "assists": "",
+        "kills": "",
+        "last_hits": "",
+        "neutral_damage": "",
+        "neutral_damage_per_min": "",
+        "crit_shot_rate": "",
+        "denies": "",
+        "player_damage": "",
+        "healing": "",
+        "player_damage_taken_per_min": "",
+        "player_healing_per_min": "",
+        "boss_damage_per_min": "",
+        "boss_damage": "",
+        "teammate_healing": "",
+        "self_healing": "",
+        "teammate_barriering": "",
+        "accuracy": ""
+      },
+      "soulSources": {
+        "player": "",
+        "player_orbs": "",
+        "lane_creep": "",
+        "lane_creep_orbs": "",
+        "neutral_creep": "",
+        "neutral_creep_orbs": "",
+        "boss": "",
+        "boss_orb": "",
+        "treasure": "",
+        "assists": "",
+        "team_bonus": "",
+        "breakable": "",
+        "ability_assassinate": "",
+        "item_trophy_collector": "",
+        "item_cultist_sacrifice": "",
+        "item_goose_egg": ""
+      },
+      "buffs": {
+        "ammo_permanent_pickup": "",
+        "ammo_permanent_pickup_lv2": "",
+        "ammo_permanent_pickup_lv3": "",
+        "bulletresist_permanent_pickup": "",
+        "bulletresist_permanent_pickup_lv2": "",
+        "bulletresist_permanent_pickup_lv3": "",
+        "cd_permanent_pickup": "",
+        "cd_permanent_pickup_lv2": "",
+        "cd_permanent_pickup_lv3": "",
+        "firerate_permanent_pickup": "",
+        "firerate_permanent_pickup_lv2": "",
+        "firerate_permanent_pickup_lv3": "",
+        "hp_permanent_pickup": "",
+        "hp_permanent_pickup_lv2": "",
+        "hp_permanent_pickup_lv3": "",
+        "movespeed_permanent_pickup": "",
+        "movespeed_permanent_pickup_lv2": "",
+        "movespeed_permanent_pickup_lv3": "",
+        "range_permanent_pickup": "",
+        "range_permanent_pickup_lv2": "",
+        "range_permanent_pickup_lv3": "",
+        "spirit_permanent_pickup": "",
+        "spirit_permanent_pickup_lv2": "",
+        "spirit_permanent_pickup_lv3": "",
+        "spiritresist_permanent_pickup": "",
+        "spiritresist_permanent_pickup_lv2": "",
+        "spiritresist_permanent_pickup_lv3": "",
+        "wp_permanent_pickup": "",
+        "wp_permanent_pickup_lv2": "",
+        "wp_permanent_pickup_lv3": "",
+        "casting_powerup_pickup": "",
+        "gun_powerup_pickup": "",
+        "movement_powerup_pickup": "",
+        "survival_powerup_pickup": ""
+      }
     }
   },
   "foundry": {
