@@ -31,10 +31,10 @@ export const ModOptionsButton = ({
             onOpen();
           }}
           className={cn(
-            "flex items-center gap-1 rounded-md p-1 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground",
+            "flex h-9 min-w-9 items-center justify-center gap-1 rounded-md px-2.5 text-primary transition-colors hover:bg-accent hover:text-accent-foreground",
             className,
           )}>
-          <Settings className='h-3.5 w-3.5' />
+          <Settings className='h-4 w-4' />
           {activeCount > 0 && (
             <span className='font-medium text-xs tabular-nums leading-none'>
               {activeCount}

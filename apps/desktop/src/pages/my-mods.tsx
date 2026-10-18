@@ -288,7 +288,7 @@ const GridModCard = ({
 
   const cardContent = (
     <ModContextMenu mod={mod}>
-      <Card className='shadow h-full'>
+      <Card className='flex h-full flex-col shadow'>
         <div className='relative'>
           <div
             className={cn("cursor-pointer", isDisabled && "grayscale")}
@@ -323,7 +323,7 @@ const GridModCard = ({
               </div>
             )}
           </div>
-          <div className='absolute top-2 left-2'>
+          <div className='absolute bottom-2 left-2'>
             <ModUpdateBadge mod={mod} hasUpdate={hasUpdate} />
           </div>
           <div className='absolute top-2 right-2 flex flex-col gap-1'>
@@ -352,43 +352,31 @@ const GridModCard = ({
             </div>
           )}
         </div>
-        <CardHeader className='px-3 py-3 pb-0'>
-          <div className='flex min-w-0 items-start gap-2'>
-            <div className='flex min-w-0 flex-1 flex-col'>
-              <CardTitle
-                className='cursor-pointer truncate'
-                onClick={openModDetail}
-                title={mod.name}>
-                {mod.name}
-              </CardTitle>
-              <CardDescription
-                className='w-48 overflow-clip text-ellipsis text-nowrap'
-                title={mod.author}>
-                <LibraryModAuthor mod={mod} />
-              </CardDescription>
-            </div>
+        <CardHeader className='space-y-1 px-3 py-3 pb-0'>
+          <CardTitle
+            className='line-clamp-2 cursor-pointer leading-tight'
+            onClick={openModDetail}
+            title={mod.name}>
+            {mod.name}
+          </CardTitle>
+          <CardDescription className='truncate' title={mod.author}>
+            <LibraryModAuthor mod={mod} />
+          </CardDescription>
+        </CardHeader>
+        <CardFooter className='mt-auto justify-between gap-3 px-3 py-3 pt-2'>
+          <div className='flex min-w-0 items-center gap-1'>
+            {compatibility ? (
+              <PerModCompatibilityControl
+                mod={mod}
+                compatibility={compatibility}
+                variant='icon'
+              />
+            ) : null}
             {modOptions.showButton ? (
               <ModOptionsButton
                 activeCount={modOptions.activeVariantCount}
                 onOpen={modOptions.open}
                 className='shrink-0'
-              />
-            ) : null}
-          </div>
-        </CardHeader>
-        <CardFooter className='flex items-center flex-row-reverse justify-between gap-1 px-3 py-3 pt-2'>
-          <div className='flex items-center gap-2'>
-            <ModButton
-              remoteMod={mod}
-              variant='iconOnly'
-              showLabel={!!compatibility}
-            />
-          </div>
-          <div className='flex items-center gap-1'>
-            {compatibility ? (
-              <PerModCompatibilityControl
-                mod={mod}
-                compatibility={compatibility}
               />
             ) : null}
             <Tooltip>
@@ -405,6 +393,7 @@ const GridModCard = ({
               <TooltipContent>{t("mods.removeMod")}</TooltipContent>
             </Tooltip>
           </div>
+          <ModButton remoteMod={mod} variant='iconOnly' />
         </CardFooter>
       </Card>
     </ModContextMenu>

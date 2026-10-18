@@ -9,6 +9,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
+import { ShieldCheck } from "@deadlock-mods/ui/icons";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import type { ModCompatibilityController } from "@/hooks/use-mod-compatibility";
@@ -23,7 +24,7 @@ export function PerModCompatibilityControl({
 }: {
   mod: LocalMod;
   compatibility: ModCompatibilityController;
-  variant?: "inline" | "context-menu";
+  variant?: "inline" | "icon" | "context-menu";
 }) {
   const { t } = useTranslation();
   const id = useId();
@@ -96,7 +97,11 @@ export function PerModCompatibilityControl({
               aria-describedby={descriptionId}
               onCheckedChange={change}
             />
-            {t("myMods.compatibility.label")}
+            {variant === "icon" ? (
+              <ShieldCheck className='h-4 w-4' aria-hidden />
+            ) : (
+              t("myMods.compatibility.label")
+            )}
           </Label>
         </TooltipTrigger>
         <TooltipContent className='max-w-xs space-y-2'>
