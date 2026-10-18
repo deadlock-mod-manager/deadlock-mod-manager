@@ -177,6 +177,8 @@ jobs:
             libappindicator3-dev \
             librsvg2-dev \
             patchelf \
+            xdg-utils \
+            desktop-file-utils \
             libfuse2t64 \
             gstreamer1.0-plugins-base \
             gstreamer1.0-plugins-good \
@@ -211,6 +213,7 @@ jobs:
           VITE_GA_MEASUREMENT_ID: ${{ secrets.VITE_GA_MEASUREMENT_ID }}
         with:
           projectPath: ./apps/desktop
+          tauriScript: bash scripts/tauri-appimage.sh
           releaseId: ${{ needs.create-release.outputs.release_id }}
 
       - name: Build Flatpak bundle (Linux)

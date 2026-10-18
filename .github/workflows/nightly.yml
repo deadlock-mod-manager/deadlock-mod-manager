@@ -396,6 +396,8 @@ jobs:
             libappindicator3-dev \
             librsvg2-dev \
             patchelf \
+            xdg-utils \
+            desktop-file-utils \
             libfuse2t64 \
             gstreamer1.0-plugins-base \
             gstreamer1.0-plugins-good \
@@ -440,7 +442,7 @@ jobs:
         with:
           projectPath: ./apps/desktop
           releaseId: ${{ needs.create-nightly-release.outputs.release_id }}
-          tauriScript: pnpm tauri
+          tauriScript: bash scripts/tauri-appimage.sh
 
       - name: Build Flatpak bundle (Linux)
         if: matrix.os == 'linux'
