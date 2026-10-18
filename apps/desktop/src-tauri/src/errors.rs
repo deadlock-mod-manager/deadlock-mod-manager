@@ -106,6 +106,8 @@ pub enum Error {
   BackgroundTaskFailed(String),
   #[error("VPK files are in use and cannot be deleted: {0}")]
   VpkInUse(String),
+  #[error("System tray is unavailable: install libayatana-appindicator")]
+  TrayUnavailable,
   // subcode is a stable machine-readable tag (e.g. "consentRequired") so the
   // frontend can branch/localize without parsing the English message.
   #[error("Match sync error: {message}")]
@@ -193,6 +195,7 @@ impl serde::Serialize for Error {
       Error::RollbackFailed(_) => "rollbackFailed",
       Error::BackgroundTaskFailed(_) => "backgroundTaskFailed",
       Error::VpkInUse(_) => "vpkInUse",
+      Error::TrayUnavailable => "trayUnavailable",
       Error::MatchSync { .. } => "matchSync",
     };
     let match_sync_kind: Option<&str> = match self {

@@ -40,7 +40,8 @@ export type ErrorKind = {
     | "crosshairConfigResetFailed"
     | "rollbackFailed"
     | "backgroundTaskFailed"
-    | "vpkInUse";
+    | "vpkInUse"
+    | "trayUnavailable";
   message: string;
   affectedMods?: { id: string; name: string }[];
   path?: string;

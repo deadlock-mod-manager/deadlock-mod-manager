@@ -120,6 +120,10 @@ tempfile = "3.27.0"
 [target.'cfg(any(target_os = "macos", windows, target_os = "linux"))'.dependencies]
 tauri-plugin-single-instance = { version = "2.4.2", features = ["deep-link"] }
 
+[target.'cfg(target_os = "linux")'.dependencies]
+# Same version libappindicator-sys uses; probes for the tray library before Tauri loads it
+libloading = "0.7"
+
 [target.'cfg(windows)'.dependencies]
 junction = "1"
 windows = { version = "0.58", features = [

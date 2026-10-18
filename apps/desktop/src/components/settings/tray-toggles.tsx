@@ -5,6 +5,7 @@ import { SettingToggleRow } from "@/components/settings/setting-row";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { applyTrayBehavior, type TrayBehavior } from "@/lib/tray";
+import { isTauriError } from "@/types/tauri";
 
 export const TrayToggles = () => {
   const { t } = useTranslation();
@@ -14,12 +15,17 @@ export const TrayToggles = () => {
 
   const toggleMutation = useMutation({
     mutationFn: applyTrayBehavior,
+    meta: { skipGlobalErrorHandler: true },
     onSuccess: (_, behavior) => {
       setTrayBehavior(behavior);
     },
     onError: (error) => {
       logger.withError(error).error("Failed to sync the tray settings");
-      toast.error(t("settings.traySyncFailed"));
+      toast.error(
+        isTauriError(error) && error.kind === "trayUnavailable"
+          ? t("settings.trayUnavailable")
+          : t("settings.traySyncFailed"),
+      );
     },
   });
 
