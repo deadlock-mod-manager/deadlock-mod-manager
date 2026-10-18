@@ -55,6 +55,11 @@ import {
   assertVariantNamesNetwork,
 } from "./variant-names-fixtures";
 import { monkeyRoutes, prepareMonkeyWorld } from "./monkey-fixtures";
+import {
+  assertStatsDashboardNetwork,
+  prepareStatsDashboardWorld,
+  statsDashboardRoutes,
+} from "./stats-dashboard-fixtures";
 
 type Definition = {
   family: string;
@@ -254,6 +259,15 @@ const heroSkins: Definition = {
   phases: ["active-skins"],
   routes: profileRoutes,
   prepare: async (world) => prepareHeroSkinsWorld(world),
+};
+const stats: Definition = {
+  ...defaults,
+  family: "stats",
+  spec: "stats-default-layout",
+  phases: ["default-layout"],
+  routes: statsDashboardRoutes,
+  prepare: prepareStatsDashboardWorld,
+  verifyNetwork: assertStatsDashboardNetwork,
 };
 export const scenarios = {
   monkey: {
@@ -551,6 +565,27 @@ export const scenarios = {
   },
   "grimoire-import": interchange,
   "hero-skins-active": heroSkins,
+  "stats-default-layout": stats,
+  "stats-arrange-widgets": {
+    ...stats,
+    spec: "stats-arrange-widgets",
+    phases: ["arrange", "restart-arrange"],
+  },
+  "stats-custom-tabs": {
+    ...stats,
+    spec: "stats-custom-tabs",
+    phases: ["tabs", "restart-tabs"],
+  },
+  "stats-custom-queries": {
+    ...stats,
+    spec: "stats-custom-queries",
+    phases: ["queries"],
+  },
+  "stats-broken-endpoints": {
+    ...stats,
+    spec: "stats-broken-endpoints",
+    phases: ["broken"],
+  },
 } satisfies Record<string, Definition>;
 export type ScenarioId = keyof typeof scenarios;
 const isScenario = (value: string): value is ScenarioId =>
