@@ -102,7 +102,6 @@
 ["exports","apps/bot/src/lib/env.ts",[["","envSchema"]]]
 ["exports","apps/bot/src/lib/logger.ts",[["","loggerContext"]]]
 ["exports","apps/bot/src/lib/permissions.ts",[["","getRequiredRolesDisplay"]]]
-["exports","apps/bot/src/lib/permissions.ts",[["","hasReportModerationPermission"]]]
 ["exports","apps/bot/src/lib/quick-answer-validation.ts",[["","QUICK_ANSWER_MAX_FILE_BYTES"]]]
 ["exports","apps/bot/src/lib/quick-answer-validation.ts",[["","QUICK_ANSWER_MAX_TOTAL_BYTES"]]]
 ["exports","apps/bot/src/lib/redis.ts",[["","default"]]]

@@ -88,6 +88,7 @@ async function main() {
   const { added, removed } = compareFindings(findings, baseline);
   if (added.length || removed.length) {
     for (const key of added) console.error(`New Knip finding: ${key}`);
+    for (const key of removed) console.error(`Resolved Knip finding: ${key}`);
     console.error(
       `${added.length} new, ${removed.length} resolved findings. Fix new findings; run pnpm knip:baseline and review the diff after cleanup.`,
     );

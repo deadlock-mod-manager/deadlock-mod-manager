@@ -17,6 +17,16 @@ pre-commit:
         - "*.ts"
         - "*.tsx"
       stage_fixed: true
+    - run: pnpm knip:check
+      glob:
+        - "*.js"
+        - "*.jsx"
+        - "*.mjs"
+        - "*.ts"
+        - "*.tsx"
+        - "package.json"
+        - "knip.json"
+        - "knip-baseline.txt"
     - run: node scripts/check-changesets.mjs {staged_files}
       glob:
         - ".changeset/*.md"
