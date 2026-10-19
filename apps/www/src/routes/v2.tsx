@@ -193,6 +193,11 @@ function V2Page() {
               <CtaArrow />
             </Link>
           </div>
+          <p
+            style={riseDelay(3)}
+            className='mt-4 max-w-[58ch] animate-dl-rise text-pretty text-muted-foreground text-sm'>
+            {t("hero.previewNote")}
+          </p>
           <nav
             aria-label={t("nav.label")}
             className='mt-14 flex flex-wrap gap-2 border-border border-t pt-6'>
