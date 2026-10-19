@@ -13,7 +13,7 @@ use steam_vent::proto::steammessages_clientserver::CMsgClientGamesPlayed;
 use steam_vent::{
   Connection, ConnectionTrait, GameCoordinator, RawNetMessage, ServerList, UntypedMessage,
 };
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, watch};
 use valveprotos::deadlock::{
   CMsgClientToGcGetMatchHistory, CMsgClientToGcGetMatchHistoryResponse,
   CMsgClientToGcGetMatchMetaData, CMsgClientToGcGetMatchMetaDataResponse, EgcCitadelClientMessages,
@@ -65,6 +65,17 @@ async fn with_timeout<T, E: std::fmt::Display>(
   }
 }
 
+async fn until_launch<T>(
+  cancel: &mut watch::Receiver<()>,
+  fut: impl Future<Output = Result<T, MatchSyncError>>,
+) -> Result<T, MatchSyncError> {
+  tokio::select! {
+    biased;
+    _ = cancel.changed() => Err(MatchSyncError::GameRunning),
+    result = fut => result,
+  }
+}
+
 // `impl Future + Send` keeps impls spawnable. No internal retries: a failed salt
 // fetch must cost at most one quota unit (caller rate-limits + quota-gates).
 pub trait GcMatchClient: Send + Sync {
@@ -92,10 +103,14 @@ impl GcSession {
   // prompts to disconnect this session. Clear that instead of logging off: the session
   // shares the Steam client's login, and logging off signs the client out too.
   async fn stop_playing(self) {
+    Self::clear_playing(&self.conn).await;
+  }
+
+  async fn clear_playing(conn: &Connection) {
     if let Err(e) = with_timeout(
       STOP_PLAYING_TIMEOUT,
       "clear games played",
-      self.conn.send_with_kind(
+      conn.send_with_kind(
         CMsgClientGamesPlayed::default(),
         EMsg::k_EMsgClientGamesPlayedWithDataBlob,
       ),
@@ -109,29 +124,56 @@ impl GcSession {
 
 pub struct SteamGcClient {
   session: Mutex<Option<GcSession>>,
+  launch_cancel: watch::Sender<()>,
 }
 
 impl SteamGcClient {
   pub fn new() -> Self {
     Self {
       session: Mutex::new(None),
+      launch_cancel: watch::channel(()).0,
     }
   }
 
-  async fn connect(ctx: &AuthContext) -> Result<GcSession, MatchSyncError> {
-    let servers = with_timeout(GC_CALL_TIMEOUT, "server discovery", ServerList::discover()).await?;
-    let conn = with_timeout(
-      GC_CALL_TIMEOUT,
-      "CM login",
-      Connection::access(&servers, &ctx.account_name, &ctx.refresh_token),
-    )
+  async fn connect(
+    ctx: &AuthContext,
+    cancel: &mut watch::Receiver<()>,
+  ) -> Result<GcSession, MatchSyncError> {
+    let conn = until_launch(cancel, async {
+      let servers =
+        with_timeout(GC_CALL_TIMEOUT, "server discovery", ServerList::discover()).await?;
+      with_timeout(
+        GC_CALL_TIMEOUT,
+        "CM login",
+        Connection::access(&servers, &ctx.account_name, &ctx.refresh_token),
+      )
+      .await
+    })
     .await?;
-    let gc = with_timeout(
-      GC_CALL_TIMEOUT,
-      "GC handshake",
-      GameCoordinator::new(&conn, DEADLOCK_APP_ID),
+    Self::connect_gc(ctx, conn, cancel).await
+  }
+
+  async fn connect_gc(
+    ctx: &AuthContext,
+    conn: Connection,
+    cancel: &mut watch::Receiver<()>,
+  ) -> Result<GcSession, MatchSyncError> {
+    let gc = match until_launch(
+      cancel,
+      with_timeout(
+        GC_CALL_TIMEOUT,
+        "GC handshake",
+        GameCoordinator::new(&conn, DEADLOCK_APP_ID),
+      ),
     )
-    .await?;
+    .await
+    {
+      Ok(gc) => gc,
+      Err(error) => {
+        GcSession::clear_playing(&conn).await;
+        return Err(error);
+      }
+    };
     Ok(GcSession {
       steam_id64: ctx.steam_id64,
       gc,
@@ -140,27 +182,19 @@ impl SteamGcClient {
   }
 
   pub async fn disconnect(&self) {
-    let session = self.session.lock().await.take();
-    if let Some(session) = session {
-      session.stop_playing().await;
-    }
+    let mut guard = self.session.lock().await;
+    Self::poison(&mut guard).await;
   }
 
-  /// Doesn't wait on a request in flight; that session closes once it finishes.
-  pub async fn release(self: &Arc<Self>) {
-    let Ok(session) = self.session.try_lock().map(|mut guard| guard.take()) else {
-      let client = Arc::clone(self);
-      tokio::spawn(async move { client.disconnect().await });
-      return;
-    };
-    if let Some(session) = session {
-      session.stop_playing().await;
-    }
+  /// Waits for the cancelled request to clear its playing status before launch.
+  pub async fn release(&self) {
+    self.launch_cancel.send_replace(());
+    self.disconnect().await;
   }
 
-  fn poison(guard: &mut Option<GcSession>) {
+  async fn poison(guard: &mut Option<GcSession>) {
     if let Some(session) = guard.take() {
-      tokio::spawn(session.stop_playing());
+      session.stop_playing().await;
     }
   }
 
@@ -168,52 +202,46 @@ impl SteamGcClient {
     &self,
     guard: &mut Option<GcSession>,
     ctx: &AuthContext,
+    cancel: &mut watch::Receiver<()>,
   ) -> Result<(), MatchSyncError> {
+    if launch_hold_active() {
+      return Err(MatchSyncError::GameRunning);
+    }
     let stale = guard
       .as_ref()
       .is_none_or(|s| s.steam_id64 != ctx.steam_id64);
     if stale {
-      if launch_hold_active() {
-        return Err(MatchSyncError::GameRunning);
-      }
-      *guard = Some(Self::connect(ctx).await?);
+      *guard = Some(Self::connect(ctx, cancel).await?);
     }
     Ok(())
   }
 
-  // Poisons the session (closes it) on any failure or timeout, so the next call
-  // reconnects instead of retrying a broken GC connection.
+  // Keep cleanup under the session lock so launch cannot overtake a failed job.
   async fn send_job(
     guard: &mut Option<GcSession>,
+    cancel: &mut watch::Receiver<()>,
     req_bytes: Vec<u8>,
     kind: MsgKind,
     label: &str,
   ) -> Result<RawNetMessage, MatchSyncError> {
-    let sent = tokio::time::timeout(
-      GC_CALL_TIMEOUT,
-      guard.as_ref().expect("connected above").gc.job_untyped(
-        UntypedMessage(req_bytes),
-        kind,
-        true,
+    let sent = until_launch(
+      cancel,
+      with_timeout(
+        GC_CALL_TIMEOUT,
+        label,
+        guard.as_ref().expect("connected above").gc.job_untyped(
+          UntypedMessage(req_bytes),
+          kind,
+          true,
+        ),
       ),
     )
     .await;
 
-    match sent {
-      Ok(Ok(raw)) => Ok(raw),
-      Ok(Err(e)) => {
-        Self::poison(guard);
-        Err(MatchSyncError::GcUnavailable(format!(
-          "{label} request failed: {e}"
-        )))
-      }
-      Err(_) => {
-        Self::poison(guard);
-        Err(MatchSyncError::GcUnavailable(format!(
-          "{label} request timed out after {GC_CALL_TIMEOUT:?}"
-        )))
-      }
+    if sent.is_err() {
+      Self::poison(guard).await;
     }
+    sent
   }
 }
 
@@ -224,7 +252,8 @@ impl GcMatchClient for SteamGcClient {
     cursor: Option<u64>,
   ) -> Result<MatchHistoryPage, MatchSyncError> {
     let mut guard = self.session.lock().await;
-    self.ensure_connected(&mut guard, ctx).await?;
+    let mut cancel = self.launch_cancel.subscribe();
+    self.ensure_connected(&mut guard, ctx, &mut cancel).await?;
 
     let req = CMsgClientToGcGetMatchHistory {
       account_id: Some(ctx.account_id()),
@@ -232,7 +261,14 @@ impl GcMatchClient for SteamGcClient {
       ..Default::default()
     };
     let kind = MsgKind(EgcCitadelClientMessages::KEMsgClientToGcGetMatchHistory as i32);
-    let raw = Self::send_job(&mut guard, req.encode_to_vec(), kind, "history").await?;
+    let raw = Self::send_job(
+      &mut guard,
+      &mut cancel,
+      req.encode_to_vec(),
+      kind,
+      "history",
+    )
+    .await?;
 
     let resp = CMsgClientToGcGetMatchHistoryResponse::decode(raw.data.as_ref())
       .map_err(|e| MatchSyncError::GcUnavailable(format!("bad history response: {e}")))?;
@@ -285,14 +321,15 @@ impl GcMatchClient for SteamGcClient {
     match_id: u64,
   ) -> Result<MatchSalts, MatchSyncError> {
     let mut guard = self.session.lock().await;
-    self.ensure_connected(&mut guard, ctx).await?;
+    let mut cancel = self.launch_cancel.subscribe();
+    self.ensure_connected(&mut guard, ctx, &mut cancel).await?;
 
     let req = CMsgClientToGcGetMatchMetaData {
       match_id: Some(match_id),
       ..Default::default()
     };
     let kind = MsgKind(EgcCitadelClientMessages::KEMsgClientToGcGetMatchMetaData as i32);
-    let raw = Self::send_job(&mut guard, req.encode_to_vec(), kind, "salts").await?;
+    let raw = Self::send_job(&mut guard, &mut cancel, req.encode_to_vec(), kind, "salts").await?;
 
     let resp = CMsgClientToGcGetMatchMetaDataResponse::decode(raw.data.as_ref())
       .map_err(|e| MatchSyncError::GcUnavailable(format!("bad salts response: {e}")))?;
@@ -338,14 +375,4 @@ impl GcMatchClient for Arc<SteamGcClient> {
 }
 
 #[cfg(test)]
-mod tests {
-  use super::*;
-
-  #[test]
-  fn launch_hold_lasts_until_ended() {
-    hold_for_launch();
-    assert!(launch_hold_active());
-    end_launch_hold();
-    assert!(!launch_hold_active());
-  }
-}
+mod tests;
