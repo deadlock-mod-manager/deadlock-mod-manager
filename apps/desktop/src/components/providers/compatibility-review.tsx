@@ -57,11 +57,12 @@ export function CompatibilityReviewProvider({
   const activeRequest = useRef<ReviewRequest | null>(null);
   const activeFixRequest = useRef<LaunchFixRequest | null>(null);
   const nextId = useRef(0);
+  // useHeroDetection already polls this key every 5s; a second interval here
+  // would drift out of phase and double the process scans.
   const game = useQuery({
     queryKey: ["is-game-running"],
     queryFn: isGameRunning,
     enabled: !!gamePath && !!request,
-    refetchInterval: 5000,
     staleTime: 5000,
   });
 
