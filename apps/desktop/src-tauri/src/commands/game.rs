@@ -177,6 +177,7 @@ pub async fn start_game(
   if cancel.is_cancelled() {
     return Err(Error::LaunchCancelled);
   }
+  crate::match_sync::release_for_game_launch().await;
   app_handle.emit("launch-progress", "openingSteam").ok();
   let monitor = request.spawn()?;
   app_handle.emit("launch-progress", "waitingForGame").ok();
@@ -220,6 +221,7 @@ async fn prepare_game_launch(
 pub async fn launch_game_direct(additional_args: String) -> Result<(), Error> {
   log::info!("Launching game without search path changes, args: {additional_args:?}");
   crate::game_session::note_launch_requested(&additional_args);
+  crate::match_sync::release_for_game_launch().await;
 
   let request = {
     let mod_manager = MANAGER.lock().unwrap();

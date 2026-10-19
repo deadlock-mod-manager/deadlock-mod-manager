@@ -362,7 +362,10 @@ pub async fn recent_local_matches(app: &AppHandle, account_id: u32) -> Vec<Local
   if !resources.throttle.try_acquire().await {
     return Vec::new();
   }
-  match resources.gc_client.fetch_match_history(&ctx, None).await {
+  let result = resources.gc_client.fetch_match_history(&ctx, None).await;
+  // An open session counts as playing Deadlock, so don't keep it until the next refresh.
+  resources.gc_client.disconnect().await;
+  match result {
     Ok(page) => page.matches,
     Err(e) => {
       log::debug!("match-sync: local history unavailable: {e}");
@@ -493,6 +496,9 @@ async fn run_account_batch<F, Fut>(
       Arc::clone(&gc_error_seen),
     );
     let result = run_engine(engine).await;
+    // An open session counts as playing Deadlock; holding it between passes would make
+    // Steam ask the player to disconnect it when they start the game.
+    resources_for(ctx.steam_id64).gc_client.disconnect().await;
     match &result {
       Ok(Some(p)) => log::info!(
         "match-sync: {label} finished for {}: {p:?}",
@@ -549,9 +555,25 @@ async fn run_full_sync_batch(app: &AppHandle, config: &model::MatchSyncConfig) {
 
 // Called by the game-presence watcher on the "game closed" transition.
 pub fn on_game_exit(app: AppHandle) {
+  // A launch that ends within the hold (e.g. a crash) must not delay this pass.
+  gc_client::end_launch_hold();
   tokio::spawn(async move {
     background_pass(&app).await;
   });
+}
+
+/// Ends every match-sync Steam session before the game launches and keeps new ones
+/// from opening until the game is up. Steam would otherwise see this account already
+/// playing Deadlock and ask the player to disconnect that session first.
+pub async fn release_for_game_launch() {
+  gc_client::hold_for_launch();
+  let clients: Vec<_> = ACCOUNT_RESOURCES
+    .lock()
+    .unwrap()
+    .values()
+    .map(|resources| Arc::clone(&resources.gc_client))
+    .collect();
+  futures::future::join_all(clients.iter().map(SteamGcClient::release)).await;
 }
 
 pub fn should_monitor(app: &AppHandle) -> bool {
