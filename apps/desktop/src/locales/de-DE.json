@@ -2339,6 +2339,7 @@
       "skipped": ""
     },
     "copyModList": "",
+    "moreActions": "",
     "copyModListEnabled": "",
     "copyModListAll": "",
     "copyModListDisabled": "",
@@ -3526,6 +3527,8 @@
     "autoResetGameinfoFailed": "",
     "showModUpdateBadges": "",
     "showModUpdateBadgesDescription": "",
+    "featureTips": "",
+    "featureTipsDescription": "",
     "modelPreview": "",
     "modelPreviewDescription": "",
     "modelPreviewWarning": "",
@@ -3810,7 +3813,10 @@
     "copyright": "Nicht mit Valve verbunden. Deadlock und das Deadlock-Logo sind eingetragene Marken der Valve Corporation.",
     "resetOnboarding": "Onboarding zurücksetzen",
     "resetOnboardingDescription": "Onboarding-Assistent beim nächsten Start erneut anzeigen.",
-    "resetOnboardingSuccess": "Onboarding wird beim nächsten Start angezeigt"
+    "resetOnboardingSuccess": "Onboarding wird beim nächsten Start angezeigt",
+    "resetFeatureTips": "",
+    "resetFeatureTipsDescription": "",
+    "resetFeatureTipsSuccess": ""
   },
   "update": {
     "checkFailed": "",
@@ -3932,6 +3938,7 @@
     "addFiles": "Dateien hinzufügen",
     "dropFilesDescription": "Eine .vpk-Datei oder ein .zip/.rar/.7z-Archiv ablegen.",
     "dropAreaText": "Dateien/Ordner hier ablegen oder klicken zum Auswählen",
+    "dropAnywhereTitle": "",
     "supportedFormats": "Unterstützt: .vpk/.zip/.rar/.7z",
     "finalizeTitle": "Details vervollständigen",
     "finalizeDescription": "Nur der Name ist erforderlich. Den Rest können Sie später ausfüllen.",
@@ -6152,6 +6159,52 @@
         "previewTitle": "",
         "previewDetail": ""
       }
+    }
+  },
+  "featureHints": {
+    "didYouKnow": "",
+    "showMe": "",
+    "gotIt": "",
+    "turnOff": "",
+    "importFromManager": {
+      "title": "",
+      "body": ""
+    },
+    "myModsMenu": {
+      "title": "",
+      "body": ""
+    },
+    "modContextMenu": {
+      "title": "",
+      "body": ""
+    },
+    "loadOrder": {
+      "title": "",
+      "body": ""
+    },
+    "modsFolderShortcut": {
+      "title": "",
+      "body": ""
+    },
+    "profiles": {
+      "title": "",
+      "body": ""
+    },
+    "settingsSearch": {
+      "title": "",
+      "body": ""
+    },
+    "skinRandomizer": {
+      "title": "",
+      "body": ""
+    },
+    "statsCustomize": {
+      "title": "",
+      "body": ""
+    },
+    "nightlyChannel": {
+      "title": "",
+      "body": ""
     }
   }
 }

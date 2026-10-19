@@ -2339,6 +2339,7 @@
       "skipped": ""
     },
     "copyModList": "",
+    "moreActions": "",
     "copyModListEnabled": "",
     "copyModListAll": "",
     "copyModListDisabled": "",
@@ -3526,6 +3527,8 @@
     "autoResetGameinfoFailed": "",
     "showModUpdateBadges": "",
     "showModUpdateBadgesDescription": "",
+    "featureTips": "",
+    "featureTipsDescription": "",
     "modelPreview": "",
     "modelPreviewDescription": "",
     "modelPreviewWarning": "",
@@ -3810,7 +3813,10 @@
     "copyright": "Non affilié à Valve. Deadlock et le logo Deadlock sont des marques déposées de Valve Corporation.",
     "resetOnboarding": "Réinitialiser l'intégration",
     "resetOnboardingDescription": "Afficher à nouveau l'assistant d'intégration au prochain lancement.",
-    "resetOnboardingSuccess": "L'intégration sera affichée au prochain lancement"
+    "resetOnboardingSuccess": "L'intégration sera affichée au prochain lancement",
+    "resetFeatureTips": "",
+    "resetFeatureTipsDescription": "",
+    "resetFeatureTipsSuccess": ""
   },
   "update": {
     "checkFailed": "",
@@ -3932,6 +3938,7 @@
     "addFiles": "Ajouter des fichiers",
     "dropFilesDescription": "Déposez un fichier .vpk ou une archive .zip/.rar/.7z.",
     "dropAreaText": "Déposez des fichiers/dossiers ici ou cliquez pour sélectionner",
+    "dropAnywhereTitle": "",
     "supportedFormats": "Pris en charge : .vpk/.zip/.rar/.7z",
     "finalizeTitle": "Finaliser les détails",
     "finalizeDescription": "Seul le nom est requis. Vous pouvez remplir le reste plus tard.",
@@ -6152,6 +6159,52 @@
         "previewTitle": "",
         "previewDetail": ""
       }
+    }
+  },
+  "featureHints": {
+    "didYouKnow": "",
+    "showMe": "",
+    "gotIt": "",
+    "turnOff": "",
+    "importFromManager": {
+      "title": "",
+      "body": ""
+    },
+    "myModsMenu": {
+      "title": "",
+      "body": ""
+    },
+    "modContextMenu": {
+      "title": "",
+      "body": ""
+    },
+    "loadOrder": {
+      "title": "",
+      "body": ""
+    },
+    "modsFolderShortcut": {
+      "title": "",
+      "body": ""
+    },
+    "profiles": {
+      "title": "",
+      "body": ""
+    },
+    "settingsSearch": {
+      "title": "",
+      "body": ""
+    },
+    "skinRandomizer": {
+      "title": "",
+      "body": ""
+    },
+    "statsCustomize": {
+      "title": "",
+      "body": ""
+    },
+    "nightlyChannel": {
+      "title": "",
+      "body": ""
     }
   }
 }

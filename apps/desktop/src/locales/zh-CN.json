@@ -2339,6 +2339,7 @@
       "skipped": "已跳过 {{name}} 的更新"
     },
     "copyModList": "",
+    "moreActions": "",
     "copyModListEnabled": "",
     "copyModListAll": "",
     "copyModListDisabled": "",
@@ -3526,6 +3527,8 @@
     "autoResetGameinfoFailed": "Deadlock 关闭后无法恢复原版游戏配置。请使用设置中的「重置为纯净版」。",
     "showModUpdateBadges": "",
     "showModUpdateBadgesDescription": "",
+    "featureTips": "",
+    "featureTipsDescription": "",
     "modelPreview": "3D 模型预览",
     "modelPreviewDescription": "在英雄皮肤面板与 Mod Foundry 中渲染皮肤模型。",
     "modelPreviewWarning": "预览会解码整个角色模型并在你的 GPU 上渲染。这是打开皮肤最慢的一步，而且并非所有皮肤都能解码——异常或损坏的模型可能加载失败，少数情况下还会影响显卡驱动。不同显卡驱动与平台上的表现并不一致；如果预览很慢、空白或崩溃，请关闭此项。",
@@ -3810,7 +3813,10 @@
     "copyright": "与 Valve 无关联。Deadlock 和 Deadlock 徽标是 Valve Corporation 的注册商标。",
     "resetOnboarding": "重置引导",
     "resetOnboardingDescription": "下次启动时再次显示引导向导。",
-    "resetOnboardingSuccess": "下次启动时将显示引导"
+    "resetOnboardingSuccess": "下次启动时将显示引导",
+    "resetFeatureTips": "",
+    "resetFeatureTipsDescription": "",
+    "resetFeatureTipsSuccess": ""
   },
   "update": {
     "checkFailed": "",
@@ -3932,6 +3938,7 @@
     "addFiles": "添加文件",
     "dropFilesDescription": "拖放 .vpk 文件，或 .zip/.rar/.7z 压缩包。",
     "dropAreaText": "将文件/文件夹拖放到此处，或点击选择",
+    "dropAnywhereTitle": "",
     "supportedFormats": "支持格式：.vpk/.zip/.rar/.7z",
     "finalizeTitle": "完善详细信息",
     "finalizeDescription": "仅名称是必填项。其余内容你可以稍后填写。",
@@ -6152,6 +6159,52 @@
         "previewTitle": "",
         "previewDetail": ""
       }
+    }
+  },
+  "featureHints": {
+    "didYouKnow": "",
+    "showMe": "",
+    "gotIt": "",
+    "turnOff": "",
+    "importFromManager": {
+      "title": "",
+      "body": ""
+    },
+    "myModsMenu": {
+      "title": "",
+      "body": ""
+    },
+    "modContextMenu": {
+      "title": "",
+      "body": ""
+    },
+    "loadOrder": {
+      "title": "",
+      "body": ""
+    },
+    "modsFolderShortcut": {
+      "title": "",
+      "body": ""
+    },
+    "profiles": {
+      "title": "",
+      "body": ""
+    },
+    "settingsSearch": {
+      "title": "",
+      "body": ""
+    },
+    "skinRandomizer": {
+      "title": "",
+      "body": ""
+    },
+    "statsCustomize": {
+      "title": "",
+      "body": ""
+    },
+    "nightlyChannel": {
+      "title": "",
+      "body": ""
     }
   }
 }
