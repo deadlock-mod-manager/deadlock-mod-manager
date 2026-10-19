@@ -17,7 +17,7 @@ import { CATALOG_MOD_NAME } from "../support/gamebanana-fixtures";
 import { observeUntil } from "../support/observations";
 import { ALPHA, ALPHA_MODS } from "../support/profile-fixtures";
 import { openSettings } from "../support/settings-actions";
-import { navigate, reveal } from "../support/ui";
+import { navigate, reveal, waitForDisplayed } from "../support/ui";
 
 describe("a profile addons folder wiped outside DMM", () => {
   it("clears missing installs and can reinstall without a stalled transfer", async () => {
@@ -139,9 +139,9 @@ describe("a profile addons folder wiped outside DMM", () => {
     }
     if (phase !== "seed-wipe") {
       if (phase === "restart-wipe")
-        await expect(
-          $(`//main//*[normalize-space()="${CATALOG_MOD_NAME}"]`),
-        ).toBeDisplayed();
+        await waitForDisplayed(
+          `//main//*[normalize-space()="${CATALOG_MOD_NAME}"]`,
+        );
       const installed = await captureBrokenState(
         world,
         phase,
