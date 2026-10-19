@@ -1,9 +1,9 @@
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** No hints until the user has had the app for this long. */
-export const HINTS_QUIET_PERIOD_MS = 3 * DAY_MS;
+const HINTS_QUIET_PERIOD_MS = 3 * DAY_MS;
 /** Minimum gap between two hints. */
-export const HINTS_COOLDOWN_MS = 3 * DAY_MS;
+const HINTS_COOLDOWN_MS = 3 * DAY_MS;
 /** A hint closed without "Got it" this many times stops showing. */
 export const HINT_MAX_IGNORES = 2;
 /** How long the page has to sit without input before a hint appears. */
@@ -11,7 +11,7 @@ export const HINT_IDLE_MS = 2000;
 
 // Ordered by priority: when several hints could show on the same page, the
 // first one in this list wins.
-export const FEATURE_HINTS = [
+const FEATURE_HINTS = [
   { id: "import-from-manager", i18nKey: "importFromManager", minAgeDays: 0 },
   { id: "my-mods-menu", i18nKey: "myModsMenu", minAgeDays: 7 },
   { id: "mod-context-menu", i18nKey: "modContextMenu", minAgeDays: 7 },
