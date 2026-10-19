@@ -3720,8 +3720,8 @@
       "benefit": "",
       "settings": "",
       "learnMore": "",
-      "keepOn": "",
-      "turnOff": ""
+      "turnOn": "",
+      "noThanks": ""
     }
   },
   "privacy": {
@@ -3870,6 +3870,7 @@
     "showOutdated": "Pokaż nieaktualne",
     "showNSFWContent": "Pokaż Treści NSFW",
     "hideNSFWContent": "NSFW Content",
+    "nsfwOnly": "",
     "audioModsOnly": "Tylko Mody Audio",
     "excludeAudioMods": "Ukryj modyfikacje audio",
     "mapsModsOnly": "Tylko mapy",
@@ -4509,7 +4510,7 @@
       "0.18.0": {
         "title": "Downloads",
         "features": [
-          "✨ Add GameBanana file server selection with latency testing",
+          "",
           "✨ Add HTTP request/response logging for outgoing fetch calls",
           "✨ Add \"How to Play\" card with instructions for custom maps",
           "🔧 Better image display in mod gallery and mod detail page.",
@@ -4918,6 +4919,13 @@
       "twitch": "Twitch",
       "carrd": "Carrd"
     },
+    "drututt": {
+      "description": "",
+      "visit": "",
+      "twitch": "",
+      "youtube": "",
+      "pokeEmote": ""
+    },
     "oled": {
       "description": "",
       "customColor": "",
@@ -5131,6 +5139,8 @@
   "accessibility": {
     "deadlockLogoAlt": "Deadlock",
     "snipzteaMascotAlt": "Maskotka Snipztea",
+    "drututtEmoteAlt": "",
+    "drututModsAlt": "",
     "deadlockApiIconAlt": "Ikona API Deadlock",
     "close": "Zamknij",
     "previousSlide": "Poprzedni slajd",
@@ -5689,7 +5699,7 @@
     "switchingTo": "Przełącz na",
     "swapAction": "Zamień mody",
     "keepBothAction": "Zachowaj oba",
-    "keepBothHint": "Niezalecane — tylko jeden się załaduje.",
+    "keepBothHint": "",
     "cancel": "Anuluj",
     "byAuthor": "Stworzone przez: {{author}}"
   },
@@ -5705,7 +5715,7 @@
   },
   "persist": {
     "loadFailed": "Nie udało się załadować zapisanych ustawień",
-    "loadFailedDescription": "Twoje ustawienia nie mogły zostać załadowane ({{reason}}). Zmiany nie zostaną zapisane w tej sesji — spróbuj uruchomić aplikację ponownie."
+    "loadFailedDescription": ""
   },
   "heroParser": {
     "idle": "Parser bohatera: bezczynny",
