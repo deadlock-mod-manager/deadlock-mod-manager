@@ -103,6 +103,17 @@
         "steam": ""
       }
     },
+    "bisect": {
+      "nav": "",
+      "title": "",
+      "body": "",
+      "points": {
+        "fast": "",
+        "pairs": "",
+        "crash": "",
+        "restore": ""
+      }
+    },
     "performance": {
       "nav": "",
       "title": "",
@@ -200,6 +211,27 @@
       "closedIt": "",
       "launchAgain": "",
       "hint": ""
+    },
+    "bisect": {
+      "title": "",
+      "round": "",
+      "left_one": "",
+      "left_other": "",
+      "foundIn_one": "",
+      "foundIn_other": "",
+      "launch": "",
+      "launching": "",
+      "question": "",
+      "broken": "",
+      "fine": "",
+      "found": "",
+      "foundBody": "",
+      "wrongAnswer": "",
+      "restore": "",
+      "again": "",
+      "restored": "",
+      "hint": "",
+      "foundHint": ""
     }
   },
   "more": {
