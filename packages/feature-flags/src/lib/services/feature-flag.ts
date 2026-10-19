@@ -1,7 +1,8 @@
 import type { Cache } from "@deadlock-mods/common";
-import { FEATURE_FLAG_CACHE_TTL } from "@deadlock-mods/common";
+import { FEATURE_FLAG_CACHE_TTL, UnknownError } from "@deadlock-mods/common";
 import type { NewFeatureFlag } from "@deadlock-mods/database";
 import type { Logger } from "@deadlock-mods/logging";
+import { ResultAsync } from "neverthrow";
 import type { FeatureFlagRepository } from "../repositories/feature-flag";
 import type { SegmentService } from "./segment";
 
@@ -30,7 +31,7 @@ export class FeatureFlagService {
     try {
       await this.cache.mdel([
         `feature-flag-value-${featureFlagName}-${userId}`,
-        `all-feature-flags-${userId}`,
+        `all-feature-flags-v2-${userId}`,
         `client-feature-flags-${userId}`,
       ]);
     } catch (error) {
@@ -94,12 +95,19 @@ export class FeatureFlagService {
    */
   async getAllFeatureFlags(options?: { userId?: string }) {
     const userId = options?.userId ?? "";
-    const cacheKey = `all-feature-flags-${userId}`;
+    const cacheKey = `all-feature-flags-v2-${userId}`;
 
-    return this.cache.wrap(
-      cacheKey,
-      () => this.featureFlagRepository.findAll(options),
-      FEATURE_FLAG_CACHE_TTL,
+    return ResultAsync.fromPromise(
+      this.cache.wrap(
+        cacheKey,
+        async () => {
+          const result = await this.featureFlagRepository.findAll(options);
+          if (result.isErr()) throw result.error;
+          return result.value;
+        },
+        FEATURE_FLAG_CACHE_TTL,
+      ),
+      (error) => (error instanceof Error ? error : new UnknownError(error)),
     );
   }
 
@@ -107,10 +115,17 @@ export class FeatureFlagService {
    * Get all exposed feature flags, the result is cached for 15 minutes
    */
   async getAllExposedFeatureFlags() {
-    return this.cache.wrap(
-      "all-exposed-feature-flags",
-      () => this.featureFlagRepository.findAllExposed(),
-      FEATURE_FLAG_CACHE_TTL,
+    return ResultAsync.fromPromise(
+      this.cache.wrap(
+        "all-exposed-feature-flags-v2",
+        async () => {
+          const result = await this.featureFlagRepository.findAllExposed();
+          if (result.isErr()) throw result.error;
+          return result.value;
+        },
+        FEATURE_FLAG_CACHE_TTL,
+      ),
+      (error) => (error instanceof Error ? error : new UnknownError(error)),
     );
   }
 
