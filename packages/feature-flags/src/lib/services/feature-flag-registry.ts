@@ -1,3 +1,4 @@
+import { EntityNotFoundError, UnknownError } from "@deadlock-mods/common";
 import type { FeatureFlagType } from "@deadlock-mods/database";
 import type { Logger } from "@deadlock-mods/logging";
 import { err, ok } from "neverthrow";
@@ -39,6 +40,10 @@ export class FeatureFlagRegistry {
         return ok(existingResult.value);
       }
 
+      if (!(existingResult.error instanceof EntityNotFoundError)) {
+        return err(existingResult.error);
+      }
+
       this.logger
         .withMetadata({ name, type, defaultValue, exposed })
         .info("Creating feature flag");
@@ -69,7 +74,7 @@ export class FeatureFlagRegistry {
         .withError(error)
         .withMetadata({ name })
         .error("Unexpected error registering feature flag");
-      return err(error as Error);
+      return err(error instanceof Error ? error : new UnknownError(error));
     }
   }
 
