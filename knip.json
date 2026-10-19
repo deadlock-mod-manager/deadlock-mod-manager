@@ -51,6 +51,7 @@
         "scripts/**/*.{ts,mjs}",
         "*.config.{ts,mjs}",
         "src/commands/**/*.ts",
+        "src/interaction-handlers/**/*.ts",
         "src/listeners/**/*.ts"
       ]
     },
