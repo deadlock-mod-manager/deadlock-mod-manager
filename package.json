@@ -65,6 +65,7 @@
     "format:check": "oxfmt . --check",
     "check-types:tooling": "pnpm exec tsc --noEmit -p scripts/tsconfig.json",
     "knip:check": "node scripts/check-knip.mjs",
+    "changeset:check": "node scripts/check-changesets.mjs",
     "knip:baseline": "node scripts/check-knip.mjs --update-baseline"
   },
   "dependencies": {

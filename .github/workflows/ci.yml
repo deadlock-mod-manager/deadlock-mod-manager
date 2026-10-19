@@ -52,6 +52,9 @@ jobs:
       - name: Check unused code against reviewed baseline
         run: pnpm knip:check
 
+      - name: Check changeset length
+        run: pnpm changeset:check
+
       - name: Run type check
         run: pnpm check-types
 

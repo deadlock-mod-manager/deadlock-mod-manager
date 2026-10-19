@@ -17,6 +17,9 @@ pre-commit:
         - "*.ts"
         - "*.tsx"
       stage_fixed: true
+    - run: node scripts/check-changesets.mjs {staged_files}
+      glob:
+        - ".changeset/*.md"
     - run: cargo clippy --all-targets
       glob:
         - "**/*.rs"
