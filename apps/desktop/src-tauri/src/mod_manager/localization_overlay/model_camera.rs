@@ -296,7 +296,9 @@ fn repair_with_controls(
     let resource = Resource::parse(&rebuilt).ok()?;
     let mesh_format = kv3::Format::from_payload(resource.get_block_by_index(*index)?).ok()?;
     let data = kv3::encode_preserving(mesh, mesh_encoding, &mesh_format).ok()?;
-    rebuilt = resource.rebuild_with_block(*index, &data).ok()?;
+    rebuilt = resource
+      .rebuild_with_block_preserving(*index, &data)
+      .ok()?;
   }
   let (decoded_format, decoded_model, decoded_encoding) =
     decode_compiled_data(&rebuilt, "rebuilt model camera").ok()?;

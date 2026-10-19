@@ -33,12 +33,28 @@ impl<'a> Resource<'a> {
         {
             return Err(DecodeError::BadResource("expected exactly one DATA block"));
         }
+        let index = self
+            .blocks()
+            .iter()
+            .position(|block| block.kind == BLOCK_TYPE_DATA)
+            .ok_or(DecodeError::MissingDataBlock)?;
+        self.rebuild_with_block_preserving(index, new_data)
+    }
+
+    /// [`Resource::rebuild_with_block`] for compatibility patches: refuse
+    /// payloads outside the block table, and verify every other block survives
+    /// the rebuild byte-for-byte.
+    pub fn rebuild_with_block_preserving(
+        &self,
+        block_index: usize,
+        new_payload: &[u8],
+    ) -> Result<Vec<u8>, DecodeError> {
         let end = self
             .blocks()
             .iter()
             .map(|block| block.offset as usize + block.size as usize)
             .max()
-            .ok_or(DecodeError::MissingDataBlock)?;
+            .ok_or(DecodeError::BadResource("resource has no blocks"))?;
         let tail = self
             .raw()
             .get(end..)
@@ -48,7 +64,23 @@ impl<'a> Resource<'a> {
                 "unsupported payload outside resource blocks",
             ));
         }
-        self.rebuild_with_data(new_data)
+        let output = self.rebuild_with_block(block_index, new_payload)?;
+        let rebuilt = Resource::parse(&output)?;
+        let preserved = rebuilt.blocks().len() == self.blocks().len()
+            && self
+                .blocks()
+                .iter()
+                .zip(rebuilt.blocks())
+                .enumerate()
+                .all(|(index, (old, new))| {
+                    old.kind == new.kind
+                        && (index == block_index
+                            || self.get_block_by_index(index) == rebuilt.get_block_by_index(index))
+                });
+        if !preserved {
+            return Err(DecodeError::BadResource("rebuild changed another block"));
+        }
+        Ok(output)
     }
 
     pub fn data_block(&self) -> Result<&'a [u8], DecodeError> {

@@ -478,7 +478,7 @@ paths for every hero and alternate form, without hero-specific dispatch.
 
 Model checks include `m_animGraph2Refs.m_hGraph` and the legacy
 `anim_graph_resource` in embedded metadata, including mods with no separate
-skeleton file. When both NM binding arrays are absent or empty, the manager can
+skeleton file. When both NM binding arrays are absent, null, or empty, the manager can
 inherit the same model's installed-game bindings after verifying the current NM
 sampling skeleton. Every sampled bone and its complete ancestor chain must retain
 its named parent. Reference poses must match, or all sampled local translations
@@ -849,7 +849,11 @@ Previously reviewed choices can restore a damaged overlay only when its inputs
 still match; choices are not carried across changed inputs.
 
 The manager stages overlay and receipt writes before replacing their destination
-files. Mod changes and overlay deletion invalidate both files. Increment
+files. Before the staged overlay is kept, it is read back and every entry is
+compared with the file staged for it; a missing, extra, or different entry fails
+the write. Every compatibility rebuild of a resource refuses data outside its
+block table and checks that each block it did not edit is byte-identical after
+the rebuild. Mod changes and overlay deletion invalidate both files. Increment
 `REPAIR_REVISION` in `manager/localization/receipt.rs` when changing repair rules or
 output semantics so already-installed overlays are regenerated.
 

@@ -141,7 +141,7 @@ pub(super) fn repair(source: &[u8], base: &[u8]) -> Result<Option<Vec<u8>>, &'st
       return Err("Camera migration failed its preservation check");
     }
     output = resource
-      .rebuild_with_block(index, &rebuilt)
+      .rebuild_with_block_preserving(index, &rebuilt)
       .map_err(|_| "Camera model could not be rebuilt")?;
   }
   Ok(Some(output))

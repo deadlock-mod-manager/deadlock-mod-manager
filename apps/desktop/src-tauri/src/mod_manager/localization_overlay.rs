@@ -3,7 +3,6 @@ use crate::mod_manager::vdata_history::{BaselineEvidence, VdataHistoryIndex};
 use keyvalues_parser::Value;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-#[cfg(test)]
 use source2_model::vpk_extract::VpkArchive;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
@@ -1232,6 +1231,7 @@ impl LocalizationOverlayPlan {
         output_path.display()
       ))
     })?;
+    verify_packed_overlay(workspace.path(), output_path)?;
     Ok(LocalizationOverlayApplyResult {
       has_overlay: true,
       output_path: Some(output_path.display().to_string()),
@@ -1242,6 +1242,51 @@ impl LocalizationOverlayPlan {
       data_warnings,
     })
   }
+}
+
+/// Read the packed overlay back and compare every entry with the file staged
+/// for it. The archive is closed before returning, since an open handle can
+/// block replacing the file on Windows.
+fn verify_packed_overlay(workspace: &Path, output_path: &Path) -> Result<(), Error> {
+  let mismatch = |detail: String| {
+    Error::ModInvalid(format!(
+      "Overlay at {} does not match its staged files: {detail}",
+      output_path.display()
+    ))
+  };
+  let mut staged = BTreeMap::new();
+  let mut directories = vec![workspace.to_path_buf()];
+  while let Some(directory) = directories.pop() {
+    for entry in fs::read_dir(&directory)? {
+      let path = entry?.path();
+      if path.is_dir() {
+        directories.push(path);
+        continue;
+      }
+      let relative = path
+        .strip_prefix(workspace)
+        .map_err(|error| mismatch(error.to_string()))?;
+      staged.insert(normalize_path(&relative.to_string_lossy()), path);
+    }
+  }
+  let archive = VpkArchive::open(output_path).map_err(|error| mismatch(error.to_string()))?;
+  let packed: BTreeSet<_> = archive
+    .list_entries()
+    .iter()
+    .map(|entry| normalize_path(entry))
+    .collect();
+  if packed.iter().ne(staged.keys()) {
+    return Err(mismatch("entry list differs".into()));
+  }
+  for (entry, path) in &staged {
+    let bytes = archive
+      .extract_entry(entry)
+      .map_err(|error| mismatch(error.to_string()))?;
+    if bytes != fs::read(path)? {
+      return Err(mismatch(format!("{entry} differs")));
+    }
+  }
+  Ok(())
 }
 
 fn build_compiled_data(

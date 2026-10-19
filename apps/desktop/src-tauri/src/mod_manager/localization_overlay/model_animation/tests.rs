@@ -168,6 +168,12 @@ fn existing_partial_or_authored_bindings_are_not_overwritten() {
   bindings(&mut current);
   let mut old = model(&["root", "head"], &[-1, 0]);
   assert!(eligible(&old, &current));
+  let mut null = old.clone();
+  let Kv3Value::Object(fields) = &mut null else {
+    panic!("model object");
+  };
+  fields.push((FIELDS[0].into(), Kv3Value::Null));
+  assert!(restore_bindings(&resource(&null), &resource(&current)).is_some());
   let Kv3Value::Object(fields) = &mut old else {
     panic!("model object");
   };
