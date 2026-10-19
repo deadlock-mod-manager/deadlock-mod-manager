@@ -154,7 +154,8 @@ jobs:
       - name: Cache CEF binaries
         uses: actions/cache@v6
         with:
-          path: ~/.cache/tauri-cef
+          # tauri-cli downloads CEF into dirs::cache_dir()/tauri-cef.
+          path: ${{ matrix.os == 'windows' && '~/AppData/Local/tauri-cef' || '~/.cache/tauri-cef' }}
           key: ${{ runner.os }}-${{ runner.arch }}-cef-${{ env.TAURI_CEF_TAG }}-${{ hashFiles('apps/desktop/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-${{ runner.arch }}-cef-${{ env.TAURI_CEF_TAG }}-
@@ -163,7 +164,7 @@ jobs:
         id: cache-tauri-cli
         uses: actions/cache@v6
         with:
-          path: ~/.cargo/bin/cargo-tauri
+          path: ~/.cargo/bin/cargo-tauri${{ matrix.os == 'windows' && '.exe' || '' }}
           key: ${{ runner.os }}-${{ runner.arch }}-tauri-cli-${{ env.TAURI_CEF_TAG }}
 
       - name: Install Tauri CEF CLI
