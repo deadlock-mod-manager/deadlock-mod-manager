@@ -14,6 +14,7 @@ import { resolveFileserverGeo } from "../../services/geo";
 import { modCache } from "../../services/mod-cache";
 import { ModSyncHooksService } from "../../services/mod-sync-hooks";
 import { Provider, providerRegistry } from "../registry";
+import { assertGameBananaResponseOk } from "./response";
 import type {
   GameBananaListedSubmission,
   GameBananaProfileSkip,
@@ -176,18 +177,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       `${GAME_BANANA_BASE_URL}/${modType}/${remoteId}/DownloadPage`,
     );
 
-    if (!response.ok) {
-      let errorBody: string;
-      try {
-        // Try to parse as JSON first
-        const errorData = await response.json();
-        errorBody = JSON.stringify(errorData);
-      } catch {
-        // Fall back to text if JSON parsing fails
-        errorBody = await response.text();
-      }
-      throw new ProviderError(`HTTP ${response.status}: ${errorBody}`);
-    }
+    await assertGameBananaResponseOk(response);
 
     const data = (await response.json()) as D;
     return data;

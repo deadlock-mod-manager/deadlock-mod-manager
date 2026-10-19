@@ -7,6 +7,9 @@
     "incremental": false,
     "types": ["bun"]
   },
-  "include": ["src/lib/redis-options.test.ts"],
+  "include": [
+    "src/lib/redis-options.test.ts",
+    "src/providers/game-banana/response.test.ts"
+  ],
   "exclude": ["node_modules", "dist"]
 }
