@@ -79,6 +79,26 @@ describe("real Rust downloads", () => {
     await navigate("downloads");
     await card().waitForDisplayed();
     if (process.env.DMM_E2E_PHASE === "transfer") {
+      if (scenario === "downloads-auth") {
+        await expect(card()).not.toHaveText(expect.stringContaining("100%"));
+        const completed = $('[role="tab"]*=Completed');
+        await expect(completed).toHaveText("Completed (0)");
+        await completed.click();
+        await browser.keys("Space");
+        await expect(completed).toHaveAttribute("aria-selected", "true");
+        await expect(card()).not.toBeDisplayed();
+        const failed = $('[role="tab"]*=Failed');
+        await expect(failed).toHaveText("Failed (1)");
+        await failed.click();
+        await browser.keys("Space");
+        await expect(failed).toHaveAttribute("aria-selected", "true");
+        await expect(card().$("button=Retry")).toBeDisplayed();
+        await browser.saveScreenshot(
+          path.join(world, "artifacts", "failed-download.png"),
+        );
+        await $('[role="tab"]*=All').click();
+        await expect(card().$("button=Retry")).toBeDisplayed();
+      }
       await retry();
       if (
         scenario === "downloads-pause" ||

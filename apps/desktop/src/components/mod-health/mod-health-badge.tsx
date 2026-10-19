@@ -112,7 +112,7 @@ export const ModHealthBadge = ({
       <TooltipTrigger asChild>
         <Badge
           className={cn(
-            "cursor-help bg-background/80 backdrop-blur-sm",
+            "cursor-help bg-background/95",
             BADGE_STYLES[kind],
             className,
           )}

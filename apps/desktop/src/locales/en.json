@@ -2272,6 +2272,24 @@
     "at": "at"
   },
   "myMods": {
+    "selection": {
+      "start": "Select mods",
+      "working": "Applying changes…",
+      "done": "Done selecting",
+      "selectMod": "Select {{name}}",
+      "count_one": "{{count}} mod selected",
+      "count_other": "{{count}} mods selected",
+      "selectFiltered": "Select all matching",
+      "clear": "Clear selection",
+      "enable": "Enable selected",
+      "disable": "Disable selected",
+      "enableTitle": "Enable {{count}} selected mods?",
+      "enableBody": "Enable only the {{count}} selected, downloaded mods in the active profile. Mods that need file selection or individual confirmation will be listed for review.",
+      "disableTitle": "Disable {{count}} selected mods?",
+      "disableBody": "Disable only the {{count}} selected, enabled mods in the active profile. Downloaded files will be kept so you can enable them again.",
+      "disabled_one": "{{count}} selected mod disabled",
+      "disabled_other": "{{count}} selected mods disabled"
+    },
     "compatibility": {
       "review": "Review fixes",
       "reviewDescription": "Some fixes need your approval before they apply. Your mod files are never changed.",
@@ -2825,6 +2843,7 @@
     "next": "Next"
   },
   "downloads": {
+    "failed": "Failed",
     "alreadyQueued": "A download for this mod is already queued. Wait for it to finish or cancel it first.",
     "downloading": "Downloading {{count}} mod",
     "downloading_plural": "Downloading {{count}} mods",
@@ -5302,6 +5321,11 @@
     "activeProfile": "Active Profile",
     "selectProfile": "Select Profile",
     "manage": "Manage Profiles",
+    "editNamed": "Edit {{profileName}} profile",
+    "deleteNamed": "Delete {{profileName}} profile",
+    "activateNamed": "Activate {{profileName}} profile",
+    "inactive": "Inactive",
+    "switching": "Switching profile…",
     "manageDescription": "Create, edit, and switch between different mod profiles. Each profile remembers which mods you have enabled.",
     "createNew": "Create New Profile",
     "create": "Create",

@@ -15,7 +15,11 @@ import DownloadCard from "@/components/downloads/download-card";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
 import { usePersistedStore } from "@/lib/store";
-import { ModStatus } from "@/types/mods";
+import {
+  isDownloadInProgress,
+  isDownloadComplete,
+  isDownloadFailed,
+} from "@/lib/download/status";
 
 // Helper function to safely get a timestamp from downloadedAt which could be a Date, string, or undefined
 const getDownloadTimestamp = (
@@ -25,26 +29,17 @@ const getDownloadTimestamp = (
     return 0;
   }
 
-  if (downloadedAt instanceof Date) {
-    return downloadedAt.getTime();
-  }
-
-  if (typeof downloadedAt === "string") {
-    return new Date(downloadedAt).getTime();
-  }
-
-  return 0;
+  return downloadedAt instanceof Date
+    ? downloadedAt.getTime()
+    : new Date(downloadedAt).getTime();
 };
-
-const isDownloadInProgress = (status: ModStatus) =>
-  status === ModStatus.Downloading ||
-  status === ModStatus.Extracting ||
-  status === ModStatus.Paused;
 
 const Downloads = () => {
   const { t } = useTranslation();
   const downloads = usePersistedStore((state) => state.localMods);
-  const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
+  const [filter, setFilter] = useState<
+    "all" | "active" | "completed" | "failed"
+  >("all");
 
   const filteredDownloads = useMemo(() => {
     if (filter === "all") {
@@ -53,7 +48,11 @@ const Downloads = () => {
     if (filter === "active") {
       return downloads.filter((d) => isDownloadInProgress(d.status));
     }
-    return downloads.filter((d) => !isDownloadInProgress(d.status));
+    return downloads.filter((d) =>
+      filter === "failed"
+        ? isDownloadFailed(d.status)
+        : isDownloadComplete(d.status),
+    );
   }, [downloads, filter]);
 
   const sortedDownloads = useMemo(() => {
@@ -80,11 +79,15 @@ const Downloads = () => {
   );
 
   const completedCount = useMemo(
-    () => downloads.filter((d) => !isDownloadInProgress(d.status)).length,
+    () => downloads.filter((d) => isDownloadComplete(d.status)).length,
     [downloads],
   );
 
-  const subtitle = `${activeCount} ${t("downloads.active").toLowerCase()}, ${completedCount} ${t("downloads.completed").toLowerCase()}, ${downloads.length} ${t("downloads.total").toLowerCase()}`;
+  const failedCount = downloads.filter((d) =>
+    isDownloadFailed(d.status),
+  ).length;
+
+  const subtitle = `${activeCount} ${t("downloads.active").toLowerCase()}, ${completedCount} ${t("downloads.completed").toLowerCase()}, ${failedCount} ${t("downloads.failed").toLowerCase()}, ${downloads.length} ${t("downloads.total").toLowerCase()}`;
 
   return (
     <div className='flex h-full min-h-0 w-full flex-col'>
@@ -93,9 +96,15 @@ const Downloads = () => {
         <Tabs
           className='w-auto pt-4'
           defaultValue='all'
-          onValueChange={(value) =>
-            setFilter(value as "all" | "active" | "completed")
-          }
+          onValueChange={(value) => {
+            if (
+              value === "all" ||
+              value === "active" ||
+              value === "completed" ||
+              value === "failed"
+            )
+              setFilter(value);
+          }}
           value={filter}>
           <TabsList className='rounded-full bg-muted/60 p-1'>
             <TabsTrigger
@@ -114,6 +123,11 @@ const Downloads = () => {
               value='completed'>
               <Package className='mr-1' />
               {t("downloads.completed")} ({completedCount})
+            </TabsTrigger>
+            <TabsTrigger
+              className='rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground'
+              value='failed'>
+              {t("downloads.failed")} ({failedCount})
             </TabsTrigger>
           </TabsList>
         </Tabs>

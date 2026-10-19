@@ -27,7 +27,7 @@ export const MissingFilesWarning = ({
       <TooltipTrigger asChild>
         <Badge
           className={cn(
-            "cursor-help border-destructive/50 bg-background/80 text-red-300 backdrop-blur-sm",
+            "cursor-help border-destructive/50 bg-background/95 text-red-300",
             className,
           )}
           data-testid='missing-files-warning'

@@ -6,6 +6,7 @@ import type { MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { DownloadHealthNotice } from "@/components/downloads/download-health-notice";
+import { isDownloadComplete, isDownloadFailed } from "@/lib/download/status";
 import { downloadManager } from "@/lib/download/manager";
 import { useDownload } from "@/hooks/use-download";
 import { getErrorMessage } from "@/lib/errors";
@@ -62,6 +63,7 @@ const getStatusVariant = (status: ModStatus): StatusChipVariant => {
         pillClass: "bg-primary/15 text-primary",
         dotClass: "bg-primary",
       };
+    case ModStatus.Error:
     case ModStatus.FailedToDownload:
       return {
         label: "modStatus.failed",
@@ -105,9 +107,10 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
   const isDownloading = download.status === ModStatus.Downloading;
   const isPaused = download.status === ModStatus.Paused;
   const isExtracting = download.status === ModStatus.Extracting;
-  const isInProgress = isDownloading || isPaused || isExtracting;
-  const isFailed = download.status === ModStatus.FailedToDownload;
-  const percentage = isInProgress ? (modProgress?.percentage ?? 0) : 100;
+  const isFailed = isDownloadFailed(download.status);
+  const percentage = isDownloadComplete(download.status)
+    ? 100
+    : (modProgress?.percentage ?? 0);
   const speed = isDownloading ? (modProgress?.speed ?? 0) : 0;
   const totalSize = getQueuedDownloads(download).reduce(
     (acc, curr) => acc + (curr.size || 0),
@@ -185,31 +188,35 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
               {formatSize(totalSize)}
             </span>
           )}
-          <span
-            className={cn(
-              "text-xs tabular-nums",
-              isDownloading ? "text-primary" : "text-muted-foreground",
-            )}>
-            {isDownloading
-              ? `${formatSpeed(speed)}, ${percentage.toFixed(1)}%`
-              : isPaused
-                ? `${t("downloads.paused")}, ${percentage.toFixed(1)}%`
-                : isExtracting
-                  ? t("modStatus.extracting")
-                  : `${percentage.toFixed(0)}%`}
-          </span>
+          {!isFailed && (
+            <span
+              className={cn(
+                "text-xs tabular-nums",
+                isDownloading ? "text-primary" : "text-muted-foreground",
+              )}>
+              {isDownloading
+                ? `${formatSpeed(speed)}, ${percentage.toFixed(1)}%`
+                : isPaused
+                  ? `${t("downloads.paused")}, ${percentage.toFixed(1)}%`
+                  : isExtracting
+                    ? t("modStatus.extracting")
+                    : `${percentage.toFixed(0)}%`}
+            </span>
+          )}
         </div>
       </div>
 
-      <div className='mt-4 h-2 w-full overflow-hidden rounded-full bg-muted/60'>
-        <div
-          className={cn(
-            "h-full rounded-full bg-primary transition-[width] duration-500 ease-out",
-            (isDownloading || isExtracting) && "downloads-shimmer",
-          )}
-          style={{ width: `${percentage}%` }}
-        />
-      </div>
+      {!isFailed && (
+        <div className='mt-4 h-2 w-full overflow-hidden rounded-full bg-muted/60'>
+          <div
+            className={cn(
+              "h-full rounded-full bg-primary transition-[width] duration-500 ease-out",
+              (isDownloading || isExtracting) && "downloads-shimmer",
+            )}
+            style={{ width: `${percentage}%` }}
+          />
+        </div>
+      )}
 
       <DownloadHealthNotice progress={modProgress} status={download.status} />
 

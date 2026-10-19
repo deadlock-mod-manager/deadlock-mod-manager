@@ -292,6 +292,9 @@ pub async fn check_gamebanana_catalog_updates(
   submissions: Vec<InstalledSubmissionDto>,
 ) -> Result<CatalogUpdatesDto, Error> {
   let backend = state.backend()?;
+  // Observers can overlap while installation changes the query key. Recheck
+  // the cache after the preceding caller has finished populating it.
+  let _update_check = backend.update_check.lock().await;
   let now = unix_timestamp();
   let mut resolved = Vec::new();
   let mut pending = Vec::new();

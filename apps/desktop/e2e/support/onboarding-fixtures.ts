@@ -10,6 +10,10 @@ export const prepareOnboardingWorld = async (world: CreatedWorld) => {
     .object({ state: z.record(z.string(), z.json()), version: z.number() })
     .parse(await readPersistedDocument(world.directory));
   persisted.state.hasCompletedOnboarding = false;
+  persisted.state.telemetrySettings = {
+    analyticsEnabled: false,
+    hasSeenTelemetryPrompt: false,
+  };
   await writeFile(
     path.join(world.configuration.roots.appData, "state.json"),
     JSON.stringify({ "local-config": JSON.stringify(persisted) }),

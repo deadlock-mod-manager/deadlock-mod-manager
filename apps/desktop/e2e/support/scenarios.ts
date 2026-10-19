@@ -39,6 +39,7 @@ import {
 import { prepareLegacyCatalog } from "./catalog-upgrade-fixtures";
 import { prepareOnboardingWorld } from "./onboarding-fixtures";
 import {
+  libraryAuthorRoutes,
   legacyLibraryAuthorRoutes,
   prepareLegacyLibraryAuthorWorld,
 } from "./library-author-fixtures";
@@ -380,7 +381,7 @@ export const scenarios = {
     family: "navigation",
     spec: "library-author-navigation",
     phases: ["author-navigation"],
-    routes: contentRoutes,
+    routes: libraryAuthorRoutes,
   },
   "gamebanana-detected-files": {
     ...defaults,
@@ -507,6 +508,14 @@ export const scenarios = {
   "profiles-pointer": profiles,
   "profiles-keyboard": profiles,
   "conflicts-resolve": conflicts,
+  "library-selection": {
+    ...defaults,
+    family: "profiles",
+    spec: "library-selection",
+    phases: ["select", "restart-selection"],
+    routes: profileRoutes,
+    prepare: async (world: CreatedWorld) => prepareProfileWorld(world),
+  },
   "downloads-pause": downloads,
   "downloads-range": downloads,
   "downloads-cancel": { ...downloads, coverage: "ipc-recovery" },
