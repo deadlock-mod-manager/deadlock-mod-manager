@@ -2639,7 +2639,8 @@
         "unverifiedInheritance": "Inherited settings update skipped",
         "missingDevelopmentState": "Hero visibility needs author review",
         "omittedHeroDefinition": "Hero definition omitted because required abilities are unavailable",
-        "omittedEnumMapEntry": "Omitted stat value needs author review"
+        "omittedEnumMapEntry": "Omitted stat value needs author review",
+        "unreadableData": "Game data file could not be read"
       },
       "reasons": {
         "definitionUnavailable": "Not found in the installed game or enabled mods.",
@@ -2647,7 +2648,8 @@
         "unrecognizedClassOrEnum": "The definition uses a class or enum value that could not be verified against the installed game.",
         "ambiguousTemplates": "More than one template could supply the current settings.",
         "inheritanceCycle": "The definitions inherit from each other in a loop.",
-        "visibilityMigrationUnverified": "No matching current hero provides an unambiguous visibility value."
+        "visibilityMigrationUnverified": "No matching current hero provides an unambiguous visibility value.",
+        "unreadableResource": "The file could not be decoded. It loads as shipped and other mods' changes to it are not combined."
       }
     },
     "localization": {
@@ -2672,9 +2674,10 @@
       "snapshotWarningTitle": "Some mods include many game text entries",
       "snapshotWarningDescription": "These files may include an older copy of the game's text. DMM ignored unchanged text and kept only the differences it found.",
       "snapshotWarningItem": "{{modName}} differs in {{changed}} of {{total}} text entries",
-      "parseWarningTitle": "Some text entries could not be read",
-      "parseWarningDescription": "DMM skipped only the damaged lines and kept the readable text.",
+      "parseWarningTitle": "Some text could not be read",
+      "parseWarningDescription": "DMM skipped the damaged lines and kept the readable text. A file it could not read at all loads as shipped.",
       "parseWarningItem": "{{modName}} has unreadable text on lines {{lines}}",
+      "parseErrorItem": "{{modName}} has a text file DMM could not read",
       "advancedDetails_one": "Advanced details for {{count}} file",
       "advancedDetails_other": "Advanced details for {{count}} files",
       "textConflictLabel": "Text entry: {{token}}",

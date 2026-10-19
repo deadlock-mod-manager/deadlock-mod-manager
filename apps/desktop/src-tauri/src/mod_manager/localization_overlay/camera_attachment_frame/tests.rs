@@ -577,7 +577,7 @@ fn tweaked_or_partial_old_pivots_migrate_with_their_authored_transforms() {
   let mut partial = mesh(OLD_FRAME);
   points_mut(&mut partial).remove(1);
   for authored in [mesh(turned(OLD_FRAME, 10_f64.to_radians())), partial] {
-    let original = container(&model(), &[authored.clone()]);
+    let original = container(&model(), std::slice::from_ref(&authored));
     let repaired = repair(&original, &base).unwrap().unwrap();
     let mut expected = authored;
     migrate_mesh(&mut expected, None).unwrap();

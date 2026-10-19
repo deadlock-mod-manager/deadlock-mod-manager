@@ -125,7 +125,17 @@ repaired, so mod health reports them and they never pause launch.
   of the same mod
 - Baselines that are not an exact historical match
 - Mods whose files are all missing, localization files that could not be parsed,
-  and stale localization snapshots
+  game-data files that could not be decoded, and stale localization snapshots
+
+A mod file that cannot be read no longer stops the analysis for every mod. A
+localization file that is not UTF-8 or byte-order-marked UTF-16, or has no
+readable `lang` and `Tokens` objects, is skipped with a parse warning carrying
+the error. A VData file that fails to decode is skipped with an
+`unreadableData` warning; its rows are staged per file, so a failure leaves
+nothing partial behind. When the unreadable file is the one the game would
+load for its path, the manager leaves that path out of the overlay instead of
+replacing it with a merge of the other mods, and the file loads as shipped.
+Installed game files that fail to parse still stop the analysis.
 
 Unmanaged VPKs, protected and shared resources, and every other finding are
 listed in review when it opens, without pausing launch on their own. When review

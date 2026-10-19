@@ -182,7 +182,8 @@ pub(crate) fn symptom(finding: Finding) -> ModHealthSymptom {
       | DataWarningKind::UnverifiedInheritance
       | DataWarningKind::MissingDevelopmentState
       | DataWarningKind::OmittedHeroDefinition
-      | DataWarningKind::OmittedEnumMapEntry,
+      | DataWarningKind::OmittedEnumMapEntry
+      | DataWarningKind::UnreadableData,
     ) => GameData,
     Finding::Localization => GameData,
   }

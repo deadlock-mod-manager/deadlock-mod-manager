@@ -68,6 +68,7 @@ interface LocalizationParseWarning {
   modId: string;
   filePath: string;
   skippedLines: number[];
+  error: string | null;
 }
 
 interface HeroIdReassignment {
@@ -567,11 +568,18 @@ export function LocalizationConflictReview({
                       {analysis.parseWarnings.map((warning) => (
                         <li key={`${warning.modId}:${warning.filePath}`}>
                           <p>
-                            {t("modOrdering.localization.parseWarningItem", {
-                              modName:
-                                modNames.get(warning.modId) ?? warning.modId,
-                              lines: warning.skippedLines.join(", "),
-                            })}
+                            {warning.error
+                              ? t("modOrdering.localization.parseErrorItem", {
+                                  modName:
+                                    modNames.get(warning.modId) ??
+                                    warning.modId,
+                                })
+                              : t("modOrdering.localization.parseWarningItem", {
+                                  modName:
+                                    modNames.get(warning.modId) ??
+                                    warning.modId,
+                                  lines: warning.skippedLines.join(", "),
+                                })}
                           </p>
                           <code className='mt-0.5 block break-all text-muted-foreground'>
                             {warning.filePath}

@@ -166,6 +166,8 @@ pub struct LocalizationParseWarning {
   pub mod_id: String,
   pub file_path: String,
   pub skipped_lines: Vec<usize>,
+  /// Set when the whole file could not be read and was skipped.
+  pub error: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -380,6 +382,9 @@ struct CompiledDataTable {
   row_warnings: Vec<vdata_compatibility::DataWarning>,
   baselines: Vec<CompiledDataBaseline>,
   restorations: Vec<vdata_compatibility::DataRepair>,
+  unreadable: Vec<vdata_compatibility::DataWarning>,
+  // An unreadable source would win in game, so the table is left out.
+  shadowed: bool,
 }
 
 /// Findings about whole mod files. They do not depend on conflict choices, so
@@ -387,6 +392,7 @@ struct CompiledDataTable {
 #[derive(Default)]
 struct FileFindings {
   repairs: Vec<vdata_compatibility::DataRepair>,
+  warnings: Vec<vdata_compatibility::DataWarning>,
 }
 
 fn prepare_data(
@@ -396,6 +402,7 @@ fn prepare_data(
 ) -> Result<vdata_compatibility::PreparedData, Error> {
   let mut prepared = vdata_compatibility::prepare(tables, resolutions)?;
   prepared.repairs.extend(files.repairs.iter().cloned());
+  prepared.warnings.extend(files.warnings.iter().cloned());
   Ok(prepared)
 }
 
@@ -595,6 +602,9 @@ impl LocalizationOverlayPlan {
     let mut file_findings = FileFindings::default();
     let mut game_text = BTreeSet::new();
     let mut seeded_text = BTreeSet::new();
+    let mut read_text = BTreeSet::new();
+    // Paths whose winning file could not be read stay as shipped.
+    let mut unreadable_text = BTreeSet::new();
     let mut compiled_sources: BTreeMap<String, Vec<CompiledDataSource>> = BTreeMap::new();
     let mut skeleton_sources: BTreeMap<String, Vec<CompiledDataSource>> = BTreeMap::new();
     let mut mesh_sources: BTreeMap<String, Vec<CompiledDataSource>> = BTreeMap::new();
@@ -718,6 +728,9 @@ impl LocalizationOverlayPlan {
 
         for file_path in localization_paths {
           let normalized_file = normalize_path(&file_path);
+          if unreadable_text.contains(&normalized_file) {
+            continue;
+          }
 
           let base = match bases.get(&normalized_file) {
             Some(base) => base.clone(),
@@ -736,19 +749,39 @@ impl LocalizationOverlayPlan {
             }
           };
 
-          let bytes = archive.extract_entry(&file_path).map_err(|error| {
-            Error::ModInvalid(format!(
-              "Failed to extract {file_path} from {}: {error}",
-              vpk_path.display()
-            ))
-          })?;
-          let parsed_mod_file =
-            parse_localization_bytes(&bytes, &format!("{}:{file_path}", mod_input.mod_id))?;
+          let parsed_mod_file = archive
+            .extract_entry(&file_path)
+            .map_err(|error| {
+              Error::ModInvalid(format!(
+                "Failed to extract {file_path} from {}: {error}",
+                vpk_path.display()
+              ))
+            })
+            .and_then(|bytes| {
+              parse_localization_bytes(&bytes, &format!("{}:{file_path}", mod_input.mod_id))
+            });
+          let parsed_mod_file = match parsed_mod_file {
+            Ok(parsed) => parsed,
+            Err(error) => {
+              if !read_text.contains(&normalized_file) {
+                unreadable_text.insert(normalized_file);
+              }
+              parse_warnings.push(LocalizationParseWarning {
+                mod_id: mod_input.mod_id.clone(),
+                file_path: file_path.replace('\\', "/"),
+                skipped_lines: Vec::new(),
+                error: Some(error.to_string()),
+              });
+              continue;
+            }
+          };
+          read_text.insert(normalized_file.clone());
           if !parsed_mod_file.skipped_lines.is_empty() {
             parse_warnings.push(LocalizationParseWarning {
               mod_id: mod_input.mod_id.clone(),
               file_path: file_path.replace('\\', "/"),
               skipped_lines: parsed_mod_file.skipped_lines,
+              error: None,
             });
           }
           let mod_file = parsed_mod_file.file;
@@ -1241,8 +1274,11 @@ fn build_compiled_data(
       sources,
       Some(history),
     )?;
-    files.repairs.append(&mut table.restorations);
-    tables.push(table);
+    files.warnings.append(&mut table.unreadable);
+    if !table.shadowed {
+      files.repairs.append(&mut table.restorations);
+      tables.push(table);
+    }
   }
   Ok(tables)
 }
@@ -1269,26 +1305,97 @@ fn build_compiled_table(
     .as_object()
     .expect("base encoding root was validated as an object");
 
-  let files = sources.len();
-  let mut ignored_vanilla_rows = 0usize;
-  let mut groups: BTreeMap<String, CompiledDataGroup> = BTreeMap::new();
-  let mut retired_rows: BTreeMap<String, Vec<CompiledDataCandidateValue>> = BTreeMap::new();
-  let mut row_repairs = Vec::new();
-  let mut row_warnings = Vec::new();
-  let mut baselines = Vec::new();
-  let mut restorations = Vec::new();
+  let mut table = TableSources::default();
+  let mut unreadable = Vec::new();
+  let mut readable_priority: Option<usize> = None;
   let enum_maps = enum_maps::EnumMapCompatibility::learn(base_rows);
   for source in sources {
-    let CompiledDataSource {
-      mod_id,
-      source_vpk,
-      priority,
-      bytes,
-    } = source;
-    let (_, mod_root, mod_encoding) =
-      decode_compiled_data(&bytes, &format!("{mod_id}:{source_vpk}:{file_path}"))?;
-    if omits_game_content(&base_root, &mod_root) {
-      restorations.push(vdata_compatibility::DataRepair {
+    let (mod_id, source_vpk, priority) = (
+      source.mod_id.clone(),
+      source.source_vpk.clone(),
+      source.priority,
+    );
+    match compile_source(
+      file_path,
+      &base_root,
+      base_rows,
+      base_row_encodings,
+      &enum_maps,
+      history,
+      source,
+    ) {
+      Ok(contribution) => {
+        readable_priority = Some(readable_priority.map_or(priority, |top| top.min(priority)));
+        table.add(contribution);
+      }
+      Err(error) => unreadable.push((
+        priority,
+        vdata_compatibility::DataWarning {
+          mod_id,
+          source_vpk,
+          file_path: file_path.into(),
+          row_name: String::new(),
+          kind: vdata_compatibility::WarningKind::UnreadableData,
+          field_path: String::new(),
+          target_file: String::new(),
+          target_row: String::new(),
+          reason: vdata_compatibility::WarningReason::UnreadableResource,
+          detail: error.to_string(),
+        },
+      )),
+    }
+  }
+  // An unreadable file that wins in game must not be replaced by a merge of the others.
+  let shadowed = readable_priority
+    .is_none_or(|top| unreadable.iter().any(|(priority, _)| *priority <= top))
+    && !unreadable.is_empty();
+
+  Ok(CompiledDataTable {
+    file_path: file_path.to_string(),
+    base_bytes,
+    format,
+    base_root,
+    base_encoding,
+    groups: table.groups,
+    files: table.files,
+    ignored_vanilla_rows: table.ignored_vanilla_rows,
+    retired_rows: table.retired_rows,
+    row_repairs: table.row_repairs,
+    row_warnings: table.row_warnings,
+    baselines: table.baselines,
+    restorations: table.restorations,
+    unreadable: unreadable.into_iter().map(|(_, warning)| warning).collect(),
+    shadowed,
+  })
+}
+
+/// One mod's contribution to a compiled table, built apart from the others so
+/// a source that cannot be read adds nothing.
+fn compile_source(
+  file_path: &str,
+  base_root: &Kv3Value,
+  base_rows: &[(String, Kv3Value)],
+  base_row_encodings: &[(String, Kv3Encoding)],
+  enum_maps: &enum_maps::EnumMapCompatibility,
+  history: Option<&VdataHistoryIndex>,
+  source: CompiledDataSource,
+) -> Result<TableSources, Error> {
+  let CompiledDataSource {
+    mod_id,
+    source_vpk,
+    priority,
+    bytes,
+  } = source;
+  let mut contribution = TableSources {
+    files: 1,
+    ..TableSources::default()
+  };
+  let (_, mod_root, mod_encoding) =
+    decode_compiled_data(&bytes, &format!("{mod_id}:{source_vpk}:{file_path}"))?;
+  if omits_game_content(base_root, &mod_root) {
+    contribution
+      .restorations
+      .push(vdata_compatibility::DataRepair {
         mod_id: mod_id.clone(),
         source_vpk: source_vpk.clone(),
         file_path: file_path.into(),
@@ -1296,108 +1403,111 @@ fn build_compiled_table(
         kind: vdata_compatibility::RepairKind::RestoredGameData,
         detail: String::new(),
       });
-    }
-    let fallback = VdataHistoryIndex::default();
-    let (baseline, evidence) = history
-      .unwrap_or(&fallback)
-      .match_with_evidence(file_path, &mod_root);
-    if !runtime_values_equal(&mod_root, &base_root) {
-      baselines.push(CompiledDataBaseline {
-        mod_id: mod_id.clone(),
-        source_vpk: source_vpk.clone(),
-        file_path: file_path.into(),
-        evidence,
-      });
-    }
-    if let Some(baseline) = &baseline {
-      #[cfg(test)]
-      println!(
-        "matched {mod_id}:{source_vpk}:{file_path} to v{} ({}/{} rows changed)",
-        baseline.build_version, baseline.changed_rows, baseline.comparable_rows
-      );
-      log::info!(
-        "Matched {mod_id}:{source_vpk}:{file_path} to historical build v{} ({} comparable rows, {} changed)",
-        baseline.build_version,
-        baseline.comparable_rows,
-        baseline.changed_rows
-      );
-    }
-    let Kv3Value::Object(mod_rows) = mod_root else {
-      return Err(Error::ModInvalid(format!(
-        "{mod_id}:{source_vpk}:{file_path} root is not an object"
-      )));
-    };
-    let mod_row_encodings = mod_encoding.as_object().ok_or_else(|| {
-      Error::ModInvalid(format!(
-        "{mod_id}:{source_vpk}:{file_path} encoding root is not an object"
-      ))
-    })?;
+  }
+  let fallback = VdataHistoryIndex::default();
+  let (baseline, evidence) = history
+    .unwrap_or(&fallback)
+    .match_with_evidence(file_path, &mod_root);
+  if !runtime_values_equal(&mod_root, base_root) {
+    contribution.baselines.push(CompiledDataBaseline {
+      mod_id: mod_id.clone(),
+      source_vpk: source_vpk.clone(),
+      file_path: file_path.into(),
+      evidence,
+    });
+  }
+  if let Some(baseline) = &baseline {
+    #[cfg(test)]
+    println!(
+      "matched {mod_id}:{source_vpk}:{file_path} to v{} ({}/{} rows changed)",
+      baseline.build_version, baseline.changed_rows, baseline.comparable_rows
+    );
+    log::info!(
+      "Matched {mod_id}:{source_vpk}:{file_path} to historical build v{} ({} comparable rows, {} changed)",
+      baseline.build_version,
+      baseline.comparable_rows,
+      baseline.changed_rows
+    );
+  }
+  let Kv3Value::Object(mod_rows) = mod_root else {
+    return Err(Error::ModInvalid(format!(
+      "{mod_id}:{source_vpk}:{file_path} root is not an object"
+    )));
+  };
+  let mod_row_encodings = mod_encoding.as_object().ok_or_else(|| {
+    Error::ModInvalid(format!(
+      "{mod_id}:{source_vpk}:{file_path} encoding root is not an object"
+    ))
+  })?;
 
-    let enum_compatibility =
-      enum_compatibility::EnumCompatibility::learn(base_rows, base_row_encodings, &mod_rows);
-    let mut migrated_enums = 0;
-    let hero_rebaser =
-      hero_rebase::HeroRebaser::new(base_rows, base_row_encodings, &mod_rows, baseline.as_ref());
-    for (row_name, original_value) in &mod_rows {
-      let row_name = row_name.clone();
-      let mut value = original_value.clone();
-      let mut unrebased = None;
-      let mut row_encoding = encoding_get_case_insensitive(mod_row_encodings, &row_name)
-        .ok_or_else(|| {
-          Error::ModInvalid(format!(
-            "{mod_id}:{source_vpk}:{file_path} has no encoding for row {row_name}"
-          ))
-        })?
-        .clone();
-      let vanilla_value = object_get_case_insensitive(base_rows, &row_name);
-      if vanilla_value.is_none()
-        && baseline
-          .as_ref()
-          .is_some_and(|baseline| baseline.row_matches(&row_name, original_value))
+  let enum_compatibility =
+    enum_compatibility::EnumCompatibility::learn(base_rows, base_row_encodings, &mod_rows);
+  let mut migrated_enums = 0;
+  let hero_rebaser =
+    hero_rebase::HeroRebaser::new(base_rows, base_row_encodings, &mod_rows, baseline.as_ref());
+  for (row_name, original_value) in &mod_rows {
+    let row_name = row_name.clone();
+    let mut value = original_value.clone();
+    let mut unrebased = None;
+    let mut row_encoding = encoding_get_case_insensitive(mod_row_encodings, &row_name)
+      .ok_or_else(|| {
+        Error::ModInvalid(format!(
+          "{mod_id}:{source_vpk}:{file_path} has no encoding for row {row_name}"
+        ))
+      })?
+      .clone();
+    let vanilla_value = object_get_case_insensitive(base_rows, &row_name);
+    if vanilla_value.is_none()
+      && baseline
+        .as_ref()
+        .is_some_and(|baseline| baseline.row_matches(&row_name, original_value))
+    {
+      enum_compatibility.normalize(&mut value, &mut row_encoding)?;
+      if let vdata_compatibility::InheritedRebase::Rebased(rebased, encoding) =
+        vdata_compatibility::rebase_inherited(
+          (&value, &row_encoding),
+          (base_rows, base_row_encodings),
+          (&mod_rows, mod_row_encodings),
+          baseline
+            .as_ref()
+            .expect("retired row has a matched baseline"),
+          &enum_compatibility,
+        )?
       {
-        enum_compatibility.normalize(&mut value, &mut row_encoding)?;
-        if let vdata_compatibility::InheritedRebase::Rebased(rebased, encoding) =
-          vdata_compatibility::rebase_inherited(
-            (&value, &row_encoding),
-            (base_rows, base_row_encodings),
-            (&mod_rows, mod_row_encodings),
-            baseline
-              .as_ref()
-              .expect("retired row has a matched baseline"),
-            &enum_compatibility,
-          )?
-        {
-          value = rebased;
-          row_encoding = encoding;
-        }
-        retired_rows
-          .entry(row_name.to_ascii_lowercase())
-          .or_default()
-          .push(CompiledDataCandidateValue {
-            candidate: CompiledDataCandidate {
-              mod_id: mod_id.clone(),
-              source_vpk: source_vpk.clone(),
-              priority,
-            },
-            value,
-            encoding: row_encoding,
-            unrebased: None,
-          });
-        ignored_vanilla_rows += 1;
-        continue;
+        value = rebased;
+        row_encoding = encoding;
       }
-      if file_path == HEROES_VDATA_PATH && vanilla_value.is_none() {
-        if let Some((rebased, encoding)) = hero_rebaser.rebase(&value, &row_encoding)? {
-          value = rebased;
-          row_encoding = encoding;
-        }
-        hero_rebaser.restore_development_state(&mut value, &mut row_encoding)?;
-        if original_value.get("m_eHeroDevelopmentState").is_none()
-          && let Some(state) = value
-            .get("m_eHeroDevelopmentState")
-            .and_then(Kv3Value::as_str)
-        {
-          row_repairs.push(vdata_compatibility::DataRepair {
+      contribution
+        .retired_rows
+        .entry(row_name.to_ascii_lowercase())
+        .or_default()
+        .push(CompiledDataCandidateValue {
+          candidate: CompiledDataCandidate {
+            mod_id: mod_id.clone(),
+            source_vpk: source_vpk.clone(),
+            priority,
+          },
+          value,
+          encoding: row_encoding,
+          unrebased: None,
+        });
+      contribution.ignored_vanilla_rows += 1;
+      continue;
+    }
+    if file_path == HEROES_VDATA_PATH && vanilla_value.is_none() {
+      if let Some((rebased, encoding)) = hero_rebaser.rebase(&value, &row_encoding)? {
+        value = rebased;
+        row_encoding = encoding;
+      }
+      hero_rebaser.restore_development_state(&mut value, &mut row_encoding)?;
+      if original_value.get("m_eHeroDevelopmentState").is_none()
+        && let Some(state) = value
+          .get("m_eHeroDevelopmentState")
+          .and_then(Kv3Value::as_str)
+      {
+        contribution
+          .row_repairs
+          .push(vdata_compatibility::DataRepair {
             mod_id: mod_id.clone(),
             source_vpk: source_vpk.clone(),
             file_path: file_path.into(),
@@ -1405,13 +1515,15 @@ fn build_compiled_table(
             kind: vdata_compatibility::RepairKind::HeroDevelopmentState,
             detail: state.into(),
           });
-        }
       }
-      migrated_enums += enum_compatibility.normalize(&mut value, &mut row_encoding)?;
-      if file_path == HEROES_VDATA_PATH {
-        for key in enum_maps.normalize(&mut value, &mut row_encoding)? {
-          let field_path = format!("m_mapStandardLevelUpUpgrades.{key}");
-          row_repairs.push(vdata_compatibility::DataRepair {
+    }
+    migrated_enums += enum_compatibility.normalize(&mut value, &mut row_encoding)?;
+    if file_path == HEROES_VDATA_PATH {
+      for key in enum_maps.normalize(&mut value, &mut row_encoding)? {
+        let field_path = format!("m_mapStandardLevelUpUpgrades.{key}");
+        contribution
+          .row_repairs
+          .push(vdata_compatibility::DataRepair {
             mod_id: mod_id.clone(),
             source_vpk: source_vpk.clone(),
             file_path: file_path.into(),
@@ -1419,13 +1531,15 @@ fn build_compiled_table(
             kind: vdata_compatibility::RepairKind::EnumMapEntry,
             detail: field_path.clone(),
           });
-          let original = original_value
-            .get("m_mapStandardLevelUpUpgrades")
-            .and_then(|map| map.get(&key));
-          if !matches!(original, Some(Kv3Value::Double(v)) if *v == 0.0)
-            && !matches!(original, Some(Kv3Value::Int(0) | Kv3Value::UInt(0)))
-          {
-            row_warnings.push(vdata_compatibility::DataWarning {
+        let original = original_value
+          .get("m_mapStandardLevelUpUpgrades")
+          .and_then(|map| map.get(&key));
+        if !matches!(original, Some(Kv3Value::Double(v)) if *v == 0.0)
+          && !matches!(original, Some(Kv3Value::Int(0) | Kv3Value::UInt(0)))
+        {
+          contribution
+            .row_warnings
+            .push(vdata_compatibility::DataWarning {
               mod_id: mod_id.clone(),
               source_vpk: source_vpk.clone(),
               file_path: file_path.into(),
@@ -1439,24 +1553,26 @@ fn build_compiled_table(
                 "Omitted value {original:?}; no mapping was proven in the current game table"
               ),
             });
-          }
         }
       }
-      if file_path != HEROES_VDATA_PATH
-        && vanilla_value.is_none()
-        && let Some(baseline) = baseline.as_ref()
-      {
-        match vdata_compatibility::rebase_inherited(
-          (&value, &row_encoding),
-          (base_rows, base_row_encodings),
-          (&mod_rows, mod_row_encodings),
-          baseline,
-          &enum_compatibility,
-        )? {
-          vdata_compatibility::InheritedRebase::Rebased(rebased, encoding) => {
-            if !runtime_values_equal(&value, &rebased) || row_encoding != encoding {
-              unrebased = Some((value.clone(), row_encoding.clone()));
-              row_repairs.push(vdata_compatibility::DataRepair {
+    }
+    if file_path != HEROES_VDATA_PATH
+      && vanilla_value.is_none()
+      && let Some(baseline) = baseline.as_ref()
+    {
+      match vdata_compatibility::rebase_inherited(
+        (&value, &row_encoding),
+        (base_rows, base_row_encodings),
+        (&mod_rows, mod_row_encodings),
+        baseline,
+        &enum_compatibility,
+      )? {
+        vdata_compatibility::InheritedRebase::Rebased(rebased, encoding) => {
+          if !runtime_values_equal(&value, &rebased) || row_encoding != encoding {
+            unrebased = Some((value.clone(), row_encoding.clone()));
+            contribution
+              .row_repairs
+              .push(vdata_compatibility::DataRepair {
                 mod_id: mod_id.clone(),
                 source_vpk: source_vpk.clone(),
                 file_path: file_path.into(),
@@ -1464,12 +1580,14 @@ fn build_compiled_table(
                 kind: vdata_compatibility::RepairKind::InheritedDefinition,
                 detail: String::new(),
               });
-            }
-            value = rebased;
-            row_encoding = encoding;
           }
-          vdata_compatibility::InheritedRebase::Ambiguous => {
-            row_warnings.push(vdata_compatibility::DataWarning {
+          value = rebased;
+          row_encoding = encoding;
+        }
+        vdata_compatibility::InheritedRebase::Ambiguous => {
+          contribution
+            .row_warnings
+            .push(vdata_compatibility::DataWarning {
               mod_id: mod_id.clone(),
               source_vpk: source_vpk.clone(),
               file_path: file_path.into(),
@@ -1481,119 +1599,140 @@ fn build_compiled_table(
               reason: vdata_compatibility::WarningReason::AmbiguousTemplates,
               detail: String::new(),
             })
-          }
-          vdata_compatibility::InheritedRebase::NotApplicable => {}
         }
-      }
-      let vanilla_encoding = encoding_get_case_insensitive(base_row_encodings, &row_name);
-      if vanilla_value.is_some_and(|vanilla| runtime_values_equal(vanilla, &value)) {
-        ignored_vanilla_rows += 1;
-        continue;
-      }
-      let patches = if let (Some(vanilla), Some(baseline)) = (vanilla_value, baseline.as_ref())
-        && baseline.contains_row(&row_name)
-      {
-        let mut candidate_fields = Vec::new();
-        collect_compiled_fields(
-          &value,
-          &row_encoding,
-          &mut Vec::new(),
-          &mut candidate_fields,
-        )?;
-        candidate_fields
-          .into_iter()
-          .filter(|(path, candidate, _)| {
-            !baseline.field_matches(&row_name, path, candidate)
-              && !compiled_value_at_path(vanilla, path)
-                .is_some_and(|current| runtime_values_equal(current, candidate))
-          })
-          .collect()
-      } else if let Some(vanilla) = vanilla_value {
-        let mut patches = Vec::new();
-        collect_compiled_patches(
-          vanilla,
-          &value,
-          &row_encoding,
-          &mut Vec::new(),
-          &mut patches,
-        )?;
-        patches
-      } else {
-        vec![(Vec::new(), value.clone(), row_encoding.clone())]
-      };
-      let patches =
-        if let (Some(vanilla), Some(vanilla_encoding)) = (vanilla_value, vanilla_encoding) {
-          patches
-            .into_iter()
-            .map(|patch| {
-              promote_patch_to_applicable_ancestor(
-                vanilla,
-                vanilla_encoding,
-                &value,
-                &row_encoding,
-                patch,
-              )
-            })
-            .collect::<Result<Vec<_>, Error>>()?
-        } else {
-          patches
-        };
-      if patches.is_empty() {
-        ignored_vanilla_rows += 1;
-        continue;
-      }
-      let mut distinct_patches = BTreeMap::new();
-      for (path, value, encoding) in patches {
-        let key = compiled_conflict_key(file_path, &row_name, &path);
-        distinct_patches
-          .entry(key)
-          .or_insert((path, value, encoding));
-      }
-      for (key, (path, value, encoding)) in distinct_patches {
-        let group = groups
-          .entry(key.clone())
-          .or_insert_with(|| CompiledDataGroup {
-            key,
-            file_path: file_path.to_string(),
-            row_name: row_name.clone(),
-            path,
-            existed_in_vanilla: vanilla_value.is_some(),
-            candidates: Vec::new(),
-          });
-        group.candidates.push(CompiledDataCandidateValue {
-          candidate: CompiledDataCandidate {
-            mod_id: mod_id.clone(),
-            source_vpk: source_vpk.clone(),
-            priority,
-          },
-          value,
-          encoding,
-          unrebased: unrebased.clone(),
-        });
+        vdata_compatibility::InheritedRebase::NotApplicable => {}
       }
     }
-    if migrated_enums > 0 {
-      log::info!(
-        "Migrated {migrated_enums} known enum names to current game data for {mod_id}:{source_vpk}:{file_path}"
-      );
+    let vanilla_encoding = encoding_get_case_insensitive(base_row_encodings, &row_name);
+    if vanilla_value.is_some_and(|vanilla| runtime_values_equal(vanilla, &value)) {
+      contribution.ignored_vanilla_rows += 1;
+      continue;
+    }
+    let patches = if let (Some(vanilla), Some(baseline)) = (vanilla_value, baseline.as_ref())
+      && baseline.contains_row(&row_name)
+    {
+      let mut candidate_fields = Vec::new();
+      collect_compiled_fields(
+        &value,
+        &row_encoding,
+        &mut Vec::new(),
+        &mut candidate_fields,
+      )?;
+      candidate_fields
+        .into_iter()
+        .filter(|(path, candidate, _)| {
+          !baseline.field_matches(&row_name, path, candidate)
+            && !compiled_value_at_path(vanilla, path)
+              .is_some_and(|current| runtime_values_equal(current, candidate))
+        })
+        .collect()
+    } else if let Some(vanilla) = vanilla_value {
+      let mut patches = Vec::new();
+      collect_compiled_patches(
+        vanilla,
+        &value,
+        &row_encoding,
+        &mut Vec::new(),
+        &mut patches,
+      )?;
+      patches
+    } else {
+      vec![(Vec::new(), value.clone(), row_encoding.clone())]
+    };
+    let patches = if let (Some(vanilla), Some(vanilla_encoding)) = (vanilla_value, vanilla_encoding)
+    {
+      patches
+        .into_iter()
+        .map(|patch| {
+          promote_patch_to_applicable_ancestor(
+            vanilla,
+            vanilla_encoding,
+            &value,
+            &row_encoding,
+            patch,
+          )
+        })
+        .collect::<Result<Vec<_>, Error>>()?
+    } else {
+      patches
+    };
+    if patches.is_empty() {
+      contribution.ignored_vanilla_rows += 1;
+      continue;
+    }
+    let mut distinct_patches = BTreeMap::new();
+    for (path, value, encoding) in patches {
+      let key = compiled_conflict_key(file_path, &row_name, &path);
+      distinct_patches
+        .entry(key)
+        .or_insert((path, value, encoding));
+    }
+    for (key, (path, value, encoding)) in distinct_patches {
+      let group = contribution
+        .groups
+        .entry(key.clone())
+        .or_insert_with(|| CompiledDataGroup {
+          key,
+          file_path: file_path.to_string(),
+          row_name: row_name.clone(),
+          path,
+          existed_in_vanilla: vanilla_value.is_some(),
+          candidates: Vec::new(),
+        });
+      group.candidates.push(CompiledDataCandidateValue {
+        candidate: CompiledDataCandidate {
+          mod_id: mod_id.clone(),
+          source_vpk: source_vpk.clone(),
+          priority,
+        },
+        value,
+        encoding,
+        unrebased: unrebased.clone(),
+      });
     }
   }
+  if migrated_enums > 0 {
+    log::info!(
+      "Migrated {migrated_enums} known enum names to current game data for {mod_id}:{source_vpk}:{file_path}"
+    );
+  }
+  Ok(contribution)
+}
 
-  Ok(CompiledDataTable {
-    file_path: file_path.to_string(),
-    base_bytes,
-    format,
-    base_root,
-    base_encoding,
-    groups,
-    files,
-    ignored_vanilla_rows,
-    retired_rows,
-    row_repairs,
-    row_warnings,
-    baselines,
-    restorations,
-  })
+#[derive(Default)]
+struct TableSources {
+  files: usize,
+  ignored_vanilla_rows: usize,
+  groups: BTreeMap<String, CompiledDataGroup>,
+  retired_rows: BTreeMap<String, Vec<CompiledDataCandidateValue>>,
+  row_repairs: Vec<vdata_compatibility::DataRepair>,
+  row_warnings: Vec<vdata_compatibility::DataWarning>,
+  baselines: Vec<CompiledDataBaseline>,
+  restorations: Vec<vdata_compatibility::DataRepair>,
+}
+
+impl TableSources {
+  fn add(&mut self, source: TableSources) {
+    self.files += source.files;
+    self.ignored_vanilla_rows += source.ignored_vanilla_rows;
+    for (key, group) in source.groups {
+      match self.groups.entry(key) {
+        std::collections::btree_map::Entry::Vacant(entry) => {
+          entry.insert(group);
+        }
+        std::collections::btree_map::Entry::Occupied(mut entry) => {
+          entry.get_mut().candidates.extend(group.candidates);
+        }
+      }
+    }
+    for (row, values) in source.retired_rows {
+      self.retired_rows.entry(row).or_default().extend(values);
+    }
+    self.row_repairs.extend(source.row_repairs);
+    self.row_warnings.extend(source.row_warnings);
+    self.baselines.extend(source.baselines);
+    self.restorations.extend(source.restorations);
+  }
 }
 
 /// Game rows or object fields an outdated copy of a table lacks. The merge
@@ -2050,9 +2189,9 @@ fn choose_winner<'a>(
 }
 
 fn parse_localization_bytes(bytes: &[u8], source: &str) -> Result<ParsedLocalizationFile, Error> {
-  let text = std::str::from_utf8(bytes)
-    .map_err(|error| Error::ModInvalid(format!("{source} is not UTF-8: {error}")))?;
-  let text = text.strip_prefix('\u{feff}').unwrap_or(text);
+  let text = decode_localization_text(bytes)
+    .ok_or_else(|| Error::ModInvalid(format!("{source} is not UTF-8 or UTF-16 text")))?;
+  let text = text.strip_prefix('\u{feff}').unwrap_or(&text);
   let Ok(parsed) = keyvalues_parser::parse(text) else {
     return parse_localization_lines(text, source);
   };
@@ -2085,6 +2224,23 @@ fn parse_localization_bytes(bytes: &[u8], source: &str) -> Result<ParsedLocaliza
     file: LocalizationFile { language, tokens },
     skipped_lines: Vec::new(),
   })
+}
+
+/// Older tools save localization as UTF-16 with a byte order mark.
+fn decode_localization_text(bytes: &[u8]) -> Option<String> {
+  let utf16 = |units: &[u8], unit: fn([u8; 2]) -> u16| {
+    let (pairs, []) = units.as_chunks::<2>() else {
+      return None;
+    };
+    char::decode_utf16(pairs.iter().map(|pair| unit(*pair)))
+      .collect::<Result<String, _>>()
+      .ok()
+  };
+  match bytes {
+    [0xFF, 0xFE, units @ ..] => utf16(units, u16::from_le_bytes),
+    [0xFE, 0xFF, units @ ..] => utf16(units, u16::from_be_bytes),
+    _ => String::from_utf8(bytes.to_vec()).ok(),
+  }
 }
 
 fn parse_localization_lines(text: &str, source: &str) -> Result<ParsedLocalizationFile, Error> {
@@ -2991,7 +3147,10 @@ mod tests {
     fs::create_dir_all(base_path.parent().unwrap()).unwrap();
     let game_text = localization(&[("hero_test", "Hero"), ("hero_new", "New hero")]);
     fs::write(&base_path, render_localization(&game_text)).unwrap();
-    let game_rows = vec![("hero_a".to_string(), hero(1)), ("hero_new".to_string(), hero(2))];
+    let game_rows = vec![
+      ("hero_a".to_string(), hero(1)),
+      ("hero_new".to_string(), hero(2)),
+    ];
     pack_vdata(&citadel, "pak01", game_rows.clone());
     let mods = [
       packed_mod(temp.path(), "text", &localization(&[("hero_test", "Hero")])),
@@ -3038,12 +3197,73 @@ mod tests {
       get_case_insensitive(&text.file.tokens, "hero_new"),
       Some("New hero")
     );
-    let (_, data, _) = decode_compiled_data(
-      &archive.extract_entry(HEROES_VDATA_PATH).unwrap(),
-      "merged",
-    )
-    .unwrap();
+    let (_, data, _) =
+      decode_compiled_data(&archive.extract_entry(HEROES_VDATA_PATH).unwrap(), "merged").unwrap();
     assert!(data.get("hero_new").is_some());
+  }
+
+  #[test]
+  fn unreadable_mod_files_are_reported_and_never_replaced_by_other_mods() {
+    let temp = tempfile::tempdir().unwrap();
+    let citadel = temp.path().join("citadel");
+    let base_path = citadel.join(FILE_PATH);
+    fs::create_dir_all(base_path.parent().unwrap()).unwrap();
+    fs::write(&base_path, render_localization(&localization(&[("hero_test", "Hero")]))).unwrap();
+    pack_vdata(&citadel, "pak01", vec![("hero_a".to_string(), hero(1))]);
+    let broken = LocalizationModInput {
+      mod_id: "broken".into(),
+      vpks: vec![resources::tests::pack(
+        temp.path(),
+        "broken",
+        &[
+          (FILE_PATH, b"\xff\xfe\x00".as_slice()),
+          (HEROES_VDATA_PATH, b"not a compiled resource".as_slice()),
+        ],
+      )],
+    };
+    let valid = packed_mod(temp.path(), "valid", &localization(&[("hero_test", "Renamed")]));
+    let valid_data = LocalizationModInput {
+      mod_id: "valid-data".into(),
+      vpks: vec![pack_vdata(
+        temp.path(),
+        "valid-data",
+        vec![("hero_a".to_string(), hero(7))],
+      )],
+    };
+    for broken_wins in [true, false] {
+      let mods = if broken_wins {
+        vec![broken.clone(), valid.clone(), valid_data.clone()]
+      } else {
+        vec![valid.clone(), valid_data.clone(), broken.clone()]
+      };
+      let plan = LocalizationOverlayPlan::build(&citadel, &mods).unwrap();
+      let analysis = &plan.analysis;
+      assert!(
+        analysis
+          .parse_warnings
+          .iter()
+          .any(|warning| warning.mod_id == "broken" && warning.error.is_some())
+      );
+      assert!(analysis.data_warnings.iter().any(|warning| {
+        warning.mod_id == "broken"
+          && matches!(warning.kind, vdata_compatibility::WarningKind::UnreadableData)
+      }));
+      assert_eq!(analysis.changed_tokens, usize::from(!broken_wins));
+      assert_eq!(plan.compiled_data.is_empty(), broken_wins);
+    }
+  }
+
+  #[test]
+  fn utf16_localization_files_are_read() {
+    let text = "\"lang\"\n{\n\"Language\" \"English\"\n\"Tokens\"\n{\n\"hero_test\" \"Héros\"\n}\n}\n";
+    let mut bytes = vec![0xFF, 0xFE];
+    bytes.extend(text.encode_utf16().flat_map(u16::to_le_bytes));
+    let parsed = parse_localization_bytes(&bytes, "utf16").unwrap();
+    assert_eq!(
+      get_case_insensitive(&parsed.file.tokens, "hero_test"),
+      Some("Héros")
+    );
+    assert!(parse_localization_bytes(&bytes[..bytes.len() - 1], "odd").is_err());
   }
 
   #[test]

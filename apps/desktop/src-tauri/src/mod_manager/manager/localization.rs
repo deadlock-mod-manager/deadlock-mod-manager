@@ -460,7 +460,12 @@ fn requires_review(analysis: &LocalizationOverlayAnalysis) -> bool {
     || analysis
       .data_warnings
       .iter()
-      .any(|warning| matches!(warning.reason, WarningReason::CompetingDefinitions))
+      .any(|warning| {
+        matches!(
+          warning.reason,
+          WarningReason::CompetingDefinitions | WarningReason::UnreadableResource
+        )
+      })
 }
 
 fn game_archive_stamps(directory: &Path) -> Result<Vec<LocalizationInputStamp>, Error> {

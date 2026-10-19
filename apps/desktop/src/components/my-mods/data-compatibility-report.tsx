@@ -25,7 +25,8 @@ export interface DataWarning {
     | "unverifiedInheritance"
     | "missingDevelopmentState"
     | "omittedHeroDefinition"
-    | "omittedEnumMapEntry";
+    | "omittedEnumMapEntry"
+    | "unreadableData";
   fieldPath: string;
   targetFile: string;
   targetRow: string;
@@ -35,6 +36,7 @@ export interface DataWarning {
     | "unrecognizedClassOrEnum"
     | "ambiguousTemplates"
     | "inheritanceCycle"
-    | "visibilityMigrationUnverified";
+    | "visibilityMigrationUnverified"
+    | "unreadableResource";
   detail: string;
 }

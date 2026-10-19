@@ -41,6 +41,7 @@ pub enum WarningKind {
   MissingDevelopmentState,
   OmittedHeroDefinition,
   OmittedEnumMapEntry,
+  UnreadableData,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -52,6 +53,7 @@ pub enum WarningReason {
   AmbiguousTemplates,
   InheritanceCycle,
   VisibilityMigrationUnverified,
+  UnreadableResource,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
