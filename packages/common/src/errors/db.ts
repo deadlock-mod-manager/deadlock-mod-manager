@@ -127,8 +127,21 @@ export const mapDrizzleError = (
     return new UnknownError("Unknown database error");
   }
 
-  const errMsg = error.message || "";
-  const errCode = "code" in error ? error.code : "";
+  let currentError = error;
+  const visited = new Set<Error>();
+  while (
+    !(currentError instanceof BaseError) &&
+    currentError.cause instanceof Error &&
+    !visited.has(currentError.cause)
+  ) {
+    visited.add(currentError);
+    currentError = currentError.cause;
+  }
+
+  if (currentError instanceof BaseError) return currentError;
+
+  const errMsg = currentError.message || "";
+  const errCode = "code" in currentError ? currentError.code : "";
 
   // Handle "not found" errors
   if (errMsg.includes("no rows returned") || errMsg.includes("not found")) {
@@ -139,6 +152,10 @@ export const mapDrizzleError = (
   // See: https://www.postgresql.org/docs/current/errcodes-appendix.html
   switch (errCode) {
     // Connection errors
+    case "ECONNREFUSED":
+    case "ECONNRESET":
+    case "ENOTFOUND":
+    case "EHOSTUNREACH":
     case "08000": // connection_exception
     case "08003": // connection_does_not_exist
     case "08006": // connection_failure
@@ -178,6 +195,7 @@ export const mapDrizzleError = (
       return new PermissionError(errMsg);
 
     // Timeout errors
+    case "ETIMEDOUT":
     case "57014": // query_canceled
     case "57P01": // admin_shutdown
     case "57P02": // crash_shutdown
@@ -186,12 +204,6 @@ export const mapDrizzleError = (
 
     // Default: return the original error with improved context
     default:
-      if (error instanceof BaseError) {
-        return error;
-      }
-      if (error instanceof Error) {
-        return new UnknownError(`Database error: ${error.message}`);
-      }
-      return new UnknownError(`Unknown database error: ${String(error)}`);
+      return new UnknownError(currentError);
   }
 };
