@@ -90,9 +90,18 @@ runs:
             const url = `${baseDownloadUrl}/${toGitHubAssetName(linuxDeb.name)}`;
 
             platforms['linux-x86_64'] = { signature, url };
+            platforms['linux-x86_64-deb'] = { signature, url };
             console.log(`Added Linux CEF platform: ${url}`);
           } else {
             console.log('No Linux CEF artifacts found in release assets');
+          }
+
+          const flatpakAsset = assets.find(a => a.name === 'deadlock-mod-manager-cef.flatpak');
+          if (flatpakAsset) {
+            platforms['linux-x86_64-flatpak'] = {
+              signature: '',
+              url: `${baseDownloadUrl}/${flatpakAsset.name}`
+            };
           }
 
           if (Object.keys(platforms).length === 0) {

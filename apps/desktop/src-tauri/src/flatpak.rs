@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Stdio;
 
 use crate::app_runtime::AppHandle;
@@ -31,30 +31,58 @@ fn validate_update_url(url: &str) -> Result<reqwest::Url, Error> {
     ));
   }
 
-  if !parsed_url.path().ends_with("/deadlock-mod-manager.flatpak") {
+  if ![
+    "/deadlock-mod-manager.flatpak",
+    "/deadlock-mod-manager-cef.flatpak",
+  ]
+  .iter()
+  .any(|asset| parsed_url.path().ends_with(asset))
+  {
     return Err(Error::InvalidInput(
-      "Flatpak update URL must target the deadlock-mod-manager.flatpak asset".to_string(),
+      "Flatpak update URL must target a Deadlock Mod Manager Flatpak asset".to_string(),
     ));
   }
 
   Ok(parsed_url)
 }
 
-fn bundle_path() -> PathBuf {
-  let timestamp = chrono::Utc::now().timestamp_nanos_opt().unwrap_or_default();
-  std::env::temp_dir().join(format!(
-    "deadlock-mod-manager-{}-{timestamp}.flatpak",
-    std::process::id(),
-  ))
+fn bundle_directory(cache: &Path) -> Result<tempfile::TempDir, Error> {
+  std::fs::create_dir_all(cache)?;
+  // Flatpak's /tmp is private; the app cache has the same path on the host.
+  Ok(
+    tempfile::Builder::new()
+      .prefix("dmm-update-")
+      .tempdir_in(cache)?,
+  )
 }
 
-async fn cleanup_bundle(path: &PathBuf) {
-  if let Err(error) = tokio::fs::remove_file(path).await {
-    log::warn!(
-      "Failed to remove temporary Flatpak bundle {}: {error}",
-      path.display()
-    );
-  }
+fn installed_in_user_directory(info: &str, user_location: &str) -> bool {
+  let app_path = info.lines().find_map(|line| line.strip_prefix("app-path="));
+  app_path.is_some_and(|path| Path::new(path) == Path::new(user_location.trim()).join("files"))
+}
+
+async fn installation_scope(app_id: &str) -> Result<&'static str, Error> {
+  let info = tokio::fs::read_to_string("/.flatpak-info").await?;
+  let user_installation = Command::new("flatpak-spawn")
+    .args([
+      "--host",
+      "flatpak",
+      "info",
+      "--user",
+      "--show-location",
+      app_id,
+    ])
+    .output()
+    .await?;
+  Ok(
+    if user_installation.status.success()
+      && installed_in_user_directory(&info, std::str::from_utf8(&user_installation.stdout)?)
+    {
+      "--user"
+    } else {
+      "--system"
+    },
+  )
 }
 
 #[tauri::command]
@@ -73,108 +101,190 @@ pub async fn update_flatpak(app_handle: AppHandle, url: String) -> Result<(), Er
   }
 
   let validated_url = validate_update_url(&url)?;
-  let path = bundle_path();
+  let app_id = std::env::var("FLATPAK_ID")
+    .map_err(|e| Error::InvalidInput(format!("Missing Flatpak application ID: {e}")))?;
+  let scope = installation_scope(&app_id).await?;
+  let cache = std::env::var_os("XDG_CACHE_HOME")
+    .map(PathBuf::from)
+    .ok_or_else(|| Error::InvalidInput("Missing Flatpak cache directory".to_string()))?;
+  download_and_install(
+    validated_url,
+    &cache,
+    scope,
+    Command::new("flatpak-spawn"),
+    move |message| {
+      let _ = app_handle.emit("flatpak-update-progress", message);
+    },
+  )
+  .await
+}
 
-  let result: Result<(), Error> =
-    async {
-      log::info!("Downloading Flatpak bundle from {url}");
-      let _ = app_handle.emit("flatpak-update-progress", "Downloading update...");
+async fn download_and_install(
+  url: reqwest::Url,
+  cache: &Path,
+  scope: &str,
+  mut installer: Command,
+  progress: impl Fn(&str) + Clone + Send + 'static,
+) -> Result<(), Error> {
+  let directory = bundle_directory(cache)?;
+  let path = directory.path().join("update.flatpak");
 
-      let mut response = reqwest::get(validated_url)
-        .await
-        .map_err(|e| Error::InvalidInput(format!("Failed to download Flatpak bundle: {e}")))?;
+  log::info!("Downloading Flatpak bundle from {url}");
+  progress("Downloading update...");
 
-      if !response.status().is_success() {
-        return Err(Error::InvalidInput(format!(
-          "Download failed with status: {}",
-          response.status()
-        )));
-      }
+  let mut response = reqwest::get(url)
+    .await
+    .map_err(|e| Error::InvalidInput(format!("Failed to download Flatpak bundle: {e}")))?;
 
-      let mut bundle_file = File::create(&path)
-        .await
-        .map_err(|e| Error::InvalidInput(format!("Failed to create bundle file: {e}")))?;
+  if !response.status().is_success() {
+    return Err(Error::InvalidInput(format!(
+      "Download failed with status: {}",
+      response.status()
+    )));
+  }
 
-      while let Some(chunk) = response
-        .chunk()
-        .await
-        .map_err(|e| Error::InvalidInput(format!("Failed to read download: {e}")))?
-      {
-        bundle_file
-          .write_all(&chunk)
-          .await
-          .map_err(|e| Error::InvalidInput(format!("Failed to write bundle: {e}")))?;
-      }
+  let mut bundle_file = File::create(&path)
+    .await
+    .map_err(|e| Error::InvalidInput(format!("Failed to create bundle file: {e}")))?;
 
-      bundle_file
-        .flush()
-        .await
-        .map_err(|e| Error::InvalidInput(format!("Failed to flush bundle: {e}")))?;
+  while let Some(chunk) = response
+    .chunk()
+    .await
+    .map_err(|e| Error::InvalidInput(format!("Failed to read download: {e}")))?
+  {
+    bundle_file
+      .write_all(&chunk)
+      .await
+      .map_err(|e| Error::InvalidInput(format!("Failed to write bundle: {e}")))?;
+  }
 
-      let bundle_path_str = path.to_string_lossy().to_string();
-      log::info!("Downloaded Flatpak bundle to {bundle_path_str}");
-      let _ = app_handle.emit("flatpak-update-progress", "Installing update...");
+  bundle_file
+    .flush()
+    .await
+    .map_err(|e| Error::InvalidInput(format!("Failed to flush bundle: {e}")))?;
 
-      let mut child = Command::new("flatpak-spawn")
-        .args([
-          "--host",
-          "flatpak",
-          "install",
-          "--reinstall",
-          "--noninteractive",
-          &bundle_path_str,
-        ])
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|e| Error::InvalidInput(format!("Failed to spawn flatpak-spawn: {e}")))?;
+  let bundle_path_str = path.to_string_lossy().to_string();
+  log::info!("Downloaded Flatpak bundle to {bundle_path_str}");
+  progress("Installing update...");
 
-      let stdout = child.stdout.take().ok_or_else(|| {
-        Error::InvalidInput("Failed to capture flatpak install stdout".to_string())
-      })?;
-      let stderr = child.stderr.take().ok_or_else(|| {
-        Error::InvalidInput("Failed to capture flatpak install stderr".to_string())
-      })?;
+  let mut child = installer
+    .args([
+      "--host",
+      "flatpak",
+      "install",
+      scope,
+      "--reinstall",
+      "--noninteractive",
+      &bundle_path_str,
+    ])
+    .stdout(Stdio::piped())
+    .stderr(Stdio::piped())
+    .spawn()
+    .map_err(|e| Error::InvalidInput(format!("Failed to spawn flatpak-spawn: {e}")))?;
 
-      let app_stdout = app_handle.clone();
-      let stdout_task = tokio::spawn(async move {
-        let mut lines = BufReader::new(stdout).lines();
-        while let Ok(Some(line)) = lines.next_line().await {
-          log::info!("[flatpak update] {line}");
-          let _ = app_stdout.emit("flatpak-update-progress", &line);
-        }
-      });
+  let stdout = child
+    .stdout
+    .take()
+    .ok_or_else(|| Error::InvalidInput("Failed to capture flatpak install stdout".to_string()))?;
+  let stderr = child
+    .stderr
+    .take()
+    .ok_or_else(|| Error::InvalidInput("Failed to capture flatpak install stderr".to_string()))?;
 
-      let app_stderr = app_handle.clone();
-      let stderr_task = tokio::spawn(async move {
-        let mut lines = BufReader::new(stderr).lines();
-        while let Ok(Some(line)) = lines.next_line().await {
-          log::warn!("[flatpak update stderr] {line}");
-          let _ = app_stderr.emit("flatpak-update-progress", &line);
-        }
-      });
+  let stdout_progress = progress.clone();
+  let stdout_task = tokio::spawn(async move {
+    let mut lines = BufReader::new(stdout).lines();
+    while let Ok(Some(line)) = lines.next_line().await {
+      log::info!("[flatpak update] {line}");
+      stdout_progress(&line);
+    }
+  });
 
-      let status = child
-        .wait()
-        .await
-        .map_err(|e| Error::InvalidInput(format!("Failed to wait on flatpak-spawn: {e}")))?;
+  let stderr_task = tokio::spawn(async move {
+    let mut lines = BufReader::new(stderr).lines();
+    while let Ok(Some(line)) = lines.next_line().await {
+      log::warn!("[flatpak update stderr] {line}");
+      progress(&line);
+    }
+  });
 
-      let _ = stdout_task.await;
-      let _ = stderr_task.await;
+  let status = child
+    .wait()
+    .await
+    .map_err(|e| Error::InvalidInput(format!("Failed to wait on flatpak-spawn: {e}")))?;
 
-      if status.success() {
-        log::info!("Flatpak update completed successfully");
-        Ok(())
-      } else {
-        let code = status.code().unwrap_or(-1);
-        log::error!("Flatpak update failed with exit code {code}");
-        Err(Error::InvalidInput(format!(
-          "flatpak update exited with code {code}"
-        )))
+  let _ = stdout_task.await;
+  let _ = stderr_task.await;
+
+  if status.success() {
+    log::info!("Flatpak update completed successfully");
+    Ok(())
+  } else {
+    let code = status.code().unwrap_or(-1);
+    log::error!("Flatpak update failed with exit code {code}");
+    Err(Error::InvalidInput(format!(
+      "flatpak update exited with code {code}"
+    )))
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn accepts_both_flatpak_variants_on_stable_and_nightly_tags() {
+    for tag in ["nightly", "v2.0.0"] {
+      for asset in [
+        "deadlock-mod-manager.flatpak",
+        "deadlock-mod-manager-cef.flatpak",
+      ] {
+        let url = format!("https://github.com{ALLOWED_UPDATE_PATH_PREFIX}{tag}/{asset}");
+        assert!(validate_update_url(&url).is_ok());
       }
     }
-    .await;
+  }
 
-  cleanup_bundle(&path).await;
-  result
+  #[test]
+  fn rejects_untrusted_urls_and_other_assets() {
+    for url in [
+      "http://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/download/nightly/deadlock-mod-manager.flatpak",
+      "https://example.com/deadlock-mod-manager/deadlock-mod-manager/releases/download/nightly/deadlock-mod-manager.flatpak",
+      "https://github.com/other/repository/releases/download/nightly/deadlock-mod-manager.flatpak",
+      "https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/download/nightly/other.flatpak",
+      "https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/download/nightly/app.deb",
+    ] {
+      assert!(validate_update_url(url).is_err(), "accepted {url}");
+    }
+  }
+
+  #[test]
+  fn stages_and_cleans_bundles_in_the_host_visible_cache() {
+    let root = tempfile::tempdir().unwrap();
+    let cache = root.path().join("app-cache");
+    let directory = bundle_directory(&cache).unwrap();
+    let path = directory.path().join("update.flatpak");
+    std::fs::write(&path, b"bundle").unwrap();
+    assert!(path.starts_with(&cache));
+    assert_eq!(std::fs::read(&path).unwrap(), b"bundle");
+    drop(directory);
+    assert!(!path.exists());
+  }
+
+  #[test]
+  fn preserves_the_running_installation_when_user_and_system_copies_exist() {
+    let user_location =
+      "/home/player/.local/share/flatpak/app/dev.stormix.deadlock-mod-manager/x86_64/master/commit";
+    assert!(installed_in_user_directory(
+      &format!("[Instance]\napp-path={user_location}/files\n"),
+      &format!("{user_location}\n"),
+    ));
+    assert!(!installed_in_user_directory(
+      "[Instance]\napp-path=/var/lib/flatpak/app/dev.stormix.deadlock-mod-manager/x86_64/master/commit/files\n",
+      user_location,
+    ));
+  }
 }
+
+#[cfg(all(test, target_os = "linux"))]
+mod e2e_tests;

@@ -109,11 +109,16 @@ runs:
             console.log('No Flatpak asset found, skipping linux-x86_64-flatpak entry');
           }
 
-          // Rewrite all platform URLs to use the version-pinned download path,
-          // fixing tauri-action's default /releases/latest/download/ URLs
+          // Draft releases can use asset API URLs, whose last segment is an ID.
           for (const [platform, entry] of Object.entries(latestJson.platforms)) {
-            const filename = entry.url.split('/').pop();
-            const correctedUrl = `${baseDownloadUrl}/${filename}`;
+            const filename = decodeURIComponent(entry.url.split('/').pop());
+            const asset = release.assets.find(a =>
+              a.url === entry.url || a.name === filename || String(a.id) === filename
+            );
+            if (!asset) {
+              throw new Error(`Cannot resolve ${platform} URL to a release asset: ${entry.url}`);
+            }
+            const correctedUrl = `${baseDownloadUrl}/${encodeURIComponent(asset.name)}`;
             if (entry.url !== correctedUrl) {
               console.log(`Rewrote ${platform} URL: ${entry.url} -> ${correctedUrl}`);
               entry.url = correctedUrl;

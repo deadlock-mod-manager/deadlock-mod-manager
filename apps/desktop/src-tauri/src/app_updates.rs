@@ -51,6 +51,7 @@ impl UpdateContext {
 #[serde(rename_all = "camelCase")]
 pub struct UpdateMetadata {
   rid: tauri::ResourceId,
+  download_url: String,
   current_version: String,
   version: String,
   date: Option<String>,
@@ -111,6 +112,7 @@ pub async fn check_app_update(webview: tauri::Webview<AppRuntime>) -> UpdateChec
   let outcome = match check.await {
     Ok(Some(update)) => {
       let metadata = UpdateMetadata {
+        download_url: update.download_url.to_string(),
         current_version: update.current_version.clone(),
         version: update.version.clone(),
         date: update.date.and_then(|date| {

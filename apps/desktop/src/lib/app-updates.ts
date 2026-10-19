@@ -13,8 +13,13 @@ export interface UpdateContext {
   target: string;
 }
 
-export type AppUpdate = Update & { context: UpdateContext };
-type UpdateMetadata = ConstructorParameters<typeof Update>[0];
+export type AppUpdate = Update & {
+  context: UpdateContext;
+  downloadUrl: string;
+};
+type UpdateMetadata = ConstructorParameters<typeof Update>[0] & {
+  downloadUrl: string;
+};
 
 export type UpdateCheckResponse = { context: UpdateContext } & (
   | { status: "no-update" }
@@ -51,6 +56,7 @@ export const checkForAppUpdates = async (
       case "available":
         return Object.assign(new Update(response.metadata), {
           context: response.context,
+          downloadUrl: response.metadata.downloadUrl,
         });
       case "check-failed":
       case "missing-target":

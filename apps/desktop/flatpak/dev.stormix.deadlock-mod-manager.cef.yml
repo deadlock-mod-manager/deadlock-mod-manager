@@ -22,7 +22,8 @@ finish-args:
   - --filesystem=home/.steam
   - --talk-name=org.freedesktop.Notifications
   - --talk-name=org.kde.StatusNotifierWatcher
-  # CEF-only permissions (audio, portals, updater's flatpak-spawn)
+  - --talk-name=org.freedesktop.Flatpak
+  # CEF-only permissions (audio and portals)
   - --socket=session-bus
   - --socket=pulseaudio
   - --talk-name=org.freedesktop.portal.Desktop

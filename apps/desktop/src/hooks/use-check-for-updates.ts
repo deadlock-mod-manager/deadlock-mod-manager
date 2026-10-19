@@ -11,15 +11,11 @@ import { showAppUpdateError } from "@/lib/app-update-notifications";
 import { useTranslation } from "react-i18next";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { isFlatpak } from "@/lib/tauri-commands";
-import { GITHUB_REPO } from "@/lib/constants";
 import { createLogger } from "@/lib/logger";
 import { GC_TIME_UPDATER, STALE_TIME_UPDATER } from "@/lib/query-constants";
 import { useFlatpakUpdate } from "./use-flatpak-update";
 
 const logger = createLogger("check-for-updates");
-
-const buildFlatpakReleaseUrl = (version: string) =>
-  `${GITHUB_REPO}/releases/download/v${version}/deadlock-mod-manager.flatpak`;
 
 const NATIVE_UPDATES_QUERY_KEY = ["app-updates", "native"] as const;
 const IS_FLATPAK_QUERY_KEY = ["app-env", "is-flatpak"] as const;
@@ -76,12 +72,11 @@ export const useCheckForUpdates = () => {
       });
       try {
         if (isRunningAsFlatpak) {
-          const flatpakUrl = buildFlatpakReleaseUrl(native.version);
           logger
             .withMetadata({ version: native.version })
             .info("Installing Flatpak update");
           await installAppUpdate(native, undefined, () =>
-            installFlatpakUpdate(flatpakUrl),
+            installFlatpakUpdate(native.downloadUrl),
           );
           attempt.finish("completed");
           return;

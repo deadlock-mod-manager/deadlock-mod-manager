@@ -56,6 +56,11 @@ import {
 } from "./variant-names-fixtures";
 import { monkeyRoutes, prepareMonkeyWorld } from "./monkey-fixtures";
 import {
+  appUpdateRoutes,
+  prepareAppUpdateWorld,
+  assertAppUpdateNetwork,
+} from "./app-update-fixtures";
+import {
   assertStatsDashboardNetwork,
   prepareStatsDashboardWorld,
   statsDashboardRoutes,
@@ -474,6 +479,24 @@ export const scenarios = {
   "settings-backups-presence": settings,
   "settings-language": settings,
   "about-smoke": smoke,
+  "app-update-download": {
+    ...defaults,
+    family: "updater",
+    spec: "app-update",
+    phases: ["download"],
+    routes: appUpdateRoutes,
+    prepare: prepareAppUpdateWorld,
+    verifyNetwork: assertAppUpdateNetwork,
+  },
+  "app-update-check-failure": {
+    ...defaults,
+    family: "updater",
+    spec: "app-update",
+    phases: ["check-failure"],
+    routes: appUpdateRoutes,
+    prepare: prepareAppUpdateWorld,
+    verifyNetwork: assertAppUpdateNetwork,
+  },
   "local-mod-lifecycle": local,
   "local-mod-large-picker-vpk": { ...localLargeOnDisk, nativeInput: true },
   "local-mod-large-picker-zip": { ...localLargeOnDisk, nativeInput: true },
