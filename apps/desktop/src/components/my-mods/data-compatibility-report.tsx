@@ -8,7 +8,9 @@ export interface DataRepair {
     | "inheritedDefinition"
     | "retainedDependency"
     | "currentReference"
-    | "enumMapEntry";
+    | "enumMapEntry"
+    | "restoredGameData"
+    | "restoredGameText";
   detail: string;
 }
 

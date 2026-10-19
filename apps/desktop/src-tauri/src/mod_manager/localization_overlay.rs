@@ -379,6 +379,24 @@ struct CompiledDataTable {
   row_repairs: Vec<vdata_compatibility::DataRepair>,
   row_warnings: Vec<vdata_compatibility::DataWarning>,
   baselines: Vec<CompiledDataBaseline>,
+  restorations: Vec<vdata_compatibility::DataRepair>,
+}
+
+/// Findings about whole mod files. They do not depend on conflict choices, so
+/// every recomputation of the prepared data carries them.
+#[derive(Default)]
+struct FileFindings {
+  repairs: Vec<vdata_compatibility::DataRepair>,
+}
+
+fn prepare_data(
+  tables: &[CompiledDataTable],
+  resolutions: &[LocalizationResolution],
+  files: &FileFindings,
+) -> Result<vdata_compatibility::PreparedData, Error> {
+  let mut prepared = vdata_compatibility::prepare(tables, resolutions)?;
+  prepared.repairs.extend(files.repairs.iter().cloned());
+  Ok(prepared)
 }
 
 struct MergedCompiledData {
@@ -394,6 +412,9 @@ pub struct LocalizationOverlayPlan {
   bases: BTreeMap<String, LocalizationFile>,
   groups: BTreeMap<String, CandidateGroup>,
   compiled_data: Vec<CompiledDataTable>,
+  file_findings: FileFindings,
+  // Mod text files with a game copy; the overlay always restores their base.
+  seeded_text: BTreeSet<String>,
   animation_skeletons: BTreeMap<String, Vec<u8>>,
   animation_clips: BTreeMap<String, Vec<u8>>,
   camera_models: BTreeMap<String, Vec<u8>>,
@@ -571,6 +592,9 @@ impl LocalizationOverlayPlan {
     let mut scanned_vpks = 0usize;
     let mut snapshot_warnings = Vec::new();
     let mut parse_warnings = Vec::new();
+    let mut file_findings = FileFindings::default();
+    let mut game_text = BTreeSet::new();
+    let mut seeded_text = BTreeSet::new();
     let mut compiled_sources: BTreeMap<String, Vec<CompiledDataSource>> = BTreeMap::new();
     let mut skeleton_sources: BTreeMap<String, Vec<CompiledDataSource>> = BTreeMap::new();
     let mut mesh_sources: BTreeMap<String, Vec<CompiledDataSource>> = BTreeMap::new();
@@ -699,6 +723,7 @@ impl LocalizationOverlayPlan {
             Some(base) => base.clone(),
             None => {
               let parsed = if let Some(bytes) = resources.game_bytes(&normalized_file)? {
+                game_text.insert(normalized_file.clone());
                 parse_localization_bytes(&bytes, &format!("game:{file_path}"))?.file
               } else {
                 LocalizationFile {
@@ -730,6 +755,13 @@ impl LocalizationOverlayPlan {
           localization_files += 1;
           let total_tokens = mod_file.tokens.len();
           let mut changed_in_file = 0usize;
+          let mut stale_in_file = 0usize;
+          // A copy of a game file hides every game token it lacks.
+          let omits_game_text = game_text.contains(&normalized_file)
+            && base
+              .tokens
+              .keys()
+              .any(|token| get_case_insensitive(&mod_file.tokens, token).is_none());
 
           for (token, value) in mod_file.tokens {
             let vanilla_value = get_case_insensitive(&base.tokens, &token).map(str::to_string);
@@ -742,6 +774,7 @@ impl LocalizationOverlayPlan {
               && historical_localization.contains(&normalized_file, &token, &value)
             {
               ignored_historical_tokens += 1;
+              stale_in_file += 1;
               continue;
             }
 
@@ -762,6 +795,20 @@ impl LocalizationOverlayPlan {
             });
           }
 
+          if game_text.contains(&normalized_file) {
+            seeded_text.insert(normalized_file.clone());
+            if omits_game_text || stale_in_file > 0 {
+              file_findings.repairs.push(vdata_compatibility::DataRepair {
+                mod_id: mod_input.mod_id.clone(),
+                source_vpk: source_name.clone(),
+                file_path: file_path.replace('\\', "/"),
+                row_name: String::new(),
+                kind: vdata_compatibility::RepairKind::RestoredGameText,
+                detail: String::new(),
+              });
+            }
+          }
+
           if changed_in_file >= STALE_SNAPSHOT_CHANGE_THRESHOLD
             && !base.tokens.is_empty()
             && total_tokens >= STALE_SNAPSHOT_CHANGE_THRESHOLD
@@ -777,12 +824,13 @@ impl LocalizationOverlayPlan {
       }
     }
 
-    let compiled_data = build_compiled_data(resources, compiled_sources, history)?;
+    let compiled_data =
+      build_compiled_data(resources, compiled_sources, history, &mut file_findings)?;
     let vdata_compatibility::PreparedData {
       repairs: data_repairs,
       warnings: data_warnings,
       ..
-    } = vdata_compatibility::prepare(&compiled_data, &[])?;
+    } = prepare_data(&compiled_data, &[], &file_findings)?;
     let mut asset_repairs = Vec::new();
     let mut asset_warnings = asset_compatibility::model_overlaps(resources, mods, &repair_scope);
     let animation_skeletons = animation_skeleton::prepare(
@@ -960,6 +1008,8 @@ impl LocalizationOverlayPlan {
       bases,
       groups,
       compiled_data,
+      file_findings,
+      seeded_text,
       animation_skeletons,
       animation_clips,
       camera_models,
@@ -979,7 +1029,7 @@ impl LocalizationOverlayPlan {
       repairs: data_repairs,
       warnings: data_warnings,
       ..
-    } = vdata_compatibility::prepare(&self.compiled_data, resolutions)?;
+    } = prepare_data(&self.compiled_data, resolutions, &self.file_findings)?;
     let mut analysis = self.analysis.clone();
     analysis.data_repairs = data_repairs;
     analysis.data_warnings = data_warnings;
@@ -1041,6 +1091,7 @@ impl LocalizationOverlayPlan {
           .iter()
           .map(|table| table.file_path.as_str()),
       )
+      .chain(self.seeded_text.iter().map(String::as_str))
       .chain(self.animation_skeletons.keys().map(String::as_str))
       .chain(self.animation_clips.keys().map(String::as_str))
       .chain(self.camera_models.keys().map(String::as_str))
@@ -1055,7 +1106,11 @@ impl LocalizationOverlayPlan {
       .iter()
       .map(|resolution| (resolution.conflict_key.as_str(), resolution))
       .collect();
-    let mut output_files: BTreeMap<String, LocalizationFile> = BTreeMap::new();
+    let mut output_files: BTreeMap<String, LocalizationFile> = self
+      .seeded_text
+      .iter()
+      .filter_map(|file| Some((file.clone(), self.bases.get(file)?.clone())))
+      .collect();
     let mut applied_tokens = 0usize;
 
     for (normalized_file, group) in self
@@ -1098,7 +1153,7 @@ impl LocalizationOverlayPlan {
       merged: merged_data,
       repairs: data_repairs,
       warnings: data_warnings,
-    } = vdata_compatibility::prepare(&self.compiled_data, resolutions)?;
+    } = prepare_data(&self.compiled_data, resolutions, &self.file_findings)?;
     let mut applied_compiled_rows = 0usize;
     for (table, merged) in self.compiled_data.iter().zip(&merged_data) {
       applied_compiled_rows += table.write_merged_to_directory(workspace.path(), merged)?;
@@ -1160,6 +1215,7 @@ fn build_compiled_data(
   resources: &resources::ResourceSnapshot,
   sources_by_path: BTreeMap<String, Vec<CompiledDataSource>>,
   history: &VdataHistoryIndex,
+  files: &mut FileFindings,
 ) -> Result<Vec<CompiledDataTable>, Error> {
   if sources_by_path.is_empty() {
     return Ok(Vec::new());
@@ -1179,12 +1235,14 @@ fn build_compiled_data(
       // only needs to build an overlay when there is a base table to merge into.
       continue;
     };
-    tables.push(build_compiled_table(
+    let mut table = build_compiled_table(
       &file_path,
       base_bytes.as_ref().clone(),
       sources,
       Some(history),
-    )?);
+    )?;
+    files.repairs.append(&mut table.restorations);
+    tables.push(table);
   }
   Ok(tables)
 }
@@ -1218,6 +1276,7 @@ fn build_compiled_table(
   let mut row_repairs = Vec::new();
   let mut row_warnings = Vec::new();
   let mut baselines = Vec::new();
+  let mut restorations = Vec::new();
   let enum_maps = enum_maps::EnumMapCompatibility::learn(base_rows);
   for source in sources {
     let CompiledDataSource {
@@ -1228,6 +1287,16 @@ fn build_compiled_table(
     } = source;
     let (_, mod_root, mod_encoding) =
       decode_compiled_data(&bytes, &format!("{mod_id}:{source_vpk}:{file_path}"))?;
+    if omits_game_content(&base_root, &mod_root) {
+      restorations.push(vdata_compatibility::DataRepair {
+        mod_id: mod_id.clone(),
+        source_vpk: source_vpk.clone(),
+        file_path: file_path.into(),
+        row_name: String::new(),
+        kind: vdata_compatibility::RepairKind::RestoredGameData,
+        detail: String::new(),
+      });
+    }
     let fallback = VdataHistoryIndex::default();
     let (baseline, evidence) = history
       .unwrap_or(&fallback)
@@ -1523,6 +1592,22 @@ fn build_compiled_table(
     row_repairs,
     row_warnings,
     baselines,
+    restorations,
+  })
+}
+
+/// Game rows or object fields an outdated copy of a table lacks. The merge
+/// restores them; the copy alone would hide them from the game. Arrays are
+/// authored as a whole and are not compared.
+fn omits_game_content(game: &Kv3Value, authored: &Kv3Value) -> bool {
+  let (Kv3Value::Object(game), Kv3Value::Object(authored)) = (game, authored) else {
+    return false;
+  };
+  game.iter().any(|(key, value)| {
+    key != "_editor"
+      && key != "_include"
+      && object_get_case_insensitive(authored, key)
+        .is_none_or(|authored| omits_game_content(value, authored))
   })
 }
 
@@ -2895,6 +2980,70 @@ mod tests {
       get_case_insensitive(&merged.file.tokens, "hero_custom"),
       Some("Custom hero name")
     );
+  }
+
+  #[test]
+  fn outdated_copies_of_game_files_are_fixable_and_restore_game_content() {
+    use crate::mod_manager::mod_health::{CompatibilityChoice, ModFindings, ModHealthStatus};
+    let temp = tempfile::tempdir().unwrap();
+    let citadel = temp.path().join("citadel");
+    let base_path = citadel.join(FILE_PATH);
+    fs::create_dir_all(base_path.parent().unwrap()).unwrap();
+    let game_text = localization(&[("hero_test", "Hero"), ("hero_new", "New hero")]);
+    fs::write(&base_path, render_localization(&game_text)).unwrap();
+    let game_rows = vec![("hero_a".to_string(), hero(1)), ("hero_new".to_string(), hero(2))];
+    pack_vdata(&citadel, "pak01", game_rows.clone());
+    let mods = [
+      packed_mod(temp.path(), "text", &localization(&[("hero_test", "Hero")])),
+      LocalizationModInput {
+        mod_id: "data".into(),
+        vpks: vec![pack_vdata(
+          temp.path(),
+          "data",
+          vec![("hero_a".to_string(), hero(1))],
+        )],
+      },
+      LocalizationModInput {
+        mod_id: "current".into(),
+        vpks: vec![pack_vdata(temp.path(), "current", game_rows)],
+      },
+    ];
+    let plan = LocalizationOverlayPlan::build(&citadel, &mods).unwrap();
+    let kinds = |mod_id: &str| {
+      plan
+        .analysis
+        .data_repairs
+        .iter()
+        .filter(|repair| repair.mod_id == mod_id)
+        .map(|repair| format!("{:?}", repair.kind))
+        .collect::<Vec<_>>()
+    };
+    assert_eq!(kinds("text"), ["RestoredGameText"]);
+    assert_eq!(kinds("data"), ["RestoredGameData"]);
+    assert!(kinds("current").is_empty());
+    for mod_id in ["text", "data"] {
+      assert_eq!(
+        ModFindings::from_analysis(&plan.analysis, mod_id, true).status(CompatibilityChoice::Unset),
+        ModHealthStatus::Fixable,
+        "{mod_id}"
+      );
+    }
+
+    let output = temp.path().join("restored_dir.vpk");
+    plan.write(&output, &[]).unwrap();
+    let archive = VpkArchive::open(&output).unwrap();
+    let text =
+      parse_localization_bytes(&archive.extract_entry(FILE_PATH).unwrap(), "merged").unwrap();
+    assert_eq!(
+      get_case_insensitive(&text.file.tokens, "hero_new"),
+      Some("New hero")
+    );
+    let (_, data, _) = decode_compiled_data(
+      &archive.extract_entry(HEROES_VDATA_PATH).unwrap(),
+      "merged",
+    )
+    .unwrap();
+    assert!(data.get("hero_new").is_some());
   }
 
   #[test]

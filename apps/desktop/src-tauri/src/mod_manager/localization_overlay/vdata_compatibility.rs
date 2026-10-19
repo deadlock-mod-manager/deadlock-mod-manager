@@ -17,6 +17,8 @@ pub enum RepairKind {
   RetainedDependency,
   CurrentReference,
   EnumMapEntry,
+  RestoredGameData,
+  RestoredGameText,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

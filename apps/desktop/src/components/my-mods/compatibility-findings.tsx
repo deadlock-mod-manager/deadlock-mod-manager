@@ -198,7 +198,7 @@ export function CompatibilityFixes({
           repair.detail,
         ]),
         filePath: repair.filePath,
-        context: [repair.rowName],
+        context: [repair.rowName].filter(Boolean),
         details: repair.detail ? [repair.detail] : [],
       },
     })),

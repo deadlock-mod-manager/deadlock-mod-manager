@@ -2629,7 +2629,9 @@
         "inheritedDefinition": "Inherited settings updated",
         "retainedDependency": "Required definition retained",
         "currentReference": "Unavailable ability binding replaced with current game settings",
-        "enumMapEntry": "Stat key absent from the current game omitted"
+        "enumMapEntry": "Stat key absent from the current game omitted",
+        "restoredGameData": "Game data missing from the mod's older copy restored",
+        "restoredGameText": "Game text missing from the mod's older copy restored"
       },
       "warnings": {
         "missingDefinition": "Required definition is missing",

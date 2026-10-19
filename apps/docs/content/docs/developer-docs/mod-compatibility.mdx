@@ -195,6 +195,28 @@ learns future patches locally without shipping another embedded history update.
 It cannot recover a build the installation never observed. Corrupt history is
 ignored and rebuilt from the currently installed tables.
 
+### Outdated copies of game files
+
+Many mods ship a whole copy of a game data table or localization file, taken
+from the game build they were made for. In game, that copy replaces the
+current file, hiding rows, fields, and text the game added since. Fixing such a
+mod merges its edits onto the installed file instead, which restores the
+missing content.
+
+A data table copy that lacks a current game row, or an object field inside a
+shared row, reports `restoredGameData`. Arrays are authored as a whole and are
+not compared, and `_editor` and `_include` keys are ignored. A localization
+copy that lacks a current game token, or carries a stale value that local
+history identifies, reports `restoredGameText`. Each finding is reported once
+per mod archive and file and counts under abilities, stats and text, so these
+mods show as fixable instead of working. A copy identical to the current game
+is not a finding.
+
+When a fixed mod provides a localization file the game also ships, the overlay
+always contains that file: the installed text plus the winning mod changes.
+Without this, a copy whose remaining tokens all match old or current vanilla
+text would still replace the game's file.
+
 ### Hero and ability data
 
 VData tables are merged first, then checked together using the selected conflict

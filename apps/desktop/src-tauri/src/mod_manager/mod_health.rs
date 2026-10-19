@@ -172,7 +172,9 @@ pub(crate) fn symptom(finding: Finding) -> ModHealthSymptom {
       | DataRepairKind::InheritedDefinition
       | DataRepairKind::RetainedDependency
       | DataRepairKind::CurrentReference
-      | DataRepairKind::EnumMapEntry,
+      | DataRepairKind::EnumMapEntry
+      | DataRepairKind::RestoredGameData
+      | DataRepairKind::RestoredGameText,
     ) => GameData,
     Finding::DataWarning(
       DataWarningKind::MissingDefinition
