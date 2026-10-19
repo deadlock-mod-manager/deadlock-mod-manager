@@ -63,7 +63,8 @@ export const prepareShardWorld = async (world: CreatedWorld): Promise<void> => {
     ],
     SHARDS.id,
   );
-  // Shard status lives on the developer page.
+  // Shard status lives on the developer page. The specs count badges across all
+  // 101 mods, so Linux's default library pagination is turned off.
   const storePath = path.join(world.configuration.roots.appData, "state.json");
   const store = z
     .object({ "local-config": z.string() })
@@ -76,7 +77,25 @@ export const prepareShardWorld = async (world: CreatedWorld): Promise<void> => {
     JSON.stringify({
       "local-config": JSON.stringify({
         ...persisted,
-        state: { ...persisted.state, developerMode: true },
+        state: {
+          ...persisted.state,
+          developerMode: true,
+          settings: {
+            ...z
+              .record(z.string(), z.json())
+              .parse(persisted.state.settings ?? {}),
+            "mods-store-pagination": {
+              id: "mods-store-pagination",
+              key: "",
+              value: "",
+              type: "boolean",
+              description: "",
+              enabled: false,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+          },
+        },
       }),
     }),
   );
