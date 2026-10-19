@@ -437,7 +437,8 @@ fn overlapping_real_skins_preserve_load_order_and_camera_repairs() {
           let packed = VpkArchive::open(&archive).unwrap();
           for entry in packed.list_entries() {
             if entry.ends_with("_c") {
-              validate_exported_blocks(&packed.extract_entry(&entry).unwrap(), &entry, None).unwrap();
+              validate_exported_blocks(&packed.extract_entry(&entry).unwrap(), &entry, None)
+                .unwrap();
             }
           }
           if should_repair {
@@ -1176,7 +1177,10 @@ fn validate_exported_blocks(
 fn exported_mesh_validation_catches_tags_even_when_both_decoders_accept_them() {
   let mut bytes = tests::compiled_resource(vec![("value".into(), Kv3Value::Bool(true))]);
   bytes[16..20].copy_from_slice(b"MDAT");
-  assert_eq!(validate_exported_blocks(&bytes, "test.vmdl_c", None).unwrap(), 1);
+  assert_eq!(
+    validate_exported_blocks(&bytes, "test.vmdl_c", None).unwrap(),
+    1
+  );
   let block = Resource::parse(&bytes).unwrap().blocks()[0];
   let datatype = block.offset as usize + block.size as usize - 5;
   assert_eq!(bytes[datatype], 13);
@@ -1279,9 +1283,10 @@ fn run_obsolete_mod_corpus() {
               for path in archive.list_entries() {
                 let bytes = archive.extract_entry(&path).unwrap();
                 if path.ends_with("_c") {
-                  let source = case.vpks.iter().find_map(|vpk| {
-                    VpkArchive::open(vpk).ok()?.extract_entry(&path).ok()
-                  });
+                  let source = case
+                    .vpks
+                    .iter()
+                    .find_map(|vpk| VpkArchive::open(vpk).ok()?.extract_entry(&path).ok());
                   match validate_exported_blocks(&bytes, &path, source.as_deref()) {
                     Ok(count) => validated_blocks += count,
                     Err(failure) => {
@@ -1371,16 +1376,15 @@ fn legacy_cat_bindings_and_camera_preserve_authored_geometry() {
   let animations =
     model_animation::prepare(&resources, &sources, &inputs, &mut repairs, &mut warnings).unwrap();
   assert!(animations.contains_key(path), "{warnings:?}");
-  let repaired =
-    model_camera::prepare(
-      &resources,
-      &sources,
-      &inputs,
-      &animations.keys().cloned().collect(),
-      &animations,
-      &mut repairs,
-    )
-    .unwrap();
+  let repaired = model_camera::prepare(
+    &resources,
+    &sources,
+    &inputs,
+    &animations.keys().cloned().collect(),
+    &animations,
+    &mut repairs,
+  )
+  .unwrap();
   assert!(
     repairs.iter().any(|repair| matches!(
       repair.kind,
@@ -1546,16 +1550,15 @@ fn legacy_sliver_animation_activation_contract() {
   let mut warnings = Vec::new();
   let output =
     model_animation::prepare(&resources, &sources, &inputs, &mut repairs, &mut warnings).unwrap();
-  let final_models =
-    model_camera::prepare(
-      &resources,
-      &sources,
-      &inputs,
-      &output.keys().cloned().collect(),
-      &output,
-      &mut repairs,
-    )
-    .unwrap();
+  let final_models = model_camera::prepare(
+    &resources,
+    &sources,
+    &inputs,
+    &output.keys().cloned().collect(),
+    &output,
+    &mut repairs,
+  )
+  .unwrap();
   let live = std::env::var("DMM_COMPAT_LIVE_OVERLAY")
     .ok()
     .map(|path| VpkArchive::open(Path::new(&path)).unwrap());
@@ -1671,16 +1674,15 @@ fn legacy_mina_animation_and_camera_contract() {
   let animations =
     model_animation::prepare(&resources, &sources, &inputs, &mut repairs, &mut warnings).unwrap();
   assert!(animations.contains_key(path), "{warnings:?}");
-  let output =
-    model_camera::prepare(
-      &resources,
-      &sources,
-      &inputs,
-      &animations.keys().cloned().collect(),
-      &animations,
-      &mut repairs,
-    )
-    .unwrap();
+  let output = model_camera::prepare(
+    &resources,
+    &sources,
+    &inputs,
+    &animations.keys().cloned().collect(),
+    &animations,
+    &mut repairs,
+  )
+  .unwrap();
   let (_, model, _) = decode_compiled_data(&output[path], path).unwrap();
   let current = resources.game_bytes(path).unwrap().unwrap();
   let (_, current_model, _) = decode_compiled_data(&current, path).unwrap();
@@ -2024,7 +2026,10 @@ fn toon_bebop_repair_is_stable_with_unrelated_animation_overrides() {
         )
     })
   };
-  assert!(!rewrites_model(&baseline), "Toon model must remain authored");
+  assert!(
+    !rewrites_model(&baseline),
+    "Toon model must remain authored"
+  );
   let output = TempDir::new().unwrap();
   for (name, extension, binding, allowed) in [
     (

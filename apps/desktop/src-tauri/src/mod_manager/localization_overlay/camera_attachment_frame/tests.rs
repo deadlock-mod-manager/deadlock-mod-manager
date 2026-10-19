@@ -602,7 +602,12 @@ fn partially_migrated_meshes_convert_only_their_stale_root_attachments() {
     [-19.0, 124.0, -1.0],
     OLD_PITCH,
   ));
-  points.push(point("far_01", "root_motion", [-43.0, 192.0, 27.0], OLD_PITCH));
+  points.push(point(
+    "far_01",
+    "root_motion",
+    [-43.0, 192.0, 27.0],
+    OLD_PITCH,
+  ));
   points.push(point(
     "near_02",
     "root_motion",

@@ -397,10 +397,7 @@ pub(super) fn camera_point_requirements(
   current: &Kv3Value,
 ) -> Option<BTreeSet<String>> {
   let (_, fields) = root_fields(model_text(current)?)?;
-  if CAMERA_FIELDS
-    .iter()
-    .any(|name| !fields.contains_key(*name))
-  {
+  if CAMERA_FIELDS.iter().any(|name| !fields.contains_key(*name)) {
     return None;
   }
   camera_data_names(model_text(model)?)
