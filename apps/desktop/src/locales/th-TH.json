@@ -2339,6 +2339,7 @@
       "skipped": ""
     },
     "copyModList": "",
+    "moreActions": "",
     "copyModListEnabled": "",
     "copyModListAll": "",
     "copyModListDisabled": "",
@@ -3526,6 +3527,8 @@
     "autoResetGameinfoFailed": "",
     "showModUpdateBadges": "",
     "showModUpdateBadgesDescription": "",
+    "featureTips": "",
+    "featureTipsDescription": "",
     "modelPreview": "",
     "modelPreviewDescription": "",
     "modelPreviewWarning": "",
@@ -3810,7 +3813,10 @@
     "copyright": "ไม่มีส่วนเกี่ยวข้องกับ Valve, Deadlock และโลโก้ Deadlock เป็นเครื่องหมายการค้าจดทะเบียนของ Valve Corporation",
     "resetOnboarding": "รีเซ็ตการแนะนำ",
     "resetOnboardingDescription": "แสดงตัวช่วยการตั้งค่าอีกครั้งในการเปิดครั้งถัดไป",
-    "resetOnboardingSuccess": "การแนะนำจะแสดงในการเปิดครั้งถัดไป"
+    "resetOnboardingSuccess": "การแนะนำจะแสดงในการเปิดครั้งถัดไป",
+    "resetFeatureTips": "",
+    "resetFeatureTipsDescription": "",
+    "resetFeatureTipsSuccess": ""
   },
   "update": {
     "checkFailed": "",
@@ -3932,6 +3938,7 @@
     "addFiles": "เพิ่มไฟล์",
     "dropFilesDescription": "วางไฟล์ .vpk หรือไฟล์บีบอัด .zip/.rar/.7z",
     "dropAreaText": "วางไฟล์/โฟลเดอร์ที่นี่ หรือคลิกเพื่อเลือก",
+    "dropAnywhereTitle": "",
     "supportedFormats": "รองรับ: .vpk/.zip/.rar/.7z",
     "finalizeTitle": "สรุปรายละเอียด",
     "finalizeDescription": "ต้องระบุชื่อเท่านั้น คุณสามารถกรอกส่วนที่เหลือในภายหลังได้",
@@ -6152,6 +6159,52 @@
         "previewTitle": "",
         "previewDetail": ""
       }
+    }
+  },
+  "featureHints": {
+    "didYouKnow": "",
+    "showMe": "",
+    "gotIt": "",
+    "turnOff": "",
+    "importFromManager": {
+      "title": "",
+      "body": ""
+    },
+    "myModsMenu": {
+      "title": "",
+      "body": ""
+    },
+    "modContextMenu": {
+      "title": "",
+      "body": ""
+    },
+    "loadOrder": {
+      "title": "",
+      "body": ""
+    },
+    "modsFolderShortcut": {
+      "title": "",
+      "body": ""
+    },
+    "profiles": {
+      "title": "",
+      "body": ""
+    },
+    "settingsSearch": {
+      "title": "",
+      "body": ""
+    },
+    "skinRandomizer": {
+      "title": "",
+      "body": ""
+    },
+    "statsCustomize": {
+      "title": "",
+      "body": ""
+    },
+    "nightlyChannel": {
+      "title": "",
+      "body": ""
     }
   }
 }

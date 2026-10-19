@@ -2339,6 +2339,7 @@
       "skipped": ""
     },
     "copyModList": "",
+    "moreActions": "",
     "copyModListEnabled": "",
     "copyModListAll": "",
     "copyModListDisabled": "",
@@ -3526,6 +3527,8 @@
     "autoResetGameinfoFailed": "",
     "showModUpdateBadges": "",
     "showModUpdateBadgesDescription": "",
+    "featureTips": "",
+    "featureTipsDescription": "",
     "modelPreview": "",
     "modelPreviewDescription": "",
     "modelPreviewWarning": "",
@@ -3810,7 +3813,10 @@
     "copyright": "Nöd mit Valve verbunde. Deadlock und s'Deadlock-Logo sind iitreiti Marke der Valve Corporation.",
     "resetOnboarding": "",
     "resetOnboardingDescription": "Zeigt de Irichtigassistent bim nöchste Start wieder aa.",
-    "resetOnboardingSuccess": "Onboarding wird bim nöchste Start aazeigt"
+    "resetOnboardingSuccess": "Onboarding wird bim nöchste Start aazeigt",
+    "resetFeatureTips": "",
+    "resetFeatureTipsDescription": "",
+    "resetFeatureTipsSuccess": ""
   },
   "update": {
     "checkFailed": "",
@@ -3932,6 +3938,7 @@
     "addFiles": "Dateie hinzufüge",
     "dropFilesDescription": "Eine .vpk-Datei oder ein .zip/.rar/.7z-Archiv ablege.",
     "dropAreaText": "Dateie/Ordner da ablege oder klicke zum Uswähle",
+    "dropAnywhereTitle": "",
     "supportedFormats": "Unterstützt: .vpk/.zip/.rar/.7z",
     "finalizeTitle": "Details vervollständige",
     "finalizeDescription": "Nu de Name isch erforderlich. De Rest chönd Sie später usfülle.",
@@ -6152,6 +6159,52 @@
         "previewTitle": "",
         "previewDetail": ""
       }
+    }
+  },
+  "featureHints": {
+    "didYouKnow": "",
+    "showMe": "",
+    "gotIt": "",
+    "turnOff": "",
+    "importFromManager": {
+      "title": "",
+      "body": ""
+    },
+    "myModsMenu": {
+      "title": "",
+      "body": ""
+    },
+    "modContextMenu": {
+      "title": "",
+      "body": ""
+    },
+    "loadOrder": {
+      "title": "",
+      "body": ""
+    },
+    "modsFolderShortcut": {
+      "title": "",
+      "body": ""
+    },
+    "profiles": {
+      "title": "",
+      "body": ""
+    },
+    "settingsSearch": {
+      "title": "",
+      "body": ""
+    },
+    "skinRandomizer": {
+      "title": "",
+      "body": ""
+    },
+    "statsCustomize": {
+      "title": "",
+      "body": ""
+    },
+    "nightlyChannel": {
+      "title": "",
+      "body": ""
     }
   }
 }

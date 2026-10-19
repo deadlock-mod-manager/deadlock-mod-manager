@@ -2339,6 +2339,7 @@
       "skipped": ""
     },
     "copyModList": "",
+    "moreActions": "",
     "copyModListEnabled": "",
     "copyModListAll": "",
     "copyModListDisabled": "",
@@ -3526,6 +3527,8 @@
     "autoResetGameinfoFailed": "",
     "showModUpdateBadges": "",
     "showModUpdateBadgesDescription": "",
+    "featureTips": "",
+    "featureTipsDescription": "",
     "modelPreview": "",
     "modelPreviewDescription": "",
     "modelPreviewWarning": "",
@@ -3810,7 +3813,10 @@
     "copyright": "Não afiliado à Valve. Deadlock e o logotipo de Deadlock são marcas registradas da Valve Corporation.",
     "resetOnboarding": "Redefinir Integração",
     "resetOnboardingDescription": "Mostrar o assistente de integração novamente na próxima inicialização.",
-    "resetOnboardingSuccess": "A integração será mostrada na próxima inicialização"
+    "resetOnboardingSuccess": "A integração será mostrada na próxima inicialização",
+    "resetFeatureTips": "",
+    "resetFeatureTipsDescription": "",
+    "resetFeatureTipsSuccess": ""
   },
   "update": {
     "checkFailed": "",
@@ -3932,6 +3938,7 @@
     "addFiles": "Adicionar Arquivos",
     "dropFilesDescription": "Solte um arquivo .vpk, er um arquivo .zip/.rar/.7z.",
     "dropAreaText": "Solte arquivos/pastas aqui, ou clique para selecionar",
+    "dropAnywhereTitle": "",
     "supportedFormats": "Suportado: .vpk/.zip/.rar/.7z",
     "finalizeTitle": "Finalizar detalhes",
     "finalizeDescription": "Apenas o nome é obrigatório. Você pode preencher o resto depois.",
@@ -6152,6 +6159,52 @@
         "previewTitle": "",
         "previewDetail": ""
       }
+    }
+  },
+  "featureHints": {
+    "didYouKnow": "",
+    "showMe": "",
+    "gotIt": "",
+    "turnOff": "",
+    "importFromManager": {
+      "title": "",
+      "body": ""
+    },
+    "myModsMenu": {
+      "title": "",
+      "body": ""
+    },
+    "modContextMenu": {
+      "title": "",
+      "body": ""
+    },
+    "loadOrder": {
+      "title": "",
+      "body": ""
+    },
+    "modsFolderShortcut": {
+      "title": "",
+      "body": ""
+    },
+    "profiles": {
+      "title": "",
+      "body": ""
+    },
+    "settingsSearch": {
+      "title": "",
+      "body": ""
+    },
+    "skinRandomizer": {
+      "title": "",
+      "body": ""
+    },
+    "statsCustomize": {
+      "title": "",
+      "body": ""
+    },
+    "nightlyChannel": {
+      "title": "",
+      "body": ""
     }
   }
 }

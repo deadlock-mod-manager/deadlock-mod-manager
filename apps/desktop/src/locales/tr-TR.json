@@ -2339,6 +2339,7 @@
       "skipped": ""
     },
     "copyModList": "",
+    "moreActions": "",
     "copyModListEnabled": "",
     "copyModListAll": "",
     "copyModListDisabled": "",
@@ -3526,6 +3527,8 @@
     "autoResetGameinfoFailed": "",
     "showModUpdateBadges": "",
     "showModUpdateBadgesDescription": "",
+    "featureTips": "",
+    "featureTipsDescription": "",
     "modelPreview": "",
     "modelPreviewDescription": "",
     "modelPreviewWarning": "",
@@ -3810,7 +3813,10 @@
     "copyright": "Valve ile bağlantılı değildir. Deadlock ve Deadlock logosu, Valve Corporation'ın tescilli markalarıdır.",
     "resetOnboarding": "Karşılamayı Sıfırla",
     "resetOnboardingDescription": "Bir sonraki başlatmada karşılama sihirbazını tekrar göster.",
-    "resetOnboardingSuccess": "Karşılama bir sonraki başlatmada gösterilecek"
+    "resetOnboardingSuccess": "Karşılama bir sonraki başlatmada gösterilecek",
+    "resetFeatureTips": "",
+    "resetFeatureTipsDescription": "",
+    "resetFeatureTipsSuccess": ""
   },
   "update": {
     "checkFailed": "",
@@ -3932,6 +3938,7 @@
     "addFiles": "Dosya ekle",
     "dropFilesDescription": ".vpk dosyası veya .zip/.rar/.7z arşivi bırakın.",
     "dropAreaText": "Dosya/Klasör buraya bırakın veya seçmek için tıklayın",
+    "dropAnywhereTitle": "",
     "supportedFormats": "Desteklenen: .vpk/.zip/.rar/.7z",
     "finalizeTitle": "Detayları tamamlayın",
     "finalizeDescription": "Sadece isim zorunlu. Diğerlerini sonra doldurabilirsiniz.",
@@ -6152,6 +6159,52 @@
         "previewTitle": "",
         "previewDetail": ""
       }
+    }
+  },
+  "featureHints": {
+    "didYouKnow": "",
+    "showMe": "",
+    "gotIt": "",
+    "turnOff": "",
+    "importFromManager": {
+      "title": "",
+      "body": ""
+    },
+    "myModsMenu": {
+      "title": "",
+      "body": ""
+    },
+    "modContextMenu": {
+      "title": "",
+      "body": ""
+    },
+    "loadOrder": {
+      "title": "",
+      "body": ""
+    },
+    "modsFolderShortcut": {
+      "title": "",
+      "body": ""
+    },
+    "profiles": {
+      "title": "",
+      "body": ""
+    },
+    "settingsSearch": {
+      "title": "",
+      "body": ""
+    },
+    "skinRandomizer": {
+      "title": "",
+      "body": ""
+    },
+    "statsCustomize": {
+      "title": "",
+      "body": ""
+    },
+    "nightlyChannel": {
+      "title": "",
+      "body": ""
     }
   }
 }

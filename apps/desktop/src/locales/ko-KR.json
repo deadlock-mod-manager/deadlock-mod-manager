@@ -2339,6 +2339,7 @@
       "skipped": ""
     },
     "copyModList": "",
+    "moreActions": "",
     "copyModListEnabled": "",
     "copyModListAll": "",
     "copyModListDisabled": "",
@@ -3526,6 +3527,8 @@
     "autoResetGameinfoFailed": "",
     "showModUpdateBadges": "",
     "showModUpdateBadgesDescription": "",
+    "featureTips": "",
+    "featureTipsDescription": "",
     "modelPreview": "",
     "modelPreviewDescription": "",
     "modelPreviewWarning": "",
@@ -3810,7 +3813,10 @@
     "copyright": "Valve와 관련이 없습니다. Deadlock 및 Deadlock 로고는 Valve Corporation의 등록 상표입니다.",
     "resetOnboarding": "온보딩 재설정",
     "resetOnboardingDescription": "다음 실행 시 온보딩 마법사를 다시 표시합니다.",
-    "resetOnboardingSuccess": "온보딩은 다음 출시 시 표시됩니다."
+    "resetOnboardingSuccess": "온보딩은 다음 출시 시 표시됩니다.",
+    "resetFeatureTips": "",
+    "resetFeatureTipsDescription": "",
+    "resetFeatureTipsSuccess": ""
   },
   "update": {
     "checkFailed": "",
@@ -3932,6 +3938,7 @@
     "addFiles": "파일 추가",
     "dropFilesDescription": ".vpk 또는 .zip/.rar/.7z 아카이브를 삭제하세요.",
     "dropAreaText": "여기에 파일/폴더를 놓거나 클릭하여 선택하세요.",
+    "dropAnywhereTitle": "",
     "supportedFormats": "지원됨: .vpk/.zip/.rar/.7z",
     "finalizeTitle": "세부정보 마무리",
     "finalizeDescription": "이름만 필수입니다. 나머지는 나중에 채울 수 있습니다.",
@@ -6152,6 +6159,52 @@
         "previewTitle": "",
         "previewDetail": ""
       }
+    }
+  },
+  "featureHints": {
+    "didYouKnow": "",
+    "showMe": "",
+    "gotIt": "",
+    "turnOff": "",
+    "importFromManager": {
+      "title": "",
+      "body": ""
+    },
+    "myModsMenu": {
+      "title": "",
+      "body": ""
+    },
+    "modContextMenu": {
+      "title": "",
+      "body": ""
+    },
+    "loadOrder": {
+      "title": "",
+      "body": ""
+    },
+    "modsFolderShortcut": {
+      "title": "",
+      "body": ""
+    },
+    "profiles": {
+      "title": "",
+      "body": ""
+    },
+    "settingsSearch": {
+      "title": "",
+      "body": ""
+    },
+    "skinRandomizer": {
+      "title": "",
+      "body": ""
+    },
+    "statsCustomize": {
+      "title": "",
+      "body": ""
+    },
+    "nightlyChannel": {
+      "title": "",
+      "body": ""
     }
   }
 }

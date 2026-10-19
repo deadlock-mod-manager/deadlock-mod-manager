@@ -2339,6 +2339,7 @@
       "skipped": ""
     },
     "copyModList": "",
+    "moreActions": "",
     "copyModListEnabled": "",
     "copyModListAll": "",
     "copyModListDisabled": "",
@@ -3526,6 +3527,8 @@
     "autoResetGameinfoFailed": "",
     "showModUpdateBadges": "",
     "showModUpdateBadgesDescription": "",
+    "featureTips": "",
+    "featureTipsDescription": "",
     "modelPreview": "",
     "modelPreviewDescription": "",
     "modelPreviewWarning": "",
@@ -3810,7 +3813,10 @@
     "copyright": "Не е свързано с Valve. Deadlock и логото на Deadlock са регистрирани търговски марки на Valve Corporation.",
     "resetOnboarding": "Нулиране на Въвеждащия помощник",
     "resetOnboardingDescription": "Показване на въвеждащия помощник отново при следващото стартиране.",
-    "resetOnboardingSuccess": "Въвеждащият помощник ще бъде показан при следващото стартиране"
+    "resetOnboardingSuccess": "Въвеждащият помощник ще бъде показан при следващото стартиране",
+    "resetFeatureTips": "",
+    "resetFeatureTipsDescription": "",
+    "resetFeatureTipsSuccess": ""
   },
   "update": {
     "checkFailed": "",
@@ -3932,6 +3938,7 @@
     "addFiles": "Добавяне на файлове",
     "dropFilesDescription": "Пуснете .vpk, или .zip/.rar/.7z архив.",
     "dropAreaText": "Пуснете файлове/папки тук или кликнете, за да изберете",
+    "dropAnywhereTitle": "",
     "supportedFormats": "Поддържани: .vpk/.zip/.rar/.7z",
     "finalizeTitle": "Финализиране на детайлите",
     "finalizeDescription": "Само името е задължително. Можете да попълните останалото по-късно.",
@@ -6152,6 +6159,52 @@
         "previewTitle": "",
         "previewDetail": ""
       }
+    }
+  },
+  "featureHints": {
+    "didYouKnow": "",
+    "showMe": "",
+    "gotIt": "",
+    "turnOff": "",
+    "importFromManager": {
+      "title": "",
+      "body": ""
+    },
+    "myModsMenu": {
+      "title": "",
+      "body": ""
+    },
+    "modContextMenu": {
+      "title": "",
+      "body": ""
+    },
+    "loadOrder": {
+      "title": "",
+      "body": ""
+    },
+    "modsFolderShortcut": {
+      "title": "",
+      "body": ""
+    },
+    "profiles": {
+      "title": "",
+      "body": ""
+    },
+    "settingsSearch": {
+      "title": "",
+      "body": ""
+    },
+    "skinRandomizer": {
+      "title": "",
+      "body": ""
+    },
+    "statsCustomize": {
+      "title": "",
+      "body": ""
+    },
+    "nightlyChannel": {
+      "title": "",
+      "body": ""
     }
   }
 }
