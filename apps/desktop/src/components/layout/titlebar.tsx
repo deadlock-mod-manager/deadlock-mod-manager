@@ -55,6 +55,7 @@ export const Titlebar = () => {
   const navigate = useNavigate();
   const { checkForUpdates, updateAndRelaunch } = useUpdateManager();
   const { getActiveProfile } = usePersistedStore();
+  const markFeatureUsed = usePersistedStore((state) => state.markFeatureUsed);
   const [showAboutDialog, setShowAboutDialog] = useState(false);
   const [showMenubar, setShowMenubar] = useState(false);
   const [currentWindow, setCurrentWindow] = useState<ReturnType<
@@ -65,20 +66,30 @@ export const Titlebar = () => {
     setCurrentWindow(getCurrentWindow());
   }, []);
 
+  // Tapping Alt on its own toggles the menu bar, as in other Windows apps.
+  // Alt held for a shortcut such as Alt+F4 leaves it alone.
   useEffect(() => {
+    let altTapped = false;
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Alt") {
         event.preventDefault();
-        setShowMenubar(true);
+        if (!event.repeat) altTapped = true;
+        return;
       }
+      altTapped = false;
+      if (event.key === "Escape") setShowMenubar(false);
     };
     const handleKeyUp = (event: KeyboardEvent) => {
-      if (event.key === "Alt") {
+      if (event.key === "Alt" && altTapped) {
         event.preventDefault();
-        setShowMenubar(false);
+        setShowMenubar((visible) => !visible);
       }
+      altTapped = false;
     };
-    const handleBlur = () => setShowMenubar(false);
+    const handleBlur = () => {
+      altTapped = false;
+      setShowMenubar(false);
+    };
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
     window.addEventListener("blur", handleBlur);
@@ -88,6 +99,22 @@ export const Titlebar = () => {
       window.removeEventListener("blur", handleBlur);
     };
   }, []);
+
+  useEffect(() => {
+    if (!showMenubar) return;
+    const handlePointerDown = (event: PointerEvent) => {
+      const target = event.target;
+      if (
+        target instanceof Element &&
+        target.closest('[data-menubar="true"], [role="menu"]')
+      ) {
+        return;
+      }
+      setShowMenubar(false);
+    };
+    window.addEventListener("pointerdown", handlePointerDown);
+    return () => window.removeEventListener("pointerdown", handlePointerDown);
+  }, [showMenubar]);
 
   const handleOpenModsFolder = async () => {
     try {
@@ -206,7 +233,10 @@ export const Titlebar = () => {
   useGlobalShortcuts([
     {
       key: "Ctrl+M",
-      handler: handleOpenModsFolder,
+      handler: () => {
+        markFeatureUsed("mods-folder-shortcut");
+        return handleOpenModsFolder();
+      },
       description: "Open Mods Folder",
     },
     {
@@ -361,6 +391,7 @@ export const Titlebar = () => {
       {showMenubar && (
         <div
           className='z-20 flex h-8 w-full shrink-0 items-center border-b bg-background px-2'
+          data-menubar='true'
           data-tauri-drag-region
           data-titlebar='true'>
           <Menubar className='h-auto border-none bg-transparent p-0 shadow-none'>
@@ -383,7 +414,10 @@ export const Titlebar = () => {
                       <MenubarItem
                         disabled={item.disabled}
                         key={item.label}
-                        onClick={item.action}>
+                        onClick={() => {
+                          setShowMenubar(false);
+                          void item.action?.();
+                        }}>
                         {item.label}
                         {item.shortcut && (
                           <div className='ml-auto flex items-center gap-1'>

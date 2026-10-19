@@ -71,6 +71,7 @@ import { LoggingSettings } from "@/components/settings/logging-settings";
 import OccultGeometrySettings from "@/components/settings/occult-geometry-settings";
 import { PluginList } from "@/components/settings/plugin-list";
 import { MatchSyncSettings } from "@/components/settings/match-sync-settings";
+import { FeatureTipsToggle } from "@/components/settings/feature-tips-toggle";
 import { ModUpdateBadgesToggle } from "@/components/settings/mod-update-badges-toggle";
 import { ModelPreviewToggle } from "@/components/settings/model-preview-toggle";
 import { NukeReinstall } from "@/components/settings/nuke-reinstall";
@@ -809,6 +810,8 @@ const CustomSettings = ({ value }: { value?: string }) => {
 
                 <ModUpdateBadgesToggle />
 
+                <FeatureTipsToggle />
+
                 <ModelPreviewToggle />
 
                 <OccultGeometrySettings />
@@ -1150,6 +1153,27 @@ const CustomSettings = ({ value }: { value?: string }) => {
                       size='sm'
                       variant='outline'>
                       {t("about.resetOnboarding")}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className='rounded-lg border border-border/50 bg-card/50 p-4 sm:col-span-2'>
+                  <div className='flex flex-col gap-2'>
+                    <h3 className='font-semibold text-primary'>
+                      {t("about.resetFeatureTips")}
+                    </h3>
+                    <p className='text-muted-foreground text-sm'>
+                      {t("about.resetFeatureTipsDescription")}
+                    </p>
+                    <Button
+                      className='mt-2 w-fit'
+                      onClick={() => {
+                        usePersistedStore.getState().resetFeatureHints();
+                        toast.success(t("about.resetFeatureTipsSuccess"));
+                      }}
+                      size='sm'
+                      variant='outline'>
+                      {t("about.resetFeatureTips")}
                     </Button>
                   </div>
                 </div>

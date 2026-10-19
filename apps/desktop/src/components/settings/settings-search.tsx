@@ -2,11 +2,15 @@ import { SearchInput } from "@deadlock-mods/ui/components/search-input";
 import { platform } from "@tauri-apps/plugin-os";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { HintAnchor } from "@/components/feature-hints/hint-anchor";
 import {
   SETTINGS_SEARCH_INDEX,
   type SettingsSearchResult,
   searchSettings,
 } from "@/lib/settings-search";
+import { usePersistedStore } from "@/lib/store";
+
+const SEARCH_HINT_MIN_VISITS = 3;
 
 type SettingsSearchProps = {
   /** Navigation shown while the query is empty. */
@@ -18,6 +22,14 @@ export const SettingsSearch = ({ children, onSelect }: SettingsSearchProps) => {
   const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
+  const markFeatureUsed = usePersistedStore((state) => state.markFeatureUsed);
+  const settingsVisits = usePersistedStore(
+    (state) => state.featureHints.counters.settingsVisits ?? 0,
+  );
+
+  useEffect(() => {
+    usePersistedStore.getState().countFeatureHintEvent("settingsVisits");
+  }, []);
 
   const results = useMemo(
     () =>
@@ -36,11 +48,12 @@ export const SettingsSearch = ({ children, onSelect }: SettingsSearchProps) => {
         event.preventDefault();
         inputRef.current?.focus();
         inputRef.current?.select();
+        markFeatureUsed("settings-search");
       }
     };
     window.addEventListener("keydown", focusOnFind);
     return () => window.removeEventListener("keydown", focusOnFind);
-  }, []);
+  }, [markFeatureUsed]);
 
   const handleSelect = (result: SettingsSearchResult) => {
     setQuery("");
@@ -58,14 +71,23 @@ export const SettingsSearch = ({ children, onSelect }: SettingsSearchProps) => {
   return (
     <div className='flex flex-col gap-1'>
       <div className='px-2 pt-2'>
-        <SearchInput
-          aria-label={t("settings.searchPlaceholder")}
-          onChange={(event) => setQuery(event.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={t("settings.searchPlaceholder")}
-          ref={inputRef}
-          value={query}
-        />
+        <HintAnchor
+          eligible={settingsVisits >= SEARCH_HINT_MIN_VISITS}
+          hintId='settings-search'
+          onShowMe={() => inputRef.current?.focus()}
+          side='right'>
+          <SearchInput
+            aria-label={t("settings.searchPlaceholder")}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              markFeatureUsed("settings-search");
+            }}
+            onKeyDown={handleKeyDown}
+            placeholder={t("settings.searchPlaceholder")}
+            ref={inputRef}
+            value={query}
+          />
+        </HintAnchor>
       </div>
 
       {query.trim() === "" ? (

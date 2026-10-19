@@ -186,6 +186,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
         descriptionKey: "settings.showModUpdateBadgesDescription",
       },
       {
+        titleKey: "settings.featureTips",
+        descriptionKey: "settings.featureTipsDescription",
+      },
+      {
         titleKey: "settings.modelPreview",
         descriptionKey: "settings.modelPreviewDescription",
       },
@@ -436,6 +440,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
       {
         titleKey: "about.resetOnboarding",
         descriptionKey: "about.resetOnboardingDescription",
+      },
+      {
+        titleKey: "about.resetFeatureTips",
+        descriptionKey: "about.resetFeatureTipsDescription",
       },
       { titleKey: "about.thirdPartyNotices" },
     ],

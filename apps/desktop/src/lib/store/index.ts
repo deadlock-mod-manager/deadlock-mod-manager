@@ -9,6 +9,11 @@ import {
   crosshairDeepMergeKeys,
 } from "./slices/crosshair";
 import {
+  createFeatureHintsSlice,
+  featureHintsDeepMergeKeys,
+  type FeatureHintsState,
+} from "./slices/feature-hints";
+import {
   createFavoritesSlice,
   favoritesDeepMergeKeys,
   type FavoritesState,
@@ -76,6 +81,7 @@ export type State = ModsState &
   ScrollState &
   CrosshairState &
   FavoritesState &
+  FeatureHintsState &
   StatsState &
   PerformanceState &
   LaunchHealthState;
@@ -91,6 +97,7 @@ const allDeepMergeKeys = new Set<string>([
   ...scrollDeepMergeKeys,
   ...crosshairDeepMergeKeys,
   ...favoritesDeepMergeKeys,
+  ...featureHintsDeepMergeKeys,
   ...statsDeepMergeKeys,
   ...performanceDeepMergeKeys,
   ...launchHealthDeepMergeKeys,
@@ -109,6 +116,7 @@ export const usePersistedStore = create<State>()(
       ...createScrollSlice(...a),
       ...createCrosshairSlice(...a),
       ...createFavoritesSlice(...a),
+      ...createFeatureHintsSlice(...a),
       ...createStatsSlice(...a),
       ...createPerformanceSlice(...a),
       ...createLaunchHealthSlice(...a),

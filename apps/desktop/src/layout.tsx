@@ -4,10 +4,12 @@ import {
   SidebarProvider,
 } from "@deadlock-mods/ui/components/sidebar";
 import { Toaster } from "@deadlock-mods/ui/components/sonner";
+import { FeatureHintsRenderer } from "./components/feature-hints/feature-hints-renderer";
 import { AppSidebar } from "./components/layout/app-sidebar";
 import { BottomBar } from "./components/layout/bottom-bar";
 import { CatalogSyncProgress } from "./components/layout/catalog-sync-progress";
 import { GameConfigBanner } from "./components/layout/game-config-banner";
+import { GlobalFileDrop } from "./components/layout/global-file-drop";
 import { LaunchOverlay } from "./components/layout/launch-overlay";
 import { OccultGeometry } from "./components/layout/occult-geometry";
 import { Titlebar } from "./components/layout/titlebar";
@@ -45,6 +47,8 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
       </div>
       <Toaster offset={{ bottom: 56 }} />
       <GlobalAudioPlayer />
+      <FeatureHintsRenderer />
+      <GlobalFileDrop />
 
       <Dialog
         onOpenChange={(open) => !open && markVersionAsSeen()}

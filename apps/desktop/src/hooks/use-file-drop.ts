@@ -126,11 +126,15 @@ const extractPathsFromStringPayloads = (
   return Array.from(extractedPaths);
 };
 
-export const useFileDrop = (
+/**
+ * Turns a drop's DataTransfer into a staged mod source and reports it, or
+ * reports why it could not. Shared by the Add Mods drop zone and the
+ * window-wide drop target.
+ */
+export const useDroppedSource = (
   onFilesDetected: (source: DetectedSource) => void,
   onError: (message: string) => void,
 ) => {
-  const [isDragging, setIsDragging] = useState(false);
   const { t } = useTranslation();
   const { setProcessing } = useProgress();
 
@@ -152,50 +156,11 @@ export const useFileDrop = (
     [setProcessing, t],
   );
 
-  const preventDefaults = useCallback((event: Event) => {
-    event.preventDefault();
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener("dragenter", preventDefaults, { passive: false });
-    window.addEventListener("dragover", preventDefaults, { passive: false });
-    window.addEventListener("drop", preventDefaults, { passive: false });
-
-    return () => {
-      window.removeEventListener("dragenter", preventDefaults);
-      window.removeEventListener("dragover", preventDefaults);
-      window.removeEventListener("drop", preventDefaults);
-    };
-  }, [preventDefaults]);
-
-  const handleDragEnter = useCallback((event: React.DragEvent) => {
-    event.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((event: React.DragEvent) => {
-    if (event.currentTarget === event.target) {
-      setIsDragging(false);
-    }
-  }, []);
-
-  const handleDragOver = useCallback((event: React.DragEvent) => {
-    event.preventDefault();
-    event.stopPropagation();
-    if (event.dataTransfer) {
-      event.dataTransfer.dropEffect = "copy";
-    }
-  }, []);
-
-  const handleDrop = useCallback(
-    async (event: React.DragEvent) => {
-      event.preventDefault();
-      event.stopPropagation();
-      setIsDragging(false);
-
-      const droppedFiles = Array.from(event.dataTransfer.files || []);
-      const droppedItems = Array.from(event.dataTransfer.items || []);
-      const droppedUriList = event.dataTransfer.getData("text/uri-list");
+  const handleDataTransfer = useCallback(
+    async (dataTransfer: DataTransfer) => {
+      const droppedFiles = Array.from(dataTransfer.files || []);
+      const droppedItems = Array.from(dataTransfer.items || []);
+      const droppedUriList = dataTransfer.getData("text/uri-list");
 
       logger.debug(
         "Drop event: files=%d items=%d uriList=%s",
@@ -258,6 +223,65 @@ export const useFileDrop = (
       onFilesDetected(detectedSource);
     },
     [onFilesDetected, onError, stageSource, t],
+  );
+
+  return { handleDataTransfer, stageSource };
+};
+
+export const useFileDrop = (
+  onFilesDetected: (source: DetectedSource) => void,
+  onError: (message: string) => void,
+) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const { t } = useTranslation();
+  const { handleDataTransfer, stageSource } = useDroppedSource(
+    onFilesDetected,
+    onError,
+  );
+
+  const preventDefaults = useCallback((event: Event) => {
+    event.preventDefault();
+  }, []);
+
+  useEffect(() => {
+    window.addEventListener("dragenter", preventDefaults, { passive: false });
+    window.addEventListener("dragover", preventDefaults, { passive: false });
+    window.addEventListener("drop", preventDefaults, { passive: false });
+
+    return () => {
+      window.removeEventListener("dragenter", preventDefaults);
+      window.removeEventListener("dragover", preventDefaults);
+      window.removeEventListener("drop", preventDefaults);
+    };
+  }, [preventDefaults]);
+
+  const handleDragEnter = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((event: React.DragEvent) => {
+    if (event.currentTarget === event.target) {
+      setIsDragging(false);
+    }
+  }, []);
+
+  const handleDragOver = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = "copy";
+    }
+  }, []);
+
+  const handleDrop = useCallback(
+    async (event: React.DragEvent) => {
+      event.preventDefault();
+      event.stopPropagation();
+      setIsDragging(false);
+      await handleDataTransfer(event.dataTransfer);
+    },
+    [handleDataTransfer],
   );
 
   const handleFileSelect = useCallback(
