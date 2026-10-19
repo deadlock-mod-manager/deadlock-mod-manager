@@ -103,6 +103,9 @@ yay -S deadlock-modmanager
 # nixpkgs
 nix-shell -p deadlock-mod-manager --run deadlock-mod-manager
 
+# Nix nightly (prebuilt via the deadlock-mod-manager Cachix cache)
+nix run github:deadlock-mod-manager/deadlock-mod-manager#nightly
+
 # Gentoo (third-party ::deftera overlay)
 sudo eselect repository add deftera git https://github.com/Deftera186/deftera-overlay.git
 sudo emaint sync --repo deftera

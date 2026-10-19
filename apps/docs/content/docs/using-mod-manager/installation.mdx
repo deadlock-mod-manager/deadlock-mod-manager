@@ -160,6 +160,32 @@ environment.systemPackages = with pkgs; [
 ];
 ```
 
+#### Nix nightly
+
+The repository flake builds the latest development version from `main`. CI publishes each build to the [`deadlock-mod-manager`](https://deadlock-mod-manager.cachix.org) Cachix cache, so you download it instead of compiling it.
+
+```bash
+# Trust the cache once (needs root or a trusted Nix user)
+cachix use deadlock-mod-manager
+
+# Run the nightly build
+nix run github:deadlock-mod-manager/deadlock-mod-manager#nightly
+```
+
+On NixOS, add the cache to your system configuration instead:
+
+```nix
+# configuration.nix
+nix.settings = {
+  substituters = [ "https://deadlock-mod-manager.cachix.org" ];
+  trusted-public-keys = [
+    "deadlock-mod-manager.cachix.org-1:wUjtzL6yN2i9zTq1YrXHBr0mx3LP7tBGsosk3N+/A/M="
+  ];
+};
+```
+
+Without the cache, Nix builds the app from source, which takes a while.
+
 #### Gentoo
 
 Available via the third-party [`::deftera`](https://github.com/Deftera186/deftera-overlay) overlay.
