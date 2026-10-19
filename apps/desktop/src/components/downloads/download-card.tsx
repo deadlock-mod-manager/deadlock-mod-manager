@@ -99,8 +99,9 @@ const StatusChip = ({ status }: { status: ModStatus }) => {
 const DownloadCard = ({ download }: DownloadCardProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { getModProgress } = usePersistedStore();
-  const modProgress = getModProgress(download.remoteId);
+  const modProgress = usePersistedStore((s) =>
+    s.getModProgress(download.remoteId),
+  );
   const isDownloading = download.status === ModStatus.Downloading;
   const isPaused = download.status === ModStatus.Paused;
   const isExtracting = download.status === ModStatus.Extracting;

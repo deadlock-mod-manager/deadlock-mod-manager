@@ -54,7 +54,7 @@ export const Titlebar = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { checkForUpdates, updateAndRelaunch } = useUpdateManager();
-  const { getActiveProfile } = usePersistedStore();
+  const getActiveProfile = usePersistedStore((s) => s.getActiveProfile);
   const markFeatureUsed = usePersistedStore((state) => state.markFeatureUsed);
   const [showAboutDialog, setShowAboutDialog] = useState(false);
   const [showMenubar, setShowMenubar] = useState(false);

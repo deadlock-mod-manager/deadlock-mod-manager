@@ -10,7 +10,7 @@ interface FilesystemWritableStatus {
 }
 
 export const useFilesystemStatus = () => {
-  const { gamePath } = usePersistedStore();
+  const gamePath = usePersistedStore((s) => s.gamePath);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ["filesystem-writable"],

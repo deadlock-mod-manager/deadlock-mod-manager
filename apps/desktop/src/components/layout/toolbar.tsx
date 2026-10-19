@@ -29,7 +29,8 @@ export const Toolbar = () => {
   const { t } = useTranslation();
   const { state } = useSidebar();
   const isSidebarCollapsed = state === "collapsed";
-  const { gamePath, getEnabledModsCount } = usePersistedStore();
+  const gamePath = usePersistedStore((s) => s.gamePath);
+  const enabledModsCount = usePersistedStore((s) => s.getEnabledModsCount());
   const { launch } = useLaunch();
   const cancelLaunch = useLaunchProgress((state) => state.cancel);
   const [vanillaAnimating, setVanillaAnimating] = useState(false);
@@ -37,8 +38,6 @@ export const Toolbar = () => {
   const [launching, setLaunching] = useState(false);
   const { showBackButton, onBackClick } = useScrollBackButtonContext();
   const isProfileSharingEnabled = useExperimentalFeature("profile-sharing");
-
-  const enabledModsCount = getEnabledModsCount();
 
   const { data: isRunning, refetch } = useQuery({
     queryKey: ["is-game-running"],

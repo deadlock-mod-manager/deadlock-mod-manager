@@ -8,7 +8,8 @@ import { ModStatus } from "@/types/mods";
  * This runs once when the app starts and ensures all mods have an install order
  */
 export const useModOrderMigration = () => {
-  const { localMods, migrateLegacyMods } = usePersistedStore();
+  const localMods = usePersistedStore((s) => s.localMods);
+  const migrateLegacyMods = usePersistedStore((s) => s.migrateLegacyMods);
 
   useEffect(() => {
     // Only check installed mods for migration

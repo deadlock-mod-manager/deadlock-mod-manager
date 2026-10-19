@@ -23,13 +23,11 @@ const GAMEBANANA_MMDL_REGEX =
 export const useDeepLink = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const {
-    addLocalMod: addMod,
-    setModStatus,
-    setModProgress,
-    setInstalledVpks,
-    getActiveProfile,
-  } = usePersistedStore();
+  const addMod = usePersistedStore((s) => s.addLocalMod);
+  const setModStatus = usePersistedStore((s) => s.setModStatus);
+  const setModProgress = usePersistedStore((s) => s.setModProgress);
+  const setInstalledVpks = usePersistedStore((s) => s.setInstalledVpks);
+  const getActiveProfile = usePersistedStore((s) => s.getActiveProfile);
   const { install } = useInstall();
   const processingRef = useRef<Set<string>>(new Set());
 

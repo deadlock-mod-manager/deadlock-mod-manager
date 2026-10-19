@@ -16,7 +16,7 @@ export type InstallFunction = (
 ) => Promise<InstallableMod | null>;
 
 const useInstall = () => {
-  const { getActiveProfile } = usePersistedStore();
+  const getActiveProfile = usePersistedStore((s) => s.getActiveProfile);
 
   const install: InstallFunction = useCallback(
     async (mod, originalOptions) => {

@@ -338,7 +338,7 @@ const fsStatusConfig = {
 export const BottomBar = () => {
   const { t } = useTranslation();
   const localMods = usePersistedStore((state) => state.localMods);
-  const { gamePath } = usePersistedStore();
+  const gamePath = usePersistedStore((s) => s.gamePath);
   const {
     updateAvailable,
     checkForUpdates,

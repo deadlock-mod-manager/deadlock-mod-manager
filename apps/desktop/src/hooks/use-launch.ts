@@ -35,15 +35,17 @@ const BACKEND_TAIL: LaunchStep[] = [
 
 export const useLaunch = () => {
   const { t } = useTranslation();
-  const {
-    settings,
-    gamePresenceEnabled,
-    getActiveProfile,
-    localMods,
-    isModEnabledInCurrentProfile,
-    setModStatus,
-    setModEnabledInCurrentProfile,
-  } = usePersistedStore();
+  const settings = usePersistedStore((s) => s.settings);
+  const gamePresenceEnabled = usePersistedStore((s) => s.gamePresenceEnabled);
+  const getActiveProfile = usePersistedStore((s) => s.getActiveProfile);
+  const localMods = usePersistedStore((s) => s.localMods);
+  const isModEnabledInCurrentProfile = usePersistedStore(
+    (s) => s.isModEnabledInCurrentProfile,
+  );
+  const setModStatus = usePersistedStore((s) => s.setModStatus);
+  const setModEnabledInCurrentProfile = usePersistedStore(
+    (s) => s.setModEnabledInCurrentProfile,
+  );
   const clearLastJoin = usePersistedStore((s) => s.clearLastJoin);
   const setLastLaunchVanilla = usePersistedStore((s) => s.setLastLaunchVanilla);
   const queryClient = useQueryClient();

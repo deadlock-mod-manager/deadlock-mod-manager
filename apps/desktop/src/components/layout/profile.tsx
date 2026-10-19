@@ -13,8 +13,7 @@ const PROFILES_HINT_MIN_MODS = 15;
 const Profile = () => {
   const { t } = useTranslation();
   const [showProfileManager, setShowProfileManager] = useState(false);
-  const { getActiveProfile } = usePersistedStore();
-  const activeProfile = getActiveProfile();
+  const activeProfile = usePersistedStore((s) => s.getActiveProfile());
   const isProfileManagementEnabled =
     useExperimentalFeature("profile-management");
   const markFeatureUsed = usePersistedStore((state) => state.markFeatureUsed);
