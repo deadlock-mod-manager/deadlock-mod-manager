@@ -3,7 +3,7 @@ import { $, $$, browser, expect } from "@wdio/globals";
 import { step } from "./evidence";
 import { observeUntil } from "./observations";
 import { readShardStore } from "./shard-oracle";
-import { navigate, openOrdering, reveal } from "./ui";
+import { navigate, openOrdering } from "./ui";
 
 const card = (modId: string) =>
   `//*[@title="${modId}"]/ancestor::*[.//button[@role="switch"]][1]`;
@@ -16,13 +16,35 @@ export const searchLibrary = async (query: string) => {
   await search.waitForDisplayed();
   await search.setValue(query);
 };
+// The debounced search re-sorts the grid after typing and React replaces the
+// cards. A held node then never recovers on Windows or WebKitGTK, so these
+// helpers look their element up again on every poll.
 export const findMod = async (modId: string) => {
   await searchLibrary(modId);
-  await reveal(await $(card(modId)));
+  // Clicks land on screen coordinates, so wait until the card stops moving:
+  // the same position on two polls, which are further apart than the debounce.
+  let previous = "";
+  await browser.waitUntil(
+    async () => {
+      const target = await $(card(modId));
+      const position = await browser.execute((node: HTMLElement) => {
+        node.scrollIntoView({ block: "center", behavior: "instant" });
+        const rect = node.getBoundingClientRect();
+        return `${rect.left},${rect.top}`;
+      }, target);
+      const settled = position === previous;
+      previous = position;
+      return settled && target.isDisplayed({ withinViewport: true });
+    },
+    { timeoutMsg: `${modId} card did not settle in the viewport` },
+  );
 };
 
-// React can replace the card after a search, and a held switch node then never
-// recovers on Windows or WebKitGTK, so look it up again on every poll.
+const waitForClickable = (selector: string) =>
+  browser.waitUntil(async () => (await $(selector)).isClickable(), {
+    timeoutMsg: `${selector} never became clickable`,
+  });
+
 export const waitForSwitch = (
   modId: string,
   checked: boolean,
@@ -61,9 +83,9 @@ export const setModEnabled = (world: string, modId: string, enabled: boolean) =>
 export const deleteMod = (world: string, modId: string) =>
   step(`delete ${modId}`, async () => {
     await findMod(modId);
-    const remove = await $(`${card(modId)}//button[@aria-label="Remove mod"]`);
-    await remove.waitForClickable();
-    await remove.click();
+    const remove = `${card(modId)}//button[@aria-label="Remove mod"]`;
+    await waitForClickable(remove);
+    await $(remove).click();
     const confirm = await $('[role="alertdialog"]').$("button=Delete");
     await confirm.waitForClickable();
     await confirm.click();
