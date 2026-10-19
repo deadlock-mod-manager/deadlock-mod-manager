@@ -74,9 +74,6 @@ export type UIState = {
   modsFilters: ModsFilters;
   crosshairFilters: CrosshairFilters;
   hasCompletedOnboarding: boolean;
-  // Set once the user has seen that match sync is now on by default, either in
-  // onboarding or via the one-time notice shown to existing users.
-  hasSeenMatchSyncNotice: boolean;
   // Sidebar entries marked "New" that the user has opened at least once.
   seenNavItems: Record<string, true>;
   showOccultGeometry: boolean;
@@ -97,7 +94,6 @@ export type UIState = {
   updateCrosshairFilters: (filters: Partial<CrosshairFilters>) => void;
   resetCrosshairFilters: () => void;
   setHasCompletedOnboarding: (completed: boolean) => void;
-  setHasSeenMatchSyncNotice: (seen: boolean) => void;
   markNavItemSeen: (id: string) => void;
   setShowOccultGeometry: (value: boolean) => void;
   setAnimateOccultGeometry: (value: boolean) => void;
@@ -147,7 +143,6 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   modsFilters: DEFAULT_MODS_FILTERS,
   crosshairFilters: DEFAULT_CROSSHAIR_FILTERS,
   hasCompletedOnboarding: false,
-  hasSeenMatchSyncNotice: false,
   seenNavItems: {},
   showOccultGeometry: true,
   animateOccultGeometry: true,
@@ -200,11 +195,6 @@ export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   setHasCompletedOnboarding: (completed: boolean) =>
     set(() => ({
       hasCompletedOnboarding: completed,
-    })),
-
-  setHasSeenMatchSyncNotice: (seen: boolean) =>
-    set(() => ({
-      hasSeenMatchSyncNotice: seen,
     })),
 
   markNavItemSeen: (id: string) =>

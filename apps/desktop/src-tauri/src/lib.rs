@@ -267,6 +267,8 @@ pub fn run() {
       commands::fonts::debug_trigger_font_install,
       #[cfg(debug_assertions)]
       commands::downloads::debug_queue_local_zip,
+      #[cfg(debug_assertions)]
+      commands::match_sync::debug_reset_match_sync_config,
       commands::downloads::clear_download_cache,
       commands::vpk::clear_all_mods_data,
       commands::mods::uninstall_mod,

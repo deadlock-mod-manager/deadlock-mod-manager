@@ -16,12 +16,17 @@ const STORE_FILE: &str = "match-sync.json";
 
 const KEY_ENABLED: &str = "enabled";
 const KEY_CONSENT: &str = "consent_accepted";
+const KEY_CONSENT_VERSION: &str = "consent_version";
 const KEY_FETCHED_IDS: &str = "fetched_ids";
 const KEY_QUOTA_HITS: &str = "quota_hits";
 const KEY_FULL_SYNC_COMPLETE: &str = "full_sync_complete";
 const KEY_GC_BACKOFF: &str = "gc_backoff_until";
 
 const MAX_FETCHED_IDS: usize = 10_000;
+
+/// Bump to ask every user again. Choices saved under an older version are
+/// ignored, so the config falls back to the default: on, but no consent.
+const CONSENT_VERSION: u64 = 1;
 
 pub fn now_secs() -> i64 {
   chrono::Utc::now().timestamp()
@@ -46,14 +51,30 @@ fn save(store: &Store<AppRuntime>) -> Result<(), MatchSyncError> {
 pub fn load_config(app: &AppHandle) -> Result<MatchSyncConfig, MatchSyncError> {
   let store = store(app)?;
   let default = MatchSyncConfig::default();
+  if !has_current_consent_version(&store) {
+    return Ok(default);
+  }
   Ok(MatchSyncConfig {
     enabled: get_bool(&store, KEY_ENABLED, default.enabled),
     consent_accepted: get_bool(&store, KEY_CONSENT, default.consent_accepted),
   })
 }
 
+fn has_current_consent_version(store: &Store<AppRuntime>) -> bool {
+  store.get(KEY_CONSENT_VERSION).and_then(|v| v.as_u64()) == Some(CONSENT_VERSION)
+}
+
+// The first write under a new version must not revive the old consent value.
+fn stamp_consent_version(store: &Store<AppRuntime>) {
+  if !has_current_consent_version(store) {
+    store.set(KEY_CONSENT, false);
+    store.set(KEY_CONSENT_VERSION, CONSENT_VERSION);
+  }
+}
+
 pub fn set_consent(app: &AppHandle, accepted: bool) -> Result<(), MatchSyncError> {
   let store = store(app)?;
+  stamp_consent_version(&store);
   store.set(KEY_CONSENT, accepted);
   // enabled=true with consent_accepted=false is never a valid persisted state.
   if !accepted {
@@ -62,8 +83,18 @@ pub fn set_consent(app: &AppHandle, accepted: bool) -> Result<(), MatchSyncError
   save(&store)
 }
 
+#[cfg(debug_assertions)]
+pub fn reset_config(app: &AppHandle) -> Result<(), MatchSyncError> {
+  let store = store(app)?;
+  store.delete(KEY_ENABLED);
+  store.delete(KEY_CONSENT);
+  store.delete(KEY_CONSENT_VERSION);
+  save(&store)
+}
+
 pub fn set_enabled(app: &AppHandle, enabled: bool) -> Result<(), MatchSyncError> {
   let store = store(app)?;
+  stamp_consent_version(&store);
   store.set(KEY_ENABLED, enabled);
   save(&store)
 }

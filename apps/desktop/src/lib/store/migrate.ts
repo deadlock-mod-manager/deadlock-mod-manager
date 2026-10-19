@@ -519,6 +519,13 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       state.experimentalTourDismissed ??= false;
     },
   },
+  {
+    to: 31,
+    label: "drop-match-sync-notice-flag",
+    apply: (state) => {
+      delete state.hasSeenMatchSyncNotice;
+    },
+  },
 ];
 
 const LEGACY_GAMEBANANA_ID = /^[1-9]\d*$/;

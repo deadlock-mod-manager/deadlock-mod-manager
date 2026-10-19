@@ -57,8 +57,10 @@ Open a match from **Last matches** on the Overview tab. The dialog shows the her
 
 Match Data Sharing is **on by default**. It fills in matches that public trackers such as Statlocker, Tracklock and deadlock-api are missing, so your match history and stats there are complete. Stats in the app works whether or not sharing is on.
 
-- **New installs** see the setting during onboarding and can turn it off there.
-- **Existing users** see a one-time notice after updating. Choosing **Keep it on** or closing the notice leaves sharing on; **Turn it off** disables it. If you had already turned sharing off before the update, it stays off.
+Nothing runs until you have seen that default:
+
+- **New installs** see the setting during onboarding and can turn it off there. Sharing starts once you reach that step.
+- **Existing users** are asked again after updating, whatever they chose before. Choosing **Keep it on** starts sharing; **Turn it off** or closing the notice disables it.
 
 You can change it any time under **Settings → Privacy → Match Data Sharing**. Turning it off stops all background work immediately.
 
@@ -68,12 +70,12 @@ Trackers can only download a match's full data once someone submits its match ID
 
 ### What it does
 
-The app reads the Steam auto-login token already stored on your machine to fetch your own Deadlock match history through your account. It sends **only match IDs and match salts** to deadlock-api. It never sends your Steam token, password, or personal data, and it never writes the token to disk. Fetching is rate-limited to 40 requests per rolling 24 hours.
+The app reads the Steam auto-login token already stored on your machine to fetch your own Deadlock match history through your account. It never sees, asks for, or handles your Steam password. The saved login is kept in memory, sent only to Steam to sign in, and never written to disk, logged, or sent to Deadlock Mod Manager or deadlock-api. It only asks Steam for your match history and match salts; it never touches your inventory, items, trades, Market listings, wallet, or purchases. It sends **only match IDs and match salts** to deadlock-api. Fetching is rate-limited to 40 requests per rolling 24 hours.
 
 <Callout type='warning' title='Uses your Steam account'>
   Sharing acts through your real Steam account, so the risk is low but not zero.
   Because the app reads Steam's stored login token, some antivirus software may
-  flag it. The code is open source and the token never leaves your machine; see
+  flag it. The code is open source and the token only ever goes to Steam; see
   [SECURITY.md](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/SECURITY.md)
   for details. If you are not comfortable with this, turn sharing off in
   Settings.

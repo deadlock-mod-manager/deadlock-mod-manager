@@ -50,7 +50,7 @@ Match sync is **enabled by default**. You can turn it off at any time in Setting
 
 - **Credentials read locally**: The app reads Steam's `config/loginusers.vdf` to list remembered accounts, and reads the `ConnectCache` blob from `local.vdf` to recover each account's Steam refresh token. The token is decrypted with the same OS-bound mechanism Steam itself uses — DPAPI on Windows, AES-256 derived from the account name on Linux and macOS — so it can only be recovered on your own machine, under your own user account.
 - **Token handling**: The refresh token is a live account credential. It is held **in memory only** for the duration of a sync — never logged, never written to disk by us, and never transmitted to our servers or any third party other than Valve.
-- **What it is used for**: The token authenticates a session against Valve's Steam servers (CM + Deadlock Game Coordinator) so the app can request your own match history and per-match salts, exactly as the game client would.
+- **What it is used for**: The token authenticates a session against Valve's Steam servers (CM + Deadlock Game Coordinator) so the app can request your own match history and per-match salts, exactly as the game client would. Those are the only requests it sends: it never touches your inventory, items, trades, Market listings, wallet, or purchases.
 - **We never ask for your Steam password**: The app has no login form and never prompts for Steam credentials. It only reuses the session Steam already stored when you chose "remember me".
 - **Rate limiting**: Requests to the Game Coordinator are throttled and capped per account (40 match fetches per rolling 24 hours) to stay well within Valve's limits.
 
@@ -101,7 +101,7 @@ New releases may trigger Windows SmartScreen warnings due to the code signing pr
 
 Some antivirus software may flag the application due to file system access and network features. We work to minimize false positives.
 
-With match sync enabled, the app reads and decrypts Steam's stored session token — the same behaviour credential-stealing malware exhibits — so some security software may flag it. This is why the feature can be turned off at any time, why the token never leaves your machine, and why the relevant code lives in a small, auditable module ([`apps/desktop/src-tauri/src/match_sync/auth.rs`](apps/desktop/src-tauri/src/match_sync/auth.rs)). If you are not comfortable with this trade-off, turn match sync off in Settings; the rest of the app is unaffected.
+With match sync enabled, the app reads and decrypts Steam's stored session token — the same behaviour credential-stealing malware exhibits — so some security software may flag it. This is why the feature can be turned off at any time, why the token is only ever sent to Valve, and why the relevant code lives in a small, auditable module ([`apps/desktop/src-tauri/src/match_sync/auth.rs`](apps/desktop/src-tauri/src/match_sync/auth.rs)). If you are not comfortable with this trade-off, turn match sync off in Settings; the rest of the app is unaffected.
 
 ### Mod Execution Risks
 

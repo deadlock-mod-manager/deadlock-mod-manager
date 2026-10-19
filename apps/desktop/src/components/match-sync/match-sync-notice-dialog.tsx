@@ -14,7 +14,7 @@ import {
   XIcon,
 } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useMatchSync } from "@/hooks/use-match-sync";
 import { matchSyncErrorMessage } from "@/hooks/use-match-sync-toggle";
@@ -24,21 +24,16 @@ const DOCS_URL =
   "https://docs.deadlockmods.app/using-mod-manager/community#match-data-sharing";
 
 /**
- * One-time notice for users who finished onboarding before match sync became
- * on by default. Dismissing it keeps sync on; new users see the same choice in
- * onboarding instead.
+ * Asks users who finished onboarding to keep match sync on. The backend drops
+ * consent saved under an older consent version, so this reappears for everyone
+ * after a bump. Sync stays idle until they keep it on; closing the dialog any
+ * other way turns it off. New users see the same choice in onboarding instead.
  */
 export const MatchSyncNoticeDialog = () => {
   const { t } = useTranslation();
-  const { status, setEnabled } = useMatchSync();
+  const { status, setConsent, setEnabled } = useMatchSync();
   const hasCompletedOnboarding = usePersistedStore(
     (state) => state.hasCompletedOnboarding,
-  );
-  const hasSeenNotice = usePersistedStore(
-    (state) => state.hasSeenMatchSyncNotice,
-  );
-  const setHasSeenNotice = usePersistedStore(
-    (state) => state.setHasSeenMatchSyncNotice,
   );
   // Let the telemetry prompt go first so the two dialogs never stack.
   const telemetryPromptResolved = usePersistedStore(
@@ -47,36 +42,34 @@ export const MatchSyncNoticeDialog = () => {
       state.telemetrySettings.analyticsEnabled,
   );
 
-  const pending =
-    hasCompletedOnboarding && !hasSeenNotice && status !== undefined;
+  const isOpen =
+    hasCompletedOnboarding &&
+    telemetryPromptResolved &&
+    status?.enabled === true &&
+    !status.consentAccepted;
+  const isSaving = setConsent.isPending || setEnabled.isPending;
 
-  // Users who already turned sync off keep that choice; there is nothing to announce.
-  useEffect(() => {
-    if (pending && !status.enabled) {
-      setHasSeenNotice(true);
+  const handleKeep = useCallback(async () => {
+    try {
+      await setConsent.mutateAsync(true);
+    } catch (error) {
+      toast.error(matchSyncErrorMessage(error, t));
     }
-  }, [pending, status?.enabled, setHasSeenNotice]);
-
-  const isOpen = pending && status.enabled && telemetryPromptResolved;
-
-  const handleKeep = useCallback(() => {
-    setHasSeenNotice(true);
-  }, [setHasSeenNotice]);
+  }, [setConsent, t]);
 
   const handleTurnOff = useCallback(async () => {
     try {
       await setEnabled.mutateAsync(false);
-      setHasSeenNotice(true);
     } catch (error) {
       toast.error(matchSyncErrorMessage(error, t));
     }
-  }, [setEnabled, setHasSeenNotice, t]);
+  }, [setEnabled, t]);
 
   return (
     <Dialog
       onOpenChange={(open) => {
-        if (!open) {
-          handleKeep();
+        if (!open && !isSaving) {
+          handleTurnOff();
         }
       }}
       open={isOpen}>
@@ -110,16 +103,13 @@ export const MatchSyncNoticeDialog = () => {
         <DialogFooter className='gap-2 sm:gap-2'>
           <button
             className={buttonVariants({ variant: "outline" })}
-            disabled={setEnabled.isPending}
+            disabled={isSaving}
             onClick={handleTurnOff}
             type='button'>
             <XIcon className='size-4' weight='bold' />
             {t("matchSync.notice.turnOff")}
           </button>
-          <Button
-            disabled={setEnabled.isPending}
-            onClick={handleKeep}
-            type='button'>
+          <Button disabled={isSaving} onClick={handleKeep} type='button'>
             <CheckCircleIcon className='size-4' weight='bold' />
             {t("matchSync.notice.keepOn")}
           </Button>

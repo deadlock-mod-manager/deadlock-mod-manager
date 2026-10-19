@@ -1,11 +1,18 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { TrashIcon } from "@deadlock-mods/ui/icons";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { useWipeLocalCatalog } from "@/hooks/use-gamebanana-catalog-sync";
+import {
+  MATCH_SYNC_STATUS_KEY,
+  type MatchSyncStatus,
+  useMatchSync,
+} from "@/hooks/use-match-sync";
+import { useMatchSyncToggle } from "@/hooks/use-match-sync-toggle";
 import { useOnboarding } from "@/hooks/use-onboarding";
 import { usePersistedStore } from "@/lib/store";
 
@@ -111,6 +118,27 @@ const Debug = () => {
   const { showOnboarding } = useOnboarding();
   const confirm = useConfirm();
   const wipeCatalog = useWipeLocalCatalog();
+  const queryClient = useQueryClient();
+  const { status: matchSyncStatus, setConsent, setEnabled } = useMatchSync();
+  // Onboarding and the status change in one render, so the existing-user
+  // notice never sees a fresh config while onboarding still reads as done.
+  const simulateMatchSync = useMutation({
+    mutationFn: async (scenario: "newInstall" | "update") => {
+      await invoke("debug_reset_match_sync_config");
+      const status = await invoke<MatchSyncStatus>("get_match_sync_status");
+      queryClient.setQueryData(MATCH_SYNC_STATUS_KEY, status);
+      if (scenario === "newInstall") {
+        setHasCompletedOnboarding(false);
+      }
+    },
+    onError: (error) => toast.error(String(error)),
+  });
+  // No status forces the consent dialog even if consent was already given.
+  const triggerMatchSyncConsent = useMatchSyncToggle({
+    status: undefined,
+    setConsent,
+    setEnabled,
+  });
 
   const clearModsState = async () => {
     if (!(await confirm(t("debug.confirmClearModsState")))) {
@@ -156,7 +184,30 @@ const Debug = () => {
             disabled={!telemetrySettings.hasSeenTelemetryPrompt}>
             {t("debug.resetTelemetryConsent")}
           </Button>
+          <Button
+            onClick={() => void triggerMatchSyncConsent(true)}
+            variant='outline'>
+            {t("debug.triggerMatchSyncConsent")}
+          </Button>
+          <Button
+            onClick={() => simulateMatchSync.mutate("newInstall")}
+            variant='outline'
+            disabled={simulateMatchSync.isPending}>
+            {t("debug.simulateMatchSyncNewInstall")}
+          </Button>
+          <Button
+            onClick={() => simulateMatchSync.mutate("update")}
+            variant='outline'
+            disabled={simulateMatchSync.isPending}>
+            {t("debug.simulateMatchSyncUpdate")}
+          </Button>
         </div>
+        {matchSyncStatus && (
+          <p className='text-muted-foreground text-sm'>
+            Match sync: enabled={String(matchSyncStatus.enabled)}, consent=
+            {String(matchSyncStatus.consentAccepted)}
+          </p>
+        )}
       </div>
 
       <div className='space-y-2'>

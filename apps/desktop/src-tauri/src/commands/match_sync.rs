@@ -37,6 +37,7 @@ pub async fn set_match_sync_consent(app_handle: AppHandle, accepted: bool) -> Re
     return Ok(());
   }
   match_sync::set_consent(&app_handle, accepted)?;
+  game_presence::sync_monitoring_watcher(&app_handle);
   Ok(())
 }
 
@@ -47,6 +48,14 @@ pub async fn set_match_sync_enabled(app_handle: AppHandle, enabled: bool) -> Res
   }
   match_sync::set_enabled(&app_handle, enabled)?;
   // Enabling starts (and disabling stops) the game-exit detect-only watcher.
+  game_presence::sync_monitoring_watcher(&app_handle);
+  Ok(())
+}
+
+#[cfg(debug_assertions)]
+#[tauri::command]
+pub async fn debug_reset_match_sync_config(app_handle: AppHandle) -> Result<(), Error> {
+  match_sync::reset_config(&app_handle)?;
   game_presence::sync_monitoring_watcher(&app_handle);
   Ok(())
 }

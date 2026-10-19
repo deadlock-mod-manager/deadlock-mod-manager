@@ -37,17 +37,17 @@ export type MatchSyncProgress = {
   };
 };
 
-const STATUS_KEY = ["match-sync-status"] as const;
+export const MATCH_SYNC_STATUS_KEY = ["match-sync-status"] as const;
 
 export const useMatchSync = () => {
   const queryClient = useQueryClient();
   const [progress, setProgress] = useState<MatchSyncProgress | null>(null);
 
   const invalidate = () =>
-    queryClient.invalidateQueries({ queryKey: STATUS_KEY });
+    queryClient.invalidateQueries({ queryKey: MATCH_SYNC_STATUS_KEY });
 
   const status = useQuery({
-    queryKey: STATUS_KEY,
+    queryKey: MATCH_SYNC_STATUS_KEY,
     queryFn: (): Promise<MatchSyncStatus> =>
       invoke<MatchSyncStatus>("get_match_sync_status"),
     // Poll while a full sync is running so the quota/progress stay current.

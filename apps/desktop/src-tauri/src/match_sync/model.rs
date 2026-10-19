@@ -130,11 +130,13 @@ pub struct MatchSyncConfig {
   pub consent_accepted: bool,
 }
 
+// On by default, but nothing runs until the user keeps it on in onboarding or
+// in the notice shown to existing users.
 impl Default for MatchSyncConfig {
   fn default() -> Self {
     Self {
       enabled: true,
-      consent_accepted: true,
+      consent_accepted: false,
     }
   }
 }

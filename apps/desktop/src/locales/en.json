@@ -3668,11 +3668,11 @@
     "title": "Match Data Sharing",
     "description": "Automatically upload your Deadlock matches to trackers like Statlocker, Tracklock and deadlock-api, so your match history and stats there are complete.",
     "about": {
-      "reads": "Reads your local Steam login (the auto-login token already stored on this machine) to talk to Steam on your behalf.",
+      "reads": "Signs in to Steam as you in the background, using the login Steam already saved on this PC, and briefly connects to Deadlock to fetch your matches. Steam may show you as in Deadlock while it runs.",
       "sends": "Sends only match IDs and salts to deadlock-api, never your login or personal data.",
       "limit": "Strictly rate-limited to {{limit}} match fetches per 24 hours, shared across everything below.",
       "risk": "Uses your Steam account. Low risk, but not zero.",
-      "summary": "Uses your Steam account, but only shares match IDs, never your login or personal data."
+      "summary": "Signs in to Steam as you in the background, using the login already saved on this PC, to fetch your matches. It never touches your items, trades, or wallet, never sees your password, and only shares match IDs."
     },
     "enable": {
       "title": "Enable match data sharing",
@@ -3680,7 +3680,7 @@
     },
     "consent": {
       "title": "Enable match data sharing?",
-      "body": "This reads your Steam login token on this machine to fetch your own Deadlock matches through your account.\n\n• Only match IDs and salts are sent to deadlock-api.\n• Your token, password, and personal data are never sent or stored.\n• Fetching is capped at 40 requests per 24 hours.\n\nBecause it acts through your real Steam account, the risk is low but not zero.",
+      "body": "This signs in to Steam as you in the background, using the login already saved on this PC, to fetch your own Deadlock matches.\n\n• We never see, ask for, or handle your Steam password.\n• The saved login stays in memory and only goes to Steam to sign you in. It is never stored, logged, or sent to us or deadlock-api.\n• It only asks Steam for your match history. It never touches your inventory, items, trades, Market listings, wallet, or purchases.\n• Only match IDs and salts are sent to deadlock-api.\n• Fetching is capped at 40 requests per 24 hours.\n\nBecause it acts through your real Steam account, the risk is low but not zero.",
       "accept": "I understand, enable it",
       "decline": "Cancel"
     },
@@ -3715,8 +3715,8 @@
       "rateLimited": "Steam is rate-limiting your account right now. Try again later."
     },
     "notice": {
-      "title": "Match data sharing is now on",
-      "description": "Deadlock Mod Manager now shares your match data by default. You can keep it on or turn it off now.",
+      "title": "Keep match data sharing on?",
+      "description": "Match data sharing is on by default, but nothing is shared until you choose. Keep it on, or turn it off.",
       "benefit": "Fills in missing matches on trackers like Statlocker, Tracklock and deadlock-api, so your history and stats there are complete.",
       "settings": "You can change this any time in Settings → Privacy.",
       "learnMore": "Learn more about match data sharing",
@@ -5226,7 +5226,10 @@
     "confirmClearModsState": "Are you sure you want to clear the mods state? This will remove all mods from the application but will NOT delete them from your game folder. You can re-scan your mods folder to restore them.",
     "modsStateCleared": "Mods state cleared successfully",
     "triggerOnboarding": "Trigger Onboarding",
-    "resetTelemetryConsent": "Reset Telemetry Consent"
+    "resetTelemetryConsent": "Reset Telemetry Consent",
+    "triggerMatchSyncConsent": "Trigger Match Data Consent",
+    "simulateMatchSyncNewInstall": "Match Data: Simulate New Install",
+    "simulateMatchSyncUpdate": "Match Data: Simulate Update"
   },
   "developer": {
     "title": "Developer Tools",

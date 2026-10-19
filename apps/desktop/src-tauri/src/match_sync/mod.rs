@@ -377,7 +377,12 @@ pub fn set_consent(app: &AppHandle, accepted: bool) -> Result<(), MatchSyncError
   if !accepted {
     cancel_background_work();
   }
-  settings::set_consent(app, accepted)
+  settings::set_consent(app, accepted)?;
+  if accepted {
+    prune_forgotten_accounts(app);
+    start_background_worker(app.clone());
+  }
+  Ok(())
 }
 
 pub fn set_enabled(app: &AppHandle, enabled: bool) -> Result<(), MatchSyncError> {
@@ -394,6 +399,13 @@ pub fn set_enabled(app: &AppHandle, enabled: bool) -> Result<(), MatchSyncError>
     start_background_worker(app.clone());
   }
   Ok(())
+}
+
+/// Back to a fresh install's config: on by default, no consent yet.
+#[cfg(debug_assertions)]
+pub fn reset_config(app: &AppHandle) -> Result<(), MatchSyncError> {
+  cancel_background_work();
+  settings::reset_config(app)
 }
 
 // Drops persisted per-account state (quota/fetched/completion) and in-memory resources
