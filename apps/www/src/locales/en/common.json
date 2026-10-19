@@ -1,4 +1,30 @@
 {
+  "privacy": {
+    "updated": "Last updated: October 19, 2026",
+    "scope": "This policy covers the Deadlock Mod Manager desktop application, deadlockmods.app and our Discord community bot. Desktop-specific collection and settings are described below; the Discord Bot section explains how we process Discord data.",
+    "desktopCollection": "The desktop application runs locally on your computer and communicates with online services for features such as mod discovery and downloads. It also collects technical and usage data as described in this policy.",
+    "serverStorage": "API communications use HTTPS. Server-side services also store data needed to provide their features, including Discord identifiers and community management records as described in the Discord Bot section.",
+    "sections": {
+      "discord": "6. Discord Bot",
+      "updates": "7. Updates",
+      "changes": "8. Changes to Privacy Policy",
+      "contact": "9. Contact"
+    },
+    "discord": {
+      "dataTitle": "Data and purposes",
+      "data": "Our Discord bot processes message text, user and role information, server, channel, thread and message identifiers, and command inputs as needed to manage community forums, provide saved support answers, and enforce channel rules. Community management records can include command submissions and their authors. Bot replies and warnings are visible according to the channel's permissions. This processing is separate from the desktop app's analytics settings.",
+      "languageTitle": "English-language moderation",
+      "language": "When enabled, language moderation checks ordinary messages in operator-selected channels and their threads. It skips direct messages, bots, webhooks and system messages. It ignores short or uncertain text, issues reminders for confidently detected non-English messages, and deletes further violations after the configured warning limit. By default, three delivered warnings within a fixed 30-minute window precede deletion of subsequent violations. Automated language detection can make mistakes; contact server staff to question a moderation action.",
+      "languageData": "Language detection runs locally on our bot server. This feature processes message text in memory, does not store message bodies, and does not send them to an external AI or translation service. Temporary warning counts and server, user and processed-message identifiers are stored in Redis with expiry, normally 30 minutes. The operator can configure that period from 1 minute to 24 hours.",
+      "sharingTitle": "Service providers and AI",
+      "sharing": "Discord delivers messages and interactions to the bot and receives its replies and moderation actions. Our hosting, database and diagnostic providers process the data needed to run and troubleshoot these features. Bot diagnostics may be sent to Sentry under the policy linked in the Crash Reports section above. Moderation action logs contain identifiers, detected language, actions and errors rather than message bodies. We no longer use the bot's former AI support or AI message-triage features. We do not use Discord message content to train AI or machine learning models.",
+      "retentionTitle": "Retention and deletion",
+      "retention": "Temporary language-moderation records expire as described above. That expiry does not apply to diagnostic logs or saved community management records, which remain until removed under the operator's or service provider's retention settings. Deleting a message in Discord does not automatically remove records already stored outside Discord. Contact us to request access to or deletion of bot data associated with your Discord account, including any retained records from retired support features. We will verify that the request concerns your account and explain any data we must retain for security or legal reasons.",
+      "controlsTitle": "Choices and contact",
+      "controls": "There is no per-user opt-out command for automatic language moderation. Operators can disable the feature and choose or exclude channels. Avoiding a bot mention does not prevent moderation in enabled channels. Ask server staff about an alternative channel or data deletion. Disabling desktop analytics does not disable Discord bot processing.",
+      "contact": "For bot privacy questions, access or deletion requests, contact server staff privately through our <discord>Discord community</discord>. Include your Discord user ID and relevant channel or thread references so we can locate your records. Do not post message contents, credentials or other private information in a public GitHub issue."
+    }
+  },
   "language": {
     "label": "Language"
   },

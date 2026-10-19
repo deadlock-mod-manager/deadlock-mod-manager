@@ -1,7 +1,8 @@
 import { ArrowUpIcon } from "@deadlock-mods/ui/icons";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { GITHUB_REPO } from "@/lib/constants";
+import { Trans, useTranslation } from "react-i18next";
+import { DISCORD_URL, GITHUB_REPO } from "@/lib/constants";
 import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/privacy")({
@@ -10,12 +11,13 @@ export const Route = createFileRoute("/privacy")({
     seo({
       title: "Privacy Policy | Deadlock Mod Manager",
       description:
-        "What data Deadlock Mod Manager and deadlockmods.app collect, how it is stored, how analytics and crash reports work, and how to contact us about privacy.",
+        "What data Deadlock Mod Manager and deadlockmods.app collect, how it is stored, how Discord bot features, analytics and crash reports work, and how to contact us about privacy.",
       path: "/privacy",
     }),
 });
 
 function PrivacyComponent() {
+  const { t } = useTranslation("common", { lng: "en" });
   const [showBackToTop, setShowBackToTop] = useState(false);
 
   useEffect(() => {
@@ -51,9 +53,13 @@ function PrivacyComponent() {
           </p>
           <div className='mx-auto mt-6 h-1 w-24 bg-primary'></div>
           <p className='text-muted-foreground text-sm mt-4'>
-            Last updated: September 24, 2025
+            {t("privacy.updated")}
           </p>
         </div>
+
+        <p className='text-muted-foreground leading-relaxed mb-8'>
+          {t("privacy.scope")}
+        </p>
 
         <div className='grid gap-8 lg:grid-cols-4'>
           <aside className='lg:col-span-1'>
@@ -78,9 +84,13 @@ function PrivacyComponent() {
                     id: "analytics-crash-reports",
                     title: "5. Analytics & Crash Reports",
                   },
-                  { id: "updates", title: "6. Updates" },
-                  { id: "changes-policy", title: "7. Changes to Policy" },
-                  { id: "contact", title: "8. Contact" },
+                  { id: "discord-bot", title: t("privacy.sections.discord") },
+                  { id: "updates", title: t("privacy.sections.updates") },
+                  {
+                    id: "changes-policy",
+                    title: t("privacy.sections.changes"),
+                  },
+                  { id: "contact", title: t("privacy.sections.contact") },
                 ].map((item) => (
                   <button
                     key={item.id}
@@ -102,10 +112,7 @@ function PrivacyComponent() {
                   1. Information Collection
                 </h2>
                 <p className='text-muted-foreground leading-relaxed mb-4'>
-                  Deadlock Mod Manager is a desktop application that runs
-                  locally on your computer. While we do not collect personal
-                  information that identifies you, we may collect certain
-                  technical and usage data to provide and improve our service.
+                  {t("privacy.desktopCollection")}
                 </p>
 
                 <h3 className='text-xl font-semibold mb-4'>Usage Data</h3>
@@ -272,9 +279,7 @@ function PrivacyComponent() {
                   </p>
                 </div>
                 <p className='text-muted-foreground leading-relaxed'>
-                  All API communications use secure HTTPS connections. We do not
-                  store personal information on our servers - only anonymous
-                  usage patterns and publicly available mod data.
+                  {t("privacy.serverStorage")}
                 </p>
               </section>
 
@@ -419,9 +424,66 @@ function PrivacyComponent() {
 
               <section className='scroll-mt-8'>
                 <h2
+                  id='discord-bot'
+                  className='text-2xl font-semibold border-b border-border pb-2 mb-4'>
+                  {t("privacy.sections.discord")}
+                </h2>
+                <h3 className='text-xl font-semibold mb-4'>
+                  {t("privacy.discord.dataTitle")}
+                </h3>
+                <p className='text-muted-foreground leading-relaxed mb-4'>
+                  {t("privacy.discord.data")}
+                </p>
+                <h3 className='text-xl font-semibold mb-4'>
+                  {t("privacy.discord.languageTitle")}
+                </h3>
+                <p className='text-muted-foreground leading-relaxed mb-4'>
+                  {t("privacy.discord.language")}
+                </p>
+                <p className='text-muted-foreground leading-relaxed mb-4'>
+                  {t("privacy.discord.languageData")}
+                </p>
+                <h3 className='text-xl font-semibold mb-4'>
+                  {t("privacy.discord.sharingTitle")}
+                </h3>
+                <p className='text-muted-foreground leading-relaxed mb-4'>
+                  {t("privacy.discord.sharing")}
+                </p>
+                <h3 className='text-xl font-semibold mb-4'>
+                  {t("privacy.discord.retentionTitle")}
+                </h3>
+                <p className='text-muted-foreground leading-relaxed mb-4'>
+                  {t("privacy.discord.retention")}
+                </p>
+                <h3 className='text-xl font-semibold mb-4'>
+                  {t("privacy.discord.controlsTitle")}
+                </h3>
+                <p className='text-muted-foreground leading-relaxed mb-4'>
+                  {t("privacy.discord.controls")}
+                </p>
+                <p className='text-muted-foreground leading-relaxed'>
+                  <Trans
+                    t={t}
+                    i18nKey='privacy.discord.contact'
+                    components={{
+                      discord: (
+                        <a
+                          href={DISCORD_URL}
+                          rel='noopener noreferrer'
+                          target='_blank'
+                          className='text-primary hover:underline'
+                        />
+                      ),
+                    }}
+                  />
+                </p>
+              </section>
+
+              <section className='scroll-mt-8'>
+                <h2
                   id='updates'
                   className='text-2xl font-semibold border-b border-border pb-2 mb-4'>
-                  6. Updates
+                  {t("privacy.sections.updates")}
                 </h2>
                 <p className='text-muted-foreground leading-relaxed'>
                   The application may check for updates when connected to the
@@ -434,7 +496,7 @@ function PrivacyComponent() {
                 <h2
                   id='changes-policy'
                   className='text-2xl font-semibold border-b border-border pb-2 mb-4'>
-                  7. Changes to Privacy Policy
+                  {t("privacy.sections.changes")}
                 </h2>
                 <p className='text-muted-foreground leading-relaxed'>
                   We may update this privacy policy from time to time. Any
@@ -447,7 +509,7 @@ function PrivacyComponent() {
                 <h2
                   id='contact'
                   className='text-2xl font-semibold border-b border-border pb-2 mb-4'>
-                  8. Contact
+                  {t("privacy.sections.contact")}
                 </h2>
                 <p className='text-muted-foreground leading-relaxed'>
                   For questions about this Privacy Policy, please create an
