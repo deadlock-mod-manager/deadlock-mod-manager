@@ -1,9 +1,12 @@
 import { Command } from "@sapphire/framework";
 import { ChannelType, GuildMember, MessageFlags } from "discord.js";
 import { getForumConfig } from "@/config/forum-lifecycle";
+import { env } from "@/lib/env";
 import { type ForumStatus, isClosedStatus } from "@/lib/forum-status";
 import { logger as mainLogger } from "@/lib/logger";
 import { hasForumModerationPermission } from "@/lib/permissions";
+import { ForumCleanupProcessor } from "@/processors/forum-cleanup.processor";
+import { cronService } from "@/services/cron";
 import { closeThread } from "@/services/forum-lifecycle";
 
 const logger = mainLogger.child().withContext({
@@ -31,6 +34,11 @@ export class ForumCommand extends Command {
       builder
         .setName("forum")
         .setDescription("Manage support forum posts")
+        .addSubcommand((subcommand) =>
+          subcommand
+            .setName("cleanup")
+            .setDescription("Run the scheduled forum cleanup now"),
+        )
         .addSubcommand((subcommand) =>
           subcommand
             .setName("close")
@@ -65,9 +73,36 @@ export class ForumCommand extends Command {
       !hasForumModerationPermission(interaction.member)
     ) {
       return interaction.reply({
-        content: "You don't have permission to close forum posts.",
+        content: "You don't have permission to manage forum posts.",
         flags: MessageFlags.Ephemeral,
       });
+    }
+
+    if (interaction.options.getSubcommand() === "cleanup") {
+      if (interaction.guildId !== env.DMM_GUILD_ID) {
+        return interaction.reply({
+          content: "Run forum cleanup in the Deadlock Mod Manager server.",
+          flags: MessageFlags.Ephemeral,
+        });
+      }
+
+      await interaction.deferReply();
+      try {
+        const jobId = await cronService.triggerJob(ForumCleanupProcessor.name, {
+          requestedBy: interaction.user.id,
+        });
+        logger
+          .withMetadata({ userId: interaction.user.id, jobId })
+          .info("Forum cleanup requested");
+        return interaction.editReply(
+          "Forum cleanup queued for bug reports and suggestions. The usual cleanup rules apply.",
+        );
+      } catch (error) {
+        logger.withError(error).error("Failed to queue forum cleanup");
+        return interaction.editReply(
+          "Could not queue forum cleanup, try again later.",
+        );
+      }
     }
 
     const thread = interaction.channel;

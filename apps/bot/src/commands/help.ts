@@ -36,6 +36,12 @@ const helpEntries: HelpEntry[] = [
     allowed: hasForumModerationPermission,
   },
   {
+    usage: "/forum cleanup",
+    description:
+      "Queue an immediate cleanup of bug reports and suggestions using the usual rules.",
+    allowed: hasForumModerationPermission,
+  },
+  {
     usage: "/quickanswer answer, /quickanswer preview",
     description:
       "Send a saved answer in this channel, or preview it privately.",
