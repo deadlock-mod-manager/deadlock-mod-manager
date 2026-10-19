@@ -70,6 +70,7 @@ const main = async () => {
 
   logger.info("Defining cron jobs");
   await cronService.defineJobs(cronJobDefinitions);
+  await cronService.removeRetiredJobs(["GamebananaRssProcessor"]);
 
   cronService.start();
 

@@ -1,4 +1,4 @@
-import { NotFoundError } from "@deadlock-mods/common";
+import { ConfigurationError, NotFoundError } from "@deadlock-mods/common";
 import type { Logger } from "@deadlock-mods/logging";
 import type { JobsOptions } from "bullmq";
 import type { Redis } from "ioredis";
@@ -6,6 +6,7 @@ import type { BaseProcessor } from "../base/processor";
 import type { CronJobData } from "../types/jobs";
 import type { QueueConfig } from "../types/queues";
 import { CronQueue } from "./queue";
+import { removeRetiredCronJobs } from "./remove-retired-jobs";
 import { CronWorker } from "./worker";
 
 export interface CronJobDefinition {
@@ -95,6 +96,17 @@ export class CronService {
         processor: processor.constructor.name,
       })
       .info(`Defined cron job: ${name} with pattern: ${pattern}`);
+  }
+
+  async removeRetiredJobs(jobNames: readonly string[]): Promise<void> {
+    for (const name of jobNames) {
+      if (this.jobs.has(name))
+        throw new ConfigurationError(
+          `Cannot retire a defined cron job: ${name}`,
+        );
+    }
+    await removeRetiredCronJobs(this.queue.getQueue(), jobNames);
+    this.logger.withMetadata({ jobNames }).info("Removed retired cron jobs");
   }
 
   async defineJobs(definitions: CronJobDefinition[]): Promise<void> {
