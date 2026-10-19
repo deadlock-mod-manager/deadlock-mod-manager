@@ -5226,7 +5226,10 @@
     "confirmClearModsState": "모드 상태를 지우시겠습니까? 이렇게 하면 애플리케이션에서 모든 모드가 제거되지만 게임 폴더에서는 삭제되지 않습니다. mods 폴더를 다시 스캔하여 복원할 수 있습니다.",
     "modsStateCleared": "Mods 상태가 성공적으로 지워졌습니다.",
     "triggerOnboarding": "",
-    "resetTelemetryConsent": ""
+    "resetTelemetryConsent": "",
+    "triggerMatchSyncConsent": "",
+    "simulateMatchSyncNewInstall": "",
+    "simulateMatchSyncUpdate": ""
   },
   "developer": {
     "title": "개발자 도구",

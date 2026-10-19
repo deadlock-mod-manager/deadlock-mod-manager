@@ -5226,7 +5226,10 @@
     "confirmClearModsState": "Tem certeza que deseja limpar o estado dos mods? Isso removerá todos os mods da aplicação mas NÃO os deletará de sua pasta do jogo. Você pode re-escanejar sua pasta de mods para restaurá-los.",
     "modsStateCleared": "Estado dos mods limpo com sucesso",
     "triggerOnboarding": "",
-    "resetTelemetryConsent": ""
+    "resetTelemetryConsent": "",
+    "triggerMatchSyncConsent": "",
+    "simulateMatchSyncNewInstall": "",
+    "simulateMatchSyncUpdate": ""
   },
   "developer": {
     "title": "Ferramentas de Desenvolvedor",

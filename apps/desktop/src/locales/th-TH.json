@@ -5226,7 +5226,10 @@
     "confirmClearModsState": "คุณแน่ใจหรือไม่ว่าต้องการล้างสถานะม็อด? การกระทำนี้จะลบม็อดทั้งหมดออกจากแอปพลิเคชัน แต่จะไม่ลบออกจากโฟลเดอร์เกมของคุณ คุณสามารถสแกนโฟลเดอร์ม็อดของคุณอีกครั้งเพื่อกู้คืนได้",
     "modsStateCleared": "ล้างสถานะม็อดเรียบร้อยแล้ว",
     "triggerOnboarding": "",
-    "resetTelemetryConsent": ""
+    "resetTelemetryConsent": "",
+    "triggerMatchSyncConsent": "",
+    "simulateMatchSyncNewInstall": "",
+    "simulateMatchSyncUpdate": ""
   },
   "developer": {
     "title": "เครื่องมือสำหรับนักพัฒนา",

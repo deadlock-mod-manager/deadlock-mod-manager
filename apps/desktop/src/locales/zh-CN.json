@@ -3668,11 +3668,11 @@
     "title": "分享比赛数据",
     "description": "自动将你的 Deadlock 比赛上传至 Statlocker、Tracklock、deadlock-api 等追踪平台，让你的比赛记录与统计数据保持完整。",
     "about": {
-      "reads": "读取你本地存储的 Steam 登录信息（即本机上已保存的自动登录令牌），以便代表你与 Steam 进行通信。",
+      "reads": "",
       "sends": "只会向 deadlock-api 发送比赛 ID 与 salt，绝不会发送你的登录凭据或个人数据。",
       "limit": "严格限制每24小时最多获取 {{limit}} 场比赛数据，该次数限制同样适用于下文所列的所有选项。",
       "risk": "会使用你的 Steam 账户。风险很低，但并非为零。",
-      "summary": "会使用你的 Steam 账户，但只共享比赛 ID，绝不共享你的登录凭据或个人数据。"
+      "summary": ""
     },
     "enable": {
       "title": "启用比赛数据分享",
@@ -3680,7 +3680,7 @@
     },
     "consent": {
       "title": "是否启用比赛数据分享？",
-      "body": "此功能会读取本机上的 Steam 登录令牌，通过你的账户获取你自己的 Deadlock 比赛数据。\n\n• 只有比赛 ID 与 salt 会被发送至 deadlock-api。\n• 你的令牌、密码与个人数据绝不会被发送或存储。\n• 每 24 小时最多获取 40 次。\n\n由于它是通过你真实的 Steam 账户操作，风险很低，但并非为零。",
+      "body": "",
       "accept": "我已经了解存在的风险，开启这个功能",
       "decline": "取消"
     },
@@ -3715,8 +3715,8 @@
       "rateLimited": "Steam 当前正在限制你账号的请求频率，请稍后再试。"
     },
     "notice": {
-      "title": "比赛数据共享现已开启",
-      "description": "Deadlock Mod Manager 现在默认共享你的比赛数据。你可以保持开启，也可以立即关闭。",
+      "title": "",
+      "description": "",
       "benefit": "可为 Statlocker、Tracklock、deadlock-api 等平台补齐缺失的比赛，让你的历史记录与统计数据保持完整。",
       "settings": "你可以随时在 设置 → 隐私 中更改。",
       "learnMore": "了解比赛数据共享的详情",
@@ -5226,7 +5226,10 @@
     "confirmClearModsState": "确定要清除模组状态吗？这将从应用程序中移除所有模组，但不会从你的游戏文件夹中删除它们。你可以重新扫描模组文件夹来恢复它们。",
     "modsStateCleared": "模组状态清除成功",
     "triggerOnboarding": "触发新手引导",
-    "resetTelemetryConsent": "重置遥测同意"
+    "resetTelemetryConsent": "重置遥测同意",
+    "triggerMatchSyncConsent": "",
+    "simulateMatchSyncNewInstall": "",
+    "simulateMatchSyncUpdate": ""
   },
   "developer": {
     "title": "开发者工具",

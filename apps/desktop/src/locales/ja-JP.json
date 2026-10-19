@@ -5226,7 +5226,10 @@
     "confirmClearModsState": "Modの状態をクリアしてもよろしいですか？これにより、アプリケーションからすべてのModが削除されますが、ゲームフォルダーからは削除されません。Modフォルダーを再スキャンして復元できます。",
     "modsStateCleared": "Modの状態を正常にクリアしました",
     "triggerOnboarding": "",
-    "resetTelemetryConsent": ""
+    "resetTelemetryConsent": "",
+    "triggerMatchSyncConsent": "",
+    "simulateMatchSyncNewInstall": "",
+    "simulateMatchSyncUpdate": ""
   },
   "developer": {
     "title": "開発者ツール",

@@ -5226,7 +5226,10 @@
     "confirmClearModsState": "Modlar durumunu temizlemek istediğinizden emin misiniz? Bu, tüm modları uygulamadan kaldıracak ancak oyun klasörünüzden SİLMEYECEKTİR. Modları geri yüklemek için mod klasörünüzü yeniden tarayabilirsiniz.",
     "modsStateCleared": "Modlar durumu başarıyla temizlendi",
     "triggerOnboarding": "",
-    "resetTelemetryConsent": ""
+    "resetTelemetryConsent": "",
+    "triggerMatchSyncConsent": "",
+    "simulateMatchSyncNewInstall": "",
+    "simulateMatchSyncUpdate": ""
   },
   "developer": {
     "title": "",
