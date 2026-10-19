@@ -2338,6 +2338,13 @@
       "skipDescription": "Hide this update until the author publishes a newer one",
       "skipped": "Skipped the update for {{name}}"
     },
+    "copyModList": "Copy mod list",
+    "copyModListEnabled": "Enabled mods only",
+    "copyModListAll": "Include disabled mods",
+    "copyModListDisabled": "disabled",
+    "copyModListSuccess_one": "Copied {{count}} mod to the clipboard",
+    "copyModListSuccess_other": "Copied {{count}} mods to the clipboard",
+    "copyModListFailed": "Couldn't copy the mod list",
     "disableAll": "Disable all mods",
     "disableAllConfirmTitle": "Disable all mods?",
     "disableAllConfirmBody": "This will disable all {{count}} currently enabled mods. The mods will remain in your library and can be re-enabled at any time.",

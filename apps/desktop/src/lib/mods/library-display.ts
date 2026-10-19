@@ -73,3 +73,23 @@ export function sortLibraryMods(
     }
   }
 }
+
+export function formatModList(
+  mods: LocalMod[],
+  includeDisabled: boolean,
+  disabledLabel: string,
+): string {
+  const listed = includeDisabled ? mods : mods.filter(isInstalledModWithVpks);
+  return sortLibraryMods(listed, LibrarySortType.InstallOrder)
+    .map((mod) => {
+      const disabled =
+        includeDisabled && !isInstalledModWithVpks(mod)
+          ? ` (${disabledLabel})`
+          : "";
+      const url = mod.remoteUrl.startsWith("local://")
+        ? ""
+        : ` - ${mod.remoteUrl}`;
+      return `${mod.name}${disabled}${url}`;
+    })
+    .join("\n");
+}

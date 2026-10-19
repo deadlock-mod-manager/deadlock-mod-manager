@@ -18,6 +18,9 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@deadlock-mods/ui/components/dropdown-menu";
 import {
@@ -43,6 +46,7 @@ import {
   ArrowUpDown,
   ChevronLeft,
   ChevronRight,
+  Copy,
   EllipsisVertical,
   FileOutput,
   FolderOpen,
@@ -108,6 +112,7 @@ import { ModCategory } from "@/lib/constants";
 import { getErrorMessage } from "@/lib/errors";
 import {
   filterLibraryModsByStatus,
+  formatModList,
   LibrarySortType,
   ModFilter,
   sortLibraryMods,
@@ -863,6 +868,21 @@ const MyMods = () => {
     .filter(isInstalledModWithVpks)
     .reduce((sum, mod) => sum + (mod.installedVpks?.length ?? 0), 0);
 
+  const copyModList = async (includeDisabled: boolean) => {
+    try {
+      await navigator.clipboard.writeText(
+        formatModList(mods, includeDisabled, t("myMods.copyModListDisabled")),
+      );
+      toast.success(
+        t("myMods.copyModListSuccess", {
+          count: includeDisabled ? mods.length : enabledModsCount,
+        }),
+      );
+    } catch {
+      toast.error(t("myMods.copyModListFailed"));
+    }
+  };
+
   useLayoutEffect(() => {
     if (scrollContainerRef.current && scrollPositionRef.current > 0) {
       scrollContainerRef.current.scrollTop = scrollPositionRef.current;
@@ -993,6 +1013,22 @@ const MyMods = () => {
                 <FileOutput className='h-4 w-4' />
                 {t("interchange.exportMenu")}
               </DropdownMenuItem>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger disabled={mods.length === 0}>
+                  <Copy className='h-4 w-4' />
+                  {t("myMods.copyModList")}
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  <DropdownMenuItem
+                    onSelect={() => copyModList(false)}
+                    disabled={enabledModsCount === 0}>
+                    {t("myMods.copyModListEnabled")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => copyModList(true)}>
+                    {t("myMods.copyModListAll")}
+                  </DropdownMenuItem>
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
