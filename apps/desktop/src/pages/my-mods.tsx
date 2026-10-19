@@ -1205,12 +1205,14 @@ const MyMods = () => {
                       hideNSFW={hideNSFW}
                       hideOutdated={hideOutdated}
                       mods={mods}
+                      nsfwOnly={globallyHideNSFW ? undefined : nsfwOnly}
                       onCategoriesChange={setSelectedCategories}
                       onFilterModeChange={setFilterMode}
                       onHeroesChange={setSelectedHeroes}
                       onAudioQuickFilterChange={setAudioQuickFilter}
                       onMapQuickFilterChange={setMapQuickFilter}
                       onHideNSFWChange={setHideNSFW}
+                      onNSFWOnlyChange={setNSFWOnly}
                       onHideOutdatedChange={setHideOutdated}
                       query={query}
                       selectedCategories={selectedCategories}
@@ -1226,8 +1228,6 @@ const MyMods = () => {
                             triggerClassName='h-8 border-0 bg-transparent px-2.5 text-muted-foreground shadow-none hover:text-foreground data-[state=open]:text-foreground'
                             value={sortType}
                           />
-                          nsfwOnly={globallyHideNSFW ? undefined : nsfwOnly}
-                          onNSFWOnlyChange={setNSFWOnly}
                           <span aria-hidden className='h-4 w-px bg-border' />
                           <Tooltip>
                             <TooltipTrigger asChild>
