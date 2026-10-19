@@ -1,6 +1,9 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+#[cfg(all(test, target_os = "linux"))]
+mod linux_gpu_tests;
+
 #[cfg(target_os = "linux")]
 fn is_nvidia_gpu_present() -> bool {
   if std::path::Path::new("/proc/driver/nvidia/version").exists() {
@@ -62,12 +65,25 @@ fn display_drivers(drm_dir: &std::path::Path) -> Vec<String> {
   drivers
 }
 
-/// Whether the webview will be drawn by an NVIDIA GPU. On hybrid laptops the
-/// NVIDIA card is present but idle, so only the GPU driving the screens counts.
+#[cfg(target_os = "linux")]
+fn nvidia_prime_offload_requested(
+  offload: Option<&std::ffi::OsStr>,
+  vendor: Option<&std::ffi::OsStr>,
+  provider: Option<&std::ffi::OsStr>,
+) -> bool {
+  offload.is_some_and(|value| value == "1")
+    || vendor.is_some_and(|value| value == "nvidia")
+    || provider.is_some_and(|value| !value.is_empty())
+}
+
+/// Detect NVIDIA rendering from explicit offload requests or connected displays.
 #[cfg(target_os = "linux")]
 fn nvidia_renders_webview() -> bool {
-  let prime_offload = std::env::var_os("__NV_PRIME_RENDER_OFFLOAD").is_some()
-    || std::env::var("__GLX_VENDOR_LIBRARY_NAME").is_ok_and(|vendor| vendor == "nvidia");
+  let prime_offload = nvidia_prime_offload_requested(
+    std::env::var_os("__NV_PRIME_RENDER_OFFLOAD").as_deref(),
+    std::env::var_os("__GLX_VENDOR_LIBRARY_NAME").as_deref(),
+    std::env::var_os("__NV_PRIME_RENDER_OFFLOAD_PROVIDER").as_deref(),
+  );
   if prime_offload {
     eprintln!("[GPU Compat] NVIDIA PRIME render offload requested");
     return true;
@@ -151,23 +167,30 @@ fn read_gpu_compat_setting() -> String {
 #[cfg(target_os = "linux")]
 fn should_enable_gpu_compat_workaround() -> bool {
   let cli_args = desktop_lib::cli::get_cli_args();
+  let setting = read_gpu_compat_setting();
+  eprintln!("[GPU Compat] Setting value: '{setting}'");
 
-  if cli_args.disable_linux_gpu_optimization {
+  gpu_compat_workaround_enabled(
+    cli_args.disable_linux_gpu_optimization,
+    &setting,
+    std::env::var_os("WEBKIT_DISABLE_DMABUF_RENDERER").as_deref(),
+    nvidia_renders_webview,
+  )
+}
+
+#[cfg(target_os = "linux")]
+fn gpu_compat_workaround_enabled(
+  disabled_by_cli: bool,
+  setting: &str,
+  dmabuf_override: Option<&std::ffi::OsStr>,
+  detect_nvidia: impl FnOnce() -> bool,
+) -> bool {
+  if disabled_by_cli {
     eprintln!("[GPU Compat] Disabled via --disable-linux-gpu-optimization CLI flag");
     return false;
   }
 
-  if let Ok(value) = std::env::var("WEBKIT_DISABLE_DMABUF_RENDERER") {
-    eprintln!(
-      "[GPU Compat] WEBKIT_DISABLE_DMABUF_RENDERER={value} set in the environment, leaving it"
-    );
-    return false;
-  }
-
-  let setting = read_gpu_compat_setting();
-  eprintln!("[GPU Compat] Setting value: '{setting}'");
-
-  match setting.as_str() {
+  match setting {
     "on" => {
       eprintln!("[GPU Compat] Forced ON via settings");
       true
@@ -177,9 +200,15 @@ fn should_enable_gpu_compat_workaround() -> bool {
       false
     }
     _ => {
+      if let Some(value) = dmabuf_override {
+        eprintln!(
+          "[GPU Compat] WEBKIT_DISABLE_DMABUF_RENDERER={value:?} set in the environment, leaving it"
+        );
+        return false;
+      }
       let session_type = std::env::var("XDG_SESSION_TYPE").unwrap_or_default();
       eprintln!("[GPU Compat] Auto-detecting NVIDIA on {session_type}...");
-      nvidia_renders_webview()
+      detect_nvidia()
     }
   }
 }
