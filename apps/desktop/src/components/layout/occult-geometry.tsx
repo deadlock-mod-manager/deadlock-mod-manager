@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { type ReactNode, useMemo } from "react";
 import { useWindowFocused } from "@/hooks/use-window-focused";
 import { usePersistedStore } from "@/lib/store";
 
@@ -348,6 +348,56 @@ function CornerSigil({
   );
 }
 
+// The artwork is laid out in a 1000x800 viewBox drawn with preserveAspectRatio "xMidYMid slice",
+// so one viewBox unit is this many CSS px.
+const VIEWBOX_UNIT = "max(100vw / 1000, 100vh / 800)";
+
+const FULL_LAYER_STYLE = { position: "absolute", inset: 0 } as const;
+
+const FullLayerSvg = ({ children }: { children: ReactNode }) => (
+  <svg
+    height='100%'
+    preserveAspectRatio='xMidYMid slice'
+    style={FULL_LAYER_STYLE}
+    viewBox='0 0 1000 800'
+    width='100%'>
+    {children}
+  </svg>
+);
+
+// Each animated group gets its own HTML box so the compositor can rotate or fade a cached layer.
+// Animating SVG <g> elements instead re-rasterizes the whole full-screen SVG every frame.
+const MandalaLayer = ({
+  cx,
+  cy,
+  radius,
+  className,
+  children,
+}: {
+  cx: number;
+  cy: number;
+  radius: number;
+  className?: string;
+  children: ReactNode;
+}) => (
+  <div
+    className={className}
+    style={{
+      position: "absolute",
+      left: `calc(50% + ${cx - radius - 500} * ${VIEWBOX_UNIT})`,
+      top: `calc(50% + ${cy - radius - 400} * ${VIEWBOX_UNIT})`,
+      width: `calc(${radius * 2} * ${VIEWBOX_UNIT})`,
+      height: `calc(${radius * 2} * ${VIEWBOX_UNIT})`,
+    }}>
+    <svg
+      height='100%'
+      viewBox={`${cx - radius} ${cy - radius} ${radius * 2} ${radius * 2}`}
+      width='100%'>
+      {children}
+    </svg>
+  </div>
+);
+
 export const OccultGeometry = () => {
   const showOccultGeometry = usePersistedStore((s) => s.showOccultGeometry);
   const animateOccultGeometry = usePersistedStore(
@@ -396,6 +446,34 @@ export const OccultGeometry = () => {
     return null;
   }
 
+  const sigilLayer = (parity: number) => (
+    <div
+      className={
+        animationsEnabled
+          ? parity === 0
+            ? "occult-pulse-a"
+            : "occult-pulse-b"
+          : undefined
+      }
+      style={FULL_LAYER_STYLE}>
+      <FullLayerSvg>
+        {elements.map((el, i) =>
+          i % 2 === parity ? (
+            <Sigil
+              cx={el.x}
+              cy={el.y}
+              key={`sigil-${i}`}
+              opacity={el.opacity}
+              pathIndex={el.pathIndex}
+              rotation={el.rotation}
+              scale={el.scale}
+            />
+          ) : null,
+        )}
+      </FullLayerSvg>
+    </div>
+  );
+
   return (
     <div
       aria-hidden
@@ -407,139 +485,106 @@ export const OccultGeometry = () => {
         zIndex: 1,
         overflow: "hidden",
       }}>
-      <svg
-        height='100%'
-        preserveAspectRatio='xMidYMid slice'
-        style={{ position: "absolute", inset: 0 }}
-        viewBox='0 0 1000 800'
-        width='100%'>
-        <defs>
-          <radialGradient id='occult-fade-center'>
-            <stop offset='0%' stopColor='white' stopOpacity={1} />
-            <stop offset='70%' stopColor='white' stopOpacity={0.6} />
-            <stop offset='100%' stopColor='white' stopOpacity={0} />
-          </radialGradient>
-          <radialGradient id='occult-fade-edge'>
-            <stop offset='0%' stopColor='white' stopOpacity={0.8} />
-            <stop offset='100%' stopColor='white' stopOpacity={0} />
-          </radialGradient>
-        </defs>
+      {/* Primary mandala - bottom right area, partially off-screen */}
+      <MandalaLayer
+        className={animationsEnabled ? "occult-rotate-slow" : undefined}
+        cx={780}
+        cy={620}
+        radius={265}>
+        <ConcentricRings
+          baseRadius={80}
+          cx={780}
+          cy={620}
+          ringCount={6}
+          seed={101}
+        />
+        <RadialLines
+          count={24}
+          cx={780}
+          cy={620}
+          innerRadius={60}
+          opacity={0.07}
+          outerRadius={180}
+        />
+        <LogoSigil cx={780} cy={620} opacity={0.18} rotation={15} scale={2.4} />
+      </MandalaLayer>
 
-        {/* Primary mandala - bottom right area, partially off-screen */}
-        <g
-          className={animationsEnabled ? "occult-rotate-slow" : undefined}
-          style={{ transformOrigin: "780px 620px" }}>
-          <ConcentricRings
-            baseRadius={80}
-            cx={780}
-            cy={620}
-            ringCount={6}
-            seed={101}
-          />
-          <RadialLines
-            count={24}
-            cx={780}
-            cy={620}
-            innerRadius={60}
-            opacity={0.07}
-            outerRadius={180}
-          />
-          <LogoSigil
-            cx={780}
-            cy={620}
-            opacity={0.18}
-            rotation={15}
-            scale={2.4}
-          />
-        </g>
+      {/* Secondary mandala - top left, smaller */}
+      <MandalaLayer
+        className={animationsEnabled ? "occult-rotate-reverse" : undefined}
+        cx={150}
+        cy={140}
+        radius={122}>
+        <ConcentricRings
+          baseRadius={50}
+          cx={150}
+          cy={140}
+          ringCount={4}
+          seed={202}
+        />
+        <RadialLines
+          count={12}
+          cx={150}
+          cy={140}
+          innerRadius={35}
+          opacity={0.06}
+          outerRadius={100}
+        />
+        <Sigil
+          cx={150}
+          cy={140}
+          opacity={0.1}
+          pathIndex={7}
+          rotation={30}
+          scale={1.2}
+        />
+      </MandalaLayer>
 
-        {/* Secondary mandala - top left, smaller */}
-        <g
-          className={animationsEnabled ? "occult-rotate-reverse" : undefined}
-          style={{ transformOrigin: "150px 140px" }}>
-          <ConcentricRings
-            baseRadius={50}
-            cx={150}
-            cy={140}
-            ringCount={4}
-            seed={202}
-          />
-          <RadialLines
-            count={12}
-            cx={150}
-            cy={140}
-            innerRadius={35}
-            opacity={0.06}
-            outerRadius={100}
-          />
-          <Sigil
-            cx={150}
-            cy={140}
-            opacity={0.1}
-            pathIndex={7}
-            rotation={30}
-            scale={1.2}
-          />
-        </g>
+      {/* Tertiary mandala - center-left, very faint */}
+      <MandalaLayer
+        className={animationsEnabled ? "occult-rotate-slow" : undefined}
+        cx={80}
+        cy={450}
+        radius={70}>
+        <ConcentricRings
+          baseRadius={35}
+          cx={80}
+          cy={450}
+          ringCount={3}
+          seed={303}
+          tickMarks={false}
+        />
+        <Sigil
+          cx={80}
+          cy={450}
+          opacity={0.08}
+          pathIndex={3}
+          rotation={45}
+          scale={1}
+        />
+      </MandalaLayer>
 
-        {/* Tertiary mandala - center-left, very faint */}
-        <g
-          className={animationsEnabled ? "occult-rotate-slow" : undefined}
-          style={{ transformOrigin: "80px 450px" }}>
-          <ConcentricRings
-            baseRadius={35}
-            cx={80}
-            cy={450}
-            ringCount={3}
-            seed={303}
-            tickMarks={false}
-          />
-          <Sigil
-            cx={80}
-            cy={450}
-            opacity={0.08}
-            pathIndex={3}
-            rotation={45}
-            scale={1}
-          />
-        </g>
+      {/* Small mandala - top right */}
+      <MandalaLayer
+        className={animationsEnabled ? "occult-rotate-reverse" : undefined}
+        cx={920}
+        cy={80}
+        radius={60}>
+        <ConcentricRings
+          baseRadius={30}
+          cx={920}
+          cy={80}
+          ringCount={3}
+          seed={404}
+          tickMarks={false}
+        />
+      </MandalaLayer>
 
-        {/* Small mandala - top right */}
-        <g
-          className={animationsEnabled ? "occult-rotate-reverse" : undefined}
-          style={{ transformOrigin: "920px 80px" }}>
-          <ConcentricRings
-            baseRadius={30}
-            cx={920}
-            cy={80}
-            ringCount={3}
-            seed={404}
-            tickMarks={false}
-          />
-        </g>
+      {/* Scattered alchemical sigils, pulsing in two alternating groups */}
+      {sigilLayer(0)}
+      {sigilLayer(1)}
 
-        {/* Scattered alchemical sigils */}
-        {elements.map((el, i) => (
-          <g
-            className={
-              animationsEnabled
-                ? i % 2 === 0
-                  ? "occult-pulse-a"
-                  : "occult-pulse-b"
-                : undefined
-            }
-            key={`sigil-${i}`}>
-            <Sigil
-              cx={el.x}
-              cy={el.y}
-              opacity={el.opacity}
-              pathIndex={el.pathIndex}
-              rotation={el.rotation}
-              scale={el.scale}
-            />
-          </g>
-        ))}
-
+      <FullLayerSvg>
         {/* Horizon line - subtle divider */}
         <line
           opacity={0.06}
@@ -582,7 +627,7 @@ export const OccultGeometry = () => {
           stroke='hsl(var(--primary))'
           strokeWidth={0.3}
         />
-      </svg>
+      </FullLayerSvg>
     </div>
   );
 };

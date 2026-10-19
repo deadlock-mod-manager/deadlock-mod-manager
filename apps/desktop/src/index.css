@@ -444,20 +444,22 @@
   }
 }
 
+/* Stepped to about 10 updates a second: the motion is too slow to see the steps, and a smooth
+   animation makes the compositor redraw the whole window on every display refresh. */
 .occult-rotate-slow {
-  animation: occult-rotate 240s linear infinite;
+  animation: occult-rotate 240s steps(2400) infinite;
 }
 
 .occult-rotate-reverse {
-  animation: occult-rotate-reverse 300s linear infinite;
+  animation: occult-rotate-reverse 300s steps(3000) infinite;
 }
 
 .occult-pulse-a {
-  animation: occult-pulse-a 12s ease-in-out infinite;
+  animation: occult-pulse-a 12s steps(60) infinite;
 }
 
 .occult-pulse-b {
-  animation: occult-pulse-b 16s ease-in-out infinite;
+  animation: occult-pulse-b 16s steps(80) infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
