@@ -38,6 +38,10 @@ export const waitForDisplayed = (selector: string) =>
   browser.waitUntil(async () => (await $(selector)).isDisplayed(), {
     timeoutMsg: `${selector} was not displayed`,
   });
+export const waitForClickable = (selector: string) =>
+  browser.waitUntil(async () => (await $(selector)).isClickable(), {
+    timeoutMsg: `${selector} never became clickable`,
+  });
 export const openOrdering = () =>
   step("open mod ordering", async () => {
     await expect($('[role="dialog"]')).not.toBeDisplayed();
@@ -58,12 +62,10 @@ export const openOrdering = () =>
 export const activateProfile = (name: string) =>
   step(`activate profile ${name}`, async () => {
     await $('button[aria-label="Active Profile"]').click();
-    const toggle = await $(
-      `[role="switch"][aria-label="Activate ${name} profile"]`,
-    );
-    await toggle.waitForClickable();
-    await toggle.click();
-    await expect(toggle).toHaveAttribute("aria-checked", "true");
+    const toggle = `[role="switch"][aria-label="Activate ${name} profile"]`;
+    await waitForClickable(toggle);
+    await $(toggle).click();
+    await expect($(toggle)).toHaveAttribute("aria-checked", "true");
     await browser.keys("Escape");
     await expect($('button[aria-label="Active Profile"]')).toHaveText(
       expect.stringContaining(name),

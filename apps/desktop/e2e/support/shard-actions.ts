@@ -3,7 +3,7 @@ import { $, $$, browser, expect } from "@wdio/globals";
 import { step } from "./evidence";
 import { observeUntil } from "./observations";
 import { readShardStore } from "./shard-oracle";
-import { navigate, openOrdering } from "./ui";
+import { navigate, openOrdering, waitForClickable } from "./ui";
 
 const card = (modId: string) =>
   `//*[@title="${modId}"]/ancestor::*[.//button[@role="switch"]][1]`;
@@ -39,11 +39,6 @@ export const findMod = async (modId: string) => {
     { timeoutMsg: `${modId} card did not settle in the viewport` },
   );
 };
-
-const waitForClickable = (selector: string) =>
-  browser.waitUntil(async () => (await $(selector)).isClickable(), {
-    timeoutMsg: `${selector} never became clickable`,
-  });
 
 export const waitForSwitch = (
   modId: string,
