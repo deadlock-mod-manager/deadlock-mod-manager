@@ -2338,6 +2338,13 @@
       "skipDescription": "",
       "skipped": ""
     },
+    "copyModList": "",
+    "copyModListEnabled": "",
+    "copyModListAll": "",
+    "copyModListDisabled": "",
+    "copyModListSuccess_one": "",
+    "copyModListSuccess_other": "",
+    "copyModListFailed": "",
     "disableAll": "Адключыць усе моды",
     "disableAllConfirmTitle": "Адключыць усе моды?",
     "disableAllConfirmBody": "Гэта адключыць усе {{count}} бягучых уключаных модаў. Моды застануцца ў вашай бібліятэцы і могуць быць зноў уключаны ў любы час.",

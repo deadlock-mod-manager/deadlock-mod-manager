@@ -2338,6 +2338,13 @@
       "skipDescription": "在作者发布更新版本之前隐藏此更新",
       "skipped": "已跳过 {{name}} 的更新"
     },
+    "copyModList": "",
+    "copyModListEnabled": "",
+    "copyModListAll": "",
+    "copyModListDisabled": "",
+    "copyModListSuccess_one": "",
+    "copyModListSuccess_other": "",
+    "copyModListFailed": "",
     "disableAll": "禁用所有模组",
     "disableAllConfirmTitle": "禁用所有模组？",
     "disableAllConfirmBody": "这将禁用所有当前启用的 {{count}} 个模组。这些模组将保留在你的库中，并可以随时重新启用。",

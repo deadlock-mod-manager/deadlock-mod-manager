@@ -2338,6 +2338,13 @@
       "skipDescription": "",
       "skipped": ""
     },
+    "copyModList": "",
+    "copyModListEnabled": "",
+    "copyModListAll": "",
+    "copyModListDisabled": "",
+    "copyModListSuccess_one": "",
+    "copyModListSuccess_other": "",
+    "copyModListFailed": "",
     "disableAll": "Wyłącz wszystkie modyfikacje",
     "disableAllConfirmTitle": "Wyłączyć wszystkie modyfikacje?",
     "disableAllConfirmBody": "Spowoduje to wyłączenie wszystkich aktualnie włączonych modów {{count}}. Mody pozostaną w twojej bibliotece i mogą być ponownie włączone w każdej chwili.",
