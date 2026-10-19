@@ -5226,7 +5226,10 @@
     "confirmClearModsState": "¿Estás seguro de que quieres limpiar el estado de los mods? Esto eliminará todos los mods de la aplicación pero NO los eliminará de tu carpeta del juego. Puedes volver a escanear tu carpeta de mods para restaurarlos.",
     "modsStateCleared": "Estado de mods limpiado exitosamente",
     "triggerOnboarding": "",
-    "resetTelemetryConsent": ""
+    "resetTelemetryConsent": "",
+    "triggerMatchSyncConsent": "",
+    "simulateMatchSyncNewInstall": "",
+    "simulateMatchSyncUpdate": ""
   },
   "developer": {
     "title": "Herramientas de Desarrollador",

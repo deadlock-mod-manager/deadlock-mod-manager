@@ -5226,7 +5226,10 @@
     "confirmClearModsState": "To usunie wszystkie modyfikacje z aplikacji, ale NIE usunie ich z folderu gry. Możesz ponownie zeskanować folder modów, aby je przywrócić.",
     "modsStateCleared": "Stan modyfikacji wyczyszczony pomyślnie",
     "triggerOnboarding": "Uruchom wdrożenie",
-    "resetTelemetryConsent": "Zresetuj zgodę Telemetrii"
+    "resetTelemetryConsent": "Zresetuj zgodę Telemetrii",
+    "triggerMatchSyncConsent": "",
+    "simulateMatchSyncNewInstall": "",
+    "simulateMatchSyncUpdate": ""
   },
   "developer": {
     "title": "Narzędzia dla deweloperów",

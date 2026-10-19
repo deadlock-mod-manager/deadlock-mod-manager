@@ -5226,7 +5226,10 @@
     "confirmClearModsState": "",
     "modsStateCleared": "",
     "triggerOnboarding": "",
-    "resetTelemetryConsent": ""
+    "resetTelemetryConsent": "",
+    "triggerMatchSyncConsent": "",
+    "simulateMatchSyncNewInstall": "",
+    "simulateMatchSyncUpdate": ""
   },
   "developer": {
     "title": "",

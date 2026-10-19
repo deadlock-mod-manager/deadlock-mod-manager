@@ -5226,7 +5226,10 @@
     "confirmClearModsState": "Êtes-vous sûr de vouloir effacer l'état des mods ? Cela supprimera tous les mods de l'application mais ne les supprimera PAS de votre dossier de jeu. Vous pouvez rescanner votre dossier de mods pour les restaurer.",
     "modsStateCleared": "État des mods effacé avec succès",
     "triggerOnboarding": "",
-    "resetTelemetryConsent": ""
+    "resetTelemetryConsent": "",
+    "triggerMatchSyncConsent": "",
+    "simulateMatchSyncNewInstall": "",
+    "simulateMatchSyncUpdate": ""
   },
   "developer": {
     "title": "",

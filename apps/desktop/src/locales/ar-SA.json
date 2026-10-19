@@ -5226,7 +5226,10 @@
     "confirmClearModsState": "هل أنت متأكد من أنك تريد مسح حالة التعديلات؟ هذا سيزيل جميع التعديلات من التطبيق ولكن لن يحذفها من مجلد اللعبة الخاص بك. يمكنك إعادة فحص مجلد التعديلات لاستعادتها.",
     "modsStateCleared": "تم مسح حالة التعديلات بنجاح",
     "triggerOnboarding": "",
-    "resetTelemetryConsent": ""
+    "resetTelemetryConsent": "",
+    "triggerMatchSyncConsent": "",
+    "simulateMatchSyncNewInstall": "",
+    "simulateMatchSyncUpdate": ""
   },
   "developer": {
     "title": "أدوات المطور",
