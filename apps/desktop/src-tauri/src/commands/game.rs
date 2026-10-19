@@ -178,6 +178,9 @@ pub async fn start_game(
     return Err(Error::LaunchCancelled);
   }
   crate::match_sync::release_for_game_launch().await;
+  if cancel.is_cancelled() {
+    return Err(Error::LaunchCancelled);
+  }
   app_handle.emit("launch-progress", "openingSteam").ok();
   let monitor = request.spawn()?;
   app_handle.emit("launch-progress", "waitingForGame").ok();

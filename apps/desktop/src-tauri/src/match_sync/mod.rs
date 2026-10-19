@@ -567,7 +567,7 @@ pub async fn release_for_game_launch() {
     .values()
     .map(|resources| Arc::clone(&resources.gc_client))
     .collect();
-  futures::future::join_all(clients.iter().map(SteamGcClient::release)).await;
+  futures::future::join_all(clients.iter().map(|client| client.release())).await;
 }
 
 pub fn should_monitor(app: &AppHandle) -> bool {
