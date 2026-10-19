@@ -101,18 +101,22 @@ fn repair_with_evidence(
   let (_, old, old_encoding) = decode_compiled_data(source, "mod animation skeleton").ok()?;
   let (format, mut current, mut current_encoding) =
     decode_compiled_data(base, "current animation skeleton").ok()?;
-  if equivalent_rigs(&old, &current) == Some(true) {
+  // Bones the game added are safe only when no enabled mod ships animations
+  // that sample the old layout, which is when no evidence is required.
+  let extension = evidence.is_none();
+  if equivalent_rigs(&old, &current, extension) == Some(true) {
     return Some((base.to_vec(), RepairKind::AnimationSkeleton));
   }
-  if equivalent_layout_with_evidence(&old, &current, evidence) != Some(true) {
+  if equivalent_layout_with_evidence(&old, &current, evidence, extension) != Some(true) {
     return None;
   }
+  let extended = extension && added_bones(&old, &current)?;
   let (masks, encoding) =
     animation_masks::rebase(&old, &current, &old_encoding, &current_encoding)?;
   *current.get_mut("m_maskDefinitions")? = masks;
   *current_encoding.get_mut("m_maskDefinitions")? = encoding;
   animation_poses::preserve(&old, &old_encoding, &mut current, &mut current_encoding)?;
-  if evidence.is_some() && animation_poses::self_consistent(&current) != Some(true) {
+  if (evidence.is_some() || extended) && animation_poses::self_consistent(&current) != Some(true) {
     return None;
   }
   let payload = kv3::encode_preserving(&current, &current_encoding, &format).ok()?;
@@ -131,8 +135,27 @@ fn repair_with_evidence(
   Some((bytes, RepairKind::AnimationSkeletonRebased))
 }
 
-fn equivalent_rigs(old: &Kv3Value, current: &Kv3Value) -> Option<bool> {
-  if !equivalent_layout(old, current)? {
+/// Whether the current skeleton has bones the old one lacks, other than the
+/// known root attachment.
+fn added_bones(old: &Kv3Value, current: &Kv3Value) -> Option<bool> {
+  let old_names = old
+    .get("m_boneIDs")?
+    .as_array()?
+    .iter()
+    .map(Kv3Value::as_str)
+    .collect::<Option<BTreeSet<_>>>()?;
+  Some(
+    current
+      .get("m_boneIDs")?
+      .as_array()?
+      .iter()
+      .filter_map(Kv3Value::as_str)
+      .any(|name| name != "attachWorld" && !old_names.contains(name)),
+  )
+}
+
+fn equivalent_rigs(old: &Kv3Value, current: &Kv3Value, extension: bool) -> Option<bool> {
+  if !equivalent_layout(old, current, extension)? {
     return Some(false);
   }
   let old_indices = old
@@ -173,14 +196,17 @@ fn equivalent_rigs(old: &Kv3Value, current: &Kv3Value) -> Option<bool> {
 
 /// Compare semantic rig data rather than index order and compiler float noise.
 /// Unknown metadata, changed hierarchy, and poses outside the drift bounds fail closed.
-fn equivalent_layout(old: &Kv3Value, current: &Kv3Value) -> Option<bool> {
-  equivalent_layout_with_evidence(old, current, None)
+/// `extension` accepts bones the current game added below retained joints,
+/// as leaves or whole branches.
+fn equivalent_layout(old: &Kv3Value, current: &Kv3Value, extension: bool) -> Option<bool> {
+  equivalent_layout_with_evidence(old, current, None, extension)
 }
 
 fn equivalent_layout_with_evidence(
   old: &Kv3Value,
   current: &Kv3Value,
   evidence: Option<&animation_model_evidence::ModelEvidence>,
+  extension: bool,
 ) -> Option<bool> {
   let names = |root: &Kv3Value| -> Option<Vec<String>> {
     root
@@ -294,6 +320,18 @@ fn equivalent_layout_with_evidence(
       let parent = current_names.get(root)?;
       let known_root_attachment =
         name == "attachWorld" && current_parents.get(root)?.as_int()? == -1;
+      // Retained joints keep their names, parents and poses below, so an added
+      // leaf or branch only extends the rig.
+      let mut ancestor = root;
+      while !old_indices.contains_key(current_names.get(ancestor)?) {
+        let Ok(next) = usize::try_from(current_parents.get(ancestor)?.as_int()?) else {
+          break;
+        };
+        ancestor = next;
+      }
+      if extension && old_indices.contains_key(current_names.get(ancestor)?) {
+        continue;
+      }
       let verified_control = evidence.is_some_and(|evidence| {
         let Some(&old_parent) = old_indices.get(parent) else {
           return false;
@@ -578,7 +616,7 @@ mod tests {
 
   #[test]
   fn recognizes_equivalent_rigs_with_reordered_bones_and_pruned_masks() {
-    assert_eq!(equivalent_rigs(&fixture(false), &fixture(true)), Some(true));
+    assert_eq!(equivalent_rigs(&fixture(false), &fixture(true), true), Some(true));
   }
 
   fn with_terminal_bone(mut rig: Kv3Value, name: &str) -> Kv3Value {
@@ -603,7 +641,7 @@ mod tests {
   fn recognizes_reordered_rigs_with_retired_terminal_end_bones() {
     for name in ["child_end", "child_end_L", "child_end_R"] {
       let old = with_terminal_bone(fixture(false), name);
-      assert_eq!(equivalent_rigs(&old, &fixture(true)), Some(true), "{name}");
+      assert_eq!(equivalent_rigs(&old, &fixture(true), true), Some(true), "{name}");
     }
   }
 
@@ -612,14 +650,14 @@ mod tests {
     assert_eq!(
       equivalent_rigs(
         &fixture(false),
-        &with_terminal_bone(fixture(true), "attachWorld")
+        &with_terminal_bone(fixture(true), "attachWorld"), true
       ),
       Some(true)
     );
     assert_eq!(
       equivalent_rigs(
         &with_terminal_bone(fixture(false), "child_TWIST1"),
-        &fixture(true)
+        &fixture(true), true
       ),
       Some(true)
     );
@@ -693,25 +731,47 @@ mod tests {
   fn rejects_unverified_helper_topology_and_added_deforming_bones() {
     let current = fixture(true);
     let mut old = with_terminal_bone(fixture(false), "root_TWIST1");
-    assert_eq!(equivalent_rigs(&old, &current), Some(false));
+    assert_eq!(equivalent_rigs(&old, &current, true), Some(false));
     let Kv3Value::Array(parents) = old.get_mut("m_parentIndices").unwrap() else {
       unreachable!()
     };
     parents[1] = Kv3Value::Int(2);
     parents[2] = Kv3Value::Int(0);
-    assert_eq!(equivalent_rigs(&old, &current), Some(false));
+    assert_eq!(equivalent_rigs(&old, &current, true), Some(false));
     let mut added = with_terminal_bone(current.clone(), "attachWorld");
     let Kv3Value::Array(parents) = added.get_mut("m_parentIndices").unwrap() else {
       unreachable!()
     };
     parents[2] = Kv3Value::Int(0);
-    assert_eq!(equivalent_rigs(&fixture(false), &added), Some(false));
+    assert_eq!(equivalent_rigs(&fixture(false), &added, false), Some(false));
     assert_eq!(
       equivalent_rigs(
         &fixture(false),
-        &with_terminal_bone(current, "custom_joint")
+        &with_terminal_bone(current, "custom_joint"),
+        false
       ),
       Some(false)
+    );
+  }
+
+  #[test]
+  fn structural_repair_accepts_bones_the_game_added_below_retained_joints() {
+    let leaf = with_terminal_bone(fixture(true), "custom_joint");
+    assert_eq!(equivalent_rigs(&fixture(false), &leaf, true), Some(true));
+    let mut branch = with_terminal_bone(leaf.clone(), "custom_tip");
+    let Kv3Value::Array(parents) = branch.get_mut("m_parentIndices").unwrap() else {
+      unreachable!()
+    };
+    parents[3] = Kv3Value::Int(2);
+    assert_eq!(equivalent_rigs(&fixture(false), &branch, true), Some(true));
+    let mut added_root = leaf;
+    let Kv3Value::Array(parents) = added_root.get_mut("m_parentIndices").unwrap() else {
+      unreachable!()
+    };
+    parents[2] = Kv3Value::Int(-1);
+    assert_ne!(
+      equivalent_rigs(&fixture(false), &added_root, true),
+      Some(true)
     );
   }
 
@@ -749,7 +809,7 @@ mod tests {
     assert_eq!(
       equivalent_rigs(
         &with_terminal_bone(fixture(false), "custom_attachment"),
-        &current
+        &current, true
       ),
       Some(false)
     );
@@ -759,13 +819,13 @@ mod tests {
     };
     parents[1] = Kv3Value::Int(2);
     parents[2] = Kv3Value::Int(0);
-    assert_eq!(equivalent_rigs(&old, &current), Some(false));
+    assert_eq!(equivalent_rigs(&old, &current, true), Some(false));
     let Kv3Value::Array(parents) = old.get_mut("m_parentIndices").unwrap() else {
       unreachable!()
     };
     parents[1] = Kv3Value::Int(0);
     parents[2] = Kv3Value::Int(99);
-    assert_eq!(equivalent_rigs(&old, &current), Some(false));
+    assert_eq!(equivalent_rigs(&old, &current, true), Some(false));
   }
 
   #[test]
@@ -793,7 +853,7 @@ mod tests {
       };
       object_set_case_insensitive(fields, field, replacement);
       assert_eq!(
-        equivalent_rigs(&authored, &current),
+        equivalent_rigs(&authored, &current, true),
         Some(false),
         "must preserve {field}"
       );
@@ -1133,7 +1193,9 @@ mod tests {
     ]);
     let base = compiled_fixture(current);
     let source = compiled_fixture(old);
-    assert!(repair_resource(&source, &base).is_none());
+    // Without bundled animations the game's added bone is accepted structurally;
+    // the evidence path below still has to prove it unused.
+    assert!(repair_resource(&source, &base).is_some());
     let evidence = animation_model_evidence::ModelEvidence::from_models(
       &model,
       &base_model,
@@ -1527,7 +1589,7 @@ mod tests {
   fn rejects_malformed_or_unsupported_rigs_and_unsafe_paths() {
     let current = fixture(true);
     assert_eq!(
-      equivalent_rigs(&Kv3Value::Object(Vec::new()), &current),
+      equivalent_rigs(&Kv3Value::Object(Vec::new()), &current, true),
       None
     );
     assert!(!is_path("models/../../outside.vnmskel_c"));

@@ -301,7 +301,14 @@ their name stems are also supported. The retired `scapulaAimUp_JNT` helper is
 recognized only as a leaf under `spine_3`. Retired `knee_helper_L` and
 `knee_helper_R` leaves are recognized only beneath the corresponding
 `leg_upper_L` or `leg_upper_R`. Removed helpers cannot have children, and their
-parents must survive. Arbitrary added or removed custom bones prevent replacement.
+parents must survive. Other removed bones prevent replacement.
+
+When no enabled mod ships animations, nothing samples the old layout, so bones
+the current game added are accepted as leaves or whole branches below a retained
+joint. Retained joints still need the same named parents and compatible poses,
+an added root is rejected, and a rebuilt skeleton must stay self-consistent.
+With bundled or overriding animations, the dependency proof below still decides
+each added bone.
 
 When only mask settings differ, the manager can rebase onto the current sampled
 layout while preserving the mod's named primary weights and extra masks. It drops
