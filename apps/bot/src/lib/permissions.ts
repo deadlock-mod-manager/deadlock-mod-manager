@@ -6,9 +6,6 @@ const logger = mainLogger.child().withContext({
   service: "permissions",
 });
 
-/**
- * Check if a user has any of the required moderator roles for report verification
- */
 export function hasReportModerationPermission(
   user: User,
   member: GuildMember | null,
@@ -26,9 +23,9 @@ export function hasReportModerationPermission(
   }
 
   const userRoles = member.roles.cache.map((role) => role.id);
-  const hasRequiredRole = env.REPORT_MODERATOR_ROLES.some((roleId) =>
-    userRoles.includes(roleId),
-  );
+  const hasPermission =
+    hasBlacklistPermission(user, member) ||
+    env.REPORT_MODERATOR_ROLES.some((roleId) => userRoles.includes(roleId));
 
   logger
     .withMetadata({
@@ -36,11 +33,11 @@ export function hasReportModerationPermission(
       username: user.username,
       userRoles,
       requiredRoles: env.REPORT_MODERATOR_ROLES,
-      hasPermission: hasRequiredRole,
+      hasPermission,
     })
     .debug("Checked report moderation permission");
 
-  return hasRequiredRole;
+  return hasPermission;
 }
 
 /**
