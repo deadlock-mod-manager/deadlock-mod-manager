@@ -3720,8 +3720,8 @@
       "benefit": "",
       "settings": "",
       "learnMore": "",
-      "keepOn": "",
-      "turnOff": ""
+      "turnOn": "",
+      "noThanks": ""
     }
   },
   "privacy": {
@@ -3870,6 +3870,7 @@
     "showOutdated": "오래된 표시",
     "showNSFWContent": "NSFW 표시",
     "hideNSFWContent": "NSFW 숨기기",
+    "nsfwOnly": "",
     "audioModsOnly": "오디오 개조만 해당",
     "excludeAudioMods": "오디오 모드 숨기기",
     "mapsModsOnly": "지도만",
@@ -4509,7 +4510,7 @@
       "0.18.0": {
         "title": "맞춤형 지도, 다운로드 서버 및 UI 개선",
         "features": [
-          "🧪 맞춤 지도 지원(실험적 — 설정 > 실험적에서 활성화)",
+          "",
           "✨ GameBanana 파일 서버 선택 추가(더 나은 다운로드 속도를 위해)",
           "✨ 이제 Mods에는 작성자의 Patreon, GitHub 스폰서 및 Ko-fi에 대한 링크가 포함된 작성자 지원 버튼이 표시됩니다.",
           "🔧 마우스 오버 시 탐색 라벨을 표시하는 접힌 사이드바 아이콘에 툴팁 추가",
@@ -4918,6 +4919,13 @@
       "twitch": "경련",
       "carrd": "카드"
     },
+    "drututt": {
+      "description": "",
+      "visit": "",
+      "twitch": "",
+      "youtube": "",
+      "pokeEmote": ""
+    },
     "oled": {
       "description": "",
       "customColor": "",
@@ -5131,6 +5139,8 @@
   "accessibility": {
     "deadlockLogoAlt": "이중 자물쇠",
     "snipzteaMascotAlt": "Snipztea 마스코트",
+    "drututtEmoteAlt": "",
+    "drututModsAlt": "",
     "deadlockApiIconAlt": "교착 상태 API 아이콘",
     "close": "닫다",
     "previousSlide": "이전 슬라이드",

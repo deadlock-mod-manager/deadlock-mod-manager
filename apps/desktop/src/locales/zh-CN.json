@@ -870,7 +870,7 @@
     "noSkins": "没有已下载皮肤",
     "noSkinsHint": "要在此处展示皮肤，请先从模组商店下载。若下载后仍未出现，则需在模组库中为对应模组手动配置英雄覆盖。",
     "conflict": "激活了多个皮肤",
-    "restartHint": "Deadlock 正在运行——新皮肤将在重启游戏后生效。",
+    "restartHint": "",
     "swapFailed": "更换皮肤失败",
     "overrideFooter": "皮肤未在对应英雄下显示？",
     "overrideFooterLink": "前往模组库，设置模组英雄覆盖。",
@@ -883,13 +883,13 @@
       "title": "3D 预览",
       "nothingSelected": "未选择皮肤",
       "placeholder": "选择一个皮肤以在 3D 中查看",
-      "defaultLabel": "{{hero}} — 默认皮肤",
+      "defaultLabel": "",
       "previewSkin": "在3D 中显示",
       "previewDefault": "在 3D 中显示默认皮肤",
       "loading": "正在加载模型…",
       "unsupported": "此 VPK 没有英雄模型。",
       "failed": "无法解码此皮肤。",
-      "failedHint": "并非所有皮肤都能解码——模型异常或损坏时可能加载失败。该皮肤仍可正常安装并在游戏中使用。",
+      "failedHint": "",
       "retry": "请重试",
       "hide": "隐藏3D 预览",
       "enable": "显示 3D 预览"
@@ -904,7 +904,7 @@
     "extrasCount_other": "{{count}} 个其他模组",
     "assignMod": "指定模组",
     "assignTitle": "为 {{hero}} 指定模组",
-    "assignDescription": "从模组库中挑一个模组列在此英雄下——可以是被识别失败的皮肤或音效，也可以是你之前从列表中移除的内容。",
+    "assignDescription": "",
     "assignSearchPlaceholder": "搜索模组库…",
     "assignEmpty": "没有可指定的模组了。",
     "assignCurrent": "识别为 {{hero}}",
@@ -913,7 +913,7 @@
     "assignSuccess": "{{mod}} 现已列在 {{hero}} 下",
     "randomizer": {
       "title": "皮肤随机器",
-      "inactiveSummary": "已关闭——皮肤保持为你设定的样子",
+      "inactiveSummary": "",
       "activeSummary_one": "{{count}} 位英雄每次启动都会随机获得皮肤",
       "activeSummary_other": "{{count}} 位英雄每次启动都会随机获得皮肤",
       "bulk": "批量",
@@ -921,10 +921,10 @@
       "includeDefaultAll": "为所有英雄纳入默认皮肤",
       "excludeDefaultAll": "为所有英雄排除默认皮肤",
       "clearAll": "清空整个选择",
-      "heroNeedsMore_one": "随机池中 {{count}} 个——至少选 2 个才能为该英雄随机",
-      "heroNeedsMore_other": "随机池中 {{count}} 个——至少选 2 个才能为该英雄随机",
-      "heroReady_one": "随机池中 {{count}} 个——打开随机器即可生效",
-      "heroReady_other": "随机池中 {{count}} 个——打开随机器即可生效",
+      "heroNeedsMore_one": "",
+      "heroNeedsMore_other": "",
+      "heroReady_one": "",
+      "heroReady_other": "",
       "heroActive_one": "每次启动从 {{count}} 个中随机",
       "heroActive_other": "每次启动从 {{count}} 个中随机",
       "includeDefault": "纳入默认皮肤",
@@ -989,7 +989,7 @@
       "lastMatch": "你的上一场比赛",
       "resolving": "正在请求实时数据…",
       "connecting": "正在等待第一个 tick…",
-      "broadcastError": "无法打开实时数据。Deadlock API 每小时仅允许两次观战请求，请稍后再试。",
+      "broadcastError": "",
       "streamError": "实时数据流在传输记分板前中断了。比赛恢复后，请点击“立即检查”。",
       "status": {
         "connecting": "正在连接",
@@ -1085,7 +1085,7 @@
     },
     "hero": {
       "openHero": "查看 {{hero}} 详情",
-      "deepDiveDescription": "该玩家本人使用此英雄的战绩——能压制谁，以及会为它出什么装备。",
+      "deepDiveDescription": "",
       "strongAgainst": "克制",
       "weakAgainst": "被克制",
       "record": "{{wins}} 胜 {{losses}} 负",
@@ -1119,9 +1119,9 @@
     },
     "refresh": "刷新",
     "refreshHint": "从 deadlock-api 获取最新比赛",
-    "refreshCooldown": "刚刚刷新过——一分钟后可再次使用",
+    "refreshCooldown": "",
     "updated": "更新于 {{ago}}",
-    "offlineData": "离线——显示 {{ago}} 的数据",
+    "offlineData": "",
     "staleWarning": "无法连接 deadlock-api，因此这些数据是最后一次成功加载的结果。",
     "errorTitle": "无法加载你的统计数据",
     "errorDescription": "deadlock-api 没有响应。请检查网络连接，然后尝试刷新。",
@@ -1197,12 +1197,12 @@
       "form": "",
       "winStreak_one": "{{count}} 连胜。保持让你走到这里的选人。",
       "winStreak_other": "{{count}} 连胜。保持让你走到这里的选人。",
-      "lossStreak_one": "{{count}} 连败——休息一下通常比再排一局恢复得更快。",
-      "lossStreak_other": "{{count}} 连败——休息一下通常比再排一局恢复得更快。",
+      "lossStreak_one": "",
+      "lossStreak_other": "",
       "session": "在一场会话的第 {{position}} 场比赛，你的胜率是 {{winrate}}，而平时是 {{baseline}}。这大概就是该停下来的位置。",
       "hours": "在 {{range}} 之间，你的胜率是 {{winrate}}，而基准是 {{baseline}}。",
-      "comfortHero": "{{matches}} 场比赛胜率 {{winrate}}——明显高于你的平均水准。",
-      "trapHero": "{{matches}} 场比赛胜率仅 {{winrate}}——值得放弃，或者有意识地专门练习。",
+      "comfortHero": "",
+      "trapHero": "",
       "topHero": "使用次数遥遥领先：{{matches}} 场比赛，胜率 {{winrate}}。",
       "longGames": "超过 {{minutes}} 分钟的比赛中，你的胜率为 {{winrate}}，总体为 {{baseline}}。"
     },
@@ -1229,7 +1229,7 @@
       "nemesisDescription": "总是遇到、却很少赢的对手",
       "encounters_one": "{{count}} 次交手",
       "encounters_other": "{{count}} 次交手",
-      "empty": "尚未找到常遇到的队友——需要与相同的人多打几场。"
+      "empty": ""
     },
     "dashboard": {
       "customize": "",
@@ -1867,7 +1867,7 @@
       "commissionsTitle": "",
       "commissionsDescription": "想要自己做不出来的东西？付费委托模组作者为你定制皮肤、音效包或其他模组。将在浏览器中打开。",
       "commissionsAction": "浏览委托",
-      "hint": "此处不支持地图模组——Mod Foundry 只用于英雄皮肤。"
+      "hint": ""
     },
     "import": {
       "cta": "导入皮肤",
@@ -1875,7 +1875,7 @@
       "browseTitle": "选择皮肤 VPK",
       "browseCta": "选择 VPK 文件",
       "dialogTitle": "导入英雄皮肤",
-      "dialogDescription": "从你的英雄皮肤中挑选一个，或导入本地 VPK。此处只显示英雄皮肤——地图与音频模组已被排除。",
+      "dialogDescription": "",
       "defaultSkins": "默认",
       "fromLibrary": "我的模组",
       "fromFile": "本地文件",
@@ -1896,7 +1896,7 @@
     },
     "tabs": {
       "assets": "素材",
-      "assetsHint": "此 VPK 中的全部内容——选择要预览的模型",
+      "assetsHint": "",
       "assetsEmpty": "此 VPK 是空的。",
       "paint": "上色",
       "paintHint": "为身体、枪械与技能特效重新着色",
@@ -1978,7 +1978,7 @@
       "replaceLabel": "替换",
       "replace": "选择文件…",
       "replaceTitle": "选择替换用的文件",
-      "replaceImageHint": "选择 PNG 或 JPG——会自动裁剪并重新编码为这张纹理。",
+      "replaceImageHint": "",
       "replaceFileHint": "选择一个 .{{ext}} 文件进行替换。",
       "replaced": "已替换 {{file}}",
       "replaceFailed": "无法替换该文件。",
@@ -1986,7 +1986,7 @@
       "reverted": "已还原 {{file}}",
       "revertFailed": "无法还原该文件。",
       "workspacePending": "正在准备该皮肤的可编辑副本…",
-      "replaceSoundHint": "选择 MP3 或 WAV——会重建为这段音频所用的容器格式。",
+      "replaceSoundHint": "",
       "primaryLabel": "主模型",
       "primaryHint": "预览默认打开的模型，导出文件也以它命名。",
       "setPrimary": "设为主模型",
@@ -1994,7 +1994,7 @@
     },
     "export": {
       "dialogTitle": "导出此皮肤",
-      "dialogDescription": "无论选哪种方式，生成的 VPK 都相同——只需决定它放在哪里。",
+      "dialogDescription": "",
       "destinations": {
         "file": {
           "title": "保存为文件",
@@ -2046,7 +2046,7 @@
       "brightnessLabel": "亮度",
       "preview": "预览",
       "previewHint": "在模型上显示该颜色而不实际应用。在你点击应用之前不会写入任何内容。",
-      "previewUnavailable": "图案无法实时预览——应用后才能看到效果。",
+      "previewUnavailable": "",
       "patternLabel": "图案",
       "patternOverridesColor": "图案自带配色，会取代上方选择的颜色。",
       "patternOverridesColorExceptEffects": "图案会取代纹理上的颜色。上方颜色仍会为特效粒子着色，因为粒子无法承载图案。",
@@ -3541,11 +3541,11 @@
     "featureTipsDescription": "",
     "modelPreview": "3D 模型预览",
     "modelPreviewDescription": "在英雄皮肤面板与 Mod Foundry 中渲染皮肤模型。",
-    "modelPreviewWarning": "预览会解码整个角色模型并在你的 GPU 上渲染。这是打开皮肤最慢的一步，而且并非所有皮肤都能解码——异常或损坏的模型可能加载失败，少数情况下还会影响显卡驱动。不同显卡驱动与平台上的表现并不一致；如果预览很慢、空白或崩溃，请关闭此项。",
+    "modelPreviewWarning": "",
     "heroSkins": "英雄皮肤页面",
     "heroSkinsDescription": "英雄皮肤页面列出哪些内容，以及在那里选择条目时的行为。",
     "multipleSkins": "允许一位英雄有多个皮肤",
-    "multipleSkinsDescription": "选择皮肤时会新增，而不是替换已有的那个。仅适合修改英雄不同部位的皮肤——两个完整皮肤会争抢同一批文件。",
+    "multipleSkinsDescription": "",
     "heroExtras": "按英雄归类音效与武器皮肤",
     "heroExtrasDescription": "尝试把武器皮肤、技能音效与语音台词匹配到英雄并一并列出。这里的判断比皮肤所属英雄更容易出错，可在页面上用「指定模组」纠正。"
   },
@@ -3720,8 +3720,8 @@
       "benefit": "可为 Statlocker、Tracklock、deadlock-api 等平台补齐缺失的比赛，让你的历史记录与统计数据保持完整。",
       "settings": "你可以随时在 设置 → 隐私 中更改。",
       "learnMore": "了解比赛数据共享的详情",
-      "keepOn": "保持开启",
-      "turnOff": "关闭"
+      "turnOn": "",
+      "noThanks": ""
     }
   },
   "privacy": {
@@ -3870,6 +3870,7 @@
     "showOutdated": "包含过时内容",
     "showNSFWContent": "包含 NSFW 内容",
     "hideNSFWContent": "隐藏 NSFW 内容",
+    "nsfwOnly": "",
     "audioModsOnly": "仅音频模组",
     "excludeAudioMods": "隐藏音频模组",
     "mapsModsOnly": "仅地图",
@@ -4206,7 +4207,7 @@
       "serverError": "服务器错误（HTTP {{status}}）",
       "httpError": "意外的响应（HTTP {{status}}）",
       "dnsFailed": "可以上网，但无法解析域名",
-      "dnsHostFailed": "无法解析 {{host}}——这是 DNS 问题，而非连接被拦截",
+      "dnsHostFailed": "",
       "catalogReady": "已缓存 {{count}} 个模组，可离线浏览",
       "catalogStale": "已缓存 {{count}} 个模组，但目录已过期",
       "catalogEmpty": "尚未下载任何模组",
@@ -4225,7 +4226,7 @@
       "tryOtherNetwork": "尝试其他网络，例如手机热点或 VPN。",
       "checkGamebanana": "在浏览器中打开 gamebanana.com。如果在浏览器中也打不开，说明 GameBanana 自身出了问题。",
       "checkDeadlockApi": "在浏览器中打开 deadlock-api.com。如果在浏览器中也打不开，说明该服务自身出了问题。",
-      "allowFirewall": "在防火墙、杀毒软件或路由器中放行 {{host}}——这就是应用无法访问的地址。",
+      "allowFirewall": "",
       "syncCatalog": "打开 设置 → 工具 重新同步模组目录，或重启应用。",
       "restartApp": "重启 Deadlock Mod Manager。如果问题持续出现，请到我们的 Discord 求助，并附上复制的结果。"
     },
@@ -4509,7 +4510,7 @@
       "0.18.0": {
         "title": "自定义地图、下载服务器与界面改进",
         "features": [
-          "🧪 自定义地图支持（实验性功能 — 请在设置 > 实验性中启用）",
+          "",
           "✨ 新增 GameBanana 文件服务器选择（可获得更快的下载速度）",
           "✨ 模组现在会显示「支持作者」按钮，附有作者的 Patreon、GitHub Sponsors 与 Ko-fi 链接",
           "🔧 为折叠的侧边栏图标添加工具提示，悬停时显示导航标签",
@@ -4918,6 +4919,13 @@
       "twitch": "抽搐",
       "carrd": "卡德"
     },
+    "drututt": {
+      "description": "",
+      "visit": "",
+      "twitch": "",
+      "youtube": "",
+      "pokeEmote": ""
+    },
     "oled": {
       "description": "纯黑背景、低调的炭黑表面，以及可自定义的强调色，专为 OLED 屏幕设计。",
       "customColor": "OLED 强调色",
@@ -5131,6 +5139,8 @@
   "accessibility": {
     "deadlockLogoAlt": "死锁",
     "snipzteaMascotAlt": "Snipztea 吉祥物",
+    "drututtEmoteAlt": "",
+    "drututModsAlt": "",
     "deadlockApiIconAlt": "Deadlock API 图标",
     "close": "关闭",
     "previousSlide": "上一张",
@@ -5689,7 +5699,7 @@
     "switchingTo": "切换至",
     "swapAction": "互换模组",
     "keepBothAction": "保留两者",
-    "keepBothHint": "不推荐 — 只会加载一个。",
+    "keepBothHint": "",
     "cancel": "取消",
     "byAuthor": "来源：{{author}}"
   },
@@ -5705,7 +5715,7 @@
   },
   "persist": {
     "loadFailed": "加载保存的设置失败",
-    "loadFailedDescription": "你的设置加载失败（{{reason}}）。本次会话中的更改不会保存 — 请尝试重启应用。"
+    "loadFailedDescription": ""
   },
   "heroParser": {
     "idle": "英雄解析器：闲置",

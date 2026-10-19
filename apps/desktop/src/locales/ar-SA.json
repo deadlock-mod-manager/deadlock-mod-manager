@@ -3720,8 +3720,8 @@
       "benefit": "",
       "settings": "",
       "learnMore": "",
-      "keepOn": "",
-      "turnOff": ""
+      "turnOn": "",
+      "noThanks": ""
     }
   },
   "privacy": {
@@ -3870,6 +3870,7 @@
     "showOutdated": "إظهار التعديلات القديمة",
     "showNSFWContent": "إظهار محتوى NSFW",
     "hideNSFWContent": "إخفاء محتوى NSFW",
+    "nsfwOnly": "",
     "audioModsOnly": "تعديلات صوتية فقط",
     "excludeAudioMods": "إخفاء التعديلات الصوتية",
     "mapsModsOnly": "",
@@ -4509,7 +4510,7 @@
       "0.18.0": {
         "title": "Downloads",
         "features": [
-          "✨ Add GameBanana file server selection with latency testing",
+          "",
           "✨ Add HTTP request/response logging for outgoing fetch calls",
           "✨ Add \"How to Play\" card with instructions for custom maps",
           "🔧 Better image display in mod gallery and mod detail page.",
@@ -4918,6 +4919,13 @@
       "twitch": "",
       "carrd": ""
     },
+    "drututt": {
+      "description": "",
+      "visit": "",
+      "twitch": "",
+      "youtube": "",
+      "pokeEmote": ""
+    },
     "oled": {
       "description": "",
       "customColor": "",
@@ -5131,6 +5139,8 @@
   "accessibility": {
     "deadlockLogoAlt": "",
     "snipzteaMascotAlt": "تميمة Snipztea",
+    "drututtEmoteAlt": "",
+    "drututModsAlt": "",
     "deadlockApiIconAlt": "",
     "close": "إغلاق",
     "previousSlide": "الشريحة السابقة",

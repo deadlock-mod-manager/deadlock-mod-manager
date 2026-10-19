@@ -3720,8 +3720,8 @@
       "benefit": "",
       "settings": "",
       "learnMore": "",
-      "keepOn": "",
-      "turnOff": ""
+      "turnOn": "",
+      "noThanks": ""
     }
   },
   "privacy": {
@@ -3870,6 +3870,7 @@
     "showOutdated": "",
     "showNSFWContent": "",
     "hideNSFWContent": "",
+    "nsfwOnly": "",
     "audioModsOnly": "",
     "excludeAudioMods": "",
     "mapsModsOnly": "",
@@ -4918,6 +4919,13 @@
       "twitch": "",
       "carrd": ""
     },
+    "drututt": {
+      "description": "",
+      "visit": "",
+      "twitch": "",
+      "youtube": "",
+      "pokeEmote": ""
+    },
     "oled": {
       "description": "",
       "customColor": "",
@@ -5131,6 +5139,8 @@
   "accessibility": {
     "deadlockLogoAlt": "",
     "snipzteaMascotAlt": "",
+    "drututtEmoteAlt": "",
+    "drututModsAlt": "",
     "deadlockApiIconAlt": "",
     "close": "",
     "previousSlide": "",
