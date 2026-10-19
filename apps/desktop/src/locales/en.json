@@ -6019,6 +6019,155 @@
     "gameRunning": "Deadlock is running. Mods are imported disabled until you close the game; you can enable them afterwards.",
     "checkingFiles": "Checking files ({{current}}/{{total}}). Unchanged files are instant next time."
   },
+  "bisect": {
+    "entry": "Find a broken mod",
+    "answers": {
+      "broken": "Still broken",
+      "fine": "Works now",
+      "unsure": "Not sure",
+      "unsureHint": "Use this if you couldn't check. It counts as working, so the search keeps going."
+    },
+    "explainer": {
+      "eyebrow": "How finding a broken mod works",
+      "steps": {
+        "split": {
+          "title": "Half your mods get turned off",
+          "body": "Pick the mods to test and the app turns half of them off for you. Nothing is deleted or downloaded again."
+        },
+        "check": {
+          "title": "Launch and check",
+          "body": "Play until you'd normally see the problem, then close the game and say whether it's still there. If the game crashes, the app notices and answers for you."
+        },
+        "narrow": {
+          "title": "Every answer rules out half",
+          "body": "Each round halves the list of suspects. Even 100 mods usually take about 9 launches, and if two mods only break together, it finds the pair."
+        },
+        "restore": {
+          "title": "Your setup comes back",
+          "body": "When it's done, your mods go back on in their original order with the same variants. You decide whether the broken one stays off."
+        }
+      },
+      "illustration": {
+        "testing": "Testing these",
+        "launch": "Launch {{round}}",
+        "brokenHint": "It's in the mods that were on",
+        "fineHint": "It's in the mods that were off"
+      },
+      "goToStep": "Step {{current}} of {{total}}",
+      "back": "Back",
+      "next": "Next",
+      "skip": "Skip",
+      "chooseMods": "Choose mods",
+      "done": "Got it"
+    },
+    "setup": {
+      "title": "Find a broken mod",
+      "description": "Answer one question after each launch, and the app narrows it down to the mod causing the problem.",
+      "howItWorks": "How it works",
+      "noMods": "Turn on the mods you were using when the problem happened, then try again.",
+      "close": "Close",
+      "listHeading": "Mods to test ({{selected}} of {{total}})",
+      "selectAll": "Select all",
+      "selectNone": "Select none",
+      "search": "Search mods",
+      "noMatches": "No mods match your search.",
+      "uncheckHint": "Uncheck mods you're sure are fine. They stay on, and the search goes faster.",
+      "estimate": "This usually takes {{min}} to {{max}} launches.",
+      "pickOne": "Pick at least one mod to test.",
+      "safe": "Nothing is deleted. When you finish or stop, your mods go back to how they are now, in the same order.",
+      "leftOut": "Kept as is: {{names}}. Maps and mods that replace core game files can't be switched automatically.",
+      "crashCheckOff": "Crash check is turned off in settings, so you'll answer after every launch, even if the game crashes.",
+      "cancel": "Cancel",
+      "start": "Start",
+      "starting": "Starting…"
+    },
+    "banner": {
+      "title": "Finding the broken mod",
+      "round": "Round {{round}}",
+      "applying": "Getting round {{round}} ready…",
+      "applyInterrupted": "Round {{round}} wasn't fully set up.",
+      "continue": "Continue",
+      "readyBaseline_one": "The mod you picked is off. Launch Deadlock and check if the problem is still there.",
+      "readyBaseline_other": "All {{count}} mods you picked are off. Launch Deadlock and check if the problem is still there.",
+      "ready_one": "{{on}} of {{count}} mod is on. Launch Deadlock and check if the problem is still there.",
+      "ready_other": "{{on}} of {{count}} mods are on. Launch Deadlock and check if the problem is still there.",
+      "launch": "Launch Deadlock",
+      "playing": "Deadlock is running. Check for the problem, then close the game.",
+      "answerNow": "I've closed it",
+      "crashed": "Deadlock crashed. Counting that as still broken…",
+      "questionBaseline": "With those mods off, is the problem still there?",
+      "question": "Is the problem still there?",
+      "result": "Done. Your result is ready.",
+      "seeResult": "See result",
+      "restoring": "Putting your mods back…",
+      "restoreInterrupted": "Your mods aren't all back yet.",
+      "finishRestoring": "Put them back",
+      "wrongProfile": "This search belongs to the {{profile}} profile. Switch back to continue it.",
+      "switchBack": "Switch back",
+      "discard": "Discard",
+      "undo": "Undo last answer",
+      "howItWorks": "How it works",
+      "stop": "Stop"
+    },
+    "stop": {
+      "title": "Stop the search?",
+      "body_one": "The mod you picked goes back to how it was before you started.",
+      "body_other": "The {{count}} mods you picked go back to how they were before you started.",
+      "confirm": "Stop and restore",
+      "cancel": "Keep going"
+    },
+    "discard": {
+      "title": "Discard this search?",
+      "body": "Mods in the {{profile}} profile stay as they are now, so some of them may still be off.",
+      "confirm": "Discard",
+      "cancel": "Cancel"
+    },
+    "result": {
+      "single": {
+        "title": "Found it: {{name}}",
+        "body_one": "Found in {{count}} launch. The problem comes and goes with this mod.",
+        "body_other": "Found in {{count}} launches. The problem comes and goes with this mod.",
+        "tip": "Check for an update or report it to the author. Mods often break after a Deadlock patch."
+      },
+      "together": {
+        "title": "These mods break together",
+        "body_one": "Found in {{count}} launch. Each one works alone, but the problem appears when they're all on.",
+        "body_other": "Found in {{count}} launches. Each one works alone, but the problem appears when they're all on.",
+        "tip": "Try changing their load order in Manage order, or keep only one of them."
+      },
+      "notMods": {
+        "title": "Your mods aren't the cause",
+        "body": "The problem happened with every tested mod off. It's more likely the game, a config file, or a launch option.",
+        "tip": "Try verifying the game files in Steam, and check recent changes to your autoexec or launch options."
+      },
+      "viewMod": "View mod",
+      "undo": "Undo last answer",
+      "restore": "Restore my mods",
+      "restoreAll": "Restore everything",
+      "disableCulprits_one": "Turn it off and restore the rest",
+      "disableCulprits_other": "Turn them off and restore the rest",
+      "removedMod": "a removed mod"
+    },
+    "recovery": {
+      "outdated": "This search was started by an older version of the app and can't continue.",
+      "error": "Something went wrong with this search.",
+      "restore": "Put my mods back",
+      "forget": "Forget it"
+    },
+    "toasts": {
+      "restored": "Your mods are back the way they were.",
+      "restoredWithout_one": "Your mods are back, with the broken one turned off.",
+      "restoredWithout_other": "Your mods are back, with the {{count}} broken ones turned off.",
+      "gameRunning": "Close Deadlock first. Mods can't be switched while it's running.",
+      "wrongProfile": "Switch back to the profile this search started in first.",
+      "switchFailed": "Couldn't turn on {{name}}. Try again, or stop the search.",
+      "stepFailed": "Something went wrong while switching mods. Try again, or stop the search.",
+      "roundChanged": "Some mods were changed by hand during this round, so it's set up again. Answer after the next launch.",
+      "switchBlocked": "Finish or stop the broken mod search before switching profiles.",
+      "switchBackFailed": "Couldn't switch back to that profile.",
+      "crashCounted": "Deadlock crashed, so this round counts as still broken."
+    }
+  },
   "launchHealth": {
     "duration": {
       "seconds_one": "{{count}} second",
@@ -6039,7 +6188,9 @@
       "optOut": "Don't check for crashes",
       "closedIt": "I closed it",
       "turnOffAndRelaunch": "Turn off config and relaunch",
-      "launchAgain": "Launch again"
+      "launchAgain": "Launch again",
+      "findBrokenMod": "Not sure which mod? Find it",
+      "findBrokenModHint": "Test your mods in halves to find the one causing the crash."
     },
     "changes": {
       "perfConfig": {
@@ -6073,6 +6224,7 @@
     "toast": {
       "title": "Deadlock closed after {{duration}}",
       "review": "Review",
+      "findMod": "Find the mod",
       "perfConfig": "Your performance config changed recently.",
       "modsAdded_one": "A mod was added recently.",
       "modsAdded_other": "{{count}} mods were added recently.",
@@ -6194,6 +6346,10 @@
     "loadOrder": {
       "title": "Choose which mod wins",
       "body": "Some of your mods change the same files. Drag them into the order you want to decide which one takes priority."
+    },
+    "findBrokenMod": {
+      "title": "Not sure which mod broke the game?",
+      "body": "Use Find a broken mod in this menu. It turns your mods off in halves and narrows down the culprit in a few launches, then puts everything back."
     },
     "modRepairs": {
       "title": "Mods acting up after a patch?",

@@ -4,6 +4,7 @@ import {
   SidebarProvider,
 } from "@deadlock-mods/ui/components/sidebar";
 import { Toaster } from "@deadlock-mods/ui/components/sonner";
+import { BisectRenderer } from "./components/bisect/bisect-renderer";
 import { FeatureHintsRenderer } from "./components/feature-hints/feature-hints-renderer";
 import { AppSidebar } from "./components/layout/app-sidebar";
 import { BottomBar } from "./components/layout/bottom-bar";
@@ -31,6 +32,7 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
           <SidebarProvider className='flex min-h-0 flex-1 flex-col overflow-hidden'>
             <Titlebar />
             <GameConfigBanner />
+            <BisectRenderer />
             <div className='relative flex min-h-0 flex-1 overflow-hidden'>
               <AppSidebar />
               <SidebarInset className='flex min-h-0 flex-1 flex-col'>

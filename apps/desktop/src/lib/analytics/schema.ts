@@ -170,6 +170,9 @@ export type AnalyticsEvents = {
       | "closed_by_user"
       | "opt_out";
   };
+  bisect_started: { mod_count: number };
+  bisect_finished: { rounds: number; culprit_count: number };
+  bisect_stopped: { rounds: number };
   feature_hint_shown: { hint_id: FeatureHintId };
   feature_hint_closed: {
     hint_id: FeatureHintId;

@@ -4,6 +4,11 @@ import logger from "@/lib/logger";
 import { buildPersistMerge } from "./merge";
 import { LATEST_VERSION, safeMigrate } from "./migrate";
 import {
+  type BisectState,
+  bisectDeepMergeKeys,
+  createBisectSlice,
+} from "./slices/bisect";
+import {
   type CrosshairState,
   createCrosshairSlice,
   crosshairDeepMergeKeys,
@@ -84,7 +89,8 @@ export type State = ModsState &
   FeatureHintsState &
   StatsState &
   PerformanceState &
-  LaunchHealthState;
+  LaunchHealthState &
+  BisectState;
 
 const allDeepMergeKeys = new Set<string>([
   ...modsDeepMergeKeys,
@@ -101,6 +107,7 @@ const allDeepMergeKeys = new Set<string>([
   ...statsDeepMergeKeys,
   ...performanceDeepMergeKeys,
   ...launchHealthDeepMergeKeys,
+  ...bisectDeepMergeKeys,
 ]);
 
 export const usePersistedStore = create<State>()(
@@ -120,6 +127,7 @@ export const usePersistedStore = create<State>()(
       ...createStatsSlice(...a),
       ...createPerformanceSlice(...a),
       ...createLaunchHealthSlice(...a),
+      ...createBisectSlice(...a),
     }),
     {
       name: "local-config",

@@ -3,6 +3,7 @@ import { LightningSlashIcon } from "@phosphor-icons/react";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { useCrashCheck } from "@/hooks/use-crash-check";
+import { openFindBrokenMod } from "@/lib/bisect/dialogs";
 import { CrashCheckDialog } from "./crash-check-dialog";
 import { formatUptime, summarizeChange } from "./format";
 
@@ -50,6 +51,15 @@ export const LaunchHealthRenderer = () => {
         description: summarizeChange(t, prompt.decision.changes[0]),
         duration: TOAST_DURATION_MS,
         action: { label: t("launchHealth.toast.review"), onClick: openDialog },
+        cancel: prompt.decision.modsLoaded
+          ? {
+              label: t("launchHealth.toast.findMod"),
+              onClick: () => {
+                dismiss();
+                openFindBrokenMod();
+              },
+            }
+          : undefined,
         onDismiss: dismiss,
         onAutoClose: dismiss,
       },

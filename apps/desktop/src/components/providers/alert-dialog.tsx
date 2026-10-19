@@ -56,6 +56,7 @@ export type AlertAction =
       tone?: DialogTone;
       cancelButton?: string;
       actionButton?: string;
+      actionButtonIcon?: Icon;
       cancelButtonVariant?: ButtonVariant;
       actionButtonVariant?: ButtonVariant;
     }
@@ -85,6 +86,7 @@ type AlertDialogState = {
   icon?: Icon;
   cancelButton: string;
   actionButton: string;
+  actionButtonIcon?: Icon;
   cancelButtonVariant: ButtonVariant;
   actionButtonVariant: ButtonVariant;
   defaultValue?: string;
@@ -110,6 +112,7 @@ export function alertDialogReducer(
         ...state,
         body: "",
         icon: undefined,
+        actionButtonIcon: undefined,
         open: true,
         ...action,
         tone: ("tone" in action && action.tone) || "default",
@@ -233,6 +236,9 @@ export const AlertDialogProvider = ({
               </Button>
               {state.type === "alert" ? null : (
                 <Button type='submit' variant={state.actionButtonVariant}>
+                  {state.actionButtonIcon && (
+                    <state.actionButtonIcon aria-hidden weight='bold' />
+                  )}
                   {state.actionButton}
                 </Button>
               )}

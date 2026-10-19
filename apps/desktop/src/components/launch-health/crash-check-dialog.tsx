@@ -10,6 +10,7 @@ import {
 } from "@deadlock-mods/ui/components/dialog";
 import { Label } from "@deadlock-mods/ui/components/label";
 import {
+  BugBeetleIcon,
   LightbulbIcon,
   LightningSlashIcon,
   PlayIcon,
@@ -19,6 +20,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import type { CrashCheck } from "@/hooks/use-crash-check";
 import { useLaunch } from "@/hooks/use-launch";
+import { openFindBrokenMod } from "@/lib/bisect/dialogs";
 import {
   type CrashCheckPrompt,
   modsWereLoaded,
@@ -118,6 +120,29 @@ export const CrashCheckDialog = ({
             </p>
           )}
         </section>
+
+        {decision.modsLoaded && (
+          <button
+            className='flex items-center gap-3 rounded-md border border-primary/20 bg-primary/5 px-3 py-2.5 text-left transition-colors hover:bg-primary/10'
+            onClick={() => {
+              crashCheck.dismiss();
+              openFindBrokenMod();
+            }}
+            type='button'>
+            <BugBeetleIcon
+              className='size-4 shrink-0 text-primary'
+              weight='duotone'
+            />
+            <span className='min-w-0 flex-1'>
+              <span className='block font-medium text-sm'>
+                {t("launchHealth.dialog.findBrokenMod")}
+              </span>
+              <span className='block text-muted-foreground text-xs'>
+                {t("launchHealth.dialog.findBrokenModHint")}
+              </span>
+            </span>
+          </button>
+        )}
 
         <p className='flex items-start gap-2 text-muted-foreground text-xs'>
           <LightbulbIcon className='mt-px size-4 shrink-0' weight='duotone' />

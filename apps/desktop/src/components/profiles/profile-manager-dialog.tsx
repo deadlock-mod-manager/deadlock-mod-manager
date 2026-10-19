@@ -104,6 +104,11 @@ export const ProfileManagerDialog = ({
     if (profileId === activeProfile?.id) {
       return;
     }
+    // The session restores mods into the profile it started in.
+    if (usePersistedStore.getState().bisectSession) {
+      toast.error(t("bisect.toasts.switchBlocked"));
+      return;
+    }
 
     try {
       const result = await switchToProfile(profileId);

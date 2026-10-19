@@ -17,6 +17,7 @@ const FEATURE_HINTS = [
   { id: "mod-context-menu", i18nKey: "modContextMenu", minAgeDays: 7 },
   { id: "load-order", i18nKey: "loadOrder", minAgeDays: 0 },
   { id: "mod-repairs", i18nKey: "modRepairs", minAgeDays: 7 },
+  { id: "find-broken-mod", i18nKey: "findBrokenMod", minAgeDays: 7 },
   {
     id: "mods-folder-shortcut",
     i18nKey: "modsFolderShortcut",

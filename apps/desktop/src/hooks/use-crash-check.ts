@@ -123,6 +123,17 @@ export const useCrashCheck = () => {
   const handleReports = useCallback(
     (reports: SessionReport[]) => {
       const state = usePersistedStore.getState();
+      // Bisect launches run with mods deliberately off: a crash answers the
+      // round, and none of them may become the baseline.
+      if (state.bisectSession) {
+        const acknowledged = new Set(state.acknowledgedSessionIds);
+        for (const report of reports) {
+          if (acknowledged.has(report.sessionId)) continue;
+          if (report.classification === "crash") state.noteBisectCrash();
+          acknowledge(report.sessionId, "ignored");
+        }
+        return;
+      }
       const shown = promptRef.current;
       const plan = planReports(
         reports.filter(

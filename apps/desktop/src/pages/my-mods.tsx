@@ -44,6 +44,7 @@ import {
 } from "@deadlock-mods/ui/components/tooltip";
 import {
   ArrowUpDown,
+  Bug,
   ChevronLeft,
   ChevronRight,
   Copy,
@@ -112,6 +113,7 @@ import { useSearch } from "@/hooks/use-search";
 import { useModOptions } from "@/hooks/use-mod-options";
 import useUninstall from "@/hooks/use-uninstall";
 import { useVpkScan } from "@/hooks/use-vpk-scan";
+import { openFindBrokenMod } from "@/lib/bisect/dialogs";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { SortType } from "@/lib/constants";
 import { ModCategory } from "@/lib/constants";
@@ -146,6 +148,8 @@ const PAGE_SIZE = 20;
 const CONFLICTS_TAB = "conflicts";
 const MENU_HINT_MIN_MODS = 8;
 const CONTEXT_MENU_HINT_MIN_MODS = 5;
+// Below this, turning mods off one by one is about as quick as bisecting.
+const FIND_BROKEN_MOD_HINT_MIN_MODS = 6;
 const MODS_FOLDER_HINT_MIN_OPENS = 3;
 type LibraryTab = ModFilter | typeof CONFLICTS_TAB;
 const MODS_STORE_PAGINATION_SETTING_ID = "mods-store-pagination";
@@ -710,6 +714,7 @@ const MyMods = () => {
     dismissProgressToast,
   } = useAddonAnalysis();
   const { disableAll, isPending: isDisablingAll } = useDisableAllMods();
+  const bisectActive = usePersistedStore((state) => !!state.bisectSession);
   const {
     enableAll,
     isPending: isEnablingAll,
@@ -1036,14 +1041,23 @@ const MyMods = () => {
                   eligible={installedMods.length > 0}
                   hintId='mod-repairs'
                   onShowMe={() => setActionsMenuOpen(true)}>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      aria-label={t("myMods.moreActions")}
-                      size='icon'
-                      variant='outline'>
-                      <EllipsisVertical className='h-4 w-4' />
-                    </Button>
-                  </DropdownMenuTrigger>
+                  <HintAnchor
+                    align='end'
+                    eligible={
+                      enabledModsCount >= FIND_BROKEN_MOD_HINT_MIN_MODS &&
+                      !bisectActive
+                    }
+                    hintId='find-broken-mod'
+                    onShowMe={() => setActionsMenuOpen(true)}>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        aria-label={t("myMods.moreActions")}
+                        size='icon'
+                        variant='outline'>
+                        <EllipsisVertical className='h-4 w-4' />
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </HintAnchor>
                 </HintAnchor>
               </HintAnchor>
             </HintAnchor>
@@ -1087,6 +1101,15 @@ const MyMods = () => {
                 disabled={enabledModsCount === 0 || isDisablingAll}>
                 <PowerOff className='h-4 w-4' />
                 {t("myMods.disableAll")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  markFeatureUsed("find-broken-mod");
+                  openFindBrokenMod();
+                }}
+                disabled={enabledModsCount === 0 || bisectActive}>
+                <Bug className='h-4 w-4' />
+                {t("bisect.entry")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() => setShowExportDialog(true)}
