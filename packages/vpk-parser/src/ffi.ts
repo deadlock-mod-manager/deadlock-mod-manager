@@ -1,8 +1,7 @@
 import { RuntimeError } from "@deadlock-mods/common";
 import { CString, dlopen, FFIType, type Pointer, ptr } from "bun:ffi";
 import { readFileSync, statSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join } from "node:path";
 import type {
   VpkFingerprint,
   VpkInfo,
@@ -17,12 +16,8 @@ const suffix =
       ? "dylib"
       : "so";
 
-// Get the directory of this module file
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
 // Resolve library path relative to this package directory
-const packageRoot = join(__dirname, "..");
+const packageRoot = join(import.meta.dir, "..");
 const libPath =
   suffix === "dll"
     ? join(packageRoot, "target", "release", `vpk_parser.${suffix}`)
