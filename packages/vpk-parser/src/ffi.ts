@@ -31,19 +31,19 @@ const libPath =
 const lib = dlopen(libPath, {
   vpk_parse: {
     args: [FFIType.ptr, FFIType.uint64_t, FFIType.ptr],
-    returns: FFIType.cstring,
+    returns: FFIType.ptr,
   },
   vpk_parse_file: {
     args: [FFIType.ptr, FFIType.ptr],
-    returns: FFIType.cstring,
+    returns: FFIType.ptr,
   },
   vpk_get_hashes: {
     args: [FFIType.ptr, FFIType.uint64_t, FFIType.ptr],
-    returns: FFIType.cstring,
+    returns: FFIType.ptr,
   },
   vpk_get_info: {
     args: [FFIType.ptr, FFIType.uint64_t],
-    returns: FFIType.cstring,
+    returns: FFIType.ptr,
   },
   vpk_free_string: {
     args: [FFIType.ptr],
@@ -51,55 +51,37 @@ const lib = dlopen(libPath, {
   },
   vpk_version: {
     args: [],
-    returns: FFIType.cstring,
+    returns: FFIType.ptr,
   },
 });
 
-type FFIFunction = (
-  ...args: (number | bigint | CString | Pointer | NodeJS.TypedArray | null)[]
-) => CString;
+type FFIArg = number | bigint | Pointer | NodeJS.TypedArray | null;
+type FFIFunction = (...args: FFIArg[]) => Pointer | null;
 
 interface ErrorResult {
   error: string;
 }
 
 /**
- * Calls native FFI function and handles various return types from Bun FFI.
- * Bun FFI can return strings, String objects, pointers to C strings, or parsed objects.
+ * Copies a string allocated by the native library and frees it. The symbols
+ * return raw pointers because Bun's `cstring` return type hands back a JS
+ * string and drops the pointer, which leaks every result.
  */
-function callNativeFunction<T>(
-  fn: FFIFunction,
-  ...args: (number | bigint | CString | Pointer | NodeJS.TypedArray | null)[]
-): T {
+function takeNativeString(result: Pointer | null): string {
+  if (result === null) {
+    throw new RuntimeError("Native VPK parser returned a null pointer");
+  }
+  const text = new CString(result).toString();
+  lib.symbols.vpk_free_string(result);
+  return text;
+}
+
+function callNativeFunction<T>(fn: FFIFunction, ...args: FFIArg[]): T {
   return decodeNativeResult<T>(fn(...args));
 }
 
-function decodeNativeResult<T>(result: CString): T {
-  let jsonString: string;
-
-  if (typeof result === "string") {
-    jsonString = result;
-  } else if (typeof result === "object" && result !== null) {
-    if (result.constructor === String || result instanceof String) {
-      jsonString = result.toString();
-    } else {
-      const errorResult = result as ErrorResult;
-      if (errorResult.error) {
-        throw new RuntimeError(errorResult.error);
-      }
-      return result as T;
-    }
-  } else if (typeof result === "number" && result !== 0) {
-    const resultStr = new CString(result as Pointer);
-    jsonString = resultStr.toString();
-    lib.symbols.vpk_free_string(result as Pointer);
-  } else {
-    throw new RuntimeError(
-      `Unexpected result type: ${typeof result}, value: ${result}`,
-    );
-  }
-
-  const parsed = JSON.parse(jsonString) as T | ErrorResult;
+function decodeNativeResult<T>(result: Pointer | null): T {
+  const parsed = JSON.parse(takeNativeString(result)) as T | ErrorResult;
   const errorResult = parsed as ErrorResult;
   if (errorResult.error) {
     throw new RuntimeError(errorResult.error);
@@ -221,15 +203,5 @@ export function getVpkInfoFromFile(filePath: string): VpkInfo {
  * @returns Version string of the underlying Rust library
  */
 export function getVersion(): string {
-  const result = lib.symbols.vpk_version();
-
-  if (typeof result === "number" && result !== 0) {
-    const version = new CString(result as Pointer).toString();
-    lib.symbols.vpk_free_string(result as Pointer);
-    return version;
-  } else if (typeof result === "string") {
-    return result;
-  } else {
-    return String(result);
-  }
+  return takeNativeString(lib.symbols.vpk_version());
 }
