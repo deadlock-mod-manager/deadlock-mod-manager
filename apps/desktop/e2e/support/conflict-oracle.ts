@@ -1,9 +1,10 @@
 import assert from "node:assert/strict";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { isDeepStrictEqual } from "node:util";
 import { z } from "zod";
 import { CONFLICTS, conflictPayload } from "./conflict-fixtures";
-import { fingerprint } from "./observations";
+import { fingerprint, observeUntil } from "./observations";
 import { readProfileState } from "./profile-oracle";
 import { assertOwnedWorld, collectFileInventory } from "./world";
 
@@ -14,6 +15,11 @@ const ignoresSchema = z.object({
   pairFiles: z.record(z.string(), z.array(z.string())),
   mods: z.array(z.string()),
 });
+
+const persistedOrder = (state: Awaited<ReturnType<typeof readProfileState>>) =>
+  state.localMods
+    .toSorted((a, b) => a.installOrder - b.installOrder)
+    .map((mod) => [mod.remoteId, mod.installedVpks]);
 
 export const pairKey = (a: string, b: string): string =>
   a <= b ? `${a}::${b}` : `${b}::${a}`;
@@ -67,14 +73,14 @@ export const assertConflictDisk = async (
     .parse(
       JSON.parse(await readFile(path.join(directory, ".dmm.json"), "utf8")),
     );
-  const state = await readProfileState(world);
-  assert.equal(state.activeProfileId, CONFLICTS.id);
-  assert.deepEqual(
-    state.localMods
-      .toSorted((a, b) => a.installOrder - b.installOrder)
-      .map((mod) => [mod.remoteId, mod.installedVpks]),
-    order.map((modId, index) => [modId, [slots[index]]]),
+  const expected = order.map((modId, index) => [modId, [slots[index]]]);
+  // The store persists asynchronously, after the UI already shows the order.
+  const state = await observeUntil(
+    `${step}: persisted load order`,
+    () => readProfileState(world),
+    (value) => isDeepStrictEqual(persistedOrder(value), expected),
   );
+  assert.equal(state.activeProfileId, CONFLICTS.id);
   for (const [index, modId] of order.entries()) {
     assert.deepEqual(manifest.mods[modId], {
       enabled: true,
