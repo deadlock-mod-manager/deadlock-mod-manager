@@ -11,6 +11,7 @@ export type CatalogQuery = {
   isAudio: boolean | null;
   isMap: boolean | null;
   hideNsfw: boolean;
+  nsfwOnly: boolean;
   hideObsolete: boolean;
   updatedAfter: number | null;
   addedAfter: number | null;

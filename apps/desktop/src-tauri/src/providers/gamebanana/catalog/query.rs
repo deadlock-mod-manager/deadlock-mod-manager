@@ -41,6 +41,7 @@ pub struct CatalogQuery {
   pub is_audio: Option<bool>,
   pub is_map: Option<bool>,
   pub hide_nsfw: bool,
+  pub nsfw_only: bool,
   pub hide_obsolete: bool,
   #[ts(type = "number | null")]
   pub updated_after: Option<i64>,
@@ -258,6 +259,9 @@ fn filtered_query<'a>(
   }
   if query.hide_nsfw {
     statement = statement.filter(submission::is_nsfw.eq(false));
+  }
+  if query.nsfw_only {
+    statement = statement.filter(submission::is_nsfw.eq(true));
   }
   if query.hide_obsolete {
     statement = statement.filter(submission::is_obsolete.eq(false));
@@ -689,6 +693,32 @@ mod tests {
       .query(CatalogQuery {
         added_after: Some(200),
         added_before: Some(300),
+        page_size: 10,
+        ..CatalogQuery::default()
+      })
+      .await
+      .unwrap();
+
+    assert_eq!(page.total, 1);
+    assert_eq!(page.items[0].submission.to_slug().unwrap(), "11");
+  }
+
+  #[tokio::test]
+  async fn nsfw_only_returns_only_nsfw_submissions() {
+    let directory = tempdir().unwrap();
+    let catalog = Catalog::open(directory.path().join("catalog.db"), 1)
+      .await
+      .unwrap();
+    let mut nsfw = record("11", "Spicy", "Skins", None);
+    nsfw.is_nsfw = true;
+    catalog
+      .upsert_records(vec![record("10", "Safe", "Skins", None), nsfw])
+      .await
+      .unwrap();
+
+    let page = catalog
+      .query(CatalogQuery {
+        nsfw_only: true,
         page_size: 10,
         ..CatalogQuery::default()
       })

@@ -3870,6 +3870,7 @@
     "showOutdated": "Show Outdated",
     "showNSFWContent": "Show NSFW",
     "hideNSFWContent": "Hide NSFW",
+    "nsfwOnly": "NSFW Only",
     "audioModsOnly": "Audio Mods Only",
     "excludeAudioMods": "Hide Audio Mods",
     "mapsModsOnly": "Maps Only",

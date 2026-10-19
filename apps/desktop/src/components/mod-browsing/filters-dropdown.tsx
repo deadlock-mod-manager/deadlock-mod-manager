@@ -33,6 +33,9 @@ import { FiltersTriggerButton } from "./filters-trigger-button";
 type FiltersDropdownProps = {
   hideNSFW: boolean;
   onHideNSFWChange: (hideNSFW: boolean) => void;
+  // Omitted when NSFW mods are hidden globally, so the switch has nothing to show.
+  nsfwOnly?: boolean;
+  onNSFWOnlyChange?: (nsfwOnly: boolean) => void;
   audioQuickFilter?: AudioQuickFilter;
   onAudioQuickFilterChange?: (value: AudioQuickFilter) => void;
   mapQuickFilter?: MapQuickFilter;
@@ -74,6 +77,8 @@ const SwitchRow = ({
 const FiltersDropdown = ({
   hideNSFW,
   onHideNSFWChange,
+  nsfwOnly,
+  onNSFWOnlyChange,
   audioQuickFilter,
   onAudioQuickFilterChange,
   mapQuickFilter,
@@ -95,8 +100,10 @@ const FiltersDropdown = ({
     !hideMapFilter && mapQuickFilter && onMapQuickFilterChange;
   const showTimePeriod = timePeriod && onTimePeriodChange;
   const showAdded = addedFilter && onAddedFilterChange;
+  const showNSFWOnly = nsfwOnly !== undefined && onNSFWOnlyChange;
   const totalActiveFilters = [
     hideNSFW,
+    showNSFWOnly && nsfwOnly,
     showAudioFilter && audioQuickFilter !== "off",
     showMapFilter && mapQuickFilter !== "off",
     hideOutdated,
@@ -106,13 +113,14 @@ const FiltersDropdown = ({
   const canReset = totalActiveFilters > 0 || !include;
 
   // Audio and map are three-way (off/only/exclude), so their switch follows
-  // the match mode. NSFW and outdated are plain "hide" toggles.
+  // the match mode. NSFW and outdated are plain toggles.
   const quickFilterValue = (checked: boolean) =>
     checked ? (include ? "only" : "exclude") : "off";
 
   const reset = () => {
     onFilterModeChange("include");
     onHideNSFWChange(false);
+    onNSFWOnlyChange?.(false);
     onHideOutdatedChange(false);
     onAudioQuickFilterChange?.("off");
     onMapQuickFilterChange?.("off");
@@ -210,8 +218,22 @@ const FiltersDropdown = ({
             checked={hideNSFW}
             id='hideNsfwSwitch'
             label={t("filters.hideNSFWContent")}
-            onCheckedChange={onHideNSFWChange}
+            onCheckedChange={(checked) => {
+              onHideNSFWChange(checked);
+              if (checked) onNSFWOnlyChange?.(false);
+            }}
           />
+          {showNSFWOnly && (
+            <SwitchRow
+              checked={nsfwOnly}
+              id='nsfwOnlySwitch'
+              label={t("filters.nsfwOnly")}
+              onCheckedChange={(checked) => {
+                onNSFWOnlyChange(checked);
+                if (checked) onHideNSFWChange(false);
+              }}
+            />
+          )}
           <SwitchRow
             checked={hideOutdated}
             id='hideOutdatedSwitch'

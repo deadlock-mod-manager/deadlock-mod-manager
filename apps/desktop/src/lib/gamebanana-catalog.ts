@@ -51,6 +51,7 @@ export const CATALOG_QUERY_DEFAULTS: CatalogQuery = {
   isAudio: null,
   isMap: null,
   hideNsfw: false,
+  nsfwOnly: false,
   hideObsolete: false,
   updatedAfter: null,
   addedAfter: null,

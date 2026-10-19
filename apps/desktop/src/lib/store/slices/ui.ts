@@ -35,6 +35,7 @@ export type ModsFilters = {
   selectedHeroes: string[];
   contentType: ContentType;
   hideNSFW: boolean;
+  nsfwOnly: boolean;
   hideOutdated: boolean;
   currentSort: SortType;
   timePeriod: TimePeriod;
@@ -115,6 +116,7 @@ const DEFAULT_MODS_FILTERS: ModsFilters = {
   selectedHeroes: [],
   contentType: "mod",
   hideNSFW: false,
+  nsfwOnly: false,
   hideOutdated: false,
   currentSort: SortType.LAST_UPDATED,
   timePeriod: TimePeriod.ALL_TIME,

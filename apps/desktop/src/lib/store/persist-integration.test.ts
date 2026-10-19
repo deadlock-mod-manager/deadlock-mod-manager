@@ -134,7 +134,7 @@ const seededState = {
     searchQuery: "",
   } satisfies Omit<
     ModsFilters,
-    "contentType" | "addedFilter" | "showFavoritesOnly"
+    "contentType" | "addedFilter" | "showFavoritesOnly" | "nsfwOnly"
   > & { audioQuickFilter: AudioQuickFilter; mapQuickFilter: MapQuickFilter },
   crosshairFilters: {
     selectedHeroes: [],
@@ -219,6 +219,7 @@ describe("persisted store integration with real production fixture", () => {
       ...seededModsFilters,
       contentType: "mod",
       showFavoritesOnly: false,
+      nsfwOnly: false,
       addedFilter: { period: "any", from: "", to: "" },
     });
     expect(s.crosshairFilters).toEqual(seededState.crosshairFilters);

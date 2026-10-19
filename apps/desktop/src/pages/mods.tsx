@@ -233,6 +233,7 @@ const GetModsData = ({
     selectedCategories,
     selectedHeroes,
     hideNSFW,
+    nsfwOnly: nsfwOnlyFilter,
     hideOutdated,
     timePeriod = TimePeriod.ALL_TIME,
     addedFilter,
@@ -241,6 +242,8 @@ const GetModsData = ({
     searchQuery = "",
     currentSort,
   } = modsFilters;
+  // A stale NSFW-only filter must not override the global hide setting.
+  const nsfwOnly = nsfwOnlyFilter && !nsfwSettings.hideNSFW;
   const favorites = usePersistedStore((state) => state.favorites);
   const pageKey = mapsOnly ? MAPS_STORE_PAGE_KEY : MODS_STORE_PAGE_KEY;
   const scrollKey = mapsOnly ? "/maps" : "/mods";
@@ -273,6 +276,7 @@ const GetModsData = ({
             ? false
             : null,
       hideNsfw: nsfwSettings.hideNSFW || hideNSFW,
+      nsfwOnly,
       hideObsolete: hideOutdated,
       updatedAfter,
       addedAfter: addedRange.after,
@@ -294,6 +298,7 @@ const GetModsData = ({
     hideNSFW,
     hideOutdated,
     isCustomMapsEnabled,
+    nsfwOnly,
     nsfwSettings.hideNSFW,
     page,
     paginationEnabled,
@@ -460,6 +465,7 @@ const GetModsData = ({
         currentSort,
         hideNSFW,
         hideOutdated,
+        nsfwOnly,
         query,
         selectedCategories,
         selectedHeroes,
@@ -474,6 +480,7 @@ const GetModsData = ({
       currentSort,
       hideNSFW,
       hideOutdated,
+      nsfwOnly,
       query,
       selectedCategories,
       selectedHeroes,
@@ -548,6 +555,10 @@ const GetModsData = ({
     (hideNSFW: boolean) => updateModsFilters({ hideNSFW }),
     [updateModsFilters],
   );
+  const handleNSFWOnlyChange = useCallback(
+    (nsfwOnly: boolean) => updateModsFilters({ nsfwOnly }),
+    [updateModsFilters],
+  );
   const handleHideOutdatedChange = useCallback(
     (hideOutdated: boolean) => updateModsFilters({ hideOutdated }),
     [updateModsFilters],
@@ -572,6 +583,7 @@ const GetModsData = ({
     selectedCategories.length > 0 ||
     selectedHeroes.length > 0 ||
     hideNSFW ||
+    nsfwOnly ||
     hideOutdated ||
     showFavoritesOnly ||
     isAddedFilterActive(addedFilter) ||
@@ -590,6 +602,8 @@ const GetModsData = ({
         onHeroesChange={handleHeroesChange}
         onHideNSFWChange={handleHideNSFWChange}
         onHideOutdatedChange={handleHideOutdatedChange}
+        nsfwOnly={nsfwSettings.hideNSFW ? undefined : nsfwOnly}
+        onNSFWOnlyChange={handleNSFWOnlyChange}
         query={query}
         selectedCategories={selectedCategories}
         selectedHeroes={selectedHeroes}

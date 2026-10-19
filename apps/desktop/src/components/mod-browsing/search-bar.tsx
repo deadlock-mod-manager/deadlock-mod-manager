@@ -49,6 +49,8 @@ type SearchBarProps = {
   onHeroesChange: (heroes: string[]) => void;
   hideNSFW: boolean;
   onHideNSFWChange: (hideNSFW: boolean) => void;
+  nsfwOnly?: boolean;
+  onNSFWOnlyChange?: (nsfwOnly: boolean) => void;
   // Local libraries filter by audio/map flags; the store has section tabs.
   audioQuickFilter?: AudioQuickFilter;
   onAudioQuickFilterChange?: (value: AudioQuickFilter) => void;
@@ -87,6 +89,8 @@ const SearchBar = ({
   onHeroesChange,
   hideNSFW,
   onHideNSFWChange,
+  nsfwOnly,
+  onNSFWOnlyChange,
   audioQuickFilter,
   onAudioQuickFilterChange,
   mapQuickFilter,
@@ -132,6 +136,7 @@ const SearchBar = ({
     onCategoriesChange([]);
     onHeroesChange([]);
     onHideNSFWChange(false);
+    onNSFWOnlyChange?.(false);
     onAudioQuickFilterChange?.("off");
     onMapQuickFilterChange?.("off");
     onHideOutdatedChange(false);
@@ -157,6 +162,7 @@ const SearchBar = ({
     selectedCategories.length > 0 ||
     selectedHeroes.length > 0 ||
     hideNSFW ||
+    nsfwOnly ||
     (audioQuickFilter ?? "off") !== "off" ||
     (!hideMapFilter && (mapQuickFilter ?? "off") !== "off") ||
     hideOutdated ||
@@ -207,12 +213,14 @@ const SearchBar = ({
           hideNSFW={hideNSFW}
           hideOutdated={hideOutdated}
           mapQuickFilter={mapQuickFilter}
+          nsfwOnly={nsfwOnly}
           onAddedFilterChange={onAddedFilterChange}
           onAudioQuickFilterChange={onAudioQuickFilterChange}
           onFilterModeChange={onFilterModeChange}
           onHideNSFWChange={onHideNSFWChange}
           onHideOutdatedChange={onHideOutdatedChange}
           onMapQuickFilterChange={onMapQuickFilterChange}
+          onNSFWOnlyChange={onNSFWOnlyChange}
           onTimePeriodChange={
             showTimePeriodControl ? onTimePeriodChange : undefined
           }
@@ -307,6 +315,18 @@ const SearchBar = ({
               <button
                 className='ml-1 rounded-full p-0.5 hover:bg-muted'
                 onClick={() => onHideNSFWChange(false)}
+                type='button'>
+                <X className='h-3 w-3' />
+              </button>
+            </Badge>
+          )}
+
+          {nsfwOnly && (
+            <Badge className='flex items-center gap-1' variant='destructive'>
+              {t("filters.nsfwOnly")}
+              <button
+                className='ml-1 rounded-full p-0.5 hover:bg-muted'
+                onClick={() => onNSFWOnlyChange?.(false)}
                 type='button'>
                 <X className='h-3 w-3' />
               </button>

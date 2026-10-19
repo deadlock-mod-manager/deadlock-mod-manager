@@ -760,6 +760,7 @@ const MyMods = () => {
     ? mapQuickFilter
     : "off";
   const [hideNSFW, setHideNSFW] = useState(false);
+  const [nsfwOnly, setNSFWOnly] = useState(false);
   const globallyHideNSFW = usePersistedStore(
     (state) => state.nsfwSettings.hideNSFW,
   );
@@ -811,6 +812,7 @@ const MyMods = () => {
       }
 
       if ((globallyHideNSFW || hideNSFW) && mod.isNSFW) return false;
+      if (nsfwOnly && !mod.isNSFW) return false;
 
       if (audioQuickFilter === "only" && !mod.isAudio) return false;
       if (audioQuickFilter === "exclude" && mod.isAudio) return false;
@@ -843,6 +845,7 @@ const MyMods = () => {
     globallyHideNSFW,
     hideNSFW,
     hideOutdated,
+    nsfwOnly,
     query,
     results,
     selectedCategories,
@@ -879,6 +882,7 @@ const MyMods = () => {
     effectiveMapQuickFilter,
     hideNSFW,
     hideOutdated,
+    nsfwOnly,
     query,
     selectedCategories,
     selectedHeroes,
@@ -1204,6 +1208,8 @@ const MyMods = () => {
                             triggerClassName='h-8 border-0 bg-transparent px-2.5 text-muted-foreground shadow-none hover:text-foreground data-[state=open]:text-foreground'
                             value={sortType}
                           />
+                          nsfwOnly={globallyHideNSFW ? undefined : nsfwOnly}
+                          onNSFWOnlyChange={setNSFWOnly}
                           <span aria-hidden className='h-4 w-px bg-border' />
                           <Tooltip>
                             <TooltipTrigger asChild>
