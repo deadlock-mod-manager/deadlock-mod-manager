@@ -12,7 +12,8 @@ export interface AssetRepair {
     | "cameraControls"
     | "cameraAttachmentFrame"
     | "materialBindings"
-    | "modelRelocation";
+    | "modelRelocation"
+    | "taggedSounds";
 }
 
 export interface AssetWarning {
@@ -28,6 +29,7 @@ export interface AssetWarning {
     | "missingResource"
     | "missingCameraInterface"
     | "outdatedCameraAttachments"
+    | "missingSoundBindings"
     | "missingAnimationInterface"
     | "animationMapping"
     | "unreadableResource"

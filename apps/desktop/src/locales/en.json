@@ -2593,7 +2593,8 @@
         "cameraInterface": "Missing camera interface restored",
         "cameraControls": "Camera interface and missing controls restored",
         "materialBindings": "Material colors restored on current models",
-        "modelRelocation": "Mod model restored at the current hero model path"
+        "modelRelocation": "Mod model restored at the current hero model path",
+        "taggedSounds": "Footstep and movement sounds restored"
       },
       "warnings": {
         "unverifiedSkeleton": "Animation layout differs; automatic update skipped",
@@ -2604,6 +2605,7 @@
         "missingResource": "Referenced resource is unavailable",
         "outdatedCameraAttachments": "Old camera attachments need author review; automatic migration skipped",
         "missingCameraInterface": "Required camera settings are missing; automatic repair skipped",
+        "missingSoundBindings": "Footstep and movement sounds are not bound; automatic repair skipped",
         "materialMapping": "Material repair needs a reviewed mapping",
         "materialInterface": "Material shader interface differs from the current reference",
         "modelMapping": "Model migration needs a verified current target",

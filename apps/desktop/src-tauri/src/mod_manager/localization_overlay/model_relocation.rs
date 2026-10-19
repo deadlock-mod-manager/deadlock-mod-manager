@@ -298,13 +298,24 @@ pub(super) fn prepare(
       super::camera_attachment_frame::prepare(
         resources, &relocated, &mut models, &mut verified_repairs, &mut unverified,
       )?;
+      super::model_sounds::prepare(
+        resources,
+        &relocated,
+        &mut models,
+        &BTreeMap::new(),
+        &mut verified_repairs,
+      )?;
       let repaired = models
         .iter()
         .map(|(path, bytes)| (path.as_str(), bytes.as_slice()))
         .collect();
-      unverified.extend(asset_compatibility::analyze(
-        resources, &relocated, &repaired,
-      )?);
+      // Missing sounds leave the relocated model usable; report them instead.
+      let (advisories, unverified): (Vec<_>, Vec<_>) = unverified
+        .into_iter()
+        .chain(asset_compatibility::analyze(
+          resources, &relocated, &repaired,
+        )?)
+        .partition(|warning| matches!(warning.kind, WarningKind::MissingSoundBindings));
       if !unverified.is_empty() {
         let reasons = unverified
           .iter()
@@ -320,6 +331,7 @@ pub(super) fn prepare(
         continue;
       }
       repairs.extend(verified_repairs);
+      warnings.extend(advisories);
       repairs.push(AssetRepair {
         mod_id: source.mod_id.clone(),
         source_vpk: source.source_vpk.clone(),

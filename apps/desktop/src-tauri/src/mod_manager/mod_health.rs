@@ -17,7 +17,7 @@ use ts_rs::TS;
 
 const CACHE_FILE: &str = "mod-health.json";
 // Increment when status or symptom rules change, so cached verdicts are rechecked.
-const HEALTH_RULES_REVISION: u32 = 6;
+const HEALTH_RULES_REVISION: u32 = 7;
 
 static CACHE_LOCK: Mutex<()> = Mutex::new(());
 
@@ -141,7 +141,8 @@ pub(crate) fn symptom(finding: Finding) -> ModHealthSymptom {
       | AssetRepairKind::AnimationSkeletonRebased
       | AssetRepairKind::AnimationInterface
       | AssetRepairKind::AnimationClipTracks
-      | AssetRepairKind::AnimationRigRebase => Animations,
+      | AssetRepairKind::AnimationRigRebase
+      | AssetRepairKind::TaggedSounds => Animations,
       AssetRepairKind::CameraInterface
       | AssetRepairKind::CameraControls
       | AssetRepairKind::CameraAttachmentFrame => CameraAim,
@@ -152,7 +153,8 @@ pub(crate) fn symptom(finding: Finding) -> ModHealthSymptom {
     Finding::AssetWarning(warning) => match warning.kind {
       AssetWarningKind::UnverifiedSkeleton
       | AssetWarningKind::MissingAnimationInterface
-      | AssetWarningKind::AnimationMapping => Animations,
+      | AssetWarningKind::AnimationMapping
+      | AssetWarningKind::MissingSoundBindings => Animations,
       AssetWarningKind::OutdatedCameraAttachments => CameraAim,
       AssetWarningKind::MaterialMapping | AssetWarningKind::MaterialInterface => Appearance,
       AssetWarningKind::ModelMapping | AssetWarningKind::OverlappingModel => Model,

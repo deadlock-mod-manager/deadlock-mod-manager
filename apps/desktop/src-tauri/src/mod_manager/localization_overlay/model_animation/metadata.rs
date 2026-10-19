@@ -1,5 +1,5 @@
 use super::*;
-use crate::mod_manager::localization_overlay::model_camera::root_fields;
+use crate::mod_manager::localization_overlay::model_text::root_fields;
 use std::ops::Range;
 
 const GAME_DATA: &str = "CCitadelHeroModelGameData_t";

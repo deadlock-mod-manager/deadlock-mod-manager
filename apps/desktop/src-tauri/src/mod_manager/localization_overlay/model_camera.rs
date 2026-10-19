@@ -1,13 +1,11 @@
 use super::asset_compatibility::{AssetRepair, RepairKind};
+use super::model_text::{array_items, assigned_value, root_fields};
 use super::{
   CompiledDataSource, Kv3Encoding, Kv3Value, Resource, decode_compiled_data, kv3, normalize_path,
   object_set_case_insensitive, resources::ResourceSnapshot,
 };
 use crate::errors::Error;
-use std::{
-  collections::{BTreeMap, BTreeSet},
-  ops::Range,
-};
+use std::collections::{BTreeMap, BTreeSet};
 
 const CAMERA_FIELDS: [&str; 2] = ["CitadelCameraSettings_t", "AttachmentCameraData"];
 #[cfg(test)]
@@ -405,38 +403,25 @@ fn add_camera_points(
   Some(())
 }
 
-fn camera_point_names(text: &str, mesh: &Kv3Value) -> Option<Vec<String>> {
+/// Attachment names listed by the model's `AttachmentCameraData`.
+pub(super) fn camera_data_names(text: &str) -> Option<BTreeSet<String>> {
   let (_, fields) = root_fields(text)?;
-  let field = &text[fields.get("AttachmentCameraData")?.clone()];
-  let (_, value) = field.split_once('=')?;
-  let mut cursor = TextCursor {
-    text: value.as_bytes(),
-    position: 0,
-  };
-  cursor.space()?;
-  cursor.expect(b'[')?;
+  let value = assigned_value(&text[fields.get("AttachmentCameraData")?.clone()])?;
   let mut names = BTreeSet::new();
-  loop {
-    cursor.space()?;
-    if cursor.peek()? == b']' {
-      cursor.position += 1;
-      break;
-    }
-    let start = cursor.position;
-    cursor.value(0)?;
-    let entry = &value[start..cursor.position];
+  for entry in array_items(value)? {
     let (_, fields) = root_fields(entry)?;
-    let (_, name) = entry[fields.get("attachment_name")?.clone()].split_once('=')?;
-    let name = name.trim().strip_prefix('"')?.strip_suffix('"')?;
+    let name = assigned_value(&entry[fields.get("attachment_name")?.clone()])?;
+    let name = name.strip_prefix('"')?.strip_suffix('"')?;
     if name.is_empty() || name.contains(['"', '\\']) {
       return None;
     }
     names.insert(name.to_owned());
   }
-  cursor.space()?;
-  if cursor.peek().is_some() || names.is_empty() {
-    return None;
-  }
+  (!names.is_empty()).then_some(names)
+}
+
+fn camera_point_names(text: &str, mesh: &Kv3Value) -> Option<Vec<String>> {
+  let mut names = camera_data_names(text)?;
   let points = mesh.get("m_attachments")?.as_array()?;
   for pivot in ["standing_pivot", "crouching_pivot"] {
     if points
@@ -627,142 +612,6 @@ fn compatible_rigs(old: &Kv3Value, current: &Kv3Value, allow_scaled: bool) -> Op
   )
 }
 
-// This is a bounded scanner for root metadata fields, not a KV3 serializer.
-// It preserves authored text verbatim and declines unsupported syntax.
-pub(super) fn root_fields(text: &str) -> Option<(usize, BTreeMap<String, Range<usize>>)> {
-  let start = text.find("-->").map_or(0, |index| index + 3);
-  let mut cursor = TextCursor {
-    text: text.as_bytes(),
-    position: start,
-  };
-  cursor.space()?;
-  cursor.expect(b'{')?;
-  let mut fields = BTreeMap::new();
-  loop {
-    cursor.space()?;
-    if cursor.peek()? == b'}' {
-      return Some((cursor.position, fields));
-    }
-    let start = cursor.position;
-    while cursor
-      .peek()
-      .is_some_and(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'_' | b'.'))
-    {
-      cursor.position += 1;
-    }
-    if start == cursor.position {
-      return None;
-    }
-    let name = std::str::from_utf8(&cursor.text[start..cursor.position])
-      .ok()?
-      .to_owned();
-    cursor.space()?;
-    cursor.expect(b'=')?;
-    cursor.space()?;
-    cursor.value(0)?;
-    if fields.insert(name, start..cursor.position).is_some() {
-      return None;
-    }
-  }
-}
-
-struct TextCursor<'a> {
-  text: &'a [u8],
-  position: usize,
-}
-
-impl TextCursor<'_> {
-  fn peek(&self) -> Option<u8> {
-    self.text.get(self.position).copied()
-  }
-  fn expect(&mut self, byte: u8) -> Option<()> {
-    if self.peek()? != byte {
-      return None;
-    }
-    self.position += 1;
-    Some(())
-  }
-  fn space(&mut self) -> Option<()> {
-    loop {
-      while self
-        .peek()
-        .is_some_and(|byte| byte.is_ascii_whitespace() || byte == b',')
-      {
-        self.position += 1;
-      }
-      if self.text.get(self.position..self.position + 2) == Some(b"//") {
-        while self.peek().is_some_and(|byte| byte != b'\n') {
-          self.position += 1;
-        }
-      } else if self.text.get(self.position..self.position + 2) == Some(b"/*") {
-        self.position += 2;
-        while self.text.get(self.position..self.position + 2) != Some(b"*/") {
-          self.peek()?;
-          self.position += 1;
-        }
-        self.position += 2;
-      } else {
-        return Some(());
-      }
-    }
-  }
-  fn quoted(&mut self) -> Option<()> {
-    self.expect(b'"')?;
-    loop {
-      match self.peek()? {
-        b'"' => {
-          self.position += 1;
-          return Some(());
-        }
-        b'\\' => {
-          self.position += 1;
-          self.peek()?;
-          self.position += 1;
-        }
-        _ => self.position += 1,
-      }
-    }
-  }
-  fn value(&mut self, depth: usize) -> Option<()> {
-    if depth > 64 {
-      return None;
-    }
-    match self.peek()? {
-      b'{' | b'[' => {
-        let closing = if self.peek()? == b'{' { b'}' } else { b']' };
-        self.position += 1;
-        loop {
-          self.space()?;
-          if self.peek()? == closing {
-            self.position += 1;
-            return Some(());
-          }
-          if matches!(self.peek()?, b'}' | b']') {
-            return None;
-          }
-          self.value(depth + 1)?;
-        }
-      }
-      b'"' => self.quoted(),
-      _ => {
-        let start = self.position;
-        while self.peek().is_some_and(|byte| {
-          !byte.is_ascii_whitespace() && !matches!(byte, b',' | b'}' | b']' | b'{' | b'[' | b'"')
-        }) {
-          self.position += 1;
-        }
-        if self.position == start {
-          return None;
-        }
-        if self.peek() == Some(b'"') {
-          self.quoted()?;
-        }
-        Some(())
-      }
-    }
-  }
-}
-
 #[cfg(test)]
 mod tests {
   use super::*;
@@ -851,24 +700,6 @@ mod tests {
   }
 
   #[test]
-  fn metadata_scan_handles_nested_values_quotes_comments_and_resource_names() {
-    let text = r#"<!-- kv3 format:version{ignored-header-braces} -->
-{
-  Existing = { name = "escaped \" }" resource = resource:"path/{not_a_block}" /* } */ }
-  // CitadelCameraSettings_t = { bogus = true }
-  CitadelCameraSettings_t = { offset = [ -10.0, 0.0, 1.0 ] }
-  AttachmentCameraData = [ { attachment_name = "near_00" } ]
-}"#;
-    let (closing, fields) = root_fields(text).unwrap();
-    assert_eq!(&text[closing..], "}");
-    assert_eq!(
-      &text[fields["AttachmentCameraData"].clone()],
-      "AttachmentCameraData = [ { attachment_name = \"near_00\" } ]"
-    );
-    assert_eq!(fields.len(), 3);
-  }
-
-  #[test]
   fn camera_attachment_names_come_from_the_current_model_interface() {
     let text = "{ AttachmentCameraData = [ { attachment_name = \"alternate_form_camera\" fov = 90 } { attachment_name = \"near_02\" fov = 75 } ] }";
     let mesh = attachments(&["alternate_form_camera", "near_02", "standing_pivot"]);
@@ -884,20 +715,6 @@ mod tests {
       )
       .is_none()
     );
-  }
-
-  #[test]
-  fn metadata_scan_declines_malformed_duplicate_and_overly_nested_fields() {
-    for text in [
-      "{ a = {",
-      "{ a = [ } }",
-      "{ a = \"unterminated }",
-      "{ a = {} a = {} }",
-    ] {
-      assert!(root_fields(text).is_none(), "{text}");
-    }
-    let nested = format!("{{ a = {}{} }}", "[".repeat(100), "]".repeat(100));
-    assert!(root_fields(&nested).is_none());
   }
 
   #[test]

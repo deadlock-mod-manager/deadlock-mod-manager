@@ -47,7 +47,7 @@ fn translated_root_skin_migrates_camera_without_replacing_its_rig() {
       assert!(runtime_values_equal(&expected, &actual));
     }
   }
-  validate_exported_blocks(repaired, path).unwrap();
+  validate_exported_blocks(repaired, path, None).unwrap();
   assert!(
     camera_attachment_frame::repair(repaired, &current)
       .unwrap()
@@ -130,7 +130,7 @@ fn exporter_root_drift_skin_repairs_every_camera_mesh_without_rebinding() {
     asset_compatibility::RepairKind::CameraAttachmentFrame
   ));
   assert!(plan.analysis.asset_warnings.is_empty());
-  assert_eq!(validate_exported_blocks(repaired, path).unwrap(), 28);
+  assert_eq!(validate_exported_blocks(repaired, path, None).unwrap(), 28);
   assert!(
     camera_attachment_frame::repair(repaired, &current)
       .unwrap()
@@ -333,7 +333,7 @@ fn authored_clips_gain_inserted_tracks_without_changing_custom_motion() {
         );
       }
     }
-    validate_exported_blocks(&repaired, path).unwrap();
+    validate_exported_blocks(&repaired, path, None).unwrap();
     clips += 1;
     additive += usize::from(new_animation.clip.additive);
   }
@@ -437,7 +437,7 @@ fn overlapping_real_skins_preserve_load_order_and_camera_repairs() {
           let packed = VpkArchive::open(&archive).unwrap();
           for entry in packed.list_entries() {
             if entry.ends_with("_c") {
-              validate_exported_blocks(&packed.extract_entry(&entry).unwrap(), &entry).unwrap();
+              validate_exported_blocks(&packed.extract_entry(&entry).unwrap(), &entry, None).unwrap();
             }
           }
           if should_repair {
@@ -1128,13 +1128,26 @@ fn inspect_legacy_model_contracts() {
   }
 }
 
-fn validate_exported_blocks(bytes: &[u8], path: &str) -> Result<usize, String> {
+/// Blocks byte-identical to the mod's own `source` were copied, not rebuilt,
+/// and are skipped; legacy embedded blocks can use encodings no repair writes.
+fn validate_exported_blocks(
+  bytes: &[u8],
+  path: &str,
+  source: Option<&[u8]>,
+) -> Result<usize, String> {
   let resource = Resource::parse(bytes).map_err(|error| format!("{path}: {error}"))?;
   let independent = source2_model::resource::Resource::parse(bytes.to_vec())
     .map_err(|error| format!("{path}: {error}"))?;
+  let source = source.and_then(|source| Resource::parse(source).ok());
   let mut validated = 0;
   for (index, block) in resource.blocks().iter().enumerate() {
     let raw = resource.get_block_by_index(index).unwrap();
+    if source.as_ref().is_some_and(|source| {
+      source.blocks().get(index).map(|old| old.kind) == Some(block.kind)
+        && source.get_block_by_index(index) == Some(raw)
+    }) {
+      continue;
+    }
     let Some(magic) = raw.get(..4) else {
       continue;
     };
@@ -1163,13 +1176,13 @@ fn validate_exported_blocks(bytes: &[u8], path: &str) -> Result<usize, String> {
 fn exported_mesh_validation_catches_tags_even_when_both_decoders_accept_them() {
   let mut bytes = tests::compiled_resource(vec![("value".into(), Kv3Value::Bool(true))]);
   bytes[16..20].copy_from_slice(b"MDAT");
-  assert_eq!(validate_exported_blocks(&bytes, "test.vmdl_c").unwrap(), 1);
+  assert_eq!(validate_exported_blocks(&bytes, "test.vmdl_c", None).unwrap(), 1);
   let block = Resource::parse(&bytes).unwrap().blocks()[0];
   let datatype = block.offset as usize + block.size as usize - 5;
   assert_eq!(bytes[datatype], 13);
   bytes[datatype] = 27;
   assert!(
-    validate_exported_blocks(&bytes, "test.vmdl_c")
+    validate_exported_blocks(&bytes, "test.vmdl_c", None)
       .unwrap_err()
       .contains("MDAT[0]: unsupported v4")
   );
@@ -1266,7 +1279,10 @@ fn run_obsolete_mod_corpus() {
               for path in archive.list_entries() {
                 let bytes = archive.extract_entry(&path).unwrap();
                 if path.ends_with("_c") {
-                  match validate_exported_blocks(&bytes, &path) {
+                  let source = case.vpks.iter().find_map(|vpk| {
+                    VpkArchive::open(vpk).ok()?.extract_entry(&path).ok()
+                  });
+                  match validate_exported_blocks(&bytes, &path, source.as_deref()) {
                     Ok(count) => validated_blocks += count,
                     Err(failure) => {
                       error = Some(failure);
@@ -1974,10 +1990,18 @@ fn toon_bebop_repair_is_stable_with_unrelated_animation_overrides() {
     expected,
     snapshot.game_bytes(skeleton).unwrap().unwrap().as_ref()
   );
-  assert!(
-    baseline.camera_models.is_empty(),
-    "Toon model must remain authored"
-  );
+  // Attachment frames and the sound binding may change; the authored rig may not.
+  let rewrites_model = |plan: &LocalizationOverlayPlan| {
+    plan.analysis.asset_repairs.iter().any(|repair| {
+      repair.file_path.ends_with(".vmdl_c")
+        && !matches!(
+          repair.kind,
+          asset_compatibility::RepairKind::CameraAttachmentFrame
+            | asset_compatibility::RepairKind::TaggedSounds
+        )
+    })
+  };
+  assert!(!rewrites_model(&baseline), "Toon model must remain authored");
   let output = TempDir::new().unwrap();
   for (name, extension, binding, allowed) in [
     (
@@ -2015,7 +2039,7 @@ fn toon_bebop_repair_is_stable_with_unrelated_animation_overrides() {
     ] {
       let plan = LocalizationOverlayPlan::build(&citadel, &inputs).unwrap();
       assert!(
-        plan.camera_models.is_empty(),
+        !rewrites_model(&plan),
         "{name}/{order}: Toon model was rewritten"
       );
       if allowed {

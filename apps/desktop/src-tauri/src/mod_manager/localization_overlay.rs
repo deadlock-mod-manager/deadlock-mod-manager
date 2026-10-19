@@ -32,6 +32,8 @@ mod material_compatibility;
 mod model_animation;
 mod model_camera;
 mod model_relocation;
+mod model_sounds;
+mod model_text;
 mod repair_scope;
 mod resources;
 pub mod vdata_compatibility;
@@ -830,6 +832,13 @@ impl LocalizationOverlayPlan {
       &repair_scope,
       &mut asset_repairs,
       &mut asset_warnings,
+    )?;
+    model_sounds::prepare(
+      resources,
+      &camera_sources,
+      &mut camera_models,
+      &material_assets,
+      &mut asset_repairs,
     )?;
     let mut asset_sources = skeleton_sources;
     asset_sources.extend(camera_sources);

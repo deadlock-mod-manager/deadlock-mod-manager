@@ -465,6 +465,34 @@ The rules operate on resource structure rather than mod IDs or hero names. The
 installed game provides the current reference data. Unknown differences do not
 become speculative repairs.
 
+### Footstep and movement sounds
+
+Current models bind their animation-tagged sounds, such as footsteps, landings,
+and reloads, through a `TaggedSoundSettings_t` block in the model metadata text.
+Models compiled before the October 16 update store the same binding as
+`CitadelTaggedSoundSettings_t`. The game no longer reads that name, so those
+skins play no footstep or movement sounds.
+
+When the installed game model at the same path has the current block and the
+mod's model has no block of that name, the manager renames the mod's legacy
+block in place. The mod's own sound tables, including custom ones, are kept. A
+model with neither block receives the installed game's binding. An authored
+current block, including an empty one, is left unchanged.
+
+Either form must contain only an `m_taggedSounds` list of
+`resource:"scripts/tagged_sounds/<name>.vdata"` references. Each table must
+resolve to a `CTaggedSound_t` resource in the game or an enabled mod. Table
+references missing from the model's resource list are added with their Source 2
+IDs, and a conflicting authored ID declines the repair. The rest of the metadata
+text, every other DATA field, and every other block stay unchanged. A model
+whose binding cannot be repaired reports `missingSoundBindings`, counted under
+animations and movement. This finding does not block model relocation.
+
+Metadata text edits use a bounded scanner that keeps authored text verbatim. It
+recognizes a KV3 header only at the start of the text and declines names that
+differ only in case, multiline strings, and text after the closing brace. Every
+edited text is scanned again before use.
+
 ## Generalization requirements
 
 A repair is selected by resource structure and a matching installed-game resource

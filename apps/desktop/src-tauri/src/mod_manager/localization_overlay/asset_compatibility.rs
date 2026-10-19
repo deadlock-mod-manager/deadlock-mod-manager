@@ -18,6 +18,7 @@ pub enum RepairKind {
   CameraAttachmentFrame,
   MaterialBindings,
   ModelRelocation,
+  TaggedSounds,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -40,6 +41,7 @@ pub enum WarningKind {
   MissingResource,
   MissingCameraInterface,
   OutdatedCameraAttachments,
+  MissingSoundBindings,
   MissingAnimationInterface,
   AnimationMapping,
   UnreadableResource,
@@ -342,6 +344,12 @@ pub(super) fn analyze(
         {
           for field in super::model_camera::missing_camera_fields(&value, &vanilla) {
             add(WarningKind::MissingCameraInterface, field);
+          }
+          if super::model_sounds::missing(&value, &vanilla) {
+            add(
+              WarningKind::MissingSoundBindings,
+              "TaggedSoundSettings_t".into(),
+            );
           }
           let missing = missing_animation_fields(&value, &vanilla);
           if !missing.is_empty() {
