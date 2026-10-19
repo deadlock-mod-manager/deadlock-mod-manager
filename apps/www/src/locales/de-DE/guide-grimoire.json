@@ -7,7 +7,7 @@
   "faqs": {
     "better": {
       "question": "Was ist besser, Deadlock Mod Manager oder Grimoire?",
-      "answer": "Seit Deadlock Mod Manager V2 decken beide Apps dasselbe ab: GameBanana-Installationen, Konflikte und Ladereihenfolge, teilbare Profile, Helden-Skins mit 3D-Vorschau, Fadenkreuze, autoexec und Match-Statistiken. Nimm das Interface, das du lieber benutzt. Das vom Deadlock Mod Manager kannst du in der Live-Vorschau auf dieser Seite ausprobieren."
+      "answer": ""
     },
     "same": {
       "question": "Ist Grimoire dasselbe wie der Deadlock Mod Manager?",
@@ -38,6 +38,10 @@
       "gamebanana": "GameBanana-Mods in der App durchsuchen und installieren",
       "sounds": "Sounds neben Mods",
       "conflicts": "Konflikterkennung und Ladereihenfolge",
+      "repair": "",
+      "crashes": "",
+      "performance": "",
+      "foundry": "",
       "profiles": "Teilbare Mod-Profile",
       "import": "Import aus der jeweils anderen App",
       "skins": "Helden-Skins mit 3D-Vorschau",
