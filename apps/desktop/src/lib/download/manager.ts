@@ -6,6 +6,9 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import type {
   DownloadableMod,
+  DownloadFailure,
+  DownloadFailureReason,
+  DownloadSource,
   FontInfo,
   ModFileTree,
   Progress,
@@ -30,6 +33,7 @@ export interface DownloadProgressEvent {
   total: number;
   transferSpeed: number;
   percentage: number;
+  source: DownloadSource | null;
 }
 
 interface DownloadCompletedEvent {
@@ -54,7 +58,15 @@ interface DownloadFontsFoundEvent {
 interface DownloadErrorEvent {
   modId: string;
   error: string;
+  reason: DownloadFailureReason | null;
+  retryAfterSecs: number | null;
 }
+
+/** Says whose side a server failure is on, in place of the raw HTTP error. */
+const describeFailure = ({ reason }: DownloadFailure) =>
+  reason === "sourceBusy"
+    ? i18n.t("downloads.health.busyTitle")
+    : i18n.t("downloads.health.stoppedTitle");
 
 interface DownloadPausedEvent {
   modId: string;
@@ -94,6 +106,13 @@ class DownloadManager {
           logger
             .withMetadata({ mod: event.payload.modId })
             .info("Download started");
+          usePersistedStore.getState().patchModProgress(event.payload.modId, {
+            percentage: 0,
+            speed: 0,
+            source: undefined,
+            failure: undefined,
+            slowSince: Date.now(),
+          });
           mod.onStart();
         }
       },
@@ -110,6 +129,7 @@ class DownloadManager {
             total: event.payload.total,
             transferSpeed: event.payload.transferSpeed,
             percentage: event.payload.percentage,
+            source: event.payload.source,
           };
           mod.onProgress(progress);
         }
@@ -137,11 +157,18 @@ class DownloadManager {
       (event) => {
         const mod = this.downloads.getMod(event.payload.modId);
         if (mod) {
+          const { modId, error, reason, retryAfterSecs } = event.payload;
           logger
-            .withMetadata({ mod: event.payload.modId })
-            .withError(new Error(event.payload.error))
+            .withMetadata({ mod: modId, reason })
+            .withError(new Error(error))
             .error("Download error");
-          this.downloads.fail(event.payload.modId, event.payload.error);
+          if (reason) {
+            const failure = { reason, retryAfterSecs };
+            usePersistedStore.getState().patchModProgress(modId, { failure });
+            this.downloads.fail(modId, describeFailure(failure));
+          } else {
+            this.downloads.fail(modId, error);
+          }
         }
       },
     );
@@ -255,9 +282,10 @@ class DownloadManager {
         logger
           .withMetadata({ mod: event.payload.modId })
           .info("Download resumed");
-        usePersistedStore
-          .getState()
-          .setModStatus(event.payload.modId, ModStatus.Downloading);
+        const store = usePersistedStore.getState();
+        // The time spent paused is not the server being slow.
+        store.patchModProgress(event.payload.modId, { slowSince: Date.now() });
+        store.setModStatus(event.payload.modId, ModStatus.Downloading);
       },
     );
 

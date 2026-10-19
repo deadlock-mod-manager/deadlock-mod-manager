@@ -176,6 +176,27 @@ describe("setModProgress", () => {
 
     expect(store.getState().modProgress["2"].percentage).toBe(25);
   });
+
+  it("keeps the slow clock running until the download speeds up", () => {
+    const report = (transferSpeed: number) =>
+      store.getState().setModProgress("2", {
+        ...progressFor(25, { progressTotal: 900, total: 1000 }),
+        transferSpeed,
+      });
+
+    report(1_000);
+    const slowSince = store.getState().modProgress["2"].slowSince;
+    expect(slowSince).toBeNumber();
+
+    report(2_000);
+    expect(
+      store.getState().modProgress["2"].slowSince,
+      "each slow report restarted the clock, so the notice never appeared",
+    ).toBe(slowSince);
+
+    report(10_000_000);
+    expect(store.getState().modProgress["2"].slowSince).toBeUndefined();
+  });
 });
 
 describe("clearMods", () => {

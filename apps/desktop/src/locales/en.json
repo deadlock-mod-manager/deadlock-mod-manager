@@ -2838,7 +2838,23 @@
     "resumeError": "Could not resume download: {{message}}",
     "retryFetchError": "Failed to fetch mod download data. Try again later.",
     "retryNoFiles": "No downloadable files found.",
-    "retryError": "Could not retry download: {{message}}"
+    "retryError": "Could not retry download: {{message}}",
+    "health": {
+      "slowGameBananaTitle": "GameBanana is sending this slowly",
+      "slowGameBananaBody": "Their servers are busy or limiting download speeds right now. This is on GameBanana's side, not the mod manager. The download keeps going on its own, or you can pause it and try again later.",
+      "slowTitle": "The download server is slow right now",
+      "slowBody": "Your download is still going and usually speeds up again on its own. You can also pause it and try again later.",
+      "waitingGameBananaTitle": "Waiting for GameBanana to respond",
+      "waitingTitle": "Waiting for the download server to respond",
+      "waitingBody": "No data has arrived for a few seconds. If it stays quiet, the mod manager reconnects on its own and picks up where it left off.",
+      "busyTitle": "GameBanana is limiting downloads right now",
+      "busyBody": "This is on GameBanana's side, not the mod manager. Wait a few minutes, then press Retry.",
+      "busyBodyWait_one": "This is on GameBanana's side, not the mod manager. Try again in about {{count}} minute.",
+      "busyBodyWait_other": "This is on GameBanana's side, not the mod manager. Try again in about {{count}} minutes.",
+      "stoppedTitle": "The download server stopped responding",
+      "stoppedBody": "The mod manager reconnected a few times without luck, which usually means the server is overloaded. Wait a few minutes, then press Retry.",
+      "switchFileServer": "Try a different file server"
+    }
   },
   "notifications": {
     "modInstalledSuccessfully": "Mod installed successfully",

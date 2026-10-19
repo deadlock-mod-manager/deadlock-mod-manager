@@ -3,10 +3,11 @@ use futures::StreamExt;
 use md5::{Digest, Md5};
 use reqwest::header::{HeaderMap, RANGE};
 use serde::{Deserialize, Serialize};
+use std::collections::VecDeque;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use tokio::fs::{File, OpenOptions};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::Notify;
@@ -16,6 +17,89 @@ use tokio_util::sync::CancellationToken;
 const BUFFER_SIZE: usize = 64 * 1024; // 64KB buffer for future use
 const PROGRESS_THROTTLE_MS: u128 = 500; // Emit progress every 500ms
 const MAX_REDIRECTS: usize = 5;
+const MAX_RECONNECTS: u32 = 3;
+/// How far back the reported speed looks, so a stall shows as a falling rate
+/// instead of hiding behind the average since the download started.
+const SPEED_WINDOW: Duration = Duration::from_secs(5);
+/// How often a silent connection still reports progress, letting the rate decay.
+const STALL_TICK: Duration = Duration::from_secs(1);
+/// Silence after which the connection is dropped and the Range request re-issued.
+const STALL_TIMEOUT: Duration = Duration::from_secs(20);
+
+/// Where the bytes of a download are coming from, so the UI can say whose end a
+/// slow or failed download is on.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub enum DownloadSource {
+  GameBanana,
+  Other,
+}
+
+fn is_gamebanana_host(host: &str) -> bool {
+  host == "gamebanana.com" || host.ends_with(".gamebanana.com")
+}
+
+/// Read from the URL after redirects, which is the server actually sending the bytes.
+fn classify_source(url: &reqwest::Url) -> DownloadSource {
+  if url.host_str().is_some_and(is_gamebanana_host) {
+    DownloadSource::GameBanana
+  } else {
+    DownloadSource::Other
+  }
+}
+
+fn retry_after_secs(headers: &HeaderMap) -> Option<u64> {
+  headers
+    .get(reqwest::header::RETRY_AFTER)?
+    .to_str()
+    .ok()?
+    .trim()
+    .parse()
+    .ok()
+}
+
+/// Transfer rate over the last [`SPEED_WINDOW`].
+struct SpeedWindow {
+  samples: VecDeque<(Instant, u64)>,
+}
+
+impl SpeedWindow {
+  fn new(now: Instant, bytes: u64) -> Self {
+    Self {
+      samples: VecDeque::from([(now, bytes)]),
+    }
+  }
+
+  fn record(&mut self, now: Instant, bytes: u64) {
+    self.samples.push_back((now, bytes));
+    // The front stays the newest sample at least a window old, the baseline the
+    // rate is measured from.
+    while self.samples.len() > 2 && now.duration_since(self.samples[1].0) >= SPEED_WINDOW {
+      self.samples.pop_front();
+    }
+  }
+
+  /// Bytes over the window ending at `now` rather than at the last sample, so
+  /// silence lowers the rate.
+  fn rate(&self, now: Instant, bytes: u64) -> f64 {
+    let window_start = now.checked_sub(SPEED_WINDOW);
+    let Some(&(since, baseline)) = self
+      .samples
+      .iter()
+      .rev()
+      .find(|(at, _)| window_start.is_some_and(|start| *at <= start))
+      .or_else(|| self.samples.front())
+    else {
+      return 0.0;
+    };
+    let elapsed = now.duration_since(since).as_secs_f64();
+    if elapsed > 0.0 {
+      bytes.saturating_sub(baseline) as f64 / elapsed
+    } else {
+      0.0
+    }
+  }
+}
 
 pub fn validate_download_url(url: &str) -> Result<(), Error> {
   let parsed = reqwest::Url::parse(url)
@@ -49,9 +133,11 @@ fn is_allowed_download_url(url: &reqwest::Url) -> bool {
 #[derive(Clone, Debug)]
 pub struct DownloadProgress {
   pub downloaded: u64,
+  /// Bytes per second over the last few seconds.
   pub speed: f64,
   /// `None` until a response states the entity's size; a declared size is not one.
   pub total: Option<u64>,
+  pub source: DownloadSource,
 }
 
 /// Shared pause gate for in-flight downloads (one per mod).
@@ -249,12 +335,9 @@ where
     }
   })?;
 
-  let mut chunk_retries: u32 = 0;
+  let mut reconnects: u32 = 0;
 
   'retry: loop {
-    let start_time = Instant::now();
-    let mut last_progress_time = Instant::now();
-
     let stored_meta = read_partial_meta(&meta_path).await.unwrap_or_default();
     let resume_from = match tokio::fs::metadata(&partial_path).await {
       Ok(m) => m.len(),
@@ -292,7 +375,17 @@ where
       continue 'retry;
     }
 
+    let source = classify_source(response.url());
+
     if !status.is_success() {
+      if source == DownloadSource::GameBanana
+        && (status == reqwest::StatusCode::TOO_MANY_REQUESTS || status.is_server_error())
+      {
+        return Err(Error::DownloadSourceBusy {
+          status: status.as_u16(),
+          retry_after_secs: retry_after_secs(response.headers()),
+        });
+      }
       return Err(Error::Network(format!(
         "Server returned error status: {status}"
       )));
@@ -354,6 +447,7 @@ where
       downloaded: base_offset,
       speed: 0.0,
       total: confirmed_entity_size,
+      source,
     });
 
     let mut file = if resume_from > 0 {
@@ -377,6 +471,11 @@ where
     };
 
     let mut stream = response.bytes_stream();
+    let mut last_data_at = Instant::now();
+    let mut speed_window = SpeedWindow::new(last_data_at, 0);
+    // Counted from the first byte, not the request: a slow response would otherwise
+    // report its first chunk at once, measured over a few milliseconds.
+    let mut last_progress_time = last_data_at;
 
     loop {
       if cancel_token.is_cancelled() {
@@ -386,31 +485,62 @@ where
         return Err(Error::DownloadCancelled);
       }
 
-      pause.wait_until_running(&cancel_token).await;
+      if pause.is_paused() {
+        pause.wait_until_running(&cancel_token).await;
+        // Time spent paused is not the server going quiet.
+        last_data_at = Instant::now();
+        speed_window = SpeedWindow::new(last_data_at, session_downloaded);
+      }
       if cancel_token.is_cancelled() {
         drop(file);
         remove_partial_pair(&partial_path, &meta_path).await;
         return Err(Error::DownloadCancelled);
       }
 
-      let chunk = match stream.next().await {
-        Some(Ok(c)) => c,
-        Some(Err(e)) => {
+      let chunk = match tokio::time::timeout(STALL_TICK, stream.next()).await {
+        Ok(Some(Ok(c))) => c,
+        Ok(Some(Err(e))) => {
           // Stream errors after a long pause are typically stale TCP connections.
           // Drop the stream and re-issue the Range request using the partial file.
-          if chunk_retries < 3 {
-            chunk_retries += 1;
-            log::warn!("Chunk read error (retry {chunk_retries}/3), re-issuing Range request: {e}");
+          if reconnects < MAX_RECONNECTS {
+            reconnects += 1;
+            log::warn!(
+              "Chunk read error (retry {reconnects}/{MAX_RECONNECTS}), re-issuing Range request: {e}"
+            );
             drop(file);
             continue 'retry;
           }
           return Err(Error::Network(format!(
-            "Failed to read chunk after {chunk_retries} retries: {e}"
+            "Failed to read chunk after {reconnects} retries: {e}"
           )));
         }
-        None => break,
+        Ok(None) => break,
+        Err(_) => {
+          let now = Instant::now();
+          if now.duration_since(last_data_at) >= STALL_TIMEOUT {
+            if reconnects < MAX_RECONNECTS {
+              reconnects += 1;
+              log::warn!(
+                "No data for {}s (retry {reconnects}/{MAX_RECONNECTS}), re-issuing Range request",
+                STALL_TIMEOUT.as_secs()
+              );
+              drop(file);
+              continue 'retry;
+            }
+            return Err(Error::DownloadStalled);
+          }
+          on_progress(DownloadProgress {
+            downloaded: base_offset.saturating_add(session_downloaded),
+            speed: speed_window.rate(now, session_downloaded),
+            total: confirmed_entity_size,
+            source,
+          });
+          last_progress_time = now;
+          continue;
+        }
       };
 
+      last_data_at = Instant::now();
       session_downloaded += chunk.len() as u64;
       let downloaded_total = base_offset.saturating_add(session_downloaded);
 
@@ -440,17 +570,13 @@ where
       completion_reported |= is_complete;
 
       if report_completion || elapsed_since_last >= PROGRESS_THROTTLE_MS {
-        let elapsed_total = start_time.elapsed().as_secs_f64();
-        let speed = if elapsed_total > 0.0 {
-          session_downloaded as f64 / elapsed_total
-        } else {
-          0.0
-        };
+        speed_window.record(now, session_downloaded);
 
         on_progress(DownloadProgress {
           downloaded: downloaded_total,
-          speed,
+          speed: speed_window.rate(now, session_downloaded),
           total: confirmed_entity_size,
+          source,
         });
 
         last_progress_time = now;
@@ -459,18 +585,13 @@ where
 
     let final_total = base_offset.saturating_add(session_downloaded);
 
-    let elapsed_total = start_time.elapsed().as_secs_f64();
-    let final_speed = if elapsed_total > 0.0 {
-      session_downloaded as f64 / elapsed_total
-    } else {
-      0.0
-    };
     // Falling back to the bytes read: a declared size that overstated the file, and that no
     // response corrected, would otherwise leave the bar short of 100% for good.
     on_progress(DownloadProgress {
       downloaded: final_total,
-      speed: final_speed,
+      speed: speed_window.rate(Instant::now(), session_downloaded),
       total: confirmed_entity_size.or(Some(final_total)),
+      source,
     });
 
     file
@@ -573,6 +694,25 @@ mod tests {
       parse_content_range_total(&headers),
       None,
       "a slice that withheld the total was sized at its own end, confirming a fragment as the whole entity"
+    );
+  }
+
+  #[test]
+  fn a_silent_connection_reports_a_falling_rate() {
+    let start = Instant::now();
+    let mut window = SpeedWindow::new(start, 0);
+    let mut bytes = 0;
+    for second in 1..=10 {
+      bytes += 1_000_000;
+      window.record(start + Duration::from_secs(second), bytes);
+    }
+    let busy = start + Duration::from_secs(10);
+    assert_eq!(window.rate(busy, bytes), 1_000_000.0);
+
+    let silent = busy + Duration::from_secs(5);
+    assert!(
+      window.rate(silent, bytes) < 200_000.0,
+      "five seconds without data still reported the earlier rate, hiding the stall from the user"
     );
   }
 
