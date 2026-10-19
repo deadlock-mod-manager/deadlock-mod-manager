@@ -274,7 +274,9 @@
       color 0.3s ease;
   }
 
-  * {
+  /* SVG internals are excluded: every icon path ran its own transition on hover, which made the
+     sidebar repaint on every frame. */
+  :where(*:not(svg, svg *)) {
     transition:
       background-color 0.3s ease,
       color 0.3s ease,
