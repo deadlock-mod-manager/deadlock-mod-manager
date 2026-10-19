@@ -83,6 +83,6 @@ it("serves hero assets used after installs and launch preparation without unexpe
     },
   });
   worlds.push(result.worldDirectory);
-  expect(result.unexpectedRequests).toBe(0);
+  expect(result.unexpectedRequests).toEqual([]);
   expect(checked).toBe(true);
 });

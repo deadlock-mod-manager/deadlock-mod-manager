@@ -318,6 +318,8 @@ const run = async (): Promise<void> => {
     );
     if (!result.passed) {
       console.log(`Retained failure world: ${result.worldDirectory}`);
+      for (const request of result.unexpectedRequests)
+        console.log(`Unexpected request (no fixture route): ${request}`);
       process.exitCode = 1;
     } else if (argumentsList.includes("--keep")) {
       console.log(`Retained requested world: ${result.worldDirectory}`);

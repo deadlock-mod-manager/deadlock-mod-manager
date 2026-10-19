@@ -11,7 +11,11 @@ import { monkeyStepCount, monkeyTimeoutMs } from "./monkey-plan";
 import { runProcess } from "./process-control";
 import { captureEvidence } from "./evidence";
 import { startFilesystemJournal } from "./filesystem-journal";
-import { startFixtureServer, type FixtureRoute } from "./fixture-server";
+import {
+  startFixtureServer,
+  type FixtureRequest,
+  type FixtureRoute,
+} from "./fixture-server";
 import {
   collectFileInventory,
   createWorld,
@@ -52,8 +56,15 @@ export type RunResult = {
   exitCode: number;
   worldDirectory: string;
   elapsedMs: number;
-  unexpectedRequests: number;
+  unexpectedRequests: string[];
 };
+
+const describeRequests = (requests: readonly FixtureRequest[]): string[] =>
+  requests.map((request) =>
+    request.method === "CONNECT"
+      ? `CONNECT ${String(request.headers.host)}`
+      : `${request.method} ${request.url}`,
+  );
 
 const startupFixtureRoutes: readonly FixtureRoute[] = [
   {
@@ -256,7 +267,11 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
       )
         break;
     }
-    if (wdioResult.exitCode === 0)
+    // A leak stops later phases, so the scenario's request counts would mislead.
+    if (
+      wdioResult.exitCode === 0 &&
+      fixtureServer.unmatchedRequests().length === 0
+    )
       definition.verifyNetwork(options.caseId, fixtureServer.requests());
     await closeResources();
     const after = Object.fromEntries(
@@ -272,13 +287,15 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
       JSON.stringify(after, null, 2),
     );
 
-    const unexpectedRequests = fixtureServer.unmatchedRequests().length;
+    const unexpectedRequests = describeRequests(
+      fixtureServer.unmatchedRequests(),
+    );
     const expectedFailureObserved =
       options.intentionalTimeout === true &&
       wdioResult.exitCode !== 0 &&
       wdioResult.output.includes("intentional harness timeout");
     const passed =
-      unexpectedRequests === 0 &&
+      unexpectedRequests.length === 0 &&
       (options.intentionalTimeout === true
         ? expectedFailureObserved
         : wdioResult.exitCode === 0);
@@ -338,7 +355,9 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
       exitCode: 1,
       worldDirectory: retained.directory,
       elapsedMs: Date.now() - startedAt,
-      unexpectedRequests: fixtureServer?.unmatchedRequests().length ?? 0,
+      unexpectedRequests: describeRequests(
+        fixtureServer?.unmatchedRequests() ?? [],
+      ),
       error: runError instanceof Error ? runError.stack : String(runError),
       captureErrors: failures,
     };
