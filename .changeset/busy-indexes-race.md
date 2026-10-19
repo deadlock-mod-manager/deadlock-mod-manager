@@ -5,4 +5,4 @@
 "@deadlock-mods/queue": patch
 ---
 
-Speed up Lockdex indexing and backfill files it never indexed.
+Speed up Lockdex indexing and backfill files it never indexed
