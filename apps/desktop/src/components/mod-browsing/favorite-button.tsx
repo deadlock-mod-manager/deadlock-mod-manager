@@ -52,7 +52,7 @@ const FavoriteButton = ({
               />
             }
             onClick={handleClick}
-            size='lg'
+            size='default'
             variant='outline'>
             {isFavorite ? t("favorites.favorited") : t("favorites.favorite")}
           </Button>

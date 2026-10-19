@@ -363,7 +363,7 @@ const ModButton = ({
               </div>
             ) : (
               <div
-                className='flex items-center gap-3 rounded-lg border border-input bg-background px-4 py-2.5 shadow-sm'
+                className='flex h-9 items-center gap-2 rounded-md border border-input bg-background px-4 shadow-sm'
                 onClick={(e) => e.stopPropagation()}>
                 <Switch
                   aria-label={t("modButton.toggleForMod", {
