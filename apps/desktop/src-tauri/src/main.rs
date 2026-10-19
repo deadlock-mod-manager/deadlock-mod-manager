@@ -66,24 +66,15 @@ fn display_drivers(drm_dir: &std::path::Path) -> Vec<String> {
 }
 
 #[cfg(target_os = "linux")]
-fn nvidia_prime_offload_requested(
-  offload: Option<&std::ffi::OsStr>,
-  vendor: Option<&std::ffi::OsStr>,
-  provider: Option<&std::ffi::OsStr>,
-) -> bool {
-  offload.is_some_and(|value| value == "1")
-    || vendor.is_some_and(|value| value == "nvidia")
-    || provider.is_some_and(|value| !value.is_empty())
+fn nvidia_prime_offload_requested(get_env: impl Fn(&str) -> Option<std::ffi::OsString>) -> bool {
+  get_env("__NV_PRIME_RENDER_OFFLOAD").is_some_and(|value| value == "1")
+    || get_env("__NV_PRIME_RENDER_OFFLOAD_PROVIDER").is_some_and(|value| !value.is_empty())
 }
 
 /// Detect NVIDIA rendering from explicit offload requests or connected displays.
 #[cfg(target_os = "linux")]
 fn nvidia_renders_webview() -> bool {
-  let prime_offload = nvidia_prime_offload_requested(
-    std::env::var_os("__NV_PRIME_RENDER_OFFLOAD").as_deref(),
-    std::env::var_os("__GLX_VENDOR_LIBRARY_NAME").as_deref(),
-    std::env::var_os("__NV_PRIME_RENDER_OFFLOAD_PROVIDER").as_deref(),
-  );
+  let prime_offload = nvidia_prime_offload_requested(|name| std::env::var_os(name));
   if prime_offload {
     eprintln!("[GPU Compat] NVIDIA PRIME render offload requested");
     return true;

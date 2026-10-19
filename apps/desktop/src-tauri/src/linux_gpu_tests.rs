@@ -1,6 +1,22 @@
 use super::{display_drivers, gpu_compat_workaround_enabled, nvidia_prime_offload_requested};
 use std::{ffi::OsStr, fs, os::unix::fs::symlink, path::Path};
 
+fn prime_offload_requested(
+  offload: Option<&str>,
+  vendor: Option<&str>,
+  provider: Option<&str>,
+) -> bool {
+  nvidia_prime_offload_requested(|name| {
+    match name {
+      "__NV_PRIME_RENDER_OFFLOAD" => offload,
+      "__GLX_VENDOR_LIBRARY_NAME" => vendor,
+      "__NV_PRIME_RENDER_OFFLOAD_PROVIDER" => provider,
+      _ => None,
+    }
+    .map(std::ffi::OsString::from)
+  })
+}
+
 fn add_connector(drm: &Path, name: &str, status: &str, driver: Option<&str>) {
   let (card, _) = name.split_once('-').unwrap();
   let device = drm.join(card).join("device");
@@ -22,11 +38,14 @@ fn add_connector(drm: &Path, name: &str, status: &str, driver: Option<&str>) {
 #[test]
 fn disabled_prime_values_do_not_request_offload() {
   for value in [None, Some("0"), Some(""), Some("false"), Some("2")] {
-    assert!(!nvidia_prime_offload_requested(
-      value.map(OsStr::new),
-      None,
-      None,
-    ));
+    assert!(!prime_offload_requested(value, None, None));
+  }
+}
+
+#[test]
+fn glx_vendor_only_does_not_request_offload() {
+  for offload in [None, Some("0"), Some("")] {
+    assert!(!prime_offload_requested(offload, Some("nvidia"), None));
   }
 }
 
@@ -34,21 +53,14 @@ fn disabled_prime_values_do_not_request_offload() {
 fn recognizes_each_nvidia_offload_selector() {
   for (offload, vendor, provider) in [
     (Some("1"), None, None),
-    (None, Some("nvidia"), None),
+    (Some("1"), Some("nvidia"), None),
     (None, None, Some("NVIDIA-G0")),
+    (None, Some("nvidia"), Some("NVIDIA-G0")),
     (Some("0"), None, Some("NVIDIA-G1")),
   ] {
-    assert!(nvidia_prime_offload_requested(
-      offload.map(OsStr::new),
-      vendor.map(OsStr::new),
-      provider.map(OsStr::new),
-    ));
+    assert!(prime_offload_requested(offload, vendor, provider));
   }
-  assert!(!nvidia_prime_offload_requested(
-    None,
-    Some(OsStr::new("mesa")),
-    Some(OsStr::new("")),
-  ));
+  assert!(!prime_offload_requested(None, Some("mesa"), Some("")));
 }
 
 #[test]
