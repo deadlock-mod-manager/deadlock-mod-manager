@@ -2,4 +2,4 @@
 "@deadlock-mods/desktop": patch
 ---
 
-Fixing an older hero skin now repairs adjusted camera pivots, leftover camera poses and camera points on every level of detail.
+Fixing an older hero skin now also repairs camera points the author adjusted, and restores missing camera points at every model detail level.

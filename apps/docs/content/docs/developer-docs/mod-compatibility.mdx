@@ -127,7 +127,7 @@ repaired, so mod health reports them and they never pause launch.
 - Mods whose files are all missing, localization files that could not be parsed,
   game-data files that could not be decoded, and stale localization snapshots
 
-A mod file that cannot be read no longer stops the analysis for every mod. A
+One unreadable mod file does not stop the analysis for the other mods. A
 localization file that is not UTF-8 or byte-order-marked UTF-16, or has no
 readable `lang` and `Tokens` objects, is skipped with a parse warning carrying
 the error. A VData file that fails to decode is skipped with an
@@ -391,9 +391,9 @@ metadata, geometry, and animation bindings remain unchanged. Reordered and added
 custom bones do not prevent repair when the root dependency still matches.
 
 A mesh whose pivots are already current can still carry root attachments left
-in the old frame by a partial migration. Such an attachment is converted alone
-when it has a same-name game attachment that it matches within 30 degrees only
-after conversion and differs from by more than 60 degrees before. An extra
+in the old frame by a partial migration. Such an attachment is converted on its
+own when a same-name game attachment lies within 30 degrees of it after
+conversion and more than 60 degrees from it before. An extra
 `near_NN`, `far_NN`, or `gunaim_NN` pose without a game counterpart is converted
 when the mod's own `AttachmentCameraData` lists it and only the converted pose
 keeps its right axis on the current pivot's right axis; these poses only pitch
