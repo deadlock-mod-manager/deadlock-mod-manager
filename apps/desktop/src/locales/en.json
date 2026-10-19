@@ -6133,7 +6133,7 @@
         "title": "These mods break together",
         "body_one": "Found in {{count}} launch. Each one works alone, but the problem appears when they're all on.",
         "body_other": "Found in {{count}} launches. Each one works alone, but the problem appears when they're all on.",
-        "tip": "Try changing their load order in Manage order, or keep only one of them."
+        "tip": "Try changing their order in Change Mods Order, or keep only one of them."
       },
       "notMods": {
         "title": "Your mods aren't the cause",
