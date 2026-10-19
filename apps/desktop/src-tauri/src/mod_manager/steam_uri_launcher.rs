@@ -22,6 +22,7 @@ enum CompletionPolicy {
 
 pub(crate) struct SteamUriLaunchRequest {
   program: PathBuf,
+  launcher_args: Vec<&'static str>,
   uri: String,
   completion: CompletionPolicy,
 }
@@ -36,6 +37,19 @@ impl SteamUriLaunchRequest {
   pub(crate) fn direct(program: PathBuf, uri: String) -> Self {
     Self {
       program,
+      launcher_args: Vec::new(),
+      uri,
+      completion: CompletionPolicy::Observe,
+    }
+  }
+
+  /// Hand the URI to a launcher that needs its own arguments first, such as
+  /// `flatpak run com.valvesoftware.Steam`.
+  #[cfg(target_os = "linux")]
+  pub(crate) fn wrapped(program: PathBuf, launcher_args: Vec<&'static str>, uri: String) -> Self {
+    Self {
+      program,
+      launcher_args,
       uri,
       completion: CompletionPolicy::Observe,
     }
@@ -45,6 +59,7 @@ impl SteamUriLaunchRequest {
   pub(crate) fn portal(program: PathBuf, uri: String) -> Self {
     Self {
       program,
+      launcher_args: Vec::new(),
       uri,
       completion: CompletionPolicy::Timeout(PORTAL_TIMEOUT),
     }
@@ -63,6 +78,7 @@ impl SteamUriLaunchRequest {
     }
 
     let mut child = Command::new(&self.program)
+      .args(&self.launcher_args)
       .arg(&self.uri)
       .stdout(Stdio::null())
       .stderr(Stdio::piped())
@@ -105,6 +121,11 @@ impl SteamUriLaunchRequest {
   #[cfg(all(test, target_os = "linux"))]
   pub(crate) fn program(&self) -> &Path {
     &self.program
+  }
+
+  #[cfg(all(test, target_os = "linux"))]
+  pub(crate) fn launcher_args(&self) -> &[&'static str] {
+    &self.launcher_args
   }
 
   #[cfg(all(test, target_os = "linux"))]
@@ -354,6 +375,7 @@ mod process_tests {
     let launcher = fake_launcher(&temp_dir.path().join("fake-xdg-open"), "exec sleep 5");
     let result = spawn_fake(|| SteamUriLaunchRequest {
       program: launcher.clone(),
+      launcher_args: Vec::new(),
       uri: "steam://run/1422450//".to_string(),
       completion: CompletionPolicy::Timeout(Duration::from_millis(20)),
     })

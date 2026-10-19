@@ -98,6 +98,46 @@ fn linux_steam_dir_candidates(home_dir: &Path, snap_dir: &Path) -> Vec<PathBuf> 
   ]
 }
 
+/// Steam installed as a Flatpak or Snap. Its steam.sh needs the sandbox
+/// runtime; run on the host it fails with "missing 32-bit libraries".
+#[cfg(target_os = "linux")]
+#[derive(Debug)]
+enum SandboxedSteam {
+  Flatpak,
+  Snap,
+}
+
+#[cfg(target_os = "linux")]
+impl SandboxedSteam {
+  /// `~/.steam/steam` can symlink into either sandbox, so the resolved path is
+  /// checked.
+  fn detect(steam_exe: &Path) -> Option<Self> {
+    let path = std::fs::canonicalize(steam_exe).unwrap_or_else(|_| steam_exe.to_path_buf());
+    let components: Vec<_> = path.components().map(|c| c.as_os_str()).collect();
+    if components
+      .windows(3)
+      .any(|w| w[0] == ".var" && w[1] == "app" && w[2] == "com.valvesoftware.Steam")
+    {
+      Some(Self::Flatpak)
+    } else if components
+      .windows(2)
+      .any(|w| w[0] == "snap" && w[1] == "steam")
+    {
+      Some(Self::Snap)
+    } else {
+      None
+    }
+  }
+
+  fn launch_request(&self, steam_uri: &str) -> SteamUriLaunchRequest {
+    let (program, args) = match self {
+      Self::Flatpak => ("flatpak", vec!["run", "com.valvesoftware.Steam"]),
+      Self::Snap => ("snap", vec!["run", "steam"]),
+    };
+    SteamUriLaunchRequest::wrapped(PathBuf::from(program), args, steam_uri.to_string())
+  }
+}
+
 #[cfg(target_os = "linux")]
 fn linux_fallback_steam_dirs(home_dir: &Path, snap_dir: &Path) -> Vec<steamlocate::SteamDir> {
   let mut steam_dirs = Vec::new();
@@ -287,13 +327,22 @@ impl SteamManager {
     }
 
     match self.get_steam_executable() {
-      Ok(steam_exe) => {
-        log::info!(
-          "Launching via Steam executable directly: {}",
-          steam_exe.display()
-        );
-        SteamUriLaunchRequest::direct(steam_exe, steam_uri.to_string())
-      }
+      Ok(steam_exe) => match SandboxedSteam::detect(&steam_exe) {
+        Some(sandbox) => {
+          log::info!(
+            "Launching {sandbox:?} Steam through its sandbox: {}",
+            steam_exe.display()
+          );
+          sandbox.launch_request(steam_uri)
+        }
+        None => {
+          log::info!(
+            "Launching via Steam executable directly: {}",
+            steam_exe.display()
+          );
+          SteamUriLaunchRequest::direct(steam_exe, steam_uri.to_string())
+        }
+      },
       Err(_) => {
         log::info!("No Steam executable found, falling back to xdg-open");
         SteamUriLaunchRequest::portal(PathBuf::from("xdg-open"), steam_uri.to_string())
@@ -680,6 +729,22 @@ mod tests {
 
     let request = manager.linux_uri_launch_request("steam://run/1422450//", false);
     assert_eq!(request.program(), steam_sh);
+    assert!(!request.uses_portal_timeout());
+  }
+
+  #[test]
+  fn resolve_uri_launcher_runs_flatpak_steam_inside_its_sandbox() {
+    let relative_path = ".var/app/com.valvesoftware.Steam/.local/share/Steam";
+    let (temp_dir, steam_dir) = temp_steam_dir(relative_path, false);
+    fs::write(steam_dir.path().join("steam.sh"), "").unwrap();
+    let mut manager = SteamManager::new();
+    manager
+      .set_steam_dir(temp_dir.path().join(relative_path))
+      .unwrap();
+
+    let request = manager.linux_uri_launch_request("steam://run/1422450//", false);
+    assert_eq!(request.program(), Path::new("flatpak"));
+    assert_eq!(request.launcher_args(), ["run", "com.valvesoftware.Steam"]);
     assert!(!request.uses_portal_timeout());
   }
 
