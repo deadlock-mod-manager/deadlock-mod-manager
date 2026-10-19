@@ -1,5 +1,15 @@
 import { RuntimeError } from "@deadlock-mods/common";
-import { and, count, desc, eq, getTableColumns, sql } from "drizzle-orm";
+import {
+  and,
+  count,
+  desc,
+  eq,
+  getTableColumns,
+  inArray,
+  isNull,
+  or,
+  sql,
+} from "drizzle-orm";
 import type { Database } from "../client";
 import { mods } from "../schema/mods";
 import { type NewReport, type Report, reports } from "../schema/reports";
@@ -9,6 +19,10 @@ export interface ReportIdentity {
   submissionType: "mod" | "sound";
   submissionId: string;
 }
+
+export type ReportClearTarget =
+  | { kind: "submission"; identity: ReportIdentity }
+  | { kind: "author"; authorName: string };
 
 const identityPredicate = (identity: ReportIdentity) =>
   and(
@@ -88,6 +102,46 @@ export class ReportRepository {
       .where(identityPredicate(identity))
       .returning({ id: reports.id });
     return result.length;
+  }
+
+  async clearForModeration(target: ReportClearTarget): Promise<Report[]> {
+    if (target.kind === "author") {
+      const matchingMods = this.db
+        .select({ id: mods.id })
+        .from(mods)
+        .where(sql`lower(${mods.author}) = lower(${target.authorName})`);
+      return this.db
+        .delete(reports)
+        .where(
+          or(
+            sql`lower(${reports.modAuthor}) = lower(${target.authorName})`,
+            inArray(reports.modId, matchingMods),
+          ),
+        )
+        .returning();
+    }
+
+    const { identity } = target;
+    const remoteId =
+      identity.submissionType === "sound"
+        ? `snd-${identity.submissionId}`
+        : identity.submissionId;
+    const matchingMods = this.db
+      .select({ id: mods.id })
+      .from(mods)
+      .where(eq(mods.remoteId, remoteId));
+    return this.db
+      .delete(reports)
+      .where(
+        or(
+          identityPredicate(identity),
+          and(
+            isNull(reports.submissionId),
+            inArray(reports.modId, matchingMods),
+          ),
+        ),
+      )
+      .returning();
   }
 
   /**

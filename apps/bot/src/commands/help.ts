@@ -5,6 +5,7 @@ import {
   hasForumModerationPermission,
   hasQuickAnswerEditorPermission,
   hasQuickAnswerUsePermission,
+  hasReportModerationPermission,
 } from "@/lib/permissions";
 
 interface HelpEntry {
@@ -44,6 +45,11 @@ const helpEntries: HelpEntry[] = [
     usage: "/quickanswer setup, edit, delete, media-add, media-remove",
     description: "Create and maintain quick answer templates.",
     allowed: hasQuickAnswerEditorPermission,
+  },
+  {
+    usage: "/reports clear target:<mod URL, member URL, or exact author name>",
+    description: "Clear all reports for a mod or author.",
+    allowed: (member) => hasReportModerationPermission(member.user, member),
   },
   {
     usage: "/blacklist add, /blacklist remove",
