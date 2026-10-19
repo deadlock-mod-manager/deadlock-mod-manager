@@ -9,7 +9,9 @@
   },
   "include": [
     "src/lib/redis-options.test.ts",
-    "src/providers/game-banana/response.test.ts"
+    "src/providers/game-banana/response.test.ts",
+    "src/services/github-releases-cache.test.ts",
+    "src/services/github-releases.test.ts"
   ],
   "exclude": ["node_modules", "dist"]
 }

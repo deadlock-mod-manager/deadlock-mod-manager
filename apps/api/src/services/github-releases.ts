@@ -12,6 +12,7 @@ const GITHUB_API_BASE = "https://api.github.com";
 const REPO_OWNER = "deadlock-mod-manager";
 const REPO_NAME = "deadlock-mod-manager";
 const CACHE_TTL = 15 * 60 * 1000;
+const RATE_LIMIT_RETRY_DELAY = 60 * 1000;
 
 interface CacheEntry {
   data: ReleasesResponse;
@@ -30,6 +31,9 @@ const transformRelease = (release: GitHubRelease) => ({
 export class GitHubReleasesService {
   private static instance: GitHubReleasesService;
   private cache: CacheEntry | null = null;
+  private inFlight: Promise<ReleasesResponse> | null = null;
+  private retryAt = 0;
+  private rateLimitError: ProviderError | null = null;
 
   static getInstance(): GitHubReleasesService {
     if (!GitHubReleasesService.instance) {
@@ -51,6 +55,22 @@ export class GitHubReleasesService {
       return this.cache.data;
     }
 
+    if (this.rateLimitError && Date.now() < this.retryAt) {
+      if (this.cache) return this.cache.data;
+      throw this.rateLimitError;
+    }
+
+    if (this.inFlight) return this.inFlight;
+
+    this.inFlight = this.fetchFromGitHub();
+    try {
+      return await this.inFlight;
+    } finally {
+      this.inFlight = null;
+    }
+  }
+
+  private async fetchFromGitHub(): Promise<ReleasesResponse> {
     try {
       logger.info("Fetching releases from GitHub API");
 
@@ -65,9 +85,27 @@ export class GitHubReleasesService {
       );
 
       if (!response.ok) {
-        throw new ProviderError(
+        const error = new ProviderError(
           `GitHub API responded with status ${response.status}: ${response.statusText}`,
         );
+        if (response.status === 403 || response.status === 429) {
+          const now = Date.now();
+          const retryAfter = response.headers.get("retry-after");
+          const seconds = retryAfter === null ? NaN : Number(retryAfter);
+          const retryAt = Number.isFinite(seconds)
+            ? now + seconds * 1000
+            : Date.parse(retryAfter ?? "");
+          const resetAt =
+            Number(response.headers.get("x-ratelimit-reset")) * 1000;
+          const headerRetryAt = Math.max(
+            Number.isFinite(retryAt) ? retryAt : 0,
+            Number.isFinite(resetAt) ? resetAt : 0,
+          );
+          this.retryAt =
+            headerRetryAt > now ? headerRetryAt : now + RATE_LIMIT_RETRY_DELAY;
+          this.rateLimitError = error;
+        }
+        throw error;
       }
 
       const releases = GitHubReleasesSchema.parse(await response.json());
@@ -107,6 +145,8 @@ export class GitHubReleasesService {
         allVersions,
       };
 
+      this.rateLimitError = null;
+      this.retryAt = 0;
       this.cache = {
         data: result,
         timestamp: Date.now(),
