@@ -2845,7 +2845,23 @@
     "resumeError": "无法恢复下载：{{message}}",
     "retryFetchError": "获取模组下载数据失败，请稍后再试。",
     "retryNoFiles": "没有找到可下载的文件。",
-    "retryError": "无法恢复下载：{{message}}"
+    "retryError": "无法恢复下载：{{message}}",
+    "health": {
+      "slowGameBananaTitle": "",
+      "slowGameBananaBody": "",
+      "slowTitle": "",
+      "slowBody": "",
+      "waitingGameBananaTitle": "",
+      "waitingTitle": "",
+      "waitingBody": "",
+      "busyTitle": "",
+      "busyBody": "",
+      "busyBodyWait_one": "",
+      "busyBodyWait_other": "",
+      "stoppedTitle": "",
+      "stoppedBody": "",
+      "switchFileServer": ""
+    }
   },
   "notifications": {
     "modInstalledSuccessfully": "模组安装成功",

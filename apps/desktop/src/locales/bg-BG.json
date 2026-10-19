@@ -2845,7 +2845,23 @@
     "resumeError": "",
     "retryFetchError": "",
     "retryNoFiles": "",
-    "retryError": ""
+    "retryError": "",
+    "health": {
+      "slowGameBananaTitle": "",
+      "slowGameBananaBody": "",
+      "slowTitle": "",
+      "slowBody": "",
+      "waitingGameBananaTitle": "",
+      "waitingTitle": "",
+      "waitingBody": "",
+      "busyTitle": "",
+      "busyBody": "",
+      "busyBodyWait_one": "",
+      "busyBodyWait_other": "",
+      "stoppedTitle": "",
+      "stoppedBody": "",
+      "switchFileServer": ""
+    }
   },
   "notifications": {
     "modInstalledSuccessfully": "Модът е инсталиран успешно",
