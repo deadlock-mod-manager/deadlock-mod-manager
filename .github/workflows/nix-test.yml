@@ -18,6 +18,11 @@ permissions:
   contents: write
   pull-requests: write
 
+# A newer main commit supersedes the build and the hash PR update, so drop the older run.
+concurrency:
+  group: nix-test-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   check-flake:
     name: Check Flake
