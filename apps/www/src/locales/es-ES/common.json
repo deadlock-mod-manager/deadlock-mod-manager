@@ -1,4 +1,30 @@
 {
+  "privacy": {
+    "updated": "",
+    "scope": "",
+    "desktopCollection": "",
+    "serverStorage": "",
+    "sections": {
+      "discord": "",
+      "updates": "",
+      "changes": "",
+      "contact": ""
+    },
+    "discord": {
+      "dataTitle": "",
+      "data": "",
+      "languageTitle": "",
+      "language": "",
+      "languageData": "",
+      "sharingTitle": "",
+      "sharing": "",
+      "retentionTitle": "",
+      "retention": "",
+      "controlsTitle": "",
+      "controls": "",
+      "contact": ""
+    }
+  },
   "language": {
     "label": "Idioma"
   },

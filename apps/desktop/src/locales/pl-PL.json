@@ -2413,6 +2413,8 @@
     "lastUpdatedBefore": "",
     "stillNeedsUpdate": "",
     "fixForPatch": "",
+    "checkForRepairs": "",
+    "checkingForRepairs": "",
     "useOriginalFiles": "",
     "closeGame": "",
     "alert": {
@@ -2593,7 +2595,8 @@
         "cameraInterface": "",
         "cameraControls": "",
         "materialBindings": "",
-        "modelRelocation": ""
+        "modelRelocation": "",
+        "taggedSounds": ""
       },
       "warnings": {
         "unverifiedSkeleton": "",
@@ -2604,6 +2607,8 @@
         "missingResource": "",
         "outdatedCameraAttachments": "",
         "missingCameraInterface": "",
+        "missingCameraAttachments": "",
+        "missingSoundBindings": "",
         "materialMapping": "",
         "materialInterface": "",
         "modelMapping": "",
@@ -2626,7 +2631,9 @@
         "inheritedDefinition": "",
         "retainedDependency": "",
         "currentReference": "",
-        "enumMapEntry": ""
+        "enumMapEntry": "",
+        "restoredGameData": "",
+        "restoredGameText": ""
       },
       "warnings": {
         "missingDefinition": "",
@@ -2634,7 +2641,8 @@
         "unverifiedInheritance": "",
         "missingDevelopmentState": "",
         "omittedHeroDefinition": "",
-        "omittedEnumMapEntry": ""
+        "omittedEnumMapEntry": "",
+        "unreadableData": ""
       },
       "reasons": {
         "definitionUnavailable": "",
@@ -2642,7 +2650,8 @@
         "unrecognizedClassOrEnum": "",
         "ambiguousTemplates": "",
         "inheritanceCycle": "",
-        "visibilityMigrationUnverified": ""
+        "visibilityMigrationUnverified": "",
+        "unreadableResource": ""
       }
     },
     "localization": {
@@ -2670,6 +2679,7 @@
       "parseWarningTitle": "",
       "parseWarningDescription": "",
       "parseWarningItem": "",
+      "parseErrorItem": "",
       "advancedDetails_one": "",
       "advancedDetails_other": "",
       "textConflictLabel": "",
@@ -6179,6 +6189,10 @@
       "body": ""
     },
     "loadOrder": {
+      "title": "",
+      "body": ""
+    },
+    "modRepairs": {
       "title": "",
       "body": ""
     },
