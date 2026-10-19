@@ -47,6 +47,7 @@ import RemlockTheme from "./pre-defined/remlock/remlock.tsx";
 import { SeasonalTheme } from "./pre-defined/seasonal/seasonal";
 import { SeasonalSettingsCard } from "./pre-defined/seasonal/seasonal-settings";
 import TeaTheme from "./pre-defined/tea/tea.tsx";
+import DrututtTheme from "./pre-defined/drututt/drututt.tsx";
 import GridlineTheme from "./pre-defined/gridline/gridline.tsx";
 
 const arcanePreview = getPluginAssetUrl(
@@ -84,6 +85,10 @@ const oledPreview = getPluginAssetUrl(
 const gridlinePreview = getPluginAssetUrl(
   "themes",
   "public/pre-defined/gridline/preview.png",
+);
+const drututtPreview = getPluginAssetUrl(
+  "themes",
+  "public/pre-defined/drututt/preview.png",
 );
 
 export const manifest = {
@@ -134,6 +139,13 @@ const PRE_DEFINED_THEMES = [
     descriptionKey: "plugins.tea.description",
     component: TeaTheme,
     previewImage: teaPreview,
+  },
+  {
+    id: "drututt",
+    name: "Drututt",
+    descriptionKey: "plugins.drututt.description",
+    component: DrututtTheme,
+    previewImage: drututtPreview,
   },
   {
     id: "arcane",
@@ -396,6 +408,32 @@ const Settings = () => {
                           }}
                           type='button'>
                           {t("plugins.tea.carrd")}
+                        </button>
+                      </div>
+                    ) : theme.id === "drututt" ? (
+                      <div className='text-sm text-muted-foreground mb-4'>
+                        <span className='mr-3'>
+                          {t("plugins.drututt.visit")}
+                        </span>
+                        <button
+                          className='text-primary hover:underline inline-flex items-center mr-3'
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void openUrl("https://www.twitch.tv/drututt");
+                          }}
+                          type='button'>
+                          {t("plugins.drututt.twitch")}
+                        </button>
+                        <button
+                          className='text-primary hover:underline inline-flex items-center'
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void openUrl(
+                              "https://www.youtube.com/channel/UCh4EBtwyPUikfTN2vfu7REQ",
+                            );
+                          }}
+                          type='button'>
+                          {t("plugins.drututt.youtube")}
                         </button>
                       </div>
                     ) : theme.id === "nightshift" ? (

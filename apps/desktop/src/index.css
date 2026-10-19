@@ -621,7 +621,7 @@
   background-color: transparent;
 }
 
-:is(.nightshift-theme-active, .bloodmoon-theme-active)
+:is(.nightshift-theme-active, .bloodmoon-theme-active, .drututt-theme-active)
   .occult-geometry-container {
   display: none;
 }

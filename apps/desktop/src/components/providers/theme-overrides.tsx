@@ -1,6 +1,7 @@
 import { type ReactNode, createContext, useContext, useMemo } from "react";
 import { useActiveTheme } from "@/hooks/use-active-theme";
 import { overrides as deadlockApiOverrides } from "@/plugins/themes/pre-defined/deadlock-api/overrides";
+import { overrides as drututtOverrides } from "@/plugins/themes/pre-defined/drututt/overrides";
 import { overrides as gridlineOverrides } from "@/plugins/themes/pre-defined/gridline/overrides";
 import { overrides as remlockOverrides } from "@/plugins/themes/pre-defined/remlock/overrides";
 import { seasonalOverrides } from "@/plugins/themes/pre-defined/seasonal/overrides";
@@ -16,6 +17,7 @@ const ThemeOverridesContext = createContext<ThemeOverrides>(EMPTY_OVERRIDES);
 const THEME_OVERRIDES_REGISTRY = new Map<string, ThemeOverrides>([
   ["deadlock-api", deadlockApiOverrides],
   ["tea", teaOverrides],
+  ["drututt", drututtOverrides],
   ["remlock", remlockOverrides],
   ["gridline", gridlineOverrides],
   ...seasonalOverrides,

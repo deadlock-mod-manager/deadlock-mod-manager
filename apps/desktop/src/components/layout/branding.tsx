@@ -37,6 +37,7 @@ const predefinedThemeIcons = {
   tea: getPluginAssetUrl("themes", "public/pre-defined/tea/logo.png"),
   lovelock: getPluginAssetUrl("themes", "public/pre-defined/lovelock/icon.png"),
   remlock: getPluginAssetUrl("themes", "public/pre-defined/remlock/icon.png"),
+  drututt: getPluginAssetUrl("themes", "public/pre-defined/drututt/icon.png"),
 } as const;
 
 type PredefinedThemeId = keyof typeof predefinedThemeIcons;
@@ -62,6 +63,7 @@ export const BrandingHeader = ({
   const collapsed = collapsedProp ?? state === "collapsed";
   const activeTheme = useActiveTheme();
   const TopbarLogo = useThemeOverride("topbarLogo");
+  const brandName = useThemeOverride("brandName");
   const navigate = useNavigate();
   const { data: contributors } = useContributors();
   const coreNames = new Intl.ListFormat(i18n.language, {
@@ -116,7 +118,7 @@ export const BrandingHeader = ({
             : "max-w-[12rem] translate-x-0 opacity-100 delay-100",
         )}>
         <span className='font-primary text-xl leading-none tracking-tight'>
-          Deadlock Mod Manager
+          {brandName ?? "Deadlock Mod Manager"}
         </span>
         <div className='flex flex-wrap items-baseline gap-x-1'>
           {version &&

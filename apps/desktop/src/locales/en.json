@@ -4919,6 +4919,13 @@
       "twitch": "Twitch",
       "carrd": "Carrd"
     },
+    "drututt": {
+      "description": "A teal campfire theme made for the Twitch streamer Drututt.",
+      "visit": "Watch Drututt:",
+      "twitch": "Twitch",
+      "youtube": "YouTube",
+      "pokeEmote": "Poke Drututt"
+    },
     "oled": {
       "description": "True-black backgrounds, subtle charcoal surfaces, and a customizable accent for OLED displays.",
       "customColor": "OLED Accent Color",
@@ -5132,6 +5139,8 @@
   "accessibility": {
     "deadlockLogoAlt": "Deadlock",
     "snipzteaMascotAlt": "Snipztea mascot",
+    "drututtEmoteAlt": "Drututt emote",
+    "drututModsAlt": "drututMODS emote",
     "deadlockApiIconAlt": "Deadlock API icon",
     "close": "Close",
     "previousSlide": "Previous slide",
