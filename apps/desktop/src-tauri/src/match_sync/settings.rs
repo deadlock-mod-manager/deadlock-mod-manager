@@ -25,8 +25,9 @@ const KEY_GC_BACKOFF: &str = "gc_backoff_until";
 const MAX_FETCHED_IDS: usize = 10_000;
 
 /// Bump to ask every user again. Choices saved under an older version are
-/// ignored, so the config falls back to the default: on, but no consent.
-const CONSENT_VERSION: u64 = 1;
+/// ignored, so the config falls back to the default: off, no consent.
+/// Version 1 consent could be given just by viewing the onboarding step.
+const CONSENT_VERSION: u64 = 2;
 
 pub fn now_secs() -> i64 {
   chrono::Utc::now().timestamp()

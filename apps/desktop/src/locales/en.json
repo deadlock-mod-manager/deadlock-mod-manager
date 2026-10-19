@@ -3715,13 +3715,13 @@
       "rateLimited": "Steam is rate-limiting your account right now. Try again later."
     },
     "notice": {
-      "title": "Keep match data sharing on?",
-      "description": "Match data sharing is on by default, but nothing is shared until you choose. Keep it on, or turn it off.",
+      "title": "Turn on match data sharing?",
+      "description": "Match data sharing is off, and nothing is shared unless you turn it on.",
       "benefit": "Fills in missing matches on trackers like Statlocker, Tracklock and deadlock-api, so your history and stats there are complete.",
       "settings": "You can change this any time in Settings → Privacy.",
       "learnMore": "Learn more about match data sharing",
-      "keepOn": "Keep it on",
-      "turnOff": "Turn it off"
+      "turnOn": "Turn on",
+      "noThanks": "No thanks"
     }
   },
   "privacy": {

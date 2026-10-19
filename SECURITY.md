@@ -46,7 +46,7 @@ For security vulnerabilities, please report them **privately** through:
 
 ### Steam Account Access (Match Sync)
 
-Match sync is **enabled by default**. You can turn it off at any time in Settings, which stops all background work immediately. While it is enabled:
+Match sync is **off by default** and only starts after you turn it on and accept the consent screen. You can turn it off at any time in Settings, which stops all background work immediately. While it is enabled:
 
 - **Credentials read locally**: The app reads Steam's `config/loginusers.vdf` to list remembered accounts, and reads the `ConnectCache` blob from `local.vdf` to recover each account's Steam refresh token. The token is decrypted with the same OS-bound mechanism Steam itself uses — DPAPI on Windows, AES-256 derived from the account name on Linux and macOS — so it can only be recovered on your own machine, under your own user account.
 - **Token handling**: The refresh token is a live account credential. It is held **in memory only** for the duration of a sync — never logged, never written to disk by us, and never transmitted to our servers or any third party other than Valve.

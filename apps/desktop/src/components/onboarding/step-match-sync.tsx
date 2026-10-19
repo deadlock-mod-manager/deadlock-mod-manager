@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useMatchSync } from "@/hooks/use-match-sync";
 import { useMatchSyncToggle } from "@/hooks/use-match-sync-toggle";
+import { usePersistedStore } from "@/lib/store";
 
 type MatchSyncStepProps = {
   onComplete: () => void;
@@ -18,18 +19,14 @@ export const OnboardingStepMatchSync = ({ onComplete }: MatchSyncStepProps) => {
     setEnabled,
   });
 
+  const dismissMatchSyncPrompt = usePersistedStore(
+    (state) => state.dismissMatchSyncPrompt,
+  );
+
   useEffect(() => {
     onComplete();
-  }, [onComplete]);
-
-  // Seeing the default here is the opt-in; sync stays idle until this runs.
-  const needsConsent = status?.enabled === true && !status.consentAccepted;
-  const { mutate: acceptConsent } = setConsent;
-  useEffect(() => {
-    if (needsConsent) {
-      acceptConsent(true);
-    }
-  }, [needsConsent, acceptConsent]);
+    dismissMatchSyncPrompt();
+  }, [onComplete, dismissMatchSyncPrompt]);
 
   return (
     <div className='space-y-5'>

@@ -68,6 +68,10 @@ export type CrosshairFilters = {
 export type UIState = {
   experimentalTourDismissed: boolean;
   dismissExperimentalTour: () => void;
+  // Set once the user has answered the match sync opt-in, either in onboarding
+  // or in the one-time prompt shown to existing users.
+  matchSyncPromptDismissed: boolean;
+  dismissMatchSyncPrompt: () => void;
   showWhatsNew: boolean;
   lastSeenVersion: string | null;
   audioVolume: number; // Volume as percentage (0-100)
@@ -137,6 +141,8 @@ export const uiDeepMergeKeys = [
 export const createUISlice: StateCreator<State, [], [], UIState> = (set) => ({
   experimentalTourDismissed: false,
   dismissExperimentalTour: () => set({ experimentalTourDismissed: true }),
+  matchSyncPromptDismissed: false,
+  dismissMatchSyncPrompt: () => set({ matchSyncPromptDismissed: true }),
   showWhatsNew: false,
   lastSeenVersion: null,
   audioVolume: 50, // Default to 50%

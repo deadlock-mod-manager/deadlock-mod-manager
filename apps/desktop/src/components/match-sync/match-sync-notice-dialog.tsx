@@ -7,33 +7,41 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
-import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
   CheckCircleIcon,
   ShareNetworkIcon,
   XIcon,
 } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useMatchSync } from "@/hooks/use-match-sync";
-import { matchSyncErrorMessage } from "@/hooks/use-match-sync-toggle";
+import { useMatchSyncToggle } from "@/hooks/use-match-sync-toggle";
 import { usePersistedStore } from "@/lib/store";
 
 const DOCS_URL =
   "https://docs.deadlockmods.app/using-mod-manager/community#match-data-sharing";
 
 /**
- * Asks users who finished onboarding to keep match sync on. The backend drops
- * consent saved under an older consent version, so this reappears for everyone
- * after a bump. Sync stays idle until they keep it on; closing the dialog any
- * other way turns it off. New users see the same choice in onboarding instead.
+ * Asks users who finished onboarding before it had a match sync step whether
+ * to turn sync on. Shown once; "Turn on" still goes through the consent dialog.
+ * New users answer the same question in onboarding instead.
  */
 export const MatchSyncNoticeDialog = () => {
   const { t } = useTranslation();
   const { status, setConsent, setEnabled } = useMatchSync();
+  const handleEnableChange = useMatchSyncToggle({
+    status,
+    setConsent,
+    setEnabled,
+  });
   const hasCompletedOnboarding = usePersistedStore(
     (state) => state.hasCompletedOnboarding,
+  );
+  const promptDismissed = usePersistedStore(
+    (state) => state.matchSyncPromptDismissed,
+  );
+  const dismissPrompt = usePersistedStore(
+    (state) => state.dismissMatchSyncPrompt,
   );
   // Let the telemetry prompt go first so the two dialogs never stack.
   const telemetryPromptResolved = usePersistedStore(
@@ -45,31 +53,20 @@ export const MatchSyncNoticeDialog = () => {
   const isOpen =
     hasCompletedOnboarding &&
     telemetryPromptResolved &&
-    status?.enabled === true &&
+    !promptDismissed &&
+    status?.enabled === false &&
     !status.consentAccepted;
-  const isSaving = setConsent.isPending || setEnabled.isPending;
 
-  const handleKeep = useCallback(async () => {
-    try {
-      await setConsent.mutateAsync(true);
-    } catch (error) {
-      toast.error(matchSyncErrorMessage(error, t));
-    }
-  }, [setConsent, t]);
-
-  const handleTurnOff = useCallback(async () => {
-    try {
-      await setEnabled.mutateAsync(false);
-    } catch (error) {
-      toast.error(matchSyncErrorMessage(error, t));
-    }
-  }, [setEnabled, t]);
+  const handleTurnOn = () => {
+    dismissPrompt();
+    void handleEnableChange(true);
+  };
 
   return (
     <Dialog
       onOpenChange={(open) => {
-        if (!open && !isSaving) {
-          handleTurnOff();
+        if (!open) {
+          dismissPrompt();
         }
       }}
       open={isOpen}>
@@ -103,15 +100,14 @@ export const MatchSyncNoticeDialog = () => {
         <DialogFooter className='gap-2 sm:gap-2'>
           <button
             className={buttonVariants({ variant: "outline" })}
-            disabled={isSaving}
-            onClick={handleTurnOff}
+            onClick={dismissPrompt}
             type='button'>
             <XIcon className='size-4' weight='bold' />
-            {t("matchSync.notice.turnOff")}
+            {t("matchSync.notice.noThanks")}
           </button>
-          <Button disabled={isSaving} onClick={handleKeep} type='button'>
+          <Button onClick={handleTurnOn} type='button'>
             <CheckCircleIcon className='size-4' weight='bold' />
-            {t("matchSync.notice.keepOn")}
+            {t("matchSync.notice.turnOn")}
           </Button>
         </DialogFooter>
       </DialogContent>

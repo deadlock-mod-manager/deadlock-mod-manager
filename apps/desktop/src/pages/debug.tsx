@@ -129,6 +129,8 @@ const Debug = () => {
       queryClient.setQueryData(MATCH_SYNC_STATUS_KEY, status);
       if (scenario === "newInstall") {
         setHasCompletedOnboarding(false);
+      } else {
+        usePersistedStore.setState({ matchSyncPromptDismissed: false });
       }
     },
     onError: (error) => toast.error(String(error)),

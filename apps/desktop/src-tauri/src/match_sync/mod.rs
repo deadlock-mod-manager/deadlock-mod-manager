@@ -401,7 +401,7 @@ pub fn set_enabled(app: &AppHandle, enabled: bool) -> Result<(), MatchSyncError>
   Ok(())
 }
 
-/// Back to a fresh install's config: on by default, no consent yet.
+/// Back to a fresh install's config: off, no consent.
 #[cfg(debug_assertions)]
 pub fn reset_config(app: &AppHandle) -> Result<(), MatchSyncError> {
   cancel_background_work();

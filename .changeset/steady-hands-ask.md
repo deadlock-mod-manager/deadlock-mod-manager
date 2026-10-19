@@ -2,4 +2,4 @@
 "@deadlock-mods/desktop": patch
 ---
 
-Ask every user for match data sharing consent before syncing any matches
+Turn match data sharing off by default and only start it after the user consents

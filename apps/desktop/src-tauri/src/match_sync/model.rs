@@ -123,22 +123,12 @@ impl MatchHistoryPage {
   }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+// Off until the user turns it on and accepts the consent dialog.
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MatchSyncConfig {
   pub enabled: bool,
   pub consent_accepted: bool,
-}
-
-// On by default, but nothing runs until the user keeps it on in onboarding or
-// in the notice shown to existing users.
-impl Default for MatchSyncConfig {
-  fn default() -> Self {
-    Self {
-      enabled: true,
-      consent_accepted: false,
-    }
-  }
 }
 
 impl MatchSyncConfig {
