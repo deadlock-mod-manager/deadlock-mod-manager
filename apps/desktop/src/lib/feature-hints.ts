@@ -31,11 +31,19 @@ const FEATURE_HINTS = [
   },
   { id: "skin-randomizer", i18nKey: "skinRandomizer", minAgeDays: 3 },
   { id: "stats-customize", i18nKey: "statsCustomize", minAgeDays: 0 },
+  {
+    id: "nightly-channel",
+    i18nKey: "nightlyChannel",
+    minAgeDays: 14,
+    emote: "/emotes/wicked.webp",
+  },
 ] as const satisfies readonly {
   id: string;
   i18nKey: string;
   minAgeDays: number;
   shortcut?: readonly string[];
+  /** Decorative image shown next to the title. */
+  emote?: string;
 }[];
 
 export type FeatureHint = (typeof FEATURE_HINTS)[number];

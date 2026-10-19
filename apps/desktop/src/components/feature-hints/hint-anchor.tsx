@@ -197,8 +197,19 @@ export const HintAnchor = forwardRef<HTMLDivElement, HintAnchorProps>(
             <p className='font-semibold text-[11px] text-primary uppercase tracking-wider'>
               {t("featureHints.didYouKnow")}
             </p>
-            <h3 className='mt-1 font-semibold text-sm' id={titleId}>
+            <h3
+              className='mt-1 flex items-center gap-2 font-semibold text-sm'
+              id={titleId}>
               {t(`featureHints.${hint.i18nKey}.title`)}
+              {"emote" in hint && (
+                <img
+                  alt=''
+                  className='h-8 w-9 shrink-0'
+                  height={32}
+                  src={hint.emote}
+                  width={36}
+                />
+              )}
             </h3>
             <p className='mt-1.5 text-muted-foreground text-sm leading-relaxed'>
               {t(`featureHints.${hint.i18nKey}.body`)}

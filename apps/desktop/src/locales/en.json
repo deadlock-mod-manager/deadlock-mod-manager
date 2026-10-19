@@ -6201,6 +6201,10 @@
     "statsCustomize": {
       "title": "Make this dashboard yours",
       "body": "Add, remove, resize, and rearrange widgets, or create new tabs from templates."
+    },
+    "nightlyChannel": {
+      "title": "Like living on the edge?",
+      "body": "Switch to the nightly update channel to get new features before everyone else. Expect the occasional rough edge."
     }
   }
 }

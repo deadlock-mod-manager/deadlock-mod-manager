@@ -8,8 +8,11 @@ import {
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { HintAnchor } from "@/components/feature-hints/hint-anchor";
 import { SettingRow } from "@/components/settings/setting-row";
+import { usePersistedStore } from "@/lib/store";
 
 const UPDATE_CHANNEL_QUERY_KEY = ["update-channel"] as const;
 const DESCRIPTION_ID = "settings-update-channel-description";
@@ -17,6 +20,8 @@ const DESCRIPTION_ID = "settings-update-channel-description";
 export const UpdateChannelSelect = () => {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const markFeatureUsed = usePersistedStore((state) => state.markFeatureUsed);
 
   const { data: channel = "stable" } = useQuery({
     queryKey: UPDATE_CHANNEL_QUERY_KEY,
@@ -41,13 +46,26 @@ export const UpdateChannelSelect = () => {
       description={t("settings.updateChannelDescription")}
       descriptionId={DESCRIPTION_ID}
       title={t("settings.updateChannel")}>
-      <Select onValueChange={setChannel} value={channel}>
-        <SelectTrigger
-          aria-describedby={DESCRIPTION_ID}
-          aria-label={t("settings.updateChannel")}
-          className='w-36'>
-          <SelectValue />
-        </SelectTrigger>
+      <Select
+        onOpenChange={(nextOpen) => {
+          setOpen(nextOpen);
+          if (nextOpen) markFeatureUsed("nightly-channel");
+        }}
+        onValueChange={setChannel}
+        open={open}
+        value={channel}>
+        <HintAnchor
+          align='end'
+          eligible={channel === "stable"}
+          hintId='nightly-channel'
+          onShowMe={() => setOpen(true)}>
+          <SelectTrigger
+            aria-describedby={DESCRIPTION_ID}
+            aria-label={t("settings.updateChannel")}
+            className='w-36'>
+            <SelectValue />
+          </SelectTrigger>
+        </HintAnchor>
         <SelectContent>
           <SelectItem value='stable'>
             {t("settings.updateChannelStable")}
