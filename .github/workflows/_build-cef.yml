@@ -131,8 +131,9 @@ jobs:
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: |
-            apps/desktop -> ${{ matrix.os == 'windows' && 'C:/t' || 'apps/desktop/target' }}
+          workspaces: apps/desktop -> target
+          # Windows builds into C:/t, which rust-cache cannot cache as a workspace target; sccache covers it.
+          cache-targets: ${{ matrix.os != 'windows' }}
           key: cef-${{ matrix.os }}
           cache-on-failure: true
 

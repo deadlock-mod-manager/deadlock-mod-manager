@@ -104,9 +104,9 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: |
-            packages/vpk-parser -> packages/vpk-parser/target
-            packages/kv-parser -> packages/kv-parser/target
-            packages/dmodpkg -> packages/dmodpkg/target
+            packages/vpk-parser -> target
+            packages/kv-parser -> target
+            packages/dmodpkg -> target
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -179,7 +179,10 @@ jobs:
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: apps/desktop/src-tauri -> apps/desktop/src-tauri/target
+          workspaces: |
+            apps/desktop -> target
+            packages/vpkmanager -> target
+            packages/source2-model -> target
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile

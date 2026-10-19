@@ -338,7 +338,7 @@ jobs:
       - name: Rust cache
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: apps/desktop -> apps/desktop/target
+          workspaces: apps/desktop -> target
           key: nightly-${{ matrix.os }}
           cache-on-failure: true
 
