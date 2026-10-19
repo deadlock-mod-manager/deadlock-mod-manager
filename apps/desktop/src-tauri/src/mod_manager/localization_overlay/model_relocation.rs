@@ -288,15 +288,21 @@ pub(super) fn prepare(
         );
         continue;
       }
+      let animated = animation.keys().cloned().collect();
+      super::camera_attachment_frame::prepare(
+        resources,
+        &relocated,
+        &mut animation,
+        &mut verified_repairs,
+        &mut unverified,
+      )?;
       let mut models = model_camera::prepare(
         resources,
         &relocated,
         inputs,
+        &animated,
         &animation,
         &mut verified_repairs,
-      )?;
-      super::camera_attachment_frame::prepare(
-        resources, &relocated, &mut models, &mut verified_repairs, &mut unverified,
       )?;
       super::model_sounds::prepare(
         resources,
@@ -309,13 +315,18 @@ pub(super) fn prepare(
         .iter()
         .map(|(path, bytes)| (path.as_str(), bytes.as_slice()))
         .collect();
-      // Missing sounds leave the relocated model usable; report them instead.
+      // These leave the relocated model usable; report them instead.
       let (advisories, unverified): (Vec<_>, Vec<_>) = unverified
         .into_iter()
         .chain(asset_compatibility::analyze(
           resources, &relocated, &repaired,
         )?)
-        .partition(|warning| matches!(warning.kind, WarningKind::MissingSoundBindings));
+        .partition(|warning| {
+          matches!(
+            warning.kind,
+            WarningKind::MissingSoundBindings | WarningKind::MissingCameraAttachments
+          )
+        });
       if !unverified.is_empty() {
         let reasons = unverified
           .iter()

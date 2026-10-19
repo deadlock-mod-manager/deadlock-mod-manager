@@ -24,14 +24,17 @@ pub(super) fn is_path(path: &str) -> bool {
     && path.split('/').all(|part| !matches!(part, "" | "." | ".."))
 }
 
+/// `animated` holds the paths whose animation bindings were repaired or proven;
+/// `models` holds the bytes earlier repairs produced.
 pub(super) fn prepare(
   resources: &ResourceSnapshot,
   sources: &BTreeMap<String, Vec<CompiledDataSource>>,
   animation_inputs: &super::animation_model_evidence::AnimationInputs,
-  animation_models: &BTreeMap<String, Vec<u8>>,
+  animated: &BTreeSet<String>,
+  models: &BTreeMap<String, Vec<u8>>,
   repairs: &mut Vec<AssetRepair>,
 ) -> Result<BTreeMap<String, Vec<u8>>, Error> {
-  let mut output = animation_models.clone();
+  let mut output = models.clone();
   if sources.is_empty() {
     return Ok(output);
   }
@@ -43,7 +46,7 @@ pub(super) fn prepare(
     let Some(base) = resources.game_bytes(path)? else {
       continue;
     };
-    let sampled_bones = if animation_models.contains_key(path)
+    let sampled_bones = if animated.contains(path)
       && repairs.iter().any(|repair| {
         repair.file_path == *path
           && repair.mod_id == source.mod_id
@@ -54,13 +57,10 @@ pub(super) fn prepare(
       None
     };
     if let Some((repaired, kind)) = repair_with_controls(
-      animation_models
-        .get(path)
-        .map(Vec::as_slice)
-        .unwrap_or(&source.bytes),
+      models.get(path).map(Vec::as_slice).unwrap_or(&source.bytes),
       &base,
       |reference| animation_inputs.permits_camera_controls(resources, reference, &source.mod_id),
-      animation_models.contains_key(path),
+      animated.contains(path),
       sampled_bones.as_ref(),
     ) {
       log::info!(
@@ -147,7 +147,49 @@ fn repair_with_controls(
     .copied()
     .filter(|name| !old_fields.contains_key(*name))
     .collect();
-  let settings_only = missing.as_slice() == ["CitadelCameraSettings_t"];
+  if CAMERA_FIELDS
+    .iter()
+    .any(|name| !current_fields.contains_key(*name))
+    || (missing.contains(&"CitadelCameraSettings_t")
+      && !numeric_settings(&current_text[current_fields["CitadelCameraSettings_t"].clone()]))
+  {
+    return None;
+  }
+  let source_resource = Resource::parse(source).ok()?;
+  let base_resource = Resource::parse(base).ok()?;
+  let base_mesh = base_resource
+    .find_block(*b"MDAT")
+    .and_then(|raw| kv3::decode_preserving(raw).ok());
+  // The mod's own camera list applies unless the current one is restored with it.
+  let camera_text = if missing.contains(&"AttachmentCameraData") {
+    current_text
+  } else {
+    old_text
+  };
+  let names = base_mesh
+    .as_ref()
+    .and_then(|(mesh, _)| camera_point_names(camera_text, mesh));
+  // Every LOD mesh carries its own copy of the attachments.
+  let mut meshes = Vec::new();
+  for (index, block) in source_resource.blocks().iter().enumerate() {
+    if block.kind != *b"MDAT" {
+      continue;
+    }
+    let (mesh, mesh_encoding) =
+      kv3::decode_preserving(source_resource.get_block_by_index(index)?).ok()?;
+    if mesh.get("m_attachments").is_some() {
+      meshes.push((index, mesh, mesh_encoding));
+    }
+  }
+  let points_missing = names.as_ref().is_some_and(|names| {
+    meshes
+      .iter()
+      .any(|(_, mesh, _)| names.iter().any(|name| !has_point(mesh, name)))
+  });
+  if missing.is_empty() && !points_missing {
+    return None;
+  }
+  let settings_only = missing.as_slice() == ["CitadelCameraSettings_t"] && !points_missing;
   let compatible = (allow_scaled
     && compatible_camera_dependencies(&model, &vanilla, base, sampled_bones) == Some(true))
     || settings_only
@@ -156,31 +198,24 @@ fn repair_with_controls(
       .zip(vanilla.get("m_modelSkeleton"))
       .and_then(|(old, current)| compatible_rigs(old, current, allow_scaled))
       == Some(true);
-  if missing.is_empty()
-    || CAMERA_FIELDS
-      .iter()
-      .any(|name| !current_fields.contains_key(*name))
-    || (missing.contains(&"CitadelCameraSettings_t")
-      && !numeric_settings(&current_text[current_fields["CitadelCameraSettings_t"].clone()]))
-  {
-    return None;
-  }
   // Walk animation dependencies only when this model actually needs new controls.
   if !compatible && !allow_controls(&vanilla) {
     return None;
   }
-  let mut text = old_text[..closing].to_owned();
-  text.push('\n');
-  for name in missing {
-    text.push_str(&current_text[current_fields[name].clone()]);
+  if !missing.is_empty() {
+    let mut text = old_text[..closing].to_owned();
     text.push('\n');
+    for name in &missing {
+      text.push_str(&current_text[current_fields[*name].clone()]);
+      text.push('\n');
+    }
+    text.push_str(&old_text[closing..]);
+    root_fields(&text)?;
+    let Kv3Value::Object(info) = model.get_mut("m_modelInfo")? else {
+      return None;
+    };
+    object_set_case_insensitive(info, "m_keyValueText", Kv3Value::String(text));
   }
-  text.push_str(&old_text[closing..]);
-  let source_resource = Resource::parse(source).ok()?;
-  let Kv3Value::Object(info) = model.get_mut("m_modelInfo")? else {
-    return None;
-  };
-  object_set_case_insensitive(info, "m_keyValueText", Kv3Value::String(text));
   if settings_only {
     let data = kv3::encode_preserving(&model, &encoding, &format).ok()?;
     let intermediate = source_resource.rebuild_with_data_preserving(&data).ok()?;
@@ -191,38 +226,32 @@ fn repair_with_controls(
       && kv3::encoding_preserved(&model, &encoding, &decoded_encoding))
     .then_some((intermediate, RepairKind::CameraInterface));
   }
-  let base_resource = Resource::parse(base).ok()?;
-  let (mut mesh, mut mesh_encoding) =
-    kv3::decode_preserving(source_resource.find_block(*b"MDAT")?).ok()?;
-  let (base_mesh, base_encoding) =
-    kv3::decode_preserving(base_resource.find_block(*b"MDAT")?).ok()?;
-  let names = camera_point_names(current_text, &base_mesh)?;
+  let (names, (base_mesh, base_encoding)) = names.zip(base_mesh)?;
+  if meshes.is_empty() {
+    return None;
+  }
   let points: Vec<_> = names.iter().map(String::as_str).collect();
   let mut kind = RepairKind::CameraInterface;
   if !compatible {
-    if source_resource
-      .blocks()
-      .iter()
-      .filter(|block| block.kind == *b"MDAT")
-      .count()
-      != 1
-      || base_resource
+    let mesh_blocks = |resource: &Resource| {
+      resource
         .blocks()
         .iter()
         .filter(|block| block.kind == *b"MDAT")
         .count()
-        != 1
-    {
+    };
+    if mesh_blocks(&source_resource) != 1 || mesh_blocks(&base_resource) != 1 {
       return None;
     }
+    let (_, mesh, mesh_encoding) = meshes.first_mut()?;
     super::camera_controls::extend(
       super::camera_controls::Encoded {
         value: &mut model,
         encoding: &mut encoding,
       },
       super::camera_controls::Encoded {
-        value: &mut mesh,
-        encoding: &mut mesh_encoding,
+        value: mesh,
+        encoding: mesh_encoding,
       },
       super::camera_controls::Reference {
         value: &vanilla,
@@ -243,48 +272,62 @@ fn repair_with_controls(
     .iter()
     .filter_map(Kv3Value::as_str)
     .collect();
-  if super::asset_compatibility::mesh_warnings(&mesh, &model_bones)
-    .iter()
-    .any(|(kind, label)| {
-      matches!(
-        kind,
-        super::asset_compatibility::WarningKind::InvalidAttachment
-      ) && names.contains(label)
-    })
-  {
-    return None;
+  for (_, mesh, mesh_encoding) in &mut meshes {
+    if super::asset_compatibility::mesh_warnings(mesh, &model_bones)
+      .iter()
+      .any(|(kind, label)| {
+        matches!(
+          kind,
+          super::asset_compatibility::WarningKind::InvalidAttachment
+        ) && names.contains(label)
+      })
+    {
+      return None;
+    }
+    add_camera_points(mesh, mesh_encoding, &base_mesh, &base_encoding, &points)?;
   }
-  add_camera_points(
-    &mut mesh,
-    &mut mesh_encoding,
-    &base_mesh,
-    &base_encoding,
-    &points,
-  )?;
-  let data = kv3::encode_preserving(&model, &encoding, &format).ok()?;
-  let intermediate = source_resource.rebuild_with_data_preserving(&data).ok()?;
-  let resource = Resource::parse(&intermediate).ok()?;
-  let mesh_block = resource
-    .blocks()
-    .iter()
-    .position(|block| block.kind == *b"MDAT")?;
-  let mesh_format = kv3::Format::from_payload(resource.find_block(*b"MDAT")?).ok()?;
-  let data = kv3::encode_preserving(&mesh, &mesh_encoding, &mesh_format).ok()?;
-  let rebuilt = resource.rebuild_with_block(mesh_block, &data).ok()?;
+  let mut rebuilt = if missing.is_empty() && compatible {
+    source.to_vec()
+  } else {
+    let data = kv3::encode_preserving(&model, &encoding, &format).ok()?;
+    source_resource.rebuild_with_data_preserving(&data).ok()?
+  };
+  for (index, mesh, mesh_encoding) in &meshes {
+    let resource = Resource::parse(&rebuilt).ok()?;
+    let mesh_format = kv3::Format::from_payload(resource.get_block_by_index(*index)?).ok()?;
+    let data = kv3::encode_preserving(mesh, mesh_encoding, &mesh_format).ok()?;
+    rebuilt = resource.rebuild_with_block(*index, &data).ok()?;
+  }
   let (decoded_format, decoded_model, decoded_encoding) =
     decode_compiled_data(&rebuilt, "rebuilt model camera").ok()?;
-  let rebuilt_resource = Resource::parse(&rebuilt).ok()?;
-  let (decoded_mesh, decoded_mesh_encoding) =
-    kv3::decode_preserving(rebuilt_resource.get_block_by_index(mesh_block)?).ok()?;
   if decoded_format != format
     || !super::runtime_values_equal(&model, &decoded_model)
-    || !super::runtime_values_equal(&mesh, &decoded_mesh)
     || !kv3::encoding_preserved(&model, &encoding, &decoded_encoding)
-    || !kv3::encoding_preserved(&mesh, &mesh_encoding, &decoded_mesh_encoding)
   {
     return None;
   }
+  let rebuilt_resource = Resource::parse(&rebuilt).ok()?;
+  for (index, mesh, mesh_encoding) in &meshes {
+    let (decoded_mesh, decoded_mesh_encoding) =
+      kv3::decode_preserving(rebuilt_resource.get_block_by_index(*index)?).ok()?;
+    if !super::runtime_values_equal(mesh, &decoded_mesh)
+      || !kv3::encoding_preserved(mesh, mesh_encoding, &decoded_mesh_encoding)
+    {
+      return None;
+    }
+  }
   Some((rebuilt, kind))
+}
+
+fn has_point(mesh: &Kv3Value, name: &str) -> bool {
+  mesh
+    .get("m_attachments")
+    .and_then(Kv3Value::as_array)
+    .is_some_and(|points| {
+      points
+        .iter()
+        .any(|point| point.get("key").and_then(Kv3Value::as_str) == Some(name))
+    })
 }
 
 // Only scalar/vector offsets can be copied without evidence about the skin's rig.
@@ -345,6 +388,22 @@ pub(super) fn missing_camera_fields(model: &Kv3Value, vanilla: &Kv3Value) -> Vec
     .filter(|name| current.1.contains_key(**name) && !old.contains_key(**name))
     .map(|name| (*name).to_owned())
     .collect()
+}
+
+/// Camera points named by the model's own camera list, when the current game
+/// model has a complete camera interface at the same path.
+pub(super) fn camera_point_requirements(
+  model: &Kv3Value,
+  current: &Kv3Value,
+) -> Option<BTreeSet<String>> {
+  let (_, fields) = root_fields(model_text(current)?)?;
+  if CAMERA_FIELDS
+    .iter()
+    .any(|name| !fields.contains_key(*name))
+  {
+    return None;
+  }
+  camera_data_names(model_text(model)?)
 }
 
 pub(super) fn legacy_animation_graph(model: &Kv3Value) -> Option<&str> {

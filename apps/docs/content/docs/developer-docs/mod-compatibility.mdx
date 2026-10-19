@@ -336,9 +336,12 @@ authored poses are preserved. Unrepaired missing camera fields are reported.
 Conflicting model sources keep addon precedence and are not automatically repaired.
 
 Models with the known pre-update `root_motion` attachment frame can also migrate
-existing camera and aim points. Both `standing_pivot` and `crouching_pivot` must
-match the old rotation, and the installed game must supply both pivots in the new
-frame. Both models must have an unparented root with matching scale and rotation
+existing camera and aim points. Each pivot a mesh carries must lie within 30
+degrees of the old rotation; the two frames are 120 degrees apart, so an
+authored adjustment keeps its frame and is converted with the rest. A pivot
+absent from the mesh does not block migration, and the camera interface repair
+adds the current one afterwards. The installed game must supply both pivots in
+the new frame. Both models must have an unparented root with matching scale and rotation
 within 0.001 radians (about 0.057 degrees), allowing small exporter differences.
 Root translation may differ; the authored bind pose remains unchanged. This
 tolerance applies only to camera migration, not skeleton or animation rebasing. The inverse
@@ -347,6 +350,18 @@ custom positioning instead of replacing it with vanilla values. Every embedded
 mesh block is checked; inactive influence slots, other bone attachments, model
 metadata, geometry, and animation bindings remain unchanged. Reordered and added
 custom bones do not prevent repair when the root dependency still matches.
+
+A mesh whose pivots are already current can still carry root attachments left
+in the old frame by a partial migration. Such an attachment is converted alone
+when it has a same-name game attachment that it matches within 30 degrees only
+after conversion and differs from by more than 60 degrees before. An extra
+`near_NN`, `far_NN`, or `gunaim_NN` pose without a game counterpart is converted
+when the mod's own `AttachmentCameraData` lists it and only the converted pose
+keeps its right axis on the current pivot's right axis; these poses only pitch
+around that axis. Models without any pivot are left as authored.
+
+The frame migration runs before missing camera points are restored, so points
+copied from the current game are never converted a second time.
 
 Mixed pivot frames, blended influences, incompatible root axes, unsupported encodings,
 and failed preservation checks produce review warnings. Already current or
@@ -367,7 +382,7 @@ every block kind, including mesh `MDAT` and control `CTRL` blocks. Its target
 format check rejects newer-only wire types even when the decoder understands
 them, including subtypes on empty typed arrays. Untouched legacy blocks remain
 opaque and are copied exactly. The opt-in corpus runner independently decodes
-every versioned KV3 block in exported resources, records block counts and
+every versioned KV3 block a repair rebuilt in exported resources, records block counts and
 failures per mod, and can retain overlays with `DMM_COMPAT_EXPORT_ROOT` for
 external inspection. Successful rebuilding does not establish in-game acceptance.
 
@@ -403,6 +418,12 @@ is not an in-game acceptance test.
 Partial interfaces missing camera attachments can inherit those attachments when
 the rigs are equivalent. Required attachment names are read from the current
 model's `AttachmentCameraData`, including additional poses and alternate forms.
+When the mod keeps its own `AttachmentCameraData`, the names it lists are
+required instead, and only names the current game mesh provides are restored.
+Every embedded mesh with attachments receives the missing points, since each
+LOD carries its own copy. A listed name that no mesh carries after repair is
+reported as `missingCameraAttachments`, under camera and aim; names starting
+with `portrait_` only frame the HUD portrait and stay informational.
 If the current attachments need a missing control bone,
 the manager can append an isolated root leaf with zero deformation bounds to a
 single embedded mesh. Its current bind pose, flags, and inverse bind matrix come

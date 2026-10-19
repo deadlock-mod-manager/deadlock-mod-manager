@@ -1372,7 +1372,15 @@ fn legacy_cat_bindings_and_camera_preserve_authored_geometry() {
     model_animation::prepare(&resources, &sources, &inputs, &mut repairs, &mut warnings).unwrap();
   assert!(animations.contains_key(path), "{warnings:?}");
   let repaired =
-    model_camera::prepare(&resources, &sources, &inputs, &animations, &mut repairs).unwrap();
+    model_camera::prepare(
+      &resources,
+      &sources,
+      &inputs,
+      &animations.keys().cloned().collect(),
+      &animations,
+      &mut repairs,
+    )
+    .unwrap();
   assert!(
     repairs.iter().any(|repair| matches!(
       repair.kind,
@@ -1539,7 +1547,15 @@ fn legacy_sliver_animation_activation_contract() {
   let output =
     model_animation::prepare(&resources, &sources, &inputs, &mut repairs, &mut warnings).unwrap();
   let final_models =
-    model_camera::prepare(&resources, &sources, &inputs, &output, &mut repairs).unwrap();
+    model_camera::prepare(
+      &resources,
+      &sources,
+      &inputs,
+      &output.keys().cloned().collect(),
+      &output,
+      &mut repairs,
+    )
+    .unwrap();
   let live = std::env::var("DMM_COMPAT_LIVE_OVERLAY")
     .ok()
     .map(|path| VpkArchive::open(Path::new(&path)).unwrap());
@@ -1656,7 +1672,15 @@ fn legacy_mina_animation_and_camera_contract() {
     model_animation::prepare(&resources, &sources, &inputs, &mut repairs, &mut warnings).unwrap();
   assert!(animations.contains_key(path), "{warnings:?}");
   let output =
-    model_camera::prepare(&resources, &sources, &inputs, &animations, &mut repairs).unwrap();
+    model_camera::prepare(
+      &resources,
+      &sources,
+      &inputs,
+      &animations.keys().cloned().collect(),
+      &animations,
+      &mut repairs,
+    )
+    .unwrap();
   let (_, model, _) = decode_compiled_data(&output[path], path).unwrap();
   let current = resources.game_bytes(path).unwrap().unwrap();
   let (_, current_model, _) = decode_compiled_data(&current, path).unwrap();
@@ -1675,33 +1699,6 @@ fn legacy_mina_animation_and_camera_contract() {
   }
   let resource = Resource::parse(&output[path]).unwrap();
   let original = Resource::parse(&source).unwrap();
-  let first_mesh = original
-    .blocks()
-    .iter()
-    .position(|block| block.kind == *b"MDAT")
-    .unwrap();
-  for (index, block) in original.blocks().iter().enumerate() {
-    if index != first_mesh && ![*b"DATA", *b"RERL"].contains(&block.kind) {
-      assert_eq!(
-        original.get_block_by_index(index),
-        resource.get_block_by_index(index)
-      );
-    }
-  }
-  let before = kv3::decode(original.find_block(*b"MDAT").unwrap()).unwrap();
-  let after = kv3::decode(resource.find_block(*b"MDAT").unwrap()).unwrap();
-  for (field, value) in before.as_object().unwrap() {
-    if field == "m_attachments" {
-      let points = value.as_array().unwrap();
-      assert_eq!(
-        &after.get(field).unwrap().as_array().unwrap()[..points.len()],
-        points,
-        "authored attachments changed"
-      );
-    } else {
-      assert_eq!(after.get(field), Some(value), "mesh field changed: {field}");
-    }
-  }
   let bones: BTreeSet<_> = model
     .get("m_modelSkeleton")
     .unwrap()
@@ -1712,7 +1709,33 @@ fn legacy_mina_animation_and_camera_contract() {
     .iter()
     .filter_map(Kv3Value::as_str)
     .collect();
-  assert!(asset_compatibility::mesh_warnings(&after, &bones).is_empty());
+  for (index, block) in original.blocks().iter().enumerate() {
+    if block.kind != *b"MDAT" {
+      if ![*b"DATA", *b"RERL"].contains(&block.kind) {
+        assert_eq!(
+          original.get_block_by_index(index),
+          resource.get_block_by_index(index)
+        );
+      }
+      continue;
+    }
+    // Every LOD mesh carries its own camera points.
+    let before = kv3::decode(original.get_block_by_index(index).unwrap()).unwrap();
+    let after = kv3::decode(resource.get_block_by_index(index).unwrap()).unwrap();
+    for (field, value) in before.as_object().unwrap() {
+      if field == "m_attachments" {
+        let points = value.as_array().unwrap();
+        assert_eq!(
+          &after.get(field).unwrap().as_array().unwrap()[..points.len()],
+          points,
+          "authored attachments changed"
+        );
+      } else {
+        assert_eq!(after.get(field), Some(value), "mesh field changed: {field}");
+      }
+    }
+    assert!(asset_compatibility::mesh_warnings(&after, &bones).is_empty());
+  }
   let independent = source2_model::resource::Resource::parse(output[path].clone()).unwrap();
   let decoded = source2_model::kv3::parse(independent.block_bytes("DATA").unwrap()).unwrap();
   assert!(super::tests::independent_values_equal(&model, &decoded));

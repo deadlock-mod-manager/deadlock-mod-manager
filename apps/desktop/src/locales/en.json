@@ -2605,6 +2605,7 @@
         "missingResource": "Referenced resource is unavailable",
         "outdatedCameraAttachments": "Old camera attachments need author review; automatic migration skipped",
         "missingCameraInterface": "Required camera settings are missing; automatic repair skipped",
+        "missingCameraAttachments": "Camera point listed by the model is missing from its meshes",
         "missingSoundBindings": "Footstep and movement sounds are not bound; automatic repair skipped",
         "materialMapping": "Material repair needs a reviewed mapping",
         "materialInterface": "Material shader interface differs from the current reference",

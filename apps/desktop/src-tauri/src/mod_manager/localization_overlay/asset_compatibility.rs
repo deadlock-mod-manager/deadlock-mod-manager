@@ -40,6 +40,7 @@ pub enum WarningKind {
   InvalidHitbox,
   MissingResource,
   MissingCameraInterface,
+  MissingCameraAttachments,
   OutdatedCameraAttachments,
   MissingSoundBindings,
   MissingAnimationInterface,
@@ -327,6 +328,7 @@ pub(super) fn analyze(
           }
         }
       }
+      let mut camera_points = None;
       if path.ends_with(".vmdl_c") {
         let graphs = value
           .get("m_animGraph2Refs")
@@ -342,7 +344,11 @@ pub(super) fn analyze(
         if let Some(base) = resources.game_bytes(path)?
           && let Ok((_, vanilla, _)) = decode_compiled_data(&base, path)
         {
-          for field in super::model_camera::missing_camera_fields(&value, &vanilla) {
+          let missing_fields = super::model_camera::missing_camera_fields(&value, &vanilla);
+          if missing_fields.is_empty() {
+            camera_points = super::model_camera::camera_point_requirements(&value, &vanilla);
+          }
+          for field in missing_fields {
             add(WarningKind::MissingCameraInterface, field);
           }
           if super::model_sounds::missing(&value, &vanilla) {
@@ -360,6 +366,7 @@ pub(super) fn analyze(
       let Ok(resource) = Resource::parse(bytes) else {
         continue;
       };
+      let mut mesh_points: Option<BTreeSet<String>> = None;
       for (index, block) in resource.blocks().iter().enumerate().filter(|(_, block)| {
         block.kind == *b"MDAT" || (path.ends_with(".vmesh_c") && block.kind == *b"DATA")
       }) {
@@ -382,6 +389,20 @@ pub(super) fn analyze(
           .unwrap_or_default();
         for (kind, detail) in mesh_warnings(&mesh, &model_bones) {
           add(kind, detail);
+        }
+        if let Some(points) = mesh.get("m_attachments").and_then(Kv3Value::as_array) {
+          mesh_points.get_or_insert_default().extend(
+            points
+              .iter()
+              .filter_map(|point| point.get("key").and_then(Kv3Value::as_str))
+              .map(str::to_owned),
+          );
+        }
+      }
+      // A listed camera point that no mesh carries leaves that camera unusable.
+      if let (Some(required), Some(present)) = (camera_points, mesh_points) {
+        for name in required.difference(&present) {
+          add(WarningKind::MissingCameraAttachments, name.clone());
         }
       }
     }

@@ -23,6 +23,7 @@ fn point(name: &str, parent: &str, offset: [f64; 3], q: [f64; 4]) -> Kv3Value {
           "m_bInfluenceRootTransform".into(),
           Kv3Value::Array(vec![Kv3Value::Bool(false); 3]),
         ),
+        ("m_influenceWeights".into(), array(&[1.0, 0.0, 0.0])),
         (
           "m_vInfluenceOffsets".into(),
           Kv3Value::Array(vec![array(&offset), array(&[0.0; 3]), array(&[0.0; 3])]),
@@ -96,7 +97,7 @@ fn migrates_every_mesh_and_preserves_authored_offsets_and_other_blocks() {
       continue;
     }
     let mut expected = mesh(OLD_FRAME);
-    migrate_mesh(&mut expected).unwrap();
+    migrate_mesh(&mut expected, None).unwrap();
     assert_eq!(kv3::decode(b).unwrap(), expected);
     let point = attachment(&expected, "standing_pivot").unwrap();
     assert_eq!(
@@ -142,7 +143,7 @@ fn translated_root_keeps_authored_bind_and_receives_the_local_frame_migration() 
     }
   }
   let mut expected = mesh(OLD_FRAME);
-  migrate_mesh(&mut expected).unwrap();
+  migrate_mesh(&mut expected, None).unwrap();
   assert_eq!(
     kv3::decode(after.find_block(*b"MDAT").unwrap()).unwrap(),
     expected
@@ -187,7 +188,7 @@ fn tolerates_exporter_root_rotation_drift_without_changing_the_authored_bind() {
         );
       } else {
         let mut expected = mesh(OLD_FRAME);
-        migrate_mesh(&mut expected).unwrap();
+        migrate_mesh(&mut expected, None).unwrap();
         assert_eq!(
           kv3::decode(after.get_block_by_index(index).unwrap()).unwrap(),
           expected
@@ -445,7 +446,7 @@ fn real_model_preserves_geometry_and_inactive_influences() {
     let raw = res.get_block_by_index(index).unwrap();
     let (mut mesh, mut encoding) = kv3::decode_preserving(raw).unwrap();
     if pivots(&mesh, OLD_FRAME) {
-      migrate_mesh(&mut mesh).unwrap();
+      migrate_mesh(&mut mesh, None).unwrap();
       kv3::normalize_numeric_array_encoding(&mesh, &mut encoding).unwrap();
       let format = kv3::Format::from_payload(raw).unwrap();
       let payload = kv3::encode_preserving(&mesh, &encoding, &format).unwrap();
@@ -505,7 +506,7 @@ fn real_model_preserves_geometry_and_inactive_influences() {
     }
     let (mut expected, mut expected_encoding) = kv3::decode_preserving(original).unwrap();
     if pivots(&expected, OLD_FRAME) {
-      migrate_mesh(&mut expected).unwrap();
+      migrate_mesh(&mut expected, None).unwrap();
       kv3::normalize_numeric_array_encoding(&expected, &mut expected_encoding).unwrap();
       round_float_values(&mut expected, &expected_encoding);
     }
@@ -528,4 +529,184 @@ fn real_model_preserves_geometry_and_inactive_influences() {
       "post-update"
     }
   );
+}
+
+fn with_camera_text(mut model: Kv3Value, text: &str) -> Kv3Value {
+  let Kv3Value::Object(fields) = &mut model else {
+    panic!()
+  };
+  fields.push((
+    "m_modelInfo".into(),
+    Kv3Value::Object(vec![(
+      "m_keyValueText".into(),
+      Kv3Value::String(text.into()),
+    )]),
+  ));
+  model
+}
+
+fn points_mut(mesh: &mut Kv3Value) -> &mut Vec<Kv3Value> {
+  let Kv3Value::Array(points) = mesh.get_mut("m_attachments").unwrap() else {
+    panic!()
+  };
+  points
+}
+
+fn turned(q: [f64; 4], radians: f64) -> [f64; 4] {
+  let [x, y, z, w] = q;
+  let (s, c) = (radians / 2.0).sin_cos();
+  [x * c + y * s, y * c - x * s, z * c + w * s, w * c - z * s]
+}
+
+const PITCH: [f64; 4] = [
+  0.0,
+  std::f64::consts::FRAC_1_SQRT_2,
+  0.0,
+  std::f64::consts::FRAC_1_SQRT_2,
+];
+const OLD_PITCH: [f64; 4] = [
+  0.0,
+  0.0,
+  -std::f64::consts::FRAC_1_SQRT_2,
+  std::f64::consts::FRAC_1_SQRT_2,
+];
+
+#[test]
+fn tweaked_or_partial_old_pivots_migrate_with_their_authored_transforms() {
+  let base = container(&model(), &[mesh(IDENTITY)]);
+  let mut partial = mesh(OLD_FRAME);
+  points_mut(&mut partial).remove(1);
+  for authored in [mesh(turned(OLD_FRAME, 10_f64.to_radians())), partial] {
+    let original = container(&model(), &[authored.clone()]);
+    let repaired = repair(&original, &base).unwrap().unwrap();
+    let mut expected = authored;
+    migrate_mesh(&mut expected, None).unwrap();
+    let after = Resource::parse(&repaired).unwrap();
+    assert_eq!(
+      kv3::decode(after.find_block(*b"MDAT").unwrap()).unwrap(),
+      expected
+    );
+    assert!(repair(&repaired, &base).unwrap().is_none());
+  }
+}
+
+#[test]
+fn partially_migrated_meshes_convert_only_their_stale_root_attachments() {
+  let base = container(&model(), &[mesh(IDENTITY)]);
+  let mut authored = mesh(IDENTITY);
+  let points = points_mut(&mut authored);
+  points[2] = point("aim", "root_motion", [5.0, 70.0, 6.0], OLD_FRAME);
+  points.push(point(
+    "near_01",
+    "root_motion",
+    [-19.0, 124.0, -1.0],
+    OLD_PITCH,
+  ));
+  points.push(point("far_01", "root_motion", [-43.0, 192.0, 27.0], OLD_PITCH));
+  points.push(point(
+    "near_02",
+    "root_motion",
+    [-5.0, -19.0, 108.0],
+    [0.0, -PITCH[1], 0.0, PITCH[3]],
+  ));
+  let listed = with_camera_text(
+    model(),
+    r#"{ AttachmentCameraData = [ { attachment_name = "near_01" } { attachment_name = "near_02" } ] }"#,
+  );
+  let original = container(&listed, &[authored.clone(), authored.clone()]);
+  let repaired = repair(&original, &base).unwrap().unwrap();
+  let mut expected = authored;
+  migrate_mesh(
+    &mut expected,
+    Some(&BTreeSet::from(["aim".into(), "near_01".into()])),
+  )
+  .unwrap();
+  let after = Resource::parse(&repaired).unwrap();
+  for (index, block) in after.blocks().iter().enumerate() {
+    if block.kind == *b"MDAT" {
+      let mesh = kv3::decode(after.get_block_by_index(index).unwrap()).unwrap();
+      assert_eq!(mesh, expected);
+      assert!(same_rotation(
+        rotation(attachment(&mesh, "near_01").unwrap()).unwrap(),
+        PITCH
+      ));
+    }
+  }
+  assert!(repair(&repaired, &base).unwrap().is_none());
+}
+
+/// Packs a game model with a complete camera interface and an old skin, then
+/// plans the skin's repairs.
+fn camera_interface_plan(
+  temp: &std::path::Path,
+  skin_text: &str,
+  skin_meshes: &[Kv3Value],
+) -> (super::super::LocalizationOverlayPlan, Kv3Value) {
+  use super::super::{LocalizationModInput, LocalizationOverlayPlan, resources};
+  let citadel = temp.join("citadel");
+  let path = "models/heroes/test/test.vmdl_c";
+  let mut game_mesh = mesh(IDENTITY);
+  let near = point("near_00", "root_motion", [-14.0, -19.0, 113.0], IDENTITY);
+  points_mut(&mut game_mesh).push(near.clone());
+  let game_model = with_camera_text(
+    model(),
+    r#"{ CitadelCameraSettings_t = { m_flCameraHeightStanding = 80.0 } AttachmentCameraData = [ { attachment_name = "near_00" } ] }"#,
+  );
+  let current = container(&game_model, &[game_mesh]);
+  resources::tests::pack(&citadel, "pak01", &[(path, &current)]);
+  let original = container(&with_camera_text(model(), skin_text), skin_meshes);
+  let archive = resources::tests::pack(temp, "skin", &[(path, &original)]);
+  let mods = [LocalizationModInput {
+    mod_id: "skin".into(),
+    vpks: vec![archive],
+  }];
+  let plan =
+    LocalizationOverlayPlan::build_selected(&citadel, &mods, &BTreeSet::from(["skin".into()]))
+      .unwrap();
+  (plan, near.get("value").unwrap().clone())
+}
+
+#[test]
+fn restored_camera_points_stay_in_the_current_frame_on_every_mesh() {
+  let temp = tempfile::tempdir().unwrap();
+  let cases = [
+    // Old pivots and no camera list: the frame migration runs before points are added.
+    (
+      "{ CitadelCameraSettings_t = { m_flCameraHeightStanding = 70.0 } }",
+      mesh(OLD_FRAME),
+    ),
+    // A camera list naming a point the meshes lack.
+    (
+      r#"{ CitadelCameraSettings_t = { m_flCameraHeightStanding = 70.0 } AttachmentCameraData = [ { attachment_name = "near_00" } ] }"#,
+      mesh(IDENTITY),
+    ),
+  ];
+  for (index, (text, skin_mesh)) in cases.into_iter().enumerate() {
+    let root = temp.path().join(index.to_string());
+    let (plan, near) = camera_interface_plan(&root, text, &[skin_mesh.clone(), skin_mesh]);
+    let repaired = &plan.camera_models["models/heroes/test/test.vmdl_c"];
+    let resource = Resource::parse(repaired).unwrap();
+    let mut meshes = 0;
+    for (block_index, block) in resource.blocks().iter().enumerate() {
+      if block.kind != *b"MDAT" {
+        continue;
+      }
+      meshes += 1;
+      let mesh = kv3::decode(resource.get_block_by_index(block_index).unwrap()).unwrap();
+      assert!(pivots(&mesh, IDENTITY), "case {index}");
+      assert!(
+        super::super::runtime_values_equal(attachment(&mesh, "near_00").unwrap(), &near),
+        "case {index}: restored point was converted again"
+      );
+    }
+    assert_eq!(meshes, 2);
+    assert!(
+      plan
+        .analysis
+        .asset_warnings
+        .iter()
+        .all(|warning| !matches!(warning.kind, WarningKind::MissingCameraAttachments)),
+      "case {index}"
+    );
+  }
 }

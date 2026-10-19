@@ -155,7 +155,8 @@ pub(crate) fn symptom(finding: Finding) -> ModHealthSymptom {
       | AssetWarningKind::MissingAnimationInterface
       | AssetWarningKind::AnimationMapping
       | AssetWarningKind::MissingSoundBindings => Animations,
-      AssetWarningKind::OutdatedCameraAttachments => CameraAim,
+      AssetWarningKind::OutdatedCameraAttachments
+      | AssetWarningKind::MissingCameraAttachments => CameraAim,
       AssetWarningKind::MaterialMapping | AssetWarningKind::MaterialInterface => Appearance,
       AssetWarningKind::ModelMapping | AssetWarningKind::OverlappingModel => Model,
       AssetWarningKind::InvalidSkeleton
@@ -204,7 +205,9 @@ fn is_informational(warning: &AssetWarning) -> bool {
     AssetWarningKind::MissingResource => {
       is_missing_texture(warning) || warning.detail.to_ascii_lowercase().ends_with(".vanmgrph")
     }
-    AssetWarningKind::InvalidAttachment => warning.detail.starts_with("portrait_"),
+    AssetWarningKind::InvalidAttachment | AssetWarningKind::MissingCameraAttachments => {
+      warning.detail.starts_with("portrait_")
+    }
     _ => false,
   }
 }
@@ -217,6 +220,7 @@ fn affects_mod(analysis: &LocalizationOverlayAnalysis, warning: &AssetWarning) -
       && matches!(
         warning.kind,
         AssetWarningKind::MissingCameraInterface
+          | AssetWarningKind::MissingCameraAttachments
           | AssetWarningKind::MissingAnimationInterface
           | AssetWarningKind::OutdatedCameraAttachments
           | AssetWarningKind::ModelMapping

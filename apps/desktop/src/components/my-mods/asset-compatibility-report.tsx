@@ -28,6 +28,7 @@ export interface AssetWarning {
     | "invalidHitbox"
     | "missingResource"
     | "missingCameraInterface"
+    | "missingCameraAttachments"
     | "outdatedCameraAttachments"
     | "missingSoundBindings"
     | "missingAnimationInterface"

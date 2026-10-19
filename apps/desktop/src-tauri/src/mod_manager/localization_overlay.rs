@@ -800,10 +800,19 @@ impl LocalizationOverlayPlan {
       &mut asset_repairs,
       &mut asset_warnings,
     )?;
-    let animation_models = model_animation::prepare(
+    let mut animation_models = model_animation::prepare(
       resources,
       &camera_sources,
       &animation_inputs,
+      &mut asset_repairs,
+      &mut asset_warnings,
+    )?;
+    let animated = animation_models.keys().cloned().collect();
+    // Convert old attachments first, so points restored from the game are not converted again.
+    camera_attachment_frame::prepare(
+      resources,
+      &camera_sources,
+      &mut animation_models,
       &mut asset_repairs,
       &mut asset_warnings,
     )?;
@@ -811,6 +820,7 @@ impl LocalizationOverlayPlan {
       resources,
       &camera_sources,
       &animation_inputs,
+      &animated,
       &animation_models,
       &mut asset_repairs,
     )?;
@@ -823,9 +833,6 @@ impl LocalizationOverlayPlan {
       &mut asset_repairs,
       &mut asset_warnings,
     )?);
-    camera_attachment_frame::prepare(
-      resources, &camera_sources, &mut camera_models, &mut asset_repairs, &mut asset_warnings,
-    )?;
     let material_assets = material_compatibility::prepare(
       resources,
       &camera_models,
