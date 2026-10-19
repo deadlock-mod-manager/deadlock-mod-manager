@@ -1,9 +1,11 @@
 import { ProviderError } from "@deadlock-mods/common/client-errors";
 import { z } from "zod";
 import { fetch } from "./fetch";
+import { runtimeServiceOrigin } from "./runtime-bootstrap";
 
-const CONTRIBUTORS_URL =
-  "https://api.github.com/repos/deadlock-mod-manager/deadlock-mod-manager/contributors?per_page=100";
+const GITHUB_API_ORIGIN = "https://api.github.com";
+const CONTRIBUTORS_PATH =
+  "/repos/deadlock-mod-manager/deadlock-mod-manager/contributors?per_page=100";
 
 export type CoreMember = {
   name: string;
@@ -58,7 +60,8 @@ export type Contributor = {
 
 /** Community contributors from GitHub, most commits first, without bots or the core team. */
 export const getContributors = async (): Promise<Contributor[]> => {
-  const res = await fetch(CONTRIBUTORS_URL, {
+  const origin = runtimeServiceOrigin("github", GITHUB_API_ORIGIN);
+  const res = await fetch(`${origin}${CONTRIBUTORS_PATH}`, {
     headers: { Accept: "application/vnd.github+json" },
   });
   if (!res.ok) {

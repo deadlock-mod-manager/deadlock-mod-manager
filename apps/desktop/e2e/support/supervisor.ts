@@ -70,6 +70,12 @@ const startupFixtureRoutes: readonly FixtureRoute[] = [
     status: 200,
     body: '{"appnews":{"newsitems":[]}}',
   },
+  {
+    method: "GET",
+    path: "/repos/deadlock-mod-manager/deadlock-mod-manager/contributors",
+    status: 200,
+    body: "[]",
+  },
   { method: "GET", path: "/custom-settings", status: 200, body: "[]" },
   {
     method: "GET",
