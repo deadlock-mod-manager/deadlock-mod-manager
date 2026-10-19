@@ -66,7 +66,7 @@ import { Trash, UploadSimple } from "@phosphor-icons/react";
 import { MagnifyingGlass } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { platform } from "@tauri-apps/plugin-os";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { HintAnchor } from "@/components/feature-hints/hint-anchor";
@@ -770,7 +770,6 @@ const MyMods = () => {
   );
   const [librarySearchQuery, setLibrarySearchQuery] = useState("");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const scrollPositionRef = useRef<number>(0);
 
   const { results, query, setQuery } = useSearch({
     data: mods,
@@ -870,7 +869,6 @@ const MyMods = () => {
   // Reset to first page whenever the filtered set changes, and clamp if totalPages shrinks
   useEffect(() => {
     setPage(0);
-    scrollPositionRef.current = 0;
   }, [
     activeTab,
     filterMode,
@@ -887,7 +885,6 @@ const MyMods = () => {
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    scrollPositionRef.current = 0;
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -918,12 +915,6 @@ const MyMods = () => {
       toast.error(t("myMods.copyModListFailed"));
     }
   };
-
-  useLayoutEffect(() => {
-    if (scrollContainerRef.current && scrollPositionRef.current > 0) {
-      scrollContainerRef.current.scrollTop = scrollPositionRef.current;
-    }
-  });
 
   return (
     <div className='flex min-h-0 w-full flex-1 flex-col px-4'>
@@ -1140,10 +1131,7 @@ const MyMods = () => {
 
       <div
         className='min-h-0 flex-1 overflow-y-auto overflow-x-hidden pt-8 pb-4'
-        ref={scrollContainerRef}
-        onScroll={(e) => {
-          scrollPositionRef.current = e.currentTarget.scrollTop;
-        }}>
+        ref={scrollContainerRef}>
         <ErrorBoundary>
           <Tabs
             className='flex w-full flex-col gap-4'
