@@ -7,7 +7,7 @@
   "faqs": {
     "better": {
       "question": "Which is better, Deadlock Mod Manager or Grimoire?",
-      "answer": "Since Deadlock Mod Manager V2, both apps cover the same ground: GameBanana installs, conflicts and load order, shareable profiles, hero skins with 3D previews, crosshairs, autoexec and match stats. Pick the interface you like using. You can try Deadlock Mod Manager's in the live preview on this page."
+      "answer": "Since Deadlock Mod Manager V2, both apps cover the same ground: GameBanana installs, conflicts and load order, repairs for mods a game update broke, shareable profiles, hero skins with 3D previews, crosshairs, autoexec and match stats. Pick the interface you like using. You can try Deadlock Mod Manager's in the live preview on this page."
     },
     "same": {
       "question": "Is Grimoire the same as Deadlock Mod Manager?",
@@ -38,6 +38,10 @@
       "gamebanana": "Browse and install GameBanana mods in-app",
       "sounds": "Sounds alongside mods",
       "conflicts": "Conflict detection and load order",
+      "repair": "Repairs for mods a game update broke",
+      "crashes": "Help finding which mod crashed the game",
+      "performance": "Performance configs for more frames",
+      "foundry": "A Foundry for making your own mods",
       "profiles": "Shareable mod profiles",
       "import": "Import from the other app",
       "skins": "Hero skins with a 3D preview",
