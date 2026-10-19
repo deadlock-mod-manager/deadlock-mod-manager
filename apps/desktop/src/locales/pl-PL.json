@@ -6019,6 +6019,155 @@
     "gameRunning": "",
     "checkingFiles": ""
   },
+  "bisect": {
+    "entry": "",
+    "answers": {
+      "broken": "",
+      "fine": "",
+      "unsure": "",
+      "unsureHint": ""
+    },
+    "explainer": {
+      "eyebrow": "",
+      "steps": {
+        "split": {
+          "title": "",
+          "body": ""
+        },
+        "check": {
+          "title": "",
+          "body": ""
+        },
+        "narrow": {
+          "title": "",
+          "body": ""
+        },
+        "restore": {
+          "title": "",
+          "body": ""
+        }
+      },
+      "illustration": {
+        "testing": "",
+        "launch": "",
+        "brokenHint": "",
+        "fineHint": ""
+      },
+      "goToStep": "",
+      "back": "",
+      "next": "",
+      "skip": "",
+      "chooseMods": "",
+      "done": ""
+    },
+    "setup": {
+      "title": "",
+      "description": "",
+      "howItWorks": "",
+      "noMods": "",
+      "close": "",
+      "listHeading": "",
+      "selectAll": "",
+      "selectNone": "",
+      "search": "",
+      "noMatches": "",
+      "uncheckHint": "",
+      "estimate": "",
+      "pickOne": "",
+      "safe": "",
+      "leftOut": "",
+      "crashCheckOff": "",
+      "cancel": "",
+      "start": "",
+      "starting": ""
+    },
+    "banner": {
+      "title": "",
+      "round": "",
+      "applying": "",
+      "applyInterrupted": "",
+      "continue": "",
+      "readyBaseline_one": "",
+      "readyBaseline_other": "",
+      "ready_one": "",
+      "ready_other": "",
+      "launch": "",
+      "playing": "",
+      "answerNow": "",
+      "crashed": "",
+      "questionBaseline": "",
+      "question": "",
+      "result": "",
+      "seeResult": "",
+      "restoring": "",
+      "restoreInterrupted": "",
+      "finishRestoring": "",
+      "wrongProfile": "",
+      "switchBack": "",
+      "discard": "",
+      "undo": "",
+      "howItWorks": "",
+      "stop": ""
+    },
+    "stop": {
+      "title": "",
+      "body_one": "",
+      "body_other": "",
+      "confirm": "",
+      "cancel": ""
+    },
+    "discard": {
+      "title": "",
+      "body": "",
+      "confirm": "",
+      "cancel": ""
+    },
+    "result": {
+      "single": {
+        "title": "",
+        "body_one": "",
+        "body_other": "",
+        "tip": ""
+      },
+      "together": {
+        "title": "",
+        "body_one": "",
+        "body_other": "",
+        "tip": ""
+      },
+      "notMods": {
+        "title": "",
+        "body": "",
+        "tip": ""
+      },
+      "viewMod": "",
+      "undo": "",
+      "restore": "",
+      "restoreAll": "",
+      "disableCulprits_one": "",
+      "disableCulprits_other": "",
+      "removedMod": ""
+    },
+    "recovery": {
+      "outdated": "",
+      "error": "",
+      "restore": "",
+      "forget": ""
+    },
+    "toasts": {
+      "restored": "",
+      "restoredWithout_one": "",
+      "restoredWithout_other": "",
+      "gameRunning": "",
+      "wrongProfile": "",
+      "switchFailed": "",
+      "stepFailed": "",
+      "roundChanged": "",
+      "switchBlocked": "",
+      "switchBackFailed": "",
+      "crashCounted": ""
+    }
+  },
   "launchHealth": {
     "duration": {
       "seconds_one": "",
@@ -6039,7 +6188,9 @@
       "optOut": "",
       "closedIt": "",
       "turnOffAndRelaunch": "",
-      "launchAgain": ""
+      "launchAgain": "",
+      "findBrokenMod": "",
+      "findBrokenModHint": ""
     },
     "changes": {
       "perfConfig": {
@@ -6073,6 +6224,7 @@
     "toast": {
       "title": "",
       "review": "",
+      "findMod": "",
       "perfConfig": "",
       "modsAdded_one": "",
       "modsAdded_other": "",
@@ -6192,6 +6344,10 @@
       "body": ""
     },
     "loadOrder": {
+      "title": "",
+      "body": ""
+    },
+    "findBrokenMod": {
       "title": "",
       "body": ""
     },
