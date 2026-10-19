@@ -1,6 +1,14 @@
 {
   description = "Deadlock Mod Manager - A mod manager for the Valve game Deadlock";
 
+  # CI pushes nightly builds here, so users can download them instead of compiling
+  nixConfig = {
+    extra-substituters = [ "https://deadlock-mod-manager.cachix.org" ];
+    extra-trusted-public-keys = [
+      "deadlock-mod-manager.cachix.org-1:wUjtzL6yN2i9zTq1YrXHBr0mx3LP7tBGsosk3N+/A/M="
+    ];
+  };
+
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";

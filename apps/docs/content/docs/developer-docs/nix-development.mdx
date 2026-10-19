@@ -207,6 +207,16 @@ nix run .#nightly
 
 This produces a fully self-contained package with all dependencies included.
 
+### Binary cache
+
+CI pushes nightly builds from `main` to the [`deadlock-mod-manager`](https://deadlock-mod-manager.cachix.org) Cachix cache. The flake declares the cache in `nixConfig`, so Nix offers to use it the first time you build. Accept it to download the nightly instead of compiling it. To trust the cache permanently:
+
+```bash
+cachix use deadlock-mod-manager
+```
+
+Builds of other commits, or of local changes, aren't in the cache and still compile locally. Stable releases come from nixpkgs, which is cached on `cache.nixos.org`.
+
 ## Formatting Nix Files
 
 Format all Nix files in the project using:
