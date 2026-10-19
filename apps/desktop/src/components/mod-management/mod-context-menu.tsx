@@ -99,7 +99,7 @@ export const ModContextMenu = ({
           <HintAnchor
             hintId='mod-context-menu'
             onShowMe={openContextMenuOn}
-            side='right'>
+            side='bottom'>
             {children}
           </HintAnchor>
         ) : (

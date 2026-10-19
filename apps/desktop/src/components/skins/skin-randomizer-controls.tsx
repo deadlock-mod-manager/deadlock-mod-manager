@@ -87,9 +87,9 @@ export const HeroRandomizerBar = ({
   return (
     <div className='mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border bg-muted/30 px-3 py-2'>
       <HintAnchor
-        align='start'
         eligible={!enabled && group.skins.length >= RANDOMIZER_MIN_POOL}
-        hintId='skin-randomizer'>
+        hintId='skin-randomizer'
+        side='right'>
         <div className='-m-1 flex items-center gap-2 rounded-md p-1'>
           <Shuffle className='h-4 w-4 shrink-0 text-muted-foreground' />
           <Switch
