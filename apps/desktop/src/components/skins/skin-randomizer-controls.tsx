@@ -12,6 +12,7 @@ import { Separator } from "@deadlock-mods/ui/components/separator";
 import { Switch } from "@deadlock-mods/ui/components/switch";
 import { ChevronDown, Shuffle } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
+import { HintAnchor } from "@/components/feature-hints/hint-anchor";
 import type { HeroModGroup } from "@/lib/mods/hero-mods";
 import {
   bulkSelectableSkins,
@@ -46,9 +47,14 @@ export const HeroRandomizerBar = ({
 }: HeroRandomizerBarProps) => {
   const { t } = useTranslation();
   const enabled = usePersistedStore((state) => state.skinRandomizerEnabled);
-  const setEnabled = usePersistedStore(
+  const setSkinRandomizerEnabled = usePersistedStore(
     (state) => state.setSkinRandomizerEnabled,
   );
+  const markFeatureUsed = usePersistedStore((state) => state.markFeatureUsed);
+  const setEnabled = (checked: boolean) => {
+    setSkinRandomizerEnabled(checked);
+    if (checked) markFeatureUsed("skin-randomizer");
+  };
   const defaultHeroes = usePersistedStore(
     (state) => state.randomizerDefaultHeroes,
   );
@@ -80,17 +86,22 @@ export const HeroRandomizerBar = ({
 
   return (
     <div className='mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border bg-muted/30 px-3 py-2'>
-      <div className='flex items-center gap-2'>
-        <Shuffle className='h-4 w-4 shrink-0 text-muted-foreground' />
-        <Switch
-          checked={enabled}
-          id='skin-randomizer'
-          onCheckedChange={setEnabled}
-        />
-        <Label className='font-semibold text-sm' htmlFor='skin-randomizer'>
-          {t("skins.randomizer.title")}
-        </Label>
-      </div>
+      <HintAnchor
+        align='start'
+        eligible={!enabled && group.skins.length >= RANDOMIZER_MIN_POOL}
+        hintId='skin-randomizer'>
+        <div className='-m-1 flex items-center gap-2 rounded-md p-1'>
+          <Shuffle className='h-4 w-4 shrink-0 text-muted-foreground' />
+          <Switch
+            checked={enabled}
+            id='skin-randomizer'
+            onCheckedChange={setEnabled}
+          />
+          <Label className='font-semibold text-sm' htmlFor='skin-randomizer'>
+            {t("skins.randomizer.title")}
+          </Label>
+        </div>
+      </HintAnchor>
       {hasSkins && (
         <>
           <Separator className='h-5' orientation='vertical' />

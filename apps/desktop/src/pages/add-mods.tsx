@@ -33,7 +33,7 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft } from "@deadlock-mods/ui/icons";
 import { UploadSimple } from "@phosphor-icons/react";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
@@ -61,6 +61,7 @@ import {
   getFileName,
 } from "@/lib/file-utils";
 import logger from "@/lib/logger";
+import { takePendingDrop } from "@/lib/pending-drop";
 import { cn } from "@/lib/utils";
 import { type AddModFormValues, addModSchema } from "@/types/add-mods";
 
@@ -116,6 +117,12 @@ const AddMods = () => {
     handleFilesDetected,
     handleError,
   );
+
+  // Picks up a file dropped elsewhere in the window (see GlobalFileDrop).
+  useEffect(() => {
+    const source = takePendingDrop();
+    if (source) handleFilesDetected(source);
+  }, []);
 
   const handleDropZoneKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLDivElement>) => {

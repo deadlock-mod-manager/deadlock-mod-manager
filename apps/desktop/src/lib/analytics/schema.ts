@@ -1,4 +1,5 @@
 import type { ModDto } from "@deadlock-mods/shared";
+import type { FeatureHintId } from "@/lib/feature-hints";
 
 export type AnalyticsProperties = Record<
   string,
@@ -168,6 +169,11 @@ export type AnalyticsEvents = {
       | "dismiss"
       | "closed_by_user"
       | "opt_out";
+  };
+  feature_hint_shown: { hint_id: FeatureHintId };
+  feature_hint_closed: {
+    hint_id: FeatureHintId;
+    action: "show_me" | "got_it" | "ignored" | "used" | "tips_off";
   };
 };
 export type AnalyticsMilestone =

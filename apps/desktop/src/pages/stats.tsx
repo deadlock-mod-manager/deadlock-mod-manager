@@ -17,6 +17,7 @@ import {
 } from "@deadlock-mods/ui/icons";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { HintAnchor } from "@/components/feature-hints/hint-anchor";
 import PageTitle from "@/components/shared/page-title";
 import { AccountPrompt } from "@/components/stats/account-prompt";
 import { DashboardDataProvider } from "@/components/stats/dashboard/dashboard-context";
@@ -51,6 +52,7 @@ import {
   type StatsMatchMode,
   type StatsScope,
 } from "@/lib/stats/scope";
+import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 const StatsSkeleton = () => (
@@ -68,11 +70,25 @@ const StatsSkeleton = () => (
   </div>
 );
 
+const CUSTOMIZE_HINT_MIN_VISITS = 5;
+
 const Stats = () => {
   const { t } = useTranslation();
   const { analytics } = useAnalyticsContext();
   const dashboard = useDashboardEditor();
   const { activeTab, editing } = dashboard;
+  const markFeatureUsed = usePersistedStore((state) => state.markFeatureUsed);
+  const statsVisits = usePersistedStore(
+    (state) => state.featureHints.counters.statsVisits ?? 0,
+  );
+  const startEditing = () => {
+    dashboard.startEditing();
+    markFeatureUsed("stats-customize");
+  };
+
+  useEffect(() => {
+    usePersistedStore.getState().countFeatureHintEvent("statsVisits");
+  }, []);
 
   const {
     accounts,
@@ -118,16 +134,22 @@ const Stats = () => {
         {...dashboard.tabActions}
       />
       {!editing && (
-        <Button
-          className='h-9 shrink-0 gap-1.5'
-          data-testid='stats-customize'
-          onClick={dashboard.startEditing}
-          size='sm'
-          title={t("stats.dashboard.customizeHint")}
-          variant='outline'>
-          <Pencil className='h-3.5 w-3.5' />
-          {t("stats.dashboard.customize")}
-        </Button>
+        <HintAnchor
+          align='end'
+          eligible={statsVisits >= CUSTOMIZE_HINT_MIN_VISITS}
+          hintId='stats-customize'
+          onShowMe={startEditing}>
+          <Button
+            className='h-9 shrink-0 gap-1.5'
+            data-testid='stats-customize'
+            onClick={startEditing}
+            size='sm'
+            title={t("stats.dashboard.customizeHint")}
+            variant='outline'>
+            <Pencil className='h-3.5 w-3.5' />
+            {t("stats.dashboard.customize")}
+          </Button>
+        </HintAnchor>
       )}
     </div>
   );
@@ -196,7 +218,7 @@ const Stats = () => {
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
-            <Button className='gap-1.5' onClick={dashboard.startEditing}>
+            <Button className='gap-1.5' onClick={startEditing}>
               <Pencil className='h-4 w-4' />
               {t("stats.dashboard.customize")}
             </Button>

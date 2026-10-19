@@ -67,6 +67,7 @@ import { platform } from "@tauri-apps/plugin-os";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import { HintAnchor } from "@/components/feature-hints/hint-anchor";
 import ModButton from "@/components/mod-browsing/mod-button";
 import NSFWBlur from "@/components/mod-browsing/nsfw-blur";
 import AudioPlayerPreview from "@/components/mod-management/audio-player-preview";
@@ -138,6 +139,9 @@ import { type LocalMod, ModStatus } from "@/types/mods";
 
 const PAGE_SIZE = 20;
 const CONFLICTS_TAB = "conflicts";
+const MENU_HINT_MIN_MODS = 8;
+const CONTEXT_MENU_HINT_MIN_MODS = 5;
+const MODS_FOLDER_HINT_MIN_OPENS = 3;
 type LibraryTab = ModFilter | typeof CONFLICTS_TAB;
 const MODS_STORE_PAGINATION_SETTING_ID = "mods-store-pagination";
 
@@ -235,6 +239,7 @@ type ModCardProps = {
   conflictStatus: ModConflictStatus | undefined;
   onShowConflicts: () => void;
   health: ModHealth | undefined;
+  contextMenuHint: boolean;
 };
 
 const GridModCard = ({
@@ -242,6 +247,7 @@ const GridModCard = ({
   conflictStatus,
   onShowConflicts,
   health,
+  contextMenuHint,
 }: ModCardProps) => {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
@@ -292,7 +298,7 @@ const GridModCard = ({
   ) : null;
 
   const cardContent = (
-    <ModContextMenu mod={mod}>
+    <ModContextMenu hint={contextMenuHint} mod={mod}>
       <Card className='flex h-full flex-col shadow'>
         <div className='relative'>
           <div
@@ -413,6 +419,7 @@ const ListModCard = ({
   conflictStatus,
   onShowConflicts,
   health,
+  contextMenuHint,
 }: ModCardProps) => {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
@@ -447,7 +454,7 @@ const ListModCard = ({
 
   return (
     <>
-      <ModContextMenu mod={mod}>
+      <ModContextMenu hint={contextMenuHint} mod={mod}>
         <Card className='shadow'>
           <div className='flex items-center pr-4'>
             <div
@@ -598,19 +605,23 @@ const ModsList = ({
   conflictStatusByMod,
   onShowConflicts,
   healthById,
+  contextMenuHint,
 }: {
   healthById: ReadonlyMap<string, ModHealth>;
   mods: LocalMod[];
   viewMode: ViewMode;
   conflictStatusByMod: ReadonlyMap<string, ModConflictStatus>;
   onShowConflicts: () => void;
+  /** Points the right-click hint at the first card. */
+  contextMenuHint: boolean;
 }) => {
   if (viewMode === ViewMode.GRID) {
     return (
       <div className='grid grid-cols-[repeat(auto-fill,minmax(min(100%,14rem),1fr))] gap-3'>
-        {mods.map((mod) => (
+        {mods.map((mod, index) => (
           <GridModCard
             conflictStatus={conflictStatusByMod.get(mod.remoteId)}
+            contextMenuHint={contextMenuHint && index === 0}
             key={mod.remoteId ?? mod.id}
             mod={mod}
             onShowConflicts={onShowConflicts}
@@ -623,9 +634,10 @@ const ModsList = ({
 
   return (
     <div className='flex flex-col gap-3'>
-      {mods.map((mod) => (
+      {mods.map((mod, index) => (
         <ListModCard
           conflictStatus={conflictStatusByMod.get(mod.remoteId)}
+          contextMenuHint={contextMenuHint && index === 0}
           key={mod.remoteId ?? mod.id}
           mod={mod}
           onShowConflicts={onShowConflicts}
@@ -714,6 +726,18 @@ const MyMods = () => {
   );
   const [showModOrdering, setShowModOrdering] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
+  const markFeatureUsed = usePersistedStore((state) => state.markFeatureUsed);
+  const countFeatureHintEvent = usePersistedStore(
+    (state) => state.countFeatureHintEvent,
+  );
+  const modsFolderOpens = usePersistedStore(
+    (state) => state.featureHints.counters.modsFolderOpens ?? 0,
+  );
+  const openModOrdering = () => {
+    setShowModOrdering(true);
+    markFeatureUsed("load-order");
+  };
   const [page, setPage] = useState(0);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedHeroes, setSelectedHeroes] = useState<string[]>([]);
@@ -898,18 +922,24 @@ const MyMods = () => {
               {t("navigation.myMods")}
             </h1>
             <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant='ghost'
-                  size='icon'
-                  onClick={async () => {
-                    const activeProfile = getActiveProfile();
-                    const profileFolder = activeProfile?.folderName ?? null;
-                    await invoke("open_mods_folder", { profileFolder });
-                  }}
-                  icon={<FolderOpen className='h-4 w-4' />}
-                />
-              </TooltipTrigger>
+              <HintAnchor
+                align='start'
+                eligible={modsFolderOpens >= MODS_FOLDER_HINT_MIN_OPENS}
+                hintId='mods-folder-shortcut'>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    onClick={async () => {
+                      countFeatureHintEvent("modsFolderOpens");
+                      const activeProfile = getActiveProfile();
+                      const profileFolder = activeProfile?.folderName ?? null;
+                      await invoke("open_mods_folder", { profileFolder });
+                    }}
+                    icon={<FolderOpen className='h-4 w-4' />}
+                  />
+                </TooltipTrigger>
+              </HintAnchor>
               <TooltipContent>{t("settings.openModsFolder")}</TooltipContent>
             </Tooltip>
             {mods.length > 0 && (
@@ -974,12 +1004,36 @@ const MyMods = () => {
             {t("navigation.addMods")}
           </Button>
           <ImportSourceMenu />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size='icon' variant='outline'>
-                <EllipsisVertical className='h-4 w-4' />
-              </Button>
-            </DropdownMenuTrigger>
+          <DropdownMenu
+            onOpenChange={(open) => {
+              setActionsMenuOpen(open);
+              if (open) markFeatureUsed("my-mods-menu");
+            }}
+            open={actionsMenuOpen}>
+            <HintAnchor
+              align='end'
+              eligible={
+                isConflictDetectionEnabled &&
+                conflictCount > 0 &&
+                installedMods.length > 1
+              }
+              hintId='load-order'
+              onShowMe={openModOrdering}>
+              <HintAnchor
+                align='end'
+                eligible={mods.length >= MENU_HINT_MIN_MODS}
+                hintId='my-mods-menu'
+                onShowMe={() => setActionsMenuOpen(true)}>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    aria-label={t("myMods.moreActions")}
+                    size='icon'
+                    variant='outline'>
+                    <EllipsisVertical className='h-4 w-4' />
+                  </Button>
+                </DropdownMenuTrigger>
+              </HintAnchor>
+            </HintAnchor>
             <DropdownMenuContent align='end'>
               <DropdownMenuItem
                 onClick={startAnalysis}
@@ -990,7 +1044,7 @@ const MyMods = () => {
                   : t("addons.analyzeLocal")}
               </DropdownMenuItem>
               <DropdownMenuItem
-                onClick={() => setShowModOrdering(true)}
+                onClick={openModOrdering}
                 disabled={installedMods.length === 0}>
                 <ArrowUpDown className='h-4 w-4' />
                 {t("mods.manageOrder")}
@@ -1230,6 +1284,9 @@ const MyMods = () => {
                       onShowConflicts={showConflicts}
                       viewMode={viewMode}
                       healthById={healthById}
+                      contextMenuHint={
+                        mods.length >= CONTEXT_MENU_HINT_MIN_MODS
+                      }
                     />
                   </TabsContent>
                 )}
@@ -1242,6 +1299,9 @@ const MyMods = () => {
                       onShowConflicts={showConflicts}
                       viewMode={viewMode}
                       healthById={healthById}
+                      contextMenuHint={
+                        mods.length >= CONTEXT_MENU_HINT_MIN_MODS
+                      }
                     />
                   </TabsContent>
                 )}
@@ -1254,6 +1314,9 @@ const MyMods = () => {
                       onShowConflicts={showConflicts}
                       viewMode={viewMode}
                       healthById={healthById}
+                      contextMenuHint={
+                        mods.length >= CONTEXT_MENU_HINT_MIN_MODS
+                      }
                     />
                   </TabsContent>
                 )}

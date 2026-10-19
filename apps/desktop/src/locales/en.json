@@ -2339,6 +2339,7 @@
       "skipped": "Skipped the update for {{name}}"
     },
     "copyModList": "Copy mod list",
+    "moreActions": "More actions",
     "copyModListEnabled": "Enabled mods only",
     "copyModListAll": "Include disabled mods",
     "copyModListDisabled": "disabled",
@@ -3510,6 +3511,8 @@
     "autoResetGameinfoFailed": "Couldn't restore the vanilla game config after Deadlock closed. Use Reset to Vanilla in Settings.",
     "showModUpdateBadges": "Mod update badges",
     "showModUpdateBadgesDescription": "Show update available and recently updated badges on mod cards and details, including disabled mods. Update checks remain enabled.",
+    "featureTips": "Show feature tips",
+    "featureTipsDescription": "Point out features you haven't tried yet, at most one tip every few days.",
     "modelPreview": "3D model preview",
     "modelPreviewDescription": "Render skin models in the Hero Skins panel and the Mod Foundry.",
     "modelPreviewWarning": "The preview decodes a whole character model and renders it on your GPU. It is the slowest part of opening a skin, and not every skin can be decoded — an unusual or broken model may fail to load or, rarely, upset the graphics driver. Behaviour varies between graphics drivers and platforms; switch this off if previews are slow, blank or crash.",
@@ -3794,7 +3797,10 @@
     "copyright": "Not affiliated with Valve. Deadlock, and the Deadlock logo are registered trademarks of Valve Corporation.",
     "resetOnboarding": "Reset Onboarding",
     "resetOnboardingDescription": "Show the onboarding wizard again on next launch.",
-    "resetOnboardingSuccess": "Onboarding will be shown on next launch"
+    "resetOnboardingSuccess": "Onboarding will be shown on next launch",
+    "resetFeatureTips": "Reset Feature Tips",
+    "resetFeatureTipsDescription": "Show feature tips again, including ones you dismissed.",
+    "resetFeatureTipsSuccess": "Feature tips will show again"
   },
   "update": {
     "checkFailed": "Could not check for updates",
@@ -3916,6 +3922,7 @@
     "addFiles": "Add Files",
     "dropFilesDescription": "Drop a .vpk, or a .zip/.rar/.7z archive.",
     "dropAreaText": "Drop files/folders here, or click to select",
+    "dropAnywhereTitle": "Drop to add a mod",
     "supportedFormats": "Supported: .vpk/.zip/.rar/.7z",
     "finalizeTitle": "Finalize details",
     "finalizeDescription": "Only the name is required. You can fill the rest later.",
@@ -6136,6 +6143,48 @@
         "previewTitle": "See what a config changes",
         "previewDetail": "Review the settings before you apply them."
       }
+    }
+  },
+  "featureHints": {
+    "didYouKnow": "Did you know?",
+    "showMe": "Show me",
+    "gotIt": "Got it",
+    "turnOff": "Turn off tips",
+    "importFromManager": {
+      "title": "Bring your mods over",
+      "body": "Another mod manager is set up on this PC. Import its mods here instead of downloading them all again."
+    },
+    "myModsMenu": {
+      "title": "There's more in this menu",
+      "body": "Change the load order, turn every mod on or off at once, export your library, or copy your mod list to share it."
+    },
+    "modContextMenu": {
+      "title": "Right-click any mod",
+      "body": "Right-click a mod to copy its link, show its files in the game folder, or reinstall it."
+    },
+    "loadOrder": {
+      "title": "Choose which mod wins",
+      "body": "Some of your mods change the same files. Drag them into the order you want to decide which one takes priority."
+    },
+    "modsFolderShortcut": {
+      "title": "Open this folder faster",
+      "body": "Press this shortcut anywhere in the app to open the active profile's mods folder."
+    },
+    "profiles": {
+      "title": "Keep separate mod setups",
+      "body": "Profiles save different sets of mods so you can switch between them without enabling and disabling mods one by one."
+    },
+    "settingsSearch": {
+      "title": "Search every setting",
+      "body": "Press this shortcut on the settings page to jump straight to the setting you need."
+    },
+    "skinRandomizer": {
+      "title": "Mix up your skins",
+      "body": "Turn on the skin randomizer and each launch picks one of the skins you selected for this hero."
+    },
+    "statsCustomize": {
+      "title": "Make this dashboard yours",
+      "body": "Add, remove, resize, and rearrange widgets, or create new tabs from templates."
     }
   }
 }

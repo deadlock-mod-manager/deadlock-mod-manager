@@ -9,8 +9,10 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { FolderOpen } from "@deadlock-mods/ui/icons";
 import { ArrowClockwiseIcon } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
+import type { ReactElement } from "react";
 import { useTranslation } from "react-i18next";
 import { FaShare } from "react-icons/fa";
+import { HintAnchor } from "@/components/feature-hints/hint-anchor";
 import { ModHealthMenuItems } from "@/components/mod-health/mod-health-menu-items";
 import { useReinstallAction } from "@/hooks/use-reinstall-action";
 import { usePersistedStore } from "@/lib/store";
@@ -19,12 +21,32 @@ import type { LocalMod } from "@/types/mods";
 
 interface ModContextMenuProps {
   mod: LocalMod;
-  children: React.ReactNode;
+  /** Points the right-click feature hint at this card. */
+  hint?: boolean;
+  children: ReactElement;
 }
 
-export const ModContextMenu = ({ mod, children }: ModContextMenuProps) => {
+// Opens the menu where a right-click near the top of the card would.
+const openContextMenuOn = (target: HTMLElement) => {
+  const rect = target.getBoundingClientRect();
+  target.dispatchEvent(
+    new MouseEvent("contextmenu", {
+      bubbles: true,
+      cancelable: true,
+      clientX: rect.left + rect.width / 2,
+      clientY: rect.top + Math.min(rect.height / 3, 120),
+    }),
+  );
+};
+
+export const ModContextMenu = ({
+  mod,
+  hint = false,
+  children,
+}: ModContextMenuProps) => {
   const { t } = useTranslation();
   const { getActiveProfile } = usePersistedStore();
+  const markFeatureUsed = usePersistedStore((state) => state.markFeatureUsed);
   const {
     reinstall: handleReinstall,
     isReinstalling,
@@ -70,8 +92,20 @@ export const ModContextMenu = ({ mod, children }: ModContextMenuProps) => {
   };
 
   return (
-    <ContextMenu>
-      <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
+    <ContextMenu
+      onOpenChange={(open) => open && markFeatureUsed("mod-context-menu")}>
+      <ContextMenuTrigger asChild>
+        {hint ? (
+          <HintAnchor
+            hintId='mod-context-menu'
+            onShowMe={openContextMenuOn}
+            side='right'>
+            {children}
+          </HintAnchor>
+        ) : (
+          children
+        )}
+      </ContextMenuTrigger>
       <ContextMenuContent className='w-60'>
         {mod.remoteUrl && (
           <ContextMenuItem onClick={handleShareMod}>

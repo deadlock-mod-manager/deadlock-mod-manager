@@ -354,6 +354,57 @@
   }
 }
 
+/* Feature hints: the pulse on the highlighted control and the drawn arrow */
+@keyframes feature-hint-pulse {
+  0% {
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 8px hsl(var(--primary) / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
+  }
+}
+
+@keyframes feature-hint-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+[data-feature-hint] {
+  outline: 2px solid hsl(var(--primary) / 0.8);
+  outline-offset: -2px;
+  animation: feature-hint-pulse 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.feature-hint-arrow {
+  /* Keeps the stroke readable where it crosses text or artwork. */
+  filter: drop-shadow(0 0 2px hsl(var(--background)))
+    drop-shadow(0 0 1px hsl(var(--background)));
+}
+
+.feature-hint-arrow path {
+  stroke-dasharray: 60;
+  stroke-dashoffset: 60;
+  animation: feature-hint-draw 500ms ease-out 120ms forwards;
+}
+
+.feature-hint-arrow path + path {
+  animation-delay: 520ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-feature-hint] {
+    animation: none;
+  }
+  .feature-hint-arrow path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
 /* Occult Geometry Animations */
 @keyframes occult-rotate {
   from {

@@ -17,6 +17,9 @@ import {
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { HintAnchor } from "@/components/feature-hints/hint-anchor";
+import { canShowHint } from "@/lib/feature-hints";
+import { usePersistedStore } from "@/lib/store";
 import {
   type InterchangeSource,
   useInterchangeSources,
@@ -31,7 +34,13 @@ import { ImportWizardDialog } from "./import-wizard-dialog";
 export const ImportSourceMenu = () => {
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
-  const sources = useInterchangeSources(menuOpen);
+  const markFeatureUsed = usePersistedStore((state) => state.markFeatureUsed);
+  // Detection only runs for the hint while it could still be shown.
+  const hintPossible = usePersistedStore((state) =>
+    canShowHint("import-from-manager", state.featureHints, Date.now()),
+  );
+  const sources = useInterchangeSources(menuOpen || hintPossible);
+  const otherManagerFound = sources.data?.some((info) => info.found) ?? false;
   const [source, setSource] = useState<InterchangeSource | null>(null);
 
   const pickLocation = async (id: string, name: string) => {
@@ -56,16 +65,27 @@ export const ImportSourceMenu = () => {
 
   return (
     <>
-      <DropdownMenu onOpenChange={setMenuOpen} open={menuOpen}>
-        <DropdownMenuTrigger asChild>
-          <Button
-            data-testid='interchange-import-menu'
-            icon={<Import className='h-4 w-4' />}
-            variant='outline'>
-            {t("interchange.importButton")}
-            <ChevronDown className='ml-1 h-3 w-3' />
-          </Button>
-        </DropdownMenuTrigger>
+      <DropdownMenu
+        onOpenChange={(open) => {
+          setMenuOpen(open);
+          if (open) markFeatureUsed("import-from-manager");
+        }}
+        open={menuOpen}>
+        <HintAnchor
+          align='end'
+          eligible={otherManagerFound}
+          hintId='import-from-manager'
+          onShowMe={() => setMenuOpen(true)}>
+          <DropdownMenuTrigger asChild>
+            <Button
+              data-testid='interchange-import-menu'
+              icon={<Import className='h-4 w-4' />}
+              variant='outline'>
+              {t("interchange.importButton")}
+              <ChevronDown className='ml-1 h-3 w-3' />
+            </Button>
+          </DropdownMenuTrigger>
+        </HintAnchor>
         <DropdownMenuContent align='end' className='w-72'>
           <DropdownMenuLabel>
             {t("interchange.managersLabel")}
