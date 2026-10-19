@@ -558,7 +558,7 @@ pub fn on_game_exit(app: AppHandle) {
   });
 }
 
-/// Logs every match-sync session off Steam and keeps new ones closed while the game starts.
+/// Closes every match-sync session and keeps new ones closed while the game starts.
 pub async fn release_for_game_launch() {
   gc_client::hold_for_launch();
   let clients: Vec<_> = ACCOUNT_RESOURCES
