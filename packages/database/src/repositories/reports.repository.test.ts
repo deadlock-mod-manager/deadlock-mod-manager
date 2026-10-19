@@ -115,6 +115,35 @@ describe.skipIf(!testDatabaseUrl)("clearing reports for moderation", () => {
     expect(await repository.findById("modern_sound")).not.toBeNull();
   });
 
+  it("finds every author mod even after all report rows are gone", async () => {
+    await pool.query("DELETE FROM report");
+    expect(
+      await repository.findModsForModeration({
+        kind: "author",
+        authorName: "AUTHOR_%",
+      }),
+    ).toEqual([{ id: "mod_legacy", slug: "688091" }]);
+    expect(
+      await repository.findModsForModeration({
+        kind: "author",
+        authorName: "Author",
+      }),
+    ).toEqual([]);
+  });
+
+  it("finds sounds separately from mods for moderation totals", async () => {
+    expect(
+      await repository.findModsForModeration({
+        kind: "submission",
+        identity: {
+          provider: "gamebanana",
+          submissionType: "sound",
+          submissionId: "688091",
+        },
+      }),
+    ).toEqual([{ id: "sound_legacy", slug: "snd-688091" }]);
+  });
+
   it("does not interpret SQL syntax in author names", async () => {
     expect(
       await repository.clearForModeration({

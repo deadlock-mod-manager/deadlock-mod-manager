@@ -104,6 +104,23 @@ export class ReportRepository {
     return result.length;
   }
 
+  async findModsForModeration(
+    target: ReportClearTarget,
+  ): Promise<Array<{ id: string; slug: string }>> {
+    const slug = sql<string>`CASE WHEN ${mods.isAudio} AND ${mods.remoteId} NOT LIKE 'snd-%'
+      THEN 'snd-' || ${mods.remoteId} ELSE ${mods.remoteId} END`;
+    const predicate =
+      target.kind === "author"
+        ? sql`lower(${mods.author}) = lower(${target.authorName})`
+        : eq(
+            slug,
+            target.identity.submissionType === "sound"
+              ? `snd-${target.identity.submissionId}`
+              : target.identity.submissionId,
+          );
+    return this.db.select({ id: mods.id, slug }).from(mods).where(predicate);
+  }
+
   async clearForModeration(target: ReportClearTarget): Promise<Report[]> {
     if (target.kind === "author") {
       const matchingMods = this.db

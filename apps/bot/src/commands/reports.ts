@@ -5,7 +5,7 @@ import { escapeMarkdown, GuildMember, MessageFlags } from "discord.js";
 import { logger as mainLogger } from "../lib/logger";
 import { hasReportModerationPermission } from "../lib/permissions";
 import { cache } from "../lib/redis";
-import { reportCacheKeys } from "../lib/report-cache";
+import { summarizeClearedReports } from "../lib/report-cache";
 import { parseReportTarget, resolveReportTarget } from "../lib/report-target";
 
 const logger = mainLogger.child().withContext({ service: "reports-command" });
@@ -56,6 +56,14 @@ export class ReportsCommand extends Command {
     try {
       const target = await resolveReportTarget(parseReportTarget(input));
       await reportRepository.backfillLegacyIdentities();
+      const mods = await reportRepository.findModsForModeration(target);
+      if (target.kind === "submission") {
+        const slug =
+          target.identity.submissionType === "sound"
+            ? `snd-${target.identity.submissionId}`
+            : target.identity.submissionId;
+        mods.push({ id: slug, slug });
+      }
       const deleted = await reportRepository.clearForModeration(target);
       const label =
         target.kind === "author"
@@ -70,22 +78,31 @@ export class ReportsCommand extends Command {
         })
         .info("Mod reports cleared");
 
+      let totalCount: number;
       try {
-        await cache.mdel(reportCacheKeys(deleted));
+        const summary = await summarizeClearedReports(
+          deleted,
+          mods,
+          async (slug) =>
+            (await cache.get<{ total: number }>(`reports:counts:${slug}`))
+              ?.total,
+        );
+        totalCount = summary.totalCount;
+        await cache.mdel(summary.cacheKeys);
       } catch (error) {
         logger
           .withError(error)
           .withMetadata({ target })
           .error("Failed to invalidate report caches");
         return interaction.editReply({
-          content: `Cleared ${deleted.length} report(s) for ${label}, but cached report counts could not be refreshed.`,
+          content: `Reports cleared for ${label}, but the total report count could not be refreshed.`,
           allowedMentions: { parse: [] },
         });
       }
       return interaction.editReply({
-        content: deleted.length
-          ? `Cleared ${deleted.length} report(s) for ${label}.`
-          : `No reports found for ${label}.`,
+        content: totalCount
+          ? `Reset total report count for ${label}: **${totalCount} → 0**.`
+          : `Total report count for ${label}: **0**.`,
         allowedMentions: { parse: [] },
       });
     } catch (error) {
