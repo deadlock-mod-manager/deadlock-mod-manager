@@ -12,6 +12,9 @@
         "-y",
         "transcripts-mcp@0.1.0"
       ]
+    },
+    "sentry": {
+      "url": "https://mcp.sentry.dev/mcp/stormix/deadlock-mod-manager"
     }
   }
 }
