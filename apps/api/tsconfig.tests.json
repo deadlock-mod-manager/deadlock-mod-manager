@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "emitDeclarationOnly": false,
+    "composite": false,
+    "incremental": false,
+    "types": ["bun"]
+  },
+  "include": ["src/lib/redis-options.test.ts"],
+  "exclude": ["node_modules", "dist"]
+}

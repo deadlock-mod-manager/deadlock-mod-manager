@@ -3,6 +3,7 @@ import IORedis, { type Callback, type Result } from "ioredis";
 import { CACHE_TTL } from "./constants";
 import { env } from "./env";
 import { logger } from "./logger";
+import { redisConnectionOptions } from "./redis-options";
 
 /**
  * Lua script that atomically increments a rate-limit counter and sets its TTL.
@@ -30,20 +31,17 @@ declare module "ioredis" {
   }
 }
 
-export const redis = new IORedis(env.REDIS_URL, {
-  maxRetriesPerRequest: null,
-  lazyConnect: true,
-});
+export const redis = new IORedis(env.REDIS_URL, redisConnectionOptions);
 
 redis.defineCommand("rateLimit", {
   numberOfKeys: 1,
   lua: RATE_LIMIT_SCRIPT,
 });
 
-export const redisPublisher = new IORedis(env.REDIS_URL, {
-  maxRetriesPerRequest: null,
-  lazyConnect: true,
-});
+export const redisPublisher = new IORedis(
+  env.REDIS_URL,
+  redisConnectionOptions,
+);
 
 redis.on("error", (error) => {
   logger.withError(error).error("Redis error");
