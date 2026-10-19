@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "What's New in Deadlock Mod Manager V2",
-    "description": "Deadlock Mod Manager V2, rebuilt from the ground up: mod health checks that repair outdated mods, mods that survive game updates, a GameBanana catalog that lives on your PC, conflict detection, a crash check, stats and new themes."
+    "description": "Deadlock Mod Manager V2, rebuilt from the ground up: mod health checks that repair outdated mods, mods that survive game updates, a GameBanana catalog that lives on your PC, conflict detection, a crash check, a broken-mod finder, stats and new themes."
   },
   "hero": {
     "eyebrow": "Deadlock Mod Manager 2.0",
@@ -103,6 +103,17 @@
         "steam": "Works when you start the game from Steam too, as long as the app is open"
       }
     },
+    "bisect": {
+      "nav": "Find a broken mod",
+      "title": "Track down the mod that breaks the game",
+      "body": "When something breaks and you can't tell which mod did it, the app turns your mods off in rounds. You launch, say whether the problem is still there, and each answer rules out a share of the rest.",
+      "points": {
+        "fast": "One bad mod takes at most 6 launches with 12 mods, and 9 with 100",
+        "pairs": "Finds two mods that only break the game together",
+        "crash": "With the crash check on, a crash answers the round for you",
+        "restore": "Puts every mod back in its original load order when you're done, with the culprit off if you want"
+      }
+    },
     "performance": {
       "nav": "Performance",
       "title": "More frames, your way",
@@ -200,6 +211,27 @@
       "closedIt": "I closed it",
       "launchAgain": "Launch again",
       "hint": "Try it: press Disable both."
+    },
+    "bisect": {
+      "title": "Finding the broken mod",
+      "round": "Round {{round}}",
+      "left_one": "{{count}} suspect left",
+      "left_other": "{{count}} suspects left",
+      "foundIn_one": "Found in {{count}} launch",
+      "foundIn_other": "Found in {{count}} launches",
+      "launch": "Launch Deadlock",
+      "launching": "Launching…",
+      "question": "Is the problem still there?",
+      "broken": "Still broken",
+      "fine": "Works now",
+      "found": "Found it: {{name}}",
+      "foundBody": "The problem comes and goes with this mod.",
+      "wrongAnswer": "One of your answers didn't match the game, so this isn't the real culprit. Try again.",
+      "restore": "Restore everything",
+      "again": "Try again",
+      "restored": "Your mods are back the way they were.",
+      "hint": "Try it: launch, look at the game, then answer.",
+      "foundHint": "Try again hides the problem in a different mod."
     }
   },
   "more": {

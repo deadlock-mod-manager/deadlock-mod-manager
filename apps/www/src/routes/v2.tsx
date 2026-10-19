@@ -4,6 +4,7 @@ import { Trans, useTranslation } from "react-i18next";
 import { StepList } from "@/components/guides/guide-page";
 import { CtaArrow, primaryCta, secondaryCta } from "@/components/home/cta";
 import { Eyebrow } from "@/components/home/section-heading";
+import { BisectDemo } from "@/components/v2/bisect-demo";
 import { ConflictsDemo } from "@/components/v2/conflicts-demo";
 import { CrashCheckDemo } from "@/components/v2/crash-check-demo";
 import { FixTicker } from "@/components/v2/fix-ticker";
@@ -68,13 +69,20 @@ const PerformanceScreenshot = () => {
   );
 };
 
-type FeatureId = "updates" | "store" | "conflicts" | "crashes" | "performance";
+type FeatureId =
+  | "updates"
+  | "store"
+  | "conflicts"
+  | "crashes"
+  | "bisect"
+  | "performance";
 
 const FEATURES: { id: FeatureId; visual: React.ReactNode }[] = [
   { id: "updates", visual: <UpdateDemo /> },
   { id: "store", visual: <StoreScreenshot /> },
   { id: "conflicts", visual: <ConflictsDemo /> },
   { id: "crashes", visual: <CrashCheckDemo /> },
+  { id: "bisect", visual: <BisectDemo /> },
   { id: "performance", visual: <PerformanceScreenshot /> },
 ];
 
