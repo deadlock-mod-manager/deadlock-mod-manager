@@ -70,13 +70,13 @@ const FavoriteButton = ({
           aria-pressed={isFavorite}
           className={cn(
             "inline-flex h-8 w-8 items-center justify-center rounded-full",
-            "border border-white/10 bg-black/50 backdrop-blur-md",
+            "border border-white/10 bg-black/60",
             "transition-all duration-300 ease-out",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
             "active:scale-90",
             isFavorite
               ? "border-yellow-500/20"
-              : "opacity-0 group-hover:opacity-100 hover:border-white/20 hover:bg-black/60",
+              : "opacity-0 group-hover:opacity-100 hover:border-white/20 hover:bg-black/70",
             className,
           )}
           onClick={handleClick}

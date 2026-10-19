@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useMemo } from "react";
 import { useShallow } from "zustand/react/shallow";
+import { shallow } from "zustand/shallow";
 import { checkModUpdates } from "@/lib/api-client";
 import { fileIdFromDownloadUrl } from "@/lib/mod-interchange";
 import {
@@ -45,22 +46,49 @@ const toModToCheck = (mod: LocalMod): ModToCheck => {
 // Every mod card subscribes, so derive once per localMods change.
 let lastLocalMods: LocalMod[] | undefined;
 let lastModsToCheck: ModToCheck[] = [];
+// Stands in for the list in the query key. Every card observes this query, and React Query
+// hashes the key on each observer render, so keying on the whole list cost O(n) per card.
+let modsToCheckRevision = 0;
 
 const selectModsToCheck = (state: State) => {
   if (state.localMods !== lastLocalMods) {
     lastLocalMods = state.localMods;
-    lastModsToCheck = state.localMods
-      .filter(canCheckModUpdates)
-      .map(toModToCheck);
+    const next = state.localMods.filter(canCheckModUpdates).map(toModToCheck);
+    if (!shallow(next, lastModsToCheck)) {
+      lastModsToCheck = next;
+      modsToCheckRevision++;
+    }
   }
   return lastModsToCheck;
+};
+
+type ModUpdate = CheckUpdatesData["updates"][number];
+
+// Grouped once per result so each card looks its mod up instead of scanning every update.
+const updatesByRemoteId = new WeakMap<
+  CheckUpdatesData,
+  Map<string, ModUpdate[]>
+>();
+
+const getUpdatesByRemoteId = (data: CheckUpdatesData) => {
+  let byId = updatesByRemoteId.get(data);
+  if (!byId) {
+    byId = new Map();
+    for (const update of data.updates) {
+      const forMod = byId.get(update.mod.remoteId);
+      if (forMod) forMod.push(update);
+      else byId.set(update.mod.remoteId, [update]);
+    }
+    updatesByRemoteId.set(data, byId);
+  }
+  return byId;
 };
 
 const useModUpdatesQuery = () => {
   const modsToCheck = usePersistedStore(useShallow(selectModsToCheck));
 
   return useQuery({
-    queryKey: ["check-mod-updates", modsToCheck],
+    queryKey: ["check-mod-updates", modsToCheckRevision],
     queryFn: () => checkModUpdates(modsToCheck),
     enabled: modsToCheck.length > 0,
     staleTime: STALE_TIME_API,
@@ -72,13 +100,11 @@ const useModUpdatesQuery = () => {
 
 export const useModHasUpdate = (localMod: LocalMod | undefined) => {
   const { data } = useModUpdatesQuery();
-  if (!localMod || !canCheckModUpdates(localMod)) return false;
+  if (!data || !localMod || !canCheckModUpdates(localMod)) return false;
   return (
-    data?.updates.some(
-      (update) =>
-        update.mod.remoteId === localMod.remoteId &&
-        !isModUpdateSkipped(update, localMod),
-    ) ?? false
+    getUpdatesByRemoteId(data)
+      .get(localMod.remoteId)
+      ?.some((update) => !isModUpdateSkipped(update, localMod)) ?? false
   );
 };
 

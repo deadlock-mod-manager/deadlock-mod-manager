@@ -329,7 +329,9 @@ const GridModCard = ({
                 <img
                   alt={mod.name}
                   className='h-48 w-full object-cover'
+                  decoding='async'
                   height='192'
+                  loading='lazy'
                   src={getModCoverImage(mod)}
                   width='320'
                 />
@@ -488,7 +490,9 @@ const ListModCard = ({
                   <img
                     alt={mod.name}
                     className='h-full w-full object-cover'
+                    decoding='async'
                     height='160'
+                    loading='lazy'
                     src={getModCoverImage(mod)}
                     width='160'
                   />
@@ -895,18 +899,32 @@ const MyMods = () => {
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const installedMods = getOrderedMods();
+  // getOrderedMods reads the same localMods as `mods`, so `mods` is what invalidates it.
+  const installedMods = useMemo(() => getOrderedMods(), [getOrderedMods, mods]);
 
-  const enabledModsCount = mods.filter(isInstalledModWithVpks).length;
-  const downloadedModsCount = mods.filter(
-    (mod) => mod.status === ModStatus.Downloaded,
-  ).length;
-  const disabledModsCount = mods.filter(
-    (mod) => !isInstalledModWithVpks(mod),
-  ).length;
-  const enabledVpkFileCount = mods
-    .filter(isInstalledModWithVpks)
-    .reduce((sum, mod) => sum + (mod.installedVpks?.length ?? 0), 0);
+  const {
+    enabledModsCount,
+    downloadedModsCount,
+    disabledModsCount,
+    enabledVpkFileCount,
+  } = useMemo(() => {
+    let enabled = 0;
+    let downloaded = 0;
+    let vpkFiles = 0;
+    for (const mod of mods) {
+      if (isInstalledModWithVpks(mod)) {
+        enabled++;
+        vpkFiles += mod.installedVpks?.length ?? 0;
+      }
+      if (mod.status === ModStatus.Downloaded) downloaded++;
+    }
+    return {
+      enabledModsCount: enabled,
+      downloadedModsCount: downloaded,
+      disabledModsCount: mods.length - enabled,
+      enabledVpkFileCount: vpkFiles,
+    };
+  }, [mods]);
 
   const copyModList = async (includeDisabled: boolean) => {
     try {
