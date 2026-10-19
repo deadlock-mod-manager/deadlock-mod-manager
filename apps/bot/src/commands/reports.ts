@@ -52,7 +52,7 @@ export class ReportsCommand extends Command {
     }
 
     const input = interaction.options.getString("target", true);
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    await interaction.deferReply();
     try {
       const target = await resolveReportTarget(parseReportTarget(input));
       await reportRepository.backfillLegacyIdentities();
