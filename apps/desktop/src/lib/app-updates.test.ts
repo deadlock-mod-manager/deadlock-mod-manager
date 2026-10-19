@@ -23,6 +23,7 @@ const available: UpdateCheckResponse = {
     version: "2.1.0",
     currentVersion: "2.0.0",
     rawJson: {},
+    downloadUrl: "https://example.com/app.deb",
   },
 };
 
@@ -77,6 +78,21 @@ describe("app update outcomes", () => {
     expect(update?.rid).toBe(1);
     expect(update?.version).toBe("2.1.0");
     expect(update?.context).toEqual(context);
+  });
+
+  it("retains the selected Flatpak URL instead of rebuilding it from the version", async () => {
+    const downloadUrl =
+      "https://github.com/deadlock-mod-manager/deadlock-mod-manager/releases/download/nightly/deadlock-mod-manager-cef.flatpak";
+    const update = await checkForAppUpdates(async () => ({
+      status: "available",
+      context: {
+        ...context,
+        installer: "flatpak",
+        target: "linux-x86_64-flatpak",
+      },
+      metadata: { ...available.metadata, downloadUrl },
+    }));
+    expect(update?.downloadUrl).toBe(downloadUrl);
   });
 
   it("distinguishes an installation failure and retains its target", async () => {

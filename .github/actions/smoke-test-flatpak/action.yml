@@ -154,6 +154,14 @@ runs:
           --address="unix:path=${RUNTIME_DIR}/bus")"
         export DBUS_SESSION_BUS_ADDRESS="unix:path=${RUNTIME_DIR}/bus"
 
+        flatpak run --filesystem="$(realpath "${BUNDLE_PATH}"):ro" --command=sh "${APP_ID}" -c '
+          set -eu
+          staging=$(mktemp -d "$XDG_CACHE_HOME/dmm-update-smoke.XXXXXX")
+          trap '\''rm -rf "$staging"'\'' EXIT
+          cp "$1" "$staging/update.flatpak"
+          flatpak-spawn --host flatpak install --user --reinstall --noninteractive "$staging/update.flatpak"
+        ' sh "$(realpath "${BUNDLE_PATH}")" > "${LOG_DIR}/updater-install.log" 2>&1
+
         flatpak run "${APP_ID}" > "${LOG_DIR}/app.log" 2>&1 &
         APP_PID=$!
 

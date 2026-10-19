@@ -57,7 +57,19 @@ async function updateMetadata(files: Record<string, string>) {
       rest: {
         repos: {
           getRelease: async () => ({
-            data: { assets: [{ name: "latest.json", id: 1 }] },
+            data: {
+              assets: [
+                { name: "latest.json", id: 1 },
+                { name: "app.AppImage", id: 2 },
+                ...Object.keys(files).map((name, index) => ({
+                  name: name
+                    .trim()
+                    .replace(/[^a-zA-Z0-9_-]/g, ".")
+                    .replace(/\.+/g, "."),
+                  id: index + 3,
+                })),
+              ],
+            },
           }),
           getReleaseAsset: async () => ({
             data: Buffer.from(JSON.stringify(latest)),
