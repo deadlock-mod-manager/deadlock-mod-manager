@@ -1,0 +1,64 @@
+---
+title: Finding a Broken Mod
+description: Let the manager narrow down which mod crashes the game or causes a bug, a few launches at a time
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Finding a Broken Mod
+
+When the game crashes or something looks wrong and you don't know which mod is responsible, **Find a broken mod** works it out for you. Each round, the manager turns some of your mods off, you launch Deadlock and check, and your answer rules out a large share of the remaining mods. With 12 mods it takes at most 6 launches; with 100 mods, at most 9.
+
+Nothing is deleted or downloaded again. Turning a mod off only moves its files aside, and when you finish, every mod goes back on in its original load order with the same variants selected.
+
+## Start a search
+
+1. Open **Mods Library** and turn on the mods you were using when the problem happened.
+2. Open the **⋮** menu at the top of the page and choose **Find a broken mod**. The first time, a short walkthrough explains how it works; you can open it again with **How it works**.
+3. Uncheck any mods you're sure are fine. They stay on during the search, and fewer mods means fewer launches. The dialog shows how many launches to expect.
+4. Choose **Start**.
+
+You can also start from a crash: the **Did Deadlock just crash?** dialog has a **Not sure which mod? Find it** button, and the crash notification has **Find the mod**.
+
+Maps and mods that replace core game files are left out and kept as they are, because they can't be switched on and off automatically. The dialog lists them.
+
+## Each round
+
+A bar under the title bar guides you through the search:
+
+1. **Launch Deadlock** from the bar, or from Steam. The first round turns every mod you picked off, to rule out the game itself.
+2. Play until you'd normally see the problem, then close the game.
+3. Answer **Is the problem still there?** with **Still broken**, **Works now**, or **Not sure** if you couldn't check. **Not sure** counts as working, so the search keeps going.
+
+If the [crash check](/using-mod-manager/customization) is on and Deadlock crashes, the manager answers **Still broken** for you. The crash check's own dialog doesn't appear while a search is running.
+
+If you gave the wrong answer, **Undo last answer** (the arrow in the bar) sets the previous round up again.
+
+## The result
+
+When the search ends, the manager shows one of three results:
+
+- **Found it**: one mod causes the problem. Check for an update or report it to the author; mods often break after a Deadlock patch.
+- **These mods break together**: each mod works alone, but the problem appears when they're all on. Try changing their order in **Change Mods Order**, or keep only one of them.
+- **Your mods aren't the cause**: the problem happened with every tested mod off. Look at the game files, your autoexec, or your launch options instead.
+
+Choose **Turn it off and restore the rest** to keep the culprit disabled, or **Restore everything** to put every mod back as it was.
+
+To end a search early, choose **Stop** in the bar. Your mods go back to how they were before you started.
+
+## If something gets in the way
+
+The search is saved as you go, so it survives closing the manager or a crash. If the manager closed while it was switching mods, the bar shows **Continue**, or **Put them back** if it was restoring; choose it to finish the step.
+
+If you turn a mod on or off by hand during a round, your answer wouldn't be reliable. The manager sets the round up again and asks you to launch once more.
+
+Mods can't be switched while Deadlock is open, so close the game before you start a search or answer a round.
+
+You can't switch profiles during a search, because the mods are restored into the profile the search started in. Finish or stop the search first.
+
+<Callout type='info' title='How it narrows down'>
+  The manager assumes that turning more mods on never fixes the problem. Each
+  answer tells it whether the culprit is among the mods that were on, so the
+  list of suspects shrinks every round. When two mods only break the game
+  together, it finds the first, keeps it on, and searches for its partner.
+</Callout>
