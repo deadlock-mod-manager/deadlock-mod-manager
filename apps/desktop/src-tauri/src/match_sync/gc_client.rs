@@ -3,11 +3,12 @@
 //! The subsystem never uses deadlock-api's own server-side endpoints.
 
 use std::future::Future;
-use std::sync::Arc;
-use std::time::Duration;
+use std::sync::{Arc, PoisonError};
+use std::time::{Duration, Instant};
 
 use prost::Message as _;
 use steam_vent::proto::MsgKind;
+use steam_vent::proto::steammessages_clientserver_login::CMsgClientLogOff;
 use steam_vent::{
   Connection, ConnectionTrait, GameCoordinator, RawNetMessage, ServerList, UntypedMessage,
 };
@@ -23,15 +24,42 @@ use super::model::{AuthContext, DEADLOCK_APP_ID, LocalMatch, MatchHistoryPage, M
 
 // A stalled discover/login/job call must not block cancel/disable indefinitely.
 const GC_CALL_TIMEOUT: Duration = Duration::from_secs(30);
+const LOG_OFF_TIMEOUT: Duration = Duration::from_secs(2);
+// Covers the gap until the game process appears and the game-running checks take over.
+const LAUNCH_HOLD: Duration = Duration::from_secs(3 * 60);
+
+static LAUNCH_REQUESTED_AT: std::sync::Mutex<Option<Instant>> = std::sync::Mutex::new(None);
+
+pub fn hold_for_launch() {
+  set_launch_requested_at(Some(Instant::now()));
+}
+
+pub fn end_launch_hold() {
+  set_launch_requested_at(None);
+}
+
+fn set_launch_requested_at(at: Option<Instant>) {
+  *LAUNCH_REQUESTED_AT
+    .lock()
+    .unwrap_or_else(PoisonError::into_inner) = at;
+}
+
+fn launch_hold_active() -> bool {
+  LAUNCH_REQUESTED_AT
+    .lock()
+    .unwrap_or_else(PoisonError::into_inner)
+    .is_some_and(|at| at.elapsed() < LAUNCH_HOLD)
+}
 
 async fn with_timeout<T, E: std::fmt::Display>(
+  timeout: Duration,
   label: &str,
   fut: impl Future<Output = Result<T, E>>,
 ) -> Result<T, MatchSyncError> {
-  match tokio::time::timeout(GC_CALL_TIMEOUT, fut).await {
+  match tokio::time::timeout(timeout, fut).await {
     Ok(result) => result.map_err(|e| MatchSyncError::GcUnavailable(format!("{label}: {e}"))),
     Err(_) => Err(MatchSyncError::GcUnavailable(format!(
-      "{label}: timed out after {GC_CALL_TIMEOUT:?}"
+      "{label}: timed out after {timeout:?}"
     ))),
   }
 }
@@ -55,8 +83,23 @@ pub trait GcMatchClient: Send + Sync {
 struct GcSession {
   steam_id64: u64,
   gc: GameCoordinator,
-  // Held only to keep the CM connection alive for the GC session.
-  _conn: Connection,
+  conn: Connection,
+}
+
+impl GcSession {
+  // An open session shows this account as playing Deadlock, so launching the game
+  // prompts to disconnect it. Dropping the connection leaves it up until Steam times out.
+  async fn log_off(self) {
+    if let Err(e) = with_timeout(
+      LOG_OFF_TIMEOUT,
+      "log-off",
+      self.conn.send(CMsgClientLogOff::new()),
+    )
+    .await
+    {
+      log::debug!("match-sync: {e}");
+    }
+  }
 }
 
 pub struct SteamGcClient {
@@ -71,18 +114,49 @@ impl SteamGcClient {
   }
 
   async fn connect(ctx: &AuthContext) -> Result<GcSession, MatchSyncError> {
-    let servers = with_timeout("server discovery", ServerList::discover()).await?;
+    let servers = with_timeout(GC_CALL_TIMEOUT, "server discovery", ServerList::discover()).await?;
     let conn = with_timeout(
+      GC_CALL_TIMEOUT,
       "CM login",
       Connection::access(&servers, &ctx.account_name, &ctx.refresh_token),
     )
     .await?;
-    let gc = with_timeout("GC handshake", GameCoordinator::new(&conn, DEADLOCK_APP_ID)).await?;
+    let gc = with_timeout(
+      GC_CALL_TIMEOUT,
+      "GC handshake",
+      GameCoordinator::new(&conn, DEADLOCK_APP_ID),
+    )
+    .await?;
     Ok(GcSession {
       steam_id64: ctx.steam_id64,
       gc,
-      _conn: conn,
+      conn,
     })
+  }
+
+  pub async fn disconnect(&self) {
+    let session = self.session.lock().await.take();
+    if let Some(session) = session {
+      session.log_off().await;
+    }
+  }
+
+  /// Doesn't wait on a request in flight; that session logs off once it finishes.
+  pub async fn release(self: &Arc<Self>) {
+    let Ok(session) = self.session.try_lock().map(|mut guard| guard.take()) else {
+      let client = Arc::clone(self);
+      tokio::spawn(async move { client.disconnect().await });
+      return;
+    };
+    if let Some(session) = session {
+      session.log_off().await;
+    }
+  }
+
+  fn poison(guard: &mut Option<GcSession>) {
+    if let Some(session) = guard.take() {
+      tokio::spawn(session.log_off());
+    }
   }
 
   async fn ensure_connected(
@@ -94,13 +168,16 @@ impl SteamGcClient {
       .as_ref()
       .is_none_or(|s| s.steam_id64 != ctx.steam_id64);
     if stale {
+      if launch_hold_active() {
+        return Err(MatchSyncError::GameRunning);
+      }
       *guard = Some(Self::connect(ctx).await?);
     }
     Ok(())
   }
 
-  // Poisons the session (drops it from `guard`) on any failure or timeout, so the next
-  // call reconnects instead of retrying a broken GC connection.
+  // Poisons the session (logs it off) on any failure or timeout, so the next call
+  // reconnects instead of retrying a broken GC connection.
   async fn send_job(
     guard: &mut Option<GcSession>,
     req_bytes: Vec<u8>,
@@ -120,13 +197,13 @@ impl SteamGcClient {
     match sent {
       Ok(Ok(raw)) => Ok(raw),
       Ok(Err(e)) => {
-        *guard = None;
+        Self::poison(guard);
         Err(MatchSyncError::GcUnavailable(format!(
           "{label} request failed: {e}"
         )))
       }
       Err(_) => {
-        *guard = None;
+        Self::poison(guard);
         Err(MatchSyncError::GcUnavailable(format!(
           "{label} request timed out after {GC_CALL_TIMEOUT:?}"
         )))
@@ -252,5 +329,18 @@ impl GcMatchClient for Arc<SteamGcClient> {
     match_id: u64,
   ) -> impl Future<Output = Result<MatchSalts, MatchSyncError>> + Send {
     (**self).fetch_match_salts(ctx, match_id)
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn launch_hold_lasts_until_ended() {
+    hold_for_launch();
+    assert!(launch_hold_active());
+    end_launch_hold();
+    assert!(!launch_hold_active());
   }
 }
