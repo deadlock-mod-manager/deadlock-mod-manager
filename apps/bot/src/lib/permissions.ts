@@ -118,6 +118,13 @@ function hasConfiguredRole(
   return configuredRoleIds.some((roleId) => member.roles.cache.has(roleId));
 }
 
+export function hasForumModerationPermission(member: GuildMember): boolean {
+  return (
+    member.permissions.has("Administrator") ||
+    hasConfiguredRole(member, env.FORUM_MODERATOR_ROLES)
+  );
+}
+
 export function hasQuickAnswerEditorPermission(member: GuildMember): boolean {
   return (
     member.permissions.has("Administrator") ||

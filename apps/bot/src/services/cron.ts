@@ -8,6 +8,6 @@ export const cronService = new CronService(
   redis,
   logger,
   // One slot per defined job so a slow job cannot starve the others
-  2,
+  3,
   { defaultJobOptions: queueConfigs.cron.defaultJobOptions },
 );

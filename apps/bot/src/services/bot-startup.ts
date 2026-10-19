@@ -3,6 +3,7 @@ import { featureFlagDefinitions } from "@/config/feature-flags";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { DocumentationSyncProcessor } from "@/processors/documentation-sync.processor";
+import { ForumCleanupProcessor } from "@/processors/forum-cleanup.processor";
 import { NightlyTestersSyncProcessor } from "@/processors/nightly-testers-sync.processor";
 import { cronService } from "@/services/cron";
 import { FeatureFlagsService } from "@/services/feature-flags";
@@ -65,6 +66,13 @@ export class BotStartupService {
       pattern: NightlyTestersSyncProcessor.cronPattern,
       processor: NightlyTestersSyncProcessor.instance,
       enabled: env.AI_SUPPORT_ENABLED,
+    });
+
+    logger.info("Defining forum cleanup cron job");
+    await cronService.defineJob({
+      name: ForumCleanupProcessor.name,
+      pattern: ForumCleanupProcessor.cronPattern,
+      processor: ForumCleanupProcessor.instance,
     });
 
     if (!env.AI_SUPPORT_ENABLED) {

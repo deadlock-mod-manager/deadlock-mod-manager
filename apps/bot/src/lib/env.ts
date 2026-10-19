@@ -18,6 +18,7 @@ export const envSchema = z.object({
   FORUM_CHANNEL_ID: z.string().default("1412799289301925908"),
   SUPPORT_CHANNEL_ID: z.string().default("1431734280463188100"),
   BUG_REPORT_CHANNEL_ID: z.string().default("1418618964925480990"),
+  SUGGESTIONS_CHANNEL_ID: z.string().default("1414240008394772624"),
   NIGHTLY_TESTERS_CHANNEL_ID: z.string().default("1495462339175252220"),
   NIGHTLY_TESTER_ROLE_ID: z.string().default("1495494477555433692"),
   DMM_GUILD_ID: z.string().default("1322369530386710568"),
@@ -30,7 +31,20 @@ export const envSchema = z.object({
     .transform((val) => val.split(",").map((id) => id.trim())),
   BLACKLIST_MODERATOR_ROLES: z
     .string()
-    .default("1322369688445124719,1322369692962390119")
+    // Lead Dev, Co-Founders, Moderator, Community Support
+    .default(
+      "1322369688445124719,1322369692962390119,1499784538056818699,1486214760952234105",
+    )
+    .transform((val) =>
+      val
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean),
+    ),
+  // Moderator, Core Contributors, Community Support. Administrators always pass.
+  FORUM_MODERATOR_ROLES: z
+    .string()
+    .default("1499784538056818699,1491132377282514978,1486214760952234105")
     .transform((val) =>
       val
         .split(",")
