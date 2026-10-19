@@ -248,7 +248,10 @@ pub async fn get_game_presence_heroes() -> Result<Vec<GamePresenceHeroDto>, Erro
     .as_deref()
     .unwrap_or_else(|| std::path::Path::new("."));
   let mut hero_store = HeroDataStore::new(cache_path);
-  hero_store.load().await;
+  // E2E worlds are offline; the built-in hero list is enough for the settings picker.
+  if !crate::runtime_environment::is_e2e_active() {
+    hero_store.load().await;
+  }
   Ok(
     hero_store
       .heroes_detailed()
