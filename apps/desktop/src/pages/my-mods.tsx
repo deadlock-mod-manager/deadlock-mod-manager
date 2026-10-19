@@ -59,6 +59,7 @@ import {
   RefreshCw,
   ScanSearch,
   TriangleAlert,
+  Wrench,
 } from "@deadlock-mods/ui/icons";
 import { Trash, UploadSimple } from "@phosphor-icons/react";
 import { MagnifyingGlass } from "@phosphor-icons/react";
@@ -93,7 +94,11 @@ import { LibraryModAuthor } from "@/components/my-mods/library-mod-author";
 import { ModOrderingDialog } from "@/components/my-mods/mod-ordering-dialog";
 import { ModHealthBadge } from "@/components/mod-health/mod-health-badge";
 import { ModHealthBanner } from "@/components/mod-health/mod-health-banner";
-import { useModHealthReport } from "@/hooks/use-mod-health";
+import {
+  useCheckModHealth,
+  useIsCheckingModHealth,
+  useModHealthReport,
+} from "@/hooks/use-mod-health";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useAddonAnalysis } from "@/hooks/use-addon-analysis";
 import { useDisableAllMods } from "@/hooks/use-disable-all-mods";
@@ -670,6 +675,8 @@ const MyMods = () => {
     activeProfileFolder,
   } = useVpkScan();
   const healthReport = useModHealthReport(activeProfileFolder);
+  const checkModHealth = useCheckModHealth();
+  const isCheckingModHealth = useIsCheckingModHealth();
   const healthById = useMemo(
     () => healthByModId(healthReport.data),
     [healthReport.data],
@@ -1024,14 +1031,20 @@ const MyMods = () => {
                 eligible={mods.length >= MENU_HINT_MIN_MODS}
                 hintId='my-mods-menu'
                 onShowMe={() => setActionsMenuOpen(true)}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    aria-label={t("myMods.moreActions")}
-                    size='icon'
-                    variant='outline'>
-                    <EllipsisVertical className='h-4 w-4' />
-                  </Button>
-                </DropdownMenuTrigger>
+                <HintAnchor
+                  align='end'
+                  eligible={installedMods.length > 0}
+                  hintId='mod-repairs'
+                  onShowMe={() => setActionsMenuOpen(true)}>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      aria-label={t("myMods.moreActions")}
+                      size='icon'
+                      variant='outline'>
+                      <EllipsisVertical className='h-4 w-4' />
+                    </Button>
+                  </DropdownMenuTrigger>
+                </HintAnchor>
               </HintAnchor>
             </HintAnchor>
             <DropdownMenuContent align='end'>
@@ -1042,6 +1055,20 @@ const MyMods = () => {
                 {isAnalysisPending
                   ? t("addons.analyzing")
                   : t("addons.analyzeLocal")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  markFeatureUsed("mod-repairs");
+                  checkModHealth({
+                    profileFolder: activeProfileFolder,
+                    force: true,
+                  });
+                }}
+                disabled={installedMods.length === 0 || isCheckingModHealth}>
+                <Wrench className='h-4 w-4' />
+                {isCheckingModHealth
+                  ? t("modHealth.checkingForRepairs")
+                  : t("modHealth.checkForRepairs")}
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={openModOrdering}

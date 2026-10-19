@@ -2413,6 +2413,8 @@
     "lastUpdatedBefore": "Last updated before the Paint the Town update.",
     "stillNeedsUpdate": "Some parts still need an update for this patch: {{remainingSymptoms}}.",
     "fixForPatch": "Fix for this patch",
+    "checkForRepairs": "Check mods for repairs",
+    "checkingForRepairs": "Checking mods...",
     "useOriginalFiles": "Use original files",
     "closeGame": "Close Deadlock to fix mods.",
     "alert": {
@@ -6189,6 +6191,10 @@
     "loadOrder": {
       "title": "Choose which mod wins",
       "body": "Some of your mods change the same files. Drag them into the order you want to decide which one takes priority."
+    },
+    "modRepairs": {
+      "title": "Mods acting up after a patch?",
+      "body": "Use Check mods for repairs in this menu to scan every installed mod against the current game version and see what can be fixed."
     },
     "modsFolderShortcut": {
       "title": "Open this folder faster",
