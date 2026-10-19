@@ -90,6 +90,7 @@ jobs:
             settings,
             skins,
             interchange,
+            shards,
           ]
         # Fixed seeds keep failures reproducible: 0 is the default, 887
         # replays #891 and 4 retries an update straight after a failure.
@@ -200,6 +201,7 @@ jobs:
             settings,
             skins,
             interchange,
+            shards,
           ]
         include:
           - distro: debian
@@ -223,6 +225,7 @@ jobs:
           - { distro: arch, suite: settings }
           - { distro: arch, suite: skins }
           - { distro: arch, suite: interchange }
+          - { distro: arch, suite: shards }
     steps:
       - name: Install Debian packages
         if: matrix.distro == 'debian'
