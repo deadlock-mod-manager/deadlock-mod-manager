@@ -66,6 +66,13 @@ const describeRequests = (requests: readonly FixtureRequest[]): string[] =>
       : `${request.method} ${request.url}`,
   );
 
+// A CI run recorded an fs error whose stack had no message, so the path of
+// the missing file never reached result.json.
+const describeError = (error: Error) =>
+  error.stack?.includes(error.message)
+    ? error.stack
+    : `${error.message}\n${error.stack ?? ""}`;
+
 const startupFixtureRoutes: readonly FixtureRoute[] = [
   {
     method: "GET",
@@ -358,7 +365,8 @@ export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
       unexpectedRequests: describeRequests(
         fixtureServer?.unmatchedRequests() ?? [],
       ),
-      error: runError instanceof Error ? runError.stack : String(runError),
+      error:
+        runError instanceof Error ? describeError(runError) : String(runError),
       captureErrors: failures,
     };
     await writeFile(
