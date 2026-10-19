@@ -24,16 +24,12 @@ use super::model::{AuthContext, DEADLOCK_APP_ID, LocalMatch, MatchHistoryPage, M
 
 // A stalled discover/login/job call must not block cancel/disable indefinitely.
 const GC_CALL_TIMEOUT: Duration = Duration::from_secs(30);
-// Logging off runs right before a game launch, so it must not hold that up.
 const LOG_OFF_TIMEOUT: Duration = Duration::from_secs(2);
-// Steam takes a while to start the game after a launch request, and a session opened
-// in that gap brings Steam's "logged in on another computer" prompt back. Once the
-// game is up, the engine's game-running checks keep sessions closed.
+// Covers the gap until the game process appears and the game-running checks take over.
 const LAUNCH_HOLD: Duration = Duration::from_secs(3 * 60);
 
 static LAUNCH_REQUESTED_AT: std::sync::Mutex<Option<Instant>> = std::sync::Mutex::new(None);
 
-/// Keeps every client from opening a session for [`LAUNCH_HOLD`] from now.
 pub fn hold_for_launch() {
   set_launch_requested_at(Some(Instant::now()));
 }
@@ -91,10 +87,8 @@ struct GcSession {
 }
 
 impl GcSession {
-  // The GC handshake tells Steam this account is playing Deadlock. Until that session
-  // ends, launching the game on this PC shows Steam's "logged in on another computer"
-  // prompt. Dropping the connection alone leaves the session up until Steam times it
-  // out, so log off explicitly.
+  // An open session shows this account as playing Deadlock, so launching the game
+  // prompts to disconnect it. Dropping the connection leaves it up until Steam times out.
   async fn log_off(self) {
     if let Err(e) = with_timeout(
       LOG_OFF_TIMEOUT,
@@ -140,7 +134,6 @@ impl SteamGcClient {
     })
   }
 
-  /// Ends the Steam session, if one is open. The next request reconnects.
   pub async fn disconnect(&self) {
     let session = self.session.lock().await.take();
     if let Some(session) = session {
@@ -148,8 +141,7 @@ impl SteamGcClient {
     }
   }
 
-  /// Like [`Self::disconnect`], but never waits on a request in flight: a busy
-  /// session logs off as soon as that request finishes.
+  /// Doesn't wait on a request in flight; that session logs off once it finishes.
   pub async fn release(self: &Arc<Self>) {
     let Ok(session) = self.session.try_lock().map(|mut guard| guard.take()) else {
       let client = Arc::clone(self);
