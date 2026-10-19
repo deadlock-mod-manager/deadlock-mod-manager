@@ -19,6 +19,13 @@ describe("AI support configuration", () => {
     expect(intents).not.toContain(GatewayIntentBits.MessageContent);
   });
 
+  it("requests Message Content for language moderation without enabling AI", () => {
+    const intents = getBotIntents(false, true);
+    expect(intents).toContain(GatewayIntentBits.MessageContent);
+    expect(intents).not.toContain(GatewayIntentBits.GuildMembers);
+    expect(intents).not.toContain(GatewayIntentBits.GuildPresences);
+  });
+
   it("requests only Message Content when AI support is explicitly restored", () => {
     const intents = getBotIntents(aiSupportEnabledSchema.parse("true"));
     expect(intents).toContain(GatewayIntentBits.MessageContent);

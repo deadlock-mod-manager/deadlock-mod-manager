@@ -1,7 +1,9 @@
 import { z } from "zod";
 import { aiSupportEnabledSchema } from "../config/ai-support";
+import { languageModerationEnvSchema } from "../config/language-moderation";
 
 export const envSchema = z.object({
+  ...languageModerationEnvSchema.shape,
   NODE_ENV: z.enum(["development", "production"]).default("production"),
   DATABASE_URL: z.string().url("DATABASE_URL must be a valid URL"),
   REDIS_URL: z.string().default("redis://localhost:6379"),
@@ -91,6 +93,17 @@ export const envSchema = z.object({
     .default("https://docs.deadlockmods.app/llms-full.txt"),
 });
 
-export const env = envSchema.parse(process.env);
+export const env = envSchema
+  .refine(
+    (value) =>
+      !value.LANGUAGE_MODERATION_ENABLED ||
+      value.LANGUAGE_MODERATION_CHANNEL_IDS.length > 0,
+    {
+      message:
+        "Set LANGUAGE_MODERATION_CHANNEL_IDS before enabling language moderation",
+      path: ["LANGUAGE_MODERATION_CHANNEL_IDS"],
+    },
+  )
+  .parse(process.env);
 
 export type Environment = z.infer<typeof envSchema>;

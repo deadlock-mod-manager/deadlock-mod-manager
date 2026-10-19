@@ -4,7 +4,10 @@ import { getBotIntents } from "../config/ai-support";
 import { env } from "./env";
 
 const client = new SapphireClient({
-  intents: getBotIntents(env.AI_SUPPORT_ENABLED),
+  intents: getBotIntents(
+    env.AI_SUPPORT_ENABLED,
+    env.LANGUAGE_MODERATION_ENABLED,
+  ),
   loadMessageCommandListeners: true,
 });
 

@@ -4,7 +4,7 @@
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
-    "check-types": "tsc --noEmit --skipLibCheck",
+    "check-types": "tsc --noEmit --skipLibCheck && tsc --noEmit --skipLibCheck -p tsconfig.tests.json",
     "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
     "dev": "dotenv -e ../../.env -- bun run --preload ./src/instrument.ts --watch ./src/index.ts",
     "start": "bun run --preload ./src/instrument.ts ./src/index.ts",
@@ -42,6 +42,7 @@
     "@sentry/opentelemetry": "^10.46.0",
     "cache-manager": "catalog:",
     "cacheable": "catalog:",
+    "cld3-asm": "4.0.0",
     "discord-api-types": "^0.38.42",
     "discord.js": "^14.25.1",
     "genversion": "^3.2.0",
