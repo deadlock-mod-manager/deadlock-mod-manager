@@ -8,7 +8,8 @@ use std::time::{Duration, Instant};
 
 use prost::Message as _;
 use steam_vent::proto::MsgKind;
-use steam_vent::proto::steammessages_clientserver_login::CMsgClientLogOff;
+use steam_vent::proto::enums_clientserver::EMsg;
+use steam_vent::proto::steammessages_clientserver::CMsgClientGamesPlayed;
 use steam_vent::{
   Connection, ConnectionTrait, GameCoordinator, RawNetMessage, ServerList, UntypedMessage,
 };
@@ -24,7 +25,7 @@ use super::model::{AuthContext, DEADLOCK_APP_ID, LocalMatch, MatchHistoryPage, M
 
 // A stalled discover/login/job call must not block cancel/disable indefinitely.
 const GC_CALL_TIMEOUT: Duration = Duration::from_secs(30);
-const LOG_OFF_TIMEOUT: Duration = Duration::from_secs(2);
+const STOP_PLAYING_TIMEOUT: Duration = Duration::from_secs(2);
 // Covers the gap until the game process appears and the game-running checks take over.
 const LAUNCH_HOLD: Duration = Duration::from_secs(3 * 60);
 
@@ -87,13 +88,17 @@ struct GcSession {
 }
 
 impl GcSession {
-  // An open session shows this account as playing Deadlock, so launching the game
-  // prompts to disconnect it. Dropping the connection leaves it up until Steam times out.
-  async fn log_off(self) {
+  // The GC handshake reports this account as playing Deadlock, so launching the game
+  // prompts to disconnect this session. Clear that instead of logging off: the session
+  // shares the Steam client's login, and logging off signs the client out too.
+  async fn stop_playing(self) {
     if let Err(e) = with_timeout(
-      LOG_OFF_TIMEOUT,
-      "log-off",
-      self.conn.send(CMsgClientLogOff::new()),
+      STOP_PLAYING_TIMEOUT,
+      "clear games played",
+      self.conn.send_with_kind(
+        CMsgClientGamesPlayed::default(),
+        EMsg::k_EMsgClientGamesPlayedWithDataBlob,
+      ),
     )
     .await
     {
@@ -137,11 +142,11 @@ impl SteamGcClient {
   pub async fn disconnect(&self) {
     let session = self.session.lock().await.take();
     if let Some(session) = session {
-      session.log_off().await;
+      session.stop_playing().await;
     }
   }
 
-  /// Doesn't wait on a request in flight; that session logs off once it finishes.
+  /// Doesn't wait on a request in flight; that session closes once it finishes.
   pub async fn release(self: &Arc<Self>) {
     let Ok(session) = self.session.try_lock().map(|mut guard| guard.take()) else {
       let client = Arc::clone(self);
@@ -149,13 +154,13 @@ impl SteamGcClient {
       return;
     };
     if let Some(session) = session {
-      session.log_off().await;
+      session.stop_playing().await;
     }
   }
 
   fn poison(guard: &mut Option<GcSession>) {
     if let Some(session) = guard.take() {
-      tokio::spawn(session.log_off());
+      tokio::spawn(session.stop_playing());
     }
   }
 
@@ -176,7 +181,7 @@ impl SteamGcClient {
     Ok(())
   }
 
-  // Poisons the session (logs it off) on any failure or timeout, so the next call
+  // Poisons the session (closes it) on any failure or timeout, so the next call
   // reconnects instead of retrying a broken GC connection.
   async fn send_job(
     guard: &mut Option<GcSession>,
