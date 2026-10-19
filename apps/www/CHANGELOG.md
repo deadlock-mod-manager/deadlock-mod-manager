@@ -1,5 +1,13 @@
 # web
 
+## 0.6.2
+
+### Patch Changes
+
+- Updated dependencies [c1a5b52]
+  - @deadlock-mods/common@1.3.1
+  - @deadlock-mods/shared@2.3.0
+
 ## 0.6.1
 
 ### Patch Changes

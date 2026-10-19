@@ -1,5 +1,14 @@
 # @deadlock-mods/queue
 
+## 0.2.1
+
+### Patch Changes
+
+- cdec390: Speed up Lockdex indexing and backfill files it never indexed
+- a153505: Stop retired GameBanana RSS jobs from repeatedly failing in the worker queue.
+- Updated dependencies [c1a5b52]
+  - @deadlock-mods/common@1.3.1
+
 ## 0.2.0
 
 ### Minor Changes

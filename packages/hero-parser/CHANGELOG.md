@@ -1,5 +1,13 @@
 # @deadlock-mods/hero-parser
 
+## 1.1.2
+
+### Patch Changes
+
+- Updated dependencies [cdec390]
+- Updated dependencies [cdec390]
+  - @deadlock-mods/vpk-parser@1.1.0
+
 ## 1.1.1
 
 ### Patch Changes

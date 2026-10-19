@@ -1,5 +1,36 @@
 # @deadlock-mods/bot
 
+## 1.5.0
+
+### Minor Changes
+
+- 439da9f: Add a moderator command to clear reports by mod URL, member URL, or exact author name.
+- ddfc7a5: Add /forum cleanup so forum staff can trigger the scheduled cleanup immediately.
+- 4e0c11c: Add English-only channel moderation with warnings and repeat-message deletion
+- cdec390: Add status tags, close and solve controls, and idle auto-close to forum posts
+
+### Patch Changes
+
+- cef25b0: Show total report counts when clearing reports and refresh stale counts.
+- 3bd448c: Allow blacklist staff, including Moderators and Community Support, to clear mod reports.
+- d5539c4: Show report-clearing results publicly in the channel.
+- Updated dependencies [c1a5b52]
+- Updated dependencies [439da9f]
+- Updated dependencies [cdec390]
+- Updated dependencies [c6b0443]
+- Updated dependencies [cef25b0]
+- Updated dependencies [a4d7103]
+- Updated dependencies [cdec390]
+- Updated dependencies [a153505]
+- Updated dependencies [cdec390]
+  - @deadlock-mods/common@1.3.1
+  - @deadlock-mods/database@2.4.0
+  - @deadlock-mods/vpk-parser@1.1.0
+  - @deadlock-mods/queue@0.2.1
+  - @deadlock-mods/feature-flags@0.2.11
+  - @deadlock-mods/instrumentation@0.1.13
+  - @deadlock-mods/shared@2.3.0
+
 ## 1.4.1
 
 ### Patch Changes

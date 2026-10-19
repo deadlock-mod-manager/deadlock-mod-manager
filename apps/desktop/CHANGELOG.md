@@ -14,6 +14,16 @@
 - 712f690: Add ranked, unranked, and start-date filters to Overview, Heroes, and Items stats.
 - e31d615: Sort the mod library by install order, hero, name, or recently added, and tidy the library toolbar.
 - b4b34a2: Show update badges in My Mods, including disabled mods, and add a setting to hide them. Keep disabled mods disabled when updating them.
+- 5246248: Add occasional tips that point out features you haven't tried yet
+- 8eb3a21: Add the Drututt theme with channel art and emote easter eggs
+- cdec390: Add a tour of experimental features you can enable and reopen later
+- 5246248: Add a Check mods for repairs action to the Mods Library menu
+- 5246248: Keep the menu bar open after a single tap of Alt
+- cdec390: Tell users when a slow or failed download is on GameBanana's side
+- cdec390: Add a Contributors page crediting the core team and GitHub contributors
+- 932aa5c: Add an NSFW Only filter to the mod browser and My Mods
+- d8d6e74: Add Find a broken mod, which tests mods in halves to find the one breaking the game
+- 5246248: Allow dropping mod files anywhere in the window
 - 85b515a: Show GameBanana comments and changelogs on mod pages and when updating
 - d0d29cd: Add an OLED theme with true-black backgrounds and a customizable accent
 - c52fc90: Add seasonal themes with mini-games for Halloween, Christmas, Easter and more
@@ -73,6 +83,19 @@
 
 ### Patch Changes
 
+- 21e7900: Fix modded launch failing when a mod file cannot be read
+- 41bbeca: Fix Steam launch warnings when match sync is still fetching matches
+- 21e7900: Fix mods that ship older copies of game data or text
+- cdec390: Fix duplicate and missing heroes in the Discord Rich Presence hero picker
+- 39dc269: Improve app responsiveness and cut idle GPU use from the animated background
+- 8215ed4: Fix game launches on Linux when Steam is installed as a Flatpak or Snap
+- 718218b: Starting Deadlock with match sync on no longer shows Steam's "logged in on another computer" prompt.
+- 21e7900: Fix silent footsteps and movement sounds on older hero skins
+- cdec390: Fix Linux GPU detection and preserve explicit compatibility settings
+- 21e7900: Fix adjusted and missing camera points on older hero skins
+- 3920c28: Turn match data sharing off by default and only start it after the user consents
+- 6c300f5: Fix Linux updates for Flatpak, Debian, RPM, and CEF installations
+- 21e7900: Update mod animation skeletons when the game adds bones
 - a1f2286: Check installed mods against the current game after installs and game updates, badge mods made for an older version, and fix them from the library or before launch without the experimental flag. Mod files are never changed, and any mod can go back to its original files
 - 9b06f22: Fix access-denied errors when combining shared mod changes on Windows.
 - 5382703: Add Enable all mods to the library menu, with a recap of what was enabled, skipped or failed and a button to finish each one
@@ -200,9 +223,14 @@
 - Updated dependencies [437e943]
 - Updated dependencies [cbab84a]
 - Updated dependencies [fd4234f]
+- Updated dependencies [c1a5b52]
+- Updated dependencies [cdec390]
+- Updated dependencies [cdec390]
   - @deadlock-mods/shared@2.3.0
-  - @deadlock-mods/hero-parser@1.1.1
+  - @deadlock-mods/hero-parser@1.1.2
   - @deadlock-mods/crosshair@0.2.6
+  - @deadlock-mods/common@1.3.1
+  - @deadlock-mods/vpk-parser@1.1.0
 
 ## 1.1.0
 

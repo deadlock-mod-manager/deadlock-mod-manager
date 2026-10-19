@@ -1,5 +1,37 @@
 # api
 
+## 3.5.0
+
+### Minor Changes
+
+- cdec390: Sync new and updated GameBanana mods every 15 minutes
+
+### Patch Changes
+
+- aa258ed: Recover queue and publisher writes after Redis primary failover.
+- dbd4ab1: Preserve GameBanana HTTP errors when downloads return HTML or plain text.
+- e784832: Keep cached release downloads available while respecting GitHub rate limits.
+- a153505: Stop retired GameBanana RSS jobs from repeatedly failing in the worker queue.
+- Updated dependencies [c1a5b52]
+- Updated dependencies [439da9f]
+- Updated dependencies [cdec390]
+- Updated dependencies [c6b0443]
+- Updated dependencies [cef25b0]
+- Updated dependencies [a4d7103]
+- Updated dependencies [cdec390]
+- Updated dependencies [a153505]
+- Updated dependencies [cdec390]
+  - @deadlock-mods/common@1.3.1
+  - @deadlock-mods/database@2.4.0
+  - @deadlock-mods/vpk-parser@1.1.0
+  - @deadlock-mods/queue@0.2.1
+  - @deadlock-mods/feature-flags@0.2.11
+  - @deadlock-mods/instrumentation@0.1.13
+  - @deadlock-mods/kv-parser@0.3.2
+  - @deadlock-mods/relay-client@0.2.1
+  - @deadlock-mods/distributed-lock@1.0.13
+  - @deadlock-mods/shared@2.3.0
+
 ## 3.4.0
 
 ### Minor Changes

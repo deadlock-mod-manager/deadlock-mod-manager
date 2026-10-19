@@ -1,5 +1,12 @@
 # @deadlock-mods/relay-client
 
+## 0.2.1
+
+### Patch Changes
+
+- Updated dependencies [c1a5b52]
+  - @deadlock-mods/common@1.3.1
+
 ## 0.2.0
 
 ### Minor Changes

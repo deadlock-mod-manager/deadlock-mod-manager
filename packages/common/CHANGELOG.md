@@ -1,5 +1,11 @@
 # @deadlock-mods/common
 
+## 1.3.1
+
+### Patch Changes
+
+- c1a5b52: Preserve database failure causes and classify wrapped driver errors correctly.
+
 ## 1.3.0
 
 ### Minor Changes

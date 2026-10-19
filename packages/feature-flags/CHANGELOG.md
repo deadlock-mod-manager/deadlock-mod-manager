@@ -1,5 +1,19 @@
 # @deadlock-mods/feature-flags
 
+## 0.2.11
+
+### Patch Changes
+
+- c6b0443: Fix feature flag requests failing after cached results are serialized.
+- a4d7103: Avoid creating feature flags when startup cannot read the database.
+- Updated dependencies [c1a5b52]
+- Updated dependencies [439da9f]
+- Updated dependencies [cdec390]
+- Updated dependencies [cef25b0]
+- Updated dependencies [cdec390]
+  - @deadlock-mods/common@1.3.1
+  - @deadlock-mods/database@2.4.0
+
 ## 0.2.10
 
 ### Patch Changes

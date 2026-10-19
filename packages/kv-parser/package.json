@@ -1,6 +1,6 @@
 {
   "name": "@deadlock-mods/kv-parser",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "High-performance KeyValues (VDF) parser with AST support using native Rust implementation via Bun FFI",
   "keywords": [
     "ast",

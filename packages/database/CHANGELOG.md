@@ -1,5 +1,19 @@
 # @deadlock-mods/database
 
+## 2.4.0
+
+### Minor Changes
+
+- 439da9f: Add a moderator command to clear reports by mod URL, member URL, or exact author name.
+- cdec390: Sync new and updated GameBanana mods every 15 minutes
+
+### Patch Changes
+
+- cdec390: Speed up Lockdex indexing and backfill files it never indexed
+- cef25b0: Show total report counts when clearing reports and refresh stale counts.
+- Updated dependencies [c1a5b52]
+  - @deadlock-mods/common@1.3.1
+
 ## 2.3.0
 
 ### Minor Changes
