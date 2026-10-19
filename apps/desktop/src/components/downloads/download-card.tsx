@@ -5,6 +5,7 @@ import { ArrowClockwiseIcon, Pause, Play } from "@phosphor-icons/react";
 import type { MouseEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
+import { DownloadHealthNotice } from "@/components/downloads/download-health-notice";
 import { downloadManager } from "@/lib/download/manager";
 import { useDownload } from "@/hooks/use-download";
 import { getErrorMessage } from "@/lib/errors";
@@ -208,6 +209,8 @@ const DownloadCard = ({ download }: DownloadCardProps) => {
           style={{ width: `${percentage}%` }}
         />
       </div>
+
+      <DownloadHealthNotice progress={modProgress} status={download.status} />
 
       {(isDownloading || isPaused || isFailed) && (
         <div

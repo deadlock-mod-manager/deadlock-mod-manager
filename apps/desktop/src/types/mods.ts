@@ -7,12 +7,24 @@ import type { VpkParsed } from "@deadlock-mods/vpk-parser";
 // Individual download item type extracted from ModDownloadDto schema
 export type ModDownloadItem = z.infer<typeof ModDownloadDtoSchema>;
 
+/** Who is serving a download's bytes; mirrors the backend's `DownloadSource`. */
+export type DownloadSource = "gameBanana" | "other";
+
+/** A failure on the download server's side; mirrors `DownloadFailureReason`. */
+export type DownloadFailureReason = "sourceBusy" | "stalled";
+
+export type DownloadFailure = {
+  reason: DownloadFailureReason;
+  retryAfterSecs: number | null;
+};
+
 export type Progress = {
   progress: number;
   progressTotal: number;
   total: number;
   transferSpeed: number;
   percentage: number;
+  source?: DownloadSource | null;
 };
 
 export enum ModStatus {

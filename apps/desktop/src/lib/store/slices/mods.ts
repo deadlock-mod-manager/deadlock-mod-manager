@@ -1,10 +1,13 @@
 import type { ModDto } from "@deadlock-mods/shared";
 import type { StateCreator } from "zustand";
 import { SortType } from "@/lib/constants";
+import { nextSlowSince } from "@/lib/download/health";
 import logger from "@/lib/logger";
 import { ModStatusStateMachine } from "@/lib/state-machines/mod-status";
 import {
   type AnalyzeAddonsResult,
+  type DownloadFailure,
+  type DownloadSource,
   type LocalMod,
   type ModDownloadItem,
   type ModFileTree,
@@ -22,6 +25,10 @@ import {
 export type ModProgress = {
   percentage: number;
   speed?: number;
+  source?: DownloadSource;
+  /** Epoch ms since the speed has been below the slow threshold. */
+  slowSince?: number;
+  failure?: DownloadFailure;
 };
 
 export type HeroDetectionProgress = {
@@ -78,6 +85,7 @@ export type ModsState = {
     profileId?: ProfileId,
   ) => void;
   setModProgress: (remoteId: string, progress: Progress) => void;
+  patchModProgress: (remoteId: string, patch: Partial<ModProgress>) => void;
   /** Records a finished update, so update checks compare against now. */
   markModUpdated: (
     remoteId: string,
@@ -532,12 +540,32 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
   },
 
   setModProgress: (remoteId, progress) =>
+    set((state) => {
+      const previous = state.modProgress[remoteId];
+      return {
+        modProgress: {
+          ...state.modProgress,
+          [remoteId]: {
+            percentage: progress?.percentage ?? 0,
+            speed: progress?.transferSpeed,
+            source: progress?.source ?? previous?.source,
+            slowSince: nextSlowSince(
+              previous?.slowSince,
+              progress?.transferSpeed ?? 0,
+              Date.now(),
+            ),
+          },
+        },
+      };
+    }),
+
+  patchModProgress: (remoteId, patch) =>
     set((state) => ({
       modProgress: {
         ...state.modProgress,
         [remoteId]: {
-          percentage: progress?.percentage ?? 0,
-          speed: progress?.transferSpeed,
+          ...(state.modProgress[remoteId] ?? { percentage: 0 }),
+          ...patch,
         },
       },
     })),

@@ -6,7 +6,9 @@ use crate::errors::Error;
 use crate::mod_manager::filesystem_helper::FileSystemHelper;
 use crate::mod_manager::perf_config::staging as perf_staging;
 use crate::mod_manager::perf_config::types::{ConfigFoundEvent, ImportVariant};
-use downloader::{DownloadProgress as FileProgress, PauseHandle, download_file_resumable};
+use downloader::{
+  DownloadProgress as FileProgress, DownloadSource, PauseHandle, download_file_resumable,
+};
 use progress::{AcceptedProgress, ProgressAggregator};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet, VecDeque};
@@ -55,6 +57,8 @@ pub struct DownloadProgressEvent {
   pub total: u64,
   pub transfer_speed: f64,
   pub percentage: f64,
+  /// `None` on reports that carry no response, such as a file finishing.
+  pub source: Option<DownloadSource>,
 }
 
 impl DownloadProgressEvent {
@@ -63,6 +67,7 @@ impl DownloadProgressEvent {
     mod_id: &str,
     file_index: usize,
     total_files: usize,
+    source: Option<DownloadSource>,
   ) -> Self {
     Self {
       mod_id: mod_id.to_string(),
@@ -73,6 +78,7 @@ impl DownloadProgressEvent {
       total: accepted.total_size,
       transfer_speed: accepted.total_speed,
       percentage: accepted.percentage,
+      source,
     }
   }
 }
@@ -109,6 +115,36 @@ pub struct DownloadFontsFoundEvent {
 pub struct DownloadErrorEvent {
   pub mod_id: String,
   pub error: String,
+  /// Set when the failure is on the download server's side rather than the app's.
+  pub reason: Option<DownloadFailureReason>,
+  pub retry_after_secs: Option<u64>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum DownloadFailureReason {
+  /// GameBanana answered with 429 or a 5xx.
+  SourceBusy,
+  /// The server stopped sending data and reconnecting did not help.
+  Stalled,
+}
+
+impl DownloadErrorEvent {
+  fn new(mod_id: String, error: &Error) -> Self {
+    let (reason, retry_after_secs) = match error {
+      Error::DownloadSourceBusy {
+        retry_after_secs, ..
+      } => (Some(DownloadFailureReason::SourceBusy), *retry_after_secs),
+      Error::DownloadStalled => (Some(DownloadFailureReason::Stalled), None),
+      _ => (None, None),
+    };
+    Self {
+      mod_id,
+      error: error.to_string(),
+      reason,
+      retry_after_secs,
+    }
+  }
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -303,10 +339,7 @@ impl DownloadManager {
                 app_handle
                   .emit(
                     "download-error",
-                    DownloadErrorEvent {
-                      mod_id: mod_id.clone(),
-                      error: error.to_string(),
-                    },
+                    DownloadErrorEvent::new(mod_id.clone(), error),
                   )
                   .ok();
               }
@@ -397,7 +430,14 @@ impl DownloadManager {
                 progress.total,
                 progress.speed,
                 |accepted| {
-                  Self::publish_progress(accepted, &mod_id, file_index, total_files, &app_handle);
+                  Self::publish_progress(
+                    accepted,
+                    &mod_id,
+                    file_index,
+                    total_files,
+                    Some(progress.source),
+                    &app_handle,
+                  );
                 },
               );
             }
@@ -422,6 +462,7 @@ impl DownloadManager {
             &mod_id_clone,
             file_index,
             total_files,
+            None,
             &app_handle_clone,
           );
         });
@@ -441,16 +482,30 @@ impl DownloadManager {
           downloaded_files.push(path);
         }
         Ok(Err(e)) => {
-          errors.push(e.to_string());
+          errors.push(e);
         }
         Err(e) => {
-          errors.push(format!("Task join error: {e}"));
+          errors.push(Error::DownloadFailed(format!("Task join error: {e}")));
         }
       }
     }
 
+    // A server-side failure is surfaced as is, so the UI can tell the user it is
+    // not the app's fault; anything else keeps every file's message.
+    if let Some(index) = errors.iter().position(|error| {
+      matches!(
+        error,
+        Error::DownloadSourceBusy { .. } | Error::DownloadStalled
+      )
+    }) {
+      return Err(errors.swap_remove(index));
+    }
     if !errors.is_empty() {
-      let error_message = errors.join("; ");
+      let error_message = errors
+        .iter()
+        .map(ToString::to_string)
+        .collect::<Vec<_>>()
+        .join("; ");
       return Err(Error::DownloadFailed(error_message));
     }
 
@@ -865,12 +920,13 @@ impl DownloadManager {
     mod_id: &str,
     file_index: usize,
     total_files: usize,
+    source: Option<DownloadSource>,
     app_handle: &AppHandle,
   ) {
     app_handle
       .emit(
         "download-progress",
-        DownloadProgressEvent::from_accepted(accepted, mod_id, file_index, total_files),
+        DownloadProgressEvent::from_accepted(accepted, mod_id, file_index, total_files, source),
       )
       .ok();
   }
@@ -1774,6 +1830,7 @@ mod tests {
       "mod-7",
       8,
       9,
+      None,
     );
 
     assert_eq!(event.mod_id, "mod-7");
