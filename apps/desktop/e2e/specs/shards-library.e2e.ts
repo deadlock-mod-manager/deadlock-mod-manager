@@ -12,10 +12,10 @@ import {
   expectOrderingDialog,
   expectShardStatus,
   findMod,
-  modSwitch,
   openShardStatus,
   searchLibrary,
   setModEnabled,
+  waitForSwitch,
 } from "../support/shard-actions";
 import { LIBRARY_MODS, SHARDS, shardModId } from "../support/shard-fixtures";
 import {
@@ -79,10 +79,7 @@ describe("addon shards in the library", () => {
         );
         for (const modId of [shardModId(0), shardModId(98), OVERFLOW, LAST]) {
           await findMod(modId);
-          await expect(modSwitch(modId)).toHaveAttribute(
-            "aria-checked",
-            "true",
-          );
+          await waitForSwitch(modId, true);
         }
       });
 
@@ -211,10 +208,7 @@ describe("addon shards in the library", () => {
         );
         for (const modId of [OVERFLOW, MOVED]) {
           await findMod(modId);
-          await expect(modSwitch(modId)).toHaveAttribute(
-            "aria-checked",
-            "true",
-          );
+          await waitForSwitch(modId, true);
         }
         await searchLibrary(LAST);
         await expect($(`[title="${LAST}"]`)).not.toExist();
