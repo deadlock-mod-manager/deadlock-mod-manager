@@ -7,6 +7,8 @@ runs:
       with:
         node-version: "24.8.0"
     - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6
+      with:
+        cache: true
     - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
     # The native input helper only exists for Windows scenarios.
     - if: runner.os == 'Windows'
