@@ -3,6 +3,11 @@ import {
   ContextMenuContent,
   ContextMenuItem,
   ContextMenuSeparator,
+  ContextMenuSub,
+  ContextMenuSubContent,
+  ContextMenuSubTrigger,
+  ContextMenuRadioGroup,
+  ContextMenuRadioItem,
   ContextMenuTrigger,
 } from "@deadlock-mods/ui/components/context-menu";
 import { toast } from "@deadlock-mods/ui/components/sonner";
@@ -16,6 +21,8 @@ import { HintAnchor } from "@/components/feature-hints/hint-anchor";
 import { ModHealthMenuItems } from "@/components/mod-health/mod-health-menu-items";
 import { useReinstallAction } from "@/hooks/use-reinstall-action";
 import { usePersistedStore } from "@/lib/store";
+import { EMPTY_MOD_GROUPS } from "@/lib/store/slices/mod-groups";
+import { useMoveModsToGroup } from "@/hooks/use-move-mods-to-group";
 import { cn } from "@/lib/utils";
 import type { LocalMod } from "@/types/mods";
 
@@ -50,6 +57,13 @@ export const ModContextMenu = ({
   const { t } = useTranslation();
   const { getActiveProfile } = usePersistedStore();
   const markFeatureUsed = usePersistedStore((state) => state.markFeatureUsed);
+  const profileId = usePersistedStore((state) => state.activeProfileId);
+  const groups = usePersistedStore(
+    (state) => state.profiles[profileId]?.modGroups ?? EMPTY_MOD_GROUPS,
+  );
+  const assignGroup = useMoveModsToGroup();
+  const groupId =
+    groups.find((group) => group.modIds.includes(mod.remoteId))?.id ?? "";
   const {
     reinstall: handleReinstall,
     isReinstalling,
@@ -139,6 +153,32 @@ export const ModContextMenu = ({
           </ContextMenuItem>
         )}
         <ModHealthMenuItems mod={mod} />
+        {groups.length > 0 && (
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuSub>
+              <ContextMenuSubTrigger>
+                {t("myMods.groups.moveTo")}
+              </ContextMenuSubTrigger>
+              <ContextMenuSubContent>
+                <ContextMenuRadioGroup
+                  value={groupId}
+                  onValueChange={(id) =>
+                    assignGroup(profileId, [mod.remoteId], id || null)
+                  }>
+                  {groups.map((group) => (
+                    <ContextMenuRadioItem key={group.id} value={group.id}>
+                      {group.name}
+                    </ContextMenuRadioItem>
+                  ))}
+                  <ContextMenuRadioItem value=''>
+                    {t("myMods.groups.ungrouped")}
+                  </ContextMenuRadioItem>
+                </ContextMenuRadioGroup>
+              </ContextMenuSubContent>
+            </ContextMenuSub>
+          </>
+        )}
       </ContextMenuContent>
     </ContextMenu>
   );

@@ -1,5 +1,11 @@
 import { Checkbox } from "@deadlock-mods/ui/components/checkbox";
 import { LibrarySelectionBar } from "@/components/my-mods/library-selection-bar";
+import { ModGroupTools } from "@/components/my-mods/mod-group-tools";
+import type { ModGroupActions } from "@/components/my-mods/mod-group-enablement";
+import { LibraryModGroups } from "@/components/my-mods/library-mod-groups";
+import { DraggableLibraryMod } from "@/components/my-mods/draggable-library-mod";
+import { groupLibraryMods } from "@/lib/mods/library-groups";
+import { EMPTY_MOD_GROUPS } from "@/lib/store/slices/mod-groups";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
@@ -20,6 +26,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
@@ -65,7 +73,7 @@ import {
   TriangleAlert,
   Wrench,
 } from "@deadlock-mods/ui/icons";
-import { Trash, UploadSimple } from "@phosphor-icons/react";
+import { Trash } from "@phosphor-icons/react";
 import { MagnifyingGlass } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { platform } from "@tauri-apps/plugin-os";
@@ -90,7 +98,7 @@ import { BatchUpdateDialog } from "@/components/my-mods/batch-update-dialog";
 import { EnableAllRecapDialog } from "@/components/my-mods/enable-all-recap-dialog";
 import { UpdateButton } from "@/components/my-mods/update-button";
 import { ExportDialog } from "@/components/mod-interchange/export-dialog";
-import { ImportSourceMenu } from "@/components/mod-interchange/import-source-menu";
+import { AddModsMenu } from "@/components/mod-interchange/add-mods-menu";
 import { ConflictsPanel } from "@/components/my-mods/conflicts/conflicts-panel";
 import { ModConflictBadge } from "@/components/my-mods/conflicts/mod-conflict-badge";
 import { MyModsEmptyState } from "@/components/my-mods/empty-state";
@@ -112,6 +120,7 @@ import { ModUpdateBadge } from "@/components/mod-management/mod-update-badges";
 import { useModHasUpdate, useCheckUpdates } from "@/hooks/use-check-updates";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useNSFWBlur } from "@/hooks/use-nsfw-blur";
+import { useStuckAttribute } from "@/hooks/use-stuck-attribute";
 import { useProfileConflicts } from "@/hooks/use-profile-conflicts";
 import { useSearch } from "@/hooks/use-search";
 import { useModOptions } from "@/hooks/use-mod-options";
@@ -471,125 +480,116 @@ const ListModCard = ({
   return (
     <>
       <ModContextMenu hint={contextMenuHint} mod={mod} onSelect={onSelect}>
-        <Card className='shadow'>
-          <div className='flex items-center pr-4'>
-            <div
-              className={cn(
-                "relative h-24 w-24 min-w-24",
-                isDisabled && "grayscale",
-              )}
-              onClick={openModDetail}>
-              {mod.isAudio ? (
-                <AudioPlayerPreview
-                  audioUrl={mod.audioUrl || ""}
-                  onPlayClick={(e) => e.stopPropagation()}
-                  variant='compact'
+        <Card className='group/row flex items-center gap-4 overflow-hidden pr-3 shadow transition-colors hover:bg-muted/40'>
+          <div
+            className={cn(
+              "relative h-16 w-28 shrink-0 transition-[filter] duration-300 ease-out",
+              isDisabled && "grayscale",
+            )}
+            onClick={openModDetail}>
+            {mod.isAudio ? (
+              <AudioPlayerPreview
+                audioUrl={mod.audioUrl || ""}
+                onPlayClick={(e) => e.stopPropagation()}
+                variant='compact'
+              />
+            ) : mod.images && mod.images.length > 0 ? (
+              <NSFWBlur
+                blurStrength={nsfwSettings.blurStrength}
+                className='h-full w-full cursor-pointer overflow-hidden'
+                disableBlur={nsfwSettings.disableBlur}
+                isNSFW={shouldBlur}
+                onToggleVisibility={handleNSFWToggle}>
+                <img
+                  alt={mod.name}
+                  className='h-full w-full object-cover transition-transform duration-300 ease-out group-hover/row:scale-105'
+                  decoding='async'
+                  height='160'
+                  loading='lazy'
+                  src={getModCoverImage(mod)}
+                  width='160'
                 />
-              ) : mod.images && mod.images.length > 0 ? (
-                <NSFWBlur
-                  blurStrength={nsfwSettings.blurStrength}
-                  className='h-full w-full cursor-pointer overflow-hidden rounded-l-xl'
-                  disableBlur={nsfwSettings.disableBlur}
-                  isNSFW={shouldBlur}
-                  onToggleVisibility={handleNSFWToggle}>
-                  <img
-                    alt={mod.name}
-                    className='h-full w-full object-cover'
-                    decoding='async'
-                    height='160'
-                    loading='lazy'
-                    src={getModCoverImage(mod)}
-                    width='160'
-                  />
-                </NSFWBlur>
-              ) : (
-                <div className='flex h-full w-full cursor-pointer items-center justify-center rounded-l-xl bg-secondary'>
-                  <div className='text-center text-foreground/60'>
-                    <div className='mx-auto h-6 w-6' />
-                  </div>
-                </div>
-              )}
-              <div className='absolute top-1 right-1 flex flex-col gap-1'>
-                {mod.isAudio && (
-                  <Badge className='text-xs' variant='secondary'>
-                    {t("mods.audio")}
-                  </Badge>
-                )}
-                {mod.remoteUrl?.startsWith("local://") && (
-                  <Badge variant='outline' className='text-xs bg-background/95'>
-                    {t("mods.customBadge")}
-                  </Badge>
-                )}
-                {showsDateOutdatedWarning(isModOutdated(mod), health) && (
-                  <OutdatedModWarning className='text-xs' variant='indicator' />
-                )}
-                <ModHealthBadge
-                  className='text-xs'
-                  health={health}
-                  isOutdated={isModOutdated(mod)}
-                />
-                <MissingFilesWarning
-                  className='text-xs'
-                  missingVpks={mod.missingVpks}
-                />
-                {conflictStatus && (
-                  <ModConflictBadge
-                    className='text-xs'
-                    onClick={onShowConflicts}
-                    status={conflictStatus}
-                  />
-                )}
+              </NSFWBlur>
+            ) : (
+              <div className='h-full w-full cursor-pointer bg-secondary' />
+            )}
+            {mod.status === ModStatus.Installing && (
+              <div className='absolute inset-0 flex items-center justify-center bg-black/50'>
+                <Loader2 className='h-5 w-5 animate-spin text-primary' />
               </div>
-              {mod.status === ModStatus.Installing && (
-                <div className='absolute inset-0 flex items-center justify-center bg-black/50'>
-                  <Loader2 className='h-5 w-5 animate-spin text-primary' />
-                </div>
-              )}
-            </div>
-            <div className='flex w-full flex-col justify-between p-3'>
-              <div>
-                <ModUpdateBadge
-                  mod={mod}
-                  hasUpdate={hasUpdate}
-                  className='mb-1 text-xs'
-                />
-                <h3
-                  className='cursor-pointer font-semibold text-lg'
-                  onClick={openModDetail}>
-                  {mod.name}
-                </h3>
-                <p className='text-muted-foreground text-sm'>
-                  <LibraryModAuthor mod={mod} />{" "}
-                  {mod.isAudio && `• ${t("mods.audioMod")}`}
-                </p>
-              </div>
-            </div>
+            )}
+          </div>
 
-            <div className='flex shrink-0 items-center gap-2'>
-              <div className='flex items-center gap-2'>
-                <ModButton remoteMod={mod} variant='iconOnly' />
-                {modOptions.showButton && (
-                  <ModOptionsButton
-                    activeCount={modOptions.activeVariantCount}
-                    onOpen={modOptions.open}
-                  />
-                )}
-              </div>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    aria-label={t("mods.removeMod")}
-                    disabled={isInstalling || deleting}
-                    icon={<Trash className='h-4 w-4' />}
-                    isLoading={deleting}
-                    onClick={deleteMod}
-                    size='icon'
-                    variant='destructive'
-                  />
-                </TooltipTrigger>
-                <TooltipContent>{t("mods.removeMod")}</TooltipContent>
-              </Tooltip>
-            </div>
+          <div className='min-w-0 flex-1 py-2'>
+            <h3
+              className={cn(
+                "cursor-pointer truncate font-semibold transition-colors",
+                isDisabled && "text-muted-foreground",
+              )}
+              onClick={openModDetail}
+              title={mod.name}>
+              {mod.name}
+            </h3>
+            <p className='truncate text-muted-foreground text-sm'>
+              <LibraryModAuthor mod={mod} />{" "}
+              {mod.isAudio && `• ${t("mods.audioMod")}`}
+            </p>
+          </div>
+
+          <div className='flex min-w-0 flex-wrap items-center justify-end gap-1 empty:hidden'>
+            <ModUpdateBadge
+              mod={mod}
+              hasUpdate={hasUpdate}
+              className='text-xs'
+            />
+            <ModHealthBadge
+              className='text-xs'
+              health={health}
+              isOutdated={isModOutdated(mod)}
+            />
+            {showsDateOutdatedWarning(isModOutdated(mod), health) && (
+              <OutdatedModWarning className='text-xs' variant='indicator' />
+            )}
+            <MissingFilesWarning
+              className='text-xs'
+              missingVpks={mod.missingVpks}
+            />
+            {conflictStatus && (
+              <ModConflictBadge
+                className='text-xs'
+                onClick={onShowConflicts}
+                status={conflictStatus}
+              />
+            )}
+            {mod.remoteUrl?.startsWith("local://") && (
+              <Badge variant='outline' className='text-xs'>
+                {t("mods.customBadge")}
+              </Badge>
+            )}
+          </div>
+
+          <div className='flex shrink-0 items-center gap-1'>
+            {modOptions.showButton && (
+              <ModOptionsButton
+                activeCount={modOptions.activeVariantCount}
+                onOpen={modOptions.open}
+              />
+            )}
+            <ModButton remoteMod={mod} variant='iconOnly' />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  aria-label={t("mods.removeMod")}
+                  disabled={isInstalling || deleting}
+                  icon={<Trash className='h-4 w-4' />}
+                  isLoading={deleting}
+                  onClick={deleteMod}
+                  size='icon'
+                  variant='destructiveGhost'
+                />
+              </TooltipTrigger>
+              <TooltipContent>{t("mods.removeMod")}</TooltipContent>
+            </Tooltip>
           </div>
         </Card>
       </ModContextMenu>
@@ -617,13 +617,18 @@ const ListModCard = ({
 
 const ModsList = ({
   mods,
+  allMods,
+  revealMatches,
+  showEmptyGroups,
   viewMode,
   conflictStatusByMod,
   onShowConflicts,
   healthById,
   contextMenuHint,
   selection,
+  groupActions,
 }: {
+  groupActions: ModGroupActions;
   selection: {
     active: boolean;
     ids: ReadonlySet<string>;
@@ -633,6 +638,9 @@ const ModsList = ({
   };
   healthById: ReadonlyMap<string, ModHealth>;
   mods: LocalMod[];
+  allMods: LocalMod[];
+  revealMatches: boolean;
+  showEmptyGroups: boolean;
   viewMode: ViewMode;
   conflictStatusByMod: ReadonlyMap<string, ModConflictStatus>;
   onShowConflicts: () => void;
@@ -641,82 +649,104 @@ const ModsList = ({
 }) => {
   const { t } = useTranslation();
   const ModCard = viewMode === ViewMode.GRID ? GridModCard : ListModCard;
+  const profileId = usePersistedStore((state) => state.activeProfileId);
   return (
-    <div
-      className={
-        viewMode === ViewMode.GRID
-          ? "grid grid-cols-[repeat(auto-fill,minmax(min(100%,14rem),1fr))] gap-3"
-          : "flex flex-col gap-3"
-      }>
-      {mods.map((mod, index) => {
-        const selected = selection.ids.has(mod.remoteId);
-        return (
-          <div
-            inert={selection.busy}
-            key={mod.remoteId}
-            onClickCapture={
-              selection.active
-                ? undefined
-                : (event) => {
-                    if (!(event.ctrlKey || event.metaKey || event.shiftKey))
-                      return;
-                    event.preventDefault();
-                    event.stopPropagation();
-                    selection.toggle(mod.remoteId, false);
+    <LibraryModGroups
+      key={profileId}
+      mods={mods}
+      allMods={allMods}
+      revealMatches={revealMatches}
+      showEmptyGroups={showEmptyGroups}
+      selectedIds={selection.ids}
+      actions={groupActions}
+      renderMods={(members, draggable) => (
+        <div
+          className={
+            viewMode === ViewMode.GRID
+              ? "grid grid-cols-[repeat(auto-fill,minmax(min(100%,14rem),1fr))] gap-3"
+              : "flex flex-col gap-2"
+          }>
+          {members.map((mod, index) => {
+            const selected = selection.ids.has(mod.remoteId);
+            return (
+              <DraggableLibraryMod
+                id={mod.remoteId}
+                disabled={!draggable || selection.busy}
+                key={mod.remoteId}>
+                <div
+                  inert={selection.busy}
+                  key={mod.remoteId}
+                  onClickCapture={
+                    selection.active
+                      ? undefined
+                      : (event) => {
+                          if (
+                            !(event.ctrlKey || event.metaKey || event.shiftKey)
+                          )
+                            return;
+                          event.preventDefault();
+                          event.stopPropagation();
+                          selection.toggle(mod.remoteId, false);
+                        }
                   }
-            }
-            className={cn(
-              "group/select relative rounded-xl transition-opacity",
-              selection.active && "select-none",
-              selected && "outline-2 outline-primary -outline-offset-2",
-              selection.active &&
-                selection.ids.size > 0 &&
-                !selected &&
-                "opacity-60 hover:opacity-100",
-            )}>
-            <Checkbox
-              aria-label={t("myMods.selection.selectMod", { name: mod.name })}
-              checked={selected}
-              disabled={selection.busy}
-              onClick={(event) => {
-                event.preventDefault();
-                selection.toggle(mod.remoteId, event.shiftKey);
-              }}
-              className={cn(
-                "absolute top-2 left-2 z-20 size-5 rounded-full border-2 border-white/80 bg-black/50 shadow-md transition-opacity data-[state=checked]:border-primary [&_svg]:size-3.5",
-                !selection.active &&
-                  "opacity-0 group-hover/select:opacity-100 focus-visible:opacity-100",
-              )}
-            />
-            {selection.active && (
-              <button
-                aria-hidden
-                className='absolute inset-0 z-10 cursor-pointer rounded-xl'
-                onClick={(event) =>
-                  selection.toggle(mod.remoteId, event.shiftKey)
-                }
-                tabIndex={-1}
-                type='button'
-              />
-            )}
-            <ModCard
-              conflictStatus={conflictStatusByMod.get(mod.remoteId)}
-              contextMenuHint={
-                !selection.active && contextMenuHint && index === 0
-              }
-              mod={mod}
-              onSelect={
-                selection.active
-                  ? undefined
-                  : () => selection.toggle(mod.remoteId, false)
-              }
-              onShowConflicts={onShowConflicts}
-              health={healthById.get(mod.remoteId)}
-            />
-          </div>
-        );
-      })}
-    </div>
+                  className={cn(
+                    "group/select relative h-full rounded-xl transition-opacity",
+                    selection.active && "select-none",
+                    selected && "outline-2 outline-primary -outline-offset-2",
+                    selection.active &&
+                      selection.ids.size > 0 &&
+                      !selected &&
+                      "opacity-60 hover:opacity-100",
+                  )}>
+                  <Checkbox
+                    aria-label={t("myMods.selection.selectMod", {
+                      name: mod.name,
+                    })}
+                    checked={selected}
+                    disabled={selection.busy}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      selection.toggle(mod.remoteId, event.shiftKey);
+                    }}
+                    className={cn(
+                      "absolute top-2 left-2 z-20 size-5 rounded-full border-2 border-white/80 bg-black/50 shadow-md transition-opacity data-[state=checked]:border-primary [&_svg]:size-3.5",
+                      !selection.active &&
+                        "opacity-0 group-hover/select:opacity-100 focus-visible:opacity-100",
+                    )}
+                  />
+                  {selection.active && (
+                    <button
+                      aria-hidden
+                      data-library-selection-surface
+                      className='absolute inset-0 z-10 cursor-pointer rounded-xl'
+                      onClick={(event) =>
+                        selection.toggle(mod.remoteId, event.shiftKey)
+                      }
+                      tabIndex={-1}
+                      type='button'
+                    />
+                  )}
+                  <ModCard
+                    conflictStatus={conflictStatusByMod.get(mod.remoteId)}
+                    contextMenuHint={
+                      !selection.active && contextMenuHint && index === 0
+                    }
+                    mod={mod}
+                    onSelect={
+                      selection.active
+                        ? undefined
+                        : () => selection.toggle(mod.remoteId, false)
+                    }
+                    onShowConflicts={onShowConflicts}
+                    health={healthById.get(mod.remoteId)}
+                  />
+                </div>
+              </DraggableLibraryMod>
+            );
+          })}
+        </div>
+      )}
+    />
   );
 };
 
@@ -725,9 +755,11 @@ const MyMods = () => {
   const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
   const isConflictDetectionEnabled =
     useExperimentalFeature("conflict-detection");
-  const navigate = useNavigate();
   const mods = usePersistedStore((state) => state.localMods);
   const activeProfileId = usePersistedStore((state) => state.activeProfileId);
+  const modGroups = usePersistedStore(
+    (state) => state.profiles[activeProfileId]?.modGroups ?? EMPTY_MOD_GROUPS,
+  );
   const isSwitching = usePersistedStore((state) => state.isSwitching);
   const [selection, setSelection] = useState<{
     profileId: string;
@@ -884,6 +916,14 @@ const MyMods = () => {
   );
   const [librarySearchQuery, setLibrarySearchQuery] = useState("");
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const toolbarAnchorRef = useRef<HTMLDivElement>(null);
+  useStuckAttribute(
+    scrollContainerRef,
+    toolbarAnchorRef,
+    toolbarRef,
+    mods.length > 0,
+  );
 
   const { results, query, setQuery } = useSearch({
     data: mods,
@@ -974,12 +1014,18 @@ const MyMods = () => {
     ? Math.ceil(displayMods.length / PAGE_SIZE)
     : 1;
 
+  const groupedDisplayMods = useMemo(() => {
+    if (modGroups.length === 0) return displayMods;
+    const { sections, ungrouped } = groupLibraryMods(displayMods, modGroups);
+    return [...sections.flatMap((section) => section.mods), ...ungrouped];
+  }, [displayMods, modGroups]);
+
   const visibleMods = useMemo(
     () =>
       paginationEnabled
-        ? displayMods.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
-        : displayMods,
-    [displayMods, page, paginationEnabled],
+        ? groupedDisplayMods.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+        : groupedDisplayMods,
+    [groupedDisplayMods, page, paginationEnabled],
   );
 
   // Reset to first page whenever the filtered set changes, and clamp if totalPages shrinks
@@ -1132,28 +1178,23 @@ const MyMods = () => {
               <TooltipContent>{t("settings.openModsFolder")}</TooltipContent>
             </Tooltip>
             {mods.length > 0 && (
-              <div className='border-border/80 bg-muted/40 inline-flex max-w-full flex-wrap items-center gap-2 rounded-lg border px-2.5 py-1.5 text-sm shadow-sm'>
-                <div className='flex items-baseline gap-1.5 tabular-nums'>
-                  <span className='inline-flex items-baseline gap-px font-semibold text-foreground'>
-                    <span>{enabledModsCount}</span>
-                    <span className='font-normal text-muted-foreground'>
-                      /{mods.length}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div
+                    tabIndex={0}
+                    className='border-border/80 bg-muted/40 inline-flex items-baseline gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm tabular-nums shadow-sm'>
+                    <span className='font-semibold text-foreground'>
+                      {enabledVpkFileCount}
                     </span>
-                  </span>
-                  <span className='font-normal text-muted-foreground'>
-                    {t("myMods.libraryModsNoun", { count: mods.length })}
-                  </span>
-                </div>
-                <span aria-hidden className='h-3.5 w-px shrink-0 bg-border' />
-                <div className='flex items-baseline gap-1.5 tabular-nums'>
-                  <span className='font-semibold text-foreground'>
-                    {enabledVpkFileCount}
-                  </span>
-                  <span className='font-normal text-muted-foreground'>
-                    {t("myMods.vpkFilesNoun")}
-                  </span>
-                </div>
-              </div>
+                    <span className='font-normal text-muted-foreground'>
+                      {t("myMods.vpkFilesNoun")}
+                    </span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className='max-w-64'>
+                  {t("myMods.vpkFilesTooltip")}
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
           <p className='text-muted-foreground'>{t("myMods.subtitle")}</p>
@@ -1171,6 +1212,8 @@ const MyMods = () => {
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                aria-label={t("myMods.checkForUpdates")}
+                size='icon'
                 variant='outline'
                 disabled={isCheckingUpdates}
                 onClick={() => refetchUpdates()}
@@ -1178,21 +1221,12 @@ const MyMods = () => {
                   <RefreshCw
                     className={`h-4 w-4 ${isCheckingUpdates ? "animate-spin" : ""}`}
                   />
-                }>
-                {t("myMods.checkForUpdates")}
-              </Button>
+                }
+              />
             </TooltipTrigger>
-            <TooltipContent>
-              {t("myMods.checkForUpdatesTooltip")}
-            </TooltipContent>
+            <TooltipContent>{t("myMods.checkForUpdates")}</TooltipContent>
           </Tooltip>
-          <Button
-            variant='outline'
-            onClick={() => navigate("/add-mods")}
-            icon={<UploadSimple className='h-4 w-4' />}>
-            {t("navigation.addMods")}
-          </Button>
-          <ImportSourceMenu />
+          <AddModsMenu />
           <DropdownMenu
             onOpenChange={(open) => {
               setActionsMenuOpen(open);
@@ -1239,34 +1273,9 @@ const MyMods = () => {
               </HintAnchor>
             </HintAnchor>
             <DropdownMenuContent align='end'>
-              <DropdownMenuItem
-                onClick={startAnalysis}
-                disabled={isAnalysisPending}>
-                <ScanSearch className='h-4 w-4' />
-                {isAnalysisPending
-                  ? t("addons.analyzing")
-                  : t("addons.analyzeLocal")}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  markFeatureUsed("mod-repairs");
-                  checkModHealth({
-                    profileFolder: activeProfileFolder,
-                    force: true,
-                  });
-                }}
-                disabled={installedMods.length === 0 || isCheckingModHealth}>
-                <Wrench className='h-4 w-4' />
-                {isCheckingModHealth
-                  ? t("modHealth.checkingForRepairs")
-                  : t("modHealth.checkForRepairs")}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={openModOrdering}
-                disabled={installedMods.length === 0}>
-                <ArrowUpDown className='h-4 w-4' />
-                {t("mods.manageOrder")}
-              </DropdownMenuItem>
+              <DropdownMenuLabel>
+                {t("myMods.menuSections.library")}
+              </DropdownMenuLabel>
               <DropdownMenuItem
                 onClick={() =>
                   setSelection({ profileId: activeProfileId, ids: new Set() })
@@ -1293,6 +1302,30 @@ const MyMods = () => {
                 {t("myMods.disableAll")}
               </DropdownMenuItem>
               <DropdownMenuItem
+                onClick={openModOrdering}
+                disabled={installedMods.length === 0}>
+                <ArrowUpDown className='h-4 w-4' />
+                {t("mods.manageOrder")}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>
+                {t("myMods.menuSections.troubleshoot")}
+              </DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() => {
+                  markFeatureUsed("mod-repairs");
+                  checkModHealth({
+                    profileFolder: activeProfileFolder,
+                    force: true,
+                  });
+                }}
+                disabled={installedMods.length === 0 || isCheckingModHealth}>
+                <Wrench className='h-4 w-4' />
+                {isCheckingModHealth
+                  ? t("modHealth.checkingForRepairs")
+                  : t("modHealth.checkForRepairs")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
                 onClick={() => {
                   markFeatureUsed("find-broken-mod");
                   openFindBrokenMod();
@@ -1301,6 +1334,18 @@ const MyMods = () => {
                 <Bug className='h-4 w-4' />
                 {t("bisect.entry")}
               </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={startAnalysis}
+                disabled={isAnalysisPending}>
+                <ScanSearch className='h-4 w-4' />
+                {isAnalysisPending
+                  ? t("addons.analyzing")
+                  : t("addons.analyzeLocal")}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>
+                {t("myMods.menuSections.share")}
+              </DropdownMenuLabel>
               <DropdownMenuItem
                 onClick={() => setShowExportDialog(true)}
                 disabled={mods.length === 0}>
@@ -1330,7 +1375,7 @@ const MyMods = () => {
 
       <div
         className={cn(
-          "min-h-0 flex-1 overflow-y-auto overflow-x-hidden pt-8",
+          "min-h-0 flex-1 overflow-y-auto overflow-x-hidden",
           selecting ? "pb-24" : "pb-4",
         )}
         ref={scrollContainerRef}>
@@ -1364,7 +1409,10 @@ const MyMods = () => {
             {mods.length > 0 && (
               <div className='flex w-full flex-col gap-4'>
                 <ModHealthBanner profileFolder={activeProfileFolder} />
-                <div className='flex w-full flex-col gap-3 px-px'>
+                <div ref={toolbarAnchorRef} aria-hidden className='-mb-4' />
+                <div
+                  ref={toolbarRef}
+                  className='sticky top-0 z-30 -my-3 flex w-full flex-col gap-3 border-b border-transparent bg-background px-px py-3 transition-colors duration-200 data-stuck:border-border/60'>
                   <div className='min-w-0 overflow-visible [&_input]:border-border/70 [&_input]:bg-background/70 [&_input]:shadow-sm [&_input]:placeholder:text-muted-foreground/90 [&_input]:hover:border-border [&_input]:focus-visible:bg-background'>
                     <SearchBar
                       className='w-full'
@@ -1389,60 +1437,9 @@ const MyMods = () => {
                       setQuery={setQuery}
                       showSortControl={false}
                       showTimePeriodControl={false}
-                      trailingActions={
-                        <div className='flex h-9 items-center gap-0.5 rounded-lg border border-border/50 bg-secondary/40 p-0.5'>
-                          <SortSelect
-                            onChange={setSortType}
-                            options={Object.values(LibrarySortType)}
-                            triggerClassName='h-8 border-0 bg-transparent px-2.5 text-muted-foreground shadow-none hover:text-foreground data-[state=open]:text-foreground'
-                            value={sortType}
-                          />
-                          <span aria-hidden className='h-4 w-px bg-border' />
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                aria-label={t("mods.gridView")}
-                                aria-pressed={viewMode === ViewMode.GRID}
-                                className='size-8'
-                                onClick={() => setViewMode(ViewMode.GRID)}
-                                size='icon'
-                                variant={
-                                  viewMode === ViewMode.GRID
-                                    ? "secondary"
-                                    : "ghost"
-                                }
-                                icon={<LayoutGrid className='h-4 w-4' />}
-                              />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {t("mods.gridView")}
-                            </TooltipContent>
-                          </Tooltip>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                aria-label={t("mods.listView")}
-                                aria-pressed={viewMode === ViewMode.LIST}
-                                className='size-8'
-                                onClick={() => setViewMode(ViewMode.LIST)}
-                                size='icon'
-                                variant={
-                                  viewMode === ViewMode.LIST
-                                    ? "secondary"
-                                    : "ghost"
-                                }
-                                icon={<LayoutList className='h-4 w-4' />}
-                              />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {t("mods.listView")}
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                      }
                       hideMapFilter={!isCustomMapsEnabled}
                       inputGroupClassName='min-w-0 w-full'
-                      searchContainerClassName='w-full min-w-32 max-w-80'
+                      searchContainerClassName='w-full min-w-48 max-w-md flex-1'
                       searchInputClassName='w-full'
                     />
                   </div>
@@ -1480,6 +1477,58 @@ const MyMods = () => {
                         </TabsTrigger>
                       )}
                     </TabsList>
+                    <div className='ml-auto flex h-9 items-center gap-0.5 rounded-lg border border-border/50 bg-secondary/40 p-0.5'>
+                      <SortSelect
+                        onChange={setSortType}
+                        options={Object.values(LibrarySortType)}
+                        triggerClassName='h-8 border-0 bg-transparent px-2.5 text-muted-foreground shadow-none hover:text-foreground data-[state=open]:text-foreground'
+                        value={sortType}
+                      />
+                      <span aria-hidden className='h-4 w-px bg-border' />
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            aria-label={t("mods.gridView")}
+                            aria-pressed={viewMode === ViewMode.GRID}
+                            className='size-8'
+                            onClick={() => setViewMode(ViewMode.GRID)}
+                            size='icon'
+                            variant={
+                              viewMode === ViewMode.GRID ? "secondary" : "ghost"
+                            }
+                            icon={<LayoutGrid className='h-4 w-4' />}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>{t("mods.gridView")}</TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            aria-label={t("mods.listView")}
+                            aria-pressed={viewMode === ViewMode.LIST}
+                            className='size-8'
+                            onClick={() => setViewMode(ViewMode.LIST)}
+                            size='icon'
+                            variant={
+                              viewMode === ViewMode.LIST ? "secondary" : "ghost"
+                            }
+                            icon={<LayoutList className='h-4 w-4' />}
+                          />
+                        </TooltipTrigger>
+                        <TooltipContent>{t("mods.listView")}</TooltipContent>
+                      </Tooltip>
+                      {!isConflictsTab && (
+                        <>
+                          <span aria-hidden className='h-4 w-px bg-border' />
+                          <ModGroupTools
+                            key={`group-tools:${activeProfileId}`}
+                            profileId={activeProfileId}
+                            disabled={selectionBusy}
+                            onCreated={() => handlePageChange(0)}
+                          />
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -1523,7 +1572,15 @@ const MyMods = () => {
                   <TabsContent className='mt-0' value={ModFilter.All}>
                     <ModsList
                       selection={modsListSelection}
+                      groupActions={{
+                        busy: selectionBusy,
+                        enable: enableAll,
+                        disable: disableAll,
+                      }}
                       mods={visibleMods}
+                      allMods={displayMods}
+                      revealMatches={query.trim().length > 0}
+                      showEmptyGroups={page === 0 && !query.trim()}
                       conflictStatusByMod={conflictStatusByMod}
                       onShowConflicts={showConflicts}
                       viewMode={viewMode}
@@ -1539,7 +1596,15 @@ const MyMods = () => {
                   <TabsContent className='mt-0' value={ModFilter.Enabled}>
                     <ModsList
                       selection={modsListSelection}
+                      groupActions={{
+                        busy: selectionBusy,
+                        enable: enableAll,
+                        disable: disableAll,
+                      }}
                       mods={visibleMods}
+                      allMods={displayMods}
+                      revealMatches={query.trim().length > 0}
+                      showEmptyGroups={page === 0 && !query.trim()}
                       conflictStatusByMod={conflictStatusByMod}
                       onShowConflicts={showConflicts}
                       viewMode={viewMode}
@@ -1555,7 +1620,15 @@ const MyMods = () => {
                   <TabsContent className='mt-0' value={ModFilter.Disabled}>
                     <ModsList
                       selection={modsListSelection}
+                      groupActions={{
+                        busy: selectionBusy,
+                        enable: enableAll,
+                        disable: disableAll,
+                      }}
                       mods={visibleMods}
+                      allMods={displayMods}
+                      revealMatches={query.trim().length > 0}
+                      showEmptyGroups={page === 0 && !query.trim()}
                       conflictStatusByMod={conflictStatusByMod}
                       onShowConflicts={showConflicts}
                       viewMode={viewMode}
@@ -1631,6 +1704,7 @@ const MyMods = () => {
         <div className='pointer-events-none absolute inset-x-4 bottom-4 z-30 flex justify-center'>
           <LibrarySelectionBar
             count={selectedIds.size}
+            selectedIds={[...selectedIds]}
             matchingCount={displayMods.length}
             allMatchingSelected={allMatchingSelected}
             enableCount={

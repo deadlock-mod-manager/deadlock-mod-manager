@@ -63,7 +63,7 @@ describe("multipak updates", () => {
       );
       await step("update both multipak mods through Update All", async () => {
         await navigate("my-mods");
-        const check = await $("button=Check for updates");
+        const check = await $('button[aria-label="Check for updates"]');
         await check.waitForEnabled({ timeout: 30_000 });
         await check.click();
         await $("button=2 updates available").click();

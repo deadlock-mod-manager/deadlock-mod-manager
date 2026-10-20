@@ -147,6 +147,16 @@ export const useAddonAnalysis = () => {
               profileFolder,
             });
             const store = usePersistedStore.getState();
+            const profileGroups = profileId
+              ? (store.profiles[profileId]?.modGroups ?? [])
+              : [];
+            const libraryGroup =
+              profileGroups.find((group) => group.modIds.includes(remoteId)) ??
+              profileGroups.find((group) =>
+                group.modIds.some((id) =>
+                  registration.replacedModIds.includes(id),
+                ),
+              );
             for (const alias of registration.replacedModIds) {
               store.removeMod(alias, profileId);
             }
@@ -158,6 +168,9 @@ export const useAddonAnalysis = () => {
               store.setModEnabledInCurrentProfile(remoteId, true);
               if (registration.installOrder !== null) {
                 store.setModOrder(remoteId, registration.installOrder);
+              }
+              if (profileId && libraryGroup) {
+                store.assignModsToGroup(profileId, [remoteId], libraryGroup.id);
               }
             }
             processedIdentifiedCount++;

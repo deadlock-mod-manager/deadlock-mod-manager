@@ -13,6 +13,7 @@ import {
   BugBeetleIcon,
   InfoIcon,
   PlayCircleIcon,
+  PlayIcon,
   ShieldCheckIcon,
 } from "@phosphor-icons/react";
 import { useState } from "react";
@@ -209,6 +210,7 @@ const SetupContent = () => {
           {t("bisect.setup.cancel")}
         </Button>
         <Button disabled={selected.length === 0 || isPending} onClick={start}>
+          <PlayIcon className='size-4' weight='fill' />
           {isPending ? t("bisect.setup.starting") : t("bisect.setup.start")}
         </Button>
       </DialogFooter>

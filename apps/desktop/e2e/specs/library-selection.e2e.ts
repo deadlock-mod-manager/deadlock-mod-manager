@@ -1,3 +1,9 @@
+import {
+  createGroup,
+  expectMembership,
+  moveSelected,
+  selectMods,
+} from "../support/library-groups-actions";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -110,6 +116,10 @@ describe("selected library actions", () => {
     await navigate("my-mods");
     const [first, second, third] = ALPHA_MODS;
     if (process.env.DMM_E2E_PHASE === "select") {
+      await createGroup("Selected cosmetics");
+      await selectMods([first, third]);
+      await moveSelected("Selected cosmetics");
+      await $('button[aria-label="Done selecting"]').click();
       await verify(world, []);
       // Checkboxes stay hidden until a card is hovered or selection starts.
       await $(`[role="checkbox"][aria-label="Select ${first}"]`).moveTo();
@@ -177,6 +187,7 @@ describe("selected library actions", () => {
         $('[role="region"][aria-label="Select mods"]'),
       ).not.toBeDisplayed();
     }
+    await expectMembership(world, { "Selected cosmetics": [first, third] });
     await verify(world, [second]);
     await expect(
       $('[role="region"][aria-label="Select mods"]'),

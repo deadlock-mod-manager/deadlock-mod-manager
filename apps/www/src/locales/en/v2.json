@@ -82,6 +82,17 @@
       },
       "alt": "The Mods Store in Deadlock Mod Manager V2, showing a grid of GameBanana mods"
     },
+    "groups": {
+      "nav": "Mod groups",
+      "title": "Sort your library into groups",
+      "body": "Put the mods in My Mods into groups, like the skins you main or the ones you're trying out. Each group shows covers of its mods and how many are on, and turns the whole set on or off in one click.",
+      "points": {
+        "drag": "Drag mods onto a group, or pick several and use Move to group",
+        "undo": "Undo a move from the notification",
+        "profiles": "Groups are saved per profile, and you can copy them to another profile",
+        "order": "Groups only organize your library, so load order stays as it is"
+      }
+    },
     "conflicts": {
       "nav": "Conflicts",
       "title": "Know when mods clash",
@@ -185,6 +196,22 @@
       "reapply": "Re-apply mods",
       "reapplying": "Re-applying",
       "reapplied": "Mods re-applied. They'll load next time you start Deadlock."
+    },
+    "groups": {
+      "names": {
+        "mains": "Skins I main",
+        "testing": "Trying out"
+      },
+      "count_one": "{{count}} mod",
+      "count_other": "{{count}} mods",
+      "enabledCount": "{{count}}/{{total}} enabled",
+      "enable": "Enable mods in {{name}}",
+      "disable": "Disable mods in {{name}}",
+      "enabledAll": "Enabled every mod in {{name}}",
+      "disabledAll": "Disabled every mod in {{name}}",
+      "on": "Enabled",
+      "off": "Disabled",
+      "hint": "Try it: press the power button on a group."
     },
     "conflicts": {
       "title": "Same model in 2 mods",

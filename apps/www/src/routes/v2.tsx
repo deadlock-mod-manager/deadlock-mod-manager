@@ -8,6 +8,7 @@ import { BisectDemo } from "@/components/v2/bisect-demo";
 import { ConflictsDemo } from "@/components/v2/conflicts-demo";
 import { CrashCheckDemo } from "@/components/v2/crash-check-demo";
 import { FixTicker } from "@/components/v2/fix-ticker";
+import { GroupsDemo } from "@/components/v2/groups-demo";
 import { ModHealthSection } from "@/components/v2/mod-health-section";
 import { Seasons } from "@/components/v2/seasons";
 import { UpdateDemo } from "@/components/v2/update-demo";
@@ -72,6 +73,7 @@ const PerformanceScreenshot = () => {
 type FeatureId =
   | "updates"
   | "store"
+  | "groups"
   | "conflicts"
   | "crashes"
   | "bisect"
@@ -80,6 +82,7 @@ type FeatureId =
 const FEATURES: { id: FeatureId; visual: React.ReactNode }[] = [
   { id: "updates", visual: <UpdateDemo /> },
   { id: "store", visual: <StoreScreenshot /> },
+  { id: "groups", visual: <GroupsDemo /> },
   { id: "conflicts", visual: <ConflictsDemo /> },
   { id: "crashes", visual: <CrashCheckDemo /> },
   { id: "bisect", visual: <BisectDemo /> },

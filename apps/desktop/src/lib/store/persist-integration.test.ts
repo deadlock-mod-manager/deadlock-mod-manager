@@ -52,6 +52,12 @@ mock.module("@/lib/api-client", () => ({
   getMod: async () => null,
 }));
 
+mock.module("@/lib/mods/local-metadata", () => ({
+  readLocalModMetadata: () => {
+    throw new Error("Store hydration must not read local mod metadata");
+  },
+}));
+
 // Stub Tauri IPC. The store imports through to slices that import @tauri-apps/api/core.
 mock.module("@tauri-apps/api/core", () => ({
   ...tauriCore,
@@ -184,6 +190,35 @@ const importStoreFreshly = async () => {
 describe("persisted store integration with real production fixture", () => {
   beforeEach(() => {
     memory.clear();
+  });
+
+  it("upgrades older profiles and persists groups through the production merge and storage pipeline", async () => {
+    seedFromVersion(15, seededState);
+    const { usePersistedStore } = await importStoreFreshly();
+    await usePersistedStore.persist.rehydrate();
+    const profileId = createProfileId("default");
+    expect(usePersistedStore.getState().profiles[profileId].modGroups).toEqual(
+      [],
+    );
+    const before = usePersistedStore.getState();
+    expect(before.createModGroup(profileId, "Cosmetics")).not.toBeNull();
+    const groupId =
+      usePersistedStore.getState().profiles[profileId].modGroups?.[0].id;
+    if (!groupId) throw new Error("Group creation failed");
+    usePersistedStore.getState().assignModsToGroup(profileId, ["1"], groupId);
+    usePersistedStore.getState().setModGroupsCollapsed(profileId, true);
+    const { flushPendingWrites } = await import("./storage");
+    await flushPendingWrites();
+    await usePersistedStore.persist.rehydrate();
+    const restored = usePersistedStore.getState();
+    expect(restored.profiles[profileId].modGroups).toEqual([
+      { id: groupId, name: "Cosmetics", modIds: ["1"], collapsed: true },
+    ]);
+    expect(restored.localMods).toEqual(before.localMods);
+    expect(restored.profiles[profileId].enabledMods).toEqual(
+      before.profiles[profileId].enabledMods,
+    );
+    expect(restored.proxyConfig).toEqual(before.proxyConfig);
   });
 
   it("defaults update badges on for existing users and persists their choice", async () => {

@@ -11,6 +11,7 @@ import { Input } from "@deadlock-mods/ui/components/input";
 import { Label } from "@deadlock-mods/ui/components/label";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { Textarea } from "@deadlock-mods/ui/components/textarea";
+import { PlusIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
@@ -135,7 +136,11 @@ export const ProfileCreateDialog = ({
             disabled={isCreating}>
             {t("common.cancel")}
           </Button>
-          <Button onClick={handleCreate} disabled={!name.trim() || isCreating}>
+          <Button
+            onClick={handleCreate}
+            disabled={!name.trim() || isCreating}
+            icon={<PlusIcon className='h-4 w-4' />}
+            isLoading={isCreating}>
             {isCreating ? t("profiles.creating") : t("profiles.create")}
           </Button>
         </DialogFooter>

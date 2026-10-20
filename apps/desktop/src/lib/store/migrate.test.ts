@@ -28,6 +28,25 @@ const { LATEST_VERSION, MIGRATION_STEPS, safeMigrate } =
   await import("./migrate");
 
 describe("safeMigrate", () => {
+  it("adds empty groups to older profiles and preserves existing organization", () => {
+    const existing = [
+      { id: "group", name: "Silver", modIds: ["silver"], collapsed: true },
+    ];
+    const state = {
+      profiles: {
+        first: { mods: [] },
+        second: { mods: [], modGroups: existing },
+      },
+    };
+    expect(safeMigrate(state, 31)).toEqual({
+      profiles: {
+        first: { mods: [], modGroups: [] },
+        second: { mods: [], modGroups: existing },
+      },
+    });
+    expect(safeMigrate(state, 31)).toEqual(state);
+  });
+
   it("returns persistedState as-is when not a plain object", () => {
     expect(safeMigrate(null, 0)).toBe(null);
     expect(safeMigrate("garbage", 0)).toBe("garbage");
@@ -230,7 +249,7 @@ describe("safeMigrate", () => {
   it("LATEST_VERSION matches the highest step target", () => {
     const max = Math.max(...MIGRATION_STEPS.map((s) => s.to));
     expect(LATEST_VERSION).toBe(max);
-    expect(LATEST_VERSION).toBe(31);
+    expect(LATEST_VERSION).toBe(32);
   });
 
   it("v25 (themes switch): drops the leftover enabledPlugins.themes entry", () => {

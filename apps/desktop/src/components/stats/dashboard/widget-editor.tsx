@@ -14,9 +14,11 @@ import {
   ToggleGroupItem,
 } from "@deadlock-mods/ui/components/toggle-group";
 import {
+  Check,
   Code,
   Database,
   LayoutGrid,
+  Plus,
   Sparkles,
   TriangleAlert,
 } from "@deadlock-mods/ui/icons";
@@ -519,6 +521,13 @@ export const WidgetEditor = ({
           <Button
             data-testid='widget-editor-save'
             disabled={!canSave}
+            icon={
+              initial ? (
+                <Check className='h-4 w-4' />
+              ) : (
+                <Plus className='h-4 w-4' />
+              )
+            }
             onClick={() => {
               if (draft) {
                 onSave(draft);

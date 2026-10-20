@@ -12,6 +12,7 @@ import {
   ArrowSquareOutIcon,
   CheckCircleIcon,
   LightbulbIcon,
+  ProhibitIcon,
   PuzzlePieceIcon,
   TargetIcon,
 } from "@phosphor-icons/react";
@@ -137,6 +138,7 @@ export const BisectResultDialog = ({
                 className='flex-1'
                 disabled={isPending}
                 onClick={() => run({ type: "finish", disableCulprits: false })}>
+                <ArrowCounterClockwiseIcon className='size-4' />
                 {t("bisect.result.restore")}
               </Button>
             ) : (
@@ -148,6 +150,7 @@ export const BisectResultDialog = ({
                     run({ type: "finish", disableCulprits: false })
                   }
                   variant='outline'>
+                  <ArrowCounterClockwiseIcon className='size-4' />
                   {t("bisect.result.restoreAll")}
                 </Button>
                 <Button
@@ -156,6 +159,7 @@ export const BisectResultDialog = ({
                   onClick={() =>
                     run({ type: "finish", disableCulprits: true })
                   }>
+                  <ProhibitIcon className='size-4' />
                   {t("bisect.result.disableCulprits", {
                     count: culpritIds.length,
                   })}

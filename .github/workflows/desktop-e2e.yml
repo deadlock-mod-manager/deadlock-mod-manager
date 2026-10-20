@@ -20,7 +20,7 @@ on:
       platforms:
         description: Platforms to run
         type: choice
-        options: [all, nix]
+        options: [all, windows, nix]
         default: all
 
 permissions:
@@ -81,9 +81,12 @@ jobs:
           [
             smoke,
             updater,
+            library-groups,
+            compatibility,
             local,
             local-large,
             profiles,
+            conflicts,
             downloads,
             filesystem,
             gamebanana,
@@ -127,7 +130,7 @@ jobs:
 
   linux-build:
     name: Build isolated harness (${{ matrix.distro }})
-    if: (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e-full')) && inputs.platforms != 'nix'
+    if: (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e-full')) && inputs.platforms != 'nix' && inputs.platforms != 'windows'
     runs-on: ubuntu-latest
     container: ${{ matrix.image }}
     timeout-minutes: 60
@@ -194,6 +197,8 @@ jobs:
           [
             smoke,
             updater,
+            library-groups,
+            compatibility,
             conflicts,
             downloads,
             filesystem,
@@ -218,6 +223,7 @@ jobs:
         # The app has no per-distro code paths, so one full Linux run is
         # enough. Arch's rolling WebKitGTK only needs the startup check.
         exclude:
+          - { distro: arch, suite: compatibility }
           - { distro: arch, suite: conflicts }
           - { distro: arch, suite: downloads }
           - { distro: arch, suite: filesystem }
@@ -233,13 +239,13 @@ jobs:
           apt-get update
           apt-get install -y --no-install-recommends ca-certificates curl git unzip xz-utils \
             libwebkit2gtk-4.1-0 libayatana-appindicator3-1 librsvg2-2 \
-            libgl1-mesa-dri xvfb xauth dbus fonts-dejavu-core
+            libgl1-mesa-dri xvfb xauth xdotool dbus fonts-dejavu-core
       - name: Install Arch packages
         if: matrix.distro == 'arch'
         run: |
           pacman -Syu --noconfirm --needed curl git unzip xz \
             webkit2gtk-4.1 libappindicator-gtk3 librsvg \
-            mesa xorg-server-xvfb xorg-xauth dbus ttf-dejavu
+            mesa xorg-server-xvfb xorg-xauth xdotool dbus ttf-dejavu
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-desktop-e2e
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -254,7 +260,7 @@ jobs:
         env:
           E2E_SUITE: ${{ matrix.suite }}
           DMM_E2E_SEED: ${{ matrix.seed }}
-        run: xvfb-run -a -s "-screen 0 1920x1080x24" dbus-run-session -- pnpm --filter @deadlock-mods/desktop e2e:test -- --suite "$E2E_SUITE" --keep --report ../../.e2e/reports/scenarios.json
+        run: xvfb-run -a -s "-screen 0 1920x1080x24" dbus-run-session -- pnpm --filter @deadlock-mods/desktop e2e:test -- --suite "$E2E_SUITE" --keep --allow-native-input --report ../../.e2e/reports/scenarios.json
       - name: Retain scenario evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -270,7 +276,7 @@ jobs:
 
   nix-build:
     name: Build isolated harness (nix)
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e-full')
+    if: (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e-full')) && inputs.platforms != 'windows'
     runs-on: depot-ubuntu-24.04-8
     timeout-minutes: 90
     env:

@@ -15,7 +15,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@deadlock-mods/ui/components/tooltip";
-import { GripVertical, Loader2, Save, X } from "@deadlock-mods/ui/icons";
+import { GripVertical, Loader2, Save } from "@deadlock-mods/ui/icons";
 import {
   closestCenter,
   DndContext,
@@ -282,7 +282,6 @@ export const ModOrderingDialog = ({
 
         <DialogFooter className='flex shrink-0 justify-between border-t pt-4'>
           <Button variant='outline' onClick={handleCancel} disabled={isLoading}>
-            <X className='mr-2 h-4 w-4' />
             {t("common.cancel")}
           </Button>
           <Button

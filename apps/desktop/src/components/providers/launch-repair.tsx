@@ -8,6 +8,7 @@ import {
   AlertDialogTitle,
 } from "@deadlock-mods/ui/components/alert-dialog";
 import { Button } from "@deadlock-mods/ui/components/button";
+import { ArrowsClockwiseIcon, PowerIcon } from "@phosphor-icons/react";
 import { useMutation } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import {
@@ -231,6 +232,7 @@ export function LaunchRepairProvider({ children }: { children: ReactNode }) {
             <Button
               data-testid='launch-repair-disable'
               disabled={repair.isPending}
+              icon={<PowerIcon className='h-4 w-4' />}
               onClick={() => repair.mutate("disable")}
               variant='outline'>
               {t("launchRepair.disableAndLaunch")}
@@ -240,6 +242,7 @@ export function LaunchRepairProvider({ children }: { children: ReactNode }) {
               disabled={
                 repair.isPending || failures.length > 0 || repair.isError
               }
+              icon={<ArrowsClockwiseIcon className='h-4 w-4' />}
               onClick={() => repair.mutate("reinstall")}>
               {t("launchRepair.reinstallAndLaunch")}
             </Button>

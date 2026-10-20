@@ -11,7 +11,6 @@ import {
   ChartLineUpIcon,
   CheckCircleIcon,
   HeartIcon,
-  XIcon,
 } from "@phosphor-icons/react";
 import { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -120,7 +119,6 @@ export const TelemetryConsentDialog = () => {
                 className={buttonVariants({ variant: "outline" })}
                 onClick={handleDecline}
                 type='button'>
-                <XIcon className='size-4' weight='bold' />
                 {t("telemetryConsent.disableButton")}
               </button>
               <Button onClick={handleEnable} type='button'>

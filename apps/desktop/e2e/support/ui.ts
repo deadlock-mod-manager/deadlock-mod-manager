@@ -45,10 +45,7 @@ export const waitForClickable = (selector: string) =>
 export const openOrdering = () =>
   step("open mod ordering", async () => {
     await expect($('[role="dialog"]')).not.toBeDisplayed();
-    // The import menu sits between Add Local Mod and the overflow menu.
-    const menu = await $("button=Add Local Mod").$(
-      './following-sibling::button[@aria-haspopup="menu"][last()]',
-    );
+    const menu = await $('button[aria-label="More actions"]');
     await menu.waitForClickable();
     await menu.click();
     await expect(menu).toBeFocused();
@@ -115,3 +112,12 @@ export const openFilesTab = () =>
   });
 export const installedFiles = () => $('[data-testid="installed-files"]');
 export const activeFiles = () => $('[data-testid="active-vpks"]');
+
+/** Radix menus open on keyboard input under the embedded driver. */
+export const openAddLocalMod = async () => {
+  const menu = await $('[data-testid="interchange-import-menu"]');
+  await menu.waitForClickable();
+  await menu.click();
+  await browser.keys("ArrowDown");
+  await $('[data-testid="add-local-mod"]').click();
+};

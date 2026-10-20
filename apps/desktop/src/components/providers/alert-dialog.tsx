@@ -10,6 +10,7 @@ import { Button } from "@deadlock-mods/ui/components/button";
 import { Input } from "@deadlock-mods/ui/components/input";
 import { cn } from "@deadlock-mods/ui/lib/utils";
 import {
+  CheckIcon,
   type Icon,
   InfoIcon,
   QuestionIcon,
@@ -139,6 +140,10 @@ const defaultIcon = (state: AlertDialogState): Icon => {
   return state.type === "alert" ? InfoIcon : QuestionIcon;
 };
 
+// The header icon names the action (Power, Trash); the tone defaults don't.
+const actionIcon = (state: AlertDialogState): Icon =>
+  state.actionButtonIcon ?? state.icon ?? CheckIcon;
+
 export const AlertDialogProvider = ({
   children,
 }: {
@@ -161,6 +166,8 @@ export const AlertDialogProvider = ({
       // Default no-op function
     },
   );
+
+  const ActionIcon = actionIcon(state);
 
   const close = () => {
     dispatch({ type: "close" });
@@ -236,9 +243,7 @@ export const AlertDialogProvider = ({
               </Button>
               {state.type === "alert" ? null : (
                 <Button type='submit' variant={state.actionButtonVariant}>
-                  {state.actionButtonIcon && (
-                    <state.actionButtonIcon aria-hidden weight='bold' />
-                  )}
+                  <ActionIcon aria-hidden weight='bold' />
                   {state.actionButton}
                 </Button>
               )}

@@ -32,7 +32,7 @@ import {
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft } from "@deadlock-mods/ui/icons";
-import { UploadSimple } from "@phosphor-icons/react";
+import { PlusIcon, UploadSimple } from "@phosphor-icons/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -294,6 +294,8 @@ const AddMods = () => {
             </Button>
             <Button
               disabled={isProcessing}
+              icon={<PlusIcon className='h-4 w-4' />}
+              isLoading={isProcessing}
               onClick={handleFinalize}
               type='button'>
               {isProcessing ? t("addMods.processing") : t("addMods.add")}

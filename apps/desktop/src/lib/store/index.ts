@@ -38,6 +38,7 @@ import {
   modsDeepMergeKeys,
   type ModsState,
 } from "./slices/mods";
+import { createModGroupsSlice, type ModGroupsState } from "./slices/mod-groups";
 import {
   createNetworkSlice,
   networkDeepMergeKeys,
@@ -77,6 +78,7 @@ import { createUISlice, uiDeepMergeKeys, type UIState } from "./slices/ui";
 import storage from "./storage";
 
 export type State = ModsState &
+  ModGroupsState &
   ProfilesState &
   ServerProfilesState &
   GameState &
@@ -114,6 +116,7 @@ export const usePersistedStore = create<State>()(
   persist(
     (...a) => ({
       ...createModsSlice(...a),
+      ...createModGroupsSlice(...a),
       ...createProfilesSlice(...a),
       ...createServerProfilesSlice(...a),
       ...createGameSlice(...a),

@@ -167,7 +167,7 @@ const spawnWdio = (environment: NodeJS.ProcessEnv, outputPath: string) =>
 export const runE2eWorld = async (options: RunOptions): Promise<RunResult> => {
   if (scenarios[options.caseId].nativeInput && !options.allowNativeInput)
     throw new Error(
-      `${options.caseId} controls the Windows desktop. Run with --allow-native-input only when the desktop is available for testing.`,
+      `${options.caseId} controls the desktop. Run with --allow-native-input only when the desktop is available for testing.`,
     );
   const startedAt = Date.now();
   let fixtureServer: Awaited<ReturnType<typeof startFixtureServer>> | undefined;

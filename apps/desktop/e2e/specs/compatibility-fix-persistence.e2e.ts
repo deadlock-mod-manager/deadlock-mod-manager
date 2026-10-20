@@ -17,7 +17,7 @@ import { step } from "../support/evidence";
 import { readLifecycleState } from "../support/lifecycle-oracle";
 import { observeUntil } from "../support/observations";
 import { searchLibrary, setModEnabled } from "../support/shard-actions";
-import { navigate, waitForClickable } from "../support/ui";
+import { navigate, openAddLocalMod, waitForClickable } from "../support/ui";
 import { assertOwnedWorld } from "../support/world";
 
 const manifestSchema = z.object({
@@ -99,9 +99,7 @@ const card = (name: string) =>
 
 const importNewMod = async (world: string) => {
   const before = (await readLifecycleState(world)).localMods.length;
-  const addLocal = await $("button=Add Local Mod");
-  await addLocal.waitForClickable();
-  await addLocal.click();
+  await openAddLocalMod();
   await $(DROP_AREA).waitForClickable();
   const uri = pathToFileURL(path.join(world, "fixtures", NEW_MOD_FILE)).href;
   // A dropped file:// path takes the same route as a picked file.

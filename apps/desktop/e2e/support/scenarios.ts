@@ -11,6 +11,11 @@ import {
   prepareDownloadWorld,
   assertDownloadNetwork,
 } from "./download-fixtures";
+import {
+  prepareLibraryGroupsWorld,
+  preparePaginatedGroupsWorld,
+  prepareGroupedIdentificationWorld,
+} from "./library-groups-fixtures";
 import { prepareProfileWorld } from "./profile-fixtures";
 import { prepareCompatibilityFixWorld } from "./compatibility-fix-fixtures";
 import { prepareConflictWorld } from "./conflict-fixtures";
@@ -74,8 +79,8 @@ type Definition = {
   spec: string;
   phases: readonly string[];
   nativeInput: boolean;
-  // Native input drives the FlaUI helper, and some faults rely on Windows file
-  // sharing semantics; those cases are not registered on other platforms.
+  // Native picker and legacy ordering cases require FlaUI; group dragging also
+  // supports X11. Some filesystem faults require Windows sharing semantics.
   platforms: readonly NodeJS.Platform[];
   coverage: "ui" | "ipc-recovery";
   routes: (id: string) => Promise<(origin: string) => readonly FixtureRoute[]>;
@@ -172,6 +177,14 @@ const profiles: Definition = {
   platforms: ["win32"],
   routes: profileRoutes,
   prepare: async (world) => prepareProfileWorld(world),
+};
+const libraryGroups: Definition = {
+  ...defaults,
+  family: "library-groups",
+  spec: "library-groups-organize",
+  phases: ["organize", "restart-organize"],
+  routes: profileRoutes,
+  prepare: prepareLibraryGroupsWorld,
 };
 const conflicts: Definition = {
   ...defaults,
@@ -310,6 +323,36 @@ const onboarding: Definition = {
   },
 };
 export const scenarios = {
+  "library-groups-organize": libraryGroups,
+  "library-groups-identification": {
+    ...libraryGroups,
+    spec: "library-groups-identification",
+    phases: ["identify", "restart-identify"],
+    routes: detectedModRoutes,
+    prepare: prepareGroupedIdentificationWorld,
+  },
+  "library-groups-pagination": {
+    ...libraryGroups,
+    spec: "library-groups-pagination",
+    phases: ["paginate", "restart-paginate"],
+    prepare: preparePaginatedGroupsWorld,
+  },
+  "library-groups-removal": {
+    ...libraryGroups,
+    spec: "library-groups-removal",
+    phases: ["remove", "restart-remove"],
+  },
+  "library-groups-drag": {
+    ...libraryGroups,
+    spec: "library-groups-drag",
+    phases: ["drag", "restart-drag"],
+    nativeInput: true,
+  },
+  "library-groups-toggle": {
+    ...libraryGroups,
+    spec: "library-groups-toggle",
+    phases: ["toggle", "restart-toggle"],
+  },
   monkey: {
     ...defaults,
     family: "monkey",

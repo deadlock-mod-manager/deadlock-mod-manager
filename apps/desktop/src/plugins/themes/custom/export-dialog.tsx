@@ -10,6 +10,7 @@ import {
 import { Input } from "@deadlock-mods/ui/components/input";
 import { Label } from "@deadlock-mods/ui/components/label";
 import { Textarea } from "@deadlock-mods/ui/components/textarea";
+import { FloppyDiskIcon } from "@phosphor-icons/react";
 import { toPng } from "html-to-image";
 import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -167,6 +168,7 @@ export const ExportCustomThemeButton = () => {
             </Button>
             <Button
               disabled={!canSave || captureBusy}
+              icon={<FloppyDiskIcon className='h-4 w-4' />}
               onClick={handleSave}
               type='button'>
               {t("plugins.themes.save")}

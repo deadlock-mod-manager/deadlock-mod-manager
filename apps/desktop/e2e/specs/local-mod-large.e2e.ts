@@ -1,4 +1,5 @@
 import { startApplication } from "../support/application";
+import { openAddLocalMod } from "../support/ui";
 import { closeApplication } from "../support/application-exit";
 import { observeUntil } from "../support/observations";
 import { readLifecycleState } from "../support/lifecycle-oracle";
@@ -115,9 +116,7 @@ describe("large local mod import", () => {
     const link = await $('a[href="/my-mods"]');
     await link.waitForClickable();
     await link.click();
-    const addLocal = await $("button=Add Local Mod");
-    await addLocal.waitForClickable();
-    await addLocal.click();
+    await openAddLocalMod();
     const dropArea = await $(DROP_AREA);
     await dropArea.waitForClickable();
 

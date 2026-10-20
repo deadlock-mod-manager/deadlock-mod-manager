@@ -526,6 +526,16 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       delete state.hasSeenMatchSyncNotice;
     },
   },
+  {
+    to: 32,
+    label: "add-profile-mod-groups",
+    apply: (state) => {
+      if (!isPlainObject(state.profiles)) return;
+      for (const profile of Object.values(state.profiles)) {
+        if (isPlainObject(profile)) profile.modGroups ??= [];
+      }
+    },
+  },
 ];
 
 const LEGACY_GAMEBANANA_ID = /^[1-9]\d*$/;

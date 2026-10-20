@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
-import { Archive, File, FolderOpen } from "@deadlock-mods/ui/icons";
+import { Archive, Download, File, FolderOpen } from "@deadlock-mods/ui/icons";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { formatSize } from "@/lib/utils";
@@ -369,6 +369,7 @@ export const FileSelectorDialog = ({
               </Button>
               <Button
                 disabled={selectedCount === 0}
+                icon={<Download className='h-4 w-4' />}
                 onClick={(e) => {
                   e.stopPropagation();
                   onConfirm(localFileTree);

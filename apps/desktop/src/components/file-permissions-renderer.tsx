@@ -7,6 +7,7 @@ import {
   AlertDialogTitle,
 } from "@deadlock-mods/ui/components/alert-dialog";
 import { Button } from "@deadlock-mods/ui/components/button";
+import { LockOpenIcon } from "@phosphor-icons/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -88,6 +89,7 @@ export const FilePermissionsRenderer = () => {
           </Button>
           <Button
             data-testid='make-file-writable'
+            icon={<LockOpenIcon className='h-4 w-4' />}
             disabled={repair.isPending || repair.isError}
             onClick={() => {
               if (request) repair.mutate(request.path);

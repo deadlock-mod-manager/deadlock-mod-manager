@@ -15,9 +15,11 @@ import { ScrollArea } from "@deadlock-mods/ui/components/scroll-area";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import {
   AlertTriangle,
+  ArrowRight,
   CheckCircle,
   ChevronDown,
   ChevronRight,
+  Download,
   Loader2,
   Search,
 } from "@deadlock-mods/ui/icons";
@@ -743,6 +745,7 @@ export const ImportWizardDialog = ({
             <Button
               data-testid='interchange-next'
               disabled={nothingSelected || busy}
+              icon={<Download className='h-4 w-4' />}
               onClick={start}>
               {t("interchange.startImport")}
             </Button>
@@ -751,6 +754,7 @@ export const ImportWizardDialog = ({
             <Button
               data-testid='interchange-finish'
               disabled={busy}
+              icon={<ArrowRight className='h-4 w-4' />}
               onClick={() => setStep("done")}>
               {pending.every((mod) => linked[mod.modId])
                 ? t("interchange.continue")

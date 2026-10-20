@@ -74,7 +74,7 @@ describe("variants sharing a VPK filename", () => {
 
       await step("update keeps blue unselected", async () => {
         await navigate("my-mods");
-        const check = await $("button=Check for updates");
+        const check = await $('button[aria-label="Check for updates"]');
         await check.waitForEnabled({ timeout: 30_000 });
         await check.click();
         await $("button=1 update available").click();

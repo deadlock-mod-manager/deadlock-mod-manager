@@ -11,6 +11,7 @@ import { Input } from "@deadlock-mods/ui/components/input";
 import { Label } from "@deadlock-mods/ui/components/label";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { Textarea } from "@deadlock-mods/ui/components/textarea";
+import { FloppyDiskIcon } from "@phosphor-icons/react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePersistedStore } from "@/lib/store";
@@ -157,7 +158,9 @@ export const ProfileEditDialog = ({
           </Button>
           <Button
             onClick={handleUpdate}
-            disabled={!name.trim() || isUpdating || profile.isDefault}>
+            disabled={!name.trim() || isUpdating || profile.isDefault}
+            icon={<FloppyDiskIcon className='h-4 w-4' />}
+            isLoading={isUpdating}>
             {isUpdating ? t("profiles.updating") : t("profiles.update")}
           </Button>
         </DialogFooter>

@@ -12,11 +12,13 @@ import {
   ChevronDown,
   FileInput,
   FolderSearch,
-  Import,
+  Plus,
 } from "@deadlock-mods/ui/icons";
+import { UploadSimple } from "@phosphor-icons/react";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router";
 import { HintAnchor } from "@/components/feature-hints/hint-anchor";
 import { canShowHint } from "@/lib/feature-hints";
 import { usePersistedStore } from "@/lib/store";
@@ -27,12 +29,13 @@ import {
 import { ImportWizardDialog } from "./import-wizard-dialog";
 
 /**
- * "Import from other mod managers": one entry per mod manager DMM can read
+ * "Add mods": local files, plus one import entry per mod manager DMM can read
  * (reported by the backend registry, so new managers appear without UI
- * changes), plus any manager's exported interchange file.
+ * changes) and any manager's exported interchange file.
  */
-export const ImportSourceMenu = () => {
+export const AddModsMenu = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const markFeatureUsed = usePersistedStore((state) => state.markFeatureUsed);
   // Detection only runs for the hint while it could still be shown.
@@ -79,14 +82,21 @@ export const ImportSourceMenu = () => {
           <DropdownMenuTrigger asChild>
             <Button
               data-testid='interchange-import-menu'
-              icon={<Import className='h-4 w-4' />}
+              icon={<Plus className='h-4 w-4' />}
               variant='outline'>
-              {t("interchange.importButton")}
+              {t("myMods.addMods")}
               <ChevronDown className='ml-1 h-3 w-3' />
             </Button>
           </DropdownMenuTrigger>
         </HintAnchor>
         <DropdownMenuContent align='end' className='w-72'>
+          <DropdownMenuItem
+            data-testid='add-local-mod'
+            onSelect={() => navigate("/add-mods")}>
+            <UploadSimple className='h-4 w-4' />
+            {t("navigation.addMods")}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuLabel>
             {t("interchange.managersLabel")}
           </DropdownMenuLabel>

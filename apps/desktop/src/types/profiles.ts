@@ -8,6 +8,13 @@ export interface ModProfileEntry {
   lastModified: Date;
 }
 
+export interface ModGroup {
+  id: string;
+  name: string;
+  modIds: string[];
+  collapsed: boolean;
+}
+
 export interface ModProfile {
   id: ProfileId;
   name: string;
@@ -18,6 +25,7 @@ export interface ModProfile {
   isDefault: boolean;
   folderName: string | null;
   mods: LocalMod[];
+  modGroups?: ModGroup[];
 }
 
 export interface VpkManifestEntry {

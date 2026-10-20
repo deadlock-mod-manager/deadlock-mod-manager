@@ -7,11 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
-import {
-  CheckCircleIcon,
-  ShareNetworkIcon,
-  XIcon,
-} from "@phosphor-icons/react";
+import { CheckCircleIcon, ShareNetworkIcon } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
 import { useMatchSync } from "@/hooks/use-match-sync";
@@ -102,7 +98,6 @@ export const MatchSyncNoticeDialog = () => {
             className={buttonVariants({ variant: "outline" })}
             onClick={dismissPrompt}
             type='button'>
-            <XIcon className='size-4' weight='bold' />
             {t("matchSync.notice.noThanks")}
           </button>
           <Button onClick={handleTurnOn} type='button'>
