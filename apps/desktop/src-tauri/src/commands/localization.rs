@@ -57,6 +57,18 @@ pub async fn fix_mods(
 }
 
 #[tauri::command]
+pub async fn refresh_mod_fixes(profile_folder: Option<String>) -> Result<(), Error> {
+  tauri::async_runtime::spawn_blocking(move || {
+    MANAGER
+      .lock()
+      .map_err(|_| Error::BackgroundTaskFailed("Mod manager is unavailable".into()))?
+      .refresh_mod_fixes(profile_folder.as_deref())
+  })
+  .await
+  .map_err(|error| Error::BackgroundTaskFailed(format!("Could not refresh mod fixes: {error}")))?
+}
+
+#[tauri::command]
 pub async fn get_mod_compatibility_settings(
   profile_folder: Option<String>,
 ) -> Result<std::collections::BTreeMap<String, bool>, Error> {

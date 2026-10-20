@@ -5,6 +5,7 @@ import {
   useCheckModHealth,
   useModHealthProgress,
   useModHealthReport,
+  useRefreshModFixes,
 } from "@/hooks/use-mod-health";
 import { gameUpdatedSinceLastCheck } from "@/lib/mods/mod-health";
 import { forcedBuildStorageKey } from "@/lib/mods/mod-health-queries";
@@ -18,17 +19,20 @@ const INSTALL_CHECK_DELAY_MS = 1500;
 /**
  * Keeps the mod health report current: checks once per profile after start,
  * rechecks every mod after a game update, and checks newly installed files.
+ * After any library change it also rebuilds the fixed mods' repair package.
  * Mounted once in app.tsx.
  */
 export const ModHealthRenderer = () => {
   const profileFolder = useActiveProfileFolder();
   const report = useModHealthReport(profileFolder);
   const check = useCheckModHealth();
+  const { mutate: refreshFixes } = useRefreshModFixes();
   const setProgress = useModHealthProgress((state) => state.setProgress);
   const localMods = usePersistedStore((state) => state.localMods);
   const checkedProfiles = useRef(new Set<string | null>());
   const previousInstalled = useRef<ReadonlyMap<string, string> | null>(null);
   const pendingModIds = useRef(new Set<string>());
+  const libraryChanged = useRef(false);
 
   useEffect(() => {
     const unlisten = listen<ModHealthProgress>("mod-health-progress", (event) =>
@@ -66,14 +70,22 @@ export const ModHealthRenderer = () => {
     for (const [modId, vpks] of installed) {
       if (before.get(modId) !== vpks) pendingModIds.current.add(modId);
     }
-    if (pendingModIds.current.size === 0) return;
+    if (
+      pendingModIds.current.size > 0 ||
+      [...before.keys()].some((modId) => !installed.has(modId))
+    ) {
+      libraryChanged.current = true;
+    }
+    if (!libraryChanged.current) return;
     const timer = setTimeout(() => {
       const modIds = [...pendingModIds.current];
       pendingModIds.current.clear();
-      check({ profileFolder, modIds });
+      libraryChanged.current = false;
+      refreshFixes(profileFolder);
+      if (modIds.length > 0) check({ profileFolder, modIds });
     }, INSTALL_CHECK_DELAY_MS);
     return () => clearTimeout(timer);
-  }, [installed, profileFolder, check]);
+  }, [installed, profileFolder, check, refreshFixes]);
 
   return null;
 };

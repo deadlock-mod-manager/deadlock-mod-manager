@@ -282,6 +282,7 @@ pub fn run() {
       commands::localization::get_mod_health,
       commands::localization::check_mod_health,
       commands::localization::fix_mods,
+      commands::localization::refresh_mod_fixes,
       commands::game::is_game_running,
       commands::game::set_game_file_guard,
       commands::game::allow_next_game_file_operation,

@@ -12,6 +12,7 @@ import {
   assertDownloadNetwork,
 } from "./download-fixtures";
 import { prepareProfileWorld } from "./profile-fixtures";
+import { prepareCompatibilityFixWorld } from "./compatibility-fix-fixtures";
 import { prepareConflictWorld } from "./conflict-fixtures";
 import { prepareFilesystemWorld } from "./filesystem-fixtures";
 import { prepareManifestRepairWorld } from "./manifest-repair-fixtures";
@@ -528,6 +529,14 @@ export const scenarios = {
     ...conflicts,
     spec: "model-conflict-switch",
     phases: ["switch", "restart-switch"],
+  },
+  "compatibility-fix-persistence": {
+    ...defaults,
+    family: "compatibility",
+    spec: "compatibility-fix-persistence",
+    phases: ["library-changes"],
+    routes: profileRoutes,
+    prepare: async (world) => prepareCompatibilityFixWorld(world),
   },
   "library-selection": {
     ...defaults,
