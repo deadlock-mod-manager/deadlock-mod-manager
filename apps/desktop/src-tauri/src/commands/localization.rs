@@ -4,6 +4,7 @@ use crate::mod_manager::localization_overlay::{
   LocalizationOverlayAnalysis, LocalizationOverlayApplyResult, LocalizationResolution,
 };
 use crate::mod_manager::mod_health::{FixModsResult, ModHealthReport};
+use std::sync::Mutex;
 use tauri::Emitter;
 
 use super::state::MANAGER;
@@ -56,13 +57,30 @@ pub async fn fix_mods(
   .map_err(|error| Error::BackgroundTaskFailed(format!("Could not fix mods: {error}")))?
 }
 
+static REFRESH_LOCK: Mutex<()> = Mutex::new(());
+
+/// Rebuilds the repair package that installing, enabling, disabling or
+/// reordering a mod deleted, so fixed mods keep their repairs when the game
+/// starts outside the manager. gameinfo.gi keeps the package's search path
+/// through those changes, so it is left as is. The plan builds without the mod
+/// manager lock so library actions stay responsive meanwhile. While the game
+/// runs, or when the rebuild needs review, launch prepares the package instead.
 #[tauri::command]
 pub async fn refresh_mod_fixes(profile_folder: Option<String>) -> Result<(), Error> {
   tauri::async_runtime::spawn_blocking(move || {
-    MANAGER
+    let _refreshing = REFRESH_LOCK
       .lock()
-      .map_err(|_| Error::BackgroundTaskFailed("Mod manager is unavailable".into()))?
-      .refresh_mod_fixes(profile_folder.as_deref())
+      .unwrap_or_else(|error| error.into_inner());
+    let manager = || {
+      MANAGER
+        .lock()
+        .map_err(|_| Error::BackgroundTaskFailed("Mod manager is unavailable".into()))
+    };
+    let Some(refresh) = manager()?.begin_mod_fix_refresh(profile_folder.as_deref())? else {
+      return Ok(());
+    };
+    let (refresh, plan) = refresh.build()?;
+    manager()?.finish_mod_fix_refresh(refresh, plan)
   })
   .await
   .map_err(|error| Error::BackgroundTaskFailed(format!("Could not refresh mod fixes: {error}")))?

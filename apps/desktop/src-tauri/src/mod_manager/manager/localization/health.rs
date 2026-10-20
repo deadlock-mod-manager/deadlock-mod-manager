@@ -77,24 +77,6 @@ impl ModManager {
     Ok(FixModsResult { status })
   }
 
-  /// Rebuilds the repair package that installing, enabling, disabling or
-  /// reordering a mod deleted, so fixed mods keep their repairs when the game
-  /// starts outside the manager. gameinfo.gi keeps the package's search path
-  /// through those changes, so it is left as is. While the game runs, or when
-  /// the rebuild needs review, launch prepares the package instead.
-  pub fn refresh_mod_fixes(&mut self, profile_folder: Option<&str>) -> Result<(), Error> {
-    if self.is_game_running()? {
-      return Ok(());
-    }
-    match self.ensure_localization_overlay_for_launch(profile_folder) {
-      Err(Error::ModDataReviewRequired) => {
-        log::info!("Repair package needs review; launch will prepare it");
-        Ok(())
-      }
-      result => result,
-    }
-  }
-
   pub(super) fn record_launch_health(
     &self,
     profile_folder: Option<&str>,
