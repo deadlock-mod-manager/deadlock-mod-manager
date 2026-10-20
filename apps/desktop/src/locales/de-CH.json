@@ -1,4 +1,12 @@
 {
+  "modelConflict": {
+    "title": "",
+    "body": "",
+    "useSkin": "",
+    "keepCurrent": "",
+    "keptCurrent": "",
+    "replaced": ""
+  },
   "launchRepair": {
     "title_one": "",
     "title_other": "",
@@ -2272,6 +2280,24 @@
     "at": ""
   },
   "myMods": {
+    "selection": {
+      "start": "",
+      "working": "",
+      "done": "",
+      "selectMod": "",
+      "count_one": "",
+      "count_other": "",
+      "selectFiltered": "",
+      "clear": "",
+      "enable": "",
+      "disable": "",
+      "enableTitle": "",
+      "enableBody": "",
+      "disableTitle": "",
+      "disableBody": "",
+      "disabled_one": "",
+      "disabled_other": ""
+    },
     "compatibility": {
       "review": "",
       "reviewDescription": "",
@@ -2825,6 +2851,7 @@
     "next": ""
   },
   "downloads": {
+    "failed": "",
     "alreadyQueued": "",
     "downloading": "Lad {{count}} Mod abe",
     "downloading_plural": "Lad {{count}} Mods abe",
@@ -5302,6 +5329,11 @@
     "activeProfile": "",
     "selectProfile": "Profil uswähle",
     "manage": "Profile verwalte",
+    "editNamed": "",
+    "deleteNamed": "",
+    "activateNamed": "",
+    "inactive": "",
+    "switching": "",
     "manageDescription": "Erstelle, bearbeite und wechsle zwüsched verschiedene Mod-Profile. Jedes Profil merkt sich, welli Mods Sie aktiviert hend.",
     "createNew": "Neus Profil erstelle",
     "create": "Erstelle",

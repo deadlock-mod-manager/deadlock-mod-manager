@@ -1,4 +1,12 @@
 {
+  "modelConflict": {
+    "title": "",
+    "body": "",
+    "useSkin": "",
+    "keepCurrent": "",
+    "keptCurrent": "",
+    "replaced": ""
+  },
   "launchRepair": {
     "title_one": "",
     "title_other": "",
@@ -2272,6 +2280,24 @@
     "at": "في"
   },
   "myMods": {
+    "selection": {
+      "start": "",
+      "working": "",
+      "done": "",
+      "selectMod": "",
+      "count_one": "",
+      "count_other": "",
+      "selectFiltered": "",
+      "clear": "",
+      "enable": "",
+      "disable": "",
+      "enableTitle": "",
+      "enableBody": "",
+      "disableTitle": "",
+      "disableBody": "",
+      "disabled_one": "",
+      "disabled_other": ""
+    },
     "compatibility": {
       "review": "",
       "reviewDescription": "",
@@ -2825,6 +2851,7 @@
     "next": ""
   },
   "downloads": {
+    "failed": "",
     "alreadyQueued": "",
     "downloading": "جاري التنزيل {{count}} تعديل",
     "downloading_plural": "تعديلات {{count}} تنزيل",
@@ -5302,6 +5329,11 @@
     "activeProfile": "",
     "selectProfile": "اختيار الملف الشخصي",
     "manage": "إدارة الملفات الشخصية",
+    "editNamed": "",
+    "deleteNamed": "",
+    "activateNamed": "",
+    "inactive": "",
+    "switching": "",
     "manageDescription": "إنشاء وتحرير والتنقل بين ملفات التعديل المختلفة. كل ملف شخصي يتذكر التعديلات التي قمت بتفعيلها.",
     "createNew": "إنشاء ملف شخصي جديد",
     "create": "إنشاء",

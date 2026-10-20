@@ -1,8 +1,16 @@
 {
+  "modelConflict": {
+    "title": "",
+    "body": "",
+    "useSkin": "",
+    "keepCurrent": "",
+    "keptCurrent": "",
+    "replaced": ""
+  },
   "launchRepair": {
     "title_one": "",
     "title_other": "",
-    "description": "",
+    "description": "Reinstale os mods afetados ou desative-os antes de iniciar.",
     "localImport": "",
     "localNotice": "",
     "reinstallAndLaunch": "",
@@ -13,12 +21,12 @@
     "profileChanged": ""
   },
   "favorites": {
-    "title": "",
+    "title": "Favoritos",
     "subtitle": "Mods que você salvou para rever mais tarde.",
-    "add": "",
-    "remove": "",
-    "favorite": "",
-    "favorited": "",
+    "add": "Adicionar aos favoritos",
+    "remove": "Remover dos favoritos",
+    "favorite": "Favorito",
+    "favorited": "Favoritado",
     "back": "",
     "emptyTitle": "",
     "emptyDescription": ""
@@ -2272,6 +2280,24 @@
     "at": ""
   },
   "myMods": {
+    "selection": {
+      "start": "",
+      "working": "",
+      "done": "",
+      "selectMod": "",
+      "count_one": "",
+      "count_other": "",
+      "selectFiltered": "",
+      "clear": "",
+      "enable": "",
+      "disable": "",
+      "enableTitle": "",
+      "enableBody": "",
+      "disableTitle": "",
+      "disableBody": "",
+      "disabled_one": "",
+      "disabled_other": ""
+    },
     "compatibility": {
       "review": "",
       "reviewDescription": "",
@@ -2825,6 +2851,7 @@
     "next": ""
   },
   "downloads": {
+    "failed": "",
     "alreadyQueued": "",
     "downloading": "Baixando {{count}} mod",
     "downloading_plural": "Baixando {{count}} mods",
@@ -5302,6 +5329,11 @@
     "activeProfile": "",
     "selectProfile": "Selecionar Perfil",
     "manage": "Gerenciar Perfis",
+    "editNamed": "",
+    "deleteNamed": "",
+    "activateNamed": "",
+    "inactive": "",
+    "switching": "",
     "manageDescription": "Criar, editar e alternar entre diferentes perfis de mod. Cada perfil lembra quais mods você tem habilitados.",
     "createNew": "Criar Novo Perfil",
     "create": "Criar",
