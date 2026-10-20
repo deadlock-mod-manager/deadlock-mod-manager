@@ -331,18 +331,11 @@ impl ModManager {
     &self,
     profile_folder: Option<&str>,
   ) -> Result<(), Error> {
-    self.prepare_localization_overlay_for_launch(
+    self.prepare_localization_overlay_with_progress(
       profile_folder,
       self.mod_compatibility_enabled(profile_folder)?,
+      || {},
     )
-  }
-
-  fn prepare_localization_overlay_for_launch(
-    &self,
-    profile_folder: Option<&str>,
-    enabled: bool,
-  ) -> Result<(), Error> {
-    self.prepare_localization_overlay_with_progress(profile_folder, enabled, || {})
   }
 
   pub(super) fn prepare_localization_overlay_with_progress(
@@ -1294,7 +1287,7 @@ mod tests {
       .unwrap();
     assert!(!output.exists());
     manager
-      .prepare_localization_overlay_for_launch(None, true)
+      .prepare_localization_overlay_with_progress(None, true, || {})
       .unwrap();
   }
 
@@ -1502,7 +1495,7 @@ Game core
     assert!(analysis.parse_warnings.is_empty());
     assert!(!requires_review(&analysis));
     manager
-      .prepare_localization_overlay_for_launch(None, true)
+      .prepare_localization_overlay_with_progress(None, true, || {})
       .unwrap();
     assert!(
       !manager
@@ -1521,7 +1514,7 @@ Game core
     fs::create_dir_all(path.parent().unwrap()).unwrap();
     fs::write(&path, b"stale untracked overlay").unwrap();
     manager
-      .prepare_localization_overlay_for_launch(None, true)
+      .prepare_localization_overlay_with_progress(None, true, || {})
       .unwrap();
     assert!(!path.exists());
     let receipt_path = receipt::path(&path);
@@ -1533,7 +1526,7 @@ Game core
       .set_times(fs::FileTimes::new().set_modified(old_time))
       .unwrap();
     manager
-      .prepare_localization_overlay_for_launch(None, true)
+      .prepare_localization_overlay_with_progress(None, true, || {})
       .unwrap();
     assert_eq!(
       fs::metadata(&receipt_path).unwrap().modified().unwrap(),
@@ -1550,19 +1543,19 @@ Game core
     fs::write(citadel.join("pak01_000.vpk"), b"chunk").unwrap();
     fs::write(citadel.join("steam.inf"), b"ClientVersion=1").unwrap();
     manager
-      .prepare_localization_overlay_for_launch(None, true)
+      .prepare_localization_overlay_with_progress(None, true, || {})
       .unwrap();
     let path = manager.localization_overlay_vpk_path(None).unwrap();
     let before = receipt::load(&path).unwrap().unwrap().key;
     fs::write(citadel.join("pak01_000.vpk"), b"updated game data chunk").unwrap();
     manager
-      .prepare_localization_overlay_for_launch(None, true)
+      .prepare_localization_overlay_with_progress(None, true, || {})
       .unwrap();
     let after = receipt::load(&path).unwrap().unwrap().key;
     assert_ne!(before, after);
     fs::write(citadel.join("steam.inf"), b"ClientVersion=200").unwrap();
     manager
-      .prepare_localization_overlay_for_launch(None, true)
+      .prepare_localization_overlay_with_progress(None, true, || {})
       .unwrap();
     assert_ne!(after, receipt::load(&path).unwrap().unwrap().key);
   }
