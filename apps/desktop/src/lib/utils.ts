@@ -1,11 +1,9 @@
 import {
-  CustomSettingType,
   ModDto,
   type ReportCountsDto,
   formatByteRate,
   formatByteSize,
 } from "@deadlock-mods/shared";
-import { invoke } from "@tauri-apps/api/core";
 import {
   addDays,
   format,
@@ -16,9 +14,7 @@ import {
 } from "date-fns";
 import { platform } from "@tauri-apps/plugin-os";
 
-import type { LocalSetting } from "@/types/settings";
 import type { AddedFilter } from "@/lib/store/slices/ui";
-import { AUTOEXEC_LAUNCH_OPTION_ID } from "@/lib/autoexec/constants";
 import {
   MOD_OUTDATED_CUTOFF_SECONDS,
   STALE_MOD_DAYS,
@@ -47,47 +43,6 @@ export function isMacOS(osType: string): boolean {
 export const formatSize = formatByteSize;
 export const formatSpeed = formatByteRate;
 
-export const getAdditionalArgs = async (
-  settings: LocalSetting[],
-  gamePresenceEnabled: boolean,
-) => {
-  const additionalArgs: string[] = [];
-
-  if (gamePresenceEnabled) {
-    additionalArgs.push("-condebug");
-  }
-
-  for (const setting of settings.filter(
-    (s) =>
-      s.type === CustomSettingType.LAUNCH_OPTION &&
-      s.enabled &&
-      s.id !== AUTOEXEC_LAUNCH_OPTION_ID,
-  )) {
-    additionalArgs.push(`${setting.key} ${setting.value || ""}`.trim());
-  }
-
-  const autoexecLaunchOption = settings.find(
-    (s) => s.id === AUTOEXEC_LAUNCH_OPTION_ID && s.enabled,
-  );
-
-  if (autoexecLaunchOption) {
-    try {
-      const autoexecConfig = await invoke<{
-        full_content: string;
-      }>("get_autoexec_config");
-      if (
-        autoexecConfig?.full_content &&
-        autoexecConfig.full_content.trim().length > 0
-      ) {
-        additionalArgs.push("-exec autoexec");
-      }
-    } catch {
-      return additionalArgs.join(" ");
-    }
-  }
-
-  return additionalArgs.join(" ");
-};
 export const compareDates = (
   a: Date | number | undefined,
   b: Date | number | undefined,

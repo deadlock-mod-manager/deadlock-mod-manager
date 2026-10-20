@@ -16,7 +16,7 @@ import { pauseGameinfoAutoReset } from "@/lib/gameinfo-auto-reset";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { isGameRunning } from "@/lib/tauri-commands";
-import { getAdditionalArgs } from "@/lib/utils";
+import { getAdditionalArgs } from "@/lib/launch-options";
 
 const GAME_EXIT_POLL_MS = 500;
 const GAME_EXIT_TIMEOUT_MS = 20_000;
@@ -52,8 +52,6 @@ export const useJoinServer = (
   const { t } = useTranslation();
   const confirm = useConfirm();
   const queryClient = useQueryClient();
-  const settings = usePersistedStore((s) => s.settings);
-  const gamePresenceEnabled = usePersistedStore((s) => s.gamePresenceEnabled);
   const getActiveProfile = usePersistedStore((s) => s.getActiveProfile);
   const clearLastJoin = usePersistedStore((s) => s.clearLastJoin);
 
@@ -132,10 +130,7 @@ export const useJoinServer = (
     }: JoinVariables): Promise<JoinResult> => {
       if (!server) return { kind: "cancelled" };
 
-      const additionalArgs = await getAdditionalArgs(
-        Object.values(settings),
-        gamePresenceEnabled,
-      );
+      const additionalArgs = await getAdditionalArgs();
 
       // The gateway path just opens a URL; nothing touches the game install.
       if (server.gateway_url) {
