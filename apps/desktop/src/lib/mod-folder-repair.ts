@@ -10,8 +10,12 @@ export const repairManifestEntries = (
     shard: 1,
     currentVpks: mod.installedVpks ?? [],
     disabledVpks: [],
-    originalVpkNames:
-      mod.installedFileTree?.files.map((file) => file.name) ?? [],
+    // Installs, updates and option swaps enable the selected files in name
+    // order, so sorting pairs each name with its installed VPK.
+    originalVpkNames: (mod.installedFileTree?.files ?? [])
+      .filter((file) => file.is_selected)
+      .map((file) => file.name)
+      .sort(),
     order: mod.installOrder ?? null,
   }));
 

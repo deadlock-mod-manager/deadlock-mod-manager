@@ -344,8 +344,11 @@ impl ModManager {
     profile_folder: Option<String>,
     current_installed_vpks: &[String],
     current_original_names: &[String],
-    selected_original_names: Vec<String>,
+    mut selected_original_names: Vec<String>,
   ) -> Result<VariantChangeResult, Error> {
+    // Installs enable a mod's VPKs in name order, so a swap does too and the
+    // same file wins inside the mod either way.
+    selected_original_names.sort();
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
     let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
     // The UI file tree may be sorted differently from the numbered VPKs.

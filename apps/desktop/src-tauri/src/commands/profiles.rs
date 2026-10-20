@@ -676,9 +676,24 @@ pub(crate) fn seed_manifest_entries(
   entries: Vec<SeedManifestEntry>,
 ) -> bool {
   let mut changed = false;
-  for entry in entries {
+  for mut entry in entries {
     if manifest.mods.contains_key(&entry.mod_id) {
       continue;
+    }
+    let vpk_count = if entry.enabled {
+      entry.current_vpks.len()
+    } else {
+      entry.disabled_vpks.len()
+    };
+    // Names pair with files by position, so a list of a different length
+    // would rename files after the wrong variant.
+    if !entry.original_vpk_names.is_empty() && entry.original_vpk_names.len() != vpk_count {
+      log::warn!(
+        "Dropping {} original VPK names for mod {}: they do not match its {vpk_count} VPKs",
+        entry.original_vpk_names.len(),
+        entry.mod_id
+      );
+      entry.original_vpk_names.clear();
     }
     if entry.enabled {
       manifest.mark_enabled(

@@ -789,6 +789,29 @@ mod tests {
   }
 
   #[test]
+  fn variant_swap_enables_the_selection_in_name_order() {
+    let game = game_dir();
+    let addons = game.path().join("game/citadel/addons");
+    fs::create_dir_all(&addons).unwrap();
+    fs::write(addons.join("42_blue.vpk"), b"blue bytes").unwrap();
+    fs::write(addons.join("42_red.vpk"), b"red bytes").unwrap();
+    let result = test_manager(game.path())
+      .apply_variant_selection(
+        "42",
+        None,
+        &[],
+        &[],
+        vec!["red.vpk".into(), "blue.vpk".into()],
+      )
+      .unwrap();
+    assert_eq!(result.original_vpk_names, vec!["blue.vpk", "red.vpk"]);
+    assert_eq!(
+      fs::read(addons.join(&result.installed_vpks[0])).unwrap(),
+      b"blue bytes"
+    );
+  }
+
+  #[test]
   fn reenable_keeps_deselected_variants_inactive() {
     let game = game_dir();
     let citadel = game.path().join("game/citadel");
@@ -1653,6 +1676,27 @@ mod tests {
     assert_eq!(
       fs::read(base.join("other_pak01-blue_dir.vpk")).unwrap(),
       b"other-blue"
+    );
+  }
+
+  #[test]
+  fn update_mod_from_prepared_enables_files_in_name_order() {
+    let game = game_dir();
+    let addons_path = game.path().join("game").join("citadel").join("addons");
+    fs::create_dir_all(&addons_path).unwrap();
+    let prepared_dir = game.path().join("prepared");
+    fs::create_dir_all(&prepared_dir).unwrap();
+    let red = prepared_dir.join("red.vpk");
+    let blue = prepared_dir.join("blue.vpk");
+    fs::write(&red, b"red").unwrap();
+    fs::write(&blue, b"blue").unwrap();
+    let updated = test_manager(game.path())
+      .update_mod_from_prepared("target", "Target", &[red, blue], None, None, true)
+      .unwrap();
+    assert_eq!(updated.original_vpk_names, ["blue.vpk", "red.vpk"]);
+    assert_eq!(
+      fs::read(addons_path.join(&updated.installed_vpks[0])).unwrap(),
+      b"blue"
     );
   }
 

@@ -72,7 +72,9 @@ fn rebuild_manifest(
   for entry in entries {
     let mut seed = entry.clone();
     let mut installed = Vec::new();
-    for name in &entry.current_vpks {
+    let names_aligned = entry.original_vpk_names.len() == entry.current_vpks.len();
+    let mut kept_names = Vec::new();
+    for (index, name) in entry.current_vpks.iter().enumerate() {
       let normalized = name.replace('\\', "/");
       let matches: Vec<_> = files
         .iter()
@@ -91,6 +93,10 @@ fn rebuild_manifest(
           "Cannot determine which shard owns {name}"
         )));
       }
+      // A file missing from disk takes only its own name with it.
+      if names_aligned && !matches.is_empty() {
+        kept_names.push(entry.original_vpk_names[index].clone());
+      }
       installed.extend(matches);
     }
     let shards: BTreeSet<_> = installed.iter().map(|file| file.shard).collect();
@@ -105,16 +111,25 @@ fn rebuild_manifest(
       .map(|file| file.shard)
       .unwrap_or(ShardIndex::FIRST);
     seed.current_vpks = installed.iter().map(|file| file.filename.clone()).collect();
+    let prefix = format!("{}_", entry.mod_id);
     seed.disabled_vpks = files
       .iter()
-      .filter(|file| {
-        file.shard == ShardIndex::FIRST && file.filename.starts_with(&format!("{}_", entry.mod_id))
-      })
+      .filter(|file| file.shard == ShardIndex::FIRST && file.filename.starts_with(&prefix))
       .map(|file| file.filename.clone())
       .collect();
     seed.enabled = !seed.current_vpks.is_empty();
     if !seed.enabled && seed.disabled_vpks.is_empty() {
       continue;
+    }
+    if !seed.enabled {
+      // Parked files keep their original names after the mod id.
+      seed.original_vpk_names = seed
+        .disabled_vpks
+        .iter()
+        .map(|file| file[prefix.len()..].to_string())
+        .collect();
+    } else if names_aligned {
+      seed.original_vpk_names = kept_names;
     }
     let paths: Vec<_> = if seed.enabled {
       seed
@@ -435,10 +450,28 @@ mod tests {
       manifest.mods["local-abc"].disabled_vpks,
       ["local-abc_skin.vpk"]
     );
+    assert_eq!(manifest.mods["local-abc"].original_vpk_names, ["skin.vpk"]);
     assert_eq!(
       fs::read(base.join("local-abc_skin.vpk")).unwrap(),
       b"disabled local"
     );
+  }
+
+  #[test]
+  fn rebuild_keeps_original_names_paired_with_the_files_left_on_disk() {
+    let temp = tempfile::tempdir().unwrap();
+    let (base, backups) = world(&temp);
+    write(&base, "pak02_dir.vpk", b"blue");
+    write(&base, "pak03_dir.vpk", b"stale");
+    let mut variants = seed("variants", &["pak01_dir.vpk", "pak02_dir.vpk"]);
+    variants.original_vpk_names = vec!["red.vpk".into(), "blue.vpk".into()];
+    let mut stale = seed("stale", &["pak03_dir.vpk"]);
+    stale.original_vpk_names = vec!["red.vpk".into(), "blue.vpk".into()];
+    repair_mod_folder_at(&base, &backups, &[variants, stale], false).unwrap();
+    let manifest = ProfileVpkManifest::load(&base).unwrap();
+    assert_eq!(manifest.mods["variants"].current_vpks, ["pak02_dir.vpk"]);
+    assert_eq!(manifest.mods["variants"].original_vpk_names, ["blue.vpk"]);
+    assert!(manifest.mods["stale"].original_vpk_names.is_empty());
   }
 
   #[test]
