@@ -92,10 +92,10 @@ export const lunarNewYearSeason: Season = {
     },
   },
   hideouts: [
-    { id: "firecrackers", route: "/", place: "hang", at: 82, drop: 40 },
-    { id: "luckyCat", route: "/my-mods", place: "bottom", at: 86 },
-    { id: "koi", route: "/mods", place: "right", at: 62 },
-    { id: "mandarins", route: "/settings", place: "bottom", at: 58 },
-    { id: "ingot", route: "/plugins", place: "right", at: 40 },
+    { id: "firecrackers", route: "/mods", place: "right", at: 22 },
+    { id: "luckyCat", route: "/downloads", place: "bottom", at: 48 },
+    { id: "koi", route: "/settings", place: "hang", at: 44, drop: 80 },
+    { id: "mandarins", route: "/my-mods", place: "right", at: 70 },
+    { id: "ingot", route: "/servers", place: "bottom", at: 16 },
   ],
 };

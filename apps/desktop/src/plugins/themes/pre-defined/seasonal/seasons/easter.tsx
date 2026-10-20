@@ -75,10 +75,10 @@ export const easter: Season = {
     Accessory: BunnyEars,
   },
   hideouts: [
-    { id: "bunny", route: "/", place: "bottom", at: 72 },
-    { id: "chick", route: "/my-mods", place: "right", at: 58 },
-    { id: "carrot", route: "/mods", place: "bottom", at: 40 },
-    { id: "tulip", route: "/settings", place: "bottom", at: 76 },
-    { id: "eggOrnament", route: "/plugins", place: "hang", at: 80, drop: 60 },
+    { id: "bunny", route: "/", place: "right", at: 48 },
+    { id: "chick", route: "/skins", place: "bottom", at: 62 },
+    { id: "carrot", route: "/crosshairs", place: "hang", at: 70, drop: 36 },
+    { id: "tulip", route: "/settings", place: "bottom", at: 24 },
+    { id: "eggOrnament", route: "/mods", place: "hang", at: 36, drop: 88 },
   ],
 };

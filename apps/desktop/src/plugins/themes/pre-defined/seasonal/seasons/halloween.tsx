@@ -86,10 +86,10 @@ export const halloween: Season = {
     Accessory: WitchHat,
   },
   hideouts: [
-    { id: "spider", route: "/", place: "hang", at: 68, drop: 96 },
-    { id: "ghost", route: "/my-mods", place: "right", at: 38 },
-    { id: "cauldron", route: "/mods", place: "bottom", at: 80 },
-    { id: "blackCat", route: "/settings", place: "bottom", at: 56 },
-    { id: "tombstone", route: "/plugins", place: "bottom", at: 88 },
+    { id: "spider", route: "/", place: "hang", at: 22, drop: 72 },
+    { id: "ghost", route: "/downloads", place: "right", at: 36 },
+    { id: "cauldron", route: "/mods", place: "bottom", at: 22 },
+    { id: "blackCat", route: "/crosshairs", place: "bottom", at: 71 },
+    { id: "tombstone", route: "/servers", place: "right", at: 64 },
   ],
 };
