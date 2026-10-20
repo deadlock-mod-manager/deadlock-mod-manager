@@ -1,4 +1,3 @@
-import { ProviderError } from "@deadlock-mods/common";
 import { gameBananaTimestampToDate } from "./utils";
 
 const DETAIL_CACHE_TTL_MS = 10 * 60 * 1000;
@@ -18,17 +17,13 @@ export function indexRevisionToAcknowledge(
   return indexModifiedAt;
 }
 
-export function assertProfileFresh(
+export function isProfileStale(
   profileModifiedAt: number | undefined,
   indexModifiedAt: number | undefined,
-): void {
+): boolean {
   const listed = gameBananaTimestampToDate(indexModifiedAt);
-  if (!listed) return;
+  if (!listed) return false;
 
   const profile = gameBananaTimestampToDate(profileModifiedAt);
-  if (profile && profile < listed) {
-    throw new ProviderError(
-      "GameBanana profile is older than its index listing",
-    );
-  }
+  return profile !== null && profile < listed;
 }

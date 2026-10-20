@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import { assertProfileFresh, indexRevisionToAcknowledge } from "./detail";
+import { isProfileStale, indexRevisionToAcknowledge } from "./detail";
 import { indexListingChanged } from "./utils";
 
 describe("GameBanana detail freshness", () => {
@@ -8,7 +8,9 @@ describe("GameBanana detail freshness", () => {
 
   it("revisits an unchanged listing after an early sync, even with a fresh profile", () => {
     let stored = new Date("2026-10-19T12:00:00Z");
-    assertProfileFresh(revision.getTime() / 1000, revision.getTime() / 1000);
+    expect(
+      isProfileStale(revision.getTime() / 1000, revision.getTime() / 1000),
+    ).toBe(false);
 
     const early = indexRevisionToAcknowledge(
       revision,
@@ -54,24 +56,22 @@ describe("GameBanana detail freshness", () => {
     ).toBeUndefined();
   });
 
-  it("rejects an older profile so sync cannot acknowledge the newer listing", () => {
-    expect(() => assertProfileFresh(1792455811, 1792515954)).toThrow(
-      "GameBanana profile is older than its index listing",
-    );
+  it("identifies an older profile without throwing", () => {
+    expect(isProfileStale(1792455811, 1792515954)).toBe(true);
   });
 
   it("accepts matching or newer profiles", () => {
-    expect(() => assertProfileFresh(1792515954, 1792515954)).not.toThrow();
-    expect(() => assertProfileFresh(1792515955, 1792515954)).not.toThrow();
+    expect(isProfileStale(1792515954, 1792515954)).toBe(false);
+    expect(isProfileStale(1792515955, 1792515954)).toBe(false);
   });
 
   it("does not compare timestamps for refreshes without a valid index timestamp", () => {
-    expect(() => assertProfileFresh(1792455811, undefined)).not.toThrow();
-    expect(() => assertProfileFresh(1792455811, 0)).not.toThrow();
+    expect(isProfileStale(1792455811, undefined)).toBe(false);
+    expect(isProfileStale(1792455811, 0)).toBe(false);
   });
 
   it("preserves handling of undated profiles", () => {
-    expect(() => assertProfileFresh(undefined, 1792515954)).not.toThrow();
-    expect(() => assertProfileFresh(0, 1792515954)).not.toThrow();
+    expect(isProfileStale(undefined, 1792515954)).toBe(false);
+    expect(isProfileStale(0, 1792515954)).toBe(false);
   });
 });

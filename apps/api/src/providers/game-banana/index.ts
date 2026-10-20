@@ -15,7 +15,7 @@ import { modCache } from "../../services/mod-cache";
 import { ModSyncHooksService } from "../../services/mod-sync-hooks";
 import { Provider, providerRegistry } from "../registry";
 import { assertGameBananaResponseOk } from "./response";
-import { assertProfileFresh, indexRevisionToAcknowledge } from "./detail";
+import { isProfileStale, indexRevisionToAcknowledge } from "./detail";
 import type {
   GameBananaListedSubmission,
   GameBananaProfileSkip,
@@ -297,7 +297,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
   async createModPayload(
     mod: GameBananaSubmission,
     source: GameBananaSubmissionSource,
-  ): Promise<GameBananaModPayload | GameBananaProfileSkip> {
+  ): Promise<GameBananaModPayload | GameBananaProfileSkip | "stale_profile"> {
     if (source === "sound") {
       return this.createSoundModPayload(mod);
     }
@@ -306,12 +306,14 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
 
   private async createSoundModPayload(
     mod: GameBananaSubmission,
-  ): Promise<GameBananaModPayload | GameBananaProfileSkip> {
+  ): Promise<GameBananaModPayload | GameBananaProfileSkip | "stale_profile"> {
     const profile = await this.getMod(mod._idRow.toString(), "Sound");
 
     if (!profile) return "not_found";
 
-    assertProfileFresh(profile._tsDateModified, mod._tsDateModified);
+    if (isProfileStale(profile._tsDateModified, mod._tsDateModified)) {
+      return "stale_profile";
+    }
 
     if (profile._bIsTrashed === true) {
       return this.createTrashedPayload(profile);
@@ -354,12 +356,14 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
 
   private async createRegularModPayload(
     mod: GameBananaSubmission,
-  ): Promise<GameBananaModPayload | GameBananaProfileSkip> {
+  ): Promise<GameBananaModPayload | GameBananaProfileSkip | "stale_profile"> {
     const profile = await this.getMod(mod._idRow.toString(), "Mod");
 
     if (!profile) return "not_found";
 
-    assertProfileFresh(profile._tsDateModified, mod._tsDateModified);
+    if (isProfileStale(profile._tsDateModified, mod._tsDateModified)) {
+      return "stale_profile";
+    }
 
     if (profile._bIsTrashed === true) {
       return this.createTrashedPayload(profile);
@@ -440,6 +444,7 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     contentChanged: boolean;
     handledAsTrashed?: boolean;
     skipped?: GameBananaProfileSkip;
+    deferred?: "stale_profile";
   }> {
     const modId = mod._idRow.toString();
     const wide = createWideEvent(this.logger, "mod_sync", {
@@ -451,6 +456,17 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       let t0 = Date.now();
       const payload = await this.createModPayload(mod, source);
       wide.set("payloadMs", Date.now() - t0);
+
+      if (payload === "stale_profile") {
+        wide.set("outcome_reason", "deferred_stale_profile");
+        wide.emit("success");
+        return {
+          mod: undefined,
+          filesChanged: false,
+          contentChanged: false,
+          deferred: payload,
+        };
+      }
 
       if (typeof payload === "string") {
         wide.set(
