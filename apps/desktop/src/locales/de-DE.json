@@ -1,9 +1,5 @@
 {
   "modelConflict": {
-    "title": "",
-    "body": "",
-    "useSkin": "",
-    "keepCurrent": "",
     "keptCurrent": "",
     "replaced": ""
   },
@@ -2218,6 +2214,13 @@
       "summaryServerContent": "",
       "summaryServerContentCounted_one": "",
       "summaryServerContentCounted_other": "",
+      "summaryServerContentPending_one": "",
+      "summaryServerContentPending_other": "",
+      "summaryServerContentReady": "",
+      "summaryServerContentNone": "",
+      "contentTruncated": "",
+      "contentMissingSource": "",
+      "contentBlockedMaps": "",
       "noConnectMethod": ""
     },
     "staging": {
@@ -2234,7 +2237,12 @@
       "applying": "Server-Mods werden auf gameinfo.gi appliziert...",
       "downloadingServerContent": "",
       "contentItemProgress": "",
-      "decompressing": ""
+      "decompressing": "",
+      "awaitingMismatchConfirm": "",
+      "mismatchTitle": "",
+      "mismatchDescription": "",
+      "mismatchAccept": "",
+      "mismatchDeclined": ""
     },
     "requirementRow": {
       "customProvider": "Benutzerdefiniert",
@@ -2252,18 +2260,11 @@
       "registryStale_one": "",
       "registryStale_other": ""
     },
-    "relayBar": {
-      "online": "online",
-      "degraded": "",
-      "offline": "offline",
-      "lastSeen": "Letzter Kontakt",
-      "latency": "{{ms}} ms"
-    },
     "hostCta": {
       "title": "Hosts du einen eigenen Deadlock-Server?",
-      "description": "Teile ihn hier damit andere Spieler ihn finden und ihm beitreten können.",
-      "action": "Server auflisten",
-      "openError": "Konnte die Server-Hosting-Seite nicht öffnen."
+      "description": "",
+      "action": "",
+      "openError": ""
     },
     "connect": {
       "retrying": "",
@@ -2600,6 +2601,16 @@
     }
   },
   "modOrdering": {
+    "animationChecks": {
+      "title": "",
+      "scope": "",
+      "result": "",
+      "status": {
+        "verified": "",
+        "unresolved": "",
+        "notChecked": ""
+      }
+    },
     "manageOrderTooltip": "Reihenfolge verwalten, in der Mods geladen werden",
     "title": "Mod-Ladereihenfolge verwalten",
     "description": "Ziehen und ablegen, um Ihre Mods neu zu ordnen. Mods oben laden zuerst, Mods unten laden zuletzt.",
@@ -2946,6 +2957,7 @@
       "disablingMods": "",
       "verifyingMods_one": "",
       "verifyingMods_other": "",
+      "checkingCompatibility": "",
       "mergingModData": "",
       "writingSearchPaths": "",
       "applyingPerformance": "",
@@ -3581,10 +3593,6 @@
     "description": "",
     "features": {
       "custom-maps": {
-        "title": "",
-        "description": ""
-      },
-      "server-browser": {
         "title": "",
         "description": ""
       },
@@ -5726,7 +5734,10 @@
   },
   "heroConflict": {
     "title": "",
+    "modelTitle": "",
     "description": "",
+    "andMore_one": "",
+    "andMore_other": "",
     "currentlyActive": "",
     "switchingTo": "",
     "swapAction": "",
@@ -6345,13 +6356,6 @@
     "open": "",
     "enabled": "",
     "features": {
-      "server-browser": {
-        "title": "",
-        "description": "",
-        "hint": "",
-        "previewTitle": "",
-        "previewDetail": ""
-      },
       "custom-maps": {
         "title": "",
         "description": "",
@@ -6373,6 +6377,10 @@
     "showMe": "",
     "gotIt": "",
     "turnOff": "",
+    "serverBrowser": {
+      "title": "",
+      "body": ""
+    },
     "importFromManager": {
       "title": "",
       "body": ""

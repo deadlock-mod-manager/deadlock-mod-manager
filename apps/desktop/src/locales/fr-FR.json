@@ -1,9 +1,5 @@
 {
   "modelConflict": {
-    "title": "",
-    "body": "",
-    "useSkin": "",
-    "keepCurrent": "",
     "keptCurrent": "",
     "replaced": ""
   },
@@ -2218,6 +2214,13 @@
       "summaryServerContent": "",
       "summaryServerContentCounted_one": "",
       "summaryServerContentCounted_other": "",
+      "summaryServerContentPending_one": "",
+      "summaryServerContentPending_other": "",
+      "summaryServerContentReady": "",
+      "summaryServerContentNone": "",
+      "contentTruncated": "",
+      "contentMissingSource": "",
+      "contentBlockedMaps": "",
       "noConnectMethod": ""
     },
     "staging": {
@@ -2234,7 +2237,12 @@
       "applying": "",
       "downloadingServerContent": "",
       "contentItemProgress": "",
-      "decompressing": ""
+      "decompressing": "",
+      "awaitingMismatchConfirm": "",
+      "mismatchTitle": "",
+      "mismatchDescription": "",
+      "mismatchAccept": "",
+      "mismatchDeclined": ""
     },
     "requirementRow": {
       "customProvider": "",
@@ -2252,17 +2260,10 @@
       "registryStale_one": "",
       "registryStale_other": ""
     },
-    "relayBar": {
-      "online": "en ligne",
-      "degraded": "connexion dégradée",
-      "offline": "hors ligne",
-      "lastSeen": "",
-      "latency": "{{ms}} ms"
-    },
     "hostCta": {
       "title": "Vous gérez un serveur Deadlock personnalisé ?",
-      "description": "Partagez-le ici pour que d'autres joueurs puissent le trouver et le rejoindre.",
-      "action": "L'ajouter à la liste",
+      "description": "",
+      "action": "",
       "openError": ""
     },
     "connect": {
@@ -2600,6 +2601,16 @@
     }
   },
   "modOrdering": {
+    "animationChecks": {
+      "title": "",
+      "scope": "",
+      "result": "",
+      "status": {
+        "verified": "",
+        "unresolved": "",
+        "notChecked": ""
+      }
+    },
     "manageOrderTooltip": "",
     "title": "Gérer l'ordre de chargement des mods",
     "description": "Glissez-déposez pour réorganiser vos mods. Les mods en haut se chargent en premier, ceux en bas se chargent en dernier.",
@@ -2946,6 +2957,7 @@
       "disablingMods": "",
       "verifyingMods_one": "",
       "verifyingMods_other": "",
+      "checkingCompatibility": "",
       "mergingModData": "",
       "writingSearchPaths": "",
       "applyingPerformance": "",
@@ -3581,10 +3593,6 @@
     "description": "",
     "features": {
       "custom-maps": {
-        "title": "",
-        "description": ""
-      },
-      "server-browser": {
         "title": "",
         "description": ""
       },
@@ -5726,7 +5734,10 @@
   },
   "heroConflict": {
     "title": "",
+    "modelTitle": "",
     "description": "",
+    "andMore_one": "",
+    "andMore_other": "",
     "currentlyActive": "",
     "switchingTo": "",
     "swapAction": "",
@@ -6345,13 +6356,6 @@
     "open": "",
     "enabled": "",
     "features": {
-      "server-browser": {
-        "title": "",
-        "description": "",
-        "hint": "",
-        "previewTitle": "",
-        "previewDetail": ""
-      },
       "custom-maps": {
         "title": "",
         "description": "",
@@ -6373,6 +6377,10 @@
     "showMe": "",
     "gotIt": "",
     "turnOff": "",
+    "serverBrowser": {
+      "title": "",
+      "body": ""
+    },
     "importFromManager": {
       "title": "",
       "body": ""
