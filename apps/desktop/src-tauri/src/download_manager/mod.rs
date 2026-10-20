@@ -1405,6 +1405,12 @@ impl DownloadManager {
     }))
   }
 
+  pub async fn is_busy(&self) -> bool {
+    *self.processing.lock().await
+      || !self.queue.lock().await.is_empty()
+      || !self.active_downloads.lock().await.is_empty()
+  }
+
   pub async fn get_all_downloads(&self) -> Result<Vec<DownloadStatus>, Error> {
     let active = self.active_downloads.lock().await;
     Ok(

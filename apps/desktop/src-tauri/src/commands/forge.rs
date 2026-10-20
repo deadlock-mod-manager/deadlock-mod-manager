@@ -24,9 +24,7 @@ pub async fn place_forge_payload(
   destination: String,
 ) -> Result<(), Error> {
   let staged = forge_bridge::peek_staged(&path)?;
-  let mods_root = crate::runtime_environment::app_local_data_dir(&app_handle)
-    .map_err(Error::Tauri)?
-    .join("mods");
+  let mods_root = crate::mod_manager::mods_store::dir(&app_handle)?;
   let destination = contained_destination(&mods_root, &destination)?;
 
   if let Some(parent) = destination.parent() {

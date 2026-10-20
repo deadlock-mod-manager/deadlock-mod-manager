@@ -18,6 +18,7 @@ pub mod manager;
 pub mod missing_vpks;
 pub mod mod_health;
 pub mod mod_repository;
+pub mod mods_store;
 pub mod perf_config;
 pub mod repair_backup;
 pub mod shard;

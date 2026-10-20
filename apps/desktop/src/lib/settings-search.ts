@@ -70,6 +70,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
     descriptionKey: "settings.steamPathSectionDescription",
   },
   {
+    id: "download-cache-location",
+    tab: "game",
+    titleKey: "settings.downloadCacheLocation",
+    descriptionKey: "settings.downloadCacheLocationDescription",
+  },
+  {
     id: "game-config",
     tab: "game",
     titleKey: "settings.gameConfigManagement",

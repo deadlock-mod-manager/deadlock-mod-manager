@@ -449,7 +449,7 @@ pub fn import(
   import_into(manager, &app_data, request, progress)
 }
 
-/// [`import`] with DMM's app data folder (ledger and mod store) given.
+/// [`import`] with DMM's app data folder (ledger) given.
 pub fn import_into(
   manager: &mut ModManager,
   app_data: &Path,
@@ -458,7 +458,7 @@ pub fn import_into(
 ) -> Result<InterchangeImportReport, Error> {
   let base = manager.get_addons_path(request.profile_folder.as_deref())?;
   fs::create_dir_all(base.path())?;
-  let store = app_data.join("mods");
+  let store = manager.get_mods_store_path()?;
   let hashes = HashCache::open(Some(app_data));
   let mut ledger = super::ledger::load(app_data);
   let source_manager = if request.document.source.manager.is_empty() {

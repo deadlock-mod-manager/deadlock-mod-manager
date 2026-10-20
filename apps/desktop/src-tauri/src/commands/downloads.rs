@@ -1,11 +1,12 @@
 use crate::app_runtime::AppHandle;
 use crate::download_manager::{DownloadFileDto, DownloadManager, DownloadStatus, DownloadTask};
 use crate::errors::Error;
-use crate::mod_manager::ModFileTree;
+use crate::mod_manager::{ModFileTree, mods_store};
 use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use std::time::Instant;
 use tauri::State;
+use ts_rs::TS;
 
 use super::mods::InstalledModInfo;
 use super::server_profiles::validate_addons_subfolder;
@@ -42,10 +43,7 @@ pub async fn queue_download(
   )
   .await?;
 
-  let app_local_data_dir =
-    crate::runtime_environment::app_local_data_dir(&app_handle).map_err(Error::Tauri)?;
-
-  let target_dir = app_local_data_dir.join("mods").join(&mod_id);
+  let target_dir = crate::mod_manager::mods_store::dir(&app_handle)?.join(&mod_id);
 
   let task = DownloadTask {
     mod_id,
@@ -267,6 +265,77 @@ pub async fn get_all_downloads(app_handle: AppHandle) -> Result<Vec<DownloadStat
 pub async fn clear_download_cache() -> Result<u64, Error> {
   let mod_manager = MANAGER.lock().unwrap();
   mod_manager.clear_download_cache()
+}
+
+#[derive(Debug, Serialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct DownloadCacheLocation {
+  pub path: String,
+  pub is_custom: bool,
+}
+
+fn download_cache_location(app_handle: &AppHandle) -> Result<DownloadCacheLocation, Error> {
+  Ok(DownloadCacheLocation {
+    path: mods_store::dir(app_handle)?.to_string_lossy().into_owned(),
+    is_custom: mods_store::custom_dir(app_handle).is_some(),
+  })
+}
+
+#[tauri::command]
+pub async fn get_download_cache_location(
+  app_handle: AppHandle,
+) -> Result<DownloadCacheLocation, Error> {
+  download_cache_location(&app_handle)
+}
+
+/// Moves the mod store into `path`, or back to app data when `path` is None.
+#[tauri::command]
+pub async fn set_download_cache_location(
+  app_handle: AppHandle,
+  path: Option<String>,
+) -> Result<DownloadCacheLocation, Error> {
+  if let Some(downloads) = DOWNLOAD_MANAGER.get()
+    && downloads.is_busy().await
+  {
+    return Err(Error::InvalidInput(
+      "Wait for downloads to finish before moving the download cache".to_string(),
+    ));
+  }
+
+  tokio::task::spawn_blocking(move || {
+    // Held for the whole move so installs never read a half-moved store.
+    let manager = MANAGER
+      .lock()
+      .map_err(|_| Error::BackgroundTaskFailed("Mod manager lock poisoned".to_string()))?;
+    let current = mods_store::dir(&app_handle)?;
+    let default = mods_store::default_dir(&app_handle)?;
+    let target = match path {
+      Some(path) => mods_store::target_for(std::path::Path::new(&path))?,
+      None => default.clone(),
+    };
+    let forbidden: Vec<_> = manager
+      .get_steam_manager()
+      .get_game_path()
+      .map(|game| game.join("game").join("citadel").join("addons"))
+      .into_iter()
+      .collect();
+
+    mods_store::relocate(&current, &target, &forbidden)?;
+    if let Err(error) =
+      mods_store::save_custom_dir(&app_handle, (target != default).then_some(target.as_path()))
+    {
+      if let Err(undo_error) = mods_store::relocate(&target, &current, &[]) {
+        log::error!("Could not move the download cache back to {current:?}: {undo_error}");
+      }
+      return Err(error);
+    }
+    mods_store::allow_frontend_access(&app_handle, &target);
+    log::info!("Download cache moved from {current:?} to {target:?}");
+    download_cache_location(&app_handle)
+  })
+  .await
+  .map_err(|error| Error::BackgroundTaskFailed(error.to_string()))?
 }
 
 const SERVER_FOLDER_PREFIX: &str = "server_";
