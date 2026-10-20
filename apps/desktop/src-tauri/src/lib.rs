@@ -194,6 +194,9 @@ pub fn run() {
         tauri::path::BaseDirectory::AppData,
       )?);
       let _store = app.store(runtime_environment::state_store_path())?;
+      if let Some(mods_store) = mod_manager::mods_store::custom_dir(app.handle()) {
+        mod_manager::mods_store::allow_frontend_access(app.handle(), &mods_store);
+      }
       if runtime_environment::current().e2e().is_none() {
         deep_link::setup(app)?;
       }
@@ -275,6 +278,8 @@ pub fn run() {
       #[cfg(debug_assertions)]
       commands::match_sync::debug_reset_match_sync_config,
       commands::downloads::clear_download_cache,
+      commands::downloads::get_download_cache_location,
+      commands::downloads::set_download_cache_location,
       commands::vpk::clear_all_mods_data,
       commands::mods::uninstall_mod,
       commands::mods::purge_mod,

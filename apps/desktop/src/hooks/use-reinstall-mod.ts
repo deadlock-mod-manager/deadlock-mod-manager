@@ -1,9 +1,10 @@
 import { ValidationError } from "@deadlock-mods/common/client-errors";
 import { invoke } from "@tauri-apps/api/core";
-import { appLocalDataDir, join } from "@tauri-apps/api/path";
+import { join } from "@tauri-apps/api/path";
 import { useCallback } from "react";
 import useInstallWithCollection from "@/hooks/use-install-with-collection";
 import { getModDownload } from "@/lib/api-client";
+import { getModsStorePath } from "@/lib/download-cache";
 import { downloadManager } from "@/lib/download/manager";
 import { getErrorMessage } from "@/lib/errors";
 import { createLogger } from "@/lib/logger";
@@ -251,8 +252,7 @@ const restore = async (
   let fileTree = mod.installedFileTree;
   if (!fileTree) {
     try {
-      const base = await appLocalDataDir();
-      const modDir = await join(base, "mods", mod.remoteId);
+      const modDir = await join(await getModsStorePath(), mod.remoteId);
       fileTree = await invoke<ModFileTree>("get_mod_file_tree", {
         modPath: modDir,
       });

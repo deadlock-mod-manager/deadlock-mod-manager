@@ -33,14 +33,18 @@ pub async fn migrate_submission_identities(
 ) -> Result<(), Error> {
   let app_data =
     crate::runtime_environment::app_local_data_dir(&app_handle).map_err(Error::Tauri)?;
+  let mods_store = crate::mod_manager::mods_store::dir(&app_handle)?;
   let game_path = super::state::game_path()?;
-  tokio::task::spawn_blocking(move || migrate_on_disk(&app_data, &game_path, migrations))
-    .await
-    .map_err(|error| Error::BackgroundTaskFailed(error.to_string()))?
+  tokio::task::spawn_blocking(move || {
+    migrate_on_disk(&app_data, &mods_store, &game_path, migrations)
+  })
+  .await
+  .map_err(|error| Error::BackgroundTaskFailed(error.to_string()))?
 }
 
 fn migrate_on_disk(
   app_data: &Path,
+  mods_store: &Path,
   game_path: &Path,
   requested: Vec<IdentityMigration>,
 ) -> Result<(), Error> {
@@ -76,7 +80,7 @@ fn migrate_on_disk(
     }
   };
 
-  migrate_mod_cache(&app_data.join("mods"), &migrations)?;
+  migrate_mod_cache(mods_store, &migrations)?;
   migrate_game_files(game_path, &migrations)?;
   write_journal(
     &journal_path,
@@ -94,7 +98,7 @@ fn migrate_on_disk(
 /// already in use, so two mods never merge by accident. A failure partway is
 /// rolled back, so the mod keeps its old id and a retry starts clean.
 pub(crate) fn relabel_mod_on_disk(
-  app_data: &Path,
+  mods_store: &Path,
   game_path: &Path,
   from: &str,
   to: &str,
@@ -114,7 +118,7 @@ pub(crate) fn relabel_mod_on_disk(
       }
     }
   }
-  if app_data.join("mods").join(to).exists() {
+  if mods_store.join(to).exists() {
     return Err(Error::ModInvalid(format!(
       "Downloaded files for {to} already exist; remove that mod first"
     )));
@@ -123,8 +127,8 @@ pub(crate) fn relabel_mod_on_disk(
     from: from.to_string(),
     to: to.to_string(),
   }];
-  let result = migrate_mod_cache(&app_data.join("mods"), &forward)
-    .and_then(|()| migrate_game_files(game_path, &forward));
+  let result =
+    migrate_mod_cache(mods_store, &forward).and_then(|()| migrate_game_files(game_path, &forward));
   if result.is_err() {
     // Nothing used `to` before (checked above), so renaming every `to` back
     // to `from` restores exactly what moved.
@@ -132,16 +136,16 @@ pub(crate) fn relabel_mod_on_disk(
       from: to.to_string(),
       to: from.to_string(),
     }];
-    undo_relabel(app_data, game_path, &backward);
+    undo_relabel(mods_store, game_path, &backward);
   }
   result
 }
 
 /// Best effort: every step runs even if an earlier one fails.
-fn undo_relabel(app_data: &Path, game_path: &Path, backward: &[IdentityMigration]) {
+fn undo_relabel(mods_store: &Path, game_path: &Path, backward: &[IdentityMigration]) {
   let citadel = game_path.join("game").join("citadel");
   let addons = citadel.join("addons");
-  let mut steps = vec![migrate_mod_cache(&app_data.join("mods"), backward)];
+  let mut steps = vec![migrate_mod_cache(mods_store, backward)];
   if addons.exists() {
     match profile_bases(&addons) {
       Ok(profiles) => steps.extend(
@@ -396,7 +400,7 @@ mod tests {
     let fonts_conf = game_path.join("game/citadel/panorama/fonts/fonts.conf");
     fs::create_dir_all(&fonts_conf).unwrap();
 
-    assert!(relabel_mod_on_disk(&app_data, &game_path, "local-1", "900").is_err());
+    assert!(relabel_mod_on_disk(&app_data.join("mods"), &game_path, "local-1", "900").is_err());
 
     assert!(app_data.join("mods/local-1").is_dir());
     assert!(!app_data.join("mods/900").exists());
@@ -410,7 +414,7 @@ mod tests {
     );
 
     fs::remove_dir(&fonts_conf).unwrap();
-    relabel_mod_on_disk(&app_data, &game_path, "local-1", "900").unwrap();
+    relabel_mod_on_disk(&app_data.join("mods"), &game_path, "local-1", "900").unwrap();
     assert!(app_data.join("mods/900").is_dir());
     assert!(addons.join("900_skin.vpk").is_file());
   }
@@ -458,8 +462,20 @@ mod tests {
     )
     .unwrap();
 
-    migrate_on_disk(&app_data, &game_path, vec![migration.clone()]).unwrap();
-    migrate_on_disk(&app_data, &game_path, vec![migration]).unwrap();
+    migrate_on_disk(
+      &app_data,
+      &app_data.join("mods"),
+      &game_path,
+      vec![migration.clone()],
+    )
+    .unwrap();
+    migrate_on_disk(
+      &app_data,
+      &app_data.join("mods"),
+      &game_path,
+      vec![migration],
+    )
+    .unwrap();
 
     assert!(app_data.join("mods/snd-42").is_dir());
     assert!(!app_data.join("mods/42").exists());

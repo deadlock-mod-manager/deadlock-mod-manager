@@ -432,9 +432,7 @@ pub async fn import_profile_batch(
       )
       .ok();
 
-    let app_local_data_dir =
-      crate::runtime_environment::app_local_data_dir(&app_handle).map_err(Error::Tauri)?;
-    let target_dir = app_local_data_dir.join("mods").join(&mod_data.mod_id);
+    let target_dir = crate::mod_manager::mods_store::dir(&app_handle)?.join(&mod_data.mod_id);
 
     let task = DownloadTask {
       mod_id: mod_data.mod_id.clone(),

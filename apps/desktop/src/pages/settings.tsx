@@ -55,6 +55,7 @@ import { FeatureFlagsSettings } from "@/components/settings/feature-flags-settin
 import { FileserverSettings } from "@/components/settings/fileserver-settings";
 import { CrashCheckToggle } from "@/components/settings/crash-check-toggle";
 import { GameGuardToggle } from "@/components/settings/game-guard-toggle";
+import { DownloadCacheSettings } from "@/components/settings/download-cache-settings";
 import { GamePathSettings } from "@/components/settings/game-path-settings";
 import { SteamPathSettings } from "@/components/settings/steam-path-settings";
 import { GamePresenceSettings } from "@/components/settings/game-presence-settings";
@@ -738,6 +739,13 @@ const CustomSettings = ({ value }: { value?: string }) => {
               searchId='steam-path'
               title={t("settings.steamPath")}>
               <SteamPathSettings />
+            </Section>
+
+            <Section
+              description={t("settings.downloadCacheLocationDescription")}
+              searchId='download-cache-location'
+              title={t("settings.downloadCacheLocation")}>
+              <DownloadCacheSettings />
             </Section>
 
             <Section

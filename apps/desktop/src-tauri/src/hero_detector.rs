@@ -127,13 +127,11 @@ fn collect_vpk_files_for_mod(mod_id: &str, installed_vpks: Option<Vec<String>>) 
       collect_game_vpks_for_mod(&addons_path, mod_id, &known_vpks, &mut vpk_files);
     }
   }
+  let mods_store = mod_manager.get_mods_store_path().ok();
   drop(mod_manager);
 
-  if let Ok(app_data) = std::env::var("LOCALAPPDATA") {
-    let mod_data_path = PathBuf::from(app_data)
-      .join("dev.stormix.deadlock-mod-manager")
-      .join("mods")
-      .join(mod_id);
+  if let Some(mods_store) = mods_store {
+    let mod_data_path = mods_store.join(mod_id);
     if mod_data_path.exists() {
       collect_vpk_files_recursive(&mod_data_path, &mut vpk_files);
     }
@@ -187,7 +185,7 @@ pub async fn detect_mod_heroes_batch(
   let items: Vec<hero_parser::BatchDetectionItem> = {
     let mod_manager = MANAGER.lock().unwrap();
     let game_path = mod_manager.get_steam_manager().get_game_path().cloned();
-    let app_data = std::env::var("LOCALAPPDATA").ok();
+    let mods_store = mod_manager.get_mods_store_path().ok();
 
     mods
       .into_iter()
@@ -209,11 +207,8 @@ pub async fn detect_mod_heroes_batch(
           }
         }
 
-        if let Some(ref ad) = app_data {
-          let mod_data_path = PathBuf::from(ad)
-            .join("dev.stormix.deadlock-mod-manager")
-            .join("mods")
-            .join(&req.mod_id);
+        if let Some(ref mods_store) = mods_store {
+          let mod_data_path = mods_store.join(&req.mod_id);
           if mod_data_path.exists() {
             collect_vpk_files_recursive(&mod_data_path, &mut vpk_files);
           }
