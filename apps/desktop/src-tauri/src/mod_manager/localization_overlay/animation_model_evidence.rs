@@ -1,6 +1,6 @@
 use super::animation_skeleton::equivalent_pose;
 use super::{
-  CompiledDataSource, Kv3Value, Resource, asset_compatibility, decode_compiled_data, kv3,
+  CompiledDataSource, Kv3Value, Resource, asset_compatibility, compiled_resource, kv3,
   normalize_path, resources::ResourceSnapshot,
 };
 use std::collections::{BTreeMap, BTreeSet};
@@ -276,9 +276,10 @@ fn walk_animation(
   if model_closure && provider.mod_id.is_some() {
     return false;
   }
-  let Ok((_, root, _)) = decode_compiled_data(&bytes, &path) else {
+  let Ok(decoded_root) = compiled_resource::decode(&bytes, &path) else {
     return false;
   };
+  let root = &decoded_root.root;
   let binding = root.get("m_skeleton").map(|value| {
     value
       .as_str()
@@ -353,16 +354,16 @@ pub(super) fn find(
 ) -> Option<ModelEvidence> {
   let mut candidates = Vec::new();
   for (path, sources) in models {
-    let Some(current_bytes) = resources.game_bytes(path).ok()? else {
+    if !resources.has_game_resource(path) {
       continue;
-    };
+    }
     let matching = sources
       .iter()
-      .map(|model| decode_compiled_data(&model.bytes, path).ok())
+      .map(|model| compiled_resource::decode(&model.bytes, path).ok())
       .collect::<Option<Vec<_>>>()?;
     if !matching
       .iter()
-      .any(|(_, model, _)| references_skeleton(model, skeleton_path))
+      .any(|model| references_skeleton(&model.root, skeleton_path))
     {
       continue;
     }
@@ -375,19 +376,22 @@ pub(super) fn find(
     {
       return None;
     }
-    let (_, model, _) = matching.into_iter().next()?;
-    let (_, current, _) = decode_compiled_data(&current_bytes, path).ok()?;
-    if !references_skeleton(&current, skeleton_path) {
+    let model = matching.into_iter().next()?;
+    let model = &model.root;
+    let current_bytes = resources.game_bytes(path).ok()??;
+    let current = compiled_resource::decode(&current_bytes, path).ok()?;
+    let current = &current.root;
+    if !references_skeleton(current, skeleton_path) {
       return None;
     }
     // Retired UI graphs do not sample the active NM rig. Require a vanilla NM
     // closure before exempting them; authored clips still keep their own layout.
     if animation_inputs.mod_ids.contains(&source.mod_id)
-      && !permits_retired_graphs(resources, &current, skeleton_path, &source.mod_id)
+      && !permits_retired_graphs(resources, current, skeleton_path, &source.mod_id)
     {
       return None;
     }
-    if !animation_inputs.unrelated(resources, &current, skeleton_path) {
+    if !animation_inputs.unrelated(resources, current, skeleton_path) {
       return None;
     }
     let resource = Resource::parse(&current_bytes).ok()?;
@@ -399,8 +403,8 @@ pub(super) fn find(
       .map(|(index, _)| kv3::decode(resource.get_block_by_index(index)?).ok())
       .collect::<Option<Vec<_>>>();
     candidates.push(ModelEvidence::from_models(
-      &model,
-      &current,
+      model,
+      current,
       meshes.as_deref(),
     )?);
   }
@@ -621,7 +625,7 @@ mod tests {
         ])]),
       ),
     ]);
-    let (_, model, _) = decode_compiled_data(&model, "camera test model").unwrap();
+    let (_, model, _) = super::super::decode_compiled_data(&model, "camera test model").unwrap();
     for (path, bytes, owner, allowed) in [
       (
         "animations/b.vnmclip_c",

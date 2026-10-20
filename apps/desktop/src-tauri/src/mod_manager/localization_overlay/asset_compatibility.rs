@@ -1,5 +1,5 @@
 use super::resources::{ResourceSnapshot, resource_path};
-use super::{CompiledDataSource, Kv3Value, Resource, decode_compiled_data, kv3, normalize_path};
+use super::{CompiledDataSource, Kv3Value, Resource, compiled_resource, kv3, normalize_path};
 use crate::errors::Error;
 use crate::mod_manager::vdata_history::VdataHistoryIndex;
 use serde::{Deserialize, Serialize};
@@ -108,10 +108,23 @@ pub(super) fn model_overlaps(
       .unwrap_or_default()
       .to_string_lossy()
       .into_owned();
-    let detail = format!(
+    let mut detail = format!(
       "Load order uses {source_vpk}. Enabled archives providing this model: {}. Disable unused variations or skins to avoid mixing their animation and accessory files.",
       providers.into_iter().collect::<Vec<_>>().join(", ")
     );
+    if let Some(input) = mods.iter().find(|input| input.mod_id == mod_id) {
+      match super::model_dependencies::mixed_animation_dependencies(resources, input, &path) {
+        Ok(dependencies) if !dependencies.is_empty() => detail.push_str(&format!(
+          " Original files mix this model with changed animation dependencies from another mod: {}. Compatibility repairs are assessed separately; test with only the intended skin enabled if the model stretches or twists.",
+          super::model_dependencies::describe(&dependencies)
+        )),
+        Err(error) => {
+          log::warn!("Could not inspect overlapping model dependencies for {path}: {error}");
+          detail.push_str(" Some animation dependencies could not be inspected.");
+        }
+        _ => {}
+      }
+    }
     warnings.push(AssetWarning {
       mod_id,
       source_vpk,
@@ -213,9 +226,9 @@ fn referenced_names(path: &str, bytes: &[u8]) -> Vec<String> {
     .map(|references| references.into_iter().map(|(_, name)| name).collect())
     .unwrap_or_default();
   if path.ends_with(".vdata_c")
-    && let Ok((_, root, _)) = decode_compiled_data(bytes, path)
+    && let Ok(decoded) = compiled_resource::decode(bytes, path)
   {
-    collect_strings(&root, &mut names);
+    collect_strings(&decoded.root, &mut names);
   }
   names
 }
@@ -270,13 +283,14 @@ pub(super) fn analyze(
           detail,
         })
       };
-      let Ok((_, value, _)) = decode_compiled_data(bytes, path) else {
+      let Ok(decoded_value) = compiled_resource::decode(bytes, path) else {
         add(WarningKind::UnreadableResource, "DATA".into());
         continue;
       };
+      let value = &decoded_value.root;
       if path.ends_with(".vnmskel_c") {
         if !valid_skeleton(
-          &value,
+          value,
           "m_boneIDs",
           "m_parentIndices",
           &[
@@ -304,7 +318,7 @@ pub(super) fn analyze(
         ) {
           add(WarningKind::InvalidSkeleton, "m_modelSkeleton".into());
         }
-        if !valid_remapping(&value, rig) {
+        if !valid_remapping(value, rig) {
           add(
             WarningKind::InvalidBoneRemapping,
             "m_remappingTable / m_remappingTableStarts".into(),
@@ -336,28 +350,29 @@ pub(super) fn analyze(
           .into_iter()
           .flatten()
           .filter_map(|graph| graph.get("m_hGraph").and_then(Kv3Value::as_str));
-        for name in graphs.chain(super::model_camera::legacy_animation_graph(&value)) {
+        for name in graphs.chain(super::model_camera::legacy_animation_graph(value)) {
           if !resource_exists(name, resources) {
             add(WarningKind::MissingResource, name.into());
           }
         }
         if let Some(base) = resources.game_bytes(path)?
-          && let Ok((_, vanilla, _)) = decode_compiled_data(&base, path)
+          && let Ok(decoded_vanilla) = compiled_resource::decode(&base, path)
         {
-          let missing_fields = super::model_camera::missing_camera_fields(&value, &vanilla);
+          let vanilla = &decoded_vanilla.root;
+          let missing_fields = super::model_camera::missing_camera_fields(value, vanilla);
           if missing_fields.is_empty() {
-            camera_points = super::model_camera::camera_point_requirements(&value, &vanilla);
+            camera_points = super::model_camera::camera_point_requirements(value, vanilla);
           }
           for field in missing_fields {
             add(WarningKind::MissingCameraInterface, field);
           }
-          if super::model_sounds::missing(&value, &vanilla) {
+          if super::model_sounds::missing(value, vanilla) {
             add(
               WarningKind::MissingSoundBindings,
               "TaggedSoundSettings_t".into(),
             );
           }
-          let missing = missing_animation_fields(&value, &vanilla);
+          let missing = missing_animation_fields(value, vanilla);
           if !missing.is_empty() {
             add(WarningKind::MissingAnimationInterface, missing.join(" / "));
           }

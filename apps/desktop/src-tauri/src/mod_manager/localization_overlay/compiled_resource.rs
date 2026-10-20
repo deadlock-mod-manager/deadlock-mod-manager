@@ -14,7 +14,9 @@ pub(super) struct Decoded {
 
 // Cache only successful authoritative parses, by exact DATA bytes. A process
 // restart after parser/rule changes naturally invalidates every entry.
-const MAX_BYTES: usize = 32 * 1024 * 1024;
+// The current hero registry charges about 44 MiB including encoding metadata.
+// Keep it reusable across model checks without retaining unbounded parse trees.
+const MAX_BYTES: usize = 64 * 1024 * 1024;
 const MAX_ENTRIES: usize = 16;
 
 #[derive(Default)]
