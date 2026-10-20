@@ -81,7 +81,7 @@ describe("mod conflicts", () => {
       await createGroup("Outfits");
       await selectMods([HAT_JACKET, HAT_PANTS]);
       await moveSelected("Outfits");
-      await $("button=Done selecting").click();
+      await $('button[aria-label="Done selecting"]').click();
       await assertConflictDisk(world, "initial-state", CONFLICT_MODS, null);
 
       await step(

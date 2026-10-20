@@ -121,7 +121,7 @@ describe("bisection of pre-existing skin conflicts", () => {
       await createGroup("Outfits");
       await selectMods(CONFLICT_MODS);
       await moveSelected("Outfits");
-      await $("button=Done selecting").click();
+      await $('button[aria-label="Done selecting"]').click();
       await start(world, true);
       await restore(world);
       await start(world, false);
