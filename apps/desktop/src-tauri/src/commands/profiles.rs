@@ -27,23 +27,7 @@ pub async fn create_profile_folder(
 fn create_profile_folder_unguarded(profile_id: &str, profile_name: &str) -> Result<String, Error> {
   log::info!("Creating profile folder for: {profile_id} - {profile_name}");
 
-  let sanitized_name = profile_name
-    .to_lowercase()
-    .chars()
-    .map(|c| {
-      if c.is_alphanumeric() || c == '-' || c == '_' {
-        c
-      } else if c.is_whitespace() {
-        '-'
-      } else {
-        '_'
-      }
-    })
-    .collect::<String>()
-    .trim_matches(|c| c == '-' || c == '_')
-    .to_string();
-
-  let folder_name = format!("{}_{}", profile_id, sanitized_name);
+  let folder_name = profile_folder_name(profile_id, profile_name);
 
   let mod_manager = MANAGER.lock().unwrap();
   let game_path = mod_manager
@@ -63,6 +47,30 @@ fn create_profile_folder_unguarded(profile_id: &str, profile_name: &str) -> Resu
   log::info!("Created profile folder: {profile_folder:?}");
 
   Ok(folder_name)
+}
+
+fn profile_folder_name(profile_id: &str, profile_name: &str) -> String {
+  let sanitized_name = profile_name
+    .to_lowercase()
+    .chars()
+    .map(|c| {
+      if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+        c
+      } else if c.is_whitespace() {
+        '-'
+      } else {
+        '_'
+      }
+    })
+    .collect::<String>()
+    .trim_matches(|c| c == '-' || c == '_')
+    .to_string();
+
+  if sanitized_name.is_empty() {
+    profile_id.to_string()
+  } else {
+    format!("{profile_id}_{sanitized_name}")
+  }
 }
 
 #[tauri::command]
@@ -732,4 +740,37 @@ pub async fn seed_profile_vpk_manifest_entries(
   }
 
   Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  /// Switching writes the folder into gameinfo.gi, which only accepts ASCII
+  /// names. A folder that fails that check can never be switched to.
+  #[test]
+  fn profile_folders_are_valid_gameinfo_search_paths() {
+    for name in [
+      "已导入配置 - 2026/10/20",
+      "Профиль",
+      "Perfil técnico",
+      "Imported Profile - ٢٠/١٠/٢٠٢٦",
+    ] {
+      let folder = profile_folder_name("profile_1_abc", name);
+      assert!(
+        crate::mod_manager::shard::is_valid_search_path(
+          &ShardIndex::FIRST.search_path(Some(&folder))
+        ),
+        "{name:?} produced {folder:?}"
+      );
+    }
+  }
+
+  /// The frontend reads the profile id back from the folder name; a trailing
+  /// separator makes it treat the whole folder as a new id.
+  #[test]
+  fn a_name_with_nothing_to_keep_leaves_just_the_profile_id() {
+    assert_eq!(profile_folder_name("profile_1_abc", "!!!"), "profile_1_abc");
+    assert_eq!(profile_folder_name("profile_1_abc", "Профиль"), "profile_1_abc");
+  }
 }
