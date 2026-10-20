@@ -777,11 +777,29 @@ impl DownloadManager {
             .reduce(|selected, next| selected || next)
         };
         // An entry with this file's own name beats a bare path that fits every
-        // variant. A file the selection doesn't list at all is new, so it stays.
+        // variant. A file the selection doesn't list at all is new, so it stays,
+        // unless the selection lists only installed names and has a sibling
+        // variant: then this one was left out.
         listed(Self::lists_by_name)
           .or_else(|| listed(Self::lists_by_path))
-          .unwrap_or(true)
+          .unwrap_or_else(|| {
+            !selection
+              .files
+              .iter()
+              .any(|listed| Self::lists_sibling_of(listed, candidate))
+          })
       })
+  }
+
+  /// Trees rebuilt from installed names list no variant they left out, so
+  /// another name from the same source file means this one wasn't picked.
+  fn lists_sibling_of(
+    listed: &crate::mod_manager::file_tree::ModFile,
+    file: &crate::mod_manager::file_tree::ModFile,
+  ) -> bool {
+    Self::lists_archive_of(listed, file)
+      && listed.path == listed.name
+      && crate::mod_manager::file_tree::is_name_from_source_of(&listed.name, file)
   }
 
   /// Whether a saved tree entry is `file`, by its path in the archive. Saved
@@ -1612,6 +1630,24 @@ mod tests {
       ),
       vec![std::path::Path::new("extracted").join("pak01_dir.vpk")]
     );
+  }
+
+  #[test]
+  fn update_selection_skips_variants_left_out_of_trees_listing_only_installed_files() {
+    // Interchange import lists just the bundled VPKs, by installed name.
+    let selection = tree(vec![file("", "pak01-red_dir.vpk", true)]);
+    let selected_in = |archive: &str, path: &str| {
+      !DownloadManager::selected_extracted_vpks(
+        std::path::Path::new("extracted"),
+        &tree(vec![file(archive, path, true)]),
+        Some(&selection),
+      )
+      .is_empty()
+    };
+
+    assert!(selected_in("red.zip", "pak01_dir.vpk"));
+    assert!(!selected_in("blue.zip", "pak01_dir.vpk"));
+    assert!(selected_in("blue.zip", "extras_dir.vpk"));
   }
 
   #[test]

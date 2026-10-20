@@ -151,6 +151,24 @@ pub(crate) fn relative_path(file: &ModFile) -> String {
     .map_or_else(|| path.clone(), str::to_string)
 }
 
+/// Whether `name` is `file`'s own file name or one qualified from it, e.g.
+/// `pak01-red_dir.vpk` for any `pak01_dir.vpk`.
+pub(crate) fn is_name_from_source_of(name: &str, file: &ModFile) -> bool {
+  let name = name.to_ascii_lowercase();
+  let file_name = source_file_name(file).to_ascii_lowercase();
+  name == file_name
+    || ["_dir.vpk", ".vpk"]
+      .into_iter()
+      .find(|suffix| file_name.ends_with(suffix))
+      .is_some_and(|suffix| {
+        let stem = &file_name[..file_name.len() - suffix.len()];
+        name
+          .strip_prefix(&format!("{stem}-"))
+          .and_then(|rest| rest.strip_suffix(suffix))
+          .is_some_and(|qualifier| !qualifier.is_empty())
+      })
+}
+
 fn qualify_vpk_name(file_name: &str, qualifier: &str) -> String {
   if qualifier.is_empty() {
     return file_name.to_string();
