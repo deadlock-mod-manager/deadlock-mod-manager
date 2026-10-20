@@ -490,23 +490,8 @@ impl DownloadManager {
       }
     }
 
-    // A server-side failure is surfaced as is, so the UI can tell the user it is
-    // not the app's fault; anything else keeps every file's message.
-    if let Some(index) = errors.iter().position(|error| {
-      matches!(
-        error,
-        Error::DownloadSourceBusy { .. } | Error::DownloadStalled
-      )
-    }) {
-      return Err(errors.swap_remove(index));
-    }
-    if !errors.is_empty() {
-      let error_message = errors
-        .iter()
-        .map(ToString::to_string)
-        .collect::<Vec<_>>()
-        .join("; ");
-      return Err(Error::DownloadFailed(error_message));
+    if let Some(error) = Self::combine_file_errors(errors) {
+      return Err(error);
     }
 
     log::info!(
@@ -554,6 +539,30 @@ impl DownloadManager {
         })
       }
     }
+  }
+
+  /// A server-side failure is surfaced as is, so the UI can tell the user it is
+  /// not the app's fault. Anything else keeps each distinct message once: every
+  /// file of a mod usually fails the same way, and repeating it per file buries it.
+  fn combine_file_errors(mut errors: Vec<Error>) -> Option<Error> {
+    if let Some(index) = errors.iter().position(|error| {
+      matches!(
+        error,
+        Error::DownloadSourceBusy { .. } | Error::DownloadStalled
+      )
+    }) {
+      return Some(errors.swap_remove(index));
+    }
+    if errors.is_empty() {
+      return None;
+    }
+    let mut messages: Vec<String> = Vec::new();
+    for message in errors.iter().map(ToString::to_string) {
+      if !messages.contains(&message) {
+        messages.push(message);
+      }
+    }
+    Some(Error::DownloadFailed(messages.join("; ")))
   }
 
   async fn prepare_downloaded_vpks(
@@ -1889,6 +1898,27 @@ mod tests {
     assert_eq!(
       event.percentage, 5.0,
       "the bar was driven by the transfer rate"
+    );
+  }
+
+  #[test]
+  fn files_failing_the_same_way_report_the_failure_once() {
+    let forbidden = || Error::Network("Server returned error status: 403 Forbidden".to_string());
+    let errors = vec![
+      forbidden(),
+      forbidden(),
+      Error::Network("Failed to send request: timed out".to_string()),
+      forbidden(),
+    ];
+
+    assert_eq!(
+      DownloadManager::combine_file_errors(errors)
+        .map(|error| error.to_string())
+        .as_deref(),
+      Some(
+        "Download failed: Network error: Server returned error status: 403 Forbidden; Network error: Failed to send request: timed out"
+      ),
+      "a six-file mod showed the same 403 six times in one message"
     );
   }
 }
