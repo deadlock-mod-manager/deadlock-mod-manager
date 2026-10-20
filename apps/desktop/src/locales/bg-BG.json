@@ -3142,6 +3142,17 @@
     "steamPathSet": "",
     "invalidSteamPath": "",
     "steamPathToggleFailed": "",
+    "downloadCacheLocation": "",
+    "downloadCacheLocationDescription": "",
+    "currentDownloadCacheLocation": "",
+    "browseDownloadCacheLocation": "",
+    "resetDownloadCacheLocation": "",
+    "confirmMoveDownloadCache": "",
+    "confirmMoveDownloadCacheBody": "",
+    "confirmMoveDownloadCacheAction": "",
+    "movingDownloadCache": "",
+    "downloadCacheMoved": "",
+    "downloadCacheMoveFailed": "",
     "defaultSortValue": "Стойност по подразбиране за сортиране",
     "defaultSortDescription": "Изберете подреждането по подразбиране за страницата с Модове.",
     "defaultSort": "Сортиране по подразбиране",
@@ -4086,6 +4097,7 @@
     "analysisWarning": "Анализът е завършен! Намерени {{count}} добавка/и с {{errors}} грешка/и",
     "analysisError": "Неуспешен анализ на локалните добавки",
     "registrationError": "",
+    "registrationErrorDetail": "",
     "foundAddons": "Намерени добавки",
     "noAddonsFound": "Не са намерени добавки във вашата игрова директория",
     "errors": "Грешки",
@@ -5771,7 +5783,11 @@
   },
   "persist": {
     "loadFailed": "",
-    "loadFailedDescription": ""
+    "loadFailedDescription": "",
+    "lockedDescription": "",
+    "resetTitle": "",
+    "resetDescription": "",
+    "openFolder": ""
   },
   "heroParser": {
     "idle": "",

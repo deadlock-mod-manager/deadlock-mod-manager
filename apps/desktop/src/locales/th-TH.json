@@ -3142,6 +3142,17 @@
     "steamPathSet": "",
     "invalidSteamPath": "",
     "steamPathToggleFailed": "",
+    "downloadCacheLocation": "",
+    "downloadCacheLocationDescription": "",
+    "currentDownloadCacheLocation": "",
+    "browseDownloadCacheLocation": "",
+    "resetDownloadCacheLocation": "",
+    "confirmMoveDownloadCache": "",
+    "confirmMoveDownloadCacheBody": "",
+    "confirmMoveDownloadCacheAction": "",
+    "movingDownloadCache": "",
+    "downloadCacheMoved": "",
+    "downloadCacheMoveFailed": "",
     "defaultSortValue": "ค่าการจัดเรียงเริ่มต้น",
     "defaultSortDescription": "เลือกลำดับการจัดเรียงเริ่มต้นสำหรับหน้าม็อด",
     "defaultSort": "การจัดเรียงเริ่มต้น",
@@ -4086,6 +4097,7 @@
     "analysisWarning": "การวิเคราะห์เสร็จสมบูรณ์! พบ {{count}} addon และมีข้อผิดพลาด {{errors}} รายการ",
     "analysisError": "ไม่สามารถวิเคราะห์ addons ในเครื่องได้",
     "registrationError": "",
+    "registrationErrorDetail": "",
     "foundAddons": "Addons ที่พบ",
     "noAddonsFound": "ไม่พบ addons ในไดเรกทอรีเกมของคุณ",
     "errors": "ข้อผิดพลาด",
@@ -5771,7 +5783,11 @@
   },
   "persist": {
     "loadFailed": "",
-    "loadFailedDescription": ""
+    "loadFailedDescription": "",
+    "lockedDescription": "",
+    "resetTitle": "",
+    "resetDescription": "",
+    "openFolder": ""
   },
   "heroParser": {
     "idle": "",

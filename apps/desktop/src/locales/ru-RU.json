@@ -3142,6 +3142,17 @@
     "steamPathSet": "",
     "invalidSteamPath": "",
     "steamPathToggleFailed": "",
+    "downloadCacheLocation": "",
+    "downloadCacheLocationDescription": "",
+    "currentDownloadCacheLocation": "",
+    "browseDownloadCacheLocation": "",
+    "resetDownloadCacheLocation": "",
+    "confirmMoveDownloadCache": "",
+    "confirmMoveDownloadCacheBody": "",
+    "confirmMoveDownloadCacheAction": "",
+    "movingDownloadCache": "",
+    "downloadCacheMoved": "",
+    "downloadCacheMoveFailed": "",
     "defaultSortValue": "",
     "defaultSortDescription": "",
     "defaultSort": "",
@@ -4086,6 +4097,7 @@
     "analysisWarning": "",
     "analysisError": "",
     "registrationError": "",
+    "registrationErrorDetail": "",
     "foundAddons": "",
     "noAddonsFound": "",
     "errors": "",
@@ -5771,7 +5783,11 @@
   },
   "persist": {
     "loadFailed": "",
-    "loadFailedDescription": ""
+    "loadFailedDescription": "",
+    "lockedDescription": "",
+    "resetTitle": "",
+    "resetDescription": "",
+    "openFolder": ""
   },
   "heroParser": {
     "idle": "",
