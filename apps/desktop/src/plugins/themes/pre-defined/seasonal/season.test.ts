@@ -11,7 +11,7 @@ const PAGES = [
   "/settings",
   "/crosshairs",
   "/skins",
-] as const;
+];
 
 const seasonRoutes = (file: string) => {
   const source = readFileSync(new URL(file, import.meta.url), "utf8");
