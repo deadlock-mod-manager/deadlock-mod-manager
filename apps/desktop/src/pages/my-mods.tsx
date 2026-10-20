@@ -1412,7 +1412,7 @@ const MyMods = () => {
                 <div ref={toolbarAnchorRef} aria-hidden className='-mb-4' />
                 <div
                   ref={toolbarRef}
-                  className='sticky top-0 z-30 -my-3 flex w-full flex-col gap-3 border-b border-transparent bg-background px-px py-3 transition-colors duration-200 data-stuck:border-border/60'>
+                  className='sticky top-0 z-30 -my-3 flex w-full flex-col gap-3 border-b border-transparent px-px py-3 transition-colors duration-200 data-stuck:border-border/60 data-stuck:bg-background/90 data-stuck:backdrop-blur-sm'>
                   <div className='min-w-0 overflow-visible [&_input]:border-border/70 [&_input]:bg-background/70 [&_input]:shadow-sm [&_input]:placeholder:text-muted-foreground/90 [&_input]:hover:border-border [&_input]:focus-visible:bg-background'>
                     <SearchBar
                       className='w-full'
