@@ -1,5 +1,12 @@
 # @deadlock-mods/lockdex
 
+## 0.4.1
+
+### Patch Changes
+
+- Updated dependencies [4970162]
+  - @deadlock-mods/shared@2.4.0
+
 ## 0.4.0
 
 ### Minor Changes

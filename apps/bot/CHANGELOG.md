@@ -1,5 +1,12 @@
 # @deadlock-mods/bot
 
+## 1.5.1
+
+### Patch Changes
+
+- Updated dependencies [4970162]
+  - @deadlock-mods/shared@2.4.0
+
 ## 1.5.0
 
 ### Minor Changes

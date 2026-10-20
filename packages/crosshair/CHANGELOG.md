@@ -1,5 +1,12 @@
 # @deadlock-mods/crosshair
 
+## 0.2.7
+
+### Patch Changes
+
+- Updated dependencies [4970162]
+  - @deadlock-mods/shared@2.4.0
+
 ## 0.2.6
 
 ### Patch Changes

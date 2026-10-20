@@ -1,5 +1,17 @@
 # api
 
+## 3.6.0
+
+### Minor Changes
+
+- 4970162: Show every Deadworks server and fetch the maps and addons each one advertises
+
+### Patch Changes
+
+- 174fdcc: Recheck recent GameBanana mod updates after the cache window expires, without bypassing GameBanana's cache.
+- Updated dependencies [4970162]
+  - @deadlock-mods/shared@2.4.0
+
 ## 3.5.0
 
 ### Minor Changes

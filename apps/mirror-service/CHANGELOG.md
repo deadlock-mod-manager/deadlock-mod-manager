@@ -1,5 +1,12 @@
 # @deadlock-mods/mirror-service
 
+## 1.1.13
+
+### Patch Changes
+
+- Updated dependencies [4970162]
+  - @deadlock-mods/shared@2.4.0
+
 ## 1.1.12
 
 ### Patch Changes

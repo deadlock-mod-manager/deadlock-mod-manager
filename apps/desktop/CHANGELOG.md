@@ -8,6 +8,11 @@
 
 ### Minor Changes
 
+- a7cd243: Add selection-based enable and disable actions to the mod library
+- 4970162: Show every Deadworks server and fetch the maps and addons each one advertises
+- a0f2cbd: Add a setting to move the download cache to another folder or drive
+- 293d350: Add profile mod groups with drag, undo, bulk toggles and organization copying
+- 3c5a8ff: Add bulk update, delete, and copy actions to library selection
 - Add a Collections tab with GameBanana collections, local search and filters, and downloads for an entire collection or selected mods
 - f440325: Refresh the GameBanana catalog about every 30 minutes instead of every 6 hours, and show catalog sync status in the bottom bar.
 - 72ea72c: Customize the Stats page: add, arrange and resize widgets on your own tabs.
@@ -83,6 +88,32 @@
 
 ### Patch Changes
 
+- b370dbb: Fix the What's New heading for releases without translated notes
+- a7cd243: Fix local mod names showing internal IDs and recover saved names
+- 5554546: Return to the Default profile when the active profile's folder was deleted
+- c763011: Fix Linux CEF crashes when opening file and folder dialogs
+- b370dbb: Preserve frontend error messages in desktop logs without custom error fields
+- 0c45865: Choose which skin to keep and review replacements when enabling mods
+- 5554546: Fix switching to profiles whose names contain non-English letters
+- f22926b: Validate animation dependencies before and after repairs, restore camera metadata from valid attachments, and repair legacy movement-sound bindings.
+- 0c45865: Restore original conflicting skins after a diagnostic mod search
+- 71c0ee4: Spread seasonal hideouts across real pages, including settings sub-pages
+- b370dbb: Reduce updater log spam while keeping download totals and failure details
+- 5554546: Install imported profile mods in the load order the sharer set
+- 0c45865: Speed up compatibility checks and explain mixed skin animation dependencies
+- 0e657f7: Stop addon analysis from listing leftover files in profile subfolders
+- 45851c9: Fix updates installing mod variants that were never selected
+- a7cd243: Fix library rendering, consent, downloads, update checks and profile labels
+- f22926b: Keep compatibility repairs current after library changes, report stale fixes accurately, and reuse unchanged data to speed up rebuilds and launches.
+- 0e657f7: Show the addon review list whenever analysis reports an error
+- fa0ff6d: Keep a running download from being marked failed when it is requested again
+- b9916d0: Fix fixed mods losing their repairs after other library changes
+- b51a4b8: Keep the active profile loaded in game after enabling a mod
+- 08d0fbf: Back up an unreadable settings file and explain why settings were reset
+- 6f1547d: Keep the library responsive while the repair package rebuilds
+- f815b69: Keep variant file names attached to the right files after repairing a mod folder
+- fa0ff6d: Show each download error once when several files of a mod fail the same way
+- 6819b31: Keep both skins when one mod is made to go on top of another
 - 21e7900: Fix modded launch failing when a mod file cannot be read
 - 41bbeca: Fix Steam launch warnings when match sync is still fetching matches
 - 21e7900: Fix mods that ship older copies of game data or text
@@ -226,9 +257,10 @@
 - Updated dependencies [c1a5b52]
 - Updated dependencies [cdec390]
 - Updated dependencies [cdec390]
-  - @deadlock-mods/shared@2.3.0
+- Updated dependencies [4970162]
+  - @deadlock-mods/shared@2.4.0
   - @deadlock-mods/hero-parser@1.1.2
-  - @deadlock-mods/crosshair@0.2.6
+  - @deadlock-mods/crosshair@0.2.7
   - @deadlock-mods/common@1.3.1
   - @deadlock-mods/vpk-parser@1.1.0
 

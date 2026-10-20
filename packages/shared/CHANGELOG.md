@@ -1,5 +1,11 @@
 # @deadlock-mods/shared
 
+## 2.4.0
+
+### Minor Changes
+
+- 4970162: Show every Deadworks server and fetch the maps and addons each one advertises
+
 ## 2.3.0
 
 ### Minor Changes
