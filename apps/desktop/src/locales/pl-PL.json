@@ -5352,7 +5352,8 @@
     "resetTelemetryConsent": "Zresetuj zgodę Telemetrii",
     "triggerMatchSyncConsent": "",
     "simulateMatchSyncNewInstall": "",
-    "simulateMatchSyncUpdate": ""
+    "simulateMatchSyncUpdate": "",
+    "resetWhatsNew": ""
   },
   "developer": {
     "title": "Narzędzia dla deweloperów",

@@ -5352,7 +5352,8 @@
     "resetTelemetryConsent": "",
     "triggerMatchSyncConsent": "",
     "simulateMatchSyncNewInstall": "",
-    "simulateMatchSyncUpdate": ""
+    "simulateMatchSyncUpdate": "",
+    "resetWhatsNew": ""
   },
   "developer": {
     "title": "Ferramentas de Desenvolvedor",

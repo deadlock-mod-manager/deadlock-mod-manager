@@ -51,8 +51,8 @@
     "avatarFallback": "Użytkownik"
   },
   "v2Banner": {
-    "short": "",
-    "long": "",
+    "outNow": "",
+    "outNowLong": "",
     "whatsNew": ""
   },
   "footer": {

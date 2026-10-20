@@ -51,8 +51,8 @@
     "avatarFallback": "Usuário"
   },
   "v2Banner": {
-    "short": "Em breve: reconstruído do zero.",
-    "long": "Em breve: mods que sobrevivem às atualizações do jogo, uma loja mais rápida e detecção de conflitos.",
+    "outNow": "",
+    "outNowLong": "",
     "whatsNew": "Veja as novidades"
   },
   "footer": {
