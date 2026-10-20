@@ -46,6 +46,22 @@ pub(super) struct CachedLocalizationOverlayPlan {
   plan: LocalizationOverlayPlan,
 }
 
+/// Inputs for a repair package rebuild, captured under the mod manager lock so
+/// the slow plan build can run without it.
+pub struct ModFixRefresh {
+  profile_folder: Option<String>,
+  citadel: PathBuf,
+  inputs: Vec<LocalizationModInput>,
+  key: LocalizationOverlayPlanKey,
+}
+
+impl ModFixRefresh {
+  pub fn build(mut self) -> Result<(Self, LocalizationOverlayPlan), Error> {
+    let plan = build_overlay_plan(&self.citadel, &self.inputs, &mut self.key)?;
+    Ok((self, plan))
+  }
+}
+
 impl ModManager {
   pub(super) fn localization_overlay_search_path(profile_folder: Option<&str>) -> String {
     let suffix = match profile_folder {
@@ -334,6 +350,83 @@ impl ModManager {
     if current_key != key {
       return Err(Error::ModDataReviewRequired);
     }
+    self.commit_overlay_plan(profile_folder, key, plan, reviewed)
+  }
+
+  /// Starts rebuilding the repair package after a library change. Returns
+  /// `None` when the game is running, fixes are off or the package is current.
+  pub fn begin_mod_fix_refresh(
+    &mut self,
+    profile_folder: Option<&str>,
+  ) -> Result<Option<ModFixRefresh>, Error> {
+    if self.is_game_running()? {
+      return Ok(None);
+    }
+    if !self.mod_compatibility_enabled(profile_folder)? {
+      self.delete_localization_overlay(profile_folder)?;
+      return Ok(None);
+    }
+    let (citadel, inputs, key) = self.localization_overlay_inputs(profile_folder)?;
+    if let Some(previous) = receipt::load(&key.output_path)?
+      && previous.is_current(&key)?
+    {
+      previous.log_status("reused");
+      return Ok(None);
+    }
+    Ok(Some(ModFixRefresh {
+      profile_folder: profile_folder.map(str::to_owned),
+      citadel,
+      inputs,
+      key,
+    }))
+  }
+
+  /// Writes a plan built by [`ModFixRefresh::build`]. A library change, a game
+  /// start or a launch that already prepared the package during the build
+  /// makes the plan stale, so it is dropped; the change schedules a new one.
+  pub fn finish_mod_fix_refresh(
+    &mut self,
+    refresh: ModFixRefresh,
+    plan: LocalizationOverlayPlan,
+  ) -> Result<(), Error> {
+    let ModFixRefresh {
+      profile_folder,
+      key,
+      ..
+    } = refresh;
+    let profile_folder = profile_folder.as_deref();
+    if self.is_game_running()? {
+      return Ok(());
+    }
+    let (_, _, current_key) = self.localization_overlay_inputs(profile_folder)?;
+    if current_key != key {
+      log::info!("Mods changed while rebuilding the repair package; dropping the stale plan");
+      return Ok(());
+    }
+    let previous = receipt::load(&key.output_path)?;
+    if let Some(previous) = &previous
+      && previous.is_current(&key)?
+    {
+      return Ok(());
+    }
+    let reviewed = previous.filter(|receipt| receipt.key == key);
+    receipt::remove(&key.output_path)?;
+    match self.commit_overlay_plan(profile_folder, key, plan, reviewed) {
+      Err(Error::ModDataReviewRequired) => {
+        log::info!("Repair package needs review; launch will prepare it");
+        Ok(())
+      }
+      result => result,
+    }
+  }
+
+  fn commit_overlay_plan(
+    &self,
+    profile_folder: Option<&str>,
+    key: LocalizationOverlayPlanKey,
+    plan: LocalizationOverlayPlan,
+    reviewed: Option<receipt::OverlayReceipt>,
+  ) -> Result<(), Error> {
     if let Err(error) = self.record_launch_health(profile_folder, &plan.analysis) {
       log::warn!("Could not record mod health from the launch analysis: {error}");
     }
@@ -1678,6 +1771,105 @@ Game core
     assert!(entry.compatibility_enabled);
     assert!(!entry.compatibility_opted_out);
     assert_eq!(status(), ModHealthStatus::Fixed);
+  }
+
+  #[test]
+  fn refresh_drops_a_plan_built_before_the_library_changed() {
+    let temp = tempfile::tempdir().unwrap();
+    let mut manager = manager_with_gameinfo(temp.path());
+    let base = manager.get_addons_path(None).unwrap();
+    write_test_vpk(&base.join("pak01_dir.vpk"));
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_enabled(
+      "mod",
+      vec!["pak01_dir.vpk".into()],
+      vec![],
+      None,
+      ShardIndex::FIRST,
+    );
+    manifest.save(&base).unwrap();
+    manager
+      .set_mod_compatibility_for_mod("mod".into(), true, None)
+      .unwrap();
+
+    let (refresh, plan) = manager
+      .begin_mod_fix_refresh(None)
+      .unwrap()
+      .unwrap()
+      .build()
+      .unwrap();
+    // The library changes while the plan builds without the manager lock.
+    write_test_vpk(&base.join("pak02_dir.vpk"));
+    let mut manifest = ProfileVpkManifest::load(&base).unwrap();
+    manifest.mark_enabled(
+      "other",
+      vec!["pak02_dir.vpk".into()],
+      vec![],
+      None,
+      ShardIndex::FIRST,
+    );
+    manifest.save(&base).unwrap();
+    manager.finish_mod_fix_refresh(refresh, plan).unwrap();
+    let overlay = manager.localization_overlay_vpk_path(None).unwrap();
+    assert!(
+      receipt::load(&overlay).unwrap().is_none(),
+      "a stale plan must not be written as the package"
+    );
+
+    let (refresh, plan) = manager
+      .begin_mod_fix_refresh(None)
+      .unwrap()
+      .unwrap()
+      .build()
+      .unwrap();
+    manager.finish_mod_fix_refresh(refresh, plan).unwrap();
+    assert!(manager.begin_mod_fix_refresh(None).unwrap().is_none());
+  }
+
+  #[test]
+  fn refresh_keeps_the_package_a_launch_prepared_during_the_build() {
+    let temp = tempfile::tempdir().unwrap();
+    let mut manager = manager_with_gameinfo(temp.path());
+    let base = manager.get_addons_path(None).unwrap();
+    write_test_vpk(&base.join("pak01_dir.vpk"));
+    let mut manifest = ProfileVpkManifest::default();
+    manifest.mark_enabled(
+      "mod",
+      vec!["pak01_dir.vpk".into()],
+      vec![],
+      None,
+      ShardIndex::FIRST,
+    );
+    manifest.save(&base).unwrap();
+    manager
+      .set_mod_compatibility_for_mod("mod".into(), true, None)
+      .unwrap();
+
+    let (refresh, plan) = manager
+      .begin_mod_fix_refresh(None)
+      .unwrap()
+      .unwrap()
+      .build()
+      .unwrap();
+    // Launch takes the manager lock while the refresh builds without it.
+    manager
+      .ensure_localization_overlay_for_launch(None)
+      .unwrap();
+    let receipt_path = receipt::path(&manager.localization_overlay_vpk_path(None).unwrap());
+    let launched = std::time::SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(1);
+    fs::File::options()
+      .write(true)
+      .open(&receipt_path)
+      .unwrap()
+      .set_modified(launched)
+      .unwrap();
+
+    manager.finish_mod_fix_refresh(refresh, plan).unwrap();
+    assert_eq!(
+      fs::metadata(&receipt_path).unwrap().modified().unwrap(),
+      launched,
+      "the refresh must not replace the package launch prepared"
+    );
   }
 
   #[test]

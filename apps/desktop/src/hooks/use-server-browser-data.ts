@@ -1,11 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useDeferredValue, useMemo } from "react";
 import type { ServerFiltersValue } from "@/components/server-browser/server-filters";
-import { getRelaysHealth, getServerFacets, getServers } from "@/lib/api-client";
+import { getServerFacets, getServers } from "@/lib/api-client";
 import { useServerPings } from "./use-server-pings";
 
 const SERVERS_REFETCH_INTERVAL_MS = 15_000;
-const RELAYS_REFETCH_INTERVAL_MS = 30_000;
 const FACETS_REFETCH_INTERVAL_MS = 60_000;
 
 export const useServerBrowserData = (filters: ServerFiltersValue) => {
@@ -39,13 +38,6 @@ export const useServerBrowserData = (filters: ServerFiltersValue) => {
     refetchOnWindowFocus: false,
   });
 
-  const relaysQuery = useQuery({
-    queryKey: ["servers", "relays", "health"],
-    queryFn: getRelaysHealth,
-    refetchInterval: RELAYS_REFETCH_INTERVAL_MS,
-    refetchOnWindowFocus: false,
-  });
-
   const facetsQuery = useQuery({
     queryKey: ["servers", "facets"],
     queryFn: getServerFacets,
@@ -55,7 +47,6 @@ export const useServerBrowserData = (filters: ServerFiltersValue) => {
 
   const rawServers = serversQuery.data?.servers ?? [];
   const { pings, query: pingsQuery } = useServerPings(rawServers);
-  const relays = relaysQuery.data?.relays ?? [];
   const facets = facetsQuery.data;
 
   const isJoinablePreset =
@@ -73,23 +64,15 @@ export const useServerBrowserData = (filters: ServerFiltersValue) => {
   const registrySnapshotAgeMs =
     serversQuery.data?.registry_snapshot_age_ms ?? null;
 
-  const allRelaysFailed =
-    !!serversQuery.data &&
-    serversQuery.data.relays_failed > 0 &&
-    serversQuery.data.relays_queried === 0;
-
   return {
     servers,
     total: servers.length,
-    relays,
     availableGameModes,
     availableRegions,
     serversQuery,
-    relaysQuery,
     facetsQuery,
     pings,
     pingsQuery,
-    allRelaysFailed,
     registryDegraded,
     registrySnapshotAgeMs,
   };

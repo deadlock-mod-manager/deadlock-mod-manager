@@ -82,10 +82,10 @@ export const newYear: Season = {
     Accessory: PartyHat,
   },
   hideouts: [
-    { id: "clock", route: "/", place: "hang", at: 78, drop: 54 },
-    { id: "popper", route: "/my-mods", place: "right", at: 52 },
-    { id: "champagne", route: "/mods", place: "bottom", at: 82 },
-    { id: "balloon", route: "/settings", place: "right", at: 30 },
-    { id: "sparkler", route: "/plugins", place: "bottom", at: 64 },
+    { id: "clock", route: "/", place: "bottom", at: 76 },
+    { id: "popper", route: "/my-mods", place: "hang", at: 18, drop: 58 },
+    { id: "champagne", route: "/skins", place: "right", at: 58 },
+    { id: "balloon", route: "/servers", place: "bottom", at: 30 },
+    { id: "sparkler", route: "/settings", place: "hang", at: 62, drop: 40 },
   ],
 };

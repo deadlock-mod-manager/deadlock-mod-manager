@@ -68,6 +68,9 @@ env:
   NODE_VERSION: "24.8.0"
   # Keep in sync with TAURI_CEF_TAG in apps/desktop/scripts/cef-patch.ts.
   TAURI_CEF_TAG: "tauri-cef-v3.0.0-alpha.27"
+  # Keep the sccache server alive through long link and bundle steps so the
+  # end-of-job stats are not reset by the default 10-minute idle shutdown.
+  SCCACHE_IDLE_TIMEOUT: "0"
 
 jobs:
   build-cef:
@@ -225,6 +228,14 @@ jobs:
         env:
           COMMIT_SHORT: ${{ inputs.commit_short }}
         run: pnpm version:nightly "$COMMIT_SHORT"
+
+      # Same nightly-only thin LTO trial as nightly.yml; env from the caller does not reach reusable workflows.
+      - name: Use thin LTO (nightly only)
+        if: inputs.nightly == true
+        shell: bash
+        run: |
+          echo "CARGO_PROFILE_RELEASE_LTO=thin" >> "$GITHUB_ENV"
+          echo "CARGO_PROFILE_RELEASE_CODEGEN_UNITS=16" >> "$GITHUB_ENV"
 
       - name: Resolve desktop package version
         id: desktop-version

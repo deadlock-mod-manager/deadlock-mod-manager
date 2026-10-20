@@ -24,6 +24,7 @@ pub struct CatalogBackend {
   sync: CatalogSync,
   cancellation: StdMutex<CancellationToken>,
   fileservers: tokio::sync::Mutex<Option<CachedFileservers>>,
+  pub(super) update_check: tokio::sync::Mutex<()>,
 }
 
 struct CachedFileservers {
@@ -56,6 +57,7 @@ impl GameBananaCatalogState {
       sync,
       cancellation: StdMutex::new(CancellationToken::new()),
       fileservers: tokio::sync::Mutex::new(None),
+      update_check: tokio::sync::Mutex::new(()),
     })
   }
 

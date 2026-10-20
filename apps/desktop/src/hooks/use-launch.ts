@@ -19,7 +19,7 @@ import { type LaunchStep, useLaunchProgress } from "@/lib/launch-progress";
 import { launchWithCompatibilityReview } from "@/lib/launch-with-compatibility-review";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
-import { getAdditionalArgs } from "@/lib/utils";
+import { getAdditionalArgs } from "@/lib/launch-options";
 import { ModStatus } from "@/types/mods";
 import { invokeGuarded } from "@/lib/game-guard";
 
@@ -36,7 +36,6 @@ const BACKEND_TAIL: LaunchStep[] = [
 export const useLaunch = () => {
   const { t } = useTranslation();
   const settings = usePersistedStore((s) => s.settings);
-  const gamePresenceEnabled = usePersistedStore((s) => s.gamePresenceEnabled);
   const getActiveProfile = usePersistedStore((s) => s.getActiveProfile);
   const localMods = usePersistedStore((s) => s.localMods);
   const isModEnabledInCurrentProfile = usePersistedStore(
@@ -182,12 +181,7 @@ export const useLaunch = () => {
         const args = {
           vanilla,
           additionalArgs:
-            vanilla && launchVanillaNoArgs
-              ? ""
-              : await getAdditionalArgs(
-                  Object.values(settings),
-                  gamePresenceEnabled,
-                ),
+            vanilla && launchVanillaNoArgs ? "" : await getAdditionalArgs(),
           profileFolder,
         };
         launched = await launchWithCompatibilityReview(

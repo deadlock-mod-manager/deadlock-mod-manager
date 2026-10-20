@@ -114,10 +114,10 @@ export const christmas: Season = {
     Accessory: SantaHat,
   },
   hideouts: [
-    { id: "gingerbread", route: "/", place: "hang", at: 74, drop: 70 },
-    { id: "candyCane", route: "/my-mods", place: "right", at: 46 },
-    { id: "snowman", route: "/mods", place: "bottom", at: 84 },
-    { id: "present", route: "/settings", place: "bottom", at: 60 },
-    { id: "bell", route: "/plugins", place: "hang", at: 86, drop: 46 },
+    { id: "gingerbread", route: "/my-mods", place: "bottom", at: 18 },
+    { id: "candyCane", route: "/skins", place: "hang", at: 80, drop: 48 },
+    { id: "snowman", route: "/settings", place: "right", at: 28 },
+    { id: "present", route: "/downloads", place: "bottom", at: 84 },
+    { id: "bell", route: "/crosshairs", place: "hang", at: 30, drop: 64 },
   ],
 };

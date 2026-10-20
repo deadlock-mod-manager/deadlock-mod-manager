@@ -1,3 +1,5 @@
+import { z } from "zod";
+import { readPersistedDocument } from "../support/observations";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { $, browser, expect } from "@wdio/globals";
@@ -42,8 +44,16 @@ describe("onboarding existing addons", () => {
     await step("skip advances before analyzing any mods", async () => {
       await $("button=Skip for Now").click();
       await expectTelemetry();
+      await expect($("#telemetry-consent-switch")).toHaveAttribute(
+        "aria-checked",
+        "true",
+      );
       await $("#telemetry-consent-switch").click();
-      await $("button=Back").click();
+      await expect($("#telemetry-consent-switch")).toHaveAttribute(
+        "aria-checked",
+        "false",
+      );
+      await $('[role="dialog"]').$("button=Back").click();
       await waitForDisplayed("button=Analyze Mods");
     });
 
@@ -64,18 +74,22 @@ describe("onboarding existing addons", () => {
     await step("skip analysis advances to telemetry", async () => {
       await $("button=Skip for Now").click();
       await expectTelemetry();
+      await expect($("#telemetry-consent-switch")).toHaveAttribute(
+        "aria-checked",
+        "false",
+      );
       await expect($("button=Analyze Mods")).not.toBeDisplayed();
     });
 
     await step("skip also advances after navigating back", async () => {
-      await $("button=Back").click();
+      await $('[role="dialog"]').$("button=Back").click();
       await waitForDisplayed("button=Skip for Now");
       await $("button=Skip for Now").click();
       await expectTelemetry();
     });
 
     await step("Next still advances past existing mods", async () => {
-      await $("button=Back").click();
+      await $('[role="dialog"]').$("button=Back").click();
       await waitForDisplayed("button=Analyze Mods");
       await next().click();
       await expectTelemetry();
@@ -85,5 +99,13 @@ describe("onboarding existing addons", () => {
     expect(await readFile(addonPath)).toEqual(originalAddon);
     await $("button=Skip Setup").click();
     await closeApplication(world, runtime.processId);
+    const saved = z
+      .object({
+        state: z.object({
+          telemetrySettings: z.object({ analyticsEnabled: z.boolean() }),
+        }),
+      })
+      .parse(await readPersistedDocument(world));
+    expect(saved.state.telemetrySettings.analyticsEnabled).toBe(false);
   });
 });

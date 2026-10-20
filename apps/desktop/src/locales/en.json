@@ -1,4 +1,8 @@
 {
+  "modelConflict": {
+    "keptCurrent": "Skipped to keep current skins",
+    "replaced": "Replaced by another selected skin"
+  },
   "launchRepair": {
     "title_one": "{{count}} mod is missing files",
     "title_other": "{{count}} mods are missing files",
@@ -2210,6 +2214,13 @@
       "summaryServerContent": "Download and activate the maps and addons this server requires",
       "summaryServerContentCounted_one": "Download {{count}} of {{total}} maps and addons ({{size}})",
       "summaryServerContentCounted_other": "Download {{count}} of {{total}} maps and addons ({{size}})",
+      "summaryServerContentPending_one": "Download {{count}} of {{total}} maps and addons",
+      "summaryServerContentPending_other": "Download {{count}} of {{total}} maps and addons",
+      "summaryServerContentReady": "This server's maps and addons are already installed",
+      "summaryServerContentNone": "This server doesn't list any maps or addons",
+      "contentTruncated": "This server lists more content than fits in its reply. Only the listed files are installed, so joining may still fail.",
+      "contentMissingSource": "This server needs files but doesn't say where to download them. Ask its host to set a download URL.",
+      "contentBlockedMaps": "Your copy of {{maps}} differs from the server's. DMM only replaces maps it installed itself.",
       "noConnectMethod": "This server didn't publish an address to connect to."
     },
     "staging": {
@@ -2226,7 +2237,12 @@
       "applying": "Applying server mods to gameinfo.gi...",
       "downloadingServerContent": "Downloading the maps and addons this server needs...",
       "contentItemProgress": "{{current}} of {{total}}",
-      "decompressing": "Unpacking {{name}}..."
+      "decompressing": "Unpacking {{name}}...",
+      "awaitingMismatchConfirm": "Waiting for your decision on mismatched files...",
+      "mismatchTitle": "The download host has a different build",
+      "mismatchDescription": "The server runs a different version of these files than its download host serves, and only the server's host can fix that. You can install the host's copy anyway, but joining may fail.",
+      "mismatchAccept": "Install anyway",
+      "mismatchDeclined": "Join cancelled because the server's download host serves a different build."
     },
     "requirementRow": {
       "customProvider": "Custom",
@@ -2244,18 +2260,11 @@
       "registryStale_one": "The Deadworks server registry is unreachable. Its servers are shown from a snapshot {{minutes}} minute old and may already be gone.",
       "registryStale_other": "The Deadworks server registry is unreachable. Its servers are shown from a snapshot {{minutes}} minutes old and may already be gone."
     },
-    "relayBar": {
-      "online": "online",
-      "degraded": "degraded",
-      "offline": "offline",
-      "lastSeen": "Last contact",
-      "latency": "{{ms}} ms"
-    },
     "hostCta": {
       "title": "Running a custom Deadlock server?",
-      "description": "Share it here so other players can find and join it.",
-      "action": "List your server",
-      "openError": "Couldn't open the server hosting page."
+      "description": "Host it with Deadworks and it shows up here for other players.",
+      "action": "Hosting guide",
+      "openError": "Couldn't open the Deadworks hosting guide."
     },
     "connect": {
       "retrying": "Deadlock did not connect on its own. Retrying {{address}}",
@@ -2272,6 +2281,24 @@
     "at": "at"
   },
   "myMods": {
+    "selection": {
+      "start": "Select mods",
+      "working": "Applying changes…",
+      "done": "Done selecting",
+      "selectMod": "Select {{name}}",
+      "count_one": "{{count}} mod selected",
+      "count_other": "{{count}} mods selected",
+      "selectFiltered": "Select all matching",
+      "clear": "Clear selection",
+      "enable": "Enable selected",
+      "disable": "Disable selected",
+      "enableTitle": "Enable {{count}} selected mods?",
+      "enableBody": "Enable only the {{count}} selected, downloaded mods in the active profile. Mods that need file selection or individual confirmation will be listed for review.",
+      "disableTitle": "Disable {{count}} selected mods?",
+      "disableBody": "Disable only the {{count}} selected, enabled mods in the active profile. Downloaded files will be kept so you can enable them again.",
+      "disabled_one": "{{count}} selected mod disabled",
+      "disabled_other": "{{count}} selected mods disabled"
+    },
     "compatibility": {
       "review": "Review fixes",
       "reviewDescription": "Some fixes need your approval before they apply. Your mod files are never changed.",
@@ -2825,6 +2852,7 @@
     "next": "Next"
   },
   "downloads": {
+    "failed": "Failed",
     "alreadyQueued": "A download for this mod is already queued. Wait for it to finish or cancel it first.",
     "downloading": "Downloading {{count}} mod",
     "downloading_plural": "Downloading {{count}} mods",
@@ -3556,10 +3584,6 @@
       "custom-maps": {
         "title": "Custom Maps",
         "description": "Browse and install custom maps from the Maps page."
-      },
-      "server-browser": {
-        "title": "Server Browser",
-        "description": "Find and join community servers."
       },
       "mod-foundry": {
         "title": "Mod Foundry",
@@ -5302,6 +5326,11 @@
     "activeProfile": "Active Profile",
     "selectProfile": "Select Profile",
     "manage": "Manage Profiles",
+    "editNamed": "Edit {{profileName}} profile",
+    "deleteNamed": "Delete {{profileName}} profile",
+    "activateNamed": "Activate {{profileName}} profile",
+    "inactive": "Inactive",
+    "switching": "Switching profile…",
     "manageDescription": "Create, edit, and switch between different mod profiles. Each profile remembers which mods you have enabled.",
     "createNew": "Create New Profile",
     "create": "Create",
@@ -5694,12 +5723,15 @@
   },
   "heroConflict": {
     "title": "{{heroName}} already has a mod",
-    "description": "Pick which mod to use in-game. Only one mod per hero can be active at a time.",
+    "modelTitle": "These mods replace the same model",
+    "description": "Pick which mod to use in-game. Swapping disables the current one. Restart Deadlock after switching.",
+    "andMore_one": "Also disables {{count}} more mod",
+    "andMore_other": "Also disables {{count}} more mods",
     "currentlyActive": "Currently active",
     "switchingTo": "Switching to",
     "swapAction": "Swap mods",
     "keepBothAction": "Keep both",
-    "keepBothHint": "Not recommended. Only one will load.",
+    "keepBothHint": "Only for mods made to go on top of each other. Otherwise models can mix and look broken.",
     "cancel": "Cancel",
     "byAuthor": "by {{author}}"
   },
@@ -6290,7 +6322,7 @@
     "tryMe": "Try me",
     "invitation": "Experimental features",
     "title": "Want to try something new?",
-    "description": "Take a quick look at community servers, custom maps, and performance settings.",
+    "description": "Take a quick look at custom maps and performance settings.",
     "duration": "The tour takes about a minute. You decide which features to enable.",
     "start": "Take the tour",
     "dismiss": "Not now",
@@ -6313,13 +6345,6 @@
     "open": "Open {{feature}}",
     "enabled": "Enabled",
     "features": {
-      "server-browser": {
-        "title": "Find a server to play on",
-        "description": "Browse community servers without leaving the mod manager.",
-        "hint": "Adds Server Browser to your sidebar.",
-        "previewTitle": "Play with the community",
-        "previewDetail": "Find a server with other players and join a game."
-      },
       "custom-maps": {
         "title": "Try a community map",
         "description": "Browse maps made by other players.",
@@ -6341,6 +6366,10 @@
     "showMe": "Show me",
     "gotIt": "Got it",
     "turnOff": "Turn off tips",
+    "serverBrowser": {
+      "title": "Play on community servers",
+      "body": "Server Browser lists community servers with custom modes and maps. DMM downloads whatever a server needs before you join."
+    },
     "importFromManager": {
       "title": "Bring your mods over",
       "body": "Another mod manager is set up on this PC. Import its mods here instead of downloading them all again."

@@ -44,10 +44,32 @@ interface ServerJoinDialogProps {
 // The check and decompress steps report no byte progress of their own, so a
 // size here would always read as 0 B.
 const contentBytesLabel = (progress: DeadworksContentProgress): string => {
-  if (progress.status !== "downloading" || progress.totalBytes <= 0) {
-    return "";
-  }
+  if (progress.status !== "downloading") return "";
+  if (progress.totalBytes <= 0)
+    return ` (${formatSize(progress.bytesDownloaded)})`;
   return ` (${formatSize(progress.bytesDownloaded)} / ${formatSize(progress.totalBytes)})`;
+};
+
+const serverContentSummary = (
+  preview: DeadworksContentPreview | undefined,
+  t: TFunction,
+): string => {
+  if (!preview) return t("servers.join.summaryServerContent");
+  if (!preview.advertised) return t("servers.join.summaryServerContentNone");
+  if (preview.pendingItems === 0) {
+    return t("servers.join.summaryServerContentReady");
+  }
+  if (preview.pendingBytes > 0) {
+    return t("servers.join.summaryServerContentCounted", {
+      count: preview.pendingItems,
+      total: preview.totalItems,
+      size: formatSize(preview.pendingBytes),
+    });
+  }
+  return t("servers.join.summaryServerContentPending", {
+    count: preview.pendingItems,
+    total: preview.totalItems,
+  });
 };
 
 const contentStatusLabel = (
@@ -85,14 +107,14 @@ const ServerJoinDialog = ({
     open && downloadingContent,
   );
 
-  const serverId = server?.id;
+  const address = server?.connect_code;
   const previewQuery = useQuery({
-    queryKey: ["deadworks-content-preview", serverId],
+    queryKey: ["deadworks-content-preview", address],
     queryFn: () =>
       invoke<DeadworksContentPreview>("preview_deadworks_content", {
-        serverId,
+        address,
       }),
-    enabled: open && !!serverId && !!server?.managed_content,
+    enabled: open && !!address && !!server?.managed_content,
     staleTime: 60 * 1000,
     retry: 1,
     meta: { skipGlobalErrorHandler: true },
@@ -116,6 +138,8 @@ const ServerJoinDialog = ({
         return t("servers.staging.downloadingCustom");
       case "downloading-server-content":
         return t("servers.staging.downloadingServerContent");
+      case "awaiting-mismatch-confirm":
+        return t("servers.staging.awaitingMismatchConfirm");
       case "patching-gameinfo":
         return t("servers.staging.applying");
       default:
@@ -129,8 +153,8 @@ const ServerJoinDialog = ({
     !server.password_protected || password.length > 0 || !!server.gateway_url;
   const staging = isStagingActive(stager.state.phase);
   const busy = staging || joinMutation.isPending;
-  // Servers with managed content ship their maps and addons through their own
-  // manifest instead of `required_mods`, so they need staging either way.
+  // Deadworks servers advertise their maps and addons themselves instead of
+  // through `required_mods`, so they need staging either way.
   const needsMods = server.required_mods.length > 0 || server.managed_content;
 
   const handleJoin = () => {
@@ -153,10 +177,13 @@ const ServerJoinDialog = ({
 
   const customDownloads = stager.state.pendingCustomDownloads;
   const fileSelection = stager.state.pendingFileSelection;
+  const mismatches = stager.state.pendingMismatches;
+  const preview = previewQuery.data;
   const showCancelDisabled =
     busy &&
     stager.state.phase !== "awaiting-custom-confirm" &&
-    stager.state.phase !== "awaiting-file-selection";
+    stager.state.phase !== "awaiting-file-selection" &&
+    stager.state.phase !== "awaiting-mismatch-confirm";
 
   return (
     <Dialog onOpenChange={onOpenChange} open={open}>
@@ -278,19 +305,62 @@ const ServerJoinDialog = ({
                 </li>
               )}
               {server.managed_content && (
-                <li>
-                  {previewQuery.data && previewQuery.data.pendingBytes > 0
-                    ? t("servers.join.summaryServerContentCounted", {
-                        count: previewQuery.data.pendingItems,
-                        total: previewQuery.data.totalItems,
-                        size: formatSize(previewQuery.data.pendingBytes),
-                      })
-                    : t("servers.join.summaryServerContent")}
-                </li>
+                <li>{serverContentSummary(preview, t)}</li>
               )}
               {!needsMods && <li>{t("servers.join.summaryRestore")}</li>}
               <li>{t("servers.join.summaryLaunch")}</li>
             </ol>
+          </div>
+        )}
+
+        {preview?.truncated && (
+          <p className='text-xs text-amber-300'>
+            {t("servers.join.contentTruncated")}
+          </p>
+        )}
+        {preview?.missingSource && (
+          <p className='text-xs text-amber-300'>
+            {t("servers.join.contentMissingSource")}
+          </p>
+        )}
+        {preview && preview.blockedMaps.length > 0 && (
+          <p className='text-xs text-amber-300'>
+            {t("servers.join.contentBlockedMaps", {
+              maps: preview.blockedMaps.join(", "),
+            })}
+          </p>
+        )}
+
+        {mismatches && mismatches.length > 0 && (
+          <div className='space-y-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-3'>
+            <div className='space-y-1'>
+              <p className='text-xs font-semibold text-amber-300'>
+                {t("servers.staging.mismatchTitle")}
+              </p>
+              <p className='text-[11px] text-muted-foreground'>
+                {t("servers.staging.mismatchDescription")}
+              </p>
+            </div>
+            <ul className='space-y-1 font-mono text-[11px]'>
+              {mismatches.map((m) => (
+                <li
+                  className='truncate rounded bg-card/40 px-2 py-1'
+                  key={m.key}>
+                  {m.name}
+                </li>
+              ))}
+            </ul>
+            <div className='flex justify-end gap-2'>
+              <Button
+                onClick={stager.declineMismatches}
+                size='sm'
+                variant='ghost'>
+                {t("common.cancel")}
+              </Button>
+              <Button onClick={stager.acceptMismatches} size='sm'>
+                {t("servers.staging.mismatchAccept")}
+              </Button>
+            </div>
           </div>
         )}
 

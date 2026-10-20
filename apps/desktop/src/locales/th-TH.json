@@ -1,4 +1,12 @@
 {
+  "modelConflict": {
+    "title": "",
+    "body": "",
+    "useSkin": "",
+    "keepCurrent": "",
+    "keptCurrent": "",
+    "replaced": ""
+  },
   "launchRepair": {
     "title_one": "",
     "title_other": "",
@@ -2272,6 +2280,24 @@
     "at": ""
   },
   "myMods": {
+    "selection": {
+      "start": "",
+      "working": "",
+      "done": "",
+      "selectMod": "",
+      "count_one": "",
+      "count_other": "",
+      "selectFiltered": "",
+      "clear": "",
+      "enable": "",
+      "disable": "",
+      "enableTitle": "",
+      "enableBody": "",
+      "disableTitle": "",
+      "disableBody": "",
+      "disabled_one": "",
+      "disabled_other": ""
+    },
     "compatibility": {
       "review": "",
       "reviewDescription": "",
@@ -2825,6 +2851,7 @@
     "next": ""
   },
   "downloads": {
+    "failed": "",
     "alreadyQueued": "",
     "downloading": "กำลังดาวน์โหลด {{count}} ม็อด",
     "downloading_plural": "กำลังดาวน์โหลด {{count}} ม็อด",
@@ -5302,6 +5329,11 @@
     "activeProfile": "",
     "selectProfile": "เลือกโปรไฟล์",
     "manage": "จัดการโปรไฟล์",
+    "editNamed": "",
+    "deleteNamed": "",
+    "activateNamed": "",
+    "inactive": "",
+    "switching": "",
     "manageDescription": "สร้าง แก้ไข และสลับระหว่างโปรไฟล์ม็อดต่างๆ แต่ละโปรไฟล์จะจดจำว่าคุณเปิดใช้งานม็อดใดไว้บ้าง",
     "createNew": "สร้างโปรไฟล์ใหม่",
     "create": "สร้าง",

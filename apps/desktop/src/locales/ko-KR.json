@@ -1,4 +1,12 @@
 {
+  "modelConflict": {
+    "title": "",
+    "body": "",
+    "useSkin": "",
+    "keepCurrent": "",
+    "keptCurrent": "",
+    "replaced": ""
+  },
   "launchRepair": {
     "title_one": "",
     "title_other": "",
@@ -2272,6 +2280,24 @@
     "at": "~에"
   },
   "myMods": {
+    "selection": {
+      "start": "",
+      "working": "",
+      "done": "",
+      "selectMod": "",
+      "count_one": "",
+      "count_other": "",
+      "selectFiltered": "",
+      "clear": "",
+      "enable": "",
+      "disable": "",
+      "enableTitle": "",
+      "enableBody": "",
+      "disableTitle": "",
+      "disableBody": "",
+      "disabled_one": "",
+      "disabled_other": ""
+    },
     "compatibility": {
       "review": "",
       "reviewDescription": "",
@@ -2825,6 +2851,7 @@
     "next": "다음"
   },
   "downloads": {
+    "failed": "",
     "alreadyQueued": "",
     "downloading": "{{count}} 모드 다운로드 중",
     "downloading_plural": "{{count}} 모드 다운로드 중",
@@ -5302,6 +5329,11 @@
     "activeProfile": "",
     "selectProfile": "프로필 선택",
     "manage": "프로필 관리",
+    "editNamed": "",
+    "deleteNamed": "",
+    "activateNamed": "",
+    "inactive": "",
+    "switching": "",
     "manageDescription": "다양한 모드 프로필을 생성, 편집 및 전환하세요. 각 프로필은 귀하가 활성화한 모드를 기억합니다.",
     "createNew": "새 프로필 만들기",
     "create": "만들다",

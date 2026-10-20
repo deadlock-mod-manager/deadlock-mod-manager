@@ -8,7 +8,11 @@ import { usePersistedStore } from "@/lib/store";
 import { type LocalMod, type ModFileTree, ModStatus } from "@/types/mods";
 
 export type UseInstallActionReturn = {
-  performInstall: (mod: LocalMod, entryPoint?: ModEntryPoint) => Promise<void>;
+  performInstall: (
+    mod: LocalMod,
+    entryPoint?: ModEntryPoint,
+    keepBothWith?: string[],
+  ) => Promise<void>;
   isAnalyzing: boolean;
   currentFileTree: ModFileTree | null;
   showFileSelector: boolean;
@@ -36,7 +40,11 @@ export const useInstallAction = (): UseInstallActionReturn => {
   } = useInstallWithCollection();
 
   const performInstall = useCallback(
-    async (mod: LocalMod, entryPoint: ModEntryPoint = "library") => {
+    async (
+      mod: LocalMod,
+      entryPoint: ModEntryPoint = "library",
+      keepBothWith?: string[],
+    ) => {
       if (mod.usesCriticalPaths) {
         const confirmed = await confirm({
           title: t("criticalPaths.title"),
@@ -52,6 +60,7 @@ export const useInstallAction = (): UseInstallActionReturn => {
 
       await install(mod, {
         analyticsEntryPoint: entryPoint,
+        keepBothWith,
         onStart: (m) => {
           setModStatus(m.remoteId, ModStatus.Installing);
         },
@@ -65,9 +74,10 @@ export const useInstallAction = (): UseInstallActionReturn => {
           setModStatus(m.remoteId, ModStatus.Downloaded);
           toast.error(error.message || t("notifications.failedToInstallMod"));
         },
-        onCancel: (m) => {
+        onCancel: (m, reason) => {
           setModStatus(m.remoteId, ModStatus.Downloaded);
-          toast.info(t("notifications.installationCanceled"));
+          if (reason !== "modelConflict")
+            toast.info(t("notifications.installationCanceled"));
         },
         onFileTreeAnalyzed: (m, fileTree) => {
           if (fileTree.has_multiple_files) {

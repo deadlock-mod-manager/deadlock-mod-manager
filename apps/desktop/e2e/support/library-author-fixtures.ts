@@ -5,7 +5,33 @@ import { contentAuthor, contentMods, contentRoutes } from "./content-fixtures";
 import { BULK_UPDATE_FIELDS } from "./gamebanana-fixtures";
 import { readPersistedDocument } from "./observations";
 import { ALPHA, prepareInstalledProfiles } from "./profile-fixtures";
+import type { FixtureRoute } from "./fixture-server";
 import type { CreatedWorld } from "./world";
+
+export const libraryAuthorRoutes = async () => {
+  const routes = await contentRoutes();
+  return (origin: string): FixtureRoute[] => [
+    ...routes(origin),
+    {
+      method: "GET",
+      path: "/Core/Item/Data",
+      query: { "itemid[]": contentMods[0].id, "fields[]": BULK_UPDATE_FIELDS },
+      status: 200,
+      body: JSON.stringify([
+        `https://gamebanana.com/mods/${contentMods[0].id}`,
+        0,
+        [
+          {
+            _idRow: Number(contentMods[0].id),
+            _sFile: "skin.vpk",
+            _sDownloadUrl: `${origin}/dl/${contentMods[0].id}`,
+            _tsDateAdded: 1780000000,
+          },
+        ],
+      ]),
+    },
+  ];
+};
 
 export const legacyLibraryAuthorRoutes = async () => {
   const routes = await contentRoutes();

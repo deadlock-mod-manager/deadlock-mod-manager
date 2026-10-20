@@ -31,6 +31,9 @@ const FEATURE_HINTS = [
     minAgeDays: 0,
     shortcut: ["Ctrl", "F"],
   },
+  // Anchored in the sidebar, so it could show on any page; kept low so
+  // page-specific hints win.
+  { id: "server-browser", i18nKey: "serverBrowser", minAgeDays: 0 },
   { id: "skin-randomizer", i18nKey: "skinRandomizer", minAgeDays: 3 },
   { id: "stats-customize", i18nKey: "statsCustomize", minAgeDays: 0 },
   {

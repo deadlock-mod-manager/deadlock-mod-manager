@@ -2,21 +2,12 @@ import type {
   ServerBrowserEntry,
   ServerBrowserFacetsResponse,
 } from "@deadlock-mods/shared";
-import {
-  CircuitOpenError,
-  RelayHttpError,
-  type ServerListItem,
-} from "@deadlock-mods/relay-client";
+import type { ServerListItem } from "@deadlock-mods/relay-client";
 import { CACHE_TTL } from "../lib/constants";
 import { env } from "../lib/env";
 import { logger as mainLogger } from "../lib/logger";
 import { cache } from "../lib/redis";
-import {
-  relayRequestDurationSeconds,
-  relayRequestsTotal,
-} from "../lib/relay-metrics";
-import { fetchDeadworksRegistryServers } from "./deadworks-registry";
-import { RelayDiscoveryService } from "./relay-discovery";
+import { fetchDeadworksServers } from "./deadworks-registry";
 
 const logger = mainLogger.child().withContext({
   service: "server-browser",
@@ -53,7 +44,7 @@ export interface ServerBrowserListResult {
   cursor: number | null;
   relays_queried: number;
   relays_failed: number;
-  /** The Deadworks registry couldn't be refreshed; its servers may be stale. */
+  /** The Deadworks server list couldn't be refreshed; its servers may be stale. */
   registry_degraded: boolean;
   /** Age of the stale registry snapshot in ms, if one is being served. */
   registry_snapshot_age_ms: number | null;
@@ -75,21 +66,10 @@ const MAX_LIMIT = 500;
 
 const normalize = (url: string) => url.replace(/\/+$/, "");
 
-/**
- * Registry entries can arrive without a heartbeat, and an unparseable date must
- * not win a freshness comparison by being NaN — treat it as the oldest possible.
- */
-const lastSeenAt = (server: { last_seen: string }): number => {
-  const parsed = new Date(server.last_seen).getTime();
-  return Number.isNaN(parsed) ? 0 : parsed;
-};
-
 export class ServerBrowserService {
   private static instance: ServerBrowserService | null = null;
 
-  private constructor(
-    private readonly discovery: RelayDiscoveryService = RelayDiscoveryService.getInstance(),
-  ) {}
+  private constructor() {}
 
   static getInstance(): ServerBrowserService {
     if (!ServerBrowserService.instance) {
@@ -105,7 +85,7 @@ export class ServerBrowserService {
     const cached = await cache.get<ServerBrowserListResult>(cacheKey);
     if (cached) return cached;
 
-    const aggregated = await this.fetchAggregated(filters);
+    const aggregated = await this.fetchAggregated();
     const filtered = this.applyFilters(aggregated.servers, filters);
 
     const limit = Math.min(filters.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
@@ -128,12 +108,11 @@ export class ServerBrowserService {
   }
 
   async listFacets(): Promise<ServerBrowserFacetsResponse> {
-    const cacheKey = "server-browser:v2:facets";
+    const cacheKey = "server-browser:v3:facets";
     const cached = await cache.get<ServerBrowserFacetsResponse>(cacheKey);
     if (cached) return cached;
 
-    const aggregated = await this.fetchAggregated({});
-    const relays = await this.discovery.getRelays();
+    const aggregated = await this.fetchAggregated();
 
     const gameModeSet = new Set<string>();
     for (const s of aggregated.servers) {
@@ -145,10 +124,6 @@ export class ServerBrowserService {
     );
 
     const regionSet = new Set<string>();
-    for (const r of relays) {
-      const region = (r.region ?? "").trim().toLowerCase();
-      if (region) regionSet.add(region);
-    }
     for (const s of aggregated.servers) {
       const region = (s.source_region ?? "").trim().toLowerCase();
       if (region) regionSet.add(region);
@@ -167,73 +142,9 @@ export class ServerBrowserService {
   }
 
   async getServer(id: string): Promise<AggregatedServer | null> {
-    const cacheKey = `server-browser:v2:detail:${id}`;
+    const cacheKey = `server-browser:v3:detail:${id}`;
     const cached = await cache.get<AggregatedServer>(cacheKey);
     if (cached) return cached;
-
-    const relays = await this.discovery.getRelays();
-    const client = this.discovery.getClient();
-
-    for (const relay of relays) {
-      const base = normalize(relay.url);
-      if (!client.isHealthy(base)) continue;
-
-      const stop = relayRequestDurationSeconds.startTimer({
-        relay: base,
-        endpoint: "get",
-      });
-      const startedAt = Date.now();
-
-      try {
-        const server = await client.getServer(base, id);
-        const latencyMs = Date.now() - startedAt;
-        stop();
-
-        if (server) {
-          relayRequestsTotal.inc({
-            relay: base,
-            endpoint: "get",
-            outcome: "found",
-          });
-          await this.discovery.recordOutcome(base, {
-            ok: true,
-            latencyMs,
-          });
-          const enriched: AggregatedServer = {
-            ...server,
-            source_relay: base,
-            source_region: relay.region,
-          };
-          await cache.set(cacheKey, enriched, CACHE_TTL.SERVER_DETAIL);
-          return enriched;
-        }
-
-        relayRequestsTotal.inc({
-          relay: base,
-          endpoint: "get",
-          outcome: "not_found",
-        });
-        await this.discovery.recordOutcome(base, { ok: true, latencyMs });
-      } catch (error) {
-        stop();
-        relayRequestsTotal.inc({
-          relay: base,
-          endpoint: "get",
-          outcome: "error",
-        });
-        await this.discovery.recordOutcome(base, {
-          ok: false,
-          latencyMs: Date.now() - startedAt,
-          error: error instanceof Error ? error.message : String(error),
-        });
-        if (
-          !(error instanceof RelayHttpError) &&
-          !(error instanceof CircuitOpenError)
-        ) {
-          logger.withError(error).debug("Relay get request failed");
-        }
-      }
-    }
 
     const registry = await this.fetchRegistryServers();
     const registryServer = registry.servers.find((server) => server.id === id);
@@ -246,115 +157,22 @@ export class ServerBrowserService {
   }
 
   async invalidateServer(id: string): Promise<void> {
-    await cache.del(`server-browser:v2:detail:${id}`);
+    await cache.del(`server-browser:v3:detail:${id}`);
   }
 
-  private async fetchAggregated(filters: ServerBrowserFilters): Promise<{
+  // Relays are no longer queried: every listed server comes from Deadworks.
+  // The relay counts stay in the response for clients that still read them.
+  private async fetchAggregated(): Promise<{
     servers: AggregatedServer[];
     relaysQueried: number;
     relaysFailed: number;
     registry: RegistryResult;
   }> {
-    const relays = await this.discovery.getRelays();
-    const client = this.discovery.getClient();
-
-    const registryServersPromise = this.fetchRegistryServers();
-    const results = await Promise.all(
-      relays.map(async (relay) => {
-        const base = normalize(relay.url);
-        if (!client.isHealthy(base)) {
-          return { ok: false as const, base, region: relay.region };
-        }
-
-        const stop = relayRequestDurationSeconds.startTimer({
-          relay: base,
-          endpoint: "list",
-        });
-        const startedAt = Date.now();
-
-        try {
-          const response = await client.listServers(base, {
-            game_mode: filters.game_mode,
-            has_players: filters.has_players,
-          });
-          const latencyMs = Date.now() - startedAt;
-          stop();
-
-          relayRequestsTotal.inc({
-            relay: base,
-            endpoint: "list",
-            outcome: "success",
-          });
-          await this.discovery.recordOutcome(base, {
-            ok: true,
-            latencyMs,
-          });
-          return {
-            ok: true as const,
-            base,
-            region: relay.region,
-            servers: response.servers,
-          };
-        } catch (error) {
-          stop();
-          relayRequestsTotal.inc({
-            relay: base,
-            endpoint: "list",
-            outcome: "error",
-          });
-          await this.discovery.recordOutcome(base, {
-            ok: false,
-            latencyMs: Date.now() - startedAt,
-            error: error instanceof Error ? error.message : String(error),
-          });
-          if (
-            !(error instanceof RelayHttpError) &&
-            !(error instanceof CircuitOpenError)
-          ) {
-            logger
-              .withError(error)
-              .withMetadata({ relay: base })
-              .debug("Relay list request failed");
-          }
-          return { ok: false as const, base, region: relay.region };
-        }
-      }),
-    );
-    const registry = await registryServersPromise;
-
-    const dedup = new Map<string, AggregatedServer>();
-    let relaysQueried = 0;
-    let relaysFailed = 0;
-
-    for (const result of results) {
-      if (!result.ok) {
-        relaysFailed += 1;
-        continue;
-      }
-      relaysQueried += 1;
-      for (const server of result.servers) {
-        const existing = dedup.get(server.id);
-        if (!existing || lastSeenAt(server) > lastSeenAt(existing)) {
-          dedup.set(server.id, {
-            ...server,
-            source_relay: result.base,
-            source_region: result.region,
-          });
-        }
-      }
-    }
-
-    for (const server of registry.servers) {
-      const existing = dedup.get(server.id);
-      if (!existing || lastSeenAt(server) > lastSeenAt(existing)) {
-        dedup.set(server.id, server);
-      }
-    }
-
+    const registry = await this.fetchRegistryServers();
     return {
-      servers: Array.from(dedup.values()),
-      relaysQueried,
-      relaysFailed,
+      servers: registry.servers,
+      relaysQueried: 0,
+      relaysFailed: 0,
       registry,
     };
   }
@@ -365,7 +183,7 @@ export class ServerBrowserService {
    */
   private async fetchRegistryServers(): Promise<RegistryResult> {
     const registryUrl = normalize(env.DEADWORKS_REGISTRY_URL);
-    const listKey = `server-browser:v2:registry:${registryUrl}`;
+    const listKey = `server-browser:v3:registry:${registryUrl}`;
     const snapshotKey = `${listKey}:last-good`;
 
     const cached = await cache.get<ServerBrowserEntry[]>(listKey);
@@ -373,7 +191,7 @@ export class ServerBrowserService {
       return { servers: cached, degraded: false, snapshotAgeMs: null };
 
     try {
-      const servers = await fetchDeadworksRegistryServers(registryUrl);
+      const servers = await fetchDeadworksServers(registryUrl);
       await cache.set(listKey, servers, CACHE_TTL.SERVERS_LIST);
       await cache.set(
         snapshotKey,
@@ -385,7 +203,7 @@ export class ServerBrowserService {
       logger
         .withError(error)
         .withMetadata({ registry: registryUrl })
-        .warn("Deadworks registry request failed");
+        .warn("Deadworks server list request failed");
 
       const snapshot = await cache.get<RegistrySnapshot>(snapshotKey);
       if (!snapshot) {
@@ -461,6 +279,6 @@ export class ServerBrowserService {
       limit: String(filters.limit ?? DEFAULT_LIMIT),
       cursor: String(filters.cursor ?? 0),
     };
-    return `server-browser:v2:list:${JSON.stringify(norm)}`;
+    return `server-browser:v3:list:${JSON.stringify(norm)}`;
   }
 }

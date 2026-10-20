@@ -37,7 +37,7 @@ unsigned fixture is rejected before installation. `app-update-check-failure`
 requires a manifest 404 to show a check error instead of claiming the app is
 current. Both run in the Windows and Linux E2E matrices with no host update.
 
-`onboarding-skip-analysis` starts setup with a synthetic existing VPK. It verifies Skip for Now advances before analysis, after closing analysis results, and after navigating back; Next still advances and the VPK bytes remain intact.
+`onboarding-skip-analysis` starts setup with a synthetic existing VPK. It verifies Skip for Now advances before analysis, after closing analysis results, and after navigating back; Next still advances and the VPK bytes remain intact. Saved telemetry consent starts enabled and must persist as disabled after opting out. `onboarding-telemetry-default` repeats the flow with an unseen prompt and stored consent disabled, verifying that first-run consent initially defaults to enabled.
 
 `gamebanana-detected-files` starts with a manually installed VPK and an empty DMM library. It identifies the mod through the analysis API, checks that Manage Files marks its matched archive enabled, adds an optional archive, and removes that optional archive after restart. The original VPK bytes and manifest ownership must survive, and only the optional archive may be downloaded.
 
@@ -366,3 +366,14 @@ Use the seven scenario jobs and their per-case reports to verify clean-runner qu
 | M6: nightly E2E pipeline | Implemented; qualification tracked in CI | Nightly/manual Windows E2E matrix and opt-in execution on labelled PRs | All 37 registered scenarios pass on clean runners with retained failure evidence |
 
 Keep scenarios independent and small even when they share recipes. The final routine-development gate is a composed import/download → enable → profile switch → reorder → backup → modify → restore → restart journey, supported by focused tests for each operation and failure boundary.
+
+`conflicts-switch` enables a model replacement through the selected-mod workflow.
+Keep current leaves the existing skin and VPK bytes unchanged; choosing the new
+skin disables only its model conflict. The unrelated material mod stays enabled,
+and the library state, manifests and archive hashes must agree after restart.
+
+
+`bisect-conflicts` starts from two conflicting model replacements and an unrelated
+mod. It verifies Stop restores every original mod and its load order, then starts
+another search and restores after a fresh process. Persisted library/profile
+state, manifest entries and exact VPK hashes must all agree.

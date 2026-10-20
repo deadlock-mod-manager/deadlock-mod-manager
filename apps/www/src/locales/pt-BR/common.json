@@ -1,24 +1,24 @@
 {
   "privacy": {
-    "updated": "",
-    "scope": "",
-    "desktopCollection": "",
+    "updated": "Última atualização: 19 de outubro de 2026",
+    "scope": "Esta política cobre o aplicativo Deadlock Mod Manager, deadlockmods.app e nosso bot da comunidade do Discord. As configurações e coleções específicas do computador são descritas abaixo; a seção do Bot explica como processamos os dados do Discord.",
+    "desktopCollection": "O aplicativo roda localmente no seu computador e se comunica com serviços “on-line” para recursos como a descoberta de mods e downloads. Também recolhe dados técnicos e de utilização, como descrito nesta política.",
     "serverStorage": "",
     "sections": {
-      "discord": "",
-      "updates": "",
-      "changes": "",
-      "contact": ""
+      "discord": "6. Bot do Discord",
+      "updates": "7. Atualizações",
+      "changes": "8. Alterações na Política de Privacidade",
+      "contact": "9. Contato"
     },
     "discord": {
-      "dataTitle": "",
+      "dataTitle": "Dados e finalidades",
       "data": "",
       "languageTitle": "",
       "language": "",
       "languageData": "",
-      "sharingTitle": "",
+      "sharingTitle": "Provedores de serviço e IA",
       "sharing": "",
-      "retentionTitle": "",
+      "retentionTitle": "Retenção e exclusão",
       "retention": "",
       "controlsTitle": "",
       "controls": "",
@@ -51,8 +51,8 @@
     "avatarFallback": "Usuário"
   },
   "v2Banner": {
-    "short": "",
-    "long": "",
+    "short": "Em breve: reconstruído do zero.",
+    "long": "Em breve: mods que sobrevivem às atualizações do jogo, uma loja mais rápida e detecção de conflitos.",
     "whatsNew": "Veja as novidades"
   },
   "footer": {

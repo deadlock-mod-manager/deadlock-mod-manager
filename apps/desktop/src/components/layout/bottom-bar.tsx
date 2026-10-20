@@ -35,15 +35,12 @@ import type { Icon as PhosphorIcon } from "@phosphor-icons/react";
 import { formatDistanceToNow } from "date-fns";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import RelayStatusPopover from "@/components/server-browser/relay-status-popover";
 import { useApiStatus } from "@/hooks/use-api-status";
 import { useAuthStatus } from "@/hooks/use-auth-status";
 import { useCheckForUpdates } from "@/hooks/use-check-for-updates";
 import { useFilesystemStatus } from "@/hooks/use-filesystem-status";
 import { useCatalogSyncState } from "@/hooks/use-gamebanana-catalog-sync";
-import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useDiscordGamePresenceIndicator } from "@/hooks/use-game-presence-status";
-import { useRelaysHealth } from "@/hooks/use-relays-health";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
@@ -349,8 +346,6 @@ export const BottomBar = () => {
   const { status: apiStatus } = useApiStatus();
   const { status: authStatus } = useAuthStatus();
   const { status: fsStatus } = useFilesystemStatus();
-  const { relays } = useRelaysHealth();
-  const isServerBrowserEnabled = useExperimentalFeature("server-browser");
 
   const downloadingCount = localMods.filter(
     (mod) =>
@@ -412,14 +407,6 @@ export const BottomBar = () => {
               className={fsCfg.className}
               icon={fsCfg.icon}
               tooltip={t(fsCfg.key)}
-            />
-          )}
-          {isServerBrowserEnabled && relays.length > 0 && (
-            <RelayStatusPopover
-              align='start'
-              relays={relays}
-              side='top'
-              variant='compact'
             />
           )}
           <HeroParserIndicator />

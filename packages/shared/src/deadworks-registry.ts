@@ -38,6 +38,27 @@ export const DeadworksRegistryResponseSchema = z.object({
   servers: z.array(DeadworksRegistryServerSchema),
 });
 
+/** A record from Steam's master server list, as proxied by Deadworks. */
+const DeadworksSteamServerSchema = z.object({
+  addr: z.string(),
+  gameport: z.number().int().optional(),
+  steamid: z.string(),
+  name: z.string(),
+  players: z.number().int().optional().default(0),
+  max_players: z.number().int(),
+  map: z.string().optional().default(""),
+  gametype: z.string().optional().default(""),
+});
+
+export const DeadworksSteamResponseSchema = z.object({
+  servers: z.array(DeadworksSteamServerSchema),
+});
+
+/** Every Deadworks server sets it; the endpoint filters on it but we re-check. */
+const DEADWORKS_TAG = "dw1";
+/** The host asked not to be listed. */
+const UNLISTED_TAG = "dwu";
+
 const parseAddress = (address: string): { ip: string; port: number } | null => {
   const separator = address.lastIndexOf(":");
   if (separator <= 0) return null;
@@ -66,44 +87,77 @@ const normalizeLastSeen = (value?: string | null): string => {
   return Number.isNaN(date.getTime()) ? value : date.toISOString();
 };
 
-export const normalizeDeadworksRegistryServers = (
-  payload: z.output<typeof DeadworksRegistryResponseSchema>,
-  sourceUrl: string,
-): ServerBrowserEntry[] => {
-  return payload.servers.flatMap((raw): ServerBrowserEntry[] => {
-    const connectCode = raw.raw_address || raw.address;
-    const address = parseAddress(connectCode);
-    if (!address) return [];
+const serverTags = (gametype: string): Set<string> =>
+  new Set(gametype.split(",").map((tag) => tag.trim()));
 
-    const sourceRegion = (raw.country || raw.region).trim().toLowerCase();
+/**
+ * Steam lists every running Deadworks server; the registry only knows the
+ * registered ones but adds their country and Deadworks version, so it is
+ * matched in by address. Content is not taken from either: the client asks
+ * the game server itself (A2S_RULES) when the player opens the join dialog.
+ */
+export const normalizeDeadworksServers = (
+  steam: z.output<typeof DeadworksSteamResponseSchema>,
+  registry: z.output<typeof DeadworksRegistryResponseSchema> | null,
+  sourceUrl: string,
+  fetchedAt: Date,
+): ServerBrowserEntry[] => {
+  const registryByAddress = new Map(
+    (registry?.servers ?? []).map((server) => [
+      server.raw_address || server.address,
+      server,
+    ]),
+  );
+
+  return steam.servers.flatMap((raw): ServerBrowserEntry[] => {
+    const tags = serverTags(raw.gametype);
+    if (!tags.has(DEADWORKS_TAG) || tags.has(UNLISTED_TAG)) return [];
+
+    const address = parseAddress(raw.addr);
+    if (!address) return [];
+    const port = raw.gameport ?? address.port;
+    const connectCode = raw.addr.includes("[")
+      ? `[${address.ip}]:${port}`
+      : `${address.ip}:${port}`;
+
+    const registered = registryByAddress.get(raw.addr);
+    const sourceRegion = registered
+      ? (registered.country || registered.region).trim().toLowerCase()
+      : "";
+
     return [
       {
-        id: raw.id,
+        id: raw.steamid,
         name: raw.name,
         ip: address.ip,
-        port: address.port,
-        visibility: raw.visibility,
-        password_protected: raw.password_protected,
+        port,
+        visibility: registered?.visibility ?? "public",
+        password_protected: registered?.password_protected ?? false,
         connect_code: connectCode,
         gateway_url: "",
-        player_count: raw.player_count,
+        player_count: raw.players,
         max_players: raw.max_players,
         map: raw.map,
         game_mode: "",
-        version: raw.version,
-        players: raw.players,
-        // Both are client-side content the player needs before joining, so
-        // they belong in the same list the detail panel renders.
-        mods: [...raw.content_addons, ...raw.extra_maps].map((name) => ({
-          name,
-          version: "",
-        })),
+        // The browser prints its own "v" prefix.
+        version: registered?.version.replace(/^v/i, "") ?? "",
+        players: registered?.players ?? [],
+        // Display-only names; the join dialog reads the real list off the server.
+        mods: registered
+          ? [...registered.content_addons, ...registered.extra_maps].map(
+              (name) => ({ name, version: "" }),
+            )
+          : [],
         required_mods: [],
-        last_seen: normalizeLastSeen(raw.last_heartbeat),
+        last_seen: registered?.last_heartbeat
+          ? normalizeLastSeen(registered.last_heartbeat)
+          : fetchedAt.toISOString(),
         auth_required: false,
         auth_providers: [],
         source_relay: sourceUrl.replace(/\/+$/, ""),
         source_region: sourceRegion || undefined,
+        // Any Deadworks server may advertise maps or addons, and only the
+        // server itself can say which, so every join runs a content check.
         managed_content: true,
       },
     ];

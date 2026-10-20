@@ -3,10 +3,10 @@ use crate::errors::Error;
 use source2_model::vpk_extract::VpkArchive;
 use std::{
   cell::RefCell,
-  collections::BTreeMap,
+  collections::{BTreeMap, VecDeque},
   fs,
   path::{Path, PathBuf},
-  sync::Arc,
+  sync::{Arc, Mutex},
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -26,6 +26,7 @@ pub(crate) struct GameIndex {
   directories: Vec<PathBuf>,
   archives: BTreeMap<PathBuf, VpkArchive>,
   resources: BTreeMap<String, Provider>,
+  bytes: Mutex<GameBytes>,
 }
 
 impl GameIndex {
@@ -34,6 +35,7 @@ impl GameIndex {
       directories: vec![citadel.to_path_buf(), citadel.with_file_name("core")],
       archives: BTreeMap::new(),
       resources: BTreeMap::new(),
+      bytes: Mutex::new(GameBytes::default()),
     }
   }
 
@@ -85,6 +87,43 @@ impl GameIndex {
       }
     }
     Ok(index)
+  }
+}
+
+// This cache lives only for one game index/check batch. A new check reopens the
+// game files; mod bytes stay in their own snapshot and cannot contaminate it.
+const MAX_GAME_BYTES: usize = 64 * 1024 * 1024;
+const MAX_GAME_ENTRIES: usize = 128;
+
+#[derive(Default)]
+struct GameBytes {
+  entries: VecDeque<(PathBuf, Arc<Vec<u8>>)>,
+  bytes: usize,
+}
+
+impl GameBytes {
+  fn get(&mut self, key: &Path) -> Option<Arc<Vec<u8>>> {
+    let index = self.entries.iter().position(|(path, _)| path == key)?;
+    let entry = self.entries.remove(index)?;
+    let bytes = Arc::clone(&entry.1);
+    self.entries.push_back(entry);
+    Some(bytes)
+  }
+
+  fn insert(&mut self, key: PathBuf, bytes: Arc<Vec<u8>>) {
+    let size = bytes.capacity();
+    if size > MAX_GAME_BYTES || self.get(&key).is_some() {
+      return;
+    }
+    while self.bytes + size > MAX_GAME_BYTES || self.entries.len() >= MAX_GAME_ENTRIES {
+      let (_, removed) = self
+        .entries
+        .pop_front()
+        .expect("cache has an eviction candidate");
+      self.bytes -= removed.capacity();
+    }
+    self.bytes += size;
+    self.entries.push_back((key, bytes));
   }
 }
 
@@ -190,10 +229,42 @@ impl ResourceSnapshot {
       .transpose()
   }
 
+  /// The dependency this mod would load on its own, using its own VPK order.
+  pub(super) fn standalone_bytes(
+    &self,
+    input: &LocalizationModInput,
+    path: &str,
+  ) -> Result<Option<Arc<Vec<u8>>>, Error> {
+    for archive in &input.vpks {
+      if self.archive(archive).contains_entry(path) {
+        return self
+          .read(&Provider {
+            archive: archive.clone(),
+            entry: path.into(),
+            mod_id: Some(input.mod_id.clone()),
+            priority: 0,
+          })
+          .map(Some);
+      }
+    }
+    self.game_bytes(path)
+  }
+
   fn read(&self, provider: &Provider) -> Result<Arc<Vec<u8>>, Error> {
     let key = provider.archive.join(&provider.entry);
     if let Some(bytes) = self.bytes.borrow().get(&key) {
       return Ok(Arc::clone(bytes));
+    }
+    if provider.mod_id.is_none()
+      && let Some(bytes) = self
+        .game
+        .bytes
+        .lock()
+        .unwrap_or_else(|error| error.into_inner())
+        .get(&key)
+    {
+      self.bytes.borrow_mut().insert(key, Arc::clone(&bytes));
+      return Ok(bytes);
     }
     let bytes = if provider.entry.is_empty() {
       fs::read(&provider.archive)?
@@ -212,6 +283,14 @@ impl ResourceSnapshot {
         })?
     };
     let bytes = Arc::new(bytes);
+    if provider.mod_id.is_none() {
+      self
+        .game
+        .bytes
+        .lock()
+        .unwrap_or_else(|error| error.into_inner())
+        .insert(key.clone(), Arc::clone(&bytes));
+    }
     self.bytes.borrow_mut().insert(key, Arc::clone(&bytes));
     Ok(bytes)
   }
@@ -343,6 +422,53 @@ pub(super) mod tests {
         .as_slice(),
       b"loose"
     );
+  }
+
+  #[test]
+  fn game_bytes_are_shared_across_mod_checks_but_refresh_with_the_index() {
+    let temp = tempfile::tempdir().unwrap();
+    let path = "scripts/shared.vdata_c";
+    fs::create_dir_all(temp.path().join("scripts")).unwrap();
+    fs::write(temp.path().join(path), b"before").unwrap();
+    let game = Arc::new(GameIndex::open(temp.path()).unwrap());
+    let first = ResourceSnapshot::with_game(Arc::clone(&game), &[]).unwrap();
+    let bytes = first.game_bytes(path).unwrap().unwrap();
+    let second = ResourceSnapshot::with_game(game, &[]).unwrap();
+    assert!(Arc::ptr_eq(
+      &bytes,
+      &second.game_bytes(path).unwrap().unwrap()
+    ));
+    fs::write(temp.path().join(path), b"after").unwrap();
+    let fresh =
+      ResourceSnapshot::with_game(Arc::new(GameIndex::open(temp.path()).unwrap()), &[]).unwrap();
+    assert_eq!(
+      fresh.game_bytes(path).unwrap().unwrap().as_slice(),
+      b"after"
+    );
+  }
+
+  #[test]
+  fn game_cache_evicts_old_entries_and_rejects_oversized_files() {
+    let mut cache = GameBytes::default();
+    for index in 0..MAX_GAME_ENTRIES {
+      cache.insert(index.to_string().into(), Arc::new(vec![1]));
+    }
+    cache.get(Path::new("0")).unwrap();
+    cache.insert("new".into(), Arc::new(vec![2]));
+    assert!(cache.get(Path::new("1")).is_none());
+    assert!(cache.get(Path::new("0")).is_some());
+    cache.insert("oversized".into(), Arc::new(vec![0; MAX_GAME_BYTES + 1]));
+    assert!(cache.get(Path::new("oversized")).is_none());
+    assert!(cache.bytes <= MAX_GAME_BYTES);
+    for index in 0..4 {
+      cache.insert(
+        format!("large-{index}").into(),
+        Arc::new(vec![0; MAX_GAME_BYTES / 2]),
+      );
+    }
+    assert!(cache.get(Path::new("large-0")).is_none());
+    assert_eq!(cache.entries.len(), 2);
+    assert_eq!(cache.bytes, MAX_GAME_BYTES);
   }
 
   #[test]

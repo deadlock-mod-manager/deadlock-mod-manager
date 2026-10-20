@@ -26,6 +26,7 @@ mod analyzed;
 pub use analyzed::AnalyzedModRegistration;
 mod gameinfo;
 mod lifecycle;
+mod model_conflict_switch;
 mod localization;
 mod reorder;
 
@@ -572,7 +573,7 @@ mod tests {
 
   /// Builds a manager pointing at a throwaway game install, bypassing the
   /// Steam lookup and the app handle that `ModManager::new` depends on.
-  fn test_manager(game_path: &Path) -> ModManager {
+  pub(super) fn test_manager(game_path: &Path) -> ModManager {
     let mut manager = test_manager_without_game_path();
 
     manager
@@ -879,7 +880,9 @@ mod tests {
     let mut manifest = ProfileVpkManifest::default();
     for i in 0..100u32 {
       if i == 3 {
-        fs::write(addons.join("mod03_mod03.vpk"), id(i)).unwrap();
+        let source = tempfile::tempdir().unwrap();
+        fs::write(source.path().join("readme.txt"), id(i)).unwrap();
+        vpkmanager::pack_directory(source.path(), &addons.join("mod03_mod03.vpk")).unwrap();
         manifest.mark_disabled(
           &id(i),
           vec!["mod03_mod03.vpk".into()],
@@ -904,6 +907,7 @@ mod tests {
     }
     manifest.save(&base).unwrap();
 
+    let expected_vpk = fs::read(addons.join("mod03_mod03.vpk")).unwrap();
     let installed = test_manager(game.path())
       .install_mod(
         Mod {
@@ -942,7 +946,7 @@ mod tests {
     assert_eq!(installed.installed_vpks, entry.current_vpks);
     assert_eq!(
       fs::read(addons.join(&entry.current_vpks[0])).unwrap(),
-      id(3).as_bytes()
+      expected_vpk
     );
     assert_eq!(manifest.mods[&id(99)].shard, shard_two);
     assert_eq!(count_enabled(&addons), 99);

@@ -4,8 +4,8 @@
 use super::asset_compatibility::{AssetRepair, RepairKind};
 use super::model_text::{array_items, assigned_value, field, resource_name, root_fields};
 use super::{
-  CompiledDataSource, Kv3Value, Resource, decode_compiled_data, kv3, object_set_case_insensitive,
-  resources::ResourceSnapshot, runtime_values_equal,
+  CompiledDataSource, Kv3Value, Resource, compiled_resource, decode_compiled_data, kv3,
+  object_set_case_insensitive, resources::ResourceSnapshot, runtime_values_equal,
 };
 use crate::errors::Error;
 use std::collections::BTreeMap;
@@ -81,10 +81,11 @@ pub(super) fn repair(
   let Ok((format, mut model, encoding)) = decode_compiled_data(source, "mod model sounds") else {
     return Ok(None);
   };
-  let Ok((_, current, _)) = decode_compiled_data(base, "current model sounds") else {
+  let Ok(decoded_current) = compiled_resource::decode(base, "current model sounds") else {
     return Ok(None);
   };
-  let Some(current_text) = model_text(&current) else {
+  let current = &decoded_current.root;
+  let Some(current_text) = model_text(current) else {
     return Ok(None);
   };
   let Some((_, current_fields)) = root_fields(current_text) else {
@@ -132,9 +133,10 @@ pub(super) fn repair(
     let Some((_, bytes)) = resources.resolve(&table)? else {
       return Ok(None);
     };
-    let Ok((_, root, _)) = decode_compiled_data(&bytes, &table) else {
+    let Ok(decoded_root) = compiled_resource::decode(&bytes, &table) else {
       return Ok(None);
     };
+    let root = &decoded_root.root;
     let Ok(id) = resource_id(&table) else {
       return Ok(None);
     };

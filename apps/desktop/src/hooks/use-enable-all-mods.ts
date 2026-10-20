@@ -12,6 +12,8 @@ export type EnableAllRecap = {
   failed: { mod: LocalMod; message: string }[];
   needsFileSelection: LocalMod[];
   criticalPaths: LocalMod[];
+  keptCurrent: LocalMod[];
+  replaced: LocalMod[];
   /** Left untouched after the user kept the game-running guard in place. */
   notAttempted: LocalMod[];
 };
@@ -29,32 +31,65 @@ export const useEnableAllMods = () => {
   const [recap, setRecap] = useState<EnableAllRecap | null>(null);
 
   const mutation = useMutation({
-    mutationFn: async () => {
+    mutationKey: ["library-bulk"],
+    mutationFn: async (selectedIds?: ReadonlySet<string>) => {
+      const profileId = usePersistedStore.getState().activeProfileId;
       const disabledMods = mods.filter(
-        (mod) => mod.status === ModStatus.Downloaded,
+        (mod) =>
+          mod.status === ModStatus.Downloaded &&
+          (!selectedIds || selectedIds.has(mod.remoteId)),
       );
+      if (disabledMods.length === 0) return;
       const shouldEnable = await confirm({
-        title: t("myMods.enableAllConfirmTitle", {
-          count: disabledMods.length,
-        }),
-        body: t("myMods.enableAllConfirmBody"),
-        actionButton: t("myMods.enableAllConfirmAction"),
+        title: t(
+          selectedIds
+            ? "myMods.selection.enableTitle"
+            : "myMods.enableAllConfirmTitle",
+          {
+            count: disabledMods.length,
+          },
+        ),
+        body: t(
+          selectedIds
+            ? "myMods.selection.enableBody"
+            : "myMods.enableAllConfirmBody",
+          { count: disabledMods.length },
+        ),
+        actionButton: t(
+          selectedIds
+            ? "myMods.selection.enable"
+            : "myMods.enableAllConfirmAction",
+        ),
         cancelButton: t("myMods.enableAllConfirmCancel"),
         icon: PowerIcon,
         actionButtonVariant: "default",
       });
 
-      if (!shouldEnable) return;
+      if (
+        !shouldEnable ||
+        usePersistedStore.getState().activeProfileId !== profileId
+      )
+        return;
 
       const result: EnableAllRecap = {
         enabled: [],
         failed: [],
         needsFileSelection: [],
         criticalPaths: [],
+        keptCurrent: [],
+        replaced: [],
         notAttempted: [],
       };
 
+      const initiallyInstalled = usePersistedStore
+        .getState()
+        .localMods.filter((mod) => mod.status === ModStatus.Installed);
+
       for (const [index, mod] of disabledMods.entries()) {
+        if (usePersistedStore.getState().activeProfileId !== profileId) {
+          result.notAttempted = disabledMods.slice(index);
+          break;
+        }
         // These ask for confirmation one by one, so a batch leaves them alone.
         if (mod.usesCriticalPaths) {
           result.criticalPaths.push(mod);
@@ -88,9 +123,10 @@ export const useEnableAllMods = () => {
               message: error.message || t("notifications.failedToInstallMod"),
             });
           },
-          onCancel: (m) => {
+          onCancel: (m, reason) => {
             setModStatus(m.remoteId, ModStatus.Downloaded);
-            result.needsFileSelection.push(m);
+            if (reason === "modelConflict") result.keptCurrent.push(m);
+            else result.needsFileSelection.push(m);
           },
         });
 
@@ -101,6 +137,22 @@ export const useEnableAllMods = () => {
         }
       }
 
+      const active = new Set(
+        usePersistedStore
+          .getState()
+          .localMods.filter((mod) => mod.status === ModStatus.Installed)
+          .map((mod) => mod.remoteId),
+      );
+      const replacementCandidates = new Map(
+        [...initiallyInstalled, ...result.enabled].map((mod) => [
+          mod.remoteId,
+          mod,
+        ]),
+      );
+      result.replaced = [...replacementCandidates.values()].filter(
+        (mod) => !active.has(mod.remoteId),
+      );
+      result.enabled = result.enabled.filter((mod) => active.has(mod.remoteId));
       setRecap(result);
     },
   });

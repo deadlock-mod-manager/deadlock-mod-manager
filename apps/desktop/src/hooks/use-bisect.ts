@@ -86,7 +86,12 @@ const restoreLoadOrder = async (loadOrder: string[]) => {
 const useApplyModSet = () => {
   const { install } = useInstallWithCollection();
 
-  return async (scope: string[], target: Set<string>, loadOrder: string[]) => {
+  return async (
+    scope: string[],
+    target: Set<string>,
+    loadOrder: string[],
+    originalEnabled: string[],
+  ) => {
     const state = usePersistedStore.getState();
     const profileFolder = state.getActiveProfile()?.folderName ?? null;
     const inScope = new Set(scope);
@@ -119,6 +124,7 @@ const useApplyModSet = () => {
         analyticsEntryPoint: "library",
         analyticsOperationKind: "enable",
         skipFileSelection: true,
+        bisectOriginalEnabled: originalEnabled,
         onStart: (m) => state.setModStatus(m.remoteId, ModStatus.Installing),
         onComplete: (m, installed) => {
           state.setModStatus(m.remoteId, ModStatus.Installed);
@@ -190,6 +196,7 @@ export const useBisect = () => {
       session.candidates,
       new Set(session.config),
       session.loadOrder,
+      session.originalEnabled,
     );
     update({ stage: "ready" });
   };
@@ -201,6 +208,7 @@ export const useBisect = () => {
       session.candidates,
       new Set(session.originalEnabled.filter((id) => !keepOff.has(id))),
       session.loadOrder,
+      session.originalEnabled,
     );
     usePersistedStore.getState().setBisectSession(null);
   };

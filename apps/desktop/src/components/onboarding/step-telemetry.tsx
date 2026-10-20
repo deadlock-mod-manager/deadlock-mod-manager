@@ -10,8 +10,11 @@ export const OnboardingStepTelemetry = ({ onComplete }: TelemetryStepProps) => {
   const updateTelemetrySettings = usePersistedStore(
     (state) => state.updateTelemetrySettings,
   );
-  const [analyticsEnabled, setAnalyticsEnabled] = useState(true);
-  const analyticsEnabledRef = useRef(true);
+  const [analyticsEnabled, setAnalyticsEnabled] = useState(() => {
+    const settings = usePersistedStore.getState().telemetrySettings;
+    return settings.hasSeenTelemetryPrompt ? settings.analyticsEnabled : true;
+  });
+  const analyticsEnabledRef = useRef(analyticsEnabled);
 
   useEffect(() => {
     onComplete();

@@ -1535,6 +1535,7 @@ dependencies = [
  "vpkmanager",
  "windows 0.58.0",
  "zip 6.0.0",
+ "zstd",
 ]
 
 [[package]]

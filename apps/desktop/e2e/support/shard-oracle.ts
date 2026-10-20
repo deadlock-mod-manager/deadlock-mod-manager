@@ -2,7 +2,11 @@ import assert from "node:assert/strict";
 import { readFile, stat, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
-import { fingerprint, readPersistedDocument } from "./observations";
+import {
+  fingerprint,
+  observeUntil,
+  readPersistedDocument,
+} from "./observations";
 import { SHARDS, shardPayload } from "./shard-fixtures";
 import { assertOwnedWorld, collectFileInventory } from "./world";
 
@@ -195,7 +199,20 @@ export const assertShardLayout = async (
     assert.equal(exists, holdsFiles, `addons${shard} folder presence`);
   }
 
-  const store = await readShardStore(world);
+  // The UI can show the new order before its queued VPK mapping snapshot reaches disk.
+  const store = await observeUntil(
+    "Persisted VPK mappings match the manifest",
+    () => readShardStore(world),
+    (state) =>
+      state.localMods.every((mod) => {
+        const entry = manifest.mods[mod.remoteId];
+        return (
+          !entry?.enabled ||
+          JSON.stringify(mod.installedVpks) ===
+            JSON.stringify(entry.currentVpks)
+        );
+      }),
+  );
   assert.equal(store.activeProfileId, SHARDS.id);
   const profile = store.profiles[SHARDS.id];
   for (const mods of [store.localMods, profile.mods])

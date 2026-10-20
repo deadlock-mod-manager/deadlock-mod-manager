@@ -1,0 +1,85 @@
+import { CustomSettingType } from "@deadlock-mods/shared";
+import { invoke } from "@tauri-apps/api/core";
+import { getCustomSettings } from "@/lib/api-client";
+import { AUTOEXEC_LAUNCH_OPTION_ID } from "@/lib/autoexec/constants";
+import { queryClient } from "@/lib/client";
+import { usePersistedStore } from "@/lib/store";
+import type { LocalSetting } from "@/types/settings";
+
+const LOCAL_SETTING_PREFIX = "local_setting_";
+
+// Server launch options are stored under their database id. Once the server
+// deletes or re-creates one, the stored copy keeps applying at launch while the
+// settings page no longer lists it, so nothing can turn it off.
+const findOrphanedLaunchOptionIds = (
+  settings: LocalSetting[],
+  serverSettingIds: ReadonlySet<string>,
+): string[] =>
+  settings
+    .filter(
+      (s) =>
+        s.type === CustomSettingType.LAUNCH_OPTION &&
+        !s.id.startsWith(LOCAL_SETTING_PREFIX) &&
+        s.id !== AUTOEXEC_LAUNCH_OPTION_ID &&
+        !serverSettingIds.has(s.id),
+    )
+    .map((s) => s.id);
+
+const pruneOrphanedLaunchOptions = async () => {
+  const serverSettings = await queryClient
+    .fetchQuery({
+      queryKey: ["custom-settings"],
+      queryFn: getCustomSettings,
+      retry: false,
+      meta: { skipGlobalErrorHandler: true },
+    })
+    .catch(() => null);
+  // Offline: an orphan can't be told apart from a live option, so keep both.
+  if (!serverSettings) return;
+
+  const { settings, removeSetting } = usePersistedStore.getState();
+  const orphanedIds = findOrphanedLaunchOptionIds(
+    Object.values(settings),
+    new Set(serverSettings.map((s) => s.id)),
+  );
+  for (const id of orphanedIds) {
+    removeSetting(id);
+  }
+};
+
+export const getAdditionalArgs = async () => {
+  await pruneOrphanedLaunchOptions();
+  const { settings, gamePresenceEnabled } = usePersistedStore.getState();
+  const additionalArgs: string[] = [];
+
+  if (gamePresenceEnabled) {
+    additionalArgs.push("-condebug");
+  }
+
+  for (const setting of Object.values(settings).filter(
+    (s) =>
+      s.type === CustomSettingType.LAUNCH_OPTION &&
+      s.enabled &&
+      s.id !== AUTOEXEC_LAUNCH_OPTION_ID,
+  )) {
+    additionalArgs.push(`${setting.key} ${setting.value || ""}`.trim());
+  }
+
+  if (settings[AUTOEXEC_LAUNCH_OPTION_ID]?.enabled) {
+    try {
+      const autoexecConfig = await invoke<{
+        full_content: string;
+      }>("get_autoexec_config");
+      if (
+        autoexecConfig?.full_content &&
+        autoexecConfig.full_content.trim().length > 0
+      ) {
+        additionalArgs.push("-exec autoexec");
+      }
+    } catch {
+      return additionalArgs.join(" ");
+    }
+  }
+
+  return additionalArgs.join(" ");
+};

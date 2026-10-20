@@ -32,7 +32,11 @@ import {
 } from "./profile-import-form";
 import { ProfilePreview } from "./profile-preview";
 
-export const ProfileImportDialog = () => {
+export const ProfileImportDialog = ({
+  disabled = false,
+}: {
+  disabled?: boolean;
+}) => {
   const [open, setOpen] = useState(false);
   const [importedProfile, setImportedProfile] = useState<SharedProfile | null>(
     null,
@@ -172,8 +176,8 @@ export const ProfileImportDialog = () => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger>
-        <Button variant='outline' icon={<ImportIcon />}>
+      <DialogTrigger asChild>
+        <Button disabled={disabled} variant='outline' icon={<ImportIcon />}>
           {t("profiles.import")}
         </Button>
       </DialogTrigger>

@@ -49,7 +49,6 @@ export type ExperimentalFeature = (typeof EXPERIMENTAL_FEATURES)[number];
 
 const DEFAULT_EXPERIMENTAL_FEATURES: Record<ExperimentalFeature, boolean> = {
   "custom-maps": false,
-  "server-browser": false,
   "mod-foundry": true,
   "player-stats": true,
   "profile-management": true,

@@ -25,6 +25,7 @@ import { ModStatus } from "@/types/mods";
 import type { ModProfile, ProfileId } from "@/types/profiles";
 import { createProfileId } from "@/types/profiles";
 import { createModsSlice, type ModsState } from "./mods";
+import { placeholderModFromManifest } from "../utils/manifest-install-state";
 
 type TestState = ModsState & {
   profiles: Record<string, ModProfile>;
@@ -98,6 +99,54 @@ beforeEach(() => {
       secondary: profileFor("secondary", ["1"]),
     },
     activeProfileId: createProfileId("default"),
+  });
+});
+
+describe("addLocalMod", () => {
+  it("keeps existing named mods unchanged when the same remote mod is added", () => {
+    const before = store.getState().profiles.default.mods;
+    store.getState().addLocalMod({
+      ...modFor("1"),
+      id: "different-dto-id",
+      name: "Replacement",
+    });
+    expect(store.getState().profiles.default.mods).toBe(before);
+  });
+
+  it("replaces a manifest placeholder when a local import finishes", () => {
+    const id = "local-aa83cfac-def9-4a7a-820b-1e004e30ca29";
+    const placeholder = placeholderModFromManifest(
+      id,
+      {
+        shard: 1,
+        enabled: false,
+        currentVpks: [],
+        disabledVpks: ["skin.vpk"],
+        originalVpkNames: ["skin.vpk"],
+        order: 3,
+      },
+      [],
+    );
+    store.setState({
+      localMods: [placeholder],
+      profiles: {
+        ...store.getState().profiles,
+        default: { ...profileFor("default", []), mods: [placeholder] },
+      },
+    });
+    store.getState().addLocalMod(
+      { ...placeholder, name: "My local skin" },
+      {
+        status: ModStatus.Downloaded,
+      },
+    );
+    expect(store.getState().localMods).toHaveLength(1);
+    expect(store.getState().localMods[0].name).toBe("My local skin");
+    expect(store.getState().localMods[0].metadataPending).toBe(false);
+    expect(store.getState().localMods[0].installOrder).toBe(3);
+    expect(store.getState().profiles.default.mods).toEqual(
+      store.getState().localMods,
+    );
   });
 });
 

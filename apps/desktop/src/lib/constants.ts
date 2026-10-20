@@ -134,7 +134,6 @@ export const MOD_OUTDATED_CUTOFF_SECONDS = Math.floor(
 // anyone can opt in from Settings without signing in.
 export const EXPERIMENTAL_FEATURES = [
   "custom-maps",
-  "server-browser",
   "mod-foundry",
   "player-stats",
   "profile-management",

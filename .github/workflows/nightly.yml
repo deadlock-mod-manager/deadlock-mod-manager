@@ -2,6 +2,14 @@ name: Nightly Build
 
 env:
   NODE_VERSION: "24.8.0"
+  # Nightly-only trial: thin LTO with parallel codegen cuts Rust build time
+  # by roughly half for a ~10% larger binary. Stable releases keep the
+  # fat-LTO profile from apps/desktop/Cargo.toml.
+  CARGO_PROFILE_RELEASE_LTO: thin
+  CARGO_PROFILE_RELEASE_CODEGEN_UNITS: "16"
+  # Keep the sccache server alive through long link and bundle steps so the
+  # end-of-job stats are not reset by the default 10-minute idle shutdown.
+  SCCACHE_IDLE_TIMEOUT: "0"
 
 concurrency:
   group: nightly-build

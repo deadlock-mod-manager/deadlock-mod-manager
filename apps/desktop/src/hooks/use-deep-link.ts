@@ -181,6 +181,10 @@ export const useDeepLink = () => {
                         // Remove from processing set when fully complete
                         processingRef.current.delete(slug);
                       },
+                      onCancel: (mod) => {
+                        setModStatus(mod.remoteId, ModStatus.Downloaded);
+                        processingRef.current.delete(slug);
+                      },
                       onError: (mod, error) => {
                         setModStatus(mod.remoteId, ModStatus.Downloaded);
                         toast.error(

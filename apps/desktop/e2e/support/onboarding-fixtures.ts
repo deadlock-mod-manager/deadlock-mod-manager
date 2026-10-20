@@ -5,11 +5,18 @@ import { readPersistedDocument } from "./observations";
 import { writeSyntheticVpk } from "./vpk";
 import type { CreatedWorld } from "./world";
 
-export const prepareOnboardingWorld = async (world: CreatedWorld) => {
+export const prepareOnboardingWorld = async (
+  world: CreatedWorld,
+  analyticsEnabled: boolean,
+) => {
   const persisted = z
     .object({ state: z.record(z.string(), z.json()), version: z.number() })
     .parse(await readPersistedDocument(world.directory));
   persisted.state.hasCompletedOnboarding = false;
+  persisted.state.telemetrySettings = {
+    analyticsEnabled,
+    hasSeenTelemetryPrompt: false,
+  };
   await writeFile(
     path.join(world.configuration.roots.appData, "state.json"),
     JSON.stringify({ "local-config": JSON.stringify(persisted) }),

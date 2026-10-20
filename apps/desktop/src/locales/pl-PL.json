@@ -1,4 +1,12 @@
 {
+  "modelConflict": {
+    "title": "",
+    "body": "",
+    "useSkin": "",
+    "keepCurrent": "",
+    "keptCurrent": "",
+    "replaced": ""
+  },
   "launchRepair": {
     "title_one": "",
     "title_other": "",
@@ -2272,6 +2280,24 @@
     "at": "o"
   },
   "myMods": {
+    "selection": {
+      "start": "",
+      "working": "",
+      "done": "",
+      "selectMod": "",
+      "count_one": "",
+      "count_other": "",
+      "selectFiltered": "",
+      "clear": "",
+      "enable": "",
+      "disable": "",
+      "enableTitle": "",
+      "enableBody": "",
+      "disableTitle": "",
+      "disableBody": "",
+      "disabled_one": "",
+      "disabled_other": ""
+    },
     "compatibility": {
       "review": "",
       "reviewDescription": "",
@@ -2825,6 +2851,7 @@
     "next": "Następny"
   },
   "downloads": {
+    "failed": "",
     "alreadyQueued": "",
     "downloading": "Pobieranie {{count}} moda",
     "downloading_plural": "Pobieranie {{count}} modów",
@@ -5302,6 +5329,11 @@
     "activeProfile": "Aktywny profil",
     "selectProfile": "Wybierz profil",
     "manage": "Zarządzaj profilami",
+    "editNamed": "",
+    "deleteNamed": "",
+    "activateNamed": "",
+    "inactive": "",
+    "switching": "",
     "manageDescription": "Twórz, edytuj i przełączaj między różnymi profilami modów. Każdy profil pamięta, które mody masz włączone.",
     "createNew": "Utwórz nowy profil",
     "create": "Utwórz",

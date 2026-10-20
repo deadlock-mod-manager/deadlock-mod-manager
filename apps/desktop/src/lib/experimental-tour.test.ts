@@ -3,8 +3,7 @@ import { enableTourFeatures } from "./experimental-tour";
 import type { ExperimentalFeature } from "./store/slices/ui";
 
 const current = {
-  "server-browser": false,
-  "custom-maps": true,
+  "custom-maps": false,
   "performance-configs": false,
   "mod-foundry": false,
   "player-stats": true,
@@ -18,10 +17,10 @@ describe("tour opt-in", () => {
     expect(enableTourFeatures(current, [])).toEqual(current);
   });
   it("enables only selected features while preserving existing choices", () => {
-    const result = enableTourFeatures(current, ["server-browser"]);
-    expect(result).toEqual({ ...current, "server-browser": true });
-    expect(current["server-browser"]).toBe(false);
-    expect(result["custom-maps"]).toBe(true);
+    const result = enableTourFeatures(current, ["custom-maps"]);
+    expect(result).toEqual({ ...current, "custom-maps": true });
+    expect(current["custom-maps"]).toBe(false);
+    expect(result["player-stats"]).toBe(true);
     expect(result["mod-foundry"]).toBe(false);
   });
 });

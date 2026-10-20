@@ -1,21 +1,21 @@
 {
   "meta": {
-    "name": "",
+    "name": "Falha ao salvar ordem dos mods",
     "title": "Como corrigir \"Failed to save mod order\" no Deadlock Mod Manager",
     "description": "Erro Failed to save mod order (Falha ao salvar ordem dos mods)? Feche o Deadlock, libere os .vpk travados, ajuste as permissões e salve de novo."
   },
   "hero": {
     "eyebrow": "Correção de erro",
-    "title": "",
+    "title": "Falha ao salvar ordem dos mods",
     "intro": "Salvar a ordem de carregamento renomeia os arquivos dos seus mods para o Deadlock carregá-los na nova ordem. Quando um arquivo está travado ou protegido, a renomeação é desfeita e o app mostra este erro. A mensagem logo abaixo diz o motivo.",
     "errorSource": "Deadlock Mod Manager, ao salvar em Gerenciar Ordem de Carregamento de Mods"
   },
   "errorText": {
-    "message": "",
+    "message": "Falha ao salvar ordem dos mods",
     "causes": {
-      "gameRunning": "",
+      "gameRunning": "Jogo em execução",
       "fileInUse": "",
-      "vpkInUse": "",
+      "vpkInUse": "Arquivos VPK estão em uso e não podem ser excluídos",
       "accessDenied": "",
       "shardsFull": ""
     }

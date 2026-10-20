@@ -1,4 +1,12 @@
 {
+  "modelConflict": {
+    "title": "",
+    "body": "",
+    "useSkin": "",
+    "keepCurrent": "",
+    "keptCurrent": "",
+    "replaced": ""
+  },
   "launchRepair": {
     "title_one": "",
     "title_other": "",
@@ -2272,6 +2280,24 @@
     "at": "在"
   },
   "myMods": {
+    "selection": {
+      "start": "",
+      "working": "",
+      "done": "",
+      "selectMod": "",
+      "count_one": "",
+      "count_other": "",
+      "selectFiltered": "",
+      "clear": "",
+      "enable": "",
+      "disable": "",
+      "enableTitle": "",
+      "enableBody": "",
+      "disableTitle": "",
+      "disableBody": "",
+      "disabled_one": "",
+      "disabled_other": ""
+    },
     "compatibility": {
       "review": "",
       "reviewDescription": "",
@@ -2825,6 +2851,7 @@
     "next": "下一页"
   },
   "downloads": {
+    "failed": "",
     "alreadyQueued": "该模组的下载已在队列中。请等待其完成，或先取消。",
     "downloading": "正在下载 {{count}} 个模组",
     "downloading_plural": "正在下载 {{count}} 个模组",
@@ -5302,6 +5329,11 @@
     "activeProfile": "当前配置文件",
     "selectProfile": "选择配置",
     "manage": "管理配置",
+    "editNamed": "",
+    "deleteNamed": "",
+    "activateNamed": "",
+    "inactive": "",
+    "switching": "",
     "manageDescription": "创建、编辑和切换不同的模组配置。每个配置都会记住你启用了哪些模组。",
     "createNew": "创建新配置",
     "create": "创建",

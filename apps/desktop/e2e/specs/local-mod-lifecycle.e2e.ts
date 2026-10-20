@@ -4,6 +4,7 @@ import { closeApplication } from "../support/application-exit";
 import { $, browser, expect } from "@wdio/globals";
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { z } from "zod";
 import {
   assertLifecycleDisk,
@@ -63,6 +64,9 @@ const toggle = async (
 
 describe("local mod lifecycle", () => {
   it("keeps UI, manifest, store, and bytes consistent across a fresh process", async () => {
+    const recoveryCase =
+      process.env.DMM_E2E_CASE_ID === "local-mod-name-recovery";
+    const settledStatus = recoveryCase ? "downloaded" : "installed";
     const runtime = await startApplication();
     const world = runtime.roots.world;
     const checkpointPath = path.join(
@@ -70,20 +74,41 @@ describe("local mod lifecycle", () => {
       "artifacts",
       "lifecycle-checkpoint.json",
     );
-    if (process.env.DMM_E2E_PHASE === "import-toggle") {
+    if (
+      process.env.DMM_E2E_PHASE === "import-toggle" ||
+      process.env.DMM_E2E_PHASE === "import"
+    ) {
       const link = await $('a[href="/my-mods"]');
       await link.waitForClickable();
       await link.click();
       const addLocal = await $("button=Add Local Mod");
       await addLocal.waitForClickable();
       await addLocal.click();
-      await selectNativeFixture(runtime.processId, world, async () => {
-        const dropArea = await $(
-          '[role="button"][aria-label="Drop files/folders here, or click to select"]',
+      const dropSelector =
+        '[role="button"][aria-label="Drop files/folders here, or click to select"]';
+      const dropArea = await $(dropSelector);
+      await dropArea.waitForClickable();
+      if (process.env.DMM_E2E_CASE_ID === "local-mod-name-recovery") {
+        await browser.execute(
+          (selector: string, uri: string) => {
+            const transfer = new DataTransfer();
+            transfer.setData("text/uri-list", uri);
+            document.querySelector(selector)?.dispatchEvent(
+              new DragEvent("drop", {
+                bubbles: true,
+                cancelable: true,
+                dataTransfer: transfer,
+              }),
+            );
+          },
+          dropSelector,
+          pathToFileURL(path.join(world, "fixtures", "e2e-local-mod.vpk")).href,
         );
-        await dropArea.waitForClickable();
-        await dropArea.click();
-      });
+      } else {
+        await selectNativeFixture(runtime.processId, world, () =>
+          dropArea.click(),
+        );
+      }
       const add = await $('[role="dialog"]').$("button=Add");
       await add.waitForClickable();
       await add.click();
@@ -104,9 +129,11 @@ describe("local mod lifecycle", () => {
       expect(parsed.entries.map((entry) => entry.fullPath)).toEqual([
         "scripts/e2e-lifecycle.txt",
       ]);
-      await toggle(world, modId, true, "enabled");
-      await toggle(world, modId, false, "disabled");
-      await toggle(world, modId, true, "reenabled");
+      if (!recoveryCase) {
+        await toggle(world, modId, true, "enabled");
+        await toggle(world, modId, false, "disabled");
+        await toggle(world, modId, true, "reenabled");
+      }
       await writeFile(
         checkpointPath,
         JSON.stringify({ modId, processId: runtime.processId }),
@@ -119,14 +146,14 @@ describe("local mod lifecycle", () => {
       await openLibrary();
       await expect($('[role="switch"]')).toHaveAttribute(
         "aria-checked",
-        "true",
+        String(!recoveryCase),
       );
-      await waitForStatus(world, "installed");
+      await waitForStatus(world, settledStatus);
       await assertLifecycleDisk(
         world,
         "restarted",
         checkpoint.modId,
-        "installed",
+        settledStatus,
       );
       const remove = await $('button[aria-label="Remove mod"]');
       await remove.waitForClickable();
@@ -148,7 +175,9 @@ describe("local mod lifecycle", () => {
       world,
       `closed-${process.env.DMM_E2E_PHASE}`,
       checkpoint.modId,
-      process.env.DMM_E2E_PHASE === "import-toggle" ? "installed" : "deleted",
+      process.env.DMM_E2E_PHASE === "restart-delete"
+        ? "deleted"
+        : settledStatus,
     );
   });
 });

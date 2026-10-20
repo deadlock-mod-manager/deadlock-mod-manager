@@ -24,6 +24,7 @@ import {
   Trash2,
   Users,
 } from "@deadlock-mods/ui/icons";
+import { useIsMutating } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
@@ -69,6 +70,7 @@ export const ProfileManagerDialog = ({
   useSyncProfiles(open);
 
   const {
+    isSwitching: profileSwitchPending,
     getAllProfiles,
     getActiveProfile,
     deleteProfile,
@@ -76,6 +78,8 @@ export const ProfileManagerDialog = ({
     syncProfilesWithFilesystem,
   } = usePersistedStore();
 
+  const bulkPending = useIsMutating({ mutationKey: ["library-bulk"] }) > 0;
+  const isSwitching = profileSwitchPending || bulkPending;
   const profiles = getAllProfiles();
   const activeProfile = getActiveProfile();
 
@@ -212,6 +216,14 @@ export const ProfileManagerDialog = ({
               </DialogDescription>
             </DialogHeader>
           </div>
+          {profileSwitchPending && (
+            <p
+              role='status'
+              className='flex items-center gap-2 text-sm text-muted-foreground'>
+              <RefreshCw aria-hidden className='size-4 animate-spin' />
+              {t("profiles.switching")}
+            </p>
+          )}
           <div className='flex-1 overflow-auto'>
             <div className='grid gap-4 pb-4'>
               {profiles.map((profile) => (
@@ -234,6 +246,13 @@ export const ProfileManagerDialog = ({
                             </Badge>
                           )}
                           <Button
+                            aria-label={t("profiles.editNamed", {
+                              profileName: profile.name,
+                            })}
+                            title={t("profiles.editNamed", {
+                              profileName: profile.name,
+                            })}
+                            disabled={isSwitching}
                             variant='transparent'
                             size='sm'
                             onClick={() => setEditingProfile(profile.id)}>
@@ -249,22 +268,32 @@ export const ProfileManagerDialog = ({
                       <div className='flex items-center gap-2 ml-4'>
                         <div className='flex items-center gap-2'>
                           <Switch
+                            disabled={isSwitching}
                             checked={profile.id === activeProfile?.id}
                             onCheckedChange={(checked) => {
                               if (checked && profile.id !== activeProfile?.id) {
                                 handleSetActive(profile.id);
                               }
                             }}
-                            aria-label={`Activate ${profile.name} profile`}
+                            aria-label={t("profiles.activateNamed", {
+                              profileName: profile.name,
+                            })}
                           />
                           <span className='text-sm font-medium'>
                             {profile.id === activeProfile?.id
-                              ? "Active"
-                              : "Inactive"}
+                              ? t("profiles.active")
+                              : t("profiles.inactive")}
                           </span>
                         </div>
                         {!profile.isDefault && (
                           <Button
+                            aria-label={t("profiles.deleteNamed", {
+                              profileName: profile.name,
+                            })}
+                            title={t("profiles.deleteNamed", {
+                              profileName: profile.name,
+                            })}
+                            disabled={isSwitching}
                             variant='outline'
                             size='sm'
                             onClick={() =>
@@ -354,7 +383,7 @@ export const ProfileManagerDialog = ({
           <DialogFooter>
             <Button
               onClick={handleSyncProfiles}
-              disabled={isSyncing}
+              disabled={isSyncing || isSwitching}
               variant='outline'
               icon={
                 <RefreshCw
@@ -364,11 +393,12 @@ export const ProfileManagerDialog = ({
               {t("profiles.sync")}
             </Button>
             <Button
+              disabled={isSwitching}
               onClick={() => setShowCreateDialog(true)}
               icon={<Plus className='w-4 h-4' />}>
               {t("profiles.createNew")}
             </Button>
-            <ProfileImportDialog />
+            <ProfileImportDialog disabled={isSwitching} />
           </DialogFooter>
         </DialogContent>
       </Dialog>

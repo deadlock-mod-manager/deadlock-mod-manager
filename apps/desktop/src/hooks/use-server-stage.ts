@@ -1,6 +1,7 @@
 import type { ServerBrowserEntry } from "@deadlock-mods/shared";
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getModDownloads } from "@/lib/api-client";
 import { downloadManager } from "@/lib/download/manager";
 import { getErrorMessage } from "@/lib/errors";
@@ -13,6 +14,10 @@ import {
   type ModDownloadItem,
   ModStatus,
 } from "@/types/mods";
+import type {
+  DeadworksContentResult,
+  DeadworksMismatch,
+} from "./use-deadworks-content-progress";
 import type { ResolvedRequirementStatus } from "./use-server-join";
 import { invokeGuarded } from "@/lib/game-guard";
 
@@ -24,6 +29,7 @@ export type ServerStagingPhase =
   | "awaiting-custom-confirm"
   | "downloading-custom"
   | "downloading-server-content"
+  | "awaiting-mismatch-confirm"
   | "patching-gameinfo"
   | "ready"
   | "error";
@@ -47,6 +53,7 @@ export type ServerStagingState = {
   currentRequirement: string | null;
   pendingCustomDownloads: CustomDownloadPreview[] | null;
   pendingFileSelection: PendingFileSelection | null;
+  pendingMismatches: DeadworksMismatch[] | null;
 };
 
 export type StageServerOptions = {
@@ -113,9 +120,11 @@ const initialState: ServerStagingState = {
   currentRequirement: null,
   pendingCustomDownloads: null,
   pendingFileSelection: null,
+  pendingMismatches: null,
 };
 
 export const useServerStage = () => {
+  const { t } = useTranslation();
   const [state, setState] = useState<ServerStagingState>(initialState);
   const recordStagedServer = usePersistedStore((s) => s.recordStagedServer);
   const recordJoin = usePersistedStore((s) => s.recordJoin);
@@ -127,6 +136,7 @@ export const useServerStage = () => {
   const customConfirmResolverRef = useRef<((proceed: boolean) => void) | null>(
     null,
   );
+  const mismatchResolverRef = useRef<((accept: boolean) => void) | null>(null);
   const fileSelectionResolverRef = useRef<
     ((selection: ModDownloadItem[] | null) => void) | null
   >(null);
@@ -144,6 +154,23 @@ export const useServerStage = () => {
       }).finally(() => {
         customConfirmResolverRef.current = null;
         setState((s) => ({ ...s, pendingCustomDownloads: null }));
+      });
+    },
+    [],
+  );
+
+  const awaitMismatchConfirmation = useCallback(
+    (items: DeadworksMismatch[]): Promise<boolean> => {
+      setState((s) => ({
+        ...s,
+        phase: "awaiting-mismatch-confirm",
+        pendingMismatches: items,
+      }));
+      return new Promise<boolean>((resolve) => {
+        mismatchResolverRef.current = resolve;
+      }).finally(() => {
+        mismatchResolverRef.current = null;
+        setState((s) => ({ ...s, pendingMismatches: null }));
       });
     },
     [],
@@ -339,10 +366,26 @@ export const useServerStage = () => {
             phase: "downloading-server-content",
             currentRequirement: null,
           }));
-          await invokeGuarded("download_deadworks_content", {
-            serverId: server.id,
-            serverFolder: folderName,
-          });
+          const address = server.connect_code;
+          const result = await invokeGuarded<DeadworksContentResult>(
+            "download_deadworks_content",
+            { address, acceptMismatch: [] },
+          );
+          if (result.mismatched.length > 0) {
+            // The hash is a build id, not authentication: a mismatch means the
+            // host is stale, which only the server's host can fix.
+            if (!(await awaitMismatchConfirmation(result.mismatched))) {
+              throw new Error(t("servers.staging.mismatchDeclined"));
+            }
+            setState((s) => ({ ...s, phase: "downloading-server-content" }));
+            await invokeGuarded<DeadworksContentResult>(
+              "download_deadworks_content",
+              {
+                address,
+                acceptMismatch: result.mismatched.map((m) => m.key),
+              },
+            );
+          }
         }
 
         setState((s) => ({
@@ -417,9 +460,15 @@ export const useServerStage = () => {
           fileSelectionResolverRef.current(null);
           fileSelectionResolverRef.current = null;
         }
+        if (mismatchResolverRef.current) {
+          mismatchResolverRef.current(false);
+          mismatchResolverRef.current = null;
+        }
       }
     },
     [
+      t,
+      awaitMismatchConfirmation,
       recordStagedServer,
       recordJoin,
       evictStagedServersIfNeeded,
@@ -437,6 +486,14 @@ export const useServerStage = () => {
     customConfirmResolverRef.current?.(false);
   }, []);
 
+  const acceptMismatches = useCallback(() => {
+    mismatchResolverRef.current?.(true);
+  }, []);
+
+  const declineMismatches = useCallback(() => {
+    mismatchResolverRef.current?.(false);
+  }, []);
+
   const confirmFileSelection = useCallback((selection: ModDownloadItem[]) => {
     fileSelectionResolverRef.current?.(selection);
   }, []);
@@ -452,6 +509,7 @@ export const useServerStage = () => {
     if (fileSelectionResolverRef.current) {
       fileSelectionResolverRef.current(null);
     }
+    mismatchResolverRef.current?.(false);
     setState(initialState);
   }, []);
 
@@ -461,6 +519,8 @@ export const useServerStage = () => {
     reset,
     confirmCustomDownloads,
     skipCustomDownloads,
+    acceptMismatches,
+    declineMismatches,
     confirmFileSelection,
     cancelFileSelection,
   };

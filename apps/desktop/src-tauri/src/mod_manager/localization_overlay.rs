@@ -19,8 +19,8 @@ mod animation_model_evidence;
 mod animation_poses;
 mod animation_skeleton;
 pub mod asset_compatibility;
-mod camera_controls;
 mod camera_attachment_frame;
+mod camera_controls;
 #[cfg(test)]
 mod compatibility_corpus;
 mod compiled_resource;
@@ -30,9 +30,12 @@ mod hero_rebase;
 mod material_compatibility;
 mod model_animation;
 mod model_camera;
+mod model_dependencies;
 mod model_relocation;
 mod model_sounds;
 mod model_text;
+#[cfg(test)]
+mod profile_benchmark;
 mod repair_scope;
 mod resources;
 pub mod vdata_compatibility;
@@ -731,22 +734,20 @@ impl LocalizationOverlayPlan {
             continue;
           }
 
-          let base = match bases.get(&normalized_file) {
-            Some(base) => base.clone(),
-            None => {
-              let parsed = if let Some(bytes) = resources.game_bytes(&normalized_file)? {
-                game_text.insert(normalized_file.clone());
-                parse_localization_bytes(&bytes, &format!("game:{file_path}"))?.file
-              } else {
-                LocalizationFile {
-                  language: infer_language(&file_path),
-                  tokens: BTreeMap::new(),
-                }
-              };
-              bases.insert(normalized_file.clone(), parsed.clone());
-              parsed
-            }
-          };
+          if !bases.contains_key(&normalized_file) {
+            let parsed = if let Some(bytes) = resources.game_bytes(&normalized_file)? {
+              game_text.insert(normalized_file.clone());
+              parse_localization_bytes(&bytes, &format!("game:{file_path}"))?.file
+            } else {
+              LocalizationFile {
+                language: infer_language(&file_path),
+                tokens: BTreeMap::new(),
+              }
+            };
+            bases.insert(normalized_file.clone(), parsed);
+          }
+          let base = &bases[&normalized_file];
+          let base_tokens = token_index(&base.tokens);
 
           let parsed_mod_file = archive
             .extract_entry(&file_path)
@@ -789,14 +790,19 @@ impl LocalizationOverlayPlan {
           let mut changed_in_file = 0usize;
           let mut stale_in_file = 0usize;
           // A copy of a game file hides every game token it lacks.
+          let mod_tokens: BTreeSet<_> = mod_file
+            .tokens
+            .keys()
+            .map(|token| token.to_ascii_lowercase())
+            .collect();
           let omits_game_text = game_text.contains(&normalized_file)
-            && base
-              .tokens
-              .keys()
-              .any(|token| get_case_insensitive(&mod_file.tokens, token).is_none());
+            && base_tokens.keys().any(|token| !mod_tokens.contains(token));
 
           for (token, value) in mod_file.tokens {
-            let vanilla_value = get_case_insensitive(&base.tokens, &token).map(str::to_string);
+            let vanilla_value = base_tokens
+              .get(&token.to_ascii_lowercase())
+              .copied()
+              .map(str::to_string);
             if vanilla_value.as_deref() == Some(value.as_str()) {
               ignored_vanilla_tokens += 1;
               continue;
@@ -2422,6 +2428,19 @@ fn escape_keyvalues(value: &str) -> String {
     .replace('\t', "\\t")
 }
 
+/// Preserve the first key in BTree order when a file contains case variants,
+/// matching the existing lookup semantics without scanning every token per query.
+fn token_index(tokens: &BTreeMap<String, String>) -> BTreeMap<String, &str> {
+  let mut index = BTreeMap::new();
+  for (key, value) in tokens {
+    index
+      .entry(key.to_ascii_lowercase())
+      .or_insert(value.as_str());
+  }
+  index
+}
+
+#[cfg(test)]
 fn get_case_insensitive<'a>(tokens: &'a BTreeMap<String, String>, key: &str) -> Option<&'a str> {
   tokens
     .iter()
@@ -3028,6 +3047,24 @@ mod tests {
     assert!(error.contains("Reinstall"), "{error}");
   }
 
+  #[test]
+  fn indexed_tokens_preserve_case_variant_precedence_and_non_ascii_keys() {
+    let tokens = BTreeMap::from([
+      ("Hero".into(), "first".into()),
+      ("hero".into(), "second".into()),
+      ("HÉRO".into(), "accent".into()),
+      ("héरो".into(), "other".into()),
+    ]);
+    let index = token_index(&tokens);
+    for name in ["Hero", "hero", "HERO", "HÉRO", "héro", "héरो", "missing"] {
+      assert_eq!(
+        index.get(&name.to_ascii_lowercase()).copied(),
+        get_case_insensitive(&tokens, name)
+      );
+    }
+    assert_eq!(index.get("hero"), Some(&"first"));
+  }
+
   const FILE_PATH: &str = "resource/localization/citadel_heroes/citadel_heroes_english.txt";
   const ABILITIES_VDATA_PATH: &str = "scripts/abilities.vdata_c";
 
@@ -3253,7 +3290,11 @@ mod tests {
     let citadel = temp.path().join("citadel");
     let base_path = citadel.join(FILE_PATH);
     fs::create_dir_all(base_path.parent().unwrap()).unwrap();
-    fs::write(&base_path, render_localization(&localization(&[("hero_test", "Hero")]))).unwrap();
+    fs::write(
+      &base_path,
+      render_localization(&localization(&[("hero_test", "Hero")])),
+    )
+    .unwrap();
     pack_vdata(&citadel, "pak01", vec![("hero_a".to_string(), hero(1))]);
     let broken = LocalizationModInput {
       mod_id: "broken".into(),
@@ -3266,7 +3307,11 @@ mod tests {
         ],
       )],
     };
-    let valid = packed_mod(temp.path(), "valid", &localization(&[("hero_test", "Renamed")]));
+    let valid = packed_mod(
+      temp.path(),
+      "valid",
+      &localization(&[("hero_test", "Renamed")]),
+    );
     let valid_data = LocalizationModInput {
       mod_id: "valid-data".into(),
       vpks: vec![pack_vdata(
@@ -3291,7 +3336,10 @@ mod tests {
       );
       assert!(analysis.data_warnings.iter().any(|warning| {
         warning.mod_id == "broken"
-          && matches!(warning.kind, vdata_compatibility::WarningKind::UnreadableData)
+          && matches!(
+            warning.kind,
+            vdata_compatibility::WarningKind::UnreadableData
+          )
       }));
       assert_eq!(analysis.changed_tokens, usize::from(!broken_wins));
       assert_eq!(plan.compiled_data.is_empty(), broken_wins);
@@ -3300,7 +3348,8 @@ mod tests {
 
   #[test]
   fn utf16_localization_files_are_read() {
-    let text = "\"lang\"\n{\n\"Language\" \"English\"\n\"Tokens\"\n{\n\"hero_test\" \"Héros\"\n}\n}\n";
+    let text =
+      "\"lang\"\n{\n\"Language\" \"English\"\n\"Tokens\"\n{\n\"hero_test\" \"Héros\"\n}\n}\n";
     let mut bytes = vec![0xFF, 0xFE];
     bytes.extend(text.encode_utf16().flat_map(u16::to_le_bytes));
     let parsed = parse_localization_bytes(&bytes, "utf16").unwrap();

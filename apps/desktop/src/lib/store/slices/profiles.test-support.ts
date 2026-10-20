@@ -88,10 +88,19 @@ export const snapshotMissing = (
 export const profileTestBackend: {
   readSnapshot: (folder: string | null) => Promise<ProfileVpkSnapshot>;
   readMetadata: (id: string) => Promise<ModDto>;
+  readLocalMetadata: (
+    id: string,
+  ) => Promise<
+    Pick<
+      ModDto,
+      "name" | "author" | "description" | "remoteUrl" | "category" | "isMap"
+    >
+  >;
   forgetOrphans: (folder: string | null, modIds: string[]) => Promise<string[]>;
 } = {
   readSnapshot: async () => snapshotFor(),
   readMetadata: async (id) => modFor(id),
+  readLocalMetadata: async (id) => modFor(id),
   forgetOrphans: async (_folder, modIds) => modIds,
 };
 mock.module("@tauri-apps/api/core", () => ({
@@ -111,4 +120,8 @@ mock.module("@tauri-apps/api/core", () => ({
 }));
 mock.module("@/lib/api-client", () => ({
   getMod: (id: string) => profileTestBackend.readMetadata(id),
+}));
+mock.module("@/lib/mods/local-metadata", () => ({
+  readLocalModMetadata: (id: string) =>
+    profileTestBackend.readLocalMetadata(id),
 }));

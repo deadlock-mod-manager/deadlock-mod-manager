@@ -12,6 +12,7 @@ import {
   assertDownloadNetwork,
 } from "./download-fixtures";
 import { prepareProfileWorld } from "./profile-fixtures";
+import { prepareCompatibilityFixWorld } from "./compatibility-fix-fixtures";
 import { prepareConflictWorld } from "./conflict-fixtures";
 import { prepareFilesystemWorld } from "./filesystem-fixtures";
 import { prepareManifestRepairWorld } from "./manifest-repair-fixtures";
@@ -32,6 +33,7 @@ import { contentRoutes, prepareContentWorld } from "./content-fixtures";
 import { preparePresenceCache } from "./settings-fixtures";
 import { grimoireRoutes, prepareGrimoireWorld } from "./interchange-fixtures";
 import { prepareHeroSkinsWorld } from "./hero-skins-fixtures";
+import { prepareHeroSwapWorld } from "./hero-swap-fixtures";
 import {
   catalogRefreshRoutes,
   assertCatalogRefreshNetwork,
@@ -39,6 +41,7 @@ import {
 import { prepareLegacyCatalog } from "./catalog-upgrade-fixtures";
 import { prepareOnboardingWorld } from "./onboarding-fixtures";
 import {
+  libraryAuthorRoutes,
   legacyLibraryAuthorRoutes,
   prepareLegacyLibraryAuthorWorld,
 } from "./library-author-fixtures";
@@ -274,6 +277,38 @@ const stats: Definition = {
   prepare: prepareStatsDashboardWorld,
   verifyNetwork: assertStatsDashboardNetwork,
 };
+const onboarding: Definition = {
+  ...defaults,
+  family: "onboarding",
+  spec: "onboarding",
+  phases: ["skip-analysis"],
+  prepare: (world) => prepareOnboardingWorld(world, true),
+  routes: async () => () => [
+    {
+      method: "POST",
+      path: "/api/v2/vpk-analyse-hashes",
+      status: 200,
+      body: "[]",
+    },
+    {
+      method: "GET",
+      path: "/apiv11/Util/Fileservers",
+      status: 200,
+      body: '{"_aRecords":[]}',
+    },
+  ],
+  verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) => {
+    if (
+      !requests.some(
+        (request) =>
+          request.method === "POST" &&
+          request.url.includes("/api/v2/vpk-analyse-hashes") &&
+          request.responseStatus === 200,
+      )
+    )
+      throw new Error("Onboarding never analyzed the existing VPK");
+  },
+};
 export const scenarios = {
   monkey: {
     ...defaults,
@@ -380,7 +415,7 @@ export const scenarios = {
     family: "navigation",
     spec: "library-author-navigation",
     phases: ["author-navigation"],
-    routes: contentRoutes,
+    routes: libraryAuthorRoutes,
   },
   "gamebanana-detected-files": {
     ...defaults,
@@ -411,37 +446,10 @@ export const scenarios = {
         );
     },
   },
-  "onboarding-skip-analysis": {
-    ...defaults,
-    family: "onboarding",
-    spec: "onboarding",
-    phases: ["skip-analysis"],
-    prepare: prepareOnboardingWorld,
-    routes: async () => () => [
-      {
-        method: "POST",
-        path: "/api/v2/vpk-analyse-hashes",
-        status: 200,
-        body: "[]",
-      },
-      {
-        method: "GET",
-        path: "/apiv11/Util/Fileservers",
-        status: 200,
-        body: '{"_aRecords":[]}',
-      },
-    ],
-    verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) => {
-      if (
-        !requests.some(
-          (request) =>
-            request.method === "POST" &&
-            request.url.includes("/api/v2/vpk-analyse-hashes") &&
-            request.responseStatus === 200,
-        )
-      )
-        throw new Error("Onboarding never analyzed the existing VPK");
-    },
+  "onboarding-skip-analysis": onboarding,
+  "onboarding-telemetry-default": {
+    ...onboarding,
+    prepare: (world: CreatedWorld) => prepareOnboardingWorld(world, false),
   },
   "content-blur": {
     ...settings,
@@ -498,6 +506,12 @@ export const scenarios = {
     verifyNetwork: assertAppUpdateNetwork,
   },
   "local-mod-lifecycle": local,
+  "local-mod-name-recovery": {
+    ...local,
+    phases: ["import", "restart-delete"],
+    nativeInput: false,
+    platforms: ["win32", "linux"],
+  },
   "local-mod-large-picker-vpk": { ...localLargeOnDisk, nativeInput: true },
   "local-mod-large-picker-zip": { ...localLargeOnDisk, nativeInput: true },
   "local-mod-large-drop-vpk": localLargeInPage,
@@ -507,6 +521,38 @@ export const scenarios = {
   "profiles-pointer": profiles,
   "profiles-keyboard": profiles,
   "conflicts-resolve": conflicts,
+  "bisect-conflicts": {
+    ...conflicts,
+    spec: "bisect-conflicts",
+    phases: ["bisect", "restart-restore"],
+  },
+  "conflicts-switch": {
+    ...conflicts,
+    spec: "model-conflict-switch",
+    phases: ["switch", "restart-switch"],
+  },
+  "hero-swap": {
+    ...conflicts,
+    spec: "hero-swap",
+    phases: ["swap", "restart-swap"],
+    prepare: async (world) => prepareHeroSwapWorld(world),
+  },
+  "compatibility-fix-persistence": {
+    ...defaults,
+    family: "compatibility",
+    spec: "compatibility-fix-persistence",
+    phases: ["library-changes"],
+    routes: profileRoutes,
+    prepare: async (world) => prepareCompatibilityFixWorld(world),
+  },
+  "library-selection": {
+    ...defaults,
+    family: "profiles",
+    spec: "library-selection",
+    phases: ["select", "restart-selection"],
+    routes: profileRoutes,
+    prepare: async (world: CreatedWorld) => prepareProfileWorld(world),
+  },
   "downloads-pause": downloads,
   "downloads-range": downloads,
   "downloads-cancel": { ...downloads, coverage: "ipc-recovery" },

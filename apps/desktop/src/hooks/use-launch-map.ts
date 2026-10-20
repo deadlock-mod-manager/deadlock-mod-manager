@@ -10,7 +10,7 @@ import { launchWithCompatibilityReview } from "@/lib/launch-with-compatibility-r
 import { getLaunchErrorMessage } from "@/lib/launch-error";
 import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
-import { getAdditionalArgs } from "@/lib/utils";
+import { getAdditionalArgs } from "@/lib/launch-options";
 
 export const useLaunchMap = (onSuccess?: () => void) => {
   const { t } = useTranslation();
@@ -29,11 +29,7 @@ export const useLaunchMap = (onSuccess?: () => void) => {
       const activeProfile = getActiveProfile();
       const profileFolder = activeProfile?.folderName ?? null;
 
-      const storeState = usePersistedStore.getState();
-      const additionalArgs = await getAdditionalArgs(
-        Object.values(storeState.settings),
-        storeState.gamePresenceEnabled,
-      );
+      const additionalArgs = await getAdditionalArgs();
 
       if (!(await prepareModFixes(profileFolder, () => {}))) return false;
       const launched = await launchWithCompatibilityReview(

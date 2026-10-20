@@ -1,10 +1,59 @@
+use super::model_conflict_switch::ConflictPolicy;
 use super::*;
 
 impl ModManager {
   pub fn install_mod(
     &mut self,
+    deadlock_mod: Mod,
+    profile_folder: Option<String>,
+  ) -> Result<Mod, Error> {
+    self.install_mod_resolving_conflicts(deadlock_mod, profile_folder, &[])
+  }
+
+  pub fn install_mod_resolving_conflicts(
+    &mut self,
+    deadlock_mod: Mod,
+    profile_folder: Option<String>,
+    confirmed_conflicts: &[String],
+  ) -> Result<Mod, Error> {
+    self.install_mod_with_conflict_policy(
+      deadlock_mod,
+      profile_folder,
+      ConflictPolicy::Replace(confirmed_conflicts),
+    )
+  }
+
+  pub fn install_mod_allowing_conflicts(
+    &mut self,
+    deadlock_mod: Mod,
+    profile_folder: Option<String>,
+    allowed_conflicts: &[String],
+  ) -> Result<Mod, Error> {
+    self.install_mod_with_conflict_policy(
+      deadlock_mod,
+      profile_folder,
+      ConflictPolicy::Allow(allowed_conflicts),
+    )
+  }
+
+  pub fn install_mod_for_bisect(
+    &mut self,
+    deadlock_mod: Mod,
+    profile_folder: Option<String>,
+    original_enabled: &[String],
+  ) -> Result<Mod, Error> {
+    self.install_mod_with_conflict_policy(
+      deadlock_mod,
+      profile_folder,
+      ConflictPolicy::RestoreBisect(original_enabled),
+    )
+  }
+
+  fn install_mod_with_conflict_policy(
+    &mut self,
     mut deadlock_mod: Mod,
     profile_folder: Option<String>,
+    conflict_policy: ConflictPolicy<'_>,
   ) -> Result<Mod, Error> {
     log::info!(
       "Starting installation (enable) of mod: {} (profile: {profile_folder:?})",
@@ -88,15 +137,35 @@ impl ModManager {
         .get(&deadlock_mod.id)
         .and_then(|entry| entry.order);
     }
-    let target_shard = Self::choose_shard_for(&addons_path, None, prefixed_vpks.len() as u32)?;
+    let conflicts = crate::mod_manager::conflicts::activation_model_conflicts(
+      &addons_path,
+      &manifest,
+      &deadlock_mod.id,
+      &prefixed_vpks,
+    )?;
+    let conflicts = conflict_policy.conflicts_to_disable(&deadlock_mod.id, conflicts)?;
+    let conflict_switch = super::model_conflict_switch::disable_conflicts(
+      &self.vpk_manager,
+      &addons_path,
+      &mut manifest,
+      &conflicts,
+    )?;
+    let target_shard = match Self::choose_shard_for(&addons_path, None, prefixed_vpks.len() as u32)
+    {
+      Ok(shard) => shard,
+      Err(error) => return Err(conflict_switch.rollback(error)),
+    };
     let enabled_dir = addons_path.shard_dir(target_shard);
 
-    let installed_vpks = self.vpk_manager.enable_vpks_in(
+    let installed_vpks = match self.vpk_manager.enable_vpks_in(
       &addons_path,
       &enabled_dir,
       &deadlock_mod.id,
       &prefixed_vpks,
-    )?;
+    ) {
+      Ok(vpks) => vpks,
+      Err(error) => return Err(conflict_switch.rollback(error)),
+    };
 
     deadlock_mod.installed_vpks = installed_vpks;
     deadlock_mod.original_vpk_names = prefixed_vpks
@@ -145,12 +214,21 @@ impl ModManager {
         &deadlock_mod.original_vpk_names,
         MissingVpkPolicy::Strict,
       );
-      return match rollback {
-        Ok(_) => Err(save_error),
-        Err(rollback_error) => Err(Error::RollbackFailed(format!(
+      let error = match rollback {
+        Ok(_) => save_error,
+        Err(rollback_error) => Error::RollbackFailed(format!(
           "Failed to save manifest: {save_error}. Failed to disable newly enabled VPKs: {rollback_error}"
-        ))),
+        )),
       };
+      return Err(conflict_switch.rollback(error));
+    }
+
+    conflict_switch.commit();
+    for id in &conflicts {
+      if let Some(mut disabled) = self.mod_repository.get_mod(id).cloned() {
+        disabled.installed_vpks.clear();
+        self.mod_repository.add_mod(disabled);
+      }
     }
 
     log::info!("Adding mod to managed mods list");

@@ -73,11 +73,32 @@ fn validate_download_url(url: &str) -> Result<(), Error> {
 pub async fn install_mod(
   deadlock_mod: Mod,
   profile_folder: Option<String>,
+  replace_conflicting_mods: Option<Vec<String>>,
+  allow_conflicting_mods: Option<Vec<String>>,
+  bisect_original_enabled: Option<Vec<String>>,
   guard_permit: Option<String>,
 ) -> Result<Mod, Error> {
   crate::game_guard::ensure_game_idle_locked("install_mod", guard_permit.as_deref())?;
   let mut mod_manager = MANAGER.lock().unwrap();
-  mod_manager.install_mod(deadlock_mod, profile_folder)
+  let replace = replace_conflicting_mods.unwrap_or_default();
+  let allow = allow_conflicting_mods.unwrap_or_default();
+  if let Some(original_enabled) = bisect_original_enabled {
+    if !replace.is_empty() || !allow.is_empty() {
+      return Err(Error::InvalidInput(
+        "Bisection cannot resolve conflicting mods".into(),
+      ));
+    }
+    return mod_manager.install_mod_for_bisect(deadlock_mod, profile_folder, &original_enabled);
+  }
+  if !allow.is_empty() {
+    if !replace.is_empty() {
+      return Err(Error::InvalidInput(
+        "Cannot both replace and keep conflicting mods".into(),
+      ));
+    }
+    return mod_manager.install_mod_allowing_conflicts(deadlock_mod, profile_folder, &allow);
+  }
+  mod_manager.install_mod_resolving_conflicts(deadlock_mod, profile_folder, &replace)
 }
 
 #[tauri::command]

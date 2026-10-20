@@ -1,6 +1,7 @@
 import { invoke } from "@tauri-apps/api/core";
 import { appLocalDataDir, join } from "@tauri-apps/api/path";
 import { useState } from "react";
+import { useModelConflictInstall } from "@/hooks/use-model-conflict-install";
 import { createLogger } from "@/lib/logger";
 import {
   applyDownloadTimeSelection,
@@ -29,6 +30,10 @@ export type InstallWithCollectionOptions = InstallAnalyticsOptions & {
   onFileTreeAnalyzed?: (mod: LocalMod, fileTree: ModFileTree) => void;
   /** Cancel instead of opening the file selector, for batch installs. */
   skipFileSelection?: boolean;
+  /** Restore only combinations from the diagnostic session's original setup. */
+  bisectOriginalEnabled?: string[];
+  /** Mods the user already chose to keep alongside this one. */
+  keepBothWith?: string[];
 };
 
 export type InstallWithCollectionFunction = (
@@ -50,6 +55,8 @@ export type UseInstallWithCollectionReturn = {
 };
 
 const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
+  const { mutateAsync: installWithConflictResolution } =
+    useModelConflictInstall();
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentFileTree, setCurrentFileTree] = useState<ModFileTree | null>(
@@ -112,15 +119,16 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         file_tree: fileTree,
       };
 
-      const result = await invokeGuarded<InstallableMod>("install_mod", {
-        deadlockMod: {
-          id: modData.remoteId,
-          name: modData.name,
-          is_map: modData.isMap,
-          file_tree: modData.file_tree,
-        },
+      const result = await installWithConflictResolution({
+        mod: modData,
         profileFolder,
+        bisectOriginalEnabled: options.bisectOriginalEnabled,
+        keepBothWith: options.keepBothWith,
       });
+      if (!result) {
+        options.onCancel?.(mod, "modelConflict");
+        return null;
+      }
       await syncInstalledVpksFromManifest(profileFolder);
 
       options.onComplete(mod, result);

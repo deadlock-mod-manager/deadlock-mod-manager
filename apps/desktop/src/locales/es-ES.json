@@ -1,4 +1,12 @@
 {
+  "modelConflict": {
+    "title": "",
+    "body": "",
+    "useSkin": "",
+    "keepCurrent": "",
+    "keptCurrent": "",
+    "replaced": ""
+  },
   "launchRepair": {
     "title_one": "",
     "title_other": "",
@@ -2272,6 +2280,24 @@
     "at": ""
   },
   "myMods": {
+    "selection": {
+      "start": "",
+      "working": "",
+      "done": "",
+      "selectMod": "",
+      "count_one": "",
+      "count_other": "",
+      "selectFiltered": "",
+      "clear": "",
+      "enable": "",
+      "disable": "",
+      "enableTitle": "",
+      "enableBody": "",
+      "disableTitle": "",
+      "disableBody": "",
+      "disabled_one": "",
+      "disabled_other": ""
+    },
     "compatibility": {
       "review": "",
       "reviewDescription": "",
@@ -2825,6 +2851,7 @@
     "next": ""
   },
   "downloads": {
+    "failed": "",
     "alreadyQueued": "",
     "downloading": "Descargando {{count}} Mod",
     "downloading_plural": "Descargando {{count}} Mods",
@@ -5302,6 +5329,11 @@
     "activeProfile": "",
     "selectProfile": "Seleccionar Perfil",
     "manage": "Gestionar Perfiles",
+    "editNamed": "",
+    "deleteNamed": "",
+    "activateNamed": "",
+    "inactive": "",
+    "switching": "",
     "manageDescription": "Crear, editar y cambiar entre diferentes perfiles de mod. Cada perfil recuerda qué mods tienes habilitados.",
     "createNew": "Crear Nuevo Perfil",
     "create": "Crear",
