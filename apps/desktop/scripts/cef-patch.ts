@@ -41,9 +41,14 @@ const DEPENDENCIES_HEADER = "[dependencies]";
 // On `feat/cef` the CEF runtime is a standalone crate and `tauri` no longer has
 // `wry`/`cef` features, so CEF builds swap the Wry feature for one enabling an
 // optional `tauri-runtime-cef` dependency.
-const TAURI_WRY_LINE =
-  'tauri-wry = ["tauri/wry", "dep:tauri-plugin-mcp-bridge"]';
-const CEF_FEATURE_LINES = 'tauri-wry = []\ncef = ["dep:tauri-runtime-cef"]';
+const TAURI_WRY_LINE = `tauri-wry = [
+  "tauri/wry",
+  "dep:tauri-plugin-mcp-bridge",
+  "tauri-plugin-dialog/gtk3",
+]`;
+// RFD's GTK worker can dispatch CEF's GLib callbacks off the Chromium UI thread.
+const CEF_FEATURE_LINES =
+  'tauri-wry = []\ncef = ["dep:tauri-runtime-cef", "tauri-plugin-dialog/xdg-portal"]';
 const CEF_DEPENDENCY_LINE = `tauri-runtime-cef = { git = "${TAURI_GIT}", tag = "${TAURI_CEF_TAG}", optional = true, features = ["devtools"] }`;
 
 const desktopDir = resolve(import.meta.dirname, "..");
@@ -134,7 +139,8 @@ function stripCefManifest(): boolean {
   // Match the dependency by prefix so cleanup still works after a pin bump.
   const updated = manifest
     .replace(/^tauri-runtime-cef = .*\n/m, "")
-    .replace(`${CEF_FEATURE_LINES}\n`, `${TAURI_WRY_LINE}\n`);
+    // Also restore setups injected before CEF selected its own dialog backend.
+    .replace(/^tauri-wry = \[\]\ncef = \[.*\]\n/m, `${TAURI_WRY_LINE}\n`);
 
   if (updated === manifest) {
     return false;

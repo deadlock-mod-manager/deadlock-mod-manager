@@ -15,7 +15,11 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 
 [features]
 default = ["tauri-wry"]
-tauri-wry = ["tauri/wry", "dep:tauri-plugin-mcp-bridge"]
+tauri-wry = [
+  "tauri/wry",
+  "dep:tauri-plugin-mcp-bridge",
+  "tauri-plugin-dialog/gtk3",
+]
 e2e-harness = [
   "dep:tauri-plugin-wdio",
   "dep:tauri-plugin-wdio-webdriver",
@@ -92,7 +96,8 @@ diesel = { version = "2.3.12", default-features = false, features = [
 diesel_migrations = "2.3.2"
 libsqlite3-sys = { version = "0.38", features = ["bundled"] }
 futures = "0.3"
-tauri-plugin-dialog = "2.7.1"
+# Select the Linux dialog backend per runtime; CEF cannot share RFD's GTK loop.
+tauri-plugin-dialog = { version = "2.7.1", default-features = false }
 memchr = "2.8.0"
 notify = "8.2.0"
 clap = { version = "4.6", features = ["derive"] }
