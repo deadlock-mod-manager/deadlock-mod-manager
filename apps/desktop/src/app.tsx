@@ -99,15 +99,47 @@ const App = ({ runtime, storage }: AppProps) => {
   } = useAutoUpdate(integrations?.updater !== "disabled");
 
   useEffect(() => {
-    if (!storage.ok && !hasReportedStorageFailure.current) {
+    if (hasReportedStorageFailure.current) return;
+    const recovery = runtime.stateFileRecovery;
+    const openFolder = recovery
+      ? {
+          label: t("persist.openFolder"),
+          onClick: () => {
+            invoke("show_in_folder", { path: recovery.folder }).catch(
+              (error) => {
+                logger.withError(error).warn("Failed to open state folder");
+              },
+            );
+          },
+        }
+      : undefined;
+
+    if (!storage.ok) {
       hasReportedStorageFailure.current = true;
       toast.error(t("persist.loadFailed"), {
-        description: t("persist.loadFailedDescription", {
-          reason: storage.reason ?? "unknown",
+        description: t(
+          recovery
+            ? "persist.lockedDescription"
+            : "persist.loadFailedDescription",
+          { reason: storage.reason ?? "unknown" },
+        ),
+        duration: Infinity,
+        closeButton: true,
+        action: openFolder,
+      });
+    } else if (recovery?.backupPath) {
+      hasReportedStorageFailure.current = true;
+      toast.warning(t("persist.resetTitle"), {
+        description: t("persist.resetDescription", {
+          reason: recovery.reason,
+          fileName: recovery.backupPath.split(/[\\/]/).pop(),
         }),
+        duration: Infinity,
+        closeButton: true,
+        action: openFolder,
       });
     }
-  }, [storage, t]);
+  }, [runtime, storage, t]);
 
   const dequeuePendingFontInstall = useCallback(() => {
     setPendingFontInstalls((currentQueue) => currentQueue.slice(1));

@@ -223,6 +223,20 @@ describe("storage write gate", () => {
     expect(status.reason).toContain("tauri plugin not ready");
   });
 
+  it("keeps the gate closed after a locked startup even when reads succeed", async () => {
+    storageModule.lockWriteGate("state.json: Access is denied");
+
+    expect(await storage.getItem("local-config")).toBe(null);
+    await storage.setItem("local-config", "defaults");
+    expect(memory.has("local-config")).toBe(false);
+
+    const status = await storageModule.storageReady();
+    expect(status).toEqual({
+      ok: false,
+      reason: "state.json: Access is denied",
+    });
+  });
+
   it("retries getItem and succeeds on the 3rd attempt", async () => {
     let callCount = 0;
     getStoreImpl = async () => {

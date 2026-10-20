@@ -32,6 +32,7 @@ pub use mod_manager::vdata_history::encode_history_index;
 pub mod proxy;
 mod reports;
 pub mod runtime_environment;
+mod state_file;
 mod steam_user;
 #[cfg_attr(target_os = "linux", path = "tray_linux.rs")]
 mod tray;
@@ -188,6 +189,10 @@ pub fn run() {
         app.add_capability(capability)?;
       }
 
+      state_file::inspect(&app.path().resolve(
+        runtime_environment::state_store_path(),
+        tauri::path::BaseDirectory::AppData,
+      )?);
       let _store = app.store(runtime_environment::state_store_path())?;
       if runtime_environment::current().e2e().is_none() {
         deep_link::setup(app)?;

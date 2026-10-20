@@ -14,6 +14,7 @@ import { syncProxyConfigToBackend } from "./proxy";
 import { usePersistedStore } from "./store";
 import {
   flushPendingWrites,
+  lockWriteGate,
   setStateStorePath,
   storageReady,
   type StorageReadyStatus,
@@ -31,6 +32,10 @@ const bootstrapApplication = async (): Promise<ApplicationBootstrap> => {
   const runtime = await initializeRuntimeBootstrap();
 
   setStateStorePath(runtime.stateStorePath);
+  const recovery = runtime.stateFileRecovery;
+  if (recovery && recovery.backupPath === null) {
+    lockWriteGate(recovery.reason);
+  }
   await load(runtime.stateStorePath, { autoSave: true, defaults: {} });
   await usePersistedStore.persist.rehydrate();
   const storage = await storageReady();

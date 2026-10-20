@@ -28,6 +28,11 @@ export type RuntimeBootstrap = {
     ingestion: "disabled";
     matchSync: "disabled";
   } | null;
+  stateFileRecovery: {
+    reason: string;
+    folder: string;
+    backupPath: string | null;
+  } | null;
 };
 
 let runtimeBootstrapPromise: Promise<RuntimeBootstrap> | null = null;
