@@ -3142,6 +3142,17 @@
     "steamPathSet": "",
     "invalidSteamPath": "",
     "steamPathToggleFailed": "",
+    "downloadCacheLocation": "",
+    "downloadCacheLocationDescription": "",
+    "currentDownloadCacheLocation": "",
+    "browseDownloadCacheLocation": "",
+    "resetDownloadCacheLocation": "",
+    "confirmMoveDownloadCache": "",
+    "confirmMoveDownloadCacheBody": "",
+    "confirmMoveDownloadCacheAction": "",
+    "movingDownloadCache": "",
+    "downloadCacheMoved": "",
+    "downloadCacheMoveFailed": "",
     "defaultSortValue": "Varsayılan sıralama değeri",
     "defaultSortDescription": "Modlar sayfası için varsayılan sıralama süzenini seçin.",
     "defaultSort": "Varsayılan sıralama",
@@ -4086,6 +4097,7 @@
     "analysisWarning": "Analiz tamamlandı! {{count}} eklenti bulundu, {{errors}} hata ile",
     "analysisError": "Yerel eklentiler analiz edilemedi",
     "registrationError": "",
+    "registrationErrorDetail": "",
     "foundAddons": "Bulunan Eklentiler",
     "noAddonsFound": "Oyun dizininizde eklenti bulunamadı",
     "errors": "Hatalar",
@@ -5771,7 +5783,11 @@
   },
   "persist": {
     "loadFailed": "",
-    "loadFailedDescription": ""
+    "loadFailedDescription": "",
+    "lockedDescription": "",
+    "resetTitle": "",
+    "resetDescription": "",
+    "openFolder": ""
   },
   "heroParser": {
     "idle": "",

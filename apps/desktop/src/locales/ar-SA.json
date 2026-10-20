@@ -3142,6 +3142,17 @@
     "steamPathSet": "",
     "invalidSteamPath": "",
     "steamPathToggleFailed": "",
+    "downloadCacheLocation": "",
+    "downloadCacheLocationDescription": "",
+    "currentDownloadCacheLocation": "",
+    "browseDownloadCacheLocation": "",
+    "resetDownloadCacheLocation": "",
+    "confirmMoveDownloadCache": "",
+    "confirmMoveDownloadCacheBody": "",
+    "confirmMoveDownloadCacheAction": "",
+    "movingDownloadCache": "",
+    "downloadCacheMoved": "",
+    "downloadCacheMoveFailed": "",
     "defaultSortValue": "قيمة الفرز الافتراضية",
     "defaultSortDescription": "اختر ترتيب الفرز الافتراضي لصفحة التعديلات.",
     "defaultSort": "الفرز الافتراضي",
@@ -4086,6 +4097,7 @@
     "analysisWarning": "اكتمل التحليل! تم العثور على {{count}} إضافة مع {{errors}} خطأ",
     "analysisError": "خطأ في تحليل الإضافات المحلية",
     "registrationError": "",
+    "registrationErrorDetail": "",
     "foundAddons": "الإضافات الموجودة",
     "noAddonsFound": "لم يتم العثور على إضافات",
     "errors": "الأخطاء",
@@ -5771,7 +5783,11 @@
   },
   "persist": {
     "loadFailed": "",
-    "loadFailedDescription": ""
+    "loadFailedDescription": "",
+    "lockedDescription": "",
+    "resetTitle": "",
+    "resetDescription": "",
+    "openFolder": ""
   },
   "heroParser": {
     "idle": "",

@@ -3142,6 +3142,17 @@
     "steamPathSet": "",
     "invalidSteamPath": "",
     "steamPathToggleFailed": "",
+    "downloadCacheLocation": "",
+    "downloadCacheLocationDescription": "",
+    "currentDownloadCacheLocation": "",
+    "browseDownloadCacheLocation": "",
+    "resetDownloadCacheLocation": "",
+    "confirmMoveDownloadCache": "",
+    "confirmMoveDownloadCacheBody": "",
+    "confirmMoveDownloadCacheAction": "",
+    "movingDownloadCache": "",
+    "downloadCacheMoved": "",
+    "downloadCacheMoveFailed": "",
     "defaultSortValue": "デフォルトソート値",
     "defaultSortDescription": "Modページのデフォルトの並び順を選択する",
     "defaultSort": "デフォルトソート",
@@ -4086,6 +4097,7 @@
     "analysisWarning": "分析完了！{{count}}個のアドオンが見つかりましたが、{{errors}}個のエラーがあります",
     "analysisError": "ローカルアドオンの分析に失敗しました",
     "registrationError": "",
+    "registrationErrorDetail": "",
     "foundAddons": "見つかったアドオン",
     "noAddonsFound": "ゲームディレクトリにアドオンが見つかりませんでした",
     "errors": "エラー",
@@ -5771,7 +5783,11 @@
   },
   "persist": {
     "loadFailed": "",
-    "loadFailedDescription": ""
+    "loadFailedDescription": "",
+    "lockedDescription": "",
+    "resetTitle": "",
+    "resetDescription": "",
+    "openFolder": ""
   },
   "heroParser": {
     "idle": "",

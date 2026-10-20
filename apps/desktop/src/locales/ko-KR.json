@@ -3142,6 +3142,17 @@
     "steamPathSet": "",
     "invalidSteamPath": "",
     "steamPathToggleFailed": "",
+    "downloadCacheLocation": "",
+    "downloadCacheLocationDescription": "",
+    "currentDownloadCacheLocation": "",
+    "browseDownloadCacheLocation": "",
+    "resetDownloadCacheLocation": "",
+    "confirmMoveDownloadCache": "",
+    "confirmMoveDownloadCacheBody": "",
+    "confirmMoveDownloadCacheAction": "",
+    "movingDownloadCache": "",
+    "downloadCacheMoved": "",
+    "downloadCacheMoveFailed": "",
     "defaultSortValue": "기본 정렬 값",
     "defaultSortDescription": "모드 페이지의 기본 정렬 순서를 선택하세요.",
     "defaultSort": "기본 정렬",
@@ -4086,6 +4097,7 @@
     "analysisWarning": "분석 완료! {{errors}} 오류가 있는 {{count}} 애드온을 찾았습니다.",
     "analysisError": "로컬 애드온 분석에 실패했습니다.",
     "registrationError": "",
+    "registrationErrorDetail": "",
     "foundAddons": "발견된 애드온",
     "noAddonsFound": "게임 디렉토리에 애드온이 없습니다",
     "errors": "오류",
@@ -5771,7 +5783,11 @@
   },
   "persist": {
     "loadFailed": "",
-    "loadFailedDescription": ""
+    "loadFailedDescription": "",
+    "lockedDescription": "",
+    "resetTitle": "",
+    "resetDescription": "",
+    "openFolder": ""
   },
   "heroParser": {
     "idle": "",

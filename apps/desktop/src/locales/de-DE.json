@@ -3142,6 +3142,17 @@
     "steamPathSet": "",
     "invalidSteamPath": "",
     "steamPathToggleFailed": "",
+    "downloadCacheLocation": "",
+    "downloadCacheLocationDescription": "",
+    "currentDownloadCacheLocation": "",
+    "browseDownloadCacheLocation": "",
+    "resetDownloadCacheLocation": "",
+    "confirmMoveDownloadCache": "",
+    "confirmMoveDownloadCacheBody": "",
+    "confirmMoveDownloadCacheAction": "",
+    "movingDownloadCache": "",
+    "downloadCacheMoved": "",
+    "downloadCacheMoveFailed": "",
     "defaultSortValue": "Standard-Sortierwert",
     "defaultSortDescription": "Wählen Sie die Standard-Sortierreihenfolge für die Mods-Seite.",
     "defaultSort": "Standard-Sortierung",
@@ -4086,6 +4097,7 @@
     "analysisWarning": "Analyse abgeschlossen! {{count}} Addon(s) mit {{errors}} Fehler(n) gefunden",
     "analysisError": "Fehler beim Analysieren lokaler Addons",
     "registrationError": "",
+    "registrationErrorDetail": "",
     "foundAddons": "Gefundene Addons",
     "noAddonsFound": "Keine Addons in Ihrem Spielverzeichnis gefunden",
     "errors": "Fehler",
@@ -5771,7 +5783,11 @@
   },
   "persist": {
     "loadFailed": "",
-    "loadFailedDescription": ""
+    "loadFailedDescription": "",
+    "lockedDescription": "",
+    "resetTitle": "",
+    "resetDescription": "",
+    "openFolder": ""
   },
   "heroParser": {
     "idle": "",

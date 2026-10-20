@@ -3142,6 +3142,17 @@
     "steamPathSet": "Steam 路径设置成功",
     "invalidSteamPath": "无效的 Steam 路径。请选择有效的 Steam 安装文件夹。",
     "steamPathToggleFailed": "无法更新 Steam 路径设置",
+    "downloadCacheLocation": "",
+    "downloadCacheLocationDescription": "",
+    "currentDownloadCacheLocation": "",
+    "browseDownloadCacheLocation": "",
+    "resetDownloadCacheLocation": "",
+    "confirmMoveDownloadCache": "",
+    "confirmMoveDownloadCacheBody": "",
+    "confirmMoveDownloadCacheAction": "",
+    "movingDownloadCache": "",
+    "downloadCacheMoved": "",
+    "downloadCacheMoveFailed": "",
     "defaultSortValue": "默认排序值",
     "defaultSortDescription": "选择模组页面的默认排序顺序。",
     "defaultSort": "默认排序",
@@ -4086,6 +4097,7 @@
     "analysisWarning": "分析完成！找到 {{count}} 个插件，其中有 {{errors}} 个错误",
     "analysisError": "分析本地插件失败",
     "registrationError": "",
+    "registrationErrorDetail": "",
     "foundAddons": "找到的插件",
     "noAddonsFound": "在你的游戏目录中未找到插件",
     "errors": "错误",
@@ -5770,8 +5782,12 @@
     "other": "通用"
   },
   "persist": {
-    "loadFailed": "加载保存的设置失败",
-    "loadFailedDescription": ""
+    "loadFailed": "",
+    "loadFailedDescription": "",
+    "lockedDescription": "",
+    "resetTitle": "",
+    "resetDescription": "",
+    "openFolder": ""
   },
   "heroParser": {
     "idle": "英雄解析器：闲置",

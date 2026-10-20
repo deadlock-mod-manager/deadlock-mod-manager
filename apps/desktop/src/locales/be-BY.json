@@ -3142,6 +3142,17 @@
     "steamPathSet": "Шлях да Steam паспяхова ўсталяваны",
     "invalidSteamPath": "Няслушны шлях да Steam. Калі ласка, выберыце сапраўдную папку ўсталявання Steam.",
     "steamPathToggleFailed": "Не атрымалася абнавіць налады шляху да Steam",
+    "downloadCacheLocation": "",
+    "downloadCacheLocationDescription": "",
+    "currentDownloadCacheLocation": "",
+    "browseDownloadCacheLocation": "",
+    "resetDownloadCacheLocation": "",
+    "confirmMoveDownloadCache": "",
+    "confirmMoveDownloadCacheBody": "",
+    "confirmMoveDownloadCacheAction": "",
+    "movingDownloadCache": "",
+    "downloadCacheMoved": "",
+    "downloadCacheMoveFailed": "",
     "defaultSortValue": "Значэнне сартавання па змаўчанні",
     "defaultSortDescription": "",
     "defaultSort": "",
@@ -4086,6 +4097,7 @@
     "analysisWarning": "",
     "analysisError": "",
     "registrationError": "",
+    "registrationErrorDetail": "",
     "foundAddons": "",
     "noAddonsFound": "",
     "errors": "",
@@ -5771,7 +5783,11 @@
   },
   "persist": {
     "loadFailed": "",
-    "loadFailedDescription": ""
+    "loadFailedDescription": "",
+    "lockedDescription": "",
+    "resetTitle": "",
+    "resetDescription": "",
+    "openFolder": ""
   },
   "heroParser": {
     "idle": "",

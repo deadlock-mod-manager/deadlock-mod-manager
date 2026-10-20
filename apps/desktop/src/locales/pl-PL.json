@@ -3142,6 +3142,17 @@
     "steamPathSet": "Ścieżka Steam ustawiona pomyślnie",
     "invalidSteamPath": "Nieprawidłowa ścieżka Steam. Proszę wybrać prawidłowy folder instalacyjny Steam.",
     "steamPathToggleFailed": "Nie udało się zaktualizować ustawień ścieżki Steam",
+    "downloadCacheLocation": "",
+    "downloadCacheLocationDescription": "",
+    "currentDownloadCacheLocation": "",
+    "browseDownloadCacheLocation": "",
+    "resetDownloadCacheLocation": "",
+    "confirmMoveDownloadCache": "",
+    "confirmMoveDownloadCacheBody": "",
+    "confirmMoveDownloadCacheAction": "",
+    "movingDownloadCache": "",
+    "downloadCacheMoved": "",
+    "downloadCacheMoveFailed": "",
     "defaultSortValue": "Domyślna wartość sortowania",
     "defaultSortDescription": "Wybierz domyślną kolejność sortowania dla strony z modami.",
     "defaultSort": "Domyślne sortowanie",
@@ -4086,6 +4097,7 @@
     "analysisWarning": "Analiza zakończona! Znaleziono {{count}} dodatek(-ów) z {{errors}} błędem(-ami)",
     "analysisError": "Nie udało się przeanalizować lokalnych dodatków",
     "registrationError": "",
+    "registrationErrorDetail": "",
     "foundAddons": "Znalezione dodatki",
     "noAddonsFound": "Nie znaleziono dodatków w katalogu gry",
     "errors": "Błędy",
@@ -5770,8 +5782,12 @@
     "other": "Główne"
   },
   "persist": {
-    "loadFailed": "Nie udało się załadować zapisanych ustawień",
-    "loadFailedDescription": ""
+    "loadFailed": "",
+    "loadFailedDescription": "",
+    "lockedDescription": "",
+    "resetTitle": "",
+    "resetDescription": "",
+    "openFolder": ""
   },
   "heroParser": {
     "idle": "Parser bohatera: bezczynny",
