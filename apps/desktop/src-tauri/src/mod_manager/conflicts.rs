@@ -447,9 +447,13 @@ pub(crate) fn activation_model_conflicts(
   for (id, entry) in enabled {
     let mut seen = HashSet::new();
     for vpk in entry.file_paths(base) {
-      // Unlike the informational profile scan, activation must fail closed
-      // when an enabled archive cannot be read.
-      if read_tree(&vpk)?.iter().any(|(path, crc)| {
+      let tree = match read_tree(&vpk) {
+        Ok(tree) => tree,
+        // Missing archives cannot load; launch validation reports them separately.
+        Err(Error::Io(error)) if error.kind() == std::io::ErrorKind::NotFound => continue,
+        Err(error) => return Err(error),
+      };
+      if tree.iter().any(|(path, crc)| {
         models
           .get(path)
           .is_some_and(|other| seen.insert(path.clone()) && other != crc)

@@ -371,3 +371,9 @@ Keep scenarios independent and small even when they share recipes. The final rou
 Keep current leaves the existing skin and VPK bytes unchanged; choosing the new
 skin disables only its model conflict. The unrelated material mod stays enabled,
 and the library state, manifests and archive hashes must agree after restart.
+
+
+`bisect-conflicts` starts from two conflicting model replacements and an unrelated
+mod. It verifies Stop restores every original mod and its load order, then starts
+another search and restores after a fresh process. Persisted library/profile
+state, manifest entries and exact VPK hashes must all agree.

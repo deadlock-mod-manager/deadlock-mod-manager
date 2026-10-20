@@ -64,7 +64,7 @@ pub(super) fn mixed_animation_dependencies(
   model: &str,
 ) -> Result<Vec<MixedDependency>, Error> {
   if !resources.mod_paths().any(|path| {
-    animation_path(path)
+    (animation_path(path) || path.ends_with(".vmdl_c"))
       && resources.provider(path).is_some_and(|provider| {
         provider
           .mod_id
@@ -105,12 +105,7 @@ pub(super) fn mixed_animation_dependencies(
     };
     let root = &decoded.root;
     let mut references = Vec::new();
-    for field in [
-      "m_vecNmSkeletonRefs",
-      "m_resources",
-      "m_refAnimGroups",
-      "m_refAnimIncludeModels",
-    ] {
+    for field in ["m_vecNmSkeletonRefs", "m_resources", "m_refAnimGroups"] {
       references.extend(
         root
           .get(field)
@@ -130,6 +125,16 @@ pub(super) fn mixed_animation_dependencies(
     );
     references.extend(root.get("m_skeleton").and_then(Kv3Value::as_str));
     references.extend(super::model_camera::legacy_animation_graph(root));
+    pending.extend(
+      root
+        .get("m_refAnimIncludeModels")
+        .and_then(Kv3Value::as_array)
+        .into_iter()
+        .flatten()
+        .filter_map(Kv3Value::as_str)
+        .filter_map(resource_path)
+        .filter(|path| path.ends_with(".vmdl_c")),
+    );
     pending.extend(
       references
         .into_iter()

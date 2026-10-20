@@ -1,6 +1,41 @@
 use super::*;
 use crate::mod_manager::vpk_manager::staging::RenameTransaction;
 
+pub(super) enum ConflictPolicy<'a> {
+  Replace(&'a [String]),
+  RestoreBisect(&'a [String]),
+}
+
+impl ConflictPolicy<'_> {
+  pub(super) fn conflicts_to_disable(
+    &self,
+    mod_id: &str,
+    conflicts: Vec<String>,
+  ) -> Result<Vec<String>, Error> {
+    match self {
+      Self::Replace(confirmed) => {
+        if conflicts.iter().any(|id| !confirmed.contains(id)) {
+          return Err(Error::ModelConflict(conflicts));
+        }
+        Ok(conflicts)
+      }
+      // Bisect deliberately reproduces the original setup, including conflicts.
+      // Both sides must belong to its persisted original-enabled snapshot.
+      Self::RestoreBisect(original_enabled) => {
+        if !original_enabled.iter().any(|id| id == mod_id) {
+          return Err(Error::InvalidInput(
+            "Mod was not enabled when bisection started".into(),
+          ));
+        }
+        if conflicts.iter().any(|id| !original_enabled.contains(id)) {
+          return Err(Error::ModelConflict(conflicts));
+        }
+        Ok(Vec::new())
+      }
+    }
+  }
+}
+
 /// Hold the conflicting skins' renames until the replacement and manifest
 /// commit together. No copies of large archives are needed.
 pub(super) fn disable_conflicts(
@@ -193,6 +228,85 @@ mod tests {
     ));
     manager.install_mod(target, None).unwrap();
     assert!(base.join("variants_skin.vpk").is_file());
+  }
+
+  #[test]
+  fn missing_enabled_archive_does_not_block_an_unrelated_model() {
+    let (_game, mut manager, base) = world();
+    let manifest = ProfileVpkManifest::load(&base).unwrap();
+    fs::remove_file(manifest.mods["other"].file_paths(&base)[0].clone()).unwrap();
+    pack(&base.join("fresh_skin.vpk"), "models/lash.vmdl_c", b"lash");
+    manager.install_mod(skin("fresh"), None).unwrap();
+    let manifest = ProfileVpkManifest::load(&base).unwrap();
+    assert!(manifest.mods["fresh"].enabled);
+    assert!(manifest.mods["other"].enabled);
+  }
+
+  #[test]
+  fn unreadable_existing_archive_still_blocks_activation() {
+    let (_game, mut manager, base) = world();
+    let manifest = ProfileVpkManifest::load(&base).unwrap();
+    fs::write(&manifest.mods["other"].file_paths(&base)[0], b"invalid vpk").unwrap();
+    pack(&base.join("fresh_skin.vpk"), "models/lash.vmdl_c", b"lash");
+    assert!(matches!(
+      manager.install_mod(skin("fresh"), None),
+      Err(Error::InvalidInput(_))
+    ));
+    assert!(base.join("fresh_skin.vpk").is_file());
+  }
+
+  #[test]
+  fn bisect_restores_original_conflicting_skins_without_replacing_them() {
+    let (_game, mut manager, base) = world();
+    // Seed a legacy combination that was enabled before conflict prevention.
+    let mut manifest = ProfileVpkManifest::load(&base).unwrap();
+    fs::rename(base.join("suit_skin.vpk"), base.join("pak03_dir.vpk")).unwrap();
+    manifest.mark_enabled(
+      "suit",
+      vec!["pak03_dir.vpk".into()],
+      vec!["skin.vpk".into()],
+      Some(2),
+      ShardIndex::FIRST,
+    );
+    manifest.save(&base).unwrap();
+    for id in ["josuke", "suit"] {
+      manager.uninstall_mod(id.into(), vec![], None).unwrap();
+    }
+    for id in ["josuke", "suit"] {
+      manager
+        .install_mod_for_bisect(
+          skin(id),
+          None,
+          &["josuke".into(), "suit".into(), "other".into()],
+        )
+        .unwrap();
+    }
+    let manifest = ProfileVpkManifest::load(&base).unwrap();
+    for id in ["josuke", "suit", "other"] {
+      assert!(manifest.mods[id].enabled);
+      assert!(
+        manifest.mods[id]
+          .file_paths(&base)
+          .iter()
+          .all(|path| path.is_file())
+      );
+    }
+  }
+
+  #[test]
+  fn bisect_does_not_authorize_new_mods_or_conflicts_outside_original_set() {
+    let (_game, mut manager, base) = world();
+    let before = fs::read(base.join(".dmm.json")).unwrap();
+    assert!(matches!(
+      manager.install_mod_for_bisect(skin("suit"), None, &["josuke".into()]),
+      Err(Error::InvalidInput(_))
+    ));
+    assert!(matches!(
+      manager.install_mod_for_bisect(skin("suit"), None, &["suit".into(), "other".into()]),
+      Err(Error::ModelConflict(ref ids)) if ids == &["josuke"]
+    ));
+    assert_eq!(fs::read(base.join(".dmm.json")).unwrap(), before);
+    assert!(base.join("suit_skin.vpk").is_file());
   }
 
   #[test]

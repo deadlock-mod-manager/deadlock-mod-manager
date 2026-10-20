@@ -30,8 +30,8 @@ export type InstallWithCollectionOptions = InstallAnalyticsOptions & {
   onFileTreeAnalyzed?: (mod: LocalMod, fileTree: ModFileTree) => void;
   /** Cancel instead of opening the file selector, for batch installs. */
   skipFileSelection?: boolean;
-  /** Diagnostics must not replace another member of their test set. */
-  skipConflictPrompt?: boolean;
+  /** Restore only combinations from the diagnostic session's original setup. */
+  bisectOriginalEnabled?: string[];
 };
 
 export type InstallWithCollectionFunction = (
@@ -120,7 +120,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
       const result = await installWithConflictResolution({
         mod: modData,
         profileFolder,
-        promptForConflicts: !options.skipConflictPrompt,
+        bisectOriginalEnabled: options.bisectOriginalEnabled,
       });
       if (!result) {
         options.onCancel?.(mod, "modelConflict");

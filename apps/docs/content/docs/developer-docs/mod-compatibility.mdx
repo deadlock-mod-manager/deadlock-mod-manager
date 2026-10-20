@@ -923,3 +923,14 @@ reversible until the replacement and manifest commit; a failed enable or
 manifest save rolls the switch back. This prevents mixing two model replacements
 when enabling a mod; it does not repair arbitrary skeleton incompatibilities or
 change already-enabled combinations automatically.
+
+
+Missing enabled archives are excluded from activation conflicts because they
+cannot load; launch validation still reports them. Existing archives that cannot
+be read or parsed continue to block activation.
+
+Bisection passes its persisted `originalEnabled` snapshot during rounds and
+restoration. The backend permits a conflicting combination only when both mods
+belong to that original set, without disabling either one. Mods outside the set
+still trigger conflict validation. Stop, finish, retry and restart recovery use
+the same snapshot and restore the original load order.

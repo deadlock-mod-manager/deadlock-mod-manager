@@ -519,6 +519,11 @@ export const scenarios = {
   "profiles-pointer": profiles,
   "profiles-keyboard": profiles,
   "conflicts-resolve": conflicts,
+  "bisect-conflicts": {
+    ...conflicts,
+    spec: "bisect-conflicts",
+    phases: ["bisect", "restart-restore"],
+  },
   "conflicts-switch": {
     ...conflicts,
     spec: "model-conflict-switch",

@@ -147,3 +147,55 @@ fn follows_nested_graphs_and_terminates_cycles() {
     }]
   );
 }
+
+#[test]
+fn follows_include_models_and_their_children() {
+  const INCLUDED: &str = "models/example/animations.vmdl_c";
+  let temp = tempfile::tempdir().unwrap();
+  let citadel = temp.path().join("citadel");
+  fs::create_dir_all(&citadel).unwrap();
+  let model = refs(
+    "m_refAnimIncludeModels",
+    &["models/example/animations.vmdl"],
+  );
+  let included = refs("m_refAnimGroups", &[GRAPH]);
+  let changed_include = refs("m_refAnimGroups", &[GRAPH, GRAPH]);
+  let graph = refs("m_resources", &[SKELETON]);
+  let skeleton = compiled_resource(vec![("layout".into(), Kv3Value::Int(1))]);
+  let changed = compiled_resource(vec![("layout".into(), Kv3Value::Int(2))]);
+  pack(
+    &citadel,
+    "pak01",
+    &[
+      (INCLUDED, &included),
+      (GRAPH, &graph),
+      (SKELETON, &skeleton),
+    ],
+  );
+  let owner = LocalizationModInput {
+    mod_id: "owner".into(),
+    vpks: vec![pack(temp.path(), "owner", &[(MODEL, &model)])],
+  };
+  for (path, bytes) in [(INCLUDED, &changed_include), (SKELETON, &changed)] {
+    let dependency = LocalizationModInput {
+      mod_id: "dependency".into(),
+      vpks: vec![pack(
+        temp.path(),
+        if path == INCLUDED {
+          "included"
+        } else {
+          "skeleton"
+        },
+        &[(path, bytes)],
+      )],
+    };
+    let resources = ResourceSnapshot::open(&citadel, &[owner.clone(), dependency]).unwrap();
+    assert_eq!(
+      mixed_animation_dependencies(&resources, &owner, MODEL).unwrap(),
+      vec![MixedDependency {
+        path: path.into(),
+        mod_id: "dependency".into()
+      }]
+    );
+  }
+}

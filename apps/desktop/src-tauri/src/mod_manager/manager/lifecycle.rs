@@ -1,3 +1,4 @@
+use super::model_conflict_switch::ConflictPolicy;
 use super::*;
 
 impl ModManager {
@@ -11,9 +12,35 @@ impl ModManager {
 
   pub fn install_mod_resolving_conflicts(
     &mut self,
-    mut deadlock_mod: Mod,
+    deadlock_mod: Mod,
     profile_folder: Option<String>,
     confirmed_conflicts: &[String],
+  ) -> Result<Mod, Error> {
+    self.install_mod_with_conflict_policy(
+      deadlock_mod,
+      profile_folder,
+      ConflictPolicy::Replace(confirmed_conflicts),
+    )
+  }
+
+  pub fn install_mod_for_bisect(
+    &mut self,
+    deadlock_mod: Mod,
+    profile_folder: Option<String>,
+    original_enabled: &[String],
+  ) -> Result<Mod, Error> {
+    self.install_mod_with_conflict_policy(
+      deadlock_mod,
+      profile_folder,
+      ConflictPolicy::RestoreBisect(original_enabled),
+    )
+  }
+
+  fn install_mod_with_conflict_policy(
+    &mut self,
+    mut deadlock_mod: Mod,
+    profile_folder: Option<String>,
+    conflict_policy: ConflictPolicy<'_>,
   ) -> Result<Mod, Error> {
     log::info!(
       "Starting installation (enable) of mod: {} (profile: {profile_folder:?})",
@@ -103,9 +130,7 @@ impl ModManager {
       &deadlock_mod.id,
       &prefixed_vpks,
     )?;
-    if conflicts.iter().any(|id| !confirmed_conflicts.contains(id)) {
-      return Err(Error::ModelConflict(conflicts));
-    }
+    let conflicts = conflict_policy.conflicts_to_disable(&deadlock_mod.id, conflicts)?;
     let conflict_switch = super::model_conflict_switch::disable_conflicts(
       &self.vpk_manager,
       &addons_path,

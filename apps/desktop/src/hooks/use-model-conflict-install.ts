@@ -20,11 +20,11 @@ export function useModelConflictInstall() {
     mutationFn: async ({
       mod,
       profileFolder,
-      promptForConflicts = true,
+      bisectOriginalEnabled,
     }: {
       mod: LocalModWithFiles;
       profileFolder: string | null;
-      promptForConflicts?: boolean;
+      bisectOriginalEnabled?: string[];
     }) => {
       const profileId = usePersistedStore.getState().activeProfileId;
       const isCurrentProfile = () =>
@@ -40,6 +40,7 @@ export function useModelConflictInstall() {
             },
             profileFolder,
             replaceConflictingMods,
+            bisectOriginalEnabled,
           });
           if (replaceConflictingMods.length > 0) {
             try {
@@ -67,7 +68,7 @@ export function useModelConflictInstall() {
           return result;
         },
         async (ids) => {
-          if (!promptForConflicts) return false;
+          if (bisectOriginalEnabled) return false;
           const mods = usePersistedStore.getState().localMods;
           const names = ids.map(
             (id) =>
