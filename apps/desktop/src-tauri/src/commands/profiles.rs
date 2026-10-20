@@ -687,7 +687,7 @@ pub(crate) fn seed_manifest_entries(
     };
     // Names pair with files by position, so a list of a different length
     // would rename files after the wrong variant.
-    if entry.original_vpk_names.len() != vpk_count {
+    if !entry.original_vpk_names.is_empty() && entry.original_vpk_names.len() != vpk_count {
       log::warn!(
         "Dropping {} original VPK names for mod {}: they do not match its {vpk_count} VPKs",
         entry.original_vpk_names.len(),

@@ -630,6 +630,10 @@ impl ModManager {
         "No prepared VPKs provided for update".to_string(),
       ));
     }
+    // Installs enable a mod's VPKs in name order, so an update does too and
+    // the same file wins inside the mod either way.
+    let mut prepared_vpks = prepared_vpks.to_vec();
+    prepared_vpks.sort_by(|a, b| a.file_name().cmp(&b.file_name()));
 
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
     let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;

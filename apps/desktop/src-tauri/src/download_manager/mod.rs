@@ -582,8 +582,6 @@ impl DownloadManager {
       let analyzer = FileTreeAnalyzer::new();
       let mut prepared_files = Vec::new();
       let held_path = |index: usize| prepared_dir.join(format!("{index}.pending"));
-      // The update pairs prepared VPKs with installed ones by position, so they
-      // are prepared in download order once the archives' names are known.
       enum Slot {
         Loose(PathBuf, usize),
         Held(usize),
