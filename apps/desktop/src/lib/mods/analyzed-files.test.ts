@@ -1,6 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import type { ModDownloadItem, ModFileTree } from "@/types/mods";
-import { buildAnalyzedFileTree } from "./analyzed-files";
+import { buildAnalyzedFileTree, needsAnalysisReview } from "./analyzed-files";
 
 const download = (fileId: string, name: string): ModDownloadItem => ({
   url: `gamebanana-file://42/${fileId}`,
@@ -110,5 +110,16 @@ describe("analyzed addon archive identity", () => {
       previous,
     );
     expect(tree).toEqual(previous);
+  });
+});
+
+describe("analysis review", () => {
+  it("asks for review when files failed to parse even if every addon was identified", () => {
+    expect(
+      needsAnalysisReview({
+        addons: [],
+        errors: ["Failed to parse pak03_dir.vpk: invalid header"],
+      }),
+    ).toBe(true);
   });
 });

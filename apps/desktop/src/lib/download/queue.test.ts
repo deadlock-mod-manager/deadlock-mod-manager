@@ -106,7 +106,7 @@ beforeEach(() => {
       new Promise<void>((resolve, reject) => {
         cancellations.push({ resolve, reject });
       }),
-    duplicateError: () => new Error("Duplicate download"),
+    duplicateMessage: () => "Duplicate download",
     onQueueError: () => {},
   });
 });

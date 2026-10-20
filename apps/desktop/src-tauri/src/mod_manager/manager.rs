@@ -423,7 +423,11 @@ impl ModManager {
   }
 
   pub fn get_mods_store_path(&self) -> Result<std::path::PathBuf, Error> {
-    Ok(self.get_app_local_data_path()?.join("mods"))
+    let app_handle = self
+      .app_handle
+      .as_ref()
+      .ok_or(Error::AppHandleNotInitialized)?;
+    crate::mod_manager::mods_store::dir(app_handle)
   }
 
   pub fn get_profile_vpk_manifest(

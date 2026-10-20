@@ -81,7 +81,7 @@ class DownloadManager {
     start: (properties) => analytics.start("mod_download", properties),
     queue: (mod) => this.queueDownload(mod),
     cancel: (modId) => invoke<void>("cancel_download", { modId }),
-    duplicateError: () => new Error(i18n.t("downloads.alreadyQueued")),
+    duplicateMessage: () => i18n.t("downloads.alreadyQueued"),
     onQueueError: (error) => {
       logger.withError(error).error("Failed to queue download");
       toast.error(`Failed to queue download: ${error.message}`);

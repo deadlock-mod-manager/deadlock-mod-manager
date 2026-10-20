@@ -1,4 +1,5 @@
 import type {
+  AnalyzeAddonsResult,
   LocalAddonInfo,
   ModDownloadItem,
   ModFileTree,
@@ -51,3 +52,10 @@ export const buildAnalyzedFileTree = (
     has_multiple_files: files.length > 1,
   };
 };
+
+export const needsAnalysisReview = ({
+  addons,
+  errors,
+}: Pick<AnalyzeAddonsResult, "addons" | "errors">): boolean =>
+  errors.length > 0 ||
+  addons.some((addon) => !addon.remoteId || !addon.vpkParsed?.fingerprint);

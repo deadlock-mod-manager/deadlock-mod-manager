@@ -6,7 +6,10 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import { getMod, getModDownloads } from "@/lib/api-client";
-import { buildAnalyzedFileTree } from "@/lib/mods/analyzed-files";
+import {
+  buildAnalyzedFileTree,
+  needsAnalysisReview,
+} from "@/lib/mods/analyzed-files";
 import { invalidateModHealth } from "@/lib/mods/mod-health-queries";
 import { analyzeLocalAddons } from "@/lib/tauri-commands";
 import logger from "@/lib/logger";
@@ -83,23 +86,12 @@ export const useAddonAnalysis = () => {
     onSuccess: async (data, { profileFolder, profileId }) => {
       setAnalysisResult(data);
 
-      // Check if there are any addons that need user attention
-      const unknownAddons = data.addons.filter(
-        (addon) => !addon.remoteId && addon.vpkParsed?.fingerprint,
-      );
-      const errorAddons = data.addons.filter(
-        (addon) => !addon.vpkParsed || !addon.vpkParsed.fingerprint,
-      );
-
-      // Only show dialog if there are unidentified or error addons
-      const shouldShowDialog =
-        unknownAddons.length > 0 || errorAddons.length > 0;
-
+      const shouldShowDialog = needsAnalysisReview(data);
       setDialogOpen(shouldShowDialog);
 
       // Group addons by remoteId so multi-VPK mods are processed together
       let processedIdentifiedCount = 0;
-      let registrationErrors = 0;
+      const registrationErrors: string[] = [];
 
       const modGroups = new Map<string, typeof data.addons>();
       for (const addon of data.addons) {
@@ -175,18 +167,30 @@ export const useAddonAnalysis = () => {
             addIdentifiedLocalMod(modDetails, "", false);
           }
         } catch (error) {
-          registrationErrors++;
-          toast.error(
-            t("addons.registrationError", {
-              modName: groupAddons[0].matchInfo?.modName ?? remoteId,
+          const modName = groupAddons[0].matchInfo?.modName ?? remoteId;
+          const description = getErrorMessage(error);
+          registrationErrors.push(
+            t("addons.registrationErrorDetail", {
+              modName,
+              error: description,
             }),
-            { description: getErrorMessage(error) },
           );
+          toast.error(t("addons.registrationError", { modName }), {
+            description,
+          });
           logger
             .withMetadata({ remoteId })
             .withError(error)
             .error("Failed to register analyzed addon");
         }
+      }
+
+      if (registrationErrors.length > 0) {
+        setAnalysisResult({
+          ...data,
+          errors: [...data.errors, ...registrationErrors],
+        });
+        setDialogOpen(true);
       }
 
       await invalidateModHealth(queryClient);
@@ -205,11 +209,11 @@ export const useAddonAnalysis = () => {
         durationSeconds,
       );
 
-      if (data.errors.length > 0 || registrationErrors > 0) {
+      if (data.errors.length > 0 || registrationErrors.length > 0) {
         toast.warning(
           t("addons.analysisWarning", {
             count: data.totalCount,
-            errors: data.errors.length + registrationErrors,
+            errors: data.errors.length + registrationErrors.length,
           }),
         );
       } else {
