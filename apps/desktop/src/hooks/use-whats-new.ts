@@ -45,10 +45,16 @@ export const useWhatsNew = () => {
     forceShowWhatsNew();
   };
 
+  const reset = () => {
+    localStorage.removeItem(LAST_SEEN_VERSION_KEY);
+    usePersistedStore.setState({ lastSeenVersion: null, showWhatsNew: true });
+  };
+
   return {
     showWhatsNew,
     markVersionAsSeen,
     forceShow,
+    reset,
     currentVersion: data?.version,
   };
 };

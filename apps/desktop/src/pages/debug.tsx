@@ -14,6 +14,7 @@ import {
 } from "@/hooks/use-match-sync";
 import { useMatchSyncToggle } from "@/hooks/use-match-sync-toggle";
 import { useOnboarding } from "@/hooks/use-onboarding";
+import { useWhatsNew } from "@/hooks/use-whats-new";
 import { usePersistedStore } from "@/lib/store";
 
 type DeepLinkDebugInfo = {
@@ -116,6 +117,7 @@ const Debug = () => {
     telemetrySettings,
   } = usePersistedStore();
   const { showOnboarding } = useOnboarding();
+  const { reset: resetWhatsNew } = useWhatsNew();
   const confirm = useConfirm();
   const wipeCatalog = useWipeLocalCatalog();
   const queryClient = useQueryClient();
@@ -202,6 +204,9 @@ const Debug = () => {
             variant='outline'
             disabled={simulateMatchSync.isPending}>
             {t("debug.simulateMatchSyncUpdate")}
+          </Button>
+          <Button onClick={resetWhatsNew} variant='outline'>
+            {t("debug.resetWhatsNew")}
           </Button>
         </div>
         {matchSyncStatus && (

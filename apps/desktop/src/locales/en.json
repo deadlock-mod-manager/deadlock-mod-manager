@@ -5352,7 +5352,8 @@
     "resetTelemetryConsent": "Reset Telemetry Consent",
     "triggerMatchSyncConsent": "Trigger Match Data Consent",
     "simulateMatchSyncNewInstall": "Match Data: Simulate New Install",
-    "simulateMatchSyncUpdate": "Match Data: Simulate Update"
+    "simulateMatchSyncUpdate": "Match Data: Simulate Update",
+    "resetWhatsNew": "Reset What's New"
   },
   "developer": {
     "title": "Developer Tools",
