@@ -1,4 +1,25 @@
+import type { i18n } from "i18next";
+import { z } from "zod";
 import enTranslation from "@/locales/en.json" with { type: "json" };
+
+const featuresSchema = z.array(z.string()).catch([]);
+
+export const getWhatsNewContent = (
+  translations: Pick<i18n, "t" | "exists">,
+  version: string,
+) => {
+  const titleKey = `whatsNew.versions.${version}.title`;
+  const featuresKey = `whatsNew.versions.${version}.features`;
+  const features = translations.exists(featuresKey)
+    ? translations.t(featuresKey, { returnObjects: true })
+    : [];
+  return {
+    title: translations.exists(titleKey)
+      ? translations.t(titleKey)
+      : translations.t("whatsNew.title"),
+    features: featuresSchema.parse(features),
+  };
+};
 
 export const WHATS_NEW_RIBBON_VERSION_COUNT = 3;
 

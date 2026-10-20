@@ -79,17 +79,45 @@ export const checkForAppUpdates = async (
 export const installAppUpdate = async (
   update: AppUpdate,
   onProgress?: (event: DownloadEvent) => void,
-  install = () => update.downloadAndInstall(onProgress),
+  install = (onDownloadEvent?: (event: DownloadEvent) => void) =>
+    update.downloadAndInstall(onDownloadEvent),
 ): Promise<void> => {
+  const startedAt = performance.now();
+  let downloaded = 0;
+  let contentLength: number | undefined;
+  const summary = () =>
+    `downloaded=${downloaded} contentLength=${contentLength ?? "unknown"} elapsedMs=${Math.round(performance.now() - startedAt)}`;
+  const installLogger = logger.child().withContext({
+    ...update.context,
+    version: update.version,
+  });
+
   try {
-    await install();
+    await install((event) => {
+      switch (event.event) {
+        case "Started":
+          contentLength = event.data.contentLength;
+          installLogger.info(`App update download started: ${summary()}`);
+          break;
+        case "Progress":
+          downloaded += event.data.chunkLength;
+          break;
+        case "Finished":
+          installLogger.info(`App update download finished: ${summary()}`);
+          break;
+      }
+      onProgress?.(event);
+    });
+    installLogger.info(`App update installed: ${summary()}`);
   } catch (error) {
     const failure = new AppUpdateError(
       "install-failed",
       update.context,
       getErrorMessage(error),
     );
-    logFailure(failure);
+    installLogger
+      .withError(failure)
+      .warn(`App update installation failed: ${summary()}`);
     throw failure;
   }
 };
