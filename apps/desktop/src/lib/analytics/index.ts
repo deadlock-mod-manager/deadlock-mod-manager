@@ -14,20 +14,20 @@ let version: string | undefined;
 let releaseChannel = "unknown";
 let consentEpoch = 0;
 let initialized = false;
+let userId: string | undefined;
 
+// Nothing is sent until the user ID is known, so GA never counts a device twice.
 const isEnabled = () =>
   !!measurementId &&
+  !!version &&
+  !!userId &&
   !import.meta.env.DEV &&
   import.meta.env.VITE_DMM_E2E_HARNESS !== "1" &&
   usePersistedStore.getState().telemetrySettings.analyticsEnabled;
 const syncConsent = () => {
   try {
     if (typeof window !== "undefined" && measurementId) {
-      Reflect.set(
-        window,
-        `ga-disable-${measurementId}`,
-        !isEnabled() || !version,
-      );
+      Reflect.set(window, `ga-disable-${measurementId}`, !isEnabled());
     }
   } catch {
     // Preference updates and app startup must still work when GA is unavailable.
@@ -54,6 +54,7 @@ const initialize = () => {
   if (!initialized && measurementId) {
     ReactGA.initialize(measurementId, {
       gtagOptions: {
+        user_id: userId,
         send_page_view: false,
         allow_google_signals: false,
         allow_ad_personalization_signals: false,
@@ -69,7 +70,7 @@ export const analytics = createAnalyticsClient({
     return {
       enabled,
       version,
-      os: enabled && version ? platform() : "unknown",
+      os: enabled ? platform() : "unknown",
       releaseChannel,
       consentEpoch,
     };
@@ -82,14 +83,9 @@ export const analytics = createAnalyticsClient({
   createId: () => crypto.randomUUID(),
 });
 
-export const identifyAnalytics = (distinctId: string): void => {
-  try {
-    if (!isEnabled() || !version) return;
-    initialize();
-    ReactGA.set({ userId: distinctId });
-  } catch {
-    // Analytics must never block a user action.
-  }
+export const identifyAnalytics = (hardwareId: string): void => {
+  userId = hardwareId;
+  syncConsent();
 };
 
 export const captureMilestone = <K extends AnalyticsMilestone>(

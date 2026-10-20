@@ -4,12 +4,10 @@ import { useAnalytics } from "./use-analytics";
 import type { AnalyticsEvents } from "@/lib/analytics/schema";
 
 export const useAnalyticsEvents = () => {
-  const { track, identify, isEnabled } = useAnalytics();
+  const { track, isEnabled } = useAnalytics();
   return useMemo(
     () => ({
       isEnabled,
-      identifyUser: (hardwareId: string, userId?: string) =>
-        identify(userId ?? hardwareId),
       trackAppStarted: trackAppReady,
       trackPageViewed: (
         page: string,
@@ -69,6 +67,6 @@ export const useAnalyticsEvents = () => {
         duration_seconds?: number;
       }) => track("mods_reordered", properties),
     }),
-    [track, identify, isEnabled],
+    [track, isEnabled],
   );
 };
