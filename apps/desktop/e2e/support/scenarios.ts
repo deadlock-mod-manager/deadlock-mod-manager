@@ -33,6 +33,7 @@ import { contentRoutes, prepareContentWorld } from "./content-fixtures";
 import { preparePresenceCache } from "./settings-fixtures";
 import { grimoireRoutes, prepareGrimoireWorld } from "./interchange-fixtures";
 import { prepareHeroSkinsWorld } from "./hero-skins-fixtures";
+import { prepareHeroSwapWorld } from "./hero-swap-fixtures";
 import {
   catalogRefreshRoutes,
   assertCatalogRefreshNetwork,
@@ -529,6 +530,12 @@ export const scenarios = {
     ...conflicts,
     spec: "model-conflict-switch",
     phases: ["switch", "restart-switch"],
+  },
+  "hero-swap": {
+    ...conflicts,
+    spec: "hero-swap",
+    phases: ["swap", "restart-swap"],
+    prepare: async (world) => prepareHeroSwapWorld(world),
   },
   "compatibility-fix-persistence": {
     ...defaults,

@@ -541,9 +541,14 @@ impl GameConfigManager {
       // Continue anyway - this is not critical for mod functionality
     }
 
-    // Modify gameinfo.gi to enable mod loading
-    let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
-    self.modify_search_paths(&gameinfo_path, false)?;
+    // A previous session already wrote the marker block, which may mount a
+    // profile folder. Rewriting it would leave only the default addons folder.
+    if self.marker_addons_paths(game_path)?.is_empty() {
+      let gameinfo_path = game_path.join("game").join("citadel").join("gameinfo.gi");
+      self.modify_search_paths(&gameinfo_path, false)?;
+    } else {
+      log::info!("Keeping the existing mod search paths in gameinfo.gi");
+    }
 
     // Validate the patch was applied correctly
     if let Err(e) = self.validate_gameinfo_patch(game_path, false) {
@@ -1432,6 +1437,22 @@ mod tests {
       start = MOD_MANAGER_MARKER_START,
       end = MOD_MANAGER_MARKER_END,
     )
+  }
+
+  #[test]
+  fn setup_in_a_new_session_keeps_the_profile_search_path() {
+    let (_dir, game_path) = setup_game_dir();
+    write_gameinfo(&game_path, &vanilla_fixture("\n"));
+    let paths = vec!["citadel/addons/profile_test".to_string()];
+    GameConfigManager::new()
+      .update_mod_paths(&game_path, &paths)
+      .unwrap();
+
+    let mut restarted = GameConfigManager::new();
+    restarted.setup_game_for_mods(&game_path).unwrap();
+
+    assert!(restarted.is_game_setup());
+    assert_eq!(restarted.marker_addons_paths(&game_path).unwrap(), paths);
   }
 
   #[test]
