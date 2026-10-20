@@ -1,9 +1,5 @@
 {
   "modelConflict": {
-    "title": "",
-    "body": "",
-    "useSkin": "",
-    "keepCurrent": "",
     "keptCurrent": "",
     "replaced": ""
   },
@@ -2218,6 +2214,13 @@
       "summaryServerContent": "",
       "summaryServerContentCounted_one": "",
       "summaryServerContentCounted_other": "",
+      "summaryServerContentPending_one": "",
+      "summaryServerContentPending_other": "",
+      "summaryServerContentReady": "",
+      "summaryServerContentNone": "",
+      "contentTruncated": "",
+      "contentMissingSource": "",
+      "contentBlockedMaps": "",
       "noConnectMethod": ""
     },
     "staging": {
@@ -2234,7 +2237,12 @@
       "applying": "",
       "downloadingServerContent": "",
       "contentItemProgress": "",
-      "decompressing": ""
+      "decompressing": "",
+      "awaitingMismatchConfirm": "",
+      "mismatchTitle": "",
+      "mismatchDescription": "",
+      "mismatchAccept": "",
+      "mismatchDeclined": ""
     },
     "requirementRow": {
       "customProvider": "",
@@ -2251,13 +2259,6 @@
       "registryDegraded": "",
       "registryStale_one": "",
       "registryStale_other": ""
-    },
-    "relayBar": {
-      "online": "",
-      "degraded": "",
-      "offline": "",
-      "lastSeen": "",
-      "latency": ""
     },
     "hostCta": {
       "title": "",
@@ -3581,10 +3582,6 @@
     "description": "실험적 기능을 선택하고 새로운 기능이 모든 사람에게 출시되기 전에 사용해 보세요.",
     "features": {
       "custom-maps": {
-        "title": "",
-        "description": ""
-      },
-      "server-browser": {
         "title": "",
         "description": ""
       },
@@ -5726,7 +5723,10 @@
   },
   "heroConflict": {
     "title": "",
+    "modelTitle": "",
     "description": "",
+    "andMore_one": "",
+    "andMore_other": "",
     "currentlyActive": "",
     "switchingTo": "",
     "swapAction": "",
@@ -6345,13 +6345,6 @@
     "open": "",
     "enabled": "",
     "features": {
-      "server-browser": {
-        "title": "",
-        "description": "",
-        "hint": "",
-        "previewTitle": "",
-        "previewDetail": ""
-      },
       "custom-maps": {
         "title": "",
         "description": "",
@@ -6373,6 +6366,10 @@
     "showMe": "",
     "gotIt": "",
     "turnOff": "",
+    "serverBrowser": {
+      "title": "",
+      "body": ""
+    },
     "importFromManager": {
       "title": "",
       "body": ""
