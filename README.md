@@ -243,11 +243,11 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 | 🇺🇸 **English** (Default) | English | ✅ Complete | - |
 | 🇧🇬 **Bulgarian** | Български | 🚧 4% | [macchiako](https://discordapp.com/users/macchiako./) |
 | 🇧🇾 **Belarusian** | Беларуская | 🚧 In Progress | [drodn](https://discordapp.com/users/drodn/) |
-| 🇩🇪 **German** | Deutsch | 🚧 33% | [skeptic](https://github.com/Skeptic-systems) |
-| 🇫🇷 **French** | Français | 🚧 30% | [stormix](https://github.com/stormix) |
+| 🇩🇪 **German** | Deutsch | 🚧 32% | [skeptic](https://github.com/Skeptic-systems) |
+| 🇫🇷 **French** | Français | 🚧 29% | [stormix](https://github.com/stormix) |
 | 🇷🇺 **Russian** | Русский | 🚧 24% | [awkward_akio](https://discordapp.com/users/awkward_akio/), [Thyron](https://github.com/baka-thyron) |
 | 🇸🇦 **Arabic** | العربية | 🚧 10% | [archeroflegend](https://discordapp.com/users/archeroflegend/) |
-| 🇵🇱 **Polish** | Polski | 🚧 44% | [_manio](https://discordapp.com/users/_manio/) |
+| 🇵🇱 **Polish** | Polski | 🚧 43% | [_manio](https://discordapp.com/users/_manio/) |
 | 🇨🇭 **Swiss German** | Schwiizerdütsch | 🚧 4% | [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
 | 🇹🇭 **Thai** | ไทย | 🚧 7% | [altqx](https://discordapp.com/users/altq/) |
 | 🇹🇷 **Turkish** | Türkçe | 🚧 5% | [kenanala](https://discordapp.com/users/kenanala/) |
