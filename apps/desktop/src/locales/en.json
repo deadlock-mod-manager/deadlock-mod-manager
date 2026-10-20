@@ -4085,6 +4085,7 @@
     "analysisWarning": "Analysis complete! Found {{count}} addon(s) with {{errors}} error(s)",
     "analysisError": "Failed to analyze local addons",
     "registrationError": "Could not register {{modName}}",
+    "registrationErrorDetail": "Could not register {{modName}}: {{error}}",
     "foundAddons": "Found Addons",
     "noAddonsFound": "No addons found in your game directory",
     "errors": "Errors",
