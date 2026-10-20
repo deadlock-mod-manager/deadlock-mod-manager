@@ -58,11 +58,42 @@ export const waitForSwitch = (
     },
   );
 
+// On Windows the driver's el.click() now and then reaches a card button
+// without running its handler. Click again only while nothing shows that the
+// previous click landed, so a slow handler is never triggered twice.
+const clickUntilLanded = async (
+  selector: string,
+  landed: () => Promise<boolean>,
+  description: string,
+) => {
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    await waitForClickable(selector);
+    await $(selector).click();
+    const registered = await browser
+      .waitUntil(landed, { timeout: 3_000 })
+      .catch(() => false);
+    if (registered) return;
+  }
+  throw new Error(`${description} ignored three clicks`);
+};
+
 export const setModEnabled = (world: string, modId: string, enabled: boolean) =>
   step(`${enabled ? "enable" : "disable"} ${modId}`, async () => {
     await findMod(modId);
     await waitForSwitch(modId, !enabled, true);
-    await modSwitch(modId).click();
+    const toggle = `${card(modId)}//button[@role="switch"]`;
+    // The switch is disabled while the toggle runs, then shows the new state.
+    await clickUntilLanded(
+      toggle,
+      async () => {
+        const control = await $(toggle);
+        return (
+          (await control.getAttribute("aria-checked")) === String(enabled) ||
+          !(await control.isEnabled())
+        );
+      },
+      `${modId} switch`,
+    );
     await observeUntil(
       `${modId} never became ${enabled ? "enabled" : "disabled"}`,
       () => readShardStore(world),
@@ -78,9 +109,11 @@ export const setModEnabled = (world: string, modId: string, enabled: boolean) =>
 export const deleteMod = (world: string, modId: string) =>
   step(`delete ${modId}`, async () => {
     await findMod(modId);
-    const remove = `${card(modId)}//button[@aria-label="Remove mod"]`;
-    await waitForClickable(remove);
-    await $(remove).click();
+    await clickUntilLanded(
+      `${card(modId)}//button[@aria-label="Remove mod"]`,
+      () => $('[role="alertdialog"]').isExisting(),
+      `${modId} remove button`,
+    );
     const confirm = await $('[role="alertdialog"]').$("button=Delete");
     await confirm.waitForClickable();
     await confirm.click();
