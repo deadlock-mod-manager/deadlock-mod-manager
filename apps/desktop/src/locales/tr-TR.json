@@ -1,4 +1,12 @@
 {
+  "modelConflict": {
+    "title": "",
+    "body": "",
+    "useSkin": "",
+    "keepCurrent": "",
+    "keptCurrent": "",
+    "replaced": ""
+  },
   "launchRepair": {
     "title_one": "",
     "title_other": "",
@@ -2272,6 +2280,24 @@
     "at": ""
   },
   "myMods": {
+    "selection": {
+      "start": "",
+      "working": "",
+      "done": "",
+      "selectMod": "",
+      "count_one": "",
+      "count_other": "",
+      "selectFiltered": "",
+      "clear": "",
+      "enable": "",
+      "disable": "",
+      "enableTitle": "",
+      "enableBody": "",
+      "disableTitle": "",
+      "disableBody": "",
+      "disabled_one": "",
+      "disabled_other": ""
+    },
     "compatibility": {
       "review": "",
       "reviewDescription": "",
@@ -2825,6 +2851,7 @@
     "next": ""
   },
   "downloads": {
+    "failed": "",
     "alreadyQueued": "",
     "downloading": "{{count}} mod indiriliyor",
     "downloading_plural": "{{count}} mod indiriliyor",
@@ -5302,6 +5329,11 @@
     "activeProfile": "",
     "selectProfile": "Profil seç",
     "manage": "Profilleri yönet",
+    "editNamed": "",
+    "deleteNamed": "",
+    "activateNamed": "",
+    "inactive": "",
+    "switching": "",
     "manageDescription": "Farklı mod profilleri oluşturun, düzenleyin ve aralarında geçiş yapın. Her profil hangi modları etkinleştirdiğinizi hatırlar.",
     "createNew": "Yeni profil oluştur",
     "create": "Oluştur",
