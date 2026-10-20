@@ -168,10 +168,10 @@ const hasPortrait = (hero: DeadlockHero): boolean =>
   Boolean(hero.images.icon_image_small_webp || hero.images.icon_image_small);
 
 /**
- * Whether a hero picker should offer `name`. The enum already knows heroes
- * Valve hasn't released (Violet, Nurse Harrow); the active catalog only lists
- * them once they are playable and have a portrait, so they appear on their
- * own. With no catalog yet - loading or offline - every hero is offered.
+ * Whether a hero picker should offer `name`. The enum can know heroes Valve
+ * hasn't released yet; the active catalog only lists them once they are
+ * playable and have a portrait, so they appear on their own. With no catalog
+ * yet - loading or offline - every hero is offered.
  */
 export const useIsHeroAvailable = (): ((name: string) => boolean) => {
   const { heroesById, heroByName } = useHeroCatalog();

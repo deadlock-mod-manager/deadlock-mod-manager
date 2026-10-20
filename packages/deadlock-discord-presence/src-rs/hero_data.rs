@@ -293,8 +293,7 @@ fn hero(name: &str, hideout_text: &str, asset_key: &str, image: Option<&str>) ->
     }
 }
 
-/// Used only until the first API response or cache load. Violet and Nurse Harrow
-/// have no portrait yet; the API fills theirs in once Valve releases them.
+/// Used only until the first API response or cache load.
 fn fallback_heroes() -> Vec<(&'static str, HeroInfo)> {
     vec![
         (
@@ -592,11 +591,21 @@ fn fallback_heroes() -> Vec<(&'static str, HeroInfo)> {
         ),
         (
             "artist",
-            hero("Violet", "In the Hideout", "hero_artist", None),
+            hero(
+                "Violet",
+                "Painting In The Hideout",
+                "hero_artist",
+                Some("artist"),
+            ),
         ),
         (
             "nurse",
-            hero("Nurse Harrow", "In the Hideout", "hero_nurse", None),
+            hero(
+                "Nurse Harrow",
+                "Conducting Rounds In The Hideout",
+                "hero_nurse",
+                Some("nurse"),
+            ),
         ),
     ]
 }
@@ -651,7 +660,6 @@ mod tests {
         assert_eq!(store.display_name("ratking"), "Rat King");
         assert_eq!(store.display_name("deadpack"), "Deadman Danny");
         assert_eq!(store.normalize_codename("hero_chessmaster"), "chessmaster");
-        // No portrait yet, so the presence falls back to the Discord asset key.
-        assert_eq!(store.asset_key("artist"), "hero_artist");
+        assert_eq!(store.display_name("nurse"), "Nurse Harrow");
     }
 }

@@ -18,6 +18,24 @@
         "display": "Seismic Impact"
       }
     },
+    "artist": {
+      "1": {
+        "token": "homingbrush",
+        "display": "Living Ink"
+      },
+      "2": {
+        "token": "rollingprojectile",
+        "display": "Flow State"
+      },
+      "3": {
+        "token": "tether",
+        "display": "Still Life"
+      },
+      "4": {
+        "token": "bamboogrove",
+        "display": "Abstract Landscape"
+      }
+    },
     "astro": {
       "1": {
         "token": "barrel",
@@ -538,6 +556,24 @@
       "4": {
         "token": "gravestone",
         "display": "Borrowed Decree"
+      }
+    },
+    "nurse": {
+      "1": {
+        "token": "leech_therapy",
+        "display": "Leech Therapy"
+      },
+      "2": {
+        "token": "adrenaline_rush",
+        "display": "Wretched Vapors"
+      },
+      "3": {
+        "token": "healing_needles",
+        "display": "Healing Needles"
+      },
+      "4": {
+        "token": "fear",
+        "display": "Lurking Terrors"
       }
     },
     "operative": {
