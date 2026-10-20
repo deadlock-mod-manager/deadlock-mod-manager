@@ -24,7 +24,10 @@ import { useTranslation } from "react-i18next";
 import useAbout from "@/hooks/use-about";
 import { getReleaseNotesUrl } from "@/lib/app-version-display";
 import { APP_NAME } from "@/lib/constants";
-import { getWhatsNewVideoId } from "@/lib/whats-new-versions";
+import {
+  getWhatsNewContent,
+  getWhatsNewVideoId,
+} from "@/lib/whats-new-versions";
 
 type WhatsNewDialogProps = {
   onClose: () => void;
@@ -124,21 +127,6 @@ const categorizeFeatures = (features: string[]): FeatureCategory[] => {
   });
 };
 
-const getFeatures = (
-  t: (
-    key: string,
-    options?: { returnObjects?: boolean; defaultValue?: string[] },
-  ) => string | string[],
-  version: string,
-): string[] => {
-  const features = t(`whatsNew.versions.${version}.features`, {
-    returnObjects: true,
-    defaultValue: [],
-  });
-  if (!Array.isArray(features)) return [];
-  return features.filter((f): f is string => typeof f === "string");
-};
-
 const CategorySection = ({
   category,
   categoryIndex,
@@ -231,19 +219,23 @@ const YouTubeEmbed = ({ videoId }: { videoId: string }) => {
 };
 
 export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { data } = useAbout();
 
   const version = data?.version || "0.10.0";
 
-  const title = t(`whatsNew.versions.${version}.title`, { defaultValue: "" });
   const videoId = getWhatsNewVideoId(version);
 
-  const categories = useMemo(() => {
-    const features = getFeatures(t, version);
-    if (features.length === 0) return [];
-    return categorizeFeatures(features);
-  }, [t, version]);
+  const { title, categories } = useMemo(() => {
+    const content = getWhatsNewContent(
+      { t, exists: i18n.exists.bind(i18n) },
+      version,
+    );
+    return {
+      title: content.title,
+      categories: categorizeFeatures(content.features),
+    };
+  }, [t, i18n, version]);
 
   return (
     <DialogContent className='wn-dialog-enter max-h-[85dvh] max-w-lg flex flex-col gap-0 overflow-hidden border-primary/15 p-0'>
@@ -266,7 +258,7 @@ export const WhatsNewDialog = ({ onClose }: WhatsNewDialogProps) => {
         </div>
 
         <DialogTitle className='relative mt-2 font-primary font-bold text-[1.65rem] leading-[1.15] tracking-tight text-foreground'>
-          {title || t("whatsNew.title")}
+          {title}
         </DialogTitle>
 
         <DialogDescription className='mt-1.5 text-muted-foreground text-xs leading-relaxed'>

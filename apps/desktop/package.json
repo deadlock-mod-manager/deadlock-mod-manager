@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "bun test",
+    "test": "bun test --isolate",
     "check:dashboard-endpoints": "cross-env DASHBOARD_LIVE=1 bun test src/lib/stats/dashboard/endpoints.live.test.ts",
     "ui:dev": "vite",
     "check-types": "tsc --noEmit --skipLibCheck && tsc --noEmit --skipLibCheck -p tsconfig.tests.json",
