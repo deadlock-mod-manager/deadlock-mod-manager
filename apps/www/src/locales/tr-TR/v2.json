@@ -82,6 +82,17 @@
       },
       "alt": ""
     },
+    "groups": {
+      "nav": "",
+      "title": "",
+      "body": "",
+      "points": {
+        "drag": "",
+        "undo": "",
+        "profiles": "",
+        "order": ""
+      }
+    },
     "conflicts": {
       "nav": "",
       "title": "",
@@ -185,6 +196,22 @@
       "reapply": "",
       "reapplying": "",
       "reapplied": ""
+    },
+    "groups": {
+      "names": {
+        "mains": "",
+        "testing": ""
+      },
+      "count_one": "",
+      "count_other": "",
+      "enabledCount": "",
+      "enable": "",
+      "disable": "",
+      "enabledAll": "",
+      "disabledAll": "",
+      "on": "",
+      "off": "",
+      "hint": ""
     },
     "conflicts": {
       "title": "",
