@@ -24,6 +24,7 @@ export type StorageReadyStatus = {
 };
 
 let firstReadDone = false;
+let writeGateLocked = false;
 let storageReadyResolve: (status: StorageReadyStatus) => void = () => {};
 let storageReadyPromise: Promise<StorageReadyStatus> =
   new Promise<StorageReadyStatus>((resolve) => {
@@ -43,9 +44,17 @@ export const storageReady = (): Promise<StorageReadyStatus> =>
 
 // Idempotent. Callable from bootstrap to flip the write gate manually.
 export const markStorageReady = (): void => {
-  if (firstReadDone) return;
+  if (firstReadDone || writeGateLocked) return;
   firstReadDone = true;
   storageReadyResolve({ ok: true });
+};
+
+// For a state file the backend could neither read nor move aside: the store
+// opens empty, so every save would overwrite the real file with defaults.
+export const lockWriteGate = (reason: string): void => {
+  if (firstReadDone) return;
+  writeGateLocked = true;
+  storageReadyResolve({ ok: false, reason });
 };
 
 const sleep = (ms: number): Promise<void> =>
@@ -168,6 +177,7 @@ export const __resetForTests = (): void => {
   pendingWrite = Promise.resolve();
   lastQueued.clear();
   firstReadDone = false;
+  writeGateLocked = false;
   storageReadyPromise = new Promise<StorageReadyStatus>((resolve) => {
     storageReadyResolve = resolve;
   });
