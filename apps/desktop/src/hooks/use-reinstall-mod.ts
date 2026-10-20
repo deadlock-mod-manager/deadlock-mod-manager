@@ -6,6 +6,7 @@ import useInstallWithCollection from "@/hooks/use-install-with-collection";
 import { getModDownload } from "@/lib/api-client";
 import { getModsStorePath } from "@/lib/download-cache";
 import { downloadManager } from "@/lib/download/manager";
+import { DownloadAlreadyQueuedError } from "@/lib/download/queue";
 import { getErrorMessage } from "@/lib/errors";
 import { createLogger } from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
@@ -221,9 +222,11 @@ const redownload = (
         resolve();
       },
       onError: (error) => {
-        usePersistedStore
-          .getState()
-          .setModStatus(mod.remoteId, ModStatus.FailedToDownload);
+        if (!(error instanceof DownloadAlreadyQueuedError)) {
+          usePersistedStore
+            .getState()
+            .setModStatus(mod.remoteId, ModStatus.FailedToDownload);
+        }
         reject(error);
       },
     });

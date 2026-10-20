@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
 import { getMod } from "@/lib/api-client";
 import { downloadManager } from "@/lib/download/manager";
+import { DownloadAlreadyQueuedError } from "@/lib/download/queue";
 import logger from "@/lib/logger";
 import { serializeSubmissionRef } from "@/lib/mods/submission-ref";
 import { usePersistedStore } from "@/lib/store";
@@ -210,7 +211,9 @@ export const useDeepLink = () => {
                   }
                 },
                 onError: (error) => {
-                  setModStatus(modData.remoteId, ModStatus.FailedToDownload);
+                  if (!(error instanceof DownloadAlreadyQueuedError)) {
+                    setModStatus(modData.remoteId, ModStatus.FailedToDownload);
+                  }
                   toast.error(
                     `Failed to download ${modData.name}: ${error.message}`,
                   );

@@ -10,6 +10,7 @@ import type { ModEntryPoint } from "@/lib/analytics/schema";
 import { useTranslation } from "react-i18next";
 import { detectHeroForMod } from "@/hooks/use-hero-detection";
 import { downloadManager } from "@/lib/download/manager";
+import { DownloadAlreadyQueuedError } from "@/lib/download/queue";
 import { getErrorMessage } from "@/lib/errors";
 import { getQueuedDownloads } from "@/lib/mods/mod-variants";
 import logger from "@/lib/logger";
@@ -88,7 +89,9 @@ export const queueModDownload = (
         });
     },
     onError: (error) => {
-      setModStatus(mod.remoteId, ModStatus.FailedToDownload);
+      if (!(error instanceof DownloadAlreadyQueuedError)) {
+        setModStatus(mod.remoteId, ModStatus.FailedToDownload);
+      }
       onError?.(error);
     },
   });
