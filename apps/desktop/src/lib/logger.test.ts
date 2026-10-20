@@ -52,6 +52,8 @@ describe("frontend error log payload", () => {
     expect(message).toContain("Directory does not exist");
     expect(message).not.toContain("private-token");
     expect(options?.keyValues?.operation).toBe("set-game-path");
+    expect(options?.keyValues?.error).toBe("Error: Directory does not exist");
+    expect(JSON.stringify(options)).not.toContain("private-token");
   });
 
   it("keeps string rejections useful and bounds long error details", () => {
@@ -62,6 +64,7 @@ describe("frontend error log payload", () => {
     const message = shippedError.mock.calls[1]?.[0] ?? "";
     expect(message.length).toBeGreaterThan(0);
     expect(message.length).toBeLessThanOrEqual(2048);
+    expect(shippedError.mock.calls[1]?.[1]?.keyValues?.error).toBe(message);
   });
 });
 

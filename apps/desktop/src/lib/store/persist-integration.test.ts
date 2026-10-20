@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import * as tauriCore from "@tauri-apps/api/core";
 import { ModStatus } from "@/types/mods";
 import { createProfileId } from "@/types/profiles";
 import { SortType, TimePeriod } from "@/lib/constants";
@@ -53,6 +54,7 @@ mock.module("@/lib/api-client", () => ({
 
 // Stub Tauri IPC. The store imports through to slices that import @tauri-apps/api/core.
 mock.module("@tauri-apps/api/core", () => ({
+  ...tauriCore,
   invoke: async () => undefined,
 }));
 

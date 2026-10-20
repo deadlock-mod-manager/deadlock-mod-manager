@@ -27,7 +27,9 @@ const serializeKeyValues = (
 ): Record<string, string> => {
   const result: Record<string, string> = {};
   for (const [key, value] of Object.entries(data)) {
-    if (typeof value === "string") {
+    if (key === "error") {
+      result[key] = summarizeError(value);
+    } else if (typeof value === "string") {
       result[key] = value;
     } else if (value === null || value === undefined) {
       result[key] = String(value);

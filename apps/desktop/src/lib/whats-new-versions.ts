@@ -10,12 +10,12 @@ export const getWhatsNewContent = (
 ) => {
   const titleKey = `whatsNew.versions.${version}.title`;
   const featuresKey = `whatsNew.versions.${version}.features`;
-  const features = translations.exists(featuresKey)
-    ? translations.t(featuresKey, { returnObjects: true })
+  const features = translations.exists(featuresKey, { fallbackLng: false })
+    ? translations.t(featuresKey, { returnObjects: true, fallbackLng: false })
     : [];
   return {
-    title: translations.exists(titleKey)
-      ? translations.t(titleKey)
+    title: translations.exists(titleKey, { fallbackLng: false })
+      ? translations.t(titleKey, { fallbackLng: false })
       : translations.t("whatsNew.title"),
     features: featuresSchema.parse(features),
   };

@@ -12,6 +12,26 @@ await translations.init({
 });
 
 describe("What's New release content", () => {
+  it("uses the localized generic heading when only English has release notes", async () => {
+    const localized = createInstance();
+    await localized.init({
+      lng: "fr-FR",
+      fallbackLng: "en",
+      returnEmptyString: false,
+      resources: {
+        en: { translation: enTranslation },
+        "fr-FR": {
+          translation: { whatsNew: { title: "Nouveautés" } },
+        },
+      },
+    });
+
+    expect(getWhatsNewContent(localized, "1.1.0")).toEqual({
+      title: "Nouveautés",
+      features: [],
+    });
+  });
+
   it("keeps the title and features for a release in the locale catalog", () => {
     expect(getWhatsNewContent(translations, "1.1.0")).toEqual({
       title: enTranslation.whatsNew.versions["1.1.0"].title,
