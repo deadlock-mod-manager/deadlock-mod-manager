@@ -14,7 +14,7 @@ use std::{
 };
 
 // Increment when repair rules or output semantics change, so installed overlays are rebuilt.
-pub(super) const REPAIR_REVISION: u32 = 39;
+pub(super) const REPAIR_REVISION: u32 = 40;
 const RECEIPT_NAME: &str = "compatibility.json";
 
 #[derive(Serialize, Deserialize)]
@@ -25,6 +25,8 @@ pub(super) struct OverlayReceipt {
   overlay_hash: Option<String>,
   repairs: Vec<AssetRepair>,
   warnings: Vec<AssetWarning>,
+  animation_checks:
+    Vec<crate::mod_manager::localization_overlay::animation_contract::AnimationDependencyCheck>,
   data_repairs: Vec<DataRepair>,
   data_warnings: Vec<DataWarning>,
   baselines: Vec<crate::mod_manager::localization_overlay::CompiledDataBaseline>,
@@ -134,6 +136,7 @@ fn write_inner(
     resolutions: resolutions.to_vec(),
     repairs: plan.analysis.asset_repairs.clone(),
     warnings: plan.analysis.asset_warnings.clone(),
+    animation_checks: plan.analysis.animation_checks.clone(),
     data_repairs: result.data_repairs.clone(),
     data_warnings: result.data_warnings.clone(),
     baselines: plan.analysis.baselines.clone(),
@@ -192,6 +195,7 @@ mod tests {
       resolutions: Vec::new(),
       repairs: Vec::new(),
       warnings: Vec::new(),
+      animation_checks: Vec::new(),
       data_repairs: Vec::new(),
       data_warnings: Vec::new(),
       baselines: Vec::new(),

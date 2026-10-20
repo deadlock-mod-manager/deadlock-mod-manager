@@ -10,6 +10,8 @@ use sha2::{Digest, Sha256};
 mod health;
 mod history;
 mod inventory;
+#[cfg(all(test, unix))]
+mod performance;
 mod preference;
 mod receipt;
 use std::fs;
@@ -109,12 +111,25 @@ impl ModManager {
     ),
     Error,
   > {
-    let game_path = self
-      .steam_manager
-      .get_game_path()
-      .ok_or(Error::GamePathNotSet)?;
-    let citadel_dir = game_path.join("game").join("citadel");
-    let profile_base = self.get_addons_path(profile_folder)?;
+    Self::localization_overlay_inputs_at(
+      self.citadel_path()?,
+      self.get_addons_path(profile_folder)?,
+      self.localization_overlay_vpk_path(profile_folder)?,
+    )
+  }
+
+  fn localization_overlay_inputs_at(
+    citadel_dir: PathBuf,
+    profile_base: ProfileBase,
+    output_path: PathBuf,
+  ) -> Result<
+    (
+      PathBuf,
+      Vec<LocalizationModInput>,
+      LocalizationOverlayPlanKey,
+    ),
+    Error,
+  > {
     let manifest = ProfileVpkManifest::load(&profile_base)?;
     let compatibility_mod_ids = manifest
       .mods
@@ -178,10 +193,6 @@ impl ModManager {
       }
     }
     let (inputs, unmanaged_vpks) = inventory::mounted_inputs(&profile_base, inputs)?;
-    let output_path = game_path
-      .join("game")
-      .join(Self::localization_overlay_search_path(profile_folder))
-      .join(OVERLAY_VPK_NAME);
     let mut base_game = game_archive_stamps(&citadel_dir)?;
     base_game.extend(game_archive_stamps(&citadel_dir.with_file_name("core"))?);
     let localization_paths = crate::mod_manager::localization_overlay::localization_paths(&inputs)?;
@@ -320,16 +331,18 @@ impl ModManager {
     &self,
     profile_folder: Option<&str>,
   ) -> Result<(), Error> {
-    self.prepare_localization_overlay_for_launch(
+    self.prepare_localization_overlay_with_progress(
       profile_folder,
       self.mod_compatibility_enabled(profile_folder)?,
+      || {},
     )
   }
 
-  fn prepare_localization_overlay_for_launch(
+  pub(super) fn prepare_localization_overlay_with_progress(
     &self,
     profile_folder: Option<&str>,
     enabled: bool,
+    before_rebuild: impl FnOnce(),
   ) -> Result<(), Error> {
     if !enabled {
       return self.delete_localization_overlay(profile_folder);
@@ -342,6 +355,7 @@ impl ModManager {
       previous.log_status("reused");
       return Ok(());
     }
+    before_rebuild();
     let reviewed = previous.filter(|receipt| receipt.key == key);
     receipt::remove(&key.output_path)?;
     let plan = build_overlay_plan(&citadel, &inputs, &mut key)?;
@@ -451,6 +465,13 @@ impl ModManager {
     Ok(())
   }
 
+  fn notify_compatibility_changed(&self, profile_folder: Option<&str>) {
+    use tauri::Emitter;
+    if let Some(app) = &self.app_handle {
+      app.emit("mod-compatibility-changed", profile_folder).ok();
+    }
+  }
+
   pub(crate) fn invalidate_localization_overlay(&self, profile_folder: Option<&str>) {
     match self.localization_overlay_plan_cache.lock() {
       Ok(mut cache) => *cache = None,
@@ -469,6 +490,7 @@ impl ModManager {
         path.display()
       );
     }
+    self.notify_compatibility_changed(profile_folder);
   }
 
   pub fn delete_localization_overlay(&self, profile_folder: Option<&str>) -> Result<(), Error> {
@@ -550,15 +572,12 @@ fn requires_review(analysis: &LocalizationOverlayAnalysis) -> bool {
       warning.kind == WarningKind::OverlappingModel
         && !analysis.unloaded_models.contains(&warning.file_path)
     })
-    || analysis
-      .data_warnings
-      .iter()
-      .any(|warning| {
-        matches!(
-          warning.reason,
-          WarningReason::CompetingDefinitions | WarningReason::UnreadableResource
-        )
-      })
+    || analysis.data_warnings.iter().any(|warning| {
+      matches!(
+        warning.reason,
+        WarningReason::CompetingDefinitions | WarningReason::UnreadableResource
+      )
+    })
 }
 
 fn game_archive_stamps(directory: &Path) -> Result<Vec<LocalizationInputStamp>, Error> {
@@ -865,7 +884,7 @@ mod tests {
     );
   }
 
-  fn test_manager(root: &Path) -> ModManager {
+  pub(super) fn test_manager(root: &Path) -> ModManager {
     let citadel = root.join("game/citadel");
     fs::create_dir_all(&citadel).unwrap();
     fs::write(citadel.join("gameinfo.gi"), b"").unwrap();
@@ -1268,7 +1287,7 @@ mod tests {
       .unwrap();
     assert!(!output.exists());
     manager
-      .prepare_localization_overlay_for_launch(None, true)
+      .prepare_localization_overlay_with_progress(None, true, || {})
       .unwrap();
   }
 
@@ -1476,7 +1495,7 @@ Game core
     assert!(analysis.parse_warnings.is_empty());
     assert!(!requires_review(&analysis));
     manager
-      .prepare_localization_overlay_for_launch(None, true)
+      .prepare_localization_overlay_with_progress(None, true, || {})
       .unwrap();
     assert!(
       !manager
@@ -1495,7 +1514,7 @@ Game core
     fs::create_dir_all(path.parent().unwrap()).unwrap();
     fs::write(&path, b"stale untracked overlay").unwrap();
     manager
-      .prepare_localization_overlay_for_launch(None, true)
+      .prepare_localization_overlay_with_progress(None, true, || {})
       .unwrap();
     assert!(!path.exists());
     let receipt_path = receipt::path(&path);
@@ -1507,7 +1526,7 @@ Game core
       .set_times(fs::FileTimes::new().set_modified(old_time))
       .unwrap();
     manager
-      .prepare_localization_overlay_for_launch(None, true)
+      .prepare_localization_overlay_with_progress(None, true, || {})
       .unwrap();
     assert_eq!(
       fs::metadata(&receipt_path).unwrap().modified().unwrap(),
@@ -1524,19 +1543,19 @@ Game core
     fs::write(citadel.join("pak01_000.vpk"), b"chunk").unwrap();
     fs::write(citadel.join("steam.inf"), b"ClientVersion=1").unwrap();
     manager
-      .prepare_localization_overlay_for_launch(None, true)
+      .prepare_localization_overlay_with_progress(None, true, || {})
       .unwrap();
     let path = manager.localization_overlay_vpk_path(None).unwrap();
     let before = receipt::load(&path).unwrap().unwrap().key;
     fs::write(citadel.join("pak01_000.vpk"), b"updated game data chunk").unwrap();
     manager
-      .prepare_localization_overlay_for_launch(None, true)
+      .prepare_localization_overlay_with_progress(None, true, || {})
       .unwrap();
     let after = receipt::load(&path).unwrap().unwrap().key;
     assert_ne!(before, after);
     fs::write(citadel.join("steam.inf"), b"ClientVersion=200").unwrap();
     manager
-      .prepare_localization_overlay_for_launch(None, true)
+      .prepare_localization_overlay_with_progress(None, true, || {})
       .unwrap();
     assert_ne!(after, receipt::load(&path).unwrap().unwrap().key);
   }
@@ -1633,6 +1652,430 @@ Game core
     )
     .unwrap();
     manager
+  }
+
+  pub(super) fn refresh_repairs(
+    manager: &mut ModManager,
+    profile: Option<&str>,
+  ) -> Result<(), Error> {
+    if let Some(refresh) = manager.begin_mod_fix_refresh(profile)? {
+      let (refresh, plan) = refresh.build()?;
+      manager.finish_mod_fix_refresh(refresh, plan)?;
+    }
+    Ok(())
+  }
+
+  fn manager_with_applied_repair() -> (tempfile::TempDir, ModManager) {
+    let temp = tempfile::tempdir().unwrap();
+    let mut manager = manager_with_gameinfo(temp.path());
+    let base = manager.get_addons_path(None).unwrap();
+    let locale = "resource/localization/citadel_gc/citadel_gc_english.txt";
+    write_vpk(
+      &temp.path().join("game/citadel/pak01_dir.vpk"),
+      &[(
+        locale,
+        br#""lang" { "Language" "English" "Tokens" { "shared" "Game" "retained" "Game token" } }"#,
+      )],
+    );
+    write_vpk(
+      &base.join("pak01_dir.vpk"),
+      &[(
+        locale,
+        br#""lang" { "Language" "English" "Tokens" { "shared" "Mod" } }"#,
+      )],
+    );
+    write_test_vpk(&base.join("pak02_dir.vpk"));
+    let mut manifest = ProfileVpkManifest::default();
+    for (id, name) in [("fixed", "pak01_dir.vpk"), ("unrelated", "pak02_dir.vpk")] {
+      manifest.mark_enabled(
+        id,
+        vec![name.into()],
+        vec![name.into()],
+        None,
+        ShardIndex::FIRST,
+      );
+    }
+    manifest.save(&base).unwrap();
+    assert_eq!(
+      manager.fix_mods(None, vec!["fixed".into()]).unwrap().status,
+      FixModsStatus::Applied
+    );
+    (temp, manager)
+  }
+
+  #[test]
+  fn unchanged_repairs_survive_a_fresh_manager_without_rebuilding() {
+    let (temp, manager) = manager_with_applied_repair();
+    let overlay = manager.localization_overlay_vpk_path(None).unwrap();
+    let receipt_path = receipt::path(&overlay);
+    let repaired = fs::read(&overlay).unwrap();
+    let recorded = fs::read(&receipt_path).unwrap();
+    let old_time = SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(1000);
+    for path in [&overlay, &receipt_path] {
+      fs::File::options()
+        .write(true)
+        .open(path)
+        .unwrap()
+        .set_times(fs::FileTimes::new().set_modified(old_time))
+        .unwrap();
+    }
+    drop(manager);
+    let manager = test_manager(temp.path());
+    let mut rebuilds = 0;
+    for _ in 0..2 {
+      manager
+        .prepare_localization_overlay_with_progress(None, true, || rebuilds += 1)
+        .unwrap();
+    }
+    assert_eq!(fs::read(&overlay).unwrap(), repaired);
+    assert_eq!(fs::read(&receipt_path).unwrap(), recorded);
+    for path in [&overlay, &receipt_path] {
+      assert_eq!(
+        fs::metadata(path).unwrap().modified().unwrap(),
+        old_time,
+        "cache hit must not rewrite files"
+      );
+    }
+    assert_eq!(rebuilds, 0, "cache hits must not announce a rebuild");
+    fs::remove_file(&overlay).unwrap();
+    manager
+      .prepare_localization_overlay_with_progress(None, true, || rebuilds += 1)
+      .unwrap();
+    assert_eq!(rebuilds, 1, "a missing cache artifact must be rebuilt");
+    assert_eq!(fs::read(&overlay).unwrap(), repaired);
+  }
+
+  #[test]
+  fn disabling_an_unrelated_mod_keeps_applied_repairs_available() {
+    let (_temp, mut manager) = manager_with_applied_repair();
+    let overlay = manager.localization_overlay_vpk_path(None).unwrap();
+    assert!(
+      overlay.exists(),
+      "fixture must produce an applied repair package"
+    );
+    let repaired = fs::read(&overlay).unwrap();
+    manager
+      .uninstall_mod("unrelated".into(), vec![], None)
+      .unwrap();
+    assert!(manager.mod_compatibility_settings(None).unwrap()["fixed"]);
+    assert!(
+      !overlay.exists(),
+      "library actions invalidate without rebuilding under the manager lock"
+    );
+    refresh_repairs(&mut manager, None).unwrap();
+    let survived = overlay.exists();
+    assert_applied_repair(&manager, &repaired);
+    manager
+      .ensure_localization_overlay_for_launch(None)
+      .unwrap();
+    assert_eq!(
+      fs::read(&overlay).unwrap(),
+      repaired,
+      "manager launch must preserve the refreshed package"
+    );
+    assert!(
+      survived,
+      "disabling an unrelated mod removed the applied repair package before manager launch"
+    );
+    let (_, _, key) = manager.localization_overlay_inputs(None).unwrap();
+    assert!(
+      receipt::load(&overlay)
+        .unwrap()
+        .unwrap()
+        .is_current(&key)
+        .unwrap()
+    );
+  }
+
+  fn assert_applied_repair(manager: &ModManager, expected: &[u8]) {
+    let overlay = manager.localization_overlay_vpk_path(None).unwrap();
+    assert_eq!(
+      fs::read(&overlay).expect("repair must remain installed"),
+      expected
+    );
+    let (_, _, key) = manager.localization_overlay_inputs(None).unwrap();
+    assert!(
+      receipt::load(&overlay)
+        .unwrap()
+        .unwrap()
+        .is_current(&key)
+        .unwrap()
+    );
+    assert_eq!(
+      manager.profile_gameinfo_paths(None).unwrap()[0],
+      ModManager::localization_overlay_search_path(None)
+    );
+  }
+
+  #[test]
+  fn library_operations_refresh_applied_repairs_without_a_manager_launch() {
+    for operation in ["remove", "reorder", "enable", "replace", "download"] {
+      let (temp, mut manager) = manager_with_applied_repair();
+      let base = manager.get_addons_path(None).unwrap();
+      let overlay = manager.localization_overlay_vpk_path(None).unwrap();
+      let repaired = fs::read(&overlay).unwrap();
+      let gameinfo = fs::read(temp.path().join("game/citadel/gameinfo.gi")).unwrap();
+      match operation {
+        "remove" => {
+          manager.remove_mod_vpks("unrelated", &[], None).unwrap();
+        }
+        "reorder" => {
+          // The fixed mod retains pak01 while other mods swap places.
+          write_test_vpk(&base.join("pak03_dir.vpk"));
+          let mut manifest = ProfileVpkManifest::load(&base).unwrap();
+          manifest.mark_enabled(
+            "third",
+            vec!["pak03_dir.vpk".into()],
+            vec!["third.vpk".into()],
+            Some(2),
+            ShardIndex::FIRST,
+          );
+          manifest.save(&base).unwrap();
+          manager
+            .reorder_mods_by_remote_id(
+              vec![
+                ("fixed".into(), vec![], 0),
+                ("third".into(), vec![], 1),
+                ("unrelated".into(), vec![], 2),
+              ],
+              None,
+            )
+            .unwrap();
+          assert_eq!(
+            ProfileVpkManifest::load(&base).unwrap().mods["fixed"].current_vpks,
+            ["pak01_dir.vpk"]
+          );
+        }
+        "enable" => {
+          write_test_vpk(&base.join("new_new.vpk"));
+          manager
+            .install_mod(
+              Mod {
+                id: "new".into(),
+                name: "New unrelated mod".into(),
+                is_map: false,
+                installed_vpks: vec![],
+                original_vpk_names: vec![],
+                file_tree: None,
+                install_order: Some(2),
+              },
+              None,
+            )
+            .unwrap();
+        }
+        "replace" | "download" => {
+          let source = temp.path().join("replacement.vpk");
+          write_vpk(&source, &[("unrelated.txt", b"updated unrelated file")]);
+          manager
+            .update_mod_from_prepared(
+              if operation == "download" {
+                "downloaded"
+              } else {
+                "unrelated"
+              },
+              "Unrelated",
+              &[source],
+              None,
+              None,
+              operation != "download",
+            )
+            .unwrap();
+        }
+        _ => unreachable!(),
+      }
+      refresh_repairs(&mut manager, None).unwrap();
+      assert_applied_repair(&manager, &repaired);
+      assert_eq!(
+        fs::read(temp.path().join("game/citadel/gameinfo.gi")).unwrap(),
+        gameinfo,
+        "{operation} changed the active search paths"
+      );
+    }
+  }
+
+  #[test]
+  fn refreshing_an_inactive_profile_keeps_the_active_profile_and_its_repairs() {
+    let (temp, mut manager) = manager_with_applied_repair();
+    let base = manager.get_addons_path(None).unwrap();
+    let other = manager.get_addons_path(Some("other")).unwrap();
+    fs::create_dir_all(&other).unwrap();
+    for name in ["pak01_dir.vpk", "pak02_dir.vpk"] {
+      fs::copy(base.join(name), other.join(name)).unwrap();
+    }
+    ProfileVpkManifest::load(&base)
+      .unwrap()
+      .save(&other)
+      .unwrap();
+    let active_overlay = fs::read(manager.localization_overlay_vpk_path(None).unwrap()).unwrap();
+    let gameinfo_path = temp.path().join("game/citadel/gameinfo.gi");
+    let active_gameinfo = fs::read(&gameinfo_path).unwrap();
+    refresh_repairs(&mut manager, Some("other")).unwrap();
+    let other_overlay = manager
+      .localization_overlay_vpk_path(Some("other"))
+      .unwrap();
+    assert!(other_overlay.exists());
+    manager
+      .uninstall_mod("unrelated".into(), vec![], Some("other".into()))
+      .unwrap();
+    refresh_repairs(&mut manager, Some("other")).unwrap();
+    assert!(other_overlay.exists());
+    let (_, _, key) = manager.localization_overlay_inputs(Some("other")).unwrap();
+    assert!(
+      receipt::load(&other_overlay)
+        .unwrap()
+        .unwrap()
+        .is_current(&key)
+        .unwrap()
+    );
+    assert_eq!(fs::read(&gameinfo_path).unwrap(), active_gameinfo);
+    assert_applied_repair(&manager, &active_overlay);
+  }
+
+  #[test]
+  fn removing_the_fixed_mod_does_not_keep_its_replacements_mounted() {
+    let (_temp, mut manager) = manager_with_applied_repair();
+    manager.uninstall_mod("fixed".into(), vec![], None).unwrap();
+    assert!(
+      !manager
+        .localization_overlay_vpk_path(None)
+        .unwrap()
+        .exists()
+    );
+    assert!(
+      !manager
+        .profile_gameinfo_paths(None)
+        .unwrap()
+        .contains(&ModManager::localization_overlay_search_path(None))
+    );
+    assert!(manager.mod_compatibility_settings(None).unwrap()["fixed"]);
+  }
+
+  #[test]
+  fn failed_refresh_removes_stale_repairs_without_clearing_the_saved_choice() {
+    let (_temp, mut manager) = manager_with_applied_repair();
+    let base = manager.get_addons_path(None).unwrap();
+    let mut manifest = ProfileVpkManifest::load(&base).unwrap();
+    // A partially missing multifile mod makes input collection fail before
+    // launch preparation reaches its normal stale-overlay removal.
+    manifest
+      .mods
+      .get_mut("unrelated")
+      .unwrap()
+      .current_vpks
+      .push("pak03_dir.vpk".into());
+    manifest.save(&base).unwrap();
+    manager.invalidate_localization_overlay(None);
+    assert!(refresh_repairs(&mut manager, None).is_err());
+    let overlay = manager.localization_overlay_vpk_path(None).unwrap();
+    assert!(!overlay.exists());
+    assert!(receipt::load(&overlay).unwrap().is_none());
+    assert!(manager.mod_compatibility_settings(None).unwrap()["fixed"]);
+  }
+
+  #[test]
+  fn library_conflicts_remove_stale_repairs_and_wait_for_review() {
+    let (_temp, mut manager) = manager_with_applied_repair();
+    let base = manager.get_addons_path(None).unwrap();
+    let locale = "resource/localization/citadel_gc/citadel_gc_english.txt";
+    write_vpk(
+      &base.join("pak02_dir.vpk"),
+      &[(
+        locale,
+        br#""lang" { "Language" "English" "Tokens" { "shared" "Other mod" } }"#,
+      )],
+    );
+    let mut manifest = ProfileVpkManifest::load(&base).unwrap();
+    manifest
+      .mods
+      .get_mut("unrelated")
+      .unwrap()
+      .compatibility_enabled = true;
+    manifest.save(&base).unwrap();
+    manager.invalidate_localization_overlay(None);
+    refresh_repairs(&mut manager, None).unwrap();
+    let overlay = manager.localization_overlay_vpk_path(None).unwrap();
+    assert!(!overlay.exists());
+    assert!(receipt::load(&overlay).unwrap().is_none());
+    let cache = manager.localization_overlay_plan_cache.lock().unwrap();
+    assert!(requires_review(
+      &cache
+        .as_ref()
+        .expect("review plan must be retained")
+        .plan
+        .analysis
+    ));
+    assert!(manager.mod_compatibility_settings(None).unwrap()["fixed"]);
+  }
+
+  #[test]
+  fn missing_overlay_is_not_reported_as_fixed() {
+    let (temp, mut manager) = manager_with_applied_repair();
+    let base = manager.get_addons_path(None).unwrap();
+    let app_data = temp.path().join("app-data");
+    let key = HealthKey::stamp(
+      &[base.join("pak01_dir.vpk")],
+      None,
+      receipt::REPAIR_REVISION,
+    )
+    .unwrap();
+    mod_health::record(
+      &app_data,
+      &base.to_string_lossy(),
+      None,
+      [(
+        "fixed".into(),
+        CachedModHealth::new(key, ModFindings::with_repairs(1), ModHealthSource::Launch),
+      )],
+    )
+    .unwrap();
+    let context = manager.mod_health_context_in(None, app_data).unwrap();
+    assert_eq!(
+      context.report().unwrap().mods[0].status,
+      ModHealthStatus::Fixed
+    );
+    let overlay = manager.localization_overlay_vpk_path(None).unwrap();
+    let repaired = fs::read(&overlay).unwrap();
+    let receipt_bytes = fs::read(receipt::path(&overlay)).unwrap();
+    fs::remove_file(&overlay).unwrap();
+    assert!(manager.mod_compatibility_settings(None).unwrap()["fixed"]);
+    assert_eq!(
+      context.report().unwrap().mods[0].status,
+      ModHealthStatus::Fixable,
+      "saved preference does not prove the repair is installed"
+    );
+    fs::write(&overlay, &repaired).unwrap();
+    assert_eq!(
+      context.report().unwrap().mods[0].status,
+      ModHealthStatus::Fixed
+    );
+    fs::write(&overlay, b"damaged overlay").unwrap();
+    assert_eq!(
+      context.report().unwrap().mods[0].status,
+      ModHealthStatus::Fixable
+    );
+    fs::write(&overlay, &repaired).unwrap();
+    fs::remove_file(receipt::path(&overlay)).unwrap();
+    assert_eq!(
+      context.report().unwrap().mods[0].status,
+      ModHealthStatus::Fixable
+    );
+    fs::write(receipt::path(&overlay), receipt_bytes).unwrap();
+    // The original mod's health key is unchanged; the full applied receipt
+    // still must stop matching when another enabled input changes.
+    write_vpk(
+      &base.join("pak02_dir.vpk"),
+      &[("unrelated.txt", b"updated unrelated mod")],
+    );
+    assert_eq!(
+      context.report().unwrap().mods[0].status,
+      ModHealthStatus::Fixable
+    );
+    manager.invalidate_localization_overlay(None);
+    refresh_repairs(&mut manager, None).unwrap();
+    assert_eq!(
+      context.report().unwrap().mods[0].status,
+      ModHealthStatus::Fixed
+    );
   }
 
   #[test]

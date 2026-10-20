@@ -14,6 +14,9 @@ use vpkmanager::source2::kv3::{self, Encoding as Kv3Encoding, Seg as Kv3Seg, Val
 use vpkmanager::source2::resource::Resource;
 
 mod animation_clips;
+pub(crate) mod animation_contract;
+#[cfg(test)]
+mod animation_contract_tests;
 mod animation_masks;
 mod animation_model_evidence;
 mod animation_poses;
@@ -34,6 +37,7 @@ mod model_dependencies;
 mod model_relocation;
 mod model_sounds;
 mod model_text;
+mod observed_data;
 #[cfg(test)]
 mod profile_benchmark;
 mod repair_scope;
@@ -232,6 +236,7 @@ pub struct LocalizationOverlayAnalysis {
   pub parse_warnings: Vec<LocalizationParseWarning>,
   pub asset_repairs: Vec<asset_compatibility::AssetRepair>,
   pub asset_warnings: Vec<asset_compatibility::AssetWarning>,
+  pub animation_checks: Vec<animation_contract::AnimationDependencyCheck>,
   /// Mod-only models that nothing loaded references. Their asset warnings are
   /// left out of review and mod health.
   pub unloaded_models: Vec<String>,
@@ -550,10 +555,7 @@ impl LocalizationOverlayPlan {
           continue;
         }
         if let Some(bytes) = resources.game_bytes(&path)? {
-          let (_, root, _) = decode_compiled_data(&bytes, &path)?;
-          changed |= observed
-            .record(&path, version, &root)
-            .map_err(Error::ModInvalid)?;
+          changed |= observed_data::record(observed, &path, version, &bytes)?;
         }
       }
     }
@@ -938,7 +940,9 @@ impl LocalizationOverlayPlan {
     asset_sources.extend(mesh_sources);
     let repaired_assets = animation_skeletons
       .iter()
+      .chain(&animation_clips)
       .chain(&camera_models)
+      .chain(&material_assets)
       .map(|(path, bytes)| (path.as_str(), bytes.as_slice()))
       .collect();
     asset_warnings.extend(asset_compatibility::analyze(
@@ -946,8 +950,21 @@ impl LocalizationOverlayPlan {
       &asset_sources,
       &repaired_assets,
     )?);
-    let unloaded_models =
-      asset_compatibility::unloaded_models(resources, history, &asset_warnings)?;
+    let animation_checks = animation_contract::analyze(
+      resources,
+      &asset_sources,
+      &repaired_assets,
+      &asset_repairs,
+      &mut asset_warnings,
+    );
+    let unloaded_models = asset_compatibility::unloaded_models(
+      resources,
+      history,
+      asset_warnings
+        .iter()
+        .map(|warning| warning.file_path.as_str())
+        .chain(animation_checks.iter().map(|check| check.file_path.as_str())),
+    )?;
     let prop_models = model_relocation::prop_models(resources, history, &asset_warnings)?;
     let mut changed_tokens = 0usize;
     let mut new_tokens = 0usize;
@@ -1036,6 +1053,7 @@ impl LocalizationOverlayPlan {
         parse_warnings,
         asset_repairs,
         asset_warnings,
+        animation_checks,
         unloaded_models,
         prop_models,
         data_repairs,

@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { listen } from "@tauri-apps/api/event";
 import { useEffect, useMemo, useRef } from "react";
 import {
@@ -8,13 +9,14 @@ import {
   useRefreshModFixes,
 } from "@/hooks/use-mod-health";
 import { gameUpdatedSinceLastCheck } from "@/lib/mods/mod-health";
-import { forcedBuildStorageKey } from "@/lib/mods/mod-health-queries";
+import {
+  forcedBuildStorageKey,
+  invalidateModHealth,
+} from "@/lib/mods/mod-health-queries";
+import { createModHealthRefreshQueue } from "@/lib/mods/mod-health-refresh";
 import { usePersistedStore } from "@/lib/store";
 import type { ModHealthProgress } from "@/types/generated/ModHealthProgress";
 import { ModStatus } from "@/types/mods";
-
-// Enable all and collection installs land one mod at a time.
-const INSTALL_CHECK_DELAY_MS = 1500;
 
 /**
  * Keeps the mod health report current: checks once per profile after start,
@@ -23,6 +25,7 @@ const INSTALL_CHECK_DELAY_MS = 1500;
  * Mounted once in app.tsx.
  */
 export const ModHealthRenderer = () => {
+  const queryClient = useQueryClient();
   const profileFolder = useActiveProfileFolder();
   const report = useModHealthReport(profileFolder);
   const check = useCheckModHealth();
@@ -31,8 +34,16 @@ export const ModHealthRenderer = () => {
   const localMods = usePersistedStore((state) => state.localMods);
   const checkedProfiles = useRef(new Set<string | null>());
   const previousInstalled = useRef<ReadonlyMap<string, string> | null>(null);
-  const pendingModIds = useRef(new Set<string>());
-  const libraryChanged = useRef(false);
+  const refreshQueue = useMemo(
+    () =>
+      createModHealthRefreshQueue((folder, modIds) => {
+        refreshFixes(folder);
+        if (modIds.length > 0) check({ profileFolder: folder, modIds });
+      }),
+    [refreshFixes, check],
+  );
+
+  useEffect(() => () => refreshQueue.cancelAll(), [refreshQueue]);
 
   useEffect(() => {
     const unlisten = listen<ModHealthProgress>("mod-health-progress", (event) =>
@@ -42,6 +53,22 @@ export const ModHealthRenderer = () => {
       void unlisten.then((stop) => stop());
     };
   }, [setProgress]);
+
+  useEffect(() => {
+    let active = true;
+    const unlisten = listen<string | null>(
+      "mod-compatibility-changed",
+      ({ payload: folder }) => {
+        if (!active) return;
+        void invalidateModHealth(queryClient);
+        refreshQueue.schedule(folder);
+      },
+    );
+    return () => {
+      active = false;
+      void unlisten.then((stop) => stop());
+    };
+  }, [queryClient, refreshQueue]);
 
   useEffect(() => {
     if (!report.data || checkedProfiles.current.has(profileFolder)) return;
@@ -67,25 +94,16 @@ export const ModHealthRenderer = () => {
     const before = previousInstalled.current;
     previousInstalled.current = installed;
     if (!before) return;
-    for (const [modId, vpks] of installed) {
-      if (before.get(modId) !== vpks) pendingModIds.current.add(modId);
-    }
+    const modIds = [...installed]
+      .filter(([modId, vpks]) => before.get(modId) !== vpks)
+      .map(([modId]) => modId);
     if (
-      pendingModIds.current.size > 0 ||
+      modIds.length > 0 ||
       [...before.keys()].some((modId) => !installed.has(modId))
     ) {
-      libraryChanged.current = true;
+      refreshQueue.schedule(profileFolder, modIds);
     }
-    if (!libraryChanged.current) return;
-    const timer = setTimeout(() => {
-      const modIds = [...pendingModIds.current];
-      pendingModIds.current.clear();
-      libraryChanged.current = false;
-      refreshFixes(profileFolder);
-      if (modIds.length > 0) check({ profileFolder, modIds });
-    }, INSTALL_CHECK_DELAY_MS);
-    return () => clearTimeout(timer);
-  }, [installed, profileFolder, check, refreshFixes]);
+  }, [installed, profileFolder, refreshQueue]);
 
   return null;
 };

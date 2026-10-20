@@ -136,23 +136,22 @@ pub(super) fn model_overlaps(
   warnings
 }
 
-/// Mod-only models with warnings that nothing loads. The game cannot reference
+/// Mod-only models that nothing loads. The game cannot reference
 /// a path it does not ship, so such a model loads only when a mod file that
 /// replaces a game path, or an old hero model that relocation moves, reaches it
 /// through resource references.
-pub(super) fn unloaded_models(
+pub(super) fn unloaded_models<'a>(
   resources: &ResourceSnapshot,
   history: &VdataHistoryIndex,
-  warnings: &[AssetWarning],
+  paths: impl IntoIterator<Item = &'a str>,
 ) -> Result<Vec<String>, Error> {
   let mod_models: BTreeSet<&str> = resources
     .mod_paths()
     .map(String::as_str)
     .filter(|path| super::model_camera::is_path(path) && !resources.has_game_resource(path))
     .collect();
-  let mut candidates: BTreeSet<&str> = warnings
-    .iter()
-    .map(|warning| warning.file_path.as_str())
+  let mut candidates: BTreeSet<&str> = paths
+    .into_iter()
     .filter(|path| mod_models.contains(path))
     .collect();
   if candidates.is_empty() {
@@ -687,7 +686,12 @@ mod tests {
         vpks: vec![pack(root.path(), name, entries)],
       }];
       let resources = ResourceSnapshot::open(&citadel, &mods).unwrap();
-      unloaded_models(&resources, VdataHistoryIndex::embedded(), &warnings).unwrap()
+      unloaded_models(
+        &resources,
+        VdataHistoryIndex::embedded(),
+        warnings.iter().map(|warning| warning.file_path.as_str()),
+      )
+      .unwrap()
     };
     let model: &[u8] = b"mod model";
     assert_eq!(

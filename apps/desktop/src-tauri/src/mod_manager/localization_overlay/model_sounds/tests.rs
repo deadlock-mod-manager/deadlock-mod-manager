@@ -188,3 +188,28 @@ fn authored_unknown_or_unverifiable_bindings_are_left_alone() {
   );
   assert!(repair(&source, &current(), &resources).unwrap().is_none());
 }
+
+#[test]
+fn legacy_sound_lists_preserve_empty_slots_without_losing_valid_tables() {
+  let temp = tempfile::tempdir().unwrap();
+  let resources = snapshot(temp.path(), &[]);
+  let authored = text(&format!(
+    "{LEGACY_SETTINGS} = {{ m_taggedSounds = [ resource:\"{GAME_TABLE}\", resource:\"\" ] }}"
+  ));
+  let source = model(&authored, &[]);
+  let repaired = repair(&source, &current(), &resources)
+    .unwrap()
+    .expect("an empty sound slot must not prevent migration of the valid authored table");
+  assert_eq!(
+    text_of(&repaired),
+    authored.replacen(LEGACY_SETTINGS, SETTINGS, 1)
+  );
+  assert_eq!(
+    material_repair::references(&repaired).unwrap(),
+    [(id(GAME_TABLE), GAME_TABLE.to_owned())]
+  );
+  assert_only_text_and_references_changed(&source, &repaired);
+  assert!(repair(&repaired, &current(), &resources).unwrap().is_none());
+  let empty = model(&text(&binding(LEGACY_SETTINGS, "")), &[]);
+  assert!(repair(&empty, &current(), &resources).unwrap().is_none());
+}

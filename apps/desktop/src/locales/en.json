@@ -2601,6 +2601,16 @@
     }
   },
   "modOrdering": {
+    "animationChecks": {
+      "title": "Animation dependency checks",
+      "scope": "Checks resource references, skeleton structure, and clip track counts before and after planned repairs. These checks do not verify playback, deformation, authored track order, or in-game behavior.",
+      "result": "Original: {{before}} · After repairs: {{after}} · Resources inspected: {{count}}",
+      "status": {
+        "verified": "Passed these checks",
+        "unresolved": "Unresolved issues",
+        "notChecked": "Some checks incomplete"
+      }
+    },
     "manageOrderTooltip": "Manage the order in which mods are loaded",
     "title": "Manage Mod Load Order",
     "description": "Drag and drop to reorder your mods. Mods at the top load first, mods at the bottom load last.",
@@ -2947,6 +2957,7 @@
       "disablingMods": "Disabling mods",
       "verifyingMods_one": "Verifying {{count}} mod",
       "verifyingMods_other": "Verifying {{count}} mods",
+      "checkingCompatibility": "Checking saved mod fixes",
       "mergingModData": "Merging mod data",
       "writingSearchPaths": "Writing game search paths",
       "applyingPerformance": "Applying performance config",

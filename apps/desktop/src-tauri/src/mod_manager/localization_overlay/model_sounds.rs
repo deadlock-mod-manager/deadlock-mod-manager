@@ -196,18 +196,22 @@ fn tables(assignment: &str) -> Option<Vec<String>> {
   if name != "m_taggedSounds" {
     return None;
   }
-  let tables = array_items(assigned_value(&object[range.clone()])?)?
-    .into_iter()
-    .map(|item| {
-      let table = resource_name(item)?;
-      (table.starts_with(TABLES)
-        && table.ends_with(".vdata")
-        && table
-          .split('/')
-          .all(|part| !matches!(part, "" | "." | "..")))
-      .then_some(table)
-    })
-    .collect::<Option<Vec<_>>>()?;
+  let mut tables = Vec::new();
+  for item in array_items(assigned_value(&object[range.clone()])?)? {
+    let table = resource_name(item)?;
+    // Null resource slots are retained in the authored text, but have no
+    // dependency to resolve or add to RERL.
+    if table.is_empty() {
+      continue;
+    }
+    if !table.starts_with(TABLES)
+      || !table.ends_with(".vdata")
+      || table.split('/').any(|part| matches!(part, "" | "." | ".."))
+    {
+      return None;
+    }
+    tables.push(table);
+  }
   (!tables.is_empty()).then_some(tables)
 }
 

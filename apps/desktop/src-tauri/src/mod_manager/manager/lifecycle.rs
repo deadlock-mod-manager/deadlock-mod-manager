@@ -444,7 +444,6 @@ impl ModManager {
     let addons_path = self.get_addons_path(profile_folder.as_deref())?;
     let mut manifest = ProfileVpkManifest::open_for_write(&addons_path)?;
     let manifest_entry = manifest.mods.get(mod_id).cloned();
-    let affects_overlay = manifest_entry.as_ref().is_some_and(|entry| entry.enabled);
     let sources = if let Some(entry) = &manifest_entry {
       entry
         .file_paths(&addons_path)
@@ -480,9 +479,7 @@ impl ModManager {
     staging.commit();
     self.mod_repository.remove_mod(mod_id);
     VpkManager::prune_empty_shard_dirs(&addons_path);
-    if affects_overlay {
-      self.invalidate_localization_overlay(profile_folder.as_deref());
-    }
+    self.invalidate_localization_overlay(profile_folder.as_deref());
 
     Ok(removed_count)
   }
@@ -522,6 +519,7 @@ impl ModManager {
     for mod_id in &forgotten {
       self.mod_repository.remove_mod(mod_id);
     }
+    self.invalidate_localization_overlay(profile_folder.as_deref());
     log::info!("Forgot mods whose VPKs were deleted (profile: {profile_folder:?}): {forgotten:?}");
     Ok(forgotten)
   }

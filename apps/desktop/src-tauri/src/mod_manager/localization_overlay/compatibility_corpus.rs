@@ -3,6 +3,157 @@
 use super::*;
 
 #[test]
+#[ignore = "requires DMM_REAL_CITADEL and DMM_COMPAT_CORPUS with CT SAS Venator"]
+fn authored_camera_contract_repairs_all_meshes_without_replacing_the_model() {
+    assert_camera_model_preserved(
+        655351,
+        "models/heroes_wip/priest/priest.vmdl_c",
+        12,
+        &[
+            asset_compatibility::RepairKind::CameraInterface,
+            asset_compatibility::RepairKind::CameraAttachmentFrame,
+        ],
+    );
+}
+
+#[test]
+#[ignore = "requires DMM_REAL_CITADEL and DMM_COMPAT_CORPUS with Goth Ivy"]
+fn goth_ivy_camera_repair_preserves_authored_model_and_meshes() {
+    assert_camera_model_preserved(
+        701199,
+        "models/heroes_wip/ivy/ivy.vmdl_c",
+        2,
+        &[asset_compatibility::RepairKind::CameraAttachmentFrame],
+    );
+}
+
+fn assert_camera_model_preserved(
+    id: u64,
+    path: &str,
+    expected_meshes: usize,
+    repairs: &[asset_compatibility::RepairKind],
+) {
+    let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+    let cases: Vec<CorpusCase> =
+        serde_json::from_slice(&fs::read(std::env::var("DMM_COMPAT_CORPUS").unwrap()).unwrap())
+            .unwrap();
+    let case = cases.iter().find(|case| case.id == id).unwrap();
+    assert_eq!(
+        hex::encode(Sha256::digest(fs::read(&case.archive).unwrap())),
+        case.sha256
+    );
+    let input = LocalizationModInput {
+        mod_id: case.id.to_string(),
+        vpks: case.vpks.clone(),
+    };
+    let resources =
+        resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
+    let original = resources.resolve(path).unwrap().unwrap().1;
+    let current = resources.game_bytes(path).unwrap().unwrap();
+    let plan = LocalizationOverlayPlan::build(&citadel, &[input]).unwrap();
+    let repaired = plan
+        .camera_models
+        .get(path)
+        .expect("authored camera contract was skipped");
+    for kind in repairs {
+        assert!(
+            plan.analysis
+                .asset_repairs
+                .iter()
+                .any(|repair| repair.file_path == path
+                    && std::mem::discriminant(&repair.kind) == std::mem::discriminant(kind))
+        );
+    }
+    assert!(!plan.analysis.asset_warnings.iter().any(|warning| matches!(
+        warning.kind,
+        asset_compatibility::WarningKind::MissingCameraInterface
+            | asset_compatibility::WarningKind::OutdatedCameraAttachments
+    )));
+    let before = Resource::parse(&original).unwrap();
+    let after = Resource::parse(repaired).unwrap();
+    assert_eq!(before.blocks().len(), after.blocks().len());
+    let (_, mut expected_model, _) = decode_compiled_data(&original, path).unwrap();
+    let (_, updated_model, _) = decode_compiled_data(repaired, path).unwrap();
+    *expected_model
+        .get_mut("m_modelInfo")
+        .unwrap()
+        .get_mut("m_keyValueText")
+        .unwrap() = updated_model
+        .get("m_modelInfo")
+        .unwrap()
+        .get("m_keyValueText")
+        .unwrap()
+        .clone();
+    assert!(
+        runtime_values_equal(&expected_model, &updated_model),
+        "camera repair changed the rig or animation bindings"
+    );
+    let mut meshes = 0;
+    for (index, block) in before.blocks().iter().enumerate() {
+        match &block.kind {
+            b"DATA" => {}
+            b"MDAT" => {
+                meshes += 1;
+                let mut expected = kv3::decode(before.get_block_by_index(index).unwrap()).unwrap();
+                let actual = kv3::decode(after.get_block_by_index(index).unwrap()).unwrap();
+                let old_points = expected.get("m_attachments").unwrap().as_array().unwrap();
+                let new_points = actual.get("m_attachments").unwrap().as_array().unwrap();
+                assert_eq!(old_points.len(), new_points.len());
+                for (old, new) in old_points.iter().zip(new_points) {
+                    assert_eq!(old.get("key"), new.get("key"));
+                    let old_value = old.get("value").unwrap();
+                    let new_value = new.get("value").unwrap();
+                    let root = old_value
+                        .get("m_influenceNames")
+                        .unwrap()
+                        .as_array()
+                        .unwrap()[0]
+                        .as_str()
+                        == Some("root_motion");
+                    if !root {
+                        assert_eq!(old, new);
+                        continue;
+                    }
+                    let offsets = |v: &Kv3Value| {
+                        v.get("m_vInfluenceOffsets").unwrap().as_array().unwrap()[0]
+                            .as_array()
+                            .unwrap()
+                            .iter()
+                            .map(|n| n.as_f64().unwrap())
+                            .collect::<Vec<_>>()
+                    };
+                    let a = offsets(old_value);
+                    let b = offsets(new_value);
+                    assert_eq!(b, [a[2], a[0], a[1]]);
+                }
+                *expected.get_mut("m_attachments").unwrap() =
+                    actual.get("m_attachments").unwrap().clone();
+                assert!(
+                    runtime_values_equal(&expected, &actual),
+                    "camera repair changed mesh geometry or binds"
+                );
+            }
+            _ => assert_eq!(
+                before.get_block_by_index(index),
+                after.get_block_by_index(index)
+            ),
+        }
+    }
+    assert_eq!(meshes, expected_meshes);
+    assert_eq!(
+        validate_exported_blocks(repaired, path, Some(&original)).unwrap(),
+        expected_meshes + 1
+    );
+    assert!(
+        camera_attachment_frame::repair(repaired, &current)
+            .unwrap()
+            .is_none()
+    );
+    assert!(model_camera::repair(repaired, &current).is_none());
+    assert_eq!(resources.resolve(path).unwrap().unwrap().1, original);
+}
+
+#[test]
 #[ignore = "requires DMM_REAL_CITADEL and DMM_COMPAT_CORPUS with Cowboy Drifter"]
 fn translated_root_skin_migrates_camera_without_replacing_its_rig() {
   let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
@@ -2223,4 +2374,151 @@ fn owl_camera_repair_is_stable_with_unrelated_animation_overrides() {
     }
   }
   assert_eq!(Sha256::digest(fs::read(vpk).unwrap()), original);
+}
+
+#[test]
+#[ignore = "local warning diagnostic; requires DMM_REAL_CITADEL and DMM_COMPAT_CORPUS"]
+fn inspect_warning_resources() {
+    let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+    let cases: Vec<CorpusCase> =
+        serde_json::from_slice(&fs::read(std::env::var("DMM_COMPAT_CORPUS").unwrap()).unwrap())
+            .unwrap();
+    let root = std::env::temp_dir().join("dmm-warning-resources");
+    fs::create_dir_all(&root).unwrap();
+    for case in cases {
+        let resources = resources::ResourceSnapshot::open(
+            &citadel,
+            &[LocalizationModInput {
+                mod_id: case.id.to_string(),
+                vpks: case.vpks.clone(),
+            }],
+        )
+        .unwrap();
+        let paths: Vec<_> = resources.mod_paths().cloned().collect();
+        fs::write(
+            root.join(format!("{}-paths.json", case.id)),
+            serde_json::to_vec_pretty(&paths).unwrap(),
+        )
+        .unwrap();
+        for path in paths
+            .iter()
+            .filter(|path| path.ends_with(".vmdl_c") || path.ends_with(".vmat_c"))
+        {
+            let original = resources.resolve(path).unwrap().unwrap().1;
+            for (label, bytes) in [
+                ("source", Some(original)),
+                ("game", resources.game_bytes(path).unwrap()),
+            ] {
+                let Some(bytes) = bytes else {
+                    continue;
+                };
+                let resource = Resource::parse(&bytes).unwrap();
+                let (_, value, _) = decode_compiled_data(&bytes, path).unwrap();
+                let mut meshes = Vec::new();
+                for (index, block) in resource.blocks().iter().enumerate() {
+                    if block.kind == *b"MDAT" {
+                        meshes.push(diagnostic_json(
+                            &kv3::decode(resource.get_block_by_index(index).unwrap()).unwrap(),
+                        ));
+                    }
+                }
+                let refs = vpkmanager::material_repair::references(&bytes).unwrap_or_default();
+                let data = serde_json::json!({"path":path,"data":diagnostic_json(&value),"meshes":meshes,"references":refs});
+                fs::write(
+                    root.join(format!(
+                        "{}-{}-{label}.json",
+                        case.id,
+                        path.replace('/', "_")
+                    )),
+                    serde_json::to_vec_pretty(&data).unwrap(),
+                )
+                .unwrap();
+            }
+        }
+    }
+}
+
+#[test]
+#[ignore = "requires DMM_REAL_CITADEL and DMM_COMPAT_CORPUS with Sean Paul Lash"]
+fn legacy_sound_empty_slots_preserve_the_real_authored_model() {
+    let citadel = PathBuf::from(std::env::var("DMM_REAL_CITADEL").unwrap());
+    let cases: Vec<CorpusCase> =
+        serde_json::from_slice(&fs::read(std::env::var("DMM_COMPAT_CORPUS").unwrap()).unwrap())
+            .unwrap();
+    let case = cases.iter().find(|case| case.id == 699464).unwrap();
+    assert_eq!(
+        hex::encode(Sha256::digest(fs::read(&case.archive).unwrap())),
+        case.sha256
+    );
+    let input = LocalizationModInput {
+        mod_id: case.id.to_string(),
+        vpks: case.vpks.clone(),
+    };
+    let resources =
+        resources::ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
+    let path = "models/heroes_wip/lash/lash.vmdl_c";
+    let source = resources.resolve(path).unwrap().unwrap().1;
+    let plan = LocalizationOverlayPlan::build(&citadel, &[input]).unwrap();
+    let repaired = plan
+        .camera_models
+        .get(path)
+        .expect("valid sound binding must migrate despite its null slot");
+    assert!(
+        !plan
+            .analysis
+            .asset_warnings
+            .iter()
+            .any(|w| w.file_path == path
+                && matches!(
+                    w.kind,
+                    asset_compatibility::WarningKind::MissingSoundBindings
+                ))
+    );
+    let (_, mut expected, _) = decode_compiled_data(&source, path).unwrap();
+    let (_, actual, _) = decode_compiled_data(repaired, path).unwrap();
+    let old_text = expected
+        .get("m_modelInfo")
+        .unwrap()
+        .get("m_keyValueText")
+        .unwrap()
+        .as_str()
+        .unwrap();
+    let new_text = actual
+        .get("m_modelInfo")
+        .unwrap()
+        .get("m_keyValueText")
+        .unwrap()
+        .as_str()
+        .unwrap();
+    assert!(old_text.contains("resource:\"\""));
+    assert_eq!(
+        new_text,
+        old_text.replacen("CitadelTaggedSoundSettings_t", "TaggedSoundSettings_t", 1)
+    );
+    *expected
+        .get_mut("m_modelInfo")
+        .unwrap()
+        .get_mut("m_keyValueText")
+        .unwrap() = Kv3Value::String(new_text.into());
+    assert!(runtime_values_equal(&expected, &actual));
+    let before = Resource::parse(&source).unwrap();
+    let after = Resource::parse(repaired).unwrap();
+    for (index, block) in before.blocks().iter().enumerate() {
+        if !matches!(&block.kind, b"DATA" | b"RERL") {
+            assert_eq!(
+                before.get_block_by_index(index),
+                after.get_block_by_index(index)
+            );
+        }
+    }
+    assert_eq!(
+        validate_exported_blocks(repaired, path, Some(&source)).unwrap(),
+        1
+    );
+    let current = resources.game_bytes(path).unwrap().unwrap();
+    assert!(
+        model_sounds::repair(repaired, &current, &resources)
+            .unwrap()
+            .is_none()
+    );
 }

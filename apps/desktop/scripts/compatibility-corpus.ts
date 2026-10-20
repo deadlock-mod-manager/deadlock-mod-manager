@@ -13,13 +13,10 @@ const caseSchema = z.object({
   sha256: z.string().regex(/^[a-f0-9]{64}$/),
   vpks: z.array(z.string()).min(1),
 });
-const cases = z
-  .array(caseSchema)
-  .parse(
-    await Bun.file(
-      new URL("./compatibility-corpus.json", import.meta.url),
-    ).json(),
-  );
+const manifest = process.argv[3]
+  ? resolve(process.argv[3])
+  : new URL("./compatibility-corpus.json", import.meta.url);
+const cases = z.array(caseSchema).parse(await Bun.file(manifest).json());
 const root = resolve(process.argv[2] ?? "/tmp/dmm-compatibility-corpus");
 await mkdir(root, { recursive: true });
 const prepared = [];

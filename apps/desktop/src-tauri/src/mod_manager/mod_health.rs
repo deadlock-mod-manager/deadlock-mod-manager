@@ -17,7 +17,7 @@ use ts_rs::TS;
 
 const CACHE_FILE: &str = "mod-health.json";
 // Increment when status or symptom rules change, so cached verdicts are rechecked.
-const HEALTH_RULES_REVISION: u32 = 7;
+const HEALTH_RULES_REVISION: u32 = 10;
 
 static CACHE_LOCK: Mutex<()> = Mutex::new(());
 
@@ -155,8 +155,9 @@ pub(crate) fn symptom(finding: Finding) -> ModHealthSymptom {
       | AssetWarningKind::MissingAnimationInterface
       | AssetWarningKind::AnimationMapping
       | AssetWarningKind::MissingSoundBindings => Animations,
-      AssetWarningKind::OutdatedCameraAttachments
-      | AssetWarningKind::MissingCameraAttachments => CameraAim,
+      AssetWarningKind::OutdatedCameraAttachments | AssetWarningKind::MissingCameraAttachments => {
+        CameraAim
+      }
       AssetWarningKind::MaterialMapping | AssetWarningKind::MaterialInterface => Appearance,
       AssetWarningKind::ModelMapping | AssetWarningKind::OverlappingModel => Model,
       AssetWarningKind::InvalidSkeleton

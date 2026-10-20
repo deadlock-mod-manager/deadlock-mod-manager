@@ -24,15 +24,15 @@ for mods whose installed files change, and as a forced recheck of every mod when
 the game build differs from the build of the previous check. Progress is sent as
 `mod-health-progress` events.
 
-| Status          | Condition                                                   | Badge                                                                             |
-| --------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `works`         | No repairs and no findings that need an update              | None                                                                              |
-| `fixable`       | Repairs available, nothing left after them, no choice made  | **Can be fixed**                                                                  |
-| `partlyFixable` | Repairs available, findings left after them, no choice made | **Can be partly fixed**                                                           |
-| `fixed`         | Repairs available and the player fixed the mod              | **Fixed for this patch**, or **Partly fixed for this patch** when findings remain |
-| `originalFiles` | Repairs available and the player chose original files       | **Original files**                                                                |
-| `needsUpdate`   | Findings that need an update and no repairs                 | **Needs an update for this patch**                                                |
-| `notCovered`    | No checkable resources                                      | None; the date-based outdated badge still applies                                 |
+| Status          | Condition                                                         | Badge                                                                             |
+| --------------- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `works`         | No repairs and no findings that need an update                    | None                                                                              |
+| `fixable`       | Repairs available, nothing left after them, no choice made        | **Can be fixed**                                                                  |
+| `partlyFixable` | Repairs available, findings left after them, no choice made       | **Can be partly fixed**                                                           |
+| `fixed`         | Repairs available and a current receipt verifies they are applied | **Fixed for this patch**, or **Partly fixed for this patch** when findings remain |
+| `originalFiles` | Repairs available and the player chose original files             | **Original files**                                                                |
+| `needsUpdate`   | Findings that need an update and no repairs                       | **Needs an update for this patch**                                                |
+| `notCovered`    | No checkable resources                                            | None; the date-based outdated badge still applies                                 |
 
 On installed mods, the date-based outdated badge appears only when the status is
 `notCovered` or no result exists yet. Browse pages keep the date badge.
@@ -62,6 +62,11 @@ makes the entry stale, so the mod is checked again. Increment
 launch analysis of all fixed mods together take precedence over standalone
 results for the same files. Results are never uploaded or shown to other users.
 
+The saved compatibility choice is not proof that a repair is installed. Before
+returning `fixed`, health checks the profile's receipt against the current enabled
+inputs and verifies the overlay hash. Missing, damaged, outdated, or unverified
+repairs report `fixable` or `partlyFixable` without clearing the saved choice.
+
 ## Fix choices
 
 Each mod has one of three choices, stored per profile in its profile VPK
@@ -85,8 +90,8 @@ right-click menu and on the mod page, and the launch preflight all call it.
 `enabled: false`, which records the original-files choice.
 
 Disabling or reordering a mod keeps its choice. When the set of fixed mods
-changes, the manager deletes the active profile's overlay and receipt, clears
-the cached plan, and refreshes game search paths. Deadlock must be closed to
+changes, the manager removes the old overlay and receipt, clears the cached plan,
+schedules the selected repairs to rebuild in the background, and refreshes game search paths. Deadlock must be closed to
 change these choices or apply fixes. Review remains available while it runs.
 
 Before a modded launch, the frontend collects enabled mods whose status is
@@ -548,7 +553,10 @@ model with neither block receives the installed game's binding. An authored
 current block, including an empty one, is left unchanged.
 
 Either form must contain only an `m_taggedSounds` list of
-`resource:"scripts/tagged_sounds/<name>.vdata"` references. Each table must
+`resource:"scripts/tagged_sounds/<name>.vdata"` references and optional empty
+`resource:""` slots. Empty slots remain verbatim in the authored list and do not
+become resource dependencies. A list with no nonempty table is left unchanged.
+Each nonempty table must
 resolve to a `CTaggedSound_t` resource in the game or an enabled mod. Table
 references missing from the model's resource list are added with their Source 2
 IDs, and a conflicting authored ID declines the repair. The rest of the metadata
@@ -602,6 +610,37 @@ indices, attachment influences, hitbox bone references, and direct model resourc
 dependencies. Embedded mesh checks use the full model skeleton because each mesh
 may contain only a subset of its bones.
 
+Models with existing NM animation bindings also receive a dependency check.
+Starting at their declared graphs and skeletons, it follows nested graphs and
+clips using the effective enabled-mod load order. It checks referenced skeleton
+structure and clip track counts against that skeleton, including game clips that
+resolve to a modded skeleton. A second pass uses the proposed repaired skeletons,
+clips, and models. Only unresolved findings from that pass become asset warnings.
+Decoded dependency facts are cached across models and rebuilds by resource type
+and exact source bytes. This process-local cache holds at most 2,048 entries with
+a 2 MiB allocation budget. It retains compact skeleton, graph, and clip metadata,
+not decoded animation payloads. Each rebuild still resolves dependencies against
+the current providers and repaired resources; missing resources and final verdicts
+are not cached. Traversal is bounded and shared references are visited once per model.
+
+The review and `compatibility.json` receipt retain original and post-repair
+results: passed these checks, unresolved issues, or checks incomplete. Unsupported
+layouts, unverified retargeting, and absent clips referenced by installed game
+graphs are incomplete checks rather than proof of a broken mod. An unreadable
+rebuilt model retains an unresolved result; previously present bindings that
+disappear retain an incomplete result instead of removing the check. Passing only
+verifies dependency resolution, skeleton structure, and track counts. It does not
+prove authored track order, model deformation, animation playback, or runtime
+acceptance. Equal track counts are not evidence that the original bone order is
+unchanged.
+
+Missing camera metadata can use an authored rig when every embedded mesh already
+supplies the complete required camera attachment set. Each attachment must be
+unambiguous, name a valid bone or root-space transform, and have finite transforms,
+unit rotations, and normalized nonnegative weights. This metadata-only repair
+preserves the model rig, mesh data, and attachment transforms. Other camera repairs
+must satisfy the same attachment postconditions after rebuilding.
+
 Required resource names are resolved against the game, core archives, and every
 enabled mod. Missing references may have engine fallbacks; a finding is not proof
 of a crash. Unreadable resources and skeleton layouts without a verified repair
@@ -620,6 +659,11 @@ preload prefixes, including entries stored entirely in the directory tree, and
 reads payloads lazily. Repeated reads share bytes within the plan. Successful KV3
 parses use an exact-content LRU cache limited to 16 entries and a conservative
 32 MiB allocation charge; oversized trees are parsed without being retained.
+Observed game-table fingerprints have a separate process-local LRU cache of up to
+8 entries with a conservative 64 MiB allocation budget, keyed by table path and
+the exact compiled resource bytes. Reuse still records the observation into the
+current installation's history, including when that history is new or reset.
+These caches require no persistent-format migration and clear on app restart.
 Loose file presence is stamped, with content hashes for supported compiled
 baseline formats and the language files supplied by enabled mods. Other languages
 do not need a content hash. Directory aliases are followed with cycle guards.
@@ -721,13 +765,32 @@ DATA with an independent reader, checks source archives remain unchanged, and
 records resource categories, current hero model usage, repairs, warnings, and
 timing. Analysis or export failures fail the run after writing its report.
 
-The corpus now pins fifteen source archives: the original five older models, Toon
+An additional manifest pins 20 previously untested downloads selected on October
+19, 2026. To prepare it, pass the manifest as the second argument:
+
+```sh
+bun apps/desktop/scripts/compatibility-corpus.ts /tmp/dmm-compatibility-holdout \
+  apps/desktop/scripts/compatibility-holdout-2026-10-19.json
+```
+
+Use that directory's `cases.json` with the same runner. Selection took five Skins
+entries from each of GameBanana index pages 1, 10, 30, and 60, ordered by the SHA-256
+of `dmm-holdout-20261019:<mod ID>`, excluding the earlier 34-mod analysis set and
+the existing pinned fixtures. Each case uses the first nonarchived supported
+download under 150 MiB and the lexicographically first VPK when variants exist.
+The selection was frozen before analysis. This includes effects and icon variants
+listed as Skins; resource categories in the report identify which cases actually
+exercise model checks. It is not a population-random sample or a gameplay pass
+rate. Once used to guide changes, these cases become regression fixtures rather
+than an unseen holdout for later revisions.
+
+The original corpus pins seventeen source archives: the original five older models, Toon
 Bebop, Ivy Gardener, Bull Abrams, Kelvin Amazon Worker, TF2 Engineer McGinnis,
 Gold Pocket, Scaramouche Seven, Nightsisters Merrin Vindicta, Minimalist Health
-Bar, and Square Top Bar. Merrin uses only the cape-with-cloth variant; alternative
+Bar, Square Top Bar, CT SAS Venator, and Goth Ivy. Merrin uses only the cape-with-cloth variant; alternative
 skins and optional gun audio are excluded from that case.
 The `mixed_corpus_respects_per_mod_selection_and_load_order` opt-in test uses all
-fifteen together, with none, all, alternating, Toon-only, and all-except-Toon selected,
+provided fixtures together, with none, all, alternating, Toon-only, and all-except-Toon selected,
 in forward and reverse order. It checks that exports preserve resources owned
 by opted-out effective providers and protected merged tables, repair findings
 belong to selected mods, compiled outputs decode with
@@ -879,7 +942,10 @@ Compatibility rebuilds reject duplicate DATA blocks and unrepresented stream tai
 instead of silently dropping data outside the resource's block table.
 
 When any enabled mod is fixed, launch reuses an overlay only when its
-receipt, inputs, and output hash match. Changed inputs or missing/outdated
+receipt, inputs, and output hash match. This cache persists across app restarts;
+a hit does not rewrite either file or run repair analysis. The launch checklist
+shows a saved-fix check and adds a merge step only when rebuilding is necessary.
+Changed inputs or missing/outdated
 receipts trigger analysis again. Verified repairs are automatic. Conflicts
 between enabled mods and repairs that need approval use the review flow.
 Previously reviewed choices can restore a damaged overlay only when its inputs
@@ -890,9 +956,20 @@ files. Before the staged overlay is kept, it is read back and every entry is
 compared with the file staged for it; a missing, extra, or different entry fails
 the write. Every compatibility rebuild of a resource refuses data outside its
 block table and checks that each block it did not edit is byte-identical after
-the rebuild. Mod changes and overlay deletion invalidate both files. Increment
+the rebuild. Overlay deletion invalidates both files. Mod changes refresh them against the
+new inputs. Increment
 `REPAIR_REVISION` in `manager/localization/receipt.rs` when changing repair rules or
 output semantics so already-installed overlays are regenerated.
+
+Successful library changes invalidate stale repairs and emit a compatibility-change
+event, including enable, disable, remove, update, and reorder. The frontend coalesces
+these events per profile and requests the existing background rebuild, which builds
+without holding the mod manager lock and rechecks the inputs before applying.
+Repairs become available to launches outside the manager when that rebuild finishes.
+Unchanged inputs reuse the verified receipt. Failed refreshes retain saved
+compatibility choices; conflicts remain subject to review. The frontend refreshes
+health both when repairs are invalidated and when the background request settles.
+Changing an inactive profile does not switch the active game's search paths.
 
 Addon analysis registers a mod only after validating its full VPK paths and saving
 its manifest entry. An exact duplicate file assignment transfers ownership to the
@@ -923,7 +1000,6 @@ reversible until the replacement and manifest commit; a failed enable or
 manifest save rolls the switch back. This prevents mixing two model replacements
 when enabling a mod; it does not repair arbitrary skeleton incompatibilities or
 change already-enabled combinations automatically.
-
 
 Missing enabled archives are excluded from activation conflicts because they
 cannot load; launch validation still reports them. Existing archives that cannot

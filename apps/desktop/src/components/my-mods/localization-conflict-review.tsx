@@ -15,6 +15,8 @@ import {
 import { CheckCircle2, TriangleAlert } from "@deadlock-mods/ui/icons";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import type { AnimationDependencyCheck } from "@/types/generated/AnimationDependencyCheck";
+import { AnimationDependencyReport } from "./animation-dependency-report";
 import {
   BaselineCompatibilityReport,
   type CompiledDataBaseline,
@@ -104,6 +106,7 @@ export interface LocalizationOverlayAnalysis {
   parseWarnings: LocalizationParseWarning[];
   assetRepairs: AssetRepair[];
   assetWarnings: AssetWarning[];
+  animationChecks: AnimationDependencyCheck[];
   unloadedModels: string[];
   dataRepairs: DataRepair[];
   dataWarnings: DataWarning[];
@@ -428,6 +431,13 @@ export function LocalizationConflictReview({
           />
         </ReviewSection>
       ) : null}
+
+      <AnimationDependencyReport
+        checks={analysis.animationChecks.filter(
+          (check) => !unloadedModels.has(check.filePath),
+        )}
+        modNames={modNames}
+      />
 
       {analysis.excludedModIds.length > 0 ? (
         <p className='text-muted-foreground text-xs'>
