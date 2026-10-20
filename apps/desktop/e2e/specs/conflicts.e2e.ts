@@ -97,7 +97,9 @@ describe("mod conflicts", () => {
           await dialog.waitForDisplayed();
           await dialog.$("button=Cancel").click();
           await expect(dialog).not.toBeDisplayed();
-          await expect($("button=Check for updates")).toBeEnabled();
+          await expect(
+            $('button[aria-label="Check for updates"]'),
+          ).toBeEnabled();
           await assertConflictDisk(
             world,
             "after-cancel-disable",

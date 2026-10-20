@@ -1,8 +1,14 @@
 import { Button } from "@deadlock-mods/ui/components/button";
-import { Power, PowerOff } from "@deadlock-mods/ui/icons";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deadlock-mods/ui/components/tooltip";
+import { Power } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
 import { usePersistedStore } from "@/lib/store";
+import { cn } from "@/lib/utils";
 import { ModStatus } from "@/types/mods";
 import type { ModGroup } from "@/types/profiles";
 
@@ -25,6 +31,12 @@ export const ModGroupEnablement = ({
   const members = mods.filter((mod) => ids.has(mod.remoteId));
   const enabled = members.filter(isInstalledModWithVpks).length;
   const canEnable = members.some((mod) => mod.status === ModStatus.Downloaded);
+  const label = t(
+    canEnable ? "myMods.groups.enable" : "myMods.groups.disable",
+    {
+      name: group.name,
+    },
+  );
   return (
     <div className='flex shrink-0 items-center gap-1'>
       <span
@@ -35,24 +47,26 @@ export const ModGroupEnablement = ({
           total: members.length,
         })}
       </span>
-      <Button
-        size='icon'
-        variant='ghost'
-        aria-label={t("myMods.groups.enable", { name: group.name })}
-        title={t("myMods.groups.enable", { name: group.name })}
-        disabled={actions.busy || !canEnable}
-        onClick={() => actions.enable(ids)}>
-        <Power className='size-4' />
-      </Button>
-      <Button
-        size='icon'
-        variant='ghost'
-        aria-label={t("myMods.groups.disable", { name: group.name })}
-        title={t("myMods.groups.disable", { name: group.name })}
-        disabled={actions.busy || enabled === 0}
-        onClick={() => actions.disable(ids)}>
-        <PowerOff className='size-4' />
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            size='icon'
+            variant='ghost'
+            aria-label={label}
+            disabled={actions.busy || (!canEnable && enabled === 0)}
+            onClick={() =>
+              canEnable ? actions.enable(ids) : actions.disable(ids)
+            }>
+            <Power
+              className={cn(
+                "size-4 transition-colors duration-200",
+                !canEnable && enabled > 0 && "text-primary",
+              )}
+            />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{label}</TooltipContent>
+      </Tooltip>
     </div>
   );
 };

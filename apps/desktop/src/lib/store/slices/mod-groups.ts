@@ -12,7 +12,7 @@ type ModGroupMove = {
 };
 
 export type ModGroupsState = {
-  createModGroup: (profileId: ProfileId, name: string) => boolean;
+  createModGroup: (profileId: ProfileId, name: string) => string | null;
   renameModGroup: (
     profileId: ProfileId,
     groupId: string,
@@ -96,18 +96,19 @@ export const createModGroupsSlice: StateCreator<
     createModGroup: (profileId, name) => {
       const profile = get().profiles[profileId];
       if (!profile || !isModGroupNameAvailable(profile.modGroups ?? [], name)) {
-        return false;
+        return null;
       }
+      const id = crypto.randomUUID();
       updateGroups(profileId, (groups) => [
         ...groups,
         {
-          id: crypto.randomUUID(),
+          id,
           name: name.trim(),
           modIds: [],
           collapsed: false,
         },
       ]);
-      return true;
+      return id;
     },
     renameModGroup: (profileId, groupId, name) => {
       const groups = get().profiles[profileId]?.modGroups ?? [];

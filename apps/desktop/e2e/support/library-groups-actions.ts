@@ -14,8 +14,9 @@ export const groupToggle = (name: string) =>
   groupHeader(name).$("button[aria-expanded]");
 
 export const createGroup = async (name: string) => {
-  await browser.waitUntil(() => $("button=New group").isEnabled());
-  await $("button=New group").click();
+  await browser.waitUntil(() => $("button=Groups").isEnabled());
+  await $("button=Groups").click();
+  await $('[role="menuitem"]=New group').click();
   await $('input[placeholder="e.g. Map cosmetics"]').setValue(name);
   await $("button=Create group").click();
   await expect(group(name)).toBeDisplayed();
@@ -27,7 +28,7 @@ export const groupMenu = async (name: string, action: string) => {
   await $(`[role="menuitem"]=${action}`).click();
 };
 export const groupTools = async (action: string) => {
-  await $('button[aria-label="Group options"]').click();
+  await $("button=Groups").click();
   await browser.keys("ArrowDown");
   await $(`[role="menuitem"]=${action}`).click();
 };

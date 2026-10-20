@@ -51,7 +51,7 @@ describe("native library group dragging", () => {
       );
       await expectMembership(world, { Characters: [first, third], Maps: [] });
       await $('button[aria-label="Done selecting"]').click();
-      await nativeGroupDrag($('button[aria-label="Reorder Maps"]'), () =>
+      await nativeGroupDrag(groupToggle("Maps"), () =>
         groupHeader("Characters"),
       );
       await expectGroupOrder(["Maps", "Characters"]);
@@ -63,7 +63,7 @@ describe("native library group dragging", () => {
         Maps: [second],
         Characters: [first, third],
       });
-      await nativeGroupDrag(mod(second), () => $("button=New group"));
+      await nativeGroupDrag(mod(second), () => $("button=Groups"));
     }
     await expectMembership(world, {
       Maps: [second],

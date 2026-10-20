@@ -99,9 +99,8 @@ const start = async (world: string, first: boolean) => {
   }
   await $('[role="dialog"]').$("button=Start").click();
   await verify(world, false);
-  await expect($("button=New group")).toBeDisabled();
+  await expect($("button=Groups")).toBeDisabled();
   await expect($('button[aria-label="Enable mods in Outfits"]')).toBeDisabled();
-  await expect($('button[aria-label="Reorder Outfits"]')).toBeDisabled();
   const state = stateSchema.parse(await readPersistedDocument(world)).state;
   assert.deepEqual(state.bisectSession?.originalEnabled, CONFLICT_MODS);
 };

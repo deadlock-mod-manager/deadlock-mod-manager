@@ -1,4 +1,5 @@
 import { startApplication } from "../support/application";
+import { openAddLocalMod } from "../support/ui";
 import { observeUntil } from "../support/observations";
 import { closeApplication } from "../support/application-exit";
 import { $, browser, expect } from "@wdio/globals";
@@ -81,9 +82,7 @@ describe("local mod lifecycle", () => {
       const link = await $('a[href="/my-mods"]');
       await link.waitForClickable();
       await link.click();
-      const addLocal = await $("button=Add Local Mod");
-      await addLocal.waitForClickable();
-      await addLocal.click();
+      await openAddLocalMod();
       const dropSelector =
         '[role="button"][aria-label="Drop files/folders here, or click to select"]';
       const dropArea = await $(dropSelector);

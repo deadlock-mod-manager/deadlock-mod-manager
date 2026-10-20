@@ -2281,6 +2281,11 @@
     "at": "at"
   },
   "myMods": {
+    "menuSections": {
+      "library": "Library",
+      "troubleshoot": "Troubleshoot",
+      "share": "Share"
+    },
     "groups": {
       "new": "New group",
       "create": "Create group",
@@ -2302,8 +2307,7 @@
       "empty": "Drag a mod here, or use Move to group from its right-click menu.",
       "dropHere": "Drop into {{name}}",
       "releaseToMove": "Release to move into {{name}}",
-      "options": "Group options",
-      "reorder": "Reorder {{name}}",
+      "menu": "Groups",
       "enabledCount": "{{count}}/{{total}} enabled",
       "enable": "Enable mods in {{name}}",
       "disable": "Disable mods in {{name}}",
@@ -2311,6 +2315,8 @@
       "collapseAll": "Collapse all groups",
       "draggingMods_one": "{{count}} mod",
       "draggingMods_other": "{{count}} mods",
+      "createAndMove_one": "Create and move {{count}} mod",
+      "createAndMove_other": "Create and move {{count}} mods",
       "moved_one": "Moved {{count}} mod to {{name}}",
       "moved_other": "Moved {{count}} mods to {{name}}",
       "undo": "Undo",
@@ -2373,7 +2379,7 @@
       "sharedDescription": "These files stay unchanged because an active VPK is untracked, an active mod uses its original files, or an unfixed mod shares game text and data. Inspect untracked files, fix the active skin, or disable competing skins and variations."
     },
     "checkForUpdates": "Check for updates",
-    "checkForUpdatesTooltip": "Check if your mods have updates",
+    "addMods": "Add mods",
     "checkForUpdatesError": "Failed to check for mod updates",
     "allModsUpToDate": "All mods are up to date",
     "subtitle": "Mods you have downloaded or installed",
@@ -2384,9 +2390,8 @@
     "enabledModsCount": "{{count}}/99 mods enabled",
     "enabledModsCountNearLimit": "{{count}}/99 mods enabled (approaching limit)",
     "enabledModsCountAtLimit": "{{count}}/99 mods enabled (at limit)",
-    "libraryModsNoun_one": "mod",
-    "libraryModsNoun_other": "mods",
     "vpkFilesNoun": "addon files",
+    "vpkFilesTooltip": "Addon files (.vpk) used by your enabled mods. One mod can include several.",
     "updateAll": "Update All",
     "updateAllDescription": "Download and install the latest versions of all your mods",
     "updateAvailableCount_one": "{{count}} update available",
@@ -6051,7 +6056,6 @@
     }
   },
   "interchange": {
-    "importButton": "Import from other mod managers",
     "managersLabel": "Mod managers",
     "detecting": "Looking for installed mod managers…",
     "detected": "Detected",

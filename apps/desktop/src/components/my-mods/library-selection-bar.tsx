@@ -136,11 +136,12 @@ export const LibrarySelectionBar = ({
             )}
             {enableCount > 0 && (
               <Button
-                className='whitespace-nowrap'
+                className='whitespace-nowrap border-primary/50 bg-primary/10 text-primary hover:border-primary hover:bg-primary/20'
                 disabled={busy}
                 icon={<Power className='size-4' />}
                 onClick={onEnable}
-                size='sm'>
+                size='sm'
+                variant='outline'>
                 {t("myMods.selection.enableCount", { count: enableCount })}
               </Button>
             )}

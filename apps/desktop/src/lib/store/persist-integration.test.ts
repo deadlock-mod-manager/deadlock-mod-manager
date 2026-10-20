@@ -201,7 +201,7 @@ describe("persisted store integration with real production fixture", () => {
       [],
     );
     const before = usePersistedStore.getState();
-    expect(before.createModGroup(profileId, "Cosmetics")).toBe(true);
+    expect(before.createModGroup(profileId, "Cosmetics")).not.toBeNull();
     const groupId =
       usePersistedStore.getState().profiles[profileId].modGroups?.[0].id;
     if (!groupId) throw new Error("Group creation failed");

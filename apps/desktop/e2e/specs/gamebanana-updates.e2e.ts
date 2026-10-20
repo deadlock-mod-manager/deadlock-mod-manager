@@ -55,7 +55,7 @@ const expireUpdateCache = async (world: string) => {
 const expectUpdates = (count: 0 | 1) =>
   step(`check for updates: ${count} available`, async () => {
     await navigate("my-mods");
-    const check = await $("button=Check for updates");
+    const check = await $('button[aria-label="Check for updates"]');
     // Wait for any automatic check to finish so a manual one cannot race it.
     await check.waitForEnabled({ timeout: 30_000 });
     await check.click();

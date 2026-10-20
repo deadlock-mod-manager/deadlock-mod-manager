@@ -154,7 +154,7 @@ export const updateMonkeyMod = async (
   const mod = MULTIPAK_MODS.find((item) => item.id === id);
   assert(mod);
   await navigate("my-mods");
-  const check = await $("button=Check for updates");
+  const check = await $('button[aria-label="Check for updates"]');
   await check.waitForEnabled({ timeout: 30_000 });
   await check.click();
   await check.waitForEnabled({ timeout: 30_000 });

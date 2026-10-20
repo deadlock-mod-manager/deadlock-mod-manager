@@ -67,7 +67,7 @@ const createTestStore = (saved = new Map<string, string>()) =>
   );
 
 const addGroup = (store: ReturnType<typeof createTestStore>, name: string) => {
-  expect(store.getState().createModGroup(firstId, name)).toBe(true);
+  expect(store.getState().createModGroup(firstId, name)).not.toBeNull();
   const group = store.getState().profiles[firstId].modGroups?.at(-1);
   if (!group) throw new Error("Group was not created");
   return group.id;
@@ -145,12 +145,12 @@ describe("profile library groups", () => {
   it("validates names per profile and keeps stable IDs when renaming", () => {
     const store = createTestStore();
     const groupId = addGroup(store, "  Cosmetics  ");
-    expect(store.getState().createModGroup(firstId, "cosmetics")).toBe(false);
-    expect(store.getState().createModGroup(firstId, " ")).toBe(false);
-    expect(store.getState().createModGroup(firstId, "x".repeat(81))).toBe(
-      false,
-    );
-    expect(store.getState().createModGroup(secondId, "Cosmetics")).toBe(true);
+    expect(store.getState().createModGroup(firstId, "cosmetics")).toBeNull();
+    expect(store.getState().createModGroup(firstId, " ")).toBeNull();
+    expect(store.getState().createModGroup(firstId, "x".repeat(81))).toBeNull();
+    expect(
+      store.getState().createModGroup(secondId, "Cosmetics"),
+    ).not.toBeNull();
     expect(
       store.getState().renameModGroup(firstId, groupId, "Map cosmetics"),
     ).toBe(true);

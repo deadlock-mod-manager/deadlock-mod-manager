@@ -16,17 +16,15 @@ import {
 import {
   ArrowDown,
   ArrowUp,
-  ChevronDown,
   ChevronRight,
   EllipsisVertical,
-  FolderOpen,
-  GripVertical,
   Pencil,
   Trash2,
 } from "@deadlock-mods/ui/icons";
 import { useId, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ModGroupForm } from "@/components/my-mods/mod-group-form";
+import { ModGroupCovers } from "@/components/my-mods/mod-group-covers";
 import { ModGroupDropZone } from "@/components/my-mods/mod-group-drop-zone";
 import {
   ModGroupEnablement,
@@ -79,33 +77,35 @@ export const ModGroupSection = ({
       <div
         ref={droppable.setNodeRef}
         data-mod-group-header={group.id}
+        onPointerDown={(event) => {
+          if (
+            !(event.target instanceof Element) ||
+            !event.currentTarget.contains(event.target) ||
+            event.target.closest("button:not([aria-expanded])")
+          ) {
+            return;
+          }
+          draggable.listeners?.onPointerDown?.(event);
+        }}
         className={cn(
-          "flex flex-wrap items-center gap-2 rounded-md border-b border-border/60 pb-2",
+          "flex flex-wrap items-center gap-2 rounded-t-md border-b border-border/60 py-1 transition-colors hover:bg-accent/50",
+          !actions.busy && "cursor-grab",
           droppable.isOver && "bg-primary/10 ring-1 ring-primary/50",
         )}>
         <Button
-          {...draggable.attributes}
-          {...draggable.listeners}
-          size='icon'
           variant='ghost'
-          className='cursor-grab touch-none'
-          disabled={actions.busy}
-          aria-label={t("myMods.groups.reorder", { name: group.name })}>
-          <GripVertical className='size-4' />
-        </Button>
-        <Button
-          variant='ghost'
-          className='min-w-0 flex-1 justify-start px-2'
+          className='min-w-0 flex-1 justify-start px-2 hover:bg-transparent'
           aria-expanded={expanded}
           aria-controls={contentId}
           onClick={() => toggle(profileId, group.id)}
           disabled={revealMatches || actions.busy}>
-          {expanded ? (
-            <ChevronDown className='size-4 shrink-0' />
-          ) : (
-            <ChevronRight className='size-4 shrink-0' />
-          )}
-          <FolderOpen className='size-4 shrink-0 text-muted-foreground' />
+          <ChevronRight
+            className={cn(
+              "size-4 shrink-0 transition-transform duration-200 ease-out motion-reduce:transition-none",
+              expanded && "rotate-90",
+            )}
+          />
+          <ModGroupCovers group={group} />
           <span className='truncate'>{group.name}</span>
           <span className='text-xs text-muted-foreground'>
             {count === total
