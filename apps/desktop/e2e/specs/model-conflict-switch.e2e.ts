@@ -96,9 +96,9 @@ describe("skin conflict activation", () => {
       await $("button=Enable selected").click();
       await choose("Enable selected");
       await expect($('[role="alertdialog"]')).toHaveText(
-        expect.stringContaining("Choose which skin to keep"),
+        expect.stringContaining("These mods replace the same model"),
       );
-      await choose("Keep current");
+      await choose("Cancel");
       await verify(world, HAT_PANTS);
       await expect($('[role="dialog"]')).toHaveText(
         expect.stringContaining("Skipped to keep current skins"),
@@ -106,7 +106,7 @@ describe("skin conflict activation", () => {
       await $('[role="dialog"]').$("button=Close").click();
       await $("button=Enable selected").click();
       await choose("Enable selected");
-      await choose(`Use ${HAT_PANTS}`);
+      await choose("Swap mods");
       await verify(world, HAT_JACKET);
       await $('[role="dialog"]').waitForDisplayed();
       await expect(replaced()).toBeDisplayed();
@@ -121,7 +121,7 @@ describe("skin conflict activation", () => {
       await $(`[role="checkbox"][aria-label="Select ${HAT_JACKET}"]`).click();
       await $("button=Enable selected").click();
       await choose("Enable selected");
-      await choose(`Use ${HAT_PANTS}`);
+      await choose("Swap mods");
       await verify(world, HAT_JACKET);
       await expect(replaced()).toBeDisplayed();
       await expect(replaced()).toHaveText(expect.stringContaining(HAT_JACKET));
