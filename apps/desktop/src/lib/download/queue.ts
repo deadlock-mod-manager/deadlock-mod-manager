@@ -7,6 +7,13 @@ import {
 } from "@/lib/analytics/schema";
 import type { DownloadableMod } from "@/types/mods";
 
+/**
+ * The rejection a second request for an in-flight mod gets. The first download
+ * is still running and owns the mod's status, so a caller must not mark the mod
+ * failed over it.
+ */
+export class DownloadAlreadyQueuedError extends Error {}
+
 interface PendingDownload {
   mod: DownloadableMod;
   attempt: AnalyticsAttempt<"mod_download">;
@@ -17,7 +24,7 @@ interface DownloadQueueDependencies {
   ) => AnalyticsAttempt<"mod_download">;
   queue: (mod: DownloadableMod) => Promise<void>;
   cancel: (modId: string) => Promise<void>;
-  duplicateError: () => Error;
+  duplicateMessage: () => string;
   onQueueError: (error: Error) => void;
 }
 
@@ -35,7 +42,9 @@ export class DownloadQueue {
 
   add(mod: DownloadableMod) {
     if (this.pending.has(mod.remoteId)) {
-      mod.onError(this.dependencies.duplicateError());
+      mod.onError(
+        new DownloadAlreadyQueuedError(this.dependencies.duplicateMessage()),
+      );
       return;
     }
     const entry: PendingDownload = {
