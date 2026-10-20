@@ -13,7 +13,7 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 78 : 67);
+    expect(ids).toHaveLength(windows ? 79 : 68);
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
       expect(scenarioSpec(id)).toContain("./specs/");
@@ -69,6 +69,12 @@ describe("scenario selection", () => {
   });
 
   it("runs the lifecycle in two fresh processes against one world", () => {
+    expect(scenarioPhases("local-mod-name-recovery")).toEqual([
+      "import",
+      "restart-delete",
+    ]);
+    expect(scenarios["local-mod-name-recovery"].nativeInput).toBe(false);
+    expect(scenarios["local-mod-name-recovery"].platforms).toContain("linux");
     expect(scenarioPhases("local-mod-lifecycle")).toEqual([
       "import-toggle",
       "restart-delete",

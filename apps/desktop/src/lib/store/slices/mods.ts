@@ -191,7 +191,8 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       const profile = state.profiles[profileId];
       const profileMods = profile?.mods ?? state.localMods;
 
-      if (profileMods.some((m) => m.id === mod.id)) {
+      const existing = profileMods.find((m) => m.remoteId === mod.remoteId);
+      if (existing && !existing.metadataPending) {
         return state;
       }
 
@@ -199,22 +200,27 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
         profileMods.length > 0
           ? Math.max(...profileMods.map((m) => m.installOrder ?? -1))
           : -1;
-      const installOrder = additional?.installOrder ?? maxOrder + 1;
+      const installOrder =
+        additional?.installOrder ?? existing?.installOrder ?? maxOrder + 1;
 
       const effectiveStatus = additional?.status ?? ModStatus.Downloading;
       const newMod = {
+        ...existing,
         ...mod,
         status: ModStatus.Downloading,
         installOrder,
         ...additional,
+        metadataPending: false,
         downloadedAt:
           additional?.downloadedAt ??
           (effectiveStatus !== ModStatus.Downloading ? new Date() : undefined),
         selectedDownloads: additional?.selectedDownloads,
       };
 
+      const nextMods = existing
+        ? profileMods.map((item) => (item === existing ? newMod : item))
+        : [...profileMods, newMod];
       if (profile) {
-        const nextMods = [...profile.mods, newMod];
         return {
           localMods:
             state.activeProfileId === profileId ? nextMods : state.localMods,
@@ -226,7 +232,7 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
       }
 
       return {
-        localMods: [...state.localMods, newMod],
+        localMods: nextMods,
       };
     });
   },

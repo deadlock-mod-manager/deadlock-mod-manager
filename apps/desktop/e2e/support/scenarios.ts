@@ -499,6 +499,12 @@ export const scenarios = {
     verifyNetwork: assertAppUpdateNetwork,
   },
   "local-mod-lifecycle": local,
+  "local-mod-name-recovery": {
+    ...local,
+    phases: ["import", "restart-delete"],
+    nativeInput: false,
+    platforms: ["win32", "linux"],
+  },
   "local-mod-large-picker-vpk": { ...localLargeOnDisk, nativeInput: true },
   "local-mod-large-picker-zip": { ...localLargeOnDisk, nativeInput: true },
   "local-mod-large-drop-vpk": localLargeInPage,
