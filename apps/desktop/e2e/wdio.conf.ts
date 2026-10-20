@@ -2,6 +2,7 @@ import path from "node:path";
 import { writeFile } from "node:fs/promises";
 import { monkeyStepCount, monkeyTimeoutMs } from "./support/monkey-plan";
 import { parseScenarioId, scenarioSpec } from "./support/scenarios";
+import { seedPendingLocalName } from "./support/local-mod-recovery-fixture";
 import { captureEvidence } from "./support/evidence";
 
 interface TauriCapability {
@@ -64,6 +65,16 @@ export const config: TauriWdioConfig = {
       },
     ],
   ],
+  onPrepare: async () => {
+    if (
+      process.env.DMM_E2E_CASE_ID === "local-mod-name-recovery" &&
+      process.env.DMM_E2E_PHASE === "restart-delete"
+    ) {
+      // Seed the affected store after the previous phase's exit was verified,
+      // before the next application process starts.
+      await seedPendingLocalName(path.dirname(artifacts));
+    }
+  },
   logLevel: "warn",
   bail: 0,
   waitforTimeout: 15_000,

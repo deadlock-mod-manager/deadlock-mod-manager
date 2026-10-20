@@ -19,24 +19,51 @@ export const useDisableAllMods = () => {
   );
 
   const mutation = useMutation({
-    mutationFn: async () => {
-      const enabledMods = mods.filter(isInstalledModWithVpks);
+    mutationKey: ["library-bulk"],
+    mutationFn: async (selectedIds?: ReadonlySet<string>) => {
+      const profileId = usePersistedStore.getState().activeProfileId;
+      const enabledMods = mods.filter(
+        (mod) =>
+          isInstalledModWithVpks(mod) &&
+          (!selectedIds || selectedIds.has(mod.remoteId)),
+      );
+      if (enabledMods.length === 0) return false;
       const shouldDisable = await confirm({
-        title: t("myMods.disableAllConfirmTitle"),
-        body: t("myMods.disableAllConfirmBody", {
-          count: enabledMods.length,
-        }),
-        actionButton: t("myMods.disableAllConfirmAction"),
+        title: t(
+          selectedIds
+            ? "myMods.selection.disableTitle"
+            : "myMods.disableAllConfirmTitle",
+          { count: enabledMods.length },
+        ),
+        body: t(
+          selectedIds
+            ? "myMods.selection.disableBody"
+            : "myMods.disableAllConfirmBody",
+          {
+            count: enabledMods.length,
+          },
+        ),
+        actionButton: t(
+          selectedIds
+            ? "myMods.selection.disable"
+            : "myMods.disableAllConfirmAction",
+        ),
         cancelButton: t("myMods.disableAllConfirmCancel"),
         tone: "destructive",
       });
 
-      if (!shouldDisable) return;
+      if (
+        !shouldDisable ||
+        usePersistedStore.getState().activeProfileId !== profileId
+      )
+        return false;
 
       const activeProfile = getActiveProfile();
       const profileFolder = activeProfile?.folderName ?? null;
 
       for (const mod of enabledMods) {
+        if (usePersistedStore.getState().activeProfileId !== profileId)
+          return false;
         await invokeGuarded("uninstall_mod", {
           modId: mod.remoteId,
           vpks: mod.installedVpks ?? [],
@@ -45,9 +72,18 @@ export const useDisableAllMods = () => {
         setModStatus(mod.remoteId, ModStatus.Downloaded);
         setModEnabledInCurrentProfile(mod.remoteId, false);
       }
+      return enabledMods.length;
     },
-    onSuccess: () => {
-      toast.success(t("myMods.disableAllSuccess"));
+    onSuccess: (disabled, selectedIds) => {
+      if (!disabled) return;
+      toast.success(
+        t(
+          selectedIds
+            ? "myMods.selection.disabled"
+            : "myMods.disableAllSuccess",
+          { count: disabled },
+        ),
+      );
     },
     onError: (error) => {
       logger.errorOnly(error);

@@ -6,6 +6,7 @@ import { getMod } from "@/lib/api-client";
 import { getErrorMessage } from "@/lib/errors";
 import logger from "@/lib/logger";
 import { isInstalledModWithVpks } from "@/lib/mods/installed-helpers";
+import { readLocalModMetadata } from "@/lib/mods/local-metadata";
 import { type LocalMod, ModStatus, type InstalledModInfo } from "@/types/mods";
 import {
   createProfileId,
@@ -374,8 +375,11 @@ const planManifestReconciliation = async (
     const missingVpks = missingById.get(modId)?.missingVpks ?? [];
     let restoredMod: LocalMod;
     try {
-      const modDetails = await getMod(modId);
+      const modDetails = modId.startsWith("local-")
+        ? await readLocalModMetadata(modId)
+        : await getMod(modId);
       restoredMod = {
+        ...placeholderModFromManifest(modId, entry, installedVpks),
         ...trackedById.get(modId),
         ...modDetails,
         metadataPending: false,
@@ -390,7 +394,7 @@ const planManifestReconciliation = async (
       logger
         .withMetadata({ modId })
         .withError(error)
-        .warn("Using placeholder for unavailable catalog metadata");
+        .warn("Using placeholder for unavailable mod metadata");
       restoredMod = {
         ...placeholderModFromManifest(modId, entry, installedVpks),
         missingVpks,

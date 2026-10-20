@@ -33,6 +33,23 @@ describe("library author navigation", () => {
     if (!legacy) {
       await navigate("mods");
       await waitForDisplayed(`[title="${mod.name}"]`);
+      const favorite = await $('button[aria-label="Add to favorites"]');
+      await browser.keys("Tab");
+      await browser.execute(
+        (element: HTMLElement) => element.focus(),
+        favorite,
+      );
+      await expect(favorite).toBeFocused();
+      await browser.waitUntil(
+        () =>
+          browser.execute(
+            (element: HTMLElement) =>
+              element.matches(":focus-visible") &&
+              getComputedStyle(element).opacity === "1",
+            favorite,
+          ),
+        { timeoutMsg: "Keyboard-focused favorite button stayed invisible" },
+      );
       await $(`[title="${mod.name}"]`).click();
       await waitForDisplayed('button[aria-label="Download Mod"]');
       await $('button[aria-label="Download Mod"]').click();
@@ -108,6 +125,15 @@ describe("library author navigation", () => {
           await expect(browser).toHaveUrl(expect.stringMatching(/\/mods$/));
         },
       );
+    }
+    if (!legacy) {
+      await navigate("my-mods");
+      const check = await $("button=Check for updates");
+      await check.waitForEnabled({ timeout: 30_000 });
+      await check.click();
+      await expect(
+        $('//*[@data-sonner-toast and contains(., "All mods are up to date")]'),
+      ).toBeDisplayed({ wait: 30_000 });
     }
     await closeApplication(runtime.roots.world, runtime.processId);
   });

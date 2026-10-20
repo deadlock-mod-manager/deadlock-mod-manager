@@ -29,22 +29,45 @@ export const useEnableAllMods = () => {
   const [recap, setRecap] = useState<EnableAllRecap | null>(null);
 
   const mutation = useMutation({
-    mutationFn: async () => {
+    mutationKey: ["library-bulk"],
+    mutationFn: async (selectedIds?: ReadonlySet<string>) => {
+      const profileId = usePersistedStore.getState().activeProfileId;
       const disabledMods = mods.filter(
-        (mod) => mod.status === ModStatus.Downloaded,
+        (mod) =>
+          mod.status === ModStatus.Downloaded &&
+          (!selectedIds || selectedIds.has(mod.remoteId)),
       );
+      if (disabledMods.length === 0) return;
       const shouldEnable = await confirm({
-        title: t("myMods.enableAllConfirmTitle", {
-          count: disabledMods.length,
-        }),
-        body: t("myMods.enableAllConfirmBody"),
-        actionButton: t("myMods.enableAllConfirmAction"),
+        title: t(
+          selectedIds
+            ? "myMods.selection.enableTitle"
+            : "myMods.enableAllConfirmTitle",
+          {
+            count: disabledMods.length,
+          },
+        ),
+        body: t(
+          selectedIds
+            ? "myMods.selection.enableBody"
+            : "myMods.enableAllConfirmBody",
+          { count: disabledMods.length },
+        ),
+        actionButton: t(
+          selectedIds
+            ? "myMods.selection.enable"
+            : "myMods.enableAllConfirmAction",
+        ),
         cancelButton: t("myMods.enableAllConfirmCancel"),
         icon: PowerIcon,
         actionButtonVariant: "default",
       });
 
-      if (!shouldEnable) return;
+      if (
+        !shouldEnable ||
+        usePersistedStore.getState().activeProfileId !== profileId
+      )
+        return;
 
       const result: EnableAllRecap = {
         enabled: [],
@@ -55,6 +78,10 @@ export const useEnableAllMods = () => {
       };
 
       for (const [index, mod] of disabledMods.entries()) {
+        if (usePersistedStore.getState().activeProfileId !== profileId) {
+          result.notAttempted = disabledMods.slice(index);
+          break;
+        }
         // These ask for confirmation one by one, so a batch leaves them alone.
         if (mod.usesCriticalPaths) {
           result.criticalPaths.push(mod);

@@ -71,9 +71,6 @@
     "[xml]": {
       "editor.defaultFormatter": "redhat.vscode-xml",
     },
-    "cSpell.words": [
-      "dlmm",
-      "modmanager"
-    ],
+    "cSpell.words": ["dlmm", "modmanager"],
   },
 }

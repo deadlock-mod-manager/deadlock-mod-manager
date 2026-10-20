@@ -26,7 +26,7 @@ export const ModConflictBadge = ({
         <Badge
           asChild
           className={cn(
-            "cursor-pointer bg-background/80 backdrop-blur-sm",
+            "cursor-pointer bg-background/95",
             status === "modelHidden"
               ? "border-destructive/50 text-red-300 hover:bg-destructive/20"
               : "border-border text-muted-foreground hover:bg-muted",

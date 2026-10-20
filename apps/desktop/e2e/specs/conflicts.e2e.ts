@@ -73,6 +73,38 @@ describe("mod conflicts", () => {
     if (process.env.DMM_E2E_PHASE === "resolve") {
       await assertConflictDisk(world, "initial-state", CONFLICT_MODS, null);
 
+      await step(
+        "cancel disabling all mods without reporting success",
+        async () => {
+          const menu = $('button[aria-label="More actions"]');
+          await menu.click();
+          await browser.keys("ArrowDown");
+          await $(
+            '//*[@role="menuitem" and normalize-space()="Disable all mods"]',
+          ).click();
+          const dialog = $('[role="alertdialog"]');
+          await dialog.waitForDisplayed();
+          await dialog.$("button=Cancel").click();
+          await expect(dialog).not.toBeDisplayed();
+          await expect($("button=Check for updates")).toBeEnabled();
+          await assertConflictDisk(
+            world,
+            "after-cancel-disable",
+            CONFLICT_MODS,
+            null,
+          );
+          const observedAt = Date.now();
+          let successToastShown = false;
+          await browser.waitUntil(async () => {
+            successToastShown ||= await $(
+              '//*[@data-sonner-toast and contains(., "All mods disabled")]',
+            ).isDisplayed();
+            return Date.now() - observedAt >= 1000;
+          });
+          expect(successToastShown).toBe(false);
+        },
+      );
+
       await step("badge every conflicting mod", async () => {
         await browser.waitUntil(
           async () =>

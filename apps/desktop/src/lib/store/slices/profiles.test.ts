@@ -49,6 +49,7 @@ beforeEach(() => {
   profileTestLogger.error.mockClear();
   profileTestBackend.readSnapshot = async () => snapshotFor();
   profileTestBackend.readMetadata = async (id) => modFor(id);
+  profileTestBackend.readLocalMetadata = async (id) => modFor(id);
   profileTestBackend.forgetOrphans = async (_folder, modIds) => modIds;
 });
 
@@ -377,6 +378,41 @@ describe("mods whose VPKs were deleted", () => {
 });
 
 describe("profile snapshot reconciliation", () => {
+  it("recovers a local placeholder from disk without querying GameBanana", async () => {
+    const store = createTestStore();
+    const id = "local-aa83cfac-def9-4a7a-820b-1e004e30ca29";
+    profileTestBackend.readSnapshot = async () => snapshotFor(id);
+    let remoteReads = 0;
+    profileTestBackend.readMetadata = async () => {
+      remoteReads += 1;
+      throw new Error("Local mods are not in GameBanana");
+    };
+    profileTestBackend.readLocalMetadata = async () => {
+      throw new Error("Metadata not written yet");
+    };
+    await store.getState().restoreModsFromManifest();
+    expect(store.getState().localMods[0].metadataPending).toBe(true);
+    profileTestBackend.readLocalMetadata = async () => ({
+      name: "My local skin",
+      author: "Local author",
+      description: "My description",
+      category: "Skins",
+      remoteUrl: "local://manual",
+      isMap: false,
+    });
+    await store.getState().restoreModsFromManifest();
+    expect(store.getState().localMods[0].name).toBe("My local skin");
+    expect(store.getState().localMods[0].author).toBe("Local author");
+    expect(store.getState().localMods[0].metadataPending).toBe(false);
+    expect(store.getState().localMods[0].installedVpks).toEqual([
+      "pak01_dir.vpk",
+    ]);
+    expect(store.getState().profiles[defaultProfileId].mods).toEqual(
+      store.getState().localMods,
+    );
+    expect(remoteReads).toBe(0);
+  });
+
   it("allows overlapping syncs for different profiles", async () => {
     const store = createTestStore();
     store.setState({

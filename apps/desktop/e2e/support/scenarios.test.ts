@@ -13,12 +13,16 @@ const windows = process.platform === "win32";
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 77 : 66);
+    expect(ids).toHaveLength(windows ? 80 : 69);
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
       expect(scenarioSpec(id)).toContain("./specs/");
       expect(new Set(scenarioPhases(id)).size).toBe(scenarioPhases(id).length);
     }
+    expect(selectScenarios("onboarding")).toEqual([
+      "onboarding-skip-analysis",
+      "onboarding-telemetry-default",
+    ]);
     expect(selectScenarios("gamebanana")).toHaveLength(17);
     expect(selectScenarios("monkey")).toEqual(["monkey"]);
     expect(selectScenarios("updater")).toEqual([
@@ -69,6 +73,12 @@ describe("scenario selection", () => {
   });
 
   it("runs the lifecycle in two fresh processes against one world", () => {
+    expect(scenarioPhases("local-mod-name-recovery")).toEqual([
+      "import",
+      "restart-delete",
+    ]);
+    expect(scenarios["local-mod-name-recovery"].nativeInput).toBe(false);
+    expect(scenarios["local-mod-name-recovery"].platforms).toContain("linux");
     expect(scenarioPhases("local-mod-lifecycle")).toEqual([
       "import-toggle",
       "restart-delete",

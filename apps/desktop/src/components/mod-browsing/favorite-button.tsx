@@ -76,7 +76,7 @@ const FavoriteButton = ({
             "active:scale-90",
             isFavorite
               ? "border-yellow-500/20"
-              : "opacity-0 group-hover:opacity-100 hover:border-white/20 hover:bg-black/70",
+              : "opacity-0 group-hover:opacity-100 focus-visible:opacity-100 hover:border-white/20 hover:bg-black/70",
             className,
           )}
           onClick={handleClick}
