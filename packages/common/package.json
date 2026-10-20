@@ -6,6 +6,7 @@
     "./client-errors": "./src/errors/client-entry.ts"
   },
   "scripts": {
+    "test": "bun test",
     "check-types": "tsc --noEmit"
   },
   "dependencies": {

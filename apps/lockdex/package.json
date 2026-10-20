@@ -2,6 +2,7 @@
   "name": "@deadlock-mods/lockdex",
   "version": "0.4.0",
   "scripts": {
+    "test": "bun test",
     "check-types": "tsc --noEmit --skipLibCheck",
     "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
     "start": "dotenv -e ../../.env -- bun run --preload ./src/instrument.ts ./src/index.ts",

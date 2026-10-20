@@ -1,6 +1,10 @@
 import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { ProviderError } from "@deadlock-mods/common";
-import { GitHubReleasesService } from "./github-releases";
+import { createMockLogger } from "@deadlock-mods/logging";
+
+mock.module("../lib/logger", () => ({ logger: createMockLogger() }));
+
+const { GitHubReleasesService } = await import("./github-releases");
 
 const now = Date.parse("2026-10-19T12:00:00Z");
 const expired = now + 16 * 60 * 1000;

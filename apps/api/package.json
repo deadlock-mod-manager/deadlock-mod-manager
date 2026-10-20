@@ -2,6 +2,7 @@
   "name": "@deadlock-mods/api",
   "version": "3.5.0",
   "scripts": {
+    "test": "bun test",
     "build": "tsdown",
     "check-types": "tsc --noEmit --skipLibCheck",
     "compile": "bun build --compile --minify --sourcemap --bytecode ./src/index.ts --outfile server",
