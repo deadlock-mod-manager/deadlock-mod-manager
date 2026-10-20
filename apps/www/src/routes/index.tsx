@@ -35,7 +35,7 @@ export const Route = createFileRoute("/")({
     const page = seo({
       title: t("meta.title"),
       description: version
-        ? t("meta.descriptionWithVersion", { version })
+        ? t("meta.descriptionLatest", { version })
         : t("meta.description"),
       path: "/",
       locale,

@@ -12,7 +12,7 @@ import { GroupsDemo } from "@/components/v2/groups-demo";
 import { ModHealthSection } from "@/components/v2/mod-health-section";
 import { Seasons } from "@/components/v2/seasons";
 import { UpdateDemo } from "@/components/v2/update-demo";
-import { DISCORD_URL, V2_PREVIEW_URL } from "@/lib/constants";
+import { DISCORD_URL } from "@/lib/constants";
 import { headI18n, useNumberFormat } from "@/lib/i18n/route";
 import { getV2Stats } from "@/lib/v2-stats";
 import { seo } from "@/utils/seo";
@@ -192,23 +192,14 @@ function V2Page() {
           <div
             style={riseDelay(3)}
             className='mt-10 flex animate-dl-rise flex-wrap items-center gap-x-8 gap-y-3'>
-            <a
-              href={V2_PREVIEW_URL}
-              target='_blank'
-              rel='noopener noreferrer'
-              className={primaryCta("lg")}>
-              {t("hero.tryPreview")}
-            </a>
+            <Link to='/download' className={primaryCta("lg")}>
+              {t("hero.download")}
+            </Link>
             <Link to='/changelog' className={secondaryCta("lg")}>
               {t("hero.changelog")}
               <CtaArrow />
             </Link>
           </div>
-          <p
-            style={riseDelay(3)}
-            className='mt-4 max-w-[58ch] animate-dl-rise text-pretty text-muted-foreground text-sm'>
-            {t("hero.previewNote")}
-          </p>
           <nav
             aria-label={t("nav.label")}
             className='mt-14 flex flex-wrap gap-2 border-border border-t pt-6'>

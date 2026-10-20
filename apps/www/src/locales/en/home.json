@@ -2,10 +2,10 @@
   "meta": {
     "title": "Deadlock Mod Manager | Install & Manage Deadlock Mods",
     "description": "Free, open-source mod manager for Valve's Deadlock. Browse GameBanana mods, install them in one click, and manage skins and sounds on Windows and Linux.",
-    "descriptionWithVersion": "Free, open-source mod manager for Valve's Deadlock on Windows and Linux. Install GameBanana mods, skins and sounds in one click. Latest: v{{version}}, with V2 coming soon."
+    "descriptionLatest": "Free, open-source mod manager for Valve's Deadlock on Windows and Linux. Install GameBanana mods, skins and sounds in one click. Latest: v{{version}}."
   },
   "hero": {
-    "v2Teaser": "Coming soon: see what's new",
+    "v2OutNow": "V2 is out: see what's new",
     "title": "Mods for Deadlock,<br/><accent>minus the hassle.</accent>",
     "subtitle": "Find, install and update mods in a couple of clicks. The same app handles hero skins, crosshairs and themes.",
     "allDownloads": "All downloads",

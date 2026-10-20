@@ -7,8 +7,7 @@
     "eyebrow": "Deadlock Mod Manager 2.0",
     "title": "Rebuilt from the ground up",
     "intro": "V2 repairs mods that a game update broke and warns you when two of them change the same files. If the game crashes on launch, it shows you what changed. The Mods Store now searches a copy of GameBanana on your PC.",
-    "tryPreview": "Try the V2 nightly",
-    "previewNote": "The nightly is an experimental test build made automatically from our latest code. Expect bugs, and back up your mods before switching. Most players should stay on the stable release until V2 ships.",
+    "download": "Download V2",
     "changelog": "Full changelog"
   },
   "nav": {

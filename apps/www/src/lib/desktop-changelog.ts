@@ -8,7 +8,7 @@ const DESKTOP_PACKAGE = "@deadlock-mods/desktop";
  * as part of that release; set it to null once it is out, so changesets merged
  * afterwards show up under "Next" instead of being added to a shipped version.
  */
-export const PREVIEW_VERSION: string | null = "2.0.0";
+export const PREVIEW_VERSION: string | null = null;
 
 export const NEXT_VERSION = "Next";
 

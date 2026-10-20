@@ -2,7 +2,7 @@ import { ArrowRightIcon } from "@phosphor-icons/react";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 
-/** Site-wide strip above the navbar announcing V2 to players who left V1. */
+/** Site-wide strip above the navbar announcing the V2 release. */
 export const V2Banner = () => {
   const { t } = useTranslation("common");
 
@@ -14,8 +14,8 @@ export const V2Banner = () => {
         V2
       </span>
       <span className='truncate'>
-        <span className='sm:hidden'>{t("v2Banner.short")}</span>
-        <span className='hidden sm:inline'>{t("v2Banner.long")}</span>
+        <span className='sm:hidden'>{t("v2Banner.outNow")}</span>
+        <span className='hidden sm:inline'>{t("v2Banner.outNowLong")}</span>
       </span>
       <span className='hidden shrink-0 items-center gap-1.5 font-semibold underline-offset-3 group-hover:underline md:inline-flex'>
         {t("v2Banner.whatsNew")}

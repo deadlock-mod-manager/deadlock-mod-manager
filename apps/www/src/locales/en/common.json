@@ -51,8 +51,8 @@
     "avatarFallback": "User"
   },
   "v2Banner": {
-    "short": "Coming soon: rebuilt from the ground up.",
-    "long": "Coming soon: mods that survive game updates, a faster store and clash detection.",
+    "outNow": "Out now: rebuilt from the ground up.",
+    "outNowLong": "Out now: mods that survive game updates, a faster store and clash detection.",
     "whatsNew": "See what's new"
   },
   "footer": {

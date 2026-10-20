@@ -52,7 +52,7 @@ export const HeroSection = () => {
             <span className='rounded-full bg-primary px-2 py-0.5 font-semibold text-primary-foreground text-xs'>
               V2
             </span>
-            {t("hero.v2Teaser")}
+            {t("hero.v2OutNow")}
             <ArrowRightIcon
               aria-hidden='true'
               className='size-3.5 text-muted-foreground transition-transform group-hover:translate-x-0.5'
