@@ -1449,7 +1449,18 @@ export const createProfilesSlice: StateCreator<
           for (const profileId of profilesToRemove) {
             delete newProfiles[profileId];
           }
-          return { profiles: newProfiles };
+          if (!profilesToRemove.includes(state.activeProfileId)) {
+            return { profiles: newProfiles };
+          }
+          // The fallback switch failed. The deleted profile still cannot stay
+          // active; the next switch or launch rewrites gameinfo.gi.
+          const fallbackProfile =
+            newProfiles[DEFAULT_PROFILE_ID] ?? createDefaultProfile();
+          return {
+            profiles: { ...newProfiles, [DEFAULT_PROFILE_ID]: fallbackProfile },
+            activeProfileId: DEFAULT_PROFILE_ID,
+            localMods: [...fallbackProfile.mods],
+          };
         });
       }
 

@@ -51,6 +51,33 @@ beforeEach(() => {
   profileTestBackend.readMetadata = async (id) => modFor(id);
   profileTestBackend.readLocalMetadata = async (id) => modFor(id);
   profileTestBackend.forgetOrphans = async (_folder, modIds) => modIds;
+  profileTestBackend.listProfileFolders = async () => [];
+  profileTestBackend.switchProfile = async () => {};
+});
+
+describe("profiles deleted outside the app", () => {
+  it("leaves the user in Default when the fallback switch fails", async () => {
+    const store = createTestStore();
+    const defaultMod = modFor("7");
+    store.setState({
+      profiles: {
+        [defaultProfileId]: profileFor("default", [defaultMod]),
+        [secondaryProfileId]: profileFor("secondary", [modFor("42")]),
+      },
+      activeProfileId: secondaryProfileId,
+      localMods: [modFor("42")],
+    });
+    profileTestBackend.switchProfile = async () => {
+      throw new Error("gameinfo.gi validation failed");
+    };
+
+    await store.getState().syncProfilesWithFilesystem();
+
+    const state = store.getState();
+    expect(state.profiles[secondaryProfileId]).toBeUndefined();
+    expect(state.activeProfileId).toBe(defaultProfileId);
+    expect(state.localMods).toEqual([defaultMod]);
+  });
 });
 
 const installedMod = (): LocalMod => ({
