@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { PowerOff, RefreshCw, Undo2, Wrench, X } from "@deadlock-mods/ui/icons";
+import { PowerOff, RefreshCw, Undo2, Wrench } from "@deadlock-mods/ui/icons";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -311,10 +311,7 @@ export const ModHealthDialog = ({
             ))}
           </ul>
           <DialogFooter className='shrink-0 border-t pt-4'>
-            <Button
-              variant='outline'
-              icon={<X className='h-4 w-4' />}
-              onClick={() => onOpenChange(false)}>
+            <Button variant='outline' onClick={() => onOpenChange(false)}>
               {t("common.close")}
             </Button>
             {fixableIds.length > 0 ? (

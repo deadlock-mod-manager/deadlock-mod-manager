@@ -11,8 +11,10 @@ import {
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Check,
+  type LucideIcon,
   Plus,
   RotateCcw,
+  Trash2,
   TriangleAlert,
   X,
 } from "@deadlock-mods/ui/icons";
@@ -20,10 +22,17 @@ import { useTranslation } from "react-i18next";
 import type { PendingConfirm } from "./use-dashboard-editor";
 import { useTabTitle } from "./use-tab-title";
 
+const CONFIRM_ICONS = {
+  reset: RotateCcw,
+  discard: X,
+  deleteTab: Trash2,
+} satisfies Record<PendingConfirm["kind"], LucideIcon>;
+
 interface ConfirmDialogProps {
   open: boolean;
   title: string;
   description: string;
+  confirmIcon: LucideIcon;
   confirmLabel: string;
   onConfirm: () => void;
   onOpenChange: (open: boolean) => void;
@@ -33,6 +42,7 @@ const ConfirmDialog = ({
   open,
   title,
   description,
+  confirmIcon: ConfirmIcon,
   confirmLabel,
   onConfirm,
   onOpenChange,
@@ -50,6 +60,7 @@ const ConfirmDialog = ({
           <AlertDialogAction
             className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
             onClick={onConfirm}>
+            <ConfirmIcon />
             {confirmLabel}
           </AlertDialogAction>
         </AlertDialogFooter>
@@ -73,6 +84,7 @@ export const PendingConfirmDialog = ({
   const copy = `stats.dashboard.confirm.${pending?.kind ?? "discard"}`;
   return (
     <ConfirmDialog
+      confirmIcon={CONFIRM_ICONS[pending?.kind ?? "discard"]}
       confirmLabel={t(`${copy}Action`)}
       description={
         pending?.kind === "deleteTab"

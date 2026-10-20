@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@deadlock-mods/ui/components/select";
 import { toast } from "@deadlock-mods/ui/components/sonner";
+import { CopyIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePersistedStore } from "@/lib/store";
@@ -69,6 +70,7 @@ export const CopyModGroups = ({
           </Button>
           <Button
             disabled={!target || target.id === sourceId}
+            icon={<CopyIcon className='h-4 w-4' />}
             onClick={() => {
               if (target && copy(sourceId, target.id)) {
                 toast.success(t("myMods.groups.copied", { name: target.name }));

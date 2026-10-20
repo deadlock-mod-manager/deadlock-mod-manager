@@ -9,7 +9,7 @@ import {
 } from "@deadlock-mods/ui/components/dialog";
 import { Input } from "@deadlock-mods/ui/components/input";
 import { Label } from "@deadlock-mods/ui/components/label";
-import { Eyedropper } from "@phosphor-icons/react";
+import { CheckIcon, Eyedropper } from "@phosphor-icons/react";
 import {
   useEffect,
   useMemo,
@@ -345,7 +345,9 @@ export function HsvColorPickerDialog({
           <Button variant='outline' onClick={() => onOpenChange(false)}>
             {t("plugins.themes.cancel")}
           </Button>
-          <Button onClick={apply}>{t("plugins.themes.apply")}</Button>
+          <Button icon={<CheckIcon className='h-4 w-4' />} onClick={apply}>
+            {t("plugins.themes.apply")}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

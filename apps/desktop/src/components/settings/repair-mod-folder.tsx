@@ -147,6 +147,8 @@ export const RepairModFolder = () => {
             {!report?.applied && (
               <Button
                 disabled={repair.isPending}
+                icon={<WrenchIcon className='h-4 w-4' />}
+                isLoading={repair.isPending}
                 onClick={() => repair.mutate(false)}>
                 {t(
                   repair.isPending

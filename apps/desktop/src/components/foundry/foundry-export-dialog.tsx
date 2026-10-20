@@ -12,6 +12,7 @@ import { Label } from "@deadlock-mods/ui/components/label";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { cn } from "@deadlock-mods/ui/lib/utils";
 import {
+  ExportIcon,
   FloppyDiskIcon,
   PackageIcon,
   WarningIcon,
@@ -285,7 +286,11 @@ export const FoundryExportDialog = ({
             variant='outline'>
             {t("common.cancel")}
           </Button>
-          <Button disabled={busy} onClick={handleExport}>
+          <Button
+            disabled={busy}
+            icon={<ExportIcon className='h-4 w-4' />}
+            isLoading={busy}
+            onClick={handleExport}>
             {busy ? t("foundry.export.building") : t("foundry.export.confirm")}
           </Button>
         </DialogFooter>

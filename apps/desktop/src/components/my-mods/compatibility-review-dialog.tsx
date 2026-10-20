@@ -14,7 +14,6 @@ import {
   RefreshCw,
   ShieldCheck,
   Wrench,
-  X,
 } from "@deadlock-mods/ui/icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
@@ -197,7 +196,6 @@ export function CompatibilityReviewDialog({
           <Button
             variant='outline'
             disabled={apply.isPending}
-            icon={<X className='h-4 w-4' />}
             onClick={() => changeOpen(false)}>
             {t("common.close")}
           </Button>

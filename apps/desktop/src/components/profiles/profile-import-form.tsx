@@ -11,6 +11,7 @@ import {
 } from "@deadlock-mods/ui/components/form";
 import { Input } from "@deadlock-mods/ui/components/input";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { DownloadSimpleIcon } from "@phosphor-icons/react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
@@ -80,7 +81,9 @@ export const ProfileImportForm = ({
         <Button
           type='submit'
           form='profile-import-form'
-          disabled={!profileId?.trim() || isLoading}>
+          disabled={!profileId?.trim() || isLoading}
+          icon={<DownloadSimpleIcon className='h-4 w-4' />}
+          isLoading={isLoading}>
           {isLoading ? t("profiles.importing") : t("profiles.import")}
         </Button>
       </DialogFooter>

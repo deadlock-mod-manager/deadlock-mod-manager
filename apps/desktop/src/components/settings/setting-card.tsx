@@ -1,6 +1,6 @@
 import { CustomSettingType } from "@deadlock-mods/shared";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { PencilIcon, TrashIcon } from "@deadlock-mods/ui/icons";
+import { PencilIcon, SaveIcon, TrashIcon } from "@deadlock-mods/ui/icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { SwitchStatus } from "@/components/settings/setting-row";
@@ -270,7 +270,9 @@ const SettingCard = ({
           </div>
 
           <DialogFooter>
-            <Button onClick={saveEdit}>{t("common.save")}</Button>
+            <Button icon={<SaveIcon className='h-4 w-4' />} onClick={saveEdit}>
+              {t("common.save")}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@deadlock-mods/ui/components/dialog";
+import { ArrowSquareOutIcon } from "@phosphor-icons/react";
 import { format } from "date-fns";
 import { Markup } from "interweave";
 import { useMemo } from "react";
@@ -72,6 +73,7 @@ export const AnnouncementDetailDialog = ({
                       handleOpenLink(announcement.linkUrl);
                   }}
                   variant='default'>
+                  <ArrowSquareOutIcon className='size-4' />
                   {announcement.linkLabel || t("dashboard.learnMore")}
                 </Button>
               </DialogFooter>

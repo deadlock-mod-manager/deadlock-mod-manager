@@ -12,7 +12,11 @@ import {
   RadioGroup,
   RadioGroupItem,
 } from "@deadlock-mods/ui/components/radio-group";
-import { ArrowsClockwiseIcon, TrashIcon } from "@phosphor-icons/react";
+import {
+  ArrowCounterClockwiseIcon,
+  ArrowsClockwiseIcon,
+  TrashIcon,
+} from "@phosphor-icons/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { RestoreStrategy } from "@/types/backup";
@@ -116,7 +120,11 @@ export const RestoreBackupDialog = ({
           <Button variant='outline' onClick={() => onOpenChange(false)}>
             {t("common.cancel")}
           </Button>
-          <Button onClick={handleConfirm}>{t("settings.restoreBackup")}</Button>
+          <Button
+            icon={<ArrowCounterClockwiseIcon className='h-4 w-4' />}
+            onClick={handleConfirm}>
+            {t("settings.restoreBackup")}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

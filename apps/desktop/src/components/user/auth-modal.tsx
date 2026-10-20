@@ -165,7 +165,9 @@ const AuthModal = () => {
                 </Button>
                 <Button
                   onClick={handleCodeSubmit}
-                  disabled={exchangeCodeMutation.isPending}>
+                  disabled={exchangeCodeMutation.isPending}
+                  icon={<LogInIcon className='size-4' />}
+                  isLoading={exchangeCodeMutation.isPending}>
                   {exchangeCodeMutation.isPending
                     ? t("auth.signingIn")
                     : t("auth.signIn")}

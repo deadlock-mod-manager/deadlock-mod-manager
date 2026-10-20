@@ -18,7 +18,6 @@ import {
   Loader2,
   RefreshCw,
   SkipForward,
-  X,
 } from "@deadlock-mods/ui/icons";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useEffect, useRef, useState } from "react";
@@ -209,8 +208,7 @@ export const BatchUpdateDialog = ({
               <Button
                 variant='outline'
                 onClick={() => onOpenChange(false)}
-                disabled={batchUpdateMutation.isPending}
-                icon={<X className='h-4 w-4' />}>
+                disabled={batchUpdateMutation.isPending}>
                 {t("common.cancel")}
               </Button>
               <Button

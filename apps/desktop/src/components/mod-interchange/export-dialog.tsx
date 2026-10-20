@@ -10,7 +10,7 @@ import {
 } from "@deadlock-mods/ui/components/dialog";
 import { Progress } from "@deadlock-mods/ui/components/progress";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { CheckCircle, FolderOpen } from "@deadlock-mods/ui/icons";
+import { CheckCircle, FolderOpen, Upload } from "@deadlock-mods/ui/icons";
 import { invoke } from "@tauri-apps/api/core";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { useEffect, useState } from "react";
@@ -206,6 +206,7 @@ export const ExportDialog = ({ open, onOpenChange }: ExportDialogProps) => {
           ) : (
             <Button
               disabled={exportBundle.isPending}
+              icon={<Upload className='h-4 w-4' />}
               isLoading={exportBundle.isPending}
               onClick={() => void run()}>
               {t("interchange.chooseFolderAndExport")}
