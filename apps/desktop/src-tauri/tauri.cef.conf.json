@@ -10,7 +10,9 @@
           "libasound2t64 | libasound2",
           "libxkbcommon-x11-0",
           "desktop-file-utils",
-          "xdg-utils"
+          "xdg-utils",
+          "xdg-desktop-portal",
+          "xdg-desktop-portal-gtk | xdg-desktop-portal-backend"
         ]
       },
       "rpm": {
@@ -21,7 +23,9 @@
           "alsa-lib",
           "libxkbcommon-x11",
           "desktop-file-utils",
-          "xdg-utils"
+          "xdg-utils",
+          "xdg-desktop-portal",
+          "xdg-desktop-portal-gtk"
         ]
       }
     }
