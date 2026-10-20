@@ -1,41 +1,58 @@
-import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
-import { assertProfileFresh, fetchDetailPage } from "./detail";
-
-afterEach(() => mock.restore());
+import { describe, expect, it } from "bun:test";
+import { assertProfileFresh, indexRevisionToAcknowledge } from "./detail";
+import { indexListingChanged } from "./utils";
 
 describe("GameBanana detail freshness", () => {
-  const kinds: Array<"Mod" | "Sound"> = ["Mod", "Sound"];
-  const pages: Array<"ProfilePage" | "DownloadPage"> = [
-    "ProfilePage",
-    "DownloadPage",
-  ];
-  for (const kind of kinds) {
-    for (const page of pages) {
-      it(`bypasses an older cached ${kind} ${page} for a changed listing`, async () => {
-        const fetch = spyOn(globalThis, "fetch").mockImplementation(
-          Object.assign(
-            async (input: string | Request | URL) => {
-              const url = new URL(String(input));
-              const fresh = url.searchParams.get("_v") === "1792515954";
-              return Response.json({
-                _aFiles: [{ _idRow: fresh ? 1856171 : 1744602 }],
-              });
-            },
-            { preconnect: globalThis.fetch.preconnect },
-          ),
-        );
+  const revision = new Date("2026-10-20T12:00:00Z");
+  const minute = 60 * 1000;
 
-        const cached = await fetchDetailPage("629490", kind, page);
-        const fresh = await fetchDetailPage("629490", kind, page, 1792515954);
+  it("revisits an unchanged listing after an early sync, even with a fresh profile", () => {
+    let stored = new Date("2026-10-19T12:00:00Z");
+    assertProfileFresh(revision.getTime() / 1000, revision.getTime() / 1000);
 
-        expect(await cached.json()).toEqual({ _aFiles: [{ _idRow: 1744602 }] });
-        expect(await fresh.json()).toEqual({ _aFiles: [{ _idRow: 1856171 }] });
-        expect(fetch).toHaveBeenLastCalledWith(
-          `https://gamebanana.com/apiv11/${kind}/629490/${page}?_v=1792515954`,
-        );
-      });
-    }
-  }
+    const early = indexRevisionToAcknowledge(
+      revision,
+      revision.getTime() + 5 * minute,
+    );
+    expect(early).toBeUndefined();
+    stored = early ?? stored;
+    expect(indexListingChanged(revision, stored)).toBe(true);
+
+    const recheck = indexRevisionToAcknowledge(
+      revision,
+      revision.getTime() + 20 * minute,
+    );
+    expect(recheck).toEqual(revision);
+    stored = recheck ?? stored;
+    expect(indexListingChanged(revision, stored)).toBe(false);
+  });
+
+  it("leaves a new mod eligible for a recheck", () => {
+    const stored = indexRevisionToAcknowledge(revision, revision.getTime());
+    expect(stored).toBeUndefined();
+    expect(indexListingChanged(revision, stored)).toBe(true);
+  });
+
+  it("acknowledges revisions only once the cache window has elapsed before fetching", () => {
+    expect(
+      indexRevisionToAcknowledge(
+        revision,
+        revision.getTime() + 10 * minute - 1,
+      ),
+    ).toBeUndefined();
+    expect(
+      indexRevisionToAcknowledge(revision, revision.getTime() + 10 * minute),
+    ).toEqual(revision);
+    expect(
+      indexRevisionToAcknowledge(revision, revision.getTime() - minute),
+    ).toBeUndefined();
+  });
+
+  it("does not acknowledge a revision for background refreshes", () => {
+    expect(
+      indexRevisionToAcknowledge(undefined, revision.getTime()),
+    ).toBeUndefined();
+  });
 
   it("rejects an older profile so sync cannot acknowledge the newer listing", () => {
     expect(() => assertProfileFresh(1792455811, 1792515954)).toThrow(

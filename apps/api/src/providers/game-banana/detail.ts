@@ -1,19 +1,21 @@
 import { ProviderError } from "@deadlock-mods/common";
-import { GAME_BANANA_BASE_URL } from "./constants";
 import { gameBananaTimestampToDate } from "./utils";
 
-export function fetchDetailPage(
-  remoteId: string,
-  modType: "Mod" | "Sound",
-  page: "ProfilePage" | "DownloadPage",
-  indexModifiedAt?: number,
-): Promise<Response> {
-  const url = new URL(`${GAME_BANANA_BASE_URL}/${modType}/${remoteId}/${page}`);
-  // Detail pages can remain cached after the uncached index reports an edit.
-  if (gameBananaTimestampToDate(indexModifiedAt)) {
-    url.searchParams.set("_v", String(indexModifiedAt));
+const DETAIL_CACHE_TTL_MS = 10 * 60 * 1000;
+
+export function indexRevisionToAcknowledge(
+  indexModifiedAt: Date | undefined,
+  fetchStartedAt: number,
+): Date | undefined {
+  // Keep recent revisions pending: DownloadPage can lag behind a fresh profile.
+  // markSynced preserves the stored revision when this returns undefined.
+  if (
+    !indexModifiedAt ||
+    fetchStartedAt - indexModifiedAt.getTime() < DETAIL_CACHE_TTL_MS
+  ) {
+    return undefined;
   }
-  return fetch(url.toString());
+  return indexModifiedAt;
 }
 
 export function assertProfileFresh(

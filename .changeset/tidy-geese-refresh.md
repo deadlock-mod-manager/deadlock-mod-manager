@@ -2,4 +2,4 @@
 "@deadlock-mods/api": patch
 ---
 
-Prevent cached GameBanana details from delaying mod file updates after a listing changes.
+Recheck recent GameBanana mod updates after the cache window expires, without bypassing GameBanana's cache.
