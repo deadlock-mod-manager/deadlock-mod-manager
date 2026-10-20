@@ -22,6 +22,10 @@ on:
         type: choice
         options: [all, windows, nix]
         default: all
+      suites:
+        description: 'Windows suites as a JSON array, e.g. ["profiles","conflicts"]. Empty runs every suite.'
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -77,30 +81,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        suite:
-          [
-            smoke,
-            updater,
-            library-groups,
-            compatibility,
-            local,
-            local-large,
-            profiles,
-            conflicts,
-            downloads,
-            filesystem,
-            gamebanana,
-            settings,
-            skins,
-            interchange,
-            shards,
-          ]
+        suite: ${{ fromJSON(inputs.suites || '["smoke","updater","library-groups","compatibility","local","local-large","profiles","conflicts","downloads","filesystem","gamebanana","settings","skins","interchange","shards"]') }}
         # Fixed seeds keep failures reproducible: 0 is the default, 887
         # replays #891 and 4 retries an update straight after a failure.
-        include:
-          - { suite: monkey, seed: "0" }
-          - { suite: monkey, seed: "887" }
-          - { suite: monkey, seed: "4" }
+        include: ${{ fromJSON((!inputs.suites || contains(inputs.suites, '"monkey"')) && '[{"suite":"monkey","seed":"0"},{"suite":"monkey","seed":"887"},{"suite":"monkey","seed":"4"}]' || '[]') }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: ./.github/actions/setup-desktop-e2e
