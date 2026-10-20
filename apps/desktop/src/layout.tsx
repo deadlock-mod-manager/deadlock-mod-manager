@@ -47,7 +47,11 @@ export const Layout = ({ children }: { children: React.ReactNode }) => {
           </SidebarProvider>
         </ScrollBackButtonProvider>
       </div>
-      <Toaster offset={{ bottom: 56 }} />
+      <Toaster
+        offset={{ top: 52, right: 16 }}
+        position='top-right'
+        visibleToasts={3}
+      />
       <GlobalAudioPlayer />
       <FeatureHintsRenderer />
       <GlobalFileDrop />
