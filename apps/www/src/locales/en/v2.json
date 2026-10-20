@@ -310,7 +310,7 @@
       },
       "servers": {
         "title": "Server Browser",
-        "body": "Experimental: browse Deadworks community servers and get their maps and addons before you join. Turn it on in Settings → Experimental."
+        "body": "Browse Deadworks community servers and get their maps and addons before you join."
       }
     }
   },
