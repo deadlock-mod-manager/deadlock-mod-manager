@@ -15,6 +15,7 @@ import { modCache } from "../../services/mod-cache";
 import { ModSyncHooksService } from "../../services/mod-sync-hooks";
 import { Provider, providerRegistry } from "../registry";
 import { assertGameBananaResponseOk } from "./response";
+import { assertProfileFresh, fetchDetailPage } from "./detail";
 import type {
   GameBananaListedSubmission,
   GameBananaProfileSkip,
@@ -172,9 +173,13 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
   async getModDownload<D = GameBanana.GameBananaModDownload>(
     remoteId: string,
     modType: "Mod" | "Sound" = "Mod",
+    indexModifiedAt?: number,
   ): Promise<D> {
-    const response = await fetch(
-      `${GAME_BANANA_BASE_URL}/${modType}/${remoteId}/DownloadPage`,
+    const response = await fetchDetailPage(
+      remoteId,
+      modType,
+      "DownloadPage",
+      indexModifiedAt,
     );
 
     await assertGameBananaResponseOk(response);
@@ -188,9 +193,12 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     D = T extends "Mod"
       ? GameBanana.GameBananaModProfile
       : GameBanana.GameBananaSoundProfile,
-  >(remoteId: string, modType: T): Promise<D | null> {
-    const response = await fetch(
-      `${GAME_BANANA_BASE_URL}/${modType}/${remoteId}/ProfilePage`,
+  >(remoteId: string, modType: T, indexModifiedAt?: number): Promise<D | null> {
+    const response = await fetchDetailPage(
+      remoteId,
+      modType,
+      "ProfilePage",
+      indexModifiedAt,
     );
     if (response.status === 404) return null;
     if (!response.ok) {
@@ -305,9 +313,15 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
   private async createSoundModPayload(
     mod: GameBananaSubmission,
   ): Promise<GameBananaModPayload | GameBananaProfileSkip> {
-    const profile = await this.getMod(mod._idRow.toString(), "Sound");
+    const profile = await this.getMod(
+      mod._idRow.toString(),
+      "Sound",
+      mod._tsDateModified,
+    );
 
     if (!profile) return "not_found";
+
+    assertProfileFresh(profile._tsDateModified, mod._tsDateModified);
 
     if (profile._bIsTrashed === true) {
       return this.createTrashedPayload(profile);
@@ -351,9 +365,15 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
   private async createRegularModPayload(
     mod: GameBananaSubmission,
   ): Promise<GameBananaModPayload | GameBananaProfileSkip> {
-    const profile = await this.getMod(mod._idRow.toString(), "Mod");
+    const profile = await this.getMod(
+      mod._idRow.toString(),
+      "Mod",
+      mod._tsDateModified,
+    );
 
     if (!profile) return "not_found";
+
+    assertProfileFresh(profile._tsDateModified, mod._tsDateModified);
 
     if (profile._bIsTrashed === true) {
       return this.createTrashedPayload(profile);
@@ -503,7 +523,10 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
       wide.set("upsertMs", Date.now() - t0);
 
       t0 = Date.now();
-      const { filesChanged } = await this.refreshModDownloads(dbMod);
+      const { filesChanged } = await this.refreshModDownloads(
+        dbMod,
+        mod._tsDateModified,
+      );
       wide.merge({
         downloadsMs: Date.now() - t0,
         filesChanged,
@@ -540,11 +563,15 @@ export class GameBananaProvider extends Provider<GameBananaSubmission> {
     }
   }
 
-  async refreshModDownloads(dbMod: Mod): Promise<{ filesChanged: boolean }> {
+  async refreshModDownloads(
+    dbMod: Mod,
+    indexModifiedAt?: number,
+  ): Promise<{ filesChanged: boolean }> {
     try {
       const download = await this.getModDownload(
         dbMod.remoteId,
         dbMod.isAudio ? "Sound" : "Mod",
+        indexModifiedAt,
       );
 
       if (!download?._aFiles || download._aFiles.length === 0) {
