@@ -15,7 +15,7 @@ export interface InstallAnalyticsOptions {
   onStart: (mod: LocalMod) => void;
   onComplete: (mod: LocalMod, result: InstallableMod) => void;
   onError: (mod: LocalMod, error: ErrorKind) => void;
-  onCancel?: (mod: LocalMod) => void;
+  onCancel?: (mod: LocalMod, reason?: "modelConflict") => void;
 }
 
 interface InstallAnalyticsDependencies {
@@ -55,9 +55,9 @@ export const createInstallTracker =
         attempt.finish(failureOutcome(error.kind));
         options.onError(failedMod, error);
       },
-      onCancel: (cancelledMod: LocalMod) => {
+      onCancel: (cancelledMod: LocalMod, reason?: "modelConflict") => {
         attempt.finish("cancelled");
-        options.onCancel?.(cancelledMod);
+        options.onCancel?.(cancelledMod, reason);
       },
     };
   };

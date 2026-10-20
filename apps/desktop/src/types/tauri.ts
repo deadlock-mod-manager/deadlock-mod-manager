@@ -16,6 +16,7 @@ export type ErrorKind = {
     | "rar"
     | "zip"
     | "modInvalid"
+    | "modelConflict"
     | "unknown"
     | "gameRunning"
     | "gameNotRunning"
@@ -43,6 +44,7 @@ export type ErrorKind = {
     | "vpkInUse";
   message: string;
   affectedMods?: { id: string; name: string }[];
+  conflictingMods?: string[];
   path?: string;
 };
 

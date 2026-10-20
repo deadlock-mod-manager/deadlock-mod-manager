@@ -908,3 +908,18 @@ Apply requires the input fingerprint returned by review and checks the inputs
 again after preparing the plan. If mods or game files changed, the user must
 review again. Duplicate, unavailable, or stale conflict choices fail in both
 preview and export, before output files are replaced.
+
+### Choosing a skin during activation
+
+Before `install_mod` enables the selected VPKs, it compares their model entry
+paths and CRCs with the profile's enabled mods. Different contents at the same
+`.vmdl_c` path require a choice: keep the current skins, or enable the new mod
+and disable the listed conflicts. Identical models, material-only overlaps and
+unselected variants do not trigger this prompt. Review ignores do not bypass it.
+
+The backend rescans under the manager lock when the choice is confirmed. Only
+conflicts included in that choice can be disabled. Their VPK renames remain
+reversible until the replacement and manifest commit; a failed enable or
+manifest save rolls the switch back. This prevents mixing two model replacements
+when enabling a mod; it does not repair arbitrary skeleton incompatibilities or
+change already-enabled combinations automatically.

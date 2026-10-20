@@ -12,6 +12,8 @@ export type EnableAllRecap = {
   failed: { mod: LocalMod; message: string }[];
   needsFileSelection: LocalMod[];
   criticalPaths: LocalMod[];
+  keptCurrent: LocalMod[];
+  replaced: LocalMod[];
   /** Left untouched after the user kept the game-running guard in place. */
   notAttempted: LocalMod[];
 };
@@ -74,6 +76,8 @@ export const useEnableAllMods = () => {
         failed: [],
         needsFileSelection: [],
         criticalPaths: [],
+        keptCurrent: [],
+        replaced: [],
         notAttempted: [],
       };
 
@@ -115,9 +119,10 @@ export const useEnableAllMods = () => {
               message: error.message || t("notifications.failedToInstallMod"),
             });
           },
-          onCancel: (m) => {
+          onCancel: (m, reason) => {
             setModStatus(m.remoteId, ModStatus.Downloaded);
-            result.needsFileSelection.push(m);
+            if (reason === "modelConflict") result.keptCurrent.push(m);
+            else result.needsFileSelection.push(m);
           },
         });
 
@@ -128,6 +133,16 @@ export const useEnableAllMods = () => {
         }
       }
 
+      const active = new Set(
+        usePersistedStore
+          .getState()
+          .localMods.filter((mod) => mod.status === ModStatus.Installed)
+          .map((mod) => mod.remoteId),
+      );
+      result.replaced = result.enabled.filter(
+        (mod) => !active.has(mod.remoteId),
+      );
+      result.enabled = result.enabled.filter((mod) => active.has(mod.remoteId));
       setRecap(result);
     },
   });

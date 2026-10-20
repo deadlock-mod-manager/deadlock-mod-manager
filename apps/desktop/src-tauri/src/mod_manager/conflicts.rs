@@ -416,6 +416,53 @@ fn read_tree(vpk_path: &Path) -> Result<Arc<Vec<(String, String)>>, Error> {
   Ok(files)
 }
 
+/// Check only the selected archives before activation. Ignores hide review
+/// noise; they must not authorize replacing another skin's files.
+pub(crate) fn activation_model_conflicts(
+  base: &ProfileBase,
+  manifest: &ProfileVpkManifest,
+  mod_id: &str,
+  selected_vpks: &[String],
+) -> Result<Vec<String>, Error> {
+  let enabled: Vec<_> = manifest
+    .mods
+    .iter()
+    .filter(|(id, entry)| *id != mod_id && entry.enabled)
+    .collect();
+  if enabled.is_empty() {
+    return Ok(Vec::new());
+  }
+  let mut models = HashMap::new();
+  for name in selected_vpks {
+    for (path, crc) in read_tree(&base.join(name))?.iter() {
+      if path.ends_with(".vmdl_c") {
+        models.entry(path.clone()).or_insert_with(|| crc.clone());
+      }
+    }
+  }
+  if models.is_empty() {
+    return Ok(Vec::new());
+  }
+  let mut conflicts = Vec::new();
+  for (id, entry) in enabled {
+    let mut seen = HashSet::new();
+    for vpk in entry.file_paths(base) {
+      // Unlike the informational profile scan, activation must fail closed
+      // when an enabled archive cannot be read.
+      if read_tree(&vpk)?.iter().any(|(path, crc)| {
+        models
+          .get(path)
+          .is_some_and(|other| seen.insert(path.clone()) && other != crc)
+      }) {
+        conflicts.push(id.clone());
+        break;
+      }
+    }
+  }
+  conflicts.sort();
+  Ok(conflicts)
+}
+
 /// Read the enabled mods of a profile and find their conflicts.
 pub fn detect_profile_conflicts(base: &ProfileBase) -> Result<ProfileConflicts, Error> {
   let manifest = ProfileVpkManifest::load(base)?;

@@ -366,3 +366,8 @@ Use the seven scenario jobs and their per-case reports to verify clean-runner qu
 | M6: nightly E2E pipeline | Implemented; qualification tracked in CI | Nightly/manual Windows E2E matrix and opt-in execution on labelled PRs | All 37 registered scenarios pass on clean runners with retained failure evidence |
 
 Keep scenarios independent and small even when they share recipes. The final routine-development gate is a composed import/download → enable → profile switch → reorder → backup → modify → restore → restart journey, supported by focused tests for each operation and failure boundary.
+
+`conflicts-switch` enables a model replacement through the selected-mod workflow.
+Keep current leaves the existing skin and VPK bytes unchanged; choosing the new
+skin disables only its model conflict. The unrelated material mod stays enabled,
+and the library state, manifests and archive hashes must agree after restart.

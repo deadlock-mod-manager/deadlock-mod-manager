@@ -119,6 +119,7 @@ const useApplyModSet = () => {
         analyticsEntryPoint: "library",
         analyticsOperationKind: "enable",
         skipFileSelection: true,
+        skipConflictPrompt: true,
         onStart: (m) => state.setModStatus(m.remoteId, ModStatus.Installing),
         onComplete: (m, installed) => {
           state.setModStatus(m.remoteId, ModStatus.Installed);

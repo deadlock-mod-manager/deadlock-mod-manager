@@ -73,11 +73,16 @@ fn validate_download_url(url: &str) -> Result<(), Error> {
 pub async fn install_mod(
   deadlock_mod: Mod,
   profile_folder: Option<String>,
+  replace_conflicting_mods: Option<Vec<String>>,
   guard_permit: Option<String>,
 ) -> Result<Mod, Error> {
   crate::game_guard::ensure_game_idle_locked("install_mod", guard_permit.as_deref())?;
   let mut mod_manager = MANAGER.lock().unwrap();
-  mod_manager.install_mod(deadlock_mod, profile_folder)
+  mod_manager.install_mod_resolving_conflicts(
+    deadlock_mod,
+    profile_folder,
+    &replace_conflicting_mods.unwrap_or_default(),
+  )
 }
 
 #[tauri::command]

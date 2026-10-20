@@ -519,6 +519,11 @@ export const scenarios = {
   "profiles-pointer": profiles,
   "profiles-keyboard": profiles,
   "conflicts-resolve": conflicts,
+  "conflicts-switch": {
+    ...conflicts,
+    spec: "model-conflict-switch",
+    phases: ["switch", "restart-switch"],
+  },
   "library-selection": {
     ...defaults,
     family: "profiles",
