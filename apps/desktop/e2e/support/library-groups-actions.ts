@@ -16,6 +16,7 @@ export const groupToggle = (name: string) =>
 export const createGroup = async (name: string) => {
   await browser.waitUntil(() => $("button=Groups").isEnabled());
   await $("button=Groups").click();
+  await browser.keys("ArrowDown");
   await $('[role="menuitem"]=New group').click();
   await $('input[placeholder="e.g. Map cosmetics"]').setValue(name);
   await $("button=Create group").click();
