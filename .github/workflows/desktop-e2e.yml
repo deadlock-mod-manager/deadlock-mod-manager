@@ -20,7 +20,7 @@ on:
       platforms:
         description: Platforms to run
         type: choice
-        options: [all, nix]
+        options: [all, windows, nix]
         default: all
 
 permissions:
@@ -130,7 +130,7 @@ jobs:
 
   linux-build:
     name: Build isolated harness (${{ matrix.distro }})
-    if: (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e-full')) && inputs.platforms != 'nix'
+    if: (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e-full')) && inputs.platforms != 'nix' && inputs.platforms != 'windows'
     runs-on: ubuntu-latest
     container: ${{ matrix.image }}
     timeout-minutes: 60
@@ -276,7 +276,7 @@ jobs:
 
   nix-build:
     name: Build isolated harness (nix)
-    if: github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e-full')
+    if: (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'e2e-full')) && inputs.platforms != 'windows'
     runs-on: depot-ubuntu-24.04-8
     timeout-minutes: 90
     env:
