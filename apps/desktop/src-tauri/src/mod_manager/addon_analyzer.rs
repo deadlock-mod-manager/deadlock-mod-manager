@@ -295,15 +295,11 @@ impl AddonAnalyzer {
     }
 
     let profile_base = crate::mod_manager::shard::ProfileBase::new(&addons_path)?;
-    let recursive = profile_folder.is_some();
     let mut vpk_file_paths = Vec::new();
     for (shard_index, shard_path) in profile_base.existing_shards() {
-      let scan_result = if recursive {
-        self.find_vpk_file_paths(&shard_path, &mut vpk_file_paths)
-      } else {
-        Self::find_vpk_file_paths_shallow(&shard_path, &mut vpk_file_paths)
-      };
-      if let Err(e) = scan_result {
+      // The game only loads VPKs at the top of each search path; subfolders
+      // hold internal staging from interrupted operations.
+      if let Err(e) = Self::find_vpk_file_paths_shallow(&shard_path, &mut vpk_file_paths) {
         return Ok(AnalyzeAddonsResult {
           addons: Vec::new(),
           total_count: 0,
@@ -594,23 +590,6 @@ impl AddonAnalyzer {
     })
   }
 
-  /// Recursively find all VPK file paths in a directory
-  fn find_vpk_file_paths(&self, dir: &PathBuf, vpk_paths: &mut Vec<PathBuf>) -> Result<(), Error> {
-    if dir.is_dir() {
-      for entry in std::fs::read_dir(dir)? {
-        let entry = entry?;
-        let path = entry.path();
-
-        if path.is_dir() {
-          self.find_vpk_file_paths(&path, vpk_paths)?;
-        } else if path.extension().and_then(|e| e.to_str()) == Some("vpk") {
-          vpk_paths.push(path);
-        }
-      }
-    }
-    Ok(())
-  }
-
   fn find_vpk_file_paths_shallow(dir: &PathBuf, vpk_paths: &mut Vec<PathBuf>) -> Result<(), Error> {
     if !dir.is_dir() {
       return Ok(());
@@ -736,5 +715,22 @@ mod tests {
     );
     assert_eq!(result.matched_vpk.remote_id().as_deref(), Some("123"));
     assert!(result.matched_vpk.file_id.is_none());
+  }
+
+  #[tokio::test]
+  async fn profile_scan_skips_vpks_in_subfolders_the_game_does_not_load() {
+    let game = tempfile::tempdir().unwrap();
+    let profile = game.path().join("game/citadel/addons/1_profile");
+    let staged = profile.join(".dmm-clear");
+    std::fs::create_dir_all(&staged).unwrap();
+    std::fs::write(staged.join("pak01_dir.vpk"), b"not a vpk").unwrap();
+
+    let result = AddonAnalyzer::new()
+      .analyze_local_addons(game.path().to_path_buf(), Some("1_profile".into()), None)
+      .await
+      .unwrap();
+
+    assert_eq!(result.total_count, 0);
+    assert!(result.errors.is_empty(), "{:?}", result.errors);
   }
 }
