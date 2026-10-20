@@ -1,3 +1,10 @@
+import {
+  createGroup,
+  expectMembership,
+  moveSelected,
+  selectMods,
+} from "../support/library-groups-actions";
+import { CONFLICTS } from "../support/conflict-fixtures";
 import { $, $$, browser, expect } from "@wdio/globals";
 import { startApplication } from "../support/application";
 import { closeApplication } from "../support/application-exit";
@@ -71,6 +78,10 @@ describe("mod conflicts", () => {
     await navigate("my-mods");
 
     if (process.env.DMM_E2E_PHASE === "resolve") {
+      await createGroup("Outfits");
+      await selectMods([HAT_JACKET, HAT_PANTS]);
+      await moveSelected("Outfits");
+      await $("button=Done selecting").click();
       await assertConflictDisk(world, "initial-state", CONFLICT_MODS, null);
 
       await step(
@@ -175,6 +186,11 @@ describe("mod conflicts", () => {
       await assertConflictDisk(world, "restored", RESOLVED, []);
     } else throw new Error("Unknown conflicts phase");
 
+    await expectMembership(
+      world,
+      { Outfits: [HAT_JACKET, HAT_PANTS] },
+      CONFLICTS.id,
+    );
     await closeApplication(world, runtime.processId);
     await assertConflictDisk(
       world,

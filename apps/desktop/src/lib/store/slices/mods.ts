@@ -439,6 +439,16 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
           ...currentProfile,
           mods: currentProfile.mods.filter((mod) => mod.remoteId !== remoteId),
           enabledMods: remainingEnabledMods,
+          modGroups: currentProfile.modGroups?.map((group) =>
+            group.modIds.includes(remoteId)
+              ? {
+                  id: group.id,
+                  name: group.name,
+                  collapsed: group.collapsed,
+                  modIds: group.modIds.filter((id) => id !== remoteId),
+                }
+              : group,
+          ),
         };
 
         return {
@@ -481,6 +491,16 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
                 ...currentProfile,
                 mods: [],
                 enabledMods: {},
+                modGroups: currentProfile.modGroups?.map((group) =>
+                  group.modIds.length > 0
+                    ? {
+                        id: group.id,
+                        name: group.name,
+                        collapsed: group.collapsed,
+                        modIds: [],
+                      }
+                    : group,
+                ),
               },
             }
           : state.profiles,
@@ -534,6 +554,10 @@ export const createModsSlice: StateCreator<State, [], [], ModsState> = (
           [profileId]: {
             ...profile,
             mods: nextProfileMods,
+            modGroups: profile.modGroups?.map((group) => ({
+              ...group,
+              modIds: group.modIds.filter((id) => keep.has(id)),
+            })),
             enabledMods: Object.fromEntries(
               Object.entries(profile.enabledMods).filter(([remoteId]) =>
                 keep.has(remoteId),

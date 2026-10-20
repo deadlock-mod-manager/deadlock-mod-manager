@@ -146,7 +146,13 @@ const doctor = async (): Promise<void> => {
   const selectedProvider = provider();
   const checks: Array<{ name: string; ok: boolean; detail: string }> = [];
   const scenario = parseScenarioId(valueAfter("--case"));
-  if (scenarios[scenario].nativeInput) {
+  if (scenarios[scenario].nativeInput && process.platform === "linux") {
+    checks.push({
+      name: "native input helper",
+      ok: commandExists("xdotool", "--version"),
+      detail: "Linux native input requires xdotool and an isolated X11 display",
+    });
+  } else if (scenarios[scenario].nativeInput) {
     let pickerExists = true;
     try {
       await access(nativePickerBinary);

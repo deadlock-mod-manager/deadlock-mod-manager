@@ -1,5 +1,12 @@
 import { Checkbox } from "@deadlock-mods/ui/components/checkbox";
 import { LibrarySelectionBar } from "@/components/my-mods/library-selection-bar";
+import { CreateModGroup } from "@/components/my-mods/create-mod-group";
+import { ModGroupTools } from "@/components/my-mods/mod-group-tools";
+import type { ModGroupActions } from "@/components/my-mods/mod-group-enablement";
+import { LibraryModGroups } from "@/components/my-mods/library-mod-groups";
+import { DraggableLibraryMod } from "@/components/my-mods/draggable-library-mod";
+import { groupLibraryMods } from "@/lib/mods/library-groups";
+import { EMPTY_MOD_GROUPS } from "@/lib/store/slices/mod-groups";
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
 import {
@@ -617,13 +624,18 @@ const ListModCard = ({
 
 const ModsList = ({
   mods,
+  allMods,
+  revealMatches,
+  showEmptyGroups,
   viewMode,
   conflictStatusByMod,
   onShowConflicts,
   healthById,
   contextMenuHint,
   selection,
+  groupActions,
 }: {
+  groupActions: ModGroupActions;
   selection: {
     active: boolean;
     ids: ReadonlySet<string>;
@@ -633,6 +645,9 @@ const ModsList = ({
   };
   healthById: ReadonlyMap<string, ModHealth>;
   mods: LocalMod[];
+  allMods: LocalMod[];
+  revealMatches: boolean;
+  showEmptyGroups: boolean;
   viewMode: ViewMode;
   conflictStatusByMod: ReadonlyMap<string, ModConflictStatus>;
   onShowConflicts: () => void;
@@ -641,82 +656,104 @@ const ModsList = ({
 }) => {
   const { t } = useTranslation();
   const ModCard = viewMode === ViewMode.GRID ? GridModCard : ListModCard;
+  const profileId = usePersistedStore((state) => state.activeProfileId);
   return (
-    <div
-      className={
-        viewMode === ViewMode.GRID
-          ? "grid grid-cols-[repeat(auto-fill,minmax(min(100%,14rem),1fr))] gap-3"
-          : "flex flex-col gap-3"
-      }>
-      {mods.map((mod, index) => {
-        const selected = selection.ids.has(mod.remoteId);
-        return (
-          <div
-            inert={selection.busy}
-            key={mod.remoteId}
-            onClickCapture={
-              selection.active
-                ? undefined
-                : (event) => {
-                    if (!(event.ctrlKey || event.metaKey || event.shiftKey))
-                      return;
-                    event.preventDefault();
-                    event.stopPropagation();
-                    selection.toggle(mod.remoteId, false);
+    <LibraryModGroups
+      key={profileId}
+      mods={mods}
+      allMods={allMods}
+      revealMatches={revealMatches}
+      showEmptyGroups={showEmptyGroups}
+      selectedIds={selection.ids}
+      actions={groupActions}
+      renderMods={(members, draggable) => (
+        <div
+          className={
+            viewMode === ViewMode.GRID
+              ? "grid grid-cols-[repeat(auto-fill,minmax(min(100%,14rem),1fr))] gap-3"
+              : "flex flex-col gap-3"
+          }>
+          {members.map((mod, index) => {
+            const selected = selection.ids.has(mod.remoteId);
+            return (
+              <DraggableLibraryMod
+                id={mod.remoteId}
+                disabled={!draggable || selection.busy}
+                key={mod.remoteId}>
+                <div
+                  inert={selection.busy}
+                  key={mod.remoteId}
+                  onClickCapture={
+                    selection.active
+                      ? undefined
+                      : (event) => {
+                          if (
+                            !(event.ctrlKey || event.metaKey || event.shiftKey)
+                          )
+                            return;
+                          event.preventDefault();
+                          event.stopPropagation();
+                          selection.toggle(mod.remoteId, false);
+                        }
                   }
-            }
-            className={cn(
-              "group/select relative rounded-xl transition-opacity",
-              selection.active && "select-none",
-              selected && "outline-2 outline-primary -outline-offset-2",
-              selection.active &&
-                selection.ids.size > 0 &&
-                !selected &&
-                "opacity-60 hover:opacity-100",
-            )}>
-            <Checkbox
-              aria-label={t("myMods.selection.selectMod", { name: mod.name })}
-              checked={selected}
-              disabled={selection.busy}
-              onClick={(event) => {
-                event.preventDefault();
-                selection.toggle(mod.remoteId, event.shiftKey);
-              }}
-              className={cn(
-                "absolute top-2 left-2 z-20 size-5 rounded-full border-2 border-white/80 bg-black/50 shadow-md transition-opacity data-[state=checked]:border-primary [&_svg]:size-3.5",
-                !selection.active &&
-                  "opacity-0 group-hover/select:opacity-100 focus-visible:opacity-100",
-              )}
-            />
-            {selection.active && (
-              <button
-                aria-hidden
-                className='absolute inset-0 z-10 cursor-pointer rounded-xl'
-                onClick={(event) =>
-                  selection.toggle(mod.remoteId, event.shiftKey)
-                }
-                tabIndex={-1}
-                type='button'
-              />
-            )}
-            <ModCard
-              conflictStatus={conflictStatusByMod.get(mod.remoteId)}
-              contextMenuHint={
-                !selection.active && contextMenuHint && index === 0
-              }
-              mod={mod}
-              onSelect={
-                selection.active
-                  ? undefined
-                  : () => selection.toggle(mod.remoteId, false)
-              }
-              onShowConflicts={onShowConflicts}
-              health={healthById.get(mod.remoteId)}
-            />
-          </div>
-        );
-      })}
-    </div>
+                  className={cn(
+                    "group/select relative rounded-xl transition-opacity",
+                    selection.active && "select-none",
+                    selected && "outline-2 outline-primary -outline-offset-2",
+                    selection.active &&
+                      selection.ids.size > 0 &&
+                      !selected &&
+                      "opacity-60 hover:opacity-100",
+                  )}>
+                  <Checkbox
+                    aria-label={t("myMods.selection.selectMod", {
+                      name: mod.name,
+                    })}
+                    checked={selected}
+                    disabled={selection.busy}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      selection.toggle(mod.remoteId, event.shiftKey);
+                    }}
+                    className={cn(
+                      "absolute top-2 left-2 z-20 size-5 rounded-full border-2 border-white/80 bg-black/50 shadow-md transition-opacity data-[state=checked]:border-primary [&_svg]:size-3.5",
+                      !selection.active &&
+                        "opacity-0 group-hover/select:opacity-100 focus-visible:opacity-100",
+                    )}
+                  />
+                  {selection.active && (
+                    <button
+                      aria-hidden
+                      data-library-selection-surface
+                      className='absolute inset-0 z-10 cursor-pointer rounded-xl'
+                      onClick={(event) =>
+                        selection.toggle(mod.remoteId, event.shiftKey)
+                      }
+                      tabIndex={-1}
+                      type='button'
+                    />
+                  )}
+                  <ModCard
+                    conflictStatus={conflictStatusByMod.get(mod.remoteId)}
+                    contextMenuHint={
+                      !selection.active && contextMenuHint && index === 0
+                    }
+                    mod={mod}
+                    onSelect={
+                      selection.active
+                        ? undefined
+                        : () => selection.toggle(mod.remoteId, false)
+                    }
+                    onShowConflicts={onShowConflicts}
+                    health={healthById.get(mod.remoteId)}
+                  />
+                </div>
+              </DraggableLibraryMod>
+            );
+          })}
+        </div>
+      )}
+    />
   );
 };
 
@@ -728,6 +765,9 @@ const MyMods = () => {
   const navigate = useNavigate();
   const mods = usePersistedStore((state) => state.localMods);
   const activeProfileId = usePersistedStore((state) => state.activeProfileId);
+  const modGroups = usePersistedStore(
+    (state) => state.profiles[activeProfileId]?.modGroups ?? EMPTY_MOD_GROUPS,
+  );
   const isSwitching = usePersistedStore((state) => state.isSwitching);
   const [selection, setSelection] = useState<{
     profileId: string;
@@ -974,12 +1014,18 @@ const MyMods = () => {
     ? Math.ceil(displayMods.length / PAGE_SIZE)
     : 1;
 
+  const groupedDisplayMods = useMemo(() => {
+    if (modGroups.length === 0) return displayMods;
+    const { sections, ungrouped } = groupLibraryMods(displayMods, modGroups);
+    return [...sections.flatMap((section) => section.mods), ...ungrouped];
+  }, [displayMods, modGroups]);
+
   const visibleMods = useMemo(
     () =>
       paginationEnabled
-        ? displayMods.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
-        : displayMods,
-    [displayMods, page, paginationEnabled],
+        ? groupedDisplayMods.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+        : groupedDisplayMods,
+    [groupedDisplayMods, page, paginationEnabled],
   );
 
   // Reset to first page whenever the filtered set changes, and clamp if totalPages shrinks
@@ -1480,6 +1526,23 @@ const MyMods = () => {
                         </TabsTrigger>
                       )}
                     </TabsList>
+                    {!isConflictsTab && (
+                      <>
+                        <CreateModGroup
+                          key={activeProfileId}
+                          profileId={activeProfileId}
+                          disabled={selectionBusy}
+                          onCreated={() => handlePageChange(0)}
+                        />
+                        {modGroups.length > 0 && (
+                          <ModGroupTools
+                            key={`group-tools:${activeProfileId}`}
+                            profileId={activeProfileId}
+                            disabled={selectionBusy}
+                          />
+                        )}
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -1523,7 +1586,15 @@ const MyMods = () => {
                   <TabsContent className='mt-0' value={ModFilter.All}>
                     <ModsList
                       selection={modsListSelection}
+                      groupActions={{
+                        busy: selectionBusy,
+                        enable: enableAll,
+                        disable: disableAll,
+                      }}
                       mods={visibleMods}
+                      allMods={displayMods}
+                      revealMatches={query.trim().length > 0}
+                      showEmptyGroups={page === 0 && !query.trim()}
                       conflictStatusByMod={conflictStatusByMod}
                       onShowConflicts={showConflicts}
                       viewMode={viewMode}
@@ -1539,7 +1610,15 @@ const MyMods = () => {
                   <TabsContent className='mt-0' value={ModFilter.Enabled}>
                     <ModsList
                       selection={modsListSelection}
+                      groupActions={{
+                        busy: selectionBusy,
+                        enable: enableAll,
+                        disable: disableAll,
+                      }}
                       mods={visibleMods}
+                      allMods={displayMods}
+                      revealMatches={query.trim().length > 0}
+                      showEmptyGroups={page === 0 && !query.trim()}
                       conflictStatusByMod={conflictStatusByMod}
                       onShowConflicts={showConflicts}
                       viewMode={viewMode}
@@ -1555,7 +1634,15 @@ const MyMods = () => {
                   <TabsContent className='mt-0' value={ModFilter.Disabled}>
                     <ModsList
                       selection={modsListSelection}
+                      groupActions={{
+                        busy: selectionBusy,
+                        enable: enableAll,
+                        disable: disableAll,
+                      }}
                       mods={visibleMods}
+                      allMods={displayMods}
+                      revealMatches={query.trim().length > 0}
+                      showEmptyGroups={page === 0 && !query.trim()}
                       conflictStatusByMod={conflictStatusByMod}
                       onShowConflicts={showConflicts}
                       viewMode={viewMode}
@@ -1631,6 +1718,7 @@ const MyMods = () => {
         <div className='pointer-events-none absolute inset-x-4 bottom-4 z-30 flex justify-center'>
           <LibrarySelectionBar
             count={selectedIds.size}
+            selectedIds={[...selectedIds]}
             matchingCount={displayMods.length}
             allMatchingSelected={allMatchingSelected}
             enableCount={

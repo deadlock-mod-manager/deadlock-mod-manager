@@ -65,7 +65,7 @@ The `stats` family pins a Stats account and serves deadlock-api from fixtures wi
 
 `support/scenarios.ts` is the scenario registry. Each definition owns its spec, phases, fixture setup, HTTP routes, network assertions, native-input requirement, and expected exit mode. `--suite` selects `all`, a family such as `gamebanana` or `downloads`, or a coverage category (`ui` / `ipc-recovery`). Cases run serially with a separate world per case; restart phases share that case's world. Failures retain their world and the runner continues to report the remaining cases.
 
-Native input requires explicit `--allow-native-input`. This applies to the local-picker and profile-ordering scenarios, including `--suite all`. Those cases control the Windows desktop and require exclusive mouse/keyboard use; never enable the option while someone is working on that desktop. Other cases still launch application windows but do not use the physical input helper. The native executable also checks the supervisor's opt-in environment variable.
+Native input requires explicit `--allow-native-input`. This applies to the local-picker, profile-ordering, and library-group dragging scenarios, including `--suite all`. Those cases control the desktop and require exclusive mouse/keyboard use; never enable the option while someone is working on that desktop. Other cases still launch application windows but do not use the physical input helper. The native executable also checks the supervisor's opt-in environment variable.
 
 Use these modules when adding a flow:
 
@@ -73,7 +73,7 @@ Use these modules when adding a flow:
 | --- | --- |
 | `application.ts`, `application-exit.ts` | Verify the real application identity, dismiss release notes, record phase startup, and close normally after the scenario finishes |
 | `ui.ts` | Navigate, open ordering through keyboard input, activate profiles, select downloads/install files, and locate installed-file sections |
-| `native-input.ts`, `native-picker.ts` | Owned Windows input for drag/keyboard sensors and native file selection; the picker accepts any fixture path beneath the world's fixtures directory |
+| `native-input.ts`, `native-picker.ts` | Owned Windows/X11 input for drag sensors and Windows native file selection; the picker accepts any fixture path beneath the world's fixtures directory |
 | `observations.ts` | Decode persisted state, hash bytes, compare exact inventory changes, and poll a read-only observation with the last value in timeout errors |
 | `mod-fixtures.ts`, `profile-fixtures.ts` | Build mod records and arbitrary installed profile layouts; the Alpha/Beta recipe is a convenience wrapper |
 | `vpk.ts`, `archive-fixtures.ts`, `fixture-server.ts` | Compose synthetic VPKs, deterministic ZIPs, and strict HTTP responses, including transfer failures |
@@ -377,3 +377,11 @@ and the library state, manifests and archive hashes must agree after restart.
 mod. It verifies Stop restores every original mod and its load order, then starts
 another search and restores after a fresh process. Persisted library/profile
 state, manifest entries and exact VPK hashes must all agree.
+
+## Library groups
+
+Run `pnpm --filter @deadlock-mods/desktop e2e:test -- --suite library-groups --keep --allow-native-input` after rebuilding the E2E application. Six cases cover organization/copying, native dragging, group enablement, pagination/filtering, removal/Undo, and addon identification, each followed by a fresh-process restart. Assertions compare membership, collapse state, independent profile copies, enabled status, manifest order, exact file inventories, and VPK hashes.
+
+The drag case uses native pointer down/move/up to exercise multi-selection, Undo, hover expansion, header and dotted drop targets, folder ordering, list/grid views, cancellation, and preview distance from the pointer. Windows uses the FlaUI helper. Linux requires `xdotool` and an X11 display; use Xvfb with a private D-Bus session as above. Input is restricted to the owned test window and requires explicit opt-in. Synthetic DOM pointer events are not a substitute for this case.
+
+The surrounding `library-selection`, `conflicts-resolve`, and `bisect-conflicts` cases also create library groups through the UI. They check selection across profiles, conflict load-order changes, and bisection controls/restoration while preserving organization. Grouped addon identification replaces a placeholder ID with its catalog ID and verifies that membership, VPK bytes, load order, and enablement survive that transition and restart.

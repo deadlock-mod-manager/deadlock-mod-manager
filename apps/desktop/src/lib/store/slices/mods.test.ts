@@ -151,6 +151,60 @@ describe("addLocalMod", () => {
 });
 
 describe("removeMod", () => {
+  it("removes group membership only in the affected profile", () => {
+    const group = {
+      id: "cosmetics",
+      name: "Cosmetics",
+      modIds: ["1", "2"],
+      collapsed: true,
+    };
+    const { profiles } = store.getState();
+    store.setState({
+      profiles: {
+        default: { ...profiles.default, modGroups: [group] },
+        secondary: { ...profiles.secondary, modGroups: [group] },
+      },
+    });
+    store.getState().removeMod("1");
+    expect(store.getState().profiles.default.modGroups?.[0].modIds).toEqual([
+      "2",
+    ]);
+    expect(store.getState().profiles.secondary.modGroups?.[0].modIds).toEqual([
+      "1",
+      "2",
+    ]);
+    store.getState().clearMods();
+    expect(store.getState().profiles.default.modGroups?.[0]).toMatchObject({
+      name: "Cosmetics",
+      modIds: [],
+      collapsed: true,
+    });
+  });
+
+  it("keeps group membership only for mods retained by a library reset", () => {
+    const { profiles } = store.getState();
+    store.setState({
+      profiles: {
+        ...profiles,
+        default: {
+          ...profiles.default,
+          modGroups: [
+            {
+              id: "cosmetics",
+              name: "Cosmetics",
+              modIds: ["1", "2"],
+              collapsed: false,
+            },
+          ],
+        },
+      },
+    });
+    store.getState().nukeModsState(["2"]);
+    expect(store.getState().profiles.default.modGroups?.[0].modIds).toEqual([
+      "2",
+    ]);
+  });
+
   it("preserves active progress and visibility when removing from another profile", () => {
     store.setState({ hiddenHeroMods: { "1": true } });
     const before = store.getState();

@@ -1,3 +1,9 @@
+import {
+  createGroup,
+  expectMembership,
+  moveSelected,
+  selectMods,
+} from "../support/library-groups-actions";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -93,6 +99,9 @@ const start = async (world: string, first: boolean) => {
   }
   await $('[role="dialog"]').$("button=Start").click();
   await verify(world, false);
+  await expect($("button=New group")).toBeDisabled();
+  await expect($('button[aria-label="Enable mods in Outfits"]')).toBeDisabled();
+  await expect($('button[aria-label="Reorder Outfits"]')).toBeDisabled();
   const state = stateSchema.parse(await readPersistedDocument(world)).state;
   assert.deepEqual(state.bisectSession?.originalEnabled, CONFLICT_MODS);
 };
@@ -109,14 +118,20 @@ describe("bisection of pre-existing skin conflicts", () => {
     const world = runtime.roots.world;
     await navigate("my-mods");
     if (process.env.DMM_E2E_PHASE === "bisect") {
+      await createGroup("Outfits");
+      await selectMods(CONFLICT_MODS);
+      await moveSelected("Outfits");
+      await $("button=Done selecting").click();
       await start(world, true);
       await restore(world);
       await start(world, false);
+      await expectMembership(world, { Outfits: CONFLICT_MODS }, CONFLICTS.id);
       await closeApplication(world, runtime.processId);
       await verify(world, false);
     } else {
       await verify(world, false);
       await restore(world);
+      await expectMembership(world, { Outfits: CONFLICT_MODS }, CONFLICTS.id);
       await closeApplication(world, runtime.processId);
       await verify(world, true);
     }

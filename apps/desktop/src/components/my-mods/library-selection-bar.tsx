@@ -24,8 +24,11 @@ import {
 } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 
+import { MoveToModGroup } from "@/components/my-mods/move-to-mod-group";
+
 type LibrarySelectionBarProps = {
   count: number;
+  selectedIds: readonly string[];
   matchingCount: number;
   allMatchingSelected: boolean;
   enableCount: number;
@@ -44,6 +47,7 @@ type LibrarySelectionBarProps = {
 
 export const LibrarySelectionBar = ({
   count,
+  selectedIds,
   matchingCount,
   allMatchingSelected,
   enableCount,
@@ -140,6 +144,7 @@ export const LibrarySelectionBar = ({
                 {t("myMods.selection.enableCount", { count: enableCount })}
               </Button>
             )}
+            <MoveToModGroup modIds={selectedIds} disabled={busy} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button

@@ -7,13 +7,13 @@ import {
   scenarios,
 } from "./scenarios";
 
-// Native-input cases and filesystem-lock are registered on Windows only.
+// Legacy native-input cases and filesystem-lock are Windows-only.
 const windows = process.platform === "win32";
 
 describe("scenario selection", () => {
   it("registers every case with explicit phases and capability requirements", () => {
     const ids = selectScenarios("all");
-    expect(ids).toHaveLength(windows ? 84 : 73);
+    expect(ids).toHaveLength(windows ? 90 : 79);
     for (const id of ids) {
       expect(parseScenarioId(id)).toBe(id);
       expect(scenarioSpec(id)).toContain("./specs/");
@@ -24,6 +24,16 @@ describe("scenario selection", () => {
       "onboarding-telemetry-default",
     ]);
     expect(selectScenarios("gamebanana")).toHaveLength(17);
+    expect(selectScenarios("library-groups")).toEqual([
+      "library-groups-organize",
+      "library-groups-identification",
+      "library-groups-pagination",
+      "library-groups-removal",
+      "library-groups-drag",
+      "library-groups-toggle",
+    ]);
+    expect(scenarios["library-groups-drag"].nativeInput).toBe(true);
+    expect(scenarios["library-groups-drag"].platforms).toContain("linux");
     expect(selectScenarios("monkey")).toEqual(["monkey"]);
     expect(selectScenarios("updater")).toEqual([
       "app-update-download",

@@ -24,7 +24,7 @@ internal static class NativeInput
         // PER_MONITOR_AWARE_V2 keeps Win32 coordinates in the physical pixels FlaUI uses.
         SetThreadDpiAwarenessContext(new nint(-4));
         var request = JsonSerializer.Deserialize<Request>(json) ?? throw new ArgumentException("Missing input request");
-        if (request.Action is not ("click" or "drag" or "keyboard-reorder")) throw new ArgumentException("Unsupported input action");
+        if (request.Action is not ("click" or "drag" or "keyboard-reorder" or "pointer-down" or "pointer-move" or "pointer-up")) throw new ArgumentException("Unsupported input action");
         var window = process.MainWindowHandle;
         if (window == 0 || !GetClientRect(window, out var rect)) throw new InvalidOperationException("Owned window unavailable");
         if (!(request.Width > 0 && request.Height > 0)) throw new ArgumentException("Invalid viewport dimensions");
@@ -54,7 +54,7 @@ internal static class NativeInput
         finally { if (attached) AttachThreadInput(currentThread, foregroundThread, false); }
         Thread.Sleep(100);
         if (GetForegroundWindow() != window) throw new InvalidOperationException($"Owned E2E window must have focus: expected {window}, actual {GetForegroundWindow()}, title {process.MainWindowTitle}");
-        Mouse.MoveTo(start);
+        if (request.Action != "pointer-up") Mouse.MoveTo(start);
         if (request.Action == "drag")
         {
             Mouse.Down(MouseButton.Left);
@@ -67,7 +67,9 @@ internal static class NativeInput
             finally { Mouse.Up(MouseButton.Left); }
         }
         else if (request.Action == "click") Mouse.Click(MouseButton.Left);
-        else
+        else if (request.Action == "pointer-down") Mouse.Down(MouseButton.Left);
+        else if (request.Action == "pointer-up") Mouse.Up(MouseButton.Left);
+        else if (request.Action == "keyboard-reorder")
         {
             // Scan codes preserve KeyboardEvent.code, which dnd-kit's keyboard sensor requires.
             foreach (var scanCode in new ushort[] { 0x39, 0x50, 0x50, 0x39 })
