@@ -70,10 +70,11 @@ const verify = async (world: string, disabled: string) => {
     assert.equal(entry.currentVpks.length, id === disabled ? 0 : 1);
   }
 };
+// One query per lookup: a dialog that is still closing must not capture it.
 const choose = async (label: string) => {
-  const dialog = $('[role="alertdialog"]');
-  await dialog.waitForDisplayed();
-  await dialog.$(`button=${label}`).click();
+  await $(
+    `//*[@role="alertdialog"]//button[normalize-space()="${label}"]`,
+  ).click();
 };
 
 const replaced = () =>
@@ -95,9 +96,11 @@ describe("skin conflict activation", () => {
       await $("button=Enable 1").waitForDisplayed();
       await $("button=Enable 1").click();
       await choose("Enable selected");
-      await expect($('[role="alertdialog"]')).toHaveText(
-        expect.stringContaining("These mods replace the same model"),
-      );
+      await expect(
+        $(
+          '//*[@role="alertdialog"][.//*[normalize-space()="These mods replace the same model"]]',
+        ),
+      ).toBeDisplayed();
       await choose("Cancel");
       await verify(world, HAT_PANTS);
       await expect($('[role="dialog"]')).toHaveText(

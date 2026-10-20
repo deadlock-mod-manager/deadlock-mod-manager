@@ -95,9 +95,9 @@ const start = async (world: string, first: boolean) => {
     '//*[@role="menuitem" and normalize-space()="Find a broken mod"]',
   ).click();
   if (first) {
-    await $('[role="dialog"]').$("button=Skip").click();
+    await $('//*[@role="dialog"]//button[normalize-space()="Skip"]').click();
   }
-  await $('[role="dialog"]').$("button=Start").click();
+  await $('//*[@role="dialog"]//button[normalize-space()="Start"]').click();
   await verify(world, false);
   await expect($("button=Groups")).toBeDisabled();
   await expect($('button[aria-label="Enable mods in Outfits"]')).toBeDisabled();
