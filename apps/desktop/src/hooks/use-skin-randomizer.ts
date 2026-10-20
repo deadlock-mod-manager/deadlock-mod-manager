@@ -81,6 +81,7 @@ export const useSkinRandomizer = () => {
             );
             state.setModEnabledInCurrentProfile(m.remoteId, true);
           },
+          onCancel: (m) => state.setModStatus(m.remoteId, ModStatus.Downloaded),
           onError: (m, error) => {
             state.setModStatus(m.remoteId, ModStatus.Downloaded);
             logger

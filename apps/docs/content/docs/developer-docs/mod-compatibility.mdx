@@ -106,7 +106,15 @@ effective archive supplies the model; duplicate paths are not merged.
 Overlapping models produce a review warning naming the active archive and the
 other providers, because their non-overlapping animation or accessory files can
 still mix. Disable unused variations or competing skins when those files cannot
-work together. If the winning provider is not fixed, its resource stays
+work together. `localization_overlay/model_dependencies.rs` follows the winning
+model's original animation references through graphs, clips, and skeletons. The
+warning names dependencies supplied by another mod when their bytes differ from
+what this model's mod would load alone. Unrelated heroes and identical dependency
+files do not add this finding. Traversal deduplicates paths and stops at 4,096
+resources; an incomplete traversal never clears the general overlap warning.
+This is original-file provenance, not proof of a playback fault: repairs may
+restore a dependency's game layout, and repaired assets are checked separately.
+If the winning provider is not fixed, its resource stays
 protected and launch uses the original files.
 
 Localization and mergeable game-data tables combine providers, so those entire
@@ -664,6 +672,35 @@ This recipe establishes one reviewed correspondence. It does not infer arbitrary
 material renames or all authored edits from filename similarity. Additional
 resource families need evidence-backed mappings and game verification.
 
+## Performance checks
+
+A health-check batch shares one game index and a bounded 64 MiB game-byte cache.
+Mod reads stay local to each snapshot; opening a new game index refreshes cached
+game bytes. The content-keyed compiled-data cache is bounded to 64 MiB and 16
+entries, with conservative charges for values and encoding metadata. Read-only
+checks borrow parsed values. Localization comparisons index case-folded tokens
+instead of repeatedly scanning each table. Successful health results are saved
+once at the end of the batch; progress still advances for every attempted mod,
+and a failed mod does not discard successful results.
+
+The opt-in `profile_compatibility_benchmark` Rust test measures combined analysis
+at 1, 2, and the full input count, then each mod against a shared game index. Set
+`DMM_REAL_CITADEL` to the installed game's `citadel` directory,
+`DMM_PROFILE_INPUTS` to a JSON array of `{ "mod_id": "id", "vpks": ["/path/mod.vpk"] }`,
+and `DMM_PROFILE_REPORT` to an output JSON path. Run from `apps/desktop`:
+
+```sh
+cargo test -p deadlock-mod-manager --lib profile_compatibility_benchmark -- --ignored --nocapture
+```
+
+Use the same game files, input order, and build profile for both revisions. Run
+without concurrent builds. The report includes findings alongside elapsed times
+so an optimization cannot silently remove coverage. It measures analysis, not
+UI rendering, overlay packing, health-cache persistence, or learning a new game
+history snapshot. The separate ignored Shiv-pair regression takes
+`DMM_JOSUKE_VPK` and `DMM_SUIT_SHIV_VPK` and checks the combined and standalone
+warnings without modifying the installed mods.
+
 ## Regression corpus
 
 Prepare pinned older GameBanana fixtures with:
@@ -871,3 +908,29 @@ Apply requires the input fingerprint returned by review and checks the inputs
 again after preparing the plan. If mods or game files changed, the user must
 review again. Duplicate, unavailable, or stale conflict choices fail in both
 preview and export, before output files are replaced.
+
+### Choosing a skin during activation
+
+Before `install_mod` enables the selected VPKs, it compares their model entry
+paths and CRCs with the profile's enabled mods. Different contents at the same
+`.vmdl_c` path require a choice: keep the current skins, or enable the new mod
+and disable the listed conflicts. Identical models, material-only overlaps and
+unselected variants do not trigger this prompt. Review ignores do not bypass it.
+
+The backend rescans under the manager lock when the choice is confirmed. Only
+conflicts included in that choice can be disabled. Their VPK renames remain
+reversible until the replacement and manifest commit; a failed enable or
+manifest save rolls the switch back. This prevents mixing two model replacements
+when enabling a mod; it does not repair arbitrary skeleton incompatibilities or
+change already-enabled combinations automatically.
+
+
+Missing enabled archives are excluded from activation conflicts because they
+cannot load; launch validation still reports them. Existing archives that cannot
+be read or parsed continue to block activation.
+
+Bisection passes its persisted `originalEnabled` snapshot during rounds and
+restoration. The backend permits a conflicting combination only when both mods
+belong to that original set, without disabling either one. Mods outside the set
+still trigger conflict validation. Stop, finish, retry and restart recovery use
+the same snapshot and restore the original load order.

@@ -3,7 +3,7 @@ use super::{
   CompiledDataSource, HEROES_VDATA_PATH,
   animation_model_evidence::AnimationInputs,
   asset_compatibility::{self, AssetRepair, AssetWarning, RepairKind, WarningKind},
-  decode_compiled_data, model_animation, model_camera,
+  compiled_resource, decode_compiled_data, model_animation, model_camera,
   repair_scope::RepairScope,
   resources::{ResourceSnapshot, resource_path},
 };
@@ -41,12 +41,17 @@ pub(super) fn historical_hero_models<'a>(
   history: &VdataHistoryIndex,
   paths: impl IntoIterator<Item = &'a str>,
 ) -> Result<BTreeSet<String>, Error> {
+  let paths: Vec<_> = paths.into_iter().collect();
+  if paths.is_empty() {
+    return Ok(BTreeSet::new());
+  }
   let Some(bytes) = resources.game_bytes(HEROES_VDATA_PATH)? else {
     return Ok(BTreeSet::new());
   };
-  let Ok((_, heroes, _)) = decode_compiled_data(&bytes, HEROES_VDATA_PATH) else {
+  let Ok(decoded_heroes) = compiled_resource::decode(&bytes, HEROES_VDATA_PATH) else {
     return Ok(BTreeSet::new());
   };
+  let heroes = &decoded_heroes.root;
   let Some(rows) = heroes.as_object() else {
     return Ok(BTreeSet::new());
   };
@@ -85,6 +90,14 @@ pub(super) fn prop_models(
   history: &VdataHistoryIndex,
   warnings: &[AssetWarning],
 ) -> Result<Vec<String>, Error> {
+  let warned_models: BTreeSet<&str> = warnings
+    .iter()
+    .map(|warning| warning.file_path.as_str())
+    .filter(|path| model_camera::is_path(path))
+    .collect();
+  if warned_models.is_empty() {
+    return Ok(Vec::new());
+  }
   let mut heroes = BTreeSet::new();
   for registry in [
     resources.game_bytes(HEROES_VDATA_PATH)?,
@@ -95,9 +108,10 @@ pub(super) fn prop_models(
   .into_iter()
   .flatten()
   {
-    let Ok((_, root, _)) = decode_compiled_data(&registry, HEROES_VDATA_PATH) else {
+    let Ok(decoded_root) = compiled_resource::decode(&registry, HEROES_VDATA_PATH) else {
       continue;
     };
+    let root = &decoded_root.root;
     heroes.extend(
       root
         .as_object()
@@ -106,10 +120,9 @@ pub(super) fn prop_models(
         .filter_map(|(_, row)| resource_path(row.get("m_strModelName")?.as_str()?)),
     );
   }
-  let models: BTreeSet<&str> = warnings
-    .iter()
-    .map(|warning| warning.file_path.as_str())
-    .filter(|path| model_camera::is_path(path) && !heroes.contains(*path))
+  let models: BTreeSet<&str> = warned_models
+    .into_iter()
+    .filter(|path| !heroes.contains(*path))
     .collect();
   let relocated = historical_hero_models(resources, history, models.iter().copied())?;
   Ok(
@@ -137,9 +150,10 @@ pub(super) fn prepare(
   let Some(bytes) = resources.game_bytes(HEROES_VDATA_PATH)? else {
     return Ok(output);
   };
-  let Ok((_, heroes, _)) = decode_compiled_data(&bytes, HEROES_VDATA_PATH) else {
+  let Ok(decoded_heroes) = compiled_resource::decode(&bytes, HEROES_VDATA_PATH) else {
     return Ok(output);
   };
+  let heroes = &decoded_heroes.root;
   let Some(rows) = heroes.as_object() else {
     return Ok(output);
   };
@@ -268,9 +282,9 @@ pub(super) fn prepare(
             &source.mod_id,
           )
           .is_ok()
-          {
-            animation.insert(target.clone(), source.bytes.clone());
-          }
+        {
+          animation.insert(target.clone(), source.bytes.clone());
+        }
       }
       if !animation.contains_key(&target) {
         let reasons = unverified

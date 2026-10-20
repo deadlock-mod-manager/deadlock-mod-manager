@@ -184,19 +184,15 @@ impl ModHealthContext {
     let mut observed = history::load(&self.citadel);
     let mut recorded = BTreeSet::new();
     let mut learned = false;
+    let mut entries = Vec::with_capacity(pending.len());
     for (index, installed) in pending.into_iter().enumerate() {
       match check_mod(&game, installed, &mut observed, game_build, &mut recorded) {
         Ok((findings, changed)) => {
           learned |= changed;
-          mod_health::record(
-            &self.app_data,
-            &profile,
-            game_build,
-            [(
-              installed.id.clone(),
-              CachedModHealth::new(installed.key.clone(), findings, ModHealthSource::Standalone),
-            )],
-          )?;
+          entries.push((
+            installed.id.clone(),
+            CachedModHealth::new(installed.key.clone(), findings, ModHealthSource::Standalone),
+          ));
         }
         Err(error) => log::warn!(
           "Skipped compatibility check for mod {}: {error}",
@@ -207,6 +203,11 @@ impl ModHealthContext {
         checked: index as u32 + 1,
         total,
       });
+    }
+    // Persist the batch once instead of reading and rewriting the whole cache
+    // for each mod. Progress events still describe every completed analysis.
+    if !entries.is_empty() {
+      mod_health::record(&self.app_data, &profile, game_build, entries)?;
     }
     if learned && let Err(error) = history::save(&self.citadel, &observed) {
       log::warn!("Could not persist observed compatibility history: {error}");
@@ -346,5 +347,44 @@ mod tests {
     assert_eq!(report.mods.len(), 2);
     assert_eq!(report.game_build, Some(101));
     assert_eq!(report.previous_game_build, Some(100));
+  }
+  #[test]
+  fn a_failed_mod_does_not_discard_successful_batch_results() {
+    let temp = tempfile::tempdir().unwrap();
+    let citadel = temp.path().join("citadel");
+    fs::create_dir_all(&citadel).unwrap();
+    let base = ProfileBase::new(citadel.join("addons")).unwrap();
+    write_vpk(&base.join("good_dir.vpk"), &[("sounds/a.vsnd_c", b"sound")]);
+    fs::write(base.join("bad_dir.vpk"), b"broken archive").unwrap();
+    let mut manifest = ProfileVpkManifest::default();
+    for id in ["good", "bad"] {
+      manifest.mods.insert(
+        id.into(),
+        ProfileVpkManifestEntry {
+          disabled_vpks: vec![format!("{id}_dir.vpk")],
+          ..Default::default()
+        },
+      );
+    }
+    manifest.save(&base).unwrap();
+    let context = ModHealthContext {
+      citadel,
+      base,
+      app_data: temp.path().join("app-data"),
+    };
+    let progress = Mutex::new(Vec::new());
+    let report = context
+      .check(None, false, |event| progress.lock().unwrap().push(event))
+      .unwrap();
+    assert_eq!(status(&report, "good"), Some(ModHealthStatus::NotCovered));
+    assert_eq!(status(&report, "bad"), None);
+    assert_eq!(context.report().unwrap(), report);
+    assert_eq!(
+      progress.lock().unwrap().last(),
+      Some(&ModHealthProgress {
+        checked: 2,
+        total: 2
+      })
+    );
   }
 }

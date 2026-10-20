@@ -6,7 +6,7 @@ import { syncInstalledVpksFromManifest } from "@/lib/mods/sync-installed-vpks";
 import { isTauriError } from "@/types/tauri";
 import { usePersistedStore } from "@/lib/store";
 import { type InstallableMod, type LocalMod, ModStatus } from "@/types/mods";
-import { invokeGuarded } from "@/lib/game-guard";
+import { useModelConflictInstall } from "@/hooks/use-model-conflict-install";
 
 export type InstallOptions = InstallAnalyticsOptions;
 
@@ -16,6 +16,8 @@ export type InstallFunction = (
 ) => Promise<InstallableMod | null>;
 
 const useInstall = () => {
+  const { mutateAsync: installWithConflictResolution } =
+    useModelConflictInstall();
   const getActiveProfile = usePersistedStore((s) => s.getActiveProfile);
 
   const install: InstallFunction = useCallback(
@@ -31,14 +33,14 @@ const useInstall = () => {
         const activeProfile = getActiveProfile();
         const profileFolder = activeProfile?.folderName ?? null;
 
-        const result = await invokeGuarded<InstallableMod>("install_mod", {
-          deadlockMod: {
-            id: mod.remoteId,
-            name: mod.name,
-            is_map: mod.isMap,
-          },
+        const result = await installWithConflictResolution({
+          mod,
           profileFolder,
         });
+        if (!result) {
+          options.onCancel?.(mod, "modelConflict");
+          return null;
+        }
         await syncInstalledVpksFromManifest(profileFolder);
 
         options.onComplete(mod, result);
@@ -54,7 +56,7 @@ const useInstall = () => {
         return null;
       }
     },
-    [getActiveProfile],
+    [getActiveProfile, installWithConflictResolution],
   );
 
   return { install };

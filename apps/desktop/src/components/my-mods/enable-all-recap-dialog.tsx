@@ -152,6 +152,8 @@ export const EnableAllRecapDialog = ({
     recap.failed.length +
     recap.needsFileSelection.length +
     recap.criticalPaths.length +
+    recap.keptCurrent.length +
+    recap.replaced.length +
     recap.notAttempted.length;
 
   return (
@@ -206,6 +208,16 @@ export const EnableAllRecapDialog = ({
               title={t("myMods.enableAllRecap.notAttempted")}
               mods={asItems(recap.notAttempted)}
               action={action(t("myMods.enableAllRecap.enable"))}
+            />
+            <RecapSection
+              icon={<CircleSlash className='h-4 w-4 text-muted-foreground' />}
+              title={t("modelConflict.keptCurrent")}
+              mods={asItems(recap.keptCurrent)}
+            />
+            <RecapSection
+              icon={<CircleSlash className='h-4 w-4 text-muted-foreground' />}
+              title={t("modelConflict.replaced")}
+              mods={asItems(recap.replaced)}
             />
             <RecapSection
               icon={<CheckCircle className='h-4 w-4 text-green-500' />}

@@ -39,6 +39,8 @@ pub enum Error {
   Zip(#[from] zip::result::ZipError),
   #[error("Mod is invalid: {0}")]
   ModInvalid(String),
+  #[error("Choose which skin to keep before enabling mods that replace the same model")]
+  ModelConflict(Vec<String>),
   #[error("Game is running")]
   GameRunning,
   #[error("Game is not running")]
@@ -145,7 +147,10 @@ impl serde::Serialize for Error {
     use serde::ser::SerializeStruct;
     let field_count = if matches!(
       self,
-      Error::MissingEnabledModFiles(_) | Error::ReadOnlyFile(_) | Error::MakeWritableFailed { .. }
+      Error::ModelConflict(_)
+        | Error::MissingEnabledModFiles(_)
+        | Error::ReadOnlyFile(_)
+        | Error::MakeWritableFailed { .. }
     ) {
       4
     } else {
@@ -169,6 +174,7 @@ impl serde::Serialize for Error {
       Error::Rar(_) => "rar",
       Error::Zip(_) => "zip",
       Error::ModInvalid(_) => "modInvalid",
+      Error::ModelConflict(_) => "modelConflict",
       Error::GameRunning => "gameRunning",
       Error::GameNotRunning => "gameNotRunning",
       Error::GameLaunchFailed(_) => "gameLaunchFailed",
@@ -212,6 +218,9 @@ impl serde::Serialize for Error {
     state.serialize_field("kind", kind)?;
     state.serialize_field("message", &self.to_string())?;
     state.serialize_field("matchSyncKind", &match_sync_kind)?;
+    if let Error::ModelConflict(mods) = self {
+      state.serialize_field("conflictingMods", mods)?;
+    }
     if let Error::MissingEnabledModFiles(mods) = self {
       state.serialize_field("affectedMods", mods)?;
     }

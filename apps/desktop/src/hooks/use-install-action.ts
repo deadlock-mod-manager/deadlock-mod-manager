@@ -65,9 +65,10 @@ export const useInstallAction = (): UseInstallActionReturn => {
           setModStatus(m.remoteId, ModStatus.Downloaded);
           toast.error(error.message || t("notifications.failedToInstallMod"));
         },
-        onCancel: (m) => {
+        onCancel: (m, reason) => {
           setModStatus(m.remoteId, ModStatus.Downloaded);
-          toast.info(t("notifications.installationCanceled"));
+          if (reason !== "modelConflict")
+            toast.info(t("notifications.installationCanceled"));
         },
         onFileTreeAnalyzed: (m, fileTree) => {
           if (fileTree.has_multiple_files) {

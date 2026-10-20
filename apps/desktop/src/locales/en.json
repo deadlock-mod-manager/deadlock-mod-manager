@@ -1,4 +1,12 @@
 {
+  "modelConflict": {
+    "title": "Choose which skin to keep",
+    "body": "{{mod}} replaces the same model as {{conflicts}}. Keeping both enabled can mix models and skeletons, causing stretched or twisted characters. Using {{mod}} will disable {{conflicts}}. Other mods will stay enabled. Restart Deadlock after switching.",
+    "useSkin": "Use {{mod}}",
+    "keepCurrent": "Keep current",
+    "keptCurrent": "Skipped to keep current skins",
+    "replaced": "Replaced by another selected skin"
+  },
   "launchRepair": {
     "title_one": "{{count}} mod is missing files",
     "title_other": "{{count}} mods are missing files",

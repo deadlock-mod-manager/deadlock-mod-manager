@@ -297,6 +297,11 @@ const restore = async (
         store.setModEnabledInCurrentProfile(m.remoteId, true);
         result = { outcome: "restored" };
       },
+      onCancel: (m) => {
+        usePersistedStore
+          .getState()
+          .setModStatus(m.remoteId, ModStatus.Downloaded);
+      },
       onError: (m, error) => {
         usePersistedStore
           .getState()
