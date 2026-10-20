@@ -1,9 +1,5 @@
 {
   "modelConflict": {
-    "title": "",
-    "body": "",
-    "useSkin": "",
-    "keepCurrent": "",
     "keptCurrent": "",
     "replaced": ""
   },
@@ -2218,6 +2214,13 @@
       "summaryServerContent": "",
       "summaryServerContentCounted_one": "",
       "summaryServerContentCounted_other": "",
+      "summaryServerContentPending_one": "",
+      "summaryServerContentPending_other": "",
+      "summaryServerContentReady": "",
+      "summaryServerContentNone": "",
+      "contentTruncated": "",
+      "contentMissingSource": "",
+      "contentBlockedMaps": "",
       "noConnectMethod": ""
     },
     "staging": {
@@ -2234,7 +2237,12 @@
       "applying": "Stosowanie modyfikacji serwera do gameinfo.gi...",
       "downloadingServerContent": "",
       "contentItemProgress": "",
-      "decompressing": ""
+      "decompressing": "",
+      "awaitingMismatchConfirm": "",
+      "mismatchTitle": "",
+      "mismatchDescription": "",
+      "mismatchAccept": "",
+      "mismatchDeclined": ""
     },
     "requirementRow": {
       "customProvider": "Własne",
@@ -2252,18 +2260,11 @@
       "registryStale_one": "",
       "registryStale_other": ""
     },
-    "relayBar": {
-      "online": "online",
-      "degraded": "zdegradowany",
-      "offline": "offline",
-      "lastSeen": "Ostatnio widziany",
-      "latency": "{{ms}} ms"
-    },
     "hostCta": {
       "title": "Masz niestandardowy serwer Deadlock?",
-      "description": "Udostępnij tutaj, aby inni gracze mogli go znaleźć i dołączyć.",
-      "action": "Wyświetl swój serwer",
-      "openError": "Nie można otworzyć strony hostingu serwera."
+      "description": "",
+      "action": "",
+      "openError": ""
     },
     "connect": {
       "retrying": "",
@@ -2600,6 +2601,16 @@
     }
   },
   "modOrdering": {
+    "animationChecks": {
+      "title": "",
+      "scope": "",
+      "result": "",
+      "status": {
+        "verified": "",
+        "unresolved": "",
+        "notChecked": ""
+      }
+    },
     "manageOrderTooltip": "Zarządzaj kolejnością wczytywania modyfikacji",
     "title": "Zarządzaj kolejnością ładowania modyfikacji",
     "description": "Przeciągnij i upuść, aby zmienić kolejność modów. Najpierw mody z najwyższym priorytetem, mody na dole z najniższym.",
@@ -2946,6 +2957,7 @@
       "disablingMods": "",
       "verifyingMods_one": "",
       "verifyingMods_other": "",
+      "checkingCompatibility": "",
       "mergingModData": "",
       "writingSearchPaths": "",
       "applyingPerformance": "",
@@ -3581,10 +3593,6 @@
     "description": "Wybieraj funkcje eksperymentalne i spróbuj nowej funkcjonalności zanim zostanie ona udostępniona wszystkim.",
     "features": {
       "custom-maps": {
-        "title": "",
-        "description": ""
-      },
-      "server-browser": {
         "title": "",
         "description": ""
       },
@@ -5726,7 +5734,10 @@
   },
   "heroConflict": {
     "title": "{{heroName}} ma już moda",
-    "description": "Wybierz modyfikację do użycia w grze. Tylko jeden mod na danego bohatera może być aktywny jednocześnie.",
+    "modelTitle": "",
+    "description": "",
+    "andMore_one": "",
+    "andMore_other": "",
     "currentlyActive": "Obecnie aktywny",
     "switchingTo": "Przełącz na",
     "swapAction": "Zamień mody",
@@ -6345,13 +6356,6 @@
     "open": "",
     "enabled": "",
     "features": {
-      "server-browser": {
-        "title": "",
-        "description": "",
-        "hint": "",
-        "previewTitle": "",
-        "previewDetail": ""
-      },
       "custom-maps": {
         "title": "",
         "description": "",
@@ -6373,6 +6377,10 @@
     "showMe": "",
     "gotIt": "",
     "turnOff": "",
+    "serverBrowser": {
+      "title": "",
+      "body": ""
+    },
     "importFromManager": {
       "title": "",
       "body": ""

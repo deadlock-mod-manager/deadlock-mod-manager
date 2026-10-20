@@ -1,9 +1,5 @@
 {
   "modelConflict": {
-    "title": "",
-    "body": "",
-    "useSkin": "",
-    "keepCurrent": "",
     "keptCurrent": "",
     "replaced": ""
   },
@@ -2218,6 +2214,13 @@
       "summaryServerContent": "下载并启用该服务器需要的地图与插件",
       "summaryServerContentCounted_one": "下载 {{total}} 个地图与插件中的 {{count}} 个（{{size}}）",
       "summaryServerContentCounted_other": "下载 {{total}} 个地图与插件中的 {{count}} 个（{{size}}）",
+      "summaryServerContentPending_one": "",
+      "summaryServerContentPending_other": "",
+      "summaryServerContentReady": "",
+      "summaryServerContentNone": "",
+      "contentTruncated": "",
+      "contentMissingSource": "",
+      "contentBlockedMaps": "",
       "noConnectMethod": "该服务器没有公布可用的连接地址。"
     },
     "staging": {
@@ -2234,7 +2237,12 @@
       "applying": "正在将服务器模组应用到 gameinfo.gi…custom-provider…",
       "downloadingServerContent": "正在下载该服务器需要的地图与插件…",
       "contentItemProgress": "第 {{current}} / {{total}} 个",
-      "decompressing": "正在解包 {{name}}…"
+      "decompressing": "正在解包 {{name}}…",
+      "awaitingMismatchConfirm": "",
+      "mismatchTitle": "",
+      "mismatchDescription": "",
+      "mismatchAccept": "",
+      "mismatchDeclined": ""
     },
     "requirementRow": {
       "customProvider": "自定义",
@@ -2252,18 +2260,11 @@
       "registryStale_one": "无法访问 Deadworks 服务器注册表。其服务器来自 {{minutes}} 分钟前的快照，可能已经下线。",
       "registryStale_other": "无法访问 Deadworks 服务器注册表。其服务器来自 {{minutes}} 分钟前的快照，可能已经下线。"
     },
-    "relayBar": {
-      "online": "可用",
-      "degraded": "受影响",
-      "offline": "不可用",
-      "lastSeen": "最后通信时间",
-      "latency": "{{ms}} 毫秒"
-    },
     "hostCta": {
       "title": "正在运行自定义 Deadlock 服务器？",
-      "description": "在此分享它，让其他玩家可以找到并加入。",
-      "action": "列出你的服务器",
-      "openError": "无法打开服务器托管页面。"
+      "description": "",
+      "action": "",
+      "openError": ""
     },
     "connect": {
       "retrying": "Deadlock 没有自行连接。正在重试 {{address}}",
@@ -2600,6 +2601,16 @@
     }
   },
   "modOrdering": {
+    "animationChecks": {
+      "title": "",
+      "scope": "",
+      "result": "",
+      "status": {
+        "verified": "",
+        "unresolved": "",
+        "notChecked": ""
+      }
+    },
     "manageOrderTooltip": "管理模组的加载顺序",
     "title": "管理模组加载顺序",
     "description": "拖放以重新排序你的模组。顶部的模组最先加载，底部的模组最后加载。",
@@ -2946,6 +2957,7 @@
       "disablingMods": "",
       "verifyingMods_one": "",
       "verifyingMods_other": "",
+      "checkingCompatibility": "",
       "mergingModData": "",
       "writingSearchPaths": "",
       "applyingPerformance": "",
@@ -3583,10 +3595,6 @@
       "custom-maps": {
         "title": "自定义地图",
         "description": "在地图页面浏览并安装自定义地图。"
-      },
-      "server-browser": {
-        "title": "服务器浏览器",
-        "description": "查找并加入社区服务器。"
       },
       "mod-foundry": {
         "title": "",
@@ -5726,7 +5734,10 @@
   },
   "heroConflict": {
     "title": "{{heroName}} 已有模组",
-    "description": "选择要在游戏内使用的模组。每位英雄同一时间只能激活一个模组。",
+    "modelTitle": "",
+    "description": "",
+    "andMore_one": "",
+    "andMore_other": "",
     "currentlyActive": "当前活跃",
     "switchingTo": "切换至",
     "swapAction": "互换模组",
@@ -6345,13 +6356,6 @@
     "open": "",
     "enabled": "",
     "features": {
-      "server-browser": {
-        "title": "",
-        "description": "",
-        "hint": "",
-        "previewTitle": "",
-        "previewDetail": ""
-      },
       "custom-maps": {
         "title": "",
         "description": "",
@@ -6373,6 +6377,10 @@
     "showMe": "",
     "gotIt": "",
     "turnOff": "",
+    "serverBrowser": {
+      "title": "",
+      "body": ""
+    },
     "importFromManager": {
       "title": "",
       "body": ""
