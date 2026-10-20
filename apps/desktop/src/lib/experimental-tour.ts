@@ -1,7 +1,6 @@
 import type { UIState } from "@/lib/store/slices/ui";
 
 export const TOUR_FEATURES = [
-  { id: "server-browser", path: "/servers" },
   { id: "custom-maps", path: "/maps" },
   { id: "performance-configs", path: "/performance" },
 ] as const;

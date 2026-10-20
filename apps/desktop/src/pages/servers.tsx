@@ -13,6 +13,7 @@ import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
 import { useServerBrowserData } from "@/hooks/use-server-browser-data";
 import { useServerConnectProgress } from "@/hooks/use-server-connect-progress";
+import { usePersistedStore } from "@/lib/store";
 
 const DEFAULT_FILTERS: ServerFiltersValue = {
   search: "",
@@ -36,7 +37,6 @@ const Servers = () => {
     availableRegions,
     serversQuery,
     pings,
-    allRelaysFailed,
     registryDegraded,
     registrySnapshotAgeMs,
   } = useServerBrowserData(filters);
@@ -45,6 +45,11 @@ const Servers = () => {
     if (!selectedId) return null;
     return servers.find((s) => s.id === selectedId) ?? null;
   }, [servers, selectedId]);
+
+  // Finding the page is what the sidebar hint is for.
+  useEffect(() => {
+    usePersistedStore.getState().markFeatureUsed("server-browser");
+  }, []);
 
   // Auto-clear selection if it no longer exists in the result set.
   useEffect(() => {
@@ -71,15 +76,6 @@ const Servers = () => {
         total={total}
         value={filters}
       />
-
-      {allRelaysFailed && (
-        <Alert>
-          <WarningIcon className='size-4' />
-          <AlertDescription>
-            {t("servers.empty.errorDescription")}
-          </AlertDescription>
-        </Alert>
-      )}
 
       {registryDegraded && (
         <Alert>

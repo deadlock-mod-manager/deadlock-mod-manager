@@ -7,9 +7,23 @@ import {
   EmptyTitle,
 } from "@deadlock-mods/ui/components/empty";
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
-import { GameControllerIcon, WarningIcon } from "@phosphor-icons/react";
+import {
+  CaretDownIcon,
+  CaretUpDownIcon,
+  CaretUpIcon,
+  GameControllerIcon,
+  WarningIcon,
+} from "@phosphor-icons/react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { cn } from "@/lib/utils";
 import ServerRow from "./server-row";
+import {
+  nextSort,
+  type ServerSort,
+  type ServerSortKey,
+  sortServers,
+} from "./server-sort";
 
 interface ServerTableProps {
   servers: ServerBrowserEntry[];
@@ -21,7 +35,32 @@ interface ServerTableProps {
 }
 
 const SKELETON_ROW_COUNT = 8;
-const COLUMN_COUNT = 5;
+
+const COLUMNS: { key: ServerSortKey; align: string }[] = [
+  { key: "name", align: "" },
+  { key: "players", align: "text-right justify-end" },
+  { key: "map", align: "" },
+  { key: "ping", align: "text-center justify-center" },
+  { key: "region", align: "text-right justify-end" },
+];
+const COLUMN_COUNT = COLUMNS.length;
+
+const SortIcon = ({
+  sort,
+  column,
+}: {
+  sort: ServerSort | null;
+  column: ServerSortKey;
+}) => {
+  if (sort?.key !== column) {
+    return <CaretUpDownIcon className='size-3 opacity-40' />;
+  }
+  return sort.direction === "asc" ? (
+    <CaretUpIcon className='size-3' weight='bold' />
+  ) : (
+    <CaretDownIcon className='size-3' weight='bold' />
+  );
+};
 
 const ServerTable = ({
   servers,
@@ -32,6 +71,11 @@ const ServerTable = ({
   pings,
 }: ServerTableProps) => {
   const { t } = useTranslation();
+  const [sort, setSort] = useState<ServerSort | null>(null);
+  const sorted = useMemo(
+    () => sortServers(servers, sort, pings),
+    [servers, sort, pings],
+  );
 
   return (
     <div className='flex min-w-0 flex-1 flex-col overflow-hidden rounded-lg border border-border/60 bg-card shadow-[0_1px_0_rgb(255_255_255/0.04)_inset]'>
@@ -39,21 +83,38 @@ const ServerTable = ({
         <table className='w-full border-separate border-spacing-0 text-sm'>
           <thead className='sticky top-0 z-10 bg-card'>
             <tr className='text-left text-[10px] font-semibold uppercase tracking-wider text-muted-foreground'>
-              <th className='whitespace-nowrap border-b border-border/60 px-3 py-2'>
-                {t("servers.table.name")}
-              </th>
-              <th className='whitespace-nowrap border-b border-border/60 px-3 py-2 text-right'>
-                {t("servers.table.players")}
-              </th>
-              <th className='whitespace-nowrap border-b border-border/60 px-3 py-2'>
-                {t("servers.table.map")}
-              </th>
-              <th className='whitespace-nowrap border-b border-border/60 px-3 py-2 text-center'>
-                {t("servers.table.ping")}
-              </th>
-              <th className='whitespace-nowrap border-b border-border/60 px-3 py-2 text-right'>
-                {t("servers.table.region")}
-              </th>
+              {COLUMNS.map((column) => {
+                const active = sort?.key === column.key;
+                return (
+                  <th
+                    aria-sort={
+                      active
+                        ? sort.direction === "asc"
+                          ? "ascending"
+                          : "descending"
+                        : "none"
+                    }
+                    className={cn(
+                      "whitespace-nowrap border-b border-border/60 px-3 py-2",
+                      column.align,
+                    )}
+                    key={column.key}>
+                    <button
+                      className={cn(
+                        "inline-flex w-full select-none items-center gap-1 uppercase tracking-wider transition-colors hover:text-foreground",
+                        column.align,
+                        active && "text-foreground",
+                      )}
+                      onClick={() =>
+                        setSort((current) => nextSort(current, column.key))
+                      }
+                      type='button'>
+                      {t(`servers.table.${column.key}`)}
+                      <SortIcon column={column.key} sort={sort} />
+                    </button>
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody>
@@ -104,7 +165,7 @@ const ServerTable = ({
                 </td>
               </tr>
             ) : (
-              servers.map((server) => (
+              sorted.map((server) => (
                 <ServerRow
                   isSelected={server.id === selectedId}
                   key={server.id}

@@ -1,68 +1,58 @@
 //! Fetching the maps and addons a Deadworks server requires.
 //!
-//! Deadworks servers do not publish `required_mods` — their content lives
-//! behind a per-server manifest (`/api/servers/{id}/content`) listing
-//! bzip2-compressed VPKs. Without them the client connects and immediately
-//! fails on a map it does not have, so we mirror what their launcher does:
-//! maps land in `citadel/maps`, addons in the per-server addons folder DMM
-//! already wires into `gameinfo.gi`.
+//! The server advertises them in its A2S_RULES reply (see [`super::deadworks_rules`])
+//! and serves them from its own fastdl host. Maps land in `citadel/maps`,
+//! addons in `citadel/deadworks_addons/vpks`, which the `addonroot` line DMM
+//! writes into `gameinfo.gi` lets the server mount.
 
-use std::collections::HashMap;
+use std::collections::{BTreeSet, HashMap};
 use std::io::Read;
+use std::net::SocketAddr;
 use std::path::{Path, PathBuf};
+use std::time::UNIX_EPOCH;
 
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 use tauri::Emitter;
-use tokio_util::sync::CancellationToken;
 
 use crate::app_runtime::AppHandle;
-use crate::download_manager::downloader::download_file_with_limit;
 use crate::errors::Error;
 
-use super::downloads::validate_custom_provider_url;
-use super::server_profiles::{
-  server_addons_folder_name, validate_addons_subfolder, validate_remote_server_id,
+use super::deadworks_fetch::{Fetched, MAX_FILE_BYTES, decode_vpk, fetch_to_file};
+use super::deadworks_rules::{
+  Advertisement, ContentEntry, ContentKind, parse_advertisement, query_rules,
 };
+use super::server_browser::is_public_target;
 use super::state::game_path;
 
-/// The registry is part of the integration, not caller-supplied data: accepting
-/// a base URL from the frontend would turn this command into an arbitrary-URL
-/// fetcher that writes into the game directory.
-const REGISTRY_BASE: &str = "https://api.deadworks.net";
-/// Hard cap on a single decompressed VPK, so a hostile manifest cannot fill
-/// the disk with a bzip2 bomb.
-const MAX_VPK_BYTES: u64 = 4 * 1024 * 1024 * 1024;
-/// Cap on the compressed download itself, enforced by the downloader against
-/// both the advertised `Content-Length` and the bytes actually received.
-const MAX_COMPRESSED_BYTES: u64 = 2 * 1024 * 1024 * 1024;
-const VPK_MAGIC: [u8; 4] = [0x34, 0x12, 0xAA, 0x55];
+/// Cap on bytes written to disk for one join, compressed plus decompressed.
+const MAX_JOIN_BYTES: u64 = 16 * 1024 * 1024 * 1024;
 const PROGRESS_EVENT: &str = "deadworks-content-progress";
-const CACHE_FILE: &str = "dmm_content_versions.json";
+const STATE_FILE: &str = "dmm_content_state.json";
+/// Written by DMM before servers advertised content over A2S; its map keys
+/// tell us which maps DMM installed and may therefore replace.
+const LEGACY_STATE_FILE: &str = "dmm_content_versions.json";
 
-#[derive(Deserialize, Serialize, Clone, Copy, PartialEq, Eq, Debug)]
-#[serde(rename_all = "lowercase")]
-enum ContentKind {
-  Map,
-  Addon,
-}
-
-#[derive(Deserialize)]
-struct ManifestItem {
-  filename: String,
-  kind: ContentKind,
-  version: u64,
-  #[serde(default)]
-  compressed_size: u64,
-  download_url: String,
-}
-
-#[derive(Deserialize)]
-struct ContentManifest {
-  items: Vec<ManifestItem>,
+/// The size and mtime a hash was computed at, so a 1 GB stock map is not
+/// re-hashed on every join.
+#[derive(Serialize, Deserialize, Clone)]
+struct HashRecord {
+  len: u64,
+  modified_ms: u64,
+  sha16: String,
 }
 
 #[derive(Serialize, Deserialize, Default)]
-struct VersionCache {
+struct ContentState {
+  /// Maps DMM installed. Any other map in `citadel/maps` is never overwritten.
+  #[serde(default)]
+  owned_maps: BTreeSet<String>,
+  #[serde(default)]
+  hashes: HashMap<String, HashRecord>,
+}
+
+#[derive(Deserialize)]
+struct LegacyState {
   #[serde(default)]
   managed: HashMap<String, u64>,
 }
@@ -92,63 +82,181 @@ pub struct ContentProgress {
 pub struct ContentResult {
   installed: usize,
   skipped: usize,
+  /// Entries whose host serves a different build than the server runs. They
+  /// were not installed; pass their keys back in `accept_mismatch` to install
+  /// the host's copy anyway.
+  mismatched: Vec<MismatchedEntry>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MismatchedEntry {
+  key: String,
+  name: String,
 }
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ContentPreview {
+  /// The server answered with Deadworks content keys.
+  advertised: bool,
   total_items: usize,
   pending_items: usize,
+  /// Uncompressed size of the pending items the server gave a size for.
   pending_bytes: u64,
-  total_bytes: u64,
+  /// The server's list did not fit one reply; only what is listed installs.
+  truncated: bool,
+  /// Content is pending but the server gave no usable download URL.
+  missing_source: bool,
+  /// Maps DMM did not install whose build differs from the server's.
+  blocked_maps: Vec<String>,
 }
 
-/// Manifest filenames become path components, so only a single bare name with
-/// no reserved characters is allowed.
-fn validate_filename(name: &str) -> Result<(), Error> {
-  if name.is_empty() || name.len() > 128 || name == "." || name == ".." {
-    return Err(Error::InvalidInput(format!("Invalid content name: {name}")));
+struct Paths {
+  cache_dir: PathBuf,
+  maps_dir: PathBuf,
+  addons_dir: PathBuf,
+}
+
+impl Paths {
+  fn new() -> Result<Self, Error> {
+    let citadel = game_path()?.join("game").join("citadel");
+    Ok(Self {
+      cache_dir: citadel.join("deadworks_cache"),
+      maps_dir: citadel.join("maps"),
+      addons_dir: citadel.join("deadworks_addons").join("vpks"),
+    })
   }
-  if name.chars().any(|c| {
-    matches!(
-      c,
-      '/' | '\\' | ':' | '\0' | '*' | '?' | '"' | '<' | '>' | '|'
-    )
-  }) {
-    return Err(Error::InvalidInput(format!(
-      "Content name contains a reserved character: {name}"
-    )));
-  }
-  Ok(())
-}
 
-fn cache_path(citadel: &Path) -> PathBuf {
-  citadel.join("deadworks_cache").join(CACHE_FILE)
-}
-
-fn cache_key(kind: ContentKind, filename: &str) -> String {
-  match kind {
-    ContentKind::Map => format!("map:{filename}"),
-    ContentKind::Addon => format!("addon:{filename}"),
+  fn dest(&self, entry: &ContentEntry) -> PathBuf {
+    let dir = match entry.kind {
+      ContentKind::Addon => &self.addons_dir,
+      ContentKind::Map => &self.maps_dir,
+    };
+    dir.join(format!("{}.vpk", entry.name))
   }
 }
 
-fn load_cache(citadel: &Path) -> VersionCache {
-  std::fs::read(cache_path(citadel))
+fn load_state(cache_dir: &Path) -> ContentState {
+  if let Some(state) = std::fs::read(cache_dir.join(STATE_FILE))
     .ok()
     .and_then(|bytes| serde_json::from_slice(&bytes).ok())
-    .unwrap_or_default()
+  {
+    return state;
+  }
+  let owned_maps = std::fs::read(cache_dir.join(LEGACY_STATE_FILE))
+    .ok()
+    .and_then(|bytes| serde_json::from_slice::<LegacyState>(&bytes).ok())
+    .map(|legacy| {
+      legacy
+        .managed
+        .keys()
+        .filter_map(|key| key.strip_prefix("map:").map(str::to_string))
+        .collect()
+    })
+    .unwrap_or_default();
+  ContentState {
+    owned_maps,
+    hashes: HashMap::new(),
+  }
 }
 
-fn save_cache(citadel: &Path, cache: &VersionCache) -> Result<(), Error> {
-  let path = cache_path(citadel);
-  if let Some(parent) = path.parent() {
-    std::fs::create_dir_all(parent)?;
-  }
-  let bytes = serde_json::to_vec_pretty(cache)
-    .map_err(|e| Error::FileWriteFailed(format!("Could not serialize the content cache: {e}")))?;
-  std::fs::write(&path, bytes)?;
+fn save_state(cache_dir: &Path, state: &ContentState) -> Result<(), Error> {
+  std::fs::create_dir_all(cache_dir)?;
+  let bytes = serde_json::to_vec_pretty(state)
+    .map_err(|e| Error::FileWriteFailed(format!("Could not serialize the content state: {e}")))?;
+  std::fs::write(cache_dir.join(STATE_FILE), bytes)?;
   Ok(())
+}
+
+fn hash_prefix(path: &Path) -> Result<String, Error> {
+  let mut file = std::fs::File::open(path)?;
+  let mut hasher = Sha256::new();
+  let mut buf = vec![0_u8; 1024 * 1024];
+  loop {
+    let n = file.read(&mut buf)?;
+    if n == 0 {
+      break;
+    }
+    hasher.update(&buf[..n]);
+  }
+  Ok(
+    hasher.finalize()[..8]
+      .iter()
+      .map(|b| format!("{b:02x}"))
+      .collect(),
+  )
+}
+
+fn modified_ms(meta: &std::fs::Metadata) -> u64 {
+  meta
+    .modified()
+    .ok()
+    .and_then(|t| t.duration_since(UNIX_EPOCH).ok())
+    .map_or(0, |d| d.as_millis() as u64)
+}
+
+/// Whether the installed file matches the advertised size and hash prefix.
+fn is_current(state: &mut ContentState, entry: &ContentEntry, dest: &Path) -> Result<bool, Error> {
+  let Ok(meta) = std::fs::metadata(dest) else {
+    return Ok(false);
+  };
+  if entry.size.is_some_and(|size| size != meta.len()) {
+    return Ok(false);
+  }
+  let key = entry.key();
+  let modified = modified_ms(&meta);
+  let cached = state
+    .hashes
+    .get(&key)
+    .filter(|r| r.len == meta.len() && r.modified_ms == modified)
+    .map(|r| r.sha16.clone());
+  let sha16 = match cached {
+    Some(sha16) => sha16,
+    None => {
+      let sha16 = hash_prefix(dest)?;
+      state.hashes.insert(
+        key,
+        HashRecord {
+          len: meta.len(),
+          modified_ms: modified,
+          sha16: sha16.clone(),
+        },
+      );
+      sha16
+    }
+  };
+  Ok(sha16 == entry.hash)
+}
+
+/// A map already on disk that DMM did not put there must never be replaced.
+fn is_blocked_map(state: &ContentState, entry: &ContentEntry, dest: &Path) -> bool {
+  entry.kind == ContentKind::Map && dest.exists() && !state.owned_maps.contains(&entry.name)
+}
+
+fn display_name(entry: &ContentEntry) -> String {
+  match entry.kind {
+    ContentKind::Map => format!("Map: {}", entry.name),
+    ContentKind::Addon => entry.name.clone(),
+  }
+}
+
+async fn resolve_server(address: &str) -> Result<SocketAddr, Error> {
+  tokio::net::lookup_host(address)
+    .await
+    .map_err(|e| Error::Network(format!("Could not resolve {address}: {e}")))?
+    .next()
+    .ok_or_else(|| Error::Network(format!("{address} did not resolve")))
+}
+
+/// Ask the server what it needs. A silent server advertises nothing.
+async fn read_advertisement(server: SocketAddr) -> Result<Option<Advertisement>, Error> {
+  Ok(
+    query_rules(server)
+      .await?
+      .as_ref()
+      .and_then(parse_advertisement),
+  )
 }
 
 fn emit(app: &AppHandle, progress: ContentProgress) {
@@ -157,280 +265,243 @@ fn emit(app: &AppHandle, progress: ContentProgress) {
   }
 }
 
-fn display_name(item: &ManifestItem) -> String {
-  match item.kind {
-    ContentKind::Map => format!("Map: {}", item.filename),
-    ContentKind::Addon => item.filename.clone(),
-  }
+fn content_url(
+  base: &reqwest::Url,
+  entry: &ContentEntry,
+  ext: &str,
+) -> Result<reqwest::Url, Error> {
+  let base = base.as_str().trim_end_matches('/');
+  reqwest::Url::parse(&format!(
+    "{base}/{}/{}_{}.vpk.{ext}",
+    entry.kind.dir(),
+    entry.name,
+    entry.hash
+  ))
+  .map_err(|e| Error::InvalidInput(format!("Invalid content URL: {e}")))
 }
 
-fn item_dest(maps_dir: &Path, addons_dir: &Path, item: &ManifestItem) -> PathBuf {
-  match item.kind {
-    ContentKind::Map => maps_dir.join(format!("{}.vpk", item.filename)),
-    ContentKind::Addon => addons_dir.join(format!("{}.vpk", item.filename)),
-  }
-}
+/// Count what a join would download, without writing any content.
+#[tauri::command]
+pub async fn preview_deadworks_content(address: String) -> Result<ContentPreview, Error> {
+  let server = resolve_server(&address).await?;
+  let Some(ad) = read_advertisement(server).await? else {
+    return Ok(ContentPreview {
+      advertised: false,
+      total_items: 0,
+      pending_items: 0,
+      pending_bytes: 0,
+      truncated: false,
+      missing_source: false,
+      blocked_maps: Vec::new(),
+    });
+  };
 
-fn is_item_current(dest: &Path, cache: &VersionCache, item: &ManifestItem) -> bool {
-  dest.exists() && cache.managed.get(&cache_key(item.kind, &item.filename)) == Some(&item.version)
-}
-
-async fn fetch_manifest(server_id: &str) -> Result<ContentManifest, Error> {
-  let endpoint = format!("{REGISTRY_BASE}/api/servers/{server_id}/content");
-  log::info!("Fetching Deadworks content manifest: {endpoint}");
-
-  let client = crate::proxy::build_default_http_client()?;
-  let response = client
-    .get(&endpoint)
-    .send()
-    .await
-    .map_err(|e| Error::Network(format!("Content manifest request failed: {e}")))?;
-  if !response.status().is_success() {
-    return Err(Error::Network(format!(
-      "Content manifest returned HTTP {}",
-      response.status()
-    )));
-  }
-  response
-    .json()
-    .await
-    .map_err(|e| Error::Network(format!("Could not parse the content manifest: {e}")))
-}
-
-async fn validate_manifest(manifest: &ContentManifest) -> Result<(), Error> {
-  for item in &manifest.items {
-    validate_filename(&item.filename)?;
-    validate_custom_provider_url(&item.download_url).await?;
-  }
-  Ok(())
-}
-
-fn citadel_dirs(server_folder: &str) -> Result<(PathBuf, PathBuf, PathBuf), Error> {
-  let citadel = game_path()?.join("game").join("citadel");
-  let maps_dir = citadel.join("maps");
-  let addons_dir = citadel.join("addons").join(server_folder);
-  Ok((citadel, maps_dir, addons_dir))
-}
-
-fn verify_vpk_magic(path: &Path) -> Result<(), Error> {
-  let mut file = std::fs::File::open(path)?;
-  let mut magic = [0_u8; 4];
-  file.read_exact(&mut magic)?;
-  if magic != VPK_MAGIC {
-    return Err(Error::ModInvalid(format!(
-      "{} is not a valid VPK",
-      path.display()
-    )));
-  }
-  Ok(())
-}
-
-/// Decompress `compressed` into `dest`, staging through a `.part` file so an
-/// interrupted run never leaves a truncated VPK where the engine can find it.
-async fn decompress_into(compressed: &Path, dest: &Path) -> Result<(), Error> {
-  let part = dest.with_extension("vpk.part");
-
-  let source_path = compressed.to_path_buf();
-  let part_path = part.clone();
-  let result = tokio::task::spawn_blocking(move || -> Result<(), Error> {
-    let source = std::fs::File::open(&source_path)?;
-    let mut decoder = bzip2::read::BzDecoder::new(source).take(MAX_VPK_BYTES + 1);
-    let mut out = std::fs::File::create(&part_path)?;
-    let written = std::io::copy(&mut decoder, &mut out)?;
-    if written > MAX_VPK_BYTES {
-      return Err(Error::ModInvalid(
-        "Decompressed content exceeds the size limit".to_string(),
-      ));
+  let paths = Paths::new()?;
+  tokio::task::spawn_blocking(move || {
+    let mut state = load_state(&paths.cache_dir);
+    let mut pending_items = 0;
+    let mut pending_bytes = 0;
+    let mut blocked_maps = Vec::new();
+    for entry in &ad.entries {
+      let dest = paths.dest(entry);
+      if is_current(&mut state, entry, &dest)? {
+        continue;
+      }
+      if is_blocked_map(&state, entry, &dest) {
+        blocked_maps.push(entry.name.clone());
+        continue;
+      }
+      pending_items += 1;
+      pending_bytes += entry.size.unwrap_or(0);
     }
-    Ok(())
+    if let Err(error) = save_state(&paths.cache_dir, &state) {
+      log::warn!("Could not save the Deadworks hash cache: {error}");
+    }
+    Ok(ContentPreview {
+      advertised: true,
+      total_items: ad.entries.len(),
+      pending_items,
+      pending_bytes,
+      truncated: ad.truncated,
+      missing_source: pending_items > 0 && ad.fastdl.is_none(),
+      blocked_maps,
+    })
   })
   .await
-  .map_err(|e| Error::BackgroundTaskFailed(format!("Decompression task failed: {e}")))?;
-
-  let _ = std::fs::remove_file(compressed);
-  if let Err(error) = result {
-    let _ = std::fs::remove_file(&part);
-    return Err(error);
-  }
-
-  verify_vpk_magic(&part).inspect_err(|_| {
-    let _ = std::fs::remove_file(&part);
-  })?;
-
-  std::fs::rename(&part, dest)?;
-  Ok(())
+  .map_err(|e| Error::BackgroundTaskFailed(format!("Content check failed: {e}")))?
 }
 
-/// Install everything a Deadworks server lists in its content manifest.
+/// Install everything the Deadworks server at `address` advertises.
 ///
-/// Maps go to `citadel/maps` (where the engine looks them up by name), addons
-/// into the per-server addons folder that `apply_server_gameinfo` mounts.
-/// Files already present at the manifest's version are left alone.
+/// The list is re-read from the server rather than taken from the caller.
+/// Files whose host serves a different build are reported, not installed,
+/// unless their key is in `accept_mismatch`; those still pass the size caps
+/// and VPK check but are not recorded as the advertised build, so the next
+/// join checks them again.
 #[tauri::command]
 pub async fn download_deadworks_content(
   app: AppHandle,
-  server_id: String,
-  server_folder: String,
+  address: String,
+  accept_mismatch: Vec<String>,
   guard_permit: Option<String>,
 ) -> Result<ContentResult, Error> {
   crate::game_guard::ensure_game_idle_locked(
     "download_deadworks_content",
     guard_permit.as_deref(),
   )?;
-  let server_id = validate_remote_server_id(&server_id)?;
-  validate_addons_subfolder(&server_folder)?;
-
-  let manifest = fetch_manifest(&server_id).await?;
-  if manifest.items.is_empty() {
+  let server = resolve_server(&address).await?;
+  let Some(ad) = read_advertisement(server).await? else {
     return Ok(ContentResult {
       installed: 0,
       skipped: 0,
+      mismatched: Vec::new(),
     });
+  };
+  if ad.truncated {
+    log::warn!("{address} advertises more content than fits one reply; installing what is listed");
   }
+  // The game server's own LAN is the one place private hosts are expected.
+  let allow_private = !is_public_target(&server);
 
-  // Validate the whole manifest before touching the disk: a manifest that is
-  // partly hostile should install none of it.
-  validate_manifest(&manifest).await?;
+  let paths = Paths::new()?;
+  std::fs::create_dir_all(&paths.maps_dir)?;
+  std::fs::create_dir_all(&paths.addons_dir)?;
+  let cache_dir = paths.cache_dir.clone();
+  let mut state = load_state(&cache_dir);
 
-  let (citadel, maps_dir, addons_dir) = citadel_dirs(&server_folder)?;
-  std::fs::create_dir_all(&maps_dir)?;
-  std::fs::create_dir_all(&addons_dir)?;
+  let total = ad.entries.len();
+  let mut budget = MAX_JOIN_BYTES;
+  let mut installed = 0;
+  let mut skipped = 0;
+  let mut mismatched = Vec::new();
 
-  let mut cache = load_cache(&citadel);
-  let total = manifest.items.len();
-  let mut installed = 0_usize;
-  let mut skipped = 0_usize;
+  for (index, entry) in ad.entries.iter().enumerate() {
+    let dest = paths.dest(entry);
+    let name = display_name(entry);
+    let progress = |status, bytes_downloaded, total_bytes| ContentProgress {
+      status,
+      name: name.clone(),
+      bytes_downloaded,
+      total_bytes,
+      item_index: index,
+      total_items: total,
+    };
+    emit(&app, progress(ContentStatus::Checking, 0, 0));
 
-  for (index, item) in manifest.items.iter().enumerate() {
-    let dest = item_dest(&maps_dir, &addons_dir, item);
-    let name = display_name(item);
-    let key = cache_key(item.kind, &item.filename);
-
-    if is_item_current(&dest, &cache, item) {
+    if is_current(&mut state, entry, &dest)? {
       skipped += 1;
-      emit(
-        &app,
-        ContentProgress {
-          status: ContentStatus::Ready,
-          name,
-          bytes_downloaded: item.compressed_size,
-          total_bytes: item.compressed_size,
-          item_index: index,
-          total_items: total,
-        },
-      );
+      emit(&app, progress(ContentStatus::Ready, 0, 0));
       continue;
     }
-
-    emit(
-      &app,
-      ContentProgress {
-        status: ContentStatus::Checking,
-        name: name.clone(),
-        bytes_downloaded: 0,
-        total_bytes: item.compressed_size,
-        item_index: index,
-        total_items: total,
-      },
-    );
-
-    let compressed = dest.with_extension("vpk.bz2");
-    let on_progress = {
-      let app = app.clone();
-      let name = name.clone();
-      let total_bytes = item.compressed_size;
-      move |progress: crate::download_manager::downloader::DownloadProgress| {
-        emit(
-          &app,
-          ContentProgress {
-            status: ContentStatus::Downloading,
-            name: name.clone(),
-            bytes_downloaded: progress.downloaded,
-            total_bytes,
-            item_index: index,
-            total_items: total,
-          },
-        );
-      }
+    if is_blocked_map(&state, entry, &dest) {
+      log::warn!(
+        "Not replacing {}: DMM did not install it and its build differs from the server's",
+        dest.display()
+      );
+      skipped += 1;
+      continue;
+    }
+    let Some(fastdl) = ad.fastdl.as_ref() else {
+      return Err(Error::Network(format!(
+        "The server needs {name} but gives no download URL"
+      )));
     };
 
-    download_file_with_limit(
-      &item.download_url,
-      &compressed,
-      on_progress,
-      CancellationToken::new(),
-      Some(MAX_COMPRESSED_BYTES),
-    )
-    .await?;
+    std::fs::create_dir_all(&cache_dir)?;
+    let compressed = cache_dir.join(format!("{}_{}.download", entry.kind.dir(), entry.name));
+    let mut fetched = Fetched::Missing;
+    for ext in ["zst", "bz2"] {
+      let on_progress = |received, declared: Option<u64>| {
+        emit(
+          &app,
+          progress(ContentStatus::Downloading, received, declared.unwrap_or(0)),
+        );
+      };
+      fetched = fetch_to_file(
+        content_url(fastdl, entry, ext)?,
+        &compressed,
+        allow_private,
+        MAX_FILE_BYTES.min(budget),
+        on_progress,
+      )
+      .await
+      .inspect_err(|_| {
+        let _ = std::fs::remove_file(&compressed);
+      })?;
+      if matches!(fetched, Fetched::Saved) {
+        break;
+      }
+    }
+    if matches!(fetched, Fetched::Missing) {
+      return Err(Error::Network(format!(
+        "The server's download host does not have {name}"
+      )));
+    }
+    let compressed_len = std::fs::metadata(&compressed)?.len();
+    budget = budget.saturating_sub(compressed_len);
 
+    // The download is complete, so the bar holds full while unpacking.
     emit(
       &app,
-      ContentProgress {
-        status: ContentStatus::Decompressing,
+      progress(ContentStatus::Decompressing, compressed_len, compressed_len),
+    );
+    let part = dest.with_extension("vpk.part");
+    let decode_limit = MAX_FILE_BYTES.min(budget);
+    let (compressed_path, part_path) = (compressed.clone(), part.clone());
+    let decoded =
+      tokio::task::spawn_blocking(move || decode_vpk(&compressed_path, &part_path, decode_limit))
+        .await
+        .map_err(|e| Error::BackgroundTaskFailed(format!("Decompression task failed: {e}")))?;
+    let _ = std::fs::remove_file(&compressed);
+    let decoded = decoded.inspect_err(|_| {
+      let _ = std::fs::remove_file(&part);
+    })?;
+    budget = budget.saturating_sub(decoded.size);
+
+    let actual = decoded.sha256_hex();
+    let matches_build =
+      entry.size.is_none_or(|size| size == decoded.size) && actual.starts_with(&entry.hash);
+    if !matches_build && !accept_mismatch.contains(&entry.key()) {
+      let _ = std::fs::remove_file(&part);
+      mismatched.push(MismatchedEntry {
+        key: entry.key(),
         name: name.clone(),
-        bytes_downloaded: 0,
-        total_bytes: item.compressed_size,
-        item_index: index,
-        total_items: total,
-      },
-    );
-    decompress_into(&compressed, &dest).await?;
-
-    cache.managed.insert(key, item.version);
-    save_cache(&citadel, &cache)?;
-    installed += 1;
-
-    emit(
-      &app,
-      ContentProgress {
-        status: ContentStatus::Ready,
-        name,
-        bytes_downloaded: item.compressed_size,
-        total_bytes: item.compressed_size,
-        item_index: index,
-        total_items: total,
-      },
-    );
-  }
-
-  log::info!("Deadworks content ready: {installed} installed, {skipped} already current");
-  Ok(ContentResult { installed, skipped })
-}
-
-/// Count how many manifest items still need downloading, without writing
-/// anything, so the join dialog can show the cost before the user confirms.
-#[tauri::command]
-pub async fn preview_deadworks_content(server_id: String) -> Result<ContentPreview, Error> {
-  let server_id = validate_remote_server_id(&server_id)?;
-  let server_folder = server_addons_folder_name(&server_id)?;
-
-  let manifest = fetch_manifest(&server_id).await?;
-  for item in &manifest.items {
-    validate_filename(&item.filename)?;
-  }
-
-  let (citadel, maps_dir, addons_dir) = citadel_dirs(&server_folder)?;
-  let cache = load_cache(&citadel);
-
-  let mut pending_items = 0_usize;
-  let mut pending_bytes = 0_u64;
-  let mut total_bytes = 0_u64;
-
-  for item in &manifest.items {
-    total_bytes += item.compressed_size;
-    let dest = item_dest(&maps_dir, &addons_dir, item);
-    if is_item_current(&dest, &cache, item) {
+      });
       continue;
     }
-    pending_items += 1;
-    pending_bytes += item.compressed_size;
+
+    std::fs::rename(&part, &dest).inspect_err(|_| {
+      let _ = std::fs::remove_file(&part);
+    })?;
+    let meta = std::fs::metadata(&dest)?;
+    state.hashes.insert(
+      entry.key(),
+      HashRecord {
+        len: meta.len(),
+        modified_ms: modified_ms(&meta),
+        sha16: actual[..16].to_string(),
+      },
+    );
+    if entry.kind == ContentKind::Map {
+      state.owned_maps.insert(entry.name.clone());
+    }
+    save_state(&cache_dir, &state)?;
+    installed += 1;
+    emit(
+      &app,
+      progress(ContentStatus::Ready, decoded.size, decoded.size),
+    );
   }
 
-  Ok(ContentPreview {
-    total_items: manifest.items.len(),
-    pending_items,
-    pending_bytes,
-    total_bytes,
+  save_state(&cache_dir, &state)?;
+  log::info!(
+    "Deadworks content for {address}: {installed} installed, {skipped} current, {} mismatched",
+    mismatched.len()
+  );
+  Ok(ContentResult {
+    installed,
+    skipped,
+    mismatched,
   })
 }
 
@@ -438,78 +509,80 @@ pub async fn preview_deadworks_content(server_id: String) -> Result<ContentPrevi
 mod tests {
   use super::*;
 
-  #[test]
-  fn rejects_filenames_that_escape_the_target_directory() {
-    assert!(validate_filename("../../evil").is_err());
-    assert!(validate_filename("maps/evil").is_err());
-    assert!(validate_filename("").is_err());
-    assert!(validate_filename("dl_midtown_custom").is_ok());
-  }
-
-  #[test]
-  fn manifest_rejects_unknown_content_kinds() {
-    let ok: Result<ManifestItem, _> = serde_json::from_str(
-      r#"{"filename":"a","kind":"map","version":1,"download_url":"https://x/a.bz2"}"#,
-    );
-    assert!(ok.is_ok());
-
-    let bad: Result<ManifestItem, _> = serde_json::from_str(
-      r#"{"filename":"a","kind":"executable","version":1,"download_url":"https://x/a.bz2"}"#,
-    );
-    assert!(bad.is_err());
-  }
-
-  #[test]
-  fn cache_keys_are_namespaced_by_kind() {
-    assert_eq!(cache_key(ContentKind::Map, "dl_city"), "map:dl_city");
-    assert_eq!(cache_key(ContentKind::Addon, "dl_city"), "addon:dl_city");
-  }
-
-  fn sample_item(filename: &str, version: u64) -> ManifestItem {
-    ManifestItem {
-      filename: filename.to_string(),
-      kind: ContentKind::Map,
-      version,
-      compressed_size: 100,
-      download_url: "https://example.invalid/a.bz2".to_string(),
+  fn entry(kind: ContentKind, name: &str, data: &[u8]) -> ContentEntry {
+    let hash: String = Sha256::digest(data)[..8]
+      .iter()
+      .map(|b| format!("{b:02x}"))
+      .collect();
+    ContentEntry {
+      kind,
+      name: name.to_string(),
+      hash,
+      size: Some(data.len() as u64),
     }
   }
 
   #[test]
-  fn skip_check_requires_file_and_matching_version() {
+  fn current_check_compares_size_then_hash_prefix() {
     let dir = tempfile::tempdir().expect("temp dir");
-    let dest = dir.path().join("bhop_asko.vpk");
-    let item = sample_item("bhop_asko", 7);
-    let mut cache = VersionCache::default();
+    let dest = dir.path().join("turbo.vpk");
+    let mut state = ContentState::default();
+    let wanted = entry(ContentKind::Addon, "turbo", b"build-a");
 
-    assert!(!is_item_current(&dest, &cache, &item));
+    assert!(!is_current(&mut state, &wanted, &dest).unwrap());
+    std::fs::write(&dest, b"build-a").unwrap();
+    assert!(is_current(&mut state, &wanted, &dest).unwrap());
 
-    std::fs::write(&dest, b"x").expect("write dest");
-    assert!(!is_item_current(&dest, &cache, &item));
-
-    cache
-      .managed
-      .insert(cache_key(item.kind, &item.filename), 7);
-    assert!(is_item_current(&dest, &cache, &item));
-
-    cache
-      .managed
-      .insert(cache_key(item.kind, &item.filename), 8);
-    assert!(!is_item_current(&dest, &cache, &item));
+    std::fs::write(&dest, b"build-b").unwrap();
+    state.hashes.clear();
+    assert!(!is_current(&mut state, &wanted, &dest).unwrap());
   }
 
   #[test]
-  fn item_dest_puts_maps_and_addons_in_separate_folders() {
-    let maps = PathBuf::from("citadel").join("maps");
-    let addons = PathBuf::from("citadel").join("addons").join("server_abc");
-    let map = sample_item("bhop_asko", 1);
-    let mut addon = sample_item("mog_cosmetics", 1);
-    addon.kind = ContentKind::Addon;
+  fn only_maps_dmm_installed_may_be_replaced() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    let dest = dir.path().join("dl_midtown.vpk");
+    std::fs::write(&dest, b"stock").unwrap();
+    let mut state = ContentState::default();
+    let map = entry(ContentKind::Map, "dl_midtown", b"other build");
 
-    assert_eq!(item_dest(&maps, &addons, &map), maps.join("bhop_asko.vpk"));
+    assert!(is_blocked_map(&state, &map, &dest));
+    state.owned_maps.insert("dl_midtown".into());
+    assert!(!is_blocked_map(&state, &map, &dest));
+    assert!(!is_blocked_map(
+      &ContentState::default(),
+      &entry(ContentKind::Addon, "dl_midtown", b"x"),
+      &dest
+    ));
+  }
+
+  #[test]
+  fn maps_from_the_old_manifest_cache_stay_owned() {
+    let dir = tempfile::tempdir().expect("temp dir");
+    std::fs::write(
+      dir.path().join(LEGACY_STATE_FILE),
+      br#"{"managed":{"map:bhop_asko":3,"addon:mog":1}}"#,
+    )
+    .unwrap();
+    let state = load_state(dir.path());
     assert_eq!(
-      item_dest(&maps, &addons, &addon),
-      addons.join("mog_cosmetics.vpk")
+      state.owned_maps.into_iter().collect::<Vec<_>>(),
+      vec!["bhop_asko".to_string()]
+    );
+  }
+
+  #[test]
+  fn content_urls_follow_the_fastdl_layout() {
+    let base = reqwest::Url::parse("https://dl.example.com/deadworks").unwrap();
+    let addon = ContentEntry {
+      kind: ContentKind::Addon,
+      name: "turbo".into(),
+      hash: "9330149c74886724".into(),
+      size: None,
+    };
+    assert_eq!(
+      content_url(&base, &addon, "zst").unwrap().as_str(),
+      "https://dl.example.com/deadworks/addons/turbo_9330149c74886724.vpk.zst"
     );
   }
 }

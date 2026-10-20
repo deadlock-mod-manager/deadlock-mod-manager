@@ -7,7 +7,6 @@ import type {
   ModAuthorDto,
   ModDto,
   PublishedCrosshairDto,
-  RelaysHealthResponse,
   ResolveModsResponse,
   ServerBrowserEntry,
   ServerBrowserFacetsResponse,
@@ -186,10 +185,6 @@ export const getServer = async (id: string): Promise<ServerBrowserEntry> => {
   return await apiRequest<ServerBrowserEntry>(
     `/api/v2/servers/${encodeURIComponent(id)}`,
   );
-};
-
-export const getRelaysHealth = async (): Promise<RelaysHealthResponse> => {
-  return await apiRequest<RelaysHealthResponse>("/api/v2/relays/health");
 };
 
 export const resolveServerMods = async (

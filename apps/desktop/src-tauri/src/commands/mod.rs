@@ -7,6 +7,8 @@ pub mod autoexec;
 pub mod backups;
 pub mod conflicts;
 pub mod deadworks_content;
+pub mod deadworks_fetch;
+pub mod deadworks_rules;
 pub mod deep_link;
 pub mod downloads;
 #[cfg(feature = "e2e-harness")]

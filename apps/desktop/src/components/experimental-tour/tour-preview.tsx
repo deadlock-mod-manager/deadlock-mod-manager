@@ -1,13 +1,8 @@
-import {
-  CompassIcon,
-  GaugeIcon,
-  GlobeHemisphereWestIcon,
-} from "@phosphor-icons/react";
+import { CompassIcon, GaugeIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import type { TourFeature } from "@/lib/experimental-tour";
 
 const ICONS = {
-  "server-browser": GlobeHemisphereWestIcon,
   "custom-maps": CompassIcon,
   "performance-configs": GaugeIcon,
 };

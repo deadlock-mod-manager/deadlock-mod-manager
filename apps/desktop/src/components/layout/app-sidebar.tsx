@@ -36,7 +36,8 @@ import {
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useLocation } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
+import { HintAnchor } from "@/components/feature-hints/hint-anchor";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { usePersistedStore } from "@/lib/store";
@@ -374,6 +375,7 @@ const SidebarItemComponent = ({
 export const AppSidebar = () => {
   const { t } = useTranslation();
   const location = useLocation();
+  const navigate = useNavigate();
   const mods = usePersistedStore((state) => state.localMods);
   const seenNavItems = usePersistedStore((state) => state.seenNavItems);
   const markNavItemSeen = usePersistedStore((state) => state.markNavItemSeen);
@@ -381,7 +383,6 @@ export const AppSidebar = () => {
   const SidebarContentExtra = useThemeOverride("sidebarContentExtra");
   const SidebarFooterExtra = useThemeOverride("sidebarFooterExtra");
   const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
-  const isServerBrowserEnabled = useExperimentalFeature("server-browser");
   const isPlayerStatsEnabled = useExperimentalFeature("player-stats");
   const isModFoundryEnabled = useExperimentalFeature("mod-foundry");
   const isPerformanceEnabled = useExperimentalFeature("performance-configs");
@@ -389,7 +390,6 @@ export const AppSidebar = () => {
   const allItems = getSidebarItems(t, developerMode).filter(
     (item) =>
       (item.id !== "maps" || isCustomMapsEnabled) &&
-      (item.id !== "servers" || isServerBrowserEnabled) &&
       (item.id !== "stats" || isPlayerStatsEnabled) &&
       (item.id !== "foundry" || isModFoundryEnabled) &&
       (item.id !== "performance" || isPerformanceEnabled),
@@ -438,16 +438,30 @@ export const AppSidebar = () => {
               <SidebarGroupLabel>{groupLabels[group]}</SidebarGroupLabel>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {groupItems.map((item) => (
-                    <SidebarMenuItem key={item.id}>
+                  {groupItems.map((item) => {
+                    const entry = (
                       <SidebarItemComponent
                         item={item}
                         location={location}
                         mods={mods}
                         showNewBadge={!!item.isNew && !seenNavItems[item.id]}
                       />
-                    </SidebarMenuItem>
-                  ))}
+                    );
+                    return (
+                      <SidebarMenuItem key={item.id}>
+                        {item.id === "servers" ? (
+                          <HintAnchor
+                            hintId='server-browser'
+                            onShowMe={() => navigate("/servers")}
+                            side='right'>
+                            <div>{entry}</div>
+                          </HintAnchor>
+                        ) : (
+                          entry
+                        )}
+                      </SidebarMenuItem>
+                    );
+                  })}
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>

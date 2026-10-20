@@ -18,6 +18,7 @@ export const cronJobDefinitions: CronJobDefinition[] = [
     name: RelayDiscoveryProcessor.name,
     pattern: RelayDiscoveryProcessor.cronPattern,
     processor: RelayDiscoveryProcessor.getInstance(),
-    enabled: true,
+    // The server browser no longer queries relays, so their manifest goes unread.
+    enabled: false,
   },
 ];

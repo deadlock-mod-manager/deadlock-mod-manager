@@ -54,14 +54,6 @@ const StatsRouteGate = () => {
   return <Stats />;
 };
 
-const ServersRouteGate = () => {
-  const isEnabled = useExperimentalFeature("server-browser");
-  if (!isEnabled) {
-    return <Navigate replace to='/' />;
-  }
-  return <Servers />;
-};
-
 const PerformanceRouteGate = () => {
   const isEnabled = useExperimentalFeature("performance-configs");
   if (!isEnabled) {
@@ -101,7 +93,7 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
               <Route element={<Collection />} path='/collections/:id' />
               <Route element={<AddMods />} path='/add-mods' />
               <Route element={<Downloads />} path='/downloads' />
-              <Route element={<ServersRouteGate />} path='/servers' />
+              <Route element={<Servers />} path='/servers' />
               <Route element={<CustomSettings />} path='/settings' />
               <Route element={<Contributors />} path='/contributors' />
               <Route element={<Developer />} path='/developer' />

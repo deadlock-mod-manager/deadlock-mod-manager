@@ -57,7 +57,7 @@ fn is_public_ipv6(ip: Ipv6Addr) -> bool {
   ip.octets()[0] & 0xfe != 0xfc
 }
 
-fn is_public_target(addr: &SocketAddr) -> bool {
+pub(crate) fn is_public_target(addr: &SocketAddr) -> bool {
   match addr.ip() {
     IpAddr::V4(ip) => is_public_ipv4(ip),
     IpAddr::V6(ip) => match ip.to_ipv4_mapped() {

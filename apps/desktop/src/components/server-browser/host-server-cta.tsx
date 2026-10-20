@@ -6,7 +6,8 @@ import { useTranslation } from "react-i18next";
 import logger from "@/lib/logger";
 import { cn } from "@/lib/utils";
 
-const DEADWORKS_RELAY_URL = "https://deadworks-relay.deadlockmods.app/";
+const DEADWORKS_HOSTING_GUIDE_URL =
+  "https://docs.deadworks.net/getting-started/server-admins/run-a-server";
 
 interface HostServerCtaProps {
   className?: string;
@@ -17,9 +18,9 @@ const HostServerCta = ({ className }: HostServerCtaProps) => {
 
   const handleOpen = async () => {
     try {
-      await openUrl(DEADWORKS_RELAY_URL);
+      await openUrl(DEADWORKS_HOSTING_GUIDE_URL);
     } catch (err) {
-      logger.withError(err).error("Failed to open Deadworks Relay URL");
+      logger.withError(err).error("Failed to open the Deadworks hosting guide");
       toast.error(t("servers.hostCta.openError"));
     }
   };

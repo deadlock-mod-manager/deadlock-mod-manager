@@ -40,7 +40,7 @@ For security vulnerabilities, please report them **privately** through:
 ### Application Security
 
 - **Tauri Framework**: Sandboxed environment with capability-based permissions
-- **Network Access**: Limited to trusted domains (gamebanana.com, deadlockmods.app, deadlock-api.com, deadworks.net) plus Valve's Steam servers when match sync is enabled. Deadworks hosts community server listings and their content manifests.
+- **Network Access**: Limited to trusted domains (gamebanana.com, deadlockmods.app, deadlock-api.com, deadworks.net) plus Valve's Steam servers when match sync is enabled. Deadworks hosts community server listings. Maps and addons for a Deadworks server are downloaded from the host that server advertises; those downloads are refused for loopback, private and link-local addresses unless the game server itself is on the local network, and every file is size-capped and checked to be a VPK.
 - **File System**: Restricted access to app data, user-selected mod directories, and — when match sync is enabled — the Steam configuration files described below
 - **Input Validation**: All user inputs are validated and sanitized
 

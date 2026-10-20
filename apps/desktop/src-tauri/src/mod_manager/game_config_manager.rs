@@ -831,19 +831,40 @@ impl GameConfigManager {
     self.game_setup
   }
 
+  /// Deadworks content, or the bootstrap the Deadworks launcher installs, is on
+  /// disk, so the game needs the search paths from
+  /// <https://docs.deadworks.net/guides/content-discovery/>.
+  /// Steam file verification drops them too, so they are derived again on
+  /// every write rather than preserved.
+  fn uses_deadworks(game_path: &Path) -> bool {
+    let citadel = game_path.join("game").join("citadel");
+    citadel.join("deadworks_addons").is_dir()
+      || citadel
+        .join("deadworks_mods")
+        .join("pak01_dir.vpk")
+        .is_file()
+  }
+
   /// Each entry is a complete game-relative path such as `citadel/addons2/profile_x`.
-  fn generate_modded_search_paths(paths: &[String]) -> String {
+  /// The Deadworks lines must sit above the first `Game` entry.
+  fn generate_modded_search_paths(paths: &[String], deadworks: bool) -> String {
     let resolved: Vec<String> = if paths.is_empty() {
       vec!["citadel/addons".to_string()]
     } else {
       paths.to_vec()
     };
 
-    let game_lines = resolved
-      .iter()
-      .map(|p| format!("            Game                {}", p))
-      .collect::<Vec<_>>()
-      .join("\n");
+    let mut lines = Vec::new();
+    if deadworks {
+      lines.push("            Game                citadel/deadworks_mods".to_string());
+      lines.push("            addonroot           citadel/deadworks_addons".to_string());
+    }
+    lines.extend(
+      resolved
+        .iter()
+        .map(|p| format!("            Game                {}", p)),
+    );
+    let game_lines = lines.join("\n");
 
     format!(
       r#"
@@ -972,7 +993,8 @@ impl GameConfigManager {
         ));
       };
 
-    let modded_search_paths = Self::generate_modded_search_paths(paths);
+    let modded_search_paths =
+      Self::generate_modded_search_paths(paths, Self::uses_deadworks(game_path));
     let replacement_content =
       format!("\n{MOD_MANAGER_MARKER_START}\n{modded_search_paths}\n{MOD_MANAGER_MARKER_END}");
 
@@ -1249,32 +1271,51 @@ mod tests {
 
   #[test]
   fn generate_modded_search_paths_empty_falls_back_to_root() {
-    let out = GameConfigManager::generate_modded_search_paths(&[]);
+    let out = GameConfigManager::generate_modded_search_paths(&[], false);
     assert!(out.contains("Game                citadel/addons\n"));
   }
 
   #[test]
   fn generate_modded_search_paths_single_root_path() {
-    let out = GameConfigManager::generate_modded_search_paths(&["citadel/addons".to_string()]);
+    let out =
+      GameConfigManager::generate_modded_search_paths(&["citadel/addons".to_string()], false);
     assert!(out.contains("Game                citadel/addons\n"));
     assert!(!out.contains("citadel/addons/"));
   }
 
   #[test]
   fn generate_modded_search_paths_single_profile_path() {
-    let out = GameConfigManager::generate_modded_search_paths(&[
-      "citadel/addons/profile_default".to_string()
-    ]);
+    let out = GameConfigManager::generate_modded_search_paths(
+      &["citadel/addons/profile_default".to_string()],
+      false,
+    );
     assert!(out.contains("Game                citadel/addons/profile_default\n"));
   }
 
   #[test]
+  fn deadworks_paths_precede_every_game_entry() {
+    let out = GameConfigManager::generate_modded_search_paths(
+      &["citadel/addons/profile_default".to_string()],
+      true,
+    );
+    let first_game = out.find("Game                ").expect("game line");
+    assert!(out[first_game..].starts_with("Game                citadel/deadworks_mods"));
+    let addonroot = out
+      .find("addonroot           citadel/deadworks_addons")
+      .expect("addonroot line");
+    assert!(addonroot < out.find("citadel/addons/profile_default").unwrap());
+  }
+
+  #[test]
   fn generate_modded_search_paths_two_paths_preserve_order() {
-    let out = GameConfigManager::generate_modded_search_paths(&[
-      "citadel/addons/server_abc".to_string(),
-      "citadel/addons2/server_abc".to_string(),
-      "citadel/addons/profile_default".to_string(),
-    ]);
+    let out = GameConfigManager::generate_modded_search_paths(
+      &[
+        "citadel/addons/server_abc".to_string(),
+        "citadel/addons2/server_abc".to_string(),
+        "citadel/addons/profile_default".to_string(),
+      ],
+      false,
+    );
     let server_idx = out
       .find("citadel/addons2/server_abc")
       .expect("server line present");
