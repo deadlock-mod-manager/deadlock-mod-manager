@@ -1487,6 +1487,7 @@ dependencies = [
  "keyvalues-parser",
  "keyvalues-serde",
  "kv-parser",
+ "libc",
  "libsqlite3-sys",
  "log",
  "machine-uid",

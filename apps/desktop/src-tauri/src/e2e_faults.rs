@@ -45,5 +45,12 @@ pub fn checkpoint(name: &str, profile: &Path) -> std::io::Result<()> {
   evidence.flush()?;
   evidence.sync_all()?;
   // Do not unwind: Drop would roll the transaction back and mask crash recovery.
+  // On Linux, exit() runs WebKitGTK's exit handlers, which can stall the
+  // process for longer than the harness waits; _exit ends it at once.
+  #[cfg(unix)]
+  unsafe {
+    libc::_exit(86)
+  }
+  #[cfg(not(unix))]
   std::process::exit(86);
 }

@@ -16,7 +16,11 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [features]
 default = ["tauri-wry"]
 tauri-wry = ["tauri/wry", "dep:tauri-plugin-mcp-bridge"]
-e2e-harness = ["dep:tauri-plugin-wdio", "dep:tauri-plugin-wdio-webdriver"]
+e2e-harness = [
+  "dep:tauri-plugin-wdio",
+  "dep:tauri-plugin-wdio-webdriver",
+  "dep:libc",
+]
 
 # `cef` is injected into [features] by scripts/cef-patch.ts for CEF builds only.
 [lints.rust]
@@ -126,6 +130,10 @@ tauri-plugin-single-instance = { version = "2.4.2", features = ["deep-link"] }
 tauri = { version = "2.11.1", default-features = false, features = [
   "tray-icon",
 ] }
+
+# Lets E2E crash checkpoints skip exit handlers that can stall WebKitGTK
+[target.'cfg(unix)'.dependencies]
+libc = { version = "0.2", optional = true }
 
 [target.'cfg(windows)'.dependencies]
 junction = "1"
