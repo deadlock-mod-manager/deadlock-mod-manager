@@ -1,5 +1,6 @@
 import { describe, expect, it, mock } from "bun:test";
 import type { ModDto } from "@deadlock-mods/shared";
+import * as tauriCore from "@tauri-apps/api/core";
 import type { ModDownloadItem } from "@/types/mods";
 
 const noop = () => undefined;
@@ -41,6 +42,7 @@ mock.module("@deadlock-mods/ui/components/sonner", () => ({
 }));
 // The backend accepts the request and is still downloading it.
 mock.module("@tauri-apps/api/core", () => ({
+  ...tauriCore,
   invoke: () => new Promise(() => {}),
 }));
 mock.module("@tauri-apps/api/event", () => ({ listen: async () => noop }));
