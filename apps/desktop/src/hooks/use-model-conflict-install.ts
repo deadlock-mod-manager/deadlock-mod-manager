@@ -1,6 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { useTranslation } from "react-i18next";
-import { useConfirm } from "@/components/providers/alert-dialog";
+import { useModelConflictPrompt } from "@/components/providers/model-conflict";
 import logger from "@/lib/logger";
 import { invokeGuarded } from "@/lib/game-guard";
 import { resolveModelConflict } from "@/lib/mods/model-conflict-install";
@@ -13,24 +12,25 @@ import {
 } from "@/types/mods";
 
 export function useModelConflictInstall() {
-  const { t } = useTranslation();
-  const confirm = useConfirm();
+  const askModelConflict = useModelConflictPrompt();
   return useMutation({
     meta: { skipGlobalErrorHandler: true },
     mutationFn: async ({
       mod,
       profileFolder,
       bisectOriginalEnabled,
+      keepBothWith,
     }: {
       mod: LocalModWithFiles;
       profileFolder: string | null;
       bisectOriginalEnabled?: string[];
+      keepBothWith?: string[];
     }) => {
       const profileId = usePersistedStore.getState().activeProfileId;
       const isCurrentProfile = () =>
         usePersistedStore.getState().activeProfileId === profileId;
       return resolveModelConflict(
-        async (replaceConflictingMods) => {
+        async ({ replace: replaceConflictingMods, allow }) => {
           const result = await invokeGuarded<InstallableMod>("install_mod", {
             deadlockMod: {
               id: mod.remoteId,
@@ -40,6 +40,7 @@ export function useModelConflictInstall() {
             },
             profileFolder,
             replaceConflictingMods,
+            allowConflictingMods: allow,
             bisectOriginalEnabled,
           });
           if (replaceConflictingMods.length > 0) {
@@ -68,24 +69,16 @@ export function useModelConflictInstall() {
           return result;
         },
         async (ids) => {
-          if (bisectOriginalEnabled) return false;
-          const mods = usePersistedStore.getState().localMods;
-          const names = ids.map(
-            (id) =>
-              mods.find((candidate) => candidate.remoteId === id)?.name ?? id,
-          );
-          return Boolean(
-            await confirm({
-              title: t("modelConflict.title"),
-              body: t("modelConflict.body", {
-                mod: mod.name,
-                conflicts: names.join(", "),
-              }),
-              actionButton: t("modelConflict.useSkin", { mod: mod.name }),
-              cancelButton: t("modelConflict.keepCurrent"),
-              actionButtonVariant: "default",
-            }),
-          );
+          if (bisectOriginalEnabled) return null;
+          if (ids.every((id) => keepBothWith?.includes(id))) return "keepBoth";
+          const { localMods } = usePersistedStore.getState();
+          const conflicts = ids.flatMap((id) => {
+            const found = localMods.find(
+              (candidate) => candidate.remoteId === id,
+            );
+            return found ? [found] : [];
+          });
+          return askModelConflict(mod, conflicts);
         },
         isCurrentProfile,
       );

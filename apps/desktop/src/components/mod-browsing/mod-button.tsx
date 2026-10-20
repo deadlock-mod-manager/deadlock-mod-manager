@@ -200,6 +200,7 @@ const ModButton = ({
         case ModStatus.Downloaded:
         case ModStatus.FailedToInstall: {
           const resolvedHero = resolveLocalModHero(localMod).hero;
+          let keepBothWith: string[] | undefined;
           if (resolvedHero && heroConflictWarningEnabled) {
             // Read at click time: subscribing to the whole library would
             // re-render every card's button on any mod change.
@@ -222,10 +223,12 @@ const ModButton = ({
               }
               if (resolution === "swap") {
                 await uninstall(conflictingMod, false);
+              } else {
+                keepBothWith = [conflictingMod.remoteId];
               }
             }
           }
-          await performInstall(localMod, analyticsEntryPoint);
+          await performInstall(localMod, analyticsEntryPoint, keepBothWith);
           break;
         }
         case ModStatus.Installed:

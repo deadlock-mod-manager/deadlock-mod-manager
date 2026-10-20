@@ -1,5 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import { resolveModelConflict } from "./model-conflict-install";
+import {
+  type ModelConflictResolution,
+  resolveModelConflict,
+} from "./model-conflict-install";
 
 const conflict = {
   kind: "modelConflict",
@@ -9,35 +12,52 @@ const conflict = {
 
 describe("skin activation choice", () => {
   test("keeping current or dismissing never retries the blocked install", async () => {
-    const calls: string[][] = [];
+    const calls: ModelConflictResolution[] = [];
     const result = await resolveModelConflict(
-      async (ids) => {
-        calls.push(ids);
+      async (resolution) => {
+        calls.push(resolution);
         throw conflict;
       },
-      async () => false,
+      async () => null,
       () => true,
     );
     expect(result).toBeNull();
-    expect(calls).toEqual([[]]);
+    expect(calls).toEqual([{ replace: [], allow: [] }]);
   });
 
   test("switching authorizes only the displayed conflicts", async () => {
-    const calls: string[][] = [];
+    const calls: ModelConflictResolution[] = [];
     const result = await resolveModelConflict(
-      async (ids) => {
-        calls.push(ids);
-        if (!ids.length) throw conflict;
+      async (resolution) => {
+        calls.push(resolution);
+        if (!resolution.replace.length) throw conflict;
         return "suit enabled";
       },
       async (ids) => {
         expect(ids).toEqual(["josuke"]);
-        return true;
+        return "replace";
       },
       () => true,
     );
     expect(result).toBe("suit enabled");
-    expect(calls).toEqual([[], ["josuke"]]);
+    expect(calls).toEqual([
+      { replace: [], allow: [] },
+      { replace: ["josuke"], allow: [] },
+    ]);
+  });
+
+  test("keeping both allows the conflicts without replacing them", async () => {
+    const calls: ModelConflictResolution[] = [];
+    await resolveModelConflict(
+      async (resolution) => {
+        calls.push(resolution);
+        if (!resolution.allow.length) throw conflict;
+        return "both enabled";
+      },
+      async () => "keepBoth",
+      () => true,
+    );
+    expect(calls[1]).toEqual({ replace: [], allow: ["josuke"] });
   });
 
   test("a changed profile invalidates a pending choice", async () => {
@@ -51,7 +71,7 @@ describe("skin activation choice", () => {
         },
         async () => {
           sameProfile = false;
-          return true;
+          return "replace";
         },
         () => sameProfile,
       ),
@@ -69,7 +89,7 @@ describe("skin activation choice", () => {
         },
         async () => {
           prompts++;
-          return true;
+          return "replace";
         },
         () => true,
       ),
@@ -85,7 +105,7 @@ describe("skin activation choice", () => {
         async () => {
           throw ++calls === 1 ? conflict : changed;
         },
-        async () => true,
+        async () => "replace",
         () => true,
       ),
     ).rejects.toBe(changed);

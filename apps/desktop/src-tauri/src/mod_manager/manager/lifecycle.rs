@@ -23,6 +23,19 @@ impl ModManager {
     )
   }
 
+  pub fn install_mod_allowing_conflicts(
+    &mut self,
+    deadlock_mod: Mod,
+    profile_folder: Option<String>,
+    allowed_conflicts: &[String],
+  ) -> Result<Mod, Error> {
+    self.install_mod_with_conflict_policy(
+      deadlock_mod,
+      profile_folder,
+      ConflictPolicy::Allow(allowed_conflicts),
+    )
+  }
+
   pub fn install_mod_for_bisect(
     &mut self,
     deadlock_mod: Mod,

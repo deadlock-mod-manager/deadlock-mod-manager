@@ -32,6 +32,8 @@ export type InstallWithCollectionOptions = InstallAnalyticsOptions & {
   skipFileSelection?: boolean;
   /** Restore only combinations from the diagnostic session's original setup. */
   bisectOriginalEnabled?: string[];
+  /** Mods the user already chose to keep alongside this one. */
+  keepBothWith?: string[];
 };
 
 export type InstallWithCollectionFunction = (
@@ -121,6 +123,7 @@ const useInstallWithCollection = (): UseInstallWithCollectionReturn => {
         mod: modData,
         profileFolder,
         bisectOriginalEnabled: options.bisectOriginalEnabled,
+        keepBothWith: options.keepBothWith,
       });
       if (!result) {
         options.onCancel?.(mod, "modelConflict");

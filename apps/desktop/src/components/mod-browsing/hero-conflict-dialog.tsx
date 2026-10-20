@@ -17,8 +17,11 @@ export type HeroConflictResolution = "swap" | "enable-both" | "cancel";
 
 interface HeroConflictDialogProps {
   open: boolean;
-  heroName: string;
+  /** Null when the clash is a shared model with no known hero. */
+  heroName: string | null;
   currentMod: LocalMod | null;
+  /** Further enabled mods that the swap would also disable. */
+  otherCurrentCount?: number;
   newMod: LocalMod | null;
   onResolve: (resolution: HeroConflictResolution) => void;
 }
@@ -30,6 +33,7 @@ export const HeroConflictDialog = ({
   open,
   heroName,
   currentMod,
+  otherCurrentCount = 0,
   newMod,
   onResolve,
 }: HeroConflictDialogProps) => {
@@ -76,14 +80,22 @@ export const HeroConflictDialog = ({
         className='gap-0 overflow-hidden p-0 sm:max-w-2xl'
         onClick={(e) => e.stopPropagation()}>
         <div className='flex items-start gap-3 border-b border-border/60 bg-muted/30 px-6 pt-5 pb-4'>
-          <HeroIcon
-            className='size-10 rounded-full ring-1 ring-border/60'
-            hero={heroName}
-            variant='card'
-          />
+          {heroName ? (
+            <HeroIcon
+              className='size-10 rounded-full ring-1 ring-border/60'
+              hero={heroName}
+              variant='card'
+            />
+          ) : (
+            <div className='flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-primary/25'>
+              <ArrowLeftRight className='size-4 shrink-0' />
+            </div>
+          )}
           <div className='flex min-w-0 flex-col gap-0.5'>
             <AlertDialogTitle className='text-base'>
-              {t("heroConflict.title", { heroName })}
+              {heroName
+                ? t("heroConflict.title", { heroName })
+                : t("heroConflict.modelTitle")}
             </AlertDialogTitle>
             <AlertDialogDescription className='text-pretty text-sm'>
               {t("heroConflict.description")}
@@ -105,6 +117,11 @@ export const HeroConflictDialog = ({
               <div className='flex-1'>
                 <ModCard mod={currentMod ?? undefined} readOnly />
               </div>
+              {otherCurrentCount > 0 ? (
+                <p className='text-muted-foreground text-xs'>
+                  {t("heroConflict.andMore", { count: otherCurrentCount })}
+                </p>
+              ) : null}
             </div>
 
             <div className='flex items-center'>

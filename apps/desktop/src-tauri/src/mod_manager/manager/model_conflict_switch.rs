@@ -3,6 +3,8 @@ use crate::mod_manager::vpk_manager::staging::RenameTransaction;
 
 pub(super) enum ConflictPolicy<'a> {
   Replace(&'a [String]),
+  /// Keep every listed skin enabled, e.g. an addon built to load over a base.
+  Allow(&'a [String]),
   RestoreBisect(&'a [String]),
 }
 
@@ -18,6 +20,12 @@ impl ConflictPolicy<'_> {
           return Err(Error::ModelConflict(conflicts));
         }
         Ok(conflicts)
+      }
+      Self::Allow(confirmed) => {
+        if conflicts.iter().any(|id| !confirmed.contains(id)) {
+          return Err(Error::ModelConflict(conflicts));
+        }
+        Ok(Vec::new())
       }
       // Bisect deliberately reproduces the original setup, including conflicts.
       // Both sides must belong to its persisted original-enabled snapshot.
@@ -193,6 +201,23 @@ mod tests {
     for (path, bytes) in files {
       assert_eq!(fs::read(path).unwrap(), bytes);
     }
+  }
+
+  #[test]
+  fn keeping_both_leaves_the_conflicting_skin_enabled() {
+    let (_game, mut manager, base) = world();
+    manager
+      .install_mod_allowing_conflicts(skin("suit"), None, &["josuke".into()])
+      .unwrap();
+    let manifest = ProfileVpkManifest::load(&base).unwrap();
+    for id in ["josuke", "suit", "other"] {
+      assert!(manifest.mods[id].enabled);
+    }
+    pack(&base.join("third_skin.vpk"), "models/shiv.vmdl_c", b"third");
+    assert!(matches!(
+      manager.install_mod_allowing_conflicts(skin("third"), None, &["josuke".into()]),
+      Err(Error::ModelConflict(ref ids)) if ids == &["josuke", "suit"]
+    ));
   }
 
   #[test]
