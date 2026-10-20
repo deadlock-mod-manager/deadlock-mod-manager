@@ -111,7 +111,16 @@ export const resolveImportContext = (
   const modsDataByRemoteId = new Map(
     modsData.map((mod) => [mod.remoteId, mod]),
   );
-  const availableImportedMods = importedMods
+  // Mods install one after another and each lands after the last, so the
+  // install sequence becomes the profile's load order.
+  const loadOrder =
+    importedProfile.version === "1" ? [] : importedProfile.payload.loadOrder;
+  const position = new Map(
+    loadOrder.map((remoteId, index) => [remoteId, index]),
+  );
+  const rank = (remoteId: string) => position.get(remoteId) ?? loadOrder.length;
+  const availableImportedMods = [...importedMods]
+    .sort((left, right) => rank(left.remoteId) - rank(right.remoteId))
     .map((importedMod) => {
       const modData = modsDataByRemoteId.get(importedMod.remoteId);
       return modData ? { importedMod, modData } : null;
