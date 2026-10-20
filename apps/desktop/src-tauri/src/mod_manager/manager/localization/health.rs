@@ -16,6 +16,7 @@ pub struct ModHealthContext {
   citadel: PathBuf,
   base: ProfileBase,
   app_data: PathBuf,
+  overlay_path: PathBuf,
 }
 
 struct InstalledMod {
@@ -51,6 +52,7 @@ impl ModManager {
       citadel: self.citadel_path()?,
       base: self.get_addons_path(profile_folder)?,
       app_data,
+      overlay_path: self.localization_overlay_vpk_path(profile_folder)?,
     })
   }
 
@@ -140,12 +142,38 @@ impl ModHealthContext {
   }
 
   fn report_for(&self, health: &ProfileHealth, installed: &[InstalledMod]) -> ModHealthReport {
+    let applied = self.applied_mods().unwrap_or_else(|error| {
+      log::warn!("Could not verify applied compatibility repairs: {error}");
+      BTreeSet::new()
+    });
     health.report(
       history::version(&self.citadel),
-      installed
-        .iter()
-        .map(|installed| (installed.id.as_str(), &installed.key, installed.choice)),
+      installed.iter().map(|installed| {
+        let choice = match installed.choice {
+          CompatibilityChoice::Enabled if !applied.contains(&installed.id) => {
+            CompatibilityChoice::Unset
+          }
+          choice => choice,
+        };
+        (installed.id.as_str(), &installed.key, choice)
+      }),
     )
+  }
+
+  fn applied_mods(&self) -> Result<BTreeSet<String>, Error> {
+    let Some(receipt) = receipt::load(&self.overlay_path)? else {
+      return Ok(BTreeSet::new());
+    };
+    let (_, _, key) = ModManager::localization_overlay_inputs_at(
+      self.citadel.clone(),
+      self.base.clone(),
+      self.overlay_path.clone(),
+    )?;
+    if receipt.is_current(&key)? {
+      Ok(key.compatibility_mod_ids)
+    } else {
+      Ok(BTreeSet::new())
+    }
   }
 
   pub fn report(&self) -> Result<ModHealthReport, Error> {
@@ -295,6 +323,10 @@ mod tests {
       citadel,
       base: base.clone(),
       app_data: temp.path().join("app-data"),
+      overlay_path: temp
+        .path()
+        .join("game/citadel/dmm_localization_default")
+        .join(OVERLAY_VPK_NAME),
     };
     assert!(context.report().unwrap().mods.is_empty());
 
@@ -371,6 +403,10 @@ mod tests {
       citadel,
       base,
       app_data: temp.path().join("app-data"),
+      overlay_path: temp
+        .path()
+        .join("dmm_localization_default")
+        .join(OVERLAY_VPK_NAME),
     };
     let progress = Mutex::new(Vec::new());
     let report = context

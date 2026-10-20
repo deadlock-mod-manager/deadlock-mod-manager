@@ -88,6 +88,36 @@ pub struct VdataHistoryIndex {
   observed_strings: BTreeMap<Fingerprint, BTreeSet<Fingerprint>>,
 }
 
+/// Immutable fingerprints of one observed game table. Keeping these separate
+/// lets callers reuse exact-source observations without retaining decoded trees.
+pub(crate) struct VdataSnapshot {
+  discovery: BTreeMap<Fingerprint, Fingerprint>,
+  exact: BTreeMap<Fingerprint, Fingerprint>,
+  fields: BTreeMap<Fingerprint, Fingerprint>,
+  bindings: BTreeMap<Fingerprint, Fingerprint>,
+}
+
+impl VdataSnapshot {
+  pub(crate) fn new(file_path: &str, root: &Kv3Value) -> Result<Self, String> {
+    let discovery = row_fingerprints(root, FingerprintMode::Discovery)
+      .ok_or("Observed VData root is not an object")?;
+    let exact = row_fingerprints(root, FingerprintMode::Exact).expect("root was validated");
+    let fields = field_fingerprints(root, FingerprintMode::Exact).expect("root was validated");
+    Ok(Self {
+      discovery,
+      exact,
+      fields,
+      bindings: string_bindings(file_path, root),
+    })
+  }
+
+  pub(crate) fn cache_size(&self) -> usize {
+    // Charge map entries and B-tree allocation overhead conservatively.
+    (self.discovery.len() + self.exact.len() + self.fields.len() + self.bindings.len())
+      .saturating_mul(192)
+  }
+}
+
 #[derive(Debug, Clone)]
 pub struct VdataBaselineMatch {
   pub build_version: u32,
@@ -396,13 +426,25 @@ impl VdataHistoryIndex {
     history
   }
 
+  #[cfg(test)]
   pub fn record(&mut self, file_path: &str, version: u32, root: &Kv3Value) -> Result<bool, String> {
-    let discovery = row_fingerprints(root, FingerprintMode::Discovery)
-      .ok_or("Observed VData root is not an object")?;
-    let exact = row_fingerprints(root, FingerprintMode::Exact).expect("root was validated");
-    let fields = field_fingerprints(root, FingerprintMode::Exact).expect("root was validated");
+    self.record_snapshot(file_path, version, &VdataSnapshot::new(file_path, root)?)
+  }
+
+  pub(crate) fn record_snapshot(
+    &mut self,
+    file_path: &str,
+    version: u32,
+    snapshot: &VdataSnapshot,
+  ) -> Result<bool, String> {
+    let VdataSnapshot {
+      discovery,
+      exact,
+      fields,
+      bindings,
+    } = snapshot;
     let mut bindings_changed = false;
-    for (key, value) in string_bindings(file_path, root) {
+    for (&key, &value) in bindings {
       bindings_changed |= self.observed_strings.entry(key).or_default().insert(value);
     }
     let table = self
@@ -423,14 +465,14 @@ impl VdataHistoryIndex {
       apply_changes(&mut previous_exact, &build.exact_rows);
       apply_changes(&mut previous_fields, &build.fields);
     }
-    if previous_exact == exact && previous_fields == fields {
+    if &previous_exact == exact && &previous_fields == fields {
       return Ok(bindings_changed);
     }
     table.builds.push(BuildDelta {
       version,
-      rows: map_changes(&previous_rows, &discovery),
-      exact_rows: map_changes(&previous_exact, &exact),
-      fields: map_changes(&previous_fields, &fields),
+      rows: map_changes(&previous_rows, discovery),
+      exact_rows: map_changes(&previous_exact, exact),
+      fields: map_changes(&previous_fields, fields),
     });
     // Compact the retained prefix into one complete snapshot, keeping the latest 64 changes.
     if table.builds.len() > 64 {

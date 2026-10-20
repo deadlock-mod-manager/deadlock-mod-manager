@@ -39,6 +39,7 @@ impl ModManager {
       return Err(Error::GameRunning);
     }
     if self.write_mod_compatibility(&[mod_id], enabled, profile_folder.as_deref())? {
+      self.notify_compatibility_changed(profile_folder.as_deref());
       self.apply_profile_gameinfo(profile_folder)?;
     }
     Ok(())

@@ -8,6 +8,7 @@ use crate::errors::Error;
 use std::collections::{BTreeMap, BTreeSet};
 
 const CAMERA_FIELDS: [&str; 2] = ["CitadelCameraSettings_t", "AttachmentCameraData"];
+mod contract;
 #[cfg(test)]
 const CAMERA_POINTS: [&str; 5] = [
   "standing_pivot",
@@ -165,10 +166,11 @@ fn repair_with_controls(
     current_text
   } else {
     old_text
-  };
+  }
+  .to_owned();
   let names = base_mesh
     .as_ref()
-    .and_then(|(mesh, _)| camera_point_names(camera_text, mesh));
+    .and_then(|(mesh, _)| camera_point_names(&camera_text, mesh));
   // Every LOD mesh carries its own copy of the attachments.
   let mut meshes = Vec::new();
   for (index, block) in source_resource.blocks().iter().enumerate() {
@@ -198,8 +200,10 @@ fn repair_with_controls(
       .zip(vanilla.get("m_modelSkeleton"))
       .and_then(|(old, current)| compatible_rigs(old, current, allow_scaled))
       == Some(true);
-  // Walk animation dependencies only when this model actually needs new controls.
-  if !compatible && !allow_controls(&vanilla) {
+  let authored_attachments = missing.contains(&"AttachmentCameraData")
+    && contract::satisfied(&source_resource, &model, base, &camera_text) == Some(true);
+  // Existing attachments introduce no new rig or animation dependencies.
+  if !compatible && !authored_attachments && !allow_controls(&vanilla) {
     return None;
   }
   if !missing.is_empty() {
@@ -216,7 +220,7 @@ fn repair_with_controls(
     };
     object_set_case_insensitive(info, "m_keyValueText", Kv3Value::String(text));
   }
-  if settings_only {
+  if settings_only || authored_attachments {
     let data = kv3::encode_preserving(&model, &encoding, &format).ok()?;
     let intermediate = source_resource.rebuild_with_data_preserving(&data).ok()?;
     let (decoded_format, decoded_model, decoded_encoding) =
@@ -296,9 +300,7 @@ fn repair_with_controls(
     let resource = Resource::parse(&rebuilt).ok()?;
     let mesh_format = kv3::Format::from_payload(resource.get_block_by_index(*index)?).ok()?;
     let data = kv3::encode_preserving(mesh, mesh_encoding, &mesh_format).ok()?;
-    rebuilt = resource
-      .rebuild_with_block_preserving(*index, &data)
-      .ok()?;
+    rebuilt = resource.rebuild_with_block_preserving(*index, &data).ok()?;
   }
   let (decoded_format, decoded_model, decoded_encoding) =
     decode_compiled_data(&rebuilt, "rebuilt model camera").ok()?;
@@ -309,6 +311,9 @@ fn repair_with_controls(
     return None;
   }
   let rebuilt_resource = Resource::parse(&rebuilt).ok()?;
+  if contract::satisfied(&rebuilt_resource, &decoded_model, base, &camera_text) != Some(true) {
+    return None;
+  }
   for (index, mesh, mesh_encoding) in &meshes {
     let (decoded_mesh, decoded_mesh_encoding) =
       kv3::decode_preserving(rebuilt_resource.get_block_by_index(*index)?).ok()?;

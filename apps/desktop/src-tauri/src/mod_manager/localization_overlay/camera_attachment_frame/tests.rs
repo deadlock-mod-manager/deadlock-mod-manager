@@ -10,6 +10,8 @@ fn point(name: &str, parent: &str, offset: [f64; 3], q: [f64; 4]) -> Kv3Value {
     (
       "value".into(),
       Kv3Value::Object(vec![
+        ("m_name".into(), Kv3Value::String(name.into())),
+        ("m_influenceWeights".into(), array(&[1.0, 0.0, 0.0])),
         ("m_nInfluences".into(), Kv3Value::Int(1)),
         (
           "m_influenceNames".into(),
@@ -79,6 +81,192 @@ fn container(model: &Kv3Value, meshes: &[Kv3Value]) -> Vec<u8> {
 
 fn model() -> Kv3Value {
   super::super::model_animation::tests::model(&["root_motion", "head"], &[-1, 0])
+}
+
+fn camera_contract_models() -> (Kv3Value, Kv3Value) {
+  let with_text = |mut model: Kv3Value, text: &str| {
+    let Kv3Value::Object(fields) = &mut model else {
+      panic!()
+    };
+    fields.push((
+      "m_modelInfo".into(),
+      Kv3Value::Object(vec![(
+        "m_keyValueText".into(),
+        Kv3Value::String(text.into()),
+      )]),
+    ));
+    model
+  };
+  (
+    with_text(
+      model(),
+      "{ CitadelCameraSettings_t = { offset = 42 } Custom = { value = 7 } }",
+    ),
+    with_text(
+      super::super::model_animation::tests::model(
+        &["root_motion", "head", "unrelated_control"],
+        &[-1, 0, 1],
+      ),
+      "{ CitadelCameraSettings_t = { offset = 80 } AttachmentCameraData = [ { attachment_name = \"aim\" fov = 42 } ] }",
+    ),
+  )
+}
+
+#[test]
+fn exporter_pivot_drift_preserves_the_authored_rotation_residual() {
+  let mut authored = mesh(OLD_FRAME);
+  let Kv3Value::Array(points) = authored.get_mut("m_attachments").unwrap() else {
+    panic!()
+  };
+  points[1] = point(
+    "crouching_pivot",
+    "root_motion",
+    [0.0, 62.47385025024414, 0.0],
+    [
+      -0.49987781047821045,
+      -0.49987781047821045,
+      -0.5001221895217896,
+      0.5001221895217896,
+    ],
+  );
+  let original = container(&model(), &[authored.clone(), authored.clone()]);
+  let base = container(&model(), &[mesh(IDENTITY)]);
+  let repaired = repair(&original, &base)
+    .unwrap()
+    .expect("exporter pivot drift blocked migration");
+  let after = Resource::parse(&repaired).unwrap();
+  migrate_mesh(&mut authored, None).unwrap();
+  for (index, block) in after.blocks().iter().enumerate() {
+    if block.kind == *b"MDAT" {
+      assert_eq!(
+        kv3::decode(after.get_block_by_index(index).unwrap()).unwrap(),
+        authored
+      );
+    }
+  }
+  assert!(repair(&repaired, &base).unwrap().is_none());
+}
+
+#[test]
+fn camera_metadata_uses_existing_attachments_without_requiring_the_entire_current_rig() {
+  let (authored, current) = camera_contract_models();
+  let source = container(&authored, &[mesh(IDENTITY), mesh(IDENTITY)]);
+  let base = container(&current, &[mesh(IDENTITY)]);
+  let repaired = super::super::model_camera::repair(&source, &base)
+    .expect("valid authored camera attachments should satisfy the imported interface");
+  let (_, updated, _) = decode_compiled_data(&repaired, "camera metadata").unwrap();
+  assert_eq!(
+    updated.get("m_modelSkeleton"),
+    authored.get("m_modelSkeleton")
+  );
+  let text = updated
+    .get("m_modelInfo")
+    .unwrap()
+    .get("m_keyValueText")
+    .unwrap()
+    .as_str()
+    .unwrap();
+  assert!(text.contains("offset = 42"));
+  assert!(text.contains("Custom = { value = 7 }"));
+  assert!(text.contains("AttachmentCameraData"));
+  let before = Resource::parse(&source).unwrap();
+  let after = Resource::parse(&repaired).unwrap();
+  for (index, block) in before.blocks().iter().enumerate() {
+    if block.kind != *b"DATA" {
+      assert_eq!(
+        before.get_block_by_index(index),
+        after.get_block_by_index(index)
+      );
+    }
+  }
+  assert!(super::super::model_camera::repair(&repaired, &base).is_none());
+}
+
+#[test]
+fn camera_metadata_checks_the_complete_attachment_contract_on_every_mesh() {
+  let (authored, current) = camera_contract_models();
+  let base = container(&current, &[mesh(IDENTITY)]);
+  for (field, value) in [
+    ("m_name", Kv3Value::String("different_name".into())),
+    ("m_nInfluences", Kv3Value::Int(0)),
+    ("m_nInfluences", Kv3Value::Int(4)),
+    (
+      "m_influenceNames",
+      Kv3Value::Array(vec![Kv3Value::String("missing_bone".into())]),
+    ),
+    ("m_influenceWeights", array(&[0.5, 0.0, 0.0])),
+    ("m_influenceWeights", array(&[-1.0, 0.0, 0.0])),
+    (
+      "m_vInfluenceOffsets",
+      Kv3Value::Array(vec![array(&[1.0, 2.0])]),
+    ),
+    (
+      "m_vInfluenceOffsets",
+      Kv3Value::Array(vec![array(&[f64::INFINITY, 0.0, 0.0])]),
+    ),
+    (
+      "m_vInfluenceRotations",
+      Kv3Value::Array(vec![array(&[0.0; 4])]),
+    ),
+  ] {
+    let mut invalid = mesh(IDENTITY);
+    let Kv3Value::Array(points) = invalid.get_mut("m_attachments").unwrap() else {
+      panic!()
+    };
+    *points[2].get_mut("value").unwrap().get_mut(field).unwrap() = value;
+    let source = container(&authored, &[mesh(IDENTITY), invalid]);
+    assert!(
+      super::super::model_camera::repair(&source, &base).is_none(),
+      "{field}"
+    );
+  }
+  for duplicate in [false, true] {
+    let mut invalid = mesh(IDENTITY);
+    let Kv3Value::Array(points) = invalid.get_mut("m_attachments").unwrap() else {
+      panic!()
+    };
+    if duplicate {
+      points.push(points[2].clone());
+    } else {
+      points.remove(2);
+    }
+    let source = container(&authored, &[mesh(IDENTITY), invalid]);
+    assert!(super::super::model_camera::repair(&source, &base).is_none());
+  }
+}
+
+#[test]
+fn equivalent_rigs_do_not_bypass_camera_attachment_postconditions() {
+  let (authored, mut current) = camera_contract_models();
+  *current.get_mut("m_modelSkeleton").unwrap() = authored.get("m_modelSkeleton").unwrap().clone();
+  let base = container(&current, &[mesh(IDENTITY)]);
+  let mut invalid = mesh(IDENTITY);
+  let Kv3Value::Array(points) = invalid.get_mut("m_attachments").unwrap() else {
+    panic!()
+  };
+  points.push(points[2].clone());
+  let source = container(&authored, &[mesh(IDENTITY), invalid]);
+  assert!(
+    super::super::model_camera::repair(&source, &base).is_none(),
+    "the second mesh has an ambiguous attachment even though the rigs match"
+  );
+}
+
+#[test]
+fn camera_frames_reject_inconsistent_pivots_and_invalid_quaternions() {
+  let base = container(&model(), &[mesh(IDENTITY)]);
+  for rotation in [
+    [0.0, 1.0, 0.0, 0.0],
+    [0.0, 0.0, 0.0, 0.0],
+    OLD_FRAME.map(|v| v * 2.0),
+  ] {
+    let mut authored = mesh(OLD_FRAME);
+    let Kv3Value::Array(points) = authored.get_mut("m_attachments").unwrap() else {
+      panic!()
+    };
+    points[1] = point("crouching_pivot", "root_motion", [0.0, 60.0, 0.0], rotation);
+    assert!(repair(&container(&model(), &[authored]), &base).is_err());
+  }
 }
 
 #[test]

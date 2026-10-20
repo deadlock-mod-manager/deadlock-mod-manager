@@ -125,15 +125,18 @@ export const useCheckModHealth = () => {
 
 // Library changes delete the repair package; rebuild it so the fixes survive
 // a game started outside the manager.
-export const useRefreshModFixes = () =>
-  useMutation({
+export const useRefreshModFixes = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
     mutationFn: (profileFolder: string | null) =>
       invoke<void>("refresh_mod_fixes", { profileFolder }),
     meta: { skipGlobalErrorHandler: true },
     onError: (error) => {
       logger.withError(error).warn("Could not rebuild the repair package");
     },
+    onSettled: () => invalidateModHealth(queryClient),
   });
+};
 
 type FixModsOutcome = "applied" | "reviewed" | "cancelled";
 

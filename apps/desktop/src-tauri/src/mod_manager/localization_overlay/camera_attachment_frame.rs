@@ -273,7 +273,11 @@ fn right(q: [f64; 4]) -> [f64; 3] {
 fn angle(a: [f64; 4], b: [f64; 4]) -> Option<f64> {
   let norm = |q: [f64; 4]| q.iter().map(|v| v * v).sum::<f64>().sqrt();
   let (a_norm, b_norm) = (norm(a), norm(b));
-  if !a_norm.is_finite() || !b_norm.is_finite() || a_norm < 1e-9 || b_norm < 1e-9 {
+  if !a_norm.is_finite()
+    || !b_norm.is_finite()
+    || (a_norm - 1.0).abs() > 0.001
+    || (b_norm - 1.0).abs() > 0.001
+  {
     return None;
   }
   let dot = a.iter().zip(b).map(|(a, b)| a * b).sum::<f64>() / (a_norm * b_norm);

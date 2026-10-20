@@ -134,7 +134,7 @@ export const useLaunch = () => {
         ? ["disablingMods", ...BACKEND_TAIL]
         : [
             "verifyingMods",
-            "mergingModData",
+            "checkingCompatibility",
             "writingSearchPaths",
             ...BACKEND_TAIL,
           ];

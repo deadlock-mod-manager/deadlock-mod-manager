@@ -225,10 +225,12 @@ impl ModManager {
       // lines would be missing and the engine would silently drop everything
       // past the 99th pak file.
       self.migrate_profile_to_shards(profile_folder.clone())?;
-      if self.mod_compatibility_enabled(profile_folder.as_deref())? {
-        self.report_launch_step("mergingModData");
-      }
-      self.ensure_localization_overlay_for_launch(profile_folder.as_deref())?;
+      self.report_launch_step("checkingCompatibility");
+      self.prepare_localization_overlay_with_progress(
+        profile_folder.as_deref(),
+        self.mod_compatibility_enabled(profile_folder.as_deref())?,
+        || self.report_launch_step("mergingModData"),
+      )?;
       self.report_launch_step("writingSearchPaths");
       self.apply_profile_gameinfo(profile_folder)?;
     }

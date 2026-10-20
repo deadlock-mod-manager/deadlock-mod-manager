@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { listen } from "@tauri-apps/api/event";
 import { useEffect, useMemo, useRef } from "react";
 import {
@@ -8,7 +9,10 @@ import {
   useRefreshModFixes,
 } from "@/hooks/use-mod-health";
 import { gameUpdatedSinceLastCheck } from "@/lib/mods/mod-health";
-import { forcedBuildStorageKey } from "@/lib/mods/mod-health-queries";
+import {
+  forcedBuildStorageKey,
+  invalidateModHealth,
+} from "@/lib/mods/mod-health-queries";
 import { usePersistedStore } from "@/lib/store";
 import type { ModHealthProgress } from "@/types/generated/ModHealthProgress";
 import { ModStatus } from "@/types/mods";
@@ -23,6 +27,7 @@ const INSTALL_CHECK_DELAY_MS = 1500;
  * Mounted once in app.tsx.
  */
 export const ModHealthRenderer = () => {
+  const queryClient = useQueryClient();
   const profileFolder = useActiveProfileFolder();
   const report = useModHealthReport(profileFolder);
   const check = useCheckModHealth();
@@ -42,6 +47,31 @@ export const ModHealthRenderer = () => {
       void unlisten.then((stop) => stop());
     };
   }, [setProgress]);
+
+  useEffect(() => {
+    const pending = new Map<string | null, ReturnType<typeof setTimeout>>();
+    let active = true;
+    const unlisten = listen<string | null>(
+      "mod-compatibility-changed",
+      ({ payload: folder }) => {
+        if (!active) return;
+        void invalidateModHealth(queryClient);
+        clearTimeout(pending.get(folder));
+        pending.set(
+          folder,
+          setTimeout(() => {
+            pending.delete(folder);
+            refreshFixes(folder);
+          }, INSTALL_CHECK_DELAY_MS),
+        );
+      },
+    );
+    return () => {
+      active = false;
+      for (const timer of pending.values()) clearTimeout(timer);
+      void unlisten.then((stop) => stop());
+    };
+  }, [queryClient, refreshFixes]);
 
   useEffect(() => {
     if (!report.data || checkedProfiles.current.has(profileFolder)) return;

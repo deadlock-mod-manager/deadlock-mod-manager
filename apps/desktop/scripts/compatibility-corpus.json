@@ -133,5 +133,23 @@
     "filename": "square_top_bar_v05.rar",
     "sha256": "94c03a3ab84d8f2d8ae5a12787b7c7c26a7eb0e7a7be04ce61c0d98cf59172ec",
     "vpks": ["square_top_bar_v05.vpk"]
+  },
+  {
+    "id": 655351,
+    "name": "CT SAS Venator | With Sounds!",
+    "url": "https://gamebanana.com/mods/655351",
+    "fileId": 1641323,
+    "filename": "venator_sas_111.zip",
+    "sha256": "9191722ccf31adc9fa6be31c09062de3f5a1d2b49d158bdfc531feeb540ffdbb",
+    "vpks": ["pak78_dir.vpk"]
+  },
+  {
+    "id": 701199,
+    "name": "Goth Ivy",
+    "url": "https://gamebanana.com/mods/701199",
+    "fileId": 1798014,
+    "filename": "goth_ivy_e2360.rar",
+    "sha256": "c0d1c63ab96775173a0d2346412a9c0340c3dd05cc3aad9ee2601f953b1c82de",
+    "vpks": ["pak11_dir.vpk"]
   }
 ]

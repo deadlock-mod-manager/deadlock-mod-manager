@@ -1,0 +1,182 @@
+[
+  {
+    "id": 699938,
+    "name": "Grey Talon's Guided Drone (City Never Sleeps)",
+    "url": "https://gamebanana.com/mods/699938",
+    "fileId": 1855897,
+    "filename": "drone-talon-cns_ba846.zip",
+    "sha256": "f850b7e7f8ad16f7ae84e595f17337e866a89048b6fccd868c03fa54c78c3bed",
+    "vpks": ["pak91_dir.vpk"]
+  },
+  {
+    "id": 729438,
+    "name": "Red & White violet",
+    "url": "https://gamebanana.com/mods/729438",
+    "fileId": 1855151,
+    "filename": "pak62_dir_1455f.zip",
+    "sha256": "70efdc33ea972eb9671bd11b47e3e0c7bfb2a46ac790675d1d5a4cae7a75da62",
+    "vpks": ["pak62_dir.vpk"]
+  },
+  {
+    "id": 624503,
+    "name": "Minos Prime Lash[CAM FIX]",
+    "url": "https://gamebanana.com/mods/624503",
+    "fileId": 1855765,
+    "filename": "minos_prime_lash_fix.zip",
+    "sha256": "19d6189d920a1c4187d80f7aa67216ed9d268e40b05070a6400888f280de84af",
+    "vpks": ["pak08_dir.vpk"]
+  },
+  {
+    "id": 683669,
+    "name": "(Violetta update) Springtrap always comes back 2",
+    "url": "https://gamebanana.com/mods/683669",
+    "fileId": 1855983,
+    "filename": "victorafton.rar",
+    "sha256": "2ca7938a1808b47e5566556a6cf8f3048fb170eefc5e60570b5ba662ddbdd755",
+    "vpks": ["VictorModels.vpk"]
+  },
+  {
+    "id": 729831,
+    "name": "haku yowane x violet",
+    "url": "https://gamebanana.com/mods/729831",
+    "fileId": 1856040,
+    "filename": "hakumod.rar",
+    "sha256": "dd561d8c22ea55da4158a131b32b4c6835eb75be790af16877a45659b8c4269f",
+    "vpks": ["hakumod/haku.vpk"]
+  },
+  {
+    "id": 725734,
+    "name": "Jade Harley and bec over silver homestuck (broken)",
+    "url": "https://gamebanana.com/mods/725734",
+    "fileId": 1852119,
+    "filename": "fixedjade.zip",
+    "sha256": "eb7cb1eb2baf47d0438c45cbd9c4ac9413f5f1dc9e934dae1db637694af623a9",
+    "vpks": ["fixedJade/pak44_dir.vpk"]
+  },
+  {
+    "id": 701397,
+    "name": "Jin(Persona 3 Reload) as Pocket",
+    "url": "https://gamebanana.com/mods/701397",
+    "fileId": 1852161,
+    "filename": "jinpocketnovoice_dir.rar",
+    "sha256": "34adda9820801047924e0f4650a2142cf777d78682cf362ec9a3c138dd4a295c",
+    "vpks": ["jinpocketnovoice_dir.vpk"]
+  },
+  {
+    "id": 683918,
+    "name": "Apollo Leorio Glasses",
+    "url": "https://gamebanana.com/mods/683918",
+    "fileId": 1851982,
+    "filename": "apolloleorioglasses_cns_fix.zip",
+    "sha256": "b1e3bb8a020c0335c577fbb310f74ed51ee4ce45df6b512efb709dade9c58e00",
+    "vpks": ["pak40_dir.vpk"]
+  },
+  {
+    "id": 699464,
+    "name": "Sean Paul from Def Jam Fight for New York as Lash",
+    "url": "https://gamebanana.com/mods/699464",
+    "fileId": 1852147,
+    "filename": "rasclaat_newfix_.rar",
+    "sha256": "3021651f549314fe2a0e30fd3851059485f838334c56de0c63212df3e1719a43",
+    "vpks": ["rasclaat_dir.vpk"]
+  },
+  {
+    "id": 667319,
+    "name": "Saeed_Venator (fx+vo)",
+    "url": "https://gamebanana.com/mods/667319",
+    "fileId": 1852071,
+    "filename": "saeed_venator_v2_complete.zip",
+    "sha256": "3cc9d07af84c1c39036b395faa8438e736e4e78f16a63768ad019463396a5f52",
+    "vpks": ["pak77_dir.vpk"]
+  },
+  {
+    "id": 707064,
+    "name": "Kraehe over Graves",
+    "url": "https://gamebanana.com/mods/707064",
+    "fileId": 1832144,
+    "filename": "kraehe.zip",
+    "sha256": "3e40ee44fd5ac0cd222839e84c1483bc6a453cb5ee3cf743f846a8691af8869d",
+    "vpks": ["pak41_dir.vpk"]
+  },
+  {
+    "id": 722542,
+    "name": "\"Respect me\" OW spray, poster replacement... again",
+    "url": "https://gamebanana.com/mods/722542",
+    "fileId": 1832160,
+    "filename": "respectmespray.rar",
+    "sha256": "3971c71d619a35407428cbfb3f23fe3c93f0ccb30b944ed7ee4af7520339ab07",
+    "vpks": ["pak78_dir.vpk"]
+  },
+  {
+    "id": 621072,
+    "name": "Gojo Doorman [CITY NEVER SLEEPS]",
+    "url": "https://gamebanana.com/mods/621072",
+    "fileId": 1693111,
+    "filename": "gojo_particles_only.zip",
+    "sha256": "4504565a773847c9db3a0a3cb917ed43b16951fbe2a3c5887d8307192e4b513f",
+    "vpks": ["gojo_particles_only.vpk"]
+  },
+  {
+    "id": 666723,
+    "name": "Haze Tracer (OGNB FIX) + UI",
+    "url": "https://gamebanana.com/mods/666723",
+    "fileId": 1832249,
+    "filename": "tracer_haze_73d81.zip",
+    "sha256": "4006ffdf1367299f6097137489b28d76747c7b98c1bf65ebdf6787ab8af56910",
+    "vpks": ["tracer_haze.vpk"]
+  },
+  {
+    "id": 675078,
+    "name": "LowPolyDox",
+    "url": "https://gamebanana.com/mods/675078",
+    "fileId": 1701132,
+    "filename": "lowpolydox_vfx_only_d29e3.zip",
+    "sha256": "7f330d1479309db60152d623db734743a5e753c4030e88ba50e43c62162a1f26",
+    "vpks": ["LowPolyDox VFX Only/pak02_dir.vpk"]
+  },
+  {
+    "id": 683071,
+    "name": "Uma Celeste",
+    "url": "https://gamebanana.com/mods/683071",
+    "fileId": 1834306,
+    "filename": "uma_celeste_fix.zip",
+    "sha256": "fe7b1ea954c9d4f98ea0dd843df9ba14e01627e26116aae15ae6583f82098ae9",
+    "vpks": ["pak33_dir.vpk"]
+  },
+  {
+    "id": 683200,
+    "name": "Alex from YIIK over Paige!",
+    "url": "https://gamebanana.com/mods/683200",
+    "fileId": 1720318,
+    "filename": "pak01_dir_78bdd.rar",
+    "sha256": "926c76387953ce9106ddc607cd5c66ea949f69c6482881965ebd57561853d2b2",
+    "vpks": ["pak01_dir.vpk"]
+  },
+  {
+    "id": 682742,
+    "name": "Suppidish Paige Skin",
+    "url": "https://gamebanana.com/mods/682742",
+    "fileId": 1718662,
+    "filename": "suppidishpaige_88f9e.7z",
+    "sha256": "7a393c0665a7b5be0c805a9fca51d5ae18bde7d384b5c5cd35c081665c336f7c",
+    "vpks": ["SuppidishPaige/pak01_dir.vpk"]
+  },
+  {
+    "id": 682593,
+    "name": "Icon Pack for Rosia, Daughter of Ixia",
+    "url": "https://gamebanana.com/mods/682593",
+    "fileId": 1718158,
+    "filename": "pak27_dirvpk.zip",
+    "sha256": "a6c654bf0c4799081b17532d28ec883b87bb0dddd741b8cc36713745408d4012",
+    "vpks": ["pak27_dir.vpk"]
+  },
+  {
+    "id": 617177,
+    "name": "[Dignified Blossom!] Hoshimi Miyabi Yamato",
+    "url": "https://gamebanana.com/mods/617177",
+    "fileId": 1719258,
+    "filename": "dignified_miyabi_yamato_3764a.zip",
+    "sha256": "e3d43dfd419a7658f219b2121277a43d8cad5fb02c0a72d75eb29f72087110db",
+    "vpks": ["pak01_dir.vpk"]
+  }
+]

@@ -6,6 +6,7 @@ export type LaunchStep =
   | "randomizingSkins"
   | "disablingMods"
   | "verifyingMods"
+  | "checkingCompatibility"
   | "mergingModData"
   | "writingSearchPaths"
   | "applyingPerformance"
@@ -41,11 +42,19 @@ export const useLaunchProgress = create<LaunchProgressState>()((set) => ({
       progress: { steps, current: steps[0] ?? null, modCount, hidden: false },
     }),
   advance: (step) =>
-    set(({ progress }) =>
-      progress && (step === null || progress.steps.includes(step))
-        ? { progress: { ...progress, current: step } }
-        : {},
-    ),
+    set(({ progress }) => {
+      if (!progress) return {};
+      let steps = progress.steps;
+      if (step === "mergingModData" && !steps.includes(step)) {
+        const check = steps.indexOf("checkingCompatibility");
+        if (check === -1) return {};
+        steps = [...steps];
+        steps.splice(check + 1, 0, step);
+      }
+      return step === null || steps.includes(step)
+        ? { progress: { ...progress, steps, current: step } }
+        : {};
+    }),
   hide: () =>
     set(({ progress }) =>
       progress ? { progress: { ...progress, hidden: true } } : {},
