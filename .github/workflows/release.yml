@@ -264,6 +264,26 @@ jobs:
           $version = (Get-Content -LiteralPath apps/desktop/package.json -Raw | ConvertFrom-Json).version
           Copy-Item -LiteralPath apps/desktop/target/release/deadlock-mod-manager.exe -Destination "apps/desktop/target/release/bundle/nsis/Deadlock Mod Manager_${version}_x64-portable.exe"
 
+      # The Microsoft Store needs an installer that works offline, so this one bundles WebView2.
+      # The -store.exe suffix keeps it out of the -setup.exe matchers used by latest.json and winget.
+      - name: Bundle Microsoft Store installer
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: |
+          $version = (Get-Content -LiteralPath apps/desktop/package.json -Raw | ConvertFrom-Json).version
+          $nsisDir = "apps/desktop/target/release/bundle/nsis"
+          $setupName = "Deadlock Mod Manager_${version}_x64-setup.exe"
+          $stash = Join-Path $env:RUNNER_TEMP "nsis-stash"
+          New-Item -ItemType Directory -Force -Path $stash | Out-Null
+          Move-Item -LiteralPath (Join-Path $nsisDir $setupName) -Destination $stash
+          Move-Item -LiteralPath (Join-Path $nsisDir "$setupName.sig") -Destination $stash
+
+          pnpm --filter @deadlock-mods/desktop tauri bundle --bundles nsis --config src-tauri/tauri.microsoftstore.conf.json
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          Move-Item -LiteralPath (Join-Path $nsisDir $setupName) -Destination (Join-Path $nsisDir "Deadlock Mod Manager_${version}_x64-store.exe")
+          Move-Item -Path (Join-Path $stash "*") -Destination $nsisDir
+
       # Windows: SignPath code signing flow
       - name: Sign Windows executables
         if: matrix.platform == 'windows-latest'

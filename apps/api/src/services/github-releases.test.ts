@@ -69,10 +69,12 @@ describe("GitHubReleasesService runtime policy", () => {
     expect(downloads[1]?.installerType).toBe("flatpak");
   });
 
-  test("excludes the standalone executable from installer downloads", () => {
+  test("excludes the standalone and Store executables from installer downloads", () => {
     const release = createRelease([
       createAsset("Deadlock Mod Manager_1.0.0_x64-portable.exe"),
       createAsset("Deadlock Mod Manager_1.0.0_x64-portable.exe.sig"),
+      createAsset("Deadlock Mod Manager_1.0.0_x64-store.exe"),
+      createAsset("Deadlock Mod Manager_1.0.0_x64-store.exe.sig"),
       createAsset("DMM-setup.exe"),
       createAsset("DMM-setup.exe.sig"),
       createAsset("DMM.msi"),

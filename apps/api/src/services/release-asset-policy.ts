@@ -24,7 +24,8 @@ export const parseReleaseAsset = (
   const runtime = getRuntime(name);
 
   // Standalone downloads are offered on GitHub, outside the installer-only website flow.
-  if (name.endsWith("-portable.exe") || name.endsWith("-portable.exe.sig")) {
+  // The Microsoft Store installer is only linked from the Store listing.
+  if (/-(?:portable|store)\.exe(?:\.sig)?$/.test(name)) {
     return null;
   }
 
