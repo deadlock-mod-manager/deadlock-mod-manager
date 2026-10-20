@@ -275,6 +275,38 @@ const stats: Definition = {
   prepare: prepareStatsDashboardWorld,
   verifyNetwork: assertStatsDashboardNetwork,
 };
+const onboarding: Definition = {
+  ...defaults,
+  family: "onboarding",
+  spec: "onboarding",
+  phases: ["skip-analysis"],
+  prepare: (world) => prepareOnboardingWorld(world, true),
+  routes: async () => () => [
+    {
+      method: "POST",
+      path: "/api/v2/vpk-analyse-hashes",
+      status: 200,
+      body: "[]",
+    },
+    {
+      method: "GET",
+      path: "/apiv11/Util/Fileservers",
+      status: 200,
+      body: '{"_aRecords":[]}',
+    },
+  ],
+  verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) => {
+    if (
+      !requests.some(
+        (request) =>
+          request.method === "POST" &&
+          request.url.includes("/api/v2/vpk-analyse-hashes") &&
+          request.responseStatus === 200,
+      )
+    )
+      throw new Error("Onboarding never analyzed the existing VPK");
+  },
+};
 export const scenarios = {
   monkey: {
     ...defaults,
@@ -412,37 +444,10 @@ export const scenarios = {
         );
     },
   },
-  "onboarding-skip-analysis": {
-    ...defaults,
-    family: "onboarding",
-    spec: "onboarding",
-    phases: ["skip-analysis"],
-    prepare: prepareOnboardingWorld,
-    routes: async () => () => [
-      {
-        method: "POST",
-        path: "/api/v2/vpk-analyse-hashes",
-        status: 200,
-        body: "[]",
-      },
-      {
-        method: "GET",
-        path: "/apiv11/Util/Fileservers",
-        status: 200,
-        body: '{"_aRecords":[]}',
-      },
-    ],
-    verifyNetwork: (_id: string, requests: readonly FixtureRequest[]) => {
-      if (
-        !requests.some(
-          (request) =>
-            request.method === "POST" &&
-            request.url.includes("/api/v2/vpk-analyse-hashes") &&
-            request.responseStatus === 200,
-        )
-      )
-        throw new Error("Onboarding never analyzed the existing VPK");
-    },
+  "onboarding-skip-analysis": onboarding,
+  "onboarding-telemetry-default": {
+    ...onboarding,
+    prepare: (world: CreatedWorld) => prepareOnboardingWorld(world, false),
   },
   "content-blur": {
     ...settings,

@@ -83,14 +83,22 @@ describe("real Rust downloads", () => {
         await expect(card()).not.toHaveText(expect.stringContaining("100%"));
         const completed = $('[role="tab"]*=Completed');
         await expect(completed).toHaveText("Completed (0)");
-        await completed.click();
-        await browser.keys("Space");
+        await expect(completed).toHaveAttribute("aria-selected", "false");
+        await browser.execute(
+          (element: HTMLElement) => element.focus(),
+          await $('[role="tab"]*=All'),
+        );
+        await browser.keys("ArrowRight");
+        await expect($('[role="tab"]*=Active')).toBeFocused();
+        await browser.keys("ArrowRight");
+        await expect(completed).toBeFocused();
         await expect(completed).toHaveAttribute("aria-selected", "true");
         await expect(card()).not.toBeDisplayed();
         const failed = $('[role="tab"]*=Failed');
         await expect(failed).toHaveText("Failed (1)");
-        await failed.click();
-        await browser.keys("Space");
+        await expect(failed).toHaveAttribute("aria-selected", "false");
+        await browser.keys("ArrowRight");
+        await expect(failed).toBeFocused();
         await expect(failed).toHaveAttribute("aria-selected", "true");
         await expect(card().$("button=Retry")).toBeDisplayed();
         await browser.saveScreenshot(
