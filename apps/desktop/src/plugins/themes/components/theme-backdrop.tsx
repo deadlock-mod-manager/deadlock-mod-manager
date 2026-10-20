@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 
 const BACKDROP_BASE_STYLE: CSSProperties = {
@@ -27,9 +27,41 @@ type ThemeBackdropProps = {
   style: CSSProperties;
 };
 
+let activeBackdropStyle: CSSProperties | null = null;
+const backdropListeners = new Set<() => void>();
+
+const setActiveBackdropStyle = (style: CSSProperties | null) => {
+  activeBackdropStyle = style;
+  for (const listener of backdropListeners) listener();
+};
+
+const subscribeBackdropStyle = (listener: () => void) => {
+  backdropListeners.add(listener);
+  return () => {
+    backdropListeners.delete(listener);
+  };
+};
+
+/**
+ * The active theme's backdrop pinned to the viewport, for surfaces that must
+ * hide scrolled content while blending into the backdrop behind them.
+ */
+export const useThemeBackdropSurfaceStyle = (): CSSProperties | undefined => {
+  const style = useSyncExternalStore(
+    subscribeBackdropStyle,
+    () => activeBackdropStyle,
+  );
+  return style ? { ...style, backgroundAttachment: "fixed" } : undefined;
+};
+
 export const ThemeBackdrop = ({ rootClass, style }: ThemeBackdropProps) => {
   useThemeRootClass(rootClass);
   useThemeRootClass("theme-backdrop-active");
+
+  useEffect(() => {
+    setActiveBackdropStyle(style);
+    return () => setActiveBackdropStyle(null);
+  }, [style]);
 
   return createPortal(
     <div aria-hidden style={{ ...BACKDROP_BASE_STYLE, ...style }} />,

@@ -154,6 +154,7 @@ import { getUpdatePercent } from "@/lib/mods/batch-update-progress";
 import { getModCoverImage } from "@/lib/mods/mod-images";
 import { healthByModId, showsDateOutdatedWarning } from "@/lib/mods/mod-health";
 import { cn, isModOutdated } from "@/lib/utils";
+import { useThemeBackdropSurfaceStyle } from "@/plugins/themes/components/theme-backdrop";
 import type { ModHealth } from "@/types/generated/ModHealth";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
@@ -924,6 +925,7 @@ const MyMods = () => {
     toolbarRef,
     mods.length > 0,
   );
+  const toolbarSurfaceStyle = useThemeBackdropSurfaceStyle();
 
   const { results, query, setQuery } = useSearch({
     data: mods,
@@ -1412,7 +1414,8 @@ const MyMods = () => {
                 <div ref={toolbarAnchorRef} aria-hidden className='-mb-4' />
                 <div
                   ref={toolbarRef}
-                  className='sticky top-0 z-30 -my-3 flex w-full flex-col gap-3 border-b border-transparent px-px py-3 transition-colors duration-200 data-stuck:border-border/60 data-stuck:bg-background/90 data-stuck:backdrop-blur-sm'>
+                  style={toolbarSurfaceStyle}
+                  className='sticky top-0 z-30 -my-3 flex w-full flex-col gap-3 border-b border-transparent px-px py-3 transition-colors duration-200 data-[stuck]:border-border/60 data-[stuck]:bg-background'>
                   <div className='min-w-0 overflow-visible [&_input]:border-border/70 [&_input]:bg-background/70 [&_input]:shadow-sm [&_input]:placeholder:text-muted-foreground/90 [&_input]:hover:border-border [&_input]:focus-visible:bg-background'>
                     <SearchBar
                       className='w-full'
