@@ -442,6 +442,19 @@ mod tests {
   }
 
   #[test]
+  fn rebuild_drops_original_names_that_no_longer_line_up_with_files_on_disk() {
+    let temp = tempfile::tempdir().unwrap();
+    let (base, backups) = world(&temp);
+    write(&base, "pak02_dir.vpk", b"blue");
+    let mut entry = seed("variants", &["pak01_dir.vpk", "pak02_dir.vpk"]);
+    entry.original_vpk_names = vec!["red.vpk".into(), "blue.vpk".into()];
+    repair_mod_folder_at(&base, &backups, &[entry], false).unwrap();
+    let manifest = ProfileVpkManifest::load(&base).unwrap();
+    assert_eq!(manifest.mods["variants"].current_vpks, ["pak02_dir.vpk"]);
+    assert!(manifest.mods["variants"].original_vpk_names.is_empty());
+  }
+
+  #[test]
   fn invalid_staging_is_moved_aside_and_reported_automatically() {
     let temp = tempfile::tempdir().unwrap();
     let (base, backups) = world(&temp);

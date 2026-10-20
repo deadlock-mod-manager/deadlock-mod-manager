@@ -38,6 +38,14 @@ const profile = (): ModProfile => ({
   ],
 });
 
+const file = (name: string, is_selected: boolean) => ({
+  name,
+  path: name,
+  size: 10,
+  is_selected,
+  archive_name: "variants.zip",
+});
+
 describe("repairManifestEntries", () => {
   it("preserves installed locators and order so the backend can attribute disk files", () => {
     const result = repairManifestEntries(profile());
@@ -77,6 +85,24 @@ describe("repairManifestEntries", () => {
       "skin.vpk",
     ]);
     expect(value).toEqual(before);
+  });
+
+  it("pairs installed VPKs with the selected variants in the order installs enable them", () => {
+    const value = profile();
+    value.mods[0].installedVpks = ["pak01_dir.vpk", "pak02_dir.vpk"];
+    value.mods[0].installedFileTree = {
+      files: [
+        file("pak01-red_dir.vpk", true),
+        file("pak01-blue_dir.vpk", false),
+        file("pak01-green_dir.vpk", true),
+      ],
+      total_files: 3,
+      has_multiple_files: true,
+    };
+    expect(repairManifestEntries(value)[0].originalVpkNames).toEqual([
+      "pak01-green_dir.vpk",
+      "pak01-red_dir.vpk",
+    ]);
   });
 });
 
