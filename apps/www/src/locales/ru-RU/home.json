@@ -1,11 +1,9 @@
 {
   "meta": {
     "title": "Deadlock Mod Manager — моды на Deadlock (Дедлок) в один клик",
-    "description": "Бесплатный мод менеджер для Deadlock с открытым кодом. Моды с GameBanana в один клик, скины героев и звуки — на Windows и Linux.",
-    "descriptionWithVersion": "Бесплатный мод менеджер для Deadlock с открытым кодом. Моды, скины и звуки с GameBanana в один клик. Последняя версия: v{{version}}, скоро V2."
+    "description": "Бесплатный мод менеджер для Deadlock с открытым кодом. Моды с GameBanana в один клик, скины героев и звуки — на Windows и Linux."
   },
   "hero": {
-    "v2Teaser": "Скоро: смотри, что нового",
     "title": "Моды для Deadlock<br/><accent>без лишней возни.</accent>",
     "subtitle": "Находи, устанавливай и обновляй моды в пару кликов. В том же приложении — скины героев, прицелы и темы.",
     "allDownloads": "Все загрузки",

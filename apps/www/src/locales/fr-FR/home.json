@@ -1,11 +1,9 @@
 {
   "meta": {
     "title": "Deadlock Mod Manager | Installer et gérer vos mods Deadlock",
-    "description": "Gestionnaire de mods gratuit et open source pour Deadlock. Parcourez les mods GameBanana, installez-les en un clic et gérez skins et sons sur Windows et Linux.",
-    "descriptionWithVersion": "Gestionnaire de mods Deadlock gratuit et open source, pour Windows et Linux. Mods, skins et sons GameBanana en un clic. Version v{{version}}, la V2 arrive bientôt."
+    "description": "Gestionnaire de mods gratuit et open source pour Deadlock. Parcourez les mods GameBanana, installez-les en un clic et gérez skins et sons sur Windows et Linux."
   },
   "hero": {
-    "v2Teaser": "Bientôt : découvrez les nouveautés",
     "title": "Les mods Deadlock,<br/><accent>sans prise de tête.</accent>",
     "subtitle": "Trouvez, installez et mettez à jour vos mods en quelques clics. La même app gère les skins de héros, les réticules et les thèmes.",
     "allDownloads": "Tous les téléchargements",
