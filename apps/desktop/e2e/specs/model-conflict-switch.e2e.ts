@@ -76,6 +76,11 @@ const choose = async (label: string) => {
   await dialog.$(`button=${label}`).click();
 };
 
+const replaced = () =>
+  $(
+    '//section[.//h3[normalize-space()="Replaced by another selected skin (1)"]]',
+  );
+
 describe("skin conflict activation", () => {
   it("keeps current on cancel and switches only the chosen skin across restart", async () => {
     const runtime = await startApplication();
@@ -104,6 +109,25 @@ describe("skin conflict activation", () => {
       await choose(`Use ${HAT_PANTS}`);
       await verify(world, HAT_JACKET);
       await $('[role="dialog"]').waitForDisplayed();
+      await expect(replaced()).toBeDisplayed();
+      await expect(replaced()).toHaveText(expect.stringContaining(HAT_JACKET));
+      await expect(replaced()).not.toHaveText(
+        expect.stringContaining(HAT_PANTS),
+      );
+      await $('[role="dialog"]').$("button=Close").click();
+      // Also report a skin enabled and then replaced within this same batch.
+      await $("button=Disable selected").click();
+      await choose("Disable selected");
+      await $(`[role="checkbox"][aria-label="Select ${HAT_JACKET}"]`).click();
+      await $("button=Enable selected").click();
+      await choose("Enable selected");
+      await choose(`Use ${HAT_PANTS}`);
+      await verify(world, HAT_JACKET);
+      await expect(replaced()).toBeDisplayed();
+      await expect(replaced()).toHaveText(expect.stringContaining(HAT_JACKET));
+      await expect(replaced()).not.toHaveText(
+        expect.stringContaining(HAT_PANTS),
+      );
       await $('[role="dialog"]').$("button=Close").click();
     } else if (process.env.DMM_E2E_PHASE === "restart-switch") {
       await verify(world, HAT_JACKET);

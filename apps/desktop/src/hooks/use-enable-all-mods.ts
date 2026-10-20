@@ -81,6 +81,10 @@ export const useEnableAllMods = () => {
         notAttempted: [],
       };
 
+      const initiallyInstalled = usePersistedStore
+        .getState()
+        .localMods.filter((mod) => mod.status === ModStatus.Installed);
+
       for (const [index, mod] of disabledMods.entries()) {
         if (usePersistedStore.getState().activeProfileId !== profileId) {
           result.notAttempted = disabledMods.slice(index);
@@ -139,7 +143,13 @@ export const useEnableAllMods = () => {
           .localMods.filter((mod) => mod.status === ModStatus.Installed)
           .map((mod) => mod.remoteId),
       );
-      result.replaced = result.enabled.filter(
+      const replacementCandidates = new Map(
+        [...initiallyInstalled, ...result.enabled].map((mod) => [
+          mod.remoteId,
+          mod,
+        ]),
+      );
+      result.replaced = [...replacementCandidates.values()].filter(
         (mod) => !active.has(mod.remoteId),
       );
       result.enabled = result.enabled.filter((mod) => active.has(mod.remoteId));

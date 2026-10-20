@@ -2,4 +2,4 @@
 "@deadlock-mods/desktop": patch
 ---
 
-Ask which skin to keep when enabling conflicting model replacements
+Choose which skin to keep and review replacements when enabling mods
