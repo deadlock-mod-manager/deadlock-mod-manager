@@ -87,13 +87,13 @@ describe("skin conflict activation", () => {
     const world = runtime.roots.world;
     await navigate("my-mods");
     if (process.env.DMM_E2E_PHASE === "switch") {
-      await $("button=Select mods").click();
+      await $(`[role="checkbox"][aria-label="Select ${HAT_PANTS}"]`).moveTo();
       await $(`[role="checkbox"][aria-label="Select ${HAT_PANTS}"]`).click();
-      await $("button=Disable selected").click();
+      await $("button=Disable 1").click();
       await choose("Disable selected");
       await verify(world, HAT_PANTS);
-      await $("button=Enable selected").waitForEnabled();
-      await $("button=Enable selected").click();
+      await $("button=Enable 1").waitForDisplayed();
+      await $("button=Enable 1").click();
       await choose("Enable selected");
       await expect($('[role="alertdialog"]')).toHaveText(
         expect.stringContaining("These mods replace the same model"),
@@ -104,7 +104,7 @@ describe("skin conflict activation", () => {
         expect.stringContaining("Skipped to keep current skins"),
       );
       await $('[role="dialog"]').$("button=Close").click();
-      await $("button=Enable selected").click();
+      await $("button=Enable 1").click();
       await choose("Enable selected");
       await choose("Swap mods");
       await verify(world, HAT_JACKET);
@@ -116,10 +116,10 @@ describe("skin conflict activation", () => {
       );
       await $('[role="dialog"]').$("button=Close").click();
       // Also report a skin enabled and then replaced within this same batch.
-      await $("button=Disable selected").click();
+      await $("button=Disable 1").click();
       await choose("Disable selected");
       await $(`[role="checkbox"][aria-label="Select ${HAT_JACKET}"]`).click();
-      await $("button=Enable selected").click();
+      await $("button=Enable 2").click();
       await choose("Enable selected");
       await choose("Swap mods");
       await verify(world, HAT_JACKET);

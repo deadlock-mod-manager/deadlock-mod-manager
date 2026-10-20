@@ -2288,8 +2288,6 @@
       "selectMod": "",
       "count_one": "",
       "count_other": "",
-      "selectFiltered": "",
-      "clear": "",
       "enable": "",
       "disable": "",
       "enableTitle": "",
@@ -2297,7 +2295,21 @@
       "disableTitle": "",
       "disableBody": "",
       "disabled_one": "",
-      "disabled_other": ""
+      "disabled_other": "",
+      "deselectAll": "",
+      "selectAll": "",
+      "enableCount": "",
+      "disableCount": "",
+      "update": "",
+      "more": "",
+      "copy": "",
+      "delete": "",
+      "deleteTitle_one": "",
+      "deleteTitle_other": "",
+      "deleteBody_one": "",
+      "deleteBody_other": "",
+      "deleted_one": "",
+      "deleted_other": ""
     },
     "compatibility": {
       "review": "",
@@ -5330,7 +5342,8 @@
     "openedGameFolder": "已打开游戏文件夹",
     "openedModInGame": "已在游戏文件夹中打开模组文件",
     "failedToOpenGameFolder": "打开游戏文件夹失败",
-    "failedToOpenModInGame": "无法在游戏中显示模组"
+    "failedToOpenModInGame": "无法在游戏中显示模组",
+    "select": ""
   },
   "profiles": {
     "share": "分享配置",

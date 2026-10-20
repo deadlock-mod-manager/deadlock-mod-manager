@@ -111,7 +111,8 @@ describe("selected library actions", () => {
     const [first, second, third] = ALPHA_MODS;
     if (process.env.DMM_E2E_PHASE === "select") {
       await verify(world, []);
-      await $("button=Select mods").click();
+      // Checkboxes stay hidden until a card is hovered or selection starts.
+      await $(`[role="checkbox"][aria-label="Select ${first}"]`).moveTo();
       for (const id of [first, third])
         await $(`[role="checkbox"][aria-label="Select ${id}"]`).click();
       await expect($('[role="region"][aria-label="Select mods"]')).toHaveText(
@@ -129,14 +130,14 @@ describe("selected library actions", () => {
         path.join(world, "artifacts", "library-selection-list.png"),
       );
       await $('button[aria-label="Grid view"]').click();
-      await $("button=Disable selected").click();
+      await $("button=Disable 2").click();
       await confirm("Cancel");
       await verify(world, []);
-      await $("button=Disable selected").click();
+      await $("button=Disable 2").click();
       await confirm("Disable selected");
       await verify(world, [first, third]);
-      await $("button=Enable selected").waitForEnabled();
-      await $("button=Enable selected").click();
+      await $("button=Enable 2").waitForDisplayed();
+      await $("button=Enable 2").click();
       await confirm("Enable selected");
       const recap = $('[role="dialog"]');
       await expect(recap).toHaveText(
@@ -144,17 +145,18 @@ describe("selected library actions", () => {
       );
       await recap.$("button=Close").click();
       await verify(world, []);
-      await $("button=Clear selection").click();
+      await $("button=Select all 3").click();
+      await $("button=Deselect all").click();
       const search = $("#search");
       await search.setValue("two");
       await expect(
         $$('[role="checkbox"][aria-label^="Select local-alpha-"]'),
       ).toBeElementsArrayOfSize(1);
-      await $("button=Select all matching").click();
+      await $("button=Select all 1").click();
       await expect($('[role="region"][aria-label="Select mods"]')).toHaveText(
         expect.stringContaining("1 mod selected"),
       );
-      await $("button=Disable selected").click();
+      await $("button=Disable 1").click();
       await confirm("Disable selected");
       await verify(world, [second]);
       await search.clearValue();
@@ -176,7 +178,9 @@ describe("selected library actions", () => {
       ).not.toBeDisplayed();
     }
     await verify(world, [second]);
-    await expect($("button=Select mods")).toBeDisplayed();
+    await expect(
+      $('[role="region"][aria-label="Select mods"]'),
+    ).not.toBeDisplayed();
     await closeApplication(world, runtime.processId);
   });
 });

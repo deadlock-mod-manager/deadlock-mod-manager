@@ -61,6 +61,7 @@ import {
   PowerOff,
   RefreshCw,
   ScanSearch,
+  SquareCheck,
   TriangleAlert,
   Wrench,
 } from "@deadlock-mods/ui/icons";
@@ -104,6 +105,7 @@ import {
 } from "@/hooks/use-mod-health";
 import ErrorBoundary from "@/components/shared/error-boundary";
 import { useAddonAnalysis } from "@/hooks/use-addon-analysis";
+import { useDeleteMods } from "@/hooks/use-delete-mods";
 import { useDisableAllMods } from "@/hooks/use-disable-all-mods";
 import { useEnableAllMods } from "@/hooks/use-enable-all-mods";
 import { ModUpdateBadge } from "@/components/mod-management/mod-update-badges";
@@ -251,6 +253,7 @@ type ModCardProps = {
   onShowConflicts: () => void;
   health: ModHealth | undefined;
   contextMenuHint: boolean;
+  onSelect: (() => void) | undefined;
 };
 
 const GridModCard = ({
@@ -259,6 +262,7 @@ const GridModCard = ({
   onShowConflicts,
   health,
   contextMenuHint,
+  onSelect,
 }: ModCardProps) => {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
@@ -309,7 +313,7 @@ const GridModCard = ({
   ) : null;
 
   const cardContent = (
-    <ModContextMenu hint={contextMenuHint} mod={mod}>
+    <ModContextMenu hint={contextMenuHint} mod={mod} onSelect={onSelect}>
       <Card className='flex h-full flex-col shadow'>
         <div className='relative'>
           <div
@@ -431,6 +435,7 @@ const ListModCard = ({
   onShowConflicts,
   health,
   contextMenuHint,
+  onSelect,
 }: ModCardProps) => {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
@@ -465,7 +470,7 @@ const ListModCard = ({
 
   return (
     <>
-      <ModContextMenu hint={contextMenuHint} mod={mod}>
+      <ModContextMenu hint={contextMenuHint} mod={mod} onSelect={onSelect}>
         <Card className='shadow'>
           <div className='flex items-center pr-4'>
             <div
@@ -619,10 +624,12 @@ const ModsList = ({
   contextMenuHint,
   selection,
 }: {
-  selection?: {
+  selection: {
+    active: boolean;
     ids: ReadonlySet<string>;
     busy: boolean;
-    toggle: (id: string) => void;
+    /** `extend` selects the range from the last toggled mod. */
+    toggle: (id: string, extend: boolean) => void;
   };
   healthById: ReadonlyMap<string, ModHealth>;
   mods: LocalMod[];
@@ -641,39 +648,74 @@ const ModsList = ({
           ? "grid grid-cols-[repeat(auto-fill,minmax(min(100%,14rem),1fr))] gap-3"
           : "flex flex-col gap-3"
       }>
-      {mods.map((mod, index) => (
-        <div
-          inert={selection?.busy}
-          key={mod.remoteId}
-          className={cn(
-            "relative",
-            selection && viewMode === ViewMode.LIST && "pl-9",
-            selection?.ids.has(mod.remoteId) &&
-              "rounded-xl ring-2 ring-primary",
-          )}>
-          {selection && (
+      {mods.map((mod, index) => {
+        const selected = selection.ids.has(mod.remoteId);
+        return (
+          <div
+            inert={selection.busy}
+            key={mod.remoteId}
+            onClickCapture={
+              selection.active
+                ? undefined
+                : (event) => {
+                    if (!(event.ctrlKey || event.metaKey || event.shiftKey))
+                      return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    selection.toggle(mod.remoteId, false);
+                  }
+            }
+            className={cn(
+              "group/select relative rounded-xl transition-opacity",
+              selection.active && "select-none",
+              selected && "outline-2 outline-primary -outline-offset-2",
+              selection.active &&
+                selection.ids.size > 0 &&
+                !selected &&
+                "opacity-60 hover:opacity-100",
+            )}>
             <Checkbox
               aria-label={t("myMods.selection.selectMod", { name: mod.name })}
-              checked={selection.ids.has(mod.remoteId)}
+              checked={selected}
               disabled={selection.busy}
-              onCheckedChange={() => selection.toggle(mod.remoteId)}
+              onClick={(event) => {
+                event.preventDefault();
+                selection.toggle(mod.remoteId, event.shiftKey);
+              }}
               className={cn(
-                "absolute left-2 z-10 size-5 bg-background",
-                viewMode === ViewMode.GRID
-                  ? "top-2"
-                  : "top-1/2 -translate-y-1/2",
+                "absolute top-2 left-2 z-20 size-5 rounded-full border-2 border-white/80 bg-black/50 shadow-md transition-opacity data-[state=checked]:border-primary [&_svg]:size-3.5",
+                !selection.active &&
+                  "opacity-0 group-hover/select:opacity-100 focus-visible:opacity-100",
               )}
             />
-          )}
-          <ModCard
-            conflictStatus={conflictStatusByMod.get(mod.remoteId)}
-            contextMenuHint={!selection && contextMenuHint && index === 0}
-            mod={mod}
-            onShowConflicts={onShowConflicts}
-            health={healthById.get(mod.remoteId)}
-          />
-        </div>
-      ))}
+            {selection.active && (
+              <button
+                aria-hidden
+                className='absolute inset-0 z-10 cursor-pointer rounded-xl'
+                onClick={(event) =>
+                  selection.toggle(mod.remoteId, event.shiftKey)
+                }
+                tabIndex={-1}
+                type='button'
+              />
+            )}
+            <ModCard
+              conflictStatus={conflictStatusByMod.get(mod.remoteId)}
+              contextMenuHint={
+                !selection.active && contextMenuHint && index === 0
+              }
+              mod={mod}
+              onSelect={
+                selection.active
+                  ? undefined
+                  : () => selection.toggle(mod.remoteId, false)
+              }
+              onShowConflicts={onShowConflicts}
+              health={healthById.get(mod.remoteId)}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 };
@@ -698,15 +740,32 @@ const MyMods = () => {
       .filter((mod) => selecting && selection.ids.has(mod.remoteId))
       .map((mod) => mod.remoteId),
   );
-  const toggleSelection = (id: string) =>
+  const selectionAnchor = useRef<string | null>(null);
+  const toggleSelection = (id: string, extend: boolean) => {
+    const anchorIndex = visibleMods.findIndex(
+      (mod) => mod.remoteId === selectionAnchor.current,
+    );
+    const targetIndex = visibleMods.findIndex((mod) => mod.remoteId === id);
+    const range =
+      extend && selecting && anchorIndex !== -1 && targetIndex !== -1
+        ? visibleMods
+            .slice(
+              Math.min(anchorIndex, targetIndex),
+              Math.max(anchorIndex, targetIndex) + 1,
+            )
+            .map((mod) => mod.remoteId)
+        : null;
+    if (!range) selectionAnchor.current = id;
     setSelection((current) => {
       const ids = new Set(
         current?.profileId === activeProfileId ? current.ids : [],
       );
-      if (ids.has(id)) ids.delete(id);
+      if (range) for (const rangeId of range) ids.add(rangeId);
+      else if (ids.has(id)) ids.delete(id);
       else ids.add(id);
       return { profileId: activeProfileId, ids };
     });
+  };
   const getOrderedMods = usePersistedStore((state) => state.getOrderedMods);
   const getActiveProfile = usePersistedStore((state) => state.getActiveProfile);
   const modsStorePaginationEnabled = usePersistedStore(
@@ -765,8 +824,14 @@ const MyMods = () => {
     closeRecap: closeEnableAllRecap,
   } = useEnableAllMods();
 
+  const { deleteMods, isPending: isDeletingMods } = useDeleteMods();
+
   const selectionBusy =
-    isDisablingAll || isEnablingAll || isSwitching || bisectActive;
+    isDisablingAll ||
+    isEnablingAll ||
+    isDeletingMods ||
+    isSwitching ||
+    bisectActive;
 
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.GRID);
   const [activeTab, setActiveTab] = useState<LibraryTab>(ModFilter.All);
@@ -779,6 +844,8 @@ const MyMods = () => {
   ).length;
   const showConflicts = () => setActiveTab(CONFLICTS_TAB);
   const [showBatchUpdateDialog, setShowBatchUpdateDialog] = useState(false);
+  const [batchUpdateIds, setBatchUpdateIds] =
+    useState<ReadonlySet<string> | null>(null);
   const updatePercent = usePersistedStore((state) =>
     getUpdatePercent(state.batchUpdateProgress),
   );
@@ -965,14 +1032,17 @@ const MyMods = () => {
     };
   }, [mods]);
 
-  const copyModList = async (includeDisabled: boolean) => {
+  const copyModList = async (
+    includeDisabled: boolean,
+    listed: LocalMod[] = mods,
+  ) => {
     try {
       await navigator.clipboard.writeText(
-        formatModList(mods, includeDisabled, t("myMods.copyModListDisabled")),
+        formatModList(listed, includeDisabled, t("myMods.copyModListDisabled")),
       );
       toast.success(
         t("myMods.copyModListSuccess", {
-          count: includeDisabled ? mods.length : enabledModsCount,
+          count: includeDisabled ? listed.length : enabledModsCount,
         }),
       );
     } catch {
@@ -980,8 +1050,60 @@ const MyMods = () => {
     }
   };
 
+  const selectedMods = mods.filter((mod) => selectedIds.has(mod.remoteId));
+  const allMatchingSelected =
+    displayMods.length > 0 &&
+    displayMods.every((mod) => selectedIds.has(mod.remoteId));
+  const modsListSelection = {
+    active: selecting,
+    ids: selectedIds,
+    busy: selectionBusy,
+    toggle: toggleSelection,
+  };
+
+  useEffect(() => {
+    if (isConflictsTab || selectionBusy) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (
+        event.defaultPrevented ||
+        (target instanceof HTMLElement &&
+          (target.isContentEditable ||
+            target.closest("input, textarea, select"))) ||
+        document.querySelector(
+          "[role='dialog'], [role='alertdialog'], [role='menu']",
+        )
+      )
+        return;
+      if (event.key === "Escape" && selecting) {
+        setSelection(null);
+      } else if (
+        event.key.toLowerCase() === "a" &&
+        (event.ctrlKey || event.metaKey) &&
+        visibleModIds.size > 0
+      ) {
+        event.preventDefault();
+        setSelection((current) => ({
+          profileId: activeProfileId,
+          ids: new Set([
+            ...(current?.profileId === activeProfileId ? current.ids : []),
+            ...visibleModIds,
+          ]),
+        }));
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [
+    activeProfileId,
+    isConflictsTab,
+    selecting,
+    selectionBusy,
+    visibleModIds,
+  ]);
+
   return (
-    <div className='flex min-h-0 w-full flex-1 flex-col px-4'>
+    <div className='relative flex min-h-0 w-full flex-1 flex-col px-4'>
       <div className='flex shrink-0 flex-col gap-3 pt-4 pb-2 xl:flex-row xl:items-start xl:gap-4'>
         <div className='flex min-w-0 flex-col xl:shrink-0'>
           <div className='flex flex-wrap items-center gap-2'>
@@ -1071,16 +1193,6 @@ const MyMods = () => {
             {t("navigation.addMods")}
           </Button>
           <ImportSourceMenu />
-          {!selecting && (
-            <Button
-              variant='outline'
-              disabled={selectionBusy || isConflictsTab}
-              onClick={() =>
-                setSelection({ profileId: activeProfileId, ids: new Set() })
-              }>
-              {t("myMods.selection.start")}
-            </Button>
-          )}
           <DropdownMenu
             onOpenChange={(open) => {
               setActionsMenuOpen(open);
@@ -1156,6 +1268,19 @@ const MyMods = () => {
                 {t("mods.manageOrder")}
               </DropdownMenuItem>
               <DropdownMenuItem
+                onClick={() =>
+                  setSelection({ profileId: activeProfileId, ids: new Set() })
+                }
+                disabled={
+                  selecting ||
+                  selectionBusy ||
+                  isConflictsTab ||
+                  displayMods.length === 0
+                }>
+                <SquareCheck className='h-4 w-4' />
+                {t("myMods.selection.start")}
+              </DropdownMenuItem>
+              <DropdownMenuItem
                 onClick={() => enableAll()}
                 disabled={downloadedModsCount === 0 || selectionBusy}>
                 <Power className='h-4 w-4' />
@@ -1203,40 +1328,11 @@ const MyMods = () => {
         </div>
       </div>
 
-      {selecting && (
-        <LibrarySelectionBar
-          count={selectedIds.size}
-          busy={selectionBusy}
-          working={isDisablingAll || isEnablingAll}
-          canEnable={mods.some(
-            (mod) =>
-              selectedIds.has(mod.remoteId) &&
-              mod.status === ModStatus.Downloaded,
-          )}
-          canDisable={mods.some(
-            (mod) =>
-              selectedIds.has(mod.remoteId) && isInstalledModWithVpks(mod),
-          )}
-          onSelectFiltered={() =>
-            setSelection({
-              profileId: activeProfileId,
-              ids: new Set([
-                ...selectedIds,
-                ...displayMods.map((mod) => mod.remoteId),
-              ]),
-            })
-          }
-          onClear={() =>
-            setSelection({ profileId: activeProfileId, ids: new Set() })
-          }
-          onDone={() => setSelection(null)}
-          onEnable={() => enableAll(selectedIds)}
-          onDisable={() => disableAll(selectedIds)}
-        />
-      )}
-
       <div
-        className='min-h-0 flex-1 overflow-y-auto overflow-x-hidden pt-8 pb-4'
+        className={cn(
+          "min-h-0 flex-1 overflow-y-auto overflow-x-hidden pt-8",
+          selecting ? "pb-24" : "pb-4",
+        )}
         ref={scrollContainerRef}>
         <ErrorBoundary>
           <Tabs
@@ -1426,15 +1522,7 @@ const MyMods = () => {
                 {displayMods.length > 0 && (
                   <TabsContent className='mt-0' value={ModFilter.All}>
                     <ModsList
-                      selection={
-                        selecting
-                          ? {
-                              ids: selectedIds,
-                              busy: selectionBusy,
-                              toggle: toggleSelection,
-                            }
-                          : undefined
-                      }
+                      selection={modsListSelection}
                       mods={visibleMods}
                       conflictStatusByMod={conflictStatusByMod}
                       onShowConflicts={showConflicts}
@@ -1450,15 +1538,7 @@ const MyMods = () => {
                 {displayMods.length > 0 && (
                   <TabsContent className='mt-0' value={ModFilter.Enabled}>
                     <ModsList
-                      selection={
-                        selecting
-                          ? {
-                              ids: selectedIds,
-                              busy: selectionBusy,
-                              toggle: toggleSelection,
-                            }
-                          : undefined
-                      }
+                      selection={modsListSelection}
                       mods={visibleMods}
                       conflictStatusByMod={conflictStatusByMod}
                       onShowConflicts={showConflicts}
@@ -1474,15 +1554,7 @@ const MyMods = () => {
                 {displayMods.length > 0 && (
                   <TabsContent className='mt-0' value={ModFilter.Disabled}>
                     <ModsList
-                      selection={
-                        selecting
-                          ? {
-                              ids: selectedIds,
-                              busy: selectionBusy,
-                              toggle: toggleSelection,
-                            }
-                          : undefined
-                      }
+                      selection={modsListSelection}
                       mods={visibleMods}
                       conflictStatusByMod={conflictStatusByMod}
                       onShowConflicts={showConflicts}
@@ -1516,8 +1588,17 @@ const MyMods = () => {
           </Tabs>
           <BatchUpdateDialog
             open={showBatchUpdateDialog}
-            onOpenChange={setShowBatchUpdateDialog}
-            updates={updatableMods}
+            onOpenChange={(open) => {
+              setShowBatchUpdateDialog(open);
+              if (!open) setBatchUpdateIds(null);
+            }}
+            updates={
+              batchUpdateIds
+                ? updatableMods.filter((update) =>
+                    batchUpdateIds.has(update.mod.remoteId),
+                  )
+                : updatableMods
+            }
           />
           <ModOrderingDialog
             open={showModOrdering}
@@ -1545,6 +1626,47 @@ const MyMods = () => {
           />
         </ErrorBoundary>
       </div>
+
+      {selecting && (
+        <div className='pointer-events-none absolute inset-x-4 bottom-4 z-30 flex justify-center'>
+          <LibrarySelectionBar
+            count={selectedIds.size}
+            matchingCount={displayMods.length}
+            allMatchingSelected={allMatchingSelected}
+            enableCount={
+              selectedMods.filter((mod) => mod.status === ModStatus.Downloaded)
+                .length
+            }
+            disableCount={selectedMods.filter(isInstalledModWithVpks).length}
+            updateCount={
+              updatableMods.filter((update) =>
+                selectedIds.has(update.mod.remoteId),
+              ).length
+            }
+            busy={selectionBusy}
+            working={isDisablingAll || isEnablingAll || isDeletingMods}
+            onToggleAll={() =>
+              setSelection({
+                profileId: activeProfileId,
+                ids: allMatchingSelected
+                  ? new Set(
+                      [...selectedIds].filter((id) => !visibleModIds.has(id)),
+                    )
+                  : new Set([...selectedIds, ...visibleModIds]),
+              })
+            }
+            onExit={() => setSelection(null)}
+            onEnable={() => enableAll(selectedIds)}
+            onDisable={() => disableAll(selectedIds)}
+            onUpdate={() => {
+              setBatchUpdateIds(selectedIds);
+              setShowBatchUpdateDialog(true);
+            }}
+            onCopy={() => copyModList(true, selectedMods)}
+            onDelete={() => deleteMods(selectedIds)}
+          />
+        </div>
+      )}
     </div>
   );
 };

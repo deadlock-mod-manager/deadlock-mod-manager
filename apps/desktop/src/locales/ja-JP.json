@@ -2288,8 +2288,6 @@
       "selectMod": "",
       "count_one": "",
       "count_other": "",
-      "selectFiltered": "",
-      "clear": "",
       "enable": "",
       "disable": "",
       "enableTitle": "",
@@ -2297,7 +2295,21 @@
       "disableTitle": "",
       "disableBody": "",
       "disabled_one": "",
-      "disabled_other": ""
+      "disabled_other": "",
+      "deselectAll": "",
+      "selectAll": "",
+      "enableCount": "",
+      "disableCount": "",
+      "update": "",
+      "more": "",
+      "copy": "",
+      "delete": "",
+      "deleteTitle_one": "",
+      "deleteTitle_other": "",
+      "deleteBody_one": "",
+      "deleteBody_other": "",
+      "deleted_one": "",
+      "deleted_other": ""
     },
     "compatibility": {
       "review": "",
@@ -5330,7 +5342,8 @@
     "openedGameFolder": "ゲームフォルダーを開きました",
     "openedModInGame": "ゲームフォルダーでModファイルを開きました",
     "failedToOpenGameFolder": "ゲームフォルダーを開けませんでした",
-    "failedToOpenModInGame": ""
+    "failedToOpenModInGame": "",
+    "select": ""
   },
   "profiles": {
     "share": "プロファイルを共有",

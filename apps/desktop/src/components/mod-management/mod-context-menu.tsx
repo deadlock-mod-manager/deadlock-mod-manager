@@ -6,7 +6,7 @@ import {
   ContextMenuTrigger,
 } from "@deadlock-mods/ui/components/context-menu";
 import { toast } from "@deadlock-mods/ui/components/sonner";
-import { FolderOpen } from "@deadlock-mods/ui/icons";
+import { FolderOpen, SquareCheck } from "@deadlock-mods/ui/icons";
 import { ArrowClockwiseIcon } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import type { ReactElement } from "react";
@@ -23,6 +23,8 @@ interface ModContextMenuProps {
   mod: LocalMod;
   /** Points the right-click feature hint at this card. */
   hint?: boolean;
+  /** Starts library multi-select with this mod. */
+  onSelect?: () => void;
   children: ReactElement;
 }
 
@@ -42,6 +44,7 @@ const openContextMenuOn = (target: HTMLElement) => {
 export const ModContextMenu = ({
   mod,
   hint = false,
+  onSelect,
   children,
 }: ModContextMenuProps) => {
   const { t } = useTranslation();
@@ -107,6 +110,15 @@ export const ModContextMenu = ({
         )}
       </ContextMenuTrigger>
       <ContextMenuContent className='w-60'>
+        {onSelect && (
+          <>
+            <ContextMenuItem onClick={onSelect}>
+              <SquareCheck className='mr-2 h-4 w-4' />
+              {t("contextMenu.select")}
+            </ContextMenuItem>
+            {mod.remoteUrl && <ContextMenuSeparator />}
+          </>
+        )}
         {mod.remoteUrl && (
           <ContextMenuItem onClick={handleShareMod}>
             <FaShare className='mr-2 h-4 w-4' />

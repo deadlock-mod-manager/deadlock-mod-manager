@@ -2288,8 +2288,6 @@
       "selectMod": "Select {{name}}",
       "count_one": "{{count}} mod selected",
       "count_other": "{{count}} mods selected",
-      "selectFiltered": "Select all matching",
-      "clear": "Clear selection",
       "enable": "Enable selected",
       "disable": "Disable selected",
       "enableTitle": "Enable {{count}} selected mods?",
@@ -2297,7 +2295,21 @@
       "disableTitle": "Disable {{count}} selected mods?",
       "disableBody": "Disable only the {{count}} selected, enabled mods in the active profile. Downloaded files will be kept so you can enable them again.",
       "disabled_one": "{{count}} selected mod disabled",
-      "disabled_other": "{{count}} selected mods disabled"
+      "disabled_other": "{{count}} selected mods disabled",
+      "deselectAll": "Deselect all",
+      "selectAll": "Select all {{count}}",
+      "enableCount": "Enable {{count}}",
+      "disableCount": "Disable {{count}}",
+      "update": "Update {{count}}",
+      "more": "More selection actions",
+      "copy": "Copy mod list",
+      "delete": "Delete {{count}}",
+      "deleteTitle_one": "Delete {{count}} selected mod?",
+      "deleteTitle_other": "Delete {{count}} selected mods?",
+      "deleteBody_one": "This removes the mod from your library and deletes its files. This can't be undone. Make sure Deadlock is closed first.",
+      "deleteBody_other": "This removes {{count}} mods from your library and deletes their files. This can't be undone. Make sure Deadlock is closed first.",
+      "deleted_one": "{{count}} mod deleted",
+      "deleted_other": "{{count}} mods deleted"
     },
     "compatibility": {
       "review": "Review fixes",
@@ -5342,7 +5354,8 @@
     "openedGameFolder": "Opened game folder",
     "openedModInGame": "Opened mod files in game folder",
     "failedToOpenGameFolder": "Failed to open game folder",
-    "failedToOpenModInGame": "Failed to show mod in game"
+    "failedToOpenModInGame": "Failed to show mod in game",
+    "select": "Select"
   },
   "profiles": {
     "share": "Share Profile",

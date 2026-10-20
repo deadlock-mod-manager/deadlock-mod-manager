@@ -2288,8 +2288,6 @@
       "selectMod": "",
       "count_one": "",
       "count_other": "",
-      "selectFiltered": "",
-      "clear": "",
       "enable": "",
       "disable": "",
       "enableTitle": "",
@@ -2297,7 +2295,21 @@
       "disableTitle": "",
       "disableBody": "",
       "disabled_one": "",
-      "disabled_other": ""
+      "disabled_other": "",
+      "deselectAll": "",
+      "selectAll": "",
+      "enableCount": "",
+      "disableCount": "",
+      "update": "",
+      "more": "",
+      "copy": "",
+      "delete": "",
+      "deleteTitle_one": "",
+      "deleteTitle_other": "",
+      "deleteBody_one": "",
+      "deleteBody_other": "",
+      "deleted_one": "",
+      "deleted_other": ""
     },
     "compatibility": {
       "review": "",
@@ -5330,7 +5342,8 @@
     "openedGameFolder": "게임 폴더를 열었습니다.",
     "openedModInGame": "게임 폴더에서 모드 파일을 열었습니다.",
     "failedToOpenGameFolder": "게임 폴더를 열지 못했습니다.",
-    "failedToOpenModInGame": ""
+    "failedToOpenModInGame": "",
+    "select": ""
   },
   "profiles": {
     "share": "프로필 공유",

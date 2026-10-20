@@ -228,7 +228,8 @@
     "openedGameFolder": "已開啟遊戲資料夾",
     "openedModInGame": "已在遊戲資料夾中開啟模組檔案",
     "shareUrl": "分享",
-    "urlCopied": "URL 已複製到剪貼簿！"
+    "urlCopied": "URL 已複製到剪貼簿！",
+    "select": ""
   },
   "crosshairs": {
     "activeCrosshairs": "Active Crosshairs",
