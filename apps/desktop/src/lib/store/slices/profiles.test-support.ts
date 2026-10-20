@@ -97,11 +97,15 @@ export const profileTestBackend: {
     >
   >;
   forgetOrphans: (folder: string | null, modIds: string[]) => Promise<string[]>;
+  listProfileFolders: () => Promise<string[]>;
+  switchProfile: (folder: string | null) => Promise<void>;
 } = {
   readSnapshot: async () => snapshotFor(),
   readMetadata: async (id) => modFor(id),
   readLocalMetadata: async (id) => modFor(id),
   forgetOrphans: async (_folder, modIds) => modIds,
+  listProfileFolders: async () => [],
+  switchProfile: async () => {},
 };
 mock.module("@tauri-apps/api/core", () => ({
   invoke: async (
@@ -115,6 +119,10 @@ mock.module("@tauri-apps/api/core", () => ({
         args?.profileFolder ?? null,
         args?.modIds ?? [],
       );
+    if (command === "list_profile_folders")
+      return profileTestBackend.listProfileFolders();
+    if (command === "switch_profile")
+      return profileTestBackend.switchProfile(args?.profileFolder ?? null);
     return undefined;
   },
 }));
