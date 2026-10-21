@@ -379,10 +379,12 @@ where
     let response = match request.send().await {
       Ok(response) => response,
       Err(e) => {
+        // A redirect the policy rejected fails the same way on every attempt.
+        let transient = !e.is_redirect();
         let reason = describe_request_error(e);
         // Connections refused or reset before the first byte are as transient as a
         // dropped stream, and several files of one mod start at the same moment.
-        if reconnects < MAX_RECONNECTS {
+        if transient && reconnects < MAX_RECONNECTS {
           reconnects += 1;
           let delay = Duration::from_secs(1 << (reconnects - 1));
           log::warn!(
