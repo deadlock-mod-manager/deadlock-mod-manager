@@ -270,7 +270,6 @@
 ["types","apps/desktop/src/components/stats/delta-bar-chart.tsx",[["","DeltaBar"]]]
 ["types","apps/desktop/src/hooks/use-api-status.ts",[["","ApiHealthData"]]]
 ["types","apps/desktop/src/hooks/use-deadworks-content-progress.ts",[["","DeadworksContentStatus"]]]
-["types","apps/desktop/src/hooks/use-install-with-collection.ts",[["","InstallWithCollectionFunction"]]]
 ["types","apps/desktop/src/hooks/use-install-with-collection.ts",[["","InstallWithCollectionOptions"]]]
 ["types","apps/desktop/src/hooks/use-install-with-collection.ts",[["","UseInstallWithCollectionReturn"]]]
 ["types","apps/desktop/src/hooks/use-install.ts",[["","InstallFunction"]]]

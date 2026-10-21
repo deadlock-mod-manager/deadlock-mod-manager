@@ -6298,6 +6298,7 @@
       "wrongProfile": "Switch back to the profile this search started in first.",
       "switchFailed": "Couldn't turn on {{name}}. Try again, or stop the search.",
       "stepFailed": "Something went wrong while switching mods. Try again, or stop the search.",
+      "restoreFailed": "Couldn't restore all your mods. Try again, or choose Discard to end the search and manage your mods yourself.",
       "roundChanged": "Some mods were changed by hand during this round, so it's set up again. Answer after the next launch.",
       "switchBlocked": "Finish or stop the broken mod search before switching profiles.",
       "switchBackFailed": "Couldn't switch back to that profile.",

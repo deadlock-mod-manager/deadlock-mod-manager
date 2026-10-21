@@ -368,6 +368,10 @@ export const useBisect = () => {
         return;
       }
       logger.withError(error).error("Mod bisect step failed");
+      if (usePersistedStore.getState().bisectSession?.stage === "restoring") {
+        toast.error(t("bisect.toasts.restoreFailed"));
+        return;
+      }
       toast.error(
         error instanceof ModSwitchError
           ? t("bisect.toasts.switchFailed", { name: error.modName })
