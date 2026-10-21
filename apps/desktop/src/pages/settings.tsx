@@ -75,7 +75,6 @@ import { MatchSyncSettings } from "@/components/settings/match-sync-settings";
 import { FeatureTipsToggle } from "@/components/settings/feature-tips-toggle";
 import { ModUpdateBadgesToggle } from "@/components/settings/mod-update-badges-toggle";
 import { ModelPreviewToggle } from "@/components/settings/model-preview-toggle";
-import { NukeReinstall } from "@/components/settings/nuke-reinstall";
 import { RepairModFolder } from "@/components/settings/repair-mod-folder";
 import PrivacySettings from "@/components/settings/privacy-settings";
 import { ProxySettings } from "@/components/settings/proxy-settings";
@@ -989,7 +988,6 @@ const CustomSettings = ({ value }: { value?: string }) => {
                         label={t("settings.clearAllMods")}
                         onClick={clearAllMods}
                       />
-                      <NukeReinstall />
                     </div>
                   </div>
                 </div>

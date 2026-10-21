@@ -48,6 +48,20 @@ fn classify_source(url: &reqwest::Url) -> DownloadSource {
   }
 }
 
+/// reqwest's own message is just "error sending request"; the cause (reset, TLS,
+/// DNS, timeout) lives further down the source chain.
+fn describe_request_error(error: reqwest::Error) -> String {
+  let error = error.without_url();
+  let mut message = error.to_string();
+  let mut source = std::error::Error::source(&error);
+  while let Some(cause) = source {
+    message.push_str(": ");
+    message.push_str(&cause.to_string());
+    source = cause.source();
+  }
+  message
+}
+
 fn retry_after_secs(headers: &HeaderMap) -> Option<u64> {
   headers
     .get(reqwest::header::RETRY_AFTER)?
@@ -362,10 +376,27 @@ where
       request = request.header(RANGE, format!("bytes={resume_from}-"));
     }
 
-    let response = request
-      .send()
-      .await
-      .map_err(|e| Error::Network(format!("Failed to send request: {}", e.without_url())))?;
+    let response = match request.send().await {
+      Ok(response) => response,
+      Err(e) => {
+        let reason = describe_request_error(e);
+        // Connections refused or reset before the first byte are as transient as a
+        // dropped stream, and several files of one mod start at the same moment.
+        if reconnects < MAX_RECONNECTS {
+          reconnects += 1;
+          let delay = Duration::from_secs(1 << (reconnects - 1));
+          log::warn!(
+            "Request failed (retry {reconnects}/{MAX_RECONNECTS} in {}s): {reason}",
+            delay.as_secs()
+          );
+          tokio::select! {
+            () = tokio::time::sleep(delay) => continue 'retry,
+            () = cancel_token.cancelled() => return Err(Error::DownloadCancelled),
+          }
+        }
+        return Err(Error::Network(format!("Failed to send request: {reason}")));
+      }
+    };
 
     let status = response.status();
 

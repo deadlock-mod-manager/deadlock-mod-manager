@@ -1,6 +1,7 @@
 import { Checkbox } from "@deadlock-mods/ui/components/checkbox";
 import { LibrarySelectionBar } from "@/components/my-mods/library-selection-bar";
 import { ModGroupTools } from "@/components/my-mods/mod-group-tools";
+import { NukeReinstallDialog } from "@/components/my-mods/nuke-reinstall-dialog";
 import type { ModGroupActions } from "@/components/my-mods/mod-group-enablement";
 import { LibraryModGroups } from "@/components/my-mods/library-mod-groups";
 import { DraggableLibraryMod } from "@/components/my-mods/draggable-library-mod";
@@ -73,7 +74,7 @@ import {
   TriangleAlert,
   Wrench,
 } from "@deadlock-mods/ui/icons";
-import { Trash } from "@phosphor-icons/react";
+import { Radioactive, Trash } from "@phosphor-icons/react";
 import { MagnifyingGlass } from "@phosphor-icons/react";
 import { invoke } from "@tauri-apps/api/core";
 import { platform } from "@tauri-apps/plugin-os";
@@ -885,6 +886,7 @@ const MyMods = () => {
   const [showModOrdering, setShowModOrdering] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
+  const [showNukeDialog, setShowNukeDialog] = useState(false);
   const markFeatureUsed = usePersistedStore((state) => state.markFeatureUsed);
   const countFeatureHintEvent = usePersistedStore(
     (state) => state.countFeatureHintEvent,
@@ -1344,6 +1346,13 @@ const MyMods = () => {
                   ? t("addons.analyzing")
                   : t("addons.analyzeLocal")}
               </DropdownMenuItem>
+              <DropdownMenuItem
+                className='text-destructive focus:text-destructive'
+                onClick={() => setShowNukeDialog(true)}
+                disabled={mods.length === 0}>
+                <Radioactive className='h-4 w-4' />
+                {t("nuke.action")}
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuLabel>
                 {t("myMods.menuSections.share")}
@@ -1683,6 +1692,10 @@ const MyMods = () => {
           <ExportDialog
             open={showExportDialog}
             onOpenChange={setShowExportDialog}
+          />
+          <NukeReinstallDialog
+            open={showNukeDialog}
+            onOpenChange={setShowNukeDialog}
           />
           {analysisProgress && (
             <AnalysisProgressToast

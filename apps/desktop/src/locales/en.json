@@ -3701,13 +3701,45 @@
     "description": "Wipes cache, mod state and mod files, then downloads and reinstalls everything the manager had. Use this when the app and your game folder are out of sync.",
     "action": "Nuke & Reinstall",
     "confirmAction": "Nuke it",
+    "continue": "Continue",
+    "areYouSure": "Are you sure?",
+    "stat": {
+      "mods": "Mods",
+      "installed": "Installed",
+      "download": "To download"
+    },
+    "steps": {
+      "backup": {
+        "title": "Back up your addons folder",
+        "body": "Restore it from Settings > Backups if anything goes wrong."
+      },
+      "wipe": {
+        "title": "Delete mod files, cache and mod state",
+        "body": "Mods already missing from disk are skipped."
+      },
+      "download": {
+        "title": "Download every mod again",
+        "body": "GameBanana limits download speed, so this can take a while. Keep the app open."
+      },
+      "install": {
+        "title": "Install in the original load order",
+        "body": "Mods with several variants reuse your earlier picks, or ask you to choose again."
+      }
+    },
+    "areYouSureBody_one": "{{count}} mod will be deleted from your game folder and downloaded again. This cannot be undone without restoring the backup.",
+    "areYouSureBody_other": "{{count}} mods will be deleted from your game folder and downloaded again. This cannot be undone without restoring the backup.",
     "confirmBody_one": "{{count}} mod will be removed and reinstalled ({{installed}} of them currently installed).",
     "confirmBody_other": "{{count}} mods will be removed and reinstalled ({{installed}} of them currently installed).",
     "confirmDetails": "Every mod file, the download cache and the stored mod state are deleted first, then each mod is downloaded and installed again in its original load order. Mods that are already missing from disk are skipped without error.",
-    "localModsPreserved_one": "{{count}} locally added mod is kept untouched - it cannot be downloaded again.",
-    "localModsPreserved_other": "{{count}} locally added mods are kept untouched - they cannot be downloaded again.",
+    "localModsPreserved_one": "{{count}} mod you added from your computer is skipped. Its files and settings stay as they are, since it cannot be downloaded again.",
+    "localModsPreserved_other": "{{count}} mods you added from your computer are skipped. Their files and settings stay as they are, since they cannot be downloaded again.",
     "stopAfterCurrent": "Stop after current mod",
     "stopping": "Stopping...",
+    "chooseFiles": "Choose files",
+    "chooseFilesLater": "You can pick files once all mods are done.",
+    "backupFailedBody": "The backup could not be created, so nothing was deleted: {{reason}}",
+    "retryFailed_one": "Retry failed mod",
+    "retryFailed_other": "Retry {{count}} failed mods",
     "summary": "{{restored}} of {{total}} mods restored.",
     "summaryMissing_one": "{{count}} mod was already gone from disk.",
     "summaryMissing_other": "{{count}} mods were already gone from disk.",
@@ -3718,6 +3750,8 @@
     "phase": {
       "idle": "Ready",
       "snapshot": "Recording installed mods...",
+      "backingUp": "Backing up your addons folder...",
+      "backupFailed": "Backup failed",
       "purging": "Removing mod files...",
       "clearingCache": "Clearing download cache...",
       "clearingState": "Clearing mod state...",

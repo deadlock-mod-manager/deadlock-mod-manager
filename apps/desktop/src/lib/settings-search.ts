@@ -336,10 +336,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
         descriptionKey: "settings.clearAllModsDescription",
       },
       {
-        titleKey: "nuke.title",
-        descriptionKey: "nuke.description",
-      },
-      {
         titleKey: "settings.dangerZone",
         descriptionKey: "settings.dangerZoneDescription",
       },

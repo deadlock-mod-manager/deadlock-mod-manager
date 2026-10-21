@@ -8,7 +8,7 @@ import { getErrorMessage } from "@/lib/errors";
 import { createLogger } from "@/lib/logger";
 import { isLocalMod } from "@/lib/mods/installed-helpers";
 import { usePersistedStore } from "@/lib/store";
-import { ModStatus } from "@/types/mods";
+import { type LocalMod, ModStatus } from "@/types/mods";
 import { invokeGuarded, isGameRunningError } from "@/lib/game-guard";
 
 const logger = createLogger("nuke-reinstall");
@@ -16,6 +16,9 @@ const logger = createLogger("nuke-reinstall");
 export type NukePhase =
   | "idle"
   | "snapshot"
+  | "backingUp"
+  /** The safety backup failed, so the run stopped before deleting anything. */
+  | "backupFailed"
   | "purging"
   | "clearingCache"
   | "clearingState"
@@ -75,6 +78,8 @@ const INITIAL_STATE: NukeState = {
 export const useNukeReinstall = () => {
   const [state, setState] = useState<NukeState>(INITIAL_STATE);
   const cancelRef = useRef(false);
+  /** The pre-nuke records, kept so failed mods can be retried after the run. */
+  const targetsRef = useRef<LocalMod[]>([]);
   const { reinstallMod } = useReinstallMod();
 
   const patchMod = useCallback(
@@ -96,8 +101,60 @@ export const useNukeReinstall = () => {
 
   const reset = useCallback(() => {
     cancelRef.current = false;
+    targetsRef.current = [];
     setState(INITIAL_STATE);
   }, []);
+
+  /**
+   * Downloads and installs each target in order. Progress runs from
+   * `startUnits` to `totalUnits`, two units (download, install) per mod.
+   */
+  const reinstallTargets = useCallback(
+    async (targets: LocalMod[], startUnits: number, totalUnits: number) => {
+      const setProgress = (units: number, fraction = 0) => {
+        setState((current) => ({
+          ...current,
+          progress: Math.min(100, ((units + fraction) / totalUnits) * 100),
+        }));
+      };
+
+      setState((current) => ({ ...current, phase: "reinstalling" }));
+      for (const [index, mod] of targets.entries()) {
+        if (cancelRef.current) {
+          logger.info("Nuke & reinstall cancelled by user");
+          break;
+        }
+
+        setState((current) => ({ ...current, currentMod: mod.name }));
+        patchMod(mod.remoteId, { outcome: "pending", error: undefined });
+        const modUnits = startUnits + index * 2;
+
+        const result = await reinstallMod(mod, {
+          // Files were wiped by the purge phase, or never landed on a retry.
+          skipPurge: true,
+          onStep: (step) => {
+            if (step === "purging") {
+              return;
+            }
+            patchMod(mod.remoteId, { outcome: step });
+            // The download unit is done once installing starts.
+            setProgress(modUnits + (step === "installing" ? 1 : 0));
+          },
+          onDownloadProgress: (fraction) => setProgress(modUnits, fraction),
+        });
+
+        // Both units are settled for this mod, however it turned out.
+        setProgress(modUnits + 2);
+        patchMod(mod.remoteId, {
+          outcome: result.outcome,
+          error: result.error,
+        });
+      }
+
+      setState((current) => ({ ...current, progress: 100 }));
+    },
+    [reinstallMod, patchMod],
+  );
 
   const run = useCallback(async () => {
     try {
@@ -113,6 +170,7 @@ export const useNukeReinstall = () => {
       const targets = snapshot
         .filter((mod) => !isLocalMod(mod))
         .sort((a, b) => (a.installOrder ?? 0) - (b.installOrder ?? 0));
+      targetsRef.current = targets;
 
       cancelRef.current = false;
       setState({
@@ -136,8 +194,8 @@ export const useNukeReinstall = () => {
         })
         .info("Starting nuke & reinstall");
 
-      // purge + 2 cleanup steps + (download + install) per mod
-      const totalUnits = targets.length * 3 + 2;
+      // backup + purge + 2 cleanup steps + (download + install) per mod
+      const totalUnits = targets.length * 3 + 3;
       let completedUnits = 0;
       const setProgress = (fraction = 0) => {
         setState((current) => ({
@@ -148,6 +206,24 @@ export const useNukeReinstall = () => {
           ),
         }));
       };
+
+      // Everything after this deletes files, so a failed backup ends the run here.
+      setState((current) => ({ ...current, phase: "backingUp" }));
+      try {
+        await invoke("create_addons_backup", {
+          maxBackups: store.maxBackupCount,
+        });
+      } catch (error) {
+        logger.withError(error).error("Backup before nuke failed");
+        setState((current) => ({
+          ...current,
+          phase: "backupFailed",
+          error: getErrorMessage(error),
+        }));
+        return;
+      }
+      completedUnits += 1;
+      setProgress();
 
       let missingOnDisk = 0;
 
@@ -196,42 +272,7 @@ export const useNukeReinstall = () => {
       completedUnits += 1;
       setProgress();
 
-      setState((current) => ({ ...current, phase: "reinstalling" }));
-      const reinstallBase = completedUnits;
-      for (const [index, mod] of targets.entries()) {
-        if (cancelRef.current) {
-          logger.info("Nuke & reinstall cancelled by user");
-          break;
-        }
-
-        setState((current) => ({ ...current, currentMod: mod.name }));
-
-        const result = await reinstallMod(mod, {
-          // The purge phase above already wiped every file.
-          skipPurge: true,
-          onStep: (step) => {
-            if (step === "purging") {
-              return;
-            }
-            patchMod(mod.remoteId, { outcome: step });
-            // The download unit is done once installing starts.
-            completedUnits =
-              reinstallBase + index * 2 + (step === "installing" ? 1 : 0);
-            setProgress();
-          },
-          onDownloadProgress: setProgress,
-        });
-
-        // Both units are settled for this mod, however it turned out.
-        completedUnits = reinstallBase + (index + 1) * 2;
-        setProgress();
-        patchMod(mod.remoteId, {
-          outcome: result.outcome,
-          error: result.error,
-        });
-      }
-
-      setState((current) => ({ ...current, progress: 100 }));
+      await reinstallTargets(targets, completedUnits, totalUnits);
 
       logger.info("Nuke & reinstall finished");
     } catch (error) {
@@ -245,12 +286,59 @@ export const useNukeReinstall = () => {
       // Whatever went wrong, the dialog must never stay stuck on "running".
       setState((current) => ({
         ...current,
+        phase:
+          current.phase === "failed" || current.phase === "backupFailed"
+            ? current.phase
+            : "done",
+        currentMod: null,
+        isRunning: false,
+      }));
+    }
+  }, [reinstallTargets]);
+
+  const retryFailed = useCallback(async () => {
+    const failedIds = new Set(
+      state.mods
+        .filter((entry) => entry.outcome === "failed")
+        .map((entry) => entry.remoteId),
+    );
+    const targets = targetsRef.current.filter((mod) =>
+      failedIds.has(mod.remoteId),
+    );
+    if (targets.length === 0) {
+      return;
+    }
+
+    cancelRef.current = false;
+    setState((current) => ({
+      ...current,
+      isRunning: true,
+      cancelRequested: false,
+      progress: 0,
+      error: undefined,
+    }));
+    logger
+      .withMetadata({ count: targets.length })
+      .info("Retrying failed nuke reinstalls");
+
+    try {
+      await reinstallTargets(targets, 0, targets.length * 2);
+    } catch (error) {
+      logger.withError(error).error("Retrying failed reinstalls failed");
+      setState((current) => ({
+        ...current,
+        phase: "failed",
+        error: getErrorMessage(error),
+      }));
+    } finally {
+      setState((current) => ({
+        ...current,
         phase: current.phase === "failed" ? "failed" : "done",
         currentMod: null,
         isRunning: false,
       }));
     }
-  }, [reinstallMod, patchMod]);
+  }, [state.mods, reinstallTargets]);
 
-  return { state, run, reset, requestCancel };
+  return { state, run, reset, requestCancel, retryFailed };
 };

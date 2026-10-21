@@ -8,6 +8,7 @@ import { getModsStorePath } from "@/lib/download-cache";
 import { downloadManager } from "@/lib/download/manager";
 import { DownloadAlreadyQueuedError } from "@/lib/download/queue";
 import { getErrorMessage } from "@/lib/errors";
+import { requiresFileSelection } from "@/lib/mods/mod-variants";
 import { createLogger } from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import {
@@ -267,7 +268,8 @@ const restore = async (
     }
   }
 
-  if (fileTree?.has_multiple_files) {
+  // One VPK per selected download is not a choice: install takes them all.
+  if (fileTree && requiresFileSelection(fileTree)) {
     const selection = restoreSelection(fileTree, snapshot);
     if (!selection) {
       return { outcome: "manual" };
