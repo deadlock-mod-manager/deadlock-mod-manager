@@ -6463,5 +6463,13 @@
       "title": "",
       "body": ""
     }
+  },
+  "configListing": {
+    "open": "",
+    "tooltip": "",
+    "confirmed": "",
+    "likely": "",
+    "noFiles": "",
+    "openFailed": ""
   }
 }

@@ -33,6 +33,7 @@ import { ModPageSkeleton } from "@/components/mod-detail/mod-page-skeleton";
 import { ModOptionsDialog } from "@/components/mod-management/mod-options-dialog";
 import { ModHealthAlert } from "@/components/mod-health/mod-health-alert";
 import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-warning";
+import { ConfigListingNotice } from "@/components/mod-browsing/config-listing";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
 import { ReinstallModButton } from "@/components/mod-management/reinstall-mod-button";
 import { StaleModWarning } from "@/components/mod-management/stale-mod-warning";
@@ -40,6 +41,7 @@ import { BatchUpdateDialog } from "@/components/my-mods/batch-update-dialog";
 import { UpdateButton } from "@/components/my-mods/update-button";
 import { BrokenModButton } from "@/components/reports/report-button";
 import ErrorBoundary from "@/components/shared/error-boundary";
+import { useConfigListing } from "@/hooks/performance/use-config-listing";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
 import { useMod } from "@/hooks/use-mod";
 import { useModDetailNavigation } from "@/hooks/use-mod-detail-navigation";
@@ -88,6 +90,7 @@ const Mod = () => {
   });
 
   const isGameBananaMod = !!params.id && !params.id.includes("local");
+  const configListingKind = useConfigListing(mod);
   const { availableFiles } = useModDownloads({
     remoteId: params.id,
     isDownloadable: mod?.downloadable,
@@ -278,6 +281,14 @@ const Mod = () => {
           {mod.isObsolete && (
             <div className='mb-4'>
               <ObsoleteModWarning variant='alert' />
+            </div>
+          )}
+          {configListingKind && isGameBananaMod && (
+            <div className='mb-4'>
+              <ConfigListingNotice
+                listing={configListingKind}
+                remoteId={mod.remoteId}
+              />
             </div>
           )}
           {showsDateOutdatedWarning(isModOutdated(mod), health) &&
