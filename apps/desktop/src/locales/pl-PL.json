@@ -4047,11 +4047,11 @@
     "recentlyadded": ""
   },
   "timePeriod": {
-    "alltime": "Wszystkie",
-    "pastweek": "Ostatni tydzień",
-    "pastmonth": "Ostatni miesiąc",
-    "past3months": "Ostatnie 3 miesiące",
-    "pastyear": "Ostatni rok"
+    "alltime": "",
+    "pastweek": "",
+    "pastmonth": "",
+    "past3months": "",
+    "pastyear": ""
   },
   "addMods": {
     "title": "Dodaj mody",
