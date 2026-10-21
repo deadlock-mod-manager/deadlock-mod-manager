@@ -308,7 +308,7 @@ const ImportDialogBody = ({
   const clearReview = () => {
     setLastReport(null);
     setCameraIncluded(true);
-    setIncludeEngineSections(false);
+    setIncludeEngineSections(true);
     setName("");
     nameEdited.current = false;
   };
