@@ -1,5 +1,12 @@
 # @deadlock-mods/auth
 
+## 1.1.6
+
+### Patch Changes
+
+- Updated dependencies [7fbc30f]
+  - @deadlock-mods/shared@2.4.1
+
 ## 1.1.5
 
 ### Patch Changes

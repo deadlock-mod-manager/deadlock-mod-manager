@@ -4489,6 +4489,30 @@
       "other": "Other"
     },
     "versions": {
+      "2.1.0": {
+        "title": "Performance configs for everyone and browse by hero",
+        "features": [
+          "⚡ Performance configs are now on for everyone: pick a community config to trade visual detail for frame rate, applied the way its author wrote it",
+          "✨ Changes you made to gameinfo.gi yourself, or a config copied in from a mod, can be saved as a config so they come back after game updates",
+          "✨ Performance configs listed as mods on GameBanana now open in the Performance page",
+          "✨ Added OptiLock Ultra Potato, and presets are now grouped by how much they cut",
+          "✨ Browse mods by hero from the dashboard, or roll a random hero",
+          "✨ The dashboard features one mod per category, with previews for sound mods",
+          "✨ Launch options and autoexec commands the current game no longer has are marked Outdated",
+          "📁 Nuke & Reinstall moved to the Mods Library menu, backs up your mods first, and can retry the ones that failed",
+          "✨ Added Violet and Nurse Harrow ability slots and official hero cards",
+          "📥 Failed mod updates now show what went wrong and which mods were affected, and retry only those",
+          "🔧 Fixed mods going missing when a load order change was interrupted",
+          "🔧 You can now cancel an unfinished broken mod search and get your mods back",
+          "⚡ Seasonal theme animations stutter less and use less GPU",
+          "⚡ The Stats page loads faster when no start date is picked",
+          "🔧 The Live tab no longer shows the match scoreboard",
+          "🛡️ Privacy settings link to a page listing every service the app contacts",
+          "🐛 Fixed Discord Rich Presence on Linux Flatpak",
+          "🐛 Fixed Flatpak updates needing a second restart",
+          "🐛 Fixed finding Network Activity in settings search"
+        ]
+      },
       "2.0.0": {
         "title": "V2: Mod health, mod groups and a faster Mods Store",
         "features": [

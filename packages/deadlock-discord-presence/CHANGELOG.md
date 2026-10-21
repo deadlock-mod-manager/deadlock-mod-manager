@@ -1,5 +1,11 @@
 # @deadlock-mods/deadlock-discord-presence
 
+## 0.1.2
+
+### Patch Changes
+
+- 240c143: Add Violet and Nurse Harrow ability slots and official hero cards
+
 ## 0.1.1
 
 ### Patch Changes

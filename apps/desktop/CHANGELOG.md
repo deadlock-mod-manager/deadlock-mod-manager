@@ -1,5 +1,41 @@
 # desktop
 
+## 2.1.0
+
+### Minor Changes
+
+- f4f9c21: Feature one mod per category on the dashboard, with previews for sound mods
+- 6f4891a: Turn on Performance configs by default
+- 59b328f: Flag launch options and autoexec commands the current game build no longer has
+- 8a10da1: Offer to save gameinfo.gi edits made outside the mod manager as a config
+- 154ef2d: Move Nuke & Reinstall to the library menu with a backup and retries
+- c41e76b: Browse mods by hero from the dashboard, or roll a random hero
+
+### Patch Changes
+
+- 240c143: Add Violet and Nurse Harrow ability slots and official hero cards
+- 8f0f0c4: Fix Discord Rich Presence connections in Linux Flatpak builds
+- f83ecdc: Stop asking deadlock-api for all of history on the Stats page when no start date is picked.
+- ea4f5d2: Restore available mods and allow discarding an incomplete broken mod search
+- 0f679b5: Keep engine-section edits on when switching sources in the config import
+- 7fbc30f: Apply performance configs as written, including engine sections and dev tools
+- 7fbc30f: Keep Install for performance configs that also ship VPKs
+- bebea12: Reduce stutter and GPU load from the seasonal theme animations
+- 7f9681f: Show update failure details and affected mods, and retry only failed updates.
+- aa32737: Recover mods stranded by interrupted load-order changes before V2
+- 83a81d2: Remove the Live tab's match scoreboard, whose broadcast requests exhausted deadlock-api's global spectate quota.
+- 7fbc30f: Add /perfconfig to mark GameBanana uploads as performance configs
+- 1dbe9ca: Link privacy settings to a page listing every service the app contacts
+- 7fbc30f: Send performance configs listed as mods to the Performance page
+- 9c28ea8: Fix Flatpak updates requiring a second manual restart to take effect
+- 7fbc30f: Add OptiLock Ultra Potato and place performance presets by their tier
+- 8f0f0c4: Fix finding Network Activity in settings search
+- Updated dependencies [240c143]
+- Updated dependencies [7fbc30f]
+  - @deadlock-mods/deadlock-discord-presence@0.1.2
+  - @deadlock-mods/shared@2.4.1
+  - @deadlock-mods/crosshair@0.2.8
+
 ## 2.0.0
 
 ### Major Changes

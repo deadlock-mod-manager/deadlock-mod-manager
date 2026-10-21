@@ -1,5 +1,18 @@
 # @deadlock-mods/bot
 
+## 1.6.0
+
+### Minor Changes
+
+- 7fbc30f: Add /perfconfig to mark GameBanana uploads as performance configs
+- 6ad2a4b: Allow English moderation across all current and future server channels.
+
+### Patch Changes
+
+- 7fbc30f: Keep Install for performance configs that also ship VPKs
+- Updated dependencies [7fbc30f]
+  - @deadlock-mods/shared@2.4.1
+
 ## 1.5.1
 
 ### Patch Changes

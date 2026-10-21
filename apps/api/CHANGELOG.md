@@ -1,5 +1,17 @@
 # api
 
+## 3.6.1
+
+### Patch Changes
+
+- 88f5c8c: Treat stale GameBanana profiles as deferred syncs instead of errors, preserving retries without generating false error alerts.
+- Updated dependencies [7fbc30f]
+- Updated dependencies [7fbc30f]
+- Updated dependencies [7fbc30f]
+- Updated dependencies [7fbc30f]
+  - @deadlock-mods/perf-catalog@0.0.2
+  - @deadlock-mods/shared@2.4.1
+
 ## 3.6.0
 
 ### Minor Changes

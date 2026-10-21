@@ -1325,6 +1325,30 @@
     "gotIt": "知道了！",
     "title": "更新日誌",
     "versions": {
+      "2.1.0": {
+        "title": "",
+        "features": [
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          "",
+          ""
+        ]
+      },
       "2.0.0": {
         "title": "V2: Mods That Survive Updates, a Faster Store & Mod Conflicts",
         "features": [

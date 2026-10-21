@@ -1,5 +1,11 @@
 # @deadlock-mods/shared
 
+## 2.4.1
+
+### Patch Changes
+
+- 7fbc30f: Add /perfconfig to mark GameBanana uploads as performance configs
+
 ## 2.4.0
 
 ### Minor Changes
