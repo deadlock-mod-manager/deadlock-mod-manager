@@ -90,6 +90,15 @@ pub(super) fn variant_facts(catalog: &Catalog, parsed: &ParsedConfig) -> Variant
   }
 }
 
+/// What a full gameinfo.gi changes relative to its closest stock build, as an
+/// import of it would keep. Empty for anything that isn't a full file.
+pub(super) fn changes_from_stock(catalog: &Catalog, text: &str) -> Vec<ConfigEntry> {
+  match draft_from_text(catalog, text, Some("gameinfo.gi")) {
+    Ok(draft) if draft.format == ImportFormat::FullGameinfo => draft.entries,
+    _ => Vec::new(),
+  }
+}
+
 /// An import before it is resolved against the live file.
 #[derive(Debug)]
 struct Draft {

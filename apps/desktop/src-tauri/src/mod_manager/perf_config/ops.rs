@@ -6,12 +6,14 @@
 //! `GameConfigParse`: on the launch path that variant triggers a full reset to
 //! vanilla.
 
+use std::collections::HashSet;
 use std::fs;
 use std::io::{ErrorKind, Write};
 use std::path::{Path, PathBuf};
 
+use super::analyze;
 use super::catalog::Catalog;
-use super::live::LiveGameinfo;
+use super::live::{LiveGameinfo, path_key};
 use super::patch::{self, OverlayPlan};
 use super::resolve::{self, ResolveOptions};
 use super::types::{
@@ -59,6 +61,9 @@ pub fn status(ctx: &PerfContext) -> Result<PerfStatus, Error> {
     (Some(desired), None) => text.is_some() && desired.counts.applies == 0,
     _ => false,
   };
+  let unmanaged_changes = text.as_deref().map_or(0, |text| {
+    unmanaged_changes(ctx.catalog, text, desired.as_ref())
+  });
   Ok(PerfStatus {
     game_path_set: ctx.game_path.is_some(),
     gameinfo_found: text.is_some(),
@@ -66,8 +71,56 @@ pub fn status(ctx: &PerfContext) -> Result<PerfStatus, Error> {
     applied,
     in_sync,
     foreign,
+    unmanaged_changes,
     build_id: ctx.build_id.clone(),
   })
+}
+
+/// Changes from stock that neither we nor a marked tool made and that a config
+/// saved from the file would keep, leaving out keys the chosen config sets.
+fn unmanaged_changes(catalog: &Catalog, text: &str, desired: Option<&DesiredOverlay>) -> u32 {
+  let Ok(live) = LiveGameinfo::parse(text) else {
+    return 0;
+  };
+  let (unmarked, _) = patch::strip_foreign(&live.text);
+  let changes = analyze::changes_from_stock(catalog, &unmarked);
+  if changes.is_empty() {
+    return 0;
+  }
+  let covered: HashSet<String> = desired
+    .and_then(|desired| {
+      let request = &desired.request;
+      let entries = resolve::entries_for_source(catalog, &request.source).ok()?;
+      let resolved = resolve::resolve(catalog, &entries, &live, &resolve_options(request));
+      Some(
+        resolved
+          .entries
+          .iter()
+          .map(|entry| path_key(&entry.path))
+          .collect(),
+      )
+    })
+    .unwrap_or_default();
+  let kept = resolve::resolve(
+    catalog,
+    &changes,
+    &live,
+    &ResolveOptions {
+      overrides: &[],
+      include_engine_sections: true,
+    },
+  );
+  kept
+    .entries
+    .iter()
+    .filter(|entry| {
+      matches!(
+        entry.status,
+        EntryStatus::Applies | EntryStatus::Unchanged | EntryStatus::EngineSection
+      )
+    })
+    .filter(|entry| !covered.contains(&path_key(&entry.path)))
+    .count() as u32
 }
 
 /// What applying `request` would write, without writing it.

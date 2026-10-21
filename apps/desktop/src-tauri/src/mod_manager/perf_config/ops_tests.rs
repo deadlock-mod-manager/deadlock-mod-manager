@@ -4,8 +4,10 @@ use tempfile::TempDir;
 
 use super::*;
 use crate::mod_manager::perf_config::catalog::cache_dir;
-use crate::mod_manager::perf_config::patch::test_support::{CURRENT_STOCK, fixture, test_catalog};
-use crate::mod_manager::perf_config::types::{ForeignTool, PerfConfigSource};
+use crate::mod_manager::perf_config::patch::test_support::{
+  CURRENT_STOCK, OPTILOCK, fixture, test_catalog,
+};
+use crate::mod_manager::perf_config::types::{ForeignTool, PerfConfigDefinition, PerfConfigSource};
 
 struct Setup {
   _game_dir: TempDir,
@@ -444,6 +446,33 @@ fn status_without_a_game_folder() {
   assert!(!status.game_path_set && !status.gameinfo_found);
   assert_eq!(status.applied, None);
   assert!(!status.in_sync);
+}
+
+#[test]
+fn unmanaged_changes_count_until_a_config_covers_them() {
+  let stock = Setup::new(&fixture(CURRENT_STOCK));
+  apply(&stock.ctx(), preset_request("synthetic"), false).expect("apply");
+  assert_eq!(status(&stock.ctx()).expect("status").unmanaged_changes, 0);
+
+  let setup = Setup::new(&fixture(OPTILOCK));
+  assert!(status(&setup.ctx()).expect("status").unmanaged_changes > 0);
+
+  let entries = analyze::changes_from_stock(&setup.catalog, &setup.gameinfo());
+  let request = PerfApplyRequest {
+    config_id: "user:mine".to_string(),
+    name: "My gameinfo.gi".to_string(),
+    source: PerfConfigSource::Inline {
+      definition: PerfConfigDefinition {
+        id: "mine".to_string(),
+        name: "My gameinfo.gi".to_string(),
+        entries,
+      },
+    },
+    overrides: Vec::new(),
+    include_engine_sections: true,
+  };
+  let applied = apply(&setup.ctx(), request, false).expect("apply");
+  assert_eq!(applied.status.unmanaged_changes, 0);
 }
 
 #[test]

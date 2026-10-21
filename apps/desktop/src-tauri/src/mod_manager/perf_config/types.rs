@@ -469,6 +469,9 @@ pub struct PerfStatus {
   /// The file carries exactly the desired overlay.
   pub in_sync: bool,
   pub foreign: Vec<ForeignOverlay>,
+  /// Changes from stock gameinfo.gi that no config or known tool made (hand
+  /// edits, a copied-in file), minus keys the chosen config covers.
+  pub unmanaged_changes: u32,
   pub build_id: Option<String>,
 }
 

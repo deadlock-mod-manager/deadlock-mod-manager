@@ -410,6 +410,27 @@ const OrphanedOverlayNotice = ({ name }: { name: string }) => {
   );
 };
 
+/** Edits no config or known tool made, offered as a config of their own. */
+const UnmanagedChangesNotice = ({ count }: { count: number }) => {
+  const { t } = useTranslation();
+  const { openImport } = usePerformanceUi();
+  if (count === 0) return null;
+  return (
+    <Alert className='py-2'>
+      <InfoIcon className='size-4 shrink-0 text-muted-foreground' />
+      <p className='min-w-0 flex-1 text-muted-foreground'>
+        {t("performance.activeStatus.unmanaged", { count })}
+      </p>
+      <Button
+        onClick={() => openImport({ kind: "currentGameinfo" })}
+        size='sm'
+        variant='outline'>
+        {t("performance.activeStatus.saveUnmanaged")}
+      </Button>
+    </Alert>
+  );
+};
+
 /** The game updated past the catalog's convar list; it catches up with the next catalog update. */
 export const CatalogBehindNotice = () => {
   const { t } = useTranslation();
@@ -465,7 +486,14 @@ export const ActiveConfigStatus = () => {
       />
     );
   }
-  if (!desired) return <EmptyStrip foreign={status.foreign} />;
+  if (!desired) {
+    return (
+      <div className='flex flex-col gap-3'>
+        <EmptyStrip foreign={status.foreign} />
+        <UnmanagedChangesNotice count={status.unmanagedChanges} />
+      </div>
+    );
+  }
 
   const tier =
     activeItem?.tier ??
@@ -481,6 +509,7 @@ export const ActiveConfigStatus = () => {
       />
       <SyncNotice desired={desired} status={status} />
       <ForeignOverlayNotices desired={desired} foreign={status.foreign} />
+      <UnmanagedChangesNotice count={status.unmanagedChanges} />
     </div>
   );
 };

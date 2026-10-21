@@ -13,5 +13,10 @@ export type PerfStatus = {
    */
   inSync: boolean;
   foreign: Array<ForeignOverlay>;
+  /**
+   * Changes from stock gameinfo.gi that no config or known tool made (hand
+   * edits, a copied-in file), minus keys the chosen config covers.
+   */
+  unmanagedChanges: number;
   buildId: string | null;
 };

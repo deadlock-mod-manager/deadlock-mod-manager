@@ -638,7 +638,10 @@
       "foreignReplaced_one": "Removed the lines another tool marked in gameinfo.gi. Its unmarked edits stay",
       "foreignReplaced_other": "Removed the lines {{count}} other tools marked in gameinfo.gi. Their unmarked edits stay",
       "orphaned": "gameinfo.gi still has a performance config from the mod manager ({{name}}), but none is selected.",
-      "removeOrphaned": "Remove it"
+      "removeOrphaned": "Remove it",
+      "unmanaged_one": "gameinfo.gi has {{count}} setting changed from stock that no config here made, such as a hand edit or a file copied in from a mod. Save it as a config to keep it across game updates.",
+      "unmanaged_other": "gameinfo.gi has {{count}} settings changed from stock that no config here made, such as hand edits or a file copied in from a mod. Save them as a config to keep them across game updates.",
+      "saveUnmanaged": "Save as config"
     },
     "foreignTools": {
       "grimoire": "Grimoire",
