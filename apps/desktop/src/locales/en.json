@@ -954,15 +954,14 @@
       "allTime": "All time",
       "about": "About stats filters",
       "reset": "Reset",
-      "hint": "Standard ranked and unranked matches only. History widgets, hero and item performance, and their global comparisons use these filters. Squad, Live, and widgets with their own API queries keep their own scope.",
+      "hint": "Standard ranked and unranked matches only. History widgets, hero and item performance, and their global comparisons use these filters. Squad and widgets with their own API queries keep their own scope.",
       "squad": "Squad uses its own available match history. Match mode and date filters do not apply here."
     },
     "tabs": {
       "overview": "Overview",
       "heroes": "Heroes",
       "items": "Items",
-      "squad": "Squad",
-      "live": "Live"
+      "squad": "Squad"
     },
     "items": {
       "item": "Item",
@@ -978,48 +977,10 @@
       "loading": "Loading item statistics…",
       "empty": "No item statistics for this account yet."
     },
-    "live": {
-      "condebugTitle": "Console log is off",
-      "condebugDescription": "The live scoreboard reads your current match from the game's console log, which Deadlock only writes with the -condebug launch option. Turn it on, then restart the game.",
-      "openSettings": "Open launch options",
-      "queuedTitle": "Searching for a match",
-      "queuedDescription": "You are in the queue. As soon as the lobby is formed, everyone in it shows up here.",
-      "queuedBadge": "In queue",
-      "waitingTitle": "No match running",
-      "waitingDescription": "Start a Deadlock match and this fills up with everyone in your lobby. The match is read from the game's console log, so nothing needs to be typed in.",
-      "checkNow": "Check now",
-      "checking": "Checking…",
-      "matchId": "Match {{id}}",
-      "lastMatch": "Your last match",
-      "resolving": "Requesting the live broadcast…",
-      "connecting": "Waiting for the first ticks…",
-      "broadcastError": "Could not open the live broadcast. deadlock-api allows two spectate requests per hour. Try again in a bit.",
-      "streamError": "The live broadcast closed before sending a scoreboard. Use \"Check now\" once the match is running again.",
-      "status": {
-        "connecting": "Connecting",
-        "streaming": "Live",
-        "ended": "Match over",
-        "error": "Disconnected"
-      },
-      "sapphire": "Sapphire",
-      "amber": "Amber",
-      "you": "You",
-      "mostSouls": "Most souls",
-      "mostKills": "Most kills",
-      "soulLead": "Soul lead",
-      "soulLeadTitle": "Soul lead",
-      "soulLeadDescription": "Sapphire minus Amber over the course of the match",
-      "killsTitle": "Kills",
-      "killsDescription": "Team kills as the match goes on"
-    },
     "player": {
-      "onHero": "{{matches}} matches on this hero at {{winrate}} winrate",
       "onHeroShort": "{{matches}} × this hero, {{winrate}}",
-      "firstTimeHero": "No tracked matches on this hero",
       "overallWinrate": "Overall winrate",
       "overallKda": "Overall KDA",
-      "netWorth": "Net worth right now",
-      "netWorthHint": "In the current match",
       "mostPlayed": "Most played heroes",
       "mostPlayedDescription": "Winrate on the heroes they pick most; the line marks even odds",
       "lastN": "Last {{count}} matches",
@@ -1034,7 +995,6 @@
       "openMatch": "Open match {{id}}",
       "matchHistory": "Recent matches",
       "noMatchHistory": "No match history is available for this player.",
-      "reviewHero": "Games on {{hero}}",
       "noHeroMatches": "No tracked matches on {{hero}} yet.",
       "showAllMatches": "Show all matches",
       "heroRunSummary_one": "{{count}} match, {{winrate}} winrate, {{kda}} KDA",
@@ -1296,7 +1256,6 @@
         "heroes": "Heroes",
         "items": "Items",
         "squad": "Squad",
-        "live": "Live",
         "performance": "Performance",
         "habits": "Habits",
         "ranked": "Ranked",
@@ -1544,10 +1503,6 @@
         "squad": {
           "title": "Squad",
           "description": "Winrate with your mates, and the players who beat you most."
-        },
-        "live": {
-          "title": "Live match",
-          "description": "The scoreboard of the match you are playing right now. Works without an account."
         }
       },
       "presets": {
@@ -3671,7 +3626,7 @@
       },
       "player-stats": {
         "title": "Player Stats",
-        "description": "Show the Stats page and follow live matches in the background."
+        "description": "Show the Stats page."
       },
       "profile-management": {
         "title": "Profile Management",

@@ -263,8 +263,8 @@ const Stats = () => {
 
         {/* Account and tabs share one pinned row - the tabs are the page's
             primary navigation and shouldn't cost a band of their own. Without a
-            detected account the live tab still works, so the switcher stands on
-            its own. */}
+            detected account the global widgets still work, so the switcher
+            stands on its own. */}
         <div className='flex shrink-0 flex-col gap-3 px-4 pr-2 pt-4 pb-4'>
           {hasAccount ? (
             <StatsHeader

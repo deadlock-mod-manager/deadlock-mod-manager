@@ -54,6 +54,25 @@ describe("dashboard layout", () => {
     expect(parseLayout(future).recovered).toBe(false);
   });
 
+  it("drops the retired live panel and the tab that only held it", () => {
+    const panel = (id: string, name: string): DashboardWidget => ({
+      ...widget(id),
+      source: { kind: "panel", panel: name },
+    });
+    const saved = structuredClone(layout);
+    saved.tabs[0]?.widgets.push(panel("4", "live"));
+    saved.tabs.push({
+      id: "live",
+      title: null,
+      icon: "radio",
+      widgets: [panel("live-scoreboard", "live")],
+    });
+    const { layout: parsed, recovered } = parseLayout(saved);
+    expect(recovered).toBe(false);
+    expect(parsed.tabs.map((tab) => tab.id)).toEqual(["a", "b"]);
+    expect(ids(parsed, "a")).toEqual(["1", "2", "3"]);
+  });
+
   it("moves a widget onto another widget's slot", () => {
     expect(ids(reorderWidget(layout, "a", "3", "1"), "a")).toEqual([
       "3",

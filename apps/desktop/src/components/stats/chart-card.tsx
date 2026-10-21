@@ -37,20 +37,3 @@ export const ChartCard = ({
     <CardContent>{children}</CardContent>
   </Card>
 );
-
-/** Legend key: a coloured mark beside text ink, never coloured text. */
-export const LegendKey = ({
-  color,
-  label,
-}: {
-  color: string;
-  label: string;
-}) => (
-  <span className='flex items-center gap-1.5 text-muted-foreground text-xs'>
-    <span
-      className='h-0.5 w-3 rounded-full'
-      style={{ backgroundColor: color }}
-    />
-    {label}
-  </span>
-);

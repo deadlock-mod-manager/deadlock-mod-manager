@@ -231,12 +231,6 @@ export const DEFAULT_LAYOUT: DashboardLayout = {
       icon: "users",
       widgets: [panel("squad-explorer", "squad")],
     },
-    {
-      id: "live",
-      title: null,
-      icon: "radio",
-      widgets: [panel("live-scoreboard", "live")],
-    },
   ],
 };
 
@@ -257,8 +251,29 @@ export const parseLayout = (stored: DashboardLayout | null) => {
   }
   const parsed = layoutSchema.safeParse(stored);
   return parsed.success
-    ? { layout: parsed.data, recovered: false }
+    ? { layout: dropRetiredPanels(parsed.data), recovered: false }
     : { layout: DEFAULT_LAYOUT, recovered: true };
+};
+
+/** Panels the app no longer has. Saved layouts lose them instead of showing them broken. */
+const RETIRED_PANELS: ReadonlySet<string> = new Set(["live"]);
+
+const isRetired = (widget: DashboardWidget) =>
+  widget.source.kind === "panel" && RETIRED_PANELS.has(widget.source.panel);
+
+/**
+ * Drops retired panels, and the tabs that held nothing else. The layout is the
+ * parser's fresh copy, so its tabs are edited in place.
+ */
+const dropRetiredPanels = (layout: DashboardLayout): DashboardLayout => {
+  const tabs = layout.tabs
+    .filter((tab) => tab.widgets.length === 0 || !tab.widgets.every(isRetired))
+    .map((tab) =>
+      Object.assign(tab, {
+        widgets: tab.widgets.filter((widget) => !isRetired(widget)),
+      }),
+    );
+  return tabs.length > 0 ? { ...layout, tabs } : DEFAULT_LAYOUT;
 };
 
 const mapTab = (

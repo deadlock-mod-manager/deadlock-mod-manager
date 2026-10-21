@@ -34,13 +34,13 @@ import {
   benchmarkDeltas,
   generateInsights,
   heroPerformance,
+  heroStatsByAccount,
   joinItemStats,
   joinMateStats,
   localOnlyMatches,
   mergeHeroStats,
   mergeLocalMatches,
 } from "@/lib/stats/derive";
-import { heroStatsByAccount } from "@/lib/stats/live-players";
 import { playerFromMatch } from "@/lib/stats/match-detail";
 import {
   ALL_STATS_SCOPE,

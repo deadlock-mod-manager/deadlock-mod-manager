@@ -66,7 +66,7 @@ const apiBaseUrl = (): string => runtimeServiceOrigin("deadlockApi", BASE_URL);
  * the client has to send. Requests for a prioritized account get the better data
  * on their own, so the app never asks for one.
  */
-export const API_HEADERS = {
+const API_HEADERS = {
   Accept: "application/json",
 } as const;
 
@@ -119,7 +119,7 @@ export const getMatchMetadata = (matchId: number) =>
     matchMetadataSchema,
   );
 
-/** Takes a whole lobby at once, so the live scoreboard costs a single request. */
+/** Takes several accounts at once, so the squad view costs a single request. */
 export const getPlayerHeroStats = (
   accountIds: number | number[],
   scope?: StatsScope,

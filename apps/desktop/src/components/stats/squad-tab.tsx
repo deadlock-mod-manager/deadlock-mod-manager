@@ -46,7 +46,7 @@ interface SquadTabProps {
   rankAssets: RankAsset[];
 }
 
-/** Opens the same player card the live scoreboard uses. */
+/** Opens the player card of a mate or an enemy. */
 const PlayerCell = ({
   accountId,
   profile,

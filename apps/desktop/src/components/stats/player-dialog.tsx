@@ -3,7 +3,6 @@ import {
   AvatarFallback,
   AvatarImage,
 } from "@deadlock-mods/ui/components/avatar";
-import { Badge } from "@deadlock-mods/ui/components/badge";
 import {
   Dialog,
   DialogContent,
@@ -16,10 +15,9 @@ import {
   TabsList,
   TabsTrigger,
 } from "@deadlock-mods/ui/components/tabs";
-import { ChevronRight, History } from "@deadlock-mods/ui/icons";
+import { ChevronRight } from "@deadlock-mods/ui/icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { HeroAvatar } from "@/components/stats/hero-avatar";
 import { HeroDeepDive } from "@/components/stats/hero-deep-dive";
 import { PlayerCareerOverview } from "@/components/stats/player-career-overview";
 import { PlayerMatchExplorer } from "@/components/stats/player-match-explorer";
@@ -31,8 +29,6 @@ import {
   resolveRank,
   type SteamProfile,
 } from "@/lib/stats/api";
-import { formatPercent } from "@/lib/stats/format";
-import type { LivePlayer } from "@/lib/stats/live";
 import { rankProgress } from "@/lib/stats/rank";
 
 interface PlayerDialogProps {
@@ -43,14 +39,12 @@ interface PlayerDialogProps {
   rankAssets: RankAsset[];
   seed?: PlayerCardSeed;
   onOpenChange: (open: boolean) => void;
-  /** The scoreboard row when opened from a running match. */
-  live?: LivePlayer | null;
 }
 
 type DialogTab = "overview" | "matches";
 /**
  * Every bit of card state, tagged with whose card it is. The dialog stays mounted
- * between players - the live tab keeps it around and swaps the account - so state
+ * between players - the squad tab keeps it around and swaps the account - so state
  * held loose would follow one player's card into the next one's.
  */
 type DialogView = {
@@ -81,7 +75,6 @@ export const PlayerDialog = ({
   rankAssets,
   seed,
   onOpenChange,
-  live,
 }: PlayerDialogProps) => {
   const { t } = useTranslation();
   const card = usePlayerCard(accountId, seed);
@@ -95,10 +88,6 @@ export const PlayerDialog = ({
     setView({ ...activeView, ...patch });
   const badge = resolveRank(card.rank?.badge, rankAssets);
   const progress = rankProgress(card.rank ?? null);
-  const hero = live ? heroesById.get(live.heroId) : undefined;
-  const onCurrentHero = live
-    ? card.heroStats.find((entry) => entry.hero_id === live.heroId)
-    : undefined;
   const selectedMatchId =
     activeView.matchId ?? card.matches[0]?.match_id ?? null;
 
@@ -186,48 +175,6 @@ export const PlayerDialog = ({
             </DialogTitle>
           </DialogHeader>
 
-          {live && (
-            <div className='mx-5 mb-4 flex shrink-0 flex-wrap items-center gap-3 rounded-md border bg-muted/20 p-3'>
-              <HeroAvatar
-                className='h-10 w-10'
-                hero={hero}
-                heroId={live.heroId}
-              />
-              <div className='min-w-0 flex-1'>
-                <div className='font-medium text-sm'>
-                  {hero?.name ?? `#${live.heroId}`}
-                </div>
-                <div className='text-muted-foreground text-xs'>
-                  {onCurrentHero
-                    ? t("stats.player.onHero", {
-                        matches: onCurrentHero.matches_played,
-                        winrate: formatPercent(
-                          onCurrentHero.wins / onCurrentHero.matches_played,
-                          0,
-                        ),
-                      })
-                    : t("stats.player.firstTimeHero")}
-                </div>
-              </div>
-              {/* The whole point of the live card: they are on a hero right now,
-                  and their own games on it are the best read on what comes next. */}
-              {onCurrentHero && (
-                <button
-                  className='flex shrink-0 items-center gap-1.5 rounded-md border px-2.5 py-1.5 font-medium text-xs transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
-                  onClick={() => focusHero(live.heroId)}
-                  type='button'>
-                  <History className='h-3.5 w-3.5' aria-hidden />
-                  {t("stats.player.reviewHero", {
-                    hero: hero?.name ?? `#${live.heroId}`,
-                  })}
-                </button>
-              )}
-              <Badge className='shrink-0' variant='secondary'>
-                {live.kills}/{live.deaths}/{live.assists}
-              </Badge>
-            </div>
-          )}
-
           <Tabs
             className='flex min-h-0 flex-1 flex-col'
             onValueChange={(value) =>
@@ -250,7 +197,6 @@ export const PlayerDialog = ({
                 heroesById={heroesById}
                 isHeroStatsPending={card.isHeroStatsPending}
                 isPending={card.isPending}
-                live={live}
                 matches={card.matches}
                 onSelectHero={(heroId) => update({ divedHero: heroId })}
                 onSelectMatch={selectMatch}

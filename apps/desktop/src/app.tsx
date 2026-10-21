@@ -13,7 +13,6 @@ import { LaunchHealthRenderer } from "./components/launch-health/launch-health-r
 import { ModHealthRenderer } from "./components/mod-health/mod-health-renderer";
 import { FoundryProvider } from "./components/foundry/foundry-context";
 import { GamePresenceRenderer } from "./components/game-presence-renderer";
-import { LiveMatchRenderer } from "./components/live-match-renderer";
 import { MatchSyncNoticeDialog } from "./components/match-sync/match-sync-notice-dialog";
 import { MatchSyncRenderer } from "./components/match-sync-renderer";
 import GlobalPluginRenderer from "./components/global-plugin-renderer";
@@ -208,7 +207,6 @@ const App = ({ runtime, storage }: AppProps) => {
                           {integrations?.matchSync !== "disabled" && (
                             <>
                               <MatchSyncRenderer />
-                              <LiveMatchRenderer />
                               <MatchSyncNoticeDialog />
                             </>
                           )}
