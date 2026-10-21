@@ -19,7 +19,6 @@ import {
   formatDecimal,
   formatPercent,
 } from "@/lib/stats/format";
-import type { LivePlayer } from "@/lib/stats/live";
 import { cn } from "@/lib/utils";
 
 const FORM_WINDOW = 10;
@@ -70,7 +69,6 @@ interface PlayerCareerOverviewProps {
   heroesById: Map<number, DeadlockHero>;
   isPending: boolean;
   isHeroStatsPending: boolean;
-  live?: LivePlayer | null;
   onSelectMatch: (matchId: number) => void;
   onSelectHero: (heroId: number) => void;
 }
@@ -81,7 +79,6 @@ export const PlayerCareerOverview = ({
   heroesById,
   isPending,
   isHeroStatsPending,
-  live,
   onSelectMatch,
   onSelectHero,
 }: PlayerCareerOverviewProps) => {
@@ -141,19 +138,11 @@ export const PlayerCareerOverview = ({
             (totals.kills + totals.assists) / Math.max(totals.deaths, 1),
           )}
         />
-        {live ? (
-          <Metric
-            hint={t("stats.player.netWorthHint")}
-            label={t("stats.player.netWorth")}
-            value={formatCompact(live.netWorth)}
-          />
-        ) : (
-          <Metric
-            hint={t("stats.player.trackedMatchesHint")}
-            label={t("stats.player.trackedMatches")}
-            value={String(totals.matches)}
-          />
-        )}
+        <Metric
+          hint={t("stats.player.trackedMatchesHint")}
+          label={t("stats.player.trackedMatches")}
+          value={String(totals.matches)}
+        />
       </div>
 
       {isPending ? (

@@ -785,3 +785,19 @@ const fallbackInsights = (
 
   return fallbacks;
 };
+
+/** Splits a multi-account hero stats response per player. */
+export const heroStatsByAccount = (
+  heroStats: PlayerHeroStats[],
+): Map<number, PlayerHeroStats[]> => {
+  const byAccount = new Map<number, PlayerHeroStats[]>();
+  for (const entry of heroStats) {
+    const existing = byAccount.get(entry.account_id);
+    if (existing) {
+      existing.push(entry);
+    } else {
+      byAccount.set(entry.account_id, [entry]);
+    }
+  }
+  return byAccount;
+};

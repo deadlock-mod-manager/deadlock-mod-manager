@@ -6,7 +6,6 @@ import {
   Lightbulb,
   ListOrdered,
   Package,
-  Radio,
   Sword,
   Trophy,
   Users,
@@ -17,7 +16,6 @@ import { FormChart } from "@/components/stats/form-chart";
 import { HeroesTab } from "@/components/stats/heroes-tab";
 import { InsightList } from "@/components/stats/insight-list";
 import { ItemsTab } from "@/components/stats/items-tab";
-import { LiveTab } from "@/components/stats/live-tab";
 import { OverviewTiles } from "@/components/stats/overview-tiles";
 import { RankChart } from "@/components/stats/rank-chart";
 import { RecentMatches } from "@/components/stats/recent-matches";
@@ -42,7 +40,6 @@ export const PANEL_IDS = [
   "heroes",
   "items",
   "squad",
-  "live",
 ] as const;
 export type PanelId = (typeof PANEL_IDS)[number];
 
@@ -164,19 +161,6 @@ const PANELS = {
     needsAccount: true,
     needsHistory: true,
     render: () => <SquadPanel />,
-  },
-  live: {
-    icon: Radio,
-    // The live scoreboard reads the running game, so it works without an account.
-    needsAccount: false,
-    needsHistory: false,
-    render: ({ accountId, heroesById, rankAssets }) => (
-      <LiveTab
-        heroesById={heroesById}
-        ownAccountId={accountId}
-        rankAssets={rankAssets}
-      />
-    ),
   },
 } satisfies Record<PanelId, PanelDef>;
 
