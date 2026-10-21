@@ -961,8 +961,7 @@
       "overview": "概览",
       "heroes": "英雄",
       "items": "装备",
-      "squad": "阵容",
-      "live": "即时"
+      "squad": "阵容"
     },
     "items": {
       "item": "装备",
@@ -978,48 +977,10 @@
       "loading": "正在载入装备统计数据…",
       "empty": "此账户暂无装备统计数据。"
     },
-    "live": {
-      "condebugTitle": "控制台日志已关闭",
-      "condebugDescription": "实时记分板通过读取游戏控制台日志来获取当前比赛数据。Deadlock 仅在添加 -condebug 启动选项时才会写入该日志，请开启该选项并重启游戏。",
-      "openSettings": "打开启动设置",
-      "queuedTitle": "正在搜索比赛",
-      "queuedDescription": "你正在队列中。比赛大厅组建完成后，所有成员都会显示在这里。",
-      "queuedBadge": "排队中",
-      "waitingTitle": "暂无进行中的比赛",
-      "waitingDescription": "开始一场 Deadlock 比赛后，这里将显示你大厅中的所有玩家。比赛数据从游戏的控制台日志读取，无需手动输入任何内容。",
-      "checkNow": "立即检查",
-      "checking": "检查中…",
-      "matchId": "比赛 {{id}}",
-      "lastMatch": "你的上一场比赛",
-      "resolving": "正在请求实时数据…",
-      "connecting": "正在等待第一个 tick…",
-      "broadcastError": "",
-      "streamError": "实时数据流在传输记分板前中断了。比赛恢复后，请点击“立即检查”。",
-      "status": {
-        "connecting": "正在连接",
-        "streaming": "实时",
-        "ended": "比赛已结束",
-        "error": "连接已断开"
-      },
-      "sapphire": "源祖",
-      "amber": "隐王",
-      "you": "你",
-      "mostSouls": "最多魂魄",
-      "mostKills": "最多击杀",
-      "soulLead": "魂魄王",
-      "soulLeadTitle": "魂魄王",
-      "soulLeadDescription": "源祖 与 隐王 全场差值",
-      "killsTitle": "击杀",
-      "killsDescription": "团队击杀全场走势"
-    },
     "player": {
-      "onHero": "此英雄共 {{matches}} 场，胜率为 {{winrate}}",
       "onHeroShort": "",
-      "firstTimeHero": "此英雄暂无已追踪的比赛",
       "overallWinrate": "总体胜率",
       "overallKda": "总体 KDA",
-      "netWorth": "当前净资产",
-      "netWorthHint": "当前比赛",
       "mostPlayed": "最常使用的英雄",
       "mostPlayedDescription": "最常选用英雄的胜率；参考线代表均等胜率",
       "lastN": "最近 {{count}} 场比赛",
@@ -1034,7 +995,6 @@
       "openMatch": "打开比赛 {{id}}",
       "matchHistory": "最近的比赛",
       "noMatchHistory": "该玩家没有比赛历史记录。",
-      "reviewHero": "{{hero}} 的比赛",
       "noHeroMatches": "{{hero}} 暂无已追踪的比赛。",
       "showAllMatches": "显示所有比赛",
       "heroRunSummary_one": "",
@@ -1296,7 +1256,6 @@
         "heroes": "",
         "items": "",
         "squad": "",
-        "live": "",
         "performance": "",
         "habits": "",
         "ranked": "",
@@ -1542,10 +1501,6 @@
           "description": ""
         },
         "squad": {
-          "title": "",
-          "description": ""
-        },
-        "live": {
           "title": "",
           "description": ""
         }
@@ -3671,7 +3626,7 @@
       },
       "player-stats": {
         "title": "玩家统计",
-        "description": "显示统计页面，并在后台跟踪实时比赛。"
+        "description": ""
       },
       "profile-management": {
         "title": "配置文件管理",
