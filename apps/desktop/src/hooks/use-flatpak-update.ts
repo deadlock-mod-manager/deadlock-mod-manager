@@ -1,4 +1,3 @@
-import { relaunch } from "@tauri-apps/plugin-process";
 import { useMutation } from "@tanstack/react-query";
 import { updateFlatpak } from "@/lib/tauri-commands";
 import { createLogger } from "@/lib/logger";
@@ -12,10 +11,6 @@ export const useFlatpakUpdate = () => {
   } = useMutation({
     meta: { skipGlobalErrorHandler: true },
     mutationFn: (url: string) => updateFlatpak(url),
-    onSuccess: async () => {
-      logger.info("Flatpak update complete — relaunching");
-      await relaunch();
-    },
     onError: (err) => {
       const error = err instanceof Error ? err : new Error(String(err));
       logger.withError(error).error("Flatpak update failed");
