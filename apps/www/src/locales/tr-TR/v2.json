@@ -1,341 +1,341 @@
 {
   "meta": {
-    "title": "",
-    "description": ""
+    "title": "Deadlock Mod Manager V2’deki Yenilikler",
+    "description": "Deadlock Mod Manager V2 baştan geliştirildi: eski modları onaran sağlık kontrolleri, oyun güncellemelerinden sonra da çalışan modlar, bilgisayarınızda tutulan GameBanana kataloğu, çakışma tespiti, çökme kontrolü, bozuk mod bulucu, istatistikler ve yeni temalar."
   },
   "hero": {
-    "eyebrow": "",
-    "title": "",
-    "intro": "",
-    "download": "",
-    "changelog": ""
+    "eyebrow": "Deadlock Mod Manager 2.0",
+    "title": "Baştan geliştirildi",
+    "intro": "V2, oyun güncellemesiyle bozulan modları onarır ve iki mod aynı dosyaları değiştirdiğinde sizi uyarır. Oyun başlatılırken çökerse nelerin değiştiğini gösterir. Mod Mağazası artık GameBanana kataloğunun bilgisayarınızdaki kopyasında arama yapar.",
+    "download": "V2’yi indir",
+    "changelog": "Tüm değişiklik günlüğü"
   },
   "nav": {
-    "label": "",
-    "more": "",
-    "upgrade": "",
-    "fixes": ""
+    "label": "Bu sayfada",
+    "more": "Diğer yenilikler",
+    "upgrade": "V1’den yükseltme",
+    "fixes": "Hata düzeltmeleri"
   },
   "features": {
     "updates": {
-      "nav": "",
-      "title": "",
-      "body": "",
+      "nav": "Oyun güncellemeleri",
+      "title": "Güncellemelerden sonra modlarınız çalışmaya devam eder",
+      "body": "Uygulama açıkken bir Steam güncellemesi veya başka bir araç gameinfo.gi dosyasını yeniden yazarsa bunu algılar, etkin modlarınızdan kaçının yüklenmediğini söyler ve tek tıklamayla yeniden uygular.",
       "points": {
-        "layout": "",
-        "patchNotes": "",
-        "inGame": "",
-        "vanilla": ""
+        "layout": "Yeni eklenti klasörü düzeni eski 99 dosya sınırını kaldırır",
+        "patchNotes": "Valve’ın son yama notları Gösterge Panelinizde",
+        "inGame": "Bu ayarı kapatmadığınız sürece Deadlock çalışırken mod değişiklikleri engellenir",
+        "vanilla": "İsteğe bağlı: Oyun kapanınca modsuz duruma dönün; böylece Steam’den başlatıldığında modlar kullanılmaz"
       }
     },
     "health": {
-      "nav": "",
-      "title": "",
-      "body": "",
+      "nav": "Mod sağlığı",
+      "title": "Eski modları yeniden çalıştırın",
+      "body": "Her Deadlock yaması bazı modları bozar. V2, yüklediğiniz her modu bilgisayarınızdaki oyunla karşılaştırır ve uzun zaman önce çalışmayı bırakmış modlar dâhil, güncel yama için doğrulayabildiği sorunları onarır. Mod dosyalarınıza asla dokunmaz.",
       "points": {
-        "when": "",
-        "fix": "",
-        "undo": "",
-        "local": ""
+        "when": "Etkin ve devre dışı modlar için mod yüklediğinizde veya değiştirdiğinizde ve her oyun güncellemesinden sonra çalışır",
+        "fix": "Mod Kitaplığı’ndaki duyurudan tüm modları, mod sayfasından veya sağ tık menüsünden tek bir modu onarın ya da başlatma sırasında otomatik onarılmasını sağlayın",
+        "undo": "Düzeltmeler ayrı bir katmanda tutulur; Özgün dosyaları kullan seçeneği her modu geliştiricisinin yayımladığı hâline döndürür",
+        "local": "Her şey bilgisayarınızda çalışır ve tercihleriniz profil bazında kaydedilir"
       },
-      "repairsTitle": "",
+      "repairsTitle": "Neleri onarır",
       "repairs": {
         "camera": {
-          "title": "",
-          "body": ""
+          "title": "Kamera ve nişan",
+          "body": "Eski kahraman görünümlerindeki kamera ve nişan noktalarını güncel oyunun beklediği konuma taşır."
         },
         "animations": {
-          "title": "",
-          "body": ""
+          "title": "Animasyonlar ve hareket",
+          "body": "Animasyon bağlantılarını onarır; böylece kahramanlar kaymaz, donmaz veya animasyonları atlamaz."
         },
         "appearance": {
-          "title": "",
-          "body": ""
+          "title": "Renkler ve dokular",
+          "body": "Oyunla artık uyumlu olmayan ve yanlış renklerde görünen malzemeleri düzeltir."
         },
         "model": {
-          "title": "",
-          "body": ""
+          "title": "Model",
+          "body": "Modelleri oyunun artık aradığı konuma yönlendirir; böylece varsayılan görünüm yerine seçtiğiniz görünüm gösterilir."
         },
         "gameData": {
-          "title": "",
-          "body": ""
+          "title": "Yetenekler, istatistikler ve metinler",
+          "body": "Birden fazla mod aynı oyun verisini düzenlediğinde yetenek, istatistik ve metin değişikliklerini birleştirir."
         }
       },
-      "caveat": "",
+      "caveat": "Her sorunu tespit edemez. Özel iskelet veya animasyon içeren modların geliştiricileri tarafından güncellenmesi yine de gerekebilir.",
       "invite": {
-        "title": "",
-        "body": "",
-        "send": "",
-        "docs": ""
+        "title": "Çalıştırmaktan vazgeçtiğiniz bir mod mu var?",
+        "body": "Yükleyip kontrolün ne bulduğuna bakın. Düzeltmeden sonra hâlâ çalışmıyorsa bize gönderin; böylece kontrolü bu modu da onaracak şekilde geliştirebiliriz.",
+        "send": "Discord üzerinden bize bir mod gönderin",
+        "docs": "Düzeltmeler nasıl çalışır"
       }
     },
     "store": {
-      "nav": "",
-      "title": "",
-      "body": "",
+      "nav": "Mod Mağazası",
+      "title": "GameBanana kataloğunun tamamı bilgisayarınızda",
+      "body": "V2, GameBanana kataloğunun bir kopyasını bilgisayarınızda tutar; böylece gezinme ve arama için ağı beklemeniz gerekmez. Uygulamayı başlattığınızda ve açık kaldığı sürece yaklaşık 30 dakikada bir yeni ve güncellenmiş modları denetler.",
       "points": {
-        "tabs": "",
-        "pages": "",
-        "authors": "",
-        "skip": ""
+        "tabs": "Modlar, Sesler, Koleksiyonlar ve Devam Eden Çalışmalar için ayrı sekmeler",
+        "pages": "Genel Bakış, Değişiklik Günlüğü, Yorumlar ve Dosyalar sekmelerini içeren mod sayfaları",
+        "authors": "Her geliştiricinin yayımladığı modları gösteren profiller",
+        "skip": "Geliştirici daha yeni bir sürüm yayımlayana kadar güncellemeyi atlayın"
       },
-      "alt": ""
+      "alt": "Deadlock Mod Manager V2’de GameBanana modlarını ızgara düzeninde gösteren Mod Mağazası"
     },
     "groups": {
-      "nav": "",
-      "title": "",
-      "body": "",
+      "nav": "Mod grupları",
+      "title": "Kitaplığınızı gruplara ayırın",
+      "body": "Modlarım bölümündeki modları, sık kullandığınız görünümler veya denedikleriniz gibi gruplara ayırın. Her grup, modlarının kapaklarını ve kaçının etkin olduğunu gösterir; tek tıklamayla tüm grubu açıp kapatabilirsiniz.",
       "points": {
-        "drag": "",
-        "undo": "",
-        "profiles": "",
-        "order": ""
+        "drag": "Modları bir gruba sürükleyin veya birkaçını seçip Gruba taşı seçeneğini kullanın",
+        "undo": "Taşıma işlemini bildirimden geri alın",
+        "profiles": "Gruplar her profil için ayrı kaydedilir ve başka bir profile kopyalanabilir",
+        "order": "Gruplar yalnızca kitaplığınızı düzenler; yükleme sırası değişmez"
       }
     },
     "conflicts": {
-      "nav": "",
-      "title": "",
-      "body": "",
+      "nav": "Çakışmalar",
+      "title": "Modların ne zaman çakıştığını görün",
+      "body": "Modlarım bölümündeki Çakışmalar sekmesi, hangi etkin modların aynı dosyaları değiştirdiğini ve oyunun hangisini kullandığını gösterir.",
       "points": {
-        "loadFirst": "",
-        "hidden": "",
-        "ignore": ""
+        "loadFirst": "Görmek istediğiniz modda Önce yükle’ye basın",
+        "hidden": "Başka bir modun örttüğü görünümlerde Model gizlendi etiketi",
+        "ignore": "Sorun olmayan örtüşmeleri profil bazında yok sayın"
       }
     },
     "crashes": {
-      "nav": "",
-      "title": "",
-      "body": "",
+      "nav": "Çökme kontrolü",
+      "title": "Oyunu neyin bozduğunu öğrenin",
+      "body": "Deadlock başlatıldıktan sonraki beş dakika içinde beklenmedik şekilde kapanırsa uygulama çöküp çökmediğini sorar ve son normal oturumunuzdan bu yana değişen her şeyi, değişiklikleri geri alma seçenekleriyle birlikte listeler.",
       "points": {
-        "changes": "",
-        "undo": "",
-        "build": "",
-        "steam": ""
+        "changes": "Yeni ve güncellenmiş modları, autoexec.cfg dosyasını, başlatma seçeneklerini ve eklenti klasörünüzdeki dosyaları kapsar",
+        "undo": "Aynı pencereden yeni modları devre dışı bırakın veya autoexec ve başlatma seçeneklerinizi açın",
+        "build": "Bir yama tek başına çökmeye neden olabileceği için Deadlock güncellendiyse bunu da belirtir",
+        "steam": "Uygulama açık olduğu sürece oyunu Steam’den başlattığınızda da çalışır"
       }
     },
     "bisect": {
-      "nav": "",
-      "title": "",
-      "body": "",
+      "nav": "Bozuk bir modu bulun",
+      "title": "Oyunu bozan modu tespit edin",
+      "body": "Bir şey bozulduğunda hangi modun neden olduğunu anlayamıyorsanız uygulama modlarınızı turlar hâlinde kapatır. Oyunu başlatıp sorunun sürüp sürmediğini belirtirsiniz; her yanıt kalan olasılıkların bir bölümünü eler.",
       "points": {
-        "fast": "",
-        "pairs": "",
-        "crash": "",
-        "restore": ""
+        "fast": "Tek bir bozuk modu bulmak 12 modda en fazla 6, 100 modda en fazla 9 başlatma gerektirir",
+        "pairs": "Oyunu yalnızca birlikte kullanıldığında bozan iki modu bulur",
+        "crash": "Çökme kontrolü açıksa bir çökme turun yanıtını otomatik olarak verir",
+        "restore": "İşiniz bittiğinde tüm modları özgün yükleme sırasına döndürür; isterseniz soruna neden olan mod kapalı kalır"
       }
     },
     "performance": {
-      "nav": "",
-      "title": "",
-      "body": "",
+      "nav": "Performans",
+      "title": "Daha yüksek kare hızı, istediğiniz gibi",
+      "body": "Deneysel: Görsel ayrıntıdan ödün vererek kare hızını artıran bir topluluk gameinfo.gi yapılandırması uygulayın; hafif değişikliklerden en düşük görüntü kalitesine kadar seçenekler var. Yönetici bunu modlarınızın yanına yazar, oyun güncellemelerinden sonra yeniden uygular ve işiniz bittiğinde sorunsuzca kapatır. Ayarlar → Deneysel bölümünden etkinleştirin.",
       "points": {
-        "presets": "",
-        "editor": "",
-        "safe": "",
-        "share": ""
+        "presets": "Sqooky, dacooderr ve başkalarından özenle seçilmiş hazır ayarlar ile GameBanana yapılandırmaları",
+        "editor": "Bir yapılandırmanın değiştirdiği her ayarı, yanında gösterilen oyun varsayılanıyla karşılaştırarak düzenleyin",
+        "safe": "Deadlock’un artık kullanmadığı ayarlar atlanır; bir şey yazılmadan önce nedenini görürsünüz",
+        "share": "Yapıştırılmış bir yapılandırmayı, dosyayı veya GameBanana bağlantısını içe aktarın; kendi yapılandırmanızı kod olarak paylaşın"
       },
-      "alt": ""
+      "alt": "Deadlock Mod Manager V2 Performans sayfası: uygulanan yapılandırma, En iyi görünümden En hızlı çalışmaya uzanan ölçek ve seçilmiş yapılandırmalar"
     },
     "themes": {
-      "nav": "",
-      "title": "",
-      "body": "",
-      "lovelockAlt": "",
-      "inSeason": "",
+      "nav": "Temalar",
+      "title": "Kendinize göre düzenleyin",
+      "body": "V2, OLED, Lovelock ve Gridline temalarını ekler. Yılda yaklaşık beş özel dönemde uygulama, kendi temanızı seçmediyseniz bulunacak gizli bir sürpriz içeren mevsimlik temaya geçer.",
+      "lovelockAlt": "Lovelock temalı Deadlock Mod Manager: erik ve pembe tonları, gösterge panelinin arkasında kahraman görselleri",
+      "inSeason": "Şu anki mevsimlik tema:",
       "seasons": {
         "halloween": {
-          "name": "",
-          "window": "",
-          "description": ""
+          "name": "Cadılar Bayramı",
+          "window": "1 Ekim–1 Kasım",
+          "description": "Gece yarısı moru üzerine balkabağı turuncusu; dolunay, süzülen sis, yükselen korlar ve ara sıra beliren yarasalar."
         },
         "christmas": {
-          "name": "",
-          "window": "",
-          "description": ""
+          "name": "Noel",
+          "window": "1–26 Aralık",
+          "description": "Yavaşça yağan kar altında ateş ışığı, tarçın ve mum altını; uygulamanın çeşitli yerlerinde gizli bir Noel takvimi ve sürprizler."
         },
         "newYear": {
-          "name": "",
-          "window": "",
-          "description": ""
+          "name": "Yılbaşı Gecesi",
+          "window": "27 Aralık–1 Ocak",
+          "description": "Ufuk çizgisinin üzerinde havai fişekler ve gece yarısına canlı geri sayım eşliğinde gece mavisi ve şampanya altını."
         },
         "lunarNewYear": {
-          "name": "",
-          "window": "",
-          "description": ""
+          "name": "Ay Yeni Yılı",
+          "window": "Ay Yeni Yılı’ndan üç hafta önce başlayıp Fener Festivali’ne kadar",
+          "description": "Fener Festivali’ne kadar, geceye yükselen kâğıt fenerler ve yakalanmayı bekleyen kırmızı zarflarla parlak kırmızı ve altın tonları."
         },
         "easter": {
-          "name": "",
-          "window": "",
-          "description": ""
+          "name": "Paskalya",
+          "window": "Paskalya Pazarı’ndan 30 gün önce başlayıp Paskalya Pazartesi’sine kadar",
+          "description": "Alacakaranlıkta bir bahar çayırı: civciv sarısı, çiçek pembesi ve taze yeşil; havada uçuşan taç yapraklar ve ekranda gizlenmiş yumurtalar."
         }
       }
     }
   },
   "demo": {
     "health": {
-      "window": "",
-      "banner_one": "",
-      "banner_other": "",
-      "fix_one": "",
-      "fix_other": "",
-      "seeDetails": "",
-      "fixable": "",
-      "fixed": "",
-      "fixableSummary": "",
-      "fixedSummary": "",
-      "symptomCamera": "",
-      "symptomAnimations": "",
-      "fixedToast_one": "",
-      "fixedToast_other": "",
-      "replay": ""
+      "window": "Mod Kitaplığı",
+      "banner_one": "Deadlock güncellendi. Modlarınızdan {{count}} tanesi eski bir sürüm için yapılmış ve otomatik olarak onarılabilir.",
+      "banner_other": "Deadlock güncellendi. Modlarınızdan {{count}} tanesi eski bir sürüm için yapılmış ve otomatik olarak onarılabilir.",
+      "fix_one": "{{count}} modu onar",
+      "fix_other": "{{count}} modu onar",
+      "seeDetails": "Ayrıntıları gör",
+      "fixable": "Onarılabilir",
+      "fixed": "Bu yama için onarıldı",
+      "fixableSummary": "Eski bir Deadlock sürümü için yapılmış. Bu bölümler otomatik olarak onarılabilir.",
+      "fixedSummary": "Eski bir Deadlock sürümü için yapılmış. Bu bölümler mevcut yama için onarıldı.",
+      "symptomCamera": "Kamera ve nişan",
+      "symptomAnimations": "Animasyonlar ve hareket",
+      "fixedToast_one": "{{count}} mod onarıldı",
+      "fixedToast_other": "{{count}} mod onarıldı",
+      "replay": "Yeniden oyna"
     },
     "update": {
-      "title": "",
-      "body": "",
-      "reapply": "",
-      "reapplying": "",
-      "reapplied": ""
+      "title": "Deadlock güncellendi ve modlarınız devre dışı kaldı.",
+      "body": "Steam gameinfo.gi dosyasını değiştirdi. Bu nedenle etkin 14 modunuz yeniden uygulanana kadar yüklenmeyecek.",
+      "reapply": "Modları yeniden uygula",
+      "reapplying": "Yeniden uygulanıyor",
+      "reapplied": "Modlar yeniden uygulandı. Deadlock’u bir sonraki başlatışınızda yüklenecekler."
     },
     "groups": {
       "names": {
-        "mains": "",
-        "testing": ""
+        "mains": "Sık kullandığım görünümler",
+        "testing": "Deniyorum"
       },
-      "count_one": "",
-      "count_other": "",
-      "enabledCount": "",
-      "enable": "",
-      "disable": "",
-      "enabledAll": "",
-      "disabledAll": "",
-      "on": "",
-      "off": "",
-      "hint": ""
+      "count_one": "{{count}} mod",
+      "count_other": "{{count}} mod",
+      "enabledCount": "{{count}}/{{total}} etkin",
+      "enable": "{{name}} grubundaki modları etkinleştir",
+      "disable": "{{name}} grubundaki modları devre dışı bırak",
+      "enabledAll": "{{name}} grubundaki tüm modlar etkinleştirildi",
+      "disabledAll": "{{name}} grubundaki tüm modlar devre dışı bırakıldı",
+      "on": "Etkin",
+      "off": "Devre dışı",
+      "hint": "Deneyin: Bir grubun açma kapama düğmesine basın."
     },
     "conflicts": {
-      "title": "",
-      "used": "",
-      "skipped": "",
-      "loadFirst": "",
-      "loadedFirst": "",
-      "hint": ""
+      "title": "Aynı model 2 modda",
+      "used": "Oyunda kullanılıyor",
+      "skipped": "Atlandı",
+      "loadFirst": "Önce yükle",
+      "loadedFirst": "{{mod}} artık önce yükleniyor",
+      "hint": "Deneyin: Önce yükle’ye basın."
     },
     "crash": {
-      "title": "",
-      "body": "",
-      "changesHeading": "",
-      "modsAdded": "",
-      "modsAddedWhen": "",
-      "modUpdated": "",
-      "modUpdatedWhen": "",
-      "launchOptions": "",
-      "launchOptionsAdded": "",
-      "disableBoth": "",
-      "disabled": "",
-      "modsDisabled": "",
-      "tip": "",
-      "closedIt": "",
-      "launchAgain": "",
-      "hint": ""
+      "title": "Deadlock az önce çöktü mü?",
+      "body": "Başlatıldıktan 1 dakika sonra kapandı ve bir çökme raporu bıraktı. Nedeni, yakın zamanda yapılan şu değişikliklerden biri olabilir.",
+      "changesHeading": "Son normal oturumunuzdan bu yana değişenler",
+      "modsAdded": "2 mod eklendi: Formal Wraith ve Vyper Propeller Hat",
+      "modsAddedWhen": "12 dakika önce",
+      "modUpdated": "Shiv Refresh (CITY NEVER SLEEPS) güncellendi",
+      "modUpdatedWhen": "Dün",
+      "launchOptions": "Başlatma seçenekleri değiştirildi",
+      "launchOptionsAdded": "-novid eklendi",
+      "disableBoth": "İkisini de devre dışı bırak",
+      "disabled": "Devre dışı",
+      "modsDisabled": "2 mod devre dışı bırakıldı",
+      "tip": "Bir seferde yalnızca bir şeyi değiştirip oyunu yeniden başlatın. Nedeni bulmanın en hızlı yolu budur.",
+      "closedIt": "Ben kapattım",
+      "launchAgain": "Yeniden başlat",
+      "hint": "Deneyin: İkisini de devre dışı bırak’a basın."
     },
     "bisect": {
-      "title": "",
-      "round": "",
-      "left_one": "",
-      "left_other": "",
-      "foundIn_one": "",
-      "foundIn_other": "",
-      "launch": "",
-      "launching": "",
-      "question": "",
-      "broken": "",
-      "fine": "",
-      "found": "",
-      "foundBody": "",
-      "wrongAnswer": "",
-      "restore": "",
-      "again": "",
-      "restored": "",
-      "hint": "",
-      "foundHint": ""
+      "title": "Bozuk mod bulunuyor",
+      "round": "Tur {{round}}",
+      "left_one": "{{count}} olası neden kaldı",
+      "left_other": "{{count}} olası neden kaldı",
+      "foundIn_one": "{{count}} başlatmada bulundu",
+      "foundIn_other": "{{count}} başlatmada bulundu",
+      "launch": "Deadlock’u başlat",
+      "launching": "Başlatılıyor…",
+      "question": "Sorun hâlâ var mı?",
+      "broken": "Hâlâ bozuk",
+      "fine": "Artık çalışıyor",
+      "found": "Bulundu: {{name}}",
+      "foundBody": "Sorun, bu mod etkinleştirildiğinde ortaya çıkıyor ve kapatıldığında kayboluyor.",
+      "wrongAnswer": "Yanıtlarınızdan biri oyundaki sonuçla uyuşmadığı için asıl neden bu değil. Yeniden deneyin.",
+      "restore": "Her şeyi geri yükle",
+      "again": "Yeniden dene",
+      "restored": "Modlarınız önceki durumuna döndü.",
+      "hint": "Deneyin: Oyunu başlatın, kontrol edin ve ardından yanıtlayın.",
+      "foundHint": "Yeniden dene seçeneği sorunu başka bir modda gizler."
     }
   },
   "more": {
-    "title": "",
+    "title": "V2’deki diğer yenilikler",
     "items": {
       "foundry": {
-        "title": "",
-        "body": ""
+        "title": "Mod Foundry",
+        "body": "Bir kahraman görünümünü içe aktarın, renklerini değiştirin, kartlarını ve seslerini değiştirip mod olarak dışa aktarın."
       },
       "stats": {
-        "title": "",
-        "body": ""
+        "title": "İstatistikler",
+        "body": "Kahraman, eşya ve takım arkadaşı dökümleri; eşya zaman çizelgeleriyle maç geçmişi ve geçerli maçınızın canlı sıralamaları (-condebug başlatma seçeneğiyle). Bileşenleri ve sekmeleri yeniden sıralayın, boyutlandırın, ekleyin veya kaldırın; dereceli, derecesiz ya da başlangıç tarihine göre filtreleyin."
       },
       "skins": {
-        "title": "",
-        "body": ""
+        "title": "Kahraman Görünümleri",
+        "body": "Bir kahramanın tüm görünümleri 3B önizlemeyle tek sayfada. Rastgele görünüm seçici açıksa her başlatmada seçtikleriniz arasından rastgele bir görünüm belirlenir."
       },
       "library": {
-        "title": "",
-        "body": ""
+        "title": "Kitaplık sıralaması",
+        "body": "Modlarım bölümünü yükleme sırasına, kahramana, ada veya eklenme tarihine göre sıralayın."
       },
       "launch": {
-        "title": "",
-        "body": ""
+        "title": "Başlatma ilerlemesi",
+        "body": "Deadlock başlatılırken modlarınızın doğrulanmasından Steam’in açılmasına kadar her adımı görün; fikrinizi değiştirirseniz başlatmayı iptal edin."
       },
       "badges": {
-        "title": "",
-        "body": ""
+        "title": "Güncelleme etiketleri",
+        "body": "Mod kartlarında ve ayrıntılarında Güncelleme mevcut ve Yakın zamanda güncellendi etiketleri artık devre dışı modlarda da gösterilir."
       },
       "import": {
-        "title": "",
-        "body": ""
+        "title": "Grimoire’dan mı geçiyorsunuz?",
+        "body": "Grimoire modlarını, profillerini ve nişangâhlarını veya herhangi bir mod-interchange dosyasını içe aktarın. Dışa aktarma da desteklenir."
       },
       "updates": {
-        "title": "",
-        "body": ""
+        "title": "Mod güncellemeleri",
+        "body": "Bir GameBanana modunu güncellemeden önce değişiklik günlüğünü okuyun ve indirme ilerlemesini takip edin."
       },
       "settings": {
-        "title": "",
-        "body": ""
+        "title": "Ayarlarda arama",
+        "body": "Ayarlar kenar çubuğundaki arama kutusuyla istediğiniz ayarı bulun."
       },
       "heroes": {
-        "title": "",
-        "body": ""
+        "title": "Yeni kahramanlar",
+        "body": "Baba, Deadman Danny, Nurse Harrow, Rat King, Solomon ve Violet artık tanınıyor."
       },
       "forge": {
-        "title": "",
-        "body": ""
+        "title": "Tek tıklamayla yükleme",
+        "body": "Modları doğrudan DeadlockForge üzerinden yüklemeyi etkinleştirin. Her yüklemede önce onayınız istenir."
       },
       "servers": {
-        "title": "",
-        "body": ""
+        "title": "Sunucu Tarayıcısı",
+        "body": "Deadworks topluluk sunucularına göz atın; katılmadan önce haritalarını ve eklentilerini edinin."
       }
     }
   },
   "upgrade": {
-    "title": "",
+    "title": "V1’den mi geçiyorsunuz?",
     "steps": {
       "install": {
-        "title": "",
-        "body": ""
+        "title": "V2’yi normal bir güncelleme gibi yükleyin",
+        "body": "Modlarınız, profilleriniz ve ayarlarınız korunur."
       },
       "migrate": {
-        "title": "",
-        "body": ""
+        "title": "Profiller yeni düzene taşınır",
+        "body": "Bir profili ilk kez kullandığınızda modları otomatik olarak yeni eklenti klasörü düzenine taşınır."
       },
       "help": {
-        "title": "",
-        "body": ""
+        "title": "Bir şey ters mi görünüyor?",
+        "body": "Ayarlar → Araçlar bölümündeki Mod klasörünü onar seçeneği, uygulamanın yüklemediği dosyaları bir kenara ayırır ve hiçbir şeyi silmeden mod listenizi yeniden oluşturur. Bağlantıyı tanıla, uygulamanın kullandığı tüm hizmetleri denetler. Uygulama ile oyun klasörünüz hâlâ eşitlenmiyorsa Tümünü kaldır ve yeniden yükle, modlarınızı silip yeniden indirir. Sorun sürüyor mu? <discord>Discord</discord> üzerinden sorun."
       }
     }
   },
   "fixes": {
-    "label": "",
-    "body": ""
+    "label": "V1’den beri düzeltilen hatalar",
+    "body": "V1’den bu yana uygulamaya yapılan hata düzeltmeleri. Sürüm notlarına girenler burada listelenmiştir; geri kalanı <link>tam değişiklik günlüğünde</link> bulabilirsiniz."
   },
   "thanks": {
-    "title": "",
-    "body": ""
+    "title": "Teşekkürler",
+    "body": "Her hata bildirimi ve önerileri için <discord>Discord</discord> topluluğumuzun 20.000’den fazla üyesine teşekkür ederiz."
   }
 }

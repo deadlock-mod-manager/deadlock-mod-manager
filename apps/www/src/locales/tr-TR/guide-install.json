@@ -1,79 +1,79 @@
 {
   "meta": {
-    "name": "",
-    "title": "",
-    "description": ""
+    "name": "Deadlock modları nasıl yüklenir?",
+    "title": "Deadlock modları nasıl yüklenir? (2026 kılavuzu) | Deadlock Mod Manager",
+    "description": "Deadlock’a adım adım mod yükleyin: GameBanana modlarını Deadlock Mod Manager ile tek tıklamayla veya addons klasörü ve gameinfo.gi dosyasını kullanarak elle yükleyin."
   },
   "faqs": {
     "howTo": {
-      "question": "",
-      "answer": ""
+      "question": "Deadlock’a nasıl mod yüklerim?",
+      "answer": "Deadlock Mod Manager’ı yükleyin, oyunu bulmasına izin verin, ardından Mod Mağazası’ndan modları indirip Modlarla başlat’a tıklayın. Uygulama addons klasörünü ve gameinfo.gi dosyasını sizin için düzenler."
     },
     "addonsFolder": {
-      "question": "",
-      "answer": ""
+      "question": "Deadlock addons klasörü nerede?",
+      "answer": "Deadlock kurulumunuzdaki game/citadel/addons konumundadır. Windows’ta genellikle C:\\Program Files (x86)\\Steam\\steamapps\\common\\Deadlock\\game\\citadel\\addons yolundadır. addons klasörü yoksa oluşturun."
     },
     "gameinfo": {
-      "question": "",
-      "answer": ""
+      "question": "gameinfo.gi dosyasını neden düzenlemem gerekiyor?",
+      "answer": "Deadlock, addons klasöründeki dosyaları yalnızca gameinfo.gi içinde bu klasör arama yolu olarak belirtilmişse yükler. Bu satır olmadan oyun modlarınızı yok sayar. Deadlock Mod Manager, oyunu modlarla başlattığınızda satırı ekler."
     },
     "uninstall": {
-      "question": "",
-      "answer": ""
+      "question": "Deadlock modlarını nasıl kaldırırım?",
+      "answer": "Uygulamada modları Mod Kitaplığı’ndan kaldırın veya Ayarlar’daki Tüm Modları Temizle’yi kullanın. Geçici olarak modsuz oynamak için Modlar olmadan başlat’ı seçin. Elle kaldırmak için addons klasöründeki .vpk dosyalarını silin."
     },
     "linux": {
-      "question": "",
-      "answer": ""
+      "question": "Linux veya Steam Deck’te Deadlock modları yükleyebilir miyim?",
+      "answer": "Evet. Deadlock Mod Manager, Masaüstü Modu’ndaki Steam Deck dâhil Linux’ta çalışır. APT depomuzdan, .deb, RPM veya Flatpak paketi olarak, ayrıca AUR ve nixpkgs üzerinden edinilebilir."
     }
   },
   "hero": {
-    "eyebrow": "",
-    "title": "",
-    "intro": ""
+    "eyebrow": "Kılavuz",
+    "title": "Deadlock modları nasıl yüklenir?",
+    "intro": "Deadlock’a mod yüklemenin iki yolu vardır: Birkaç tıklamayla Deadlock Mod Manager’a yaptırmak veya addons klasörünü elle hazırlamak. İkisi de işe yarar; uygulama ayrıca modlarınızı güncel tutar ve değişiklikleri geri almayı kolaylaştırır."
   },
   "app": {
-    "title": "",
-    "intro": "",
+    "title": "Deadlock Mod Manager ile mod yükleyin",
+    "intro": "En hızlı ve önerdiğimiz yöntem. İlk kurulum yaklaşık iki dakika sürer.",
     "steps": {
       "download": {
-        "title": "",
-        "body": ""
+        "title": "Uygulamayı indirin",
+        "body": "Uygulamayı <link>indirme sayfasından</link> edinin. Windows sürümleri imzalı bir yükleyiciyle gelir. Linux için APT deposu ile .deb, RPM, Flatpak, AUR ve nixpkgs paketleri vardır."
       },
       "detect": {
-        "title": "",
-        "body": ""
+        "title": "Deadlock’u bulmasına izin verin",
+        "body": "Uygulama Steam kurulumunuzu algılar. Deadlock başka bir kitaplıktaysa klasörü Ayarlar’dan belirtin."
       },
       "pick": {
-        "title": "",
-        "body": ""
+        "title": "Modları seçin",
+        "body": "Mod Mağazası’nı açın, arama yapın veya kahramana ve kategoriye göre filtreleyin; ardından İndir’e tıklayın."
       },
       "launch": {
-        "title": "",
-        "body": ""
+        "title": "Modlarla başlat",
+        "body": "Modlarla başlat’a tıklayın. Uygulama oyunu açmadan önce modlarınızı etkinleştirir ve gameinfo.gi dosyasını düzenler."
       }
     },
     "figure": {
-      "alt": "",
-      "caption": ""
+      "alt": "Yüklü modların listelendiği Deadlock Mod Manager’daki Modlarla başlat düğmesi",
+      "caption": "Tek düğmeyle modlarınızı uygulayıp Deadlock’u başlatın."
     }
   },
   "manual": {
-    "title": "",
-    "intro": "",
+    "title": "Modları elle yükleyin",
+    "intro": "Mod yöneticisi kullanmak istemiyorsanız onun sizin için yaptığı işlemler şunlardır.",
     "steps": {
-      "extract": "",
-      "addons": "",
-      "copy": "",
-      "gameinfo": "",
-      "launch": ""
+      "extract": "GameBanana’dan bir mod indirip arşivden çıkarın. İçindeki, genellikle <code>pak01_dir.vpk</code> gibi adlandırılmış <code>.vpk</code> dosyasına ihtiyacınız var.",
+      "addons": "Deadlock klasörünüzü açıp <code>game/citadel</code> konumuna gidin. Burada <code>addons</code> klasörü yoksa oluşturun.",
+      "copy": "<code>.vpk</code> dosyasını <code>game/citadel/addons</code> klasörüne kopyalayın. Her modun farklı bir numarası olmalıdır; bu yüzden çakışan dosyaları <code>pak01_dir.vpk</code>, <code>pak02_dir.vpk</code> vb. biçimde yeniden adlandırın. İki mod aynı dosyayı değiştiriyorsa hangisinin yükleneceğini numara belirler.",
+      "gameinfo": "<code>game/citadel/gameinfo.gi</code> dosyasını bir metin düzenleyicide açın. <code>SearchPaths</code> bloğunda <code>Write citadel</code> satırının hemen üzerine şu iki satırı ekleyin:",
+      "launch": "Dosyayı kaydedip Deadlock’u başlatın. Steam’in “Oyun dosyalarının bütünlüğünü doğrula” işlemi ve bazı oyun güncellemeleri <code>gameinfo.gi</code> dosyasını sıfırlar; bunlardan sonra satırları yeniden eklemeniz gerekir."
     },
-    "outro": ""
+    "outro": "Son adımın sıfırlanması, güncellemeden sonra modların “çalışmayı bırakmasının” yaygın nedenidir. Uygulama oyunu modlarla her başlattığınızda bu ayarı yeniden uygular. Uygulamadan çıktığınızda ayarı kaldırarak Steam üzerinden modsuz başlatmayı da sağlayabilir."
   },
   "after": {
-    "title": "",
-    "conflicts": "",
-    "updates": "",
-    "profiles": "",
-    "docs": ""
+    "title": "Yüklemeden sonra",
+    "conflicts": "<strong>Çakışmalar:</strong> Aynı dosyaları değiştiren iki modun ikisi birden öncelikli olamaz. Uygulama sizi uyarır ve yükleme sırasını değiştirmenizi sağlar.",
+    "updates": "<strong>Güncellemeler:</strong> Deadlock güncellemesinden sonra Mod Kitaplığı’nda mod güncellemelerini kontrol edin.",
+    "profiles": "<strong>Profiller:</strong> Ayrı kurulumlar oluşturun (örneğin yalnızca görünüm içeren bir profil) ve bunları Profil Kimliği ile arkadaşlarınızla paylaşın.",
+    "docs": "Daha fazla bilgi için <link>başlangıç belgelerine</link> bakın."
   }
 }

@@ -3310,8 +3310,15 @@
     "autoexecCommandAdd": "",
     "autoexecCommandAdded": "",
     "autoexecCommandAddedBadge": "",
+    "outdatedConvarBadge": "",
+    "outdatedConvarTooltip": "",
     "autoexecCommandDefaultBadge": "",
     "autoexecEditorHeading": "",
+    "autoexecUnsaved": "",
+    "autoexecManagedCrosshair": "",
+    "autoexecManagedMapCommand": "",
+    "autoexecManagedLines_one": "",
+    "autoexecManagedLines_other": "",
     "autoexecSaving": "",
     "autoexecClear": "",
     "autoexecClearConfirmTitle": "",
@@ -3694,6 +3701,33 @@
     "description": "",
     "action": "",
     "confirmAction": "",
+    "continue": "",
+    "areYouSure": "",
+    "stat": {
+      "mods": "",
+      "installed": "",
+      "download": ""
+    },
+    "steps": {
+      "backup": {
+        "title": "",
+        "body": ""
+      },
+      "wipe": {
+        "title": "",
+        "body": ""
+      },
+      "download": {
+        "title": "",
+        "body": ""
+      },
+      "install": {
+        "title": "",
+        "body": ""
+      }
+    },
+    "areYouSureBody_one": "",
+    "areYouSureBody_other": "",
     "confirmBody_one": "",
     "confirmBody_other": "",
     "confirmDetails": "",
@@ -3701,6 +3735,11 @@
     "localModsPreserved_other": "",
     "stopAfterCurrent": "",
     "stopping": "",
+    "chooseFiles": "",
+    "chooseFilesLater": "",
+    "backupFailedBody": "",
+    "retryFailed_one": "",
+    "retryFailed_other": "",
     "summary": "",
     "summaryMissing_one": "",
     "summaryMissing_other": "",
@@ -3711,6 +3750,8 @@
     "phase": {
       "idle": "",
       "snapshot": "",
+      "backingUp": "",
+      "backupFailed": "",
       "purging": "",
       "clearingCache": "",
       "clearingState": "",
@@ -4054,7 +4095,8 @@
     "unsupportedImageType": "نوع صورة غير مدعوم"
   },
   "progress": {
-    "pleaseWait": "يرجى الانتظار..."
+    "pleaseWait": "يرجى الانتظار...",
+    "bytes": ""
   },
   "modStatus": {
     "added": "تمت الإضافة إلى تعديلاتي",
@@ -5248,6 +5290,9 @@
     "featuredModOfTheWeek": "",
     "trendingIn": "",
     "seeAll": "",
+    "browseBy": "",
+    "hero": "",
+    "randomHero": "",
     "viewMod": "",
     "installedMods": "",
     "pendingUpdates": "",

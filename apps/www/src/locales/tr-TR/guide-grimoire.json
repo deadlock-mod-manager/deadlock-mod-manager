@@ -1,149 +1,149 @@
 {
   "meta": {
-    "name": "",
-    "title": "",
-    "description": ""
+    "name": "Deadlock Mod Manager ve Grimoire karşılaştırması",
+    "title": "Deadlock Mod Manager ve Grimoire: Hangisini seçmeli?",
+    "description": "V2’den beri Deadlock Mod Manager ve Grimoire aynı özellikleri sunuyor. Seçim, hangi arayüzü tercih ettiğinize bağlı. Bizimkini canlı olarak deneyin ve Grimoire kurulumunuzu bir dakikada içe aktarın."
   },
   "faqs": {
     "better": {
-      "question": "",
-      "answer": ""
+      "question": "Deadlock Mod Manager mı, Grimoire mı daha iyi?",
+      "answer": "Deadlock Mod Manager V2’den beri iki uygulama da aynı temel özellikleri sunuyor: GameBanana’dan yükleme, çakışmalar ve yükleme sırası, oyun güncellemesiyle bozulan modları onarma, paylaşılabilir profiller, 3B önizlemeli kahraman görünümleri, nişangâhlar, autoexec ve maç istatistikleri. Kullanmayı sevdiğiniz arayüzü seçin. Bu sayfadaki canlı önizlemede Deadlock Mod Manager arayüzünü deneyebilirsiniz."
     },
     "same": {
-      "question": "",
-      "answer": ""
+      "question": "Grimoire ile Deadlock Mod Manager aynı uygulama mı?",
+      "answer": "Hayır. Ayrı açık kaynaklı projeler olsalar da ortak kökleri var. Deadlock Mod Manager Aralık 2024’te, Grimoire ise bir yıl sonra başladı. Grimoire, Deadlock Mod Manager’dan ilham aldı ve Deadlock Mod Manager’a katkıda bulunan bazı kişiler daha sonra Grimoire’ın geliştirilmesine de yardımcı oldu."
     },
     "switch": {
-      "question": "",
-      "answer": ""
+      "question": "Grimoire’dan Deadlock Mod Manager’a geçebilir miyim?",
+      "answer": "Evet, yaklaşık bir dakikada. Mod Kitaplığı’nı açın, Diğer mod yöneticilerinden içe aktar’ı seçip Grimoire’ı belirleyin. Deadlock Mod Manager, Grimoire kitaplığınızı bulur; modlarınızı etkinlik durumları ve yükleme sıralarıyla birlikte, profillerinizi ve nişangâhlarınızı içe aktarır. Grimoire’daki hiçbir şey değiştirilmez."
     },
     "goBack": {
-      "question": "",
-      "answer": ""
+      "question": "Grimoire’a geri dönebilir veya ikisini birden kullanabilir miyim?",
+      "answer": "Evet. İki uygulama da aynı mod alışveriş biçimini okur ve yazar. Bu sayede Deadlock Mod Manager’dan dışa aktarıp Grimoire’a içe aktarabilir veya karar verene kadar aralarında geçiş yapabilirsiniz."
     },
     "safe": {
-      "question": "",
-      "answer": ""
+      "question": "İki mod yöneticisi de güvenli mi?",
+      "answer": "İkisi de açık kaynaklıdır; dolayısıyla kodlarını herkes inceleyebilir. Deadlock Mod Manager’ın Windows yükleyicisi SignPath aracılığıyla kod imzası taşır. Grimoire’ın README dosyasına göre Windows yükleyicileri henüz kod imzalı değildir; bunun yerine SHA256 sağlama toplamları yayımlanır."
     }
   },
   "hero": {
-    "eyebrow": "",
-    "title": "",
-    "intro": ""
+    "eyebrow": "Karşılaştırma",
+    "title": "Deadlock Mod Manager ve Grimoire karşılaştırması",
+    "intro": "İki uygulama da işini iyi yapar; her maçtan önce açmayı tercih edeceğinizi seçin. Bizim uygulamamızı bu sayfada deneyebilir ve Grimoire kurulumunuzu yaklaşık bir dakikada aktarabilirsiniz."
   },
   "shared": {
-    "title": "",
-    "intro": "",
+    "title": "Özellik açısından (neredeyse) eşitler",
+    "intro": "İki uygulama da çoğu oyuncunun ihtiyaçlarını karşılar. Bizimkinde birkaç ek özellik ve biraz daha özenli bir arayüz olduğunu düşünüyoruz; elbette tarafsız değiliz. Belirli bir özellik arıyorsanız muhtemelen bu listede bulunur ve iki uygulamada da vardır.",
     "features": {
-      "gamebanana": "",
-      "sounds": "",
-      "conflicts": "",
-      "repair": "",
-      "crashes": "",
-      "performance": "",
-      "foundry": "",
-      "profiles": "",
-      "import": "",
-      "skins": "",
-      "launch": "",
-      "crosshair": "",
-      "stats": "",
-      "platforms": "",
-      "openSource": ""
+      "gamebanana": "GameBanana modlarına uygulama içinde göz atıp yükleme",
+      "sounds": "Modlarla birlikte sesler",
+      "conflicts": "Çakışma tespiti ve yükleme sırası",
+      "repair": "Oyun güncellemesiyle bozulan modları onarma",
+      "crashes": "Oyunu çökerten modu bulma yardımı",
+      "performance": "Daha yüksek kare hızı için performans yapılandırmaları",
+      "foundry": "Kendi modlarınızı yapmak için Mod Foundry",
+      "profiles": "Paylaşılabilir mod profilleri",
+      "import": "Diğer uygulamadan içe aktarma",
+      "skins": "3B önizlemeli kahraman görünümleri",
+      "launch": "Modlarla veya modsuz başlatma",
+      "crosshair": "Nişangâh düzenleyici ve autoexec",
+      "stats": "deadlock-api üzerinden maç istatistikleri",
+      "platforms": "Windows ve Linux sürümleri",
+      "openSource": "Ücretsiz ve açık kaynaklı"
     }
   },
   "roots": {
-    "title": "",
-    "first": "",
-    "grimoire": "",
+    "title": "Bu kadar benzer olmalarının nedeni",
+    "first": "Önce Deadlock Mod Manager geliştirildi. Aralık 2024’ten başlayarak topluluğun elle mod yükleme bilgisini tek bir uygulamada topladı: GameBanana’dan yükleme, <code>gameinfo.gi</code> dosyasını sizin için hazırlama ve oyunu modlarla veya modsuz başlatma. Sonraki yıl Linux desteği, ses modları, paylaşılabilir profiller ve temalar eklendi; topluluk da tüm bu özelliklerin geliştirilmesine katkıda bulundu.",
+    "grimoire": "Grimoire Aralık 2025’te başladı ve Deadlock Mod Manager’ın işe yarayan özelliklerinden ilham aldı. Bunu bir iltifat olarak görüp biz de katkıda bulunduk. Deadlock Mod Manager’ın ana katkıcıları Grimoire’ın geliştirilmesine de yardımcı oldu. Bu, iki uygulama arasında geçişin kolay olmasının nedenlerinden biridir.",
     "stats": {
       "dmmStarted": {
-        "label": "",
-        "value": ""
+        "label": "Deadlock Mod Manager başladı",
+        "value": "Aralık 2024"
       },
       "grimoireStarted": {
-        "label": "",
-        "value": ""
+        "label": "Grimoire başladı",
+        "value": "Aralık 2025"
       },
       "contributors": {
-        "label": "",
-        "value": ""
+        "label": "Deadlock Mod Manager’a katkıda bulunan kişiler",
+        "value": "30+"
       },
       "shared": {
-        "label": "",
-        "value": ""
+        "label": "Grimoire üzerinde de çalışan Deadlock Mod Manager ana katkıcıları",
+        "value": "2"
       }
     }
   },
   "interface": {
-    "title": "",
-    "intro": "",
+    "title": "Sonuçta seçim arayüze bağlı",
+    "intro": "İki uygulama farklı biçimlerde özelleştirilebilir.",
     "dmm": {
-      "title": "",
-      "body": ""
+      "title": "Deadlock Mod Manager: Temaları bütünüyle değiştirin",
+      "body": "Her tema kendine özgü renkleri olan bütünlüklü bir görünüm sunar; çoğu, altın renkli varsayılan temadan Bloodmoon’un kızılına kadar kendi görsellerini ve kenar çubuğu logosunu da ekler. Tek tıklamayla tema değiştirebilir veya Arka Plan eklentisiyle kendi görselinizi kullanabilirsiniz. Mod kitaplığı sıkı bir liste hâlindedir; bu, çok sayıda modunuz olduğunda işinizi kolaylaştırır."
     },
-    "themeAlt": "",
+    "themeAlt": "{{name}} temasıyla Deadlock Mod Manager",
     "grimoire": {
-      "title": "",
-      "body": "",
+      "title": "Grimoire: Tek bir görünümü özelleştirin",
+      "body": "Büyük görsel kartları olan koyu renkli bir arayüzü parça parça özelleştirebilirsiniz:",
       "options": {
-        "accents": "",
-        "oled": "",
-        "glow": "",
-        "art": ""
+        "accents": "Sekiz vurgu rengi veya istediğiniz özel bir renk",
+        "oled": "OLED siyah modu",
+        "glow": "Renkli arka plan ışıltısı",
+        "art": "Başlatma düğmelerinin ve etkin sekmenin arkasında kahraman görselleri veya kendi görselleriniz"
       },
-      "screenshots": ""
+      "screenshots": "Grimoire ekran görüntülerine bakın"
     }
   },
   "tryIt": {
-    "title": "",
-    "intro": "",
-    "mobileNote": ""
+    "title": "İndirmeden önce bizim uygulamamızı deneyin",
+    "intro": "Bu, uygulamanın çalışan bir kopyasıdır. Bir mod yükleyin, oyunu başlatın veya Ayarlar → Temalar bölümünden bir tema seçin.",
+    "mobileNote": "Bilgisayarda canlı önizlemeyi burada tıklayarak inceleyebilirsiniz."
   },
   "switch": {
-    "title": "",
-    "intro": "",
+    "title": "Grimoire kurulumunuzu yanınızda getirin",
+    "intro": "Deadlock Mod Manager, Grimoire kitaplığınızı doğrudan içe aktarır; böylece modları yeniden yüklemeniz veya profilleri baştan oluşturmanız gerekmez.",
     "steps": {
       "install": {
-        "title": "",
-        "body": ""
+        "title": "Deadlock Mod Manager’ı yükleyin",
+        "body": "Uygulamayı <link>indirme sayfasından</link> edinin. Grimoire’ı yüklü tutun; içindeki hiçbir şey değiştirilmez."
       },
       "import": {
-        "title": "",
-        "body": ""
+        "title": "İçe aktarmayı açın",
+        "body": "Mod Kitaplığı’nda Diğer mod yöneticilerinden içe aktar seçeneğini belirleyin. Grimoire otomatik olarak algılanır; isterseniz veri klasörünü de gösterebilirsiniz."
       },
       "pick": {
-        "title": "",
-        "body": ""
+        "title": "Aktarılacakları seçin",
+        "body": "Modların etkinlik durumu ve yükleme sırası korunur. Profiller, aynı modları içeren DMM profillerine dönüşür; nişangâhlar da nişangâh geçmişinize eklenir."
       },
       "play": {
-        "title": "",
-        "body": ""
+        "title": "Oynayın",
+        "body": "Uygulamanın eşleştiremediği modlar yerel mod olarak içe aktarılır. Güncelleme almak için onları tanımlayabilir veya oldukları gibi bırakabilirsiniz. Ardından Modlarla başlat’a tıklayın."
       }
     },
     "lockIn": {
-      "title": "",
-      "format": "",
-      "reimport": "",
-      "tryBoth": ""
+      "title": "Her iki yönde de geçiş serbest",
+      "format": "Deadlock Mod Manager ve Grimoire, açık <strong>mod-interchange</strong> biçimini destekler. Modlarınızı, profillerinizi ve nişangâhlarınızı bir uygulamadan dışa aktarıp diğerine içe aktarabilirsiniz.",
+      "reimport": "İçe aktardıktan sonra Grimoire’da bir şey mi değiştirdiniz? İçe aktarmayı yeniden çalıştırın: Zaten sahip olduğunuz modlar eşleştirilip yerinde güncellenir, kopyaları oluşturulmaz.",
+      "tryBoth": "İkisini de deneyin, beğendiğinizi kullanın."
     }
   },
   "smallPrint": {
-    "title": "",
+    "title": "Ayrıntılar",
     "items": {
       "installer": {
-        "title": "",
-        "body": ""
+        "title": "Windows yükleyicisi",
+        "body": "Bizim yükleyicimiz SignPath aracılığıyla kod imzası taşır. Grimoire’ın README dosyasına göre yükleyicileri henüz imzalı değildir; bu yüzden Windows “Bilinmeyen yayıncı” uyarısı gösterir."
       },
       "linux": {
-        "title": "",
-        "body": ""
+        "title": "Linux paketleri",
+        "body": "Biz apt deposu, .deb, RPM, Flatpak, AUR, nixpkgs ve Gentoo paketleri sunuyoruz. Grimoire ise AppImage, .deb, apt deposu, AUR ve Nix flake sunuyor."
       },
       "tech": {
-        "title": "",
-        "body": ""
+        "title": "Teknik altyapı",
+        "body": "Deadlock Mod Manager, Tauri ile geliştirilmiştir ve sisteminizin web görünümünü kullanır. Grimoire ise Chromium’u içinde barındıran bir Electron uygulamasıdır."
       }
     },
-    "sources": ""
+    "sources": "Ekim 2026 itibarıyla her projenin README dosyasına, belgelerine ve sürümlerine dayanmaktadır. Güncelliğini yitirmiş bir bilgi mi gördünüz? <link>Bize bildirin</link>."
   }
 }

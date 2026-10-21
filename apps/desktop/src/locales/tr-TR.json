@@ -1,80 +1,80 @@
 {
   "modelConflict": {
-    "keptCurrent": "",
-    "replaced": ""
+    "keptCurrent": "Mevcut görünümleri korumak için atlandı",
+    "replaced": "Seçilen başka bir görünümle değiştirildi"
   },
   "launchRepair": {
-    "title_one": "",
-    "title_other": "",
-    "description": "",
-    "localImport": "",
-    "localNotice": "",
-    "reinstallAndLaunch": "",
-    "disableAndLaunch": "",
-    "progress": "",
-    "notRestored": "",
-    "failed": "",
-    "profileChanged": ""
+    "title_one": "{{count}} modun dosyaları eksik",
+    "title_other": "{{count}} modun dosyaları eksik",
+    "description": "Başlatmadan önce etkilenen modları yeniden yükleyin veya devre dışı bırakın.",
+    "localImport": "Yerel içe aktarma",
+    "localNotice": "Yerel olarak içe aktarılan modlar yeniden indirilemez. Yeniden yükleyip başlatma işlemi bunları devre dışı bırakır.",
+    "reinstallAndLaunch": "Yeniden yükle ve başlat",
+    "disableAndLaunch": "Devre dışı bırak ve başlat",
+    "progress": "Yeniden yükleniyor ({{index}}/{{total}}): {{name}}",
+    "notRestored": "Dosyalar otomatik olarak geri yüklenemedi.",
+    "failed": "Bazı modlar onarılamadı. Başlatmak için bunları devre dışı bırakın veya işlemi iptal edin.",
+    "profileChanged": "Etkin profil değişti. İşlemi iptal edip oyunu o profilden yeniden başlatın."
   },
   "favorites": {
-    "title": "",
-    "subtitle": "",
-    "add": "",
-    "remove": "",
-    "favorite": "",
-    "favorited": "",
-    "back": "",
-    "emptyTitle": "",
-    "emptyDescription": ""
+    "title": "Favoriler",
+    "subtitle": "Daha sonra tekrar bakmak için kaydettiğiniz modlar.",
+    "add": "Favorilere ekle",
+    "remove": "Favorilerden kaldır",
+    "favorite": "Favori",
+    "favorited": "Favorilere eklendi",
+    "back": "Mod Mağazasına Dön",
+    "emptyTitle": "Henüz favori yok",
+    "emptyDescription": "Daha sonra burada bulmak için bir mod kartındaki yıldıza dokunun."
   },
   "navigation": {
-    "dashboard": "",
+    "dashboard": "Gösterge Paneli",
     "myMods": "Modlarım",
     "getMods": "Modları keşfet",
     "addMods": "Mod ekle",
     "downloads": "İndirilenler",
     "settings": "Ayarlar",
-    "developer": "",
+    "developer": "Geliştirici",
     "whatsNew": "Yenilikler",
     "needHelp": "Yardıma İhtiyacınız Var mı?",
     "collapseMenu": "Menüyü daralt",
-    "expandMenu": "",
+    "expandMenu": "Menüyü genişlet",
     "about": "Hakkında",
-    "crosshairs": "",
-    "skins": "",
-    "stats": "",
-    "foundry": "",
-    "customization": "",
+    "crosshairs": "Nişangâhlar",
+    "skins": "Kahraman Görünümleri",
+    "stats": "İstatistikler",
+    "foundry": "Mod Foundry",
+    "customization": "Özelleştirme",
     "autoexec": "Autoexec yapılandırması",
-    "performance": "",
-    "new": "",
-    "maps": "",
-    "servers": "",
-    "multiplayer": "",
-    "general": "",
-    "mods": ""
+    "performance": "Performans",
+    "new": "Yeni",
+    "maps": "Haritalar",
+    "servers": "Sunucu Tarayıcısı",
+    "multiplayer": "Özel Sunucular",
+    "general": "Genel",
+    "mods": "Modlar"
   },
   "performance": {
-    "title": "",
-    "subtitle": "",
+    "title": "Performans",
+    "subtitle": "Görsel ayrıntıdan ödün vererek kare hızını artıran topluluk yapılandırmaları. Bunlar modlarınızla birlikte gameinfo.gi dosyasına yazılır ve istediğiniz zaman kapatılabilir.",
     "tabs": {
-      "configs": "",
-      "editor": "",
-      "history": "",
-      "howItWorks": ""
+      "configs": "Yapılandırmalar",
+      "editor": "Ayar düzenleyici",
+      "history": "Geçmiş",
+      "howItWorks": "Nasıl çalışır"
     },
     "howItWorks": {
       "writes": {
-        "title": "",
-        "inPlace": "",
-        "turnOff": "",
-        "reapply": "",
-        "untouched": ""
+        "title": "Mod yöneticisi neleri değiştirir",
+        "inPlace": "Yapılandırma, gameinfo.gi dosyanıza yazılan konsol değişkenlerinin (convar) ve bazen motor ayarlarının listesidir. Mod yöneticisi dosyayı değiştirmek yerine modlarınızın yanında yerinde düzenler.",
+        "turnOff": "Eklediği veya değiştirdiği her satırı işaretler. Bu sayede Kapat seçeneği bu satırları kaldırır ve önceki değerleri geri getirir. Yapılandırmalarınız ve ince ayarlarınız kayıtlı kalır.",
+        "reapply": "Oyun güncellemesi veya Modsuz Duruma Sıfırla işlemi gameinfo.gi dosyasını değiştirir. Mod yöneticisi başlatıldığında, penceresine geri döndüğünüzde ve uygulama üzerinden yapılan her başlatmadan önce (modsuz başlatmalar dâhil) yapılandırmanızı yeniden yazar; Deadlock çalışırken bekler. Mod yöneticisi kapalıyken Deadlock’u Steam’den başlatırsanız uygulamayı yeniden açana kadar yapılandırma uygulanmaz.",
+        "untouched": "Modlarınızın yüklenmesini sağlayan SearchPaths ve video.txt hiçbir zaman değiştirilmez."
       },
       "sources": {
-        "title": "",
+        "title": "Bilgilerin kaynağı",
         "convars": {
-          "term": "",
+          "term": "Valve’ın konsol değişkenleri listesi",
           "body": ""
         },
         "history": {
@@ -3310,8 +3310,15 @@
     "autoexecCommandAdd": "",
     "autoexecCommandAdded": "",
     "autoexecCommandAddedBadge": "",
+    "outdatedConvarBadge": "",
+    "outdatedConvarTooltip": "",
     "autoexecCommandDefaultBadge": "",
     "autoexecEditorHeading": "",
+    "autoexecUnsaved": "",
+    "autoexecManagedCrosshair": "",
+    "autoexecManagedMapCommand": "",
+    "autoexecManagedLines_one": "",
+    "autoexecManagedLines_other": "",
     "autoexecSaving": "",
     "autoexecClear": "",
     "autoexecClearConfirmTitle": "",
@@ -3694,6 +3701,33 @@
     "description": "",
     "action": "",
     "confirmAction": "",
+    "continue": "",
+    "areYouSure": "",
+    "stat": {
+      "mods": "",
+      "installed": "",
+      "download": ""
+    },
+    "steps": {
+      "backup": {
+        "title": "",
+        "body": ""
+      },
+      "wipe": {
+        "title": "",
+        "body": ""
+      },
+      "download": {
+        "title": "",
+        "body": ""
+      },
+      "install": {
+        "title": "",
+        "body": ""
+      }
+    },
+    "areYouSureBody_one": "",
+    "areYouSureBody_other": "",
     "confirmBody_one": "",
     "confirmBody_other": "",
     "confirmDetails": "",
@@ -3701,6 +3735,11 @@
     "localModsPreserved_other": "",
     "stopAfterCurrent": "",
     "stopping": "",
+    "chooseFiles": "",
+    "chooseFilesLater": "",
+    "backupFailedBody": "",
+    "retryFailed_one": "",
+    "retryFailed_other": "",
     "summary": "",
     "summaryMissing_one": "",
     "summaryMissing_other": "",
@@ -3711,6 +3750,8 @@
     "phase": {
       "idle": "",
       "snapshot": "",
+      "backingUp": "",
+      "backupFailed": "",
       "purging": "",
       "clearingCache": "",
       "clearingState": "",
@@ -4054,7 +4095,8 @@
     "unsupportedImageType": ""
   },
   "progress": {
-    "pleaseWait": "Lütfen bekleyin..."
+    "pleaseWait": "Lütfen bekleyin...",
+    "bytes": ""
   },
   "modStatus": {
     "added": "Modlarıma eklendi",
@@ -5248,6 +5290,9 @@
     "featuredModOfTheWeek": "",
     "trendingIn": "",
     "seeAll": "",
+    "browseBy": "",
+    "hero": "",
+    "randomHero": "",
     "viewMod": "",
     "installedMods": "",
     "pendingUpdates": "",

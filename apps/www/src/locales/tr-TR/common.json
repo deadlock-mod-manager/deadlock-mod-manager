@@ -1,211 +1,211 @@
 {
   "privacy": {
-    "updated": "",
-    "scope": "",
-    "desktopCollection": "",
-    "serverStorage": "",
+    "updated": "Son güncelleme: 21 Ekim 2026",
+    "scope": "Bu politika Deadlock Mod Manager masaüstü uygulamasını, deadlockmods.app sitesini ve Discord topluluk botumuzu kapsar. Masaüstü uygulamasına özgü veri toplama ve ayarlar aşağıda açıklanmıştır. Discord Botu bölümü, Discord verilerini nasıl işlediğimizi açıklar.",
+    "desktopCollection": "Masaüstü uygulaması bilgisayarınızda yerel olarak çalışır ve mod keşfi ile indirme gibi özellikler için çevrim içi hizmetlerle iletişim kurar. Ayrıca bu politikada açıklandığı şekilde teknik verileri ve kullanım verilerini toplar.",
+    "serverStorage": "API iletişiminde HTTPS kullanılır. Sunucu tarafındaki hizmetler, özelliklerini sunmak için gerekli verileri de saklar. Bunlara Discord Botu bölümünde açıklanan Discord tanımlayıcıları ve topluluk yönetimi kayıtları dâhildir.",
     "sections": {
-      "discord": "",
-      "updates": "",
-      "changes": "",
-      "contact": ""
+      "discord": "6. Discord Botu",
+      "updates": "7. Güncellemeler",
+      "changes": "8. Gizlilik Politikasındaki Değişiklikler",
+      "contact": "9. İletişim"
     },
     "discord": {
-      "dataTitle": "",
-      "data": "",
-      "languageTitle": "",
-      "language": "",
-      "languageData": "",
-      "sharingTitle": "",
-      "sharing": "",
-      "retentionTitle": "",
-      "retention": "",
-      "controlsTitle": "",
-      "controls": "",
-      "contact": ""
+      "dataTitle": "Veriler ve amaçlar",
+      "data": "Discord botumuz; topluluk forumlarını yönetmek, kayıtlı destek yanıtları sunmak ve kanal kurallarını uygulamak için gerektiğinde ileti metinlerini, kullanıcı ve rol bilgilerini, sunucu, kanal, konuşma dizisi ve ileti tanımlayıcılarını ve komut girdilerini işler. Topluluk yönetimi kayıtları, gönderilen komutları ve bunları gönderen kişileri içerebilir. Bot yanıtları ve uyarıları, kanal izinlerine göre görünür. Bu işleme, masaüstü uygulamasının analiz ayarlarından ayrıdır.",
+      "languageTitle": "İngilizce dil denetimi",
+      "language": "Dil denetimi etkinleştirildiğinde, yöneticilerin seçtiği kanallardaki ve bunların konuşma dizilerindeki normal iletileri kontrol eder. Özel iletileri, botları, webhook iletilerini ve sistem iletilerini atlar. Kısa veya dili belirsiz metinleri dikkate almaz; İngilizce olmadığı güvenle belirlenen iletiler için hatırlatma gönderir ve ayarlanan uyarı sınırından sonraki ihlalleri siler. Varsayılan olarak, sabit bir 30 dakikalık süre içinde iletilen üç uyarıdan sonra yeni ihlaller silinir. Otomatik dil algılama hata yapabilir; bir denetim işlemine itiraz etmek için sunucu ekibiyle iletişime geçin.",
+      "languageData": "Dil algılama bot sunucumuzda yerel olarak çalışır. Bu özellik ileti metinlerini bellekte işler, ileti içeriklerini saklamaz ve haricî bir yapay zekâ veya çeviri hizmetine göndermez. Geçici uyarı sayıları ile sunucu, kullanıcı ve işlenen ileti tanımlayıcıları, normalde 30 dakika sonra silinecek şekilde Redis’te saklanır. Yönetici bu süreyi 1 dakika ile 24 saat arasında ayarlayabilir.",
+      "sharingTitle": "Hizmet sağlayıcıları ve yapay zekâ",
+      "sharing": "Discord, ileti ve etkileşimleri bota iletir; botun yanıtlarını ve denetim işlemlerini alır. Barındırma, veritabanı ve tanılama sağlayıcılarımız, bu özellikleri çalıştırmak ve sorunlarını gidermek için gerekli verileri işler. Bot tanılama verileri, yukarıdaki Çökme Raporları bölümünde bağlantısı verilen politika kapsamında Sentry’ye gönderilebilir. Denetim işlemi günlükleri ileti içeriklerini değil; tanımlayıcıları, algılanan dili, işlemleri ve hataları içerir. Botun eski yapay zekâ destek veya ileti sınıflandırma özelliklerini artık kullanmıyoruz. Discord ileti içeriklerini yapay zekâ veya makine öğrenimi modellerini eğitmek için kullanmıyoruz.",
+      "retentionTitle": "Saklama ve silme",
+      "retention": "Geçici dil denetimi kayıtlarının süresi yukarıda açıklandığı gibi dolar. Bu süre, yöneticinin veya hizmet sağlayıcısının saklama ayarları kapsamında kaldırılana kadar tutulan tanılama günlükleri ya da kayıtlı topluluk yönetimi verileri için geçerli değildir. Discord’da bir iletiyi silmek, Discord dışında önceden saklanmış kayıtları otomatik olarak kaldırmaz. Kullanımdan kaldırılan destek özelliklerinden kalan kayıtlar dâhil Discord hesabınızla ilişkili bot verilerine erişmek veya bunların silinmesini istemek için bizimle iletişime geçin. Talebin hesabınızla ilgili olduğunu doğrular; güvenlik veya yasal nedenlerle saklamamız gereken veriler varsa açıklarız.",
+      "controlsTitle": "Seçenekler ve iletişim",
+      "controls": "Otomatik dil denetiminden kullanıcı bazında çıkmayı sağlayan bir komut yoktur. Yöneticiler özelliği kapatabilir, kanalları seçebilir veya hariç tutabilir. Botu etiketlememek, özelliğin etkin olduğu kanallarda denetimi engellemez. Alternatif bir kanal veya veri silme hakkında sunucu ekibine danışın. Masaüstü analizlerini kapatmak Discord botunun veri işlemesini durdurmaz.",
+      "contact": "Botun gizliliğiyle ilgili sorular ve erişim veya silme talepleri için <discord>Discord topluluğumuz</discord> üzerinden sunucu ekibiyle özel olarak iletişime geçin. Kayıtlarınızı bulabilmemiz için Discord kullanıcı kimliğinizi ve ilgili kanal veya konuşma dizisi bilgilerini ekleyin. İleti içeriklerini, kimlik bilgilerini veya başka özel bilgileri herkese açık bir GitHub issue’sunda paylaşmayın."
     }
   },
   "language": {
-    "label": ""
+    "label": "Dil"
   },
   "navbar": {
-    "homepage": "",
-    "primaryNav": "",
-    "mobileNav": "",
-    "openMenu": "",
-    "download": "",
+    "homepage": "Ana sayfa",
+    "primaryNav": "Birincil",
+    "mobileNav": "Mobil",
+    "openMenu": "Menüyü aç",
+    "download": "İndir",
     "links": {
-      "mods": "",
-      "skins": "",
-      "features": "",
-      "themes": "",
-      "tools": "",
-      "docs": ""
+      "mods": "Modlar",
+      "skins": "Görünümler",
+      "features": "Özellikler",
+      "themes": "Temalar",
+      "tools": "Araçlar",
+      "docs": "Belgeler"
     }
   },
   "userMenu": {
-    "signIn": "",
-    "signInButton": "",
-    "signOut": "",
-    "dashboard": "",
-    "avatarFallback": ""
+    "signIn": "Oturum aç",
+    "signInButton": "Oturum aç",
+    "signOut": "Oturumu kapat",
+    "dashboard": "Kontrol paneli",
+    "avatarFallback": "Kullanıcı"
   },
   "v2Banner": {
-    "outNow": "",
-    "outNowLong": "",
-    "whatsNew": ""
+    "outNow": "Şimdi yayında: Baştan sona yeniden geliştirildi.",
+    "outNowLong": "Şimdi yayında: Oyun güncellemelerinden etkilenmeyen modlar, daha hızlı mağaza ve çakışma tespiti.",
+    "whatsNew": "Yeniliklere göz atın"
   },
   "footer": {
-    "tagline": "",
-    "disclaimer": "",
+    "tagline": "Valve’ın Deadlock oyunu için mod yüklemeye ve yönetmeye yarayan küçük, açık kaynaklı bir uygulama.",
+    "disclaimer": "Valve ile bağlantılı değildir. “Deadlock” ve ilgili işaretler Valve Corporation’ın ticari markalarıdır.",
     "headings": {
-      "links": "",
-      "guides": "",
-      "support": "",
-      "partners": ""
+      "links": "Bağlantılar",
+      "guides": "Kılavuzlar",
+      "support": "Destek",
+      "partners": "İş ortakları"
     },
     "links": {
-      "download": "",
-      "sourceCode": "",
-      "changelog": "",
-      "documentation": "",
-      "faq": "",
-      "reportBug": ""
+      "download": "İndir",
+      "sourceCode": "Kaynak kodu",
+      "changelog": "Değişiklik günlüğü",
+      "documentation": "Belgeler",
+      "faq": "Sık sorulan sorular",
+      "reportBug": "Hata bildir"
     },
     "legal": {
-      "privacy": "",
-      "terms": "",
-      "transparency": ""
+      "privacy": "Gizlilik politikası",
+      "terms": "Hizmet şartları",
+      "transparency": "Şeffaflık"
     },
-    "madeBy": ""
+    "madeBy": "{{copyright}}. <link>Stormix</link> tarafından <heart /> ile yapıldı."
   },
   "statusWidget": {
-    "checking": "",
-    "refresh": "",
+    "checking": "Durum kontrol ediliyor...",
+    "refresh": "Durumu yenile",
     "status": {
-      "operational": "",
-      "downtime": "",
-      "degraded": "",
-      "unknown": ""
+      "operational": "Tüm sistemler çalışıyor",
+      "downtime": "Tüm sistemler hizmet dışı",
+      "degraded": "Bazı sistemlerde aksama var",
+      "unknown": "Durum bilinmiyor"
     }
   },
   "cta": {
-    "downloadStarted": "",
-    "sendToPc": "",
+    "downloadStarted": "İndirme başladı. Yükleyiciyi çalıştırın, ardından Modlarla Başlat’a tıklayın.",
+    "sendToPc": "Bilgisayarınıza indirin",
     "sendNotes": {
-      "copied": "",
-      "shared": "",
-      "failed": ""
+      "copied": "Bağlantı kopyalandı. Windows veya Linux bilgisayarınızda açın.",
+      "shared": "Bağlantı gönderildi. Windows veya Linux bilgisayarınızda açın.",
+      "failed": "Windows veya Linux bilgisayarınızda {{url}} adresini açın."
     }
   },
   "platformDownload": {
-    "download": "",
-    "windows": "",
-    "linux": "",
-    "available": "",
-    "version": "",
-    "versionWithArch": ""
+    "download": "İndir",
+    "windows": "Windows için indir",
+    "linux": "Linux için indir",
+    "available": "Windows ve Linux için kullanılabilir",
+    "version": "{{os}} için {{version}} sürümü",
+    "versionWithArch": "{{os}} ({{arch}}) için {{version}} sürümü"
   },
   "modCard": {
-    "heroSkin": "",
+    "heroSkin": "{{hero}} görünümü",
     "categories": {
-      "skins": "",
-      "qualityOfLife": ""
+      "skins": "Görünümler",
+      "qualityOfLife": "Kullanım kolaylığı"
     },
-    "byline": "",
-    "bylineWithDownloads": "",
+    "byline": "{{author}} tarafından hazırlanan {{kind}}",
+    "bylineWithDownloads": "{{author}} tarafından hazırlanan {{kind}} · {{downloads}} indirme",
     "alt": {
-      "heroSkin": "",
-      "skins": "",
-      "qualityOfLife": ""
+      "heroSkin": "{{name}}, Deadlock için {{hero}} görünümü",
+      "skins": "{{name}}, bir Deadlock görünüm modu",
+      "qualityOfLife": "{{name}}, bir Deadlock kullanım kolaylığı modu"
     }
   },
   "guidePage": {
-    "allDownloads": "",
-    "questions": "",
-    "relatedGuides": ""
+    "allDownloads": "Tüm indirmeler",
+    "questions": "Sorular",
+    "relatedGuides": "İlgili kılavuzlar"
   },
   "guides": {
     "mods": {
-      "label": "",
-      "description": ""
+      "label": "Deadlock modları",
+      "description": "GameBanana modlarına göz atın ve tek tıklamayla yükleyin."
     },
     "skins": {
-      "label": "",
-      "description": ""
+      "label": "Deadlock görünümleri",
+      "description": "Bir kahraman görünümü seçip önizleyin; istediğiniz zaman eskisine dönün."
     },
     "install": {
-      "label": "",
-      "description": ""
+      "label": "Deadlock modlarını yükleme",
+      "description": "Modları uygulamayla veya elle birkaç dakikada hazırlayın."
     },
     "notWorking": {
-      "label": "",
-      "description": ""
+      "label": "Güncellemeden sonra modlar çalışmıyor",
+      "description": "Deadlock güncellemesinden sonra bozulan modları düzeltin."
     },
     "grimoire": {
-      "label": "",
-      "description": ""
+      "label": "Deadlock Mod Manager ve Grimoire karşılaştırması",
+      "description": "İki açık kaynaklı mod yöneticisinin karşılaştırması."
     },
     "os5": {
-      "label": "",
-      "description": ""
+      "label": "Erişim reddedildi (işletim sistemi hatası 5)",
+      "description": "Salt okunur dosyalar veya yönetici yetkisiyle yüklenen modlar değişiklikleri engeller."
     },
     "os740": {
-      "label": "",
-      "description": ""
+      "label": "Yönetici izni gerekiyor (işletim sistemi hatası 740)",
+      "description": "Steam yönetici olarak çalışacak şekilde ayarlanmış."
     },
     "modOrder": {
-      "label": "",
-      "description": ""
+      "label": "Mod sırası kaydedilemedi",
+      "description": "Oyun veya başka bir uygulama mod dosyalarını açık tutuyor."
     },
     "download": {
-      "label": "",
-      "description": ""
+      "label": "İndirme başarısız / İndirmeler yavaş",
+      "description": "GameBanana istek sınırları, virüsten koruma ve ağ sorunları."
     },
     "fatal": {
-      "label": "",
-      "description": ""
+      "label": "Deadlock başlatılırken kritik hata",
+      "description": "Düzen dosyası yüklenemedi, alt öğe bulunamadı ve diğer hatalar."
     }
   },
   "fallbacks": {
     "error": {
-      "title": "",
-      "staleBuild": "",
-      "body": "",
-      "reload": "",
-      "retry": "",
-      "goHome": "",
-      "stillBroken": ""
+      "title": "Bu sayfa düzgün yüklenmedi",
+      "staleBuild": "Site az önce güncellendi. En son sürümü görmek için sayfayı yeniden yükleyin.",
+      "body": "Sayfa yüklenirken bizim tarafımızda bir sorun oluştu. Yeniden deneyin veya ana sayfaya dönün.",
+      "reload": "Yeniden yükle",
+      "retry": "Yeniden dene",
+      "goHome": "Ana sayfaya dön",
+      "stillBroken": "Hâlâ çalışmıyor mu? <link>GitHub üzerinden bize bildirin</link>."
     },
     "notFound": {
-      "title": "",
-      "body": "",
-      "goHome": "",
-      "download": ""
+      "title": "Sayfa bulunamadı",
+      "body": "Bu sayfa mevcut değil veya taşınmış.",
+      "goHome": "Ana sayfaya dön",
+      "download": "Uygulamayı indir"
     }
   },
   "errorPages": {
-    "returnHome": "",
-    "escape": "",
+    "returnHome": "Ana sayfaya dön",
+    "escape": "Boşluktan kurtul",
     "notFound": {
       "meta": {
-        "title": "",
-        "description": ""
+        "title": "Sayfa bulunamadı | Deadlock Mod Manager",
+        "description": "Bu sayfa mevcut değil. Uygulamayı indirmek veya web araçlarını denemek için Deadlock Mod Manager ana sayfasına dönün."
       },
-      "title": "",
-      "body": "",
-      "stillLooking": "",
-      "hint": ""
+      "title": "Astral Kapılar’da kayboldunuz",
+      "body": "Bu sayfa Maelstrom sırasında bir Astral Kapı’dan geçip kayboldu. Dükkâncı bile onu envanterinde bulamıyor!",
+      "stillLooking": "Aradığınızı hâlâ bulamadınız mı?",
+      "hint": "Son gelişmeler için <oracle>The New York Oracle</oracle>’a göz atın veya mod ritüelinize devam etmek üzere <home>the Cursed Apple</home>’a dönün."
     },
     "forbidden": {
       "meta": {
-        "title": "",
-        "description": ""
+        "title": "Erişim reddedildi | Deadlock Mod Manager",
+        "description": "Bu sayfayı görüntüleme izniniz yok."
       },
-      "title": "",
-      "body": "",
-      "needAccess": "",
-      "hint": ""
+      "title": "Erişim reddedildi",
+      "body": "Bu âlem güçlü tılsımlarla korunuyor. Uygun yetkiniz olmadan Patronlar bile geçmenize izin veremez!",
+      "needAccess": "Bu alana erişmeniz mi gerekiyor?",
+      "hint": "Yardım için bir yöneticiyle iletişime geçin veya <oracle>The New York Oracle</oracle>’a göz atın. Mod ritüelinize devam etmek için <home>the Cursed Apple</home>’a dönün."
     }
   }
 }

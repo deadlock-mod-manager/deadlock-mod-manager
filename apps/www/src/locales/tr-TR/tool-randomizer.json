@@ -89,80 +89,80 @@
       "detail": "Dizilimdeki eşyaları kesinlikle yukarıdan aşağıya doğru satın alın. Bir sonraki kademeye paranız yetse bile sırayı atlamayın. Yükseltmeleri karşılayabildiğiniz anda alın."
     },
     "noRecall": {
-      "title": "",
-      "detail": ""
+      "title": "15. dakikadan sonra üste alışveriş yok",
+      "detail": "Oyun süresi 15 dakikayı geçtikten sonra tüm alışverişlerinizi kendi üssünüzün dışında yapmalısınız."
     },
     "parry": {
-      "title": "",
-      "detail": ""
+      "title": "Her zaman savuştur",
+      "detail": "Size yöneltilen her yakın dövüş saldırısını savuşturmayı denemelisiniz. Bunun yerine karşılıklı hasar almak başarısızlık sayılır."
     },
     "noZipline": {
-      "title": "",
-      "detail": ""
+      "title": "Yere bas",
+      "detail": "İlk on dakika boyunca hava hattını kullanmak yasak. Yürüyün."
     },
     "meleeOpening": {
-      "title": "",
-      "detail": ""
+      "title": "Önce yumruklar",
+      "detail": "İlk 2. kademe eşyanızı satın alana kadar bir rakip oyuncuya yalnızca yakın dövüş saldırılarıyla hasar verebilirsiniz."
     },
     "ultOnCooldown": {
-      "title": "",
-      "detail": ""
+      "title": "Ultiyi bekletme",
+      "detail": "Ulti yeteneğiniz kullanılabilir olur olmaz onu kullanın. Daha uygun bir an için saklamak başarısızlık sayılır."
     },
     "noRetreat": {
-      "title": "",
-      "detail": ""
+      "title": "Geri çekilme",
+      "detail": "Başlattığınız koridor çatışmasından asla ayrılmayın. Ya kazanırsınız ya da yeniden doğma noktasından geri yürürsünüz."
     },
     "soulCap": {
-      "title": "",
-      "detail": ""
+      "title": "Hepsini harca",
+      "detail": "Diziliminizdeki sonraki eşyaya paranız yeter yetmez gidip onu alın. Bedelinden fazla ruh biriktirmek başarısızlık sayılır."
     },
     "oneLane": {
-      "title": "",
-      "detail": ""
+      "title": "Koridora sadakat",
+      "detail": "Seçilen koridorda ilk koruyucu düşene kadar kalın. Başka koridora geçmek veya ormana gitmek yok."
     },
     "noCancel": {
-      "title": "",
-      "detail": ""
+      "title": "Kararlı ol",
+      "detail": "Kullanmaya başladığınız her yeteneği tamamlamalısınız. Yeteneği iptal etmek başarısızlık sayılır."
     },
     "callout": {
-      "title": "",
-      "detail": ""
+      "title": "Her seçimi duyur",
+      "detail": "Bariyer kalkmadan önce kahramanınızı, koridorunuzu ve ilk eşyanızı genel sohbete yazın."
     },
     "noHeal": {
-      "title": "",
-      "detail": ""
+      "title": "Üs yasak",
+      "detail": "Kendi üssünüzde asla iyileşmeyin. Yalnızca yenilenme, can çalma ve iyileştirme eşyalarını kullanın."
     }
   },
   "abilities": {
-    "fallback": "",
-    "ultimate": "",
-    "maxFirst": "",
-    "unlockedAt": "",
-    "upgradeAt": "",
-    "unlock": "",
-    "cost": "",
-    "spent": "",
-    "srUnlock": "",
-    "srUpgrade": ""
+    "fallback": "Yetenek {{slot}}",
+    "ultimate": "Ulti",
+    "maxFirst": "Önce son seviyeye çıkar",
+    "unlockedAt": "{{position}}. adımda açıldı",
+    "upgradeAt": "{{position}}. adımda {{upgrade}} yükseltmesi",
+    "unlock": "Kilidini aç",
+    "cost": "+{{cost}} yetenek puanı",
+    "spent": "{{spent}} yetenek puanı",
+    "srUnlock": "{{ability}}, kilidini aç",
+    "srUpgrade": "{{ability}}, {{step}}. yükseltme"
   },
   "item": {
-    "tier": "",
-    "active": "",
-    "activeTitle": "",
-    "tooltipHeader": "",
+    "tier": "{{tier}}. kademe",
+    "active": "Etkin",
+    "activeTitle": "Etkin eşya",
+    "tooltipHeader": "{{category}} · {{tier}}. kademe · <souls>{{cost}}</souls>",
     "sectionKinds": {
-      "active": "",
-      "passive": ""
+      "active": "etkin",
+      "passive": "pasif"
     },
-    "ariaUpgrade": "",
-    "ariaItem": "",
-    "categoryChange": "",
-    "upgrade": "",
-    "upgradePriceTitle": "",
-    "goodFit": "",
-    "goodFitTitle": "",
-    "imbueOn": "",
-    "imbueOnUntilUpgraded": "",
-    "imbueLapsesTitle": ""
+    "ariaUpgrade": "{{item}}, {{upgrade}} eşyasına yükseltildi",
+    "ariaItem": "{{item}}, {{category}} kategorisinde {{tier}}. kademe",
+    "categoryChange": "{{category}} →",
+    "upgrade": "· Yükseltme",
+    "upgradePriceTitle": "{{total}} ruh, {{item}} için ödenmiş {{paid}} ruh düşüldüğünde",
+    "goodFit": "İyi uyum",
+    "goodFitTitle": "Taslak verilere göre bu kahraman için yüksek puan aldı",
+    "imbueOn": "{{ability}} yeteneğine işle",
+    "imbueOnUntilUpgraded": "Yükseltilene kadar {{ability}} yeteneğine işle",
+    "imbueLapsesTitle": "{{item}} bir yeteneğe işlenir; {{upgrade}} ise tüm yeteneklerde etkilidir"
   }
 }

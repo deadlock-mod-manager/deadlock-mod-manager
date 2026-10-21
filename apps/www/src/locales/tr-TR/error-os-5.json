@@ -1,70 +1,70 @@
 {
   "meta": {
-    "name": "",
-    "title": "",
-    "description": ""
+    "name": "Erişim reddedildi (işletim sistemi hatası 5)",
+    "title": "Deadlock Mod Manager’da “Erişim reddedildi (işletim sistemi hatası 5)” çözümü",
+    "description": "Windows, gameinfo.gi dosyasında veya addons klasöründe değişiklik yapılmasını engellediğinde Deadlock Mod Manager “Erişim reddedildi” (işletim sistemi hatası 5) iletisini gösterir. Salt okunur ayarını kaldırın, Denetimli klasör erişiminde uygulamaya izin verin ve yönetici yetkisiyle yüklenen modları kaldırın."
   },
   "hero": {
-    "eyebrow": "",
-    "title": "",
-    "intro": "",
-    "errorSource": ""
+    "eyebrow": "Hata çözümü",
+    "title": "Erişim reddedildi (işletim sistemi hatası 5)",
+    "intro": "Windows, Deadlock Mod Manager’ın Deadlock klasörünüzdeki bir dosyayı değiştirmesini engelledi. Nedeni neredeyse her zaman salt okunur bir dosya, klasörü koruyan bir güvenlik özelliği veya yönetici yetkisiyle yüklenmiş bir moddur.",
+    "errorSource": "Windows’ta Deadlock Mod Manager"
   },
   "errorText": {
-    "message": ""
+    "message": "Erişim reddedildi. (İşletim sistemi hatası 5)"
   },
   "fix": {
-    "title": "",
-    "intro": "",
+    "title": "Nasıl çözülür?",
+    "intro": "Bu adımları sırayla uygulayın. Çoğu kişi için ilk iki adım yeterlidir.",
     "steps": {
       "closeAndUpdate": {
-        "title": "",
-        "body": ""
+        "title": "Deadlock’u kapatın ve uygulamayı güncelleyin",
+        "body": "Oyunu tamamen kapatın ve Deadlock Mod Manager’ın en son sürümünü kullandığınızdan emin olun. Başka bir ayarı değiştirmeden önce başarısız olan işlemi yeniden deneyin."
       },
       "readOnly": {
-        "title": "",
-        "body": ""
+        "title": "Salt okunur işaretini kaldırın",
+        "body": "<code>game\\citadel\\gameinfo.gi</code> dosyasına sağ tıklayın, Özellikler’i açın ve <strong>Salt okunur</strong> işaretini kaldırın. Aynı işlemi <code>addons</code> klasörüne de uygulayın ve tüm alt klasörlere yayılmasını sağlayın. Terminalden: <code>attrib -r \"…\\Deadlock\\game\\citadel\\*\" /s /d</code>"
       },
       "controlledFolderAccess": {
-        "title": "",
-        "body": ""
+        "title": "Denetimli klasör erişiminde uygulamaya izin verin",
+        "body": "Windows Güvenliği > Virüs ve tehdit koruması > Fidye yazılımı koruması yolunu izleyin. Denetimli klasör erişimi açıksa Uygulamaya izin ver bölümüne Deadlock Mod Manager’ı ekleyin veya Steam kitaplığınızı korunan klasörlerden çıkarın. Diğer virüsten koruma araçlarında da benzer bir istisna listesi bulunur."
       },
       "adminMods": {
-        "title": "",
-        "body": ""
+        "title": "Yönetici yetkisiyle yüklenen modları kaldırın",
+        "body": "Yönetici yetkisiyle çalışan bir programın oluşturduğu dosyalar normal yetkilerle değiştirilemeyebilir. Deadlock Mod Manager’ı bir kez yönetici olarak çalıştırın, etkilenen modları kaldırın veya yeniden yükleyin. Ardından uygulamayı kapatıp normal şekilde başlatın."
       },
       "protectedLocation": {
-        "title": "",
-        "body": ""
+        "title": "Klasörün korumalı bir konumda olmadığını kontrol edin",
+        "body": "Program Files dışındaki Steam kitaplıklarında çoğu izin sorunu yaşanmaz. Deadlock’u özel izinleri olan bir sürücüye taşıdıysanız klasörün Güvenlik sekmesinden Windows kullanıcı hesabınıza Tam denetim izni verin."
       },
       "verifyFiles": {
-        "title": "",
-        "body": ""
+        "title": "Son çare olarak oyun dosyalarını doğrulayın",
+        "body": "Steam’de Deadlock’a sağ tıklayın > Özellikler > Yüklü Dosyalar > Oyun dosyalarının bütünlüğünü doğrula yolunu izleyin. Bu işlem gameinfo.gi dosyasını geri yükler; oyunu modlarla bir sonraki başlatışınızda uygulama modlarınızı yeniden uygular."
       }
     }
   },
   "why": {
-    "title": "",
-    "cause": "",
-    "otherErrors": "",
-    "stillStuck": ""
+    "title": "Neden olur?",
+    "cause": "Deadlock Mod Manager modları etkinleştirmek, devre dışı bırakmak veya yeniden sıralamak için addons klasöründeki <code>.vpk</code> dosyalarını yeniden adlandırır ve oyunun bunları yüklemesi için <code>gameinfo.gi</code> dosyasını düzenler. Dosya salt okunur işaretliyse, Denetimli klasör erişimi gibi bir güvenlik özelliği klasörü koruyorsa veya dosya uygulamanın kullanmadığı bir yönetici hesabına aitse Windows 5 hatasını döndürür.",
+    "otherErrors": "Hata, dosyaların <em>kullanımda</em> olduğunu söylüyorsa bu farklı bir sorundur: <order>Mod sırası kaydedilemedi</order> bölümüne bakın. Başlatma 740 hatasıyla başarısız oluyorsa <os740>işletim sistemi hatası 740</os740> bölümüne bakın.",
+    "stillStuck": "Sorun sürüyor mu? <docs>İzin sorunlarını giderme belgelerinde</docs> daha fazla bilgi bulabilirsiniz. Uygulama günlüklerini paylaşırsanız <discord>Discord</discord> üzerinden de yardım alabilirsiniz."
   },
   "faqs": {
     "meaning": {
-      "question": "",
-      "answer": ""
+      "question": "Deadlock Mod Manager’da işletim sistemi hatası 5 ne anlama geliyor?",
+      "answer": "Bu, Windows’taki ERROR_ACCESS_DENIED hatasıdır. Windows, uygulamanın Deadlock klasörünüzdeki bir dosyayı yazmasına, yeniden adlandırmasına veya silmesine izin vermedi. Dosya genellikle gameinfo.gi veya addons klasöründeki bir .vpk dosyasıdır."
     },
     "runAsAdmin": {
-      "question": "",
-      "answer": ""
+      "question": "Deadlock Mod Manager’ı her zaman yönetici olarak mı çalıştırmalıyım?",
+      "answer": "Hayır. Yönetici yetkisiyle oluşturulmuş dosyaları temizlemek için uygulamayı bir kez yönetici olarak çalıştırın, ardından normal şekilde başlatmaya dönün. Uygulamayı sürekli yönetici olarak çalıştırmak yeni mod dosyalarını da yönetici hesabına ait hâle getirir; normal başlattığınızda hata yeniden ortaya çıkar."
     },
     "gameClosed": {
-      "question": "",
-      "answer": ""
+      "question": "Deadlock kapalıyken neden işletim sistemi hatası 5 alıyorum?",
+      "answer": "Dosyayı oyun dışında bir etken engelliyor olabilir: salt okunur özelliği, Windows Güvenliği’nin Denetimli klasör erişimi, başka bir virüsten koruma programı veya yönetici yetkisiyle yüklenmiş bir moddan kalan dosyalar."
     },
     "linux": {
-      "question": "",
-      "answer": ""
+      "question": "İşletim sistemi hatası 5 Linux’ta da olur mu?",
+      "answer": "Linux’taki karşılığı “İzin reddedildi” (işletim sistemi hatası 13) iletisidir. Deadlock klasörünün sahibi olduğunuzdan emin olun. Flatpak kullanıyorsanız sorun giderme belgelerinde anlatıldığı gibi uygulamaya Steam kitaplığınıza erişim izni verin."
     }
   }
 }
