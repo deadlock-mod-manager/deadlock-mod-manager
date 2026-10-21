@@ -536,6 +536,17 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       }
     },
   },
+  {
+    to: 33,
+    label: "enable-performance-configs",
+    apply: (state) => {
+      // Performance configs left the opt-in experiments; persisted toggles
+      // still hold the old `false` default.
+      if (isPlainObject(state.experimentalFeatures)) {
+        state.experimentalFeatures["performance-configs"] = true;
+      }
+    },
+  },
 ];
 
 const LEGACY_GAMEBANANA_ID = /^[1-9]\d*$/;

@@ -4,11 +4,10 @@ import { ReapplyFailedListener } from "./global/reapply-failed-listener";
 
 export const PerformanceRenderer = () => {
   const isEnabled = useExperimentalFeature("performance-configs");
-  if (!isEnabled) return null;
   return (
     <>
       <ConfigFoundListener />
-      <ReapplyFailedListener />
+      {isEnabled && <ReapplyFailedListener />}
     </>
   );
 };

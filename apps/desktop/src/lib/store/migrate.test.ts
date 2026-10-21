@@ -249,7 +249,7 @@ describe("safeMigrate", () => {
   it("LATEST_VERSION matches the highest step target", () => {
     const max = Math.max(...MIGRATION_STEPS.map((s) => s.to));
     expect(LATEST_VERSION).toBe(max);
-    expect(LATEST_VERSION).toBe(32);
+    expect(LATEST_VERSION).toBe(33);
   });
 
   it("v25 (themes switch): drops the leftover enabledPlugins.themes entry", () => {

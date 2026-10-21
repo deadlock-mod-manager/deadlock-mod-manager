@@ -1,10 +1,9 @@
-import { CompassIcon, GaugeIcon } from "@phosphor-icons/react";
+import { CompassIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
 import type { TourFeature } from "@/lib/experimental-tour";
 
 const ICONS = {
   "custom-maps": CompassIcon,
-  "performance-configs": GaugeIcon,
 };
 
 export const TourPreview = ({ feature }: { feature: TourFeature }) => {

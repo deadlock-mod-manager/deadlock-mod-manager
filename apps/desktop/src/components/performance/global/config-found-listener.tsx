@@ -37,6 +37,9 @@ const ConfigFoundDialog = ({
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dismissModConfig = usePersistedStore((state) => state.dismissModConfig);
+  const setExperimentalFeature = usePersistedStore(
+    (state) => state.setExperimentalFeature,
+  );
   const variants = pickableVariants(found.variants);
   const [variantPath, setVariantPath] = useState(
     variants[0]?.path ?? found.variants[0]?.path ?? null,
@@ -63,6 +66,7 @@ const ConfigFoundDialog = ({
       },
       importContext: { modId: found.modId, modName: found.modName },
     };
+    setExperimentalFeature("performance-configs", true);
     navigate("/performance", { state });
     finish();
   };

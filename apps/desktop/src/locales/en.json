@@ -6431,7 +6431,7 @@
     "tryMe": "Try me",
     "invitation": "Experimental features",
     "title": "Want to try something new?",
-    "description": "Take a quick look at custom maps and performance settings.",
+    "description": "Take a quick look at custom maps.",
     "duration": "The tour takes about a minute. You decide which features to enable.",
     "start": "Take the tour",
     "dismiss": "Not now",
@@ -6460,13 +6460,6 @@
         "hint": "Adds Maps to your sidebar.",
         "previewTitle": "Somewhere new to play",
         "previewDetail": "See what the community has been building."
-      },
-      "performance-configs": {
-        "title": "Adjust your game settings",
-        "description": "Browse performance configs for Deadlock.",
-        "hint": "Adds Performance to your sidebar. Your game settings stay the same until you apply a config.",
-        "previewTitle": "See what a config changes",
-        "previewDetail": "Review the settings before you apply them."
       }
     }
   },
