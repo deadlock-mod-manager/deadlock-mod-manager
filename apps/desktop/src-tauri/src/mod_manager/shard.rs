@@ -452,12 +452,13 @@ pub fn is_valid_search_path(path: &str) -> bool {
 /// citadel/addonsN/<profile>` lines in gameinfo.gi. Restrict them to a strict
 /// allowlist so characters that are safe path components but unsafe in the KV
 /// syntax (spaces, quotes, braces, control chars) can never reach that file.
-/// Created folders are already sanitized to this set; this is defense in depth.
+/// Unicode letters stay allowed: profiles created before folder names were
+/// limited to ASCII still carry them.
 fn is_gameinfo_safe_profile(profile: &str) -> bool {
   !profile.is_empty()
     && profile
       .chars()
-      .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '-')
+      .all(|c| c.is_alphanumeric() || c == '_' || c == '-')
 }
 
 #[cfg(test)]
@@ -601,6 +602,9 @@ mod tests {
     assert!(is_valid_search_path("citadel/addons/profile_123_my-mod"));
     assert!(is_valid_search_path("citadel/addons2/server_abc"));
     assert!(is_valid_search_path("citadel/addons10/profile_x"));
+    assert!(is_valid_search_path(
+      "citadel/addons/profile_1790733456494_hq878upvz_нов"
+    ));
     assert!(is_valid_search_path("citadel/dmm_localization_default"));
     assert!(is_valid_search_path(
       "citadel/dmm_localization_0123456789abcdef"
