@@ -16,7 +16,7 @@
 	tonemapping 0
 	GameData	"citadel.fgd"
 
-	PGIVersion "39A735A413003C88A806B364C32DFC6D077E551B9E4EC6C7B11D41E8E67BFA0C"
+	PGIVersion "48C04ECAFC6448F8D3F41F0AA3A15D065501751CF45FBE32DF6CB951BC4F7F6E"
 
 	Localize
 	{
@@ -287,11 +287,19 @@
 			AggregateInstancingMeshlets			"1"
 			BakePropsWithExtraVertexStreams		"1"
 			MergeTranslucents					"1"
+
+			// Precomputed static shadowmaps for fog
+			BakePrecomputedShadows				"1"
+			BakePrecomputedShadowsForDirectionalLights "0"
+			BakePrecomputedDepthPyramids		"0"
+			PrecomputedShadowmapAtlas			"1" // so precomputed shadows work without bindless (dx11)
+			PrecomputedShadowmapAtlasBorder		"1"
+			PrecomputedShadowmapResolutionDefault "128" // should match SceneSystem/FogCachedShadowTileSizeTools
 		}
 
 		BakedLighting
 		{
-			Version 4
+			Version 5
 			ImportanceVolumeTransitionRegion 512            // distance we transition from high to low resolution charts 
 			LightmapChannels
 			{
@@ -299,17 +307,7 @@
 				debug_chart_color 1
 				directional_irradiance_sh2_dc 1
 				
-				directional_irradiance_sh2_r
-				{
-					CompressedFormat DXT1
-				}
-				
-				directional_irradiance_sh2_g
-				{
-					CompressedFormat DXT1
-				}
-				
-				directional_irradiance_sh2_b
+				directional_irradiance_sh2_lum
 				{
 					CompressedFormat DXT1
 				}
@@ -438,9 +436,9 @@
 	SceneSystem
 	{
 		GpuLightBinner 1
-		FogCachedShadowAtlasWidth 2048
-		FogCachedShadowAtlasHeight 2048
-		FogCachedShadowTileSize 128
+		FogCachedShadowAtlasWidthTools 2048
+		FogCachedShadowAtlasHeightTools 2048
+		FogCachedShadowTileSizeTools 128 // should match WorldRendererBuilder/PrecomputedShadowmapResolutionDefault
 		GpuLightBinnerSunLightFastPath 1
 		CSMCascadeResolution 2048
 		SunLightManagerCount 0
