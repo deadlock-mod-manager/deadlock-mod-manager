@@ -6299,6 +6299,8 @@
       "switchFailed": "Couldn't turn on {{name}}. Try again, or stop the search.",
       "stepFailed": "Something went wrong while switching mods. Try again, or stop the search.",
       "restoreFailed": "Couldn't restore all your mods. Try again, or choose Discard to end the search and manage your mods yourself.",
+      "restoreSwitchFailed": "Couldn't turn on {{name}}. Try again, or choose Discard to end the search and manage your mods yourself.",
+      "restoreIncomplete": "Files are missing or the download failed for: {{names}}. The other available mods were restored in their original order. Try again after restoring the files, or choose Discard to end the search and download those mods again.",
       "roundChanged": "Some mods were changed by hand during this round, so it's set up again. Answer after the next launch.",
       "switchBlocked": "Finish or stop the broken mod search before switching profiles.",
       "switchBackFailed": "Couldn't switch back to that profile.",

@@ -2,4 +2,4 @@
 "@deadlock-mods/desktop": patch
 ---
 
-Allow discarding a broken mod search when restoring mods fails
+Restore available mods and allow discarding an incomplete broken mod search
