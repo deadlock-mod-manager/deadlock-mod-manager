@@ -6,6 +6,8 @@ use crate::mod_manager::vpk_manager::staging::{RecoveryMode, recover_staging_dir
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, fs, io::ErrorKind, path::Path};
 
+mod legacy_reorder;
+
 const MANIFEST_FILENAME: &str = ".dmm.json";
 const CURRENT_MANIFEST_VERSION: u32 = 3;
 
@@ -302,7 +304,7 @@ impl ProfileVpkManifest {
       };
       recover_staging_directory(&base, &path, mode, manifest)?;
     }
-    Ok(())
+    legacy_reorder::recover(&base)
   }
 
   pub fn save(&self, addons_path: &Path) -> Result<(), Error> {

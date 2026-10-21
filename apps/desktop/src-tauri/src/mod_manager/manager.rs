@@ -26,6 +26,8 @@ mod analyzed;
 pub use analyzed::AnalyzedModRegistration;
 mod gameinfo;
 mod lifecycle;
+#[cfg(test)]
+mod legacy_reorder_tests;
 mod model_conflict_switch;
 mod localization;
 mod reorder;
