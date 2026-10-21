@@ -6,10 +6,10 @@
   "schemaExplorer": {
     "repo": "ValveResourceFormat/SchemaExplorer",
     "path": "schemas/deadlock.json",
-    "commit": "ab53665d46a385018b0efba549fb9861d331349e",
-    "sha256": "a757a6dda315f75c32ea3de5186161dae531d5b35c102c9a835719ec64706b37",
-    "revision": 11151951,
-    "versionDate": "Oct 20 2026"
+    "commit": "f16c9fb321cddb75a4d80eaf7abe318ddf24f402",
+    "sha256": "94b6ed32800da42981e3e2b9e477b9256f36720dadc50b9ca4f9faee6c7ece88",
+    "revision": 11157350,
+    "versionDate": "Oct 21 2026"
   },
   "gameTracking": {
     "repo": "SteamTracking/GameTracking-Deadlock",
@@ -275,6 +275,12 @@
       "path": "DumpSource2/convars.txt",
       "since": "2026-03-01",
       "versions": [
+        {
+          "commit": "0abfe676c64c7d24bd5340a46778e65a84be70ed",
+          "date": "2026-10-21",
+          "build": 6812,
+          "sha256": "d0cccd7a34f882cf346e8a6b151315d28c6704fa681a19e91164a851dbac5094"
+        },
         {
           "commit": "37f9aebdc62766aa13748f73309b9b8120549833",
           "date": "2026-10-20",
@@ -613,16 +619,16 @@
     "kaizu-minspec": {
       "repo": "Sqooky/OptimizationLock",
       "path": "kaizuchanerus minimum spec/gameinfo.gi",
-      "commit": "0298945c40d3e01d00a96673bf39229c4f303908",
-      "date": "2026-10-14",
-      "sha256": "e7a2b712efa0e53e07d0b58ff19cd531d8d5089a02474e5d581ea94acc49d359"
+      "commit": "347a6694bd7779bafa66b339cd13435c90f1c2f3",
+      "date": "2026-10-21",
+      "sha256": "7a5118c5bc2b3d5da8d982b71477ba661aa48ed9dd45ec79abf80aaaf05bff52"
     },
     "kaizu-extremelow": {
       "repo": "Sqooky/OptimizationLock",
       "path": "kaizuchanerus minimum spec/gameinfo-EXTREME-LOW.gi",
-      "commit": "0298945c40d3e01d00a96673bf39229c4f303908",
-      "date": "2026-10-14",
-      "sha256": "965c0b567f51fa70f00f168d215a0778b1450d1a788272e1cee8bdbe65da313f"
+      "commit": "347a6694bd7779bafa66b339cd13435c90f1c2f3",
+      "date": "2026-10-21",
+      "sha256": "e81f08c55dea0d10f9a6d8bd3ad3a0a676a449d0e9c971d981e3edbbbb42bd25"
     },
     "boot-maxfps": {
       "repo": "Sqooky/OptimizationLock",
