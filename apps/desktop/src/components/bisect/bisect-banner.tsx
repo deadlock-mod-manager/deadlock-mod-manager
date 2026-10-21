@@ -252,13 +252,22 @@ export const BisectBanner = ({ session, onShowResult }: BannerProps) => {
           : t("bisect.banner.restoreInterrupted");
         if (!isPending) {
           actions = (
-            <Button
-              className={ACTION_CLASS}
-              onClick={() => run({ type: "retry" })}
-              size='sm'>
-              <ArrowsClockwiseIcon className='size-3.5' weight='bold' />
-              {t("bisect.banner.finishRestoring")}
-            </Button>
+            <>
+              <Button
+                className={ACTION_CLASS}
+                onClick={() => run({ type: "retry" })}
+                size='sm'>
+                <ArrowsClockwiseIcon className='size-3.5' weight='bold' />
+                {t("bisect.banner.finishRestoring")}
+              </Button>
+              <Button
+                className={ACTION_CLASS}
+                onClick={discard}
+                size='sm'
+                variant='ghost'>
+                {t("bisect.banner.discard")}
+              </Button>
+            </>
           );
         }
         break;

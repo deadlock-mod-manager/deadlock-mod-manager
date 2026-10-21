@@ -120,9 +120,7 @@ impl ModManager {
 
     if prefixed_vpks.is_empty() {
       log::error!("No prefixed VPKs found for mod {}", deadlock_mod.id);
-      return Err(Error::ModInvalid(
-        "Mod needs to be downloaded first. No VPK files found in addons folder.".into(),
-      ));
+      return Err(Error::ModFileNotFound);
     }
 
     log::info!("Found {} prefixed VPKs, enabling them", prefixed_vpks.len());

@@ -1,3 +1,4 @@
+import { RuntimeError } from "@deadlock-mods/common/client-errors";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useIsMutating, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -37,9 +38,15 @@ export const isBisectCandidate = (mod: LocalMod) =>
 
 const BISECT_MUTATION_KEY = ["bisect"];
 
-class ModSwitchError extends Error {
+class ModSwitchError extends RuntimeError {
   constructor(readonly modName: string) {
     super(`Could not enable ${modName}`);
+  }
+}
+
+class RestoreIncompleteError extends RuntimeError {
+  constructor(readonly modNames: string[]) {
+    super(`Could not restore ${modNames.join(", ")}`);
   }
 }
 
@@ -91,6 +98,7 @@ const useApplyModSet = () => {
     target: Set<string>,
     loadOrder: string[],
     originalEnabled: string[],
+    mode: "round" | "restore" = "round",
   ) => {
     const state = usePersistedStore.getState();
     const profileFolder = state.getActiveProfile()?.folderName ?? null;
@@ -102,6 +110,12 @@ const useApplyModSet = () => {
     const turnOn = mods.filter(
       (mod) => !isEnabled(state, mod) && target.has(mod.remoteId),
     );
+    const present = new Set(mods.map((mod) => mod.remoteId));
+    const absent = scope.filter((id) => !present.has(id));
+    if (mode === "round" && absent.length > 0) {
+      throw new ModSwitchError(absent[0]);
+    }
+    const unavailable = absent.filter((id) => target.has(id));
 
     for (const mod of turnOff) {
       await invokeGuarded("uninstall_mod", {
@@ -117,9 +131,19 @@ const useApplyModSet = () => {
       const mod = usePersistedStore
         .getState()
         .localMods.find((item) => item.remoteId === remoteId);
-      if (!mod) continue;
+      if (!mod) {
+        if (mode === "round") throw new ModSwitchError(remoteId);
+        unavailable.push(remoteId);
+        continue;
+      }
+      if (mod.status === ModStatus.FailedToDownload) {
+        if (mode !== "restore") throw new ModSwitchError(mod.name);
+        unavailable.push(mod.name);
+        continue;
+      }
       let enabled = false;
       let gameRunning = false;
+      let missingFiles = false;
       await install(mod, {
         analyticsEntryPoint: "library",
         analyticsOperationKind: "enable",
@@ -139,14 +163,21 @@ const useApplyModSet = () => {
         onError: (m, error) => {
           state.setModStatus(m.remoteId, ModStatus.Downloaded);
           gameRunning = error.kind === "gameRunning";
+          missingFiles = error.kind === "modFileNotFound";
         },
         onCancel: (m) => state.setModStatus(m.remoteId, ModStatus.Downloaded),
       });
       if (gameRunning) throw new GameRunningError();
-      if (!enabled) throw new ModSwitchError(mod.name);
+      if (!enabled) {
+        if (mode !== "restore" || !missingFiles) {
+          throw new ModSwitchError(mod.name);
+        }
+        unavailable.push(mod.name);
+      }
     }
 
     await restoreLoadOrder(loadOrder);
+    return unavailable;
   };
 };
 
@@ -204,12 +235,14 @@ export const useBisect = () => {
   const restore = async (session: BisectSession) => {
     update({ stage: "restoring" });
     const keepOff = new Set(session.disableOnFinish);
-    await applyModSet(
+    const unavailable = await applyModSet(
       session.candidates,
       new Set(session.originalEnabled.filter((id) => !keepOff.has(id))),
       session.loadOrder,
       session.originalEnabled,
+      "restore",
     );
+    if (unavailable.length > 0) throw new RestoreIncompleteError(unavailable);
     usePersistedStore.getState().setBisectSession(null);
   };
 
@@ -368,6 +401,22 @@ export const useBisect = () => {
         return;
       }
       logger.withError(error).error("Mod bisect step failed");
+      if (error instanceof RestoreIncompleteError) {
+        toast.error(
+          t("bisect.toasts.restoreIncomplete", {
+            names: error.modNames.join(", "),
+          }),
+        );
+        return;
+      }
+      if (usePersistedStore.getState().bisectSession?.stage === "restoring") {
+        toast.error(
+          error instanceof ModSwitchError
+            ? t("bisect.toasts.restoreSwitchFailed", { name: error.modName })
+            : t("bisect.toasts.restoreFailed"),
+        );
+        return;
+      }
       toast.error(
         error instanceof ModSwitchError
           ? t("bisect.toasts.switchFailed", { name: error.modName })
