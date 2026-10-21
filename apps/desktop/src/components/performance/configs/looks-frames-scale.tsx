@@ -1,3 +1,4 @@
+import { InfoIcon } from "@phosphor-icons/react";
 import {
   Tooltip,
   TooltipContent,
@@ -73,7 +74,7 @@ export const LooksFramesScale = ({
   onSelectTier,
 }: LooksFramesScaleProps) => {
   const { t } = useTranslation();
-  const { openDetails } = usePerformanceUi();
+  const { openDetails, setTab } = usePerformanceUi();
   const pins = scalePins(items, activeConfigId, activeCutScore);
   const labelRows = assignLabelRows(
     pins
@@ -88,10 +89,16 @@ export const LooksFramesScale = ({
       className='rounded-lg border bg-card p-4'>
       <div className='flex items-baseline justify-between gap-4 text-xs'>
         <span className='font-medium'>{t("performance.scale.looks")}</span>
-        <span className='hidden text-center text-muted-foreground md:block'>
+        <button
+          className='flex items-center gap-1.5 text-center text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+          onClick={() => setTab("howItWorks")}
+          type='button'>
+          <InfoIcon aria-hidden className='size-3.5 shrink-0' />
           {t("performance.configs.scale.hint")}
+        </button>
+        <span className='text-right font-medium'>
+          {t("performance.scale.frames")}
         </span>
-        <span className='font-medium'>{t("performance.scale.frames")}</span>
       </div>
 
       <div className='relative mx-3 mt-9 mb-12 h-1.5 rounded-full bg-gradient-to-r from-primary/70 via-amber-500/70 to-orange-600/80'>

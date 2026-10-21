@@ -119,7 +119,7 @@
       "scale": {
         "title": "Categories, the scale and tiers",
         "categories": "Valve doesn't group convars, so the mod manager sorts each one into a category by its name: names with \"shadow\" go to Shadows, for example. A setting can occasionally land in the wrong group.",
-        "position": "A config's place on the Looks best to Runs fastest scale comes from how many settings it changes in each category. Shadows count the most; Network and Camera & visibility don't count. It ranks configs against each other and isn't a frame-rate estimate.",
+        "position": "A config's place on the Lighter cuts to Heavier cuts scale comes from how many settings it changes in each category. Shadows count the most; Network and Camera & visibility don't count. It ranks configs against each other and isn't a frame-rate estimate: how many frames a cut gains depends on your hardware.",
         "tiers": "Tiers, from Pretty to Potato, are picked by hand for curated and GameBanana configs. Your own configs take the tier of the config they came from."
       }
     },
@@ -146,8 +146,8 @@
       }
     },
     "scale": {
-      "looks": "Looks best",
-      "frames": "Runs fastest",
+      "looks": "Lighter cuts",
+      "frames": "Heavier cuts",
       "you": "You"
     },
     "categories": {
@@ -196,7 +196,7 @@
         "presets": "Presets",
         "yourConfigs": "Your configs",
         "appliedOption": "{{name}} (applied)",
-        "tierTooltip": "Where this config sits between Looks best and Runs fastest. It moves as you edit.",
+        "tierTooltip": "Where this config sits between lighter and heavier cuts. It moves as you edit.",
         "summary": "{{written}} written to gameinfo.gi, {{leftOut}} left out, {{matching}} already match the game",
         "updating": "Updating…"
       },
@@ -679,7 +679,7 @@
       "retry": "Retry",
       "scale": {
         "label": "Looks to frames scale",
-        "hint": "Pick a tier to filter. Your config's pin moves as you edit it.",
+        "hint": "Placed by how much each config cuts, not by measured FPS. Gains depend on your hardware.",
         "pin": "{{name}}: open details",
         "you": "You ({{name}})"
       },
@@ -695,7 +695,7 @@
       "sorts": {
         "downloads": "Most downloaded",
         "name": "Name",
-        "looksToFrames": "Looks best first"
+        "looksToFrames": "Lightest cuts first"
       },
       "rename": {
         "label": "Rename",
