@@ -420,6 +420,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchSection[] = [
         titleKey: "privacy.analyticsEnabled",
         descriptionKey: "privacy.analyticsEnabledDescription",
       },
+      {
+        titleKey: "privacy.networkActivity",
+        descriptionKey: "privacy.networkActivityDescription",
+      },
     ],
   },
   {
