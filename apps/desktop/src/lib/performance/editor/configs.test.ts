@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import type { UserPerfConfig } from "@/lib/store/slices/performance";
+import type { DesiredOverlay } from "@/types/generated/DesiredOverlay";
 import type { PerfApplyRequest } from "@/types/generated/PerfApplyRequest";
 import {
   editorBaseRequest,
@@ -111,16 +112,33 @@ describe("editorBaseRequest", () => {
   });
 });
 
+/** What was applied, and how many engine-section edits it left out. */
+const applied = (
+  request: PerfApplyRequest,
+  engineSection: number,
+): DesiredOverlay => ({
+  request,
+  rev: "0123456789ab",
+  appliedAt: "2026-10-21T12:00:00+00:00",
+  counts: {
+    applies: 0,
+    unchanged: 0,
+    blocked: 0,
+    removed: 0,
+    notConvar: 0,
+    engineSection,
+    excluded: 0,
+    denied: 0,
+    omitted: 0,
+    unsupported: 0,
+    overridden: 0,
+  },
+});
+
 describe("saved tweaks", () => {
   test("come from the store; overrides fall back to what was applied", () => {
-    expect(
-      savedDraftFor(
-        "preset:optilock",
-        {},
-        {},
-        desired({ includeEngineSections: false }),
-      ),
-    ).toEqual({
+    const leftOut = applied(desired({ includeEngineSections: false }), 3);
+    expect(savedDraftFor("preset:optilock", {}, {}, leftOut)).toEqual({
       overrides: desired().overrides,
       includeEngineSections: true,
     });
@@ -129,17 +147,34 @@ describe("saved tweaks", () => {
         "preset:optilock",
         { "preset:optilock": [] },
         { "preset:optilock": false },
-        desired(),
+        leftOut,
       ),
     ).toEqual({ overrides: [], includeEngineSections: false });
-    expect(savedDraftFor("user:old", {}, {}, desired())).toEqual({
+    expect(savedDraftFor("user:old", {}, {}, leftOut)).toEqual({
       overrides: [],
       includeEngineSections: true,
     });
   });
 
+  test("keep the applied engine choice when it left nothing out", () => {
+    const nothingLeftOut = applied(
+      desired({ includeEngineSections: false }),
+      0,
+    );
+    const saved = savedDraftFor("preset:optilock", {}, {}, nothingLeftOut);
+    expect(saved.includeEngineSections).toBe(false);
+    expect(isAppliedAs("preset:optilock", saved, nothingLeftOut.request)).toBe(
+      true,
+    );
+  });
+
   test("isAppliedAs compares config, tweaks and the engine toggle", () => {
-    const saved = savedDraftFor("preset:optilock", {}, {}, desired());
+    const saved = savedDraftFor(
+      "preset:optilock",
+      {},
+      {},
+      applied(desired(), 0),
+    );
     expect(isAppliedAs("preset:optilock", saved, desired())).toBe(true);
     expect(isAppliedAs("preset:dmm-clean", saved, desired())).toBe(false);
     expect(

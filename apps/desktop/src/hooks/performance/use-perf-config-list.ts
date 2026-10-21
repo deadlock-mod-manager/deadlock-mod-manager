@@ -14,7 +14,7 @@ import { usePersistedStore } from "@/lib/store";
  */
 export const useStoredRequestOptions = (configId: string) => {
   const { data: status } = usePerfStatus();
-  const desired = status?.desired?.request ?? null;
+  const desired = status?.desired ?? null;
   const savedOverrides = usePersistedStore((state) => state.perfOverrides);
   const savedInclude = usePersistedStore(
     (state) => state.perfIncludeEngineSections,
