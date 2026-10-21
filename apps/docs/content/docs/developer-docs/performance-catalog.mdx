@@ -71,7 +71,7 @@ Some upstream authors ship a `video.txt`. The catalog keeps only the keys the in
 `curated/rules.ts` becomes `rules` in the catalog:
 
 - **Excluded sections**, never written: FileSystem, MaterialSystem2/RenderModes, Hammer, pulse, ResourceCompiler, ContentBuilder, SoundTool, ToolsEnvironment, MaterialEditor, ModelDoc, NavSystem, Localize, SupportedLanguages, hidden_maps, Source1Import.
-- **Guarded sections**, the ones Valve's matchmaking message names (build 6417): Engine2, MaterialSystem2, NetworkSystem, Particles, RenderSystem, SceneSystem, WorldRenderer. The app writes engine-section edits only when the user includes them.
+- **Guarded sections**, the ones Valve's matchmaking message names (build 6417): Engine2, MaterialSystem2, NetworkSystem, Particles, RenderSystem, SceneSystem, WorldRenderer. The app writes engine-section edits as the config sets them; the user can turn them off per config if matchmaking refuses them.
 - **Denied keys**, each with the reason the app shows: `sv_cheats`, `timescale`/`host_timescale`, `Engine2/RenderingPipeline/DistanceField` (crashes after the hideout loads), `r_render_portals` (breaks Doorman's door), `Engine2/LocalServerClientAccess`.
 
 Convars Valve flags `gameinfo_cannot_override` get the status `blocked`; keys configs use that aren't in the dump get `removed`; console commands get `notConvar`. `statusSinceBuild` comes from the `convars.txt` history when it covers the change.
@@ -84,7 +84,7 @@ Some convars change what a player can see or how the camera frames the world rat
 - **visibility**: outlines, glows, health-bar readability, see-through-walls;
 - **devtools**: debug overlays and hideout tools.
 
-Camera and visibility settings apply as the author set them and the user can turn them off one by one. Developer tools stay off unless enabled.
+Camera, visibility and developer-tool settings apply as the author set them and the user can turn them off one by one.
 
 The rule is enforced. Every ConVar a preset sets whose name matches a pattern in `curated/gameplay.ts` (`outline`, `glow`, `see_thru`, `_fov$`, `aspectratio`, `camera`, `camera_pitch`, `citadel_unit_status_`, `debug_draw`, `debug_show`, `hideout`, `timescale`) must be classified, listed in `ALLOW_IN_BODY` with a written reason, or denied. Otherwise generation fails, so an upstream update that adds a new outline or FOV convar can't reach players unclassified.
 
@@ -101,7 +101,7 @@ DMM's own preset is derived, not written by hand (`curated/consensus.ts`):
 
 `curated/community.ts` lists GameBanana configs that aren't copies of a curated preset. The generator downloads the pinned file, analyzes the configured variant the same way as a preset, and stores only:
 
-- `settingsCount` and `categoryCounts`: ConVars the app would write by default (active, not denied, not developer tools);
+- `settingsCount` and `categoryCounts`: ConVars the app would write by default (active, not denied);
 - `engineEditCount`: edits outside ConVars;
 - `baseBuild`, plus the mod's name, author, download count and last update from GameBanana.
 

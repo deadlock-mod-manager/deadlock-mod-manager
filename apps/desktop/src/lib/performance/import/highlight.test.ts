@@ -43,7 +43,7 @@ const ENTRIES = [
   entry(["FileSystem", "SearchPaths"], "excluded"),
   entry(["SceneSystem", "CSMCascadeResolution"], "engineSection"),
   entry(["ConVars", "r_shadows"], "blocked"),
-  entry(["ConVars", "citadel_hideout_tool"], "omitted", "devtools"),
+  entry(["ConVars", "citadel_hideout_tool"], "applies", "devtools"),
   entry(["ConVars", "r_rendersun"], "applies"),
 ];
 
@@ -67,7 +67,7 @@ describe("highlightConfig", () => {
       "plain", // ConVars: mixed
       "plain",
       "ignored",
-      "optIn",
+      "applies",
       "applies",
       "plain",
       "plain",

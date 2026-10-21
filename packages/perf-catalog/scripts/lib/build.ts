@@ -380,8 +380,8 @@ export const buildCatalog = async (
 
   /**
    * ConVars entries the app writes by default, per category: active, not
-   * denied, not a developer tool, and not the convar's own default for a key
-   * stock doesn't set (the app counts that as unchanged).
+   * denied, and not the convar's own default for a key stock doesn't set (the
+   * app counts that as unchanged).
    */
   const writableCounts = (entries: ConfigEntry[]): Record<string, number> => {
     const counts: Record<string, number> = {};
@@ -390,7 +390,7 @@ export const buildCatalog = async (
       const key = lowerName(entry.path);
       const meta = metas.get(key);
       if (!meta || (meta.status ?? "active") !== "active") continue;
-      if (isDeniedConvar(meta.name) || meta.gameplay === "devtools") continue;
+      if (isDeniedConvar(meta.name)) continue;
       if (
         !latestStock.parsed.convars.has(key) &&
         meta.default !== undefined &&

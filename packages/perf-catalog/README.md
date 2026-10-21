@@ -48,11 +48,11 @@ DMM's own preset is computed from the pinned GPL-3.0 configs. Configs that deriv
 
 ### Gameplay classification
 
-Every ConVar a preset sets whose name matches a pattern in `curated/gameplay.ts` (outline, glow, see_thru, `_fov$`, aspectratio, camera, camera_pitch, `citadel_unit_status_`, debug_draw, debug_show, hideout, timescale) must be classified camera, visibility or devtools, listed in `ALLOW_IN_BODY` with a reason, or denied. Otherwise the generator fails. Camera and visibility settings apply as the author set them; devtools stay off unless the user enables them.
+Every ConVar a preset sets whose name matches a pattern in `curated/gameplay.ts` (outline, glow, see_thru, `_fov$`, aspectratio, camera, camera_pitch, `citadel_unit_status_`, debug_draw, debug_show, hideout, timescale) must be classified camera, visibility or devtools, listed in `ALLOW_IN_BODY` with a reason, or denied. Otherwise the generator fails. Camera, visibility and devtools settings apply as the author set them; the user can turn each one off.
 
 ### Community configs
 
-GameBanana files are downloaded only to compute `settingsCount` (ConVars the app would write: active, not denied, not developer tools), `categoryCounts` (the same, per category), `engineEditCount` and `baseBuild`. No file content is stored.
+GameBanana files are downloaded only to compute `settingsCount` (ConVars the app would write: active, not denied), `categoryCounts` (the same, per category), `engineEditCount` and `baseBuild`. No file content is stored.
 
 ## Sources and licences
 

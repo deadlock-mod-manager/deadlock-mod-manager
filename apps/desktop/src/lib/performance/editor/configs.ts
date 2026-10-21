@@ -20,7 +20,7 @@ export type EditorConfigOption = {
 
 type PresetRef = Pick<PresetSummary, "id" | "name">;
 
-const NO_TWEAKS: EditorDraft = { overrides: [], includeEngineSections: false };
+const NO_TWEAKS: EditorDraft = { overrides: [], includeEngineSections: true };
 
 /**
  * Every config the editor can open: catalog presets, then the user's own
@@ -90,8 +90,9 @@ export const withDraft = (
 });
 
 /**
- * The tweaks saved for a config. Falls back to what was applied, for a config
- * applied before the store had an entry for it (e.g. from History).
+ * The tweaks saved for a config. Overrides fall back to what was applied, for a
+ * config applied before the store had an entry for it (e.g. from History).
+ * Engine sections are included unless the user turned them off.
  */
 export const savedDraftFor = (
   configId: string,
@@ -102,10 +103,7 @@ export const savedDraftFor = (
   const applied = desired?.configId === configId ? desired : null;
   return {
     overrides: savedOverrides[configId] ?? applied?.overrides ?? [],
-    includeEngineSections:
-      savedIncludeEngineSections[configId] ??
-      applied?.includeEngineSections ??
-      false,
+    includeEngineSections: savedIncludeEngineSections[configId] ?? true,
   };
 };
 

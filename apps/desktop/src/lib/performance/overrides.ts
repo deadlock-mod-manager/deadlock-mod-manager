@@ -11,10 +11,6 @@ export const findOverride = (
   return overrides.find((override) => pathKey(override.path) === key) ?? null;
 };
 
-/** Developer and hideout tools stay off unless the user enables them or sets a value. */
-export const isDevtoolEnabled = (override: EntryOverride | null | undefined) =>
-  override?.action.kind === "enable" || override?.action.kind === "set";
-
 /** Whether two requests carry the same tweaks, ignoring their order. */
 export const sameApplyOptions = (
   a: { overrides: EntryOverride[]; includeEngineSections: boolean },

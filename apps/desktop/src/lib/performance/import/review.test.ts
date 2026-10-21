@@ -45,7 +45,6 @@ describe("groupReviewEntries", () => {
       entry(["ConVars", "panorama_max_fps"], "removed"),
       entry(["ConVars", "echo"], "notConvar"),
       entry(["ConVars", "sv_cheats"], "denied"),
-      entry(["ConVars", "cl_showpos"], "omitted", { gameplay: "devtools" }),
       entry(["SceneSystem", "CSMCascadeResolution"], "engineSection"),
       entry(["PGIVersion"], "excluded"),
     ]);
@@ -56,7 +55,6 @@ describe("groupReviewEntries", () => {
     expect(names(groups.blocked)).toEqual(["r_shadows"]);
     expect(names(groups.removed)).toEqual(["panorama_max_fps", "echo"]);
     expect(names(groups.refused)).toEqual(["sv_cheats"]);
-    expect(names(groups.devtools)).toEqual(["cl_showpos"]);
     expect(names(groups.engineSections)).toEqual([
       "SceneSystem › CSMCascadeResolution",
     ]);

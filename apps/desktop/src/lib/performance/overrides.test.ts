@@ -1,11 +1,6 @@
 import { expect, test } from "bun:test";
 import type { EntryOverride } from "@/types/generated/EntryOverride";
-import {
-  findOverride,
-  isDevtoolEnabled,
-  sameApplyOptions,
-  withOverride,
-} from "./overrides";
+import { findOverride, sameApplyOptions, withOverride } from "./overrides";
 
 const overrides: EntryOverride[] = [
   { path: ["ConVars", "r_ssao"], action: { kind: "set", value: "1" } },
@@ -49,16 +44,4 @@ test("drops the override when the action is null", () => {
   expect(withOverride(overrides, ["ConVars", "fov"], null)).toEqual([
     overrides[0],
   ]);
-});
-
-test("a developer tool is on when enabled or given a value", () => {
-  expect(isDevtoolEnabled(overrides[0])).toBe(true);
-  expect(
-    isDevtoolEnabled({
-      path: ["ConVars", "sv_cheats"],
-      action: { kind: "enable" },
-    }),
-  ).toBe(true);
-  expect(isDevtoolEnabled(overrides[1])).toBe(false);
-  expect(isDevtoolEnabled(null)).toBe(false);
 });

@@ -262,14 +262,12 @@
         },
         "fromAuthor": "",
         "turnOffInline": "",
-        "devtoolsOff": "",
-        "devtoolsOn": "",
-        "enable": "",
         "turnedOff": "",
         "restore": "",
         "turnOff": "",
         "undoChange": "",
-        "menu": ""
+        "menu": "",
+        "devtoolsFromAuthor": ""
       },
       "notes": {
         "clamped": "",
@@ -485,11 +483,6 @@
           "valveMessage": "",
           "sectionsWithRest_one": "",
           "sectionsWithRest_other": ""
-        },
-        "devtools": {
-          "title": "",
-          "description_one": "",
-          "description_other": ""
         },
         "ignored": {
           "title": "",

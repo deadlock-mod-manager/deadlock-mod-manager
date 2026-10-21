@@ -196,11 +196,22 @@ fn gameplay_classes() {
     &[],
     false,
   );
-  assert_eq!(devtools.status, EntryStatus::Omitted);
+  assert_eq!(devtools.status, EntryStatus::Applies);
   assert!(!devtools.overridden);
   assert_eq!(devtools.gameplay, Some(GameplayClass::Devtools));
 
-  let enabled = resolve_one(
+  let turned_off = resolve_one(
+    entry("ConVars/citadel_hideout_enable_testing_tools", Some("1")),
+    &[action(
+      "ConVars/citadel_hideout_enable_testing_tools",
+      OverrideAction::Omit,
+    )],
+    false,
+  );
+  assert_eq!(turned_off.status, EntryStatus::Omitted);
+
+  // Saved before developer tools applied as written.
+  let legacy_enable = resolve_one(
     entry("ConVars/citadel_hideout_enable_testing_tools", Some("1")),
     &[action(
       "ConVars/citadel_hideout_enable_testing_tools",
@@ -208,8 +219,8 @@ fn gameplay_classes() {
     )],
     false,
   );
-  assert_eq!(enabled.status, EntryStatus::Applies);
-  assert!(enabled.overridden);
+  assert_eq!(legacy_enable.status, EntryStatus::Applies);
+  assert!(legacy_enable.overridden);
 
   let given_a_value = resolve_one(
     entry("ConVars/citadel_hideout_enable_testing_tools", Some("1")),

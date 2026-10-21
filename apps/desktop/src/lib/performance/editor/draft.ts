@@ -13,7 +13,6 @@ export type EditorDraft = {
 export type DraftAction =
   | { kind: "set"; path: string[]; value: string }
   | { kind: "omit"; path: string[] }
-  | { kind: "enable"; path: string[] }
   | { kind: "reset"; path: string[] }
   | { kind: "includeEngineSections"; include: boolean };
 
@@ -22,8 +21,6 @@ export type ValueTarget = {
   path: string[];
   configValue: string | null;
   kind: ConvarKind | null;
-  /** Developer tools are off unless enabled, so going back to the config's value keeps them on. */
-  offByDefault: boolean;
 };
 
 type OverrideChange = {
@@ -33,11 +30,11 @@ type OverrideChange = {
 };
 
 const toOverrideAction = (
-  action: Extract<DraftAction, { kind: "set" | "omit" | "enable" }>,
-): OverrideAction => {
-  if (action.kind === "set") return { kind: "set", value: action.value };
-  return action.kind === "omit" ? { kind: "omit" } : { kind: "enable" };
-};
+  action: Extract<DraftAction, { kind: "set" | "omit" }>,
+): OverrideAction =>
+  action.kind === "set"
+    ? { kind: "set", value: action.value }
+    : { kind: "omit" };
 
 export const applyDraftAction = (
   draft: EditorDraft,
@@ -77,10 +74,9 @@ export const actionForValue = (
   const matchesConfig =
     target.configValue !== null &&
     sameValue(value, target.configValue, target.kind);
-  if (!matchesConfig) return { kind: "set", path: target.path, value };
-  return target.offByDefault
-    ? { kind: "enable", path: target.path }
-    : { kind: "reset", path: target.path };
+  return matchesConfig
+    ? { kind: "reset", path: target.path }
+    : { kind: "set", path: target.path, value };
 };
 
 export const overridesByKey = (

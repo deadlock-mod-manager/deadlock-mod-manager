@@ -73,7 +73,7 @@ describe("editorBaseRequest", () => {
       name: "DMM Clean",
       source: { kind: "preset", id: "dmm-clean" },
       overrides: [],
-      includeEngineSections: false,
+      includeEngineSections: true,
     });
   });
 
@@ -93,7 +93,7 @@ describe("editorBaseRequest", () => {
     const request = editorBaseRequest("preset:optilock", [], {}, desired());
     expect(request?.source).toEqual({ kind: "preset", id: "optilock" });
     expect(request?.overrides).toEqual([]);
-    expect(request?.includeEngineSections).toBe(false);
+    expect(request?.includeEngineSections).toBe(true);
   });
 
   test("returns null for an unknown config", () => {
@@ -112,8 +112,15 @@ describe("editorBaseRequest", () => {
 });
 
 describe("saved tweaks", () => {
-  test("come from the store, else from what was applied", () => {
-    expect(savedDraftFor("preset:optilock", {}, {}, desired())).toEqual({
+  test("come from the store; overrides fall back to what was applied", () => {
+    expect(
+      savedDraftFor(
+        "preset:optilock",
+        {},
+        {},
+        desired({ includeEngineSections: false }),
+      ),
+    ).toEqual({
       overrides: desired().overrides,
       includeEngineSections: true,
     });
@@ -127,7 +134,7 @@ describe("saved tweaks", () => {
     ).toEqual({ overrides: [], includeEngineSections: false });
     expect(savedDraftFor("user:old", {}, {}, desired())).toEqual({
       overrides: [],
-      includeEngineSections: false,
+      includeEngineSections: true,
     });
   });
 

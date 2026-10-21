@@ -42,7 +42,6 @@ const toneFor = (entry: ResolvedEntry): LineTone => {
     case "unsupported":
       return "stripped";
     case "omitted":
-      return entry.gameplay === "devtools" ? "optIn" : "skipped";
     case "excluded":
       return "skipped";
   }

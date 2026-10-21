@@ -244,7 +244,7 @@ pub fn catalog_summary(ctx: &PerfContext) -> Result<CatalogSummary, Error> {
   });
   let options = ResolveOptions {
     overrides: &[],
-    include_engine_sections: false,
+    include_engine_sections: true,
   };
   let presets = catalog
     .presets()

@@ -9,13 +9,13 @@
 //! 3. ConVars: blocked → `Blocked`; not in the dump → `Removed` (with a
 //!    `SectionKey` note when Valve's file sets the key in another section);
 //!    concommand →
-//!    `NotConvar`; devtools → `Omitted` unless the user enabled them or set a
-//!    value; user omit → `Omitted`; same as live, or as the convar's default
+//!    `NotConvar`; user omit → `Omitted`; same as live, or as the convar's default
 //!    when the live file doesn't set it → `Unchanged`; object leaf
 //!    for a key the live file lacks, a value where the file has a block, or
 //!    text gameinfo.gi can't hold → `Unsupported`; otherwise `Applies`
 //!    (+ `Clamped`/`TypeMismatch` notes).
-//!    Camera and visibility convars apply as the author set them.
+//!    Camera, visibility and developer-tool convars apply as the author set
+//!    them.
 //! 4. Other sections: user omit → `Omitted`; same as live → `Unchanged`;
 //!    otherwise `EngineSection` unless engine sections are included, then
 //!    `Applies` (or `Unsupported` when the section is missing).
@@ -32,7 +32,7 @@ use super::live::{LiveGameinfo, normalize_value, path_key, values_equal};
 use super::patch;
 use super::types::{
   ConfigEntry, ConvarKind, ConvarMeta, ConvarStatus, EntryNote, EntryOverride, EntryStatus,
-  GameplayClass, OverrideAction, PerfConfigSource, ResolvedConfig, ResolvedCounts, ResolvedEntry,
+  OverrideAction, PerfConfigSource, ResolvedConfig, ResolvedCounts, ResolvedEntry,
 };
 use crate::errors::Error;
 
@@ -313,13 +313,6 @@ impl Check<'_> {
       }
       ConvarStatus::NotConvar => return (EntryStatus::NotConvar, Vec::new()),
       ConvarStatus::Active => {}
-    }
-    let enabled = matches!(
-      self.action,
-      Some(OverrideAction::Enable | OverrideAction::Set { .. })
-    );
-    if meta.gameplay == Some(GameplayClass::Devtools) && !enabled {
-      return (EntryStatus::Omitted, Vec::new());
     }
     if let Some(result) = self.omitted_or_unchanged(meta.default.as_deref()) {
       return result;
