@@ -117,6 +117,21 @@ const parseAutoexecCommandKeys = (content: string): Set<string> => {
   return keys;
 };
 
+export interface AutoexecReadonlySection {
+  start_line: number;
+  end_line: number;
+  content: string;
+}
+
+export const findCommandLineIndex = (
+  content: string,
+  commandKey: string,
+): number => {
+  return content
+    .split("\n")
+    .findIndex((line) => parseCommandLine(line) === commandKey);
+};
+
 export const commandExistsInContent = (
   content: string,
   commandKey: string,
@@ -143,17 +158,6 @@ export const appendPredefinedCommand = (
   }
 
   return `${trimmedContent}${block}`;
-};
-
-export const formatCommandPreview = (
-  command: string,
-  value: string,
-): string => {
-  if (value.length === 0) {
-    return command;
-  }
-
-  return `${command} ${value}`;
 };
 
 export const normalizeAutoexecContent = (content: string): string => {

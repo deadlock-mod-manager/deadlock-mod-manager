@@ -1,11 +1,8 @@
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
-import { PlusIcon } from "@deadlock-mods/ui/icons";
+import { CheckIcon, PlusIcon } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
-import {
-  commandExistsInContent,
-  formatCommandPreview,
-} from "@/lib/autoexec/autoexec-content";
+import { commandExistsInContent } from "@/lib/autoexec/autoexec-content";
 import type { FlatAutoexecCommand } from "@/lib/autoexec/predefined-commands";
 import { OutdatedConvarBadge } from "../outdated-convar-badge";
 
@@ -14,6 +11,7 @@ type AutoexecCommandRowProps = {
   content: string;
   isOutdated: boolean;
   onAddCommand: (command: FlatAutoexecCommand) => void;
+  onRevealCommand: (command: FlatAutoexecCommand) => void;
 };
 
 export const AutoexecCommandRow = ({
@@ -21,6 +19,7 @@ export const AutoexecCommandRow = ({
   content,
   isOutdated,
   onAddCommand,
+  onRevealCommand,
 }: AutoexecCommandRowProps) => {
   const { t } = useTranslation();
   const isAdded = commandExistsInContent(content, command.command);
@@ -28,11 +27,14 @@ export const AutoexecCommandRow = ({
   const isDefaultCommand = command.intent === "default";
 
   return (
-    <div className='flex flex-row items-center justify-between gap-4 rounded-md border border-border/30 bg-background/40 px-4 py-3 transition-colors hover:bg-muted/30'>
-      <div className='flex min-w-0 flex-col gap-1'>
-        <div className='flex flex-wrap items-center gap-2'>
-          <code className='font-mono text-sm text-foreground'>
-            {formatCommandPreview(command.command, command.value)}
+    <div className='flex items-center justify-between gap-3 border-border/20 border-b px-3 py-2 transition-colors hover:bg-muted/30'>
+      <div className='flex min-w-0 flex-col'>
+        <div className='flex flex-wrap items-center gap-1.5'>
+          <code className='font-mono text-[13px] text-foreground'>
+            {command.command}
+            {command.value.length > 0 && (
+              <span className='text-primary'> {command.value}</span>
+            )}
           </code>
           {isDefaultCommand && (
             <Badge variant='outline'>
@@ -41,25 +43,34 @@ export const AutoexecCommandRow = ({
           )}
           {isOutdated && <OutdatedConvarBadge />}
         </div>
-        <p className='text-muted-foreground text-sm'>{description}</p>
+        <p
+          className='truncate text-muted-foreground text-xs'
+          title={description}>
+          {description}
+        </p>
       </div>
 
-      <div className='flex shrink-0 items-center gap-2'>
-        {isAdded ? (
-          <Badge variant='secondary'>
-            {t("settings.autoexecCommandAddedBadge")}
-          </Badge>
-        ) : (
-          <Button
-            onClick={() => onAddCommand(command)}
-            size='sm'
-            type='button'
-            variant='outline'>
-            <PlusIcon className='h-4 w-4' />
-            {t("settings.autoexecCommandAdd")}
-          </Button>
-        )}
-      </div>
+      {isAdded ? (
+        <Button
+          className='shrink-0 text-green-400 hover:text-foreground'
+          icon={<CheckIcon className='h-3.5 w-3.5' />}
+          onClick={() => onRevealCommand(command)}
+          size='sm'
+          type='button'
+          variant='ghost'>
+          {t("settings.autoexecCommandAddedBadge")}
+        </Button>
+      ) : (
+        <Button
+          className='shrink-0'
+          icon={<PlusIcon className='h-3.5 w-3.5' />}
+          onClick={() => onAddCommand(command)}
+          size='sm'
+          type='button'
+          variant='outline'>
+          {t("settings.autoexecCommandAdd")}
+        </Button>
+      )}
     </div>
   );
 };

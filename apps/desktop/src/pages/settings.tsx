@@ -1188,7 +1188,7 @@ const CustomSettings = ({ value }: { value?: string }) => {
               </div>
             </Section>
           </TabsContent>
-          <TabsContent className='mt-0 space-y-4' value='autoexec'>
+          <TabsContent className='mt-0 xl:h-full' value='autoexec'>
             <ErrorBoundary>
               <AutoexecSettings />
             </ErrorBoundary>
