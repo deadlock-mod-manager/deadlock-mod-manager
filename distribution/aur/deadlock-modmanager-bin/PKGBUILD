@@ -1,9 +1,9 @@
 # Maintainer: stormix <hello@stormix.co>
 pkgname=deadlock-modmanager-bin
 pkgdesc='A mod manager for the Valve game Deadlock (binary)'
-_pkgver=1.1.0
+_pkgver=2.0.0
 pkgver=${_pkgver}
-pkgrel=4
+pkgrel=1
 arch=('x86_64')
 url='https://github.com/deadlock-mod-manager/deadlock-mod-manager'
 license=('GPL-3.0-only')
