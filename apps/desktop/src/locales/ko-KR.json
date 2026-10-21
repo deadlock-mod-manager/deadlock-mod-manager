@@ -4047,11 +4047,11 @@
     "recentlyadded": ""
   },
   "timePeriod": {
-    "alltime": "모든 시간",
-    "pastweek": "지난주",
-    "pastmonth": "지난달",
-    "past3months": "지난 3개월",
-    "pastyear": "작년"
+    "alltime": "",
+    "pastweek": "",
+    "pastmonth": "",
+    "past3months": "",
+    "pastyear": ""
   },
   "addMods": {
     "title": "모드 추가",

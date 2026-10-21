@@ -4047,11 +4047,11 @@
     "recentlyadded": ""
   },
   "timePeriod": {
-    "alltime": "不限时间",
-    "pastweek": "最近一周",
-    "pastmonth": "最近 1 个月",
-    "past3months": "最近 3 个月",
-    "pastyear": "最近一年"
+    "alltime": "",
+    "pastweek": "",
+    "pastmonth": "",
+    "past3months": "",
+    "pastyear": ""
   },
   "addMods": {
     "title": "添加模组",
