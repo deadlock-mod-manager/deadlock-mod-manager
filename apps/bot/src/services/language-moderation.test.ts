@@ -98,6 +98,8 @@ describe("local language detection", () => {
       "I cannot install this mod, can someone please help me?",
       "my mod isnt working idk why pls help",
       "the vpk doesnt work after the update lol",
+      // cld3 reports this as reliable Malagasy.
+      "fair I mean I don't need any audio swap",
       "bonjour",
       "привет",
       "你好",
