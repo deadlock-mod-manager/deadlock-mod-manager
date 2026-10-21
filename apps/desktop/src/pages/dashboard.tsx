@@ -3,6 +3,7 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { AnnouncementsCard } from "@/components/dashboard/announcements-card";
 import { AnnouncementsTicker } from "@/components/dashboard/announcements-ticker";
+import { BrowseByHeroRail } from "@/components/dashboard/browse-by-hero-rail";
 import { ChangelogRibbon } from "@/components/dashboard/changelog-ribbon";
 import { FeaturedModsCarousel } from "@/components/dashboard/featured-mods-carousel";
 import { LatestModsCard } from "@/components/dashboard/latest-mods-card";
@@ -73,6 +74,8 @@ const Dashboard = () => {
         <FeaturedModsCarousel isLoading={isPending} mods={featured} />
 
         <QuickStatsStrip />
+
+        <BrowseByHeroRail />
 
         <div className='space-y-8'>
           {isPending
