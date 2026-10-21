@@ -786,10 +786,7 @@ const fallbackInsights = (
   return fallbacks;
 };
 
-/**
- * Hero stats for several accounts arrive as one flat list. The squad view wants
- * them per player, so the split lives here.
- */
+/** Splits a multi-account hero stats response per player. */
 export const heroStatsByAccount = (
   heroStats: PlayerHeroStats[],
 ): Map<number, PlayerHeroStats[]> => {
