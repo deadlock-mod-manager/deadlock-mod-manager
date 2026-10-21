@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { configListing, PERFORMANCE_CONFIG_CATEGORY } from "./config-listing";
+import { PERFORMANCE_CONFIG_CATEGORY } from "@deadlock-mods/shared";
+import { configListing } from "./config-listing";
 
 const mod = (name: string, category: string, remoteId = "1") => ({
   remoteId,

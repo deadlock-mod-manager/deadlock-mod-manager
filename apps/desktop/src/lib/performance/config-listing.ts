@@ -1,12 +1,8 @@
-import type { ModDto } from "@deadlock-mods/shared";
+import {
+  type ModDto,
+  PERFORMANCE_CONFIG_CATEGORY,
+} from "@deadlock-mods/shared";
 import { ModCategory } from "@/lib/constants";
-
-/**
- * Category the API's policy corrections give a GameBanana upload that is a
- * gameinfo.gi performance config rather than a mod, e.g.
- * `pnpm --filter api set-mod-overrides -- 690233 '{"category":"Performance Configs"}'`.
- */
-export const PERFORMANCE_CONFIG_CATEGORY = "Performance Configs";
 
 const HINT_CATEGORIES: ReadonlySet<string> = new Set([
   "Quality of Life/Fixes",
