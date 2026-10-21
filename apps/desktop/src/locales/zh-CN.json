@@ -5352,7 +5352,8 @@
     "resetTelemetryConsent": "重置遥测同意",
     "triggerMatchSyncConsent": "",
     "simulateMatchSyncNewInstall": "",
-    "simulateMatchSyncUpdate": ""
+    "simulateMatchSyncUpdate": "",
+    "resetWhatsNew": ""
   },
   "developer": {
     "title": "开发者工具",
@@ -6297,6 +6298,9 @@
       "wrongProfile": "",
       "switchFailed": "",
       "stepFailed": "",
+      "restoreFailed": "",
+      "restoreSwitchFailed": "",
+      "restoreIncomplete": "",
       "roundChanged": "",
       "switchBlocked": "",
       "switchBackFailed": "",

@@ -5352,7 +5352,8 @@
     "resetTelemetryConsent": "",
     "triggerMatchSyncConsent": "",
     "simulateMatchSyncNewInstall": "",
-    "simulateMatchSyncUpdate": ""
+    "simulateMatchSyncUpdate": "",
+    "resetWhatsNew": ""
   },
   "developer": {
     "title": "개발자 도구",
@@ -6297,6 +6298,9 @@
       "wrongProfile": "",
       "switchFailed": "",
       "stepFailed": "",
+      "restoreFailed": "",
+      "restoreSwitchFailed": "",
+      "restoreIncomplete": "",
       "roundChanged": "",
       "switchBlocked": "",
       "switchBackFailed": "",

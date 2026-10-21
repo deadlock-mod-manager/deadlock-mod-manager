@@ -1,9 +1,11 @@
 {
   "meta": {
     "title": "Deadlock Mod Manager | Deadlock Mods installieren & verwalten",
-    "description": "Kostenloser Open-Source-Mod-Manager für Valves Deadlock. Deadlock Mods von GameBanana mit einem Klick installieren, Skins und Sounds verwalten. Windows & Linux."
+    "description": "Kostenloser Open-Source-Mod-Manager für Valves Deadlock. Deadlock Mods von GameBanana mit einem Klick installieren, Skins und Sounds verwalten. Windows & Linux.",
+    "descriptionLatest": ""
   },
   "hero": {
+    "v2OutNow": "",
     "title": "Mods für Deadlock,<br/><accent>ganz ohne Stress.</accent>",
     "subtitle": "Deadlock Mods mit ein paar Klicks finden, installieren und aktualisieren. Dieselbe App kümmert sich um Helden-Skins, Fadenkreuze und Themes.",
     "allDownloads": "Alle Downloads",

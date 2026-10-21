@@ -1,9 +1,11 @@
 {
   "meta": {
     "title": "",
-    "description": ""
+    "description": "",
+    "descriptionLatest": ""
   },
   "hero": {
+    "v2OutNow": "",
     "title": "",
     "subtitle": "",
     "allDownloads": "",
