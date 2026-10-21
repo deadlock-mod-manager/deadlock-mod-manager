@@ -115,6 +115,8 @@ const startupFixtureRoutes: readonly FixtureRoute[] = [
     status: 200,
     body: '{"version":1,"revision":0,"generatedAt":"1970-01-01T00:00:00Z","rules":[]}',
   },
+  // A failed refresh keeps the bundled performance catalog.
+  { method: "GET", path: "/api/v2/perf-catalog", status: 404, body: "" },
   {
     method: "GET",
     path: "/apiv11/Mod/Index",
