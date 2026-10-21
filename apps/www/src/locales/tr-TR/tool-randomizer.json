@@ -1,92 +1,92 @@
 {
   "meta": {
-    "title": "",
-    "description": "",
-    "keywords": ""
+    "title": "Deadlock Rastgele Seçici: Rastgele kahraman ve eşya dizilimi oluşturucu",
+    "description": "Rastgele bir Deadlock kahramanı, satın alma sırasına göre geçerli bir eşya dizilimi, yetenek puanı sırası ve üç cesaret kuralı oluşturun. Tohumu paylaşın; dilediğiniz kadar yeniden seçim yapın.",
+    "keywords": "deadlock rastgele seçici, deadlock rastgele dizilim, deadlock ultimate bravery, rastgele deadlock kahramanı, deadlock dizilim oluşturucu"
   },
   "error": {
-    "title": "",
-    "description": "",
-    "retry": ""
+    "title": "Rastgele seçim yapılamadı",
+    "description": "Kahraman ve eşya verileri Deadlock API’sinden alınır ancak API yanıt vermedi.",
+    "retry": "Yeniden dene"
   },
   "skeleton": {
-    "heading": ""
+    "heading": "Deadlock Rastgele Seçici: Rastgele kahraman ve eşya dizilimi"
   },
   "toolbar": {
     "copyLink": {
-      "idle": "",
-      "copied": "",
-      "failed": ""
+      "idle": "Bağlantıyı kopyala",
+      "copied": "Kopyalandı",
+      "failed": "Kopyalama başarısız"
     },
-    "reroll": ""
+    "reroll": "Yeniden seç"
   },
   "sections": {
-    "trigger": "",
-    "label": "",
+    "trigger": "Bölümler",
+    "label": "Benim için seç",
     "options": {
-      "build": "",
-      "abilities": "",
-      "rules": ""
+      "build": "Dizilim sırası",
+      "abilities": "Yetenekler",
+      "rules": "Kurallar"
     }
   },
   "heroPicker": {
-    "anyHero": "",
-    "label": ""
+    "anyHero": "Herhangi bir kahraman",
+    "label": "Şu kahraman için dizilim oluştur"
   },
   "hero": {
-    "heading": "",
-    "headingWithRole": "",
-    "youArePlaying": "",
-    "role": ""
+    "heading": "{{hero}} oynuyorsunuz",
+    "headingWithRole": "{{hero}} oynuyorsunuz, rolünüz: {{role}}",
+    "youArePlaying": "Oynadığınız kahraman",
+    "role": "{{role}}."
   },
   "facts": {
-    "complexity": "",
-    "lane": "",
-    "archetype": "",
-    "tags": "",
-    "mandate": "",
-    "buildCost": "",
-    "souls": "",
-    "abilityPriority": "",
-    "abilityPriorityHint": "",
-    "total": ""
+    "complexity": "Zorluk",
+    "lane": "Koridor",
+    "archetype": "Karakter türü",
+    "tags": "Etiketler",
+    "mandate": "Görev",
+    "buildCost": "Dizilim maliyeti",
+    "souls": "ruh",
+    "abilityPriority": "Yetenek önceliği",
+    "abilityPriorityHint": "4 kilit açma · 32 puan",
+    "total": "Toplam"
   },
   "headings": {
-    "build": "",
-    "skills": "",
-    "rules": ""
+    "build": "Sırayla oluşturun.",
+    "skills": "Yetenek sırası, 1–16.",
+    "rules": "Kurallar."
   },
   "footer": {
-    "credit": ""
+    "credit": "Kahramanlar, eşyalar ve görseller <link>Deadlock API</link> tarafından sağlanır."
   },
   "lanes": {
-    "yellow": "",
-    "blue": "",
-    "green": ""
+    "yellow": "Sarı koridor",
+    "blue": "Mavi koridor",
+    "green": "Yeşil koridor"
   },
   "mandates": {
     "gunslinger": {
-      "label": "",
-      "blurb": ""
+      "label": "Silah ustası",
+      "blurb": "Ruhlarınızın çoğunu silaha harcadınız. Rakipler zırh almadan önce silahınızla çatışmalarda üstünlük sağlayın."
     },
     "caster": {
-      "label": "",
-      "blurb": ""
+      "label": "Büyücü",
+      "blurb": "Bu dizilim yeteneklerinize odaklanıyor. Önemli çatışma için yeteneklerinizin bekleme sürelerini kollayın."
     },
     "bulwark": {
-      "label": "",
-      "blurb": ""
+      "label": "Savunmacı",
+      "blurb": "Önce dayanıklılığa yatırım yaptınız. Koridora girip orada kalan kişi olun."
     }
   },
   "categories": {
-    "weapon": "",
-    "vitality": "",
-    "spirit": ""
+    "weapon": "Silah",
+    "vitality": "Canlılık",
+    "spirit": "Ruh"
   },
   "challenges": {
     "exactOrder": {
-      "title": "",
-      "detail": ""
+      "title": "Sırayla satın alın",
+      "detail": "Dizilimdeki eşyaları kesinlikle yukarıdan aşağıya doğru satın alın. Bir sonraki kademeye paranız yetse bile sırayı atlamayın. Yükseltmeleri karşılayabildiğiniz anda alın."
     },
     "noRecall": {
       "title": "",

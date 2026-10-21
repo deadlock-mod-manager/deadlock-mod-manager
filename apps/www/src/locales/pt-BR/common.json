@@ -1,6 +1,6 @@
 {
   "privacy": {
-    "updated": "Última atualização: 19 de outubro de 2026",
+    "updated": "",
     "scope": "Esta política cobre o aplicativo Deadlock Mod Manager, deadlockmods.app e nosso bot da comunidade do Discord. As configurações e coleções específicas do computador são descritas abaixo; a seção do Bot explica como processamos os dados do Discord.",
     "desktopCollection": "O aplicativo roda localmente no seu computador e se comunica com serviços “on-line” para recursos como a descoberta de mods e downloads. Também recolhe dados técnicos e de utilização, como descrito nesta política.",
     "serverStorage": "",

@@ -1,42 +1,42 @@
 {
   "meta": {
-    "title": "",
-    "description": ""
+    "title": "Deadlock nişangâh oluşturucu: Nişangâh tasarlayın ve paylaşın",
+    "description": "Oyun içi arka planlarda canlı önizlemeyle kendinize özel bir Deadlock nişangâhı tasarlayın. Yapılandırmayı kopyalayın veya bağlantısını paylaşın. Aralığı, boyutu, çizgileri, merkez noktasını ve kenarlığı ayarlayın."
   },
   "page": {
-    "editingShared": "",
-    "title": "",
-    "description": ""
+    "editingShared": "Paylaşılan bir nişangâhı düzenliyorsunuz. Yaptığınız değişiklikler yeni bir yapılandırma oluşturacak.",
+    "title": "Nişangâh oluşturucu",
+    "description": "Deadlock nişangâhınızı oluşturun ve özelleştirin"
   },
   "preview": {
-    "title": "",
-    "none": "",
+    "title": "Önizleme",
+    "none": "Yok",
     "backgrounds": {
-      "bg1": "",
-      "bg2": ""
+      "bg1": "Arka plan 1",
+      "bg2": "Arka plan 2"
     },
-    "hint": ""
+    "hint": "Nişangâhın oyunda nasıl göründüğünü görmek için farenizi önizlemenin üzerinde gezdirin."
   },
   "controls": {
-    "settings": "",
-    "gap": "",
-    "width": "",
-    "height": "",
-    "pipOpacity": "",
-    "dotOpacity": "",
-    "dotOutlineOpacity": "",
-    "color": "",
-    "colorHex": "",
-    "options": "",
-    "pipBorder": "",
-    "pipGapStatic": "",
-    "hero": "",
-    "defaultHero": ""
+    "settings": "Nişangâh ayarları",
+    "gap": "Aralık",
+    "width": "Genişlik",
+    "height": "Yükseklik",
+    "pipOpacity": "Çizgi opaklığı",
+    "dotOpacity": "Merkez noktası opaklığı",
+    "dotOutlineOpacity": "Merkez noktası kenarlığının opaklığı",
+    "color": "Renk",
+    "colorHex": "Renk (Hex)",
+    "options": "Seçenekler",
+    "pipBorder": "Çizgi kenarlığını göster",
+    "pipGapStatic": "Sabit çizgi aralığı",
+    "hero": "Kahraman",
+    "defaultHero": "Varsayılan"
   },
   "export": {
-    "copy": "",
-    "copied": "",
-    "share": "",
-    "linkCopied": ""
+    "copy": "Yapılandırmayı kopyala",
+    "copied": "Kopyalandı!",
+    "share": "Paylaşım bağlantısı",
+    "linkCopied": "Bağlantı kopyalandı!"
   }
 }
