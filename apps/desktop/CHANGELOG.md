@@ -1,5 +1,11 @@
 # desktop
 
+## 2.1.1
+
+### Patch Changes
+
+- Fix launching on profiles named with non-Latin characters
+
 ## 2.1.0
 
 ### Minor Changes

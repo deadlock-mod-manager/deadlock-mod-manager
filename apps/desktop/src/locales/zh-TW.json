@@ -1325,6 +1325,12 @@
     "gotIt": "知道了！",
     "title": "更新日誌",
     "versions": {
+      "2.1.1": {
+        "title": "Profile launch fix",
+        "features": [
+          "🐛 Fixed games not launching on profiles with names in Cyrillic, Chinese and other non-Latin scripts"
+        ]
+      },
       "2.1.0": {
         "title": "",
         "features": [

@@ -4489,6 +4489,12 @@
       "other": "Other"
     },
     "versions": {
+      "2.1.1": {
+        "title": "Profile launch fix",
+        "features": [
+          "🐛 Fixed games not launching on profiles with names in Cyrillic, Chinese and other non-Latin scripts"
+        ]
+      },
       "2.1.0": {
         "title": "Performance configs for everyone and browse by hero",
         "features": [
