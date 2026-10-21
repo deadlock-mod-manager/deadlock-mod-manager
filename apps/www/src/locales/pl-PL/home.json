@@ -1,9 +1,11 @@
 {
   "meta": {
     "title": "Deadlock Mod Manager | Instaluj mody Deadlock i zarządzaj nimi",
-    "description": "Darmowy menedżer modów open source do Deadlock od Valve. Przeglądaj mody z GameBanana, instaluj je jednym kliknięciem i zarządzaj skinami oraz dźwiękami."
+    "description": "Darmowy menedżer modów open source do Deadlock od Valve. Przeglądaj mody z GameBanana, instaluj je jednym kliknięciem i zarządzaj skinami oraz dźwiękami.",
+    "descriptionLatest": ""
   },
   "hero": {
+    "v2OutNow": "",
     "title": "Mody do Deadlock,<br/><accent>bez kombinowania.</accent>",
     "subtitle": "Znajduj, instaluj i aktualizuj mody w kilka kliknięć. Ta sama aplikacja ogarnia skiny bohaterów, celowniki i motywy.",
     "allDownloads": "Wszystkie pobrania",
