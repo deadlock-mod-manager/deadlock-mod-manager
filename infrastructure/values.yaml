@@ -161,7 +161,7 @@ deployments:
       - name: AI_SUPPORT_ENABLED
         value: "false"
       - name: LANGUAGE_MODERATION_ENABLED
-        value: "true"
+        value: "false"
       - name: LANGUAGE_MODERATION_CHANNEL_IDS
         value: "*"
       - name: LANGUAGE_MODERATION_IGNORED_CHANNEL_IDS
