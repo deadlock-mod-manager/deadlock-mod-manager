@@ -8,7 +8,6 @@ import {
   QuestionIcon,
   ShieldWarningIcon,
   WarningIcon,
-  WrenchIcon,
 } from "@phosphor-icons/react";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -370,23 +369,6 @@ export const ImportReview = ({
               : t("performance.import.review.engine.title")
           }>
           <EntryList entries={groups.engineSections} />
-        </ReviewSection>
-      )}
-
-      {groups.devtools.length > 0 && (
-        <ReviewSection
-          count={groups.devtools.length}
-          icon={
-            <WrenchIcon
-              className='size-4 text-muted-foreground'
-              weight='bold'
-            />
-          }
-          summary={t("performance.import.review.devtools.description", {
-            count: groups.devtools.length,
-          })}
-          title={t("performance.import.review.devtools.title")}>
-          <EntryList entries={groups.devtools} />
         </ReviewSection>
       )}
 

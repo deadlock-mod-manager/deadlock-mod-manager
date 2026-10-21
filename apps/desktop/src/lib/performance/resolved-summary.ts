@@ -106,7 +106,7 @@ export const authorViewEntries = (entries: ResolvedEntry[]) =>
       (entry.status === "applies" || entry.status === "omitted"),
   );
 
-/** Developer and hideout tools, which stay off unless enabled. */
+/** Developer and hideout tools the config sets, including ones the user turned off. */
 export const devtoolEntries = (entries: ResolvedEntry[]) =>
   entries.filter(
     (entry) =>

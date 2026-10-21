@@ -118,6 +118,10 @@ pub struct CatalogCommunityConfig {
   /// Settings per category, so the scale can place a config we don't ship.
   #[serde(default)]
   pub category_counts: BTreeMap<String, u32>,
+  /// The pinned archive also ships VPKs. Added without a schema bump: older
+  /// apps ignore it and newer ones default it to false.
+  #[serde(default)]
+  pub bundles_vpks: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

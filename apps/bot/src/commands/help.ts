@@ -3,6 +3,7 @@ import { GuildMember, MessageFlags } from "discord.js";
 import {
   hasBlacklistPermission,
   hasForumModerationPermission,
+  hasPerfConfigModerationPermission,
   hasQuickAnswerEditorPermission,
   hasQuickAnswerUsePermission,
   hasReportModerationPermission,
@@ -61,6 +62,12 @@ const helpEntries: HelpEntry[] = [
     usage: "/blacklist add, /blacklist remove",
     description: "Block or unblock a GameBanana mod by ID or URL.",
     allowed: (member) => hasBlacklistPermission(member.user, member),
+  },
+  {
+    usage: "/perfconfig add, /perfconfig remove",
+    description:
+      "Mark a GameBanana upload that is only a performance config (gameinfo.gi, no VPKs) so the app opens it in Performance instead of installing it as a mod, or undo that. Leave uploads that also ship VPKs alone: installing them already offers to import the config.",
+    allowed: hasPerfConfigModerationPermission,
   },
   {
     usage: "/pattern add",

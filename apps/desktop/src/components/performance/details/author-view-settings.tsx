@@ -7,11 +7,7 @@ import {
   parseBool,
   sameValue,
 } from "@/lib/performance/editor/values";
-import {
-  findOverride,
-  isDevtoolEnabled,
-  withOverride,
-} from "@/lib/performance/overrides";
+import { findOverride, withOverride } from "@/lib/performance/overrides";
 import {
   authorViewEntries,
   devtoolEntries,
@@ -210,10 +206,10 @@ export const AuthorViewSettings = ({
           <EntrySwitchList
             entries={devtools}
             isChecked={(entry) =>
-              isDevtoolEnabled(findOverride(overrides, entry.path))
+              findOverride(overrides, entry.path)?.action.kind !== "omit"
             }
             onCheckedChange={(entry, checked) =>
-              setAction(entry.path, checked ? { kind: "enable" } : null)
+              setAction(entry.path, checked ? null : { kind: "omit" })
             }
           />
         </DetailsSection>

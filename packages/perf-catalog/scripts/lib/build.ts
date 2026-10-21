@@ -283,7 +283,10 @@ export const buildCatalog = async (
   }
 
   // GameBanana configs: analyzed for stats only.
-  const community = new Map<string, AnalyzedFile & { variantPath: string }>();
+  const community = new Map<
+    string,
+    AnalyzedFile & { variantPath: string; bundlesVpks: boolean }
+  >();
   for (const definition of COMMUNITY) {
     const pin = sources.community[String(definition.gamebananaId)];
     if (!pin)
@@ -299,6 +302,7 @@ export const buildCatalog = async (
     community.set(definition.id, {
       ...analyze(variant.text),
       variantPath: variant.path,
+      bundlesVpks: variant.bundlesVpks,
     });
   }
 
@@ -380,8 +384,8 @@ export const buildCatalog = async (
 
   /**
    * ConVars entries the app writes by default, per category: active, not
-   * denied, not a developer tool, and not the convar's own default for a key
-   * stock doesn't set (the app counts that as unchanged).
+   * denied, and not the convar's own default for a key stock doesn't set (the
+   * app counts that as unchanged).
    */
   const writableCounts = (entries: ConfigEntry[]): Record<string, number> => {
     const counts: Record<string, number> = {};
@@ -390,7 +394,7 @@ export const buildCatalog = async (
       const key = lowerName(entry.path);
       const meta = metas.get(key);
       if (!meta || (meta.status ?? "active") !== "active") continue;
-      if (isDeniedConvar(meta.name) || meta.gameplay === "devtools") continue;
+      if (isDeniedConvar(meta.name)) continue;
       if (
         !latestStock.parsed.convars.has(key) &&
         meta.default !== undefined &&
@@ -527,6 +531,7 @@ export const buildCatalog = async (
           (entry) => !isConvarEntry(entry),
         ).length,
         categoryCounts,
+        bundlesVpks: analyzed.bundlesVpks || undefined,
       });
     },
   );
@@ -586,6 +591,9 @@ export const buildCatalog = async (
   return { catalog, report: { lines } };
 };
 
+/** `CATEGORY_SATURATION` in perf_config/resolve.rs. */
+const CATEGORY_SATURATION = 25;
+
 /**
  * The desktop's Looks ⟷ Frames placement (`cut_score_from_category_counts` in
  * perf_config/resolve.rs), for the report: each category saturates on its own.
@@ -599,7 +607,7 @@ const cutScore = (counts: Record<string, number>): number => {
   for (const [category, count] of Object.entries(counts)) {
     const weight =
       CATEGORIES.find((entry) => entry.id === category)?.weight ?? 0;
-    score += Math.max(0, weight) * (1 - Math.exp(-count / 4));
+    score += Math.max(0, weight) * (1 - Math.exp(-count / CATEGORY_SATURATION));
   }
   return total === 0 ? 0 : Math.min(1, score / total);
 };

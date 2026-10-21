@@ -13,6 +13,7 @@ import AudioPlayerPreview from "@/components/mod-management/audio-player-preview
 import { ModUpdateBadge } from "@/components/mod-management/mod-update-badges";
 import { ObsoleteModWarning } from "@/components/mod-management/obsolete-mod-warning";
 import { OutdatedModWarning } from "@/components/mod-management/outdated-mod-warning";
+import { useConfigListing } from "@/hooks/performance/use-config-listing";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
 import ModCardSkeleton from "@/components/skeletons/mod-card";
 import { useModHasUpdate } from "@/hooks/use-check-updates";
@@ -66,10 +67,14 @@ const ModCard = memo((props: ModCardProps) => {
   const hoverPrefetch = useModDetailHoverPrefetch(
     readOnly ? undefined : mod?.remoteId,
   );
+  const configListingKind = useConfigListing(mod);
 
   if (!mod) {
     return <ModCardSkeleton />;
   }
+
+  // A config-only upload is a gameinfo.gi config, not a VPK a patch breaks.
+  const isOutdated = isModOutdated(mod) && configListingKind !== "confirmed";
 
   const entryPoint: ModEntryPoint = curatedCollection
     ? "collection"
@@ -160,14 +165,14 @@ const ModCard = memo((props: ModCardProps) => {
         )}
         {(status === ModStatus.Installed ||
           mod.isObsolete ||
-          isModOutdated(mod) ||
+          isOutdated ||
           (showModUpdateBadges && (isUpdatedRecently(mod) || hasUpdate))) && (
           <div className='pointer-events-none absolute inset-x-0 bottom-0 z-10 flex items-end justify-end gap-1 bg-gradient-to-t from-black/60 to-transparent px-2 pb-2 pt-6'>
             {status === ModStatus.Installed && (
               <Badge>{t("modStatus.installed")}</Badge>
             )}
             {mod.isObsolete && <ObsoleteModWarning variant='indicator' />}
-            {isModOutdated(mod) && <OutdatedModWarning variant='indicator' />}
+            {isOutdated && <OutdatedModWarning variant='indicator' />}
             <ModUpdateBadge mod={mod} hasUpdate={hasUpdate} />
           </div>
         )}

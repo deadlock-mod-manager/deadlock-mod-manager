@@ -268,7 +268,7 @@ const ImportDialogBody = ({
     !initialSource || !isHandedOver(initialSource),
   );
   const [cameraIncluded, setCameraIncluded] = useState(true);
-  const [includeEngineSections, setIncludeEngineSections] = useState(false);
+  const [includeEngineSections, setIncludeEngineSections] = useState(true);
   const [name, setName] = useState("");
   const nameEdited = useRef(false);
   // Kept through a failed re-analysis so the variant picker stays usable.
@@ -391,7 +391,7 @@ const ImportDialogBody = ({
     });
     addUserPerfConfig(config);
     if (overrides.length > 0) setPerfOverrides(config.id, overrides);
-    if (includeEngineSections) setPerfIncludeEngineSections(config.id, true);
+    if (!includeEngineSections) setPerfIncludeEngineSections(config.id, false);
     session.current.keptStagingId = report.stagingId;
 
     if (apply) {

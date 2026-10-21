@@ -171,19 +171,20 @@ const makeWritable = (dir: string) => {
 
 /**
  * Downloads the pinned file (md5-verified, cached), extracts it to a temporary
- * folder and returns the text of the variant. Nothing extracted is kept.
+ * folder and returns the text of the variant, and whether the archive also
+ * ships VPKs. Nothing extracted is kept.
  */
 export const readCommunityVariant = async (
   pin: CommunityPin,
   variantHint: string,
-): Promise<{ text: string; path: string }> => {
+): Promise<{ text: string; path: string; bundlesVpks: boolean }> => {
   const data = await fetchPinned({
     url: `https://gamebanana.com/dl/${pin.fileId}`,
     md5: pin.md5,
   });
   const extension = pin.fileName.slice(pin.fileName.lastIndexOf("."));
   if (!/\.(zip|rar|7z)$/i.test(extension))
-    return { text: decodeText(data), path: pin.fileName };
+    return { text: decodeText(data), path: pin.fileName, bundlesVpks: false };
   const workDir = mkdtempSync(join(tmpdir(), "perf-catalog-"));
   try {
     const archive = join(workDir, `archive${extension}`);
@@ -205,6 +206,7 @@ export const readCommunityVariant = async (
     return {
       text: decodeText(new Uint8Array(readFileSync(join(out, match)))),
       path: match,
+      bundlesVpks: files.some((path) => /\.vpk$/i.test(path)),
     };
   } finally {
     makeWritable(workDir);

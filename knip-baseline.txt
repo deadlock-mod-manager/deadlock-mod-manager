@@ -9,7 +9,6 @@
 ["dependencies","apps/auth/package.json",[["","genversion"]]]
 ["dependencies","apps/auth/package.json",[["","neverthrow"]]]
 ["dependencies","apps/bot/package.json",[["","@deadlock-mods/instrumentation"]]]
-["dependencies","apps/bot/package.json",[["","@deadlock-mods/shared"]]]
 ["dependencies","apps/bot/package.json",[["","@deadlock-mods/vpk-parser"]]]
 ["dependencies","apps/bot/package.json",[["","@langchain/community"]]]
 ["dependencies","apps/bot/package.json",[["","@langchain/langgraph"]]]

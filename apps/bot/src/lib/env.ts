@@ -53,6 +53,16 @@ export const envSchema = z.object({
         .map((id) => id.trim())
         .filter(Boolean),
     ),
+  // Moderator, Core Contributors, Community Support. Administrators always pass.
+  PERF_CONFIG_MODERATOR_ROLES: z
+    .string()
+    .default("1499784538056818699,1491132377282514978,1486214760952234105")
+    .transform((val) =>
+      val
+        .split(",")
+        .map((id) => id.trim())
+        .filter(Boolean),
+    ),
   QUICKANSWER_ASSET_CHANNEL_ID: z.string().default("1527730609651318874"),
   QUICKANSWER_EDITOR_ROLE_IDS: z
     .string()

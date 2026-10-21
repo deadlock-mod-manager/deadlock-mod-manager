@@ -23,12 +23,14 @@ import { useTranslation } from "react-i18next";
 import { GrInstallOption } from "react-icons/gr";
 import { RiErrorWarningLine } from "react-icons/ri";
 import { FileSelectorDialog } from "@/components/downloads/file-selector-dialog";
+import { OpenInPerformanceButton } from "@/components/mod-browsing/config-listing";
 import { MultiFileDownloadDialog } from "@/components/downloads/multi-file-download-dialog";
 import {
   HeroConflictDialog,
   type HeroConflictResolution,
 } from "@/components/mod-browsing/hero-conflict-dialog";
 import ErrorBoundary from "@/components/shared/error-boundary";
+import { useConfigListing } from "@/hooks/performance/use-config-listing";
 import { useDownload } from "@/hooks/use-download";
 import { useInstallAction } from "@/hooks/use-install-action";
 import {
@@ -39,6 +41,7 @@ import useUninstall from "@/hooks/use-uninstall";
 import logger from "@/lib/logger";
 import { resolveLocalModHero } from "@/lib/mods/hero-resolution";
 import { usePersistedStore } from "@/lib/store";
+import { findLocalMod } from "@/lib/store/selectors";
 import { cn } from "@/lib/utils";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
@@ -104,7 +107,7 @@ export const ModStatusIcon = ({
   );
 };
 
-const ModButton = ({
+const InstallModButton = ({
   remoteMod,
   variant = "default",
   analyticsEntryPoint,
@@ -431,7 +434,7 @@ const ModButton = ({
           }
           isExtracting={localMod?.status === ModStatus.Extracting}
           isOpen={isDialogOpen}
-          modName={localMod?.name || t("modForm.unknownMod")}
+          modName={localMod?.name || remoteMod?.name || t("modForm.unknownMod")}
           onClose={closeDialog}
           onDownload={downloadSelectedFiles}
         />
@@ -446,6 +449,26 @@ const ModButton = ({
       </div>
     </ErrorBoundary>
   );
+};
+
+/**
+ * Install for mods. A GameBanana upload that is a performance config opens the
+ * Performance page instead, unless the user already has it as a mod.
+ */
+const ModButton = (props: ModButtonProps) => {
+  const listing = useConfigListing(props.remoteMod);
+  const hasLocalMod = usePersistedStore(
+    (state) => !!findLocalMod(state.localMods, props.remoteMod?.remoteId),
+  );
+  if (props.remoteMod && listing === "confirmed" && !hasLocalMod) {
+    return (
+      <OpenInPerformanceButton
+        remoteId={props.remoteMod.remoteId}
+        variant={props.variant}
+      />
+    );
+  }
+  return <InstallModButton {...props} />;
 };
 
 export default ModButton;

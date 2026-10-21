@@ -24,6 +24,13 @@ const policyDownloadCorrectionSchema = z
   })
   .strict();
 
+/**
+ * Category a metadata correction gives a GameBanana upload that is a
+ * gameinfo.gi performance config rather than a mod. The desktop app sends
+ * these to its Performance page instead of installing them.
+ */
+export const PERFORMANCE_CONFIG_CATEGORY = "Performance Configs";
+
 export const policyMetadataCorrectionSchema = z
   .object({
     name: z.string().optional(),

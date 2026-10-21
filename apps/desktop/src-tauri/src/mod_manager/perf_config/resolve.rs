@@ -9,13 +9,13 @@
 //! 3. ConVars: blocked → `Blocked`; not in the dump → `Removed` (with a
 //!    `SectionKey` note when Valve's file sets the key in another section);
 //!    concommand →
-//!    `NotConvar`; devtools → `Omitted` unless the user enabled them or set a
-//!    value; user omit → `Omitted`; same as live, or as the convar's default
+//!    `NotConvar`; user omit → `Omitted`; same as live, or as the convar's default
 //!    when the live file doesn't set it → `Unchanged`; object leaf
 //!    for a key the live file lacks, a value where the file has a block, or
 //!    text gameinfo.gi can't hold → `Unsupported`; otherwise `Applies`
 //!    (+ `Clamped`/`TypeMismatch` notes).
-//!    Camera and visibility convars apply as the author set them.
+//!    Camera, visibility and developer-tool convars apply as the author set
+//!    them.
 //! 4. Other sections: user omit → `Omitted`; same as live → `Unchanged`;
 //!    otherwise `EngineSection` unless engine sections are included, then
 //!    `Applies` (or `Unsupported` when the section is missing).
@@ -32,7 +32,7 @@ use super::live::{LiveGameinfo, normalize_value, path_key, values_equal};
 use super::patch;
 use super::types::{
   ConfigEntry, ConvarKind, ConvarMeta, ConvarStatus, EntryNote, EntryOverride, EntryStatus,
-  GameplayClass, OverrideAction, PerfConfigSource, ResolvedConfig, ResolvedCounts, ResolvedEntry,
+  OverrideAction, PerfConfigSource, ResolvedConfig, ResolvedCounts, ResolvedEntry,
 };
 use crate::errors::Error;
 
@@ -97,8 +97,9 @@ pub fn resolve(
     .map(|candidate| resolve_entry(catalog, live, options.include_engine_sections, candidate))
     .collect();
 
+  let stock = LiveGameinfo::latest_stock(catalog);
   let mut counts = ResolvedCounts::default();
-  let mut applied_per_category: BTreeMap<String, u32> = BTreeMap::new();
+  let mut cut_per_category: BTreeMap<String, u32> = BTreeMap::new();
   for entry in &resolved {
     let count = match entry.status {
       EntryStatus::Applies => &mut counts.applies,
@@ -116,18 +117,42 @@ pub fn resolve(
     if entry.overridden {
       counts.overridden += 1;
     }
-    if entry.status == EntryStatus::Applies {
-      *applied_per_category
-        .entry(entry.category.clone())
-        .or_default() += 1;
+    if cuts_from_stock(entry, &stock, options.include_engine_sections) {
+      *cut_per_category.entry(entry.category.clone()).or_default() += 1;
     }
   }
 
   ResolvedConfig {
-    cut_score: cut_score_from_category_counts(catalog, &applied_per_category),
+    cut_score: cut_score_from_category_counts(catalog, &cut_per_category),
     rev: revision(&resolved, options.include_engine_sections),
     entries: resolved,
     counts,
+  }
+}
+
+/// Whether an entry takes effect and differs from the latest stock file. The
+/// scale measures a config against stock, not against the live file: a player
+/// whose hand-edited gameinfo.gi already holds a preset's values would
+/// otherwise see that preset as one that changes nothing.
+fn cuts_from_stock(
+  entry: &ResolvedEntry,
+  stock: &LiveGameinfo,
+  include_engine_sections: bool,
+) -> bool {
+  let is_convar = entry.path[0].eq_ignore_ascii_case("ConVars");
+  let takes_effect = match entry.status {
+    EntryStatus::Applies => true,
+    EntryStatus::Unchanged => is_convar || include_engine_sections,
+    _ => false,
+  };
+  if !takes_effect {
+    return false;
+  }
+  let default = entry.meta.as_ref().and_then(|meta| meta.default.as_deref());
+  match (entry.value.as_deref(), stock.value(&entry.path)) {
+    (Some(value), Some(stock)) => !values_equal(value, stock),
+    (Some(value), None) => !default.is_some_and(|default| values_equal(value, default)),
+    (None, stock) => stock.is_some(),
   }
 }
 
@@ -146,8 +171,8 @@ pub fn entries_for_source(
 }
 
 /// Scale position from settings-per-category counts, for configs we only know
-/// by their stats (GameBanana). `resolve` scores its `Applies` entries the
-/// same way.
+/// by their stats (GameBanana). `resolve` scores the entries that differ from
+/// stock the same way.
 ///
 /// Each category saturates on its own and contributes up to its weight:
 /// `score = Σ w_c · (1 − e^(−n_c / 25)) / Σ w_c`, summed over the catalog's
@@ -288,13 +313,6 @@ impl Check<'_> {
       }
       ConvarStatus::NotConvar => return (EntryStatus::NotConvar, Vec::new()),
       ConvarStatus::Active => {}
-    }
-    let enabled = matches!(
-      self.action,
-      Some(OverrideAction::Enable | OverrideAction::Set { .. })
-    );
-    if meta.gameplay == Some(GameplayClass::Devtools) && !enabled {
-      return (EntryStatus::Omitted, Vec::new());
     }
     if let Some(result) = self.omitted_or_unchanged(meta.default.as_deref()) {
       return result;

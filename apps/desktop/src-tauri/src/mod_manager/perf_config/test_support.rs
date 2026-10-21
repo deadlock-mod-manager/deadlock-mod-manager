@@ -370,6 +370,7 @@ pub fn test_catalog() -> Catalog {
       variant_hint: None,
       settings_count: 12,
       engine_edit_count: 0,
+      bundles_vpks: false,
       category_counts: [("shadows".to_string(), 5), ("world".to_string(), 3)]
         .into_iter()
         .collect(),

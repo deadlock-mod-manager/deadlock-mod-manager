@@ -101,7 +101,9 @@ export const VariantPicker = ({
         {title}
       </span>
       <RadioGroup
-        className={cn("gap-1.5", className)}
+        // max-content rows: with a capped height the grid would squeeze rows
+        // and let wrapped paths overlap the next option.
+        className={cn("auto-rows-max gap-1.5", className)}
         disabled={disabled}
         onValueChange={onPick}
         value={value ?? undefined}>

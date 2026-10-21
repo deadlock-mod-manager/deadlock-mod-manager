@@ -202,11 +202,11 @@ fn files_without_pgiversion_match_the_closest_build() {
   assert_eq!((base.build, base.exact, base.distance), (6652, false, 0));
   assert!(copy.entries.is_empty());
 
+  let lf = draft(&fixture(STOCK_6711), "gameinfo.gi");
   let crlf = draft(&fixture(STOCK_6711).replace('\n', "\r\n"), "gameinfo.gi");
-  assert_eq!(
-    crlf.base.map(|base| (base.build, base.exact)),
-    Some((current_build(), true))
-  );
+  let build_and_exact = |draft: &Draft| draft.base.as_ref().map(|base| (base.build, base.exact));
+  assert_eq!(build_and_exact(&crlf), build_and_exact(&lf));
+  assert_eq!(crlf.base.map(|base| base.exact), Some(true));
   assert!(crlf.entries.is_empty());
   assert!(crlf.ignored.iter().all(|part| matches!(
     part.kind,

@@ -18,8 +18,6 @@ type ImportReviewGroups = {
   refused: ResolvedEntry[];
   /** Edits outside ConVars, only written when engine sections are included. */
   engineSections: ResolvedEntry[];
-  /** Developer and debug tools, off unless enabled. */
-  devtools: ResolvedEntry[];
   /** Sections and root keys that are never written. */
   excluded: ResolvedEntry[];
 };
@@ -46,7 +44,6 @@ export const groupReviewEntries = (
     removed: [],
     refused: [],
     engineSections: [],
-    devtools: [],
     excluded: [],
   };
 
@@ -56,8 +53,6 @@ export const groupReviewEntries = (
       (writes(entry) || entry.status === "omitted")
     ) {
       groups.cameraVisibility.push(entry);
-    } else if (entry.gameplay === "devtools" && entry.status === "omitted") {
-      groups.devtools.push(entry);
     } else if (entry.status === "excluded") {
       groups.excluded.push(entry);
     } else if (

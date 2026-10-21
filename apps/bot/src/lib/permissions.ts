@@ -122,6 +122,15 @@ export function hasForumModerationPermission(member: GuildMember): boolean {
   );
 }
 
+export function hasPerfConfigModerationPermission(
+  member: GuildMember,
+): boolean {
+  return (
+    member.permissions.has("Administrator") ||
+    hasConfiguredRole(member, env.PERF_CONFIG_MODERATOR_ROLES)
+  );
+}
+
 export function hasQuickAnswerEditorPermission(member: GuildMember): boolean {
   return (
     member.permissions.has("Administrator") ||

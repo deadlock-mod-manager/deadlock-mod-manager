@@ -458,7 +458,7 @@ fn draft_from_parsed(catalog: &Catalog, parsed: ParsedConfig) -> Draft {
     warnings,
     preset_id: None,
     overrides: Vec::new(),
-    include_engine_sections: false,
+    include_engine_sections: true,
   }
 }
 

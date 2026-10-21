@@ -4,7 +4,7 @@ import type { CatalogRules } from "../src/schema";
  * What the app never writes. Excluded sections are dropped from preset entries
  * at generation time and reported as excluded at import time; guarded sections
  * are the ones Valve's matchmaking message names (`Citadel_StartMatchmaking_UnverifiedPGI`,
- * build 6417), which the app only writes when the user includes engine sections.
+ * build 6417), which the app writes unless the user turns engine sections off.
  */
 export const RULES: CatalogRules = {
   excludedSections: [

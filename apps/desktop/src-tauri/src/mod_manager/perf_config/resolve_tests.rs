@@ -196,11 +196,22 @@ fn gameplay_classes() {
     &[],
     false,
   );
-  assert_eq!(devtools.status, EntryStatus::Omitted);
+  assert_eq!(devtools.status, EntryStatus::Applies);
   assert!(!devtools.overridden);
   assert_eq!(devtools.gameplay, Some(GameplayClass::Devtools));
 
-  let enabled = resolve_one(
+  let turned_off = resolve_one(
+    entry("ConVars/citadel_hideout_enable_testing_tools", Some("1")),
+    &[action(
+      "ConVars/citadel_hideout_enable_testing_tools",
+      OverrideAction::Omit,
+    )],
+    false,
+  );
+  assert_eq!(turned_off.status, EntryStatus::Omitted);
+
+  // Saved before developer tools applied as written.
+  let legacy_enable = resolve_one(
     entry("ConVars/citadel_hideout_enable_testing_tools", Some("1")),
     &[action(
       "ConVars/citadel_hideout_enable_testing_tools",
@@ -208,8 +219,8 @@ fn gameplay_classes() {
     )],
     false,
   );
-  assert_eq!(enabled.status, EntryStatus::Applies);
-  assert!(enabled.overridden);
+  assert_eq!(legacy_enable.status, EntryStatus::Applies);
+  assert!(legacy_enable.overridden);
 
   let given_a_value = resolve_one(
     entry("ConVars/citadel_hideout_enable_testing_tools", Some("1")),
@@ -528,6 +539,23 @@ fn cut_score_rises_with_what_is_cut() {
 }
 
 #[test]
+fn cut_score_ignores_values_the_live_file_already_holds() {
+  let catalog = test_catalog();
+  let config = [
+    entry("ConVars/r_ssao", Some("0")),
+    entry("ConVars/lb_enable_shadow_casting", Some("0")),
+    entry("ConVars/r_farz", Some("7000")),
+  ];
+  let stock = catalog.latest_stock().expect("stock").entries.clone();
+  let hand_edited = LiveGameinfo::from_entries(&[stock, config.to_vec()].concat());
+  let against_stock = resolve(&catalog, &config, &live(), &options(&[], false));
+  let against_edited = resolve(&catalog, &config, &hand_edited, &options(&[], false));
+  assert_eq!(against_edited.counts.applies, 0);
+  assert!(against_stock.cut_score > 0.0);
+  assert_eq!(against_edited.cut_score, against_stock.cut_score);
+}
+
+#[test]
 fn category_counts_score_like_resolved_configs() {
   let catalog = test_catalog();
   let config = [
@@ -597,7 +625,9 @@ fn bundled_presets_spread_across_the_scale() {
   let clean = score("dmm-clean");
   let balanced = score("optimizationlock");
   let optilock = score("optilock-fps");
-  assert!(clean < balanced && balanced < optilock);
+  // Counts alone don't order OptiLock and OptimizationLock: they set
+  // similar keys and differ in values.
+  assert!(clean < balanced && clean < optilock);
   assert!(clean < 0.45, "dmm-clean at {clean}");
   assert!(optilock < 0.9, "optilock-fps at {optilock}");
 }

@@ -1659,5 +1659,13 @@
       }
     },
     "welcome": "歡迎使用 {{appName}} 的最新版本！"
+  },
+  "configListing": {
+    "open": "",
+    "tooltip": "",
+    "confirmed": "",
+    "likely": "",
+    "noFiles": "",
+    "openFailed": ""
   }
 }

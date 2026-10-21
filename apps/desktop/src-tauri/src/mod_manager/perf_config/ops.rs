@@ -233,8 +233,9 @@ fn remove_orphan(ctx: &PerfContext) -> Result<ReapplyOutcome, Error> {
   Ok(ReapplyOutcome::RemovedOrphan)
 }
 
-/// The catalog with preset counts and scale positions computed against the
-/// live file (or the catalog's latest stock when the game isn't set up).
+/// The catalog with preset counts computed against the live file (or the
+/// catalog's latest stock when the game isn't set up). Scale positions are
+/// always measured against stock.
 pub fn catalog_summary(ctx: &PerfContext) -> Result<CatalogSummary, Error> {
   let catalog = ctx.catalog;
   let live = live_gameinfo(ctx).unwrap_or_else(|error| {
@@ -243,7 +244,7 @@ pub fn catalog_summary(ctx: &PerfContext) -> Result<CatalogSummary, Error> {
   });
   let options = ResolveOptions {
     overrides: &[],
-    include_engine_sections: false,
+    include_engine_sections: true,
   };
   let presets = catalog
     .presets()
@@ -287,6 +288,7 @@ pub fn catalog_summary(ctx: &PerfContext) -> Result<CatalogSummary, Error> {
       settings_count: config.settings_count,
       engine_edit_count: config.engine_edit_count,
       cut_score: resolve::cut_score_from_category_counts(catalog, &config.category_counts),
+      bundles_vpks: config.bundles_vpks,
     })
     .collect();
   Ok(CatalogSummary {

@@ -108,8 +108,8 @@ The manager edits `gameinfo.gi` in place next to your mods instead of replacing 
 What gets written:
 
 - Settings that Valve's convar list marks as not read from `gameinfo.gi`, or that aren't in that list at all, are left out and listed in the config's details. The list comes from the newest game build the catalog knows.
-- Edits outside the ConVars block (SceneSystem, RenderSystem and other engine sections) are left out unless you choose **Include** for that config. Deadlock's matchmaking error lists Engine2, MaterialSystem2, NetworkSystem, Particles, RenderSystem, SceneSystem and WorldRenderer as `gameinfo.gi` sections where it doesn't support changes.
-- Camera and visibility settings, such as field of view or outlines, follow the config's author. You can turn each one off.
+- Edits outside the ConVars block (SceneSystem, RenderSystem and other engine sections) are written as the config sets them. Deadlock's matchmaking error lists Engine2, MaterialSystem2, NetworkSystem, Particles, RenderSystem, SceneSystem and WorldRenderer as `gameinfo.gi` sections where it doesn't support some changes, so if Deadlock won't let you queue, turn off **Include engine-section edits** for that config.
+- Camera and visibility settings, such as field of view or outlines, and developer or hideout tools follow the config's author. You can turn each one off.
 - SearchPaths and `video.txt` are never changed.
 
 ![Settings editor grouping a config's settings by category, with switches and the config's value next to the game default](/assets/v2-performance-editor.png)

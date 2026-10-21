@@ -14,7 +14,7 @@ import {
   presetIdFromConfigId,
   userConfigApplyRequest,
 } from "./request";
-import { tierForScore } from "./scale";
+import { presetPosition, tierForScore } from "./scale";
 
 export type ConfigSourceFilter = "all" | "curated" | "gamebanana" | "yours";
 
@@ -38,6 +38,7 @@ export type PresetListItem = {
   configId: string;
   name: string;
   tier: PerfTier;
+  /** Track position from `presetPosition`, not the catalog's raw score. */
   cutScore: number;
   preset: PresetSummary;
 };
@@ -125,7 +126,12 @@ const placementOf = (
   const { origin } = config;
   const presetPlacement = (presetId: string | null) => {
     const preset = catalog?.presets.find((item) => item.id === presetId);
-    return preset ? { tier: preset.tier, cutScore: preset.cutScore } : null;
+    return preset
+      ? {
+          tier: preset.tier,
+          cutScore: presetPosition(preset.tier, preset.cutScore),
+        }
+      : null;
   };
   switch (origin.kind) {
     case "gamebanana": {
@@ -167,7 +173,7 @@ export const buildConfigList = (
     configId: presetConfigId(preset.id),
     name: preset.name,
     tier: preset.tier,
-    cutScore: preset.cutScore,
+    cutScore: presetPosition(preset.tier, preset.cutScore),
     preset,
   }));
   const community: ConfigListItem[] = (catalog?.community ?? []).map(

@@ -44,15 +44,15 @@ pnpm perf:catalog --refresh  # move the pins to the newest upstream state, then 
 
 ### DMM Clean
 
-DMM's own preset is computed from the pinned GPL-3.0 configs. Configs that derive from each other count as one lineage (sqooky: Sqooky, Eskay, Max FPS; kaizu: minimum spec, extreme low; boot; piggy; optilock: FPS, Potato). Each lineage votes with the value its configs set (majority within the lineage). A value is kept when at least 3 lineages vote for it and they are at least 75% of the lineages that change the key, the convar is active (in the dump, not `gameinfo_cannot_override`), it has no gameplay class and isn't in Camera & visibility, the in-game video menu doesn't control it, it doesn't hide things (`HIDES_THINGS`: draw distance, culling, LOD, draw toggles, sun and fog, PVS, grass and clutter, decals, splashes and blood, ropes, effect caps, Doorman's indicator, dark portraits), it is inside the convar's min/max, and it differs from the latest stock value.
+DMM's own preset is computed from the pinned GPL-3.0 configs. Configs that derive from each other count as one lineage (sqooky: Sqooky, Eskay, Max FPS; kaizu: minimum spec, extreme low; boot; piggy; optilock: FPS, Potato, Ultra Potato). Each lineage votes with the value its configs set (majority within the lineage). A value is kept when at least 3 lineages vote for it and they are at least 75% of the lineages that change the key, the convar is active (in the dump, not `gameinfo_cannot_override`), it has no gameplay class and isn't in Camera & visibility, the in-game video menu doesn't control it, it doesn't hide things (`HIDES_THINGS`: draw distance, culling, LOD, draw toggles, sun and fog, PVS, grass and clutter, decals, splashes and blood, ropes, effect caps, Doorman's indicator, dark portraits), it is inside the convar's min/max, and it differs from the latest stock value.
 
 ### Gameplay classification
 
-Every ConVar a preset sets whose name matches a pattern in `curated/gameplay.ts` (outline, glow, see_thru, `_fov$`, aspectratio, camera, camera_pitch, `citadel_unit_status_`, debug_draw, debug_show, hideout, timescale) must be classified camera, visibility or devtools, listed in `ALLOW_IN_BODY` with a reason, or denied. Otherwise the generator fails. Camera and visibility settings apply as the author set them; devtools stay off unless the user enables them.
+Every ConVar a preset sets whose name matches a pattern in `curated/gameplay.ts` (outline, glow, see_thru, `_fov$`, aspectratio, camera, camera_pitch, `citadel_unit_status_`, debug_draw, debug_show, hideout, timescale) must be classified camera, visibility or devtools, listed in `ALLOW_IN_BODY` with a reason, or denied. Otherwise the generator fails. Camera, visibility and devtools settings apply as the author set them; the user can turn each one off.
 
 ### Community configs
 
-GameBanana files are downloaded only to compute `settingsCount` (ConVars the app would write: active, not denied, not developer tools), `categoryCounts` (the same, per category), `engineEditCount` and `baseBuild`. No file content is stored.
+GameBanana files are downloaded only to compute `settingsCount` (ConVars the app would write: active, not denied), `categoryCounts` (the same, per category), `engineEditCount`, `baseBuild` and `bundlesVpks` (the archive also ships VPKs, so the app keeps Install for it). No file content is stored.
 
 ## Sources and licences
 

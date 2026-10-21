@@ -103,8 +103,8 @@
         "blocked": "Valve flags this convar as one gameinfo.gi can't set (gameinfo_cannot_override).",
         "removed": "Not in Deadlock's convar list. When the convar history shows it disappearing, the build is named.",
         "notConvar": "Valve lists it as a console command, not a convar.",
-        "engineSection": "Outside the ConVars block, such as SceneSystem or RenderSystem. Left out unless you choose Include for that config. Deadlock's matchmaking error lists Engine2, MaterialSystem2, NetworkSystem, Particles, RenderSystem, SceneSystem and WorldRenderer as sections where it doesn't support changes.",
-        "omitted": "You turned it off, or it's a developer or hideout tool. Those stay off unless you turn them on.",
+        "engineSection": "Outside the ConVars block, such as SceneSystem or RenderSystem. Left out because engine-section edits are off for this config. Deadlock's matchmaking error lists Engine2, MaterialSystem2, NetworkSystem, Particles, RenderSystem, SceneSystem and WorldRenderer as sections where it doesn't support some changes.",
+        "omitted": "You turned it off.",
         "excluded": "FileSystem (which holds SearchPaths) and editor-only sections. The mod manager never writes them.",
         "denied": "Keys the mod manager won't write, such as sv_cheats. Each one shows its reason.",
         "unsupported": "The edit doesn't fit your file, for example a section your gameinfo.gi doesn't have.",
@@ -262,14 +262,12 @@
         },
         "fromAuthor": "Set by the config's author. It changes what you see in matches.",
         "turnOffInline": "Turn off",
-        "devtoolsOff": "Developer tool. Off unless you enable it.",
-        "devtoolsOn": "Developer tool, enabled by you.",
-        "enable": "Enable {{name}}",
         "turnedOff": "Turned off by you, so gameinfo.gi keeps the game's value.",
         "restore": "Restore",
         "turnOff": "Turn off this setting",
         "undoChange": "Undo your change",
-        "menu": "More actions for {{name}}"
+        "menu": "More actions for {{name}}",
+        "devtoolsFromAuthor": "Developer or hideout tool set by the config's author."
       },
       "notes": {
         "clamped": "The config sets {{value}}, so the game uses {{effective}}.",
@@ -301,16 +299,16 @@
         "excluded": "The mod manager never writes this key.",
         "missingSection": "Your gameinfo.gi has no {{section}} section, so this can't be written.",
         "unsupported": "This can't be written as an edit to your gameinfo.gi.",
-        "engineSection": "Left out unless you include engine-section edits."
+        "engineSection": "Left out because engine-section edits are off for this config."
       },
       "engine": {
-        "excluded_one": "{{count}} engine-section edit ({{sections}}) is left out unless you include it.",
-        "excluded_other": "{{count}} engine-section edits ({{sections}}) are left out unless you include them.",
+        "excluded_one": "{{count}} engine-section edit ({{sections}}) is turned off.",
+        "excluded_other": "{{count}} engine-section edits ({{sections}}) are turned off.",
         "included_one": "{{count}} engine-section edit ({{sections}}) is included.",
         "included_other": "{{count}} engine-section edits ({{sections}}) are included.",
         "sectionsMore": "{{sections}} and {{count}} more",
-        "why": "Why these are left out",
-        "valveMessage": "Deadlock's matchmaking error lists {{sections}} among the gameinfo.gi sections where it doesn't support changes.",
+        "why": "About these sections",
+        "valveMessage": "Deadlock's matchmaking error lists {{sections}} among the gameinfo.gi sections where it doesn't support some changes. If Deadlock won't let you queue, turn these edits off.",
         "toggle": "Include engine-section edits"
       },
       "add": {
@@ -482,14 +480,9 @@
           "include": "Include",
           "description_one": "{{count}} edit to {{sections}}, left out unless you include it.",
           "description_other": "{{count}} edits to {{sections}}, left out unless you include them.",
-          "valveMessage": "Deadlock's matchmaking error lists {{sections}} among the gameinfo.gi sections where it doesn't support changes.",
+          "valveMessage": "Deadlock's matchmaking error lists {{sections}} among the gameinfo.gi sections where it doesn't support some changes. If Deadlock won't let you queue, turn these edits off.",
           "sectionsWithRest_one": "{{sections}} and {{count}} other section",
           "sectionsWithRest_other": "{{sections}} and {{count}} other sections"
-        },
-        "devtools": {
-          "title": "Developer tools (off)",
-          "description_one": "{{count}} developer or debug setting stays off. You can turn it on in the settings editor after import.",
-          "description_other": "{{count}} developer, debug or hideout settings stay off. You can turn them on in the settings editor after import."
         },
         "ignored": {
           "title": "Ignored parts",
@@ -771,7 +764,7 @@
       },
       "devtools": {
         "title": "Developer & hideout tools",
-        "description": "The author's config sets these. They stay off unless you turn them on."
+        "description": "The author's config sets these. Turn any of them off here."
       },
       "notApplied": {
         "title": "Not applied",
@@ -786,7 +779,7 @@
         "sections": "{{sections}}.",
         "sectionsMore_one": "{{sections}} and {{count}} more.",
         "sectionsMore_other": "{{sections}} and {{count}} more.",
-        "valveMessage": "Deadlock's matchmaking error lists {{sections}} among the gameinfo.gi sections where it doesn't support changes.",
+        "valveMessage": "Deadlock's matchmaking error lists {{sections}} among the gameinfo.gi sections where it doesn't support some changes. If Deadlock won't let you queue, turn these edits off.",
         "outsideConvars": "These edits sit outside the ConVars block and are left out unless you include them.",
         "change": "{{from}} → {{to}}",
         "notSet": "not set"
@@ -6470,5 +6463,13 @@
       "title": "Like living on the edge?",
       "body": "Switch to the nightly update channel to get new features before everyone else. Expect the occasional rough edge."
     }
+  },
+  "configListing": {
+    "open": "Open in Performance",
+    "tooltip": "This upload is a gameinfo.gi config, not a mod. Review and apply it from the Performance page.",
+    "confirmed": "This upload is a performance config for gameinfo.gi, not a mod. The Performance page reviews and applies it, and can turn it off again.",
+    "likely": "This upload looks like it includes a performance config for gameinfo.gi. Installing it adds any VPKs as usual and then offers to import the config, or you can review only the config in Performance.",
+    "noFiles": "This upload has no files to review.",
+    "openFailed": "Couldn't open this config in Performance"
   }
 }

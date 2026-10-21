@@ -16,6 +16,7 @@ import {
   useState,
 } from "react";
 import { useTranslation } from "react-i18next";
+import { useStoredRequestOptions } from "@/hooks/performance/use-perf-config-list";
 import { useApplyPerfConfig } from "@/hooks/performance/use-perf-mutations";
 import { usePerfResolve } from "@/hooks/performance/use-perf-queries";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
@@ -24,7 +25,6 @@ import { applySourceFor } from "@/lib/performance/config-list";
 import {
   type EditorConfigOption,
   isAppliedAs,
-  savedDraftFor,
   withDraft,
 } from "@/lib/performance/editor/configs";
 import {
@@ -94,10 +94,6 @@ export const ConfigEditor = ({
   const { t } = useTranslation();
   const configId = base.configId;
 
-  const savedOverrides = usePersistedStore((state) => state.perfOverrides);
-  const savedInclude = usePersistedStore(
-    (state) => state.perfIncludeEngineSections,
-  );
   const userConfigs = usePersistedStore((state) => state.perfUserConfigs);
   const setPerfOverrides = usePersistedStore((state) => state.setPerfOverrides);
   const setPerfIncludeEngineSections = usePersistedStore(
@@ -106,10 +102,7 @@ export const ConfigEditor = ({
   const apply = useApplyPerfConfig();
 
   const { drafts, updateDraft } = useEditorDrafts();
-  const saved = useMemo(
-    () => savedDraftFor(configId, savedOverrides, savedInclude, desired),
-    [configId, savedOverrides, savedInclude, desired],
-  );
+  const saved = useStoredRequestOptions(configId);
   const draft = drafts[configId] ?? saved;
   const unsavedCount = countUnsavedChanges(saved, draft);
   const appliedAsSaved = isAppliedAs(configId, saved, desired);

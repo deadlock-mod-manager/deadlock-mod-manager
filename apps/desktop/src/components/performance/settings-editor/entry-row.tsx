@@ -6,7 +6,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@deadlock-mods/ui/components/dropdown-menu";
-import { Switch } from "@deadlock-mods/ui/components/switch";
 import {
   Tooltip,
   TooltipContent,
@@ -31,7 +30,6 @@ import {
   entryKeyLabel,
   sameValue,
 } from "@/lib/performance/editor/values";
-import { isDevtoolEnabled } from "@/lib/performance/overrides";
 import { cn } from "@/lib/utils";
 import type { ConvarMeta } from "@/types/generated/ConvarMeta";
 import type { EntryOverride } from "@/types/generated/EntryOverride";
@@ -100,7 +98,6 @@ const EntryRowComponent = ({
   const inert = isInert(entry);
   const engineLocked = isEngineSectionEntry(entry) && !engineIncluded;
   const isDevtools = entry.gameplay === "devtools";
-  const devtoolsEnabled = isDevtoolEnabled(override);
   const omittedByUser = overrideKind === "omit";
   const isAuthorView =
     entry.gameplay === "camera" || entry.gameplay === "visibility";
@@ -128,13 +125,8 @@ const EntryRowComponent = ({
       : null;
 
   const controlDisabled =
-    inert ||
-    engineLocked ||
-    omittedByUser ||
-    commentedOut ||
-    (isDevtools && !devtoolsEnabled);
-  const canTurnOff =
-    !inert && !omittedByUser && !(isDevtools && !devtoolsEnabled);
+    inert || engineLocked || omittedByUser || commentedOut;
+  const canTurnOff = !inert && !omittedByUser;
 
   const commitValue = (next: string) =>
     onAction(
@@ -143,7 +135,6 @@ const EntryRowComponent = ({
           path,
           configValue: entry.configValue,
           kind,
-          offByDefault: isDevtools,
         },
         next,
       ),
@@ -239,24 +230,17 @@ const EntryRowComponent = ({
           </p>
         )}
         {isDevtools && !omittedByUser && !inert && (
-          <div className='flex items-center gap-2 text-muted-foreground text-xs'>
+          <p className='flex flex-wrap items-center gap-x-2 text-muted-foreground text-xs'>
             <WrenchIcon className='size-3.5 shrink-0' />
-            <span>
-              {devtoolsEnabled
-                ? t("performance.editor.row.devtoolsOn")
-                : t("performance.editor.row.devtoolsOff")}
-            </span>
-            <Switch
-              aria-label={t("performance.editor.row.enable", { name })}
-              checked={devtoolsEnabled}
-              className='scale-75'
-              onCheckedChange={(checked) =>
-                onAction(
-                  checked ? { kind: "enable", path } : { kind: "reset", path },
-                )
-              }
-            />
-          </div>
+            {t("performance.editor.row.devtoolsFromAuthor")}
+            <Button
+              className='h-auto p-0 text-xs'
+              onClick={omit}
+              size='text'
+              variant='link'>
+              {t("performance.editor.row.turnOffInline")}
+            </Button>
+          </p>
         )}
       </div>
 

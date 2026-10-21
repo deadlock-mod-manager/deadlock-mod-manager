@@ -40,11 +40,12 @@ describe("applyDraftAction", () => {
   test("matches paths case-insensitively and keeps the original casing", () => {
     const start = draft([{ path: SSAO, action: { kind: "omit" } }]);
     const next = applyDraftAction(start, {
-      kind: "enable",
+      kind: "set",
       path: ["convars", "R_SSAO"],
+      value: "1",
     });
     expect(next.overrides).toEqual([
-      { path: SSAO, action: { kind: "enable" } },
+      { path: SSAO, action: { kind: "set", value: "1" } },
     ]);
   });
 
@@ -85,7 +86,6 @@ describe("actionForValue", () => {
     path: SSAO,
     configValue: "0",
     kind: "bool",
-    offByDefault: false,
   };
 
   test("stores a value that differs from the config", () => {
@@ -99,13 +99,6 @@ describe("actionForValue", () => {
   test("drops the override when the value goes back to the config's", () => {
     expect(actionForValue(target, "false")).toEqual({
       kind: "reset",
-      path: SSAO,
-    });
-  });
-
-  test("keeps an off-by-default tool enabled at the config's value", () => {
-    expect(actionForValue({ ...target, offByDefault: true }, "0")).toEqual({
-      kind: "enable",
       path: SSAO,
     });
   });

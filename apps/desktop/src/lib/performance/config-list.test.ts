@@ -14,6 +14,7 @@ import {
   sourceCounts,
   unusedCount,
 } from "./config-list";
+import { presetPosition } from "./scale";
 
 const counts = (overrides: Partial<ResolvedCounts> = {}): ResolvedCounts => ({
   applies: 0,
@@ -66,6 +67,7 @@ const community = (
   settingsCount: 0,
   engineEditCount: 0,
   cutScore: 0.5,
+  bundlesVpks: false,
   ...overrides,
 });
 
@@ -139,7 +141,7 @@ describe("buildConfigList", () => {
     );
     const mine = items.find((item) => item.kind === "user");
     expect(mine?.tier).toBe("sweaty");
-    expect(mine?.cutScore).toBe(0.72);
+    expect(mine?.cutScore).toBe(presetPosition("sweaty", 0.72));
   });
 
   test("a pasted config only gets a tier when it is the active one", () => {
@@ -209,7 +211,7 @@ describe("sortConfigs", () => {
   const items = buildConfigList(
     catalog({
       presets: [
-        preset({ id: "a", name: "Zeta", cutScore: 0.9 }),
+        preset({ id: "a", name: "Zeta", tier: "potato", cutScore: 0.9 }),
         preset({ id: "b", name: "alpha", recommended: true, cutScore: 0.1 }),
       ],
       community: [

@@ -40,7 +40,9 @@ pub enum OverrideAction {
   Set { value: String },
   /// Leave the config's value out of the file.
   Omit,
-  /// Turn on an entry that is off by default (developer and hideout tools).
+  /// Turned on a developer or hideout tool back when those were off by default.
+  /// They apply as written now, so this acts like no override; it stays so
+  /// saved overrides and share codes keep parsing.
   Enable,
 }
 
@@ -375,6 +377,8 @@ pub struct CommunityConfigSummary {
   pub settings_count: u32,
   pub engine_edit_count: u32,
   pub cut_score: f32,
+  /// The upload also ships VPKs, so installing it as a mod is still right.
+  pub bundles_vpks: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
