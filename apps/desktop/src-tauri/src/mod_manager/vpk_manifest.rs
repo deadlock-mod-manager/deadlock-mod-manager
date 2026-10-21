@@ -4,7 +4,12 @@ use crate::mod_manager::shard::{
 };
 use crate::mod_manager::vpk_manager::staging::{RecoveryMode, recover_staging_directory};
 use serde::{Deserialize, Serialize};
-use std::{collections::BTreeMap, fs, io::ErrorKind, path::Path};
+use std::{
+  collections::BTreeMap,
+  fs,
+  io::{ErrorKind, Write},
+  path::Path,
+};
 
 mod legacy_reorder;
 
@@ -331,7 +336,12 @@ impl ProfileVpkManifest {
 
     crate::mod_manager::file_permissions::ensure_file_writable(&manifest_path)?;
     crate::mod_manager::file_permissions::ensure_file_writable(&temp_path)?;
-    fs::write(&temp_path, manifest_json)?;
+    // Flush before the rename: NTFS journals the rename and file size, so a
+    // power loss after an unsynced write leaves a manifest of NUL bytes.
+    let mut temp_file = fs::File::create(&temp_path)?;
+    temp_file.write_all(manifest_json.as_bytes())?;
+    temp_file.sync_all()?;
+    drop(temp_file);
     if let Err(err) = fs::rename(&temp_path, &manifest_path) {
       if err.kind() == ErrorKind::AlreadyExists {
         fs::remove_file(&manifest_path)?;
