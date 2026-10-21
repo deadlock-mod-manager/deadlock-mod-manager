@@ -1,6 +1,6 @@
 {
   "privacy": {
-    "updated": "Last updated: October 19, 2026",
+    "updated": "Last updated: October 21, 2026",
     "scope": "This policy covers the Deadlock Mod Manager desktop application, deadlockmods.app and our Discord community bot. Desktop-specific collection and settings are described below; the Discord Bot section explains how we process Discord data.",
     "desktopCollection": "The desktop application runs locally on your computer and communicates with online services for features such as mod discovery and downloads. It also collects technical and usage data as described in this policy.",
     "serverStorage": "API communications use HTTPS. Server-side services also store data needed to provide their features, including Discord identifiers and community management records as described in the Discord Bot section.",

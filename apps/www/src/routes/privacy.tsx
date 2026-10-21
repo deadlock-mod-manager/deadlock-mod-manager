@@ -2,7 +2,7 @@ import { ArrowUpIcon } from "@deadlock-mods/ui/icons";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { DISCORD_URL, GITHUB_REPO } from "@/lib/constants";
+import { DISCORD_URL, DOCS_URL, GITHUB_REPO } from "@/lib/constants";
 import { seo } from "@/utils/seo";
 
 export const Route = createFileRoute("/privacy")({
@@ -131,7 +131,8 @@ function PrivacyComponent() {
                   </p>
                   <ul className='space-y-2 text-muted-foreground ml-6 mb-4'>
                     <li className='list-disc'>
-                      IP address (anonymized via Cloudflare)
+                      IP address, used for rate limiting and stored with each
+                      sign-in session
                     </li>
                     <li className='list-disc'>
                       API request patterns and response times
@@ -147,13 +148,13 @@ function PrivacyComponent() {
 
                 <div className='mb-6'>
                   <h4 className='text-lg font-medium mb-3 text-foreground'>
-                    Analytics Data (Enabled by Default, Can Be Disabled)
+                    Analytics Data (Off Until You Agree)
                   </h4>
                   <div className='rounded-lg border-l-4 border-orange-500 bg-orange-500/10 p-4 mb-4'>
                     <p className='text-sm text-muted-foreground'>
-                      The following analytics data is collected by default to
-                      help improve the application. You can disable this at any
-                      time in the Privacy Settings.
+                      The desktop app collects the following only after you turn
+                      on usage analytics, either when it asks or in Privacy
+                      Settings. You can turn it off again at any time.
                     </p>
                   </div>
                   <ul className='space-y-2 text-muted-foreground ml-6'>
@@ -165,7 +166,8 @@ function PrivacyComponent() {
                     </li>
                     <li className='list-disc'>Time and date of visits</li>
                     <li className='list-disc'>
-                      Device identifiers (anonymous hardware ID)
+                      A hardware ID for your PC, provided by your operating
+                      system
                     </li>
                     <li className='list-disc'>
                       Operating system and app version
@@ -247,10 +249,11 @@ function PrivacyComponent() {
                 <ul className='space-y-2 text-muted-foreground ml-6 mb-4'>
                   <li className='list-disc'>
                     <strong className='text-foreground'>Mod Discovery:</strong>{" "}
-                    During the direct-catalog rollout, catalog, detail, and
-                    update requests may be sent directly from the app to the
-                    GameBanana API. These requests do not include a stable
-                    Deadlock Mod Manager user identifier
+                    Catalog, detail, and update requests go directly from the
+                    app to the GameBanana API. Searching and filtering mods use
+                    a copy of the catalog stored on your computer, so they are
+                    not sent to us or to GameBanana. These requests do not
+                    include a Deadlock Mod Manager user identifier
                   </li>
                   <li className='list-disc'>
                     <strong className='text-foreground'>Mod Downloads:</strong>{" "}
@@ -263,8 +266,8 @@ function PrivacyComponent() {
                     <strong className='text-foreground'>
                       Profile Sharing:
                     </strong>{" "}
-                    When you share mod profiles, the profile data is temporarily
-                    stored on our servers with a unique identifier
+                    When you share a mod profile, its name, mod list, app
+                    version, and your hardware ID are stored on our servers
                   </li>
                 </ul>
                 <div className='rounded-lg border-l-4 border-blue-500 bg-blue-500/10 p-4 mb-4'>
@@ -280,6 +283,18 @@ function PrivacyComponent() {
                 </div>
                 <p className='text-muted-foreground leading-relaxed'>
                   {t("privacy.serverStorage")}
+                </p>
+                <p className='text-muted-foreground leading-relaxed mt-4'>
+                  For every service the desktop app contacts, what each one
+                  receives, and the setting that controls it, see{" "}
+                  <a
+                    href={`${DOCS_URL}/using-mod-manager/privacy`}
+                    rel='noopener noreferrer'
+                    target='_blank'
+                    className='text-primary hover:underline'>
+                    Privacy and Network Activity
+                  </a>{" "}
+                  in our documentation.
                 </p>
               </section>
 
@@ -328,7 +343,7 @@ function PrivacyComponent() {
                 <div className='space-y-6'>
                   <div>
                     <h3 className='text-xl font-semibold mb-4'>
-                      Usage Analytics (Enabled by Default)
+                      Usage Analytics (Off Until You Agree)
                     </h3>
 
                     <div className='rounded-lg border-l-4 border-primary bg-primary/10 p-4 mb-4'>
@@ -336,18 +351,15 @@ function PrivacyComponent() {
                         Privacy Control
                       </p>
                       <p className='text-sm text-muted-foreground'>
-                        Analytics are enabled by default but can be disabled at
-                        any time in Privacy Settings. All data is anonymous with
-                        no personal information collected.
+                        Analytics are off until you agree, and can be turned off
+                        again at any time in Privacy Settings.
                       </p>
                     </div>
 
                     <p className='text-muted-foreground leading-relaxed mb-4'>
-                      We collect anonymous usage analytics through Google
-                      Analytics 4 to improve the application experience. This
-                      feature is enabled by default, but you can disable it at
-                      any time in the app's Privacy Settings. When enabled, we
-                      collect:
+                      With your consent, we collect usage analytics through
+                      Google Analytics 4 to improve the application. When
+                      enabled, we collect:
                     </p>
 
                     <ul className='space-y-2 text-muted-foreground ml-6 mb-4'>
@@ -370,13 +382,11 @@ function PrivacyComponent() {
                     </ul>
 
                     <p className='text-muted-foreground leading-relaxed'>
-                      <strong className='text-foreground'>
-                        Complete Anonymity:
-                      </strong>{" "}
-                      Users are identified only by an anonymous hardware ID - no
-                      personal information, usernames, or identifying data is
-                      collected. All analytics data is processed in accordance
-                      with{" "}
+                      <strong className='text-foreground'>Identifier:</strong>{" "}
+                      Each event carries your PC's hardware ID. We do not send
+                      your name, email, or Steam account. The same hardware ID
+                      is sent when you share a profile or report a mod. All
+                      analytics data is processed in accordance with{" "}
                       <a
                         href='https://policies.google.com/privacy'
                         rel='noopener noreferrer'
@@ -393,22 +403,15 @@ function PrivacyComponent() {
                       Crash Reports
                     </h3>
                     <p className='text-muted-foreground leading-relaxed mb-4'>
-                      We use Sentry.io to collect crash reports and error data
-                      to improve the application's stability. This data
-                      includes:
+                      The desktop app does not send crash reports. Its logs and
+                      Deadlock crash dumps are analysed on your computer and
+                      stay there.
                     </p>
-                    <ul className='space-y-2 text-muted-foreground ml-6 mb-4'>
-                      <li className='list-disc'>
-                        Error details and stack traces
-                      </li>
-                      <li className='list-disc'>
-                        Basic device information (OS, app version)
-                      </li>
-                      <li className='list-disc'>Anonymous session data</li>
-                    </ul>
                     <p className='text-muted-foreground leading-relaxed'>
-                      No personally identifiable information is intentionally
-                      collected. All data is processed in accordance with{" "}
+                      Our servers use Sentry.io to record their own errors, such
+                      as error details and stack traces. This does not include
+                      data from your computer. It is processed in accordance
+                      with{" "}
                       <a
                         href='https://sentry.io/privacy/'
                         rel='noopener noreferrer'
