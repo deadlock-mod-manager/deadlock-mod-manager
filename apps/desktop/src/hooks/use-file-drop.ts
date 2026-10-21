@@ -146,9 +146,15 @@ export const useDroppedSource = (
         return source;
       }
 
-      setProcessing(true, t("addMods.copyingDroppedFile"));
+      const status = t("addMods.copyingDroppedFile", {
+        name: source.file.name,
+      });
+      setProcessing(true, status, { done: 0, total: source.file.size });
       try {
-        return { ...source, file: await stageDroppedFile(source.file) };
+        const file = await stageDroppedFile(source.file, (done, total) =>
+          setProcessing(true, status, { done, total }),
+        );
+        return { ...source, file };
       } finally {
         setProcessing(false);
       }

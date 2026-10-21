@@ -4032,7 +4032,7 @@
     "processingPreview": "Processing preview image...",
     "processingFiles": "Processing mod files...",
     "storingArchive": "Storing {{format}} archive...",
-    "copyingDroppedFile": "Copying dropped file...",
+    "copyingDroppedFile": "Copying {{name}}",
     "extractingArchive": "Extracting {{format}} archive...",
     "validatingFiles": "Validating mod files...",
     "savingMetadata": "Saving mod metadata...",
@@ -4054,7 +4054,8 @@
     "unsupportedImageType": "Unsupported image type"
   },
   "progress": {
-    "pleaseWait": "Please wait..."
+    "pleaseWait": "Please wait...",
+    "bytes": "{{done}} of {{total}}"
   },
   "modStatus": {
     "added": "Added to my mods",

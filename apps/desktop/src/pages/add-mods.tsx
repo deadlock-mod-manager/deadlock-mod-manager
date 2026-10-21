@@ -37,10 +37,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router";
-import {
-  ProgressIndicator,
-  useProgress,
-} from "@/components/downloads/progress-indicator";
+import { useProgress } from "@/components/downloads/progress-indicator";
 import ModMetadataForm, {
   type ModMetadata,
   type ModMetadataFormHandle,
@@ -303,7 +300,6 @@ const AddMods = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <ProgressIndicator />
     </div>
   );
 };

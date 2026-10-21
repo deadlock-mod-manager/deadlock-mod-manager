@@ -91,6 +91,7 @@ const WRITE_CHUNK_BYTES = 8 * 1024 * 1024;
 export const writeFileInChunks = async (
   absolutePath: string,
   file: Blob,
+  onProgress?: (written: number, total: number) => void,
 ): Promise<void> => {
   let offset = 0;
   do {
@@ -102,6 +103,7 @@ export const writeFileInChunks = async (
       baseDir: BaseDirectory.AppLocalData,
     });
     offset += WRITE_CHUNK_BYTES;
+    onProgress?.(Math.min(offset, file.size), file.size);
   } while (offset < file.size);
 };
 
@@ -126,12 +128,15 @@ export const discardStagedDrops = async (): Promise<void> => {
  * import handles it by path, like a file chosen in the picker. Only the latest
  * drop is kept.
  */
-export const stageDroppedFile = async (file: File): Promise<File> => {
+export const stageDroppedFile = async (
+  file: File,
+  onProgress?: (written: number, total: number) => void,
+): Promise<File> => {
   await discardStagedDrops();
   const directory = await stagedDropsDirectory();
   await ensureDirectory(directory);
   const stagedPath = await join(directory, getFileBaseName(file));
-  await writeFileInChunks(stagedPath, file);
+  await writeFileInChunks(stagedPath, file, onProgress);
   return createPathBackedFile(stagedPath);
 };
 
