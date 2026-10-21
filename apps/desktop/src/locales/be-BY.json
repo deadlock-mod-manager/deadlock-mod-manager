@@ -638,7 +638,10 @@
       "foreignReplaced_one": "",
       "foreignReplaced_other": "",
       "orphaned": "",
-      "removeOrphaned": ""
+      "removeOrphaned": "",
+      "unmanaged_one": "",
+      "unmanaged_other": "",
+      "saveUnmanaged": ""
     },
     "foreignTools": {
       "grimoire": "",
