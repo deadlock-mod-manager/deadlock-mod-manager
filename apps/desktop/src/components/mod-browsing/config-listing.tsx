@@ -59,13 +59,14 @@ export const ConfigListingNotice = ({
   return (
     <Alert>
       <GaugeIcon className='h-4 w-4' />
-      <AlertDescription className='flex flex-wrap items-center justify-between gap-3'>
-        <span>
+      <AlertDescription className='flex items-center gap-4'>
+        <span className='min-w-0 flex-1'>
           {listing === "confirmed"
             ? t("configListing.confirmed")
             : t("configListing.likely")}
         </span>
         <Button
+          className='shrink-0'
           isLoading={open.isPending}
           onClick={() => open.mutate(remoteId)}
           size='sm'

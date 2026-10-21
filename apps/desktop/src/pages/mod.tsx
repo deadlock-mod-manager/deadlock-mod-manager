@@ -291,7 +291,10 @@ const Mod = () => {
               />
             </div>
           )}
-          {showsDateOutdatedWarning(isModOutdated(mod), health) &&
+          {showsDateOutdatedWarning(
+            isModOutdated(mod) && configListingKind !== "confirmed",
+            health,
+          ) &&
             !staleResult && (
               <div className='mb-4'>
                 <OutdatedModWarning variant='alert' />

@@ -434,7 +434,7 @@ const InstallModButton = ({
           }
           isExtracting={localMod?.status === ModStatus.Extracting}
           isOpen={isDialogOpen}
-          modName={localMod?.name || t("modForm.unknownMod")}
+          modName={localMod?.name || remoteMod?.name || t("modForm.unknownMod")}
           onClose={closeDialog}
           onDownload={downloadSelectedFiles}
         />
