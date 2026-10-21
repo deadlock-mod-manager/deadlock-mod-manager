@@ -155,6 +155,21 @@ deployments:
 
   bot:
     image: stormix/deadlock-mods-bot:latest
+    env:
+      - name: DMM_GUILD_ID
+        value: "1322369530386710568"
+      - name: AI_SUPPORT_ENABLED
+        value: "false"
+      - name: LANGUAGE_MODERATION_ENABLED
+        value: "true"
+      - name: LANGUAGE_MODERATION_CHANNEL_IDS
+        value: "*"
+      - name: LANGUAGE_MODERATION_IGNORED_CHANNEL_IDS
+        value: ""
+      - name: LANGUAGE_MODERATION_MAX_WARNINGS
+        value: "3"
+      - name: LANGUAGE_MODERATION_WINDOW_MINUTES
+        value: "30"
     replicas: 1
     memory:
       request: 512Mi

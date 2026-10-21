@@ -54,6 +54,49 @@ describe("language moderation configuration", () => {
     ).toThrow();
   });
 
+  it("accepts all channels without allowing wildcard exclusions", () => {
+    expect(
+      languageModerationEnvSchema.parse({
+        LANGUAGE_MODERATION_CHANNEL_IDS: " * ",
+      }).LANGUAGE_MODERATION_CHANNEL_IDS,
+    ).toEqual(["*"]);
+    expect(() =>
+      languageModerationEnvSchema.parse({
+        LANGUAGE_MODERATION_IGNORED_CHANNEL_IDS: "*",
+      }),
+    ).toThrow();
+  });
+
+  it("watches all current and future channels and threads only in its guild", () => {
+    const allChannels = { ...config, channelIds: ["*"] };
+    expect(isLanguageModerationChannel(allChannels, "1", "20", null)).toBe(
+      true,
+    );
+    expect(isLanguageModerationChannel(allChannels, "1", "21", "20")).toBe(
+      true,
+    );
+    expect(isLanguageModerationChannel(allChannels, "2", "20", null)).toBe(
+      false,
+    );
+    expect(isLanguageModerationChannel(allChannels, null, "20", null)).toBe(
+      false,
+    );
+    expect(
+      isLanguageModerationChannel(
+        { ...allChannels, enabled: false },
+        "1",
+        "20",
+        null,
+      ),
+    ).toBe(false);
+    expect(isLanguageModerationChannel(allChannels, "1", "12", null)).toBe(
+      false,
+    );
+    expect(isLanguageModerationChannel(allChannels, "1", "21", "12")).toBe(
+      false,
+    );
+  });
+
   it("only watches configured channels and their threads in the configured guild", () => {
     expect(isLanguageModerationChannel(config, "1", "10", null)).toBe(true);
     expect(isLanguageModerationChannel(config, "1", "11", "10")).toBe(true);

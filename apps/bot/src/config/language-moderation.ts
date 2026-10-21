@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const channelIdsSchema = z
+const channelListSchema = z
   .string()
   .default("")
   .transform((value) =>
@@ -8,16 +8,21 @@ const channelIdsSchema = z
       .split(",")
       .map((id) => id.trim())
       .filter(Boolean),
-  )
-  .pipe(z.array(z.string().regex(/^\d+$/)));
+  );
+
+const channelIdSchema = z.string().regex(/^\d+$/);
 
 export const languageModerationEnvSchema = z.object({
   LANGUAGE_MODERATION_ENABLED: z
     .enum(["true", "false"])
     .default("false")
     .transform((value) => value === "true"),
-  LANGUAGE_MODERATION_CHANNEL_IDS: channelIdsSchema,
-  LANGUAGE_MODERATION_IGNORED_CHANNEL_IDS: channelIdsSchema,
+  LANGUAGE_MODERATION_CHANNEL_IDS: channelListSchema.pipe(
+    z.array(z.union([channelIdSchema, z.literal("*")])),
+  ),
+  LANGUAGE_MODERATION_IGNORED_CHANNEL_IDS: channelListSchema.pipe(
+    z.array(channelIdSchema),
+  ),
   LANGUAGE_MODERATION_MAX_WARNINGS: z.coerce
     .number()
     .int()
@@ -51,6 +56,7 @@ export function isLanguageModerationChannel(
   const ids = parentId ? [channelId, parentId] : [channelId];
   return (
     !ids.some((id) => config.ignoredChannelIds.includes(id)) &&
-    ids.some((id) => config.channelIds.includes(id))
+    (config.channelIds.includes("*") ||
+      ids.some((id) => config.channelIds.includes(id)))
   );
 }
