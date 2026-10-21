@@ -1,175 +1,175 @@
 {
   "meta": {
-    "title": "",
-    "description": "",
-    "descriptionLatest": ""
+    "title": "Deadlock Mod Manager | Deadlock modlarını yükleyin ve yönetin",
+    "description": "Valve’ın Deadlock oyunu için ücretsiz, açık kaynaklı mod yöneticisi. GameBanana modlarına göz atın, tek tıklamayla yükleyin; Windows ve Linux’ta görünümleri ve sesleri yönetin.",
+    "descriptionLatest": "Windows ve Linux’ta Valve’ın Deadlock oyunu için ücretsiz, açık kaynaklı mod yöneticisi. GameBanana modlarını, görünümleri ve sesleri tek tıklamayla yükleyin. Son sürüm: v{{version}}."
   },
   "hero": {
-    "v2OutNow": "",
-    "title": "",
-    "subtitle": "",
-    "allDownloads": "",
+    "v2OutNow": "V2 yayımlandı: Yeniliklere göz atın",
+    "title": "Deadlock modları,<br/><accent>uğraştırmadan.</accent>",
+    "subtitle": "Modları birkaç tıklamayla bulun, yükleyin ve güncelleyin. Aynı uygulamayla kahraman görünümlerini, nişangâhları ve temaları da yönetin.",
+    "allDownloads": "Tüm indirmeler",
     "facts": {
-      "free": "",
-      "platforms": "",
-      "signed": ""
+      "free": "Ücretsiz ve açık kaynaklı",
+      "platforms": "Windows ve Linux",
+      "signed": "İmzalı yükleyici"
     },
-    "screenshotAlt": "",
+    "screenshotAlt": "Bir mod indirilirken Deadlock Mod Manager’daki Mod Mağazası",
     "toast": {
-      "installing": "",
-      "installed": "",
-      "ready": ""
+      "installing": "Mod yükleniyor",
+      "installed": "Mod yüklendi",
+      "ready": "{{name}} oynamaya hazır."
     }
   },
   "partners": {
-    "title": ""
+    "title": "İş ortaklarımız"
   },
   "tour": {
-    "eyebrow": "",
-    "title": "",
-    "description": "",
-    "slidesLabel": "",
+    "eyebrow": "Canlı önizleme",
+    "title": "İndirmeden önce deneyin",
+    "description": "Bu sayfada uygulamanın çalışan bir kopyası var. Bir mod yükleyin, temayı değiştirin veya nişangâh ayarlayın.",
+    "slidesLabel": "Uygulama nasıl çalışır?",
     "slides": {
       "find": {
-        "title": "",
-        "body": ""
+        "title": "Bir mod bulun",
+        "body": "Mağazada arayın, kahramana göre filtreleyin ve tek tıklamayla yükleyin."
       },
       "launch": {
-        "title": "",
-        "body": ""
+        "title": "Modlarla başlat",
+        "body": "Modlarla Başlat’a tıklayın; uygulama oyun açılmadan önce modlarınızı uygular."
       },
       "theme": {
-        "title": "",
-        "body": ""
+        "title": "Kendinize göre düzenleyin",
+        "body": "Her kahraman için bir görünüm belirleyin ve uygulamaya bir tema seçin."
       }
     },
-    "mobileNote": ""
+    "mobileNote": "Bilgisayarda canlı önizlemeyi doğrudan burada deneyebilirsiniz."
   },
   "trust": {
-    "title": "",
+    "title": "Oyununuzda neler yapar?",
     "does": {
-      "heading": "",
+      "heading": "Yaptıkları",
       "items": {
-        "copies": "",
-        "backups": "",
-        "vanilla": ""
+        "copies": ".vpk mod dosyalarını addons klasörünüze kopyalar",
+        "backups": "Değişiklikten önce yedek alır, tek tıklamayla geri yükler",
+        "vanilla": "Oyunu istediğiniz zaman modsuz başlatmanızı sağlar"
       }
     },
     "never": {
-      "heading": "",
+      "heading": "Yapmadıkları",
       "items": {
-        "patches": "",
-        "others": "",
-        "analytics": ""
+        "patches": "Deadlock çalıştırılabilir dosyasını değiştirmez",
+        "others": "Diğer oyuncuların gördüklerini değiştirmez",
+        "analytics": "Siz izin vermedikçe analiz verisi göndermez"
       }
     },
     "openSource": {
-      "title": "",
-      "body": "",
-      "github": "",
-      "transparency": ""
+      "title": "Açık kaynaklı",
+      "body": "Kod GitHub’da GPL-3.0 lisansıyla yayımlanır; uygulama Crowdin’de topluluk tarafından çevrilir.",
+      "github": "GitHub’da görüntüle",
+      "transparency": "Şeffaflık"
     }
   },
   "themes": {
-    "title": "",
-    "description": "",
-    "screenshotAlt": "",
-    "pickerLabel": "",
-    "tryInPreview": "",
-    "builderHint": ""
+    "title": "Uygulamanın görünümünü değiştirin",
+    "description": "Topluluk temalarından birini seçin veya tema oluşturucuda kendi temanızı hazırlayıp dosyasını arkadaşlarınızla paylaşın.",
+    "screenshotAlt": "{{theme}} temasıyla Deadlock Mod Manager",
+    "pickerLabel": "Tema",
+    "tryInPreview": "{{theme}} temasını önizlemede deneyin",
+    "builderHint": "{{description}} Tema oluşturucuyu Ayarlar’da bulabilirsiniz."
   },
   "skins": {
-    "title": "",
-    "body": "",
-    "link": ""
+    "title": "Topluluk yapımı kahraman görünümleri",
+    "body": "Bir kahraman seçin, görünümü 3B önizlemede inceleyip uygulayın. Kendi görünümünüzü mü yapmak istiyorsunuz? Mod Foundry’ye bir model aktarın. Görünümler yalnızca sizin oyun istemcinizde uygulanır; diğer oyuncular varsayılan modelleri görmeye devam eder.",
+    "link": "Kahraman görünümleri nasıl çalışır?"
   },
   "stats": {
-    "label": "",
+    "label": "İstatistikler",
     "downloads": {
-      "label": "",
-      "value": "",
-      "note": ""
+      "label": "Uygulama indirmeleri",
+      "value": "{{value}}+",
+      "note": "Tüm sürümlerde"
     },
     "users": {
-      "label": "",
-      "note": ""
+      "label": "Kayıtlı kullanıcılar",
+      "note": "Şimdiye kadar kaydolanlar"
     },
     "release": {
-      "label": "",
-      "note": ""
+      "label": "En son sürüm",
+      "note": "Sürüm notlarını okuyun"
     },
     "price": {
-      "label": "",
-      "value": "",
-      "note": ""
+      "label": "Fiyat",
+      "value": "Ücretsiz",
+      "note": "İlk günden beri açık kaynaklı"
     }
   },
   "tools": {
-    "title": "",
+    "title": "Sitedeki ücretsiz araçlar",
     "items": {
       "randomizer": {
-        "title": "",
-        "description": ""
+        "title": "Rastgele seçici",
+        "description": "Sonraki maçınız için bir kahraman seçin"
       },
       "crosshair": {
-        "title": "",
-        "description": ""
+        "title": "Nişangâh oluşturucu",
+        "description": "Bir nişangâh oluşturup yapılandırmayı kopyalayın"
       },
       "vpk": {
-        "title": "",
-        "description": ""
+        "title": "VPK analiz aracı",
+        "description": "Bir .vpk dosyasının içeriğini görün"
       },
       "kv": {
-        "title": "",
-        "description": ""
+        "title": "KV ayrıştırıcısı",
+        "description": "Valve KeyValues dosyalarını okuyun"
       }
     }
   },
   "faq": {
-    "eyebrow": "",
-    "title": "",
-    "intro": "",
+    "eyebrow": "Yardıma mı ihtiyacınız var?",
+    "title": "Sık sorulan sorular",
+    "intro": "Aradığınızı burada bulamadınız mı? <docs>Belgelere</docs> bakın veya <discord>Discord</discord> üzerinden bize sorun.",
     "items": {
       "what": {
-        "question": "",
-        "answer": ""
+        "question": "Deadlock Mod Manager nedir?",
+        "answer": "Deadlock’a mod yüklemeyi kolaylaştıran küçük bir masaüstü uygulamasıdır. Oyun klasörlerinize dokunmadan modlara göz atabilir, onları yükleyip yönetebilirsiniz."
       },
       "install": {
-        "question": "",
+        "question": "Modları nasıl yüklerim?",
         "steps": {
-          "download": "",
-          "detect": "",
-          "browse": "",
-          "install": ""
+          "download": "Deadlock Mod Manager’ı indirip açın.",
+          "detect": "Deadlock’u kendisi algılar; isterseniz klasörü Ayarlar’dan belirtebilirsiniz.",
+          "browse": "Mod Mağazası’na göz atıp İndir’e tıklayın.",
+          "install": "Uygulama modu doğru yere yükler. Elle işlem yapmanız gerekmez."
         }
       },
       "safe": {
-        "question": "",
-        "answer": ""
+        "question": "Mod kullanmak güvenli mi?",
+        "answer": "Uygulama .vpk dosyalarını yalnızca oyununuzun addons klasörüne kopyalar; Deadlock çalıştırılabilir dosyasını değiştirmez. Önce yedek alır; böylece tek tıklamayla geri yükleyebilir veya oyunu istediğiniz zaman modsuz başlatabilirsiniz. Görünümler yalnızca sizin oyun istemcinizde uygulanır. Modlar topluluk tarafından hazırlandığı için güvendiğiniz modları kullanın."
       },
       "uninstall": {
-        "question": "",
-        "answer": ""
+        "question": "Modları nasıl kaldırırım?",
+        "answer": "Mod Kitaplığı’nı açıp istemediğiniz modları kaldırın veya Ayarlar’daki Tüm Modları Temizle’yi kullanın."
       },
       "platforms": {
-        "question": "",
-        "answer": ""
+        "question": "Hangi platformlar destekleniyor?",
+        "answer": "Windows ve Linux. Linux’ta APT depomuzdan (Ubuntu/Debian), AUR’dan (Arch), nixpkgs üzerinden veya Flatpak paketiyle yükleyebilirsiniz."
       },
       "bug": {
-        "question": "",
-        "answer": ""
+        "question": "Bir hata buldum, nasıl bildirebilirim?",
+        "answer": "<link>GitHub depomuzda</link> bir issue açın. Hatayı yeniden oluşturma adımlarını, beklediğiniz sonucu ve gerçekleşeni belirtin."
       },
       "docs": {
-        "question": "",
-        "answer": ""
+        "question": "Daha ayrıntılı belgeleri nerede bulabilirim?",
+        "answer": "<docs>Belge sitesinde</docs> kılavuzlar, öğreticiler ve teknik başvuru bilgileri bulunur."
       },
       "officialSkins": {
-        "question": "",
-        "answer": ""
+        "question": "Deadlock’a resmî görünümler gelecek mi?",
+        "answer": "Deadlock gelişmeye devam ediyor. Resmî kozmetik öğeler gelse bile bu uygulama topluluk yapımı seçenekler için kullanılmaya devam edecek."
       },
       "skinsVisible": {
-        "question": "",
-        "answer": ""
+        "question": "Diğer oyuncular yüklediğim görünümleri görebilir mi?",
+        "answer": "Hayır. Bunlar yalnızca sizin oyun istemcinizde uygulanır. Diğer oyuncular varsayılan modelleri ve dokuları görür."
       }
     }
   }

@@ -1,84 +1,84 @@
 {
   "meta": {
-    "name": "",
-    "title": "",
-    "description": ""
+    "name": "Deadlock modları çalışmıyor",
+    "title": "Güncellemeden sonra Deadlock modları çalışmıyor mu? Çözümler | Deadlock Mod Manager",
+    "description": "Deadlock modları artık yüklenmiyor veya bir güncellemeden sonra oyun çöküyor mu? gameinfo.gi sıfırlanmasını, eski arayüz modlarını, çakışmaları ve mod yöneticisi sorunlarını adım adım giderin."
   },
   "faqs": {
     "afterUpdate": {
-      "question": "",
-      "answer": ""
+      "question": "Güncellemeden sonra Deadlock modlarım neden çalışmayı bıraktı?",
+      "answer": "Deadlock güncellemeleri genellikle gameinfo.gi dosyasının üzerine yazar. Böylece oyuna addons klasörünü yüklemesini söyleyen satır silinir. Satırı yeniden eklemek için Deadlock Mod Manager’dan oyunu modlarla başlatın veya elle ekleyin."
     },
     "crash": {
-      "question": "",
-      "answer": ""
+      "question": "Modlar yüklüyken Deadlock güncellemeden sonra neden çöküyor?",
+      "answer": "En yaygın neden güncel olmayan arayüz modlarıdır. Bunları devre dışı bırakıp oyunu başlatın. Geliştiricileri güncelleme yayımladıktan sonra modları teker teker yeniden etkinleştirin."
     },
     "manager": {
-      "question": "",
-      "answer": ""
+      "question": "Deadlock Mod Manager neden çalışmıyor?",
+      "answer": "Önce uygulamayı en son sürüme güncelleyin. Oyun bulunamıyorsa Ayarlar’da Deadlock klasörünü belirtin. Linux Flatpak sürümlerindeki gri ekran veya klasör seçicinin çökmesi için sorun giderme belgelerinde çözüm yolları bulunur."
     },
     "reinstall": {
-      "question": "",
-      "answer": ""
+      "question": "Her Deadlock güncellemesinden sonra modlarımı yeniden yüklemem gerekiyor mu?",
+      "answer": "Hayır. .vpk dosyalarınız addons klasöründe kalır. Genellikle yalnızca gameinfo.gi dosyasının düzeltilmesi gerekir; uygulama oyunu modlarla her başlattığınızda bunu yapar."
     }
   },
   "hero": {
-    "eyebrow": "",
-    "title": "",
-    "intro": ""
+    "eyebrow": "Sorun giderme",
+    "title": "Güncellemeden sonra Deadlock modları çalışmıyor mu?",
+    "intro": "Valve güncellemesinden sonraki sorunların çoğu üç nedenden kaynaklanır: sıfırlanan gameinfo.gi, güncel olmayan arayüz modları veya aynı dosyaları değiştiren iki mod. Her birini nasıl düzeltebileceğinizi burada bulabilirsiniz."
   },
   "quickFix": {
-    "title": "",
+    "title": "Hızlı çözüm",
     "steps": {
-      "updateApp": "",
-      "updateMods": "",
-      "disableHud": "",
-      "reenable": ""
+      "updateApp": "Deadlock Mod Manager’ı <link>indirme sayfasından</link> en son sürüme güncelleyin.",
+      "updateMods": "Mod Kitaplığı’nda mod güncellemelerini kontrol edin.",
+      "disableHud": "Arayüz modlarını devre dışı bırakın, ardından <strong>Modlarla başlat</strong> seçeneğini kullanın.",
+      "reenable": "Soruna yol açmaya devam eden modları bulmak için modları teker teker yeniden etkinleştirin."
     }
   },
   "fixes": {
-    "title": "",
-    "why": "",
-    "fix": "",
+    "title": "Belirtiler ve çözümler",
+    "why": "Neden:",
+    "fix": "Çözüm:",
     "items": {
       "ignored": {
-        "title": "",
-        "cause": "",
-        "fix": ""
+        "title": "Oyun hiçbir modu yüklemiyor",
+        "cause": "Deadlock güncellemesi veya Steam’in dosya doğrulaması gameinfo.gi dosyasını değiştirdiği için addons klasörü artık yüklenmiyor.",
+        "fix": "Deadlock Mod Manager’ı açıp Modlarla başlat’ı kullanın; bu seçenek arama yolunu her seferinde yeniden ekler. Modları elle mi yüklediniz? Yükleme kılavuzundaki iki satırı gameinfo.gi dosyasına yeniden ekleyin."
       },
       "crash": {
-        "title": "",
-        "cause": "",
-        "fix": ""
+        "title": "Oyun başlatılırken çöküyor veya arayüz bozuk",
+        "cause": "Arayüz modları, Valve’ın yeni değiştirdiği dosyaların yerini alır. Eski dosyalar oyunun yeni sürümüyle çakışır.",
+        "fix": "Önce arayüz ve kullanım kolaylığı modlarını devre dışı bırakıp oyunu başlatın. Mod Kitaplığı’nda güncellemeleri kontrol edin; modlar güncellendiğinde yeniden etkinleştirin."
       },
       "partial": {
-        "title": "",
-        "cause": "",
-        "fix": ""
+        "title": "Bazı modlar çalışıyor, bazıları çalışmıyor",
+        "cause": "Etkin iki mod aynı dosyaları değiştiriyorsa bunlardan yalnızca biri yüklenebilir.",
+        "fix": "Mod Kitaplığı’nda çakışmalar görünümünü açın, hangi modun öncelikli olacağını seçin ve yükleme sırasını değiştirin."
       },
       "stuck": {
-        "title": "",
-        "cause": "",
-        "fix": ""
+        "title": "Bir modun indirilmesi veya yüklenmesi takılı kalıyor",
+        "cause": "Yarım kalan bir indirme veya oyunun açık tuttuğu bir dosya.",
+        "fix": "Deadlock’u kapatın, takılan modu çöp kutusu simgesiyle kaldırıp yeniden yükleyin. Sorun sürüyor mu? Ayarlar’daki Tüm Modları Temizle’yi kullanın, ardından diskteki modları yeniden eklemek için Yerel Eklentileri Analiz Et’i çalıştırın."
       },
       "accessDenied": {
-        "title": "",
-        "cause": "",
-        "fix": ""
+        "title": "Windows’ta “Erişim reddedildi” (işletim sistemi hatası 5)",
+        "cause": "gameinfo.gi dosyası veya addons klasörü salt okunur.",
+        "fix": "Dosyaya veya klasöre sağ tıklayın, Özellikler’i açın ve Salt okunur işaretini kaldırın. Eski bir mod yönetici yetkisiyle yüklenmişse modu kaldırmak için yöneticiyi bir kez yönetici olarak çalıştırın."
       },
       "steamLaunch": {
-        "title": "",
-        "cause": "",
-        "fix": ""
+        "title": "Steam üzerinden başlatınca modlar kayboluyor",
+        "cause": "Uygulamanın otomatik sıfırlama seçeneği, uygulamadan çıktığınızda mod yollarını kaldırır. Bu yüzden Steam oyunu modsuz başlatır.",
+        "fix": "Bu beklenen davranıştır. Modlarla oynamak için oyunu Deadlock Mod Manager üzerinden başlatın veya Ayarlar’dan bu seçeneği kapatın."
       }
     }
   },
   "errors": {
-    "title": "",
-    "intro": ""
+    "title": "Belirli bir hata mı görüyorsunuz?",
+    "intro": "Bunların her biri için ayrı bir adım adım çözüm bulunur."
   },
   "stillStuck": {
-    "title": "",
-    "body": ""
+    "title": "Sorun sürüyor mu?",
+    "body": "<docs>Sorun giderme belgelerinde</docs> Linux, Flatpak ve Steam Deck sorunları ayrıntılı olarak anlatılır. <discord>Discord</discord> üzerinden de yardım isteyebilirsiniz; topluluk genellikle son güncellemeyle hangi modların bozulduğunu bilir."
   }
 }

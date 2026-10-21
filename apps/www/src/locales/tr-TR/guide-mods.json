@@ -1,90 +1,90 @@
 {
   "meta": {
-    "name": "",
-    "title": "",
-    "description": ""
+    "name": "Deadlock modları",
+    "title": "Deadlock modları: GameBanana modlarını indirin ve yükleyin | Deadlock Mod Manager",
+    "description": "GameBanana’daki kahraman görünümlerinden arayüz ve kullanım kolaylığı modlarına kadar tüm Deadlock modlarına göz atın. Ücretsiz Deadlock Mod Manager ile tek tıklamayla yükleyin."
   },
   "faqs": {
     "where": {
-      "question": "",
-      "answer": ""
+      "question": "Deadlock modlarını nereden indirebilirim?",
+      "answer": "Deadlock modlarının neredeyse tamamı GameBanana’da bulunur. Deadlock Mod Manager, GameBanana kataloğunu uygulama içinde gösterir. Böylece siteyi ziyaret etmeden veya ZIP dosyalarıyla uğraşmadan modları arayabilir, önizleyebilir ve yükleyebilirsiniz."
     },
     "manual": {
-      "question": "",
-      "answer": ""
+      "question": "Deadlock modlarını elle yüklemem gerekiyor mu?",
+      "answer": "Hayır. Uygulama modu indirir, arşivden çıkarır, .vpk dosyalarını oyunun addons klasörüne kopyalar ve gameinfo.gi dosyasını sizin için düzenler. İsterseniz modları elle de yükleyebilirsiniz; yükleme kılavuzu her iki yöntemi anlatır."
     },
     "free": {
-      "question": "",
-      "answer": ""
+      "question": "Deadlock modları ücretsiz mi?",
+      "answer": "Evet. GameBanana’daki modlar topluluk tarafından ücretsiz olarak hazırlanıp paylaşılır. Deadlock Mod Manager da ücretsiz ve açık kaynaklıdır."
     },
     "visibility": {
-      "question": "",
-      "answer": ""
+      "question": "Diğer oyuncular modlarımı görebilir mi?",
+      "answer": "Hayır. Görünümler, arayüz değişiklikleri ve sesler yalnızca sizin oyun istemcinizde uygulanır. Diğer oyuncular oyunun varsayılan hâlini görür."
     },
     "updates": {
-      "question": "",
-      "answer": ""
+      "question": "Deadlock güncellendikten sonra modlar çalışmaya devam eder mi?",
+      "answer": "Çoğu çalışır. Valve güncellemeleri bazen arayüz modlarını, geliştiricileri bu modları güncelleyene kadar bozabilir. Mod Kitaplığı’nda güncellemeleri kontrol edin veya bir düzeltme yayımlanana kadar oyunu modsuz başlatın."
     }
   },
   "hero": {
-    "eyebrow": "",
-    "title": "",
-    "intro": ""
+    "eyebrow": "Deadlock modları",
+    "title": "Tüm Deadlock modları bir tık uzağınızda",
+    "intro": "Deadlock Mod Manager, GameBanana kataloğunun tamamını sunar: görünümler, arayüz ve kullanım kolaylığı modları, sesler ve daha fazlası. Bir mod seçip İndir’e tıklayın; uygulama onu doğru yere yüklesin."
   },
   "popular": {
-    "title": "",
-    "intro": "",
-    "snapshot": ""
+    "title": "Şu anda popüler Deadlock modları",
+    "intro": "Mod Mağazası’ndaki en çok indirilen modlar. Her biri kendi GameBanana sayfasını açar ve tamamı uygulama içinden yüklenebilir.",
+    "snapshot": "Ekim 2026 tarihli görünüm. İndirme sayıları GameBanana’dan alınmıştır."
   },
   "categories": {
-    "title": "",
+    "title": "Neler yükleyebilirsiniz?",
     "items": {
       "skins": {
-        "title": "",
-        "body": ""
+        "title": "Kahraman görünümleri",
+        "body": "Her kahraman için yeni modeller ve renk değişiklikleri. Kahramana göre gruplandırılır; etkin görünümü tek tıklamayla değiştirebilirsiniz."
       },
       "hud": {
-        "title": "",
-        "body": ""
+        "title": "Arayüz ve kullanım kolaylığı",
+        "body": "Daha sade üst çubuklar, her zaman görünen eşya simgeleri ve QOL Lock gibi başka arayüz iyileştirmeleri."
       },
       "sounds": {
-        "title": "",
-        "body": ""
+        "title": "Sesler",
+        "body": "Yetenek, spiker ve müzik seslerinin yerine geçen seçenekler. Bunları görünümlerden bağımsız olarak açıp kapatabilirsiniz."
       },
       "wip": {
-        "title": "",
-        "body": ""
+        "title": "Geliştirme aşamasındakiler",
+        "body": "Mod geliştiricilerinin erken sürümleri ayrı bir bölümde gösterilir; böylece ne yüklediğinizi bilirsiniz."
       }
     }
   },
   "steps": {
-    "title": "",
+    "title": "GameBanana’dan oyununuza dört adımda",
     "items": {
       "install": {
-        "title": "",
-        "body": ""
+        "title": "Uygulamayı yükleyin",
+        "body": "Deadlock Mod Manager’ı Windows veya Linux için indirin. Deadlock kurulumunuzu kendisi bulur."
       },
       "find": {
-        "title": "",
-        "body": ""
+        "title": "Bir mod bulun",
+        "body": "Mod Mağazası’nda arama yapın; kahramana veya kategoriye göre filtreleyin ve indirme sayısına, puana veya son güncellemeye göre sıralayın."
       },
       "download": {
-        "title": "",
-        "body": ""
+        "title": "Modu indirin",
+        "body": "Modun birden fazla sürümü varsa istediğinizi seçin. Uygulama arşivden çıkarıp sizin için yükler."
       },
       "launch": {
-        "title": "",
-        "body": ""
+        "title": "Modlarla başlat",
+        "body": "Modlarla başlat’a tıklayın. Oyunu modsuz oynamak isterseniz Modlar olmadan başlat’ı seçin; hiçbir mod kaldırılmaz."
       }
     },
     "figure": {
-      "alt": "",
-      "caption": ""
+      "alt": "Kahraman ve kategori filtreleriyle GameBanana modlarını listeleyen Deadlock Mod Manager Mod Mağazası",
+      "caption": "Mod Mağazası: GameBanana’daki tüm Deadlock içerikleri, filtrelerle birlikte."
     }
   },
   "gamebanana": {
-    "title": "",
-    "manual": "",
-    "app": ""
+    "title": "GameBanana Deadlock modları, uğraştıran işlemler olmadan",
+    "manual": "<link>GameBanana</link>, Deadlock mod topluluğunun çalışmalarını yayımladığı platformdur ve Deadlock Mod Manager’ın iş ortağıdır. Siteden elle yüklemek için bir arşiv indirmeniz, doğru <code>.vpk</code> dosyasını bulmanız, diğer modlarla çakışmaması için dosyayı yeniden adlandırmanız ve <code>gameinfo.gi</code> dosyasını düzenlemeniz gerekir.",
+    "app": "Uygulama tüm bunları yapar ve yüklemeden sonra da yardımcı olur: İki mod aynı dosyaları değiştirdiğinde sizi uyarır, güncellemeleri kontrol eder, farklı kurulumlar için ayrı profiller tutar ve gerektiğinde geri dönebilmeniz için önce eklentilerinizi yedekler."
   }
 }

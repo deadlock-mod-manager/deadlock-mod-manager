@@ -1,453 +1,453 @@
 {
   "themes": {
     "default": {
-      "name": "",
-      "description": ""
+      "name": "Varsayılan",
+      "description": "Klasik Deadlock Mod Manager görünümü."
     },
     "bloodmoon": {
-      "name": "",
-      "description": ""
+      "name": "Bloodmoon",
+      "description": "Siyah-kırmızı geçişler ve koyu kırmızı vurgular içeren koyu bir tema."
     },
     "nightshift": {
-      "name": "",
-      "description": ""
+      "name": "Nightshift",
+      "description": "Zarif arayüz öğeleri ve turkuaz vurgular içeren siberpunk teması."
     },
     "lovelock": {
-      "name": "",
-      "description": ""
+      "name": "Lovelock",
+      "description": "Yumuşak pembe ışıltılı, sıcak bir erik rengi tema."
     },
     "tea": {
-      "name": "",
-      "description": ""
+      "name": "Tea",
+      "description": "Snipztea’yı kutlayan sıcak bir tema."
     },
     "arcane": {
-      "name": "",
-      "description": ""
+      "name": "Arcane",
+      "description": "Pembe-kırmızı ışıltılı, şık bir koyu tema."
     },
     "deadlock-api": {
-      "name": "",
-      "description": ""
+      "name": "Deadlock API",
+      "description": "Elektrik kırmızısı ışıltı efektleriyle OLED siyahı."
     },
     "oled": {
-      "name": "",
-      "description": ""
+      "name": "OLED",
+      "description": "OLED ekranlar için tasarlanmış, kömür rengi yüzeylere sahip gerçek siyah tema."
     }
   },
   "categories": {
-    "skins": "",
-    "qualityOfLife": ""
+    "skins": "Görünümler",
+    "qualityOfLife": "Kullanım kolaylığı"
   },
   "titlebar": {
-    "profile": "",
-    "launchVanilla": "",
-    "launchModded": "",
-    "enabledMods": "",
-    "stopGame": "",
-    "signIn": ""
+    "profile": "Varsayılan Profil",
+    "launchVanilla": "Modsuz başlat",
+    "launchModded": "Modlarla başlat",
+    "enabledMods": "{{total}} mod",
+    "stopGame": "Oyunu durdur",
+    "signIn": "Oturum aç"
   },
   "sidebar": {
-    "label": "",
-    "byline": "",
+    "label": "Uygulama önizlemesi",
+    "byline": "Stormix tarafından geliştirildi · <version>{{version}}</version>",
     "groups": {
-      "general": "",
-      "mods": "",
-      "customServers": "",
-      "customization": ""
+      "general": "Genel",
+      "mods": "Modlar",
+      "customServers": "Özel Sunucular",
+      "customization": "Özelleştirme"
     },
     "items": {
-      "dashboard": "",
-      "downloads": "",
-      "settings": "",
-      "library": "",
-      "store": "",
-      "servers": "",
-      "crosshairs": "",
-      "skins": "",
-      "autoexec": "",
-      "stats": ""
+      "dashboard": "Gösterge Paneli",
+      "downloads": "İndirmeler",
+      "settings": "Ayarlar",
+      "library": "Mod Kitaplığı",
+      "store": "Mod Mağazası",
+      "servers": "Sunucu Tarayıcısı",
+      "crosshairs": "Nişangâhlar",
+      "skins": "Kahraman Görünümleri",
+      "autoexec": "Autoexec Yapılandırması",
+      "stats": "İstatistikler"
     },
-    "documentation": "",
-    "needHelp": "",
-    "expand": "",
-    "collapse": ""
+    "documentation": "Belgeler",
+    "needHelp": "Yardıma mı ihtiyacınız var?",
+    "expand": "Menüyü genişlet",
+    "collapse": "Menüyü daralt"
   },
   "bottomBar": {
-    "status": "",
+    "status": "Durum:",
     "statuses": {
-      "online": "",
-      "signedIn": "",
-      "mirror": "",
-      "heroData": ""
+      "online": "Çevrimiçi",
+      "signedIn": "Oturum açık",
+      "mirror": "Yansı",
+      "heroData": "Kahraman verileri"
     },
-    "downloading": "",
-    "volume": "",
-    "checkUpdates": ""
+    "downloading": "{{total}} öğe indiriliyor",
+    "volume": "SES DÜZEYİ:",
+    "checkUpdates": "Güncellemeleri denetle"
   },
   "launch": {
-    "title": "",
+    "title": "Deadlock başlatılıyor",
     "steps": {
-      "checkingFiles": "",
-      "skippingMods": "",
-      "applyingMods": "",
-      "noMods": "",
-      "starting": ""
+      "checkingFiles": "Oyun dosyaları denetleniyor",
+      "skippingMods": "Modlar atlanıyor",
+      "applyingMods": "Modlar uygulanıyor ({{count}})",
+      "noMods": "Etkin mod yok, oyun modsuz başlatılıyor",
+      "starting": "Deadlock başlatılıyor"
     },
     "stepState": {
-      "done": "",
-      "active": "",
-      "pending": ""
+      "done": "tamamlandı",
+      "active": "devam ediyor",
+      "pending": "bekliyor"
     },
     "running": {
-      "title": "",
-      "modded": "",
-      "vanilla": ""
+      "title": "Deadlock çalışıyor",
+      "modded": "İyi eğlenceler! Modlarınız etkin.",
+      "vanilla": "İyi eğlenceler! Bu kez modsuz oynuyorsunuz."
     },
     "closed": {
-      "title": "",
-      "description": ""
+      "title": "Deadlock kapandı",
+      "description": "Mod yöneticisine dönün."
     }
   },
   "mod": {
-    "installed": "",
-    "updatedRecently": "",
-    "updated": "",
-    "byAuthor": "",
-    "enable": "",
-    "remove": "",
-    "download": "",
-    "downloading": "",
+    "installed": "Yüklü",
+    "updatedRecently": "Yakın zamanda güncellendi",
+    "updated": "Güncellendi",
+    "byAuthor": "{{author}} tarafından",
+    "enable": "{{name}} modunu etkinleştir",
+    "remove": "{{name}} modunu kaldır",
+    "download": "{{name}} modunu indir",
+    "downloading": "{{name}} indiriliyor",
     "installedToast": {
-      "title": "",
-      "description": ""
+      "title": "Mod yüklendi",
+      "description": "{{name}} oynamaya hazır."
     }
   },
   "dashboard": {
-    "title": "",
-    "subtitle": "",
-    "featured": "",
-    "featuredBy": "",
-    "viewMod": "",
+    "title": "Gösterge Paneli",
+    "subtitle": "Öne çıkan, popüler ve yeni modları keşfedin",
+    "featured": "Haftanın öne çıkan modu",
+    "featuredBy": "<author>{{author}}</author> tarafından",
+    "viewMod": "Modu görüntüle",
     "stats": {
-      "installed": "",
-      "updates": "",
-      "inQueue": ""
+      "installed": "Yüklü",
+      "updates": "Güncellemeler",
+      "inQueue": "Sırada"
     },
-    "browseStore": "",
-    "trending": ""
+    "browseStore": "Mağazaya göz at",
+    "trending": "<accent>{{category}}</accent> kategorisinde popüler"
   },
   "store": {
-    "title": "",
-    "subtitle": "",
+    "title": "Mod Mağazası",
+    "subtitle": "Her saat güncellenir ve yeni modlar eklenir.",
     "tabs": {
-      "mods": "",
-      "sounds": "",
-      "collections": "",
-      "wips": ""
+      "mods": "Modlar",
+      "sounds": "Sesler",
+      "collections": "Koleksiyonlar",
+      "wips": "Devam eden çalışmalar"
     },
-    "searchLabel": "",
-    "searchPlaceholder": "",
-    "heroLabel": "",
-    "allHeroes": "",
-    "categoryLabel": "",
-    "allCategories": "",
-    "sortLabel": "",
+    "searchLabel": "Mod ara",
+    "searchPlaceholder": "Mod veya geliştirici ara",
+    "heroLabel": "Kahraman",
+    "allHeroes": "Tüm Kahramanlar",
+    "categoryLabel": "Kategori",
+    "allCategories": "Tüm Kategoriler",
+    "sortLabel": "Sırala",
     "sort": {
-      "default": "",
-      "updated": "",
-      "downloads": "",
-      "rating": ""
+      "default": "Varsayılan",
+      "updated": "Son Güncelleme",
+      "downloads": "İndirme Sayısı",
+      "rating": "Puan"
     },
     "empty": {
-      "title": "",
-      "description": ""
+      "title": "Mod bulunamadı",
+      "description": "Farklı bir arama yapın veya filtreleri temizleyin."
     }
   },
   "library": {
-    "title": "",
-    "count": "",
-    "subtitle": "",
-    "checkUpdates": "",
+    "title": "Mod Kitaplığı",
+    "count": "<strong>{{enabled}}</strong>/{{total}} mod",
+    "subtitle": "İndirdiğiniz veya yüklediğiniz modlar",
+    "checkUpdates": "Güncellemeleri denetle",
     "upToDate": {
-      "title": "",
-      "description": ""
+      "title": "Tüm modlar güncel",
+      "description": "Şu anda güncellenecek bir şey yok."
     },
-    "filterLabel": "",
+    "filterLabel": "Kitaplık filtresi",
     "tabs": {
-      "all": "",
-      "installed": "",
-      "downloaded": ""
+      "all": "tümü",
+      "installed": "yüklü",
+      "downloaded": "indirilmiş"
     },
     "empty": {
-      "title": "",
-      "description": "",
-      "action": ""
+      "title": "Yüklü mod yok",
+      "description": "Henüz hiçbir mod yüklemediniz. Kullanılabilir modlara göz atarak başlayın.",
+      "action": "Modlar Sayfasına Git"
     }
   },
   "downloads": {
-    "title": "",
-    "subtitle": "",
+    "title": "İndirmeler",
+    "subtitle": "Mod indirmelerinizi takip edin",
     "empty": {
-      "title": "",
-      "description": "",
-      "action": ""
+      "title": "Etkin indirme yok",
+      "description": "Mod Mağazası’ndan başlattığınız indirmeler burada görünür.",
+      "action": "Mağazaya göz at"
     }
   },
   "crosshairs": {
-    "title": "",
-    "subtitle": "",
-    "apply": "",
+    "title": "Nişangâhlar",
+    "subtitle": "Nişangâhlarınızı oluşturun ve özelleştirin",
+    "apply": "Nişangâhı uygula",
     "applied": {
-      "title": "",
-      "description": ""
+      "title": "Nişangâh uygulandı",
+      "description": "Autoexec dosyanıza yazıldı; sonraki maçınız için hazır."
     },
-    "settings": "",
+    "settings": "Nişangâh Ayarları",
     "sliders": {
-      "gap": "",
-      "width": "",
-      "height": "",
-      "dotOpacity": ""
+      "gap": "Boşluk",
+      "width": "Genişlik",
+      "height": "Yükseklik",
+      "dotOpacity": "Nokta Saydamlığı"
     },
-    "color": "",
+    "color": "Renk",
     "swatches": {
-      "white": "",
-      "gold": "",
-      "green": "",
-      "cyan": "",
-      "pink": ""
+      "white": "Beyaz",
+      "gold": "Altın",
+      "green": "Yeşil",
+      "cyan": "Camgöbeği",
+      "pink": "Pembe"
     },
-    "preview": "",
-    "aimHint": ""
+    "preview": "Önizleme",
+    "aimHint": "Nişan almak için imlecinizi önizlemenin üzerine getirin."
   },
   "skins": {
-    "title": "",
-    "subtitle": "",
-    "noneDownloaded": "",
-    "default": "",
-    "downloaded": "",
+    "title": "Kahraman Görünümleri",
+    "subtitle": "Her kahraman için etkin görünümü belirleyin",
+    "noneDownloaded": "İndirilmiş görünüm yok",
+    "default": "Varsayılan",
+    "downloaded": "İndirilen görünümler: {{count}}",
     "empty": {
-      "title": "",
-      "description": "",
-      "action": ""
+      "title": "{{hero}} için henüz görünüm yok",
+      "description": "Mod Mağazası’ndan görünümler indirin ve istediğinizi burada seçin.",
+      "action": "{{hero}} için görünümlere göz at"
     },
-    "vanilla": ""
+    "vanilla": "Varsayılan görünüm; görünüm modu yok"
   },
   "servers": {
-    "title": "",
-    "subtitle": "",
+    "title": "Sunucu Tarayıcısı",
+    "subtitle": "Özel Deadlock sunucularına göz atın",
     "columns": {
-      "name": "",
-      "players": "",
-      "map": "",
-      "ping": ""
+      "name": "Ad",
+      "players": "Oyuncular",
+      "map": "Harita",
+      "ping": "Gecikme"
     },
-    "requiredModsBadge": "",
-    "ping": "",
+    "requiredModsBadge": "{{total}} gerekli mod",
+    "ping": "{{ping}} ms",
     "details": {
-      "map": "",
-      "players": "",
-      "region": "",
-      "requiredMods": ""
+      "map": "Harita",
+      "players": "Oyuncular",
+      "region": "Bölge",
+      "requiredMods": "Gerekli modlar"
     },
-    "join": "",
-    "full": "",
+    "join": "Sunucuya katıl",
+    "full": "Sunucu dolu",
     "joining": {
-      "title": "",
-      "withMods": "",
-      "withoutMods": ""
+      "title": "{{name}} sunucusuna katılınıyor",
+      "withMods": "Önce gerekli modlar yükleniyor, ardından sunucuya bağlanılıyor.",
+      "withoutMods": "Deadlock açılıp sunucuya bağlanacak."
     }
   },
   "screens": {
-    "foundryAlt": "",
-    "autoexecAlt": "",
-    "statsAlt": ""
+    "foundryAlt": "Kahraman modeli önizlemeli Mod Foundry ekranı",
+    "autoexecAlt": "Komut kitaplıklı Autoexec Yapılandırması ekranı",
+    "statsAlt": "Kazanma oranı, KDA ve zaman içindeki performansı gösteren İstatistikler ekranı"
   },
   "settings": {
-    "title": "",
-    "navLabel": "",
+    "title": "Ayarlar",
+    "navLabel": "Ayar bölümleri",
     "groups": {
-      "game": "",
-      "application": "",
-      "advanced": ""
+      "game": "Oyun",
+      "application": "Uygulama",
+      "advanced": "Gelişmiş"
     },
     "nav": {
-      "launchOptions": "",
-      "game": "",
-      "application": "",
-      "themes": "",
-      "network": "",
-      "tools": "",
-      "backups": "",
-      "logging": "",
-      "privacy": ""
+      "launchOptions": "Başlatma Seçenekleri",
+      "game": "Oyun",
+      "application": "Uygulama",
+      "themes": "Temalar",
+      "network": "Ağ",
+      "tools": "Araçlar",
+      "backups": "Yedekler",
+      "logging": "Günlük Kaydı",
+      "privacy": "Gizlilik"
     },
     "themes": {
-      "title": "",
-      "description": "",
-      "predefined": "",
-      "custom": "",
-      "active": "",
-      "inactive": ""
+      "title": "Temalar",
+      "description": "Deneyiminizi iyileştirmek için özenle hazırlanmış temalardan birini seçin.",
+      "predefined": "Hazır Temalar",
+      "custom": "Özel Temalar",
+      "active": "Etkin",
+      "inactive": "Etkin değil"
     },
     "system": {
-      "title": "",
-      "description": "",
+      "title": "Sistem Ayarları",
+      "description": "Mod yöneticisi ayarları. Bunlar oyunu etkilemez.",
       "autoReapply": {
-        "label": "",
-        "description": ""
+        "label": "Modları Otomatik Yeniden Uygula",
+        "description": "Mod yöneticisi açıldığında modları otomatik olarak yeniden uygula."
       },
       "heroConflict": {
-        "label": "",
-        "description": ""
+        "label": "Kahraman Çakışması Uyarısı",
+        "description": "Etkin bir modu olan kahraman için ikinci bir mod etkinleştirilirken uyarı göster."
       },
       "paginated": {
-        "label": "",
-        "description": ""
+        "label": "Sayfalı Gezinme",
+        "description": "Mod Mağazası ve Kitaplığı’nı tek bir sürekli kaydırılan liste yerine sayfalar hâlinde göster."
       }
     },
     "appearance": {
-      "title": "",
-      "description": "",
+      "title": "Görünüm",
+      "description": "Uygulamanın görünümünü özelleştirin.",
       "geometry": {
-        "label": "",
-        "description": ""
+        "label": "Okült geometrik şekiller",
+        "description": "Arka planda süs amaçlı okült simgeleri ve mandalaları göster."
       },
       "animateGeometry": {
-        "label": "",
-        "description": ""
+        "label": "Okült geometrik şekilleri canlandır",
+        "description": "Arka plandaki simgeleri yavaşça döndürüp titreştir."
       }
     },
     "discord": {
-      "title": "",
-      "description": "",
+      "title": "Discord Oyun Durumu",
+      "description": "Geçerli kahraman, maç modu, grup büyüklüğü ve diğer bilgileri Discord Rich Presence üzerinden canlı Deadlock durumunuzda gösterin.",
       "toggle": {
-        "label": "",
-        "description": ""
+        "label": "Discord Oyun Durumu",
+        "description": "Deadlock’un Discord profilinizde nasıl görüneceğini özelleştirin."
       },
       "preview": {
-        "title": "",
-        "description": ""
+        "title": "Önizleme",
+        "description": "Discord durumunuzun örnek değerlerle nasıl görüneceğine bakın."
       },
       "example": {
-        "details": "",
-        "state": ""
+        "details": "Sığınakta Uyurgezerlik",
+        "state": "Standart (6’ya 6) oynuyor · 6 kişiden 3’ü"
       },
-      "disabled": ""
+      "disabled": "Discord Oyun Durumu Devre Dışı"
     },
     "network": {
-      "title": "",
-      "description": "",
+      "title": "İndirme yönlendirmesi",
+      "description": "Mod indirmelerinin GameBanana dosya sunucularına nasıl bağlanacağını seçin. Varsayılan seçenek, API’nin standart indirme bağlantısını kullanır.",
       "default": {
-        "title": "",
-        "body": ""
+        "title": "Varsayılan",
+        "body": "API’den alınan standart indirme bağlantısı"
       },
       "auto": {
-        "title": "",
-        "body": ""
+        "title": "Otomatik",
+        "body": "En iyi gecikme veya aktarım hızı"
       }
     },
     "backups": {
-      "title": "",
-      "description": "",
-      "create": "",
+      "title": "Mod Yedeği",
+      "description": "Yüklü modlarınızın yedeklerini oluşturun ve geri yükleyin.",
+      "create": "Yedek oluştur",
       "autoBackup": {
-        "label": "",
-        "description": ""
+        "label": "Güncellemelerden önce otomatik yedekleme",
+        "description": "Modları toplu olarak güncellemeden önce otomatik olarak yedeklerini oluştur"
       },
       "columns": {
-        "date": "",
-        "vpkFiles": "",
-        "size": ""
+        "date": "Tarih",
+        "vpkFiles": "VPK Dosyaları",
+        "size": "Boyut"
       },
-      "restore": "",
+      "restore": "Geri yükle",
       "created": {
-        "title": "",
-        "description": ""
+        "title": "Yedek başarıyla oluşturuldu",
+        "description": "{{total}} VPK dosyası kaydedildi."
       },
       "restored": {
-        "title": "",
-        "description": ""
+        "title": "Yedek başarıyla geri yüklendi",
+        "description": "{{date}} tarihli yedek geri yüklendi."
       }
     },
     "game": {
       "path": {
-        "title": "",
-        "description": ""
+        "title": "Oyun Yolu",
+        "description": "Deadlock oyununuzun yüklü olduğu konum. Mod yöneticisi bunu otomatik olarak algılar; gerekirse elle de belirleyebilirsiniz."
       },
-      "autoDetect": "",
+      "autoDetect": "Otomatik algıla",
       "detected": {
-        "title": "",
-        "description": ""
+        "title": "Oyun yolu otomatik olarak bulundu",
+        "description": "Deadlock, Steam kitaplığınızda bulundu."
       },
       "protection": {
-        "title": "",
-        "description": ""
+        "title": "Oyun sırasında koruma",
+        "description": "Deadlock açıkken modları değiştirdiğinizde mod yöneticisinin ne yapacağı."
       },
       "blockChanges": {
-        "label": "",
-        "description": ""
+        "label": "Deadlock çalışırken değişiklikleri engelle",
+        "description": "Deadlock bu dosyaları kullandığından, oyun açıkken mod yüklemeyi, kaldırmayı veya yeniden sıralamayı engeller. Yarım kalan bir değişiklik yükleme sıranızı bozabilir."
       }
     },
     "privacy": {
-      "title": "",
-      "description": "",
+      "title": "Gizlilik ve İçerik",
+      "description": "NSFW (iş ortamına uygun olmayan) içeriğin nasıl gösterilip filtreleneceğini belirleyin.",
       "hideNsfw": {
-        "label": "",
-        "description": ""
+        "label": "NSFW İçeriği Gizle",
+        "description": "NSFW olarak işaretlenen modları listelerden ve arama sonuçlarından tamamen gizle"
       },
       "disableBlur": {
-        "label": "",
-        "description": ""
+        "label": "NSFW Bulanıklığını Kapat",
+        "description": "NSFW içeriği bulanıklık olmadan göster (NSFW etiketi görünmeye devam eder)"
       },
       "analytics": {
-        "title": "",
-        "description": ""
+        "title": "Kullanım Analitiği",
+        "description": "Anonim kullanım istatistikleri ve özellik analizleri göndererek uygulamanın gelişmesine yardımcı olun"
       }
     },
     "launchOptions": {
-      "title": "",
-      "description": "",
+      "title": "Başlatma Seçenekleri",
+      "description": "Oyunun başlatma seçeneklerini özelleştirin. Bunlar seçilen oyun modundan (modsuz veya modlu) bağımsız olarak uygulanır.",
       "vanilla": {
-        "label": "",
-        "description": ""
+        "label": "Modsuz Mod",
+        "description": "Oyunu ek parametreler olmadan modsuz modda başlatın."
       },
       "autoexec": {
-        "label": "",
-        "description": ""
+        "label": "Autoexec Yapılandırması",
+        "description": "Oyun başladığında autoexec.cfg dosyanızı çalıştırın."
       }
     },
     "autoexec": {
-      "description": "",
-      "whatIs": "",
-      "explanation": "",
-      "usage": ""
+      "description": "autoexec.cfg dosyanızı yönetin. Değişiklikler için oyunu yeniden başlatmanız gerekir.",
+      "whatIs": "Autoexec yapılandırması nedir?",
+      "explanation": "Autoexec, oyunu başlatırken belirlediğiniz konsol değişkenlerini (konsol komutları gibi düşünebilirsiniz) otomatik olarak çalıştıran bir CFG dosyasıdır.",
+      "usage": "Mod yöneticisi, konsolda komut çalıştırmanıza gerek kalmadan nişangâh ayarlarını otomatik olarak uygulamak için bu dosyayı kullanır. Daha fazla komut eklemek isterseniz dosyayı elle düzenleyebilirsiniz."
     },
     "tools": {
-      "title": "",
-      "description": "",
+      "title": "Araçlar",
+      "description": "Modlarınızı yönetmeye yönelik yardımcı araçlar",
       "openGameFolder": {
-        "label": "",
-        "description": ""
+        "label": "Oyun Klasörünü Aç",
+        "description": "Deadlock’un yüklü olduğu klasörü dosya yöneticinizde açar."
       },
-      "open": "",
+      "open": "Aç",
       "clearCache": {
-        "label": "",
-        "description": ""
+        "label": "İndirme Önbelleğini Temizle",
+        "description": "Önbelleğe alınmış indirme dosyalarını kaldırır. Yüklü modlarınız etkilenmez."
       },
-      "clear": ""
+      "clear": "Temizle"
     },
     "logging": {
-      "title": "",
-      "description": "",
+      "title": "Günlük Kaydı",
+      "description": "Sorunları gidermek için günlük dosyalarına erişin.",
       "logs": {
-        "label": "",
-        "description": ""
+        "label": "Mod Yöneticisi Günlükleri",
+        "description": "Sorunları ayıklamak için uygulama günlükleri."
       },
-      "openFolder": "",
+      "openFolder": "Klasörü aç",
       "crashDumps": {
-        "label": "",
-        "description": ""
+        "label": "Deadlock Çökme Dökümleri",
+        "description": "Deadlock çöktüğünde hata ayıklama amacıyla oluşturulan çökme dökümleri."
       },
-      "openLatest": ""
+      "openLatest": "En yenisini aç"
     }
   }
 }

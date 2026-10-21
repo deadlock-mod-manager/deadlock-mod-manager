@@ -1,80 +1,80 @@
 {
   "meta": {
-    "name": "",
-    "title": "",
-    "description": ""
+    "name": "İndirilemedi",
+    "title": "Deadlock Mod Manager’da indirme başarısız mı veya yavaş mı? Çözümler",
+    "description": "Deadlock Mod Manager’da modlar indirilemiyor veya yavaş mı iniyor? Yerleşik bağlantı denetimini çalıştırın, GameBanana istek sınırı için bekleyin ve virüsten koruma, VPN veya DNS sorunlarını giderin."
   },
   "hero": {
-    "eyebrow": "",
-    "title": "",
-    "intro": "",
-    "errorSource": ""
+    "eyebrow": "Hata çözümü",
+    "title": "Modlar indirilemiyor veya yavaş iniyor",
+    "intro": "Deadlock Mod Manager modları doğrudan GameBanana’dan indirir. İndirme başarısız olursa neden GameBanana, ağınız veya bilgisayarınızda dosyayı engelleyen bir şey olabilir. Uygulama hangisi olduğunu anlamanıza yardımcı olur.",
+    "errorSource": "Bir mod kartında veya İndirilenler bölümünde Deadlock Mod Manager"
   },
   "errorText": {
-    "message": "",
+    "message": "İndirilemedi",
     "messages": {
-      "rateLimit": "",
-      "unavailable": "",
-      "refused": "",
-      "network": "",
-      "writeFailed": ""
+      "rateLimit": "GameBanana istek sınırına ulaşıldı / Çok fazla istek (HTTP 429)",
+      "unavailable": "GameBanana kullanılamıyor / Sunucu hatası (HTTP 5xx)",
+      "refused": "GameBanana otomatik istekleri reddetti / Erişim engellendi (HTTP 403)",
+      "network": "Ağ hatası / Adres çözümlenemiyor",
+      "writeFailed": "İndirme başarısız: … (işletim sistemi hatası 5) / Dosya yazılamadı"
     }
   },
   "diagnose": {
-    "title": "",
-    "intro": "",
+    "title": "Önce yerleşik denetimi çalıştırın",
+    "intro": "Ayarlar’ı açıp Bağlantıyı tanıla’ya tıklayın. İnternet bağlantınızı, DNS’i, API’mizi ve GameBanana’yı tek tek sınar. Başarısız olan her denetimde “Nasıl düzeltilir?” önerisi gösterilir.",
     "results": {
-      "gameBananaFails": "",
-      "everythingFails": "",
-      "everythingPasses": ""
+      "gameBananaFails": "<strong>GameBanana başarısız, diğer her şey başarılı:</strong> Sorun GameBanana tarafında veya aranızdaki bağlantıda olabilir. Bekleyin ya da VPN’inizi kapatın.",
+      "everythingFails": "<strong>Her denetim başarısız:</strong> Bağlantınız, güvenlik duvarınız veya DNS uygulamayı engelliyor. Deadlock Mod Manager’a güvenlik duvarınızda ve virüsten koruma programınızda izin verin.",
+      "everythingPasses": "<strong>Tüm denetimler başarılı ama indirme yine başarısız:</strong> Dosya kaydedilemiyor. Boş disk alanını ve aşağıdaki hata iletisini kontrol edin."
     }
   },
   "messages": {
-    "title": "",
-    "os5Link": "",
+    "title": "Yaygın hata iletileri ve çözümleri",
+    "os5Link": "İşletim sistemi hatası 5’i giderin",
     "items": {
       "rateLimit": {
-        "fix": ""
+        "fix": "Gösterilen bekleme süresi dolunca yeniden deneyin. Onlarca modu aynı anda sıraya eklemek yerine birkaçını birden indirin."
       },
       "unavailable": {
-        "fix": ""
+        "fix": "GameBanana hizmet dışı veya aşırı yoğun. Bu durum sık sık Deadlock güncellemelerinin hemen ardından yaşanır. Daha sonra yeniden deneyin; sizin tarafınızda düzeltilmesi gereken bir şey yok."
       },
       "refused": {
-        "fix": ""
+        "fix": "GameBanana’nın koruması bağlantınızı engelliyor. VPN veya proxy kullanıyorsanız kapatıp yeniden deneyin. Sorun sürerse modun GameBanana sayfasını tarayıcınızda açıp yüklenip yüklenmediğini kontrol edin."
       },
       "network": {
-        "fix": ""
+        "fix": "Bağlantınızda veya DNS’te sorun var. Bağlantıyı tanıla’yı çalıştırın. Ardından DNS adresinizi 1.1.1.1 veya 8.8.8.8 olarak değiştirmeyi ve ipconfig /flushdns komutuyla DNS önbelleğini temizlemeyi deneyin."
       },
       "writeFailed": {
-        "fix": ""
+        "fix": "Dosya indirildi ancak kaydedilemedi. Virüsten koruma programı veya klasör izinleri uygulamayı engelliyor."
       }
     }
   },
   "stuck": {
-    "title": "",
+    "title": "İndirme takıldı mı veya çok mu yavaş?",
     "steps": {
-      "readd": "",
-      "vpn": "",
-      "patchRush": "",
-      "status": ""
+      "readd": "İndirmeyi iptal edin, çöp kutusu simgesiyle modu kaldırın ve yeniden ekleyin.",
+      "vpn": "İndirme sırasında VPN’leri, proxy’leri ve “indirme hızlandırıcı” araçları kapatın.",
+      "patchRush": "GameBanana’nın en yoğun olduğu Deadlock güncellemesinin hemen sonrasındaki saatler dışında yeniden deneyin.",
+      "status": "<status>Durum sayfamızı</status> kontrol edin. Tüm hizmetler çalışıyorsa ve sorun sürüyorsa Bağlantıyı tanıla sonuçlarınızı <discord>Discord</discord> üzerinden paylaşın. Sonuçları kopyala düğmesi bunları panoya aktarır."
     }
   },
   "faqs": {
     "why": {
-      "question": "",
-      "answer": ""
+      "question": "Deadlock Mod Manager neden “İndirilemedi” diyor?",
+      "answer": "Modlar doğrudan GameBanana’dan indirilir. GameBanana hizmet dışıysa veya isteklerinizi sınırlıyorsa, virüsten koruma programı, güvenlik duvarı ya da VPN bağlantıyı engelliyorsa veya dosya diske yazılamıyorsa indirme başarısız olur."
     },
     "slow": {
-      "question": "",
-      "answer": ""
+      "question": "Modlar neden bu kadar yavaş indiriliyor?",
+      "answer": "İndirme hızı GameBanana’nın dosya sunucularına ve bu sunucularla aranızdaki bağlantıya bağlıdır. Büyük modlar ve Deadlock güncellemesi sonrasındaki yoğun saatler daha yavaş olabilir. VPN veya proxy’yi kapatmak çoğu zaman yardımcı olur; uygulamanın kendisi hızı sınırlamaz."
     },
     "rateLimit": {
-      "question": "",
-      "answer": ""
+      "question": "“GameBanana istek sınırına ulaşıldı” ne anlama geliyor?",
+      "answer": "Kısa sürede çok fazla istek gönderdiniz; bu genellikle aynı anda birçok mod indirildiğinde olur. İletide belirtilen süre kadar bekleyip yeniden deneyin."
     },
     "down": {
-      "question": "",
-      "answer": ""
+      "question": "Deadlock Mod Manager hizmet dışı mı?",
+      "answer": "deadlockmods.app/status adresindeki durum sayfasını kontrol edin. Hizmetlerimiz çalışıyorsa sorunun GameBanana’dan mı yoksa ağınızdan mı kaynaklandığını görmek için uygulamanın Ayarlar bölümündeki Bağlantıyı tanıla aracını kullanın."
     }
   }
 }

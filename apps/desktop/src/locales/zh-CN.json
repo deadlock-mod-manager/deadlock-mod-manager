@@ -3310,8 +3310,15 @@
     "autoexecCommandAdd": "添加",
     "autoexecCommandAdded": "命令已添加到配置。保存以应用。",
     "autoexecCommandAddedBadge": "已添加",
+    "outdatedConvarBadge": "",
+    "outdatedConvarTooltip": "",
     "autoexecCommandDefaultBadge": "默认",
     "autoexecEditorHeading": "当前 Autoexec 配置",
+    "autoexecUnsaved": "",
+    "autoexecManagedCrosshair": "",
+    "autoexecManagedMapCommand": "",
+    "autoexecManagedLines_one": "",
+    "autoexecManagedLines_other": "",
     "autoexecSaving": "保存中…",
     "autoexecClear": "清除",
     "autoexecClearConfirmTitle": "清除 Autoexec 配置？",
@@ -3694,13 +3701,45 @@
     "description": "清空缓存、模组状态与模组文件，然后重新下载并安装管理器此前拥有的全部内容。当应用与游戏文件夹不同步时，可以使用此功能。",
     "action": "彻底重装",
     "confirmAction": "确认重装",
+    "continue": "",
+    "areYouSure": "",
+    "stat": {
+      "mods": "",
+      "installed": "",
+      "download": ""
+    },
+    "steps": {
+      "backup": {
+        "title": "",
+        "body": ""
+      },
+      "wipe": {
+        "title": "",
+        "body": ""
+      },
+      "download": {
+        "title": "",
+        "body": ""
+      },
+      "install": {
+        "title": "",
+        "body": ""
+      }
+    },
+    "areYouSureBody_one": "",
+    "areYouSureBody_other": "",
     "confirmBody_one": "{{count}} 个模组将被移除并重新安装（其中 {{installed}} 个当前已安装）。",
     "confirmBody_other": "{{count}} 个模组将被移除并重新安装（其中 {{installed}} 个当前已安装）。",
     "confirmDetails": "所有模组文件、下载缓存与已保存的模组状态都会先被删除，然后每个模组都会按原有加载顺序重新下载并安装。磁盘上已经不存在的模组会被直接跳过，且不报错。",
-    "localModsPreserved_one": "{{count}} 个本地添加的模组会原样保留——它无法被重新下载。",
-    "localModsPreserved_other": "{{count}} 个本地添加的模组会原样保留——它们无法被重新下载。",
+    "localModsPreserved_one": "",
+    "localModsPreserved_other": "",
     "stopAfterCurrent": "当前模组完成后停止",
     "stopping": "正在停止…",
+    "chooseFiles": "",
+    "chooseFilesLater": "",
+    "backupFailedBody": "",
+    "retryFailed_one": "",
+    "retryFailed_other": "",
     "summary": "已恢复 {{total}} 个模组中的 {{restored}} 个。",
     "summaryMissing_one": "{{count}} 个模组已从磁盘上消失。",
     "summaryMissing_other": "{{count}} 个模组已从磁盘上消失。",
@@ -3711,6 +3750,8 @@
     "phase": {
       "idle": "已就绪",
       "snapshot": "正在记录已安装的模组…",
+      "backingUp": "",
+      "backupFailed": "",
       "purging": "正在移除模组文件…",
       "clearingCache": "正在清空下载缓存…",
       "clearingState": "正在清空模组状态…",
@@ -4054,7 +4095,8 @@
     "unsupportedImageType": "不支持的图像类型"
   },
   "progress": {
-    "pleaseWait": "请稍候…"
+    "pleaseWait": "请稍候…",
+    "bytes": ""
   },
   "modStatus": {
     "added": "已添加到我的模组",
@@ -5248,6 +5290,9 @@
     "featuredModOfTheWeek": "本周精选模组",
     "trendingIn": "热门",
     "seeAll": "查看全部",
+    "browseBy": "",
+    "hero": "",
+    "randomHero": "",
     "viewMod": "查看模组",
     "installedMods": "已安装",
     "pendingUpdates": "更新",

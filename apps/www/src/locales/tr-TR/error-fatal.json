@@ -1,100 +1,100 @@
 {
   "meta": {
-    "name": "",
-    "title": "",
-    "description": ""
+    "name": "Deadlock başlatılırken kritik hata",
+    "title": "Deadlock’ta “Kritik hata: Düzen dosyası yüklenemedi” çözümü (modlar)",
+    "description": "Modların neden olduğu Deadlock kritik hatalarını giderin: düzen dosyası yüklenemedi, alt öğe (IdolCashInMeter) bulunamadı, 16 bayt okunamadı, gameinfo.gi yüklenemedi ve KV3 ayrıştırma hataları."
   },
   "hero": {
-    "eyebrow": "",
-    "title": "",
-    "intro": "",
-    "errorSource": ""
+    "eyebrow": "Hata çözümü",
+    "title": "Deadlock modlarla başlatılırken “Kritik hata”",
+    "intro": "Deadlock başlarken görünen Kritik hata penceresi neredeyse her zaman bir modun oyunla artık uyumlu olmadığını gösterir. Bu, genellikle güncellemeden sonra bir arayüz moduyla olur. Hatanın türünü iletinin tamamından anlayabilirsiniz.",
+    "errorSource": "Deadlock başlatılırken"
   },
   "errorText": {
-    "message": "",
+    "message": "Kritik hata: Düzen dosyası yüklenemedi",
     "errors": {
-      "layoutFile": "",
-      "findChild": "",
-      "read16Bytes": "",
-      "gameinfo": "",
-      "kv3": ""
+      "layoutFile": "Kritik hata: “panorama/layout/…” düzen dosyası yüklenemedi",
+      "findChild": "Kritik hata: “IdolCashInMeter” alt öğesi bulunamadı",
+      "read16Bytes": "Kritik hata: 16 bayt okunamadı",
+      "gameinfo": "Kritik hata: Uygulama gameinfo.gi dosyasını yükleyemedi",
+      "kv3": "KV3 verileri ayrıştırılırken hata oluştu"
     }
   },
   "fix": {
-    "title": "",
+    "title": "Dört adımda çözün",
     "steps": {
       "confirm": {
-        "title": "",
-        "body": ""
+        "title": "Nedenin bir mod olduğunu doğrulayın",
+        "body": "Deadlock Mod Manager’da Modlar olmadan başlat’ı kullanın. Oyun açılırsa Deadlock kurulumunuzda sorun yoktur; sorun modlarınızdan birindedir."
       },
       "update": {
-        "title": "",
-        "body": ""
+        "title": "Modlarınızı güncelleyin",
+        "body": "Mod Kitaplığı’nda güncellemeleri kontrol edin. Mod geliştiricileri arayüz modlarını genellikle oyun güncellemesinden sonraki birkaç gün içinde düzeltir."
       },
       "disableHud": {
-        "title": "",
-        "body": ""
+        "title": "Arayüz modlarını devre dışı bırakın",
+        "body": "Düzen dosyası ve alt öğe bulunamadı hatalarının çoğuna bunlar neden olur. Modları kapatıp oyunu yeniden modlarla başlatın."
       },
       "narrowDown": {
-        "title": "",
-        "body": ""
+        "title": "Kalan modlar arasından sorunluyu bulun",
+        "body": "Oyun hâlâ çöküyor mu? Kalan modların yarısını devre dışı bırakıp oyunu açın. Soruna neden olan modu bulana kadar çökmeye yol açan grubu yarıya indirmeye devam edin."
       }
     }
   },
   "errors": {
-    "title": "",
-    "intro": "",
-    "whyLabel": "",
-    "fixLabel": "",
-    "kvParserLink": "",
+    "title": "İletilerine göre kritik hatalar",
+    "intro": "Hata penceresindeki metni eşleştirin.",
+    "whyLabel": "Neden:",
+    "fixLabel": "Çözüm:",
+    "kvParserLink": "KeyValues ayrıştırıcısını aç",
     "items": {
       "layoutFile": {
-        "cause": "",
-        "fix": ""
+        "cause": "Güncel olmayan bir arayüz modu, oyun güncellemesinde değiştirilen arayüz dosyalarının yerini alıyor.",
+        "fix": "Arayüz modlarını devre dışı bırakıp oyunu başlatın; modlar güncellendiğinde yeniden etkinleştirin."
       },
       "findChild": {
-        "cause": "",
-        "fix": ""
+        "cause": "Bir arayüz modu, güncellemede yeniden adlandırılan veya kaldırılan bir arayüz öğesine başvuruyor. KothCashInMeter ve benzeri adlar aynı soruna işaret eder.",
+        "fix": "Geliştiricileri bir düzeltme yayımlayana kadar arayüz modlarını devre dışı bırakın."
       },
       "read16Bytes": {
-        "cause": "",
-        "fix": ""
+        "cause": "Genellikle bir .vpk dosyası olmak üzere bozuk veya yarım indirilmiş bir dosya.",
+        "fix": "Son eklediğiniz modları kaldırıp yeniden yükleyin. Oyun modsuzken de çöküyorsa Steam’de oyun dosyalarını doğrulayın."
       },
       "gameinfo": {
-        "cause": "",
-        "fix": ""
+        "cause": "gameinfo.gi dosyası eksik veya düzenleme sonucunda geçersiz hâle gelmiş.",
+        "fix": "Steam’de oyun dosyalarını doğrulayın, ardından uygulamanın mod yollarını yeniden eklemesi için oyunu modlarla başlatın."
       },
       "kv3": {
-        "cause": "",
-        "fix": ""
+        "cause": "Bir modun yapılandırma dosyasında veya elle düzenlenen gameinfo.gi dosyasında sözdizimi hatası var.",
+        "fix": "Son eklediğiniz modları devre dışı bırakın. gameinfo.gi dosyasını elle düzenlediyseniz hatalı satırı bulmak için içeriğini KeyValues ayrıştırıcısına yapıştırın."
       }
     }
   },
   "withoutMods": {
-    "title": "",
-    "verify": "",
-    "notWorking": ""
+    "title": "Modlar olmadan da çöküyor mu?",
+    "verify": "Modlar olmadan başlat seçeneğinde de çöküyorsa sorun modda değil oyun dosyalarındadır. Steam’de Deadlock’a sağ tıklayın, <strong>Özellikler > Yüklü Dosyalar</strong> bölümünü açın ve <strong>Oyun dosyalarının bütünlüğünü doğrula</strong> seçeneğini seçin. Modlarınız yüklü kalır; uygulama oyunu modlarla bir sonraki başlatışınızda onları yeniden uygular.",
+    "notWorking": "Oyun çökmeden çalışmayı bırakan modlar için <guide>Güncellemeden sonra Deadlock modları çalışmıyor</guide> bölümüne bakın. Son güncellemeyle hangi modların bozulduğunu öğrenmek için <discord>Discord</discord> üzerinden sorabilirsiniz."
   },
   "faqs": {
     "layoutFile": {
-      "question": "",
-      "answer": ""
+      "question": "Deadlock’ta “Kritik hata: Düzen dosyası yüklenemedi” neden olur?",
+      "answer": "Güncel olmayan bir arayüz modu nedeniyle olur. Bu modlar Panorama düzen dosyalarını değiştirir. Deadlock güncellemesi arayüzü değiştirdiğinde eski dosyalar artık uymaz. Arayüz modlarını devre dışı bırakıp oyunu başlatın; modlar güncellendiğinde yeniden etkinleştirin."
     },
     "findChild": {
-      "question": "",
-      "answer": ""
+      "question": "“IdolCashInMeter alt öğesi bulunamadı” hatasını nasıl gideririm?",
+      "answer": "Aynı şekilde. Bir arayüz modu, Valve’ın yeniden adlandırdığı veya kaldırdığı IdolCashInMeter ya da KothCashInMeter gibi bir öğeye hâlâ başvuruyor. Geliştiricileri güncelleme yayımlayana kadar arayüz modlarını devre dışı bırakın."
     },
     "read16Bytes": {
-      "question": "",
-      "answer": ""
+      "question": "“Kritik hata: 16 bayt okunamadı” ne anlama geliyor?",
+      "answer": "Oyun, okuma sırasında bozuk veya eksik bir dosyayla karşılaştı; çoğunlukla indirmesi tamamlanmamış bir .vpk dosyasıdır. Son yüklediğiniz modları kaldırıp yeniden yükleyin. Modlar devre dışıyken de oluyorsa Steam’de Deadlock dosyalarını doğrulayın."
     },
     "gameinfo": {
-      "question": "",
-      "answer": ""
+      "question": "“Uygulama gameinfo.gi dosyasını yükleyemedi” hatasını nasıl gideririm?",
+      "answer": "gameinfo.gi dosyası eksik veya düzenleme sonucunda geçersiz hâle gelmiş. Dosyayı geri yüklemek için Steam’de oyun dosyalarının bütünlüğünü doğrulayın. Ardından mod yollarını doğru şekilde yeniden eklemek için Deadlock Mod Manager’da Modlarla başlat’ı kullanın."
     },
     "findMod": {
-      "question": "",
-      "answer": ""
+      "question": "Deadlock’u hangi modun çökerttiğini nasıl anlarım?",
+      "answer": "Önce oyunun sorunsuz açıldığını doğrulamak için Modlar olmadan başlat’ı kullanın. Sonra modlarınızın yarısını devre dışı bırakıp oyunu modlarla başlatın. Çökmeye neden olan grubu tek mod kalana kadar yarıya indirin."
     }
   }
 }
