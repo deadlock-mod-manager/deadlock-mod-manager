@@ -1,72 +1,72 @@
 {
   "meta": {
-    "title": "",
-    "description": ""
+    "title": "Deadlock VPK analiz aracı: Bir VPK dosyasının hangi moda ait olduğunu bulun",
+    "description": "Bir Deadlock .vpk dosyası yükleyin. VPK analiz aracı, dosyayı bilinen GameBanana modlarıyla karşılaştırarak kaynağını bilmediğiniz paket dosyasının hangi moda ait olduğunu belirler."
   },
   "page": {
-    "title": "",
-    "description": ""
+    "title": "VPK analiz aracı",
+    "description": "Hangi moda ait olduğunu öğrenmek için bir VPK dosyası yükleyin"
   },
   "toasts": {
-    "matched": "",
-    "noMatch": "",
-    "failed": "",
-    "unknownError": "",
-    "onlyVpk": "",
-    "ignored": ""
+    "matched": "{{file}}: GameBanana'daki {{slug}} gönderisiyle eşleşti",
+    "noMatch": "{{file}}: Eşleşen mod bulunamadı",
+    "failed": "{{file}}: Analiz başarısız oldu - {{error}}",
+    "unknownError": "Bilinmeyen hata",
+    "onlyVpk": "Lütfen yalnızca .vpk dosyaları yükleyin",
+    "ignored": "{{ignored}} VPK olmayan dosya yok sayıldı"
   },
-  "unknownSize": "",
+  "unknownSize": "Bilinmeyen boyut",
   "upload": {
-    "title": "",
-    "description": "",
-    "analyzing": "",
-    "processing": "",
-    "preparing": "",
-    "progress": "",
-    "dropActive": "",
-    "drop": "",
-    "browse": ""
+    "title": "VPK dosyalarını yükle",
+    "description": "Birden fazla .vpk dosyasını buraya sürükleyip bırakın veya seçmek için tıklayın",
+    "analyzing": "VPK dosyaları analiz ediliyor...",
+    "processing": "Toplam {{total}} dosyanın {{current}}. dosyası işleniyor",
+    "preparing": "Analiz hazırlanıyor...",
+    "progress": "Tamamlanma: %{{percent}}",
+    "dropActive": "Dosyaları buraya bırakın",
+    "drop": "VPK dosyalarını buraya bırakın",
+    "browse": "veya dosya seçmek için tıklayın (birden fazla dosya seçebilirsiniz)"
   },
   "results": {
-    "title": "",
-    "completed": "",
+    "title": "Analiz sonuçları",
+    "completed": "{{completed}} / {{total}} tamamlandı",
     "status": {
-      "pending": "",
-      "analyzing": "",
-      "completed": "",
-      "error": ""
+      "pending": "Bekliyor",
+      "analyzing": "Analiz ediliyor...",
+      "completed": "Tamamlandı",
+      "error": "Hata"
     },
-    "failed": ""
+    "failed": "Analiz başarısız oldu: {{error}}"
   },
   "info": {
-    "title": "",
-    "version": "",
-    "fileCount": "",
-    "fileSize": "",
-    "hasMultiparts": "",
-    "hasInlineData": "",
-    "yes": "",
-    "no": "",
-    "unknown": ""
+    "title": "VPK bilgileri",
+    "version": "Sürüm:",
+    "fileCount": "Dosya sayısı:",
+    "fileSize": "Dosya boyutu:",
+    "hasMultiparts": "Çok parçalı mı:",
+    "hasInlineData": "Gömülü veri içeriyor mu:",
+    "yes": "Evet",
+    "no": "Hayır",
+    "unknown": "Bilinmiyor"
   },
   "match": {
-    "title": "",
-    "heading": "",
-    "file": "",
-    "certainty": "",
-    "view": ""
+    "title": "Eşleşen mod",
+    "heading": "GameBanana: {{type}} {{id}}",
+    "file": "Dosya {{id}}",
+    "certainty": "%{{certainty}} eşleşme ({{type}})",
+    "view": "GameBanana'da görüntüle"
   },
   "noMatch": {
-    "title": "",
-    "description": "",
+    "title": "Eşleşme bulunamadı",
+    "description": "Bu VPK dosyası veritabanımızdaki hiçbir modla eşleşmiyor. Şunlardan biri olabilir:",
     "reasons": {
-      "custom": "",
-      "modified": "",
-      "new": ""
+      "custom": "GameBanana'da bulunmayan özel bir mod",
+      "modified": "Mevcut bir modun değiştirilmiş sürümü",
+      "new": "Henüz dizine eklenmemiş yeni bir mod"
     }
   },
   "contents": {
-    "title": "",
-    "more": ""
+    "title": "Dosya içeriği",
+    "more": "... ve {{more}} dosya daha"
   }
 }

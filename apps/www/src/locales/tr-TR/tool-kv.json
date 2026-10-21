@@ -1,63 +1,63 @@
 {
   "meta": {
-    "title": "",
-    "description": ""
+    "title": "Deadlock gameinfo.gi için Valve KeyValues (VDF) ayrıştırıcısı",
+    "description": "Deadlock’un gameinfo.gi dosyası gibi bir Valve KeyValues (VDF) dosyasını yapıştırın veya sürükleyip bırakın. Dosyayı tarayıcınızda ayrıştırıp ağaç görünümünde inceleyebilirsiniz. Hiçbir dosya sunucuya yüklenmez."
   },
   "page": {
-    "title": "",
-    "description": ""
+    "title": "KeyValues ayrıştırıcısı",
+    "description": "gameinfo.gi gibi Valve KeyValues (VDF) dosyalarını ayrıştırın ve görselleştirin"
   },
   "input": {
-    "title": "",
-    "description": "",
-    "paste": "",
-    "upload": "",
-    "loadSample": "",
-    "clear": "",
-    "placeholder": "",
-    "dropActive": "",
-    "drop": "",
-    "browse": ""
+    "title": "Girdi",
+    "description": "KeyValues içeriğini nasıl ekleyeceğinizi seçin",
+    "paste": "Yapıştır / Düzenle",
+    "upload": "Dosya yükle",
+    "loadSample": "Örneği yükle",
+    "clear": "Temizle",
+    "placeholder": "KeyValues içeriğinizi buraya yapıştırın...",
+    "dropActive": "Dosyayı buraya bırakın",
+    "drop": "Bir KeyValues dosyasını buraya bırakın",
+    "browse": "veya dosya seçmek için tıklayın (.gi, .vdf, .kv, .txt)"
   },
   "toasts": {
-    "invalidFile": "",
-    "loaded": "",
-    "readAsTextFailed": "",
-    "readFailed": "",
-    "sampleLoaded": "",
-    "cleared": "",
-    "copied": ""
+    "invalidFile": "Lütfen geçerli bir dosya yükleyin",
+    "loaded": "{{file}} yüklendi",
+    "readAsTextFailed": "Dosya metin olarak okunamadı",
+    "readFailed": "Dosya okunamadı",
+    "sampleLoaded": "Örnek gameinfo.gi dosyası yüklendi",
+    "cleared": "İçerik temizlendi",
+    "copied": "Panoya kopyalandı"
   },
   "viewer": {
-    "parsing": "",
-    "parseError": "",
-    "failed": "",
-    "parseFailed": "",
-    "line": "",
-    "column": "",
-    "valid": "",
-    "original": "",
-    "jsonOutput": "",
-    "treeView": "",
-    "switchToTree": "",
-    "switchToJson": "",
-    "fixErrors": "",
-    "empty": "",
-    "copy": "",
-    "copied": ""
+    "parsing": "Ayrıştırılıyor...",
+    "parseError": "Ayrıştırma hatası",
+    "failed": "Başarısız",
+    "parseFailed": "KeyValues içeriği ayrıştırılamadı",
+    "line": "Satır: {{line}}",
+    "column": "Sütun: {{column}}",
+    "valid": "✓ Geçerli",
+    "original": "Orijinal",
+    "jsonOutput": "JSON çıktısı",
+    "treeView": "Ağaç görünümü",
+    "switchToTree": "Ağaç görünümüne geç",
+    "switchToJson": "JSON görünümüne geç",
+    "fixErrors": "Ayrıştırılmış çıktıyı görmek için yukarıdaki hataları düzeltin",
+    "empty": "Ayrıştırılmış sonucu görmek için KeyValues içeriği girin",
+    "copy": "Kopyala",
+    "copied": "Kopyalandı!"
   },
   "stats": {
-    "line": "",
-    "lines": "",
-    "character": "",
-    "characters": "",
-    "key": "",
-    "keys": ""
+    "line": "{{value}} satır",
+    "lines": "{{value}} satır",
+    "character": "{{value}} karakter",
+    "characters": "{{value}} karakter",
+    "key": "{{value}} anahtar",
+    "keys": "{{value}} anahtar"
   },
   "tree": {
-    "title": "",
-    "expandAll": "",
-    "collapseAll": "",
-    "items": ""
+    "title": "Ayrıştırılmış yapı",
+    "expandAll": "Tümünü genişlet",
+    "collapseAll": "Tümünü daralt",
+    "items": "[{{value}} öğe]"
   }
 }

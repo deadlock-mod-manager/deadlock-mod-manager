@@ -1,73 +1,73 @@
 {
   "meta": {
-    "name": "",
-    "title": "",
-    "description": ""
+    "name": "Deadlock görünümleri",
+    "title": "Deadlock görünümleri: Özel kahraman görünümü modları | Deadlock Mod Manager",
+    "description": "GameBanana’dan özel Deadlock kahraman görünümleri yükleyin, bunları 3B olarak önizleyin ve istediğiniz zaman varsayılan görünüme dönün. Açık kaynaklı Deadlock Mod Manager ile ücretsiz."
   },
   "faqs": {
     "howToGet": {
-      "question": "",
-      "answer": ""
+      "question": "Deadlock’ta görünümleri nasıl edinirim?",
+      "answer": "Deadlock’ta henüz bir görünüm mağazası yok; görünümler GameBanana’daki mod topluluğundan geliyor. Deadlock Mod Manager’ı yükleyin, Mod Mağazası’nda Görünümler kategorisine ve kahramanınıza göre filtreleme yapın, bir görünüm indirin ve ardından Kahraman Görünümleri bölümünde onu seçin."
     },
     "visibility": {
-      "question": "",
-      "answer": ""
+      "question": "Diğer oyuncular Deadlock görünümlerimi görebilir mi?",
+      "answer": "Hayır. Görünümler yalnızca sizin oyun istemcinizde uygulanır. Yeni modeli siz görürsünüz; diğer herkes varsayılan modeli görür."
     },
     "free": {
-      "question": "",
-      "answer": ""
+      "question": "Deadlock görünümleri ücretsiz mi?",
+      "answer": "Evet. GameBanana’daki topluluk görünümleri de Deadlock Mod Manager da ücretsizdir."
     },
     "revert": {
-      "question": "",
-      "answer": ""
+      "question": "Bir kahramanın varsayılan görünümüne nasıl dönerim?",
+      "answer": "Kahraman Görünümleri bölümünü açın, kahramanı seçin ve varsayılan görünümü belirleyin. İndirdiğiniz görünüm cihazınızda kalır; daha sonra yeniden kullanabilirsiniz."
     },
     "multiple": {
-      "question": "",
-      "answer": ""
+      "question": "Aynı kahraman için birden fazla görünüm kullanabilir miyim?",
+      "answer": "Her kahraman için aynı anda yalnızca bir görünüm etkin olabilir. İki görünüm çakışacaksa uygulama sizi uyarır. Bir kahramana birden fazla görünüm atayıp her başlatmada rastgele birinin seçilmesini de sağlayabilirsiniz."
     },
     "official": {
-      "question": "",
-      "answer": ""
+      "question": "Deadlock’a resmî görünümler gelecek mi?",
+      "answer": "Valve henüz resmî kozmetik öğeler yayımlamadı. Yayımlansa bile topluluk görünümlerine uygulama üzerinden erişebileceksiniz."
     }
   },
   "hero": {
-    "eyebrow": "",
-    "title": "",
-    "intro": ""
+    "eyebrow": "Deadlock görünümleri",
+    "title": "Her Deadlock kahramanı için özel görünümler",
+    "intro": "Topluluğun hazırladığı yeni modeller, renk değişiklikleri ve kapsamlı tasarımlar. Deadlock Mod Manager bunları kahramanlara göre gruplandırır, 3B olarak gösterir ve tek tıklamayla değiştirmenizi sağlar."
   },
   "popular": {
-    "title": "",
-    "intro": "",
-    "snapshot": ""
+    "title": "Popüler kahraman görünümleri",
+    "intro": "Mod Mağazası’ndaki topluluk görünümleri. Her kart, görünümün GameBanana sayfasını açar; görünümü uygulamadan yükleyebilirsiniz.",
+    "snapshot": "Ekim 2026 tarihli görünüm. İndirme sayıları GameBanana’dan alınmıştır."
   },
   "steps": {
-    "title": "",
+    "title": "Deadlock görünümü nasıl yüklenir?",
     "items": {
       "install": {
-        "title": "",
-        "body": ""
+        "title": "Deadlock Mod Manager’ı edinin",
+        "body": "Windows veya Linux’a yükleyin. Oyun klasörünüzü kendisi bulur."
       },
       "filter": {
-        "title": "",
-        "body": ""
+        "title": "Kahramana göre filtreleyin",
+        "body": "Mod Mağazası’nda Görünümler kategorisini ve oynadığınız kahramanı seçin."
       },
       "download": {
-        "title": "",
-        "body": ""
+        "title": "Görünümü indirin",
+        "body": "Görünümün birden fazla tarzı varsa istediğiniz sürümü seçin."
       },
       "activate": {
-        "title": "",
-        "body": ""
+        "title": "Kahraman Görünümleri bölümünde etkinleştirin",
+        "body": "Kahraman için etkin görünümü seçin, 3B önizlemede kontrol edin, ardından Modlarla başlat düğmesine basın."
       }
     }
   },
   "foundry": {
-    "title": "",
-    "intro": "",
-    "exports": "",
+    "title": "Kendi görünümünüzü oluşturun",
+    "intro": "<strong>Mod Foundry</strong>, temel oyundan veya sahip olduğunuz bir görünümden kahraman modeli yükler. Modeli boyayın, sesleri değiştirin, 3B önizlemede inceleyin ve yüklemeye hazır bir mod olarak dışa aktarın.",
+    "exports": "Dışa aktardığınız çalışmayı dosya olarak kaydedebilir, kitaplığınıza yeni bir mod olarak ekleyebilir veya başlangıçtaki görünümün yerine koyabilirsiniz (orijinali yedek olarak saklanır). <link>Mod Foundry kılavuzunu okuyun</link>.",
     "figure": {
-      "alt": "",
-      "caption": ""
+      "alt": "Deadlock Mod Manager’daki Mod Foundry görünüm düzenleyicisi; boya ve ses araçlarıyla birlikte bir kahraman modeli gösteriliyor",
+      "caption": "Mod Foundry: Bir kahraman görünümünü düzenleyip mod olarak dışa aktarın."
     }
   }
 }

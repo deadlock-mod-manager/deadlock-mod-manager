@@ -1,72 +1,72 @@
 {
   "meta": {
-    "name": "",
-    "title": "",
-    "description": ""
+    "name": "Mod sırası kaydedilemedi",
+    "title": "Deadlock Mod Manager’da “Mod sırası kaydedilemedi” hatasının çözümü",
+    "description": "Deadlock Mod Manager’da “Mod sırası kaydedilemedi” hatası mı alıyorsunuz? Deadlock’u kapatın, kilitli .vpk dosyalarını serbest bırakın ve klasör izinlerini düzeltin. Ardından yükleme sırasını yeniden kaydedin."
   },
   "hero": {
-    "eyebrow": "",
-    "title": "",
-    "intro": "",
-    "errorSource": ""
+    "eyebrow": "Hata çözümü",
+    "title": "Mod sırası kaydedilemedi",
+    "intro": "Yükleme sırası kaydedilirken mod dosyalarınız yeniden adlandırılır; böylece Deadlock bunları yeni sırayla yükler. Bir dosya kilitliyse veya korumalıysa adlandırma işlemi geri alınır ve uygulama bu hatayı gösterir. Altındaki ileti, hatanın nedenini açıklar.",
+    "errorSource": "Mod Yükleme Sırasını Yönet bölümünde kaydetme işlemi sonrası Deadlock Mod Manager"
   },
   "errorText": {
-    "message": "",
+    "message": "Mod sırası kaydedilemedi",
     "causes": {
-      "gameRunning": "",
-      "fileInUse": "",
-      "vpkInUse": "",
-      "accessDenied": "",
-      "shardsFull": ""
+      "gameRunning": "Oyun çalışıyor",
+      "fileInUse": "Dosya başka bir işlem tarafından kullanıldığı için işleme erişilemiyor. (İşletim sistemi hatası 32)",
+      "vpkInUse": "VPK dosyaları kullanımda olduğu için silinemiyor",
+      "accessDenied": "Erişim reddedildi. (İşletim sistemi hatası 5)",
+      "shardsFull": "Tüm eklenti bölüm klasörleri dolu"
     }
   },
   "causes": {
-    "title": "",
-    "intro": "",
-    "os5Link": "",
+    "title": "Hata iletinizi bulun ve çözümü uygulayın",
+    "intro": "Bildirimdeki “Mod sırası kaydedilemedi” başlığının altındaki satırı okuyun ve aşağıdaki açıklamalarla eşleştirin.",
+    "os5Link": "İşletim sistemi hatası 5’i giderin",
     "items": {
       "gameRunning": {
-        "fix": ""
+        "fix": "Deadlock’u sistem tepsisinden de tamamen kapatın, ardından sırayı yeniden kaydedin. Oyun zaten kapalıysa işlemin sonlanması için birkaç saniye bekleyin."
       },
       "fileInUse": {
-        "fix": ""
+        "fix": "Başka bir program bir .vpk dosyasını açık tutuyor. Eklentiler klasörünü gösteren Dosya Gezgini pencerelerini, VPK görüntüleyicilerini ve arşiv araçlarını kapatın. Virüs taraması dosyaları kısa süreliğine kilitleyebilir; birkaç saniye sonra yeniden deneyin veya Deadlock klasörünü virüsten koruma programınızın istisnalarına ekleyin."
       },
       "vpkInUse": {
-        "fix": ""
+        "fix": "Nedeni yukarıdakiyle aynı: Oyunu ve mod dosyalarını açık tutan programları kapatıp yeniden deneyin."
       },
       "accessDenied": {
-        "fix": ""
+        "fix": "Windows, eklentiler klasöründeki değişiklikleri engelliyor. Salt okunur işaretlerini ve izin sorunlarını gidermek için işletim sistemi hatası 5 kılavuzunu izleyin."
       },
       "shardsFull": {
-        "fix": ""
+        "fix": "Oyunun yükleyebileceğinden fazla etkin .vpk dosyanız var. Kullanmadığınız modları devre dışı bırakın, ardından sırayı yeniden kaydedin."
       }
     }
   },
   "nothingMatches": {
-    "title": "",
+    "title": "Hiçbiri uymuyorsa",
     "steps": {
-      "restart": "",
-      "checkInstalls": "",
-      "saveAgain": "",
-      "discord": ""
+      "restart": "Deadlock’u kapatın ve Deadlock Mod Manager’ı yeniden başlatın.",
+      "checkInstalls": "Mod Kitaplığı’nı açıp tüm modların yüklemesinin tamamlandığını kontrol edin. Takılmış görünen modları kaldırıp yeniden yükleyin.",
+      "saveAgain": "Mod Sırasını Değiştir’e yeniden tıklayıp kaydedin.",
+      "discord": "Hata sürüyor mu? İletinin tamamını ve uygulama sürümünüzü <discord>Discord</discord> üzerinden paylaşın."
     }
   },
   "faqs": {
     "why": {
-      "question": "",
-      "answer": ""
+      "question": "Deadlock Mod Manager mod sıramı neden kaydedemiyor?",
+      "answer": "Sıra kaydedilirken eklentiler klasörünüzdeki .vpk dosyaları yeniden adlandırılır; böylece oyun dosyaları yeni sırayla yükler. Deadlock çalışıyorsa, başka bir program bir .vpk dosyasını açık tutuyorsa veya Windows klasöre erişimi reddediyorsa işlem başarısız olur."
     },
     "loseMods": {
-      "question": "",
-      "answer": ""
+      "question": "Sırayı kaydetme işlemi başarısız olursa modlarımı kaybeder miyim?",
+      "answer": "Hayır. Bir adım başarısız olursa uygulama yeniden adlandırma işlemini geri alır; modlarınız önceki sırada yüklü kalır. Sorunu giderip yeniden kaydedin."
     },
     "whileOpen": {
-      "question": "",
-      "answer": ""
+      "question": "Deadlock açıkken yükleme sırasını değiştirebilir miyim?",
+      "answer": "Hayır. Oyun çalışırken .vpk dosyalarını açık tutar; önce Deadlock’u kapatın. Değişiklikler, oyunu modlarla bir sonraki başlatışınızda uygulanır."
     },
     "whatChanges": {
-      "question": "",
-      "answer": ""
+      "question": "Mod sırası tam olarak neyi değiştirir?",
+      "answer": "İki mod aynı dosyanın yerini alıyorsa yalnızca bir sürüm yüklenebilir; hangisinin yükleneceğini mod sırası belirler. Birbiriyle çakışmayan modlar her sırada aynı şekilde çalışır."
     }
   }
 }

@@ -1,114 +1,114 @@
 {
   "meta": {
-    "title": "",
-    "latest": "",
-    "latestVersion": "",
-    "description": ""
+    "title": "Windows ve Linux için Deadlock Mod Manager'ı İndir",
+    "latest": "Deadlock Mod Manager'ın en son sürümü",
+    "latestVersion": "Deadlock Mod Manager'ın en son sürümü: v{{version}}",
+    "description": "{{latest}} sürümünü indirin: Windows yükleyicisi veya Linux paketi (Flatpak, .deb ya da .rpm). Ücretsiz ve açık kaynaklıdır; GitHub'da herkese açık kaynak kodları kullanılarak geliştirilmiştir."
   },
   "redirect": {
     "windows": {
-      "metaTitle": "",
-      "metaDescription": "",
-      "preparing": "",
-      "redirecting": ""
+      "metaTitle": "Windows için Deadlock Mod Manager indiriliyor",
+      "metaDescription": "Deadlock Mod Manager'ın Windows sürümü indirilmeye başlanıyor.",
+      "preparing": "Windows indirme işleminiz hazırlanıyor...",
+      "redirecting": "Windows indirme sayfasına yönlendiriliyorsunuz..."
     },
     "linux": {
-      "metaTitle": "",
-      "metaDescription": "",
-      "preparing": "",
-      "redirecting": ""
+      "metaTitle": "Linux için Deadlock Mod Manager indiriliyor",
+      "metaDescription": "Deadlock Mod Manager'ın Linux sürümü indirilmeye başlanıyor.",
+      "preparing": "Linux indirme işleminiz hazırlanıyor...",
+      "redirecting": "Linux indirme sayfasına yönlendiriliyorsunuz..."
     },
-    "fetching": "",
-    "errorTitle": "",
-    "errorDescription": "",
-    "goToDownloads": "",
-    "fallback": ""
+    "fetching": "En son sürüm bilgisi alınıyor",
+    "errorTitle": "İndirme hatası",
+    "errorDescription": "En son sürümler alınamadı. Lütfen daha sonra tekrar deneyin.",
+    "goToDownloads": "İndirme sayfasına git",
+    "fallback": "İndirme otomatik olarak başlamazsa indirme sayfasına gitmek için <button>buraya tıklayın</button>."
   },
   "hero": {
-    "whatsNew": "",
-    "title": "",
-    "description": "",
-    "otherPlatforms": "",
+    "whatsNew": "Yenilikler",
+    "title": "Deadlock Mod Manager'ı indir",
+    "description": "Deadlock modlarını birkaç tıkla bulun, yükleyin ve güncelleyin. İşletim sisteminize uygun sürümü aşağıdan indirin.",
+    "otherPlatforms": "Diğer platformlar",
     "highlights": {
-      "openSource": "",
-      "autoUpdate": "",
-      "platforms": ""
+      "openSource": "Ücretsiz ve açık kaynaklı",
+      "autoUpdate": "Otomatik güncellenir",
+      "platforms": "Windows ve Linux"
     }
   },
   "error": {
-    "title": "",
-    "description": "",
-    "github": ""
+    "title": "İndirmeler geçici olarak kullanılamıyor",
+    "description": "En son sürümler alınamadı. Yükleyiciyi yine de GitHub'dan indirebilirsiniz.",
+    "github": "GitHub'dan indir"
   },
   "loading": {
-    "title": "",
-    "description": ""
+    "title": "İndirmeler yükleniyor",
+    "description": "En son sürüm bilgisi alınıyor…"
   },
   "latest": {
-    "title": "",
-    "released": "",
-    "installGuide": "",
-    "releaseNotes": ""
+    "title": "Platformunuzu seçin",
+    "released": "{{date}} tarihinde yayımlanan {{version}} sürümü",
+    "installGuide": "Kurulum kılavuzu",
+    "releaseNotes": "Sürüm notları"
   },
   "releaseDate": {
-    "dateTime": ""
+    "dateTime": "{{date}}, {{time}} (UTC)"
   },
   "platforms": {
     "windows": {
-      "requirements": ""
+      "requirements": "Windows 10 veya 11, 64 bit"
     },
     "linux": {
-      "requirements": ""
+      "requirements": "64 bit, çoğu dağıtım"
     },
-    "detected": "",
-    "noBuilds": "",
-    "experimental": "",
-    "experimentalDescription": ""
+    "detected": "Algılanan sistem",
+    "noBuilds": "Bu sürüm için {{platform}} derlemesi yok.",
+    "experimental": "Deneysel Chromium derlemeleri ({{total}})",
+    "experimentalDescription": "Sistem web görünümü yerine Chromium (CEF) motorunu içerir. Daha büyük ve daha az test edilmiştir; yalnızca standart sürümde görüntüleme sorunları yaşıyorsanız deneyin."
   },
   "installer": {
-    "recommended": "",
-    "signature": "",
-    "signatureTitle": "",
-    "download": "",
-    "downloadLabel": "",
+    "recommended": "Önerilen",
+    "signature": "imza",
+    "signatureTitle": "{{filename}} için imza",
+    "download": "İndir",
+    "downloadLabel": "{{filename}} dosyasını indir",
     "types": {
       "exe": {
-        "label": "",
-        "description": ""
+        "label": "Yükleyici",
+        "description": "Windows 10 ve 11 kurulum dosyası (.exe)"
       },
       "msi": {
-        "label": "",
-        "description": ""
+        "label": "MSI paketi",
+        "description": "Yönetilen veya sessiz kurulumlar için (.msi)"
       },
       "dmg": {
-        "label": "",
-        "description": ""
+        "label": "Disk görüntüsü",
+        "description": "macOS uygulaması (.dmg)"
       },
       "flatpak": {
-        "label": "",
-        "description": ""
+        "label": "Flatpak paketi",
+        "description": "Çoğu dağıtımda çalışır"
       },
       "deb": {
-        "label": "",
-        "description": ""
+        "label": "Debian paketi",
+        "description": "Ubuntu, Debian ve Mint (.deb)"
       },
       "rpm": {
-        "label": "",
-        "description": ""
+        "label": "RPM paketi",
+        "description": "Fedora, openSUSE ve Nobara (.rpm)"
       }
     }
   },
   "history": {
-    "title": "",
-    "description": "",
+    "title": "Diğer sürümler",
+    "description": "Önceki bir sürüme dönün veya gelecek değişiklikleri erkenden deneyin.",
     "tabs": {
-      "stable": "",
-      "prerelease": ""
+      "stable": "Önceki sürümler",
+      "prerelease": "Gecelik derlemeler"
     },
-    "emptyStable": "",
-    "emptyPrerelease": "",
-    "nightlyWarning": "",
-    "prerelease": "",
-    "viewOnGithub": ""
+    "emptyStable": "Henüz önceki sürüm yok.",
+    "emptyPrerelease": "Şu anda gecelik derleme yok.",
+    "nightlyWarning": "Gecelik derlemeler en son koddan otomatik oluşturulur. Yeni özellikleri ilk onlar içerir, ancak kararsız olabilirler. Bu nedenle, geçiş yapmadan önce mod kurulumunuzu yedekleyin.",
+    "prerelease": "Ön sürüm",
+    "viewOnGithub": "Sürümü GitHub'da görüntüle"
   }
 }

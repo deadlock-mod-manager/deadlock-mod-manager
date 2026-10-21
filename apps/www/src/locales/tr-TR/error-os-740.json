@@ -1,72 +1,72 @@
 {
   "meta": {
-    "name": "",
-    "title": "",
-    "description": ""
+    "name": "Yönetici izni gerekiyor (işletim sistemi hatası 740)",
+    "title": "Deadlock Mod Manager’da “işletim sistemi hatası 740” (yönetici izni gerekiyor) çözümü",
+    "description": "Steam yönetici olarak çalışacak şekilde ayarlandığında Deadlock Mod Manager, işletim sistemi hatası 740 nedeniyle oyunu başlatamaz. steam.exe için “Yönetici olarak çalıştır” ayarını kapatıp oyunu modlarla yeniden başlatın."
   },
   "hero": {
-    "eyebrow": "",
-    "title": "",
-    "intro": "",
-    "errorSource": ""
+    "eyebrow": "Hata çözümü",
+    "title": "İstenen işlem için yönetici izni gerekiyor (işletim sistemi hatası 740)",
+    "intro": "Deadlock Mod Manager, Deadlock’u Steam aracılığıyla başlatır. Steam her zaman yönetici olarak çalışacak şekilde ayarlanmışsa Windows, normal yetkilerle çalışan bir programın Steam’i başlatmasını engeller ve 740 hatası oluşur.",
+    "errorSource": "Windows’ta oyun başlatılırken Deadlock Mod Manager"
   },
   "errorText": {
-    "message": ""
+    "message": "İstenen işlem için yönetici izni gerekiyor. (İşletim sistemi hatası 740)"
   },
   "fix": {
-    "title": "",
+    "title": "Nasıl çözülür?",
     "steps": {
       "quitSteam": {
-        "title": "",
-        "body": ""
+        "title": "Steam’i tamamen kapatın",
+        "body": "Sistem tepsisindeki Steam simgesine sağ tıklayıp Çıkış’ı seçin. Pencereyi kapatmak yeterli değildir."
       },
       "findSteamExe": {
-        "title": "",
-        "body": ""
+        "title": "steam.exe dosyasını bulun",
+        "body": "Genellikle <code>C:\\Program Files (x86)\\Steam\\steam.exe</code> konumundadır. Kısayola değil, dosyanın kendisine sağ tıklayın ve <strong>Özellikler</strong>’i açın."
       },
       "disableAdmin": {
-        "title": "",
-        "body": ""
+        "title": "Yönetici olarak çalıştır ayarını kapatın",
+        "body": "<strong>Uyumluluk</strong> sekmesinde <strong>Bu programı yönetici olarak çalıştır</strong> seçeneğinin işaretini kaldırın. Ardından <strong>Tüm kullanıcıların ayarlarını değiştir</strong>’e tıklayıp oradaki işareti de kaldırın."
       },
       "checkShortcuts": {
-        "title": "",
-        "body": ""
+        "title": "Kısayollarınızı kontrol edin",
+        "body": "Masaüstü veya Başlat menüsü kısayollarında da Özellikler > Kısayol > Gelişmiş altında aynı ayar bulunabilir. Steam için kullandığınız tüm kısayollardaki Yönetici olarak çalıştır seçeneğini kapatın."
       },
       "startSteam": {
-        "title": "",
-        "body": ""
+        "title": "Steam’i normal şekilde başlatın",
+        "body": "Steam’i her zamanki kısayolundan açın ve oturum açmasını bekleyin."
       },
       "launchModded": {
-        "title": "",
-        "body": ""
+        "title": "Oyunu modlarla yeniden başlatın",
+        "body": "Deadlock Mod Manager’a dönüp Modlarla başlat’a tıklayın. Oyun Steam üzerinden hatasız açılmalıdır."
       }
     }
   },
   "stillSeeing": {
-    "title": "",
+    "title": "Hata hâlâ görünüyor mu?",
     "items": {
-      "otherTools": "",
-      "appUpdate": "",
-      "runAppAsAdmin": "",
-      "discord": ""
+      "otherTools": "Bazı araçlar yönetici olarak çalıştırma ayarını sizin yerinize etkinleştirir. Hata yeniden ortaya çıkarsa Steam’i başlatan oyun başlatıcılarda, ekran katmanlarında veya ayar araçlarında “Yönetici olarak çalıştır” seçeneğini arayın.",
+      "appUpdate": "Hata uygulama güncellenirken görünüyorsa <download>indirme sayfasından</download> en son yükleyiciyi indirin ve mevcut kurulumunuzun üzerine çalıştırın.",
+      "runAppAsAdmin": "Deadlock Mod Manager’ı yönetici olarak çalıştırmak da hatayı önler; ancak daha sonra <os5>Erişim reddedildi (işletim sistemi hatası 5)</os5> sorununa yol açar. Bu yöntemi geçici bir çözüm olarak kullanın.",
+      "discord": "Hatanın ekran görüntüsü ve uygulama sürümünüzle birlikte <discord>Discord</discord> üzerinden yardım isteyin."
     }
   },
   "faqs": {
     "cause": {
-      "question": "",
-      "answer": ""
+      "question": "Deadlock Mod Manager’da işletim sistemi hatası 740 neden oluşur?",
+      "answer": "Windows 740 hatası, istenen işlemin yönetici izni gerektirdiği anlamına gelir. Deadlock Mod Manager, Deadlock’u steam.exe üzerinden başlatır. steam.exe her zaman yönetici olarak çalışacak şekilde ayarlanmışsa Windows, normal yetkilerle çalışan bir programın onu başlatmasına izin vermez."
     },
     "runAsAdmin": {
-      "question": "",
-      "answer": ""
+      "question": "Bunun yerine Deadlock Mod Manager’ı yönetici olarak mı çalıştırmalıyım?",
+      "answer": "Bu yöntem hatayı geçici olarak aşar ancak önerilmez. Uygulama yönetici yetkisiyle çalışırken yüklenen modlar yönetici hesabının sahipliğinde olur. Uygulamayı daha sonra normal şekilde çalıştırdığınızda “Erişim reddedildi” (işletim sistemi hatası 5) sorunu oluşabilir. Steam’in yönetici olarak çalıştırma ayarını kapatmak daha uygun bir çözümdür."
     },
     "steamAdmin": {
-      "question": "",
-      "answer": ""
+      "question": "Steam’in Deadlock’u çalıştırmak için yönetici iznine ihtiyacı var mı?",
+      "answer": "Hayır. Steam ve Deadlock normal kullanıcı yetkileriyle sorunsuz çalışır. Bir yükleme veya güncelleme gerçekten izin gerektirdiğinde Steam bunu kendisi ister."
     },
     "appUpdate": {
-      "question": "",
-      "answer": ""
+      "question": "Uygulamayı güncellerken 740 hatası alıyorum. Ne yapmalıyım?",
+      "answer": "En son yükleyiciyi deadlockmods.app/download adresinden indirip mevcut kurulumunuzun üzerine çalıştırın. Modlarınız ve ayarlarınız korunur."
     }
   }
 }
