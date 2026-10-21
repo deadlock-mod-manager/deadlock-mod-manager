@@ -3,18 +3,21 @@ import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import { type ReinstallStep, useReinstallMod } from "@/hooks/use-reinstall-mod";
+import { downloadManager } from "@/lib/download/manager";
+import { isDownloadInProgress } from "@/lib/download/status";
 import { getErrorMessage } from "@/lib/errors";
 import { createLogger } from "@/lib/logger";
 import { isLocalMod } from "@/lib/mods/installed-helpers";
+import { usePersistedStore } from "@/lib/store";
 import { type LocalMod, ModStatus } from "@/types/mods";
 
 const logger = createLogger("reinstall-action");
 
-/** Nothing to reinstall while the mod is already busy doing something. */
+/**
+ * Download statuses are left out: they outlive a download that never reported
+ * back, so whether one is running is asked of the download queue on click.
+ */
 const BUSY_STATUSES = new Set<ModStatus>([
-  ModStatus.Downloading,
-  ModStatus.Extracting,
-  ModStatus.Paused,
   ModStatus.Installing,
   ModStatus.Removing,
 ]);
@@ -40,6 +43,12 @@ export const useReinstallAction = (mod: LocalMod) => {
       return;
     }
 
+    const hasDownloadStatus = isDownloadInProgress(mod.status);
+    if (hasDownloadStatus && downloadManager.isQueued(mod.remoteId)) {
+      toast.info(t("downloads.alreadyQueued"));
+      return;
+    }
+
     const confirmed = await confirm({
       title: t("reinstall.confirmTitle", { modName: mod.name }),
       body: t("reinstall.confirmBody"),
@@ -48,6 +57,14 @@ export const useReinstallAction = (mod: LocalMod) => {
     });
     if (!confirmed) {
       return;
+    }
+
+    if (hasDownloadStatus) {
+      // Nothing is downloading it, so the status is stale, and it would reject
+      // the move back to Downloading.
+      usePersistedStore
+        .getState()
+        .setModStatus(mod.remoteId, ModStatus.FailedToDownload);
     }
 
     setStep("purging");

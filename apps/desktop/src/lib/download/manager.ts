@@ -366,6 +366,11 @@ class DownloadManager {
     this.downloads.clear();
   }
 
+  /** Whether a download for the mod is still waiting for its outcome. */
+  isQueued(modId: string) {
+    return this.downloads.getMod(modId) !== undefined;
+  }
+
   addToQueue(mod: DownloadableMod) {
     this.downloads.add(mod);
   }
