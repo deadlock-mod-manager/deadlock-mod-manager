@@ -98,6 +98,15 @@ export const UPSTREAM_FILES: UpstreamFile[] = [
     license: "GPL-3.0",
     lineage: "optilock",
   },
+  {
+    id: "optilock-ultra-potato",
+    repo: "dacooderr/OptiLock",
+    path: "OptiLock Ultra Potato Config/gameinfo.gi",
+    videoPath: "OptiLock Ultra Potato Config/video(No Shadows).txt",
+    track: "tag",
+    license: "GPL-3.0",
+    lineage: "optilock",
+  },
 ];
 
 interface PresetDefinition {
@@ -196,5 +205,18 @@ export const PRESETS: PresetDefinition[] = [
     blurb:
       "dacooderr's lowest-quality config for weak hardware. Upstream ships it with a matching set of in-game video settings.",
     upstream: "optilock-potato",
+  },
+  {
+    id: "optilock-ultra-potato",
+    name: "OptiLock Ultra Potato",
+    author: "dacooderr",
+    tier: "potato",
+    blurb:
+      "OptiLock Potato with a shorter draw distance, lower model and decal detail, and more aggressive culling of small objects. For the weakest hardware.",
+    notes: [
+      "Buildings and distant players pop in sooner than with OptiLock Potato (r_farz, r_mapextents).",
+      "Upstream ships two sets of in-game video settings; this uses the one without shadows.",
+    ],
+    upstream: "optilock-ultra-potato",
   },
 ];

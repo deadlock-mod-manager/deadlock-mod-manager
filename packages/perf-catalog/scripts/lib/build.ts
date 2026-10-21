@@ -586,6 +586,9 @@ export const buildCatalog = async (
   return { catalog, report: { lines } };
 };
 
+/** `CATEGORY_SATURATION` in perf_config/resolve.rs. */
+const CATEGORY_SATURATION = 25;
+
 /**
  * The desktop's Looks ⟷ Frames placement (`cut_score_from_category_counts` in
  * perf_config/resolve.rs), for the report: each category saturates on its own.
@@ -599,7 +602,7 @@ const cutScore = (counts: Record<string, number>): number => {
   for (const [category, count] of Object.entries(counts)) {
     const weight =
       CATEGORIES.find((entry) => entry.id === category)?.weight ?? 0;
-    score += Math.max(0, weight) * (1 - Math.exp(-count / 4));
+    score += Math.max(0, weight) * (1 - Math.exp(-count / CATEGORY_SATURATION));
   }
   return total === 0 ? 0 : Math.min(1, score / total);
 };
