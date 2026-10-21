@@ -1,0 +1,173 @@
+---
+title: Privacy and Network Activity
+description: Every service the app talks to, what it sends, and the setting that controls it
+---
+
+import { Callout } from "fumadocs-ui/components/callout";
+
+# Privacy and Network Activity
+
+This page lists every service Deadlock Mod Manager contacts, what each one receives, and how to turn it off. Our own servers are open source, so for those you can read the code that handles each request.
+
+Any request reveals your IP address to the server that receives it. That applies to every entry below and is not repeated in each one.
+
+## At a glance
+
+| Recipient                                    | What it receives                                                            | Default                   |
+| -------------------------------------------- | --------------------------------------------------------------------------- | ------------------------- |
+| [Deadlock Mods](#deadlock-mods-our-services) | App startup checks, things you share or report, your account if you sign in | On (core)                 |
+| [GameBanana](#gamebanana)                    | Catalog and update requests, the mods you open and download                 | On (core)                 |
+| [deadlock-api](#deadlock-api)                | Hero and item data, Steam account IDs for Stats, match IDs and salts        | Partly on, see below      |
+| [Steam](#steam)                              | News requests; your Steam session if you enable Match Data Sharing          | Sharing off               |
+| [Discord](#discord)                          | Your current game state, through the Discord app on your PC                 | On                        |
+| [Google Analytics](#google-analytics)        | Feature usage events tied to a machine ID                                   | Off until you agree       |
+| [GitHub](#github)                            | Update checks, update downloads, the contributor list                       | On                        |
+| [Game servers](#game-servers)                | Pings, and downloads of the files a server requires                         | Only when you use Servers |
+
+## What can identify you
+
+The app sends three identifiers. Nothing else it sends is tied to you.
+
+- **Machine ID**, a value your operating system generates for this PC. Sent to Google Analytics if you enable analytics, and to Deadlock Mods when you share a profile or report a mod. Stored in the [`profiles`](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/packages/database/src/schema/profiles.ts) and [`reports`](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/packages/database/src/schema/reports.ts) tables.
+- **Steam account ID**, the numeric ID of your Steam account. Sent to deadlock-api for Stats and, if you enable it, Match Data Sharing.
+- **Deadlock Mods account**, only if you sign in. Requests made while signed in carry your access token.
+
+The app never uploads your mod files, file paths, logs, or crash dumps.
+
+## Deadlock Mods (our services)
+
+Everything here runs from this repository. Our servers sit behind Cloudflare.
+
+### API (`api.deadlockmods.app`)
+
+When the app starts, it requests:
+
+- the moderation list: GameBanana mods that have been taken down or hidden, mods whose downloads are paused, and corrections to mod details such as the hero or category. The app applies it to its local copy of the catalog ([`policy.ts`](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/apps/api/src/routers/v2/policy.ts), [`policy-manifest-builder.ts`](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/apps/api/src/services/policy-manifest-builder.ts))
+- feature flags, personalised if you are signed in ([`feature-flags.ts`](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/apps/api/src/routers/v2/feature-flags.ts))
+- announcements ([`announcements.ts`](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/apps/api/src/routers/v2/announcements.ts))
+
+Browsing, searching, and filtering mods never reaches our API. It runs against the copy of the GameBanana catalog stored on your PC.
+
+When you use a feature:
+
+| Action                                | Sent                                                                    | Stored                                                |
+| ------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------- |
+| Add local mods or analyse your addons | Hashes and sizes of the VPK files, to identify which mod they came from | Nothing, the server only looks them up                |
+| Share a profile                       | Profile name, mod list, app version, machine ID                         | All of it, so the share code works                    |
+| Import a profile                      | The share code                                                          | Nothing                                               |
+| Report a mod                          | Mod ID, machine ID                                                      | Both; the machine ID limits you to one report per mod |
+| Publish or like a crosshair           | Crosshair settings, your account                                        | All of it, linked to your account                     |
+| Browse servers                        | Your filters and search text                                            | Nothing                                               |
+| Open Performance, reset `gameinfo.gi` | Nothing beyond the request                                              | Nothing                                               |
+
+Handlers are in [`apps/api/src/routers/v2`](https://github.com/deadlock-mod-manager/deadlock-mod-manager/tree/main/apps/api/src/routers/v2).
+
+On the server side:
+
+- Your IP address is used as a rate-limit key in Redis and expires when the limit window ends ([`orpc.ts`](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/apps/api/src/lib/orpc.ts)).
+- Server errors and 1% of request traces go to Sentry ([`constants.ts`](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/apps/api/src/lib/constants.ts)). These come from our servers, not from your PC.
+
+### Account (`auth.deadlockmods.app`)
+
+Contacted only when you sign in, which happens in your browser through GitHub, Discord, or Steam. We store your account's name, email, and avatar from that provider, plus each session's IP address and user agent ([`auth.ts`](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/packages/database/src/schema/auth.ts)). The app keeps its sign-in token on your PC.
+
+### Website checks
+
+- The Foundry screen checks whether the commissions site is live, and shows a link once it is.
+
+### Check it yourself
+
+- API: [`apps/api`](https://github.com/deadlock-mod-manager/deadlock-mod-manager/tree/main/apps/api)
+- Accounts: [`apps/auth`](https://github.com/deadlock-mod-manager/deadlock-mod-manager/tree/main/apps/auth)
+- Database tables: [`packages/database/src/schema`](https://github.com/deadlock-mod-manager/deadlock-mod-manager/tree/main/packages/database/src/schema)
+- Running costs and infrastructure: [Transparency](https://deadlockmods.app/transparency)
+
+If you build the app from source, `VITE_API_URL` points it at your own API.
+
+## Third parties
+
+We do not run these services. This section covers what the app sends them; what they do with it is covered by their own privacy policies.
+
+### GameBanana
+
+GameBanana hosts most mods. The app:
+
+- keeps a local copy of the catalog, refreshed about every half hour while the app is open, with a full refresh once a week. Searches and filters run against this copy, so GameBanana does not see them.
+- loads mod pages, comments, changelogs, and images when you open a mod
+- checks your installed GameBanana mods for updates, so GameBanana can see which mods you have
+- downloads mod files from GameBanana's file servers
+
+None of this can be turned off, since browsing and installing depend on it.
+
+### deadlock-api
+
+[deadlock-api](https://deadlock-api.com) is a community project that provides game data and match statistics.
+
+- **Hero, item, and rank data.** Loaded by Stats, Foundry, and hero pickers. Nothing about you is sent.
+- **Stats.** Sends the Steam account IDs of the players you look up, including your own, and follows your live matches in the background. Turn off under **Settings → Experimental → Player Stats** (on by default).
+- **Matchdata Ingest Tool.** Reads Deadlock replay links from Steam's download cache on your PC and sends each match's ID, server cluster, and salt, with a fixed name such as "Mod Manager (Cache)". No account ID is sent. Turn off under **Settings → Application → Matchdata Ingest Tool** (on by default).
+- **Match Data Sharing.** See [Steam](#steam). Sends your Steam account ID with the match IDs and salts it finds, up to 40 matches a day.
+
+### Steam
+
+- The patch-notes widget loads Deadlock news from Steam, with images from Steam's CDN.
+- **Match Data Sharing** signs in to Steam using the login already saved on your PC and asks Valve's game coordinator for your match history. The login token stays in memory and is never sent anywhere else. Off by default; enable it under **Settings → Privacy → Match Data Sharing** after reviewing the consent prompt.
+
+The app reads your Steam account from local files and sends nothing to Steam to find it.
+
+### Discord
+
+**Discord Game Presence** talks only to the Discord app on your PC. It shares your game state (menu, queue, match, or spectating), your hero, party size, how long you have been playing, and any custom text you set. Discord shows this on your profile. To show hero names and portraits, the app loads the hero list from deadlock-api about once a day. Turn it off under **Settings → Discord** (on by default).
+
+### Google Analytics
+
+Off until you agree, either in the consent prompt, during onboarding, or under **Settings → Privacy → Usage Analytics**.
+
+When on, it sends your machine ID, app version, operating system, release channel, and the events listed in [`schema.ts`](https://github.com/deadlock-mod-manager/deadlock-mod-manager/blob/main/apps/desktop/src/lib/analytics/schema.ts), such as pages you view, the IDs of mods you open or install, mod and profile counts, and how long installs take. Google signals and ad personalisation are disabled.
+
+### GitHub
+
+- The app checks GitHub for updates on startup and every 15 minutes while it is open, and downloads updates from GitHub releases. Flatpak builds skip the check. **Settings → Application → Automatic Updates** controls whether updates install automatically; the check itself always runs.
+- The sidebar loads the list of contributors from GitHub when the app starts, and their avatars when they are shown.
+
+### Game servers
+
+The **Servers** page sends a ping to each listed server to measure latency, so those servers see your IP before you join. Joining a server downloads the files it requires from wherever its listing points.
+
+### Other
+
+- Images in mod descriptions load from wherever the author hosts them.
+- The What's New dialog loads a YouTube thumbnail. The video itself loads only when you play it.
+- **Network Diagnostics**, under **Settings → Tools**, contacts Cloudflare and each service above when you run it.
+- The background plugin loads any image URL you enter.
+
+## What stays on your PC
+
+- Your mods, profiles, and settings
+- Logs and Deadlock crash dumps, which are analysed locally. The Logging settings can open an AI chat site in your browser if you click one of those buttons.
+- Your Steam login. Match Data Sharing uses it only to sign in to Steam, keeps it in memory, and never saves or logs it.
+- The DeadlockForge bridge, which only listens on your own PC for installs from deadlockforge.net. Off by default.
+
+## Turning things off
+
+| Setting                             | Location                | Default |
+| ----------------------------------- | ----------------------- | ------- |
+| Usage Analytics                     | Settings → Privacy      | Off     |
+| Match Data Sharing                  | Settings → Privacy      | Off     |
+| Matchdata Ingest Tool               | Settings → Application  | On      |
+| Discord Game Presence               | Settings → Discord      | On      |
+| Player Stats                        | Settings → Experimental | On      |
+| 1-click installs from DeadlockForge | Settings → Application  | Off     |
+| Automatic Updates                   | Settings → Application  | On      |
+
+## Known gaps
+
+<Callout type="warn">
+  These are open issues, listed here so this page stays accurate:
+
+- A few downloads (mod variants and Flatpak updates) do not use your proxy settings.
+- The app does not restrict which hosts can serve images, so mod descriptions can load images from anywhere.
+
+</Callout>
+
+See also the [privacy policy](https://deadlockmods.app/privacy) on our website.

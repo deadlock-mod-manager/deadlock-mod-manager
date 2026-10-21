@@ -2,6 +2,7 @@ import { Button } from "@deadlock-mods/ui/components/button";
 import { Label } from "@deadlock-mods/ui/components/label";
 import { Slider } from "@deadlock-mods/ui/components/slider";
 import { useMutation } from "@tanstack/react-query";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
 import { useConfirm } from "@/components/providers/alert-dialog";
 import {
@@ -9,10 +10,12 @@ import {
   SettingToggleRow,
 } from "@/components/settings/setting-row";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
+import { NETWORK_ACTIVITY_DOCS_URL } from "@/lib/constants";
 import { usePersistedStore } from "@/lib/store";
 
 const BLUR_STRENGTH_DESCRIPTION_ID = "privacy-blur-strength-description";
 const SAVED_CHOICES_DESCRIPTION_ID = "privacy-saved-choices-description";
+const NETWORK_ACTIVITY_DESCRIPTION_ID = "privacy-network-activity-description";
 
 const PrivacySettings = () => {
   const { t } = useTranslation();
@@ -151,6 +154,18 @@ const PrivacySettings = () => {
           }}
           title={t("privacy.analyticsEnabled")}
         />
+
+        <SettingRow
+          description={t("privacy.networkActivityDescription")}
+          descriptionId={NETWORK_ACTIVITY_DESCRIPTION_ID}
+          title={t("privacy.networkActivity")}>
+          <Button
+            aria-describedby={NETWORK_ACTIVITY_DESCRIPTION_ID}
+            onClick={() => void openUrl(NETWORK_ACTIVITY_DOCS_URL)}
+            variant='outline'>
+            {t("privacy.networkActivityOpen")}
+          </Button>
+        </SettingRow>
       </div>
     </div>
   );
