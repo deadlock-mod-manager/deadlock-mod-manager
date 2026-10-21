@@ -1,4 +1,4 @@
-import { RuntimeError } from "@deadlock-mods/common";
+import { RuntimeError } from "@deadlock-mods/common/client-errors";
 import { toast } from "@deadlock-mods/ui/components/sonner";
 import { useIsMutating, useMutation } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -110,7 +110,12 @@ const useApplyModSet = () => {
     const turnOn = mods.filter(
       (mod) => !isEnabled(state, mod) && target.has(mod.remoteId),
     );
-    const unavailable: string[] = [];
+    const present = new Set(mods.map((mod) => mod.remoteId));
+    const absent = scope.filter((id) => !present.has(id));
+    if (mode === "round" && absent.length > 0) {
+      throw new ModSwitchError(absent[0]);
+    }
+    const unavailable = absent.filter((id) => target.has(id));
 
     for (const mod of turnOff) {
       await invokeGuarded("uninstall_mod", {
@@ -126,7 +131,11 @@ const useApplyModSet = () => {
       const mod = usePersistedStore
         .getState()
         .localMods.find((item) => item.remoteId === remoteId);
-      if (!mod) continue;
+      if (!mod) {
+        if (mode === "round") throw new ModSwitchError(remoteId);
+        unavailable.push(remoteId);
+        continue;
+      }
       if (mod.status === ModStatus.FailedToDownload) {
         if (mode !== "restore") throw new ModSwitchError(mod.name);
         unavailable.push(mod.name);

@@ -359,6 +359,66 @@ describe("broken mod search recovery", () => {
     client.clear();
   });
 
+  for (const keepHealthy of [true, false]) {
+    it(`keeps recovery incomplete when reconciliation removes ${keepHealthy ? "one mod" : "all mods"}`, async () => {
+      const client = new QueryClient();
+      const healthy = addHealthyMod("healthy");
+      const profile = usePersistedStore.getState().getActiveProfile();
+      if (!profile) throw new Error("Expected a recovery fixture");
+      const mods = keepHealthy ? [healthy] : [];
+      usePersistedStore.setState({
+        localMods: mods,
+        profiles: { [profile.id]: { ...profile, mods } },
+      });
+      install.mockImplementation(async (mod, options) => {
+        options.onStart(mod);
+        const installed = {
+          id: mod.remoteId,
+          name: mod.name,
+          installed_vpks: ["pak01_dir.vpk"],
+        };
+        options.onComplete(mod, installed);
+        return installed;
+      });
+      renderBanner(client);
+      buttons.get("bisect.banner.finishRestoring")?.click();
+      await waitForActions(client);
+      expect(install).toHaveBeenCalledTimes(keepHealthy ? 1 : 0);
+      expect(
+        usePersistedStore.getState().isModEnabledInCurrentProfile("healthy"),
+      ).toBe(keepHealthy);
+      expect(usePersistedStore.getState().bisectSession?.stage).toBe(
+        "restoring",
+      );
+      expect(translate).toHaveBeenCalledWith(
+        "bisect.toasts.restoreIncomplete",
+        { names: keepHealthy ? "snd-82623" : "snd-82623, healthy" },
+      );
+      client.clear();
+    });
+  }
+
+  it("stops a diagnostic round when its candidate disappeared from the library", async () => {
+    const client = new QueryClient();
+    const state = usePersistedStore.getState();
+    const profile = state.getActiveProfile();
+    if (!profile) throw new Error("Expected a recovery fixture");
+    usePersistedStore.setState({
+      localMods: [],
+      profiles: { [profile.id]: { ...profile, mods: [] } },
+    });
+    state.updateBisectSession({ stage: "applying", config: ["snd-82623"] });
+    renderBanner(client);
+    buttons.get("bisect.banner.continue")?.click();
+    await waitForActions(client);
+    expect(install).not.toHaveBeenCalled();
+    expect(usePersistedStore.getState().bisectSession?.stage).toBe("applying");
+    expect(translate).toHaveBeenCalledWith("bisect.toasts.switchFailed", {
+      name: "snd-82623",
+    });
+    client.clear();
+  });
+
   it("names every mod whose files could not be restored", async () => {
     const client = new QueryClient();
     addHealthyMod("another-missing-mod");
