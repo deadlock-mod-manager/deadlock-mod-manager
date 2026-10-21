@@ -41,6 +41,12 @@ pub enum Error {
   ModInvalid(String),
   #[error("Choose which skin to keep before enabling mods that replace the same model")]
   ModelConflict(Vec<String>),
+  #[error("Manifest entries {} both claim {path} in profile {profile_folder}", .mod_ids.join(" and "))]
+  DuplicateVpkOwnership {
+    mod_ids: Vec<String>,
+    path: String,
+    profile_folder: String,
+  },
   #[error("Game is running")]
   GameRunning,
   #[error("Game is not running")]
@@ -145,7 +151,9 @@ impl serde::Serialize for Error {
     S: serde::Serializer,
   {
     use serde::ser::SerializeStruct;
-    let field_count = if matches!(
+    let field_count = if matches!(self, Error::DuplicateVpkOwnership { .. }) {
+      6
+    } else if matches!(
       self,
       Error::ModelConflict(_)
         | Error::MissingEnabledModFiles(_)
@@ -175,6 +183,7 @@ impl serde::Serialize for Error {
       Error::Zip(_) => "zip",
       Error::ModInvalid(_) => "modInvalid",
       Error::ModelConflict(_) => "modelConflict",
+      Error::DuplicateVpkOwnership { .. } => "duplicateVpkOwnership",
       Error::GameRunning => "gameRunning",
       Error::GameNotRunning => "gameNotRunning",
       Error::GameLaunchFailed(_) => "gameLaunchFailed",
@@ -218,6 +227,16 @@ impl serde::Serialize for Error {
     state.serialize_field("kind", kind)?;
     state.serialize_field("message", &self.to_string())?;
     state.serialize_field("matchSyncKind", &match_sync_kind)?;
+    if let Error::DuplicateVpkOwnership {
+      mod_ids,
+      path,
+      profile_folder,
+    } = self
+    {
+      state.serialize_field("conflictingMods", mod_ids)?;
+      state.serialize_field("path", path)?;
+      state.serialize_field("profileFolder", profile_folder)?;
+    }
     if let Error::ModelConflict(mods) = self {
       state.serialize_field("conflictingMods", mods)?;
     }

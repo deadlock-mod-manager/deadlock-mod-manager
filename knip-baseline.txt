@@ -306,7 +306,6 @@
 ["types","apps/desktop/src/types/foundry.ts",[["","FoundryCategory"]]]
 ["types","apps/desktop/src/types/foundry.ts",[["","FoundryEntrySource"]]]
 ["types","apps/desktop/src/types/foundry.ts",[["","FoundrySoundGroupKind"]]]
-["types","apps/desktop/src/types/mods.ts",[["","BatchUpdateResult"]]]
 ["types","apps/desktop/src/types/plugins.ts",[["","PluginTag"]]]
 ["types","apps/docs/src/components/ui/button.tsx",[["","ButtonProps"]]]
 ["types","apps/lockdex/src/lib/env.ts",[["","Environment"]]]

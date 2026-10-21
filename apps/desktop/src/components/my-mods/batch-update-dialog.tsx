@@ -31,6 +31,11 @@ import logger from "@/lib/logger";
 import { usePersistedStore } from "@/lib/store";
 import { findLocalMod } from "@/lib/store/selectors";
 import { useBatchUpdate } from "@/hooks/use-batch-update";
+import { BatchUpdateFailureDetails } from "@/components/my-mods/batch-update-failure-details";
+import {
+  getBatchUpdateFailure,
+  remainingUpdateTargets,
+} from "@/lib/mods/batch-update-failures";
 import type {
   ModDownloadItem,
   ModUpdateCandidate,
@@ -73,17 +78,51 @@ export const BatchUpdateDialog = ({
 
   const batchUpdateMutation = useMutation({
     mutationFn: executeBatchUpdate,
-    onSuccess: () => {
-      onOpenChange(false);
+    meta: { skipGlobalErrorHandler: true },
+    onSuccess: (result) => {
+      if (result.failed.length === 0) onOpenChange(false);
     },
     onError: (error) => {
-      logger.withError(error as Error).error("Failed to update mods");
-      toast.error(`${t("myMods.batchUpdate.error")}`);
+      logger.withError(error).error("Failed to update mods");
     },
   });
 
+  const { reset: resetBatchUpdate } = batchUpdateMutation;
+  const localMods = usePersistedStore((state) => state.localMods);
+  const profiles = usePersistedStore((state) => state.profiles);
+  const targets =
+    batchUpdateMutation.variables?.map(
+      (target) =>
+        updatableMods.find(
+          (update) => update.mod.remoteId === target.mod.remoteId,
+        ) ?? target,
+    ) ?? updatableMods;
+  const pendingUpdates = remainingUpdateTargets(
+    targets,
+    batchUpdateMutation.data,
+  );
+  const failure = batchUpdateMutation.isError
+    ? getBatchUpdateFailure(
+        batchUpdateMutation.error,
+        localMods,
+        Object.values(profiles),
+      )
+    : undefined;
+  const hasFailures =
+    !!failure || (batchUpdateMutation.data?.failed.length ?? 0) > 0;
+
+  let updateLabel = t(isSingleMod ? "modDetail.updateMod" : "myMods.updateAll");
+  if (hasFailures) {
+    updateLabel = t(
+      batchUpdateMutation.data
+        ? "myMods.batchUpdate.retryFailed"
+        : "myMods.batchUpdate.retry",
+    );
+  }
+
   useEffect(() => {
     if (!open) {
+      resetBatchUpdate();
       prepareUpdates([]);
       return;
     }
@@ -102,9 +141,7 @@ export const BatchUpdateDialog = ({
           });
           return downloads.length > 0 ? { ...update, downloads } : update;
         } catch (error) {
-          logger
-            .withError(error as Error)
-            .warn("Failed to refresh update files");
+          logger.withError(error).warn("Failed to refresh update files");
           return update;
         }
       }),
@@ -117,7 +154,7 @@ export const BatchUpdateDialog = ({
       cancelled = true;
       setRefreshingFiles(false);
     };
-  }, [open, updateIds, prepareUpdates, queryClient]);
+  }, [open, updateIds, prepareUpdates, queryClient, resetBatchUpdate]);
 
   const handleSkip = (mod: ModDto, updatedAt: number) => {
     skipModUpdate(mod.remoteId, updatedAt);
@@ -175,6 +212,14 @@ export const BatchUpdateDialog = ({
           </div>
         ) : (
           <div className='space-y-4 py-4'>
+            {hasFailures && (
+              <BatchUpdateFailureDetails
+                key={batchUpdateMutation.submittedAt}
+                failure={failure}
+                result={batchUpdateMutation.data}
+                mods={targets.map((target) => target.mod)}
+              />
+            )}
             <div className='rounded-lg bg-muted p-3 flex items-start gap-2'>
               <AlertCircle className='h-5 w-5 text-muted-foreground mt-0.5' />
               <p className='text-sm text-muted-foreground'>
@@ -183,7 +228,7 @@ export const BatchUpdateDialog = ({
             </div>
 
             <div className='space-y-3'>
-              {updatableMods.map((update) => {
+              {pendingUpdates.map((update) => {
                 const { updatedAt } = update;
                 return (
                   <UpdateModCard
@@ -191,7 +236,9 @@ export const BatchUpdateDialog = ({
                     update={update}
                     onSelectDownloads={setSelectedDownloads}
                     onSkip={
-                      !batchUpdateMutation.isPending && updatedAt !== undefined
+                      !hasFailures &&
+                      !batchUpdateMutation.isPending &&
+                      updatedAt !== undefined
                         ? () => handleSkip(update.mod, updatedAt)
                         : undefined
                     }
@@ -209,13 +256,17 @@ export const BatchUpdateDialog = ({
                 variant='outline'
                 onClick={() => onOpenChange(false)}
                 disabled={batchUpdateMutation.isPending}>
-                {t("common.cancel")}
+                {t(hasFailures ? "common.close" : "common.cancel")}
               </Button>
               <Button
-                onClick={() => batchUpdateMutation.mutate()}
-                disabled={batchUpdateMutation.isPending || refreshingFiles}
+                onClick={() => batchUpdateMutation.mutate(pendingUpdates)}
+                disabled={
+                  batchUpdateMutation.isPending ||
+                  refreshingFiles ||
+                  pendingUpdates.length === 0
+                }
                 icon={<RefreshCw className='h-4 w-4' />}>
-                {isSingleMod ? t("modDetail.updateMod") : t("myMods.updateAll")}
+                {updateLabel}
               </Button>
             </>
           )}

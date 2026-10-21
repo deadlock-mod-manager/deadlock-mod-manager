@@ -338,10 +338,7 @@ pub async fn batch_update_mods(
       Ok(Ok(_)) => log::info!("Backup created successfully: {}", filename),
       Ok(Err(e)) => {
         log::error!("Failed to create backup: {:?}", e);
-        return Err(Error::BackupCreationFailed(format!(
-          "Failed to create backup before update: {:?}",
-          e
-        )));
+        return Err(e);
       }
       Err(e) => {
         log::error!("Failed to spawn backup task: {:?}", e);

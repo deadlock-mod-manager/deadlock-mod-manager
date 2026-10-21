@@ -22,4 +22,13 @@ describe("formatUserError", () => {
       formatUserError(new HttpError("backend", 503, "/mods")).category,
     ).toBe("server");
   });
+
+  it("preserves a Tauri command's reason", () => {
+    expect(
+      formatUserError({
+        kind: "backupCreationFailed",
+        message: "Backup disk full",
+      }).description,
+    ).toBe("Backup disk full");
+  });
 });

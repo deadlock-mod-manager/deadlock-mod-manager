@@ -198,9 +198,10 @@ impl AddonsBackupManager {
 
     if let Err(error) = Self::validate_snapshot(&staging_path) {
       let _ = fs::remove_dir_all(&staging_path);
-      return Err(Error::BackupCreationFailed(format!(
-        "Created backup is inconsistent: {error}"
-      )));
+      return Err(match error {
+        Error::DuplicateVpkOwnership { .. } => error,
+        _ => Error::BackupCreationFailed(format!("Created backup is inconsistent: {error}")),
+      });
     }
 
     // Publish the validated snapshot atomically.

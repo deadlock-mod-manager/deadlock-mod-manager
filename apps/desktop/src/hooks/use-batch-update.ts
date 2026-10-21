@@ -12,6 +12,7 @@ import { usePersistedStore } from "@/lib/store";
 import { BatchUpdateResultSchema } from "@/lib/validation/batch-update";
 import type {
   BatchUpdateProgressEvent,
+  BatchUpdateResult,
   ModDownloadItem,
   ModFileTree,
   ModUpdateCandidate,
@@ -176,7 +177,9 @@ export const useBatchUpdate = () => {
     );
   };
 
-  const executeBatchUpdate = async (): Promise<void> => {
+  const executeBatchUpdate = async (
+    targets: UpdatableMod[],
+  ): Promise<BatchUpdateResult> => {
     const originalMods = usePersistedStore.getState().localMods;
     const previousStatuses = new Map(
       originalMods.map((mod) => [mod.remoteId, mod.status]),
@@ -186,28 +189,28 @@ export const useBatchUpdate = () => {
 
     logger
       .withMetadata({
-        modsCount: updatableMods.length,
+        modsCount: targets.length,
         profileFolder,
       })
       .info("Starting batch mod update");
 
     const stopListening = await listenForUpdateProgress();
     const attempt = analytics.start("mod_update", {
-      mod_count: updatableMods.length,
+      mod_count: targets.length,
     });
 
     try {
       setUpdateProgress({
         currentStep: t("myMods.batchUpdate.updating"),
-        modIds: updatableMods.map((um) => um.mod.remoteId),
+        modIds: targets.map((um) => um.mod.remoteId),
         completedMods: 0,
-        totalMods: updatableMods.length,
+        totalMods: targets.length,
         overallProgress: 0,
         isDownloading: false,
         isInstalling: false,
       });
 
-      const batchUpdateMods: ProfileImportMod[] = updatableMods.map((um) => {
+      const batchUpdateMods: ProfileImportMod[] = targets.map((um) => {
         const localMod = originalMods.find(
           (m) => m.remoteId === um.mod.remoteId,
         );
@@ -241,7 +244,7 @@ export const useBatchUpdate = () => {
       }
 
       for (const installedModInfo of result.installedMods) {
-        const updatableMod = updatableMods.find(
+        const updatableMod = targets.find(
           (m) => m.mod.remoteId === installedModInfo.modId,
         );
 
@@ -289,15 +292,10 @@ export const useBatchUpdate = () => {
             succeeded: result.succeeded.length,
           })
           .warn("Some mods failed to update");
-        toast.warning(
-          t("myMods.batchUpdate.partialSuccess", {
-            succeeded: result.succeeded.length,
-            failed: result.failed.length,
-          }),
-        );
       } else {
         toast.success(t("myMods.batchUpdate.complete"));
       }
+      return result;
     } catch (error) {
       attempt.finish(
         failureOutcome(isTauriError(error) ? error.kind : undefined),
@@ -312,7 +310,7 @@ export const useBatchUpdate = () => {
       usePersistedStore
         .getState()
         .restoreInterruptedUpdates(
-          new Set(updatableMods.map((um) => um.mod.remoteId)),
+          new Set(targets.map((um) => um.mod.remoteId)),
           activeProfile?.id,
           previousStatuses,
         );

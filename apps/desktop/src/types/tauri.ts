@@ -17,6 +17,7 @@ export type ErrorKind = {
     | "zip"
     | "modInvalid"
     | "modelConflict"
+    | "duplicateVpkOwnership"
     | "unknown"
     | "gameRunning"
     | "gameNotRunning"
@@ -46,6 +47,7 @@ export type ErrorKind = {
   affectedMods?: { id: string; name: string }[];
   conflictingMods?: string[];
   path?: string;
+  profileFolder?: string;
 };
 
 export function isTauriError(

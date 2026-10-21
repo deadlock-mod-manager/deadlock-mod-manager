@@ -144,9 +144,19 @@ impl ProfileVpkManifest {
         for path in entry.file_paths(&base) {
           let key = path.display().to_string();
           if let Some(owner) = claimed.insert(key.clone(), mod_id.clone()) {
-            return Err(Error::ModInvalid(format!(
-              "Manifest entries {owner} and {mod_id} both claim {key}"
-            )));
+            return Err(Error::DuplicateVpkOwnership {
+              mod_ids: vec![owner, mod_id.clone()],
+              path: path
+                .strip_prefix(root)
+                .unwrap_or(&path)
+                .to_string_lossy()
+                .replace('\\', "/"),
+              profile_folder: profile_path
+                .strip_prefix(root.join("addons"))
+                .unwrap_or(&profile_path)
+                .to_string_lossy()
+                .replace('\\', "/"),
+            });
           }
         }
       }
@@ -752,6 +762,49 @@ mod tests {
       !snapshot.join("addons2/profile_x/pak02_dir.vpk").exists(),
       "validation relocated a staged VPK inside the backup"
     );
+  }
+
+  #[test]
+  fn validate_tree_reports_duplicate_owners_with_snapshot_relative_paths() {
+    for folder in ["", "profile_other"] {
+      let temp = tempfile::tempdir().unwrap();
+      let snapshot = temp.path().join("snapshot");
+      let profile = snapshot.join("addons").join(folder);
+      let shard = snapshot.join("addons2").join(folder);
+      fs::create_dir_all(&profile).unwrap();
+      fs::create_dir_all(&shard).unwrap();
+      fs::write(shard.join("pak19_dir.vpk"), b"vpk").unwrap();
+      let mut manifest = ProfileVpkManifest::default();
+      for id in ["636266", "658671"] {
+        manifest.mark_enabled(
+          id,
+          vec!["pak19_dir.vpk".into()],
+          vec![],
+          Some(0),
+          ShardIndex::new(2).unwrap(),
+        );
+      }
+      manifest.save(&profile).unwrap();
+      let before = fs::read(profile.join(MANIFEST_FILENAME)).unwrap();
+      let error = ProfileVpkManifest::validate_tree(&snapshot).unwrap_err();
+      let json = serde_json::to_value(error).unwrap();
+      assert_eq!(json["kind"], "duplicateVpkOwnership");
+      assert_eq!(
+        json["conflictingMods"],
+        serde_json::json!(["636266", "658671"])
+      );
+      assert_eq!(json["profileFolder"], folder);
+      assert_eq!(
+        json["path"],
+        if folder.is_empty() {
+          "addons2/pak19_dir.vpk".to_string()
+        } else {
+          format!("addons2/{folder}/pak19_dir.vpk")
+        }
+      );
+      assert_eq!(fs::read(profile.join(MANIFEST_FILENAME)).unwrap(), before);
+      assert_eq!(fs::read(shard.join("pak19_dir.vpk")).unwrap(), b"vpk");
+    }
   }
 
   #[test]

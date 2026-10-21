@@ -1,3 +1,4 @@
+import { isTauriError } from "@/types/tauri";
 import { isGameRunningError } from "@/lib/game-guard";
 import { HttpError } from "@/lib/http-error";
 import i18n from "@/lib/i18n";
@@ -58,6 +59,14 @@ export function formatUserError(error: unknown): FormattedError {
       title: i18n.t("errors.genericMessage"),
       description: "",
       category: "game-config",
+    };
+  }
+
+  if (isTauriError(error)) {
+    return {
+      title: i18n.t("errors.genericMessage"),
+      description: error.message,
+      category: "unknown",
     };
   }
 
