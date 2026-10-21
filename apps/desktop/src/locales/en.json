@@ -4047,11 +4047,11 @@
     "recentlyadded": "Recently Added"
   },
   "timePeriod": {
-    "alltime": "All Time",
-    "pastweek": "Past Week",
-    "pastmonth": "Past Month",
-    "past3months": "Past 3 Months",
-    "pastyear": "Past Year"
+    "alltime": "Any time",
+    "pastweek": "Past week",
+    "pastmonth": "Past month",
+    "past3months": "Past 3 months",
+    "pastyear": "Past year"
   },
   "addMods": {
     "title": "Add Mods",
