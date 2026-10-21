@@ -12,13 +12,18 @@ export const ALL_STATS_SCOPE: StatsScope = { mode: "all", since: 0 };
 export const isStatsMatchMode = (value: string): value is StatsMatchMode =>
   value === "all" || value === "ranked" || value === "unranked";
 
-export const statsScopeQuery = (scope: StatsScope): string =>
-  new URLSearchParams({
+export const statsScopeQuery = (scope: StatsScope): string => {
+  const query = new URLSearchParams({
     game_mode: "normal",
     match_mode: scope.mode === "all" ? "ranked,unranked" : scope.mode,
-    // Explicit zero overrides analytics endpoints' implicit 30-day cutoff.
-    min_unix_timestamp: String(scope.since),
-  }).toString();
+  });
+  // Without a picked date each endpoint keeps its own default window. An explicit
+  // zero asked for all of history, which the global benchmarks cannot answer in time.
+  if (scope.since > 0) {
+    query.set("min_unix_timestamp", String(scope.since));
+  }
+  return query.toString();
+};
 
 export const statsSinceTimestamp = (date: string): number => {
   if (!date) return 0;
