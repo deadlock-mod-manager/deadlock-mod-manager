@@ -97,8 +97,9 @@ pub fn resolve(
     .map(|candidate| resolve_entry(catalog, live, options.include_engine_sections, candidate))
     .collect();
 
+  let stock = LiveGameinfo::latest_stock(catalog);
   let mut counts = ResolvedCounts::default();
-  let mut applied_per_category: BTreeMap<String, u32> = BTreeMap::new();
+  let mut cut_per_category: BTreeMap<String, u32> = BTreeMap::new();
   for entry in &resolved {
     let count = match entry.status {
       EntryStatus::Applies => &mut counts.applies,
@@ -116,18 +117,42 @@ pub fn resolve(
     if entry.overridden {
       counts.overridden += 1;
     }
-    if entry.status == EntryStatus::Applies {
-      *applied_per_category
-        .entry(entry.category.clone())
-        .or_default() += 1;
+    if cuts_from_stock(entry, &stock, options.include_engine_sections) {
+      *cut_per_category.entry(entry.category.clone()).or_default() += 1;
     }
   }
 
   ResolvedConfig {
-    cut_score: cut_score_from_category_counts(catalog, &applied_per_category),
+    cut_score: cut_score_from_category_counts(catalog, &cut_per_category),
     rev: revision(&resolved, options.include_engine_sections),
     entries: resolved,
     counts,
+  }
+}
+
+/// Whether an entry takes effect and differs from the latest stock file. The
+/// scale measures a config against stock, not against the live file: a player
+/// whose hand-edited gameinfo.gi already holds a preset's values would
+/// otherwise see that preset as one that changes nothing.
+fn cuts_from_stock(
+  entry: &ResolvedEntry,
+  stock: &LiveGameinfo,
+  include_engine_sections: bool,
+) -> bool {
+  let is_convar = entry.path[0].eq_ignore_ascii_case("ConVars");
+  let takes_effect = match entry.status {
+    EntryStatus::Applies => true,
+    EntryStatus::Unchanged => is_convar || include_engine_sections,
+    _ => false,
+  };
+  if !takes_effect {
+    return false;
+  }
+  let default = entry.meta.as_ref().and_then(|meta| meta.default.as_deref());
+  match (entry.value.as_deref(), stock.value(&entry.path)) {
+    (Some(value), Some(stock)) => !values_equal(value, stock),
+    (Some(value), None) => !default.is_some_and(|default| values_equal(value, default)),
+    (None, stock) => stock.is_some(),
   }
 }
 
@@ -146,8 +171,8 @@ pub fn entries_for_source(
 }
 
 /// Scale position from settings-per-category counts, for configs we only know
-/// by their stats (GameBanana). `resolve` scores its `Applies` entries the
-/// same way.
+/// by their stats (GameBanana). `resolve` scores the entries that differ from
+/// stock the same way.
 ///
 /// Each category saturates on its own and contributes up to its weight:
 /// `score = Σ w_c · (1 − e^(−n_c / 25)) / Σ w_c`, summed over the catalog's

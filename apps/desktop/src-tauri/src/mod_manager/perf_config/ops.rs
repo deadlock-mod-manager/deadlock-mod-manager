@@ -233,8 +233,9 @@ fn remove_orphan(ctx: &PerfContext) -> Result<ReapplyOutcome, Error> {
   Ok(ReapplyOutcome::RemovedOrphan)
 }
 
-/// The catalog with preset counts and scale positions computed against the
-/// live file (or the catalog's latest stock when the game isn't set up).
+/// The catalog with preset counts computed against the live file (or the
+/// catalog's latest stock when the game isn't set up). Scale positions are
+/// always measured against stock.
 pub fn catalog_summary(ctx: &PerfContext) -> Result<CatalogSummary, Error> {
   let catalog = ctx.catalog;
   let live = live_gameinfo(ctx).unwrap_or_else(|error| {

@@ -528,6 +528,23 @@ fn cut_score_rises_with_what_is_cut() {
 }
 
 #[test]
+fn cut_score_ignores_values_the_live_file_already_holds() {
+  let catalog = test_catalog();
+  let config = [
+    entry("ConVars/r_ssao", Some("0")),
+    entry("ConVars/lb_enable_shadow_casting", Some("0")),
+    entry("ConVars/r_farz", Some("7000")),
+  ];
+  let stock = catalog.latest_stock().expect("stock").entries.clone();
+  let hand_edited = LiveGameinfo::from_entries(&[stock, config.to_vec()].concat());
+  let against_stock = resolve(&catalog, &config, &live(), &options(&[], false));
+  let against_edited = resolve(&catalog, &config, &hand_edited, &options(&[], false));
+  assert_eq!(against_edited.counts.applies, 0);
+  assert!(against_stock.cut_score > 0.0);
+  assert_eq!(against_edited.cut_score, against_stock.cut_score);
+}
+
+#[test]
 fn category_counts_score_like_resolved_configs() {
   let catalog = test_catalog();
   let config = [

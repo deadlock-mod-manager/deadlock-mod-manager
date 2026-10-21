@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { tierForScore, tierInfo, tierLevel } from "./scale";
+import { presetPosition, tierForScore, tierInfo, tierLevel } from "./scale";
 
 describe("tierForScore", () => {
   test("maps the ends of the scale to the end tiers", () => {
@@ -26,5 +26,13 @@ describe("tier helpers", () => {
 
   test("every tier has an emoji", () => {
     expect(tierInfo("lean").emoji).toBe("⚡");
+  });
+});
+
+describe("presetPosition", () => {
+  test("a harsher tier sits further right whatever the scores", () => {
+    expect(presetPosition("potato", 0.3)).toBeGreaterThan(
+      presetPosition("sweaty", 0.9),
+    );
   });
 });

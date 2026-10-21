@@ -5,7 +5,7 @@ import {
 } from "@deadlock-mods/ui/components/tooltip";
 import { useTranslation } from "react-i18next";
 import type { ConfigListItem } from "@/lib/performance/config-list";
-import { TIERS } from "@/lib/performance/scale";
+import { presetPosition, TIERS } from "@/lib/performance/scale";
 import { assignLabelRows } from "@/lib/performance/scale-pins";
 import { cn } from "@/lib/utils";
 import type { PerfTier } from "@/types/generated/PerfTier";
@@ -37,7 +37,11 @@ const scalePins = (
 ): Pin[] => {
   const pins: Pin[] = items.flatMap((item) => {
     const active = item.configId === activeConfigId;
-    const position = active ? (activeCutScore ?? item.cutScore) : item.cutScore;
+    const activePosition =
+      activeCutScore !== null && item.kind === "preset"
+        ? presetPosition(item.tier, activeCutScore)
+        : activeCutScore;
+    const position = active ? (activePosition ?? item.cutScore) : item.cutScore;
     if (position === null || (item.kind === "user" && !active)) return [];
     return [
       {
