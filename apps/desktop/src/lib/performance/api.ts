@@ -44,5 +44,9 @@ export const exportPerfConfig = (request: PerfApplyRequest) =>
 export const searchConvars = (query: string, limit = 50) =>
   invoke<ConvarMeta[]>("perf_search_convars", { query, limit });
 
+/** Catalog entries for the given names; names it doesn't know are left out. */
+export const getConvars = (names: string[]) =>
+  invoke<ConvarMeta[]>("perf_get_convars", { names });
+
 export const discardPerfStaging = (stagingId: string) =>
   invoke<void>("perf_discard_staging", { stagingId });

@@ -8,6 +8,7 @@ export const perfQueryKeys = {
   status: () => [...all, "status"] as const,
   resolve: (request: PerfApplyRequest | null) =>
     [...all, "resolve", request] as const,
+  convars: (names: readonly string[]) => [...all, "convars", names] as const,
   convarSearch: (query: string) => [...all, "convar-search", query] as const,
   shareExport: (request: PerfApplyRequest) =>
     [...all, "share-export", request] as const,

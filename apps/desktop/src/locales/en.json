@@ -3310,6 +3310,8 @@
     "autoexecCommandAdd": "Add",
     "autoexecCommandAdded": "Command added to config. Save to apply.",
     "autoexecCommandAddedBadge": "Added",
+    "outdatedConvarBadge": "Outdated",
+    "outdatedConvarTooltip": "The current Deadlock build no longer has this setting, so the game ignores it.",
     "autoexecCommandDefaultBadge": "Default",
     "autoexecEditorHeading": "Current Autoexec Config",
     "autoexecSaving": "Saving...",

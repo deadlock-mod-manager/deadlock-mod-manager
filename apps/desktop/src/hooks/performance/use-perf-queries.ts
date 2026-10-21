@@ -7,6 +7,7 @@ import {
 import { useEffect } from "react";
 import logger from "@/lib/logger";
 import {
+  getConvars,
   getPerfCatalog,
   getPerfStatus,
   refreshPerfCatalog,
@@ -15,6 +16,7 @@ import {
 import { perfQueryKeys } from "@/lib/performance/query-keys";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import type { CatalogSummary } from "@/types/generated/CatalogSummary";
+import type { ConvarMeta } from "@/types/generated/ConvarMeta";
 import type { PerfApplyRequest } from "@/types/generated/PerfApplyRequest";
 import type { ResolvedConfig } from "@/types/generated/ResolvedConfig";
 
@@ -70,6 +72,32 @@ export const usePerfStatus = () =>
     refetchOnWindowFocus: true,
     meta: { skipGlobalErrorHandler: true },
   });
+
+const removedNames = (convars: ConvarMeta[]) =>
+  new Set(
+    convars
+      .filter((convar) => convar.status === "removed")
+      .map((convar) => convar.name),
+  );
+
+/**
+ * The names the current game build no longer has, per the synced catalog.
+ * Names the catalog doesn't know (launch flags, commands) are never included.
+ */
+export const useRemovedConvars = (names: readonly string[]) => {
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    refreshPerfCatalogOnce(queryClient);
+  }, [queryClient]);
+
+  return useQuery({
+    queryKey: perfQueryKeys.convars(names),
+    queryFn: names.length > 0 ? () => getConvars([...names]) : skipToken,
+    staleTime: STALE_TIME_API,
+    select: removedNames,
+    meta: { skipGlobalErrorHandler: true },
+  }).data;
+};
 
 // Each edit changes the request, so each result is a different query. A
 // stable `select` makes the observer share unchanged entries with its previous

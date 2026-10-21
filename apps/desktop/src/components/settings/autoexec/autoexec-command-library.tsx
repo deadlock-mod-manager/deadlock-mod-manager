@@ -2,10 +2,16 @@ import { Alert, AlertDescription } from "@deadlock-mods/ui/components/alert";
 import { SearchInput } from "@deadlock-mods/ui/components/search-input";
 import { AlertTriangle } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
+import { useRemovedConvars } from "@/hooks/performance/use-perf-queries";
 import { useAutoexecLibraryFilter } from "@/hooks/use-autoexec-library-filter";
-import type { FlatAutoexecCommand } from "@/lib/autoexec/predefined-commands";
+import {
+  FLAT_AUTOEXEC_COMMANDS,
+  type FlatAutoexecCommand,
+} from "@/lib/autoexec/predefined-commands";
 import { AutoexecCategoryChips } from "./autoexec-category-chips";
 import { AutoexecCommandRow } from "./autoexec-command-row";
+
+const COMMAND_NAMES = FLAT_AUTOEXEC_COMMANDS.map((command) => command.command);
 
 type AutoexecCommandLibraryProps = {
   content: string;
@@ -26,6 +32,7 @@ export const AutoexecCommandLibrary = ({
     groupedCategories,
     hasResults,
   } = useAutoexecLibraryFilter(t);
+  const removedConvars = useRemovedConvars(COMMAND_NAMES);
 
   return (
     <div className='flex flex-col gap-4'>
@@ -83,6 +90,9 @@ export const AutoexecCommandLibrary = ({
                       <AutoexecCommandRow
                         command={command}
                         content={content}
+                        isOutdated={
+                          removedConvars?.has(command.command) ?? false
+                        }
                         key={command.id}
                         onAddCommand={onAddCommand}
                       />
@@ -98,6 +108,7 @@ export const AutoexecCommandLibrary = ({
               <AutoexecCommandRow
                 command={command}
                 content={content}
+                isOutdated={removedConvars?.has(command.command) ?? false}
                 key={command.id}
                 onAddCommand={onAddCommand}
               />

@@ -7,16 +7,19 @@ import {
   formatCommandPreview,
 } from "@/lib/autoexec/autoexec-content";
 import type { FlatAutoexecCommand } from "@/lib/autoexec/predefined-commands";
+import { OutdatedConvarBadge } from "../outdated-convar-badge";
 
 type AutoexecCommandRowProps = {
   command: FlatAutoexecCommand;
   content: string;
+  isOutdated: boolean;
   onAddCommand: (command: FlatAutoexecCommand) => void;
 };
 
 export const AutoexecCommandRow = ({
   command,
   content,
+  isOutdated,
   onAddCommand,
 }: AutoexecCommandRowProps) => {
   const { t } = useTranslation();
@@ -36,6 +39,7 @@ export const AutoexecCommandRow = ({
               {t("settings.autoexecCommandDefaultBadge")}
             </Badge>
           )}
+          {isOutdated && <OutdatedConvarBadge />}
         </div>
         <p className='text-muted-foreground text-sm'>{description}</p>
       </div>

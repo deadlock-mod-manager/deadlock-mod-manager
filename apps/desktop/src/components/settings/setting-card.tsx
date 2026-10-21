@@ -3,11 +3,14 @@ import { toast } from "@deadlock-mods/ui/components/sonner";
 import { PencilIcon, SaveIcon, TrashIcon } from "@deadlock-mods/ui/icons";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { OutdatedConvarBadge } from "@/components/settings/outdated-convar-badge";
 import { SwitchStatus } from "@/components/settings/setting-row";
+import { useRemovedConvars } from "@/hooks/performance/use-perf-queries";
 import { usePersistedStore } from "@/lib/store";
 import type { LocalSetting } from "@/types/settings";
 
 const WHITESPACE_REGEX = /\s+/;
+const LAUNCH_OPTION_PREFIX_REGEX = /^[+-]/;
 
 import { Badge } from "@deadlock-mods/ui/components/badge";
 import { Button } from "@deadlock-mods/ui/components/button";
@@ -109,6 +112,8 @@ const SettingCard = ({
   subtitle,
 }: SettingsCardProps) => {
   const { t } = useTranslation();
+  const convarName = setting?.key.replace(LAUNCH_OPTION_PREFIX_REGEX, "") ?? "";
+  const isOutdated = useRemovedConvars([convarName])?.has(convarName);
   const addSetting = usePersistedStore((s) => s.addSetting);
   const removeSetting = usePersistedStore((s) => s.removeSetting);
 
@@ -175,7 +180,8 @@ const SettingCard = ({
       <div className='flex flex-row items-center justify-between gap-4 rounded-md border border-border/30 bg-background/40 px-4 py-3 transition-colors hover:bg-muted/30'>
         <div className='flex min-w-0 flex-col gap-1'>
           <h3 className='font-bold text-sm'>
-            {setting.description} {custom && <Badge>Custom</Badge>}
+            {setting.description} {custom && <Badge>Custom</Badge>}{" "}
+            {isOutdated && <OutdatedConvarBadge />}
           </h3>
           {subtitle && (
             <p className='text-muted-foreground text-sm' id={subtitleId}>
