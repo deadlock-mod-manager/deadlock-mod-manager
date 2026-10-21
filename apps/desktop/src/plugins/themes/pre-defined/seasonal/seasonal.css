@@ -242,9 +242,11 @@
   z-index: -1;
 }
 
+/* Wider than the viewport and drifted with transform, so it never repaints. */
 .seasonal-fog {
   position: fixed;
-  inset: auto 0 0;
+  inset: auto auto 0 0;
+  width: 160vw;
   height: 40vh;
   z-index: -1;
   pointer-events: none;
@@ -259,8 +261,6 @@
       rgba(150, 170, 200, 0.14),
       transparent 70%
     );
-  background-size: 160% 100%;
-  filter: blur(10px);
 }
 
 /* Sidebar decorations */
@@ -337,6 +337,19 @@
 .seasonal-pumpkin,
 .seasonal-tree,
 .seasonal-lanterns {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.seasonal-pumpkin {
+  position: relative;
+  display: block;
+}
+
+.seasonal-pumpkin svg {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   overflow: visible;
@@ -774,11 +787,8 @@
 }
 
 @keyframes seasonal-fog-drift {
-  from {
-    background-position: 0 0;
-  }
   to {
-    background-position: 100% 0;
+    transform: translateX(-60vw);
   }
 }
 

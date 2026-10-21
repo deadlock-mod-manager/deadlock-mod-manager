@@ -7,18 +7,23 @@ import { createBatsAndEmbers } from "../effects";
 import type { Season } from "../season";
 
 const JackOLantern = () => (
-  <svg aria-hidden viewBox='0 0 64 56' className='seasonal-pumpkin'>
-    <path d='M30 10Q29 3 35 1L37 4Q33 5 34 10Z' fill='hsl(95 45% 32%)' />
-    <ellipse cx='20' cy='32' rx='15' ry='20' fill='hsl(24 95% 42%)' />
-    <ellipse cx='44' cy='32' rx='15' ry='20' fill='hsl(24 95% 42%)' />
-    <ellipse cx='32' cy='32' rx='16' ry='22' fill='hsl(27 100% 52%)' />
-    <g className='seasonal-pumpkin-glow' fill='hsl(48 100% 65%)'>
+  <span aria-hidden className='seasonal-pumpkin'>
+    <svg viewBox='0 0 64 56'>
+      <path d='M30 10Q29 3 35 1L37 4Q33 5 34 10Z' fill='hsl(95 45% 32%)' />
+      <ellipse cx='20' cy='32' rx='15' ry='20' fill='hsl(24 95% 42%)' />
+      <ellipse cx='44' cy='32' rx='15' ry='20' fill='hsl(24 95% 42%)' />
+      <ellipse cx='32' cy='32' rx='16' ry='22' fill='hsl(27 100% 52%)' />
+    </svg>
+    <svg
+      viewBox='0 0 64 56'
+      className='seasonal-pumpkin-glow'
+      fill='hsl(48 100% 65%)'>
       <path d='M17 25 25 21 24 30Z' />
       <path d='M47 25 39 21 40 30Z' />
       <path d='M30 31 32 27 34 31Z' />
       <path d='M14 37Q32 50 50 37L45 39 42 36 38 41 32 38 26 41 22 36 19 39Z' />
-    </g>
-  </svg>
+    </svg>
+  </span>
 );
 
 const Sidebar = () => {

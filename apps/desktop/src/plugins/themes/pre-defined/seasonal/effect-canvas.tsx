@@ -10,6 +10,8 @@ export type Effect = {
   dispose?: () => void;
 };
 
+const MIN_FRAME_MS = 1000 / 60 - 2;
+
 type EffectCanvasProps = {
   create: () => Effect;
   layer: Season["layer"];
@@ -34,19 +36,20 @@ export const EffectCanvas = ({
     let last = performance.now();
 
     const resize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      // Soft particles look the same at 1x and cost a quarter of the pixels on hi-DPI screens.
       const { innerWidth: width, innerHeight: height } = window;
-      canvas.width = Math.round(width * dpr);
-      canvas.height = Math.round(height * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      canvas.width = width;
+      canvas.height = height;
       effect.resize(width, height);
     };
 
     const loop = (now: number) => {
+      frameId = requestAnimationFrame(loop);
+      // High refresh rate monitors would otherwise repaint the full-window canvas 144-240 times a second.
+      if (now - last < MIN_FRAME_MS) return;
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
       effect.frame(ctx, dt, now / 1000);
-      frameId = requestAnimationFrame(loop);
     };
 
     const onVisibility = () => {
