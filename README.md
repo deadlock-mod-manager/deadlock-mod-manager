@@ -250,8 +250,8 @@ We're actively working to make Deadlock Mod Manager accessible to users worldwid
 | 🇵🇱 **Polish** | Polski | 🚧 43% | [_manio](https://discordapp.com/users/_manio/) |
 | 🇨🇭 **Swiss German** | Schwiizerdütsch | 🚧 4% | [degoods_deedos](https://discordapp.com/users/degoods_deedos/) |
 | 🇹🇭 **Thai** | ไทย | 🚧 7% | [altqx](https://discordapp.com/users/altq/) |
-| 🇹🇷 **Turkish** | Türkçe | 🚧 5% | [kenanala](https://discordapp.com/users/kenanala/) |
-| 🇨🇳 **Chinese (Simplified)** | 简体中文 | 🚧 38% | [待到春深方挽柳](mailto:sfk_04@qq.com) |
+| 🇹🇷 **Turkish** | Türkçe | 🚧 22% | [kenanala](https://discordapp.com/users/kenanala/) |
+| 🇨🇳 **Chinese (Simplified)** | 简体中文 | 🚧 37% | [待到春深方挽柳](mailto:sfk_04@qq.com) |
 | 🇹🇼 **Chinese (Traditional)** | 繁體中文 | ✅ Complete | [白雲](https://github.com/phillychi3) |
 | 🇪🇸 **Spanish** | Español | ✅ Complete | [chikencio](https://discordapp.com/users/chikencio/) |
 | 🇧🇷 **Portuguese (Brazil)** | Português (Brasil) | 🚧 29% | [meneee](https://discordapp.com/users/meneee/) |
