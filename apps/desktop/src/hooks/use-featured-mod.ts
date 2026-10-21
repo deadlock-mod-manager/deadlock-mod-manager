@@ -1,6 +1,6 @@
 import type { ModDto } from "@deadlock-mods/shared";
 import { useMemo } from "react";
-import { FEATURED_POOL_SIZE } from "@/lib/constants";
+import { FEATURED_POOL_SIZE, MOD_CATEGORY_ORDER } from "@/lib/constants";
 import { isModOutdated } from "@/lib/utils";
 
 export type IsoWeekParts = { year: number; week: number };
@@ -43,6 +43,7 @@ const deterministicShuffle = <T>(
 export const pickFeaturedMod = (
   mods: ModDto[],
   now: Date,
+  salt = 0,
 ): ModDto | undefined => {
   if (mods.length === 0) return undefined;
 
@@ -53,7 +54,7 @@ export const pickFeaturedMod = (
         !m.isNSFW &&
         !m.isObsolete &&
         !isModOutdated(m) &&
-        (m.hero || m.images.length > 0),
+        (m.hero || m.images.length > 0 || (m.isAudio && m.audioUrl)),
     )
     .sort((a, b) => b.downloadCount - a.downloadCount)
     .slice(0, FEATURED_POOL_SIZE);
@@ -61,25 +62,41 @@ export const pickFeaturedMod = (
   if (eligible.length === 0) return undefined;
 
   const { year, week } = getIsoWeekParts(now);
-  const seed = year * 100 + week;
-  const shuffled = deterministicShuffle(eligible, seed);
-  const picked = shuffled[0];
-  return picked;
+  const seed = year * 100 + week + Math.imul(salt, 0x9e3779b1);
+  return deterministicShuffle(eligible, seed)[0];
 };
 
 /**
- * Picks a "featured mod of the week" deterministically from the pool of top
- * downloads. Stable across reloads, identical for every user, rotates weekly.
+ * One weekly pick per category, in `MOD_CATEGORY_ORDER`. Categories without an
+ * eligible mod are skipped.
+ */
+export const pickFeaturedModsByCategory = (
+  mods: ModDto[],
+  now: Date,
+): ModDto[] =>
+  MOD_CATEGORY_ORDER.flatMap((category, index) => {
+    const picked = pickFeaturedMod(
+      mods.filter((m) => m.category === category),
+      now,
+      index + 1,
+    );
+    return picked ? [picked] : [];
+  });
+
+/**
+ * Picks the "featured mods of the week" deterministically, one per category,
+ * from each category's top downloads. Stable across reloads, identical for
+ * every user, rotates weekly.
  *
  * NOTE: client-side heuristic. A backend `/featured` endpoint would be a
  * better long-term solution.
  */
-export const useFeaturedMod = (
+export const useFeaturedMods = (
   mods: ModDto[] | undefined,
   options?: { now?: Date },
-): ModDto | undefined => {
+): ModDto[] => {
   return useMemo(() => {
-    if (!mods || mods.length === 0) return undefined;
-    return pickFeaturedMod(mods, options?.now ?? new Date());
+    if (!mods || mods.length === 0) return [];
+    return pickFeaturedModsByCategory(mods, options?.now ?? new Date());
   }, [mods, options?.now]);
 };

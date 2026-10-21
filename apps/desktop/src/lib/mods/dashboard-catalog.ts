@@ -22,9 +22,9 @@ const FEATURED_CANDIDATES = FEATURED_POOL_SIZE * 3;
 const TRENDING_CANDIDATES = TRENDING_LIMIT * 2;
 
 /**
- * The slice of the catalog the dashboard ranks: the top downloads the featured
- * pick draws from, plus each category's top recent and all-time mods. Feeding
- * this to `pickFeaturedMod` and `useTrendingByCategory` yields the same picks
+ * The slice of the catalog the dashboard ranks: each category's top downloads
+ * the featured picks draw from, plus its top recent and all-time mods. Feeding
+ * this to `pickFeaturedModsByCategory` and `useTrendingByCategory` yields the same picks
  * as the whole catalog, without loading all of it.
  */
 export const getDashboardCatalogMods = async ({
@@ -40,15 +40,16 @@ export const getDashboardCatalogMods = async ({
   } satisfies CatalogQuery;
   const recentCutoff =
     Math.floor(now.getTime() / 1_000) - TRENDING_WINDOW_DAYS * 24 * 60 * 60;
-  const pages = await Promise.all([
-    queryGameBananaCatalog({
-      ...byDownloads,
-      hideNsfw: true,
-      hideObsolete: true,
-      updatedAfter: MOD_OUTDATED_CUTOFF_SECONDS,
-      pageSize: FEATURED_CANDIDATES,
-    }),
-    ...MOD_CATEGORY_ORDER.flatMap((category) => [
+  const pages = await Promise.all(
+    MOD_CATEGORY_ORDER.flatMap((category) => [
+      queryGameBananaCatalog({
+        ...byDownloads,
+        categories: [category],
+        hideNsfw: true,
+        hideObsolete: true,
+        updatedAfter: MOD_OUTDATED_CUTOFF_SECONDS,
+        pageSize: FEATURED_CANDIDATES,
+      }),
       queryGameBananaCatalog({
         ...byDownloads,
         categories: [category],
@@ -63,7 +64,7 @@ export const getDashboardCatalogMods = async ({
         pageSize: TRENDING_CANDIDATES,
       }),
     ]),
-  ]);
+  );
 
   const mods = new Map<string, ModDto>();
   for (const page of pages) {

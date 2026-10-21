@@ -16,10 +16,13 @@ export const deadlockHeroSchema = z.object({
   class_name: z.string(),
   images: z
     .object({
+      background_image: z.string().optional(),
+      background_image_webp: z.string().optional(),
       icon_hero_card: z.string().optional(),
       icon_hero_card_webp: z.string().optional(),
       icon_image_small: z.string().optional(),
       icon_image_small_webp: z.string().optional(),
+      name_image: z.string().optional(),
     })
     // A hero without artwork is still a hero the id lookup needs.
     .default({}),

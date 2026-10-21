@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { AnnouncementsCard } from "@/components/dashboard/announcements-card";
 import { AnnouncementsTicker } from "@/components/dashboard/announcements-ticker";
 import { ChangelogRibbon } from "@/components/dashboard/changelog-ribbon";
-import { FeaturedModCard } from "@/components/dashboard/featured-mod-card";
+import { FeaturedModsCarousel } from "@/components/dashboard/featured-mods-carousel";
 import { LatestModsCard } from "@/components/dashboard/latest-mods-card";
 import { PatchNotesSection } from "@/components/dashboard/patch-notes-section";
 import { QuickStatsStrip } from "@/components/dashboard/quick-stats-strip";
@@ -12,7 +12,7 @@ import { TrendingCategoryRail } from "@/components/dashboard/trending-category-r
 import { WhatsNewCard } from "@/components/dashboard/whats-new-card";
 import { useThemeOverride } from "@/components/providers/theme-overrides";
 import PageTitle from "@/components/shared/page-title";
-import { useFeaturedMod } from "@/hooks/use-featured-mod";
+import { useFeaturedMods } from "@/hooks/use-featured-mod";
 import { useTrendingByCategory } from "@/hooks/use-trending-by-category";
 import { MOD_CATEGORY_ORDER } from "@/lib/constants";
 import {
@@ -39,7 +39,7 @@ const Dashboard = () => {
     () => filterHiddenNSFWItems(mods, hideNSFW),
     [hideNSFW, mods],
   );
-  const featured = useFeaturedMod(visibleMods);
+  const featured = useFeaturedMods(visibleMods);
   const trending = useTrendingByCategory(visibleMods);
 
   const visibleCategories = useMemo(
@@ -70,7 +70,7 @@ const Dashboard = () => {
         />
       </div>
       <div className='flex-1 space-y-8 overflow-y-auto overflow-x-hidden px-6 pb-8 pr-2'>
-        <FeaturedModCard isLoading={isPending} mod={featured} />
+        <FeaturedModsCarousel isLoading={isPending} mods={featured} />
 
         <QuickStatsStrip />
 

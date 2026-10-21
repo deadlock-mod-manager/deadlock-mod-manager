@@ -1,13 +1,21 @@
 import { describe, expect, it } from "bun:test";
 import type { ModDto } from "@deadlock-mods/shared";
 import { ModDtoSchema } from "@deadlock-mods/shared";
-import { MOD_OUTDATED_CUTOFF_SECONDS } from "@/lib/constants";
-import { getIsoWeekParts, pickFeaturedMod } from "./use-featured-mod";
+import { MOD_OUTDATED_CUTOFF_SECONDS, ModCategory } from "@/lib/constants";
+import {
+  getIsoWeekParts,
+  pickFeaturedMod,
+  pickFeaturedModsByCategory,
+} from "./use-featured-mod";
 
 function makeMod(
   id: string,
   downloadCount: number,
-  options?: { isObsolete?: boolean; remoteUpdatedAt?: Date },
+  options?: {
+    isObsolete?: boolean;
+    remoteUpdatedAt?: Date;
+    category?: string;
+  },
 ): ModDto {
   const remoteUpdatedAt =
     options?.remoteUpdatedAt ??
@@ -18,7 +26,7 @@ function makeMod(
     name: `Mod ${id}`,
     description: null,
     remoteUrl: "https://example.com",
-    category: "test",
+    category: options?.category ?? "test",
     likes: 0,
     author: "author",
     downloadable: true,
@@ -99,7 +107,7 @@ describe("pickFeaturedMod", () => {
     const picks = collectWeeklyPicks(pool, 2025);
     expect(picks.length).toBeGreaterThanOrEqual(52);
     const unique = new Set(picks);
-    expect(unique.size).toBeGreaterThanOrEqual(32);
+    expect(unique.size).toBeGreaterThanOrEqual(14);
   });
 
   it("limits long streaks of the same featured mod", () => {
@@ -141,5 +149,27 @@ describe("pickFeaturedMod", () => {
     const pool = [obsolete, outdated, ok];
     const at = new Date("2025-03-01T00:00:00.000Z");
     expect(pickFeaturedMod(pool, at)?.id).toBe("ok");
+  });
+});
+
+describe("pickFeaturedModsByCategory", () => {
+  it("picks one mod per category in category order, skipping empty ones", () => {
+    const pool = [
+      makeMod("hud-1", 50, { category: ModCategory.HUD }),
+      makeMod("hud-2", 40, { category: ModCategory.HUD }),
+      makeMod("skin-1", 10, { category: ModCategory.SKINS }),
+      makeMod("music-old", 999, {
+        category: ModCategory.MUSIC,
+        isObsolete: true,
+      }),
+    ];
+    const picks = pickFeaturedModsByCategory(
+      pool,
+      new Date("2025-03-01T00:00:00.000Z"),
+    );
+    expect(picks.map((m) => m.category)).toEqual([
+      ModCategory.SKINS,
+      ModCategory.HUD,
+    ]);
   });
 });

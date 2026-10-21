@@ -119,8 +119,8 @@ export const UPDATED_RECENTLY_THRESHOLD = new Date("2026-02-07T17:00:00Z");
 export const STALE_MOD_REPORT_THRESHOLD = 5;
 export const STALE_MOD_DAYS = 30;
 
-/** Top-downloaded mods the weekly featured pick is drawn from. */
-export const FEATURED_POOL_SIZE = 50;
+/** Top-downloaded mods per category each weekly featured pick is drawn from. */
+export const FEATURED_POOL_SIZE = 20;
 /** Trending = updated within this window, ranked by downloads. */
 export const TRENDING_WINDOW_DAYS = 30;
 export const TRENDING_LIMIT = 8;
