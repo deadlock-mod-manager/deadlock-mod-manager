@@ -9,6 +9,8 @@ use tokio::process::Command;
 
 use crate::errors::Error;
 
+mod relaunch;
+
 const ALLOWED_UPDATE_HOST: &str = "github.com";
 const ALLOWED_UPDATE_PATH_PREFIX: &str =
   "/deadlock-mod-manager/deadlock-mod-manager/releases/download/";
@@ -107,16 +109,21 @@ pub async fn update_flatpak(app_handle: AppHandle, url: String) -> Result<(), Er
   let cache = std::env::var_os("XDG_CACHE_HOME")
     .map(PathBuf::from)
     .ok_or_else(|| Error::InvalidInput("Missing Flatpak cache directory".to_string()))?;
+  let progress_handle = app_handle.clone();
   download_and_install(
     validated_url,
     &cache,
     scope,
     Command::new("flatpak-spawn"),
     move |message| {
-      let _ = app_handle.emit("flatpak-update-progress", message);
+      let _ = progress_handle.emit("flatpak-update-progress", message);
     },
   )
-  .await
+  .await?;
+  // Re-executing /app inside this sandbox would start the old deployment again.
+  relaunch::schedule(scope, &cache).await?;
+  app_handle.exit(0);
+  Ok(())
 }
 
 async fn download_and_install(
