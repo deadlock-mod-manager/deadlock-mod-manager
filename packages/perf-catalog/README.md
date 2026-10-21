@@ -52,7 +52,7 @@ Every ConVar a preset sets whose name matches a pattern in `curated/gameplay.ts`
 
 ### Community configs
 
-GameBanana files are downloaded only to compute `settingsCount` (ConVars the app would write: active, not denied), `categoryCounts` (the same, per category), `engineEditCount` and `baseBuild`. No file content is stored.
+GameBanana files are downloaded only to compute `settingsCount` (ConVars the app would write: active, not denied), `categoryCounts` (the same, per category), `engineEditCount`, `baseBuild` and `bundlesVpks` (the archive also ships VPKs, so the app keeps Install for it). No file content is stored.
 
 ## Sources and licences
 

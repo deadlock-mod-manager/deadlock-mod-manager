@@ -283,7 +283,10 @@ export const buildCatalog = async (
   }
 
   // GameBanana configs: analyzed for stats only.
-  const community = new Map<string, AnalyzedFile & { variantPath: string }>();
+  const community = new Map<
+    string,
+    AnalyzedFile & { variantPath: string; bundlesVpks: boolean }
+  >();
   for (const definition of COMMUNITY) {
     const pin = sources.community[String(definition.gamebananaId)];
     if (!pin)
@@ -299,6 +302,7 @@ export const buildCatalog = async (
     community.set(definition.id, {
       ...analyze(variant.text),
       variantPath: variant.path,
+      bundlesVpks: variant.bundlesVpks,
     });
   }
 
@@ -527,6 +531,7 @@ export const buildCatalog = async (
           (entry) => !isConvarEntry(entry),
         ).length,
         categoryCounts,
+        bundlesVpks: analyzed.bundlesVpks || undefined,
       });
     },
   );

@@ -6468,7 +6468,7 @@
     "open": "Open in Performance",
     "tooltip": "This upload is a gameinfo.gi config, not a mod. Review and apply it from the Performance page.",
     "confirmed": "This upload is a performance config for gameinfo.gi, not a mod. The Performance page reviews and applies it, and can turn it off again.",
-    "likely": "This looks like a performance config for gameinfo.gi. If it is, apply it from the Performance page instead of installing it as a mod.",
+    "likely": "This upload looks like it includes a performance config for gameinfo.gi. Installing it adds any VPKs as usual and then offers to import the config, or you can review only the config in Performance.",
     "noFiles": "This upload has no files to review.",
     "openFailed": "Couldn't open this config in Performance"
   }

@@ -129,6 +129,8 @@ const catalogCommunityConfigSchema = z.object({
   settingsCount: z.number().int().optional(),
   engineEditCount: z.number().int().optional(),
   categoryCounts: z.record(z.string(), z.number().int()).optional(),
+  /** The pinned archive also ships VPKs, so the upload is a mod with a config, not only a config. */
+  bundlesVpks: z.boolean().optional(),
 });
 
 const deniedRuleSchema = z.object({

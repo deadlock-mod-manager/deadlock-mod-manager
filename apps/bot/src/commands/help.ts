@@ -66,7 +66,7 @@ const helpEntries: HelpEntry[] = [
   {
     usage: "/perfconfig add, /perfconfig remove",
     description:
-      "Mark a GameBanana upload as a performance config so the app opens it in Performance instead of installing it as a mod, or undo that.",
+      "Mark a GameBanana upload that is only a performance config (gameinfo.gi, no VPKs) so the app opens it in Performance instead of installing it as a mod, or undo that. Leave uploads that also ship VPKs alone: installing them already offers to import the config.",
     allowed: hasPerfConfigModerationPermission,
   },
   {

@@ -288,6 +288,7 @@ pub fn catalog_summary(ctx: &PerfContext) -> Result<CatalogSummary, Error> {
       settings_count: config.settings_count,
       engine_edit_count: config.engine_edit_count,
       cut_score: resolve::cut_score_from_category_counts(catalog, &config.category_counts),
+      bundles_vpks: config.bundles_vpks,
     })
     .collect();
   Ok(CatalogSummary {

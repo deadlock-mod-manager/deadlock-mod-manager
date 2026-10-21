@@ -20,14 +20,17 @@ type ListedMod = Pick<ModDto, "remoteId" | "category" | "name" | "tags">;
 /** Whether a GameBanana listing is a performance config rather than a mod. */
 export const useConfigListing = (mod: ListedMod | undefined) => {
   const { data: catalog } = usePerfCatalog();
-  const catalogIds = useMemo(
+  const catalogConfigs = useMemo(
     () =>
-      new Set(
-        (catalog?.community ?? []).map((config) => String(config.gamebananaId)),
+      new Map(
+        (catalog?.community ?? []).map((config) => [
+          String(config.gamebananaId),
+          config.bundlesVpks,
+        ]),
       ),
     [catalog],
   );
-  return mod ? configListing(mod, catalogIds) : null;
+  return mod ? configListing(mod, catalogConfigs) : null;
 };
 
 /**

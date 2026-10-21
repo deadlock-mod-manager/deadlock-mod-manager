@@ -9,41 +9,53 @@ const mod = (name: string, category: string, remoteId = "1") => ({
   tags: [],
 });
 
-const catalogIds = new Set(["650519"]);
+const catalogConfigs = new Map([
+  ["650519", false],
+  ["671812", true],
+]);
 
 describe("configListing", () => {
   test("confirms flagged uploads and the ones the catalog lists", () => {
     expect(
       configListing(
         mod("Potato Lock", PERFORMANCE_CONFIG_CATEGORY),
-        catalogIds,
+        catalogConfigs,
       ),
     ).toBe("confirmed");
     expect(
-      configListing(mod("Optimisationlock", "Skins", "650519"), catalogIds),
+      configListing(mod("Optimisationlock", "Skins", "650519"), catalogConfigs),
     ).toBe("confirmed");
+  });
+
+  test("keeps Install for catalog configs that also ship VPKs", () => {
+    expect(
+      configListing(
+        mod("OptimizationDL", "Quality of Life/Fixes", "671812"),
+        catalogConfigs,
+      ),
+    ).toBe("likely");
   });
 
   test("only hints in the categories configs are uploaded to", () => {
     expect(
       configListing(
         mod("OptiLock FPS Configs", "Quality of Life/Fixes"),
-        catalogIds,
+        catalogConfigs,
       ),
     ).toBe("likely");
     expect(
-      configListing(mod("Full FPS UP cfg", "Other/Misc"), catalogIds),
+      configListing(mod("Full FPS UP cfg", "Other/Misc"), catalogConfigs),
     ).toBe("likely");
     expect(
       configListing(
         mod("Clutter Be Gone", "Quality of Life/Fixes"),
-        catalogIds,
+        catalogConfigs,
       ),
     ).toBeNull();
     expect(
       configListing(
         mod("Optimized Soul Container", "Model Replacement"),
-        catalogIds,
+        catalogConfigs,
       ),
     ).toBeNull();
   });

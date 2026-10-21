@@ -23,4 +23,8 @@ export type CommunityConfigSummary = {
   settingsCount: number;
   engineEditCount: number;
   cutScore: number;
+  /**
+   * The upload also ships VPKs, so installing it as a mod is still right.
+   */
+  bundlesVpks: boolean;
 };

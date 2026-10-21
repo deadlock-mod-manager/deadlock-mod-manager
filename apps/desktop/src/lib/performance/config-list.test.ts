@@ -67,6 +67,7 @@ const community = (
   settingsCount: 0,
   engineEditCount: 0,
   cutScore: 0.5,
+  bundlesVpks: false,
   ...overrides,
 });
 

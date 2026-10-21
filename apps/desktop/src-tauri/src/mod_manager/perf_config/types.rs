@@ -377,6 +377,8 @@ pub struct CommunityConfigSummary {
   pub settings_count: u32,
   pub engine_edit_count: u32,
   pub cut_score: f32,
+  /// The upload also ships VPKs, so installing it as a mod is still right.
+  pub bundles_vpks: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, TS)]
