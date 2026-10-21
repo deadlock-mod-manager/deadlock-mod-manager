@@ -961,8 +961,7 @@
       "overview": "",
       "heroes": "",
       "items": "",
-      "squad": "",
-      "live": ""
+      "squad": ""
     },
     "items": {
       "item": "",
@@ -978,48 +977,10 @@
       "loading": "",
       "empty": ""
     },
-    "live": {
-      "condebugTitle": "",
-      "condebugDescription": "",
-      "openSettings": "",
-      "queuedTitle": "",
-      "queuedDescription": "",
-      "queuedBadge": "",
-      "waitingTitle": "",
-      "waitingDescription": "",
-      "checkNow": "",
-      "checking": "",
-      "matchId": "",
-      "lastMatch": "",
-      "resolving": "",
-      "connecting": "",
-      "broadcastError": "",
-      "streamError": "",
-      "status": {
-        "connecting": "",
-        "streaming": "",
-        "ended": "",
-        "error": ""
-      },
-      "sapphire": "",
-      "amber": "",
-      "you": "",
-      "mostSouls": "",
-      "mostKills": "",
-      "soulLead": "",
-      "soulLeadTitle": "",
-      "soulLeadDescription": "",
-      "killsTitle": "",
-      "killsDescription": ""
-    },
     "player": {
-      "onHero": "",
       "onHeroShort": "",
-      "firstTimeHero": "",
       "overallWinrate": "",
       "overallKda": "",
-      "netWorth": "",
-      "netWorthHint": "",
       "mostPlayed": "",
       "mostPlayedDescription": "",
       "lastN": "",
@@ -1034,7 +995,6 @@
       "openMatch": "",
       "matchHistory": "",
       "noMatchHistory": "",
-      "reviewHero": "",
       "noHeroMatches": "",
       "showAllMatches": "",
       "heroRunSummary_one": "",
@@ -1296,7 +1256,6 @@
         "heroes": "",
         "items": "",
         "squad": "",
-        "live": "",
         "performance": "",
         "habits": "",
         "ranked": "",
@@ -1542,10 +1501,6 @@
           "description": ""
         },
         "squad": {
-          "title": "",
-          "description": ""
-        },
-        "live": {
           "title": "",
           "description": ""
         }

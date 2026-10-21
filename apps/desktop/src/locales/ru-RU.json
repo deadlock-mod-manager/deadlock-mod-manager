@@ -961,8 +961,7 @@
       "overview": "Обзор",
       "heroes": "Герои",
       "items": "Предметы",
-      "squad": "",
-      "live": ""
+      "squad": ""
     },
     "items": {
       "item": "Предмет",
@@ -978,48 +977,10 @@
       "loading": "Загрузка статистики по предметам.",
       "empty": "Пока что для данного аккаунта нет статистики по предметам."
     },
-    "live": {
-      "condebugTitle": "Журнал консоли выключен",
-      "condebugDescription": "",
-      "openSettings": "Открыть параметры запуска",
-      "queuedTitle": "Поиск матча",
-      "queuedDescription": "Вы в очереди. Как только лобби будет сформировано, все появятся в нем.",
-      "queuedBadge": "В очереди",
-      "waitingTitle": "Нет запущенных матчей",
-      "waitingDescription": "",
-      "checkNow": "Посмотреть сейчас",
-      "checking": "Идёт проверка…",
-      "matchId": "Матч {{id}}",
-      "lastMatch": "Ваш последний матч",
-      "resolving": "Запрос трансляции…",
-      "connecting": "",
-      "broadcastError": "",
-      "streamError": "",
-      "status": {
-        "connecting": "Подключение",
-        "streaming": "Эфир",
-        "ended": "Матч окончен",
-        "error": "Соединение разорвано"
-      },
-      "sapphire": "Сапфир",
-      "amber": "Янтарь",
-      "you": "Вы",
-      "mostSouls": "Большинство душ",
-      "mostKills": "Большинство убийств",
-      "soulLead": "",
-      "soulLeadTitle": "",
-      "soulLeadDescription": "",
-      "killsTitle": "Убийства",
-      "killsDescription": ""
-    },
     "player": {
-      "onHero": "",
       "onHeroShort": "",
-      "firstTimeHero": "",
       "overallWinrate": "",
       "overallKda": "",
-      "netWorth": "",
-      "netWorthHint": "",
       "mostPlayed": "",
       "mostPlayedDescription": "",
       "lastN": "",
@@ -1034,7 +995,6 @@
       "openMatch": "",
       "matchHistory": "",
       "noMatchHistory": "",
-      "reviewHero": "",
       "noHeroMatches": "",
       "showAllMatches": "",
       "heroRunSummary_one": "",
@@ -1296,7 +1256,6 @@
         "heroes": "",
         "items": "",
         "squad": "",
-        "live": "",
         "performance": "",
         "habits": "",
         "ranked": "",
@@ -1542,10 +1501,6 @@
           "description": ""
         },
         "squad": {
-          "title": "",
-          "description": ""
-        },
-        "live": {
           "title": "",
           "description": ""
         }
