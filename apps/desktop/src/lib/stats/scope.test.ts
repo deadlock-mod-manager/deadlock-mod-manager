@@ -114,11 +114,18 @@ describe("Stats match scope", () => {
     expect(heroes[0]?.matches_played).toBe(1);
   });
 
-  it("overrides the upstream 30-day analytics default for all history", () => {
+  it("leaves the start to each endpoint without a picked date", () => {
     const query = new URLSearchParams(statsScopeQuery(ALL_STATS_SCOPE));
     expect(query.get("game_mode")).toBe("normal");
     expect(query.get("match_mode")).toBe("ranked,unranked");
-    expect(query.get("min_unix_timestamp")).toBe("0");
+    expect(query.has("min_unix_timestamp")).toBe(false);
+  });
+
+  it("sends a picked start date", () => {
+    const query = new URLSearchParams(
+      statsScopeQuery({ mode: "ranked", since: 1_790_000_000 }),
+    );
+    expect(query.get("min_unix_timestamp")).toBe("1790000000");
   });
 
   it("uses separate cache scopes for different modes and dates", () => {
