@@ -14,7 +14,6 @@ export type FeatureHintsState = {
   startFeatureHints: () => void;
   markFeatureHintSeen: (id: FeatureHintId) => void;
   markFeatureUsed: (id: FeatureHintId) => void;
-  recordFeatureHintShown: (id: FeatureHintId) => void;
   retireFeatureHint: (id: FeatureHintId) => void;
   ignoreFeatureHint: (id: FeatureHintId) => void;
   countFeatureHintEvent: (counter: FeatureHintCounter) => void;
@@ -79,8 +78,6 @@ export const createFeatureHintsSlice: StateCreator<
             },
       ),
 
-    recordFeatureHintShown: () => update(() => ({ lastShownAt: Date.now() })),
-
     retireFeatureHint: (id) =>
       update(({ retired }) => ({ retired: { ...retired, [id]: true } })),
 
@@ -100,11 +97,10 @@ export const createFeatureHintsSlice: StateCreator<
       })),
 
     // Brings every hint back without waiting out the first-run quiet period
-    // again; the cooldown between hints still applies.
+    // again.
     resetFeatureHints: () =>
       update(() => ({
         enabled: true,
-        lastShownAt: null,
         used: {},
         retired: {},
         ignoredCount: {},

@@ -62,7 +62,6 @@ export const FeatureHintsRenderer = () => {
         .sort((a, b) => hintPriority(a) - hintPriority(b));
       if (!next) return;
       session.activate(next);
-      store.recordFeatureHintShown(next);
       analytics.track("feature_hint_shown", { hint_id: next });
     };
 

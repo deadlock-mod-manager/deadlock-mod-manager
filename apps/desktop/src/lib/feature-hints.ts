@@ -1,9 +1,8 @@
-const DAY_MS = 24 * 60 * 60 * 1000;
+const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
 
 /** No hints until the user has had the app for this long. */
-const HINTS_QUIET_PERIOD_MS = 3 * DAY_MS;
-/** Minimum gap between two hints. */
-const HINTS_COOLDOWN_MS = 3 * DAY_MS;
+const HINTS_QUIET_PERIOD_MS = 3 * HOUR_MS;
 /** A hint closed without "Got it" this many times stops showing. */
 export const HINT_MAX_IGNORES = 2;
 /** How long the page has to sit without input before a hint appears. */
@@ -13,18 +12,18 @@ export const HINT_IDLE_MS = 2000;
 // first one in this list wins.
 const FEATURE_HINTS = [
   { id: "import-from-manager", i18nKey: "importFromManager", minAgeDays: 0 },
-  { id: "my-mods-menu", i18nKey: "myModsMenu", minAgeDays: 7 },
-  { id: "mod-context-menu", i18nKey: "modContextMenu", minAgeDays: 7 },
+  { id: "my-mods-menu", i18nKey: "myModsMenu", minAgeDays: 1 },
+  { id: "mod-context-menu", i18nKey: "modContextMenu", minAgeDays: 1 },
   { id: "load-order", i18nKey: "loadOrder", minAgeDays: 0 },
-  { id: "mod-repairs", i18nKey: "modRepairs", minAgeDays: 7 },
-  { id: "find-broken-mod", i18nKey: "findBrokenMod", minAgeDays: 7 },
+  { id: "mod-repairs", i18nKey: "modRepairs", minAgeDays: 1 },
+  { id: "find-broken-mod", i18nKey: "findBrokenMod", minAgeDays: 1 },
   {
     id: "mods-folder-shortcut",
     i18nKey: "modsFolderShortcut",
     minAgeDays: 0,
     shortcut: ["Ctrl", "M"],
   },
-  { id: "profiles", i18nKey: "profiles", minAgeDays: 7 },
+  { id: "profiles", i18nKey: "profiles", minAgeDays: 1 },
   {
     id: "settings-search",
     i18nKey: "settingsSearch",
@@ -34,12 +33,12 @@ const FEATURE_HINTS = [
   // Anchored in the sidebar, so it could show on any page; kept low so
   // page-specific hints win.
   { id: "server-browser", i18nKey: "serverBrowser", minAgeDays: 0 },
-  { id: "skin-randomizer", i18nKey: "skinRandomizer", minAgeDays: 3 },
+  { id: "skin-randomizer", i18nKey: "skinRandomizer", minAgeDays: 1 },
   { id: "stats-customize", i18nKey: "statsCustomize", minAgeDays: 0 },
   {
     id: "nightly-channel",
     i18nKey: "nightlyChannel",
-    minAgeDays: 14,
+    minAgeDays: 2,
     emote: "/emotes/wicked.webp",
   },
 ] as const satisfies readonly {
@@ -64,7 +63,6 @@ export type FeatureHintsProgress = {
   enabled: boolean;
   /** When the user first finished onboarding with hints available. */
   startedAt: number | null;
-  lastShownAt: number | null;
   /** First time each hint's control was on screen. */
   firstSeenAt: Partial<Record<FeatureHintId, number>>;
   used: Partial<Record<FeatureHintId, true>>;
@@ -76,7 +74,6 @@ export type FeatureHintsProgress = {
 export const DEFAULT_FEATURE_HINTS_PROGRESS: FeatureHintsProgress = {
   enabled: true,
   startedAt: null,
-  lastShownAt: null,
   firstSeenAt: {},
   used: {},
   retired: {},
@@ -110,12 +107,6 @@ export const canShowHint = (
   if (
     progress.startedAt === null ||
     now - progress.startedAt < HINTS_QUIET_PERIOD_MS
-  ) {
-    return false;
-  }
-  if (
-    progress.lastShownAt !== null &&
-    now - progress.lastShownAt < HINTS_COOLDOWN_MS
   ) {
     return false;
   }

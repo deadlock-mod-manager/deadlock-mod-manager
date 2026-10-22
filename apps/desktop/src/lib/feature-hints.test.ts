@@ -5,7 +5,8 @@ import {
   type FeatureHintsProgress,
 } from "./feature-hints";
 
-const DAY = 24 * 60 * 60 * 1000;
+const HOUR = 60 * 60 * 1000;
+const DAY = 24 * HOUR;
 const NOW = 100 * DAY;
 
 const progress = (
@@ -22,15 +23,9 @@ describe("canShowHint", () => {
     expect(canShowHint("my-mods-menu", progress(), NOW)).toBe(true);
   });
 
-  it("waits out the first days after onboarding", () => {
+  it("waits out the first hours after onboarding", () => {
     expect(
-      canShowHint("my-mods-menu", progress({ startedAt: NOW - DAY }), NOW),
-    ).toBe(false);
-  });
-
-  it("waits out the cooldown after any other hint", () => {
-    expect(
-      canShowHint("my-mods-menu", progress({ lastShownAt: NOW - DAY }), NOW),
+      canShowHint("my-mods-menu", progress({ startedAt: NOW - HOUR }), NOW),
     ).toBe(false);
   });
 
@@ -38,7 +33,7 @@ describe("canShowHint", () => {
     expect(
       canShowHint(
         "my-mods-menu",
-        progress({ firstSeenAt: { "my-mods-menu": NOW - DAY } }),
+        progress({ firstSeenAt: { "my-mods-menu": NOW - HOUR } }),
         NOW,
       ),
     ).toBe(false);
