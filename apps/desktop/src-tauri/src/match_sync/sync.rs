@@ -369,7 +369,11 @@ where
             "match-sync: match history of friend {} unavailable: {e}",
             friend.account_id
           );
-          self.persistence.record_gc_error(&e);
+          // A refusal is about this friend's history; only a broken GC connection backs
+          // the account off.
+          if let MatchSyncError::GcUnavailable(_) = e {
+            self.persistence.record_gc_error(&e);
+          }
           FRIEND_COOLDOWN_SECS
         }
       };
@@ -626,6 +630,7 @@ mod tests {
     friends: HashMap<u32, Persona>,
     // `None`: the friend's history is private.
     friend_history: HashMap<u32, Option<Vec<u64>>>,
+    refuse_friend_history: bool,
   }
   impl GcMatchClient for SpyGc {
     async fn fetch_match_history(
@@ -640,6 +645,8 @@ mod tests {
       }
       let history = if account_id == ctx.account_id() {
         &self.history
+      } else if self.refuse_friend_history {
+        return Err(MatchSyncError::HistoryRefused(2));
       } else {
         self.friend_history[&account_id]
           .as_ref()
@@ -1514,6 +1521,24 @@ mod tests {
     assert_eq!(
       eng.persistence.cooldowns.lock().unwrap().get(&FRIEND),
       Some(&(NOW + PRIVATE_FRIEND_COOLDOWN_SECS))
+    );
+    assert_eq!(eng.persistence.gc_errors.load(Ordering::Relaxed), 0);
+    assert_eq!(*eng.sink.posted.lock().unwrap(), vec![600]);
+  }
+
+  #[tokio::test]
+  async fn refused_friend_history_cools_down_without_backing_off_the_account() {
+    let (mut gc, backfill) = friend_scenario(vec![600]);
+    gc.refuse_friend_history = true;
+    let eng = engine(gc, backfill);
+
+    eng
+      .run_background_pass(&active_config(), &AtomicBool::new(false))
+      .await
+      .unwrap();
+    assert_eq!(
+      eng.persistence.cooldowns.lock().unwrap().get(&FRIEND),
+      Some(&(NOW + FRIEND_COOLDOWN_SECS))
     );
     assert_eq!(eng.persistence.gc_errors.load(Ordering::Relaxed), 0);
     assert_eq!(*eng.sink.posted.lock().unwrap(), vec![600]);

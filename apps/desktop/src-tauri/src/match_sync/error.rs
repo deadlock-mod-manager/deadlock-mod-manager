@@ -30,6 +30,10 @@ pub enum MatchSyncError {
   #[error("match history is private")]
   HistoryPrivate,
 
+  // The GC answered a match history request with an error; the connection itself is fine.
+  #[error("Steam GC refused the match history request (result {0})")]
+  HistoryRefused(i32),
+
   #[error("Deadlock is currently running; close it to fetch matches")]
   GameRunning,
 
@@ -53,6 +57,7 @@ impl MatchSyncError {
       MatchSyncError::GcUnavailable(_) => "gcUnavailable",
       MatchSyncError::GcRateLimited => "gcRateLimited",
       MatchSyncError::HistoryPrivate => "historyPrivate",
+      MatchSyncError::HistoryRefused(_) => "historyRefused",
       MatchSyncError::GameRunning => "gameRunning",
       MatchSyncError::Api(_) => "apiError",
       MatchSyncError::Store(_) => "storeError",
