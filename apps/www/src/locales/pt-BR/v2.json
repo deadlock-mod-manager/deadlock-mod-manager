@@ -1,36 +1,36 @@
 {
   "meta": {
-    "title": "",
+    "title": "Novidades no Deadlock Mod Manager V2",
     "description": ""
   },
   "hero": {
     "eyebrow": "",
-    "title": "",
+    "title": "Refeito do zero",
     "intro": "",
-    "download": "",
-    "changelog": ""
+    "download": "Baixar V2",
+    "changelog": "Histórico completo de alterações"
   },
   "nav": {
-    "label": "",
+    "label": "Nessa página",
     "more": "",
-    "upgrade": "",
-    "fixes": ""
+    "upgrade": "Atualizando da V1",
+    "fixes": "Correções de erros"
   },
   "features": {
     "updates": {
-      "nav": "",
-      "title": "",
-      "body": "",
+      "nav": "Atualizações de jogo",
+      "title": "Seus mods sobrevivem as atualizações",
+      "body": "Enquanto o aplicativo está aberto, ele percebe quando uma atualização da Steam ou outra ferramenta modifica gameinfo.gi, avisa você quantos mods ativos pararam de carregar, e reaplica eles em um clique.",
       "points": {
-        "layout": "",
-        "patchNotes": "",
-        "inGame": "",
-        "vanilla": ""
+        "layout": "Um novo layout de pastas de addon remove o limite antigo de 99 arquivos",
+        "patchNotes": "As últimas notas de atualização da Valve no seu painel",
+        "inGame": "Mudanças no mod são bloqueadas enquanto o Deadlock estiver em execução, a menos que você desative isso",
+        "vanilla": "Opcional: voltar ao Vanilla quando o jogo fecha, então iniciar pela Steam inicia o jogo sem mods"
       }
     },
     "health": {
-      "nav": "",
-      "title": "",
+      "nav": "Saúde do mod",
+      "title": "Traga mods antigos à vida",
       "body": "",
       "points": {
         "when": "",
