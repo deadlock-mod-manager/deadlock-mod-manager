@@ -429,6 +429,17 @@ jobs:
     uses: ./.github/workflows/publish-apt.yml
     secrets: inherit
 
+  publish-aur:
+    needs: [create-release, publish-release]
+    if: always() && needs.publish-release.result == 'success'
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: ./.github/workflows/aur.yml
+    with:
+      release_tag: v${{ needs.create-release.outputs.package_version }}
+    secrets: inherit
+
   cleanup-release:
     permissions:
       contents: write

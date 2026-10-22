@@ -1,8 +1,14 @@
 name: Update AUR PKGBUILDs for new release
 
+# Called from release.yml after the release is published. A `release` trigger
+# would never fire: release.yml publishes with GITHUB_TOKEN, and events created
+# with that token do not start other workflows.
 on:
-  release:
-    types: [released]
+  workflow_call:
+    inputs:
+      release_tag:
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       release_tag:
@@ -47,11 +53,7 @@ jobs:
       - name: Resolve version
         id: version
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VERSION=${{ github.event.inputs.release_tag }}
-          else
-            VERSION=${{ github.event.release.tag_name }}
-          fi
+          VERSION=${{ inputs.release_tag }}
           VERSION=${VERSION#v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
@@ -67,7 +69,7 @@ jobs:
           fi
 
       - name: Prepare PKGBUILD
-        if: steps.check_version.outputs.is_newer == 'true' || github.event.inputs.allow_backfill == 'true'
+        if: steps.check_version.outputs.is_newer == 'true' || inputs.allow_backfill == true
         run: |
           # Only reset pkgrel for a new version; on a backfill the repo's pkgrel
           # carries packaging fixes and must ship as-is to stay upgradable.
@@ -90,7 +92,7 @@ jobs:
           auto-merge: true
 
       - name: Publish to AUR
-        if: steps.check_version.outputs.is_newer == 'true' || github.event.inputs.allow_backfill == 'true'
+        if: steps.check_version.outputs.is_newer == 'true' || inputs.allow_backfill == true
         uses: KSXGitHub/github-actions-deploy-aur@084b0d9b15415bf9cdb65d44dad1efe37a354050
         with:
           pkgname: ${{ matrix.pkgname }}
@@ -98,5 +100,5 @@ jobs:
           commit_username: GitHub Actions
           commit_email: github-actions@github.com
           ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
-          commit_message: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.release_tag || github.event.release.tag_name }}
+          commit_message: ${{ inputs.release_tag }}
           updpkgsums: true
