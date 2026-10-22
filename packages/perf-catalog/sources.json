@@ -6,10 +6,10 @@
   "schemaExplorer": {
     "repo": "ValveResourceFormat/SchemaExplorer",
     "path": "schemas/deadlock.json",
-    "commit": "f16c9fb321cddb75a4d80eaf7abe318ddf24f402",
-    "sha256": "94b6ed32800da42981e3e2b9e477b9256f36720dadc50b9ca4f9faee6c7ece88",
-    "revision": 11157350,
-    "versionDate": "Oct 21 2026"
+    "commit": "3a3ee7b500a6b1e700136a78cb4acd7cccded3ed",
+    "sha256": "07472fa9b41fa828b600c29617aafbc5ce7953e91e9e749f672206c4c7e7e21e",
+    "revision": 11160503,
+    "versionDate": "Oct 22 2026"
   },
   "gameTracking": {
     "repo": "SteamTracking/GameTracking-Deadlock",
@@ -649,10 +649,10 @@
     "optilock-fps": {
       "repo": "dacooderr/OptiLock",
       "path": "OptiLock FPS Config (Recommended)/gameinfo.gi",
-      "commit": "d9c131dff25e73d6d2afe051e5386edf80ca170e",
-      "date": "2026-10-21",
-      "sha256": "47d2156c8d9502a84b90d58ab1f0a3dfeeeb4bddc0f686e34761b406abd57516",
-      "tag": "v5.9",
+      "commit": "ee1127daf641454a9c79beb654bf2ffff72aff5b",
+      "date": "2026-10-22",
+      "sha256": "9e361d90dabc7569f085b1a174eef2293e5ac8e45de6137e539fc19c775ad715",
+      "tag": "v6.1",
       "videos": [
         {
           "path": "OptiLock FPS Config (Recommended)/video.txt",
@@ -663,10 +663,10 @@
     "optilock-potato": {
       "repo": "dacooderr/OptiLock",
       "path": "OptiLock Potato Config/gameinfo.gi",
-      "commit": "d9c131dff25e73d6d2afe051e5386edf80ca170e",
-      "date": "2026-10-21",
-      "sha256": "17fdb9fc69165cf4142e5b3c7c6bf1a3e716c74ad14f5802a8f8da1d897c620f",
-      "tag": "v5.9",
+      "commit": "ee1127daf641454a9c79beb654bf2ffff72aff5b",
+      "date": "2026-10-22",
+      "sha256": "3ab40f1739a71a2998131f0a6309bd825170b93ed0f07824b563436aab1cdd8f",
+      "tag": "v6.1",
       "videos": [
         {
           "path": "OptiLock Potato Config/video.txt",
@@ -677,10 +677,10 @@
     "optilock-ultra-potato": {
       "repo": "dacooderr/OptiLock",
       "path": "OptiLock Ultra Potato Config/gameinfo.gi",
-      "commit": "d9c131dff25e73d6d2afe051e5386edf80ca170e",
-      "date": "2026-10-21",
-      "sha256": "3ea138945a5c2807e9f888e1bdb542f66df40bfb5f39f77280a8f1001223b766",
-      "tag": "v5.9",
+      "commit": "ee1127daf641454a9c79beb654bf2ffff72aff5b",
+      "date": "2026-10-22",
+      "sha256": "72f8af16495d67e6f8573dd467289bc0e97d37f21050ab0d4bb3688d9ea1931b",
+      "tag": "v6.1",
       "videos": [
         {
           "path": "OptiLock Ultra Potato Config/video(Shadows).txt",
@@ -745,7 +745,7 @@
       "md5": "fa507f4ea07871200121859600875312",
       "name": "Max Fps but with Small Changes",
       "author": "Tysen98",
-      "downloads": 6727,
+      "downloads": 7424,
       "updatedAt": "2026-05-24"
     },
     "722944": {
@@ -754,7 +754,7 @@
       "md5": "bc5da539fd3e16000ebc07837cee91ff",
       "name": "SideLock[mb best fps cfg]",
       "author": "hitmeupwhenyourelonely",
-      "downloads": 1627,
+      "downloads": 1992,
       "updatedAt": "2026-10-01"
     }
   }
