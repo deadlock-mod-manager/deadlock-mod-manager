@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  NODE_VERSION: "24.8.0"
+  NODE_VERSION: "24.22.1"
   BRANCH: chore/perf-catalog-refresh
 
 jobs:
@@ -43,7 +43,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: "1.4.2"
+          bun-version: "1.4.4"
 
       # GameBanana configs ship as zip, rar and 7z archives.
       - name: Install bsdtar

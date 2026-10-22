@@ -1,6 +1,6 @@
 name: Deploy Services
 env:
-  NODE_VERSION: "24.8.0"
+  NODE_VERSION: "24.22.1"
 
 on:
   workflow_dispatch:

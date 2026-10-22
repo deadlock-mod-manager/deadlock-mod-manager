@@ -1,4 +1,4 @@
-FROM oven/bun:1.3.1 AS builder
+FROM oven/bun:1.4.4 AS builder
 
 WORKDIR /usr/src/app
 
@@ -8,7 +8,7 @@ RUN apt-get -y update && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Node.js and pnpm
-ARG NODE_VERSION=24.8.0
+ARG NODE_VERSION=24.22.1
 RUN curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n && \
     bash n $NODE_VERSION && \
     rm n && \
@@ -28,7 +28,7 @@ COPY apps/mirror-service ./apps/mirror-service
 RUN pnpm install --frozen-lockfile
 
 # Runtime stage - Minimal image with only runtime dependencies
-FROM oven/bun:1.3.1-slim AS runtime
+FROM oven/bun:1.4.4-slim AS runtime
 
 # Create non-root user first
 RUN groupadd -r appuser && useradd -r -g appuser appuser
@@ -46,7 +46,7 @@ RUN apt-get -y update && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Node.js and pnpm (needed for runtime)
-ARG NODE_VERSION=24.8.0
+ARG NODE_VERSION=24.22.1
 RUN curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n && \
     bash n $NODE_VERSION && \
     rm n && \

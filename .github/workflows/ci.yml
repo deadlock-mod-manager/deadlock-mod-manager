@@ -1,7 +1,7 @@
 name: CI
 
 env:
-  NODE_VERSION: "24.8.0"
+  NODE_VERSION: "24.22.1"
 
 on:
   push:
@@ -35,7 +35,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: "1.4.2"
+          bun-version: "1.4.4"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -93,7 +93,7 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
         with:
-          bun-version: "1.4.2"
+          bun-version: "1.4.4"
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable

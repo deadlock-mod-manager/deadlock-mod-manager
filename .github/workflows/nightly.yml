@@ -1,7 +1,7 @@
 name: Nightly Build
 
 env:
-  NODE_VERSION: "24.8.0"
+  NODE_VERSION: "24.22.1"
   # Nightly-only trial: thin LTO with parallel codegen cuts Rust build time
   # by roughly half for a ~10% larger binary. Stable releases keep the
   # fat-LTO profile from apps/desktop/Cargo.toml.

@@ -1,4 +1,4 @@
-FROM oven/bun:1.3.1
+FROM oven/bun:1.4.4
 
 WORKDIR /usr/src/app
 
@@ -7,7 +7,7 @@ RUN apt-get -y update && \
     ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
-ARG NODE_VERSION=24.8.0
+ARG NODE_VERSION=24.22.1
 RUN curl -L https://raw.githubusercontent.com/tj/n/master/bin/n -o n && \
     bash n $NODE_VERSION && \
     rm n && \

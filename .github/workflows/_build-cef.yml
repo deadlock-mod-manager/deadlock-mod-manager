@@ -65,7 +65,7 @@ permissions:
   contents: write
 
 env:
-  NODE_VERSION: "24.8.0"
+  NODE_VERSION: "24.22.1"
   # Keep in sync with TAURI_CEF_TAG in apps/desktop/scripts/cef-patch.ts.
   TAURI_CEF_TAG: "tauri-cef-v3.0.0-alpha.27"
   # Keep the sccache server alive through long link and bundle steps so the
