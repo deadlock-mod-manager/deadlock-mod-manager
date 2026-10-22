@@ -21,6 +21,11 @@ export const createGroup = async (name: string) => {
   await $('input[placeholder="e.g. Map cosmetics"]').setValue(name);
   await $("button=Create group").click();
   await expect(group(name)).toBeDisplayed();
+  // The fading overlay still covers the page, so native input would hit it.
+  await expect($('[role="dialog"]')).not.toBeExisting();
+  await expect(
+    $('//div[@data-state and contains(@class, "bg-black/80")]'),
+  ).not.toBeExisting();
 };
 export const groupMenu = async (name: string, action: string) => {
   const trigger = group(name).$(`button[aria-label="Actions for ${name}"]`);
