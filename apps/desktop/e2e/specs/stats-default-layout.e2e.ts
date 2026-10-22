@@ -34,14 +34,11 @@ describe("stats dashboard default layout", () => {
     });
 
     await step(
-      "the key figures are computed from the match history",
+      "the trend strip is computed from the match history",
       async () => {
-        // 20 matches: (130 kills + 160 assists) / 80 deaths.
-        await expect(widget("tiles")).toHaveText(
-          expect.stringContaining("3.63"),
-        );
-        await expect(widget("tiles")).toHaveText(
-          expect.stringContaining("50.0%"),
+        // The fixture's 20 matches split evenly.
+        await expect(widget("trends")).toHaveText(
+          expect.stringContaining("50%"),
         );
       },
     );

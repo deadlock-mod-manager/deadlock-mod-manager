@@ -1,27 +1,40 @@
 import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import {
+  Activity,
   CalendarClock,
   ChartLine,
+  Gauge,
   LayoutGrid,
   Lightbulb,
   ListOrdered,
   Package,
   Sword,
+  Swords,
   Trophy,
+  UserRound,
   Users,
 } from "@deadlock-mods/ui/icons";
 import type { ComponentType, ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { FormChart } from "@/components/stats/form-chart";
+import { HeroPool } from "@/components/stats/hero-pool";
 import { HeroesTab } from "@/components/stats/heroes-tab";
 import { InsightList } from "@/components/stats/insight-list";
 import { ItemsTab } from "@/components/stats/items-tab";
 import { OverviewTiles } from "@/components/stats/overview-tiles";
+import { ProfilePanel } from "@/components/stats/profile-panel";
+import { RankBenchmark } from "@/components/stats/rank-benchmark";
 import { RankChart } from "@/components/stats/rank-chart";
 import { RecentMatches } from "@/components/stats/recent-matches";
 import { SessionChart } from "@/components/stats/session-chart";
 import { SquadTab } from "@/components/stats/squad-tab";
-import { useItemStats, useSquadStats } from "@/hooks/use-player-stats";
+import { TrendStrip } from "@/components/stats/trend-strip";
+import {
+  useBracketBenchmark,
+  useItemStats,
+  useSquadStats,
+} from "@/hooks/use-player-stats";
+import { resolveRank } from "@/lib/stats/api";
 import { summarize } from "@/lib/stats/derive";
 import { type DashboardData, useDashboardData } from "./dashboard-context";
 
@@ -31,12 +44,16 @@ import { type DashboardData, useDashboardData } from "./dashboard-context";
  * cards), so the editor offers them as a whole rather than as chart options.
  */
 export const PANEL_IDS = [
+  "profile",
+  "trends",
   "tiles",
   "insights",
   "form",
   "session",
   "rank",
+  "benchmark",
   "recentMatches",
+  "heroPool",
   "heroes",
   "items",
   "squad",
@@ -66,6 +83,41 @@ const ItemsPanel = ({ accountId }: { accountId: number }) => {
   );
 };
 
+/** The rank bracket both bracket panels compare with; one shared request. */
+const useBracket = () => {
+  const { stats, scope, rankAssets } = useDashboardData();
+  const benchmark = useBracketBenchmark(stats, scope);
+  const bracketName =
+    benchmark.tier === null
+      ? null
+      : (resolveRank(benchmark.tier * 10 + 1, rankAssets).name ?? null);
+  return { ...benchmark, bracketName };
+};
+
+const TrendsPanel = () => {
+  const { stats } = useDashboardData();
+  const { rows, bracketName } = useBracket();
+  return (
+    <TrendStrip
+      bracket={rows}
+      bracketName={bracketName}
+      matches={stats.matches}
+    />
+  );
+};
+
+const BenchmarkPanel = () => {
+  const { rows, bracketName, isPending, isError } = useBracket();
+  return (
+    <RankBenchmark
+      bracketName={bracketName}
+      isError={isError}
+      isPending={isPending}
+      rows={rows}
+    />
+  );
+};
+
 const SquadPanel = () => {
   const { accountId, stats, heroesById, rankAssets } = useDashboardData();
   const { t } = useTranslation();
@@ -91,6 +143,29 @@ const SquadPanel = () => {
 };
 
 const PANELS = {
+  profile: {
+    icon: UserRound,
+    needsAccount: true,
+    needsHistory: true,
+    render: ({ account, accounts, onSelectAccount, stats, rankAssets }) => (
+      <ProfilePanel
+        account={account}
+        accounts={accounts}
+        heroes={stats.heroes}
+        matches={stats.matches}
+        onSelectAccount={onSelectAccount}
+        profile={stats.profile}
+        rank={stats.rank}
+        rankAssets={rankAssets}
+      />
+    ),
+  },
+  trends: {
+    icon: Activity,
+    needsAccount: true,
+    needsHistory: true,
+    render: () => <TrendsPanel />,
+  },
   tiles: {
     icon: LayoutGrid,
     needsAccount: true,
@@ -109,7 +184,9 @@ const PANELS = {
     icon: ChartLine,
     needsAccount: true,
     needsHistory: true,
-    render: ({ stats }) => <FormChart matches={stats.matches} />,
+    render: ({ stats, heroesById }) => (
+      <FormChart heroesById={heroesById} matches={stats.matches} />
+    ),
   },
   session: {
     icon: CalendarClock,
@@ -125,16 +202,26 @@ const PANELS = {
       <RankChart matches={stats.matches} rankAssets={rankAssets} />
     ),
   },
+  benchmark: {
+    icon: Gauge,
+    needsAccount: true,
+    needsHistory: true,
+    render: () => <BenchmarkPanel />,
+  },
   recentMatches: {
     icon: ListOrdered,
     needsAccount: true,
     needsHistory: true,
-    render: ({ accountId, stats, heroesById }) => (
-      <RecentMatches
-        accountId={accountId}
-        heroesById={heroesById}
-        matches={stats.matches}
-      />
+    render: ({ stats, heroesById }) => (
+      <RecentMatches heroesById={heroesById} matches={stats.matches} />
+    ),
+  },
+  heroPool: {
+    icon: Swords,
+    needsAccount: true,
+    needsHistory: true,
+    render: ({ stats, heroesById }) => (
+      <HeroPool heroes={stats.heroes} heroesById={heroesById} />
     ),
   },
   heroes: {

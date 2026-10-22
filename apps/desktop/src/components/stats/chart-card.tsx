@@ -24,7 +24,9 @@ export const ChartCard = ({
   className,
   children,
 }: ChartCardProps) => (
-  <Card className={cn("shadow-none", className)}>
+  // Fills a fixed-height dashboard cell; in an auto-height one `h-full` is a no-op.
+  <Card
+    className={cn("stats-surface flex h-full flex-col shadow-none", className)}>
     <CardHeader className='flex flex-row items-start justify-between gap-4 space-y-0 pb-2'>
       <div className='min-w-0'>
         <CardTitle className='text-base'>{title}</CardTitle>
@@ -34,6 +36,6 @@ export const ChartCard = ({
       </div>
       {action}
     </CardHeader>
-    <CardContent>{children}</CardContent>
+    <CardContent className='min-h-0 flex-1'>{children}</CardContent>
   </Card>
 );

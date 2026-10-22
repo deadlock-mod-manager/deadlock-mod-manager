@@ -187,16 +187,24 @@ export const defaultView = (
   overrides: Partial<WidgetView> = {},
 ): WidgetView => ({ ...widgetViewSchema.parse({ chart }), ...overrides });
 
-const panel = (id: string, panelId: string, w = GRID_COLUMNS) =>
+const panel = (
+  id: string,
+  panelId: string,
+  w = GRID_COLUMNS,
+  h: number | null = null,
+) =>
   ({
     id,
     title: "",
     w,
-    h: null,
+    h,
     source: { kind: "panel", panel: panelId },
   }) satisfies DashboardWidget;
 
-/** The dashboard as it shipped before it became editable. */
+/**
+ * The built-in tabs. Panels that share a row get the same fixed height so the
+ * row lines up; full-width and closing panels size to their content.
+ */
 export const DEFAULT_LAYOUT: DashboardLayout = {
   version: 1,
   tabs: [
@@ -205,12 +213,15 @@ export const DEFAULT_LAYOUT: DashboardLayout = {
       title: null,
       icon: "chart",
       widgets: [
-        panel("overview-tiles", "tiles"),
+        panel("overview-profile", "profile", 3, 10),
+        panel("overview-form", "form", 9, 10),
+        panel("overview-trends", "trends"),
+        panel("overview-benchmark", "benchmark", 8, 11),
+        panel("overview-session", "session", 4, 11),
+        panel("overview-recent", "recentMatches", 8, 12),
+        panel("overview-pool", "heroPool", 4, 12),
+        panel("overview-rank", "rank"),
         panel("overview-insights", "insights"),
-        panel("overview-form", "form"),
-        panel("overview-session", "session", 6),
-        panel("overview-rank", "rank", 6),
-        panel("overview-recent", "recentMatches"),
       ],
     },
     {

@@ -1,8 +1,4 @@
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@deadlock-mods/ui/components/avatar";
+import { Button } from "@deadlock-mods/ui/components/button";
 import {
   Dialog,
   DialogContent,
@@ -15,9 +11,16 @@ import {
   TabsList,
   TabsTrigger,
 } from "@deadlock-mods/ui/components/tabs";
-import { ChevronRight } from "@deadlock-mods/ui/icons";
+import {
+  ChartLine,
+  ChevronRight,
+  ExternalLink,
+  List,
+} from "@deadlock-mods/ui/icons";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { PlayerAvatar } from "@/components/stats/account-switcher";
 import { HeroDeepDive } from "@/components/stats/hero-deep-dive";
 import { PlayerCareerOverview } from "@/components/stats/player-career-overview";
 import { PlayerMatchExplorer } from "@/components/stats/player-match-explorer";
@@ -131,47 +134,58 @@ export const PlayerDialog = ({
         }}
         open>
         <DialogContent className='flex h-[85vh] max-h-[760px] w-[calc(100vw-2rem)] max-w-[1120px] flex-col gap-0 overflow-hidden p-0'>
-          <DialogHeader className='shrink-0 px-5 pt-5 pb-4'>
-            <DialogTitle className='flex items-center gap-3 pr-8'>
-              <Avatar className='h-12 w-12'>
-                {profile?.avatarfull && (
-                  <AvatarImage alt='' src={profile.avatarfull} />
-                )}
-                <AvatarFallback>
-                  {profile?.personaname?.charAt(0) ?? "?"}
-                </AvatarFallback>
-              </Avatar>
-              <div className='min-w-0'>
-                <div className='truncate'>
+          <DialogHeader className='shrink-0 px-6 pt-6 pb-4'>
+            <DialogTitle className='flex items-center gap-3.5 pr-10'>
+              <PlayerAvatar
+                className='h-[52px] w-[52px] ring-1 ring-border'
+                name={profile?.personaname ?? ""}
+                profile={profile}
+              />
+              <div className='min-w-0 flex-1'>
+                <div className='truncate font-bold text-xl tracking-tight'>
                   {profile?.personaname ?? `#${accountId}`}
                 </div>
-                {/* The badge is a doorway, not a label: the ranking system tracks
-                    progress, placements and demotion protection that a tier name
-                    cannot show. */}
-                <button
-                  className='group -mx-1 flex items-center gap-1.5 rounded px-1 font-normal text-muted-foreground text-xs transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
-                  onClick={() => update({ isRankOpen: true })}
-                  type='button'>
-                  {badge.image && (
-                    <img
-                      alt=''
-                      className='h-4 w-4 object-contain'
-                      src={badge.image}
-                    />
-                  )}
-                  <span>{badge.name ?? t("stats.unranked")}</span>
-                  {badge.subrank > 0 && <span>{badge.subrank}</span>}
-                  {progress && (
-                    <span className='tabular-nums'>
-                      {t("stats.rank.progressShort", {
-                        percent: Math.round(progress.fraction * 100),
-                      })}
-                    </span>
-                  )}
-                  <span className='ml-2 tabular-nums'>{accountId}</span>
-                  <ChevronRight className='h-3 w-3 transition-transform group-hover:translate-x-0.5' />
-                </button>
+                <div className='mt-1 flex flex-wrap items-center gap-3 font-normal text-xs'>
+                  {/* The badge is a doorway, not a label: the ranking system
+                      tracks progress, placements and demotion protection that a
+                      tier name cannot show. */}
+                  <button
+                    className='group -mx-1 flex items-center gap-1.5 rounded px-1 font-semibold text-foreground/85 transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+                    onClick={() => update({ isRankOpen: true })}
+                    type='button'>
+                    {badge.image && (
+                      <img
+                        alt=''
+                        className='h-4 w-5 object-contain'
+                        src={badge.image}
+                      />
+                    )}
+                    <span>{badge.name ?? t("stats.unranked")}</span>
+                    {badge.subrank > 0 && <span>{badge.subrank}</span>}
+                    {progress && (
+                      <span className='font-normal text-muted-foreground tabular-nums'>
+                        {t("stats.rank.progressShort", {
+                          percent: Math.round(progress.fraction * 100),
+                        })}
+                      </span>
+                    )}
+                    <ChevronRight className='h-3 w-3 text-muted-foreground transition-transform group-hover:translate-x-0.5' />
+                  </button>
+                  <span className='font-mono text-muted-foreground/80'>
+                    {accountId}
+                  </span>
+                </div>
               </div>
+              {profile?.profileurl && (
+                <Button
+                  className='h-8 shrink-0 gap-1.5 font-semibold'
+                  onClick={() => void openUrl(profile.profileurl)}
+                  size='sm'
+                  variant='outline'>
+                  <ExternalLink className='h-3.5 w-3.5 text-muted-foreground' />
+                  {t("stats.player.steamProfile")}
+                </Button>
+              )}
             </DialogTitle>
           </DialogHeader>
 
@@ -181,13 +195,21 @@ export const PlayerDialog = ({
               update({ tab: value === "matches" ? "matches" : "overview" })
             }
             value={activeView.tab}>
-            <TabsList className='h-11 w-full shrink-0 justify-start rounded-none border-y bg-muted/30 px-5 py-1'>
-              <TabsTrigger value='overview'>
-                {t("stats.player.overview")}
-              </TabsTrigger>
-              <TabsTrigger value='matches'>
-                {t("stats.player.matches")}
-              </TabsTrigger>
+            <TabsList className='h-auto w-full shrink-0 justify-start gap-1 rounded-none border-border/60 border-b bg-transparent px-6 pt-0 pb-3'>
+              {(
+                [
+                  ["overview", ChartLine, "stats.player.overview"],
+                  ["matches", List, "stats.player.matches"],
+                ] as const
+              ).map(([value, Icon, label]) => (
+                <TabsTrigger
+                  className='h-9 gap-2 rounded-lg border border-transparent px-3.5 font-semibold text-[13px] text-muted-foreground data-[state=active]:border-primary/15 data-[state=active]:bg-secondary data-[state=active]:text-foreground data-[state=active]:shadow-none [&[data-state=active]>svg]:text-primary'
+                  key={value}
+                  value={value}>
+                  <Icon className='h-4 w-4' />
+                  {t(label)}
+                </TabsTrigger>
+              ))}
             </TabsList>
             <TabsContent
               className='m-0 min-h-0 flex-1 overflow-y-auto'

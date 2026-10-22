@@ -943,7 +943,7 @@
     "subtitle": "How you are playing right now, and where to improve",
     "scope": {
       "mode": "Match mode",
-      "all": "All matches",
+      "all": "All",
       "ranked": "Ranked",
       "unranked": "Unranked",
       "since": "Matches since",
@@ -972,7 +972,26 @@
       "chartDescription": "Your winrate with each item compared to everyone else building the same one, for the items you buy most",
       "tooltip": "{{winrate}} winrate across {{matches}} matches",
       "loading": "Loading item statistics…",
-      "empty": "No item statistics for this account yet."
+      "empty": "No item statistics for this account yet.",
+      "liftsMost": "Lifts you most",
+      "holdsBack": "Holds you back",
+      "gamesWith_one": "{{count}} game with it",
+      "gamesWith_other": "{{count}} games with it",
+      "you": "You",
+      "everyone": "Everyone",
+      "liftsLine": "{{points}} pts over everyone who buys it",
+      "dragLine": "{{points}} pts against everyone who buys it",
+      "lateLine": "{{points}} pts; you buy it {{minutes}} min later than most",
+      "emptyTitle": "No item stats yet",
+      "emptyDescription": "deadlock-api builds item stats from fully analysed matches, and only some of yours have been analysed so far. They will show up here as more of your matches are processed.",
+      "emptyAction": "Get matches analysed first",
+      "tableTitle": "Your items against everyone",
+      "tableDescription": "Winrate when you buy an item, next to all players who buy it",
+      "slotFilter": "Item slot",
+      "allSlots": "All",
+      "versus": "You vs everyone",
+      "points": "{{value}} pts",
+      "tierSlot": "T{{tier}} {{slot}}"
     },
     "player": {
       "onHeroShort": "{{matches}} × this hero, {{winrate}}",
@@ -987,7 +1006,7 @@
       "recentMatches": "Recent matches",
       "trackedMatches": "Tracked matches",
       "trackedMatchesHint": "Matches Deadlock API has on record",
-      "overview": "Career overview",
+      "overview": "Career",
       "matches": "Match history",
       "openMatch": "Open match {{id}}",
       "matchHistory": "Recent matches",
@@ -1017,7 +1036,13 @@
       "transactions": "Transactions",
       "buy": "Buy",
       "sell": "Sell",
-      "noTransactionsYet": "No purchases at this point in the match."
+      "noTransactionsYet": "No purchases at this point in the match.",
+      "steamProfile": "Steam profile",
+      "overallShort": "overall",
+      "recentFormLabel": "Recent form, last {{count}}",
+      "recentRecord": "{{wins}}W {{losses}}L, {{winrate}}",
+      "soulsHint": "Across tracked matches",
+      "recentDescription": "Last {{count}}, newest first; open one for the full match"
     },
     "rank": {
       "deepDiveDescription": "Deadlock ranks on a progress counter now, not an MMR estimate: a subrank spans 1000 points, and placements and demotion protection change what a match is worth.",
@@ -1113,13 +1138,13 @@
       "heroes": "Heroes",
       "formTitle": "Form",
       "formDescription": "Winrate across a rolling window of {{window}} matches",
-      "sessionTitle": "Winrate per session",
-      "sessionDescription": "How you do on the 1st, 2nd, 3rd… match of a session. The dashed line is your overall winrate.",
+      "sessionTitle": "Game by game",
+      "sessionDescription": "Winrate by position in a play session",
       "sessionTick": "#{{position}}",
       "sessionTooltip": "Match {{position}} of a session",
       "matchCount_one": "({{count}} match)",
       "matchCount_other": "({{count}} matches)",
-      "recentTitle": "Last matches",
+      "recentTitle": "Recent matches",
       "recentDescription": "Your last {{count}} games, newest first",
       "recentTooltip": "{{souls}} souls, {{duration}}",
       "benchmarkTitle": "You vs. everyone",
@@ -1165,7 +1190,14 @@
       "comfortHero": "{{winrate}} winrate across {{matches}} matches, clearly above your average.",
       "trapHero": "Only {{winrate}} winrate across {{matches}} matches. Worth dropping or practising deliberately.",
       "topHero": "Most played by far: {{matches}} matches at {{winrate}} winrate.",
-      "longGames": "In matches past {{minutes}} minutes you win {{winrate}} against {{baseline}} overall."
+      "longGames": "In matches past {{minutes}} minutes you win {{winrate}} against {{baseline}} overall.",
+      "panelTitle": "What stands out",
+      "panelDescription": "Patterns worth acting on, from your selected matches",
+      "versus": "vs {{value}}",
+      "streakWins_one": "{{count}}W",
+      "streakWins_other": "{{count}}W",
+      "streakLosses_one": "{{count}}L",
+      "streakLosses_other": "{{count}}L"
     },
     "heroes": {
       "hero": "Hero",
@@ -1174,7 +1206,26 @@
       "kda": "KDA",
       "souls": "Souls/min",
       "accuracy": "Accuracy",
-      "empty": "No hero stats for this account yet."
+      "empty": "No hero stats for this account yet.",
+      "aboveLine": "Above your {{value}}",
+      "belowLine": "Below",
+      "scatterDescription": "Games played against winrate; pick a hero to see how you compare",
+      "comfortZone": "Comfort picks",
+      "trapZone": "Traps",
+      "selectHero": "Show {{hero}}",
+      "gamesTick_one": "{{count}} game",
+      "gamesTick_other": "{{count}} games",
+      "spotlightMeta_one": "{{count}} game, {{hours}} h played",
+      "spotlightMeta_other": "{{count}} games, {{hours}} h played",
+      "versusEveryone": "Against everyone on {{hero}}",
+      "perMatch": "per match",
+      "worse": "worse",
+      "better": "better",
+      "noBenchmark": "No comparison with other players on this hero yet.",
+      "allTitle": "All heroes",
+      "allDescription_one": "{{count}} hero played in the selected matches",
+      "allDescription_other": "{{count}} heroes played in the selected matches",
+      "lastPlayed": "Last played"
     },
     "squad": {
       "player": "Player",
@@ -1186,11 +1237,30 @@
       "chartTitle": "Who lifts your winrate",
       "chartDescription": "Winrate with each teammate compared to your matches without them ({{winrate}} overall)",
       "tooltip": "{{winrate}} winrate across {{matches}} matches together",
-      "nemesisTitle": "Nemeses",
-      "nemesisDescription": "Opponents you keep running into and rarely beat",
+      "nemesisTitle": "Who beats you most",
+      "nemesisDescription": "Enemies you met 3+ times, worst record first",
       "encounters_one": "{{count}} encounter",
       "encounters_other": "{{count}} encounters",
-      "empty": "No recurring teammates found yet. This needs a few matches with the same people."
+      "empty": "No recurring teammates found yet. This needs a few matches with the same people.",
+      "worseTogether": "Worse together",
+      "betterTogether": "Better together",
+      "games_one": "{{count}} game",
+      "games_other": "{{count}} games",
+      "together": "Together",
+      "without": "Without",
+      "bestDuo": "Best duo",
+      "duoLine_one": "{{count}} game together",
+      "duoLine_other": "{{count}} games together",
+      "duoLinePremade_one": "Premade, {{count}} game together",
+      "duoLinePremade_other": "Premade, {{count}} games together",
+      "nemesis": "Your nemesis",
+      "nemesisLine_one": "Faced {{count}} time, you won {{wins}}",
+      "nemesisLine_other": "Faced {{count}} times, you won {{wins}}",
+      "yourWins": "Your wins",
+      "met": "Met",
+      "record": "Record",
+      "matesTitle": "Teammates",
+      "matesDescription": "Everyone you played 5+ games with"
     },
     "dashboard": {
       "customize": "Customize",
@@ -1478,7 +1548,7 @@
           "description": "Your rolling winrate over time."
         },
         "session": {
-          "title": "Winrate per session",
+          "title": "Game by game",
           "description": "How you do on the 1st, 2nd, 3rd match of a session."
         },
         "rank": {
@@ -1486,7 +1556,7 @@
           "description": "The badge Valve gave you after each ranked match."
         },
         "recentMatches": {
-          "title": "Last matches",
+          "title": "Recent matches",
           "description": "Your latest games, with details on click."
         },
         "heroes": {
@@ -1500,6 +1570,22 @@
         "squad": {
           "title": "Squad",
           "description": "Winrate with your mates, and the players who beat you most."
+        },
+        "profile": {
+          "title": "Profile",
+          "description": "Your account, rank and where it sits on the ladder."
+        },
+        "trends": {
+          "title": "Trends",
+          "description": "Winrate ring and sparklines against your rank's median."
+        },
+        "benchmark": {
+          "title": "Against your rank",
+          "description": "Your averages placed among players of your rank."
+        },
+        "heroPool": {
+          "title": "Hero pool",
+          "description": "Your most played heroes with their winrates."
         }
       },
       "presets": {
@@ -1807,6 +1893,215 @@
         "movement_powerup_pickup": "Movement power-up",
         "survival_powerup_pickup": "Survival power-up"
       }
+    },
+    "switchAccount": "Switch account",
+    "form": {
+      "description": "Winrate over a rolling {{window}} matches, last {{count}} shown",
+      "baseline": "Overall {{value}}",
+      "tooltip": "{{winrate}} over the last {{window}}",
+      "tooFew": "Play {{window}} matches to see your form.",
+      "oldest_one": "{{count}} match ago",
+      "oldest_other": "{{count}} matches ago",
+      "latest": "Latest",
+      "winrateLabel": "Winrate, last {{count}}",
+      "recordValue": "{{wins}}W {{losses}}L"
+    },
+    "trends": {
+      "resultsLabel": "{{wins}} wins and {{losses}} losses, oldest to latest",
+      "oldestToLatest": "Oldest to latest",
+      "bracketMedian": "{{rank}} median {{value}}",
+      "globalMedian": "Median {{value}}",
+      "lastMatches": "Last {{count}} matches"
+    },
+    "bracket": {
+      "title": "Against your rank",
+      "description": "Your typical match, placed among {{rank}} players",
+      "descriptionGlobal": "Your typical match, placed among all players",
+      "middleHalf": "Middle 50%",
+      "median": "Median",
+      "medianValue": "Median {{value}}",
+      "top": "Top {{percent}}%",
+      "beatsHint": "Higher than {{percent}}% of the bracket",
+      "beatsHintLower": "Lower than {{percent}}% of the bracket",
+      "error": "Couldn't load your rank's numbers. Try refreshing in a minute.",
+      "empty": "Not enough data to compare yet.",
+      "metrics": {
+        "damagePerMin": "Damage / min",
+        "soulsPerMin": "Souls / min",
+        "accuracy": "Accuracy",
+        "kda": "KDA",
+        "lastHits": "Last hits",
+        "deaths": "Deaths"
+      },
+      "bottom": "Bottom {{percent}}%"
+    },
+    "session": {
+      "lastSlot": "#{{position}}+",
+      "dropsAfter": "Your winrate drops below 50% after game {{count}}."
+    },
+    "recent": {
+      "description": "Grouped by play session",
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "span": "{{from}} to {{to}}",
+      "rankSame": "No change",
+      "rankUp_one": "+{{count}} subrank",
+      "rankUp_other": "+{{count}} subranks",
+      "rankDown_one": "-{{count}} subrank",
+      "rankDown_other": "-{{count}} subranks",
+      "winShort": "W",
+      "lossShort": "L",
+      "kda": "KDA {{value}}",
+      "souls": "Souls",
+      "lastHits": "Last hits"
+    },
+    "pool": {
+      "title": "Hero pool",
+      "gem_one": "{{hero}} wins {{winrate}} in {{count}} game. Worth more time.",
+      "gem_other": "{{hero}} wins {{winrate}} in {{count}} games. Worth more time.",
+      "description": "Bars show games played",
+      "games_one": "{{count}} game",
+      "games_other": "{{count}} games",
+      "kda": "KDA {{value}}",
+      "all_one": "All {{count}} hero",
+      "all_other": "All {{count}} heroes"
+    },
+    "profile": {
+      "lastPlayed": "Last played {{ago}}",
+      "top": "Top {{percent}}% of ranked players",
+      "hoursValue_one": "{{count}} h",
+      "hoursValue_other": "{{count}} h",
+      "facts": {
+        "matches": "Matches",
+        "hours": "Time played",
+        "heroes": "Heroes played",
+        "bestStreak": "Best streak"
+      },
+      "unrankedHint": "Finish your ranked placements to show up on the ladder."
+    },
+    "match": {
+      "breadcrumb": "Breadcrumb",
+      "matchId": "Match {{id}}",
+      "copyId": "Copy ID",
+      "copied": "Match ID copied",
+      "copyFailed": "Couldn't copy the match ID",
+      "previous": "Previous match",
+      "next": "Next match",
+      "victory": "Victory",
+      "defeat": "Defeat",
+      "onHero": "on {{hero}}",
+      "teams": {
+        "0": "Hidden King",
+        "1": "Archmother"
+      },
+      "kda": "K / D / A",
+      "perMinute": "{{value}} / min",
+      "souls": "Souls",
+      "damage": "Damage",
+      "rank": "Rank",
+      "rankFromTo": "{{from}} to {{to}}",
+      "views": "Match views",
+      "view": {
+        "overview": "Overview",
+        "build": "Build",
+        "lobby": "Lobby"
+      },
+      "soulLead": "Soul lead",
+      "soulLeadDescription": "Team souls difference over the match",
+      "leadLost": "Lead lost {{time}}",
+      "even": "Even",
+      "teamAhead": "{{team}} +{{souls}}",
+      "peak": "Peak {{souls}} at {{time}}",
+      "placements": "Where you placed",
+      "placementsDescription": "Your rank among all {{count}} players",
+      "metrics": {
+        "damage": "Damage",
+        "souls": "Souls",
+        "accuracy": "Accuracy",
+        "healing": "Healing",
+        "deaths": "Deaths"
+      },
+      "best": "Best",
+      "worst": "Worst",
+      "kills": "Kills",
+      "you": "You",
+      "columns": {
+        "player": "Player",
+        "kda": "K / D / A",
+        "souls": "Souls",
+        "damage": "Damage",
+        "healing": "Healing",
+        "lastHits": "LH / DN",
+        "build": "Build"
+      },
+      "slots": {
+        "weapon": "Weapon",
+        "vitality": "Vitality",
+        "spirit": "Spirit"
+      },
+      "yourSouls": "Your souls",
+      "timeline": "Build timeline",
+      "timelineDescription": "Every purchase at the minute you made it, over your souls",
+      "phases": {
+        "laningEnds": "Laning ends",
+        "lateGame": "Late game"
+      },
+      "boughtAt": "Bought at {{time}}",
+      "firstTier": "First T{{tier}} {{time}}",
+      "spent": "Where your souls went",
+      "spentDescription_one": "{{souls}} spent on {{count}} item",
+      "spentDescription_other": "{{souls}} spent on {{count}} items",
+      "soulsAmount": "{{souls}} souls",
+      "compare": "Faster or slower than usual",
+      "compareDescription": "Buy times and souls against your {{hero}} average",
+      "noBaseline": "Not enough analysed games on this hero to compare yet. deadlock-api fully analyses only some matches.",
+      "usually": "usually {{value}}",
+      "earlier": "{{time}} earlier",
+      "later": "{{time}} later",
+      "soulsAtTime": "Souls at {{time}}",
+      "final": "Final build",
+      "finalDescription": "What you ended the match with",
+      "lane": "Your lane",
+      "laneDescription": "Souls when laning ended, at {{time}}",
+      "laneWon": "Lane won by {{souls}} souls.",
+      "laneLost": "Lane lost by {{souls}} souls.",
+      "duels": "Duels",
+      "duelsDescription": "Your kills on each enemy against their kills on you",
+      "duel": {
+        "won": "Won",
+        "lost": "Lost",
+        "even": "Even",
+        "none": "No fights"
+      },
+      "youKilled": "You killed them",
+      "theyKilled": "They killed you",
+      "history": {
+        "party": "Party member",
+        "mate_one": "Teammate {{count}} time, won {{wins}}",
+        "mate_other": "Teammate {{count}} times, won {{wins}}",
+        "enemy_one": "Faced {{count}} time, you won {{wins}}",
+        "enemy_other": "Faced {{count}} times, you won {{wins}}"
+      },
+      "averageRank": "Average rank",
+      "mvp": "MVP #{{rank}}",
+      "errorTitle": "Couldn't load this match",
+      "errorDescription": "deadlock-api didn't return it. It may not be processed yet; try again in a few minutes.",
+      "backToStats": "Back to stats",
+      "notInMatchTitle": "You're not in this match",
+      "notInMatchDescription": "Switch to the Steam account that played it on the Stats page.",
+      "lobbyRank_ordinal_one": "{{count}}st in lobby",
+      "lobbyRank_ordinal_two": "{{count}}nd in lobby",
+      "lobbyRank_ordinal_few": "{{count}}rd in lobby",
+      "lobbyRank_ordinal_other": "{{count}}th in lobby",
+      "placeOf_ordinal_one": "{{count}}st of {{total}}",
+      "placeOf_ordinal_two": "{{count}}nd of {{total}}",
+      "placeOf_ordinal_few": "{{count}}rd of {{total}}",
+      "placeOf_ordinal_other": "{{count}}th of {{total}}",
+      "boughtAndSold": "Bought {{bought}}, sold {{sold}}",
+      "leadTaken": "Lead taken {{time}}",
+      "versus": "vs",
+      "laneKiller_one": "{{name}} had {{count}} kill before {{time}}.",
+      "laneKiller_other": "{{name}} had {{count}} kills before {{time}}."
     }
   },
   "foundry": {
