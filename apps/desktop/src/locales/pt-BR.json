@@ -754,7 +754,8 @@
       "video": {
         "title": "",
         "notesTitle": "",
-        "description": ""
+        "description": "",
+        "variantLabel": ""
       },
       "view": {
         "title": "",
@@ -3866,7 +3867,8 @@
     "socials": {
       "discord": "",
       "x": "",
-      "reddit": ""
+      "reddit": "",
+      "github": ""
     }
   },
   "branding": {
@@ -3894,7 +3896,8 @@
     "loadFailed": "",
     "viewOnGithub": "",
     "thanksTitle": "",
-    "thanksDescription": ""
+    "thanksDescription": "",
+    "contributeOnGithub": ""
   },
   "about": {
     "title": "Sobre",

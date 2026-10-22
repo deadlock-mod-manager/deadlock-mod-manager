@@ -62,7 +62,7 @@
     },
     "detected": "Твоя система",
     "noBuilds": "Для этой версии нет сборок под {{platform}}.",
-    "experimental": "Экспериментальные сборки с Chromium ({{total}})",
+    "experimental": "",
     "experimentalDescription": "Включают движок Chromium (CEF) вместо системного webview. Весят больше и протестированы хуже; пробуй их, только если у обычной сборки проблемы с отрисовкой."
   },
   "installer": {
@@ -79,6 +79,10 @@
       "msi": {
         "label": "Пакет MSI",
         "description": "Для управляемой или тихой установки (.msi)"
+      },
+      "portable": {
+        "label": "",
+        "description": ""
       },
       "dmg": {
         "label": "Образ диска",
