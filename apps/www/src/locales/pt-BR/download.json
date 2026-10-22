@@ -62,7 +62,7 @@
     },
     "detected": "Sistema detectado",
     "noBuilds": "Nenhuma versão para {{platform}} nesta release.",
-    "experimental": "Versões experimentais com Chromium ({{total}})",
+    "experimental": "",
     "experimentalDescription": "Inclui o motor Chromium (CEF) em vez do webview do sistema. Maiores e menos testadas; só use se a versão padrão tiver problemas de renderização."
   },
   "installer": {
@@ -79,6 +79,10 @@
       "msi": {
         "label": "Pacote MSI",
         "description": "Para instalações gerenciadas ou silenciosas (.msi)"
+      },
+      "portable": {
+        "label": "",
+        "description": ""
       },
       "dmg": {
         "label": "Imagem de disco",

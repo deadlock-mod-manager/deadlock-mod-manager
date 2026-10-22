@@ -62,7 +62,7 @@
     },
     "detected": "Erkanntes System",
     "noBuilds": "Keine {{platform}}-Builds für diese Version.",
-    "experimental": "Experimentelle Chromium-Builds ({{total}})",
+    "experimental": "",
     "experimentalDescription": "Enthält die Chromium-Engine (CEF) statt der System-Webview. Größer und weniger getestet; probier sie nur, wenn der Standard-Build Darstellungsprobleme hat."
   },
   "installer": {
@@ -79,6 +79,10 @@
       "msi": {
         "label": "MSI-Paket",
         "description": "Für verwaltete oder stille Installationen (.msi)"
+      },
+      "portable": {
+        "label": "",
+        "description": ""
       },
       "dmg": {
         "label": "Disk-Image",
