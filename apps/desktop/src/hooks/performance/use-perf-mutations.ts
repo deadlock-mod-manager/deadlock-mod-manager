@@ -17,9 +17,11 @@ import { presetIdFromConfigId } from "@/lib/performance/request";
 import { usePersistedStore } from "@/lib/store";
 import { isGameRunning } from "@/lib/tauri-commands";
 import { isTauriError } from "@/types/tauri";
+import type { CatalogSummary } from "@/types/generated/CatalogSummary";
 import type { PerfApplyRequest } from "@/types/generated/PerfApplyRequest";
 import type { PerfApplyResult } from "@/types/generated/PerfApplyResult";
 import type { PerfStatus } from "@/types/generated/PerfStatus";
+import { refreshPerfCatalogNow } from "./use-perf-queries";
 
 /** One toast at a time, so an older toast's Undo can't revert a newer change. */
 const APPLIED_TOAST_ID = "performance-config-applied";
@@ -38,6 +40,33 @@ type ApplyPerfConfigVariables = {
 
 type RemovePerfConfigVariables = {
   entryPoint: AnalyticsEvents["performance_config_removed"]["entry_point"];
+};
+
+export const useRefreshPerfCatalog = () => {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+
+  return useMutation<{ version: string; updated: boolean }, Error>({
+    mutationFn: async () => {
+      const previous = queryClient.getQueryData<CatalogSummary>(
+        perfQueryKeys.catalog(),
+      )?.version;
+      const { version } = await refreshPerfCatalogNow(queryClient);
+      return { version, updated: version !== previous };
+    },
+    meta: { skipGlobalErrorHandler: true },
+    onSuccess: ({ version, updated }) => {
+      toast.success(
+        updated
+          ? t("performance.toasts.catalogUpdated", { version })
+          : t("performance.toasts.catalogUpToDate"),
+      );
+    },
+    onError: (error) => {
+      logger.withError(error).warn("Performance catalog refresh failed");
+      toast.error(t("performance.toasts.catalogRefreshFailed"));
+    },
+  });
 };
 
 export const useRemovePerfConfig = () => {

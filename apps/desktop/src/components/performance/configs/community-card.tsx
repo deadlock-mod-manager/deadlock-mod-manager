@@ -42,11 +42,11 @@ export const OutdatedPatchChip = ({
   return (
     <Chip
       icon={<ClockCounterClockwiseIcon aria-hidden />}
-      title={t("performance.configs.outdatedHint", {
+      tone='warning'
+      tooltip={t("performance.configs.outdatedHint", {
         build: community.baseBuild,
         latest: latestBuild,
-      })}
-      tone='warning'>
+      })}>
       {community.updatedAt
         ? t("performance.configs.updatedIn", {
             month: new Date(community.updatedAt).toLocaleDateString(

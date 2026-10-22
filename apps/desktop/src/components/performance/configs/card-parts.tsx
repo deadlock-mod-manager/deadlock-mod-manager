@@ -1,3 +1,8 @@
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deadlock-mods/ui/components/tooltip";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { TIERS, tierInfo, tierLevel } from "@/lib/performance/scale";
@@ -50,6 +55,7 @@ export const TierMeter = ({ tier }: { tier: PerfTier }) => {
 
 const CHIP_TONES = {
   default: "border-border bg-muted/30 text-muted-foreground",
+  quiet: "border-transparent text-muted-foreground/70",
   warning: "border-amber-500/25 bg-amber-500/5 text-amber-400",
   success: "border-emerald-500/25 bg-emerald-500/10 text-emerald-400",
 } as const;
@@ -58,23 +64,35 @@ export const Chip = ({
   children,
   icon,
   tone = "default",
-  title,
+  tooltip,
 }: {
   children: ReactNode;
   icon?: ReactNode;
   tone?: keyof typeof CHIP_TONES;
-  title?: string;
-}) => (
-  <span
-    className={cn(
-      "inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] leading-4 [&_svg]:size-3 [&_svg]:shrink-0",
-      CHIP_TONES[tone],
-    )}
-    title={title}>
-    {icon}
-    {children}
-  </span>
-);
+  tooltip?: string;
+}) => {
+  const chip = (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] leading-4 [&_svg]:size-3 [&_svg]:shrink-0",
+        CHIP_TONES[tone],
+        tooltip && "cursor-help",
+      )}
+      tabIndex={tooltip ? 0 : undefined}>
+      {icon}
+      {children}
+    </span>
+  );
+  if (!tooltip) return chip;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{chip}</TooltipTrigger>
+      <TooltipContent className='max-w-xs leading-relaxed'>
+        {tooltip}
+      </TooltipContent>
+    </Tooltip>
+  );
+};
 
 export const ConfigCardShell = ({
   active,

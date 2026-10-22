@@ -64,7 +64,7 @@ export const PresetCard = ({
           })}
         </Chip>
         {unused > 0 && (
-          <Chip title={t("performance.configs.unusedHint")} tone='warning'>
+          <Chip tone='quiet' tooltip={t("performance.configs.unusedHint")}>
             {t("performance.configs.unusedCount", { count: unused })}
           </Chip>
         )}

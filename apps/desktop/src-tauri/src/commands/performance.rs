@@ -69,14 +69,12 @@ pub async fn perf_get_catalog(app_handle: AppHandle) -> Result<CatalogSummary, E
   with_context(&app_handle, ops::catalog_summary)
 }
 
-/// Fetches a newer catalog from the API if there is one. Failing to reach the
-/// API is not an error for the caller: the bundled catalog keeps working.
+/// Fetches a newer catalog from the API if there is one. On failure the current
+/// catalog keeps working; the error is returned so a manual check can report it.
 #[tauri::command]
 pub async fn perf_refresh_catalog(app_handle: AppHandle) -> Result<CatalogSummary, Error> {
   let app_data_dir = app_data_dir(&app_handle)?;
-  if let Err(error) = catalog::refresh_from_api(&get_api_url(), &app_data_dir).await {
-    log::warn!("Performance catalog refresh failed: {error}");
-  }
+  catalog::refresh_from_api(&get_api_url(), &app_data_dir).await?;
   with_context(&app_handle, ops::catalog_summary)
 }
 

@@ -20,14 +20,21 @@ import type { ConvarMeta } from "@/types/generated/ConvarMeta";
 import type { PerfApplyRequest } from "@/types/generated/PerfApplyRequest";
 import type { ResolvedConfig } from "@/types/generated/ResolvedConfig";
 
-let catalogRefresh: Promise<void> | null = null;
+/** Background checks run at most this often. */
+const CATALOG_RECHECK_MS = 60 * 60 * 1000;
+
+let catalogRefresh: Promise<CatalogSummary> | null = null;
+let lastCatalogCheck = 0;
 
 /**
- * Asks the API for a newer catalog, once per session (app start, or the first
- * catalog read). The bundled one keeps working when that fails.
+ * Asks the API for a newer catalog and adopts it. Calls made while a check is
+ * in flight share it. Rejects when the API can't be reached; the current
+ * catalog keeps working.
  */
-export const refreshPerfCatalogOnce = (queryClient: QueryClient) => {
-  catalogRefresh ??= refreshPerfCatalog()
+export const refreshPerfCatalogNow = (queryClient: QueryClient) => {
+  if (catalogRefresh) return catalogRefresh;
+  lastCatalogCheck = Date.now();
+  catalogRefresh = refreshPerfCatalog()
     .then(async (summary) => {
       const catalogKey = perfQueryKeys.catalog();
       const previous = queryClient.getQueryData<CatalogSummary>(catalogKey);
@@ -37,23 +44,41 @@ export const refreshPerfCatalogOnce = (queryClient: QueryClient) => {
       queryClient.setQueryData(catalogKey, summary);
       // Presets resolve against the catalog, so other results only go stale
       // when it actually changed.
-      if (previous?.version === summary.version) return;
+      if (previous?.version === summary.version) return summary;
       await queryClient.invalidateQueries({
         queryKey: perfQueryKeys.all,
         predicate: (query) => query.queryKey[1] !== catalogKey[1],
       });
+      return summary;
     })
-    .catch((error) =>
-      logger.withError(error).warn("Performance catalog refresh failed"),
-    );
+    .finally(() => {
+      catalogRefresh = null;
+    });
   return catalogRefresh;
+};
+
+/**
+ * Checks for a newer catalog at app start (or the first catalog read), then
+ * at most once an hour. Never rejects.
+ */
+export const refreshPerfCatalogInBackground = async (
+  queryClient: QueryClient,
+) => {
+  if (!catalogRefresh && Date.now() - lastCatalogCheck < CATALOG_RECHECK_MS) {
+    return;
+  }
+  try {
+    await refreshPerfCatalogNow(queryClient);
+  } catch (error) {
+    logger.withError(error).warn("Performance catalog refresh failed");
+  }
 };
 
 /** The catalog with counts computed against the user's gameinfo.gi. */
 export const usePerfCatalog = () => {
   const queryClient = useQueryClient();
   useEffect(() => {
-    refreshPerfCatalogOnce(queryClient);
+    refreshPerfCatalogInBackground(queryClient);
   }, [queryClient]);
 
   return useQuery({
@@ -87,7 +112,7 @@ const removedNames = (convars: ConvarMeta[]) =>
 export const useRemovedConvars = (names: readonly string[]) => {
   const queryClient = useQueryClient();
   useEffect(() => {
-    refreshPerfCatalogOnce(queryClient);
+    refreshPerfCatalogInBackground(queryClient);
   }, [queryClient]);
 
   return useQuery({

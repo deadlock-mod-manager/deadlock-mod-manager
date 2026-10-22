@@ -439,11 +439,19 @@ fn read_cache(app_data_dir: &Path, today: NaiveDate) -> Option<Catalog> {
 pub async fn refresh_from_api(api_url: &str, app_data_dir: &Path) -> Result<Arc<Catalog>, Error> {
   let url = format!("{api_url}/api/v2/perf-catalog");
   let client = crate::proxy::build_default_http_client()?;
+  let existing = current();
   let response = client
     .get(&url)
+    .header(
+      reqwest::header::IF_NONE_MATCH,
+      format!("\"{}\"", existing.version()),
+    )
     .send()
     .await
     .map_err(|e| Error::Network(format!("Failed to download performance catalog: {e}")))?;
+  if response.status() == reqwest::StatusCode::NOT_MODIFIED {
+    return Ok(existing);
+  }
   if !response.status().is_success() {
     return Err(Error::Network(format!(
       "Performance catalog request failed with status {}",
@@ -456,7 +464,6 @@ pub async fn refresh_from_api(api_url: &str, app_data_dir: &Path) -> Result<Arc<
     .map_err(|e| Error::Network(format!("Failed to read performance catalog: {e}")))?;
   let catalog = Catalog::from_json(&json, CatalogOrigin::Downloaded)?;
   check_version_date(catalog.version(), today())?;
-  let existing = current();
   if !is_newer(catalog.version(), existing.version()) {
     return Ok(existing);
   }

@@ -10,17 +10,20 @@ import {
   FolderOpenIcon,
   GaugeIcon,
   InfoIcon,
+  PowerIcon,
   SlidersHorizontalIcon,
   WarningIcon,
 } from "@phosphor-icons/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { useConfirm } from "@/components/providers/alert-dialog";
 import { useCatalogBehind } from "@/hooks/performance/use-catalog-behind";
 import { useNavigate } from "react-router";
 import { usePerfConfigList } from "@/hooks/performance/use-perf-config-list";
 import {
   useApplyPerfConfig,
+  useRefreshPerfCatalog,
   useRemovePerfConfig,
 } from "@/hooks/performance/use-perf-mutations";
 import { analytics } from "@/lib/analytics";
@@ -133,6 +136,34 @@ const UndoButton = ({
       size='sm'
       variant='ghost'>
       {t("performance.activeStatus.undo")}
+    </Button>
+  );
+};
+
+const TurnOffButton = ({ name }: { name: string }) => {
+  const { t } = useTranslation();
+  const confirm = useConfirm();
+  const removeMutation = useRemovePerfConfig();
+
+  const turnOff = async () => {
+    const confirmed = await confirm({
+      title: t("performance.header.turnOffConfirm.title", { name }),
+      body: t("performance.header.turnOffConfirm.body"),
+      actionButton: t("performance.header.turnOff"),
+      tone: "destructive",
+      icon: PowerIcon,
+    });
+    if (confirmed) removeMutation.mutate({ entryPoint: "page" });
+  };
+
+  return (
+    <Button
+      icon={<PowerIcon aria-hidden />}
+      isLoading={removeMutation.isPending}
+      onClick={turnOff}
+      size='sm'
+      variant='ghost'>
+      {t("performance.header.turnOff")}
     </Button>
   );
 };
@@ -333,6 +364,7 @@ const ActiveStrip = ({
         </Button>
         <OpenInEditorButton />
         <UndoButton currentConfigId={desired.request.configId} />
+        <TurnOffButton name={name} />
       </div>
     </section>
   );
@@ -435,11 +467,21 @@ const UnmanagedChangesNotice = ({ count }: { count: number }) => {
 export const CatalogBehindNotice = () => {
   const { t } = useTranslation();
   const behind = useCatalogBehind();
+  const refreshMutation = useRefreshPerfCatalog();
   if (!behind) return null;
   return (
     <p className='mt-2 flex items-start gap-1.5 px-1 text-muted-foreground text-xs'>
       <InfoIcon aria-hidden className='mt-0.5 size-3.5 shrink-0' />
-      {t("performance.activeStatus.catalogBehind", behind)}
+      <span>
+        {t("performance.activeStatus.catalogBehind", behind)}{" "}
+        <button
+          className='font-medium text-foreground/80 underline-offset-2 hover:text-foreground hover:underline disabled:opacity-50'
+          disabled={refreshMutation.isPending}
+          onClick={() => refreshMutation.mutate()}
+          type='button'>
+          {t("performance.activeStatus.checkForUpdates")}
+        </button>
+      </span>
     </p>
   );
 };

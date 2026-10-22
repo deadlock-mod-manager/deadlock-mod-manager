@@ -93,7 +93,7 @@
           "term": "GameBanana configs",
           "body": "Listed by their <gamebanana>GameBanana</gamebanana> id. The files are downloaded from GameBanana when you import one."
         },
-        "updates": "The app ships with a copy of this data and checks the mod manager's server for a newer one once per session."
+        "updates": "The app ships with a copy of this data and checks the mod manager's server for a newer one at startup and at most once an hour after that."
       },
       "statuses": {
         "title": "What happens to each setting",
@@ -187,7 +187,10 @@
       "undoFailed": "Couldn't undo the change",
       "applyFailed": "Couldn't apply the config",
       "removed": "Performance config turned off",
-      "removeFailed": "Couldn't turn off the config"
+      "removeFailed": "Couldn't turn off the config",
+      "catalogUpdated": "Config catalog updated to {{version}}",
+      "catalogUpToDate": "The config catalog is up to date",
+      "catalogRefreshFailed": "Couldn't check for catalog updates"
     },
     "editor": {
       "header": {
@@ -597,6 +600,8 @@
     },
     "header": {
       "import": "Import config",
+      "refreshCatalog": "Refresh catalog",
+      "catalogVersion": "Catalog version {{version}}",
       "turnOff": "Turn off",
       "turnOffConfirm": {
         "title": "Turn off {{name}}?",
@@ -626,6 +631,7 @@
       "notInFile": "Not in gameinfo.gi right now (a game update or reset replaced the file). It goes back in when you return to the mod manager with Deadlock closed, or when you launch from it.",
       "outOfDate": "gameinfo.gi holds a different version of this config than the one you chose. It's updated when you launch from the mod manager.",
       "catalogBehind": "Your game is build {{installed}}, newer than the mod manager's convar list (build {{catalog}}). Settings added since then are left out until the list updates.",
+      "checkForUpdates": "Check for updates",
       "handEdited_one": "{{count}} line was edited by hand since the mod manager wrote it ({{keys}}). Re-applying puts the config's value back.",
       "handEdited_other": "{{count}} lines were edited by hand since the mod manager wrote them ({{keys}}). Re-applying puts the config's values back.",
       "reapply": "Re-apply now",

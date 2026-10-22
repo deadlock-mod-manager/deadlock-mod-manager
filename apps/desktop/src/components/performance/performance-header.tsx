@@ -1,43 +1,61 @@
 import { Button } from "@deadlock-mods/ui/components/button";
-import { DownloadSimpleIcon, PowerIcon } from "@phosphor-icons/react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@deadlock-mods/ui/components/tooltip";
+import { ArrowsClockwiseIcon, DownloadSimpleIcon } from "@phosphor-icons/react";
 import { useTranslation } from "react-i18next";
-import { useConfirm } from "@/components/providers/alert-dialog";
 import PageTitle from "@/components/shared/page-title";
-import { useRemovePerfConfig } from "@/hooks/performance/use-perf-mutations";
-import { usePerfStatus } from "@/hooks/performance/use-perf-queries";
+import { useRefreshPerfCatalog } from "@/hooks/performance/use-perf-mutations";
+import { usePerfCatalog } from "@/hooks/performance/use-perf-queries";
 import { ExportConfigButton } from "./export/export-config-button";
 import { usePerformanceUi } from "./performance-context";
+
+const RefreshCatalogButton = () => {
+  const { t } = useTranslation();
+  const { data: catalog } = usePerfCatalog();
+  const refreshMutation = useRefreshPerfCatalog();
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button
+          aria-label={t("performance.header.refreshCatalog")}
+          className='text-muted-foreground'
+          icon={<ArrowsClockwiseIcon aria-hidden />}
+          isLoading={refreshMutation.isPending}
+          onClick={() => refreshMutation.mutate()}
+          size='icon'
+          variant='ghost'
+        />
+      </TooltipTrigger>
+      <TooltipContent>
+        <p>{t("performance.header.refreshCatalog")}</p>
+        {catalog && (
+          <p className='text-white/60'>
+            {t("performance.header.catalogVersion", {
+              version: catalog.version,
+            })}
+          </p>
+        )}
+      </TooltipContent>
+    </Tooltip>
+  );
+};
 
 export const PerformanceHeader = () => {
   const { t } = useTranslation();
   const { openImport } = usePerformanceUi();
-  const confirm = useConfirm();
-  const { data: status } = usePerfStatus();
-  const removeMutation = useRemovePerfConfig();
-  const desired = status?.desired ?? null;
-
-  const handleTurnOff = async () => {
-    if (!desired) return;
-    const confirmed = await confirm({
-      title: t("performance.header.turnOffConfirm.title", {
-        name: desired.request.name,
-      }),
-      body: t("performance.header.turnOffConfirm.body"),
-      actionButton: t("performance.header.turnOff"),
-      tone: "destructive",
-      icon: PowerIcon,
-    });
-    if (confirmed) removeMutation.mutate({ entryPoint: "page" });
-  };
 
   return (
-    <div className='mb-6 flex flex-wrap items-start justify-between gap-3'>
+    <div className='mb-6 flex items-start justify-between gap-6'>
       <PageTitle
-        className='max-w-3xl'
+        className='min-w-0 max-w-2xl'
         subtitle={t("performance.subtitle")}
         title={t("performance.title")}
       />
-      <div className='flex flex-wrap items-center gap-2 pt-4'>
+      <div className='flex shrink-0 items-center gap-2 pt-5'>
+        <RefreshCatalogButton />
         <Button
           icon={<DownloadSimpleIcon aria-hidden />}
           onClick={() => openImport()}
@@ -45,14 +63,6 @@ export const PerformanceHeader = () => {
           {t("performance.header.import")}
         </Button>
         <ExportConfigButton />
-        <Button
-          disabled={!desired}
-          icon={<PowerIcon aria-hidden />}
-          isLoading={removeMutation.isPending}
-          onClick={handleTurnOff}
-          variant='outline'>
-          {t("performance.header.turnOff")}
-        </Button>
       </div>
     </div>
   );

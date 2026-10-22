@@ -15,7 +15,7 @@ Performance configs are `gameinfo.gi` tweaks that the desktop app applies as an 
 - **stock**: every scalar of Valve's stock `gameinfo.gi` for each build, used to find the build an imported config was made from;
 - **rules**: sections and keys the app never writes.
 
-The desktop app bundles the file (`include_str!` in `perf_config/catalog.rs`) and the API serves the copy it was built with at `GET /api/v2/perf-catalog`, with `ETag` set to the catalog version and `Cache-Control: public, max-age=3600`. The app adopts a downloaded catalog only when it parses, has a schema version it understands, and has a newer `version` (`YYYY.MM.DD-N`), so a new pin reaches players with an API deploy instead of an app release.
+The desktop app bundles the file (`include_str!` in `perf_config/catalog.rs`) and the API serves the copy it was built with at `GET /api/v2/perf-catalog`, with `ETag` set to the catalog version and `Cache-Control: public, max-age=3600`. The app adopts a downloaded catalog only when it parses, has a schema version it understands, and has a newer `version` (`YYYY.MM.DD-N`), so a new pin reaches players with an API deploy instead of an app release. The app checks at startup, then on window focus at most once an hour, and sends its version as `If-None-Match` so an unchanged catalog costs a 304. Refresh catalog in the Performance page header checks now.
 
 The shape lives in two places: `packages/perf-catalog/src/schema.ts` (zod) and `apps/desktop/src-tauri/src/mod_manager/perf_config/catalog.rs` (serde). Change them together and bump `SCHEMA_VERSION` in both.
 
