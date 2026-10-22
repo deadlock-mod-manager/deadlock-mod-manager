@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { isDeepStrictEqual } from "node:util";
-import { $, $$, browser, expect } from "@wdio/globals";
+import { $, browser, expect } from "@wdio/globals";
 import { z } from "zod";
 import { chooseInstallFiles } from "./catalog-actions";
 import { readBrokenLaunches } from "./broken-state-oracle";
@@ -132,19 +132,6 @@ export const repairMonkey = async (world: string, external: Set<string>) => {
     if (file.split("/")[1] === folder) external.delete(file);
 };
 
-const attemptMonkeyUpdate = async () => {
-  const update = await $(
-    '//button[normalize-space()="Force Update" or normalize-space()="Update Mod"]',
-  );
-  await reveal(update);
-  await update.waitForClickable();
-  await update.click();
-  const dialog = await $('[role="dialog"]');
-  await dialog.waitForDisplayed();
-  await dialog.$("button=Update Mod").click();
-  await expect(dialog).not.toBeDisplayed({ wait: 30_000 });
-};
-
 export const updateMonkeyMod = async (
   world: string,
   id: string,
@@ -160,28 +147,28 @@ export const updateMonkeyMod = async (
   await check.waitForEnabled({ timeout: 30_000 });
   await openMonkeyMod(mod.name);
 
-  const failureToasts =
-    '[data-sonner-toast][data-type="warning"], [data-sonner-toast][data-type="error"]';
-  // An earlier step's failure toast may still be visible.
-  const shown = new Set(
-    await $$(failureToasts).map((toast) => toast.elementId),
+  const update = await $(
+    '//button[normalize-space()="Force Update" or normalize-space()="Update Mod"]',
   );
-  await attemptMonkeyUpdate();
+  await reveal(update);
+  await update.waitForClickable();
+  await update.click();
+  const dialog = await $('[role="dialog"]');
+  await dialog.waitForDisplayed();
+  await dialog.$("button=Update Mod").click();
   if (failure) {
-    await browser.waitUntil(
-      async () => {
-        for (const toast of await $$(failureToasts)) {
-          if (shown.has(toast.elementId)) continue;
-          const text = await toast.getText().catch(() => "");
-          if (text.includes("failed")) return true;
-        }
-        return false;
-      },
-      { timeout: 30_000, timeoutMsg: "No new update failure toast appeared" },
-    );
+    // A failed update stays in the dialog with its details and a retry button.
+    await dialog
+      .$('[data-testid="batch-update-failure"]')
+      .waitForDisplayed({ timeout: 30_000 });
     await verifyFailure();
-    await attemptMonkeyUpdate();
+    const retry = await dialog.$(
+      './/button[normalize-space()="Retry failed updates" or normalize-space()="Retry updates"]',
+    );
+    await retry.waitForClickable({ timeout: 30_000 });
+    await retry.click();
   }
+  await expect(dialog).not.toBeDisplayed({ wait: 30_000 });
   await waitMonkeyStatus(world, id, "installed");
 };
 

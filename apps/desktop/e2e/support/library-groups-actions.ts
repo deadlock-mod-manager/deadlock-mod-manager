@@ -107,8 +107,20 @@ export const nativeGroupDrag = async (
   await revealDragTarget(source);
   await nativeInput("pointer-down", source);
   try {
-    await nativeInput("pointer-move", source, undefined, { x: 12, y: 0 });
-    await $("[data-library-drag-preview]").waitForDisplayed();
+    // WebKitGTK can coalesce a lone motion event after the press, so keep
+    // moving past the 8px activation distance until the drag starts.
+    let nudge = 0;
+    await browser.waitUntil(
+      async () => {
+        nudge++;
+        await nativeInput("pointer-move", source, undefined, {
+          x: 8 + 4 * nudge,
+          y: 0,
+        });
+        return $("[data-library-drag-preview]").isDisplayed();
+      },
+      { timeout: 15_000, timeoutMsg: "Native drag never started" },
+    );
     await revealDragTarget(target());
     await nativeInput("pointer-move", target());
     if (whileHovering) await whileHovering();

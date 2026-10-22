@@ -70,11 +70,12 @@ const verify = async (world: string, disabled: string) => {
     assert.equal(entry.currentVpks.length, id === disabled ? 0 : 1);
   }
 };
+const MODEL_CONFLICT =
+  '//*[@role="alertdialog"][.//*[normalize-space()="These mods replace the same model"]]';
 // One query per lookup: a dialog that is still closing must not capture it.
-const choose = async (label: string) => {
-  await $(
-    `//*[@role="alertdialog"]//button[normalize-space()="${label}"]`,
-  ).click();
+// The bulk confirm also has a Cancel button, so scope ambiguous labels.
+const choose = async (label: string, dialog = '//*[@role="alertdialog"]') => {
+  await $(`${dialog}//button[normalize-space()="${label}"]`).click();
 };
 
 const replaced = () =>
@@ -96,12 +97,8 @@ describe("skin conflict activation", () => {
       await $("button=Enable 1").waitForDisplayed();
       await $("button=Enable 1").click();
       await choose("Enable selected");
-      await expect(
-        $(
-          '//*[@role="alertdialog"][.//*[normalize-space()="These mods replace the same model"]]',
-        ),
-      ).toBeDisplayed();
-      await choose("Cancel");
+      await expect($(MODEL_CONFLICT)).toBeDisplayed();
+      await choose("Cancel", MODEL_CONFLICT);
       await verify(world, HAT_PANTS);
       await expect($('[role="dialog"]')).toHaveText(
         expect.stringContaining("Skipped to keep current skins"),
