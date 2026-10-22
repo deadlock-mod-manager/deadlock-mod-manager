@@ -216,7 +216,9 @@ const GetModsData = ({
   const { t } = useTranslation();
   const isCustomMapsEnabled = useExperimentalFeature("custom-maps");
   const nsfwSettings = usePersistedStore((state) => state.nsfwSettings);
-  const modsFilters = usePersistedStore((state) => state.modsFilters);
+  const filters = usePersistedStore((state) =>
+    mapsOnly ? state.mapsFilters : state.modsFilters,
+  );
   const modsStorePaginationEnabled = usePersistedStore(
     (state) => state.settings[MODS_STORE_PAGINATION_SETTING_ID]?.enabled,
   );
@@ -226,8 +228,8 @@ const GetModsData = ({
   const setPersistedPage = usePersistedStore(
     (state) => state.setScrollPosition,
   );
-  const updateModsFilters = usePersistedStore(
-    (state) => state.updateModsFilters,
+  const updateFilters = usePersistedStore((state) =>
+    mapsOnly ? state.updateMapsFilters : state.updateModsFilters,
   );
   const {
     selectedCategories,
@@ -241,7 +243,7 @@ const GetModsData = ({
     showFavoritesOnly = false,
     searchQuery = "",
     currentSort,
-  } = modsFilters;
+  } = filters;
   // A stale NSFW-only filter must not override the global hide setting.
   const nsfwOnly = nsfwOnlyFilter && !nsfwSettings.hideNSFW;
   const favorites = usePersistedStore((state) => state.favorites);
@@ -408,7 +410,17 @@ const GetModsData = ({
       restoreScrollPosition();
     }
   }, [paginationEnabled, restoreScrollPosition, setScrollElement]);
-  const { query, setQuery, sortType, setSortType } = useSearchQueryState();
+  const searchQueryState = useMemo(
+    () => ({
+      query: searchQuery,
+      setQuery: (next: string) => updateFilters({ searchQuery: next }),
+      sortType: currentSort,
+      setSortType: (next: SortType) => updateFilters({ currentSort: next }),
+    }),
+    [searchQuery, currentSort, updateFilters],
+  );
+  const { query, setQuery, sortType, setSortType } =
+    useSearchQueryState(searchQueryState);
   const filteredResults = deferredData;
 
   const totalPages = paginationEnabled
@@ -540,43 +552,43 @@ const GetModsData = ({
   );
 
   const handleCategoriesChange = useCallback(
-    (cats: string[]) => updateModsFilters({ selectedCategories: cats }),
-    [updateModsFilters],
+    (cats: string[]) => updateFilters({ selectedCategories: cats }),
+    [updateFilters],
   );
   const handleFilterModeChange = useCallback(
-    (mode: FilterMode) => updateModsFilters({ filterMode: mode }),
-    [updateModsFilters],
+    (mode: FilterMode) => updateFilters({ filterMode: mode }),
+    [updateFilters],
   );
   const handleHeroesChange = useCallback(
-    (heroes: string[]) => updateModsFilters({ selectedHeroes: heroes }),
-    [updateModsFilters],
+    (heroes: string[]) => updateFilters({ selectedHeroes: heroes }),
+    [updateFilters],
   );
   const handleHideNSFWChange = useCallback(
-    (hideNSFW: boolean) => updateModsFilters({ hideNSFW }),
-    [updateModsFilters],
+    (hideNSFW: boolean) => updateFilters({ hideNSFW }),
+    [updateFilters],
   );
   const handleNSFWOnlyChange = useCallback(
-    (nsfwOnly: boolean) => updateModsFilters({ nsfwOnly }),
-    [updateModsFilters],
+    (nsfwOnly: boolean) => updateFilters({ nsfwOnly }),
+    [updateFilters],
   );
   const handleHideOutdatedChange = useCallback(
-    (hideOutdated: boolean) => updateModsFilters({ hideOutdated }),
-    [updateModsFilters],
+    (hideOutdated: boolean) => updateFilters({ hideOutdated }),
+    [updateFilters],
   );
 
   const handleTimePeriodChange = useCallback(
-    (timePeriod: TimePeriod) => updateModsFilters({ timePeriod }),
-    [updateModsFilters],
+    (timePeriod: TimePeriod) => updateFilters({ timePeriod }),
+    [updateFilters],
   );
 
   const handleAddedFilterChange = useCallback(
-    (addedFilter: AddedFilter) => updateModsFilters({ addedFilter }),
-    [updateModsFilters],
+    (addedFilter: AddedFilter) => updateFilters({ addedFilter }),
+    [updateFilters],
   );
 
   const handleShowFavoritesOnlyChange = useCallback(
-    (showFavoritesOnly: boolean) => updateModsFilters({ showFavoritesOnly }),
-    [updateModsFilters],
+    (showFavoritesOnly: boolean) => updateFilters({ showFavoritesOnly }),
+    [updateFilters],
   );
 
   const hasActiveFilters =
