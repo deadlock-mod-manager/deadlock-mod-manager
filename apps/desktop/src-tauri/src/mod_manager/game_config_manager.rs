@@ -118,6 +118,17 @@ impl GameConfigManager {
     content.contains(MOD_MANAGER_MARKER_START) && content.contains(MOD_MANAGER_MARKER_END)
   }
 
+  /// Where the block at `pos` starts once its indentation and the line break
+  /// before it are included. Blocks are written back starting with a line
+  /// break, so replacing from here leaves no stray whitespace line behind.
+  fn block_start(content: &str, pos: usize) -> usize {
+    let before = content[..pos].trim_end_matches([' ', '\t']);
+    before
+      .strip_suffix("\r\n")
+      .or_else(|| before.strip_suffix('\n'))
+      .map_or(pos, str::len)
+  }
+
   fn match_line_endings(content: &str, original: &str) -> String {
     let content = content.replace("\r\n", "\n");
     let first_newline = original.find('\n');
@@ -641,16 +652,7 @@ impl GameConfigManager {
           .find(MOD_MANAGER_MARKER_END)
           .ok_or_else(|| Error::GameConfigParse("Mod manager end marker not found".into()))?;
         let marker_end = marker_end_pos + MOD_MANAGER_MARKER_END.len();
-
-        // Find the actual start (include preceding whitespace/newline)
-        let preceding_content = &gameinfo_content[..marker_start];
-        let actual_start = if preceding_content.ends_with("\r\n") {
-          marker_start - 2
-        } else if preceding_content.ends_with('\n') {
-          marker_start - 1
-        } else {
-          marker_start
-        };
+        let actual_start = Self::block_start(&gameinfo_content, marker_start);
 
         (
           actual_start,
@@ -670,15 +672,7 @@ impl GameConfigManager {
           })?;
 
         let search_paths_end = search_paths_start + relative_end + 1;
-
-        // Include the tab/whitespace before SearchPaths
-        let section_start = if search_paths_start > 0
-          && gameinfo_content.chars().nth(search_paths_start - 1) == Some('\t')
-        {
-          search_paths_start - 1
-        } else {
-          search_paths_start
-        };
+        let section_start = Self::block_start(&gameinfo_content, search_paths_start);
 
         (
           section_start,
@@ -973,7 +967,8 @@ impl GameConfigManager {
 
     // Find the mod manager section to replace
     let (section_start, section_end, _section_content) =
-      if let Some(start_pos) = gameinfo_content.find(MOD_MANAGER_MARKER_START) {
+      if let Some(marker_start) = gameinfo_content.find(MOD_MANAGER_MARKER_START) {
+        let start_pos = Self::block_start(&gameinfo_content, marker_start);
         if let Some(end_pos) = gameinfo_content.find(MOD_MANAGER_MARKER_END) {
           let end_pos = end_pos + MOD_MANAGER_MARKER_END.len();
           (start_pos, end_pos, &gameinfo_content[start_pos..end_pos])
@@ -1216,10 +1211,16 @@ mod tests {
       let prefix = original.split("\t\tSearchPaths").next().unwrap();
       let suffix = format!("{newline}  }}{newline}}}");
       let mut mgr = GameConfigManager::new();
+      let mut seen: [Option<String>; 2] = [None, None];
 
       for vanilla in [false, false, true, false, true] {
         mgr.toggle_mods(&game_path, vanilla).expect("toggle mods");
         let content = fs::read_to_string(&gameinfo_path).expect("read gameinfo");
+        // Switching back and forth leaves no stray whitespace lines behind.
+        assert_eq!(
+          seen[usize::from(vanilla)].get_or_insert_with(|| content.clone()),
+          &content
+        );
         assert_line_endings(&content, newline);
         assert!(content.starts_with(prefix));
         assert!(content.ends_with(&suffix));
@@ -1249,12 +1250,15 @@ mod tests {
       ];
       let mut mgr = GameConfigManager::new();
       mgr.game_setup = true;
+      let mut first = None;
 
       for _ in 0..3 {
         mgr
           .update_mod_paths(&game_path, &paths)
           .expect("update paths");
         let content = fs::read_to_string(&gameinfo_path).expect("read gameinfo");
+        // The same paths leave the file untouched, not one blank line longer.
+        assert_eq!(first.get_or_insert_with(|| content.clone()), &content);
         assert_line_endings(&content, newline);
         assert_eq!(mgr.marker_addons_paths(&game_path).unwrap(), paths);
         assert!(content.contains("Game_UILanguage"));
