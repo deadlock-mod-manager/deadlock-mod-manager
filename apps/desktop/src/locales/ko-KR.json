@@ -187,7 +187,10 @@
       "undoFailed": "",
       "applyFailed": "",
       "removed": "",
-      "removeFailed": ""
+      "removeFailed": "",
+      "catalogUpdated": "",
+      "catalogUpToDate": "",
+      "catalogRefreshFailed": ""
     },
     "editor": {
       "header": {
@@ -597,6 +600,8 @@
     },
     "header": {
       "import": "",
+      "refreshCatalog": "",
+      "catalogVersion": "",
       "turnOff": "",
       "turnOffConfirm": {
         "title": "",
@@ -626,6 +631,7 @@
       "notInFile": "",
       "outOfDate": "",
       "catalogBehind": "",
+      "checkForUpdates": "",
       "handEdited_one": "",
       "handEdited_other": "",
       "reapply": "",

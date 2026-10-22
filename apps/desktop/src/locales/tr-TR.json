@@ -93,7 +93,7 @@
           "term": "GameBanana yapılandırmaları",
           "body": "<gamebanana>GameBanana</gamebanana> kimliklerine göre listelenir. Birini içe aktardığınızda dosyalar GameBanana’dan indirilir."
         },
-        "updates": "Uygulama bu verilerin bir kopyasıyla gelir ve her oturumda bir kez daha yeni sürümünü mod yöneticisinin sunucusunda denetler."
+        "updates": ""
       },
       "statuses": {
         "title": "Her ayara ne olur",
@@ -187,7 +187,10 @@
       "undoFailed": "Değişiklik geri alınamadı",
       "applyFailed": "Yapılandırma uygulanamadı",
       "removed": "Performans yapılandırması kapatıldı",
-      "removeFailed": "Yapılandırma kapatılamadı"
+      "removeFailed": "Yapılandırma kapatılamadı",
+      "catalogUpdated": "",
+      "catalogUpToDate": "",
+      "catalogRefreshFailed": ""
     },
     "editor": {
       "header": {
@@ -597,6 +600,8 @@
     },
     "header": {
       "import": "Yapılandırmayı içe aktar",
+      "refreshCatalog": "",
+      "catalogVersion": "",
       "turnOff": "Kapat",
       "turnOffConfirm": {
         "title": "{{name}} kapatılsın mı?",
@@ -626,6 +631,7 @@
       "notInFile": "Şu anda gameinfo.gi dosyasında yok (oyun güncellemesi veya sıfırlama dosyayı değiştirmiş). Deadlock kapalıyken mod yöneticisine döndüğünüzde veya oyunu mod yöneticisinden başlattığınızda yeniden eklenir.",
       "outOfDate": "gameinfo.gi dosyasında bu yapılandırmanın seçtiğinizden farklı bir sürümü var. Oyunu mod yöneticisinden başlattığınızda güncellenir.",
       "catalogBehind": "Oyununuzun sürümü {{installed}}; bu, mod yöneticisinin konsol değişkeni listesindeki {{catalog}} sürümünden daha yeni. O tarihten sonra eklenen ayarlar liste güncellenene kadar dışarıda bırakılır.",
+      "checkForUpdates": "",
       "handEdited_one": "Mod yöneticisi yazdıktan sonra {{count}} satır elle düzenlendi ({{keys}}). Yeniden uygulamak yapılandırmadaki değeri geri getirir.",
       "handEdited_other": "Mod yöneticisi yazdıktan sonra {{count}} satır elle düzenlendi ({{keys}}). Yeniden uygulamak yapılandırmadaki değerleri geri getirir.",
       "reapply": "Şimdi yeniden uygula",
