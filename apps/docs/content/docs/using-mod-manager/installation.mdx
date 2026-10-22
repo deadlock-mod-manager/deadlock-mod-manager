@@ -303,6 +303,7 @@ To ensure everything is working correctly:
 #### "App won't start" or crashes on launch
 
 - **Windows**: Run as administrator once, then normally
+- **Windows, closes instantly with no window**: Check for an `OPENSSL_ia32cap` environment variable. See [Windows: App Closes Instantly on Launch](./troubleshooting#windows-app-closes-instantly-on-launch)
 - **Linux**: Ensure all dependencies are installed (`sudo apt install libwebkit2gtk-4.0-dev` on Ubuntu)
 
 #### "Cannot find Deadlock installation"

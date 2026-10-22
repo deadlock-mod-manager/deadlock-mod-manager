@@ -39,6 +39,9 @@ Having issues with Deadlock Mod Manager? This comprehensive troubleshooting guid
    - Ensure you're running Windows 10 version 1903 or later
    - Install all pending Windows updates
 
+5. **Check for the `OPENSSL_ia32cap` environment variable**
+   - If the window never appears and nothing above helps, see [Windows: App Closes Instantly on Launch](#windows-app-closes-instantly-on-launch)
+
 #### Linux Solutions
 
 1. **Install Dependencies**
@@ -67,6 +70,33 @@ Having issues with Deadlock Mod Manager? This comprehensive troubleshooting guid
    # Make AppImage executable
    chmod +x deadlock-modmanager-*.AppImage
    ```
+
+### Windows: App Closes Instantly on Launch
+
+**Symptoms:** On Windows, version 1.1.0 or later closes the moment you open it, before any window appears. Reinstalling and clearing app data don't help, and version 1.0.0 may still start normally. Event Viewer shows an application error for the mod manager, and other apps built on the same networking stack can crash the same way.
+
+**Cause:** The `OPENSSL_ia32cap` environment variable is set on your PC without a leading `~`, for example `OPENSSL_ia32cap=0x20000000`. Guides for older games often recommend this variable, usually as `~0x20000000`. With the `~`, it turns a CPU feature off. Without it, it asks for CPU features that your processor may not have, and the encryption library the mod manager uses for secure connections stops the app at startup. This happens before the mod manager's own code runs, so the app can't show an error.
+
+#### Check Whether the Variable Is Set
+
+Open PowerShell and run:
+
+```powershell
+[Environment]::GetEnvironmentVariable('OPENSSL_ia32cap','User')
+[Environment]::GetEnvironmentVariable('OPENSSL_ia32cap','Machine')
+```
+
+If either command prints a value that doesn't start with `~`, this is the cause.
+
+#### Remove or Fix the Variable
+
+1. Press **Start**, type **environment variables**, and open **Edit the system environment variables**
+2. Click **Environment Variables...**
+3. Find `OPENSSL_ia32cap` under both **User variables** and **System variables**
+4. Delete it. If an older game needs it, change the value to start with `~` instead, for example `~0x20000000`
+5. Sign out and back in, or restart your PC, so every program picks up the change
+
+The space in a Windows username or install path is not related to this crash.
 
 ### Flatpak Opens to a Grey Screen on NVIDIA
 
