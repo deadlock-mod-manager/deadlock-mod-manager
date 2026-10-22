@@ -12,6 +12,7 @@ use reqwest::header::{COOKIE, HeaderMap, SET_COOKIE};
 use serde::Deserialize;
 
 use super::error::MatchSyncError;
+use super::friends::GAP_SAMPLE;
 use super::model::{ActiveFriend, FetchScope, SaltPayload};
 
 const DEFAULT_BASE_URL: &str = "https://api.deadlock-api.com";
@@ -42,12 +43,16 @@ fn stored_histories() -> MutexGuard<'static, HistoryCache> {
 #[derive(Default)]
 struct HistoryCache(HashMap<u32, (Instant, Option<ActiveFriend>)>);
 
+fn fresh(read_at: Instant, now: Instant) -> bool {
+  now.duration_since(read_at) < STORED_HISTORY_TTL
+}
+
 impl HistoryCache {
   fn get(&self, account_id: u32, now: Instant) -> Option<Option<ActiveFriend>> {
     self
       .0
       .get(&account_id)
-      .filter(|(read_at, _)| now.duration_since(*read_at) < STORED_HISTORY_TTL)
+      .filter(|&&(read_at, _)| fresh(read_at, now))
       .map(|(_, friend)| friend.clone())
   }
 
@@ -56,9 +61,7 @@ impl HistoryCache {
   }
 
   fn prune(&mut self, now: Instant) {
-    self
-      .0
-      .retain(|_, (read_at, _)| now.duration_since(*read_at) < STORED_HISTORY_TTL);
+    self.0.retain(|_, &mut (read_at, _)| fresh(read_at, now));
   }
 }
 
@@ -106,7 +109,6 @@ impl Default for ApiClient {
 #[derive(Deserialize)]
 struct SteamProfile {
   account_id: u32,
-  #[serde(default)]
   matches_played_last_30d: Option<u64>,
 }
 
@@ -144,26 +146,6 @@ impl ApiClient {
       .map_err(|e| MatchSyncError::Api(e.to_string()))
   }
 
-  // deadlock-api answers 404 for queries that match nothing, so that reads as empty.
-  async fn get_list<T: serde::de::DeserializeOwned>(
-    &self,
-    req: reqwest::RequestBuilder,
-  ) -> Result<Vec<T>, MatchSyncError> {
-    let resp = req
-      .send()
-      .await
-      .map_err(|e| MatchSyncError::Api(e.to_string()))?;
-    if resp.status() == reqwest::StatusCode::NOT_FOUND {
-      return Ok(Vec::new());
-    }
-    resp
-      .error_for_status()
-      .map_err(|e| MatchSyncError::Api(e.to_string()))?
-      .json()
-      .await
-      .map_err(|e| MatchSyncError::Api(format!("invalid response: {e}")))
-  }
-
   // Of `account_ids`, the ones deadlock-api saw play Deadlock in the last 30 days.
   async fn recent_players(
     &self,
@@ -180,7 +162,7 @@ impl ApiClient {
       let req = client
         .get(format!("{}/v1/players/steam", self.base_url))
         .query(&[("account_ids", ids)]);
-      let profiles: Vec<SteamProfile> = self.get_list(req).await?;
+      let profiles: Vec<SteamProfile> = get_list(req).await?;
       players.extend(
         profiles
           .into_iter()
@@ -197,10 +179,30 @@ impl ApiClient {
     account_id: u32,
   ) -> Result<Vec<StoredMatch>, MatchSyncError> {
     let url = format!("{}/v1/players/{account_id}/match-history", self.base_url);
-    self.get_list(client.get(url)).await
+    get_list(client.get(url)).await
   }
 }
 
+// deadlock-api answers 404 for queries that match nothing, so that reads as empty.
+async fn get_list<T: serde::de::DeserializeOwned>(
+  req: reqwest::RequestBuilder,
+) -> Result<Vec<T>, MatchSyncError> {
+  let resp = req
+    .send()
+    .await
+    .map_err(|e| MatchSyncError::Api(e.to_string()))?;
+  if resp.status() == reqwest::StatusCode::NOT_FOUND {
+    return Ok(Vec::new());
+  }
+  resp
+    .error_for_status()
+    .map_err(|e| MatchSyncError::Api(e.to_string()))?
+    .json()
+    .await
+    .map_err(|e| MatchSyncError::Api(format!("invalid response: {e}")))
+}
+
+// Only the newest `GAP_SAMPLE` starts are kept: the cadence never reads further back.
 fn summarize(account_id: u32, history: &[StoredMatch]) -> Option<ActiveFriend> {
   Some(ActiveFriend {
     account_id,
@@ -209,7 +211,11 @@ fn summarize(account_id: u32, history: &[StoredMatch]) -> Option<ActiveFriend> {
       .iter()
       .map(|m| m.start_time + m.match_duration_s)
       .max()?,
-    starts: history.iter().map(|m| m.start_time).collect(),
+    starts: history
+      .iter()
+      .take(GAP_SAMPLE)
+      .map(|m| m.start_time)
+      .collect(),
   })
 }
 
@@ -274,23 +280,26 @@ impl BackfillSource for ApiClient {
   async fn active_friends(&self, account_ids: &[u32]) -> Result<Vec<ActiveFriend>, MatchSyncError> {
     // One client for the whole batch, so the per-friend requests share connections.
     let client = self.client()?;
-    stored_histories().prune(Instant::now());
+    let now = Instant::now();
+    stored_histories().prune(now);
     let mut active = Vec::new();
     for account_id in self.recent_players(&client, account_ids).await? {
-      let cached = stored_histories().get(account_id, Instant::now());
+      // A statement of its own, so the cache lock is released before the request.
+      let cached = stored_histories().get(account_id, now);
       let friend = match cached {
         Some(friend) => friend,
-        None => match self.stored_history(&client, account_id).await {
-          Ok(history) => {
-            let friend = summarize(account_id, &history);
-            stored_histories().insert(account_id, Instant::now(), friend.clone());
-            friend
-          }
-          Err(e) => {
-            log::warn!("match-sync: stored history of friend {account_id}: {e}");
-            continue;
-          }
-        },
+        None => {
+          let history = match self.stored_history(&client, account_id).await {
+            Ok(history) => history,
+            Err(e) => {
+              log::warn!("match-sync: stored history of friend {account_id}: {e}");
+              continue;
+            }
+          };
+          let friend = summarize(account_id, &history);
+          stored_histories().insert(account_id, Instant::now(), friend.clone());
+          friend
+        }
       };
       active.extend(friend);
     }
