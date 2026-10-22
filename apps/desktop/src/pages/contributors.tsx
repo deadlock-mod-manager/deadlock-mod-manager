@@ -61,17 +61,10 @@ const CommunityContributors = () => {
 
   if (isError) {
     return (
-      <div className='flex flex-col items-start gap-3 rounded-lg border border-border/50 bg-card/50 p-4'>
+      <div className='rounded-lg border border-border/50 bg-card/50 p-4'>
         <p className='text-muted-foreground text-sm'>
           {t("contributors.loadFailed")}
         </p>
-        <Button
-          onClick={() => openUrl(`${GITHUB_REPO}/graphs/contributors`)}
-          size='sm'
-          variant='outline'>
-          <GithubLogoIcon className='size-4' />
-          {t("contributors.viewOnGithub")}
-        </Button>
       </div>
     );
   }
@@ -152,13 +145,23 @@ const Contributors = () => {
           </section>
 
           <section className='flex flex-col gap-4'>
-            <div className='flex flex-col gap-1'>
-              <h2 className='font-semibold text-lg'>
-                {t("contributors.community")}
-              </h2>
-              <p className='text-muted-foreground text-sm'>
-                {t("contributors.communityDescription")}
-              </p>
+            <div className='flex items-end justify-between gap-4'>
+              <div className='flex flex-col gap-1'>
+                <h2 className='font-semibold text-lg'>
+                  {t("contributors.community")}
+                </h2>
+                <p className='text-muted-foreground text-sm'>
+                  {t("contributors.communityDescription")}
+                </p>
+              </div>
+              <Button
+                className='shrink-0'
+                onClick={() => openUrl(`${GITHUB_REPO}/graphs/contributors`)}
+                size='sm'
+                variant='ghost'>
+                <GithubLogoIcon className='size-4' />
+                {t("contributors.viewOnGithub")}
+              </Button>
             </div>
             <CommunityContributors />
           </section>
@@ -168,11 +171,22 @@ const Contributors = () => {
               className='mt-0.5 size-5 shrink-0 text-primary'
               weight='fill'
             />
-            <div className='flex flex-col gap-1'>
-              <h2 className='font-semibold'>{t("contributors.thanksTitle")}</h2>
-              <p className='text-muted-foreground text-sm'>
-                {t("contributors.thanksDescription")}
-              </p>
+            <div className='flex flex-col items-start gap-3'>
+              <div className='flex flex-col gap-1'>
+                <h2 className='font-semibold'>
+                  {t("contributors.thanksTitle")}
+                </h2>
+                <p className='text-muted-foreground text-sm'>
+                  {t("contributors.thanksDescription")}
+                </p>
+              </div>
+              <Button
+                onClick={() => openUrl(GITHUB_REPO)}
+                size='sm'
+                variant='outline'>
+                <GithubLogoIcon className='size-4' />
+                {t("contributors.contributeOnGithub")}
+              </Button>
             </div>
           </section>
         </div>

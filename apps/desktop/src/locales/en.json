@@ -3867,7 +3867,8 @@
     "socials": {
       "discord": "Get help and chat on Discord",
       "x": "Follow updates on X",
-      "reddit": "Join r/DeadlockModManager"
+      "reddit": "Join r/DeadlockModManager",
+      "github": "View the source on GitHub"
     }
   },
   "branding": {
@@ -3895,7 +3896,8 @@
     "loadFailed": "Could not load the contributor list from GitHub.",
     "viewOnGithub": "View on GitHub",
     "thanksTitle": "And everyone else",
-    "thanksDescription": "Translators, mod creators, bug reporters and the people who help others on Discord make this project what it is. Thank you."
+    "thanksDescription": "Translators, mod creators, bug reporters and the people who help others on Discord make this project what it is. Thank you.",
+    "contributeOnGithub": "Contribute on GitHub"
   },
   "about": {
     "title": "About",

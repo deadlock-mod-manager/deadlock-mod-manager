@@ -9,13 +9,14 @@ import {
 } from "@deadlock-mods/ui/components/tooltip";
 import {
   DiscordLogoIcon,
+  GithubLogoIcon,
   type Icon,
   RedditLogoIcon,
   XLogoIcon,
 } from "@phosphor-icons/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
-import { DISCORD_URL, REDDIT_URL, X_URL } from "@/lib/constants";
+import { DISCORD_URL, GITHUB_REPO, REDDIT_URL, X_URL } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 type Social = {
@@ -51,6 +52,14 @@ const SOCIALS: Social[] = [
     url: REDDIT_URL,
     icon: RedditLogoIcon,
     hoverClassName: "hover:text-[oklch(0.66_0.21_38)]",
+  },
+  {
+    id: "github",
+    name: "GitHub",
+    tooltipKey: "help.socials.github",
+    url: GITHUB_REPO,
+    icon: GithubLogoIcon,
+    hoverClassName: "hover:text-sidebar-accent-foreground",
   },
 ];
 
