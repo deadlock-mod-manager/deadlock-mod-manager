@@ -1231,10 +1231,7 @@ const MyMods = () => {
             <TooltipContent>{t("myMods.checkForUpdates")}</TooltipContent>
           </Tooltip>
           <AddModsMenu />
-          {/* Several items open a modal dialog. A modal menu closing under it
-              can leave body pointer-events disabled after the dialog closes. */}
           <DropdownMenu
-            modal={false}
             onOpenChange={(open) => {
               setActionsMenuOpen(open);
               if (open) markFeatureUsed("my-mods-menu");
