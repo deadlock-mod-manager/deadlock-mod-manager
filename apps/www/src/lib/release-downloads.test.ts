@@ -126,6 +126,10 @@ describe("selectRecommendedDownload", () => {
   });
 
   test("keeps the Windows exe preference", () => {
+    const portable: PlatformDownload = {
+      ...createDownload("deadlock-mod-manager-portable.exe", "portable", "wry"),
+      platform: "windows",
+    };
     const msi: PlatformDownload = {
       ...createDownload("deadlock-mod-manager.msi", "msi", "wry"),
       platform: "windows",
@@ -135,7 +139,9 @@ describe("selectRecommendedDownload", () => {
       platform: "windows",
     };
 
-    expect(selectRecommendedDownload([msi, exe], "windows", "x64")).toBe(exe);
+    expect(
+      selectRecommendedDownload([portable, msi, exe], "windows", "x64"),
+    ).toBe(exe);
   });
 
   test("returns no recommendation for an unknown platform", () => {

@@ -62,7 +62,7 @@
     },
     "detected": "Detected system",
     "noBuilds": "No {{platform}} builds for this version.",
-    "experimental": "Experimental Chromium builds ({{total}})",
+    "experimental": "Experimental Chromium builds",
     "experimentalDescription": "Bundles the Chromium (CEF) engine instead of the system webview. Larger and less tested; only try these if the standard build has rendering problems."
   },
   "installer": {
@@ -79,6 +79,10 @@
       "msi": {
         "label": "MSI package",
         "description": "For managed or silent installs (.msi)"
+      },
+      "portable": {
+        "label": "Portable",
+        "description": "Run directly without installing (.exe)"
       },
       "dmg": {
         "label": "Disk image",

@@ -7,7 +7,14 @@ import type {
 
 const getInstallerPriority = (download: PlatformDownload): number => {
   if (download.platform === "windows") {
-    return download.installerType === "exe" ? 0 : 1;
+    switch (download.installerType) {
+      case "exe":
+        return 0;
+      case "msi":
+        return 1;
+      default:
+        return 2;
+    }
   }
 
   if (download.platform === "linux") {

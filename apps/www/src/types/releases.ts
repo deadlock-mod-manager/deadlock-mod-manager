@@ -1,7 +1,15 @@
 export interface PlatformDownload {
   platform: "windows" | "macos" | "linux";
   architecture: "x64" | "arm64" | "universal";
-  installerType?: "exe" | "msi" | "dmg" | "deb" | "rpm" | "flatpak" | "sig";
+  installerType?:
+    | "exe"
+    | "msi"
+    | "portable"
+    | "dmg"
+    | "deb"
+    | "rpm"
+    | "flatpak"
+    | "sig";
   runtime?: "wry" | "cef";
   url: string;
   filename: string;

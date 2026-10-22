@@ -7,7 +7,15 @@ import type {
 export interface ParsedReleaseAsset {
   platform: "windows" | "macos" | "linux";
   architecture: "x64" | "arm64" | "universal";
-  installerType: "exe" | "msi" | "dmg" | "deb" | "rpm" | "flatpak" | "sig";
+  installerType:
+    | "exe"
+    | "msi"
+    | "portable"
+    | "dmg"
+    | "deb"
+    | "rpm"
+    | "flatpak"
+    | "sig";
   runtime: RuntimeKind;
 }
 
@@ -23,10 +31,18 @@ export const parseReleaseAsset = (
   const name = filename.toLowerCase();
   const runtime = getRuntime(name);
 
-  // Standalone downloads are offered on GitHub, outside the installer-only website flow.
   // The Microsoft Store installer is only linked from the Store listing.
-  if (/-(?:portable|store)\.exe(?:\.sig)?$/.test(name)) {
+  if (/-store\.exe(?:\.sig)?$/.test(name)) {
     return null;
+  }
+
+  if (/-portable\.exe(?:\.sig)?$/.test(name)) {
+    return {
+      platform: "windows",
+      architecture: name.includes("arm64") ? "arm64" : "x64",
+      installerType: name.endsWith(".sig") ? "sig" : "portable",
+      runtime,
+    };
   }
 
   if (name.endsWith(".msi.sig")) {

@@ -1,10 +1,5 @@
 import { Button } from "@deadlock-mods/ui/components/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@deadlock-mods/ui/components/collapsible";
-import { ChevronDown, Download } from "@deadlock-mods/ui/icons";
+import { Download } from "@deadlock-mods/ui/icons";
 import { useTranslation } from "react-i18next";
 import { FaLinux, FaWindows } from "react-icons/fa";
 import { useAnalyticsContext } from "@/components/analytics-provider";
@@ -168,29 +163,26 @@ export const PlatformDownloads = ({
               )}
 
               {experimental.length > 0 && (
-                <Collapsible className='border-border/60 border-t'>
-                  <CollapsibleTrigger className='group flex w-full items-center gap-1.5 py-3 text-left text-muted-foreground text-xs transition-colors hover:text-foreground'>
-                    <ChevronDown className='h-3.5 w-3.5 transition-transform group-data-[state=open]:rotate-180' />
+                <div className='border-border/60 border-t pt-3'>
+                  <p className='text-muted-foreground text-xs'>
                     {t("platforms.experimental", {
                       total: experimental.length,
                     })}
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <p className='pb-1 text-muted-foreground text-xs'>
-                      {t("platforms.experimentalDescription")}
-                    </p>
-                    <ul className='divide-y divide-border/60'>
-                      {experimental.map((download) => (
-                        <InstallerRow
-                          download={download}
-                          key={download.filename}
-                          signature={findSignatureFor(downloads, download)}
-                          version={version}
-                        />
-                      ))}
-                    </ul>
-                  </CollapsibleContent>
-                </Collapsible>
+                  </p>
+                  <p className='py-1 text-muted-foreground text-xs'>
+                    {t("platforms.experimentalDescription")}
+                  </p>
+                  <ul className='divide-y divide-border/60'>
+                    {experimental.map((download) => (
+                      <InstallerRow
+                        download={download}
+                        key={download.filename}
+                        signature={findSignatureFor(downloads, download)}
+                        version={version}
+                      />
+                    ))}
+                  </ul>
+                </div>
               )}
             </div>
           </div>

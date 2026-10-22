@@ -69,7 +69,7 @@ describe("GitHubReleasesService runtime policy", () => {
     expect(downloads[1]?.installerType).toBe("flatpak");
   });
 
-  test("excludes the standalone and Store executables from installer downloads", () => {
+  test("labels the portable executable and excludes the Store installer", () => {
     const release = createRelease([
       createAsset("Deadlock Mod Manager_1.0.0_x64-portable.exe"),
       createAsset("Deadlock Mod Manager_1.0.0_x64-portable.exe.sig"),
@@ -82,10 +82,14 @@ describe("GitHubReleasesService runtime policy", () => {
 
     const downloads = transformReleaseAssets(release);
 
-    expect(downloads.map((download) => download.filename)).toEqual([
-      "DMM-setup.exe",
-      "DMM-setup.exe.sig",
-      "DMM.msi",
+    expect(
+      downloads.map((download) => [download.filename, download.installerType]),
+    ).toEqual([
+      ["Deadlock Mod Manager_1.0.0_x64-portable.exe", "portable"],
+      ["Deadlock Mod Manager_1.0.0_x64-portable.exe.sig", "sig"],
+      ["DMM-setup.exe", "exe"],
+      ["DMM-setup.exe.sig", "sig"],
+      ["DMM.msi", "msi"],
     ]);
   });
 });
