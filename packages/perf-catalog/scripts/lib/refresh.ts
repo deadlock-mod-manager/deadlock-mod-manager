@@ -76,7 +76,8 @@ const refreshUpstream = async (
       old &&
       old.commit === commit.sha &&
       old.path === file.path &&
-      old.video?.path === file.videoPath
+      (old.videos ?? []).map((video) => video.path).join(", ") ===
+        (file.videos ?? []).map((video) => video.path).join(", ")
     ) {
       out[file.id] = old;
       continue;
@@ -92,11 +93,14 @@ const refreshUpstream = async (
       sha256: sha256(data),
     };
     if (tag) pin.tag = tag;
-    if (file.videoPath) {
-      const video = await fetchBytes(
-        githubRawUrl(file.repo, commit.sha, file.videoPath),
-      );
-      pin.video = { path: file.videoPath, sha256: sha256(video) };
+    if (file.videos) {
+      pin.videos = [];
+      for (const { path } of file.videos) {
+        const video = await fetchBytes(
+          githubRawUrl(file.repo, commit.sha, path),
+        );
+        pin.videos.push({ path, sha256: sha256(video) });
+      }
     }
     out[file.id] = pin;
   }

@@ -3,6 +3,7 @@ import type { PerfTier } from "./PerfTier";
 import type { PresetSourceInfo } from "./PresetSourceInfo";
 import type { ResolvedCounts } from "./ResolvedCounts";
 import type { VideoSetting } from "./VideoSetting";
+import type { VideoVariant } from "./VideoVariant";
 
 /**
  * A curated preset as the UI lists it. Counts are computed against the live
@@ -21,6 +22,7 @@ export type PresetSummary = {
   baseBuild: number | null;
   source: PresetSourceInfo;
   videoSettings: Array<VideoSetting>;
+  videoVariants: Array<VideoVariant>;
   notes: Array<string>;
   counts: ResolvedCounts;
   cutScore: number;

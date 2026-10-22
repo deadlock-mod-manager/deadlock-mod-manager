@@ -259,6 +259,9 @@ const ApplicableDetails = ({
         <VideoSettingsChecklist
           notes={config.kind === "preset" ? config.preset.notes : []}
           settings={videoSettings}
+          variants={
+            config.kind === "preset" ? config.preset.videoVariants : undefined
+          }
         />
         <Credits config={config} />
       </div>

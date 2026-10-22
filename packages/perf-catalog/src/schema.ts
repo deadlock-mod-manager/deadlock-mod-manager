@@ -110,7 +110,14 @@ const catalogPresetSchema = z.object({
   source: presetSourceSchema,
   /** The author's changes relative to `baseBuild`, not a whole file. */
   entries: z.array(configEntrySchema),
+  /** The first variant's settings, which is all that older apps read. */
   videoSettings: z.array(videoSettingSchema).optional(),
+  /** Every video.txt the author ships, when there is more than one. */
+  videoVariants: z
+    .array(
+      z.object({ label: z.string(), settings: z.array(videoSettingSchema) }),
+    )
+    .optional(),
   notes: z.array(z.string()).optional(),
 });
 

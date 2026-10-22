@@ -317,6 +317,7 @@ pub fn catalog_summary(ctx: &PerfContext) -> Result<CatalogSummary, Error> {
         base_build: preset.base_build,
         source: preset.source.clone(),
         video_settings: preset.video_settings.clone(),
+        video_variants: preset.video_variants.clone(),
         notes: preset.notes.clone(),
         counts: resolved.counts,
         cut_score: resolved.cut_score,

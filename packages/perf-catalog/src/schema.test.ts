@@ -137,9 +137,17 @@ describe("bundled performance catalog", () => {
 
   it("only takes in-game menu keys from video.txt", () => {
     for (const preset of presets) {
-      for (const setting of preset.videoSettings ?? []) {
+      const variants = preset.videoVariants ?? [];
+      const settings = [
+        preset.videoSettings ?? [],
+        ...variants.map((variant) => variant.settings),
+      ];
+      for (const setting of settings.flat()) {
         expect(setting.label).toBe(VIDEO_MENU.get(setting.key)?.label);
       }
+      // Older apps only read videoSettings, so it must be the default variant.
+      if (variants.length > 0)
+        expect(preset.videoSettings).toEqual(variants[0].settings);
     }
   });
 

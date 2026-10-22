@@ -16,6 +16,7 @@ use serde::{Deserialize, Serialize};
 
 use super::types::{
   CatalogOrigin, CategoryInfo, ConfigEntry, ConvarMeta, PerfTier, PresetSourceInfo, VideoSetting,
+  VideoVariant,
 };
 use crate::errors::Error;
 
@@ -87,8 +88,12 @@ pub struct CatalogPreset {
   pub source: PresetSourceInfo,
   /// The author's changes relative to `base_build`, not a whole file.
   pub entries: Vec<ConfigEntry>,
+  /// The first variant's settings when the author ships several video.txt files.
   #[serde(default)]
   pub video_settings: Vec<VideoSetting>,
+  /// Added without a schema bump: older apps ignore it.
+  #[serde(default)]
+  pub video_variants: Vec<VideoVariant>,
   #[serde(default)]
   pub notes: Vec<String>,
 }

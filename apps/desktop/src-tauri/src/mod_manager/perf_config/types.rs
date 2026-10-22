@@ -312,6 +312,15 @@ pub struct VideoSetting {
   pub display: Option<String>,
 }
 
+/// One of several video.txt files an author ships for a config.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[ts(export, rename_all = "camelCase")]
+#[serde(rename_all = "camelCase")]
+pub struct VideoVariant {
+  pub label: String,
+  pub settings: Vec<VideoSetting>,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
 #[ts(export, rename_all = "camelCase")]
 #[serde(tag = "kind", rename_all = "camelCase")]
@@ -346,6 +355,8 @@ pub struct PresetSummary {
   pub source: PresetSourceInfo,
   #[serde(default)]
   pub video_settings: Vec<VideoSetting>,
+  #[serde(default)]
+  pub video_variants: Vec<VideoVariant>,
   #[serde(default)]
   pub notes: Vec<String>,
   pub counts: ResolvedCounts,

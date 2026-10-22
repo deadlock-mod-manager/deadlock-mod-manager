@@ -287,6 +287,7 @@ fn preset(id: &str, entries: Vec<ConfigEntry>) -> CatalogPreset {
     },
     entries,
     video_settings: Vec::new(),
+    video_variants: Vec::new(),
     notes: Vec::new(),
   }
 }

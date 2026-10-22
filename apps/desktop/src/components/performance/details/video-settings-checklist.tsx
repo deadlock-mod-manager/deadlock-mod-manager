@@ -2,21 +2,32 @@ import { Checkbox } from "@deadlock-mods/ui/components/checkbox";
 import { InfoIcon } from "@phosphor-icons/react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { FilterTabs } from "@/components/performance/filter-tabs";
 import type { VideoSetting } from "@/types/generated/VideoSetting";
+import type { VideoVariant } from "@/types/generated/VideoVariant";
 import { DetailsSection } from "./details-parts";
 
-/** The author's in-game video settings. We never write video.txt. */
+/**
+ * The author's in-game video settings. We never write video.txt. When the
+ * author ships several video.txt files, each one is a variant to pick from.
+ */
 export const VideoSettingsChecklist = ({
   settings,
+  variants = [],
   notes,
 }: {
   settings: VideoSetting[];
+  variants?: VideoVariant[];
   notes: string[];
 }) => {
   const { t } = useTranslation();
   const [done, setDone] = useState<ReadonlySet<string>>(new Set());
+  const [variant, setVariant] = useState(variants[0]?.label ?? "");
+  const shown =
+    variants.find((candidate) => candidate.label === variant)?.settings ??
+    settings;
 
-  if (settings.length === 0 && notes.length === 0) return null;
+  if (shown.length === 0 && notes.length === 0) return null;
 
   const toggle = (key: string, checked: boolean) =>
     setDone((previous) => {
@@ -29,28 +40,39 @@ export const VideoSettingsChecklist = ({
   return (
     <DetailsSection
       description={
-        settings.length > 0
+        shown.length > 0
           ? t("performance.details.video.description")
           : undefined
       }
       title={
-        settings.length > 0
+        shown.length > 0
           ? t("performance.details.video.title")
           : t("performance.details.video.notesTitle")
       }>
-      {settings.length > 0 && (
+      {variants.length > 1 && (
+        <div className='flex'>
+          <FilterTabs
+            ariaLabel={t("performance.details.video.variantLabel")}
+            onValueChange={setVariant}
+            tabs={variants.map(({ label }) => ({ value: label, label }))}
+            value={variant}
+          />
+        </div>
+      )}
+      {shown.length > 0 && (
         <ul className='divide-y rounded-md border'>
-          {settings.map((setting) => {
+          {shown.map((setting) => {
             const id = `video-setting-${setting.key}`;
+            const doneKey = `${variant}:${setting.key}`;
             return (
               <li
                 className='flex items-center gap-3 px-3 py-2'
                 key={setting.key}>
                 <Checkbox
-                  checked={done.has(setting.key)}
+                  checked={done.has(doneKey)}
                   id={id}
                   onCheckedChange={(checked) =>
-                    toggle(setting.key, checked === true)
+                    toggle(doneKey, checked === true)
                   }
                 />
                 <label

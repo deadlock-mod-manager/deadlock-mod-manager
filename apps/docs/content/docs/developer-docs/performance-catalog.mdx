@@ -64,7 +64,7 @@ Upstream configs are whole `gameinfo.gi` files. The catalog stores what the auth
 
 Blocked and removed convars stay in a preset's entries so the app can show them as not applying.
 
-Some upstream authors ship a `video.txt`. The catalog keeps only the keys the in-game video menu exposes, with the menu's wording (`curated/video.ts`), and the app shows them as a checklist. It never writes `video.txt`.
+Some upstream authors ship a `video.txt`. The catalog keeps only the keys the in-game video menu exposes, with the menu's wording (`curated/video.ts`), and the app shows them as a checklist. It never writes `video.txt`. When an author ships several (OptiLock Ultra Potato has Shadows and No Shadows), each becomes a variant in `videoVariants` and the app lets the user switch between them; `videoSettings` holds the first, which is what older app versions show.
 
 ## Rules
 

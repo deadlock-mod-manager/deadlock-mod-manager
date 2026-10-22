@@ -167,6 +167,9 @@ const compact = <T extends object>(value: T): T =>
     ),
   ) as T;
 
+const videoPaths = (videos?: { path: string }[]) =>
+  (videos ?? []).map((video) => video.path).join(", ");
+
 const pinOf = (sources: Sources, file: UpstreamFile) => {
   const pin = sources.upstream[file.id];
   if (!pin)
@@ -177,6 +180,18 @@ const pinOf = (sources: Sources, file: UpstreamFile) => {
     throw new Error(
       `Pin for ${file.id} points at ${pin.repo}/${pin.path}; run with --refresh`,
     );
+  }
+  if (videoPaths(pin.videos) !== videoPaths(file.videos)) {
+    throw new Error(
+      `Pin for ${file.id} has video files [${videoPaths(pin.videos)}]; run with --refresh`,
+    );
+  }
+  if (
+    file.videos &&
+    file.videos.length > 1 &&
+    file.videos.some((video) => !video.label)
+  ) {
+    throw new Error(`${file.id} ships several video.txt files; label each one`);
   }
   return pin;
 };
@@ -261,7 +276,7 @@ export const buildCatalog = async (
 
   const upstream = new Map<
     string,
-    AnalyzedFile & { text: string; video?: string }
+    AnalyzedFile & { text: string; videos: { label?: string; text: string }[] }
   >();
   for (const file of UPSTREAM_FILES) {
     const pin = pinOf(sources, file);
@@ -271,15 +286,19 @@ export const buildCatalog = async (
         sha256: pin.sha256,
       }),
     );
-    const video = pin.video
-      ? decodeText(
+    const videos = [];
+    for (const [index, video] of (pin.videos ?? []).entries()) {
+      videos.push({
+        label: file.videos?.[index]?.label,
+        text: decodeText(
           await fetchPinned({
-            url: githubRawUrl(file.repo, pin.commit, pin.video.path),
-            sha256: pin.video.sha256,
+            url: githubRawUrl(file.repo, pin.commit, video.path),
+            sha256: video.sha256,
           }),
-        )
-      : undefined;
-    upstream.set(file.id, { ...analyze(text), text, video });
+        ),
+      });
+    }
+    upstream.set(file.id, { ...analyze(text), text, videos });
   }
 
   // GameBanana configs: analyzed for stats only.
@@ -496,7 +515,16 @@ export const buildCatalog = async (
         license: file.license,
       },
       entries: analyzed.delta.entries,
-      videoSettings: analyzed.video ? videoSettings(analyzed.video) : undefined,
+      videoSettings: analyzed.videos[0]
+        ? videoSettings(analyzed.videos[0].text)
+        : undefined,
+      videoVariants:
+        analyzed.videos.length > 1
+          ? analyzed.videos.map((video) => ({
+              label: video.label ?? "",
+              settings: videoSettings(video.text),
+            }))
+          : undefined,
       notes: definition.notes,
     });
   });

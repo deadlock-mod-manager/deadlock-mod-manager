@@ -754,7 +754,8 @@
       "video": {
         "title": "Recommended in-game settings",
         "notesTitle": "Notes from the author",
-        "description": "The author also tunes Deadlock's Video menu. The mod manager doesn't change these; set them in-game."
+        "description": "The author also tunes Deadlock's Video menu. The mod manager doesn't change these; set them in-game.",
+        "variantLabel": "Video settings variant"
       },
       "view": {
         "title": "Camera & visibility (from the author)",

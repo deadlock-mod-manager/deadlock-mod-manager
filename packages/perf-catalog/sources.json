@@ -611,10 +611,12 @@
       "commit": "23c833866b19a3867abb80e3bc9d85195f9ada1c",
       "date": "2026-10-21",
       "sha256": "fb1c9e67df8eac5d5af577bc51c78a5d99e192a656e56ed1c6e05d59b41e8748",
-      "video": {
-        "path": "maximumfps or minimum spec config and resources here/video.txt",
-        "sha256": "3eac767a751db000ba2400c07eeb2bd1dd509a60a35f33ceb4f29ff0954f26f3"
-      }
+      "videos": [
+        {
+          "path": "maximumfps or minimum spec config and resources here/video.txt",
+          "sha256": "3eac767a751db000ba2400c07eeb2bd1dd509a60a35f33ceb4f29ff0954f26f3"
+        }
+      ]
     },
     "kaizu-minspec": {
       "repo": "Sqooky/OptimizationLock",
@@ -651,10 +653,12 @@
       "date": "2026-10-21",
       "sha256": "47d2156c8d9502a84b90d58ab1f0a3dfeeeb4bddc0f686e34761b406abd57516",
       "tag": "v5.9",
-      "video": {
-        "path": "OptiLock FPS Config (Recommended)/video.txt",
-        "sha256": "5294c63ce0e371ae2696dfc1f2e6acf84c4601cc8d7d39f0f1398719dba8825d"
-      }
+      "videos": [
+        {
+          "path": "OptiLock FPS Config (Recommended)/video.txt",
+          "sha256": "5294c63ce0e371ae2696dfc1f2e6acf84c4601cc8d7d39f0f1398719dba8825d"
+        }
+      ]
     },
     "optilock-potato": {
       "repo": "dacooderr/OptiLock",
@@ -663,10 +667,12 @@
       "date": "2026-10-21",
       "sha256": "17fdb9fc69165cf4142e5b3c7c6bf1a3e716c74ad14f5802a8f8da1d897c620f",
       "tag": "v5.9",
-      "video": {
-        "path": "OptiLock Potato Config/video.txt",
-        "sha256": "95282034467d5231e53327ee40da4f1bb97688faed4021ec2c3ad3a31810445c"
-      }
+      "videos": [
+        {
+          "path": "OptiLock Potato Config/video.txt",
+          "sha256": "95282034467d5231e53327ee40da4f1bb97688faed4021ec2c3ad3a31810445c"
+        }
+      ]
     },
     "optilock-ultra-potato": {
       "repo": "dacooderr/OptiLock",
@@ -675,10 +681,16 @@
       "date": "2026-10-21",
       "sha256": "3ea138945a5c2807e9f888e1bdb542f66df40bfb5f39f77280a8f1001223b766",
       "tag": "v5.9",
-      "video": {
-        "path": "OptiLock Ultra Potato Config/video(No Shadows).txt",
-        "sha256": "338ac80c6d2422640e7599d41fbe502511aacb124661aff14fc4a85fdd5ef0b5"
-      }
+      "videos": [
+        {
+          "path": "OptiLock Ultra Potato Config/video(Shadows).txt",
+          "sha256": "20f36827aba5c241a30c9093d4ba88a053f89d3373c55db24b78c61b41e9c3f6"
+        },
+        {
+          "path": "OptiLock Ultra Potato Config/video(No Shadows).txt",
+          "sha256": "338ac80c6d2422640e7599d41fbe502511aacb124661aff14fc4a85fdd5ef0b5"
+        }
+      ]
     }
   },
   "community": {

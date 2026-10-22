@@ -44,6 +44,7 @@ const preset = (overrides: Partial<PresetSummary>): PresetSummary => ({
   baseBuild: null,
   source: { kind: "bundled" },
   videoSettings: [],
+  videoVariants: [],
   notes: [],
   counts: counts(),
   cutScore: 0.3,

@@ -86,5 +86,6 @@ export const VIDEO_MENU = new Map(
       values: { "0": "Disabled", "1": "Enabled", "2": "Enabled + Boost" },
     },
     r_light_sensitivity_mode: { label: "Reduce flashing effects", bool: true },
+    r_fullscreen_gamma: { label: "Full Screen Brightness" },
   }),
 );

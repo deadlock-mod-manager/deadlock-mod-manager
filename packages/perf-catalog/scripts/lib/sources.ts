@@ -21,7 +21,7 @@ export interface UpstreamPin {
   /** Release tag the commit was pinned from, for tag-tracked sources. */
   tag?: string;
   sha256: string;
-  video?: { path: string; sha256: string };
+  videos?: { path: string; sha256: string }[];
 }
 
 export interface CommunityPin {

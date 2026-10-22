@@ -8,8 +8,11 @@ export interface UpstreamFile {
   id: string;
   repo: string;
   path: string;
-  /** The author's recommended in-game settings, shown as a checklist. */
-  videoPath?: string;
+  /**
+   * The author's recommended in-game settings, shown as a checklist. An
+   * author can ship several video.txt files; the first is the default.
+   */
+  videos?: { path: string; label?: string }[];
   /** `tag`: pin the latest release tag. `branch`: pin the last commit touching `path`. */
   track: "tag" | "branch";
   license: string;
@@ -42,7 +45,11 @@ export const UPSTREAM_FILES: UpstreamFile[] = [
     id: "sqooky-maxfps",
     repo: "Sqooky/OptimizationLock",
     path: "maximumfps or minimum spec config and resources here/gameinfo.gi",
-    videoPath: "maximumfps or minimum spec config and resources here/video.txt",
+    videos: [
+      {
+        path: "maximumfps or minimum spec config and resources here/video.txt",
+      },
+    ],
     track: "branch",
     license: "GPL-3.0",
     lineage: "sqooky",
@@ -84,7 +91,7 @@ export const UPSTREAM_FILES: UpstreamFile[] = [
     id: "optilock-fps",
     repo: "dacooderr/OptiLock",
     path: "OptiLock FPS Config (Recommended)/gameinfo.gi",
-    videoPath: "OptiLock FPS Config (Recommended)/video.txt",
+    videos: [{ path: "OptiLock FPS Config (Recommended)/video.txt" }],
     track: "tag",
     license: "GPL-3.0",
     lineage: "optilock",
@@ -93,7 +100,7 @@ export const UPSTREAM_FILES: UpstreamFile[] = [
     id: "optilock-potato",
     repo: "dacooderr/OptiLock",
     path: "OptiLock Potato Config/gameinfo.gi",
-    videoPath: "OptiLock Potato Config/video.txt",
+    videos: [{ path: "OptiLock Potato Config/video.txt" }],
     track: "tag",
     license: "GPL-3.0",
     lineage: "optilock",
@@ -102,7 +109,16 @@ export const UPSTREAM_FILES: UpstreamFile[] = [
     id: "optilock-ultra-potato",
     repo: "dacooderr/OptiLock",
     path: "OptiLock Ultra Potato Config/gameinfo.gi",
-    videoPath: "OptiLock Ultra Potato Config/video(No Shadows).txt",
+    videos: [
+      {
+        path: "OptiLock Ultra Potato Config/video(Shadows).txt",
+        label: "Shadows",
+      },
+      {
+        path: "OptiLock Ultra Potato Config/video(No Shadows).txt",
+        label: "No Shadows",
+      },
+    ],
     track: "tag",
     license: "GPL-3.0",
     lineage: "optilock",
@@ -215,7 +231,6 @@ export const PRESETS: PresetDefinition[] = [
       "OptiLock Potato with a shorter draw distance, lower model and decal detail, and more aggressive culling of small objects. For the weakest hardware.",
     notes: [
       "Buildings and distant players pop in sooner than with OptiLock Potato (r_farz, r_mapextents).",
-      "Upstream ships two sets of in-game video settings; this uses the one without shadows.",
     ],
     upstream: "optilock-ultra-potato",
   },
