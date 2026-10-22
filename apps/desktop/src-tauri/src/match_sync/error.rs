@@ -30,7 +30,8 @@ pub enum MatchSyncError {
   #[error("match history is private")]
   HistoryPrivate,
 
-  // The GC answered a match history request with an error; the connection itself is fine.
+  // The GC answered a friend's match history request with an error; the connection
+  // itself is fine.
   #[error("Steam GC refused the match history request (result {0})")]
   HistoryRefused(i32),
 

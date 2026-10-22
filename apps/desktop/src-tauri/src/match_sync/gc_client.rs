@@ -89,6 +89,23 @@ async fn until_launch<T>(
   }
 }
 
+// What a history response's non-success `result` means. Refusing the account's own
+// history means the GC won't serve this account, which backs it off like an outage; a
+// refusal for a friend is only about that friend.
+fn history_error(result: Option<i32>, own_history: bool) -> Option<MatchSyncError> {
+  use c_msg_client_to_gc_get_match_history_response::EResult;
+  let r = result.filter(|&r| r != EResult::KEResultSuccess as i32)?;
+  Some(if r == EResult::KEResultRateLimited as i32 {
+    MatchSyncError::GcRateLimited
+  } else if own_history {
+    MatchSyncError::GcUnavailable(format!("history result {r}"))
+  } else if r == EResult::KEResultInvalidPermission as i32 {
+    MatchSyncError::HistoryPrivate
+  } else {
+    MatchSyncError::HistoryRefused(r)
+  })
+}
+
 // `impl Future + Send` keeps impls spawnable. No internal retries: a failed salt
 // fetch must cost at most one quota unit (caller rate-limits + quota-gates).
 pub trait GcMatchClient: Send + Sync {
@@ -334,18 +351,8 @@ impl GcMatchClient for SteamGcClient {
     let resp = CMsgClientToGcGetMatchHistoryResponse::decode(raw.data.as_ref())
       .map_err(|e| MatchSyncError::GcUnavailable(format!("bad history response: {e}")))?;
 
-    use c_msg_client_to_gc_get_match_history_response::EResult;
-    match resp.result {
-      Some(r) if r == EResult::KEResultRateLimited as i32 => {
-        return Err(MatchSyncError::GcRateLimited);
-      }
-      Some(r) if r == EResult::KEResultInvalidPermission as i32 => {
-        return Err(MatchSyncError::HistoryPrivate);
-      }
-      Some(r) if r != EResult::KEResultSuccess as i32 => {
-        return Err(MatchSyncError::HistoryRefused(r));
-      }
-      _ => {}
+    if let Some(e) = history_error(resp.result, account_id == ctx.account_id()) {
+      return Err(e);
     }
 
     Ok(MatchHistoryPage {

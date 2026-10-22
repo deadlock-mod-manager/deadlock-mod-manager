@@ -330,12 +330,18 @@ where
           break;
         }
         Err(MatchSyncError::HistoryPrivate) => PRIVATE_FRIEND_COOLDOWN_SECS,
+        // The connection is broken, not this friend's history: stop instead of
+        // reconnecting for, and cooling down, every remaining friend.
+        Err(e @ MatchSyncError::GcUnavailable(_)) => {
+          log::warn!("match-sync: friend history lookups stopped: {e}");
+          self.persistence.record_gc_error(&e);
+          break;
+        }
         Err(e) => {
           log::warn!(
             "match-sync: match history of friend {} unavailable: {e}",
             friend.account_id
           );
-          self.persistence.record_gc_error(&e);
           FRIEND_COOLDOWN_SECS
         }
       };
@@ -1535,6 +1541,21 @@ mod tests {
       Some(&(NOW + PRIVATE_FRIEND_COOLDOWN_SECS))
     );
     assert_eq!(eng.persistence.gc_errors.load(Ordering::Relaxed), 0);
+    assert_eq!(*eng.sink.posted.lock().unwrap(), vec![600]);
+  }
+
+  #[tokio::test]
+  async fn broken_gc_stops_friend_lookups_without_cooling_friends_down() {
+    let (mut gc, backfill) = friend_scenario(vec![600]);
+    gc.friend_history_error = Some(|| MatchSyncError::GcUnavailable("spy".into()));
+    let eng = engine(gc, backfill);
+
+    eng
+      .run_background_pass(&active_config(), &AtomicBool::new(false))
+      .await
+      .unwrap();
+    assert!(eng.persistence.cooldowns.lock().unwrap().is_empty());
+    assert_eq!(eng.persistence.gc_errors.load(Ordering::Relaxed), 1);
     assert_eq!(*eng.sink.posted.lock().unwrap(), vec![600]);
   }
 

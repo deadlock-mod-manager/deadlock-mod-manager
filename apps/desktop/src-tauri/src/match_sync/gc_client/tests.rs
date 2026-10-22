@@ -306,3 +306,29 @@ async fn launch_hold_lasts_until_ended() {
   drop(hold);
   assert!(!launch_hold_active());
 }
+
+#[test]
+fn own_history_refusals_back_off_and_friend_refusals_do_not() {
+  use c_msg_client_to_gc_get_match_history_response::EResult;
+  let private = Some(EResult::KEResultInvalidPermission as i32);
+  let other = Some(i32::MAX);
+
+  assert!(history_error(None, true).is_none());
+  assert!(history_error(Some(EResult::KEResultSuccess as i32), false).is_none());
+  assert!(matches!(
+    history_error(Some(EResult::KEResultRateLimited as i32), false),
+    Some(MatchSyncError::GcRateLimited)
+  ));
+  for result in [private, other] {
+    assert!(history_error(result, true).is_some_and(|e| e.backs_off_gc()));
+    assert!(history_error(result, false).is_some_and(|e| !e.backs_off_gc()));
+  }
+  assert!(matches!(
+    history_error(private, false),
+    Some(MatchSyncError::HistoryPrivate)
+  ));
+  assert!(matches!(
+    history_error(other, false),
+    Some(MatchSyncError::HistoryRefused(i32::MAX))
+  ));
+}
