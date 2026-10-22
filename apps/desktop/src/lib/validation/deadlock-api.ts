@@ -44,6 +44,8 @@ export const deadlockItemSchema = z.object({
 export const rankAssetSchema = z.object({
   tier: z.number(),
   name: z.string(),
+  /** The tier's signature colour, e.g. "#EE4F57"; absent from older cached payloads. */
+  color: z.string().nullish().catch(null),
   images: z.record(z.string(), z.string()).default({}),
 });
 

@@ -66,8 +66,15 @@ export const matchMetadataStatSchema = z.object({
   shots_missed: count,
 });
 
+/** One death, and which player slot landed it. */
+const matchMetadataDeathSchema = z.object({
+  game_time_s: count,
+  killer_player_slot: optionalCount,
+});
+
 export const matchMetadataPlayerSchema = z.object({
   account_id: z.number(),
+  player_slot: count,
   team: count,
   hero_id: z.number(),
   kills: count,
@@ -81,6 +88,15 @@ export const matchMetadataPlayerSchema = z.object({
   // build must not drop the whole player off the scoreboard.
   items: z.array(matchMetadataItemSchema).optional().default([]).catch([]),
   stats: z.array(matchMetadataStatSchema).optional().default([]).catch([]),
+  death_details: z
+    .array(matchMetadataDeathSchema)
+    .optional()
+    .default([])
+    .catch([]),
+  /** Valve's post-match ranking, 1 being the lobby's best. */
+  mvp_rank: optionalCount,
+  /** Shared by the two teams' players in the same lane. */
+  assigned_lane: optionalCount,
 });
 
 export const matchMetadataSchema = z.object({
@@ -89,6 +105,9 @@ export const matchMetadataSchema = z.object({
     winning_team: count,
     start_time: count,
     match_id: z.number(),
+    match_mode: count,
+    average_badge_team0: optionalCount,
+    average_badge_team1: optionalCount,
     players: z
       .array(matchMetadataPlayerSchema)
       .optional()
@@ -213,6 +232,30 @@ export const badgeDistributionEntrySchema = z.object({
   unique_players: count,
 });
 
+/**
+ * One metric of `/analytics/player-stats/metrics`: the spread of a per-match
+ * value across every player in the requested bracket.
+ */
+export const metricSpreadSchema = z.object({
+  avg: z.number(),
+  percentile1: z.number(),
+  percentile5: z.number(),
+  percentile10: z.number(),
+  percentile25: z.number(),
+  percentile50: z.number(),
+  percentile75: z.number(),
+  percentile90: z.number(),
+  percentile95: z.number(),
+  percentile99: z.number(),
+});
+
+/** One bucket of `/analytics/player-performance-curve` in absolute game time. */
+export const performancePointSchema = z.object({
+  game_time: count,
+  net_worth_avg: count,
+  samples: count,
+});
+
 export const seasonIntervalSchema = z.object({
   interval: count,
   start_timestamp: z.number(),
@@ -261,6 +304,8 @@ export type ItemStats = z.infer<typeof itemStatsSchema>;
 export type BadgeDistributionEntry = z.infer<
   typeof badgeDistributionEntrySchema
 >;
+export type PerformancePoint = z.infer<typeof performancePointSchema>;
+export type MetricSpread = z.infer<typeof metricSpreadSchema>;
 export type SeasonInterval = z.infer<typeof seasonIntervalSchema>;
 export type RankedSeason = z.infer<typeof rankedSeasonSchema>;
 export type HeroCounterStats = z.infer<typeof heroCounterStatsSchema>;

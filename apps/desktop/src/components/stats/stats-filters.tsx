@@ -10,12 +10,7 @@ import {
   ToggleGroup,
   ToggleGroupItem,
 } from "@deadlock-mods/ui/components/toggle-group";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@deadlock-mods/ui/components/tooltip";
-import { Calendar, ChevronDown, Info, X } from "@deadlock-mods/ui/icons";
+import { Calendar, X } from "@deadlock-mods/ui/icons";
 import { useId } from "react";
 import { useTranslation } from "react-i18next";
 import { isStatsMatchMode, type StatsMatchMode } from "@/lib/stats/scope";
@@ -54,7 +49,7 @@ export const StatsFilters = ({
       data-testid='stats-filters'>
       <ToggleGroup
         aria-label={t("stats.scope.mode")}
-        className='justify-start gap-0.5 rounded-lg border border-border/50 bg-secondary/40 p-0.5'
+        className='h-9 justify-start gap-0.5 rounded-lg border bg-card p-[3px]'
         onValueChange={(value) => {
           if (isStatsMatchMode(value)) onModeChange(value);
         }}
@@ -64,7 +59,7 @@ export const StatsFilters = ({
         {(["all", "ranked", "unranked"] satisfies StatsMatchMode[]).map(
           (value) => (
             <ToggleGroupItem
-              className='h-7 rounded-md px-3 text-xs text-muted-foreground hover:text-foreground data-[state=on]:bg-secondary data-[state=on]:text-foreground data-[state=on]:shadow-sm'
+              className='h-[28px] rounded-md px-3 font-semibold text-[12.5px] text-muted-foreground hover:text-foreground data-[state=on]:bg-secondary data-[state=on]:text-foreground data-[state=on]:shadow-none'
               key={value}
               value={value}>
               {t(`stats.scope.${value}`)}
@@ -75,15 +70,17 @@ export const StatsFilters = ({
       <Popover>
         <PopoverTrigger asChild>
           <Button
-            className='h-8 gap-2 border-border/50 bg-transparent px-3 text-xs font-normal text-muted-foreground hover:text-foreground data-[state=open]:bg-secondary'
+            className='h-9 gap-2 rounded-lg px-3 font-semibold text-[12.5px] data-[state=open]:bg-secondary'
             size='sm'
             variant='outline'>
-            <Calendar aria-hidden className='h-3.5 w-3.5' />
+            <Calendar
+              aria-hidden
+              className='h-3.5 w-3.5 text-muted-foreground'
+            />
             {dateLabel}
-            <ChevronDown aria-hidden className='h-3 w-3 opacity-60' />
           </Button>
         </PopoverTrigger>
-        <PopoverContent align='start' className='w-64 space-y-3 p-3'>
+        <PopoverContent align='end' className='w-72 space-y-3 p-3'>
           <Label className='text-xs' htmlFor={`${id}-since`}>
             {t("stats.scope.since")}
           </Label>
@@ -107,6 +104,9 @@ export const StatsFilters = ({
               {t("stats.scope.allTime")}
             </Button>
           )}
+          <p className='border-border/60 border-t pt-3 text-muted-foreground text-xs leading-relaxed'>
+            {t("stats.scope.hint")}
+          </p>
         </PopoverContent>
       </Popover>
       {(mode !== "all" || sinceDate !== "") && (
@@ -122,22 +122,6 @@ export const StatsFilters = ({
           {t("stats.scope.reset")}
         </Button>
       )}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            aria-label={t("stats.scope.about")}
-            className='h-7 w-7 text-muted-foreground/60 hover:text-foreground'
-            size='icon'
-            variant='ghost'>
-            <Info aria-hidden className='h-3.5 w-3.5' />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent
-          className='max-w-80 text-pretty leading-relaxed'
-          side='bottom'>
-          {t("stats.scope.hint")}
-        </TooltipContent>
-      </Tooltip>
     </div>
   );
 };

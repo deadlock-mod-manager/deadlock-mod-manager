@@ -66,6 +66,8 @@ type SidebarItem = {
   group: string;
   /** Shows a "New" badge until the user opens the page. */
   isNew?: boolean;
+  /** Also active on pages nested under `url`, such as a single match under Stats. */
+  activeOnChildren?: boolean;
 };
 
 const GROUP_ORDER = [
@@ -207,6 +209,7 @@ const getSidebarItems = (
       icon: ChartLineUpIcon,
       group: "customization",
       isNew: true,
+      activeOnChildren: true,
     },
     ...(developerMode
       ? [
@@ -311,7 +314,11 @@ const SidebarItemComponent = ({
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const titleProps = {
-    isActive: item.url ? location.pathname === item.url : false,
+    isActive: item.url
+      ? location.pathname === item.url ||
+        (item.activeOnChildren === true &&
+          location.pathname.startsWith(`${item.url}/`))
+      : false,
     count: item.id === "my-mods" ? mods.length : undefined,
     downloads:
       item.id === "downloads"

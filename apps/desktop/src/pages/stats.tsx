@@ -19,6 +19,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { HintAnchor } from "@/components/feature-hints/hint-anchor";
 import PageTitle from "@/components/shared/page-title";
+import {
+  AccountSwitcher,
+  accountDisplayName,
+  PlayerAvatar,
+} from "@/components/stats/account-switcher";
 import { AccountPrompt } from "@/components/stats/account-prompt";
 import { DashboardDataProvider } from "@/components/stats/dashboard/dashboard-context";
 import { DashboardGrid } from "@/components/stats/dashboard/dashboard-grid";
@@ -34,7 +39,6 @@ import {
   widgetNeedsHistory,
 } from "@/components/stats/dashboard/widget-requirements";
 import { StatsFilters } from "@/components/stats/stats-filters";
-import { StatsHeader } from "@/components/stats/stats-header";
 import { StatsHints } from "@/components/stats/stats-hints";
 import { StatsStatus } from "@/components/stats/stats-status";
 import { StatTileSkeleton } from "@/components/stats/stat-tile";
@@ -124,34 +128,34 @@ const Stats = () => {
     hasWidgets && activeTab.widgets.every(widgetNeedsHistory);
 
   const tabBar = (
-    <div className='flex min-w-0 items-center gap-2'>
-      <DashboardTabs
-        activeTabId={activeTab.id}
-        brokenTabIds={dashboard.brokenTabIds}
-        editing={editing}
-        onSelect={dashboard.selectTab}
-        tabs={dashboard.layout.tabs}
-        {...dashboard.tabActions}
-      />
-      {!editing && (
-        <HintAnchor
-          align='end'
-          eligible={statsVisits >= CUSTOMIZE_HINT_MIN_VISITS}
-          hintId='stats-customize'
-          onShowMe={startEditing}>
-          <Button
-            className='h-9 shrink-0 gap-1.5'
-            data-testid='stats-customize'
-            onClick={startEditing}
-            size='sm'
-            title={t("stats.dashboard.customizeHint")}
-            variant='outline'>
-            <Pencil className='h-3.5 w-3.5' />
-            {t("stats.dashboard.customize")}
-          </Button>
-        </HintAnchor>
-      )}
-    </div>
+    <DashboardTabs
+      activeTabId={activeTab.id}
+      brokenTabIds={dashboard.brokenTabIds}
+      counts={{ heroes: hasAccount ? stats.heroes.length : undefined }}
+      editing={editing}
+      onSelect={dashboard.selectTab}
+      tabs={dashboard.layout.tabs}
+      {...dashboard.tabActions}
+    />
+  );
+
+  const customize = (
+    <HintAnchor
+      align='end'
+      eligible={statsVisits >= CUSTOMIZE_HINT_MIN_VISITS}
+      hintId='stats-customize'
+      onShowMe={startEditing}>
+      <Button
+        className='h-9 shrink-0 gap-2 rounded-lg font-semibold'
+        data-testid='stats-customize'
+        onClick={startEditing}
+        size='sm'
+        title={t("stats.dashboard.customizeHint")}
+        variant='outline'>
+        <Pencil className='h-3.5 w-3.5 text-muted-foreground' />
+        {t("stats.dashboard.customize")}
+      </Button>
+    </HintAnchor>
   );
 
   const renderBody = () => {
@@ -229,6 +233,12 @@ const Stats = () => {
     return grid;
   };
 
+  const displayName = accountDisplayName(stats.profile, account);
+  const showsProfile = activeTab.widgets.some(
+    (widget) =>
+      widget.source.kind === "panel" && widget.source.panel === "profile",
+  );
+
   const showAccountPrompt =
     !editing && needsAccount && !accountsPending && !hasAccount;
 
@@ -236,6 +246,9 @@ const Stats = () => {
     <DashboardDataProvider
       value={{
         accountId,
+        account,
+        accounts,
+        onSelectAccount: setAccountId,
         scope,
         stats,
         heroesById,
@@ -261,33 +274,42 @@ const Stats = () => {
           />
         </div>
 
-        {/* Account and tabs share one pinned row - the tabs are the page's
-            primary navigation and shouldn't cost a band of their own. Without a
-            detected account the global widgets still work, so the switcher
-            stands on its own. */}
+        {/* Tabs and filters share one pinned row. The account lives in the
+            Overview's profile panel; tabs without one get a compact chip so
+            switching accounts is always one click away. */}
         <div className='flex shrink-0 flex-col gap-3 px-4 pr-2 pt-4 pb-4'>
-          {hasAccount ? (
-            <StatsHeader
-              account={account}
-              accountId={accountId}
-              accounts={accounts}
-              onSelectAccount={setAccountId}
-              profile={stats.profile}
-              rank={stats.rank}
-              rankAssets={rankAssets.data?.data ?? []}
-              tabs={tabBar}
-            />
-          ) : (
-            tabBar
-          )}
-          {!editing && (
-            <StatsFilters
-              mode={mode}
-              onModeChange={setMode}
-              onSinceDateChange={setSinceDate}
-              sinceDate={sinceDate}
-            />
-          )}
+          <div className='flex flex-wrap items-center justify-between gap-x-4 gap-y-3'>
+            <div className='flex min-w-0 items-center gap-3'>
+              {hasAccount && !showsProfile && (
+                <div className='flex min-w-0 items-center gap-2 rounded-lg border border-border/60 py-1 pr-1 pl-1.5'>
+                  <PlayerAvatar
+                    className='h-6 w-6'
+                    name={displayName}
+                    profile={stats.profile}
+                  />
+                  <span className='max-w-40 truncate font-medium text-sm'>
+                    {displayName || t("stats.unknownPlayer")}
+                  </span>
+                  <AccountSwitcher
+                    accounts={accounts}
+                    onSelectAccount={setAccountId}
+                  />
+                </div>
+              )}
+              {tabBar}
+            </div>
+            {!editing && (
+              <div className='flex flex-wrap items-center gap-2'>
+                <StatsFilters
+                  mode={mode}
+                  onModeChange={setMode}
+                  onSinceDateChange={setSinceDate}
+                  sinceDate={sinceDate}
+                />
+                {customize}
+              </div>
+            )}
+          </div>
           {editing && (
             <EditToolbar
               isDirty={dashboard.isDirty}

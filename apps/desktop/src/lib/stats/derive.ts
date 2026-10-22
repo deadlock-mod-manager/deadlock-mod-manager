@@ -5,6 +5,7 @@ import type {
   MateStats,
   PlayerHeroStats,
 } from "@/lib/stats/api";
+import { badgeToStep } from "@/lib/stats/rank";
 
 /**
  * Everything on the Stats page is derived from the one match-history payload, so
@@ -299,7 +300,7 @@ export const winrateByWeekday = (matches: MatchHistoryEntry[]): BucketStats[] =>
 
 const SESSION_GAP_MS = 3 * 60 * 60 * 1000;
 /** Beyond this the samples get too thin to say anything. */
-const MAX_SESSION_POSITION = 6;
+export const MAX_SESSION_POSITION = 6;
 
 /**
  * Each match with its position within a session (matches less than 3h apart),
@@ -317,6 +318,60 @@ export const sessionPositions = (
     previousEnd = start + match.match_duration_s * 1000;
     return { match, position: Math.min(position, MAX_SESSION_POSITION) };
   });
+};
+
+export interface PlaySession {
+  /** Newest first, the order the list reads in. */
+  matches: MatchHistoryEntry[];
+  startTime: number;
+  endTime: number;
+  wins: number;
+  /** Subranks gained (or lost) across the session; `null` without ranked games on both ends. */
+  rankSteps: number | null;
+}
+
+const rankedBadge = (match: MatchHistoryEntry): number | null =>
+  match.ranked_display_badge !== null && match.ranked_display_badge > 0
+    ? match.ranked_display_badge
+    : null;
+
+/**
+ * The history cut into play sessions (the same 3h gap `sessionPositions` uses),
+ * newest session first. Rank movement compares the last badge of a session with
+ * the last one shown before it started.
+ */
+export const playSessions = (matches: MatchHistoryEntry[]): PlaySession[] => {
+  // Walked oldest first, each session collected newest first.
+  const sessions: MatchHistoryEntry[][] = [];
+  for (const { match, position } of sessionPositions(matches)) {
+    const current = sessions[sessions.length - 1];
+    if (position === 1 || !current) {
+      sessions.push([match]);
+    } else {
+      current.unshift(match);
+    }
+  }
+
+  const result: PlaySession[] = [];
+  let badgeBefore: number | null = null;
+  for (const games of sessions) {
+    const latestBadge =
+      games.map(rankedBadge).find((badge) => badge !== null) ?? null;
+    const newest = games[0];
+    const oldest = games[games.length - 1];
+    result.unshift({
+      matches: games,
+      startTime: oldest?.start_time ?? 0,
+      endTime: newest ? newest.start_time + newest.match_duration_s : 0,
+      wins: games.filter(isWin).length,
+      rankSteps:
+        badgeBefore !== null && latestBadge !== null
+          ? badgeToStep(latestBadge) - badgeToStep(badgeBefore)
+          : null,
+    });
+    badgeBefore = latestBadge ?? badgeBefore;
+  }
+  return result;
 };
 
 /**
@@ -496,6 +551,7 @@ export interface HeroPerformance {
   kda: number;
   soulsPerMin: number;
   accuracy: number;
+  damagePerMin: number;
   lastPlayed: number;
   timePlayedMin: number;
 }
@@ -513,6 +569,7 @@ export const heroPerformance = (
       kda: (hero.kills + hero.assists) / Math.max(hero.deaths, 1),
       soulsPerMin: hero.networth_per_min,
       accuracy: hero.accuracy,
+      damagePerMin: hero.damage_per_min,
       lastPlayed: hero.last_played,
       timePlayedMin: hero.time_played / 60,
     }))
