@@ -29,8 +29,7 @@ use valveprotos::deadlock::{
 use super::error::MatchSyncError;
 use super::friends::Persona;
 use super::model::{AuthContext, DEADLOCK_APP_ID, LocalMatch, MatchHistoryPage, MatchSalts};
-use super::settings::now_secs;
-use crate::steam_user::account_id_of;
+use crate::steam_user::{account_id_of, is_individual};
 
 // A stalled discover/login/job call must not block cancel/disable indefinitely.
 const GC_CALL_TIMEOUT: Duration = Duration::from_secs(30);
@@ -211,7 +210,7 @@ impl SteamGcClient {
       )
       .await?;
       let list = match buffered {
-        Some(list) => Some(list),
+        list @ Some(_) => list,
         None => tokio::time::timeout(FRIENDS_WAIT, pushed.next())
           .await
           .ok()
@@ -228,17 +227,12 @@ impl SteamGcClient {
       }
     };
     let friends = list
-      .map(|list| {
-        list
-          .friends
-          .iter()
-          .filter(|f| f.efriendrelationship == Some(FRIEND_RELATIONSHIP_FRIEND))
-          .filter_map(|f| f.ulfriendid)
-          // SteamID64 bits 52..56 hold the account type; 1 = individual.
-          .filter(|id| (id >> 52) & 0xF == 1)
-          .collect()
-      })
-      .unwrap_or_default();
+      .into_iter()
+      .flat_map(|list| list.friends)
+      .filter(|f| f.efriendrelationship == Some(FRIEND_RELATIONSHIP_FRIEND))
+      .filter_map(|f| f.ulfriendid)
+      .filter(|&id| is_individual(id))
+      .collect();
     Ok(GcSession {
       steam_id64: ctx.steam_id64,
       gc,
@@ -436,8 +430,8 @@ impl GcMatchClient for SteamGcClient {
 
   async fn personas(&self, ctx: &AuthContext, account_ids: &[u32]) -> HashMap<u32, Persona> {
     let mut personas = HashMap::new();
-    let mut pending: HashSet<u32> = account_ids.iter().copied().collect();
-    if pending.is_empty() {
+    let wanted: HashSet<u32> = account_ids.iter().copied().collect();
+    if wanted.is_empty() {
       return personas;
     }
     let mut guard = self.session.lock().await;
@@ -464,7 +458,7 @@ impl GcMatchClient for SteamGcClient {
       .friends
       .iter()
       .copied()
-      .filter(|&id| pending.contains(&account_id_of(id)))
+      .filter(|&id| wanted.contains(&account_id_of(id)))
       .collect();
     // Personas only sharpen the ranking; without them friends still rank by cadence.
     if let Err(e) = with_timeout(GC_CALL_TIMEOUT, "persona request", session.conn.send(req)).await {
@@ -472,9 +466,8 @@ impl GcMatchClient for SteamGcClient {
       return personas;
     }
 
-    let now = now_secs();
     let deadline = tokio::time::Instant::now() + FRIENDS_WAIT;
-    while !pending.is_empty() {
+    while personas.len() < wanted.len() {
       // A launch must not wait out the deadline for the session lock.
       let next = tokio::select! {
         biased;
@@ -490,23 +483,19 @@ impl GcMatchClient for SteamGcClient {
           continue;
         };
         // Steam also pushes updates nobody asked for (e.g. about ourselves).
-        if !account_ids.contains(&id) {
+        if !wanted.contains(&id) {
           continue;
         }
-        pending.remove(&id);
-        let last_seen = if f.persona_state.is_some_and(|s| s != 0) {
-          Some(now)
-        } else {
-          [f.last_seen_online, f.last_logoff]
-            .into_iter()
-            .flatten()
-            .filter(|&t| t != 0)
-            .max()
-            .map(i64::from)
-        };
+        let last_seen = [f.last_seen_online, f.last_logoff]
+          .into_iter()
+          .flatten()
+          .filter(|&t| t != 0)
+          .max()
+          .map(i64::from);
         // A later, partial update must not erase what an earlier one told us.
-        let persona: &mut Persona = personas.entry(id).or_default();
+        let persona = personas.entry(id).or_default();
         persona.in_deadlock |= f.game_played_app_id == Some(DEADLOCK_APP_ID);
+        persona.online |= f.persona_state.is_some_and(|s| s != 0);
         persona.last_seen = last_seen.or(persona.last_seen);
       }
     }

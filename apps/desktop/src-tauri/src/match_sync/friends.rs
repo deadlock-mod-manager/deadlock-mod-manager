@@ -10,7 +10,8 @@ const DAY: i64 = 24 * HOUR;
 const MIN_GAP: i64 = HOUR;
 const MAX_GAP: i64 = 3 * DAY;
 const DEFAULT_GAP: i64 = DAY;
-const GAP_SAMPLE: usize = 20;
+/// How many of a friend's newest stored matches the cadence is read from.
+pub const GAP_SAMPLE: usize = 20;
 // A match takes a while to start and finish; being online only briefly after the last
 // stored match doesn't mean another one was played.
 const MIN_ACTIVITY_AFTER_LAST: i64 = 45 * 60;
@@ -23,7 +24,8 @@ const IN_GAME_BOOST: u64 = 1 << 32;
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Persona {
   pub in_deadlock: bool,
-  /// Last time the friend was seen online (now, if they're online), if Steam shares it.
+  pub online: bool,
+  /// Last time the friend was seen online, if Steam shares it.
   pub last_seen: Option<i64>,
 }
 
@@ -53,13 +55,12 @@ pub fn estimate(
   let gap = typical_gap(starts_newest_first);
   let score = u64::try_from(elapsed * 100 / gap).unwrap_or(0);
 
-  match persona {
-    Some(p) if p.in_deadlock => (elapsed > HOUR).then_some(score + IN_GAME_BOOST),
-    Some(Persona {
-      last_seen: Some(seen),
-      ..
-    }) => (seen > last_end + MIN_ACTIVITY_AFTER_LAST && elapsed > gap).then_some(score),
-    _ => (elapsed > 2 * gap && elapsed < MAX_CADENCE_ONLY_AGE).then_some(score),
+  if persona.is_some_and(|p| p.in_deadlock) {
+    return (elapsed > HOUR).then_some(score + IN_GAME_BOOST);
+  }
+  match persona.and_then(|p| p.online.then_some(now).or(p.last_seen)) {
+    Some(seen) => (seen > last_end + MIN_ACTIVITY_AFTER_LAST && elapsed > gap).then_some(score),
+    None => (elapsed > 2 * gap && elapsed < MAX_CADENCE_ONLY_AGE).then_some(score),
   }
 }
 
@@ -100,7 +101,8 @@ mod tests {
     let (end, starts) = regular(2 * HOUR);
     let p = Persona {
       in_deadlock: true,
-      last_seen: Some(NOW),
+      online: true,
+      last_seen: None,
     };
     assert!(estimate(NOW, end, &starts, Some(p)).unwrap() > IN_GAME_BOOST);
     let (end, starts) = regular(30 * 60);
@@ -111,14 +113,14 @@ mod tests {
   fn seen_online_after_last_match_and_past_cadence() {
     let (end, starts) = regular(5 * HOUR);
     let seen = Persona {
-      in_deadlock: false,
       last_seen: Some(end + 2 * HOUR),
+      ..Default::default()
     };
     assert!(estimate(NOW, end, &starts, Some(seen)).is_some());
     // Offline ever since the last stored match: nothing new to find.
     let gone = Persona {
-      in_deadlock: false,
       last_seen: Some(end + 10 * 60),
+      ..Default::default()
     };
     assert_eq!(estimate(NOW, end, &starts, Some(gone)), None);
   }
@@ -127,8 +129,8 @@ mod tests {
   fn seen_online_but_within_cadence_is_not_stale() {
     let (end, starts) = regular(90 * 60);
     let p = Persona {
-      in_deadlock: false,
-      last_seen: Some(NOW),
+      online: true,
+      ..Default::default()
     };
     assert_eq!(estimate(NOW, end, &starts, Some(p)), None);
   }
@@ -148,7 +150,8 @@ mod tests {
   fn future_last_match_is_never_stale() {
     let p = Persona {
       in_deadlock: true,
-      last_seen: Some(NOW),
+      online: true,
+      last_seen: None,
     };
     assert_eq!(estimate(NOW, NOW + 10, &[], Some(p)), None);
   }

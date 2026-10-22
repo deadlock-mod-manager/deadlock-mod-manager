@@ -45,6 +45,15 @@ pub enum MatchSyncError {
 }
 
 impl MatchSyncError {
+  // Only a broken or throttled GC connection backs an account's sync off; an answer about
+  // one match history (refused, private) says nothing about the connection.
+  pub fn backs_off_gc(&self) -> bool {
+    matches!(
+      self,
+      MatchSyncError::GcUnavailable(_) | MatchSyncError::GcRateLimited
+    )
+  }
+
   // A stable, machine-readable tag so the frontend can branch/localize on the
   // specific case without parsing the English message.
   pub fn subcode(&self) -> &'static str {
