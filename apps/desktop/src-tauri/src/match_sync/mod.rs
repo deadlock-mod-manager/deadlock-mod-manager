@@ -162,12 +162,14 @@ impl SyncPersistence for AppPersistence {
     );
   }
   fn record_gc_error(&self, err: &MatchSyncError) {
-    // Only a broken GC connection, or Steam rate-limiting the account's own history,
-    // warrants a backoff; the hook is only ever called from GC swallow points, but match
+    // Only a broken GC connection, or Steam rate-limiting or refusing the account's own
+    // history, warrants a backoff; the hook is only ever called from GC swallow points, but match
     // defensively so a future caller can't misfire it.
     if matches!(
       err,
-      MatchSyncError::GcUnavailable(_) | MatchSyncError::GcRateLimited
+      MatchSyncError::GcUnavailable(_)
+        | MatchSyncError::GcRateLimited
+        | MatchSyncError::HistoryRefused(_)
     ) {
       self.gc_error_seen.store(true, Ordering::Relaxed);
     }

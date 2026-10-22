@@ -191,11 +191,18 @@ impl SteamGcClient {
     cancel: &mut watch::Receiver<()>,
   ) -> Result<GcSession, MatchSyncError> {
     // Listen before draining the unprocessed buffer, so the list can't slip between them.
-    let pushed = conn.one::<CMsgClientFriendsList>();
+    // Only a full list will do: an incremental one carries just the friends that changed.
+    let mut pushed = Box::pin(
+      conn
+        .on::<CMsgClientFriendsList>()
+        .filter_map(|msg| std::future::ready(msg.ok().filter(|list| !list.bincremental()))),
+    );
     let buffered = conn
       .take_unprocessed()
       .into_iter()
-      .find(|m| m.kind == MsgKind::from(CMsgClientFriendsList::KIND));
+      .filter(|m| m.kind == MsgKind::from(CMsgClientFriendsList::KIND))
+      .filter_map(|raw| raw.into_message::<CMsgClientFriendsList>().ok())
+      .find(|list| !list.bincremental());
     let handshake = until_launch(cancel, async {
       let gc = with_timeout(
         GC_CALL_TIMEOUT,
@@ -204,11 +211,11 @@ impl SteamGcClient {
       )
       .await?;
       let list = match buffered {
-        Some(raw) => raw.into_message::<CMsgClientFriendsList>().ok(),
-        None => tokio::time::timeout(FRIENDS_WAIT, pushed)
+        Some(list) => Some(list),
+        None => tokio::time::timeout(FRIENDS_WAIT, pushed.next())
           .await
           .ok()
-          .and_then(Result::ok),
+          .flatten(),
       };
       Ok((gc, list))
     })
@@ -342,7 +349,7 @@ impl GcMatchClient for SteamGcClient {
         return Err(MatchSyncError::HistoryPrivate);
       }
       Some(r) if r != EResult::KEResultSuccess as i32 => {
-        return Err(MatchSyncError::GcUnavailable(format!("history result {r}")));
+        return Err(MatchSyncError::HistoryRefused(r));
       }
       _ => {}
     }

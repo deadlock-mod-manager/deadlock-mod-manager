@@ -3,9 +3,10 @@
 //! friends, and POST recovered salts to the same route the httpcache scraper uses.
 //! Split into traits so [`super::sync`] can be tested with spies.
 
+use std::collections::HashMap;
 use std::future::Future;
-use std::sync::Mutex;
-use std::time::Duration;
+use std::sync::{LazyLock, Mutex, MutexGuard, PoisonError};
+use std::time::{Duration, Instant};
 
 use reqwest::header::{COOKIE, HeaderMap, SET_COOKIE};
 use serde::Deserialize;
@@ -21,6 +22,45 @@ const POST_RETRY_DELAY: Duration = Duration::from_secs(3);
 const CLAIM_COOKIE: &str = "to_fetch_claim";
 // The release runs inline at the end of a pass; an unresponsive API mustn't hold it up.
 const RELEASE_TIMEOUT: Duration = Duration::from_secs(15);
+// Friends who are active but not picked would otherwise have their stored history re-read
+// every pass. Short enough that matches deadlock-api ingested since are soon seen; picked
+// friends go on a far longer cooldown anyway.
+const STORED_HISTORY_TTL: Duration = Duration::from_secs(60 * 60);
+
+// Process-wide, since every pass builds a fresh client. Stored history belongs to the
+// friend, so accounts sharing a friend share the entry.
+static STORED_HISTORIES: LazyLock<Mutex<HistoryCache>> = LazyLock::new(Default::default);
+
+fn stored_histories() -> MutexGuard<'static, HistoryCache> {
+  STORED_HISTORIES
+    .lock()
+    .unwrap_or_else(PoisonError::into_inner)
+}
+
+// Per friend: when their stored history was read, and the summary `active_friends`
+// reports (`None` if deadlock-api has no stored match for them).
+#[derive(Default)]
+struct HistoryCache(HashMap<u32, (Instant, Option<ActiveFriend>)>);
+
+impl HistoryCache {
+  fn get(&self, account_id: u32, now: Instant) -> Option<Option<ActiveFriend>> {
+    self
+      .0
+      .get(&account_id)
+      .filter(|(read_at, _)| now.duration_since(*read_at) < STORED_HISTORY_TTL)
+      .map(|(_, friend)| friend.clone())
+  }
+
+  fn insert(&mut self, account_id: u32, now: Instant, friend: Option<ActiveFriend>) {
+    self.0.insert(account_id, (now, friend));
+  }
+
+  fn prune(&mut self, now: Instant) {
+    self
+      .0
+      .retain(|_, (read_at, _)| now.duration_since(*read_at) < STORED_HISTORY_TTL);
+  }
+}
 
 pub trait BackfillSource: Send + Sync {
   fn to_fetch(
@@ -161,6 +201,18 @@ impl ApiClient {
   }
 }
 
+fn summarize(account_id: u32, history: &[StoredMatch]) -> Option<ActiveFriend> {
+  Some(ActiveFriend {
+    account_id,
+    latest_match_id: history.iter().map(|m| m.match_id).max()?,
+    last_end: history
+      .iter()
+      .map(|m| m.start_time + m.match_duration_s)
+      .max()?,
+    starts: history.iter().map(|m| m.start_time).collect(),
+  })
+}
+
 // The claim cookie's value from a `Set-Cookie` header: everything after `name=` up to
 // the first `;`. An empty value is the server clearing the cookie.
 fn parse_claim_cookie(set_cookie: &str) -> Option<String> {
@@ -222,30 +274,25 @@ impl BackfillSource for ApiClient {
   async fn active_friends(&self, account_ids: &[u32]) -> Result<Vec<ActiveFriend>, MatchSyncError> {
     // One client for the whole batch, so the per-friend requests share connections.
     let client = self.client()?;
+    stored_histories().prune(Instant::now());
     let mut active = Vec::new();
     for account_id in self.recent_players(&client, account_ids).await? {
-      let history = match self.stored_history(&client, account_id).await {
-        Ok(history) => history,
-        Err(e) => {
-          log::warn!("match-sync: stored history of friend {account_id}: {e}");
-          continue;
-        }
+      let cached = stored_histories().get(account_id, Instant::now());
+      let friend = match cached {
+        Some(friend) => friend,
+        None => match self.stored_history(&client, account_id).await {
+          Ok(history) => {
+            let friend = summarize(account_id, &history);
+            stored_histories().insert(account_id, Instant::now(), friend.clone());
+            friend
+          }
+          Err(e) => {
+            log::warn!("match-sync: stored history of friend {account_id}: {e}");
+            continue;
+          }
+        },
       };
-      let (Some(latest_match_id), Some(last_end)) = (
-        history.iter().map(|m| m.match_id).max(),
-        history
-          .iter()
-          .map(|m| m.start_time + m.match_duration_s)
-          .max(),
-      ) else {
-        continue;
-      };
-      active.push(ActiveFriend {
-        account_id,
-        latest_match_id,
-        last_end,
-        starts: history.iter().map(|m| m.start_time).collect(),
-      });
+      active.extend(friend);
     }
     Ok(active)
   }
@@ -323,5 +370,55 @@ mod tests {
       HeaderValue::from_static("to_fetch_claim=abc; Path=/v1/matches/to-fetch; Max-Age=900"),
     );
     assert_eq!(claim_from_headers(&headers).as_deref(), Some("abc"));
+  }
+
+  #[test]
+  fn summarizes_stored_history_or_nothing() {
+    let history = [
+      StoredMatch {
+        match_id: 12,
+        start_time: 2_000,
+        match_duration_s: 1_500,
+      },
+      StoredMatch {
+        match_id: 11,
+        start_time: 1_000,
+        match_duration_s: 3_000,
+      },
+    ];
+    let friend = summarize(7, &history).unwrap();
+    assert_eq!(friend.latest_match_id, 12);
+    assert_eq!(friend.last_end, 4_000);
+    assert_eq!(friend.starts, vec![2_000, 1_000]);
+    assert!(summarize(7, &[]).is_none());
+  }
+
+  #[test]
+  fn cached_histories_expire_after_the_ttl() {
+    let read_at = Instant::now();
+    let mut cache = HistoryCache::default();
+    cache.insert(7, read_at, None);
+    cache.insert(
+      8,
+      read_at + STORED_HISTORY_TTL,
+      summarize(
+        8,
+        &[StoredMatch {
+          match_id: 1,
+          start_time: 0,
+          match_duration_s: 0,
+        }],
+      ),
+    );
+
+    let before_expiry = read_at + STORED_HISTORY_TTL - Duration::from_secs(1);
+    assert!(matches!(cache.get(7, before_expiry), Some(None)));
+    let expired = read_at + STORED_HISTORY_TTL;
+    assert!(cache.get(7, expired).is_none());
+    assert!(cache.get(9, read_at).is_none());
+
+    cache.prune(expired);
+    assert_eq!(cache.0.len(), 1);
+    assert!(matches!(cache.get(8, expired), Some(Some(_))));
   }
 }
