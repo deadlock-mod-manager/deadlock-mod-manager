@@ -405,8 +405,8 @@ fn draft_from_share(catalog: &Catalog, text: &str) -> Result<Draft, Error> {
 
 /// Keeps the author's changes: every entry for a snippet, cfg or overrides
 /// file; for a full gameinfo.gi only what differs from its base build.
-/// SearchPaths, list sections, root keys and editor-only sections are never
-/// imported and are reported instead.
+/// SearchPaths, list sections and root keys are never imported and are
+/// reported instead.
 fn draft_from_parsed(catalog: &Catalog, parsed: ParsedConfig) -> Draft {
   let mut ignored = parsed.ignored;
   let mut warnings = Vec::new();

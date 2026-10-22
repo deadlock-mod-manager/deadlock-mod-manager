@@ -103,8 +103,7 @@ pub enum EntryStatus {
   /// An edit outside ConVars that is only written when engine sections are
   /// included.
   EngineSection,
-  /// A section or root key we never write (SearchPaths, RenderModes, PGIVersion,
-  /// editor-only sections).
+  /// A section or root key we never write (SearchPaths, RenderModes, PGIVersion).
   Excluded,
   /// A key we refuse with a recorded reason (crashes, cheats).
   Denied,

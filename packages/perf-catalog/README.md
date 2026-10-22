@@ -39,7 +39,7 @@ pnpm perf:catalog --refresh  # move the pins to the newest upstream state, then 
 
 - A preset's `entries` are the author's changes against the stock file it was built on: the stock build whose `PGIVersion` matches (closest among builds sharing it), otherwise the closest stock file by section values. Values compare normalized (`true`/`1`, `false`/`0`, canonical numbers).
 - ConVars that are new or differ; section scalars that are new or differ (the app writes those only when the user includes engine sections); section keys the author commented out (value `null`). A missing key is never a deletion.
-- Left out: FileSystem, list sections (MaterialSystem2/RenderModes), root keys (`PGIVersion`), editor-only sections. A preset that edits another list section or a section stock doesn't have fails the run.
+- Left out: FileSystem, list sections (MaterialSystem2/RenderModes) and root keys (`PGIVersion`). A preset that edits another list section or a section stock doesn't have fails the run.
 - Blocked and removed convars stay in `entries`; the app shows them as not applying.
 
 ### DMM Clean

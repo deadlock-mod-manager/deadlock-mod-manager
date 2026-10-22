@@ -3,8 +3,8 @@
 //!
 //! Entries are deduplicated by path first (the last one wins, as in a file).
 //! Rules, in order:
-//! 1. Root keys (`PGIVersion`) and excluded sections (FileSystem, RenderModes,
-//!    editor-only sections) → `Excluded`.
+//! 1. Root keys (`PGIVersion`) and excluded sections (FileSystem, RenderModes)
+//!    → `Excluded`.
 //! 2. Denied paths/patterns → `Denied`.
 //! 3. ConVars: blocked → `Blocked`; not in the dump → `Removed` (with a
 //!    `SectionKey` note when Valve's file sets the key in another section);

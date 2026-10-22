@@ -60,7 +60,7 @@ Upstream configs are whole `gameinfo.gi` files. The catalog stores what the auth
 
 1. **Find the base build.** If the file has a `PGIVersion`, use the stock build with that hash (the closest one when several builds share it). Otherwise use the stock build with the most matching section values.
 2. **Diff against it.** Keep ConVars that are new or differ, section scalars that are new or differ, and section keys the author commented out (value `null`). Values compare normalized: `true`/`1`, `false`/`0`, canonical numbers. A key that is only missing is never a deletion.
-3. **Drop what the app never writes.** FileSystem (including SearchPaths), list sections (`MaterialSystem2/RenderModes`), root keys (`PGIVersion`, `DisallowGameInfoConditionals`) and editor-only sections. If a preset edits any other list section, or a section stock doesn't have, the run fails.
+3. **Drop what the app never writes.** FileSystem (including SearchPaths), list sections (`MaterialSystem2/RenderModes`) and root keys (`PGIVersion`, `DisallowGameInfoConditionals`). If a preset edits any other list section, or a section stock doesn't have, the run fails.
 
 Blocked and removed convars stay in a preset's entries so the app can show them as not applying.
 
@@ -70,7 +70,7 @@ Some upstream authors ship a `video.txt`. The catalog keeps only the keys the in
 
 `curated/rules.ts` becomes `rules` in the catalog:
 
-- **Excluded sections**, never written: FileSystem, MaterialSystem2/RenderModes, Hammer, pulse, ResourceCompiler, ContentBuilder, SoundTool, ToolsEnvironment, MaterialEditor, ModelDoc, NavSystem, Localize, SupportedLanguages, hidden_maps, Source1Import.
+- **Excluded sections**, never written: FileSystem (DMM manages SearchPaths) and MaterialSystem2/RenderModes (a list, which an overlay can't express).
 - **Guarded sections**, the ones Valve's matchmaking message names (build 6417): Engine2, MaterialSystem2, NetworkSystem, Particles, RenderSystem, SceneSystem, WorldRenderer. The app writes engine-section edits as the config sets them; the user can turn them off per config if matchmaking refuses them.
 - **Denied keys**, each with the reason the app shows: `sv_cheats`, `timescale`/`host_timescale`, `Engine2/RenderingPipeline/DistanceField` (crashes after the hideout loads), `r_render_portals` (breaks Doorman's door), `Engine2/LocalServerClientAccess`.
 

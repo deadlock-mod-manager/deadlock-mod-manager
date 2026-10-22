@@ -179,7 +179,13 @@ fn sqooky_matches_the_current_build_exactly() {
     .collect();
   assert_eq!(
     sections.into_iter().collect::<Vec<_>>(),
-    vec!["Particles", "RenderSystem", "SceneSystem", "WorldRenderer"]
+    vec![
+      "Particles",
+      "RenderSystem",
+      "ResourceCompiler",
+      "SceneSystem",
+      "WorldRenderer"
+    ]
   );
 }
 
@@ -188,7 +194,8 @@ fn files_without_pgiversion_match_the_closest_build() {
   let kaizu = draft(&fixture(KAIZU), "gameinfo.gi");
   let base = kaizu.base.expect("base");
   assert!(!base.exact, "Kaizu comments PGIVersion out");
-  assert_eq!(base.build, current_build());
+  // The PGIVersion Kaizu commented out is 6711's.
+  assert_eq!(base.build, 6711);
   assert!(base.distance < 30, "distance {}", base.distance);
   assert!(!ignored_details(&kaizu.ignored, IgnoredKind::RootKey).contains(&"PGIVersion"));
 

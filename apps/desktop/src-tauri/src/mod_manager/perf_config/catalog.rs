@@ -139,8 +139,8 @@ pub struct DeniedRule {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CatalogRules {
-  /// Sections we never write, as `/`-joined paths: `FileSystem`,
-  /// `MaterialSystem2/RenderModes`, editor-only sections.
+  /// Sections we never write, as `/`-joined paths: `FileSystem` and
+  /// `MaterialSystem2/RenderModes`.
   pub excluded_sections: Vec<String>,
   /// Sections Valve's matchmaking message lists.
   pub guarded_sections: Vec<String>,
