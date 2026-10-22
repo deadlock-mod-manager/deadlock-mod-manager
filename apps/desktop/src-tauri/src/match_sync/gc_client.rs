@@ -468,7 +468,12 @@ impl GcMatchClient for SteamGcClient {
       .filter(|&id| wanted.contains(&account_id_of(id)))
       .collect();
     // Personas only sharpen the ranking; without them friends still rank by cadence.
-    if let Err(e) = with_timeout(GC_CALL_TIMEOUT, "persona request", session.conn.send(req)).await {
+    if let Err(e) = until_launch(
+      &mut cancel,
+      with_timeout(GC_CALL_TIMEOUT, "persona request", session.conn.send(req)),
+    )
+    .await
+    {
       log::warn!("match-sync: {e}");
       return personas;
     }
