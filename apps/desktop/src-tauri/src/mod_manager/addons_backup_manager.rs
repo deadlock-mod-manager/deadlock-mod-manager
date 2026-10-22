@@ -373,8 +373,10 @@ impl AddonsBackupManager {
   }
 
   fn validate_snapshot(root: &Path) -> Result<(), Error> {
-    ProfileVpkManifest::validate_tree(root)
-      .map_err(|error| Error::BackupRestoreFailed(error.to_string()))
+    ProfileVpkManifest::validate_tree(root).map_err(|error| match error {
+      Error::DuplicateVpkOwnership { .. } => error,
+      _ => Error::BackupRestoreFailed(error.to_string()),
+    })
   }
 
   fn restore_staged_roots(
@@ -820,6 +822,30 @@ mod tests {
 
     let error = AddonsBackupManager::validate_snapshot(&snapshot).unwrap_err();
     assert!(error.to_string().contains("references missing VPKs"));
+  }
+
+  /// The update dialog names the conflicting mods only when the ownership
+  /// error reaches it intact, so validation must not flatten it to a string.
+  #[test]
+  fn validation_keeps_duplicate_ownership_structured() {
+    let temp = tempfile::tempdir().unwrap();
+    let snapshot = temp.path().join("snapshot");
+    let profile = snapshot.join("addons");
+    write(&profile.join("pak02_dir.vpk"), b"vpk");
+    let mut manifest = ProfileVpkManifest::default();
+    for id in ["661996", "snd-86793"] {
+      manifest.mark_enabled(
+        id,
+        vec!["pak02_dir.vpk".to_string()],
+        vec![],
+        Some(0),
+        ShardIndex::FIRST,
+      );
+    }
+    manifest.save(&profile).unwrap();
+
+    let error = AddonsBackupManager::validate_snapshot(&snapshot).unwrap_err();
+    assert!(matches!(error, Error::DuplicateVpkOwnership { .. }));
   }
 
   /// In-progress staging directories belong to an interrupted operation, not to
