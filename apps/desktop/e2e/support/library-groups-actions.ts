@@ -99,28 +99,55 @@ const revealDragTarget = async (element: ChainablePromiseElement) => {
   await browser.waitUntil(() => element.isDisplayed({ withinViewport: true }));
 };
 
+type ProbeWindow = Window & { dragProbe?: string[] };
+
+// Records which element each native pointer event reaches, so a drag that
+// never starts shows whether the press or the moves went missing.
+const startDragProbe = () =>
+  browser.execute(() => {
+    const probe: string[] = [];
+    (window as ProbeWindow).dragProbe = probe;
+    for (const type of ["pointerdown", "pointermove", "pointerup", "mousedown"])
+      document.addEventListener(
+        type,
+        (event) => {
+          if (probe.length >= 40 || !(event instanceof MouseEvent)) return;
+          const target =
+            event.target instanceof Element
+              ? `${event.target.tagName.toLowerCase()}${event.target.id ? `#${event.target.id}` : ""}.${event.target.className}`
+              : String(event.target);
+          probe.push(
+            `${type} (${event.clientX},${event.clientY}) buttons=${event.buttons} prevented=${event.defaultPrevented} ${target.slice(0, 120)}`,
+          );
+        },
+        { capture: true },
+      );
+  });
+
+const readDragProbe = () =>
+  browser.execute(() => (window as ProbeWindow).dragProbe ?? []);
+
 export const nativeGroupDrag = async (
   source: ChainablePromiseElement,
   target: () => ChainablePromiseElement,
   whileHovering?: () => Promise<void>,
 ) => {
   await revealDragTarget(source);
+  await startDragProbe();
   await nativeInput("pointer-down", source);
   try {
-    // WebKitGTK can coalesce a lone motion event after the press, so keep
-    // moving past the 8px activation distance until the drag starts.
-    let nudge = 0;
-    await browser.waitUntil(
-      async () => {
-        nudge++;
-        await nativeInput("pointer-move", source, undefined, {
-          x: 8 + 4 * nudge,
-          y: 0,
-        });
-        return $("[data-library-drag-preview]").isDisplayed();
-      },
-      { timeout: 15_000, timeoutMsg: "Native drag never started" },
-    );
+    await nativeInput("pointer-move", source, undefined, { x: 12, y: 0 });
+    try {
+      await $("[data-library-drag-preview]").waitForDisplayed();
+    } catch (error) {
+      throw new Error(
+        [
+          "Drag never started. Events the page received:",
+          ...(await readDragProbe()),
+        ].join("\n"),
+        { cause: error },
+      );
+    }
     await revealDragTarget(target());
     await nativeInput("pointer-move", target());
     if (whileHovering) await whileHovering();

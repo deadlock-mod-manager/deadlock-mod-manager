@@ -18,6 +18,19 @@ import { assertConflictDisk, pairKey } from "../support/conflict-oracle";
 import { step } from "../support/evidence";
 import { navigate } from "../support/ui";
 
+// A closed Radix menu or dialog can leave body pointer-events disabled,
+// which blocks every click without showing anything on screen.
+const expectBodyUnlocked = (after: string) =>
+  browser.waitUntil(
+    async () =>
+      (await browser.execute(() => document.body.style.pointerEvents)) !==
+      "none",
+    {
+      timeout: 3000,
+      timeoutMsg: `Body pointer-events stayed disabled after ${after}`,
+    },
+  );
+
 type ShownGroup = { providers: string; severity: string };
 
 /** Providers are listed in load order, so this also asserts who is used in game. */
@@ -79,9 +92,12 @@ describe("mod conflicts", () => {
 
     if (process.env.DMM_E2E_PHASE === "resolve") {
       await createGroup("Outfits");
+      await expectBodyUnlocked("creating a group");
       await selectMods([HAT_JACKET, HAT_PANTS]);
       await moveSelected("Outfits");
+      await expectBodyUnlocked("moving mods to a group");
       await $('button[aria-label="Done selecting"]').click();
+      await expectBodyUnlocked("leaving selection");
       await assertConflictDisk(world, "initial-state", CONFLICT_MODS, null);
 
       await step(
@@ -97,6 +113,7 @@ describe("mod conflicts", () => {
           await dialog.waitForDisplayed();
           await dialog.$("button=Cancel").click();
           await expect(dialog).not.toBeDisplayed();
+          await expectBodyUnlocked("cancelling Disable all mods");
           await expect(
             $('button[aria-label="Check for updates"]'),
           ).toBeEnabled();
