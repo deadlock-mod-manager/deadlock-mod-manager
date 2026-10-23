@@ -111,7 +111,7 @@ export const UPSTREAM_FILES: UpstreamFile[] = [
     path: "OptiLock Ultra Potato Config/gameinfo.gi",
     videos: [
       {
-        path: "OptiLock Ultra Potato Config/video(Shadows).txt",
+        path: "OptiLock Ultra Potato Config/video.txt",
         label: "Shadows",
       },
       {
