@@ -1,7 +1,7 @@
 name: Watch convar dumps
 
 # Starts the catalog refresh as soon as SteamTracking publishes a convar dump
-# newer than the one pinned in sources.json, instead of waiting for Monday.
+# newer than the one pinned in sources.json, instead of waiting for the next scheduled run.
 
 on:
   workflow_dispatch:

@@ -3,7 +3,7 @@ name: Refresh performance catalog
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 6 * * 1" # Mondays 06:00 UTC; perf-catalog-watch.yml also starts it for new convar dumps
+    - cron: "0 6,18 * * *" # 06:00 and 18:00 UTC; perf-catalog-watch.yml also starts it for new convar dumps
 
 concurrency:
   group: perf-catalog
