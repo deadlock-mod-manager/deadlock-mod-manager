@@ -43,7 +43,7 @@ GH_TOKEN=$(gh auth token) pnpm perf:catalog --refresh   # move every pin, then r
 
 `--refresh` pins the latest release tag for tag-tracked sources (OptiLock) and the last commit that touched the file for the others, adds new stock and `convars.txt` versions from GameTracking, moves SchemaExplorer to its latest revision, and picks the newest GameBanana file that contains the configured variant. It prints what moved.
 
-The `Refresh performance catalog` workflow (`.github/workflows/perf-catalog.yml`) runs this every Monday and opens or updates a pull request from `chore/perf-catalog-refresh` when the catalog changed. The pull request body lists the moved pins and the generator report.
+The `Refresh performance catalog` workflow (`.github/workflows/perf-catalog.yml`) runs this twice a day (06:00 and 18:00 UTC) and opens or updates a pull request from `chore/perf-catalog-refresh` when the catalog changed. The pull request body lists the moved pins and the generator report.
 
 <Callout type='warn' title='Review refresh pull requests like code'>
   A moved pin brings in whatever the upstream author changed. Read the upstream
