@@ -5,6 +5,7 @@ import { nativeInput } from "./native-input";
 import { readLibraryGroups } from "./library-groups-oracle";
 import { observeUntil } from "./observations";
 import { ALPHA } from "./profile-fixtures";
+import { waitForOverlaysClosed } from "./ui";
 
 export const group = (name: string) =>
   $(`section[data-mod-group][aria-label="${name}"]`);
@@ -29,11 +30,13 @@ export const createGroup = async (name: string) => {
 };
 export const groupMenu = async (name: string, action: string) => {
   const trigger = group(name).$(`button[aria-label="Actions for ${name}"]`);
+  await waitForOverlaysClosed();
   await trigger.click();
   await browser.keys("ArrowDown");
   await $(`[role="menuitem"]=${action}`).click();
 };
 export const groupTools = async (action: string) => {
+  await waitForOverlaysClosed();
   await $("button=Groups").click();
   await browser.keys("ArrowDown");
   await $(`[role="menuitem"]=${action}`).click();
