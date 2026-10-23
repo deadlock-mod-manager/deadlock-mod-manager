@@ -39,7 +39,11 @@ export class ForumLifecycleThreadCreateListener extends Listener {
           .setLabel("Mark as solved")
           .setStyle(ButtonStyle.Success);
         await thread.send({
-          content: "Once this is fixed, press the button to close the post.",
+          content: [
+            "To help us look into this, please attach your logs: open **Settings > Logging** in the mod manager, press **Open Folder** under Mod Manager Logs, and drag the latest log file into this post.",
+            "",
+            "Once this is fixed, press the button to close the post.",
+          ].join("\n"),
           components: [
             new ActionRowBuilder<ButtonBuilder>().addComponents(solveButton),
           ],
