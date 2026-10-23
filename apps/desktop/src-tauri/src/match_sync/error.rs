@@ -26,6 +26,15 @@ pub enum MatchSyncError {
   #[error("Steam GC rate-limited the request")]
   GcRateLimited,
 
+  // The GC refused a friend's match history (their profile is private).
+  #[error("match history is private")]
+  HistoryPrivate,
+
+  // The GC answered a friend's match history request with an error; the connection
+  // itself is fine.
+  #[error("Steam GC refused the match history request (result {0})")]
+  HistoryRefused(i32),
+
   #[error("Deadlock is currently running; close it to fetch matches")]
   GameRunning,
 
@@ -37,6 +46,15 @@ pub enum MatchSyncError {
 }
 
 impl MatchSyncError {
+  // Only a broken or throttled GC connection backs an account's sync off; an answer about
+  // one match history (refused, private) says nothing about the connection.
+  pub fn backs_off_gc(&self) -> bool {
+    matches!(
+      self,
+      MatchSyncError::GcUnavailable(_) | MatchSyncError::GcRateLimited
+    )
+  }
+
   // A stable, machine-readable tag so the frontend can branch/localize on the
   // specific case without parsing the English message.
   pub fn subcode(&self) -> &'static str {
@@ -48,6 +66,8 @@ impl MatchSyncError {
       MatchSyncError::AuthUnavailable(_) => "authUnavailable",
       MatchSyncError::GcUnavailable(_) => "gcUnavailable",
       MatchSyncError::GcRateLimited => "gcRateLimited",
+      MatchSyncError::HistoryPrivate => "historyPrivate",
+      MatchSyncError::HistoryRefused(_) => "historyRefused",
       MatchSyncError::GameRunning => "gameRunning",
       MatchSyncError::Api(_) => "apiError",
       MatchSyncError::Store(_) => "storeError",

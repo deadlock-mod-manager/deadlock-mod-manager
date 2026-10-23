@@ -81,7 +81,7 @@ async fn fake_connection(replies: GcReplies, block_cleanup: bool) -> (Connection
         tx.unbounded_send(Ok(reply.into_bytes())).unwrap();
       } else if raw.kind == EMsg::k_EMsgClientGamesPlayedWithDataBlob {
         let mut raw = raw;
-        raw.kind = CMsgClientGamesPlayed::KIND.into();
+        raw.kind = <CMsgClientGamesPlayed as NetMessage>::KIND.into();
         let message = raw.into_message::<CMsgClientGamesPlayed>()?;
         if message.games_played.is_empty() {
           state.cleanup_started.notify_one();
@@ -164,6 +164,7 @@ async fn seeded_client(
     steam_id64: 42,
     gc,
     conn,
+    friends: Vec::new(),
   });
   (client, state)
 }
@@ -173,8 +174,11 @@ async fn launch_cancels_in_flight_history_and_waits_for_cleanup() {
   let _serial = TEST_LOCK.lock().await;
   let (client, state) = seeded_client(GcReplies::HandshakeOnly, true).await;
   let request_client = Arc::clone(&client);
-  let request =
-    tokio::spawn(async move { request_client.fetch_match_history(&context(), None).await });
+  let request = tokio::spawn(async move {
+    request_client
+      .fetch_match_history(&context(), context().account_id(), None)
+      .await
+  });
   tokio::time::timeout(Duration::from_secs(1), state.job_started.notified())
     .await
     .unwrap();
@@ -206,12 +210,17 @@ async fn launch_hold_blocks_cached_sessions_and_allows_requests_afterward() {
   let _serial = TEST_LOCK.lock().await;
   let (client, state) = seeded_client(GcReplies::All, false).await;
   let hold = LaunchHold::start();
-  let result = client.fetch_match_history(&context(), None).await;
+  let result = client
+    .fetch_match_history(&context(), context().account_id(), None)
+    .await;
   assert!(matches!(result, Err(MatchSyncError::GameRunning)));
   assert_eq!(state.jobs.load(Ordering::SeqCst), 0);
   drop(hold);
 
-  client.fetch_match_history(&context(), None).await.unwrap();
+  client
+    .fetch_match_history(&context(), context().account_id(), None)
+    .await
+    .unwrap();
   assert_eq!(state.jobs.load(Ordering::SeqCst), 1);
   client.disconnect().await;
   assert!(!state.playing.load(Ordering::SeqCst));
@@ -296,4 +305,30 @@ async fn launch_hold_lasts_until_ended() {
   assert!(launch_hold_active());
   drop(hold);
   assert!(!launch_hold_active());
+}
+
+#[test]
+fn own_history_refusals_back_off_and_friend_refusals_do_not() {
+  use c_msg_client_to_gc_get_match_history_response::EResult;
+  let private = Some(EResult::KEResultInvalidPermission as i32);
+  let other = Some(i32::MAX);
+
+  assert!(history_error(None, true).is_none());
+  assert!(history_error(Some(EResult::KEResultSuccess as i32), false).is_none());
+  assert!(matches!(
+    history_error(Some(EResult::KEResultRateLimited as i32), false),
+    Some(MatchSyncError::GcRateLimited)
+  ));
+  for result in [private, other] {
+    assert!(history_error(result, true).is_some_and(|e| e.backs_off_gc()));
+    assert!(history_error(result, false).is_some_and(|e| !e.backs_off_gc()));
+  }
+  assert!(matches!(
+    history_error(private, false),
+    Some(MatchSyncError::HistoryPrivate)
+  ));
+  assert!(matches!(
+    history_error(other, false),
+    Some(MatchSyncError::HistoryRefused(i32::MAX))
+  ));
 }
