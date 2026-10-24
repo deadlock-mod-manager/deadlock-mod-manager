@@ -8,6 +8,7 @@ node_modules
 # testing
 coverage
 .e2e/
+.verify/
 
 # next.js
 .next/
