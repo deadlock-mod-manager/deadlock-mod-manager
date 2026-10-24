@@ -1,14 +1,28 @@
 import path from 'node:path';
 import react from '@vitejs/plugin-react';
 import Unfonts from 'unplugin-fonts/vite';
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 
 const host = process.env.TAURI_DEV_HOST;
+
+// React Scan must load before React, so inject it ahead of main.tsx in dev only.
+const reactScan = (): Plugin => ({
+  name: 'react-scan',
+  apply: 'serve',
+  transformIndexHtml: () => [
+    {
+      tag: 'script',
+      attrs: { type: 'module', src: '/src/lib/react-scan.ts' },
+      injectTo: 'head-prepend',
+    },
+  ],
+});
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
   envDir: path.resolve(__dirname, '../..'),
   plugins: [
+    reactScan(),
     react(),
     Unfonts({
       custom: {
