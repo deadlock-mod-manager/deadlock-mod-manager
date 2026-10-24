@@ -34,11 +34,13 @@ const HERO_OVERRIDE_OPTIONS = Object.values(DeadlockHeroes).sort((a, b) =>
 interface HeroOverridePickerProps {
   remoteId: string;
   resolvedHero: ResolvedModHero;
+  disabled?: boolean;
 }
 
 export const HeroOverridePicker = ({
   remoteId,
   resolvedHero,
+  disabled = false,
 }: HeroOverridePickerProps) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -53,6 +55,32 @@ export const HeroOverridePicker = ({
     setHeroOverride(remoteId, heroOverride);
     setOpen(false);
   };
+
+  if (disabled) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className='ml-auto shrink-0'>
+            <Button
+              aria-label={t("modDetail.changeHero", {
+                defaultValue: "Change hero",
+              })}
+              className='h-7 w-7'
+              disabled
+              size='icon'
+              variant='ghost'>
+              <Settings className='h-3.5 w-3.5' />
+            </Button>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>
+          {t("modDetail.changeHeroRequiresDownload", {
+            defaultValue: "Download the mod to change its hero",
+          })}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

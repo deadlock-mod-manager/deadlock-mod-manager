@@ -6004,6 +6004,7 @@
     "modStatusLabel": "Status",
     "detectedHero": "Hero",
     "changeHero": "Change hero",
+    "changeHeroRequiresDownload": "Download the mod to change its hero",
     "heroOverrideAutomatic": "Use automatic",
     "generalOther": "General/Other",
     "heroSource": {
