@@ -20,6 +20,7 @@ import {
   REFETCH_INTERVAL_CATALOG_SYNC,
   REFETCH_JITTER_CATALOG_SYNC,
 } from "@/lib/query-constants";
+import { isTauriError } from "@/types/tauri";
 
 export const CATALOG_SYNC_KEY = ["gamebanana-catalog-sync"];
 const CATALOG_WIPE_KEY = ["gamebanana-catalog-wipe"];
@@ -54,6 +55,8 @@ export const useCatalogSyncMutation = (forceRefresh = false) => {
       void queryClient.invalidateQueries({ queryKey: ["check-mod-updates"] });
     },
     onError: (error) => {
+      // A newer sync (e.g. after a webview reload) replaced this one.
+      if (isTauriError(error) && error.kind === "providerCancelled") return;
       logger.withError(error).warn("GameBanana catalog refresh failed");
     },
   });

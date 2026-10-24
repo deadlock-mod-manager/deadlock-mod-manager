@@ -717,6 +717,9 @@ mod tests {
   #[test]
   fn a_name_with_nothing_to_keep_leaves_just_the_profile_id() {
     assert_eq!(profile_folder_name("profile_1_abc", "!!!"), "profile_1_abc");
-    assert_eq!(profile_folder_name("profile_1_abc", "Профиль"), "profile_1_abc");
+    assert_eq!(
+      profile_folder_name("profile_1_abc", "Профиль"),
+      "profile_1_abc"
+    );
   }
 }

@@ -401,7 +401,11 @@ fn existing_current_models_block_relocation_for_selected_and_opted_out_mods_in_b
 fn already_active_models_unknown_history_and_opted_out_sources_do_not_relocate() {
   let root = tempfile::tempdir().unwrap();
   let (citadel, input, history) = fixture(root.path(), "hero_copper", true, false);
-  let unknown = plan(&citadel, std::slice::from_ref(&input), &VdataHistoryIndex::default());
+  let unknown = plan(
+    &citadel,
+    std::slice::from_ref(&input),
+    &VdataHistoryIndex::default(),
+  );
   assert!(!unknown.camera_models.contains_key(CURRENT));
   let resources = ResourceSnapshot::open(&citadel, std::slice::from_ref(&input)).unwrap();
   let disabled = LocalizationOverlayPlan::build_snapshot(

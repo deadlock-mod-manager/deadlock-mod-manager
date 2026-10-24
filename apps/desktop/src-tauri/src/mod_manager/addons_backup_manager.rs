@@ -951,6 +951,9 @@ mod tests {
       .into_iter()
       .map(|backup| backup.file_name)
       .collect();
-    assert_eq!(names, [format!("{name}-10"), format!("{name}-2"), name.to_string()]);
+    assert_eq!(
+      names,
+      [format!("{name}-10"), format!("{name}-2"), name.to_string()]
+    );
   }
 }

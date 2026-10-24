@@ -200,6 +200,17 @@ impl GameBananaTransport {
       }
       drop(permit);
 
+      // GameBanana occasionally answers 200 with an empty body; a retry gets the payload.
+      if status.is_success() && body.trim_ascii().is_empty() {
+        if attempt == self.config.max_retries {
+          return Err(Error::ProviderUnavailable(format!(
+            "{operation} returned an empty response"
+          )));
+        }
+        wait_or_cancel(retry_delay(&self.config, attempt), cancel).await?;
+        continue;
+      }
+
       return Ok(FetchedBody { status, body });
     }
 
@@ -473,6 +484,13 @@ mod tests {
       .get_json::<Value>("profile", invalid, &cancel)
       .await;
     assert!(matches!(result, Err(Error::ProviderInvalidResponse(_))));
+
+    let empty = serve_once("HTTP/1.1 200 OK\r\nContent-Length: 0\r\n\r\n").await;
+    let result = transport.get_json::<Value>("profile", empty, &cancel).await;
+    assert!(
+      matches!(result, Err(Error::ProviderUnavailable(_))),
+      "{result:?}"
+    );
   }
 
   #[test]

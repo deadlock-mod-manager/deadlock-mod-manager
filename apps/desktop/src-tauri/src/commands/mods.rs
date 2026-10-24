@@ -782,9 +782,10 @@ pub async fn fetch_missing_mod_variants(
       )));
     }
 
-    let bytes = response.bytes().await.map_err(|e| {
-      Error::DownloadFailed(format!("Failed reading body for {}: {e}", file.url))
-    })?;
+    let bytes = response
+      .bytes()
+      .await
+      .map_err(|e| Error::DownloadFailed(format!("Failed reading body for {}: {e}", file.url)))?;
 
     let temp_dir = tempfile::tempdir()?;
     let archive_path = temp_dir.path().join(&safe_archive_name);

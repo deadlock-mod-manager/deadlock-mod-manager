@@ -36,6 +36,7 @@ export type ErrorKind = {
     | "downloadFailed"
     | "downloadCancelled"
     | "launchCancelled"
+    | "providerCancelled"
     | "fileWriteFailed"
     | "autoexecReadFailed"
     | "autoexecWriteFailed"

@@ -250,7 +250,11 @@ export const SquadTab = ({
             })}
           </div>
         </ChartCard>
-        <div className='flex flex-col gap-4'>
+        <div
+          className={cn(
+            "flex flex-col gap-4",
+            !(duo && nemesis) && "xl:self-start",
+          )}>
           {duo && (
             <Spotlight
               figures={[
