@@ -6004,6 +6004,7 @@
     "modStatusLabel": "Status",
     "detectedHero": "Bohater",
     "changeHero": "Zmień bohatera",
+    "changeHeroRequiresDownload": "",
     "heroOverrideAutomatic": "Użyj automatycznego",
     "generalOther": "Ogólne/Inne",
     "heroSource": {
