@@ -75,6 +75,7 @@ fn profile_folder_name(profile_id: &str, profile_name: &str) -> String {
 
 #[tauri::command]
 pub async fn delete_profile_folder(
+  app_handle: AppHandle,
   profile_folder: String,
   guard_permit: Option<String>,
 ) -> Result<(), Error> {
@@ -99,6 +100,11 @@ pub async fn delete_profile_folder(
       "Invalid profile folder name".to_string(),
     ));
   }
+
+  get_download_manager(app_handle)
+    .await
+    .cancel_profile_downloads(&profile_folder)
+    .await;
 
   let mod_manager = MANAGER.lock().unwrap();
   let game_path = mod_manager
@@ -470,8 +476,9 @@ pub async fn import_profile_batch(
           }
           download_complete = true;
         }
+        // No status yet means it's either finished or still waiting its turn.
         Ok(None) => {
-          download_complete = true;
+          download_complete = !manager.is_queued(&mod_data.mod_id).await;
         }
         Err(e) => {
           download_error = Some(format!("Failed to check download status: {:?}", e));

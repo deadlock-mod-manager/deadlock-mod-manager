@@ -170,6 +170,7 @@ struct ActiveDownload {
   cancel_token: CancellationToken,
   pause: PauseHandle,
   status: String,
+  profile_folder: Option<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -379,6 +380,7 @@ impl DownloadManager {
           cancel_token: cancel_token.clone(),
           pause: pause.clone(),
           status: "downloading".to_string(),
+          profile_folder: task.profile_folder.clone(),
         },
       );
     }
@@ -1348,6 +1350,48 @@ impl DownloadManager {
         "No active download found for mod: {mod_id}"
       )))
     }
+  }
+
+  /// Drops queued downloads for a profile folder and cancels the running one,
+  /// so a deleted profile's folder isn't recreated when they finish.
+  pub async fn cancel_profile_downloads(&self, profile_folder: &str) {
+    let targets = |folder: &Option<String>| folder.as_deref() == Some(profile_folder);
+
+    let dropped = {
+      let mut queue = self.queue.lock().await;
+      let before = queue.len();
+      queue.retain(|queued| !targets(&queued.task.profile_folder));
+      before - queue.len()
+    };
+
+    let mut active = self.active_downloads.lock().await;
+    let cancelled: Vec<String> = active
+      .iter()
+      .filter(|(_, download)| targets(&download.profile_folder))
+      .map(|(mod_id, _)| mod_id.clone())
+      .collect();
+    for mod_id in &cancelled {
+      if let Some(download) = active.remove(mod_id) {
+        download.pause.resume();
+        download.cancel_token.cancel();
+      }
+    }
+
+    if dropped > 0 || !cancelled.is_empty() {
+      log::info!(
+        "Cancelled downloads for deleted profile {profile_folder}: {dropped} queued, {} active",
+        cancelled.len()
+      );
+    }
+  }
+
+  pub async fn is_queued(&self, mod_id: &str) -> bool {
+    self
+      .queue
+      .lock()
+      .await
+      .iter()
+      .any(|queued| queued.task.mod_id == mod_id)
   }
 
   pub async fn pause_download(&self, mod_id: &str) -> Result<(), Error> {
