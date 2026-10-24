@@ -29,12 +29,24 @@ export interface MeshGroupTable {
   defaults: Record<string, number>;
 }
 
-/** The model's switchable body groups, or null when it has none. */
+/**
+ * The model's switchable body groups, or null when it has none. Choices with
+ * no meshes are left out: skins often keep the game's group table but drop
+ * the alternates, and picking one would hide the whole model.
+ */
 export const readMeshGroups = (root: THREE.Object3D): MeshGroupTable | null => {
   const parsed = sceneMeshGroups.safeParse(root.userData);
   if (!parsed.success) return null;
+  const drawn = new Set<number>();
+  root.traverse((object) => {
+    if (!(object instanceof THREE.Mesh)) return;
+    const groups = primitiveMeshGroups.safeParse(object.geometry.userData);
+    if (groups.success)
+      for (const bit of groups.data.meshGroups) drawn.add(bit);
+  });
   const byName = new Map<string, BodyGroup>();
   for (const choice of parsed.data.meshGroups) {
+    if (!drawn.has(choice.bit)) continue;
     const group = byName.get(choice.bodyGroup) ?? {
       name: choice.bodyGroup,
       choices: [],

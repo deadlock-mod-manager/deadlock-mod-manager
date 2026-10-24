@@ -709,7 +709,12 @@ export const FoundryModelViewer = ({
             meshGroups && {
               table: meshGroups,
               chosen: bodyChoice,
-              onChange: setBodyChoice,
+              onChange: (chosen) => {
+                setBodyChoice(chosen);
+                if (modelRef.current && meshGroups)
+                  applyMeshGroups(modelRef.current, meshGroups, chosen);
+                fitRef.current?.();
+              },
             }
           }
           overlays={[
