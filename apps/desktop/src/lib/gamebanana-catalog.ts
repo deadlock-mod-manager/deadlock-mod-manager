@@ -10,9 +10,7 @@ import type { CatalogPageDto } from "@/types/generated/CatalogPageDto";
 import type { CatalogQuery } from "@/types/generated/CatalogQuery";
 import type { CatalogSyncStatusDto } from "@/types/generated/CatalogSyncStatusDto";
 import type { CatalogUpdatesDto } from "@/types/generated/CatalogUpdatesDto";
-import type { GameBananaFileserverDto } from "@/types/generated/GameBananaFileserverDto";
 import type { InstalledSubmissionDto } from "@/types/generated/InstalledSubmissionDto";
-import type { FileserverDto } from "@deadlock-mods/shared";
 import type { ModDownloadItem } from "@/types/mods";
 
 export type DirectCatalogPage = {
@@ -154,29 +152,6 @@ export const synchronizeGameBananaCatalog = (forceRefresh = false) =>
     forceRefresh,
     forceReconcile: false,
   });
-
-export const getDirectGameBananaFileservers = async (): Promise<
-  FileserverDto[]
-> => {
-  const servers = await invoke<GameBananaFileserverDto[]>(
-    "get_gamebanana_fileservers",
-    { forceRefresh: false },
-  );
-  return servers.map((server) => ({
-    id: server.id,
-    provider: server.provider,
-    domain: server.domain,
-    name: server.name,
-    state:
-      server.state === "up"
-        ? "up"
-        : server.state === "terminated"
-          ? "terminated"
-          : "down",
-    urlTemplate: server.urlTemplate,
-    stats: server.stats ?? undefined,
-  }));
-};
 
 const catalogModToModDto = (mod: CatalogModDto): ModDto => ({
   id: mod.id,

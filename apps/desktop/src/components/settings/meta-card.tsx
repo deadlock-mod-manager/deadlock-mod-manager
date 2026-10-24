@@ -5,12 +5,14 @@ export const MetaCard = ({
   icon: Icon,
   label,
   description,
+  badge,
   selected,
   onClick,
 }: {
   icon: LucideIcon;
   label: string;
   description: string;
+  badge?: string;
   selected: boolean;
   onClick: () => void;
 }) => (
@@ -18,7 +20,7 @@ export const MetaCard = ({
     aria-checked={selected}
     aria-label={label}
     className={cn(
-      "group relative flex items-start gap-3 rounded-lg border p-4 text-left transition-all",
+      "group relative flex items-center gap-2.5 rounded-md border px-3 py-2 text-left transition-colors",
       "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary",
       selected
         ? "border-primary/60 bg-primary/5 ring-1 ring-primary/40"
@@ -29,15 +31,22 @@ export const MetaCard = ({
     type='button'>
     <Icon
       className={cn(
-        "mt-0.5 h-4 w-4 shrink-0",
+        "h-4 w-4 shrink-0",
         selected ? "text-primary" : "text-muted-foreground",
       )}
     />
-    <div className='flex flex-col gap-1'>
-      <span className='font-semibold text-sm'>{label}</span>
+    <div className='flex min-w-0 flex-col'>
+      <span className='flex items-center gap-1.5'>
+        <span className='font-semibold text-sm'>{label}</span>
+        {badge ? (
+          <span className='rounded-sm bg-primary/15 px-1.5 py-px font-medium text-[10px] text-primary uppercase tracking-wide'>
+            {badge}
+          </span>
+        ) : null}
+      </span>
       <span
         className={cn(
-          "text-xs",
+          "truncate text-xs",
           selected ? "text-primary/70" : "text-muted-foreground",
         )}>
         {description}

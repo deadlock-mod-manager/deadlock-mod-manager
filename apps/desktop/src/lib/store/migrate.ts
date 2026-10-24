@@ -547,6 +547,21 @@ export const MIGRATION_STEPS: readonly MigrationStep[] = [
       }
     },
   },
+  {
+    to: 34,
+    label: "drop-pinned-fileservers",
+    apply: (state) => {
+      // Pinned file caches failed downloads for files they did not mirror, and
+      // the picker that set them is gone.
+      if (
+        "fileserverPreference" in state &&
+        state.fileserverPreference !== "auto"
+      ) {
+        state.fileserverPreference = "default";
+      }
+      delete state.fileserverLatencyMs;
+    },
+  },
 ];
 
 const LEGACY_GAMEBANANA_ID = /^[1-9]\d*$/;

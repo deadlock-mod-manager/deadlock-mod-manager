@@ -429,14 +429,6 @@ pub async fn invalidate_gamebanana_catalog_state(
   state.backend()?.catalog.invalidate_sync_state().await
 }
 
-#[tauri::command]
-pub async fn get_gamebanana_fileservers(
-  state: State<'_, GameBananaCatalogState>,
-  force_refresh: bool,
-) -> Result<Vec<GameBananaFileserverDto>, Error> {
-  state.backend()?.fileservers(force_refresh).await
-}
-
 async fn submission_files(
   state: &State<'_, GameBananaCatalogState>,
   policy: &State<'_, super::policy::PolicyState>,

@@ -126,8 +126,7 @@ const seededState = {
   enabledPlugins: {},
   backupEnabled: true,
   maxBackupCount: 5,
-  fileserverPreference: "default",
-  fileserverLatencyMs: { server1: 42, server2: 88 },
+  fileserverPreference: "default" as const,
   audioVolume: 50,
   modsFilters: {
     selectedCategories: [],
@@ -244,7 +243,6 @@ describe("persisted store integration with real production fixture", () => {
     // Every field that the buggy unconditional-assign migration steps would
     // have clobbered on the upgrade from v15 -> v18 must survive.
     expect(s.proxyConfig).toEqual(seededState.proxyConfig);
-    expect(s.fileserverLatencyMs).toEqual(seededState.fileserverLatencyMs);
     expect(s.fileserverPreference).toBe(seededState.fileserverPreference);
     expect(s.nsfwSettings).toEqual(seededState.nsfwSettings);
     const {

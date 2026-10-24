@@ -3,7 +3,6 @@ import type {
   CreateCrosshairDto,
   CustomSettingDto,
   FeatureFlag,
-  FileserverDto,
   ModAuthorDto,
   ModDto,
   PublishedCrosshairDto,
@@ -24,7 +23,6 @@ import {
   getGameBananaCatalogDownloads,
   getGameBananaCatalogMod,
   getGameBananaCatalogMods,
-  getDirectGameBananaFileservers,
 } from "./gamebanana-catalog";
 
 export const BASE_URL =
@@ -94,10 +92,6 @@ export const getModDownload = async (remoteId: string) => {
 
 export const getModDownloads = async (remoteId: string) => {
   return getGameBananaCatalogDownloads(remoteId);
-};
-
-export const getGameBananaFileservers = async (): Promise<FileserverDto[]> => {
-  return getDirectGameBananaFileservers();
 };
 
 export const checkModUpdates = async (

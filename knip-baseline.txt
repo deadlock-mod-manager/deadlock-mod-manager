@@ -143,7 +143,6 @@
 ["exports","apps/desktop/src/lib/constants.ts",[["","COPYRIGHT"]]]
 ["exports","apps/desktop/src/lib/constants.ts",[["","NOOP"]]]
 ["exports","apps/desktop/src/lib/constants.ts",[["","UPDATED_RECENTLY_DAYS"]]]
-["exports","apps/desktop/src/lib/download/fileserver.ts",[["","resolveDownloadFileUrls"]]]
 ["exports","apps/desktop/src/lib/file-patterns.ts",[["","ACCEPTED_FILE_TYPES"]]]
 ["exports","apps/desktop/src/lib/file-patterns.ts",[["","FALLBACK_MOD_SVG"]]]
 ["exports","apps/desktop/src/lib/file-patterns.ts",[["","SUPPORTED_ARCHIVE_EXTENSIONS"]]]
