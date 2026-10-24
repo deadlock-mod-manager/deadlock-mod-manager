@@ -265,7 +265,8 @@ type ModCardProps = {
   onShowConflicts: () => void;
   health: ModHealth | undefined;
   contextMenuHint: boolean;
-  onSelect: ((id: string) => void) | undefined;
+  onSelect: (id: string) => void;
+  selected: boolean;
 };
 
 const GridModCard = memo(function GridModCard({
@@ -275,6 +276,7 @@ const GridModCard = memo(function GridModCard({
   health,
   contextMenuHint,
   onSelect,
+  selected,
 }: ModCardProps) {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
@@ -330,7 +332,8 @@ const GridModCard = memo(function GridModCard({
     <ModContextMenu
       hint={contextMenuHint}
       mod={mod}
-      onSelect={onSelect ? () => onSelect(mod.remoteId) : undefined}>
+      onSelect={() => onSelect(mod.remoteId)}
+      selected={selected}>
       <Card className='flex h-full flex-col shadow'>
         <div className='relative'>
           <div
@@ -453,6 +456,7 @@ const ListModCard = memo(function ListModCard({
   health,
   contextMenuHint,
   onSelect,
+  selected,
 }: ModCardProps) {
   const { t } = useTranslation();
   const isDisabled = mod.status !== ModStatus.Installed;
@@ -491,7 +495,8 @@ const ListModCard = memo(function ListModCard({
       <ModContextMenu
         hint={contextMenuHint}
         mod={mod}
-        onSelect={onSelect ? () => onSelect(mod.remoteId) : undefined}>
+        onSelect={() => onSelect(mod.remoteId)}
+        selected={selected}>
         <Card className='group/row flex items-center gap-4 overflow-hidden pr-3 shadow transition-colors hover:bg-muted/40'>
           <div
             className={cn(
@@ -736,6 +741,23 @@ const ModsList = ({
                       onClick={(event) =>
                         selection.toggle(mod.remoteId, event.shiftKey)
                       }
+                      onContextMenu={(event) => {
+                        // The surface covers the card, so hand the right-click
+                        // to the card's own context menu underneath.
+                        event.preventDefault();
+                        const surface = event.currentTarget;
+                        document
+                          .elementsFromPoint(event.clientX, event.clientY)
+                          .find((element) => element !== surface)
+                          ?.dispatchEvent(
+                            new MouseEvent("contextmenu", {
+                              bubbles: true,
+                              cancelable: true,
+                              clientX: event.clientX,
+                              clientY: event.clientY,
+                            }),
+                          );
+                      }}
                       tabIndex={-1}
                       type='button'
                     />
@@ -746,7 +768,8 @@ const ModsList = ({
                       !selection.active && contextMenuHint && index === 0
                     }
                     mod={mod}
-                    onSelect={selection.active ? undefined : onSelectMod}
+                    onSelect={onSelectMod}
+                    selected={selected}
                     onShowConflicts={onShowConflicts}
                     health={healthById.get(mod.remoteId)}
                   />

@@ -30,8 +30,10 @@ interface ModContextMenuProps {
   mod: LocalMod;
   /** Points the right-click feature hint at this card. */
   hint?: boolean;
-  /** Starts library multi-select with this mod. */
+  /** Toggles this mod in library multi-select, starting it if needed. */
   onSelect?: () => void;
+  /** Whether this mod is already selected, so the item offers to deselect. */
+  selected?: boolean;
   children: ReactElement;
 }
 
@@ -52,6 +54,7 @@ export const ModContextMenu = ({
   mod,
   hint = false,
   onSelect,
+  selected = false,
   children,
 }: ModContextMenuProps) => {
   const { t } = useTranslation();
@@ -128,7 +131,7 @@ export const ModContextMenu = ({
           <>
             <ContextMenuItem onClick={onSelect}>
               <SquareCheck className='mr-2 h-4 w-4' />
-              {t("contextMenu.select")}
+              {selected ? t("contextMenu.deselect") : t("contextMenu.select")}
             </ContextMenuItem>
             {mod.remoteUrl && <ContextMenuSeparator />}
           </>

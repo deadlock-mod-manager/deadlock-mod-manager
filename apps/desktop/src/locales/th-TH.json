@@ -5456,7 +5456,8 @@
     "openedModInGame": "เปิดไฟล์ม็อดในโฟลเดอร์เกมแล้ว",
     "failedToOpenGameFolder": "ไม่สามารถเปิดโฟลเดอร์เกมได้",
     "failedToOpenModInGame": "",
-    "select": ""
+    "select": "",
+    "deselect": ""
   },
   "profiles": {
     "share": "แชร์โปรไฟล์",

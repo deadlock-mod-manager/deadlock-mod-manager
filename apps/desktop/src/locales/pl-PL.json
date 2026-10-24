@@ -5456,7 +5456,8 @@
     "openedModInGame": "Otwarte pliki modyfikacji w folderze gry",
     "failedToOpenGameFolder": "Nie udało się otworzyć folderu logów",
     "failedToOpenModInGame": "Nie udało się wyświetlić modyfikacji w grze",
-    "select": ""
+    "select": "",
+    "deselect": ""
   },
   "profiles": {
     "share": "Udostępnij profil",

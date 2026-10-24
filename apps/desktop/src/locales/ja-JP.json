@@ -5456,7 +5456,8 @@
     "openedModInGame": "ゲームフォルダーでModファイルを開きました",
     "failedToOpenGameFolder": "ゲームフォルダーを開けませんでした",
     "failedToOpenModInGame": "",
-    "select": ""
+    "select": "",
+    "deselect": ""
   },
   "profiles": {
     "share": "プロファイルを共有",

@@ -5456,7 +5456,8 @@
     "openedModInGame": "已在游戏文件夹中打开模组文件",
     "failedToOpenGameFolder": "打开游戏文件夹失败",
     "failedToOpenModInGame": "无法在游戏中显示模组",
-    "select": ""
+    "select": "",
+    "deselect": ""
   },
   "profiles": {
     "share": "分享配置",

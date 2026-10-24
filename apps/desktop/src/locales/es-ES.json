@@ -5456,7 +5456,8 @@
     "openedModInGame": "Archivos del mod abiertos en la carpeta del juego",
     "failedToOpenGameFolder": "Error al abrir la carpeta del juego",
     "failedToOpenModInGame": "",
-    "select": ""
+    "select": "",
+    "deselect": ""
   },
   "profiles": {
     "share": "Compartir Perfil",

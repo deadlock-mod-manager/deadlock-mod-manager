@@ -5753,7 +5753,8 @@
     "openedModInGame": "Opened mod files in game folder",
     "failedToOpenGameFolder": "Failed to open game folder",
     "failedToOpenModInGame": "Failed to show mod in game",
-    "select": "Select"
+    "select": "Select",
+    "deselect": "Deselect"
   },
   "profiles": {
     "share": "Share Profile",

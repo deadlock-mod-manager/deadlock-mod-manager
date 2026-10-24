@@ -5456,7 +5456,8 @@
     "openedModInGame": "تم فتح ملفات التعديل في مجلد اللعبة",
     "failedToOpenGameFolder": "فشل في فتح مجلد اللعبة",
     "failedToOpenModInGame": "",
-    "select": ""
+    "select": "",
+    "deselect": ""
   },
   "profiles": {
     "share": "مشاركة الملف الشخصي",

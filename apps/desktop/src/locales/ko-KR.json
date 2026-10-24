@@ -5456,7 +5456,8 @@
     "openedModInGame": "게임 폴더에서 모드 파일을 열었습니다.",
     "failedToOpenGameFolder": "게임 폴더를 열지 못했습니다.",
     "failedToOpenModInGame": "",
-    "select": ""
+    "select": "",
+    "deselect": ""
   },
   "profiles": {
     "share": "프로필 공유",
