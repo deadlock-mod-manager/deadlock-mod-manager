@@ -102,7 +102,7 @@
   },
   "devDependencies": {
     "@resvg/resvg-js": "2.6.2",
-    "@tauri-apps/cli": "^2.11.1",
+    "@tauri-apps/cli": "^2.12.0",
     "@types/mocha": "10.0.10",
     "@types/node": "^20.19.37",
     "@types/react": "^19.2.14",
