@@ -132,6 +132,7 @@ import { useThemeOverride } from "@/components/providers/theme-overrides";
 import { SortType } from "@/lib/constants";
 import { ModCategory } from "@/lib/constants";
 import { getErrorMessage } from "@/lib/errors";
+import { parseGameBananaReference } from "@/lib/mod-interchange";
 import {
   filterLibraryModsByStatus,
   formatModList,
@@ -940,8 +941,16 @@ const MyMods = () => {
     },
   });
 
+  // A pasted GameBanana id or link matches that mod exactly, without the
+  // fuzzy search's debounce.
+  const idReference = parseGameBananaReference(librarySearchQuery);
+
   const displayMods = useMemo(() => {
-    const baseMods = query.trim() ? results : mods;
+    const baseMods = idReference
+      ? mods.filter((mod) => mod.remoteId === idReference)
+      : query.trim()
+        ? results
+        : mods;
     const predefinedCategorySet =
       selectedCategories.length > 0
         ? new Set<string>(Object.values(ModCategory))
@@ -1001,6 +1010,7 @@ const MyMods = () => {
     globallyHideNSFW,
     hideNSFW,
     hideOutdated,
+    idReference,
     nsfwOnly,
     query,
     results,

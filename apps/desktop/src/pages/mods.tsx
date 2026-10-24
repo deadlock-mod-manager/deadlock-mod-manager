@@ -43,6 +43,7 @@ import {
 import ErrorBoundary from "@/components/shared/error-boundary";
 import PageTitle from "@/components/shared/page-title";
 import { useExperimentalFeature } from "@/hooks/use-experimental-feature";
+import { useMod } from "@/hooks/use-mod";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useResponsiveColumns } from "@/hooks/use-responsive-columns";
 import { useScrollPosition } from "@/hooks/use-scroll-position";
@@ -57,6 +58,7 @@ import {
   SortType,
   TimePeriod,
 } from "@/lib/constants";
+import { parseGameBananaReference } from "@/lib/mod-interchange";
 import { MODS_LIST_QUERY_KEY } from "@/lib/mods/mod-query-cache";
 import { STALE_TIME_API } from "@/lib/query-constants";
 import { usePersistedStore } from "@/lib/store";
@@ -409,7 +411,21 @@ const GetModsData = ({
     }
   }, [paginationEnabled, restoreScrollPosition, setScrollElement]);
   const { query, setQuery, sortType, setSortType } = useSearchQueryState();
-  const filteredResults = deferredData;
+  // A pasted GameBanana id or link shows that mod right away, ahead of the
+  // text matches, even when it isn't in the local catalog yet.
+  const idReference = parseGameBananaReference(query);
+  const { mod: idMatch, isFetching: isFetchingIdMatch } = useMod(
+    idReference ?? undefined,
+    { enabled: !!idReference, retry: 0 },
+  );
+  const filteredResults = useMemo(
+    () =>
+      idReference && idMatch
+        ? [idMatch, ...deferredData.filter((mod) => mod.id !== idMatch.id)]
+        : deferredData,
+    [deferredData, idMatch, idReference],
+  );
+  const isLookingUpId = !!idReference && !idMatch && isFetchingIdMatch;
 
   const totalPages = paginationEnabled
     ? Math.ceil(catalogPage.total / PAGE_SIZE)
@@ -633,13 +649,13 @@ const GetModsData = ({
         </Alert>
       ) : null}
       <div
-        aria-busy={isUpdatingResults}
+        aria-busy={isUpdatingResults || isLookingUpId}
         className='relative flex min-h-0 flex-1 flex-col'>
         <div
           aria-hidden
           className={cn(
             "pointer-events-none absolute inset-x-0 -top-2 z-10 h-0.5 overflow-hidden rounded-full opacity-0 transition-opacity duration-200",
-            isUpdatingResults && "opacity-100 delay-150",
+            (isUpdatingResults || isLookingUpId) && "opacity-100 delay-150",
           )}>
           <div className='h-full w-1/3 animate-results-loading rounded-full bg-primary/70 motion-reduce:w-full motion-reduce:animate-none motion-reduce:bg-primary/40' />
         </div>
@@ -647,7 +663,7 @@ const GetModsData = ({
           <Empty
             className={cn(
               "py-12 transition-opacity duration-200",
-              isUpdatingResults && "opacity-50 delay-150",
+              (isUpdatingResults || isLookingUpId) && "opacity-50 delay-150",
             )}>
             <EmptyHeader>
               <EmptyMedia variant='default'>
