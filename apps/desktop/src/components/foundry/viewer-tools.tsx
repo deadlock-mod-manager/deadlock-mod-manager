@@ -16,6 +16,7 @@ import {
 import { cn } from "@deadlock-mods/ui/lib/utils";
 import {
   ApertureIcon,
+  ArrowClockwiseIcon,
   ArrowCounterClockwiseIcon,
   CameraIcon,
   CaretDownIcon,
@@ -27,7 +28,6 @@ import {
   ImageIcon,
   type Icon,
   PenNibIcon,
-  PlanetIcon,
   SlidersHorizontalIcon,
   StairsIcon,
   StopIcon,
@@ -451,9 +451,12 @@ export const ViewerToolRail = ({
           aria-pressed={autoRotate}
           className={cn(autoRotate && "text-primary hover:text-primary")}
           onClick={() => onAutoRotateChange(!autoRotate)}>
-          <PlanetIcon
-            className='size-4'
-            weight={autoRotate ? "fill" : "regular"}
+          <ArrowClockwiseIcon
+            className={cn(
+              "size-4",
+              autoRotate && "motion-safe:animate-[spin_3s_linear_infinite]",
+            )}
+            weight='bold'
           />
         </RailButton>
         <div className='mx-1.5 my-0.5 h-px bg-white/10' />
