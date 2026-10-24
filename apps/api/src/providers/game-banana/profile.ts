@@ -1,17 +1,33 @@
 import type { DeadlockHeroes, GameBanana } from "@deadlock-mods/shared";
-import { heroRegistry } from "@deadlock-mods/shared";
+import { heroRegistry, SKINS_SUPER_CATEGORY } from "@deadlock-mods/shared";
 import { DEADLOCK_GAME_ID } from "./constants";
 
 type GameBananaProfileForCategory =
   | GameBanana.GameBananaModProfile
   | GameBanana.GameBananaSoundProfile;
 
+// Profile pages omit _aRootCategory despite the shared submission type.
+type GameBananaProfileCategories = Pick<
+  GameBananaProfileForCategory,
+  "_sName" | "_aCategory" | "_aSuperCategory"
+> &
+  Partial<Pick<GameBananaProfileForCategory, "_aRootCategory">>;
+
+/**
+ * Profiles only carry the category and its parent, so pass the index record's
+ * root category when the caller has it: skin subcategories sit a level deeper
+ * (Skins > hero > style), where the parent is the hero, not "Skins".
+ */
 export function categoryFromGameBananaProfile(
-  profile: GameBananaProfileForCategory,
+  profile: GameBananaProfileCategories,
+  rootCategoryName?: string,
 ): string {
+  if (rootCategoryName) {
+    return rootCategoryName;
+  }
   const superName = profile._aSuperCategory?._sName;
   if (superName !== undefined && superName.length > 0) {
-    return superName;
+    return heroRegistry.normalize(superName) ? SKINS_SUPER_CATEGORY : superName;
   }
   const rootName = profile._aRootCategory?._sName;
   if (rootName !== undefined && rootName.length > 0) {
@@ -21,11 +37,15 @@ export function categoryFromGameBananaProfile(
 }
 
 export function heroFromGameBananaProfile(
-  profile: GameBananaProfileForCategory,
+  profile: GameBananaProfileCategories,
+  rootCategoryName?: string,
 ): DeadlockHeroes | null {
   return heroRegistry.resolveFromSkinCategory(
-    profile._aSuperCategory?._sName,
-    profile._aCategory?._sName,
+    {
+      root: rootCategoryName,
+      parent: profile._aSuperCategory?._sName,
+      category: profile._aCategory?._sName,
+    },
     profile._sName,
   );
 }

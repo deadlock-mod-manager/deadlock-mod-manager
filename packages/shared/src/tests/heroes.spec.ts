@@ -59,16 +59,49 @@ test("one word of a two-word hero name or a common-word codename doesn't match",
 });
 
 test("resolveHeroFromSkinCategory", () => {
-  expect(resolveHeroFromSkinCategory("Skins", "Seven", "Toon Seven")).toBe(
-    DeadlockHeroes.Seven,
-  );
-  expect(resolveHeroFromSkinCategory("Skins", "Skins", "Toon Viktor")).toBe(
-    DeadlockHeroes.Victor,
-  );
   expect(
-    resolveHeroFromSkinCategory("Maps", "Victor", "Generic Map Pack"),
+    resolveHeroFromSkinCategory(
+      { parent: "Skins", category: "Seven" },
+      "Toon Seven",
+    ),
+  ).toBe(DeadlockHeroes.Seven);
+  expect(
+    resolveHeroFromSkinCategory(
+      { parent: "Skins", category: "Skins" },
+      "Toon Viktor",
+    ),
+  ).toBe(DeadlockHeroes.Victor);
+  expect(
+    resolveHeroFromSkinCategory(
+      { parent: "Maps", category: "Victor" },
+      "Generic Map Pack",
+    ),
   ).toBeNull();
-  expect(resolveHeroFromSkinCategory("Skins", "Other", "Toon Viktor")).toBe(
-    DeadlockHeroes.Victor,
-  );
+  expect(
+    resolveHeroFromSkinCategory(
+      { parent: "Skins", category: "Other" },
+      "Toon Viktor",
+    ),
+  ).toBe(DeadlockHeroes.Victor);
+});
+
+test("resolveHeroFromSkinCategory reads the hero from a skin subcategory's parent", () => {
+  expect(
+    resolveHeroFromSkinCategory(
+      { parent: "Nurse Harrow", category: "Faithful/Vanilla+" },
+      "Nurse Sparrow",
+    ),
+  ).toBe(DeadlockHeroes.NurseHarrow);
+  expect(
+    resolveHeroFromSkinCategory(
+      { root: "Skins", parent: "RatKing", category: "RatKing Flag" },
+      "Flag",
+    ),
+  ).toBe(DeadlockHeroes.RatKing);
+  expect(
+    resolveHeroFromSkinCategory(
+      { root: "Model Replacement", parent: "Abrams", category: "Walker" },
+      "Walker",
+    ),
+  ).toBeNull();
 });

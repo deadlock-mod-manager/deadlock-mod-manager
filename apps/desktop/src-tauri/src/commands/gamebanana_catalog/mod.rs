@@ -160,10 +160,18 @@ pub async fn get_gamebanana_submission_detail(
   let cancel = CancellationToken::new();
   let mut mod_data = match backend.client.profile(&submission, &cancel).await {
     Ok(profile) => {
-      let normalized =
+      let mut normalized =
         normalize_profile(&profile, submission.submission_type).ok_or_else(|| {
           Error::ProviderInvalidResponse("submission is not publicly available".to_string())
         })?;
+      // A profile names only its category and that category's parent, which is not the
+      // root in deeper trees (Model Replacement > NPCs > Troopers). The sync stored the
+      // index root category.
+      match backend.catalog.get(submission.clone()).await {
+        Ok(Some(cached)) => normalized.category = cached.category,
+        Ok(None) => {}
+        Err(error) => log::warn!("Could not read the cached record for {remote_id}: {error}"),
+      }
       // Caching the profile is incidental; a busy catalog must not hide a page we already have.
       if let Err(error) = backend
         .catalog

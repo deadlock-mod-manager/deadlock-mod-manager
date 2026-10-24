@@ -15,6 +15,7 @@
     "trigger-cron": "dotenv -e ../../.env -- bun run ./src/scripts/trigger-cron.ts",
     "set-mod-overrides": "dotenv -e ../../.env -- bun run ./src/scripts/set-mod-overrides.ts",
     "backfill-submission-identity": "dotenv -e ../../.env -- bun run ./src/scripts/backfill-submission-identity.ts",
+    "audit-gamebanana-categories": "bun run ./src/scripts/audit-gamebanana-categories.ts",
     "desktop:dev": "pnpm dev",
     "version:generate": "genversion -f -p ./package.json --es6 ./src/version.ts"
   },

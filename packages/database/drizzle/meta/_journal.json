@@ -414,6 +414,13 @@
       "when": 1792834301640,
       "tag": "0058_daily_drax",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1792864578848,
+      "tag": "0059_resync_nested_categories",
+      "breakpoints": true
     }
   ]
 }

@@ -3,8 +3,6 @@ import type { HeroDefinitions } from "./types";
 
 export const SKINS_SUPER_CATEGORY = "Skins";
 
-export const GENERIC_SKIN_CATEGORIES = new Set(["Skins", "Other"]);
-
 export const HERO_DEFINITIONS: HeroDefinitions = {
   [DeadlockHeroes.Abrams]: {
     aliases: ["atlas", "atlas detective", "atlas detective v2"],

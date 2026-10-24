@@ -1,7 +1,7 @@
 use super::activity::ActivityPage;
 use super::models::{
-  BulkHydration, CollectionDescription, DownloadPage, FileserverPage, IndexPage, MemberProfile,
-  Profile, UpdateSnapshot, core_error,
+  BulkHydration, CategoryListing, CollectionDescription, DownloadPage, FileserverPage, IndexPage,
+  MemberProfile, Profile, UpdateSnapshot, core_error,
 };
 use super::transport::{ApiResponse, GameBananaTransport, TransportConfig};
 use crate::errors::Error;
@@ -155,6 +155,16 @@ impl GameBananaClient {
       .transport
       .get_json_or_rejection("remote install queue", url, cancel)
       .await
+  }
+
+  /// Lists Deadlock's top-level Mod categories, or the children of `parent_id`.
+  pub async fn mod_categories(
+    &self,
+    parent_id: Option<u64>,
+    cancel: &CancellationToken,
+  ) -> Result<Vec<CategoryListing>, Error> {
+    let url = mod_categories_url(&self.api_base, parent_id)?;
+    self.transport.get_json("mod categories", url, cancel).await
   }
 
   pub async fn fileservers(&self, cancel: &CancellationToken) -> Result<FileserverPage, Error> {
@@ -313,6 +323,21 @@ fn index_url(
     );
   }
 
+  Ok(url)
+}
+
+fn mod_categories_url(api_base: &str, parent_id: Option<u64>) -> Result<reqwest::Url, Error> {
+  let mut url = reqwest::Url::parse(&format!("{api_base}Mod/Categories"))
+    .map_err(|error| Error::ProviderInvalidResponse(error.to_string()))?;
+  let scope = match parent_id {
+    Some(id) => ("_idCategoryRow", id.to_string()),
+    None => ("_idGameRow", DEADLOCK_GAME_ID.to_string()),
+  };
+  url
+    .query_pairs_mut()
+    .append_pair(scope.0, &scope.1)
+    .append_pair("_sSort", "a_to_z")
+    .append_pair("_bShowEmpty", "true");
   Ok(url)
 }
 

@@ -1,6 +1,10 @@
 import { ProviderError } from "@deadlock-mods/common";
 import { z } from "zod";
-import type { ResolvedRequirement } from "@deadlock-mods/shared";
+import {
+  heroRegistry,
+  type ResolvedRequirement,
+  SKINS_SUPER_CATEGORY,
+} from "@deadlock-mods/shared";
 import {
   DEADLOCK_GAME_ID,
   GAME_BANANA_BASE_URL,
@@ -107,9 +111,12 @@ export const fetchGameBananaSubmission = async (
   ) {
     return null;
   }
+  const superName = profile._aSuperCategory?._sName;
   const category =
     [
-      profile._aSuperCategory?._sName,
+      superName && heroRegistry.normalize(superName)
+        ? SKINS_SUPER_CATEGORY
+        : superName,
       profile._aRootCategory?._sName,
       profile._aCategory?._sName,
     ]

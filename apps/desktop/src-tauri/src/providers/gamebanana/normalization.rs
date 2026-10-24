@@ -1,6 +1,6 @@
 use super::client::DEADLOCK_GAME_ID;
 use super::hero_registry;
-use super::models::{DonationMethod, Profile, Tag};
+use super::models::{Category, DonationMethod, Profile, Tag};
 use crate::providers::{SubmissionProvider, SubmissionRef, SubmissionType};
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -114,11 +114,17 @@ pub fn normalize_profile(
       .to_string(),
     category,
     hero: hero_registry::resolve_from_skin_category(
-      profile
-        .super_category
-        .as_ref()
-        .map(|value| value.name.as_str()),
-      profile.category.as_ref().map(|value| value.name.as_str()),
+      hero_registry::CategoryPath {
+        root: profile
+          .root_category
+          .as_ref()
+          .map(|value| value.name.as_str()),
+        parent: profile
+          .super_category
+          .as_ref()
+          .map(|value| value.name.as_str()),
+        category: profile.category.as_ref().map(|value| value.name.as_str()),
+      },
       &profile.name,
     ),
     download_count: profile.download_count,
@@ -279,16 +285,24 @@ pub fn donation_links(methods: &[DonationMethod], description: &str) -> Vec<Dona
 }
 
 fn category(profile: &Profile) -> String {
-  [
-    profile.super_category.as_ref(),
-    profile.root_category.as_ref(),
-    profile.category.as_ref(),
-  ]
-  .into_iter()
-  .filter_map(|value| value.map(|category| category.name.trim()))
-  .find(|value| !value.is_empty())
-  .unwrap_or("Other")
-  .to_string()
+  fn name(category: Option<&Category>) -> Option<&str> {
+    category
+      .map(|category| category.name.trim())
+      .filter(|name| !name.is_empty())
+  }
+  // Skin subcategories make the hero the parent; the submission is still a skin.
+  let parent = name(profile.super_category.as_ref()).map(|parent| {
+    if hero_registry::normalize(parent).is_some() {
+      hero_registry::SKINS_CATEGORY
+    } else {
+      parent
+    }
+  });
+  parent
+    .or_else(|| name(profile.root_category.as_ref()))
+    .or_else(|| name(profile.category.as_ref()))
+    .unwrap_or("Other")
+    .to_string()
 }
 
 fn normalize_timestamps(added: Option<i64>, updated: Option<i64>) -> (i64, i64) {
@@ -348,6 +362,8 @@ mod tests {
   use crate::providers::gamebanana::models::Profile;
 
   const MOD_PROFILE: &str = include_str!("../../../tests/fixtures/gamebanana/mod-profile.json");
+  const NESTED_SKIN_PROFILE: &str =
+    include_str!("../../../tests/fixtures/gamebanana/nested-skin-profile.json");
   const SOUND_PROFILE: &str = include_str!("../../../tests/fixtures/gamebanana/sound-profile.json");
   const EXPECTED: &str =
     include_str!("../../../tests/fixtures/gamebanana/normalized-retained.json");
@@ -356,10 +372,12 @@ mod tests {
   fn rust_normalizer_matches_the_retained_field_oracle() {
     let expected: Vec<NormalizedSubmission> = serde_json::from_str(EXPECTED).unwrap();
     let mod_profile: Profile = serde_json::from_str(MOD_PROFILE).unwrap();
+    let nested_skin_profile: Profile = serde_json::from_str(NESTED_SKIN_PROFILE).unwrap();
     let sound_profile: Profile = serde_json::from_str(SOUND_PROFILE).unwrap();
 
     let actual = vec![
       normalize_profile(&mod_profile, SubmissionType::Mod).unwrap(),
+      normalize_profile(&nested_skin_profile, SubmissionType::Mod).unwrap(),
       normalize_profile(&sound_profile, SubmissionType::Sound).unwrap(),
     ];
 

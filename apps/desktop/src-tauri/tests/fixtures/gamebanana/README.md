@@ -2,7 +2,9 @@
 
 The endpoint fixtures were captured from public GameBanana responses on
 2026-08-29 and reduced to the stable fields DMM retains. The Mod fixture uses
-submission `711387`; the Sound fixture uses `92659`. Volatile member metadata,
+submission `711387`; the Sound fixture uses `92659`. `nested-skin-profile.json`
+(`731467`, captured 2026-10-24) is a skin in a hero subcategory, Skins > Nurse
+Harrow > Faithful/Vanilla+, whose title does not name the hero. Volatile member metadata,
 medals, and aggregate fileserver traffic counters were removed.
 
 `edge-cases.json` is synthetic. It isolates provider states that are difficult

@@ -209,6 +209,18 @@ describe("heroFromGameBananaProfile", () => {
 });
 
 describe("categoryFromGameBananaProfile", () => {
+  it("files a skin subcategory under Skins, with or without the index root", () => {
+    const profile = buildGameBananaModProfile({
+      _sName: "Viscous Redesign",
+      _aCategory: { _sName: "Faithful/Vanilla+" },
+      _aSuperCategory: { _sName: "Viscous" },
+    });
+
+    expect(categoryFromGameBananaProfile(profile)).toBe("Skins");
+    expect(categoryFromGameBananaProfile(profile, "Skins")).toBe("Skins");
+    expect(heroFromGameBananaProfile(profile)).toBe(DeadlockHeroes.Viscous);
+  });
+
   it("returns Other when category name is empty", () => {
     const profile = buildGameBananaModProfile({
       _sName: "Test Mod",
