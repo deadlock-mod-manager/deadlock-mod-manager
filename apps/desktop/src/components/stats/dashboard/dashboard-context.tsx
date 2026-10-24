@@ -13,6 +13,8 @@ import type { StatsScope } from "@/lib/stats/scope";
  */
 export interface DashboardData {
   accountId: number | null;
+  /** The saved accounts are still loading, so no account is selected yet. */
+  isAccountPending: boolean;
   account: SteamAccount | null;
   accounts: SteamAccount[];
   onSelectAccount: (accountId: number) => void;

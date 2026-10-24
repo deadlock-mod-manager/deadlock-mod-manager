@@ -92,10 +92,12 @@ const brokenFrom = (
  * history still loading, or its request having failed. `null` once it is there.
  */
 export const useHistoryGate = (): WidgetDataState | null => {
-  const { accountId, stats } = useDashboardData();
+  const { accountId, isAccountPending, stats } = useDashboardData();
   return useMemo((): WidgetDataState | null => {
     if (accountId === null) {
-      return { status: "needsAccount" };
+      return isAccountPending
+        ? { status: "loading" }
+        : { status: "needsAccount" };
     }
     if (stats.isPending) {
       return { status: "loading" };
@@ -108,7 +110,7 @@ export const useHistoryGate = (): WidgetDataState | null => {
       };
     }
     return null;
-  }, [accountId, stats.isPending, stats.isError]);
+  }, [accountId, isAccountPending, stats.isPending, stats.isError]);
 };
 
 /**

@@ -20,6 +20,7 @@ import type { DashboardWidget } from "@/lib/stats/dashboard/layout";
 import { suggestView } from "@/lib/stats/dashboard/suggest";
 import { cn } from "@/lib/utils";
 import { useDashboardData } from "./dashboard-context";
+import { PanelSkeleton } from "./panel-skeletons";
 import { panelDef } from "./panels";
 import {
   useHistoryGate,
@@ -217,6 +218,10 @@ const PanelWidget = ({ widget, onHealth, actions }: WidgetContentProps) => {
       : null;
   })();
   useHealthReport(widget.id, state?.status === "broken", onHealth);
+
+  if (state?.status === "loading" && !actions) {
+    return <PanelSkeleton panelId={panelId} />;
+  }
 
   const body = (() => {
     if (state || !panel) {

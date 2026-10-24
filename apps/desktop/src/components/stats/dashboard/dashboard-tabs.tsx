@@ -202,8 +202,8 @@ interface DashboardTabsProps {
   editing: boolean;
   /** Tab ids holding at least one broken widget. */
   brokenTabIds: ReadonlySet<string>;
-  /** A count shown after a tab's name, such as heroes played. */
-  counts?: Partial<Record<string, number>>;
+  /** A count shown after a tab's name, such as heroes played; `null` holds its slot while it loads. */
+  counts?: Partial<Record<string, number | null>>;
   onSelect: (tabId: string) => void;
   onAddTab: (templateId: string | null) => void;
   onRenameTab: (tabId: string, title: string) => void;
@@ -248,7 +248,7 @@ export const DashboardTabs = ({
                 <Icon className='h-4 w-4' />
                 {tabTitle(tab)}
                 {counts?.[tab.id] !== undefined && (
-                  <span className='font-medium font-mono text-[11.5px] text-muted-foreground/70'>
+                  <span className='min-w-[2ch] font-medium font-mono text-[11.5px] text-muted-foreground/70'>
                     {counts[tab.id]}
                   </span>
                 )}

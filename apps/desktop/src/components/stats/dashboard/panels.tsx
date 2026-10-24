@@ -1,4 +1,3 @@
-import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import {
   Activity,
   CalendarClock,
@@ -37,6 +36,7 @@ import {
 import { resolveRank } from "@/lib/stats/api";
 import { summarize } from "@/lib/stats/derive";
 import { type DashboardData, useDashboardData } from "./dashboard-context";
+import { SquadSkeleton } from "./panel-skeletons";
 
 /**
  * The hand-built sections of the original Stats tabs, placeable like any other
@@ -123,7 +123,7 @@ const SquadPanel = () => {
   const { t } = useTranslation();
   const squad = useSquadStats(accountId, stats.allMatches);
   if (squad.isPending) {
-    return <Skeleton className='h-[320px] w-full rounded-xl' />;
+    return <SquadSkeleton />;
   }
   return (
     <div className='flex flex-col gap-2'>

@@ -1,6 +1,5 @@
 import { Button } from "@deadlock-mods/ui/components/button";
 import { Card } from "@deadlock-mods/ui/components/card";
-import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import {
   ToggleGroup,
   ToggleGroupItem,
@@ -10,6 +9,7 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { LOSS_COLOR, tint, WIN_COLOR } from "@/components/stats/chart-fx";
+import { ItemsSkeleton } from "@/components/stats/dashboard/panel-skeletons";
 import { ItemTile, slotColor } from "@/components/stats/match/item-tile";
 import { PATRON_URL } from "@/components/stats/patron-hint";
 import type { DeadlockItem } from "@/lib/deadlock-api";
@@ -255,7 +255,7 @@ export const ItemsTab = ({ items, itemsById, isPending }: ItemsTabProps) => {
   );
 
   if (isPending) {
-    return <Skeleton className='h-[420px] w-full rounded-xl' />;
+    return <ItemsSkeleton />;
   }
   if (known.length === 0) {
     return (

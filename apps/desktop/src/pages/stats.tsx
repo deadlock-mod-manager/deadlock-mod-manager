@@ -8,7 +8,6 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@deadlock-mods/ui/components/empty";
-import { Skeleton } from "@deadlock-mods/ui/components/skeleton";
 import {
   LayoutGrid,
   Pencil,
@@ -41,7 +40,6 @@ import {
 import { StatsFilters } from "@/components/stats/stats-filters";
 import { StatsHints } from "@/components/stats/stats-hints";
 import { StatsStatus } from "@/components/stats/stats-status";
-import { StatTileSkeleton } from "@/components/stats/stat-tile";
 import { useAnalyticsContext } from "@/contexts/analytics-context";
 import {
   useHeroCatalog,
@@ -58,21 +56,6 @@ import {
 } from "@/lib/stats/scope";
 import { usePersistedStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-
-const StatsSkeleton = () => (
-  <div className='flex flex-col gap-4'>
-    <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'>
-      {Array.from({ length: 5 }, (_, index) => (
-        <StatTileSkeleton key={index} />
-      ))}
-    </div>
-    <Skeleton className='h-[320px] w-full rounded-xl' />
-    <div className='grid gap-4 lg:grid-cols-2'>
-      <Skeleton className='h-[280px] w-full rounded-xl' />
-      <Skeleton className='h-[280px] w-full rounded-xl' />
-    </div>
-  </div>
-);
 
 const CUSTOMIZE_HINT_MIN_VISITS = 5;
 
@@ -131,7 +114,13 @@ const Stats = () => {
     <DashboardTabs
       activeTabId={activeTab.id}
       brokenTabIds={dashboard.brokenTabIds}
-      counts={{ heroes: hasAccount ? stats.heroes.length : undefined }}
+      counts={{
+        heroes: hasAccount
+          ? stats.isPending
+            ? null
+            : stats.heroes.length
+          : undefined,
+      }}
       editing={editing}
       onSelect={dashboard.selectTab}
       tabs={dashboard.layout.tabs}
@@ -158,28 +147,27 @@ const Stats = () => {
     </HintAnchor>
   );
 
+  const grid = (
+    <DashboardGrid
+      actions={dashboard.gridActions}
+      editing={editing}
+      onAddWidget={dashboard.addWidget}
+      onHealth={dashboard.reportHealth}
+      tab={activeTab}
+      tabs={dashboard.layout.tabs}
+    />
+  );
+
   const renderBody = () => {
-    const grid = (
-      <DashboardGrid
-        actions={dashboard.gridActions}
-        editing={editing}
-        onAddWidget={dashboard.addWidget}
-        onHealth={dashboard.reportHealth}
-        tab={activeTab}
-        tabs={dashboard.layout.tabs}
-      />
-    );
     if (editing) {
       return grid;
     }
-    if (needsAccount && accountsPending) {
-      return <StatsSkeleton />;
-    }
-    if (needsAccount && !hasAccount) {
+    if (needsAccount && !accountsPending && !hasAccount) {
       return <AccountPrompt onSubmit={setAccountId} />;
     }
-    if (needsHistory && stats.isPending) {
-      return <StatsSkeleton />;
+    // While loading, the grid draws each widget's own skeleton in its cell.
+    if (accountsPending || (hasAccount && stats.isPending)) {
+      return grid;
     }
     if (needsHistory && stats.isError) {
       return (
@@ -233,11 +221,16 @@ const Stats = () => {
     return grid;
   };
 
+  const body = renderBody();
   const displayName = accountDisplayName(stats.profile, account);
-  const showsProfile = activeTab.widgets.some(
-    (widget) =>
-      widget.source.kind === "panel" && widget.source.panel === "profile",
-  );
+  // The profile panel carries its own switcher, but only while the grid is on
+  // screen; an empty or error state in its place would leave no way to switch.
+  const showsProfile =
+    body === grid &&
+    activeTab.widgets.some(
+      (widget) =>
+        widget.source.kind === "panel" && widget.source.panel === "profile",
+    );
 
   const showAccountPrompt =
     !editing && needsAccount && !accountsPending && !hasAccount;
@@ -246,6 +239,7 @@ const Stats = () => {
     <DashboardDataProvider
       value={{
         accountId,
+        isAccountPending: accountsPending,
         account,
         accounts,
         onSelectAccount: setAccountId,
@@ -279,27 +273,32 @@ const Stats = () => {
             switching accounts is always one click away. */}
         <div className='flex shrink-0 flex-col gap-3 px-4 pr-2 pt-4 pb-4'>
           <div className='flex flex-wrap items-center justify-between gap-x-4 gap-y-3'>
-            <div className='flex min-w-0 items-center gap-3'>
-              {hasAccount && !showsProfile && (
-                <div className='flex min-w-0 items-center gap-2 rounded-lg border border-border/60 py-1 pr-1 pl-1.5'>
-                  <PlayerAvatar
-                    className='h-6 w-6'
-                    name={displayName}
-                    profile={stats.profile}
-                  />
-                  <span className='max-w-40 truncate font-medium text-sm'>
-                    {displayName || t("stats.unknownPlayer")}
-                  </span>
-                  <AccountSwitcher
-                    accounts={accounts}
-                    onSelectAccount={setAccountId}
-                  />
-                </div>
-              )}
-              {tabBar}
-            </div>
+            {tabBar}
             {!editing && (
               <div className='flex flex-wrap items-center gap-2'>
+                {/* Tabs with the profile panel keep the chip's space, so
+                    switching tabs never moves the filters. */}
+                {hasAccount && (
+                  <div
+                    aria-hidden={showsProfile || undefined}
+                    className={cn(
+                      "flex h-9 min-w-0 items-center gap-2 rounded-lg border border-border/60 pr-1 pl-1.5",
+                      showsProfile && "invisible",
+                    )}>
+                    <PlayerAvatar
+                      className='h-6 w-6'
+                      name={displayName}
+                      profile={stats.profile}
+                    />
+                    <span className='max-w-40 truncate font-medium text-sm'>
+                      {displayName || t("stats.unknownPlayer")}
+                    </span>
+                    <AccountSwitcher
+                      accounts={accounts}
+                      onSelectAccount={setAccountId}
+                    />
+                  </div>
+                )}
                 <StatsFilters
                   mode={mode}
                   onModeChange={setMode}
@@ -341,7 +340,7 @@ const Stats = () => {
             // The account prompt is a centred card; every tab body is a full page.
             showAccountPrompt && "flex items-center justify-center",
           )}>
-          {renderBody()}
+          {body}
         </div>
         {hasAccount && !editing && (
           <div className='shrink-0 px-4 py-3 pr-2 empty:hidden'>
