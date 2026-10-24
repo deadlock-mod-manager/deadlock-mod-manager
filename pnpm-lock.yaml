@@ -277,7 +277,7 @@ importers:
         version: 1.166.22(supports-color@10.2.2)
       better-auth:
         specifier: 'catalog:'
-        version: 1.5.6(@opentelemetry/api@1.9.1)(@tanstack/react-start@1.168.60(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(supports-color@10.2.2)(vite@7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)))(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@electric-sql/pglite@0.3.16)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(bun-types@1.3.11)(kysely@0.28.14)(pg@8.20.0))(pg@8.20.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(solid-js@1.9.15)(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jiti@2.7.0)(jsdom@29.0.0(@noble/hashes@2.0.1))(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0))
+        version: 1.5.6(@opentelemetry/api@1.9.1)(@tanstack/react-start@1.168.60(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(supports-color@10.2.2)(vite@7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)))(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@electric-sql/pglite@0.3.16)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(bun-types@1.3.11)(kysely@0.28.14)(pg@8.20.0))(pg@8.20.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(solid-js@1.9.15)(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jiti@2.7.0)(jsdom@29.0.0(@noble/hashes@2.0.1))(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.1))
       dotenv-cli:
         specifier: ^7.4.4
         version: 7.4.4
@@ -536,41 +536,41 @@ importers:
         specifier: ^3.13.23
         version: 3.13.23(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       '@tauri-apps/api':
-        specifier: ^2.11.0
-        version: 2.11.1
+        specifier: ^2.12.4
+        version: 2.12.4
       '@tauri-apps/plugin-clipboard-manager':
-        specifier: ^2.3.2
-        version: 2.3.2
+        specifier: ^2.5.0
+        version: 2.5.0
       '@tauri-apps/plugin-deep-link':
-        specifier: ~2.4.9
-        version: 2.4.9
+        specifier: ~2.6.2
+        version: 2.6.2
       '@tauri-apps/plugin-dialog':
+        specifier: ^2.8.3
+        version: 2.8.3
+      '@tauri-apps/plugin-fs':
         specifier: ^2.7.1
         version: 2.7.1
-      '@tauri-apps/plugin-fs':
-        specifier: ^2.5.1
-        version: 2.5.1
       '@tauri-apps/plugin-http':
-        specifier: ~2.5.9
-        version: 2.5.9
+        specifier: ~2.8.3
+        version: 2.8.3
       '@tauri-apps/plugin-log':
-        specifier: ~2.8.0
-        version: 2.8.0
-      '@tauri-apps/plugin-opener':
-        specifier: ^2.5.4
-        version: 2.5.4
-      '@tauri-apps/plugin-os':
-        specifier: ^2.3.2
-        version: 2.3.2
-      '@tauri-apps/plugin-process':
-        specifier: ^2.3.1
-        version: 2.3.1
-      '@tauri-apps/plugin-store':
-        specifier: ^2.4.3
-        version: 2.4.3
-      '@tauri-apps/plugin-updater':
         specifier: ~2.10.1
         version: 2.10.1
+      '@tauri-apps/plugin-opener':
+        specifier: ^2.7.2
+        version: 2.7.2
+      '@tauri-apps/plugin-os':
+        specifier: ^2.4.0
+        version: 2.4.0
+      '@tauri-apps/plugin-process':
+        specifier: ^2.4.0
+        version: 2.4.0
+      '@tauri-apps/plugin-store':
+        specifier: ^2.5.0
+        version: 2.5.0
+      '@tauri-apps/plugin-updater':
+        specifier: ~2.14.0
+        version: 2.14.0
       '@types/bun':
         specifier: ^1.3.11
         version: 1.3.11
@@ -582,7 +582,7 @@ importers:
         version: 2.4.1(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       better-auth:
         specifier: 'catalog:'
-        version: 1.5.6(@opentelemetry/api@1.9.1)(@tanstack/react-start@1.168.60(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(supports-color@10.2.2)(vite@7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)))(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@electric-sql/pglite@0.3.16)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(bun-types@1.3.11)(kysely@0.28.14)(pg@8.20.0))(pg@8.20.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(solid-js@1.9.15)(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jiti@2.7.0)(jsdom@29.0.0(@noble/hashes@2.0.1))(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0))
+        version: 1.5.6(@opentelemetry/api@1.9.1)(@tanstack/react-start@1.168.60(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(supports-color@10.2.2)(vite@7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)))(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@electric-sql/pglite@0.3.16)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(bun-types@1.3.11)(kysely@0.28.14)(pg@8.20.0))(pg@8.20.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(solid-js@1.9.15)(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jiti@2.7.0)(jsdom@29.0.0(@noble/hashes@2.0.1))(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.1))
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -655,9 +655,6 @@ importers:
       tailwindcss-animate:
         specifier: ^1.0.7
         version: 1.0.7(tailwindcss@3.4.19(tsx@4.21.0)(yaml@2.9.0))
-      tauri-plugin-sentry-api:
-        specifier: ^0.3.1
-        version: 0.3.1
       three:
         specifier: ^0.185.0
         version: 0.185.0
@@ -681,8 +678,8 @@ importers:
         specifier: 2.6.2
         version: 2.6.2
       '@tauri-apps/cli':
-        specifier: ^2.11.1
-        version: 2.11.2
+        specifier: ~2.12.3
+        version: 2.12.3
       '@types/mocha':
         specifier: 10.0.10
         version: 10.0.10
@@ -700,13 +697,13 @@ importers:
         version: 5.2.0(supports-color@10.2.2)(vite@7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0))
       '@wdio/cli':
         specifier: 9.31.5
-        version: 9.31.5(@types/node@22.19.15)(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)
+        version: 9.31.5(@types/node@22.19.15)(expect-webdriverio@6.1.0)(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)
       '@wdio/globals':
         specifier: 9.31.3
-        version: 9.31.3(expect-webdriverio@6.1.0(@wdio/globals@9.31.3(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)))(@wdio/logger@9.29.1)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)))(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))
+        version: 9.31.3(expect-webdriverio@6.1.0)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))
       '@wdio/local-runner':
         specifier: 9.31.5
-        version: 9.31.5(@wdio/globals@9.31.3(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)))(supports-color@10.2.2)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))
+        version: 9.31.5(@wdio/globals@9.31.3)(supports-color@10.2.2)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))
       '@wdio/mocha-framework':
         specifier: 9.31.5
         version: 9.31.5(supports-color@10.2.2)
@@ -714,11 +711,11 @@ importers:
         specifier: 9.31.2
         version: 9.31.2
       '@wdio/tauri-plugin':
-        specifier: 1.3.0
-        version: 1.3.0(supports-color@10.2.2)(tsx@4.21.0)
+        specifier: 1.5.0
+        version: 1.5.0(supports-color@10.2.2)(tsx@4.21.0)
       '@wdio/tauri-service':
-        specifier: 1.3.0
-        version: 1.3.0(supports-color@10.2.2)(tsx@4.21.0)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))
+        specifier: 1.5.0
+        version: 1.5.0(expect-webdriverio@6.1.0)(supports-color@10.2.2)(tsx@4.21.0)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))
       autoprefixer:
         specifier: ^10.4.27
         version: 10.4.27(postcss@8.5.14)
@@ -800,7 +797,7 @@ importers:
         version: 16.7.7(@mdx-js/mdx@3.1.1(supports-color@10.2.2))(@tanstack/react-router@1.170.41(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@0.544.0(react@19.2.0))(next@16.2.6(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react-router@7.13.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react@19.2.0)(supports-color@10.2.2)(zod@4.6.5)
       fumadocs-mdx:
         specifier: ^14.2.11
-        version: 14.2.11(@types/mdast@4.0.4)(@types/mdx@2.0.13)(@types/react@19.2.14)(fumadocs-core@16.7.7(@mdx-js/mdx@3.1.1(supports-color@10.2.2))(@tanstack/react-router@1.170.41(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@0.544.0(react@19.2.0))(next@16.2.6(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react-router@7.13.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react@19.2.0)(supports-color@10.2.2)(zod@4.6.5))(next@16.2.6(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react@19.2.0)(supports-color@10.2.2)(vite@7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0))
+        version: 14.2.11(@types/mdast@4.0.4)(@types/mdx@2.0.13)(@types/react@19.2.14)(fumadocs-core@16.7.7(@mdx-js/mdx@3.1.1(supports-color@10.2.2))(@tanstack/react-router@1.170.41(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@0.544.0(react@19.2.0))(next@16.2.6(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react-router@7.13.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react@19.2.0)(supports-color@10.2.2)(zod@4.6.5))(next@16.2.6(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react@19.2.0)(supports-color@10.2.2)(vite@7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.1))
       fumadocs-openapi:
         specifier: ^10.6.0
         version: 10.6.0(6c244527dc72bb72c4e8df5b3c46158c)
@@ -1085,7 +1082,7 @@ importers:
         version: 3.13.23(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       better-auth:
         specifier: 'catalog:'
-        version: 1.5.6(@opentelemetry/api@1.9.1)(@tanstack/react-start@1.168.60(esbuild@0.28.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(rolldown@1.0.1)(rollup@4.60.0)(supports-color@10.2.2)(vite@7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)))(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@electric-sql/pglite@0.3.16)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(bun-types@1.3.11)(kysely@0.28.14)(pg@8.20.0))(pg@8.20.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(solid-js@1.9.15)(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jiti@2.7.0)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0))
+        version: 1.5.6(@opentelemetry/api@1.9.1)(@tanstack/react-start@1.168.60(esbuild@0.28.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(rolldown@1.0.1)(rollup@4.60.0)(supports-color@10.2.2)(vite@7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)))(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@electric-sql/pglite@0.3.16)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(bun-types@1.3.11)(kysely@0.28.14)(pg@8.20.0))(pg@8.20.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(solid-js@1.9.15)(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jiti@2.7.0)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.1))
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -1215,7 +1212,7 @@ importers:
         version: 5.1.4(supports-color@10.2.2)(typescript@7.0.2)(vite@7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0))
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jiti@2.7.0)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jiti@2.7.0)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.1)
       web-vitals:
         specifier: ^5.2.0
         version: 5.2.0
@@ -1347,7 +1344,7 @@ importers:
         version: 1.3.11
       vitest:
         specifier: ^3.2.4
-        version: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jiti@2.7.0)(jsdom@29.0.0(@noble/hashes@2.0.1))(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)
+        version: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jiti@2.7.0)(jsdom@29.0.0(@noble/hashes@2.0.1))(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.1)
 
   packages/dmp-parser: {}
 
@@ -7800,124 +7797,123 @@ packages:
     resolution: {integrity: sha512-uhOeFyxLcU41HzvrxsGpiWdcMbScY1EDgbZ5K7DVRMYInbLYWAC0EA/kx9wXAoSM8q82bUG2hRl8+EAjE6XAbA==}
     engines: {node: '>=20.19'}
 
-  '@tauri-apps/api@2.0.0-beta.8':
-    resolution: {integrity: sha512-fN5u+9HsSfhRaXGOdD2kPGbqDgyX+nkm1XF/4d/LNuM4WiNfvHjjRAqWQYBhQsg1aF9nsTPmSW+tmy+Yn5T5+A==}
-    engines: {node: '>= 18', npm: '>= 6.6.0', yarn: '>= 1.19.1'}
+  '@tauri-apps/api@2.12.1':
+    resolution: {integrity: sha512-DeyFHa3wynpyoqTDikDEDGTJIq4LQ5USfolQGRmGIWT6JMADyxZBTDa5cAdT3tDg73rUXufPaCwN7aXBos4OnQ==}
 
-  '@tauri-apps/api@2.11.1':
-    resolution: {integrity: sha512-M2FPuYND2m+wh5hfW9ZpSdxMPdEJovPBWwoHJmwUpysTYNHaOkVFN419m/K0LIgjb/7KU2vBgsUepJWugQCvAA==}
+  '@tauri-apps/api@2.12.4':
+    resolution: {integrity: sha512-pVmfis+4zT8H0Qhp3xPZx9Ju7kpzvA6rr/PSJPyuwfvucTQ8sVt61NYU9KMkK703UFlYadFmjKA4HhybOtN0gg==}
 
-  '@tauri-apps/cli-darwin-arm64@2.11.2':
-    resolution: {integrity: sha512-+4UZzLt+eOAEQCwgd+TqKgyUJMrvx+BgdXLLaqJYmPqzP+nE6YZr/hY6CWLYGQb8jFn99jEkmC6uA3tNvamA1w==}
+  '@tauri-apps/cli-darwin-arm64@2.12.3':
+    resolution: {integrity: sha512-xmVNoJOOKzKLj7GLHXmXLimRby9M42aBIJa0sB80N7o24eKV5JiVmToKTRLVH9yhL05GZ/B6rSSOmbzNFJwBAA==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [darwin]
 
-  '@tauri-apps/cli-darwin-x64@2.11.2':
-    resolution: {integrity: sha512-VjYYtZUPqDMLutSfJEyxFE3Bz+DPi7c8wC3imckgvciLDZLq4qwKJxBicg0BXGhXjJsl8vKWgWRFNMPELQ+Xyg==}
+  '@tauri-apps/cli-darwin-x64@2.12.3':
+    resolution: {integrity: sha512-URd+0usfmUQQyb5kNPiKt2OT8gp7oGU7QR+qOppB6e35mpVBFFVNhWc9oWb3p0u71fDJ09DpF4T6m9xYxoIB8g==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [darwin]
 
-  '@tauri-apps/cli-linux-arm-gnueabihf@2.11.2':
-    resolution: {integrity: sha512-yMemD6f4i95AQriS8EazyOFzbE34yjnP16i3IOzpHGQvBoy2DjypFMFBq0NtPuITURv/cOGguRtHR5d79/9CSA==}
+  '@tauri-apps/cli-linux-arm-gnueabihf@2.12.3':
+    resolution: {integrity: sha512-0kwUVx2LbmOoTRlwF1oDww7th4/NSluv4ZBQ6KRZsFKg4g0TlTcIiJ0VehqkQYUeC9xIT1Mk6XtF52mI155VSQ==}
     engines: {node: '>= 10'}
     cpu: [arm]
     os: [linux]
 
-  '@tauri-apps/cli-linux-arm64-gnu@2.11.2':
-    resolution: {integrity: sha512-cgI91D2wL8GSgoWwZXDqt+DwnuZCP2/bz03QAE4TrhgAKIsrB4hX26W/H1EONPUUNkqrsgeCD0wU6pcNjV/5kw==}
+  '@tauri-apps/cli-linux-arm64-gnu@2.12.3':
+    resolution: {integrity: sha512-gKSGDx6fx+HBLQmG6guChFdisbrCSdx9Yli+j5teOa64gm1CeM+C6NLru5Pj3ZkkEep05BmCFjxvX+cjqAycZQ==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
     libc: [glibc]
 
-  '@tauri-apps/cli-linux-arm64-musl@2.11.2':
-    resolution: {integrity: sha512-X1rm0BERqAAggtYTESSgXrS3sz4Sb/OiPiz54UqISlXW+GkR3vNIGnsy/lejNmoXGVqri3Q53BCfQiclOIyRPw==}
+  '@tauri-apps/cli-linux-arm64-musl@2.12.3':
+    resolution: {integrity: sha512-Yr59qMy/gcvAfBuFdCGlAmGiLsYWMFDbsP4bAI6iNBzcJTGrYWZGeiQhGDo29MQwfF/NUBqyM2qljXu5tZ6wjQ==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [linux]
     libc: [musl]
 
-  '@tauri-apps/cli-linux-riscv64-gnu@2.11.2':
-    resolution: {integrity: sha512-usbMLJbT3KtkOrBMDVeGYNM35aTHXx38SJSzTMSqqjeUIOQ+iVPjb2yAGNAE+KqmBbAx4FOFIyMeKXx2M/JKGQ==}
+  '@tauri-apps/cli-linux-riscv64-gnu@2.12.3':
+    resolution: {integrity: sha512-jKr0/REBMnLKC0OwPQZkyge0mKDaNZ0b/AbfGwVyCgFfwS730EVLfVDo3nt7MUu6jJaytRq08+xSj5qfy+U1+Q==}
     engines: {node: '>= 10'}
     cpu: [riscv64]
     os: [linux]
     libc: [glibc]
 
-  '@tauri-apps/cli-linux-x64-gnu@2.11.2':
-    resolution: {integrity: sha512-Ru4gwJKPG0ctVGchRGpRup4Y4lW2SSfFnrbQcyHhCliKy4g8Qz97TrUgCur4CbWyAgKxvGh3SjrkA0LDYzDGiw==}
+  '@tauri-apps/cli-linux-x64-gnu@2.12.3':
+    resolution: {integrity: sha512-gTkEqJAGCMROGanxHnzaJzQ+/rXl39HWVg0/hDODS1wDWBGqoceqGC6Qm1+mQbyT11xnsB8mKu/gyVID/YpFIw==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
     libc: [glibc]
 
-  '@tauri-apps/cli-linux-x64-musl@2.11.2':
-    resolution: {integrity: sha512-eUm7T6clN1MMmNSRQ9gaWsQdyehQx2Gmn5hht/QUlqZQI/qcP2OJK5dnaxqwFzCr2HdsEo9ydxaqcS1oJzMvUw==}
+  '@tauri-apps/cli-linux-x64-musl@2.12.3':
+    resolution: {integrity: sha512-T2dTxL1svRym71fZtaW4pZYXbthbfFsEJr1NeOUg/p7laWXZbUt/8DMSZf8recu9f7+1F/Lv00HtzsEu6vDO9w==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [linux]
     libc: [musl]
 
-  '@tauri-apps/cli-win32-arm64-msvc@2.11.2':
-    resolution: {integrity: sha512-HeeZW80jU+gVTOEX4X/hC6NVSAdDVXajwP5fxIZ/3z9WvUC7qrudX2GMTilYq6Dg0e0sk0XgsAJD1hZ5wPBXUA==}
+  '@tauri-apps/cli-win32-arm64-msvc@2.12.3':
+    resolution: {integrity: sha512-eoiQwpEZWbpsVHcM9BAzqqe4TCHszvr3rsM7pUQ4ofLK0lF1i1d/jX0Qo5DYMqcrUtwQuDdDuOCbcT0Izf1VwQ==}
     engines: {node: '>= 10'}
     cpu: [arm64]
     os: [win32]
 
-  '@tauri-apps/cli-win32-ia32-msvc@2.11.2':
-    resolution: {integrity: sha512-YhjQNZcXfbkCLyazSv1nPnJ9iRFE1wm6kc51FDbU10/Dk09io+6PAGMLjkxnX2GdM0qMnDmTjstY8mTDVvtKeA==}
+  '@tauri-apps/cli-win32-ia32-msvc@2.12.3':
+    resolution: {integrity: sha512-kE+KUg6Dbbkgvcw0m99wJVIToFQzJqpMBAXah74WqxaLzssNwSTUccrHp6+QVzMhjQP330tvekFmnQF+0NbE6Q==}
     engines: {node: '>= 10'}
     cpu: [ia32]
     os: [win32]
 
-  '@tauri-apps/cli-win32-x64-msvc@2.11.2':
-    resolution: {integrity: sha512-d2JchlFIpZevZVReyqhQOekJmb1UH3rhZ5VX6sH3ty9ETE0TKQavpihvoScUXfKKpW6HZC0MrFGRU0ZtD+w3gA==}
+  '@tauri-apps/cli-win32-x64-msvc@2.12.3':
+    resolution: {integrity: sha512-L7wndWAgX2mLW7alswpL3d1R0P9FN2WYBgHaQkAYEBxHHGkY4vFX9CjcRQ1LAxDAMIJxrY7/aDziFJeChS84NQ==}
     engines: {node: '>= 10'}
     cpu: [x64]
     os: [win32]
 
-  '@tauri-apps/cli@2.11.2':
-    resolution: {integrity: sha512-bk3HemqvGRoy+5D/dVMUQHKMYLglD0jVnMm/0iGMH6ufZ+p8r14m6BpIixwij3PBvZdvORUp1YifTD8QxVZ1Nw==}
+  '@tauri-apps/cli@2.12.3':
+    resolution: {integrity: sha512-f7/LsY74SVb1ChmOPw1ajOpxii0GSzDAgmWHRci8JUYuuai04rXsSbFobpmB0sP2DdlvMD/B5ZotEn8GOGMRUg==}
     engines: {node: '>= 10'}
     hasBin: true
 
-  '@tauri-apps/plugin-clipboard-manager@2.3.2':
-    resolution: {integrity: sha512-CUlb5Hqi2oZbcZf4VUyUH53XWPPdtpw43EUpCza5HWZJwxEoDowFzNUDt1tRUXA8Uq+XPn17Ysfptip33sG4eQ==}
+  '@tauri-apps/plugin-clipboard-manager@2.5.0':
+    resolution: {integrity: sha512-dibUy1nKURYDXRMvjNk4deAbTZ5jPQ8wCE4nolt5xniryWgXQ4sK2GkFXoXlHbRdPzfZptZj95BRLfalA7m/2Q==}
 
-  '@tauri-apps/plugin-deep-link@2.4.9':
-    resolution: {integrity: sha512-u0SKOUHnJ1wqeqXsDFq2+kASCBj9xxbG0g9XZWPy9SOmU4wXtp6b/wiYpm6oH6/5fBTQsLqnLhIvqLBRpgHJlA==}
+  '@tauri-apps/plugin-deep-link@2.6.2':
+    resolution: {integrity: sha512-uMsF1VQt1OdYq3jDGsSBlBdtbTp6o7WYFYFnjiNuLfFpBvZsdH0XnolJoSzBOlTzhroROBUys/j1y1PQqdiMZA==}
 
-  '@tauri-apps/plugin-dialog@2.7.1':
-    resolution: {integrity: sha512-OK1UBXYt+ojcmxMktzzuyonYIFta8CmAASpX+CA+DTGK24KlHjhYI6x2iOJ/TjZF4N7/ACK1oFmEOjIY9IhzOQ==}
+  '@tauri-apps/plugin-dialog@2.8.3':
+    resolution: {integrity: sha512-Hd/yBfk2R5v2MFrz/0VArSXeh8xKLLXGunqSiTtcHKn1zNZwaKujuA0VSwUvNfwC4hDoF1PveS+gBDNe3nHspw==}
 
-  '@tauri-apps/plugin-fs@2.5.1':
-    resolution: {integrity: sha512-9Lz+Jopp6QyeEWhlpkMx4R/+P9HgR+AVAI4vOZhlT8Xaymtz8iVI/Ov984/XTqgJz/5gz5NretqPB/XEMS3NhQ==}
+  '@tauri-apps/plugin-fs@2.7.1':
+    resolution: {integrity: sha512-4TBVjpi/q8PuNzjpkAc2iBGXMTLjOrAyfTiiOL8ORaJCZJRG3tjzmQ4sqs2CMG75FvLyRkOkERfP7AyY4iBNwQ==}
 
-  '@tauri-apps/plugin-http@2.5.9':
-    resolution: {integrity: sha512-lCiY0+vs4HvIUSvZrBs8TC3TiCB0MOPRmiUjTq4prW7SlcJE2jdLeT6KBsJrT9Tlplufl7W1pY6SFAO3gCWxDA==}
+  '@tauri-apps/plugin-http@2.8.3':
+    resolution: {integrity: sha512-MrgCnnxSnzxkMX+Tk1XXB8rSI9hfhUHQmtbn0EpflEDcSx04K1BDfrv51tcK27SCuU/B1j8sNHL0UZur/1iqKA==}
 
-  '@tauri-apps/plugin-log@2.8.0':
-    resolution: {integrity: sha512-a+7rOq3MJwpTOLLKbL8d0qGZ85hgHw5pNOWusA9o3cf7cEgtYHiGY/+O8fj8MvywQIGqFv0da2bYQDlrqLE7rw==}
+  '@tauri-apps/plugin-log@2.10.0':
+    resolution: {integrity: sha512-IHMspJx/fDA+8q8O6MTbrKffkemSDa1I5iXRhnLrLVnOd7xK4bAosyQbWcjnpPA7E+c6BMkpsE2kESHhkiBrDg==}
 
-  '@tauri-apps/plugin-log@2.9.0':
-    resolution: {integrity: sha512-Ql8okrnsguk0eDq1GvRfttFV5KaeW/7vcao6bdbkXCRJ1+2sWE15ZJvJVEKVANrOKy1mRngqC3IFIAP+wP5qSw==}
+  '@tauri-apps/plugin-log@2.10.1':
+    resolution: {integrity: sha512-QYgxDunUZP+Cd3ev+8ItOc3Q6uUFkEhRHdTolxUtlC/8SGsc5IyVjGgFclprkAx736HUCUYfh2vqUr3qwNfTTw==}
 
-  '@tauri-apps/plugin-opener@2.5.4':
-    resolution: {integrity: sha512-1HnPkb+AmgO29HBazm4uPLKB+r7zzcTBW1d0fyYp1uP+jwtpoiNDGKMMzz58SFp49nOIrxdE3aUJtT57lfO9CQ==}
+  '@tauri-apps/plugin-opener@2.7.2':
+    resolution: {integrity: sha512-LyybP1VSzTMQiaFYcsbAse47KpivlyXdLZMQzGLEnkgQacGESnpjAfFoQ6h5sqWgAdZDH9szYjPzHMpv0Sz+TQ==}
 
-  '@tauri-apps/plugin-os@2.3.2':
-    resolution: {integrity: sha512-n+nXWeuSeF9wcEsSPmRnBEGrRgOy6jjkSU+UVCOV8YUGKb2erhDOxis7IqRXiRVHhY8XMKks00BJ0OAdkpf6+A==}
+  '@tauri-apps/plugin-os@2.4.0':
+    resolution: {integrity: sha512-XFQjntNNI3Vlqdy4WUGwiXX8DByzKVvoemAcUVkBm9NJPGmoDtII5i+vfuAzWaJfOE5cUJJLUDqXBnd4reSAIA==}
 
-  '@tauri-apps/plugin-process@2.3.1':
-    resolution: {integrity: sha512-nCa4fGVaDL/B9ai03VyPOjfAHRHSBz5v6F/ObsB73r/dA3MHHhZtldaDMIc0V/pnUw9ehzr2iEG+XkSEyC0JJA==}
+  '@tauri-apps/plugin-process@2.4.0':
+    resolution: {integrity: sha512-GddrmsSLAYrLa/yTXlXK/YRDzUgYeeOnUXTbiyvJWkmI424RmDPD3FVLeqcon7rv6O6ZfhBilcrHWnSo7o6hIQ==}
 
-  '@tauri-apps/plugin-store@2.4.3':
-    resolution: {integrity: sha512-9LWPj9yMphRi9czEtUv87XHbl1b6xgd9EXpPrUnq6nG7+nbtoF84d4Kwz9xhAv/Hf30sr58pq7EOlyI936y8qw==}
+  '@tauri-apps/plugin-store@2.5.0':
+    resolution: {integrity: sha512-+ykjiQwMJCSk/U2enHA8peKBWgDKgrP7JfZnGwQpqzwA0nVtKTc0LCyxWr2whOrcQoQqtUdr9NVdDZpfKpT1Xw==}
 
-  '@tauri-apps/plugin-updater@2.10.1':
-    resolution: {integrity: sha512-NFYMg+tWOZPJdzE/PpFj2qfqwAWwNS3kXrb1tm1gnBJ9mYzZ4WDRrwy8udzWoAnfGCHLuePNLY1WVCNHnh3eRA==}
+  '@tauri-apps/plugin-updater@2.14.0':
+    resolution: {integrity: sha512-gdylJ9tger4hkyOn24QZd6MNOKVo2Eh53iw5th2Qj1vKTR/+u4PIwJWuiis5hohYvobn6iOvlnALfrqIPSzh7Q==}
 
   '@testing-library/dom@10.4.1':
     resolution: {integrity: sha512-o4PXJQidqJl82ckFaXUeoAW+XysPLauYI43Abki5hABd853iMhitooc6znOnczgbTYmEP6U6/y1ZyKAIsvMKGg==}
@@ -8689,13 +8685,6 @@ packages:
     resolution: {integrity: sha512-SY7lYPJzCGdedPxHcGMEJlC2tjdxqqq+e8ROGaob3kmjbKH2Zn7bQIqgCk9fOsA814Zz+V628pEKJNKHL8xpyQ==}
     engines: {node: '>=18.20.0'}
 
-  '@wdio/globals@9.29.1':
-    resolution: {integrity: sha512-F96BKppx4HGD64v+s57TM4K4zaxqUCg2RXHk6sjB2xrSa7P+d2VYV28ID2ddF7iSodVfPlpa1i2/jy8jMGrU8w==}
-    engines: {node: '>=18.20.0'}
-    peerDependencies:
-      expect-webdriverio: ^5.6.5
-      webdriverio: ^9.0.0
-
   '@wdio/globals@9.31.3':
     resolution: {integrity: sha512-ZzmRKUlwUBahNoNxHbAzst+9dNInEjLQc7Z3c86OhDRxAf3Ivw8k2rc56UCbyYiZnkd1dOpuA91zFiTrUNNORw==}
     engines: {node: '>=18.20.0'}
@@ -8707,10 +8696,6 @@ packages:
     resolution: {integrity: sha512-5jZcUpZGxWXr4Mido8DgiCzZ+B7EMXtPo8wGe96KwTWkHnCjFj53ZIjpT9GVYIxnJsX0zslqsuA28/2An0pq2g==}
     engines: {node: '>=18.20.0'}
 
-  '@wdio/logger@9.18.0':
-    resolution: {integrity: sha512-HdzDrRs+ywAqbXGKqe1i/bLtCv47plz4TvsHFH3j729OooT5VH38ctFn5aLXgECmiAKDkmH/A6kOq2Zh5DIxww==}
-    engines: {node: '>=18.20.0'}
-
   '@wdio/logger@9.29.1':
     resolution: {integrity: sha512-0ZAEIo6PNyMIJPlOGkIgyOJUjcd0pC8/QHlVAAe1c91/IcjZ1X+k0yidXHaboJdN7dq1XPUacmhRdtua0U5EZg==}
     engines: {node: '>=18.20.0'}
@@ -8719,34 +8704,21 @@ packages:
     resolution: {integrity: sha512-UYGNF8M77T7PKvRGidN+Iu++LSPLKbKpQ+K3eJEaDnP7hWcHk+x7VYKrXWPWorPuJfS2ocT+QWAgZlkEhTo6fQ==}
     engines: {node: '>=18.20.0'}
 
-  '@wdio/native-core@1.1.0':
-    resolution: {integrity: sha512-whRLCp8ZpZDvjNHOkXZdPzSJmRyqtyA7XldUZaawV+g+ib8N4EcgjhSiT58djmJw4jxMec+94niEj5a1c6ZkCA==}
-    engines: {node: ^18.12.0 || ^20.9.0 || >=22.11.0}
+  '@wdio/native-core@1.3.0':
+    resolution: {integrity: sha512-wUwc0QTdvhD0LwH4YcRaN9JWLX/yac8sovddUR5/4sqHMNJr3yaN11bpIfYoD/bEk+1nTLjWuDCFpe5l5wUgLQ==}
+    engines: {node: '>=18.20.0'}
 
-  '@wdio/native-spy@1.2.0':
-    resolution: {integrity: sha512-roTRIi/0pxSpC7C4DIAqzh3i2dqKaV+T+mx9Yu1vOGAG9vbQwHGn/qwxHTggE+3kV1FYWOoSI0eKnKw9aqFiDg==}
-    engines: {node: ^18.12.0 || ^20.9.0 || >=22.11.0}
+  '@wdio/native-spy@1.4.0':
+    resolution: {integrity: sha512-unsC2Vgu5T9atD478Zj/p2N+rVSK4i/NibIaaEw4rZF/T5u5bmAHChFntEiBEfyMzd62VwbhKhzwwOSKjzrfJA==}
+    engines: {node: '>=18.20.0'}
 
-  '@wdio/native-types@2.4.0':
-    resolution: {integrity: sha512-GjgPskOoTvl17Jwj8aAU3A31gpklL5M1KfbrwYffbQT16CTpJTD8A4PdoS2ZjGoCWcyLBR1CWdJI3W8T0JBLjw==}
-    engines: {node: ^18.12.0 || ^20.9.0 || >=22.11.0}
+  '@wdio/native-types@2.6.0':
+    resolution: {integrity: sha512-MVMVpZTH+UY6nUtLClCzY4BQSIs/nCCHo81i4ClLR+b2NehyBvwccttXDAGPgf0icyHUhd+PgIPXaLgRcm4M9A==}
+    engines: {node: '>=18.20.0'}
 
-  '@wdio/native-types@2.5.0':
-    resolution: {integrity: sha512-NjaIfcsEKpU9gm0goywEG0A7J4pyEsgORKNrQ1xboSy10BeTk5QpgHWP1bNvqUnZrKoKJRonpSn81ZyYKghO1g==}
-    engines: {node: ^18.12.0 || ^20.9.0 || >=22.11.0}
-
-  '@wdio/native-utils@2.5.0':
-    resolution: {integrity: sha512-Qv0mJ2elRBZCgYbHCnKPNgE9VaqnmNJyjythTDYyOQpj8pAs6FZXXmWXGkUIdMds5cK0ux/qtxyKU0Y0tDsUUQ==}
-    engines: {node: ^18.12.0 || ^20.9.0 || >=22.11.0}
-    peerDependencies:
-      tsx: ^4.22.4
-    peerDependenciesMeta:
-      tsx:
-        optional: true
-
-  '@wdio/native-utils@2.6.0':
-    resolution: {integrity: sha512-54qpJ1XwNl4gBTYb84xsRTHDi3zTdmbms4FBUVFY50+X3t0FDuMmWlBLYADdyS1d17uv698GUFRjrorRKLAPXw==}
-    engines: {node: ^18.12.0 || ^20.9.0 || >=22.11.0}
+  '@wdio/native-utils@2.8.0':
+    resolution: {integrity: sha512-TmIkPAd19FkJ747AdFVEtawbakVV3HHCh8zk3Kl/FLc6B2bbea7hn90jtLxqBZgCVqUuJIBcMNFg/nV/hgBFOw==}
+    engines: {node: '>=18.20.0'}
     peerDependencies:
       tsx: ^4.22.4
     peerDependenciesMeta:
@@ -8760,10 +8732,6 @@ packages:
     resolution: {integrity: sha512-FLTF0VL6+o5BSTCO7yLSXocm3kUnu31zYwzdsz4n9s5YWt83sCtzGZlZpt7TaTzb3jVUfxuHNQDTb8UMkCu0lQ==}
     engines: {node: '>=18.20.0'}
 
-  '@wdio/reporter@9.29.1':
-    resolution: {integrity: sha512-CKAcVy9BGwvufokMcl3H+yNcvD11Klku/1BPz8bKSRv7/KzueXR06s1cPbJH3tv9r9zxPErxgdVMpulN8I0qAg==}
-    engines: {node: '>=18.20.0'}
-
   '@wdio/reporter@9.31.2':
     resolution: {integrity: sha512-3cKE6vCOsro/Ep9dGTIbo3FBn3WNvJ++BIn32lFd9m19pFdjuwlVgLtPXHb9jWNCJs740h5AIUcVkcscqUYhAA==}
     engines: {node: '>=18.20.0'}
@@ -8775,27 +8743,19 @@ packages:
       expect-webdriverio: ^6.0.9
       webdriverio: ^9.28.0
 
-  '@wdio/spec-reporter@9.29.1':
-    resolution: {integrity: sha512-iqlHW/qGDRGmxQKN7XyCHxfKphTbPNnniV3yxNXZRSGHCCQok5KFKOnj4fpUCKEyD5jtPAmP6Y0qc1UyR3Dc3Q==}
-    engines: {node: '>=18.20.0'}
-
   '@wdio/spec-reporter@9.31.2':
     resolution: {integrity: sha512-lNLLPUk4y1Yp5pWwBFF+tjZIy7bOv0TPTk4HDWV4LnnHnkc24abI0nN+kb2y5/JV8ZgwLCCVKUFRdRUxfKsAaQ==}
     engines: {node: '>=18.20.0'}
 
-  '@wdio/tauri-plugin@1.3.0':
-    resolution: {integrity: sha512-dq0utb6Lj5bi3zzHkIIb4WTegpqVMc3D+mVsJCx7OzRPiFQfhYutmRIkNS/i3Cai41KqTf2eP5ZvlPO0LCKv0A==}
-    engines: {node: ^18.12.0 || ^20.9.0 || >=22.11.0}
+  '@wdio/tauri-plugin@1.5.0':
+    resolution: {integrity: sha512-Bd7rWgqr3bKz6iLALULsOrwB8m3wg29GvFsOwWRzNjBxDxqwjLVg3DwCZmHr6cv1pW6RsZnNwMxqeoXemkOl9g==}
+    engines: {node: '>=18.20.0'}
 
-  '@wdio/tauri-service@1.3.0':
-    resolution: {integrity: sha512-CzO7ddZo0gIdwVWDftUbHmDPC74M2ZDwWiucUe1M37/QCNy9y4QEdYbobD8yuL1c9n4dAO+NQzmvC3BUICjl0Q==}
-    engines: {node: ^18.12.0 || ^20.9.0 || >=22.11.0}
+  '@wdio/tauri-service@1.5.0':
+    resolution: {integrity: sha512-S3fs8T+jgNOFi4x/X2z69unS/1K3ZB28+owBouhHtVnrMKeBWAKP46IHnp8c8AZXppn6fiPNC4M1jfRZbLKeKw==}
+    engines: {node: '>=18.20.0'}
     peerDependencies:
       webdriverio: ^9.0.0
-
-  '@wdio/types@9.29.1':
-    resolution: {integrity: sha512-jp8jgMv6TS35G96YzHZxw3PVN0Dz6xQ6tnMAicndAJ8Jt9AIXb0ywIse4TjaFywakO3dLoEhlyA3ZtR26vmt+w==}
-    engines: {node: '>=18.20.0'}
 
   '@wdio/types@9.31.2':
     resolution: {integrity: sha512-lQKaiQDCJJ6VC1K/cKzaAxCpwB9pL1U0VbmX2uGksMxO4EDbNuLvIxWryuUDJ7OaSYTjxILTKYFErdbT/xEikg==}
@@ -14117,9 +14077,6 @@ packages:
     resolution: {integrity: sha512-tOG/7GyXpFevhXVh8jOPJrmtRpOTsYqUIkVdVooZYJS/z8WhfQUX8RJILmeuJNinGAMSu1veBr4asSHFt5/hng==}
     engines: {node: '>=18'}
 
-  tauri-plugin-sentry-api@0.3.1:
-    resolution: {integrity: sha512-YXw+DKVAyGVdGrQoM10GJLtmqHWcErxAG55/55vtKEWLdIbroGEYsB4usw0QfEN1AXr8yznBBGzGKG6DXRTgPg==}
-
   tdigest@0.1.2:
     resolution: {integrity: sha512-+G0LLgjjo9BZX2MfdvPfH+MKLCrxlXSYec5DaPYP1fe6Iyhf0/fSmJ0bFiZ1F8BT6cGXl2LpltQptzjXKWEkKA==}
 
@@ -15052,6 +15009,11 @@ packages:
 
   yaml@2.9.0:
     resolution: {integrity: sha512-2AvhNX3mb8zd6Zy7INTtSpl1F15HW6Wnqj0srWlkKLcpYl/gMIMJiyuGq2KeI2YFxUPjdlB+3Lc10seMLtL4cA==}
+    engines: {node: '>= 14.6'}
+    hasBin: true
+
+  yaml@2.9.1:
+    resolution: {integrity: sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==}
     engines: {node: '>= 14.6'}
     hasBin: true
 
@@ -21010,104 +20972,104 @@ snapshots:
 
   '@tanstack/virtual-file-routes@1.162.0': {}
 
-  '@tauri-apps/api@2.0.0-beta.8': {}
+  '@tauri-apps/api@2.12.1': {}
 
-  '@tauri-apps/api@2.11.1': {}
+  '@tauri-apps/api@2.12.4': {}
 
-  '@tauri-apps/cli-darwin-arm64@2.11.2':
+  '@tauri-apps/cli-darwin-arm64@2.12.3':
     optional: true
 
-  '@tauri-apps/cli-darwin-x64@2.11.2':
+  '@tauri-apps/cli-darwin-x64@2.12.3':
     optional: true
 
-  '@tauri-apps/cli-linux-arm-gnueabihf@2.11.2':
+  '@tauri-apps/cli-linux-arm-gnueabihf@2.12.3':
     optional: true
 
-  '@tauri-apps/cli-linux-arm64-gnu@2.11.2':
+  '@tauri-apps/cli-linux-arm64-gnu@2.12.3':
     optional: true
 
-  '@tauri-apps/cli-linux-arm64-musl@2.11.2':
+  '@tauri-apps/cli-linux-arm64-musl@2.12.3':
     optional: true
 
-  '@tauri-apps/cli-linux-riscv64-gnu@2.11.2':
+  '@tauri-apps/cli-linux-riscv64-gnu@2.12.3':
     optional: true
 
-  '@tauri-apps/cli-linux-x64-gnu@2.11.2':
+  '@tauri-apps/cli-linux-x64-gnu@2.12.3':
     optional: true
 
-  '@tauri-apps/cli-linux-x64-musl@2.11.2':
+  '@tauri-apps/cli-linux-x64-musl@2.12.3':
     optional: true
 
-  '@tauri-apps/cli-win32-arm64-msvc@2.11.2':
+  '@tauri-apps/cli-win32-arm64-msvc@2.12.3':
     optional: true
 
-  '@tauri-apps/cli-win32-ia32-msvc@2.11.2':
+  '@tauri-apps/cli-win32-ia32-msvc@2.12.3':
     optional: true
 
-  '@tauri-apps/cli-win32-x64-msvc@2.11.2':
+  '@tauri-apps/cli-win32-x64-msvc@2.12.3':
     optional: true
 
-  '@tauri-apps/cli@2.11.2':
+  '@tauri-apps/cli@2.12.3':
     optionalDependencies:
-      '@tauri-apps/cli-darwin-arm64': 2.11.2
-      '@tauri-apps/cli-darwin-x64': 2.11.2
-      '@tauri-apps/cli-linux-arm-gnueabihf': 2.11.2
-      '@tauri-apps/cli-linux-arm64-gnu': 2.11.2
-      '@tauri-apps/cli-linux-arm64-musl': 2.11.2
-      '@tauri-apps/cli-linux-riscv64-gnu': 2.11.2
-      '@tauri-apps/cli-linux-x64-gnu': 2.11.2
-      '@tauri-apps/cli-linux-x64-musl': 2.11.2
-      '@tauri-apps/cli-win32-arm64-msvc': 2.11.2
-      '@tauri-apps/cli-win32-ia32-msvc': 2.11.2
-      '@tauri-apps/cli-win32-x64-msvc': 2.11.2
+      '@tauri-apps/cli-darwin-arm64': 2.12.3
+      '@tauri-apps/cli-darwin-x64': 2.12.3
+      '@tauri-apps/cli-linux-arm-gnueabihf': 2.12.3
+      '@tauri-apps/cli-linux-arm64-gnu': 2.12.3
+      '@tauri-apps/cli-linux-arm64-musl': 2.12.3
+      '@tauri-apps/cli-linux-riscv64-gnu': 2.12.3
+      '@tauri-apps/cli-linux-x64-gnu': 2.12.3
+      '@tauri-apps/cli-linux-x64-musl': 2.12.3
+      '@tauri-apps/cli-win32-arm64-msvc': 2.12.3
+      '@tauri-apps/cli-win32-ia32-msvc': 2.12.3
+      '@tauri-apps/cli-win32-x64-msvc': 2.12.3
 
-  '@tauri-apps/plugin-clipboard-manager@2.3.2':
+  '@tauri-apps/plugin-clipboard-manager@2.5.0':
     dependencies:
-      '@tauri-apps/api': 2.11.1
+      '@tauri-apps/api': 2.12.4
 
-  '@tauri-apps/plugin-deep-link@2.4.9':
+  '@tauri-apps/plugin-deep-link@2.6.2':
     dependencies:
-      '@tauri-apps/api': 2.11.1
+      '@tauri-apps/api': 2.12.4
 
-  '@tauri-apps/plugin-dialog@2.7.1':
+  '@tauri-apps/plugin-dialog@2.8.3':
     dependencies:
-      '@tauri-apps/api': 2.11.1
+      '@tauri-apps/api': 2.12.4
 
-  '@tauri-apps/plugin-fs@2.5.1':
+  '@tauri-apps/plugin-fs@2.7.1':
     dependencies:
-      '@tauri-apps/api': 2.11.1
+      '@tauri-apps/api': 2.12.4
 
-  '@tauri-apps/plugin-http@2.5.9':
+  '@tauri-apps/plugin-http@2.8.3':
     dependencies:
-      '@tauri-apps/api': 2.11.1
+      '@tauri-apps/api': 2.12.4
 
-  '@tauri-apps/plugin-log@2.8.0':
+  '@tauri-apps/plugin-log@2.10.0':
     dependencies:
-      '@tauri-apps/api': 2.11.1
+      '@tauri-apps/api': 2.12.4
 
-  '@tauri-apps/plugin-log@2.9.0':
+  '@tauri-apps/plugin-log@2.10.1':
     dependencies:
-      '@tauri-apps/api': 2.11.1
+      '@tauri-apps/api': 2.12.4
 
-  '@tauri-apps/plugin-opener@2.5.4':
+  '@tauri-apps/plugin-opener@2.7.2':
     dependencies:
-      '@tauri-apps/api': 2.11.1
+      '@tauri-apps/api': 2.12.4
 
-  '@tauri-apps/plugin-os@2.3.2':
+  '@tauri-apps/plugin-os@2.4.0':
     dependencies:
-      '@tauri-apps/api': 2.11.1
+      '@tauri-apps/api': 2.12.4
 
-  '@tauri-apps/plugin-process@2.3.1':
+  '@tauri-apps/plugin-process@2.4.0':
     dependencies:
-      '@tauri-apps/api': 2.11.1
+      '@tauri-apps/api': 2.12.4
 
-  '@tauri-apps/plugin-store@2.4.3':
+  '@tauri-apps/plugin-store@2.5.0':
     dependencies:
-      '@tauri-apps/api': 2.11.1
+      '@tauri-apps/api': 2.12.4
 
-  '@tauri-apps/plugin-updater@2.10.1':
+  '@tauri-apps/plugin-updater@2.14.0':
     dependencies:
-      '@tauri-apps/api': 2.11.1
+      '@tauri-apps/api': 2.12.4
 
   '@testing-library/dom@10.4.1':
     dependencies:
@@ -21666,7 +21628,7 @@ snapshots:
   '@typescript-eslint/project-service@8.50.0(supports-color@10.2.2)(typescript@7.0.2)':
     dependencies:
       '@typescript-eslint/tsconfig-utils': 8.50.0(typescript@7.0.2)
-      '@typescript-eslint/types': 8.50.0
+      '@typescript-eslint/types': 8.71.2
       debug: 4.4.3(supports-color@10.2.2)
       typescript: 7.0.2
     transitivePeerDependencies:
@@ -21955,11 +21917,11 @@ snapshots:
 
   '@vue/shared@3.5.26': {}
 
-  '@wdio/cli@9.31.5(@types/node@22.19.15)(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)':
+  '@wdio/cli@9.31.5(@types/node@22.19.15)(expect-webdriverio@6.1.0)(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)':
     dependencies:
       '@vitest/snapshot': 2.1.9
       '@wdio/config': 9.31.5(supports-color@10.2.2)
-      '@wdio/globals': 9.31.3(expect-webdriverio@6.1.0(@wdio/globals@9.31.3(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)))(@wdio/logger@9.29.1)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)))(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))
+      '@wdio/globals': 9.31.3(expect-webdriverio@6.1.0)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))
       '@wdio/logger': 9.29.1
       '@wdio/protocols': 9.31.5
       '@wdio/types': 9.31.2
@@ -22009,25 +21971,21 @@ snapshots:
       '@wdio/types': 9.31.2
       chalk: 5.6.2
 
-  '@wdio/globals@9.29.1(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))':
+  '@wdio/globals@9.31.3(expect-webdriverio@6.1.0)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))':
     dependencies:
+      expect-webdriverio: 6.1.0(@wdio/globals@9.31.3)(@wdio/logger@9.29.1)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))
       webdriverio: 9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)
 
-  '@wdio/globals@9.31.3(expect-webdriverio@6.1.0(@wdio/globals@9.31.3(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)))(@wdio/logger@9.29.1)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)))(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))':
-    dependencies:
-      expect-webdriverio: 6.1.0(@wdio/globals@9.31.3(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)))(@wdio/logger@9.29.1)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))
-      webdriverio: 9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)
-
-  '@wdio/local-runner@9.31.5(@wdio/globals@9.31.3(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)))(supports-color@10.2.2)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))':
+  '@wdio/local-runner@9.31.5(@wdio/globals@9.31.3)(supports-color@10.2.2)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))':
     dependencies:
       '@types/node': 22.19.15
       '@wdio/logger': 9.29.1
       '@wdio/repl': 9.16.2
-      '@wdio/runner': 9.31.5(expect-webdriverio@6.1.0(@wdio/globals@9.31.3(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)))(@wdio/logger@9.29.1)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)))(supports-color@10.2.2)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))
+      '@wdio/runner': 9.31.5(expect-webdriverio@6.1.0)(supports-color@10.2.2)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))
       '@wdio/types': 9.31.2
       '@wdio/xvfb': 9.31.2
       exit-hook: 4.0.0
-      expect-webdriverio: 6.1.0(@wdio/globals@9.31.3(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)))(@wdio/logger@9.29.1)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))
+      expect-webdriverio: 6.1.0(@wdio/globals@9.31.3)(@wdio/logger@9.29.1)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))
       split2: 4.2.0
       stream-buffers: 3.0.3
     transitivePeerDependencies:
@@ -22039,14 +21997,6 @@ snapshots:
       - supports-color
       - utf-8-validate
       - webdriverio
-
-  '@wdio/logger@9.18.0':
-    dependencies:
-      chalk: 5.6.2
-      loglevel: 1.9.2
-      loglevel-plugin-prefix: 0.8.4
-      safe-regex2: 5.1.1
-      strip-ansi: 7.1.2
 
   '@wdio/logger@9.29.1':
     dependencies:
@@ -22070,11 +22020,11 @@ snapshots:
       - react-native-b4a
       - supports-color
 
-  '@wdio/native-core@1.1.0(supports-color@10.2.2)(tsx@4.21.0)':
+  '@wdio/native-core@1.3.0(supports-color@10.2.2)(tsx@4.21.0)':
     dependencies:
       '@wdio/logger': 9.29.1
-      '@wdio/native-types': 2.4.0
-      '@wdio/native-utils': 2.5.0(supports-color@10.2.2)(tsx@4.21.0)
+      '@wdio/native-types': 2.6.0
+      '@wdio/native-utils': 2.8.0(supports-color@10.2.2)(tsx@4.21.0)
       debug: 4.4.3(supports-color@10.2.2)
       get-port: 7.1.0
       tslib: 2.8.1
@@ -22082,27 +22032,11 @@ snapshots:
       - supports-color
       - tsx
 
-  '@wdio/native-spy@1.2.0': {}
+  '@wdio/native-spy@1.4.0': {}
 
-  '@wdio/native-types@2.4.0': {}
+  '@wdio/native-types@2.6.0': {}
 
-  '@wdio/native-types@2.5.0': {}
-
-  '@wdio/native-utils@2.5.0(supports-color@10.2.2)(tsx@4.21.0)':
-    dependencies:
-      '@wdio/logger': 9.18.0
-      debug: 4.4.3(supports-color@10.2.2)
-      esbuild: 0.28.2
-      find-up-simple: 1.0.1
-      json5: 2.2.3
-      smol-toml: 1.9.0
-      yaml: 2.9.0
-    optionalDependencies:
-      tsx: 4.21.0
-    transitivePeerDependencies:
-      - supports-color
-
-  '@wdio/native-utils@2.6.0(supports-color@10.2.2)(tsx@4.21.0)':
+  '@wdio/native-utils@2.8.0(supports-color@10.2.2)(tsx@4.21.0)':
     dependencies:
       '@wdio/logger': 9.29.1
       debug: 4.4.3(supports-color@10.2.2)
@@ -22110,7 +22044,7 @@ snapshots:
       find-up-simple: 1.0.1
       json5: 2.2.3
       smol-toml: 1.9.0
-      yaml: 2.9.0
+      yaml: 2.9.1
     optionalDependencies:
       tsx: 4.21.0
     transitivePeerDependencies:
@@ -22122,14 +22056,6 @@ snapshots:
     dependencies:
       '@types/node': 22.19.15
 
-  '@wdio/reporter@9.29.1':
-    dependencies:
-      '@types/node': 22.19.15
-      '@wdio/logger': 9.29.1
-      '@wdio/types': 9.29.1
-      diff: 8.0.4
-      object-inspect: 1.13.4
-
   '@wdio/reporter@9.31.2':
     dependencies:
       '@types/node': 22.19.15
@@ -22138,17 +22064,17 @@ snapshots:
       diff: 8.0.4
       object-inspect: 1.13.4
 
-  '@wdio/runner@9.31.5(expect-webdriverio@6.1.0(@wdio/globals@9.31.3(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)))(@wdio/logger@9.29.1)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)))(supports-color@10.2.2)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))':
+  '@wdio/runner@9.31.5(expect-webdriverio@6.1.0)(supports-color@10.2.2)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))':
     dependencies:
       '@types/node': 22.19.15
       '@wdio/config': 9.31.5(supports-color@10.2.2)
       '@wdio/dot-reporter': 9.31.2
-      '@wdio/globals': 9.31.3(expect-webdriverio@6.1.0(@wdio/globals@9.31.3(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)))(@wdio/logger@9.29.1)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)))(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))
+      '@wdio/globals': 9.31.3(expect-webdriverio@6.1.0)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))
       '@wdio/logger': 9.29.1
       '@wdio/types': 9.31.2
       '@wdio/utils': 9.31.5(supports-color@10.2.2)
       deepmerge-ts: 7.1.6
-      expect-webdriverio: 6.1.0(@wdio/globals@9.31.3(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)))(@wdio/logger@9.29.1)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))
+      expect-webdriverio: 6.1.0(@wdio/globals@9.31.3)(@wdio/logger@9.29.1)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))
       webdriver: 9.31.5(supports-color@10.2.2)
       webdriverio: 9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)
     transitivePeerDependencies:
@@ -22159,14 +22085,6 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  '@wdio/spec-reporter@9.29.1':
-    dependencies:
-      '@wdio/reporter': 9.29.1
-      '@wdio/types': 9.29.1
-      chalk: 5.6.2
-      easy-table: 1.2.0
-      pretty-ms: 9.3.1
-
   '@wdio/spec-reporter@9.31.2':
     dependencies:
       '@wdio/reporter': 9.31.2
@@ -22175,26 +22093,26 @@ snapshots:
       easy-table: 1.2.0
       pretty-ms: 9.3.1
 
-  '@wdio/tauri-plugin@1.3.0(supports-color@10.2.2)(tsx@4.21.0)':
+  '@wdio/tauri-plugin@1.5.0(supports-color@10.2.2)(tsx@4.21.0)':
     dependencies:
-      '@tauri-apps/api': 2.11.1
-      '@tauri-apps/plugin-log': 2.9.0
-      '@wdio/native-spy': 1.2.0
-      '@wdio/native-utils': 2.6.0(supports-color@10.2.2)(tsx@4.21.0)
+      '@tauri-apps/api': 2.12.1
+      '@tauri-apps/plugin-log': 2.10.0
+      '@wdio/native-spy': 1.4.0
+      '@wdio/native-utils': 2.8.0(supports-color@10.2.2)(tsx@4.21.0)
     transitivePeerDependencies:
       - supports-color
       - tsx
 
-  '@wdio/tauri-service@1.3.0(supports-color@10.2.2)(tsx@4.21.0)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))':
+  '@wdio/tauri-service@1.5.0(expect-webdriverio@6.1.0)(supports-color@10.2.2)(tsx@4.21.0)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))':
     dependencies:
-      '@wdio/globals': 9.29.1(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))
+      '@wdio/globals': 9.31.3(expect-webdriverio@6.1.0)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))
       '@wdio/logger': 9.29.1
-      '@wdio/native-core': 1.1.0(supports-color@10.2.2)(tsx@4.21.0)
-      '@wdio/native-spy': 1.2.0
-      '@wdio/native-types': 2.5.0
-      '@wdio/native-utils': 2.6.0(supports-color@10.2.2)(tsx@4.21.0)
-      '@wdio/spec-reporter': 9.29.1
-      '@wdio/types': 9.29.1
+      '@wdio/native-core': 1.3.0(supports-color@10.2.2)(tsx@4.21.0)
+      '@wdio/native-spy': 1.4.0
+      '@wdio/native-types': 2.6.0
+      '@wdio/native-utils': 2.8.0(supports-color@10.2.2)(tsx@4.21.0)
+      '@wdio/spec-reporter': 9.31.2
+      '@wdio/types': 9.31.2
       debug: 4.4.3(supports-color@10.2.2)
       get-port: 7.1.0
       tslib: 2.8.1
@@ -22203,10 +22121,6 @@ snapshots:
       - expect-webdriverio
       - supports-color
       - tsx
-
-  '@wdio/types@9.29.1':
-    dependencies:
-      '@types/node': 22.19.15
 
   '@wdio/types@9.31.2':
     dependencies:
@@ -22502,7 +22416,7 @@ snapshots:
       jsonpointer: 5.0.1
       leven: 3.1.0
 
-  better-auth@1.5.6(@opentelemetry/api@1.9.1)(@tanstack/react-start@1.168.60(esbuild@0.28.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(rolldown@1.0.1)(rollup@4.60.0)(supports-color@10.2.2)(vite@7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)))(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@electric-sql/pglite@0.3.16)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(bun-types@1.3.11)(kysely@0.28.14)(pg@8.20.0))(pg@8.20.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(solid-js@1.9.15)(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jiti@2.7.0)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)):
+  better-auth@1.5.6(@opentelemetry/api@1.9.1)(@tanstack/react-start@1.168.60(esbuild@0.28.2)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(rolldown@1.0.1)(rollup@4.60.0)(supports-color@10.2.2)(vite@7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)))(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@electric-sql/pglite@0.3.16)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(bun-types@1.3.11)(kysely@0.28.14)(pg@8.20.0))(pg@8.20.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(solid-js@1.9.15)(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jiti@2.7.0)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.1)):
     dependencies:
       '@better-auth/core': 1.5.6(@better-auth/utils@0.3.1)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.2(zod@4.6.5))(jose@6.1.3)(kysely@0.28.14)(nanostores@1.2.0)
       '@better-auth/drizzle-adapter': 1.5.6(@better-auth/core@1.5.6(@better-auth/utils@0.3.1)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.2(zod@4.6.5))(jose@6.1.3)(kysely@0.28.14)(nanostores@1.2.0))(@better-auth/utils@0.3.1)(drizzle-orm@0.45.2(@electric-sql/pglite@0.3.16)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(bun-types@1.3.11)(kysely@0.28.14)(pg@8.20.0))
@@ -22529,12 +22443,12 @@ snapshots:
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
       solid-js: 1.9.15
-      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jiti@2.7.0)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)
+      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jiti@2.7.0)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.1)
     transitivePeerDependencies:
       - '@cloudflare/workers-types'
       - '@opentelemetry/api'
 
-  better-auth@1.5.6(@opentelemetry/api@1.9.1)(@tanstack/react-start@1.168.60(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(supports-color@10.2.2)(vite@7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)))(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@electric-sql/pglite@0.3.16)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(bun-types@1.3.11)(kysely@0.28.14)(pg@8.20.0))(pg@8.20.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(solid-js@1.9.15)(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jiti@2.7.0)(jsdom@29.0.0(@noble/hashes@2.0.1))(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)):
+  better-auth@1.5.6(@opentelemetry/api@1.9.1)(@tanstack/react-start@1.168.60(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(supports-color@10.2.2)(vite@7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)))(drizzle-kit@0.31.10)(drizzle-orm@0.45.2(@electric-sql/pglite@0.3.16)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(bun-types@1.3.11)(kysely@0.28.14)(pg@8.20.0))(pg@8.20.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)(solid-js@1.9.15)(vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jiti@2.7.0)(jsdom@29.0.0(@noble/hashes@2.0.1))(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.1)):
     dependencies:
       '@better-auth/core': 1.5.6(@better-auth/utils@0.3.1)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.2(zod@4.6.5))(jose@6.1.3)(kysely@0.28.14)(nanostores@1.2.0)
       '@better-auth/drizzle-adapter': 1.5.6(@better-auth/core@1.5.6(@better-auth/utils@0.3.1)(@better-fetch/fetch@1.1.21)(@opentelemetry/api@1.9.1)(better-call@1.3.2(zod@4.6.5))(jose@6.1.3)(kysely@0.28.14)(nanostores@1.2.0))(@better-auth/utils@0.3.1)(drizzle-orm@0.45.2(@electric-sql/pglite@0.3.16)(@opentelemetry/api@1.9.1)(@types/pg@8.20.0)(bun-types@1.3.11)(kysely@0.28.14)(pg@8.20.0))
@@ -22561,7 +22475,7 @@ snapshots:
       react: 19.2.0
       react-dom: 19.2.0(react@19.2.0)
       solid-js: 1.9.15
-      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jiti@2.7.0)(jsdom@29.0.0(@noble/hashes@2.0.1))(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)
+      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jiti@2.7.0)(jsdom@29.0.0(@noble/hashes@2.0.1))(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.1)
     transitivePeerDependencies:
       - '@cloudflare/workers-types'
       - '@opentelemetry/api'
@@ -23942,10 +23856,10 @@ snapshots:
 
   expect-type@1.3.0: {}
 
-  expect-webdriverio@6.1.0(@wdio/globals@9.31.3(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)))(@wdio/logger@9.29.1)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)):
+  expect-webdriverio@6.1.0(@wdio/globals@9.31.3)(@wdio/logger@9.29.1)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)):
     dependencies:
       '@vitest/snapshot': 4.1.11
-      '@wdio/globals': 9.31.3(expect-webdriverio@6.1.0(@wdio/globals@9.31.3(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)))(@wdio/logger@9.29.1)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2)))(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))
+      '@wdio/globals': 9.31.3(expect-webdriverio@6.1.0)(webdriverio@9.31.5(puppeteer-core@24.43.1(supports-color@10.2.2))(supports-color@10.2.2))
       '@wdio/logger': 9.29.1
       deep-eql: 5.0.2
       expect: 30.5.2
@@ -24184,7 +24098,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  fumadocs-mdx@14.2.11(@types/mdast@4.0.4)(@types/mdx@2.0.13)(@types/react@19.2.14)(fumadocs-core@16.7.7(@mdx-js/mdx@3.1.1(supports-color@10.2.2))(@tanstack/react-router@1.170.41(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@0.544.0(react@19.2.0))(next@16.2.6(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react-router@7.13.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react@19.2.0)(supports-color@10.2.2)(zod@4.6.5))(next@16.2.6(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react@19.2.0)(supports-color@10.2.2)(vite@7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)):
+  fumadocs-mdx@14.2.11(@types/mdast@4.0.4)(@types/mdx@2.0.13)(@types/react@19.2.14)(fumadocs-core@16.7.7(@mdx-js/mdx@3.1.1(supports-color@10.2.2))(@tanstack/react-router@1.170.41(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(@types/estree-jsx@1.0.5)(@types/hast@3.0.4)(@types/mdast@4.0.4)(@types/react@19.2.14)(lucide-react@0.544.0(react@19.2.0))(next@16.2.6(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react-dom@19.2.0(react@19.2.0))(react-router@7.13.2(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react@19.2.0)(supports-color@10.2.2)(zod@4.6.5))(next@16.2.6(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0))(react@19.2.0)(supports-color@10.2.2)(vite@7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.1)):
     dependencies:
       '@mdx-js/mdx': 3.1.1(supports-color@10.2.2)
       '@standard-schema/spec': 1.1.0
@@ -24210,7 +24124,7 @@ snapshots:
       '@types/react': 19.2.14
       next: 16.2.6(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
       react: 19.2.0
-      vite: 7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)
+      vite: 7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.1)
     transitivePeerDependencies:
       - supports-color
 
@@ -28473,11 +28387,6 @@ snapshots:
       minizlib: 3.1.0
       yallist: 5.0.0
 
-  tauri-plugin-sentry-api@0.3.1:
-    dependencies:
-      '@tauri-apps/api': 2.0.0-beta.8
-      tslib: 2.8.1
-
   tdigest@0.1.2:
     dependencies:
       bintrees: 1.0.2
@@ -29039,13 +28948,13 @@ snapshots:
       - supports-color
       - terser
 
-  vite-node@3.2.4(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0):
+  vite-node@3.2.4(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.1):
     dependencies:
       cac: 6.7.14
       debug: 4.4.3(supports-color@10.2.2)
       es-module-lexer: 1.7.0
       pathe: 2.0.3
-      vite: 7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)
+      vite: 7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.1)
     transitivePeerDependencies:
       - '@types/node'
       - jiti
@@ -29099,6 +29008,23 @@ snapshots:
       tsx: 4.21.0
       yaml: 2.9.0
 
+  vite@7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.1):
+    dependencies:
+      esbuild: 0.25.12
+      fdir: 6.5.0(picomatch@4.0.7)
+      picomatch: 4.0.7
+      postcss: 8.5.14
+      rollup: 4.60.0
+      tinyglobby: 0.2.17
+    optionalDependencies:
+      '@types/node': 22.19.15
+      fsevents: 2.3.3
+      jiti: 2.7.0
+      lightningcss: 1.33.0
+      terser: 5.44.1
+      tsx: 4.21.0
+      yaml: 2.9.1
+
   vitefu@1.1.3(vite@7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)):
     optionalDependencies:
       vite: 7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)
@@ -29139,7 +29065,7 @@ snapshots:
       - supports-color
       - terser
 
-  vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jiti@2.7.0)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0):
+  vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jiti@2.7.0)(jsdom@27.4.0(@noble/hashes@2.0.1)(supports-color@10.2.2))(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.1):
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/expect': 3.2.4
@@ -29161,8 +29087,8 @@ snapshots:
       tinyglobby: 0.2.17
       tinypool: 1.1.1
       tinyrainbow: 2.0.0
-      vite: 7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)
-      vite-node: 3.2.4(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)
+      vite: 7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.1)
+      vite-node: 3.2.4(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.1)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/debug': 4.1.12
@@ -29182,7 +29108,7 @@ snapshots:
       - tsx
       - yaml
 
-  vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jiti@2.7.0)(jsdom@29.0.0(@noble/hashes@2.0.1))(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0):
+  vitest@3.2.4(@types/debug@4.1.12)(@types/node@22.19.15)(jiti@2.7.0)(jsdom@29.0.0(@noble/hashes@2.0.1))(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.1):
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/expect': 3.2.4
@@ -29204,8 +29130,8 @@ snapshots:
       tinyglobby: 0.2.17
       tinypool: 1.1.1
       tinyrainbow: 2.0.0
-      vite: 7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)
-      vite-node: 3.2.4(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.0)
+      vite: 7.1.11(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.1)
+      vite-node: 3.2.4(@types/node@22.19.15)(jiti@2.7.0)(lightningcss@1.33.0)(supports-color@10.2.2)(terser@5.44.1)(tsx@4.21.0)(yaml@2.9.1)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@types/debug': 4.1.12
@@ -29459,6 +29385,8 @@ snapshots:
   yallist@5.0.0: {}
 
   yaml@2.9.0: {}
+
+  yaml@2.9.1: {}
 
   yargs-parser@20.2.9: {}
 
