@@ -649,10 +649,10 @@
     "optilock-fps": {
       "repo": "dacooderr/OptiLock",
       "path": "OptiLock FPS Config (Recommended)/gameinfo.gi",
-      "commit": "26916477030f024102af5e8dcde07d832befcde8",
+      "commit": "3822b5311dc5535e626ff1917a3ce92e31e99216",
       "date": "2026-10-23",
-      "sha256": "77ce1eb7d923b59dd8e69be61dce915311a484810eafb394057a6f25f1ec6f40",
-      "tag": "V6.1b",
+      "sha256": "f6200a0c917d66ca0f370375655d87051b4b7859f24c42ead64875f6e4047ce5",
+      "tag": "v6.1c",
       "videos": [
         {
           "path": "OptiLock FPS Config (Recommended)/video.txt",
@@ -663,10 +663,10 @@
     "optilock-potato": {
       "repo": "dacooderr/OptiLock",
       "path": "OptiLock Potato Config/gameinfo.gi",
-      "commit": "26916477030f024102af5e8dcde07d832befcde8",
+      "commit": "3822b5311dc5535e626ff1917a3ce92e31e99216",
       "date": "2026-10-23",
-      "sha256": "f0ccc05c023496a399c7c4c02b26af666b1061f1577722bb02e59a17c2a9362e",
-      "tag": "V6.1b",
+      "sha256": "2c943f6e55df44d398c2a6039544d157ac6bd9896d3c1d966658850591e01568",
+      "tag": "v6.1c",
       "videos": [
         {
           "path": "OptiLock Potato Config/video.txt",
@@ -677,10 +677,10 @@
     "optilock-ultra-potato": {
       "repo": "dacooderr/OptiLock",
       "path": "OptiLock Ultra Potato Config/gameinfo.gi",
-      "commit": "26916477030f024102af5e8dcde07d832befcde8",
+      "commit": "3822b5311dc5535e626ff1917a3ce92e31e99216",
       "date": "2026-10-23",
-      "sha256": "28dc8fb4123ed1bedafb411275cf38db746114c9197efb15ec91fe9e6fc85024",
-      "tag": "V6.1b",
+      "sha256": "8ecc976a6960efca8e44c974a1581dc06b63e6a0da2d5cab5bdbe455b234e543",
+      "tag": "v6.1c",
       "videos": [
         {
           "path": "OptiLock Ultra Potato Config/video.txt",
@@ -718,7 +718,7 @@
       "md5": "de4b404c97ef4c6b368e5961c0c8969e",
       "name": "Optimisationlock - Competitive FPS Optimisations",
       "author": "Maidehnless",
-      "downloads": 36864,
+      "downloads": 40653,
       "updatedAt": "2026-04-08"
     },
     "658776": {
