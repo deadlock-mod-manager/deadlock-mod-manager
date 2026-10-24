@@ -20,7 +20,7 @@ const PHASES: &[(i32, &[&str])] = &[
     (10, &["start", "takeoff", "upwards", "casting", "jump"]),
     (30, &["hover", "hold", "fly", "charge", "charging"]),
     (40, &["intro"]),
-    (50, &["loop", "idle", "channeling"]),
+    (HOLD_RANK, &["loop", "idle", "channeling"]),
     (55, &["dash", "dive"]),
     (58, &["attack", "hit", "shoot", "fire", "slam", "cast"]),
     (59, &["attached"]),
@@ -41,6 +41,9 @@ const PHASES: &[(i32, &[&str])] = &[
     (70, &["end", "release", "castcomplete", "exit", "getup"]),
 ];
 
+/// Loops and idles: the part of a move that holds.
+const HOLD_RANK: i32 = 50;
+
 /// The clip named after the family alone, like `ability_uppercut`, is the
 /// move's body: after its start and intro, before any loop or follow-up.
 const BODY_RANK: i32 = 45;
@@ -48,9 +51,9 @@ const BODY_RANK: i32 = 45;
 /// Stance, direction and layer tokens. Like phases, they end an ability's
 /// name inside a clip stem.
 const VARIANTS: &[&str] = &[
-    "in", "air", "inair", "up", "down", "crouch", "alt", "base", "turn", "run", "walk", "zipline",
-    "stand", "add", "additive", "null", "aim", "forward", "backward", "left", "right", "n", "e",
-    "s", "w", "ne", "nw", "se", "sw",
+    "in", "air", "inair", "ground", "up", "down", "crouch", "alt", "base", "turn", "run", "walk",
+    "zipline", "stand", "add", "additive", "null", "aim", "forward", "backward", "left", "right",
+    "n", "e", "s", "w", "ne", "nw", "se", "sw",
 ];
 
 fn phase_token_rank(token: &str) -> Option<i32> {
@@ -142,7 +145,7 @@ pub(super) fn coherent_phase_paths(
     paths: impl IntoIterator<Item = String>,
 ) -> Vec<(i32, String)> {
     let primary_in_air = is_in_air_variant(clip_stem(primary_path));
-    let mut phases = paths
+    let phases = paths
         .into_iter()
         .filter_map(|path| {
             let stem = clip_stem(&path);
@@ -158,8 +161,7 @@ pub(super) fn coherent_phase_paths(
             // Judge variants on what follows the name, so an ability called
             // "Paradoxical Swap" still keeps its own clips.
             if [
-                "alt", "base", "swap", "turn", "run", "walk", "zipline", "stand", "up", "down",
-                "crouch",
+                "alt", "base", "swap", "turn", "run", "walk", "zipline", "up", "down", "crouch",
             ]
             .iter()
             .any(|token| contains_token(suffix, token))
@@ -169,8 +171,19 @@ pub(super) fn coherent_phase_paths(
             if !primary_in_air && is_in_air_variant(suffix) {
                 return None;
             }
-            phase_rank(name, family).map(|rank| (rank, path))
+            let stance = contains_token(suffix, "stand");
+            phase_rank(name, family).map(|rank| (rank, stance, path))
         })
+        .collect::<Vec<_>>();
+    // A stance clip such as `ability_bishop_stand_idle` is the move's hold,
+    // unless the move holds on its own as Bebop's beam does.
+    let holds = phases
+        .iter()
+        .any(|((first, next), stance, _)| !stance && (*first == HOLD_RANK || *next == HOLD_RANK));
+    let mut phases = phases
+        .into_iter()
+        .filter(|(_, stance, _)| !(holds && *stance))
+        .map(|(rank, _, path)| (rank, path))
         .collect::<Vec<_>>();
 
     let directions = phases

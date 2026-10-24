@@ -77,6 +77,19 @@ describe("preview ability slots", () => {
     expect(rest.map((entry) => entry.id)).toEqual(["ability:idle_sentry"]);
   });
 
+  it("lets clips found by an ability's name claim its slot first", () => {
+    const { slots, rest } = assignAbilitySlots(
+      [action("last"), { ...action("strix_salvo"), ability: "Strix Salvo" }],
+      [
+        ability("ability_deadpack_chargeblast", "Strix Salvo"),
+        ability("ability_deadpack_rocketeer", "Chimera Mk1"),
+      ],
+    );
+    // `last` is part of `chargeblast`, but the salvo clips spell the name.
+    expect(slots[0].action?.id).toBe("ability:strix_salvo");
+    expect(rest.map((entry) => entry.id)).toEqual(["ability:last"]);
+  });
+
   it("does not let a shared class prefix tie every slot", () => {
     const { slots } = assignAbilitySlots(
       [action("unicorn_radiant_blast"), action("unicorn_dazzlingorb")],

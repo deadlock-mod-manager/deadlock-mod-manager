@@ -52,8 +52,11 @@ interface Candidate {
   action: PreviewAnimationChoice;
   /** The slot it matches better than every other, or -1. */
   slot: number;
-  /** Whether the whole stem matched, rather than only some of its words. */
-  whole: boolean;
+  /**
+   * Claim order: 0 when found by the ability's name, 1 when the whole stem
+   * matched, 2 when only some of its words did.
+   */
+  tier: number;
 }
 
 const uniqueBest = (scores: number[]): number => {
@@ -81,30 +84,30 @@ const candidate = (
     return {
       action,
       slot: abilities.findIndex((ability) => ability.name === action.ability),
-      whole: true,
+      tier: 0,
     };
-  if (!stem) return { action, slot: -1, whole: false };
+  if (!stem) return { action, slot: -1, tier: 2 };
   const whole = abilities.map((ability, slot) =>
     partScore(stem, ability, slot),
   );
   if (whole.some((score) => score > 0))
-    return { action, slot: uniqueBest(whole), whole: true };
+    return { action, slot: uniqueBest(whole), tier: 1 };
   const parts = abilities.map((ability, slot) =>
     stem
       .split("_")
       .filter((part) => part.length >= 3)
       .reduce((total, part) => total + partScore(part, ability, slot), 0),
   );
-  return { action, slot: uniqueBest(parts), whole: false };
+  return { action, slot: uniqueBest(parts), tier: 2 };
 };
 
 /**
  * Puts each ability action on the hero's ability it animates. Clip names only
  * loosely follow the ability names, so an action goes to a slot only when it
  * matches that slot better than every other; `shiv_*` clips, which name all
- * four, stay unassigned. Whole-stem matches claim slots first, so `sentry`
- * beats `idle_sentry` to Mini Turret. Whatever is left over is returned as
- * `rest`.
+ * four, stay unassigned. Actions found by an ability's name claim slots first,
+ * then whole-stem matches, so `sentry` beats `idle_sentry` to Mini Turret.
+ * Whatever is left over is returned as `rest`.
  */
 export const assignAbilitySlots = (
   actions: PreviewAnimationChoice[],
@@ -118,10 +121,10 @@ export const assignAbilitySlots = (
     .filter((action) => action.kind === "ability")
     .map((action) => candidate(action, abilities));
   const claimed = new Set<PreviewAnimationChoice>();
-  for (const whole of [true, false]) {
+  for (const tier of [0, 1, 2]) {
     for (const entry of candidates) {
       const target = slots[entry.slot];
-      if (entry.whole !== whole || !target || target.action) continue;
+      if (entry.tier !== tier || !target || target.action) continue;
       target.action = entry.action;
       claimed.add(entry.action);
     }

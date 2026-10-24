@@ -18,8 +18,7 @@ pub struct PreviewAnimationChoice {
   pub kind: PreviewAnimationKind,
   pub label: String,
   pub clips: Vec<String>,
-  /// The ability name these clips were found by, when they don't carry the
-  /// `ability_` prefix that otherwise ties them to an ability.
+  /// The ability name these clips were found by, when their names spell one.
   #[ts(optional)]
   #[serde(skip_serializing_if = "Option::is_none")]
   pub ability: Option<String>,

@@ -17,8 +17,8 @@ pub struct PreviewAction {
     pub id: String,
     pub kind: PreviewActionKind,
     pub clips: Vec<String>,
-    /// The ability name a clip group was found by, when its clips are not
-    /// prefixed `ability_` and so do not name the ability themselves.
+    /// The ability name a clip group was found by, when its clip names spell
+    /// one.
     pub ability: Option<String>,
 }
 
@@ -77,21 +77,25 @@ fn squash(text: &str) -> String {
         .collect()
 }
 
-/// A clip group named after an ability without the `ability_` prefix, and the
-/// ability it names: its first one to three tokens spell the whole name, as
-/// Bebop's `hyperbeam_fire` does for "Hyper Beam".
+/// A clip group named after an ability, and the ability it names: the one to
+/// three tokens after any `ability_` prefix spell the whole name. That finds
+/// Bebop's `hyperbeam_fire` for "Hyper Beam", and keeps Warden's
+/// `ability_last_stand_idle` whole although `stand` reads as a stance.
 fn named_family<'a>(path: &str, ability_names: &'a [String]) -> Option<(String, &'a str)> {
     let stem = clip_stem(path);
-    let tokens: Vec<_> = stem.split('_').collect();
-    if tokens.contains(&"ability") {
-        return None;
-    }
-    (1..tokens.len().min(4)).find_map(|count| {
-        let family = tokens[..count].join("_");
+    let (prefix, name) = match stem.find("ability_") {
+        Some(index) => ("ability_", &stem[index + "ability_".len()..]),
+        None => ("", stem),
+    };
+    let tokens: Vec<_> = name.split('_').collect();
+    // An unprefixed clip needs a phase after the name to read as an ability.
+    let longest = tokens.len() - usize::from(prefix.is_empty());
+    (1..=longest.min(3)).rev().find_map(|count| {
+        let words = &tokens[..count];
         ability_names
             .iter()
-            .find(|name| name.len() >= 4 && squash(name) == squash(&family))
-            .map(|name| (family, name.as_str()))
+            .find(|name| name.len() >= 4 && squash(name) == squash(&words.concat()))
+            .map(|name| (format!("{prefix}{}", words.join("_")), name.as_str()))
     })
 }
 
@@ -141,15 +145,15 @@ pub fn preview_actions(
     let mut families: BTreeMap<String, Vec<String>> = BTreeMap::new();
     let mut named: BTreeMap<String, &str> = BTreeMap::new();
     for path in paths {
-        let family = match family_prefix(&path) {
-            Some(family) => family,
-            None => {
-                let Some((family, ability)) = named_family(&path, ability_names) else {
-                    continue;
-                };
+        let family = match named_family(&path, ability_names) {
+            Some((family, ability)) => {
                 named.insert(family.clone(), ability);
                 family
             }
+            None => match family_prefix(&path) {
+                Some(family) => family,
+                None => continue,
+            },
         };
         families.entry(family).or_default().push(path);
     }
@@ -211,8 +215,20 @@ mod tests {
             "ability_ult_turn_left",
             "aim_ability_charge_start",
             "ability_charge_start_add",
+            "ability_bishop_end",
+            "ability_bishop_stand_idle",
+            "ability_bishop_start",
         ]);
-        assert_eq!(selected.len(), 2);
+        assert_eq!(selected.len(), 3);
+        assert_eq!(
+            names(&selected[0]),
+            [
+                "ability_bishop_start",
+                "ability_bishop_stand_idle",
+                "ability_bishop_end"
+            ]
+        );
+        let selected = &selected[1..];
         assert_eq!(selected[0].id, "ability:charge");
         assert_eq!(
             names(&selected[0]),
@@ -236,8 +252,8 @@ mod tests {
 
     #[test]
     fn multi_word_and_unprefixed_ability_names_form_actions() {
-        // Haze's Sleep Dagger and Bebop's Grapple Arm and Hyper Beam, as the game
-        // names them.
+        // Haze's Sleep Dagger, Warden's Last Stand, Mina's Rake and Bebop's
+        // Grapple Arm and Hyper Beam, as the game names them.
         let selected = preview_actions(
             [
                 "ability_sleep_dagger",
@@ -252,10 +268,18 @@ mod tests {
                 "hyperbeam_fire",
                 "hyperbeam_stand_idle",
                 "hyperbeam_charge_loop",
+                "ability_last_stand_idle",
+                "ability_last_stand_casting_intro",
+                "vampirebat_ability_rake",
             ]
             .iter()
             .map(|name| format!("models/a/clips/{name}.vnmclip_c")),
-            &["Hyper Beam".to_string(), "Sleep Dagger".to_string()],
+            &[
+                "Hyper Beam".to_string(),
+                "Sleep Dagger".to_string(),
+                "Last Stand".to_string(),
+                "Rake".to_string(),
+            ],
         );
         let action = |id: &str| selected.iter().find(|action| action.id == id).unwrap();
         assert_eq!(
@@ -290,6 +314,14 @@ mod tests {
             Some("Hyper Beam")
         );
         assert!(selected.iter().all(|action| action.id != "ability:sleep"));
+        assert_eq!(
+            names(action("ability:last_stand")),
+            [
+                "ability_last_stand_casting_intro",
+                "ability_last_stand_idle"
+            ]
+        );
+        assert_eq!(names(action("ability:rake")), ["vampirebat_ability_rake"]);
     }
 
     #[test]
